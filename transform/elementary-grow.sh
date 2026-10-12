@@ -618,10 +618,14 @@ build_linux_line() {
   local kpath="$1" word out=() line
   for word in $(cat /proc/cmdline); do
     case "$word" in
-      BOOT_IMAGE=*|rootflags=*|ro) continue ;;
+      BOOT_IMAGE=*|rootflags=*|ro|appledrm.show_notch=*) continue ;;
       *) out+=("$word") ;;
     esac
   done
+  # Pantheon centers Wingpanel content and has no notch avoidance. The
+  # running omarchy cmdline may opt into the full-height mode, but the new
+  # elementary entry must retain the rectangular safe display mode.
+  out+=(appledrm.show_notch=0)
   printf -v line '    linux %s %s rootflags=subvol=%s rw' "$kpath" "${out[*]}" "$SUBVOL_NAME"
   [[ $line == *' root='* ]] || { echo "running cmdline has no root= — refusing to guess" >&2; return 1; }
   printf '%s\n' "$line"

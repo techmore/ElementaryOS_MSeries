@@ -111,12 +111,12 @@ namespace MSeries {
             }
             request_in_flight = true;
 
-            string stdout_text;
-            string stderr_text;
+            string? stdout_text = null;
+            string? stderr_text = null;
             int exit_status;
             try {
                 Process.spawn_sync (null, { executable, "--snapshot" }, null,
-                    SpawnFlags.SEARCH_PATH | SpawnFlags.STDERR_TO_DEV_NULL,
+                    SpawnFlags.SEARCH_PATH,
                     null, out stdout_text, out stderr_text, out exit_status);
             } catch (Error e) {
                 request_in_flight = false;
@@ -125,7 +125,7 @@ namespace MSeries {
             }
             request_in_flight = false;
 
-            if (exit_status != 0 || stdout_text.strip ().length == 0) {
+            if (exit_status != 0 || stdout_text == null || stdout_text.strip ().length == 0) {
                 show_unavailable ("Start CodexBar and sign in to see quota.");
                 return;
             }

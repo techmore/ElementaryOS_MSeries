@@ -7,14 +7,20 @@ sudo install -D -m 0644 /dev/stdin /etc/modprobe.d/zz-pantheon-notch.conf <<'EOF
 options appledrm show_notch=0
 EOF
 
-if command -v update-initramfs >/dev/null; then
-  sudo update-initramfs -u -k all
-elif command -v mkinitcpio >/dev/null; then
-  sudo mkinitcpio -P
-elif command -v dracut >/dev/null; then
-  sudo dracut --regenerate-all --force
-else
-  echo 'No known initramfs generator found; modprobe config is installed. Rebuild the initramfs manually if your system embeds modprobe.d.' >&2
+grub_cfg=/boot/grub/grub.cfg
+[[ -f $grub_cfg ]] || { echo "Missing $grub_cfg; refusing to guess the active boot configuration." >&2; exit 1; }
+if [[ ! -e "$grub_cfg.pre-pantheon-notch" ]]; then
+  sudo cp -a "$grub_cfg" "$grub_cfg.pre-pantheon-notch"
+fi
+# The installed elementary entry is custom and uses the @elementary subvolume.
+# Pass the module option on the kernel command line so it applies even when
+# appledrm loads from the Asahi initramfs before the root filesystem is mounted.
+sudo sed -i '/^[[:space:]]*linux .*rootflags=subvol=@elementary/ {
+  /appledrm\.show_notch=0/! s/$/ appledrm.show_notch=0/
+}' "$grub_cfg"
+if ! rg -q '^[[:space:]]*linux .*rootflags=subvol=@elementary.*appledrm\.show_notch=0' "$grub_cfg"; then
+  echo 'Could not find the elementary @elementary GRUB kernel line; no boot entry was changed.' >&2
+  exit 1
 fi
 
-echo 'Pantheon notch setting installed. Reboot to restore the cropped 16:10 desktop mode and reveal the centered clock.'
+echo 'Pantheon notch setting added to the elementary GRUB entry. Reboot to restore the cropped 16:10 desktop mode and reveal the centered clock.'

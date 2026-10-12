@@ -89,9 +89,10 @@ Pantheon places its date/time indicator in the center of Wingpanel and does not
 avoid the MacBook camera notch. Keep `appledrm show_notch` disabled so the
 desktop receives the rectangular 16:10 mode; enabling the full-height mode can
 put the clock and other centered panel content behind the camera. The Apple
-Silicon image no longer opts in. On an existing install, add
-`options appledrm show_notch=0` under `/etc/modprobe.d/` and rebuild the
-initramfs; reboot to apply the display mode.
+Silicon image no longer opts in. On this transformed install, pass
+`appledrm.show_notch=0` on the custom elementary GRUB entry; the Asahi driver
+loads from an Arch-named initramfs, so regenerating Ubuntu's conventional
+`initrd.img-*` files does not change this boot entry.
 
 ## Dock diagnosis
 
