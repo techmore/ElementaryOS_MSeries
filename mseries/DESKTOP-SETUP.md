@@ -158,13 +158,19 @@ restore the packaged binary with `bash mseries/install-wingpanel-clock-position.
   waited on each other for the 25 second D-Bus timeout. Install the fix with
   `bash mseries/install-files-portal-fix.sh` (undo with `--uninstall`).
 - **Kernel phase, about 10 seconds:** `apple-dcp` defers probing because
-  `mux-apple-display-crossbar` (its `dp-xbar`) is not in the fairydust
-  initramfs, so the kernel waits out its 10 second deferred-probe timeout.
-  Add `mux-apple-display-crossbar` to `MODULES` in the mkinitcpio config used by
-  `fairydust-driver.sh` and rebuild with `mkinitcpio -P`, then check the
-  `Failed to get dp-xbar` messages are gone from `dmesg`.
-- The roughly 24 second gap before the root filesystem mounts is the disk
-  encryption passphrase prompt, not a fault.
+  `mux-apple-display-crossbar` (its `dp-xbar`) is not in the initramfs, so the
+  kernel waits out its 10 second deferred-probe timeout.
+- **Disk-encryption passphrase screen:** the roughly 24 second gap before the
+  root filesystem mounts is the LUKS passphrase prompt. Both systems boot the
+  Arch (Omarchy) kernel and initramfs, so it shows the Omarchy Plymouth theme.
+  The disk stays encrypted; auto-unlock would need a key stored on `/boot`.
+
+Run `bash mseries/install-elementary-boot-splash.sh` to add the missing module
+(`mseries/boot/zz_mseries_boot.conf`) and switch the passphrase screen to the
+elementary Plymouth theme. It backs up the current initramfs images as
+`*.pre-mseries`, rebuilds them in the Arch root at `/mnt/fdbuild/root`, and
+`--uninstall` restores the Omarchy theme and the backups. Reboot afterwards and
+check `dmesg` no longer shows `Failed to get dp-xbar`.
 
 ## Dock diagnosis
 
