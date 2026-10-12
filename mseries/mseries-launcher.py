@@ -51,6 +51,7 @@ def log(message):
     except OSError:
         pass
 
+DOUBLE_PRESS_MS = 400  # activations closer together than this are one key press
 HEIGHT_FROM_BOTTOM = 0.80  # window top edge sits this fraction of the screen height above the bottom
 
 CSS = b"""
@@ -86,10 +87,16 @@ class Launcher(Gtk.Application):
 
     def do_activate(self):
         if self.win:
+            # One key press can start the launcher twice within milliseconds (both bindings
+            # fire), so only a later press counts as "toggle closed".
+            if (GLib.get_monotonic_time() - self.opened_at) / 1000 < DOUBLE_PRESS_MS:
+                log("ignored: duplicate activation right after opening")
+                return
             log("quit: second activation toggled it closed")
             self.quit()
             return
         log("opened")
+        self.opened_at = GLib.get_monotonic_time()
         self.apps = [a for a in Gio.AppInfo.get_all() if a.should_show()]
         self.win = win = Gtk.ApplicationWindow(application=self, title="Launcher")
         win.set_decorated(False)
@@ -156,6 +163,7 @@ class Launcher(Gtk.Application):
         return False
 
     ready = False
+    opened_at = 0
 
     def on_key(self, _ctl, keyval, _code, _state):
         if keyval == Gdk.KEY_Escape:
