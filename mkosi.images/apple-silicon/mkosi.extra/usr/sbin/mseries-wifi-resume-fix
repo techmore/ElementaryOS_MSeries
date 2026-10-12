@@ -20,30 +20,38 @@ export LC_ALL=C
 [[ $(uname -m) == "aarch64" ]] || exit 0
 lspci -nn 2>/dev/null | grep -E "14e4:(4425|4433)" >/dev/null || exit 0
 
-wedge_signature() {
-  # Association rejections with status 16 since last boot.
-  journalctl -kb 2>/dev/null | grep -cE "ASSOC-REJECT.*status_code=16|status 16" || true
+# Association rejections come from wpa_supplicant, which logs under its own unit - they never appear in
+# the kernel log (journalctl -k), so counting them there could never match. Count them in the window
+# since resume instead.
+recent_rejections() {
+  journalctl -b -u wpa_supplicant -u NetworkManager --since "-40 sec" --no-pager 2>/dev/null \
+    | grep -cE "ASSOC-REJECT.*status_code=16|status 16" || true
 }
 
-wifi_down() {
-  # Global STATE can be connected via Ethernet while Wi-Fi is wedged.
-  nmcli -t -f TYPE,STATE device status 2>/dev/null |
-    grep -Eq '^wifi:(disconnected|connecting.*)$'
+wifi_connected() {
+  nmcli -t -f TYPE,STATE device 2>/dev/null | grep -q '^wifi:connected'
+}
+
+reload_driver() {
+  # NetworkManager and wpa_supplicant hold brcmfmac open ("Module brcmfmac is in use"), so stop them
+  # first, reload the stack (brcmfmac_wcc depends on brcmfmac), then bring them back.
+  systemctl stop NetworkManager.service wpa_supplicant.service || true
+  modprobe -r brcmfmac_wcc brcmfmac || modprobe -r brcmfmac || true
+  modprobe brcmfmac || true
+  systemctl start wpa_supplicant.service || true
+  systemctl start NetworkManager.service || true
 }
 
 main() {
-  local before after
-  # Respect airplane mode; never reload hardware the user switched off.
-  [[ $(nmcli radio wifi 2>/dev/null) == enabled ]] || return 0
-  before=$(wedge_signature)
   # Short backstop: give the driver a moment to recover on its own.
   sleep 15
-  [[ $(nmcli radio wifi 2>/dev/null) == enabled ]] || return 0
-  after=$(wedge_signature)
-  if [[ $after != "$before" ]] || wifi_down; then
-    logger -t mseries-wifi-resume-fix "reloading brcmfmac after resume (rejections $before->$after)"
-    modprobe -r brcmfmac
-    modprobe brcmfmac
+  # A slow reconnect is not a wedge. Only act when Wi-Fi is still not connected AND the firmware has
+  # been rejecting associations with status 16 since resume.
+  local rejections
+  rejections=$(recent_rejections)
+  if (( rejections > 0 )) && ! wifi_connected; then
+    logger -t mseries-wifi-resume-fix "reloading brcmfmac after resume ($rejections association rejections, Wi-Fi not connected)"
+    reload_driver
   fi
 }
 

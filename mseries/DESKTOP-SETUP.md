@@ -307,3 +307,22 @@ so the patch points them at `meta/meta-monitor.h` / `meta/meta-logical-monitor.h
 `STRAWBERRY_*` (the accent, selection and error colours are derived from them) with softer tones, and raise the
 window corner radius from 0.5rem to 0.8rem. `ghostty.config` sets a muted 16-colour palette. `--uninstall`
 restores backups.
+
+## System audit, 2026-10-12: findings and fixes
+
+Findings from reading this boot's logs, `systemctl`, `ps`, `/proc/meminfo` and the kernel/initramfs build:
+
+| Finding | Evidence | Fix |
+| --- | --- | --- |
+| Display crossbar never made it into the fairydust initramfs | `apple-dcp: Failed to get dp-xbar: -517` x70 per boot; display up ~2.6 s late; widened the greeter/display race | `install-initramfs-crossbar.sh`. Root cause: mkinitcpio ignores `/etc/mkinitcpio.conf.d/*.conf` when a config is given with `-c` or a preset's `ALL_config`; the fairydust presets set it, the stock one does not. That also means `zz_mseries_boot.conf` and Omarchy's drop-ins (incl. its HOOKS with plymouth) only ever applied to the stock kernel. |
+| No swap | `free`: 0 B swap, 19 GB used, 11.6 GB shared (GPU buffers) | `install-system-tuning.sh`: zram swap (half of RAM, max 8 GiB, zstd), swappiness 100, page-cluster 0, zswap off |
+| AppCenter background daemon | 682 MB resident | autostart override (`Hidden=true`); AppCenter itself still works |
+| ModemManager running, duplicate snap CUPS | no modem; apt CUPS + snap CUPS both running | disabled ModemManager and snap cups |
+| Wi-Fi resume recovery could never trigger or work | rejection filter used `journalctl -k` (wpa_supplicant logs are not kernel messages); `modprobe -r brcmfmac` failed with "Module brcmfmac is in use"; "connecting" counted as down so it restarted NetworkManager after every slow resume | rewritten in `mkosi.images/.../mseries-wifi-resume-fix`: acts only on recent status-16 rejections while Wi-Fi is not connected, stops NetworkManager/wpa_supplicant before reloading `brcmfmac_wcc`+`brcmfmac`, then restarts them |
+| Build caches on the Arch side | 34 GB (compressed on disk: ~9 GB) | removed `usb4-pkg`, `fairydust`, `usb4`, `test`; built packages kept in `~/fairydust-usb4/pkgs/` |
+
+Seen and left alone (noise, not defects here): Wingpanel's intermittent SEGV in `PanelWindow.on_realize`
+(upstream race when the panel is respawned; Gala restarts it), repeated NM/`g_str_has_prefix` assertions from
+Wingpanel indicators, the greeter's wireplumber abort, brcmfmac P2P-device `-52` errors, `systemd-growfs` failing
+to resize the LUKS volume, USB `cannot reset (-71)` floods when a dock is pulled, and kernel taint `S`
+(CPU out of spec) which is normal on Asahi. Revert the tuning with `install-system-tuning.sh --revert`.
