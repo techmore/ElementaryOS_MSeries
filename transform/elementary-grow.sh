@@ -15,6 +15,7 @@
 #   sudo ./elementary-grow.sh --repair-grub    # drop stale .removed dup, regen
 #   sudo ./elementary-grow.sh --add-user [NAME]  # login acct (default admin/admin)
 #   sudo ./elementary-grow.sh --finalize [NAME]  # repair-grub + add-user + status
+#   sudo ./elementary-grow.sh --logs       # read-only: new root + last boot logs
 #
 # Safety contract: additive-only. New subvolume, new GRUB menu entry, old
 # system and default boot entry untouched. Every assumption in the design
@@ -36,6 +37,7 @@ for arg in "$@"; do
     --repair-grub) MODE="repair-grub" ;;
     --add-user) MODE="add-user" ;;
     --finalize) MODE="finalize" ;;
+    --logs) MODE="logs" ;;
     --dry-run) MODE="dry-run" ;;
     --upload) UPLOAD=1 ;;
     -h|--help) sed -n '2,22p' "$0"; exit 0 ;;
@@ -519,6 +521,38 @@ EOF
   fi
 }
 
+# Read-only: what the elementary system is and what its last boot did.
+# Answers "did we actually boot Ubuntu/elementary, and why did the session
+# fail?" without chrooting into it.
+do_logs() {
+  mount_top
+  trap unmount_top EXIT
+  local newroot="$TOP_MNT/$SUBVOL_NAME"
+  [[ -d "$newroot/etc" ]] || fail "no $SUBVOL_NAME — run --apply first"
+  echo "--- os-release ---"
+  cat "$newroot/etc/os-release" 2>/dev/null
+  echo "--- kernel modules present in new root? ---"
+  ls "$newroot/usr/lib/modules" 2>/dev/null \
+    || echo "(NONE — the Asahi kernel can't load any module not baked into the initramfs)"
+  echo "--- display manager ---"
+  readlink "$newroot/etc/systemd/system/display-manager.service" 2>/dev/null || echo "(none)"
+  echo "--- persistent journal? ---"
+  if [[ -d "$newroot/var/log/journal" ]]; then
+    journalctl -D "$newroot/var/log/journal" --list-boots --no-pager 2>/dev/null | tail -5
+    echo "--- last boot, warning and above ---"
+    journalctl -D "$newroot/var/log/journal" -b -1 -p warning --no-pager 2>/dev/null | tail -100
+  else
+    echo "(no /var/log/journal — journald was volatile; boot logs were not persisted)"
+  fi
+  echo "--- lightdm logs ---"
+  ls -la "$newroot/var/log/lightdm" 2>/dev/null || echo "(no lightdm log dir)"
+  for f in lightdm.log seat0-greeter.log x-0-greeter.log; do
+    [[ -f "$newroot/var/log/lightdm/$f" ]] && { echo "##### $f (tail) #####"; tail -40 "$newroot/var/log/lightdm/$f"; }
+  done
+  echo "--- Xorg logs ---"
+  ls "$newroot"/var/log/Xorg* 2>/dev/null || echo "(none)"
+}
+
 # The new entry reuses the RUNNING kernel's command line and only swaps the
 # root subvolume: LUKS cryptdevice, root=, resume, splash and friends are
 # carried over instead of assumed. (Provenance: omarchy's own GRUB entries
@@ -591,6 +625,7 @@ main() {
     repair-grub) [[ $(id -u) -eq 0 ]] || fail "repair-grub needs root"; do_repair_grub ;;
     add-user) [[ $(id -u) -eq 0 ]] || fail "add-user needs root"; do_add_user "$USER_NAME" ;;
     finalize) [[ $(id -u) -eq 0 ]] || fail "finalize needs root"; do_repair_grub; do_add_user "$USER_NAME"; do_status ;;
+    logs) [[ $(id -u) -eq 0 ]] || fail "logs needs root"; do_logs ;;
     *) do_apply ;;
   esac
 }
