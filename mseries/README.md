@@ -10,11 +10,15 @@ Upstream bases (pinned at first commit — see `mseries/UPSTREAM-PINS.md`):
 - build system: [elementary/os](https://github.com/elementary/os) `main`
 - Apple Silicon hardware scripts: [omacom/omarchy-mac](https://github.com/omacom/omarchy-mac) `quattro`
 
-## Status: scaffolding + build wiring, NOT a tested ISO
+## Status: booted M1 Pro desktop; factory ISO still unverified
+
+The owner confirms elementary OS 9 boots on a 2021 14-inch M1 Pro using
+the transformed system. See [desktop setup](DESKTOP-SETUP.md) for reproducible
+Command shortcuts, Pantheon brightness keys, Signal ARM64 and CodexBar Linux.
 
 `mkosi.images/apple-silicon/` (arm64-only directory image) carries the
 ported layer and is wired into the arm64 live ISO profile and the sysupdate
-image via `ExtraTrees`. No ISO has been built or hardware-tested yet.
+image via `ExtraTrees`. This factory ISO path has not been hardware-verified.
 See `mseries/PORT-MAP.md` for the per-fix analysis, `mseries/KERNEL-REPORT.md`
 for the kernel verdict, and `mseries/BUILD-NOTES.md` for what remains.
 

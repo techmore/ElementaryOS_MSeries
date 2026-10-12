@@ -1,0 +1,75 @@
+#!/usr/bin/python3
+"""Handle screen brightness keys in Pantheon with GNOME 50 (no GNOME Shell)."""
+import argparse
+import sys
+from gi.repository import Gio, GLib
+
+
+class Brightness:
+    def __init__(self):
+        self.display = Gio.DBusProxy.new_for_bus_sync(
+            Gio.BusType.SESSION, Gio.DBusProxyFlags.NONE, None,
+            "org.gnome.Mutter.DisplayConfig", "/org/gnome/Mutter/DisplayConfig",
+            "org.gnome.Mutter.DisplayConfig", None)
+        self.shell = Gio.DBusProxy.new_for_bus_sync(
+            Gio.BusType.SESSION, Gio.DBusProxyFlags.NONE, None,
+            "org.gnome.Shell", "/org/gnome/Shell", "org.gnome.Shell", None)
+        self.actions = {}
+
+    def change(self, delta=0, percent=None):
+        # Fetch fresh values: SetBacklight requires the current serial.
+        reply = self.display.get_connection().call_sync(
+            "org.gnome.Mutter.DisplayConfig", "/org/gnome/Mutter/DisplayConfig",
+            "org.freedesktop.DBus.Properties", "Get",
+            GLib.Variant("(ss)", ("org.gnome.Mutter.DisplayConfig", "Backlight")),
+            None, Gio.DBusCallFlags.NONE, 3000, None)
+        serial, panels = reply.unpack()[0]
+        for panel in panels:
+            if panel["connector"] != "eDP-1" or not panel["active"]:
+                continue
+            low, high = panel["min"], panel["max"]
+            value = round(high * percent / 100) if percent is not None else panel["value"] + round(high * delta / 100)
+            value = max(low, min(high, value))
+            self.display.call_sync("SetBacklight", GLib.Variant("(usi)",
+                (serial, panel["connector"], value)), Gio.DBusCallFlags.NONE, 3000, None)
+            self.shell.call_sync("ShowOSD", GLib.Variant("(a{sv})", ({
+                "icon": GLib.Variant("s", "display-brightness-symbolic"),
+                "level": GLib.Variant("d", value / high),
+            },)), Gio.DBusCallFlags.NONE, 3000, None)
+            return
+        raise RuntimeError("No active internal panel backlight")
+
+    def activated(self, proxy, sender, signal, parameters):
+        if signal == "AcceleratorActivated":
+            action = parameters.unpack()[0]
+            if action in self.actions:
+                try:
+                    self.change(delta=self.actions[action])
+                except (GLib.Error, RuntimeError) as error:
+                    print(error, file=sys.stderr, flush=True)
+
+    def run(self):
+        self.shell.connect("g-signal", self.activated)
+        for key, delta in [("XF86MonBrightnessUp", 5), ("XF86MonBrightnessDown", -5)]:
+            action = self.shell.call_sync("GrabAccelerator", GLib.Variant("(suu)",
+                (key, 0, 0)), Gio.DBusCallFlags.NONE, 3000, None).unpack()[0]
+            if not action:
+                raise RuntimeError(f"Could not bind {key}; another handler may own it")
+            self.actions[action] = delta
+        try:
+            GLib.MainLoop().run()
+        finally:
+            for action in self.actions:
+                self.shell.call_sync("UngrabAccelerator", GLib.Variant("(u)", (action,)),
+                    Gio.DBusCallFlags.NONE, 3000, None)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--set", type=int, choices=range(1, 101), metavar="1-100")
+    args = parser.parse_args()
+    brightness = Brightness()
+    if args.set is None:
+        brightness.run()
+    else:
+        brightness.change(percent=args.set)

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=M-series brightness keys
+Comment=Pantheon screen brightness keys for GNOME 50
+Exec=/usr/libexec/mseries-brightness
+OnlyShowIn=Pantheon;
+NoDisplay=true

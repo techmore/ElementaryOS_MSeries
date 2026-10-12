@@ -32,6 +32,11 @@ jobs:
           bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-resume-fix
           bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-firmware
           bash -n transform/elementary-grow.sh
+          bash -n mseries/install-signal.sh
+          bash -n mseries/install-codexbar.sh
+          python3 -m py_compile mseries/apply-desktop-settings.py
+          python3 -m py_compile mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness
+          python3 mseries/test-wifi-resume.py
 
       - name: mkosi config parse check (all images)
         run: just mkosi summary
