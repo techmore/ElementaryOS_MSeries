@@ -199,15 +199,33 @@ apt-get install -y elementary-desktop pipewire-pulse pipewire-alsa rtkit network
 apt-get clean
 EOF
 
-  # Apple layer: firmware copy (machine-local, never redistributed) …
+  # Apple layer: firmware copy (machine-local, never redistributed).
+  # Host layout (verified on j314s/M1 Pro): blobs live in
+  # /usr/lib/firmware/vendor/brcm/ with Apple board suffixes, e.g.
+  # brcmfmac4387c2-pcie.apple,maldives.{bin,clm_blob,txcap_blob,txt}
+  # (board from DT brcm,board-type; 5 variants shipped, ~8MB total).
+  # The driver requests brcm/brcmfmacXXXX-pcie and the firmware loader
+  # resolves the .apple,<board> suffix, so copy all board variants into
+  # the new root's /lib/firmware/brcm/ (== /usr/lib/firmware/brcm/).
   local chip
   chip=$(detect_chip)
   if [[ -n $chip ]]; then
-    log "copying host brcmfmac${chip} firmware into new root"
+    log "copying host brcmfmac${chip}* + brcmbt${chip}* firmware into new root"
     run mkdir -p "$newroot/lib/firmware/brcm"
     if [[ $MODE == "apply" ]]; then
-      cp -a /lib/firmware/brcm/brcmfmac${chip}* "$newroot/lib/firmware/brcm/" 2>/dev/null \
-        || log "WARNING: no host brcmfmac${chip} blobs to copy — first-boot provisioning will report them"
+      local copied=0 src
+      for src in /lib/firmware/brcm/brcmfmac${chip}* \
+                 /usr/lib/firmware/brcm/brcmfmac${chip}* \
+                 /usr/lib/firmware/vendor/brcm/brcmfmac${chip}* \
+                 /lib/firmware/brcm/brcmbt${chip}* \
+                 /usr/lib/firmware/brcm/brcmbt${chip}* \
+                 /usr/lib/firmware/vendor/brcm/brcmbt${chip}*; do
+        [[ -e $src ]] || continue
+        cp -a "$src" "$newroot/lib/firmware/brcm/" && copied=$((copied+1))
+      done
+      (( copied > 0 )) \
+        || log "WARNING: no host brcmfmac${chip}/brcmbt${chip} blobs found in /lib/firmware/brcm, /usr/lib/firmware/brcm, or /usr/lib/firmware/vendor/brcm — first-boot provisioning will report them"
+      log "firmware copy: $copied file(s)"
     fi
   else log "WARNING: no Apple Broadcom Wi-Fi detected — skipping firmware copy"; fi
   # … UCM audio config, notch modprobe, resume + provisioning units …

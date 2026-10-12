@@ -26,6 +26,18 @@ when there is nothing to copy from.
 
 Destination: `/lib/firmware/brcm/`.
 
+## Board suffixes (verified 2026-10-12 on j314s/M1 Pro)
+
+Asahi ships per-board files, e.g.
+`brcmfmac4387c2-pcie.apple,maldives.{bin,clm_blob,txcap_blob,txt}`
+(board from DT `brcm,board-type`; 5 variants: hokkaido, madagascar,
+maldives, okinawa, snake) in `/usr/lib/firmware/vendor/brcm/`. The driver
+requests `brcm/brcmfmacXXXX-pcie` and the firmware loader resolves the
+`.apple,<board>` suffix. The transform track copies **all** board variants
+(~8MB) into the new root's `/lib/firmware/brcm/`; the provisioning unit
+accepts both plain and `.apple,*` names. Bluetooth (`brcmbtXXXX`) is copied
+the same way.
+
 ## v1 behavior (shipped in the apple-silicon image)
 
 - `mseries-wifi-firmware.service`: `ConditionArchitecture=arm64`, runs

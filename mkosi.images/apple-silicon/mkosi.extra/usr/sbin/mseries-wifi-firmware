@@ -22,24 +22,34 @@ elif lspci -nn 2>/dev/null | grep -q "14e4:4433"; then chip="4387c2"; fi
 [[ -n $chip ]] || { log "no Apple Silicon Broadcom Wi-Fi found; nothing to do"; exit 0; }
 
 base="brcmfmac${chip}-pcie"
-required=("$base.bin" "$base.clm_blob" "$base.txcap_blob")
+# Presence check accepts both plain names (brcmfmac4387c2-pcie.bin) and
+# Apple board-suffixed names (brcmfmac4387c2-pcie.apple,maldives.bin),
+# which is what Asahi ships in /usr/lib/firmware/vendor/brcm/ and what the
+# transform track copies into $FIRMWARE_DIR (all board variants).
+have_blob() { # $1 = extension without dot
+  compgen -G "$FIRMWARE_DIR/$base.$1" >/dev/null && return 0
+  compgen -G "$FIRMWARE_DIR/$base.apple,*.$1" >/dev/null && return 0
+  return 1
+}
+required=(bin clm_blob txcap_blob)
 missing=()
-for f in "${required[@]}"; do
-  [[ -f "$FIRMWARE_DIR/$f" ]] || missing+=("$f")
+for ext in "${required[@]}"; do
+  have_blob "$ext" || missing+=("$base.$ext / $base.apple,<board>.$ext")
 done
 # NVRAM .txt name varies by module/antenna; any match counts.
 if ! compgen -G "$FIRMWARE_DIR/$base*.txt" >/dev/null; then missing+=("$base-<module>.txt"); fi
 
 if (( ${#missing[@]} == 0 )); then log "Apple Wi-Fi firmware present ($base)"; exit 0; fi
 
-# Try installer handoff locations before giving up.
+# Try installer handoff locations before giving up (accept exact or
+# .apple,<board> names on both sides).
 for dir in "${HANDOFF_DIRS[@]}"; do
   [[ -d $dir ]] || continue
-  for f in "${missing[@]}"; do
-    [[ $f == *"<module>"* ]] && continue
-    if [[ -f "$dir/$f" ]]; then
-      install -m 644 "$dir/$f" "$FIRMWARE_DIR/$f" && log "provisioned $f from $dir"
-    fi
+  for ext in "${required[@]}"; do
+    have_blob "$ext" && continue
+    for cand in "$dir/$base.$ext" "$dir/$base.apple,"*".$ext"; do
+      [[ -f $cand ]] && install -m 644 "$cand" "$FIRMWARE_DIR/" && log "provisioned $(basename "$cand") from $dir"
+    done
   done
   for txt in "$dir/$base"*.txt; do
     [[ -f $txt ]] && install -m 644 "$txt" "$FIRMWARE_DIR/" && log "provisioned $(basename "$txt") from $dir"
@@ -47,8 +57,8 @@ for dir in "${HANDOFF_DIRS[@]}"; do
 done
 
 missing=()
-for f in "${required[@]}"; do
-  [[ -f "$FIRMWARE_DIR/$f" ]] || missing+=("$f")
+for ext in "${required[@]}"; do
+  have_blob "$ext" || missing+=("$base.$ext / $base.apple,<board>.$ext")
 done
 if ! compgen -G "$FIRMWARE_DIR/$base*.txt" >/dev/null; then missing+=("$base-<module>.txt"); fi
 
