@@ -1,0 +1,36 @@
+# M-series: fast validation of the Apple Silicon build wiring. Parses every
+# mkosi config (catches bad references/typos in mkosi.images/**) and syntax-
+# checks the layer's scripts. Does NOT build images — full arm64 builds run
+# via workflow_dispatch on Daily OS 9.
+name: Validate M-series wiring
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "mkosi.images/**"
+      - "mkosi.conf.d/**"
+      - "mseries/**"
+      - ".github/workflows/validate-mseries.yml"
+
+jobs:
+  validate:
+    name: mkosi summary + script checks (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install deps
+        run: sudo apt-get update && sudo apt-get install just podman zstd -y
+
+      - name: Shell syntax check (M-series scripts)
+        run: |
+          set -e
+          bash -n mkosi.images/apple-silicon/mkosi.postinst.chroot
+          bash -n mkosi.images/apple-silicon/mkosi.finalize
+          bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-resume-fix
+          bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-firmware
+
+      - name: mkosi config parse check (all images)
+        run: just mkosi summary

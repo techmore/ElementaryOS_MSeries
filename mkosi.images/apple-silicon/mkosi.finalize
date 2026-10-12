@@ -12,10 +12,12 @@ find "$BUILDROOT" -xdev -mindepth 1 -depth \
     ! -path "$BUILDROOT/usr" \
     ! -path "$BUILDROOT/usr/sbin" \
     ! -path "$BUILDROOT/usr/sbin/mseries-wifi-resume-fix" \
+    ! -path "$BUILDROOT/usr/sbin/mseries-wifi-firmware" \
     ! -path "$BUILDROOT/usr/lib" \
     ! -path "$BUILDROOT/usr/lib/systemd" \
     ! -path "$BUILDROOT/usr/lib/systemd/system" \
     ! -path "$BUILDROOT/usr/lib/systemd/system/omarchy-wifi-resume-fix.service" \
+    ! -path "$BUILDROOT/usr/lib/systemd/system/mseries-wifi-firmware.service" \
     ! -path "$BUILDROOT/etc" \
     ! -path "$BUILDROOT/etc/modprobe.d*" \
     ! -path "$BUILDROOT/etc/initramfs-tools*" \

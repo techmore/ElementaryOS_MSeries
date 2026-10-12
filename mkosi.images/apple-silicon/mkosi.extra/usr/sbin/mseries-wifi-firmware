@@ -1,0 +1,57 @@
+#!/bin/bash
+# First-boot Apple Silicon Wi-Fi firmware provisioning (see
+# mseries/FIRMWARE-WIFI.md). v1: detect the chip, report exactly which
+# blobs are missing, and copy from installer handoff locations when they
+# exist. Always exits 0 — Wi-Fi staying down must never fail the boot.
+set -euo pipefail
+
+FIRMWARE_DIR="${MSERIES_FIRMWARE_DIR:-/lib/firmware/brcm}"
+HANDOFF_DIRS=("${MSERIES_HANDOFF_DIR:-/boot/efi/mseries-firmware}" /run/mseries/firmware)
+
+log() { logger -t mseries-wifi-firmware "$@" || true; echo "mseries-wifi-firmware: $*" >&2; }
+
+# Same Apple gate as the rest of the layer: aarch64 + apple, in device-tree.
+if [[ $(uname -m) != "aarch64" ]]; then exit 0; fi
+compatible="${MSERIES_APPLE_COMPATIBLE:-/proc/device-tree/compatible}"
+if [[ -f $compatible ]] && ! grep -Faiq 'apple,' "$compatible"; then exit 0; fi
+[[ -f $compatible ]] || exit 0
+
+chip=""
+if lspci -nn 2>/dev/null | grep -q "14e4:4425"; then chip="4378b1";
+elif lspci -nn 2>/dev/null | grep -q "14e4:4433"; then chip="4387c2"; fi
+[[ -n $chip ]] || { log "no Apple Silicon Broadcom Wi-Fi found; nothing to do"; exit 0; }
+
+base="brcmfmac${chip}-pcie"
+required=("$base.bin" "$base.clm_blob" "$base.txcap_blob")
+missing=()
+for f in "${required[@]}"; do
+  [[ -f "$FIRMWARE_DIR/$f" ]] || missing+=("$f")
+done
+# NVRAM .txt name varies by module/antenna; any match counts.
+if ! compgen -G "$FIRMWARE_DIR/$base*.txt" >/dev/null; then missing+=("$base-<module>.txt"); fi
+
+if (( ${#missing[@]} == 0 )); then log "Apple Wi-Fi firmware present ($base)"; exit 0; fi
+
+# Try installer handoff locations before giving up.
+for dir in "${HANDOFF_DIRS[@]}"; do
+  [[ -d $dir ]] || continue
+  for f in "${missing[@]}"; do
+    [[ $f == *"<module>"* ]] && continue
+    if [[ -f "$dir/$f" ]]; then
+      install -m 644 "$dir/$f" "$FIRMWARE_DIR/$f" && log "provisioned $f from $dir"
+    fi
+  done
+  for txt in "$dir/$base"*.txt; do
+    [[ -f $txt ]] && install -m 644 "$txt" "$FIRMWARE_DIR/" && log "provisioned $(basename "$txt") from $dir"
+  done
+done
+
+missing=()
+for f in "${required[@]}"; do
+  [[ -f "$FIRMWARE_DIR/$f" ]] || missing+=("$f")
+done
+if ! compgen -G "$FIRMWARE_DIR/$base*.txt" >/dev/null; then missing+=("$base-<module>.txt"); fi
+
+if (( ${#missing[@]} == 0 )); then log "Apple Wi-Fi firmware provisioned ($base)"; exit 0; fi
+log "MISSING Apple Wi-Fi firmware in $FIRMWARE_DIR: ${missing[*]}. Copy them from macOS (see mseries/FIRMWARE-WIFI.md) into /boot/efi/mseries-firmware and reboot. Wi-Fi stays down until then."
+exit 0

@@ -7,6 +7,10 @@ set -euo pipefail
 # unconditionally here is safe. Offline enable only plants symlinks.
 systemctl enable omarchy-wifi-resume-fix.service
 
+# First-boot firmware provisioning: same offline enable. The script itself
+# gates on Apple hardware and always exits 0 (see mseries/FIRMWARE-WIFI.md).
+systemctl enable mseries-wifi-firmware.service
+
 # Early-load HID drivers so the internal keyboard/trackpad bind correctly on
 # first registration (Ubuntu equivalent of omarchy-mac's mkinitcpio HID-race
 # fix; background: omarchy-mac docs/apple-silicon-trackpad.md).

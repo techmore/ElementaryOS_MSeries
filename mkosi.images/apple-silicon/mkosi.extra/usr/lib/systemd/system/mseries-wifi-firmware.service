@@ -1,0 +1,13 @@
+[Unit]
+Description=Provision Apple Silicon Wi-Fi firmware on first boot
+ConditionArchitecture=arm64
+Before=NetworkManager.service
+After=local-fs.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/mseries-wifi-firmware
+
+[Install]
+WantedBy=multi-user.target
