@@ -25,4 +25,4 @@ trap 'rm -rf "$build_dir"' EXIT
 meson setup "$build_dir" "$src" --prefix=/usr
 ninja -C "$build_dir"
 sudo ninja -C "$build_dir" install
-echo 'Installed the Wingpanel tray host. Signal Beta can minimize to its unread-count icon.'
+echo 'Installed the Wingpanel tray host. Signal Beta can minimize to its unread-count icon and open from the panel menu.'

@@ -121,11 +121,24 @@ private class TrayItem : Gtk.Button {
         initialize.begin ();
     }
 
+    public void activate_item () {
+        if (proxy == null) {
+            return;
+        }
+        proxy.Activate.begin (0, 0, (obj, res) => {
+            try { proxy.Activate.end (res); } catch (Error e) { }
+        });
+    }
+
     private async void initialize () {
         try {
             proxy = yield Bus.get_proxy<StatusNotifierItem> (
                 BusType.SESSION, bus_name, object_path, DBusProxyFlags.NONE
             );
+            if (!bus_name.down ().contains ("signal") && !proxy.Title.down ().contains ("signal")) {
+                vanished ();
+                return;
+            }
             proxy.NewTitle.connect (() => update_title ());
             proxy.NewIcon.connect (() => update_icon ());
             proxy.NewAttentionIcon.connect (() => update_icon ());
@@ -235,6 +248,7 @@ private class TrayItem : Gtk.Button {
 
 private class SignalTrayIndicator : Wingpanel.Indicator {
     private Gtk.Box display;
+    private Gtk.Box menu;
     private StatusNotifierWatcher? watcher;
     private StatusNotifierWatcherProxy? watcher_proxy;
     private Gee.HashMap<string, TrayItem> tray_items = new Gee.HashMap<string, TrayItem> ();
@@ -249,6 +263,30 @@ private class SignalTrayIndicator : Wingpanel.Indicator {
 
     construct {
         display = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 2);
+        menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 10) {
+            margin_top = 12,
+            margin_bottom = 12,
+            margin_start = 12,
+            margin_end = 12,
+            width_request = 260
+        };
+        var title = new Gtk.Label ("Signal Beta") {
+            xalign = 0,
+            halign = Gtk.Align.START
+        };
+        title.add_css_class ("heading");
+        menu.append (title);
+        var hint = new Gtk.Label ("Open Signal to link your phone or reply to messages.") {
+            xalign = 0,
+            wrap = true,
+            halign = Gtk.Align.START
+        };
+        hint.add_css_class ("dim-label");
+        menu.append (hint);
+        var open_button = new Gtk.Button.with_label ("Open Signal");
+        open_button.add_css_class ("suggested-action");
+        open_button.clicked.connect (() => activate_signal ());
+        menu.append (open_button);
         host_name = "org.kde.StatusNotifierHost-%d".printf ((int) Posix.getpid ());
         start_watcher ();
     }
@@ -321,7 +359,6 @@ private class SignalTrayIndicator : Wingpanel.Indicator {
         tray_items.set (service, item);
         display.append (item);
         item.notify["visible"].connect (() => update_indicator_visibility ());
-        visible = true;
     }
 
     private void on_item_unregistered (string service) {
@@ -344,12 +381,21 @@ private class SignalTrayIndicator : Wingpanel.Indicator {
         visible = any_visible;
     }
 
+    private void activate_signal () {
+        foreach (var item in tray_items.values) {
+            if (item.get_visible ()) {
+                item.activate_item ();
+                return;
+            }
+        }
+    }
+
     public override Gtk.Widget get_display_widget () {
         return display;
     }
 
     public override Gtk.Widget? get_widget () {
-        return null;
+        return menu;
     }
 
     public override void opened () { }
