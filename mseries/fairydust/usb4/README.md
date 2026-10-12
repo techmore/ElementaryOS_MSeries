@@ -9,7 +9,7 @@ Status on `MacBookPro18,3` / `apple,j314s` (verified 2026-10-12):
 | Item | Result |
 | --- | --- |
 | Dell dock hub tree enumerates (USB2 side) | **works** — mouse, headset, dock hubs |
-| USB3 tunnel / dock Ethernet | **fix applied, awaiting reboot test** — new m1n1 + quirk fix (see "USB3 tunnel: bandwidth-allocation timeout") |
+| USB3 tunnel / dock Ethernet | **works** (verified 2026-10-12) - Realtek r8152 on the 10 Gb/s USB3 bus, 1 Gb/s full duplex, DHCP, 0% loss. Needs the new m1n1 + quirk fix |
 | Dock HDMI/DP video | **not supported** — DisplayPort tunnelling is not implemented upstream yet |
 | Suspend with a USB4 link up | **unsafe** — upstream notes S2RAM SError panic; do not suspend while docked |
 
@@ -166,3 +166,27 @@ Debugging aids that worked: `/sys/kernel/debug/thunderbolt/<router>/port<N>/{reg
 
 Still open after this: the dock's DP tunnel (`could not allocate DP tunnel`, `DPRX read timeout`)
 - DisplayPort tunnelling is not supported upstream yet, so dock video stays dead.
+
+## Verified result (2026-10-12, MacBookPro18,3 + Dell WD22TB4)
+
+After the quirk fix, a live module reload (no reboot) brought up the USB3 tunnel:
+
+    0: running quirk_no_usb3_bw_alloc [thunderbolt]
+    0: disabling USB3 bandwidth allocation
+    0:4 <-> 1:16 (USB3): activating ... USB3 Down/Up path activation complete
+    0:4 <-> 1:16 (USB3): consumed bandwidth 13500/13500 Mb/s
+
+`lsusb -t` then shows the dock's SuperSpeed hubs on the 10000M bus and `r8152 2-1.4.4` (Realtek GbE);
+interface `enx<mac>` came up with carrier, DHCP and 1 Gb/s full duplex.
+
+Live reload used (worked cleanly, no oops; mouse/headset on the dock drop for ~15 s while the
+domain is torn down, so have the trackpad ready). A reboot is the conservative alternative:
+
+    sudo modprobe -r thunderbolt_apple      # also drops thunderbolt (dependency)
+    sudo modprobe thunderbolt dyndbg=+p     # dyndbg optional
+    sudo modprobe thunderbolt_apple dyndbg=+p
+
+Notes: `rtl_nic/rtl8153b-2.fw` is missing from the root's linux-firmware (r8152 works without the
+patch); `could not allocate DP tunnel` / `DPRX read timeout` repeat every ~30 s (DP tunnelling is
+unsupported upstream; log noise only). Turn debug off again with
+`echo 'module thunderbolt -p' | sudo tee /sys/kernel/debug/dynamic_debug/control`.
