@@ -282,3 +282,28 @@ installed desktop based solely on that endpoint.
 Coreglass and MLX Chat are now installed on the M1 Pro. MLX uses an isolated
 Honeykrisp compute driver; the desktop Mesa package is unchanged. Start with
 the Compact model pair. See [local AI setup and verification](local-ai/README.md).
+
+## Rounded screen corners, softer accent colours
+
+**Screen corners** (`bash mseries/install-gala-screen-corners.sh [--radius N]`): the M1 Pro's display has
+rounded corners that the Linux desktop ignores. This builds Gala (pinned to the commit matching the
+installed 8.6.2) with `mseries/patches/gala-screen-corners.patch`, which adds a click-through overlay that
+draws black rounded masks over the four corners of the *built-in* display only (external monitors are
+left square), above the top bar, dock, windows and lock screen. Default radius 10 logical px
+(`GALA_SCREEN_CORNER_RADIUS` in the drop-in; 0 hides it).
+
+Safety: the patched Gala lives in `/usr/local/lib/mseries/gala`; `/usr/bin/gala` and the login screen are
+untouched. Only your user session is pointed at it (systemd drop-in under `~/.config`). The launcher falls
+back to stock Gala by itself if the patched one dies within 15 s of starting, and then stays on stock until
+`~/.cache/mseries-gala-failed` is deleted. It takes effect at the next login. Revert with `--disable`. If a
+session ever will not start, switch to a text console (ctrl+alt+F3), log in and run
+`rm ~/.config/systemd/user/io.elementary.gala@wayland.service.d/mseries-screen-corners.conf`.
+Build notes: needs `libibus-1.0-dev libgnome-bg-4-dev` besides the mutter/gala/granite dev packages; Gala's
+bundled `vapi/libmutter.vapi` maps `Monitor`/`LogicalMonitor` to `meta/main.h`, which does not declare them,
+so the patch points them at `meta/meta-monitor.h` / `meta/meta-logical-monitor.h`.
+
+**Colours and window radius** (`bash mseries/install-theme-tweaks.sh`): user stylesheets
+(`mseries/theme/gtk-4.0.css`, `gtk-3.0.css`) override the theme's named colours `BLUEBERRY_*` and
+`STRAWBERRY_*` (the accent, selection and error colours are derived from them) with softer tones, and raise the
+window corner radius from 0.5rem to 0.8rem. `ghostty.config` sets a muted 16-colour palette. `--uninstall`
+restores backups.

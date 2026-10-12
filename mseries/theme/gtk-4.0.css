@@ -1,0 +1,22 @@
+/* ElementaryOS_MSeries: softer accent colours and larger window corners.
+ * Theme-derived colours (accent_color, selection, error) follow these named colours.
+ * Delete this file (and ~/.config/gtk-3.0/gtk.css) to go back to stock.
+ */
+
+/* blueberry (accent): was #64baff / #3689e6 / #0d52bf */
+@define-color BLUEBERRY_300 #86b4de;
+@define-color BLUEBERRY_500 #4a84c4;
+@define-color BLUEBERRY_700 #2c5c9a;
+
+/* strawberry (errors, destructive): was #ed5353 / #c6262e / #a10705 */
+@define-color STRAWBERRY_300 #d98080;
+@define-color STRAWBERRY_500 #b94d52;
+@define-color STRAWBERRY_700 #8f3338;
+@define-color error_color #d98080;
+
+/* window corners: was 0.5rem (~8px), closer to macOS */
+window.csd,
+bottom-sheet sheet,
+floating-sheet sheet {
+  border-radius: 0.8rem;
+}
