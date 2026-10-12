@@ -179,19 +179,42 @@ private class TrayItem : Gtk.Box {
 
         var icon_name = proxy.IconName;
         if (icon_name != null && icon_name.length > 0) {
+            // Electron writes each icon change to a new status_icon_N.png in a
+            // temp directory. GTK's icon theme never rescans that directory, so
+            // load the file directly instead of looking the name up.
             var icon_theme_path = proxy.IconThemePath;
-            if (icon_theme_path != null && icon_theme_path.length > 0) {
-                var theme = Gtk.IconTheme.get_for_display (Gdk.Display.get_default ());
-                theme.add_search_path (icon_theme_path);
+            if (icon_theme_path != null && icon_theme_path.length > 0 &&
+                set_icon_file (Path.build_filename (icon_theme_path, icon_name + ".png"))) {
+                icon_retry = false;
+                return;
             }
-            image.set_from_icon_name (icon_name);
-            return;
+            // The file may still be mid-write; look once more shortly.
+            if (!icon_retry && icon_theme_path != null && icon_theme_path.length > 0) {
+                icon_retry = true;
+                Timeout.add (300, () => { update_icon (); return Source.REMOVE; });
+            }
+            if (Gtk.IconTheme.get_for_display (Gdk.Display.get_default ()).has_icon (icon_name)) {
+                image.set_from_icon_name (icon_name);
+                return;
+            }
         }
         var pixmaps = proxy.IconPixmap;
         if (pixmaps != null && set_pixmap (pixmaps)) {
             return;
         }
         image.set_from_icon_name ("org.signal.Signal");
+    }
+
+    private bool icon_retry = false;
+
+    private bool set_icon_file (string path) {
+        try {
+            var pixbuf = new Gdk.Pixbuf.from_file_at_size (path, 36, 36);
+            image.set_from_paintable (Gdk.Texture.for_pixbuf (pixbuf));
+            return true;
+        } catch (Error e) {
+            return false;
+        }
     }
 
     private bool set_pixmap (IconPixmap[]? pixmaps) {
