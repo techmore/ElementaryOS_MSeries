@@ -1,4 +1,5 @@
 <div align="center">
+  <p><strong>This is a derivative: elementary OS build system + Apple Silicon (M-series) port scaffolding. Start at <a href="mseries/README.md">mseries/README.md</a>.</strong> Upstream: <a href="https://github.com/elementary/os">elementary/os</a>, Apple hardware knowledge: <a href="https://github.com/omacom/omarchy-mac">omacom/omarchy-mac</a> (<code>quattro</code>). Status: research scaffolding, no tested ISO yet.</p>
   <a href="https://elementary.io" align="center">
     <center align="center">
 <picture>

@@ -1,0 +1,46 @@
+#!/bin/bash
+# Wi-Fi resume recovery for Apple Silicon Broadcom parts (ported from
+# omarchy-mac install/hardware/apple/fix-wifi-resume.sh; the systemd unit is
+# unchanged, this script is rewritten for Ubuntu: modprobe + NetworkManager,
+# no pacman helpers).
+#
+# The Broadcom firmware on Apple Silicon Macs can wedge across s2idle: scans
+# fail with -52 and associations are rejected with status_code=16, which
+# NetworkManager reports as a wrong password. Toggling the radio does not
+# reset the chip firmware — only a driver reload clears it.
+# Upstream: https://github.com/AsahiLinux/linux/issues/439
+#
+# Gate: aarch64 + BCM4378 (14e4:4425) / BCM4387 (14e4:4433) on PCI.
+# BCM4388 (14e4:4434, M2 Max/Ultra) is deliberately excluded: observed to
+# ride out s2idle without the wedge signature. T2 Intel Macs carry some of
+# the same IDs over a different suspend path — hence the architecture gate.
+set -euo pipefail
+
+[[ $(uname -m) == "aarch64" ]] || exit 0
+lspci -nn 2>/dev/null | grep -E "14e4:(4425|4433)" >/dev/null || exit 0
+
+wedge_signature() {
+  # Association rejections with status 16 since last boot.
+  journalctl -kb 2>/dev/null | grep -cE "ASSOC-REJECT.*status_code=16|status 16" || true
+}
+
+wifi_down() {
+  nmcli -t -f WIFI g 2>/dev/null | grep -q disabled && return 0
+  nmcli -t -f STATE g 2>/dev/null | grep -Eq "disconnected|connecting" || return 1
+}
+
+main() {
+  local before after
+  before=$(wedge_signature)
+  # Short backstop: give the driver a moment to recover on its own.
+  sleep 15
+  after=$(wedge_signature)
+  if [[ $after != "$before" ]] || wifi_down; then
+    logger -t mseries-wifi-resume-fix "reloading brcmfmac after resume (rejections $before->$after)"
+    modprobe -r brcmfmac || true
+    modprobe brcmfmac || true
+    systemctl restart NetworkManager || true
+  fi
+}
+
+main

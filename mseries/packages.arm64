@@ -1,0 +1,42 @@
+# Ubuntu package list — Apple Silicon layer (DRAFT, untested)
+
+Intended to become the `Packages=` set of a future
+`mkosi.images/apple-silicon/mkosi.conf`. Ubuntu archive names are used where
+they exist; Asahi-origin packages are marked TODO because no source (PPA or
+vendored build) has been confirmed on Ubuntu resolute.
+
+## From the Ubuntu archive (names confirmed by archive membership, not tested)
+
+- `pipewire-pulse` — PulseAudio-compat server (omarchy `audio.sh`: x86 gets
+  this from the ISO; Apple Silicon has no ISO path, so it must be explicit)
+- `pipewire-alsa` — ALSA compat for the same reason
+- `rtkit` — realtime scheduling; only an optional dep of pipewire, without
+  which the Asahi speaker DSP chain underruns (crackling under load)
+- `powertop` / `thermald` — power/thermal sanity on laptops (optional,
+  evaluate during bring-up)
+
+## Asahi-origin (TODO — needs a source before wiring into mkosi)
+
+- `asahi-audio` (UCM profiles + speaker DSP chain) — no Ubuntu package known
+- `speakersafetyd` (speaker mute daemon — kernel holds drivers at -100 dB
+  without it) — no Ubuntu package known
+- `avd-fw` (Apple Video Decoder firmware `apple/avd-fw-v2-t0.bin`) — no
+  Ubuntu package known
+- `libva-v4l2_request-avd` (`asahi_drv_video.so` VA-API bridge) — no Ubuntu
+  package known
+- `asdcontrol` (Apple display brightness) — omarchy-edge-only; no Ubuntu
+  source known
+
+Candidate sources to evaluate: Ubuntu Asahi Remix PPAs, Asahi ALARM PKGBUILDs
+(repackage the firmware blobs + `speakersafetyd` as debs), or mkosi
+`BuildScripts=` that fetch pinned upstream artifacts at image build time.
+Do NOT point apt at Arch repositories.
+
+## Kernel (open question, see BUILD-NOTES.md)
+
+elementary `base` installs `linux-image-generic`. Whether resolute's generic
+arm64 kernel carries the Apple Silicon drivers used here (`appledrm`,
+`CONFIG_VIDEO_APPLE_AVD=m`, HID, NVMe, brcmfmac firmware paths) is unverified
+and is the first bring-up question. If not, the project needs either an
+Asahi-flavoured kernel package or a custom kernel image — the largest single
+work item.

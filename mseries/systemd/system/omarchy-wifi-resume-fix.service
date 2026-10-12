@@ -1,0 +1,12 @@
+[Unit]
+Description=Reload brcmfmac if Apple Silicon Wi-Fi does not return after resume
+After=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
+After=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/sbin/mseries-wifi-resume-fix
+TimeoutStartSec=120
+
+[Install]
+WantedBy=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target
