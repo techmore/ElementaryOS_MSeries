@@ -28,7 +28,7 @@ DRIVER=/home/admin/fairydust-driver.sh
 [[ -f $KIT/PKGBUILD ]] || { echo "missing $KIT/PKGBUILD (clone the repo?)" >&2; exit 1; }
 
 cleanup() {
-  for m in "$R/boot" "$R/home" "$R/run" "$R/sys" "$R/proc" "$R/dev"; do
+  for m in "$R/etc/hosts" "$R/boot" "$R/home" "$R/run" "$R/sys" "$R/proc" "$R/dev"; do
     umount -R "$m" 2>/dev/null || true
   done
   umount "$R" 2>/dev/null || true
@@ -79,6 +79,38 @@ install -d "$(dirname -- "$resolv")"
 cp -f "$tmp_resolv" "$resolv"
 rm -f "$tmp_resolv"
 echo ">>> chroot DNS: $(grep -h '^nameserver' "$R/etc/resolv.conf" 2>/dev/null | tr '\n' ' ')"
+
+# Belt-and-suspenders for the flaky resolver: pin every host we know the build
+# needs in the chroot's /etc/hosts. glibc and libcurl consult "files" before
+# "dns" (nsswitch), so pacman/makepkg then don't depend on the resolver at all.
+# Generated on the private tmpfs and bind-mounted, so the Arch subvolume's
+# /etc/hosts is left untouched.
+hosts_src=$R/run/fairydust-hosts
+{
+  cat "$R/etc/hosts" 2>/dev/null || true
+  {
+    # Every pacman repo host, including mirrorlist includes.
+    grep -rhoE 'https?://[^/$ ]+' "$R/etc/pacman.conf" "$R/etc/pacman.d/" 2>/dev/null \
+      | sed -E 's#https?://##'
+    # Hosts makepkg/rustup reach that aren't in pacman's config.
+    printf '%s\n' \
+      codeload.github.com objects.githubusercontent.com \
+      release-assets.githubusercontent.com raw.githubusercontent.com \
+      static.rust-lang.org sh.rustup.rs rustup.rs forge.rust-lang.org \
+      distribution.rust-lang.org
+  } | sort -u | while read -r h; do
+      [[ -n $h ]] || continue
+      # getent returns non-zero for hosts that don't resolve; don't let that
+      # (with set -e + pipefail) kill the build.
+      ip=$(getent ahostsv4 "$h" 2>/dev/null | awk 'NR==1{print $1}') || ip=
+      if [[ -n $ip ]]; then printf '%s %s\n' "$ip" "$h"; fi
+    done
+} > "$hosts_src" || true
+if mount --bind "$hosts_src" "$R/etc/hosts"; then
+  echo ">>> chroot /etc/hosts pins: $(grep -cvE '^#|^$' "$hosts_src") entries"
+else
+  echo ">>> WARNING: could not bind /etc/hosts pins; using DNS only" >&2
+fi
 
 sed -i 's/^CheckSpace/#CheckSpace/' "$R/etc/pacman.conf"
 
