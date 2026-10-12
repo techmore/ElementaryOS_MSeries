@@ -522,3 +522,14 @@ Which system boots is chosen by the Mac's firmware (NVRAM `boot-volume`), not by
 Things that put it back to macOS: a macOS update, choosing a startup disk inside macOS (System Settings > Startup
 Disk), or `--set-boot` with the macOS name. If a reboot lands in macOS again, re-run the `--set-boot` line above.
 `asahi-bless` needs root to read NVRAM, so the checklist robot (a user service) cannot verify this on its own.
+
+## Network speed in the menu bar (2026-10-12)
+
+The network dropdown has a **Show speed in menu bar** switch under the speed graph. When on, `↓ rate ↑ rate`
+appears beside the network icon, averaged over 10 s (the timer stops when the switch is off). The choice is
+stored in `~/.config/mseries/network-speed.ini`. Built by `install-network-throughput.sh` from
+`patches/network-panel-speed.patch`.
+
+Colours: libadwaita apps ignore elementary's `@BLUEBERRY_*` names and read `accent_bg_color` and friends, which
+`theme/gtk-4.0.css` now sets too. Screen-corner radius raised from 10 to 14 (log out/in to apply; change
+`GALA_SCREEN_CORNER_RADIUS` in the Gala drop-in).

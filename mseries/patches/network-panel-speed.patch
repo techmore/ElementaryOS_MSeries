@@ -1,0 +1,208 @@
+diff --git a/meson.build b/meson.build
+index 4659c55..fcd2b97 100644
+--- a/meson.build
++++ b/meson.build
+@@ -52,6 +52,7 @@ shared_module(
+     'src/Widgets/ModemInterface.vala',
+     'src/Widgets/PopoverWidget.vala',
+     'src/Widgets/SettingsToggle.vala',
++    'src/Widgets/PanelSpeed.vala',
+     'src/Widgets/ThroughputWidget.vala',
+     'src/Widgets/VpnInterface.vala',
+     'src/Widgets/VpnMenuItem.vala',
+diff --git a/src/Widgets/DisplayWidget.vala b/src/Widgets/DisplayWidget.vala
+index b8e4faf..2560f4d 100644
+--- a/src/Widgets/DisplayWidget.vala
++++ b/src/Widgets/DisplayWidget.vala
+@@ -31,6 +31,7 @@ public class Network.Widgets.DisplayWidget : Gtk.Box {
+ 
+         append (image);
+         append (extra_info_revealer);
++        append (new PanelSpeed ());
+     }
+ 
+     public void update_state (Network.State state, bool secure, string? extra_info = null) {
+diff --git a/src/Widgets/PanelSpeed.vala b/src/Widgets/PanelSpeed.vala
+new file mode 100644
+index 0000000..c98d4de
+--- /dev/null
++++ b/src/Widgets/PanelSpeed.vala
+@@ -0,0 +1,113 @@
++/*
++* SPDX-License-Identifier: LGPL-2.1-or-later
++* SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries
++*/
++
++/**
++ * Whether the speed readout is shown next to the network icon in the panel.
++ * Stored in ~/.config/mseries/network-speed.ini so there is no GSettings schema to install.
++ */
++public class Network.PanelSpeedSettings : Object {
++    private static PanelSpeedSettings? instance = null;
++
++    public bool enabled { get; set; default = false; }
++
++    public static unowned PanelSpeedSettings get_default () {
++        if (instance == null) {
++            instance = new PanelSpeedSettings ();
++        }
++        return instance;
++    }
++
++    private static string path () {
++        return Path.build_filename (Environment.get_user_config_dir (), "mseries", "network-speed.ini");
++    }
++
++    construct {
++        try {
++            var keyfile = new KeyFile ();
++            keyfile.load_from_file (path (), KeyFileFlags.NONE);
++            enabled = keyfile.get_boolean ("panel", "show-speed");
++        } catch (Error e) {
++            // No file yet: off by default.
++        }
++
++        notify["enabled"].connect (() => {
++            var keyfile = new KeyFile ();
++            keyfile.set_boolean ("panel", "show-speed", enabled);
++            DirUtils.create_with_parents (Path.get_dirname (path ()), 0755);
++            try {
++                FileUtils.set_contents (path (), keyfile.to_data ());
++            } catch (Error e) {
++                warning ("Could not save %s: %s", path (), e.message);
++            }
++        });
++    }
++}
++
++/**
++ * "↓ 1.2 MB/s ↑ 40 kB/s" beside the panel icon, averaged over 10 seconds. The timer only runs
++ * while the readout is enabled.
++ */
++public class Network.Widgets.PanelSpeed : Gtk.Box {
++    private Gtk.Label speed_label;
++    private const uint INTERVAL_SECONDS = 10;
++
++    private uint timeout_id = 0;
++    private uint64 last_rx = 0;
++    private uint64 last_tx = 0;
++    private int64 last_time = 0;
++    private bool have_baseline = false;
++
++    construct {
++        speed_label = new Gtk.Label (null);
++        speed_label.add_css_class ("numeric");
++        append (speed_label);
++        margin_start = 4;
++        visible = false;
++
++        var settings = PanelSpeedSettings.get_default ();
++        settings.notify["enabled"].connect (sync);
++        sync ();
++    }
++
++    private void sync () {
++        if (PanelSpeedSettings.get_default ().enabled) {
++            if (timeout_id == 0) {
++                have_baseline = false;
++                speed_label.label = "↓ … ↑ …";
++                visible = true;
++                tick ();
++                timeout_id = Timeout.add_seconds (INTERVAL_SECONDS, tick);
++            }
++        } else {
++            if (timeout_id != 0) {
++                Source.remove (timeout_id);
++                timeout_id = 0;
++            }
++            visible = false;
++        }
++    }
++
++    private bool tick () {
++        uint64 rx, tx;
++        if (!ThroughputWidget.read_counters (out rx, out tx)) {
++            return Source.CONTINUE;
++        }
++
++        var now = get_monotonic_time ();
++        if (have_baseline && now > last_time && rx >= last_rx && tx >= last_tx) {
++            double seconds = (now - last_time) / 1000000.0;
++            speed_label.label = "↓ %s  ↑ %s".printf (
++                ThroughputWidget.format_rate ((rx - last_rx) / seconds),
++                ThroughputWidget.format_rate ((tx - last_tx) / seconds)
++            );
++        }
++
++        last_rx = rx;
++        last_tx = tx;
++        last_time = now;
++        have_baseline = true;
++        return Source.CONTINUE;
++    }
++}
+diff --git a/src/Widgets/PopoverWidget.vala b/src/Widgets/PopoverWidget.vala
+index 542cc92..508cb59 100644
+--- a/src/Widgets/PopoverWidget.vala
++++ b/src/Widgets/PopoverWidget.vala
+@@ -106,6 +106,20 @@ public class Network.Widgets.PopoverWidget : Gtk.Box {
+ 
+         // Live down/up speed and graph, directly under the connection toggles.
+         append (new ThroughputWidget ());
++
++        var panel_speed_switch = new Gtk.Switch () {
++            valign = Gtk.Align.CENTER
++        };
++        PanelSpeedSettings.get_default ().bind_property ("enabled", panel_speed_switch, "active", BindingFlags.SYNC_CREATE | BindingFlags.BIDIRECTIONAL);
++
++        var panel_speed_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12) {
++            margin_start = 12,
++            margin_end = 12,
++            margin_bottom = 3
++        };
++        panel_speed_row.append (new Gtk.Label (_("Show speed in menu bar")) { xalign = 0, hexpand = true });
++        panel_speed_row.append (panel_speed_switch);
++        append (panel_speed_row);
+         append (throughput_separator);
+ 
+         append (vpn_box);
+diff --git a/src/Widgets/ThroughputWidget.vala b/src/Widgets/ThroughputWidget.vala
+index 0e3ab13..8cd1d7d 100644
+--- a/src/Widgets/ThroughputWidget.vala
++++ b/src/Widgets/ThroughputWidget.vala
+@@ -17,7 +17,7 @@ public class Network.Widgets.ThroughputWidget : Gtk.Box {
+     private double[] rx_history = new double[HISTORY];
+     private double[] tx_history = new double[HISTORY];
+ 
+-    private HashTable<string, bool> virtual_cache = new HashTable<string, bool> (str_hash, str_equal);
++    private static HashTable<string, bool> virtual_cache = new HashTable<string, bool> (str_hash, str_equal);
+     private uint64 last_rx = 0;
+     private uint64 last_tx = 0;
+     private int64 last_time = 0;
+@@ -136,7 +136,7 @@ public class Network.Widgets.ThroughputWidget : Gtk.Box {
+         return Source.CONTINUE;
+     }
+ 
+-    private static string format_rate (double bytes_per_second) {
++    public static string format_rate (double bytes_per_second) {
+         if (bytes_per_second < 1000) {
+             return "%d B/s".printf ((int) bytes_per_second);
+         }
+@@ -144,7 +144,7 @@ public class Network.Widgets.ThroughputWidget : Gtk.Box {
+         return format_size ((uint64) bytes_per_second) + "/s";
+     }
+ 
+-    private bool is_virtual (string name) {
++    private static bool is_virtual (string name) {
+         bool result;
+         if (virtual_cache.lookup_extended (name, null, out result)) {
+             return result;
+@@ -160,7 +160,7 @@ public class Network.Widgets.ThroughputWidget : Gtk.Box {
+         return result;
+     }
+ 
+-    private bool read_counters (out uint64 rx, out uint64 tx) {
++    public static bool read_counters (out uint64 rx, out uint64 tx) {
+         rx = 0;
+         tx = 0;
+ 

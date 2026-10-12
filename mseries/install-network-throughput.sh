@@ -59,6 +59,7 @@ git -C "$source_dir" fetch -q --depth=1 origin "$commit"
 git -C "$source_dir" checkout -q --detach FETCH_HEAD
 git -C "$source_dir" apply "$repo/mseries/patches/network-throughput.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/network-null-devices.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/network-panel-speed.patch"
 
 meson setup "$build_dir" "$source_dir" --prefix=/usr --libdir=lib/aarch64-linux-gnu --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null

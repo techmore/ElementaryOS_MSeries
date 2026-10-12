@@ -36,3 +36,15 @@ entry.error:focus {
 @define-color BLUEBERRY_900 #3b5068;
 @define-color accent_color #748fae;
 @define-color selected_bg_color #748fae;
+
+/* libadwaita apps ignore the elementary named colours above and read these instead. */
+@define-color accent_bg_color #748fae;
+@define-color accent_fg_color #ffffff;
+@define-color accent_color #8aa3bf;
+@define-color destructive_bg_color #a56f78;
+@define-color destructive_fg_color #ffffff;
+@define-color destructive_color #bf9298;
+@define-color error_bg_color #a56f78;
+@define-color error_color #bf9298;
+@define-color success_bg_color #6f9a85;
+@define-color warning_bg_color #b39a6a;
