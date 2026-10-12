@@ -481,7 +481,15 @@ do_add_user() {
 
   chroot "$newroot" /bin/bash -s -- "$name" <<'EOF'
 set -euo pipefail
+# Ubuntu keeps useradd/usermod in /usr/sbin, which is NOT on the PATH the
+# chroot inherits from an Arch host. Set a normal Linux PATH first.
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 name="$1"
+if ! command -v useradd >/dev/null 2>&1; then
+  echo "useradd missing — installing the passwd package"
+  apt-get update -qq
+  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends passwd
+fi
 groups="sudo,adm,cdrom,dip,plugdev,netdev,video,render,audio,input"
 if id "$name" >/dev/null 2>&1; then
   echo "user $name already exists; refreshing group membership"
@@ -491,9 +499,9 @@ fi
 usermod -aG "$groups" "$name"
 EOF
 
-  # Password via stdin (never in argv/ps). chpasswd hashes with the root's
-  # default scheme (yescrypt on Ubuntu).
-  printf '%s:%s\n' "$name" "$pass" | chroot "$newroot" chpasswd \
+  # Password via stdin (never in argv/ps). Absolute path for the same reason
+  # as above; chpasswd hashes with the root's default scheme (yescrypt).
+  printf '%s:%s\n' "$name" "$pass" | chroot "$newroot" /usr/sbin/chpasswd \
     || fail "chpasswd failed for $name"
 
   # Carry over the invoking user's SSH keys, if any (convenience only).
