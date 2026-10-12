@@ -68,8 +68,30 @@ bash mseries/install-codexbar.sh
 Installer pins v0.74.1 and verifies both published SHA256 checksums before
 extraction. Provider authentication stays with the provider CLIs. Pantheon
 may not expose a StatusNotifier tray host; desktop launcher/windows work
-without one. Wingpanel integration would be a separate enhancement.
+without one. For a native Wingpanel item that displays remaining quota and
+opens a dropdown, install the separate Pantheon indicator:
+
+```sh
+sudo apt install meson ninja-build valac libwingpanel-9-dev libgranite-7-dev libjson-glib-dev
+bash mseries/install-codexbar-wingpanel.sh
+```
+
+Log out and back in after installation. The indicator starts CodexBar's local
+backend, reads its same-user snapshot, and shows its configured providers and
+remaining quota. Click the panel item for per-provider quota, Refresh, Open
+CodexBar, and Settings/sign-in. Provider credentials remain managed by CodexBar.
+Remove it with `bash mseries/install-codexbar-wingpanel.sh --uninstall`.
 Source: https://github.com/steipete/CodexBar/tree/main/Integrations/Linux
+
+## Camera notch and centered panel indicators
+
+Pantheon places its date/time indicator in the center of Wingpanel and does not
+avoid the MacBook camera notch. Keep `appledrm show_notch` disabled so the
+desktop receives the rectangular 16:10 mode; enabling the full-height mode can
+put the clock and other centered panel content behind the camera. The Apple
+Silicon image no longer opts in. On an existing install, add
+`options appledrm show_notch=0` under `/etc/modprobe.d/` and rebuild the
+initramfs; reboot to apply the display mode.
 
 ## Dock diagnosis
 
