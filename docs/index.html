@@ -27,6 +27,11 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <li>Every change to the build wiring is config-checked on real arm64 runners (<em>Validate M-series wiring</em>).</li>
 </ul>
 
+<h2>Cutover quickstart (omarchy-mac side)</h2>
+<p>On a booted omarchy-mac, dry run first — changes nothing, uploads its log:</p>
+<pre><code>git clone --depth 1 https://github.com/techmore/ElementaryOS_MSeries &amp;&amp; sudo ./ElementaryOS_MSeries/transform/elementary-grow.sh --upload</code></pre>
+<p>Paste the printed gist URL back for review. Post-boot verification checklist: <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/POST-BOOT-CHECKS.md">POST-BOOT-CHECKS.md</a>.</p>
+
 <h2>How this differs from Asahi / Omarchy installers</h2>
 <p>This project is an <strong>image factory, not an installer command</strong>. Asahi ships an installer app you run from macOS; Omarchy ships a script you run inside an already-booted Linux. Here, CI builds a bootable live ISO (hours, in the cloud); you flash it to USB and boot it. There is no one-line command that transforms your running Mac — and nothing here can touch your Mac until you deliberately boot media it produced.</p>
 <p>A second, design-stage track exists for machines already booting omarchy-mac: a <strong>single grow-from-omarchy command</strong> (<code>transform/elementary-grow.sh</code>) that adds an elementary boot entry alongside the old system. Dry-run review on the real machine comes before any <code>--apply</code>.</p>

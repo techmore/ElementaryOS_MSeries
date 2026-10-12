@@ -1,5 +1,18 @@
 <div align="center">
   <p><strong>This is a derivative: elementary OS build system + Apple Silicon (M-series) port scaffolding. Start at <a href="mseries/README.md">mseries/README.md</a>.</strong> Upstream: <a href="https://github.com/elementary/os">elementary/os</a>, Apple hardware knowledge: <a href="https://github.com/omacom/omarchy-mac">omacom/omarchy-mac</a> (<code>quattro</code>). Status: research scaffolding, no tested ISO yet.</p>
+</div>
+
+## M-series cutover quickstart (run on omarchy-mac, Apple Silicon)
+
+Dry run first — changes nothing, uploads its log for review:
+
+```bash
+git clone --depth 1 https://github.com/techmore/ElementaryOS_MSeries && sudo ./ElementaryOS_MSeries/transform/elementary-grow.sh --upload
+```
+
+Paste the printed gist URL back for review. If `gh` isn't logged in over there: `sudo pacman -S github-cli && gh auth login`, then re-run. Only after the dry run is reviewed: `--apply`, reboot, pick **elementary OS (M-series)** in the boot menu. Full design + safety contract: [`mseries/TRANSFORM-DESIGN.md`](mseries/TRANSFORM-DESIGN.md). Post-boot checks: [`mseries/POST-BOOT-CHECKS.md`](mseries/POST-BOOT-CHECKS.md).
+
+<div align="center">
   <a href="https://elementary.io" align="center">
     <center align="center">
 <picture>
