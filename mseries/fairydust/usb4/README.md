@@ -190,3 +190,35 @@ Notes: `rtl_nic/rtl8153b-2.fw` is missing from the root's linux-firmware (r8152 
 patch); `could not allocate DP tunnel` / `DPRX read timeout` repeat every ~30 s (DP tunnelling is
 unsupported upstream; log noise only). Turn debug off again with
 `echo 'module thunderbolt -p' | sudo tee /sys/kernel/debug/dynamic_debug/control`.
+
+## Dock video (HDMI/DP out of the dock): why it does not work, and where it stops
+
+Status: **not supported** on this kernel, with a USB4 dock on a fixed (captive) cable. Everything
+else on the dock works (USB2/USB3 hubs, headset, mouse, 1 Gb/s Ethernet).
+
+What the kernel shows (Dell WD22TB4, monitor on the dock's DP out via a DP-to-HDMI cable):
+
+    1:14: DP adapter HPD set, queuing hotplug          <- the dock sees the monitor: cable/monitor OK
+    0:5 <-> 1:14 (DP): DPRX read timeout               <- ~316x per attempt, retried every ~30 s
+    0:5: DP IN resource unavailable: DPRX negotiation failed
+    1:14: could not allocate DP tunnel
+
+Root cause: the host DP IN adapter (0:5) is never driven by a DisplayPort source. The Linux
+thunderbolt core waits for the adapter's DPRX capabilities, which only appear once the display
+controller (DCP) acts as DP source on the tunnel. In this device tree the DCP external pipes are wired
+only to the ATC PHYs (`dcpext1`: `apple,dptx-phy = <1>`, `mux-controls = <&atcphy1_xbar>`,
+connector `displayport = <&dcpext1>`); there is no route from the DCP to the ACIO DP IN adapters, and
+`apple-dcp` has no tunnelled-DP mode. Upstream says the same: DP/PCIe tunnelling "need further
+reverse engineering" (Sven Peter's USB4 series, Aug 2026). No Asahi branch has it (checked
+`sven/tbt-wip`, `tbt-reset-wip`, `b4/apple-soc-tbt`, `dcp/dptx-fixes`, `dp-altmode-WIP`).
+
+What would be required: DCP firmware protocol for a tunnelled DPTX endpoint, AUX-over-tunnel via the
+DP IN adapter, crossbar/DPXBAR routing to ACIO instead of an ATC PHY, plus link training - new driver
+work against undocumented firmware.
+
+Workarounds that do not need that code (not verified here): a non-Thunderbolt/USB4 USB-C cable so the
+dock falls back to plain DP Alt Mode on the fairydust DP port (front-left, atcphy1); or a USB-C to
+DP/HDMI adapter on that port. Neither applies when the dock cable is captive.
+
+Optional cleanup if the retry noise matters: a quirk to skip DP tunnel creation on Apple hosts until
+this exists (the retries are harmless but chatty).
