@@ -40,12 +40,12 @@ namespace MSeries {
             panel_display.set_tooltip_text ("OpenAI Codex usage remaining");
             this.visible = true;
 
-            menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 14) {
-                margin_top = 14,
-                margin_bottom = 14,
-                margin_start = 14,
-                margin_end = 14,
-                width_request = 360
+            menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 12) {
+                margin_top = 12,
+                margin_bottom = 12,
+                margin_start = 12,
+                margin_end = 12,
+                width_request = 340
             };
 
             var title_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 10);
@@ -55,24 +55,13 @@ namespace MSeries {
             menu_icon.add_css_class ("symbolic");
             title_row.append (menu_icon);
 
-            var title_stack = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) {
-                hexpand = true,
-                halign = Gtk.Align.FILL
-            };
             var title = new Gtk.Label ("CodexBar") {
                 xalign = 0,
+                hexpand = true,
                 halign = Gtk.Align.START
             };
             title.add_css_class ("heading");
-            title_stack.append (title);
-            var subtitle = new Gtk.Label ("Usage overview") {
-                xalign = 0,
-                halign = Gtk.Align.START
-            };
-            subtitle.add_css_class ("dim-label");
-            subtitle.add_css_class ("caption");
-            title_stack.append (subtitle);
-            title_row.append (title_stack);
+            title_row.append (title);
 
             refresh_icon = new Gtk.Image.from_icon_name ("view-refresh-symbolic") {
                 pixel_size = 16
@@ -102,17 +91,15 @@ namespace MSeries {
             var separator = new Gtk.Separator (Gtk.Orientation.HORIZONTAL);
             menu.append (separator);
 
-            var action_grid = new Gtk.Grid () {
-                column_spacing = 8,
-                row_spacing = 8,
-                column_homogeneous = true,
-                row_homogeneous = true
+            var action_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) {
+                homogeneous = true,
+                halign = Gtk.Align.END
             };
-            action_grid.attach (make_action_button ("Quick View", "view-reveal-symbolic", "--quick-view"), 0, 0, 1, 1);
-            action_grid.attach (make_action_button ("Usage", "utilities-system-monitor-symbolic", "--usage"), 1, 0, 1, 1);
-            action_grid.attach (make_action_button ("Spending", "view-list-symbolic", "--spending"), 0, 1, 1, 1);
-            action_grid.attach (make_action_button ("Settings & Sign In", "preferences-system-symbolic", "--settings"), 1, 1, 1, 1);
-            menu.append (action_grid);
+            action_row.append (make_action_button ("Open quick view", "view-reveal-symbolic", "--quick-view"));
+            action_row.append (make_action_button ("Open usage", "utilities-system-monitor-symbolic", "--usage"));
+            action_row.append (make_action_button ("Open spending", "view-list-symbolic", "--spending"));
+            action_row.append (make_action_button ("Open settings and sign in", "preferences-system-symbolic", "--settings"));
+            menu.append (action_row);
 
             // CodexBar owns provider authentication, polling and cached usage.
             // This indicator only reads its documented, same-user local snapshot.
@@ -129,26 +116,16 @@ namespace MSeries {
             Timeout.add_seconds (60, () => { read_snapshot (); return Source.CONTINUE; });
         }
 
-        private Gtk.Button make_action_button (string label, string icon_name, string action) {
+        private Gtk.Button make_action_button (string tooltip, string icon_name, string action) {
             var button = new Gtk.Button () {
-                tooltip_text = label,
-                height_request = 58,
-                hexpand = true
+                tooltip_text = tooltip,
+                width_request = 36,
+                height_request = 36
             };
-            var content = new Gtk.Box (Gtk.Orientation.VERTICAL, 5) {
-                halign = Gtk.Align.CENTER,
-                valign = Gtk.Align.CENTER
-            };
-            var icon = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 18 };
+            var icon = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 16 };
             icon.add_css_class ("symbolic");
-            content.append (icon);
-            var text = new Gtk.Label (label) {
-                xalign = 0.5f,
-                justify = Gtk.Justification.CENTER
-            };
-            text.add_css_class ("caption");
-            content.append (text);
-            button.set_child (content);
+            button.set_child (icon);
+            button.add_css_class ("flat");
             button.clicked.connect (() => run_action (action));
             return button;
         }
@@ -412,23 +389,18 @@ namespace MSeries {
             quota_card.append (progress);
 
             if (reset.length > 0) {
-                append_quota_detail (quota_card, "appointment-soon-symbolic", reset, true);
+                append_quota_detail (quota_card, reset, true);
             }
             var estimate = pace_estimate (pace);
             if (estimate.length > 0) {
-                append_quota_detail (quota_card, "document-properties-symbolic", estimate, false);
+                append_quota_detail (quota_card, estimate, false);
             } else if (pace.length > 0) {
-                append_quota_detail (quota_card, "document-properties-symbolic", pace, true);
+                append_quota_detail (quota_card, pace, true);
             }
             providers_box.append (quota_card);
         }
 
-        private void append_quota_detail (Gtk.Box card, string icon_name, string text, bool subdued) {
-            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
-            var icon = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 14 };
-            icon.add_css_class ("dim-label");
-            icon.add_css_class ("symbolic");
-            row.append (icon);
+        private void append_quota_detail (Gtk.Box card, string text, bool subdued) {
             var label = new Gtk.Label (text) {
                 xalign = 0,
                 hexpand = true,
@@ -441,8 +413,7 @@ namespace MSeries {
             } else {
                 label.add_css_class ("heading");
             }
-            row.append (label);
-            card.append (row);
+            card.append (label);
         }
 
         private string pace_estimate (string pace) {
@@ -453,11 +424,11 @@ namespace MSeries {
                 if (runout_index >= 0) {
                     var remaining_time = detail.substring (runout_index + runout.length).strip ();
                     if (remaining_time.length > 0) {
-                        return "About " + remaining_time + " left at this pace";
+                        return "Runs out in " + remaining_time + " at this pace";
                     }
                 }
                 if (detail.down ().contains ("lasts until reset")) {
-                    return "At this pace, lasts until reset";
+                    return "Quota lasts until reset at this pace";
                 }
             }
             return "";
