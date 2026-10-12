@@ -24,6 +24,13 @@ Legend: **PORTED** = translated into `mseries/` in this commit.
 | `bin/omarchy-brightness-display-apple` (`asdcontrol`) | Apple Studio/XDR display brightness | **DOCUMENTED** | `asdcontrol`/`tobi-try` are omarchy-edge-only packages (see `docs/arm-package-sources.md`); no Ubuntu source confirmed. |
 | `docs/arm-package-sources.md` edge-repo policy | pacman `Usage = Sync` + explicit `omarchy/…` selection | **OUT OF SCOPE** (pattern noted) | pacman-only. The *pattern* (pin Apple-specific packages from a dedicated source, keep the rest rolling) should be re-expressed as apt pinning (`repos/common-files/etc/apt/preferences.d/`) once an Asahi PPA exists. |
 
+## New findings (captured on hardware, not ported from omarchy)
+
+| Area | Finding | Disposition | Notes |
+|---|---|---|---|
+| USB-C dock video (Dell WD19S) | Dock displays need **DisplayPort Alt Mode**; Asahi M1 `DP Alt Mode`/`Thunderbolt` are both **WIP**, so dock video/mouse do not work on stock `linux-asahi`. | **DOCUMENTED** | New doc `mseries/USB-C-DOCK-DP-ALT-MODE.md`. Live evidence: no DP DRM connector, `ATCPHY_PIPEHANDLER_STATE_USB4 not implemented`, `Failed to lock pipehandler`. Real fix = experimental `fairydust` kernel; helper `mseries/fairydust/build-fairydust-kernel.sh`. |
+| Signal Desktop messaging app | elementary ships Flatpak + Flathub (AppCenter). `org.signal.Signal` is aarch64-clean and installed as a user Flatpak on the live transform. | **PORTED** (packages) | `mseries/packages.arm64` lists it; `transform/elementary-grow.sh` adds Signal's official apt repo and installs `signal-desktop` into the new root so both transport paths exist. |
+
 ## Intel Macs (T2, SPI keyboard, NVMe, Broadcom-STA) — out of scope for M-series
 
 | omarchy source | Disposition | Reason |

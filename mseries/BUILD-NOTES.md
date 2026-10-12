@@ -32,7 +32,8 @@ on and drives M-series hardware, not whether arm64 builds at all.
 5. **Hardware test matrix on a spare machine**: display (notch), keyboard/
    trackpad across 20+ reboot cycles (the HID race is intermittent),
    speakers + mic, Wi-Fi connect + suspend/resume, video decode (`mpv` CPU
-   comparison), brightness keys.
+   comparison), brightness keys, **USB-C dock video + downstream USB**
+   (blocked on DP Alt Mode — see `mseries/USB-C-DOCK-DP-ALT-MODE.md`).
 6. **apt pinning** for the Asahi source once it exists (Ubuntu analogue of
    omarchy's `Usage = Sync` edge policy), in
    `repos/common-files/etc/apt/preferences.d/`.

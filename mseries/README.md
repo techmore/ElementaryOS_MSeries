@@ -58,7 +58,14 @@ Two tracks, one shared hardware layer:
 - `mseries/KERNEL-REPORT.md` — Ubuntu generic kernel vs Apple Silicon
   verdict (boots unaccelerated; daily-driver needs an Asahi kernel).
 - `mseries/BUILD-NOTES.md` — what is needed to get to a testable arm64 ISO.
+- `mseries/USB-C-DOCK-DP-ALT-MODE.md` — why USB-C dock video/mouse
+  (Dell WD19S) does not work on stock `linux-asahi`, with live evidence
+  from a MacBookPro18,3 (M1 Pro) and the `fairydust` DP-Alt-Mode path.
+- `mseries/fairydust/` — helper to build the experimental `fairydust`
+  DP-Alt-Mode kernel on the Arch/omarchy side.
 - `mseries/packages.arm64` — package rationale for the Apple Silicon layer.
+  Includes Signal Desktop (`signal-desktop` apt repo + Flathub `org.signal.Signal`)
+  and the DP-Alt-Mode kernel config bits.
 - `mkosi.images/apple-silicon/` — the build wiring: `mkosi.conf`,
   `mkosi.extra/` (final-path config files + resume script),
   `mkosi.postinst.chroot`, `mkosi.finalize`. Arm64-only; wired into

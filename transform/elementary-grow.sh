@@ -323,6 +323,22 @@ apt-get update
 apt-cache show elementary-desktop >/dev/null \
   || { echo "elementary-desktop not in PPAs for $UBUNTU_SUITE — aborting chroot build"; exit 1; }
 apt-get install -y --install-recommends elementary-desktop elementary-minimal elementary-standard pantheon io.elementary.greeter io.elementary.wingpanel pipewire-pulse pipewire-alsa rtkit network-manager
+# Signal Desktop: official arm64 apt repo. The suite name really is
+# 'xenial' (Signal never bumped it) — do not "correct" it. Non-fatal: a
+# messaging app must not abort the whole root build. Flatpak
+# (org.signal.Signal, Flathub) is the alternative transport — see
+# mseries/packages.arm64.
+rm -f /usr/share/keyrings/signal-desktop-keyring.gpg
+if curl -fsSL https://updates.signal.org/desktop/apt/keys.asc \
+     | gpg --dearmor -o /usr/share/keyrings/signal-desktop-keyring.gpg; then
+  echo 'deb [arch=arm64 signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main' \
+    > /etc/apt/sources.list.d/signal-desktop.list
+  apt-get update
+  apt-get install -y signal-desktop \
+    || echo "WARNING: signal-desktop install failed (non-fatal)" >&2
+else
+  echo "WARNING: could not fetch Signal keyring — skipping Signal (non-fatal)" >&2
+fi
 apt-get clean
 EOF
 

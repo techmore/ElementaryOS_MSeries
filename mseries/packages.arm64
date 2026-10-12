@@ -22,6 +22,39 @@ source (see KERNEL-REPORT.md).
 - `powertop` / `thermald` — power/thermal sanity on laptops (optional,
   evaluate during bring-up)
 
+## Apps — Signal Desktop
+
+Signal Desktop ships an official **arm64** build. Two transports, both wired:
+
+- **Flatpak** (what the live elementary transform uses): `org.signal.Signal`
+  from Flathub, aarch64-clean. Install with
+  `flatpak install --user flathub org.signal.Signal`. elementary ships
+  Flatpak + the Flathub/AppCenter remotes by default, so no extra source.
+- **Official apt repo** (used by `transform/elementary-grow.sh` so the fresh
+  root has a native `signal-desktop` package too):
+
+  ```ini
+  # /etc/apt/sources.list.d/signal-desktop.list
+  deb [arch=arm64 signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] \
+      https://updates.signal.org/desktop/apt xenial main
+  ```
+
+  key: `https://updates.signal.org/desktop/apt/keys.asc` (dearmored).
+
+The suite is literally `xenial` — Signal never renames it; do not "fix" it.
+
+## DP Alt Mode kernel config (for a future Asahi-flavoured kernel)
+
+USB-C dock video needs these **as modules** in the kernel config; they are
+inert without the `fairydust` branch. See `USB-C-DOCK-DP-ALT-MODE.md`.
+
+```
+CONFIG_TYPEC=m
+CONFIG_TYPEC_DP_ALTMODE=m
+CONFIG_TYPEC_NVIDIA_ALTMODE=m
+CONFIG_TYPEC_TBT_ALTMODE=m
+```
+
 ## Asahi-origin (TODO — needs a source before wiring into mkosi)
 
 - `asahi-audio` (UCM profiles + speaker DSP chain) — no Ubuntu package known
