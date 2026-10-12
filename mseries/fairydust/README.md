@@ -27,22 +27,21 @@ the **front-left** USB-C port.
 | `build-and-install.sh` | preflight (aarch64, Arch, ≥35 GiB) → deps → `makepkg` → install → initramfs → `update-m1n1` → GRUB |
 | `verify.sh` | run after booting fairydust: one OK/FAIL per hardware block |
 
-## Two files you must generate (not redistributable)
+## One file you must generate (not redistributable)
 
 ```bash
-# 1) kernel config — from the machine's stock linux-asahi
+# kernel config — from the machine's stock linux-asahi
 zcat /proc/config.gz > config
-
-# 2) the fairydust delta over this machine's Asahi release
-git clone https://github.com/AsahiLinux/linux.git
-cd linux
-git diff asahi-7.1.13-3...origin/fairydust > ../fairydust.patch
-cd ..
-updpkgsums        # pacman-contrib; refreshes the checksums in PKGBUILD
 ```
 
-`git diff asahi-7.1.13-3...origin/fairydust` (three dots) emits exactly the
-fairydust delta over the common ancestor — 12 commits on this version.
+The `PKGBUILD` fetches the Asahi **`fairydust` branch snapshot** directly
+(no patch to apply), so `config` is the only input. This sidesteps the
+version-pin drift of patch-based builds: at the time of writing the branch
+is 12 commits ahead / 2 behind `asahi-7.1.13-3`.
+
+(If you prefer the pinned-release + `fairydust.patch` route — the original
+kit's — see the blog linked at the top; generate the patch with
+`git diff asahi-7.1.13-3...origin/fairydust`.)
 
 ## Run it
 

@@ -1,20 +1,13 @@
 # Fairydust kernel for Apple Silicon, packaged for Asahi ALARM.
-# Adapted from Grzegorz Smajdor's kit (GPL-2.0):
-#   https://grzegorzsmajdor.com/blog/2026-omarchy-asahi-arch-m1/
-# Retargeted to this machine: Asahi asahi-7.1.13-3 (apple,j314s, M1 Pro).
+# Adapted from Grzegorz Smajdor's kit (GPL-2.0); builds the Asahi
+# `fairydust` branch snapshot directly (no patch), coexisting with stock
+# linux-asahi. Target: apple,j314s (M1 Pro 14"), Asahi 7.1.13-3.
 # See ../USB-C-DOCK-DP-ALT-MODE.md and ./README.md.
 
-_rcver=7.1.13
-_asahirel=3
-_fairydust_commits=12
-pkgrel=1
-
-_m1n1_version=1.4.21
 pkgbase=linux-asahi-fairydust
-_commit_id=asahi-${_rcver}-${_asahirel}
-_srcname=linux-${_commit_id}
-pkgver="${_rcver}.asahi${_asahirel}.fairydust${_fairydust_commits}"
 pkgname=("$pkgbase")
+pkgver=7.1.13.fairydust
+pkgrel=1
 pkgdesc="Asahi Linux kernel with experimental Fairydust USB-C DisplayPort support"
 arch=('aarch64')
 url="https://github.com/AsahiLinux/linux/tree/fairydust"
@@ -24,22 +17,20 @@ makedepends=(
   base-devel bc dtc kmod libelf pahole cpio perl rustup rust-bindgen
   tar xz xmlto python
 )
-depends=(coreutils kmod initramfs "m1n1>=${_m1n1_version}")
+depends=(coreutils kmod initramfs 'm1n1')
 optdepends=(
   'crda: set the wireless regulatory domain'
   'linux-firmware: firmware for additional devices'
 )
-provides=(WIREGUARD-MODULE "linux=${_rcver}")
+provides=(WIREGUARD-MODULE 'linux=7.1.13')
 options=('!strip' '!debug')
 
+_srcname=linux-fairydust
 source=(
-  "https://github.com/AsahiLinux/linux/archive/${_commit_id}.tar.gz"
+  'https://github.com/AsahiLinux/linux/archive/refs/heads/fairydust.tar.gz'
   config
-  fairydust.patch
 )
-# Generate with `updpkgsums` after producing config + fairydust.patch
-# (see README.md). SKIP keeps the first build from failing on a stale hash.
-sha256sums=('SKIP' 'SKIP' 'SKIP')
+sha256sums=('SKIP' 'SKIP')
 
 export KBUILD_BUILD_HOST=archlinux
 export KBUILD_BUILD_USER=$pkgbase
@@ -47,15 +38,12 @@ export KBUILD_BUILD_TIMESTAMP="$(date -Ru${SOURCE_DATE_EPOCH:+d @$SOURCE_DATE_EP
 
 prepare() {
   cd "$_srcname"
-  patch -Np1 < ../fairydust.patch
-
-  # Keep this kernel alongside stock linux-asahi with a distinct release name.
-  echo "-${_asahirel}-${pkgrel}-fairydust" > localversion.10-pkgrel
+  # Keep this kernel alongside stock linux-asahi with a distinct release.
+  echo '-1-1-fairydust' > localversion.10-pkgrel
 
   mkdir -p build/base
   cp ../config build/base/.config
 
-  # The extra Alt Mode helpers the working Fedora build relies on.
   scripts/config --file build/base/.config --module TYPEC_DP_ALTMODE
   scripts/config --file build/base/.config --module TYPEC_NVIDIA_ALTMODE
   scripts/config --file build/base/.config --module TYPEC_TBT_ALTMODE
