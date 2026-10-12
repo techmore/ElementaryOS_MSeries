@@ -128,27 +128,36 @@ do_apply() {
   local stamp snap
   stamp=$(date +%Y%m%d-%H%M%S)
   snap="$TOP_MNT/$SNAP_PREFIX-$stamp"
-  log "snapshotting current root to $snap"
-  run btrfs subvolume snapshot -r / "$snap"
-
   [[ -e "$TOP_MNT/$SUBVOL_NAME" ]] \
     && fail "$SUBVOL_NAME already exists — --rollback first if retrying"
+  [[ -e "$TOP_MNT/$HOME_SUBVOL" ]] \
+    && fail "$HOME_SUBVOL already exists — --rollback first if retrying"
+  log "snapshotting current root to $snap"
+  if [[ $MODE == "apply" ]]; then
+    mkdir -p "$TOP_MNT/@.snapshots" \
+      || fail "cannot create @.snapshots dir at btrfs top"
+    btrfs subvolume snapshot -r / "$snap" \
+      || fail "root snapshot failed — aborting before any other change"
+  else
+    run btrfs subvolume snapshot -r / "$snap"
+  fi
   # Separate home subvolume: sharing @home across Arch and Ubuntu would mix
   # dotfiles/dconf between Hyprland and Pantheon. Cheap to separate now.
   log "creating $TOP_MNT/$SUBVOL_NAME + $TOP_MNT/$HOME_SUBVOL"
   run btrfs subvolume create "$TOP_MNT/$SUBVOL_NAME"
   run btrfs subvolume create "$TOP_MNT/$HOME_SUBVOL"
 
-  local workdir tarball
+  local workdir tarball tarname
   workdir=$(mktemp -d /tmp/elementary-grow.XXXXXX)
-  tarball="$workdir/ubuntu-base.tar.gz"
+  tarname=$(basename "$UBUNTU_BASE_URL")
+  tarball="$workdir/$tarname"
   log "fetching Ubuntu $UBUNTU_SUITE base ($UBUNTU_BASE_URL)"
   if [[ $MODE == "apply" ]]; then
     curl -fSL -o "$tarball" "$UBUNTU_BASE_URL" \
       || fail "base tarball download failed — check network/suite name"
     curl -fSL -o "$workdir/SHA256SUMS" "$(dirname "$UBUNTU_BASE_URL")/SHA256SUMS" \
       || fail "checksum file download failed"
-    ( cd "$workdir" && sha256sum -c --status <(grep "arm64.tar.gz" SHA256SUMS) ) \
+    ( cd "$workdir" && sha256sum -c --status <(grep -F "$tarname" SHA256SUMS) ) \
       || fail "base tarball checksum MISMATCH — refusing to unpack"
     tar -xzpf "$tarball" -C "$TOP_MNT/$SUBVOL_NAME"
   else log "(dry-run) would download, verify, and unpack the base tarball"; fi
