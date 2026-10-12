@@ -29,6 +29,7 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 
 <h2>How this differs from Asahi / Omarchy installers</h2>
 <p>This project is an <strong>image factory, not an installer command</strong>. Asahi ships an installer app you run from macOS; Omarchy ships a script you run inside an already-booted Linux. Here, CI builds a bootable live ISO (hours, in the cloud); you flash it to USB and boot it. There is no one-line command that transforms your running Mac — and nothing here can touch your Mac until you deliberately boot media it produced.</p>
+<p>A second, design-stage track exists for machines already booting omarchy-mac: a <strong>single grow-from-omarchy command</strong> (<code>transform/elementary-grow.sh</code>) that adds an elementary boot entry alongside the old system. Dry-run review on the real machine comes before any <code>--apply</code>.</p>
 
 <h2>Support &amp; parity</h2>
 <p>Full matrix: <a href="support.html">support.html</a> — per-feature status on the stock Ubuntu kernel vs the planned Asahi kernel, plus the tested-on table (currently empty; testers wanted).</p>

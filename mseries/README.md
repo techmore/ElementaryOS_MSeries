@@ -36,6 +36,17 @@ macOS install, or the existing Omarchy ISO on your NAS.
 
 ## Layout
 
+Two tracks, one shared hardware layer:
+
+- **Image factory** (`mkosi.images/apple-silicon/` + arm64 wiring): builds
+  a bootable live ISO in CI. Long-term clean path; blocked on kernel +
+  firmware work (see KERNEL-REPORT.md, KERNEL-SOURCE.md).
+- **Transform** (`transform/elementary-grow.sh`, design in
+  `mseries/TRANSFORM-DESIGN.md`): single command run on a booted
+  omarchy-mac that grows an elementary boot entry alongside the existing
+  system (new subvolume, reused Asahi kernel, additive GRUB entry).
+  Untested — dry-run review on the real machine comes first.
+
 - `mseries/PORT-MAP.md` — every omarchy-mac Apple fix, mapped to
   portable / N-A with reasons.
 - `mseries/UPSTREAM-PINS.md` — exact upstream commits this is based on.
