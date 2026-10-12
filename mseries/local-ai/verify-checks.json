@@ -73,6 +73,27 @@
       "note": "2026-10-12: QUIRK_NO_DP_TUNNEL for Apple routers. Before: ~316 'DPRX read timeout' lines per attempt, every ~30 s. Not yet seen live because the dock was unplugged when the module was reloaded.",
       "precondition": "[ -d /sys/bus/thunderbolt/devices/0-1 ] && [ $(( $(date +%s) - $(journalctl -k -b -o short-unix 2>/dev/null | grep 'new device found, vendor=0xd4' | tail -1 | cut -d. -f1) )) -gt 120 ]",
       "command": "s=$(journalctl -k -b -o short-unix 2>/dev/null | grep 'new device found, vendor=0xd4' | tail -1 | cut -d. -f1); n=$(journalctl -k -b --since \"@$s\" 2>/dev/null | grep -c 'DPRX read timeout'); echo \"DPRX read timeouts since the dock appeared: $n (was ~316 per attempt)\"; [ \"$n\" -eq 0 ]"
+    },
+    {
+      "id": "speakersafetyd-active",
+      "title": "Speaker protection daemon is running",
+      "note": "2026-10-12: speakersafetyd 1.1.2 installed (j314 profile identical to Arch's 2.0.1). The DSP chain (asahi-audio) could not be installed: Ubuntu's PipeWire has no LV2 filter plugin.",
+      "precondition": "[ -e /var/lib/dpkg/info/speakersafetyd.list ]",
+      "command": "systemctl is-active speakersafetyd && journalctl -u speakersafetyd -b --no-pager -n 40 -o cat | grep -m1 'Sample rate'"
+    },
+    {
+      "id": "amp-overcurrent",
+      "title": "Speaker amp over-current faults have stopped",
+      "note": "2026-10-12: tas2764 1-0039 logged 'fault: over current' at ~30-60 min intervals even with volume 0 before speakersafetyd. If this keeps failing, the faults are idle power-up glitches, not something the daemon fixes.",
+      "precondition": "[ $(( $(date +%s) - $(stat -c %Y /var/lib/dpkg/info/speakersafetyd.list) )) -gt 7200 ]",
+      "command": "n=$(journalctl -k --since '-2h' --no-pager 2>/dev/null | grep -c 'fault: over current'); echo \"over-current faults in the last 2 h: $n\"; [ \"$n\" -eq 0 ]"
+    },
+    {
+      "id": "audio-output-ok",
+      "kind": "manual",
+      "title": "Speakers still work (quiet test)",
+      "hint": "Audio is back to the plain 'Built-in Audio Stereo' output, muted at 0. Raise the volume slowly in the sound menu and play something quiet. Speakers will sound plain/quiet (no Apple DSP profile yet).",
+      "precondition": "true"
     }
   ]
 }

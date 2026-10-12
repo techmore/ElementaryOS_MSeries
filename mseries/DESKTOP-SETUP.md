@@ -471,14 +471,20 @@ Fixes that can only be verified later (after a reboot or login, or when the dock
 
 * **Speaker amplifier faults, speakersafetyd missing.** `tas2764 1-0039: fault: over current` three times (~30-60 min
   apart, constant context bytes `02,19,00,00,00`) plus bursts of `bad TDM clock`. The kernel's "Speaker Volume Unlock"
-  is in its locked state and the sink volume is 0, so nothing unsafe is being driven, but the elementary root has none
-  of the Apple audio stack the Arch root already runs (`speakersafetyd` 2.0.1, `asahi-audio` 4.1,
-  `alsa-ucm-conf-asahi` 10). Ubuntu carries older versions (1.1.2 / 3.4 / 8). Undecided.
+  was locked and the sink volume 0, so nothing unsafe was being driven, but the elementary root had none of the Apple
+  audio stack the Arch root runs. **Result:** `speakersafetyd` 1.1.2 installed and running (its `j314.conf` is
+  byte-identical to Arch's 2.0.1; per-woofer limits loaded). The DSP chain (`asahi-audio` + `alsa-ucm-conf-asahi`) was
+  tried and **reverted**: it needs PipeWire's LV2 filter plugin, which Ubuntu's PipeWire 1.6.2 lacks (Arch's 1.6.9 has
+  `libspa-filter-graph-plugin-lv2.so`), so `spa.filter-graph: can't load plugin type 'lv2'` and the speaker sink
+  vanished, leaving only a headphone sink at 100%. Audio was restored (Built-in Audio Stereo, muted) and
+  `install-audio-stack.sh --with-dsp` now refuses until that plugin exists. Retry when Ubuntu's PipeWire ships it
+  (or consider building the plugin from the matching PipeWire source). Tracked by the `amp-overcurrent` check.
 * **Wingpanel SEGV (3 today).** Identical stack each time: `PanelWindow.on_realize` -> `wl_proxy_get_version`, a
   Wayland proxy invalid during a panel (re)spawn. Gala respawns the panel, which is the recovery; a null check would
   leave an unanchored panel running, so it is deliberately left alone. Report upstream.
 * **Orca started and died at 18:12.** Shortcut `<Alt><Super>s`; with Command/Control swapped it is physical
-  Control+Option+S. Orca then fails with an XKB `BadValue` under Xwayland. Harmless.
+  Control+Option+S. Orca then fails with an XKB `BadValue` under Xwayland. Shortcut removed
+  (`gsettings set org.gnome.settings-daemon.plugins.media-keys screenreader "[]"`; `gsettings reset` restores it).
 * **Repo lint:** `shellcheck` over 58 scripts: 0 errors; 13 warnings (mostly `ls | grep` style; `SC2114` is upstream
   elementary's intentional `/usr/local` replacement in the image). Fixed: `build-m1n1.sh` ignored its pinned SHA.
 * **CI gap:** only the wifi test ran. CI now runs every Python test file. `test_bridge.py` had no runner.
