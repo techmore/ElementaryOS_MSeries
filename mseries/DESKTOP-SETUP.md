@@ -319,7 +319,7 @@ Findings from reading this boot's logs, `systemctl`, `ps`, `/proc/meminfo` and t
 | No swap | `free`: 0 B swap, 19 GB used, 11.6 GB shared (GPU buffers) | `install-system-tuning.sh`: zram swap (half of RAM, max 8 GiB, zstd), swappiness 100, page-cluster 0, zswap off |
 | AppCenter background daemon | 682 MB resident | autostart override (`Hidden=true`); AppCenter itself still works |
 | ModemManager running, duplicate snap CUPS | no modem; apt CUPS + snap CUPS both running | disabled ModemManager and snap cups |
-| Wi-Fi resume recovery could never trigger or work | rejection filter used `journalctl -k` (wpa_supplicant logs are not kernel messages); `modprobe -r brcmfmac` failed with "Module brcmfmac is in use"; "connecting" counted as down so it restarted NetworkManager after every slow resume | rewritten in `mkosi.images/.../mseries-wifi-resume-fix`: acts only on recent status-16 rejections while Wi-Fi is not connected, stops NetworkManager/wpa_supplicant before reloading `brcmfmac_wcc`+`brcmfmac`, then restarts them |
+| Wi-Fi resume recovery could not unload the driver | `modprobe -r brcmfmac` failed with "Module brcmfmac is in use": brcmfmac is held by its vendor module (`brcmfmac_wcc`, refcount 1), not by NetworkManager. The rejection counter also read `journalctl -k`, which never contains wpa_supplicant lines | `mseries-wifi-resume-fix` now uses `modprobe -r --remove-holders` and loads the holders back, and reads rejections from the wpa_supplicant/NetworkManager units. The policy (airplane mode respected, Ethernet does not hide a down Wi-Fi, abort on failed unload) is unchanged and covered by `mseries/test-wifi-resume.py`. |
 | Build caches on the Arch side | 34 GB (compressed on disk: ~9 GB) | removed `usb4-pkg`, `fairydust`, `usb4`, `test`; built packages kept in `~/fairydust-usb4/pkgs/` |
 
 Historical issues left outside the system-tuning change: Wingpanel's intermittent SEGV in `PanelWindow.on_realize`
@@ -466,3 +466,21 @@ Fixes that can only be verified later (after a reboot or login, or when the dock
 * `mseries-verify status`, `history [ID]`, `run --notify`, `recheck ID`, `reload` (re-reads
   `mseries/local-ai/verify-checks.json`; recorded results are kept). Add new "check this later" items there.
 * Commands come only from that seed file, never from a model. Tests: `python3 -I mseries/local-ai/test_verify.py`.
+
+### Second sweep (same day): kernel/journal and the repo itself
+
+* **Speaker amplifier faults, speakersafetyd missing.** `tas2764 1-0039: fault: over current` three times (~30-60 min
+  apart, constant context bytes `02,19,00,00,00`) plus bursts of `bad TDM clock`. The kernel's "Speaker Volume Unlock"
+  is in its locked state and the sink volume is 0, so nothing unsafe is being driven, but the elementary root has none
+  of the Apple audio stack the Arch root already runs (`speakersafetyd` 2.0.1, `asahi-audio` 4.1,
+  `alsa-ucm-conf-asahi` 10). Ubuntu carries older versions (1.1.2 / 3.4 / 8). Undecided.
+* **Wingpanel SEGV (3 today).** Identical stack each time: `PanelWindow.on_realize` -> `wl_proxy_get_version`, a
+  Wayland proxy invalid during a panel (re)spawn. Gala respawns the panel, which is the recovery; a null check would
+  leave an unanchored panel running, so it is deliberately left alone. Report upstream.
+* **Orca started and died at 18:12.** Shortcut `<Alt><Super>s`; with Command/Control swapped it is physical
+  Control+Option+S. Orca then fails with an XKB `BadValue` under Xwayland. Harmless.
+* **Repo lint:** `shellcheck` over 58 scripts: 0 errors; 13 warnings (mostly `ls | grep` style; `SC2114` is upstream
+  elementary's intentional `/usr/local` replacement in the image). Fixed: `build-m1n1.sh` ignored its pinned SHA.
+* **CI gap:** only the wifi test ran. CI now runs every Python test file. `test_bridge.py` had no runner.
+* **A mistake worth recording:** the first Wi-Fi rewrite overwrote newer tested logic and broke two CI tests;
+  restored in `2bcd925`. Re-read a file immediately before replacing part of it, and run the repo's tests before pushing.
