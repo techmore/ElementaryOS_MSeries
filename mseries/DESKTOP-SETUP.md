@@ -276,3 +276,9 @@ launching `/opt/OpenCode/ai.opencode.desktop`. It was launched successfully
 during the audit. The terminal command remains `~/.opencode/bin/opencode`.
 GitHub's legacy latest release was 1.19.0 at audit time; do not downgrade the
 installed desktop based solely on that endpoint.
+
+## Local AI and performance tools
+
+Coreglass and MLX Chat are now installed on the M1 Pro. MLX uses an isolated
+Honeykrisp compute driver; the desktop Mesa package is unchanged. Start with
+the Compact model pair. See [local AI setup and verification](local-ai/README.md).

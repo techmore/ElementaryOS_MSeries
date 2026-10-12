@@ -1,0 +1,16 @@
+diff --git a/coreglass/remote.py b/coreglass/remote.py
+index 91da751..ea03edf 100644
+--- a/coreglass/remote.py
++++ b/coreglass/remote.py
+@@ -89,8 +89,9 @@ def resolve(name):
+ 
+ 
+ def ssh(host, cmd, stdin="", timeout=120):
+-    return subprocess.run(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=8", host["ssh"], cmd],
+-                          input=stdin, text=True, capture_output=True, timeout=timeout)
++    command = (["bash", "-c", cmd] if host["ssh"] == "local" else
++               ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=8", host["ssh"], cmd])
++    return subprocess.run(command, input=stdin, text=True, capture_output=True, timeout=timeout)
+ 
+ 
+ def preflight(host):

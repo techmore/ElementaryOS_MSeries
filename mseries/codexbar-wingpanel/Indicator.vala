@@ -39,7 +39,10 @@ namespace MSeries {
             panel_display = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 5);
             panel_display.append (panel_icon);
             panel_display.append (panel_label);
-            panel_display.set_tooltip_text ("OpenAI Codex usage remaining");
+            panel_display.set_tooltip_text ("OpenAI Codex usage remaining · Middle-click to refresh");
+            var refresh_gesture = new Gtk.GestureClick () { button = 2 };
+            refresh_gesture.released.connect (() => refresh_usage ());
+            panel_display.add_controller (refresh_gesture);
             this.visible = true;
 
             menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 12) {
