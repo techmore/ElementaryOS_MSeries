@@ -12,7 +12,9 @@ namespace MSeries {
         private Gtk.Label status_label;
         private Gtk.Box providers_box;
         private Gtk.Button refresh_button;
-        private Gtk.Image refresh_icon;
+        private Gtk.Stack refresh_display;
+        private Gtk.Spinner refresh_spinner;
+        private uint refresh_poll_source = 0;
         private string executable;
         private bool request_in_flight = false;
         private bool snapshot_busy = false;
@@ -55,51 +57,55 @@ namespace MSeries {
             menu_icon.add_css_class ("symbolic");
             title_row.append (menu_icon);
 
-            var title = new Gtk.Label ("CodexBar") {
+            var title_stack = new Gtk.Box (Gtk.Orientation.VERTICAL, 3) {
+                hexpand = true
+            };
+            var title = new Granite.HeaderLabel ("CodexBar") {
+                size = Granite.HeaderLabel.Size.H3
+            };
+            title_stack.append (title);
+            status_label = new Gtk.Label ("Loading usage…") {
                 xalign = 0,
-                hexpand = true,
-                halign = Gtk.Align.START
+                wrap = true,
+                max_width_chars = 34
             };
-            title.add_css_class ("heading");
-            title_row.append (title);
+            status_label.add_css_class ("dim-label");
+            status_label.add_css_class ("caption");
+            title_stack.append (status_label);
+            title_row.append (title_stack);
 
-            refresh_icon = new Gtk.Image.from_icon_name ("view-refresh-symbolic") {
-                pixel_size = 16
-            };
-            refresh_icon.add_css_class ("symbolic");
+            refresh_display = new Gtk.Stack ();
+            refresh_display.add_named (new Gtk.Image.from_icon_name ("view-refresh-symbolic"), "idle");
+            refresh_spinner = new Gtk.Spinner ();
+            refresh_display.add_named (refresh_spinner, "busy");
             refresh_button = new Gtk.Button () {
-                child = refresh_icon,
-                tooltip_text = "Refresh usage"
+                child = refresh_display,
+                tooltip_text = "Refresh usage",
+                valign = Gtk.Align.CENTER
             };
             refresh_button.add_css_class ("flat");
             refresh_button.clicked.connect (() => refresh_usage ());
             title_row.append (refresh_button);
             menu.append (title_row);
 
-            status_label = new Gtk.Label ("Loading CodexBar usage…") {
-                xalign = 0,
-                wrap = true,
-                halign = Gtk.Align.FILL
+            providers_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 16);
+            var scroll = new Gtk.ScrolledWindow () {
+                child = providers_box,
+                hscrollbar_policy = Gtk.PolicyType.NEVER,
+                vscrollbar_policy = Gtk.PolicyType.AUTOMATIC,
+                propagate_natural_height = true,
+                max_content_height = 420
             };
-            status_label.add_css_class ("dim-label");
-            status_label.add_css_class ("caption");
-            menu.append (status_label);
+            menu.append (scroll);
+            menu.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
 
-            providers_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 12);
-            menu.append (providers_box);
-
-            var separator = new Gtk.Separator (Gtk.Orientation.HORIZONTAL);
-            menu.append (separator);
-
-            var action_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) {
-                homogeneous = true,
-                halign = Gtk.Align.END
-            };
-            action_row.append (make_action_button ("Open quick view", "view-reveal-symbolic", "--quick-view"));
-            action_row.append (make_action_button ("Open usage", "utilities-system-monitor-symbolic", "--usage"));
-            action_row.append (make_action_button ("Open spending", "view-list-symbolic", "--spending"));
-            action_row.append (make_action_button ("Open settings and sign in", "preferences-system-symbolic", "--settings"));
-            menu.append (action_row);
+            // Labeled, borderless action rows live inside Wingpanel's popover.
+            var actions = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+            actions.append (make_action_button ("Quick View…", "view-reveal-symbolic", "--quick-view"));
+            actions.append (make_action_button ("Usage Details…", "view-list-symbolic", "--usage"));
+            actions.append (make_action_button ("Spending…", "accessories-calculator-symbolic", "--spending"));
+            actions.append (make_action_button ("Settings & Sign In…", "preferences-system-symbolic", "--settings"));
+            menu.append (actions);
 
             // CodexBar owns provider authentication, polling and cached usage.
             // This indicator only reads its documented, same-user local snapshot.
@@ -116,44 +122,60 @@ namespace MSeries {
             Timeout.add_seconds (60, () => { read_snapshot (); return Source.CONTINUE; });
         }
 
-        private Gtk.Button make_action_button (string tooltip, string icon_name, string action) {
-            var button = new Gtk.Button () {
-                tooltip_text = tooltip,
-                width_request = 36,
-                height_request = 36
-            };
-            var icon = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 16 };
-            icon.add_css_class ("symbolic");
-            button.set_child (icon);
+        private Gtk.Button make_action_button (string label, string icon_name, string action) {
+            var content = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
+            content.append (new Gtk.Image.from_icon_name (icon_name) { pixel_size = 16 });
+            content.append (new Gtk.Label (label) { xalign = 0, hexpand = true });
+            var button = new Gtk.Button () { child = content };
             button.add_css_class ("flat");
-            button.clicked.connect (() => run_action (action));
+            button.clicked.connect (() => {
+                var popover = button.get_ancestor (typeof (Gtk.Popover)) as Gtk.Popover;
+                if (popover != null) {
+                    popover.popdown ();
+                }
+                run_action (action);
+            });
             return button;
         }
 
+        private void set_refreshing (bool busy) {
+            refresh_display.set_visible_child_name (busy ? "busy" : "idle");
+            refresh_spinner.set_spinning (busy);
+            refresh_button.set_sensitive (!busy);
+        }
+
         private void refresh_usage () {
-            run_action ("--refresh");
+            if (!run_action ("--refresh")) {
+                return;
+            }
             status_label.set_text ("Refreshing usage…");
-            refresh_icon.set_from_icon_name ("process-working-symbolic");
-            refresh_button.set_sensitive (false);
+            set_refreshing (true);
+            if (refresh_poll_source != 0) {
+                Source.remove (refresh_poll_source);
+            }
             refresh_poll_count = 0;
-            Timeout.add_seconds (2, () => {
+            refresh_poll_source = Timeout.add_seconds (2, () => {
                 read_snapshot ();
                 refresh_poll_count++;
                 if ((!snapshot_busy && refresh_poll_count >= 3) || refresh_poll_count >= 30) {
+                    refresh_poll_source = 0;
+                    set_refreshing (false);
                     return Source.REMOVE;
                 }
                 return Source.CONTINUE;
             });
         }
 
-        private void run_action (string action) {
+        private bool run_action (string action) {
             try {
                 Pid child_pid;
                 Process.spawn_async (null, { executable, action }, null,
                     SpawnFlags.SEARCH_PATH | SpawnFlags.STDOUT_TO_DEV_NULL | SpawnFlags.STDERR_TO_DEV_NULL,
                     null, out child_pid);
+                return true;
             } catch (Error e) {
                 status_label.set_text ("Could not open CodexBar: " + e.message);
+                return false;
             }
         }
 
@@ -199,14 +221,21 @@ namespace MSeries {
                 var snapshot = root.get_object ();
                 var entries = snapshot.get_array_member ("entries");
                 if (entries == null || entries.get_length () == 0) {
-                    show_unavailable ("No quota data yet. Open Settings to sign in.");
+                    if (snapshot.get_boolean_member ("busy")) {
+                        snapshot_busy = true;
+                        set_refreshing (true);
+                        status_label.set_text ("Fetching usage…");
+                        clear_provider_rows ();
+                        append_subtle_row ("Your limits will appear when the update completes.");
+                    } else {
+                        show_unavailable ("No quota data yet. Open Settings to sign in.");
+                    }
                     return;
                 }
 
                 clear_provider_rows ();
                 snapshot_busy = snapshot.get_boolean_member ("busy");
-                refresh_icon.set_from_icon_name (snapshot_busy ? "process-working-symbolic" : "view-refresh-symbolic");
-                refresh_button.set_sensitive (!snapshot_busy);
+                set_refreshing (snapshot_busy);
                 string codex_panel_summary = "";
                 string claude_panel_summary = "";
                 for (uint i = 0; i < entries.get_length (); i++) {
@@ -254,28 +283,33 @@ namespace MSeries {
             var provider = entry.get_string_member ("provider") ?? "Provider";
             var title_text = provider.down () == "codex" ? "OpenAI Codex" :
                 provider.down () == "claude" ? "Claude" : provider;
-            var title = new Gtk.Label (title_text) {
-                xalign = 0,
-                halign = Gtk.Align.START
+            var title = new Granite.HeaderLabel (title_text) {
+                size = Granite.HeaderLabel.Size.H4
             };
-            title.add_css_class ("heading");
 
             var provider_section = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
             provider_section.append (title);
             providers_box.append (provider_section);
 
             var previous_provider_box = providers_box;
-            providers_box = provider_section;
+            var limits = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+            limits.add_css_class (Granite.CssClass.CARD);
+            provider_section.append (limits);
+            providers_box = limits;
 
             var windows = entry.get_array_member ("windows");
             if (windows != null && windows.get_length () > 0) {
                 for (uint i = 0; i < windows.get_length (); i++) {
+                    if (i > 0) {
+                        limits.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
+                    }
                     append_window (windows.get_object_element (i));
                 }
             } else {
                 append_metric_row ("Usage", "Unavailable");
             }
 
+            providers_box = provider_section;
             var provider_status = entry.get_string_member ("status") ?? "";
             if (provider_status.length > 0) {
                 append_subtle_row ("Status · " + provider_status);
@@ -344,20 +378,20 @@ namespace MSeries {
             var remaining_node = window.get_member ("remaining");
 
             var quota_card = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) {
-                margin_top = 2,
-                margin_bottom = 2,
-                margin_start = 10,
-                margin_end = 10
+                margin_top = 12,
+                margin_bottom = 12,
+                margin_start = 12,
+                margin_end = 12
             };
-            quota_card.add_css_class ("card");
 
             var heading = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
             var name_label = new Gtk.Label (label) {
+                ellipsize = Pango.EllipsizeMode.END,
+                tooltip_text = label,
                 xalign = 0,
                 hexpand = true,
                 halign = Gtk.Align.START
             };
-            name_label.add_css_class ("dim-label");
             heading.append (name_label);
 
             if (remaining_node == null || remaining_node.get_node_type () == Json.NodeType.NULL) {
@@ -373,7 +407,7 @@ namespace MSeries {
                 halign = Gtk.Align.END
             };
             percent_label.add_css_class ("numeric");
-            percent_label.add_css_class ("heading");
+            percent_label.set_markup ("<b>%0.0f%%</b> remaining".printf (remaining));
             heading.append (percent_label);
             quota_card.append (heading);
 
@@ -405,13 +439,14 @@ namespace MSeries {
                 xalign = 0,
                 hexpand = true,
                 wrap = true,
-                halign = Gtk.Align.START
+                max_width_chars = 42,
+                halign = Gtk.Align.FILL
             };
             if (subdued) {
                 label.add_css_class ("dim-label");
                 label.add_css_class ("caption");
             } else {
-                label.add_css_class ("heading");
+                label.add_css_class ("caption");
             }
             card.append (label);
         }
@@ -424,18 +459,21 @@ namespace MSeries {
                 if (runout_index >= 0) {
                     var remaining_time = detail.substring (runout_index + runout.length).strip ();
                     if (remaining_time.length > 0) {
-                        return "Runs out in " + remaining_time + " at this pace";
+                        return "About " + remaining_time + " left at this pace";
                     }
                 }
                 if (detail.down ().contains ("lasts until reset")) {
-                    return "Quota lasts until reset at this pace";
+                    return "On pace to last until reset";
                 }
             }
             return "";
         }
 
         private void append_metric_row (string name, string value) {
-            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12) {
+                margin_top = 12, margin_bottom = 12,
+                margin_start = 12, margin_end = 12
+            };
             var name_label = new Gtk.Label (name) {
                 xalign = 0,
                 hexpand = true,
@@ -465,10 +503,28 @@ namespace MSeries {
             snapshot_busy = false;
             panel_label.set_text ("5H — · 7D —");
             panel_display.set_tooltip_text (message);
-            status_label.set_text (message);
-            refresh_icon.set_from_icon_name ("view-refresh-symbolic");
-            refresh_button.set_sensitive (true);
+            status_label.set_text ("Usage unavailable");
+            set_refreshing (false);
             clear_provider_rows ();
+            var empty = new Gtk.Box (Gtk.Orientation.VERTICAL, 12) {
+                margin_top = 12,
+                margin_bottom = 12
+            };
+            var explanation = new Gtk.Label (message) { xalign = 0, wrap = true };
+            explanation.add_css_class ("dim-label");
+            empty.append (explanation);
+            var sign_in = new Gtk.Button.with_label ("Settings & Sign In…") {
+                halign = Gtk.Align.START
+            };
+            sign_in.clicked.connect (() => {
+                var popover = sign_in.get_ancestor (typeof (Gtk.Popover)) as Gtk.Popover;
+                if (popover != null) {
+                    popover.popdown ();
+                }
+                run_action ("--settings");
+            });
+            empty.append (sign_in);
+            providers_box.append (empty);
         }
 
         public override Gtk.Widget get_display_widget () {

@@ -1,7 +1,7 @@
 project('codexbar-wingpanel', 'vala', version: '0.1.0', meson_version: '>= 0.59.0')
 
 libwingpanel_dep = dependency('wingpanel-9')
-granite_dep = dependency('granite-7')
+granite_dep = dependency('granite-7', version: '>= 7.7.0')
 json_dep = dependency('json-glib-1.0')
 indicators_dir = libwingpanel_dep.get_variable(pkgconfig: 'indicatorsdir')
 
