@@ -16,6 +16,7 @@
 #   sudo ./elementary-grow.sh --add-user [NAME]  # login acct (default admin/admin)
 #   sudo ./elementary-grow.sh --finalize [NAME]  # repair-grub + add-user + status
 #   sudo ./elementary-grow.sh --logs       # read-only: new root + last boot logs
+#   sudo ./elementary-grow.sh --sync-kernel  # graft host kernel modules + firmware
 #
 # Safety contract: additive-only. New subvolume, new GRUB menu entry, old
 # system and default boot entry untouched. Every assumption in the design
@@ -38,6 +39,7 @@ for arg in "$@"; do
     --add-user) MODE="add-user" ;;
     --finalize) MODE="finalize" ;;
     --logs) MODE="logs" ;;
+    --sync-kernel) MODE="sync-kernel" ;;
     --dry-run) MODE="dry-run" ;;
     --upload) UPLOAD=1 ;;
     -h|--help) sed -n '2,22p' "$0"; exit 0 ;;
@@ -255,6 +257,8 @@ do_apply() {
   if [[ $MODE == "apply" ]]; then chroot_build "$newroot" \
       || fail "chroot build FAILED — new root incomplete, GRUB entry NOT installed. See log above; fix and re-run (rollback first).";
   else log "(dry-run) would chroot and install elementary-desktop + M-series layer"; fi
+
+  if [[ $MODE == "apply" ]]; then graft_kernel_into "$newroot" || fail "kernel graft failed"; fi
 
   log "installing GRUB entry $GRUB_CUSTOM (additive; default untouched)"
   if [[ $MODE == "apply" ]]; then install_grub_entry "$newroot";
@@ -553,6 +557,43 @@ do_logs() {
   ls "$newroot"/var/log/Xorg* 2>/dev/null || echo "(none)"
 }
 
+# Graft the host kernel's module tree + Asahi firmware into the new root.
+# elementary's Ubuntu userspace ships no linux-asahi modules, but the boot
+# reuses the host kernel — so without this, `modprobe` of anything not baked
+# into the initramfs fails (nls_iso8859-1 for the vfat ESP, i2c_dev, the DCP
+# display stack, …). depmod runs against the grafted tree.
+graft_kernel_into() {
+  local newroot="$1" kver src fw
+  kver=$(uname -r)
+  src="/usr/lib/modules/$kver"
+  if [[ ! -d $src ]]; then
+    log "WARNING: no $src on host — skipping module graft"
+    return 0
+  fi
+  log "grafting kernel modules $kver ($(du -sh "$src" | cut -f1)) into new root"
+  mkdir -p "$newroot/usr/lib/modules"
+  cp -a "$src" "$newroot/usr/lib/modules/" || return 1
+  for fw in apple vendor brcm; do
+    [[ -d /usr/lib/firmware/$fw ]] || continue
+    mkdir -p "$newroot/usr/lib/firmware/$fw"
+    cp -a "/usr/lib/firmware/$fw/." "$newroot/usr/lib/firmware/$fw/" 2>/dev/null || true
+  done
+  # Build modules.dep for the grafted tree (host depmod, alternate root).
+  depmod -b "$newroot" "$kver" 2>/dev/null \
+    || log "WARNING: depmod -b failed; module autoloading may be incomplete"
+  return 0
+}
+
+# Add/refresh the kernel modules + firmware on an already-built @elementary.
+do_sync_kernel() {
+  mount_top
+  trap unmount_top EXIT
+  local newroot="$TOP_MNT/$SUBVOL_NAME"
+  [[ -d "$newroot/etc" ]] || fail "no $SUBVOL_NAME — run --apply first"
+  graft_kernel_into "$newroot" || fail "kernel graft failed"
+  log "kernel modules + Asahi firmware grafted into $SUBVOL_NAME; reboot into it"
+}
+
 # The new entry reuses the RUNNING kernel's command line and only swaps the
 # root subvolume: LUKS cryptdevice, root=, resume, splash and friends are
 # carried over instead of assumed. (Provenance: omarchy's own GRUB entries
@@ -626,6 +667,7 @@ main() {
     add-user) [[ $(id -u) -eq 0 ]] || fail "add-user needs root"; do_add_user "$USER_NAME" ;;
     finalize) [[ $(id -u) -eq 0 ]] || fail "finalize needs root"; do_repair_grub; do_add_user "$USER_NAME"; do_status ;;
     logs) [[ $(id -u) -eq 0 ]] || fail "logs needs root"; do_logs ;;
+    sync-kernel) [[ $(id -u) -eq 0 ]] || fail "sync-kernel needs root"; do_sync_kernel ;;
     *) do_apply ;;
   esac
 }
