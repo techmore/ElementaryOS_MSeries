@@ -70,3 +70,5 @@ authentication and spending to upstream CodexBar. This pass adds its convenient
 middle-click refresh interaction to the native panel item. Provider switchers,
 inline spending charts and adaptive polling remain future work; the separate
 Spending window and upstream refresh settings are available today.
+
+For the full upstream project screen, see [Joshua repository review](../JOSHUA-REPOSITORY-REVIEW.md).

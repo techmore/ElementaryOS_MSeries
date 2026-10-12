@@ -28,7 +28,7 @@ namespace MSeries {
             executable = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "codexbar-linux");
 
             var panel_icon = new Gtk.Image.from_icon_name ("mseries-codexbar-openai-symbolic") {
-                pixel_size = 18
+                pixel_size = 14
             };
             panel_icon.add_css_class ("symbolic");
             panel_label = new Gtk.Label ("5H — · 7D —") {
@@ -45,17 +45,26 @@ namespace MSeries {
             panel_display.add_controller (refresh_gesture);
             this.visible = true;
 
-            menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 12) {
-                margin_top = 12,
-                margin_bottom = 12,
-                margin_start = 12,
-                margin_end = 12,
-                width_request = 340
+            menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 9) {
+                margin_top = 9,
+                margin_bottom = 9,
+                margin_start = 9,
+                margin_end = 9,
+                width_request = 255
             };
 
-            var title_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 10);
+            menu.add_css_class ("mseries-codexbar-compact");
+            var compact_style = new Gtk.CssProvider ();
+            compact_style.load_from_string (
+                ".mseries-codexbar-compact label { font-size: 9pt; } " +
+                ".mseries-codexbar-compact .h3 { font-size: 11pt; } " +
+                ".mseries-codexbar-compact button { padding: 5px 7px; }");
+            Gtk.StyleContext.add_provider_for_display (menu.get_display (), compact_style,
+                Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+            var title_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
             var menu_icon = new Gtk.Image.from_icon_name ("mseries-codexbar-openai-symbolic") {
-                pixel_size = 22
+                pixel_size = 17
             };
             menu_icon.add_css_class ("symbolic");
             title_row.append (menu_icon);
@@ -91,13 +100,13 @@ namespace MSeries {
             title_row.append (refresh_button);
             menu.append (title_row);
 
-            providers_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 16);
+            providers_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 12);
             var scroll = new Gtk.ScrolledWindow () {
                 child = providers_box,
                 hscrollbar_policy = Gtk.PolicyType.NEVER,
                 vscrollbar_policy = Gtk.PolicyType.AUTOMATIC,
                 propagate_natural_height = true,
-                max_content_height = 420
+                max_content_height = 315
             };
             menu.append (scroll);
             menu.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
@@ -127,8 +136,8 @@ namespace MSeries {
         }
 
         private Gtk.Button make_action_button (string label, string icon_name, string action) {
-            var content = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
-            content.append (new Gtk.Image.from_icon_name (icon_name) { pixel_size = 16 });
+            var content = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 9);
+            content.append (new Gtk.Image.from_icon_name (icon_name) { pixel_size = 12 });
             content.append (new Gtk.Label (label) { xalign = 0, hexpand = true });
             var button = new Gtk.Button () { child = content };
             button.add_css_class ("flat");
@@ -291,7 +300,7 @@ namespace MSeries {
                 size = Granite.HeaderLabel.Size.H4
             };
 
-            var provider_section = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
+            var provider_section = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
             provider_section.append (title);
             providers_box.append (provider_section);
 
@@ -381,14 +390,14 @@ namespace MSeries {
             var pace = window.get_string_member ("pace") ?? "";
             var remaining_node = window.get_member ("remaining");
 
-            var quota_card = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) {
-                margin_top = 12,
-                margin_bottom = 12,
-                margin_start = 12,
-                margin_end = 12
+            var quota_card = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) {
+                margin_top = 9,
+                margin_bottom = 9,
+                margin_start = 9,
+                margin_end = 9
             };
 
-            var heading = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
+            var heading = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 9);
             var description = new Gtk.Box (Gtk.Orientation.VERTICAL, 4) {
                 hexpand = true, valign = Gtk.Align.CENTER
             };
@@ -429,7 +438,7 @@ namespace MSeries {
                 halign = Gtk.Align.END, valign = Gtk.Align.CENTER
             };
             var percent_label = new Granite.HeaderLabel ("%0.0f%%".printf (remaining)) {
-                size = Granite.HeaderLabel.Size.H2,
+                size = Granite.HeaderLabel.Size.H3,
                 halign = Gtk.Align.END
             };
             balance.append (percent_label);
@@ -499,9 +508,9 @@ namespace MSeries {
         }
 
         private void append_metric_row (string name, string value) {
-            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12) {
-                margin_top = 12, margin_bottom = 12,
-                margin_start = 12, margin_end = 12
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 9) {
+                margin_top = 9, margin_bottom = 9,
+                margin_start = 9, margin_end = 9
             };
             var name_label = new Gtk.Label (name) {
                 xalign = 0,
@@ -535,9 +544,9 @@ namespace MSeries {
             status_label.set_text ("Usage unavailable");
             set_refreshing (false);
             clear_provider_rows ();
-            var empty = new Gtk.Box (Gtk.Orientation.VERTICAL, 12) {
-                margin_top = 12,
-                margin_bottom = 12
+            var empty = new Gtk.Box (Gtk.Orientation.VERTICAL, 9) {
+                margin_top = 9,
+                margin_bottom = 9
             };
             var explanation = new Gtk.Label (message) { xalign = 0, wrap = true };
             explanation.add_css_class ("dim-label");
