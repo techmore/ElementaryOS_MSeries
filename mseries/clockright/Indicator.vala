@@ -10,7 +10,7 @@ private class RightClockIndicator : Wingpanel.Indicator {
     private uint update_timer = 0;
 
     public RightClockIndicator () {
-        GLib.Object (code_name: "clock-right");
+        GLib.Object (code_name: "clockright");
     }
 
     construct {

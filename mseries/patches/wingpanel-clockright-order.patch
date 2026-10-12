@@ -1,0 +1,14 @@
+diff --git a/src/Widgets/IndicatorEntry.vala b/src/Widgets/IndicatorEntry.vala
+index 60e39de..4560311 100644
+--- a/src/Widgets/IndicatorEntry.vala
++++ b/src/Widgets/IndicatorEntry.vala
+@@ -154,7 +154,8 @@ public class Wingpanel.Widgets.IndicatorEntry : Granite.Bin {
+             case Indicator.BLUETOOTH: return 5;
+             case Indicator.POWER: return 6;
+             case Indicator.MESSAGES: return 7;
+-            case Indicator.QUICKSETTINGS: return 8;
++            case "clockright": return 8;
++            case Indicator.QUICKSETTINGS: return 9;
+             default: return 0;
+         }
+     }
