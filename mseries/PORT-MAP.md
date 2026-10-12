@@ -1,5 +1,9 @@
 # Port map: omarchy-mac (quattro) Apple fixes → elementary (Ubuntu/mkosi)
 
+This is the original scaffold port map, not a current hardware status report.
+For the October 12 review, current dock support, Touch ID research and local AI
+plan, see [the optimization audit](OMARCHY-AUDIT-2026-10.md).
+
 Source: https://github.com/omacom/omarchy-mac, branch `quattro`,
 `install/hardware/apple/`, `bin/omarchy-hw-apple`, `bin/omarchy-audio-asahi-mic-map`,
 `docs/apple-silicon-trackpad.md`, `docs/arm-package-sources.md`.

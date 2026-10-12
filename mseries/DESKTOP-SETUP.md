@@ -142,12 +142,14 @@ approved from the primary phone.
 
 ## Touch ID on M1 Pro
 
-Touch ID is not currently supported on this M1 Pro under Asahi Linux, so it
-cannot be enabled by the elementary or Omarchy desktop setup. Asahi lists
-TouchID as TBA for M1 Pro/Max/Ultra devices. Omarchy issue
-[#8271](https://github.com/omacom/omarchy/issues/8271) describes a separate
-Apple T1 firmware/EFI risk on Intel Touch Bar MacBook Pros, not the M1 Pro.
-Source: https://github.com/AsahiLinux/docs/blob/main/docs/platform/feature-support/m1.md
+Touch ID is not enabled or verified on this M1 Pro. The earlier blanket
+unsupported statement was too strong: [Omarchy M's September announcement](https://omarchy.org/news/2026/09/introducing-omarchy-m/)
+reports Secure Enclave Touch ID work, and an experimental kernel was advertised
+on September 29. Asahi's feature matrix still lists TouchID as TBA. A tested
+M1 Pro kernel, firmware, enrollment service and PAM integration must be
+identified before enabling fingerprint login. See [the optimization audit](OMARCHY-AUDIT-2026-10.md).
+Issue [#8271](https://github.com/omacom/omarchy/issues/8271) concerns Intel T1
+firmware/EFI, not this Apple Silicon machine.
 
 ## Camera notch and centered panel indicators
 
@@ -191,13 +193,12 @@ check `dmesg` no longer shows `Failed to get dp-xbar`.
 
 ## Dock diagnosis
 
-Charging is detected, but the attached USB-C dock's mouse does not enumerate.
-Kernel log: `ATCPHY_PIPEHANDLER_STATE_USB4 not implemented; falling back to USB2`.
-Only an ASIX USB Ethernet adapter and root hubs were visible. DRM exposes
-internal `eDP-1` (connected) and built-in `HDMI-A-1` (disconnected), no USB-C
-display connector. This points to USB4/Thunderbolt dock compatibility rather
-than a mouse preference. Test a plain USB hub/adapter and built-in HDMI.
-Do not assume a desktop settings change can enable unsupported USB4 hardware.
+The original stock-kernel diagnosis is superseded by the experimental
+fairydust USB4 work. Dock USB2 peripherals and USB3 Ethernet were verified on
+October 12; tunneled dock video remains unsupported. See
+[fairydust USB4 status and recovery](fairydust/usb4/README.md) for the exact
+hardware, kernel patches and rollback procedure. Plain DP Alt Mode and
+Thunderbolt DP tunneling are separate paths.
 
 ## OpenCode
 
@@ -266,3 +267,12 @@ Possible optimizations, not applied (each needs sudo and a decision):
 - **CPU:** with the Claude and ChatGPT desktop apps open, load average sits near 3 on 10
   cores, and `gala` uses about 15% while they repaint. Not investigated further.
 
+
+## OpenCode Desktop verification (2026-10-12)
+
+The ARM64 `opencode` Debian package version 2.0.27 is already installed.
+Its visible application entry is `/usr/share/applications/ai.opencode.desktop.desktop`,
+launching `/opt/OpenCode/ai.opencode.desktop`. It was launched successfully
+during the audit. The terminal command remains `~/.opencode/bin/opencode`.
+GitHub's legacy latest release was 1.19.0 at audit time; do not downgrade the
+installed desktop based solely on that endpoint.
