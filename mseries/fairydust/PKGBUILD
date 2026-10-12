@@ -1,0 +1,90 @@
+# Fairydust kernel for Apple Silicon, packaged for Asahi ALARM.
+# Adapted from Grzegorz Smajdor's kit (GPL-2.0):
+#   https://grzegorzsmajdor.com/blog/2026-omarchy-asahi-arch-m1/
+# Retargeted to this machine: Asahi asahi-7.1.13-3 (apple,j314s, M1 Pro).
+# See ../USB-C-DOCK-DP-ALT-MODE.md and ./README.md.
+
+_rcver=7.1.13
+_asahirel=3
+_fairydust_commits=12
+pkgrel=1
+
+_m1n1_version=1.4.21
+pkgbase=linux-asahi-fairydust
+_commit_id=asahi-${_rcver}-${_asahirel}
+_srcname=linux-${_commit_id}
+pkgver="${_rcver}.asahi${_asahirel}.fairydust${_fairydust_commits}"
+pkgname=("$pkgbase")
+pkgdesc="Asahi Linux kernel with experimental Fairydust USB-C DisplayPort support"
+arch=('aarch64')
+url="https://github.com/AsahiLinux/linux/tree/fairydust"
+license=('GPL2')
+
+makedepends=(
+  base-devel bc dtc kmod libelf pahole cpio perl rustup rust-bindgen
+  tar xz xmlto python
+)
+depends=(coreutils kmod initramfs "m1n1>=${_m1n1_version}")
+optdepends=(
+  'crda: set the wireless regulatory domain'
+  'linux-firmware: firmware for additional devices'
+)
+provides=(WIREGUARD-MODULE "linux=${_rcver}")
+options=('!strip' '!debug')
+
+source=(
+  "https://github.com/AsahiLinux/linux/archive/${_commit_id}.tar.gz"
+  config
+  fairydust.patch
+)
+# Generate with `updpkgsums` after producing config + fairydust.patch
+# (see README.md). SKIP keeps the first build from failing on a stale hash.
+sha256sums=('SKIP' 'SKIP' 'SKIP')
+
+export KBUILD_BUILD_HOST=archlinux
+export KBUILD_BUILD_USER=$pkgbase
+export KBUILD_BUILD_TIMESTAMP="$(date -Ru${SOURCE_DATE_EPOCH:+d @$SOURCE_DATE_EPOCH})"
+
+prepare() {
+  cd "$_srcname"
+  patch -Np1 < ../fairydust.patch
+
+  # Keep this kernel alongside stock linux-asahi with a distinct release name.
+  echo "-${_asahirel}-${pkgrel}-fairydust" > localversion.10-pkgrel
+
+  mkdir -p build/base
+  cp ../config build/base/.config
+
+  # The extra Alt Mode helpers the working Fedora build relies on.
+  scripts/config --file build/base/.config --module TYPEC_DP_ALTMODE
+  scripts/config --file build/base/.config --module TYPEC_NVIDIA_ALTMODE
+  scripts/config --file build/base/.config --module TYPEC_TBT_ALTMODE
+
+  make olddefconfig prepare O="$PWD/build/base"
+  make -s kernelrelease O="$PWD/build/base" > build/base/version
+  printf 'Prepared %s version %s\n' "$pkgbase" "$(<build/base/version)"
+}
+
+build() {
+  cd "$_srcname"
+  make all O="$PWD/build/base" -j "$(nproc)"
+}
+
+package() {
+  cd "$_srcname"
+  local output="$PWD/build/base"
+  local kernver
+  kernver="$(<"$output/version")"
+  local modulesdir="$pkgdir/usr/lib/modules/$kernver"
+
+  install -Dm644 "$output/arch/arm64/boot/Image" "$modulesdir/vmlinuz"
+  printf '%s\n' "$pkgbase" | install -Dm644 /dev/stdin "$modulesdir/pkgbase"
+
+  make O="$output" INSTALL_MOD_PATH="$pkgdir/usr" \
+    INSTALL_MOD_STRIP=1 modules_install
+
+  install -Dt "$modulesdir/dtbs" "$output"/arch/arm64/boot/dts/apple/*.dtb
+  rm -f "$modulesdir/source" "$modulesdir/build"
+}
+
+# vim:set ts=8 sts=2 sw=2 et:

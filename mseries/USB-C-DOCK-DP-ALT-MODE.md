@@ -108,10 +108,14 @@ CONFIG_TYPEC_NVIDIA_ALTMODE=m
 CONFIG_TYPEC_TBT_ALTMODE=m
 ```
 
-Helper: `mseries/fairydust/build-fairydust-kernel.sh` (run on the Arch/omarchy
-side, not in the elementary subvolume). It is intentionally conservative:
-it refuses to touch `/boot` unless `--install` is passed and prints the
-exact `update-m1n1` + GRUB steps to review.
+Build kit: `mseries/fairydust/` — `PKGBUILD`, `build-and-install.sh`,
+`verify.sh` (adapted from Grzegorz Smajdor's Asahi-Arch kit, GPL-2.0). It
+pins Asahi `7.1.13-3` (this machine's stock), installs beside stock
+`linux-asahi`, and runs `update-m1n1` + GRUB in `build-and-install.sh`.
+
+The blessed port for `j314/j316/j414/j416` is the **front-left** USB-C port.
+This must be run on the **Arch/omarchy side** (it needs `pacman`, `makepkg`,
+`update-m1n1`, `mkinitcpio`) — not from the elementary subvolume.
 
 ### WD19S caveat
 
