@@ -15,7 +15,7 @@ script installs it to `~/.local/bin/mseries-launcher` and binds `<Control>space`
 (right Command) as custom shortcuts. It clears Pantheon's default Super+Space
 input-source switch; Alt+Shift still switches layouts. Alt+F2 still opens
 Slingshot. Gala cannot place Wayland windows, so the launcher runs through
-XWayland and moves itself: centered horizontally, top edge 75% of the screen
+XWayland and moves itself: centered horizontally, top edge 80% of the screen
 height up from the bottom (`HEIGHT_FROM_BOTTOM` in the script).
 Undo by removing the two `mseries-launcher` entries from
 `org.gnome.settings-daemon.plugins.media-keys custom-keybindings`.

@@ -37,7 +37,7 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gdk, GdkX11, Gio, GLib, Gtk
 
 MAX_RESULTS = 8
-HEIGHT_FROM_BOTTOM = 0.75  # window top edge sits this fraction of the screen height above the bottom
+HEIGHT_FROM_BOTTOM = 0.80  # window top edge sits this fraction of the screen height above the bottom
 
 CSS = b"""
 window.mseries { background: transparent; box-shadow: none; }
