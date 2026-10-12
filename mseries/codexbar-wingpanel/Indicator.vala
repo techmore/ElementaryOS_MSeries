@@ -104,6 +104,7 @@ namespace MSeries {
             actions.append (make_action_button ("Quick View…", "view-reveal-symbolic", "--quick-view"));
             actions.append (make_action_button ("Usage Details…", "view-list-symbolic", "--usage"));
             actions.append (make_action_button ("Spending…", "accessories-calculator-symbolic", "--spending"));
+            actions.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL) { margin_top = 6, margin_bottom = 6 });
             actions.append (make_action_button ("Settings & Sign In…", "preferences-system-symbolic", "--settings"));
             menu.append (actions);
 
@@ -384,31 +385,56 @@ namespace MSeries {
                 margin_end = 12
             };
 
-            var heading = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+            var heading = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
+            var description = new Gtk.Box (Gtk.Orientation.VERTICAL, 4) {
+                hexpand = true, valign = Gtk.Align.CENTER
+            };
             var name_label = new Gtk.Label (label) {
                 ellipsize = Pango.EllipsizeMode.END,
                 tooltip_text = label,
                 xalign = 0,
-                hexpand = true,
-                halign = Gtk.Align.START
+                hexpand = true
             };
-            heading.append (name_label);
+            description.append (name_label);
+            if (reset.length > 0) {
+                var reset_label = new Gtk.Label (reset) {
+                    xalign = 0,
+                    ellipsize = Pango.EllipsizeMode.END,
+                    max_width_chars = 27,
+                    tooltip_text = reset
+                };
+                reset_label.add_css_class ("dim-label");
+                reset_label.add_css_class ("caption");
+                description.append (reset_label);
+            }
+            heading.append (description);
 
             if (remaining_node == null || remaining_node.get_node_type () == Json.NodeType.NULL) {
-                var unknown = new Gtk.Label ("Unavailable") { halign = Gtk.Align.END };
+                var unknown = new Gtk.Label ("—") {
+                    tooltip_text = "This limit has not been reported",
+                    halign = Gtk.Align.END
+                };
                 heading.append (unknown);
                 quota_card.append (heading);
+                append_quota_detail (quota_card, "Usage not reported yet", true);
                 providers_box.append (quota_card);
                 return;
             }
 
-            var remaining = remaining_node.get_double ();
-            var percent_label = new Gtk.Label ("%0.0f%% remaining".printf (remaining)) {
+            var remaining = GLib.Math.fmin (100.0, GLib.Math.fmax (0.0, remaining_node.get_double ()));
+            var balance = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) {
+                halign = Gtk.Align.END, valign = Gtk.Align.CENTER
+            };
+            var percent_label = new Granite.HeaderLabel ("%0.0f%%".printf (remaining)) {
+                size = Granite.HeaderLabel.Size.H2,
                 halign = Gtk.Align.END
             };
-            percent_label.add_css_class ("numeric");
-            percent_label.set_markup ("<b>%0.0f%%</b> remaining".printf (remaining));
-            heading.append (percent_label);
+            balance.append (percent_label);
+            var remaining_label = new Gtk.Label ("remaining") { halign = Gtk.Align.END };
+            remaining_label.add_css_class ("caption");
+            remaining_label.add_css_class ("dim-label");
+            balance.append (remaining_label);
+            heading.append (balance);
             quota_card.append (heading);
 
             var progress = new Gtk.ProgressBar () {
@@ -422,10 +448,10 @@ namespace MSeries {
             }
             quota_card.append (progress);
 
-            if (reset.length > 0) {
-                append_quota_detail (quota_card, reset, true);
-            }
             var estimate = pace_estimate (pace);
+            if (window.get_boolean_member ("warning")) {
+                append_quota_detail (quota_card, remaining <= 0 ? "Quota exhausted" : "Low remaining quota", false);
+            }
             if (estimate.length > 0) {
                 append_quota_detail (quota_card, estimate, false);
             } else if (pace.length > 0) {
