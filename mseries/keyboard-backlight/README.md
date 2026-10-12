@@ -28,7 +28,7 @@ Manual controls:
 Logind gates automatic writes to an active, unlocked graphical session.
 An exposed closed-lid ACPI state also suppresses writes. Locking does not
 force the light off; it leaves the current value alone. Sensor/API failures
-leave lighting untouched and are logged in `/tmp/mseries-keyboard-backlight.log`.
+leave lighting untouched and are logged in `journalctl --user -u mseries-keyboard-backlight.service`.
 Autostart resumes the helper at login. Disable with:
 
 ```sh
@@ -36,8 +36,8 @@ bash mseries/install-keyboard-backlight.sh --uninstall
 ```
 
 Hardware verification on 2026-10-12: M1 Pro / j314s, ambient reading 141 lx,
-UPower adjusted the keyboard from 0 to 59/255; installed helper remained at
-59 after another poll with no logged errors. Physical appearance, lock/lid
+UPower adjusted the keyboard from 0 to 59/255; the first subsequent poll remained at 59 with no logged errors.
+The background helper runs as a user systemd service started by desktop autostart. Physical appearance, lock/lid
 transitions and suspend/resume still need interactive qualification.
 
 Run sensor regression checks with:
