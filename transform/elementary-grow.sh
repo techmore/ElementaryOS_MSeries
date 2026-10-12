@@ -25,6 +25,7 @@ for arg in "$@"; do
     --apply) MODE="apply" ;;
     --rollback) MODE="rollback" ;;
     --status) MODE="status" ;;
+    --finish-root) MODE="finish-root" ;;
     --cleanup-stale) MODE="cleanup-stale" ;;
     --dry-run) MODE="dry-run" ;;
     --upload) UPLOAD=1 ;;
@@ -146,7 +147,8 @@ do_status() {
   grep -c "elementary OS (M-series" /boot/grub/grub.cfg 2>/dev/null || echo "(no entry)"
   echo "--- display manager ---"
   readlink "$TOP_MNT/$SUBVOL_NAME/etc/systemd/system/display-manager.service" 2>/dev/null || echo "(no display-manager symlink)"
-  dpkg-query -W -f='${Status} ${Package}\n' --admindir="$TOP_MNT/$SUBVOL_NAME/var/lib/dpkg" pantheon-greeter lightdm gdm3 2>/dev/null || echo "(greeter pkgs unknown)"
+  echo "--- graphical stack ---"
+  chroot "$TOP_MNT/$SUBVOL_NAME" dpkg -l pantheon gala lightdm io.elementary.greeter io.elementary.wingpanel 2>/dev/null | grep -E "^ii|^un" || echo "(graphical pkgs unknown)"
   echo "--- users (uid>=1000) ---"
   awk -F: '$3>=1000 && $3<60000 {print $1, $3, $6}' "$TOP_MNT/$SUBVOL_NAME/etc/passwd" 2>/dev/null || echo "(no passwd)"
 }
@@ -279,7 +281,7 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-cache show elementary-desktop >/dev/null \
   || { echo "elementary-desktop not in PPAs for $UBUNTU_SUITE — aborting chroot build"; exit 1; }
-apt-get install -y elementary-desktop elementary-minimal elementary-standard pipewire-pulse pipewire-alsa rtkit network-manager
+apt-get install -y --install-recommends elementary-desktop elementary-minimal elementary-standard pantheon io.elementary.greeter io.elementary.wingpanel pipewire-pulse pipewire-alsa rtkit network-manager
 apt-get clean
 EOF
 
@@ -367,6 +369,35 @@ EOF2
   trap - RETURN
 }
 
+# Install the graphical shell into the EXISTING @elementary root (no
+# rebuild): greeter + panel + pantheon session were Recommends-only and got
+# skipped. Additive apt install only; safe to re-run.
+do_finish_root() {
+  mount_top
+  trap unmount_top EXIT
+  local newroot="$TOP_MNT/$SUBVOL_NAME"
+  [[ -d "$newroot/etc/apt" ]] || fail "no $SUBVOL_NAME — run --apply first"
+  mount --bind /dev "$newroot/dev"
+  mount -t devpts devpts "$newroot/dev/pts"
+  mount -t proc proc "$newroot/proc"
+  mount -t sysfs sys "$newroot/sys"
+  mount --bind /run "$newroot/run"
+  cp /etc/resolv.conf "$newroot/etc/resolv.conf"
+  chroot "$newroot" /bin/bash -s <<EOF
+set -euo pipefail
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get install -y --install-recommends pantheon io.elementary.greeter io.elementary.wingpanel
+apt-get clean
+systemctl enable display-manager 2>/dev/null || systemctl enable lightdm 2>/dev/null || true
+EOF
+  local rc=$?
+  umount -R "$newroot/dev" "$newroot/proc" "$newroot/sys" "$newroot/run" 2>/dev/null \
+    || umount -l "$newroot/dev" "$newroot/proc" "$newroot/sys" "$newroot/run" 2>/dev/null || true
+  (( rc == 0 )) || fail "finish-root chroot failed — see log"
+  log "graphical shell installed; re-run --status to verify"
+}
+
 # The new entry reuses the RUNNING kernel's command line and only swaps the
 # root subvolume: LUKS cryptdevice, root=, resume, splash and friends are
 # carried over instead of assumed. (Provenance: omarchy's own GRUB entries
@@ -425,6 +456,7 @@ main() {
   case "$MODE" in
     rollback) [[ $(id -u) -eq 0 ]] || fail "rollback needs root"; do_rollback ;;
     status) [[ $(id -u) -eq 0 ]] || fail "status needs root"; do_status ;;
+    finish-root) [[ $(id -u) -eq 0 ]] || fail "finish-root needs root"; do_finish_root ;;
     cleanup-stale) [[ $(id -u) -eq 0 ]] || fail "cleanup needs root"; cleanup_stale ;;
     *) do_apply ;;
   esac
