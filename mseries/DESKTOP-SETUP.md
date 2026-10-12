@@ -326,3 +326,11 @@ Seen and left alone (noise, not defects here): Wingpanel's intermittent SEGV in 
 Wingpanel indicators, the greeter's wireplumber abort, brcmfmac P2P-device `-52` errors, `systemd-growfs` failing
 to resize the LUKS volume, USB `cannot reset (-71)` floods when a dock is pulled, and kernel taint `S`
 (CPU out of spec) which is normal on Asahi. Revert the tuning with `install-system-tuning.sh --revert`.
+
+The user GTK palette now uses muted slate blue (`#748fae`) and dusty rose
+(`#bf9298`) for accents and error feedback. Error entry borders are softened too.
+Restart apps to pick up the updated user stylesheets.
+
+Spellcheck squiggles are drawn by each application or text engine; the GTK
+palette does not override every spelling marker (including Chromium/Electron).
+These colour tweaks keep spelling checks enabled.

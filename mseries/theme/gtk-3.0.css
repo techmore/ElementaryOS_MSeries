@@ -1,8 +1,24 @@
 /* ElementaryOS_MSeries: softer accent colours for GTK3 apps (see ../gtk-4.0/gtk.css). */
-@define-color BLUEBERRY_300 #86b4de;
-@define-color BLUEBERRY_500 #4a84c4;
-@define-color BLUEBERRY_700 #2c5c9a;
-@define-color STRAWBERRY_300 #d98080;
-@define-color STRAWBERRY_500 #b94d52;
-@define-color STRAWBERRY_700 #8f3338;
-@define-color error_color #d98080;
+@define-color BLUEBERRY_300 #9aafc5;
+@define-color BLUEBERRY_500 #748fae;
+@define-color BLUEBERRY_700 #526d8b;
+@define-color STRAWBERRY_300 #bf9298;
+@define-color STRAWBERRY_500 #a56f78;
+@define-color STRAWBERRY_700 #80545c;
+@define-color error_color #bf9298;
+
+/* Muted rose feedback: retain a visible error cue without a vivid red edge. */
+@define-color STRAWBERRY_100 #d8b1b6;
+@define-color STRAWBERRY_900 #604047;
+.error { color: @error_color; }
+entry.error { border-color: alpha(@error_color, 0.5); }
+entry.error:focus {
+  border-color: @error_color;
+  box-shadow: inset 0 0 0 1px alpha(@error_color, 0.3);
+}
+
+/* Quiet slate-blue accents and focus outlines. */
+@define-color BLUEBERRY_100 #c3cfda;
+@define-color BLUEBERRY_900 #3b5068;
+@define-color accent_color #748fae;
+@define-color selected_bg_color #748fae;
