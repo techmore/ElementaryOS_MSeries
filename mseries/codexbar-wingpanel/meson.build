@@ -1,4 +1,4 @@
-project('codexbar-wingpanel', 'vala', version: '0.1.0', meson_version: '>= 0.57.0')
+project('codexbar-wingpanel', 'vala', version: '0.1.0', meson_version: '>= 0.59.0')
 
 libwingpanel_dep = dependency('wingpanel-9')
 granite_dep = dependency('granite-7')

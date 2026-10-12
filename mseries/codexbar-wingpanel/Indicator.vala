@@ -14,11 +14,11 @@ namespace MSeries {
         private bool request_in_flight = false;
 
         public CodexBarIndicator () {
-            Object (code_name: "codexbar");
+            GLib.Object (code_name: "codexbar");
         }
 
         construct {
-            executable = Path.build_filename (Environment.get_home_dir (), ".local", "bin", "codexbar-linux");
+            executable = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "codexbar-linux");
 
             panel_label = new Gtk.Label ("CodexBar") {
                 ellipsize = Pango.EllipsizeMode.END,
@@ -202,11 +202,18 @@ namespace MSeries {
             read_snapshot ();
             return menu;
         }
+
+        public override void opened () {
+            read_snapshot ();
+        }
+
+        public override void closed () {
+        }
     }
 }
 
-public Wingpanel.Indicator? get_indicator (Module module, Wingpanel.IndicatorManager.ServerType server_type) {
-    if (server_type != Wingpanel.IndicatorManager.ServerType.SESSION) {
+public Wingpanel.Indicator? get_indicator (Module module, Wingpanel.ServerType server_type) {
+    if (server_type != Wingpanel.ServerType.SESSION) {
         return null;
     }
     return new MSeries.CodexBarIndicator ();
