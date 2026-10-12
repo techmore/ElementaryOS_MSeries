@@ -38,20 +38,28 @@ namespace MSeries {
             panel_display.set_tooltip_text ("OpenAI Codex usage remaining");
             this.visible = true;
 
-            menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) {
+            menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 12) {
                 margin_top = 12,
                 margin_bottom = 12,
                 margin_start = 12,
                 margin_end = 12,
-                width_request = 280
+                width_request = 320
             };
 
-            var title = new Gtk.Label ("OpenAI usage remaining") {
+            var title_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+            var menu_icon = new Gtk.Image.from_icon_name ("mseries-codexbar-openai-symbolic") {
+                pixel_size = 20
+            };
+            menu_icon.add_css_class ("symbolic");
+            title_row.append (menu_icon);
+            var title = new Gtk.Label ("Codex usage") {
                 xalign = 0,
+                hexpand = true,
                 halign = Gtk.Align.START
             };
             title.add_css_class ("heading");
-            menu.append (title);
+            title_row.append (title);
+            menu.append (title_row);
 
             status_label = new Gtk.Label ("Loading CodexBar usage…") {
                 xalign = 0,
@@ -60,10 +68,16 @@ namespace MSeries {
             };
             menu.append (status_label);
 
-            providers_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
+            providers_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 12);
             menu.append (providers_box);
 
-            var refresh_button = make_button ("Refresh usage");
+            var separator = new Gtk.Separator (Gtk.Orientation.HORIZONTAL);
+            menu.append (separator);
+
+            var action_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) {
+                homogeneous = true
+            };
+            var refresh_button = make_button ("Refresh", "view-refresh-symbolic");
             refresh_button.clicked.connect (() => {
                 run_action ("--refresh");
                 refresh_poll_count = 0;
@@ -76,23 +90,26 @@ namespace MSeries {
                     return Source.CONTINUE;
                 });
             });
-            menu.append (refresh_button);
+            action_row.append (refresh_button);
 
-            var quick_view_button = make_button ("Open CodexBar");
+            var quick_view_button = make_button ("Quick View", "view-reveal-symbolic");
             quick_view_button.clicked.connect (() => run_action ("--quick-view"));
-            menu.append (quick_view_button);
+            action_row.append (quick_view_button);
 
-            var usage_button = make_button ("Usage & Spend");
+            var usage_button = make_button ("Usage", "utilities-system-monitor-symbolic");
             usage_button.clicked.connect (() => run_action ("--usage"));
-            menu.append (usage_button);
+            action_row.append (usage_button);
+            menu.append (action_row);
 
-            var spending_button = make_button ("Spending");
+            var secondary_action_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            var spending_button = make_button ("Spending", "view-list-symbolic");
             spending_button.clicked.connect (() => run_action ("--spending"));
-            menu.append (spending_button);
+            secondary_action_row.append (spending_button);
 
-            var settings_button = make_button ("Settings and sign in");
+            var settings_button = make_button ("Settings & Sign In", "preferences-system-symbolic");
             settings_button.clicked.connect (() => run_action ("--settings"));
-            menu.append (settings_button);
+            secondary_action_row.append (settings_button);
+            menu.append (secondary_action_row);
 
             // CodexBar owns provider authentication, polling and cached usage.
             // This indicator only reads its documented, same-user local snapshot.
@@ -109,8 +126,17 @@ namespace MSeries {
             Timeout.add_seconds (60, () => { read_snapshot (); return Source.CONTINUE; });
         }
 
-        private Gtk.Button make_button (string label) {
-            var button = new Gtk.Button.with_label (label);
+        private Gtk.Button make_button (string label, string icon_name) {
+            var button = new Gtk.Button () {
+                tooltip_text = label
+            };
+            var content = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            var icon = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 16 };
+            icon.add_css_class ("symbolic");
+            content.append (icon);
+            var text = new Gtk.Label (label);
+            content.append (text);
+            button.set_child (content);
             button.add_css_class ("flat");
             return button;
         }
@@ -207,13 +233,19 @@ namespace MSeries {
 
         private void append_provider_entry (Json.Object entry) {
             var provider = entry.get_string_member ("provider") ?? "Provider";
-            var title_text = provider.down () == "codex" ? "OpenAI Codex" : provider.up ();
+            var title_text = provider.down () == "codex" ? "OpenAI Codex" : provider;
             var title = new Gtk.Label (title_text) {
                 xalign = 0,
                 halign = Gtk.Align.START
             };
             title.add_css_class ("heading");
-            providers_box.append (title);
+
+            var provider_section = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
+            provider_section.append (title);
+            providers_box.append (provider_section);
+
+            var previous_provider_box = providers_box;
+            providers_box = provider_section;
 
             var windows = entry.get_array_member ("windows");
             if (windows != null && windows.get_length () > 0) {
@@ -232,6 +264,7 @@ namespace MSeries {
             if (provider_error.length > 0) {
                 append_subtle_row (provider_error);
             }
+            providers_box = previous_provider_box;
         }
 
         private string compact_codex_summary (Json.Object entry) {
@@ -290,19 +323,28 @@ namespace MSeries {
             var pace = window.get_string_member ("pace") ?? "";
             var remaining_node = window.get_member ("remaining");
 
+            var quota_card = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) {
+                margin_top = 8,
+                margin_bottom = 8,
+                margin_start = 10,
+                margin_end = 10
+            };
+            quota_card.add_css_class ("card");
+
             var heading = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
             var name_label = new Gtk.Label (label) {
                 xalign = 0,
                 hexpand = true,
                 halign = Gtk.Align.START
             };
-            name_label.add_css_class ("heading");
+            name_label.add_css_class ("caption");
             heading.append (name_label);
 
             if (remaining_node == null || remaining_node.get_node_type () == Json.NodeType.NULL) {
                 var unknown = new Gtk.Label ("Unavailable") { halign = Gtk.Align.END };
                 heading.append (unknown);
-                providers_box.append (heading);
+                quota_card.append (heading);
+                providers_box.append (quota_card);
                 return;
             }
 
@@ -311,23 +353,70 @@ namespace MSeries {
                 halign = Gtk.Align.END
             };
             percent_label.add_css_class ("numeric");
+            percent_label.add_css_class ("heading");
             heading.append (percent_label);
-            providers_box.append (heading);
+            quota_card.append (heading);
 
-            var progress = new Gtk.ProgressBar () { show_text = true };
+            var progress = new Gtk.ProgressBar () {
+                show_text = false,
+                height_request = 6
+            };
             progress.set_fraction (GLib.Math.fmin (1.0, GLib.Math.fmax (0.0, remaining / 100.0)));
-            progress.set_text ("%0.0f%% remaining".printf (remaining));
             if (window.get_boolean_member ("warning")) {
                 progress.add_css_class ("warning");
             }
-            providers_box.append (progress);
+            quota_card.append (progress);
 
             if (reset.length > 0) {
-                append_subtle_row (reset);
+                append_quota_detail (quota_card, "appointment-soon-symbolic", reset, true);
             }
-            if (pace.length > 0) {
-                append_subtle_row (pace);
+            var estimate = pace_estimate (pace);
+            if (estimate.length > 0) {
+                append_quota_detail (quota_card, "document-properties-symbolic", estimate, false);
+            } else if (pace.length > 0) {
+                append_quota_detail (quota_card, "document-properties-symbolic", pace, true);
             }
+            providers_box.append (quota_card);
+        }
+
+        private void append_quota_detail (Gtk.Box card, string icon_name, string text, bool subdued) {
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+            var icon = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 14 };
+            icon.add_css_class ("dim-label");
+            icon.add_css_class ("symbolic");
+            row.append (icon);
+            var label = new Gtk.Label (text) {
+                xalign = 0,
+                hexpand = true,
+                wrap = true,
+                halign = Gtk.Align.START
+            };
+            if (subdued) {
+                label.add_css_class ("dim-label");
+                label.add_css_class ("caption");
+            } else {
+                label.add_css_class ("heading");
+            }
+            row.append (label);
+            card.append (row);
+        }
+
+        private string pace_estimate (string pace) {
+            foreach (string part in pace.split ("|")) {
+                var detail = part.strip ();
+                var runout = "Runs out in ";
+                var runout_index = detail.index_of (runout);
+                if (runout_index >= 0) {
+                    var remaining_time = detail.substring (runout_index + runout.length).strip ();
+                    if (remaining_time.length > 0) {
+                        return "About " + remaining_time + " left at this pace";
+                    }
+                }
+                if (detail.down ().contains ("lasts until reset")) {
+                    return "At this pace, lasts until reset";
+                }
+            }
+            return "";
         }
 
         private void append_metric_row (string name, string value) {

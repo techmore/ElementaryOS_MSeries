@@ -46,9 +46,14 @@ and persistence across login still need user verification.
 Run `bash mseries/install-signal.sh`. Installs the official ARM64 beta,
 checks its detached signature against fingerprint
 `4B16B7232DFAA439AD791002EF9F501F13EED94C`, and adds a launcher.
-The AppImage requires FUSE and supports automatic updates. Version observed:
-8.31.0-beta.1, launched successfully on the live Wayland session.
-Phone linking remains a user step.
+The launcher enables Signal's tray mode: the window still opens normally, and
+minimizing it leaves Signal running behind its Wingpanel icon. The icon shows
+Signal's unread badge and activates the app when clicked. Install the optional
+Wingpanel StatusNotifier host with `bash mseries/install-signal-wingpanel.sh`;
+log out and back in to load the indicator. New message notifications continue
+to use elementary's Notification Center. The AppImage requires FUSE and
+supports automatic updates. Phone linking remains a user step: open Signal,
+then scan its QR code from Signal on your phone.
 Source: https://community.signalusers.org/t/beta-test-signal-desktop-for-linux-arm64/76184
 
 ## CodexBar
@@ -79,13 +84,32 @@ bash mseries/install-codexbar-wingpanel.sh
 Log out and back in after installation. The indicator starts CodexBar's local
 backend and reads its same-user structured snapshot without changing CodexBar
 preferences. The panel shows the OpenAI mark with both Codex's five-hour and
-weekly remaining percentages. The dropdown shows progress, reset time, pace,
-and service status for each configured provider, plus Refresh, Quick View,
-Usage & Spend, Spending, and Settings/sign-in actions. Provider credentials
-remain managed by CodexBar. The monochrome mark comes from the [OpenAI 2025 symbol](https://commons.wikimedia.org/wiki/File:OpenAI_logo_2025_(symbol).svg)
+weekly remaining percentages. The dropdown groups quota windows into compact
+cards, shows the reset time, and highlights the provider's estimated time left
+at its current pace, plus Refresh, Quick View, Usage & Spend, Spending, and
+Settings/sign-in actions. Provider credentials remain managed by CodexBar. The
+monochrome mark comes from the [OpenAI 2025 symbol](https://commons.wikimedia.org/wiki/File:OpenAI_logo_2025_(symbol).svg)
 and follows OpenAI's branding guidelines.
 Remove it with `bash mseries/install-codexbar-wingpanel.sh --uninstall`.
 Source: https://github.com/steipete/CodexBar/tree/main/Integrations/Linux
+
+## Signal Beta in Wingpanel
+
+The Signal launcher uses its supported `--use-tray-icon` option. Install the
+GTK 4 Wingpanel host with `bash mseries/install-signal-wingpanel.sh`, then log
+out and back in. The host displays Signal's own unread-count icon; activating it
+brings the app window forward. Signal does not expose an independent Wingpanel
+login flow, so linking or relinking opens Signal's QR screen and must be
+approved from the primary phone.
+
+## Touch ID on M1 Pro
+
+Touch ID is not currently supported on this M1 Pro under Asahi Linux, so it
+cannot be enabled by the elementary or Omarchy desktop setup. Asahi lists
+TouchID as TBA for M1 Pro/Max/Ultra devices. Omarchy issue
+[#8271](https://github.com/omacom/omarchy/issues/8271) describes a separate
+Apple T1 firmware/EFI risk on Intel Touch Bar MacBook Pros, not the M1 Pro.
+Source: https://github.com/AsahiLinux/docs/blob/main/docs/platform/feature-support/m1.md
 
 ## Camera notch and centered panel indicators
 

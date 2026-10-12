@@ -18,7 +18,7 @@ cat > "$HOME/.local/share/applications/signal-desktop.desktop" <<EOF
 Type=Application
 Name=Signal Beta
 Comment=Official Signal Desktop ARM64 beta
-Exec="$HOME/.local/bin/signal-desktop" %U
+Exec="$HOME/.local/bin/signal-desktop" --use-tray-icon %U
 Terminal=false
 Categories=Network;InstantMessaging;
 StartupWMClass=Signal Beta
