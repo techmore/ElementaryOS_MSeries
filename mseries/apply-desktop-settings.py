@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Apply the M1 Pro owner's Command shortcuts and brightness-key helper."""
+"""Apply the M1 Pro owner's Command shortcuts, Command+Space launcher and brightness-key helper."""
 from pathlib import Path
 import shutil
 import subprocess
@@ -17,6 +17,28 @@ for action, binding in [("screenshot", "<Control><Shift>3"), ("area-screenshot",
     existing = keys.get_strv(action)
     if binding not in existing:
         keys.set_strv(action, existing + [binding])
+Gio.Settings.sync()
+# Command+Space launcher. Command is Ctrl here, so bind <Control>space; <Super>space
+# covers right Command. Super+Space otherwise switches input sources in Pantheon.
+for action in ("switch-input-source", "switch-input-source-backward"):
+    keys.set_strv(action, [b for b in keys.get_strv(action) if b.lower() != "<super>space"])
+launcher = home / ".local/bin/mseries-launcher"
+launcher.parent.mkdir(parents=True, exist_ok=True)
+shutil.copy2(repo / "mseries/mseries-launcher.py", launcher)
+launcher.chmod(0o755)
+media = "org.gnome.settings-daemon.plugins.media-keys"
+base = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/"
+paths = []
+for name, binding in [("mseries-launcher0", "<Control>space"), ("mseries-launcher1", "<Super>space")]:
+    path = f"{base}{name}/"
+    custom = Gio.Settings.new_with_path(f"{media}.custom-keybinding", path)
+    custom.set_string("name", "M-series launcher")
+    custom.set_string("command", str(launcher))
+    custom.set_string("binding", binding)
+    paths.append(path)
+shortcuts = Gio.Settings.new(media)
+existing = shortcuts.get_strv("custom-keybindings")
+shortcuts.set_strv("custom-keybindings", existing + [p for p in paths if p not in existing])
 Gio.Settings.sync()
 # Gala hardcodes Pictures/Screenshots; redirect only that folder, not Pictures.
 pictures = Path(GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_PICTURES) or home / "Pictures")
@@ -39,5 +61,5 @@ autostart = home / ".config/autostart/mseries-brightness.desktop"
 autostart.parent.mkdir(parents=True, exist_ok=True)
 autostart.write_text("[Desktop Entry]\nType=Application\nName=M-series brightness keys\n"
     f'Exec="{helper}"\nOnlyShowIn=Pantheon;\nNoDisplay=true\n')
-print("Command acts as Ctrl; physical left Ctrl acts as Super. Brightness keys start at next login.")
+print("Command acts as Ctrl; physical left Ctrl acts as Super. Command+Space opens the launcher. Brightness keys start at next login.")
 print(f"To start now: {helper}")

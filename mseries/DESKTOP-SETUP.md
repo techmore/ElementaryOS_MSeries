@@ -5,6 +5,19 @@ Pantheon on a 2021 14-inch M1 Pro, kernel `7.1.13-3-2-ARCH`, ARM64.
 This is a running transformed system; it does not establish that our factory
 ISO builds or boots correctly.
 
+## Command+Space launcher
+
+`mseries/mseries-launcher.py` is a small dark, rounded GTK 4 search box that
+filters installed apps as you type: Enter launches, Up/Down select, Esc or
+clicking away closes, and pressing the shortcut again closes it. The setup
+script installs it to `~/.local/bin/mseries-launcher` and binds `<Control>space`
+(physical left Command, since Command is remapped to Ctrl) and `<Super>space`
+(right Command) as custom shortcuts. It clears Pantheon's default Super+Space
+input-source switch; Alt+Shift still switches layouts. Alt+F2 still opens
+Slingshot. Gala cannot place Wayland windows, so the box opens wherever Gala puts
+new windows. Undo by removing the two `mseries-launcher` entries from
+`org.gnome.settings-daemon.plugins.media-keys custom-keybindings`.
+
 ## Command shortcuts and brightness
 
 Run `python3 mseries/apply-desktop-settings.py` as the desktop user.
