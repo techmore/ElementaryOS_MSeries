@@ -2,7 +2,12 @@
 # elementary-grow.sh — grow an elementary OS boot entry out of a running
 # omarchy-mac (Apple Silicon, Asahi). See mseries/TRANSFORM-DESIGN.md.
 #
-#   sudo ./elementary-grow.sh              # dry run (DEFAULT): plan only
+#   sudo ./elementary-grow.sh --upload     # dry run + upload log as secret Gist
+#
+# Getting the log back: the script always saves a full log to /tmp. With
+# --upload it posts that log as a SECRET gist (needs `gh` authenticated or
+# GITHUB_TOKEN set) and prints the URL — paste the URL back and the reviewer
+# sees everything without you copying screens of text.
 #   sudo ./elementary-grow.sh --apply      # perform the work
 #   sudo ./elementary-grow.sh --rollback   # remove @elementary + boot entry
 #
@@ -13,17 +18,21 @@
 set -euo pipefail
 
 MODE="dry-run"
+UPLOAD=0
+LOGFILE="/tmp/elementary-grow-$(date +%Y%m%d-%H%M%S).log"
 for arg in "$@"; do
   case "$arg" in
     --apply) MODE="apply" ;;
     --rollback) MODE="rollback" ;;
     --dry-run) MODE="dry-run" ;;
-    -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
+    --upload) UPLOAD=1 ;;
+    -h|--help) sed -n '2,16p' "$0"; exit 0 ;;
     *) echo "Unknown option: $arg (see --help)" >&2; exit 2 ;;
   esac
 done
 
 SUBVOL_NAME="@elementary"
+HOME_SUBVOL="@elementary-home"
 GRUB_CUSTOM="/etc/grub.d/40_elementary-grow"
 SNAP_PREFIX="@.snapshots/elementary-grow"
 MIN_FREE_GB=40
@@ -97,9 +106,10 @@ unmount_top() { [[ -n $TOP_MNT ]] && umount "$TOP_MNT" && rmdir "$TOP_MNT" && TO
 # ---------------------------------------------------------------- rollback
 do_rollback() {
   mount_top
-  if [[ -e "$TOP_MNT/$SUBVOL_NAME" ]]; then
-    run btrfs subvolume delete "$TOP_MNT/$SUBVOL_NAME"
-  else log "no $SUBVOL_NAME subvolume — nothing to delete"; fi
+  if [[ -e "$TOP_MNT/$SUBVOL_NAME" || -e "$TOP_MNT/$HOME_SUBVOL" ]]; then
+    run btrfs subvolume delete "$TOP_MNT/$SUBVOL_NAME" 2>/dev/null || true
+    run btrfs subvolume delete "$TOP_MNT/$HOME_SUBVOL" 2>/dev/null || true
+  else log "no $SUBVOL_NAME/$HOME_SUBVOL subvolumes — nothing to delete"; fi
   if [[ -f $GRUB_CUSTOM ]]; then
     if [[ $MODE == "apply" ]]; then mv "$GRUB_CUSTOM" "$GRUB_CUSTOM.removed"; log "moved $GRUB_CUSTOM aside";
     else log "(dry-run) would move $GRUB_CUSTOM aside"; fi
@@ -123,8 +133,11 @@ do_apply() {
 
   [[ -e "$TOP_MNT/$SUBVOL_NAME" ]] \
     && fail "$SUBVOL_NAME already exists — --rollback first if retrying"
-  log "creating $TOP_MNT/$SUBVOL_NAME"
+  # Separate home subvolume: sharing @home across Arch and Ubuntu would mix
+  # dotfiles/dconf between Hyprland and Pantheon. Cheap to separate now.
+  log "creating $TOP_MNT/$SUBVOL_NAME + $TOP_MNT/$HOME_SUBVOL"
   run btrfs subvolume create "$TOP_MNT/$SUBVOL_NAME"
+  run btrfs subvolume create "$TOP_MNT/$HOME_SUBVOL"
 
   local workdir tarball
   workdir=$(mktemp -d /tmp/elementary-grow.XXXXXX)
@@ -212,24 +225,60 @@ EOF
   fi
 
   # Identity + mounts + services inside the new root.
-  local uuid_root uuid_esp
+  # fstab mirrors the host rows (same UUIDs/options), swapping only the
+  # root subvolume — the layout omarchy itself enforces (subvol=@), so any
+  # other layout aborts instead of being guessed.
+  local host_root_row new_root_row host_boot_row host_home_row new_home_row uuid_root
   uuid_root=$(findmnt -no UUID /)
-  uuid_esp=$(findmnt -no UUID /boot 2>/dev/null || findmnt -no UUID /efi 2>/dev/null || findmnt -no UUID /boot/efi 2>/dev/null || echo UNKNOWN)
+  host_root_row=$(awk '$1 !~ /^#/ && $2=="/" {print}' /etc/fstab)
+  [[ $(wc -l <<<"$host_root_row") == 1 && -n $host_root_row ]] \
+    || fail "host /etc/fstab / row is not exactly one line — refusing to guess"
+  new_root_row=$(sed -E 's/subvol=\/@([,[:space:]])/subvol=\/@elementary\1/; s/subvol=@([,[:space:]])/subvol=@elementary\1/' <<<"$host_root_row")
+  [[ $new_root_row != "$host_root_row" ]] \
+    || fail "host / row has no subvol=@ option — unknown layout, refusing to guess"
+  host_boot_row=$(awk '$1 !~ /^#/ && $2=="/boot" {print}' /etc/fstab)
+  [[ -n $host_boot_row ]] || log "WARNING: no /boot row in host fstab — new root will not mount the ESP"
+  host_home_row=$(awk '$1 !~ /^#/ && $2=="/home" {print}' /etc/fstab)
+  if [[ -n $host_home_row ]]; then
+    new_home_row=$(sed -E 's/subvol=\/@home([,[:space:]])/subvol=\/@elementary-home\1/; s/subvol=@home([,[:space:]])/subvol=@elementary-home\1/' <<<"$host_home_row")
+    [[ $new_home_row != "$host_home_row" ]] \
+      || fail "host /home row has no subvol=@home option — refusing to guess"
+  else
+    new_home_row="UUID=$uuid_root /home btrfs subvol=$HOME_SUBVOL,defaults 0 2"
+  fi
+  # LUKS: the new root unlocks the same container, so it needs the same map.
+  if [[ -f /etc/crypttab ]]; then
+    log "copying host /etc/crypttab (LUKS unlock map)"
+    [[ $MODE == "apply" ]] && cp -a /etc/crypttab "$newroot/etc/crypttab"
+  fi
   if [[ $MODE == "apply" ]]; then
     chroot "$newroot" /bin/bash -s <<EOF2
 set -euo pipefail
 echo "elementary-m1" > /etc/hostname
-cat > /etc/fstab <<FSTAB
-UUID=$uuid_root / btrfs subvol=$SUBVOL_NAME,defaults 0 1
-# ESP (mounted by hand when needed; adjust mountpoint to match host):
-# UUID=$uuid_esp /boot/efi vfat defaults 0 2
-FSTAB
+printf '%s\n%s\n%s\n' "$new_root_row" "$host_boot_row" "$new_home_row" > /etc/fstab
 systemctl enable NetworkManager mseries-wifi-firmware.service omarchy-wifi-resume-fix.service
 echo "Set a user password and create your account on first boot (GDM/LightDM)."
 EOF2
-  fi
+  else log "(dry-run) would write fstab (rows derived from host) + enable services"; fi
   umount -R "$newroot/dev" "$newroot/proc" "$newroot/sys" "$newroot/run" 2>/dev/null || true
   trap - RETURN
+}
+
+# The new entry reuses the RUNNING kernel's command line and only swaps the
+# root subvolume: LUKS cryptdevice, root=, resume, splash and friends are
+# carried over instead of assumed. (Provenance: omarchy's own GRUB entries
+# boot with rootflags=subvol=@ on LUKS via the same shared initramfs.)
+build_linux_line() {
+  local kpath="$1" word out=() line
+  for word in $(cat /proc/cmdline); do
+    case "$word" in
+      BOOT_IMAGE=*|rootflags=*|ro) continue ;;
+      *) out+=("$word") ;;
+    esac
+  done
+  printf -v line '    linux %s %s rootflags=subvol=%s rw' "$kpath" "${out[*]}" "$SUBVOL_NAME"
+  [[ $line == *' root='* ]] || { echo "running cmdline has no root= — refusing to guess" >&2; return 1; }
+  printf '%s\n' "$line"
 }
 
 install_grub_entry() {
@@ -248,15 +297,15 @@ install_grub_entry() {
     search_uuid=$(findmnt -no UUID /)       # /boot lives on the root fs
     kpath="$kernel"; ipath="$initramfs"
   fi
-  local root_uuid
-  root_uuid=$(findmnt -no UUID /)
+  local linux_line
+  linux_line=$(build_linux_line "$kpath") || fail "cannot derive boot line from /proc/cmdline"
   cat > "$GRUB_CUSTOM" <<EOF
 #!/bin/sh
 # elementary-grow: additive entry. Managed by elementary-grow.sh --rollback.
 exec tail -n +3 \$0
 menuentry 'elementary OS (M-series, $kver)' {
     search --no-floppy --fs-uuid --set=root $search_uuid
-    linux $kpath root=UUID=$root_uuid rootflags=subvol=$SUBVOL_NAME rw
+$linux_line
     initrd $ipath
 }
 EOF
@@ -268,7 +317,41 @@ EOF
 }
 
 # ---------------------------------------------------------------- main
-case "$MODE" in
-  rollback) [[ $(id -u) -eq 0 ]] || fail "rollback needs root"; do_rollback ;;
-  *) do_apply ;;
-esac
+main() {
+  log "logging to $LOGFILE"
+  case "$MODE" in
+    rollback) [[ $(id -u) -eq 0 ]] || fail "rollback needs root"; do_rollback ;;
+    *) do_apply ;;
+  esac
+}
+
+# Post the log as a SECRET gist so the reviewer sees the full output from a
+# URL. Needs `gh` authenticated (sudo pacman -S github-cli; gh auth login);
+# otherwise the log path is printed and nothing leaves the machine.
+upload_log() {
+  (( UPLOAD )) || return 0
+  log "uploading $LOGFILE as a secret gist…"
+  curl -fsSL -m 15 -o /dev/null https://api.github.com \
+    || { log "no network — log kept at $LOGFILE"; return 0; }
+  if command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
+    local url
+    if url=$(gh gist create "$LOGFILE" -d "elementary-grow $MODE log $(date -u +%FT%TZ)"); then
+      log "uploaded: $url  — paste this URL back for review"
+    else
+      log "gh upload failed — log kept at $LOGFILE"
+    fi
+  else
+    log "gh not authenticated — log kept at $LOGFILE"
+    log "to upload: sudo pacman -S github-cli && gh auth login, then re-run with --upload"
+  fi
+}
+
+# pipefail is on: neutralize errexit around the pipeline so the exit code is
+# captured via PIPESTATUS instead of killing the upload + log-path report.
+set +e
+main "$@" 2>&1 | tee "$LOGFILE"
+rc=${PIPESTATUS[0]:-0}
+set -e
+echo "[elementary-grow] full log saved at $LOGFILE"
+upload_log 2>&1 | tee -a "$LOGFILE"
+exit "$rc"

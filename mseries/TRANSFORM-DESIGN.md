@@ -29,7 +29,38 @@ userspace.
 - Default mode is `--dry-run` (plan only). `--apply` performs changes.
   `--rollback` removes the subvolume + GRUB entry.
 
-## Boot math (assumptions → runtime checks)
+## Repo ground truth (omarchy-mac `quattro`, verified 2026-10-12)
+
+The following are confirmed from the omarchy-mac sources — the script
+relies on them, with a runtime abort if the machine disagrees:
+
+- **GRUB on Apple Silicon** (`install/login/alt-bootloaders.sh`: "every
+  Apple Silicon install" lands in the GRUB branch; `GRUB_DISTRIBUTOR="Omarchy"`).
+- **`/boot` is the vfat ESP itself** (`install/helpers/reset-boot.sh`
+  requires exactly one fstab row `UUID=XXXX-XXXX /boot vfat`; kernel,
+  initramfs, and `grub.cfg` all live there). A `/boot/efi` variant exists
+  on some Asahi images — the script detects both.
+- **Root subvolume is `@`** (reset-boot requires `subvol=@`; `install.sh`
+  snapshots `$top/@` to `$top/@factory`). Sibling `@elementary` follows
+  the same convention. `@home`/`@log`/`@fresh` may exist.
+- **Kernel is `linux-asahi*` or `linux-aarch64`** with modules in
+  `/usr/lib/modules/<kver>` and mkinitcpio presets — the script reuses the
+  running pair and never installs a kernel.
+- **GRUB cmdline carries `rootflags=subvol=@`** (and `cryptdevice=` on
+  LUKS) — the new entry is derived from `/proc/cmdline` with only the
+  subvolume swapped, so LUKS and special flags keep working.
+- **Custom entries via `/etc/grub.d/` + `grub-mkconfig -o
+  /boot/grub/grub.cfg`** is omarchy's own mechanism (splash/distributor
+  changes) — the script uses the same file + regen pattern.
+- **snapper root config + pipewire stack** present on omarchy installs.
+
+## Still only answerable on the machine (the dry-run report)
+
+- Free space on `/` (40 GB gate), running kernel version, LUKS yes/no.
+- Exact model → Wi-Fi chip (BCM4378 vs 4387) and firmware presence.
+- Whether omarchy-mac (vs plain Asahi Alarm) is installed, and whether
+  `/boot` is the ESP or a directory (both supported, must know which).
+- Whether `elementary-desktop` resolves for resolute at build time.
 
 | # | Assumption | Runtime check (abort message if false) |
 |---|---|---|
