@@ -434,3 +434,19 @@ preload library or log handler is installed persistently. One temporary panel
 probe initially selected X11 and crashed because Wingpanel requires Wayland;
 the normal panel recovered, and subsequent probes explicitly used Wayland.
 The gear menu was opened through its native toggle action after activation.
+
+### Keyboard brightness in the gear menu
+
+The Quick Settings patch also adds a separately labeled **Keyboard Brightness**
+slider immediately above screen brightness, below the toggle grid. It uses
+UPower's `org.freedesktop.UPower.KbdBacklight` system-bus API, reads the actual
+hardware maximum, supports fully off, and follows `BrightnessChanged` signals.
+It does not write screen brightness. Writes are asynchronous and coalesced while
+dragging. The existing ambient keyboard-light helper remains enabled; its
+manual-change detection pauses automatic adjustments until ambient light changes
+substantially.
+
+Reinstall with `bash mseries/install-quick-settings-brightness.sh` and reload
+Wingpanel. Validation on the M1 Pro: the widget initialized at 98% (250/255),
+a one-percent slider decrease changed the keyboard backlight to 247, and the
+test restored the original value of 250. The native plugin rebuilt successfully.
