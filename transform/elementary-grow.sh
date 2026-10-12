@@ -45,8 +45,8 @@ log()  { echo "[elementary-grow] $*"; }
 fail() { echo "[elementary-grow] ABORT: $*" >&2; exit 1; }
 
 run() {
-  if [[ $MODE == "apply" ]]; then log "+ $*"; "$@";
-  else log "(dry-run) would run: $*"; fi
+  if [[ $MODE == "dry-run" ]]; then log "(dry-run) would run: $*";
+  else log "+ $*"; "$@"; fi
 }
 
 # ---------------------------------------------------------------- checks
@@ -111,7 +111,7 @@ do_rollback() {
     run btrfs subvolume delete "$TOP_MNT/$HOME_SUBVOL" 2>/dev/null || true
   else log "no $SUBVOL_NAME/$HOME_SUBVOL subvolumes — nothing to delete"; fi
   if [[ -f $GRUB_CUSTOM ]]; then
-    if [[ $MODE == "apply" ]]; then mv "$GRUB_CUSTOM" "$GRUB_CUSTOM.removed"; log "moved $GRUB_CUSTOM aside";
+    if [[ $MODE != "dry-run" ]]; then mv "$GRUB_CUSTOM" "$GRUB_CUSTOM.removed"; log "moved $GRUB_CUSTOM aside";
     else log "(dry-run) would move $GRUB_CUSTOM aside"; fi
     run grub-mkconfig -o /boot/grub/grub.cfg
   else log "no $GRUB_CUSTOM — bootloader untouched"; fi
