@@ -72,3 +72,104 @@ inline spending charts and adaptive polling remain future work; the separate
 Spending window and upstream refresh settings are available today.
 
 For the full upstream project screen, see [Joshua repository review](../JOSHUA-REPOSITORY-REVIEW.md).
+
+## Gemma 4 local crash and log troubleshooting
+
+Install `bash mseries/local-ai/install-troubleshooter.sh`. This adds **Local
+Troubleshooter** to Applications and the `mseries-troubleshoot` command.
+Uses Joshua's Linux MLX runtime and private Honeykrisp driver, with
+`mlx-community/gemma-4-e4b-it-4bit` pinned to
+`475b9088d29754a3379866cf5aeb6b41acd313c2` (about 5.18 GB download).
+This exact revision also appears in upstream's Gemma E4B inference receipts.
+Google's [Gemma model documentation](https://ai.google.dev/gemma/docs/core)
+explains the small E4B model and memory tradeoffs; macOS MLX compatibility
+alone is not Linux compatibility evidence.
+
+```sh
+mseries-troubleshoot --start "Why did my desktop crash?"
+mseries-troubleshoot --start --previous-boot "Why did the last boot fail?"
+mseries-troubleshoot --start --file /path/to/crash.log "Explain this failure"
+mseries-troubleshoot --collect-only
+systemctl --user stop mseries-troubleshooter-model
+```
+
+The native GTK application offers current/previous boot analysis and a release
+memory button. The model runs on demand, not at login. An existing MLX chat
+session is preserved; current free memory is admission-checked before Gemma
+loads. If admission fails, close other large workloads and retry. Do not bypass
+that check. No ANE driver, bootloader or system Mesa change is involved.
+
+The dedicated inference API binds only `127.0.0.1:8767`, with a 4096-token
+prompt/output cap, no prompt cache and serialized inference. Model serving
+uses offline Hugging Face/Transformers mode after installation. The client
+refuses non-loopback endpoints, redirects and environment HTTP proxies.
+Local programs can access the unauthenticated loopback API; it is intended
+for this single-user workstation, not a network service.
+
+Collection reads failed units, up to 70 kernel and 70 user-session warnings, eight user coredump summaries,
+or the tail of a user-selected log. Evidence is limited to 8000 characters
+before line numbering. The server rejects input/output combinations beyond
+its token cap; shorten unusually dense logs if necessary. Missing journal
+access or an unavailable previous boot is included as missing evidence.
+No root escalation or log permission changes are used. Basic redaction covers
+common token/password fields and the home path; it is not a comprehensive
+secret scrubber. Both inference and reports remain on-device.
+
+Reports are written with mode 0600 under
+`~/.local/state/mseries-troubleshooter/`. They include the exact supplied
+excerpt and model identity, so review before sharing. The model is instructed
+to cite evidence lines and separate facts from hypotheses. It does not run
+suggested commands or automatically repair the system. A plausible answer
+is not proof of a diagnosis; verify its cited evidence.
+
+Regression checks:
+
+```sh
+/usr/bin/python3 -m unittest discover -s mseries/local-ai -p 'test_*.py' -v
+```
+
+To remove: stop the service, remove its unit under `~/.config/systemd/user/`,
+`~/.local/bin/mseries-troubleshoot`, the UI under `~/.local/libexec/`, and
+`~/.local/share/applications/mseries-troubleshooter.desktop`, then run
+`systemctl --user daemon-reload`. Cached models and reports are retained.
+
+### Native robot menu and crash watcher
+
+```sh
+bash mseries/install-troubleshooter-wingpanel.sh
+```
+
+Builds a native Wingpanel indicator with a symbolic robot, bounded crash count,
+latest crash metadata, an **Analyze Logs** action, and an **Automatically diagnose
+new crashes** toggle. Reload Wingpanel after installation. Uses the installed
+GTK app; no Quickshell or Omarchy desktop session is needed.
+
+The user service `mseries-crash-watch` follows new systemd-coredump events and
+filters by `COREDUMP_UID` (the crashed process owner, not the collector's UID).
+It retains ten event summaries, deduplicates each program for sixty seconds,
+and does not replay historical crashes when restarted. The local snapshot
+contains only program/PID/signal/timestamp fields. It does not extract memory
+images, environment variables or command lines from coredumps.
+
+Automatic diagnosis is off by default. When enabled in the robot menu, a new
+crash starts the same local Gemma command, with at most one watcher-launched
+analysis active. Reports appear in the app on its next launch. The idle watcher
+does not load a model; disable the toggle and use **Release Model Memory** to
+stop a previously loaded model. No generic repair commands are taken from model
+output.
+
+**Restart Panel** in the GTK app is a deterministic repair action: it sends
+SIGTERM only to a single Wingpanel owned by the current user, lets Gala respawn
+it, and checks the new process remains running for three seconds. It refuses
+ambiguous/missing panels. This restores a stuck panel; it does not establish
+that a recurring crash's root cause is fixed.
+
+The watcher is inspired by Omarchy Mac quattro's `omarchy-crash-watch` and
+`omarchy-agent-crash` at `ba546a61f881c1fe9d79d75ec050eab048b8cb63`.
+Those upstream scripts notify and open a selected coding agent; the watcher
+itself is not an autonomous repair loop. Our version uses local Gemma and a
+native elementary frontend.
+
+Remove the robot/watcher with
+`bash mseries/install-troubleshooter-wingpanel.sh --uninstall`, then reload
+Wingpanel. Reports and opt-in settings are retained.

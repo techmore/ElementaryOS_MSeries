@@ -33,13 +33,15 @@ Package names, initramfs tooling, and the desktop stack all differ, so each
 fix is translated to its Ubuntu/mkosi equivalent rather than copied. Hyprland-
 and pacman-specific pieces are documented as out of scope.
 
-## Safety: this cannot break your laptop
+## Installation paths
 
-Everything here is **build-time scaffolding**. It only takes effect when
-someone explicitly builds an ISO (`just do-daily` on a build machine or the
-GitHub workflow) and then boots *that ISO* on separate media. Cloning this
-repo, reading it, and pushing commits do not touch your bootloader, your
-macOS install, or the existing Omarchy ISO on your NAS.
+The image factory produces separate boot media. The desktop and local-AI
+installers under `mseries/` also configure a running elementary installation;
+their individual documentation describes what they install and how to remove
+it. Cloning the repository alone does not apply those changes.
+
+[Local Troubleshooter](local-ai/README.md) adds on-device Gemma 4 log analysis,
+a native GTK app, and a Wingpanel robot menu with optional crash diagnosis.
 
 ## Layout
 

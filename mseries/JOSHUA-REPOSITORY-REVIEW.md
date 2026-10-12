@@ -12,6 +12,14 @@ installation docs and selected integration code. The MLX/Coreglass components
 were installed and checked separately; see [local AI receipts](local-ai/receipts/2026-10-12.md).
 Repository update timestamps and fork descriptions do not establish support.
 
+## Installed local troubleshooting enhancement
+
+Revalidated GitHub's public repository names on 2026-10-12: all 148 match the
+recorded inventory, with no additions or removals. Joshua's Linux MLX runtime
+now powers our pinned Gemma 4 E4B local crash/log assistant, native GTK app and
+Wingpanel robot menu. See [setup and behavior](local-ai/README.md) and
+[verification receipts](local-ai/receipts/2026-10-12-troubleshooter.md).
+
 ## Recommended build priorities
 
 1. **Keep MLX, private Honeykrisp and Coreglass.** Already integrated. Preserve
