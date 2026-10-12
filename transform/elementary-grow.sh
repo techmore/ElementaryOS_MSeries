@@ -144,6 +144,11 @@ do_status() {
   ls "$TOP_MNT/$SUBVOL_NAME/lib/firmware/brcm" 2>/dev/null | grep -c brcm || echo "(no firmware dir)"
   echo "--- boot entry ---"
   grep -c "elementary OS (M-series" /boot/grub/grub.cfg 2>/dev/null || echo "(no entry)"
+  echo "--- display manager ---"
+  readlink "$TOP_MNT/$SUBVOL_NAME/etc/systemd/system/display-manager.service" 2>/dev/null || echo "(no display-manager symlink)"
+  dpkg-query -W -f='${Status} ${Package}\n' --admindir="$TOP_MNT/$SUBVOL_NAME/var/lib/dpkg" pantheon-greeter lightdm gdm3 2>/dev/null || echo "(greeter pkgs unknown)"
+  echo "--- users (uid>=1000) ---"
+  awk -F: '$3>=1000 && $3<60000 {print $1, $3, $6}' "$TOP_MNT/$SUBVOL_NAME/etc/passwd" 2>/dev/null || echo "(no passwd)"
 }
 
 # ---------------------------------------------------------------- rollback
