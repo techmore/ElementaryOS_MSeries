@@ -9,7 +9,7 @@ Status on `MacBookPro18,3` / `apple,j314s` (verified 2026-10-12):
 | Item | Result |
 | --- | --- |
 | Dell dock hub tree enumerates (USB2 side) | **works** — mouse, headset, dock hubs |
-| USB3 tunnel / dock Ethernet | **blocked on m1n1** — driver needs bootloader-supplied tunables (see "m1n1 requirement") |
+| USB3 tunnel / dock Ethernet | **fix applied, awaiting reboot test** — new m1n1 + quirk fix (see "USB3 tunnel: bandwidth-allocation timeout") |
 | Dock HDMI/DP video | **not supported** — DisplayPort tunnelling is not implemented upstream yet |
 | Suspend with a USB4 link up | **unsafe** — upstream notes S2RAM SError panic; do not suspend while docked |
 
@@ -138,3 +138,31 @@ The drop-in makes `lightdm.service` wait (max 30 s) for `/sys/class/drm/card*-eD
 
     sudo install -D -m0644 lightdm-wait-for-drm.conf /etc/systemd/system/lightdm.service.d/wait-for-drm.conf
     sudo systemctl daemon-reload
+
+## USB3 tunnel: bandwidth-allocation timeout (the Ethernet blocker)
+
+After the new m1n1 supplied the ACIO/NHI tunables, the USB4 router registered, the dock (Dell
+WD22TB4, 20 Gb/s x2) was discovered and the USB2 side worked, but the USB3 tunnel failed:
+
+    0:4 <-> 1:16 (USB3): activating
+    0:4 <-> 1:16 (USB3): allocating initial bandwidth 9000/9000 Mb/s
+    ...~1.4 s...
+    1:16: USB3 tunnel activation failed, aborting
+
+(visible with `echo 'module thunderbolt +p' > /sys/kernel/debug/dynamic_debug/control` and one
+dock replug). The PCIe tunnel right after it logs `Writing hop`; the USB3 one never gets that far:
+it dies in `tb_usb3_pre_activate()` -> `usb4_usb3_port_allocate_bandwidth()`.
+
+Cause: `quirks.c` disables USB3 bandwidth allocation for Apple host routers with
+`{ 0x05ac, 0x2000, ... }`, but the M1 Pro/Max (T6000) host router identifies as
+**`05ac:2001`** (log: `USB4 Switch: 5ac:2001`; adapter reg0 `0x200105ac`). The quirk never
+matched, the allocation handshake (unimplemented in Apple's router) timed out and the tunnel was
+torn down. Fix: match any Apple router (`{ 0x05ac, 0x0000, ... }`). Only the host router consults
+the flag, so downstream devices are unaffected. Only `thunderbolt.ko` changes; exported symbol
+CRCs are identical, so `thunderbolt_apple.ko` is untouched.
+
+Debugging aids that worked: `/sys/kernel/debug/thunderbolt/<router>/port<N>/{regs,path}`
+(read-only adapter registers; type `0x200101` = USB3 down, `0x200102` = USB3 up).
+
+Still open after this: the dock's DP tunnel (`could not allocate DP tunnel`, `DPRX read timeout`)
+- DisplayPort tunnelling is not supported upstream yet, so dock video stays dead.

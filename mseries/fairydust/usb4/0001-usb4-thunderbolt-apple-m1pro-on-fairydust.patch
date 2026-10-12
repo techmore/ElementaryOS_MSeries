@@ -6931,12 +6931,17 @@ diff -ruN -x build a/drivers/thunderbolt/quirks.c b/drivers/thunderbolt/quirks.c
  static void quirk_block_rpm_in_redrive(struct tb_switch *sw)
  {
  	sw->quirks |= QUIRK_KEEP_POWER_IN_DP_REDRIVE;
-@@ -61,6 +67,9 @@
+@@ -61,6 +67,14 @@
  };
  
  static const struct tb_quirk tb_quirks[] = {
-+	/* Apple Silicon host routers do not support USB3 bandwidth allocation */
-+	{ 0x05ac, 0x2000, 0x0000, 0x0000, quirk_no_usb3_bw_alloc },
++	/*
++	 * Apple Silicon host routers do not support USB3 bandwidth allocation. Match every
++	 * Apple router ID (0x2000 on T8103, 0x2001 on T6000, ...): with the allocation
++	 * handshake attempted, the request times out and the USB3 tunnel is torn down before
++	 * any path is written.
++	 */
++	{ 0x05ac, 0x0000, 0x0000, 0x0000, quirk_no_usb3_bw_alloc },
 +
  	/* Dell WD19TB supports self-authentication on unplug */
  	{ 0x0000, 0x0000, 0x00d4, 0xb070, quirk_force_power_link },
