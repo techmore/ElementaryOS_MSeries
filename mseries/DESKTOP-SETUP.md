@@ -490,3 +490,20 @@ Fixes that can only be verified later (after a reboot or login, or when the dock
 * **CI gap:** only the wifi test ran. CI now runs every Python test file. `test_bridge.py` had no runner.
 * **A mistake worth recording:** the first Wi-Fi rewrite overwrote newer tested logic and broke two CI tests;
   restored in `2bcd925`. Re-read a file immediately before replacing part of it, and run the repo's tests before pushing.
+
+### Third finding (same day): USB-C devices are lost across suspend
+
+Evidence (`journalctl -k`): suspend entry `17:34:06 (s2idle)`, exit `18:00:30`, then
+`xhci-hcd.3.auto: xHC error in resume, USBSTS 0x401, Reinit` / `root hub lost power or was reset` /
+`usb 2-1: USB disconnect` (the ASIX Ethernet adapter). Nothing re-enumerated it until the controller was re-probed
+16 minutes later. USBSTS 0x401 = halted + Save/Restore Error: the controller state was lost with its power domain.
+
+Cause (source): `drivers/phy/apple/atc.c` and `drivers/usb/dwc3/dwc3-apple.c` define no `dev_pm_ops`; `tipd_resume()`
+only re-enables the IRQ / reset line. The Type-C controller sees no event for an unchanged partner, so the PHY lane
+mode, pipehandler and dwc3 wrapper setup are never re-applied after the power domain comes back.
+
+Do not work around it from userspace by unbinding drivers: unbinding `dwc3-apple` (or its device-link supplier
+`tps6598x`) oopses in `dwc3_apple_remove`. A real fix means: PHY suspend/resume that re-runs
+`atcphy_configure()` for the saved mode, a dwc3-apple resume that redoes its wrapper init, and a `tipd_resume` that
+re-asserts the current mux state; tested with real suspend/resume cycles (needs someone at the keyboard to wake it).
+Tracked by `usb-c-survives-suspend` in mseries-verify. Workaround: replug after resume, or avoid suspend while docked.

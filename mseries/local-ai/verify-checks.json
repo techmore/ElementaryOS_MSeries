@@ -94,6 +94,13 @@
       "title": "Speakers still work (quiet test)",
       "hint": "Audio is back to the plain 'Built-in Audio Stereo' output, muted at 0. Raise the volume slowly in the sound menu and play something quiet. Speakers will sound plain/quiet (no Apple DSP profile yet).",
       "precondition": "true"
+    },
+    {
+      "id": "usb-c-survives-suspend",
+      "title": "USB-C devices come back after suspend/resume (known bug)",
+      "note": "2026-10-12: after s2idle the xHCI reports 'xHC error in resume, USBSTS 0x401 (Save/Restore Error), Reinit' and attached USB-C devices (ASIX Ethernet, dock) are unregistered and never return until replugged. Cause: phy-apple-atc and dwc3-apple have no system-sleep PM ops and tipd_resume only re-enables the IRQ, so the PHY/mux state is never re-applied for an unchanged partner. Needs a kernel fix (PHY + dwc3-apple + tipd resume), tested with real suspend cycles. Workaround: replug after resume, or avoid suspend while docked.",
+      "precondition": "journalctl -k -b --no-pager 2>/dev/null | grep -q 'PM: suspend exit'",
+      "command": "n=$(journalctl -k -b --no-pager 2>/dev/null | grep -c 'xHC error in resume'); echo \"xHCI resume errors this boot: $n\"; [ \"$n\" -eq 0 ]"
     }
   ]
 }
