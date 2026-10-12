@@ -116,3 +116,52 @@ class WatchLoopTests(unittest.TestCase):
             self.assertEqual(len(snapshot['events']), 2)
             self.assertEqual(launch.call_count, 2)  # journal plus one analysis
             self.assertIn('mseries-troubleshoot', launch.call_args_list[1].args[0][0])
+
+class PerformanceTests(unittest.TestCase):
+    def test_snapshot_is_bounded_and_collects_no_process_arguments(self):
+        calls = []
+        def sample(args):
+            calls.append(args)
+            return 'header\n' + 'editor 1.0 2.0 1234\n' * 1000
+        with patch.object(triage, 'command', side_effect=sample):
+            snapshot = triage.performance_snapshot()
+        self.assertLessEqual(len(snapshot), 6000)
+        self.assertIn('pressure stall', snapshot)
+        self.assertEqual(len([args for args in calls if args[0] == 'ps']), 2)
+        self.assertTrue(all('args' not in arg and 'cmdline' not in arg
+                            for call in calls for arg in call))
+
+    def test_optional_collector_failure_is_missing_evidence(self):
+        with patch.object(triage.subprocess, 'run', side_effect=FileNotFoundError('not installed')):
+            self.assertIn('collection unavailable', triage.command(['powerprofilesctl', 'get']))
+
+    def test_analysis_lock_prevents_competing_model_stop(self):
+        from types import SimpleNamespace
+        args = SimpleNamespace(start=True, release_model=True)
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.object(triage.Path, 'home', return_value=Path(directory)), \
+             patch.object(triage, 'start_server') as start, \
+             patch.object(triage.subprocess, 'run') as stop, \
+             patch.object(triage, 'stage'):
+            stop.return_value.returncode = 0
+            with triage.analysis_session(args, triage.DEFAULT_ENDPOINT):
+                with self.assertRaisesRegex(ValueError, 'Another local analysis'):
+                    with triage.analysis_session(args, triage.DEFAULT_ENDPOINT):
+                        self.fail('concurrent inference allowed')
+            start.assert_called_once()
+            stop.assert_called_once()
+            self.assertIn('mseries-troubleshooter-model.service', stop.call_args.args[0])
+
+    def test_failed_inference_still_releases_dedicated_model(self):
+        from types import SimpleNamespace
+        args = SimpleNamespace(start=True, release_model=True)
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.object(triage.Path, 'home', return_value=Path(directory)), \
+             patch.object(triage, 'start_server'), \
+             patch.object(triage.subprocess, 'run') as stop, \
+             patch.object(triage, 'stage'):
+            stop.return_value.returncode = 0
+            with self.assertRaisesRegex(ValueError, 'inference failed'):
+                with triage.analysis_session(args, triage.DEFAULT_ENDPOINT):
+                    raise ValueError('inference failed')
+            stop.assert_called_once()

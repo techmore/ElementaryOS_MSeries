@@ -20,6 +20,7 @@ Environment=TRANSFORMERS_OFFLINE=1
 Environment=HF_HUB_DISABLE_TELEMETRY=1
 ExecStart="$launcher" serve "$model" --weights-gib 4.83 --context 4096 --host 127.0.0.1 --port 8767 --offline --yes
 TimeoutStopSec=20
+SuccessExitStatus=143
 EOF
 install -Dm755 "$repo/mseries/local-ai/troubleshooter-ui.py" "$HOME/.local/libexec/mseries-troubleshooter-ui"
 install -Dm755 "$repo/mseries/local-ai/repair-panel.py" "$HOME/.local/libexec/mseries-repair-panel"
@@ -33,6 +34,11 @@ Exec=/usr/bin/python3 "$HOME/.local/libexec/mseries-troubleshooter-ui"
 Icon=utilities-system-monitor
 Categories=System;Utility;
 Terminal=false
+Actions=Performance;
+
+[Desktop Action Performance]
+Name=Check Native Performance
+Exec=/usr/bin/python3 "$HOME/.local/libexec/mseries-troubleshooter-ui" --performance
 EOF
 systemctl --user daemon-reload
 echo 'Installed. Run: mseries-troubleshoot --start "Why is my desktop crashing?"'

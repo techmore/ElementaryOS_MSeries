@@ -43,6 +43,14 @@ private class TroubleshooterIndicator : Wingpanel.Indicator {
             } catch (Error e) { warning ("Cannot open troubleshooter: %s", e.message); }
         });
         menu.append (open);
+        var performance = new Gtk.Button.with_label ("Check Performance…");
+        performance.clicked.connect (() => {
+            try {
+                var app = new DesktopAppInfo ("mseries-troubleshooter.desktop");
+                if (app != null) app.launch_action ("Performance", new AppLaunchContext ());
+            } catch (Error e) { warning ("Cannot open performance check: %s", e.message); }
+        });
+        menu.append (performance);
         var automatic = new Gtk.CheckButton.with_label ("Automatically diagnose new crashes");
         automatic.active = FileUtils.test (Path.build_filename (state_dir, "auto-diagnose"), FileTest.EXISTS);
         automatic.toggled.connect (() => {

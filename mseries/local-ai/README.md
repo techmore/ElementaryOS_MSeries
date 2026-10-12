@@ -173,3 +173,29 @@ native elementary frontend.
 Remove the robot/watcher with
 `bash mseries/install-troubleshooter-wingpanel.sh --uninstall`, then reload
 Wingpanel. Reports and opt-in settings are retained.
+
+### Native performance checks and memory release
+
+Choose **Check Performance…** in the robot menu, or enable **Check native desktop
+performance** in the application. CLI equivalent:
+
+```sh
+mseries-troubleshoot --start --performance --release-model "Find native desktop bottlenecks"
+mseries-troubleshoot --performance --collect-only
+```
+
+The performance snapshot is collected before this request loads Gemma. It records
+available RAM/swap, CPU/memory/I/O pressure, load averages, cpufreq governors,
+thermal readings, the native power profile, disk space and top process names by
+CPU/memory. Process arguments and environments are excluded. Missing sensors or
+optional tools appear as missing evidence. CPU percentages are lifetime averages;
+a single snapshot and thermal readings alone do not prove a speedup or throttling.
+The model recommends reversible native changes with verification steps.
+
+**Release model memory after analysis** defaults on in the GTK app and automatic
+crash diagnoses. It stops only the dedicated troubleshooting model after the
+report is saved, or after inference fails, returning its memory to the desktop.
+Uncheck it for repeated warm requests. Other chat services are untouched. A
+same-user lock prevents the app and crash watcher from running competing analyses
+or unloading a model during an active analysis. The manual memory-release button
+uses the same lock and runs off the UI thread.

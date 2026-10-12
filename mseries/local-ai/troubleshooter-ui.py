@@ -2,6 +2,7 @@
 """Small native GTK4 frontend for the on-device diagnostic command."""
 import subprocess
 import json
+import sys
 import threading
 from pathlib import Path
 import gi
@@ -11,8 +12,16 @@ from gi.repository import Gio, GLib, Gtk
 
 class Troubleshooter(Gtk.Application):
     def __init__(self):
-        super().__init__(application_id='org.techmore.MSeries.Troubleshooter')
+        super().__init__(application_id='org.techmore.MSeries.Troubleshooter',
+                         flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
+        self.connect('command-line', self.command_line)
         self.connect('activate', self.activate_window)
+
+    def command_line(self, _app, command_line):
+        self.activate()
+        if '--performance' in command_line.get_arguments():
+            self.performance.set_active(True)
+        return 0
 
     def activate_window(self, _app):
         if self.get_active_window():
@@ -31,6 +40,10 @@ class Troubleshooter(Gtk.Application):
         box.append(self.question)
         self.previous = Gtk.CheckButton(label='Use logs from the previous boot')
         box.append(self.previous)
+        self.performance = Gtk.CheckButton(label='Check native desktop performance')
+        box.append(self.performance)
+        self.free_after = Gtk.CheckButton(label='Release model memory after analysis', active=True)
+        box.append(self.free_after)
         row = Gtk.Box(spacing=8)
         self.analyze = Gtk.Button(label='Analyze Logs')
         self.analyze.add_css_class('suggested-action')
@@ -84,13 +97,44 @@ class Troubleshooter(Gtk.Application):
         return False
 
     def stop_model(self, _button):
-        result = subprocess.run(['systemctl', '--user', 'stop', 'mseries-troubleshooter-model.service'],
-                                capture_output=True, text=True, timeout=25)
-        self.status.set_text('Model memory released.' if result.returncode == 0 else result.stderr)
+        self.release.set_sensitive(False)
+        self.analyze.set_sensitive(False)
+        self.status.set_text('Releasing model memory…')
+        def work():
+            try:
+                # Share the same lock as CLI/watcher analyses before unloading.
+                import fcntl
+                import os
+                directory = Path.home() / '.local/state/mseries-troubleshooter'
+                directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+                with open(directory / 'analysis.lock', 'a',
+                          opener=lambda path, flags: os.open(path, flags, 0o600)) as lock:
+                    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    result = subprocess.run(['systemctl', '--user', 'stop', 'mseries-troubleshooter-model.service'],
+                                            capture_output=True, text=True, timeout=25)
+                    message = 'Model memory released.' if result.returncode == 0 else result.stderr
+            except BlockingIOError:
+                message = 'Another analysis is running. Wait until it finishes before releasing memory.'
+            except (OSError, subprocess.SubprocessError) as error:
+                message = str(error)
+            GLib.idle_add(self.memory_released, message)
+        threading.Thread(target=work, daemon=True).start()
+
+    def memory_released(self, message):
+        self.release.set_sensitive(True)
+        self.analyze.set_sensitive(True)
+        self.status.set_text(message)
+        return False
 
     def run_analysis(self, _button):
-        question = self.question.get_text().strip() or 'Why are there recent desktop failures?'
+        question = self.question.get_text().strip() or (
+            'Find native desktop performance bottlenecks and recommend measured, reversible improvements.'
+            if self.performance.get_active() else 'Why are there recent desktop failures?')
         args = [str(Path.home() / '.local/bin/mseries-troubleshoot'), '--start', question]
+        if self.performance.get_active():
+            args.append('--performance')
+        if self.free_after.get_active():
+            args.append('--release-model')
         if self.previous.get_active():
             args.append('--previous-boot')
         self.analyze.set_sensitive(False)
@@ -142,4 +186,4 @@ class Troubleshooter(Gtk.Application):
         return False
 
 
-Troubleshooter().run(None)
+Troubleshooter().run(sys.argv)

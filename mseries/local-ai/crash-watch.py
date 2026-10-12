@@ -62,7 +62,7 @@ def main():
                 # No shell, arbitrary command execution, or model-generated repairs.
                 question = f"Diagnose the crash of {name!r}, PID {event['pid']}, signal {event['signal']}. Cite available evidence and uncertainties."
                 worker = subprocess.Popen([str(Path.home() / '.local/bin/mseries-troubleshoot'),
-                    '--start', question], stdout=subprocess.DEVNULL, stderr=None)
+                    '--start', '--release-model', question], stdout=subprocess.DEVNULL, stderr=None)
         raise SystemExit('Journal stream ended; service will retry')
 
 

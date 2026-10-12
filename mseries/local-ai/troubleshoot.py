@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 """Read-only, on-device crash/log triage using the private Gemma server."""
 import argparse
+from contextlib import contextmanager
+import fcntl
 from datetime import datetime
 import ipaddress
 import json
@@ -25,7 +27,15 @@ most five read-only verification commands. Explain what each checks. Never claim
 commands ran or fixes succeeded. Do not propose destructive commands, firmware,
 bootloader, kernel replacement, or disabling speaker protection. If evidence is
 insufficient, say what is missing. Be concise. This machine runs Pantheon on M1 Pro;
-Arch-flavoured kernel names do not mean its elementary userspace uses pacman.'''
+Arch-flavoured kernel names do not mean its elementary userspace uses pacman.
+For performance checks, rank only bottlenecks supported by the snapshot. CPU
+percentages from ps are lifetime averages, not an instantaneous benchmark.
+Do not infer saturation from load alone: compare with logical CPU count and
+pressure stall information. Distinguish current measurements from historical warnings. Prefer native
+Pantheon/systemd tools. Do not suggest dropping caches, disabling thermal or
+audio safety, forcing CPU frequencies, or replacing system graphics drivers.
+Recommend small reversible changes and how to measure their effect. Never
+claim a speedup without before/after evidence.'''
 
 
 def stage(name, detail):
@@ -71,8 +81,11 @@ def redact(text):
 
 
 def command(args):
-    result = subprocess.run(args, text=True, stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE, timeout=15, check=False)
+    try:
+        result = subprocess.run(args, text=True, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, timeout=15, check=False)
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return '[collection unavailable: ' + redact(str(error))[:250] + ']'
     if result.returncode:
         return '[collection unavailable: ' + redact(result.stderr.strip())[:250] + ']'
     return result.stdout.strip() or '[no matching entries]'
@@ -115,6 +128,74 @@ def collect(log_file=None, previous=False):
     return '\n'.join(f'[L{i}] {line}' for i, line in enumerate(logs.splitlines(), 1))
 
 
+def read_metric(path):
+    try:
+        return path.read_text()[:1200].strip()
+    except OSError:
+        return '[not available]'
+
+
+def performance_snapshot():
+    """Bounded native telemetry; process arguments and environments are excluded."""
+    sections = ['Current native performance snapshot (before this analysis loads Gemma)']
+    memory = read_metric(Path('/proc/meminfo'))
+    keys = ('MemTotal:', 'MemAvailable:', 'SwapTotal:', 'SwapFree:')
+    sections.append('Memory (kB)\n' + '\n'.join(line for line in memory.splitlines() if line.startswith(keys)))
+    sections.append('Load averages (1/5/15 min) and runnable tasks\n' + read_metric(Path('/proc/loadavg')))
+    sections.append(f'Logical CPU count: {os.cpu_count()}; compare load with CPU count, not with 1.0.\nOnline CPUs: ' + read_metric(Path('/sys/devices/system/cpu/online')))
+    for resource in ('cpu', 'memory', 'io'):
+        sections.append(resource + ' pressure stall information\n' + read_metric(Path('/proc/pressure') / resource))
+    for policy in sorted(Path('/sys/devices/system/cpu/cpufreq').glob('policy*'))[:8]:
+        values = ' '.join(f'{field}={read_metric(policy / field)}' for field in
+                          ('affected_cpus', 'scaling_governor', 'scaling_cur_freq', 'cpuinfo_max_freq'))
+        sections.append(policy.name + ' (frequency in kHz)\n' + values)
+    thermal = []
+    for zone in sorted(Path('/sys/class/thermal').glob('thermal_zone*'))[:12]:
+        thermal.append(read_metric(zone / 'type') + ': ' + read_metric(zone / 'temp'))
+    sections.append('Thermal sensors (millidegrees C; not proof of throttling)\n' + ('\n'.join(thermal) or '[not available]'))
+    for title, args in (
+        ('Processes by lifetime CPU average (no command arguments)', ['ps', '-eo', 'comm,pcpu,pmem,rss', '--sort=-pcpu']),
+        ('Processes by resident memory (RSS in kB)', ['ps', '-eo', 'comm,pcpu,pmem,rss', '--sort=-rss']),
+        ('Native power profile', ['powerprofilesctl', 'get']),
+        ('Root disk space', ['df', '-h', '/']),
+        ('Local model state', ['systemctl', '--user', 'show', 'mseries-troubleshooter-model.service',
+                               '-p', 'ActiveState', '-p', 'MemoryCurrent']),
+    ):
+        sections.append(title + '\n' + '\n'.join(command(args).splitlines()[:9]))
+    return '\n\n'.join(sections)[:6000]
+
+
+@contextmanager
+def analysis_session(args, endpoint):
+    """Prevent the app and crash watcher from loading/unloading each other's model."""
+    directory = Path.home() / '.local/state/mseries-troubleshooter'
+    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+    with open(directory / 'analysis.lock', 'a',
+              opener=lambda path, flags: os.open(path, flags, 0o600)) as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise ValueError('Another local analysis is running. Let it finish and retry.') from None
+        started = False
+        try:
+            if args.start:
+                started = True
+                start_server(endpoint)
+            yield
+        finally:
+            if started and args.release_model:
+                stage('releasing', 'Releasing Gemma memory for the desktop…')
+                try:
+                    result = subprocess.run(['systemctl', '--user', 'stop', 'mseries-troubleshooter-model.service'],
+                                            capture_output=True, text=True, timeout=25)
+                    if result.returncode:
+                        stage('release-failed', 'Analysis finished, but Gemma memory could not be released: ' + redact(result.stderr)[:200])
+                    else:
+                        stage('released', 'Gemma stopped; model memory released for the desktop.')
+                except (OSError, subprocess.SubprocessError) as error:
+                    stage('release-failed', 'Could not release model memory: ' + redact(str(error))[:200])
+
+
 def start_server(endpoint):
     stage("model-start", "Starting the local Gemma service…")
     if endpoint != DEFAULT_ENDPOINT:
@@ -139,45 +220,54 @@ def main():
     parser.add_argument('question', nargs='?', default='Identify likely causes of recent crashes or desktop failures.')
     parser.add_argument('--file', type=Path, help='Analyze a chosen text log instead of the journal')
     parser.add_argument('--previous-boot', action='store_true')
+    parser.add_argument('--performance', action='store_true', help='Include native CPU, memory, thermal and power evidence')
+    parser.add_argument('--release-model', action='store_true', help='Stop the dedicated model after analysis to free memory; requires --start')
     parser.add_argument('--endpoint', default=DEFAULT_ENDPOINT)
     parser.add_argument('--start', action='store_true', help='Start the installed Gemma server on demand')
     parser.add_argument('--collect-only', action='store_true', help='Print the bounded, redacted input without inference')
     args = parser.parse_args()
     endpoint = local_endpoint(args.endpoint)
+    if args.release_model and (not args.start or endpoint != DEFAULT_ENDPOINT):
+        parser.error("--release-model requires --start and the dedicated default endpoint")
     stage("collecting", "Collecting and redacting " + ("the selected log…" if args.file else
           "previous-boot logs…" if args.previous_boot else "current-boot logs…"))
     logs = collect(args.file, args.previous_boot)
+    if args.performance:
+        stage('performance', 'Measuring native CPU, memory pressure, thermals and power settings…')
+        logs = '\n'.join(f'[L{i}] {line}' for i, line in enumerate(
+            redact(performance_snapshot()).splitlines() + ['Recent warnings (historical):'] +
+            [re.sub(r'^\[L\d+\] ', '', line) for line in logs.splitlines()][-20:], 1))
     context = command(['uname', '-srmo'])
-    prompt = f'Current host: {context}\nQuestion: {redact(args.question)[:1000]}\n\nEvidence:\n{logs}'
+    mode = 'Native desktop performance optimization' if args.performance else 'Crash/log diagnosis'
+    prompt = f'Mode: {mode}\nCurrent host: {context}\nQuestion: {redact(args.question)[:1000]}\n\nEvidence:\n{logs}'
     if args.collect_only:
         print(prompt)
         return
-    if args.start:
-        start_server(endpoint)
-    stage("model-ready", "Checking the model served by the local endpoint…")
-    models = api(endpoint, '/v1/models')['data']
-    if not models:
-        raise ValueError('No model served')
-    model = models[0]['id']
-    stage("analyzing", f"{model} is analyzing {len(logs.splitlines())} evidence lines on-device · this may take a few minutes…")
-    response = api(endpoint, '/v1/chat/completions', {
-        'model': model, 'messages': [{'role': 'system', 'content': SYSTEM},
-        {'role': 'user', 'content': prompt}], 'max_tokens': 768, 'temperature': 0.2,
-        'stream': False, 'chat_template_kwargs': {'enable_thinking': False}}, timeout=600)
-    answer = response['choices'][0]['message']['content']
-    if not isinstance(answer, str) or not answer.strip():
-        raise ValueError('Model returned no diagnosis')
-    if response['choices'][0].get('finish_reason') == 'length':
-        answer += '\n\n[Output reached the response limit; analysis may be incomplete.]'
-    stage("saving", "Saving the diagnosis and input evidence locally…")
-    directory = Path.home() / '.local/state/mseries-troubleshooter'
-    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
-    report = directory / (datetime.now().strftime('%Y%m%d-%H%M%S-%f') + '.md')
-    with open(report, 'x', opener=lambda path, flags: os.open(path, flags, 0o600)) as output:
-        output.write(f'# Local troubleshooting report\n\nModel: {model}\n\n{answer}\n\n## Input evidence\n\n```text\n{prompt}\n```\n')
-    stage("complete", "Analysis complete. Report saved locally.")
-    print(answer)
-    print(f'\nSaved locally: {report}')
+    with analysis_session(args, endpoint):
+        stage("model-ready", "Checking the model served by the local endpoint…")
+        models = api(endpoint, '/v1/models')['data']
+        if not models:
+            raise ValueError('No model served')
+        model = models[0]['id']
+        stage("analyzing", f"{model} is analyzing {len(logs.splitlines())} evidence lines on-device · this may take a few minutes…")
+        response = api(endpoint, '/v1/chat/completions', {
+            'model': model, 'messages': [{'role': 'system', 'content': SYSTEM},
+            {'role': 'user', 'content': prompt}], 'max_tokens': 768, 'temperature': 0.2,
+            'stream': False, 'chat_template_kwargs': {'enable_thinking': False}}, timeout=600)
+        answer = response['choices'][0]['message']['content']
+        if not isinstance(answer, str) or not answer.strip():
+            raise ValueError('Model returned no diagnosis')
+        if response['choices'][0].get('finish_reason') == 'length':
+            answer += '\n\n[Output reached the response limit; analysis may be incomplete.]'
+        stage("saving", "Saving the diagnosis and input evidence locally…")
+        directory = Path.home() / '.local/state/mseries-troubleshooter'
+        directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+        report = directory / (datetime.now().strftime('%Y%m%d-%H%M%S-%f') + '.md')
+        with open(report, 'x', opener=lambda path, flags: os.open(path, flags, 0o600)) as output:
+            output.write(f'# Local troubleshooting report\n\nModel: {model}\n\n{answer}\n\n## Input evidence\n\n```text\n{prompt}\n```\n')
+        stage("complete", "Analysis complete. Report saved locally.")
+        print(answer)
+        print(f'\nSaved locally: {report}')
 
 
 if __name__ == '__main__':
