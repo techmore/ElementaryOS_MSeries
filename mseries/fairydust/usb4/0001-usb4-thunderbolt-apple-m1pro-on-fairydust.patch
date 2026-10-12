@@ -6918,7 +6918,7 @@ diff -ruN -x build a/drivers/thunderbolt/property.c b/drivers/thunderbolt/proper
 diff -ruN -x build a/drivers/thunderbolt/quirks.c b/drivers/thunderbolt/quirks.c
 --- a/drivers/thunderbolt/quirks.c
 +++ b/drivers/thunderbolt/quirks.c
-@@ -46,6 +46,12 @@
+@@ -46,6 +46,18 @@
  	}
  }
  
@@ -6928,10 +6928,16 @@ diff -ruN -x build a/drivers/thunderbolt/quirks.c b/drivers/thunderbolt/quirks.c
 +	tb_sw_dbg(sw, "disabling USB3 bandwidth allocation\n");
 +}
 +
++static void quirk_no_dp_tunnel(struct tb_switch *sw)
++{
++	sw->quirks |= QUIRK_NO_DP_TUNNEL;
++	tb_sw_dbg(sw, "disabling DP tunneling\n");
++}
++
  static void quirk_block_rpm_in_redrive(struct tb_switch *sw)
  {
  	sw->quirks |= QUIRK_KEEP_POWER_IN_DP_REDRIVE;
-@@ -61,6 +67,14 @@
+@@ -61,6 +73,20 @@
  };
  
  static const struct tb_quirk tb_quirks[] = {
@@ -6942,6 +6948,12 @@ diff -ruN -x build a/drivers/thunderbolt/quirks.c b/drivers/thunderbolt/quirks.c
 +	 * any path is written.
 +	 */
 +	{ 0x05ac, 0x0000, 0x0000, 0x0000, quirk_no_usb3_bw_alloc },
++
++	/*
++	 * Nothing drives the Apple host router's DP IN adapters yet (the DCP is only wired to the
++	 * ATC PHYs), so every DP tunnel attempt dies after ~300 DPRX read timeouts. Skip them.
++	 */
++	{ 0x05ac, 0x0000, 0x0000, 0x0000, quirk_no_dp_tunnel },
 +
  	/* Dell WD19TB supports self-authentication on unplug */
  	{ 0x0000, 0x0000, 0x00d4, 0xb070, quirk_force_power_link },
@@ -9039,7 +9051,19 @@ diff -ruN -x build a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
  	ev->route = route;
  	ev->port = port;
  	ev->unplug = unplug;
-@@ -2524,9 +2525,14 @@
+@@ -2070,6 +2071,11 @@
+ 		return;
+ 	}
+ 
++	if (tb->root_switch->quirks & QUIRK_NO_DP_TUNNEL) {
++		tb_dbg(tb, "host does not support DP tunneling, not creating tunnel\n");
++		return;
++	}
++
+ 	/*
+ 	 * Find pair of inactive DP IN and DP OUT adapters and then
+ 	 * establish a DP tunnel between them.
+@@ -2524,9 +2530,14 @@
  out:
  	mutex_unlock(&tb->lock);
  
@@ -9054,7 +9078,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
  	kfree(ev);
  }
  
-@@ -2844,6 +2850,9 @@
+@@ -2844,6 +2855,9 @@
  
  		/* Update other clients about the allocation change */
  		tb_recalc_estimated_bandwidth(tb);
@@ -9064,7 +9088,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
  	}
  
  put_sw:
-@@ -2933,7 +2942,9 @@
+@@ -2933,7 +2947,9 @@
  static void tb_stop(struct tb *tb)
  {
  	struct tb_cm *tcm = tb_priv(tb);
@@ -9074,7 +9098,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
  	struct tb_tunnel *n;
  
  	cancel_delayed_work(&tcm->remove_work);
-@@ -2948,7 +2959,27 @@
+@@ -2948,7 +2964,27 @@
  			tb_tunnel_deactivate(tunnel);
  		tb_tunnel_put(tunnel);
  	}
@@ -9102,7 +9126,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
  	tcm->hotplug_active = false; /* signal tb_handle_hotplug to quit */
  }
  
-@@ -2986,12 +3017,18 @@
+@@ -2986,12 +3022,18 @@
  static int tb_start(struct tb *tb, bool reset)
  {
  	struct tb_cm *tcm = tb_priv(tb);
@@ -9122,7 +9146,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
  
  	/*
  	 * ICM firmware upgrade needs running firmware and in native
-@@ -3008,14 +3045,22 @@
+@@ -3008,14 +3050,22 @@
  	ret = tb_switch_configure(tb->root_switch);
  	if (ret) {
  		tb_switch_put(tb->root_switch);
@@ -9147,7 +9171,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
  	}
  
  	/*
-@@ -3110,6 +3155,24 @@
+@@ -3110,6 +3160,24 @@
  	}
  }
  
@@ -9172,7 +9196,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
  static int tb_resume_noirq(struct tb *tb)
  {
  	struct tb_cm *tcm = tb_priv(tb);
-@@ -3129,6 +3192,7 @@
+@@ -3129,6 +3197,7 @@
  	tb_switch_resume(tb->root_switch, false);
  	tb_free_invalid_tunnels(tb);
  	tb_free_unplugged_children(tb->root_switch);
@@ -9180,7 +9204,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
  	tb_restore_children(tb->root_switch);
  
  	/*
-@@ -3171,28 +3235,6 @@
+@@ -3171,28 +3240,6 @@
  	return 0;
  }
  
@@ -9209,7 +9233,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
  static int tb_freeze_noirq(struct tb *tb)
  {
  	struct tb_cm *tcm = tb_priv(tb);
-@@ -3212,14 +3254,14 @@
+@@ -3212,14 +3259,14 @@
  static void tb_complete(struct tb *tb)
  {
  	/*
@@ -9229,7 +9253,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
  }
  
  static int tb_runtime_suspend(struct tb *tb)
-@@ -3246,11 +3288,11 @@
+@@ -3246,11 +3293,11 @@
  	struct tb *tb = tcm_to_tb(tcm);
  
  	mutex_lock(&tb->lock);
@@ -9244,7 +9268,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
  }
  
  static int tb_runtime_resume(struct tb *tb)
-@@ -3304,13 +3346,14 @@
+@@ -3304,13 +3351,14 @@
   */
  static bool tb_apple_add_links(struct tb_nhi *nhi)
  {
@@ -9260,7 +9284,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
  	case PCI_DEVICE_ID_INTEL_LIGHT_RIDGE:
  	case PCI_DEVICE_ID_INTEL_CACTUS_RIDGE_4C:
  	case PCI_DEVICE_ID_INTEL_FALCON_RIDGE_2C_NHI:
-@@ -3320,7 +3363,7 @@
+@@ -3320,7 +3368,7 @@
  		return false;
  	}
  
@@ -9269,7 +9293,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
  	while (upstream) {
  		if (!pci_is_pcie(upstream))
  			return false;
-@@ -3347,15 +3390,15 @@
+@@ -3347,15 +3395,15 @@
  		    !pdev->is_pciehp)
  			continue;
  
@@ -9288,7 +9312,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
  				 dev_name(&pdev->dev));
  		}
  	}
-@@ -3392,8 +3435,10 @@
+@@ -3392,8 +3440,10 @@
  	 * before the PCIe/USB stack is resumed so complain here if we
  	 * found them missing.
  	 */
@@ -9303,16 +9327,18 @@ diff -ruN -x build a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
 diff -ruN -x build a/drivers/thunderbolt/tb.h b/drivers/thunderbolt/tb.h
 --- a/drivers/thunderbolt/tb.h
 +++ b/drivers/thunderbolt/tb.h
-@@ -26,6 +26,8 @@
+@@ -26,6 +26,10 @@
  #define QUIRK_NO_CLX					BIT(1)
  /* Need to keep power on while USB4 port is in redrive mode */
  #define QUIRK_KEEP_POWER_IN_DP_REDRIVE			BIT(2)
 +/* Does not support USB3 bandwidth allocation */
 +#define QUIRK_NO_USB3_BW_ALLOC				BIT(3)
++/* Host cannot act as a DisplayPort tunnel source (no DP IN backend) */
++#define QUIRK_NO_DP_TUNNEL				BIT(4)
  
  /**
   * struct tb_nvm - Structure holding NVM information
-@@ -132,6 +134,7 @@
+@@ -132,6 +136,7 @@
   * @link_usb4: Upstream link is USB4
   * @generation: Switch Thunderbolt generation
   * @cap_plug_events: Offset to the plug events capability (%0 if not found)
@@ -9320,7 +9346,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.h b/drivers/thunderbolt/tb.h
   * @cap_vsec_tmu: Offset to the TMU vendor specific capability (%0 if not found)
   * @cap_lc: Offset to the link controller capability (%0 if not found)
   * @cap_lp: Offset to the low power (CLx for TBT) capability (%0 if not found)
-@@ -187,6 +190,7 @@
+@@ -187,6 +192,7 @@
  	bool link_usb4;
  	unsigned int generation;
  	int cap_plug_events;
@@ -9328,7 +9354,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.h b/drivers/thunderbolt/tb.h
  	int cap_vsec_tmu;
  	int cap_lc;
  	int cap_lp;
-@@ -725,11 +729,11 @@
+@@ -725,11 +731,11 @@
  			    length);
  }
  
@@ -9345,7 +9371,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.h b/drivers/thunderbolt/tb.h
  
  #define __TB_SW_PRINT(level, sw, fmt, arg...)           \
  	do {                                            \
-@@ -793,6 +797,7 @@
+@@ -793,6 +799,7 @@
  				       int transmit_path, int transmit_ring,
  				       int receive_path, int receive_ring);
  int tb_domain_disconnect_all_paths(struct tb *tb);
@@ -9353,7 +9379,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.h b/drivers/thunderbolt/tb.h
  
  static inline struct tb *tb_domain_get(struct tb *tb)
  {
-@@ -1102,6 +1107,7 @@
+@@ -1102,6 +1109,7 @@
  int tb_port_unlock(struct tb_port *port);
  int tb_port_enable(struct tb_port *port);
  int tb_port_disable(struct tb_port *port);
@@ -9361,7 +9387,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.h b/drivers/thunderbolt/tb.h
  int tb_port_alloc_in_hopid(struct tb_port *port, int hopid, int max_hopid);
  void tb_port_release_in_hopid(struct tb_port *port, int hopid);
  int tb_port_alloc_out_hopid(struct tb_port *port, int hopid, int max_hopid);
-@@ -1263,6 +1269,7 @@
+@@ -1263,6 +1271,7 @@
  				    const uuid_t *remote_uuid);
  void tb_xdomain_add(struct tb_xdomain *xd);
  void tb_xdomain_remove(struct tb_xdomain *xd);
@@ -9369,7 +9395,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.h b/drivers/thunderbolt/tb.h
  struct tb_xdomain *tb_xdomain_find_by_link_depth(struct tb *tb, u8 link,
  						 u8 depth);
  
-@@ -1479,6 +1486,7 @@
+@@ -1479,6 +1488,7 @@
  int usb4_dp_port_requested_bandwidth(struct tb_port *port);
  
  int usb4_pci_port_set_ext_encapsulation(struct tb_port *port, bool enable);
@@ -9377,7 +9403,7 @@ diff -ruN -x build a/drivers/thunderbolt/tb.h b/drivers/thunderbolt/tb.h
  
  static inline bool tb_is_usb4_port_device(const struct device *dev)
  {
-@@ -1556,4 +1564,12 @@
+@@ -1556,4 +1566,12 @@
  static inline void tb_retimer_debugfs_remove(struct tb_retimer *rt) { }
  #endif
  

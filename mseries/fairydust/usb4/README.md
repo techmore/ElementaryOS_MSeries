@@ -220,5 +220,10 @@ Workarounds that do not need that code (not verified here): a non-Thunderbolt/US
 dock falls back to plain DP Alt Mode on the fairydust DP port (front-left, atcphy1); or a USB-C to
 DP/HDMI adapter on that port. Neither applies when the dock cable is captive.
 
-Optional cleanup if the retry noise matters: a quirk to skip DP tunnel creation on Apple hosts until
-this exists (the retries are harmless but chatty).
+Retry noise: fixed by `QUIRK_NO_DP_TUNNEL` (set for Apple host routers in `quirks.c`, checked at the
+top of `tb_tunnel_dp()` in `tb.c`). With it the host no longer allocates a DP IN resource, burns ~300
+`DPRX read timeout` polls and tears the attempt down every ~30 s; it logs one debug line instead
+("host does not support DP tunneling, not creating tunnel"). Remove the table entry once DisplayPort
+tunnelling is implemented. Installed module checked by string/exports/section comparison; not yet
+observed live against the dock (it was unplugged when the module was reloaded) - re-check with
+`journalctl -k | grep -c "DPRX read timeout"` after the next dock connection (expect 0).
