@@ -197,7 +197,7 @@ No OpenCode settings or running sessions were changed.
 
 `bash mseries/install-network-throughput.sh` adds a live download/upload readout and a
 60-second graph (down in the accent colour, up in grey) to the network indicator's dropdown,
-above "Network Settings…". It builds `elementary/panel-network` at the commit that matches the
+directly under the connection toggles (Airplane Mode etc.). It builds `elementary/panel-network` at the commit that matches the
 installed `io.elementary.panel.network` 8.0.1 with `mseries/patches/network-throughput.patch`
 and replaces only `libnetwork.so`; the original is saved at
 `/usr/local/lib/mseries/libnetwork.so.original`. Build needs `libnm-dev libnma-gtk4-dev

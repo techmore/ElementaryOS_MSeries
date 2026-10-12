@@ -11,24 +11,27 @@ index 31e04c4..4659c55 100644
      'src/Widgets/VpnMenuItem.vala',
      'src/Widgets/WidgetNMInterface.vala',
 diff --git a/src/Widgets/PopoverWidget.vala b/src/Widgets/PopoverWidget.vala
-index 5484736..90c24d6 100644
+index 5484736..894d3a3 100644
 --- a/src/Widgets/PopoverWidget.vala
 +++ b/src/Widgets/PopoverWidget.vala
-@@ -101,6 +101,14 @@ public class Network.Widgets.PopoverWidget : Gtk.Box {
-         append (vpn_box);
-         append (wifi_box);
+@@ -97,7 +97,17 @@ public class Network.Widgets.PopoverWidget : Gtk.Box {
+             child = toggle_box
+         };
  
 +        var throughput_separator = new Gtk.Separator (Gtk.Orientation.HORIZONTAL) {
 +            margin_top = 3,
 +            margin_bottom = 3
 +        };
 +
-+        append (throughput_separator);
-+        append (new ThroughputWidget ());
+         append (toggle_revealer);
 +
-         if (is_in_session) {
-             hidden_item = new Wingpanel.PopoverMenuItem ();
-             hidden_item.text = _("Connect to Hidden Network…");
++        // Live down/up speed and graph, directly under the connection toggles.
++        append (new ThroughputWidget ());
++        append (throughput_separator);
++
+         append (vpn_box);
+         append (wifi_box);
+ 
 diff --git a/src/Widgets/ThroughputWidget.vala b/src/Widgets/ThroughputWidget.vala
 new file mode 100644
 index 0000000..0e3ab13

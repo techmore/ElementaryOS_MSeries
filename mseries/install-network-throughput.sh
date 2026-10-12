@@ -73,4 +73,4 @@ if [[ ! -f $backup ]]; then
 fi
 sudo install -m 0644 "$built" "$plugin"
 reload_panel
-echo 'Installed. Click the network icon in the panel: speeds and the graph are above "Network Settings…".'
+echo 'Installed. Click the network icon in the panel: the speeds and graph sit directly under the connection toggles.'
