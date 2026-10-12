@@ -172,10 +172,11 @@ namespace MSeries {
                     var entry = entries.get_object_element (i);
                     var provider = entry.get_string_member ("provider") ?? "Provider";
                     var text = entry.get_string_member ("text") ?? "Quota unavailable";
-                    if (i == 0) {
+                    if (first_text == "" || provider.down ().contains ("codex")) {
                         first_text = text;
                     }
                     if (provider.down ().contains ("codex")) {
+                        first_text = text;
                         append_codex_rows (provider, text);
                     } else {
                         append_metric_row (provider, text);
@@ -196,7 +197,7 @@ namespace MSeries {
                 var lower = part.down ().strip ();
                 if (lower.contains ("5h") || lower.contains ("session")) {
                     session = part.strip ();
-                } else if (lower.contains ("7d") || lower.contains ("weekly") || lower.contains ("week")) {
+                } else if (lower.contains ("7d") || lower.contains ("weekly") || lower.contains ("week") || lower.contains ("total")) {
                     weekly = part.strip ();
                 }
             }
@@ -224,13 +225,13 @@ namespace MSeries {
                 var lower = part.down ().strip ();
                 if (lower.contains ("5h") || lower.contains ("session")) {
                     session = part.strip ();
-                } else if (lower.contains ("7d") || lower.contains ("weekly") || lower.contains ("week")) {
+                } else if (lower.contains ("7d") || lower.contains ("weekly") || lower.contains ("week") || lower.contains ("total")) {
                     weekly = part.strip ();
                 }
             }
             if (session.length > 0 || weekly.length > 0) {
                 append_metric_row ("5-hour", session.length > 0 ? session : "Unavailable");
-                append_metric_row ("Weekly", weekly.length > 0 ? weekly : "Unavailable");
+                append_metric_row ("Weekly total", weekly.length > 0 ? weekly : "Unavailable");
             } else {
                 append_metric_row (provider, text);
             }
