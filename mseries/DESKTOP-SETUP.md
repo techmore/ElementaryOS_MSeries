@@ -375,7 +375,7 @@ reload, the removed-property warning and nine libnm device assertions were gone,
 and the panel remained running. Both system and user failed-unit lists were
 empty. The latest five-minute warning check was empty before the panel reload.
 
-Remaining startup warnings are **not fixed**: a fresh panel still reports six
+At the end of the initial audit (subsequently fixed below): a fresh panel still reports six
 `g_str_has_prefix` null-string assertions and one `Granite.Symbol` undefined-state
 warning. An isolated notifications-plugin probe reproduced null-string warnings,
 but their precise origin has not been established. An isolated Bluetooth probe
@@ -383,3 +383,54 @@ also crashed outside the desktop host; that diagnostic crash does not establish
 that the live Bluetooth indicator crashes. No logging was suppressed. Historical
 dock/kernel and greeter teardown messages remain outside these verified fixes;
 no kernel upgrade or unsafe speaker changes were made.
+
+### Gear-menu screen brightness
+
+`bash mseries/install-quick-settings-brightness.sh` builds elementary Quick
+Settings 1.4.0 at pinned revision `fb721d4b5640a2a25ae011370c8fe8aaff8d93f4`
+with a native GTK brightness slider immediately beneath the toggle grid containing
+Onscreen Keyboard, above text scaling. It shows the current percentage and uses
+Mutter's internal-display backlight range, including its hardware minimum.
+Updates are asynchronous and coalesced while dragging; external brightness-key
+changes refresh the slider. No slider is shown when no active internal backlight
+exists, or in the greeter.
+
+Build dependencies include `libaccountsservice-dev`, `libpackagekit-glib2-dev`,
+`libportal-dev`, `libadwaita-1-dev`, `libwayland-dev`, and the existing GTK,
+Granite, Wingpanel, Meson and Vala development tools. The installer replaces only
+`libquick-settings.so`, saves the stock plugin under `/usr/local/lib/mseries/`,
+and accepts `--uninstall` to restore it. Reload Wingpanel after installation or
+restoration. Distribution package updates may require reinstalling the patch.
+
+Validation: native plugin compiled; widget initialized from the live display at
+62.6%; moving it one percentage point changed the real backlight from 315 to
+320, and a finally block restored 315. The panel reloaded and remained running.
+Visual appearance has not been checked through a screenshot.
+
+
+### Sound indicator startup warning follow-up
+
+The remaining seven panel startup warnings were isolated to the sound indicator,
+not the notifications plugin. A Wayland plugin probe and GLib log-handler stack
+trace identified two causes: `DisplayWidget.volume_state` was initially null when
+its binding synchronized, and GTK 4.22.4's `shape_apply_state()` called
+`g_str_has_prefix()` on unnamed SVG animation IDs during initial state changes.
+
+`bash mseries/install-sound-indicator-fix.sh` builds official sound indicator
+8.0.3 at `8b7991c9156ac8127d27559506baea8e6fb72e5b`. The patch gives the volume
+state a valid initial value and assigns unique IDs to the existing animations.
+It preserves the artwork, state changes, animations and all audio routing;
+no speaker output or volume settings are enabled. Build dependencies additionally
+include `libpulse-dev`, `libnotify-dev` and `libcanberra-dev`. The stock library
+is backed up under `/usr/local/lib/mseries/`; `--uninstall` restores it, followed
+by a panel reload. GTK source reference:
+https://github.com/GNOME/gtk/blob/4.22.4/gtk/gtksvg.c (shape_apply_state).
+
+Validation of the follow-up: the patched sound indicator's isolated Wayland
+startup produced no warnings. After installation, a normal Gala-respawned panel
+(PID 162249 in this session) had no warning-level journal entries. The earlier
+seven warnings belonged to the old process, not the fresh panel. No diagnostic
+preload library or log handler is installed persistently. One temporary panel
+probe initially selected X11 and crashed because Wingpanel requires Wayland;
+the normal panel recovered, and subsequent probes explicitly used Wayland.
+The gear menu was opened through its native toggle action after activation.

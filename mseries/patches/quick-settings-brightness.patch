@@ -1,0 +1,26 @@
+diff --git a/src/PopoverWidget.vala b/src/PopoverWidget.vala
+index ec1af9b..b5f67ba 100644
+--- a/src/PopoverWidget.vala
++++ b/src/PopoverWidget.vala
+@@ -76,6 +76,9 @@ public class QuickSettings.PopoverWidget : Gtk.Box {
+ 
+         main_box = new Gtk.Box (VERTICAL, 0);
+         main_box.append (toggle_box);
++        if (server_type == SESSION) {
++            main_box.append (new ScreenBrightness ());
++        }
+         main_box.append (scale_box);
+         main_box.append (new Gtk.Separator (HORIZONTAL));
+         main_box.append (bottom_box);
+diff --git a/src/meson.build b/src/meson.build
+index 8979761..6e35a25 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -26,6 +26,7 @@ sources = [
+     'Widgets' / 'SettingsToggle.vala',
+     'Widgets' / 'SessionBox.vala',
+     'Widgets' / 'TextScale.vala',
++    'Widgets' / 'ScreenBrightness.vala',
+     'Widgets' / 'UserList.vala',
+     'Widgets' / 'UserRow.vala',
+ ]

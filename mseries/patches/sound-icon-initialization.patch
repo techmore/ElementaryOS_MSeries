@@ -1,0 +1,180 @@
+diff --git a/data/24/microphone.svg b/data/24/microphone.svg
+index c62affa..0cd4e8a 100644
+--- a/data/24/microphone.svg
++++ b/data/24/microphone.svg
+@@ -20,7 +20,7 @@
+             fill-rule='nonzero'
+             overflow='visible'
+             d='M 12 5 C 10.892 5, 10 5.892, 10 7 L 10 13 C 10 14.108, 10.892 15, 12 15 C 13.108 15, 14 14.108, 14 13 L 14 7 C 14 5.892, 13.108 5, 12 5 Z M 7 10 L 7 11 L 8 11 L 8 13 A 3.981 3.981 0 0 0 11 16.861 L 11 19 L 10 19 L 10 20 L 14 20 L 14 19 L 13 19 L 13 16.861 A 3.981 3.981 0 0 0 16 13 L 16 11 L 17 11 L 17 10 L 15 10 L 15 13 C 15 14.662, 13.662 16, 12 16 C 10.338 16, 9 14.662, 9 13 L 9 10 Z'>
+-      <animate
++      <animate id='sound-animation-1'
+               attributeName='opacity'
+               begin='StateChange(normal, disabled)'
+               dur='200ms'
+@@ -28,7 +28,7 @@
+               fill='freeze'
+               to='0.5'
+               keyTimes='0; 1'/>
+-      <animate
++      <animate id='sound-animation-2'
+               attributeName='opacity'
+               begin='StateChange(disabled, normal)'
+               dur='200ms'
+diff --git a/data/24/volume.svg b/data/24/volume.svg
+index 6d3135c..3bf2b67 100644
+--- a/data/24/volume.svg
++++ b/data/24/volume.svg
+@@ -13,21 +13,21 @@
+           mask='url(#disabled-mask)'>
+     <g
+             id='g1'>
+-      <animate
++      <animate id='sound-animation-1'
+               attributeName='opacity'
+               begin='gpa:states(low normal high disabled-blocking, disabled)'
+               dur='200ms'
+               fill='freeze'
+               to='0.5'
+               keyTimes='0; 1'/>
+-      <animate
++      <animate id='sound-animation-2'
+               attributeName='opacity'
+               begin='gpa:states(disabled, low normal high disabled-blocking)'
+               dur='200ms'
+               fill='freeze'
+               to='1'
+               keyTimes='0; 1'/>
+-      <animateTransform
++      <animateTransform id='sound-animation-3'
+               attributeName='transform'
+               begin='gpa:states(low, normal)'
+               dur='200ms'
+@@ -36,7 +36,7 @@
+               to='2 0'
+               keyTimes='0; 1'
+               type='translate'/>
+-      <animateTransform
++      <animateTransform id='sound-animation-4'
+               attributeName='transform'
+               begin='gpa:states(low, high)'
+               dur='200ms'
+@@ -45,7 +45,7 @@
+               to='0 0'
+               keyTimes='0; 1'
+               type='translate'/>
+-      <animateTransform
++      <animateTransform id='sound-animation-5'
+               attributeName='transform'
+               begin='gpa:states(low, disabled disabled-blocking)'
+               dur='200ms'
+@@ -54,7 +54,7 @@
+               to='5 0'
+               keyTimes='0; 1'
+               type='translate'/>
+-      <animateTransform
++      <animateTransform id='sound-animation-6'
+               attributeName='transform'
+               begin='gpa:states(normal, low)'
+               dur='200ms'
+@@ -63,7 +63,7 @@
+               to='4 0'
+               keyTimes='0; 1'
+               type='translate'/>
+-      <animateTransform
++      <animateTransform id='sound-animation-7'
+               attributeName='transform'
+               begin='gpa:states(normal, high)'
+               dur='200ms'
+@@ -72,7 +72,7 @@
+               to='0 0'
+               keyTimes='0; 1'
+               type='translate'/>
+-      <animateTransform
++      <animateTransform id='sound-animation-8'
+               attributeName='transform'
+               begin='gpa:states(normal, disabled disabled-blocking)'
+               dur='200ms'
+@@ -81,7 +81,7 @@
+               to='5 0'
+               keyTimes='0; 1'
+               type='translate'/>
+-      <animateTransform
++      <animateTransform id='sound-animation-9'
+               attributeName='transform'
+               begin='gpa:states(high, low)'
+               dur='200ms'
+@@ -90,7 +90,7 @@
+               to='4 0'
+               keyTimes='0; 1'
+               type='translate'/>
+-      <animateTransform
++      <animateTransform id='sound-animation-10'
+               attributeName='transform'
+               begin='gpa:states(high, normal)'
+               dur='200ms'
+@@ -99,7 +99,7 @@
+               to='2 0'
+               keyTimes='0; 1'
+               type='translate'/>
+-      <animateTransform
++      <animateTransform id='sound-animation-11'
+               attributeName='transform'
+               begin='gpa:states(high, disabled disabled-blocking)'
+               dur='200ms'
+@@ -108,7 +108,7 @@
+               to='5 0'
+               keyTimes='0; 1'
+               type='translate'/>
+-      <animateTransform
++      <animateTransform id='sound-animation-12'
+               attributeName='transform'
+               begin='gpa:states(disabled disabled-blocking, low)'
+               dur='200ms'
+@@ -117,7 +117,7 @@
+               to='4 0'
+               keyTimes='0; 1'
+               type='translate'/>
+-      <animateTransform
++      <animateTransform id='sound-animation-13'
+               attributeName='transform'
+               begin='gpa:states(disabled disabled-blocking, normal)'
+               dur='200ms'
+@@ -126,7 +126,7 @@
+               to='2 0'
+               keyTimes='0; 1'
+               type='translate'/>
+-      <animateTransform
++      <animateTransform id='sound-animation-14'
+               attributeName='transform'
+               begin='gpa:states(disabled disabled-blocking, high)'
+               dur='200ms'
+@@ -145,14 +145,14 @@
+               gpa:fill='foreground'
+               gpa:animation-repeat='0'
+               gpa:animation-segment='0'>
+-        <animate
++        <animate id='sound-animation-15'
+                 attributeName='fill'
+                 begin='gpa:states(low normal high disabled, disabled-blocking)'
+                 dur='200ms'
+                 fill='freeze'
+                 to='url(#gpa:warning) rgb(249,196,64)'
+                 keyTimes='0; 1'/>
+-        <animate
++        <animate id='sound-animation-16'
+                 attributeName='fill'
+                 begin='gpa:states(disabled-blocking, low normal high disabled)'
+                 dur='200ms'
+diff --git a/src/Widgets/DisplayWidget.vala b/src/Widgets/DisplayWidget.vala
+index 3289173..d3cfafa 100644
+--- a/src/Widgets/DisplayWidget.vala
++++ b/src/Widgets/DisplayWidget.vala
+@@ -21,7 +21,7 @@ public class Sound.DisplayWidget : Gtk.Box {
+ 
+     public bool show_mic { get; set; }
+     public bool mic_muted { get; set; }
+-    public string volume_state { get; set; }
++    public string volume_state { get; set; default = SoundIndicator.SymbolState.NORMAL; }
+ 
+     // HACK: Using Gdk.ScrollEvent instead of Value as the type of the parameter
+     // resulsts build error with valac 0.56.18
