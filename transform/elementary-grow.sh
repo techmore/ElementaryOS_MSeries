@@ -220,13 +220,18 @@ EOF
   sed -e "s/Suites: .*/Suites: $UBUNTU_SUITE/" \
       "$REPO_ROOT/repos/stable/etc/apt/sources.list.d/elementary-os-patches.sources" \
       > "$newroot/etc/apt/sources.list.d/elementary-os-patches.sources" || return 1
+  # elementary-desktop metapackage lives in the daily PPA for resolute
+  # (stable carries only Pantheon components) — same team keyring.
+  sed -e "s/Suites: .*/Suites: $UBUNTU_SUITE/" \
+      "$REPO_ROOT/repos/daily/etc/apt/sources.list.d/elementary-os-daily.sources" \
+      > "$newroot/etc/apt/sources.list.d/elementary-os-daily.sources" || return 1
   chroot "$newroot" /bin/bash -s <<EOF || return 1
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-cache show elementary-desktop >/dev/null \
-  || { echo "elementary-desktop not in PPA for $UBUNTU_SUITE — aborting chroot build"; exit 1; }
-apt-get install -y elementary-desktop pipewire-pulse pipewire-alsa rtkit network-manager
+  || { echo "elementary-desktop not in PPAs for $UBUNTU_SUITE — aborting chroot build"; exit 1; }
+apt-get install -y elementary-desktop elementary-minimal elementary-standard pipewire-pulse pipewire-alsa rtkit network-manager
 apt-get clean
 EOF
 
