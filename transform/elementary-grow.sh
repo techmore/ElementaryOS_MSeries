@@ -513,7 +513,7 @@ EOF
 
   unmount_top
   trap - EXIT
-  log "user '$name' ready in $SUBVOL_NAME (groups: $groups)"
+  log "user '$name' ready in $SUBVOL_NAME (sudo + standard hardware groups)"
   if [[ $pass == admin ]]; then
     log "WARNING: password is the default 'admin' — run 'passwd' after first login"
   fi
