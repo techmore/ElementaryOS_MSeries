@@ -23,4 +23,6 @@ Terminal=false
 Categories=Network;InstantMessaging;
 StartupWMClass=Signal Beta
 EOF
+repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+bash "$repo/mseries/install-signal-integration.sh"
 echo 'Installed Signal Beta. Link your phone when it opens.'

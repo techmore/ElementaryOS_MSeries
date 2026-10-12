@@ -1,0 +1,44 @@
+diff --git a/src/Widgets/PopoverWidget.vala b/src/Widgets/PopoverWidget.vala
+index 894d3a3..542cc92 100644
+--- a/src/Widgets/PopoverWidget.vala
++++ b/src/Widgets/PopoverWidget.vala
+@@ -249,22 +249,32 @@ public class Network.Widgets.PopoverWidget : Gtk.Box {
+ 
+     private void update_interfaces_names () {
+         NM.Device[] devices = {};
++        WidgetNMInterface[] device_interfaces = {};
+         foreach (unowned var iface in network_interface) {
+-            devices += iface.device;
++            // The VPN row has no NM.Device; libnm requires real devices.
++            if (iface.device != null) {
++                devices += iface.device;
++                device_interfaces += iface;
++            }
+         }
+ 
++        if (devices.length == 0) {
++            return;
++        }
+         var names = NM.Device.disambiguate_names (devices);
+ 
+-        for (int i = 0; i < network_interface.length (); i++) {
+-            network_interface.nth_data (i).display_title = names[i];
++        for (int i = 0; i < device_interfaces.length; i++) {
++            device_interfaces[i].display_title = names[i];
+         }
+     }
+ 
+     private void device_added_cb (NM.Device device) {
+-        if (device.get_iface ().has_prefix ("vmnet") ||
+-            device.get_iface ().has_prefix ("lo") ||
+-            device.get_iface ().has_prefix ("veth") ||
+-            device.get_iface ().has_prefix ("vboxnet")) {
++        var interface_name = device.get_iface ();
++        if (interface_name == null ||
++            interface_name.has_prefix ("vmnet") ||
++            interface_name.has_prefix ("lo") ||
++            interface_name.has_prefix ("veth") ||
++            interface_name.has_prefix ("vboxnet")) {
+             return;
+         }
+ 

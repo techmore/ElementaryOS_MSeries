@@ -246,14 +246,15 @@ Resolved:
   until the next login.
 - **Touchegg missing:** see Touchpad gestures above.
 
-Seen in logs, harmless:
+Historical log observations (not a declaration that every warning is harmless):
 - The login screen's `gala` and `wireplumber` (user 108) abort during teardown while the
   session is handed over. They do not affect the desktop session.
 - `systemd-growfs: crypt_resize() of /dev/nvme0n1p5 failed: Operation not permitted` for
   `/` and `/home`; boot continues.
 - `apple-dcp: Failed to get dp-xbar`, and Thunderbolt "USB3 tunnel creation failed" / "DP
   not active" (display and USB4 bring-up). Missing `rtl_nic/rtl8156b-2.fw` for a USB
-  adapter. `org.gnome.Shell.Brightness` has no owner (Pantheon has no GNOME Shell).
+  adapter. The missing `org.gnome.Shell.Brightness` provider is addressed by the
+  2026-10-12 compatibility bridge described below.
 - Wingpanel prints GTK layout and `g_str_has_prefix` assertions from the custom indicators.
 
 Possible optimizations, not applied (each needs sudo and a decision):
@@ -321,9 +322,8 @@ Findings from reading this boot's logs, `systemctl`, `ps`, `/proc/meminfo` and t
 | Wi-Fi resume recovery could never trigger or work | rejection filter used `journalctl -k` (wpa_supplicant logs are not kernel messages); `modprobe -r brcmfmac` failed with "Module brcmfmac is in use"; "connecting" counted as down so it restarted NetworkManager after every slow resume | rewritten in `mkosi.images/.../mseries-wifi-resume-fix`: acts only on recent status-16 rejections while Wi-Fi is not connected, stops NetworkManager/wpa_supplicant before reloading `brcmfmac_wcc`+`brcmfmac`, then restarts them |
 | Build caches on the Arch side | 34 GB (compressed on disk: ~9 GB) | removed `usb4-pkg`, `fairydust`, `usb4`, `test`; built packages kept in `~/fairydust-usb4/pkgs/` |
 
-Seen and left alone (noise, not defects here): Wingpanel's intermittent SEGV in `PanelWindow.on_realize`
-(upstream race when the panel is respawned; Gala restarts it), repeated NM/`g_str_has_prefix` assertions from
-Wingpanel indicators, the greeter's wireplumber abort, brcmfmac P2P-device `-52` errors, `systemd-growfs` failing
+Historical issues left outside the system-tuning change: Wingpanel's intermittent SEGV in `PanelWindow.on_realize`
+(upstream race when the panel is respawned; Gala restarts it), Wingpanel indicator assertions (see the subsequent log audit below), the greeter's wireplumber abort, brcmfmac P2P-device `-52` errors, `systemd-growfs` failing
 to resize the LUKS volume, USB `cannot reset (-71)` floods when a dock is pulled, and kernel taint `S`
 (CPU out of spec) which is normal on Asahi. Revert the tuning with `install-system-tuning.sh --revert`.
 
@@ -334,3 +334,52 @@ Restart apps to pick up the updated user stylesheets.
 Spellcheck squiggles are drawn by each application or text engine; the GTK
 palette does not override every spelling marker (including Chromium/Electron).
 These colour tweaks keep spelling checks enabled.
+
+
+### Desktop log repair — 2026-10-12
+
+Installed and verified on the M1 Pro session:
+
+- Added a Pantheon provider for GNOME 50's `org.gnome.Shell.Brightness` API,
+  backed by Mutter's real backlight API. This resolves repeated power daemon
+  dimming failures. Manual changes during dimming are preserved. First install
+  saves the ambient-brightness preference and disables automatic brightness;
+  subsequent installs preserve the current choice. Uninstall restores the saved
+  preference. Existing brightness keys remain in use.
+- Fixed the keyboard indicator's binding to a removed `active` property on
+  `Wingpanel.PopoverMenuItem`. Selection now uses GTK's checked state.
+- Fixed the network indicator passing its device-less VPN row into libnm's
+  device-name disambiguation. Existing throughput enhancements remain included.
+- Repaired Signal Beta's lowercase Electron desktop identity and installed its
+  own bundled icon. Hidden aliases let the dock resolve the app without adding
+  duplicate visible launchers. The running Signal session was preserved.
+- Corrected the misplaced `StandardError` directive in the installed SPICE user
+  unit through a user override. Regenerate this override after vendor updates.
+- Cleared the stale failure of the already-disabled duplicate snap CUPS browser
+  only when its recorded exit status was 143 from intentional termination.
+  Native CUPS remains active.
+
+Reproduce the session integration with `bash mseries/install-log-fixes.sh`.
+Build the keyboard patch with `bash mseries/install-keyboard-indicator-fix.sh`
+and the network patch with `bash mseries/install-network-throughput.sh`.
+These indicator builds require the development packages used by the existing
+Wingpanel builds and network access to their pinned upstream sources. Reload
+Wingpanel after replacing plugins. The keyboard installer accepts `--uninstall`
+to restore its original library; the brightness installer also accepts
+`--uninstall`. Signal's original launcher is backed up under
+`~/.local/state/mseries-signal/desktop-before-integration`.
+
+Validation: five brightness behavior tests passed; shell syntax and diff checks
+passed; both native indicator libraries compiled and loaded. After a fresh panel
+reload, the removed-property warning and nine libnm device assertions were gone,
+and the panel remained running. Both system and user failed-unit lists were
+empty. The latest five-minute warning check was empty before the panel reload.
+
+Remaining startup warnings are **not fixed**: a fresh panel still reports six
+`g_str_has_prefix` null-string assertions and one `Granite.Symbol` undefined-state
+warning. An isolated notifications-plugin probe reproduced null-string warnings,
+but their precise origin has not been established. An isolated Bluetooth probe
+also crashed outside the desktop host; that diagnostic crash does not establish
+that the live Bluetooth indicator crashes. No logging was suppressed. Historical
+dock/kernel and greeter teardown messages remain outside these verified fixes;
+no kernel upgrade or unsafe speaker changes were made.
