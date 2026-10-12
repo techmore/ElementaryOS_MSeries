@@ -16,6 +16,8 @@ The owner confirms elementary OS 9 boots on a 2021 14-inch M1 Pro using
 the transformed system. See [desktop setup](DESKTOP-SETUP.md) for reproducible
 Command shortcuts, Pantheon brightness keys, Signal ARM64, CodexBar Linux and
 its native Wingpanel quota dropdown.
+[Ambient keyboard lighting](keyboard-backlight/README.md) is available through
+`bash mseries/install-keyboard-backlight.sh`, using the AOP sensor and UPower.
 
 `mkosi.images/apple-silicon/` (arm64-only directory image) carries the
 ported layer and is wired into the arm64 live ISO profile and the sysupdate
