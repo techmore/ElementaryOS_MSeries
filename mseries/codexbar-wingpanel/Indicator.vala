@@ -11,6 +11,8 @@ namespace MSeries {
         private Gtk.Box menu;
         private Gtk.Label status_label;
         private Gtk.Box providers_box;
+        private Gtk.Button refresh_button;
+        private Gtk.Image refresh_icon;
         private string executable;
         private bool request_in_flight = false;
         private bool snapshot_busy = false;
@@ -38,27 +40,51 @@ namespace MSeries {
             panel_display.set_tooltip_text ("OpenAI Codex usage remaining");
             this.visible = true;
 
-            menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 12) {
-                margin_top = 12,
-                margin_bottom = 12,
-                margin_start = 12,
-                margin_end = 12,
-                width_request = 320
+            menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 14) {
+                margin_top = 14,
+                margin_bottom = 14,
+                margin_start = 14,
+                margin_end = 14,
+                width_request = 360
             };
 
-            var title_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+            var title_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 10);
             var menu_icon = new Gtk.Image.from_icon_name ("mseries-codexbar-openai-symbolic") {
-                pixel_size = 20
+                pixel_size = 22
             };
             menu_icon.add_css_class ("symbolic");
             title_row.append (menu_icon);
-            var title = new Gtk.Label ("Codex usage") {
-                xalign = 0,
+
+            var title_stack = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) {
                 hexpand = true,
+                halign = Gtk.Align.FILL
+            };
+            var title = new Gtk.Label ("CodexBar") {
+                xalign = 0,
                 halign = Gtk.Align.START
             };
             title.add_css_class ("heading");
-            title_row.append (title);
+            title_stack.append (title);
+            var subtitle = new Gtk.Label ("Usage overview") {
+                xalign = 0,
+                halign = Gtk.Align.START
+            };
+            subtitle.add_css_class ("dim-label");
+            subtitle.add_css_class ("caption");
+            title_stack.append (subtitle);
+            title_row.append (title_stack);
+
+            refresh_icon = new Gtk.Image.from_icon_name ("view-refresh-symbolic") {
+                pixel_size = 16
+            };
+            refresh_icon.add_css_class ("symbolic");
+            refresh_button = new Gtk.Button () {
+                child = refresh_icon,
+                tooltip_text = "Refresh usage"
+            };
+            refresh_button.add_css_class ("flat");
+            refresh_button.clicked.connect (() => refresh_usage ());
+            title_row.append (refresh_button);
             menu.append (title_row);
 
             status_label = new Gtk.Label ("Loading CodexBar usage…") {
@@ -66,6 +92,8 @@ namespace MSeries {
                 wrap = true,
                 halign = Gtk.Align.FILL
             };
+            status_label.add_css_class ("dim-label");
+            status_label.add_css_class ("caption");
             menu.append (status_label);
 
             providers_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 12);
@@ -74,42 +102,17 @@ namespace MSeries {
             var separator = new Gtk.Separator (Gtk.Orientation.HORIZONTAL);
             menu.append (separator);
 
-            var action_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) {
-                homogeneous = true
+            var action_grid = new Gtk.Grid () {
+                column_spacing = 8,
+                row_spacing = 8,
+                column_homogeneous = true,
+                row_homogeneous = true
             };
-            var refresh_button = make_button ("Refresh", "view-refresh-symbolic");
-            refresh_button.clicked.connect (() => {
-                run_action ("--refresh");
-                refresh_poll_count = 0;
-                Timeout.add_seconds (2, () => {
-                    read_snapshot ();
-                    refresh_poll_count++;
-                    if ((!snapshot_busy && refresh_poll_count >= 3) || refresh_poll_count >= 30) {
-                        return Source.REMOVE;
-                    }
-                    return Source.CONTINUE;
-                });
-            });
-            action_row.append (refresh_button);
-
-            var quick_view_button = make_button ("Quick View", "view-reveal-symbolic");
-            quick_view_button.clicked.connect (() => run_action ("--quick-view"));
-            action_row.append (quick_view_button);
-
-            var usage_button = make_button ("Usage", "utilities-system-monitor-symbolic");
-            usage_button.clicked.connect (() => run_action ("--usage"));
-            action_row.append (usage_button);
-            menu.append (action_row);
-
-            var secondary_action_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
-            var spending_button = make_button ("Spending", "view-list-symbolic");
-            spending_button.clicked.connect (() => run_action ("--spending"));
-            secondary_action_row.append (spending_button);
-
-            var settings_button = make_button ("Settings & Sign In", "preferences-system-symbolic");
-            settings_button.clicked.connect (() => run_action ("--settings"));
-            secondary_action_row.append (settings_button);
-            menu.append (secondary_action_row);
+            action_grid.attach (make_action_button ("Quick View", "view-reveal-symbolic", "--quick-view"), 0, 0, 1, 1);
+            action_grid.attach (make_action_button ("Usage", "utilities-system-monitor-symbolic", "--usage"), 1, 0, 1, 1);
+            action_grid.attach (make_action_button ("Spending", "view-list-symbolic", "--spending"), 0, 1, 1, 1);
+            action_grid.attach (make_action_button ("Settings & Sign In", "preferences-system-symbolic", "--settings"), 1, 1, 1, 1);
+            menu.append (action_grid);
 
             // CodexBar owns provider authentication, polling and cached usage.
             // This indicator only reads its documented, same-user local snapshot.
@@ -126,19 +129,44 @@ namespace MSeries {
             Timeout.add_seconds (60, () => { read_snapshot (); return Source.CONTINUE; });
         }
 
-        private Gtk.Button make_button (string label, string icon_name) {
+        private Gtk.Button make_action_button (string label, string icon_name, string action) {
             var button = new Gtk.Button () {
-                tooltip_text = label
+                tooltip_text = label,
+                height_request = 58,
+                hexpand = true
             };
-            var content = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
-            var icon = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 16 };
+            var content = new Gtk.Box (Gtk.Orientation.VERTICAL, 5) {
+                halign = Gtk.Align.CENTER,
+                valign = Gtk.Align.CENTER
+            };
+            var icon = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 18 };
             icon.add_css_class ("symbolic");
             content.append (icon);
-            var text = new Gtk.Label (label);
+            var text = new Gtk.Label (label) {
+                xalign = 0.5f,
+                justify = Gtk.Justification.CENTER
+            };
+            text.add_css_class ("caption");
             content.append (text);
             button.set_child (content);
-            button.add_css_class ("flat");
+            button.clicked.connect (() => run_action (action));
             return button;
+        }
+
+        private void refresh_usage () {
+            run_action ("--refresh");
+            status_label.set_text ("Refreshing usage…");
+            refresh_icon.set_from_icon_name ("process-working-symbolic");
+            refresh_button.set_sensitive (false);
+            refresh_poll_count = 0;
+            Timeout.add_seconds (2, () => {
+                read_snapshot ();
+                refresh_poll_count++;
+                if ((!snapshot_busy && refresh_poll_count >= 3) || refresh_poll_count >= 30) {
+                    return Source.REMOVE;
+                }
+                return Source.CONTINUE;
+            });
         }
 
         private void run_action (string action) {
@@ -200,6 +228,8 @@ namespace MSeries {
 
                 clear_provider_rows ();
                 snapshot_busy = snapshot.get_boolean_member ("busy");
+                refresh_icon.set_from_icon_name (snapshot_busy ? "process-working-symbolic" : "view-refresh-symbolic");
+                refresh_button.set_sensitive (!snapshot_busy);
                 string codex_panel_summary = "";
                 string claude_panel_summary = "";
                 for (uint i = 0; i < entries.get_length (); i++) {
@@ -337,8 +367,8 @@ namespace MSeries {
             var remaining_node = window.get_member ("remaining");
 
             var quota_card = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) {
-                margin_top = 8,
-                margin_bottom = 8,
+                margin_top = 2,
+                margin_bottom = 2,
                 margin_start = 10,
                 margin_end = 10
             };
@@ -350,7 +380,7 @@ namespace MSeries {
                 hexpand = true,
                 halign = Gtk.Align.START
             };
-            name_label.add_css_class ("caption");
+            name_label.add_css_class ("dim-label");
             heading.append (name_label);
 
             if (remaining_node == null || remaining_node.get_node_type () == Json.NodeType.NULL) {
@@ -362,7 +392,7 @@ namespace MSeries {
             }
 
             var remaining = remaining_node.get_double ();
-            var percent_label = new Gtk.Label ("%0.0f%% left".printf (remaining)) {
+            var percent_label = new Gtk.Label ("%0.0f%% remaining".printf (remaining)) {
                 halign = Gtk.Align.END
             };
             percent_label.add_css_class ("numeric");
@@ -372,7 +402,8 @@ namespace MSeries {
 
             var progress = new Gtk.ProgressBar () {
                 show_text = false,
-                height_request = 6
+                height_request = 7,
+                tooltip_text = "%0.0f%% remaining".printf (remaining)
             };
             progress.set_fraction (GLib.Math.fmin (1.0, GLib.Math.fmax (0.0, remaining / 100.0)));
             if (window.get_boolean_member ("warning")) {
@@ -464,6 +495,8 @@ namespace MSeries {
             panel_label.set_text ("5H — · 7D —");
             panel_display.set_tooltip_text (message);
             status_label.set_text (message);
+            refresh_icon.set_from_icon_name ("view-refresh-symbolic");
+            refresh_button.set_sensitive (true);
             clear_provider_rows ();
         }
 

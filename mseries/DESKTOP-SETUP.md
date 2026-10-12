@@ -146,15 +146,12 @@ loads from an Arch-named initramfs, so regenerating Ubuntu's conventional
 
 If the centered date/time remains hidden, install a temporary right-side
 replacement with `bash mseries/install-clockright-wingpanel.sh`. It follows
-Wingpanel's weekday, date, 12/24-hour, and seconds preferences. Log out and
-back in to load it; remove it with `bash mseries/install-clockright-wingpanel.sh --uninstall`.
-
-To place this clock immediately after Alerts and before Quick Settings, run
-`bash mseries/install-wingpanel-clock-position.sh`. It rebuilds the matching
-Wingpanel source with that indicator order and saves the packaged binary
-for rollback. Build dependencies are `git`, `meson`, `ninja-build`, `valac`, and
-`libwingpanel-9-dev`. Wingpanel restarts on its own after install;
-restore the packaged binary with `bash mseries/install-wingpanel-clock-position.sh --uninstall`.
+Wingpanel's weekday, date, 12/24-hour, and seconds preferences. To place it
+after Alerts and before Quick Settings, run
+`bash mseries/install-wingpanel-clock-position.sh`. This rebuilds the matching
+Wingpanel 8.0.4 revision and saves the original panel executable for rollback
+with `bash mseries/install-wingpanel-clock-position.sh --uninstall`. Log out
+and back in to load the indicator and ordering.
 
 ## Boot and login timing
 
