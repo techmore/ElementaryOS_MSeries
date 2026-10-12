@@ -7,6 +7,7 @@ using Wingpanel;
 namespace MSeries {
     public class CodexBarIndicator : Wingpanel.Indicator {
         private Gtk.Label panel_label;
+        private Gtk.Box panel_display;
         private Gtk.Box menu;
         private Gtk.Label status_label;
         private Gtk.Box providers_box;
@@ -20,11 +21,19 @@ namespace MSeries {
         construct {
             executable = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "codexbar-linux");
 
-            panel_label = new Gtk.Label ("CodexBar") {
+            var panel_icon = new Gtk.Image.from_file (
+                "/usr/share/icons/hicolor/scalable/apps/mseries-codexbar-openai.svg") {
+                pixel_size = 18
+            };
+            panel_label = new Gtk.Label ("5H — · 7D —") {
                 ellipsize = Pango.EllipsizeMode.END,
-                max_width_chars = 15
+                max_width_chars = 18
             };
             panel_label.add_css_class ("caption");
+            panel_display = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 5);
+            panel_display.append (panel_icon);
+            panel_display.append (panel_label);
+            panel_display.set_tooltip_text ("OpenAI Codex usage remaining");
             this.visible = true;
 
             menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) {
@@ -35,7 +44,7 @@ namespace MSeries {
                 width_request = 280
             };
 
-            var title = new Gtk.Label ("AI quota remaining") {
+            var title = new Gtk.Label ("OpenAI usage remaining") {
                 xalign = 0,
                 halign = Gtk.Align.START
             };
@@ -78,6 +87,7 @@ namespace MSeries {
                 status_label.set_text ("Could not start CodexBar: " + e.message);
             }
 
+            Timeout.add_seconds (2, () => { configure_detailed_usage (); return Source.REMOVE; });
             Timeout.add_seconds (5, () => { read_snapshot (); return Source.REMOVE; });
             Timeout.add_seconds (60, () => { read_snapshot (); return Source.CONTINUE; });
         }
@@ -96,6 +106,17 @@ namespace MSeries {
                     null, out child_pid);
             } catch (Error e) {
                 status_label.set_text ("Could not open CodexBar: " + e.message);
+            }
+        }
+
+        private void configure_detailed_usage () {
+            try {
+                Pid child_pid;
+                Process.spawn_async (null, { executable, "--configure", "{\"showBarDetail\":true}" }, null,
+                    SpawnFlags.SEARCH_PATH | SpawnFlags.STDOUT_TO_DEV_NULL | SpawnFlags.STDERR_TO_DEV_NULL,
+                    null, out child_pid);
+            } catch (Error e) {
+                status_label.set_text ("Could not enable detailed CodexBar usage: " + e.message);
             }
         }
 
@@ -154,21 +175,11 @@ namespace MSeries {
                     if (i == 0) {
                         first_text = text;
                     }
-                    var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
-                    var provider_label = new Gtk.Label (provider) {
-                        xalign = 0,
-                        hexpand = true,
-                        halign = Gtk.Align.START
-                    };
-                    provider_label.add_css_class ("heading");
-                    var quota_label = new Gtk.Label (text) {
-                        xalign = 1,
-                        halign = Gtk.Align.END
-                    };
-                    quota_label.add_css_class ("numeric");
-                    row.append (provider_label);
-                    row.append (quota_label);
-                    providers_box.append (row);
+                    if (provider.down ().contains ("codex")) {
+                        append_codex_rows (provider, text);
+                    } else {
+                        append_metric_row (provider, text);
+                    }
                 }
                 panel_label.set_text (compact_panel_text (first_text));
                 status_label.set_text ("Remaining quota · updated " +
@@ -179,13 +190,67 @@ namespace MSeries {
         }
 
         private string compact_panel_text (string text) {
-            // barEntries.text follows CodexBar's remaining-quota preference.
-            // Keep a short provider-neutral meter in Wingpanel.
-            var trimmed = text.strip ();
-            if (trimmed.length > 12) {
-                return "AI " + trimmed.substring (0, 12);
+            var session = "";
+            var weekly = "";
+            foreach (var part in text.split ("·")) {
+                var lower = part.down ().strip ();
+                if (lower.contains ("5h") || lower.contains ("session")) {
+                    session = part.strip ();
+                } else if (lower.contains ("7d") || lower.contains ("weekly") || lower.contains ("week")) {
+                    weekly = part.strip ();
+                }
             }
-            return "AI " + trimmed;
+            if (session.length > 0 && weekly.length > 0) {
+                return session + " · " + weekly;
+            }
+            var trimmed = text.strip ();
+            if (trimmed.length > 22) {
+                return trimmed.substring (0, 22);
+            }
+            return trimmed;
+        }
+
+        private void append_codex_rows (string provider, string text) {
+            var title = new Gtk.Label ("OpenAI Codex") {
+                xalign = 0,
+                halign = Gtk.Align.START
+            };
+            title.add_css_class ("heading");
+            providers_box.append (title);
+
+            var session = "";
+            var weekly = "";
+            foreach (var part in text.split ("·")) {
+                var lower = part.down ().strip ();
+                if (lower.contains ("5h") || lower.contains ("session")) {
+                    session = part.strip ();
+                } else if (lower.contains ("7d") || lower.contains ("weekly") || lower.contains ("week")) {
+                    weekly = part.strip ();
+                }
+            }
+            if (session.length > 0 || weekly.length > 0) {
+                append_metric_row ("5-hour", session.length > 0 ? session : "Unavailable");
+                append_metric_row ("Weekly", weekly.length > 0 ? weekly : "Unavailable");
+            } else {
+                append_metric_row (provider, text);
+            }
+        }
+
+        private void append_metric_row (string name, string value) {
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+            var name_label = new Gtk.Label (name) {
+                xalign = 0,
+                hexpand = true,
+                halign = Gtk.Align.START
+            };
+            var value_label = new Gtk.Label (value) {
+                xalign = 1,
+                halign = Gtk.Align.END
+            };
+            value_label.add_css_class ("numeric");
+            row.append (name_label);
+            row.append (value_label);
+            providers_box.append (row);
         }
 
         private void show_unavailable (string message) {
@@ -195,7 +260,7 @@ namespace MSeries {
         }
 
         public override Gtk.Widget get_display_widget () {
-            return panel_label;
+            return panel_display;
         }
 
         public override Gtk.Widget? get_widget () {

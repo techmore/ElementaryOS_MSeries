@@ -12,3 +12,9 @@ shared_module(
   install: true,
   install_dir: indicators_dir,
 )
+
+install_data(
+  'icons/openai.svg',
+  install_dir: join_paths(get_option('datadir'), 'icons', 'hicolor', 'scalable', 'apps'),
+  rename: 'mseries-codexbar-openai.svg',
+)
