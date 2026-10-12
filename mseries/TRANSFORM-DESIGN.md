@@ -125,3 +125,28 @@ no reboot required.
 - **Untested**: the authoring machine (macOS) cannot execute any of this.
   First run must be `--dry-run` on the real machine, output reviewed, and
   only then `--apply` with a snapshot in place.
+
+## After `--apply`: finish the build (all idempotent)
+
+The userspace build leaves no login account, and an interrupted/rolled-back
+run can leave a duplicate GRUB entry. Three recovery commands cover it:
+
+| Command | What it does |
+|---|---|
+| `--status` | read-only report: subvolume, packages, fstab, users, boot entries |
+| `--repair-grub` | `chmod -x` any stale `40_elementary-grow.removed` (an executable aside file is what doubles the menuentry) and regenerate GRUB; verifies exactly one entry |
+| `--add-user [NAME]` | create/refresh the login account in `@elementary`, home on `@elementary-home`; adds `sudo,...` groups |
+| `--finalize [NAME]` | `--repair-grub` + `--add-user` + `--status`, in one go |
+
+`--add-user` defaults to **`admin` / `admin`** for first boot convenience
+(`--add-user NAME`, or `ELEMENTARY_PASSWORD=...` to override). The password
+is fed to `chpasswd` over stdin, never as an argument. **Change it after the
+first login** (`passwd`). If the invoking user has
+`~/.ssh/authorized_keys`, it is copied into the new account for convenience.
+
+Typical completion after a successful `--apply`:
+
+```bash
+sudo ./transform/elementary-grow.sh --finalize admin
+sudo reboot   # pick "elementary OS (M-series)", log in as admin / admin
+```

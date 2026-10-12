@@ -10,6 +10,11 @@
 # sees everything without you copying screens of text.
 #   sudo ./elementary-grow.sh --apply      # perform the work
 #   sudo ./elementary-grow.sh --rollback   # remove @elementary + boot entry
+#   sudo ./elementary-grow.sh --status     # read-only report (needs root)
+#   sudo ./elementary-grow.sh --finish-root    # add greeter/panel to a build
+#   sudo ./elementary-grow.sh --repair-grub    # drop stale .removed dup, regen
+#   sudo ./elementary-grow.sh --add-user [NAME]  # login acct (default admin/admin)
+#   sudo ./elementary-grow.sh --finalize [NAME]  # repair-grub + add-user + status
 #
 # Safety contract: additive-only. New subvolume, new GRUB menu entry, old
 # system and default boot entry untouched. Every assumption in the design
@@ -19,6 +24,7 @@ set -euo pipefail
 
 MODE="dry-run"
 UPLOAD=0
+USER_NAME="${ELEMENTARY_USER:-}"
 LOGFILE="/tmp/elementary-grow-$(date +%Y%m%d-%H%M%S).log"
 for arg in "$@"; do
   case "$arg" in
@@ -27,10 +33,14 @@ for arg in "$@"; do
     --status) MODE="status" ;;
     --finish-root) MODE="finish-root" ;;
     --cleanup-stale) MODE="cleanup-stale" ;;
+    --repair-grub) MODE="repair-grub" ;;
+    --add-user) MODE="add-user" ;;
+    --finalize) MODE="finalize" ;;
     --dry-run) MODE="dry-run" ;;
     --upload) UPLOAD=1 ;;
-    -h|--help) sed -n '2,16p' "$0"; exit 0 ;;
-    *) echo "Unknown option: $arg (see --help)" >&2; exit 2 ;;
+    -h|--help) sed -n '2,22p' "$0"; exit 0 ;;
+    -*) echo "Unknown option: $arg (see --help)" >&2; exit 2 ;;
+    *) USER_NAME="$arg" ;;
   esac
 done
 
@@ -423,6 +433,84 @@ EOF
   log "graphical shell installed; re-run --status to verify"
 }
 
+# Neutralize a stale, executable <entry>.removed (grub-mkconfig runs every
+# executable file in /etc/grub.d, so it doubles the menuentry) and regenerate
+# the menu. Idempotent.
+do_repair_grub() {
+  [[ -e $GRUB_CUSTOM || -e $GRUB_CUSTOM.removed ]] \
+    || fail "no $GRUB_CUSTOM — run --apply first"
+  if [[ -e $GRUB_CUSTOM.removed ]]; then
+    chmod -x "$GRUB_CUSTOM.removed"
+    log "neutralized $GRUB_CUSTOM.removed (no longer executable)"
+  fi
+  [[ -e $GRUB_CUSTOM ]] && chmod +x "$GRUB_CUSTOM"
+  grub-mkconfig -o /boot/grub/grub.cfg
+  local n
+  n=$(grep -c "elementary OS (M-series" /boot/grub/grub.cfg || true)
+  (( n == 1 )) || fail "expected 1 elementary menuentry, found $n — investigate /etc/grub.d"
+  log "GRUB repaired: exactly 1 elementary menuentry"
+}
+
+# Create (or refresh) a login account inside the already-built @elementary
+# root. The home directory lands on the separate @elementary-home subvolume,
+# so it never mixes with the Arch side's @home.
+#   --add-user [NAME]        NAME defaults to "admin"
+#   ELEMENTARY_PASSWORD=...  password defaults to "admin"
+# The default admin/admin is a first-boot convenience — change it after login.
+do_add_user() {
+  local name="${1:-admin}" pass="${ELEMENTARY_PASSWORD:-admin}"
+  [[ $name =~ ^[a-z_][a-z0-9_-]*$ ]] || fail "invalid user name: $name"
+  mount_top
+  trap unmount_top EXIT
+  local newroot="$TOP_MNT/$SUBVOL_NAME"
+  [[ -d "$newroot/etc" ]] || fail "no $SUBVOL_NAME — run --apply first"
+
+  # Mount the separate home subvolume so `useradd -m` writes into it.
+  local root_src
+  root_src=$(findmnt -no SOURCE /); root_src=${root_src%%\[*}
+  mkdir -p "$newroot/home"
+  if [[ -e "$TOP_MNT/$HOME_SUBVOL" ]]; then
+    mount -o "subvol=$HOME_SUBVOL" "$root_src" "$newroot/home" \
+      || fail "cannot mount $HOME_SUBVOL at /home"
+  fi
+  mount --bind /dev "$newroot/dev"
+  mount -t devpts devpts "$newroot/dev/pts"
+  mount -t proc proc "$newroot/proc"
+  mount -t sysfs sys "$newroot/sys"
+  mount --bind /run "$newroot/run"
+
+  chroot "$newroot" /bin/bash -s -- "$name" <<'EOF'
+set -euo pipefail
+name="$1"
+groups="sudo,adm,cdrom,dip,plugdev,netdev,video,render,audio,input"
+if id "$name" >/dev/null 2>&1; then
+  echo "user $name already exists; refreshing group membership"
+else
+  useradd -m -s /bin/bash -G "$groups" "$name"
+fi
+usermod -aG "$groups" "$name"
+EOF
+
+  # Password via stdin (never in argv/ps). chpasswd hashes with the root's
+  # default scheme (yescrypt on Ubuntu).
+  printf '%s:%s\n' "$name" "$pass" | chroot "$newroot" chpasswd \
+    || fail "chpasswd failed for $name"
+
+  # Carry over the invoking user's SSH keys, if any (convenience only).
+  if [[ -n ${SUDO_USER:-} && -r /home/$SUDO_USER/.ssh/authorized_keys ]]; then
+    install -d -m 700 -o 1000 -g 1000 "$newroot/home/$name/.ssh"
+    cp "/home/$SUDO_USER/.ssh/authorized_keys" "$newroot/home/$name/.ssh/authorized_keys" 2>/dev/null || true
+    chown -R 1000:1000 "$newroot/home/$name/.ssh" 2>/dev/null || true
+  fi
+
+  unmount_top
+  trap - EXIT
+  log "user '$name' ready in $SUBVOL_NAME (groups: $groups)"
+  if [[ $pass == admin ]]; then
+    log "WARNING: password is the default 'admin' — run 'passwd' after first login"
+  fi
+}
+
 # The new entry reuses the RUNNING kernel's command line and only swaps the
 # root subvolume: LUKS cryptdevice, root=, resume, splash and friends are
 # carried over instead of assumed. (Provenance: omarchy's own GRUB entries
@@ -492,6 +580,9 @@ main() {
     status) [[ $(id -u) -eq 0 ]] || fail "status needs root"; do_status ;;
     finish-root) [[ $(id -u) -eq 0 ]] || fail "finish-root needs root"; do_finish_root ;;
     cleanup-stale) [[ $(id -u) -eq 0 ]] || fail "cleanup needs root"; cleanup_stale ;;
+    repair-grub) [[ $(id -u) -eq 0 ]] || fail "repair-grub needs root"; do_repair_grub ;;
+    add-user) [[ $(id -u) -eq 0 ]] || fail "add-user needs root"; do_add_user "$USER_NAME" ;;
+    finalize) [[ $(id -u) -eq 0 ]] || fail "finalize needs root"; do_repair_grub; do_add_user "$USER_NAME"; do_status ;;
     *) do_apply ;;
   esac
 }
