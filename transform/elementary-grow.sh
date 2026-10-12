@@ -24,6 +24,8 @@ for arg in "$@"; do
   case "$arg" in
     --apply) MODE="apply" ;;
     --rollback) MODE="rollback" ;;
+    --status) MODE="status" ;;
+    --cleanup-stale) MODE="cleanup-stale" ;;
     --dry-run) MODE="dry-run" ;;
     --upload) UPLOAD=1 ;;
     -h|--help) sed -n '2,16p' "$0"; exit 0 ;;
@@ -104,7 +106,45 @@ mount_top() {
   log "btrfs top level at $TOP_MNT"
 }
 
-unmount_top() { [[ -n $TOP_MNT ]] && umount "$TOP_MNT" && rmdir "$TOP_MNT" && TOP_MNT=""; }
+unmount_top() {
+  [[ -n $TOP_MNT ]] || return 0
+  umount -R "$TOP_MNT" 2>/dev/null || umount -l "$TOP_MNT" 2>/dev/null || true
+  rmdir "$TOP_MNT" 2>/dev/null || true
+  TOP_MNT=""
+}
+
+# Unmount leftover /tmp/elementary-grow-top.* mounts from runs whose
+# chroot EXIT trap raced the main EXIT trap (binds leaked, top busy).
+cleanup_stale() {
+  local m
+  for m in $(findmnt -rno TARGET | grep '^/tmp/elementary-grow-top\.' | sort -r); do
+    log "unmounting stale $m"
+    umount -R "$m" 2>/dev/null || umount -l "$m" 2>/dev/null || true
+  done
+  rmdir /tmp/elementary-grow-top.* 2>/dev/null || true
+  log "stale mounts cleaned"
+}
+
+# Read-only report for troubleshooting the new root from omarchy.
+do_status() {
+  mount_top
+  trap unmount_top EXIT
+  echo "--- disk ---"
+  df -h / /boot
+  echo "--- subvolumes ---"
+  btrfs subvolume list / | grep -E "@elementary|@\.snapshots/elementary-grow" || echo "(none)"
+  echo "--- new root size ---"
+  du -sh "$TOP_MNT/$SUBVOL_NAME" 2>/dev/null || echo "(no $SUBVOL_NAME)"
+  echo "--- new root identity ---"
+  cat "$TOP_MNT/$SUBVOL_NAME/etc/hostname" 2>/dev/null || echo "(no hostname)"
+  cat "$TOP_MNT/$SUBVOL_NAME/etc/fstab" 2>/dev/null || echo "(no fstab)"
+  echo "--- desktop ---"
+  chroot "$TOP_MNT/$SUBVOL_NAME" dpkg -l elementary-desktop elementary-minimal elementary-standard 2>/dev/null | grep -E "^ii" || echo "(desktop packages not installed)"
+  echo "--- firmware ---"
+  ls "$TOP_MNT/$SUBVOL_NAME/lib/firmware/brcm" 2>/dev/null | grep -c brcm || echo "(no firmware dir)"
+  echo "--- boot entry ---"
+  grep -c "elementary OS (M-series" /boot/grub/grub.cfg 2>/dev/null || echo "(no entry)"
+}
 
 # ---------------------------------------------------------------- rollback
 do_rollback() {
@@ -183,12 +223,15 @@ do_apply() {
 
 chroot_build() {
   local newroot="$1"
-  mount --rbind /dev "$newroot/dev"
+  # Plain --bind (not --rbind): rbind drags host /run/user + credentials
+  # submounts into the chroot and they leak past cleanup, pinning TOP_MNT.
+  mount --bind /dev "$newroot/dev"
+  mount -t devpts devpts "$newroot/dev/pts"
   mount -t proc proc "$newroot/proc"
   mount -t sysfs sys "$newroot/sys"
-  mount --rbind /run "$newroot/run"
+  mount --bind /run "$newroot/run"
   cp /etc/resolv.conf "$newroot/etc/resolv.conf"
-  trap 'umount -R "$newroot/dev" "$newroot/proc" "$newroot/sys" "$newroot/run" 2>/dev/null || true' RETURN
+  trap 'umount -R "$newroot/dev" "$newroot/proc" "$newroot/sys" "$newroot/run" 2>/dev/null || umount -l "$newroot/dev" "$newroot/proc" "$newroot/sys" "$newroot/run" 2>/dev/null || true' RETURN
 
   chroot "$newroot" /bin/bash -s <<EOF || return 1
 set -euo pipefail
@@ -314,7 +357,8 @@ systemctl enable NetworkManager mseries-wifi-firmware.service omarchy-wifi-resum
 echo "Set a user password and create your account on first boot (GDM/LightDM)."
 EOF2
   else log "(dry-run) would write fstab (rows derived from host) + enable services"; fi
-  umount -R "$newroot/dev" "$newroot/proc" "$newroot/sys" "$newroot/run" 2>/dev/null || true
+  umount -R "$newroot/dev" "$newroot/proc" "$newroot/sys" "$newroot/run" 2>/dev/null \
+    || umount -l "$newroot/dev" "$newroot/proc" "$newroot/sys" "$newroot/run" 2>/dev/null || true
   trap - RETURN
 }
 
@@ -375,6 +419,8 @@ main() {
   log "logging to $LOGFILE"
   case "$MODE" in
     rollback) [[ $(id -u) -eq 0 ]] || fail "rollback needs root"; do_rollback ;;
+    status) [[ $(id -u) -eq 0 ]] || fail "status needs root"; do_status ;;
+    cleanup-stale) [[ $(id -u) -eq 0 ]] || fail "cleanup needs root"; cleanup_stale ;;
     *) do_apply ;;
   esac
 }
