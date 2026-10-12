@@ -144,7 +144,15 @@ do_status() {
   echo "--- firmware ---"
   ls "$TOP_MNT/$SUBVOL_NAME/lib/firmware/brcm" 2>/dev/null | grep -c brcm || echo "(no firmware dir)"
   echo "--- boot entry ---"
-  grep -c "elementary OS (M-series" /boot/grub/grub.cfg 2>/dev/null || echo "(no entry)"
+  local n
+  n=$(grep -c "elementary OS (M-series" /boot/grub/grub.cfg 2>/dev/null || true)
+  if (( n == 0 )); then echo "(no entry)";
+  elif (( n == 1 )); then echo "1 entry";
+  else echo "$n entries — WARNING: duplicate; check /etc/grub.d/*.removed is not executable"; fi
+  echo "--- grub.d files ---"
+  ls -l /etc/grub.d/*elementary* 2>/dev/null || echo "(none)"
+  echo "--- current root (as seen by grub) ---"
+  echo "/boot/vmlinuz-linux-asahi + /initramfs-linux-asahi.img present: $(ls /boot/vmlinuz-* /boot/initramfs-* 2>/dev/null | wc -l) files"
   echo "--- display manager ---"
   readlink "$TOP_MNT/$SUBVOL_NAME/etc/systemd/system/display-manager.service" 2>/dev/null || echo "(no display-manager symlink)"
   echo "--- graphical stack ---"
@@ -160,11 +168,28 @@ do_rollback() {
     run btrfs subvolume delete "$TOP_MNT/$SUBVOL_NAME" 2>/dev/null || true
     run btrfs subvolume delete "$TOP_MNT/$HOME_SUBVOL" 2>/dev/null || true
   else log "no $SUBVOL_NAME/$HOME_SUBVOL subvolumes — nothing to delete"; fi
+  # grub-mkconfig runs EVERY executable file in /etc/grub.d, so an aside
+  # file must also lose its executable bit or it adds a second, identical
+  # menuentry (the classic "two elementary OS entries, both broken" bug).
   if [[ -f $GRUB_CUSTOM ]]; then
-    if [[ $MODE != "dry-run" ]]; then mv "$GRUB_CUSTOM" "$GRUB_CUSTOM.removed"; log "moved $GRUB_CUSTOM aside";
+    if [[ $MODE != "dry-run" ]]; then
+      rm -f "$GRUB_CUSTOM.removed"
+      mv "$GRUB_CUSTOM" "$GRUB_CUSTOM.removed"
+      chmod -x "$GRUB_CUSTOM.removed"
+      log "moved $GRUB_CUSTOM aside (non-executable; grub ignores it)"
     else log "(dry-run) would move $GRUB_CUSTOM aside"; fi
     run grub-mkconfig -o /boot/grub/grub.cfg
-  else log "no $GRUB_CUSTOM — bootloader untouched"; fi
+  else
+    # No live entry, but a prior rollback may have left an executable .removed
+    # that grub still renders. Neutralize it and refresh the menu.
+    if [[ -f "$GRUB_CUSTOM.removed" ]]; then
+      if [[ $MODE != "dry-run" ]]; then
+        chmod -x "$GRUB_CUSTOM.removed"
+        log "neutralized leftover $GRUB_CUSTOM.removed"
+      else log "(dry-run) would neutralize leftover $GRUB_CUSTOM.removed"; fi
+      run grub-mkconfig -o /boot/grub/grub.cfg
+    else log "no $GRUB_CUSTOM — bootloader untouched"; fi
+  fi
   unmount_top
   log "rollback done. Snapshots under $SNAP_PREFIX-* are kept; delete manually."
 }
@@ -444,10 +469,19 @@ $linux_line
 }
 EOF
   chmod +x "$GRUB_CUSTOM"
+  # A leftover aside file from an earlier --rollback must never stay
+  # executable, or grub-mkconfig emits a duplicate menuentry.
+  if [[ -e "$GRUB_CUSTOM.removed" ]]; then
+    chmod -x "$GRUB_CUSTOM.removed"
+    log "neutralized stale $GRUB_CUSTOM.removed before grub-mkconfig"
+  fi
   grub-mkconfig -o /boot/grub/grub.cfg
   grep -q "elementary OS (M-series" /boot/grub/grub.cfg \
     || fail "new entry missing after grub-mkconfig — investigate before rebooting"
-  log "boot entry present; default entry order unchanged"
+  local n
+  n=$(grep -c "elementary OS (M-series" /boot/grub/grub.cfg || true)
+  (( n == 1 )) || fail "expected 1 elementary menuentry, found $n — duplicate in /etc/grub.d, investigate"
+  log "boot entry present (1 entry); default entry order unchanged"
 }
 
 # ---------------------------------------------------------------- main
