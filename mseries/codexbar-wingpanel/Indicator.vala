@@ -45,20 +45,20 @@ namespace MSeries {
             panel_display.add_controller (refresh_gesture);
             this.visible = true;
 
-            menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 7) {
-                margin_top = 7,
-                margin_bottom = 7,
-                margin_start = 7,
-                margin_end = 7,
+            menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) {
+                margin_top = 6,
+                margin_bottom = 6,
+                margin_start = 6,
+                margin_end = 6,
                 width_request = 204
             };
 
             menu.add_css_class ("mseries-codexbar-compact");
             var compact_style = new Gtk.CssProvider ();
             compact_style.load_from_string (
-                ".mseries-codexbar-compact label { font-size: 8pt; } " +
-                ".mseries-codexbar-compact .h3 { font-size: 9pt; } " +
-                ".mseries-codexbar-compact button { padding: 4px 5px; }");
+                ".mseries-codexbar-compact label { font-size: 7.5pt; } " +
+                ".mseries-codexbar-compact .h3 { font-size: 8.5pt; } " +
+                ".mseries-codexbar-compact button { padding: 3px 5px; }");
             Gtk.StyleContext.add_provider_for_display (menu.get_display (), compact_style,
                 Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 
@@ -300,7 +300,7 @@ namespace MSeries {
                 size = Granite.HeaderLabel.Size.H4
             };
 
-            var provider_section = new Gtk.Box (Gtk.Orientation.VERTICAL, 5);
+            var provider_section = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
             provider_section.append (title);
             providers_box.append (provider_section);
 
@@ -390,15 +390,15 @@ namespace MSeries {
             var pace = window.get_string_member ("pace") ?? "";
             var remaining_node = window.get_member ("remaining");
 
-            var quota_card = new Gtk.Box (Gtk.Orientation.VERTICAL, 5) {
-                margin_top = 7,
-                margin_bottom = 7,
-                margin_start = 7,
-                margin_end = 7
+            var quota_card = new Gtk.Box (Gtk.Orientation.VERTICAL, 4) {
+                margin_top = 6,
+                margin_bottom = 6,
+                margin_start = 6,
+                margin_end = 6
             };
 
             var heading = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 7);
-            var description = new Gtk.Box (Gtk.Orientation.VERTICAL, 4) {
+            var description = new Gtk.Box (Gtk.Orientation.VERTICAL, 3) {
                 hexpand = true, valign = Gtk.Align.CENTER
             };
             var name_label = new Gtk.Label (label) {
@@ -451,7 +451,7 @@ namespace MSeries {
 
             var progress = new Gtk.ProgressBar () {
                 show_text = false,
-                height_request = 7,
+                height_request = 5,
                 tooltip_text = "%0.0f%% remaining".printf (remaining)
             };
             progress.set_fraction (GLib.Math.fmin (1.0, GLib.Math.fmax (0.0, remaining / 100.0)));
@@ -509,8 +509,8 @@ namespace MSeries {
 
         private void append_metric_row (string name, string value) {
             var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 7) {
-                margin_top = 7, margin_bottom = 7,
-                margin_start = 7, margin_end = 7
+                margin_top = 6, margin_bottom = 6,
+                margin_start = 6, margin_end = 6
             };
             var name_label = new Gtk.Label (name) {
                 xalign = 0,
@@ -544,9 +544,9 @@ namespace MSeries {
             status_label.set_text ("Usage unavailable");
             set_refreshing (false);
             clear_provider_rows ();
-            var empty = new Gtk.Box (Gtk.Orientation.VERTICAL, 7) {
-                margin_top = 7,
-                margin_bottom = 7
+            var empty = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) {
+                margin_top = 6,
+                margin_bottom = 6
             };
             var explanation = new Gtk.Label (message) { xalign = 0, wrap = true };
             explanation.add_css_class ("dim-label");
