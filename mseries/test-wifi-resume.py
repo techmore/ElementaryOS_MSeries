@@ -20,6 +20,8 @@ class RecoveryTests(unittest.TestCase):
                 "journalctl": "exit 0",
                 "sleep": "exit 0",
                 "logger": "exit 0",
+                # brcmfmac is held by its vendor module, which must be removed and loaded back too
+                "lsmod": "echo 'Module Size Used by'; echo 'brcmfmac_wcc 1 0'; echo 'brcmfmac 1 1 brcmfmac_wcc'",
                 "modprobe": 'echo "$*" >> "$CALLS"\n' + ('exit 1' if unload_fails else 'exit 0'),
             }
             for name, body in commands.items():
@@ -38,10 +40,10 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(self.run_case("enabled", "connected"), (0, ""))
 
     def test_ethernet_does_not_hide_disconnected_wifi(self):
-        self.assertEqual(self.run_case("enabled", "disconnected"), (0, "-r brcmfmac\nbrcmfmac\n"))
+        self.assertEqual(self.run_case("enabled", "disconnected"), (0, "-r --remove-holders brcmfmac\nbrcmfmac\nbrcmfmac_wcc\n"))
 
     def test_failed_unload_stops_recovery(self):
-        self.assertEqual(self.run_case("enabled", "disconnected", True), (1, "-r brcmfmac\n"))
+        self.assertEqual(self.run_case("enabled", "disconnected", True), (1, "-r --remove-holders brcmfmac\n"))
 
 
 if __name__ == "__main__":

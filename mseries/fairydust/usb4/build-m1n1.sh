@@ -2,7 +2,8 @@
 # Build current AsahiLinux/m1n1 (has ACIO/USB4 tunable + DROM support) in the Arch chroot. Builds only; installs nothing.
 set -euo pipefail
 R=/mnt/fdbuild/root; D=/home/techmore/m1n1-build
-SHA=${M1N1_SHA:-57a9339f}
+# Pinned: the newest AsahiLinux/m1n1 commit when the installed bootloader was built (2026-10-12).
+SHA=${M1N1_SHA:-57a9339ffd1876e78297b17d34dece8cff8fa1ba}
 mountpoint -q $R || mount -o subvol=@ /dev/mapper/root $R
 for m in dev proc sys; do mountpoint -q $R/$m || mount --bind /$m $R/$m; done
 mountpoint -q $R/run  || mount -t tmpfs -o mode=755 tmpfs $R/run
@@ -12,7 +13,7 @@ cat > $R$D/go.sh <<'EOS'
 set -euo pipefail
 cd /home/techmore/m1n1-build
 if [ ! -d m1n1 ]; then
-  curl -fL --retry 5 -o m1n1.tar.gz "https://codeload.github.com/AsahiLinux/m1n1/tar.gz/main"
+  curl -fL --retry 5 -o m1n1.tar.gz "https://codeload.github.com/AsahiLinux/m1n1/tar.gz/$M1N1_SHA"
   mkdir m1n1 && tar xzf m1n1.tar.gz -C m1n1 --strip-components=1
 fi
 cd m1n1
@@ -25,4 +26,4 @@ echo -n "tunable-rc support strings: "; strings -n 6 build/m1n1.bin | grep -c "a
 echo M1N1_BUILD_DONE
 EOS
 chown 1001:1001 $R$D/go.sh
-chroot $R runuser -l techmore -c "bash $D/go.sh"
+chroot "$R" runuser -l techmore -c "M1N1_SHA=$SHA bash $D/go.sh"

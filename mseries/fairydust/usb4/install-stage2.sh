@@ -3,7 +3,7 @@
 # Needs stage 1 done first. Backups are in ~/fairydust-usb4/backup-*/ (restore boot.bin from there if needed).
 set -euo pipefail
 R=/mnt/fdbuild/root
-KV=$(ls $R/usr/lib/modules | grep fairydust-usb4 | head -1)
+KV=$(basename "$(compgen -G "$R/usr/lib/modules/*fairydust-usb4*" | head -1)")
 [[ -n $KV ]] || { echo "stage 1 not done"; exit 1; }
 [[ -f /boot/initramfs-linux-asahi-fairydust-usb4.img ]] || { echo "initramfs missing"; exit 1; }
 chroot $R /bin/bash -c "DTBS='/usr/lib/modules/$KV/dtbs/*.dtb' update-m1n1"

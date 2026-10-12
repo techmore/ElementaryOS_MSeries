@@ -51,3 +51,7 @@ class BridgeTests(unittest.TestCase):
         self.bridge.dim(True)
         self.bridge.auto(.9)
         self.assertEqual(self.panel['value'], 150)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -17,9 +17,9 @@ PRESETS=('default')
 default_image="/boot/initramfs-linux-asahi-fairydust-usb4.img"
 EOP
 chroot $R /bin/bash -c "pacman -U --noconfirm $PKG"
-KV=$(ls $R/usr/lib/modules | grep fairydust-usb4 | head -1)
+KV=$(basename "$(compgen -G "$R/usr/lib/modules/*fairydust-usb4*" | head -1)")
 echo "installed kernel: $KV"
-install -Dm644 $R/usr/lib/modules/$KV/vmlinuz /boot/vmlinuz-linux-asahi-fairydust-usb4
+install -Dm644 "$R/usr/lib/modules/$KV/vmlinuz" /boot/vmlinuz-linux-asahi-fairydust-usb4
 chroot $R /bin/bash -c "mkinitcpio -p linux-asahi-fairydust-usb4"
 ls -la /boot/*usb4*
 echo STAGE1_DONE
