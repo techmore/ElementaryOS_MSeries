@@ -13,6 +13,8 @@ namespace MSeries {
         private Gtk.Box providers_box;
         private string executable;
         private bool request_in_flight = false;
+        private bool snapshot_busy = false;
+        private uint refresh_poll_count = 0;
 
         public CodexBarIndicator () {
             GLib.Object (code_name: "codexbar");
@@ -21,10 +23,10 @@ namespace MSeries {
         construct {
             executable = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "codexbar-linux");
 
-            var panel_icon = new Gtk.Image.from_file (
-                "/usr/share/icons/hicolor/scalable/apps/mseries-codexbar-openai.svg") {
+            var panel_icon = new Gtk.Image.from_icon_name ("mseries-codexbar-openai-symbolic") {
                 pixel_size = 18
             };
+            panel_icon.add_css_class ("symbolic");
             panel_label = new Gtk.Label ("5H — · 7D —") {
                 ellipsize = Pango.EllipsizeMode.END,
                 max_width_chars = 18
@@ -64,13 +66,29 @@ namespace MSeries {
             var refresh_button = make_button ("Refresh usage");
             refresh_button.clicked.connect (() => {
                 run_action ("--refresh");
-                Timeout.add_seconds (3, () => { read_snapshot (); return Source.REMOVE; });
+                refresh_poll_count = 0;
+                Timeout.add_seconds (2, () => {
+                    read_snapshot ();
+                    refresh_poll_count++;
+                    if ((!snapshot_busy && refresh_poll_count >= 3) || refresh_poll_count >= 30) {
+                        return Source.REMOVE;
+                    }
+                    return Source.CONTINUE;
+                });
             });
             menu.append (refresh_button);
 
             var quick_view_button = make_button ("Open CodexBar");
             quick_view_button.clicked.connect (() => run_action ("--quick-view"));
             menu.append (quick_view_button);
+
+            var usage_button = make_button ("Usage & Spend");
+            usage_button.clicked.connect (() => run_action ("--usage"));
+            menu.append (usage_button);
+
+            var spending_button = make_button ("Spending");
+            spending_button.clicked.connect (() => run_action ("--spending"));
+            menu.append (spending_button);
 
             var settings_button = make_button ("Settings and sign in");
             settings_button.clicked.connect (() => run_action ("--settings"));
@@ -87,7 +105,6 @@ namespace MSeries {
                 status_label.set_text ("Could not start CodexBar: " + e.message);
             }
 
-            Timeout.add_seconds (2, () => { configure_detailed_usage (); return Source.REMOVE; });
             Timeout.add_seconds (5, () => { read_snapshot (); return Source.REMOVE; });
             Timeout.add_seconds (60, () => { read_snapshot (); return Source.CONTINUE; });
         }
@@ -106,17 +123,6 @@ namespace MSeries {
                     null, out child_pid);
             } catch (Error e) {
                 status_label.set_text ("Could not open CodexBar: " + e.message);
-            }
-        }
-
-        private void configure_detailed_usage () {
-            try {
-                Pid child_pid;
-                Process.spawn_async (null, { executable, "--configure", "{\"showBarDetail\":true}" }, null,
-                    SpawnFlags.SEARCH_PATH | SpawnFlags.STDOUT_TO_DEV_NULL | SpawnFlags.STDERR_TO_DEV_NULL,
-                    null, out child_pid);
-            } catch (Error e) {
-                status_label.set_text ("Could not enable detailed CodexBar usage: " + e.message);
             }
         }
 
@@ -160,80 +166,167 @@ namespace MSeries {
                     return;
                 }
                 var snapshot = root.get_object ();
-                var entries = snapshot.get_array_member ("barEntries");
+                var entries = snapshot.get_array_member ("entries");
                 if (entries == null || entries.get_length () == 0) {
                     show_unavailable ("No quota data yet. Open Settings to sign in.");
                     return;
                 }
 
                 clear_provider_rows ();
-                string first_text = "";
+                snapshot_busy = snapshot.get_boolean_member ("busy");
+                string codex_panel_summary = "";
                 for (uint i = 0; i < entries.get_length (); i++) {
                     var entry = entries.get_object_element (i);
                     var provider = entry.get_string_member ("provider") ?? "Provider";
-                    var text = entry.get_string_member ("text") ?? "Quota unavailable";
-                    if (first_text == "" || provider.down ().contains ("codex")) {
-                        first_text = text;
-                    }
+                    append_provider_entry (entry);
                     if (provider.down ().contains ("codex")) {
-                        first_text = text;
-                        append_codex_rows (provider, text);
-                    } else {
-                        append_metric_row (provider, text);
+                        codex_panel_summary = compact_codex_summary (entry);
                     }
                 }
-                panel_label.set_text (compact_panel_text (first_text));
-                status_label.set_text ("Remaining quota · updated " +
-                    (snapshot.get_string_member ("updatedAt") ?? "recently"));
+                panel_label.set_text (codex_panel_summary.length > 0 ? codex_panel_summary : "OpenAI —");
+                panel_display.set_tooltip_text (codex_panel_summary.length > 0
+                    ? "OpenAI Codex remaining: " + codex_panel_summary
+                    : "OpenAI Codex usage unavailable");
+
+                var update_status = "Updated " + (snapshot.get_string_member ("updated") ?? "recently");
+                if (snapshot_busy) {
+                    update_status = "Refreshing usage… · " + update_status;
+                }
+                if (snapshot.get_boolean_member ("stale")) {
+                    update_status += " · cached data";
+                }
+                var snapshot_error = snapshot.get_string_member ("error") ?? "";
+                if (snapshot_error.length > 0) {
+                    update_status += " · " + snapshot_error;
+                }
+                status_label.set_text (update_status);
             } catch (Error e) {
                 show_unavailable ("Could not read CodexBar usage: " + e.message);
             }
         }
 
-        private string compact_panel_text (string text) {
-            var session = "";
-            var weekly = "";
-            foreach (var part in text.split ("·")) {
-                var lower = part.down ().strip ();
-                if (lower.contains ("5h") || lower.contains ("session")) {
-                    session = part.strip ();
-                } else if (lower.contains ("7d") || lower.contains ("weekly") || lower.contains ("week") || lower.contains ("total")) {
-                    weekly = part.strip ();
-                }
-            }
-            if (session.length > 0 && weekly.length > 0) {
-                return session + " · " + weekly;
-            }
-            var trimmed = text.strip ();
-            if (trimmed.length > 22) {
-                return trimmed.substring (0, 22);
-            }
-            return trimmed;
-        }
-
-        private void append_codex_rows (string provider, string text) {
-            var title = new Gtk.Label ("OpenAI Codex") {
+        private void append_provider_entry (Json.Object entry) {
+            var provider = entry.get_string_member ("provider") ?? "Provider";
+            var title_text = provider.down () == "codex" ? "OpenAI Codex" : provider.up ();
+            var title = new Gtk.Label (title_text) {
                 xalign = 0,
                 halign = Gtk.Align.START
             };
             title.add_css_class ("heading");
             providers_box.append (title);
 
-            var session = "";
-            var weekly = "";
-            foreach (var part in text.split ("·")) {
-                var lower = part.down ().strip ();
-                if (lower.contains ("5h") || lower.contains ("session")) {
-                    session = part.strip ();
-                } else if (lower.contains ("7d") || lower.contains ("weekly") || lower.contains ("week") || lower.contains ("total")) {
-                    weekly = part.strip ();
+            var windows = entry.get_array_member ("windows");
+            if (windows != null && windows.get_length () > 0) {
+                for (uint i = 0; i < windows.get_length (); i++) {
+                    append_window (windows.get_object_element (i));
+                }
+            } else {
+                append_metric_row ("Usage", "Unavailable");
+            }
+
+            var provider_status = entry.get_string_member ("status") ?? "";
+            if (provider_status.length > 0) {
+                append_subtle_row ("Status · " + provider_status);
+            }
+            var provider_error = entry.get_string_member ("error") ?? "";
+            if (provider_error.length > 0) {
+                append_subtle_row (provider_error);
+            }
+        }
+
+        private string compact_codex_summary (Json.Object entry) {
+            var windows = entry.get_array_member ("windows");
+            if (windows == null) {
+                return "";
+            }
+
+            string session = "";
+            string weekly = "";
+            for (uint i = 0; i < windows.get_length (); i++) {
+                var window = windows.get_object_element (i);
+                var label = window.get_string_member ("label") ?? "";
+                int minutes = (int) window.get_int_member ("minutes");
+                var remaining_node = window.get_member ("remaining");
+                if (remaining_node == null || remaining_node.get_node_type () == Json.NodeType.NULL) {
+                    continue;
+                }
+                var remaining = remaining_node.get_double ();
+                var value = "%0.0f%%".printf (remaining);
+                var short_label = short_window_label (label, minutes);
+                if (minutes > 0 && minutes <= 360 || label.down ().contains ("hour")) {
+                    session = short_label + " " + value;
+                } else if (minutes >= 1440 || label.down ().contains ("week") || label.down ().contains ("day")) {
+                    weekly = short_label + " " + value;
                 }
             }
-            if (session.length > 0 || weekly.length > 0) {
-                append_metric_row ("5-hour", session.length > 0 ? session : "Unavailable");
-                append_metric_row ("Weekly total", weekly.length > 0 ? weekly : "Unavailable");
-            } else {
-                append_metric_row (provider, text);
+            if (session.length > 0 && weekly.length > 0) {
+                return session + " · " + weekly;
+            }
+            return session.length > 0 ? session : weekly;
+        }
+
+        private string short_window_label (string label, int minutes) {
+            var normalized = label.down ();
+            if (normalized.contains ("hour") || minutes > 0 && minutes <= 360) {
+                var hours = minutes > 0 ? (minutes + 30) / 60 : 5;
+                return "%dH".printf (hours);
+            }
+            if (normalized.contains ("week")) {
+                return "7D";
+            }
+            if (normalized.contains ("month")) {
+                return "30D";
+            }
+            if (normalized.contains ("day") || minutes >= 1440) {
+                var days = minutes > 0 ? (minutes + 720) / 1440 : 7;
+                return "%dD".printf (days);
+            }
+            return label;
+        }
+
+        private void append_window (Json.Object window) {
+            var label = window.get_string_member ("label") ?? "Quota";
+            var reset = window.get_string_member ("resetText") ?? "";
+            var pace = window.get_string_member ("pace") ?? "";
+            var remaining_node = window.get_member ("remaining");
+
+            var heading = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+            var name_label = new Gtk.Label (label) {
+                xalign = 0,
+                hexpand = true,
+                halign = Gtk.Align.START
+            };
+            name_label.add_css_class ("heading");
+            heading.append (name_label);
+
+            if (remaining_node == null || remaining_node.get_node_type () == Json.NodeType.NULL) {
+                var unknown = new Gtk.Label ("Unavailable") { halign = Gtk.Align.END };
+                heading.append (unknown);
+                providers_box.append (heading);
+                return;
+            }
+
+            var remaining = remaining_node.get_double ();
+            var percent_label = new Gtk.Label ("%0.0f%% left".printf (remaining)) {
+                halign = Gtk.Align.END
+            };
+            percent_label.add_css_class ("numeric");
+            heading.append (percent_label);
+            providers_box.append (heading);
+
+            var progress = new Gtk.ProgressBar () { show_text = true };
+            progress.set_fraction (GLib.Math.fmin (1.0, GLib.Math.fmax (0.0, remaining / 100.0)));
+            progress.set_text ("%0.0f%% remaining".printf (remaining));
+            if (window.get_boolean_member ("warning")) {
+                progress.add_css_class ("warning");
+            }
+            providers_box.append (progress);
+
+            if (reset.length > 0) {
+                append_subtle_row (reset);
+            }
+            if (pace.length > 0) {
+                append_subtle_row (pace);
             }
         }
 
@@ -254,8 +347,20 @@ namespace MSeries {
             providers_box.append (row);
         }
 
+        private void append_subtle_row (string text) {
+            var label = new Gtk.Label (text) {
+                xalign = 0,
+                wrap = true,
+                halign = Gtk.Align.FILL
+            };
+            label.add_css_class ("dim-label");
+            providers_box.append (label);
+        }
+
         private void show_unavailable (string message) {
-            panel_label.set_text ("AI —");
+            snapshot_busy = false;
+            panel_label.set_text ("5H — · 7D —");
+            panel_display.set_tooltip_text (message);
             status_label.set_text (message);
             clear_provider_rows ();
         }

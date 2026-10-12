@@ -16,5 +16,5 @@ shared_module(
 install_data(
   'icons/openai.svg',
   install_dir: join_paths(get_option('datadir'), 'icons', 'hicolor', 'scalable', 'apps'),
-  rename: 'mseries-codexbar-openai.svg',
+  rename: 'mseries-codexbar-openai-symbolic.svg',
 )

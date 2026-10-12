@@ -77,11 +77,12 @@ bash mseries/install-codexbar-wingpanel.sh
 ```
 
 Log out and back in after installation. The indicator starts CodexBar's local
-backend, enables its detailed usage snapshot, and reads its same-user data. The
-panel shows the OpenAI mark with both Codex's five-hour and weekly percentages;
-its dropdown presents those windows on separate rows. Click the panel item for
-Refresh, Open CodexBar, and Settings/sign-in. Provider credentials remain
-managed by CodexBar. The monochrome mark comes from the [OpenAI 2025 symbol](https://commons.wikimedia.org/wiki/File:OpenAI_logo_2025_(symbol).svg)
+backend and reads its same-user structured snapshot without changing CodexBar
+preferences. The panel shows the OpenAI mark with both Codex's five-hour and
+weekly remaining percentages. The dropdown shows progress, reset time, pace,
+and service status for each configured provider, plus Refresh, Quick View,
+Usage & Spend, Spending, and Settings/sign-in actions. Provider credentials
+remain managed by CodexBar. The monochrome mark comes from the [OpenAI 2025 symbol](https://commons.wikimedia.org/wiki/File:OpenAI_logo_2025_(symbol).svg)
 and follows OpenAI's branding guidelines.
 Remove it with `bash mseries/install-codexbar-wingpanel.sh --uninstall`.
 Source: https://github.com/steipete/CodexBar/tree/main/Integrations/Linux

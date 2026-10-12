@@ -8,6 +8,10 @@ src="$repo/mseries/codexbar-wingpanel"
 if [[ ${1:-} == --uninstall ]]; then
   indicators_dir=$(pkg-config --variable=indicatorsdir wingpanel-9)
   sudo rm -f "$indicators_dir/libcodexbar.so"
+  sudo rm -f /usr/share/icons/hicolor/scalable/apps/mseries-codexbar-openai-symbolic.svg
+  if command -v gtk-update-icon-cache >/dev/null; then
+    sudo gtk-update-icon-cache -f /usr/share/icons/hicolor
+  fi
   echo 'Removed the CodexBar Wingpanel indicator. Log out and back in to reload Wingpanel.'
   exit 0
 fi
@@ -25,4 +29,8 @@ trap 'rm -rf "$build_dir"' EXIT
 meson setup "$build_dir" "$src" --prefix=/usr
 ninja -C "$build_dir"
 sudo ninja -C "$build_dir" install
-echo 'Installed CodexBar in Wingpanel. Log out and back in; the panel indicator starts the CodexBar backend and displays remaining quota.'
+sudo rm -f /usr/share/icons/hicolor/scalable/apps/mseries-codexbar-openai.svg
+if command -v gtk-update-icon-cache >/dev/null; then
+  sudo gtk-update-icon-cache -f /usr/share/icons/hicolor
+fi
+echo 'Installed CodexBar in Wingpanel. Log out and back in; the panel shows Codex five-hour and weekly remaining quota.'
