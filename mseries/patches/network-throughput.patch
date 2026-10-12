@@ -1,0 +1,283 @@
+diff --git a/meson.build b/meson.build
+index 31e04c4..4659c55 100644
+--- a/meson.build
++++ b/meson.build
+@@ -52,6 +52,7 @@ shared_module(
+     'src/Widgets/ModemInterface.vala',
+     'src/Widgets/PopoverWidget.vala',
+     'src/Widgets/SettingsToggle.vala',
++    'src/Widgets/ThroughputWidget.vala',
+     'src/Widgets/VpnInterface.vala',
+     'src/Widgets/VpnMenuItem.vala',
+     'src/Widgets/WidgetNMInterface.vala',
+diff --git a/src/Widgets/PopoverWidget.vala b/src/Widgets/PopoverWidget.vala
+index 5484736..90c24d6 100644
+--- a/src/Widgets/PopoverWidget.vala
++++ b/src/Widgets/PopoverWidget.vala
+@@ -101,6 +101,14 @@ public class Network.Widgets.PopoverWidget : Gtk.Box {
+         append (vpn_box);
+         append (wifi_box);
+ 
++        var throughput_separator = new Gtk.Separator (Gtk.Orientation.HORIZONTAL) {
++            margin_top = 3,
++            margin_bottom = 3
++        };
++
++        append (throughput_separator);
++        append (new ThroughputWidget ());
++
+         if (is_in_session) {
+             hidden_item = new Wingpanel.PopoverMenuItem ();
+             hidden_item.text = _("Connect to Hidden Network…");
+diff --git a/src/Widgets/ThroughputWidget.vala b/src/Widgets/ThroughputWidget.vala
+new file mode 100644
+index 0000000..0e3ab13
+--- /dev/null
++++ b/src/Widgets/ThroughputWidget.vala
+@@ -0,0 +1,246 @@
++/*
++* SPDX-License-Identifier: LGPL-2.1-or-later
++* SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries
++*/
++
++/**
++ * Live network throughput for the network indicator's popover: current download and upload
++ * speed plus a 60 second sparkline of both. Totals all physical interfaces (Wi-Fi, Ethernet,
++ * USB/dock adapters); virtual ones (lo, bridges, veth, VPN tunnels) are skipped so traffic is
++ * not counted twice.
++ */
++public class Network.Widgets.ThroughputWidget : Gtk.Box {
++    private const int HISTORY = 60;
++    // Floor for the graph scale, so idle background chatter does not look like a full-height spike.
++    private const double MIN_SCALE = 50000.0;
++
++    private double[] rx_history = new double[HISTORY];
++    private double[] tx_history = new double[HISTORY];
++
++    private HashTable<string, bool> virtual_cache = new HashTable<string, bool> (str_hash, str_equal);
++    private uint64 last_rx = 0;
++    private uint64 last_tx = 0;
++    private int64 last_time = 0;
++    private bool have_baseline = false;
++    private uint timeout_id = 0;
++
++    private Gtk.Label down_label;
++    private Gtk.Label up_label;
++    private Gtk.DrawingArea graph;
++
++    construct {
++        orientation = Gtk.Orientation.HORIZONTAL;
++        spacing = 12;
++        margin_top = 6;
++        margin_bottom = 6;
++        margin_start = 12;
++        margin_end = 12;
++
++        down_label = new Gtk.Label ("0 B/s") {
++            xalign = 0,
++            width_chars = 10
++        };
++        down_label.add_css_class (Granite.CssClass.ACCENT);
++        down_label.add_css_class ("numeric");
++
++        up_label = new Gtk.Label ("0 B/s") {
++            xalign = 0,
++            width_chars = 10
++        };
++        up_label.add_css_class ("numeric");
++
++        var down_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
++        down_row.append (new Gtk.Image.from_icon_name ("go-down-symbolic"));
++        down_row.append (down_label);
++
++        var up_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
++        up_row.append (new Gtk.Image.from_icon_name ("go-up-symbolic"));
++        up_row.append (up_label);
++
++        var speeds = new Gtk.Box (Gtk.Orientation.VERTICAL, 3) {
++            valign = Gtk.Align.CENTER
++        };
++        speeds.append (down_row);
++        speeds.append (up_row);
++
++        graph = new Gtk.DrawingArea () {
++            content_width = 120,
++            content_height = 34,
++            hexpand = true,
++            valign = Gtk.Align.CENTER
++        };
++        graph.set_draw_func (draw_graph);
++
++        append (speeds);
++        append (graph);
++
++        tooltip_text = _("Network throughput (all physical interfaces)");
++
++        // Sample continuously (one tiny /proc read per second) so the graph is already filled
++        // when the popover is opened.
++        timeout_id = Timeout.add_seconds (1, tick);
++        tick ();
++    }
++
++    public override void dispose () {
++        if (timeout_id != 0) {
++            Source.remove (timeout_id);
++            timeout_id = 0;
++        }
++
++        base.dispose ();
++    }
++
++    private bool tick () {
++        uint64 rx, tx;
++        if (!read_counters (out rx, out tx)) {
++            return Source.CONTINUE;
++        }
++
++        var now = get_monotonic_time ();
++        double down = 0;
++        double up = 0;
++
++        if (have_baseline && now > last_time) {
++            double elapsed = (now - last_time) / 1000000.0;
++            // Counters can go backwards when an interface disappears; treat that as zero.
++            if (rx >= last_rx) {
++                down = (rx - last_rx) / elapsed;
++            }
++
++            if (tx >= last_tx) {
++                up = (tx - last_tx) / elapsed;
++            }
++        }
++
++        last_rx = rx;
++        last_tx = tx;
++        last_time = now;
++        have_baseline = true;
++
++        for (int i = 0; i < HISTORY - 1; i++) {
++            rx_history[i] = rx_history[i + 1];
++            tx_history[i] = tx_history[i + 1];
++        }
++
++        rx_history[HISTORY - 1] = down;
++        tx_history[HISTORY - 1] = up;
++
++        down_label.label = format_rate (down);
++        up_label.label = format_rate (up);
++
++        if (get_mapped ()) {
++            graph.queue_draw ();
++        }
++
++        return Source.CONTINUE;
++    }
++
++    private static string format_rate (double bytes_per_second) {
++        if (bytes_per_second < 1000) {
++            return "%d B/s".printf ((int) bytes_per_second);
++        }
++
++        return format_size ((uint64) bytes_per_second) + "/s";
++    }
++
++    private bool is_virtual (string name) {
++        bool result;
++        if (virtual_cache.lookup_extended (name, null, out result)) {
++            return result;
++        }
++
++        try {
++            result = FileUtils.read_link ("/sys/class/net/" + name).contains ("/virtual/");
++        } catch (Error e) {
++            result = true;
++        }
++
++        virtual_cache.insert (name, result);
++        return result;
++    }
++
++    private bool read_counters (out uint64 rx, out uint64 tx) {
++        rx = 0;
++        tx = 0;
++
++        string contents;
++        try {
++            FileUtils.get_contents ("/proc/net/dev", out contents);
++        } catch (Error e) {
++            return false;
++        }
++
++        var lines = contents.split ("\n");
++        for (int i = 2; i < lines.length; i++) {
++            var line = lines[i];
++            var colon = line.index_of_char (':');
++            if (colon < 0) {
++                continue;
++            }
++
++            var name = line.substring (0, colon).strip ();
++            if (is_virtual (name)) {
++                continue;
++            }
++
++            // Fields: rx bytes is column 0, tx bytes is column 8 after the colon.
++            string[] fields = {};
++            foreach (unowned var token in line.substring (colon + 1).split (" ")) {
++                if (token != "") {
++                    fields += token;
++                }
++            }
++
++            if (fields.length >= 9) {
++                rx += uint64.parse (fields[0]);
++                tx += uint64.parse (fields[8]);
++            }
++        }
++
++        return true;
++    }
++
++    private void draw_graph (Gtk.DrawingArea area, Cairo.Context cr, int width, int height) {
++        double max = MIN_SCALE;
++        for (int i = 0; i < HISTORY; i++) {
++            max = double.max (max, double.max (rx_history[i], tx_history[i]));
++        }
++
++        max *= 1.1;
++
++        // Upload first so the (accent coloured) download series sits on top.
++        var up_color = up_label.get_color ();
++        draw_series (cr, tx_history, up_color, width, height, max, 0.12, 0.55);
++
++        var down_color = down_label.get_color ();
++        draw_series (cr, rx_history, down_color, width, height, max, 0.22, 0.95);
++    }
++
++    private void draw_series (Cairo.Context cr, double[] data, Gdk.RGBA color, int width, int height, double max, double fill_alpha, double line_alpha) {
++        double step = (double) width / (HISTORY - 1);
++        double usable = height - 3;
++
++        cr.new_path ();
++        for (int i = 0; i < HISTORY; i++) {
++            double x = i * step;
++            double y = height - 1.5 - (data[i] / max) * usable;
++            if (i == 0) {
++                cr.move_to (x, y);
++            } else {
++                cr.line_to (x, y);
++            }
++        }
++
++        cr.set_line_width (1.5);
++        cr.set_line_join (Cairo.LineJoin.ROUND);
++        cr.set_source_rgba (color.red, color.green, color.blue, line_alpha);
++        cr.stroke_preserve ();
++
++        cr.line_to (width, height);
++        cr.line_to (0, height);
++        cr.close_path ();
++        cr.set_source_rgba (color.red, color.green, color.blue, fill_alpha);
++        cr.fill ();
++    }
++}

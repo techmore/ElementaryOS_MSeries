@@ -192,3 +192,19 @@ of memory pressure. These observations do not establish why model responses
 are slow. Launch from this checkout to keep project discovery scoped:
 `cd ~/Documents/ElementaryOS_MSeries && opencode`.
 No OpenCode settings or running sessions were changed.
+
+## Network speed in the panel dropdown
+
+`bash mseries/install-network-throughput.sh` adds a live download/upload readout and a
+60-second graph (down in the accent colour, up in grey) to the network indicator's dropdown,
+above "Network Settings…". It builds `elementary/panel-network` at the commit that matches the
+installed `io.elementary.panel.network` 8.0.1 with `mseries/patches/network-throughput.patch`
+and replaces only `libnetwork.so`; the original is saved at
+`/usr/local/lib/mseries/libnetwork.so.original`. Build needs `libnm-dev libnma-gtk4-dev
+libpolkit-gobject-1-dev` besides the Wingpanel/Granite/GTK dev packages the other installers use.
+Gala respawns the panel, so there is no logout. `--uninstall` restores the original.
+
+Speeds are the sum over physical interfaces from `/proc/net/dev` (virtual ones such as `lo`,
+bridges and VPN tunnels are skipped to avoid double counting), sampled once a second, so the graph
+is already filled when you open the menu. Re-run the script after a package upgrade of the network
+indicator, which overwrites the plugin.
