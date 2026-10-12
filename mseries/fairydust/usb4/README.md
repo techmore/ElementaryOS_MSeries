@@ -227,3 +227,10 @@ top of `tb_tunnel_dp()` in `tb.c`). With it the host no longer allocates a DP IN
 tunnelling is implemented. Installed module checked by string/exports/section comparison; not yet
 observed live against the dock (it was unplugged when the module was reloaded) - re-check with
 `journalctl -k | grep -c "DPRX read timeout"` after the next dock connection (expect 0).
+
+## Boot menu
+
+`install-stage2.sh` adds the "elementary OS (M-series, fairydust + USB4)" entry and makes it the default
+(`set default=elementary-usb4-test` in `/boot/grub/custom.cfg`; the id keeps the old name). The earlier
+fairydust and stock entries stay in the menu as fallbacks. Revert the default by setting
+`elementary-fairydust` (or restore `custom.cfg.bak-before-usb4-default`).

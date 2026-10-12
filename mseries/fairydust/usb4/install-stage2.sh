@@ -10,11 +10,14 @@ chroot $R /bin/bash -c "DTBS='/usr/lib/modules/$KV/dtbs/*.dtb' update-m1n1"
 ls -la /boot/m1n1
 grep -q 'elementary-usb4-test' /boot/grub/custom.cfg || cat >> /boot/grub/custom.cfg <<'EOG'
 
-# TEST entry: fairydust + USB4/Thunderbolt (not the default).
-menuentry 'elementary OS (M-series, fairydust + USB4 TEST)' --id elementary-usb4-test {
+# fairydust + USB4/Thunderbolt entry. Becomes the default below; older entries stay in the menu.
+menuentry 'elementary OS (M-series, fairydust + USB4)' --id elementary-usb4-test {
     search --no-floppy --fs-uuid --set=root 9D41-85A1
     linux /vmlinuz-linux-asahi-fairydust-usb4 root=UUID=725346d2-f127-47bc-b464-9dd46155e8d6 rw cryptdevice=UUID=eec73af3-9f69-43bc-a114-c1197ac09c62:root:allow-discards loglevel=3 quiet splash rootflags=subvol=@elementary rw
     initrd /initramfs-linux-asahi-fairydust-usb4.img
 }
 EOG
+# Make it the default (the base kit's custom.cfg defaults to elementary-fairydust). Backup first.
+cp -a /boot/grub/custom.cfg /boot/grub/custom.cfg.bak-before-usb4-default
+sed -i 's/^set default=elementary-fairydust$/set default=elementary-usb4-test/' /boot/grub/custom.cfg
 echo STAGE2_DONE
