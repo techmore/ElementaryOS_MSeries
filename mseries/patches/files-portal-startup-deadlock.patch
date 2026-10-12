@@ -1,0 +1,47 @@
+diff --git a/filechooser-portal/Main.vala b/filechooser-portal/Main.vala
+index 70faaa3fa..816f891a9 100644
+--- a/filechooser-portal/Main.vala
++++ b/filechooser-portal/Main.vala
+@@ -39,15 +39,34 @@ public class Files.FileChooserPortal : Object {
+     }
+ 
+     construct {
+-        var granite_settings = Granite.Settings.get_default ();
+-        var gtk_settings = Gtk.Settings.get_default ();
+-
+-        gtk_settings.gtk_application_prefer_dark_theme = granite_settings.prefers_color_scheme == Granite.Settings.ColorScheme.DARK;
+-
+-        granite_settings.notify["prefers-color-scheme"].connect (() => {
+-            gtk_settings.gtk_application_prefer_dark_theme = granite_settings.prefers_color_scheme == Granite.Settings.ColorScheme.DARK;
+-        });
++        // Granite.Settings makes a blocking call that auto-starts
++        // org.freedesktop.portal.Desktop, which in turn is waiting on this portal.
++        // Wait for it to be running first, or login stalls for the 25 second
++        // D-Bus activation timeout.
++        Bus.watch_name (
++            BusType.SESSION,
++            "org.freedesktop.portal.Desktop",
++            BusNameWatcherFlags.NONE,
++            (connection, name, owner) => {
++                if (settings_ready) {
++                    return;
++                }
++                settings_ready = true;
++
++                var granite_settings = Granite.Settings.get_default ();
++                var gtk_settings = Gtk.Settings.get_default ();
++
++                gtk_settings.gtk_application_prefer_dark_theme = granite_settings.prefers_color_scheme == Granite.Settings.ColorScheme.DARK;
++
++                granite_settings.notify["prefers-color-scheme"].connect (() => {
++                    gtk_settings.gtk_application_prefer_dark_theme = granite_settings.prefers_color_scheme == Granite.Settings.ColorScheme.DARK;
++                });
++            },
++            null
++        );
+     }
++
++    private bool settings_ready = false;
+     /**
+      * Requests the user for a URI.
+      *
