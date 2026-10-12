@@ -18,28 +18,22 @@ for action, binding in [("screenshot", "<Control><Shift>3"), ("area-screenshot",
     if binding not in existing:
         keys.set_strv(action, existing + [binding])
 Gio.Settings.sync()
-# Command+Space launcher. Command is Ctrl here, so bind <Control>space; <Super>space
-# covers right Command. Super+Space otherwise switches input sources in Pantheon.
-for action in ("switch-input-source", "switch-input-source-backward"):
-    keys.set_strv(action, [b for b in keys.get_strv(action) if b.lower() != "<super>space"])
+# Command+Space launcher. mseries-launcher-keys binds <Control>space (Command is Ctrl here)
+# and <Super>space (right Command), frees Super+Space from the input-source switch, and
+# re-binds at every login because the shortcut list was once found emptied after a reboot.
 launcher = home / ".local/bin/mseries-launcher"
 launcher.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy2(repo / "mseries/mseries-launcher.py", launcher)
 launcher.chmod(0o755)
-media = "org.gnome.settings-daemon.plugins.media-keys"
-base = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/"
-paths = []
-for name, binding in [("mseries-launcher0", "<Control>space"), ("mseries-launcher1", "<Super>space")]:
-    path = f"{base}{name}/"
-    custom = Gio.Settings.new_with_path(f"{media}.custom-keybinding", path)
-    custom.set_string("name", "M-series launcher")
-    custom.set_string("command", str(launcher))
-    custom.set_string("binding", binding)
-    paths.append(path)
-shortcuts = Gio.Settings.new(media)
-existing = shortcuts.get_strv("custom-keybindings")
-shortcuts.set_strv("custom-keybindings", existing + [p for p in paths if p not in existing])
-Gio.Settings.sync()
+keys_helper = home / ".local/libexec/mseries-launcher-keys"
+keys_helper.parent.mkdir(parents=True, exist_ok=True)
+shutil.copy2(repo / "mseries/mseries-launcher-keys.py", keys_helper)
+keys_helper.chmod(0o755)
+keys_autostart = home / ".config/autostart/mseries-launcher-keys.desktop"
+keys_autostart.parent.mkdir(parents=True, exist_ok=True)
+keys_autostart.write_text("[Desktop Entry]\nType=Application\nName=M-series launcher shortcuts\n"
+    f'Exec="{keys_helper}"\nOnlyShowIn=Pantheon;\nNoDisplay=true\n')
+subprocess.run([str(keys_helper), "--once"], check=True)
 # Gala hardcodes Pictures/Screenshots; redirect only that folder, not Pictures.
 pictures = Path(GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_PICTURES) or home / "Pictures")
 downloads = Path(GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOWNLOAD) or home / "Downloads")

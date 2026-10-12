@@ -17,7 +17,11 @@ input-source switch; Alt+Shift still switches layouts. Alt+F2 still opens
 Slingshot. Gala cannot place Wayland windows, so the launcher runs through
 XWayland and moves itself: centered horizontally, top edge 80% of the screen
 height up from the bottom (`HEIGHT_FROM_BOTTOM` in the script).
-Undo by removing the two `mseries-launcher` entries from
+The shortcuts are registered by `~/.local/libexec/mseries-launcher-keys`, which
+starts at Pantheon login and re-adds them if `custom-keybindings` is ever emptied
+(it was after one reboot, leaving the per-shortcut entries orphaned). Undo by
+deleting `~/.config/autostart/mseries-launcher-keys.desktop`, stopping that helper,
+and removing the two `mseries-launcher` entries from
 `org.gnome.settings-daemon.plugins.media-keys custom-keybindings`.
 
 ## Command shortcuts and brightness
