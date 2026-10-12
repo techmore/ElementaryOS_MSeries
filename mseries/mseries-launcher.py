@@ -9,6 +9,8 @@ import warnings
 import os
 
 # Wayland clients cannot choose their position, so run through XWayland and place the window.
+# Launched apps must not inherit the XWayland settings below, so remember the originals.
+ORIGINAL_ENV = {name: os.environ.get(name) for name in ("GDK_BACKEND", "GDK_SCALE")}
 os.environ["GDK_BACKEND"] = "x11"
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -206,7 +208,13 @@ class Launcher(Gtk.Application):
         if row is None:
             return
         try:
-            row.app.launch([], None)
+            context = Gdk.Display.get_default().get_app_launch_context()
+            for name, value in ORIGINAL_ENV.items():
+                if value is None:
+                    context.unsetenv(name)
+                else:
+                    context.setenv(name, value)
+            row.app.launch([], context)
         except GLib.Error as err:
             print(f"Could not launch {row.app.get_name()}: {err.message}")
         log(f"quit: launched {row.app.get_name()}")
