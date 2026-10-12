@@ -116,10 +116,13 @@ bash mseries/install-codexbar-wingpanel.sh
 Log out and back in after installation. The indicator starts CodexBar's local
 backend and reads its same-user structured snapshot without changing CodexBar
 preferences. The panel shows the OpenAI mark with both Codex's five-hour and
-weekly remaining percentages. The dropdown groups quota windows into compact
-cards, shows the reset time, and highlights the provider's estimated time left
-at its current pace, plus Refresh, Quick View, Usage & Spend, Spending, and
-Settings/sign-in actions. Provider credentials remain managed by CodexBar. The
+weekly remaining percentages. The dropdown uses Granite 7.7+ typography and
+one padded card per provider, with separate five-hour and weekly limits,
+remaining percentages, reset times, and estimated time left at the current pace.
+Long provider lists scroll while the labeled Quick View, Usage Details,
+Spending, and Settings & Sign In actions stay visible. The header refresh
+button animates during updates, and the empty state offers a direct sign-in
+action. Provider credentials remain managed by CodexBar. The
 monochrome mark comes from the [OpenAI 2025 symbol](https://commons.wikimedia.org/wiki/File:OpenAI_logo_2025_(symbol).svg)
 and follows OpenAI's branding guidelines.
 Remove it with `bash mseries/install-codexbar-wingpanel.sh --uninstall`.
@@ -221,3 +224,45 @@ Speeds are the sum over physical interfaces from `/proc/net/dev` (virtual ones s
 bridges and VPN tunnels are skipped to avoid double counting), sampled once a second, so the graph
 is already filled when you open the menu. Re-run the script after a package upgrade of the network
 indicator, which overwrites the plugin.
+
+## Log review and known issues (2026-10-12)
+
+Checked after a reboot with no failed system or user units. Nothing below needs
+action to keep the desktop working.
+
+Resolved:
+- **Cmd+Space launcher closed instantly:** each key press started it twice within
+  milliseconds and the second start toggled it shut. Fixed by ignoring a second start
+  within 400 ms. Apps it launched also inherited its `GDK_BACKEND=x11` and `GDK_SCALE`;
+  it now restores the originals for them. `~/.cache/mseries-launcher.log` records opens,
+  focus changes and quit reasons.
+- **Shortcuts lost after a reboot:** `custom-keybindings` was found emptied while the
+  per-shortcut entries survived. `mseries-launcher-keys` re-registers them at login.
+- **No Files previews:** `tumblerd.service` failed with "Failed to create cgroup ...
+  app.slice/tumblerd.service", and any new user service failed the same way, while
+  scopes still worked. A reboot cleared it and the cause is unknown. If it returns, run
+  `tumblerd` directly (`setsid nohup /usr/lib/aarch64-linux-gnu/tumbler-1/tumblerd &`)
+  until the next login.
+- **Touchegg missing:** see Touchpad gestures above.
+
+Seen in logs, harmless:
+- The login screen's `gala` and `wireplumber` (user 108) abort during teardown while the
+  session is handed over. They do not affect the desktop session.
+- `systemd-growfs: crypt_resize() of /dev/nvme0n1p5 failed: Operation not permitted` for
+  `/` and `/home`; boot continues.
+- `apple-dcp: Failed to get dp-xbar`, and Thunderbolt "USB3 tunnel creation failed" / "DP
+  not active" (display and USB4 bring-up). Missing `rtl_nic/rtl8156b-2.fw` for a USB
+  adapter. `org.gnome.Shell.Brightness` has no owner (Pantheon has no GNOME Shell).
+- Wingpanel prints GTK layout and `g_str_has_prefix` assertions from the custom indicators.
+
+Possible optimizations, not applied (each needs sudo and a decision):
+- **Boot:** `cups-browsed.service` pulls `network-online.target` onto the critical chain,
+  so `NetworkManager-wait-online` (about 3.1 s of the 6.1 s userspace time) delays
+  `graphical.target`. Disabling `cups-browsed` should remove most of that wait.
+  `snapd.*` adds roughly 3 s of parallel start-up work and is only needed for snaps.
+- **Unused daemons enabled:** `ModemManager`, `avahi-daemon`, `cups`, `apport`, `snapd`.
+- **No swap or zram** (30 GiB RAM, about 23 GiB available at the time). Adding zram would
+  only matter under memory pressure.
+- **CPU:** with the Claude and ChatGPT desktop apps open, load average sits near 3 on 10
+  cores, and `gala` uses about 15% while they repaint. Not investigated further.
+
