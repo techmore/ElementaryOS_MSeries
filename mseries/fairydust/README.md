@@ -82,8 +82,11 @@ Two chroot gotchas the scripts handle (both cost a failed run to discover):
   target is gone, so `pacman` can't resolve any mirror. The build script
   recreates the target on the tmpfs with public resolvers first.
 - **This network is flaky for bursty lookups.** `getent` succeeds while
-  `pacman`'s libcurl concurrently gets `Could not resolve host`. The driver
-  wraps every network step (`pacman`, `rustup`, `makepkg`) in a retry loop.
+  `pacman`'s libcurl concurrently gets `Could not resolve host`. Two defences:
+  the build script pins the resolved pacman-repo + makepkg/rustup hosts in the
+  chroot's `/etc/hosts` (bind-mounted from the tmpfs, subvolume untouched), and
+  the driver wraps every network step (`pacman`, `rustup`, `makepkg`) in a
+  retry loop.
 
 Run it:
 
