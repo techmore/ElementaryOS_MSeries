@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Support matrix — ElementaryOS M-Series</title>
+<style>
+body{font-family:-apple-system,system-ui,sans-serif;max-width:52rem;margin:2rem auto;padding:0 1rem;line-height:1.55;color:#1a1a1a}
+table{border-collapse:collapse;width:100%;margin:1rem 0}
+th,td{border:1px solid #ccc;padding:.4rem .6rem;text-align:left;font-size:.9rem}
+th{background:#f4f4f4}
+.ok{color:#1a7f37;font-weight:bold}.no{color:#b42318;font-weight:bold}.part{color:#9a6700;font-weight:bold}.unk{color:#555}
+footer{margin-top:2rem;font-size:.85rem;color:#555}
+</style>
+</head>
+<body>
+<p><a href="index.html">← back</a></p>
+<h1>Support &amp; parity matrix</h1>
+<p>Expectations from kernel research (<a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/KERNEL-REPORT.md">KERNEL-REPORT.md</a>, 2026-10-12). <strong>Nothing below is tested</strong> — the <em>Tested</em> column is all ❔ until hardware results come in.</p>
+<table>
+<tr><th>Feature</th><th>Stock Ubuntu 7.0 kernel</th><th>Planned Asahi kernel</th><th>Tested</th></tr>
+<tr><td>Boot to console</td><td class="ok">likely</td><td class="ok">yes</td><td class="unk">❔</td></tr>
+<tr><td>NVMe storage</td><td class="ok">likely (5.19+)</td><td class="ok">yes</td><td class="unk">❔</td></tr>
+<tr><td>USB ports</td><td class="ok">likely (7.0)</td><td class="ok">yes</td><td class="unk">❔</td></tr>
+<tr><td>Display (unaccelerated framebuffer)</td><td class="part">partial (ADP in 6.15)</td><td class="ok">yes (DCP)</td><td class="unk">❔</td></tr>
+<tr><td>GPU acceleration</td><td class="no">no (driver out-of-tree)</td><td class="ok">yes</td><td class="unk">❔</td></tr>
+<tr><td>Full-height display (notch area)</td><td class="no">no (needs appledrm)</td><td class="part">planned (modprobe wired)</td><td class="unk">❔</td></tr>
+<tr><td>Keyboard / trackpad</td><td class="part">likely + HID-race fix wired</td><td class="ok">yes</td><td class="unk">❔</td></tr>
+<tr><td>Wi-Fi driver (BCM4378/4387)</td><td class="ok">likely (6.3+)</td><td class="ok">yes</td><td class="unk">❔</td></tr>
+<tr><td>Wi-Fi firmware blobs</td><td class="part">first-boot provisioning wired</td><td class="part">same</td><td class="unk">❔</td></tr>
+<tr><td>Speakers</td><td class="no">no (needs Asahi DSP + daemon)</td><td class="ok">yes</td><td class="unk">❔</td></tr>
+<tr><td>Microphone</td><td class="no">no</td><td class="part">most models</td><td class="unk">❔</td></tr>
+<tr><td>Hardware video decode</td><td class="no">no (AVD unmerged)</td><td class="ok">yes</td><td class="unk">❔</td></tr>
+<tr><td>Suspend / resume + Wi-Fi recovery</td><td class="no">no (needs Asahi sleep)</td><td class="part">resume unit wired</td><td class="unk">❔</td></tr>
+<tr><td>Brightness keys</td><td class="unk">unknown</td><td class="part">likely</td><td class="unk">❔</td></tr>
+<tr><td>Touch ID / SEP, Thunderbolt, encoders</td><td class="no">no (WIP/TBA upstream)</td><td class="no">no</td><td class="unk">❔</td></tr>
+</table>
+
+<h2>Tested on</h2>
+<table>
+<tr><th>Machine</th><th>SoC</th><th>Image</th><th>Result</th><th>Tester</th></tr>
+<tr><td colspan="5"><em>No results yet. Have a spare M-series Mac? Open an issue with your model + the release you booted.</em></td></tr>
+</table>
+
+<h2>Out of scope (by design)</h2>
+<p>Intel Macs (T2, 2015–2017 SPI keyboard/NVMe, Broadcom STA offload tweaks) and Hyprland/Omarchy desktop behavior — see <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/PORT-MAP.md">PORT-MAP.md</a>.</p>
+<footer>Updated 2026-10-12. This page is generated from research, not test runs.</footer>
+</body>
+</html>

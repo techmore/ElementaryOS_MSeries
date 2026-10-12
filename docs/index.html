@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ElementaryOS M-Series — elementary OS for Apple Silicon</title>
+<style>
+body{font-family:-apple-system,system-ui,sans-serif;max-width:46rem;margin:2rem auto;padding:0 1rem;line-height:1.55;color:#1a1a1a}
+.banner{background:#fff8e1;border:1px solid #e0c36a;border-radius:.5rem;padding:.75rem 1rem}
+table{border-collapse:collapse;width:100%;margin:1rem 0}
+th,td{border:1px solid #ccc;padding:.4rem .6rem;text-align:left;font-size:.92rem}
+th{background:#f4f4f4}
+.ok{color:#1a7f37;font-weight:bold}.no{color:#b42318;font-weight:bold}.part{color:#9a6700;font-weight:bold}.unk{color:#555}
+code{background:#f4f4f4;padding:.1rem .3rem;border-radius:.25rem}
+footer{margin-top:2rem;font-size:.85rem;color:#555}
+</style>
+</head>
+<body>
+<h1>ElementaryOS M-Series</h1>
+<p>Experimental port of <a href="https://github.com/elementary/os">elementary OS</a> (Pantheon, Ubuntu-based) to Apple Silicon Macs (M1/M2/…), informed by the Apple Silicon hardware knowledge in <a href="https://github.com/omacom/omarchy-mac">omacom/omarchy-mac</a> (<code>quattro</code>).</p>
+<div class="banner"><strong>Status: scaffolding — no tested ISO yet.</strong> The build wiring exists and passes CI config checks, but no image has been built or booted on Apple hardware. Everything below is the plan being tracked in the open.</div>
+
+<h2>Download</h2>
+<p>No ISO is published yet. When the first arm64 build succeeds, ISOs will be attached to <a href="https://github.com/techmore/ElementaryOS_MSeries/releases">GitHub Releases</a>. Until then:</p>
+<ul>
+<li>Builders: <code>just do-daily</code> on an arm64 Ubuntu machine (see upstream README), or run <em>Daily OS 9</em> via <em>Run workflow</em> in <a href="https://github.com/techmore/ElementaryOS_MSeries/actions">Actions</a>.</li>
+<li>Every change to the build wiring is config-checked on real arm64 runners (<em>Validate M-series wiring</em>).</li>
+</ul>
+
+<h2>How this differs from Asahi / Omarchy installers</h2>
+<p>This project is an <strong>image factory, not an installer command</strong>. Asahi ships an installer app you run from macOS; Omarchy ships a script you run inside an already-booted Linux. Here, CI builds a bootable live ISO (hours, in the cloud); you flash it to USB and boot it. There is no one-line command that transforms your running Mac — and nothing here can touch your Mac until you deliberately boot media it produced.</p>
+
+<h2>Support &amp; parity</h2>
+<p>Full matrix: <a href="support.html">support.html</a> — per-feature status on the stock Ubuntu kernel vs the planned Asahi kernel, plus the tested-on table (currently empty; testers wanted).</p>
+
+<h2>Source &amp; docs</h2>
+<ul>
+<li>Repo: <a href="https://github.com/techmore/ElementaryOS_MSeries">techmore/ElementaryOS_MSeries</a></li>
+<li>Port map (every Omarchy fix, mapped): <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/PORT-MAP.md">mseries/PORT-MAP.md</a></li>
+<li>Kernel verdict: <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/KERNEL-REPORT.md">mseries/KERNEL-REPORT.md</a></li>
+<li>Kernel source plan: <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/KERNEL-SOURCE.md">mseries/KERNEL-SOURCE.md</a></li>
+<li>Wi-Fi firmware plan: <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/FIRMWARE-WIFI.md">mseries/FIRMWARE-WIFI.md</a></li>
+</ul>
+<footer>Derivative of elementary/os (GPLv3, unchanged license). Apple firmware blobs are never redistributed by this project.</footer>
+</body>
+</html>
