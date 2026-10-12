@@ -65,6 +65,35 @@ Budget **1–3 hours** and **~35 GiB** of scratch, and stay on AC.
    `/vmlinuz-linux-asahi-fairydust` + its initramfs (the stock elementary
    entry keeps using the stock kernel).
 
+## Host-side build (from the elementary subvolume)
+
+Booting Omarchy just to build is avoidable: `host/` chroots into the Arch
+(`@`) subvolume from elementary.
+
+| File | What it does |
+| --- | --- |
+| `host/fairydust-build.sh` | runs on elementary as root; mounts the `@` subvol + a **private tmpfs `/run`** (so the live Wayland session is never touched), provisions chroot DNS, drops the kit in and chroots to the driver |
+| `host/fairydust-driver.sh` | runs inside the chroot as root; installs deps, `makepkg`, installs the package, builds initramfs, `update-m1n1`, `grub-mkconfig` |
+
+Two chroot gotchas the scripts handle (both cost a failed run to discover):
+
+- **Private `/run` hides the resolver.** `/etc/resolv.conf` is a symlink to
+  `/run/systemd/resolve/stub-resolv.conf`; with a fresh tmpfs `/run` that
+  target is gone, so `pacman` can't resolve any mirror. The build script
+  recreates the target on the tmpfs with public resolvers first.
+- **This network is flaky for bursty lookups.** `getent` succeeds while
+  `pacman`'s libcurl concurrently gets `Could not resolve host`. The driver
+  wraps every network step (`pacman`, `rustup`, `makepkg`) in a retry loop.
+
+Run it:
+
+```bash
+sudo host/fairydust-build.sh        # ~1-3h; see /tmp/opencode/fairydust-build.log
+```
+
+Then reboot and pick the fairydust entry in GRUB (dock on the FRONT-LEFT
+USB-C port) and run `./verify.sh`.
+
 ## Safety
 
 - Stock `linux-asahi` stays installed; GRUB lists both. A bad boot is one
