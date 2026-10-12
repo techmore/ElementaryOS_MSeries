@@ -5,6 +5,7 @@ using Wingpanel;
 
 [DBus (name = "org.kde.StatusNotifierItem")]
 private interface StatusNotifierItem : Object {
+    public abstract string Id { owned get; }
     public abstract string Title { owned get; }
     public abstract string Status { owned get; }
     public abstract string? IconName { owned get; }
@@ -128,6 +129,11 @@ private class TrayItem : Gtk.Box {
             proxy = yield Bus.get_proxy<StatusNotifierItem> (
                 BusType.SESSION, bus_name, object_path, DBusProxyFlags.NONE
             );
+            // This host exists for Signal; leave other apps' tray items alone.
+            if (!proxy.Id.down ().contains ("signal")) {
+                vanished ();
+                return;
+            }
             proxy.NewTitle.connect (() => update_title ());
             proxy.NewIcon.connect (() => update_icon ());
             proxy.NewAttentionIcon.connect (() => update_icon ());
