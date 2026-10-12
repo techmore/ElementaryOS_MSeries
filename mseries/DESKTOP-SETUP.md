@@ -60,6 +60,19 @@ Confirmed live: SetBacklight and OSD calls succeed; owner confirms brighter
 display. Both accelerator registrations succeed. Physical key presses
 and persistence across login still need user verification.
 
+## Touchpad gestures
+
+Gala reads multitouch gestures from the Touchegg daemon, and logs "Error connecting
+to Touchégg daemon" every 5 seconds at startup when it is missing. Touchegg is not
+packaged for Ubuntu 26.04, so `bash mseries/install-touchegg.sh` builds upstream
+2.0.18 and enables the system service. It deliberately removes Touchegg's own
+`/etc/xdg/autostart/touchegg.desktop` client, since Gala handles the gestures and
+the X11 client would act on the same swipes again. Gala only connects at startup,
+so log out and back in afterwards. Pantheon's defaults apply: three-finger swipe up
+opens multitasking, three-finger swipe left/right switches workspaces, and
+four-finger gestures are unset (`io.elementary.desktop.wm.gestures`). Remove
+everything with `bash mseries/install-touchegg.sh --uninstall`.
+
 ## Signal
 
 Run `bash mseries/install-signal.sh`. Installs the official ARM64 beta,
