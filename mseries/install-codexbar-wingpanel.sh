@@ -33,4 +33,4 @@ sudo rm -f /usr/share/icons/hicolor/scalable/apps/mseries-codexbar-openai.svg
 if command -v gtk-update-icon-cache >/dev/null; then
   sudo gtk-update-icon-cache -f /usr/share/icons/hicolor
 fi
-echo 'Installed CodexBar in Wingpanel. The dropdown shows quota cards, reset and pace details, and grouped account actions.'
+echo 'Installed CodexBar in Wingpanel. The dropdown shows compact quota rows with reset times, pace tooltips, and account actions.'

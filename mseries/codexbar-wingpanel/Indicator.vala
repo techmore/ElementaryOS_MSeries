@@ -50,7 +50,7 @@ namespace MSeries {
                 margin_bottom = 6,
                 margin_start = 6,
                 margin_end = 6,
-                width_request = 204
+                width_request = 320
             };
 
             menu.add_css_class ("mseries-codexbar-compact");
@@ -58,7 +58,9 @@ namespace MSeries {
             compact_style.load_from_string (
                 ".mseries-codexbar-compact label { font-size: 7.5pt; } " +
                 ".mseries-codexbar-compact .h3 { font-size: 8.5pt; } " +
-                ".mseries-codexbar-compact button { padding: 3px 5px; }");
+                ".mseries-codexbar-compact button { padding: 3px 5px; } " +
+                ".mseries-codexbar-compact progressbar trough, " +
+                ".mseries-codexbar-compact progressbar progress { min-height: 3px; }");
             Gtk.StyleContext.add_provider_for_display (menu.get_display (), compact_style,
                 Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 
@@ -100,7 +102,7 @@ namespace MSeries {
             title_row.append (refresh_button);
             menu.append (title_row);
 
-            providers_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 10);
+            providers_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
             var scroll = new Gtk.ScrolledWindow () {
                 child = providers_box,
                 hscrollbar_policy = Gtk.PolicyType.NEVER,
@@ -116,7 +118,7 @@ namespace MSeries {
             actions.append (make_action_button ("Quick View…", "view-reveal-symbolic", "--quick-view"));
             actions.append (make_action_button ("Usage Details…", "view-list-symbolic", "--usage"));
             actions.append (make_action_button ("Spending…", "accessories-calculator-symbolic", "--spending"));
-            actions.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL) { margin_top = 6, margin_bottom = 6 });
+            
             actions.append (make_action_button ("Settings & Sign In…", "preferences-system-symbolic", "--settings"));
             menu.append (actions);
 
@@ -275,7 +277,7 @@ namespace MSeries {
                     ? "Remaining · " + (claude_panel_summary.length > 0 ? "CX = OpenAI Codex, CL = Claude" : "OpenAI Codex")
                     : "Usage unavailable");
 
-                var update_status = "Updated " + (snapshot.get_string_member ("updated") ?? "recently");
+                var update_status = "Remaining · Updated " + (snapshot.get_string_member ("updated") ?? "recently");
                 if (snapshot_busy) {
                     update_status = "Refreshing usage… · " + update_status;
                 }
@@ -296,26 +298,21 @@ namespace MSeries {
             var provider = entry.get_string_member ("provider") ?? "Provider";
             var title_text = provider.down () == "codex" ? "OpenAI Codex" :
                 provider.down () == "claude" ? "Claude" : provider;
-            var title = new Granite.HeaderLabel (title_text) {
-                size = Granite.HeaderLabel.Size.H4
-            };
+            var title = new Gtk.Label (title_text) { xalign = 0 };
+            title.add_css_class ("heading");
 
             var provider_section = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
             provider_section.append (title);
             providers_box.append (provider_section);
 
             var previous_provider_box = providers_box;
-            var limits = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
-            limits.add_css_class (Granite.CssClass.CARD);
+            var limits = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
             provider_section.append (limits);
             providers_box = limits;
 
             var windows = entry.get_array_member ("windows");
             if (windows != null && windows.get_length () > 0) {
                 for (uint i = 0; i < windows.get_length (); i++) {
-                    if (i > 0) {
-                        limits.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
-                    }
                     append_window (windows.get_object_element (i));
                 }
             } else {
@@ -390,121 +387,42 @@ namespace MSeries {
             var pace = window.get_string_member ("pace") ?? "";
             var remaining_node = window.get_member ("remaining");
 
-            var quota_card = new Gtk.Box (Gtk.Orientation.VERTICAL, 4) {
-                margin_top = 6,
-                margin_bottom = 6,
-                margin_start = 6,
-                margin_end = 6
-            };
-
-            var heading = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 7);
-            var description = new Gtk.Box (Gtk.Orientation.VERTICAL, 3) {
-                hexpand = true, valign = Gtk.Align.CENTER
-            };
-            var name_label = new Gtk.Label (label) {
-                ellipsize = Pango.EllipsizeMode.END,
-                tooltip_text = label,
-                xalign = 0,
-                hexpand = true
-            };
-            description.append (name_label);
-            if (reset.length > 0) {
-                var reset_label = new Gtk.Label (reset) {
-                    xalign = 0,
-                    ellipsize = Pango.EllipsizeMode.END,
-                    max_width_chars = 27,
-                    tooltip_text = reset
-                };
-                reset_label.add_css_class ("dim-label");
-                reset_label.add_css_class ("caption");
-                description.append (reset_label);
+            var remaining = remaining_node == null || remaining_node.get_node_type () == Json.NodeType.NULL
+                ? -1.0 : GLib.Math.fmin (100.0, GLib.Math.fmax (0.0, remaining_node.get_double ()));
+            var warning = window.get_boolean_member ("warning");
+            var detail = remaining < 0 ? "Usage not reported yet" : "%0.0f%% remaining".printf (remaining);
+            if (warning) {
+                detail += remaining <= 0 ? " · Quota exhausted" : " · Low remaining quota";
             }
-            heading.append (description);
+            if (reset.length > 0) detail += " · " + reset;
+            if (pace.length > 0) detail += " · " + pace;
 
-            if (remaining_node == null || remaining_node.get_node_type () == Json.NodeType.NULL) {
-                var unknown = new Gtk.Label ("—") {
-                    tooltip_text = "This limit has not been reported",
-                    halign = Gtk.Align.END
-                };
-                heading.append (unknown);
-                quota_card.append (heading);
-                append_quota_detail (quota_card, "Usage not reported yet", true);
-                providers_box.append (quota_card);
-                return;
-            }
-
-            var remaining = GLib.Math.fmin (100.0, GLib.Math.fmax (0.0, remaining_node.get_double ()));
-            var balance = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) {
-                halign = Gtk.Align.END, valign = Gtk.Align.CENTER
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8) { tooltip_text = label + " · " + detail };
+            var short_label = short_window_label (label, (int) window.get_int_member ("minutes"));
+            var name = new Gtk.Label (short_label) {
+                xalign = 0, width_request = 52, ellipsize = Pango.EllipsizeMode.END,
+                tooltip_text = label
             };
-            var percent_label = new Granite.HeaderLabel ("%0.0f%%".printf (remaining)) {
-                size = Granite.HeaderLabel.Size.H3,
-                halign = Gtk.Align.END
-            };
-            balance.append (percent_label);
-            var remaining_label = new Gtk.Label ("remaining") { halign = Gtk.Align.END };
-            remaining_label.add_css_class ("caption");
-            remaining_label.add_css_class ("dim-label");
-            balance.append (remaining_label);
-            heading.append (balance);
-            quota_card.append (heading);
-
+            row.append (name);
             var progress = new Gtk.ProgressBar () {
-                show_text = false,
-                height_request = 5,
-                tooltip_text = "%0.0f%% remaining".printf (remaining)
+                show_text = false, hexpand = true, valign = Gtk.Align.CENTER,
+                width_request = 64, sensitive = remaining >= 0
             };
-            progress.set_fraction (GLib.Math.fmin (1.0, GLib.Math.fmax (0.0, remaining / 100.0)));
-            if (window.get_boolean_member ("warning")) {
-                progress.add_css_class ("warning");
-            }
-            quota_card.append (progress);
-
-            var estimate = pace_estimate (pace);
-            if (window.get_boolean_member ("warning")) {
-                append_quota_detail (quota_card, remaining <= 0 ? "Quota exhausted" : "Low remaining quota", false);
-            }
-            if (estimate.length > 0) {
-                append_quota_detail (quota_card, estimate, false);
-            } else if (pace.length > 0) {
-                append_quota_detail (quota_card, pace, true);
-            }
-            providers_box.append (quota_card);
-        }
-
-        private void append_quota_detail (Gtk.Box card, string text, bool subdued) {
-            var label = new Gtk.Label (text) {
-                xalign = 0,
-                hexpand = true,
-                wrap = true,
-                max_width_chars = 42,
-                halign = Gtk.Align.FILL
+            progress.set_fraction (remaining < 0 ? 0 : remaining / 100.0);
+            if (warning) progress.add_css_class ("warning");
+            row.append (progress);
+            var percent = new Gtk.Label (remaining < 0 ? "—" : "%0.0f%%".printf (remaining)) {
+                xalign = 1, width_request = 38, tooltip_text = detail
             };
-            if (subdued) {
-                label.add_css_class ("dim-label");
-                label.add_css_class ("caption");
-            } else {
-                label.add_css_class ("caption");
-            }
-            card.append (label);
-        }
-
-        private string pace_estimate (string pace) {
-            foreach (string part in pace.split ("|")) {
-                var detail = part.strip ();
-                var runout = "Runs out in ";
-                var runout_index = detail.index_of (runout);
-                if (runout_index >= 0) {
-                    var remaining_time = detail.substring (runout_index + runout.length).strip ();
-                    if (remaining_time.length > 0) {
-                        return "About " + remaining_time + " left at this pace";
-                    }
-                }
-                if (detail.down ().contains ("lasts until reset")) {
-                    return "On pace to last until reset";
-                }
-            }
-            return "";
+            percent.add_css_class ("numeric");
+            row.append (percent);
+            var reset_label = new Gtk.Label (reset.length > 0 ? reset : "Reset unknown") {
+                xalign = 0, width_request = 108, max_width_chars = 18,
+                ellipsize = Pango.EllipsizeMode.END, tooltip_text = detail
+            };
+            reset_label.add_css_class ("dim-label");
+            row.append (reset_label);
+            providers_box.append (row);
         }
 
         private void append_metric_row (string name, string value) {
