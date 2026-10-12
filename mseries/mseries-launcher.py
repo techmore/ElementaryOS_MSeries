@@ -4,12 +4,40 @@
 Run it again while it is open to close it. Enter launches the highlighted app;
 Esc or clicking away closes it.
 """
+import ctypes
+import warnings
+import os
+
+# Wayland clients cannot choose their position, so run through XWayland and place the window.
+os.environ["GDK_BACKEND"] = "x11"
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+
+def display_scale():
+    """XWayland windows are unscaled, so GTK needs the compositor's integer scale."""
+    try:
+        from gi.repository import Gio
+        reply = Gio.DBusProxy.new_for_bus_sync(
+            Gio.BusType.SESSION, Gio.DBusProxyFlags.NONE, None, "org.gnome.Mutter.DisplayConfig",
+            "/org/gnome/Mutter/DisplayConfig", "org.gnome.Mutter.DisplayConfig", None
+        ).call_sync("GetCurrentState", None, Gio.DBusCallFlags.NONE, 1000, None).unpack()
+        logical = reply[2]
+        primary = next((m for m in logical if m[4]), logical[0])
+        return max(1, round(primary[2]))
+    except Exception:
+        return 1
+
+
+os.environ.setdefault("GDK_SCALE", str(display_scale()))
+
 import gi
 gi.require_version("Gdk", "4.0")
+gi.require_version("GdkX11", "4.0")
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gdk, Gio, GLib, Gtk
+from gi.repository import Gdk, GdkX11, Gio, GLib, Gtk
 
 MAX_RESULTS = 8
+HEIGHT_FROM_BOTTOM = 0.75  # window top edge sits this fraction of the screen height above the bottom
 
 CSS = b"""
 window.mseries { background: transparent; box-shadow: none; }
@@ -76,6 +104,26 @@ class Launcher(Gtk.Application):
         self.refilter()
         win.present()
         self.entry.grab_focus()
+        GLib.timeout_add(60, self.place)
+
+    def place(self):
+        """Center horizontally and put the top edge HEIGHT_FROM_BOTTOM up from the bottom."""
+        surface = self.win.get_surface()
+        if not isinstance(surface, GdkX11.X11Surface):
+            return False
+        monitor = self.win.get_display().get_monitor_at_surface(surface)
+        geo, scale = monitor.get_geometry(), monitor.get_scale_factor()
+        x = geo.x + (geo.width - self.win.get_width()) // 2
+        y = geo.y + int(geo.height * (1 - HEIGHT_FROM_BOTTOM))
+        xlib = ctypes.CDLL("libX11.so.6")
+        xlib.XOpenDisplay.restype = ctypes.c_void_p
+        display = xlib.XOpenDisplay(None)
+        if display:
+            xlib.XMoveWindow(ctypes.c_void_p(display), ctypes.c_ulong(surface.get_xid()),
+                             x * scale, y * scale)
+            xlib.XFlush(ctypes.c_void_p(display))
+            xlib.XCloseDisplay(ctypes.c_void_p(display))
+        return False
 
     def on_active(self, win, _pspec):
         # Debounce: the compositor can briefly flip focus while mapping the window.
