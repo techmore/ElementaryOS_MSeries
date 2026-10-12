@@ -37,6 +37,20 @@ gi.require_version("Gtk", "4.0")
 from gi.repository import Gdk, GdkX11, Gio, GLib, Gtk
 
 MAX_RESULTS = 8
+LOG = os.path.expanduser("~/.cache/mseries-launcher.log")
+
+
+def log(message):
+    """Append a timestamped line so an unexpected close can be explained afterwards."""
+    try:
+        os.makedirs(os.path.dirname(LOG), exist_ok=True)
+        if os.path.exists(LOG) and os.path.getsize(LOG) > 100_000:
+            os.remove(LOG)
+        with open(LOG, "a") as f:
+            f.write(f"{GLib.DateTime.new_now_local().format('%H:%M:%S.%f')} pid={os.getpid()} {message}\n")
+    except OSError:
+        pass
+
 HEIGHT_FROM_BOTTOM = 0.80  # window top edge sits this fraction of the screen height above the bottom
 
 CSS = b"""
@@ -72,8 +86,10 @@ class Launcher(Gtk.Application):
 
     def do_activate(self):
         if self.win:
+            log("quit: second activation toggled it closed")
             self.quit()
             return
+        log("opened")
         self.apps = [a for a in Gio.AppInfo.get_all() if a.should_show()]
         self.win = win = Gtk.ApplicationWindow(application=self, title="Launcher")
         win.set_decorated(False)
@@ -127,6 +143,7 @@ class Launcher(Gtk.Application):
 
     def on_active(self, win, _pspec):
         # Debounce: the compositor can briefly flip focus while mapping the window.
+        log(f"focus active={win.is_active()}")
         if win.is_active():
             self.ready = True
         elif self.ready:
@@ -134,6 +151,7 @@ class Launcher(Gtk.Application):
 
     def close_if_inactive(self):
         if not self.win.is_active():
+            log("quit: lost focus")
             self.quit()
         return False
 
@@ -141,6 +159,7 @@ class Launcher(Gtk.Application):
 
     def on_key(self, _ctl, keyval, _code, _state):
         if keyval == Gdk.KEY_Escape:
+            log("quit: Escape")
             self.quit()
         elif keyval in (Gdk.KEY_Down, Gdk.KEY_Up):
             row = self.list.get_selected_row()
@@ -182,6 +201,7 @@ class Launcher(Gtk.Application):
             row.app.launch([], None)
         except GLib.Error as err:
             print(f"Could not launch {row.app.get_name()}: {err.message}")
+        log(f"quit: launched {row.app.get_name()}")
         self.quit()
 
 
