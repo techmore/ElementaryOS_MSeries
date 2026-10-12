@@ -1,0 +1,78 @@
+{
+  "_comment": "Checks for mseries-verify. precondition: exit 0 = applicable now. command: exit 0 = pass (read-only!). kind=manual asks you yes/no. 'after' chains behind another check.",
+  "checks": [
+    {
+      "id": "boot-default-usb4",
+      "title": "Reboot lands in the USB4 kernel by default",
+      "note": "2026-10-12: GRUB default changed to elementary-usb4-test (backup custom.cfg.bak-before-usb4-default).",
+      "precondition": "[ \"$(date -d \"$(uptime -s)\" +%s)\" -gt \"$(stat -c %Y /boot/grub/custom.cfg)\" ]",
+      "command": "uname -r | grep -q fairydust-usb4 && uname -r"
+    },
+    {
+      "id": "initramfs-crossbar",
+      "title": "Display crossbar loads early (no dp-xbar deferral)",
+      "note": "2026-10-12: mkinitcpio ignored conf.d drop-ins for the fairydust presets; added the module to /etc/mkinitcpio.conf. Before: 14 'Failed to get dp-xbar' kernel lines per boot, display driver up at ~10.0 s.",
+      "precondition": "[ \"$(date -d \"$(uptime -s)\" +%s)\" -gt \"$(stat -c %Y /boot/initramfs-linux-asahi-fairydust-usb4.img)\" ]",
+      "command": "n=$(journalctl -k -b 2>/dev/null | grep -c 'Failed to get dp-xbar'); t=$(journalctl -k -b -o short-monotonic 2>/dev/null | grep 'Initialized apple' | head -1 | sed -E 's/^\\[ *([0-9.]+)\\].*/\\1/'); echo \"dp-xbar lines: $n (was 14); display driver up at ${t}s (was 10.0s)\"; [ \"$n\" -le 2 ]"
+    },
+    {
+      "id": "zram-swap",
+      "title": "zram swap comes up on its own at boot",
+      "note": "2026-10-12: systemd-zram-generator, 8 GiB max, zstd.",
+      "precondition": "[ \"$(date -d \"$(uptime -s)\" +%s)\" -gt \"$(stat -c %Y /etc/systemd/zram-generator.conf)\" ]",
+      "command": "swapon --show --noheadings | grep zram"
+    },
+    {
+      "id": "services-trimmed",
+      "title": "ModemManager, snap CUPS and AppCenter's daemon stay off",
+      "note": "2026-10-12: ~110 MB of services plus AppCenter's ~680 MB daemon disabled.",
+      "precondition": "[ \"$(date -d \"$(uptime -s)\" +%s)\" -gt \"$(stat -c %Y ~/.config/autostart/io.elementary.appcenter.desktop)\" ]",
+      "command": "[ \"$(systemctl is-active ModemManager)\" != active ] && [ \"$(pgrep -fc '^/usr/bin/io.elementary.appcenter --silent')\" = 0 ] && echo 'all three off'"
+    },
+    {
+      "id": "gala-corners-running",
+      "title": "Rounded-corner Gala is the compositor you are running",
+      "note": "2026-10-12: patched Gala in /usr/local/lib/mseries/gala for the user session only; the launcher falls back to stock Gala and creates ~/.cache/mseries-gala-failed if it fails within 15 s.",
+      "precondition": "g=$(pgrep -x gala | head -1); [ -n \"$g\" ] && [ $(( $(date +%s) - $(ps -o etimes= -p $g | tr -d ' ') )) -gt \"$(stat -c %Y ~/.config/systemd/user/io.elementary.gala@wayland.service.d/mseries-screen-corners.conf)\" ]",
+      "command": "g=$(pgrep -x gala | head -1); if [ -e ~/.cache/mseries-gala-failed ]; then echo 'patched Gala failed at startup and fell back to stock (see: journalctl -t mseries-gala)'; false; else readlink /proc/$g/exe | grep -q mseries/gala/bin/gala && echo 'patched Gala running'; fi"
+    },
+    {
+      "id": "gala-corners-look",
+      "kind": "manual",
+      "after": "gala-corners-running",
+      "title": "Do the screen corners look right?",
+      "hint": "Look at the four screen corners: are they rounded to match the display, with no black blobs elsewhere? If not, change GALA_SCREEN_CORNER_RADIUS (10 now) in ~/.config/systemd/user/io.elementary.gala@wayland.service.d/mseries-screen-corners.conf and log out/in.",
+      "note": "2026-10-12: default radius 10 logical px."
+    },
+    {
+      "id": "colors-look",
+      "kind": "manual",
+      "title": "Are the softer blue and red tones comfortable?",
+      "hint": "Open a few apps (they pick up the new colors when restarted). Selections/buttons now use a softer blue, errors/destructive a softer red; windows have ~13px corners. Edit ~/.config/gtk-4.0/gtk.css to adjust.",
+      "precondition": "[ \"$(date +%s)\" -gt $(( $(stat -c %Y ~/.config/gtk-4.0/gtk.css) + 60 )) ]",
+      "note": "2026-10-12: BLUEBERRY/STRAWBERRY named colours overridden in gtk-3.0 and gtk-4.0 gtk.css; Ghostty palette muted."
+    },
+    {
+      "id": "network-row-look",
+      "kind": "manual",
+      "title": "Network menu: speed row sits under the connection toggles and moves",
+      "hint": "Click the network icon: the down/up speeds and graph should be directly under the Airplane Mode button. Start a download to see it move.",
+      "precondition": "true",
+      "note": "2026-10-12: patched io.elementary.panel.network (libnetwork.so); original in /usr/local/lib/mseries/libnetwork.so.original."
+    },
+    {
+      "id": "dock-usb4-ethernet",
+      "title": "Dock: USB4 tunnel up, USB3 devices and wired Ethernet working",
+      "note": "2026-10-12: Dell WD22TB4. Needs the new m1n1 + thunderbolt quirk (any Apple router id disables USB3 bandwidth allocation).",
+      "precondition": "[ -d /sys/bus/thunderbolt/devices/0-1 ] && [ $(( $(date +%s) - $(journalctl -k -b -o short-unix 2>/dev/null | grep 'new device found, vendor=0xd4' | tail -1 | cut -d. -f1) )) -gt 20 ]",
+      "command": "lsusb -t | grep -q r8152 && ip -br link | grep -E '^en[^ ]+ +UP' && echo 'USB3 tunnel + r8152 Ethernet up'"
+    },
+    {
+      "id": "dock-dp-retry-silent",
+      "title": "Dock: no more failed DisplayPort tunnel retries",
+      "note": "2026-10-12: QUIRK_NO_DP_TUNNEL for Apple routers. Before: ~316 'DPRX read timeout' lines per attempt, every ~30 s. Not yet seen live because the dock was unplugged when the module was reloaded.",
+      "precondition": "[ -d /sys/bus/thunderbolt/devices/0-1 ] && [ $(( $(date +%s) - $(journalctl -k -b -o short-unix 2>/dev/null | grep 'new device found, vendor=0xd4' | tail -1 | cut -d. -f1) )) -gt 120 ]",
+      "command": "s=$(journalctl -k -b -o short-unix 2>/dev/null | grep 'new device found, vendor=0xd4' | tail -1 | cut -d. -f1); n=$(journalctl -k -b --since \"@$s\" 2>/dev/null | grep -c 'DPRX read timeout'); echo \"DPRX read timeouts since the dock appeared: $n (was ~316 per attempt)\"; [ \"$n\" -eq 0 ]"
+    }
+  ]
+}

@@ -62,6 +62,9 @@ class Troubleshooter(Gtk.Application):
                                 xalign=0, wrap=True)
         self.status.add_css_class('dim-label')
         box.append(self.status)
+        self.checklist = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        box.append(self.checklist)
+        self.refresh_checklist()
         self.text = Gtk.TextView(editable=False, cursor_visible=False,
                                  wrap_mode=Gtk.WrapMode.WORD_CHAR,
                                  top_margin=12, bottom_margin=12, left_margin=12, right_margin=12)
@@ -77,6 +80,60 @@ class Troubleshooter(Gtk.Application):
             except OSError:
                 pass
         window.present()
+
+    def refresh_checklist(self):
+        """Pending verification checks from mseries-verify. Must never break the rest of the window."""
+        try:
+            child = self.checklist.get_first_child()
+            while child is not None:
+                following = child.get_next_sibling()
+                self.checklist.remove(child)
+                child = following
+            tool = str(Path.home() / '.local/bin/mseries-verify')
+            result = subprocess.run([tool, 'status', '--json'], capture_output=True, text=True, timeout=10)
+            items = [item for item in json.loads(result.stdout)['items']
+                     if item['state'] in ('ask', 'failed', 'waiting')]
+            if not items:
+                return
+            heading = Gtk.Label(label=f'Checks still open ({len(items)})', xalign=0)
+            heading.add_css_class('heading')
+            self.checklist.append(heading)
+            icons = {'ask': '?', 'failed': '\u2717', 'waiting': '\u2026'}
+            for item in items:
+                row = Gtk.Box(spacing=8)
+                row.append(Gtk.Label(label=icons.get(item['state'], '?')))
+                label = Gtk.Label(label=item['title'], xalign=0, hexpand=True, wrap=True,
+                                  tooltip_text=item.get('detail') or '')
+                if item['state'] != 'ask':
+                    label.add_css_class('dim-label')
+                row.append(label)
+                if item['state'] == 'ask':
+                    for text, answer in (('Looks good', 'yes'), ('Problem', 'no')):
+                        button = Gtk.Button(label=text)
+                        button.connect('clicked', self.answer_check, item['id'], answer)
+                        row.append(button)
+                self.checklist.append(row)
+            run = Gtk.Button(label='Run checks now', halign=Gtk.Align.START)
+            run.connect('clicked', self.run_checks)
+            self.checklist.append(run)
+        except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
+            return
+
+    def answer_check(self, _button, check_id, answer):
+        tool = str(Path.home() / '.local/bin/mseries-verify')
+        try:
+            subprocess.run([tool, 'confirm', check_id, answer], capture_output=True, timeout=10)
+        except (OSError, subprocess.SubprocessError):
+            pass
+        self.refresh_checklist()
+
+    def run_checks(self, _button):
+        tool = str(Path.home() / '.local/bin/mseries-verify')
+        try:
+            subprocess.run([tool, 'run', '--quiet'], capture_output=True, timeout=120)
+        except (OSError, subprocess.SubprocessError):
+            pass
+        self.refresh_checklist()
 
     def repair_panel(self, _button):
         self.repair.set_sensitive(False)

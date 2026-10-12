@@ -450,3 +450,19 @@ Reinstall with `bash mseries/install-quick-settings-brightness.sh` and reload
 Wingpanel. Validation on the M1 Pro: the widget initialized at 98% (250/255),
 a one-percent slider decrease changed the keyboard backlight to 247, and the
 test restored the original value of 250. The native plugin rebuilt successfully.
+
+## Pending-checks list (mseries-verify)
+
+Fixes that can only be verified later (after a reboot or login, or when the dock is plugged in) are tracked by
+`mseries-verify`, which lives next to the troubleshooting robot and keeps its history in SQLite
+(`~/.local/state/mseries-troubleshooter/verify.db`, plus `verify-status.json` for panels/UIs). Install with
+`bash mseries/local-ai/install-verify.sh`; a user timer runs it 90 s after login and every 10 minutes.
+
+* Each check has a **precondition** (e.g. "booted after the initramfs was rebuilt", "dock present for 2 min") and
+  a read-only **command** (exit 0 = pass). Until the precondition holds the check is `waiting`.
+* Visual items are `manual`: it notifies once and asks; answer with the **Looks good / Problem** buttons in the
+  Local Troubleshooter window ("Checks still open") or `mseries-verify confirm ID yes|no [note]`.
+* A desktop notification is sent only when a check changes state (passed / failed / needs you).
+* `mseries-verify status`, `history [ID]`, `run --notify`, `recheck ID`, `reload` (re-reads
+  `mseries/local-ai/verify-checks.json`; recorded results are kept). Add new "check this later" items there.
+* Commands come only from that seed file, never from a model. Tests: `python3 -I mseries/local-ai/test_verify.py`.
