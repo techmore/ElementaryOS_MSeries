@@ -11,17 +11,18 @@ on and drives M-series hardware, not whether arm64 builds at all.
 
 ## Bring-up order (proposed)
 
-1. **Kernel capability check.** Does resolute's `linux-image-generic` (arm64)
-   carry `appledrm`, `CONFIG_VIDEO_APPLE_AVD`, Apple HID/NVMe/pinctrl, and
-   the brcmfmac firmware paths for 4378/4387? If yes, this project is config
-   + firmware + userspace. If no, a kernel package is step zero and the
-   biggest work item.
-2. **New `mkosi.images/apple-silicon/` image** (or a profile drop-in) that
-   installs `mseries/` files to their real paths (`/etc/modprobe.d`,
-   `/etc/initramfs-tools/modules`, `/usr/lib/systemd/system`,
-   `/usr/sbin`), adds the Ubuntu-archive packages from `packages.arm64`,
-   and runs `update-initramfs -u` at build time. Wire it into
-   `arch.arm64.conf` Dependencies.
+1. **Kernel decision (see KERNEL-REPORT.md).** Resolute's generic 7.0 arm64
+   kernel should boot M1/M2 unaccelerated, but GPU/DCP, AVD decode, sleep,
+   and audio need an Asahi-flavoured kernel — evaluate Ubuntu Asahi
+   (https://ubuntuasahi.org/) kernel debs for version pinning + apt source.
+2. **Build wiring — DONE (unbuilt).** `mkosi.images/apple-silicon/`
+   (Format=directory, arm64-only) ships modprobe/initramfs config, the
+   Wi-Fi resume unit + script, and appends HID modules in postinst; it is
+   wired into `arch.arm64.conf` Dependencies, the liveiso aarch64 profile
+   (`ExtraTrees`), and sysupdate (`ExtraTrees` + HID `KernelInitrdModules`
+   in `mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf`). Next: run an
+   arm64 build (CI `workflow_dispatch` or local podman) and read the log
+   for missing-module/package errors.
 3. **Asahi-origin packages.** Find or build Ubuntu sources for
    `asahi-audio`, `speakersafetyd`, `avd-fw`, `libva-v4l2_request-avd`
    (see `packages.arm64`). Until then, document software fallbacks.

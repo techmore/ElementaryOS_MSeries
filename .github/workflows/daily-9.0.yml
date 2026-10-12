@@ -1,9 +1,8 @@
 name: Daily OS 9
 
 on:
-  push:
-    branches:
-      - main
+  # M-series: push trigger removed — upstream release jobs need signing/R2
+  # secrets this fork does not have. Build on demand via workflow_dispatch.
   schedule:
     - cron: "0 0 * * *"
   workflow_dispatch:

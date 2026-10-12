@@ -1,9 +1,16 @@
-# Ubuntu package list — Apple Silicon layer (DRAFT, untested)
+# Ubuntu package list — Apple Silicon layer
 
-Intended to become the `Packages=` set of a future
-`mkosi.images/apple-silicon/mkosi.conf`. Ubuntu archive names are used where
-they exist; Asahi-origin packages are marked TODO because no source (PPA or
-vendored build) has been confirmed on Ubuntu resolute.
+`mkosi.images/apple-silicon/mkosi.conf` wires the Ubuntu-archive subset
+below into the build. Asahi-origin packages remain TODO for lack of a
+source (see KERNEL-REPORT.md).
+
+## Wired into the image (Ubuntu archive names)
+
+- `pipewire-pulse`, `pipewire-alsa`, `rtkit` — see rationale in the
+  previous revision of this file (commit history).
+- `initramfs-tools` — present so `mkosi.postinst.chroot` can append the
+  HID early-load modules to `/etc/initramfs-tools/modules`; pruned from
+  the final overlay by `mkosi.finalize`.
 
 ## From the Ubuntu archive (names confirmed by archive membership, not tested)
 

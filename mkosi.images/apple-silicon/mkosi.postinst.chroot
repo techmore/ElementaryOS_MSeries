@@ -1,0 +1,19 @@
+#!/bin/bash
+# M-series post-install: wire the Apple Silicon layer into the image.
+set -euo pipefail
+
+# The Wi-Fi resume unit is a no-op off Apple Silicon (the script gates on
+# aarch64 + BCM4378/BCM4387 PCI IDs and exits 0 otherwise), so enabling it
+# unconditionally here is safe. Offline enable only plants symlinks.
+systemctl enable omarchy-wifi-resume-fix.service
+
+# Early-load HID drivers so the internal keyboard/trackpad bind correctly on
+# first registration (Ubuntu equivalent of omarchy-mac's mkinitcpio HID-race
+# fix; background: omarchy-mac docs/apple-silicon-trackpad.md).
+# initramfs-tools modules.d support is version-dependent, so append to
+# /etc/initramfs-tools/modules idempotently instead of relying on the
+# drop-in alone. The live ISO assembly (assemble-iso.sh) runs
+# update-initramfs -u at build time, which picks these up.
+for module in hid_apple hid_magicmouse; do
+  grep -qxF "$module" /etc/initramfs-tools/modules || echo "$module" >> /etc/initramfs-tools/modules
+done

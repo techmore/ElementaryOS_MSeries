@@ -9,5 +9,9 @@ First M-series commit is based on:
   ("Hand off Steam launcher ownership to FEX package (#511)", 2026-09-25)
   https://github.com/omacom/omarchy-mac
 
-Only additive `mseries/` files plus the pointer banner in `README.md` sit on
-top; no upstream file content is modified.
+Only additive `mseries/` docs plus the `mkosi.images/apple-silicon/` image sit
+on top. Minimal clearly-marked one-line additions exist in four upstream
+files (`mkosi.conf.d/arch.arm64.conf` dependency, liveiso aarch64 profile
+`ExtraTrees`, new `mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf`,
+`README.md` pointer banner, `daily-9.0.yml` push-trigger removal); no
+upstream file content is otherwise modified.

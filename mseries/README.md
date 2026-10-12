@@ -10,13 +10,13 @@ Upstream bases (pinned at first commit — see `mseries/UPSTREAM-PINS.md`):
 - build system: [elementary/os](https://github.com/elementary/os) `main`
 - Apple Silicon hardware scripts: [omacom/omarchy-mac](https://github.com/omacom/omarchy-mac) `quattro`
 
-## Status: research scaffolding, NOT a bootable ISO
+## Status: scaffolding + build wiring, NOT a tested ISO
 
-This first commit adds **ported, compositor-agnostic hardware support**
-(kernel modules, firmware notes, modprobe, initramfs, systemd units) as an
-additive `mseries/` overlay. It does **not** yet wire these into the mkosi
-build, and no ISO has been built or tested. See `mseries/PORT-MAP.md` for the
-per-fix analysis and `mseries/BUILD-NOTES.md` for what remains.
+`mkosi.images/apple-silicon/` (arm64-only directory image) carries the
+ported layer and is wired into the arm64 live ISO profile and the sysupdate
+image via `ExtraTrees`. No ISO has been built or hardware-tested yet.
+See `mseries/PORT-MAP.md` for the per-fix analysis, `mseries/KERNEL-REPORT.md`
+for the kernel verdict, and `mseries/BUILD-NOTES.md` for what remains.
 
 ## Why a port, not a cherry-pick
 
@@ -39,14 +39,15 @@ macOS install, or the existing Omarchy ISO on your NAS.
 - `mseries/PORT-MAP.md` — every omarchy-mac Apple fix, mapped to
   portable / N-A with reasons.
 - `mseries/UPSTREAM-PINS.md` — exact upstream commits this is based on.
+- `mseries/KERNEL-REPORT.md` — Ubuntu generic kernel vs Apple Silicon
+  verdict (boots unaccelerated; daily-driver needs an Asahi kernel).
 - `mseries/BUILD-NOTES.md` — what is needed to get to a testable arm64 ISO.
-- `mseries/packages.arm64` — Ubuntu package list for the Apple Silicon
-  layer (to be wired into a mkosi image).
-- `mseries/modprobe.d/` — `appledrm` notch option (Asahi only).
-- `mseries/initramfs-tools/` — early-load `hid_apple`, `hid_magicmouse`
-  (Ubuntu equivalent of omarchy's mkinitcpio HID-race fix).
-- `mseries/systemd/system/` + `mseries/sbin/` — Wi-Fi resume recovery
-  service and script (ported from omarchy, `brcmfmac` reload on wedge).
+- `mseries/packages.arm64` — package rationale for the Apple Silicon layer.
+- `mkosi.images/apple-silicon/` — the build wiring: `mkosi.conf`,
+  `mkosi.extra/` (final-path config files + resume script),
+  `mkosi.postinst.chroot`, `mkosi.finalize`. Arm64-only; wired into
+  `mkosi.conf.d/arch.arm64.conf`, the liveiso aarch64 profile, and a new
+  `mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf`.
 
 ## License
 
