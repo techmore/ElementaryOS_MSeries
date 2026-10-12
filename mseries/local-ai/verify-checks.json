@@ -11,9 +11,9 @@
     {
       "id": "initramfs-crossbar",
       "title": "Display crossbar loads early (no dp-xbar deferral)",
-      "note": "2026-10-12: mkinitcpio ignored conf.d drop-ins for the fairydust presets; added the module to /etc/mkinitcpio.conf. Before: 14 'Failed to get dp-xbar' kernel lines per boot, display driver up at ~10.0 s.",
+      "note": "2026-10-12: mkinitcpio ignored conf.d drop-ins for the fairydust presets; added the module to /etc/mkinitcpio.conf. Before: 14 'Failed to get dp-xbar' kernel lines per boot and 2.57 s from the first apple-dcp message to the DRM device (measured in the boot before the fix). Verified after reboot: 0 lines, 0.01 s.",
       "precondition": "[ \"$(date -d \"$(uptime -s)\" +%s)\" -gt \"$(stat -c %Y /boot/initramfs-linux-asahi-fairydust-usb4.img)\" ]",
-      "command": "n=$(journalctl -k -b 2>/dev/null | grep -c 'Failed to get dp-xbar'); t=$(journalctl -k -b -o short-monotonic 2>/dev/null | grep 'Initialized apple' | head -1 | sed -E 's/^\\[ *([0-9.]+)\\].*/\\1/'); echo \"dp-xbar lines: $n (was 14); display driver up at ${t}s (was 10.0s)\"; [ \"$n\" -le 2 ]"
+      "command": "j=$(journalctl -k -b -o short-monotonic --no-pager 2>/dev/null); n=$(echo \"$j\" | grep -c 'Failed to get dp-xbar'); a=$(echo \"$j\" | grep -m1 apple-dcp | sed -E 's/^\\[ *([0-9.]+)\\].*/\\1/'); c=$(echo \"$j\" | grep -m1 'Initialized apple' | sed -E 's/^\\[ *([0-9.]+)\\].*/\\1/'); echo \"dp-xbar deferral lines: $n (was 14); first dcp message to display driver: $(python3 -I -c \"print('%.2f' % (float('$c')-float('$a')))\") s (was 2.57 s; the absolute boot time includes the passphrase prompt, so it is not compared)\"; [ \"$n\" -le 2 ]"
     },
     {
       "id": "zram-swap",
