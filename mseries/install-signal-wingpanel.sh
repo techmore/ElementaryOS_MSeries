@@ -25,4 +25,7 @@ trap 'rm -rf "$build_dir"' EXIT
 meson setup "$build_dir" "$src" --prefix=/usr
 ninja -C "$build_dir"
 sudo ninja -C "$build_dir" install
-echo 'Installed the Wingpanel tray host. Signal Beta can minimize to its unread-count icon and open from the panel menu.'
+if command -v gtk-update-icon-cache >/dev/null; then
+  sudo gtk-update-icon-cache -f /usr/share/icons/hicolor >/dev/null 2>&1 || true
+fi
+echo 'Installed the Wingpanel tray host and Signal icon. Log out and back in to load the corrected panel item.'

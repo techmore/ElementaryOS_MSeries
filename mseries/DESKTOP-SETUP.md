@@ -97,10 +97,12 @@ Source: https://github.com/steipete/CodexBar/tree/main/Integrations/Linux
 
 The Signal launcher uses its supported `--use-tray-icon` option. Install the
 GTK 4 Wingpanel host with `bash mseries/install-signal-wingpanel.sh`, then log
-out and back in. The host displays Signal's own unread-count icon and a small
-Wingpanel menu with an **Open Signal** action; activating either brings the app
-window forward. Signal does not expose an independent Wingpanel
-login flow, so linking or relinking opens Signal's QR screen and must be
+out and back in. The host displays Signal's unread-count icon (including a
+bundled official icon when Signal's StatusNotifier metadata is incomplete) and
+a Wingpanel menu with an **Open Signal** action. The action launches the local
+Signal Beta build, or falls back to the Flatpak installation. Signal does not
+expose an independent Wingpanel login flow, so linking or relinking opens
+Signal's QR screen and must be
 approved from the primary phone.
 
 ## Touch ID on M1 Pro

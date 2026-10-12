@@ -13,3 +13,8 @@ shared_module(
   install: true,
   install_dir: indicators_dir,
 )
+
+install_data(
+  'resources/org.signal.Signal.png',
+  install_dir: join_paths(get_option('datadir'), 'icons', 'hicolor', '64x64', 'apps'),
+)

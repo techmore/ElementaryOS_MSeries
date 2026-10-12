@@ -83,7 +83,7 @@ private class StatusNotifierWatcher : Object {
     public signal void StatusNotifierHostRegistered ();
 }
 
-private class TrayItem : Gtk.Button {
+private class TrayItem : Gtk.Box {
     private StatusNotifierItem proxy;
     private Gtk.Image image;
     private string title;
@@ -93,22 +93,15 @@ private class TrayItem : Gtk.Button {
     public signal void vanished ();
 
     public TrayItem (string service, string bus_name, string object_path) {
+        GLib.Object (orientation: Gtk.Orientation.HORIZONTAL, spacing: 0);
         this.service = service;
         this.bus_name = bus_name;
         this.object_path = object_path;
         title = "Application tray item";
         image = new Gtk.Image () { pixel_size = 18 };
+        append (image);
         set_visible (false);
-        set_child (image);
-        set_has_frame (false);
-        add_css_class ("flat");
         set_tooltip_text (title);
-
-        clicked.connect (() => {
-            proxy.Activate.begin (0, 0, (obj, res) => {
-                try { proxy.Activate.end (res); } catch (Error e) { }
-            });
-        });
 
         var context_click = new Gtk.GestureClick () { button = Gdk.BUTTON_SECONDARY };
         context_click.pressed.connect ((n_press, x, y) => {
@@ -135,10 +128,6 @@ private class TrayItem : Gtk.Button {
             proxy = yield Bus.get_proxy<StatusNotifierItem> (
                 BusType.SESSION, bus_name, object_path, DBusProxyFlags.NONE
             );
-            if (!bus_name.down ().contains ("signal") && !proxy.Title.down ().contains ("signal")) {
-                vanished ();
-                return;
-            }
             proxy.NewTitle.connect (() => update_title ());
             proxy.NewIcon.connect (() => update_icon ());
             proxy.NewAttentionIcon.connect (() => update_icon ());
@@ -196,7 +185,7 @@ private class TrayItem : Gtk.Button {
         if (pixmaps != null && set_pixmap (pixmaps)) {
             return;
         }
-        image.set_from_icon_name ("application-x-executable");
+        image.set_from_icon_name ("org.signal.Signal");
     }
 
     private bool set_pixmap (IconPixmap[]? pixmaps) {
@@ -382,11 +371,18 @@ private class SignalTrayIndicator : Wingpanel.Indicator {
     }
 
     private void activate_signal () {
-        foreach (var item in tray_items.values) {
-            if (item.get_visible ()) {
-                item.activate_item ();
-                return;
-            }
+        var binary = Path.build_filename (Environment.get_home_dir (), ".local", "bin", "signal-desktop");
+        string[] argv;
+        if (FileUtils.test (binary, FileTest.IS_EXECUTABLE)) {
+            argv = { binary, "--use-tray-icon" };
+        } else {
+            argv = { "flatpak", "run", "org.signal.Signal" };
+        }
+        try {
+            Pid child_pid;
+            Process.spawn_async (null, argv, null, SpawnFlags.SEARCH_PATH, null, out child_pid);
+        } catch (Error e) {
+            warning ("Could not open Signal: %s", e.message);
         }
     }
 
