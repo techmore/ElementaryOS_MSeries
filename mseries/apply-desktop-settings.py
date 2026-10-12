@@ -3,7 +3,7 @@
 from pathlib import Path
 import shutil
 import subprocess
-from gi.repository import Gio
+from gi.repository import Gio, GLib
 
 repo = Path(__file__).resolve().parents[1]
 home = Path.home()
@@ -12,6 +12,23 @@ options = settings.get_strv("xkb-options")
 if "ctrl:swap_lwin_lctl" not in options:
     settings.set_strv("xkb-options", options + ["ctrl:swap_lwin_lctl"])
 Gio.Settings.sync()
+keys = Gio.Settings.new("io.elementary.desktop.wm.keybindings")
+for action, binding in [("screenshot", "<Control><Shift>3"), ("area-screenshot", "<Control><Shift>4")]:
+    existing = keys.get_strv(action)
+    if binding not in existing:
+        keys.set_strv(action, existing + [binding])
+Gio.Settings.sync()
+# Gala hardcodes Pictures/Screenshots; redirect only that folder, not Pictures.
+pictures = Path(GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_PICTURES) or home / "Pictures")
+downloads = Path(GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOWNLOAD) or home / "Downloads")
+target = downloads / "Screenshots"
+target.mkdir(parents=True, exist_ok=True)
+pictures.mkdir(parents=True, exist_ok=True)
+link = pictures / "Screenshots"
+if not link.exists() and not link.is_symlink():
+    link.symlink_to(target, target_is_directory=True)
+elif link.resolve() != target.resolve():
+    print(f"Existing screenshot folder preserved: {link}. Move it manually to redirect saves.")
 Gio.Settings.new("org.gnome.desktop.wm.preferences").set_string("button-layout", "close:minimize,maximize")
 Gio.Settings.sync()
 helper = home / ".local/libexec/mseries-brightness"

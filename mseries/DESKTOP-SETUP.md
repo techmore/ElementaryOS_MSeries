@@ -16,6 +16,14 @@ The script also uses title-bar layout `close:minimize,maximize`, adding a
 Minimize button beside Maximize. Restore `close:maximize` to undo this.
 Apps drawing their own decorations may need to be reopened or may ignore it.
 
+Physical Command+Shift+3 captures the full screen; Command+Shift+4 selects an
+area. Existing Print shortcuts remain. Since Command is remapped to Ctrl,
+the actual Gala bindings use `<Control><Shift>3` and `<Control><Shift>4`.
+Gala hardcodes `Pictures/Screenshots`; the setup script links only that folder
+to `Downloads/Screenshots`, preserving the rest of Pictures. Existing real
+screenshot folders are preserved and require a manual migration. Captures
+save automatically with native timestamped filenames and notifications.
+
 GNOME settings daemon 50 expects GNOME Shell to handle screen brightness
 keys. Pantheon has no GNOME Shell brightness implementation. The new
 `mseries-brightness` user helper grabs `XF86MonBrightnessUp/Down` through
