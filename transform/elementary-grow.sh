@@ -40,6 +40,9 @@ UBUNTU_SUITE="resolute"
 UBUNTU_BASE_URL="https://cdimage.ubuntu.com/ubuntu-base/${UBUNTU_SUITE}/daily/current/${UBUNTU_SUITE}-base-arm64.tar.gz"
 # M-series layer, pinned to the commit that authored this script.
 MSERIES_BASE="https://raw.githubusercontent.com/techmore/ElementaryOS_MSeries/main/mkosi.images/apple-silicon/mkosi.extra"
+# Repo checkout this script runs from (for PPA keyrings/sources carried in
+# repos/common-files + repos/stable — never fetched over the network).
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 log()  { echo "[elementary-grow] $*"; }
 fail() { echo "[elementary-grow] ABORT: $*" >&2; exit 1; }
@@ -159,12 +162,14 @@ do_apply() {
       || fail "checksum file download failed"
     ( cd "$workdir" && sha256sum -c --status <(grep -F "$tarname" SHA256SUMS) ) \
       || fail "base tarball checksum MISMATCH — refusing to unpack"
-    tar -xzpf "$tarball" -C "$TOP_MNT/$SUBVOL_NAME"
+    tar -xzpf "$tarball" -C "$TOP_MNT/$SUBVOL_NAME" \
+      || fail "base tarball unpack failed"
   else log "(dry-run) would download, verify, and unpack the base tarball"; fi
 
   local newroot="$TOP_MNT/$SUBVOL_NAME"
   log "entering chroot build in $newroot"
-  if [[ $MODE == "apply" ]]; then chroot_build "$newroot";
+  if [[ $MODE == "apply" ]]; then chroot_build "$newroot" \
+      || fail "chroot build FAILED — new root incomplete, GRUB entry NOT installed. See log above; fix and re-run (rollback first).";
   else log "(dry-run) would chroot and install elementary-desktop + M-series layer"; fi
 
   log "installing GRUB entry $GRUB_CUSTOM (additive; default untouched)"
@@ -178,14 +183,14 @@ do_apply() {
 
 chroot_build() {
   local newroot="$1"
-  mount --bind /dev "$newroot/dev"
+  mount --rbind /dev "$newroot/dev"
   mount -t proc proc "$newroot/proc"
   mount -t sysfs sys "$newroot/sys"
-  mount --bind /run "$newroot/run"
+  mount --rbind /run "$newroot/run"
   cp /etc/resolv.conf "$newroot/etc/resolv.conf"
   trap 'umount -R "$newroot/dev" "$newroot/proc" "$newroot/sys" "$newroot/run" 2>/dev/null || true' RETURN
 
-  chroot "$newroot" /bin/bash -s <<EOF
+  chroot "$newroot" /bin/bash -s <<EOF || return 1
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
 cat > /etc/apt/sources.list.d/ubuntu.sources <<SRC
@@ -197,10 +202,27 @@ Architectures: arm64
 SRC
 apt-get update
 apt-get install -y ca-certificates curl gnupg
-# elementary PPAs (keyrings fetched; fingerprints printed for confirmation)
+# elementary PPAs: keyrings + sources copied from this repo
+# (repos/common-files keyrings, repos/stable sources) — same files the
+# image factory uses, so the transform root resolves the same packages.
 mkdir -p /etc/apt/keyrings /etc/apt/sources.list.d
-curl -fSL -o /etc/apt/keyrings/elementary-os.gpg https://ppa.launchpadcontent.net/elementary-os/stable/ubuntu/dists/$UBUNTU_SUITE/Release.gpg 2>/dev/null || true
-echo "NOTE: verify elementary PPA key fingerprints against Launchpad before trusting this root."
+EOF
+  # Keyrings/sources cross the chroot boundary from the host checkout
+  # (binary keyrings cannot go through the stdin heredoc above).
+  [[ -f "$REPO_ROOT/repos/common-files/etc/apt/keyrings/elementary-os.gpg" ]] \
+    || { echo "missing $REPO_ROOT/repos/common-files keyrings — re-clone/pull this repo" >&2; return 1; }
+  cp -a "$REPO_ROOT/repos/common-files/etc/apt/keyrings/elementary-os.gpg" \
+        "$REPO_ROOT/repos/common-files/etc/apt/keyrings/elementary-os-os-patches.gpg" \
+        "$newroot/etc/apt/keyrings/" || return 1
+  sed -e "s/Suites: .*/Suites: $UBUNTU_SUITE/" \
+      "$REPO_ROOT/repos/stable/etc/apt/sources.list.d/elementary-os-stable.sources" \
+      > "$newroot/etc/apt/sources.list.d/elementary-os-stable.sources" || return 1
+  sed -e "s/Suites: .*/Suites: $UBUNTU_SUITE/" \
+      "$REPO_ROOT/repos/stable/etc/apt/sources.list.d/elementary-os-patches.sources" \
+      > "$newroot/etc/apt/sources.list.d/elementary-os-patches.sources" || return 1
+  chroot "$newroot" /bin/bash -s <<EOF || return 1
+set -euo pipefail
+export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-cache show elementary-desktop >/dev/null \
   || { echo "elementary-desktop not in PPA for $UBUNTU_SUITE — aborting chroot build"; exit 1; }
@@ -279,7 +301,7 @@ EOF
     [[ $MODE == "apply" ]] && cp -a /etc/crypttab "$newroot/etc/crypttab"
   fi
   if [[ $MODE == "apply" ]]; then
-    chroot "$newroot" /bin/bash -s <<EOF2
+    chroot "$newroot" /bin/bash -s <<EOF2 || return 1
 set -euo pipefail
 echo "elementary-m1" > /etc/hostname
 printf '%s\n%s\n%s\n' "$new_root_row" "$host_boot_row" "$new_home_row" > /etc/fstab
