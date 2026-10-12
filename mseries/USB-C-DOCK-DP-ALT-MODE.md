@@ -139,3 +139,16 @@ WIP upstream.
 - Nothing userspace-side: do not add DisplayLink hacks as a workaround for a
   native-DP dock (DisplayLink is a different, CPU-rendered transport and a
   separate decision).
+
+## Update 2026-10-12: USB4 docks (root cause found; USB2-side fixed)
+
+The "dock hub never enumerates" failure above was **USB4 negotiation**, not just a PHY
+lock failure: a USB4-capable dock sends an Enter_USB with EUDO USB mode = USB4, and
+the stock/fairydust PHY has no USB4 pipehandler. A ported USB4/Thunderbolt host
+stack (Sven Peter's ACIO/NHI series) is in `fairydust/usb4/` — see its README for the
+evidence (CD321x register decode), the patch, build/install and rollback.
+
+Result on this M1 Pro: dock hubs, mouse and headset enumerate. USB3-tunnelled devices
+(dock Ethernet) need the device-tree graph endpoints in the same patch and are pending
+verification. **DisplayPort tunnelling is still unsupported**, so the dock's HDMI/DP
+outputs remain dead; use the laptop's own HDMI port for video.

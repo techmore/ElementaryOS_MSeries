@@ -1,0 +1,59 @@
+# fairydust + Apple USB4/Thunderbolt (ACIO/NHI) for Apple Silicon (M1 Pro j314s verified).
+# Builds the PINNED fairydust snapshot and applies 0001-usb4-*.patch (Sven Peter's USB4 series
+# from b4/apple-soc-tbt, ported). Coexists with linux-asahi-fairydust and stock linux-asahi.
+# See README.md in this directory.
+
+pkgbase=linux-asahi-fairydust-usb4
+pkgname=("$pkgbase")
+pkgver=7.1.13.fairydust.usb4
+pkgrel=1
+pkgdesc="Asahi fairydust kernel with USB4/Thunderbolt host support (USB3 tunneling)"
+arch=('aarch64')
+license=('GPL2')
+makedepends=(base-devel bc dtc kmod libelf pahole cpio perl rustup rust-bindgen tar xz xmlto python)
+depends=(coreutils kmod initramfs 'm1n1')
+provides=(WIREGUARD-MODULE)
+options=('!strip' '!debug')
+
+# AsahiLinux/linux `fairydust` branch @ "arm64: dts: apple: t8103: Add SIO alias"
+_commit=ce9f2eba72c061a50b2d790450e90af3439d8c24
+_srcname=linux-$_commit
+source=("linux-fairydust-$_commit.tar.gz::https://codeload.github.com/AsahiLinux/linux/tar.gz/$_commit"
+        config
+        0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch)
+sha256sums=('SKIP' 'SKIP' 'SKIP')
+
+export KBUILD_BUILD_HOST=archlinux
+export KBUILD_BUILD_USER=$pkgbase
+export KBUILD_BUILD_TIMESTAMP="$(date -Ru${SOURCE_DATE_EPOCH:+d @$SOURCE_DATE_EPOCH})"
+
+prepare() {
+  cd "$_srcname"
+  patch -p1 -i ../0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch
+  echo '-1-2-fairydust-usb4' > localversion.10-pkgrel
+  mkdir -p build/base
+  cp ../config build/base/.config
+  for s in TYPEC_DP_ALTMODE TYPEC_NVIDIA_ALTMODE TYPEC_TBT_ALTMODE USB4 USB4_APPLE_SOC RESET_APPLE_CIO; do
+    scripts/config --file build/base/.config --module $s
+  done
+  make olddefconfig prepare O="$PWD/build/base"
+  make -s kernelrelease O="$PWD/build/base" > build/base/version
+  printf 'Prepared %s version %s\n' "$pkgbase" "$(<build/base/version)"
+}
+
+build() {
+  cd "$_srcname"
+  make all O="$PWD/build/base" -j "$(nproc)"
+}
+
+package() {
+  cd "$_srcname"
+  local output="$PWD/build/base" kernver
+  kernver="$(<"$output/version")"
+  local modulesdir="$pkgdir/usr/lib/modules/$kernver"
+  install -Dm644 "$output/arch/arm64/boot/Image" "$modulesdir/vmlinuz"
+  printf '%s\n' "$pkgbase" | install -Dm644 /dev/stdin "$modulesdir/pkgbase"
+  make O="$output" INSTALL_MOD_PATH="$pkgdir/usr" INSTALL_MOD_STRIP=1 modules_install
+  install -Dt "$modulesdir/dtbs" "$output"/arch/arm64/boot/dts/apple/*.dtb
+  rm -f "$modulesdir/source" "$modulesdir/build"
+}

@@ -106,3 +106,9 @@ USB-C port) and run `./verify.sh`.
 - The version pin is deliberate. When stock `linux-asahi` moves past
   `7.1.13-3`, bump `_rcver`/`_asahirel` in the PKGBUILD, regenerate
   `fairydust.patch`, and expect the patch to need rework.
+
+## USB4 docks / hubs
+
+A USB4 dock that shows `RxDetect` ports and an empty `lsusb -t` is negotiating USB4,
+which this kernel does not support by default. See [`usb4/README.md`](usb4/README.md)
+for the ported USB4/Thunderbolt kernel (patch + build kit + rollback).
