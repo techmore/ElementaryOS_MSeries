@@ -150,6 +150,20 @@ for rollback. Build dependencies are `git`, `meson`, `ninja-build`, `valac`, and
 `libwingpanel-9-dev`. Wingpanel restarts on its own after install;
 restore the packaged binary with `bash mseries/install-wingpanel-clock-position.sh --uninstall`.
 
+## Boot and login timing
+
+- **Login stall (fixed):** the Files file-chooser portal and `xdg-desktop-portal`
+  waited on each other for the 25 second D-Bus timeout. Install the fix with
+  `bash mseries/install-files-portal-fix.sh` (undo with `--uninstall`).
+- **Kernel phase, about 10 seconds:** `apple-dcp` defers probing because
+  `mux-apple-display-crossbar` (its `dp-xbar`) is not in the fairydust
+  initramfs, so the kernel waits out its 10 second deferred-probe timeout.
+  Add `mux-apple-display-crossbar` to `MODULES` in the mkinitcpio config used by
+  `fairydust-driver.sh` and rebuild with `mkinitcpio -P`, then check the
+  `Failed to get dp-xbar` messages are gone from `dmesg`.
+- The roughly 24 second gap before the root filesystem mounts is the disk
+  encryption passphrase prompt, not a fault.
+
 ## Dock diagnosis
 
 Charging is detected, but the attached USB-C dock's mouse does not enumerate.
