@@ -201,18 +201,30 @@ namespace MSeries {
                 clear_provider_rows ();
                 snapshot_busy = snapshot.get_boolean_member ("busy");
                 string codex_panel_summary = "";
+                string claude_panel_summary = "";
                 for (uint i = 0; i < entries.get_length (); i++) {
                     var entry = entries.get_object_element (i);
                     var provider = entry.get_string_member ("provider") ?? "Provider";
                     append_provider_entry (entry);
                     if (provider.down ().contains ("codex")) {
                         codex_panel_summary = compact_codex_summary (entry);
+                    } else if (provider.down ().contains ("claude")) {
+                        claude_panel_summary = compact_codex_summary (entry);
                     }
                 }
-                panel_label.set_text (codex_panel_summary.length > 0 ? codex_panel_summary : "OpenAI —");
-                panel_display.set_tooltip_text (codex_panel_summary.length > 0
-                    ? "OpenAI Codex remaining: " + codex_panel_summary
-                    : "OpenAI Codex usage unavailable");
+
+                var parts = new string[0];
+                if (codex_panel_summary.length > 0) {
+                    parts += (claude_panel_summary.length > 0 ? "CX " : "") + codex_panel_summary;
+                }
+                if (claude_panel_summary.length > 0) {
+                    parts += "CL " + claude_panel_summary;
+                }
+                var panel_text = string.joinv ("   ", parts);
+                panel_label.set_text (panel_text.length > 0 ? panel_text : "OpenAI —");
+                panel_display.set_tooltip_text (panel_text.length > 0
+                    ? "Remaining · " + (claude_panel_summary.length > 0 ? "CX = OpenAI Codex, CL = Claude" : "OpenAI Codex")
+                    : "Usage unavailable");
 
                 var update_status = "Updated " + (snapshot.get_string_member ("updated") ?? "recently");
                 if (snapshot_busy) {
@@ -233,7 +245,8 @@ namespace MSeries {
 
         private void append_provider_entry (Json.Object entry) {
             var provider = entry.get_string_member ("provider") ?? "Provider";
-            var title_text = provider.down () == "codex" ? "OpenAI Codex" : provider;
+            var title_text = provider.down () == "codex" ? "OpenAI Codex" :
+                provider.down () == "claude" ? "Claude" : provider;
             var title = new Gtk.Label (title_text) {
                 xalign = 0,
                 halign = Gtk.Align.START
