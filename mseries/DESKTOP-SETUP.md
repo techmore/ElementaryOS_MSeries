@@ -507,3 +507,18 @@ Do not work around it from userspace by unbinding drivers: unbinding `dwc3-apple
 `atcphy_configure()` for the saved mode, a dwc3-apple resume that redoes its wrapper init, and a `tipd_resume` that
 re-asserts the current mux state; tested with real suspend/resume cycles (needs someone at the keyboard to wake it).
 Tracked by `usb-c-survives-suspend` in mseries-verify. Workaround: replug after resume, or avoid suspend while docked.
+
+### Reboot went to macOS: the default startup volume
+
+Which system boots is chosen by the Mac's firmware (NVRAM `boot-volume`), not by GRUB. On 2026-10-12 it pointed at
+**Macintosh HD**, so every restart or power-on booted macOS unless Linux was picked by hand in the boot picker
+(hold the power button). Fixed with the official tools (`apt install asahi-bless asahi-nvram`):
+
+    sudo asahi-bless --list-volumes                                   # *1) Macintosh HD   2) Asahi Alarm Minimal (BTRFS)
+    sudo asahi-bless --set-boot "Asahi Alarm Minimal (BTRFS)" -y      # make Linux the default
+    sudo asahi-bless --get-boot                                       # verify (and --get-boot --next for a one-time override)
+    sudo asahi-bless --set-boot-macos -y                              # undo: macOS as default again
+
+Things that put it back to macOS: a macOS update, choosing a startup disk inside macOS (System Settings > Startup
+Disk), or `--set-boot` with the macOS name. If a reboot lands in macOS again, re-run the `--set-boot` line above.
+`asahi-bless` needs root to read NVRAM, so the checklist robot (a user service) cannot verify this on its own.

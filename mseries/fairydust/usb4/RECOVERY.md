@@ -32,3 +32,7 @@ FILES HERE:
   boot.bin.KNOWN-GOOD-fairydust-original  original fairydust DTB image from before the USB4 port
 Details: ElementaryOS_MSeries/mseries/fairydust/usb4/README.md
 ```
+
+Note: the default startup volume is now Linux (`sudo asahi-bless --set-boot "Asahi Alarm Minimal (BTRFS)" -y`). To get to
+macOS for the recovery steps above, hold the power button until the boot picker appears and choose Macintosh HD, or run
+`sudo asahi-bless --set-boot-macos -y` from Linux first.
