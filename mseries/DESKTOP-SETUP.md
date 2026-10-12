@@ -123,6 +123,11 @@ Silicon image no longer opts in. On this transformed install, pass
 loads from an Arch-named initramfs, so regenerating Ubuntu's conventional
 `initrd.img-*` files does not change this boot entry.
 
+If the centered date/time remains hidden, install a temporary right-side
+replacement with `bash mseries/install-clockright-wingpanel.sh`. It follows
+Wingpanel's weekday, date, 12/24-hour, and seconds preferences. Log out and
+back in to load it; remove it with `bash mseries/install-clockright-wingpanel.sh --uninstall`.
+
 ## Dock diagnosis
 
 Charging is detected, but the attached USB-C dock's mouse does not enumerate.
