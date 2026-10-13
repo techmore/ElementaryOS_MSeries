@@ -1,9 +1,34 @@
 # Kernel capability check — Ubuntu resolute generic (arm64) vs Apple Silicon
 
-Researched 2026-10-12 from Asahi Linux docs/progress reports, the AVD
-upstream patch series (v2, Sep 2026), and Ubuntu package metadata. No
-hardware was available; treat as a sourced starting hypothesis, not a
-tested result.
+Initial research: 2026-10-12, from Asahi docs and Ubuntu metadata. Updated
+2026-10-13 with the actual built ISO kernel config and the owner's running
+Fairydust config. The ISO has booted in an ARM64 VM; Mac factory-image boot
+remains untested. Historical upstream capability expectations below are not
+hardware-test results.
+
+## Verified configuration gap (October 13)
+
+Compared the local 89e959d image's `/boot/config-7.0.0-38-generic` with
+`mseries/fairydust/usb4/running-config` captured from the working
+`7.1.13-1-2-fairydust-usb4-ARCH` host:
+
+| Option | Working host | Built generic image |
+| --- | --- | --- |
+| CONFIG_DRM_APPLE | m | Not declared |
+| CONFIG_DRM_ASAHI | y | Not declared |
+| CONFIG_DRM_APPLE_AUDIO | y | Not declared |
+| CONFIG_RESET_APPLE_CIO | m | Not declared |
+| CONFIG_USB4_APPLE_SOC | m | Not declared |
+| CONFIG_VIDEO_APPLE_AVD | m | Not declared |
+| CONFIG_PHY_APPLE_ATC | m | m |
+| CONFIG_SND_SOC_APPLE_MCA | m | m |
+
+This confirms a source/kernel packaging blocker for matching the installed
+Mac's graphics/USB4 feature set. Missing options are reported exactly as
+absent from this config, not as a physical hardware test. The generic ISO's
+graphical QEMU installer uses virtual hardware and does not qualify Apple
+display/GPU/audio. Next: qualify a reproducible Asahi kernel package and its
+boot/firmware path before promising an M1 Pro desktop from the factory ISO.
 
 ## Base facts
 
@@ -49,10 +74,10 @@ unaccelerated console**, sees NVMe/USB, and exposes the Wi-Fi hardware to
    `linux-image-generic`. Candidate source: the community Ubuntu Asahi
    project (https://ubuntuasahi.org/) kernel debs; evaluate version
    pinning + apt source before wiring into `base` or `apple-silicon`.
-2. **v1 scope on the generic kernel is honest but thin**: boots, storage,
-   USB, unaccelerated framebuffer desktop, no Wi-Fi firmware / audio / GPU /
-   sleep. Decide explicitly whether v1 targets generic-boot or waits for
-   the Asahi kernel.
+2. **Generic image scope remains limited**: graphical installer startup has
+   been observed in an ARM64 VM. Boot, framebuffer, storage, USB, firmware,
+   and sleep on a physical M1 Pro remain unverified for that image. Do not
+   infer Mac desktop readiness from virtual-hardware boot.
 3. **Wi-Fi firmware extraction** must be designed regardless of kernel
    choice: copy Apple firmware from macOS at install time (Asahi installer
    precedent), never redistribute the blobs.
