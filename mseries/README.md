@@ -6,6 +6,8 @@ Apple Silicon hardware knowledge in
 [omacom/omarchy-mac](https://github.com/omacom/omarchy-mac) (`quattro`
 branch).
 
+**Current status, open problems and stretch goals: [`ROADMAP.md`](ROADMAP.md). Benchmarks: [`benchmarks/`](benchmarks/README.md).**
+
 Upstream bases (pinned at first commit — see `mseries/UPSTREAM-PINS.md`):
 - build system: [elementary/os](https://github.com/elementary/os) `main`
 - Apple Silicon hardware scripts: [omacom/omarchy-mac](https://github.com/omacom/omarchy-mac) `quattro`

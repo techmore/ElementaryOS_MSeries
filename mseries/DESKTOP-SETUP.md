@@ -542,7 +542,7 @@ Colours: libadwaita apps ignore elementary's `@BLUEBERRY_*` names and read `acce
   Note power-profiles-daemon here only has a *placeholder* driver, so the profile name itself changes nothing; the
   CPU ceiling is what saves power.
 - `install-native-firefox.sh` replaces Ubuntu's snap shim with Mozilla's arm64 apt package (key fingerprint checked,
-  repository pinned). Headless start 0.6 s versus 2.6 s for the snap Chromium.
+  repository pinned). Headless start 0.56 s warm, about the same as the snap Chromium (0.53 s warm); an earlier "2.6 s" snap figure was a first-run penalty, so the benefit is "no snap", not speed.
 - Not possible: running macOS 27 in a VM here, see the answer in chat / `mseries/MACOS-VM.md`.
 
 ## Speaker tuning (2026-10-13)

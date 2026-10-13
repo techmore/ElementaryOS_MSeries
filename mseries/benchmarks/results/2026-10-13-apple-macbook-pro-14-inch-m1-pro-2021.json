@@ -1,0 +1,65 @@
+{
+  "info": {
+    "date": "2026-10-13",
+    "model": "Apple MacBook Pro (14-inch, M1 Pro, 2021)",
+    "kernel": "7.1.13-1-2-fairydust-usb4-ARCH",
+    "os": "elementary OS 9 Early Access",
+    "cpus": 10,
+    "memory_gib": 30.9,
+    "governor": "schedutil",
+    "power_profile": "balanced",
+    "on_ac": true,
+    "mesa_vulkan_drivers": "26.0.8-1ubuntu0.3",
+    "firefox": "Mozilla Firefox 157.0.1",
+    "root_fs": "btrfs rw,relatime,compress=zstd:1,ssd,discard=async,space_cache=v2,subvolid=278,subvol=/@elementary",
+    "start_temp_c": 53.612,
+    "end_temp_c": 47.38
+  },
+  "results": {
+    "cpu": {
+      "sysbench_prime_events_per_s_1t": 3804.74,
+      "sysbench_prime_events_per_s_10t": 27096.17,
+      "7zip_total_mips": 50536,
+      "openssl_sha256_mb_per_s_1t": 2310.1
+    },
+    "memory": {
+      "memory_read_mib_per_s_1t": 47432.74,
+      "memory_read_mib_per_s_10t": 292400.92,
+      "memory_write_mib_per_s_1t": 34444.56,
+      "memory_write_mib_per_s_10t": 53427.37
+    },
+    "disk": {
+      "seq_read_1m_mb_per_s": 6393.6,
+      "seq_write_1m_mb_per_s": 896.2,
+      "rand_read_4k_qd32_mb_per_s": 596.1,
+      "rand_read_4k_qd32_iops": 145537,
+      "rand_write_4k_qd32_mb_per_s": 52.3,
+      "rand_write_4k_qd32_iops": 12759
+    },
+    "sustained": {
+      "sustained_eps_per_10s_window": [
+        28487.18,
+        26654.18,
+        26793.21,
+        26603.19,
+        27864.27
+      ],
+      "sustained_drop_pct": 6.6,
+      "temp_before_c": 55.384,
+      "temp_after_c": 59.423
+    },
+    "gpu": {
+      "glmark2_es2_offscreen_1024x768_score": 2026,
+      "gl_renderer": "Apple M1 Pro (G13S C0)"
+    },
+    "startup": {
+      "firefox_headless_start_s": 0.53,
+      "chromium_snap_headless_start_s": 0.55
+    },
+    "boot": {
+      "systemd_analyze": "Startup finished in 12.651s (kernel) + 6.065s (userspace) = 18.717s ",
+      "note": "includes the time spent typing the NVMe passphrase, so compare userspace only"
+    }
+  },
+  "quick": false
+}
