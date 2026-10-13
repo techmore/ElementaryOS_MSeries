@@ -1,8 +1,38 @@
-# Port map: omarchy-mac (quattro) Apple fixes → elementary (Ubuntu/mkosi)
+# Port map: Omarchy Mac hardware behavior → elementary OS 9
 
-This is the original scaffold port map, not a current hardware status report.
-For the October 12 review, current dock support, Touch ID research and local AI
-plan, see [the optimization audit](OMARCHY-AUDIT-2026-10.md).
+This map separates the historical scaffold from the maintained package
+reference and from hardware verification. Presence in the repository does not
+mean the mkosi image has been built or tested.
+
+## Current Apple Silicon package reference
+
+The maintained source is
+[omacom/omarchy-mac-pkgs](https://github.com/omacom/omarchy-mac-pkgs), main at
+commit 222f7a8599bbdd287ac6a95362cd51c5b024baae (audited 2026-10-13). Its
+packages target Arch Linux and have their own staging, package tests, and
+integration-test contract. This elementary project uses them as a behavioral
+reference only; translate relevant changes to Ubuntu/mkosi and Pantheon/Gala.
+The source boundary is documented in
+[CONTRIBUTING.md](https://github.com/omacom/omarchy-mac-pkgs/blob/main/CONTRIBUTING.md).
+
+| Current package source | Hardware behavior | Elementary translation | Status |
+|---|---|---|---|
+| `omarchy-mac/bin/omarchy-wifi-resume-fix` and its systemd unit | Recover supported Apple Broadcom Wi-Fi after resume. | The image layer has a systemd recovery unit and firmware provisioner. | Present in source; factory-image path not verified. |
+| `omarchy-mac/bin/omarchy-audio-asahi-mic-map` and WirePlumber configuration | Route the Asahi DSP microphone into the desktop audio graph. | Requires an Ubuntu audio-session integration and the Asahi DSP packages. | Not ported. |
+| `omarchy-mac` speaker-safety preset and setup entrypoint | Keep the Apple speaker safety daemon installed and enabled. | Desktop install scripts provide speakersafetyd and an optional Asahi DSP chain; the factory image does not install this path yet. | Desktop audio output passed with the matched PipeWire LV2 plugin; preserve safety service. |
+| `omarchy-mac-boot/files/etc/mkinitcpio.conf.d/92-omarchy-mac-hid.conf` | Load Apple input and dock drivers early in an Arch initramfs. | The image overlay uses initramfs-tools and carries its own Apple HID module list. | Present in source; factory-image path not verified. |
+| AVD dependencies documented by the package README and Omarchy runtime | Provide Apple video-decode firmware and the VA-API bridge. | Needs an Ubuntu kernel with AVD support, firmware provisioning, and userspace bridge. | Packaging and kernel gap. |
+| `omarchy-mac/bin/omarchy-battery-charge-limit` | Configure a persistent Apple SMC charge threshold. | No equivalent M-Series settings interface is currently documented. | Candidate enhancement; first confirm supported sysfs controls on this host. |
+| `omarchy-mac-boot` lifecycle hooks, vendor firmware and Limine/U-Boot support | Maintain the Arch boot chain and encrypted-install lifecycle. | elementary's mkosi, initramfs-tools and GRUB/Asahi path have different contracts. | Do not copy; translate only independently verified behavior. |
+| USB4 suspend behavior in the current Fairydust kernel | ACIO refuses suspend while a USB4 dock link is active. | A future kernel handshake or docked-lid policy is needed. | Known issue: system remains awake with its display off. |
+| Historical `omarchy-mac` quattro ambient keyboard automation | Adjust keyboard LEDs from the AOP illuminance sensor and pause for manual changes. | `mseries/keyboard-backlight/backlight.py` uses the ALS sensor and UPower in Pantheon. | Implemented; measured on the M1 Pro at 141 lx. Lock/lid and suspend qualification remains. |
+
+Mac-only changes to the installed Omarchy packages stay in
+`omacom/omarchy-mac-pkgs`; general Omarchy behavior belongs upstream, and
+one-shot installation changes belong in the Omarchy Mac installer. No code in
+those repositories was changed by this elementary audit.
+
+## Original scaffold snapshot (historical)
 
 Source: https://github.com/omacom/omarchy-mac, branch `quattro`,
 `install/hardware/apple/`, `bin/omarchy-hw-apple`, `bin/omarchy-audio-asahi-mic-map`,

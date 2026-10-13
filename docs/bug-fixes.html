@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bug-fix audit — ElementaryOS M-Series</title>
+<style>
+body{font-family:-apple-system,system-ui,sans-serif;max-width:54rem;margin:2rem auto;padding:0 1rem;line-height:1.55;color:#1a1a1a}
+table{border-collapse:collapse;width:100%;margin:1rem 0}
+th,td{border:1px solid #ccc;padding:.45rem .6rem;text-align:left;font-size:.92rem;vertical-align:top}
+th{background:#f4f4f4}
+.ok{color:#1a7f37;font-weight:bold}.open{color:#9a6700;font-weight:bold}.blocked{color:#b42318;font-weight:bold}
+footer{margin-top:2rem;font-size:.85rem;color:#555}
+</style>
+</head>
+<body>
+<p><a href="index.html">← back</a></p>
+<h1>M-Series bug-fix audit</h1>
+<p>Updated 2026-10-13. The installed elementary OS 9 desktop boots on an M1 Pro. The factory arm64 ISO still needs a successful build and hardware boot. The evidence and reproducible next steps are tracked in the <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/BUG-FIX-ROADMAP.md">repository roadmap</a>.</p>
+
+<h2>Resolved in the current source update</h2>
+<table>
+<tr><th>Finding</th><th>Fix</th></tr>
+<tr><td>Public status contradicted the recorded M1 Pro desktop boot.</td><td>Pages now distinguish the installed transformed system from the unverified factory ISO.</td></tr>
+<tr><td>CI path filters could skip changes to the transform script, root mkosi config, repositories, or arm64 package manifest.</td><td>Added these paths to the M-series validation workflow.</td></tr>
+<tr><td>The fork's scheduled builds needed elementary's private publishing credentials.</td><td>Added a manual experimental arm64 build with retained logs, checksums, and installer artifacts. Full build remains pending.</td></tr>
+<tr><td>The hardware overlay pruned packages that its final image consumers did not explicitly install.</td><td>Added runtime dependencies to both arm64 consumers and a regression test.</td></tr>
+<tr><td>Overlay cleanup deleted the brightness helper and its desktop autostart entry.</td><td>Retained the files and added a regression test using a temporary image tree.</td></tr>
+<tr><td>The base image missed systemd-coredump, now included by current elementary OS 9 upstream.</td><td>Ported upstream commit 7024fd04646a6a8565bf6805989b59fd72de928c.</td></tr>
+<tr><td>Porting notes pointed at the retired omarchy-mac quattro branch for current package behavior.</td><td>Recorded omacom/omarchy-mac-pkgs as the maintained reference and pinned the audited revision.</td></tr>
+<tr><td>An older optimization audit listed ambient keyboard lighting as missing, though it was implemented and measured on the M1 Pro.</td><td>Corrected the audit and listed the remaining lock, lid, and suspend checks.</td></tr>
+<tr><td>Package notes said the Asahi speaker packages had no Ubuntu source, but resolute/universe provides the installed versions.</td><td>Updated the package manifest and build notes. Factory-image audio packaging remains open.</td></tr>
+</table>
+
+<h2>Open fixes and validation</h2>
+<table>
+<tr><th>Priority</th><th>Issue</th><th>Next step</th><th>Status</th></tr>
+<tr><td>P1</td><td>Gala's on-screen keyboard helper may fail when IBus changes input purpose while the keyboard is disabled.</td><td>Reproduce with a focused text field and disabled OSK; confirm Gala stays running after the guard is applied.</td><td class="open">Needs reproduction and package-safe fix</td></tr>
+<tr><td>P1</td><td>DisplayPort video through the M1 Pro USB-C dock path is unavailable; the experimental kernel has no DP tunnel.</td><td>Continue kernel/device-tree work, then verify external display hot-plug and reboot on the M1 Pro.</td><td class="blocked">Kernel limitation</td></tr>
+<tr><td>P1</td><td>A USB4 dock link blocks suspend. The Mac remains awake with its display off; non-USB4 Type-C devices can also fail to return after suspend.</td><td>Implement the USB4 sleep/wake handshake and Type-C/DWC3 resume handling, then verify repeated suspend cycles.</td><td class="blocked">Kernel bugs</td></tr>
+<tr><td>P1</td><td>The factory arm64 image has not been built or hardware-booted.</td><td>Build the ISO, verify its checksum, boot it on a test Mac, and complete the post-boot checklist.</td><td class="blocked">Release blocker</td></tr>
+<tr><td>P2</td><td>Wingpanel may crash in PanelWindow.on_realize and be respawned by Gala.</td><td>Capture the exact upstream version and logs, then report or patch the Wingpanel failure.</td><td class="open">Known upstream issue</td></tr>
+<tr><td>P2</td><td>Physical brightness keys and brightness persistence after login are not confirmed.</td><td>Check both keys and the selected level after logout/login.</td><td class="open">Needs owner check</td></tr>
+<tr><td>P2</td><td>The transformed desktop's safe speaker/DSP setup works, but is not yet included in the factory image. The hardware video-decode packages are also absent.</td><td>Package the tested speaker safety chain and volume-preserving setup; separately qualify the AVD kernel, firmware, and userspace bridge.</td><td class="open">Image packaging gap</td></tr>
+<tr><td>P2</td><td>Wi-Fi firmware provisioning and resume recovery have not had an end-to-end test from the factory image.</td><td>Connect, suspend and resume repeatedly on an image boot, then record service and kernel logs.</td><td class="open">Needs image test</td></tr>
+</table>
+
+<p>For the support evidence and hardware identity, see the <a href="support.html">support matrix</a>. For cross-project ownership, see the <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/PORT-MAP.md">port map</a>.</p>
+<footer>Findings distinguish confirmed failures from gaps that still need a test.</footer>
+</body>
+</html>

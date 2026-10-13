@@ -1,15 +1,64 @@
-name: Daily OS 9
+name: OS 9 M-series experimental build
 
+# Manual fork builds use CI artifacts, without upstream signing/R2 secrets.
 on:
-  # M-series: push trigger removed — upstream release jobs need signing/R2
-  # secrets this fork does not have. Build on demand via workflow_dispatch.
-  schedule:
-    - cron: "0 0 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: os9-mseries-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  call-reusable-build:
-    uses: ./.github/workflows/build-release.yml
-    with:
-      stream: daily
-    secrets: inherit
+  build:
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v7
+      - name: Free build space
+        uses: jlumbroso/free-disk-space@v2
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y just podman zstd
+      - name: Record source provenance
+        run: |
+          mkdir -p build-record
+          git rev-parse HEAD > build-record/source-commit.txt
+          cp mseries/UPSTREAM-PINS.md build-record/
+          printf '%s\n' 'Experimental OS 9 arm64 image. Not hardware-qualified. See mseries/POST-BOOT-CHECKS.md.' > build-record/STATUS.txt
+      - name: Build experimental arm64 image
+        shell: bash
+        run: |
+          set -euo pipefail
+          just genkey 2>&1 | tee build-record/keygen.log
+          just do-daily 2>&1 | tee build-record/build.log
+      - name: Checksum installer
+        run: |
+          cd mkosi.output
+          sha256sum elementaryos-*.iso > INSTALLER-SHA256SUMS
+      - name: Preserve build records
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: os9-mseries-build-record-${{ github.run_id }}
+          path: build-record/
+          retention-days: 14
+      - name: Preserve experimental installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: os9-mseries-arm64-${{ github.run_id }}
+          path: |
+            mkosi.output/elementaryos-*.iso
+            mkosi.output/INSTALLER-SHA256SUMS
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7

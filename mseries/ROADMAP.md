@@ -2,6 +2,10 @@
 
 Last updated 2026-10-13. Day-to-day pending checks live in the robot: `mseries-verify status`
 (seed: `mseries/local-ai/verify-checks.json`). This file is the human-readable plan.
+The specific regression reports and reproduction steps are tracked in
+[`BUG-FIX-ROADMAP.md`](BUG-FIX-ROADMAP.md).
+OS 9 implementation progress and Claude Code takeover tasks are in
+[`OS9-HANDOFF.md`](OS9-HANDOFF.md).
 
 ## Done and verified
 

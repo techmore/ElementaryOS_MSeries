@@ -10,9 +10,29 @@ First M-series commit is based on:
   ("Hand off Steam launcher ownership to FEX package (#511)", 2026-09-25)
   https://github.com/omacom/omarchy-mac
 
-Only additive `mseries/` docs plus the `mkosi.images/apple-silicon/` image sit
-on top. Minimal clearly-marked one-line additions exist in four upstream
-files (`mkosi.conf.d/arch.arm64.conf` dependency, liveiso aarch64 profile
-`ExtraTrees`, new `mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf`,
-`README.md` pointer banner, `daily-9.0.yml` push-trigger removal); no
-upstream file content is otherwise modified.
+At the original scaffold snapshot, additive `mseries/` documentation and the
+`mkosi.images/apple-silicon/` layer sat on top. The port also touched five
+upstream paths: the arm64 dependency, liveiso `ExtraTrees`, a new sysupdate
+arm64 config, the README pointer, and the daily workflow trigger. No other
+upstream files were modified at that snapshot.
+
+The current elementary upstream enhancement from
+`7024fd04646a6a8565bf6805989b59fd72de928c` adds `systemd-coredump` to the base
+image package list. That one-line change is now carried by this branch.
+
+The fetched `elementary/os` `main` reference on 2026-10-13 was
+`7024fd04646a6a8565bf6805989b59fd72de928c`. This is the comparison point for
+the OS 9 source audit; recheck the upstream branch before the next port.
+
+## Current Apple hardware reference (audit only)
+
+The maintained Omarchy Mac add-on packages were checked on 2026-10-13 at
+omacom/omarchy-mac-pkgs main commit
+222f7a8599bbdd287ac6a95362cd51c5b024baae. This is a source reference,
+not a dependency of the elementary build. Omarchy-specific packages target
+Arch Linux and follow their own package and test contract; elementary ports
+must be translated to Ubuntu/mkosi and Pantheon/Gala.
+
+The historical omacom/omarchy-mac quattro pin above records the source
+used for the original scaffold only. Package changes now belong in
+omacom/omarchy-mac-pkgs; the old branch is transitional.

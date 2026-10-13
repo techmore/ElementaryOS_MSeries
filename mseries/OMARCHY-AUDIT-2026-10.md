@@ -2,9 +2,24 @@
 
 Target: elementary OS on MacBookPro18,3 (M1 Pro / j314s).
 Observed kernel: `7.1.13-1-2-fairydust-usb4-ARCH`.
-Reference: `omacom/omarchy-mac` quattro at
-`ba546a61f881c1fe9d79d75ec050eab048b8cb63`; fetching quattro on the audit date
-returned the same commit. Newer Omarchy M experiments live outside that snapshot.
+The initial port used omacom/omarchy-mac quattro at
+ba546a61f881c1fe9d79d75ec050eab048b8cb63. The current package source was
+audited separately on 2026-10-13; see the source refresh below.
+
+## Source refresh — 2026-10-13
+
+The maintained Apple Silicon package repository is
+[omacom/omarchy-mac-pkgs](https://github.com/omacom/omarchy-mac-pkgs), checked
+at main commit 222f7a8599bbdd287ac6a95362cd51c5b024baae. Its packages are
+Arch-specific add-ons; each stages independently into DESTDIR and owns its
+package tests, with separate integration tests for runtime contracts. Mac-only
+installed hardware behavior belongs there, general desktop behavior belongs in
+omacom/omarchy, and one-shot installation belongs in the installer repo.
+
+For this elementary port, treat those packages as the current behavioral
+reference. Do not copy Arch packages or package-manager hooks into Ubuntu.
+Translate only useful hardware behavior into apt/mkosi and Pantheon/Gala, and
+keep any change in its proper upstream repository.
 
 ## What our code already carries
 
@@ -12,7 +27,7 @@ returned the same commit. Newer Omarchy M experiments live outside that snapshot
 | --- | --- | --- |
 | Display brightness and OSD | `mkosi.images/apple-silicon/overlay/usr/libexec/mseries-brightness`, `mseries/apply-desktop-settings.py` | Pantheon-specific translation already present; preserve the working path. |
 | Command shortcuts, screenshots, window controls | `mseries/apply-desktop-settings.py` | Already translated for Gala; Hyprland bindings should not be copied. |
-| Wi-Fi firmware and resume | Apple image firmware/resume scripts and systemd services | Port exists; test suspend/resume on each kernel before calling it reliable. |
+| Wi-Fi firmware and resume | Apple image firmware/resume scripts and systemd services | The recovery script now has focused regression coverage; factory-image provisioning and live suspend/resume still need an M1 Pro image test. |
 | Early Apple HID loading | Apple image initramfs module configuration | Port exists; check the actual booted Arch initramfs as well as the Ubuntu image. |
 | Dock USB and Ethernet | `mseries/fairydust/usb4/` | USB2 peripherals and USB3 Ethernet verified in the kit's current report; older desktop/port-map wording was stale. DP tunneling remains a separate unresolved feature. |
 | Gestures | `mseries/install-touchegg.sh` | Pantheon integration exists; verify gestures after session restart. |
@@ -23,24 +38,31 @@ cycle the dock, suspend the machine or benchmark the GPU.
 
 ## Highest-value gaps
 
-1. **Ambient keyboard backlight.** Upstream provides
-   `bin/omarchy-brightness-keyboard-auto` with ambient sensor discovery and manual
-   override handling. This machine exposes `kbd_backlight`, `aop-sensors-als`
-   and `aop-sensors-las`; the latter must not be mistaken for illuminance.
-   No equivalent was found under our M-series/image directories. Port the
-   service and brightness permissions, with Shift+brightness Gala shortcuts.
-   Keep automatic *display* brightness separate from keyboard brightness.
-2. **Hardware video decoding.** `mseries/packages.arm64` still marks `avd-fw`
+Audit correction, 2026-10-13: the earlier list wrongly marked ambient keyboard
+lighting as missing. `mseries/keyboard-backlight/backlight.py` already reads the
+AOP ALS sensor, changes only the keyboard through UPower, and pauses after manual
+adjustments. On the M1 Pro it adjusted the keyboard from 0 to 59/255 at 141 lx.
+The remaining work is interactive qualification of appearance, lock/lid and
+suspend/resume behavior, not another port.
+
+The transformed desktop also now has a tested internal-speaker path:
+speakersafetyd protects the amplifier, the Asahi DSP packages supply the model
+profile, and a PipeWire LV2 filter plugin built for Ubuntu's exact PipeWire
+version enables the DSP graph. The audio check passed after installation. The
+factory image still lacks this install path; do not enable internal speakers
+without the safety daemon and preserve the existing volume during setup.
+
+1. **Hardware video decoding.** `mseries/packages.arm64` still marks `avd-fw`
    and `libva-v4l2_request-avd` as TODO. Upstream
-   `install/hardware/apple/video-decode.sh` installs both: a firmware blob
+   package documentation identifies both as dependencies: a firmware blob
    alone does not make browser VA-API work. No `/dev/video*` was observed in
    this audit. Validate the kernel configuration, firmware, userspace bridge
    and an actual decoded video before promising lower CPU/power use.
-3. **Audio reproducibility.** The package manifest still has TODO entries for
-   `asahi-audio` and `speakersafetyd`; `dpkg-query` did not establish configured
-   installed versions for them. Verify the running DSP/safety chain and package
-   ownership. Never enable raw speakers as a substitute for that chain.
-4. **Touch ID / SEP.** The old categorical unsupported statement is outdated.
+2. **Image audio packaging.** The tested desktop install is described above,
+   but `mseries/packages.arm64` does not yet reproduce its complete safe DSP
+   chain. Carry the pinned PipeWire LV2 build and audio package sources into the
+   image only after their build and volume-preservation path are reviewed.
+3. **Touch ID / SEP.** The old categorical unsupported statement is outdated.
    [Omarchy's official September announcement](https://omarchy.org/news/2026/09/introducing-omarchy-m/)
    reports SEP-based Touch ID work and lists it as an initial-release target.
    [SiliconForested's September 29 X post](https://x.com/SiliconForested/status/2104994209434574999)
@@ -53,9 +75,10 @@ cycle the dock, suspend the machine or benchmark the GPU.
    source/release, firmware protocol, enrollment service and PAM instructions;
    validate enrollment, unlock and password fallback before enabling it.
    Intel T1/T2 and VM host authentication bridges are different implementations.
-5. **USB-C video.** Continue the targeted fairydust/USB4 driver work documented
-   in `fairydust/usb4/README.md`. An external-monitor success on another model
-   or plain DP Alt Mode adapter does not establish Thunderbolt dock DP support.
+4. **USB4 sleep and dock video.** The current kernel can bring up dock hubs,
+   input and Ethernet. ACIO blocks suspend while a USB4 link is up; a separate
+   non-USB4 Type-C path can lose devices after suspend. DP tunnelling remains
+   unsupported. See `ROADMAP.md` and `fairydust/usb4/README.md`.
 
 ## Combining elementary beta with Omarchy M beta
 

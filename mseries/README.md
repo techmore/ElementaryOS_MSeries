@@ -2,15 +2,17 @@
 
 Experimental project: build **elementary OS** (Pantheon, Ubuntu-based,
 `mkosi` image builder) for **Apple Silicon Macs (M1/M2/…)**, informed by the
-Apple Silicon hardware knowledge in
-[omacom/omarchy-mac](https://github.com/omacom/omarchy-mac) (`quattro`
-branch).
+Apple Silicon hardware support maintained in
+[omacom/omarchy-mac-pkgs](https://github.com/omacom/omarchy-mac-pkgs). The
+original scaffold used the transitional omarchy-mac quattro branch; current
+package behavior is tracked at the separate main-branch pin in
+`mseries/UPSTREAM-PINS.md`.
 
 **Current status, open problems and stretch goals: [`ROADMAP.md`](ROADMAP.md). Benchmarks: [`benchmarks/`](benchmarks/README.md).**
 
 Upstream bases (pinned at first commit — see `mseries/UPSTREAM-PINS.md`):
 - build system: [elementary/os](https://github.com/elementary/os) `main`
-- Apple Silicon hardware scripts: [omacom/omarchy-mac](https://github.com/omacom/omarchy-mac) `quattro`
+- Apple Silicon hardware reference: [omacom/omarchy-mac-pkgs](https://github.com/omacom/omarchy-mac-pkgs) (audit pin in UPSTREAM-PINS.md)
 
 ## Status: booted M1 Pro desktop; factory ISO still unverified
 
@@ -26,6 +28,8 @@ ported layer and is wired into the arm64 live ISO profile and the sysupdate
 image via `ExtraTrees`. This factory ISO path has not been hardware-verified.
 See `mseries/PORT-MAP.md` for the per-fix analysis, `mseries/KERNEL-REPORT.md`
 for the kernel verdict, and `mseries/BUILD-NOTES.md` for what remains.
+The current audit and prioritized bug-fix list are in
+`mseries/BUG-FIX-ROADMAP.md`.
 
 ## Why a port, not a cherry-pick
 

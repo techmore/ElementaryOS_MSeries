@@ -1,13 +1,16 @@
 # Ubuntu package list — Apple Silicon layer
 
 `mkosi.images/apple-silicon/mkosi.conf` wires the Ubuntu-archive subset
-below into the build. Asahi-origin packages remain TODO for lack of a
-source (see KERNEL-REPORT.md).
+below into the overlay build. Its finalize step prunes package payloads;
+the liveiso aarch64 and sysupdate arm64 configs explicitly install the same
+runtime packages. `mseries/test-image-wiring.py` checks this contract.
+The safe Asahi DSP chain still needs image packaging (see below).
 
 ## Wired into the image (Ubuntu archive names)
 
 - `pipewire-pulse`, `pipewire-alsa`, `rtkit` — see rationale in the
   previous revision of this file (commit history).
+- `python3-gi` — the hardware helper's GObject bindings.
 - `initramfs-tools` — present so `mkosi.postinst.chroot` can append the
   HID early-load modules to `/etc/initramfs-tools/modules`; pruned from
   the final overlay by `mkosi.finalize`.
@@ -55,28 +58,37 @@ CONFIG_TYPEC_NVIDIA_ALTMODE=m
 CONFIG_TYPEC_TBT_ALTMODE=m
 ```
 
-## Asahi-origin (TODO — needs a source before wiring into mkosi)
+## Available Asahi audio packages (not yet wired into the image)
 
-- `asahi-audio` (UCM profiles + speaker DSP chain) — no Ubuntu package known
-- `speakersafetyd` (speaker mute daemon — kernel holds drivers at -100 dB
-  without it) — no Ubuntu package known
-- `avd-fw` (Apple Video Decoder firmware `apple/avd-fw-v2-t0.bin`) — no
-  Ubuntu package known
-- `libva-v4l2_request-avd` (`asahi_drv_video.so` VA-API bridge) — no Ubuntu
-  package known
-- `asdcontrol` (Apple display brightness) — omarchy-edge-only; no Ubuntu
-  source known
+These packages are available from Ubuntu resolute/universe on arm64 and were
+installed on the transformed M1 Pro:
 
-Candidate sources to evaluate: Ubuntu Asahi Remix PPAs, Asahi ALARM PKGBUILDs
-(repackage the firmware blobs + `speakersafetyd` as debs), or mkosi
-`BuildScripts=` that fetch pinned upstream artifacts at image build time.
-Do NOT point apt at Arch repositories.
+- `speakersafetyd` 1.1.2-4 — required to protect and unlock the internal
+  speaker amplifier safely.
+- `asahi-audio` 3.4-2 and `alsa-ucm-conf-asahi` 8-3 — model profile and DSP
+  chain. The transformed desktop's output test passed after also building the
+  matching PipeWire LV2 filter plugin with `mseries/install-pipewire-lv2.sh`.
+
+The current factory-image package list does not yet include this audio path.
+Keep `speakersafetyd` enabled before the DSP chain, preserve the prior sink
+volume during setup, and do not expose the raw internal speaker as a fallback.
+
+## Asahi-origin packages still missing a confirmed Ubuntu source
+
+- `avd-fw` (Apple Video Decoder firmware `apple/avd-fw-v2-t0.bin`)
+- `libva-v4l2_request-avd` (`asahi_drv_video.so` VA-API bridge)
+- `asdcontrol` (Apple display brightness; omarchy-edge-only)
+
+Evaluate Ubuntu Asahi Remix sources or pinned upstream build steps for these
+remaining gaps. Do NOT point apt at Arch repositories.
 
 ## Kernel (open question, see BUILD-NOTES.md)
 
 elementary `base` installs `linux-image-generic`. Whether resolute's generic
 arm64 kernel carries the Apple Silicon drivers used here (`appledrm`,
 `CONFIG_VIDEO_APPLE_AVD=m`, HID, NVMe, brcmfmac firmware paths) is unverified
-and is the first bring-up question. If not, the project needs either an
+for this factory image. The owner's current M1 Pro desktop instead runs
+`7.1.13-1-2-fairydust-usb4-ARCH`; its successful boot does not validate
+Ubuntu's generic kernel or our mkosi image. If not, the project needs either an
 Asahi-flavoured kernel package or a custom kernel image — the largest single
 work item.

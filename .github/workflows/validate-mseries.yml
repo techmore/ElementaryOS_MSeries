@@ -8,10 +8,16 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - "Justfile"
+      - "mkosi.conf"
       - "mkosi.images/**"
       - "mkosi.conf.d/**"
+      - "mkosi.bump"
+      - "repos/**"
+      - "packages.arm64"
+      - "transform/**"
       - "mseries/**"
-      - ".github/workflows/validate-mseries.yml"
+      - ".github/workflows/**"
 
 jobs:
   validate:
@@ -37,6 +43,7 @@ jobs:
           python3 -m py_compile mseries/apply-desktop-settings.py
           python3 -m py_compile mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness
           python3 mseries/test-wifi-resume.py
+          python3 mseries/test-image-wiring.py
           python3 -m unittest discover -s mseries/brightness -p 'test_*.py'
           python3 -m unittest discover -s mseries/keyboard-backlight -p 'test_*.py'
           python3 -m unittest discover -s mseries/local-ai -p 'test_*.py'

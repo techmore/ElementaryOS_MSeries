@@ -1,7 +1,8 @@
 # M1 Pro desktop setup
 
 Hardware confirmed by the owner: elementary OS 9 Early Access boots to
-Pantheon on a 2021 14-inch M1 Pro, kernel `7.1.13-3-2-ARCH`, ARM64.
+Pantheon on a 2021 14-inch M1 Pro, kernel
+`7.1.13-1-2-fairydust-usb4-ARCH`, ARM64.
 This is a running transformed system; it does not establish that our factory
 ISO builds or boots correctly.
 
@@ -116,13 +117,10 @@ bash mseries/install-codexbar-wingpanel.sh
 Log out and back in after installation. The indicator starts CodexBar's local
 backend and reads its same-user structured snapshot without changing CodexBar
 preferences. The panel shows the OpenAI mark with both Codex's five-hour and
-weekly remaining percentages. The dropdown uses Granite 7.7+ typography and
-one padded card per provider, with separate five-hour and weekly limits,
-remaining percentages, reset times, and estimated time left at the current pace.
-Long provider lists scroll while the labeled Quick View, Usage Details,
-Spending, and Settings & Sign In actions stay visible. The header refresh
-button animates during updates, and the empty state offers a direct sign-in
-action. Provider credentials remain managed by CodexBar. The
+weekly remaining percentages. The dropdown uses compact aligned rows for each
+quota period, with the reset time beside the remaining percentage, keeping the
+menu short while showing both limits. Provider credentials remain managed by
+CodexBar. The
 monochrome mark comes from the [OpenAI 2025 symbol](https://commons.wikimedia.org/wiki/File:OpenAI_logo_2025_(symbol).svg)
 and follows OpenAI's branding guidelines.
 Remove it with `bash mseries/install-codexbar-wingpanel.sh --uninstall`.

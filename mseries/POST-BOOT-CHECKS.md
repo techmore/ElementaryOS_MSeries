@@ -7,6 +7,11 @@ template at the end (gist or issue).
 
 Conventions: `✔` expected pass, `⚠` expected fail/gap in v1, `?` unknown.
 
+The owner's M1 Pro already boots the transformed elementary installation.
+Use this checklist to validate a built factory image; that existing desktop
+does not count as a factory-image boot because it uses a different boot and
+kernel path.
+
 ## 0. Boot & session
 
 | # | Check | Expect |

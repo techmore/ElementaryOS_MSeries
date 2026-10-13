@@ -2,8 +2,9 @@
 # M-series finalize: prune everything except the Apple Silicon layer, so this
 # image is a pure additive overlay for ExtraTrees consumption (same pattern
 # as mkosi.images/modules-db/mkosi.finalize). Package payloads installed
-# above (pipewire, rtkit, initramfs-tools) land in the consuming image via
-# apt resolution there; what must survive here is config + the resume script.
+# above are discarded here. The liveiso aarch64 profile and sysupdate arm64
+# drop-in must explicitly install runtime packages; ExtraTrees does not run apt.
+# What survives here is configuration and the hardware helper scripts.
 set -euo pipefail
 
 BUILDROOT=$(realpath "$BUILDROOT")
@@ -13,12 +14,17 @@ find "$BUILDROOT" -xdev -mindepth 1 -depth \
     ! -path "$BUILDROOT/usr/sbin" \
     ! -path "$BUILDROOT/usr/sbin/mseries-wifi-resume-fix" \
     ! -path "$BUILDROOT/usr/sbin/mseries-wifi-firmware" \
+    ! -path "$BUILDROOT/usr/libexec" \
+    ! -path "$BUILDROOT/usr/libexec/mseries-brightness" \
     ! -path "$BUILDROOT/usr/lib" \
     ! -path "$BUILDROOT/usr/lib/systemd" \
     ! -path "$BUILDROOT/usr/lib/systemd/system" \
     ! -path "$BUILDROOT/usr/lib/systemd/system/omarchy-wifi-resume-fix.service" \
     ! -path "$BUILDROOT/usr/lib/systemd/system/mseries-wifi-firmware.service" \
     ! -path "$BUILDROOT/etc" \
+    ! -path "$BUILDROOT/etc/xdg" \
+    ! -path "$BUILDROOT/etc/xdg/autostart" \
+    ! -path "$BUILDROOT/etc/xdg/autostart/mseries-brightness.desktop" \
     ! -path "$BUILDROOT/etc/modprobe.d*" \
     ! -path "$BUILDROOT/etc/initramfs-tools*" \
     ! -path "$BUILDROOT/etc/systemd*" \

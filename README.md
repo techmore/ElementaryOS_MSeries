@@ -1,6 +1,9 @@
 <div align="center">
-  <p><strong>This is a derivative: elementary OS build system + Apple Silicon (M-series) port scaffolding. Start at <a href="mseries/README.md">mseries/README.md</a>.</strong> Upstream: <a href="https://github.com/elementary/os">elementary/os</a>, Apple hardware knowledge: <a href="https://github.com/omacom/omarchy-mac">omacom/omarchy-mac</a> (<code>quattro</code>). Status: research scaffolding, no tested ISO yet.</p>
+  <p><strong>This is a derivative of the elementary OS 9 build system with an Apple Silicon (M-series) port.</strong> Start at <a href="mseries/README.md">mseries/README.md</a>. The owner has booted an installed elementary OS 9 desktop on an M1 Pro; the factory ISO remains unbuilt and unverified on hardware. Current Apple hardware reference: <a href="https://github.com/omacom/omarchy-mac-pkgs">omacom/omarchy-mac-pkgs</a>.</p>
 </div>
+
+Upstream comparison, concrete bug-fix backlog, and porting boundaries:
+[mseries/BUG-FIX-ROADMAP.md](mseries/BUG-FIX-ROADMAP.md).
 
 ## M-series cutover quickstart (run on omarchy-mac, Apple Silicon)
 
