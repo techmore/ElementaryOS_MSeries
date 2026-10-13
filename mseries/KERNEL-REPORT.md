@@ -210,5 +210,9 @@ assembly, `verify-m1n1-esp.py` reads that disk image's GPT, copies the ESP file
 out through mtools without mounting or writing the image, and requires its
 SHA-256 to match the generated payload. The staged file exists only in the
 opt-in Fairydust CI workspace; no host ESP is involved. This integration is
-implemented but still needs the next full Fairydust CI run to verify actual
-partition contents and the ISO build.
+implemented. The first full CI build completed mkosi and produced a
+timestamped whole-disk image plus separate partition images, but the workflow's
+overbroad `elementary_*.raw` guard counted partition images as disk images and
+stopped before ESP verification. The selector is now restricted to the exact
+timestamped whole-disk filename; partition-content verification and ISO build
+remain pending a rerun.

@@ -117,7 +117,11 @@ jobs:
           just genkey 2>&1 | tee build-record/keygen.log
           if [[ "${{ inputs.fairydust }}" == "true" ]]; then
             just mkosi -B --debug --profile=daily,fairydust --force --workspace-directory=/workspace 2>&1 | tee build-record/build.log
-            mapfile -t raw_images < <(compgen -G 'mkosi.output/elementary_*.raw')
+            raw_images=()
+            for candidate in mkosi.output/elementary_*.raw; do
+              [[ -f "$candidate" && "$(basename "$candidate")" =~ ^elementary_[0-9]{14}\.raw$ ]] \
+                && raw_images+=("$candidate")
+            done
             [[ ${#raw_images[@]} == 1 ]] || { echo "Expected one sysupdate disk image, found ${#raw_images[@]}" >&2; exit 1; }
             python3 mseries/fairydust/debian/verify-m1n1-esp.py \
               --image "${raw_images[0]}" \
