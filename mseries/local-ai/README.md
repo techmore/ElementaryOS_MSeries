@@ -211,3 +211,17 @@ quick wins, needs clarifying) and unloads the model afterwards. Briefings are
 saved in `~/.local/state/mseries-brief/`. `mseries-brief --collect-only` prints
 exactly what the model would see. The tool only advises: it never edits tasks.
 It is installed as `~/.local/bin/mseries-brief` from `brief.py`.
+
+## Ask about tasks and energy
+
+`mseries-ask "question"` lets the on-device model use two **read-only** tools:
+`list_tasks` (open Homeboard tasks) and `get_energy` (power now, today, this
+month). It runs the tools, then answers from their results; it cannot add or
+change anything. Examples: `mseries-ask "Which tasks mention plumbing?"`,
+`mseries-ask "What costs the most today?"`.
+
+Energy data comes from the local file the Energy Monitor tray app publishes
+(`~/.local/state/energy-monitor/summary.json`), so it works on any network once
+that app is signed in to the collector. If the app is offline, signed out or
+the data is stale, the tool says so and the model must not invent readings.
+The model is started for the question and unloaded afterwards.

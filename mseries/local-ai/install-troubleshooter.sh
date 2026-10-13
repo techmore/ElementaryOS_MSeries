@@ -11,6 +11,7 @@ PY
 model="$HOME/.cache/huggingface/hub/models--mlx-community--Qwen3.5-9B-4bit/snapshots/8b2b98c00a6b4d291155e4890773ca8f769aee53"
 install -Dm755 "$repo/mseries/local-ai/troubleshoot.py" "$HOME/.local/bin/mseries-troubleshoot"
 install -Dm755 "$repo/mseries/local-ai/brief.py" "$HOME/.local/bin/mseries-brief"
+install -Dm755 "$repo/mseries/local-ai/ask.py" "$HOME/.local/bin/mseries-ask"
 mkdir -p "$HOME/.config/systemd/user"
 cat > "$HOME/.config/systemd/user/mseries-troubleshooter-model.service" <<EOF
 [Unit]
