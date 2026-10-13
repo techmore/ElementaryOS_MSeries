@@ -53,6 +53,13 @@ Model-selection references supplied by the owner:
 
 ## GitHub progress
 
+Owner monitoring dashboard: `docs/build-status.html`, linked from the site
+home page. It reads public GitHub workflow status every five minutes, shows
+actual build stages, and explains when to poke Codex. It cannot wake agents.
+GitHub Pages workflow ID 382174750 is used because its workflow is dynamic.
+No access tokens are embedded. The dashboard falls back to GitHub links
+when requests fail or reach anonymous API limits.
+
 Implementation pushed as 39fd815; reviewed preflight/dependencies pushed as
 401dad7. GitHub Pages deployment for 401dad7 succeeded.
 The first manual runs were started at 401dad7:

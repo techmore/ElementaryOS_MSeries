@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OS 9 · Build monitor</title>
+<style>
+:root{color-scheme:light dark;--bg:#f7f8fa;--fg:#29303d;--muted:#626c7b;--line:#dce2eb;--surface:#fff;--blue:#3e6596;--wash:#edf2fa}
+@media(prefers-color-scheme:dark){:root{--bg:#191d24;--fg:#e2e7ef;--muted:#a7b2c2;--line:#353e4b;--surface:#222832;--blue:#a8c5eb;--wash:#293546}}
+*{box-sizing:border-box}body{background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,sans-serif;margin:0 auto;max-width:880px;padding:36px 22px}a{color:var(--blue);text-underline-offset:4px}h1{font-size:32px;font-weight:500;letter-spacing:-1px;margin:20px 0 2px}h2{font-size:18px;font-weight:500}p{margin:8px 0}.muted{color:var(--muted)}.signal{background:var(--wash);border-radius:16px;padding:24px;margin:26px 0}.signal strong{font-size:22px;font-weight:500;display:block}button{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:8px 16px;cursor:pointer}button:disabled{opacity:.6;cursor:wait}.bar{display:flex;gap:16px;align-items:center;flex-wrap:wrap}.row{display:grid;grid-template-columns:1fr auto;gap:12px;padding:20px 0;border-bottom:1px solid var(--line)}.row h2{margin:0}.row p{margin:3px 0}.state{align-self:start;background:var(--wash);padding:4px 12px;border-radius:20px;white-space:nowrap}details{padding:20px 0}li{margin:9px 0}footer{border-top:1px solid var(--line);padding-top:20px;margin-top:26px;font-size:14px}#steps{padding-left:20px}#steps li{margin:4px 0}small{font-size:14px}@media(max-width:500px){.row{grid-template-columns:1fr}.state{justify-self:start}body{padding:24px 16px}}
+</style>
+</head>
+<body>
+<nav><a href="index.html">← M-series</a></nav>
+<h1>OS 9 build monitor</h1>
+<p class="muted">Elementary on Apple Silicon · GitHub status, refreshed every five minutes</p>
+<section class="signal" aria-live="polite"><strong id="signal">Checking GitHub…</strong><p id="advice">Getting the latest build and validation results.</p></section>
+<div class="bar"><button id="refresh" type="button">Refresh now</button><small id="updated" class="muted">No live status received yet</small></div>
+<main>
+<section class="row"><div><h2>Experimental arm64 image</h2><p id="build-detail" class="muted">Waiting for GitHub</p><a id="build-link" href="https://github.com/techmore/ElementaryOS_MSeries/actions/workflows/daily-9.0.yml" target="_blank" rel="noopener">Open build and logs ↗</a><details><summary>Build stages</summary><ol id="steps"><li>No stage data yet</li></ol></details></div><span class="state" id="build-state">Unknown</span></section>
+<section class="row"><div><h2>Configuration and regression checks</h2><p id="validation-detail" class="muted">Waiting for GitHub</p><a id="validation-link" href="https://github.com/techmore/ElementaryOS_MSeries/actions/workflows/validate-mseries.yml" target="_blank" rel="noopener">Open validation ↗</a></div><span class="state" id="validation-state">Unknown</span></section>
+<section class="row"><div><h2>GitHub Pages</h2><p id="pages-detail" class="muted">Waiting for GitHub</p><a id="pages-link" href="https://github.com/techmore/ElementaryOS_MSeries/actions" target="_blank" rel="noopener">Open deployment ↗</a></div><span class="state" id="pages-state">Unknown</span></section>
+<details><summary>What happens next</summary><ul><li>Build fails: poke Codex to inspect logs and fix the reported error.</li><li>Build succeeds: poke Codex to review artifacts and plan boot verification. A built ISO still needs hardware testing.</li><li>Build is running: no poke needed. This page shows GitHub activity, not whether an AI is currently working.</li><li>Build needs approval, has stopped, or has waited over 15 minutes for a runner: poke Codex.</li></ul><a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/OS9-HANDOFF.md">Shared Codex / Claude / OpenCode handoff</a> · <a href="bug-fixes.html">Specific bug fixes</a></details>
+</main>
+<footer id="connection">Reads public GitHub status without credentials. On connection or rate-limit errors, use the GitHub links for the latest result. This page cannot wake an AI automatically.</footer>
+<noscript><p>JavaScript is disabled. Follow the GitHub links above to check build progress.</p></noscript>
+<script src="build-status.js"></script>
+</body>
+</html>

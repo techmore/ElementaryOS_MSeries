@@ -17,6 +17,7 @@ on:
       - "packages.arm64"
       - "transform/**"
       - "mseries/**"
+      - "docs/build-status.*"
       - ".github/workflows/**"
 
 jobs:
@@ -44,6 +45,7 @@ jobs:
           python3 -m py_compile mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness
           python3 mseries/test-wifi-resume.py
           python3 mseries/test-image-wiring.py
+          node mseries/test-build-status.mjs
           python3 -m unittest discover -s mseries/brightness -p 'test_*.py'
           python3 -m unittest discover -s mseries/keyboard-backlight -p 'test_*.py'
           python3 -m unittest discover -s mseries/local-ai -p 'test_*.py'
