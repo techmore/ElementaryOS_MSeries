@@ -48,7 +48,7 @@ with the corrected live-session hardware overlay before progressing.
 1. **Dock video via m1n1 hypervisor trace.** Needs a second computer (below). Result would also help every Asahi user.
 2. **Panel toggle for the battery charge limit** (today it is `sudo mseries-power limit 80|100`).
 3. **Docked lid mode**: lock + display off without the endless suspend retries.
-4. **Linux VMs with KVM** (`/dev/kvm` exists): QEMU/virt-manager guide, benchmark overhead.
+4. ~~**Linux VMs with KVM**~~ Guide written 2026-10-13: [`KVM-VMS.md`](KVM-VMS.md) (boot verified headless; graphics, networking address and benchmark overhead not yet measured).
 5. **Publish benchmark history** for every kernel/Mesa update, plot trends.
 6. **Install media / transform script** for other M1/M2 Macs (see `TRANSFORM-DESIGN.md`).
 7. **Report upstream bugs** (Wingpanel crash; PipeWire missing LV2 plugin in Ubuntu).
