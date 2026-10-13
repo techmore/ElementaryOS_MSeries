@@ -51,7 +51,7 @@ with the corrected live-session hardware overlay before progressing.
 4. **Linux VMs with KVM** (`/dev/kvm` exists): QEMU/virt-manager guide, benchmark overhead.
 5. **Publish benchmark history** for every kernel/Mesa update, plot trends.
 6. **Install media / transform script** for other M1/M2 Macs (see `TRANSFORM-DESIGN.md`).
-7. **Report upstream bugs** (Wingpanel crash; PipeWire missing LV2 plugin in Ubuntu).
+7. **Report upstream bugs** (Wingpanel crash: draft in `upstream/`). ~~PipeWire missing LV2 plugin in Ubuntu~~: not a bug. Ubuntu ships `libspa-filter-graph-plugin-lv2.so` in `libspa-0.2-modules-extra` (checked 2026-10-13, 1.6.2-1ubuntu1.2, the same version as the installed PipeWire). The notes saying Ubuntu omits it missed that package. Next step: install it instead of building the plugin in `install-pipewire-lv2.sh`, and add it to the factory image. Not yet tested with the Asahi audio chain.
 
 Not realistic here: macOS 27 guests (`MACOS-VM.md`), Mac mini M4 (Asahi has no M4 support: no installer, no GPU
 driver, M3 only now nearing a first release).
