@@ -126,10 +126,15 @@ polling and refresh-on-open in CodexBar's own windows, configure the running app
 ~/.local/bin/codexbar-linux --configure '{"refreshSeconds":60,"refreshOnOpen":true}'
 ```
 
-The panel shows the OpenAI mark with both Codex's five-hour and
-weekly remaining percentages. The dropdown uses compact aligned rows for each
-quota period, with the reset time beside the remaining percentage, keeping the
-menu short while showing both limits. Provider credentials remain managed by
+The panel shows each provider's session quota remaining and the earliest
+available quota ETA, labeled with its limiting window (for example,
+`CX 87% · 7D ~1d7h`). An exhausted limit shows its reset countdown instead.
+The dropdown keeps both session and weekly percentages, reset times, and a
+visible forecast below each limit. Hover the bar for the limiting quota's detail.
+Forecasts reuse CodexBar's reported usage pace and describe quota availability,
+not an exact remaining token balance. Missing/unrecognized pace data, provider
+errors, usage older than three minutes, and expired reset boundaries suppress
+the forecast. A safe window does not imply another unmeasured limit is safe. Provider credentials remain managed by
 CodexBar. The
 monochrome mark comes from the [OpenAI 2025 symbol](https://commons.wikimedia.org/wiki/File:OpenAI_logo_2025_(symbol).svg)
 and follows OpenAI's branding guidelines.

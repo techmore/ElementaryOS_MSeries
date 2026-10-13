@@ -9,6 +9,7 @@ shared_module(
   'codexbar',
   'Indicator.vala',
   'RefreshPolicy.vala',
+  'QuotaEta.vala',
   dependencies: [libwingpanel_dep, granite_dep, json_dep],
   install: true,
   install_dir: indicators_dir,
@@ -21,6 +22,14 @@ refresh_policy_test = executable(
   dependencies: dependency('gobject-2.0'),
 )
 test('refresh-policy', refresh_policy_test)
+
+quota_eta_test = executable(
+  'test-quota-eta',
+  'QuotaEta.vala',
+  'test-quota-eta.vala',
+  dependencies: json_dep,
+)
+test('quota-eta', quota_eta_test)
 
 install_data(
   'icons/openai.svg',

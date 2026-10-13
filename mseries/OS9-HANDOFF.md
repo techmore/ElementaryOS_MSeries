@@ -398,3 +398,40 @@ package contains `update-m1n1`, but its default DTB lookup misses our package
 path. Hashes and assembly checks are in `KERNEL-REPORT.md`. Next, add explicit
 `DTBS`/`U_BOOT` selection and a disposable image ESP integration before any
 hardware path is considered; do not write the shared ESP.
+
+
+## CodexBar quota ETA (October 13)
+
+Owner requested a visible ETA for remaining usage. The existing CodexBar Linux
+IPC feed already includes the CLI's pace summary for each quota; the native
+indicator previously hid it in a tooltip. Added QuotaEta.vala to present those
+upstream forecasts and choose the earliest available limiting window.
+The bar shows session/general percent remaining plus the limiting quota label
+and ETA; both percentages and individual forecasts remain in the dropdown.
+An exhausted limit shows its reset countdown. Unknown pace, unsupported wording,
+provider errors, snapshots older than three minutes, and expired reset boundaries
+suppress forecasts. A safe measured quota does not vouch for an unknown quota.
+These are quota estimates based on CodexBar's average usage pace, not exact
+remaining token balances or guaranteed exhaustion times. The compact IPC does
+not export structured etaSeconds, so recognized upstream summary phrases are
+parsed defensively; unknown future wording falls back to unavailable.
+
+Validation: `ninja -C /tmp/codexbar-refresh-build` and `meson test -C
+/tmp/codexbar-refresh-build --print-errorlogs` passed (11 ETA cases plus the five
+existing refresh cases). Covered session/weekly projections, exhausted-without-
+pace, immediate depletion, unavailable/malformed data, stale/provider errors,
+expired resets, limiting-window selection, and unknown limits alongside a safe
+limit. A temporary GTK/Wayland fixture probe verified rendered bar and dropdown
+labels, and the final 332×344 layout was visually inspected. Its synthetic
+preview is `/tmp/codexbar-eta-preview/preview.png`; it is not a live account image.
+`python3 mseries/test-image-wiring.py` passed all four checks; `git diff --check`
+passed. Source review found no remaining blocker.
+
+Installed the built module atomically and reloaded Wingpanel through Gala.
+The previous module remains at `/tmp/libcodexbar-before-eta.so` for rollback.
+A read-only live snapshot run through the compiled model produced a weekly
+forecast for Codex and an exhausted-session reset countdown for Claude.
+One-minute backend polling and five-second asynchronous panel reads are retained.
+This qualifies the running desktop indicator only; no factory ISO was built.
+Next: use the displayed forecasts during ordinary work and reassess if the
+upstream pace format changes or a recent-rate estimate is requested.

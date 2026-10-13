@@ -18,6 +18,7 @@ namespace MSeries {
         private string executable;
         private bool request_in_flight = false;
         private bool snapshot_busy = false;
+        private bool snapshot_stale = false;
         private uint refresh_poll_count = 0;
         private bool refresh_after_snapshot = false;
         private RefreshPolicy refresh_policy = new RefreshPolicy ();
@@ -35,7 +36,7 @@ namespace MSeries {
             panel_icon.add_css_class ("symbolic");
             panel_label = new Gtk.Label ("5H — · 7D —") {
                 ellipsize = Pango.EllipsizeMode.END,
-                max_width_chars = 18
+                max_width_chars = 52
             };
             panel_label.add_css_class ("caption");
             panel_display = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 5);
@@ -110,6 +111,7 @@ namespace MSeries {
                 hscrollbar_policy = Gtk.PolicyType.NEVER,
                 vscrollbar_policy = Gtk.PolicyType.AUTOMATIC,
                 propagate_natural_height = true,
+                min_content_height = 180,
                 max_content_height = 252
             };
             menu.append (scroll);
@@ -262,6 +264,7 @@ namespace MSeries {
         }
 
         private void update_snapshot (Json.Object snapshot) {
+            snapshot_stale = snapshot.get_boolean_member ("stale");
             var entries = snapshot.get_array_member ("entries");
             if (entries == null || entries.get_length () == 0) {
                 if (snapshot.get_boolean_member ("busy")) {
@@ -281,10 +284,15 @@ namespace MSeries {
             set_refreshing (snapshot_busy);
             string codex_panel_summary = "";
             string claude_panel_summary = "";
+            var eta_tooltips = new string[0];
             for (uint i = 0; i < entries.get_length (); i++) {
                 var entry = entries.get_object_element (i);
                 var provider = entry.get_string_member ("provider") ?? "Provider";
                 append_provider_entry (entry);
+                var now_unix = new DateTime.now_utc ().to_unix ();
+                var eta = QuotaEta.for_entry (entry, QuotaEta.entry_stale (entry, snapshot_stale, now_unix), now_unix);
+                eta_tooltips += provider + " · " + eta.detail +
+                    (eta.window_label.length > 0 ? " (" + eta.window_label + ")" : "");
                 if (provider.down ().contains ("codex")) {
                     codex_panel_summary = compact_codex_summary (entry);
                 } else if (provider.down ().contains ("claude")) {
@@ -302,7 +310,7 @@ namespace MSeries {
             var panel_text = string.joinv ("   ", parts);
             panel_label.set_text (panel_text.length > 0 ? panel_text : "OpenAI —");
             panel_display.set_tooltip_text (panel_text.length > 0
-                ? "Remaining · " + (claude_panel_summary.length > 0 ? "CX = OpenAI Codex, CL = Claude" : "OpenAI Codex")
+                ? "Quota remaining · ETA at the current pace\n" + string.joinv ("\n", eta_tooltips) + "\nMiddle-click to refresh"
                 : "Usage unavailable");
 
             var update_status = "Remaining · Updated " + (snapshot.get_string_member ("updated") ?? "recently");
@@ -336,9 +344,11 @@ namespace MSeries {
             providers_box = limits;
 
             var windows = entry.get_array_member ("windows");
+            var now_unix = new DateTime.now_utc ().to_unix ();
+            var eta_stale = QuotaEta.entry_stale (entry, snapshot_stale, now_unix);
             if (windows != null && windows.get_length () > 0) {
                 for (uint i = 0; i < windows.get_length (); i++) {
-                    append_window (windows.get_object_element (i));
+                    append_window (windows.get_object_element (i), eta_stale);
                 }
             } else {
                 append_metric_row ("Usage", "Unavailable");
@@ -358,33 +368,21 @@ namespace MSeries {
 
         private string compact_codex_summary (Json.Object entry) {
             var windows = entry.get_array_member ("windows");
-            if (windows == null) {
-                return "";
-            }
-
-            string session = "";
-            string weekly = "";
+            if (windows == null || windows.get_length () == 0) return "";
+            string remaining = "—";
             for (uint i = 0; i < windows.get_length (); i++) {
                 var window = windows.get_object_element (i);
-                var label = window.get_string_member ("label") ?? "";
-                int minutes = (int) window.get_int_member ("minutes");
-                var remaining_node = window.get_member ("remaining");
-                if (remaining_node == null || remaining_node.get_node_type () == Json.NodeType.NULL) {
-                    continue;
-                }
-                var remaining = remaining_node.get_double ();
-                var value = "%0.0f%%".printf (remaining);
-                var short_label = short_window_label (label, minutes);
-                if (minutes > 0 && minutes <= 360 || label.down ().contains ("hour")) {
-                    session = short_label + " " + value;
-                } else if (minutes >= 1440 || label.down ().contains ("week") || label.down ().contains ("day")) {
-                    weekly = short_label + " " + value;
-                }
+                var node = window.get_member ("remaining");
+                if (node == null || node.get_node_type () == Json.NodeType.NULL) continue;
+                remaining = "%0.0f%%".printf (node.get_double ());
+                // The first measured window is the provider's session/general quota.
+                break;
             }
-            if (session.length > 0 && weekly.length > 0) {
-                return session + " · " + weekly;
-            }
-            return session.length > 0 ? session : weekly;
+            var now_unix = new DateTime.now_utc ().to_unix ();
+            var eta = QuotaEta.for_entry (entry, QuotaEta.entry_stale (entry, snapshot_stale, now_unix), now_unix);
+            var limit = eta.state == EtaState.DEPLETING || eta.state == EtaState.EXHAUSTED
+                ? short_window_label (eta.window_label, eta.window_minutes) + " " : "";
+            return remaining + " · " + limit + eta.compact;
         }
 
         private string short_window_label (string label, int minutes) {
@@ -406,7 +404,7 @@ namespace MSeries {
             return label;
         }
 
-        private void append_window (Json.Object window) {
+        private void append_window (Json.Object window, bool eta_stale) {
             var label = window.get_string_member ("label") ?? "Quota";
             var reset = window.get_string_member ("resetText") ?? "";
             var pace = window.get_string_member ("pace") ?? "";
@@ -448,6 +446,14 @@ namespace MSeries {
             reset_label.add_css_class ("dim-label");
             row.append (reset_label);
             providers_box.append (row);
+            var eta = QuotaEta.from_window (window, eta_stale, new DateTime.now_utc ().to_unix ());
+            var eta_label = new Gtk.Label (eta.detail) {
+                xalign = 0, wrap = true, margin_start = 60,
+                tooltip_text = "Quota estimate from CodexBar's current usage pace. The menu bar shows the earliest available limit; reset times are separate."
+            };
+            eta_label.add_css_class ("caption");
+            eta_label.add_css_class (eta.state == EtaState.EXHAUSTED || eta.state == EtaState.DEPLETING ? "warning" : "dim-label");
+            providers_box.append (eta_label);
         }
 
         private void append_metric_row (string name, string value) {
