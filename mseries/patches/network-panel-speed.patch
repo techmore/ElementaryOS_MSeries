@@ -167,7 +167,7 @@ index 542cc92..508cb59 100644
  
          append (vpn_box);
 diff --git a/src/Widgets/ThroughputWidget.vala b/src/Widgets/ThroughputWidget.vala
-index 0e3ab13..8cd1d7d 100644
+index 0e3ab13..9d8ad98 100644
 --- a/src/Widgets/ThroughputWidget.vala
 +++ b/src/Widgets/ThroughputWidget.vala
 @@ -17,7 +17,7 @@ public class Network.Widgets.ThroughputWidget : Gtk.Box {
@@ -175,7 +175,7 @@ index 0e3ab13..8cd1d7d 100644
      private double[] tx_history = new double[HISTORY];
  
 -    private HashTable<string, bool> virtual_cache = new HashTable<string, bool> (str_hash, str_equal);
-+    private static HashTable<string, bool> virtual_cache = new HashTable<string, bool> (str_hash, str_equal);
++    private static HashTable<string, bool>? virtual_cache = null;
      private uint64 last_rx = 0;
      private uint64 last_tx = 0;
      private int64 last_time = 0;
@@ -188,16 +188,21 @@ index 0e3ab13..8cd1d7d 100644
          if (bytes_per_second < 1000) {
              return "%d B/s".printf ((int) bytes_per_second);
          }
-@@ -144,7 +144,7 @@ public class Network.Widgets.ThroughputWidget : Gtk.Box {
+@@ -144,7 +144,12 @@ public class Network.Widgets.ThroughputWidget : Gtk.Box {
          return format_size ((uint64) bytes_per_second) + "/s";
      }
  
 -    private bool is_virtual (string name) {
 +    private static bool is_virtual (string name) {
++        // Created on first use: the panel readout can call this before any ThroughputWidget exists.
++        if (virtual_cache == null) {
++            virtual_cache = new HashTable<string, bool> (str_hash, str_equal);
++        }
++
          bool result;
          if (virtual_cache.lookup_extended (name, null, out result)) {
              return result;
-@@ -160,7 +160,7 @@ public class Network.Widgets.ThroughputWidget : Gtk.Box {
+@@ -160,7 +165,7 @@ public class Network.Widgets.ThroughputWidget : Gtk.Box {
          return result;
      }
  
