@@ -78,3 +78,11 @@ liveiso hardware helper payload verification passed. See FIRST-ISO-BUILD.md
 for provenance and checksum. Next verify the downloaded corrected ISO and
 repeat the VM smoke boot, then resolve the Asahi kernel/firmware packaging
 gaps. Apple hardware boot remains pending.
+
+
+Enhanced-kernel test path: pinned Fairydust + USB4 Debian packaging is now
+implemented and compiling locally; see fairydust/debian/README.md and the
+local kernel monitor. After package inspection, integrate it as an opt-in
+experimental image alongside the required pinned m1n1/DTB path. Host boot
+remains unchanged. Generic Ubuntu Asahi candidate is a packaging reference,
+not a replacement for the enhanced test kernel.

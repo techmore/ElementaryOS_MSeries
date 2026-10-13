@@ -228,3 +228,27 @@ Next: independently hash and VM-boot this corrected ISO, then implement a
 reproducible Asahi kernel/firmware path against KERNEL-REPORT.md. The previous
 local ISO's VM boot does not qualify this corrected artifact or Mac hardware.
 Untracked Gala drafts remain untouched. No host boot/audio changes.
+
+## Enhanced kernel Debian port started — 2026-10-13
+
+Owner requested merging our kernel enhancements into the test image. Added
+fairydust/debian/build.sh: pinned archive/config/USB4 patch hashes, clean patch
+application, strict driver/page ABI gate, isolated output, distinct kernel
+release, bindeb-pkg, all CPU jobs (explicit dpkg override), and low-space stop.
+Source preparation and native Rust toolchain check passed. Installed missing
+build dependencies only; no kernel or host boot/audio changes.
+
+Compilation is active in user unit elementary-fairydust-deb-20261013c.service,
+work /home/admin/Documents/os9-fairydust-deb-20261013, log
+/home/admin/Documents/os9-fairydust-build.log. Live local monitor:
+http://127.0.0.1:8767/kernel.html. No successful .deb is claimed yet.
+Preserved earlier local ISO and build records/kernel config; removed its
+regenerable mkosi intermediate outputs and synced Btrfs, restoring ~44 GiB.
+
+Also inspected signed Ubuntu Asahi resolute candidate metadata and packages:
+baseline GPU/audio config passes, experimental USB4/video symbols absent.
+KERNEL-REPORT.md records verified hashes/fingerprint and the packaging boundary.
+check-kernel-config.py plus four regression checks added to validation CI.
+Corrected CI ISO download remains active (gh exec session 50981); verify its
+checksum before repeating the isolated VM test. It is the generic kernel ISO,
+not the newly compiling Fairydust-enhanced image.

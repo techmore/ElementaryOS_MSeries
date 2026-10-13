@@ -86,3 +86,51 @@ unaccelerated console**, sees NVMe/USB, and exposes the Wi-Fi hardware to
    `CONFIG_NVME_APPLE`, `CONFIG_BRCMFMAC*`) from Ubuntu's kernel git or a
    built image's `/boot/config-*`, and confirm `linux-firmware` contents
    for `brcm/brcmfmac4378*` / `brcmfmac4387*` and `apple/avd-fw*`.
+
+## Signed Ubuntu Asahi candidate inspected — October 13
+
+Public upstream recipe at
+[UbuntuAsahi/ubuntu-asahi](https://github.com/UbuntuAsahi/ubuntu-asahi/tree/ed2868b96efe0eaa32fe87b706eba5071f679e1c)
+targets resolute and selects `linux-asahi-arm`. Read-only archive inspection
+confirmed the resolute arm64 candidate `7.0.0-1002.2` (metapackage version
+`7.0.0.1002.2`). No repository was added to the host and no package installed.
+
+Provenance chain checked:
+
+- [Launchpad archive API](https://api.launchpad.net/1.0/~ubuntu-asahi/+archive/ubuntu/ubuntu-asahi)
+  reports signing fingerprint `F5BFDB467341BF02DBC113AB39CC27E17A201624`.
+- `gpgv` verified the [resolute InRelease](https://ppa.launchpadcontent.net/ubuntu-asahi/ubuntu-asahi/ubuntu/dists/resolute/InRelease)
+  signature against that key, fetched from keyserver.ubuntu.com.
+- SHA-256 of arm64 Packages.gz matched the signed release:
+  `ce75a0e9d6754659842d4d818ad057869780a9900783ab505f6e891c86ffda06`.
+- Kernel image package hash matched index:
+  `6e67ce4a2ae4d49c2f74f3e186db1a663e9360345b5cea62ae06b656462b0bbb`.
+- Companion buildinfo package hash matched index:
+  `007d8fca1a96586a35c9cd0f2c4654fa4b40ee3d038a813842ca09484c21526e`.
+
+Its buildinfo config SHA-256 is
+`dd30cbe7c40305abdbbd63e6271ab26330894fdc5bb3b7a6c0902a565710528e`.
+`check-kernel-config.py` passes baseline symbols: 16K pages=y, DRM_APPLE=m,
+DRM_ASAHI=m, DRM_APPLE_AUDIO=y, PHY_APPLE_ATC=m, SND_SOC_APPLE_MCA=m.
+RESET_APPLE_CIO, USB4_APPLE_SOC and VIDEO_APPLE_AVD are absent, so the
+`--require fairydust` gate fails. The preserved working host config passes
+that stricter gate. This is a candidate for baseline packaging, not parity
+with the working custom kernel or a verified hardware boot.
+
+The upstream chroot recipe explicitly assembles m1n1 + Apple DTBs + gzip'd
+U-Boot into its image ESP. Kernel postinst invokes kernel hooks, initramfs
+and bootloader updates. Adapt these only inside an isolated image build;
+never run the upstream chroot recipe against this host. Before integration:
+inspect modules/DTBs, pin source/license and dependencies, simulate apt
+resolution in resolute, and design firmware and image-only boot hooks.
+
+Reproduce a config gate (exit 1 means missing required options):
+
+```bash
+python3 mseries/check-kernel-config.py /path/to/extracted/config
+python3 mseries/check-kernel-config.py /path/to/extracted/config --require fairydust
+```
+
+Four regression checks cover absent/disabled options, module-vs-page ABI,
+invalid input, and the preserved working kernel. CI runs them. Passing the
+gate does not prove module contents, firmware availability or hardware boot.

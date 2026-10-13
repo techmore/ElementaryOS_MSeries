@@ -52,6 +52,7 @@ jobs:
           python3 -m py_compile mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness
           python3 mseries/test-wifi-resume.py
           python3 mseries/test-image-wiring.py
+          python3 mseries/test-kernel-config.py
           python3 mseries/test-local-build-preflight.py
           node mseries/test-build-status.mjs
           node mseries/test-local-build-status.mjs
