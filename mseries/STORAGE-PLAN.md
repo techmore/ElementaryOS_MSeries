@@ -74,3 +74,34 @@ Measured result after cleanup and Btrfs deletion synchronization: **49.6 GiB
 free**, up from **37.4 GiB**. All six approved snapshot deletions completed;
 latest rollback copies and active roots remain. This is still **10.4 GiB
 below** the local full-build guard. No partition or filesystem resize ran.
+
+## Old OS retired after explicit approval
+
+The owner subsequently approved retiring @, @home, @log, @fresh, @factory,
+@/.snapshots (including snapshot 8), and the final elementary-grow migration
+snapshot. Those eight subvolumes were deleted and deletion synchronized.
+Only active @elementary (ID 278) and @elementary-home (ID 279) remain.
+
+Before deletion, private local archives captured the old home/configuration
+and current boot files under `/home/admin/Documents/storage-recovery/`:
+- `old-omarchy-home-and-config.tar.zst` (4,364,425,132 bytes).
+- `boot-before-old-os-retirement.tar.zst` (213,071,734 bytes).
+Both passed zstd integrity checks. The root-owned directory is mode 0700;
+archives are private and are not published in this repository. Ephemeral
+Unix sockets were omitted by tar, as expected.
+
+Three stale Omarchy GRUB entries were removed from the old generated
+10_linux section after syntax checks. The custom elementary USB4 default,
+root/home mounts, and bootloader binaries were preserved. SHA-256 verification
+before/after confirmed the active Fairydust kernel, initramfs, m1n1 boot.bin,
+and known-good USB4 recovery image unchanged. No reboot/boot qualification
+is implied by those checks.
+
+Free space is now **69.4 GiB**, passing the 60 GiB local image-build guard.
+No partition resize, metadata-profile change, balance, or filesystem rebuild
+was performed. Btrfs metadata and its DUP protection remain required.
+
+The old Omarchy fallback and legacy Arch rebuild chroot are retired. Legacy
+Fairydust scripts that mount @/@home cannot be used on this host until a new
+Arch build environment is prepared. Rebuild inputs, patches, installed
+kernel/modules, and known-good boot recovery copies remain available.

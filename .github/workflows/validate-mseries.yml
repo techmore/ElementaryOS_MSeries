@@ -41,6 +41,7 @@ jobs:
           bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-firmware
           bash -n transform/elementary-grow.sh
           bash -n assemble-iso.sh
+          bash -n mseries/local-build-worker.sh
           bash -n mseries/iso-label.sh
           bash -n mseries/test-iso-label.sh
           bash mseries/test-iso-label.sh

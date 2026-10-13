@@ -284,3 +284,13 @@ The two configurations differ; PKGBUILD adjusts feature flags during build.
 The extracted source directories were archived and integrity-checked before
 cleanup. See `mseries/STORAGE-PLAN.md`. Installed kernel/modules, boot images,
 known-good m1n1 recovery copies, and binary package backups were retained.
+
+### Legacy Arch rebuild environment retired on the owner's host
+
+The compiled Fairydust kernel is installed and running independently of the
+old Omarchy root. That old root/home and its snapshots were explicitly
+retired during storage cleanup; see mseries/STORAGE-PLAN.md. Historical
+build-pkg.sh/build-m1n1.sh/install-stage1.sh mount @ and @home and therefore
+require a replacement Arch chroot/container before reuse on this host.
+Do not run them assuming that the removed subvolumes still exist. This
+retirement does not remove the installed kernel/modules or recovery images.

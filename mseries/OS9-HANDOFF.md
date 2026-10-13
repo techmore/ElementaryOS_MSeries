@@ -168,3 +168,18 @@ Full local image build remains blocked by the conservative 60 GiB guard
 APFS/Recovery assessment needed before allocating more space to Linux.
 No partition resize was performed. Model/browser caches must be downloaded
 again when needed; account metadata and installed applications were kept.
+
+## Old OS retirement and local build readiness
+
+Owner explicitly approved the remaining old OS roots and snapshots after
+learning that the compiled kernel does not depend on the old build OS.
+All approved subvolumes were removed; only @elementary/@elementary-home
+remain. Private old-home/config and boot archives passed integrity checks.
+Stale Omarchy GRUB entries were removed, preserving elementary's custom USB4
+default; active kernel/initramfs/m1n1 SHA-256 checks passed unchanged.
+Free space is 69.4 GiB, so local-build preflight now passes. Legacy Arch
+rebuild scripts require a new build environment. See STORAGE-PLAN.md.
+
+local-build-worker.sh provides an isolated-checkout build worker with
+preflight, source revision, phase/status JSON, build log, final exit status,
+and checksum records. It does not install an image or alter host boot files.

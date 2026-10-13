@@ -17,6 +17,7 @@ mkosi.key
 mkosi.crt
 mkosi.version
 mkosi.rootpw
+local-build-records/
 .mkosi-private
 *.efi
 __pycache__/
