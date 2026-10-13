@@ -13,7 +13,7 @@
 #    starting, and stays on stock until you delete ~/.cache/mseries-gala-failed.
 #  * Takes effect at the next login (the compositor cannot be swapped inside a running session).
 #
-# Radius is in logical pixels (default 10; 0 hides the masks). Change it later by editing
+# Radius is in logical pixels (default 20; 0 hides the masks). Change it later by editing
 # GALA_SCREEN_CORNER_RADIUS in the drop-in below and logging out/in.
 set -euo pipefail
 
@@ -22,7 +22,7 @@ prefix=/usr/local/lib/mseries/gala
 commit=f0791434ac40a50f2aec64700a47b3bb04145752   # elementary/gala matching gala 8.6.2+r3174
 dropin_dir=$HOME/.config/systemd/user/io.elementary.gala@wayland.service.d
 dropin=$dropin_dir/mseries-screen-corners.conf
-radius=10
+radius=20
 
 while [[ $# -gt 0 ]]; do
   case $1 in
