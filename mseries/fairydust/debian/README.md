@@ -22,7 +22,10 @@ until this kernel, modules, DTBs and boot integration are qualified.
 Native aarch64, ordinary user. Build dependencies include make, gcc, flex,
 bison, bc, cpio, rsync, libelf-dev, libdw-dev, libssl-dev, dwarves, clang,
 libclang-dev, rustc, rust-src, bindgen, dpkg-dev, fakeroot and debhelper.
-`make rustavailable` checks the actual source/toolchain combination.
+`make rustavailable` checks the actual source/toolchain combination. The pinned
+config enables Rust kernel modules, so the Rust toolchain must include its
+matching `rust-src` component; the CI job installs that component into the
+active stable rustup toolchain before building.
 
 ```bash
 export FAIRYDUST_WORKDIR=/absolute/path/to/fresh-work-directory

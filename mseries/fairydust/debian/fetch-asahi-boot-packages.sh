@@ -3,6 +3,7 @@
 set -euo pipefail
 out=${1:?Usage: fetch-asahi-boot-packages.sh PACKAGE_DIRECTORY}
 mkdir -p "$out"
+: > "$out/UPSTREAM-SHA256SUMS"
 base=https://ppa.launchpadcontent.net/ubuntu-asahi/ubuntu-asahi/ubuntu/pool/main
 fetch() {
     local path=$1 file=$2 sha=$3

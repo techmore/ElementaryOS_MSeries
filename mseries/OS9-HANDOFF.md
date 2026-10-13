@@ -291,3 +291,18 @@ It does not yet assemble/install the m1n1 ESP boot.bin, so its installer is
 for QEMU kernel/installer testing; Mac hardware boot needs that separate step.
 Run the workflow with fairydust=true after this commit and inspect summary,
 package apt resolution, initramfs, GRUB/ISO boot, then continue m1n1 ESP work.
+
+
+## Fairydust image workflow first CI attempt (October 13)
+
+Run 38431694534 exercised the new opt-in image workflow. Package source
+download, SHA verification, USB4 patch application, config generation, and
+strict Fairydust config validation passed. The kernel job then stopped at
+`make rustavailable`: GitHub's active rustup stable toolchain lacked its
+`rust-src` component. The image job correctly skipped because the kernel
+package was not produced. No ISO or host changes resulted.
+
+Fix: explicitly install `rust-src` into the active stable rustup toolchain
+before building, and document this requirement. The fetch helper also now
+truncates its upstream checksum manifest on rerun. Validation and a fresh
+opt-in CI run remain pending.

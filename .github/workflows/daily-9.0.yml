@@ -30,6 +30,11 @@ jobs:
           sudo apt-get install -y bc bison build-essential cpio curl dwarves flex \
             libdw-dev libelf-dev libncurses-dev libssl-dev libclang-dev clang \
             pahole python3 rsync rustc rust-src bindgen fakeroot debhelper
+      - name: Install Rust standard-library sources
+        run: |
+          rustup show active-toolchain
+          rustup component add rust-src --toolchain stable
+          rustc --version
       - name: Build pinned Fairydust kernel Debian package
         shell: bash
         run: |
