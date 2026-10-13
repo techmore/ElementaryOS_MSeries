@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Name=Local Troubleshooter
+GenericName=System Diagnostics
+Comment=Find out what went wrong, privately on this Mac
+Keywords=crash;log;diagnose;performance;freeze;slow;
+Exec=/usr/bin/python3 "/home/admin/.local/libexec/mseries-troubleshooter-ui"
+Icon=org.techmore.MSeries.Troubleshooter
+Categories=System;Utility;
+StartupNotify=true
+Terminal=false
+Actions=Performance;
+
+[Desktop Action Performance]
+Name=Check Native Performance
+Exec=/usr/bin/python3 "/home/admin/.local/libexec/mseries-troubleshooter-ui" --performance
