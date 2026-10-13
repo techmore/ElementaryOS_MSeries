@@ -62,3 +62,30 @@ The upstream full-build recipe uses privileged containers and binds host
 Keep the running kernel, bootloader, and audio stack untouched. Do not delete
 user data to make room automatically. Compare actual build duration with CI
 instead of assuming a speedup from core count alone.
+
+## First native run — started 2026-10-13 at 09:42 EDT
+
+- Source checkout: `/home/admin/Documents/os9-local-build-20261013`.
+- Committed source: `89e959db11768ec1e24cbae74d5f466c7e8ace8e`.
+- User service: `elementary-os9-local-build-20261013.service`.
+- Worker: `mseries/local-build-worker.sh`, running with Nice=10, no CPU cap.
+- Records: `local-build-records/status.json`, `build.log`, and checksum after
+  completion, inside that isolated checkout.
+- Local live monitor: http://127.0.0.1:8767/ (only on this Mac), served by
+  `elementary-os9-local-monitor-20261013.service`. It exposes only the build
+  records directory and refreshes every five seconds. No external bind.
+- Progress was verified at image-build stage with advancing log writes.
+  This does not yet establish build success or boot support.
+
+Check without starting a duplicate:
+
+```bash
+systemctl --user status elementary-os9-local-build-20261013
+journalctl --user -u elementary-os9-local-build-20261013 -n 30 --no-pager
+cat /home/admin/Documents/os9-local-build-20261013/local-build-records/status.json
+```
+
+Transient services run beyond the Codex turn, but a shutdown/logout can
+interrupt them. They are not recurring automations or automatic AI takeover.
+The local monitor is separate from the public GitHub dashboard. Filesystem
+free space was 69.4 GiB before starting; it will fall as build products grow.

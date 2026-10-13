@@ -183,3 +183,11 @@ rebuild scripts require a new build environment. See STORAGE-PLAN.md.
 local-build-worker.sh provides an isolated-checkout build worker with
 preflight, source revision, phase/status JSON, build log, final exit status,
 and checksum records. It does not install an image or alter host boot files.
+
+First native OS 9 build started at 09:42 EDT October 13, source 89e959d,
+isolated checkout `/home/admin/Documents/os9-local-build-20261013`.
+User unit: elementary-os9-local-build-20261013.service (Nice=10, no CPU cap).
+Worker status/logs are in local-build-records; advancing image-build logs
+were verified. Local monitor http://127.0.0.1:8767/ was opened and shows real
+phase/log activity. See LOCAL-BUILD.md. Check that job before launching any
+more local builds; no local build success or hardware boot is claimed yet.

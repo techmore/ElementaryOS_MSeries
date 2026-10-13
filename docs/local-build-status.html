@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OS 9 · Local build</title>
+<style>:root{color-scheme:light dark}body{font:16px/1.6 system-ui,sans-serif;max-width:760px;margin:40px auto;padding:0 20px}h1,h2{font-weight:500}section{padding:20px 0;border-bottom:1px solid #8886}a{color:light-dark(#416a9b,#aac9ef)}.muted{opacity:.75}#state{font-size:24px}button{font:inherit;padding:8px 16px;border-radius:8px;border:1px solid #8886;background:transparent;color:inherit}</style>
+<h1>OS 9 · Native Mac build</h1><p class="muted">Local worker status · refreshes every five seconds</p>
+<section aria-live="polite"><div id="state">Checking local worker…</div><p id="phase"></p><p id="advice"></p></section>
+<section><p id="elapsed"></p><p id="source"></p><p id="activity"></p><p id="checked" class="muted"></p><a href="build.log" target="_blank" rel="noopener">Open current build log</a> · <a href="INSTALLER-SHA256SUMS" target="_blank" rel="noopener">Checksum when complete</a></section>
+<p>Runs on this Mac. All 10 CPUs are available; usage depends on the stage. This build creates an image and does not install it.</p>
+<p><a href="https://techmore.github.io/ElementaryOS_MSeries/build-status.html" target="_blank" rel="noopener">GitHub build monitor</a></p>
+<script>
+const el=id=>document.getElementById(id);let running=false;
+async function refresh(){if(running)return;running=true;try{
+ const r=await fetch('status.json',{cache:'no-store',signal:AbortSignal.timeout(5000)});if(!r.ok)throw Error('Worker status unavailable');const s=await r.json();
+ el('state').textContent=s.state==='success'?'Poke Codex · local build finished':s.state==='failed'?'Poke Codex · local build failed':'Local worker reports: running';
+ el('phase').textContent='Stage: '+s.phase.replaceAll('-',' ');
+ el('advice').textContent=s.state==='success'?'Next: review checksum and image contents. Hardware boot remains unverified.':s.state==='failed'?'Ask Codex to inspect the build log. Exit code: '+s.exitCode:'No poke needed while the build log is advancing.';
+ el('source').textContent='Source: '+s.sourceCommit.slice(0,12);
+ const seconds=Math.max(0,Math.floor((Date.now()-Date.parse(s.startedAt))/1000));el('elapsed').textContent='Time since start: '+Math.floor(seconds/60)+'m '+seconds%60+'s';
+ el('checked').textContent='Checked '+new Date().toLocaleTimeString()+' · worker last reported '+new Date(s.updatedAt).toLocaleTimeString();
+ try{const h=await fetch('build.log',{method:'HEAD',cache:'no-store',signal:AbortSignal.timeout(5000)});const stamp=h.headers.get('Last-Modified');el('activity').textContent=stamp?'Log last changed: '+new Date(stamp).toLocaleTimeString():'Open the log to inspect activity.';if(s.state==='running'&&stamp&&Date.now()-Date.parse(stamp)>180000){el('advice').textContent='Log quiet for over three minutes. Poke Codex to check whether the worker is waiting or stalled.';}}catch{el('activity').textContent='Log activity check unavailable.';}
+ }catch(e){el('state').textContent='Local status unavailable';el('advice').textContent='Ask Codex to check the worker or local monitor service. Previous values may be stale.';}finally{running=false;}}
+setInterval(refresh,5000);refresh();
+</script></html>

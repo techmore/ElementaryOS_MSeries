@@ -19,6 +19,7 @@ on:
       - "transform/**"
       - "mseries/**"
       - "docs/build-status.*"
+      - "docs/local-build-status.html"
       - ".github/workflows/**"
 
 jobs:
@@ -53,6 +54,7 @@ jobs:
           python3 mseries/test-image-wiring.py
           python3 mseries/test-local-build-preflight.py
           node mseries/test-build-status.mjs
+          node mseries/test-local-build-status.mjs
           python3 -m unittest discover -s mseries/brightness -p 'test_*.py'
           python3 -m unittest discover -s mseries/keyboard-backlight -p 'test_*.py'
           python3 -m unittest discover -s mseries/local-ai -p 'test_*.py'

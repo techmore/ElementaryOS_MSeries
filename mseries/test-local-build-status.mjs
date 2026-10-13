@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import vm from 'node:vm';
+const html=await readFile(new URL('../docs/local-build-status.html',import.meta.url),'utf8');
+const source=html.match(/<script>([\s\S]*?)<\/script>/)[1];
+let state='running',offline=false,quiet=false;
+const elements=new Map();
+const context=vm.createContext({Date,AbortSignal,setInterval(){},document:{getElementById(id){if(!elements.has(id))elements.set(id,{textContent:''});return elements.get(id);}},async fetch(url,options){if(offline)throw Error('Offline');return options.method==='HEAD'?{headers:{get(){return new Date(Date.now()-(quiet?240000:0)).toUTCString();}}}:{ok:true,json:async()=>({state,phase:'image-build',sourceCommit:'abcdef12345678',startedAt:new Date(Date.now()-60000).toISOString(),updatedAt:new Date().toISOString(),exitCode:state==='failed'?1:0})};}});
+vm.runInContext(source.replace(/refresh\(\);\s*$/,''),context);
+await context.refresh();assert.match(elements.get('state').textContent,/running/);
+state='success';await context.refresh();assert.match(elements.get('state').textContent,/finished/);
+state='failed';await context.refresh();assert.match(elements.get('state').textContent,/failed/);
+state='running';quiet=true;await context.refresh();assert.match(elements.get('advice').textContent,/quiet/);
+offline=true;await context.refresh();assert.match(elements.get('state').textContent,/unavailable/);assert.match(elements.get('advice').textContent,/stale/);
+console.log('Local dashboard running/success/failure/quiet-log/offline checks passed');
