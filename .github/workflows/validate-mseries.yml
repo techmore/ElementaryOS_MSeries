@@ -9,6 +9,7 @@ on:
   pull_request:
     paths:
       - "Justfile"
+      - "assemble-iso.sh"
       - "mkosi.conf"
       - "mkosi.images/**"
       - "mkosi.conf.d/**"
@@ -39,6 +40,7 @@ jobs:
           bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-resume-fix
           bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-firmware
           bash -n transform/elementary-grow.sh
+          bash -n assemble-iso.sh
           bash -n mseries/install-signal.sh
           bash -n mseries/install-codexbar.sh
           python3 -m py_compile mseries/apply-desktop-settings.py

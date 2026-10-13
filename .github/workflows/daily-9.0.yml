@@ -44,7 +44,9 @@ jobs:
       - name: Checksum installer
         run: |
           cd mkosi.output
-          sha256sum elementaryos-*.iso > INSTALLER-SHA256SUMS
+          sha256sum elementaryos-*.iso | tee INSTALLER-SHA256SUMS
+          cp INSTALLER-SHA256SUMS ../build-record/
+          stat --printf='%n %s bytes\n' elementaryos-*.iso > ../build-record/installer-sizes.txt
       - name: Preserve build records
         if: always()
         uses: actions/upload-artifact@v4

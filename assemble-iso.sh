@@ -15,7 +15,17 @@ else
     SQUASHFS_LEVEL="${SQUASHFS_LEVEL:-15}"
 fi
 
-ISO_LABEL="elementary OS ${PROFILE} ${ARCH}"
+# ISO 9660 volume IDs permit at most 32 uppercase ASCII letters, digits,
+# and underscores. Keep the human-readable name in .disk/info instead.
+ISO_LABEL=$(printf 'ELEMENTARY_%s_%s' "$PROFILE" "$ARCH" |
+    LC_ALL=C tr '[:lower:]-' '[:upper:]_' |
+    LC_ALL=C tr -cd 'A-Z0-9_' | cut -c1-32)
+
+case "$ARCH" in
+    arm64|aarch64) DEB_ARCH=arm64 ;;
+    x86-64|amd64) DEB_ARCH=amd64 ;;
+    *) echo "error: Unsupported installer architecture: $ARCH" >&2; exit 1 ;;
+esac
 
 OUT_ISO="./elementaryos-9.0-${PROFILE}-${ARCH}.${DATE}.iso"
 
@@ -43,9 +53,9 @@ rsync -a --delete "${base_name}/iso_root/" iso_root/
 
 echo "Writing minimal APT disc structure for apt-cdrom..."
 
-mkdir -p iso_root/dists/stable/main/binary-amd64
-touch iso_root/dists/stable/main/binary-amd64/Packages
-gzip -kf iso_root/dists/stable/main/binary-amd64/Packages
+mkdir -p "iso_root/dists/stable/main/binary-${DEB_ARCH}"
+touch "iso_root/dists/stable/main/binary-${DEB_ARCH}/Packages"
+gzip -kf "iso_root/dists/stable/main/binary-${DEB_ARCH}/Packages"
 mkdir -p iso_root/pool
 
 source ./base_${DATE}/usr/lib/os-release

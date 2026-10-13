@@ -14,21 +14,20 @@ on and drives M-series hardware, not whether arm64 builds at all.
 Implementation started 2026-10-13: the manual **OS 9 M-series experimental
 build** workflow saves installer/checksum artifacts and logs without upstream
 publishing credentials. The arm64 liveiso/sysupdate consumers now install
-the pruned hardware overlay's runtime packages explicitly. Full image
-build and hardware qualification remain pending. See `OS9-HANDOFF.md`.
+the pruned hardware overlay's runtime packages explicitly. The first full image build succeeded in run 38396499561. Hardware
+qualification remains pending; see FIRST-ISO-BUILD.md. See `OS9-HANDOFF.md`.
 
 1. **Kernel decision (see KERNEL-REPORT.md).** Resolute's generic 7.0 arm64
    kernel should boot M1/M2 unaccelerated, but GPU/DCP, AVD decode, sleep,
    and audio need an Asahi-flavoured kernel — evaluate Ubuntu Asahi
    (https://ubuntuasahi.org/) kernel debs for version pinning + apt source.
-2. **Build wiring — DONE (unbuilt).** `mkosi.images/apple-silicon/`
+2. **Build wiring — first arm64 build passed.** `mkosi.images/apple-silicon/`
    (Format=directory, arm64-only) ships modprobe/initramfs config, the
    Wi-Fi resume unit + script, and appends HID modules in postinst; it is
    wired into `arch.arm64.conf` Dependencies, the liveiso aarch64 profile
    (`ExtraTrees`), and sysupdate (`ExtraTrees` + HID `KernelInitrdModules`
-   in `mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf`). Next: run an
-   arm64 build (CI `workflow_dispatch` or local podman) and read the log
-   for missing-module/package errors.
+   in `mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf`). The first arm64 build succeeded; next qualify the generic-kernel boot
+   path and verify the produced installer (see FIRST-ISO-BUILD.md).
 3. **Asahi-origin packages.** `asahi-audio`, `alsa-ucm-conf-asahi`, and
    `speakersafetyd` are available from Ubuntu resolute/universe and the
    transformed desktop has passed an audio-output check with the matching

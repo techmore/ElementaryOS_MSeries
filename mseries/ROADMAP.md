@@ -6,6 +6,9 @@ The specific regression reports and reproduction steps are tracked in
 [`BUG-FIX-ROADMAP.md`](BUG-FIX-ROADMAP.md).
 OS 9 implementation progress and Claude Code takeover tasks are in
 [`OS9-HANDOFF.md`](OS9-HANDOFF.md).
+The first factory arm64 ISO build succeeded on October 13; artifact details
+and remaining verification are in [`FIRST-ISO-BUILD.md`](FIRST-ISO-BUILD.md).
+Hardware boot remains unverified.
 
 ## Done and verified
 

@@ -126,3 +126,7 @@ It ran both image-wiring tests successfully and found no new blocker in
 that limited scope. No files were changed by the Muse reviewer.
 GitHub validation run 38396503055 also completed successfully, including
 mkosi config parsing. The separate ISO build remains in progress.
+
+Subsequent outcome: ISO build 38396499561 completed successfully on October
+13. See FIRST-ISO-BUILD.md and BUILD-38396499561-REVIEW.md for artifact
+metadata and the later log review. Hardware boot remains unverified.

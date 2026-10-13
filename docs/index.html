@@ -18,11 +18,11 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <body>
 <h1>ElementaryOS M-Series</h1>
 <p>Experimental port of <a href="https://github.com/elementary/os">elementary OS 9</a> (Pantheon, Ubuntu-based) to Apple Silicon Macs (M1/M2/…), informed by the maintained Apple hardware packages in <a href="https://github.com/omacom/omarchy-mac-pkgs">omacom/omarchy-mac-pkgs</a>.</p>
-<div class="banner"><strong>Status: elementary OS 9 boots to Pantheon on an M1 Pro.</strong> This is an installed, transformed system using the experimental Fairydust USB4 kernel. The separate mkosi arm64 factory ISO has not yet been built or hardware-booted, and no ISO is published.</div>
+<div class="banner"><strong>Status: elementary OS 9 boots to Pantheon on an M1 Pro.</strong> This is an installed, transformed system using the experimental Fairydust USB4 kernel. The experimental mkosi arm64 ISO built successfully on October 13. Hardware boot is still unverified; no stable ISO release is published.</div>
 
 <h2>Download</h2>
 <p><a href="build-status.html">Live build monitor</a> — latest arm64 build, validation, deployment, and when to poke Codex.</p>
-<p>No ISO is published yet. The successful desktop boot does not validate the factory image or the stock Ubuntu arm64 kernel. The M-series CI workflow checks wiring and scripts; a factory image still needs a successful build and hardware boot before release.</p>
+<p>An experimental installer and checksum are available in the <a href="https://github.com/techmore/ElementaryOS_MSeries/actions/runs/38396499561">successful build run</a> (artifact expires October 20). GitHub may require sign-in. The factory image uses Ubuntu kernel 7.0.0-38-generic and has not been hardware-booted. This is not a stable release.</p>
 <ul>
 <li>Build instructions: <a href="https://github.com/elementary/os#building-testing-and-installation">upstream elementary/os</a>.</li>
 <li>Changes to the M-series image and transform paths trigger the <em>Validate M-series wiring</em> workflow on arm64 runners.</li>

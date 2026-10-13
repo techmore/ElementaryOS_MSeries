@@ -1,5 +1,5 @@
 <div align="center">
-  <p><strong>This is a derivative of the elementary OS 9 build system with an Apple Silicon (M-series) port.</strong> Start at <a href="mseries/README.md">mseries/README.md</a>. The owner has booted an installed elementary OS 9 desktop on an M1 Pro; the factory ISO remains unbuilt and unverified on hardware. Current Apple hardware reference: <a href="https://github.com/omacom/omarchy-mac-pkgs">omacom/omarchy-mac-pkgs</a>.</p>
+  <p><strong>This is a derivative of the elementary OS 9 build system with an Apple Silicon (M-series) port.</strong> Start at <a href="mseries/README.md">mseries/README.md</a>. The owner has booted an installed elementary OS 9 desktop on an M1 Pro; the factory ISO now builds successfully but remains unverified on hardware. Current Apple hardware reference: <a href="https://github.com/omacom/omarchy-mac-pkgs">omacom/omarchy-mac-pkgs</a>.</p>
 </div>
 
 Upstream comparison, concrete bug-fix backlog, and porting boundaries:

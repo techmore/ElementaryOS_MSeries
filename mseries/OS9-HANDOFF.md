@@ -67,19 +67,21 @@ The first manual runs were started at 401dad7:
 - Validation: https://github.com/techmore/ElementaryOS_MSeries/actions/runs/38396503055
 
 Validation completed successfully, including mkosi config parsing. The
-experimental build was still in progress at handoff recording. Inspect its
-actual conclusion and retained logs before claiming success; do not launch
-duplicates.
+experimental build completed successfully on October 13 (25m 49s).
+See FIRST-ISO-BUILD.md for inspected logs, installer/artifact details, and
+remaining checks. The installer has not been booted or independently
+checksum-verified locally; do not launch duplicate builds without new changes.
 
 Final OpenCode review used `opencode/muse-spark-1.3-contributor-free`, as
 requested. It inspected the corrected finalize allowlist, both arm64
 consumer configs, workflow, and regression tests; both tests passed and
 it reported no new blocker in that scope. No ISO was built by the reviewer.
 
-1. Run the manual OS 9 M-series experimental build after these changes reach
-   GitHub. Inspect retained build logs; resolve actual package/module/config
-   errors before attempting hardware installation. A source/config test is
-   not evidence of a successful ISO build.
+## Next implementation tasks
+
+1. Continue checksum/content/boot qualification from FIRST-ISO-BUILD.md.
+   Future workflows retain a small checksum manifest separately from the
+   7 GB installer artifact, avoiding a full ISO download just to read its hash.
 2. Package the tested Ubuntu speaker chain into the image. Ubuntu supplies
    speakersafetyd/asahi-audio/alsa-ucm-conf-asahi, but its PipeWire build lacks
    the LV2 filter plugin. Build the plugin against the exact image PipeWire
@@ -110,6 +112,16 @@ Inspect and reproduce the reported OSK issue before incorporating them.
 Run python3 mseries/test-image-wiring.py and git diff --check.
 CI also parses all mkosi configs with just mkosi summary. This workstation
 has neither just nor podman available, so full mkosi parsing/building must
-run in CI or a prepared build environment. No ISO or hardware qualification
-is claimed. This handoff supports manual takeover by Claude Code; it does
+run in CI or a prepared build environment. The first ISO build succeeded; no hardware qualification
+is claimed. See FIRST-ISO-BUILD.md. This handoff supports manual takeover by Claude Code; it does
 not install a timer or automatic agent switch.
+
+## After the successful first build
+
+Public CI log analysis by OpenCode/Muse 1.3 was explicitly authorized by
+the owner and completed; see BUILD-38396499561-REVIEW.md. Codex corrected
+ARM APT disc architecture metadata and the non-compliant ISO volume label.
+Future build records also retain the installer checksum and size separately.
+These changes require a new image build; the existing successful artifact
+at 401dad7 predates these follow-up fixes. No local kernel/boot/audio changes
+were made. Shell syntax and target architecture/label checks passed.
