@@ -216,3 +216,15 @@ Screenshot and reproducible command are in VM-SMOKE-TEST.md. Stop at this
 milestone: no installer selection, installed guest, or Mac hardware boot was
 verified. That ISO still predates the live-session overlay fix; repeat the
 content/VM checks on the corrected build before progressing.
+
+## Corrected image completed — 2026-10-13
+
+Run 38410538372, source 32877a7, succeeded at 14:35:12 UTC after 28m27s.
+Downloaded small public build records to /tmp/os9-build-38410538372.
+image-content.log confirms actual liveiso hardware payload check passed;
+checksum manifest and source provenance inspected. Exact ISO/checksum are
+in FIRST-ISO-BUILD.md. Installer and records upload steps succeeded.
+Next: independently hash and VM-boot this corrected ISO, then implement a
+reproducible Asahi kernel/firmware path against KERNEL-REPORT.md. The previous
+local ISO's VM boot does not qualify this corrected artifact or Mac hardware.
+Untracked Gala drafts remain untouched. No host boot/audio changes.

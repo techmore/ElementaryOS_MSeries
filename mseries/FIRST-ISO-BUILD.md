@@ -27,8 +27,9 @@ manifest and installer size into the separate retained build records too.
 
 Image assembly, ISO creation, compression, checksum generation, artifact
 upload, and the separate arm64 config/regression validation all succeeded.
-The logs confirm the Apple hardware overlay was consumed and HID drivers
-were selected for the initramfs.
+The overlay build and HID initramfs selection appeared in logs, but later
+inspection of the matching local build found the live installer did not
+consume the overlay. The corrected build below verifies its actual payload.
 
 ## What remains
 
@@ -50,3 +51,21 @@ not determine the build root). These did not fail assembly. Separately,
 Flatpak and remove a missing autostart file; investigate package postinst
 behavior and first-login task functionality. Successful assembly alone does
 not prove that those application behaviors work.
+
+## Corrected live installer payload verified
+
+[Run 38410538372](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/38410538372)
+succeeded on 2026-10-13 at source `32877a7b8a07d2a16d6bef978e5071a983953b8a`.
+Job duration: 28m27s (10:06:45–10:35:12 EDT). Downloaded build records confirm
+`Built live ISO hardware payload check passed`: every expected hardware
+helper from the overlay exists in the built liveiso tree.
+
+- ISO: `elementaryos-9.0-daily-arm64.20261013140741.iso`, 7,078,266,880 bytes.
+- Build-generated ISO SHA-256:
+  `066147b211909347e3499463419a39ba66326aa0fbd277985c7957b6fcfc59ab`.
+- Both records and installer artifact uploads succeeded.
+
+The checksum manifest was inspected; this corrected ISO has not yet been
+downloaded and independently hashed or VM-booted. The earlier local ISO
+booted to the graphical installer (see VM-SMOKE-TEST.md). Apple hardware
+boot and the kernel/firmware gaps remain unverified.

@@ -70,3 +70,11 @@ Python, a USB-C cable and permission to attach a USB serial device.
 - `mseries-verify status` shows what is waiting; `mseries-verify run --notify` re-checks now.
 - `python3 mseries/benchmarks/run.py` reruns the benchmarks (plug in the charger).
 - Recovery for boot problems: `mseries/fairydust/usb4/RECOVERY.md`.
+
+## Factory image checkpoint — 2026-10-13
+
+Corrected CI image run 38410538372 succeeded at source 32877a7; actual
+liveiso hardware helper payload verification passed. See FIRST-ISO-BUILD.md
+for provenance and checksum. Next verify the downloaded corrected ISO and
+repeat the VM smoke boot, then resolve the Asahi kernel/firmware packaging
+gaps. Apple hardware boot remains pending.
