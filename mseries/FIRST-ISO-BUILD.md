@@ -65,7 +65,8 @@ helper from the overlay exists in the built liveiso tree.
   `066147b211909347e3499463419a39ba66326aa0fbd277985c7957b6fcfc59ab`.
 - Both records and installer artifact uploads succeeded.
 
-The checksum manifest was inspected; this corrected ISO has not yet been
-downloaded and independently hashed or VM-booted. The earlier local ISO
+The corrected ISO was downloaded locally on October 13 and independently
+passed `sha256sum -c INSTALLER-SHA256SUMS`. Its isolated VM smoke test reached the graphical
+installer language screen; see VM-SMOKE-TEST.md. The earlier local ISO
 booted to the graphical installer (see VM-SMOKE-TEST.md). Apple hardware
 boot and the kernel/firmware gaps remain unverified.

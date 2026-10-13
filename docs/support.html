@@ -33,10 +33,10 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <table>
 <tr><th>Machine</th><th>SoC</th><th>Image</th><th>Result</th><th>Tester</th></tr>
 <tr><td>MacBookPro18,3 (2021 14-inch)</td><td>M1 Pro</td><td>Installed transformed elementary OS 9 Early Access; custom Fairydust USB4 kernel</td><td>Boots to Pantheon. This does not test the factory ISO.</td><td>Owner</td></tr>
-<tr><td>QEMU 10.2.1 / KVM / AAVMF UEFI</td><td>Virtual ARM64, 4 CPUs / 4 GiB</td><td>Locally built ISO at source 89e959d</td><td>Reached graphical installer language selection. No installation; this image predates the live-session overlay fix.</td><td>Codex</td></tr>
+<tr><td>QEMU 10.2.1 / KVM / AAVMF UEFI</td><td>Virtual ARM64, 4 CPUs / 4 GiB</td><td>Corrected CI ISO at source 32877a7</td><td>Checksum and hardware-helper payload checks passed; reached graphical installer language selection. No installation or Mac hardware boot.</td><td>Codex</td></tr>
 </table>
 <p><a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/VM-SMOKE-TEST.md">Reproducible VM smoke test and limits</a></p>
-<img src="images/os9-arm64-vm-installer.png" alt="The locally built elementary OS 9 ARM64 ISO showing the installer language selection screen inside QEMU" style="max-width:100%;height:auto">
+<img src="images/os9-arm64-corrected-vm-installer.png" alt="The corrected elementary OS 9 ARM64 ISO showing the installer language selection screen inside QEMU" style="max-width:100%;height:auto">
 
 <h2>Out of scope (by design)</h2>
 <p>Intel Macs (T2, 2015–2017 SPI keyboard/NVMe, Broadcom STA offload tweaks) and Hyprland/Omarchy desktop behavior — see <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/PORT-MAP.md">PORT-MAP.md</a>.</p>

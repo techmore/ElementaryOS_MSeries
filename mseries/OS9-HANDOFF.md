@@ -252,3 +252,13 @@ check-kernel-config.py plus four regression checks added to validation CI.
 Corrected CI ISO download remains active (gh exec session 50981); verify its
 checksum before repeating the isolated VM test. It is the generic kernel ISO,
 not the newly compiling Fairydust-enhanced image.
+
+## Corrected ISO VM check completed
+
+Corrected run 38410538372 ISO downloaded to os9-corrected-38410538372;
+independent sha256sum verification passed. Repeated isolated 4 CPU/4 GiB
+KVM/UEFI boot, no network/writable system disk. Graphical installer language
+screen and serial login reached. Screenshot committed; see VM-SMOKE-TEST.md.
+VM stopped, releasing resources. Enhanced kernel compilation remains active
+and separate; next inspect its .deb output and boot hooks, then integrate the
+pinned enhanced kernel + m1n1/DTB path into an opt-in test image.

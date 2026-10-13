@@ -14,8 +14,8 @@ were performed. Screenshot: `docs/images/os9-arm64-vm-installer.png`.
 This verifies generic ARM64 UEFI/kernel/initramfs/live-environment startup
 for that ISO. It does not verify a full Pantheon user session, installation,
 Apple m1n1/U-Boot, GPU, speakers, suspend, or other Mac hardware behavior.
-The tested ISO predates the liveiso overlay-selection fix; the corrected
-image must be rebuilt/content-checked and smoke-tested separately.
+The first tested ISO predates the liveiso overlay-selection fix. The corrected
+CI artifact was independently verified and tested separately below.
 
 ## Isolation
 
@@ -49,3 +49,23 @@ The actual test ran in transient user service
 `elementary-os9-vm-smoke-20261013.service`. Its framebuffer was captured with
 QMP screendump after UEFI boot. The VM was then stopped; the serial log,
 firmware variables, and screenshot remain in the private test directory.
+
+## Corrected CI image — verified October 13
+
+Source `32877a7b8a07d2a16d6bef978e5071a983953b8a`, run 38410538372.
+Downloaded ISO `elementaryos-9.0-daily-arm64.20261013140741.iso` passed
+`sha256sum -c INSTALLER-SHA256SUMS` independently on this Mac:
+`066147b211909347e3499463419a39ba66326aa0fbd277985c7957b6fcfc59ab`.
+The CI actual-payload test passed before upload.
+
+Repeated the same isolated QEMU/KVM command above, replacing ISO path with
+`/home/admin/Documents/os9-corrected-38410538372/elementaryos-9.0-daily-arm64.20261013140741.iso`
+and output directory with `/home/admin/Documents/os9-corrected-vm-20261013`.
+Reached the graphical installer language screen and serial login prompt.
+Screenshot: `docs/images/os9-arm64-corrected-vm-installer.png`.
+No installer selections or installation were performed. User service
+`elementary-os9-corrected-vm-20261013.service` was stopped after capture.
+
+This corrected generic-kernel image now has checksum, payload and VM startup
+evidence. It does not test the separately compiling enhanced Fairydust
+Debian kernel or Apple hardware boot, firmware, GPU, speakers or suspend.
