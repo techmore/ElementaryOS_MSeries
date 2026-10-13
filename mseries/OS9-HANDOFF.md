@@ -37,6 +37,12 @@ and push completed batches. Coordinate Git writes through one agent at a
 time. OpenCode's assigned preflight writes only OPENCODE-BUILD-REPORT.md;
 Codex reviews and commits its report alongside the implementation.
 
+Model preference recorded from the owner: use Muse 1.3 for OpenCode build
+work (`opencode/muse-spark-1.3` is listed as available); DeepSeek 4.1
+(`opencode/deepseek-v4.1-flash`) is another preferred option. The initial
+preflight used the configured default `opencode/cat-jam-free` before this
+preference was supplied. Do not silently claim that run used Muse.
+
 1. Run the manual OS 9 M-series experimental build after these changes reach
    GitHub. Inspect retained build logs; resolve actual package/module/config
    errors before attempting hardware installation. A source/config test is

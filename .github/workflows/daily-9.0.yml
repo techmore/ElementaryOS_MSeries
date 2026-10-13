@@ -28,7 +28,7 @@ jobs:
           docker-images: true
           swap-storage: false
       - name: Install build dependencies
-        run: sudo apt-get update && sudo apt-get install -y just podman zstd
+        run: sudo apt-get update && sudo apt-get install -y just podman zstd rsync
       - name: Record source provenance
         run: |
           mkdir -p build-record
