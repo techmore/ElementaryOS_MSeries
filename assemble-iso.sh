@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
-cd mkosi.output/
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/mseries/iso-label.sh"
+cd "$SCRIPT_DIR/mkosi.output/"
 
 SEARCH_DIR=.
 
@@ -15,11 +18,7 @@ else
     SQUASHFS_LEVEL="${SQUASHFS_LEVEL:-15}"
 fi
 
-# ISO 9660 volume IDs permit at most 32 uppercase ASCII letters, digits,
-# and underscores. Keep the human-readable name in .disk/info instead.
-ISO_LABEL=$(printf 'ELEMENTARY_%s_%s' "$PROFILE" "$ARCH" |
-    LC_ALL=C tr '[:lower:]-' '[:upper:]_' |
-    LC_ALL=C tr -cd 'A-Z0-9_' | cut -c1-32)
+ISO_LABEL=$(iso_volume_label "$PROFILE" "$ARCH")
 
 case "$ARCH" in
     arm64|aarch64) DEB_ARCH=arm64 ;;
