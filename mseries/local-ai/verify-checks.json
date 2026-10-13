@@ -101,6 +101,20 @@
       "note": "2026-10-12: after s2idle the xHCI reports 'xHC error in resume, USBSTS 0x401 (Save/Restore Error), Reinit' and attached USB-C devices (ASIX Ethernet, dock) are unregistered and never return until replugged. Cause: phy-apple-atc and dwc3-apple have no system-sleep PM ops and tipd_resume only re-enables the IRQ, so the PHY/mux state is never re-applied for an unchanged partner. Needs a kernel fix (PHY + dwc3-apple + tipd resume), tested with real suspend cycles. Workaround: replug after resume, or avoid suspend while docked.",
       "precondition": "journalctl -k -b --no-pager 2>/dev/null | grep -q 'PM: suspend exit'",
       "command": "n=$(journalctl -k -b --no-pager 2>/dev/null | grep -c 'xHC error in resume'); echo \"xHCI resume errors this boot: $n\"; [ \"$n\" -eq 0 ]"
+    },
+    {
+      "id": "power-battery-policy",
+      "title": "On battery: power-saver profile and CPU ceiling apply by themselves",
+      "note": "2026-10-12: mseries-power (udev on macsmc-ac). Simulated only; the real unplug path is unverified. Charge limit 80/75 verified.",
+      "precondition": "[ \"$(cat /sys/class/power_supply/macsmc-ac/online)\" = 0 ]",
+      "command": "[ \"$(powerprofilesctl get)\" = power-saver ] && [ \"$(cat /sys/devices/system/cpu/cpufreq/policy2/scaling_max_freq)\" -lt 3036000 ] && echo \"power-saver, P-core cap $(( $(cat /sys/devices/system/cpu/cpufreq/policy2/scaling_max_freq) / 1000 )) MHz\""
+    },
+    {
+      "id": "charge-limit-active",
+      "title": "Battery stops charging at 80%",
+      "note": "2026-10-12: stop 80, resume 75. Change with: sudo mseries-power limit 100.",
+      "precondition": "[ \"$(cat /sys/class/power_supply/macsmc-battery/capacity)\" -ge 80 ]",
+      "command": "[ \"$(cat /sys/class/power_supply/macsmc-battery/charge_control_end_threshold)\" = 80 ] && [ \"$(cat /sys/class/power_supply/macsmc-battery/status)\" != Charging ] && echo \"at $(cat /sys/class/power_supply/macsmc-battery/capacity)%, not charging\""
     }
   ]
 }

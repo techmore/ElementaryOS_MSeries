@@ -1,0 +1,57 @@
+#!/bin/bash
+# Battery and CPU policy for Apple Silicon (macsmc-battery + apple-cpufreq).
+#   mseries-power status          show charge limit, power source, CPU caps
+#   mseries-power limit 80|100    set (and persist) the battery charge limit
+#   mseries-power apply           apply policy for the current power source (run by systemd/udev)
+# Policy comes from /etc/mseries/power.conf. Needs root to change anything.
+set -u
+conf=/etc/mseries/power.conf
+bat=/sys/class/power_supply/macsmc-battery
+ac=/sys/class/power_supply/macsmc-ac/online
+CHARGE_LIMIT=80
+CHARGE_START=75
+BATTERY_PROFILE=power-saver
+AC_PROFILE=balanced
+BATTERY_CAP_KHZ=2400000   # performance-cluster ceiling on battery (hardware max 3036000); 0 = no cap
+# shellcheck disable=SC1090
+[[ -f $conf ]] && . "$conf"
+
+write() { printf '%s' "$2" > "$1" 2>/dev/null || echo "could not write $2 to $1" >&2; }
+
+apply_limit() {
+  # The start threshold must stay below the end threshold, so lower/raise them in the right order.
+  if (( CHARGE_LIMIT >= 100 )); then
+    write $bat/charge_control_end_threshold 100; write $bat/charge_control_start_threshold 95
+  else
+    write $bat/charge_control_start_threshold "$CHARGE_START"; write $bat/charge_control_end_threshold "$CHARGE_LIMIT"
+  fi
+}
+
+apply_source() {
+  local on_ac cap profile
+  on_ac=$(cat $ac 2>/dev/null || echo 1)
+  if [[ $on_ac == 1 ]]; then cap=0; profile=$AC_PROFILE; else cap=$BATTERY_CAP_KHZ; profile=$BATTERY_PROFILE; fi
+  local p max
+  for p in /sys/devices/system/cpu/cpufreq/policy*; do
+    max=$(cat "$p/cpuinfo_max_freq")
+    # Only the performance clusters are capped; the efficiency cores are already slow.
+    if (( max > 2500000 && cap > 0 )); then write "$p/scaling_max_freq" "$cap"; else write "$p/scaling_max_freq" "$max"; fi
+  done
+  powerprofilesctl set "$profile" 2>/dev/null || true
+}
+
+case ${1:-status} in
+  apply) apply_limit; apply_source ;;
+  limit)
+    [[ ${2:-} =~ ^(80|100)$ ]] || { echo 'usage: mseries-power limit 80|100' >&2; exit 1; }
+    mkdir -p /etc/mseries; touch "$conf"
+    if grep -q '^CHARGE_LIMIT=' "$conf"; then sed -i "s/^CHARGE_LIMIT=.*/CHARGE_LIMIT=$2/" "$conf"; else echo "CHARGE_LIMIT=$2" >> "$conf"; fi
+    CHARGE_LIMIT=$2; apply_limit ;;
+  status) ;;
+  *) echo 'usage: mseries-power status|limit 80|100|apply' >&2; exit 1 ;;
+esac
+
+echo "battery: $(cat $bat/capacity)% ($(cat $bat/status)), health $(( $(cat $bat/energy_full) * 100 / $(cat $bat/energy_full_design) ))%, $(cat $bat/cycle_count) cycles"
+echo "charge limit: stop at $(cat $bat/charge_control_end_threshold)%, resume at $(cat $bat/charge_control_start_threshold)%"
+echo "power source: $([[ $(cat $ac 2>/dev/null) == 1 ]] && echo AC || echo battery); profile: $(powerprofilesctl get 2>/dev/null)"
+for p in /sys/devices/system/cpu/cpufreq/policy*; do echo "cpus $(cat "$p/related_cpus"): max $(( $(cat "$p/scaling_max_freq") / 1000 )) MHz (hardware $(( $(cat "$p/cpuinfo_max_freq") / 1000 )))"; done

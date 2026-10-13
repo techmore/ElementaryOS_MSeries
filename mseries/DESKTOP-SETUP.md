@@ -533,3 +533,14 @@ stored in `~/.config/mseries/network-speed.ini`. Built by `install-network-throu
 Colours: libadwaita apps ignore elementary's `@BLUEBERRY_*` names and read `accent_bg_color` and friends, which
 `theme/gtk-4.0.css` now sets too. Screen-corner radius raised from 10 to 14 (log out/in to apply; change
 `GALA_SCREEN_CORNER_RADIUS` in the Gala drop-in).
+
+## Power and browser (2026-10-12)
+
+- `install-power.sh` installs `mseries-power`: battery charge limit 80% (resume at 75%; battery health was 91% at
+  89 cycles), and on battery the power-saver profile plus a performance-core ceiling (3036 MHz → 2208 MHz). A udev
+  rule on the charger re-applies it. `sudo mseries-power limit 100` lifts the cap; `mseries-power status` shows state.
+  Note power-profiles-daemon here only has a *placeholder* driver, so the profile name itself changes nothing; the
+  CPU ceiling is what saves power.
+- `install-native-firefox.sh` replaces Ubuntu's snap shim with Mozilla's arm64 apt package (key fingerprint checked,
+  repository pinned). Headless start 0.6 s versus 2.6 s for the snap Chromium.
+- Not possible: running macOS 27 in a VM here, see the answer in chat / `mseries/MACOS-VM.md`.
