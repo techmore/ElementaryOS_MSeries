@@ -117,6 +117,13 @@
       "note": "2026-10-12: stop 80, resume 75. Change with: sudo mseries-power limit 100.",
       "precondition": "[ \"$(cat /sys/class/power_supply/macsmc-battery/capacity)\" -ge 80 ]",
       "command": "[ \"$(cat /sys/class/power_supply/macsmc-battery/charge_control_end_threshold)\" = 80 ] && [ \"$(cat /sys/class/power_supply/macsmc-battery/status)\" != Charging ] && echo \"at $(cat /sys/class/power_supply/macsmc-battery/capacity)%, not charging\""
+    },
+    {
+      "id": "upstream-dp-watch",
+      "title": "New Asahi kernel work on DisplayPort / USB4 (dock video)",
+      "note": "2026-10-13: dock video needs DP tunnelling (unimplemented; Sven Peter says it needs reverse engineering) or a way to make the CD321x offer DP Alt Mode (firmware decides; Linux has no mode control). This check passes when AsahiLinux/linux fairydust gets new commits mentioning DP/USB4/tunnel/ACIO/ATC. Then rebuild the kernel from it.",
+      "precondition": "python3 ~/.local/share/mseries-verify/upstream-watch.py",
+      "command": "python3 ~/.local/share/mseries-verify/upstream-watch.py --list"
     }
   ]
 }

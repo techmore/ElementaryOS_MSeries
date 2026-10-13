@@ -256,3 +256,16 @@ USB-C devices that are not USB4 (plain hubs, Ethernet) do suspend but are lost o
 - Open routes: (1) find the CD321x vendor command that disables USB4/TBT (needs tracing macOS's driver with the m1n1
   hypervisor from a second computer) so the dock falls back to DP Alt Mode; (2) implement DP tunnelling (DCP ->
   ACIO DP-IN adapter), unimplemented upstream.
+
+### Upstream status, researched 2026-10-13
+
+- Sven Peter's USB4 series (v2, 22 patches, 2026-09-06) says: "Right now only XDomain connections and USB3-via-USB4
+  tunnels are supported. Both PCIe and DisplayPort tunnels will come later since those require additional work and
+  reverse engineering that is not done yet." His DP-tunnel *fixes* series exists only because DPRX reads time out.
+- An Asahi tipd patch ("Disable mode control") records that the CD321x firmware picks the mode and Linux cannot
+  influence it, so "make the dock fall back to DP Alt Mode" is not available from software.
+- Another developer (ice3186/linux PR #1, J414c, Aug 2026) is prototyping DP source hooks and says the blocker is
+  the unknown T602x/T600x DPIN0/DPIN1 crossbar programming, which needs an m1n1-hypervisor MMIO trace of macOS
+  running a dock (second computer required). No video yet.
+- `mseries-verify` check `upstream-dp-watch` polls AsahiLinux/linux `fairydust` every 6 h for new DP/USB4 commits
+  (baseline ce9f2eba72, 0 ahead on 2026-10-13) and notifies when something lands.
