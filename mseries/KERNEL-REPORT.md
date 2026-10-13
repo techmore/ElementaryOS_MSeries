@@ -200,6 +200,15 @@ byte payload with SHA-256
 The gzip member at offset 4,729,699 expands byte-for-byte to the packaged
 635,960-byte U-Boot binary. This reproducible result differs from the earlier
 manual assembly's gzip timestamp/metadata; both contain the same binaries and
-DTBs. The generated payload remains in `/tmp` and is not installed into an
-image or ESP. The existing Fairydust ISO workflow has not yet integrated this
-payload into its installer or target boot path.
+DTBs.
+
+The Fairydust workflow now extracts the generated payload into its temporary
+`sysupdate/mkosi.extra/efi/m1n1/boot.bin` tree. The sysupdate ESP definition
+copies `/efi` to the ESP root, producing the Asahi-required
+`/m1n1/boot.bin` path in the disposable target disk image. Before ISO
+assembly, `verify-m1n1-esp.py` reads that disk image's GPT, copies the ESP file
+out through mtools without mounting or writing the image, and requires its
+SHA-256 to match the generated payload. The staged file exists only in the
+opt-in Fairydust CI workspace; no host ESP is involved. This integration is
+implemented but still needs the next full Fairydust CI run to verify actual
+partition contents and the ISO build.

@@ -47,6 +47,8 @@ jobs:
           bash -n mseries/fairydust/debian/fetch-asahi-boot-packages.sh
           python3 -m py_compile mseries/fairydust/debian/assemble-m1n1-bootbin.py
           python3 mseries/fairydust/debian/test-assemble-m1n1-bootbin.py
+          python3 -m py_compile mseries/fairydust/debian/verify-m1n1-esp.py
+          python3 mseries/fairydust/debian/test-verify-m1n1-esp.py
           python3 -m py_compile mseries/fairydust/debian/monitor.py mseries/check-kernel-config.py
           bash -n mseries/iso-label.sh
           bash -n mseries/test-iso-label.sh

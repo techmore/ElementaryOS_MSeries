@@ -23,3 +23,4 @@ local-build-records/
 __pycache__/
 *.pyc
 mkosi.packages/
+/mkosi.images/sysupdate/mkosi.extra/efi/m1n1/boot.bin

@@ -413,10 +413,13 @@ not a Mac hardware-boot result.
 Added a non-root m1n1 payload assembler and four integration tests. It
 reproduced a 5,028,282-byte `boot.bin` from the exact kernel, m1n1 and U-Boot
 packages in `/tmp`; SHA-256 and the decompressed U-Boot member are recorded in
-`KERNEL-REPORT.md`. The fast M-series validation workflow runs these tests.
-The generated file remains outside the ISO and ESP. Next, implement and test
-an explicit image-local ESP installation/update path; preserve the shared
-host ESP until that path has a disposable-image test.
+`KERNEL-REPORT.md`. The opt-in Fairydust workflow now assembles this payload
+from its pinned artifacts, stages it at `efi/m1n1/boot.bin` in the disposable
+sysupdate image, and checks the copied ESP file against the source checksum
+using `sfdisk` and read-only `mcopy`. The fast validator covers the payload
+assembler and GPT offset logic. This wiring has not yet run through a new full
+image build; that CI result is the next qualification step. No host ESP is
+written.
 
 
 ## CodexBar quota ETA (October 13)

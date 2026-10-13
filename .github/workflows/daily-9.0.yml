@@ -48,8 +48,20 @@ jobs:
           FAIRYDUST_SOURCE_ARCHIVE="$archive" \
             bash mseries/fairydust/debian/build.sh --build
           mkdir -p mkosi.packages
-          cp "$RUNNER_TEMP/fairydust"/linux-image-7.1.13-elementary-fairydust-usb4_7.1.13+elementary.usb4.3_arm64.deb mkosi.packages/
+          kernel_deb="$RUNNER_TEMP/fairydust/linux-image-7.1.13-elementary-fairydust-usb4_7.1.13+elementary.usb4.3_arm64.deb"
+          cp "$kernel_deb" mkosi.packages/
           mseries/fairydust/debian/fetch-asahi-boot-packages.sh mkosi.packages
+          boot_inputs="$RUNNER_TEMP/fairydust-boot-inputs"
+          mkdir -p "$boot_inputs/kernel" "$boot_inputs/m1n1" "$boot_inputs/u-boot"
+          dpkg-deb -x "$kernel_deb" "$boot_inputs/kernel"
+          dpkg-deb -x mkosi.packages/m1n1_1.5.2-2ubuntu0.1~asahi1_arm64.deb "$boot_inputs/m1n1"
+          dpkg-deb -x mkosi.packages/u-boot-asahi_2025.10-2-1_arm64.deb "$boot_inputs/u-boot"
+          python3 mseries/fairydust/debian/assemble-m1n1-bootbin.py \
+            --m1n1 "$boot_inputs/m1n1/usr/lib/m1n1/m1n1.bin" \
+            --dtb-dir "$boot_inputs/kernel/usr/lib/linux-image-7.1.13-elementary-fairydust-usb4/apple" \
+            --u-boot "$boot_inputs/u-boot/usr/lib/u-boot/apple_m1/u-boot-nodtb.bin" \
+            --output mkosi.packages/fairydust-m1n1-boot.bin
+          (cd mkosi.packages && sha256sum fairydust-m1n1-boot.bin > FAIRYDUST-BOOT-SHA256SUMS)
           (cd mkosi.packages && sha256sum *.deb > SHA256SUMS)
       - name: Preserve pinned experimental kernel packages
         uses: actions/upload-artifact@v4
@@ -76,7 +88,7 @@ jobs:
           docker-images: true
           swap-storage: false
       - name: Install build dependencies
-        run: sudo apt-get update && sudo apt-get install -y just podman zstd rsync
+        run: sudo apt-get update && sudo apt-get install -y just mtools podman zstd rsync
       - name: Download enhanced kernel packages
         if: inputs.fairydust
         uses: actions/download-artifact@v4
@@ -85,7 +97,13 @@ jobs:
           path: mkosi.packages/
       - name: Verify experimental package provenance
         if: inputs.fairydust
-        run: (cd mkosi.packages && sha256sum --check SHA256SUMS && sha256sum --check UPSTREAM-SHA256SUMS)
+        run: |
+          (cd mkosi.packages && sha256sum --check SHA256SUMS && sha256sum --check UPSTREAM-SHA256SUMS && sha256sum --check FAIRYDUST-BOOT-SHA256SUMS)
+          mkdir -p build-record
+          install -D -m 0644 mkosi.packages/fairydust-m1n1-boot.bin \
+            mkosi.images/sysupdate/mkosi.extra/efi/m1n1/boot.bin
+          sha256sum mkosi.images/sysupdate/mkosi.extra/efi/m1n1/boot.bin \
+            > build-record/fairydust-m1n1-boot.sha256
       - name: Record source provenance
         run: |
           mkdir -p build-record
@@ -99,6 +117,13 @@ jobs:
           just genkey 2>&1 | tee build-record/keygen.log
           if [[ "${{ inputs.fairydust }}" == "true" ]]; then
             just mkosi -B --debug --profile=daily,fairydust --force --workspace-directory=/workspace 2>&1 | tee build-record/build.log
+            mapfile -t raw_images < <(compgen -G 'mkosi.output/elementary_*.raw')
+            [[ ${#raw_images[@]} == 1 ]] || { echo "Expected one sysupdate disk image, found ${#raw_images[@]}" >&2; exit 1; }
+            python3 mseries/fairydust/debian/verify-m1n1-esp.py \
+              --image "${raw_images[0]}" \
+              --expected mkosi.images/sysupdate/mkosi.extra/efi/m1n1/boot.bin \
+              | tee build-record/m1n1-esp-check.txt
+            cat build-record/fairydust-m1n1-boot.sha256 >> build-record/m1n1-esp-check.txt
             sudo PROFILE=daily SQUASHFS_LEVEL="${SQUASHFS_LEVEL:-}" ./assemble-iso.sh 2>&1 | tee -a build-record/build.log
             sudo just compress-repo
             sudo chown -R "$(id -u):$(id -g)" mkosi.output
