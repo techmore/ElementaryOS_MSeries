@@ -43,6 +43,9 @@ jobs:
           bash -n transform/elementary-grow.sh
           bash -n assemble-iso.sh
           bash -n mseries/local-build-worker.sh
+          bash -n mseries/fairydust/debian/build.sh
+          bash -n mseries/fairydust/debian/fetch-asahi-boot-packages.sh
+          python3 -m py_compile mseries/fairydust/debian/monitor.py mseries/check-kernel-config.py
           bash -n mseries/iso-label.sh
           bash -n mseries/test-iso-label.sh
           bash mseries/test-iso-label.sh

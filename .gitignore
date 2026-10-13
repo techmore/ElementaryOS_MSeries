@@ -22,3 +22,4 @@ local-build-records/
 *.efi
 __pycache__/
 *.pyc
+mkosi.packages/

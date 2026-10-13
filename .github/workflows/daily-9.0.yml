@@ -3,6 +3,12 @@ name: OS 9 M-series experimental build
 # Manual fork builds use CI artifacts, without upstream signing/R2 secrets.
 on:
   workflow_dispatch:
+    inputs:
+      fairydust:
+        description: Build the experimental Fairydust + USB4 kernel and image
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -12,7 +18,44 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  build-kernel:
+    if: inputs.fairydust
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install kernel build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-essential cpio curl dwarves flex \
+            libdw-dev libelf-dev libncurses-dev libssl-dev libclang-dev clang \
+            pahole python3 rsync rustc rust-src bindgen fakeroot debhelper
+      - name: Build pinned Fairydust kernel Debian package
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/linux-ce9f2eba72c061a50b2d790450e90af3439d8c24.tar.gz"
+          curl --fail --location --retry 4 --proto '=https' --tlsv1.2 \
+            https://codeload.github.com/AsahiLinux/linux/tar.gz/ce9f2eba72c061a50b2d790450e90af3439d8c24 \
+            --output "$archive"
+          echo '20ce358acffff4b3de86201975cd68c7aaf241ae010ec3cca9422bbe2b7f34aa  '"$archive" | sha256sum --check
+          FAIRYDUST_WORKDIR="$RUNNER_TEMP/fairydust" \
+          FAIRYDUST_SOURCE_ARCHIVE="$archive" \
+            bash mseries/fairydust/debian/build.sh --build
+          mkdir -p mkosi.packages
+          cp "$RUNNER_TEMP/fairydust"/linux-image-7.1.13-elementary-fairydust-usb4_7.1.13+elementary.usb4.3_arm64.deb mkosi.packages/
+          mseries/fairydust/debian/fetch-asahi-boot-packages.sh mkosi.packages
+          (cd mkosi.packages && sha256sum *.deb > SHA256SUMS)
+      - name: Preserve pinned experimental kernel packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: fairydust-kernel-packages-${{ github.run_id }}
+          path: mkosi.packages/
+          retention-days: 2
+
   build:
+    needs: build-kernel
+    if: always() && (!inputs.fairydust || needs.build-kernel.result == 'success')
     runs-on: ubuntu-26.04-arm
     timeout-minutes: 180
     steps:
@@ -29,18 +72,35 @@ jobs:
           swap-storage: false
       - name: Install build dependencies
         run: sudo apt-get update && sudo apt-get install -y just podman zstd rsync
+      - name: Download enhanced kernel packages
+        if: inputs.fairydust
+        uses: actions/download-artifact@v4
+        with:
+          name: fairydust-kernel-packages-${{ github.run_id }}
+          path: mkosi.packages/
+      - name: Verify experimental package provenance
+        if: inputs.fairydust
+        run: (cd mkosi.packages && sha256sum --check SHA256SUMS && sha256sum --check UPSTREAM-SHA256SUMS)
       - name: Record source provenance
         run: |
           mkdir -p build-record
           git rev-parse HEAD > build-record/source-commit.txt
           cp mseries/UPSTREAM-PINS.md build-record/
-          printf '%s\n' 'Experimental OS 9 arm64 image. Not hardware-qualified. See mseries/POST-BOOT-CHECKS.md.' > build-record/STATUS.txt
+          printf '%s\n' 'Experimental OS 9 arm64 image. Kernel profile: ${{ inputs.fairydust }}. Not hardware-qualified. See mseries/POST-BOOT-CHECKS.md.' > build-record/STATUS.txt
       - name: Build experimental arm64 image
         shell: bash
         run: |
           set -euo pipefail
           just genkey 2>&1 | tee build-record/keygen.log
-          just do-daily 2>&1 | tee build-record/build.log
+          if [[ "${{ inputs.fairydust }}" == "true" ]]; then
+            just mkosi -B --debug --profile=daily,fairydust --force --workspace-directory=/workspace 2>&1 | tee build-record/build.log
+            sudo PROFILE=daily SQUASHFS_LEVEL="${SQUASHFS_LEVEL:-}" ./assemble-iso.sh 2>&1 | tee -a build-record/build.log
+            sudo just compress-repo
+            sudo chown -R "$(id -u):$(id -g)" mkosi.output
+            sudo chmod -R u+rwX mkosi.output
+          else
+            just do-daily 2>&1 | tee build-record/build.log
+          fi
           python3 mseries/test-image-wiring.py --image-output mkosi.output | tee build-record/image-content.log
       - name: Checksum installer
         run: |

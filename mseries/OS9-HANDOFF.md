@@ -279,3 +279,15 @@ Corrected factory ISO independently verified and booted to graphical
 installer; see VM-SMOKE-TEST.md. Commit 9edff7f. Next implementation is the
 opt-in Fairydust image profile with pinned m1n1, DTBs, packages and mkosi-safe
 boot hooks, then VM test. Never touch current host kernel/boot for this work.
+
+
+## Opt-in image integration staged
+
+Added base/liveiso fairydust mkosi profiles and a manual workflow input to
+build the pinned kernel on ARM64 CI and feed it with hash-pinned Ubuntu Asahi
+m1n1/U-Boot packages via ignored mkosi.packages. Verified the m1n1 package
+contains all three required USB4 tunable/DROM strings. This profile is opt-in.
+It does not yet assemble/install the m1n1 ESP boot.bin, so its installer is
+for QEMU kernel/installer testing; Mac hardware boot needs that separate step.
+Run the workflow with fairydust=true after this commit and inspect summary,
+package apt resolution, initramfs, GRUB/ISO boot, then continue m1n1 ESP work.
