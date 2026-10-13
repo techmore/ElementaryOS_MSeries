@@ -98,10 +98,11 @@
     },
     {
       "id": "usb-c-survives-suspend",
-      "title": "USB-C devices come back after suspend/resume (known bug)",
-      "note": "2026-10-12: after s2idle the xHCI reports 'xHC error in resume, USBSTS 0x401 (Save/Restore Error), Reinit' and attached USB-C devices (ASIX Ethernet, dock) are unregistered and never return until replugged. Cause: phy-apple-atc and dwc3-apple have no system-sleep PM ops and tipd_resume only re-enables the IRQ, so the PHY/mux state is never re-applied for an unchanged partner. Needs a kernel fix (PHY + dwc3-apple + tipd resume), tested with real suspend cycles. Workaround: replug after resume, or avoid suspend while docked.",
-      "precondition": "journalctl -k -b --no-pager 2>/dev/null | grep -q 'PM: suspend exit'",
-      "command": "n=$(journalctl -k -b --no-pager 2>/dev/null | grep -c 'xHC error in resume'); echo \"xHCI resume errors this boot: $n\"; [ \"$n\" -eq 0 ]"
+      "title": "With the dock plugged in: suspend, wake, and the mouse and Ethernet come back (known bug)",
+      "note": "2026-10-12: after s2idle the xHCI reports 'xHC error in resume, USBSTS 0x401 (Save/Restore Error), Reinit' and attached USB-C devices (ASIX Ethernet, dock) are unregistered and never return until replugged. Cause: phy-apple-atc and dwc3-apple have no system-sleep PM ops and tipd_resume only re-enables the IRQ, so the PHY/mux state is never re-applied for an unchanged partner. Needs a kernel fix (PHY + dwc3-apple + tipd resume), tested with real suspend cycles. Workaround: replug after resume, or avoid suspend while docked. 2026-10-13: the automatic version passed vacuously (suspended with nothing on USB-C), so it is now a manual test with the dock attached.",
+      "precondition": "[ -d /sys/bus/thunderbolt/devices/0-1 ]",
+      "kind": "manual",
+      "hint": "Leave the dock plugged in, suspend (close the lid or Super+... sleep), wait ~20 s, wake. Do the mouse and wired Ethernet come back by themselves? Answer yes only if they did without replugging."
     },
     {
       "id": "power-battery-policy",
