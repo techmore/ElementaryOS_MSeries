@@ -6,7 +6,6 @@ import importlib.util
 import json
 import os
 from pathlib import Path
-import time
 from types import SimpleNamespace
 
 ENERGY_SUMMARY = Path.home() / '.local/state/energy-monitor/summary.json'
@@ -53,55 +52,15 @@ def tool_list_tasks(args, brief, triage):
     return {'open_tasks': out[:25], 'total_open': total}
 
 
-def money(value):
-    return round(value, 2) if isinstance(value, (int, float)) else None
-
-
-def watts(value):
-    return round(value) if isinstance(value, (int, float)) else None
-
-
-def tool_get_energy(args, summary_path):
-    window = args.get('window')
-    if window not in ('now', 'today', 'month'):
-        return {'error': 'window must be now, today or month'}
-    try:
-        state = json.loads(Path(summary_path).read_text())
-    except (OSError, ValueError):
-        return {'available': False, 'reason': 'No energy summary yet',
-                'hint': 'Open the Energy Monitor app and sign in.'}
-    if not isinstance(state, dict) or 'version' not in state:
-        return {'available': False, 'reason': state.get('connection', 'Collector unavailable') if isinstance(state, dict) else 'unavailable',
-                'hint': 'Open the Energy Monitor app and sign in.'}
-    live = state.get('online') is True
-    fetched = state.get('fetched_at')
-    result = {'available': True, 'live': live, 'connection': state.get('connection'),
-              'age_minutes': None if fetched is None else round((time.time() - fetched) / 60)}
-    if not live:
-        result['note'] = 'Not live: instantaneous readings are unavailable; only cached totals are shown.'
-    if window == 'now':
-        result.update(watts=watts(state.get('current_watts')), cost_per_hour=money(state.get('cost_per_hour')),
-                      top_circuits=[{'name': c.get('display_name') or c.get('channel_name'), 'watts': watts(c.get('watts'))}
-                                    for c in (state.get('top_circuits') or [])[:5]])
-        radon = state.get('radon_reading')
-        if radon:
-            result['radon_pci_l'] = radon.get('pci_l')
-    elif window == 'today':
-        slots = [s for s in (state.get('breaker_slots') or []) if isinstance(s.get('today_cost'), (int, float))]
-        slots.sort(key=lambda s: s['today_cost'], reverse=True)
-        result.update(cost_24h=money(state.get('cost_24h')),
-                      biggest_circuits_today=[{'name': s.get('display_name') or s.get('channel_name'),
-                                               'kwh': round(s.get('today_kwh') or 0, 1), 'cost': money(s.get('today_cost'))} for s in slots[:5]])
-    else:
-        result.update(month_cost=money(state.get('month_cost')), days_recorded=state.get('month_days_recorded'))
-    return result
+def tool_get_energy(args, summary_path, brief):
+    return brief.energy_snapshot(args.get('window'), summary_path)
 
 
 def run_tool(name, args, context):
     if name == 'list_tasks':
         return tool_list_tasks(args, context.brief, context.triage)
     if name == 'get_energy':
-        return tool_get_energy(args, context.energy_file)
+        return tool_get_energy(args, context.energy_file, context.brief)
     return {'error': f'unknown tool {name}'}
 
 

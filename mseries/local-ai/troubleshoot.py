@@ -241,6 +241,9 @@ def start_server(endpoint, chat_paused=None):
                 time.sleep(3)
                 subprocess.run(['systemctl', '--user', 'reset-failed', MODEL_UNIT], capture_output=True, text=True)
                 subprocess.run(['systemctl', '--user', 'start', MODEL_UNIT], check=True)
+            elif unit_state(MODEL_UNIT) == 'failed' and refused_for_memory():
+                raise ValueError('Not enough free memory to load the model (it needs about 9 GiB free). '
+                                 'Close a few large apps and try again.')
             if attempt % 10 == 0:
                 stage("model-loading", f"Waiting for the model to load into memory · {attempt}s elapsed (up to 120s)…")
             time.sleep(1)
