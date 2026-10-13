@@ -306,3 +306,23 @@ Fix: explicitly install `rust-src` into the active stable rustup toolchain
 before building, and document this requirement. The fetch helper also now
 truncates its upstream checksum manifest on rerun. Validation and a fresh
 opt-in CI run remain pending.
+
+## Opt-in Fairydust image CI result (October 13)
+
+The first opt-in run 38431694534 failed before compilation because the
+runner's Rust toolchain lacked `rust-src`. The workflow now installs that
+component explicitly. The fix is commit `4c0cdb9` and has been pushed.
+
+Run [38432118320](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/38432118320)
+then passed both kernel-package and image jobs. The pinned Fairydust + USB4
+kernel package, m1n1 and U-Boot packages were hash-verified and installed in
+the image. `test-image-wiring.py` passed; mkosi generated a 79.7 MB Fairydust
+UKI and module initrd. The downloaded 7.48 GB ISO passed its independently
+recorded SHA-256 and booted to the live login prompt in isolated QEMU/KVM.
+
+Important test boundary: the ISO's GRUB live entry boots `/casper/vmlinuz`
+and `/casper/initrd`, which selects the generic kernel. QEMU proves the
+installer image starts; it does not prove the Fairydust kernel boots. The
+Fairydust kernel is packaged in the installed-system image, but direct
+Fairydust boot testing and m1n1 ESP assembly remain next steps. No hardware
+boot qualification is claimed. See `VM-SMOKE-TEST.md` for exact evidence.

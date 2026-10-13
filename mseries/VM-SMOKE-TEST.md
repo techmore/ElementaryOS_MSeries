@@ -69,3 +69,30 @@ No installer selections or installation were performed. User service
 This corrected generic-kernel image now has checksum, payload and VM startup
 evidence. It does not test the separately compiling enhanced Fairydust
 Debian kernel or Apple hardware boot, firmware, GPU, speakers or suspend.
+
+## Opt-in Fairydust image — verified October 13
+
+Source `4c0cdb92663c01900f9eac719b829f2c5ca540c4`, run
+[38432118320](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/38432118320)
+completed successfully. The ARM64 CI job built the pinned Fairydust + USB4
+Debian kernel package after installing the required Rust source component;
+the image job verified all package hashes, built the Fairydust profile,
+passed `test-image-wiring.py`, and uploaded the ISO.
+
+Downloaded installer `elementaryos-9.0-daily-arm64.20261013170336.iso`
+(size 7,481,829,376 bytes) passed the artifact build-record checksum:
+`14184dfc351b23e7db3f7712d5c0bad5b62bb9abd75cbfd25fcb4337d8b21c1e`.
+The ISO's live filesystem package database lists
+`linux-image-7.1.13-elementary-fairydust-usb4`, `m1n1`, and `u-boot-asahi`
+as installed. The CI build log also confirms a 79.7 MB Fairydust UKI and
+module initrd were generated.
+
+Booted the ISO in QEMU/KVM with 4 virtual CPUs and 4 GiB RAM, networking
+disabled, read-only ISO media, and no writable guest system disk. It reached
+the elementary live login prompt. The GRUB live entry starts `/casper/vmlinuz`
+and `/casper/initrd`, so this smoke test booted the generic live kernel; it
+did not boot the Fairydust UKI. The Fairydust kernel is bundled in the image
+for installed-system testing, but its actual boot has not yet been qualified.
+The m1n1/U-Boot packages and generated UKI do not mean that the required
+Apple m1n1 ESP payload is assembled. No Mac hardware, USB4, GPU, audio, or
+suspend behavior is qualified by this test.
