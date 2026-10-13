@@ -234,3 +234,11 @@ observed live against the dock (it was unplugged when the module was reloaded) -
 (`set default=elementary-usb4-test` in `/boot/grub/custom.cfg`; the id keeps the old name). The earlier
 fairydust and stock entries stay in the menu as fallbacks. Revert the default by setting
 `elementary-fairydust` (or restore `custom.cfg.bak-before-usb4-default`).
+
+## Suspend with a dock attached (found 2026-10-13)
+
+`thunderbolt-apple-acio` vetoes system suspend while a USB4/Thunderbolt connection is active
+(`apple_cio_prepare` returns -EBUSY, kernel log: "unable to suspend while a USB4/Thunderbolt connection is active").
+Closing the lid with the dock plugged in therefore turns the display off but the Mac keeps running, and logind retries
+every 30 s. Real USB4 suspend/resume needs the ACIO firmware sleep/wake handshake and is unimplemented upstream.
+USB-C devices that are not USB4 (plain hubs, Ethernet) do suspend but are lost on resume (xHCI "Save/Restore Error").
