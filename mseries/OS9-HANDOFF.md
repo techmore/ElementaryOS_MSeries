@@ -125,3 +125,9 @@ Future build records also retain the installer checksum and size separately.
 These changes require a new image build; the existing successful artifact
 at 401dad7 predates these follow-up fixes. No local kernel/boot/audio changes
 were made. Shell syntax and target architecture/label checks passed.
+
+Follow-up runs launched at c1891b6 (queued when recorded):
+- Rebuilt installer: https://github.com/techmore/ElementaryOS_MSeries/actions/runs/38400807824
+- Validation: https://github.com/techmore/ElementaryOS_MSeries/actions/runs/38400810884
+The build dashboard selects the latest run automatically. Inspect these
+before starting more builds; the earlier 38396499561 build is complete.
