@@ -269,3 +269,18 @@ USB-C devices that are not USB4 (plain hubs, Ethernet) do suspend but are lost o
   running a dock (second computer required). No video yet.
 - `mseries-verify` check `upstream-dp-watch` polls AsahiLinux/linux `fairydust` every 6 h for new DP/USB4 commits
   (baseline ce9f2eba72, 0 ahead on 2026-10-13) and notifies when something lands.
+
+## Build configuration preserved during storage cleanup (2026-10-13)
+
+`config` is the build input preserved from the working kit; it was missing
+from this directory even though PKGBUILD lists it as a source. Its SHA-256 is
+`ed53211f0f8378e71e303c7eea5c03e8adbc84ec331392f06d93607ab41ce812`.
+`running-config` is a decompressed snapshot of `/proc/config.gz` for the
+running `7.1.13-1-2-fairydust-usb4-ARCH` kernel; it records the final config,
+not a substitute for the build input. Its SHA-256 is
+`cc29f7340f5eac328e3553536879f0c3fd8937ee3a4c415a6d506c71008cc40a`.
+The two configurations differ; PKGBUILD adjusts feature flags during build.
+
+The extracted source directories were archived and integrity-checked before
+cleanup. See `mseries/STORAGE-PLAN.md`. Installed kernel/modules, boot images,
+known-good m1n1 recovery copies, and binary package backups were retained.

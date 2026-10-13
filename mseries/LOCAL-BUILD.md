@@ -13,15 +13,16 @@ Checked 2026-10-13 on the owner's M1 Pro running elementary OS 9.
   downloads/package setup cannot necessarily occupy every CPU.
 - A **local read-only `mkosi summary` succeeded**. This parses configuration,
   not a full image build.
-- Full local image build has **not started**: about 37.4 GiB free is below
-  the conservative **60 GiB disk guard**. About 22.6 GiB more is needed to
+- Full local image build has **not started**: about 49.6 GiB free is below
+  the conservative **60 GiB disk guard**. About 10.4 GiB more is needed to
   pass the current guard. The owner chose internal storage only if it passes.
 
 The 60 GiB guard is a conservative capacity policy, not a measured peak
 requirement. The successful CI installer is about 6.6 GiB, but a full build
 also keeps unpacked roots, raw images, tool/container layers, and caches.
-The remaining APFS partition is not Linux free space; no partition changes,
-data cleanup, bootloader changes, kernel changes, or audio changes were made.
+The remaining APFS partition is not Linux free space. Authorized cache,
+build-tree, and snapshot cleanup recovered about 12.2 GiB; see STORAGE-PLAN.md.
+No partition, bootloader, kernel, or audio changes were made.
 
 ## Recheck without changing anything
 

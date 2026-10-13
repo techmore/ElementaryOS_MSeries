@@ -153,3 +153,18 @@ conservative 60 GiB disk guard. See LOCAL-BUILD.md and run
 `python3 mseries/local-build-preflight.py` before starting a local image.
 Disk-boundary/new-directory/tool/architecture tests pass. The public
 build monitor now distinguishes this blocked local build from GitHub CI.
+
+## Storage cleanup and expansion plan
+
+Owner authorized clearing downloaded Hugging Face models, disposable caches,
+and Fairydust build working copies after validation. The source trees were
+archived (452 MiB, zstd integrity test passed), missing build config and actual
+running config were preserved in Git, and installed/recovery kernel files
+were retained. Six exact snapshots were deleted after explicit approval:
+4–7 and migration copies ending 102330/102435; newest rollbacks and all OS
+roots remain. Filesystem free space increased from 37.4 to 49.6 GiB.
+Full local image build remains blocked by the conservative 60 GiB guard
+(10.4 GiB short). See STORAGE-PLAN.md for the actual partition layout and
+APFS/Recovery assessment needed before allocating more space to Linux.
+No partition resize was performed. Model/browser caches must be downloaded
+again when needed; account metadata and installed applications were kept.
