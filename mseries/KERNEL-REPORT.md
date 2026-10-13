@@ -181,3 +181,25 @@ and boot that image in QEMU where possible. The host's shared ESP remains out
 of scope. See the [Asahi boot-process guide](https://github.com/AsahiLinux/docs/blob/main/docs/alt/boot-process-guide.md)
 and [upstream update-m1n1 script](https://github.com/AsahiLinux/asahi-scripts/blob/main/update-m1n1)
 for the reference payload layout and implementation.
+
+## Reproducible m1n1 payload assembly — October 13
+
+Added `debian/assemble-m1n1-bootbin.py` as a non-root, image-local equivalent
+of the upstream concatenation recipe. It requires the M1 Pro
+`t6000-j314s.dtb`, validates every selected Apple DTB's FDT header, sorts the
+DTBs, writes a deterministic gzip member for U-Boot, filters m1n1 config to
+the upstream-supported keys, and atomically replaces only the requested
+output file. It never locates, mounts, or writes an ESP. Four integration
+tests cover payload layout/reproducibility, invalid-DTB preservation, missing
+M1 Pro DTB failure, and refusing to overwrite a source DTB.
+
+Ran it against the exact locally built kernel package and hash-pinned m1n1
+and U-Boot packages. It selected all 41 Apple DTBs and generated a 5,028,282
+byte payload with SHA-256
+`049c5bf29e5e4f379e44e8ef8fffce3a018ede03ee19676c98cc6ee6e8608f8d`.
+The gzip member at offset 4,729,699 expands byte-for-byte to the packaged
+635,960-byte U-Boot binary. This reproducible result differs from the earlier
+manual assembly's gzip timestamp/metadata; both contain the same binaries and
+DTBs. The generated payload remains in `/tmp` and is not installed into an
+image or ESP. The existing Fairydust ISO workflow has not yet integrated this
+payload into its installer or target boot path.

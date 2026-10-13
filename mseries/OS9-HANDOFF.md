@@ -399,6 +399,25 @@ path. Hashes and assembly checks are in `KERNEL-REPORT.md`. Next, add explicit
 `DTBS`/`U_BOOT` selection and a disposable image ESP integration before any
 hardware path is considered; do not write the shared ESP.
 
+## Fairydust image build and reproducible boot payload — October 13
+
+The opt-in GitHub Actions run 38444570042 succeeded from source commit
+`aebf31c97cdb1abd9471b94cec9d2891dd4616f0`: kernel package, image assembly,
+live-image hardware-payload check, checksum records, and artifact upload all
+passed. The image is 7,481,858,048 bytes with SHA-256
+`75b67a02230fc8ac0676e8d8ec7d39fcec8478d9ef9481be7be362c60eab368c`.
+The GitHub artifact is [available from the run](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/38444570042/artifacts/11841535221);
+it was not downloaded because of its size. This is build/image qualification,
+not a Mac hardware-boot result.
+
+Added a non-root m1n1 payload assembler and four integration tests. It
+reproduced a 5,028,282-byte `boot.bin` from the exact kernel, m1n1 and U-Boot
+packages in `/tmp`; SHA-256 and the decompressed U-Boot member are recorded in
+`KERNEL-REPORT.md`. The fast M-series validation workflow runs these tests.
+The generated file remains outside the ISO and ESP. Next, implement and test
+an explicit image-local ESP installation/update path; preserve the shared
+host ESP until that path has a disposable-image test.
+
 
 ## CodexBar quota ETA (October 13)
 
