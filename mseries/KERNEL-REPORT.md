@@ -152,3 +152,32 @@ as an OS or booted on Mac hardware. Next: adapt its `/boot` and initramfs
 maintainer hooks to an isolated mkosi profile, add the matching pinned
 m1n1/DTBs and dependencies, then test that installed-system image. The generic
 installer is verified separately.
+
+## m1n1 stage-2 assembly audit — October 13
+
+Inspected the hash-pinned Ubuntu Asahi packages without installing them. The
+m1n1 package supplies `/usr/lib/m1n1/m1n1.bin` and `/etc/m1n1.conf`; U-Boot
+supplies `/usr/lib/u-boot/apple_m1/u-boot-nodtb.bin`. Neither package contains
+`update-m1n1`. Ubuntu's separate `asahi-scripts` 20250713-1ubuntu1 package
+contains that tool and kernel hooks; its verified SHA-256 is
+`374780681de7d2b555cbbd0c8a7e7a07e235defdfa84778c26ece398587efcf9`. Its
+default DTB lookup does not point at our kernel package's
+`/usr/lib/linux-image-7.1.13-elementary-fairydust-usb4/apple` directory, so an
+installed profile must explicitly pin both `DTBS` and `U_BOOT` before enabling
+kernel-triggered updates.
+
+In `/tmp` only, assembled and checked an Asahi stage-2 payload from the pinned
+m1n1/U-Boot packages plus the Fairydust package's 41 `t6*.dtb`/`t81*.dtb`
+files. The 5,028,827-byte result SHA-256 is
+`3ad88d5e46b78ea693a5dc54cf05bd8762fe45ac49ee5c70cdb8c49884657eb2`. Checks
+confirmed the m1n1 prefix, FDT magic on each DTB, USB4 tunable/DROM strings in
+m1n1, and that the gzip member expands byte-for-byte to the pinned U-Boot
+binary. This matches the documented Asahi concatenation order. The test file
+was not copied into an ISO, disk image or ESP.
+
+Next: integrate an explicit DTB/U-Boot selection in the Fairydust image, put
+the assembled payload at the correct ESP path in a disposable install image,
+and boot that image in QEMU where possible. The host's shared ESP remains out
+of scope. See the [Asahi boot-process guide](https://github.com/AsahiLinux/docs/blob/main/docs/alt/boot-process-guide.md)
+and [upstream update-m1n1 script](https://github.com/AsahiLinux/asahi-scripts/blob/main/update-m1n1)
+for the reference payload layout and implementation.

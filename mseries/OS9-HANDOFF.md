@@ -389,3 +389,12 @@ boot the generated kernel/initramfs and prove Apple DTB selection. It still
 needs a reproducible m1n1 `boot.bin`/ESP assembly method. Do not write the
 shared host ESP or install this kernel on the host. Full machine boot, Apple
 GPU, USB4, speakers, suspend and desktop behavior remain unqualified.
+
+The pinned Asahi m1n1/U-Boot packages can be assembled into stage 2: in a
+temporary directory, the package binaries plus 41 Fairydust `t6*.dtb` and
+`t81*.dtb` files produced a 5,028,827-byte payload whose FDTs, USB4 tunables,
+and compressed U-Boot member all verified. Ubuntu's separate `asahi-scripts`
+package contains `update-m1n1`, but its default DTB lookup misses our package
+path. Hashes and assembly checks are in `KERNEL-REPORT.md`. Next, add explicit
+`DTBS`/`U_BOOT` selection and a disposable image ESP integration before any
+hardware path is considered; do not write the shared ESP.
