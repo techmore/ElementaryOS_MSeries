@@ -77,6 +77,16 @@ requested. It inspected the corrected finalize allowlist, both arm64
 consumer configs, workflow, and regression tests; both tests passed and
 it reported no new blocker in that scope. No ISO was built by the reviewer.
 
+## Build-log findings and source cleanup
+
+The first successful image log review and dispositions are recorded in
+[BUILD-ERROR-REVIEW-2026-10-13.md](BUILD-ERROR-REVIEW-2026-10-13.md).
+The ISO label repair now has a focused CI regression test. Follow-up cleanup
+also removes a duplicate D-Bus sysuser definition and fixes the image's stale
+tmpfiles entries. Run 38400807824 was still building when reviewed; it includes
+the ISO-label repair but predates the later sysusers/tmpfiles cleanup. Its
+artifact and log should be inspected before starting another full build.
+
 ## Next implementation tasks
 
 1. Continue checksum/content/boot qualification from FIRST-ISO-BUILD.md.
@@ -111,8 +121,9 @@ Inspect and reproduce the reported OSK issue before incorporating them.
 
 Run python3 mseries/test-image-wiring.py and git diff --check.
 CI also parses all mkosi configs with just mkosi summary. This workstation
-has neither just nor podman available, so full mkosi parsing/building must
-run in CI or a prepared build environment. The first ISO build succeeded; no hardware qualification
+now has just and podman installed and local read-only mkosi summary passed.
+Local full image assembly is blocked by disk headroom (see LOCAL-BUILD.md).
+The first ISO build succeeded in GitHub CI; no hardware qualification
 is claimed. See FIRST-ISO-BUILD.md. This handoff supports manual takeover by Claude Code; it does
 not install a timer or automatic agent switch.
 
@@ -131,3 +142,14 @@ Follow-up runs launched at c1891b6 (queued when recorded):
 - Validation: https://github.com/techmore/ElementaryOS_MSeries/actions/runs/38400810884
 The build dashboard selects the latest run automatically. Inspect these
 before starting more builds; the earlier 38396499561 build is complete.
+
+## Local build preparation (October 13)
+
+Owner requested local builds and chose internal storage only if it passes
+capacity checks. Installed official Ubuntu just/podman plus dependencies;
+local read-only mkosi summary passed and its container sees all 10 CPUs.
+Full local image assembly has not started: 37.4 GiB free is below the
+conservative 60 GiB disk guard. See LOCAL-BUILD.md and run
+`python3 mseries/local-build-preflight.py` before starting a local image.
+Disk-boundary/new-directory/tool/architecture tests pass. The public
+build monitor now distinguishes this blocked local build from GitHub CI.

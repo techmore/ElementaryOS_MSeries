@@ -41,12 +41,16 @@ jobs:
           bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-firmware
           bash -n transform/elementary-grow.sh
           bash -n assemble-iso.sh
+          bash -n mseries/iso-label.sh
+          bash -n mseries/test-iso-label.sh
+          bash mseries/test-iso-label.sh
           bash -n mseries/install-signal.sh
           bash -n mseries/install-codexbar.sh
           python3 -m py_compile mseries/apply-desktop-settings.py
           python3 -m py_compile mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness
           python3 mseries/test-wifi-resume.py
           python3 mseries/test-image-wiring.py
+          python3 mseries/test-local-build-preflight.py
           node mseries/test-build-status.mjs
           python3 -m unittest discover -s mseries/brightness -p 'test_*.py'
           python3 -m unittest discover -s mseries/keyboard-backlight -p 'test_*.py'
