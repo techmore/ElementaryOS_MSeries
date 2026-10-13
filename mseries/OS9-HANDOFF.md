@@ -421,6 +421,14 @@ assembler and GPT offset logic. This wiring has not yet run through a new full
 image build; that CI result is the next qualification step. No host ESP is
 written.
 
+The full Fairydust run 38473436256 completed mkosi and generated the disk
+image, but stopped at our post-build selector before ESP verification. The
+`elementary_*.raw` glob also matched mkosi's separate partition images. The
+selector now accepts only `elementary_` plus a 14-digit build timestamp and
+`.raw`; rerun the full Fairydust workflow to qualify ESP contents and continue
+through ISO assembly. No installer artifact or ESP verification result exists
+from the failed run.
+
 
 ## CodexBar quota ETA (October 13)
 
