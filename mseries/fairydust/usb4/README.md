@@ -242,3 +242,17 @@ fairydust and stock entries stay in the menu as fallbacks. Revert the default by
 Closing the lid with the dock plugged in therefore turns the display off but the Mac keeps running, and logind retries
 every 30 s. Real USB4 suspend/resume needs the ACIO firmware sleep/wake handshake and is unimplemented upstream.
 USB-C devices that are not USB4 (plain hubs, Ethernet) do suspend but are lost on resume (xHCI "Save/Restore Error").
+
+## Dock video investigation (2026-10-13)
+
+- The dock is on port 2 = `atcphy1` (b03000000); `dcpext1` has `apple,dptx-phy = <1>`, so this port IS wired for
+  display output (DCP -> dp-xbar -> ATC PHY). fairydust's plain DP Alt Mode path exists (typec_displayport,
+  display crossbar), but the Asahi Feb 2026 report says it is "kind of" done and "blesses" one port at a time.
+- With the dock attached the CD321x negotiates USB4 on its own. Registers read (read-only, i2c-0 addr 0x3f):
+  DATA_STATUS = 0x0016800013 -> data connection, USB2, **USB4_CONNECTION (bit 23)**, no DP_CONNECTION (bit 8),
+  no TBT_CONNECTION (bit 16). `usb_mode` in sysfs is read-only. The driver's only commands are SSPS, DBfg, PTC*,
+  GAID, SWUF/SWDF, SWSk/SWSr; none restricts USB4. No documented CD321x command to forbid USB4 was found, and
+  blind commands to a live PD controller were judged not worth the risk.
+- Open routes: (1) find the CD321x vendor command that disables USB4/TBT (needs tracing macOS's driver with the m1n1
+  hypervisor from a second computer) so the dock falls back to DP Alt Mode; (2) implement DP tunnelling (DCP ->
+  ACIO DP-IN adapter), unimplemented upstream.
