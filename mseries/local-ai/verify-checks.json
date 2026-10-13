@@ -124,6 +124,22 @@
       "note": "2026-10-13: dock video needs DP tunnelling (unimplemented; Sven Peter says it needs reverse engineering) or a way to make the CD321x offer DP Alt Mode (firmware decides; Linux has no mode control). This check passes when AsahiLinux/linux fairydust gets new commits mentioning DP/USB4/tunnel/ACIO/ATC. Then rebuild the kernel from it.",
       "precondition": "python3 ~/.local/share/mseries-verify/upstream-watch.py",
       "command": "python3 ~/.local/share/mseries-verify/upstream-watch.py --list"
+    },
+    {
+      "id": "charge-limit-toggle",
+      "title": "Gear menu: the 'Limit Charging to 80%' switch changes the limit (asks for your password)",
+      "note": "2026-10-13: Quick Settings switch calls pkexec mseries-power limit 80|100 (polkit action org.techmore.mseries.power.limit). Built and installed; not yet clicked.",
+      "precondition": "[ -e /sys/class/power_supply/macsmc-battery/charge_control_end_threshold ]",
+      "kind": "manual",
+      "hint": "Open the gear menu, switch 'Limit Charging to 80%' off, enter your password, and run `mseries-power status`: it should say stop at 100%. Switch it back on and confirm 80%. Cancelling the password box should leave the switch where it was."
+    },
+    {
+      "id": "docked-lid-works",
+      "title": "Dock plugged in: closing the lid locks the screen and turns the panel off, with no suspend retries",
+      "note": "2026-10-13: mseries-docked-lid user service holds the logind handle-lid-switch inhibitor while a USB4 dock is attached, locks on lid close and restores brightness on open. Inhibitor and brightness permission verified; the real lid close is untested.",
+      "precondition": "[ -d /sys/bus/thunderbolt/devices/0-1 ]",
+      "kind": "manual",
+      "hint": "With the dock attached, close the lid for about 20 seconds, then open it. Did the screen lock, the panel go dark, and the brightness come back on opening? Check `journalctl -b -u systemd-logind | grep -i suspend` shows no new suspend attempts."
     }
   ]
 }

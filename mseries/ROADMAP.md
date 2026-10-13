@@ -46,8 +46,8 @@ with the corrected live-session hardware overlay before progressing.
 ## Stretch goals (rough order of value)
 
 1. **Dock video via m1n1 hypervisor trace.** Needs a second computer (below). Result would also help every Asahi user.
-2. **Panel toggle for the battery charge limit** (today it is `sudo mseries-power limit 80|100`).
-3. **Docked lid mode**: lock + display off without the endless suspend retries.
+2. ~~**Panel toggle for the battery charge limit**~~ Done 2026-10-13: a switch in the gear menu (`quick-settings/ChargeLimit.vala`, polkit action in `power/`). Pending your click-through: check `charge-limit-toggle`.
+3. ~~**Docked lid mode**~~ Done 2026-10-13: `install-docked-lid.sh` (user service). Real lid close pending: check `docked-lid-works`.
 4. **Linux VMs with KVM** (`/dev/kvm` exists): QEMU/virt-manager guide, benchmark overhead.
 5. **Publish benchmark history** for every kernel/Mesa update, plot trends.
 6. **Install media / transform script** for other M1/M2 Macs (see `TRANSFORM-DESIGN.md`).
@@ -88,3 +88,18 @@ local kernel monitor. After package inspection, integrate it as an opt-in
 experimental image alongside the required pinned m1n1/DTB path. Host boot
 remains unchanged. Generic Ubuntu Asahi candidate is a packaging reference,
 not a replacement for the enhanced test kernel.
+
+
+Native Fairydust kernel Debian image package builds, with required modules and
+Mac DTB. Next adapt maintainer hooks/m1n1/DTBs for opt-in mkosi image testing;
+no kernel package installation or kernel VM boot has happened yet.
+
+
+The optional Fairydust mkosi profile is staged with its kernel and hashed
+m1n1/U-Boot package pipeline. It remains QEMU-only until an image-specific
+m1n1 boot.bin/ESP step is implemented; no Mac boot claim.
+
+
+The Ubuntu Asahi m1n1 binary string check confirms its USB4 tunables; the
+opt-in workflow pins those packages. This is only a static component check;
+ESP/m1n1 boot packaging and a native Mac test are still open.
