@@ -14,6 +14,8 @@ until this kernel, modules, DTBs and boot integration are qualified.
   includes the Apple router USB3 bandwidth-allocation quirk fix.
 - Feature flags match the Arch recipe; only the release suffix changes to
   `7.1.13-elementary-fairydust-usb4` to keep it separate from installed kernels.
+- PL011 and its console are built in so native ARM64 VM smoke tests can confirm
+  the kernel reaches userspace over QEMU's serial console.
 - USB4 also needs m1n1 `57a9339ffd1876e78297b17d34dece8cff8fa1ba`
   and matching DTBs. Kernel packaging alone does not provide those tunables.
 
@@ -33,6 +35,10 @@ export FAIRYDUST_SOURCE_ARCHIVE=/absolute/path/to/pinned-source.tar.gz
 bash mseries/fairydust/debian/build.sh --prepare
 bash mseries/fairydust/debian/build.sh --compile
 ```
+
+When updating a prepared tree to a newer repository config, run
+`build.sh --reconfigure` before `--compile`. Resume modes need the preserved
+source tree but no longer need the original source archive.
 
 `--build` prepares and compiles in one run. `--compile` resumes an existing
 prepared tree. Do not edit that tree between preparation and compilation.
@@ -57,8 +63,9 @@ including modules, device trees and package creation, using up to 10 jobs.
 Source/config/patch hashes passed; `olddefconfig`, Rust availability, and the
 strict Fairydust config gate passed. The first packaging attempt exposed a
 parallel DTB directory-creation race; build patch 0002 precreates that path.
-The successful `7.1.13+elementary.usb4.3` image package has SHA-256
-`2f48c0619d02b036a625427c2767dc335eb34a0997ab3f371712e2b4541b4b2f`.
+The successful `7.1.13+elementary.usb4.3` Linux image package has SHA-256
+`6047f67c33c78fd4c614adadb619aa612919e151497d3941fe8949ae08e084f3`.
+This rebuild includes built-in PL011 serial support for ARM64 VM diagnostics.
 
 Package content inspection confirmed:
 
@@ -70,11 +77,29 @@ Package content inspection confirmed:
 - Generic Debian kernel maintainer hooks request initramfs updates and pass a
   `/boot/vmlinuz-*` path. Those hooks need adaptation and testing in mkosi.
 
-The package has not been installed and has not been booted in a VM or Mac.
-Kernel module/DTB contents are packaging evidence only; no driver is qualified
-on hardware. USB4 still needs the pinned m1n1 tunables and DTB/boot integration.
-No release binary is committed. Package hashes and files live in the private
-work directory at `/home/admin/Documents/os9-fairydust-deb-20261013`.
+## Direct kernel VM smoke test
+
+The package kernel booted in QEMU/KVM directly to a temporary initramfs and
+executed its `/init` process. The script expands the package's compressed ARM64
+kernel image first, uses the host's statically linked BusyBox only inside the
+temporary guest initramfs, and attaches no disk or network device:
+
+```bash
+VM_CPUS=2 mseries/fairydust/debian/vm-kernel-smoke-test.sh \
+  /path/to/linux-image-7.1.13-elementary-fairydust-usb4_7.1.13+elementary.usb4.3_arm64.deb
+```
+
+Verified October 13 against package SHA-256
+`6047f67c33c78fd4c614adadb619aa612919e151497d3941fe8949ae08e084f3`.
+Serial output reached `Run /init as init process`, printed the script's
+`FAIRYDUST_KERNEL_USERSPACE_HANDOFF_OK` marker, then powered down. This
+qualifies kernel decompression, generic ARM64 QEMU boot and userspace handoff.
+It does not test Apple DTBs, m1n1/ESP assembly, installed-system initramfs,
+display, audio, USB4 or Mac hardware. No driver is qualified on hardware.
+The kernel package is not installed on the host and no release binary is
+committed; artifacts remain in `/home/admin/Documents/os9-fairydust-deb-20261013`.
+
+USB4 still needs the pinned m1n1 tunables and Apple DTB/ESP integration.
 
 - Work: `/home/admin/Documents/os9-fairydust-deb-20261013`
 - Log: `/home/admin/Documents/os9-fairydust-build.log`
@@ -82,4 +107,5 @@ work directory at `/home/admin/Documents/os9-fairydust-deb-20261013`.
 - `systemctl --user status elementary-fairydust-deb-20261013f.service`
 
 The monitor.py helper publishes service state for the existing loopback-only
-HTTP server. It stops after reporting completion/failure. A build failure or stopped low-space guard needs review, not automatic package installation.
+HTTP server. It stops after reporting completion/failure. A build failure or
+stopped low-space guard needs review, not automatic package installation.

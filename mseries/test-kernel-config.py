@@ -44,6 +44,13 @@ class KernelGateTests(unittest.TestCase):
         report = gate.inspect(Path(__file__).parent / 'fairydust/usb4/running-config', gate.BASELINE + gate.EXPERIMENTAL)
         self.assertEqual(report['missing_required'], [])
 
+    def test_fairydust_build_config_has_builtin_vm_console(self):
+        config = Path(__file__).parent / 'fairydust/usb4/config'
+        report = gate.inspect(config, gate.VM_CONSOLE)
+        self.assertEqual(report['missing_required'], [])
+        self.assertEqual(report['symbols']['SERIAL_AMBA_PL011'], 'y')
+        self.assertEqual(report['symbols']['SERIAL_AMBA_PL011_CONSOLE'], 'y')
+
 
 if __name__ == '__main__':
     unittest.main()

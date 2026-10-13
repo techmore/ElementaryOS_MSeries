@@ -96,3 +96,25 @@ for installed-system testing, but its actual boot has not yet been qualified.
 The m1n1/U-Boot packages and generated UKI do not mean that the required
 Apple m1n1 ESP payload is assembled. No Mac hardware, USB4, GPU, audio, or
 suspend behavior is qualified by this test.
+
+## Direct Fairydust kernel smoke test — October 13
+
+Rebuilt the locally packaged Fairydust kernel with built-in ARM PL011 console
+support, then ran
+`mseries/fairydust/debian/vm-kernel-smoke-test.sh` against the package
+`linux-image-7.1.13-elementary-fairydust-usb4_7.1.13+elementary.usb4.3_arm64.deb`.
+Package SHA-256:
+`6047f67c33c78fd4c614adadb619aa612919e151497d3941fe8949ae08e084f3`.
+
+QEMU/KVM ran with two vCPUs and 1 GiB RAM, attached only the kernel and a
+temporary BusyBox initramfs, with no disk or network. Serial output confirmed
+kernel `7.1.13-elementary-fairydust-usb4` startup on QEMU's `linux,dummy-virt`
+device tree, execution of `/init`, the
+`FAIRYDUST_KERNEL_USERSPACE_HANDOFF_OK` marker, and orderly poweroff. The test
+script has a 45-second bound plus a 5-second forced-stop limit.
+
+This directly boots the compiled kernel and verifies generic ARM64 kernel
+startup through userspace handoff. It does not test the installed-system
+initramfs or bootloader, any Apple DTB or m1n1/ESP payload, Mac hardware, GPU,
+USB4, audio, suspend or a full desktop session. Keep the distinction between
+this direct-kernel test and the separate generic live-ISO boot above.

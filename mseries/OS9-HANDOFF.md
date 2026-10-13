@@ -238,12 +238,15 @@ release, bindeb-pkg, all CPU jobs (explicit dpkg override), and low-space stop.
 Source preparation and native Rust toolchain check passed. Installed missing
 build dependencies only; no kernel or host boot/audio changes.
 
-Compilation is active in user unit elementary-fairydust-deb-20261013c.service,
-work /home/admin/Documents/os9-fairydust-deb-20261013, log
-/home/admin/Documents/os9-fairydust-build.log. Live local monitor:
-http://127.0.0.1:8767/kernel.html. No successful .deb is claimed yet.
-Preserved earlier local ISO and build records/kernel config; removed its
-regenerable mkosi intermediate outputs and synced Btrfs, restoring ~44 GiB.
+The native ARM64 Debian kernel package completed in user unit
+elementary-fairydust-deb-20261013c.service, work
+/home/admin/Documents/os9-fairydust-deb-20261013, log
+/home/admin/Documents/os9-fairydust-build.log. The package was subsequently
+rebuilt with built-in PL011 serial support for VM diagnostics. The build helper
+supports `--reconfigure` for refreshing a prepared tree and no longer requires
+the source archive when resuming a compile. No host kernel or boot files were
+changed. Preserved earlier local ISO and build records/kernel config; removed
+its regenerable mkosi intermediate outputs and synced Btrfs, restoring ~44 GiB.
 
 Also inspected signed Ubuntu Asahi resolute candidate metadata and packages:
 baseline GPU/audio config passes, experimental USB4/video symbols absent.
@@ -321,11 +324,11 @@ UKI and module initrd. The downloaded 7.48 GB ISO passed its independently
 recorded SHA-256 and booted to the live login prompt in isolated QEMU/KVM.
 
 Important test boundary: the ISO's GRUB live entry boots `/casper/vmlinuz`
-and `/casper/initrd`, which selects the generic kernel. QEMU proves the
-installer image starts; it does not prove the Fairydust kernel boots. The
-Fairydust kernel is packaged in the installed-system image, but direct
-Fairydust boot testing and m1n1 ESP assembly remain next steps. No hardware
-boot qualification is claimed. See `VM-SMOKE-TEST.md` for exact evidence.
+and `/casper/initrd`, which selects the generic kernel. That ISO QEMU run
+proves the installer image starts, not the Fairydust kernel. A separate direct
+Fairydust-kernel VM smoke test was completed afterward; it verifies generic
+ARM64 userspace handoff only. Apple DTB selection, the m1n1 ESP payload and
+hardware boot qualification remain open. See `VM-SMOKE-TEST.md` for evidence.
 
 
 ## CodexBar refresh responsiveness (October 13)
@@ -366,3 +369,23 @@ Wingpanel restarted as PID 625220 and loaded the installed module.
 
 This change is installed on the working desktop; no factory ISO was built.
 Next: confirm everyday responsiveness with normal Codex/Claude use.
+
+## Fairydust direct-kernel VM milestone — October 13
+
+The kernel source config enables built-in PL011 console support so ARM64 VM
+boot can be observed. Refreshed the prepared build tree with
+`build.sh --reconfigure`, rebuilt natively with 10 jobs, and produced kernel
+package SHA-256
+`6047f67c33c78fd4c614adadb619aa612919e151497d3941fe8949ae08e084f3`.
+`vm-kernel-smoke-test.sh` decompresses the Debian kernel image, builds a
+temporary BusyBox initramfs, and boots with QEMU/KVM, two vCPUs, no disk, and no
+network. Serial output confirmed Linux `7.1.13-elementary-fairydust-usb4`
+reached `/init`, emitted `FAIRYDUST_KERNEL_USERSPACE_HANDOFF_OK`, and powered
+down cleanly. Config gate and the Fairydust config unit checks pass.
+
+This closes the kernel-decompression/basic-kernel/userspace-handoff check. The
+next boot-path milestone is a disposable installed-system test image that can
+boot the generated kernel/initramfs and prove Apple DTB selection. It still
+needs a reproducible m1n1 `boot.bin`/ESP assembly method. Do not write the
+shared host ESP or install this kernel on the host. Full machine boot, Apple
+GPU, USB4, speakers, suspend and desktop behavior remain unqualified.

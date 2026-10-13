@@ -8,6 +8,8 @@ from pathlib import Path
 BASELINE = ('ARM64_16K_PAGES', 'DRM_APPLE', 'DRM_ASAHI', 'DRM_APPLE_AUDIO',
             'PHY_APPLE_ATC', 'SND_SOC_APPLE_MCA')
 EXPERIMENTAL = ('RESET_APPLE_CIO', 'USB4_APPLE_SOC', 'VIDEO_APPLE_AVD')
+VM_CONSOLE = ('SERIAL_AMBA_PL011', 'SERIAL_AMBA_PL011_CONSOLE')
+BUILTIN = ('ARM64_16K_PAGES',) + VM_CONSOLE
 
 
 def inspect(path, required):
@@ -21,12 +23,12 @@ def inspect(path, required):
             values[line[9:-11]] = 'n'
     if not values:
         raise ValueError('No kernel configuration options found')
-    symbols = {name: values.get(name, 'absent') for name in BASELINE + EXPERIMENTAL}
+    symbols = {name: values.get(name, 'absent') for name in BASELINE + EXPERIMENTAL + VM_CONSOLE}
     missing = [name for name in required if values.get(name) not in ('y', 'm')]
-    # The 16K page ABI is a boolean, unlike loadable hardware drivers.
-    if 'ARM64_16K_PAGES' in required and values.get('ARM64_16K_PAGES') != 'y':
-        if 'ARM64_16K_PAGES' not in missing:
-            missing.append('ARM64_16K_PAGES')
+    # Page ABI and early serial console must be built in, not loadable modules.
+    for name in BUILTIN:
+        if name in required and values.get(name) != 'y' and name not in missing:
+            missing.append(name)
     return dict(config=str(path), sha256=hashlib.sha256(raw).hexdigest(),
                 symbols=symbols, missing_required=missing,
                 scope='Configuration only; does not qualify firmware, modules or hardware boot')
@@ -38,7 +40,7 @@ def main():
     parser.add_argument('--require', choices=('baseline', 'fairydust'), default='baseline',
                         help='fairydust additionally requires the experimental USB4/video symbols')
     args = parser.parse_args()
-    required = BASELINE + (EXPERIMENTAL if args.require == 'fairydust' else ())
+    required = BASELINE + ((EXPERIMENTAL + VM_CONSOLE) if args.require == 'fairydust' else ())
     try:
         report = inspect(args.config, required)
     except (OSError, UnicodeError, ValueError) as exc:

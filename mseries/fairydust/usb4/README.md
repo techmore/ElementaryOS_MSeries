@@ -274,7 +274,7 @@ USB-C devices that are not USB4 (plain hubs, Ethernet) do suspend but are lost o
 
 `config` is the build input preserved from the working kit; it was missing
 from this directory even though PKGBUILD lists it as a source. Its SHA-256 is
-`ed53211f0f8378e71e303c7eea5c03e8adbc84ec331392f06d93607ab41ce812`.
+`0d3540afc18751b236d816312b7a0d7311d2860476b1fce6668f6565ea04c3fd`.
 `running-config` is a decompressed snapshot of `/proc/config.gz` for the
 running `7.1.13-1-2-fairydust-usb4-ARCH` kernel; it records the final config,
 not a substitute for the build input. Its SHA-256 is
