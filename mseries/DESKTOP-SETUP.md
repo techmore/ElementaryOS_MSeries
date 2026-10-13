@@ -544,3 +544,11 @@ Colours: libadwaita apps ignore elementary's `@BLUEBERRY_*` names and read `acce
 - `install-native-firefox.sh` replaces Ubuntu's snap shim with Mozilla's arm64 apt package (key fingerprint checked,
   repository pinned). Headless start 0.6 s versus 2.6 s for the snap Chromium.
 - Not possible: running macOS 27 in a VM here, see the answer in chat / `mseries/MACOS-VM.md`.
+
+## Speaker tuning (2026-10-13)
+
+`install-pipewire-lv2.sh` builds PipeWire's LV2 filter plugin (Ubuntu omits it), then
+`install-audio-stack.sh --with-dsp` installs asahi-audio 3.4 and its LV2 plugins. The speaker sink becomes
+"MacBook Pro J314 Speakers" (listed under Filters in `wpctl status`). Lesson: the first attempt left that sink at
+70% because the restore code only looked at the Sinks list; it is fixed, and all sinks were muted at 0 within a
+minute. Raise the volume slowly. Revert: `bash mseries/install-audio-stack.sh --revert`.

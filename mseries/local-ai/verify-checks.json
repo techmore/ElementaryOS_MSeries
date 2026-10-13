@@ -91,9 +91,10 @@
     {
       "id": "audio-output-ok",
       "kind": "manual",
-      "title": "Speakers still work (quiet test)",
-      "hint": "Audio is back to the plain 'Built-in Audio Stereo' output, muted at 0. Raise the volume slowly in the sound menu and play something quiet. Speakers will sound plain/quiet (no Apple DSP profile yet).",
-      "precondition": "true"
+      "title": "Speakers work with the Apple sound tuning (quiet test)",
+      "hint": "Everything is muted at 0. Pick 'MacBook Pro J314 Speakers', unmute and raise the volume slowly with something quiet playing. Expect fuller, louder sound than before. If anything crackles or distorts, tell me.",
+      "precondition": "true",
+      "note": "2026-10-13: asahi-audio 3.4 DSP now loads (LV2 plugin built by install-pipewire-lv2.sh). Never played at volume by Claude."
     },
     {
       "id": "usb-c-survives-suspend",

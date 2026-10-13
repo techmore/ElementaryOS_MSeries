@@ -5,11 +5,11 @@
 #   bash mseries/install-audio-stack.sh --with-dsp # + Apple UCM profile + asahi-audio DSP chain
 #   bash mseries/install-audio-stack.sh --revert   # remove everything this script installs
 #
-# STATUS 2026-10-12: --with-dsp is REFUSED on this system. asahi-audio's speaker chain is a PipeWire
-# filter-graph of LV2 plugins, and Ubuntu's PipeWire 1.6.2 is built without the LV2 filter plugin
-# (libspa-filter-graph-plugin-lv2.so; Arch's 1.6.9 has it). Installing the chain anyway made the raw
-# speaker node disappear: "spa.filter-graph: can't load plugin type 'lv2'" and only a headphone sink was
-# left (at 100% volume). Reverted; retry when Ubuntu's PipeWire ships that plugin.
+# STATUS 2026-10-13: --with-dsp works once PipeWire has its LV2 filter plugin, which Ubuntu does not ship. Run
+# mseries/install-pipewire-lv2.sh first (it builds that one plugin from the matching upstream source); this script
+# refuses --with-dsp without it, because the speakers would otherwise disappear (2026-10-12 incident).
+# The speaker sink then appears as "MacBook Pro J314 Speakers" (under Filters in wpctl status) and starts at the
+# volume the old sink had, so lower the volume BEFORE installing and raise it slowly afterwards.
 #
 # Why: the elementary root had none of what the Arch/Omarchy root already runs. The kernel keeps the
 # speakers volume-locked ("Speaker Volume Unlock"), but the amplifier (tas2764) logged recurring
@@ -28,8 +28,9 @@ with_dsp=0
 dsp_pkgs=(asahi-audio alsa-ucm-conf-asahi)
 lv2_plugin=/usr/lib/aarch64-linux-gnu/spa-0.2/filter-graph/libspa-filter-graph-plugin-lv2.so
 
+# Real sinks list "[vol: ...]"; asahi-audio's virtual speaker sink sits under "Filters" as [Audio/Sink].
 sink_ids() {
-  wpctl status 2>/dev/null | sed -n '/Sinks:/,/Sources:/p' | grep -oE '^ *│? *\*? *[0-9]+\.' | grep -oE '[0-9]+'
+  wpctl status 2>/dev/null | sed -n '/^Audio/,/^Video/p' | grep -E '\[vol:|\[Audio/Sink\]' | grep -oE '^[ │├└─*-]*[0-9]+\.' | grep -oE '[0-9]+'
 }
 
 # Whatever happens, no sink may be left louder than the user had it.
@@ -60,8 +61,8 @@ case ${1:-} in
 esac
 
 if (( with_dsp )) && [[ ! -e $lv2_plugin ]]; then
-  echo "Refusing --with-dsp: $lv2_plugin is missing, so PipeWire cannot load asahi-audio's LV2 speaker chain" >&2
-  echo "and the speakers would disappear. See the STATUS note at the top of this script." >&2
+  echo "Refusing --with-dsp: $lv2_plugin is missing, so PipeWire cannot load asahi-audio's LV2 speaker chain." >&2
+  echo "Run: bash mseries/install-pipewire-lv2.sh   (see the STATUS note at the top of this script)." >&2
   exit 1
 fi
 
