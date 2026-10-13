@@ -117,3 +117,12 @@ were left untouched.
   remains a full-build log check, not a confirmed defect from its absence in Git.
 - Owner prefers Muse 1.3 for subsequent OpenCode build tasks; its exact model
   ID is recorded in OS9-HANDOFF.md. This report does not claim a full image build.
+
+## Muse 1.3 follow-up
+
+The requested `opencode/muse-spark-1.3-contributor-free` model reviewed the
+corrected workflow, overlay cleanup, arm64 consumers, and image tests.
+It ran both image-wiring tests successfully and found no new blocker in
+that limited scope. No files were changed by the Muse reviewer.
+GitHub validation run 38396503055 also completed successfully, including
+mkosi config parsing. The separate ISO build remains in progress.

@@ -43,6 +43,32 @@ work (`opencode/muse-spark-1.3` is listed as available); DeepSeek 4.1
 preflight used the configured default `opencode/cat-jam-free` before this
 preference was supplied. Do not silently claim that run used Muse.
 
+Model-selection references supplied by the owner:
+- https://opencode.ai/data/ — usage/session-cost data; assess task results too.
+- https://anoma.ly/notes/opencode-2-0/ — service/API and background-task design.
+- Owner flagged DeepSeek V4.1 usage credits and a one-week Step 5 Preview
+  promotion announced October 8. Verify current eligibility/expiry before
+  assuming free use or credits. Step's listed model ID is
+  `opencode/step-5-preview-free`.
+
+## GitHub progress
+
+Implementation pushed as 39fd815; reviewed preflight/dependencies pushed as
+401dad7. GitHub Pages deployment for 401dad7 succeeded.
+The first manual runs were started at 401dad7:
+- Experimental arm64 build: https://github.com/techmore/ElementaryOS_MSeries/actions/runs/38396499561
+- Validation: https://github.com/techmore/ElementaryOS_MSeries/actions/runs/38396503055
+
+Validation completed successfully, including mkosi config parsing. The
+experimental build was still in progress at handoff recording. Inspect its
+actual conclusion and retained logs before claiming success; do not launch
+duplicates.
+
+Final OpenCode review used `opencode/muse-spark-1.3-contributor-free`, as
+requested. It inspected the corrected finalize allowlist, both arm64
+consumer configs, workflow, and regression tests; both tests passed and
+it reported no new blocker in that scope. No ISO was built by the reviewer.
+
 1. Run the manual OS 9 M-series experimental build after these changes reach
    GitHub. Inspect retained build logs; resolve actual package/module/config
    errors before attempting hardware installation. A source/config test is
