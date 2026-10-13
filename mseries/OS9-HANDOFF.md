@@ -417,17 +417,20 @@ packages in `/tmp`; SHA-256 and the decompressed U-Boot member are recorded in
 from its pinned artifacts, stages it at `efi/m1n1/boot.bin` in the disposable
 sysupdate image, and checks the copied ESP file against the source checksum
 using `sfdisk` and read-only `mcopy`. The fast validator covers the payload
-assembler and GPT offset logic. This wiring has not yet run through a new full
-image build; that CI result is the next qualification step. No host ESP is
-written.
+assembler and GPT offset logic. Full CI run 38479577898 passed and verified
+the target ESP entry at GPT offset 1,048,576: `m1n1/boot.bin`, 5,028,282
+bytes, SHA-256 `049c5bf29e5e4f379e44e8ef8fffce3a018ede03ee19676c98cc6ee6e8608f8d`.
+It completed the installer build and checksumming too. The resulting
+`elementaryos-9.0-daily-arm64.20261013230825.iso` is 7,482,648,576 bytes with
+SHA-256 `89c74fa25ac72dd8f20f7eb42e456c929ed828f791f77af3edb6f5ce1b7b259d`;
+the installer artifact is retained by GitHub for seven days. The image has
+not been booted on Apple hardware, and no host ESP was written.
 
-The full Fairydust run 38473436256 completed mkosi and generated the disk
-image, but stopped at our post-build selector before ESP verification. The
-`elementary_*.raw` glob also matched mkosi's separate partition images. The
-selector now accepts only `elementary_` plus a 14-digit build timestamp and
-`.raw`; rerun the full Fairydust workflow to qualify ESP contents and continue
-through ISO assembly. No installer artifact or ESP verification result exists
-from the failed run.
+The preceding run 38473436256 exposed an overbroad `elementary_*.raw` guard
+that also matched separate partition images. The selector was narrowed to the
+timestamped whole-disk image before the successful rerun. See the run's
+[build record](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/38479577898)
+and `mseries/KERNEL-REPORT.md` for verification details.
 
 
 ## CodexBar quota ETA (October 13)
