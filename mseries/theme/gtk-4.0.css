@@ -4,15 +4,15 @@
  */
 
 /* blueberry (accent): was #64baff / #3689e6 / #0d52bf */
-@define-color BLUEBERRY_300 #9aafc5;
-@define-color BLUEBERRY_500 #748fae;
-@define-color BLUEBERRY_700 #526d8b;
+@define-color BLUEBERRY_300 #bcd3ec;
+@define-color BLUEBERRY_500 #9dbfe3;
+@define-color BLUEBERRY_700 #7ba2cc;
 
 /* strawberry (errors, destructive): was #ed5353 / #c6262e / #a10705 */
-@define-color STRAWBERRY_300 #bf9298;
-@define-color STRAWBERRY_500 #a56f78;
-@define-color STRAWBERRY_700 #80545c;
-@define-color error_color #bf9298;
+@define-color STRAWBERRY_300 #f0b5ba;
+@define-color STRAWBERRY_500 #e59ea5;
+@define-color STRAWBERRY_700 #c47e86;
+@define-color error_color #f0b5ba;
 
 /* window corners: was 0.5rem (~8px), closer to macOS */
 window.csd,
@@ -22,8 +22,8 @@ floating-sheet sheet {
 }
 
 /* Muted rose feedback: retain a visible error cue without a vivid red edge. */
-@define-color STRAWBERRY_100 #d8b1b6;
-@define-color STRAWBERRY_900 #604047;
+@define-color STRAWBERRY_100 #f7d0d3;
+@define-color STRAWBERRY_900 #9a5d65;
 .error { color: @error_color; }
 entry.error { border-color: alpha(@error_color, 0.5); }
 entry.error:focus {
@@ -32,19 +32,19 @@ entry.error:focus {
 }
 
 /* Quiet slate-blue accents and focus outlines. */
-@define-color BLUEBERRY_100 #c3cfda;
-@define-color BLUEBERRY_900 #3b5068;
-@define-color accent_color #748fae;
-@define-color selected_bg_color #748fae;
+@define-color BLUEBERRY_100 #dce8f5;
+@define-color BLUEBERRY_900 #587fa8;
+@define-color accent_color #9dbfe3;
+@define-color selected_bg_color #9dbfe3;
 
 /* libadwaita apps ignore the elementary named colours above and read these instead. */
-@define-color accent_bg_color #748fae;
-@define-color accent_fg_color #ffffff;
-@define-color accent_color #8aa3bf;
-@define-color destructive_bg_color #a56f78;
-@define-color destructive_fg_color #ffffff;
-@define-color destructive_color #bf9298;
-@define-color error_bg_color #a56f78;
-@define-color error_color #bf9298;
+@define-color accent_bg_color #9dbfe3;
+@define-color accent_fg_color #1f2f45;
+@define-color accent_color #a9c8e8;
+@define-color destructive_bg_color #e59ea5;
+@define-color destructive_fg_color #3a1d21;
+@define-color destructive_color #f0b5ba;
+@define-color error_bg_color #e59ea5;
+@define-color error_color #f0b5ba;
 @define-color success_bg_color #6f9a85;
 @define-color warning_bg_color #b39a6a;
