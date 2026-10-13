@@ -60,4 +60,7 @@ jobs:
           python3 -m unittest discover -s mseries/local-ai -p 'test_*.py'
 
       - name: mkosi config parse check (all images)
-        run: just mkosi summary
+        run: |
+          set -euo pipefail
+          just mkosi summary | tee /tmp/mseries-mkosi-summary.txt
+          python3 mseries/test-image-wiring.py --summary /tmp/mseries-mkosi-summary.txt

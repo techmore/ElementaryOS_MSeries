@@ -41,6 +41,7 @@ jobs:
           set -euo pipefail
           just genkey 2>&1 | tee build-record/keygen.log
           just do-daily 2>&1 | tee build-record/build.log
+          python3 mseries/test-image-wiring.py --image-output mkosi.output | tee build-record/image-content.log
       - name: Checksum installer
         run: |
           cd mkosi.output

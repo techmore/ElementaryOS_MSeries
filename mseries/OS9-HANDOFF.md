@@ -191,3 +191,18 @@ Worker status/logs are in local-build-records; advancing image-build logs
 were verified. Local monitor http://127.0.0.1:8767/ was opened and shows real
 phase/log activity. See LOCAL-BUILD.md. Check that job before launching any
 more local builds; no local build success or hardware boot is claimed yet.
+
+Native build 89e959d completed successfully October 13, 09:59:08 EDT,
+exit 0, elapsed 16m39s. ISO and SHA-256 are recorded in LOCAL-BUILD.md.
+Local monitor reads success/complete from the worker status file. Build
+artifacts/caches now leave about 39 GiB free; check capacity before rebuilding.
+This was image assembly only; no factory-image hardware boot is claimed.
+
+Post-build inspection: ISO SHA-256 verification passed, but the live installer
+was missing its Apple hardware overlay. mkosi.profiles/aarch64 is opt-in and
+was not selected by daily builds. Fixed by using an Architecture=arm64
+mkosi.conf.d drop-in and explicit apple-silicon dependencies. Effective local
+summary passes for liveiso and sysupdate. Tests also inspect actual built
+liveiso payloads, now called by CI and the local worker. Rebuild required;
+the 89e959d image is assembled/hashed successfully but lacks those live-session
+helpers. See LOCAL-BUILD.md. Do not describe it as ready for hardware boot.

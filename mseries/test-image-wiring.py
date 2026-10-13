@@ -4,6 +4,7 @@ import configparser
 import os
 from pathlib import Path
 import shutil
+import sys
 import subprocess
 import tempfile
 import unittest
@@ -17,7 +18,44 @@ def packages(path):
     return set(config.get('Content', 'Packages', fallback='').split())
 
 
+def verify_image_output(output):
+    roots = [p for p in Path(output).glob('liveiso_*') if p.is_dir()]
+    if len(roots) != 1:
+        raise ValueError('Expected exactly one built liveiso tree')
+    source = ROOT / 'mkosi.images/apple-silicon/mkosi.extra'
+    required = [p.relative_to(source) for p in source.rglob('*')
+                if p.is_file() and '__pycache__' not in p.parts and p.suffix != '.pyc']
+    missing = [str(p) for p in required if not (roots[0] / p).is_file()]
+    if missing:
+        raise ValueError('Built live ISO is missing hardware payload: ' + ', '.join(missing))
+
+
+def validate_summary(text):
+    sections = {}
+    for part in text.split('IMAGE: ')[1:]:
+        name = part.splitlines()[0].strip()
+        sections[name] = part
+    for name in ('liveiso', 'sysupdate'):
+        if 'apple-silicon_arm64-' not in sections.get(name, ''):
+            raise ValueError(f'{name} effective config does not consume the Apple hardware overlay')
+
+
 class ImageWiringTests(unittest.TestCase):
+    def test_built_live_image_requires_hardware_payload(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / 'liveiso_test'
+            shutil.copytree(ROOT / 'mkosi.images/apple-silicon/mkosi.extra', root)
+            verify_image_output(directory)
+            (root / 'usr/libexec/mseries-brightness').unlink()
+            with self.assertRaises(ValueError):
+                verify_image_output(directory)
+
+    def test_effective_summary_requires_overlay_in_both_images(self):
+        overlay = 'Extra Trees: /work/mkosi.output/apple-silicon_arm64-123'
+        validate_summary('IMAGE: liveiso\n' + overlay + '\nIMAGE: sysupdate\n' + overlay)
+        with self.assertRaises(ValueError):
+            validate_summary('IMAGE: liveiso\nExtra Trees: none\nIMAGE: sysupdate\n' + overlay)
+
     def test_finalize_preserves_overlay_helpers_and_prunes_package_payload(self):
         source = ROOT / 'mkosi.images/apple-silicon'
         with tempfile.TemporaryDirectory() as directory:
@@ -40,7 +78,7 @@ class ImageWiringTests(unittest.TestCase):
         runtime = overlay - {'initramfs-tools'}
         self.assertTrue(runtime)
         for consumer in (
-            'mkosi.images/liveiso/mkosi.profiles/aarch64/mkosi.conf',
+            'mkosi.images/liveiso/mkosi.conf.d/arch.arm64.conf',
             'mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf',
         ):
             with self.subTest(consumer=consumer):
@@ -49,4 +87,11 @@ class ImageWiringTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    if len(sys.argv) == 3 and sys.argv[1] == '--summary':
+        validate_summary(Path(sys.argv[2]).read_text())
+        print('Effective liveiso/sysupdate hardware overlay wiring passed')
+    elif len(sys.argv) == 3 and sys.argv[1] == '--image-output':
+        verify_image_output(sys.argv[2])
+        print('Built live ISO hardware payload check passed')
+    else:
+        unittest.main()

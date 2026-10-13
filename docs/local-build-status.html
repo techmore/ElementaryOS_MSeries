@@ -14,7 +14,7 @@ async function refresh(){if(running)return;running=true;try{
  el('phase').textContent='Stage: '+s.phase.replaceAll('-',' ');
  el('advice').textContent=s.state==='success'?'Next: review checksum and image contents. Hardware boot remains unverified.':s.state==='failed'?'Ask Codex to inspect the build log. Exit code: '+s.exitCode:'No poke needed while the build log is advancing.';
  el('source').textContent='Source: '+s.sourceCommit.slice(0,12);
- const seconds=Math.max(0,Math.floor((Date.now()-Date.parse(s.startedAt))/1000));el('elapsed').textContent='Time since start: '+Math.floor(seconds/60)+'m '+seconds%60+'s';
+ const seconds=s.state==='running'?Math.max(0,Math.floor((Date.now()-Date.parse(s.startedAt))/1000)):s.elapsedSeconds;el('elapsed').textContent='Build elapsed: '+Math.floor(seconds/60)+'m '+seconds%60+'s';
  el('checked').textContent='Checked '+new Date().toLocaleTimeString()+' · worker last reported '+new Date(s.updatedAt).toLocaleTimeString();
  try{const h=await fetch('build.log',{method:'HEAD',cache:'no-store',signal:AbortSignal.timeout(5000)});const stamp=h.headers.get('Last-Modified');el('activity').textContent=stamp?'Log last changed: '+new Date(stamp).toLocaleTimeString():'Open the log to inspect activity.';if(s.state==='running'&&stamp&&Date.now()-Date.parse(stamp)>180000){el('advice').textContent='Log quiet for over three minutes. Poke Codex to check whether the worker is waiting or stalled.';}}catch{el('activity').textContent='Log activity check unavailable.';}
  }catch(e){el('state').textContent='Local status unavailable';el('advice').textContent='Ask Codex to check the worker or local monitor service. Previous values may be stale.';}finally{running=false;}}

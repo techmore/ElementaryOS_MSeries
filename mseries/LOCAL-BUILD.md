@@ -89,3 +89,30 @@ Transient services run beyond the Codex turn, but a shutdown/logout can
 interrupt them. They are not recurring automations or automatic AI takeover.
 The local monitor is separate from the public GitHub dashboard. Filesystem
 free space was 69.4 GiB before starting; it will fall as build products grow.
+
+## Native build result — success
+
+Completed October 13 at 09:59:08 EDT, exit code 0. Elapsed **999 seconds
+(16m 39s)**, from 09:42:29. Source: 89e959d.
+ISO: `mkosi.output/elementaryos-9.0-daily-arm64.20261013134230.iso` in the
+isolated local checkout. SHA-256:
+`ca707f3e959809d27686b2e535c9b165b843694ff86b5a48dd065cf118e02041`.
+
+The first GitHub job took 25m49s including setup/artifact upload; this is a
+rough elapsed-time comparison, not a controlled CPU benchmark. Local
+artifacts/caches reduced free space to about 39 GiB after the build. Do not
+launch another full build without rechecking capacity. Hardware boot remains
+unverified; a successful build does not install or qualify the image.
+
+Checksum verification with `sha256sum -c` passed after completion. A further
+content check found a real packaging defect: the Apple overlay existed, but
+liveiso did not consume it. Its architecture-specific config had been placed
+under an opt-in mkosi.profiles/aarch64 directory, which daily builds do not
+select. sysupdate did consume the overlay.
+
+The fix moves the active liveiso wiring to mkosi.conf.d/arch.arm64.conf with
+Architecture=arm64 and adds explicit overlay dependencies to both images.
+Effective local mkosi summary now confirms the overlay in both images.
+Regression checks now cover effective configuration and actual built helper
+files; future CI/local builds reject a live installer missing those files.
+The successful 89e959d ISO predates this fix and is not hardware-qualified.

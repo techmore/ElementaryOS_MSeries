@@ -40,6 +40,8 @@ phase=keygen; write_status running
 just genkey
 phase=image-build; write_status running
 just do-daily
+phase=image-content; write_status running
+python3 mseries/test-image-wiring.py --image-output mkosi.output
 phase=checksum; write_status running
 (cd mkosi.output && sha256sum elementaryos-*.iso) | tee "$records/INSTALLER-SHA256SUMS"
 phase=complete
