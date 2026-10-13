@@ -28,6 +28,7 @@ build_dir=$(mktemp -d "${TMPDIR:-/tmp}/codexbar-wingpanel.XXXXXX")
 trap 'rm -rf "$build_dir"' EXIT
 meson setup "$build_dir" "$src" --prefix=/usr
 ninja -C "$build_dir"
+meson test -C "$build_dir" --print-errorlogs
 sudo ninja -C "$build_dir" install
 sudo rm -f /usr/share/icons/hicolor/scalable/apps/mseries-codexbar-openai.svg
 if command -v gtk-update-icon-cache >/dev/null; then

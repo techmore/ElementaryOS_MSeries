@@ -115,8 +115,18 @@ bash mseries/install-codexbar-wingpanel.sh
 ```
 
 Log out and back in after installation. The indicator starts CodexBar's local
-backend and reads its same-user structured snapshot without changing CodexBar
-preferences. The panel shows the OpenAI mark with both Codex's five-hour and
+backend and reads its same-user structured snapshot every five seconds without
+blocking Wingpanel. Opening the dropdown requests fresh usage when the cached
+provider data is at least 30 seconds old; these requests are limited to one per
+minute and skipped while a fetch is running. Manual refresh remains available.
+The indicator preserves CodexBar preferences. For one-minute background usage
+polling and refresh-on-open in CodexBar's own windows, configure the running app:
+
+```sh
+~/.local/bin/codexbar-linux --configure '{"refreshSeconds":60,"refreshOnOpen":true}'
+```
+
+The panel shows the OpenAI mark with both Codex's five-hour and
 weekly remaining percentages. The dropdown uses compact aligned rows for each
 quota period, with the reset time beside the remaining percentage, keeping the
 menu short while showing both limits. Provider credentials remain managed by

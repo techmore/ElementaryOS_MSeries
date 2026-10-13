@@ -8,10 +8,19 @@ indicators_dir = libwingpanel_dep.get_variable(pkgconfig: 'indicatorsdir')
 shared_module(
   'codexbar',
   'Indicator.vala',
+  'RefreshPolicy.vala',
   dependencies: [libwingpanel_dep, granite_dep, json_dep],
   install: true,
   install_dir: indicators_dir,
 )
+
+refresh_policy_test = executable(
+  'test-refresh-policy',
+  'RefreshPolicy.vala',
+  'test-refresh-policy.vala',
+  dependencies: dependency('gobject-2.0'),
+)
+test('refresh-policy', refresh_policy_test)
 
 install_data(
   'icons/openai.svg',

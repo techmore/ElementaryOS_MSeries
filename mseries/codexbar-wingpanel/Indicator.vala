@@ -19,6 +19,8 @@ namespace MSeries {
         private bool request_in_flight = false;
         private bool snapshot_busy = false;
         private uint refresh_poll_count = 0;
+        private bool refresh_after_snapshot = false;
+        private RefreshPolicy refresh_policy = new RefreshPolicy ();
 
         public CodexBarIndicator () {
             GLib.Object (code_name: "codexbar");
@@ -123,7 +125,7 @@ namespace MSeries {
             menu.append (actions);
 
             // CodexBar owns provider authentication, polling and cached usage.
-            // This indicator only reads its documented, same-user local snapshot.
+            // The indicator reads snapshots and requests refreshes through documented local IPC.
             try {
                 Pid child_pid;
                 Process.spawn_async (null, { executable, "--background" }, null,
@@ -133,8 +135,7 @@ namespace MSeries {
                 status_label.set_text ("Could not start CodexBar: " + e.message);
             }
 
-            Timeout.add_seconds (5, () => { read_snapshot (); return Source.REMOVE; });
-            Timeout.add_seconds (60, () => { read_snapshot (); return Source.CONTINUE; });
+            Timeout.add_seconds (5, () => { read_snapshot.begin (); return Source.CONTINUE; });
         }
 
         private Gtk.Button make_action_button (string label, string icon_name, string action) {
@@ -160,9 +161,10 @@ namespace MSeries {
         }
 
         private void refresh_usage () {
-            if (!run_action ("--refresh")) {
+            if (snapshot_busy || !run_action ("--refresh")) {
                 return;
             }
+            refresh_policy.requested (GLib.get_monotonic_time ());
             status_label.set_text ("Refreshing usage…");
             set_refreshing (true);
             if (refresh_poll_source != 0) {
@@ -170,7 +172,7 @@ namespace MSeries {
             }
             refresh_poll_count = 0;
             refresh_poll_source = Timeout.add_seconds (2, () => {
-                read_snapshot ();
+                read_snapshot.begin ();
                 refresh_poll_count++;
                 if ((!snapshot_busy && refresh_poll_count >= 3) || refresh_poll_count >= 30) {
                     refresh_poll_source = 0;
@@ -200,32 +202,24 @@ namespace MSeries {
             }
         }
 
-        private void read_snapshot () {
+        private async void read_snapshot (bool refresh_if_old = false) {
+            refresh_after_snapshot = refresh_after_snapshot || refresh_if_old;
             if (request_in_flight) {
                 return;
             }
             request_in_flight = true;
 
-            string? stdout_text = null;
-            string? stderr_text = null;
-            int exit_status;
             try {
-                Process.spawn_sync (null, { executable, "--snapshot" }, null,
-                    SpawnFlags.SEARCH_PATH,
-                    null, out stdout_text, out stderr_text, out exit_status);
-            } catch (Error e) {
-                request_in_flight = false;
-                show_unavailable ("Start CodexBar and sign in to see quota.");
-                return;
-            }
-            request_in_flight = false;
+                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
+                    executable, "--snapshot");
+                string stdout_text;
+                string stderr_text;
+                yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
+                if (!process.get_successful () || stdout_text.strip ().length == 0) {
+                    show_unavailable ("Start CodexBar and sign in to see quota.");
+                    return;
+                }
 
-            if (exit_status != 0 || stdout_text == null || stdout_text.strip ().length == 0) {
-                show_unavailable ("Start CodexBar and sign in to see quota.");
-                return;
-            }
-
-            try {
                 var parser = new Json.Parser ();
                 parser.load_from_data (stdout_text, -1);
                 var root = parser.get_root ();
@@ -234,64 +228,95 @@ namespace MSeries {
                     return;
                 }
                 var snapshot = root.get_object ();
-                var entries = snapshot.get_array_member ("entries");
-                if (entries == null || entries.get_length () == 0) {
-                    if (snapshot.get_boolean_member ("busy")) {
-                        snapshot_busy = true;
-                        set_refreshing (true);
-                        status_label.set_text ("Fetching usage…");
-                        clear_provider_rows ();
-                        append_subtle_row ("Your limits will appear when the update completes.");
-                    } else {
-                        show_unavailable ("No quota data yet. Open Settings to sign in.");
-                    }
-                    return;
+                update_snapshot (snapshot);
+                if (refresh_after_snapshot && should_refresh_on_open (snapshot)) {
+                    refresh_usage ();
                 }
-
-                clear_provider_rows ();
-                snapshot_busy = snapshot.get_boolean_member ("busy");
-                set_refreshing (snapshot_busy);
-                string codex_panel_summary = "";
-                string claude_panel_summary = "";
-                for (uint i = 0; i < entries.get_length (); i++) {
-                    var entry = entries.get_object_element (i);
-                    var provider = entry.get_string_member ("provider") ?? "Provider";
-                    append_provider_entry (entry);
-                    if (provider.down ().contains ("codex")) {
-                        codex_panel_summary = compact_codex_summary (entry);
-                    } else if (provider.down ().contains ("claude")) {
-                        claude_panel_summary = compact_codex_summary (entry);
-                    }
-                }
-
-                var parts = new string[0];
-                if (codex_panel_summary.length > 0) {
-                    parts += (claude_panel_summary.length > 0 ? "CX " : "") + codex_panel_summary;
-                }
-                if (claude_panel_summary.length > 0) {
-                    parts += "CL " + claude_panel_summary;
-                }
-                var panel_text = string.joinv ("   ", parts);
-                panel_label.set_text (panel_text.length > 0 ? panel_text : "OpenAI —");
-                panel_display.set_tooltip_text (panel_text.length > 0
-                    ? "Remaining · " + (claude_panel_summary.length > 0 ? "CX = OpenAI Codex, CL = Claude" : "OpenAI Codex")
-                    : "Usage unavailable");
-
-                var update_status = "Remaining · Updated " + (snapshot.get_string_member ("updated") ?? "recently");
-                if (snapshot_busy) {
-                    update_status = "Refreshing usage… · " + update_status;
-                }
-                if (snapshot.get_boolean_member ("stale")) {
-                    update_status += " · cached data";
-                }
-                var snapshot_error = snapshot.get_string_member ("error") ?? "";
-                if (snapshot_error.length > 0) {
-                    update_status += " · " + snapshot_error;
-                }
-                status_label.set_text (update_status);
             } catch (Error e) {
                 show_unavailable ("Could not read CodexBar usage: " + e.message);
+            } finally {
+                request_in_flight = false;
+                refresh_after_snapshot = false;
             }
+        }
+
+        private bool should_refresh_on_open (Json.Object snapshot) {
+            int64 oldest_update_unix = 0;
+            var entries = snapshot.get_array_member ("entries");
+            if (entries != null) {
+                for (uint i = 0; i < entries.get_length (); i++) {
+                    var entry = entries.get_object_element (i);
+                    var updated = entry.get_string_member ("updatedAt") ?? "";
+                    var timestamp = new DateTime.from_iso8601 (updated, null);
+                    if (timestamp == null) {
+                        oldest_update_unix = 0;
+                        break;
+                    }
+                    if (oldest_update_unix == 0 || timestamp.to_unix () < oldest_update_unix) {
+                        oldest_update_unix = timestamp.to_unix ();
+                    }
+                }
+            }
+            return refresh_policy.should_refresh_on_open (snapshot.get_boolean_member ("busy"),
+                oldest_update_unix, new DateTime.now_utc ().to_unix (), GLib.get_monotonic_time ());
+        }
+
+        private void update_snapshot (Json.Object snapshot) {
+            var entries = snapshot.get_array_member ("entries");
+            if (entries == null || entries.get_length () == 0) {
+                if (snapshot.get_boolean_member ("busy")) {
+                    snapshot_busy = true;
+                    set_refreshing (true);
+                    status_label.set_text ("Fetching usage…");
+                    clear_provider_rows ();
+                    append_subtle_row ("Your limits will appear when the update completes.");
+                } else {
+                    show_unavailable ("No quota data yet. Open Settings to sign in.");
+                }
+                return;
+            }
+
+            clear_provider_rows ();
+            snapshot_busy = snapshot.get_boolean_member ("busy");
+            set_refreshing (snapshot_busy);
+            string codex_panel_summary = "";
+            string claude_panel_summary = "";
+            for (uint i = 0; i < entries.get_length (); i++) {
+                var entry = entries.get_object_element (i);
+                var provider = entry.get_string_member ("provider") ?? "Provider";
+                append_provider_entry (entry);
+                if (provider.down ().contains ("codex")) {
+                    codex_panel_summary = compact_codex_summary (entry);
+                } else if (provider.down ().contains ("claude")) {
+                    claude_panel_summary = compact_codex_summary (entry);
+                }
+            }
+
+            var parts = new string[0];
+            if (codex_panel_summary.length > 0) {
+                parts += (claude_panel_summary.length > 0 ? "CX " : "") + codex_panel_summary;
+            }
+            if (claude_panel_summary.length > 0) {
+                parts += "CL " + claude_panel_summary;
+            }
+            var panel_text = string.joinv ("   ", parts);
+            panel_label.set_text (panel_text.length > 0 ? panel_text : "OpenAI —");
+            panel_display.set_tooltip_text (panel_text.length > 0
+                ? "Remaining · " + (claude_panel_summary.length > 0 ? "CX = OpenAI Codex, CL = Claude" : "OpenAI Codex")
+                : "Usage unavailable");
+
+            var update_status = "Remaining · Updated " + (snapshot.get_string_member ("updated") ?? "recently");
+            if (snapshot_busy) {
+                update_status = "Refreshing usage… · " + update_status;
+            }
+            if (snapshot.get_boolean_member ("stale")) {
+                update_status += " · cached data";
+            }
+            var snapshot_error = snapshot.get_string_member ("error") ?? "";
+            if (snapshot_error.length > 0) {
+                update_status += " · " + snapshot_error;
+            }
+            status_label.set_text (update_status);
         }
 
         private void append_provider_entry (Json.Object entry) {
@@ -488,12 +513,12 @@ namespace MSeries {
         }
 
         public override Gtk.Widget? get_widget () {
-            read_snapshot ();
+            read_snapshot.begin ();
             return menu;
         }
 
         public override void opened () {
-            read_snapshot ();
+            read_snapshot.begin (true);
         }
 
         public override void closed () {

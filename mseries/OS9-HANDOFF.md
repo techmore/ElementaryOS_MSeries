@@ -326,3 +326,43 @@ installer image starts; it does not prove the Fairydust kernel boots. The
 Fairydust kernel is packaged in the installed-system image, but direct
 Fairydust boot testing and m1n1 ESP assembly remain next steps. No hardware
 boot qualification is claimed. See `VM-SMOKE-TEST.md` for exact evidence.
+
+
+## CodexBar refresh responsiveness (October 13)
+
+Owner approved shortening quota polling after investigation found the local
+backend configured for 300 seconds, refresh-on-open disabled, and the native
+Wingpanel indicator reading cached snapshots only once per minute.
+
+Changed the native indicator to read snapshots asynchronously every five seconds.
+Opening its dropdown requests a refresh when any provider timestamp is missing
+or at least 30 seconds old, unless a fetch is running. A monotonic one-minute
+cooldown bounds panel-open requests and also accounts for manual refreshes.
+The asynchronous reader coalesces overlapping reads, including an open request
+that arrives while a snapshot is already being fetched. Provider credentials
+and quota fetching remain owned by CodexBar.
+
+Applied `{"refreshSeconds":60,"refreshOnOpen":true}` to the existing backend
+through its configure IPC. Installed the tested indicator atomically and sent
+Wingpanel SIGTERM so Gala reloaded it. The installed module SHA-256 matches the
+built module. Original config and module are retained temporarily at
+`/tmp/codexbar-linux-before-refresh.json` and `/tmp/libcodexbar-before-refresh.so`.
+
+Validation: `meson setup /tmp/codexbar-refresh-build mseries/codexbar-wingpanel
+--prefix=/usr`, `ninja -C /tmp/codexbar-refresh-build`, and `meson test -C
+/tmp/codexbar-refresh-build --print-errorlogs` passed. Five GLib test cases cover
+unknown/fresh usage, busy suppression, the exact one-minute cooldown boundary,
+and wall-clock changes. The installer now runs these tests before installation.
+A temporary GTK/Wayland probe substituted only the backend executable path with
+a fake CLI: one-second snapshot delays allowed 143 main-loop ticks in 7.2 seconds,
+four snapshot reads, and one refresh despite repeated opens.
+`python3 mseries/test-image-wiring.py` passed all four checks; installer shell
+syntax and `git diff --check` passed. Source review found no additional blocker.
+
+Live verification observed consecutive Codex fetch timestamps at 14:03:25 and
+14:04:25 ET (60 seconds), and Claude at 14:03:34 and 14:04:35 ET (61 seconds),
+on October 13. Both cycles completed with empty error fields and `stale:false`.
+Wingpanel restarted as PID 625220 and loaded the installed module.
+
+This change is installed on the working desktop; no factory ISO was built.
+Next: confirm everyday responsiveness with normal Codex/Claude use.

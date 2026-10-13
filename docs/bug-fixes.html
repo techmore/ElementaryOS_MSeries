@@ -21,6 +21,7 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <h2>Resolved in the current source update</h2>
 <table>
 <tr><th>Finding</th><th>Fix</th></tr>
+<tr><td>CodexBar usage could lag by five-minute fetching plus one-minute panel reads.</td><td>The native indicator reads snapshots asynchronously every five seconds and requests a throttled refresh when opened. One-minute backend polling is documented and applied on the working desktop.</td></tr>
 <tr><td>Public status contradicted the recorded M1 Pro desktop boot.</td><td>Pages now distinguish the installed transformed system from the unverified factory ISO.</td></tr>
 <tr><td>CI path filters could skip changes to the transform script, root mkosi config, repositories, or arm64 package manifest.</td><td>Added these paths to the M-series validation workflow.</td></tr>
 <tr><td>The fork's scheduled builds needed elementary's private publishing credentials.</td><td>Added a manual experimental arm64 build with retained logs, checksums, and installer artifacts. The first arm64 image build succeeded on October 13.</td></tr>
