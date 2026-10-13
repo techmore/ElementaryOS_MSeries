@@ -46,3 +46,9 @@ generated; package contents, hooks, source/license publication and image
 qualification remain required before distribution. No release is being
 published by this script. Monitor hardening remains follow-up; the live
 monitor is a scoped local user service, not an external-input endpoint.
+
+
+Build follow-up: first packaging exposed the concurrent DTB `install -D`
+parent-directory race. Patch 0002 precreates the Apple DTB directory; the
+successful .3 package staged every DTB. Runtime dependency patch is included.
+The package hooks still require mkosi-specific adaptation and remain untested.

@@ -1,0 +1,10 @@
+--- a/scripts/package/mkdebian
++++ b/scripts/package/mkdebian
+@@ -218,6 +218,7 @@
+ 
+ Package: $packagename-${KERNELRELEASE}
+ Architecture: $debarch
++Depends: kmod, linux-base, initramfs-tools | linux-initramfs-tool
+ Description: Linux kernel, version ${KERNELRELEASE}
+  This package contains the Linux kernel, modules and corresponding other
+  files, version: ${KERNELRELEASE}.

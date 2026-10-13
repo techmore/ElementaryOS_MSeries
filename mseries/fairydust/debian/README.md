@@ -33,9 +33,11 @@ bash mseries/fairydust/debian/build.sh --compile
 
 `--build` prepares and compiles in one run. `--compile` resumes an existing
 prepared tree. Do not edit that tree between preparation and compilation.
-Preparation requires 5 GiB free; compilation requires 40 GiB at start and
-stops its process group if free space falls below 8 GiB. These are conservative
-guards, not a measured peak-space guarantee. Debug/BTF settings are retained.
+Preparation requires 5 GiB free; a fresh build requires 40 GiB at start.
+Resuming a prepared tree requires 12 GiB. Both build modes stop the process
+group if free space falls below 8 GiB. These are conservative guards, not a
+measured peak-space guarantee. Debug/BTF stays in the kernel; a separate
+434 MiB debug-symbol package is omitted by default.
 Jobs default to all CPUs, with explicit dpkg parallelism; `FAIRYDUST_JOBS`
 overrides this. The package build includes no installer/host boot operations.
 
@@ -45,19 +47,36 @@ them to an isolated image build. Do not install linux-libc-dev or debug/header
 outputs blindly on the host. Source archive, config, patch and GPL notices
 must accompany any distributed kernel binary.
 
-## Current test — October 13
+## Build result — October 13
 
-Source hashes verified, patch applied without fuzz, `olddefconfig` passed,
-and all strict Fairydust symbols passed check-kernel-config.py. Native Rust
-availability passed after adding the missing build dependencies. Compilation
-is running as `elementary-fairydust-deb-20261013c.service`, Nice=10, 10 jobs.
-No successful Debian package or hardware boot is claimed yet.
+Native ARM64 build completed as a Debian package. It took about 12 minutes
+including modules, device trees and package creation, using up to 10 jobs.
+Source/config/patch hashes passed; `olddefconfig`, Rust availability, and the
+strict Fairydust config gate passed. The first packaging attempt exposed a
+parallel DTB directory-creation race; build patch 0002 precreates that path.
+The successful `7.1.13+elementary.usb4.3` image package has SHA-256
+`2f48c0619d02b036a625427c2767dc335eb34a0997ab3f371712e2b4541b4b2f`.
+
+Package content inspection confirmed:
+
+- Kernel image + modules for `7.1.13-elementary-fairydust-usb4`.
+- `appledrm`, Apple ATC PHY, Apple Thunderbolt, CIO reset and Apple AVD modules.
+- `t6000-j314s.dtb` for the owner's MacBookPro18,3.
+- Runtime dependencies on kmod, linux-base and initramfs-tools (with Ubuntu's
+  linux-initramfs-tool alternative).
+- Generic Debian kernel maintainer hooks request initramfs updates and pass a
+  `/boot/vmlinuz-*` path. Those hooks need adaptation and testing in mkosi.
+
+The package has not been installed and has not been booted in a VM or Mac.
+Kernel module/DTB contents are packaging evidence only; no driver is qualified
+on hardware. USB4 still needs the pinned m1n1 tunables and DTB/boot integration.
+No release binary is committed. Package hashes and files live in the private
+work directory at `/home/admin/Documents/os9-fairydust-deb-20261013`.
 
 - Work: `/home/admin/Documents/os9-fairydust-deb-20261013`
 - Log: `/home/admin/Documents/os9-fairydust-build.log`
 - [Live local kernel monitor](http://127.0.0.1:8767/kernel.html)
-- `systemctl --user status elementary-fairydust-deb-20261013c.service`
+- `systemctl --user status elementary-fairydust-deb-20261013f.service`
 
 The monitor.py helper publishes service state for the existing loopback-only
-HTTP server. It stops after reporting completion/failure. Compilation failure
-or a stopped low-space guard needs review, not automatic package installation.
+HTTP server. It stops after reporting completion/failure. A build failure or stopped low-space guard needs review, not automatic package installation.

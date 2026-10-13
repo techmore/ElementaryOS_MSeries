@@ -18,6 +18,7 @@ exec > >(tee -a "$work/build.log") 2>&1
 free=$(df -PB1 "$work" | awk 'NR==2 {print $4}')
 needed=$((5 * 1024 * 1024 * 1024))
 [[ $mode == --prepare ]] || needed=$((40 * 1024 * 1024 * 1024))
+[[ $mode != --compile ]] || needed=$((12 * 1024 * 1024 * 1024))
 (( free >= needed )) || { echo "Insufficient free space: need $needed bytes" >&2; exit 2; }
 check_hash() { printf '%s  %s\n' "$1" "$2" | sha256sum -c -; }
 check_hash 20ce358acffff4b3de86201975cd68c7aaf241ae010ec3cca9422bbe2b7f34aa "$FAIRYDUST_SOURCE_ARCHIVE"
@@ -30,6 +31,7 @@ mkdir "$src"
 tar xzf "$FAIRYDUST_SOURCE_ARCHIVE" --strip-components=1 -C "$src"
 cd "$src"
 patch --batch --fuzz=0 -p1 < "$kit/0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch"
+patch --batch --fuzz=0 -p1 < "$here/0001-runtime-dependencies.patch"
 mkdir "$work/output"
 out="$work/output"
 cp "$kit/config" "$out/.config"
@@ -47,6 +49,16 @@ else
 fi
 export KBUILD_BUILD_USER=elementary-mseries KBUILD_BUILD_HOST=builder
 export KBUILD_BUILD_TIMESTAMP='Mon Oct 12 00:00:00 UTC 2026'
+# Keep debug/BTF in the kernel; omit the large separate symbol .deb by default.
+if [[ ${FAIRYDUST_DEBUG_PACKAGE:-0} != 1 ]]; then
+    export DEB_BUILD_PROFILES="${DEB_BUILD_PROFILES:-} pkg.linux-elementary-fairydust-usb4.nokerneldbg"
+fi
+if ! grep -Fq 'Depends: kmod, linux-base, initramfs-tools | linux-initramfs-tool' scripts/package/mkdebian; then
+    patch --batch --fuzz=0 -p1 < "$here/0001-runtime-dependencies.patch"
+fi
+if ! grep -Fq 'mkdir -p "${pdir}/usr/lib/linux-image-${KERNELRELEASE}/apple"' scripts/package/builddeb; then
+    patch --batch --fuzz=0 -p1 < "$here/0002-precreate-apple-dtb-directory.patch"
+fi
 export DEBEMAIL=builder@localhost DEBFULLNAME="Elementary MSeries Builder"
 export KDEB_CHANGELOG_DIST=resolute
 if ! python3 "$here/../../check-kernel-config.py" "$out/.config" --require fairydust > "$work/kernel-config-report.json"; then
@@ -77,7 +89,7 @@ trap 'exit 143' TERM
 # The kernel packaging target passes -j1 to dpkg; override it explicitly.
 setsid make O="$out" -j "$jobs" bindeb-pkg DPKG_FLAGS="-j$jobs" \
     KDEB_SOURCENAME=linux-elementary-fairydust-usb4 \
-    KDEB_PKGVERSION=7.1.13+elementary.usb4.1 LOCALVERSION= &
+    KDEB_PKGVERSION=7.1.13+elementary.usb4.3 LOCALVERSION= &
 build_pid=$!
 (
     while kill -0 "$build_pid" 2>/dev/null; do
@@ -99,6 +111,6 @@ kill "$watch_pid" 2>/dev/null || true
 wait "$watch_pid" 2>/dev/null || true
 (( result == 0 )) || exit "$result"
 # bindeb-pkg places .deb files in the parent of the output directory.
-find "$work" -maxdepth 1 -name '*.deb' -print -exec sha256sum {} \; > "$work/debian-packages.txt"
+find "$work" -maxdepth 1 -name '*_7.1.13+elementary.usb4.3_arm64.deb' -print0 | sort -z | xargs -0 -r sha256sum > "$work/debian-packages.txt"
 [[ -s $work/debian-packages.txt ]] || { echo 'No Debian packages produced' >&2; exit 1; }
 echo 'Built only. Inspect package contents/hooks before any image integration.'

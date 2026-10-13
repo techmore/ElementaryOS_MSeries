@@ -134,3 +134,17 @@ python3 mseries/check-kernel-config.py /path/to/extracted/config --require fairy
 Four regression checks cover absent/disabled options, module-vs-page ABI,
 invalid input, and the preserved working kernel. CI runs them. Passing the
 gate does not prove module contents, firmware availability or hardware boot.
+
+
+## Native Fairydust Debian package built — October 13
+
+The port in `mseries/fairydust/debian/` built successfully on native ARM64.
+Pinned Fairydust source + project USB4 patch, all ten CPU jobs, config gate,
+DTB race fix and package dependency metadata are recorded in its README. The
+resulting private `.deb` is version `7.1.13+elementary.usb4.3`; its image SHA256
+is `2f48c0619d02b036a625427c2767dc335eb34a0997ab3f371712e2b4541b4b2f`.
+Contents include modules for appledrm, ATC PHY, Thunderbolt/Apple ACIO, CIO
+reset and AVD, plus `t6000-j314s.dtb`. It has not been installed or booted.
+Next: adapt its `/boot` and initramfs maintainer hooks to an isolated mkosi
+profile, add the matching pinned m1n1/DTBs and dependencies, build that opt-in
+image, then VM and hardware test. The generic installer is verified separately.

@@ -262,3 +262,20 @@ screen and serial login reached. Screenshot committed; see VM-SMOKE-TEST.md.
 VM stopped, releasing resources. Enhanced kernel compilation remains active
 and separate; next inspect its .deb output and boot hooks, then integrate the
 pinned enhanced kernel + m1n1/DTB path into an opt-in test image.
+
+
+## Fairydust Debian build completed
+
+Native ARM64 .3 package build passed after resolving packaging issues: first
+missing libdw-dev, then concurrent DTB directory creation. Corrected source
+patch precreates Apple's DTB folder. Completed `elementary-fairydust-deb-20261013f.service`
+exit 0. SHA verified at package-inspection time; image .deb SHA
+2f48c0619d02b036a625427c2767dc335eb34a0997ab3f371712e2b4541b4b2f.
+Extracted contents confirm requested Apple modules and t6000-j314s.dtb.
+Runtime dependencies fixed; generic /boot+initramfs hooks still need an
+isolated mkosi adaptation. No install or boot test of the new kernel.
+
+Corrected factory ISO independently verified and booted to graphical
+installer; see VM-SMOKE-TEST.md. Commit 9edff7f. Next implementation is the
+opt-in Fairydust image profile with pinned m1n1, DTBs, packages and mkosi-safe
+boot hooks, then VM test. Never touch current host kernel/boot for this work.

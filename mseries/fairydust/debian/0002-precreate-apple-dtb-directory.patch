@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-2.0-only
+--- a/scripts/package/builddeb
++++ b/scripts/package/builddeb
+@@ -29,6 +29,7 @@
+ install_linux_image () {
+ 	pname=$1
+ 	pdir=debian/$1
++	mkdir -p "${pdir}/usr/lib/linux-image-${KERNELRELEASE}/apple"
+ 
+ 	# Only some architectures with OF support have this target
+ 	if is_enabled CONFIG_OF_EARLY_FLATTREE && [ -d "${srctree}/arch/${SRCARCH}/boot/dts" ]; then
