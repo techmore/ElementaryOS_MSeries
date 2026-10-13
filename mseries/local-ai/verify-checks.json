@@ -6,35 +6,53 @@
       "title": "Reboot lands in the USB4 kernel by default",
       "note": "2026-10-12: GRUB default changed to elementary-usb4-test (backup custom.cfg.bak-before-usb4-default).",
       "precondition": "[ \"$(date -d \"$(uptime -s)\" +%s)\" -gt \"$(stat -c %Y /boot/grub/custom.cfg)\" ]",
-      "command": "uname -r | grep -q fairydust-usb4 && uname -r"
+      "command": "uname -r | grep -q fairydust-usb4 && uname -r",
+      "tags": [
+        "boot",
+        "kernel"
+      ]
     },
     {
       "id": "initramfs-crossbar",
       "title": "Display crossbar loads early (no dp-xbar deferral)",
       "note": "2026-10-12: mkinitcpio ignored conf.d drop-ins for the fairydust presets; added the module to /etc/mkinitcpio.conf. Before: 14 'Failed to get dp-xbar' kernel lines per boot and 2.57 s from the first apple-dcp message to the DRM device (measured in the boot before the fix). Verified after reboot: 0 lines, 0.01 s.",
       "precondition": "[ \"$(date -d \"$(uptime -s)\" +%s)\" -gt \"$(stat -c %Y /boot/initramfs-linux-asahi-fairydust-usb4.img)\" ]",
-      "command": "j=$(journalctl -k -b -o short-monotonic --no-pager 2>/dev/null); n=$(echo \"$j\" | grep -c 'Failed to get dp-xbar'); a=$(echo \"$j\" | grep -m1 apple-dcp | sed -E 's/^\\[ *([0-9.]+)\\].*/\\1/'); c=$(echo \"$j\" | grep -m1 'Initialized apple' | sed -E 's/^\\[ *([0-9.]+)\\].*/\\1/'); echo \"dp-xbar deferral lines: $n (was 14); first dcp message to display driver: $(python3 -I -c \"print('%.2f' % (float('$c')-float('$a')))\") s (was 2.57 s; the absolute boot time includes the passphrase prompt, so it is not compared)\"; [ \"$n\" -le 2 ]"
+      "command": "j=$(journalctl -k -b -o short-monotonic --no-pager 2>/dev/null); n=$(echo \"$j\" | grep -c 'Failed to get dp-xbar'); a=$(echo \"$j\" | grep -m1 apple-dcp | sed -E 's/^\\[ *([0-9.]+)\\].*/\\1/'); c=$(echo \"$j\" | grep -m1 'Initialized apple' | sed -E 's/^\\[ *([0-9.]+)\\].*/\\1/'); echo \"dp-xbar deferral lines: $n (was 14); first dcp message to display driver: $(python3 -I -c \"print('%.2f' % (float('$c')-float('$a')))\") s (was 2.57 s; the absolute boot time includes the passphrase prompt, so it is not compared)\"; [ \"$n\" -le 2 ]",
+      "tags": [
+        "boot",
+        "display"
+      ]
     },
     {
       "id": "zram-swap",
       "title": "zram swap comes up on its own at boot",
       "note": "2026-10-12: systemd-zram-generator, 8 GiB max, zstd.",
       "precondition": "[ \"$(date -d \"$(uptime -s)\" +%s)\" -gt \"$(stat -c %Y /etc/systemd/zram-generator.conf)\" ]",
-      "command": "swapon --show --noheadings | grep zram"
+      "command": "swapon --show --noheadings | grep zram",
+      "tags": [
+        "system"
+      ]
     },
     {
       "id": "services-trimmed",
       "title": "ModemManager, snap CUPS and AppCenter's daemon stay off",
       "note": "2026-10-12: ~110 MB of services plus AppCenter's ~680 MB daemon disabled.",
       "precondition": "[ \"$(date -d \"$(uptime -s)\" +%s)\" -gt \"$(stat -c %Y ~/.config/autostart/io.elementary.appcenter.desktop)\" ]",
-      "command": "[ \"$(systemctl is-active ModemManager)\" != active ] && [ \"$(pgrep -fc '^/usr/bin/io.elementary.appcenter --silent')\" = 0 ] && echo 'all three off'"
+      "command": "[ \"$(systemctl is-active ModemManager)\" != active ] && [ \"$(pgrep -fc '^/usr/bin/io.elementary.appcenter --silent')\" = 0 ] && echo 'all three off'",
+      "tags": [
+        "system"
+      ]
     },
     {
       "id": "gala-corners-running",
       "title": "Rounded-corner Gala is the compositor you are running",
       "note": "2026-10-12: patched Gala in /usr/local/lib/mseries/gala for the user session only; the launcher falls back to stock Gala and creates ~/.cache/mseries-gala-failed if it fails within 15 s.",
       "precondition": "g=$(pgrep -x gala | head -1); [ -n \"$g\" ] && [ $(( $(date +%s) - $(ps -o etimes= -p $g | tr -d ' ') )) -gt \"$(stat -c %Y ~/.config/systemd/user/io.elementary.gala@wayland.service.d/mseries-screen-corners.conf)\" ]",
-      "command": "g=$(pgrep -x gala | head -1); if [ -e ~/.cache/mseries-gala-failed ]; then echo 'patched Gala failed at startup and fell back to stock (see: journalctl -t mseries-gala)'; false; else readlink /proc/$g/exe | grep -q mseries/gala/bin/gala && echo 'patched Gala running'; fi"
+      "command": "g=$(pgrep -x gala | head -1); if [ -e ~/.cache/mseries-gala-failed ]; then echo 'patched Gala failed at startup and fell back to stock (see: journalctl -t mseries-gala)'; false; else readlink /proc/$g/exe | grep -q mseries/gala/bin/gala && echo 'patched Gala running'; fi",
+      "tags": [
+        "display",
+        "desktop"
+      ]
     },
     {
       "id": "gala-corners-look",
@@ -42,7 +60,12 @@
       "after": "gala-corners-running",
       "title": "Do the screen corners look right?",
       "hint": "Look at the four screen corners: are they rounded to match the display, with no black blobs elsewhere? If not, change GALA_SCREEN_CORNER_RADIUS (10 now) in ~/.config/systemd/user/io.elementary.gala@wayland.service.d/mseries-screen-corners.conf and log out/in.",
-      "note": "2026-10-12: default radius 10 logical px."
+      "note": "2026-10-12: default radius 10 logical px.",
+      "tags": [
+        "display",
+        "desktop",
+        "look"
+      ]
     },
     {
       "id": "colors-look",
@@ -50,7 +73,12 @@
       "title": "Are the softer blue and red tones comfortable?",
       "hint": "Open a few apps (they pick up the new colors when restarted). Selections/buttons now use a softer blue, errors/destructive a softer red; windows have ~13px corners. Edit ~/.config/gtk-4.0/gtk.css to adjust.",
       "precondition": "[ \"$(date +%s)\" -gt $(( $(stat -c %Y ~/.config/gtk-4.0/gtk.css) + 60 )) ]",
-      "note": "2026-10-12: BLUEBERRY/STRAWBERRY named colours overridden in gtk-3.0 and gtk-4.0 gtk.css; Ghostty palette muted."
+      "note": "2026-10-12: BLUEBERRY/STRAWBERRY named colours overridden in gtk-3.0 and gtk-4.0 gtk.css; Ghostty palette muted.",
+      "tags": [
+        "theme",
+        "desktop",
+        "look"
+      ]
     },
     {
       "id": "network-row-look",
@@ -58,35 +86,54 @@
       "title": "Network menu: speed row sits under the connection toggles and moves",
       "hint": "Click the network icon: the down/up speeds and graph should be directly under the Airplane Mode button. Start a download to see it move.",
       "precondition": "true",
-      "note": "2026-10-12: patched io.elementary.panel.network (libnetwork.so); original in /usr/local/lib/mseries/libnetwork.so.original."
+      "note": "2026-10-12: patched io.elementary.panel.network (libnetwork.so); original in /usr/local/lib/mseries/libnetwork.so.original.",
+      "tags": [
+        "network",
+        "desktop",
+        "look"
+      ]
     },
     {
       "id": "dock-usb4-ethernet",
       "title": "Dock: USB4 tunnel up, USB3 devices and wired Ethernet working",
       "note": "2026-10-12: Dell WD22TB4. Needs the new m1n1 + thunderbolt quirk (any Apple router id disables USB3 bandwidth allocation).",
       "precondition": "[ -d /sys/bus/thunderbolt/devices/0-1 ] && [ $(( $(date +%s) - $(journalctl -k -b -o short-unix 2>/dev/null | grep 'new device found, vendor=0xd4' | tail -1 | cut -d. -f1) )) -gt 20 ]",
-      "command": "lsusb -t | grep -q r8152 && ip -br link | grep -E '^en[^ ]+ +UP' && echo 'USB3 tunnel + r8152 Ethernet up'"
+      "command": "lsusb -t | grep -q r8152 && ip -br link | grep -E '^en[^ ]+ +UP' && echo 'USB3 tunnel + r8152 Ethernet up'",
+      "tags": [
+        "dock",
+        "network"
+      ]
     },
     {
       "id": "dock-dp-retry-silent",
       "title": "Dock: no more failed DisplayPort tunnel retries",
       "note": "2026-10-12: QUIRK_NO_DP_TUNNEL for Apple routers. Before: ~316 'DPRX read timeout' lines per attempt, every ~30 s. Not yet seen live because the dock was unplugged when the module was reloaded.",
       "precondition": "[ -d /sys/bus/thunderbolt/devices/0-1 ] && [ $(( $(date +%s) - $(journalctl -k -b -o short-unix 2>/dev/null | grep 'new device found, vendor=0xd4' | tail -1 | cut -d. -f1) )) -gt 120 ]",
-      "command": "s=$(journalctl -k -b -o short-unix 2>/dev/null | grep 'new device found, vendor=0xd4' | tail -1 | cut -d. -f1); n=$(journalctl -k -b --since \"@$s\" 2>/dev/null | grep -c 'DPRX read timeout'); echo \"DPRX read timeouts since the dock appeared: $n (was ~316 per attempt)\"; [ \"$n\" -eq 0 ]"
+      "command": "s=$(journalctl -k -b -o short-unix 2>/dev/null | grep 'new device found, vendor=0xd4' | tail -1 | cut -d. -f1); n=$(journalctl -k -b --since \"@$s\" 2>/dev/null | grep -c 'DPRX read timeout'); echo \"DPRX read timeouts since the dock appeared: $n (was ~316 per attempt)\"; [ \"$n\" -eq 0 ]",
+      "tags": [
+        "dock",
+        "display"
+      ]
     },
     {
       "id": "speakersafetyd-active",
       "title": "Speaker protection daemon is running",
       "note": "2026-10-12: speakersafetyd 1.1.2 installed (j314 profile identical to Arch's 2.0.1). The DSP chain (asahi-audio) could not be installed: Ubuntu's PipeWire has no LV2 filter plugin.",
       "precondition": "[ -e /var/lib/dpkg/info/speakersafetyd.list ]",
-      "command": "systemctl is-active speakersafetyd && journalctl -u speakersafetyd -b --no-pager -n 40 -o cat | grep -m1 'Sample rate'"
+      "command": "systemctl is-active speakersafetyd && journalctl -u speakersafetyd -b --no-pager -n 40 -o cat | grep -m1 'Sample rate'",
+      "tags": [
+        "audio"
+      ]
     },
     {
       "id": "amp-overcurrent",
       "title": "Speaker amp over-current faults have stopped",
       "note": "2026-10-12: tas2764 1-0039 logged 'fault: over current' at ~30-60 min intervals even with volume 0 before speakersafetyd. If this keeps failing, the faults are idle power-up glitches, not something the daemon fixes.",
       "precondition": "[ $(( $(date +%s) - $(stat -c %Y /var/lib/dpkg/info/speakersafetyd.list) )) -gt 7200 ]",
-      "command": "n=$(journalctl -k --since '-2h' --no-pager 2>/dev/null | grep -c 'fault: over current'); echo \"over-current faults in the last 2 h: $n\"; [ \"$n\" -eq 0 ]"
+      "command": "n=$(journalctl -k --since '-2h' --no-pager 2>/dev/null | grep -c 'fault: over current'); echo \"over-current faults in the last 2 h: $n\"; [ \"$n\" -eq 0 ]",
+      "tags": [
+        "audio"
+      ]
     },
     {
       "id": "audio-output-ok",
@@ -94,7 +141,10 @@
       "title": "Speakers work with the Apple sound tuning (quiet test)",
       "hint": "Everything is muted at 0. Pick 'MacBook Pro J314 Speakers', unmute and raise the volume slowly with something quiet playing. Expect fuller, louder sound than before. If anything crackles or distorts, tell me.",
       "precondition": "true",
-      "note": "2026-10-13: asahi-audio 3.4 DSP now loads (LV2 plugin built by install-pipewire-lv2.sh). Never played at volume by Claude."
+      "note": "2026-10-13: asahi-audio 3.4 DSP now loads (LV2 plugin built by install-pipewire-lv2.sh). Never played at volume by Claude.",
+      "tags": [
+        "audio"
+      ]
     },
     {
       "id": "usb-c-survives-suspend",
@@ -102,28 +152,44 @@
       "note": "2026-10-12: after s2idle the xHCI reports 'xHC error in resume, USBSTS 0x401 (Save/Restore Error), Reinit' and attached USB-C devices (ASIX Ethernet, dock) are unregistered and never return until replugged. Cause: phy-apple-atc and dwc3-apple have no system-sleep PM ops and tipd_resume only re-enables the IRQ, so the PHY/mux state is never re-applied for an unchanged partner. Needs a kernel fix (PHY + dwc3-apple + tipd resume), tested with real suspend cycles. Workaround: replug after resume, or avoid suspend while docked. 2026-10-13: the automatic version passed vacuously (suspended with nothing on USB-C), so it is now a manual test with the dock attached. 2026-10-13 finding: with a USB4 dock attached suspend never happens (thunderbolt-apple-acio apple_cio_prepare returns -EBUSY by design), so the machine stays awake with the display off. The resume bug applies to non-USB4 USB-C devices only.",
       "precondition": "[ -d /sys/bus/thunderbolt/devices/0-1 ]",
       "kind": "manual",
-      "hint": "Leave the dock plugged in, suspend (close the lid or Super+... sleep), wait ~20 s, wake. Do the mouse and wired Ethernet come back by themselves? Answer yes only if they did without replugging."
+      "hint": "Leave the dock plugged in, suspend (close the lid or Super+... sleep), wait ~20 s, wake. Do the mouse and wired Ethernet come back by themselves? Answer yes only if they did without replugging.",
+      "tags": [
+        "dock",
+        "suspend",
+        "kernel"
+      ]
     },
     {
       "id": "power-battery-policy",
       "title": "On battery: power-saver profile and CPU ceiling apply by themselves",
       "note": "2026-10-12: mseries-power (udev on macsmc-ac). Simulated only; the real unplug path is unverified. Charge limit 80/75 verified.",
       "precondition": "[ \"$(cat /sys/class/power_supply/macsmc-ac/online)\" = 0 ]",
-      "command": "[ \"$(powerprofilesctl get)\" = power-saver ] && [ \"$(cat /sys/devices/system/cpu/cpufreq/policy2/scaling_max_freq)\" -lt 3036000 ] && echo \"power-saver, P-core cap $(( $(cat /sys/devices/system/cpu/cpufreq/policy2/scaling_max_freq) / 1000 )) MHz\""
+      "command": "[ \"$(powerprofilesctl get)\" = power-saver ] && [ \"$(cat /sys/devices/system/cpu/cpufreq/policy2/scaling_max_freq)\" -lt 3036000 ] && echo \"power-saver, P-core cap $(( $(cat /sys/devices/system/cpu/cpufreq/policy2/scaling_max_freq) / 1000 )) MHz\"",
+      "tags": [
+        "power"
+      ]
     },
     {
       "id": "charge-limit-active",
       "title": "Battery stops charging at 80%",
       "note": "2026-10-12: stop 80, resume 75. Change with: sudo mseries-power limit 100.",
       "precondition": "[ \"$(cat /sys/class/power_supply/macsmc-battery/capacity)\" -ge 80 ]",
-      "command": "[ \"$(cat /sys/class/power_supply/macsmc-battery/charge_control_end_threshold)\" = 80 ] && [ \"$(cat /sys/class/power_supply/macsmc-battery/status)\" != Charging ] && echo \"at $(cat /sys/class/power_supply/macsmc-battery/capacity)%, not charging\""
+      "command": "[ \"$(cat /sys/class/power_supply/macsmc-battery/charge_control_end_threshold)\" = 80 ] && [ \"$(cat /sys/class/power_supply/macsmc-battery/status)\" != Charging ] && echo \"at $(cat /sys/class/power_supply/macsmc-battery/capacity)%, not charging\"",
+      "tags": [
+        "power"
+      ]
     },
     {
       "id": "upstream-dp-watch",
       "title": "New Asahi kernel work on DisplayPort / USB4 (dock video)",
       "note": "2026-10-13: dock video needs DP tunnelling (unimplemented; Sven Peter says it needs reverse engineering) or a way to make the CD321x offer DP Alt Mode (firmware decides; Linux has no mode control). This check passes when AsahiLinux/linux fairydust gets new commits mentioning DP/USB4/tunnel/ACIO/ATC. Then rebuild the kernel from it.",
       "precondition": "python3 ~/.local/share/mseries-verify/upstream-watch.py",
-      "command": "python3 ~/.local/share/mseries-verify/upstream-watch.py --list"
+      "command": "python3 ~/.local/share/mseries-verify/upstream-watch.py --list",
+      "tags": [
+        "dock",
+        "display",
+        "upstream"
+      ]
     },
     {
       "id": "charge-limit-toggle",
@@ -131,7 +197,11 @@
       "note": "2026-10-13: Quick Settings switch calls pkexec mseries-power limit 80|100 (polkit action org.techmore.mseries.power.limit). Built and installed; not yet clicked.",
       "precondition": "[ -e /sys/class/power_supply/macsmc-battery/charge_control_end_threshold ]",
       "kind": "manual",
-      "hint": "Open the gear menu, switch 'Limit Charging to 80%' off, enter your password, and run `mseries-power status`: it should say stop at 100%. Switch it back on and confirm 80%. Cancelling the password box should leave the switch where it was."
+      "hint": "Open the gear menu, switch 'Limit Charging to 80%' off, enter your password, and run `mseries-power status`: it should say stop at 100%. Switch it back on and confirm 80%. Cancelling the password box should leave the switch where it was.",
+      "tags": [
+        "power",
+        "desktop"
+      ]
     },
     {
       "id": "docked-lid-works",
@@ -139,7 +209,12 @@
       "note": "2026-10-13: mseries-docked-lid user service holds the logind handle-lid-switch inhibitor while a USB4 dock is attached, locks on lid close and restores brightness on open. Inhibitor and brightness permission verified; the real lid close is untested.",
       "precondition": "[ -d /sys/bus/thunderbolt/devices/0-1 ]",
       "kind": "manual",
-      "hint": "With the dock attached, close the lid for about 20 seconds, then open it. Did the screen lock, the panel go dark, and the brightness come back on opening? Check `journalctl -b -u systemd-logind | grep -i suspend` shows no new suspend attempts."
+      "hint": "With the dock attached, close the lid for about 20 seconds, then open it. Did the screen lock, the panel go dark, and the brightness come back on opening? Check `journalctl -b -u systemd-logind | grep -i suspend` shows no new suspend attempts.",
+      "tags": [
+        "dock",
+        "suspend",
+        "desktop"
+      ]
     }
   ]
 }

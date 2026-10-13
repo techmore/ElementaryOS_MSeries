@@ -663,7 +663,18 @@ class Troubleshooter(Gtk.Application):
                               tooltip_text=item.get('detail') or '')
             if item['state'] != 'ask':
                 label.add_css_class('dim-label')
-            row.append(label)
+            tags = item.get('tags') or []
+            if tags:
+                # Area tags (dock, power, ...) under the title tell similar-looking checks apart.
+                text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, hexpand=True)
+                text.append(label)
+                tag_label = Gtk.Label(label='  ·  '.join(tags), xalign=0)
+                tag_label.add_css_class('dim-label')
+                tag_label.add_css_class('caption')
+                text.append(tag_label)
+                row.append(text)
+            else:
+                row.append(label)
             if item['state'] == 'ask':
                 good = Gtk.Button(label='Looks Good')
                 good.connect('clicked', self.answer_check, item['id'], 'yes')

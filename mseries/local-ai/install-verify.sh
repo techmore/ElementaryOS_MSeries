@@ -23,7 +23,7 @@ install -Dm644 "$repo/mseries/local-ai/verify-checks.json" "$HOME/.local/share/m
 install -Dm755 "$repo/mseries/local-ai/upstream-watch.py" "$HOME/.local/share/mseries-verify/upstream-watch.py"
 # The troubleshooter window shows open checks, if it is installed.
 if [[ -f $HOME/.local/libexec/mseries-troubleshooter-ui ]]; then
-  install -Dm755 "$repo/mseries/local-ai/troubleshooter-ui.py" "$HOME/.local/libexec/mseries-troubleshooter-ui"
+  install -Dm755 "$repo/mseries/netspeed/troubleshooter/mseries-troubleshooter-ui" "$HOME/.local/libexec/mseries-troubleshooter-ui"
 fi
 
 mkdir -p "$unit_dir"

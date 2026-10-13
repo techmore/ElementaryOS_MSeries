@@ -6,7 +6,7 @@ recorded as checks. A timer runs whatever has become applicable, stores every re
 when a check passes, fails or needs a human look. Commands come only from the seed file next to this
 tool (user-owned), never from a model.
 
-  mseries-verify status [--json]      what is pending, passed or failed
+  mseries-verify status [--json] [--tag TAG]   what is pending, passed or failed (optionally one area)
   mseries-verify run [--notify]       run every check whose precondition holds now
   mseries-verify confirm ID yes|no [note...]   answer a "look at it yourself" check
   mseries-verify history [ID]         every recorded result
@@ -32,7 +32,7 @@ TIMEOUT = 25
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS checks(
   id TEXT PRIMARY KEY, title TEXT NOT NULL, kind TEXT NOT NULL DEFAULT 'auto',
-  note TEXT, hint TEXT, precondition TEXT, command TEXT, after TEXT,
+  note TEXT, hint TEXT, precondition TEXT, command TEXT, after TEXT, tags TEXT,
   state TEXT NOT NULL DEFAULT 'waiting', detail TEXT, updated REAL, passed_at REAL);
 CREATE TABLE IF NOT EXISTS runs(
   id INTEGER PRIMARY KEY AUTOINCREMENT, check_id TEXT NOT NULL, ts REAL NOT NULL,
@@ -47,6 +47,9 @@ def connect():
     db = sqlite3.connect(DB, timeout=10)
     db.row_factory = sqlite3.Row
     db.executescript(SCHEMA)
+    # Databases created before tags existed gain the column on first use.
+    if 'tags' not in {row['name'] for row in db.execute('PRAGMA table_info(checks)')}:
+        db.execute('ALTER TABLE checks ADD COLUMN tags TEXT')
     if fresh:
         os.chmod(DB, 0o600)
     return db
@@ -64,13 +67,14 @@ def load_seed(db, path=None):
     seed = json.loads(Path(path or SEED).read_text())
     for item in seed['checks']:
         db.execute(
-            """INSERT INTO checks(id,title,kind,note,hint,precondition,command,after,updated)
-               VALUES(?,?,?,?,?,?,?,?,?)
+            """INSERT INTO checks(id,title,kind,note,hint,precondition,command,after,tags,updated)
+               VALUES(?,?,?,?,?,?,?,?,?,?)
                ON CONFLICT(id) DO UPDATE SET title=excluded.title, kind=excluded.kind, note=excluded.note,
                hint=excluded.hint, precondition=excluded.precondition, command=excluded.command,
-               after=excluded.after""",
+               after=excluded.after, tags=excluded.tags""",
             (item['id'], item['title'], item.get('kind', 'auto'), item.get('note'), item.get('hint'),
-             item.get('precondition'), item.get('command'), item.get('after'), time.time()))
+             item.get('precondition'), item.get('command'), item.get('after'),
+             ','.join(item.get('tags', [])), time.time()))
     db.commit()
     return len(seed['checks'])
 
@@ -120,11 +124,16 @@ def notify(title, body):
 
 
 def write_status(db):
-    rows = db.execute('SELECT id,title,kind,state,detail,updated,passed_at FROM checks ORDER BY rowid').fetchall()
+    rows = db.execute('SELECT id,title,kind,state,detail,updated,passed_at,tags FROM checks ORDER BY rowid').fetchall()
     counts = {}
     for row in rows:
         counts[row['state']] = counts.get(row['state'], 0) + 1
-    payload = {'generated': time.time(), 'counts': counts, 'items': [dict(row) for row in rows]}
+    items = []
+    for row in rows:
+        item = dict(row)
+        item['tags'] = [tag for tag in (item['tags'] or '').split(',') if tag]
+        items.append(item)
+    payload = {'generated': time.time(), 'counts': counts, 'items': items}
     tmp = STATE / 'verify-status.json.tmp'
     with open(tmp, 'w', opener=lambda p, f: os.open(p, f, 0o600)) as out:
         json.dump(payload, out)
@@ -170,13 +179,19 @@ def cmd_run(db, args):
 
 def cmd_status(db, args):
     payload = write_status(db)
+    if args.tag:
+        payload['items'] = [item for item in payload['items'] if args.tag in item['tags']]
+        payload['counts'] = {}
+        for item in payload['items']:
+            payload['counts'][item['state']] = payload['counts'].get(item['state'], 0) + 1
     if args.json:
         print(json.dumps(payload, indent=1))
         return 0
     icon = {'passed': '✓', 'failed': '✗', 'ask': '?', 'waiting': '…'}
     for item in payload['items']:
         when = time.strftime('%b %d %H:%M', time.localtime(item['updated'])) if item['updated'] else ''
-        print(f"{icon.get(item['state'], '?')} {item['state']:7s} {item['id']:24s} {item['title']}")
+        tags = f"  [{' '.join(item['tags'])}]" if item['tags'] else ''
+        print(f"{icon.get(item['state'], '?')} {item['state']:7s} {item['id']:24s} {item['title']}{tags}")
         if item['state'] in ('failed', 'ask', 'waiting') and item['detail']:
             print(f"    {item['detail'][:150]}")
     print(', '.join(f'{v} {k}' for k, v in sorted(payload['counts'].items())))
@@ -235,6 +250,7 @@ def main(argv=None):
     run.set_defaults(func=cmd_run)
     status = sub.add_parser('status')
     status.add_argument('--json', action='store_true')
+    status.add_argument('--tag', help='only checks with this tag')
     status.set_defaults(func=cmd_status)
     confirm = sub.add_parser('confirm')
     confirm.add_argument('id')

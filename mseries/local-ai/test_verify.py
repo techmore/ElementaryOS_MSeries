@@ -126,6 +126,21 @@ class VerifyTests(unittest.TestCase):
             if check.get('after'):
                 self.assertIn(check['after'], ids)
 
+    def test_tags_are_stored_listed_and_filterable(self):
+        self.load({'id': 'a', 'title': 'A', 'kind': 'manual', 'tags': ['dock', 'power']},
+                  {'id': 'b', 'title': 'B', 'kind': 'manual'})
+        payload = verify.write_status(self.db)
+        by_id = {item['id']: item for item in payload['items']}
+        self.assertEqual(by_id['a']['tags'], ['dock', 'power'])
+        self.assertEqual(by_id['b']['tags'], [])
+        verify.cmd_status(self.db, SimpleNamespace(json=True, tag='dock'))
+
+    def test_database_without_tags_column_is_upgraded(self):
+        self.db.execute('ALTER TABLE checks DROP COLUMN tags')
+        self.db.commit()
+        db = verify.connect()
+        self.assertIn('tags', {row['name'] for row in db.execute('PRAGMA table_info(checks)')})
+
 
 if __name__ == '__main__':
     unittest.main()
