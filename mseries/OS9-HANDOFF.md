@@ -206,3 +206,13 @@ summary passes for liveiso and sysupdate. Tests also inspect actual built
 liveiso payloads, now called by CI and the local worker. Rebuild required;
 the 89e959d image is assembled/hashed successfully but lacks those live-session
 helpers. See LOCAL-BUILD.md. Do not describe it as ready for hardware boot.
+
+## Generic VM boot milestone
+
+While corrected GitHub build 38410538372 runs, the existing local 89e959d
+ISO booted in QEMU/KVM to the graphical installer language screen. VM had
+4 CPUs/4 GiB, network disabled, read-only ISO, no host or writable guest disk.
+Screenshot and reproducible command are in VM-SMOKE-TEST.md. Stop at this
+milestone: no installer selection, installed guest, or Mac hardware boot was
+verified. That ISO still predates the live-session overlay fix; repeat the
+content/VM checks on the corrected build before progressing.

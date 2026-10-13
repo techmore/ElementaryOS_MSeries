@@ -9,6 +9,9 @@ OS 9 implementation progress and Claude Code takeover tasks are in
 The first factory arm64 ISO build succeeded on October 13; artifact details
 and remaining verification are in [`FIRST-ISO-BUILD.md`](FIRST-ISO-BUILD.md).
 Hardware boot remains unverified.
+The earlier local ISO reached the graphical installer in an isolated ARM64
+KVM VM; see [`VM-SMOKE-TEST.md`](VM-SMOKE-TEST.md). Repeat this on the image
+with the corrected live-session hardware overlay before progressing.
 
 ## Done and verified
 
