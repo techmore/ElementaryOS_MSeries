@@ -28,7 +28,8 @@ Where to get the kernel:
   Needs about 40 GiB free and the Arch side, not the elementary subvolume.
   Read `usb4/RECOVERY.md` first.
 
-Neither kernel has been booted with the `0003` AVD kvmalloc fix yet.
+The CI `.deb` kernel was booted on 2026-10-14 (hub, mouse, audio work; Ethernet needs a newer m1n1; see
+`usb4/CUTOVER.md`). The `0003` AVD kvmalloc fix still has no long-uptime decode test.
 
 ## TL;DR
 

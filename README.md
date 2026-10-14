@@ -125,8 +125,8 @@ Experimental and unfinished. Current state, blockers and the next task: [`mserie
 |---|---|
 | One-command installer (boot layout, encryption, build, enhancements) | written, sandbox-tested, **not run on a wiped Mac** |
 | elementary unlock screen (Plymouth) | written, **not seen on hardware** |
-| Hardware video decode (720p/1080p verified; 4K untested) | works after memory compaction; real fix in the unbooted usb4.4 kernel |
-| Patched kernel (usb4.4) | CI build in progress, **not booted** |
+| Hardware video decode (720p/1080p verified; 4K untested) | works after memory compaction; real fix in the usb4.4 kernel (booted; decode under fragmentation still untested) |
+| Patched kernel (usb4.4) | **boots on the M1 Pro** (CI `.deb`, test GRUB entry, 2026-10-14). Dock hub, mouse and USB audio work with the j314s device tree in `boot.bin`; dock Ethernet needs a newer m1n1 (USB4 tunables); dock video unsupported. See [`CUTOVER.md`](mseries/fairydust/usb4/CUTOVER.md) |
 | Factory ISO | builds in CI, **unverified on hardware** |
 | Documentation index | [`mseries/DOCS.md`](mseries/DOCS.md) |
 
