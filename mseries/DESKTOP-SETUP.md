@@ -165,6 +165,14 @@ and follows OpenAI's branding guidelines.
 Remove it with `bash mseries/install-codexbar-wingpanel.sh --uninstall`.
 Source: https://github.com/steipete/CodexBar/tree/main/Integrations/Linux
 
+On the M1 Pro, the center area of Wingpanel conflicts with the camera notch.
+Keep CodexBar in the left group beside the application launcher with
+`bash mseries/install-wingpanel-codexbar-left.sh`. This rebuilds the matching
+Wingpanel 8.0.4 source, places CodexBar immediately after the launcher, and
+preserves the optional right-side clock ordering. It saves the current panel
+binary first; restore it with `bash mseries/install-wingpanel-codexbar-left.sh
+--uninstall`.
+
 The CodexBar installer enables OpenAI Codex and OpenCode Go together on a
 fresh install. If the existing provider is Codex, Codex+Claude, or a custom
 list, it adds OpenCode Go while preserving the other CodexBar preferences.

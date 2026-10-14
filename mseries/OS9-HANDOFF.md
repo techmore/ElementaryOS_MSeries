@@ -2,6 +2,36 @@
 
 Updated 2026-10-13. Repository: techmore/ElementaryOS_MSeries.
 
+## Latest test result — 2026-10-13
+
+Downloaded CI run 38479577898's ARM64 installer artifact and independently
+matched its ISO SHA-256 against the included `INSTALLER-SHA256SUMS`. Booted the
+ISO with QEMU 10.2.1/KVM and AAVMF to the graphical installer language screen;
+serial output reached the OS 9 login prompt. The test used read-only ISO media
+and attached no writable guest or host disk. Evidence and test boundary are in
+[`VM-SMOKE-TEST.md`](VM-SMOKE-TEST.md); screenshot:
+[`os9-ci-38479577898-installer.png`](../docs/images/os9-ci-38479577898-installer.png).
+
+This ISO boot uses the generic live kernel, so it does not test the Fairydust
+kernel or the Apple m1n1 hardware path. The Fairydust kernel has a separate
+direct QEMU userspace-handoff smoke test. Next: boot a disposable installed
+image with the Fairydust kernel/initramfs and validate the Apple DTB selection
+path; Mac hardware boot remains unverified. Do not write the host ESP or change
+the running host kernel.
+
+## CodexBar notch placement — 2026-10-13
+
+The owner asked for CodexBar to sit left of the MacBook notch. Wingpanel 8.0.4
+normally assigns non-special indicators to its right group, while the date
+occupies the center. Added a source patch that places only `codexbar` in the
+left group immediately after the application launcher; other indicators and
+the clock stay in their existing groups. Its installer also reapplies the
+existing optional right-clock ordering. The pinned source built and its Meson
+tests passed, then the patched binary was installed. The original binary is
+backed up at `/usr/local/lib/mseries/io.elementary.wingpanel.pre-codexbar-left`;
+`bash mseries/install-wingpanel-codexbar-left.sh --uninstall` restores it.
+Log out and back in to load the panel placement.
+
 ## Source verified
 
 The official public elementary/os repository was cloned to

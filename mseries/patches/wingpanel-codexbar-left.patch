@@ -1,0 +1,18 @@
+diff --git a/src/Widgets/IndicatorEntry.vala b/src/Widgets/IndicatorEntry.vala
+index 60e39de..399d19b 100644
+--- a/src/Widgets/IndicatorEntry.vala
++++ b/src/Widgets/IndicatorEntry.vala
+@@ -149,2 +149,3 @@ public class Wingpanel.Widgets.IndicatorEntry : Granite.Bin {
+         switch (node.base_indicator.code_name) {
++            case "codexbar": return 1;
+             case Indicator.NIGHT_LIGHT: return 1;
+diff --git a/src/Widgets/Panel.vala b/src/Widgets/Panel.vala
+index 6092f37..243110d 100644
+--- a/src/Widgets/Panel.vala
++++ b/src/Widgets/Panel.vala
+@@ -227,3 +227,4 @@ public class Wingpanel.Widgets.Panel : Granite.Bin {
+     private static bool left_indicators_filter_func (Object item) requires (item is IndicatorEntry) {
+-        return ((IndicatorEntry) item).base_indicator.code_name == Indicator.APP_LAUNCHER;
++        var code_name = ((IndicatorEntry) item).base_indicator.code_name;
++        return code_name == Indicator.APP_LAUNCHER || code_name == "codexbar";
+     }
