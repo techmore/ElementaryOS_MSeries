@@ -228,7 +228,8 @@ mod_payload() {
            install-sound-indicator-fix.sh install-keyboard-indicator-fix.sh \
            install-files-portal-fix.sh install-gala-osk-fix.sh \
            quick-settings/ScreenBrightness.vala quick-settings/KeyboardBrightness.vala \
-           quick-settings/ChargeLimit.vala gala-daemon-fix/build.py; do
+           quick-settings/ChargeLimit.vala gala-daemon-fix/build.py \
+           netspeed/panel-network.patch netspeed/wire-network-usage.py; do
     copy 0755 "$here/$f" "$prefix/mseries/$f"
   done
   for f in "$here"/patches/*.patch; do

@@ -68,7 +68,7 @@ bash "$here/enhance.sh" --root "$root" >/dev/null
 for f in etc/systemd/zram-generator.conf usr/local/sbin/mseries-power usr/libexec/mseries/docked-lid \
          usr/lib/systemd/user/mseries-docked-lid.service etc/skel/.config/gtk-4.0/gtk.css \
          usr/sbin/elementary-mac-enhance etc/wireplumber/wireplumber.conf.d/50-mseries-asahi-no-suspend.conf usr/libexec/mseries/audio-watchdog usr/share/elementary-mac/mseries/install-brave.sh usr/share/elementary-mac/mseries/install-video-decode.sh \
-         usr/share/elementary-mac/mseries/patches/network-throughput.patch usr/share/elementary-mac/shim/sudo; do
+         usr/share/elementary-mac/mseries/patches/network-throughput.patch usr/share/elementary-mac/mseries/netspeed/panel-network.patch usr/share/elementary-mac/mseries/netspeed/wire-network-usage.py usr/share/elementary-mac/shim/sudo; do
   [[ -e $root/$f ]] || { echo "FAIL enhance.sh did not write $f" >&2; fails=$((fails + 1)); }
 done
 [[ -L $root/etc/systemd/system/multi-user.target.wants/mseries-power.service ]] ||
