@@ -68,3 +68,18 @@ Fixed in the script. For an install made with the old script, install the module
     d=$(mktemp -d /var/tmp/m.XXXX) && dpkg-deb -x ~/mseries-kernel-usb4.4/linux-image-*.deb "$d" \
       && sudo cp -a "$d"/lib/modules/7.1.13-elementary-fairydust-usb4 /usr/lib/modules/ \
       && sudo depmod -a 7.1.13-elementary-fairydust-usb4 && rm -rf "$d"
+
+## Stage 2: device tree in boot.bin (dock USB4 nodes, speaker amps)
+
+First boot of the usb4 kernel works, but with the stock `boot.bin`: no USB4 nodes (no `thunderbolt`
+devices, no dock) and `tas2764: Failed to parse devicetree` (speakers) because the kernel expects the
+matching device tree. `install-bootbin.sh` swaps only the `t6000-j314s` tree into `boot.bin`
+(m1n1 v1.6.1, U-Boot and the other 109 trees stay byte-identical; `swap-dtb.py` passes an identity test).
+
+    sudo bash mseries/fairydust/usb4/install-bootbin.sh ~/mseries-kernel-usb4.4            # dry run
+    sudo bash mseries/fairydust/usb4/install-bootbin.sh ~/mseries-kernel-usb4.4 --apply
+
+This changes the stage before GRUB. It writes a backup first (`/boot/m1n1/boot.bin.KNOWN-GOOD-pre-dtb-*`
+and `/root/usb4-backup/`). The stock kernel's entry keeps booting with the new tree in most cases, but if
+the Mac stops before GRUB, restore from macOS (`RECOVERY.md`). Unverified: whether this m1n1 generates the
+USB4 tunables the driver needs; the check is `journalctl -b -k | grep -iE "tunable|acio"` after reboot.
