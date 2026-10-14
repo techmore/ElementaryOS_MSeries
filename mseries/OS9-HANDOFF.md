@@ -27,6 +27,24 @@ per-component review before importing new patches.
   survive while package payloads are pruned.
 - Completed the pending audit/status-page edits and specific bug-fix roadmap.
 
+## One-command installer (2026-10-14)
+
+- Added `bin/elementary-mac-setup`, a port of omarchy-mac-setup: state machine
+  boot-layout -> encrypt -> elementary, resuming via a systemd unit. Steps 1-2
+  run omarchy-mac's `omarchy-system-boot-to-esp` / `-btrfs-migrate` (fetched at
+  run time); step 3 runs `transform/elementary-grow.sh --apply` + `--finalize`,
+  makes `@elementary` the default GRUB entry (`--keep-default` skips), and adds
+  LightDM autologin when encrypted.
+- Added `mseries/install-unlock-screen.sh`: elementary Plymouth theme on the
+  LUKS passphrase screen (plymouth + keymap hooks via a last-sorted mkinitcpio
+  drop-in, backups, image verification with rollback).
+- `elementary-grow.sh` now honours `ELEMENTARY_HOSTNAME`, `ELEMENTARY_PASSWORD_HASH`
+  and adds `quiet splash` when the elementary theme is configured.
+- Verified: `mseries/test-elementary-mac-setup.sh` (state machine, validators,
+  config round-trip) and shellcheck. NOT verified: any step on hardware, the
+  Plymouth hook order on a real Asahi Alarm initramfs, LightDM autologin.
+  Test on a spare/backed-up machine first.
+
 ## Next tasks, in order
 
 Coordination: Codex handles implementation and review; OpenCode handles
