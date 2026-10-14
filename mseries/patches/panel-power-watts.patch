@@ -1,0 +1,70 @@
+diff --git a/src/Indicator.vala b/src/Indicator.vala
+index 0154cb8..7d59216 100644
+--- a/src/Indicator.vala
++++ b/src/Indicator.vala
+@@ -161,6 +161,11 @@ public class Power.Indicator : Wingpanel.Indicator {
+                 display_device.is_charging ? display_device.time_to_full : 0
+             );
+ 
++            display_widget.show_power_draw (
++                display_device.energy_rate,
++                display_device.is_charging
++            );
++
+             update_tooltip ();
+         }
+     }
+diff --git a/src/Widgets/DisplayWidget.vala b/src/Widgets/DisplayWidget.vala
+index aa60b0a..2531a03 100644
+--- a/src/Widgets/DisplayWidget.vala
++++ b/src/Widgets/DisplayWidget.vala
+@@ -38,6 +38,8 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
+ 
+     private Gtk.Label percent_label;
+     private Gtk.Label charge_eta_label;
++    private Gtk.Revealer power_draw_revealer;
++    private Gtk.Label power_draw_label;
+     private Gtk.Image image;
+ 
+     construct {
+@@ -64,7 +66,16 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
+ 
+         append (image);
+         append (percent_revealer);
++        power_draw_label = new Gtk.Label (null);
++        power_draw_label.add_css_class ("dim-label");
++        power_draw_label.add_css_class ("numeric");
++        power_draw_revealer = new Gtk.Revealer () {
++            transition_type = Gtk.RevealerTransitionType.SLIDE_RIGHT,
++            child = power_draw_label,
++        };
++
+         append (charge_eta_revealer);
++        append (power_draw_revealer);
+ 
+         settings.bind ("show-percentage", percent_revealer, "reveal-child", GLib.SettingsBindFlags.GET);
+         bind_property ("allow-percent", percent_revealer, "visible", GLib.BindingFlags.SYNC_CREATE);
+@@ -80,6 +91,23 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
+         percent_revealer.reveal_child = show;
+     }
+ 
++    public void show_power_draw (double watts, bool charging) {
++        // UPower reports the draw as a positive number for both directions; below 0.1 W it is noise
++        // (fully charged on AC), so hide the label rather than show "0.0 W".
++        if (watts < 0.1) {
++            power_draw_revealer.reveal_child = false;
++            power_draw_label.label = "";
++            return;
++        }
++
++        ///Translators: This represents battery power in watts with one decimal, e.g. "12.3 W"
++        power_draw_label.label = _("%.1f W").printf (watts);
++        power_draw_label.tooltip_text = charging
++            ? _("Battery is charging at %.1f W").printf (watts)
++            : _("The computer is using %.1f W from the battery").printf (watts);
++        power_draw_revealer.reveal_child = true;
++    }
++
+     public void show_charge_eta (int64 time_to_full) {
+         if (time_to_full <= 0) {
+             charge_eta_revealer.reveal_child = false;
