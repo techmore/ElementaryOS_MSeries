@@ -42,6 +42,9 @@ install workflow. The observed system uses apt; the reported slowdown is not yet
 measured. Backend selection and implementation are open.
 The manual installer batch now reuses successful metadata refreshes until a
 repository/key changes and logs stage durations; real timing results are pending.
+An opt-in Signal prototype (`install-signal.sh --atomic`) now stages verified
+releases and supports selector rollback. Fault/concurrency tests pass; real
+desktop update/rollback and backend selection remain pending.
 
 The network/DNS logger now uses noninteractive authorization and installs a
 polkit rule for read-only DNS monitoring by administrators, addressing repeated

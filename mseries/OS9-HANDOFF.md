@@ -1102,3 +1102,25 @@ Owner: "we are going to need a Siri-like, Whisper-like speech to text, universal
 
 `mseries/apply-pending.sh` (run as your normal user): `--dry-run` prints every command and changes nothing; `--only wifi,power,polkit,greeter`; `--list`. Steps: install the fixed Wi-Fi resume script and load `brcmfmac` if missing, replace the `mseries-power` unit (drops the old multi-user link), install the DNS-logger polkit rule, install the greeter obex drop-in. Backs up any file it replaces to `<file>.pre-mseries`; never touches bootloader, kernel, initramfs or audio. Dry run checked on the live Mac; real run is the owner's.
 Facts checked for the speech-to-text request: the session is Wayland (Pantheon), IBus 1.5.34 is installed (so an IBus engine is viable), and ALSA lists a capture device `MacBook Pro J314 High-Power Audio Interface [aop_audio]`; whether it records usable speech is not yet tested. `pactl` is not installed here.
+## Atomic app prototype — 2026-10-14
+
+Added `atomic-app.py` with per-app writer locking, prepared release staging,
+synced release/generation files, atomic selector activation, retained history,
+status and explicit rollback. Its run command pins the resolved release path
+before execution. A directory-sync error after selector replacement is reported
+as an activated app with unconfirmed durability, rather than a false claim that
+activation did not occur. Newly created store ancestors are also synced.
+
+`install-signal.sh --atomic` is the first opt-in integration. The existing
+publisher-signature check precedes extraction/staging; the installed CLI and
+desktop launcher route through the selected release, and the icon follows it.
+Legacy installation files are retained. Default installs still use the existing
+path. No live app/profile was migrated during development.
+
+Validation: all nine `test-atomic-app.py` cases pass, covering rollback,
+concurrent updates, interrupted copying, failed selector replacement, sync
+failure after replacement, launch-path pinning, parent durability, unsafe links
+and invalid entrypoints. The existing extracted Signal tree passes read-only
+staging validation; installer shell syntax and whitespace checks pass. Desktop
+launch/data-migration qualification, automatic health recovery, cleanup and the
+Flatpak/Nix comparison remain open in issue #50.
