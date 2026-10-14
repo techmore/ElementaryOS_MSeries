@@ -15,10 +15,14 @@ commit=f966e0108
 source "$repo/mseries/lib-backup.sh"
 
 if [[ ${1:-} == --uninstall ]]; then
-  mseries_restore "$bin" io.elementary.files
+  mseries_restore "$bin" pantheon-files
   echo 'Restored the packaged Files portal.'
   exit 0
 fi
+
+# The patch is built from a pinned upstream commit that matches this packaged version.
+version=$(dpkg-query -W -f='${Version}' pantheon-files 2>/dev/null || true)
+[[ $version == 7.3.3* ]] || { echo "This patch targets pantheon-files 7.3.3.x; found ${version:-none}." >&2; exit 1; }
 
 for tool in git meson ninja valac; do
   command -v "$tool" >/dev/null || {
@@ -36,6 +40,6 @@ git -C "$build_dir/src" apply "$patch"
 meson setup "$build_dir/build" "$build_dir/src" --prefix=/usr -Dwith-zeitgeist=disabled
 ninja -C "$build_dir/build" filechooser-portal/io.elementary.files.xdg-desktop-portal
 
-mseries_backup "$bin" io.elementary.files
+mseries_backup "$bin" pantheon-files
 sudo install -m755 "$build_dir/build/filechooser-portal/io.elementary.files.xdg-desktop-portal" "$bin"
 echo 'Installed the fixed Files portal. Log out and back in to load it.'
