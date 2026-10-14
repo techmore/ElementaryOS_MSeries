@@ -937,3 +937,13 @@ Verified in this checkout: `post-install.sh --list` and `--dry-run` include all
 new stages; `git diff --check` is clean. This command environment cannot inspect
 the owner's live user service or browser profile, so apply with Brave fully
 quit, then review `bash mseries/post-install.sh --status` and the service logs.
+
+## Current desktop bug — unexpected screen dimming (2026-10-14)
+
+The owner reports that the built-in display keeps dimming unexpectedly. The trigger is not yet known, and it is not yet clear whether this is idle dimming, ambient brightness control, a power-profile action, or an M-series brightness-service interaction. This is tracked as P1 in `BUG-FIX-ROADMAP.md`. Capture the brightness/backlight value and relevant power/ambient-light journal events at the time of the next occurrence; avoid changing battery or display policy until the cause is identified. Prioritize a temporary user-controlled way to stop it, then make the confirmed fix persistent in the enhancement scripts.
+
+## Requested desktop apps — 2026-10-14
+
+- **Homeboard:** the project is hosted at `tasks.stoverparc.org`; `mseries/install-homeboard-launcher.sh` installs a user launcher and has been run. The separate elementary Tasks sync bridge needs `gir1.2-ecal-2.0` and `gir1.2-edataserver-1.2`, then a Google sign-in to register this computer. The current tool shell is not root and cannot install those packages; an `apt-get install` attempt failed on the dpkg lock permissions. The actual sign-in is still for the owner to complete in the desktop browser.
+- **Emporia Energy Monitor:** the repository includes an elementary Linux client, not just its macOS Swift app. It connects to the existing SER8 collector and must not start another poller. The client's WebKit 6 GI package is absent in this shell, and upstream's `energy.stoverparc.org` public TLS/auth deployment is still documented as incomplete. Do not enable a local collector or trust the public endpoint until those gates are resolved. The macOS `build.sh` is not the Linux install path.
+- **Torrential:** the private M-series source checkout was fetched and its locked ARM64 release build completed. This shell has no `transmission-daemon` or root access to install the daemon/AppArmor package, so it is not installed from this checkout. The handoff and roadmap retain the prior desktop install/transfer evidence; check the live desktop before treating this isolated tool environment as its current package state. Keep the fork private pending license grant.
