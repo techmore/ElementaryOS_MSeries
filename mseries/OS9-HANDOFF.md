@@ -1065,3 +1065,7 @@ Ran `bash mseries/local-ai/install-verify.sh` (user-level, no sudo): `~/.local/b
 - Added `mseries/local-ai/people-watch.py` + `people-watch.json` (13 projects from Omarchy's "Introducing Omarchy M" post plus Tether, BlueFerry, OpenBubbles, iCloud clients), a `upstream-people-watch` verify check, an installer line, and `test_people_watch.py` (passes). Baseline recorded on this Mac. Documented in `mseries/WATCHLIST.md`. Finding: Tether v0.2.38 exists; we pin v0.2.37.
 - Added `mseries/EDGE-AND-RUST-PLAN.md`: a 24-hour detect/build/smoke-test lane that does NOT auto-deploy kernel or bootloader changes to the Mac, and a ranked Rust port plan (privileged root helpers and the DNS logger first; installer shell and Vala patches stay). Not started.
 - Not done: no CI edge job, no Rust code yet.
+
+### Lead: omarchy-mx-mac and the Aurora kernel — 2026-10-14
+
+Read `maralcbr/omarchy-mx-mac` (README, releases, commits, changelog; read-only). It is feature-frozen; active work is in `omacom/omarchy-mac` (`quattro-upstream`) and `omacom/omarchy-mac-installer`. Its new images use the Aurora kernel (`aurora-silicon/linux`), which it reports as hardware-qualified on the 14-inch M1 Pro. Watchlist updated (15 projects, baseline re-acknowledged). Next: compare Aurora with our fairydust-usb4 kernel on dock USB4, suspend and video (VM/edge lane first, no change to the Mac's kernel or bootloader), and read their LUKS and s2idle work against ours. See `mseries/WATCHLIST.md`.

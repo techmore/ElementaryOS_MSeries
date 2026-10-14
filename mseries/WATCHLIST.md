@@ -15,7 +15,9 @@ once their repositories are confirmed. Do not guess handles.
 
 | Project | Who | Why it matters here |
 | --- | --- | --- |
-| maralcbr/omarchy-mx-mac | Marcelo Alcantara | Native Mac installer; cut the build that lit up USB-C monitors |
+| maralcbr/omarchy-mx-mac | Marcelo Alcantara | Native Mac installer; **feature-frozen** (security/boot fixes only) |
+| aurora-silicon/linux | Aurora kernel | Kernel lane its image pins; qualified on the 14" M1 Pro |
+| omacom/omarchy-mac-installer | Omarchy M | Where installer work now continues |
 | omacom/omarchy-mac | Naeem Malik, Scott Jones | M1/M2 Omarchy for a year |
 | omacom/omarchy-mac-pkgs | Omarchy M | Package source we port from (audited at 222f7a8) |
 | omacom/try-omarchy | Eduardo Martinez | Omarchy as a native Mac app |
@@ -32,3 +34,22 @@ Their claims are leads, not evidence: Omarchy's post says Touch ID works and tha
 is the first release target, but its own status page still lists Touch ID as not in the
 first release. Verify before relying on any of it. Respect each project's license; do not
 import sponsor-only or SSPL code into the image (see `AGENTS.md`).
+
+## Lead: omarchy-mx-mac (read 2026-10-14, nothing installed or downloaded)
+
+[maralcbr/omarchy-mx-mac](https://github.com/maralcbr/omarchy-mx-mac) (MIT, 420 stars, latest release v4.0.4-mac.1) is
+Omarchy on Arch Linux ARM + Asahi, with a signed, notarized macOS installer. Points that matter here:
+
+- **Frozen.** Its README says new Apple Silicon work goes to `omacom/omarchy-mac` (branch
+  `quattro-upstream`, last commit 2026-10-04) and installers to `omacom/omarchy-mac-installer`
+  (active today). Both are now watched (the first via `omarchy-mac`).
+- **Aurora kernel.** New installs use `aurora-silicon/linux` (default branch `aurora-stable`, working branch
+  `aurora-wip`), pinned to a commit it says is qualified on the **14-inch M1 Pro** (our model) and 16-inch M2 Max.
+  Aurora is a candidate second kernel lane next to Asahi fairydust for our dock/USB4, suspend and video gaps.
+  Its license shows as NOASSERTION on GitHub (a Linux tree, so GPL-2.0 expected; confirm before packaging).
+  Evaluate in the edge lane or a VM only; the Mac's kernel and bootloader are not changed without the owner.
+- **Relevant work to read:** LUKS2 key and token hardening (Sept 25 commits) against our unverified
+  `elementary-mac-setup` encryption flow; the "s2idle sleep-drain programme" tickets against our suspend and
+  battery checks; its 22-model admission list and VM-acceptance method for our factory image qualification.
+- Different base (Arch Linux ARM, Hyprland), so copy ideas and tests, not packages (see the porting boundary
+  in `ROADMAP.md`).
