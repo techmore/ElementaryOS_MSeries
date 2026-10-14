@@ -15,6 +15,7 @@ for component in CLI Desktop; do
   sha256sum -c "$archive.sha256"
 done
 mkdir -p "$HOME/.local/lib/codexbar-cli" "$HOME/.local/bin"
+install -m 0755 "$repo/mseries/codexbar-opencode-local.py" "$HOME/.local/lib/codexbar-cli/codexbar-opencode-local.py"
 tar -xzf "CodexBarCLI-${version}-linux-aarch64.tar.gz" -C "$HOME/.local/lib/codexbar-cli"
 mv -f "$HOME/.local/lib/codexbar-cli/codexbar" "$HOME/.local/lib/codexbar-cli/codexbar-upstream"
 rm -f "$HOME/.local/bin/codexbar"

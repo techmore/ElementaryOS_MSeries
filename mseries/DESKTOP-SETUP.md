@@ -173,22 +173,25 @@ preserves the optional right-side clock ordering. It saves the current panel
 binary first; restore it with `bash mseries/install-wingpanel-codexbar-left.sh
 --uninstall`.
 
-The CodexBar installer enables OpenAI Codex and OpenCode Go together on a
-fresh install. If the existing provider is Codex, Codex+Claude, or a custom
-list, it adds OpenCode Go while preserving the other CodexBar preferences.
-Other explicit single-provider selections are left alone; switch to **custom** and add
-`opencodego` in Settings → Providers to include it.
+The CodexBar installer adds OpenAI Codex and OpenCode Go to the provider list
+when the current selection allows it. Other explicit single-provider
+selections are preserved; switch to **custom** and add `opencodego` in
+Settings → Providers to request CodexBar's account-level OpenCode Go provider.
 
-OpenCode Go is separate from the base OpenCode web-dashboard provider. Sign in
-to OpenCode Go in the OpenCode CLI (`/connect` → **OpenCode Go**) and enter your
-API key there. OpenCode stores it in `~/.local/share/opencode/auth.json`. The
-M-series CodexBar wrapper reads only the `opencode-go` key for OpenCode Go
-usage calls and passes it to the upstream CLI as `OPENCODE_API_KEY`; the key
-stays in OpenCode's user auth file and is not copied into the image or
-CodexBar settings. The Wingpanel entry then shows the reported quota. A device
-with only local OpenCode Go history can show estimated usage; that estimate is
-not account quota. You can also set `OPENCODE_API_KEY` yourself to override
-the OpenCode CLI credential.
+The Wingpanel menu also reads OpenCode v2's `~/.local/share/opencode/opencode.db`
+directly in SQLite read-only mode. It shows local cost-bearing OpenCode Go
+assistant records over 5 hours, 7 days, and 30 days, labeled **local estimate ·
+not account quota**. This works with the v2 OAuth credential stored in
+OpenCode's database and does not need an API key or browser cookies. It does
+not modify OpenCode's database or credential store. CodexBar's separate
+account-quota provider still requires an auth method supported by CodexBar;
+the local estimate is shown even when that provider cannot authenticate.
+Install the Wingpanel indicator after CodexBar so its read-only adapter is
+available:
+
+```sh
+bash mseries/install-codexbar-wingpanel.sh
+```
 
 ## Signal Beta in Wingpanel
 

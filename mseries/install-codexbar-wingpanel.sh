@@ -16,6 +16,10 @@ if [[ ${1:-} == --uninstall ]]; then
   exit 0
 fi
 
+mkdir -p "$HOME/.local/lib/codexbar-cli"
+install -m 0755 "$repo/mseries/codexbar-opencode-local.py" \
+  "$HOME/.local/lib/codexbar-cli/codexbar-opencode-local.py"
+
 for tool in meson ninja valac pkg-config; do
   command -v "$tool" >/dev/null || {
     echo "Missing $tool. Install build requirements with:" >&2

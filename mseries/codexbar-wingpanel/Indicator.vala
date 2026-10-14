@@ -17,6 +17,7 @@ namespace MSeries {
         private uint refresh_poll_source = 0;
         private string executable;
         private bool request_in_flight = false;
+        private bool local_opencode_request_in_flight = false;
         private bool snapshot_busy = false;
         private bool snapshot_stale = false;
         private uint refresh_poll_count = 0;
@@ -231,6 +232,7 @@ namespace MSeries {
                 }
                 var snapshot = root.get_object ();
                 update_snapshot (snapshot);
+                refresh_local_opencode_usage.begin ();
                 if (refresh_after_snapshot && should_refresh_on_open (snapshot)) {
                     refresh_usage ();
                 }
@@ -325,6 +327,92 @@ namespace MSeries {
                 update_status += " · " + snapshot_error;
             }
             status_label.set_text (update_status);
+        }
+
+        private async void refresh_local_opencode_usage () {
+            if (local_opencode_request_in_flight) {
+                return;
+            }
+            local_opencode_request_in_flight = true;
+            var helper = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "lib",
+                "codexbar-cli", "codexbar-opencode-local.py");
+            try {
+                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
+                    "python3", helper);
+                string stdout_text;
+                string stderr_text;
+                yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
+                if (!process.get_successful () || stdout_text.strip ().length == 0) {
+                    append_local_opencode_status ("OpenCode local usage helper could not run.");
+                    return;
+                }
+                var parser = new Json.Parser ();
+                parser.load_from_data (stdout_text, -1);
+                var root = parser.get_root ();
+                if (root == null || root.get_node_type () != Json.NodeType.OBJECT) {
+                    append_local_opencode_status ("OpenCode local usage returned invalid data.");
+                    return;
+                }
+                var usage = root.get_object ();
+                var state = usage.get_string_member ("status") ?? "unavailable";
+                var section = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
+                section.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
+                var title = new Gtk.Label ("OpenCode Go · local estimate") { xalign = 0 };
+                title.add_css_class ("heading");
+                section.append (title);
+                var source_note = new Gtk.Label ("Not account quota · from OpenCode v2 local history") {
+                    xalign = 0, wrap = true
+                };
+                source_note.add_css_class ("dim-label");
+                source_note.add_css_class ("caption");
+                section.append (source_note);
+
+                if (state == "available") {
+                    var periods = usage.get_array_member ("periods");
+                    if (periods != null) {
+                        for (uint i = 0; i < periods.get_length (); i++) {
+                            var period = periods.get_object_element (i);
+                            var label = period.get_string_member ("label") ?? "Usage";
+                            var cost = period.get_double_member ("costUSD");
+                            var requests = period.get_int_member ("requests");
+                            append_section_metric (section, label,
+                                "$%0.2f · %s requests".printf (cost, requests.to_string ()));
+                        }
+                    }
+                } else {
+                    var message = usage.get_string_member ("message") ?? "Local usage is unavailable.";
+                    var detail = new Gtk.Label (message) { xalign = 0, wrap = true };
+                    detail.add_css_class ("dim-label");
+                    section.append (detail);
+                }
+
+                providers_box.append (section);
+            } catch (Error e) {
+                append_local_opencode_status ("OpenCode local usage is unavailable: " + e.message);
+            } finally {
+                local_opencode_request_in_flight = false;
+            }
+        }
+
+        private void append_section_metric (Gtk.Box section, string name, string value) {
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 7);
+            row.append (new Gtk.Label (name) { xalign = 0, hexpand = true });
+            var value_label = new Gtk.Label (value) { xalign = 1 };
+            value_label.add_css_class ("numeric");
+            row.append (value_label);
+            section.append (row);
+        }
+
+        private void append_local_opencode_status (string message) {
+            var section = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
+            section.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
+            var title = new Gtk.Label ("OpenCode Go · local estimate") { xalign = 0 };
+            title.add_css_class ("heading");
+            section.append (title);
+            var detail = new Gtk.Label (message) { xalign = 0, wrap = true };
+            detail.add_css_class ("dim-label");
+            section.append (detail);
+            providers_box.append (section);
         }
 
         private void append_provider_entry (Json.Object entry) {
