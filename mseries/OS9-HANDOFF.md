@@ -493,3 +493,20 @@ M-series validation workflow, then the full arm64 image build and post-build
 module check before deploying the resulting image. The working desktop has the
 patched module installed and `~/.config/mseries/network-speed.ini` enables the
 panel readout.
+
+## Local general agent continuation (October 13)
+
+Crush v0.98.1 ARM64 is installed from a checksum-pinned release, with an
+isolated Local Agent workspace, Applications launcher and native robot-menu
+entry. `local-ai/install-agent.sh` reproduces it. Qwen3.5-9B 4-bit answered a
+short loopback API request and emitted a structured synthetic tool call on
+this M1 Pro. The first full Crush prefill exhausted GPU scratch; the private
+server now uses 256-token prefill chunks via `configure-prefill.py`, and a full
+Crush answer completed. The final profile admits 32k context and one prompt
+cache (8.93 GiB estimate, not measured peak); use catalog ID to retain KV facts.
+The user explicitly requested killing the port conflict: whop2p is stopped
+and disabled at login. The model is an on-demand user service, not enabled
+at login. NAS address/share path remains pending; no NAS writes occurred.
+ANE artifacts were already staged and remain unactivated. No kernel, device
+tree, bootloader or audio changes were made. See local-ai/README.md and the
+October 13 agent receipt for final verification and remaining scope.

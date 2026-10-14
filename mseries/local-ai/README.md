@@ -73,6 +73,44 @@ Spending window and upstream refresh settings are available today.
 
 For the full upstream project screen, see [Joshua repository review](../JOSHUA-REPOSITORY-REVIEW.md).
 
+## General local agent (October 13)
+
+`bash mseries/local-ai/install-agent.sh` adds checksum-pinned Crush v0.98.1 for
+Linux ARM64 and **Local Agent** in Applications. It uses the existing MLX
+runtime with Qwen3.5-9B 4-bit, pinned to
+`938d8919941c6e7efd3c7150eff7fe9d12afa631`. Prepare that model first; the
+installer does not download model weights or start a model service.
+
+Run `mseries-agent` or open Local Agent. Its isolated workspace and Crush
+configuration live in `~/Documents/Local Agent`. It starts the on-demand
+`mseries-agent-model` user service on `127.0.0.1:8080`; stop it with
+`systemctl --user stop mseries-agent-model` to release model memory. It is not
+enabled at login. Cloud model providers, telemetry and provider catalog
+refresh are disabled in this workspace. Tool approval defaults are retained.
+This is a terminal frontend in elementary's terminal, not a GTK chat app.
+
+The private server uses the catalog ID so its 32K context has known KV memory
+facts. One retained prompt-cache entry is included in admission (8.93 GiB
+requirement on the final idle preflight, not a measured peak). The first attempt using a local snapshot path was rejected because it
+lost those facts; no memory admission check was bypassed. Prompt and output
+remain bounded by the server. Crush normal output is capped at 2048 tokens,
+and coding-specific LSP, Sourcegraph and Crush introspection tools are hidden
+to reduce unnecessary prompt overhead. The initial complete tool prompt
+caused a Vulkan allocation failure during prefill; `configure-prefill.py`
+reduces the private server's prefill chunk from the upstream default to 256
+tokens. It preserves context admission, serialization and cache settings.
+The patch refuses an unexpected runtime source and is idempotent.
+
+The short API answer and structured synthetic tool call passed on M1 Pro.
+NAS scope needs the owner's mounted path or share address before integration.
+The owner explicitly requested stopping the conflicting `whop2p` service;
+it is stopped and its login autostart disabled. Its executable and data remain.
+To restore it, first stop the model service, then run
+`systemctl --user enable --now whop2p` (both otherwise compete for port 8080).
+
+Crush configuration reference:
+https://github.com/charmbracelet/crush/blob/v0.98.1/docs/config/README.md
+
 ## Ornith 1.5 9B local crash and log troubleshooting
 
 Install `bash mseries/local-ai/install-troubleshooter.sh`. This adds **Local

@@ -88,3 +88,13 @@ local kernel monitor. After package inspection, integrate it as an opt-in
 experimental image alongside the required pinned m1n1/DTB path. Host boot
 remains unchanged. Generic Ubuntu Asahi candidate is a packaging reference,
 not a replacement for the enhanced test kernel.
+
+## Local general agent (October 13)
+
+Crush + Qwen3.5-9B uses the private Honeykrisp GPU runtime, with an on-demand
+user service and native robot-menu launcher. Full prompt prefill required
+256-token chunks to fit GPU scratch; a short API response, synthetic tool call
+and full Crush answer have completed. The final 32k context/one-cache profile
+is memory-admitted; it is not a full-context capacity benchmark. NAS connection
+awaits the owner's share path/address. ANE activation remains a separate boot
+trial; existing staged artifacts do not prove execution.
