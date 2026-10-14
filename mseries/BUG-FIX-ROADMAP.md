@@ -33,6 +33,27 @@ build; hardware qualification remains pending.
 - Undocked lid close, s2idle suspend (14m44s) and lid-open resume work; Wi-Fi reconnected.
 - `mseries-docked-lid` logged "dock attached: holding the lid-switch inhibitor". Suspend with the dock attached was not retried.
 
+## Priority order (2026-10-14)
+
+Ranked by how often the owner hits it, how small the fix is, and what it depends on. The P1/P2/P3 labels in the table below are older; this order replaces them for planning.
+
+| Rank | Item | Why here | Kind |
+| ---: | --- | --- | --- |
+| 1 | Launcher typed text is unreadable | Hit on every launch; a few lines of CSS | Quick win |
+| 2 | Window buttons on the left (Mac style) | One setting in `apply-desktop-settings.py`; visible all day | Quick win |
+| 3 | Dock Ethernet icon dies / `rtl8153b-2.fw` missing | Likely a firmware file and one pinned profile; needs root | Quick win |
+| 4 | Lid-open login needs the power button | Hit on every lid open; needs one traced resume first | Investigate, then fix |
+| 5 | Screenshot thumbnail (drag to use, hold Alt to also save) | Daily convenience; Gala patch or small helper | Medium |
+| 6 | Preview-style image and PDF markup | Pairs with 5; mostly choosing and packaging a tool | Medium |
+| 7 | Gaps left from the Omarchy parity audit (audio watchdog, function-key mode, mic map) | Audio watchdog work has landed in main; confirm on hardware | Medium |
+| 8 | Touch ID | Annoying, but depends on unverified Secure Enclave work | Research |
+| 9 | iMessage (OpenBubbles) | Useful; evaluate build and Apple ID risk first | Research |
+| 10 | iCloud password sync | No official Linux client; evaluate safe options | Research |
+| 11 | Small checks: brightness keys, keyboard light on lock and lid, Wi-Fi resume, Gala OSK guard, file the Wingpanel report | Cheap to verify, low daily impact | Housekeeping |
+| 12 | Factory ISO hardware boot and image packaging (audio chain, firmware) | Release blocker for the image, not for this desktop | After the reinstall decision |
+| 13 | Dock display, ACIO suspend handshake, USB-C resume power management | Kernel work; blocked upstream or large | Blocked / long |
+| 14 | ArtCraft apps as Adobe and Office replacements | Large evaluation; start after the basics work | Last |
+
 ## Open fixes and verification
 
 | Priority | Finding | Concrete next step | State |
