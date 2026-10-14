@@ -698,3 +698,15 @@ Documented the reported 112 GiB free gap before Asahi p3/p4/p5 and a checkpointe
 ## 2026-10-14 pre-reinstall backup
 
 Backup and reinstall notes are in `BACKUP-AND-REINSTALL.md`; the script is `backup/mseries-backup.sh`. A 334 MB staging copy was written and checksum-verified on the same disk. It still has to be copied off the machine (no external destination was mounted). No bug fixes were attempted. Next: copy the backup off, review `~/Downloads`, then reinstall.
+
+## 2026-10-14: usb4.4 kernel build and image-build fix
+
+- Run 38582725389 (`daily-9.0.yml`, fairydust=true): `build-kernel` **succeeded**. Artifact
+  `fairydust-kernel-packages-38582725389` holds `linux-image-7.1.13-elementary-fairydust-usb4_7.1.13+elementary.usb4.4_arm64.deb`
+  (checksums verified; `apple-avd.ko` uses `__kvmalloc_node_noprof`/`kvfree`, so the 0003 fix is built in). **Not installed or booted yet.**
+- The `build` (factory ISO) job failed in `mkosi.images/apple-silicon/build-network-indicator`: its version gate reads the
+  apple-silicon overlay's own dpkg database, which never contains `io.elementary.panel.network` (that package lives in the base
+  image), so it always saw "none" and exited 1. The script now skips with a CI warning instead of failing. The installed system
+  still gets the plugin at first boot (version-gated). Not yet re-run in CI.
+- Next: decide how to deploy the Debian kernel package to the Mac (host is Arch), boot it, run `mseries/check-video-decode.sh`
+  (720p/1080p/4K); re-run the workflow to confirm the image job now passes.

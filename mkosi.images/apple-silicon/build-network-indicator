@@ -8,9 +8,15 @@ readonly plugin=usr/lib/aarch64-linux-gnu/wingpanel-9/libnetwork.so
 
 version=$(dpkg-query --admindir="$BUILDROOT/var/lib/dpkg" -W -f='${Version}' \
     io.elementary.panel.network 2>/dev/null || true)
+# This image is a separate overlay (Packages= below does not include the panel), so its own package
+# database normally has no network indicator to check; the version of the panel in the final image is
+# not visible from here. Skip, loudly, rather than fail the whole image: an unverified plugin must not
+# be staged over a different panel version. A real mismatch is skipped the same way. The installed
+# system gets the same plugin at first boot, version-gated (mseries/install-network-throughput.sh).
 if [[ $version != "$expected_version_prefix"* ]]; then
-    echo "Network indicator patch targets ${expected_version_prefix}.x; image has ${version:-none}." >&2
-    exit 1
+    echo "::warning::Network speed indicator skipped: patch targets ${expected_version_prefix}.x, this image build sees ${version:-no panel package}." >&2
+    echo "Network indicator patch targets ${expected_version_prefix}.x; image has ${version:-none}; skipping (not an error)." >&2
+    exit 0
 fi
 
 work_dir=$(mktemp -d "${TMPDIR:-/tmp}/mseries-network-indicator.XXXXXX")
