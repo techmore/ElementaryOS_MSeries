@@ -25,7 +25,7 @@ driverdir=$(pkg-config --variable=driverdir libva 2>/dev/null || true)
 driverdir=${AVD_DRIVERDIR:-${driverdir:-/usr/lib/aarch64-linux-gnu/dri}}   # AVD_DRIVERDIR: for tests
 
 if [[ ${1:-} == --uninstall ]]; then
-  sudo rm -f "$driverdir/v4l2_request_drv_video.so" "$driverdir/asahi_drv_video.so"
+  sudo rm -f "$driverdir/v4l2_request_drv_video.so" "$driverdir/asahi_drv_video.so" /etc/sysctl.d/90-mseries-avd.conf
   echo 'Removed the VA-API driver.'
   exit 0
 fi
@@ -65,6 +65,19 @@ if [[ -e $driverdir/asahi_drv_video.so && ! -L $driverdir/asahi_drv_video.so ]];
 fi
 sudo install -D -m 0644 "$built" "$driverdir/v4l2_request_drv_video.so"
 sudo ln -sf v4l2_request_drv_video.so "$driverdir/asahi_drv_video.so"
+
+# The kernel driver allocates one large physically contiguous block per decode job (an order-10 kmalloc
+# in avd_init_job; observed on an M1 Pro: "page allocation failure: order:10" followed by the VA-API
+# driver reporting "decoder reported an error"). On a machine that has been up for a while that block
+# can be unavailable, and 1080p decodes fail or hang until memory is compacted (tested: the same 1080p
+# stream failed twice, then decoded bit-exact after `echo 1 > /proc/sys/vm/compact_memory`). Until the
+# driver uses kvzalloc, ask the kernel to compact more eagerly in the background. This is a mitigation
+# for fragmentation, not a fix, and it is not proven to remove every failure.
+sudo install -D -m 0644 /dev/stdin /etc/sysctl.d/90-mseries-avd.conf <<'SYSCTL'
+# ElementaryOS_MSeries: the Apple Video Decoder driver needs a large contiguous allocation per decode job
+vm.compaction_proactiveness = 60
+SYSCTL
+sudo sysctl -q -p /etc/sysctl.d/90-mseries-avd.conf 2>/dev/null || true
 
 # Verify: the driver must bind to the decoder and offer at least H.264.
 if command -v vainfo >/dev/null; then
