@@ -15,8 +15,8 @@ import time
 import urllib.request
 from urllib.parse import urlsplit
 
-MODEL_REPO = 'mlx-community/Qwen3.5-9B-4bit'
-REVISION = '8b2b98c00a6b4d291155e4890773ca8f769aee53'
+MODEL_REPO = 'ornith-ai/Ornith-1.5-9B-MLX-4bit'
+REVISION = 'a48173b246ac705be75c05bedf1a0666db522d53'
 DEFAULT_ENDPOINT = 'http://127.0.0.1:8767'
 MODEL_UNIT = 'mseries-troubleshooter-model.service'
 CHAT_UNIT = 'mlx-omarchy-chat.service'
@@ -218,13 +218,22 @@ def refused_for_memory():
     return 'DOES NOT FIT' in result.stdout
 
 
+def served_model(models):
+    """Pin to the model the server was started with (its absolute path).
+
+    The server also lists other cached models and swaps to whichever one a request names, so taking the first
+    listed id can silently run a different model than the one the service loaded."""
+    ids = [m['id'] for m in models]
+    return next((i for i in ids if i.startswith('/')), ids[0])
+
+
 def start_server(endpoint, chat_paused=None):
-    stage("model-start", "Starting the local Qwen3.5-9B service…")
+    stage("model-start", "Starting the local model service…")
     if endpoint != DEFAULT_ENDPOINT:
         raise ValueError('--start is only supported for the dedicated default endpoint')
     model = Path.home() / '.cache/huggingface/hub' / ('models--' + MODEL_REPO.replace('/', '--')) / 'snapshots' / REVISION
     if not (model / 'config.json').is_file():
-        raise ValueError('Pinned Qwen3.5-9B model missing; run install-troubleshooter.sh first')
+        raise ValueError('Pinned model missing; run install-troubleshooter.sh first')
     subprocess.run(['systemctl', '--user', 'start', MODEL_UNIT], check=True)
     for attempt in range(120):
         try:
@@ -242,7 +251,7 @@ def start_server(endpoint, chat_paused=None):
                 subprocess.run(['systemctl', '--user', 'reset-failed', MODEL_UNIT], capture_output=True, text=True)
                 subprocess.run(['systemctl', '--user', 'start', MODEL_UNIT], check=True)
             elif unit_state(MODEL_UNIT) == 'failed' and refused_for_memory():
-                raise ValueError('Not enough free memory to load the model (it needs about 9 GiB free). '
+                raise ValueError('Not enough free memory to load the model (it needs about 8 GiB free). '
                                  'Close a few large apps and try again.')
             if attempt % 10 == 0:
                 stage("model-loading", f"Waiting for the model to load into memory · {attempt}s elapsed (up to 120s)…")
@@ -283,7 +292,7 @@ def main():
         models = api(endpoint, '/v1/models')['data']
         if not models:
             raise ValueError('No model served')
-        model = models[0]['id']
+        model = served_model(models)
         stage("analyzing", f"{model} is analyzing {len(logs.splitlines())} evidence lines on-device · this may take a few minutes…")
         response = api(endpoint, '/v1/chat/completions', {
             'model': model, 'messages': [{'role': 'system', 'content': SYSTEM},

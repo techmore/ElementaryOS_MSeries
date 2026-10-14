@@ -73,18 +73,23 @@ Spending window and upstream refresh settings are available today.
 
 For the full upstream project screen, see [Joshua repository review](../JOSHUA-REPOSITORY-REVIEW.md).
 
-## Qwen3.5-9B local crash and log troubleshooting
+## Ornith 1.5 9B local crash and log troubleshooting
 
 Install `bash mseries/local-ai/install-troubleshooter.sh`. This adds **Local
 Troubleshooter** to Applications and the `mseries-troubleshoot` command.
 Uses Joshua's Linux MLX runtime and private Honeykrisp driver, with
-`mlx-community/Qwen3.5-9B-4bit` pinned to
-`8b2b98c00a6b4d291155e4890773ca8f769aee53` (about 5.6 GB download).
-It replaced Gemma 4 E4B on 2026-10-13 after a side-by-side run on this Mac:
-Qwen's advice was more specific and it took the planted `rm -rf` line in a
-test log as hostile, but it needs about 1 GiB more memory and runs slower per
-analysis (35-47 s versus 23-33 s). One run each on two inputs, so a first look,
-not a benchmark. Qwen3.5 also gets Joshua's fused decode route.
+`ornith-ai/Ornith-1.5-9B-MLX-4bit` pinned to
+`a48173b246ac705be75c05bedf1a0666db522d53` (about 5.0 GB download). It is a
+post-trained Qwen3.5 9B (same `qwen3_5` architecture and 4-bit grouping as
+before, so the same tuned kernels apply) and the model card states no license:
+check it before redistributing.
+
+History: Gemma 4 E4B, then Qwen3.5-9B, then Ornith (2026-10-13). On this Mac
+Ornith matched Qwen3.5-9B on speed (about 17.7 tok/s decode) and tool calls,
+was smaller (4.71 GiB against 5.57 GiB) and was better calibrated on a real
+journal: Qwen over-claimed a Wi-Fi firmware fault, Ornith ranked it as noise.
+Both refused a planted `rm -rf` line in a test log. One run each on two inputs,
+so a first look, not a benchmark.
 
 ```sh
 mseries-troubleshoot --start "Why did my desktop crash?"

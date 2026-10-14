@@ -6,21 +6,21 @@ launcher="$HOME/.local/bin/mlx-omarchy-serve"
 test -x "$runtime" && test -x "$launcher" || { echo 'Install mseries/local-ai/install.sh first.' >&2; exit 1; }
 "$runtime" - <<'PY'
 from huggingface_hub import snapshot_download
-snapshot_download('mlx-community/Qwen3.5-9B-4bit', revision='8b2b98c00a6b4d291155e4890773ca8f769aee53')
+snapshot_download('ornith-ai/Ornith-1.5-9B-MLX-4bit', revision='a48173b246ac705be75c05bedf1a0666db522d53')
 PY
-model="$HOME/.cache/huggingface/hub/models--mlx-community--Qwen3.5-9B-4bit/snapshots/8b2b98c00a6b4d291155e4890773ca8f769aee53"
+model="$HOME/.cache/huggingface/hub/models--ornith-ai--Ornith-1.5-9B-MLX-4bit/snapshots/a48173b246ac705be75c05bedf1a0666db522d53"
 install -Dm755 "$repo/mseries/local-ai/troubleshoot.py" "$HOME/.local/bin/mseries-troubleshoot"
 install -Dm755 "$repo/mseries/local-ai/brief.py" "$HOME/.local/bin/mseries-brief"
 install -Dm755 "$repo/mseries/local-ai/ask.py" "$HOME/.local/bin/mseries-ask"
 mkdir -p "$HOME/.config/systemd/user"
 cat > "$HOME/.config/systemd/user/mseries-troubleshooter-model.service" <<EOF
 [Unit]
-Description=On-device Qwen3.5-9B troubleshooting model
+Description=On-device Ornith 1.5 9B troubleshooting model
 [Service]
 Environment=HF_HUB_OFFLINE=1
 Environment=TRANSFORMERS_OFFLINE=1
 Environment=HF_HUB_DISABLE_TELEMETRY=1
-ExecStart="$launcher" serve "$model" --weights-gib 5.57 --context 4096 --host 127.0.0.1 --port 8767 --offline --yes
+ExecStart="$launcher" serve "$model" --weights-gib 4.71 --context 4096 --host 127.0.0.1 --port 8767 --offline --yes
 TimeoutStopSec=20
 SuccessExitStatus=143
 EOF
@@ -31,7 +31,7 @@ cat > "$HOME/.local/share/applications/mseries-troubleshooter.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=Local Troubleshooter
-Comment=Analyze crashes and logs privately with Qwen3.5-9B
+Comment=Analyze crashes and logs privately with Ornith 1.5 9B
 Exec=/usr/bin/python3 "$HOME/.local/libexec/mseries-troubleshooter-ui"
 Icon=utilities-system-monitor
 Categories=System;Utility;
