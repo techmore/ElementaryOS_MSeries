@@ -591,3 +591,7 @@ add the Realtek firmware and a pinned profile, repeat the docked lid-close test.
 ## Asahi root expansion planning — 2026-10-14
 
 Documented the reported 112 GiB free gap before Asahi p3/p4/p5 and a checkpointed proposal in [`STORAGE-PLAN.md`](STORAGE-PLAN.md) and [`procedures/ROOT-EXPANSION.md`](procedures/ROOT-EXPANSION.md). No disk or filesystem operations were run. The gap's origin and current sector layout still need verification; Asahi guidance limits disk changes to free space prepared by its installer. Next: collect the runbook's read-only preflight output, verify backup/recovery readiness, and review the exact target before any proposed write. The factory ISO remains unqualified on Apple hardware.
+
+## 2026-10-14 pre-reinstall backup
+
+Backup and reinstall notes are in `BACKUP-AND-REINSTALL.md`; the script is `backup/mseries-backup.sh`. A 334 MB staging copy was written and checksum-verified on the same disk. It still has to be copied off the machine (no external destination was mounted). No bug fixes were attempted. Next: copy the backup off, review `~/Downloads`, then reinstall.
