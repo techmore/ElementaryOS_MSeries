@@ -21,6 +21,7 @@ find "$BUILDROOT" -xdev -mindepth 1 -depth \
     ! -path "$BUILDROOT/usr/share/touchegg*" \
     ! -path "$BUILDROOT/usr/share/doc" \
     ! -path "$BUILDROOT/usr/share/doc/mseries-touchegg*" \
+    ! -path "$BUILDROOT/usr/share/doc/mseries-video-decode*" \
     ! -path "$BUILDROOT/usr/sbin" \
     ! -path "$BUILDROOT/usr/sbin/mseries-wifi-resume-fix" \
     ! -path "$BUILDROOT/usr/sbin/mseries-wifi-firmware" \
@@ -28,6 +29,9 @@ find "$BUILDROOT" -xdev -mindepth 1 -depth \
     ! -path "$BUILDROOT/usr/libexec/mseries-brightness" \
     ! -path "$BUILDROOT/usr/lib" \
     ! -path "$BUILDROOT/usr/lib/aarch64-linux-gnu" \
+    ! -path "$BUILDROOT/usr/lib/aarch64-linux-gnu/dri" \
+    ! -path "$BUILDROOT/usr/lib/aarch64-linux-gnu/dri/v4l2_request_drv_video.so" \
+    ! -path "$BUILDROOT/usr/lib/aarch64-linux-gnu/dri/asahi_drv_video.so" \
     ! -path "$BUILDROOT/usr/lib/aarch64-linux-gnu/wingpanel-9" \
     ! -path "$BUILDROOT/usr/lib/aarch64-linux-gnu/wingpanel-9/libnetwork.so" \
     ! -path "$BUILDROOT/usr/lib/aarch64-linux-gnu/wingpanel-9/libquick-settings.so" \

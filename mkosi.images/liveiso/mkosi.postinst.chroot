@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Present only in the arm64 Apple overlay; x86 images have no such payload.
+if [[ -x /usr/libexec/mseries/verify-video-driver-packaging ]]; then
+    /usr/libexec/mseries/verify-video-driver-packaging
+fi

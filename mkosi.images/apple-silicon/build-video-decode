@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Build the VA-API bridge offline; decoder kernel and firmware qualify separately.
+set -euo pipefail
+readonly commit=c653eaa6234a02b5f31f77a8aa23f7a744650e87
+readonly sha256=0d8368fe7d1fea304acdc4903e2442486c880daffc37819fef687c8cecf34cf3
+readonly driverdir=/usr/lib/aarch64-linux-gnu/dri
+# Stop on competing implementations rather than overlay a future Mesa driver.
+for root in "$BUILDROOT" "$DESTDIR"; do
+    alias=$root$driverdir/asahi_drv_video.so
+    if [[ -e $alias || -L $alias ]]; then
+        if [[ ! -L $alias || $(readlink "$alias") != v4l2_request_drv_video.so ]]; then
+            echo "Conflicting Asahi VA-API driver: $alias" >&2
+            exit 1
+        fi
+    fi
+    if [[ -e $root$driverdir/v4l2_request_drv_video.so || -L $root$driverdir/v4l2_request_drv_video.so ]]; then
+        echo "Existing V4L2 VA-API driver requires an explicit packaging decision: $root$driverdir" >&2
+        exit 1
+    fi
+done
+work=$(mktemp -d "${TMPDIR:-/tmp}/mseries-video-decode.XXXXXX")
+trap 'rm -rf "$work"' EXIT
+curl -fsSL --proto '=https' --tlsv1.2 --retry 3 \
+    "https://github.com/omacom/libva-v4l2_request/archive/$commit.tar.gz" -o "$work/source.tar.gz"
+printf '%s  %s\n' "$sha256" "$work/source.tar.gz" | sha256sum --check --status
+tar -xzf "$work/source.tar.gz" -C "$work"
+source=$work/libva-v4l2_request-$commit
+meson setup "$work/build" "$source" --prefix=/usr --buildtype=release \
+    -Dcodec_av1=enabled -Ddriverdir="$driverdir"
+ninja -C "$work/build" src/v4l2_request_drv_video.so
+# Meson's install path strips build/debug paths per the upstream default.
+meson install -C "$work/build" --destdir "$work/install" --no-rebuild
+install -Dm644 "$work/install$driverdir/v4l2_request_drv_video.so" \
+    "$DESTDIR$driverdir/v4l2_request_drv_video.so"
+ln -sfn v4l2_request_drv_video.so "$DESTDIR$driverdir/asahi_drv_video.so"
+install -Dm644 "$source/COPYING" "$DESTDIR/usr/share/doc/mseries-video-decode/COPYING"
+for file in README.md docs/SUPPORT.md docs/support-matrix.json; do
+    install -Dm644 "$source/$file" "$DESTDIR/usr/share/doc/mseries-video-decode/$file"
+done
+install -m644 "${BASH_SOURCE[0]}" "$DESTDIR/usr/share/doc/mseries-video-decode/build-video-decode.sh"
+printf 'Source: https://github.com/omacom/libva-v4l2_request\nRevision: %s\nArchive SHA256: %s\nSource archive: https://github.com/omacom/libva-v4l2_request/archive/%s.tar.gz\n' \
+    "$commit" "$sha256" "$commit" > "$DESTDIR/usr/share/doc/mseries-video-decode/SOURCE"

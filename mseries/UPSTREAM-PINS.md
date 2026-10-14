@@ -78,3 +78,14 @@ manual installer fetch this exact commit. Source: JoseExposito/touchegg.
 License: GPL-3.0-or-later. The factory payload retains COPYING, COPYRIGHT,
 the build recipe and a pinned source-archive URL under
 `/usr/share/doc/mseries-touchegg`. Build and gesture qualification are pending.
+
+## Factory VA-API bridge candidate
+
+`omacom/libva-v4l2_request` revision
+`c653eaa6234a02b5f31f77a8aa23f7a744650e87`, source archive SHA256
+`0d8368fe7d1fea304acdc4903e2442486c880daffc37819fef687c8cecf34cf3`.
+Factory and manual install use the same source. License: GPL-3.0.
+The factory retains COPYING, README, support contract/matrix, source provenance
+and the build recipe. Upstream reports no supported matrix rows at this pin;
+M1/T8103 evidence is not M1 Pro qualification. Enabled codec compilation is
+not hardware codec support. Kernel AVD, firmware and client validation are open.

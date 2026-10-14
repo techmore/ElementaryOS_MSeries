@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Build-time guard: final consumer packages must not own the overlaid VA driver.
+set -euo pipefail
+driverdir=/usr/lib/aarch64-linux-gnu/dri
+[[ -s /var/lib/dpkg/status ]] || { echo 'Missing package ownership database' >&2; exit 1; }
+for name in asahi_drv_video.so v4l2_request_drv_video.so; do
+    for prefix in /usr/lib /lib; do
+        path=$prefix/aarch64-linux-gnu/dri/$name
+        if owner=$(dpkg-query --search "$path" 2>&1); then
+            echo "Factory VA-API overlay conflicts with a consumer package: $owner" >&2
+            exit 1
+        else
+            rc=$?
+            [[ $rc == 1 ]] || { printf '%s\n' "$owner" >&2; exit "$rc"; }
+        fi
+    done
+done
+[[ -s $driverdir/v4l2_request_drv_video.so && -L $driverdir/asahi_drv_video.so && \
+   $(readlink "$driverdir/asahi_drv_video.so") == v4l2_request_drv_video.so ]] || {
+    echo 'Factory VA-API payload or its alias is missing/inconsistent' >&2
+    exit 1
+}

@@ -259,3 +259,24 @@ tag. Added Touchegg to GitHub upstream subscriptions. Subagent reviewed source
 dependencies, paths, activation and licensing. No tests/build or physical
 gesture qualification were run. Remaining browser, video and desktop patches
 still require build-time integration; factory hardware qualification is open.
+
+## Factory video-decode bridge candidate — 2026-10-14
+
+Added `build-video-decode` using the existing manual installer's exact c653eaa
+archive and SHA256. Meson builds/installs the stripped VA-API shared library;
+finalize retains it, the Asahi alias and GPL/source/support documentation.
+Competing canonical libraries or foreign Asahi aliases fail closed. Runtime
+libva/libdrm and vainfo are declared in both arm64 consumers. The fragmentation
+mitigation is shared with the manual installer and exported as a factory default.
+Added the source to GitHub watch subscriptions and corrected stale PORT-MAP rows.
+
+This packages a bridge candidate, not qualified hardware decode. The pinned
+upstream explicitly has no supported matrix rows, and its M1/T8103 hardware
+evidence does not qualify M1 Pro. AV1 compilation requires modern UAPI headers
+but proves no hardware AV1 support. Kernel `apple_avd`, matching firmware,
+codec/client checks and factory build/boot qualification remain open.
+Subagent source/implementation review; no tests or image build run.
+
+Final live/sysupdate post-install hooks also check package ownership of both
+VA driver paths, catching a consumer Mesa package collision after overlay
+application. Missing ownership metadata or inconsistent payload fails the build.

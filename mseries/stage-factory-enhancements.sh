@@ -11,6 +11,8 @@ if [[ -f $root/etc/dconf/profile/user ]]; then
     install -Dm644 "$root/etc/dconf/profile/user" "$stage/etc/dconf/profile/user"
 fi
 bash "$here/enhance.sh" --root "$stage" --only tuning,power,audio,session,theme,payload
+install -Dm755 "$here/video-decode/verify-package-ownership" "$stage/usr/libexec/mseries/verify-video-driver-packaging"
+install -Dm644 "$here/video-decode/90-mseries-avd.conf" "$stage/etc/sysctl.d/90-mseries-avd.conf"
 
 # /usr/local is mutable /var/usrlocal on sysupdate and is not in its artifact.
 # The factory panel and policy use the same immutable executable instead.

@@ -148,5 +148,11 @@
     "who": "José Expósito",
     "why": "Pinned gesture daemon baked into the immutable factory image; review releases for Gala compatibility",
     "group": "desktop"
+  },
+  {
+    "repo": "omacom/libva-v4l2_request",
+    "who": "Omarchy / V4L2 request driver maintainers",
+    "why": "Checksum-pinned factory VA-API bridge candidate; inspect codec support matrix and kernel/firmware applicability",
+    "group": "omarchy-m"
   }
 ]
