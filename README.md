@@ -5,9 +5,22 @@ layer, elementary (Pantheon) as the system you use, installed with one command,
 full-disk encryption included. Modelled on [omarchy-mac](https://github.com/omarchy-mac/omarchy-mac),
 whose Asahi boot and encryption tools it reuses.
 
-> **Status:** the installer has been reviewed and tested in a sandbox, but has **not yet been run end to end
-> on a freshly wiped Mac**. Back up first. See [`mseries/REINSTALL-RUNBOOK.md`](mseries/REINSTALL-RUNBOOK.md)
-> and [`mseries/OS9-HANDOFF.md`](mseries/OS9-HANDOFF.md).
+> ## 🚧 Work in progress
+>
+> This is an experimental, unfinished port. The installer has been reviewed and tested in a sandbox with
+> stubbed tools, but has **not yet been run end to end on a freshly wiped Mac**, and the patched kernel
+> (USB4 and the Apple Video Decoder fix) is built in CI but not yet booted. Expect rough edges and **back
+> up everything first**. Current state, blockers and the next task: [`mseries/OS9-HANDOFF.md`](mseries/OS9-HANDOFF.md).
+> Dry-run runbook: [`mseries/REINSTALL-RUNBOOK.md`](mseries/REINSTALL-RUNBOOK.md).
+>
+> | Part | State |
+> |---|---|
+> | One-command installer (boot layout, encryption, build, enhancements) | written, sandbox-tested, **not run on a wiped Mac** |
+> | elementary unlock screen (Plymouth) | written, **not seen on hardware** |
+> | Hardware video decode (720p/1080p verified; 4K untested) | works after memory compaction; real fix in the unbooted usb4.4 kernel |
+> | Patched kernel (usb4.4) | CI build in progress, **not booted** |
+> | Factory ISO | builds in CI, **unverified on hardware** |
+> | Documentation index | [`mseries/DOCS.md`](mseries/DOCS.md) |
 
 ---
 
@@ -123,7 +136,7 @@ git clone --depth 1 https://github.com/techmore/ElementaryOS_MSeries && sudo ./E
 
 Only after the dry run is reviewed: `--apply`, reboot, pick **elementary OS (M-series)** in the boot menu. Design and safety contract: [`mseries/TRANSFORM-DESIGN.md`](mseries/TRANSFORM-DESIGN.md).
 
-**More:** project overview [`mseries/README.md`](mseries/README.md), kernel and boot flow [`mseries/KERNEL-FLOW.md`](mseries/KERNEL-FLOW.md), bug backlog [`mseries/BUG-FIX-ROADMAP.md`](mseries/BUG-FIX-ROADMAP.md), Apple hardware reference [omacom/omarchy-mac-pkgs](https://github.com/omacom/omarchy-mac-pkgs).
+**More:** [documentation index](mseries/DOCS.md), project overview [`mseries/README.md`](mseries/README.md), kernel and boot flow [`mseries/KERNEL-FLOW.md`](mseries/KERNEL-FLOW.md), bug backlog [`mseries/BUG-FIX-ROADMAP.md`](mseries/BUG-FIX-ROADMAP.md), Apple hardware reference [omacom/omarchy-mac-pkgs](https://github.com/omacom/omarchy-mac-pkgs).
 The factory ISO builds in CI but is unverified on hardware. The rest of this page is the upstream elementary OS build documentation.
 
 <div align="center">
