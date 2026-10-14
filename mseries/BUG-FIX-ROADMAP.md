@@ -66,7 +66,7 @@ Ranked by how often the owner hits it, how small the fix is, and what it depends
 | 4 | Lid-open login needs the power button | Undocked path traced and fine; closed unless docked reproduces it | Closed |
 | 5 | Screenshot thumbnail (drag to use, hold Alt to also save) | Daily convenience; Gala patch or small helper | Medium |
 | 6 | Preview-style image and PDF markup | Pairs with 5; mostly choosing and packaging a tool | Medium |
-| 7 | Gaps left from the Omarchy parity audit (audio watchdog, function-key mode, mic map) | Audio watchdog work has landed in main; confirm on hardware | Medium |
+| 7 | Gaps left from the Omarchy parity audit | Audio watchdog and the two WirePlumber rules are installed on the M1 Pro (2026-10-14); function-key mode awaits an owner choice; mic mapper not ported | Mostly done |
 | 8 | **Touch ID (now the main login goal)** | The owner wants Touch ID as the login; depends on unverified Secure Enclave work | Research, move up when a source is found |
 | 9 | iMessage (OpenBubbles) | Useful; evaluate build and Apple ID risk first | Research |
 | 10 | iCloud password sync | No official Linux client; evaluate safe options | Research |

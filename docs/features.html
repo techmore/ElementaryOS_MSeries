@@ -29,7 +29,8 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <tr><td>Early Apple input loading</td><td class="ok">Ported</td><td>initramfs module list; factory-image path not verified.</td></tr>
 <tr><td>Dock hub, mouse and Ethernet</td><td class="ok">Working</td><td>Dell WD22TB4 verified 2026-10-14. Display through the dock is not available (no DisplayPort tunnelling).</td></tr>
 <tr><td>Docked lid mode</td><td class="part">Running</td><td>Locks instead of retrying suspend while a USB4 dock is attached; lid-close with a dock needs a repeat test.</td></tr>
-<tr><td>Audio watchdog</td><td class="no">Not ported</td><td>Upstream restarts a wedged PipeWire/WirePlumber. Highest-value remaining parity item.</td></tr>
+<tr><td>Audio watchdog</td><td class="ok">Installed 2026-10-14</td><td>Restarts PipeWire and WirePlumber if the audio server stops answering, with a restart limit. It runs as a user service; the unit and tests are in the repo.</td></tr>
+<tr><td>Speaker and headset-mic rules</td><td class="part">Installed; apply at next login</td><td>Keeps the speaker and headphone outputs open (no pop between sounds) and stops apps preferring the unplugged headset mic.</td></tr>
 <tr><td>Function-key mode</td><td class="part">Differs</td><td>Running with media keys first (fnmode=1); upstream uses the kernel default (auto). Awaiting a deliberate choice.</td></tr>
 <tr><td>Microphone mapping</td><td class="no">Not ported</td><td>Needs re-homing to elementary's audio session.</td></tr>
 <tr><td>Hardware video decode</td><td class="no">Missing</td><td>Needs AVD kernel support, firmware and a VA-API bridge.</td></tr>

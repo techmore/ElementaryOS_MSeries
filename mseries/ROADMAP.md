@@ -51,7 +51,7 @@ with the corrected live-session hardware overlay before progressing.
 
 Done on the running system: Wi-Fi resume fix, speaker safety and DSP, ambient keyboard light, battery charge limit, dock hub/mouse/Ethernet, docked lid mode, zram and service trimming. Remaining, in order:
 
-1. Port `omarchy-audio-watchdog` (audio-stack self-repair) to Pantheon.
+1. ~~Port `omarchy-audio-watchdog` (audio-stack self-repair) to Pantheon.~~ Installed on the M1 Pro 2026-10-14 with `sudo bash mseries/enhance.sh --only audio`, together with the no-suspend and headset-mic WirePlumber rules (rules apply at the next login).
 2. Decide the Apple function-key default (`fnmode`), then make it explicit.
 3. Mic mapping (`omarchy-audio-asahi-mic-map`) re-homed to the elementary audio session.
 4. Lid-open login and Touch ID research (see Stretch goal 0).
