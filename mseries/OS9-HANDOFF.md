@@ -2,6 +2,61 @@
 
 Updated 2026-10-13. Repository: techmore/ElementaryOS_MSeries.
 
+## New desktop bugs reported — 2026-10-13
+
+Added three separate owner-reported findings to
+[`BUG-FIX-ROADMAP.md`](BUG-FIX-ROADMAP.md): inconsistent app-window rounding
+versus the Mac display, reds/blues that still feel too harsh, and network
+usage/speed indicators that do not always recover around Ethernet
+suspend/resume or reboot. These need visual review or reproduction before
+implementation; no desktop code was changed for these reports.
+
+## Additional owner-reported bugs — 2026-10-13
+
+Added backlog entries for the non-native signal-strength dropdown, an
+unspecified Tasks bug, an unspecified Energy Monitor bug, Touch ID for passkey
+user verification, and remembering successful authentication for a defined
+period. Also recorded the requested pastel red-orange cue near network-link
+saturation. The app-specific reports need reproduction details; Touch ID
+support remains unverified, and the remembered-auth duration/security policy
+still needs definition. See [`BUG-FIX-ROADMAP.md`](BUG-FIX-ROADMAP.md).
+
+## Latest test result — 2026-10-13
+
+Downloaded CI run 38479577898's ARM64 installer artifact and independently
+matched its ISO SHA-256 against the included `INSTALLER-SHA256SUMS`. Booted the
+ISO with QEMU 10.2.1/KVM and AAVMF to the graphical installer language screen;
+serial output reached the OS 9 login prompt. The test used read-only ISO media
+and attached no writable guest or host disk. Evidence and test boundary are in
+[`VM-SMOKE-TEST.md`](VM-SMOKE-TEST.md); screenshot:
+[`os9-ci-38479577898-installer.png`](../docs/images/os9-ci-38479577898-installer.png).
+
+This ISO boot uses the generic live kernel, so it does not test the Fairydust
+kernel or the Apple m1n1 hardware path. The Fairydust kernel has a separate
+direct QEMU userspace-handoff smoke test; it now passes under QEMU TCG when
+KVM is unavailable. See
+[`fairydust/debian/TCG-SMOKE-TEST.md`](fairydust/debian/TCG-SMOKE-TEST.md).
+The owner-approved model and mkosi caches and completed kernel compiler
+objects were cleaned after validation; the tested kernel `.deb`, source and
+build records remain. Local preflight now finds 37.6 GiB free, 22.4 GiB below
+its conservative 60 GiB guard, so no build was started. Next: boot a disposable installed image with
+the Fairydust kernel/initramfs and validate the Apple DTB selection path; Mac
+hardware boot remains unverified. Do not write the host ESP or change the
+running host kernel.
+
+## CodexBar notch placement — 2026-10-13
+
+The owner asked for CodexBar to sit left of the MacBook notch. Wingpanel 8.0.4
+normally assigns non-special indicators to its right group, while the date
+occupies the center. Added a source patch that places only `codexbar` in the
+left group immediately after the application launcher; other indicators and
+the clock stay in their existing groups. Its installer also reapplies the
+existing optional right-clock ordering. The pinned source built and its Meson
+tests passed, then the patched binary was installed. The original binary is
+backed up at `/usr/local/lib/mseries/io.elementary.wingpanel.pre-codexbar-left`;
+`bash mseries/install-wingpanel-codexbar-left.sh --uninstall` restores it.
+Log out and back in to load the panel placement.
+
 ## Source verified
 
 The official public elementary/os repository was cloned to
@@ -638,6 +693,85 @@ This qualifies the running desktop indicator only; no factory ISO was built.
 Next: use the displayed forecasts during ordinary work and reassess if the
 upstream pace format changes or a recent-rate estimate is requested.
 
+## Tether continuity branch — October 13
+
+Created `mseries-tether-continuity` from the clean `main` branch to scope an
+optional iPhone-to-elementary continuity add-on. Upstream Tether describes
+direct iPhone/Linux SMS and iMessage messaging plus OTP handoff; this removes
+the architectural need for an always-on Mac relay. Source pin: v0.2.37,
+`d1f976aeb71896c411057cea9c899c9e40eb64a5`; upstream ARM64 `.deb` SHA-256 is
+recorded in `TETHER-CONTINUITY.md`. License: upstream MIT.
+
+The goals, package boundary, privacy expectations, dependencies, and real
+device acceptance checklist are in [`TETHER-CONTINUITY.md`](TETHER-CONTINUITY.md).
+AirDrop-style LocalSend and experimental M1 Pro Touch ID/PAM are separate
+optional tracks. `mseries/install-tether.sh` now verifies and installs the
+upstream ARM64 package, reports BlueZ readiness, and supports package removal
+and explicit data purge. `mseries/tether/brave-extension.py` prepares the
+Chromium extension and registers/unregisters its native host in Brave's user
+profile. Neither installer was executed; no package, base image, auth setting,
+Bluetooth pairing, or user data was changed. The host has BlueZ 5.85, below
+Tether's 5.86 requirement for Bluetooth messages. Next: determine a supported
+OS BlueZ 5.86+ source, then qualify messages with the owner's phone; separately
+review the Brave extension's all-sites permission during OTP qualification.
+
+## CodexBar OpenCode Go provider — 2026-10-13
+
+The owner requested OpenCode visibility/sign-in in the M-series CodexBar build.
+`install-codexbar.sh` now includes OpenCode Go in the default custom provider
+list on a fresh install and appends it to existing Codex, Codex+Claude, or
+custom provider selections while preserving other app preferences. Explicit
+unrelated single-provider choices remain unchanged. The installer writes the settings
+file with owner-only permissions using a same-directory atomic replacement.
+Wingpanel now renders the provider name as “OpenCode Go”.
+
+`codexbar-opencode-wrapper.py` reads only the `opencode-go` key from OpenCode's
+user `auth.json` and injects it into the environment for CodexBar OpenCode Go
+usage queries. Existing `OPENCODE_API_KEY` takes precedence. The credential is
+not copied into CodexBar settings or the OS image. `DESKTOP-SETUP.md` documents
+signing into OpenCode Go in the CLI and the local-usage estimate boundary.
+
+Validation: `bash -n mseries/install-codexbar.sh`, Python bytecode compilation
+of the wrapper, and `git diff --check` passed. No runtime install, authenticated
+usage fetch, or automated tests were run. Next: install on the working desktop,
+sign into OpenCode Go through its CLI, and confirm the Wingpanel quota row.
+
+## Torrential native desktop and download — 2026-10-13
+
+The local M-series fork at `/home/admin/Documents/TorrentialFork` is committed
+as `4082b079dab42a53c80a8ebbb6a11253ac716453`. It fixes unread daemon stdout,
+RPC startup timing, per-app config creation, loopback RPC binding, and graceful
+SIGTERM/wait shutdown. The native ARM64 package `0.1.0-1~mseries3` installed
+with the system Transmission 4.1.1 backend and elementary's `libgranite7`.
+A scoped AppArmor addition permits the daemon's Torrential config and Downloads
+folder and graceful termination. The fresh system daemon service was disabled
+on this host so the app owns its backend. No factory image was changed.
+
+The app launched in the active desktop session and remained running while the
+official Ubuntu 26.04.1 Server torrent transferred data. A check showed about
+235 MiB downloaded, 50 peers, and 13.5 MiB/s without an error. The full ISO
+then completed and matched Ubuntu's published SHA-256. RPC pause/resume checks
+passed; the completed test torrent was paused. The initial ARM64 desktop torrent was rejected by Ubuntu's
+tracker and removed. The server torrent remains in Downloads. UI button and
+close/reopen qualification remain. See `mseries/TORRENTIAL-PORT.md`.
+
+The upstream rewrite has no license grant. The owner-requested fixes are
+pushed to the private [`techmore/torrential`](https://github.com/techmore/torrential)
+repository on `mseries-native` at `4082b079dab42a53c80a8ebbb6a11253ac716453`.
+Keep it private until redistribution permission is clear. This public OS repo
+contains only downstream packaging and status. No one was contacted and
+nothing was sent to the upstream project.
+
+## Native battery time-to-full — 2026-10-13
+
+Added the charging estimate beside elementary's existing Power indicator
+icon. The installer pins and patches official `elementary/panel-power` source,
+builds the native Wingpanel module, preserves the original module, and can
+restore it with `--uninstall`. The native module built and was installed on the
+M1 desktop; Wingpanel restarted and remained running. UPower supplied a valid
+charging estimate. Visual confirmation of the label was unavailable in the
+isolated desktop command session. Details: `mseries/BATTERY-ETA.md`.
+
 ## Network speed readout persistence — 2026-10-13
 
 The user's panel-speed setting was already enabled, but the plugin had been
@@ -647,66 +781,38 @@ builds pinned `elementary/panel-network` commit
 `8685ec8e55a45e48da0c12931a353cd440d11664`, applies the three tracked network
 patches, and places the resulting module into the overlay consumed by both
 liveiso and sysupdate. The build checks that the target package remains 8.0.1.x.
-`test-image-wiring.py --image-output` now checks the plugin is present in the
-final liveiso tree; the sysupdate configuration consumes the same overlay. The
-local installer remains useful for the current image, while the new image
-build makes the change survive redeployments and image updates.
+`test-image-wiring.py --image-output` now checks the module is present in both
+final image roots. The local installer remains useful for the current image;
+the new image build is what makes the change survive redeployments and image
+updates.
 
-Validation: `just mkosi summary` parsed the new build script and confirmed
-network access is enabled for image build scripts. Running
-`build-network-indicator` against the matching host package compiled the
-patched module into a temporary stage; the output contained only the
-321848-byte `libnetwork.so` and its panel-speed toggle marker. `bash -n` and
-`git diff --check` passed. No full image build has run yet. Next: run the
-M-series validation workflow, then the full arm64 image build and post-build
-module check before deploying the resulting image. The working desktop has the
-patched module installed and `~/.config/mseries/network-speed.ini` enables the
-panel readout.
+No full image build has run for this change. Next: run the M-series validation
+workflow, then the full arm64 image build and post-build module check before
+deploying the resulting image. The working desktop currently has the patched
+module installed and `~/.config/mseries/network-speed.ini` enables the panel
+readout.
 
-## Local general agent continuation (October 13)
+## Restore Wi-Fi filtering and network usage views — 2026-10-13
 
-Crush v0.98.1 ARM64 is installed from a checksum-pinned release, with an
-isolated Local Agent workspace, Applications launcher and native robot-menu
-entry. `local-ai/install-agent.sh` reproduces it. Qwen3.5-9B 4-bit answered a
-short loopback API request and emitted a structured synthetic tool call on
-this M1 Pro. The first full Crush prefill exhausted GPU scratch; the private
-server now uses 256-token prefill chunks via `configure-prefill.py`, and a full
-Crush answer completed. The final profile admits 32k context and one prompt
-cache (8.93 GiB estimate, not measured peak); use catalog ID to retain KV facts.
-The user explicitly requested killing the port conflict: whop2p is stopped
-and disabled at login. The model is an on-demand user service, not enabled
-at login. NAS address/share path remains pending; no NAS writes occurred.
-ANE artifacts were already staged and remain unactivated. No kernel, device
-tree, bootloader or audio changes were made. See local-ai/README.md and the
-October 13 agent receipt for final verification and remaining scope.
+Recovered the original network-menu patch from local commit `b28aab1` on the
+sibling `mseries-usage-troubleshooter-docked-lid` branch. The connected Wi-Fi
+list now hides other networks by default with a chevron to reveal them. The
+popover also has Apps, Hosts, and DNS usage views; hostnames are learned from
+systemd-resolved's cache and query monitor. Kept this branch's existing
+throughput graph and optional panel-speed toggle by applying only the Wi-Fi,
+usage-widget, and stylesheet sections from the recovered patch, then wiring
+the new widget with `wire-network-usage.py`. The local installer and Apple
+Silicon image build both carry the enhancement; `libsqlite3-dev` is now a build
+dependency.
 
-## 2026-10-14 hardware session
-
-Dock verified (Dell WD22TB4: hub, mouse, Ethernet; no display). Lid-open
-resume works without a dock but the login screen needs a power-button press;
-the dock Ethernet icon is recreated on each connect. Both are recorded in
-BUG-FIX-ROADMAP.md with evidence and are not fixed. Running code that was only
-in PR #1 (docked lid mode, troubleshooter, netspeed) is now being merged to
-main so the repository matches the installed system. Next: trace a resume,
-add the Realtek firmware and a pinned profile, repeat the docked lid-close test.
-
-
-## Asahi root expansion planning — 2026-10-14
-
-Documented the reported 112 GiB free gap before Asahi p3/p4/p5 and a checkpointed proposal in [`STORAGE-PLAN.md`](STORAGE-PLAN.md) and [`procedures/ROOT-EXPANSION.md`](procedures/ROOT-EXPANSION.md). No disk or filesystem operations were run. The gap's origin and current sector layout still need verification; Asahi guidance limits disk changes to free space prepared by its installer. Next: collect the runbook's read-only preflight output, verify backup/recovery readiness, and review the exact target before any proposed write. The factory ISO remains unqualified on Apple hardware.
-
-## 2026-10-14 pre-reinstall backup
-
-Backup and reinstall notes are in `BACKUP-AND-REINSTALL.md`; the script is `backup/mseries-backup.sh`. A 334 MB staging copy was written and checksum-verified on the same disk. It still has to be copied off the machine (no external destination was mounted). No bug fixes were attempted. Next: copy the backup off, review `~/Downloads`, then reinstall.
-
-## 2026-10-14: usb4.4 kernel build and image-build fix
-
-- Run 38582725389 (`daily-9.0.yml`, fairydust=true): `build-kernel` **succeeded**. Artifact
-  `fairydust-kernel-packages-38582725389` holds `linux-image-7.1.13-elementary-fairydust-usb4_7.1.13+elementary.usb4.4_arm64.deb`
-  (checksums verified; `apple-avd.ko` uses `__kvmalloc_node_noprof`/`kvfree`, so the 0003 fix is built in). **Not installed or booted yet.**
-- The `build` (factory ISO) job failed in `mkosi.images/apple-silicon/build-network-indicator`: its version gate reads the
-  apple-silicon overlay's own dpkg database, which never contains `io.elementary.panel.network` (that package lives in the base
-  image), so it always saw "none" and exited 1. The script now skips with a CI warning instead of failing. The installed system
-  still gets the plugin at first boot (version-gated). Not yet re-run in CI.
-- Next: decide how to deploy the Debian kernel package to the Mac (host is Arch), boot it, run `mseries/check-video-decode.sh`
-  (720p/1080p/4K); re-run the workflow to confirm the image job now passes.
+The pinned module built and installed on the M1 Pro. The original module is
+preserved at `/usr/local/lib/mseries/libnetwork.so.original`, and the new
+module has no unresolved shared libraries. Wingpanel was signaled to reload.
+The `netusage` user service is enabled and active; its database at
+`~/.local/share/netusage/usage.db` contains app/host totals and DNS query rows.
+Visual confirmation of the menu and chevron behavior remains pending because
+the desktop session is isolated from this command session. No factory image
+build was run; image deployment is still needed for persistence across OS
+redeployments. Next: visually confirm that the joined SSID is the only one
+shown by default, that the chevron reveals other networks, and that Apps,
+Hosts, and DNS render in Wingpanel.

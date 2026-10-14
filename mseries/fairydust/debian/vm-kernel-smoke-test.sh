@@ -44,10 +44,16 @@ chmod 0755 "$work/root/init"
 
 cpus=${VM_CPUS:-2}
 [[ $cpus =~ ^[1-9][0-9]*$ ]] || { echo 'VM_CPUS must be a positive integer.' >&2; exit 2; }
-echo "Booting $(basename "$kernel") with $cpus KVM vCPUs; no disks or network are attached."
+accel=${VM_ACCEL:-kvm}
+case $accel in
+    kvm) cpu=host ;;
+    tcg) cpu=max ;;
+    *) echo 'VM_ACCEL must be kvm or tcg.' >&2; exit 2 ;;
+esac
+echo "Booting $(basename "$kernel") with $cpus $accel vCPUs; no disks or network are attached."
 set +e
 timeout --signal=TERM --kill-after=5s 45s qemu-system-aarch64 \
-    -machine virt,accel=kvm -cpu host -smp "$cpus" -m 1024 \
+    -machine "virt,accel=$accel" -cpu "$cpu" -smp "$cpus" -m 1024 \
     -kernel "$work/Image" -initrd "$work/initramfs.cpio.gz" \
     -append 'earlycon=pl011,mmio32,0x09000000 console=ttyAMA0 rdinit=/init loglevel=7 ignore_loglevel panic=-1' \
     -display none -monitor none -serial stdio -no-reboot \
@@ -62,4 +68,4 @@ grep -q 'FAIRYDUST_KERNEL_USERSPACE_HANDOFF_OK' "$work/serial.log" || {
     echo 'Kernel did not reach initramfs userspace.' >&2
     exit 1
 }
-echo 'PASS: Fairydust kernel reached initramfs userspace in isolated QEMU/KVM.'
+echo "PASS: Fairydust kernel reached initramfs userspace in isolated QEMU/$accel."

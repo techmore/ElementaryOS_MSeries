@@ -84,3 +84,17 @@ The old Omarchy fallback and legacy Arch rebuild chroot are retired. Legacy
 Fairydust scripts that mount @/@home cannot be used on this host until a new
 Arch build environment is prepared. Rebuild inputs, patches, installed
 kernel/modules, and known-good boot recovery copies remain available.
+
+## Latest capacity check — 2026-10-13
+
+The Fairydust package's generic QEMU userspace smoke test passed under TCG.
+After clearing the previously approved Hugging Face and mkosi caches, and
+removing the completed kernel compiler-object tree, the tested kernel `.deb`
+packages, source tree, logs and configuration report were retained. Current
+free space is **37.7 GiB**; `mseries/local-build-preflight.py` reports the
+local image build is still **22.3 GiB below** the conservative 60 GiB guard.
+No full image build or partition operation was started. To pursue a local
+build, first collect fresh read-only `diskutil list` and `diskutil apfs list`
+output from macOS or Recovery and determine the actual shrinkable APFS space.
+Do not resize from the current Linux session or assume the earlier 69.4 GiB
+measurement still applies.

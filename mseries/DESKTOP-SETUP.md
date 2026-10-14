@@ -89,6 +89,30 @@ supports automatic updates. Phone linking remains a user step: open Signal,
 then scan its QR code from Signal on your phone.
 Source: https://community.signalusers.org/t/beta-test-signal-desktop-for-linux-arm64/76184
 
+## Tether: iPhone messages and OTP handoff
+
+Install the optional, pinned ARM64 upstream package with
+`bash mseries/install-tether.sh`. It pairs the iPhone directly to this laptop;
+it does not need a relay Mac. Launch the app and approve pairing on both
+devices. The package install does not enable a daemon or change Bluetooth or
+firewall settings.
+
+The current host has BlueZ 5.85; upstream Tether needs 5.86+ with the
+experimental bearer API for SMS/iMessage over Bluetooth. The app can be
+installed, but the message transport is not ready on this host. Do not try to
+solve that by enabling experimental mode on BlueZ 5.85. Wi-Fi pairing and OTP
+handoff are independent, but require TCP 5134 and mDNS UDP 5353 to reach the
+laptop; configure firewall access only if you choose to use that path.
+
+Optional Brave setup is in [`tether/README.md`](tether/README.md). It requires
+loading an unpacked extension and registering its native host. The extension
+requests access to all websites, so review that permission before enabling it.
+No Brave extension is installed automatically. Remove the app with
+`bash mseries/install-tether.sh --uninstall`; pairing state is preserved unless
+you separately run `--purge-data`. That removes Tether's XDG files, not the
+Bluetooth bond stored by BlueZ; forget the laptop from both devices to fully
+unpair.
+
 ## CodexBar
 
 Upstream already ships a Linux Qt desktop and ARM64 CLI; a fork is unnecessary
@@ -140,6 +164,34 @@ monochrome mark comes from the [OpenAI 2025 symbol](https://commons.wikimedia.or
 and follows OpenAI's branding guidelines.
 Remove it with `bash mseries/install-codexbar-wingpanel.sh --uninstall`.
 Source: https://github.com/steipete/CodexBar/tree/main/Integrations/Linux
+
+On the M1 Pro, the center area of Wingpanel conflicts with the camera notch.
+Keep CodexBar in the left group beside the application launcher with
+`bash mseries/install-wingpanel-codexbar-left.sh`. This rebuilds the matching
+Wingpanel 8.0.4 source, places CodexBar immediately after the launcher, and
+preserves the optional right-side clock ordering. It saves the current panel
+binary first; restore it with `bash mseries/install-wingpanel-codexbar-left.sh
+--uninstall`.
+
+The CodexBar installer adds OpenAI Codex and OpenCode Go to the provider list
+when the current selection allows it. Other explicit single-provider
+selections are preserved; switch to **custom** and add `opencodego` in
+Settings → Providers to request CodexBar's account-level OpenCode Go provider.
+
+The Wingpanel menu also reads OpenCode v2's `~/.local/share/opencode/opencode.db`
+directly in SQLite read-only mode. It shows local cost-bearing OpenCode Go
+assistant records over 5 hours, 7 days, and 30 days, labeled **local estimate ·
+not account quota**. This works with the v2 OAuth credential stored in
+OpenCode's database and does not need an API key or browser cookies. It does
+not modify OpenCode's database or credential store. CodexBar's separate
+account-quota provider still requires an auth method supported by CodexBar;
+the local estimate is shown even when that provider cannot authenticate.
+Install the Wingpanel indicator after CodexBar so its read-only adapter is
+available:
+
+```sh
+bash mseries/install-codexbar-wingpanel.sh
+```
 
 ## Signal Beta in Wingpanel
 
@@ -236,9 +288,14 @@ Package replacement or deploying an older OS image can undo that local replaceme
 M-series image build carries it by default. `--uninstall` restores the original plugin.
 
 The dropdown also includes a 60-second graph (down in the accent colour, up in grey) directly
-under the connection toggles (Airplane Mode etc.). Build requirements for the local installer
-are `libnm-dev libnma-gtk4-dev libpolkit-gobject-1-dev` and the Wingpanel/Granite/GTK dev packages.
-Gala respawns the panel, so there is no logout.
+under the connection toggles (Airplane Mode etc.). When Wi-Fi is connected, its list shows the
+active network by default; use the chevron to reveal other networks. The collapsible **Network
+Usage** section has Apps, Hosts and DNS views. To populate those views, run
+`bash mseries/netspeed/netusage/install.sh`; the local user service records TCP byte counts and DNS
+queries and maps remote IPs using systemd-resolved's cache/query monitor. Data stays in
+`~/.local/share/netusage/usage.db`; QUIC/HTTP3 isn't attributed to apps. Build requirements for the
+local installer include `libsqlite3-dev`, `libnm-dev libnma-gtk4-dev libpolkit-gobject-1-dev`, and
+the Wingpanel/Granite/GTK dev packages. Gala respawns the panel, so there is no logout.
 
 Speeds are the sum over physical interfaces from `/proc/net/dev` (virtual ones such as `lo`,
 bridges and VPN tunnels are skipped to avoid double counting), sampled once a second, so the graph

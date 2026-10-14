@@ -1,0 +1,7 @@
+# Torrential launches the packaged daemon as the signed-in desktop user.
+owner @{HOME}/.config/user-dirs.dirs r,
+owner @{HOME}/.config/torrential/ rw,
+owner @{HOME}/.config/torrential/** rwk,
+owner @{HOME}/Downloads/ rw,
+owner @{HOME}/Downloads/** rwk,
+signal (receive) set=(term),

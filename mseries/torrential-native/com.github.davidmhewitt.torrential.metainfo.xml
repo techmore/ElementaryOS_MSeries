@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.github.davidmhewitt.torrential</id>
+  <name>Torrential</name>
+  <summary>Download and manage torrents</summary>
+  <description>
+    <p>A native GTK 4 and Granite BitTorrent client for elementary OS.</p>
+  </description>
+  <launchable type="desktop-id">com.github.davidmhewitt.torrential.desktop</launchable>
+  <url type="homepage">https://github.com/davidmhewitt/torrential</url>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LicenseRef-unknown</project_license>
+  <developer id="com.github.davidmhewitt">
+    <name>David M. Hewitt</name>
+  </developer>
+  <categories>
+    <category>Network</category>
+    <category>FileTransfer</category>
+  </categories>
+</component>
