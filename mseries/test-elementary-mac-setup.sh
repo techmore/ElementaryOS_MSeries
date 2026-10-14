@@ -31,7 +31,7 @@ bad valid_hostname 'has space'
 # The config file is sourced as root: hostile values must round-trip inert.
 tmp=$(mktemp -d)
 CONF=$tmp/conf
-want_encrypt=1 username=alice hostname=box keymap=us keep_default=0 \
+want_encrypt=1 username=alice hostname=box keymap=us keep_default=0 enhance=1 \
   password_hash='$6$salt$hash;touch /tmp/pwned' repo='a/b; touch /tmp/pwned' ref=main forge=github.com
 save_conf
 want_encrypt=0 username="" password_hash=""
@@ -60,5 +60,27 @@ for n in initramfs-console initramfs-splash; do MKINITCPIO_CONF=$mk bash "$snip"
 eq "base udev asahi autodetect modconf block encrypt filesystems fsck" \
   "$(bash -c 'source "$1"; echo "${HOOKS[*]}"' _ "$mk")" "hooks after remove"
 unlink "$mk"
+
+# enhance.sh writes the whole enhancement layer into a root without needing a session.
+here=$(dirname -- "${BASH_SOURCE[0]}")
+root=$(mktemp -d)
+bash "$here/enhance.sh" --root "$root" >/dev/null
+for f in etc/systemd/zram-generator.conf usr/local/sbin/mseries-power usr/libexec/mseries/docked-lid \
+         usr/lib/systemd/user/mseries-docked-lid.service etc/skel/.config/gtk-4.0/gtk.css \
+         usr/sbin/elementary-mac-enhance usr/share/elementary-mac/mseries/install-brave.sh \
+         usr/share/elementary-mac/mseries/patches/network-throughput.patch usr/share/elementary-mac/shim/sudo; do
+  [[ -e $root/$f ]] || { echo "FAIL enhance.sh did not write $f" >&2; fails=$((fails + 1)); }
+done
+[[ -L $root/etc/systemd/system/multi-user.target.wants/mseries-power.service ]] ||
+  { echo "FAIL mseries-power.service not enabled" >&2; fails=$((fails + 1)); }
+[[ -L $root/etc/systemd/user/default.target.wants/mseries-docked-lid.service ]] ||
+  { echo "FAIL docked-lid not enabled for all users" >&2; fails=$((fails + 1)); }
+eq "$(bash "$root/usr/share/elementary-mac/shim/sudo" -E echo hi)" hi "sudo shim runs the command"
+bash "$here/enhance.sh" --root "$root" --skip power,session,theme,payload,firstboot >/dev/null  # modules are independently skippable
+state=$(mktemp -d)
+eq "pending" "$(ELEMENTARY_MAC_STATE=$state bash "$here/enhance-firstboot.sh" --status | awk '$1=="brave"{print $2}')" "first-boot module starts pending"
+touch "$state/brave.done"
+eq "done" "$(ELEMENTARY_MAC_STATE=$state bash "$here/enhance-firstboot.sh" --status | awk '$1=="brave"{print $2}')" "first-boot module reports done"
+find "$root" "$state" -mindepth 1 -delete; rmdir "$root" "$state"
 
 (( fails == 0 )) && echo "all tests passed" || { echo "$fails failure(s)" >&2; exit 1; }

@@ -380,6 +380,14 @@ apt-get install -y speakersafetyd \
 apt-get clean
 EOF
   isolate_boot_in "$newroot" || return 1
+  # Swap on RAM for the zram setup below; non-fatal.
+  chroot "$newroot" /bin/bash -c 'DEBIAN_FRONTEND=noninteractive apt-get install -y systemd-zram-generator' \
+    || echo "WARNING: systemd-zram-generator install failed (non-fatal)" >&2
+  # M-series enhancements (power policy, tuning, session helpers, theme, and the
+  # first-boot job). ELEMENTARY_ENHANCE=0 skips them.
+  if [[ ${ELEMENTARY_ENHANCE:-1} != 0 ]]; then
+    bash "$REPO_ROOT/mseries/enhance.sh" --root "$newroot" || echo "WARNING: enhancements failed (non-fatal)" >&2
+  fi
 
   # Apple layer: firmware copy (machine-local, never redistributed).
   # Host layout (verified on j314s/M1 Pro): blobs live in

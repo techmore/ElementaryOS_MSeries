@@ -146,6 +146,17 @@ Method: diffed the whole tree against a fresh clone of `elementary/os` main, so 
 - `fairydust/debian/build.sh`: source archive, kernel config and patch all sha256-checked, fresh work dir enforced, free-space watchdog, deterministic build timestamp. Fine.
 - Still unread: the large patches (`gala-screen-corners`, `network-*`, `sound-icon-initialization`), the custom indicator sources, `fairydust/usb4/*` and `host/*`, the rest of `local-ai`.
 
+### Enhancements layer (2026-10-14) — the "automagic" half of the installer
+
+Goal: the one-command install should give a finished elementary OS experience, not just a bootable desktop. Added:
+- `mseries/enhance.sh [--root DIR] [--only|--skip ...]`: writes the enhancement layer into a root without a session (build time via `elementary-grow.sh`, or on a live system): `tuning` (zram, zswap off, ModemManager off, AppCenter daemon hidden for new users), `power` (mseries-power, polkit action, unit, udev rule), `session` (docked-lid as a global user unit; brightness bridge and keyboard backlight via autostart), `theme` (skel gtk css), `payload` (scripts/patches for the first-boot job), `firstboot` (service). Idempotent, testable against a temp dir (`test-elementary-mac-setup.sh` does).
+- `mseries/enhance-firstboot.sh` (installed as `/usr/sbin/elementary-mac-enhance`): one-shot, network-gated, per-module state and attempt counter (3 tries), `--status/--retry/--with`. Modules: Brave (apt repo, all three Brave release key fingerprints pinned), Touchegg, and the version-gated patched components (network, quick-settings, sound, keyboard, Files portal, Gala OSK). A module whose version gate fails is recorded as skipped, not forced.
+- `mseries/install-brave.sh` (the owner prefers Brave); Firefox stays available as an opt-in module.
+- Setup flag `--no-enhancements` (stored in the resume config) → `ELEMENTARY_ENHANCE=0` to the grow script. The grow script also installs `systemd-zram-generator` (non-fatal).
+Deliberately NOT automatic: Command/Ctrl swap + launcher (opinionated), rounded corners (replaces the compositor; has its own fallback), Asahi speaker DSP (needs the LV2 build and the volume-restore logic of a live session; 2026-10-12 incident).
+Unverified: every first-boot module on hardware (build dependency lists for sound/keyboard/files/osk are best guesses and will show up as `failed` with the meson error in the log if a package name is wrong); the autostart-triggered brightness/backlight services on a grown root.
+Open parity items vs omarchy-mac (see PORT-MAP.md): audio watchdog, headset-mic map, `hid_apple fnmode` default, AVD video decode.
+
 ## Next tasks, in order
 
 Coordination: Codex handles implementation and review; OpenCode handles

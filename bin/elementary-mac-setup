@@ -244,6 +244,7 @@ load_conf() {
   keymap=""
   password_hash=""
   keep_default=0
+  enhance=1
   repo=$DEFAULT_REPO
   ref=$DEFAULT_REF
   forge=$DEFAULT_FORGE
@@ -257,6 +258,7 @@ load_conf() {
     keymap=${SETUP_KEYMAP:-$keymap}
     password_hash=${SETUP_PASSWORD_HASH:-$password_hash}
     keep_default=${SETUP_KEEP_DEFAULT:-$keep_default}
+    enhance=${SETUP_ENHANCE:-$enhance}
     repo=${SETUP_REPO:-$repo}
     ref=${SETUP_REF:-$ref}
     forge=${SETUP_FORGE:-$forge}
@@ -276,6 +278,7 @@ save_conf() {
       printf 'SETUP_KEYMAP=%q\n' "$keymap"
       printf 'SETUP_PASSWORD_HASH=%q\n' "$password_hash"
       printf 'SETUP_KEEP_DEFAULT=%q\n' "$keep_default"
+      printf 'SETUP_ENHANCE=%q\n' "$enhance"
       printf 'SETUP_REPO=%q\n' "$repo"
       printf 'SETUP_REF=%q\n' "$ref"
       printf 'SETUP_FORGE=%q\n' "$forge"
@@ -355,7 +358,7 @@ print_help() {
     cat <<'EOF'
 
 Options: [--encrypt|--no-encrypt] [--user NAME] [--hostname NAME] [--keymap NAME]
-         [--repo OWNER/REPO] [--ref BRANCH] [--forge HOST] [--keep-default]
+         [--repo OWNER/REPO] [--ref BRANCH] [--forge HOST] [--keep-default] [--no-enhancements]
          [--status] [--step NAME] [--fonts] [--unlock-screen] [--resume] [--abort]
 EOF
   else
@@ -771,7 +774,7 @@ step_elementary() {
     fi
 
     log "Building elementary OS into $SUBVOL_NAME -- this takes a while (downloads and installs the desktop)."
-    ELEMENTARY_HOSTNAME=$hostname bash "$SRC/transform/elementary-grow.sh" --apply ||
+    ELEMENTARY_HOSTNAME=$hostname ELEMENTARY_ENHANCE=$enhance bash "$SRC/transform/elementary-grow.sh" --apply ||
       fail "the elementary build failed -- fix it and run '$SELF --resume'"
 
     ELEMENTARY_PASSWORD_HASH=$password_hash bash "$SRC/transform/elementary-grow.sh" --finalize "$username" ||
@@ -957,6 +960,7 @@ ask_questions() {
     log "  - show the elementary unlock screen at boot and log $username in automatically"
   fi
   log "  - build elementary OS from $repo ($ref) and make it the default boot entry"
+  ((enhance)) && log "  - enable the M-series enhancements (zram, charge limit, docked-lid, brightness, keyboard light, Brave, gestures, panel fixes)"
   log "  - reboot into elementary OS"
   echo
   read -rp "Start? [Y/n] " answer
@@ -967,7 +971,7 @@ ask_questions() {
 }
 
 main() {
-  local resume=0 status=0 abort=0 step_only="" encrypt_flag="" want_encrypt username hostname keymap password_hash keep_default repo ref forge
+  local resume=0 status=0 abort=0 step_only="" encrypt_flag="" want_encrypt username hostname keymap password_hash keep_default enhance repo ref forge
 
   # The parse loop shifts every argument away, so keep a copy first. The piped
   # re-exec has to hand the same arguments to the copy on disk.
@@ -990,6 +994,7 @@ main() {
       --ref) ref=${2:?--ref needs a branch}; shift ;;
       --forge) forge=${2:?--forge needs a host}; shift ;;
       --keep-default) keep_default=1 ;;
+      --no-enhancements) enhance=0 ;;
       --resume) resume=1 ;;
       --status) status=1 ;;
       --step) step_only=${2:?--step needs a name}; shift ;;
