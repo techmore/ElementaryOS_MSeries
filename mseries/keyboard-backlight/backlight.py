@@ -41,6 +41,18 @@ class Keyboard:
         result = self.proxy.call_sync(method, args, Gio.DBusCallFlags.NONE, 2000, None).unpack()
         return result[0] if result else None
 
+    def lid_closed(self):
+        # Apple Silicon has no ACPI, so /proc/acpi/button/lid never exists here;
+        # logind tracks the lid from the SoC's own input device.
+        try:
+            reply = self.bus.call_sync('org.freedesktop.login1', '/org/freedesktop/login1',
+                'org.freedesktop.DBus.Properties', 'Get',
+                GLib.Variant('(ss)', ('org.freedesktop.login1.Manager', 'LidClosed')), None,
+                Gio.DBusCallFlags.NONE, 2000, None)
+            return bool(reply.unpack()[0])
+        except GLib.Error:
+            return False
+
     def session_active(self):
         # Background/autostart processes may belong to a user manager, not a
         # login session. Check this user's graphical session through logind.
@@ -83,7 +95,7 @@ def main():
             last = current
             if paused_lux is not None and abs(lux - paused_lux) >= max(20, paused_lux * .4):
                 paused_lux = None
-            lid_closed = any('closed' in p.read_text() for p in Path('/proc/acpi/button/lid').glob('*/state'))
+            lid_closed = keyboard.lid_closed()
             if paused_lux is None and not lid_closed and keyboard.session_active():
                 target = round(keyboard.maximum * percent(lux) / 100)
                 if abs(current - target) >= max(1, keyboard.maximum * .04):

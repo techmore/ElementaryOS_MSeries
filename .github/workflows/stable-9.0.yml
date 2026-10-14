@@ -1,12 +1,14 @@
 name: Build and Release Stable (elementary OS 9)
 
+# Upstream's monthly schedule is removed on this fork: the release pipeline needs
+# upstream's signing key and R2 bucket credentials, which a fork does not have, so
+# it could only fail every month. Fork builds are manual (daily-9.0.yml).
 on:
-  schedule:
-    - cron: "0 0 1 * *"
   workflow_dispatch:
 
 jobs:
   call-reusable-build:
+    if: github.repository == 'elementary/os'
     uses: ./.github/workflows/build-release.yml
     with:
       stream: stable

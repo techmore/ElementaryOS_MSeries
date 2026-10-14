@@ -98,9 +98,9 @@ preconditions() {
   kver=$(uname -r)
   [[ -d "/usr/lib/modules/$kver" ]] || [[ -d "/lib/modules/$kver" ]] \
     || fail "no modules tree for running kernel $kver"
-  ls /boot/vmlinuz-* 2>/dev/null | grep -q . \
+  compgen -G '/boot/vmlinuz-*' >/dev/null \
     || fail "no kernel image in /boot"
-  ls /boot/initramfs-* 2>/dev/null | grep -q . \
+  compgen -G '/boot/initramfs-*' >/dev/null \
     || fail "no initramfs in /boot"
   log "preconditions OK (kernel $kver, ${free_gb}G free)"
 }
@@ -165,7 +165,7 @@ do_status() {
   echo "--- desktop ---"
   chroot "$TOP_MNT/$SUBVOL_NAME" dpkg -l elementary-desktop elementary-minimal elementary-standard 2>/dev/null | grep -E "^ii" || echo "(desktop packages not installed)"
   echo "--- firmware ---"
-  ls "$TOP_MNT/$SUBVOL_NAME/lib/firmware/brcm" 2>/dev/null | grep -c brcm || echo "(no firmware dir)"
+  find "$TOP_MNT/$SUBVOL_NAME/lib/firmware/brcm" -maxdepth 1 -name 'brcm*' 2>/dev/null | wc -l
   echo "--- boot entry ---"
   local n
   n=$(grep -c "elementary OS (M-series" /boot/grub/grub.cfg 2>/dev/null || true)
@@ -747,7 +747,7 @@ install_grub_entry() {
   else
     log "WARNING: cannot map BOOT_IMAGE='$bootimage' to a kernel/initramfs pair; guessing the newest"
     kernel=$(ls -t /boot/vmlinuz-* | head -n 1)
-    initramfs=$(ls -t /boot/initramfs-*.img | grep -v fallback | head -n 1)
+    initramfs=$(find /boot -maxdepth 1 -name 'initramfs-*.img' ! -name '*fallback*' -printf '%T@ %p\n' | sort -rn | head -n 1 | cut -d' ' -f2-)
   fi
   [[ -n $kernel && -n $initramfs ]] || fail "cannot locate kernel/initramfs pair in /boot"
   log "boot entry kernel: $kernel + $initramfs"

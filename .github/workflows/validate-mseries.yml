@@ -17,6 +17,7 @@ on:
       - "repos/**"
       - "packages.arm64"
       - "transform/**"
+      - "bin/**"
       - "mseries/**"
       - "docs/build-status.*"
       - "docs/local-build-status.html"
@@ -42,6 +43,10 @@ jobs:
           bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-resume-fix
           bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-firmware
           bash -n transform/elementary-grow.sh
+          bash -n bin/elementary-mac-setup
+          for f in mseries/install-*.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/disable-notch-for-pantheon.sh; do bash -n "$f"; done
+          shellcheck -S warning bin/elementary-mac-setup transform/elementary-grow.sh mseries/install-unlock-screen.sh mseries/install-boot-isolation.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet
+          bash mseries/test-elementary-mac-setup.sh
           bash -n assemble-iso.sh
           bash -n mseries/local-build-worker.sh
           bash -n mseries/fairydust/debian/build.sh

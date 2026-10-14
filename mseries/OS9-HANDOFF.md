@@ -126,6 +126,15 @@ Read the Gala/Wingpanel/Quick Settings/indicator/Files-portal/Touchegg/CodexBar/
 Reviewed, no change: `install-gala-screen-corners.sh` (private prefix, per-user drop-in, automatic fallback to stock Gala - good design), CodexBar (sha256 comes from the same release origin, so it guards corruption not tampering; it also runs the downloaded `install.py`), Touchegg (tag, not a commit, pinned).
 Not read: the Vala/meson sources under `mseries/clockright`, `codexbar-wingpanel`, `signal-wingpanel`, `troubleshooter-wingpanel`, the `mseries/patches/*.patch` files, `mseries/local-ai/*`, `mseries/brightness`, `mseries/keyboard-backlight`, `mseries/launcher*`, the mkosi image configs and workflows.
 
+### Workflows and Python helpers audit (2026-10-14)
+
+- `stable-9.0.yml` still ran upstream's release pipeline monthly (cron `0 0 1 * *`), and `proposed-9.0.yml` ran it for every non-draft pull request, both with `secrets: inherit` into a job that needs upstream's signing key and R2 credentials. On this fork that is an hour of runner time per PR and a certain failure at the upload (and, if someone ever added those secrets here, a push into upstream-named buckets). The schedule is removed and both jobs are now guarded with `github.repository == 'elementary/os'`, so they stay mergeable from upstream but never run here. `daily-9.0.yml` (manual, no secrets, hash-pinned kernel archive) is the fork's real build and is fine.
+- `validate-mseries.yml` now also syntax-checks every `mseries/install-*.sh`, the new installer scripts and the snippet tool, runs `shellcheck -S warning` over them, and runs `mseries/test-elementary-mac-setup.sh`. To keep that gate green, four `ls | grep` patterns in `elementary-grow.sh` (SC2010) were replaced.
+- `keyboard-backlight/backlight.py` detected the closed lid through `/proc/acpi/button/lid`, which does not exist on Apple Silicon (checked on this machine), so the check was always false. It now asks logind for `LidClosed` (checked live).
+- Reviewed, no change: `mseries-launcher.py`, `brightness/shell-bridge.py`, `local-ai/crash-watch.py` and the first half of `troubleshoot.py` (loopback-only endpoint, no redirects, proxies off, log redaction, no shell), `install-agent.sh` (hash-pinned Crush release). `local-ai/stage-ane.sh` hard-codes `/home/techmore/...` and one kernel version by design (it refuses on any other kernel) — owner-only tooling.
+- Still unread: `local-ai/troubleshoot.py` after line 200, `ask.py`, `brief.py`, `verify.py`, `troubleshooter-ui.py`, `repair-panel.py`, the Vala/meson sources for the custom Wingpanel indicators, `mseries/patches/*.patch`, `mseries/fairydust/*`, and the mkosi image configs.
+- `build-release.yml` (upstream) interpolates `${{ secrets.SYSUPDATE_GPG_PASS }}` straight into a shell command; upstream's choice, not run here.
+
 ## Next tasks, in order
 
 Coordination: Codex handles implementation and review; OpenCode handles
