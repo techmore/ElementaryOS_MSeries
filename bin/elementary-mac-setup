@@ -17,7 +17,10 @@
 #      on the elementary unlock screen on every boot after.   (reboot)
 #   3. ELEMENTARY   elementary OS (Pantheon) is built into its own btrfs
 #      subvolume, becomes the default boot entry, and gets the elementary
-#      unlock screen and an auto-login.                  (reboot into elementary)
+#      unlock screen, an auto-login and the M-series enhancements (zram,
+#      charge limit, docked-lid mode, brightness and keyboard lighting, and on
+#      first boot Brave, gestures and the panel fixes; --no-enhancements skips
+#      them).                                            (reboot into elementary)
 #
 # The only things you type are your answers, your password and the disk
 # passphrase. Steps 1 and 2 are done by the Asahi Alarm tools of the Omarchy Mac
