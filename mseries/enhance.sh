@@ -124,7 +124,7 @@ Type=oneshot
 ExecStart=/usr/local/sbin/mseries-power apply
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=graphical.target
 EOF
   put 0644 /etc/udev/rules.d/80-mseries-power.rules <<'EOF'
 # Plugging or unplugging the charger re-applies the policy.

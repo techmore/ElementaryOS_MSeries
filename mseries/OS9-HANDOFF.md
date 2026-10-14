@@ -983,3 +983,38 @@ builds the network/Quick Settings plugins but does not invoke the shared
 enhancement layer requires preservation rules and runtime dependencies; the
 sysupdate path emits only `/usr`, so `/etc` configuration and `/usr/local`
 helpers need deliberate treatment. This packaging gap remains open.
+
+## Wi-Fi resume fix and mseries-power ordering — 2026-10-14
+
+Found in the live journal (kernel 7.1.13-elementary-fairydust-usb4, uptime 2 h):
+
+- `omarchy-wifi-resume-fix.service` failed at 15:47 with
+  `modprobe: ERROR: could not remove 'brcmfmac': No such file or directory`.
+  The script ran `modprobe -r` unconditionally, so when the driver was already
+  unloaded it aborted before loading it back and Wi-Fi stayed down
+  (`lsmod` showed only `brcmutil`; the machine was on USB Ethernet).
+  Fix in `mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-resume-fix`:
+  unload only when loaded, then always `modprobe brcmfmac` (and its holders).
+- `mseries-power.service` (`After=power-profiles-daemon.service`, which is
+  itself after `multi-user.target`) was `WantedBy=multi-user.target`, giving a
+  boot ordering cycle that systemd broke by dropping a job. It is now
+  `WantedBy=graphical.target` in `install-power.sh` and `enhance.sh`; the
+  charger udev rule still triggers it on plug/unplug.
+
+Tests: `mseries/test-wifi-resume.py` (new: missing driver is loaded without an
+unload; both power unit templates avoid `multi-user.target`), and
+`test-elementary-mac-setup.sh` now expects the `graphical.target.wants` link.
+All pass.
+
+NOT applied to the running M1 Pro (needs sudo): reinstall with
+`sudo bash mseries/install-power.sh`, `sudo install -m755
+mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-resume-fix
+/usr/sbin/`, remove the stale `multi-user.target.wants/mseries-power.service`
+link if left over, `sudo systemctl daemon-reload`, `sudo systemctl reset-failed`,
+then `sudo modprobe brcmfmac` to bring Wi-Fi back now. Verify after reboot:
+no "ordering cycle" line in `journalctl -b -p err`, and one suspend cycle with
+Wi-Fi reconnecting.
+
+Still open from the same audit: the DNS-logger polkit rule is probably not
+installed (password helper still fires every ten minutes), `user@109` (greeter)
+stop timeout from `obexd`, `mseries-verify` not on PATH.

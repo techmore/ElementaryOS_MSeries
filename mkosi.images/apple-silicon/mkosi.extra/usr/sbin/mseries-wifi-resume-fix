@@ -47,7 +47,12 @@ main() {
     logger -t mseries-wifi-resume-fix "reloading brcmfmac after resume (rejections $before->$after)"
     local holders
     holders=$(lsmod | awk '$1 == "brcmfmac" {gsub(",", " ", $4); print $4}')
-    modprobe -r --remove-holders brcmfmac
+    # The driver may already be gone (an earlier failed reload, or a manual
+    # unload); unloading it again would abort and leave Wi-Fi down, so only
+    # remove it when it is loaded and always finish by loading it.
+    if lsmod | awk '$1 == "brcmfmac" {found = 1} END {exit !found}'; then
+      modprobe -r --remove-holders brcmfmac
+    fi
     modprobe brcmfmac
     # shellcheck disable=SC2086  # a short list of module names
     [[ -z $holders ]] || modprobe $holders

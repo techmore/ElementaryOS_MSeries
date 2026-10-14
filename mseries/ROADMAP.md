@@ -29,7 +29,7 @@ with the corrected live-session hardware overlay before progressing.
 | Speaker tuning | `install-pipewire-lv2.sh` + `install-audio-stack.sh --with-dsp` | `audio-output-ok` passed |
 | Battery charge limit 80% + on-battery CPU cap | `install-power.sh` (`mseries-power`) | limit verified; on-battery path simulated, real unplug pending (`power-battery-policy`) |
 | Native Firefox (no snap) | `install-native-firefox.sh` | runs |
-| Wi-Fi resume fix | `mseries-wifi-resume-fix` | CI test |
+| Wi-Fi resume fix | `mseries-wifi-resume-fix` (2026-10-14: no longer aborts when the driver is already unloaded; reinstall pending on the M1 Pro) | CI test |
 | Tracks upstream | merged `elementary/os` main @ 7024fd0 | `UPSTREAM-PINS.md` |
 | Benchmarks | `mseries/benchmarks/` | see `benchmarks/README.md` |
 

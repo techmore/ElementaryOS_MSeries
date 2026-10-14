@@ -10,7 +10,7 @@ SCRIPT = Path(__file__).resolve().parents[1] / "mkosi.images/apple-silicon/mkosi
 
 
 class RecoveryTests(unittest.TestCase):
-    def run_case(self, radio, state, unload_fails=False):
+    def run_case(self, radio, state, unload_fails=False, loaded=True):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             commands = {
@@ -21,7 +21,7 @@ class RecoveryTests(unittest.TestCase):
                 "sleep": "exit 0",
                 "logger": "exit 0",
                 # brcmfmac is held by its vendor module, which must be removed and loaded back too
-                "lsmod": "echo 'Module Size Used by'; echo 'brcmfmac_wcc 1 0'; echo 'brcmfmac 1 1 brcmfmac_wcc'",
+                "lsmod": "echo 'Module Size Used by'; echo 'brcmutil 1 0'" + ("; echo 'brcmfmac_wcc 1 0'; echo 'brcmfmac 1 1 brcmfmac_wcc'" if loaded else ""),
                 "modprobe": 'echo "$*" >> "$CALLS"\n' + ('exit 1' if unload_fails else 'exit 0'),
             }
             for name, body in commands.items():
@@ -44,6 +44,23 @@ class RecoveryTests(unittest.TestCase):
 
     def test_failed_unload_stops_recovery(self):
         self.assertEqual(self.run_case("enabled", "disconnected", True), (1, "-r --remove-holders brcmfmac\n"))
+
+    def test_missing_driver_is_loaded_not_unloaded(self):
+        # Regression: modprobe -r on an absent module aborted and left Wi-Fi down.
+        self.assertEqual(self.run_case("enabled", "disconnected", loaded=False), (0, "brcmfmac\n"))
+
+
+class PowerUnitTests(unittest.TestCase):
+    def test_power_unit_is_not_wanted_by_multi_user(self):
+        # After=power-profiles-daemon (itself after multi-user.target) plus
+        # WantedBy=multi-user.target made an ordering cycle.
+        root = Path(__file__).resolve().parent
+        for name in ("install-power.sh", "enhance.sh"):
+            text = (root / name).read_text()
+            unit = text[text.index("Description=Apply battery charge limit"):]
+            unit = unit[:unit.index("\n", unit.index("WantedBy="))]
+            self.assertIn("WantedBy=graphical.target", unit, name)
+            self.assertNotIn("multi-user.target", unit, name)
 
 
 if __name__ == "__main__":

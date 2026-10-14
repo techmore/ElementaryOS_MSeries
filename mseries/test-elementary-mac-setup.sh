@@ -91,7 +91,7 @@ for f in etc/systemd/zram-generator.conf usr/local/sbin/mseries-power usr/libexe
          usr/share/elementary-mac/mseries/patches/network-throughput.patch usr/share/elementary-mac/mseries/netspeed/panel-network.patch usr/share/elementary-mac/mseries/netspeed/wire-network-usage.py usr/share/elementary-mac/shim/sudo; do
   [[ -e $root/$f ]] || { echo "FAIL enhance.sh did not write $f" >&2; fails=$((fails + 1)); }
 done
-[[ -L $root/etc/systemd/system/multi-user.target.wants/mseries-power.service ]] ||
+[[ -L $root/etc/systemd/system/graphical.target.wants/mseries-power.service ]] ||
   { echo "FAIL mseries-power.service not enabled" >&2; fails=$((fails + 1)); }
 [[ -L $root/etc/systemd/user/default.target.wants/mseries-audio-watchdog.service ]] ||
   { echo "FAIL audio watchdog not enabled for all users" >&2; fails=$((fails + 1)); }
