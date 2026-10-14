@@ -11,6 +11,9 @@
 #             background daemon not autostarted for new users
 #   power     battery charge limit (80%) + lower CPU ceiling on battery, with the
 #             polkit action the Quick Settings switch uses
+#   audio     WirePlumber rules (speaker/headphone outputs stay open, no pop; headset
+#             mic is not the default) and an audio watchdog that restarts PipeWire
+#             when it stops answering
 #   session   per-user helpers as system-wide user units: docked-lid mode, GNOME
 #             brightness compatibility, ambient keyboard lighting
 #   theme     softer accent colours and larger window corners for new users
@@ -31,7 +34,7 @@ here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 ROOT=/
 only=""
 skip=""
-ALL=(tuning power session theme payload firstboot)
+ALL=(tuning power audio session theme payload firstboot)
 
 log() { printf '[enhance] %s\n' "$*"; }
 
@@ -128,6 +131,28 @@ SUBSYSTEM=="power_supply", KERNEL=="macsmc-ac", ACTION=="change", TAG+="systemd"
 EOF
   enable mseries-power.service
   log "power: 80% charge limit and battery CPU policy (change with: sudo mseries-power limit 100)"
+}
+
+mod_audio() {
+  copy 0644 "$here/audio/asahi-audio-no-suspend.conf" /etc/wireplumber/wireplumber.conf.d/50-mseries-asahi-no-suspend.conf
+  copy 0644 "$here/audio/asahi-headset-mic.conf" /etc/wireplumber/wireplumber.conf.d/50-mseries-asahi-headset-mic.conf
+  copy 0755 "$here/audio/audio-watchdog.py" /usr/libexec/mseries/audio-watchdog
+  put 0644 /usr/lib/systemd/user/mseries-audio-watchdog.service <<'EOF'
+[Unit]
+Description=Restart the audio stack when it stops responding (Apple Silicon)
+ConditionPathExists=/proc/device-tree/compatible
+
+[Service]
+ExecStart=/usr/bin/python3 -I /usr/libexec/mseries/audio-watchdog
+Restart=on-failure
+RestartSec=10
+Nice=10
+
+[Install]
+WantedBy=default.target
+EOF
+  enable --global mseries-audio-watchdog.service
+  log "audio: WirePlumber no-suspend/headset-mic rules and the audio watchdog"
 }
 
 mod_session() {

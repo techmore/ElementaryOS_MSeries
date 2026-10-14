@@ -67,12 +67,14 @@ root=$(mktemp -d)
 bash "$here/enhance.sh" --root "$root" >/dev/null
 for f in etc/systemd/zram-generator.conf usr/local/sbin/mseries-power usr/libexec/mseries/docked-lid \
          usr/lib/systemd/user/mseries-docked-lid.service etc/skel/.config/gtk-4.0/gtk.css \
-         usr/sbin/elementary-mac-enhance usr/share/elementary-mac/mseries/install-brave.sh \
+         usr/sbin/elementary-mac-enhance etc/wireplumber/wireplumber.conf.d/50-mseries-asahi-no-suspend.conf usr/libexec/mseries/audio-watchdog usr/share/elementary-mac/mseries/install-brave.sh \
          usr/share/elementary-mac/mseries/patches/network-throughput.patch usr/share/elementary-mac/shim/sudo; do
   [[ -e $root/$f ]] || { echo "FAIL enhance.sh did not write $f" >&2; fails=$((fails + 1)); }
 done
 [[ -L $root/etc/systemd/system/multi-user.target.wants/mseries-power.service ]] ||
   { echo "FAIL mseries-power.service not enabled" >&2; fails=$((fails + 1)); }
+[[ -L $root/etc/systemd/user/default.target.wants/mseries-audio-watchdog.service ]] ||
+  { echo "FAIL audio watchdog not enabled for all users" >&2; fails=$((fails + 1)); }
 [[ -L $root/etc/systemd/user/default.target.wants/mseries-docked-lid.service ]] ||
   { echo "FAIL docked-lid not enabled for all users" >&2; fails=$((fails + 1)); }
 eq "$(bash "$root/usr/share/elementary-mac/shim/sudo" -E echo hi)" hi "sudo shim runs the command"

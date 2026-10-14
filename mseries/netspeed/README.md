@@ -1,3 +1,8 @@
+> **Snapshot, 2026-10-13.** The `troubleshooter/` files here are an older copy of `mseries/local-ai/`
+> (`troubleshoot.py`, `crash-watch.py`, `troubleshooter-ui.py`) and have drifted from it. The installers use
+> `mseries/local-ai/`; do not install from this directory. `panel-network.patch` overlaps the
+> `mseries/patches/network-*.patch` series that the installer applies - use one or the other.
+
 # elementary OS on Apple Silicon: network and troubleshooting enhancements
 
 Small, local-first improvements for elementary OS on an M-series Mac. Everything runs on the machine, needs no root to *run*, and is light enough to leave on all day.

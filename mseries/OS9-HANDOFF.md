@@ -157,6 +157,13 @@ Deliberately NOT automatic: Command/Ctrl swap + launcher (opinionated), rounded 
 Unverified: every first-boot module on hardware (build dependency lists for sound/keyboard/files/osk are best guesses and will show up as `failed` with the meson error in the log if a package name is wrong); the autostart-triggered brightness/backlight services on a grown root.
 Open parity items vs omarchy-mac (see PORT-MAP.md): audio watchdog, headset-mic map, `hid_apple fnmode` default, AVD video decode.
 
+### Completion pass (2026-10-14)
+
+Read the rest: all of `local-ai` (troubleshoot, ask, verify, repair-panel, upstream-watch, configure-prefill, crash-watch; only `brief.py` and `troubleshooter-ui.py` were skimmed by pattern search), the Vala indicators (`clockright`, `codexbar-wingpanel`, `signal-wingpanel`, `troubleshooter-wingpanel`: they only spawn fixed binaries in the user's own `~/.local/bin`), the large patches (read-only `/proc`/`/sys` access, a per-user key file; the Gala corner radius is parsed defensively), `fairydust/usb4` + `host` (owner-only: hard-coded `/home/techmore`, `/mnt/fdbuild`; `install-m1n1.sh` refuses to run unless the recovery copies exist), `backup/mseries-backup.sh`. A repository-wide grep found no `shell=True`, `eval`, insecure TLS flags or world-writable modes.
+Findings: `netspeed/` is a stale snapshot (its troubleshooter files differ from `local-ai/` by 60-860 diff lines and its network patch overlaps the installer's) - marked in its README. `clockright` ignored a change of "show seconds" while running (timer rate fixed at construction) - fixed. The fairydust presets set `ALL_config` (confirmed in `install-stage1.sh`), which independently confirms that mkinitcpio drop-ins would be ignored for them and the snippet-in-`mkinitcpio.conf` approach is right.
+Ported from omarchy-mac-pkgs: WirePlumber `asahi-audio-no-suspend` and `asahi-headset-mic` rules and a Pantheon audio watchdog (`mseries/audio/`, enabled by the `audio` module). Still open: the headset-mic mapper, the `hid_apple fnmode` default (running value 1, upstream hands it to the kernel default 3 - left alone, owner preference), Apple video decode (kernel + firmware + VA-API bridge).
+Everything remains unverified on hardware.
+
 ## Next tasks, in order
 
 Coordination: Codex handles implementation and review; OpenCode handles

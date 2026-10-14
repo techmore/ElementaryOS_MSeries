@@ -26,7 +26,21 @@ private class RightClockIndicator : Wingpanel.Indicator {
         visible = true;
 
         update_clock ();
-        settings.changed.connect ((key) => update_clock ());
+        settings.changed.connect ((key) => {
+            if (key == "clock-show-seconds") {
+                start_timer ();
+            }
+            update_clock ();
+        });
+        start_timer ();
+    }
+
+    // The tick rate follows the "show seconds" setting, including when it is
+    // changed while the panel is running.
+    private void start_timer () {
+        if (update_timer != 0) {
+            Source.remove (update_timer);
+        }
         update_timer = Timeout.add_seconds (
             settings.get_boolean ("clock-show-seconds") ? 1 : 15,
             () => { update_clock (); return Source.CONTINUE; }
