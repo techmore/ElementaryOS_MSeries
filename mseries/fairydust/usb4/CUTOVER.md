@@ -16,21 +16,31 @@ unattended session cannot do.
 - [x] Rollback known: pick the normal GRUB entry; if the Mac stops before GRUB, restore
       `boot.bin` from macOS (`RECOVERY.md`). macOS is intact (APFS containers present).
 
+## Done on this Mac
+
+- [x] Dry run reviewed (UUIDs matched: root `725346d2...`, LUKS `b6276462...`, ESP `D893-79A4`).
+- [x] `install-ci-kernel.sh --apply` ran: `/boot/vmlinuz-linux-asahi-fairydust-usb4`, the
+      initramfs and the TEST entry in `/boot/grub/custom.cfg` exist; default entry unchanged;
+      `boot.bin` backed up and untouched.
+- [x] First boot of the TEST entry: kernel reached systemd, then emergency mode (see below).
+
 ## Needs you, in order
 
-1. [ ] Re-run the backup with sudo so `secrets.tar`, `blkid`, `parted` and the btrfs
-       subvolume list exist. Copy `secrets.tar` to encrypted media only.
-       `sudo -v && bash mseries/backup/mseries-backup.sh`
-2. [ ] Plug in AC power and keep the Mac on it for the whole run.
-3. [ ] Dry run, read every line:
-       `sudo bash mseries/fairydust/usb4/install-ci-kernel.sh ~/mseries-kernel-usb4.4`
-4. [ ] Apply: same command with `--apply`. The default boot entry does not change.
-5. [ ] Reboot, choose "elementary OS (M-series, fairydust + USB4 test)" in GRUB.
-6. [ ] Post-boot checks: `uname -r` shows `fairydust-usb4`; `lsmod | grep thunderbolt`;
+1. [ ] Install the modules into the booted root (the fix for the emergency-mode boot; see the
+       "First boot result" section for the command). Check: `ls /usr/lib/modules` lists
+       `7.1.13-elementary-fairydust-usb4`.
+2. [ ] AC power plugged in. The battery shows "Discharging" at 100% because of the charge limit,
+       so confirm the cable by eye.
+3. [ ] Optional but recommended: `sudo -v && bash mseries/backup/mseries-backup.sh` so
+       `secrets.tar` exists (copy it to encrypted media only). Not required for the boot test.
+4. [ ] Reboot, choose "elementary OS (M-series, fairydust + USB4 test)" in GRUB.
+5. [ ] Post-boot checks: `uname -r` shows `fairydust-usb4`; `lsmod | grep thunderbolt`;
        `ls /sys/bus/thunderbolt/devices`; `lsusb -t`;
-       `journalctl -b -k | grep -i "graph endpoint"` is empty; then the rest of
-       `POST-BOOT-CHECKS.md`.
-7. [ ] After a long uptime: `bash mseries/check-video-decode.sh` (proves the 0003 AVD fix).
+       `journalctl -b -k | grep -i "graph endpoint"` is empty; `journalctl -b -p err`;
+       then the rest of `POST-BOOT-CHECKS.md`.
+6. [ ] After a long uptime: `bash mseries/check-video-decode.sh` (proves the 0003 AVD fix).
+
+If the test entry fails again, reboot and pick the normal "elementary OS (M-series)" entry.
 
 ## Known limits
 
