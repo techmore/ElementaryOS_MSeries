@@ -59,7 +59,7 @@ need_mb=$(( used_mb * 2 + 10 ))
 avail_mb=$(df -m --output=avail /boot | tail -1)
 (( avail_mb > need_mb )) || fail "only ${avail_mb}MB free on /boot; need about ${need_mb}MB for backups and the rebuild"
 
-command -v plymouth >/dev/null || pacman -Sy --noconfirm --needed plymouth ||
+command -v plymouth >/dev/null || pacman -S --noconfirm --needed plymouth ||
   fail "could not install plymouth"
 # Inter is elementary's UI font; Noto is the fallback if it is not packaged.
 pacman -S --noconfirm --needed inter-font >/dev/null 2>&1 ||

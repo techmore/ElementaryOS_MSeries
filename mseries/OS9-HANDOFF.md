@@ -93,6 +93,11 @@ Found on the running machine: elementary's root has `initramfs-tools` (`update_i
 Added `mseries/install-boot-isolation.sh` (update_initramfs=no, apt pin against Ubuntu kernels, dpkg-diverted no-op stubs for update-grub/grub-install/grub-mkconfig), run by the grow script before and after the desktop install and available as `elementary-grow.sh --isolate-boot`. **Not yet applied to the running machine**: run `sudo mseries/install-boot-isolation.sh`.
 Open: custom kernel flavours (fairydust*) are only synced by the pacman hook if pacman installs them as `linux-asahi*`/`linux-aarch64*`.
 
+### Installer flow re-audit (2026-10-14)
+
+- Prerequisites used `pacman -Sy <pkgs>` (a partial upgrade: on a months-old Asahi Alarm image git/curl can end up linked against libraries that were not upgraded). It is now `pacman -Syu` once, up front. If that replaced the running kernel (its `/usr/lib/modules/<running>` is gone, so vfat/btrfs/dm-crypt cannot be loaded), the setup reboots onto the new kernel before doing anything else. Later installs use plain `-S` (databases are already current).
+- `--no-encrypt` on stock Asahi Alarm (/boot on the btrfs root, kernel under the `@` subvolume): the GRUB entry used `/boot/vmlinuz-...`, which GRUB cannot find because it reads the top level of the filesystem. Now uses `grub-mkrelpath` (`/@/boot/...`). Untested.
+
 ## Next tasks, in order
 
 Coordination: Codex handles implementation and review; OpenCode handles

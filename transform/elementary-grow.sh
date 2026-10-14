@@ -741,7 +741,13 @@ install_grub_entry() {
     kpath="/${kernel#/boot/}"; ipath="/${initramfs#/boot/}"
   else
     search_uuid=$(findmnt -no UUID /)       # /boot lives on the root fs
-    kpath="$kernel"; ipath="$initramfs"
+    # Relative to the filesystem, subvolume included (/@/boot/vmlinuz-...):
+    # GRUB reads the top level of the btrfs, not the @ subvolume.
+    if command -v grub-mkrelpath >/dev/null; then
+      kpath=$(grub-mkrelpath "$kernel"); ipath=$(grub-mkrelpath "$initramfs")
+    else
+      kpath="$kernel"; ipath="$initramfs"
+    fi
   fi
   local linux_line
   linux_line=$(build_linux_line "$kpath") || fail "cannot derive boot line from /proc/cmdline"

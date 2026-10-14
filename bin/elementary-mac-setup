@@ -468,8 +468,13 @@ require_network() {
 
 install_prerequisites() {
   log "Installing the tools the setup needs"
-  pacman -Sy --noconfirm --needed git curl openssl pciutils btrfs-progs cryptsetup grub >/dev/null ||
-    fail "could not install the prerequisite packages"
+  # A full upgrade, not -Sy: syncing the databases and installing a few packages
+  # against them is a partial upgrade, which on an image that is months old can
+  # leave git or curl linked against libraries that were not upgraded with them.
+  # Doing it once, here, before anything is staged, also means every later step
+  # sees a consistent system (kernel, modules, initramfs).
+  pacman -Syu --noconfirm --needed git curl openssl pciutils btrfs-progs cryptsetup grub >/dev/null ||
+    fail "could not upgrade the system and install the prerequisite packages"
 }
 
 # A Retina panel renders the kernel's 8x16 console font at about a millimetre
@@ -478,7 +483,7 @@ install_prerequisites() {
 setup_console_font() {
   command -v setfont >/dev/null || return 0
 
-  if ! pacman -Sy --noconfirm --needed terminus-font >/dev/null 2>&1; then
+  if ! pacman -S --noconfirm --needed terminus-font >/dev/null 2>&1; then
     warn "Could not install terminus-font; leaving the console font alone."
     return 0
   fi
@@ -505,7 +510,7 @@ setup_grub_font() {
     ttf=$(find /usr/share/fonts -name '*Mono*.ttf' -print -quit 2>/dev/null || true)
   fi
   if [[ -z $ttf ]]; then
-    pacman -Sy --noconfirm --needed ttf-dejavu >/dev/null 2>&1 || true
+    pacman -S --noconfirm --needed ttf-dejavu >/dev/null 2>&1 || true
     ttf=$(find /usr/share/fonts -name 'DejaVuSansMono.ttf' -print -quit 2>/dev/null || true)
   fi
   if [[ -z $ttf ]]; then
@@ -576,7 +581,7 @@ clone_shallow() {
 }
 
 ensure_source_checkout() {
-  command -v git >/dev/null || pacman -Sy --noconfirm --needed git
+  command -v git >/dev/null || pacman -S --noconfirm --needed git
   log "Fetching $repo ($ref)"
   clone_shallow "$SRC" "$(clone_url)" "$ref"
   repo_present || { rm -rf -- "${SRC:?}"; fail "$repo ($ref) does not carry transform/elementary-grow.sh"; }
@@ -1048,6 +1053,13 @@ main() {
     save_conf
     install_self
     install_unit
+    # The upgrade above may have replaced the kernel; its modules for the one
+    # still running are then gone (modprobe of vfat, btrfs, dm-crypt would
+    # fail in the steps that follow). Boot the new one first.
+    if [[ ! -d /usr/lib/modules/$(uname -r) ]]; then
+      reboot_now "The system was upgraded to a new kernel."
+      exit 0
+    fi
   else
     [[ -d $TOOLS_SRC/.git && -d $SRC/.git ]] || { require_network; install_prerequisites; ensure_source_checkout; }
   fi
