@@ -1,51 +1,30 @@
 # Cleanup and Linux storage expansion
 
-Audited 2026-10-13. This is a plan, not an executed partition resize.
+Updated 2026-10-14. The 2026-10-13 layout and capacity notes below the cleanup section are historical; the current reported layout is summarized here. This is planning only: no partition, LUKS, or Btrfs changes were performed for this request.
 
-## Current layout
+## Current reported layout
 
-The 931.8 GiB internal SSD is fully allocated, approximately:
+Owner-provided output describes a 931.8 GiB internal SSD:
 
 | Region | Size | Purpose |
 | --- | ---: | --- |
-| First Apple container | 0.49 GiB | iBoot system data — preserve |
-| Large APFS container | 828.9 GiB | Apple/macOS allocation; used/free space not yet measured |
-| Asahi APFS stub | 2.33 GiB | Apple boot integration — preserve |
-| EFI partition | 0.49 GiB | Linux boot files/m1n1 — preserve |
-| Encrypted Linux partition | 94.7 GiB | Btrfs root and home |
-| Last Apple container | 5 GiB | Recovery — preserve |
+| p1 | 500 MiB | iBoot System Container — preserve |
+| p2 | 717.1 GiB | macOS APFS |
+| Free gap | 112 GiB | Before Asahi partitions; origin must be confirmed |
+| p3 | 2.3 GiB | Asahi APFS boot stub — preserve |
+| p4 | 500 MiB | EFI, mounted at `/boot` — preserve |
+| p5 | 94.7 GiB | LUKS2 containing Btrfs `/@elementary`, mounted as `/` and `/home` |
+| p6 | 5 GiB | Apple Recovery — never touch |
 
-There is no significant unallocated space after the Linux partition.
-Shrinking the large APFS container would release space **before** the Asahi
-stub/EFI/Linux partitions, not directly after the existing Linux root.
+The gap precedes the Asahi stub/EFI/Linux root unit, so p5 cannot be extended into it by growing its end. Asahi's [partitioning cheatsheet](https://asahilinux.org/docs/sw/partitioning-cheatsheet/) says to preserve the first iBoot and last System Recovery partitions, treats the stub, EFI, and Linux root as one logical OS unit, and warns against unsorted GPT entries. The [distribution guidelines](https://asahilinux.org/docs/alt/policy/) say disk changes must be limited to free space left by the Asahi Installer. Therefore, do not use this gap unless its Asahi Installer provenance is confirmed; if it was created by a different tool or the origin is unknown, stop.
 
-## Practical first expansion
+## Safest candidate for enlarging `/`
 
-1. Back up important files and verify the recovery route before any resize.
-2. Boot Apple Recovery (or macOS if available). In Terminal, capture the
-   read-only output of `diskutil list` and `diskutil apfs list`. Identify
-   containers afresh; disk numbers can change. Determine the large APFS
-   container's used space and supported shrink limit before choosing a size.
-3. Prepare a reviewed resize plan using Apple's command-line tooling. The
-   amount reclaimable is not known merely from the 828.9 GiB allocation.
-4. Use released space for a **separate Linux build/data filesystem**, mounted
-   at a build directory. Keep the existing encrypted root and boot partitions
-   in place. This increases Linux's usable internal storage without moving
-   its installed OS. Choose encryption and boot-independent mounting before
-   formatting anything. No such changes have been authorized or executed.
+If the gap passes that provenance check, the candidate is to create a separate partition wholly inside the gap, encrypt it as a new LUKS2 volume, verify that the installed initramfs can unlock it early, reboot once while the existing root is still single-device, and only then add the mapper to the existing Btrfs filesystem with `btrfs device add`. This increases Btrfs capacity without moving p3/p4/p5. It makes root depend on both encrypted volumes and both remaining on the same physical SSD; it adds no physical redundancy. Do not run `mkfs.btrfs`, balance, or profile conversion as part of the plan.
 
-This leaves `/` at its current size. If the goal is to enlarge `/` itself,
-plan an offline backup-and-migration/repartition operation after inspecting
-APFS capacity and verifying backup media. Do not move the mounted encrypted
-root or promise that Btrfs alone can consume nonadjacent APFS space. Adding
-another device to the root Btrfs pool would also require a separate review
-of encryption, early-boot unlock, and recovery dependencies.
+This is a checkpointed proposal, not authorization to write the GPT or format a device. Before any destructive step, require fresh sector-level output, a verified external backup and LUKS header backup, a confirmed recovery route, a reviewed exact target, and the owner's explicit confirmation. If initramfs early-unlock and Btrfs discovery cannot be proven for this installation, leave the new partition unused and do not add it to root. The repository's factory ISO is not hardware-boot-qualified and must not be treated as a verified recovery path.
 
-Asahi's [partitioning guide](https://asahilinux.org/docs/sw/partitioning-cheatsheet/)
-explains the boot stub/EFI relationship and recommends `diskutil` instead
-of the graphical Disk Utility for this layout. The first/last Apple system
-containers must remain intact. This Linux session cannot supply APFS's
-actual shrink limits.
+See [`procedures/ROOT-EXPANSION.md`](procedures/ROOT-EXPANSION.md) for the read-only preflight, checkpoints, rollback boundary, and official references. The next action is to capture and review that preflight output; do not run partition operations yet.
 
 ## Cleanup performed with owner authorization
 

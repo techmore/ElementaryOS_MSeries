@@ -520,3 +520,8 @@ BUG-FIX-ROADMAP.md with evidence and are not fixed. Running code that was only
 in PR #1 (docked lid mode, troubleshooter, netspeed) is now being merged to
 main so the repository matches the installed system. Next: trace a resume,
 add the Realtek firmware and a pinned profile, repeat the docked lid-close test.
+
+
+## Asahi root expansion planning — 2026-10-14
+
+Documented the reported 112 GiB free gap before Asahi p3/p4/p5 and a checkpointed proposal in [`STORAGE-PLAN.md`](STORAGE-PLAN.md) and [`procedures/ROOT-EXPANSION.md`](procedures/ROOT-EXPANSION.md). No disk or filesystem operations were run. The gap's origin and current sector layout still need verification; Asahi guidance limits disk changes to free space prepared by its installer. Next: collect the runbook's read-only preflight output, verify backup/recovery readiness, and review the exact target before any proposed write. The factory ISO remains unqualified on Apple hardware.
