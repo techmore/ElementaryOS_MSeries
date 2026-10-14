@@ -95,3 +95,4 @@ local kernel monitor. After package inspection, integrate it as an opt-in
 experimental image alongside the required pinned m1n1/DTB path. Host boot
 remains unchanged. Generic Ubuntu Asahi candidate is a packaging reference,
 not a replacement for the enhanced test kernel.
+9. **Native battery time-to-full:** implemented as an optional patch and installer for elementary's Power indicator; built and installed on the M1 desktop. See [`BATTERY-ETA.md`](BATTERY-ETA.md).

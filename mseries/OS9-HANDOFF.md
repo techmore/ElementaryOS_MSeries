@@ -511,3 +511,12 @@ Validation: `bash -n mseries/install-codexbar.sh`, Python bytecode compilation
 of the wrapper, and `git diff --check` passed. No runtime install, authenticated
 usage fetch, or automated tests were run. Next: install on the working desktop,
 sign into OpenCode Go through its CLI, and confirm the Wingpanel quota row.
+## Native battery time-to-full — 2026-10-13
+
+Added the charging estimate beside elementary's existing Power indicator
+icon. The installer pins and patches official `elementary/panel-power` source,
+builds the native Wingpanel module, preserves the original module, and can
+restore it with `--uninstall`. The native module built and was installed on the
+M1 desktop; Wingpanel restarted and remained running. UPower supplied a valid
+charging estimate. Visual confirmation of the label was unavailable in the
+isolated desktop command session. Details: `mseries/BATTERY-ETA.md`.
