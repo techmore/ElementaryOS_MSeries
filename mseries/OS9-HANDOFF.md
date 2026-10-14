@@ -11,6 +11,16 @@ usage/speed indicators that do not always recover around Ethernet
 suspend/resume or reboot. These need visual review or reproduction before
 implementation; no desktop code was changed for these reports.
 
+## Additional owner-reported bugs — 2026-10-13
+
+Added backlog entries for the non-native signal-strength dropdown, an
+unspecified Tasks bug, an unspecified Energy Monitor bug, Touch ID for passkey
+user verification, and remembering successful authentication for a defined
+period. Also recorded the requested pastel red-orange cue near network-link
+saturation. The app-specific reports need reproduction details; Touch ID
+support remains unverified, and the remembered-auth duration/security policy
+still needs definition. See [`BUG-FIX-ROADMAP.md`](BUG-FIX-ROADMAP.md).
+
 ## Latest test result — 2026-10-13
 
 Downloaded CI run 38479577898's ARM64 installer artifact and independently
