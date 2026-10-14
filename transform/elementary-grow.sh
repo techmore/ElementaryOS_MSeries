@@ -669,7 +669,7 @@ install_grub_entry() {
 #!/bin/sh
 # elementary-grow: additive entry. Managed by elementary-grow.sh --rollback.
 exec tail -n +3 \$0
-menuentry 'elementary OS (M-series, $kver)' {
+menuentry 'elementary OS (M-series, $kver)' --id elementary-mseries {
     search --no-floppy --fs-uuid --set=root $search_uuid
 $linux_line
     initrd $ipath

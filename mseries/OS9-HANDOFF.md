@@ -45,6 +45,14 @@ per-component review before importing new patches.
   Plymouth hook order on a real Asahi Alarm initramfs, LightDM autologin.
   Test on a spare/backed-up machine first.
 
+### Installer audit fixes (2026-10-14)
+
+- Upstream Asahi tools are pinned to an omarchy-mac commit (`ELEMENTARY_TOOLS_REF`), not the moving `quattro` branch; they run as root against the partition table.
+- GRUB default is selected by `--id elementary-mseries`, not by title (the title carries the kernel version and would silently fall back to Arch after a kernel update).
+- A `grown` marker keeps a finished `@elementary` build when a later step fails on resume.
+- Unlock-screen script: failure now removes its mkinitcpio drop-in, sizes the ESP check from the real image sizes, matches only the exact `udev` hook, and detects the Inter font exactly.
+- Still unverified: whether the initramfs plymouth hook bundles Inter (it may fall back to the default sans); `pacman -Sy` partial-upgrade risk for installing plymouth, same as upstream.
+
 ## Next tasks, in order
 
 Coordination: Codex handles implementation and review; OpenCode handles

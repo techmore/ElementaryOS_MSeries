@@ -37,12 +37,12 @@ restore() {
   for img in /boot/initramfs-*.img."$STAMP"; do
     [[ -f $img ]] && cp -a "$img" "${img%."$STAMP"}"
   done
+  unlink "$DROPIN" 2>/dev/null || true
   return 0
 }
 
 if [[ ${1:-} == --uninstall ]]; then
   restore
-  unlink "$DROPIN" 2>/dev/null || true
   [[ -f $PLYMOUTHD ]] && sed -i 's/^Theme=elementary/Theme=omarchy/' "$PLYMOUTHD"
   echo "Restored the previous mkinitcpio.conf and initramfs images."
   exit 0
@@ -52,8 +52,12 @@ fi
 SRC=$2
 [[ -f $SRC/$THEME.plymouth ]] || fail "$SRC is not an elementary plymouth theme"
 
+# One backup of every image plus room to rebuild them (the ESP is small FAT).
+used_mb=0
+for img in $(images); do used_mb=$(( used_mb + $(stat -c %s "$img") / 1048576 + 1 )); done
+need_mb=$(( used_mb * 2 + 10 ))
 avail_mb=$(df -m --output=avail /boot | tail -1)
-(( avail_mb > 80 )) || fail "only ${avail_mb}MB free on /boot; need about 80MB for backups and the rebuild"
+(( avail_mb > need_mb )) || fail "only ${avail_mb}MB free on /boot; need about ${need_mb}MB for backups and the rebuild"
 
 command -v plymouth >/dev/null || pacman -Sy --noconfirm --needed plymouth ||
   fail "could not install plymouth"
@@ -62,7 +66,7 @@ pacman -S --noconfirm --needed inter-font >/dev/null 2>&1 ||
   pacman -S --noconfirm --needed noto-fonts >/dev/null 2>&1 || true
 
 font=Inter
-fc-list 2>/dev/null | grep -qi 'Inter' || font='Noto Sans'
+fc-list : family 2>/dev/null | grep -qiE '^Inter(,|$)' || font='Noto Sans'
 
 # Back up first, once.
 [[ -f $MKCONF.$STAMP ]] || cp -a "$MKCONF" "$MKCONF.$STAMP"
@@ -102,8 +106,9 @@ add=""
 if [[ $hooks != *" keymap "* && $hooks != *" sd-vconsole "* ]]; then add="keymap $add"; fi
 mkdir -p "$(dirname "$DROPIN")"
 if [[ -n $add ]]; then
+  # Rebuilt element by element so only the exact "udev" hook is matched.
   # shellcheck disable=SC2016  # expanded by mkinitcpio, not here
-  printf '# elementary-mac: unlock screen\nHOOKS=(${HOOKS[@]/udev/udev %s})\n' "${add% }" >"$DROPIN"
+  printf '# elementary-mac: unlock screen\n_h=(); for _x in "${HOOKS[@]}"; do _h+=("$_x"); if [[ $_x == udev ]]; then _h+=(%s); fi; done; HOOKS=("${_h[@]}"); unset _h _x\n' "${add% }" >"$DROPIN"
 else
   unlink "$DROPIN" 2>/dev/null || true
 fi

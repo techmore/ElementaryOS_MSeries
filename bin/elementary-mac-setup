@@ -39,6 +39,7 @@ STATE_DIR=/var/lib/elementary-mac-setup
 SRC=$STATE_DIR/src
 TOOLS_SRC=$STATE_DIR/omarchy-tools
 INSTALLED_MARKER=$STATE_DIR/installed
+GROWN_MARKER=$STATE_DIR/grown
 
 DEFAULT_REPO=techmore/ElementaryOS_MSeries
 DEFAULT_REF=main
@@ -46,7 +47,9 @@ DEFAULT_FORGE=github.com
 
 # The Asahi Alarm tools for steps 1 and 2 come from the Omarchy Mac project.
 TOOLS_REPO=${ELEMENTARY_TOOLS_REPO:-omarchy-mac/omarchy-mac}
-TOOLS_REF=${ELEMENTARY_TOOLS_REF:-quattro}
+# Pinned to a commit: these run as root and drive the partition table, so a
+# moving upstream branch must not change what they do under an installed script.
+TOOLS_REF=${ELEMENTARY_TOOLS_REF:-ba546a61f881c1fe9d79d75ec050eab048b8cb63}
 REQUIRED_TOOLS=(omarchy-system-boot-to-esp omarchy-system-btrfs-migrate)
 
 SUBVOL_NAME="@elementary"
@@ -544,18 +547,32 @@ repo_present() {
   [[ -x $SRC/transform/elementary-grow.sh && -f $SRC/mseries/install-unlock-screen.sh ]]
 }
 
-# Shallow clone of $2 at $3 into $1, replacing a checkout that is not that.
+# Shallow clone of $2 at $3 (a branch, tag or full commit SHA) into $1,
+# replacing a checkout that is not that.
 clone_shallow() {
-  local dir="$1" url="$2" branch="$3" current
+  local dir="$1" url="$2" want="$3" current
   if [[ -d $dir/.git ]]; then
-    current=$(git -C "$dir" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
-    if [[ $(git -C "$dir" remote get-url origin 2>/dev/null) == "$url" && $current == "$branch" ]]; then
-      return 0
+    if [[ $(git -C "$dir" remote get-url origin 2>/dev/null) == "$url" ]]; then
+      if [[ $want =~ ^[0-9a-f]{40}$ ]]; then
+        [[ $(git -C "$dir" rev-parse HEAD 2>/dev/null) == "$want" ]] && return 0
+      else
+        current=$(git -C "$dir" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+        [[ $current == "$want" ]] && return 0
+      fi
     fi
     rm -rf -- "${dir:?}"
   fi
-  mkdir -p "$(dirname "$dir")"
-  git clone --branch "$branch" --depth 1 "$url" "$dir" || fail "could not clone $url at $branch"
+  mkdir -p "$dir"
+  if [[ $want =~ ^[0-9a-f]{40}$ ]]; then
+    git -C "$dir" init -q &&
+      git -C "$dir" remote add origin "$url" &&
+      git -C "$dir" fetch -q --depth 1 origin "$want" &&
+      git -C "$dir" checkout -q FETCH_HEAD ||
+      fail "could not fetch $url at $want"
+  else
+    rmdir "$dir"
+    git clone --branch "$want" --depth 1 "$url" "$dir" || fail "could not clone $url at $want"
+  fi
 }
 
 ensure_source_checkout() {
@@ -631,10 +648,12 @@ configure_autologin() {
 
 # Make the elementary OS boot entry the default. Left alone with --keep-default.
 set_default_boot_entry() {
-  local title
+  local title=elementary-mseries
   (( ! keep_default )) || { log "Leaving the default boot entry alone (--keep-default)"; return 0; }
-  title=$(grep -o "menuentry 'elementary OS (M-series[^']*'" /boot/grub/grub.cfg | head -1 | sed "s/^menuentry '//; s/'\$//")
-  [[ -n $title ]] || { warn "no elementary boot entry found; default boot entry unchanged"; return 0; }
+  # By id, not title: the title carries the kernel version and changes on every
+  # kernel update, which would silently fall back to the Arch entry.
+  grep -q -- "--id $title" /boot/grub/grub.cfg ||
+    { warn "no elementary boot entry found; default boot entry unchanged"; return 0; }
 
   if grep -q '^GRUB_DEFAULT=' /etc/default/grub; then
     sed -i "s|^GRUB_DEFAULT=.*|GRUB_DEFAULT=\"$title\"|" /etc/default/grub
@@ -675,17 +694,24 @@ step_elementary() {
 
   # A previous run that died halfway leaves a half-built root; the grow script
   # refuses to start over it, so clear it with the script's own rollback.
-  if elementary_exists; then
-    log "Removing an unfinished $SUBVOL_NAME from an earlier run"
-    bash "$SRC/transform/elementary-grow.sh" --rollback || fail "could not roll back the unfinished $SUBVOL_NAME"
+  # A finished build (marker written after --apply and --finalize) is kept: a
+  # later failure in this step must not throw away a long download and install.
+  if [[ ! -f $GROWN_MARKER ]]; then
+    if elementary_exists; then
+      log "Removing an unfinished $SUBVOL_NAME from an earlier run"
+      bash "$SRC/transform/elementary-grow.sh" --rollback || fail "could not roll back the unfinished $SUBVOL_NAME"
+    fi
+
+    log "Building elementary OS into $SUBVOL_NAME -- this takes a while (downloads and installs the desktop)."
+    ELEMENTARY_HOSTNAME=$hostname bash "$SRC/transform/elementary-grow.sh" --apply ||
+      fail "the elementary build failed -- fix it and run '$SELF --resume'"
+
+    ELEMENTARY_PASSWORD_HASH=$password_hash bash "$SRC/transform/elementary-grow.sh" --finalize "$username" ||
+      fail "could not create the account $username in $SUBVOL_NAME"
+    date -u +%Y-%m-%dT%H:%M:%SZ >"$GROWN_MARKER"
+  else
+    log "$SUBVOL_NAME is already built; continuing with the boot setup"
   fi
-
-  log "Building elementary OS into $SUBVOL_NAME -- this takes a while (downloads and installs the desktop)."
-  ELEMENTARY_HOSTNAME=$hostname bash "$SRC/transform/elementary-grow.sh" --apply ||
-    fail "the elementary build failed -- fix it and run '$SELF --resume'"
-
-  ELEMENTARY_PASSWORD_HASH=$password_hash bash "$SRC/transform/elementary-grow.sh" --finalize "$username" ||
-    fail "could not create the account $username in $SUBVOL_NAME"
 
   mount_elementary || fail "cannot mount $SUBVOL_NAME to finish it"
   trap 'unmount_elementary; on_exit' EXIT
