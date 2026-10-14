@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-backup=/usr/local/lib/mseries/gala-daemon.original
+source "$repo/mseries/lib-backup.sh"
 if [[ ${1:-} == --uninstall ]]; then
-  sudo install -m755 "$backup" /usr/bin/gala-daemon
+  mseries_restore /usr/bin/gala-daemon gala
   echo 'Restored original helper; log out and back in to activate.'
   exit
 fi
@@ -17,7 +17,7 @@ git -C "$work/source" fetch -q --depth=1 origin f0791434ac40a50f2aec64700a47b3bb
 git -C "$work/source" checkout -q --detach FETCH_HEAD
 git -C "$work/source" apply "$repo/mseries/patches/gala-disabled-osk-input-purpose.patch"
 /usr/bin/python3 "$repo/mseries/gala-daemon-fix/build.py" "$work/source" "$work/build"
-if ldd "$work/build/gala-daemon" | rg -q 'not found'; then exit 1; fi
-if [[ ! -f $backup ]]; then sudo install -Dm755 /usr/bin/gala-daemon "$backup"; fi
+if ldd "$work/build/gala-daemon" | grep -q 'not found'; then exit 1; fi
+mseries_backup /usr/bin/gala-daemon gala
 sudo install -m755 "$work/build/gala-daemon" /usr/bin/gala-daemon
 echo 'Installed disabled-keyboard guard in the GTK helper; log out and back in to activate.'

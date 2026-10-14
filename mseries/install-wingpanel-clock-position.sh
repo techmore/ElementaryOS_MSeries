@@ -4,16 +4,11 @@ set -euo pipefail
 
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 binary=/usr/bin/io.elementary.wingpanel
-backup=/usr/local/lib/mseries/io.elementary.wingpanel.original
+source "$repo/mseries/lib-backup.sh"
 commit=6b8ae0453b1fd6dc07bd246642998011f04b2125
 
 if [[ ${1:-} == --uninstall ]]; then
-  if [[ ! -f $backup ]]; then
-    echo "No saved Wingpanel binary at $backup" >&2
-    exit 1
-  fi
-  sudo install -m 0755 "$backup" "$binary"
-  sudo rm -f "$backup"
+  mseries_restore "$binary" io.elementary.wingpanel
   echo 'Restored the original Wingpanel binary. Log out and back in to reload it.'
   exit 0
 fi
@@ -55,8 +50,6 @@ if ldd "$staged_binary" | grep -q 'not found'; then
   exit 1
 fi
 
-if [[ ! -f $backup ]]; then
-  sudo install -D -m 0755 "$binary" "$backup"
-fi
+mseries_backup "$binary" io.elementary.wingpanel
 sudo install -m 0755 "$staged_binary" "$binary"
 echo 'Installed the clock-after-Alerts Wingpanel ordering. Log out and back in to load it.'

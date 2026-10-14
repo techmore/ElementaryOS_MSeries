@@ -1,5 +1,9 @@
 #!/bin/bash
 # Restore the rectangular display mode so centered Pantheon indicators avoid the camera notch.
+# LEGACY HOTFIX: this edits the generated /boot/grub/grub.cfg in place, which the next
+# grub-mkconfig discards. transform/elementary-grow.sh now writes appledrm.show_notch=0 into the
+# entry it generates (run `elementary-grow.sh --repair-grub`) and the layer ships the modprobe
+# option, so a grown root does not need this script.
 set -euo pipefail
 
 sudo install -D -m 0644 /dev/stdin /etc/modprobe.d/zz-pantheon-notch.conf <<'EOF'
@@ -18,7 +22,7 @@ fi
 sudo sed -i '/^[[:space:]]*linux .*rootflags=subvol=@elementary/ {
   /appledrm\.show_notch=0/! s/$/ appledrm.show_notch=0/
 }' "$grub_cfg"
-if ! rg -q '^[[:space:]]*linux .*rootflags=subvol=@elementary.*appledrm\.show_notch=0' "$grub_cfg"; then
+if ! grep -q '^[[:space:]]*linux .*rootflags=subvol=@elementary.*appledrm\.show_notch=0' "$grub_cfg"; then
   echo 'Could not find the elementary @elementary GRUB kernel line; no boot entry was changed.' >&2
   exit 1
 fi

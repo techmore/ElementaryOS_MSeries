@@ -2,9 +2,9 @@
 set -euo pipefail
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 plugin="$(pkg-config --variable=indicatorsdir wingpanel-9)/libsound.so"
-backup=/usr/local/lib/mseries/libsound.so.original
+source "$repo/mseries/lib-backup.sh"
 if [[ ${1:-} == --uninstall ]]; then
-  sudo install -m644 "$backup" "$plugin"
+  mseries_restore "$plugin" io.elementary.panel.sound
   exit
 fi
 version=$(dpkg-query -W -f='${Version}' io.elementary.panel.sound)
@@ -18,10 +18,10 @@ git -C "$work/source" checkout -q --detach FETCH_HEAD
 git -C "$work/source" apply "$repo/mseries/patches/sound-icon-initialization.patch"
 meson setup "$work/build" "$work/source" --prefix=/usr --libdir=lib/aarch64-linux-gnu --buildtype=release
 ninja -C "$work/build"
-if ldd "$work/build/libsound.so" | rg -q 'not found'; then
+if ldd "$work/build/libsound.so" | grep -q 'not found'; then
   echo 'Missing runtime libraries; installed indicator preserved.' >&2
   exit 1
 fi
-if [[ ! -f $backup ]]; then sudo install -Dm644 "$plugin" "$backup"; fi
+mseries_backup "$plugin" io.elementary.panel.sound
 sudo install -m644 "$work/build/libsound.so" "$plugin"
 echo 'Installed sound icon initialization and animation identity fixes. Reload Wingpanel to activate.'

@@ -11,7 +11,7 @@ set -euo pipefail
 
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 plugin=/usr/lib/aarch64-linux-gnu/wingpanel-9/libnetwork.so
-backup=/usr/local/lib/mseries/libnetwork.so.original
+source "$repo/mseries/lib-backup.sh"
 commit=8685ec8e55a45e48da0c12931a353cd440d11664   # matches io.elementary.panel.network 8.0.1+r1290
 
 reload_panel() {
@@ -21,11 +21,7 @@ reload_panel() {
 }
 
 if [[ ${1:-} == --uninstall ]]; then
-  if [[ ! -f $backup ]]; then
-    echo "No saved plugin at $backup" >&2
-    exit 1
-  fi
-  sudo install -m 0644 "$backup" "$plugin"
+  mseries_restore "$plugin" io.elementary.panel.network
   reload_panel
   echo 'Restored the original network indicator.'
   exit 0
@@ -70,9 +66,7 @@ if ldd "$built" | grep -q 'not found'; then
   exit 1
 fi
 
-if [[ ! -f $backup ]]; then
-  sudo install -D -m 0644 "$plugin" "$backup"
-fi
+mseries_backup "$plugin" io.elementary.panel.network
 sudo install -m 0644 "$built" "$plugin"
 reload_panel
 echo 'Installed. Click the network icon in the panel: the speeds and graph sit directly under the connection toggles.'

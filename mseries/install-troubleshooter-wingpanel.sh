@@ -2,9 +2,10 @@
 set -euo pipefail
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 if [[ ${1:-} == --uninstall ]]; then
-  systemctl --user stop mseries-crash-watch.service
+  systemctl --user stop mseries-crash-watch.service 2>/dev/null || true
   rm -f "$HOME/.config/autostart/mseries-crash-watch.desktop" "$HOME/.config/systemd/user/mseries-crash-watch.service"
-  sudo rm -f "$(pkg-config --variable=indicatorsdir wingpanel-9)/libmseries-troubleshooter.so"
+  indicators_dir=$(pkg-config --variable=indicatorsdir wingpanel-9)
+  [[ -n $indicators_dir ]] && sudo rm -f "$indicators_dir/libmseries-troubleshooter.so"
   systemctl --user daemon-reload
   exit
 fi

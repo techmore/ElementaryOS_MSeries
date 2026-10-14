@@ -12,10 +12,10 @@ patch="$repo/mseries/patches/files-portal-startup-deadlock.patch"
 bin=/usr/lib/aarch64-linux-gnu/io.elementary.files.xdg-desktop-portal
 # Matches the packaged daily build (GTK 3); keep in step with the installed package.
 commit=f966e0108
+source "$repo/mseries/lib-backup.sh"
 
 if [[ ${1:-} == --uninstall ]]; then
-  [[ -f $bin.orig ]] || { echo "No $bin.orig backup found." >&2; exit 1; }
-  sudo mv "$bin.orig" "$bin"
+  mseries_restore "$bin" io.elementary.files
   echo 'Restored the packaged Files portal.'
   exit 0
 fi
@@ -36,6 +36,6 @@ git -C "$build_dir/src" apply "$patch"
 meson setup "$build_dir/build" "$build_dir/src" --prefix=/usr -Dwith-zeitgeist=disabled
 ninja -C "$build_dir/build" filechooser-portal/io.elementary.files.xdg-desktop-portal
 
-[[ -f $bin.orig ]] || sudo cp "$bin" "$bin.orig"
+mseries_backup "$bin" io.elementary.files
 sudo install -m755 "$build_dir/build/filechooser-portal/io.elementary.files.xdg-desktop-portal" "$bin"
 echo 'Installed the fixed Files portal. Log out and back in to load it.'

@@ -2,9 +2,9 @@
 set -euo pipefail
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 plugin="$(pkg-config --variable=indicatorsdir wingpanel-9)/libquick-settings.so"
-backup=/usr/local/lib/mseries/libquick-settings.so.original
+source "$repo/mseries/lib-backup.sh"
 if [[ ${1:-} == --uninstall ]]; then
-  sudo install -m644 "$backup" "$plugin"
+  mseries_restore "$plugin" io.elementary.quick-settings
   echo 'Original Quick Settings restored. Reload Wingpanel to activate.'
   exit
 fi
@@ -22,10 +22,10 @@ install -m644 "$repo/mseries/quick-settings/KeyboardBrightness.vala" "$work/sour
 install -m644 "$repo/mseries/quick-settings/ChargeLimit.vala" "$work/source/src/Widgets/ChargeLimit.vala"
 meson setup "$work/build" "$work/source" --prefix=/usr --libdir=lib/aarch64-linux-gnu --buildtype=release
 ninja -C "$work/build"
-if ldd "$work/build/src/libquick-settings.so" | rg -q 'not found'; then
+if ldd "$work/build/src/libquick-settings.so" | grep -q 'not found'; then
   echo 'Missing runtime libraries; installed indicator preserved.' >&2
   exit 1
 fi
-if [[ ! -f $backup ]]; then sudo install -Dm644 "$plugin" "$backup"; fi
+mseries_backup "$plugin" io.elementary.quick-settings
 sudo install -m644 "$work/build/src/libquick-settings.so" "$plugin"
 echo 'Installed keyboard brightness, screen brightness and the charge-limit switch below the gear-menu toggles (the switch needs install-power.sh for its polkit action). Reload Wingpanel to activate.'

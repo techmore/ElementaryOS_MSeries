@@ -116,6 +116,16 @@ Fixed:
 - The Signal apt key in the grown root is now checked against Signal's published fingerprint (`DBA36B51…FB06`, verified against the live key) instead of being trusted blindly; `speakersafetyd` (the safe default of install-audio-stack.sh) is installed in the build, non-fatal. TRANSFORM-DESIGN's claim that it has no Ubuntu package is out of date.
 Noted, unchanged: `apply-desktop-settings.py` is the owner's personal shortcut layout (Command↔Ctrl swap etc.) and must not be part of the installer; install-audio-stack's volume restore sets every sink, not just the speakers, to the remembered volume (errs toward quiet); `mseries-power` sources `/etc/mseries/power.conf` as root (file is root-owned).
 
+### Desktop-patch scripts audit (2026-10-14)
+
+Read the Gala/Wingpanel/Quick Settings/indicator/Files-portal/Touchegg/CodexBar/theme scripts. They replace files owned by apt packages with patched builds. Findings, fixed:
+- Each kept a single `*.original` backup and `--uninstall` copied it back unconditionally. After a package upgrade (which already overwrote the patched file) that restored the PREVIOUS version's binary over the new package. New `mseries/lib-backup.sh` records the package version with the backup; a restore with a different installed version runs `apt-get install --reinstall <pkg>` instead. Legacy backups without a version file are kept and not trusted. Tested with stubbed dpkg/sudo/apt. Applied to sound, keyboard, quick-settings, gala-daemon, network-throughput, wingpanel-clock-position and the Files portal fix.
+- Four scripts guarded the post-build `ldd | rg -q 'not found'` check with ripgrep, which elementary does not ship: with `rg` missing the pipeline fails, the check never trips, and a build with unresolved libraries would be installed over the system file. Now `grep`. (`rg` no longer appears in any script.)
+- `install-troubleshooter-wingpanel.sh --uninstall` would `rm -f /libmseries-troubleshooter.so` if `pkg-config` returned nothing; and aborted when the service was not running.
+- `disable-notch-for-pantheon.sh` edits the generated `grub.cfg` in place (lost at the next `grub-mkconfig`); marked as a legacy hotfix — `elementary-grow.sh` already writes `appledrm.show_notch=0` into its entry.
+Reviewed, no change: `install-gala-screen-corners.sh` (private prefix, per-user drop-in, automatic fallback to stock Gala - good design), CodexBar (sha256 comes from the same release origin, so it guards corruption not tampering; it also runs the downloaded `install.py`), Touchegg (tag, not a commit, pinned).
+Not read: the Vala/meson sources under `mseries/clockright`, `codexbar-wingpanel`, `signal-wingpanel`, `troubleshooter-wingpanel`, the `mseries/patches/*.patch` files, `mseries/local-ai/*`, `mseries/brightness`, `mseries/keyboard-backlight`, `mseries/launcher*`, the mkosi image configs and workflows.
+
 ## Next tasks, in order
 
 Coordination: Codex handles implementation and review; OpenCode handles
