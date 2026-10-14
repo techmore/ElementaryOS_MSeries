@@ -439,10 +439,11 @@ Installed and verified on the M1 Pro session:
 
 - Added a Pantheon provider for GNOME 50's `org.gnome.Shell.Brightness` API,
   backed by Mutter's real backlight API. This resolves repeated power daemon
-  dimming failures. Manual changes during dimming are preserved. First install
-  saves the ambient-brightness preference and disables automatic brightness;
-  subsequent installs preserve the current choice. Uninstall restores the saved
-  preference. Existing brightness keys remain in use.
+  dimming failures. Manual changes during dimming are preserved. The installer
+  saves the original ambient-brightness and idle-dim settings, disables both
+  automatic screen adjustments, and restores the saved values on uninstall.
+  Screen blanking and suspend remain enabled; existing brightness keys remain
+  in use.
 - Fixed the keyboard indicator's binding to a removed `active` property on
   `Wingpanel.PopoverMenuItem`. Selection now uses GTK's checked state.
 - Fixed the network indicator passing its device-less VPN row into libnm's

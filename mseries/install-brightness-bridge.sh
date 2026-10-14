@@ -10,7 +10,11 @@ import json
 from gi.repository import Gio
 path = Path.home() / '.local/state/mseries-brightness-bridge/preferences.json'
 if path.exists():
-    Gio.Settings.new('org.gnome.settings-daemon.plugins.power').set_boolean('ambient-enabled', json.loads(path.read_text())['ambient-enabled'])
+    saved = json.loads(path.read_text())
+    settings = Gio.Settings.new('org.gnome.settings-daemon.plugins.power')
+    for key in ('ambient-enabled', 'idle-dim'):
+        if key in saved:
+            settings.set_boolean(key, saved[key])
     Gio.Settings.sync()
     path.unlink()
 PYTHON
@@ -44,11 +48,16 @@ from gi.repository import Gio
 path = Path.home() / '.local/state/mseries-brightness-bridge/preferences.json'
 path.parent.mkdir(parents=True, exist_ok=True)
 settings = Gio.Settings.new('org.gnome.settings-daemon.plugins.power')
-if not path.exists():
-    path.write_text(json.dumps({'ambient-enabled': settings.get_boolean('ambient-enabled')}))
-    settings.set_boolean('ambient-enabled', False)
+saved = json.loads(path.read_text()) if path.exists() else {}
+for key in ('ambient-enabled', 'idle-dim'):
+    saved.setdefault(key, settings.get_boolean(key))
+path.write_text(json.dumps(saved, sort_keys=True) + '\n')
+# Keep the selected manual brightness stable. The bridge ignores both automatic
+# ambient targets and idle-dimming requests while these settings are disabled.
+settings.set_boolean('ambient-enabled', False)
+settings.set_boolean('idle-dim', False)
 Gio.Settings.sync()
 PYTHON
 systemctl --user daemon-reload
 systemctl --user restart mseries-brightness-bridge.service
-echo 'Installed GNOME brightness compatibility. Manual screen brightness preserved.'
+echo 'Installed GNOME brightness compatibility; ambient auto-brightness and idle dimming are off. Manual brightness, blanking, and suspend remain available.'
