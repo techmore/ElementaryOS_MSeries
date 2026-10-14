@@ -628,3 +628,16 @@ Colours: libadwaita apps ignore elementary's `@BLUEBERRY_*` names and read `acce
 "MacBook Pro J314 Speakers" (listed under Filters in `wpctl status`). Lesson: the first attempt left that sink at
 70% because the restore code only looked at the Sinks list; it is fixed, and all sinks were muted at 0 within a
 minute. Raise the volume slowly. Revert: `bash mseries/install-audio-stack.sh --revert`.
+
+## Window snapping and display scale
+
+`mseries/apply-desktop-settings.py` enables Gala's edge tiling
+(`org.gnome.mutter edge-tiling`): drag a window to the left or right screen
+edge to snap it to that half. `Super+Left` and `Super+Right` tile the focused
+window to a half (`org.gnome.mutter.keybindings toggle-tiled-left/right`); with
+the Command/Ctrl swap that is physical left Ctrl plus the arrow key.
+
+The built-in 3024x1890 panel defaults to a 2.0 scale, which looks large. Gala
+offers 1.0, 1.5, 1.75 and 2.0; 1.5 is the practical smaller setting. Apply it
+through `org.gnome.Mutter.DisplayConfig.ApplyMonitorsConfig` (method 2,
+persistent) or Pantheon's Displays settings.
