@@ -15,7 +15,8 @@
 #             mic is not the default) and an audio watchdog that restarts PipeWire
 #             when it stops answering
 #   session   per-user helpers as system-wide user units: docked-lid mode, GNOME
-#             brightness compatibility, ambient keyboard lighting
+#             brightness compatibility, ambient keyboard lighting, deferred
+#             CodexBar/netusage/Widevine setup in the desktop user session
 #   theme     softer accent colours and larger window corners for new users
 #   payload   the scripts, patches and sources the first-boot job needs
 #   firstboot a one-shot job that, on the first boot with network, installs native
@@ -223,7 +224,33 @@ NoDisplay=true
 X-GNOME-Autostart-enabled=true
 EOF
   done
-  log "session: docked-lid mode, brightness compatibility, ambient keyboard lighting"
+  copy 0755 "$here/user-enhance.sh" $lib/user-enhance
+  put 0644 /usr/lib/systemd/user/elementary-mac-user-enhance.service <<EOF
+[Unit]
+Description=Install per-user M-series desktop enhancements
+ConditionPathExists=$lib/user-enhance
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash $lib/user-enhance
+
+[Install]
+WantedBy=default.target
+EOF
+  put 0644 /usr/lib/systemd/user/elementary-mac-user-enhance.timer <<'EOF'
+[Unit]
+Description=Retry per-user M-series enhancements until prerequisites are ready
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=5min
+Unit=elementary-mac-user-enhance.service
+
+[Install]
+WantedBy=timers.target
+EOF
+  enable --global elementary-mac-user-enhance.timer
+  log "session: docked-lid, brightness, keyboard lighting and deferred per-user enhancements"
 }
 
 mod_theme() {
@@ -240,7 +267,11 @@ mod_payload() {
   for f in lib-backup.sh install-brave.sh install-video-decode.sh install-native-firefox.sh install-touchegg.sh \
            install-network-throughput.sh install-quick-settings-brightness.sh \
            install-sound-indicator-fix.sh install-keyboard-indicator-fix.sh \
-           install-files-portal-fix.sh install-gala-osk-fix.sh \
+           install-files-portal-fix.sh install-gala-osk-fix.sh install-netusage-policy.sh \
+           install-codexbar.sh install-brave-widevine.sh codexbar-opencode-local.py \
+           codexbar-opencode-wrapper.py user-enhance.sh \
+           netspeed/netusage/install.sh netspeed/netusage/netusage.py \
+           netspeed/netusage/netusage.service netspeed/netusage/49-mseries-netusage.rules \
            quick-settings/ScreenBrightness.vala quick-settings/KeyboardBrightness.vala \
            quick-settings/ChargeLimit.vala gala-daemon-fix/build.py \
            netspeed/panel-network.patch netspeed/wire-network-usage.py; do
@@ -278,7 +309,7 @@ TimeoutStartSec=infinity
 WantedBy=multi-user.target
 EOF
   enable elementary-mac-enhance.service
-  log "firstboot: Brave, hardware video decode, gestures and panel patches install on the first boot with network (log: /var/log/elementary-mac-enhance.log)"
+  log "firstboot: Brave, hardware video decode, user-app dependencies, DNS policy and panel patches install with network (log: /var/log/elementary-mac-enhance.log)"
 }
 
 for m in "${ALL[@]}"; do

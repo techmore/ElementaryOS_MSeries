@@ -21,6 +21,8 @@
 #   keyboard    keyboard indicator state fix
 #   files       Files portal login-stall fix
 #   osk         Gala on-screen-keyboard guard
+#   desktop-user-deps Qt runtime packages for the per-user CodexBar installer
+#   netusage-policy   narrowly authorize the read-only DNS monitor
 #   firefox     (optional) Firefox from Mozilla's apt repository
 #
 # The patched components are built from pinned upstream commits and gated on the
@@ -36,13 +38,14 @@ MAX_ATTEMPTS=3
 PATH=$PAYLOAD/shim:$PATH   # `sudo` as a no-op: the install scripts were written for a user account
 export PATH DEBIAN_FRONTEND=noninteractive
 
-DEFAULT=(brave video gestures network quick sound keyboard files osk)
+DEFAULT=(brave video gestures network desktop-user-deps netusage-policy quick sound keyboard files osk)
 declare -A SCRIPT=(
   [brave]=install-brave.sh [video]=install-video-decode.sh [gestures]=install-touchegg.sh
   [network]=install-network-throughput.sh [quick]=install-quick-settings-brightness.sh
   [sound]=install-sound-indicator-fix.sh [keyboard]=install-keyboard-indicator-fix.sh
   [files]=install-files-portal-fix.sh [osk]=install-gala-osk-fix.sh
   [firefox]=install-native-firefox.sh
+  [netusage-policy]=install-netusage-policy.sh
 )
 # Build requirements per module (apt names). A module whose packages cannot be
 # installed is skipped, not guessed at.
@@ -57,6 +60,7 @@ declare -A DEPS=(
   [files]="git meson ninja-build valac pkg-config libgtk-3-dev libgranite-dev libhandy-1-dev libportal-dev libportal-gtk3-dev libpoppler-glib-dev libcanberra-dev libsqlite3-dev libgee-0.8-dev libgit2-glib-1.0-dev libcloudproviders-dev libnotify-dev libwingpanel-9-dev"
   [osk]="git meson ninja-build valac pkg-config python3 libmutter-18-dev libgala-dev libgranite-7-dev libgtk-4-dev libibus-1.0-dev libgee-0.8-dev"
   [firefox]="curl gpg"
+  [desktop-user-deps]="qml6-module-qtquick qml6-module-qtquick-controls qml6-module-qtquick-layouts qml6-module-qtquick-templates qml6-module-qtquick-window qml6-module-qtqml-workerscript libqt6widgets6 libqt6svg6 qt6-wayland xdg-terminal-exec"
 )
 
 log() { printf '%s %s\n' "$(date '+%F %T')" "$*" | tee -a "$LOG"; }
@@ -81,13 +85,16 @@ wait_for_network() {
 
 run_module() {
   local m=$1 attempts out rc script
-  script=$PAYLOAD/mseries/${SCRIPT[$m]}
-  [[ -f $script ]] || { log "$m: payload missing ($script); skipped"; touch "$STATE/$m.skipped"; return; }
+  script=${SCRIPT[$m]:-}
+  if [[ -n $script ]]; then
+    script=$PAYLOAD/mseries/$script
+    [[ -f $script ]] || { log "$m: payload missing ($script); skipped"; touch "$STATE/$m.skipped"; return; }
+  fi
   attempts=$(cat "$STATE/$m.attempts" 2>/dev/null || echo 0)
   (( attempts >= MAX_ATTEMPTS )) && { log "$m: gave up after $attempts attempts (see $LOG; --retry $m)"; return; }
 
   log "$m: starting"
-  if [[ -n ${DEPS[$m]} ]]; then
+  if [[ -n ${DEPS[$m]:-} ]]; then
     # shellcheck disable=SC2086  # a word list on purpose
     if ! apt-get install -y --no-install-recommends ${DEPS[$m]} >>"$LOG" 2>&1; then
       apt-get update >>"$LOG" 2>&1
@@ -95,6 +102,13 @@ run_module() {
       apt-get install -y --no-install-recommends ${DEPS[$m]} >>"$LOG" 2>&1 || {
         echo $((attempts + 1)) >"$STATE/$m.attempts"; log "$m: build requirements unavailable; will retry"; return; }
     fi
+  fi
+
+  if [[ -z $script ]]; then
+    log "$m: dependencies installed"
+    touch "$STATE/$m.done"
+    rm -f "$STATE/$m.attempts"
+    return
   fi
 
   out=$(mktemp)
@@ -151,7 +165,7 @@ main() {
 
   local todo=("${DEFAULT[@]}" "${extra[@]}")
   for m in "${todo[@]}"; do
-    [[ -n ${SCRIPT[$m]:-} ]] || { log "unknown module $m"; continue; }
+    [[ -n ${SCRIPT[$m]:-} || -n ${DEPS[$m]:-} ]] || { log "unknown module $m"; continue; }
     case $(state "$m") in done | skipped) continue ;; esac
     run_module "$m"
   done

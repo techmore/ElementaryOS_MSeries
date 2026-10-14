@@ -930,8 +930,11 @@ that installer by default after the panel module. Brave DRM support and CodexBar
 (desktop/CLI plus the Wingpanel indicator) are also default stages. The
 hash-pinned Widevine installer requires Brave to have been launched once and
 fully quit. CodexBar installers now install their Qt runtime and Wingpanel build
-dependencies. `mseries/DESKTOP-SETUP.md` documents the DNS dependency on
-systemd-resolved and the Omarchy-reported Brave/AVD green-video workaround.
+dependencies. The image enhancement path now installs the CodexBar Qt runtime
+and scoped DNS-monitor Polkit rule in firstboot, then retries the user's
+CodexBar, netusage and Widevine setup at login without asking for user-level
+sudo. `mseries/DESKTOP-SETUP.md` documents the DNS dependency on systemd-resolved
+and the Omarchy-reported Brave/AVD green-video workaround.
 
 Verified in this checkout: `post-install.sh --list` and `--dry-run` include all
 new stages; `git diff --check` is clean. This command environment cannot inspect

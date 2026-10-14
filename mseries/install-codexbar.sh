@@ -4,12 +4,14 @@ set -euo pipefail
 [[ $(uname -m) == aarch64 ]] || { echo 'This installer requires ARM64' >&2; exit 1; }
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 version=v0.74.1
-sudo apt-get update -qq
-sudo apt-get install -y \
-  qml6-module-qtquick qml6-module-qtquick-controls \
-  qml6-module-qtquick-layouts qml6-module-qtquick-templates \
-  qml6-module-qtquick-window qml6-module-qtqml-workerscript \
-  libqt6widgets6 libqt6svg6 qt6-wayland xdg-terminal-exec
+if [[ ${1:-} != --skip-system-deps ]]; then
+  sudo apt-get update -qq
+  sudo apt-get install -y \
+    qml6-module-qtquick qml6-module-qtquick-controls \
+    qml6-module-qtquick-layouts qml6-module-qtquick-templates \
+    qml6-module-qtquick-window qml6-module-qtqml-workerscript \
+    libqt6widgets6 libqt6svg6 qt6-wayland xdg-terminal-exec
+fi
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 cd "$work"
