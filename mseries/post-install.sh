@@ -22,33 +22,33 @@ here=$repo/mseries
 STATE=${XDG_STATE_HOME:-$HOME/.local/state}/mseries-post-install
 LOG=$STATE/last-run.log
 
-# name|kind|default|command|what
+# name|kind|default|script|what
 STAGES=(
-  "settings|user|on|python3 $here/apply-desktop-settings.py|Command-as-Ctrl, launcher, title buttons, screenshots, brightness keys"
-  "brightness|user|on|bash $here/install-brightness-bridge.sh|brightness bridge for Pantheon"
-  "kbd-backlight|user|on|bash $here/install-keyboard-backlight.sh|keyboard backlight helper"
-  "screenshots|user|on|bash $here/install-screenshot-shelf.sh|screenshot thumbnail shelf and Markup"
-  "theme|user|on|bash $here/install-theme-tweaks.sh|softer accents, larger corners, Ghostty palette"
-  "docked-lid|user|on|bash $here/install-docked-lid.sh|lock and blank panel instead of suspending when docked"
-  "battery-eta|user|on|bash $here/install-battery-eta.sh|time-to-full beside the battery icon"
-  "power|system|on|bash $here/install-power.sh|80% charge limit, battery CPU ceiling"
-  "tuning|system|on|bash $here/install-system-tuning.sh|system tuning from the 2026-10-12 audit"
-  "audio|system|on|bash $here/install-audio-stack.sh|speaker protection daemon"
-  "brave|system|on|bash $here/install-brave.sh|Brave from its apt repository"
-  "video|system|on|bash $here/install-video-decode.sh|VA-API hardware video decode"
-  "gestures|system|on|bash $here/install-touchegg.sh|Touchegg touchpad gestures"
-  "network|system|on|bash $here/install-network-throughput.sh|network speed in the indicator"
-  "quick|system|on|bash $here/install-quick-settings-brightness.sh|brightness and charge limit in Quick Settings"
-  "sound|system|on|bash $here/install-sound-indicator-fix.sh|sound indicator fix"
-  "keyboard|system|on|bash $here/install-keyboard-indicator-fix.sh|keyboard indicator fix"
-  "files|system|on|bash $here/install-files-portal-fix.sh|Files portal login-stall fix"
-  "osk|system|on|bash $here/install-gala-osk-fix.sh|Gala on-screen-keyboard guard"
-  "firefox|system|off|bash $here/install-native-firefox.sh|Firefox from Mozilla's apt repository (no snap)"
-  "signal|user|off|bash $here/install-signal.sh|Signal Desktop ARM64 beta"
-  "tether|user|off|bash $here/install-tether.sh|Tether iPhone pairing"
-  "codexbar|user|off|bash $here/install-codexbar.sh|CodexBar quota tracker"
-  "corners|system|off|bash $here/install-gala-screen-corners.sh|rounded screen corners (patched Gala)"
-  "clockright|system|off|bash $here/install-clockright-wingpanel.sh|right-side clock while the notch area is fixed"
+  "settings|user|on|apply-desktop-settings.py|Command-as-Ctrl, launcher, title buttons, screenshots, brightness keys"
+  "brightness|user|on|install-brightness-bridge.sh|brightness bridge for Pantheon"
+  "kbd-backlight|user|on|install-keyboard-backlight.sh|keyboard backlight helper"
+  "screenshots|user|on|install-screenshot-shelf.sh|screenshot thumbnail shelf and Markup"
+  "theme|user|on|install-theme-tweaks.sh|softer accents, larger corners, Ghostty palette"
+  "docked-lid|user|on|install-docked-lid.sh|lock and blank panel instead of suspending when docked"
+  "battery-eta|user|on|install-battery-eta.sh|time-to-full beside the battery icon"
+  "power|system|on|install-power.sh|80% charge limit, battery CPU ceiling"
+  "tuning|system|on|install-system-tuning.sh|system tuning from the 2026-10-12 audit"
+  "audio|system|on|install-audio-stack.sh|speaker protection daemon"
+  "brave|system|on|install-brave.sh|Brave from its apt repository"
+  "video|system|on|install-video-decode.sh|VA-API hardware video decode"
+  "gestures|system|on|install-touchegg.sh|Touchegg touchpad gestures"
+  "network|system|on|install-network-throughput.sh|network speed in the indicator"
+  "quick|system|on|install-quick-settings-brightness.sh|brightness and charge limit in Quick Settings"
+  "sound|system|on|install-sound-indicator-fix.sh|sound indicator fix"
+  "keyboard|system|on|install-keyboard-indicator-fix.sh|keyboard indicator fix"
+  "files|system|on|install-files-portal-fix.sh|Files portal login-stall fix"
+  "osk|system|on|install-gala-osk-fix.sh|Gala on-screen-keyboard guard"
+  "firefox|system|off|install-native-firefox.sh|Firefox from Mozilla's apt repository (no snap)"
+  "signal|user|off|install-signal.sh|Signal Desktop ARM64 beta"
+  "tether|user|off|install-tether.sh|Tether iPhone pairing"
+  "codexbar|user|off|install-codexbar.sh|CodexBar quota tracker"
+  "corners|system|off|install-gala-screen-corners.sh|rounded screen corners (patched Gala)"
+  "clockright|system|off|install-clockright-wingpanel.sh|right-side clock while the notch area is fixed"
 )
 
 field() { local IFS='|'; local -a f=($1); echo "${f[$2]}"; }
@@ -101,7 +101,12 @@ done
 
 if (( dry )); then
   echo "dry run: nothing will be changed"
-  for s in "${selected[@]}"; do printf '  [%s] %s\n' "$(field "$s" 0)" "$(field "$s" 3)"; done
+  for s in "${selected[@]}"; do
+    script=$here/$(field "$s" 3)
+    runner=bash
+    [[ $script == *.py ]] && runner=python3
+    printf '  [%s] %s %s\n' "$(field "$s" 0)" "$runner" "$script"
+  done
   exit 0
 fi
 
@@ -112,7 +117,14 @@ for s in "${selected[@]}"; do
   n=$(field "$s" 0)
   echo "==> $n: $(field "$s" 4)"
   # pipefail makes the pipeline status the installer's own, not tee's
-  if ( cd "$repo" && eval "$(field "$s" 3)" ) 2>&1 | tee -a "$LOG"; then ok+=("$n"); else failed+=("$n"); fi
+  script=$here/$(field "$s" 3)
+  if [[ $script == *.py ]]; then
+    if ( cd "$repo" && python3 "$script" ) 2>&1 | tee -a "$LOG"; then ok+=("$n"); else failed+=("$n"); fi
+  elif ( cd "$repo" && bash "$script" ) 2>&1 | tee -a "$LOG"; then
+    ok+=("$n")
+  else
+    failed+=("$n")
+  fi
 done
 
 {

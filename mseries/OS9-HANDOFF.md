@@ -1,6 +1,27 @@
 # OS 9 implementation / Claude Code handoff
 
-Updated 2026-10-13. Repository: techmore/ElementaryOS_MSeries.
+Updated 2026-10-14. Repository: techmore/ElementaryOS_MSeries.
+
+## Current hardware state — 2026-10-14
+
+The transformed elementary OS 9 desktop is running on a 14-inch M1 Pro through
+LightDM and Pantheon. The display is set to scale 1.5; Gala edge tiling and
+Super+Left/Right window tiling are enabled. The centered clock is visible.
+
+The experimental `7.1.13-elementary-fairydust-usb4` kernel boots from a
+non-default GRUB entry. With the matching J314s device tree and newer pinned
+m1n1, a Dell dock's hub, mouse, keyboard, USB audio, and Ethernet work. Dock
+video remains unsupported upstream; avoid suspend with a USB4 link connected.
+Details and recovery guidance: [`fairydust/usb4/CUTOVER.md`](fairydust/usb4/CUTOVER.md).
+
+The 0003 Apple Video Decoder allocation fix still needs a long-uptime decode
+check on this kernel. The one-command installer has not been run on a wiped Mac,
+and the factory ISO remains unverified on Apple hardware. Do not describe the
+desktop result as validation of either installation path.
+
+Next: run the long-uptime decode check, complete the encrypted backup using the
+owner's normal backup procedure, and keep the installer and factory-image
+qualification work separate from the already-running transformed desktop.
 
 ## New desktop bugs reported — 2026-10-13
 

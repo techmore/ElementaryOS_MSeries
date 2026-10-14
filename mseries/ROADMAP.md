@@ -51,7 +51,7 @@ with the corrected live-session hardware overlay before progressing.
 | Dock Ethernet icon dies and is recreated | RTL8153B renamed eth0 to enx...; fresh NetworkManager profile each time; `rtl8153b-2.fw` missing | Add firmware, pin one profile, retest. |
 | Wingpanel crash `PanelWindow.on_realize` | Upstream bug; Gala respawns the panel | Report upstream (not done). |
 | **One-command installer untested on hardware** | `bin/elementary-mac-setup` + `mseries/install-unlock-screen.sh` (elementary-branded LUKS unlock screen) were written without a spare Mac; only the state machine/config logic is unit-tested | Run on a backed-up Asahi Alarm BTRFS install; confirm plymouth/keymap hook order, passphrase entry, LightDM autologin, then drop this row |
-| Hardware video decode | Not available for M1 on Linux | None, upstream. |
+| Hardware video decode after long uptime | H.264 decode at 720p, 1080p and 4K works on the current kernel; the usb4.4 kernel includes a fix for large fragmented allocations | After long uptime on usb4.4, run `mseries/check-video-decode.sh` without compacting memory first. |
 
 ## M1 Pro parity with Omarchy M (audited 2026-10-14 against omarchy-mac-pkgs 222f7a8)
 
@@ -61,7 +61,7 @@ Done on the running system: Wi-Fi resume fix, speaker safety and DSP, ambient ke
 2. Decide the Apple function-key default (`fnmode`), then make it explicit.
 3. Mic mapping (`omarchy-audio-asahi-mic-map`) re-homed to the elementary audio session.
 4. Lid-open login and Touch ID research (see Stretch goal 0).
-5. Hardware video decode (AVD firmware plus VA-API bridge) once a kernel supports it.
+5. Verify the usb4.4 kernel's AVD allocation fix after long uptime; the VA-API bridge and H.264 720p/1080p/4K decode already work on the current kernel.
 6. Put the tested audio chain into the factory image.
 
 Performance work stays measured: use `mseries/benchmarks/` before and after each change and keep the medians.
