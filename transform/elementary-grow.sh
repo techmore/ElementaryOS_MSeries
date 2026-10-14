@@ -28,7 +28,7 @@ set -euo pipefail
 MODE="dry-run"
 UPLOAD=0
 USER_NAME="${ELEMENTARY_USER:-}"
-LOGFILE="/tmp/elementary-grow-$(date +%Y%m%d-%H%M%S).log"
+LOGFILE="${ELEMENTARY_GROW_LOG:-/tmp/elementary-grow-$(date +%Y%m%d-%H%M%S).log}"
 for arg in "$@"; do
   case "$arg" in
     --apply) MODE="apply" ;;
@@ -851,7 +851,7 @@ if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
 # pipefail is on: neutralize errexit around the pipeline so the exit code is
 # captured via PIPESTATUS instead of killing the upload + log-path report.
 set +e
-main "$@" 2>&1 | tee "$LOGFILE"
+main "$@" 2>&1 | tee -a "$LOGFILE"
 rc=${PIPESTATUS[0]:-0}
 set -e
 echo "[elementary-grow] full log saved at $LOGFILE"

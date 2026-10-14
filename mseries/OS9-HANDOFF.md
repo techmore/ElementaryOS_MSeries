@@ -175,6 +175,11 @@ This repository is being worked on from a running M1 Pro (elementary on the fair
 - **Headset-mic mapper**: deliberately not ported (Quickshell-specific rationale, see PORT-MAP.md).
 What is still genuinely unverified: a full run of `elementary-mac-setup` (boot layout, encryption, unlock screen, auto-login, first-boot modules) on a fresh Asahi Alarm install. That needs a spare or backed-up Mac and cannot be done from this session.
 
+### Apple video decode (2026-10-14) - built and verified on the M1 Pro
+
+`mseries/install-video-decode.sh` builds omacom's `libva-v4l2_request` fork (the one omarchy-mac ships as `libva-v4l2_request-avd`) from the pinned commit c653eaa (sha256 `0d8368fe...` checked before building) against Ubuntu's libva 2.23, installs `v4l2_request_drv_video.so` plus the `asahi_drv_video.so` alias, and verifies with `vainfo`. Run here against a temp driver directory with Ubuntu's own libva/vainfo extracted (nothing installed system-wide): the build succeeded, vainfo found the driver through the `asahi` alias with no environment variable, bound to the Apple Video Decoder ("detected 1 Request API decoder") and listed H.264 (baseline/main/high), HEVC (main/main10) and VP9 (profile 0/2) decode. Not tested: an actual video decode through a player (no ffmpeg/mpv here), and whether Brave uses VA-API on arm64. Wired in as the first-boot `video` module (installs the build dependencies, runs the script, records skipped if the kernel has no `apple_avd`); the setup also installs `avd-fw` on the Arch side so the firmware is copied into the elementary root.
+`mseries/REINSTALL-RUNBOOK.md` is the plan for the first real run on a wiped Mac. The setup unit now tees its output to `/var/log/elementary-mac-setup.log` and the build to `/var/log/elementary-mac-setup-grow.log` so a failed run leaves evidence.
+
 ## Next tasks, in order
 
 Coordination: Codex handles implementation and review; OpenCode handles

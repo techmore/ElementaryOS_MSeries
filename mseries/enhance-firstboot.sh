@@ -12,6 +12,8 @@
 # Modules, each independent and best-effort (a failure is logged and never stops
 # the others or the boot):
 #   brave       Brave browser from Brave's apt repository (key fingerprints pinned)
+#   video       hardware video decode: builds the VA-API driver for the Apple Video Decoder from a
+#               pinned commit (checksum-verified) and checks it with vainfo
 #   gestures    Touchegg touchpad gesture daemon, built from the upstream release
 #   network     live download/upload speed and graph in the network indicator
 #   quick       screen/keyboard brightness and the charge-limit switch in Quick Settings
@@ -34,9 +36,9 @@ MAX_ATTEMPTS=3
 PATH=$PAYLOAD/shim:$PATH   # `sudo` as a no-op: the install scripts were written for a user account
 export PATH DEBIAN_FRONTEND=noninteractive
 
-DEFAULT=(brave gestures network quick sound keyboard files osk)
+DEFAULT=(brave video gestures network quick sound keyboard files osk)
 declare -A SCRIPT=(
-  [brave]=install-brave.sh [gestures]=install-touchegg.sh
+  [brave]=install-brave.sh [video]=install-video-decode.sh [gestures]=install-touchegg.sh
   [network]=install-network-throughput.sh [quick]=install-quick-settings-brightness.sh
   [sound]=install-sound-indicator-fix.sh [keyboard]=install-keyboard-indicator-fix.sh
   [files]=install-files-portal-fix.sh [osk]=install-gala-osk-fix.sh
@@ -46,6 +48,7 @@ declare -A SCRIPT=(
 # installed is skipped, not guessed at.
 declare -A DEPS=(
   [brave]="curl gpg"
+  [video]="meson ninja-build gcc pkg-config curl libva-dev libdrm-dev linux-libc-dev vainfo"
   [gestures]="cmake g++ git libinput-dev libudev-dev libpugixml-dev libcairo2-dev libgtk-3-dev libx11-dev libxtst-dev libxrandr-dev libxi-dev libsystemd-dev systemd-dev"
   [network]="git meson ninja-build valac gettext pkg-config libwingpanel-9-dev libgranite-7-dev libgtk-4-dev libnm-dev libnma-gtk4-dev libpolkit-gobject-1-dev"
   [quick]="git meson ninja-build valac gettext pkg-config libwingpanel-9-dev libgranite-7-dev libgtk-4-dev libnm-dev libpolkit-gobject-1-dev"
@@ -99,7 +102,7 @@ run_module() {
   cat "$out" >>"$LOG"
   if (( rc == 0 )); then
     log "$m: done"; touch "$STATE/$m.done"; rm -f "$STATE/$m.attempts"
-  elif grep -qE "targets .* (found|need)|This patch targets|Patch targets|Missing .*(tool|development files)" "$out"; then
+  elif grep -qE "targets .* (found|need)|This patch targets|Patch targets|not applicable here|Not an Apple" "$out"; then
     # Not applicable to this package version: a final answer, not a failure to retry.
     log "$m: not applicable here ($(grep -m1 -E 'targets' "$out" || echo see log)); skipped"
     touch "$STATE/$m.skipped"

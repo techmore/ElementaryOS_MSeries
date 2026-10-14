@@ -39,6 +39,7 @@ CONF=/etc/elementary-mac-setup.conf
 SELF=/usr/local/bin/elementary-mac-setup
 UNIT=/etc/systemd/system/elementary-mac-setup.service
 STATE_DIR=/var/lib/elementary-mac-setup
+SETUP_LOG=/var/log/elementary-mac-setup.log
 SRC=$STATE_DIR/src
 TOOLS_SRC=$STATE_DIR/omarchy-tools
 INSTALLED_MARKER=$STATE_DIR/installed
@@ -394,7 +395,8 @@ Type=oneshot
 # Dismiss any splash before taking the tty. Leading - so a machine without
 # plymouth is not a failed unit.
 ExecStartPre=-/usr/bin/plymouth quit
-ExecStart=$SELF --resume
+# tee: the output goes to tty1 for whoever is watching and to a log that survives the reboot.
+ExecStart=/bin/bash -o pipefail -c '$SELF --resume 2>&1 | tee -a $SETUP_LOG'
 StandardInput=tty-force
 StandardOutput=tty
 StandardError=tty
@@ -488,6 +490,10 @@ install_prerequisites() {
   # sees a consistent system (kernel, modules, initramfs).
   pacman -Syu --noconfirm --needed git curl openssl pciutils btrfs-progs cryptsetup grub >/dev/null ||
     fail "could not upgrade the system and install the prerequisite packages"
+  # Open replacement firmware for the Apple Video Decoder: the grow step copies the host's Apple
+  # firmware into the elementary root, which is how the decoder gets it there. Optional.
+  pacman -S --noconfirm --needed avd-fw >/dev/null 2>&1 ||
+    warn "avd-fw is not available from the Asahi Alarm repository; hardware video decode will not start"
 }
 
 # A Retina panel renders the kernel's 8x16 console font at about a millimetre
@@ -784,7 +790,7 @@ step_elementary() {
     fi
 
     log "Building elementary OS into $SUBVOL_NAME -- this takes a while (downloads and installs the desktop)."
-    ELEMENTARY_HOSTNAME=$hostname ELEMENTARY_ENHANCE=$enhance bash "$SRC/transform/elementary-grow.sh" --apply ||
+    ELEMENTARY_GROW_LOG=/var/log/elementary-mac-setup-grow.log ELEMENTARY_HOSTNAME=$hostname ELEMENTARY_ENHANCE=$enhance bash "$SRC/transform/elementary-grow.sh" --apply ||
       fail "the elementary build failed -- fix it and run '$SELF --resume'"
 
     ELEMENTARY_PASSWORD_HASH=$password_hash bash "$SRC/transform/elementary-grow.sh" --finalize "$username" ||
