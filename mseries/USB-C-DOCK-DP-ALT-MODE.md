@@ -5,6 +5,31 @@ elementary/mkosi Apple Silicon target, with a live capture from
 `MacBookPro18,3` (J314s, M1 Pro, `apple,t6000`). Read with
 `KERNEL-REPORT.md` and `PORT-MAP.md`.
 
+## Update 2026-10-14: USB4 kernel changes the dock answer
+
+The TL;DR below describes the stock `linux-asahi` kernel. The `fairydust` + USB4
+kernel (`usb4/`, version `7.1.13+elementary.usb4.4`) makes the dock **hub, mouse,
+headset and USB3 Ethernet** work (verified 2026-10-12). Dock **video** still does
+not: DisplayPort tunnelling over USB4 is not implemented upstream. Use the
+laptop HDMI port for the monitor. Do not suspend with a USB4 link up.
+
+Where to get the kernel:
+
+- **CI `.deb`**: workflow `daily-9.0.yml` run with `fairydust=true` (run
+  38589009211) uploaded artifact `fairydust-kernel-packages-38589009211`
+  (37 MB, expires 2026-10-16) holding
+  `linux-image-7.1.13-elementary-fairydust-usb4_7.1.13+elementary.usb4.4_arm64.deb`,
+  `fairydust-m1n1-boot.bin` and SHA256SUMS. Downloading an Actions artifact
+  needs a GitHub login (`gh run download 38589009211 -n fairydust-kernel-packages-38589009211`).
+  Re-run the workflow with `fairydust=true` if it has expired.
+- **Arch package** (the route the installer-built system boots): `usb4/PKGBUILD`
+  via `sudo ./build-pkg.sh`, then `install-stage1.sh` and `install-stage2.sh`
+  (adds a *TEST* GRUB entry and updates the m1n1 `boot.bin` with the new DTBs).
+  Needs about 40 GiB free and the Arch side, not the elementary subvolume.
+  Read `usb4/RECOVERY.md` first.
+
+Neither kernel has been booted with the `0003` AVD kvmalloc fix yet.
+
 ## TL;DR
 
 A USB-C dock that carries video (Dell WD19S and friends) needs **DisplayPort
