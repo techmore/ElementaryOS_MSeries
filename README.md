@@ -1,40 +1,130 @@
-<div align="center">
-  <p><strong>This is a derivative of the elementary OS 9 build system with an Apple Silicon (M-series) port.</strong> Start at <a href="mseries/README.md">mseries/README.md</a>. The owner has booted an installed elementary OS 9 desktop on an M1 Pro; the factory ISO now builds successfully but remains unverified on hardware. Current Apple hardware reference: <a href="https://github.com/omacom/omarchy-mac-pkgs">omacom/omarchy-mac-pkgs</a>.</p>
-</div>
+# elementary OS for Apple Silicon (M-series)
 
-Upstream comparison, concrete bug-fix backlog, and porting boundaries:
-[mseries/BUG-FIX-ROADMAP.md](mseries/BUG-FIX-ROADMAP.md).
+elementary OS 9 on an M1/M2-family Mac, alongside macOS: Asahi Alarm as the boot
+layer, elementary (Pantheon) as the system you use, installed with one command,
+full-disk encryption included. Modelled on [omarchy-mac](https://github.com/omarchy-mac/omarchy-mac),
+whose Asahi boot and encryption tools it reuses.
 
-## Install on an M-series Mac (one command, from Asahi Alarm)
+> **Status:** the installer has been reviewed and tested in a sandbox, but has **not yet been run end to end
+> on a freshly wiped Mac**. Back up first. See [`mseries/REINSTALL-RUNBOOK.md`](mseries/REINSTALL-RUNBOOK.md)
+> and [`mseries/OS9-HANDOFF.md`](mseries/OS9-HANDOFF.md).
 
-1. From macOS Terminal run the Asahi Alarm installer, choose `Asahi Alarm Minimal (BTRFS)` and give Linux at least 60 GB:
+---
 
-   ```bash
-   curl https://asahi-alarm.org/installer-bootstrap.sh | sh
-   ```
+## Before you begin
 
-2. Boot into Arch, log in as `root` / `root`, and get online with `nmtui` (`Activate a connection`).
-3. Still as root:
+- A recent backup of macOS (Time Machine or similar) and of anything you keep on this Mac.
+- An Apple Silicon Mac (M1/M2 family): [device support](https://asahilinux.org/fedora/#device-support).
+- At least 60 GB for Linux (the installer refuses to build with under 40 GB free), on AC power.
+- Internet access.
 
-   ```bash
-   curl -fsSL https://raw.githubusercontent.com/techmore/ElementaryOS_MSeries/main/bin/elementary-mac-setup | bash
-   ```
+## Install
 
-It asks whether to encrypt the disk, your username, hostname and password, then runs unattended across a few reboots: boot layout, in-place LUKS2 encryption (you choose the passphrase at the console), then a full elementary OS build into its own subvolume, set as the default boot entry. With encryption, every boot shows the **elementary unlock screen** (elementary Plymouth theme, Inter font) instead of Omarchy's, and logs you straight in because the passphrase is the authentication. The Asahi Alarm system stays in the boot menu as a rescue system. The rescue system keeps Asahi Alarm's stock `root`/`root` login, the same as the upstream omarchy-mac installer: it is the documented bootstrap account, it is the recovery path if elementary fails to boot, and the machine runs no SSH server by default. Change it with `passwd` if you expose the machine.
+### 1. Run the Asahi Alarm installer, from macOS Terminal
 
-**What you get without asking:** zram swap and no ModemManager; an 80% battery charge limit with a Quick Settings switch (`sudo mseries-power limit 100` to lift it) and a lower CPU ceiling on battery; docked-lid mode (lid locks instead of suspending while a USB4 dock is attached); GNOME-style brightness compatibility; ambient keyboard lighting; Wi-Fi resume recovery and firmware provisioning; speaker protection (`speakersafetyd`); softer accent colours; and the display-crossbar and Apple HID fixes in the boot image so the trackpad and screen come up reliably. On the first boot with network, a one-shot job (`elementary-mac-enhance --status`, log in `/var/log/elementary-mac-enhance.log`) adds **Brave**, **hardware video decode** (VA-API driver for the Apple Video Decoder, built from a pinned, checksum-verified source and checked with `vainfo`), the Touchegg gesture daemon, and the patched panel pieces (network speed graph, brightness and charge controls in Quick Settings, sound/keyboard indicator fixes, the Files login-stall fix, the on-screen-keyboard guard). Each is built from a pinned commit, version-gated and best-effort. Optional, not automatic: `elementary-mac-enhance --run --with firefox`, rounded screen corners (`mseries/install-gala-screen-corners.sh`), the Asahi speaker DSP (`mseries/install-pipewire-lv2.sh` then `install-audio-stack.sh --with-dsp`), and the Command/Ctrl key layout (`mseries/apply-desktop-settings.py`). `--no-enhancements` skips all of it.
+```bash
+curl https://asahi-alarm.org/installer-bootstrap.sh | sh
+```
 
-Useful flags: `--no-encrypt`, `--user`, `--hostname`, `--keymap`, `--keep-default` (don't change the default boot entry), `--no-enhancements`, `--status`, `--abort`, `--unlock-screen`. Steps 1 and 2 reuse the Asahi tools of [omarchy-mac](https://github.com/omarchy-mac/omarchy-mac), fetched at run time. **Not yet run end to end on a fresh Mac**: follow [`mseries/REINSTALL-RUNBOOK.md`](mseries/REINSTALL-RUNBOOK.md) for the first real test (backup, what to expect at each reboot, what to bring back if it fails); status in [`mseries/OS9-HANDOFF.md`](mseries/OS9-HANDOFF.md). Encryption rewrites the whole root partition in place, so back up first.
+Choose `Asahi Alarm Minimal (BTRFS)` and give Linux at least 60 GB.
 
-## M-series cutover quickstart (run on omarchy-mac, Apple Silicon)
+### 2. Boot into Arch and get online
 
-Dry run first — changes nothing, uploads its log for review:
+Log in as `root` (password `root`), then connect to Wi-Fi:
+
+```bash
+nmtui
+```
+
+Choose `Activate a connection`, then `Quit`. If `nmtui` shows an error right after activating, reboot and try again.
+
+### 3. One command
+
+Still as root:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/techmore/ElementaryOS_MSeries/main/bin/elementary-mac-setup | bash
+```
+
+Nothing to prepare beyond the network. It asks whether to encrypt the disk, then your username, hostname and
+password, and runs by itself from there. To read it first, or to pass options:
+
+```bash
+curl -LO https://raw.githubusercontent.com/techmore/ElementaryOS_MSeries/main/bin/elementary-mac-setup
+bash elementary-mac-setup --no-encrypt
+```
+
+### 4. What happens (leave it alone, it reboots on its own)
+
+| Step | What | Time |
+|---|---|---|
+| prerequisites | full `pacman -Syu`; reboots first if the kernel changed | 5-20 min |
+| boot layout | `/boot` moves onto the EFI partition, reboot | 1-2 min |
+| encryption | next boot: you **choose the disk passphrase**, then the partition is rewritten in place | 20-60+ min |
+| elementary build | downloads Ubuntu base, installs the desktop, creates your account, unlock screen, auto-login, default boot entry | 30-60 min |
+| first boot | you are logged in; Brave, hardware video decode, gestures and panel patches install in the background | 15-40 min |
+
+Encryption rewrites the whole root partition and there is **no recovery key**: if you lose the passphrase, the
+data is gone. With encryption on, every boot shows the **elementary unlock screen** (elementary Plymouth theme,
+Inter font) and then logs you straight in, because the passphrase is the authentication.
+
+### 5. Check it
+
+```bash
+elementary-mac-setup --status          # where the installer is
+elementary-mac-enhance --status        # first-boot enhancements: brave / video / gestures / ...
+sudo mseries-power status              # battery charge limit
+bash mseries/check-video-decode.sh     # hardware video decode, 720p / 1080p / 4K (from a clone of this repo)
+```
+
+More checks: [`mseries/POST-BOOT-CHECKS.md`](mseries/POST-BOOT-CHECKS.md).
+
+### If something goes wrong
+
+The Asahi Alarm system stays in the boot menu as a rescue system (it keeps Asahi Alarm's stock `root`/`root`
+login, same as upstream omarchy-mac; the machine runs no SSH server by default, change it with `passwd` if you
+expose the machine). If setup stops, fix the cause and run `elementary-mac-setup --resume`; `--abort` stops it
+without undoing anything. Logs: `/var/log/elementary-mac-setup.log`, `/var/log/elementary-mac-setup-grow.log`,
+`/var/log/elementary-mac-enhance.log`. Recovery steps for each case are in
+[`mseries/REINSTALL-RUNBOOK.md`](mseries/REINSTALL-RUNBOOK.md#5-if-something-fails).
+
+### Options
+
+`--no-encrypt`, `--user`, `--hostname`, `--keymap`, `--keep-default` (don't change the default boot entry),
+`--no-enhancements`, `--repo <owner/repo>` (install from a fork), `--status`, `--resume`, `--abort`, `--unlock-screen`.
+
+## What you get without asking
+
+zram swap and no ModemManager; an 80% battery charge limit with a Quick Settings switch (`sudo mseries-power limit 100`
+to lift it) and a lower CPU ceiling on battery; docked-lid mode (lid locks instead of suspending while a USB4 dock is
+attached); GNOME-style brightness compatibility; ambient keyboard lighting; Wi-Fi resume recovery and firmware
+provisioning; speaker protection (`speakersafetyd`); softer accent colours; and the display-crossbar and Apple HID
+fixes in the boot image so the trackpad and screen come up reliably.
+
+On the first boot with network, a one-shot job (log in `/var/log/elementary-mac-enhance.log`) adds **Brave**,
+**hardware video decode** (VA-API driver for the Apple Video Decoder, built from a pinned, checksum-verified source
+and checked with `vainfo`), the Touchegg gesture daemon, and the patched panel pieces (network speed graph, brightness
+and charge controls in Quick Settings, sound/keyboard indicator fixes, the Files login-stall fix, the on-screen-keyboard
+guard). Each is built from a pinned commit, version-gated and best-effort.
+
+Optional, not automatic: `elementary-mac-enhance --run --with firefox`, rounded screen corners
+(`mseries/install-gala-screen-corners.sh`), the Asahi speaker DSP (`mseries/install-pipewire-lv2.sh` then
+`install-audio-stack.sh --with-dsp`), and the Command/Ctrl key layout (`mseries/apply-desktop-settings.py`).
+
+---
+
+## Other ways in
+
+**Already running omarchy-mac (Apple Silicon)?** Cut over in place. Dry run first, it changes nothing and uploads its log for review:
 
 ```bash
 git clone --depth 1 https://github.com/techmore/ElementaryOS_MSeries && sudo ./ElementaryOS_MSeries/transform/elementary-grow.sh --upload
 ```
 
-Paste the printed gist URL back for review. If `gh` isn't logged in over there: `sudo pacman -S github-cli && gh auth login`, then re-run. Only after the dry run is reviewed: `--apply`, reboot, pick **elementary OS (M-series)** in the boot menu. Full design + safety contract: [`mseries/TRANSFORM-DESIGN.md`](mseries/TRANSFORM-DESIGN.md). Post-boot checks: [`mseries/POST-BOOT-CHECKS.md`](mseries/POST-BOOT-CHECKS.md).
+Only after the dry run is reviewed: `--apply`, reboot, pick **elementary OS (M-series)** in the boot menu. Design and safety contract: [`mseries/TRANSFORM-DESIGN.md`](mseries/TRANSFORM-DESIGN.md).
+
+**More:** project overview [`mseries/README.md`](mseries/README.md), kernel and boot flow [`mseries/KERNEL-FLOW.md`](mseries/KERNEL-FLOW.md), bug backlog [`mseries/BUG-FIX-ROADMAP.md`](mseries/BUG-FIX-ROADMAP.md), Apple hardware reference [omacom/omarchy-mac-pkgs](https://github.com/omacom/omarchy-mac-pkgs).
+The factory ISO builds in CI but is unverified on hardware. The rest of this page is the upstream elementary OS build documentation.
 
 <div align="center">
   <a href="https://elementary.io" align="center">
