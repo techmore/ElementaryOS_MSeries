@@ -816,3 +816,12 @@ build was run; image deployment is still needed for persistence across OS
 redeployments. Next: visually confirm that the joined SSID is the only one
 shown by default, that the chevron reveals other networks, and that Apps,
 Hosts, and DNS render in Wingpanel.
+
+## 2026-10-14: hardware decode verified at 720p, 1080p and 4K (current kernel)
+
+- On the M1 Pro (elementary, Arch `7.1.13-1-2-fairydust-usb4` kernel), `mseries/install-video-decode.sh` built and installed the
+  VA-API driver (7 decode profiles) and `mseries/check-video-decode.sh` passed: H.264 720p, 1080p and **3840x2160** decode
+  bit-identical to software (both compared as NV12). Kernel log clean (no allocation failures, no hangs).
+- Caveat: this kernel does not have the 0003 kvmalloc patch, and memory was not fragmented (3h uptime, ~4.7 GB free). The 1080p
+  hang is a fragmentation failure, so a pass here does not prove the fix; repeat on the usb4.4 kernel after a long uptime.
+- Not yet tested: real files (high bitrate, B-frames, 10-bit HEVC/VP9), a real player, Brave's VA-API.

@@ -21,13 +21,14 @@ for size in 1280x720 1920x1080 3840x2160; do
   clip=$work/$size.mp4
   ffmpeg -v error -f lavfi -i "testsrc2=size=$size:rate=30:duration=2" -pix_fmt yuv420p -c:v libx264 -g 15 "$clip" ||
     { echo "FAIL $size: could not make test clip"; failed=1; continue; }
-  soft=$(ffmpeg -v error -i "$clip" -f framemd5 - 2>&1 | grep -v '^#' | awk -F, '{print $NF}' | md5sum)
-  if hard=$(timeout 60 ffmpeg -v error -hwaccel vaapi -hwaccel_device "$render" -hwaccel_output_format nv12 \
-              -i "$clip" -vf hwdownload,format=nv12 -f framemd5 - 2>&1 | grep -v '^#' | awk -F, '{print $NF}' | md5sum) &&
+  soft=$(ffmpeg -v error -i "$clip" -vf format=nv12 -f framemd5 - 2>&1 | grep -v '^#' | awk -F, '{print $NF}' | md5sum)
+  if hard=$(timeout 60 ffmpeg -v error -hwaccel vaapi -hwaccel_device "$render" -hwaccel_output_format vaapi \
+              -i "$clip" -vf hwdownload,format=nv12 -f framemd5 - 2>"$work/$size.err" | grep -v '^#' | awk -F, '{print $NF}' | md5sum) &&
      [[ $soft == "$hard" ]]; then
     echo "ok       $size hardware decode matches software"
   else
-    echo "FAIL     $size hardware decode differs, errored or timed out (see: journalctl -k | grep -i avd)"; failed=1
+    echo "FAIL     $size hardware decode differs, errored or timed out (see: journalctl -k | grep -i avd)"
+    head -3 "$work/$size.err" 2>/dev/null; failed=1
   fi
 done
 (( failed == 0 )) && echo 'VIDEO DECODE OK' || { echo 'VIDEO DECODE CHECK FAILED' >&2; exit 1; }
