@@ -7,6 +7,7 @@ private class TroubleshooterIndicator : Wingpanel.Indicator {
     private Gtk.Label badge;
     private Gtk.Label status;
     private Gtk.Label detail;
+    private Gtk.Button agent;
     private string state_dir;
     private uint timer;
 
@@ -51,6 +52,14 @@ private class TroubleshooterIndicator : Wingpanel.Indicator {
             } catch (Error e) { warning ("Cannot open performance check: %s", e.message); }
         });
         menu.append (performance);
+        agent = new Gtk.Button.with_label ("Open Local Agent…");
+        agent.clicked.connect (() => {
+            try {
+                var app = new DesktopAppInfo ("mseries-agent.desktop");
+                if (app != null) app.launch (null, null);
+            } catch (Error e) { warning ("Cannot open local agent: %s", e.message); }
+        });
+        menu.append (agent);
         var automatic = new Gtk.CheckButton.with_label ("Automatically diagnose new crashes");
         automatic.active = FileUtils.test (Path.build_filename (state_dir, "auto-diagnose"), FileTest.EXISTS);
         automatic.toggled.connect (() => {
@@ -71,6 +80,7 @@ private class TroubleshooterIndicator : Wingpanel.Indicator {
     }
 
     private void refresh () {
+        agent.visible = new DesktopAppInfo ("mseries-agent.desktop") != null;
         try {
             string content;
             if (!FileUtils.get_contents (Path.build_filename (state_dir, "crashes.json"), out content)) return;

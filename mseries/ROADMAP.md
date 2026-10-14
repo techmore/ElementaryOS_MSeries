@@ -22,7 +22,7 @@ with the corrected live-session hardware overlay before progressing.
 | Login-screen stall fixed | `lightdm` drop-in waits for the eDP connector; display crossbar in the fairydust initramfs (`install-initramfs-crossbar.sh`) | greeter 119.7 s -> 0.82 s; dp-xbar deferrals 14 -> 0; first-dcp -> DRM 2.57 s -> 0.01 s |
 | USB4 dock data (hub, mouse, headset, 1 Gb/s Ethernet) | Custom kernel `fairydust-usb4`, m1n1 + DTBs, thunderbolt quirks (`mseries/fairydust/usb4/`) | checks `dock-usb4-ethernet`, `dock-dp-retry-silent` passed |
 | Boots Linux by default | GRUB default + `asahi-bless` | check `boot-default-usb4` |
-| Network speed in dropdown and (toggle) in menu bar | `install-network-throughput.sh` + 3 patches | check `network-row-look` |
+| Network speed in dropdown and (toggle) in menu bar | Pinned panel-network build ships through the Apple Silicon image overlay; local installer remains for existing images. | check `network-row-look` and confirm after reboot |
 | Rounded screen corners | patched Gala, radius 14 (`install-gala-screen-corners.sh`) | **needs your look**: `gala-corners-look` |
 | Pastel blue/rose theme | `install-theme-tweaks.sh` | **needs your look**: `colors-look` |
 | Memory/swap/service tuning | `install-system-tuning.sh` (zram, no ModemManager/AppCenter daemon) | `zram-swap`, `services-trimmed` |
@@ -103,3 +103,13 @@ m1n1 boot.bin/ESP step is implemented; no Mac boot claim.
 The Ubuntu Asahi m1n1 binary string check confirms its USB4 tunables; the
 opt-in workflow pins those packages. This is only a static component check;
 ESP/m1n1 boot packaging and a native Mac test are still open.
+
+## Local general agent (October 13)
+
+Crush + Qwen3.5-9B uses the private Honeykrisp GPU runtime, with an on-demand
+user service and native robot-menu launcher. Full prompt prefill required
+256-token chunks to fit GPU scratch; a short API response, synthetic tool call
+and full Crush answer have completed. The final 32k context/one-cache profile
+is memory-admitted; it is not a full-context capacity benchmark. NAS connection
+awaits the owner's share path/address. ANE activation remains a separate boot
+trial; existing staged artifacts do not prove execution.

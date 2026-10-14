@@ -214,5 +214,13 @@ implemented. The first full CI build completed mkosi and produced a
 timestamped whole-disk image plus separate partition images, but the workflow's
 overbroad `elementary_*.raw` guard counted partition images as disk images and
 stopped before ESP verification. The selector is now restricted to the exact
-timestamped whole-disk filename; partition-content verification and ISO build
-remain pending a rerun.
+timestamped whole-disk filename. The rerun, [GitHub Actions run 38479577898](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/38479577898),
+passed end to end. Its read-only ESP check found `/m1n1/boot.bin` at GPT ESP
+offset 1,048,576 and verified all 5,028,282 bytes against SHA-256
+`049c5bf29e5e4f379e44e8ef8fffce3a018ede03ee19676c98cc6ee6e8608f8d`.
+The experimental installer is
+`elementaryos-9.0-daily-arm64.20261013230825.iso` (7,482,648,576 bytes),
+SHA-256 `89c74fa25ac72dd8f20f7eb42e456c929ed828f791f77af3edb6f5ce1b7b259d`.
+It is available as the run's `os9-mseries-arm64-38479577898` artifact for
+seven days. The ESP was checked inside the disposable image; this does not
+qualify boot on Apple hardware.

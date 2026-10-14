@@ -34,7 +34,7 @@ class Troubleshooter(Gtk.Application):
         heading = Gtk.Label(label='What went wrong?', xalign=0)
         heading.add_css_class('title-2')
         box.append(heading)
-        box.append(Gtk.Label(label='Gemma 4 analyzes recent warnings on this Mac. No logs are uploaded.',
+        box.append(Gtk.Label(label='Ornith 1.5 9B analyzes recent warnings on this Mac. No logs are uploaded.',
                              xalign=0, wrap=True))
         self.question = Gtk.Entry(placeholder_text='For example: Why did my desktop freeze?')
         box.append(self.question)

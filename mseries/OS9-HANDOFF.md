@@ -417,17 +417,20 @@ packages in `/tmp`; SHA-256 and the decompressed U-Boot member are recorded in
 from its pinned artifacts, stages it at `efi/m1n1/boot.bin` in the disposable
 sysupdate image, and checks the copied ESP file against the source checksum
 using `sfdisk` and read-only `mcopy`. The fast validator covers the payload
-assembler and GPT offset logic. This wiring has not yet run through a new full
-image build; that CI result is the next qualification step. No host ESP is
-written.
+assembler and GPT offset logic. Full CI run 38479577898 passed and verified
+the target ESP entry at GPT offset 1,048,576: `m1n1/boot.bin`, 5,028,282
+bytes, SHA-256 `049c5bf29e5e4f379e44e8ef8fffce3a018ede03ee19676c98cc6ee6e8608f8d`.
+It completed the installer build and checksumming too. The resulting
+`elementaryos-9.0-daily-arm64.20261013230825.iso` is 7,482,648,576 bytes with
+SHA-256 `89c74fa25ac72dd8f20f7eb42e456c929ed828f791f77af3edb6f5ce1b7b259d`;
+the installer artifact is retained by GitHub for seven days. The image has
+not been booted on Apple hardware, and no host ESP was written.
 
-The full Fairydust run 38473436256 completed mkosi and generated the disk
-image, but stopped at our post-build selector before ESP verification. The
-`elementary_*.raw` glob also matched mkosi's separate partition images. The
-selector now accepts only `elementary_` plus a 14-digit build timestamp and
-`.raw`; rerun the full Fairydust workflow to qualify ESP contents and continue
-through ISO assembly. No installer artifact or ESP verification result exists
-from the failed run.
+The preceding run 38473436256 exposed an overbroad `elementary_*.raw` guard
+that also matched separate partition images. The selector was narrowed to the
+timestamped whole-disk image before the successful rerun. See the run's
+[build record](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/38479577898)
+and `mseries/KERNEL-REPORT.md` for verification details.
 
 
 ## CodexBar quota ETA (October 13)
@@ -465,3 +468,45 @@ One-minute backend polling and five-second asynchronous panel reads are retained
 This qualifies the running desktop indicator only; no factory ISO was built.
 Next: use the displayed forecasts during ordinary work and reassess if the
 upstream pace format changes or a recent-rate estimate is requested.
+
+## Network speed readout persistence — 2026-10-13
+
+The user's panel-speed setting was already enabled, but the plugin had been
+installed by replacing `libnetwork.so` in the current `/usr` image. A reboot or
+OS image deployment restored the stock file. The Apple Silicon mkosi image now
+builds pinned `elementary/panel-network` commit
+`8685ec8e55a45e48da0c12931a353cd440d11664`, applies the three tracked network
+patches, and places the resulting module into the overlay consumed by both
+liveiso and sysupdate. The build checks that the target package remains 8.0.1.x.
+`test-image-wiring.py --image-output` now checks the plugin is present in the
+final liveiso tree; the sysupdate configuration consumes the same overlay. The
+local installer remains useful for the current image, while the new image
+build makes the change survive redeployments and image updates.
+
+Validation: `just mkosi summary` parsed the new build script and confirmed
+network access is enabled for image build scripts. Running
+`build-network-indicator` against the matching host package compiled the
+patched module into a temporary stage; the output contained only the
+321848-byte `libnetwork.so` and its panel-speed toggle marker. `bash -n` and
+`git diff --check` passed. No full image build has run yet. Next: run the
+M-series validation workflow, then the full arm64 image build and post-build
+module check before deploying the resulting image. The working desktop has the
+patched module installed and `~/.config/mseries/network-speed.ini` enables the
+panel readout.
+
+## Local general agent continuation (October 13)
+
+Crush v0.98.1 ARM64 is installed from a checksum-pinned release, with an
+isolated Local Agent workspace, Applications launcher and native robot-menu
+entry. `local-ai/install-agent.sh` reproduces it. Qwen3.5-9B 4-bit answered a
+short loopback API request and emitted a structured synthetic tool call on
+this M1 Pro. The first full Crush prefill exhausted GPU scratch; the private
+server now uses 256-token prefill chunks via `configure-prefill.py`, and a full
+Crush answer completed. The final profile admits 32k context and one prompt
+cache (8.93 GiB estimate, not measured peak); use catalog ID to retain KV facts.
+The user explicitly requested killing the port conflict: whop2p is stopped
+and disabled at login. The model is an on-demand user service, not enabled
+at login. NAS address/share path remains pending; no NAS writes occurred.
+ANE artifacts were already staged and remain unactivated. No kernel, device
+tree, bootloader or audio changes were made. See local-ai/README.md and the
+October 13 agent receipt for final verification and remaining scope.

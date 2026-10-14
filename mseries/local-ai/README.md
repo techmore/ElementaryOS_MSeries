@@ -73,17 +73,61 @@ Spending window and upstream refresh settings are available today.
 
 For the full upstream project screen, see [Joshua repository review](../JOSHUA-REPOSITORY-REVIEW.md).
 
-## Gemma 4 local crash and log troubleshooting
+## General local agent (October 13)
+
+`bash mseries/local-ai/install-agent.sh` adds checksum-pinned Crush v0.98.1 for
+Linux ARM64 and **Local Agent** in Applications. It uses the existing MLX
+runtime with Qwen3.5-9B 4-bit, pinned to
+`938d8919941c6e7efd3c7150eff7fe9d12afa631`. Prepare that model first; the
+installer does not download model weights or start a model service.
+
+Run `mseries-agent` or open Local Agent. Its isolated workspace and Crush
+configuration live in `~/Documents/Local Agent`. It starts the on-demand
+`mseries-agent-model` user service on `127.0.0.1:8080`; stop it with
+`systemctl --user stop mseries-agent-model` to release model memory. It is not
+enabled at login. Cloud model providers, telemetry and provider catalog
+refresh are disabled in this workspace. Tool approval defaults are retained.
+This is a terminal frontend in elementary's terminal, not a GTK chat app.
+
+The private server uses the catalog ID so its 32K context has known KV memory
+facts. One retained prompt-cache entry is included in admission (8.93 GiB
+requirement on the final idle preflight, not a measured peak). The first attempt using a local snapshot path was rejected because it
+lost those facts; no memory admission check was bypassed. Prompt and output
+remain bounded by the server. Crush normal output is capped at 2048 tokens,
+and coding-specific LSP, Sourcegraph and Crush introspection tools are hidden
+to reduce unnecessary prompt overhead. The initial complete tool prompt
+caused a Vulkan allocation failure during prefill; `configure-prefill.py`
+reduces the private server's prefill chunk from the upstream default to 256
+tokens. It preserves context admission, serialization and cache settings.
+The patch refuses an unexpected runtime source and is idempotent.
+
+The short API answer and structured synthetic tool call passed on M1 Pro.
+NAS scope needs the owner's mounted path or share address before integration.
+The owner explicitly requested stopping the conflicting `whop2p` service;
+it is stopped and its login autostart disabled. Its executable and data remain.
+To restore it, first stop the model service, then run
+`systemctl --user enable --now whop2p` (both otherwise compete for port 8080).
+
+Crush configuration reference:
+https://github.com/charmbracelet/crush/blob/v0.98.1/docs/config/README.md
+
+## Ornith 1.5 9B local crash and log troubleshooting
 
 Install `bash mseries/local-ai/install-troubleshooter.sh`. This adds **Local
 Troubleshooter** to Applications and the `mseries-troubleshoot` command.
 Uses Joshua's Linux MLX runtime and private Honeykrisp driver, with
-`mlx-community/gemma-4-e4b-it-4bit` pinned to
-`475b9088d29754a3379866cf5aeb6b41acd313c2` (about 5.18 GB download).
-This exact revision also appears in upstream's Gemma E4B inference receipts.
-Google's [Gemma model documentation](https://ai.google.dev/gemma/docs/core)
-explains the small E4B model and memory tradeoffs; macOS MLX compatibility
-alone is not Linux compatibility evidence.
+`ornith-ai/Ornith-1.5-9B-MLX-4bit` pinned to
+`a48173b246ac705be75c05bedf1a0666db522d53` (about 5.0 GB download). It is a
+post-trained Qwen3.5 9B (same `qwen3_5` architecture and 4-bit grouping as
+before, so the same tuned kernels apply) and the model card states no license:
+check it before redistributing.
+
+History: Gemma 4 E4B, then Qwen3.5-9B, then Ornith (2026-10-13). On this Mac
+Ornith matched Qwen3.5-9B on speed (about 17.7 tok/s decode) and tool calls,
+was smaller (4.71 GiB against 5.57 GiB) and was better calibrated on a real
+journal: Qwen over-claimed a Wi-Fi firmware fault, Ornith ranked it as noise.
+Both refused a planted `rm -rf` line in a test log. One run each on two inputs,
+so a first look, not a benchmark.
 
 ```sh
 mseries-troubleshoot --start "Why did my desktop crash?"
@@ -93,9 +137,11 @@ mseries-troubleshoot --collect-only
 systemctl --user stop mseries-troubleshooter-model
 ```
 
-The native GTK application offers current/previous boot analysis and a release
+If the memory check refuses to start the model while MLX Chat is resident, the
+troubleshooter pauses `mlx-omarchy-chat` for the analysis and restarts it after.
+The admission check itself is never lowered. The native GTK application offers current/previous boot analysis and a release
 memory button. The model runs on demand, not at login. An existing MLX chat
-session is preserved; current free memory is admission-checked before Gemma
+session is preserved; current free memory is admission-checked before the model
 loads. If admission fails, close other large workloads and retry. Do not bypass
 that check. No ANE driver, bootloader or system Mesa change is involved.
 
@@ -152,7 +198,7 @@ contains only program/PID/signal/timestamp fields. It does not extract memory
 images, environment variables or command lines from coredumps.
 
 Automatic diagnosis is off by default. When enabled in the robot menu, a new
-crash starts the same local Gemma command, with at most one watcher-launched
+crash starts the same local model command, with at most one watcher-launched
 analysis active. Reports appear in the app on its next launch. The idle watcher
 does not load a model; disable the toggle and use **Release Model Memory** to
 stop a previously loaded model. No generic repair commands are taken from model
@@ -167,7 +213,7 @@ that a recurring crash's root cause is fixed.
 The watcher is inspired by Omarchy Mac quattro's `omarchy-crash-watch` and
 `omarchy-agent-crash` at `ba546a61f881c1fe9d79d75ec050eab048b8cb63`.
 Those upstream scripts notify and open a selected coding agent; the watcher
-itself is not an autonomous repair loop. Our version uses local Gemma and a
+itself is not an autonomous repair loop. Our version uses a local model and a
 native elementary frontend.
 
 Remove the robot/watcher with
@@ -184,7 +230,7 @@ mseries-troubleshoot --start --performance --release-model "Find native desktop 
 mseries-troubleshoot --performance --collect-only
 ```
 
-The performance snapshot is collected before this request loads Gemma. It records
+The performance snapshot is collected before this request loads the model. It records
 available RAM/swap, CPU/memory/I/O pressure, load averages, cpufreq governors,
 thermal readings, the native power profile, disk space and top process names by
 CPU/memory. Process arguments and environments are excluded. Missing sensors or
@@ -199,3 +245,26 @@ Uncheck it for repeated warm requests. Other chat services are untouched. A
 same-user lock prevents the app and crash watcher from running competing analyses
 or unloading a model during an active analysis. The manual memory-release button
 uses the same lock and runs off the UI thread.
+
+## Daily task briefing
+
+`mseries-brief` reads the open tasks in the local **Homeboard** task list
+(read-only), asks the same on-device model for a short plan (do today, overdue,
+quick wins, needs clarifying) and unloads the model afterwards. Briefings are
+saved in `~/.local/state/mseries-brief/`. `mseries-brief --collect-only` prints
+exactly what the model would see. The tool only advises: it never edits tasks.
+It is installed as `~/.local/bin/mseries-brief` from `brief.py`.
+
+## Ask about tasks and energy
+
+`mseries-ask "question"` lets the on-device model use two **read-only** tools:
+`list_tasks` (open Homeboard tasks) and `get_energy` (power now, today, this
+month). It runs the tools, then answers from their results; it cannot add or
+change anything. Examples: `mseries-ask "Which tasks mention plumbing?"`,
+`mseries-ask "What costs the most today?"`.
+
+Energy data comes from the local file the Energy Monitor tray app publishes
+(`~/.local/state/energy-monitor/summary.json`), so it works on any network once
+that app is signed in to the collector. If the app is offline, signed out or
+the data is stale, the tool says so and the model must not invent readings.
+The model is started for the question and unloaded afterwards.
