@@ -59,7 +59,8 @@ fi
 HOME_SUBVOL="@elementary-home"
 GRUB_CUSTOM="/etc/grub.d/40_elementary-grow"
 SNAP_PREFIX="@.snapshots/elementary-grow"
-MIN_FREE_GB=40
+MIN_FREE_GB=${ELEMENTARY_MIN_FREE_GB:-40}
+CMDLINE_FILE=${ELEMENTARY_CMDLINE_FILE:-/proc/cmdline}   # overridable for tests
 UBUNTU_SUITE="resolute"
 UBUNTU_BASE_URL="https://cdimage.ubuntu.com/ubuntu-base/${UBUNTU_SUITE}/daily/current/${UBUNTU_SUITE}-base-arm64.tar.gz"
 # Repo checkout this script runs from (for PPA keyrings/sources carried in
@@ -703,9 +704,13 @@ do_sync_kernel() {
 # root subvolume: LUKS cryptdevice, root=, resume, splash and friends are
 # carried over instead of assumed. (Provenance: omarchy's own GRUB entries
 # boot with rootflags=subvol=@ on LUKS via the same shared initramfs.)
+root_is_crypt() {
+  [[ $(lsblk -no TYPE "$(findmnt -no SOURCE / | sed 's/\[.*\]//')" 2>/dev/null) == crypt ]]
+}
+
 build_linux_line() {
   local kpath="$1" word out=() line
-  for word in $(cat /proc/cmdline); do
+  for word in $(cat "$CMDLINE_FILE"); do
     case "$word" in
       BOOT_IMAGE=*|rootflags=*|ro|rw|appledrm.show_notch=*) continue ;;
       *) out+=("$word") ;;
@@ -729,8 +734,7 @@ build_linux_line() {
   # carries cryptdevice=. The boot that finishes an in-place encryption still
   # runs on the OLD command line (the new one only applies from the next boot),
   # so deriving from it would produce an entry that cannot unlock itself.
-  if [[ $(lsblk -no TYPE "$(findmnt -no SOURCE / | sed 's/\[.*\]//')" 2>/dev/null) == crypt \
-        && $line != *' cryptdevice='* ]]; then
+  if root_is_crypt && [[ $line != *' cryptdevice='* ]]; then
     echo "root is encrypted but the running cmdline has no cryptdevice= — reboot once, then re-run" >&2
     return 1
   fi
@@ -746,7 +750,7 @@ install_grub_entry() {
   # flavours (stock, fairydust, fairydust-usb4) sit side by side in /boot, so
   # guessing by modification time picked a kernel the modules did not match.
   local bootimage flavour
-  bootimage=$(tr ' ' '\n' </proc/cmdline | sed -n 's/^BOOT_IMAGE=//p' | head -n 1)
+  bootimage=$(tr ' ' '\n' <"$CMDLINE_FILE" | sed -n 's/^BOOT_IMAGE=//p' | head -n 1)
   flavour=$(basename "${bootimage:-none}"); flavour=${flavour#vmlinuz-}
   kernel=""; initramfs=""
   if [[ -f /boot/vmlinuz-$flavour && -f /boot/initramfs-$flavour.img ]]; then
@@ -842,6 +846,8 @@ upload_log() {
   fi
 }
 
+# Sourcing the script (the tests do) defines the functions without running anything.
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
 # pipefail is on: neutralize errexit around the pipeline so the exit code is
 # captured via PIPESTATUS instead of killing the upload + log-path report.
 set +e
@@ -851,3 +857,4 @@ set -e
 echo "[elementary-grow] full log saved at $LOGFILE"
 upload_log 2>&1 | tee -a "$LOGFILE"
 exit "$rc"
+fi

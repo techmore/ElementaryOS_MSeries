@@ -57,6 +57,13 @@ REQUIRED_TOOLS=(omarchy-system-boot-to-esp omarchy-system-btrfs-migrate)
 
 SUBVOL_NAME="@elementary"
 
+# System paths the steps touch; overridable so the flow can be tested in a sandbox.
+GRUB_DEFAULTS=${ELEMENTARY_GRUB_DEFAULTS:-/etc/default/grub}
+GRUB_CFG=${ELEMENTARY_GRUB_CFG:-/boot/grub/grub.cfg}
+GRUB_ENTRY=${ELEMENTARY_GRUB_ENTRY:-/etc/grub.d/40_elementary-grow}
+PACMAN_HOOK_DIR=${ELEMENTARY_PACMAN_HOOK_DIR:-/etc/pacman.d/hooks}
+CMDLINE_FILE=${ELEMENTARY_CMDLINE_FILE:-/proc/cmdline}
+
 log() {
   printf '\033[32m==>\033[0m %s\n' "$*"
 }
@@ -530,14 +537,14 @@ setup_grub_font() {
     return 0
   fi
 
-  if grep -q '^GRUB_FONT=' /etc/default/grub 2>/dev/null; then
-    sed -i "s|^GRUB_FONT=.*|GRUB_FONT=$out|" /etc/default/grub
+  if grep -q '^GRUB_FONT=' "$GRUB_DEFAULTS" 2>/dev/null; then
+    sed -i "s|^GRUB_FONT=.*|GRUB_FONT=$out|" "$GRUB_DEFAULTS"
   else
-    printf 'GRUB_FONT=%s\n' "$out" >>/etc/default/grub
+    printf 'GRUB_FONT=%s\n' "$out" >>"$GRUB_DEFAULTS"
   fi
 
-  if [[ -f /boot/grub/grub.cfg ]]; then
-    grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1 ||
+  if [[ -f $GRUB_CFG ]]; then
+    grub-mkconfig -o "$GRUB_CFG" >/dev/null 2>&1 ||
       warn "could not regenerate grub.cfg; the GRUB menu keeps its old font"
   fi
   log "GRUB font built from $ttf at 32px"
@@ -686,17 +693,17 @@ set_default_boot_entry() {
   (( ! keep_default )) || { log "Leaving the default boot entry alone (--keep-default)"; return 0; }
   # By id, not title: the title carries the kernel version and changes on every
   # kernel update, which would silently fall back to the Arch entry.
-  grep -q -- "--id $title" /boot/grub/grub.cfg ||
+  grep -q -- "--id $title" "$GRUB_CFG" ||
     { warn "no elementary boot entry found; default boot entry unchanged"; return 0; }
 
-  if grep -q '^GRUB_DEFAULT=' /etc/default/grub; then
-    sed -i "s|^GRUB_DEFAULT=.*|GRUB_DEFAULT=\"$title\"|" /etc/default/grub
+  if grep -q '^GRUB_DEFAULT=' "$GRUB_DEFAULTS"; then
+    sed -i "s|^GRUB_DEFAULT=.*|GRUB_DEFAULT=\"$title\"|" "$GRUB_DEFAULTS"
   else
-    printf 'GRUB_DEFAULT="%s"\n' "$title" >>/etc/default/grub
+    printf 'GRUB_DEFAULT="%s"\n' "$title" >>"$GRUB_DEFAULTS"
   fi
   # Entries are chosen by title, so a saved default from an earlier boot must
   # not override it.
-  sed -i 's/^GRUB_SAVEDEFAULT=.*/GRUB_SAVEDEFAULT=false/' /etc/default/grub
+  sed -i 's/^GRUB_SAVEDEFAULT=.*/GRUB_SAVEDEFAULT=false/' "$GRUB_DEFAULTS"
   log "Default boot entry: $title"
 }
 
@@ -713,11 +720,11 @@ install_unlock_screen() {
     { warn "could not install the elementary unlock screen; the unlock prompt stays plain"; return 0; }
 
   # The elementary GRUB entry was derived before the splash existed.
-  local entry=/etc/grub.d/40_elementary-grow
+  local entry=$GRUB_ENTRY
   if [[ -f $entry ]] && grep -q '^    linux ' "$entry" && ! grep -q ' splash' "$entry"; then
     sed -i 's|^\(    linux .*\)$|\1 quiet splash|' "$entry"
   fi
-  grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1 ||
+  grub-mkconfig -o "$GRUB_CFG" >/dev/null 2>&1 ||
     warn "could not regenerate grub.cfg; the splash is not on the kernel command line"
 }
 
@@ -727,7 +734,7 @@ install_unlock_screen() {
 # that has the unlock parameters -- reboot once if this one does not.
 ensure_unlock_cmdline() {
   root_is_encrypted || return 0
-  grep -qE '(^| )cryptdevice=' /proc/cmdline && return 0
+  grep -qE '(^| )cryptdevice=' "$CMDLINE_FILE" && return 0
 
   if [[ -f $STATE_DIR/cmdline-reboot ]]; then
     fail "this boot has no cryptdevice= on its kernel command line even after a reboot; check GRUB_CMDLINE_LINUX_DEFAULT in /etc/default/grub and regenerate grub.cfg"
@@ -743,8 +750,8 @@ ensure_unlock_cmdline() {
 # modules for (no Wi-Fi, no display stack). Graft the new modules after every
 # kernel transaction.
 install_kernel_sync_hook() {
-  mkdir -p /etc/pacman.d/hooks
-  cat >/etc/pacman.d/hooks/90-elementary-sync-kernel.hook <<HOOK
+  mkdir -p "$PACMAN_HOOK_DIR"
+  cat >"$PACMAN_HOOK_DIR/90-elementary-sync-kernel.hook" <<HOOK
 [Trigger]
 Operation = Install
 Operation = Upgrade
@@ -803,7 +810,7 @@ step_elementary() {
   fi
   install_kernel_sync_hook
   set_default_boot_entry
-  grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1 || fail "could not regenerate grub.cfg"
+  grub-mkconfig -o "$GRUB_CFG" >/dev/null 2>&1 || fail "could not regenerate grub.cfg"
 
   mkdir -p "$STATE_DIR"
   date -u +%Y-%m-%dT%H:%M:%SZ >"$INSTALLED_MARKER"
