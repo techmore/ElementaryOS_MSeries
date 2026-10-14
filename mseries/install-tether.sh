@@ -4,10 +4,10 @@
 # install/enable a browser extension.
 set -euo pipefail
 
-VERSION='0.2.37'
+VERSION='0.2.38'
 PACKAGE='tether'
 ASSET="tether_${VERSION}_arm64.deb"
-SHA256='1d07d6d85b3717c12ffc9fe02603280b9c2206a4ed1173574a564d3d56c244c8'
+SHA256='eec8892093cbca2062739080f381a594006f9437abd1374f2087b936877257ae'
 DOWNLOAD_URL="https://github.com/zackb/tether/releases/download/v${VERSION}/${ASSET}"
 
 usage() {

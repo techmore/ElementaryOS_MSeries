@@ -10,7 +10,7 @@ import shutil
 import tempfile
 import zipfile
 
-VERSION = "0.2.37"
+VERSION = "0.2.38"
 PACKAGE_EXTENSION = Path("/usr/share/tether/extensions/tether-chromium-extension.zip")
 EXTENSION_DIR = (
     Path.home()

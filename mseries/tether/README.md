@@ -12,12 +12,12 @@ From the repository root:
 bash mseries/install-tether.sh
 ```
 
-The installer downloads upstream v0.2.37's `arm64.deb`, verifies its published
-SHA-256 (`1d07d6d85b3717c12ffc9fe02603280b9c2206a4ed1173574a564d3d56c244c8`),
+The installer downloads upstream v0.2.38's `arm64.deb`, verifies its published
+SHA-256 (`eec8892093cbca2062739080f381a594006f9437abd1374f2087b936877257ae`),
 and asks apt to install the package and resolve dependencies. Source commit:
-`d1f976aeb71896c411057cea9c899c9e40eb64a5`. The upstream project and extension
-are under its MIT license; see the [upstream license](https://github.com/zackb/tether/blob/v0.2.37/LICENSE)
-and [release](https://github.com/zackb/tether/releases/tag/v0.2.37).
+`5850727002bff150c6e11dc2b309626e0a919014`. The upstream project and extension
+are under its MIT license; see the [upstream license](https://github.com/zackb/tether/blob/v0.2.38/LICENSE)
+and [release](https://github.com/zackb/tether/releases/tag/v0.2.38).
 
 This script does not start or enable `tetherd`, configure BlueZ, open the
 firewall, or install a browser extension. Launch Tether manually from

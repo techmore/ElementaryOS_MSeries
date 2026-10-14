@@ -37,9 +37,9 @@ current elementary/Asahi stack or this M1 Pro is compatible.
 The current host reports BlueZ 5.85. Upstream requires BlueZ 5.86+ with the
 experimental bearer API for Bluetooth messages, so SMS/iMessage is blocked on
 this host until the OS provides a compatible BlueZ. The integration does not
-upgrade BlueZ. The upstream v0.2.37 ARM64 Debian package is pinned to source
-commit `d1f976aeb71896c411057cea9c899c9e40eb64a5` and release SHA-256
-`1d07d6d85b3717c12ffc9fe02603280b9c2206a4ed1173574a564d3d56c244c8`. The
+upgrade BlueZ. The upstream v0.2.38 ARM64 Debian package is pinned to source
+commit `5850727002bff150c6e11dc2b309626e0a919014` and release SHA-256
+`eec8892093cbca2062739080f381a594006f9437abd1374f2087b936877257ae`. The
 upstream repository and extension identify MIT licensing. Install and Brave
 registration instructions are in [`tether/README.md`](tether/README.md).
 
