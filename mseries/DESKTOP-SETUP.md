@@ -227,6 +227,11 @@ Silicon image no longer opts in. On this transformed install, pass
 loads from an Arch-named initramfs, so regenerating Ubuntu's conventional
 `initrd.img-*` files does not change this boot entry.
 
+Verified 2026-10-14 on the M1 Pro 14-inch: with `appledrm.show_notch=0` on the
+elementary GRUB entry, Pantheon's stock centered date/time is visible and
+working in the middle of Wingpanel, so the right-side replacement is not needed
+there.
+
 If the centered date/time remains hidden, install a temporary right-side
 replacement with `bash mseries/install-clockright-wingpanel.sh`. It follows
 Wingpanel's weekday, date, 12/24-hour, and seconds preferences. To place it
