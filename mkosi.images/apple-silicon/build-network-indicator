@@ -32,7 +32,7 @@ git -C "$source_dir" apply \
     --include=src/Widgets/UsageWidget.vala \
     --include=src/Widgets/WifiInterface.vala \
     "$SRCDIR/mseries/netspeed/panel-network.patch"
-git -C "$source_dir" apply "$SRCDIR/mseries/netspeed/network-usage-wiring.patch"
+python3 "$SRCDIR/mseries/netspeed/wire-network-usage.py" "$source_dir"
 
 meson setup "$build_dir" "$source_dir" \
     --prefix=/usr \

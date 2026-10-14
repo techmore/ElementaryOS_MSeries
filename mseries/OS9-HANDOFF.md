@@ -2,6 +2,15 @@
 
 Updated 2026-10-13. Repository: techmore/ElementaryOS_MSeries.
 
+## New desktop bugs reported — 2026-10-13
+
+Added three separate owner-reported findings to
+[`BUG-FIX-ROADMAP.md`](BUG-FIX-ROADMAP.md): inconsistent app-window rounding
+versus the Mac display, reds/blues that still feel too harsh, and network
+usage/speed indicators that do not always recover around Ethernet
+suspend/resume or reboot. These need visual review or reproduction before
+implementation; no desktop code was changed for these reports.
+
 ## Latest test result — 2026-10-13
 
 Downloaded CI run 38479577898's ARM64 installer artifact and independently
@@ -14,10 +23,16 @@ and attached no writable guest or host disk. Evidence and test boundary are in
 
 This ISO boot uses the generic live kernel, so it does not test the Fairydust
 kernel or the Apple m1n1 hardware path. The Fairydust kernel has a separate
-direct QEMU userspace-handoff smoke test. Next: boot a disposable installed
-image with the Fairydust kernel/initramfs and validate the Apple DTB selection
-path; Mac hardware boot remains unverified. Do not write the host ESP or change
-the running host kernel.
+direct QEMU userspace-handoff smoke test; it now passes under QEMU TCG when
+KVM is unavailable. See
+[`fairydust/debian/TCG-SMOKE-TEST.md`](fairydust/debian/TCG-SMOKE-TEST.md).
+The owner-approved model and mkosi caches and completed kernel compiler
+objects were cleaned after validation; the tested kernel `.deb`, source and
+build records remain. Local preflight now finds 37.6 GiB free, 22.4 GiB below
+its conservative 60 GiB guard, so no build was started. Next: boot a disposable installed image with
+the Fairydust kernel/initramfs and validate the Apple DTB selection path; Mac
+hardware boot remains unverified. Do not write the host ESP or change the
+running host kernel.
 
 ## CodexBar notch placement — 2026-10-13
 
@@ -541,6 +556,7 @@ Validation: `bash -n mseries/install-codexbar.sh`, Python bytecode compilation
 of the wrapper, and `git diff --check` passed. No runtime install, authenticated
 usage fetch, or automated tests were run. Next: install on the working desktop,
 sign into OpenCode Go through its CLI, and confirm the Wingpanel quota row.
+
 ## Torrential native desktop and download — 2026-10-13
 
 The local M-series fork at `/home/admin/Documents/TorrentialFork` is committed
@@ -576,3 +592,48 @@ restore it with `--uninstall`. The native module built and was installed on the
 M1 desktop; Wingpanel restarted and remained running. UPower supplied a valid
 charging estimate. Visual confirmation of the label was unavailable in the
 isolated desktop command session. Details: `mseries/BATTERY-ETA.md`.
+
+## Network speed readout persistence — 2026-10-13
+
+The user's panel-speed setting was already enabled, but the plugin had been
+installed by replacing `libnetwork.so` in the current `/usr` image. A reboot or
+OS image deployment restored the stock file. The Apple Silicon mkosi image now
+builds pinned `elementary/panel-network` commit
+`8685ec8e55a45e48da0c12931a353cd440d11664`, applies the three tracked network
+patches, and places the resulting module into the overlay consumed by both
+liveiso and sysupdate. The build checks that the target package remains 8.0.1.x.
+`test-image-wiring.py --image-output` now checks the module is present in both
+final image roots. The local installer remains useful for the current image;
+the new image build is what makes the change survive redeployments and image
+updates.
+
+No full image build has run for this change. Next: run the M-series validation
+workflow, then the full arm64 image build and post-build module check before
+deploying the resulting image. The working desktop currently has the patched
+module installed and `~/.config/mseries/network-speed.ini` enables the panel
+readout.
+
+## Restore Wi-Fi filtering and network usage views — 2026-10-13
+
+Recovered the original network-menu patch from local commit `b28aab1` on the
+sibling `mseries-usage-troubleshooter-docked-lid` branch. The connected Wi-Fi
+list now hides other networks by default with a chevron to reveal them. The
+popover also has Apps, Hosts, and DNS usage views; hostnames are learned from
+systemd-resolved's cache and query monitor. Kept this branch's existing
+throughput graph and optional panel-speed toggle by applying only the Wi-Fi,
+usage-widget, and stylesheet sections from the recovered patch, then wiring
+the new widget with `wire-network-usage.py`. The local installer and Apple
+Silicon image build both carry the enhancement; `libsqlite3-dev` is now a build
+dependency.
+
+The pinned module built and installed on the M1 Pro. The original module is
+preserved at `/usr/local/lib/mseries/libnetwork.so.original`, and the new
+module has no unresolved shared libraries. Wingpanel was signaled to reload.
+The `netusage` user service is enabled and active; its database at
+`~/.local/share/netusage/usage.db` contains app/host totals and DNS query rows.
+Visual confirmation of the menu and chevron behavior remains pending because
+the desktop session is isolated from this command session. No factory image
+build was run; image deployment is still needed for persistence across OS
+redeployments. Next: visually confirm that the joined SSID is the only one
+shown by default, that the chevron reveals other networks, and that Apps,
+Hosts, and DNS render in Wingpanel.

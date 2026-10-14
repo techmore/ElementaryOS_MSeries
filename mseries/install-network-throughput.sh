@@ -65,7 +65,7 @@ git -C "$source_dir" apply \
   --include=src/Widgets/UsageWidget.vala \
   --include=src/Widgets/WifiInterface.vala \
   "$repo/mseries/netspeed/panel-network.patch"
-git -C "$source_dir" apply "$repo/mseries/netspeed/network-usage-wiring.patch"
+python3 "$repo/mseries/netspeed/wire-network-usage.py" "$source_dir"
 
 meson setup "$build_dir" "$source_dir" --prefix=/usr --libdir=lib/aarch64-linux-gnu --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null
