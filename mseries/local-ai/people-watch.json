@@ -1,0 +1,15 @@
+[
+  {"repo": "maralcbr/omarchy-mx-mac", "who": "Marcelo Alcantara", "why": "Omarchy M native Mac installer; cut the build that lit up USB-C external monitors", "group": "omarchy-m"},
+  {"repo": "omacom/omarchy-mac", "who": "Naeem Malik, Scott Jones", "why": "Omarchy on M1/M2 for a year; M3 Air display controller work", "group": "omarchy-m"},
+  {"repo": "omacom/omarchy-mac-pkgs", "who": "Omarchy M team", "why": "Apple hardware package source we port from (audited at 222f7a8)", "group": "omarchy-m"},
+  {"repo": "omacom/try-omarchy", "who": "Eduardo Martinez", "why": "Omarchy desktop as a native Mac app (VM, GPU, shared folder)", "group": "omarchy-m"},
+  {"repo": "riverscn/omarchy-pkgs-aarch64", "who": "Shun Li", "why": "aarch64 packages and ARM64 disk images", "group": "omarchy-m"},
+  {"repo": "subedijaidip/dp-altmode-t8112", "who": "Jaidip Subedi", "why": "External displays over USB-C on M2 Air; relevant to our dock video gap", "group": "omarchy-m"},
+  {"repo": "joshuaswarren/mlx-omarchy", "who": "Joshua Warren", "why": "MLX on Linux over Vulkan on Apple GPUs; relevant to local AI", "group": "omarchy-m"},
+  {"user": "RyanTheTide", "who": "Ryan Murray", "why": "Kernel foundations and macOS tracing (SPTM emulator); Neo bring-up", "group": "omarchy-m"},
+  {"repo": "zackb/tether", "who": "zackb", "why": "iPhone continuity add-on we ship; needs BlueZ 5.86", "group": "apps"},
+  {"repo": "erikwb/BlueFerry", "who": "erikwb", "why": "iPhone messages and one-time codes over Bluetooth", "group": "apps"},
+  {"repo": "OpenBubbles/openbubbles-app", "who": "OpenBubbles", "why": "iMessage client candidate (SSPL core, personal build only)", "group": "apps"},
+  {"repo": "cameroncooper/keychain", "who": "Cameron Cooper", "why": "Read-only iCloud Keychain client for Linux on Apple silicon", "group": "apps"},
+  {"repo": "Sank6/iCloud-Keychain-for-Linux", "who": "Sank6", "why": "iCloud Keychain CLI and Brave extension (icp)", "group": "apps"}
+]

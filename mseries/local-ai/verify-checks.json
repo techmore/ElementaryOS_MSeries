@@ -203,6 +203,16 @@
       ]
     },
     {
+      "id": "upstream-people-watch",
+      "title": "Watched Omarchy M team and Apple-ecosystem projects have new pushes or releases",
+      "note": "2026-10-14: watches the people named in Omarchy's 'Introducing Omarchy M' post (installer, Omarchy Mac, packages, USB-C external displays, MLX, kernel tracing) plus Tether, BlueFerry, OpenBubbles and the iCloud Keychain clients. List and reasons: mseries/WATCHLIST.md and local-ai/people-watch.json. Passes when something changed since the last acknowledgement; read the list, then run `python3 ~/.local/share/mseries-verify/people-watch.py --ack`.",
+      "precondition": "python3 ~/.local/share/mseries-verify/people-watch.py",
+      "command": "python3 ~/.local/share/mseries-verify/people-watch.py --list",
+      "tags": [
+        "upstream"
+      ]
+    },
+    {
       "id": "charge-limit-toggle",
       "title": "Gear menu: the 'Limit Charging to 80%' switch changes the limit (asks for your password)",
       "note": "2026-10-13: Quick Settings switch calls pkexec mseries-power limit 80|100 (polkit action org.techmore.mseries.power.limit). Built and installed; not yet clicked.",

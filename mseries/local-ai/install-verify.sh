@@ -22,6 +22,8 @@ install -Dm755 "$repo/mseries/local-ai/verify.py" "$HOME/.local/bin/mseries-veri
 install -Dm644 "$repo/mseries/local-ai/verify-checks.json" "$HOME/.local/share/mseries-verify/checks.json"
 install -Dm755 "$repo/mseries/local-ai/upstream-watch.py" "$HOME/.local/share/mseries-verify/upstream-watch.py"
 install -Dm755 "$repo/mseries/local-ai/touchid-watch.py" "$HOME/.local/share/mseries-verify/touchid-watch.py"
+install -Dm755 "$repo/mseries/local-ai/people-watch.py" "$HOME/.local/share/mseries-verify/people-watch.py"
+install -Dm644 "$repo/mseries/local-ai/people-watch.json" "$HOME/.local/share/mseries-verify/people-watch.json"
 # The troubleshooter window shows open checks, if it is installed.
 if [[ -f $HOME/.local/libexec/mseries-troubleshooter-ui ]]; then
   install -Dm755 "$repo/mseries/netspeed/troubleshooter/mseries-troubleshooter-ui" "$HOME/.local/libexec/mseries-troubleshooter-ui"

@@ -1059,3 +1059,9 @@ Next: install the polkit rule and confirm prompts stop for 30 minutes, install `
 ### Verify robot installed; false failure fixed — 2026-10-14
 
 Ran `bash mseries/local-ai/install-verify.sh` (user-level, no sudo): `~/.local/bin/mseries-verify` now exists. Its first run reported `speakersafetyd-active` as failed although the daemon was active: the check grepped the last 40 journal lines for "Sample rate", but the log now says "PCM rate" and a suspend warning pushed it out of the window. The check in `verify-checks.json` now searches the whole boot for either phrase. Status after: 6 passed, 4 ask (owner looks), 10 waiting, 0 failed.
+
+## Watchlist, edge lane and Rust plan — 2026-10-14
+
+- Added `mseries/local-ai/people-watch.py` + `people-watch.json` (13 projects from Omarchy's "Introducing Omarchy M" post plus Tether, BlueFerry, OpenBubbles, iCloud clients), a `upstream-people-watch` verify check, an installer line, and `test_people_watch.py` (passes). Baseline recorded on this Mac. Documented in `mseries/WATCHLIST.md`. Finding: Tether v0.2.38 exists; we pin v0.2.37.
+- Added `mseries/EDGE-AND-RUST-PLAN.md`: a 24-hour detect/build/smoke-test lane that does NOT auto-deploy kernel or bootloader changes to the Mac, and a ranked Rust port plan (privileged root helpers and the DNS logger first; installer shell and Vala patches stay). Not started.
+- Not done: no CI edge job, no Rust code yet.
