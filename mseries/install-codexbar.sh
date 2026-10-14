@@ -2,6 +2,7 @@
 # Install upstream Linux ARM64 desktop + CLI; no fork required.
 set -euo pipefail
 [[ $(uname -m) == aarch64 ]] || { echo 'This installer requires ARM64' >&2; exit 1; }
+repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 version=v0.74.1
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
@@ -14,9 +15,60 @@ for component in CLI Desktop; do
   sha256sum -c "$archive.sha256"
 done
 mkdir -p "$HOME/.local/lib/codexbar-cli" "$HOME/.local/bin"
+install -m 0755 "$repo/mseries/codexbar-opencode-local.py" "$HOME/.local/lib/codexbar-cli/codexbar-opencode-local.py"
 tar -xzf "CodexBarCLI-${version}-linux-aarch64.tar.gz" -C "$HOME/.local/lib/codexbar-cli"
-ln -sfn "$HOME/.local/lib/codexbar-cli/codexbar" "$HOME/.local/bin/codexbar"
+mv -f "$HOME/.local/lib/codexbar-cli/codexbar" "$HOME/.local/lib/codexbar-cli/codexbar-upstream"
+rm -f "$HOME/.local/bin/codexbar"
+install -m 0755 "$repo/mseries/codexbar-opencode-wrapper.py" "$HOME/.local/bin/codexbar"
 tar -xzf "CodexBarDesktop-${version}-linux-aarch64.tar.gz"
 cd "CodexBarDesktop-${version}-linux-aarch64"
 python3 Integrations/Linux/install.py --cli "$HOME/.local/bin/codexbar"
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/codexbar"
+config_file="$config_dir/linux.json"
+python3 - "$config_file" <<'PY'
+import json
+import os
+import pathlib
+import sys
+import tempfile
+
+path = pathlib.Path(sys.argv[1])
+path.parent.mkdir(parents=True, exist_ok=True)
+config = {}
+if path.exists():
+    try:
+        config = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise SystemExit(f"Cannot update CodexBar settings at {path}: {error}")
+    if not isinstance(config, dict):
+        raise SystemExit(f"Cannot update CodexBar settings at {path}: expected a JSON object")
+
+provider = config.get("provider", "codex")
+if not isinstance(provider, str):
+    raise SystemExit(f"Cannot update CodexBar settings at {path}: invalid provider")
+if provider in {"codex", "both", "custom"}:
+    order = config.get("providerOrder", [])
+    if not isinstance(order, list) or not all(isinstance(item, str) for item in order):
+        raise SystemExit(f"Cannot update CodexBar settings at {path}: invalid providerOrder")
+    if provider == "codex":
+        order = ["codex", *[item for item in order if item != "codex"]]
+    elif provider == "both":
+        order = ["codex", "claude", *[item for item in order if item not in {"codex", "claude"}]]
+    config["providerOrder"] = list(dict.fromkeys([*order, "opencodego"]))
+    config["provider"] = "custom"
+else:
+    print(f"Preserved CodexBar provider selection '{provider}'; add OpenCode Go in Settings → Providers.")
+
+if config.get("provider") == "custom":
+    destination = path.resolve()
+    descriptor, temporary_name = tempfile.mkstemp(prefix=destination.name + ".", dir=destination.parent)
+    try:
+        os.fchmod(descriptor, 0o600)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as temporary:
+            temporary.write(json.dumps(config, indent=2) + "\n")
+        pathlib.Path(temporary_name).replace(destination)
+    except BaseException:
+        pathlib.Path(temporary_name).unlink(missing_ok=True)
+        raise
+PY
 echo 'Open ~/.local/bin/codexbar-linux --settings. Runtime dependencies: see mseries/DESKTOP-SETUP.md.'

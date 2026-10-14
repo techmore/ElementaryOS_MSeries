@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Torrential
+Comment=Download and manage torrents
+Exec=torrential-relm4
+Icon=com.github.davidmhewitt.torrential
+Terminal=false
+StartupNotify=true
+StartupWMClass=com.github.davidmhewitt.torrential
+Categories=Network;FileTransfer;P2P;

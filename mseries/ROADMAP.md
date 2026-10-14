@@ -22,7 +22,7 @@ with the corrected live-session hardware overlay before progressing.
 | Login-screen stall fixed | `lightdm` drop-in waits for the eDP connector; display crossbar in the fairydust initramfs (`install-initramfs-crossbar.sh`) | greeter 119.7 s -> 0.82 s; dp-xbar deferrals 14 -> 0; first-dcp -> DRM 2.57 s -> 0.01 s |
 | USB4 dock data (hub, mouse, headset, 1 Gb/s Ethernet) | Custom kernel `fairydust-usb4`, m1n1 + DTBs, thunderbolt quirks (`mseries/fairydust/usb4/`) | checks `dock-usb4-ethernet`, `dock-dp-retry-silent` passed |
 | Boots Linux by default | GRUB default + `asahi-bless` | check `boot-default-usb4` |
-| Network speed in dropdown and (toggle) in menu bar | Pinned panel-network build ships through the Apple Silicon image overlay; local installer remains for existing images. | check `network-row-look` and confirm after reboot |
+| Network indicator speed, connected-only Wi-Fi list, and usage views | Installed on the M1 Pro; user `netusage` service is active and its SQLite database contains app/host and DNS records. Existing panel-speed toggle remains. | Visual check of joined-network-only collapse, chevron expansion, and menu rendering | The pinned build also ships through the Apple Silicon image overlay.
 | Rounded screen corners | patched Gala, radius 14 (`install-gala-screen-corners.sh`) | **needs your look**: `gala-corners-look` |
 | Pastel blue/rose theme | `install-theme-tweaks.sh` | **needs your look**: `colors-look` |
 | Memory/swap/service tuning | `install-system-tuning.sh` (zram, no ModemManager/AppCenter daemon) | `zram-swap`, `services-trimmed` |
@@ -32,6 +32,12 @@ with the corrected live-session hardware overlay before progressing.
 | Wi-Fi resume fix | `mseries-wifi-resume-fix` | CI test |
 | Tracks upstream | merged `elementary/os` main @ 7024fd0 | `UPSTREAM-PINS.md` |
 | Benchmarks | `mseries/benchmarks/` | see `benchmarks/README.md` |
+
+## Implemented; runtime validation pending
+
+| Feature | Change | Next check |
+|---|---|---|
+| OpenCode Go in M-series CodexBar | The installer enables the provider and passes the existing OpenCode Go CLI credential to CodexBar at runtime. | Install on the working desktop, sign in through OpenCode, and confirm the quota row. |
 
 ## Open problems
 
@@ -72,7 +78,14 @@ Performance work stays measured: use `mseries/benchmarks/` before and after each
 4. ~~**Linux VMs with KVM**~~ Guide written 2026-10-13: [`KVM-VMS.md`](KVM-VMS.md) (boot verified headless; graphics, networking address and benchmark overhead not yet measured).
 5. **Publish benchmark history** for every kernel/Mesa update, plot trends.
 6. **Install media / transform script** for other M1/M2 Macs (see `TRANSFORM-DESIGN.md`).
-7. **Report upstream bugs** (Wingpanel crash: draft in `upstream/`). ~~PipeWire missing LV2 plugin in Ubuntu~~: not a bug. Ubuntu ships `libspa-filter-graph-plugin-lv2.so` in `libspa-0.2-modules-extra` (checked 2026-10-13, 1.6.2-1ubuntu1.2, the same version as the installed PipeWire). The notes saying Ubuntu omits it missed that package. Next step: install it instead of building the plugin in `install-pipewire-lv2.sh`, and add it to the factory image. Not yet tested with the Asahi audio chain.
+7. **Tether continuity add-on**: pinned, removable ARM64 package installer and optional Brave integration are implemented on `mseries-tether-continuity`; iPhone/Brave qualification remains. Current BlueZ 5.85 is below Tether's 5.86 minimum for Messages. See [`TETHER-CONTINUITY.md`](TETHER-CONTINUITY.md).
+8. **Native battery time-to-full:** implemented as an optional patch and installer for elementary's Power indicator; built and installed on the M1 desktop. See [`BATTERY-ETA.md`](BATTERY-ETA.md).
+9. **Torrential ARM64 native app port and optimization.** Native GTK/Granite
+    package installed on the desktop; official Ubuntu torrent data transfer
+    and full-ISO SHA-256 verified; RPC pause/resume checks passed. UI interaction,
+    close/reopen state restoration, and measured optimization remain. Upstream source and packages stay local pending a
+    license grant. See [`TORRENTIAL-PORT.md`](TORRENTIAL-PORT.md).
+10. **Report upstream bugs** (Wingpanel crash: draft in `upstream/`). ~~PipeWire missing LV2 plugin in Ubuntu~~: not a bug. Ubuntu ships `libspa-filter-graph-plugin-lv2.so` in `libspa-0.2-modules-extra` (checked 2026-10-13, 1.6.2-1ubuntu1.2, the same version as the installed PipeWire). The notes saying Ubuntu omits it missed that package. Next step: install it instead of building the plugin in `install-pipewire-lv2.sh`, and add it to the factory image. Not yet tested with the Asahi audio chain.
 
 Not realistic here: macOS 27 guests (`MACOS-VM.md`), Mac mini M4 (Asahi has no M4 support: no installer, no GPU
 driver, M3 only now nearing a first release).

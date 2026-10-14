@@ -64,6 +64,21 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <tr><td>Oct 12-13</td><td>No plain-language way to see what failed on the machine.</td><td>Added the Local Troubleshooter, briefing and read-only assistant, all running on-device.</td></tr>
 </table>
 
+<h2>Reported earlier, not yet ranked</h2>
+<p>Recorded from earlier owner reports. They are not in the ranked list above yet.</p>
+<table>
+<tr><th>Issue</th><th>Next step</th><th>Status</th></tr>
+<tr><td>App windows do not consistently follow the Mac display's rounded shape.</td><td>Define a system-level window-surface policy, then qualify native, third-party, maximized, fullscreen, dialog, and external-display cases.</td><td>Needs implementation and visual qualification</td></tr>
+<tr><td>The red and blue palette still feels harsh in use; existing GTK overrides do not reach every toolkit.</td><td>Review shared theme/system settings and check contrast, focus, selection, and warning/error distinction across supported toolkits.</td><td>Needs palette review</td></tr>
+<tr><td>Network usage readouts can fail to recover around Ethernet suspend/resume or reboot.</td><td>Compare the indicator and panel rates/history with interface counters before sleep, after wake/startup, and once the interface settles.</td><td>Needs reproduction</td></tr>
+<tr><td>The network speed readout lacks a soft pastel red-orange cue as a link approaches saturation.</td><td>Define a measurable sustained-utilization threshold and hysteresis; verify on Wi-Fi and Ethernet while preserving contrast and distinguishing error states.</td><td>Owner requested; threshold pending</td></tr>
+<tr><td>The signal strength dropdown does not feel native to elementary and could be more fully built out.</td><td>Review native panel/menu patterns, capture the current behavior, then define the added information and actions.</td><td>Owner reported; needs design/reproduction</td></tr>
+<tr><td>A bug was reported in Tasks, but the affected behavior is unspecified.</td><td>Capture the failing flow, expected and actual results, app version, and reproduction steps.</td><td>Needs details</td></tr>
+<tr><td>A bug was reported in Energy Monitor, but the affected behavior is unspecified.</td><td>Capture the failing flow, expected and actual results, app version, and reproduction steps.</td><td>Needs details</td></tr>
+<tr><td>Touch ID passkey/WebAuthn user verification is unverified on M1 Pro.</td><td>Track driver and authentication integration; verify passkey creation and sign-in while retaining password/recovery fallback.</td><td>Owner requested; hardware support unverified</td></tr>
+<tr><td>Successful authentication is not remembered for a configurable period; duration and reauthentication rules are undefined.</td><td>Define duration, scope, idle/lock/suspend expiry, and fresh-verification behavior.</td><td>Owner requested; policy to define</td></tr>
+</table>
+
 <h2>Verified on hardware 2026-10-14</h2>
 <table>
 <tr><th>Check</th><th>Result</th></tr>

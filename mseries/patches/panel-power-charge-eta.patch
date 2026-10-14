@@ -1,0 +1,64 @@
+diff --git a/src/Indicator.vala b/src/Indicator.vala
+index f7a08b7..0154cb8 100644
+--- a/src/Indicator.vala
++++ b/src/Indicator.vala
+@@ -159,0 +160,4 @@ public class Power.Indicator : Wingpanel.Indicator {
++            display_widget.show_charge_eta (
++                display_device.is_charging ? display_device.time_to_full : 0
++            );
++
+diff --git a/src/Widgets/DisplayWidget.vala b/src/Widgets/DisplayWidget.vala
+index f5128c4..aa60b0a 100644
+--- a/src/Widgets/DisplayWidget.vala
++++ b/src/Widgets/DisplayWidget.vala
+@@ -23,0 +24 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
++    private Gtk.Revealer charge_eta_revealer;
+@@ -38,0 +40 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
++    private Gtk.Label charge_eta_label;
+@@ -49,0 +52,2 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
++        charge_eta_label = new Gtk.Label (null);
++        charge_eta_label.add_css_class ("dim-label");
+@@ -55,0 +60,5 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
++        charge_eta_revealer = new Gtk.Revealer () {
++            transition_type = Gtk.RevealerTransitionType.SLIDE_RIGHT,
++            child = charge_eta_label,
++        };
++
+@@ -57,0 +67 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
++        append (charge_eta_revealer);
+@@ -72,0 +83,35 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
++    public void show_charge_eta (int64 time_to_full) {
++        if (time_to_full <= 0) {
++            charge_eta_revealer.reveal_child = false;
++            charge_eta_label.label = "";
++            return;
++        }
++
++        // Round to the nearest minute so the panel shows a useful, stable estimate.
++        int64 total_minutes = (time_to_full + 30) / 60;
++        if (total_minutes < 1) {
++            total_minutes = 1;
++        }
++        int64 hours = total_minutes / 60;
++        int64 minutes = total_minutes % 60;
++
++        if (hours > 0) {
++            charge_eta_label.label = "%lldh %02lldm".printf (hours, minutes);
++        } else {
++            charge_eta_label.label = "%lldm".printf (minutes);
++        }
++
++        charge_eta_label.tooltip_text = battery_eta_tooltip (hours, minutes, total_minutes);
++        charge_eta_revealer.reveal_child = true;
++    }
++
++    private string battery_eta_tooltip (int64 hours, int64 minutes, int64 total_minutes) {
++        if (hours > 0 && minutes > 0) {
++            return _("About %lld hours and %lld minutes until full").printf (hours, minutes);
++        } else if (hours > 0) {
++            return ngettext ("About %lld hour until full", "About %lld hours until full", (ulong) hours).printf (hours);
++        }
++
++        return ngettext ("About %lld minute until full", "About %lld minutes until full", (ulong) total_minutes).printf (total_minutes);
++    }
++

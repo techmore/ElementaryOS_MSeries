@@ -118,3 +118,26 @@ startup through userspace handoff. It does not test the installed-system
 initramfs or bootloader, any Apple DTB or m1n1/ESP payload, Mac hardware, GPU,
 USB4, audio, suspend or a full desktop session. Keep the distinction between
 this direct-kernel test and the separate generic live-ISO boot above.
+
+## Latest CI artifact boot — October 13
+
+Downloaded artifact from [CI run 38479577898](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/38479577898).
+The ISO `elementaryos-9.0-daily-arm64.20261013230825.iso` is 7,482,648,576
+bytes; its SHA-256 `89c74fa25ac72dd8f20f7eb42e456c929ed828f791f77af3edb6f5ce1b7b259d`
+matched the artifact's `INSTALLER-SHA256SUMS` after download.
+
+QEMU 10.2.1/KVM (4 vCPUs, 6 GiB RAM, AAVMF) booted the ISO to the graphical
+installer language screen. Serial output reached the elementary OS 9 login
+prompt. Only a read-only SCSI CD-ROM was attached; no writable guest or host
+disk was attached. Screenshot:
+[`os9-ci-38479577898-installer.png`](../docs/images/os9-ci-38479577898-installer.png).
+
+The ISO's live entry uses `/casper/vmlinuz` and `/casper/initrd`; this verifies
+the generic live-kernel installer path, not the Fairydust kernel packaged for
+an installed system. The separate direct-kernel test above verifies only
+generic ARM64 startup through a BusyBox initramfs. Neither test verifies the
+installed-system initramfs, Apple DTB selection, m1n1 boot on hardware, GPU,
+USB4, audio, suspend, or a full desktop installation. No host ESP or boot
+configuration was changed. The temporary artifact ZIP and signed download URL
+were removed; the verified ISO and screenshot remain in the local test
+directory and repository evidence folder, respectively.
