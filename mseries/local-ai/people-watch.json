@@ -88,5 +88,59 @@
     "who": "Sank6",
     "why": "iCloud Keychain CLI and Brave extension (icp)",
     "group": "apps"
+  },
+  {
+    "repo": "BlueBubblesApp/bluebubbles-app",
+    "who": "BlueBubbles",
+    "why": "Linux aarch64 client for iMessage via a real Mac (Apache-2.0); lowest account risk",
+    "group": "apps"
+  },
+  {
+    "repo": "BlueBubblesApp/bluebubbles-server",
+    "who": "BlueBubbles",
+    "why": "macOS server the client talks to (Apache-2.0)",
+    "group": "apps"
+  },
+  {
+    "repo": "OpenBubbles/rustpush",
+    "who": "OpenBubbles",
+    "why": "iMessage protocol core (SSPL; personal build only, never bundle)",
+    "group": "apps"
+  },
+  {
+    "repo": "chrispouliot/bubbles",
+    "who": "chrispouliot",
+    "why": "GTK4/libadwaita iMessage client on rustpush; very new",
+    "group": "apps"
+  },
+  {
+    "repo": "tannerkrewson/LiteBubbles",
+    "who": "tannerkrewson",
+    "why": "GNOME iMessage client on rustpush; early",
+    "group": "apps"
+  },
+  {
+    "repo": "bendews/apw",
+    "who": "bendews",
+    "why": "Apple Passwords CLI daemon (GPL-3.0), 257 stars",
+    "group": "apps"
+  },
+  {
+    "repo": "dragosol/icloud-keychain-linux",
+    "who": "dragosol",
+    "why": "Read-only iCloud Keychain viewer and Firefox autofill; no license",
+    "group": "apps"
+  },
+  {
+    "repo": "alex-mextner/passwords-app",
+    "who": "alex-mextner",
+    "why": "Two-way iCloud passwords with GNOME Keyring (MIT); created 2026-10-10",
+    "group": "apps"
+  },
+  {
+    "repo": "deej1721/icloud-passwords-linux",
+    "who": "deej1721",
+    "why": "Runs Apple's Windows helper in a VM and bridges to Chrome (MIT)",
+    "group": "apps"
   }
 ]

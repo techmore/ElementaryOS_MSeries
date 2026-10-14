@@ -29,6 +29,12 @@ once their repositories are confirmed. Do not guess handles.
 | erikwb/BlueFerry | erikwb | iPhone texts and codes |
 | OpenBubbles/openbubbles-app | OpenBubbles | iMessage candidate (SSPL core, never bundle) |
 | cameroncooper/keychain, Sank6/iCloud-Keychain-for-Linux | | iCloud Keychain clients |
+| BlueBubblesApp/bluebubbles-app, bluebubbles-server | BlueBubbles | iMessage through a real Mac; Apache-2.0; 1,386 / 1,108 stars; pushed 2026-10-14 / 10-13 |
+| OpenBubbles/rustpush | OpenBubbles | iMessage core; license NOASSERTION (SSPL per our notes); never bundle |
+| chrispouliot/bubbles, tannerkrewson/LiteBubbles | | rustpush GUI clients; 0 stars, license not declared, very new |
+| bendews/apw | bendews | Apple Passwords CLI; GPL-3.0; 257 stars; last push 2026-08-24 |
+| dragosol/icloud-keychain-linux | dragosol | Read-only Keychain viewer; no license, so personal use only |
+| alex-mextner/passwords-app, deej1721/icloud-passwords-linux | | Two-way sync (MIT, created 2026-10-10) / Windows-helper-in-VM bridge (MIT) |
 
 Their claims are leads, not evidence: Omarchy's post says Touch ID works and that M1/M2
 is the first release target, but its own status page still lists Touch ID as not in the
