@@ -1159,3 +1159,9 @@ release changes and fetch failures. Closing the issue acknowledges observations;
 new changes reopen it. Failed fetches preserve the last successful observation
 and fail the Action. No upstream code is automatically merged or deployed.
 The native macOS installer remains reference-only, per the owner decision.
+
+Activated on main: [upstream dashboard #51](https://github.com/techmore/ElementaryOS_MSeries/issues/51).
+First Action run 38640456586 completed successfully. The duplicate Codex
+heartbeat `follow-omarchy-m-sources` is PAUSED. Review covered initial audited
+revision comparison, missing user sources, and trusted dashboard authors.
+No new automated tests were run for this watcher.
