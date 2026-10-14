@@ -22,8 +22,9 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <tr><td>Boot to Pantheon</td><td class="ok">Confirmed on the transformed installation</td><td class="part">ISO boots to the graphical installer in an ARM64 VM; Pantheon user session and Mac hardware boot remain unverified</td></tr>
 <tr><td>Display and brightness OSD</td><td class="part">Backlight and OSD calls succeed; physical keys and login persistence still need confirmation</td><td class="unk">Not tested</td></tr>
 <tr><td>Ambient keyboard lighting</td><td class="part">ALS and UPower adjusted keyboard from 0 to 59/255 at 141 lx; lock/lid and suspend behavior still need interactive qualification</td><td class="unk">Not tested</td></tr>
-<tr><td>USB-C dock hub and downstream input</td><td class="part">Enumerate with the experimental USB4 kernel; model/port limits remain</td><td class="unk">Not tested</td></tr>
+<tr><td>USB-C dock hub and downstream input</td><td class="ok">Confirmed 2026-10-14 on a Dell WD22TB4: hub, mouse and wired Ethernet work. The Ethernet panel icon is unstable (tracked)</td><td class="unk">Not tested</td></tr>
 <tr><td>USB-C dock DisplayPort video</td><td class="no">Unavailable: DP tunnelling is not implemented in the current kernel</td><td class="unk">Not tested</td></tr>
+<tr><td>Lid-open resume without a dock</td><td class="part">Suspends and resumes on lid open; the login screen still needs a power-button press (tracked)</td><td class="unk">Not tested</td></tr>
 <tr><td>Suspend with a USB4 dock</td><td class="no">The ACIO driver blocks suspend while the dock link is active</td><td class="unk">Not tested</td></tr>
 <tr><td>Speakers / DSP</td><td class="ok">Audio output passed after installing speakersafetyd, Asahi DSP packages, and the matching PipeWire LV2 plugin</td><td class="unk">Install path not packaged or tested</td></tr>
 <tr><td>GPU, Wi-Fi resume, microphone, video decode, Touch ID</td><td class="unk">No complete end-to-end result recorded for this build</td><td class="unk">Not tested</td></tr>
@@ -40,6 +41,6 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 
 <h2>Out of scope (by design)</h2>
 <p>Intel Macs (T2, 2015–2017 SPI keyboard/NVMe, Broadcom STA offload tweaks) and Hyprland/Omarchy desktop behavior — see <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/PORT-MAP.md">PORT-MAP.md</a>.</p>
-<footer>Updated 2026-10-13. Results distinguish the running installation from the unverified factory image.</footer>
+<footer>Updated 2026-10-14. Results distinguish the running installation from the unverified factory image.</footer>
 </body>
 </html>

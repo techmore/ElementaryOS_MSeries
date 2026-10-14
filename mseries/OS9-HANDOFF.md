@@ -510,3 +510,13 @@ at login. NAS address/share path remains pending; no NAS writes occurred.
 ANE artifacts were already staged and remain unactivated. No kernel, device
 tree, bootloader or audio changes were made. See local-ai/README.md and the
 October 13 agent receipt for final verification and remaining scope.
+
+## 2026-10-14 hardware session
+
+Dock verified (Dell WD22TB4: hub, mouse, Ethernet; no display). Lid-open
+resume works without a dock but the login screen needs a power-button press;
+the dock Ethernet icon is recreated on each connect. Both are recorded in
+BUG-FIX-ROADMAP.md with evidence and are not fixed. Running code that was only
+in PR #1 (docked lid mode, troubleshooter, netspeed) is now being merged to
+main so the repository matches the installed system. Next: trace a resume,
+add the Realtek firmware and a pinned profile, repeat the docked lid-close test.

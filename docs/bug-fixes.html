@@ -16,7 +16,7 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <body>
 <p><a href="index.html">← back</a></p>
 <h1>M-Series bug-fix audit</h1>
-<p>Updated 2026-10-13. The installed elementary OS 9 desktop boots on an M1 Pro. The factory arm64 ISO built successfully on October 13; hardware boot remains pending. The evidence and reproducible next steps are tracked in the <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/BUG-FIX-ROADMAP.md">repository roadmap</a>.</p>
+<p>Updated 2026-10-14. The installed elementary OS 9 desktop boots on an M1 Pro. The factory arm64 ISO built successfully on October 13; hardware boot remains pending. The evidence and reproducible next steps are tracked in the <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/BUG-FIX-ROADMAP.md">repository roadmap</a>.</p>
 
 <h2>Resolved in the current source update</h2>
 <table>
@@ -35,12 +35,22 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <tr><td>Package notes said the Asahi speaker packages had no Ubuntu source, but resolute/universe provides the installed versions.</td><td>Updated the package manifest and build notes. Factory-image audio packaging remains open.</td></tr>
 </table>
 
+<h2>Verified on hardware 2026-10-14</h2>
+<table>
+<tr><th>Check</th><th>Result</th></tr>
+<tr><td>Dell WD22TB4 Thunderbolt 4 dock on the M1 Pro (kernel 7.1.13 Fairydust USB4)</td><td>The USB4 link trains, the dock enumerates, and the downstream USB hub, mouse and wired Ethernet work. Ethernet takes a DHCP lease and connects. The displays do not (see below).</td></tr>
+<tr><td>Lid close, suspend (s2idle), lid open, resume without a dock</td><td>Works: a 14 minute 44 second suspend returned the moment the lid opened. The display controller powered back on and the login greeter started. Wi-Fi reconnected within about three seconds.</td></tr>
+<tr><td>Docked lid mode (<code>mseries-docked-lid</code>)</td><td>Running; it logged <em>dock attached: holding the lid-switch inhibitor</em> when the dock was plugged in. A lid-close test <em>with</em> the dock attached has not been repeated since.</td></tr>
+</table>
+
 <h2>Open fixes and validation</h2>
 <table>
 <tr><th>Priority</th><th>Issue</th><th>Next step</th><th>Status</th></tr>
+<tr><td>P1</td><td>After lid-open resume the owner still has to press the power button before the login screen is usable. The log shows resume and greeter start at lid-open, with no power-key event, so the exact cause is not yet identified.</td><td>Capture one resume with the display state (DCP power, backlight value, greeter and Gala logs), then fix the wake path so lid-open shows the login screen directly.</td><td class="open">Reported; needs trace</td></tr>
+<tr><td>P2</td><td>The dock's Ethernet icon in the panel disappears and a new connection appears. The dock's Realtek RTL8153B adapter registers as <code>eth0</code>, is renamed <code>enx&hellip;</code>, and NetworkManager creates a fresh <em>Wired connection</em> profile; the kernel also cannot load <code>rtl_nic/rtl8153b-2.fw</code>. The cause is not confirmed.</td><td>Install the missing Realtek firmware, give the dock adapter one persistent connection profile, then replug and suspend several times and watch the indicator.</td><td class="open">Reported by owner; investigating</td></tr>
 <tr><td>P1</td><td>Gala's on-screen keyboard helper may fail when IBus changes input purpose while the keyboard is disabled.</td><td>Reproduce with a focused text field and disabled OSK; confirm Gala stays running after the guard is applied.</td><td class="open">Needs reproduction and package-safe fix</td></tr>
 <tr><td>P1</td><td>DisplayPort video through the M1 Pro USB-C dock path is unavailable; the experimental kernel has no DP tunnel.</td><td>Continue kernel/device-tree work, then verify external display hot-plug and reboot on the M1 Pro.</td><td class="blocked">Kernel limitation</td></tr>
-<tr><td>P1</td><td>A USB4 dock link blocks suspend. The Mac remains awake with its display off; non-USB4 Type-C devices can also fail to return after suspend.</td><td>Implement the USB4 sleep/wake handshake and Type-C/DWC3 resume handling, then verify repeated suspend cycles.</td><td class="blocked">Kernel bugs</td></tr>
+<tr><td>P1</td><td>With a USB4 dock attached the ACIO driver refuses suspend, so the Mac stays awake with its display off. Docked lid mode locks instead of retrying; the real handshake is still missing; non-USB4 Type-C devices can also fail to return after suspend.</td><td>Implement the USB4 sleep/wake handshake and Type-C/DWC3 resume handling, then verify repeated suspend cycles.</td><td class="blocked">Kernel bugs</td></tr>
 <tr><td>P1</td><td>The factory arm64 image built successfully but has not been hardware-booted.</td><td>Independently verify the installer checksum, qualify the kernel/boot path, and complete the hardware post-boot checklist.</td><td class="blocked">Release blocker</td></tr>
 <tr><td>P2</td><td>Wingpanel may crash in PanelWindow.on_realize and be respawned by Gala.</td><td>Capture the exact upstream version and logs, then report or patch the Wingpanel failure.</td><td class="open">Known upstream issue</td></tr>
 <tr><td>P2</td><td>Physical brightness keys and brightness persistence after login are not confirmed.</td><td>Check both keys and the selected level after logout/login.</td><td class="open">Needs owner check</td></tr>

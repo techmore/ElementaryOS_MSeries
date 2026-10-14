@@ -27,6 +27,12 @@ that the factory image works.
 These source and image changes at commit 401dad7 passed a factory-image
 build; hardware qualification remains pending.
 
+## Hardware verification 2026-10-14
+
+- Dell WD22TB4 dock on kernel 7.1.13-1-2-fairydust-usb4: USB4 link, hub, mouse and wired Ethernet (r8152, DHCP) work. Displays still absent (no DP tunnel).
+- Undocked lid close, s2idle suspend (14m44s) and lid-open resume work; Wi-Fi reconnected.
+- `mseries-docked-lid` logged "dock attached: holding the lid-switch inhibitor". Suspend with the dock attached was not retried.
+
 ## Open fixes and verification
 
 | Priority | Finding | Concrete next step | State |
@@ -35,6 +41,8 @@ build; hardware qualification remains pending.
 | P1 | A Dell WD19S display connected through the Apple USB4 dock path still has no DisplayPort tunnel. The experimental kernel now brings up the hub and downstream input, but the display connector is absent. | Continue the kernel and device-tree work; verify one external display on the M1 Pro and record hot-plug/reboot behavior before claiming support. | Known kernel limitation |
 | P1 | Suspending with a USB4 dock attached is blocked by the ACIO driver; the machine stays awake with its display off. | Implement and qualify the ACIO sleep/wake handshake, or provide a safe docked-lid mode that locks without suspend retries. | Reproduced; tracked in ROADMAP.md |
 | P1 | Non-USB4 USB-C devices can disappear after suspend because the Apple Type-C PHY and DWC3 drivers lack system-sleep power management. | Add kernel resume handling and verify dock/adapter recovery through repeated suspend cycles. | Kernel bug |
+| P1 | After lid-open resume the login screen needs a power-button press (reported 2026-10-14). Log evidence: logind sees "Lid opened", `PM: suspend exit` and the DCP powers on in the same second, and a greeter session starts; no power-key event is logged. | Capture display state on one resume (DCP power, `apple-panel-bl` brightness, greeter/Gala logs), find why the panel is not shown or input is not accepted, fix the wake path. | Reported; needs trace |
+| P2 | Dock Ethernet icon in the panel dies and a new connection appears (reported 2026-10-14). The RTL8153B registers as `eth0`, is renamed `enx605b3042c174`, NetworkManager creates a fresh "Wired connection 1", and `rtl_nic/rtl8153b-2.fw` fails to load (-2). Cause unconfirmed. | Install the Realtek firmware, pin one persistent profile for the adapter, replug and suspend repeatedly while watching the indicator and NetworkManager log. | Reported; investigating |
 | P2 | Wingpanel can crash in PanelWindow.on_realize and Gala respawns it. | Capture the exact upstream version and logs, then report or patch the upstream Wingpanel failure. | Known upstream issue |
 | P1 | The factory arm64 ISO built successfully but has not been booted on hardware. | Independently verify the installer checksum, qualify the kernel and boot path, and complete hardware post-boot checks before a stable release. | Validation blocker |
 | P2 | The installed desktop guide has not yet confirmed physical display-brightness key presses and persistence after a fresh login, although the Mutter backlight and OSD calls succeed. | Verify both keys and the selected level after logout/login; record the exact result. | Needs owner check |
