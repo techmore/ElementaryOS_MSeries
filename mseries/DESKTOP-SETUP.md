@@ -443,7 +443,8 @@ Installed and verified on the M1 Pro session:
   saves the original ambient-brightness and idle-dim settings, disables both
   automatic screen adjustments, and restores the saved values on uninstall.
   Screen blanking and suspend remain enabled; existing brightness keys remain
-  in use.
+  in use. The image enhancement layer sets the same unlocked defaults for new
+  sessions.
 - Fixed the keyboard indicator's binding to a removed `active` property on
   `Wingpanel.PopoverMenuItem`. Selection now uses GTK's checked state.
 - Fixed the network indicator passing its device-less VPN row into libnm's

@@ -940,7 +940,7 @@ quit, then review `bash mseries/post-install.sh --status` and the service logs.
 
 ## Current desktop bug — unexpected screen dimming (2026-10-14)
 
-The owner reports that the built-in display keeps dimming unexpectedly. The trigger remains unconfirmed. The default user brightness installer now backs up both GNOME `ambient-enabled` and `idle-dim`, disables them, and restores their prior values on uninstall. This preserves manual brightness while leaving screen blanking and suspend enabled. Existing preference files are migrated by adding only the missing `idle-dim` value, without replacing the original ambient-brightness snapshot. Owner verification on AC/battery and through suspend/resume is still needed; if brightness changes, capture backlight and power-service logs. See `BUG-FIX-ROADMAP.md`.
+The owner reports that the built-in display keeps dimming unexpectedly. The trigger remains unconfirmed. The default user brightness installer now backs up both GNOME `ambient-enabled` and `idle-dim`, disables them, and restores their prior values on uninstall. The image enhancement layer writes the same values as unlocked system dconf defaults for new sessions. This preserves manual brightness while leaving screen blanking and suspend enabled. Existing preference files are migrated by adding only the missing `idle-dim` value, without replacing the original ambient-brightness snapshot. Owner verification on AC/battery and through suspend/resume is still needed; if brightness changes, capture backlight and power-service logs. See `BUG-FIX-ROADMAP.md`.
 
 ## Requested desktop apps — 2026-10-14
 

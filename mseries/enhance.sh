@@ -157,6 +157,20 @@ EOF
 
 mod_session() {
   local lib=/usr/libexec/mseries
+  put 0644 /etc/dconf/db/local.d/00-mseries-brightness <<'EOF'
+# Avoid automatic display brightness changes on M-series elementary installs.
+# Users can still override these defaults from their desktop settings.
+[org/gnome/settings-daemon/plugins/power]
+ambient-enabled=false
+idle-dim=false
+EOF
+  if [[ -x $R/usr/bin/dconf ]]; then
+    if [[ $ROOT == / ]]; then
+      "$R/usr/bin/dconf" update || log "could not compile the system dconf defaults"
+    elif command -v chroot >/dev/null 2>&1; then
+      chroot "$ROOT" /usr/bin/dconf update || log "could not compile the system dconf defaults in $ROOT"
+    fi
+  fi
   copy 0755 "$here/docked-lid/mseries-docked-lid" $lib/docked-lid
   copy 0755 "$here/brightness/shell-bridge.py" $lib/brightness-bridge
   copy 0755 "$here/keyboard-backlight/backlight.py" $lib/keyboard-backlight
