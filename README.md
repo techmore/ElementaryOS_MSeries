@@ -5,22 +5,13 @@ layer, elementary (Pantheon) as the system you use, installed with one command,
 full-disk encryption included. Modelled on [omarchy-mac](https://github.com/omarchy-mac/omarchy-mac),
 whose Asahi boot and encryption tools it reuses.
 
-> ## 🚧 Work in progress
->
-> This is an experimental, unfinished port. The installer has been reviewed and tested in a sandbox with
-> stubbed tools, but has **not yet been run end to end on a freshly wiped Mac**, and the patched kernel
-> (USB4 and the Apple Video Decoder fix) is built in CI but not yet booted. Expect rough edges and **back
-> up everything first**. Current state, blockers and the next task: [`mseries/OS9-HANDOFF.md`](mseries/OS9-HANDOFF.md).
-> Dry-run runbook: [`mseries/REINSTALL-RUNBOOK.md`](mseries/REINSTALL-RUNBOOK.md).
->
-> | Part | State |
-> |---|---|
-> | One-command installer (boot layout, encryption, build, enhancements) | written, sandbox-tested, **not run on a wiped Mac** |
-> | elementary unlock screen (Plymouth) | written, **not seen on hardware** |
-> | Hardware video decode (720p/1080p verified; 4K untested) | works after memory compaction; real fix in the unbooted usb4.4 kernel |
-> | Patched kernel (usb4.4) | CI build in progress, **not booted** |
-> | Factory ISO | builds in CI, **unverified on hardware** |
-> | Documentation index | [`mseries/DOCS.md`](mseries/DOCS.md) |
+> 🚧 **Work in progress.** Not yet run end to end on a freshly wiped Mac. Back up everything first. [Status](#status)
+
+**The whole install, in three commands** (details for each step below):
+
+1. In **macOS Terminal**: `curl https://asahi-alarm.org/installer-bootstrap.sh | sh`
+2. Boot Linux, log in as `root` / `root`, run `nmtui` to join Wi-Fi.
+3. As root: `curl -fsSL https://raw.githubusercontent.com/techmore/ElementaryOS_MSeries/main/bin/elementary-mac-setup | bash`
 
 ---
 
@@ -123,6 +114,21 @@ guard). Each is built from a pinned commit, version-gated and best-effort.
 Optional, not automatic: `elementary-mac-enhance --run --with firefox`, rounded screen corners
 (`mseries/install-gala-screen-corners.sh`), the Asahi speaker DSP (`mseries/install-pipewire-lv2.sh` then
 `install-audio-stack.sh --with-dsp`), and the Command/Ctrl key layout (`mseries/apply-desktop-settings.py`).
+
+---
+
+## Status
+
+Experimental and unfinished. Current state, blockers and the next task: [`mseries/OS9-HANDOFF.md`](mseries/OS9-HANDOFF.md).
+
+| Part | State |
+|---|---|
+| One-command installer (boot layout, encryption, build, enhancements) | written, sandbox-tested, **not run on a wiped Mac** |
+| elementary unlock screen (Plymouth) | written, **not seen on hardware** |
+| Hardware video decode (720p/1080p verified; 4K untested) | works after memory compaction; real fix in the unbooted usb4.4 kernel |
+| Patched kernel (usb4.4) | CI build in progress, **not booted** |
+| Factory ISO | builds in CI, **unverified on hardware** |
+| Documentation index | [`mseries/DOCS.md`](mseries/DOCS.md) |
 
 ---
 
