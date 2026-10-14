@@ -17,6 +17,7 @@ simplified for Pantheon, which has no Quickshell to protect:
   * never twice within SETTLE seconds, and never right after a resume (stale state).
 """
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -89,8 +90,19 @@ def units_state():
 
 
 def probe():
+    """True when the audio server answers (or when there is no way to ask - never act blindly).
+
+    pactl (pulseaudio-utils) talks to the Pulse server, which answers only while PipeWire and
+    WirePlumber both serve it. It is not installed by default on Ubuntu/elementary - on this very
+    machine it is missing - so fall back to wpctl (shipped with WirePlumber), which needs the
+    WirePlumber main thread to be alive and is therefore just as good a wedge detector."""
     runtime = os.environ.get('XDG_RUNTIME_DIR', f'/run/user/{os.getuid()}')
-    result = run('pactl', 'info', timeout=PROBE_TIMEOUT, env={'PULSE_SERVER': f'unix:{runtime}/pulse/native'})
+    if shutil.which('pactl'):
+        result = run('pactl', 'info', timeout=PROBE_TIMEOUT, env={'PULSE_SERVER': f'unix:{runtime}/pulse/native'})
+    elif shutil.which('wpctl'):
+        result = run('wpctl', 'status', timeout=PROBE_TIMEOUT)
+    else:
+        return True
     return result is not None and result.returncode == 0
 
 

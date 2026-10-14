@@ -165,6 +165,16 @@ Ported from omarchy-mac-pkgs: WirePlumber `asahi-audio-no-suspend` and `asahi-he
 Verified against this machine's real package set (it is a resolute + elementary PPA root): every first-boot build dependency in `enhance-firstboot.sh` exists (`apt-cache show`), and the installed versions satisfy every patch's gate (gala 8.6.2, wingpanel 8.0.4, panel.network 8.0.1, quick-settings 1.4.0, panel.sound 8.0.3, panel.keyboard 2.4.2). That check caught a bug of mine: the Files portal belongs to the package `pantheon-files`, not `io.elementary.files`, so the new backup helper would have aborted that script; fixed, and the script now has a version gate (7.3.3.x) like the others.
 Everything else remains unverified on hardware.
 
+### Hardware checks on the M1 Pro itself (2026-10-14) and the last unread files
+
+This repository is being worked on from a running M1 Pro (elementary on the fairydust-usb4 kernel), so several pieces could be exercised for real, read-only:
+- **Found a real bug in my audio watchdog**: `pactl` is not installed here (it ships in `pulseaudio-utils`), so the probe failed every time and the watchdog would have "restarted" healthy audio until its budget ran out. The probe now uses `pactl` if present, else `wpctl status` (WirePlumber's own tool, needs the WirePlumber main thread alive), and never reports a failure when neither exists. Four unit tests cover it; the live probe on this machine now reports healthy.
+- Confirmed on hardware: logind exposes `LockedHint` for the session (`no` while unlocked) and the user's Display session resolves without `XDG_SESSION_ID`, so the watchdog's lock check has real data; `docked-lid --status` sees the attached dock; `keyboard-backlight --once` reads the ALS (458 lx); `mseries-power status` shows the 80% limit; zram swap is active and ModemManager is disabled; `apple-silicon` device-tree gate passes.
+- Read in full now: `local-ai/brief.py` (cosmetic fix: "about None minutes" when the cache age is unknown) and `local-ai/troubleshooter-ui.py` (the `MSeries-Progress:` protocol matches `troubleshoot.py`; a timeout kill skips model release, minor).
+- **Apple video decode**: the kernel side is already here (`apple_avd` loaded, `CONFIG_VIDEO_APPLE_AVD=m`, `/dev/video0`, `avd-fw-*` firmware in `/lib/firmware/apple`). Only the userspace VA-API bridge (omarchy's `libva-v4l2_request-avd`) is missing and has no Ubuntu package. Not a packaging job for this installer; tracked as a gap.
+- **Headset-mic mapper**: deliberately not ported (Quickshell-specific rationale, see PORT-MAP.md).
+What is still genuinely unverified: a full run of `elementary-mac-setup` (boot layout, encryption, unlock screen, auto-login, first-boot modules) on a fresh Asahi Alarm install. That needs a spare or backed-up Mac and cannot be done from this session.
+
 ## Next tasks, in order
 
 Coordination: Codex handles implementation and review; OpenCode handles

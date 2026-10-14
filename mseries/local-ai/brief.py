@@ -94,7 +94,9 @@ def energy_text(summary_path=ENERGY_SUMMARY):
         return 'Energy monitor: not available (' + str(now.get('reason')) + ').'
     today = energy_snapshot('today', summary_path)
     month = energy_snapshot('month', summary_path)
-    lines = ['Energy monitor: ' + ('live' if now['live'] else f"NOT live, cached data about {now['age_minutes']} minutes old")]
+    age = now.get('age_minutes')
+    lines = ['Energy monitor: ' + ('live' if now['live'] else
+                                   'NOT live, cached data ' + (f'about {age} minutes old' if age is not None else 'of unknown age'))]
     if now['live'] and now.get('watts') is not None:
         lines.append(f"Power now: {now['watts']} W (${now['cost_per_hour']}/hour)")
     lines.append(f"Cost over the last 24 hours: ${today.get('cost_24h')}")
