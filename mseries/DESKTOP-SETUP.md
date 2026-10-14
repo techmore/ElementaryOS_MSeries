@@ -6,6 +6,16 @@ Pantheon on a 2021 14-inch M1 Pro, kernel
 This is a running transformed system; it does not establish that our factory
 ISO builds or boots correctly.
 
+## One-command post-install
+
+`bash mseries/post-install.sh` runs all the customizations below in order
+(desktop settings, launcher, brightness, screenshots, theme, power, audio,
+Brave, video decode, gestures and the Wingpanel/Gala fixes). Use `--list` to
+see the stages, `--dry-run` to preview, `--only`, `--skip` and `--with` to
+choose, and `--status` for the last result. Run `sudo -v` first and run it as
+your normal user. Optional stages (Firefox, Signal, Tether, CodexBar, screen
+corners) are off unless named with `--with`.
+
 ## Command+Space launcher
 
 `mseries/mseries-launcher.py` is a small dark, rounded GTK 4 search box that

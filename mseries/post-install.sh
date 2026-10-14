@@ -1,0 +1,125 @@
+#!/bin/bash
+# One entry point for the M-series post-install customizations on an installed
+# elementary OS system. Runs the existing installers in order; each is
+# idempotent, and a failure is logged and never stops the rest.
+#
+#   bash mseries/post-install.sh --list                 stages and whether each is on by default
+#   bash mseries/post-install.sh --dry-run              show what would run, change nothing
+#   bash mseries/post-install.sh                        run the default stages
+#   bash mseries/post-install.sh --only power,brave     run just these
+#   bash mseries/post-install.sh --skip video           default stages minus these
+#   bash mseries/post-install.sh --with signal,tether   default stages plus optional ones
+#   bash mseries/post-install.sh --status               result of the last run
+#
+# Run as your normal desktop user, not root: the user-level stages configure
+# your session and the system-level ones call sudo themselves (so run `sudo -v`
+# first). Network is needed for the stages that download or build.
+# Log in again afterwards so Gala and Wingpanel pick up the changes.
+set -uo pipefail
+
+repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+here=$repo/mseries
+STATE=${XDG_STATE_HOME:-$HOME/.local/state}/mseries-post-install
+LOG=$STATE/last-run.log
+
+# name|kind|default|command|what
+STAGES=(
+  "settings|user|on|python3 $here/apply-desktop-settings.py|Command-as-Ctrl, launcher, title buttons, screenshots, brightness keys"
+  "brightness|user|on|bash $here/install-brightness-bridge.sh|brightness bridge for Pantheon"
+  "kbd-backlight|user|on|bash $here/install-keyboard-backlight.sh|keyboard backlight helper"
+  "screenshots|user|on|bash $here/install-screenshot-shelf.sh|screenshot thumbnail shelf and Markup"
+  "theme|user|on|bash $here/install-theme-tweaks.sh|softer accents, larger corners, Ghostty palette"
+  "docked-lid|user|on|bash $here/install-docked-lid.sh|lock and blank panel instead of suspending when docked"
+  "battery-eta|user|on|bash $here/install-battery-eta.sh|time-to-full beside the battery icon"
+  "power|system|on|bash $here/install-power.sh|80% charge limit, battery CPU ceiling"
+  "tuning|system|on|bash $here/install-system-tuning.sh|system tuning from the 2026-10-12 audit"
+  "audio|system|on|bash $here/install-audio-stack.sh|speaker protection daemon"
+  "brave|system|on|bash $here/install-brave.sh|Brave from its apt repository"
+  "video|system|on|bash $here/install-video-decode.sh|VA-API hardware video decode"
+  "gestures|system|on|bash $here/install-touchegg.sh|Touchegg touchpad gestures"
+  "network|system|on|bash $here/install-network-throughput.sh|network speed in the indicator"
+  "quick|system|on|bash $here/install-quick-settings-brightness.sh|brightness and charge limit in Quick Settings"
+  "sound|system|on|bash $here/install-sound-indicator-fix.sh|sound indicator fix"
+  "keyboard|system|on|bash $here/install-keyboard-indicator-fix.sh|keyboard indicator fix"
+  "files|system|on|bash $here/install-files-portal-fix.sh|Files portal login-stall fix"
+  "osk|system|on|bash $here/install-gala-osk-fix.sh|Gala on-screen-keyboard guard"
+  "firefox|system|off|bash $here/install-native-firefox.sh|Firefox from Mozilla's apt repository (no snap)"
+  "signal|user|off|bash $here/install-signal.sh|Signal Desktop ARM64 beta"
+  "tether|user|off|bash $here/install-tether.sh|Tether iPhone pairing"
+  "codexbar|user|off|bash $here/install-codexbar.sh|CodexBar quota tracker"
+  "corners|system|off|bash $here/install-gala-screen-corners.sh|rounded screen corners (patched Gala)"
+  "clockright|system|off|bash $here/install-clockright-wingpanel.sh|right-side clock while the notch area is fixed"
+)
+
+field() { local IFS='|'; local -a f=($1); echo "${f[$2]}"; }
+known() { local s; for s in "${STAGES[@]}"; do [[ $(field "$s" 0) == "$1" ]] && return 0; done; return 1; }
+
+list_stages() {
+  printf '%-14s %-7s %-4s %s\n' STAGE KIND DEF WHAT
+  local s
+  for s in "${STAGES[@]}"; do
+    printf '%-14s %-7s %-4s %s\n' "$(field "$s" 0)" "$(field "$s" 1)" "$(field "$s" 2)" "$(field "$s" 4)"
+  done
+}
+
+usage() { sed -n '2,19p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+
+only=() skip=() with=() dry=0
+csv() { local IFS=,; read -ra "$1" <<<"$2"; }
+while (( $# )); do
+  case $1 in
+    --list) list_stages; exit 0 ;;
+    --status) cat "$STATE/summary" 2>/dev/null || echo "no previous run recorded"; exit 0 ;;
+    --dry-run|-n) dry=1 ;;
+    --only) csv only "${2:?--only needs a list}"; shift ;;
+    --skip) csv skip "${2:?--skip needs a list}"; shift ;;
+    --with) csv with "${2:?--with needs a list}"; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "unknown option: $1" >&2; usage >&2; exit 2 ;;
+  esac
+  shift
+done
+
+for n in "${only[@]}" "${skip[@]}" "${with[@]}"; do
+  [[ -z $n ]] || known "$n" || { echo "unknown stage: $n (see --list)" >&2; exit 2; }
+done
+(( EUID == 0 )) && { echo "run as your desktop user, not root" >&2; exit 2; }
+
+in_list() { local x=$1; shift; local i; for i in "$@"; do [[ $i == "$x" ]] && return 0; done; return 1; }
+
+selected=()
+for s in "${STAGES[@]}"; do
+  n=$(field "$s" 0)
+  if (( ${#only[@]} )); then
+    in_list "$n" "${only[@]}" && selected+=("$s")
+  elif in_list "$n" "${skip[@]}"; then
+    continue
+  elif [[ $(field "$s" 2) == on ]] || in_list "$n" "${with[@]}"; then
+    selected+=("$s")
+  fi
+done
+
+if (( dry )); then
+  echo "dry run: nothing will be changed"
+  for s in "${selected[@]}"; do printf '  [%s] %s\n' "$(field "$s" 0)" "$(field "$s" 3)"; done
+  exit 0
+fi
+
+mkdir -p "$STATE"
+: >"$LOG"
+ok=() failed=()
+for s in "${selected[@]}"; do
+  n=$(field "$s" 0)
+  echo "==> $n: $(field "$s" 4)"
+  # pipefail makes the pipeline status the installer's own, not tee's
+  if ( cd "$repo" && eval "$(field "$s" 3)" ) 2>&1 | tee -a "$LOG"; then ok+=("$n"); else failed+=("$n"); fi
+done
+
+{
+  echo "ran $(date '+%F %T')"
+  echo "ok:     ${ok[*]:-none}"
+  echo "failed: ${failed[*]:-none}"
+} | tee "$STATE/summary"
+echo "log: $LOG"
+echo "Log out and back in to load Gala/Wingpanel changes."
+(( ${#failed[@]} == 0 ))
