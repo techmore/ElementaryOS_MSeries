@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Bake Gala's gesture daemon into immutable /usr; never start live services.
+set -euo pipefail
+readonly source_commit=fc30d316e163f4504043353d6610e670ce5c6439
+work=$(mktemp -d "${TMPDIR:-/tmp}/mseries-touchegg.XXXXXX")
+trap 'rm -rf "$work"' EXIT
+git init -q "$work/source"
+git -C "$work/source" remote add origin https://github.com/JoseExposito/touchegg.git
+git -C "$work/source" fetch -q --depth=1 origin "$source_commit"
+git -C "$work/source" checkout -q --detach FETCH_HEAD
+cmake -S "$work/source" -B "$work/build" \
+    -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_INSTALL_SYSCONFDIR=/etc -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+cmake --build "$work/build" --parallel "$(nproc)"
+DESTDIR="$work/install" cmake --install "$work/build"
+# Select the daemon payload only; Gala owns gestures, not the X11 client.
+install -Dm755 "$work/install/usr/bin/touchegg" "$DESTDIR/usr/bin/touchegg"
+install -Dm644 "$work/install/usr/share/touchegg/touchegg.conf" \
+    "$DESTDIR/usr/share/touchegg/touchegg.conf"
+# Upstream derives the unit directory from systemd.pc; normalize its location
+# for the overlay even on merged-/usr environments with a /lib path there.
+unit=$(find "$work/install" -type f -name touchegg.service -print -quit)
+[[ -n $unit ]] || { echo 'Touchegg did not install a daemon unit' >&2; exit 1; }
+install -Dm644 "$unit" "$DESTDIR/usr/lib/systemd/system/touchegg.service"
+for file in COPYING COPYRIGHT; do
+    install -Dm644 "$work/source/$file" "$DESTDIR/usr/share/doc/mseries-touchegg/$file"
+done
+install -m644 "${BASH_SOURCE[0]}" "$DESTDIR/usr/share/doc/mseries-touchegg/build-touchegg.sh"
+printf 'Source: https://github.com/JoseExposito/touchegg\nRevision: %s\nVersion: 2.0.18\nSource archive: https://github.com/JoseExposito/touchegg/archive/fc30d316e163f4504043353d6610e670ce5c6439.tar.gz\n' "$source_commit" \
+    > "$DESTDIR/usr/share/doc/mseries-touchegg/SOURCE"
+# Vendor presets also cover a stateless /etc on first boot.
+install -d "$DESTDIR/usr/lib/systemd/system-preset"
+printf 'enable touchegg.service\n' > "$DESTDIR/usr/lib/systemd/system-preset/00-mseries-gestures.preset"

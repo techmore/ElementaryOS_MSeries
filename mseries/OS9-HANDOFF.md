@@ -1209,3 +1209,21 @@ Reviewed twice by a subagent and corrected its findings. No tests or image
 build were run in this batch. Existing pruning fixture now mocks its absent
 target dconf compiler; that fixture is not target compilation evidence.
 Next: build/boot qualification and bake the remaining network-dependent modules.
+
+## Factory gestures baked at build time — 2026-10-14
+
+Added `build-touchegg` at upstream 2.0.18 commit
+`fc30d316e163f4504043353d6610e670ce5c6439` (GPL-3.0-or-later).
+CMake builds with the CMake 4 compatibility option and explicit /usr + /etc
+paths. Only the daemon, its configuration, service, license/provenance and
+build recipe survive pruning. The X11 client autostart is omitted because
+Gala consumes the daemon directly. Both image consumers install its runtime
+libraries. Offline enablement and a vendor preset cover live and immutable
+images; leaf factory export carries the service link. Udev's sysusers file
+provides the service's input group.
+
+The manual installer now fetches the same exact commit rather than a mutable
+tag. Added Touchegg to GitHub upstream subscriptions. Subagent reviewed source
+dependencies, paths, activation and licensing. No tests/build or physical
+gesture qualification were run. Remaining browser, video and desktop patches
+still require build-time integration; factory hardware qualification is open.

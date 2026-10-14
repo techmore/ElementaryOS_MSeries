@@ -142,5 +142,11 @@
     "who": "deej1721",
     "why": "Runs Apple's Windows helper in a VM and bridges to Chrome (MIT)",
     "group": "apps"
+  },
+  {
+    "repo": "JoseExposito/touchegg",
+    "who": "José Expósito",
+    "why": "Pinned gesture daemon baked into the immutable factory image; review releases for Gala compatibility",
+    "group": "desktop"
   }
 ]

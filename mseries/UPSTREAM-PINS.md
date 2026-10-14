@@ -69,3 +69,12 @@ on the Mac. Do not describe this package set as a hardware boot result.
 ## Installer reference (studied 2026-10-14, not imported)
 
 `omacom/omarchy-mac-installer` (MIT), main at the 2026-10-14 `Publish app releases only for X.Y.Z versions` merge. Read-only study; see `MAC-INSTALLER-PLAN.md`. Record the exact commit when the first import happens.
+
+## Factory gesture daemon
+
+Touchegg 2.0.18 is pinned to `fc30d316e163f4504043353d6610e670ce5c6439`
+(tag resolved through GitHub on 2026-10-14). Both the factory build and the
+manual installer fetch this exact commit. Source: JoseExposito/touchegg.
+License: GPL-3.0-or-later. The factory payload retains COPYING, COPYRIGHT,
+the build recipe and a pinned source-archive URL under
+`/usr/share/doc/mseries-touchegg`. Build and gesture qualification are pending.
