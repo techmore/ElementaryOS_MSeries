@@ -62,8 +62,8 @@ with the corrected live-session hardware overlay before progressing.
 9. **Native battery time-to-full:** implemented as an optional patch and installer for elementary's Power indicator; built and installed on the M1 desktop. See [`BATTERY-ETA.md`](BATTERY-ETA.md).
 10. **Torrential ARM64 native app port and optimization.** Native GTK/Granite
     package installed on the desktop; official Ubuntu torrent data transfer
-    verified. UI interaction, complete-ISO verification, and measured
-    optimization remain. Upstream source and packages stay local pending a
+    and full-ISO SHA-256 verified; RPC pause/resume checks passed. UI interaction,
+    close/reopen state restoration, and measured optimization remain. Upstream source and packages stay local pending a
     license grant. See [`TORRENTIAL-PORT.md`](TORRENTIAL-PORT.md).
 
 Not realistic here: macOS 27 guests (`MACOS-VM.md`), Mac mini M4 (Asahi has no M4 support: no installer, no GPU

@@ -40,8 +40,11 @@ interaction were not available from the command environment.
 Added the official Ubuntu 26.04.1 Server AMD64 torrent through the app's local
 backend RPC. Tracker announcement succeeded and an actual peer transfer
 produced about 235 MiB downloaded at 13.5 MiB/s with 50 peers and verified
-pieces without an error at a later check. This proves a live partial download, not a complete ISO or UI
-button qualification. The torrent remains in the app queue under `~/Downloads`.
+pieces without an error at a later check. The 2,927,861,760-byte ISO subsequently completed and matched Ubuntu's
+published SHA-256 `cc8a95cde20f6ced61a322420de00f10cc3c90ced545daa46cb9c1a117f1d927`.
+RPC pause/resume checks settled to the expected states. The completed test
+torrent was paused and remains in the app queue under `~/Downloads`. UI button
+interaction is still unqualified.
 An initial Ubuntu ARM64 desktop torrent was rejected by its tracker and was
 removed before this successful test.
 
@@ -58,8 +61,7 @@ is clear. This public OS repository contains only downstream packaging and
 status documentation. No one was contacted and no upstream fork was pushed.
 
 Keep Torrential optional and outside the factory image. Remaining work includes
-UI add/pause/resume/remove qualification, full-download checksum verification,
-close/reopen state restoration, file and magnet association support, custom
+UI add/pause/resume/remove qualification, close/reopen state restoration, file and magnet association support, custom
 folder policy handling, and measured idle CPU/RSS/wakeup comparisons before
 further optimization. Upstream's rewrite also documents incomplete features
 in its README.

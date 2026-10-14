@@ -554,8 +554,9 @@ on this host so the app owns its backend. No factory image was changed.
 
 The app launched in the active desktop session and remained running while the
 official Ubuntu 26.04.1 Server torrent transferred data. A check showed about
-235 MiB downloaded, 50 peers, and 13.5 MiB/s without an error; the ISO was not
-yet complete. The initial ARM64 desktop torrent was rejected by Ubuntu's
+235 MiB downloaded, 50 peers, and 13.5 MiB/s without an error. The full ISO
+then completed and matched Ubuntu's published SHA-256. RPC pause/resume checks
+passed; the completed test torrent was paused. The initial ARM64 desktop torrent was rejected by Ubuntu's
 tracker and removed. The server torrent remains in Downloads. UI button and
 close/reopen qualification remain. See `mseries/TORRENTIAL-PORT.md`.
 
