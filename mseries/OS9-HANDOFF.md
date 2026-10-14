@@ -87,6 +87,12 @@ Also fixed: `--rollback` no longer deletes `@elementary-home` when it contains f
 
 Open: the Ubuntu base tarball is trusted via HTTPS only (SHA256SUMS.gpg is not verified; apt then verifies packages against keys in that tarball); `--finish-root` ignores a failed chroot because of `set -e`; `/tmp` build logs are world-readable; `--status` mounts the btrfs top level read-write.
 
+### Kernel-flow audit (2026-10-14) — see mseries/KERNEL-FLOW.md
+
+Found on the running machine: elementary's root has `initramfs-tools` (`update_initramfs=yes`), `grub-efi-arm64`, `grub2-common` and `/usr/sbin/update-grub`, with the shared ESP mounted at `/boot` (157 MB free). An upgrade of any package with an initramfs hook would write unused `initrd.img-*` onto the ESP, and a grub package upgrade could run `update-grub` and overwrite the Arch-generated `grub.cfg`.
+Added `mseries/install-boot-isolation.sh` (update_initramfs=no, apt pin against Ubuntu kernels, dpkg-diverted no-op stubs for update-grub/grub-install/grub-mkconfig), run by the grow script before and after the desktop install and available as `elementary-grow.sh --isolate-boot`. **Not yet applied to the running machine**: run `sudo mseries/install-boot-isolation.sh`.
+Open: custom kernel flavours (fairydust*) are only synced by the pacman hook if pacman installs them as `linux-asahi*`/`linux-aarch64*`.
+
 ## Next tasks, in order
 
 Coordination: Codex handles implementation and review; OpenCode handles

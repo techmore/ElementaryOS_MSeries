@@ -17,6 +17,7 @@
 #   sudo ./elementary-grow.sh --finalize [NAME]  # repair-grub + add-user + status
 #   sudo ./elementary-grow.sh --logs       # read-only: new root + last boot logs
 #   sudo ./elementary-grow.sh --sync-kernel  # graft host kernel modules + firmware
+#   sudo ./elementary-grow.sh --isolate-boot # stop elementary's apt touching GRUB/initramfs/kernels
 #
 # Safety contract: additive-only. New subvolume, new GRUB menu entry, old
 # system and default boot entry untouched. Every assumption in the design
@@ -40,6 +41,7 @@ for arg in "$@"; do
     --finalize) MODE="finalize" ;;
     --logs) MODE="logs" ;;
     --sync-kernel) MODE="sync-kernel" ;;
+    --isolate-boot) MODE="isolate-boot" ;;
     --dry-run) MODE="dry-run" ;;
     --upload) UPLOAD=1 ;;
     -h|--help) sed -n '2,22p' "$0"; exit 0 ;;
@@ -280,6 +282,16 @@ do_apply() {
   log "Old system remains the default. Rollback: $0 --rollback"
 }
 
+# Keep the elementary root's apt away from the shared boot chain (initramfs,
+# GRUB, kernels). See mseries/install-boot-isolation.sh for the reasons.
+isolate_boot_in() {
+  local root="$1"
+  install -m 755 "$REPO_ROOT/mseries/install-boot-isolation.sh" "$root/tmp/install-boot-isolation.sh" \
+    || return 1
+  chroot "$root" /bin/bash /tmp/install-boot-isolation.sh || return 1
+  unlink "$root/tmp/install-boot-isolation.sh"
+}
+
 chroot_build() {
   local newroot="$1"
   # Plain --bind (not --rbind): rbind drags host /run/user + credentials
@@ -327,6 +339,9 @@ EOF
   sed -e "s/Suites: .*/Suites: $UBUNTU_SUITE/" \
       "$REPO_ROOT/repos/daily/etc/apt/sources.list.d/elementary-os-daily.sources" \
       > "$newroot/etc/apt/sources.list.d/elementary-os-daily.sources" || return 1
+  # Before the desktop's packages (and their grub/initramfs maintainer scripts)
+  # are installed, and again afterwards for the files those packages create.
+  isolate_boot_in "$newroot" || return 1
   chroot "$newroot" /bin/bash -s <<EOF || return 1
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
@@ -352,6 +367,7 @@ else
 fi
 apt-get clean
 EOF
+  isolate_boot_in "$newroot" || return 1
 
   # Apple layer: firmware copy (machine-local, never redistributed).
   # Host layout (verified on j314s/M1 Pro): blobs live in
@@ -638,6 +654,18 @@ graft_kernel_into() {
   return 0
 }
 
+# Apply the boot isolation to an already-built @elementary (built before it
+# existed). On the booted elementary system itself, run
+# mseries/install-boot-isolation.sh directly instead.
+do_isolate_boot() {
+  mount_top
+  trap unmount_top EXIT
+  local newroot="$TOP_MNT/$SUBVOL_NAME"
+  [[ -d "$newroot/etc" ]] || fail "no $SUBVOL_NAME — run --apply first"
+  isolate_boot_in "$newroot" || fail "boot isolation failed"
+  log "boot isolation applied to $SUBVOL_NAME"
+}
+
 # Add/refresh the kernel modules + firmware on an already-built @elementary.
 do_sync_kernel() {
   mount_top
@@ -759,6 +787,7 @@ main() {
     finalize) [[ $(id -u) -eq 0 ]] || fail "finalize needs root"; do_repair_grub; do_add_user "$USER_NAME"; do_status ;;
     logs) [[ $(id -u) -eq 0 ]] || fail "logs needs root"; do_logs ;;
     sync-kernel) [[ $(id -u) -eq 0 ]] || fail "sync-kernel needs root"; do_sync_kernel ;;
+    isolate-boot) [[ $(id -u) -eq 0 ]] || fail "isolate-boot needs root"; do_isolate_boot ;;
     *) do_apply ;;
   esac
 }
