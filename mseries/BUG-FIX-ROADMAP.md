@@ -88,6 +88,28 @@ Added `mseries/screenshot-shelf/` and `install-screenshot-shelf.sh`: a thumbnail
 
 **Recommendation:** try **BlueBubbles** first (full features, official arm64 client, genuine Mac, lowest account risk) if a Mac can stay on; use **BlueFerry** as the no-Apple-account option for basic texting when the iPhone is nearby. Keep OpenBubbles and its relatives as a last resort. Nothing was installed or downloaded for this comparison.
 
+## iCloud passwords evaluation (2026-10-14)
+
+Apple publishes no Linux client for iCloud Keychain or the Passwords app. Its own browser extension exists for Windows only. Every Linux option below is an unofficial reverse-engineered project that signs in to your Apple ID, all are new (weeks to months old) and **declare no license** (fine for personal use, not for shipping in our image). Metadata checked on GitHub 2026-10-14; none was installed or run.
+
+| Option | Direction | Notes |
+| --- | --- | --- |
+| [cameroncooper/keychain](https://github.com/cameroncooper/keychain) | Read only | Rust CLI written for Linux on Apple silicon: sync, search, passwords, TOTP codes, synced passkeys, optional Chromium extension. Validated by its author against a live account (including Advanced Data Protection). Its `join` step changes your Apple trust settings and escrow recovery has a server-enforced attempt limit, so read the warning first. Needs an anisette helper you supply. |
+| [Sank6/iCloud-Keychain-for-Linux](https://github.com/Sank6/iCloud-Keychain-for-Linux) ("icp", 59 stars) | Read only | Python CLI and browser extension; passwords, TOTP, Hide My Email; local encrypted store; registers your computer as an Apple device. Needs an anisette server. |
+| [dragosol/icloud-keychain-linux](https://github.com/dragosol/icloud-keychain-linux) | Read only | Terminal viewer and Firefox-family autofill, passphrase-encrypted on disk; the browser only ever sees the 6-digit code, never the TOTP secret. |
+| [alex-mextner/passwords-app](https://github.com/alex-mextner/passwords-app) | **Two-way** | GNOME Keyring plus a GTK app, changes flow back to Apple devices. Created 2026-10-10: too new to trust. |
+| [bendews/apw](https://github.com/bendews/apw) (257 stars) | Read only | CLI daemon for Apple Passwords. No Linux-specific guidance found. |
+| [deej1721/icloud-passwords-linux](https://github.com/deej1721/icloud-passwords-linux) | Read only | Runs Apple's real Windows helper in a Windows VM and bridges it to Chrome. Heavy. |
+
+**Risks common to all:** they sign in with your Apple ID and read or alter your keychain; anisette data comes from a helper or server you must trust; Apple can break any of them at any time; a mistake in a trust-changing step can affect other devices. Use a separate Apple ID to try one first if possible.
+
+**Safer paths today:**
+1. **One-way export.** On a Mac, export from the Passwords app to a file, import it into KeePassXC or Bitwarden on Linux, then delete the export (it is plain text while it exists). New passwords then live in the cross-platform manager, which syncs everywhere. No Apple sign-in on Linux.
+2. **Read-only unofficial client** (`keychain`, `icp` or dragosol's) if you want to keep using iCloud as the source. Review its code, use an anisette helper you built yourself, and keep trust-changing steps off.
+3. **Avoid two-way sync** until a tool has history.
+
+**Owner decision needed:** which path, and whether to try a read-only client at all. As with iMessage, an AI assistant must not enter Apple credentials; the owner signs in. Nothing is installed.
+
 ## Priority order (2026-10-14)
 
 Ranked by how often the owner hits it, how small the fix is, and what it depends on. The P1/P2/P3 labels in the table below are older; this order replaces them for planning.
@@ -103,7 +125,7 @@ Ranked by how often the owner hits it, how small the fix is, and what it depends
 | 7 | Gaps left from the Omarchy parity audit | Audio watchdog and the two WirePlumber rules are installed on the M1 Pro (2026-10-14); function-key mode awaits an owner choice; mic mapper not ported | Mostly done |
 | 8 | **Touch ID (the main login goal)** | No public code exists; upstream watcher installed; a security key with pam_u2f is a possible interim | Blocked upstream, watching |
 | 9 | iMessage | Documented. Owner leans to BlueFerry (iPhone over Bluetooth, code copy); install after the reinstall | Documented, install later |
-| 10 | iCloud password sync | No official Linux client; evaluate safe options | Research |
+| 10 | iCloud password sync | Options documented; safest is a one-way export into KeePassXC or Bitwarden; awaiting the owner's choice | Documented, waiting on owner |
 | 11 | Small checks: brightness keys, keyboard light on lock and lid, Wi-Fi resume, Gala OSK guard, file the Wingpanel report | Cheap to verify, low daily impact | Housekeeping |
 | 12 | Factory ISO hardware boot and image packaging (audio chain, firmware) | Release blocker for the image, not for this desktop | After the reinstall decision |
 | 13 | Dock display, ACIO suspend handshake, USB-C resume power management | Kernel work; blocked upstream or large | Blocked / long |
