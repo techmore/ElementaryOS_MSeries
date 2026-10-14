@@ -192,6 +192,17 @@
       ]
     },
     {
+      "id": "upstream-touchid-watch",
+      "title": "New public sign of Touch ID (Secure Enclave) support for M1",
+      "note": "2026-10-14: no public Linux Touch ID code exists. Omarchy's announcement says Touch ID works in a private effort, but omarchy-mac-pkgs' status page lists it as not in the first release, Asahi's M1 matrix says TBA, and Asahi's SEP page documents no driver. This check passes when any of those change or fairydust gains a Secure Enclave or Touch ID commit; then follow BUG-FIX-ROADMAP.md (Touch ID).",
+      "precondition": "python3 ~/.local/share/mseries-verify/touchid-watch.py",
+      "command": "python3 ~/.local/share/mseries-verify/touchid-watch.py --list",
+      "tags": [
+        "login",
+        "upstream"
+      ]
+    },
+    {
       "id": "charge-limit-toggle",
       "title": "Gear menu: the 'Limit Charging to 80%' switch changes the limit (asks for your password)",
       "note": "2026-10-13: Quick Settings switch calls pkexec mseries-power limit 80|100 (polkit action org.techmore.mseries.power.limit). Built and installed; not yet clicked.",
