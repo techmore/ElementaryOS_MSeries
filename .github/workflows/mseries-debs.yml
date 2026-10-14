@@ -1,0 +1,117 @@
+# M-series plugin .debs: build pinned Wingpanel plugins once in CI so
+# first boot installs binaries instead of compiling (issue #52).
+# Manual dispatch. Without `publish`, produces artifacts only — no secrets,
+# no repository writes. Publishing needs the MSERIES_APT_KEY secret
+# (key-custody decision still open) and fails closed without it.
+name: M-series plugin packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish to the Pages-hosted apt repo (needs MSERIES_APT_KEY)
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mseries-debs-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Add elementary daily PPA (build + gate headers)
+        run: |
+          sudo add-apt-repository -y ppa:elementary-os/daily
+          sudo apt-get update
+
+      - name: Install plugin build dependencies
+        run: |
+          sudo apt-get install -y --no-install-recommends \
+            dpkg-dev git meson ninja-build valac gettext pkg-config \
+            libwingpanel-9-dev libgranite-7-dev libgtk-4-dev \
+            libadwaita-1-dev libnm-dev libnma-gtk4-dev libpolkit-gobject-1-dev \
+            libpulse-dev libcanberra-dev libgee-0.8-dev \
+            libgnome-desktop-4-dev libibus-1.0-dev \
+            io.elementary.panel.network io.elementary.quick-settings
+
+      - name: Build pilot plugin packages
+        run: |
+          chmod +x mseries/debs/build.sh
+          OUTDIR=out/mseries-debs bash mseries/debs/build.sh
+
+      - name: Verify package metadata
+        run: |
+          set -e
+          for deb in out/mseries-debs/*.deb; do
+            dpkg-deb -f "$deb" Package Version Architecture Depends
+            dpkg-deb -c "$deb" | grep '\.so$'
+          done
+          cat out/mseries-debs/BUILD-PROVENANCE.txt
+          sha256sum --check out/mseries-debs/SHA256SUMS
+
+      - name: Upload plugin packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: mseries-plugin-debs-${{ github.run_id }}
+          path: out/mseries-debs/
+          retention-days: 14
+
+  publish:
+    needs: build
+    if: inputs.publish
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: gh-pages
+
+      - name: Download plugin packages
+        uses: actions/download-artifact@v4
+        with:
+          name: mseries-plugin-debs-${{ github.run_id }}
+          path: repo-incoming/
+
+      - name: Fail closed without the repository key
+        run: |
+          if [[ -z "${{ secrets.MSERIES_APT_KEY }}" ]]; then
+            echo 'MSERIES_APT_KEY is not set; refusing to publish an unsigned repo.' >&2
+            exit 1
+          fi
+
+      - name: Assemble and sign the apt repo
+        env:
+          MSERIES_APT_KEY: ${{ secrets.MSERIES_APT_KEY }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends apt-utils gnupg
+          mkdir -p apt/pool apt/dists/stable/main/binary-arm64
+          cp repo-incoming/*.deb apt/pool/
+          (cd apt && apt-ftparchive packages pool > dists/stable/main/binary-arm64/Packages)
+          gzip -kf apt/dists/stable/main/binary-arm64/Packages
+          (cd apt/dists/stable && apt-ftparchive release . > Release)
+          gpg --batch --import <(printf '%s' "$MSERIES_APT_KEY")
+          gpg --batch --yes --armor --detach-sign -o apt/dists/stable/InRelease \
+            --clearsign apt/dists/stable/Release
+          sha256sum apt/pool/*.deb > apt/SHA256SUMS
+
+      - name: Commit the repo to gh-pages
+        run: |
+          set -euo pipefail
+          git config user.name 'mseries-debs'
+          git config user.email 'mseries-debs@users.noreply.github.com'
+          git add apt/
+          git commit -m "mseries plugin debs: run ${{ github.run_id }} (see #52)" || exit 0
+          git push origin gh-pages
