@@ -121,6 +121,10 @@ Nothing was installed or signed in. Decide between icp-in-Brave and Brave Sync (
 
 **Owner decision needed:** which path, and whether to try a read-only client at all. As with iMessage, an AI assistant must not enter Apple credentials; the owner signs in. Nothing is installed.
 
+## Repeating password prompt (fixed 2026-10-14)
+
+The owner kept getting a password dialog for no visible reason. The journal showed the Pantheon polkit agent starting authentication helpers at 11:52, 12:02 and 12:12 (about every ten minutes, two at a time, each failing because nobody typed). A capture of the system bus at the next request showed the action `org.freedesktop.timedate1.set-timezone`, sent by `gsd-datetime` (the GNOME settings daemon's date and time plugin). `org.gnome.desktop.datetime automatic-timezone` was `true`: it asks the location service (geoclue) for a timezone and, when that differs from the current one, asks the system to change it, which needs authentication. The system timezone was already correct (America/New_York). Fix: `automatic-timezone` set to `false` on the M1 Pro and in `mseries/apply-desktop-settings.py`. To confirm: no authentication dialog for 30 minutes. If you travel, set the timezone by hand in Settings, Date & Time, or turn the setting back on.
+
 ## Priority order (2026-10-14)
 
 Ranked by how often the owner hits it, how small the fix is, and what it depends on. The P1/P2/P3 labels in the table below are older; this order replaces them for planning.
