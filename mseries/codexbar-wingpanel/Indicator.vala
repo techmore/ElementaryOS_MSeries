@@ -389,7 +389,7 @@ namespace MSeries {
                     section.append (detail);
                 }
 
-                providers_box.prepend (section);
+                providers_box.append (section);
             } catch (Error e) {
                 append_local_opencode_status ("OpenCode local usage is unavailable: " + e.message);
             } finally {
@@ -415,7 +415,7 @@ namespace MSeries {
             var detail = new Gtk.Label (message) { xalign = 0, wrap = true };
             detail.add_css_class ("dim-label");
             section.append (detail);
-            providers_box.prepend (section);
+            providers_box.append (section);
         }
 
         private void append_provider_entry (Json.Object entry) {
