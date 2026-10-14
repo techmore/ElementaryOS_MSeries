@@ -65,6 +65,26 @@ unlink "$mk"
 here=$(dirname -- "${BASH_SOURCE[0]}")
 root=$(mktemp -d)
 bash "$here/enhance.sh" --root "$root" >/dev/null
+ok grep -qxF 'user-db:user' "$root/etc/dconf/profile/user"
+ok grep -qxF 'system-db:local' "$root/etc/dconf/profile/user"
+ok grep -qxF 'idle-dim=false' "$root/etc/dconf/db/local.d/00-mseries-brightness"
+printf 'system-db:site\n' >>"$root/etc/dconf/profile/user"
+bash "$here/enhance.sh" --root "$root" --only session >/dev/null
+ok grep -qxF 'system-db:site' "$root/etc/dconf/profile/user"
+eq 1 "$(grep -cxF 'system-db:local' "$root/etc/dconf/profile/user")" "dconf profile stays idempotent"
+for f in usr/libexec/mseries/user-enhance \
+         usr/lib/systemd/user/elementary-mac-user-enhance.service \
+         usr/lib/systemd/user/elementary-mac-user-enhance.timer \
+         usr/share/elementary-mac/mseries/install-netusage-policy.sh \
+         usr/share/elementary-mac/mseries/install-codexbar.sh \
+         usr/share/elementary-mac/mseries/codexbar-opencode-wrapper.py \
+         usr/share/elementary-mac/mseries/install-brave-widevine.sh \
+         usr/share/elementary-mac/mseries/netspeed/netusage/netusage.service \
+         usr/share/elementary-mac/mseries/netspeed/netusage/49-mseries-netusage.rules; do
+  [[ -f $root/$f ]] || { echo "FAIL per-user payload missing: $f" >&2; fails=$((fails + 1)); }
+done
+[[ -L $root/etc/systemd/user/timers.target.wants/elementary-mac-user-enhance.timer ]] ||
+  { echo "FAIL per-user enhancement timer not enabled" >&2; fails=$((fails + 1)); }
 for f in etc/systemd/zram-generator.conf usr/local/sbin/mseries-power usr/libexec/mseries/docked-lid \
          usr/lib/systemd/user/mseries-docked-lid.service etc/skel/.config/gtk-4.0/gtk.css \
          usr/sbin/elementary-mac-enhance etc/wireplumber/wireplumber.conf.d/50-mseries-asahi-no-suspend.conf usr/libexec/mseries/audio-watchdog usr/share/elementary-mac/mseries/install-brave.sh usr/share/elementary-mac/mseries/install-video-decode.sh \
@@ -83,6 +103,18 @@ state=$(mktemp -d)
 eq "pending" "$(ELEMENTARY_MAC_STATE=$state bash "$here/enhance-firstboot.sh" --status | awk '$1=="brave"{print $2}')" "first-boot module starts pending"
 touch "$state/brave.done"
 eq "done" "$(ELEMENTARY_MAC_STATE=$state bash "$here/enhance-firstboot.sh" --status | awk '$1=="brave"{print $2}')" "first-boot module reports done"
+# A completed user setup stops the inherited timer without trying to remove a
+# root-owned enable symlink or re-running downloaded installers.
+mkdir -p "$state/elementary-mac-user-enhance"
+touch "$state/elementary-mac-user-enhance/"{codexbar,netusage,widevine}.done
+mseries_timer_calls=$state/timer-calls
+export mseries_timer_calls
+systemctl() { printf '%s\n' "$*" >>"$mseries_timer_calls"; }
+export -f systemctl
+XDG_STATE_HOME="$state" ELEMENTARY_MAC_PAYLOAD="$root/usr/share/elementary-mac/mseries" \
+  bash "$here/user-enhance.sh"
+unset -f systemctl
+eq '--user stop elementary-mac-user-enhance.timer' "$(cat "$mseries_timer_calls")" "completed user setup stops timer"
 find "$root" "$state" -mindepth 1 -delete; rmdir "$root" "$state"
 
 (( fails == 0 )) && echo "all tests passed" || { echo "$fails failure(s)" >&2; exit 1; }

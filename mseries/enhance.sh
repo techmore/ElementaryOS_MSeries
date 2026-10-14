@@ -158,6 +158,15 @@ EOF
 
 mod_session() {
   local lib=/usr/libexec/mseries
+  # A compiled system database is ignored unless the user profile selects it.
+  local profile=$R/etc/dconf/profile/user
+  mkdir -p "$(dirname "$profile")"
+  if [[ ! -f $profile ]]; then
+    printf 'user-db:user\n' >"$profile"
+  fi
+  if ! grep -qxF 'system-db:local' "$profile"; then
+    printf '\nsystem-db:local\n' >>"$profile"
+  fi
   put 0644 /etc/dconf/db/local.d/00-mseries-brightness <<'EOF'
 # Avoid automatic display brightness changes on M-series elementary installs.
 # Users can still override these defaults from their desktop settings.

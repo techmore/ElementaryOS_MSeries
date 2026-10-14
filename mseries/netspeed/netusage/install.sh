@@ -3,7 +3,7 @@
 set -e
 here=$(cd "$(dirname "$0")" && pwd)
 mode=${1:-}
-if [[ $mode != --user-only ]]; then
+if [ "$mode" != --user-only ]; then
   sudo install -Dm644 "$here/49-mseries-netusage.rules" /etc/polkit-1/rules.d/49-mseries-netusage.rules
 fi
 install -Dm755 "$here/netusage.py" "$HOME/.local/lib/netusage/netusage.py"

@@ -950,3 +950,17 @@ The owner reports that the built-in display keeps dimming unexpectedly. The trig
 - **Homeboard:** the project is hosted at `tasks.stoverparc.org`; `mseries/install-homeboard-launcher.sh` installs a user launcher and has been run. The separate elementary Tasks sync bridge needs `gir1.2-ecal-2.0` and `gir1.2-edataserver-1.2`, then a Google sign-in to register this computer. The current tool shell is not root and cannot install those packages; an `apt-get install` attempt failed on the dpkg lock permissions. The actual sign-in is still for the owner to complete in the desktop browser.
 - **Emporia Energy Monitor:** the repository includes an elementary Linux client, not just its macOS Swift app. It connects to the existing SER8 collector and must not start another poller. The client's WebKit 6 GI package is absent in this shell, and upstream's `energy.stoverparc.org` public TLS/auth deployment is still documented as incomplete. Do not enable a local collector or trust the public endpoint until those gates are resolved. The macOS `build.sh` is not the Linux install path.
 - **Torrential:** the private M-series source checkout was fetched and its locked ARM64 release build completed. This shell has no `transmission-daemon` or root access to install the daemon/AppArmor package, so it is not installed from this checkout. The handoff and roadmap retain the prior desktop install/transfer evidence; check the live desktop before treating this isolated tool environment as its current package state. Keep the fork private pending license grant.
+
+## Enhancement integration review — 2026-10-14
+
+Fixed the missing dconf profile selection for the system brightness defaults;
+existing profile entries are retained and repeated installs add no duplicates.
+Fixed POSIX syntax in the netusage installer and included curl, certificates,
+Python, unzip and procps in the deferred user setup prerequisites. Completed
+user setup stops the globally enabled timer for the current session; each new
+login checks the existing completion markers before stopping it again.
+
+Validation: `bash mseries/test-elementary-mac-setup.sh` passes, including staged
+payload delivery, timer enablement, profile preservation and completion handling.
+Bash/dash syntax checks and `git diff --check` pass. These are installer checks;
+a fresh desktop login and factory hardware boot remain unverified.

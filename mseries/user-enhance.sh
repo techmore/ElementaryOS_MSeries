@@ -20,7 +20,7 @@ run_codexbar() {
     mark_done codexbar
     log 'codexbar: installed'
   else
-    log 'codexbar: failed; will retry at the next login'
+    log 'codexbar: failed; the user timer will retry'
   fi
 }
 
@@ -32,7 +32,7 @@ run_netusage() {
     mark_done netusage
     log 'netusage: installed'
   else
-    log 'netusage: failed; will retry at the next login'
+    log 'netusage: failed; the user timer will retry'
   fi
 }
 
@@ -46,7 +46,7 @@ run_widevine() {
     mark_done widevine
     log 'widevine: installed'
   else
-    log 'widevine: failed; will retry at the next login'
+    log 'widevine: failed; the user timer will retry'
   fi
 }
 
@@ -55,5 +55,7 @@ run_codexbar
 run_netusage
 run_widevine
 if done_already codexbar && done_already netusage && done_already widevine; then
-  systemctl --user disable --now elementary-mac-user-enhance.timer >/dev/null 2>&1 || true
+  # The timer is enabled globally, so a user cannot remove its enable symlink.
+  # Stop it for this session; next login performs a cheap completion check.
+  systemctl --user stop elementary-mac-user-enhance.timer >/dev/null 2>&1 || true
 fi
