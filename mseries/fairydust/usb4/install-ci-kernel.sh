@@ -53,6 +53,11 @@ echo "== 2. unpack the kernel package"
 stage=$(mktemp -d /var/tmp/usb4-stage.XXXXXX)
 run dpkg-deb -x "$deb" "$stage"
 run install -Dm644 "$stage/boot/vmlinuz-$kv" $esp/vmlinuz-linux-asahi-fairydust-usb4
+# The modules must be in the system that BOOTS (this running root, subvol @elementary), not only in the
+# Arch root used for mkinitcpio below. Without them /boot (FAT, needs nls_iso8859-1) cannot mount and
+# boot drops to emergency mode (seen 2026-10-14).
+run cp -a "$stage/lib/modules/$kv" "/usr/lib/modules/$kv"
+run depmod -a "$kv"
 
 echo "== 3. initramfs, built in the Arch root (subvol @) with mkinitcpio so cryptdevice= unlock works"
 R=/mnt/usb4-arch

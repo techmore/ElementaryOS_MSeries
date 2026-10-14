@@ -45,3 +45,16 @@ unattended session cannot do.
 
 Go only if steps 1 to 3 are done and the dry run printed the UUIDs you expect
 (root `725346d2...`, LUKS `b6276462...`, ESP `D893-79A4` on this Mac).
+
+## First boot result (2026-10-14): kernel boots, /boot fails to mount
+
+The usb4.4 kernel booted to systemd. It then dropped to emergency mode:
+`FAT-fs (nvme0n1p4): IO charset iso8859-1 not found` / `Failed to mount boot.mount`.
+Cause: `install-ci-kernel.sh` put the kernel modules only in the Arch root (`@`) for
+`mkinitcpio`, not in the booted root (`@elementary`), so `nls_iso8859-1.ko` was not
+loadable. The kernel config is fine (`NLS_ISO8859_1=m`, same as stock); no rebuild needed.
+Fixed in the script. For an install made with the old script, install the modules by hand:
+
+    d=$(mktemp -d /var/tmp/m.XXXX) && dpkg-deb -x ~/mseries-kernel-usb4.4/linux-image-*.deb "$d" \
+      && sudo cp -a "$d"/lib/modules/7.1.13-elementary-fairydust-usb4 /usr/lib/modules/ \
+      && sudo depmod -a 7.1.13-elementary-fairydust-usb4 && rm -rf "$d"
