@@ -76,6 +76,17 @@ Fixed in elementary-grow.sh / setup:
 
 Open: Signal's apt key is fetched at build time without a pinned fingerprint (non-fatal, but a supply-chain choice); `--no-encrypt` on stock Asahi Alarm leaves the ESP at `/boot/efi`, so the new root gets no ESP mount; locale and XKB layout are not carried over.
 
+### Audit of the rest of elementary-grow.sh (2026-10-14)
+
+Confirmed against this machine's real `/boot/grub/grub.cfg`:
+- The `40_elementary-grow` file had a comment line above `exec tail -n +3 $0`, so the exec line itself was copied into grub.cfg (GRUB: unknown command). Now `exec` is line 2.
+- The kernel/initramfs pair was guessed by modification time (Arch files carry no version): the entry used stock `vmlinuz-linux-asahi` while the machine runs `fairydust-usb4`, so modules did not match. Now derived from `BOOT_IMAGE` (`vmlinuz-X` + `initramfs-X.img`); the fallback image is never chosen.
+- Duplicate `rw` on the kernel line removed.
+
+Also fixed: `--rollback` no longer deletes `@elementary-home` when it contains files (`ELEMENTARY_DELETE_HOME=1` to force); the base-tarball checksum match is exact instead of a substring; `--add-user` only uses groups that exist in the root (useradd aborts on an unknown one).
+
+Open: the Ubuntu base tarball is trusted via HTTPS only (SHA256SUMS.gpg is not verified; apt then verifies packages against keys in that tarball); `--finish-root` ignores a failed chroot because of `set -e`; `/tmp` build logs are world-readable; `--status` mounts the btrfs top level read-write.
+
 ## Next tasks, in order
 
 Coordination: Codex handles implementation and review; OpenCode handles

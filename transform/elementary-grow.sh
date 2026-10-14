@@ -183,7 +183,15 @@ do_rollback() {
   mount_top
   if [[ -e "$TOP_MNT/$SUBVOL_NAME" || -e "$TOP_MNT/$HOME_SUBVOL" ]]; then
     run btrfs subvolume delete "$TOP_MNT/$SUBVOL_NAME" 2>/dev/null || true
-    run btrfs subvolume delete "$TOP_MNT/$HOME_SUBVOL" 2>/dev/null || true
+    # The home subvolume holds the account's files: only delete it when it is
+    # empty (a build that never got as far as creating the account), or when
+    # the caller says so explicitly.
+    if [[ -e "$TOP_MNT/$HOME_SUBVOL" ]] && \
+       [[ -n $(ls -A "$TOP_MNT/$HOME_SUBVOL" 2>/dev/null) && ${ELEMENTARY_DELETE_HOME:-0} != 1 ]]; then
+      log "KEEPING $HOME_SUBVOL: it contains files. Re-run with ELEMENTARY_DELETE_HOME=1 to delete it too."
+    else
+      run btrfs subvolume delete "$TOP_MNT/$HOME_SUBVOL" 2>/dev/null || true
+    fi
   else log "no $SUBVOL_NAME/$HOME_SUBVOL subvolumes — nothing to delete"; fi
   # grub-mkconfig runs EVERY executable file in /etc/grub.d, so an aside
   # file must also lose its executable bit or it adds a second, identical
@@ -249,7 +257,7 @@ do_apply() {
       || fail "base tarball download failed — check network/suite name"
     curl -fSL -o "$workdir/SHA256SUMS" "$(dirname "$UBUNTU_BASE_URL")/SHA256SUMS" \
       || fail "checksum file download failed"
-    ( cd "$workdir" && sha256sum -c --status <(grep -F "$tarname" SHA256SUMS) ) \
+    ( cd "$workdir" && sha256sum -c --status <(grep -E "[ *]${tarname}\$" SHA256SUMS) ) \
       || fail "base tarball checksum MISMATCH — refusing to unpack"
     tar -xzpf "$tarball" -C "$TOP_MNT/$SUBVOL_NAME" \
       || fail "base tarball unpack failed"
@@ -524,13 +532,18 @@ if ! command -v useradd >/dev/null 2>&1; then
   apt-get update -qq
   DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends passwd
 fi
-groups="sudo,adm,cdrom,dip,plugdev,netdev,video,render,audio,input"
+# Only groups that exist in this root: useradd aborts on an unknown one, and
+# some (render, netdev) depend on which packages the build pulled in.
+groups=""
+for g in sudo adm cdrom dip plugdev netdev video render audio input; do
+  if getent group "$g" >/dev/null; then groups="${groups:+$groups,}$g"; fi
+done
 if id "$name" >/dev/null 2>&1; then
   echo "user $name already exists; refreshing group membership"
 else
-  useradd -m -s /bin/bash -G "$groups" "$name"
+  useradd -m -s /bin/bash "$name"
 fi
-usermod -aG "$groups" "$name"
+[ -z "$groups" ] || usermod -aG "$groups" "$name"
 EOF
 
   # Password via stdin (never in argv/ps). Absolute path for the same reason
@@ -643,7 +656,7 @@ build_linux_line() {
   local kpath="$1" word out=() line
   for word in $(cat /proc/cmdline); do
     case "$word" in
-      BOOT_IMAGE=*|rootflags=*|ro|appledrm.show_notch=*) continue ;;
+      BOOT_IMAGE=*|rootflags=*|ro|rw|appledrm.show_notch=*) continue ;;
       *) out+=("$word") ;;
     esac
   done
@@ -676,12 +689,25 @@ build_linux_line() {
 install_grub_entry() {
   local kver kernel initramfs search_uuid kpath ipath
   kver=$(uname -r)
-  # Prefer the running kernel's files; fall back to newest present.
-  kernel=$(ls /boot/vmlinuz-*"${kver}"* 2>/dev/null | head -n 1)
-  [[ -z $kernel ]] && kernel=$(ls -t /boot/vmlinuz-* | head -n 1)
-  initramfs=$(ls /boot/initramfs-*"${kver}"* 2>/dev/null | head -n 1)
-  [[ -z $initramfs ]] && initramfs=$(ls -t /boot/initramfs-* | head -n 1)
+  # The running kernel's files, as GRUB booted them: BOOT_IMAGE names the
+  # kernel (vmlinuz-<flavour>) and its initramfs is initramfs-<flavour>.img.
+  # Arch kernel files do not carry the version in their name, and several
+  # flavours (stock, fairydust, fairydust-usb4) sit side by side in /boot, so
+  # guessing by modification time picked a kernel the modules did not match.
+  local bootimage flavour
+  bootimage=$(tr ' ' '\n' </proc/cmdline | sed -n 's/^BOOT_IMAGE=//p' | head -n 1)
+  flavour=$(basename "${bootimage:-none}"); flavour=${flavour#vmlinuz-}
+  kernel=""; initramfs=""
+  if [[ -f /boot/vmlinuz-$flavour && -f /boot/initramfs-$flavour.img ]]; then
+    kernel=/boot/vmlinuz-$flavour
+    initramfs=/boot/initramfs-$flavour.img
+  else
+    log "WARNING: cannot map BOOT_IMAGE='$bootimage' to a kernel/initramfs pair; guessing the newest"
+    kernel=$(ls -t /boot/vmlinuz-* | head -n 1)
+    initramfs=$(ls -t /boot/initramfs-*.img | grep -v fallback | head -n 1)
+  fi
   [[ -n $kernel && -n $initramfs ]] || fail "cannot locate kernel/initramfs pair in /boot"
+  log "boot entry kernel: $kernel + $initramfs"
   if [[ $(findmnt -no SOURCE /boot) != $(findmnt -no SOURCE /) ]]; then
     search_uuid=$(findmnt -no UUID /boot)   # /boot is its own filesystem
     kpath="/${kernel#/boot/}"; ipath="/${initramfs#/boot/}"
@@ -691,10 +717,13 @@ install_grub_entry() {
   fi
   local linux_line
   linux_line=$(build_linux_line "$kpath") || fail "cannot derive boot line from /proc/cmdline"
+  # `exec tail -n +3 $0` must be line 2: it copies everything from line 3 on
+  # into grub.cfg. With a comment above it (as this once had) the exec line
+  # itself was emitted into grub.cfg and GRUB reported an unknown command.
   cat > "$GRUB_CUSTOM" <<EOF
 #!/bin/sh
-# elementary-grow: additive entry. Managed by elementary-grow.sh --rollback.
 exec tail -n +3 \$0
+# elementary-grow: additive entry. Managed by elementary-grow.sh --rollback.
 menuentry 'elementary OS (M-series, $kver)' --id elementary-mseries {
     search --no-floppy --fs-uuid --set=root $search_uuid
 $linux_line
