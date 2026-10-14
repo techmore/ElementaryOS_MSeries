@@ -890,6 +890,14 @@ commands on user data; "root root" login on the rescue system is deliberate (ups
 
 ## Post-install gaps reported — 2026-10-14
 
+After reboot, the live system ran stock `7.1.13-3-2-ARCH` and the dock mouse
+and Ethernet disappeared. The retained USB4 entry is `elementary-usb4-test`,
+loading `7.1.13-elementary-fairydust-usb4` with matching installed modules.
+The owner requested this as the persistent default with stock kept for recovery.
+`fairydust/usb4/set-default-kernel.sh` implements that policy in `custom.cfg`,
+preserving one-time boot selection and a visible recovery menu. Applying the
+live change requires sudo authentication.
+
 The default runner previously installed the Wingpanel network module but omitted
 the separate `netusage` user service that populates Apps/Hosts/DNS. It now runs
 that installer by default after the panel module. Brave DRM support and CodexBar

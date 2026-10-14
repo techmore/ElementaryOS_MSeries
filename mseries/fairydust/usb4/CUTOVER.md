@@ -30,6 +30,16 @@ factory ISO remains a separate, unverified installation path.
 
 ## Recovery and tools
 
+The owner selected Fairydust USB4 as the everyday kernel after a stock-kernel
+boot lost both dock mouse and Ethernet on 2026-10-14. Apply the persistent
+selection with `sudo bash mseries/fairydust/usb4/set-default-kernel.sh --apply`.
+The helper validates the installed boot files, matching modules and both menu
+entries, backs up `custom.cfg`, and keeps a visible five-second menu. Choose
+`elementary OS (M-series, 7.1.13-3-2-ARCH)` for stock-kernel recovery.
+One-time `grub-reboot` selections still take precedence. GRUB's fallback only
+handles boot-entry loading errors; a kernel hang still requires manual recovery.
+The policy lives in `custom.cfg`, so normal GRUB regeneration retains it.
+
 Read [`RECOVERY.md`](RECOVERY.md) before changing the boot image. Installer
 scripts are dry-run first and make timestamped backups before applying boot
 changes. The current helpers are:

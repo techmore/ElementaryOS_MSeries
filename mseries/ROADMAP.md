@@ -41,6 +41,11 @@ with the corrected live-session hardware overlay before progressing.
 
 ## Open problems
 
+Owner boot policy: use the installed Fairydust USB4 kernel by default and retain
+stock Asahi for recovery. Apply with
+`sudo bash mseries/fairydust/usb4/set-default-kernel.sh --apply`; the stock boot
+on October 14 did not enumerate the dock's mouse or Ethernet.
+
 | Problem | Why | Next step |
 |---|---|---|
 | **Expand elementary root using the 112 GiB gap** | Gap is before the Asahi stub/EFI/root unit; the added Btrfs member would require early LUKS unlock and initramfs discovery | Verify gap was prepared by Asahi Installer, review read-only preflight and verified backups; see [`procedures/ROOT-EXPANSION.md`](procedures/ROOT-EXPANSION.md) |

@@ -33,6 +33,13 @@ It is the only thing that can update the kernel or rebuild the initramfs.
 
 ## Updating the kernel
 
+For the owner's installed USB4 setup, Fairydust is the selected daily kernel
+and stock Asahi is the recovery option. Use
+`sudo bash mseries/fairydust/usb4/set-default-kernel.sh --apply` to persist
+that selection after the Fairydust boot files and modules are installed.
+This is specific to the installed kernel pair; it does not select an untested
+new kernel automatically.
+
 Only the Arch side can: boot the Arch entry (the rescue system), `pacman -Syu`.
 The pacman hook `90-elementary-sync-kernel.hook` then runs
 `elementary-grow.sh --sync-kernel`, which copies every module tree under
