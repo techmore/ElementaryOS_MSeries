@@ -69,7 +69,8 @@ def main():
         if len(batch) < 100:
             break
         page += 1
-    issue = next((i for i in issues if 'pull_request' not in i and MARKER in (i.get('body') or '')), None)
+    issue = next((i for i in issues if 'pull_request' not in i and i.get('title') == TITLE
+                  and i.get('user', {}).get('login') in {'github-actions[bot]', repository.split('/')[0]} and MARKER in (i.get('body') or '')), None)
     previous = {}
     if issue:
         match = re.search(r'<!-- mseries-watch-state\n(.*?)\n-->', issue['body'], re.S)
