@@ -474,14 +474,19 @@ upstream pace format changes or a recent-rate estimate is requested.
 Created `mseries-tether-continuity` from the clean `main` branch to scope an
 optional iPhone-to-elementary continuity add-on. Upstream Tether describes
 direct iPhone/Linux SMS and iMessage messaging plus OTP handoff; this removes
-the architectural need for an always-on Mac relay. Brave is Chromium-based,
-but upstream does not explicitly list Brave, so its extension and native
-messaging behavior remain to be qualified on the target desktop.
+the architectural need for an always-on Mac relay. Source pin: v0.2.37,
+`d1f976aeb71896c411057cea9c899c9e40eb64a5`; upstream ARM64 `.deb` SHA-256 is
+recorded in `TETHER-CONTINUITY.md`. License: upstream MIT.
 
 The goals, package boundary, privacy expectations, dependencies, and real
 device acceptance checklist are in [`TETHER-CONTINUITY.md`](TETHER-CONTINUITY.md).
 AirDrop-style LocalSend and experimental M1 Pro Touch ID/PAM are separate
-optional tracks. No packages, base image, auth settings, Bluetooth pairing, or
-user data were changed, and no tests were run. Next: pin/audit Tether source and
-licenses, then decide on a removable ARM64 packaging approach before installing
-or proposing it for the image.
+optional tracks. `mseries/install-tether.sh` now verifies and installs the
+upstream ARM64 package, reports BlueZ readiness, and supports package removal
+and explicit data purge. `mseries/tether/brave-extension.py` prepares the
+Chromium extension and registers/unregisters its native host in Brave's user
+profile. Neither installer was executed; no package, base image, auth setting,
+Bluetooth pairing, or user data was changed. The host has BlueZ 5.85, below
+Tether's 5.86 requirement for Bluetooth messages. Next: determine a supported
+OS BlueZ 5.86+ source, then qualify messages with the owner's phone; separately
+review the Brave extension's all-sites permission during OTP qualification.

@@ -52,9 +52,10 @@ Wingpanel robot menu. See [setup and behavior](local-ai/README.md) and
    running macOS host when they depend on Apple's Mac-side message database.
    **Correction (2026-10-13):** that is not universal. Tether is a separate
    direct iPhone-to-Linux candidate with SMS/iMessage and OTP handoff and no
-   Mac relay; see [Tether continuity](TETHER-CONTINUITY.md). It is not yet
-   source/license-audited or qualified on this M1 Pro. Media/panel plugins
-   require a native frontend port.
+   Mac relay; see [Tether continuity](TETHER-CONTINUITY.md). Its upstream MIT
+   source and ARM64 release are pinned for an optional package installer, but
+   BlueZ 5.85 blocks message transport qualification on this M1 Pro.
+   Media/panel plugins require a native frontend port.
 
 ## Boundaries and non-goals
 

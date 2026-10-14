@@ -1,8 +1,9 @@
 # Tether continuity for elementary OS M-Series
 
-Status: proposal and source review; no software has been installed or added to
-the base image. Target hardware is the MacBook Pro 14-inch M1 Pro running
-elementary OS 9 on Asahi. Desktop and phone qualification is still required.
+Status: pinned optional-package integration implemented; not installed on the
+host or added to the base image. Target hardware is the MacBook Pro 14-inch M1
+Pro running elementary OS 9 on Asahi. Desktop and phone qualification is still
+required.
 
 ## Product goal
 
@@ -33,20 +34,31 @@ OTP fill behavior in Brave are qualification items, not established support.
 Likewise, the upstream's reported stable features are not proof that the
 current elementary/Asahi stack or this M1 Pro is compatible.
 
+The current host reports BlueZ 5.85. Upstream requires BlueZ 5.86+ with the
+experimental bearer API for Bluetooth messages, so SMS/iMessage is blocked on
+this host until the OS provides a compatible BlueZ. The integration does not
+upgrade BlueZ. The upstream v0.2.37 ARM64 Debian package is pinned to source
+commit `d1f976aeb71896c411057cea9c899c9e40eb64a5` and release SHA-256
+`1d07d6d85b3717c12ffc9fe02603280b9c2206a4ed1173574a564d3d56c244c8`. The
+upstream repository and extension identify MIT licensing. Install and Brave
+registration instructions are in [`tether/README.md`](tether/README.md).
+
 ### Integration shape
 
 1. Package Tether as a removable, user-selected add-on, separate from the base
    OS and from elementary's default messaging app.
-2. Pin the reviewed upstream source revision and record the licenses for the
-   Linux daemon/UI, iOS app, and browser extension independently. Prefer a
-   supported ARM64 Flatpak or upstream ARM64 release if its provenance and
-   update path are clear; otherwise build reproducibly from pinned source.
+2. Keep the upstream Debian package pin and digest recorded. The upstream
+   repository carries the Linux daemon/UI and browser extension under MIT;
+   check App Store licensing independently before redistributing the iOS app.
 3. Start the user service only after explicit pairing/setup. Do not enable
    unattended Bluetooth discovery or pair devices without user action.
-4. Install the browser extension only when requested, and explain the host
-   permissions required for matching verification-code forms.
+4. Install the browser extension only when requested. Its Chromium manifest
+   requests all-website access; explain this permission and require the user to
+   review Brave's permission prompt.
 5. Provide an uninstall/rollback path that removes the app, service, browser
-   integration, and pairing data without touching unrelated Bluetooth pairs.
+   integration, and Tether's local pairing data without touching unrelated
+   Bluetooth pairs. Explain that the OS-level Bluetooth bond must be forgotten
+   separately.
 
 ## Acceptance before calling the core experience ready
 
@@ -56,9 +68,10 @@ current elementary/Asahi stack or this M1 Pro is compatible.
   verify behavior for group threads, attachments, phone lock, Bluetooth range,
   suspend/resume, and temporary disconnection.
 - Verify OTP handoff from an iPhone message and the iOS share sheet into a
-  matching login form in Brave. Confirm the site/origin shown to the user,
-  require a deliberate user action before filling, and check that unrelated
-  page content is not sent to the phone.
+  login form in Brave. Confirm the source/site matching behavior and that codes
+  are not sent to unrelated origins. Upstream currently polls for OTP fields
+  and can autofill automatically; treat the broad host permission and fill
+  behavior as an explicit opt-in and review before recommending it.
 - Check whether the required Bluetooth experimental features and Wayland
   clipboard protocol are available in the actual elementary session. The
   upstream currently documents BlueZ 5.86+ with its experimental bearer API
@@ -71,7 +84,8 @@ current elementary/Asahi stack or this M1 Pro is compatible.
   document the transport/encryption behavior from upstream, and provide a
   clear unpair/data-removal action.
 
-No acceptance tests have been run as part of this branch setup.
+No iPhone/Brave acceptance checks have been run. The installer and Brave helper
+are implemented but have not been executed on the host.
 
 ## Optional add-ons
 

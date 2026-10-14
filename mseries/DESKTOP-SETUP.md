@@ -89,6 +89,30 @@ supports automatic updates. Phone linking remains a user step: open Signal,
 then scan its QR code from Signal on your phone.
 Source: https://community.signalusers.org/t/beta-test-signal-desktop-for-linux-arm64/76184
 
+## Tether: iPhone messages and OTP handoff
+
+Install the optional, pinned ARM64 upstream package with
+`bash mseries/install-tether.sh`. It pairs the iPhone directly to this laptop;
+it does not need a relay Mac. Launch the app and approve pairing on both
+devices. The package install does not enable a daemon or change Bluetooth or
+firewall settings.
+
+The current host has BlueZ 5.85; upstream Tether needs 5.86+ with the
+experimental bearer API for SMS/iMessage over Bluetooth. The app can be
+installed, but the message transport is not ready on this host. Do not try to
+solve that by enabling experimental mode on BlueZ 5.85. Wi-Fi pairing and OTP
+handoff are independent, but require TCP 5134 and mDNS UDP 5353 to reach the
+laptop; configure firewall access only if you choose to use that path.
+
+Optional Brave setup is in [`tether/README.md`](tether/README.md). It requires
+loading an unpacked extension and registering its native host. The extension
+requests access to all websites, so review that permission before enabling it.
+No Brave extension is installed automatically. Remove the app with
+`bash mseries/install-tether.sh --uninstall`; pairing state is preserved unless
+you separately run `--purge-data`. That removes Tether's XDG files, not the
+Bluetooth bond stored by BlueZ; forget the laptop from both devices to fully
+unpair.
+
 ## CodexBar
 
 Upstream already ships a Linux Qt desktop and ARM64 CLI; a fork is unnecessary
