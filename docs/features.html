@@ -33,7 +33,7 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <tr><td>Speaker and headset-mic rules</td><td class="part">Installed; apply at next login</td><td>Keeps the speaker and headphone outputs open (no pop between sounds) and stops apps preferring the unplugged headset mic.</td></tr>
 <tr><td>Function-key mode</td><td class="part">Differs</td><td>Running with media keys first (fnmode=1); upstream uses the kernel default (auto). Awaiting a deliberate choice.</td></tr>
 <tr><td>Microphone mapping</td><td class="no">Not ported</td><td>Needs re-homing to elementary's audio session.</td></tr>
-<tr><td>iMessage</td><td class="part">Possible, not installed</td><td>OpenBubbles can run on Linux, but needs an arm64 build, a Mac to supply hardware identifiers and an Apple ID decision. Its core library is SSPL-licensed, so it stays a personal install and is not shipped in the image.</td></tr>
+<tr><td>iMessage</td><td class="part">Possible, not installed</td><td>Best fits: BlueBubbles (official arm64 Linux client, server on a Mac) or BlueFerry (iPhone over Bluetooth, no Apple login). OpenBubbles needs a hardware-identifier workaround and an SSPL library, so it is a last resort.</td></tr>
 <tr><td>Hardware video decode</td><td class="no">Missing</td><td>Needs AVD kernel support, firmware and a VA-API bridge.</td></tr>
 <tr><td>Touch ID</td><td class="no">Blocked upstream</td><td>No public Linux code exists. Omarchy lists it as not in its first release and Asahi lists it as to be announced. A watcher reports when that changes.</td></tr>
 </table>

@@ -73,6 +73,19 @@ Added `mseries/screenshot-shelf/` and `install-screenshot-shelf.sh`: a thumbnail
 - **Plan, after the reinstall:** install the build dependencies and Flutter, clone `OpenBubbles/openbubbles-app` (branch `rustpush`) next to `OpenBubbles/rustpush`, run `linux/build.sh`, launch the result, then do the activation steps above. Test send, receive, attachments and notifications. Signal stays the fallback.
 - **Not done:** no build, no install, no sign-in.
 
+### Other iMessage projects (added 2026-10-14, after the owner pointed out there are more than OpenBubbles)
+
+| Project | How it works | Fit for this Mac | Risk and limits |
+| --- | --- | --- | --- |
+| **BlueBubbles** ([app](https://github.com/BlueBubblesApp/bluebubbles-app), [server](https://github.com/BlueBubblesApp/bluebubbles-server)) | A server runs on a real Mac that is signed in to Messages; the Linux app connects to it over the network (the tailnet works). | The app publishes a **Linux aarch64 build** (`bluebubbles-linux-aarch64.tar.gz`, 24 MB, v2.1.3, Apache-2.0). The server needs macOS: `csp-bfs-mini` is a Mac on the tailnet; `techmore-2` was online earlier. | Uses a genuine Mac and Apple ID session, so no impersonation and the lowest account risk of the Apple-protocol options. The Mac must stay on and signed in. Optional extras (reactions, typing) use a Private API that needs macOS protections relaxed. |
+| **BlueFerry** ([repo](https://github.com/erikwb/BlueFerry)) | Talks to a **paired iPhone over Bluetooth**: no Apple login, no Mac, no cloud. | `.deb` packages (`blueferry-backend`, `blueferry-gtk`, architecture-independent, about 1.8 MB), GPL-2.0-or-later, supports Ubuntu 26.04 and a GTK client. Bluetooth is on here. This Mac has BlueZ 5.85; BlueFerry's iPhone-notification mirroring wants 5.86, but messages and contacts work without it. | Experimental: tested on iPhone 16 and 17 with iOS 26.5 and 27 beta (this owner has an iPhone 14 Pro). No attachments, reactions or typing indicators; only sees messages while connected; the iPhone must be nearby. Untested with this Mac's Broadcom Bluetooth. |
+| **Bubbles** ([repo](https://github.com/chrispouliot/bubbles)) | A native GTK4 and libadwaita client on `rustpush` (same engine as OpenBubbles, same activation). | Pantheon-friendly toolkit; v0.2.0, Flatpak manifest, no arm64 release. | SSPL-licensed `rustpush`; the same Apple-ID and hardware-identifier risks as OpenBubbles; a personal project. |
+| **LiteBubbles** ([repo](https://github.com/tannerkrewson/LiteBubbles)) | GNOME client on pinned `rustpush`. | Early stage. | Same as Bubbles. |
+| **OpenBubbles** | Flutter app on `rustpush`; see the evaluation above. | No arm64 release. | SSPL core, account risk. |
+| pypush, mautrix-imessage | Libraries and a Matrix bridge, not desktop clients. | Not a fit. | |
+
+**Recommendation:** try **BlueBubbles** first (full features, official arm64 client, genuine Mac, lowest account risk) if a Mac can stay on; use **BlueFerry** as the no-Apple-account option for basic texting when the iPhone is nearby. Keep OpenBubbles and its relatives as a last resort. Nothing was installed or downloaded for this comparison.
+
 ## Priority order (2026-10-14)
 
 Ranked by how often the owner hits it, how small the fix is, and what it depends on. The P1/P2/P3 labels in the table below are older; this order replaces them for planning.
@@ -87,7 +100,7 @@ Ranked by how often the owner hits it, how small the fix is, and what it depends
 | 6 | Preview-style image and PDF markup | Pairs with 5; mostly choosing and packaging a tool | Medium |
 | 7 | Gaps left from the Omarchy parity audit | Audio watchdog and the two WirePlumber rules are installed on the M1 Pro (2026-10-14); function-key mode awaits an owner choice; mic mapper not ported | Mostly done |
 | 8 | **Touch ID (the main login goal)** | No public code exists; upstream watcher installed; a security key with pam_u2f is a possible interim | Blocked upstream, watching |
-| 9 | iMessage (OpenBubbles) | Evaluated: personal build only (SSPL library), arm64 build untried, needs owner decisions on Apple ID risk | Waiting on owner, build after reinstall |
+| 9 | iMessage | Options compared: BlueBubbles (Linux arm64 client plus a Mac server) and BlueFerry (iPhone over Bluetooth) beat OpenBubbles on risk and fit; waiting for the owner to pick | Waiting on owner |
 | 10 | iCloud password sync | No official Linux client; evaluate safe options | Research |
 | 11 | Small checks: brightness keys, keyboard light on lock and lid, Wi-Fi resume, Gala OSK guard, file the Wingpanel report | Cheap to verify, low daily impact | Housekeeping |
 | 12 | Factory ISO hardware boot and image packaging (audio chain, firmware) | Release blocker for the image, not for this desktop | After the reinstall decision |
