@@ -1069,3 +1069,7 @@ Ran `bash mseries/local-ai/install-verify.sh` (user-level, no sudo): `~/.local/b
 ### Lead: omarchy-mx-mac and the Aurora kernel — 2026-10-14
 
 Read `maralcbr/omarchy-mx-mac` (README, releases, commits, changelog; read-only). It is feature-frozen; active work is in `omacom/omarchy-mac` (`quattro-upstream`) and `omacom/omarchy-mac-installer`. Its new images use the Aurora kernel (`aurora-silicon/linux`), which it reports as hardware-qualified on the 14-inch M1 Pro. Watchlist updated (15 projects, baseline re-acknowledged). Next: compare Aurora with our fairydust-usb4 kernel on dock USB4, suspend and video (VM/edge lane first, no change to the Mac's kernel or bootloader), and read their LUKS and s2idle work against ours. See `mseries/WATCHLIST.md`.
+
+## Mac installer adoption — 2026-10-14
+
+Owner: "ensure our installer copies" `omacom/omarchy-mac-installer`. Studied it read-only (Swift app + privileged helper + Asahi installer engine + signed catalog + image producer; MIT). Wrote `mseries/MAC-INSTALLER-PLAN.md` (what it is, adoption steps, phases, blockers). Nothing imported or built: this Mac has no Swift/Xcode/macOS, and signing needs an Apple Developer ID. The current `bin/elementary-mac-setup` stays the interim path. Next: owner decisions (where it lives, which Mac builds it, who tests), then Phase 0 (import at a pinned commit, run the portable tests on Linux, write the mkosi payload spec).

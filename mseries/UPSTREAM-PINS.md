@@ -65,3 +65,7 @@ The fetched m1n1 binary contains the USB4 properties `apple,tunable-rc`,
 `apple,tunable-nhi`, and `apple,thunderbolt-drom`. This confirms required
 strings exist; it does not verify that the PPA m1n1+U-Boot+DTB boot chain works
 on the Mac. Do not describe this package set as a hardware boot result.
+
+## Installer reference (studied 2026-10-14, not imported)
+
+`omacom/omarchy-mac-installer` (MIT), main at the 2026-10-14 `Publish app releases only for X.Y.Z versions` merge. Read-only study; see `MAC-INSTALLER-PLAN.md`. Record the exact commit when the first import happens.
