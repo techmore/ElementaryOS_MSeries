@@ -63,5 +63,83 @@ class ProbeTests(unittest.TestCase):
         self.assertEqual(calls, [])
 
 
+class HangSimulation(unittest.TestCase):
+    """Runs the real main loop against a simulated hang (fast clock, fake system calls)."""
+
+    class Done(Exception):
+        pass
+
+    def setUp(self):
+        self.saved = {name: getattr(watchdog, name) for name in (
+            'apple_silicon', 'session_ok', 'units_state', 'probe', 'restart_stack', 'notify',
+            'TICK', 'SETTLE', 'PROBE_INTERVAL', 'STACK_GAP')}
+        self.saved_sleep = watchdog.time.sleep
+        self.restarts = 0
+        self.notices = []
+        self.ticks = 0
+        watchdog.apple_silicon = lambda: True
+        watchdog.session_ok = lambda: True
+        watchdog.units_state = lambda: 'active'
+        watchdog.notify = lambda headline, body: self.notices.append(headline)
+        watchdog.TICK = watchdog.PROBE_INTERVAL = 0.0
+        watchdog.SETTLE = watchdog.STACK_GAP = 0.0
+
+        def sleep(_seconds):
+            self.ticks += 1
+            if self.ticks > 60:
+                raise self.Done()
+        watchdog.time.sleep = sleep
+
+    def tearDown(self):
+        for name, value in self.saved.items():
+            setattr(watchdog, name, value)
+        watchdog.time.sleep = self.saved_sleep
+
+    def run_loop(self):
+        with self.assertRaises(self.Done):
+            watchdog.main()
+
+    def test_a_hang_that_a_restart_cures_is_restarted_once(self):
+        state = {'hung': True}
+        watchdog.probe = lambda: not state['hung']
+
+        def restart():
+            self.restarts += 1
+            state['hung'] = False
+            return True
+        watchdog.restart_stack = restart
+        self.run_loop()
+        self.assertEqual(self.restarts, 1)
+        self.assertEqual(self.notices, ['Audio restarted'])
+
+    def test_a_healthy_server_is_never_restarted(self):
+        watchdog.probe = lambda: True
+        watchdog.restart_stack = lambda: self.fail('restarted a healthy server')
+        self.run_loop()
+
+    def test_a_single_failed_probe_is_not_enough(self):
+        answers = iter([False] + [True] * 100)
+        watchdog.probe = lambda: next(answers)
+        watchdog.restart_stack = lambda: self.fail('restarted after one failed probe')
+        self.run_loop()
+
+    def test_a_hang_nothing_cures_stops_at_the_budget_and_tells_the_user_once(self):
+        watchdog.probe = lambda: False
+
+        def restart():
+            self.restarts += 1
+            return True
+        watchdog.restart_stack = restart
+        self.run_loop()
+        self.assertEqual(self.restarts, 3)
+        self.assertEqual(self.notices.count('Audio is not responding'), 1)
+
+    def test_nothing_happens_while_the_screen_is_locked(self):
+        watchdog.session_ok = lambda: False
+        watchdog.probe = lambda: False
+        watchdog.restart_stack = lambda: self.fail('restarted under the lock screen')
+        self.run_loop()
+
+
 if __name__ == '__main__':
     unittest.main()
