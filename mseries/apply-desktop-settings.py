@@ -46,6 +46,9 @@ if not link.exists() and not link.is_symlink():
 elif link.resolve() != target.resolve():
     print(f"Existing screenshot folder preserved: {link}. Move it manually to redirect saves.")
 Gio.Settings.new("org.gnome.desktop.wm.preferences").set_string("button-layout", "close,minimize,maximize:")
+# gsd-datetime asks geoclue for a timezone and, when it disagrees with the current one, asks the system to
+# change it, which pops a password dialog about every ten minutes. Set the timezone once instead.
+Gio.Settings.new("org.gnome.desktop.datetime").set_boolean("automatic-timezone", False)
 Gio.Settings.sync()
 helper = home / ".local/libexec/mseries-brightness"
 helper.parent.mkdir(parents=True, exist_ok=True)
