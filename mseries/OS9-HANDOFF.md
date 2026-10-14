@@ -964,3 +964,22 @@ Validation: `bash mseries/test-elementary-mac-setup.sh` passes, including staged
 payload delivery, timer enablement, profile preservation and completion handling.
 Bash/dash syntax checks and `git diff --check` pass. These are installer checks;
 a fresh desktop login and factory hardware boot remain unverified.
+
+## Atomic app deployment request — 2026-10-14
+
+Created [issue #50](https://github.com/techmore/ElementaryOS_MSeries/issues/50)
+and `ATOMIC-APP-DEPLOYMENT.md` for staged verified app releases, atomic
+activation, rollback, concurrency/interruption recovery, user-data migration
+handling and measured package-delivery performance. Compare Flatpak, Nix
+profiles and versioned publisher bundles before selecting a backend. This
+continues the owner's elementary/Nix spin interest. Current environment
+inspection shows elementary OS 9 with apt and no apk executable. Slow package
+delivery is owner-reported; no timing benchmark or manager migration was run.
+Repeated per-installer apt refreshes are an observed performance candidate.
+
+The factory-path inspection also found that the Apple Silicon overlay currently
+builds the network/Quick Settings plugins but does not invoke the shared
+`enhance.sh` layer. Its finalizer prunes most other files. Connecting the full
+enhancement layer requires preservation rules and runtime dependencies; the
+sysupdate path emits only `/usr`, so `/etc` configuration and `/usr/local`
+helpers need deliberate treatment. This packaging gap remains open.

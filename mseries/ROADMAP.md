@@ -35,6 +35,12 @@ with the corrected live-session hardware overlay before progressing.
 
 ## Implemented; runtime validation pending
 
+**New feature request (2026-10-14):** [atomic app deployment and faster package
+delivery](ATOMIC-APP-DEPLOYMENT.md). Stage verified releases, switch atomically,
+retain rollback, and benchmark Flatpak/Nix alternatives to the current app
+install workflow. The observed system uses apt; the reported slowdown is not yet
+measured. Backend selection and implementation are open.
+
 The network/DNS logger now uses noninteractive authorization and installs a
 polkit rule for read-only DNS monitoring by administrators, addressing repeated
 desktop authentication prompts. Apply the updated logger installer once with
