@@ -53,6 +53,17 @@ per-component review before importing new patches.
 - Unlock-screen script: failure now removes its mkinitcpio drop-in, sizes the ESP check from the real image sizes, matches only the exact `udev` hook, and detects the Inter font exactly.
 - Still unverified: whether the initramfs plymouth hook bundles Inter (it may fall back to the default sans); `pacman -Sy` partial-upgrade risk for installing plymouth, same as upstream.
 
+### Audit of omarchy-system-btrfs-migrate @ ba546a6 (full read, 2026-10-14)
+
+Upstream mechanics confirmed: hook staged in the initramfs, worker addressed by PARTUUID, `cryptsetup reencrypt` with 64 MiB fs shrink + 32 MiB header, resumable, `@log`/`@fresh` added, finish service rebuilds initramfs + grub.cfg and removes the hook; refuses without a separate /boot or with systemd hooks. No recovery key exists; `allow-discards` is on (TRIM leaks usage patterns - upstream choice).
+
+Defects found in how we use it, fixed:
+- The boot that finishes the encryption still runs on the OLD kernel cmdline (no `cryptdevice=`). Deriving the elementary GRUB entry from it would have produced an entry that cannot unlock. Setup now reboots once before step 3 (`ensure_unlock_cmdline`), and `elementary-grow.sh` refuses to build an encrypted entry without `cryptdevice=`.
+- The passphrase is chosen in the initramfs under whatever keymap it has loaded; without the `keymap` hook a non-US passphrase would be created as US keystrokes and rejected later. Setup adds `keymap`/`consolefont` hooks (drop-in) before the encryption boot. `consolefont` is also what makes the large console font apply at the prompt.
+- The plan screen now warns that there is no recovery key.
+
+Unverified: all of it on hardware; the rebuilt initramfs vs the staged worker hook ordering with our drop-ins.
+
 ## Next tasks, in order
 
 Coordination: Codex handles implementation and review; OpenCode handles

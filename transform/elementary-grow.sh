@@ -644,6 +644,15 @@ build_linux_line() {
   fi
   printf -v line '    linux %s %s rootflags=subvol=%s rw' "$kpath" "${out[*]}" "$SUBVOL_NAME"
   [[ $line == *' root='* ]] || { echo "running cmdline has no root= — refusing to guess" >&2; return 1; }
+  # On an encrypted root the initramfs can only open the container if the line
+  # carries cryptdevice=. The boot that finishes an in-place encryption still
+  # runs on the OLD command line (the new one only applies from the next boot),
+  # so deriving from it would produce an entry that cannot unlock itself.
+  if [[ $(lsblk -no TYPE "$(findmnt -no SOURCE / | sed 's/\[.*\]//')" 2>/dev/null) == crypt \
+        && $line != *' cryptdevice='* ]]; then
+    echo "root is encrypted but the running cmdline has no cryptdevice= — reboot once, then re-run" >&2
+    return 1
+  fi
   printf '%s\n' "$line"
 }
 

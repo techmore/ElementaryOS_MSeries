@@ -623,8 +623,31 @@ step_boot_layout() {
   reboot_now "Boot layout done."
 }
 
+# The passphrase is chosen in the initramfs, at a prompt that types whatever
+# layout the initramfs has loaded. If the keymap hook is missing there, a
+# non-US passphrase is created as US keystrokes and then rejected later when
+# the unlock screen (which does load the keymap) is typed correctly. Make sure
+# the initramfs loads the keymap and console font before the encryption boot.
+ensure_console_hooks() {
+  local dropin=/etc/mkinitcpio.conf.d/zz_elementary_console.conf hooks add=""
+  hooks=$(bash -c '
+    HOOKS=(); [[ -f /etc/mkinitcpio.conf ]] && source /etc/mkinitcpio.conf
+    for c in /etc/mkinitcpio.conf.d/*.conf; do [[ -f $c && $c != "$1" ]] && source "$c"; done
+    printf " %s " "${HOOKS[*]}"' -- "$dropin")
+  [[ $hooks == *" udev "* ]] || { warn "HOOKS has no udev; not adding the keymap hook"; return 0; }
+  [[ $hooks == *" keymap "* || $hooks == *" sd-vconsole "* ]] || add="keymap"
+  [[ $hooks == *" consolefont "* || $hooks == *" sd-vconsole "* ]] || add="${add:+$add }consolefont"
+  [[ -n $add ]] || return 0
+
+  mkdir -p "$(dirname "$dropin")"
+  # shellcheck disable=SC2016  # expanded by mkinitcpio, not here
+  printf '# elementary-mac: load the keymap and font at the passphrase prompt\n_h=(); for _x in "${HOOKS[@]}"; do _h+=("$_x"); if [[ $_x == udev ]]; then _h+=(%s); fi; done; HOOKS=("${_h[@]}"); unset _h _x\n' "$add" >"$dropin"
+  log "The initramfs will load: $add (so the passphrase is typed under your keymap)"
+}
+
 step_encrypt() {
   banner "Step 2 of 3 -- disk encryption"
+  ensure_console_hooks
   log "Staging the in-place encryption of the root filesystem."
   log "On the next boot you will CHOOSE THE DISK PASSPHRASE at this console,"
   log "and the whole partition is rewritten -- that part takes a while and"
@@ -687,8 +710,25 @@ install_unlock_screen() {
     warn "could not regenerate grub.cfg; the splash is not on the kernel command line"
 }
 
+# The boot that finishes an in-place encryption still runs on the old kernel
+# command line; cryptdevice= only appears from the next boot. The elementary
+# boot entry is derived from the running command line, so build it on a boot
+# that has the unlock parameters -- reboot once if this one does not.
+ensure_unlock_cmdline() {
+  root_is_encrypted || return 0
+  grep -qE '(^| )cryptdevice=' /proc/cmdline && return 0
+
+  if [[ -f $STATE_DIR/cmdline-reboot ]]; then
+    fail "this boot has no cryptdevice= on its kernel command line even after a reboot; check GRUB_CMDLINE_LINUX_DEFAULT in /etc/default/grub and regenerate grub.cfg"
+  fi
+  date -u +%Y-%m-%dT%H:%M:%SZ >"$STATE_DIR/cmdline-reboot"
+  reboot_now "Encryption finished; rebooting once so the kernel command line carries the unlock parameters."
+  exit 0
+}
+
 step_elementary() {
   banner "Step 3 of 3 -- installing elementary OS"
+  ensure_unlock_cmdline
   require_network
   [[ -n $username && -n $password_hash ]] || fail "no owner account recorded; run '$SELF' from the start"
 
@@ -879,6 +919,7 @@ ask_questions() {
   if ((want_encrypt)); then
     boot_is_separate || log "  - move /boot onto the EFI partition, then reboot"
     root_is_encrypted || log "  - encrypt the root -- you choose the passphrase at the console"
+    root_is_encrypted || warn "There is NO recovery key (unlike FileVault): lose the passphrase and the data is gone. Back up first."
     log "  - show the elementary unlock screen at boot and log $username in automatically"
   fi
   log "  - build elementary OS from $repo ($ref) and make it the default boot entry"
