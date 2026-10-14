@@ -19,7 +19,6 @@ run dmi-model.txt bash -c 'cat /proc/device-tree/model; echo; cat /proc/device-t
 run lsblk.txt lsblk -o NAME,SIZE,TYPE,FSTYPE,UUID,PARTUUID,PARTTYPENAME,MOUNTPOINT,LABEL
 run blkid.txt sudo blkid
 run partition-table.txt bash -c 'sudo parted -m /dev/nvme0n1 unit s print; sudo parted /dev/nvme0n1 unit GiB print'
-run asahi-nvram.txt bash -c 'sudo asahi-nvram list 2>&1; sudo asahi-bless --help 2>&1 | head -5'
 run apfs-containers.txt bash -c 'lsblk -f /dev/nvme0n1; ls /dev/nvme0n*'
 run fstab.txt cat /etc/fstab
 run crypttab.txt sudo cat /etc/crypttab
