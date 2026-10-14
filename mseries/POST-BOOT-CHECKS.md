@@ -86,6 +86,7 @@ mpv --hwdec=auto <any h264 file>   # watch CPU% in another terminal with top
 | # | Check | Expect |
 |---|---|---|
 | 5.1 | Plays smoothly; note CPU% and whether `mpv` reports `vaapi`/`v4l2` hwdec | ? AVD needs Asahi firmware + translator (planned, not shipped) |
+| 5.2 | `bash mseries/check-video-decode.sh` (after a reboot, no memory compaction first) | 720p, 1080p and 4K hardware decode match software; needs the usb4.4 kernel |
 
 ## 6. Default apps (spot-check, not exhaustive)
 
