@@ -4,7 +4,8 @@
 # as mkosi.images/modules-db/mkosi.finalize). Package payloads installed
 # above are discarded here. The liveiso aarch64 profile and sysupdate arm64
 # drop-in must explicitly install runtime packages; ExtraTrees does not run apt.
-# What survives here is configuration and the hardware helper scripts.
+# What survives here is selected configuration, hardware helpers, and the
+# version-gated Wingpanel plugins built below.
 set -euo pipefail
 
 BUILDROOT=$(realpath "$BUILDROOT")
@@ -17,6 +18,10 @@ find "$BUILDROOT" -xdev -mindepth 1 -depth \
     ! -path "$BUILDROOT/usr/libexec" \
     ! -path "$BUILDROOT/usr/libexec/mseries-brightness" \
     ! -path "$BUILDROOT/usr/lib" \
+    ! -path "$BUILDROOT/usr/lib/aarch64-linux-gnu" \
+    ! -path "$BUILDROOT/usr/lib/aarch64-linux-gnu/wingpanel-9" \
+    ! -path "$BUILDROOT/usr/lib/aarch64-linux-gnu/wingpanel-9/libnetwork.so" \
+    ! -path "$BUILDROOT/usr/lib/aarch64-linux-gnu/wingpanel-9/libquick-settings.so" \
     ! -path "$BUILDROOT/usr/lib/systemd" \
     ! -path "$BUILDROOT/usr/lib/systemd/system" \
     ! -path "$BUILDROOT/usr/lib/systemd/system/omarchy-wifi-resume-fix.service" \

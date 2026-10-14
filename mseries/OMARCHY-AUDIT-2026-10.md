@@ -23,9 +23,19 @@ keep any change in its proper upstream repository.
 
 ## What our code already carries
 
+Audit correction — 2026-10-14: the keyboard-brightness slider is implemented
+in `mseries/quick-settings/KeyboardBrightness.vala` and installed by
+`mseries/install-quick-settings-brightness.sh`. The manual post-install
+`quick` stage and the transform's network firstboot `quick` module both call
+that installer. It is distinct from `mseries/keyboard-backlight/backlight.py`,
+which automatically adjusts brightness using ambient light. The Apple Silicon
+overlay now builds and preserves the Quick Settings plugin for the matching
+package version; image build/boot and live-panel operation still need checks.
+
 | Area | Local implementation | Audit disposition |
 | --- | --- | --- |
 | Display brightness and OSD | `mkosi.images/apple-silicon/overlay/usr/libexec/mseries-brightness`, `mseries/apply-desktop-settings.py` | Pantheon-specific translation already present; preserve the working path. |
+| Keyboard brightness slider | `mseries/quick-settings/KeyboardBrightness.vala`, installed by `mseries/install-quick-settings-brightness.sh` and `mkosi.images/apple-silicon/build-quick-settings` | Present in manual post-install, transform firstboot, and factory overlay build; ISO build/boot and visible UI checks remain. |
 | Command shortcuts, screenshots, window controls | `mseries/apply-desktop-settings.py` | Already translated for Gala; Hyprland bindings should not be copied. |
 | Wi-Fi firmware and resume | Apple image firmware/resume scripts and systemd services | The recovery script now has focused regression coverage; factory-image provisioning and live suspend/resume still need an M1 Pro image test. |
 | Early Apple HID loading | Apple image initramfs module configuration | Port exists; check the actual booted Arch initramfs as well as the Ubuntu image. |
@@ -52,12 +62,13 @@ version enables the DSP graph. The audio check passed after installation. The
 factory image still lacks this install path; do not enable internal speakers
 without the safety daemon and preserve the existing volume during setup.
 
-1. **Hardware video decoding.** `mseries/packages.arm64` still marks `avd-fw`
-   and `libva-v4l2_request-avd` as TODO. Upstream
-   package documentation identifies both as dependencies: a firmware blob
-   alone does not make browser VA-API work. No `/dev/video*` was observed in
-   this audit. Validate the kernel configuration, firmware, userspace bridge
-   and an actual decoded video before promising lower CPU/power use.
+1. **Factory-image video integration and DRM validation.** The earlier audit
+   claim that AVD was absent is superseded: the transformed desktop now has the
+   VA-API bridge installed and H.264 decode was verified at 720p, 1080p and 4K
+   on the current kernel. Long-uptime validation, actual Brave/player use, and
+   AVD provisioning in the factory image remain open. Widevine is separate:
+   the manual post-install includes it, but the affected Brave DRM movies still
+   need an end-to-end playback check.
 2. **Image audio packaging.** The tested desktop install is described above,
    but `mseries/packages.arm64` does not yet reproduce its complete safe DSP
    chain. Carry the pinned PipeWire LV2 build and audio package sources into the

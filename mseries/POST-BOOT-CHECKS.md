@@ -62,6 +62,7 @@ journalctl -b -u NetworkManager --no-pager | grep -iE "error|warn" | head -5
 | 3.2 | Trackpad moves/clicks/scrolls | ✔ (inherited host initramfs fix) |
 | 3.3 | Reboot 3×, trackpad alive every time | ? race shows here if anywhere |
 | 3.4 | Brightness/volume keys | ? report per-key |
+| 3.5 | Open Wingpanel Quick Settings and check for **Keyboard Brightness** slider; move it and confirm the keys change | ? slider is implemented in transform and factory-image build paths; image boot/UI confirmation pending |
 
 ## 4. Audio (⚠ speakers expected muted in v1)
 
@@ -85,7 +86,7 @@ mpv --hwdec=auto <any h264 file>   # watch CPU% in another terminal with top
 
 | # | Check | Expect |
 |---|---|---|
-| 5.1 | Plays smoothly; note CPU% and whether `mpv` reports `vaapi`/`v4l2` hwdec | ? AVD needs Asahi firmware + translator (planned, not shipped) |
+| 5.1 | Plays smoothly; note CPU% and whether `mpv` reports `vaapi`/`v4l2` hwdec | ? Factory-image AVD integration is not confirmed; transformed desktop H.264 720p/1080p/4K decode has passed |
 | 5.2 | `bash mseries/check-video-decode.sh` (after a reboot, no memory compaction first) | 720p, 1080p and 4K hardware decode match software; needs the usb4.4 kernel |
 
 ## 6. Default apps (spot-check, not exhaustive)

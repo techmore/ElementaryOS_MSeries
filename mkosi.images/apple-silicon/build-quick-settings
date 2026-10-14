@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Build the pinned Quick Settings plugin with the M-series keyboard slider.
+set -euo pipefail
+
+readonly source_commit=fb721d4b5640a2a25ae011370c8fe8aaff8d93f4
+readonly expected_version_prefix=1.4.0
+readonly plugin=usr/lib/aarch64-linux-gnu/wingpanel-9/libquick-settings.so
+
+version=$(dpkg-query --admindir="$BUILDROOT/var/lib/dpkg" -W -f='${Version}' \
+    io.elementary.quick-settings 2>/dev/null || true)
+if [[ $version != "$expected_version_prefix"* ]]; then
+    echo "Quick Settings patch targets ${expected_version_prefix}.x; image has ${version:-no package}; refusing to build an image without the keyboard-brightness slider." >&2
+    exit 1
+fi
+
+work_dir=$(mktemp -d "${TMPDIR:-/tmp}/mseries-quick-settings.XXXXXX")
+trap 'rm -rf "$work_dir"' EXIT
+source_dir="$work_dir/source"
+build_dir="$work_dir/build"
+
+git init -q "$source_dir"
+git -C "$source_dir" remote add origin https://github.com/elementary/quick-settings.git
+git -C "$source_dir" fetch -q --depth=1 origin "$source_commit"
+git -C "$source_dir" checkout -q --detach FETCH_HEAD
+git -C "$source_dir" apply "$SRCDIR/mseries/patches/quick-settings-brightness.patch"
+install -m 0644 "$SRCDIR/mseries/quick-settings/ScreenBrightness.vala" "$source_dir/src/Widgets/ScreenBrightness.vala"
+install -m 0644 "$SRCDIR/mseries/quick-settings/KeyboardBrightness.vala" "$source_dir/src/Widgets/KeyboardBrightness.vala"
+install -m 0644 "$SRCDIR/mseries/quick-settings/ChargeLimit.vala" "$source_dir/src/Widgets/ChargeLimit.vala"
+
+meson setup "$build_dir" "$source_dir" \
+    --prefix=/usr \
+    --libdir=lib/aarch64-linux-gnu \
+    --buildtype=release
+ninja -C "$build_dir"
+
+if [[ ! -s "$build_dir/src/libquick-settings.so" ]]; then
+    echo 'Build did not produce libquick-settings.so' >&2
+    exit 1
+fi
+install -D -m 0644 "$build_dir/src/libquick-settings.so" "$DESTDIR/$plugin"

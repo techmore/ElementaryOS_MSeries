@@ -80,6 +80,26 @@ backed up at `/usr/local/lib/mseries/io.elementary.wingpanel.pre-codexbar-left`;
 `bash mseries/install-wingpanel-codexbar-left.sh --uninstall` restores it.
 Log out and back in to load the panel placement.
 
+## Keyboard brightness slider audit correction — 2026-10-14
+
+The Pantheon Quick Settings patch includes a **Keyboard Brightness** slider
+(`mseries/quick-settings/KeyboardBrightness.vala`). The manual post-install
+`quick` stage and the transform's firstboot `quick` module both install it; the
+Apple Silicon overlay now builds and preserves the plugin against the matching
+Quick Settings package version. This is separate from the ambient keyboard
+backlight helper. Added an explicit live UI check to `POST-BOOT-CHECKS.md` and
+tracked the image build in `ROADMAP.md`. The new image path has not yet been
+built or booted; current panel visibility and slider operation still need an
+on-device check.
+
+Factory-image follow-up: the Apple Silicon overlay includes the matching
+Wingpanel network and Quick Settings packages while compiling the pinned
+plugins, then retains only the built plugins. The Quick Settings build adds the
+keyboard slider; the network build adds speed readouts. Both version mismatches
+now stop the image build instead of silently omitting a requested feature. This
+path has only received code review; an ARM64 image build and Mac boot remain
+pending.
+
 ## Source verified
 
 The official public elementary/os repository was cloned to
