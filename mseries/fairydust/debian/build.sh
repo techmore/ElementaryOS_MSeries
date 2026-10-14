@@ -77,6 +77,11 @@ fi
 if ! grep -Fq 'mkdir -p "${pdir}/usr/lib/linux-image-${KERNELRELEASE}/apple"' scripts/package/builddeb; then
     patch --batch --fuzz=0 -p1 < "$here/0002-precreate-apple-dtb-directory.patch"
 fi
+# The AVD driver asked for one physically contiguous block per decode job (an order-10 kzalloc) and
+# fails under memory fragmentation; see the patch header.
+if ! grep -Fq 'kvcalloc(segments' drivers/media/platform/apple/avd/avd-drv.c; then
+    patch --batch --fuzz=0 -p1 < "$here/0003-avd-job-segments-use-kvmalloc.patch"
+fi
 export DEBEMAIL=builder@localhost DEBFULLNAME="Elementary MSeries Builder"
 export KDEB_CHANGELOG_DIST=resolute
 if ! python3 "$here/../../check-kernel-config.py" "$out/.config" --require fairydust > "$work/kernel-config-report.json"; then
@@ -107,7 +112,7 @@ trap 'exit 143' TERM
 # The kernel packaging target passes -j1 to dpkg; override it explicitly.
 setsid make O="$out" -j "$jobs" bindeb-pkg DPKG_FLAGS="-j$jobs" \
     KDEB_SOURCENAME=linux-elementary-fairydust-usb4 \
-    KDEB_PKGVERSION=7.1.13+elementary.usb4.3 LOCALVERSION= &
+    KDEB_PKGVERSION=7.1.13+elementary.usb4.4 LOCALVERSION= &
 build_pid=$!
 (
     while kill -0 "$build_pid" 2>/dev/null; do
@@ -129,6 +134,6 @@ kill "$watch_pid" 2>/dev/null || true
 wait "$watch_pid" 2>/dev/null || true
 (( result == 0 )) || exit "$result"
 # bindeb-pkg places .deb files in the parent of the output directory.
-find "$work" -maxdepth 1 -name '*_7.1.13+elementary.usb4.3_arm64.deb' -print0 | sort -z | xargs -0 -r sha256sum > "$work/debian-packages.txt"
+find "$work" -maxdepth 1 -name '*_7.1.13+elementary.usb4.4_arm64.deb' -print0 | sort -z | xargs -0 -r sha256sum > "$work/debian-packages.txt"
 [[ -s $work/debian-packages.txt ]] || { echo 'No Debian packages produced' >&2; exit 1; }
 echo 'Built only. Inspect package contents/hooks before any image integration.'

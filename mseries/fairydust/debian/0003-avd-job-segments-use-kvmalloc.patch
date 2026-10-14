@@ -1,0 +1,28 @@
+--- a/drivers/media/platform/apple/avd/avd-drv.c
++++ b/drivers/media/platform/apple/avd/avd-drv.c
+@@ -137,7 +137,15 @@
+ 
+ 	job->codec = codec;
+ 	job->num = 0;
+-	job->segments = kzalloc(sizeof(*job->segments) * segments, GFP_KERNEL);
++	/*
++	 * One decode job needs sizeof(struct avd_segment) * MAX_SLICES bytes (several
++	 * MiB for H.264). The segments are only ever read by the CPU (writel() loop in
++	 * avd_submit_job()), never by the device, so physically contiguous memory is not
++	 * needed: kzalloc() asked for an order-10 block per job, which fails with
++	 * "page allocation failure: order:10" once memory is fragmented and then makes
++	 * every decode fail.
++	 */
++	job->segments = kvcalloc(segments, sizeof(*job->segments), GFP_KERNEL);
+ 	if (!job->segments)
+ 		ret = -ENOMEM;
+ 	return ret;
+@@ -185,7 +193,7 @@
+ 		       reg);
+ 	}
+ 
+-	kfree(sub->segments);
++	kvfree(sub->segments);
+ 	sub->segments = NULL;
+ 	return 0;
+ }

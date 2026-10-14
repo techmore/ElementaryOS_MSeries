@@ -13,6 +13,7 @@ mountpoint -q $R/run  || mount -t tmpfs -o mode=755 tmpfs $R/run
 mountpoint -q $R/home || mount -o subvol=@home /dev/mapper/root $R/home
 install -d -o 1001 -g 1001 $R$D
 cp "$here"/PKGBUILD "$here"/config "$here"/0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch $R$D/
+cp "$here"/../debian/0003-avd-job-segments-use-kvmalloc.patch $R$D/0002-avd-job-segments-use-kvmalloc.patch   # the one canonical copy
 chown -R 1001:1001 $R$D
 chroot $R runuser -l techmore -c "cd $D && makepkg --cleanbuild --force --noconfirm --nodeps"
 ls -la $R$D/*.pkg.tar.* && echo BUILD_PKG_DONE

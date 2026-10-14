@@ -48,7 +48,7 @@ jobs:
           FAIRYDUST_SOURCE_ARCHIVE="$archive" \
             bash mseries/fairydust/debian/build.sh --build
           mkdir -p mkosi.packages
-          kernel_deb="$RUNNER_TEMP/fairydust/linux-image-7.1.13-elementary-fairydust-usb4_7.1.13+elementary.usb4.3_arm64.deb"
+          kernel_deb="$RUNNER_TEMP/fairydust/linux-image-7.1.13-elementary-fairydust-usb4_7.1.13+elementary.usb4.4_arm64.deb"
           cp "$kernel_deb" mkosi.packages/
           mseries/fairydust/debian/fetch-asahi-boot-packages.sh mkosi.packages
           boot_inputs="$RUNNER_TEMP/fairydust-boot-inputs"

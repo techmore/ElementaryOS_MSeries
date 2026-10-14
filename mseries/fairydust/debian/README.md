@@ -109,3 +109,15 @@ USB4 still needs the pinned m1n1 tunables and Apple DTB/ESP integration.
 The monitor.py helper publishes service state for the existing loopback-only
 HTTP server. It stops after reporting completion/failure. A build failure or
 stopped low-space guard needs review, not automatic package installation.
+
+## 7.1.13+elementary.usb4.4 (video-decode fix)
+
+`usb4.4` adds `0003-avd-job-segments-use-kvmalloc.patch`. The `apple_avd` driver allocated about 8 MiB of
+physically contiguous memory (`kzalloc` of `MAX_SLICES` x `struct avd_segment`, an order-10 allocation on
+16K pages) for every decode job. Once memory is fragmented the allocation fails
+(`page allocation failure: order:10` in dmesg) and hardware video decode errors out or hangs; observed on an
+M1 Pro after about 85 minutes of desktop use, and cured by `echo 1 > /proc/sys/vm/compact_memory`. The
+segments are only read by the CPU, so `kvcalloc`/`kvfree` is sufficient. The patch applies cleanly
+(`patch --fuzz=0`) to the pinned `ce9f2eba72c0` source; it has not been compiled or run yet - the `usb4.3`
+hashes recorded above describe the build without it. After building `usb4.4`, repeat a 1080p VA-API decode
+(`mseries/install-video-decode.sh`) on a machine that has been up for a while without compacting memory first.

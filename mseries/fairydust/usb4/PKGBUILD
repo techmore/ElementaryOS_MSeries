@@ -20,8 +20,9 @@ _commit=ce9f2eba72c061a50b2d790450e90af3439d8c24
 _srcname=linux-$_commit
 source=("linux-fairydust-$_commit.tar.gz::https://codeload.github.com/AsahiLinux/linux/tar.gz/$_commit"
         config
-        0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch)
-sha256sums=('SKIP' 'SKIP' 'SKIP')
+        0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch
+        0002-avd-job-segments-use-kvmalloc.patch)
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 export KBUILD_BUILD_HOST=archlinux
 export KBUILD_BUILD_USER=$pkgbase
@@ -30,6 +31,8 @@ export KBUILD_BUILD_TIMESTAMP="$(date -Ru${SOURCE_DATE_EPOCH:+d @$SOURCE_DATE_EP
 prepare() {
   cd "$_srcname"
   patch -p1 -i ../0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch
+  # apple_avd: no multi-MiB contiguous allocation per decode job (see debian/0003-avd-job-segments-use-kvmalloc.patch)
+  patch -p1 -i ../0002-avd-job-segments-use-kvmalloc.patch
   echo '-1-2-fairydust-usb4' > localversion.10-pkgrel
   mkdir -p build/base
   cp ../config build/base/.config
