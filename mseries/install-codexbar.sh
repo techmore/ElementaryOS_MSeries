@@ -19,4 +19,52 @@ ln -sfn "$HOME/.local/lib/codexbar-cli/codexbar" "$HOME/.local/bin/codexbar"
 tar -xzf "CodexBarDesktop-${version}-linux-aarch64.tar.gz"
 cd "CodexBarDesktop-${version}-linux-aarch64"
 python3 Integrations/Linux/install.py --cli "$HOME/.local/bin/codexbar"
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/codexbar"
+config_file="$config_dir/linux.json"
+python3 - "$config_file" <<'PY'
+import json
+import os
+import pathlib
+import sys
+import tempfile
+
+path = pathlib.Path(sys.argv[1])
+path.parent.mkdir(parents=True, exist_ok=True)
+config = {}
+if path.exists():
+    try:
+        config = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise SystemExit(f"Cannot update CodexBar settings at {path}: {error}")
+    if not isinstance(config, dict):
+        raise SystemExit(f"Cannot update CodexBar settings at {path}: expected a JSON object")
+
+provider = config.get("provider", "codex")
+if not isinstance(provider, str):
+    raise SystemExit(f"Cannot update CodexBar settings at {path}: invalid provider")
+if provider in {"codex", "both", "custom"}:
+    order = config.get("providerOrder", [])
+    if not isinstance(order, list) or not all(isinstance(item, str) for item in order):
+        raise SystemExit(f"Cannot update CodexBar settings at {path}: invalid providerOrder")
+    if provider == "codex":
+        order = ["codex", *[item for item in order if item != "codex"]]
+    elif provider == "both":
+        order = ["codex", "claude", *[item for item in order if item not in {"codex", "claude"}]]
+    config["providerOrder"] = list(dict.fromkeys([*order, "opencodego"]))
+    config["provider"] = "custom"
+else:
+    print(f"Preserved CodexBar provider selection '{provider}'; add OpenCode Go in Settings → Providers.")
+
+if config.get("provider") == "custom":
+    destination = path.resolve()
+    descriptor, temporary_name = tempfile.mkstemp(prefix=destination.name + ".", dir=destination.parent)
+    try:
+        os.fchmod(descriptor, 0o600)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as temporary:
+            temporary.write(json.dumps(config, indent=2) + "\n")
+        pathlib.Path(temporary_name).replace(destination)
+    except BaseException:
+        pathlib.Path(temporary_name).unlink(missing_ok=True)
+        raise
+PY
 echo 'Open ~/.local/bin/codexbar-linux --settings. Runtime dependencies: see mseries/DESKTOP-SETUP.md.'

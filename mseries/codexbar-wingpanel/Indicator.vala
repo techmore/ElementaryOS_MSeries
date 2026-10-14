@@ -330,7 +330,8 @@ namespace MSeries {
         private void append_provider_entry (Json.Object entry) {
             var provider = entry.get_string_member ("provider") ?? "Provider";
             var title_text = provider.down () == "codex" ? "OpenAI Codex" :
-                provider.down () == "claude" ? "Claude" : provider;
+                provider.down () == "claude" ? "Claude" :
+                provider.down () == "opencodego" ? "OpenCode Go" : provider;
             var title = new Gtk.Label (title_text) { xalign = 0 };
             title.add_css_class ("heading");
 

@@ -33,6 +33,12 @@ with the corrected live-session hardware overlay before progressing.
 | Tracks upstream | merged `elementary/os` main @ 7024fd0 | `UPSTREAM-PINS.md` |
 | Benchmarks | `mseries/benchmarks/` | see `benchmarks/README.md` |
 
+## Implemented; runtime validation pending
+
+| Feature | Change | Next check |
+|---|---|---|
+| OpenCode Go in M-series CodexBar | The CodexBar installer adds `opencodego` to fresh/default and custom provider selections; Wingpanel labels it OpenCode Go. | Install on the working desktop, add an API key in CodexBar Settings, and confirm the quota row. |
+
 ## Open problems
 
 | Problem | Why | Next step |

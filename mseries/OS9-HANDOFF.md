@@ -490,3 +490,23 @@ Bluetooth pairing, or user data was changed. The host has BlueZ 5.85, below
 Tether's 5.86 requirement for Bluetooth messages. Next: determine a supported
 OS BlueZ 5.86+ source, then qualify messages with the owner's phone; separately
 review the Brave extension's all-sites permission during OTP qualification.
+
+## CodexBar OpenCode Go provider — 2026-10-13
+
+The owner requested OpenCode visibility/sign-in in the M-series CodexBar build.
+`install-codexbar.sh` now includes OpenCode Go in the default custom provider
+list on a fresh install and appends it to existing Codex, Codex+Claude, or
+custom provider selections while preserving other app preferences. Explicit
+unrelated single-provider choices remain unchanged. The installer writes the settings
+file with owner-only permissions using a same-directory atomic replacement.
+Wingpanel now renders the provider name as “OpenCode Go”.
+
+`DESKTOP-SETUP.md` explains that this is the Go quota provider, where to enter
+its API key in CodexBar’s settings field, and that local history is an
+estimate. The API key is entered by the user at runtime; it is not embedded in
+the image or installer.
+
+Validation: `bash -n mseries/install-codexbar.sh` and `git diff --check` passed.
+No runtime install, authenticated usage fetch, or automated tests were run.
+Next: install on the working desktop, add the user's OpenCode Go API key in
+CodexBar Settings, and confirm the Wingpanel quota row.

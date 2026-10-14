@@ -165,6 +165,19 @@ and follows OpenAI's branding guidelines.
 Remove it with `bash mseries/install-codexbar-wingpanel.sh --uninstall`.
 Source: https://github.com/steipete/CodexBar/tree/main/Integrations/Linux
 
+The CodexBar installer enables OpenAI Codex and OpenCode Go together on a
+fresh install. If the existing provider is Codex, Codex+Claude, or a custom
+list, it adds OpenCode Go while preserving the other CodexBar preferences.
+Other explicit single-provider selections are left alone; switch to **custom** and add
+`opencodego` in Settings → Providers to include it.
+
+OpenCode Go is separate from the base OpenCode web-dashboard provider. To
+connect it, open CodexBar → Settings → Providers, select OpenCode Go, and enter
+your OpenCode Go API key in its **API key** field. The Wingpanel entry
+then shows its reported quota. A device with only local OpenCode Go history can
+show estimated local usage; that estimate is not account quota. Credentials are
+stored by CodexBar per user and are not placed in the OS image or installer.
+
 ## Signal Beta in Wingpanel
 
 The Signal launcher uses its supported `--use-tray-icon` option. Install the
