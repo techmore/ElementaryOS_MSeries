@@ -117,4 +117,4 @@ prefix of `boot.bin` (`swap-m1n1.py`: DTBs + U-Boot tail stay identical), backin
     sudo bash mseries/fairydust/usb4/install-m1n1-bootbin.sh            # dry run
     sudo bash mseries/fairydust/usb4/install-m1n1-bootbin.sh --apply
 
-Then reboot and check `ls /sys/bus/thunderbolt/devices`, `ip link`, `dmesg | grep -i acio`. Result: untested until booted.
+Then reboot and check `ls /sys/bus/thunderbolt/devices`, `ip link`, `dmesg | grep -i acio`. Result (2026-10-14, booted): dock Ethernet works with the pinned m1n1 + j314s tree; mouse still works. Dock video remains unsupported (use HDMI).
