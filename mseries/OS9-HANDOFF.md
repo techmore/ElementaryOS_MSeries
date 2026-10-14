@@ -560,9 +560,12 @@ passed; the completed test torrent was paused. The initial ARM64 desktop torrent
 tracker and removed. The server torrent remains in Downloads. UI button and
 close/reopen qualification remain. See `mseries/TORRENTIAL-PORT.md`.
 
-The upstream rewrite has no license grant, so its source and compiled package
-remain local. This repository includes only downstream packaging and status.
-No one was contacted or sent upstream source.
+The upstream rewrite has no license grant. The owner-requested fixes are
+pushed to the private [`techmore/torrential`](https://github.com/techmore/torrential)
+repository on `mseries-native` at `4082b079dab42a53c80a8ebbb6a11253ac716453`.
+Keep it private until redistribution permission is clear. This public OS repo
+contains only downstream packaging and status. No one was contacted and
+nothing was sent to the upstream project.
 
 ## Native battery time-to-full — 2026-10-13
 

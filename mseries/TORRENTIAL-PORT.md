@@ -8,8 +8,10 @@ desktop. It runs with the system Transmission 4.1.1 backend and appears as
 
 Upstream: <https://github.com/davidmhewitt/torrential>, `main` at
 `3af2c2ab473d074bb95a63a3bb185d5809ee8d8a` (the unreleased rewrite).
-Local fork: `/home/admin/Documents/TorrentialFork`, branch `mseries-native`,
-commit `4082b079dab42a53c80a8ebbb6a11253ac716453`.
+Local fork: [private `techmore/torrential` repository](https://github.com/techmore/torrential),
+branch `mseries-native`, commit `4082b079dab42a53c80a8ebbb6a11253ac716453`.
+The working clone is `/home/admin/Documents/TorrentialFork`; its upstream remote
+points to `davidmhewitt/torrential`.
 
 The fork redirects unread daemon stdout, waits briefly for RPC readiness,
 creates its config and Downloads directories, binds RPC to loopback, and
@@ -56,9 +58,11 @@ cache. The cache is approximately 1 GiB and may be reused for later builds.
 ## Distribution and next work
 
 The audited upstream tree has no LICENSE/COPYING/NOTICE file or license grant.
-Keep source changes and binary packages local until redistribution permission
-is clear. This public OS repository contains only downstream packaging and
-status documentation. No one was contacted and no upstream fork was pushed.
+The owner requested a private `techmore/torrential` repository for the fork
+fixes; keep it private and keep built packages out of public distribution
+until redistribution permission is clear. This public OS repository contains
+only downstream packaging and status documentation. No one was contacted and
+nothing was sent to the upstream project.
 
 Keep Torrential optional and outside the factory image. Remaining work includes
 UI add/pause/resume/remove qualification, close/reopen state restoration, file and magnet association support, custom
