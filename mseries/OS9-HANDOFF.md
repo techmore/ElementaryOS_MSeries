@@ -483,7 +483,13 @@ final liveiso tree; the sysupdate configuration consumes the same overlay. The
 local installer remains useful for the current image, while the new image
 build makes the change survive redeployments and image updates.
 
-No full image build has run for this change. Next: run the M-series validation
-workflow, then the full arm64 image build and post-build module check before
-deploying the resulting image. The working desktop has the patched module
-installed and `~/.config/mseries/network-speed.ini` enables the panel readout.
+Validation: `just mkosi summary` parsed the new build script and confirmed
+network access is enabled for image build scripts. Running
+`build-network-indicator` against the matching host package compiled the
+patched module into a temporary stage; the output contained only the
+321848-byte `libnetwork.so` and its panel-speed toggle marker. `bash -n` and
+`git diff --check` passed. No full image build has run yet. Next: run the
+M-series validation workflow, then the full arm64 image build and post-build
+module check before deploying the resulting image. The working desktop has the
+patched module installed and `~/.config/mseries/network-speed.ini` enables the
+panel readout.

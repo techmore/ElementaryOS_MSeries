@@ -31,13 +31,13 @@ meson setup "$build_dir" "$source_dir" \
     --libdir=lib/aarch64-linux-gnu \
     --buildtype=release
 ninja -C "$build_dir"
-DESTDIR="$DESTDIR" meson install -C "$build_dir" --no-rebuild
 
-if [[ ! -s "$DESTDIR/$plugin" ]]; then
-    echo "Build did not produce $plugin" >&2
+if [[ ! -s "$build_dir/libnetwork.so" ]]; then
+    echo 'Build did not produce libnetwork.so' >&2
     exit 1
 fi
-if ! grep -aFq 'Show speed in menu bar' "$DESTDIR/$plugin"; then
+if ! grep -aFq 'Show speed in menu bar' "$build_dir/libnetwork.so"; then
     echo 'Built network indicator is missing the panel-speed toggle.' >&2
     exit 1
 fi
+install -D -m 0644 "$build_dir/libnetwork.so" "$DESTDIR/$plugin"
