@@ -45,6 +45,19 @@ with the corrected live-session hardware overlay before progressing.
 | Wingpanel crash `PanelWindow.on_realize` | Upstream bug; Gala respawns the panel | Report upstream (not done). |
 | Hardware video decode | Not available for M1 on Linux | None, upstream. |
 
+## M1 Pro parity with Omarchy M (audited 2026-10-14 against omarchy-mac-pkgs 222f7a8)
+
+Done on the running system: Wi-Fi resume fix, speaker safety and DSP, ambient keyboard light, battery charge limit, dock hub/mouse/Ethernet, docked lid mode, zram and service trimming. Remaining, in order:
+
+1. Port `omarchy-audio-watchdog` (audio-stack self-repair) to Pantheon.
+2. Decide the Apple function-key default (`fnmode`), then make it explicit.
+3. Mic mapping (`omarchy-audio-asahi-mic-map`) re-homed to the elementary audio session.
+4. Lid-open login and Touch ID research (see Stretch goal 0).
+5. Hardware video decode (AVD firmware plus VA-API bridge) once a kernel supports it.
+6. Put the tested audio chain into the factory image.
+
+Performance work stays measured: use `mseries/benchmarks/` before and after each change and keep the medians.
+
 ## Stretch goals (rough order of value)
 
 0. **Lid open shows the login screen, with Touch ID.** Today the login needs a power-button press after resume (bug tracked in `BUG-FIX-ROADMAP.md`). First fix the wake path; then investigate fingerprint login. No Linux driver for the Mac Touch ID sensor (Secure Enclave) is known to this project, so treat Touch ID as research, not a plan.
