@@ -9,6 +9,9 @@
 set -euo pipefail
 
 BUILDROOT=$(realpath "$BUILDROOT")
+enhancements=$(mktemp -d "${TMPDIR:-/tmp}/mseries-factory.XXXXXX")
+trap 'rm -rf "$enhancements"' EXIT
+bash "$SRCDIR/mseries/stage-factory-enhancements.sh" "$BUILDROOT" "$enhancements"
 
 find "$BUILDROOT" -xdev -mindepth 1 -depth \
     ! -path "$BUILDROOT/usr" \
@@ -35,12 +38,16 @@ find "$BUILDROOT" -xdev -mindepth 1 -depth \
     ! -path "$BUILDROOT/etc/systemd*" \
     -delete
 
+# Merge only the explicitly staged enhancement layer after package pruning.
+cp -a "$enhancements/." "$BUILDROOT/"
+
 # The installed sysupdate artifact contains /usr only. Export the surviving
 # overlay-owned defaults there and create individual missing /etc entries at
 # boot, including when their parent directory already exists. Never overwrite
 # administrator edits. Keep this AFTER pruning to avoid claiming base settings.
 python3 "$SRCDIR/mseries/export-factory-defaults.py" "$BUILDROOT" \
     --source-extra "$SRCDIR/mkosi.images/apple-silicon/mkosi.extra" \
+    --source-extra "$enhancements" \
     --include initramfs-tools/modules \
     --include systemd/system/multi-user.target.wants/omarchy-wifi-resume-fix.service \
     --include systemd/system/multi-user.target.wants/mseries-wifi-firmware.service

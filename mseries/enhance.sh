@@ -258,6 +258,18 @@ Unit=elementary-mac-user-enhance.service
 [Install]
 WantedBy=timers.target
 EOF
+  put 0644 /usr/lib/systemd/user/elementary-mac-user-enhance.path <<'EOF'
+[Unit]
+Description=Set up DRM after Brave creates a user profile
+
+[Path]
+PathChanged="%h/.config/BraveSoftware/Brave-Browser/Local State"
+Unit=elementary-mac-user-enhance.service
+
+[Install]
+WantedBy=default.target
+EOF
+  enable --global elementary-mac-user-enhance.path
   enable --global elementary-mac-user-enhance.timer
   log "session: docked-lid, brightness, keyboard lighting and deferred per-user enhancements"
 }

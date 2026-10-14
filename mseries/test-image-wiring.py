@@ -72,8 +72,14 @@ class ImageWiringTests(unittest.TestCase):
             payload = image / 'usr/bin/package-payload'
             payload.parent.mkdir(parents=True)
             payload.write_text('must be pruned')
+            tools = Path(directory) / 'tools'
+            tools.mkdir()
+            compiler = tools / 'chroot'
+            compiler.write_text('#!/bin/sh\n# Fixture only: target dconf is absent in this synthetic root.\ntouch "$1$4"\n')
+            compiler.chmod(0o755)
             subprocess.run(['bash', str(source / 'mkosi.finalize')],
-                           env={**os.environ, 'BUILDROOT': str(image), 'SRCDIR': str(ROOT)}, check=True)
+                           env={**os.environ, 'BUILDROOT': str(image), 'SRCDIR': str(ROOT),
+                                'PATH': str(tools) + os.pathsep + os.environ['PATH']}, check=True)
             for path in expected:
                 with self.subTest(path=str(path)):
                     self.assertTrue((image / path).is_file())

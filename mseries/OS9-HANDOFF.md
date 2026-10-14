@@ -1180,3 +1180,32 @@ Remaining: build and boot qualification; shared enhancement-module integration,
 canonical power helper under `/usr`, baked application dependencies and an
 immutable-safe per-user setup path. The existing enhancement firstboot job
 uses apt/build writes to `/usr` and cannot be enabled unchanged on EROFS.
+
+## Offline factory enhancements integrated — 2026-10-14
+
+Apple overlay finalize now stages `tuning,power,audio,session,theme,payload`
+through the shared enhancement installer, then merges them after pruning.
+The immutable power helper, polkit policy and compiled Quick Settings now
+agree on `/usr/libexec/mseries/power`; `/usr/bin/mseries-power` supplies the CLI.
+Both arm64 consumers explicitly install the runtime and CodexBar Qt dependencies.
+Netusage authorization is baked, and a factory readiness file replaces the
+otherwise unreachable firstboot dependency marker for per-user setup.
+
+Dconf sources/profile are merged with distribution defaults and compiled with
+the target binary before pruning. An early service recompiles persistent
+`/etc` defaults before login after updates. Per-file factory copies preserve
+administrator settings, including existing profiles that do not select local
+defaults; those profiles require explicit selection to use these settings.
+
+Per-user setup stops polling after CodexBar/netusage finish if the default
+Brave profile is absent. A profile-change path unit wakes DRM setup later and
+restarts retries until Brave closes and installation succeeds. Custom profile
+locations retain timer polling. The image still does not bake Brave, video
+decode, gestures or the remaining patched desktop components; their apt/build
+firstboot modules stay disabled on immutable `/usr`. Speaker safety and full
+hardware qualification remain separate requirements.
+
+Reviewed twice by a subagent and corrected its findings. No tests or image
+build were run in this batch. Existing pruning fixture now mocks its absent
+target dconf compiler; that fixture is not target compilation evidence.
+Next: build/boot qualification and bake the remaining network-dependent modules.

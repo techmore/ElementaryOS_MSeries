@@ -49,12 +49,14 @@ def export(root, owned=None):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('root', type=Path)
-    parser.add_argument('--source-extra', type=Path)
+    parser.add_argument('--source-extra', type=Path, action='append')
     parser.add_argument('--include', action='append', default=[])
     args = parser.parse_args()
     owned = None
     if args.source_extra:
-        extra_etc = args.source_extra / 'etc'
-        owned = {p.relative_to(extra_etc).as_posix() for p in extra_etc.rglob('*')
-                 if p.is_file() or p.is_symlink()} | set(args.include)
+        owned = set(args.include)
+        for extra in args.source_extra:
+            extra_etc = extra / 'etc'
+            owned |= {p.relative_to(extra_etc).as_posix() for p in extra_etc.rglob('*')
+                      if p.is_file() or p.is_symlink()}
     export(args.root, owned)

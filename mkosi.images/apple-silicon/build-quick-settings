@@ -26,6 +26,8 @@ git -C "$source_dir" apply "$SRCDIR/mseries/patches/quick-settings-brightness.pa
 install -m 0644 "$SRCDIR/mseries/quick-settings/ScreenBrightness.vala" "$source_dir/src/Widgets/ScreenBrightness.vala"
 install -m 0644 "$SRCDIR/mseries/quick-settings/KeyboardBrightness.vala" "$source_dir/src/Widgets/KeyboardBrightness.vala"
 install -m 0644 "$SRCDIR/mseries/quick-settings/ChargeLimit.vala" "$source_dir/src/Widgets/ChargeLimit.vala"
+# Factory sysupdate ships immutable /usr; /usr/local is a separate mutable tree.
+sed -i "s|/usr/local/sbin/mseries-power|/usr/libexec/mseries/power|g" "$source_dir/src/Widgets/ChargeLimit.vala"
 
 meson setup "$build_dir" "$source_dir" \
     --prefix=/usr \
