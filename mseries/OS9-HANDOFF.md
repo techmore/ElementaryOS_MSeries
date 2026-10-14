@@ -1073,3 +1073,7 @@ Read `maralcbr/omarchy-mx-mac` (README, releases, commits, changelog; read-only)
 ## Mac installer adoption — 2026-10-14
 
 Owner: "ensure our installer copies" `omacom/omarchy-mac-installer`. Studied it read-only (Swift app + privileged helper + Asahi installer engine + signed catalog + image producer; MIT). Wrote `mseries/MAC-INSTALLER-PLAN.md` (what it is, adoption steps, phases, blockers). Nothing imported or built: this Mac has no Swift/Xcode/macOS, and signing needs an Apple Developer ID. The current `bin/elementary-mac-setup` stays the interim path. Next: owner decisions (where it lives, which Mac builds it, who tests), then Phase 0 (import at a pinned commit, run the portable tests on Linux, write the mkosi payload spec).
+
+### Update 2026-10-14: Mac installer NOT pursued
+
+The owner decided against building the macOS installer. `MAC-INSTALLER-PLAN.md` is marked not pursued and the roadmap item is struck through. Nothing was imported or built. `omacom/omarchy-mac-installer` stays on the watchlist for reference only.

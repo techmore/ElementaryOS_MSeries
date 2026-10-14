@@ -1,3 +1,5 @@
+> **Status 2026-10-14: NOT PURSUED.** The owner decided against building this installer. Kept as a record of what was studied; do not start work from it. `bin/elementary-mac-setup` remains the install path.
+
 # Plan: a native macOS installer for elementary OS (modelled on omacom/omarchy-mac-installer)
 
 Requested 2026-10-14. Source studied read-only: [omacom/omarchy-mac-installer](https://github.com/omacom/omarchy-mac-installer)
