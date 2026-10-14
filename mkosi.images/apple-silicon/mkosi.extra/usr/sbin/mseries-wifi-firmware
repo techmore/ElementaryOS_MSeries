@@ -6,7 +6,8 @@
 set -euo pipefail
 
 FIRMWARE_DIR="${MSERIES_FIRMWARE_DIR:-/lib/firmware/brcm}"
-HANDOFF_DIRS=("${MSERIES_HANDOFF_DIR:-/boot/efi/mseries-firmware}" /run/mseries/firmware)
+# The ESP is mounted at /boot on an encrypted install and at /boot/efi on stock Asahi Alarm.
+HANDOFF_DIRS=("${MSERIES_HANDOFF_DIR:-/boot/mseries-firmware}" /boot/efi/mseries-firmware /run/mseries/firmware)
 
 log() { logger -t mseries-wifi-firmware "$@" || true; echo "mseries-wifi-firmware: $*" >&2; }
 
@@ -17,8 +18,9 @@ if [[ -f $compatible ]] && ! grep -Faiq 'apple,' "$compatible"; then exit 0; fi
 [[ -f $compatible ]] || exit 0
 
 chip=""
-if lspci -nn 2>/dev/null | grep -q "14e4:4425"; then chip="4378b1";
-elif lspci -nn 2>/dev/null | grep -q "14e4:4433"; then chip="4387c2"; fi
+pci=$(lspci -nn 2>/dev/null || true)   # not piped: grep -q under pipefail can SIGPIPE lspci
+if grep -q "14e4:4425" <<<"$pci"; then chip="4378b1";
+elif grep -q "14e4:4433" <<<"$pci"; then chip="4387c2"; fi
 [[ -n $chip ]] || { log "no Apple Silicon Broadcom Wi-Fi found; nothing to do"; exit 0; }
 
 base="brcmfmac${chip}-pcie"

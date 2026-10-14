@@ -1,0 +1,39 @@
+#!/bin/bash
+# Add or remove a managed block in /etc/mkinitcpio.conf.
+#
+#   mkinitcpio-snippet add NAME      append mseries/boot/NAME.snippet (replacing an older copy)
+#   mkinitcpio-snippet remove NAME
+#
+# Why in mkinitcpio.conf itself rather than /etc/mkinitcpio.conf.d/: mkinitcpio
+# only reads the drop-in directory when a preset sets no ALL_config, and the
+# fairydust presets set it, so drop-ins are silently ignored for them. The main
+# file is always read. Does not rebuild the initramfs.
+set -euo pipefail
+
+CONF=${MKINITCPIO_CONF:-/etc/mkinitcpio.conf}
+here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+
+action=${1:?usage: mkinitcpio-snippet add|remove NAME}
+name=${2:?usage: mkinitcpio-snippet add|remove NAME}
+[[ $name =~ ^[a-z-]+$ ]] || { echo "bad snippet name: $name" >&2; exit 1; }
+begin="# >>> elementary-mac $name >>>"
+end="# <<< elementary-mac $name <<<"
+
+drop_block() {
+  grep -qF "$begin" "$CONF" || return 0
+  local tmp
+  tmp=$(mktemp "$CONF.XXXXXX")
+  awk -v b="$begin" -v e="$end" '$0 == b {skip=1; next} $0 == e {skip=0; next} !skip' "$CONF" >"$tmp"
+  cat "$tmp" >"$CONF"   # keep the original file's owner and mode
+  unlink "$tmp"
+}
+
+case $action in
+  add)
+    [[ -f $here/$name.snippet ]] || { echo "no snippet $here/$name.snippet" >&2; exit 1; }
+    drop_block
+    { printf '\n%s\n' "$begin"; cat "$here/$name.snippet"; printf '%s\n' "$end"; } >>"$CONF"
+    ;;
+  remove) drop_block ;;
+  *) echo "unknown action: $action" >&2; exit 1 ;;
+esac

@@ -42,9 +42,11 @@ restore() {
 }
 
 if [[ ${1:-} == --uninstall ]]; then
-  restore
+  bash "$(dirname "$0")/boot/mkinitcpio-snippet" remove initramfs-splash
+  unlink "$DROPIN" 2>/dev/null || true
   [[ -f $PLYMOUTHD ]] && sed -i 's/^Theme=elementary/Theme=omarchy/' "$PLYMOUTHD"
-  echo "Restored the previous mkinitcpio.conf and initramfs images."
+  mkinitcpio -P
+  echo "Removed the elementary unlock screen hooks and rebuilt the initramfs."
   exit 0
 fi
 
@@ -69,7 +71,7 @@ font=Inter
 fc-list : family 2>/dev/null | grep -qiE '^Inter(,|$)' || font='Noto Sans'
 
 # Back up first, once.
-[[ -f $MKCONF.$STAMP ]] || cp -a "$MKCONF" "$MKCONF.$STAMP"
+cp -a "$MKCONF" "$MKCONF.$STAMP"
 for img in $(images); do
   [[ -f $img.$STAMP ]] || cp -a "$img" "$img.$STAMP"
 done
@@ -88,30 +90,12 @@ else
   printf '[Daemon]\nTheme=elementary\nShowDelay=0\n' >"$PLYMOUTHD"
 fi
 
-# HOOKS: plymouth must run before encrypt so the passphrase is asked on the
-# splash, and keymap before that so it is typed with the layout it was chosen
-# under. Inserted after udev. Written as the last drop-in because a drop-in is
-# sourced after mkinitcpio.conf and a later HOOKS= wins.
-effective_hooks() {
-  bash -c '
-    HOOKS=(); [[ -f $1 ]] && source "$1"
-    for c in "$2"/*.conf; do [[ -f $c && $c != "$3" ]] && source "$c"; done
-    printf " %s " "${HOOKS[*]}"
-  ' -- "$MKCONF" /etc/mkinitcpio.conf.d "$DROPIN"
-}
-hooks=$(effective_hooks)
-[[ $hooks == *" udev "* ]] || fail "HOOKS has no udev (found:$hooks) - not editing it blindly"
-add=""
-[[ $hooks == *" plymouth "* ]] || add="plymouth"
-if [[ $hooks != *" keymap "* && $hooks != *" sd-vconsole "* ]]; then add="keymap $add"; fi
-mkdir -p "$(dirname "$DROPIN")"
-if [[ -n $add ]]; then
-  # Rebuilt element by element so only the exact "udev" hook is matched.
-  # shellcheck disable=SC2016  # expanded by mkinitcpio, not here
-  printf '# elementary-mac: unlock screen\n_h=(); for _x in "${HOOKS[@]}"; do _h+=("$_x"); if [[ $_x == udev ]]; then _h+=(%s); fi; done; HOOKS=("${_h[@]}"); unset _h _x\n' "${add% }" >"$DROPIN"
-else
-  unlink "$DROPIN" 2>/dev/null || true
-fi
+# HOOKS: plymouth before encrypt so the passphrase is asked on the splash,
+# keyboard to type it, kms so the display is up for it, keymap/consolefont so it
+# is typed under the right layout. The block goes into mkinitcpio.conf itself
+# (see mkinitcpio-snippet for why drop-ins are not enough).
+unlink "$DROPIN" 2>/dev/null || true   # older versions of this script used a drop-in
+bash "$(dirname "$0")/boot/mkinitcpio-snippet" add initramfs-splash
 
 log "Rebuilding the initramfs"
 if ! mkinitcpio -P; then

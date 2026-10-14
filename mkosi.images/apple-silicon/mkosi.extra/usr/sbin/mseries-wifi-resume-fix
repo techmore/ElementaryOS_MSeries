@@ -29,8 +29,9 @@ wedge_signature() {
 
 wifi_down() {
   # Global STATE can be connected via Ethernet while Wi-Fi is wedged.
-  nmcli -t -f TYPE,STATE device status 2>/dev/null |
-    grep -Eq '^wifi:(disconnected|connecting.*)$'
+  local status
+  status=$(nmcli -t -f TYPE,STATE device status 2>/dev/null || true)
+  grep -Eq '^wifi:(disconnected|connecting.*)$' <<<"$status"
 }
 
 main() {

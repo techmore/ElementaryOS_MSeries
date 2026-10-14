@@ -1,0 +1,25 @@
+# The hooks the elementary unlock screen needs, in the order Omarchy Mac's
+# proven list uses: base udev asahi plymouth keyboard autodetect modconf kms
+# keymap consolefont block encrypt filesystems. Each missing hook is inserted
+# before the first hook that follows it; hooks already present are left alone.
+_elementary_ins() {
+  local want=$1 x s placed=0; shift
+  local -a out=()
+  [[ " ${HOOKS[*]} " == *" $want "* ]] && return 0
+  for x in "${HOOKS[@]}"; do
+    if (( ! placed )); then
+      for s in "$@"; do
+        if [[ $x == "$s" ]]; then out+=("$want"); placed=1; break; fi
+      done
+    fi
+    out+=("$x")
+  done
+  if (( placed )); then HOOKS=("${out[@]}"); fi
+  return 0
+}
+_elementary_ins plymouth keyboard autodetect modconf kms keymap consolefont block encrypt filesystems
+_elementary_ins keyboard autodetect modconf kms keymap consolefont block encrypt filesystems
+_elementary_ins kms keymap consolefont block encrypt filesystems
+_elementary_ins keymap consolefont block encrypt filesystems
+_elementary_ins consolefont block encrypt filesystems
+unset -f _elementary_ins

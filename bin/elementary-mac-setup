@@ -628,31 +628,31 @@ step_boot_layout() {
   reboot_now "Boot layout done."
 }
 
-# The passphrase is chosen in the initramfs, at a prompt that types whatever
-# layout the initramfs has loaded. If the keymap hook is missing there, a
-# non-US passphrase is created as US keystrokes and then rejected later when
-# the unlock screen (which does load the keymap) is typed correctly. Make sure
-# the initramfs loads the keymap and console font before the encryption boot.
-ensure_console_hooks() {
-  local dropin=/etc/mkinitcpio.conf.d/zz_elementary_console.conf hooks add=""
-  hooks=$(bash -c '
-    HOOKS=(); [[ -f /etc/mkinitcpio.conf ]] && source /etc/mkinitcpio.conf
-    for c in /etc/mkinitcpio.conf.d/*.conf; do [[ -f $c && $c != "$1" ]] && source "$c"; done
-    printf " %s " "${HOOKS[*]}"' -- "$dropin")
-  [[ $hooks == *" udev "* ]] || { warn "HOOKS has no udev; not adding the keymap hook"; return 0; }
-  [[ $hooks == *" keymap "* || $hooks == *" sd-vconsole "* ]] || add="keymap"
-  [[ $hooks == *" consolefont "* || $hooks == *" sd-vconsole "* ]] || add="${add:+$add }consolefont"
-  [[ -n $add ]] || return 0
+# What the initramfs needs, which Omarchy Mac's own install would have given it
+# and this port never runs:
+#  - the keymap and console font: the passphrase is chosen in the initramfs, at
+#    a prompt that types whatever layout is loaded there. Without the keymap hook
+#    a non-US passphrase is created as US keystrokes and then rejected when typed
+#    correctly later; without the font the prompt is a millimetre tall.
+#  - the display crossbar and the Apple HID drivers: late display bring-up and
+#    a trackpad that is sometimes dead for a whole session.
+# The blocks go into /etc/mkinitcpio.conf itself because mkinitcpio ignores the
+# drop-in directory for presets that set ALL_config (the fairydust ones).
+install_initramfs_fixes() {
+  local tool="$SRC/mseries/boot/mkinitcpio-snippet"
+  [[ -x $tool ]] || { warn "no $tool; the initramfs keeps its default hooks and modules"; return 0; }
 
-  mkdir -p "$(dirname "$dropin")"
-  # shellcheck disable=SC2016  # expanded by mkinitcpio, not here
-  printf '# elementary-mac: load the keymap and font at the passphrase prompt\n_h=(); for _x in "${HOOKS[@]}"; do _h+=("$_x"); if [[ $_x == udev ]]; then _h+=(%s); fi; done; HOOKS=("${_h[@]}"); unset _h _x\n' "$add" >"$dropin"
-  log "The initramfs will load: $add (so the passphrase is typed under your keymap)"
+  [[ -f /etc/mkinitcpio.conf.pre-elementary-mac ]] || cp -a /etc/mkinitcpio.conf /etc/mkinitcpio.conf.pre-elementary-mac
+  # An earlier version of this setup used a drop-in; the block replaces it.
+  [[ -f /etc/mkinitcpio.conf.d/zz_elementary_console.conf ]] && unlink /etc/mkinitcpio.conf.d/zz_elementary_console.conf
+  bash "$tool" add initramfs-console
+  bash "$tool" add initramfs-hardware
+  log "The initramfs will load the keymap, console font, display crossbar and Apple HID drivers"
 }
 
 step_encrypt() {
   banner "Step 2 of 3 -- disk encryption"
-  ensure_console_hooks
+  install_initramfs_fixes
   log "Staging the in-place encryption of the root filesystem."
   log "On the next boot you will CHOOSE THE DISK PASSPHRASE at this console,"
   log "and the whole partition is rewritten -- that part takes a while and"
@@ -790,6 +790,11 @@ step_elementary() {
   unmount_elementary
   trap on_exit EXIT
 
+  if ! root_is_encrypted; then
+    # Nothing else rebuilds the initramfs on this path.
+    install_initramfs_fixes
+    mkinitcpio -P || warn "could not rebuild the initramfs; the fixes apply from the next kernel update"
+  fi
   install_kernel_sync_hook
   set_default_boot_entry
   grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1 || fail "could not regenerate grub.cfg"

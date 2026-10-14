@@ -1,0 +1,18 @@
+# Apple Silicon initramfs fixes that Omarchy Mac applies from its own install,
+# which this port never runs.
+#
+# apple-dcp defers its probe until mux-apple-display-crossbar ("dp-xbar") exists;
+# without it the display comes up ~2.6 s late (see mseries/boot/zz_mseries_boot.conf).
+# hid_apple / hid_magicmouse: the internal keyboard and trackpad first bind
+# hid-generic and are re-created when the Apple drivers load; the churn
+# reshuffles input minors while logind and the compositor start, and on unlucky
+# boots the trackpad is dead for the whole session. Loading the drivers from the
+# initramfs removes the churn (ported from omarchy-mac fix-asahi-hid-race.sh).
+# mkinitcpio fails the whole image over a MODULES entry it cannot find, so each
+# is named only on kernels that build it as a module.
+for _elementary_mod in mux_apple_display_crossbar hid_apple hid_magicmouse; do
+  if modinfo -k "${KERNELVERSION:-$(uname -r)}" "$_elementary_mod" >/dev/null 2>&1; then
+    MODULES+=("$_elementary_mod")
+  fi
+done
+unset _elementary_mod

@@ -106,8 +106,12 @@ preconditions() {
 }
 
 detect_chip() {
-  if lspci -nn 2>/dev/null | grep -q "14e4:4425"; then echo "4378b1";
-  elif lspci -nn 2>/dev/null | grep -q "14e4:4433"; then echo "4387c2";
+  # Captured first: `lspci | grep -q` under pipefail fails intermittently when
+  # grep exits on the first match and lspci takes SIGPIPE.
+  local pci
+  pci=$(lspci -nn 2>/dev/null || true)
+  if grep -q "14e4:4425" <<<"$pci"; then echo "4378b1";
+  elif grep -q "14e4:4433" <<<"$pci"; then echo "4387c2";
   else echo ""; fi
 }
 
@@ -404,15 +408,18 @@ EOF
     [[ -d /usr/share/alsa-card-profile ]] && cp -a /usr/share/alsa-card-profile "$newroot/usr/share/" 2>/dev/null || true
     # From the checkout this script runs from (so --ref is honoured and nothing
     # is fetched unauthenticated at build time).
-    mkdir -p "$newroot/etc/modprobe.d" "$newroot/usr/sbin" "$newroot/usr/lib/systemd/system"
+    mkdir -p "$newroot/etc/modprobe.d" "$newroot/usr/sbin" "$newroot/usr/lib/systemd/system" \
+             "$newroot/usr/libexec" "$newroot/etc/xdg/autostart"
     for f in etc/modprobe.d/asahi-notch.conf \
+             usr/libexec/mseries-brightness etc/xdg/autostart/mseries-brightness.desktop \
              usr/sbin/mseries-wifi-resume-fix usr/sbin/mseries-wifi-firmware \
              usr/lib/systemd/system/omarchy-wifi-resume-fix.service \
              usr/lib/systemd/system/mseries-wifi-firmware.service; do
       [[ -f $layer/$f ]] || { echo "missing $layer/$f — re-clone/pull this repo" >&2; return 1; }
       cp -a "$layer/$f" "$newroot/$f" || return 1
     done
-    chmod +x "$newroot/usr/sbin/mseries-wifi-resume-fix" "$newroot/usr/sbin/mseries-wifi-firmware"
+    chmod +x "$newroot/usr/sbin/mseries-wifi-resume-fix" "$newroot/usr/sbin/mseries-wifi-firmware" \
+             "$newroot/usr/libexec/mseries-brightness"
     # Same timezone as the machine it grows on (the account is made with
     # useradd, which skips the first-run setup that would ask).
     if [[ -L /etc/localtime ]]; then

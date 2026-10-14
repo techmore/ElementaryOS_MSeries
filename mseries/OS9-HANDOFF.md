@@ -98,6 +98,13 @@ Open: custom kernel flavours (fairydust*) are only synced by the pacman hook if 
 - Prerequisites used `pacman -Sy <pkgs>` (a partial upgrade: on a months-old Asahi Alarm image git/curl can end up linked against libraries that were not upgraded). It is now `pacman -Syu` once, up front. If that replaced the running kernel (its `/usr/lib/modules/<running>` is gone, so vfat/btrfs/dm-crypt cannot be loaded), the setup reboots onto the new kernel before doing anything else. Later installs use plain `-S` (databases are already current).
 - `--no-encrypt` on stock Asahi Alarm (/boot on the btrfs root, kernel under the `@` subvolume): the GRUB entry used `/boot/vmlinuz-...`, which GRUB cannot find because it reads the top level of the filesystem. Now uses `grub-mkrelpath` (`/@/boot/...`). Untested.
 
+### Hardware-layer audit (2026-10-14)
+
+- **Initramfs fixes we were inheriting from Omarchy Mac and no longer get.** `docs`/TRANSFORM-DESIGN assumed the host initramfs already early-loads the HID drivers because Omarchy's install did it. This installer never runs Omarchy's install, so a fresh machine had: no `hid_apple`/`hid_magicmouse` early-load (sometimes-dead trackpad), no display crossbar, and no `keyboard`/`kms` hooks for the graphical unlock prompt. Added `mseries/boot/mkinitcpio-snippet` plus three snippets (`initramfs-console`, `initramfs-splash`, `initramfs-hardware`), applied by the setup (before the encryption boot and, for `--no-encrypt`, in step 3) and by `install-unlock-screen.sh`. Blocks are written into `/etc/mkinitcpio.conf` itself, not `mkinitcpio.conf.d/`, because mkinitcpio ignores the drop-in directory for presets that set `ALL_config` (the fairydust ones) — the drop-in approach used earlier in this session would have silently not applied there. The test script now covers the hook ordering.
+- `lspci -nn | grep -q` under `pipefail` fails intermittently (grep exits first, lspci takes SIGPIPE): fixed in `elementary-grow.sh` `detect_chip` and `mseries-wifi-firmware`; `mseries-wifi-resume-fix` `wifi_down` likewise. Wi-Fi firmware handoff now also looks in `/boot/mseries-firmware` (ESP at `/boot`).
+- The grown root now also gets the brightness-key helper and its autostart entry (previously only the image factory shipped them).
+- Not reviewed: the many `mseries/install-*.sh` scripts and the launcher (user-run, image-specific).
+
 ## Next tasks, in order
 
 Coordination: Codex handles implementation and review; OpenCode handles

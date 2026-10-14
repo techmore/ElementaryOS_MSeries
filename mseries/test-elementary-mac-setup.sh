@@ -47,4 +47,18 @@ forge=github.com repo=techmore/ElementaryOS_MSeries ref=main
 eq https://raw.githubusercontent.com/techmore/ElementaryOS_MSeries/main/bin/elementary-mac-setup \
   "$(raw_url bin/elementary-mac-setup)" "raw url"
 
+# mkinitcpio-snippet: hooks land in Omarchy Mac's proven order, idempotently, and
+# the block can be removed again.
+snip=$(dirname -- "${BASH_SOURCE[0]}")/boot/mkinitcpio-snippet
+mk=$(mktemp)
+printf 'HOOKS=(base udev asahi autodetect modconf block encrypt filesystems fsck)\n' >"$mk"
+for n in initramfs-console initramfs-splash initramfs-splash; do MKINITCPIO_CONF=$mk bash "$snip" add "$n"; done
+eq "base udev asahi plymouth keyboard autodetect modconf kms keymap consolefont block encrypt filesystems fsck" \
+  "$(bash -c 'source "$1"; echo "${HOOKS[*]}"' _ "$mk")" "hook order"
+eq 1 "$(grep -c '>>> elementary-mac initramfs-splash' "$mk")" "splash block written once"
+for n in initramfs-console initramfs-splash; do MKINITCPIO_CONF=$mk bash "$snip" remove "$n"; done
+eq "base udev asahi autodetect modconf block encrypt filesystems fsck" \
+  "$(bash -c 'source "$1"; echo "${HOOKS[*]}"' _ "$mk")" "hooks after remove"
+unlink "$mk"
+
 (( fails == 0 )) && echo "all tests passed" || { echo "$fails failure(s)" >&2; exit 1; }
