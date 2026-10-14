@@ -825,3 +825,42 @@ Hosts, and DNS render in Wingpanel.
 - Caveat: this kernel does not have the 0003 kvmalloc patch, and memory was not fragmented (3h uptime, ~4.7 GB free). The 1080p
   hang is a fragmentation failure, so a pass here does not prove the fix; repeat on the usb4.4 kernel after a long uptime.
 - Not yet tested: real files (high bitrate, B-frames, 10-bit HEVC/VP9), a real player, Brave's VA-API.
+
+## 2026-10-14 (end of session): where things stand, for the next agent
+
+**Host facts.** The dev machine is the M1 Pro running **elementary OS 9 (`apt`/`dpkg`)** booted on the **Arch kernel**
+`7.1.13-1-2-fairydust-usb4-ARCH` (Asahi Alarm owns kernel/initramfs/GRUB; see `KERNEL-FLOW.md`). 10 cores, 30 GB RAM,
+31 GB free on `/` (95 GB btrfs on LUKS `/dev/mapper/root`). The owner is about to **resize the partition** (an hour, done on the
+Mac side by the owner; do not touch partitions) before a local image build.
+
+**Done and pushed (main):** one-command installer `bin/elementary-mac-setup` (+ sandboxed flow test, CI), enhancement layer
+(`mseries/enhance.sh`, `enhance-firstboot.sh`), elementary unlock screen, kernel patches (0003 AVD kvmalloc, usb4.4), README
+rewritten as an omarchy-mac-style install guide with a work-in-progress status table, `mseries/DOCS.md` index,
+`mseries/check-video-decode.sh`.
+
+**Verified on hardware this session:** `install-video-decode.sh` builds/installs the VA-API driver here (7 profiles); H.264
+720p/1080p/**4K** hardware decode is bit-identical to software on the current kernel (memory not fragmented, so this does
+not prove the 0003 fix).
+
+**CI, workflow `daily-9.0.yml` with `fairydust=true`:**
+- Run 38582725389 and 38589009211: `build-kernel` **succeeds** (~24 min). Artifact `fairydust-kernel-packages-<run>` has the
+  usb4.4 `.deb` (downloaded and checksum-verified once; `apple-avd.ko` uses kvmalloc). Not booted anywhere. It is a Debian package
+  for the factory-ISO route; the installer route uses the Arch kernel, so the fix must also ship as an Arch package
+  (`mseries/fairydust/usb4/PKGBUILD` + `build-pkg.sh`, needs ~40 GiB free) to reach the installer path.
+- `build` (factory ISO) **fails** both times. First failure (fixed in a3ed9f0): `build-network-indicator` version gate read the
+  overlay's own dpkg database, always "none". Second failure: no error message. The log ends at 16:06:44 in "Building kernel
+  modules initrd" (mkosi-initrd, `modinfo` over 8544 modules), the job ends 16:18:15 with a bare `exit 1`: looks like the process
+  was killed (memory or disk on the runner), unconfirmed. Note the early line `depmod: ERROR: could not open directory
+  /lib/modules/7.0.0-1017-azure` and `cryptsetup: ERROR: Couldn't resolve device overlayfs` appear but may be benign.
+
+**Next steps, in order:**
+1. After the owner's resize: check `df -h /` and `free -g`; run the image recipe locally (the CI step is `just` -> `mkosi`, see
+   `.github/workflows/daily-9.0.yml` "Build experimental arm64 image") with all output to a log file and watch memory/disk while it
+   runs, to see where and why it dies after "Building kernel modules initrd". Fix what it shows.
+2. The factory ISO is optional for the owner's goal. The priority is the **wiped-Mac installer run** (`REINSTALL-RUNBOOK.md`);
+   bring back `/var/log/elementary-mac-setup*.log` and `/var/log/elementary-mac-enhance.log`.
+3. Boot a usb4.4 kernel (Arch package route), leave it up for a while, run `bash mseries/check-video-decode.sh` to prove the
+   1080p/4K fix under fragmentation. Still untested: real files/player, Brave VA-API, audio watchdog against a real hang.
+
+**Standing owner instructions:** always commit and push finished work to `main` without asking; never run deletion-style
+commands on user data; "root root" login on the rescue system is deliberate (upstream standard); the owner likes Brave.
