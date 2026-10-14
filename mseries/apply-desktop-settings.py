@@ -50,6 +50,12 @@ Gio.Settings.new("org.gnome.desktop.wm.preferences").set_string("button-layout",
 # change it, which pops a password dialog about every ten minutes. Set the timezone once instead.
 Gio.Settings.new("org.gnome.desktop.datetime").set_boolean("automatic-timezone", False)
 Gio.Settings.sync()
+# Window snapping: drag a window to a screen edge to tile it; Super+Left/Right (physical Ctrl+Left/Right) tiles halves.
+Gio.Settings.new("org.gnome.mutter").set_boolean("edge-tiling", True)
+mutter_keys = Gio.Settings.new("org.gnome.mutter.keybindings")
+mutter_keys.set_strv("toggle-tiled-left", ["<Super>Left"])
+mutter_keys.set_strv("toggle-tiled-right", ["<Super>Right"])
+Gio.Settings.sync()
 helper = home / ".local/libexec/mseries-brightness"
 helper.parent.mkdir(parents=True, exist_ok=True)
 shutil.copy2(repo / "mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness", helper)

@@ -5,6 +5,38 @@ elementary/mkosi Apple Silicon target, with a live capture from
 `MacBookPro18,3` (J314s, M1 Pro, `apple,t6000`). Read with
 `KERNEL-REPORT.md` and `PORT-MAP.md`.
 
+## Update 2026-10-14: USB4 kernel changes the dock answer
+
+The TL;DR and live kernel evidence below describe the stock `linux-asahi`
+kernel. On the M1 Pro, the experimental `fairydust` + USB4 kernel
+(`7.1.13-elementary-fairydust-usb4`) boots with the matching J314s device tree
+and newer m1n1. Its Dell dock hub, mouse, keyboard, and USB audio work. After
+installing newer m1n1, the owner reported that mouse and USB3 Ethernet appear to
+work; this has not been independently rechecked. Dock video still does not work because DisplayPort
+tunnelling over USB4 is not implemented upstream. Use the laptop HDMI port for
+the monitor, and avoid suspend while a USB4 link is connected. The current
+result and recovery notes are in [`fairydust/usb4/CUTOVER.md`](fairydust/usb4/CUTOVER.md).
+
+Where to get the kernel:
+
+- **CI `.deb`**: workflow `daily-9.0.yml` run with `fairydust=true` (run
+  38589009211) uploaded artifact `fairydust-kernel-packages-38589009211`
+  (37 MB, expires 2026-10-16) holding
+  `linux-image-7.1.13-elementary-fairydust-usb4_7.1.13+elementary.usb4.4_arm64.deb`,
+  `fairydust-m1n1-boot.bin` and SHA256SUMS. Downloading an Actions artifact
+  needs a GitHub login (`gh run download 38589009211 -n fairydust-kernel-packages-38589009211`).
+  Re-run the workflow with `fairydust=true` if it has expired.
+- **Arch package** (the route the installer-built system boots): `usb4/PKGBUILD`
+  via `sudo ./build-pkg.sh`, then `install-stage1.sh` and `install-stage2.sh`
+  (adds a *TEST* GRUB entry and updates the m1n1 `boot.bin` with the new DTBs).
+  Needs about 40 GiB free and the Arch side, not the elementary subvolume.
+  Read `usb4/RECOVERY.md` first.
+
+The CI `.deb` kernel was booted on 2026-10-14. The owner reports Ethernet
+appears to work after installing the pinned newer m1n1; the `0003` AVD
+kvmalloc fix still needs a long-uptime decode check. See
+[`usb4/CUTOVER.md`](fairydust/usb4/CUTOVER.md).
+
 ## TL;DR
 
 A USB-C dock that carries video (Dell WD19S and friends) needs **DisplayPort

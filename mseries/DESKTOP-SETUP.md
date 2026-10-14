@@ -6,6 +6,16 @@ Pantheon on a 2021 14-inch M1 Pro, kernel
 This is a running transformed system; it does not establish that our factory
 ISO builds or boots correctly.
 
+## One-command post-install
+
+`bash mseries/post-install.sh` runs all the customizations below in order
+(desktop settings, launcher, brightness, screenshots, theme, power, audio,
+Brave, video decode, gestures and the Wingpanel/Gala fixes). Use `--list` to
+see the stages, `--dry-run` to preview, `--only`, `--skip` and `--with` to
+choose, and `--status` for the last result. Run `sudo -v` first and run it as
+your normal user. Optional stages (Firefox, Signal, Tether, CodexBar, screen
+corners) are off unless named with `--with`.
+
 ## Command+Space launcher
 
 `mseries/mseries-launcher.py` is a small dark, rounded GTK 4 search box that
@@ -226,6 +236,11 @@ Silicon image no longer opts in. On this transformed install, pass
 `appledrm.show_notch=0` on the custom elementary GRUB entry; the Asahi driver
 loads from an Arch-named initramfs, so regenerating Ubuntu's conventional
 `initrd.img-*` files does not change this boot entry.
+
+Verified 2026-10-14 on the M1 Pro 14-inch: with `appledrm.show_notch=0` on the
+elementary GRUB entry, Pantheon's stock centered date/time is visible and
+working in the middle of Wingpanel, so the right-side replacement is not needed
+there.
 
 If the centered date/time remains hidden, install a temporary right-side
 replacement with `bash mseries/install-clockright-wingpanel.sh`. It follows
@@ -628,3 +643,16 @@ Colours: libadwaita apps ignore elementary's `@BLUEBERRY_*` names and read `acce
 "MacBook Pro J314 Speakers" (listed under Filters in `wpctl status`). Lesson: the first attempt left that sink at
 70% because the restore code only looked at the Sinks list; it is fixed, and all sinks were muted at 0 within a
 minute. Raise the volume slowly. Revert: `bash mseries/install-audio-stack.sh --revert`.
+
+## Window snapping and display scale
+
+`mseries/apply-desktop-settings.py` enables Gala's edge tiling
+(`org.gnome.mutter edge-tiling`): drag a window to the left or right screen
+edge to snap it to that half. `Super+Left` and `Super+Right` tile the focused
+window to a half (`org.gnome.mutter.keybindings toggle-tiled-left/right`); with
+the Command/Ctrl swap that is physical left Ctrl plus the arrow key.
+
+The built-in 3024x1890 panel defaults to a 2.0 scale, which looks large. Gala
+offers 1.0, 1.5, 1.75 and 2.0; 1.5 is the practical smaller setting. Apply it
+through `org.gnome.Mutter.DisplayConfig.ApplyMonitorsConfig` (method 2,
+persistent) or Pantheon's Displays settings.

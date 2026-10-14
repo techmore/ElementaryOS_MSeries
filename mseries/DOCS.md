@@ -31,6 +31,7 @@ enhancement layer are the current focus, the factory-ISO documents describe an u
 | [KERNEL-REPORT.md](KERNEL-REPORT.md) | Kernel verdict |
 | [KERNEL-SOURCE.md](KERNEL-SOURCE.md) | Where the kernel source comes from |
 | [fairydust/debian/README.md](fairydust/debian/README.md) | The patched kernel package (USB4, Apple Video Decoder fix) and how it is built |
+| [fairydust/usb4/CUTOVER.md](fairydust/usb4/CUTOVER.md) | Verified M1 Pro USB4 kernel, dock results, limits and recovery pointers |
 
 ## Status and planning
 
