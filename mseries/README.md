@@ -49,6 +49,10 @@ it. Cloning the repository alone does not apply those changes.
 [Local Troubleshooter](local-ai/README.md) adds on-device Gemma 4 log analysis,
 a native GTK app, and a Wingpanel robot menu with optional crash diagnosis.
 
+[Torrential native-port status](TORRENTIAL-PORT.md) records the installed ARM64
+app, local `.deb` recipe, successful Ubuntu torrent transfer, and source-license
+status. The packaging is optional and separate from the factory image.
+
 ## Layout
 
 Two tracks, one shared hardware layer:

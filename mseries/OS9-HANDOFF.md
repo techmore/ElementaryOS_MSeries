@@ -541,6 +541,28 @@ Validation: `bash -n mseries/install-codexbar.sh`, Python bytecode compilation
 of the wrapper, and `git diff --check` passed. No runtime install, authenticated
 usage fetch, or automated tests were run. Next: install on the working desktop,
 sign into OpenCode Go through its CLI, and confirm the Wingpanel quota row.
+## Torrential native desktop and download — 2026-10-13
+
+The local M-series fork at `/home/admin/Documents/TorrentialFork` is committed
+as `4082b079dab42a53c80a8ebbb6a11253ac716453`. It fixes unread daemon stdout,
+RPC startup timing, per-app config creation, loopback RPC binding, and graceful
+SIGTERM/wait shutdown. The native ARM64 package `0.1.0-1~mseries3` installed
+with the system Transmission 4.1.1 backend and elementary's `libgranite7`.
+A scoped AppArmor addition permits the daemon's Torrential config and Downloads
+folder and graceful termination. The fresh system daemon service was disabled
+on this host so the app owns its backend. No factory image was changed.
+
+The app launched in the active desktop session and remained running while the
+official Ubuntu 26.04.1 Server torrent transferred data. A check showed about
+235 MiB downloaded, 50 peers, and 13.5 MiB/s without an error; the ISO was not
+yet complete. The initial ARM64 desktop torrent was rejected by Ubuntu's
+tracker and removed. The server torrent remains in Downloads. UI button and
+close/reopen qualification remain. See `mseries/TORRENTIAL-PORT.md`.
+
+The upstream rewrite has no license grant, so its source and compiled package
+remain local. This repository includes only downstream packaging and status.
+No one was contacted or sent upstream source.
+
 ## Native battery time-to-full — 2026-10-13
 
 Added the charging estimate beside elementary's existing Power indicator

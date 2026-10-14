@@ -59,6 +59,12 @@ with the corrected live-session hardware overlay before progressing.
 6. **Install media / transform script** for other M1/M2 Macs (see `TRANSFORM-DESIGN.md`).
 7. **Tether continuity add-on**: pinned, removable ARM64 package installer and optional Brave integration are implemented on `mseries-tether-continuity`; iPhone/Brave qualification remains. Current BlueZ 5.85 is below Tether's 5.86 minimum for Messages. See [`TETHER-CONTINUITY.md`](TETHER-CONTINUITY.md).
 8. **Report upstream bugs** (Wingpanel crash; PipeWire missing LV2 plugin in Ubuntu).
+9. **Native battery time-to-full:** implemented as an optional patch and installer for elementary's Power indicator; built and installed on the M1 desktop. See [`BATTERY-ETA.md`](BATTERY-ETA.md).
+10. **Torrential ARM64 native app port and optimization.** Native GTK/Granite
+    package installed on the desktop; official Ubuntu torrent data transfer
+    verified. UI interaction, complete-ISO verification, and measured
+    optimization remain. Upstream source and packages stay local pending a
+    license grant. See [`TORRENTIAL-PORT.md`](TORRENTIAL-PORT.md).
 
 Not realistic here: macOS 27 guests (`MACOS-VM.md`), Mac mini M4 (Asahi has no M4 support: no installer, no GPU
 driver, M3 only now nearing a first release).
@@ -95,4 +101,3 @@ local kernel monitor. After package inspection, integrate it as an opt-in
 experimental image alongside the required pinned m1n1/DTB path. Host boot
 remains unchanged. Generic Ubuntu Asahi candidate is a packaging reference,
 not a replacement for the enhanced test kernel.
-9. **Native battery time-to-full:** implemented as an optional patch and installer for elementary's Power indicator; built and installed on the M1 desktop. See [`BATTERY-ETA.md`](BATTERY-ETA.md).
