@@ -220,6 +220,7 @@ namespace MSeries {
                 yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
                 if (!process.get_successful () || stdout_text.strip ().length == 0) {
                     show_unavailable ("Start CodexBar and sign in to see quota.");
+                    refresh_local_opencode_usage.begin ();
                     return;
                 }
 
@@ -228,6 +229,7 @@ namespace MSeries {
                 var root = parser.get_root ();
                 if (root == null || root.get_node_type () != Json.NodeType.OBJECT) {
                     show_unavailable ("CodexBar returned an unsupported snapshot.");
+                    refresh_local_opencode_usage.begin ();
                     return;
                 }
                 var snapshot = root.get_object ();
@@ -238,6 +240,7 @@ namespace MSeries {
                 }
             } catch (Error e) {
                 show_unavailable ("Could not read CodexBar usage: " + e.message);
+                refresh_local_opencode_usage.begin ();
             } finally {
                 request_in_flight = false;
                 refresh_after_snapshot = false;
@@ -386,7 +389,7 @@ namespace MSeries {
                     section.append (detail);
                 }
 
-                providers_box.append (section);
+                providers_box.prepend (section);
             } catch (Error e) {
                 append_local_opencode_status ("OpenCode local usage is unavailable: " + e.message);
             } finally {
@@ -412,7 +415,7 @@ namespace MSeries {
             var detail = new Gtk.Label (message) { xalign = 0, wrap = true };
             detail.add_css_class ("dim-label");
             section.append (detail);
-            providers_box.append (section);
+            providers_box.prepend (section);
         }
 
         private void append_provider_entry (Json.Object entry) {
