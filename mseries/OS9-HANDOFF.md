@@ -1018,3 +1018,22 @@ Wi-Fi reconnecting.
 Still open from the same audit: the DNS-logger polkit rule is probably not
 installed (password helper still fires every ten minutes), `user@109` (greeter)
 stop timeout from `obexd`, `mseries-verify` not on PATH.
+
+## Package refresh overhead — 2026-10-14
+
+Added `lib-apt.sh` and a temporary per-run cache in the manual post-install
+runner. Brave, Firefox and the two CodexBar installers share a successful
+repository refresh only while the source definitions and public signing-key
+files match. New repositories/key changes force refresh; failures remain
+retryable. Standalone installers retain normal refresh behavior. The shared
+refresh uses the documented `--error-on=any` option so transient repository failures
+cannot be treated as a successful cacheable update with stale metadata. The
+helper is included in the firstboot payload, but firstboot itself does not yet
+share the manual runner's cache. Each manual stage and actual refresh records
+elapsed seconds in its output/log.
+
+Validation: `bash mseries/test-apt-batch.sh` passes with stubbed sudo/package
+commands (reuse, repository/key invalidation, failed-refresh retry and standalone
+behavior). `bash mseries/test-elementary-mac-setup.sh`, Bash syntax checks and
+`git diff --check` pass. No real package install or timing benchmark was run.
+Atomic app deployment and the Flatpak/Nix comparison in issue #50 remain open.

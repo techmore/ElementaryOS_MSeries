@@ -3,6 +3,7 @@
 set -euo pipefail
 
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+source "$repo/mseries/lib-apt.sh"
 src="$repo/mseries/codexbar-wingpanel"
 
 if [[ ${1:-} == --uninstall ]]; then
@@ -16,7 +17,7 @@ if [[ ${1:-} == --uninstall ]]; then
   exit 0
 fi
 
-sudo apt-get update -qq
+mseries_apt_refresh
 sudo apt-get install -y meson ninja-build valac pkg-config \
   libwingpanel-9-dev libgranite-7-dev libjson-glib-dev
 

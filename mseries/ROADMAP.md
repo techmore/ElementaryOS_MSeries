@@ -40,6 +40,8 @@ delivery](ATOMIC-APP-DEPLOYMENT.md). Stage verified releases, switch atomically,
 retain rollback, and benchmark Flatpak/Nix alternatives to the current app
 install workflow. The observed system uses apt; the reported slowdown is not yet
 measured. Backend selection and implementation are open.
+The manual installer batch now reuses successful metadata refreshes until a
+repository/key changes and logs stage durations; real timing results are pending.
 
 The network/DNS logger now uses noninteractive authorization and installs a
 polkit rule for read-only DNS monitoring by administrators, addressing repeated

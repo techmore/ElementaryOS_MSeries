@@ -3,9 +3,10 @@
 set -euo pipefail
 [[ $(uname -m) == aarch64 ]] || { echo 'This installer requires ARM64' >&2; exit 1; }
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+source "$repo/mseries/lib-apt.sh"
 version=v0.74.1
 if [[ ${1:-} != --skip-system-deps ]]; then
-  sudo apt-get update -qq
+  mseries_apt_refresh
   sudo apt-get install -y \
     qml6-module-qtquick qml6-module-qtquick-controls \
     qml6-module-qtquick-layouts qml6-module-qtquick-templates \

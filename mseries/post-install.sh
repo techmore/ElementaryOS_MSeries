@@ -115,9 +115,13 @@ fi
 
 mkdir -p "$STATE"
 : >"$LOG"
+MSERIES_APT_BATCH_DIR=$(mktemp -d) || exit 1
+export MSERIES_APT_BATCH_DIR
+trap 'rm -rf -- "$MSERIES_APT_BATCH_DIR"' EXIT
 ok=() failed=()
 for s in "${selected[@]}"; do
   n=$(field "$s" 0)
+  stage_started=$SECONDS
   echo "==> $n: $(field "$s" 4)"
   # pipefail makes the pipeline status the installer's own, not tee's
   script=$here/$(field "$s" 3)
@@ -128,6 +132,7 @@ for s in "${selected[@]}"; do
   else
     failed+=("$n")
   fi
+  echo "$n: elapsed $((SECONDS - stage_started))s" | tee -a "$LOG"
 done
 
 {

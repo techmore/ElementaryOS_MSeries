@@ -77,6 +77,7 @@ for f in usr/libexec/mseries/user-enhance \
          usr/lib/systemd/user/elementary-mac-user-enhance.timer \
          usr/share/elementary-mac/mseries/install-netusage-policy.sh \
          usr/share/elementary-mac/mseries/install-codexbar.sh \
+         usr/share/elementary-mac/mseries/lib-apt.sh \
          usr/share/elementary-mac/mseries/codexbar-opencode-wrapper.py \
          usr/share/elementary-mac/mseries/install-brave-widevine.sh \
          usr/share/elementary-mac/mseries/netspeed/netusage/netusage.service \

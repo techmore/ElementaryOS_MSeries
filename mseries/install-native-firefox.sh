@@ -5,13 +5,14 @@
 # Ubuntu's "firefox" package is a snap shim; snaps start slowly and sandbox GPU access poorly. The pin below
 # makes apt prefer Mozilla's package. The signing key is checked against Mozilla's published fingerprint.
 set -euo pipefail
+source "$(dirname -- "${BASH_SOURCE[0]}")/lib-apt.sh"
 fingerprint=35BAA0B33E9EB396F59CA838C0BA5CE6DC6315A3
 keyring=/etc/apt/keyrings/packages.mozilla.org.asc
 
 if [[ ${1:-} == --uninstall ]]; then
   sudo apt-get remove -y firefox || true
   sudo rm -f /etc/apt/sources.list.d/mozilla.sources /etc/apt/preferences.d/mozilla "$keyring"
-  sudo apt-get update -qq
+  mseries_apt_refresh
   echo 'Removed.'
   exit 0
 fi
@@ -36,6 +37,6 @@ Package: *
 Pin: origin packages.mozilla.org
 Pin-Priority: 1000
 PIN
-sudo apt-get update -qq
+mseries_apt_refresh
 sudo apt-get install -y firefox
 dpkg-query -W -f='Firefox ${Version} (${Status})\n' firefox

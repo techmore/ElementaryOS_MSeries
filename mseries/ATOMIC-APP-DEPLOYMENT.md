@@ -6,6 +6,14 @@ evaluation.
 
 Tracking: [GitHub issue #50](https://github.com/techmore/ElementaryOS_MSeries/issues/50).
 
+Initial performance work: the manual post-install runner now shares a successful
+APT metadata refresh across the participating browser/CodexBar installers for
+one batch. Repository or signing-key changes invalidate that reuse, failed
+refreshes are not cached, and standalone installs still refresh normally.
+Stage durations and refresh durations are logged. Behavior is covered by
+stubbed package-command tests; real M1 Pro performance measurements and backend
+selection remain pending.
+
 ## Problem
 
 App installs and updates should be quick, recoverable and consistent after an
