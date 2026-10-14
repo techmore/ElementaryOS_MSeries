@@ -1,0 +1,175 @@
+diff --git a/src/LayoutManager.vala b/src/LayoutManager.vala
+index ec59541..57195f5 100644
+--- a/src/LayoutManager.vala
++++ b/src/LayoutManager.vala
+@@ -153,6 +153,9 @@ public class Gala.LayoutManager : Object {
+ 
+         session_locker = new SessionLocker (wm);
+         ui_group.add_child (session_locker);
++
++        // Rounded masks over the corners of the laptop panel; keep this the topmost child.
++        ui_group.add_child (new ScreenCorners (display));
+     }
+ 
+     private void update_ui_group_size () {
+diff --git a/src/Widgets/ScreenCorners.vala b/src/Widgets/ScreenCorners.vala
+new file mode 100644
+index 0000000..41886ef
+--- /dev/null
++++ b/src/Widgets/ScreenCorners.vala
+@@ -0,0 +1,122 @@
++/*
++ * SPDX-License-Identifier: GPL-3.0-or-later
++ * SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries
++ */
++
++/**
++ * Black rounded masks over the four corners of the built-in (laptop) display, so everything
++ * on the desktop (top bar, dock, maximized and tiled windows) follows the curve of the panel
++ * the way macOS does. External monitors are left alone. The actor is click-through and sits
++ * above everything else in the UI group.
++ *
++ * Radius, in logical pixels, comes from the GALA_SCREEN_CORNER_RADIUS environment variable
++ * (default 10, 0 disables the masks).
++ */
++public class Gala.ScreenCorners : CanvasActor {
++    private const double DEFAULT_RADIUS = 10.0;
++
++    public Meta.Display display { get; construct; }
++
++    private double radius = DEFAULT_RADIUS;
++    // x, y, width, height of every built-in panel, flattened
++    private Gee.ArrayList<int> panels = new Gee.ArrayList<int> ();
++
++    public ScreenCorners (Meta.Display display) {
++        Object (display: display);
++    }
++
++    construct {
++        reactive = false;
++        name = "screen-corners";
++
++        var env = Environment.get_variable ("GALA_SCREEN_CORNER_RADIUS");
++        if (env != null && env != "") {
++            radius = double.max (0, double.parse (env));
++        }
++
++        unowned var monitor_manager = display.get_context ().get_backend ().get_monitor_manager ();
++        monitor_manager.monitors_changed.connect (update);
++
++        update ();
++    }
++
++    private void update () {
++        panels.clear ();
++
++        unowned var monitor_manager = display.get_context ().get_backend ().get_monitor_manager ();
++        foreach (unowned var logical_monitor in monitor_manager.get_logical_monitors ()) {
++            foreach (unowned var monitor in logical_monitor.get_monitors ()) {
++                if (monitor.is_builtin ()) {
++                    var geometry = display.get_monitor_geometry (logical_monitor.get_number ());
++                    panels.add (geometry.x);
++                    panels.add (geometry.y);
++                    panels.add (geometry.width);
++                    panels.add (geometry.height);
++                    break;
++                }
++            }
++        }
++
++        int stage_width, stage_height;
++        display.get_size (out stage_width, out stage_height);
++        set_position (0, 0);
++        set_size (stage_width, stage_height);
++
++        visible = radius > 0 && panels.size > 0;
++        content.invalidate ();
++    }
++
++    protected override void draw (Cairo.Context cr, int width, int height) {
++        cr.set_operator (Cairo.Operator.CLEAR);
++        cr.paint ();
++
++        cr.set_operator (Cairo.Operator.OVER);
++        cr.set_source_rgb (0, 0, 0);
++
++        for (int i = 0; i + 3 < panels.size; i += 4) {
++            double x = panels[i];
++            double y = panels[i + 1];
++            double w = panels[i + 2];
++            double h = panels[i + 3];
++
++            corner (cr, x, y, 1, 1);
++            corner (cr, x + w, y, -1, 1);
++            corner (cr, x, y + h, 1, -1);
++            corner (cr, x + w, y + h, -1, -1);
++        }
++    }
++
++    /**
++     * Fills the sliver between a screen corner (cx, cy) and a quarter circle of {@link radius}.
++     * dx and dy point from the corner towards the inside of the screen (+1 or -1).
++     */
++    private void corner (Cairo.Context cr, double cx, double cy, double dx, double dy) {
++        double centre_x = cx + dx * radius;
++        double centre_y = cy + dy * radius;
++
++        // The arc runs from the point on the horizontal edge to the point on the vertical edge,
++        // the short (quarter turn) way round the circle's centre.
++        double start = Math.atan2 (-dy, 0);
++        double end = Math.atan2 (0, -dx);
++        double delta = end - start;
++        while (delta > Math.PI) {
++            delta -= 2 * Math.PI;
++        }
++
++        while (delta <= -Math.PI) {
++            delta += 2 * Math.PI;
++        }
++
++        cr.new_path ();
++        cr.move_to (cx, cy);
++        cr.line_to (centre_x, cy);
++        if (delta > 0) {
++            cr.arc (centre_x, centre_y, radius, start, start + delta);
++        } else {
++            cr.arc_negative (centre_x, centre_y, radius, start, start + delta);
++        }
++
++        cr.close_path ();
++        cr.fill ();
++    }
++}
+diff --git a/src/meson.build b/src/meson.build
+index 6b941f2..c3e2666 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -63,6 +63,7 @@ gala_bin_sources = files(
+     'ShellClients/ShellWindow.vala',
+     'Widgets/DwellClickTimer.vala',
+     'Widgets/LockScreen.vala',
++    'Widgets/ScreenCorners.vala',
+     'Widgets/MultitaskingView/MonitorClone.vala',
+     'Widgets/MultitaskingView/MultitaskingView.vala',
+     'Widgets/MultitaskingView/StaticWindowClone.vala',
+diff --git a/vapi/libmutter.vapi b/vapi/libmutter.vapi
+index 9b6a815..3ced58a 100644
+--- a/vapi/libmutter.vapi
++++ b/vapi/libmutter.vapi
+@@ -647,14 +647,14 @@ namespace Meta {
+ 		public Meta.Workspace workspace { owned get; set; }
+ 	}
+ #if HAS_MUTTER49
+-	[CCode (cheader_filename = "meta/main.h", type_id = "meta_logical_monitor_get_type ()")]
++	[CCode (cheader_filename = "meta/meta-logical-monitor.h", type_id = "meta_logical_monitor_get_type ()")]
+ 	public class LogicalMonitor : GLib.Object {
+ 		[CCode (has_construct_function = false)]
+ 		protected LogicalMonitor ();
+ 		public unowned GLib.List<Meta.Monitor> get_monitors ();
+ 		public int get_number ();
+ 	}
+-	[CCode (cheader_filename = "meta/main.h", type_id = "meta_monitor_get_type ()")]
++	[CCode (cheader_filename = "meta/meta-monitor.h", type_id = "meta_monitor_get_type ()")]
+ 	public class Monitor : GLib.Object {
+ 		[CCode (has_construct_function = false)]
+ 		protected Monitor ();
