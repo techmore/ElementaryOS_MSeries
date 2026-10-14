@@ -1165,3 +1165,18 @@ First Action run 38640456586 completed successfully. The duplicate Codex
 heartbeat `follow-omarchy-m-sources` is PAUSED. Review covered initial audited
 revision comparison, missing user sources, and trusted dashboard authors.
 No new automated tests were run for this watcher.
+
+## Factory configuration delivery — 2026-10-14
+
+The Apple overlay finalize hook now exports its surviving `/etc` files to
+`/usr/share/factory/etc` and generates individual tmpfiles copy/link entries.
+This carries Wi-Fi enablement, module options and brightness autostart into
+the `/usr`-only sysupdate artifact. Missing files are populated even when
+parent directories already exist; administrator edits are preserved.
+Export happens after pruning so unrelated base configuration is not claimed.
+Implementation reviewed; no tests or image build run in this batch.
+
+Remaining: build and boot qualification; shared enhancement-module integration,
+canonical power helper under `/usr`, baked application dependencies and an
+immutable-safe per-user setup path. The existing enhancement firstboot job
+uses apt/build writes to `/usr` and cannot be enabled unchanged on EROFS.

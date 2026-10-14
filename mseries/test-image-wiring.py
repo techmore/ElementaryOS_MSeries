@@ -73,7 +73,7 @@ class ImageWiringTests(unittest.TestCase):
             payload.parent.mkdir(parents=True)
             payload.write_text('must be pruned')
             subprocess.run(['bash', str(source / 'mkosi.finalize')],
-                           env={**os.environ, 'BUILDROOT': str(image)}, check=True)
+                           env={**os.environ, 'BUILDROOT': str(image), 'SRCDIR': str(ROOT)}, check=True)
             for path in expected:
                 with self.subTest(path=str(path)):
                     self.assertTrue((image / path).is_file())

@@ -196,3 +196,18 @@ release changes and fetch failures. Closing the issue acknowledges observations;
 new changes reopen it. Failed fetches preserve the last successful observation
 and fail the Action. No upstream code is automatically merged or deployed.
 The native macOS installer remains reference-only, per the owner decision.
+
+## Factory configuration delivery — 2026-10-14
+
+The Apple overlay finalize hook now exports its surviving `/etc` files to
+`/usr/share/factory/etc` and generates individual tmpfiles copy/link entries.
+This carries Wi-Fi enablement, module options and brightness autostart into
+the `/usr`-only sysupdate artifact. Missing files are populated even when
+parent directories already exist; administrator edits are preserved.
+Export happens after pruning so unrelated base configuration is not claimed.
+Implementation reviewed; no tests or image build run in this batch.
+
+Remaining: build and boot qualification; shared enhancement-module integration,
+canonical power helper under `/usr`, baked application dependencies and an
+immutable-safe per-user setup path. The existing enhancement firstboot job
+uses apt/build writes to `/usr` and cannot be enabled unchanged on EROFS.
