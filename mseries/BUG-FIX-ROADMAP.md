@@ -84,6 +84,8 @@ Added `mseries/screenshot-shelf/` and `install-screenshot-shelf.sh`: a thumbnail
 | **OpenBubbles** | Flutter app on `rustpush`; see the evaluation above. | No arm64 release. | SSPL core, account risk. |
 | pypush, mautrix-imessage | Libraries and a Matrix bridge, not desktop clients. | Not a fit. | |
 
+**Owner decision (2026-10-14): document only for now.** The owner likes BlueFerry (no Apple login, one-time-code copy) and has not asked for anything to be installed. Install it after the reinstall: `sudo apt install ./blueferry-backend_0.8.1-1_all.deb ./blueferry-gtk_0.8.1-1_all.deb` (from the [release page](https://github.com/erikwb/BlueFerry/releases/latest), check the version then), pair the iPhone, and enable one-time-code copy if wanted. BlueBubbles stays the fallback if attachments and reactions matter.
+
 **Recommendation:** try **BlueBubbles** first (full features, official arm64 client, genuine Mac, lowest account risk) if a Mac can stay on; use **BlueFerry** as the no-Apple-account option for basic texting when the iPhone is nearby. Keep OpenBubbles and its relatives as a last resort. Nothing was installed or downloaded for this comparison.
 
 ## Priority order (2026-10-14)
@@ -100,7 +102,7 @@ Ranked by how often the owner hits it, how small the fix is, and what it depends
 | 6 | Preview-style image and PDF markup | Pairs with 5; mostly choosing and packaging a tool | Medium |
 | 7 | Gaps left from the Omarchy parity audit | Audio watchdog and the two WirePlumber rules are installed on the M1 Pro (2026-10-14); function-key mode awaits an owner choice; mic mapper not ported | Mostly done |
 | 8 | **Touch ID (the main login goal)** | No public code exists; upstream watcher installed; a security key with pam_u2f is a possible interim | Blocked upstream, watching |
-| 9 | iMessage | Options compared: BlueBubbles (Linux arm64 client plus a Mac server) and BlueFerry (iPhone over Bluetooth) beat OpenBubbles on risk and fit; waiting for the owner to pick | Waiting on owner |
+| 9 | iMessage | Documented. Owner leans to BlueFerry (iPhone over Bluetooth, code copy); install after the reinstall | Documented, install later |
 | 10 | iCloud password sync | No official Linux client; evaluate safe options | Research |
 | 11 | Small checks: brightness keys, keyboard light on lock and lid, Wi-Fi resume, Gala OSK guard, file the Wingpanel report | Cheap to verify, low daily impact | Housekeeping |
 | 12 | Factory ISO hardware boot and image packaging (audio chain, firmware) | Release blocker for the image, not for this desktop | After the reinstall decision |
