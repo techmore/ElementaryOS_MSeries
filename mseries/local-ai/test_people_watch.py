@@ -21,12 +21,15 @@ class PeopleWatch(unittest.TestCase):
         pw.LIST.write_text(json.dumps([{'repo': 'a/b', 'who': 'Someone', 'why': 'because'}]))
         self.pushed, self.tag = '2026-10-01T00:00:00Z', 'v1'
         pw.get = self.fake_get
+        self.fail_get = False
         pw.REFRESH = 0
 
     def tearDown(self):
         self.dir.cleanup()
 
     def fake_get(self, path):
+        if self.fail_get:
+            raise OSError('rate limit exceeded')
         if path.endswith('/releases/latest'):
             return {'tag_name': self.tag}
         if '/commits' in path:
@@ -47,6 +50,14 @@ class PeopleWatch(unittest.TestCase):
         self.assertEqual(self.run_main(), 1)          # acknowledged
         self.pushed = '2026-10-02T00:00:00Z'
         self.assertEqual(self.run_main(), 0)          # new push
+
+    def test_failed_fetch_is_not_acknowledged_or_hidden(self):
+        self.run_main()
+        self.fail_get = True
+        self.assertEqual(self.run_main('--ack'), 2)   # refuses a partial baseline
+        self.tag = 'v2'
+        self.fail_get = False
+        self.assertEqual(self.run_main(), 0)          # baseline was not overwritten
 
 
 if __name__ == '__main__':

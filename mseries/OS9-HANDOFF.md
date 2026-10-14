@@ -1083,3 +1083,7 @@ The owner decided against building the macOS installer. `MAC-INSTALLER-PLAN.md` 
 - Added the iMessage and iCloud-password projects from our notes (BlueBubbles app and server, rustpush, Bubbles, LiteBubbles, apw, dragosol, passwords-app, deej1721) to `people-watch.json` (24 projects), checked license and activity, baseline re-acknowledged. Note "these new repos" was ambiguous (no links in the request); send links for any others.
 - `test-image-wiring.py` failed after the merged commit cecc9fb: the Apple overlay now lists `io.elementary.panel.network` and `io.elementary.quick-settings` but the arm64 liveiso and sysupdate configs did not install them. Added both to those two configs; the test passes. Not built into an image here.
 - Marked the launcher and window-button rows in `BUG-FIX-ROADMAP.md` as fixed (owner to confirm).
+
+### Correction: watcher fetch failure — 2026-10-14
+
+The previous entry said the 24-project baseline was acknowledged. It was not: the unauthenticated GitHub limit (60/h) was exhausted by repeated runs, `people-watch.py` swallowed the 403s and re-saved the stale 15-project cache as the baseline. Fixed in `people-watch.py`: a failed entry keeps its previous value and is reported (`--list` prints a WARNING), `--ack` refuses to save a partial baseline (exit 2), and it now uses `GITHUB_TOKEN` or the user's own `gh auth token` (5,000/h; read-only calls to api.github.com). New regression test in `test_people_watch.py`. The real baseline now holds all 24 projects.

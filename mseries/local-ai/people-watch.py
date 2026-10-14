@@ -8,6 +8,7 @@ Read-only: nothing here installs or enables anything.
 """
 import json
 import os
+import subprocess
 import sys
 import time
 import urllib.error
@@ -22,10 +23,27 @@ REFRESH = 6 * 3600
 API = 'https://api.github.com'
 
 
+_TOKEN = []
+
+
+def token_value():
+    """GITHUB_TOKEN, else the user's own `gh auth token` (read-only API calls to api.github.com only)."""
+    if not _TOKEN:
+        token = os.environ.get('GITHUB_TOKEN', '')
+        if not token:
+            try:
+                token = subprocess.run(['gh', 'auth', 'token'], capture_output=True, text=True, timeout=10).stdout.strip()
+            except (OSError, subprocess.SubprocessError):
+                token = ''
+        _TOKEN.append(token)
+    return _TOKEN[0]
+
+
 def get(path):
     headers = {'User-Agent': 'mseries-people-watch', 'Accept': 'application/vnd.github+json'}
-    if os.environ.get('GITHUB_TOKEN'):
-        headers['Authorization'] = 'Bearer ' + os.environ['GITHUB_TOKEN']
+    token = token_value()
+    if token:
+        headers['Authorization'] = 'Bearer ' + token
     try:
         with urllib.request.urlopen(urllib.request.Request(API + path, headers=headers), timeout=15) as response:
             return json.load(response)
@@ -51,14 +69,21 @@ def snapshot_entry(entry):
             'pushed': info['pushed_at'], 'release': release.get('tag_name', '')}
 
 
-def fetch(entries):
-    data = {'checked': time.time(), 'items': {}}
+def fetch(entries, previous=None):
+    """Snapshot every entry; one that fails keeps its previous value and is listed in `errors`."""
+    data = {'checked': time.time(), 'items': {}, 'errors': []}
     for entry in entries:
         key = entry.get('repo') or '@' + entry['user']
-        data['items'][key] = snapshot_entry(entry)
-        if 'repo' in entry and data['items'][key]['pushed']:
-            commits = get('/repos/%s/commits?per_page=3' % entry['repo']) or []
-            data['items'][key]['recent'] = [c['commit']['message'].splitlines()[0][:90] for c in commits]
+        try:
+            item = snapshot_entry(entry)
+            if 'repo' in entry and item['pushed']:
+                commits = get('/repos/%s/commits?per_page=3' % entry['repo']) or []
+                item['recent'] = [c['commit']['message'].splitlines()[0][:90] for c in commits]
+            data['items'][key] = item
+        except (OSError, ValueError) as error:
+            data['errors'].append('%s: %s' % (key, error))
+            if previous and key in previous.get('items', {}):
+                data['items'][key] = previous['items'][key]
     return data
 
 
@@ -73,13 +98,17 @@ def main():
     entries = json.loads(LIST.read_text())
     cached = load(CACHE)
     if cached is None or time.time() - cached['checked'] > REFRESH or '--ack' in sys.argv:
-        try:
-            cached = fetch(entries)
+        fresh = fetch(entries, cached)
+        if fresh['items']:
+            cached = fresh
             CACHE.parent.mkdir(parents=True, exist_ok=True)
             CACHE.write_text(json.dumps(cached))
-        except (OSError, ValueError):
-            if cached is None:
-                return 1  # offline and nothing cached: not applicable
+        elif cached is None:
+            return 1  # offline and nothing cached: not applicable
+    errors = cached.get('errors', [])
+    if '--ack' in sys.argv and (errors or len(cached['items']) != len(entries)):
+        print('not acknowledged: %d entries could not be read (%s)' % (len(errors), errors[0] if errors else 'incomplete'))
+        return 2
     baseline = load(BASELINE)
     if baseline is None or '--ack' in sys.argv:
         BASELINE.parent.mkdir(parents=True, exist_ok=True)
@@ -95,6 +124,8 @@ def main():
             changes.append('%s (%s): %s\n    %s' % (key, entry['who'], now['state'], '\n    '.join(now.get('recent', []))
                                                   or entry['why']))
     if '--list' in sys.argv:
+        if errors:
+            print('WARNING: %d of %d entries could not be read this time, e.g. %s' % (len(errors), len(entries), errors[0]))
         print('watching %d projects; last checked %s' % (len(cached['items']), time.strftime('%F %T', time.localtime(cached['checked']))))
         print('\n'.join(changes) or 'no changes since the baseline')
     return 0 if changes else 1
