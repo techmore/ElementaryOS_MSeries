@@ -157,7 +157,7 @@ order=$(grep -nE "^grow --apply|^grow --finalize|^unlock-screen|^REBOOT: element
 check "steps happen in order (apply, finalize, unlock screen, reboot)" test "$order" = "grow --apply|grow --finalize|unlock-screen --theme-from|REBOOT|"
 
 # 5. Finished: nothing left to do (and the answers file is gone, so it says done).
-( source "$repo/bin/elementary-mac-setup"; [[ $(next_step 1 1 1 1) == done ]] ) ||
+( source "$repo/bin/elementary-mac-setup"; [[ $(next_step 1 1 1 1) == "done" ]] ) ||
   { echo "FAIL: next_step after install is not done" >&2; fails=$((fails + 1)); }
 
 # 6. An interrupted earlier build is rolled back first; a finished one is kept.
