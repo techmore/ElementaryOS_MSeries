@@ -5,6 +5,7 @@ set -euo pipefail
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 curl -fLsS https://updates.signal.org/desktop/signal-desktop-beta_arm64.AppImage -o "$work/signal.AppImage"
+chmod 755 "$work/signal.AppImage"
 curl -fLsS https://updates.signal.org/desktop/signal-desktop-beta_arm64.AppImage.gpg -o "$work/signal.gpg"
 curl -fLsS https://updates.signal.org/static/desktop/appimage.asc -o "$work/key.asc"
 mkdir -m700 "$work/gnupg"
@@ -13,12 +14,16 @@ gpg --homedir "$work/gnupg" --status-fd 1 --verify "$work/signal.gpg" "$work/sig
 grep -q '^\[GNUPG:\] VALIDSIG 4B16B7232DFAA439AD791002EF9F501F13EED94C ' "$work/status"
 mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications"
 install -m755 "$work/signal.AppImage" "$HOME/.local/bin/signal-desktop"
+appdir="$HOME/.local/lib/signal-desktop-beta"
+mkdir -p "$appdir"
+(cd "$work" && ./signal.AppImage --appimage-extract >/dev/null)
+cp -a "$work/squashfs-root/." "$appdir/"
 cat > "$HOME/.local/share/applications/signal-desktop.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=Signal Beta
 Comment=Official Signal Desktop ARM64 beta
-Exec="$HOME/.local/bin/signal-desktop" --use-tray-icon %U
+Exec="$appdir/AppRun" --use-tray-icon %U
 Terminal=false
 Categories=Network;InstantMessaging;
 StartupWMClass=Signal Beta

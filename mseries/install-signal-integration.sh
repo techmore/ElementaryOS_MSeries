@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
 # Repair Electron's lowercase application identity and install its bundled icon.
 set -euo pipefail
-app="$HOME/.local/bin/signal-desktop"
+appdir="$HOME/.local/lib/signal-desktop-beta"
+app="$appdir/AppRun"
 test -x "$app" || { echo 'Install Signal with mseries/install-signal.sh first.' >&2; exit 1; }
-work=$(mktemp -d /tmp/mseries-signal-integration.XXXXXX)
-trap 'rm -rf "$work"' EXIT
-(cd "$work" && "$app" --appimage-extract 'usr/share/icons/hicolor/1024x1024/apps/signal-desktop-beta.png' >/dev/null)
-icon="$work/squashfs-root/usr/share/icons/hicolor/1024x1024/apps/signal-desktop-beta.png"
+icon="$appdir/usr/share/icons/hicolor/1024x1024/apps/signal-desktop-beta.png"
 test -s "$icon"
 install -Dm644 "$icon" "$HOME/.local/share/icons/hicolor/1024x1024/apps/signal-desktop-beta.png"
 mkdir -p "$HOME/.local/share/applications" "$HOME/.local/state/mseries-signal"
