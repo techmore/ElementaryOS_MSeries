@@ -77,7 +77,7 @@ def main():
     session = SimpleNamespace(start=True, release_model=not args.keep_model)
     answer = ''
     with triage.analysis_session(session, endpoint):
-        model = triage.api(endpoint, '/v1/models')['data'][0]['id']
+        model = triage.served_model(triage.api(endpoint, '/v1/models')['data'])
         messages = [{'role': 'system', 'content': SYSTEM},
                     {'role': 'user', 'content': triage.redact(' '.join(args.question))[:1000]}]
         for _ in range(MAX_ROUNDS):

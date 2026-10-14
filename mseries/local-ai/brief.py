@@ -174,7 +174,7 @@ def main():
     endpoint = triage.DEFAULT_ENDPOINT
     session = SimpleNamespace(start=True, release_model=not args.keep_model)
     with triage.analysis_session(session, endpoint):
-        model = triage.api(endpoint, '/v1/models')['data'][0]['id']
+        model = triage.served_model(triage.api(endpoint, '/v1/models')['data'])
         triage.stage('analyzing', f'Planning {len(rows)} open tasks and energy on-device…')
         response = triage.api(endpoint, '/v1/chat/completions', {
             'model': model, 'messages': [{'role': 'system', 'content': SYSTEM}, {'role': 'user', 'content': prompt}],
