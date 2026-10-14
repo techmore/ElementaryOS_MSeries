@@ -887,3 +887,19 @@ not prove the 0003 fix).
 
 **Standing owner instructions:** always commit and push finished work to `main` without asking; never run deletion-style
 commands on user data; "root root" login on the rescue system is deliberate (upstream standard); the owner likes Brave.
+
+## Post-install gaps reported — 2026-10-14
+
+The default runner previously installed the Wingpanel network module but omitted
+the separate `netusage` user service that populates Apps/Hosts/DNS. It now runs
+that installer by default after the panel module. Brave DRM support and CodexBar
+(desktop/CLI plus the Wingpanel indicator) are also default stages. The
+hash-pinned Widevine installer requires Brave to have been launched once and
+fully quit. CodexBar installers now install their Qt runtime and Wingpanel build
+dependencies. `mseries/DESKTOP-SETUP.md` documents the DNS dependency on
+systemd-resolved and the Omarchy-reported Brave/AVD green-video workaround.
+
+Verified in this checkout: `post-install.sh --list` and `--dry-run` include all
+new stages; `git diff --check` is clean. This command environment cannot inspect
+the owner's live user service or browser profile, so apply with Brave fully
+quit, then review `bash mseries/post-install.sh --status` and the service logs.

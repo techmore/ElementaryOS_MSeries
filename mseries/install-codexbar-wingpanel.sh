@@ -16,6 +16,10 @@ if [[ ${1:-} == --uninstall ]]; then
   exit 0
 fi
 
+sudo apt-get update -qq
+sudo apt-get install -y meson ninja-build valac pkg-config \
+  libwingpanel-9-dev libgranite-7-dev libjson-glib-dev
+
 mkdir -p "$HOME/.local/lib/codexbar-cli"
 install -m 0755 "$repo/mseries/codexbar-opencode-local.py" \
   "$HOME/.local/lib/codexbar-cli/codexbar-opencode-local.py"

@@ -1,7 +1,10 @@
 # Brave DRM video (Widevine) on the M-series port
 
-Rented and purchased YouTube movies (and Netflix, Apple TV+, Spotify) are DRM-protected. They need the Widevine module.
-Ordinary YouTube does not, and plays without it.
+Some YouTube Movies titles, including free/ad-supported movies, and services
+such as Netflix, Apple TV+ and Spotify use DRM and need Widevine. Ordinary
+YouTube videos do not. If only selected movies fail with a spinner or DRM
+playback error, enable Widevine in Brave; this repo's post-install flow now
+installs the pinned ARM64 component and opts it in by default.
 
 ## Symptoms and causes found (2026-10-13)
 
@@ -14,8 +17,11 @@ Ordinary YouTube does not, and plays without it.
 
 ## Fix
 
-Easiest: `brave://settings/extensions` -> turn on **Widevine**, restart Brave. Brave then downloads Google's arm64 build
-by itself (`brave://components` shows "Widevine Content Decryption Module").
+To apply on an existing installation, fully quit Brave and run
+`bash mseries/post-install.sh --only widevine`. The profile must have been
+created by launching Brave once. You can also use
+`brave://settings/extensions` -> turn on **Widevine**, then restart Brave;
+`brave://components` should show "Widevine Content Decryption Module".
 
 Scripted: with Brave fully quit,
 
@@ -31,8 +37,15 @@ Check the log if it spins: `journalctl --since -10min | grep -iE 'cdm|widevine'`
 ## Limits that are not bugs
 
 - **L3 only.** Expect SD/720p on YouTube movies and similar. Nothing in Brave or this repo changes that.
-- **Hardware decode** is not available on Asahi for the Apple video engine. The Omarchy M4 work documents hardware H.264/VP9
-  decode on its own stack; that does not install Widevine and is not part of this port.
+- Widevine and hardware video decode are separate. If DRM playback still shows
+  a green or blank picture while audio continues, the Omarchy Mac reports a
+  Brave/AVD hardware-decode issue; test software decoding in `brave://flags`
+  by disabling **Hardware-accelerated video decode**, then relaunch Brave. The
+  modern command-line workaround documented upstream is
+  `--disable-features=AcceleratedVideoDecoder`; it trades browser hardware
+  decoding for software decoding and higher CPU use. See
+  [Omarchy Mac issue #388](https://github.com/omacom/omarchy-mac/issues/388)
+  and [workaround PR #418](https://github.com/omacom/omarchy-mac/pull/418).
 - Netflix may additionally want a ChromeOS user-agent string (Asahi widevine-installer notes).
 
 ## What Omarchy does

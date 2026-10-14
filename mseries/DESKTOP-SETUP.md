@@ -10,11 +10,13 @@ ISO builds or boots correctly.
 
 `bash mseries/post-install.sh` runs all the customizations below in order
 (desktop settings, launcher, brightness, screenshots, theme, power, audio,
-Brave, video decode, gestures and the Wingpanel/Gala fixes). Use `--list` to
+Brave and Widevine, video decode, gestures, network indicator and Apps/Hosts/DNS
+usage logging, CodexBar and its Wingpanel indicator, and the Wingpanel/Gala
+fixes). Use `--list` to
 see the stages, `--dry-run` to preview, `--only`, `--skip` and `--with` to
 choose, and `--status` for the last result. Run `sudo -v` first and run it as
-your normal user. Optional stages (Firefox, Signal, Tether, CodexBar, screen
-corners) are off unless named with `--with`.
+your normal user. Optional stages (Firefox, Signal, Tether, and screen corners)
+are off unless named with `--with`.
 
 ## Command+Space launcher
 
@@ -126,25 +128,21 @@ unpair.
 ## CodexBar
 
 Upstream already ships a Linux Qt desktop and ARM64 CLI; a fork is unnecessary
-for desktop windows. Install runtime packages on Ubuntu 26.04:
+for desktop windows. The installer brings in its Qt runtime packages, then
+downloads the pinned ARM64 desktop and CLI releases and verifies both published
+SHA256 checksums. The default post-install flow also installs the Pantheon
+Wingpanel indicator with its build dependencies.
 
 ```sh
-sudo apt install qml6-module-qtquick qml6-module-qtquick-controls \
-  qml6-module-qtquick-layouts qml6-module-qtquick-templates \
-  qml6-module-qtquick-window qml6-module-qtqml-workerscript \
-  libqt6widgets6 libqt6svg6 qt6-wayland xdg-terminal-exec
 bash mseries/install-codexbar.sh
 ~/.local/bin/codexbar-linux --settings
 ```
 
-Installer pins v0.74.1 and verifies both published SHA256 checksums before
-extraction. Provider authentication stays with the provider CLIs. Pantheon
+Provider authentication stays with the provider CLIs. Pantheon
 may not expose a StatusNotifier tray host; desktop launcher/windows work
-without one. For a native Wingpanel item that displays remaining quota and
-opens a dropdown, install the separate Pantheon indicator:
+without one. To install or repair the Wingpanel indicator separately:
 
 ```sh
-sudo apt install meson ninja-build valac libwingpanel-9-dev libgranite-7-dev libjson-glib-dev
 bash mseries/install-codexbar-wingpanel.sh
 ```
 
@@ -305,9 +303,14 @@ M-series image build carries it by default. `--uninstall` restores the original 
 The dropdown also includes a 60-second graph (down in the accent colour, up in grey) directly
 under the connection toggles (Airplane Mode etc.). When Wi-Fi is connected, its list shows the
 active network by default; use the chevron to reveal other networks. The collapsible **Network
-Usage** section has Apps, Hosts and DNS views. To populate those views, run
-`bash mseries/netspeed/netusage/install.sh`; the local user service records TCP byte counts and DNS
-queries and maps remote IPs using systemd-resolved's cache/query monitor. Data stays in
+Usage** section has Apps, Hosts and DNS views. The default post-install flow
+installs and starts the user-level logger after the network indicator build;
+to apply just these customizations, run
+`bash mseries/post-install.sh --only network,netusage`. The logger records TCP
+byte counts and DNS queries and maps remote IPs using systemd-resolved's
+cache/query monitor. TCP usage logging needs `ss` from `iproute2`; DNS logging
+needs a working `systemd-resolved` service and `resolvectl`. Without those DNS
+views remain empty, while the TCP logger can still run. Data stays in
 `~/.local/share/netusage/usage.db`; QUIC/HTTP3 isn't attributed to apps. Build requirements for the
 local installer include `libsqlite3-dev`, `libnm-dev libnma-gtk4-dev libpolkit-gobject-1-dev`, and
 the Wingpanel/Granite/GTK dev packages. Gala respawns the panel, so there is no logout.
