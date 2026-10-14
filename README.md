@@ -126,7 +126,7 @@ Experimental and unfinished. Current state, blockers and the next task: [`mserie
 | One-command installer (boot layout, encryption, build, enhancements) | written, sandbox-tested, **not run on a wiped Mac** |
 | elementary unlock screen (Plymouth) | written, **not seen on hardware** |
 | Hardware video decode (720p/1080p/4K verified on the stock kernel) | Works on the current kernel; the usb4.4 kernel's memory-fragmentation fix still needs a long-uptime check |
-| Patched kernel (usb4.4) | **Boots on the M1 Pro** (CI `.deb`, test GRUB entry, 2026-10-14). Hub, mouse, keyboard, USB audio and dock Ethernet work with the j314s device tree and newer m1n1. Dock video remains unsupported. See [`CUTOVER.md`](mseries/fairydust/usb4/CUTOVER.md) |
+| Patched kernel (usb4.4) | **Boots on the M1 Pro** (CI `.deb`, test GRUB entry, 2026-10-14). Hub, mouse, keyboard and USB audio work with the J314s device tree. After installing newer m1n1, the owner reported that mouse and dock Ethernet appear to work; not independently rechecked. Dock video remains unsupported. See [`CUTOVER.md`](mseries/fairydust/usb4/CUTOVER.md) |
 | Factory ISO | builds in CI, **unverified on hardware** |
 | Documentation index | [`mseries/DOCS.md`](mseries/DOCS.md) |
 

@@ -10,8 +10,9 @@ elementary/mkosi Apple Silicon target, with a live capture from
 The TL;DR and live kernel evidence below describe the stock `linux-asahi`
 kernel. On the M1 Pro, the experimental `fairydust` + USB4 kernel
 (`7.1.13-elementary-fairydust-usb4`) boots with the matching J314s device tree
-and newer m1n1. Its Dell dock hub, mouse, keyboard, USB audio, and USB3 Ethernet
-have been verified. Dock video still does not work because DisplayPort
+and newer m1n1. Its Dell dock hub, mouse, keyboard, and USB audio work. After
+installing newer m1n1, the owner reported that mouse and USB3 Ethernet appear to
+work; this has not been independently rechecked. Dock video still does not work because DisplayPort
 tunnelling over USB4 is not implemented upstream. Use the laptop HDMI port for
 the monitor, and avoid suspend while a USB4 link is connected. The current
 result and recovery notes are in [`fairydust/usb4/CUTOVER.md`](fairydust/usb4/CUTOVER.md).
@@ -31,9 +32,10 @@ Where to get the kernel:
   Needs about 40 GiB free and the Arch side, not the elementary subvolume.
   Read `usb4/RECOVERY.md` first.
 
-The CI `.deb` kernel was booted on 2026-10-14. Ethernet started working after
-installing the pinned newer m1n1; the `0003` AVD kvmalloc fix still needs a
-long-uptime decode check. See [`usb4/CUTOVER.md`](fairydust/usb4/CUTOVER.md).
+The CI `.deb` kernel was booted on 2026-10-14. The owner reports Ethernet
+appears to work after installing the pinned newer m1n1; the `0003` AVD
+kvmalloc fix still needs a long-uptime decode check. See
+[`usb4/CUTOVER.md`](fairydust/usb4/CUTOVER.md).
 
 ## TL;DR
 

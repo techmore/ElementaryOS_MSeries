@@ -10,9 +10,11 @@ Super+Left/Right window tiling are enabled. The centered clock is visible.
 
 The experimental `7.1.13-elementary-fairydust-usb4` kernel boots from a
 non-default GRUB entry. With the matching J314s device tree and newer pinned
-m1n1, a Dell dock's hub, mouse, keyboard, USB audio, and Ethernet work. Dock
-video remains unsupported upstream; avoid suspend with a USB4 link connected.
-Details and recovery guidance: [`fairydust/usb4/CUTOVER.md`](fairydust/usb4/CUTOVER.md).
+m1n1, a Dell dock's hub, mouse, keyboard, and USB audio work. After the owner
+installed newer m1n1 and rebooted, they reported that mouse and dock Ethernet
+appear to work; this has not been independently rechecked. Dock video remains
+unsupported upstream; avoid suspend with a USB4 link connected. Details and
+recovery guidance: [`fairydust/usb4/CUTOVER.md`](fairydust/usb4/CUTOVER.md).
 
 The 0003 Apple Video Decoder allocation fix still needs a long-uptime decode
 check on this kernel. The one-command installer has not been run on a wiped Mac,

@@ -12,8 +12,10 @@ factory ISO remains a separate, unverified installation path.
   work with this kernel.
 - The matching J314s device tree fixes the speaker amplifier probe and exposes
   the dock's USB4 nodes.
-- The dock hub, mouse, keyboard, USB audio and USB3 Ethernet work with the
-  matching device tree and pinned newer m1n1.
+- The dock hub, mouse, keyboard and USB audio work with the matching device tree.
+- After installing the pinned newer m1n1 and rebooting, the owner reported that
+  mouse and USB3 Ethernet appear to work. This report has not been independently
+  rechecked.
 
 ## Limits and next checks
 
@@ -40,4 +42,5 @@ changes. The current helpers are:
 
 The original normal GRUB entry remains the first rollback option. For recovery
 before GRUB starts, follow `RECOVERY.md` from macOS using the saved known-good
-`boot.bin` copy.
+`boot.bin` copy. The owner reported the current m1n1 backup as
+`/boot/m1n1/boot.bin.KNOWN-GOOD-pre-m1n1-20261014-142142`.
