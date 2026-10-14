@@ -22,6 +22,7 @@ The safe Asahi DSP chain still needs image packaging (see below).
 - `pipewire-alsa` — ALSA compat for the same reason
 - `rtkit` — realtime scheduling; only an optional dep of pipewire, without
   which the Asahi speaker DSP chain underruns (crackling under load)
+- `linux-firmware-realtek` — firmware for the dock's Realtek USB Ethernet (`rtl_nic/rtl8153b-2.fw`); installed on the M1 Pro on 2026-10-14. Not yet wired into the image configs.
 - `powertop` / `thermald` — power/thermal sanity on laptops (optional,
   evaluate during bring-up)
 

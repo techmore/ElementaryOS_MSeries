@@ -60,11 +60,17 @@ CSS = b"""
 window.mseries { background: transparent; box-shadow: none; }
 .mseries-card { background: #1c1c20; color: #f2f2f5; border-radius: 18px; padding: 12px;
                 border: 1px solid rgba(255,255,255,0.08); }
-.mseries-card entry { background: rgba(255,255,255,0.07); color: #f2f2f5; border: none;
-                      border-radius: 12px; min-height: 40px; font-size: 16px; box-shadow: none; }
+.mseries-card entry { background: #2c2c32; color: #ffffff; caret-color: #ffffff; border: 1px solid rgba(255,255,255,0.20);
+                      border-radius: 12px; min-height: 44px; font-size: 18px; box-shadow: none; }
+.mseries-card entry text { color: #ffffff; caret-color: #ffffff; }
+.mseries-card entry text selection { background: #5d8fd6; color: #ffffff; }
+.mseries-card entry placeholder { color: rgba(255,255,255,0.60); }
+.mseries-card entry image { color: rgba(255,255,255,0.75); }
 .mseries-card list { background: transparent; }
 .mseries-card row { border-radius: 10px; padding: 6px 8px; margin-top: 2px; color: #f2f2f5; }
-.mseries-card row:selected { background: rgba(255,255,255,0.14); }
+.mseries-card row label { color: #f2f2f5; font-size: 15px; }
+.mseries-card row:selected { background: rgba(255,255,255,0.18); }
+.mseries-card row:selected label { color: #ffffff; }
 """
 
 

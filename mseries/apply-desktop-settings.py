@@ -45,7 +45,7 @@ if not link.exists() and not link.is_symlink():
     link.symlink_to(target, target_is_directory=True)
 elif link.resolve() != target.resolve():
     print(f"Existing screenshot folder preserved: {link}. Move it manually to redirect saves.")
-Gio.Settings.new("org.gnome.desktop.wm.preferences").set_string("button-layout", "close:minimize,maximize")
+Gio.Settings.new("org.gnome.desktop.wm.preferences").set_string("button-layout", "close,minimize,maximize:")
 Gio.Settings.sync()
 helper = home / ".local/libexec/mseries-brightness"
 helper.parent.mkdir(parents=True, exist_ok=True)
