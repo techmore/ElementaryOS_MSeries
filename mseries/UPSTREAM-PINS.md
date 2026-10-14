@@ -24,6 +24,14 @@ The fetched `elementary/os` `main` reference on 2026-10-13 was
 `7024fd04646a6a8565bf6805989b59fd72de928c`. This is the comparison point for
 the OS 9 source audit; recheck the upstream branch before the next port.
 
+## Wingpanel network speed readout
+
+The Apple Silicon image builds `elementary/panel-network` at
+`8685ec8e55a45e48da0c12931a353cd440d11664`, matching
+`io.elementary.panel.network` 8.0.1.x. The local patches add the live throughput
+row, guard null VPN devices, and add an opt-in menu-bar rate display. The build
+fails closed if the image's network indicator package moves beyond 8.0.1.x.
+
 ## Current Apple hardware reference (audit only)
 
 The maintained Omarchy Mac add-on packages were checked on 2026-10-13 at

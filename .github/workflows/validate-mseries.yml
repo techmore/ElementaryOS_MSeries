@@ -38,6 +38,7 @@ jobs:
           set -e
           bash -n mkosi.images/apple-silicon/mkosi.postinst.chroot
           bash -n mkosi.images/apple-silicon/mkosi.finalize
+          bash -n mkosi.images/apple-silicon/build-network-indicator
           bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-resume-fix
           bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-firmware
           bash -n transform/elementary-grow.sh
