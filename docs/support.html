@@ -22,14 +22,17 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <tr><td>Boot to Pantheon</td><td class="ok">Confirmed on the transformed installation</td><td class="part">ISO boots to the graphical installer in an ARM64 VM; Pantheon user session and Mac hardware boot remain unverified</td></tr>
 <tr><td>Display and brightness OSD</td><td class="part">Backlight and OSD calls succeed; physical keys and login persistence still need confirmation</td><td class="unk">Not tested</td></tr>
 <tr><td>Ambient keyboard lighting</td><td class="part">ALS and UPower adjusted keyboard from 0 to 59/255 at 141 lx; lock/lid and suspend behavior still need interactive qualification</td><td class="unk">Not tested</td></tr>
-<tr><td>USB-C dock hub and downstream input</td><td class="ok">Confirmed 2026-10-14 on a Dell WD22TB4: hub, mouse and wired Ethernet work. The Ethernet panel icon is unstable (tracked)</td><td class="unk">Not tested</td></tr>
+<tr><td>USB-C dock hub and downstream input</td><td class="ok">Confirmed 2026-10-14 on a Dell WD22TB4: hub, mouse and wired Ethernet work. A fix for the Ethernet panel icon is installed and awaits a replug check</td><td class="unk">Not tested</td></tr>
 <tr><td>USB-C dock DisplayPort video</td><td class="no">Unavailable: DP tunnelling is not implemented in the current kernel</td><td class="unk">Not tested</td></tr>
-<tr><td>Lid-open resume without a dock</td><td class="part">Suspends and resumes on lid open; the login screen still needs a power-button press (tracked)</td><td class="unk">Not tested</td></tr>
+<tr><td>Lid-open resume without a dock</td><td class="ok">Traced 2026-10-14: suspends on lid close, wakes on lid open, login screen in about 2 seconds, no power button</td><td class="unk">Not tested</td></tr>
 <tr><td>Suspend with a USB4 dock</td><td class="no">The ACIO driver blocks suspend while the dock link is active</td><td class="unk">Not tested</td></tr>
 <tr><td>Battery charge limit (80%) and switch</td><td class="ok">Limit reads 80%; switch installed</td><td class="unk">Not tested</td></tr>
 <tr><td>Docked lid mode</td><td class="part">Service running; lid-close with the dock not yet repeated</td><td class="unk">Not tested</td></tr>
 <tr><td>Network speed and usage indicator</td><td class="ok">Installed on the desktop; built into the image overlay</td><td class="unk">Not tested</td></tr>
 <tr><td>Local Troubleshooter (on-device model)</td><td class="ok">Answers verified on the M1 Pro; see the <a href="features.html">screenshots</a></td><td class="unk">Not tested</td></tr>
+<tr><td>Audio watchdog and WirePlumber rules</td><td class="ok">Watchdog running; rules apply at next login</td><td class="unk">Not tested</td></tr>
+<tr><td>Command+Space launcher</td><td class="ok">Installed; search text readability fixed 2026-10-14 (to confirm)</td><td class="unk">Not tested</td></tr>
+<tr><td>Screenshot thumbnail and Markup</td><td class="part">Built; thumbnail appears and expires correctly; drag-and-drop and Alt not yet tried in real apps</td><td class="unk">Not tested</td></tr>
 <tr><td>Speakers / DSP</td><td class="ok">Audio output passed after installing speakersafetyd, Asahi DSP packages, and the matching PipeWire LV2 plugin</td><td class="unk">Install path not packaged or tested</td></tr>
 <tr><td>GPU, Wi-Fi resume, microphone, video decode, Touch ID</td><td class="unk">No complete end-to-end result recorded for this build</td><td class="unk">Not tested</td></tr>
 </table>
