@@ -1,0 +1,379 @@
+#!/usr/bin/python3
+"""Screenshot shelf: after a screenshot, show its thumbnail bottom-right for a few seconds.
+
+Gala saves every screenshot to ~/Pictures/Screenshots (a link to ~/Downloads/Screenshots). This helper
+watches that folder and shows the newest shot as a draggable thumbnail, like macOS.
+
+  Drag it into an app      the shot is used and not kept: the saved file is deleted after the drop.
+  Hold Alt while dragging  the shot is used and a copy is kept (the thumbnail says so).
+  Click it                 opens Markup on the saved file; the file is kept.
+  Ignore it                the thumbnail fades after a few seconds and the file is kept.
+  Click the x              dismisses it; the file is kept.
+
+A screenshot is only ever deleted by a drag without Alt, and only after the drag was accepted.
+  mseries-screenshot-shelf             run (started from the desktop autostart)
+  mseries-screenshot-shelf --snapshot out.png [image.png]   render the card to a PNG and exit
+"""
+import ctypes
+import os
+import shutil
+import subprocess
+import sys
+import time
+import warnings
+
+# Wayland clients cannot choose their position, so run through XWayland and place the window.
+ORIGINAL_ENV = {name: os.environ.get(name) for name in ("GDK_BACKEND", "GDK_SCALE")}
+os.environ["GDK_BACKEND"] = "x11"
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+
+def display_scale():
+    """XWayland windows are unscaled, so GTK needs the compositor's integer scale."""
+    try:
+        from gi.repository import Gio
+        reply = Gio.DBusProxy.new_for_bus_sync(
+            Gio.BusType.SESSION, Gio.DBusProxyFlags.NONE, None, "org.gnome.Mutter.DisplayConfig",
+            "/org/gnome/Mutter/DisplayConfig", "org.gnome.Mutter.DisplayConfig", None
+        ).call_sync("GetCurrentState", None, Gio.DBusCallFlags.NONE, 1000, None).unpack()
+        logical = reply[2]
+        primary = next((m for m in logical if m[4]), logical[0])
+        return max(1, round(primary[2]))
+    except Exception:
+        return 1
+
+
+os.environ.setdefault("GDK_SCALE", str(display_scale()))
+
+import gi
+gi.require_version("Gdk", "4.0")
+gi.require_version("GdkX11", "4.0")
+gi.require_version("GdkPixbuf", "2.0")
+gi.require_version("Graphene", "1.0")
+gi.require_version("Gtk", "4.0")
+from gi.repository import Gdk, GdkPixbuf, GdkX11, Gio, GLib, Graphene, Gtk
+
+WATCH = os.path.realpath(os.environ.get("MSERIES_SHELF_WATCH", os.path.expanduser("~/Pictures/Screenshots")))
+STAGE = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "mseries-shelf")
+LOG = os.path.expanduser("~/.cache/mseries-screenshot-shelf.log")
+MARKUP = os.environ.get("MSERIES_MARKUP", os.path.expanduser("~/.local/bin/mseries-markup"))
+SHOW_SECONDS = 7        # how long the thumbnail stays when ignored
+DELETE_AFTER = 120      # seconds after an accepted drag before the unsaved file is removed
+THUMB_WIDTH = 280
+MARGIN = 24
+
+CSS = b"""
+window.shelf { background: transparent; box-shadow: none; }
+.shelf-card { background: #1c1c20; color: #ffffff; border-radius: 14px; padding: 10px;
+              border: 1px solid rgba(255,255,255,0.18); }
+.shelf-card picture { border-radius: 8px; }
+.shelf-hint { color: rgba(255,255,255,0.80); font-size: 12px; }
+.shelf-hint.saving { color: #9ad1a4; font-weight: bold; }
+.shelf-card button.flat { color: #ffffff; min-height: 22px; min-width: 22px; padding: 0 6px; }
+.shelf-card button.markup { background: rgba(255,255,255,0.14); color: #ffffff; border-radius: 8px; padding: 2px 10px; }
+"""
+
+
+def log(message):
+    try:
+        os.makedirs(os.path.dirname(LOG), exist_ok=True)
+        with open(LOG, "a") as handle:
+            handle.write(f"{time.strftime('%H:%M:%S')} {message}\n")
+    except OSError:
+        pass
+
+
+def clean_env():
+    env = dict(os.environ)
+    for name, value in ORIGINAL_ENV.items():
+        if value is None:
+            env.pop(name, None)
+        else:
+            env[name] = value
+    return env
+
+
+class Shelf(Gtk.Window):
+    """One thumbnail for one screenshot."""
+
+    def __init__(self, app, path, staged):
+        super().__init__(application=app)
+        self.app, self.path, self.staged = app, path, staged
+        self.finished = False
+        self.dragging = False
+        self.alt_seen = False
+        self.cancelled = False
+        self.hover = False
+        self.timer = None
+        self.add_css_class("shelf")
+        self.set_decorated(False)
+        self.set_resizable(False)
+        self.set_focusable(False)
+
+        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        card.add_css_class("shelf-card")
+        texture = None
+        try:
+            # Scale once, here: a Gtk.Picture would otherwise ask for the screenshot's full size.
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(staged, THUMB_WIDTH * 2, 440, True)
+            texture = Gdk.Texture.new_for_pixbuf(pixbuf)
+            picture = Gtk.Picture.new_for_paintable(texture)
+            ratio = pixbuf.get_width() / max(1, pixbuf.get_height())
+            width = min(THUMB_WIDTH, int(220 * ratio))
+            picture.set_size_request(width, int(width / max(ratio, 0.01)))
+        except GLib.Error:
+            picture = Gtk.Picture()
+            picture.set_size_request(THUMB_WIDTH, 160)
+        picture.set_can_shrink(True)
+        picture.set_content_fit(Gtk.ContentFit.CONTAIN)
+        picture.set_halign(Gtk.Align.CENTER)
+        self.texture = texture
+        self.picture = picture
+        card.append(picture)
+
+        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        self.hint = Gtk.Label(label="Drag to use  ·  hold Alt to also save", xalign=0, hexpand=True)
+        self.hint.add_css_class("shelf-hint")
+        markup = Gtk.Button(label="Markup")
+        markup.add_css_class("markup")
+        markup.connect("clicked", lambda *_: self.open_markup())
+        close = Gtk.Button(label="✕")
+        close.add_css_class("flat")
+        close.connect("clicked", lambda *_: self.finish("dismissed"))
+        row.append(self.hint)
+        row.append(markup)
+        row.append(close)
+        card.append(row)
+        self.set_child(card)
+
+        source = Gtk.DragSource()
+        source.set_actions(Gdk.DragAction.COPY)
+        source.connect("prepare", self.on_prepare)
+        source.connect("drag-begin", self.on_drag_begin)
+        source.connect("drag-cancel", self.on_drag_cancel)
+        source.connect("drag-end", self.on_drag_end)
+        picture.add_controller(source)
+
+        click = Gtk.GestureClick()
+        click.connect("released", lambda *_: self.open_markup())
+        picture.add_controller(click)
+
+        motion = Gtk.EventControllerMotion()
+        motion.connect("enter", lambda *_: self.set_hover(True))
+        motion.connect("leave", lambda *_: self.set_hover(False))
+        card.add_controller(motion)
+
+        provider = Gtk.CssProvider()
+        provider.load_from_data(CSS)
+        Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), provider,
+                                                  Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        self.present()
+        GLib.timeout_add(60, self.place)
+        self.restart_timer()
+
+    # ------------------------------------------------------------------ placement
+
+    def place(self):
+        """Bottom-right of the primary monitor, above the bottom edge."""
+        surface = self.get_surface()
+        if not isinstance(surface, GdkX11.X11Surface):
+            return False
+        monitor = self.get_display().get_monitor_at_surface(surface)
+        geo, scale = monitor.get_geometry(), monitor.get_scale_factor()
+        x = geo.x + geo.width - self.get_width() - MARGIN
+        y = geo.y + geo.height - self.get_height() - MARGIN
+        xlib = ctypes.CDLL("libX11.so.6")
+        xlib.XOpenDisplay.restype = ctypes.c_void_p
+        xlib.XInternAtom.restype = ctypes.c_ulong
+        display = xlib.XOpenDisplay(None)
+        if display:
+            d, xid = ctypes.c_void_p(display), ctypes.c_ulong(surface.get_xid())
+            # Ask for notification treatment: no focus, no taskbar entry.
+            wtype = xlib.XInternAtom(d, b"_NET_WM_WINDOW_TYPE", False)
+            notif = ctypes.c_ulong(xlib.XInternAtom(d, b"_NET_WM_WINDOW_TYPE_NOTIFICATION", False))
+            xlib.XChangeProperty(d, xid, ctypes.c_ulong(wtype), ctypes.c_ulong(4), 32, 0,
+                                 ctypes.byref(notif), 1)   # 4 = XA_ATOM, 0 = PropModeReplace
+            xlib.XMoveWindow(d, xid, x * scale, y * scale)
+            xlib.XFlush(d)
+            xlib.XCloseDisplay(d)
+        return False
+
+    # ------------------------------------------------------------------ timing
+
+    def restart_timer(self):
+        if self.timer:
+            GLib.source_remove(self.timer)
+        self.timer = GLib.timeout_add_seconds(SHOW_SECONDS, self.on_timeout)
+
+    def on_timeout(self):
+        self.timer = None
+        if self.hover or self.dragging:
+            self.restart_timer()
+            return False
+        self.finish("expired")
+        return False
+
+    def set_hover(self, value):
+        self.hover = value
+
+    # ------------------------------------------------------------------ drag
+
+    def alt_held(self):
+        keyboard = self.get_display().get_default_seat().get_keyboard()
+        return bool(keyboard and keyboard.get_modifier_state() & Gdk.ModifierType.ALT_MASK)
+
+    def on_prepare(self, source, _x, _y):
+        if self.alt_held():
+            self.alt_seen = True
+        file = Gio.File.new_for_path(self.staged)
+        return Gdk.ContentProvider.new_union([
+            Gdk.ContentProvider.new_for_value(Gdk.FileList.new_from_list([file])),
+        ])
+
+    def on_drag_begin(self, source, drag):
+        self.dragging, self.cancelled = True, False
+        if self.texture is not None:
+            source.set_icon(self.texture, 0, 0)
+        GLib.timeout_add(50, self.poll_alt)
+        log(f"drag begin {os.path.basename(self.path)}")
+
+    def poll_alt(self):
+        if not self.dragging:
+            return False
+        if self.alt_held():
+            self.alt_seen = True
+        self.hint.set_label("Saving a copy (Alt)" if self.alt_seen else "Drag to use  ·  hold Alt to also save")
+        (self.hint.add_css_class if self.alt_seen else self.hint.remove_css_class)("saving")
+        return True
+
+    def on_drag_cancel(self, _source, _drag, reason):
+        self.cancelled = True
+        log(f"drag cancelled ({reason.value_nick})")
+        return False
+
+    def on_drag_end(self, _source, _drag, _delete):
+        self.dragging = False
+        if self.cancelled:
+            self.alt_seen = False
+            self.hint.set_label("Drag to use  ·  hold Alt to also save")
+            self.restart_timer()
+            return
+        if self.alt_seen:
+            log(f"used and kept (Alt): {os.path.basename(self.path)}")
+            self.finish("used-kept", delay=DELETE_AFTER, delete_saved=False)
+        else:
+            log(f"used, not kept: {os.path.basename(self.path)} deleted in {DELETE_AFTER}s")
+            self.finish("used", delay=DELETE_AFTER, delete_saved=True)
+
+    # ------------------------------------------------------------------ outcomes
+
+    def open_markup(self):
+        log(f"markup {os.path.basename(self.path)}")
+        try:
+            subprocess.Popen([MARKUP, self.path], env=clean_env(), start_new_session=True)
+        except OSError as error:
+            log(f"could not start markup: {error}")
+        self.finish("markup")
+
+    def finish(self, reason, delay=0, delete_saved=False):
+        if self.finished:
+            return
+        self.finished = True
+        if self.timer:
+            GLib.source_remove(self.timer)
+            self.timer = None
+        log(f"shelf done: {reason}")
+        # The staged copy is what an app may still be reading after a drop, so it outlives the window.
+        GLib.timeout_add_seconds(max(delay, 1), self.cleanup, delete_saved)
+        self.app.shelf = None
+        self.close()
+
+    def cleanup(self, delete_saved):
+        try:
+            os.remove(self.staged)
+        except OSError:
+            pass
+        if delete_saved:
+            try:
+                os.remove(self.path)
+                log(f"deleted unsaved screenshot {os.path.basename(self.path)}")
+            except OSError:
+                pass
+        return False
+
+
+class ShelfApp(Gtk.Application):
+    def __init__(self):
+        super().__init__(application_id="org.techmore.mseries.ScreenshotShelf", flags=Gio.ApplicationFlags.NON_UNIQUE)
+        self.shelf = None
+        self.seen = set()
+        self.monitor = None
+
+    def do_activate(self):
+        self.hold()
+        os.makedirs(STAGE, exist_ok=True)
+        os.makedirs(WATCH, exist_ok=True)
+        self.monitor = Gio.File.new_for_path(WATCH).monitor_directory(Gio.FileMonitorFlags.NONE, None)
+        self.monitor.connect("changed", self.on_changed)
+        log(f"watching {WATCH}")
+
+    def on_changed(self, _monitor, file, _other, event):
+        if event != Gio.FileMonitorEvent.CHANGES_DONE_HINT:
+            return
+        name = file.get_basename()
+        if not name.lower().endswith(".png") or not name.startswith("Screenshot") or name in self.seen:
+            return
+        self.seen.add(name)
+        GLib.timeout_add(250, self.show, file.get_path())
+
+    def show(self, path):
+        try:
+            staged = os.path.join(STAGE, os.path.basename(path))
+            shutil.copy2(path, staged)
+        except OSError as error:
+            log(f"could not stage {path}: {error}")
+            return False
+        if self.shelf:
+            self.shelf.finish("replaced")
+        log(f"showing {os.path.basename(path)}")
+        self.shelf = Shelf(self, path, staged)
+        return False
+
+
+def snapshot(out, image):
+    """Render the card to a PNG for visual checks."""
+    class Holder(Gtk.Application):
+        shelf = None
+
+    app = Holder(application_id="org.techmore.mseries.ShelfSnapshot")
+
+    def on(app):
+        shelf = Shelf(app, image, image)
+
+        def snap():
+            child = shelf.get_child()
+            w, h = child.get_width(), child.get_height()
+            paintable = Gtk.WidgetPaintable.new(child)
+            s = Gtk.Snapshot()
+            paintable.snapshot(s, w, h)
+            node = s.to_node()
+            tex = shelf.get_native().get_renderer().render_texture(node, Graphene.Rect().init(0, 0, w, h))
+            tex.save_to_png(out)
+            app.quit()
+            return False
+        GLib.timeout_add(900, snap)
+
+    app.connect("activate", on)
+    app.run([])
+
+
+def main():
+    if "--snapshot" in sys.argv:
+        i = sys.argv.index("--snapshot")
+        snapshot(sys.argv[i + 1], sys.argv[i + 2])
+        return
+    ShelfApp().run([])
+
+
+if __name__ == "__main__":
+    main()
