@@ -49,6 +49,11 @@ Gio.Settings.new("org.gnome.desktop.wm.preferences").set_string("button-layout",
 # gsd-datetime asks geoclue for a timezone and, when it disagrees with the current one, asks the system to
 # change it, which pops a password dialog about every ten minutes. Set the timezone once instead.
 Gio.Settings.new("org.gnome.desktop.datetime").set_boolean("automatic-timezone", False)
+# Ambient auto-brightness kept moving the backlight (323 -> 400 -> 375 of 500 within seconds) and read as the
+# screen "dimming". Keep brightness manual; idle dimming stays off too.
+power = Gio.Settings.new("org.gnome.settings-daemon.plugins.power")
+power.set_boolean("ambient-enabled", False)
+power.set_boolean("idle-dim", False)
 Gio.Settings.sync()
 # Window snapping: drag a window to a screen edge to tile it; Super+Left/Right (physical Ctrl+Left/Right) tiles halves.
 Gio.Settings.new("org.gnome.mutter").set_boolean("edge-tiling", True)

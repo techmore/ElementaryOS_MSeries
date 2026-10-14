@@ -1037,3 +1037,21 @@ commands (reuse, repository/key invalidation, failed-refresh retry and standalon
 behavior). `bash mseries/test-elementary-mac-setup.sh`, Bash syntax checks and
 `git diff --check` pass. No real package install or timing benchmark was run.
 Atomic app deployment and the Flatpak/Nix comparison in issue #50 remain open.
+
+## Feature request: True Tone-like display — 2026-10-14
+
+Logged in `ROADMAP.md` (stretch goals) and `BUG-FIX-ROADMAP.md` (P3). Finding: the ambient light sensor on this M1 Pro (`/sys/bus/iio/devices/iio:device1`, `aop-sensors-als`) exposes only `in_illuminance_input`, no colour channels, so the interim design is a lux and time-of-day colour-temperature curve via the night-light path, independent of brightness. Night light is currently off at 4500 K. Not started.
+
+## Screen dimming and 2026-10-14 live audit findings
+
+**Screen kept dimming (fixed on the running desktop).** `idle-dim` was already off, but `org.gnome.settings-daemon.plugins.power ambient-enabled` was still `true`, so the ambient light sensor drove the panel backlight (323, 400, 375 of 500 within seconds). Commit eae7811 turned both off in `install-brightness-bridge.sh`, but it was never run on this Mac. Set both to `false` live with gsettings; the backlight then stayed at 375 for 24 s. `apply-desktop-settings.py` now sets both so a re-run or reinstall keeps them off. A full blank/lock still happens at `idle-delay` 900 s (15 min), which is separate and unchanged.
+
+**Audit findings recorded (nothing hidden):**
+- Fixed and pushed (962d4b7): Wi-Fi resume fix aborting when `brcmfmac` is already unloaded; `mseries-power` ordering cycle.
+- Open: DNS-logger polkit rule `49-mseries-netusage.rules` probably not installed in `/etc/polkit-1/rules.d` (a password helper still fires every ~10 min since `netusage` started 15:14; `rules.d` is unreadable without root so unconfirmed). Apply with the netusage installer under sudo.
+- Open: `user@109` (LightDM greeter) stop timeout because `obexd` ignores SIGTERM.
+- Open: `mseries-verify` is not installed on this Mac (`mseries/local-ai/install-verify.sh` puts it in `~/.local/bin`; not present). Run it to get the status robot back.
+- Benign log noise: systemd-growfs LUKS resize "Operation not permitted" on /home (filesystem still grew), gkr-pam control file, wpa_supplicant P2P interface -52, tas2764 devicetree parse on two amps, dp-phy -517 deferrals.
+- Feature requests logged: True Tone-like display (see above).
+
+Next: install the polkit rule and confirm prompts stop for 30 minutes, install `mseries-verify`, then the `obexd` greeter timeout.
