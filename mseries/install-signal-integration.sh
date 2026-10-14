@@ -31,7 +31,7 @@ EOF
 # that identity to a desktop filename, independent of StartupWMClass on X11.
 for id in 'signal beta' signal-desktop-beta; do
   alias="$HOME/.local/share/applications/$id.desktop"
-  if [[ -f $alias ]] && ! rg -q '^X-MSeries-Managed=true$' "$alias"; then
+  if [[ -f $alias ]] && ! grep -q '^X-MSeries-Managed=true$' "$alias"; then
     echo "Preserving existing $alias" >&2
     continue
   fi

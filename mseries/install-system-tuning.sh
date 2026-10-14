@@ -14,11 +14,12 @@ set -euo pipefail
 
 zram_conf=/etc/systemd/zram-generator.conf
 sysctl_conf=/etc/sysctl.d/99-mseries-zram.conf
+zswap_tmpfiles=/etc/tmpfiles.d/mseries-zswap.conf
 autostart=$HOME/.config/autostart/io.elementary.appcenter.desktop
 
 if [[ ${1:-} == --revert ]]; then
   systemctl stop systemd-zram-setup@zram0.service 2>/dev/null || sudo systemctl stop systemd-zram-setup@zram0.service || true
-  sudo rm -f "$zram_conf" "$sysctl_conf"
+  sudo rm -f "$zram_conf" "$sysctl_conf" "$zswap_tmpfiles"
   sudo systemctl daemon-reload
   sudo systemctl enable --now ModemManager.service 2>/dev/null || true
   command -v snap >/dev/null && sudo snap start --enable cups 2>/dev/null || true
@@ -49,6 +50,11 @@ sudo sysctl --system >/dev/null
 if [[ -w /sys/module/zswap/parameters/enabled || $EUID -eq 0 ]] || sudo test -w /sys/module/zswap/parameters/enabled; then
   echo 0 | sudo tee /sys/module/zswap/parameters/enabled >/dev/null || true
 fi
+# ...and again after every boot (the sysfs write above is runtime-only).
+sudo install -m 0644 /dev/stdin "$zswap_tmpfiles" <<'EOF'
+# ElementaryOS_MSeries: zram already compresses swap
+w /sys/module/zswap/parameters/enabled - - - - 0
+EOF
 
 # --- services that have no job on this machine -----------------------------------------------
 sudo systemctl disable --now ModemManager.service

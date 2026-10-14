@@ -25,6 +25,9 @@ THUNDERBOLT = '/sys/bus/thunderbolt/devices'
 DEVICE_RE = re.compile(r'^\d+-[1-9]\d*$')
 BACKLIGHT = '/sys/class/backlight/apple-panel-bl'
 POLL_SECONDS = 5
+# The brightness to restore, kept across a crash or restart: if this service dies while the lid is
+# closed, the panel would otherwise stay black after the lid is opened again.
+SAVED = os.path.join(os.environ.get('XDG_RUNTIME_DIR', '/tmp'), 'mseries-docked-lid.brightness')
 LOGIN = ('org.freedesktop.login1', '/org/freedesktop/login1')
 
 
@@ -48,18 +51,34 @@ def read_int(path):
 
 
 class DockedLid:
-    def __init__(self):
+    def __init__(self, restore=True):
         self.bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
         self.manager = Gio.DBusProxy.new_sync(
             self.bus, Gio.DBusProxyFlags.NONE, None, LOGIN[0], LOGIN[1],
             'org.freedesktop.login1.Manager', None)
         self.manager.connect('g-properties-changed', self.on_properties)
         self.inhibit_fd = None
-        self.saved_brightness = None
+        self.saved_brightness = self.load_saved()
         self.lid_closed = self.read_lid()
         self.loop = GLib.MainLoop()
+        if restore and self.saved_brightness is not None and not self.lid_closed:
+            self.on_lid_opened()   # restarted with the lid open and the panel still off
 
     # ------------------------------------------------------------------ state
+
+    @staticmethod
+    def load_saved():
+        return read_int(SAVED)
+
+    def store_saved(self):
+        try:
+            if self.saved_brightness is None:
+                os.unlink(SAVED)
+            else:
+                with open(SAVED, 'w') as handle:
+                    handle.write(str(self.saved_brightness))
+        except OSError:
+            pass
 
     def read_lid(self):
         value = self.manager.get_cached_property('LidClosed')
@@ -126,6 +145,7 @@ class DockedLid:
         current = read_int(f'{BACKLIGHT}/brightness')
         if current and self.saved_brightness is None:
             self.saved_brightness = current
+            self.store_saved()
         self.set_brightness(0)
 
     def on_lid_opened(self):
@@ -133,6 +153,7 @@ class DockedLid:
             log('lid opened: restoring the panel brightness')
             self.set_brightness(self.saved_brightness)
             self.saved_brightness = None
+            self.store_saved()
 
     def on_properties(self, _proxy, changed, _invalidated):
         if 'LidClosed' not in changed.unpack():
@@ -170,7 +191,7 @@ class DockedLid:
 
 def main():
     if '--status' in sys.argv:
-        service = DockedLid()
+        service = DockedLid(restore=False)
         print(f'dock attached: {dock_attached()}')
         print(f'lid closed: {service.lid_closed}')
         print(f'panel brightness: {read_int(f"{BACKLIGHT}/brightness")} of {read_int(f"{BACKLIGHT}/max_brightness")}')

@@ -358,17 +358,25 @@ apt-get install -y --install-recommends elementary-desktop elementary-minimal el
 # messaging app must not abort the whole root build. Flatpak
 # (org.signal.Signal, Flathub) is the alternative transport — see
 # mseries/packages.arm64.
-rm -f /usr/share/keyrings/signal-desktop-keyring.gpg
-if curl -fsSL https://updates.signal.org/desktop/apt/keys.asc \
-     | gpg --dearmor -o /usr/share/keyrings/signal-desktop-keyring.gpg; then
+rm -f /usr/share/keyrings/signal-desktop-keyring.gpg /tmp/signal-keys.asc
+# The key is checked against Signal's published fingerprint before it is
+# trusted; a key that does not match skips Signal rather than trusting it.
+if curl -fsSL https://updates.signal.org/desktop/apt/keys.asc -o /tmp/signal-keys.asc \
+   && [ "\$(gpg --show-keys --with-colons /tmp/signal-keys.asc | grep -m1 '^fpr' | cut -d: -f10)" = DBA36B5181D0C816F630E889D980A17457F6FB06 ] \
+   && gpg --dearmor < /tmp/signal-keys.asc > /usr/share/keyrings/signal-desktop-keyring.gpg; then
   echo 'deb [arch=arm64 signed-by=/usr/share/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main' \
     > /etc/apt/sources.list.d/signal-desktop.list
   apt-get update
   apt-get install -y signal-desktop \
     || echo "WARNING: signal-desktop install failed (non-fatal)" >&2
 else
-  echo "WARNING: could not fetch Signal keyring — skipping Signal (non-fatal)" >&2
+  echo "WARNING: could not fetch a Signal key with the expected fingerprint — skipping Signal (non-fatal)" >&2
 fi
+rm -f /tmp/signal-keys.asc
+# Speaker protection daemon (the safe default of mseries/install-audio-stack.sh).
+# Non-fatal: the kernel keeps the speakers volume-locked without it.
+apt-get install -y speakersafetyd \
+  || echo "WARNING: speakersafetyd install failed (non-fatal)" >&2
 apt-get clean
 EOF
   isolate_boot_in "$newroot" || return 1

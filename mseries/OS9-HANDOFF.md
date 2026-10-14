@@ -105,6 +105,17 @@ Open: custom kernel flavours (fairydust*) are only synced by the pacman hook if 
 - The grown root now also gets the brightness-key helper and its autostart entry (previously only the image factory shipped them).
 - Not reviewed: the many `mseries/install-*.sh` scripts and the launcher (user-run, image-specific).
 
+### User-script audit (2026-10-14)
+
+Read: install-system-tuning/audio-stack/power/network-throughput/docked-lid/log-fixes/brightness-bridge/files-portal-fix/native-firefox/signal(+integration)/keyboard-backlight, power/mseries-power, docked-lid, apply-desktop-settings.
+Fixed:
+- `install-signal-integration.sh` used `rg` (ripgrep), which elementary does not ship: with it missing, `! rg -q` is true, so a re-run never refreshed the alias desktop files. Now `grep`.
+- `install-system-tuning.sh` disabled zswap only at runtime (sysfs write); it came back after every boot, double-compressing on top of zram. Now also a tmpfiles.d rule (removed by `--revert`).
+- `install-brightness-bridge.sh --uninstall` aborted under `set -e` if the service was not running.
+- `mseries-docked-lid`: if the service died or restarted while the lid was closed, the panel stayed at brightness 0 after the lid opened (saved value lived only in memory). It is now persisted in `$XDG_RUNTIME_DIR` and restored on start; `--status` is read-only.
+- The Signal apt key in the grown root is now checked against Signal's published fingerprint (`DBA36B51…FB06`, verified against the live key) instead of being trusted blindly; `speakersafetyd` (the safe default of install-audio-stack.sh) is installed in the build, non-fatal. TRANSFORM-DESIGN's claim that it has no Ubuntu package is out of date.
+Noted, unchanged: `apply-desktop-settings.py` is the owner's personal shortcut layout (Command↔Ctrl swap etc.) and must not be part of the installer; install-audio-stack's volume restore sets every sink, not just the speakers, to the remembered volume (errs toward quiet); `mseries-power` sources `/etc/mseries/power.conf` as root (file is root-owned).
+
 ## Next tasks, in order
 
 Coordination: Codex handles implementation and review; OpenCode handles

@@ -2,7 +2,7 @@
 set -euo pipefail
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 if [[ ${1:-} == --uninstall ]]; then
-  systemctl --user stop mseries-brightness-bridge.service
+  systemctl --user stop mseries-brightness-bridge.service 2>/dev/null || true
   rm -f "$HOME/.config/autostart/mseries-brightness-bridge.desktop" "$HOME/.config/systemd/user/mseries-brightness-bridge.service"
   /usr/bin/python3 - <<'PYTHON'
 from pathlib import Path
