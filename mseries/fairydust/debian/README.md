@@ -118,6 +118,15 @@ physically contiguous memory (`kzalloc` of `MAX_SLICES` x `struct avd_segment`, 
 (`page allocation failure: order:10` in dmesg) and hardware video decode errors out or hangs; observed on an
 M1 Pro after about 85 minutes of desktop use, and cured by `echo 1 > /proc/sys/vm/compact_memory`. The
 segments are only read by the CPU, so `kvcalloc`/`kvfree` is sufficient. The patch applies cleanly
-(`patch --fuzz=0`) to the pinned `ce9f2eba72c0` source; it has not been compiled or run yet - the `usb4.3`
+(`patch --fuzz=0`) to the pinned `ce9f2eba72c0` source and compiles (see `compile-check.sh` below); it has not been booted - the `usb4.3`
 hashes recorded above describe the build without it. After building `usb4.4`, repeat a 1080p VA-API decode
 (`mseries/install-video-decode.sh`) on a machine that has been up for a while without compacting memory first.
+
+## Compile check without the 40 GiB build
+
+`compile-check.sh` fetches the pinned source (sha256-checked), applies the four patches in the order `build.sh`
+uses, takes the kit's kernel config with the same symbol overrides, and compiles every directory the patches
+touch (Thunderbolt/USB4 including the optional stream and net drivers, the CIO reset controller, the ATC PHY,
+Type-C and TPS6598x, the AVD driver) plus the J314/J316/J414/J416/J475 device trees. About 4 GiB and a few
+minutes; it does not produce a bootable kernel. 2026-10-14 result on the M1 Pro: all objects and all five
+device trees build with no errors or warnings, and `avd-drv.o` references `__kvmalloc_node_noprof` and `kvfree`.
