@@ -1,0 +1,971 @@
+#!/bin/bash
+
+# elementary-mac-setup: guided end-to-end elementary OS install for Apple
+# Silicon (M-series), run once as root on a fresh Asahi Alarm install:
+#
+#   curl -fsSL https://raw.githubusercontent.com/techmore/ElementaryOS_MSeries/main/bin/elementary-mac-setup | bash
+#
+# One command, run once as root. It asks its questions up front, then drives the
+# steps across the reboots each one needs, resuming itself on every boot until
+# the machine is done:
+#
+#   1. BOOT LAYOUT  Asahi Alarm's btrfs images keep /boot on the root
+#      filesystem, where GRUB cannot read it once the root is encrypted. The
+#      EFI partition is mounted at /boot instead.       (reboot)
+#   2. ENCRYPTION   The root is encrypted in place. You choose the disk
+#      passphrase at the console on the boot that does the work, and enter it
+#      on the elementary unlock screen on every boot after.   (reboot)
+#   3. ELEMENTARY   elementary OS (Pantheon) is built into its own btrfs
+#      subvolume, becomes the default boot entry, and gets the elementary
+#      unlock screen and an auto-login.                  (reboot into elementary)
+#
+# The only things you type are your answers, your password and the disk
+# passphrase. Steps 1 and 2 are done by the Asahi Alarm tools of the Omarchy Mac
+# project (omarchy-system-boot-to-esp, omarchy-system-btrfs-migrate), which are
+# fetched at run time; step 3 is transform/elementary-grow.sh from this repo.
+# Where the machine has got to is read from the machine itself, so an
+# interrupted run picks up where it left off rather than repeating work.
+#
+# This is a port of omarchy-mac-setup (https://github.com/omarchy-mac/omarchy-mac)
+# to elementary OS; see mseries/PORT-MAP.md for the boundary.
+
+# shellcheck disable=SC1010  # "done" is a step name here, not the keyword
+set -euo pipefail
+
+CONF=/etc/elementary-mac-setup.conf
+SELF=/usr/local/bin/elementary-mac-setup
+UNIT=/etc/systemd/system/elementary-mac-setup.service
+STATE_DIR=/var/lib/elementary-mac-setup
+SRC=$STATE_DIR/src
+TOOLS_SRC=$STATE_DIR/omarchy-tools
+INSTALLED_MARKER=$STATE_DIR/installed
+
+DEFAULT_REPO=techmore/ElementaryOS_MSeries
+DEFAULT_REF=main
+DEFAULT_FORGE=github.com
+
+# The Asahi Alarm tools for steps 1 and 2 come from the Omarchy Mac project.
+TOOLS_REPO=${ELEMENTARY_TOOLS_REPO:-omarchy-mac/omarchy-mac}
+TOOLS_REF=${ELEMENTARY_TOOLS_REF:-quattro}
+REQUIRED_TOOLS=(omarchy-system-boot-to-esp omarchy-system-btrfs-migrate)
+
+SUBVOL_NAME="@elementary"
+
+log() {
+  printf '\033[32m==>\033[0m %s\n' "$*"
+}
+
+warn() {
+  printf '\033[33mWarning:\033[0m %s\n' "$*" >&2
+}
+
+fail() {
+  printf '\033[31mError:\033[0m %s\n' "$*" >&2
+  exit 1
+}
+
+banner() {
+  printf '\n\033[36m=== %s ===\033[0m\n\n' "$*"
+}
+
+# ---------------------------------------------------------------------------
+# State, read from the machine rather than remembered
+# ---------------------------------------------------------------------------
+
+root_source() {
+  findmnt -no SOURCE / | sed 's/\[.*\]//'
+}
+
+# /boot has to be its own (unencrypted) partition before the root can be
+# encrypted, or GRUB loses its modules and kernel behind the LUKS header.
+boot_is_separate() {
+  local boot
+  boot=$(findmnt -no SOURCE /boot 2>/dev/null | sed 's/\[.*\]//') || return 1
+  [[ -n $boot && $boot != "$(root_source)" ]]
+}
+
+# A dm-crypt root is not the same as a finished one: an interrupted pass leaves
+# a mapped device whose LUKS2 header still records the reencryption.
+root_is_encrypted() {
+  local source backing
+  source=$(root_source)
+  [[ $(lsblk -no TYPE "$source" 2>/dev/null) == "crypt" ]] || return 1
+
+  backing=$(lsblk -nsplo NAME,TYPE "$source" 2>/dev/null |
+    awk '$2 == "part" {print $1; exit}')
+  if [[ -n $backing ]] && cryptsetup luksDump "$backing" 2>/dev/null | grep -q 'online-reencrypt'; then
+    return 1
+  fi
+  return 0
+}
+
+# vconsole.conf first: it is the file the initramfs reads, so it is the keymap
+# the passphrase prompt will actually use.
+current_keymap() {
+  local keymap="" vconsole=${ELEMENTARY_VCONSOLE_CONF:-/etc/vconsole.conf}
+
+  if [[ -f $vconsole ]]; then
+    keymap=$(sed -n 's/^KEYMAP=//p' "$vconsole" | tr -d '"' | head -1)
+  fi
+  if [[ -z $keymap ]]; then
+    keymap=$(localectl status 2>/dev/null | sed -n 's/.*VC Keymap: *//p' | head -1)
+  fi
+
+  case $keymap in
+    "" | "n/a" | "(unset)") keymap=us ;;
+  esac
+  printf '%s' "$keymap"
+}
+
+# An unlistable machine (no kbd data on a minimal image) is not a machine with a
+# bad keymap, so an empty list means "cannot check" rather than "wrong".
+keymaps_listable() {
+  localectl --no-pager list-keymaps 2>/dev/null | grep -q .
+}
+
+valid_keymap() {
+  local keymap="$1"
+  [[ -n $keymap ]] || return 1
+  keymaps_listable || return 0
+  localectl --no-pager list-keymaps 2>/dev/null | grep -qix "$keymap"
+}
+
+# The keymap the console uses is the keymap the LUKS passphrase prompt uses: the
+# initramfs bundles /etc/vconsole.conf. Get it wrong and the machine rejects a
+# passphrase its owner is typing correctly.
+apply_keymap() {
+  local keymap="$1"
+  [[ -n $keymap ]] || return 0
+
+  log "Setting the console keymap to $keymap"
+  loadkeys "$keymap" 2>/dev/null || true
+  systemd-firstboot --keymap="$keymap" --force >/dev/null 2>&1 ||
+    localectl set-keymap "$keymap" >/dev/null 2>&1 ||
+    warn "could not persist the keymap; the unlock prompt keeps the current one"
+
+  touch /etc/vconsole.conf
+  if grep -q '^KEYMAP=' /etc/vconsole.conf; then
+    sed -i "s|^KEYMAP=.*|KEYMAP=$keymap|" /etc/vconsole.conf
+  else
+    printf 'KEYMAP=%s\n' "$keymap" >>/etc/vconsole.conf
+  fi
+}
+
+current_hostname() {
+  local name
+  name=$(hostnamectl --static 2>/dev/null) || name=""
+  [[ -n $name ]] || name=$(cat /etc/hostname 2>/dev/null || true)
+  [[ -n $name ]] || name=$(uname -n)
+  printf '%s' "$name"
+}
+
+valid_username() {
+  local name="$1"
+  [[ $name != "root" && $name =~ ^[a-z_][a-z0-9_-]*$ ]]
+}
+
+# RFC 1123: each dot-separated label is 1-63 characters of letters, digits and
+# hyphens, and cannot start or end with a hyphen.
+valid_hostname() {
+  local name="$1"
+  [[ -n $name ]] || return 1
+  (( ${#name} <= 253 )) || return 1
+  [[ $name =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$ ]]
+}
+
+ensure_hosts_entry() {
+  local name="$1" short=${1%%.*} entry
+  if [[ $name == "$short" ]]; then
+    entry=$name
+  else
+    entry="$name $short"
+  fi
+
+  if grep -qE '^127\.0\.1\.1[[:space:]]' /etc/hosts; then
+    sed -i "s|^127\.0\.1\.1[[:space:]].*|127.0.1.1\t$entry|" /etc/hosts
+  else
+    printf '127.0.1.1\t%s\n' "$entry" >>/etc/hosts
+  fi
+}
+
+apply_hostname() {
+  local name="$1"
+  [[ -n $name ]] || return 0
+  [[ $name != "$(current_hostname)" ]] || return 0
+
+  log "Setting hostname to $name"
+  hostnamectl set-hostname "$name" 2>/dev/null || printf '%s\n' "$name" >/etc/hostname
+  ensure_hosts_entry "$name"
+}
+
+installed_marker_present() {
+  [[ -f ${ELEMENTARY_INSTALLED_MARKER:-$INSTALLED_MARKER} ]]
+}
+
+# Pure: given the machine's state and what the user asked for, name the next
+# step. Kept side-effect free so the tests can walk the whole matrix.
+next_step() {
+  local boot_separate="$1" encrypted="$2" want_encrypt="$3" installed="$4"
+
+  if [[ $installed == 1 ]]; then
+    echo "done"
+  elif [[ $want_encrypt == 1 && $encrypted != 1 ]]; then
+    if [[ $boot_separate == 1 ]]; then
+      echo encrypt
+    else
+      echo boot-layout
+    fi
+  else
+    echo elementary
+  fi
+}
+
+current_step() {
+  local boot_separate=0 encrypted=0 installed=0
+  boot_is_separate && boot_separate=1
+  root_is_encrypted && encrypted=1
+  installed_marker_present && installed=1
+  next_step "$boot_separate" "$encrypted" "$want_encrypt" "$installed"
+}
+
+# ---------------------------------------------------------------------------
+# Persistence: the answers, this script, and the unit that resumes it
+# ---------------------------------------------------------------------------
+
+load_conf() {
+  # Plain defaults, not environment fallbacks: USERNAME and friends are already
+  # set in a login shell and would quietly pick the wrong answers.
+  want_encrypt=1
+  username=""
+  hostname=""
+  keymap=""
+  password_hash=""
+  keep_default=0
+  repo=$DEFAULT_REPO
+  ref=$DEFAULT_REF
+  forge=$DEFAULT_FORGE
+
+  if [[ -f $CONF ]]; then
+    # shellcheck source=/dev/null
+    . "$CONF"
+    want_encrypt=${WANT_ENCRYPT:-$want_encrypt}
+    username=${SETUP_USER:-$username}
+    hostname=${SETUP_HOSTNAME:-$hostname}
+    keymap=${SETUP_KEYMAP:-$keymap}
+    password_hash=${SETUP_PASSWORD_HASH:-$password_hash}
+    keep_default=${SETUP_KEEP_DEFAULT:-$keep_default}
+    repo=${SETUP_REPO:-$repo}
+    ref=${SETUP_REF:-$ref}
+    forge=${SETUP_FORGE:-$forge}
+  fi
+}
+
+save_conf() {
+  # This file is sourced as root on the next boot. Keep every answer shell-safe;
+  # %q does that for the repo/ref/forge flags and the password hash alike.
+  (
+    umask 077
+    {
+      printf '# Written by elementary-mac-setup; delete it to stop the guided install.\n'
+      printf 'WANT_ENCRYPT=%q\n' "$want_encrypt"
+      printf 'SETUP_USER=%q\n' "$username"
+      printf 'SETUP_HOSTNAME=%q\n' "$hostname"
+      printf 'SETUP_KEYMAP=%q\n' "$keymap"
+      printf 'SETUP_PASSWORD_HASH=%q\n' "$password_hash"
+      printf 'SETUP_KEEP_DEFAULT=%q\n' "$keep_default"
+      printf 'SETUP_REPO=%q\n' "$repo"
+      printf 'SETUP_REF=%q\n' "$ref"
+      printf 'SETUP_FORGE=%q\n' "$forge"
+    } >"$CONF"
+  )
+  chmod 600 "$CONF"
+}
+
+# Where to read one file out of the repo. GitHub serves raw files from another
+# host entirely, so the shape follows the forge.
+raw_url() {
+  local path="$1"
+
+  if [[ $forge == "github.com" ]]; then
+    printf 'https://raw.githubusercontent.com/%s/%s/%s\n' "$repo" "$ref" "$path"
+  else
+    printf 'https://%s/%s/raw/branch/%s/%s\n' "$forge" "$repo" "$ref" "$path"
+  fi
+}
+
+clone_url() {
+  printf 'https://%s/%s.git\n' "$forge" "$repo"
+}
+
+# Piped in with `curl ... | bash`, this script has no file on disk: it cannot
+# install itself for the resume-on-boot unit, and every prompt would read from
+# stdin, which is the script. Fetch a copy, then hand over to it with stdin back
+# on the terminal.
+fetch_self() {
+  local url
+  url=$(raw_url "bin/${SELF##*/}")
+
+  [[ $url == https://* ]] || fail "refusing to fetch this script over $url"
+  command -v curl >/dev/null || fail "curl is needed to fetch this script"
+
+  log "Fetching the setup script from $repo ($ref)"
+  local staged
+  staged=$(mktemp /tmp/elementary-mac-setup.XXXXXX)
+  if ! curl -fsSL "$url" -o "$staged"; then
+    unlink "$staged"
+    fail "could not download $url -- is --ref $ref right?"
+  fi
+  # A 404 page or an empty file would install cleanly and fail confusingly
+  # later, so check this is the script before trusting it.
+  if [[ ! -s $staged ]] || ! head -1 "$staged" | grep -q '^#!/bin/bash'; then
+    unlink "$staged"
+    fail "what came back from $url is not the setup script"
+  fi
+
+  install -Dm755 "$staged" "$SELF"
+  unlink "$staged"
+}
+
+# Piped through `bash -s`, BASH_SOURCE is an empty array; every reference has to
+# tolerate that or set -u kills the run before main() is reached.
+running_from_a_file() {
+  [[ -f ${BASH_SOURCE[0]:-} ]]
+}
+
+install_self() {
+  running_from_a_file || return 0
+  if [[ ${BASH_SOURCE[0]} -ef $SELF ]]; then
+    return 0
+  fi
+  install -Dm755 "${BASH_SOURCE[0]}" "$SELF"
+}
+
+print_help() {
+  local source=""
+  if running_from_a_file; then
+    source=${BASH_SOURCE[0]}
+  elif [[ -f $SELF ]]; then
+    source=$SELF
+  fi
+  if [[ -n $source ]]; then
+    sed -n '/^# elementary-mac-setup: guided/,/^# to elementary OS/p' "$source" | sed 's/^# \{0,3\}//'
+    cat <<'EOF'
+
+Options: [--encrypt|--no-encrypt] [--user NAME] [--hostname NAME] [--keymap NAME]
+         [--repo OWNER/REPO] [--ref BRANCH] [--forge HOST] [--keep-default]
+         [--status] [--step NAME] [--fonts] [--unlock-screen] [--resume] [--abort]
+EOF
+  else
+    echo "Run with --status to see where this machine has got to, or with no"
+    echo "arguments to start the install."
+  fi
+}
+
+# The unit takes over tty1 so the next step runs, and can be watched, without
+# anyone logging in. Conflicting with the getty keeps the two off each other's
+# console.
+install_unit() {
+  cat >"$UNIT" <<EOF
+[Unit]
+Description=elementary OS (M-series) guided setup
+ConditionPathExists=$CONF
+After=network-online.target systemd-user-sessions.service
+After=omarchy-btrfs-migrate-finish.service
+Conflicts=getty@tty1.service
+
+[Service]
+Type=oneshot
+# Dismiss any splash before taking the tty. Leading - so a machine without
+# plymouth is not a failed unit.
+ExecStartPre=-/usr/bin/plymouth quit
+ExecStart=$SELF --resume
+StandardInput=tty-force
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+# Building the elementary root takes the better part of an hour; a timeout that
+# killed it mid-build would leave a half-installed machine. The bounds that
+# matter live in the script: the network wait gives up after 15 minutes.
+TimeoutStartSec=infinity
+
+[Install]
+WantedBy=multi-user.target
+EOF
+  systemctl daemon-reload
+  systemctl enable elementary-mac-setup.service >/dev/null 2>&1
+}
+
+cleanup_all() {
+  [[ -f $CONF ]] && unlink "$CONF"
+  if [[ -f $UNIT ]]; then
+    systemctl disable elementary-mac-setup.service >/dev/null 2>&1 || true
+    unlink "$UNIT"
+    systemctl daemon-reload
+  fi
+  restore_console
+}
+
+# The unit conflicts with getty@tty1, so a step that dies leaves tty1 with no
+# login. Every exit puts the getty back.
+restore_console() {
+  systemctl start getty@tty1.service >/dev/null 2>&1 || true
+}
+
+# Wi-Fi and Bluetooth drivers retry loudly on these machines, and their messages
+# land on the console the setup is printing to. Quiet it while the setup owns
+# tty1; the level goes back on the way out.
+quiet_console() {
+  [[ -w /proc/sys/kernel/printk ]] || return 0
+  read -r SAVED_PRINTK _ </proc/sys/kernel/printk || SAVED_PRINTK=""
+  echo 3 >/proc/sys/kernel/printk 2>/dev/null || true
+}
+
+restore_printk() {
+  [[ -n ${SAVED_PRINTK:-} ]] || return 0
+  echo "$SAVED_PRINTK" >/proc/sys/kernel/printk 2>/dev/null || true
+}
+
+on_exit() {
+  restore_printk
+  restore_console
+}
+
+reboot_now() {
+  local reason="$1"
+  log "$reason"
+  log "Rebooting in 5 seconds."
+  sleep 5
+  systemctl reboot
+}
+
+# ---------------------------------------------------------------------------
+# Prerequisites
+# ---------------------------------------------------------------------------
+
+have_network() {
+  ip route 2>/dev/null | grep -q '^default '
+}
+
+require_network() {
+  have_network && return 0
+
+  warn "No default route -- the install needs the network."
+  warn "Connect with 'nmtui' on another console (Ctrl+Alt+F2), then come back."
+  local waited=0
+  while ! have_network; do
+    sleep 10
+    (( waited += 10 ))
+    (( waited % 60 == 0 )) && log "Still waiting for the network ($((waited / 60))m)"
+    (( waited > 900 )) && fail "no network after 15 minutes; run '$SELF --resume' when it is up"
+  done
+  log "Network is up."
+}
+
+install_prerequisites() {
+  log "Installing the tools the setup needs"
+  pacman -Sy --noconfirm --needed git curl openssl pciutils btrfs-progs cryptsetup grub >/dev/null ||
+    fail "could not install the prerequisite packages"
+}
+
+# A Retina panel renders the kernel's 8x16 console font at about a millimetre
+# tall, and GRUB's built-in font is no better -- a problem, because the console
+# is where the disk passphrase is typed on the first encrypted boot.
+setup_console_font() {
+  command -v setfont >/dev/null || return 0
+
+  if ! pacman -Sy --noconfirm --needed terminus-font >/dev/null 2>&1; then
+    warn "Could not install terminus-font; leaving the console font alone."
+    return 0
+  fi
+
+  touch /etc/vconsole.conf
+  if grep -q '^FONT=' /etc/vconsole.conf; then
+    sed -i 's|^FONT=.*|FONT=ter-132b|' /etc/vconsole.conf
+  else
+    printf 'FONT=ter-132b\n' >>/etc/vconsole.conf
+  fi
+  setfont ter-132b 2>/dev/null || true
+}
+
+setup_grub_font() {
+  local ttf="" out=/boot/grub/fonts/unicode32.pf2 candidate
+  command -v grub-mkfont >/dev/null || {
+    warn "grub-mkfont is missing; leaving the GRUB font alone"
+    return 0
+  }
+
+  candidate=/usr/share/fonts/TTF/DejaVuSansMono.ttf
+  [[ -f $candidate ]] && ttf=$candidate
+  if [[ -z $ttf ]]; then
+    ttf=$(find /usr/share/fonts -name '*Mono*.ttf' -print -quit 2>/dev/null || true)
+  fi
+  if [[ -z $ttf ]]; then
+    pacman -Sy --noconfirm --needed ttf-dejavu >/dev/null 2>&1 || true
+    ttf=$(find /usr/share/fonts -name 'DejaVuSansMono.ttf' -print -quit 2>/dev/null || true)
+  fi
+  if [[ -z $ttf ]]; then
+    warn "No TrueType font to build a GRUB font from; the menu keeps its size"
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$out")"
+  if ! grub-mkfont -s 32 -o "$out" "$ttf"; then
+    warn "grub-mkfont failed on $ttf; the menu keeps its size"
+    return 0
+  fi
+
+  if grep -q '^GRUB_FONT=' /etc/default/grub 2>/dev/null; then
+    sed -i "s|^GRUB_FONT=.*|GRUB_FONT=$out|" /etc/default/grub
+  else
+    printf 'GRUB_FONT=%s\n' "$out" >>/etc/default/grub
+  fi
+
+  if [[ -f /boot/grub/grub.cfg ]]; then
+    grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1 ||
+      warn "could not regenerate grub.cfg; the GRUB menu keeps its old font"
+  fi
+  log "GRUB font built from $ttf at 32px"
+}
+
+tools_present() {
+  local dir="$1" tool
+  for tool in "${REQUIRED_TOOLS[@]}"; do
+    if [[ ! -f $dir/bin/$tool ]]; then
+      warn "$dir has no bin/$tool -- wrong branch? Set ELEMENTARY_TOOLS_REPO / ELEMENTARY_TOOLS_REF."
+      return 1
+    fi
+  done
+  return 0
+}
+
+repo_present() {
+  [[ -x $SRC/transform/elementary-grow.sh && -f $SRC/mseries/install-unlock-screen.sh ]]
+}
+
+# Shallow clone of $2 at $3 into $1, replacing a checkout that is not that.
+clone_shallow() {
+  local dir="$1" url="$2" branch="$3" current
+  if [[ -d $dir/.git ]]; then
+    current=$(git -C "$dir" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+    if [[ $(git -C "$dir" remote get-url origin 2>/dev/null) == "$url" && $current == "$branch" ]]; then
+      return 0
+    fi
+    rm -rf -- "${dir:?}"
+  fi
+  mkdir -p "$(dirname "$dir")"
+  git clone --branch "$branch" --depth 1 "$url" "$dir" || fail "could not clone $url at $branch"
+}
+
+ensure_source_checkout() {
+  command -v git >/dev/null || pacman -Sy --noconfirm --needed git
+  log "Fetching $repo ($ref)"
+  clone_shallow "$SRC" "$(clone_url)" "$ref"
+  repo_present || { rm -rf -- "${SRC:?}"; fail "$repo ($ref) does not carry transform/elementary-grow.sh"; }
+
+  log "Fetching the Asahi Alarm tools from $TOOLS_REPO ($TOOLS_REF)"
+  clone_shallow "$TOOLS_SRC" "https://github.com/$TOOLS_REPO.git" "$TOOLS_REF"
+  tools_present "$TOOLS_SRC" || { rm -rf -- "${TOOLS_SRC:?}"; fail "$TOOLS_REPO ($TOOLS_REF) is not usable"; }
+}
+
+# ---------------------------------------------------------------------------
+# The elementary root, mounted from the btrfs top level
+# ---------------------------------------------------------------------------
+
+ELEMENTARY_MNT=""
+
+mount_elementary() {
+  local src
+  src=$(root_source)
+  ELEMENTARY_MNT=$(mktemp -d /tmp/elementary-mac-root.XXXXXX)
+  mount -o "subvol=$SUBVOL_NAME" "$src" "$ELEMENTARY_MNT" ||
+    { rmdir "$ELEMENTARY_MNT"; ELEMENTARY_MNT=""; return 1; }
+}
+
+unmount_elementary() {
+  [[ -n $ELEMENTARY_MNT ]] || return 0
+  umount "$ELEMENTARY_MNT" 2>/dev/null || umount -l "$ELEMENTARY_MNT" 2>/dev/null || true
+  rmdir "$ELEMENTARY_MNT" 2>/dev/null || true
+  ELEMENTARY_MNT=""
+}
+
+elementary_exists() {
+  btrfs subvolume list / 2>/dev/null | awk '{print $NF}' | grep -qx "$SUBVOL_NAME"
+}
+
+# ---------------------------------------------------------------------------
+# The steps
+# ---------------------------------------------------------------------------
+
+step_boot_layout() {
+  banner "Step 1 of 3 -- boot layout"
+  log "/boot is on the root filesystem, where GRUB cannot reach it once the"
+  log "root is encrypted. Moving it onto the EFI partition."
+  bash "$TOOLS_SRC/bin/omarchy-system-boot-to-esp" --yes
+  reboot_now "Boot layout done."
+}
+
+step_encrypt() {
+  banner "Step 2 of 3 -- disk encryption"
+  log "Staging the in-place encryption of the root filesystem."
+  log "On the next boot you will CHOOSE THE DISK PASSPHRASE at this console,"
+  log "and the whole partition is rewritten -- that part takes a while and"
+  log "prints nothing. Do not power the machine off during it."
+  bash "$TOOLS_SRC/bin/omarchy-system-btrfs-migrate" --encrypt --yes
+  reboot_now "Encryption staged."
+}
+
+# LightDM is elementary's display manager. On an encrypted machine the disk
+# passphrase is the authentication, so log the owner straight in, as the
+# Omarchy Mac setup does; asking for a second password protects nothing the
+# first did not.
+configure_autologin() {
+  local user="$1" dir
+  dir=$ELEMENTARY_MNT/etc/lightdm/lightdm.conf.d
+  mkdir -p "$dir"
+  printf '[Seat:*]\nautologin-user=%s\nautologin-session=pantheon\nautologin-user-timeout=0\n' "$user" \
+    >"$dir/50-elementary-mac-autologin.conf"
+  log "elementary will log $user straight in; the disk passphrase is the authentication"
+}
+
+# Make the elementary OS boot entry the default. Left alone with --keep-default.
+set_default_boot_entry() {
+  local title
+  (( ! keep_default )) || { log "Leaving the default boot entry alone (--keep-default)"; return 0; }
+  title=$(grep -o "menuentry 'elementary OS (M-series[^']*'" /boot/grub/grub.cfg | head -1 | sed "s/^menuentry '//; s/'\$//")
+  [[ -n $title ]] || { warn "no elementary boot entry found; default boot entry unchanged"; return 0; }
+
+  if grep -q '^GRUB_DEFAULT=' /etc/default/grub; then
+    sed -i "s|^GRUB_DEFAULT=.*|GRUB_DEFAULT=\"$title\"|" /etc/default/grub
+  else
+    printf 'GRUB_DEFAULT="%s"\n' "$title" >>/etc/default/grub
+  fi
+  # Entries are chosen by title, so a saved default from an earlier boot must
+  # not override it.
+  sed -i 's/^GRUB_SAVEDEFAULT=.*/GRUB_SAVEDEFAULT=false/' /etc/default/grub
+  log "Default boot entry: $title"
+}
+
+# The elementary Plymouth theme replaces the Omarchy lock screen on the disk
+# passphrase prompt. The theme ships in the elementary root just built.
+install_unlock_screen() {
+  local theme=$ELEMENTARY_MNT/usr/share/plymouth/themes/elementary
+
+  if [[ ! -f $theme/elementary.plymouth ]]; then
+    warn "the elementary root has no plymouth theme; the unlock prompt stays plain"
+    return 0
+  fi
+  bash "$SRC/mseries/install-unlock-screen.sh" --theme-from "$theme" ||
+    { warn "could not install the elementary unlock screen; the unlock prompt stays plain"; return 0; }
+
+  # The elementary GRUB entry was derived before the splash existed.
+  local entry=/etc/grub.d/40_elementary-grow
+  if [[ -f $entry ]] && grep -q '^    linux ' "$entry" && ! grep -q ' splash' "$entry"; then
+    sed -i 's|^\(    linux .*\)$|\1 quiet splash|' "$entry"
+  fi
+  grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1 ||
+    warn "could not regenerate grub.cfg; the splash is not on the kernel command line"
+}
+
+step_elementary() {
+  banner "Step 3 of 3 -- installing elementary OS"
+  require_network
+  [[ -n $username && -n $password_hash ]] || fail "no owner account recorded; run '$SELF' from the start"
+
+  # A previous run that died halfway leaves a half-built root; the grow script
+  # refuses to start over it, so clear it with the script's own rollback.
+  if elementary_exists; then
+    log "Removing an unfinished $SUBVOL_NAME from an earlier run"
+    bash "$SRC/transform/elementary-grow.sh" --rollback || fail "could not roll back the unfinished $SUBVOL_NAME"
+  fi
+
+  log "Building elementary OS into $SUBVOL_NAME -- this takes a while (downloads and installs the desktop)."
+  ELEMENTARY_HOSTNAME=$hostname bash "$SRC/transform/elementary-grow.sh" --apply ||
+    fail "the elementary build failed -- fix it and run '$SELF --resume'"
+
+  ELEMENTARY_PASSWORD_HASH=$password_hash bash "$SRC/transform/elementary-grow.sh" --finalize "$username" ||
+    fail "could not create the account $username in $SUBVOL_NAME"
+
+  mount_elementary || fail "cannot mount $SUBVOL_NAME to finish it"
+  trap 'unmount_elementary; on_exit' EXIT
+  if root_is_encrypted; then
+    configure_autologin "$username"
+    install_unlock_screen
+  fi
+  unmount_elementary
+  trap on_exit EXIT
+
+  set_default_boot_entry
+  grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1 || fail "could not regenerate grub.cfg"
+
+  mkdir -p "$STATE_DIR"
+  date -u +%Y-%m-%dT%H:%M:%SZ >"$INSTALLED_MARKER"
+  # The next boot is elementary, which has no copy of this unit, so retire it
+  # here rather than in a step the Arch side will never run again.
+  step_done
+  reboot_now "elementary OS installed."
+}
+
+step_done() {
+  banner "Setup complete"
+  cleanup_all
+  log "Encryption: $(root_is_encrypted && echo "on ($(root_source))" || echo off)"
+  log "/boot: $(findmnt -no SOURCE /boot 2>/dev/null || echo '(not separate)')"
+  log "Log in as $username on elementary OS. The Asahi Alarm system stays in the boot menu as a rescue system."
+}
+
+STEPS=(boot-layout encrypt elementary fonts unlock-screen keymap done)
+
+run_named_step() {
+  local step="$1"
+
+  case $step in
+    boot-layout | encrypt | elementary)
+      [[ -d $TOOLS_SRC/.git ]] || { require_network; install_prerequisites; ensure_source_checkout; }
+      run_step "$step"
+      ;;
+    fonts)
+      setup_console_font
+      setup_grub_font
+      log "Reboot to see the GRUB menu at the new size."
+      ;;
+    unlock-screen)
+      [[ -d $SRC/.git ]] || { require_network; install_prerequisites; ensure_source_checkout; }
+      mount_elementary || fail "no $SUBVOL_NAME to take the theme from"
+      trap 'unmount_elementary; on_exit' EXIT
+      install_unlock_screen
+      unmount_elementary
+      trap on_exit EXIT
+      ;;
+    keymap)
+      [[ -n $keymap ]] || fail "no keymap recorded; pass --keymap <name>"
+      valid_keymap "$keymap" || fail "unknown keymap: $keymap"
+      apply_keymap "$keymap"
+      log "Rebuild the initramfs to give the unlock prompt the new layout: mkinitcpio -P"
+      ;;
+    done)
+      step_done
+      ;;
+    *)
+      fail "unknown step: $step (one of: ${STEPS[*]})"
+      ;;
+  esac
+}
+
+run_step() {
+  local step="$1"
+  case $step in
+    boot-layout) step_boot_layout ;;
+    encrypt) step_encrypt ;;
+    elementary) step_elementary ;;
+    done) step_done ;;
+    *) fail "unknown step: $step" ;;
+  esac
+}
+
+# ---------------------------------------------------------------------------
+
+print_status() {
+  local step
+  step=$(current_step)
+  banner "elementary OS (M-series) setup status"
+  printf '  root            %s (%s)\n' "$(root_source)" \
+    "$(root_is_encrypted && echo encrypted || echo "not encrypted")"
+  printf '  /boot           %s\n' \
+    "$(boot_is_separate && findmnt -no SOURCE /boot || echo "on the root filesystem")"
+  printf '  elementary      %s\n' \
+    "$(installed_marker_present && echo installed || echo "not installed")"
+  local encryption
+  if root_is_encrypted; then
+    encryption=done
+  elif ((want_encrypt)); then
+    encryption=requested
+  else
+    encryption="not requested"
+  fi
+  printf '  encryption      %s\n' "$encryption"
+  printf '  hostname        %s\n' "$(current_hostname)"
+  printf '  next step       %s\n\n' "$step"
+}
+
+ask_password() {
+  local first second
+  while :; do
+    read -rsp "Password for $username: " first; echo
+    [[ -n $first ]] || { warn "The password cannot be empty."; continue; }
+    read -rsp "Verify password: " second; echo
+    [[ $first == "$second" ]] || { warn "Those do not match."; continue; }
+    # SHA-512 crypt, fed on stdin so it never shows in a process list.
+    password_hash=$(printf '%s' "$first" | openssl passwd -6 -stdin) ||
+      fail "could not hash the password (is openssl installed?)"
+    return 0
+  done
+}
+
+ask_questions() {
+  local answer
+
+  banner "elementary OS for Apple Silicon"
+  echo "This installs elementary OS on this machine, rebooting a few times on the way."
+  echo "It asks everything now, then runs on its own."
+  echo
+
+  if [[ -n $encrypt_flag ]]; then
+    : # already answered on the command line
+  elif root_is_encrypted; then
+    want_encrypt=1
+    log "The root is already encrypted; leaving it alone."
+  else
+    read -rp "Encrypt the disk? [Y/n] " answer
+    [[ ${answer,,} == n* ]] && want_encrypt=0 || want_encrypt=1
+  fi
+
+  while [[ -z $username ]]; do
+    read -rp "Username to create (your everyday login): " username
+    valid_username "$username" || {
+      warn "That is not a valid Linux username."
+      username=""
+    }
+  done
+
+  while [[ -z $hostname ]]; do
+    read -rp "Hostname for this machine [$(current_hostname)]: " hostname
+    [[ -n $hostname ]] || hostname=$(current_hostname)
+    valid_hostname "$hostname" || {
+      warn "That is not a valid hostname (letters, digits and hyphens)."
+      hostname=""
+    }
+  done
+
+  [[ -n $password_hash ]] || ask_password
+
+  # Not asked: it is already the layout the machine shipped with. It is printed
+  # because it is the layout the disk passphrase gets typed under.
+  [[ -n $keymap ]] || keymap=$(current_keymap)
+  valid_keymap "$keymap" || warn "keymap '$keymap' is not in localectl's list; using it anyway"
+
+  echo
+  log "Plan:"
+  log "  - keyboard layout: $keymap (--keymap to change; the passphrase is typed with it)"
+  log "  - name this machine $hostname"
+  log "  - create $username (with sudo) in elementary OS"
+  if ((want_encrypt)); then
+    boot_is_separate || log "  - move /boot onto the EFI partition, then reboot"
+    root_is_encrypted || log "  - encrypt the root -- you choose the passphrase at the console"
+    log "  - show the elementary unlock screen at boot and log $username in automatically"
+  fi
+  log "  - build elementary OS from $repo ($ref) and make it the default boot entry"
+  log "  - reboot into elementary OS"
+  echo
+  read -rp "Start? [Y/n] " answer
+  if [[ ${answer,,} == n* ]]; then
+    fail "not started"
+  fi
+  return 0
+}
+
+main() {
+  local resume=0 status=0 abort=0 step_only="" encrypt_flag="" want_encrypt username hostname keymap password_hash keep_default repo ref forge
+
+  # The parse loop shifts every argument away, so keep a copy first. The piped
+  # re-exec has to hand the same arguments to the copy on disk.
+  local -a invocation=("$@")
+
+  load_conf
+
+  while (( $# )); do
+    case $1 in
+      --encrypt) encrypt_flag=1; want_encrypt=1 ;;
+      --no-encrypt) encrypt_flag=0; want_encrypt=0 ;;
+      --user) username=${2:?--user needs a name}; shift ;;
+      --hostname) hostname=${2:?--hostname needs a name}; shift ;;
+      --keymap)
+        keymap=${2:?--keymap needs a name}
+        valid_keymap "$keymap" || fail "unknown keymap: $keymap (see localectl list-keymaps)"
+        shift
+        ;;
+      --repo) repo=${2:?--repo needs owner/repo}; shift ;;
+      --ref) ref=${2:?--ref needs a branch}; shift ;;
+      --forge) forge=${2:?--forge needs a host}; shift ;;
+      --keep-default) keep_default=1 ;;
+      --resume) resume=1 ;;
+      --status) status=1 ;;
+      --step) step_only=${2:?--step needs a name}; shift ;;
+      --fonts) step_only=fonts ;;
+      --unlock-screen) step_only=unlock-screen ;;
+      --abort) abort=1 ;;
+      -h | --help)
+        print_help
+        exit 0
+        ;;
+      *) fail "unknown argument: $1" ;;
+    esac
+    shift
+  done
+
+  if (( status )); then
+    print_status
+    exit 0
+  fi
+
+  (( EUID == 0 )) || fail "run as root"
+
+  # Piped in rather than downloaded: get a copy on disk and continue from it,
+  # with stdin back on the terminal so the questions below can be answered.
+  if ! running_from_a_file; then
+    fetch_self
+    exec bash "$SELF" "${invocation[@]}" </dev/tty
+  fi
+
+  trap on_exit EXIT
+  quiet_console
+
+  if [[ -n $step_only ]]; then
+    run_named_step "$step_only"
+    exit 0
+  fi
+
+  if (( abort )); then
+    cleanup_all
+    log "Guided setup stopped. Nothing already done was undone."
+    exit 0
+  fi
+
+  [[ $(uname -m) == "aarch64" ]] || fail "this tool is for Apple Silicon (aarch64) installs"
+  grep -Faiq 'apple,' /proc/device-tree/compatible 2>/dev/null || fail "no Apple device tree -- run this on the Mac, from Linux"
+
+  mkdir -p "$STATE_DIR"
+
+  if (( ! resume )) && [[ $(current_step) == "done" ]]; then
+    run_step done
+    exit 0
+  fi
+
+  if (( ! resume )); then
+    ask_questions
+    # The checkouts come first so a branch missing what this script drives fails
+    # here, with nothing installed -- rather than after the unit is enabled,
+    # where it would refuse the same way on every boot.
+    require_network
+    install_prerequisites
+    ensure_source_checkout
+    setup_console_font
+    setup_grub_font
+    apply_keymap "$keymap"
+    apply_hostname "$hostname"
+    save_conf
+    install_self
+    install_unit
+  else
+    [[ -d $TOOLS_SRC/.git && -d $SRC/.git ]] || { require_network; install_prerequisites; ensure_source_checkout; }
+  fi
+
+  run_step "$(current_step)"
+}
+
+# Sourcing the script exposes its functions to the tests without running
+# anything; executing it (or piping it) does the work.
+if [[ -z ${BASH_SOURCE[0]:-} || ${BASH_SOURCE[0]} == "$0" ]]; then
+  main "$@"
+fi

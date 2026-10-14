@@ -415,7 +415,7 @@ EOF
   if [[ $MODE == "apply" ]]; then
     chroot "$newroot" /bin/bash -s <<EOF2 || return 1
 set -euo pipefail
-echo "elementary-m1" > /etc/hostname
+echo "${ELEMENTARY_HOSTNAME:-elementary-m1}" > /etc/hostname
 printf '%s\n%s\n%s\n' "$new_root_row" "$host_boot_row" "$new_home_row" > /etc/fstab
 systemctl enable NetworkManager mseries-wifi-firmware.service omarchy-wifi-resume-fix.service
 echo "Set a user password and create your account on first boot (GDM/LightDM)."
@@ -523,8 +523,16 @@ EOF
 
   # Password via stdin (never in argv/ps). Absolute path for the same reason
   # as above; chpasswd hashes with the root's default scheme (yescrypt).
-  printf '%s:%s\n' "$name" "$pass" | chroot "$newroot" /usr/sbin/chpasswd \
-    || fail "chpasswd failed for $name"
+  # ELEMENTARY_PASSWORD_HASH (crypt(3) format) is what bin/elementary-mac-setup
+  # passes so the plaintext never has to survive a reboot.
+  if [[ -n ${ELEMENTARY_PASSWORD_HASH:-} ]]; then
+    printf '%s:%s\n' "$name" "$ELEMENTARY_PASSWORD_HASH" | chroot "$newroot" /usr/sbin/chpasswd -e \
+      || fail "chpasswd -e failed for $name"
+    pass=""
+  else
+    printf '%s:%s\n' "$name" "$pass" | chroot "$newroot" /usr/sbin/chpasswd \
+      || fail "chpasswd failed for $name"
+  fi
 
   # Carry over the invoking user's SSH keys, if any (convenience only).
   if [[ -n ${SUDO_USER:-} && -r /home/$SUDO_USER/.ssh/authorized_keys ]]; then
@@ -626,6 +634,14 @@ build_linux_line() {
   # running omarchy cmdline may opt into the full-height mode, but the new
   # elementary entry must retain the rectangular safe display mode.
   out+=(appledrm.show_notch=0)
+  # The elementary unlock screen (mseries/install-unlock-screen.sh) needs the
+  # splash to be requested on the kernel line.
+  if grep -qs '^Theme=elementary' /etc/plymouth/plymouthd.conf; then
+    local have
+    for have in quiet splash; do
+      [[ " ${out[*]} " == *" $have "* ]] || out+=("$have")
+    done
+  fi
   printf -v line '    linux %s %s rootflags=subvol=%s rw' "$kpath" "${out[*]}" "$SUBVOL_NAME"
   [[ $line == *' root='* ]] || { echo "running cmdline has no root= — refusing to guess" >&2; return 1; }
   printf '%s\n' "$line"

@@ -5,6 +5,25 @@
 Upstream comparison, concrete bug-fix backlog, and porting boundaries:
 [mseries/BUG-FIX-ROADMAP.md](mseries/BUG-FIX-ROADMAP.md).
 
+## Install on an M-series Mac (one command, from Asahi Alarm)
+
+1. From macOS Terminal run the Asahi Alarm installer, choose `Asahi Alarm Minimal (BTRFS)` and give Linux at least 60 GB:
+
+   ```bash
+   curl https://asahi-alarm.org/installer-bootstrap.sh | sh
+   ```
+
+2. Boot into Arch, log in as `root` / `root`, and get online with `nmtui` (`Activate a connection`).
+3. Still as root:
+
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/techmore/ElementaryOS_MSeries/main/bin/elementary-mac-setup | bash
+   ```
+
+It asks whether to encrypt the disk, your username, hostname and password, then runs unattended across a few reboots: boot layout, in-place LUKS2 encryption (you choose the passphrase at the console), then a full elementary OS build into its own subvolume, set as the default boot entry. With encryption, every boot shows the **elementary unlock screen** (elementary Plymouth theme, Inter font) instead of Omarchy's, and logs you straight in because the passphrase is the authentication. The Asahi Alarm system stays in the boot menu as a rescue system.
+
+Useful flags: `--no-encrypt`, `--user`, `--hostname`, `--keymap`, `--keep-default` (don't change the default boot entry), `--status`, `--abort`, `--unlock-screen`. Steps 1 and 2 reuse the Asahi tools of [omarchy-mac](https://github.com/omarchy-mac/omarchy-mac), fetched at run time. **Unverified on hardware**: see [`mseries/OS9-HANDOFF.md`](mseries/OS9-HANDOFF.md). Encryption rewrites the whole root partition in place, so back up first.
+
 ## M-series cutover quickstart (run on omarchy-mac, Apple Silicon)
 
 Dry run first — changes nothing, uploads its log for review:
