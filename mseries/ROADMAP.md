@@ -37,7 +37,7 @@ with the corrected live-session hardware overlay before progressing.
 
 | Feature | Change | Next check |
 |---|---|---|
-| OpenCode Go in M-series CodexBar | The CodexBar installer adds `opencodego` to fresh/default and custom provider selections; Wingpanel labels it OpenCode Go. | Install on the working desktop, add an API key in CodexBar Settings, and confirm the quota row. |
+| OpenCode Go in M-series CodexBar | The installer enables the provider and passes the existing OpenCode Go CLI credential to CodexBar at runtime. | Install on the working desktop, sign in through OpenCode, and confirm the quota row. |
 
 ## Open problems
 

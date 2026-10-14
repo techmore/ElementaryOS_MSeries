@@ -171,12 +171,16 @@ list, it adds OpenCode Go while preserving the other CodexBar preferences.
 Other explicit single-provider selections are left alone; switch to **custom** and add
 `opencodego` in Settings → Providers to include it.
 
-OpenCode Go is separate from the base OpenCode web-dashboard provider. To
-connect it, open CodexBar → Settings → Providers, select OpenCode Go, and enter
-your OpenCode Go API key in its **API key** field. The Wingpanel entry
-then shows its reported quota. A device with only local OpenCode Go history can
-show estimated local usage; that estimate is not account quota. Credentials are
-stored by CodexBar per user and are not placed in the OS image or installer.
+OpenCode Go is separate from the base OpenCode web-dashboard provider. Sign in
+to OpenCode Go in the OpenCode CLI (`/connect` → **OpenCode Go**) and enter your
+API key there. OpenCode stores it in `~/.local/share/opencode/auth.json`. The
+M-series CodexBar wrapper reads only the `opencode-go` key for OpenCode Go
+usage calls and passes it to the upstream CLI as `OPENCODE_API_KEY`; the key
+stays in OpenCode's user auth file and is not copied into the image or
+CodexBar settings. The Wingpanel entry then shows the reported quota. A device
+with only local OpenCode Go history can show estimated usage; that estimate is
+not account quota. You can also set `OPENCODE_API_KEY` yourself to override
+the OpenCode CLI credential.
 
 ## Signal Beta in Wingpanel
 

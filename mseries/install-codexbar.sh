@@ -2,6 +2,7 @@
 # Install upstream Linux ARM64 desktop + CLI; no fork required.
 set -euo pipefail
 [[ $(uname -m) == aarch64 ]] || { echo 'This installer requires ARM64' >&2; exit 1; }
+repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 version=v0.74.1
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
@@ -15,7 +16,9 @@ for component in CLI Desktop; do
 done
 mkdir -p "$HOME/.local/lib/codexbar-cli" "$HOME/.local/bin"
 tar -xzf "CodexBarCLI-${version}-linux-aarch64.tar.gz" -C "$HOME/.local/lib/codexbar-cli"
-ln -sfn "$HOME/.local/lib/codexbar-cli/codexbar" "$HOME/.local/bin/codexbar"
+mv -f "$HOME/.local/lib/codexbar-cli/codexbar" "$HOME/.local/lib/codexbar-cli/codexbar-upstream"
+rm -f "$HOME/.local/bin/codexbar"
+install -m 0755 "$repo/mseries/codexbar-opencode-wrapper.py" "$HOME/.local/bin/codexbar"
 tar -xzf "CodexBarDesktop-${version}-linux-aarch64.tar.gz"
 cd "CodexBarDesktop-${version}-linux-aarch64"
 python3 Integrations/Linux/install.py --cli "$HOME/.local/bin/codexbar"

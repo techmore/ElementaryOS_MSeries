@@ -501,12 +501,13 @@ unrelated single-provider choices remain unchanged. The installer writes the set
 file with owner-only permissions using a same-directory atomic replacement.
 Wingpanel now renders the provider name as “OpenCode Go”.
 
-`DESKTOP-SETUP.md` explains that this is the Go quota provider, where to enter
-its API key in CodexBar’s settings field, and that local history is an
-estimate. The API key is entered by the user at runtime; it is not embedded in
-the image or installer.
+`codexbar-opencode-wrapper.py` reads only the `opencode-go` key from OpenCode's
+user `auth.json` and injects it into the environment for CodexBar OpenCode Go
+usage queries. Existing `OPENCODE_API_KEY` takes precedence. The credential is
+not copied into CodexBar settings or the OS image. `DESKTOP-SETUP.md` documents
+signing into OpenCode Go in the CLI and the local-usage estimate boundary.
 
-Validation: `bash -n mseries/install-codexbar.sh` and `git diff --check` passed.
-No runtime install, authenticated usage fetch, or automated tests were run.
-Next: install on the working desktop, add the user's OpenCode Go API key in
-CodexBar Settings, and confirm the Wingpanel quota row.
+Validation: `bash -n mseries/install-codexbar.sh`, Python bytecode compilation
+of the wrapper, and `git diff --check` passed. No runtime install, authenticated
+usage fetch, or automated tests were run. Next: install on the working desktop,
+sign into OpenCode Go through its CLI, and confirm the Wingpanel quota row.
