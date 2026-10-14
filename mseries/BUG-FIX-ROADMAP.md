@@ -108,6 +108,12 @@ Apple publishes no Linux client for iCloud Keychain or the Passwords app. Its ow
 2. **Read-only unofficial client** (`keychain`, `icp` or dragosol's) if you want to keep using iCloud as the source. Review its code, use an anisette helper you built yourself, and keep trust-changing steps off.
 3. **Avoid two-way sync** until a tool has history.
 
+**Owner lean (2026-10-14): a Brave browser extension.** Native Brave (1.97.56) is already installed on the M1 Pro. Two routes fit:
+- **icp's extension (iCloud, read only).** Its README explicitly supports Brave: turn on Developer mode at `brave://extensions`, **Load unpacked** the project's `extension/` folder, copy the extension ID, then run `host/install.sh <EXTENSION_ID>` to connect it to the `icp` helper. It fills passwords, one-time codes and Hide My Email from a local encrypted copy of your iCloud Keychain. It needs an anisette helper and an Apple ID sign-in done by the owner.
+- **Brave's own sync (no iCloud).** Brave Sync can keep passwords and bookmarks in step between Brave on the Mac, Linux and phone. It is a separate store from iCloud Keychain, so it avoids Apple sign-in on Linux but does not read Safari's saved passwords. It could be paired with the one-way export above to seed it.
+- Also Chromium-capable: `keychain` (passkeys only) and `passwords-app` (Chrome autofill, two-way, too new).
+Nothing was installed or signed in. Decide between icp-in-Brave and Brave Sync (or both) after the reinstall.
+
 **Owner decision needed:** which path, and whether to try a read-only client at all. As with iMessage, an AI assistant must not enter Apple credentials; the owner signs in. Nothing is installed.
 
 ## Priority order (2026-10-14)
@@ -125,7 +131,7 @@ Ranked by how often the owner hits it, how small the fix is, and what it depends
 | 7 | Gaps left from the Omarchy parity audit | Audio watchdog and the two WirePlumber rules are installed on the M1 Pro (2026-10-14); function-key mode awaits an owner choice; mic mapper not ported | Mostly done |
 | 8 | **Touch ID (the main login goal)** | No public code exists; upstream watcher installed; a security key with pam_u2f is a possible interim | Blocked upstream, watching |
 | 9 | iMessage | Documented. Owner leans to BlueFerry (iPhone over Bluetooth, code copy); install after the reinstall | Documented, install later |
-| 10 | iCloud password sync | Options documented; safest is a one-way export into KeePassXC or Bitwarden; awaiting the owner's choice | Documented, waiting on owner |
+| 10 | iCloud password sync | Options documented; the owner leans to a Brave extension (icp supports Brave; Brave Sync is the no-Apple-login alternative); decide after the reinstall | Documented, leaning Brave |
 | 11 | Small checks: brightness keys, keyboard light on lock and lid, Wi-Fi resume, Gala OSK guard, file the Wingpanel report | Cheap to verify, low daily impact | Housekeeping |
 | 12 | Factory ISO hardware boot and image packaging (audio chain, firmware) | Release blocker for the image, not for this desktop | After the reinstall decision |
 | 13 | Dock display, ACIO suspend handshake, USB-C resume power management | Kernel work; blocked upstream or large | Blocked / long |
