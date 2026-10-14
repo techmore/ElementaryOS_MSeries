@@ -468,3 +468,20 @@ One-minute backend polling and five-second asynchronous panel reads are retained
 This qualifies the running desktop indicator only; no factory ISO was built.
 Next: use the displayed forecasts during ordinary work and reassess if the
 upstream pace format changes or a recent-rate estimate is requested.
+
+## Tether continuity branch — October 13
+
+Created `mseries-tether-continuity` from the clean `main` branch to scope an
+optional iPhone-to-elementary continuity add-on. Upstream Tether describes
+direct iPhone/Linux SMS and iMessage messaging plus OTP handoff; this removes
+the architectural need for an always-on Mac relay. Brave is Chromium-based,
+but upstream does not explicitly list Brave, so its extension and native
+messaging behavior remain to be qualified on the target desktop.
+
+The goals, package boundary, privacy expectations, dependencies, and real
+device acceptance checklist are in [`TETHER-CONTINUITY.md`](TETHER-CONTINUITY.md).
+AirDrop-style LocalSend and experimental M1 Pro Touch ID/PAM are separate
+optional tracks. No packages, base image, auth settings, Bluetooth pairing, or
+user data were changed, and no tests were run. Next: pin/audit Tether source and
+licenses, then decide on a removable ARM64 packaging approach before installing
+or proposing it for the image.

@@ -51,7 +51,8 @@ with the corrected live-session hardware overlay before progressing.
 4. ~~**Linux VMs with KVM**~~ Guide written 2026-10-13: [`KVM-VMS.md`](KVM-VMS.md) (boot verified headless; graphics, networking address and benchmark overhead not yet measured).
 5. **Publish benchmark history** for every kernel/Mesa update, plot trends.
 6. **Install media / transform script** for other M1/M2 Macs (see `TRANSFORM-DESIGN.md`).
-7. **Report upstream bugs** (Wingpanel crash; PipeWire missing LV2 plugin in Ubuntu).
+7. **Tether continuity add-on**: direct iPhone SMS/iMessage and OTP handoff to Brave, with no relay Mac. The source review and qualification plan are in [`TETHER-CONTINUITY.md`](TETHER-CONTINUITY.md); no app is installed or included in the base image yet.
+8. **Report upstream bugs** (Wingpanel crash; PipeWire missing LV2 plugin in Ubuntu).
 
 Not realistic here: macOS 27 guests (`MACOS-VM.md`), Mac mini M4 (Asahi has no M4 support: no installer, no GPU
 driver, M3 only now nearing a first release).
