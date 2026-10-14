@@ -1055,3 +1055,7 @@ Logged in `ROADMAP.md` (stretch goals) and `BUG-FIX-ROADMAP.md` (P3). Finding: t
 - Feature requests logged: True Tone-like display (see above).
 
 Next: install the polkit rule and confirm prompts stop for 30 minutes, install `mseries-verify`, then the `obexd` greeter timeout.
+
+### Verify robot installed; false failure fixed — 2026-10-14
+
+Ran `bash mseries/local-ai/install-verify.sh` (user-level, no sudo): `~/.local/bin/mseries-verify` now exists. Its first run reported `speakersafetyd-active` as failed although the daemon was active: the check grepped the last 40 journal lines for "Sample rate", but the log now says "PCM rate" and a suspend warning pushed it out of the window. The check in `verify-checks.json` now searches the whole boot for either phrase. Status after: 6 passed, 4 ask (owner looks), 10 waiting, 0 failed.

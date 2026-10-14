@@ -120,7 +120,7 @@
       "title": "Speaker protection daemon is running",
       "note": "2026-10-12: speakersafetyd 1.1.2 installed (j314 profile identical to Arch's 2.0.1). The DSP chain (asahi-audio) could not be installed: Ubuntu's PipeWire has no LV2 filter plugin.",
       "precondition": "[ -e /var/lib/dpkg/info/speakersafetyd.list ]",
-      "command": "systemctl is-active speakersafetyd && journalctl -u speakersafetyd -b --no-pager -n 40 -o cat | grep -m1 'Sample rate'",
+      "command": "systemctl is-active speakersafetyd && journalctl -u speakersafetyd -b --no-pager -o cat | grep -m1 -E 'Sample rate|PCM rate'",
       "tags": [
         "audio"
       ]
