@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Screenshot shelf
+Comment=Show a draggable thumbnail after each screenshot
+Exec=%h/.local/libexec/mseries-screenshot-shelf
+X-GNOME-Autostart-enabled=true
+NoDisplay=true

@@ -1,0 +1,17 @@
+#!/bin/bash
+# Markup: open an image in the Swappy annotator (arrows, shapes, text, highlights, blur, crop) and save the
+# result next to the original as "<name> (markup).png". PDFs open in Papers, which has its own annotations.
+# Usage: mseries-markup FILE
+set -u
+file=${1:?usage: mseries-markup FILE}
+[[ -f $file ]] || { echo "No such file: $file" >&2; exit 1; }
+case ${file,,} in
+  *.pdf)
+    if command -v papers >/dev/null; then exec papers "$file"; fi
+    if flatpak info org.gnome.Papers >/dev/null 2>&1; then exec flatpak run org.gnome.Papers "$file"; fi
+    exec xdg-open "$file" ;;
+  *.png|*.jpg|*.jpeg|*.webp|*.bmp|*.gif|*.tif|*.tiff)
+    dir=$(dirname -- "$file"); base=$(basename -- "$file"); stem=${base%.*}
+    exec swappy -f "$file" -o "$dir/$stem (markup).png" ;;
+  *) exec xdg-open "$file" ;;
+esac
