@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M1 Pro features — ElementaryOS M-Series</title>
+<style>
+body{font-family:-apple-system,system-ui,sans-serif;max-width:54rem;margin:2rem auto;padding:0 1rem;line-height:1.55;color:#1a1a1a}
+table{border-collapse:collapse;width:100%;margin:1rem 0}
+th,td{border:1px solid #ccc;padding:.45rem .6rem;text-align:left;font-size:.92rem;vertical-align:top}
+th{background:#f4f4f4}
+.ok{color:#1a7f37;font-weight:bold}.part{color:#9a6700;font-weight:bold}.no{color:#b42318;font-weight:bold}
+img{max-width:100%;height:auto;border:1px solid #ccc;border-radius:8px;margin:.5rem 0}
+footer{margin-top:2rem;font-size:.85rem;color:#555}
+</style>
+</head>
+<body>
+<p><a href="index.html">← back</a></p>
+<h1>M1 Pro features and Omarchy parity</h1>
+<p>What the installed elementary OS 9 desktop does on a 14-inch MacBook Pro (M1 Pro), checked against the maintained Omarchy Apple Silicon packages (<a href="https://github.com/omacom/omarchy-mac-pkgs">omacom/omarchy-mac-pkgs</a>, audited at 222f7a8). This describes the installed system, not the unbuilt factory image. Updated 2026-10-14.</p>
+
+<h2>Omarchy M-series enhancements</h2>
+<table>
+<tr><th>Enhancement</th><th>Status on the M1 Pro</th><th>Notes</th></tr>
+<tr><td>Wi-Fi resume recovery</td><td class="ok">Ported</td><td>Resume script has a regression test; live repeated-suspend test from the factory image is still pending.</td></tr>
+<tr><td>Speaker safety and DSP</td><td class="ok">Ported on the desktop</td><td>speakersafetyd is active; audio output passed. The factory image does not install this path yet.</td></tr>
+<tr><td>Battery charge limit</td><td class="ok">Ported</td><td>Limit reads 80%; a quick-settings switch toggles it.</td></tr>
+<tr><td>Ambient keyboard light</td><td class="ok">Ported</td><td>Adjusted 0 to 59/255 at 141 lx; lock, lid and suspend behavior still to be qualified.</td></tr>
+<tr><td>Early Apple input loading</td><td class="ok">Ported</td><td>initramfs module list; factory-image path not verified.</td></tr>
+<tr><td>Dock hub, mouse and Ethernet</td><td class="ok">Working</td><td>Dell WD22TB4 verified 2026-10-14. Display through the dock is not available (no DisplayPort tunnelling).</td></tr>
+<tr><td>Docked lid mode</td><td class="part">Running</td><td>Locks instead of retrying suspend while a USB4 dock is attached; lid-close with a dock needs a repeat test.</td></tr>
+<tr><td>Audio watchdog</td><td class="no">Not ported</td><td>Upstream restarts a wedged PipeWire/WirePlumber. Highest-value remaining parity item.</td></tr>
+<tr><td>Function-key mode</td><td class="part">Differs</td><td>Running with media keys first (fnmode=1); upstream uses the kernel default (auto). Awaiting a deliberate choice.</td></tr>
+<tr><td>Microphone mapping</td><td class="no">Not ported</td><td>Needs re-homing to elementary's audio session.</td></tr>
+<tr><td>Hardware video decode</td><td class="no">Missing</td><td>Needs AVD kernel support, firmware and a VA-API bridge.</td></tr>
+<tr><td>Touch ID</td><td class="no">Research</td><td>No driver is known to this project for the M1 Pro; see the roadmap.</td></tr>
+</table>
+
+<h2>Desktop additions</h2>
+<ul>
+<li><strong>Network indicator:</strong> live download and upload speed with a 60-second graph, per-app and per-host usage, and a quieter Wi-Fi list. A background logger keeps the usage history locally. Built into the Apple Silicon image overlay.</li>
+<li><strong>Local Troubleshooter:</strong> plain-language answers about crashes and failures from an on-device model, with a dropdown in the panel. Nothing leaves the machine.</li>
+<li><strong>Login speed:</strong> the greeter went from 119.7 s to 0.82 s with a display crossbar in the initramfs.</li>
+<li><strong>Look and feel:</strong> rounded screen corners, softer blue and rose accents, and a brightness slider in quick settings.</li>
+<li><strong>Performance:</strong> zram swap, trimmed services and a battery CPU policy. Benchmark scripts and results are in <a href="https://github.com/techmore/ElementaryOS_MSeries/tree/main/mseries/benchmarks">mseries/benchmarks</a>; no new speed claim is made without a measured before and after.</li>
+</ul>
+
+<h2>Screenshots</h2>
+<p>The Local Troubleshooter answering "Is anything wrong with my computer right now?" on the M1 Pro (light and dark).</p>
+<img src="images/troubleshooter-report-light.png" alt="Local Troubleshooter report in the light theme, listing items that need attention and items safe to ignore" width="640" height="470">
+<img src="images/troubleshooter-report-dark.png" alt="Local Troubleshooter report in the dark theme" width="640" height="470">
+<p>The ARM64 installer boot test in a virtual machine:</p>
+<img src="images/os9-arm64-corrected-vm-installer.png" alt="elementary OS installer language selection booted in an ARM64 virtual machine" width="640">
+
+<p>See <a href="bug-fixes.html">the bug list</a> for what is still broken and <a href="support.html">the support matrix</a> for evidence.</p>
+<footer>Source: <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/PORT-MAP.md">mseries/PORT-MAP.md</a> and <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/ROADMAP.md">mseries/ROADMAP.md</a>.</footer>
+</body>
+</html>

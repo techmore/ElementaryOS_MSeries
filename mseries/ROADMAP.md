@@ -1,6 +1,6 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
-Last updated 2026-10-13. Day-to-day pending checks live in the robot: `mseries-verify status`
+Last updated 2026-10-14. Day-to-day pending checks live in the robot: `mseries-verify status`
 (seed: `mseries/local-ai/verify-checks.json`). This file is the human-readable plan.
 The specific regression reports and reproduction steps are tracked in
 [`BUG-FIX-ROADMAP.md`](BUG-FIX-ROADMAP.md).
