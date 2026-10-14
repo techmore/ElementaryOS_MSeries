@@ -1,0 +1,10 @@
+[Unit]
+Description=Record screen and session state around lid events (diagnostic)
+
+[Service]
+ExecStart=/usr/bin/python3 -I /usr/local/libexec/mseries-lid-trace
+Restart=on-failure
+Nice=10
+
+[Install]
+WantedBy=multi-user.target

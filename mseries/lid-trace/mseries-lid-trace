@@ -1,0 +1,96 @@
+#!/usr/bin/python3
+"""Record what the screen and session look like around each lid open.
+
+Diagnostic for "lid open needs the power button". Runs as a root system service, watches logind's
+LidClosed property, and on every lid event logs a state snapshot at 0, 2, 5 and 12 seconds: panel
+backlight, DRM connector state, the seat's active session, session lock/idle hints, and the last
+input activity. Read it with: journalctl -t mseries-lid-trace -b
+"""
+import glob
+import os
+import subprocess
+import sys
+import syslog
+
+import gi
+from gi.repository import Gio, GLib
+
+LOGIN = ('org.freedesktop.login1', '/org/freedesktop/login1')
+SAMPLES = (0, 2, 5, 12)
+
+
+def say(message):
+    syslog.syslog(message)
+    print(message, flush=True)
+
+
+def read(path):
+    try:
+        with open(path) as handle:
+            return handle.read().strip()
+    except OSError:
+        return '?'
+
+
+def run(*args):
+    try:
+        return subprocess.run(args, capture_output=True, text=True, timeout=3).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return '?'
+
+
+def snapshot(event, second):
+    backlight = '/sys/class/backlight/apple-panel-bl'
+    drm = ' '.join(f"{os.path.basename(p)[5:]}={read(p + '/status')}/{read(p + '/enabled')}"
+                   for p in sorted(glob.glob('/sys/class/drm/card*-*')))
+    seat = run('loginctl', 'show-seat', 'seat0', '-p', 'ActiveSession', '--value')
+    sessions = []
+    for line in run('loginctl', 'list-sessions', '--no-legend').splitlines():
+        parts = line.split()
+        if parts:
+            sid = parts[0]
+            info = run('loginctl', 'show-session', sid, '-p', 'Class', '-p', 'Active', '-p', 'LockedHint',
+                       '-p', 'IdleHint', '-p', 'State').replace('\n', ' ')
+            sessions.append(f'{sid}[{info}]')
+    say(f'{event} +{second}s backlight={read(backlight + "/brightness")}/{read(backlight + "/max_brightness")} '
+        f'bl_power={read(backlight + "/bl_power")} drm: {drm} active_session={seat} sessions: {" ".join(sessions)}')
+    return False
+
+
+class Tracer:
+    def __init__(self):
+        bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+        self.manager = Gio.DBusProxy.new_sync(bus, Gio.DBusProxyFlags.NONE, None, LOGIN[0], LOGIN[1],
+                                              'org.freedesktop.login1.Manager', None)
+        self.manager.connect('g-properties-changed', self.changed)
+        self.closed = self.lid()
+
+    def lid(self):
+        value = self.manager.get_cached_property('LidClosed')
+        return bool(value.get_boolean()) if value is not None else False
+
+    def changed(self, _proxy, changes, _invalid):
+        if 'LidClosed' not in changes.unpack():
+            return
+        closed = self.lid()
+        if closed == self.closed:
+            return
+        self.closed = closed
+        event = 'lid-closed' if closed else 'lid-opened'
+        say(f'{event} docked={any(n[0].isdigit() and n[-1] != "0" for n in os.listdir("/sys/bus/thunderbolt/devices"))}')
+        for second in SAMPLES:
+            GLib.timeout_add_seconds(second, snapshot, event, second) if second else snapshot(event, 0)
+
+
+def main():
+    syslog.openlog('mseries-lid-trace')
+    if '--once' in sys.argv:
+        snapshot('manual', 0)
+        return
+    Tracer()
+    say('lid trace running')
+    GLib.MainLoop().run()
+
+
+if __name__ == '__main__':
+    main()
