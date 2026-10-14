@@ -73,17 +73,18 @@ Spending window and upstream refresh settings are available today.
 
 For the full upstream project screen, see [Joshua repository review](../JOSHUA-REPOSITORY-REVIEW.md).
 
-## Gemma 4 local crash and log troubleshooting
+## Qwen3.5-9B local crash and log troubleshooting
 
 Install `bash mseries/local-ai/install-troubleshooter.sh`. This adds **Local
 Troubleshooter** to Applications and the `mseries-troubleshoot` command.
 Uses Joshua's Linux MLX runtime and private Honeykrisp driver, with
-`mlx-community/gemma-4-e4b-it-4bit` pinned to
-`475b9088d29754a3379866cf5aeb6b41acd313c2` (about 5.18 GB download).
-This exact revision also appears in upstream's Gemma E4B inference receipts.
-Google's [Gemma model documentation](https://ai.google.dev/gemma/docs/core)
-explains the small E4B model and memory tradeoffs; macOS MLX compatibility
-alone is not Linux compatibility evidence.
+`mlx-community/Qwen3.5-9B-4bit` pinned to
+`8b2b98c00a6b4d291155e4890773ca8f769aee53` (about 5.6 GB download).
+It replaced Gemma 4 E4B on 2026-10-13 after a side-by-side run on this Mac:
+Qwen's advice was more specific and it took the planted `rm -rf` line in a
+test log as hostile, but it needs about 1 GiB more memory and runs slower per
+analysis (35-47 s versus 23-33 s). One run each on two inputs, so a first look,
+not a benchmark. Qwen3.5 also gets Joshua's fused decode route.
 
 ```sh
 mseries-troubleshoot --start "Why did my desktop crash?"
@@ -93,9 +94,11 @@ mseries-troubleshoot --collect-only
 systemctl --user stop mseries-troubleshooter-model
 ```
 
-The native GTK application offers current/previous boot analysis and a release
+If the memory check refuses to start the model while MLX Chat is resident, the
+troubleshooter pauses `mlx-omarchy-chat` for the analysis and restarts it after.
+The admission check itself is never lowered. The native GTK application offers current/previous boot analysis and a release
 memory button. The model runs on demand, not at login. An existing MLX chat
-session is preserved; current free memory is admission-checked before Gemma
+session is preserved; current free memory is admission-checked before the model
 loads. If admission fails, close other large workloads and retry. Do not bypass
 that check. No ANE driver, bootloader or system Mesa change is involved.
 
@@ -152,7 +155,7 @@ contains only program/PID/signal/timestamp fields. It does not extract memory
 images, environment variables or command lines from coredumps.
 
 Automatic diagnosis is off by default. When enabled in the robot menu, a new
-crash starts the same local Gemma command, with at most one watcher-launched
+crash starts the same local model command, with at most one watcher-launched
 analysis active. Reports appear in the app on its next launch. The idle watcher
 does not load a model; disable the toggle and use **Release Model Memory** to
 stop a previously loaded model. No generic repair commands are taken from model
@@ -167,7 +170,7 @@ that a recurring crash's root cause is fixed.
 The watcher is inspired by Omarchy Mac quattro's `omarchy-crash-watch` and
 `omarchy-agent-crash` at `ba546a61f881c1fe9d79d75ec050eab048b8cb63`.
 Those upstream scripts notify and open a selected coding agent; the watcher
-itself is not an autonomous repair loop. Our version uses local Gemma and a
+itself is not an autonomous repair loop. Our version uses a local model and a
 native elementary frontend.
 
 Remove the robot/watcher with
@@ -184,7 +187,7 @@ mseries-troubleshoot --start --performance --release-model "Find native desktop 
 mseries-troubleshoot --performance --collect-only
 ```
 
-The performance snapshot is collected before this request loads Gemma. It records
+The performance snapshot is collected before this request loads the model. It records
 available RAM/swap, CPU/memory/I/O pressure, load averages, cpufreq governors,
 thermal readings, the native power profile, disk space and top process names by
 CPU/memory. Process arguments and environments are excluded. Missing sensors or
@@ -199,3 +202,26 @@ Uncheck it for repeated warm requests. Other chat services are untouched. A
 same-user lock prevents the app and crash watcher from running competing analyses
 or unloading a model during an active analysis. The manual memory-release button
 uses the same lock and runs off the UI thread.
+
+## Daily task briefing
+
+`mseries-brief` reads the open tasks in the local **Homeboard** task list
+(read-only), asks the same on-device model for a short plan (do today, overdue,
+quick wins, needs clarifying) and unloads the model afterwards. Briefings are
+saved in `~/.local/state/mseries-brief/`. `mseries-brief --collect-only` prints
+exactly what the model would see. The tool only advises: it never edits tasks.
+It is installed as `~/.local/bin/mseries-brief` from `brief.py`.
+
+## Ask about tasks and energy
+
+`mseries-ask "question"` lets the on-device model use two **read-only** tools:
+`list_tasks` (open Homeboard tasks) and `get_energy` (power now, today, this
+month). It runs the tools, then answers from their results; it cannot add or
+change anything. Examples: `mseries-ask "Which tasks mention plumbing?"`,
+`mseries-ask "What costs the most today?"`.
+
+Energy data comes from the local file the Energy Monitor tray app publishes
+(`~/.local/state/energy-monitor/summary.json`), so it works on any network once
+that app is signed in to the collector. If the app is offline, signed out or
+the data is stale, the tool says so and the model must not invent readings.
+The model is started for the question and unloaded afterwards.

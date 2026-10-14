@@ -46,7 +46,7 @@ installers under `mseries/` also configure a running elementary installation;
 their individual documentation describes what they install and how to remove
 it. Cloning the repository alone does not apply those changes.
 
-[Local Troubleshooter](local-ai/README.md) adds on-device Gemma 4 log analysis,
+[Local Troubleshooter](local-ai/README.md) adds on-device Qwen3.5-9B log analysis and a task briefing,
 a native GTK app, and a Wingpanel robot menu with optional crash diagnosis.
 
 ## Layout
