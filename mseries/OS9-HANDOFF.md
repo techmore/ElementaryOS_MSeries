@@ -1227,3 +1227,11 @@ tag. Added Touchegg to GitHub upstream subscriptions. Subagent reviewed source
 dependencies, paths, activation and licensing. No tests/build or physical
 gesture qualification were run. Remaining browser, video and desktop patches
 still require build-time integration; factory hardware qualification is open.
+
+
+### Battery drain, phone tether, minimum brightness — 2026-10-14
+
+- **Battery:** on battery the M1 Pro drew 12.9 W with the screen at 105/500 and the CPU 87% idle. The WirePlumber no-suspend rule (`session.suspend-timeout-seconds = 0`, from Omarchy, applied when PipeWire restarted at 17:35) kept the speaker stream RUNNING while idle. A user-level override of 30 s closed the stream and the draw fell to 11.7 W (about 1.2 W); `mseries/audio/asahi-audio-no-suspend.conf` now defaults to 30 s. Possible cost: a pop after 30 s of silence. Still unexplained: about 11.7 W total, with AOP mailbox interrupts about 460/s each, SPI HID about 1000/s and busy Electron apps. The power-profile code is working, so the Rust battery-profile migration (owner's idea) is not expected to fix this alone; it stays on the plan and will be judged by before/after power readings.
+- **Phone tether:** bug logged with the observed disconnect at 17:39:26 and the unmanaged/no-lease NetworkManager sequence; symptom details still needed from the owner.
+- **Minimum brightness:** panel floor is 5/500 (1%); needs the owner's look. See `BUG-FIX-ROADMAP.md`.
+- Applied on this Mac without sudo: user-level WirePlumber override only (reversible).
