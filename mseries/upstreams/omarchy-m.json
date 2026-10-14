@@ -1,0 +1,19 @@
+{
+  "observed_on": "2026-10-14",
+  "purpose": "Discovery baselines for upstream tracking; these do not replace build pins or prove hardware qualification.",
+  "announcement": "https://omarchy.org/news/2026/09/introducing-omarchy-m/",
+  "projects": [
+    {"repo": "omacom/omarchy-mac-pkgs", "branch": "main", "observed_revision": "222f7a8599bbdd287ac6a95362cd51c5b024baae", "github_license": "MIT", "area": "Apple packages and manual"},
+    {"repo": "omacom/omarchy-mac-installer", "branch": "main", "observed_revision": "00489dd23de755920f242a96f0b81b14ea3cc949", "github_license": "MIT", "area": "Native installer"},
+    {"repo": "omacom/try-omarchy", "branch": "main", "observed_revision": "afd4f2dec4445c5d4e79a0b5a0b8addbbcc25ced", "github_license": "MIT", "area": "macOS VM preview"},
+    {"repo": "subedijaidip/dp-altmode-t8112", "branch": "main", "observed_revision": "50b80f4b1e7933e572eb0f5929ef28a24c150d16", "github_license": "GPL-2.0", "area": "M2 Air t8112/j413 USB-C display"},
+    {"repo": "joshuaswarren/omarchy-mlx", "branch": "main", "observed_revision": "9ab220f7e93483e98629e00791fdee3edf5e9066", "github_license": "MIT", "area": "MLX/Vulkan"},
+    {"repo": "omacom/omarchy", "branch": "quattro", "observed_revision": "84cfb93959f4fe0bbb71de71593b36647d2ba78d", "github_license": "MIT", "area": "Desktop and packaging; observed default branch"},
+    {"repo": "AsahiLinux/linux", "branch": "fairydust", "observed_revision": "ce9f2eba72c061a50b2d790450e90af3439d8c24", "github_license": "NOASSERTION", "area": "Apple kernel; inspect component licensing before import"}
+  ],
+  "unresolved_sources": [
+    {"area": "Touch ID / SEP", "people": ["Dj", "Ryan Murray"], "status": "Announcement claim; compatible public implementation not obtained or verified"},
+    {"area": "Newer hardware/input/power/audio and ARM packages", "people": ["Miguel Cruz", "Liam", "Eryk Wieliczko", "Shun Li"], "status": "Locate and pin public component repositories and model coverage"},
+    {"area": "Intel/T2 hardware", "people": ["Shawn Yeager", "Randy"], "status": "Track separately from Apple Silicon applicability"}
+  ]
+}

@@ -56,8 +56,8 @@ Added `mseries/screenshot-shelf/` and `install-screenshot-shelf.sh`: a thumbnail
 
 ## Touch ID research (2026-10-14)
 
-- **No public Linux Touch ID code exists for M1.** Searched GitHub (repositories and the omarchy-mac, omarchy-mac-pkgs and related repos), Asahi's docs and the Linux tree.
-- Omarchy's September announcement says a developer "got Touch ID working by talking directly to the Secure Enclave" and lists it as a first-release target, but links no code. Omarchy's own package status page (`mac-manual/content/14-status.md`, omarchy-mac-pkgs 222f7a8) lists Touch ID under **"Not in the first release"**. These two statements disagree; the more specific, newer technical document says no.
+- **A compatible public Touch ID implementation has not been obtained or verified by this project.** The search of GitHub, Asahi documentation and the Linux tree is evidence of an unresolved source gap, not proof that no code exists.
+- Omarchy's September announcement claims a Secure Enclave breakthrough and lists Touch ID as a first-release target, but provides no implementation link. The package status page (`mac-manual/content/14-status.md`, omarchy-mac-pkgs 222f7a8) lists Touch ID under **"Not in the first release"**. Track the implementation and its model coverage separately from announcement and packaging status; see `OMARCHY-M-ROADMAP.md`.
 - Asahi's [SEP page](https://asahilinux.org/docs/hw/soc/sep/) is research notes only: the Secure Enclave runs Apple's own firmware, which Linux cannot replace, so a driver must speak its mailbox protocol; the biometric endpoint (SBIO) is mapped but not verified; nothing is implemented. Asahi's M1 feature matrix says TouchID is TBA for every M1 variant.
 - **What was added:** `mseries/local-ai/touchid-watch.py` plus a verify check `upstream-touchid-watch`. It watches the three places above (Omarchy status page, Asahi matrix, fairydust commits mentioning the Secure Enclave or Touch ID) and turns the check green when any changes. Today it reports no new signs.
 - **Interim options (not installed):** a hardware security key with `pam_u2f` (touch the key instead of typing the password) works on Linux today and could cover login, lock screen and sudo; a short-lived trusted-device unlock is not available. Neither is Touch ID.
@@ -138,7 +138,7 @@ Ranked by how often the owner hits it, how small the fix is, and what it depends
 | 5 | Screenshot thumbnail (drag to use, hold Alt to also save) | Daily convenience; Gala patch or small helper | Medium |
 | 6 | Preview-style image and PDF markup | Pairs with 5; mostly choosing and packaging a tool | Medium |
 | 7 | Gaps left from the Omarchy parity audit | Audio watchdog and the two WirePlumber rules are installed on the M1 Pro (2026-10-14); function-key mode awaits an owner choice; mic mapper not ported | Mostly done |
-| 8 | **Touch ID (the main login goal)** | No public code exists; upstream watcher installed; a security key with pam_u2f is a possible interim | Blocked upstream, watching |
+| 8 | **Touch ID (the main login goal)** | Compatible public source not obtained/verified; upstream watcher installed; a security key with pam_u2f is a possible interim | Source/hardware qualification pending |
 | 9 | iMessage | Documented. Owner prefers Tether (blocked on BlueZ 5.86); BlueFerry works with 5.85; install after the reinstall | Documented, install later |
 | 10 | iCloud password sync | Options documented; the owner leans to a Brave extension (icp supports Brave; Brave Sync is the no-Apple-login alternative); decide after the reinstall | Documented, leaning Brave |
 | 11 | Small checks: brightness keys, keyboard light on lock and lid, Wi-Fi resume, Gala OSK guard, file the Wingpanel report | Cheap to verify, low daily impact | Housekeeping |

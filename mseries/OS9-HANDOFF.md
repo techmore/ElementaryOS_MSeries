@@ -1124,3 +1124,28 @@ and invalid entrypoints. The existing extracted Signal tree passes read-only
 staging validation; installer shell syntax and whitespace checks pass. Desktop
 launch/data-migration qualification, automatic health recovery, cleanup and the
 Flatpak/Nix comparison remain open in issue #50.
+
+## Owner roadmap: upstream integration, then Rust — 2026-10-14
+
+The owner supplied the Introducing Omarchy M announcement and explicitly set
+the sequence: follow its people/projects, integrate the code into this port,
+then convert the maintained implementation to Rust for performance. Added
+`OMARCHY-M-ROADMAP.md` and `upstreams/omarchy-m.json` with seven observed public
+repository branches/revisions, GitHub license metadata, and unresolved source
+discovery areas. These are tracking baselines, not changed build pins.
+
+Verified refs through the GitHub API, including the installer (00489dd),
+Try Omarchy (afd4f2d), M2 Air DP-Alt-Mode (50b80f4) and MLX (9ab220f).
+The M2 Air DTB is not an M1 Pro DTB; MLX's M1 Pro GPU/ANE table is untested;
+the announcement's M1/M2 compatibility list is a target. Softened the older
+categorical Touch ID absence claim: compatible public source has not been
+obtained/verified. Missing code remains an integration task.
+
+The roadmap inventories every applicable component, source/license, model,
+elementary translation and qualification evidence before the broad Rust phase.
+The Rust phase preserves interfaces/recovery and measures performance against
+the integrated baseline. Third-party kernel/firmware/Pantheon feasibility must
+be recorded explicitly. No Rust rewrite or driver import happened in this batch.
+Created the active daily 10:00 America/New_York heartbeat
+`follow-omarchy-m-sources` for read-only source tracking with notifications only
+for meaningful actionable changes. JSON parsing and `git diff --check` pass.

@@ -33,6 +33,15 @@ with the corrected live-session hardware overlay before progressing.
 | Tracks upstream | merged `elementary/os` main @ 7024fd0 | `UPSTREAM-PINS.md` |
 | Benchmarks | `mseries/benchmarks/` | see `benchmarks/README.md` |
 
+## Owner roadmap: integrate Omarchy M, then migrate to Rust
+
+Follow the Omarchy M people/projects, inventory and integrate their applicable
+code into ElementaryOS_MSeries, qualify the complete behavior, then convert the
+maintained implementation to Rust with measured performance and parity checks.
+See [OMARCHY-M-ROADMAP.md](OMARCHY-M-ROADMAP.md) and the pinned discovery roster
+in [upstreams/omarchy-m.json](upstreams/omarchy-m.json). Integration and the Rust
+migration remain ongoing; announcement targets are not hardware test results.
+
 ## Implemented; runtime validation pending
 
 **New feature request (2026-10-14):** [atomic app deployment and faster package
