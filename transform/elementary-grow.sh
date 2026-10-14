@@ -49,14 +49,17 @@ for arg in "$@"; do
 done
 
 SUBVOL_NAME="@elementary"
+# Goes into a root-run chroot script: only a valid hostname is acceptable.
+if [[ -n ${ELEMENTARY_HOSTNAME:-} ]] && \
+   ! [[ $ELEMENTARY_HOSTNAME =~ ^[a-zA-Z0-9]([a-zA-Z0-9.-]{0,251}[a-zA-Z0-9])?$ ]]; then
+  echo "[elementary-grow] ABORT: invalid ELEMENTARY_HOSTNAME" >&2; exit 1
+fi
 HOME_SUBVOL="@elementary-home"
 GRUB_CUSTOM="/etc/grub.d/40_elementary-grow"
 SNAP_PREFIX="@.snapshots/elementary-grow"
 MIN_FREE_GB=40
 UBUNTU_SUITE="resolute"
 UBUNTU_BASE_URL="https://cdimage.ubuntu.com/ubuntu-base/${UBUNTU_SUITE}/daily/current/${UBUNTU_SUITE}-base-arm64.tar.gz"
-# M-series layer, pinned to the commit that authored this script.
-MSERIES_BASE="https://raw.githubusercontent.com/techmore/ElementaryOS_MSeries/main/mkosi.images/apple-silicon/mkosi.extra"
 # Repo checkout this script runs from (for PPA keyrings/sources carried in
 # repos/common-files + repos/stable — never fetched over the network).
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -373,16 +376,25 @@ EOF
   else log "WARNING: no Apple Broadcom Wi-Fi detected — skipping firmware copy"; fi
   # … UCM audio config, notch modprobe, resume + provisioning units …
   if [[ $MODE == "apply" ]]; then
+    local layer="$REPO_ROOT/mkosi.images/apple-silicon/mkosi.extra" f
     [[ -d /usr/share/alsa-card-profile ]] && cp -a /usr/share/alsa-card-profile "$newroot/usr/share/" 2>/dev/null || true
-    mkdir -p "$newroot/etc/modprobe.d"
-    curl -fSL -o "$newroot/etc/modprobe.d/asahi-notch.conf" "$MSERIES_BASE/etc/modprobe.d/asahi-notch.conf"
-    mkdir -p "$newroot/usr/sbin" "$newroot/usr/lib/systemd/system"
-    for f in usr/sbin/mseries-wifi-resume-fix usr/sbin/mseries-wifi-firmware \
+    # From the checkout this script runs from (so --ref is honoured and nothing
+    # is fetched unauthenticated at build time).
+    mkdir -p "$newroot/etc/modprobe.d" "$newroot/usr/sbin" "$newroot/usr/lib/systemd/system"
+    for f in etc/modprobe.d/asahi-notch.conf \
+             usr/sbin/mseries-wifi-resume-fix usr/sbin/mseries-wifi-firmware \
              usr/lib/systemd/system/omarchy-wifi-resume-fix.service \
              usr/lib/systemd/system/mseries-wifi-firmware.service; do
-      curl -fSL -o "$newroot/$f" "$MSERIES_BASE/$f"
+      [[ -f $layer/$f ]] || { echo "missing $layer/$f — re-clone/pull this repo" >&2; return 1; }
+      cp -a "$layer/$f" "$newroot/$f" || return 1
     done
     chmod +x "$newroot/usr/sbin/mseries-wifi-resume-fix" "$newroot/usr/sbin/mseries-wifi-firmware"
+    # Same timezone as the machine it grows on (the account is made with
+    # useradd, which skips the first-run setup that would ask).
+    if [[ -L /etc/localtime ]]; then
+      ln -sf "$(readlink /etc/localtime)" "$newroot/etc/localtime"
+      timedatectl show -p Timezone --value 2>/dev/null >"$newroot/etc/timezone" || true
+    fi
   fi
 
   # Identity + mounts + services inside the new root.
@@ -587,24 +599,29 @@ do_logs() {
 # into the initramfs fails (nls_iso8859-1 for the vfat ESP, i2c_dev, the DCP
 # display stack, …). depmod runs against the grafted tree.
 graft_kernel_into() {
-  local newroot="$1" kver src fw
-  kver=$(uname -r)
-  src="/usr/lib/modules/$kver"
-  if [[ ! -d $src ]]; then
-    log "WARNING: no $src on host — skipping module graft"
-    return 0
-  fi
-  log "grafting kernel modules $kver ($(du -sh "$src" | cut -f1)) into new root"
-  mkdir -p "$newroot/usr/lib/modules"
-  cp -a "$src" "$newroot/usr/lib/modules/" || return 1
+  local newroot="$1" src kver fw grafted=0
+  # Every module tree on the host, not just the running kernel's: the boot
+  # entry names the kernel by file (vmlinuz-linux-asahi), which a host kernel
+  # update replaces in place, so the entry may boot a newer kernel than the one
+  # running now.
+  for src in /usr/lib/modules/*/; do
+    [[ -d $src ]] || continue
+    kver=$(basename "$src")
+    # Always re-copy: a rebuilt kernel keeps its version string (custom kernels do).
+    log "grafting kernel modules $kver ($(du -sh "$src" | cut -f1)) into new root"
+    mkdir -p "$newroot/usr/lib/modules"
+    cp -a "${src%/}" "$newroot/usr/lib/modules/" || return 1
+    # Build modules.dep for the grafted tree (host depmod, alternate root).
+    depmod -b "$newroot" "$kver" 2>/dev/null \
+      || log "WARNING: depmod -b failed for $kver; module autoloading may be incomplete"
+    grafted=$((grafted+1))
+  done
+  (( grafted > 0 )) || log "WARNING: no module trees under /usr/lib/modules on host — skipping module graft"
   for fw in apple vendor brcm; do
     [[ -d /usr/lib/firmware/$fw ]] || continue
     mkdir -p "$newroot/usr/lib/firmware/$fw"
     cp -a "/usr/lib/firmware/$fw/." "$newroot/usr/lib/firmware/$fw/" 2>/dev/null || true
   done
-  # Build modules.dep for the grafted tree (host depmod, alternate root).
-  depmod -b "$newroot" "$kver" 2>/dev/null \
-    || log "WARNING: depmod -b failed; module autoloading may be incomplete"
   return 0
 }
 

@@ -64,6 +64,18 @@ Defects found in how we use it, fixed:
 
 Unverified: all of it on hardware; the rebuilt initramfs vs the staged worker hook ordering with our drop-ins.
 
+### Audit of boot-to-esp and elementary-grow.sh (2026-10-14)
+
+boot-to-esp (upstream, read in full): copies /boot onto the vfat ESP, remounts it at /boot, rewrites fstab, reinstalls GRUB `--removable`, rebuilds the initramfs; keeps /boot.old; refuses ISO shared-ESP layouts. No defects found; note the ESP is small, which is why install-unlock-screen.sh sizes its backups.
+
+Fixed in elementary-grow.sh / setup:
+- Kernel updates on the Arch side replace `vmlinuz-linux-asahi` in place, so the elementary entry would boot a newer kernel than the one whose modules were grafted (no Wi-Fi/display). Setup installs a pacman hook (`90-elementary-sync-kernel.hook`) running `--sync-kernel`, and the graft now copies every module tree on the host, always re-copying (custom kernels keep their version string).
+- The M-series layer (Wi-Fi units, notch modprobe) was `curl`ed from raw `main` at build time, ignoring `--ref` and unauthenticated; it is now copied from the checkout.
+- `ELEMENTARY_HOSTNAME` is validated before it reaches the root chroot script.
+- Timezone is copied from the host (the account is created with useradd, which skips first-run setup).
+
+Open: Signal's apt key is fetched at build time without a pinned fingerprint (non-fatal, but a supply-chain choice); `--no-encrypt` on stock Asahi Alarm leaves the ESP at `/boot/efi`, so the new root gets no ESP mount; locale and XKB layout are not carried over.
+
 ## Next tasks, in order
 
 Coordination: Codex handles implementation and review; OpenCode handles

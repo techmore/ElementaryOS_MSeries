@@ -726,6 +726,29 @@ ensure_unlock_cmdline() {
   exit 0
 }
 
+# elementary boots the host's kernel by file name, and a kernel update on the
+# Arch side replaces that file in place -- so the elementary root, which carries
+# only the kernel modules it was built with, would boot a kernel it has no
+# modules for (no Wi-Fi, no display stack). Graft the new modules after every
+# kernel transaction.
+install_kernel_sync_hook() {
+  mkdir -p /etc/pacman.d/hooks
+  cat >/etc/pacman.d/hooks/90-elementary-sync-kernel.hook <<HOOK
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = linux-asahi*
+Target = linux-aarch64*
+
+[Action]
+Description = Graft the new kernel modules into elementary OS (@elementary)
+When = PostTransaction
+Exec = $SRC/transform/elementary-grow.sh --sync-kernel
+HOOK
+  log "Installed a pacman hook that keeps elementary's kernel modules in step with kernel updates"
+}
+
 step_elementary() {
   banner "Step 3 of 3 -- installing elementary OS"
   ensure_unlock_cmdline
@@ -762,6 +785,7 @@ step_elementary() {
   unmount_elementary
   trap on_exit EXIT
 
+  install_kernel_sync_hook
   set_default_boot_entry
   grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1 || fail "could not regenerate grub.cfg"
 
