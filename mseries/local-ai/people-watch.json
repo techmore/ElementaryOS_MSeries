@@ -48,7 +48,7 @@
     "group": "omarchy-m"
   },
   {
-    "repo": "joshuaswarren/mlx-omarchy",
+    "repo": "joshuaswarren/omarchy-mlx",
     "who": "Joshua Warren",
     "why": "MLX on Linux over Vulkan on Apple GPUs; relevant to local AI",
     "group": "omarchy-m"

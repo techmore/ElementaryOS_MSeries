@@ -10,9 +10,8 @@ Machine-readable tracking baseline: [upstreams/omarchy-m.json](upstreams/omarchy
 Observed revisions are discovery/audit baselines, not new build pins or proof
 that the code has been imported, compiled or qualified on our hardware.
 
-Daily source monitoring is active in this Codex chat at 10:00 America/New_York.
-It checks public changes against this roster and reports meaningful actionable
-changes only. Monitoring is read-only; integration follows the review gates below.
+GitHub Actions checks public sources every six hours and maintains one review issue.
+The Codex daily reminder is superseded once the workflow is activated.
 
 ## 1. Follow the people and source projects
 
@@ -98,3 +97,13 @@ hardware, and account for compile/deployment size and dependency costs. Rust is
 the implementation direction; lower latency, memory or power consumption must
 be demonstrated. Track regressions and unresolved scope until the roadmap's
 full behavior and performance gates are satisfied.
+
+## GitHub upstream monitoring — 2026-10-14
+
+`Watch public upstreams` runs every six hours and on demand. It combines
+`local-ai/people-watch.json` subscriptions with the explicit branches in
+`upstreams/omarchy-m.json`, and maintains one issue with pending revisions,
+release changes and fetch failures. Closing the issue acknowledges observations;
+new changes reopen it. Failed fetches preserve the last successful observation
+and fail the Action. No upstream code is automatically merged or deployed.
+The native macOS installer remains reference-only, per the owner decision.

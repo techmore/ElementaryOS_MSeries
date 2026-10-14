@@ -59,3 +59,13 @@ Omarchy on Arch Linux ARM + Asahi, with a signed, notarized macOS installer. Poi
   battery checks; its 22-model admission list and VM-acceptance method for our factory image qualification.
 - Different base (Arch Linux ARM, Hyprland), so copy ideas and tests, not packages (see the porting boundary
   in `ROADMAP.md`).
+
+## GitHub upstream monitoring — 2026-10-14
+
+`Watch public upstreams` runs every six hours and on demand. It combines
+`local-ai/people-watch.json` subscriptions with the explicit branches in
+`upstreams/omarchy-m.json`, and maintains one issue with pending revisions,
+release changes and fetch failures. Closing the issue acknowledges observations;
+new changes reopen it. Failed fetches preserve the last successful observation
+and fail the Action. No upstream code is automatically merged or deployed.
+The native macOS installer remains reference-only, per the owner decision.

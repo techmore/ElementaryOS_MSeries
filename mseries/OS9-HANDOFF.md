@@ -1149,3 +1149,13 @@ be recorded explicitly. No Rust rewrite or driver import happened in this batch.
 Created the active daily 10:00 America/New_York heartbeat
 `follow-omarchy-m-sources` for read-only source tracking with notifications only
 for meaningful actionable changes. JSON parsing and `git diff --check` pass.
+
+## GitHub upstream monitoring — 2026-10-14
+
+`Watch public upstreams` runs every six hours and on demand. It combines
+`local-ai/people-watch.json` subscriptions with the explicit branches in
+`upstreams/omarchy-m.json`, and maintains one issue with pending revisions,
+release changes and fetch failures. Closing the issue acknowledges observations;
+new changes reopen it. Failed fetches preserve the last successful observation
+and fail the Action. No upstream code is automatically merged or deployed.
+The native macOS installer remains reference-only, per the owner decision.
