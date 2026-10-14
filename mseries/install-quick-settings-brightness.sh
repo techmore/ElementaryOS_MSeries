@@ -19,6 +19,7 @@ git -C "$work/source" checkout -q --detach FETCH_HEAD
 git -C "$work/source" apply "$repo/mseries/patches/quick-settings-brightness.patch"
 install -m644 "$repo/mseries/quick-settings/ScreenBrightness.vala" "$work/source/src/Widgets/ScreenBrightness.vala"
 install -m644 "$repo/mseries/quick-settings/KeyboardBrightness.vala" "$work/source/src/Widgets/KeyboardBrightness.vala"
+install -m644 "$repo/mseries/quick-settings/ChargeLimit.vala" "$work/source/src/Widgets/ChargeLimit.vala"
 meson setup "$work/build" "$work/source" --prefix=/usr --libdir=lib/aarch64-linux-gnu --buildtype=release
 ninja -C "$work/build"
 if ldd "$work/build/src/libquick-settings.so" | rg -q 'not found'; then
@@ -27,4 +28,4 @@ if ldd "$work/build/src/libquick-settings.so" | rg -q 'not found'; then
 fi
 if [[ ! -f $backup ]]; then sudo install -Dm644 "$plugin" "$backup"; fi
 sudo install -m644 "$work/build/src/libquick-settings.so" "$plugin"
-echo 'Installed keyboard and screen brightness below the gear-menu toggles. Reload Wingpanel to activate.'
+echo 'Installed keyboard brightness, screen brightness and the charge-limit switch below the gear-menu toggles (the switch needs install-power.sh for its polkit action). Reload Wingpanel to activate.'

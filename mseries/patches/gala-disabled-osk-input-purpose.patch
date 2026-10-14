@@ -1,0 +1,17 @@
+diff --git a/daemon/OSK/OSKService.vala b/daemon/OSK/OSKService.vala
+index f92c074..1a41eb7 100644
+--- a/daemon/OSK/OSKService.vala
++++ b/daemon/OSK/OSKService.vala
+@@ -49,7 +49,10 @@ public class Gala.Daemon.OSKService : Object {
+         osk_window.reset ();
+     }
+ 
+-    public void set_input_purpose (IBus.InputPurpose input_purpose) throws DBusError, IOError requires (model_manager != null) {
+-        model_manager.input_purpose = input_purpose;
++    public void set_input_purpose (IBus.InputPurpose input_purpose) throws DBusError, IOError {
++        // Input focus updates also arrive while the on-screen keyboard is disabled.
++        if (model_manager != null) {
++            model_manager.input_purpose = input_purpose;
++        }
+     }
+ }

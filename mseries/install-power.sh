@@ -10,13 +10,15 @@ if [[ ${1:-} == --uninstall ]]; then
   sudo mseries-power limit 100 >/dev/null || true
   sudo sh -c 'for p in /sys/devices/system/cpu/cpufreq/policy*; do cat "$p/cpuinfo_max_freq" > "$p/scaling_max_freq"; done'
   sudo systemctl disable --now mseries-power.service 2>/dev/null || true
-  sudo rm -f /usr/local/sbin/mseries-power /etc/systemd/system/mseries-power.service /etc/udev/rules.d/80-mseries-power.rules /etc/mseries/power.conf
+  sudo rm -f /usr/share/polkit-1/actions/org.techmore.mseries.power.policy /usr/local/sbin/mseries-power /etc/systemd/system/mseries-power.service /etc/udev/rules.d/80-mseries-power.rules /etc/mseries/power.conf
   sudo udevadm control --reload; sudo systemctl daemon-reload
   echo 'Removed; charge limit back to 100% and CPU ceiling lifted.'
   exit 0
 fi
 
 sudo install -Dm755 "$repo/mseries/power/mseries-power" /usr/local/sbin/mseries-power
+# Lets the Quick Settings charge-limit switch run `mseries-power limit` after an admin password prompt.
+sudo install -Dm644 "$repo/mseries/power/org.techmore.mseries.power.policy" /usr/share/polkit-1/actions/org.techmore.mseries.power.policy
 sudo tee /etc/systemd/system/mseries-power.service >/dev/null <<'UNIT'
 [Unit]
 Description=Apply battery charge limit and power-source CPU policy

@@ -22,3 +22,29 @@ entry.error:focus {
 @define-color BLUEBERRY_900 #587fa8;
 @define-color accent_color #9dbfe3;
 @define-color selected_bg_color #9dbfe3;
+/* The elementary stylesheet paints these two buttons with fixed colours, so the named colours
+ * above never reach them. Style them directly with the soft rose and slate blue. */
+button.destructive-action,
+button.destructive-action:not(:disabled) {
+  background-image: none;
+  background-color: #e59ea5;
+  color: #3a1d21;
+  border-color: #c47e86;
+  text-shadow: none;
+  box-shadow: none;
+}
+button.destructive-action:hover { background-color: #ecaeb4; }
+button.destructive-action:active,
+button.destructive-action:checked { background-color: #d98e96; }
+button.destructive-action:disabled { background-color: alpha(#e59ea5, 0.45); color: alpha(#3a1d21, 0.6); }
+
+/* Dark text on the pale blue so labels stay readable. */
+button.suggested-action,
+button.suggested-action:not(:disabled) {
+  background-image: none;
+  color: #1f2f45;
+  text-shadow: none;
+}
+button.suggested-action:hover { background-color: #b4cde9; }
+button.suggested-action:active,
+button.suggested-action:checked { background-color: #8fb2d9; }

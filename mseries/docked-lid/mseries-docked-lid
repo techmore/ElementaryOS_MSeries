@@ -1,0 +1,182 @@
+#!/usr/bin/python3
+"""Docked lid mode for Apple Silicon Macs with a USB4 dock attached.
+
+The kernel refuses to suspend while a USB4 dock link is active (thunderbolt-apple-acio), so a
+closed lid used to leave the Mac awake with the screen off and logind retrying suspend forever.
+While a dock is attached this service holds logind's handle-lid-switch inhibitor, so no suspend is
+attempted, and does what the lid should mean instead: lock the session and switch the internal
+panel off, restoring its brightness when the lid opens. Undocked, it holds nothing and the lid
+suspends the Mac as usual. If this service dies, the inhibitor goes with it.
+
+  mseries-docked-lid            run (as a systemd user service)
+  mseries-docked-lid --status   print dock and lid state, then exit
+"""
+import os
+import re
+import signal
+import sys
+
+import gi
+gi.require_version('GLibUnix', '2.0')
+from gi.repository import Gio, GLib, GLibUnix
+
+THUNDERBOLT = '/sys/bus/thunderbolt/devices'
+# Router 0-0 is the Mac itself; 0-1, 0-2, ... are devices (a dock) behind its USB4 ports.
+DEVICE_RE = re.compile(r'^\d+-[1-9]\d*$')
+BACKLIGHT = '/sys/class/backlight/apple-panel-bl'
+POLL_SECONDS = 5
+LOGIN = ('org.freedesktop.login1', '/org/freedesktop/login1')
+
+
+def log(message):
+    print(message, flush=True)
+
+
+def dock_attached():
+    try:
+        return any(DEVICE_RE.match(name) for name in os.listdir(THUNDERBOLT))
+    except OSError:
+        return False
+
+
+def read_int(path):
+    try:
+        with open(path) as handle:
+            return int(handle.read().strip())
+    except (OSError, ValueError):
+        return None
+
+
+class DockedLid:
+    def __init__(self):
+        self.bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+        self.manager = Gio.DBusProxy.new_sync(
+            self.bus, Gio.DBusProxyFlags.NONE, None, LOGIN[0], LOGIN[1],
+            'org.freedesktop.login1.Manager', None)
+        self.manager.connect('g-properties-changed', self.on_properties)
+        self.inhibit_fd = None
+        self.saved_brightness = None
+        self.lid_closed = self.read_lid()
+        self.loop = GLib.MainLoop()
+
+    # ------------------------------------------------------------------ state
+
+    def read_lid(self):
+        value = self.manager.get_cached_property('LidClosed')
+        return bool(value.get_boolean()) if value is not None else False
+
+    def session(self):
+        """This user's graphical session. A systemd user service is not inside a login session, so
+        look the session up through the user rather than through this process."""
+        try:
+            path = self.manager.call_sync('GetSessionByPID', GLib.Variant('(u)', (os.getpid(),)),
+                                          Gio.DBusCallFlags.NONE, 2000, None).unpack()[0]
+        except GLib.Error:
+            user = self.manager.call_sync('GetUser', GLib.Variant('(u)', (os.getuid(),)),
+                                          Gio.DBusCallFlags.NONE, 2000, None).unpack()[0]
+            proxy = Gio.DBusProxy.new_sync(self.bus, Gio.DBusProxyFlags.NONE, None, LOGIN[0], user,
+                                           'org.freedesktop.login1.User', None)
+            path = proxy.get_cached_property('Display').unpack()[1]
+        return Gio.DBusProxy.new_sync(self.bus, Gio.DBusProxyFlags.NONE, None, LOGIN[0], path,
+                                      'org.freedesktop.login1.Session', None)
+
+    # ------------------------------------------------------------------ inhibitor
+
+    def hold_inhibitor(self):
+        if self.inhibit_fd is not None:
+            return
+        try:
+            reply, fds = self.manager.call_with_unix_fd_list_sync(
+                'Inhibit',
+                GLib.Variant('(ssss)', ('handle-lid-switch', 'Docked lid mode',
+                                        'A USB4 dock blocks suspend; the lid locks the screen instead',
+                                        'block')),
+                Gio.DBusCallFlags.NONE, 2000, None, None)
+            self.inhibit_fd = fds.get(reply.unpack()[0])
+            log('dock attached: holding the lid-switch inhibitor')
+        except GLib.Error as error:
+            log(f'could not take the lid-switch inhibitor: {error.message}')
+
+    def release_inhibitor(self):
+        if self.inhibit_fd is None:
+            return
+        os.close(self.inhibit_fd)
+        self.inhibit_fd = None
+        log('dock gone: released the lid-switch inhibitor')
+
+    # ------------------------------------------------------------------ lid actions
+
+    def set_brightness(self, value):
+        try:
+            self.session().call_sync('SetBrightness', GLib.Variant('(ssu)', ('backlight', 'apple-panel-bl', value)),
+                                     Gio.DBusCallFlags.NONE, 2000, None)
+            return True
+        except GLib.Error as error:
+            log(f'could not set the panel brightness: {error.message}')
+            return False
+
+    def on_lid_closed(self):
+        if self.inhibit_fd is None:
+            return  # not docked: logind suspends as usual
+        log('lid closed while docked: locking and switching the panel off')
+        try:
+            self.session().call_sync('Lock', None, Gio.DBusCallFlags.NONE, 2000, None)
+        except GLib.Error as error:
+            log(f'could not lock the session: {error.message}')
+        current = read_int(f'{BACKLIGHT}/brightness')
+        if current and self.saved_brightness is None:
+            self.saved_brightness = current
+        self.set_brightness(0)
+
+    def on_lid_opened(self):
+        if self.saved_brightness is not None:
+            log('lid opened: restoring the panel brightness')
+            self.set_brightness(self.saved_brightness)
+            self.saved_brightness = None
+
+    def on_properties(self, _proxy, changed, _invalidated):
+        if 'LidClosed' not in changed.unpack():
+            return
+        closed = self.read_lid()
+        if closed == self.lid_closed:
+            return
+        self.lid_closed = closed
+        self.on_lid_closed() if closed else self.on_lid_opened()
+
+    # ------------------------------------------------------------------ main loop
+
+    def poll_dock(self):
+        if dock_attached():
+            self.hold_inhibitor()
+        else:
+            self.release_inhibitor()
+        return True
+
+    def shutdown(self, *_args):
+        log('stopping')
+        self.on_lid_opened()
+        self.release_inhibitor()
+        self.loop.quit()
+        return False
+
+    def run(self):
+        self.poll_dock()
+        GLib.timeout_add_seconds(POLL_SECONDS, self.poll_dock)
+        GLibUnix.signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, self.shutdown)
+        GLibUnix.signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, self.shutdown)
+        log('docked lid mode running')
+        self.loop.run()
+
+
+def main():
+    if '--status' in sys.argv:
+        service = DockedLid()
+        print(f'dock attached: {dock_attached()}')
+        print(f'lid closed: {service.lid_closed}')
+        print(f'panel brightness: {read_int(f"{BACKLIGHT}/brightness")} of {read_int(f"{BACKLIGHT}/max_brightness")}')
+        return
+    DockedLid().run()
+
+
+if __name__ == '__main__':
+    main()
