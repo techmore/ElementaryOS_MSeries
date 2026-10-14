@@ -9,6 +9,7 @@
 #
 # It cannot show that the real tools work on hardware - only that the installer
 # drives them correctly.
+# shellcheck disable=SC2034  # variables are read by the sourced installer
 set -euo pipefail
 
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
