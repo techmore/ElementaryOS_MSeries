@@ -135,6 +135,17 @@ Not read: the Vala/meson sources under `mseries/clockright`, `codexbar-wingpanel
 - Still unread: `local-ai/troubleshoot.py` after line 200, `ask.py`, `brief.py`, `verify.py`, `troubleshooter-ui.py`, `repair-panel.py`, the Vala/meson sources for the custom Wingpanel indicators, `mseries/patches/*.patch`, `mseries/fairydust/*`, and the mkosi image configs.
 - `build-release.yml` (upstream) interpolates `${{ secrets.SYSUPDATE_GPG_PASS }}` straight into a shell command; upstream's choice, not run here.
 
+### Image-factory configs, patches and kernel build audit (2026-10-14)
+
+Method: diffed the whole tree against a fresh clone of `elementary/os` main, so every fork deviation was read, not just the files named M-series. Deviations: the three workflows (above), `assemble-iso.sh` (relative paths, per-arch apt-cdrom structure, label helper — good), `mkosi.conf` (`WithNetwork=yes`), `arch.arm64.conf` (adds the apple-silicon image), `.gitignore`, the `fairydust` profiles, the arm64 `conf.d` overlays, and the base sysusers/tmpfiles/postinst.
+- `mkosi.conf` `WithNetwork=yes` opens the network for every build script in every image, not just `build-network-indicator` (which fetches a pinned commit). Needed today; revisit if more build scripts are added.
+- Base image: upstream pins `messagebus` to gid/uid 987 so the setuid `dbus-daemon-launch-helper` group and persistent `/var` ownership stay stable across sysupdate images. The fork drops the pin and chowns to the name `messagebus` after `systemd-sysusers`, relying on the dbus package's own sysusers file. It builds only if that file exists in resolute (the build fails loudly otherwise) but the numeric id may now differ between image builds. Unverified; check on the first successful image.
+- `apple-silicon/mkosi.finalize` prunes with a path whitelist under `find -xdev -mindepth 1 -depth ... -delete`; `BUILDROOT` is `realpath`ed with `set -u`, so an unset variable aborts rather than widening the delete. Fine.
+- `mseries/patches/*.patch` (small ones read in full): minimal and null-safe. `keyboard-popover-active.patch` mirrors the checked state only on change (a layout button constructed already active would not be shown checked).
+- `ChargeLimit.vala` + `org.techmore.mseries.power.policy`: pkexec by path, `auth_admin`, argument allow-listed to `80|100` in `mseries-power` — a sound privilege boundary. The toggle hides itself unless `/usr/local/sbin/mseries-power` exists, which the grown root does not install by default (install-power.sh does).
+- `fairydust/debian/build.sh`: source archive, kernel config and patch all sha256-checked, fresh work dir enforced, free-space watchdog, deterministic build timestamp. Fine.
+- Still unread: the large patches (`gala-screen-corners`, `network-*`, `sound-icon-initialization`), the custom indicator sources, `fairydust/usb4/*` and `host/*`, the rest of `local-ai`.
+
 ## Next tasks, in order
 
 Coordination: Codex handles implementation and review; OpenCode handles
