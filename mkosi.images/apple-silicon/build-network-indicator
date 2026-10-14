@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Build the pinned elementary network indicator with M-series speed readouts.
+set -euo pipefail
+
+readonly source_commit=8685ec8e55a45e48da0c12931a353cd440d11664
+readonly expected_version_prefix=8.0.1
+readonly plugin=usr/lib/aarch64-linux-gnu/wingpanel-9/libnetwork.so
+
+version=$(dpkg-query --admindir="$BUILDROOT/var/lib/dpkg" -W -f='${Version}' \
+    io.elementary.panel.network 2>/dev/null || true)
+if [[ $version != "$expected_version_prefix"* ]]; then
+    echo "Network indicator patch targets ${expected_version_prefix}.x; image has ${version:-none}." >&2
+    exit 1
+fi
+
+work_dir=$(mktemp -d "${TMPDIR:-/tmp}/mseries-network-indicator.XXXXXX")
+trap 'rm -rf "$work_dir"' EXIT
+source_dir="$work_dir/source"
+build_dir="$work_dir/build"
+
+git init -q "$source_dir"
+git -C "$source_dir" remote add origin https://github.com/elementary/panel-network.git
+git -C "$source_dir" fetch -q --depth=1 origin "$source_commit"
+git -C "$source_dir" checkout -q --detach FETCH_HEAD
+for patch in network-throughput network-null-devices network-panel-speed; do
+    git -C "$source_dir" apply "$SRCDIR/mseries/patches/$patch.patch"
+done
+
+meson setup "$build_dir" "$source_dir" \
+    --prefix=/usr \
+    --libdir=lib/aarch64-linux-gnu \
+    --buildtype=release
+ninja -C "$build_dir"
+DESTDIR="$DESTDIR" meson install -C "$build_dir" --no-rebuild
+
+if [[ ! -s "$DESTDIR/$plugin" ]]; then
+    echo "Build did not produce $plugin" >&2
+    exit 1
+fi
+if ! grep -aFq 'Show speed in menu bar' "$DESTDIR/$plugin"; then
+    echo 'Built network indicator is missing the panel-speed toggle.' >&2
+    exit 1
+fi

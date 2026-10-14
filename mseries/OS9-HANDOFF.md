@@ -468,3 +468,22 @@ One-minute backend polling and five-second asynchronous panel reads are retained
 This qualifies the running desktop indicator only; no factory ISO was built.
 Next: use the displayed forecasts during ordinary work and reassess if the
 upstream pace format changes or a recent-rate estimate is requested.
+
+## Network speed readout persistence — 2026-10-13
+
+The user's panel-speed setting was already enabled, but the plugin had been
+installed by replacing `libnetwork.so` in the current `/usr` image. A reboot or
+OS image deployment restored the stock file. The Apple Silicon mkosi image now
+builds pinned `elementary/panel-network` commit
+`8685ec8e55a45e48da0c12931a353cd440d11664`, applies the three tracked network
+patches, and places the resulting module into the overlay consumed by both
+liveiso and sysupdate. The build checks that the target package remains 8.0.1.x.
+`test-image-wiring.py --image-output` now checks the plugin is present in the
+final liveiso tree; the sysupdate configuration consumes the same overlay. The
+local installer remains useful for the current image, while the new image
+build makes the change survive redeployments and image updates.
+
+No full image build has run for this change. Next: run the M-series validation
+workflow, then the full arm64 image build and post-build module check before
+deploying the resulting image. The working desktop has the patched module
+installed and `~/.config/mseries/network-speed.ini` enables the panel readout.

@@ -225,19 +225,25 @@ No OpenCode settings or running sessions were changed.
 
 ## Network speed in the panel dropdown
 
-`bash mseries/install-network-throughput.sh` adds a live download/upload readout and a
-60-second graph (down in the accent colour, up in grey) to the network indicator's dropdown,
-directly under the connection toggles (Airplane Mode etc.). It builds `elementary/panel-network` at the commit that matches the
-installed `io.elementary.panel.network` 8.0.1 with `mseries/patches/network-throughput.patch`
-and replaces only `libnetwork.so`; the original is saved at
-`/usr/local/lib/mseries/libnetwork.so.original`. Build needs `libnm-dev libnma-gtk4-dev
-libpolkit-gobject-1-dev` besides the Wingpanel/Granite/GTK dev packages the other installers use.
-Gala respawns the panel, so there is no logout. `--uninstall` restores the original.
+The M-series image build now compiles the patched `elementary/panel-network` plugin at pinned
+commit `8685ec8e55a45e48da0c12931a353cd440d11664` and includes it in both the live installer
+and installed system image. This keeps the menu-bar speeds across reboot and OS image updates.
+The build verifies the installed indicator package is still 8.0.1.x before applying the patches.
+
+On an existing installation, `bash mseries/install-network-throughput.sh` applies the same build
+locally and backs up the original plugin at `/usr/local/lib/mseries/libnetwork.so.original`.
+Package replacement or deploying an older OS image can undo that local replacement; the next
+M-series image build carries it by default. `--uninstall` restores the original plugin.
+
+The dropdown also includes a 60-second graph (down in the accent colour, up in grey) directly
+under the connection toggles (Airplane Mode etc.). Build requirements for the local installer
+are `libnm-dev libnma-gtk4-dev libpolkit-gobject-1-dev` and the Wingpanel/Granite/GTK dev packages.
+Gala respawns the panel, so there is no logout.
 
 Speeds are the sum over physical interfaces from `/proc/net/dev` (virtual ones such as `lo`,
 bridges and VPN tunnels are skipped to avoid double counting), sampled once a second, so the graph
-is already filled when you open the menu. Re-run the script after a package upgrade of the network
-indicator, which overwrites the plugin.
+is already filled when you open the menu. The `Show speed in menu bar` switch stores its choice in
+`~/.config/mseries/network-speed.ini`.
 
 ## Log review and known issues (2026-10-12)
 
