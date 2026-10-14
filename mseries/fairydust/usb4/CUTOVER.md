@@ -105,3 +105,16 @@ current m1n1 (`build-m1n1.sh`, SHA `57a9339ffd1876e78297b17d34dece8cff8fa1ba`, A
 `aarch64-unknown-none-softfloat` Rust target), then assemble `boot.bin` with it plus the j314s tree
 (`swap-dtb.py` keeps the other trees; replacing m1n1 itself needs a new tool step). Keep the
 `boot.bin.KNOWN-GOOD-pre-dtb-*` backup. Expect no dock video either way.
+
+## Stage 3: newer m1n1 for dock Ethernet (2026-10-14)
+
+Ethernet failed with `unable to load rc tunable` because m1n1 v1.6.1 does not generate the ACIO/NHI tunables.
+`build-m1n1-local.sh` builds the pinned SHA natively (no sudo); `install-m1n1-bootbin.sh` swaps only the m1n1
+prefix of `boot.bin` (`swap-m1n1.py`: DTBs + U-Boot tail stay identical), backing up to
+`boot.bin.KNOWN-GOOD-pre-m1n1-<stamp>` first.
+
+    bash mseries/fairydust/usb4/build-m1n1-local.sh
+    sudo bash mseries/fairydust/usb4/install-m1n1-bootbin.sh            # dry run
+    sudo bash mseries/fairydust/usb4/install-m1n1-bootbin.sh --apply
+
+Then reboot and check `ls /sys/bus/thunderbolt/devices`, `ip link`, `dmesg | grep -i acio`. Result: untested until booted.
