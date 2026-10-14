@@ -23,6 +23,10 @@ The run used two emulated CPUs, 1 GiB RAM, no disk, and no network.
 This confirms generic ARM64 kernel startup and userspace handoff under TCG.
 It is not a performance measurement and does not validate Apple DTB selection,
 the installed-system initramfs, m1n1/U-Boot, USB4, display, audio, suspend, or
-boot on the Mac. The complete installed-image build remains gated by the
-60 GiB local disk-headroom check: the latest check found 22.4 GiB free. No
-image build was started.
+boot on the Mac. The first local preflight found 22.4 GiB free. After clearing
+the previously approved Hugging Face and mkosi caches and deleting the
+completed kernel compiler-object tree (while preserving the tested `.deb`
+packages, source tree, logs and configuration report), the current preflight
+finds 37.6 GiB free. That remains 22.4 GiB below the conservative 60 GiB build
+guard, so no full image build was started. Recheck with
+`python3 mseries/local-build-preflight.py`.
