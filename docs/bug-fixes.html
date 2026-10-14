@@ -48,6 +48,26 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <tr><td>Docked lid mode (<code>mseries-docked-lid</code>)</td><td>Running; it logged <em>dock attached: holding the lid-switch inhibitor</em> when the dock was plugged in. A lid-close test <em>with</em> the dock attached has not been repeated since.</td></tr>
 </table>
 
+<h2>Priority order (2026-10-14)</h2>
+<p>Ranked by how often the owner hits the problem, how small the fix is, and what it depends on. The P1/P2/P3 labels below are older.</p>
+<table>
+<tr><th>Rank</th><th>Item</th><th>Why here</th><th>Kind</th></tr>
+<tr><td>1</td><td>Launcher typed text is unreadable</td><td>Hit on every launch; a few lines of CSS</td><td>Quick win</td></tr>
+<tr><td>2</td><td>Window buttons on the left (Mac style)</td><td>One setting in `apply-desktop-settings.py`; visible all day</td><td>Quick win</td></tr>
+<tr><td>3</td><td>Dock Ethernet icon dies / `rtl8153b-2.fw` missing</td><td>Likely a firmware file and one pinned profile; needs root</td><td>Quick win</td></tr>
+<tr><td>4</td><td>Lid-open login needs the power button</td><td>Hit on every lid open; needs one traced resume first</td><td>Investigate, then fix</td></tr>
+<tr><td>5</td><td>Screenshot thumbnail (drag to use, hold Alt to also save)</td><td>Daily convenience; Gala patch or small helper</td><td>Medium</td></tr>
+<tr><td>6</td><td>Preview-style image and PDF markup</td><td>Pairs with 5; mostly choosing and packaging a tool</td><td>Medium</td></tr>
+<tr><td>7</td><td>Gaps left from the Omarchy parity audit (audio watchdog, function-key mode, mic map)</td><td>Audio watchdog work has landed in main; confirm on hardware</td><td>Medium</td></tr>
+<tr><td>8</td><td>Touch ID</td><td>Annoying, but depends on unverified Secure Enclave work</td><td>Research</td></tr>
+<tr><td>9</td><td>iMessage (OpenBubbles)</td><td>Useful; evaluate build and Apple ID risk first</td><td>Research</td></tr>
+<tr><td>10</td><td>iCloud password sync</td><td>No official Linux client; evaluate safe options</td><td>Research</td></tr>
+<tr><td>11</td><td>Small checks: brightness keys, keyboard light on lock and lid, Wi-Fi resume, Gala OSK guard, file the Wingpanel report</td><td>Cheap to verify, low daily impact</td><td>Housekeeping</td></tr>
+<tr><td>12</td><td>Factory ISO hardware boot and image packaging (audio chain, firmware)</td><td>Release blocker for the image, not for this desktop</td><td>After the reinstall decision</td></tr>
+<tr><td>13</td><td>Dock display, ACIO suspend handshake, USB-C resume power management</td><td>Kernel work; blocked upstream or large</td><td>Blocked / long</td></tr>
+<tr><td>14</td><td>ArtCraft apps as Adobe and Office replacements</td><td>Large evaluation; start after the basics work</td><td>Last</td></tr>
+</table>
+
 <h2>Open fixes and validation</h2>
 <table>
 <tr><th>Priority</th><th>Issue</th><th>Next step</th><th>Status</th></tr>
