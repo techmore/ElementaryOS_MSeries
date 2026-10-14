@@ -280,3 +280,26 @@ Subagent source/implementation review; no tests or image build run.
 Final live/sysupdate post-install hooks also check package ownership of both
 VA driver paths, catching a consumer Mesa package collision after overlay
 application. Missing ownership metadata or inconsistent payload fails the build.
+
+## Factory sound/keyboard fixes and panel artifact checks — 2026-10-14
+
+Added pinned sound and keyboard builds to the Apple overlay and matching
+packages/dependencies to both consumers. Pruning retains their plugins, licenses,
+patches and build recipes. `panel-factory-pins.json` inventories all four panel
+plugins; each builder records the actual plugin SHA256 and its source metadata.
+Both final-image hooks reject missing/changed plugin bytes, incompatible package
+versions and mismatched provenance. The recorder checks the build script's
+source revision against the pin table before recording it.
+
+Version checks now allow Debian epochs/packaging suffixes while rejecting
+`8.0.30` as a substitute for `8.0.3`. The keyboard patch also initializes an
+already-active layout's checked state before listening for subsequent changes.
+Added the two elementary sources to GitHub subscriptions.
+
+Subagent implemented/reviewed source/dependency and artifact-check pieces;
+parent integrated image hooks and initial-state fix. No tests or build run.
+Pinned upstream Meson/license contents could not be fetched in this turn;
+dependency/license audit used repository installers and installed package
+metadata, and the build refuses missing upstream license files. Network access
+for Git required sandbox escalation. Factory load/render/boot qualification,
+browser integration and remaining Files/Gala patches remain open.

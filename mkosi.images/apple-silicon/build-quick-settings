@@ -8,7 +8,8 @@ readonly plugin=usr/lib/aarch64-linux-gnu/wingpanel-9/libquick-settings.so
 
 version=$(dpkg-query --admindir="$BUILDROOT/var/lib/dpkg" -W -f='${Version}' \
     io.elementary.quick-settings 2>/dev/null || true)
-if [[ $version != "$expected_version_prefix"* ]]; then
+version_pattern='^1\.4\.0([+~.-]|$)'
+if [[ ! ${version#*:} =~ $version_pattern ]]; then
     echo "Quick Settings patch targets ${expected_version_prefix}.x; image has ${version:-no package}; refusing to build an image without the keyboard-brightness slider." >&2
     exit 1
 fi
@@ -40,3 +41,6 @@ if [[ ! -s "$build_dir/src/libquick-settings.so" ]]; then
     exit 1
 fi
 install -D -m 0644 "$build_dir/src/libquick-settings.so" "$DESTDIR/$plugin"
+
+python3 "$SRCDIR/mseries/panel/record-artifact" --root "$DESTDIR" \
+    --pins "$SRCDIR/mseries/panel-factory-pins.json" --name quick-settings --commit "$source_commit"

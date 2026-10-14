@@ -1,0 +1,33 @@
+#!/usr/bin/env python3
+"""Record a built factory panel plugin's provenance and content digest."""
+import argparse
+import hashlib
+import json
+from pathlib import Path
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--root", type=Path, required=True)
+parser.add_argument("--pins", type=Path, required=True)
+parser.add_argument("--name", required=True)
+parser.add_argument("--commit", required=True)
+args = parser.parse_args()
+pins = json.loads(args.pins.read_text())
+if pins.get("schema") != 1:
+    parser.error("Unsupported panel pin schema")
+entry = next((item for item in pins["indicators"] if item["name"] == args.name), None)
+if entry is None:
+    parser.error("Unknown indicator: " + args.name)
+if entry["commit"] != args.commit:
+    parser.error("Built source commit does not match pin table")
+plugin = Path(entry["plugin"])
+if plugin.is_absolute() or plugin.parent != Path("usr/lib/aarch64-linux-gnu/wingpanel-9"):
+    parser.error("Unexpected Wingpanel ABI path")
+artifact = args.root / plugin
+if not artifact.is_file() or artifact.stat().st_size == 0:
+    parser.error("Missing or empty built plugin: " + str(artifact))
+record = {key: entry[key] for key in ("name", "package", "version", "repository", "commit", "plugin")}
+record["schema"] = 1
+record["sha256"] = hashlib.sha256(artifact.read_bytes()).hexdigest()
+destination = args.root / "usr/share/mseries/panel-artifacts" / (args.name + ".json")
+destination.parent.mkdir(parents=True, exist_ok=True)
+destination.write_text(json.dumps(record, indent=2) + "\n")

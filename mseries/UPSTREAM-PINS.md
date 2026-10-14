@@ -89,3 +89,15 @@ The factory retains COPYING, README, support contract/matrix, source provenance
 and the build recipe. Upstream reports no supported matrix rows at this pin;
 M1/T8103 evidence is not M1 Pro qualification. Enabled codec compilation is
 not hardware codec support. Kernel AVD, firmware and client validation are open.
+
+## Factory sound and keyboard indicators
+
+`panel-factory-pins.json` records package/source requirements for all four
+factory panel plugins. Sound 8.0.3: `elementary/wingpanel-indicator-sound`
+`8b7991c9156ac8127d27559506baea8e6fb72e5b`; keyboard 2.4.2:
+`elementary/panel-keyboard` `2d086e0177d7aa9a9e6aa4eb11fa7fb77c628c76`.
+Installed package copyright metadata identifies GPL-3.0-or-later; the build
+requires and retains the actual upstream license, local patch and recipe.
+Each built plugin records its source and SHA256. Both final consumers compare
+package versions and retained binary hashes before image publication.
+These checks do not establish that the plugins load or render on hardware.

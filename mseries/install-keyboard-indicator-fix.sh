@@ -8,7 +8,7 @@ if [[ ${1:-} == --uninstall ]]; then
   exit
 fi
 version=$(dpkg-query -W -f='${Version}' io.elementary.panel.keyboard)
-[[ $version == 2.4.2* ]] || { echo "Patch targets keyboard indicator 2.4.2, found $version" >&2; exit 1; }
+[[ ${version#*:} =~ ^2\.4\.2([+~.-]|$) ]] || { echo "Patch targets keyboard indicator 2.4.2, found $version" >&2; exit 1; }
 work=$(mktemp -d /tmp/mseries-keyboard-fix.XXXXXX)
 trap 'rm -rf "$work"' EXIT
 git init -q "$work/source"

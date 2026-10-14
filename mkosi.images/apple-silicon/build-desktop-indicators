@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# Bake the pinned sound/keyboard fixes without modifying the running desktop.
+set -euo pipefail
+pins="$SRCDIR/mseries/panel-factory-pins.json"
+python3 "$SRCDIR/mseries/panel/verify-package-versions" \
+    --root "$BUILDROOT" --pins "$pins" --only sound keyboard --skip-plugins
+
+work_dir=$(mktemp -d "${TMPDIR:-/tmp}/mseries-desktop-indicators.XXXXXX")
+trap 'rm -rf "$work_dir"' EXIT
+
+python3 - "$pins" > "$work_dir/entries.tsv" <<'PY'
+import json
+from pathlib import Path
+import sys
+for entry in json.loads(Path(sys.argv[1]).read_text())["indicators"]:
+    if entry["name"] in ("sound", "keyboard"):
+        print("\t".join(entry[key] for key in ("name", "repository", "commit", "plugin", "patch")))
+PY
+
+while IFS=$'\t' read -r name repository commit plugin patch; do
+    source_dir="$work_dir/$name/source"
+    build_dir="$work_dir/$name/build"
+    git init -q "$source_dir"
+    git -C "$source_dir" remote add origin "$repository"
+    git -C "$source_dir" fetch -q --depth=1 origin "$commit"
+    git -C "$source_dir" checkout -q --detach FETCH_HEAD
+    if [[ $(git -C "$source_dir" rev-parse HEAD) != "$commit" ]]; then
+        echo "$name: fetched source does not match pinned commit" >&2
+        exit 1
+    fi
+    git -C "$source_dir" apply "$SRCDIR/mseries/patches/$patch"
+    meson setup "$build_dir" "$source_dir" \
+        --prefix=/usr --libdir=lib/aarch64-linux-gnu --buildtype=release
+    ninja -C "$build_dir"
+    artifact="$build_dir/$(basename "$plugin")"
+    if [[ ! -s "$artifact" ]]; then
+        echo "$name: build did not produce $artifact" >&2
+        exit 1
+    fi
+    install -D -m 0644 "$artifact" "$DESTDIR/$plugin"
+    python3 "$SRCDIR/mseries/panel/record-artifact" \
+        --root "$DESTDIR" --pins "$pins" --name "$name" --commit "$commit"
+
+    # Preserve the upstream's actual license file, not just an SPDX assertion.
+    documentation="$DESTDIR/usr/share/doc/mseries-panel-$name"
+    mkdir -p "$documentation"
+    license_found=false
+    for license_file in COPYING COPYING.md COPYING.txt LICENSE LICENSE.md LICENSE.txt; do
+        if [[ -s "$source_dir/$license_file" ]]; then
+            install -m 0644 "$source_dir/$license_file" "$documentation/$license_file"
+            license_found=true
+        fi
+    done
+    if [[ $license_found != true ]]; then
+        echo "$name: upstream source contains no recognized license file" >&2
+        exit 1
+    fi
+    install -m 0644 "$SRCDIR/mseries/patches/$patch" "$documentation/$patch"
+    install -m 0644 "$SRCDIR/mkosi.images/apple-silicon/build-desktop-indicators" \
+        "$documentation/build-desktop-indicators"
+    python3 - "$pins" "$name" "$documentation/source.json" <<'PY'
+import json
+from pathlib import Path
+import sys
+pins = json.loads(Path(sys.argv[1]).read_text())
+entry = next(item for item in pins["indicators"] if item["name"] == sys.argv[2])
+Path(sys.argv[3]).write_text(json.dumps(entry, indent=2) + "\n")
+PY
+done < "$work_dir/entries.tsv"
+

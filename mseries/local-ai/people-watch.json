@@ -154,5 +154,17 @@
     "who": "Omarchy / V4L2 request driver maintainers",
     "why": "Checksum-pinned factory VA-API bridge candidate; inspect codec support matrix and kernel/firmware applicability",
     "group": "omarchy-m"
+  },
+  {
+    "repo": "elementary/wingpanel-indicator-sound",
+    "who": "elementary maintainers",
+    "why": "Sound icon initialization patch and factory plugin ABI",
+    "group": "desktop"
+  },
+  {
+    "repo": "elementary/panel-keyboard",
+    "who": "elementary maintainers",
+    "why": "Keyboard popover selected-state patch and factory plugin ABI",
+    "group": "desktop"
   }
 ]

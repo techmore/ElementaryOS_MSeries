@@ -1262,3 +1262,26 @@ application. Missing ownership metadata or inconsistent payload fails the build.
 - **Watt meter (owner request):** `mseries/patches/panel-power-watts.patch` adds a live power label (UPower `EnergyRate`, e.g. `12.1 W`, charging or discharging, hidden below 0.1 W) beside the battery icon in elementary's Power indicator. Applied after the ETA patch by `install-battery-eta.sh`. Verified in a scratch tree at `elementary/panel-power` e05723d: both patches apply in order and the indicator compiles to `libpower.so` (valac 0.56.19; the unused `libgtop-2.0` meson dependency was dropped in scratch only because `libgtop2-dev` is not installed here). NOT installed and not seen in the panel: it needs `sudo apt install libgtop2-dev ...` and a module replace + Wingpanel restart. Run `bash mseries/apply-pending.sh --dry-run --only wattmeter`, then without `--dry-run`. Undo: `bash mseries/install-battery-eta.sh --uninstall`.
 - **Bug found and fixed:** the old `panel-power-charge-eta.patch` had zero-context hunks; current `git apply` put them after the end of the class in `DisplayWidget.vala`, which cannot compile, so the battery-ETA installer would have failed on a rebuild. Regenerated with context.
 - **Power-draw investigation (in progress):** baseline on battery 12.79 W (min 11.62, max 15.02, 15 samples/30 s), screen 105/500, CPU about 87% idle. Interrupt rates per second: DCP mailbox `38bc08000.mbox-recv` 479, mailbox `406408000.mbox-recv` 385, SPI HID `39b10c000.spi` 228 (it read about 1000 earlier, so it follows touching the keyboard/trackpad), Wi-Fi PCIe 60. The `38bc08000` mailbox belongs to the display coprocessor, so Gala/compositor redraws are a suspect. One-change-at-a-time tests are not done yet.
+
+## Factory sound/keyboard fixes and panel artifact checks — 2026-10-14
+
+Added pinned sound and keyboard builds to the Apple overlay and matching
+packages/dependencies to both consumers. Pruning retains their plugins, licenses,
+patches and build recipes. `panel-factory-pins.json` inventories all four panel
+plugins; each builder records the actual plugin SHA256 and its source metadata.
+Both final-image hooks reject missing/changed plugin bytes, incompatible package
+versions and mismatched provenance. The recorder checks the build script's
+source revision against the pin table before recording it.
+
+Version checks now allow Debian epochs/packaging suffixes while rejecting
+`8.0.30` as a substitute for `8.0.3`. The keyboard patch also initializes an
+already-active layout's checked state before listening for subsequent changes.
+Added the two elementary sources to GitHub subscriptions.
+
+Subagent implemented/reviewed source/dependency and artifact-check pieces;
+parent integrated image hooks and initial-state fix. No tests or build run.
+Pinned upstream Meson/license contents could not be fetched in this turn;
+dependency/license audit used repository installers and installed package
+metadata, and the build refuses missing upstream license files. Network access
+for Git required sandbox escalation. Factory load/render/boot qualification,
+browser integration and remaining Files/Gala patches remain open.

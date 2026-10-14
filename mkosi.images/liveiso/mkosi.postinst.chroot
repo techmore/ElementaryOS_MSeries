@@ -4,3 +4,8 @@ set -euo pipefail
 if [[ -x /usr/libexec/mseries/verify-video-driver-packaging ]]; then
     /usr/libexec/mseries/verify-video-driver-packaging
 fi
+
+# The final installed panel versions must match every locally patched plugin.
+if [[ -x /usr/libexec/mseries/verify-panel-packages ]]; then
+    /usr/libexec/mseries/verify-panel-packages --root /
+fi

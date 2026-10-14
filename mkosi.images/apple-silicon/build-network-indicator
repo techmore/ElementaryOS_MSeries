@@ -12,7 +12,8 @@ version=$(dpkg-query --admindir="$BUILDROOT/var/lib/dpkg" -W -f='${Version}' \
 # ABI version used to build the plugin. mkosi.finalize discards the package
 # payload and retains only this plugin; the final image provides the matching
 # runtime package through its elementary base.
-if [[ $version != "$expected_version_prefix"* ]]; then
+version_pattern='^8\.0\.1([+~.-]|$)'
+if [[ ! ${version#*:} =~ $version_pattern ]]; then
     echo "Network indicator patch targets ${expected_version_prefix}.x; image has ${version:-no panel package}; refusing to build an image without the requested indicator." >&2
     exit 1
 fi
@@ -45,3 +46,6 @@ if ! grep -aFq 'Show speed in menu bar' "$build_dir/libnetwork.so"; then
     exit 1
 fi
 install -D -m 0644 "$build_dir/libnetwork.so" "$DESTDIR/$plugin"
+
+python3 "$SRCDIR/mseries/panel/record-artifact" --root "$DESTDIR" \
+    --pins "$SRCDIR/mseries/panel-factory-pins.json" --name network --commit "$source_commit"

@@ -1,13 +1,16 @@
 diff --git a/src/LayoutButton.vala b/src/LayoutButton.vala
 --- a/src/LayoutButton.vala
 +++ b/src/LayoutButton.vala
-@@ -33,6 +33,14 @@ public class Keyboard.Widgets.LayoutButton : Granite.Bin {
+@@ -33,6 +33,17 @@ public class Keyboard.Widgets.LayoutButton : Granite.Bin {
  
          child = button;
  
 -        bind_property ("active", button, "active", BIDIRECTIONAL);
 +        // Wingpanel 9's PopoverMenuItem is a Gtk.Button, not a toggle.
 +        // Selection is owned by the layout action; mirror its state visually.
++        if (active) {
++            button.set_state_flags (Gtk.StateFlags.CHECKED, false);
++        }
 +        notify["active"].connect (() => {
 +            if (active) {
 +                button.set_state_flags (Gtk.StateFlags.CHECKED, false);
