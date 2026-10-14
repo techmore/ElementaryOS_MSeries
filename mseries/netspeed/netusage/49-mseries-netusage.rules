@@ -1,0 +1,8 @@
+// Administrators may read DNS query events for the background usage logger.
+// This grants no permission to change DNS configuration or run root commands.
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.resolve1.subscribe-query-results" &&
+        subject.isInGroup("sudo")) {
+        return polkit.Result.YES;
+    }
+});

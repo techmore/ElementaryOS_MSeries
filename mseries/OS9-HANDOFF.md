@@ -890,6 +890,12 @@ commands on user data; "root root" login on the rescue system is deliberate (ups
 
 ## Post-install gaps reported — 2026-10-14
 
+Repeated desktop authentication prompts were traced in polkit's journal to
+`org.freedesktop.resolve1.subscribe-query-results` from the netusage DNS monitor.
+The monitor now passes `--no-ask-password`; its installer adds a rule allowing
+only that read-only action for sudo-group administrators. Installing this rule
+requires sudo once. General desktop authentication policies are unchanged.
+
 After reboot, the live system ran stock `7.1.13-3-2-ARCH` and the dock mouse
 and Ethernet disappeared. The retained USB4 entry is `elementary-usb4-test`,
 loading `7.1.13-elementary-fairydust-usb4` with matching installed modules.

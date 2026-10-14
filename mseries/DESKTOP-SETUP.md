@@ -309,8 +309,11 @@ to apply just these customizations, run
 `bash mseries/post-install.sh --only network,netusage`. The logger records TCP
 byte counts and DNS queries and maps remote IPs using systemd-resolved's
 cache/query monitor. TCP usage logging needs `ss` from `iproute2`; DNS logging
-needs a working `systemd-resolved` service and `resolvectl`. Without those DNS
-views remain empty, while the TCP logger can still run. Data stays in
+needs a working `systemd-resolved` service and `resolvectl`. Without those, DNS
+views remain empty, while the TCP logger can still run. The installer grants
+sudo-group administrators read-only DNS query monitor access through a dedicated
+polkit rule. The background monitor never opens authentication dialogs;
+installing the rule requires sudo once. Data stays in
 `~/.local/share/netusage/usage.db`; QUIC/HTTP3 isn't attributed to apps. Build requirements for the
 local installer include `libsqlite3-dev`, `libnm-dev libnma-gtk4-dev libpolkit-gobject-1-dev`, and
 the Wingpanel/Granite/GTK dev packages. Gala respawns the panel, so there is no logout.

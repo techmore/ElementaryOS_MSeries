@@ -152,7 +152,7 @@ def dns_monitor():
     while not stop.is_set():
         try:
             proc = subprocess.Popen(
-                ["resolvectl", "monitor", "--json=short"],
+                ["resolvectl", "--no-ask-password", "monitor", "--json=short"],
                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
             )
         except OSError as e:

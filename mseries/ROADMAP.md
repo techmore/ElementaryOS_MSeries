@@ -35,6 +35,11 @@ with the corrected live-session hardware overlay before progressing.
 
 ## Implemented; runtime validation pending
 
+The network/DNS logger now uses noninteractive authorization and installs a
+polkit rule for read-only DNS monitoring by administrators, addressing repeated
+desktop authentication prompts. Apply the updated logger installer once with
+sudo available to enable DNS collection without dialogs.
+
 | Feature | Change | Next check |
 |---|---|---|
 | OpenCode Go in M-series CodexBar | The installer enables the provider and passes the existing OpenCode Go CLI credential to CodexBar at runtime. | Install on the working desktop, sign in through OpenCode, and confirm the quota row. |
