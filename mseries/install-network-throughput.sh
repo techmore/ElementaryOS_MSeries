@@ -34,11 +34,11 @@ fi
 for tool in git meson ninja valac msgfmt pkg-config; do
   command -v "$tool" >/dev/null || {
     echo "Missing $tool. Install the build requirements with:" >&2
-    echo '  sudo apt install git meson ninja-build valac gettext libwingpanel-9-dev libgranite-7-dev libgtk-4-dev libnm-dev libnma-gtk4-dev libpolkit-gobject-1-dev' >&2
+    echo '  sudo apt install git meson ninja-build valac gettext libwingpanel-9-dev libgranite-7-dev libgtk-4-dev libnm-dev libnma-gtk4-dev libpolkit-gobject-1-dev libsqlite3-dev' >&2
     exit 1
   }
 done
-for mod in wingpanel-9 granite-7 gtk4 libnm libnma-gtk4 polkit-gobject-1; do
+for mod in wingpanel-9 granite-7 gtk4 libnm libnma-gtk4 polkit-gobject-1 sqlite3; do
   pkg-config --exists "$mod" || { echo "Missing development files for $mod (see apt line above)." >&2; exit 1; }
 done
 
@@ -60,6 +60,12 @@ git -C "$source_dir" checkout -q --detach FETCH_HEAD
 git -C "$source_dir" apply "$repo/mseries/patches/network-throughput.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/network-null-devices.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/network-panel-speed.patch"
+git -C "$source_dir" apply \
+  --include=data/Indicator.css \
+  --include=src/Widgets/UsageWidget.vala \
+  --include=src/Widgets/WifiInterface.vala \
+  "$repo/mseries/netspeed/panel-network.patch"
+git -C "$source_dir" apply "$repo/mseries/netspeed/network-usage-wiring.patch"
 
 meson setup "$build_dir" "$source_dir" --prefix=/usr --libdir=lib/aarch64-linux-gnu --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null
@@ -75,4 +81,4 @@ if [[ ! -f $backup ]]; then
 fi
 sudo install -m 0644 "$built" "$plugin"
 reload_panel
-echo 'Installed. Click the network icon in the panel: the speeds and graph sit directly under the connection toggles.'
+echo 'Installed. The network menu has the speed graph, collapsible Wi-Fi networks, and Network Usage. Run mseries/netspeed/netusage/install.sh to populate Apps/Hosts/DNS.'

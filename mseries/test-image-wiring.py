@@ -22,6 +22,9 @@ def verify_image_output(output):
     roots = [p for p in Path(output).glob('liveiso_*') if p.is_dir()]
     if len(roots) != 1:
         raise ValueError('Expected exactly one built liveiso tree')
+    plugin = roots[0] / 'usr/lib/aarch64-linux-gnu/wingpanel-9/libnetwork.so'
+    if not plugin.is_file():
+        raise ValueError('Built live ISO is missing the patched network indicator')
     source = ROOT / 'mkosi.images/apple-silicon/mkosi.extra'
     required = [p.relative_to(source) for p in source.rglob('*')
                 if p.is_file() and '__pycache__' not in p.parts and p.suffix != '.pyc']
@@ -45,6 +48,9 @@ class ImageWiringTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory) / 'liveiso_test'
             shutil.copytree(ROOT / 'mkosi.images/apple-silicon/mkosi.extra', root)
+            plugin = root / 'usr/lib/aarch64-linux-gnu/wingpanel-9/libnetwork.so'
+            plugin.parent.mkdir(parents=True, exist_ok=True)
+            plugin.write_bytes(b'patched network indicator')
             verify_image_output(directory)
             (root / 'usr/libexec/mseries-brightness').unlink()
             with self.assertRaises(ValueError):

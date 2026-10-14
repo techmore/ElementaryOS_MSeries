@@ -1,0 +1,876 @@
+diff --git a/data/Indicator.css b/data/Indicator.css
+index 6b64bd3..9ac82a1 100644
+--- a/data/Indicator.css
++++ b/data/Indicator.css
+@@ -31,3 +31,13 @@ network .image-button:disabled,
+ settings-toggle .image-button:disabled {
+     background: @insensitive_bg_color;
+ }
++
++network .usage-bar trough,
++network .usage-bar progress {
++    min-height: 3px;
++}
++
++network .usage-row:hover {
++    background: alpha(@text_color, 0.06);
++    border-radius: 6px;
++}
+diff --git a/meson.build b/meson.build
+index 31e04c4..afd2d3b 100644
+--- a/meson.build
++++ b/meson.build
+@@ -52,6 +52,8 @@ shared_module(
+     'src/Widgets/ModemInterface.vala',
+     'src/Widgets/PopoverWidget.vala',
+     'src/Widgets/SettingsToggle.vala',
++    'src/Widgets/ThroughputWidget.vala',
++    'src/Widgets/UsageWidget.vala',
+     'src/Widgets/VpnInterface.vala',
+     'src/Widgets/VpnMenuItem.vala',
+     'src/Widgets/WidgetNMInterface.vala',
+@@ -67,6 +69,7 @@ shared_module(
+         dependency('libnm', version: '>=1.24'),
+         dependency('libnma-gtk4'),
+         polkit_dep,
++        dependency('sqlite3'),
+         meson.get_compiler('vala').find_library('posix'),
+         wingpanel_dep
+     ],
+diff --git a/src/Widgets/PopoverWidget.vala b/src/Widgets/PopoverWidget.vala
+index 5484736..3adee03 100644
+--- a/src/Widgets/PopoverWidget.vala
++++ b/src/Widgets/PopoverWidget.vala
+@@ -18,6 +18,7 @@ public class Network.Widgets.PopoverWidget : Gtk.Box {
+     private Gtk.Box vpn_box;
+     private Wingpanel.PopoverMenuItem hidden_item;
+     private Gtk.Revealer toggle_revealer;
++    private UsageWidget usage_widget;
+ 
+     public bool is_in_session { get; construct; }
+ 
+@@ -97,7 +98,21 @@ public class Network.Widgets.PopoverWidget : Gtk.Box {
+             child = toggle_box
+         };
+ 
++        var throughput_separator = new Gtk.Separator (Gtk.Orientation.HORIZONTAL) {
++            margin_top = 3,
++            margin_bottom = 3
++        };
++
+         append (toggle_revealer);
++
++        // Live down/up speed and graph, directly under the connection toggles.
++        append (new ThroughputWidget ());
++        append (throughput_separator);
++
++        // Per-app / per-host / DNS totals from the netusage logger; collapsed by default.
++        usage_widget = new UsageWidget ();
++        append (usage_widget);
++
+         append (vpn_box);
+         append (wifi_box);
+ 
+@@ -189,6 +204,7 @@ public class Network.Widgets.PopoverWidget : Gtk.Box {
+     }
+ 
+     public void opened () {
++        usage_widget.opened ();
+         foreach (unowned var iface in network_interface) {
+             if (iface is WifiInterface) {
+                 ((WifiInterface) iface).start_scanning ();
+@@ -197,6 +213,7 @@ public class Network.Widgets.PopoverWidget : Gtk.Box {
+     }
+ 
+     public void closed () {
++        usage_widget.closed ();
+         foreach (unowned var iface in network_interface) {
+             if (iface is WifiInterface) {
+                 ((WifiInterface) iface).cancel_scanning ();
+diff --git a/src/Widgets/ThroughputWidget.vala b/src/Widgets/ThroughputWidget.vala
+new file mode 100644
+index 0000000..0e3ab13
+--- /dev/null
++++ b/src/Widgets/ThroughputWidget.vala
+@@ -0,0 +1,246 @@
++/*
++* SPDX-License-Identifier: LGPL-2.1-or-later
++* SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries
++*/
++
++/**
++ * Live network throughput for the network indicator's popover: current download and upload
++ * speed plus a 60 second sparkline of both. Totals all physical interfaces (Wi-Fi, Ethernet,
++ * USB/dock adapters); virtual ones (lo, bridges, veth, VPN tunnels) are skipped so traffic is
++ * not counted twice.
++ */
++public class Network.Widgets.ThroughputWidget : Gtk.Box {
++    private const int HISTORY = 60;
++    // Floor for the graph scale, so idle background chatter does not look like a full-height spike.
++    private const double MIN_SCALE = 50000.0;
++
++    private double[] rx_history = new double[HISTORY];
++    private double[] tx_history = new double[HISTORY];
++
++    private HashTable<string, bool> virtual_cache = new HashTable<string, bool> (str_hash, str_equal);
++    private uint64 last_rx = 0;
++    private uint64 last_tx = 0;
++    private int64 last_time = 0;
++    private bool have_baseline = false;
++    private uint timeout_id = 0;
++
++    private Gtk.Label down_label;
++    private Gtk.Label up_label;
++    private Gtk.DrawingArea graph;
++
++    construct {
++        orientation = Gtk.Orientation.HORIZONTAL;
++        spacing = 12;
++        margin_top = 6;
++        margin_bottom = 6;
++        margin_start = 12;
++        margin_end = 12;
++
++        down_label = new Gtk.Label ("0 B/s") {
++            xalign = 0,
++            width_chars = 10
++        };
++        down_label.add_css_class (Granite.CssClass.ACCENT);
++        down_label.add_css_class ("numeric");
++
++        up_label = new Gtk.Label ("0 B/s") {
++            xalign = 0,
++            width_chars = 10
++        };
++        up_label.add_css_class ("numeric");
++
++        var down_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
++        down_row.append (new Gtk.Image.from_icon_name ("go-down-symbolic"));
++        down_row.append (down_label);
++
++        var up_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
++        up_row.append (new Gtk.Image.from_icon_name ("go-up-symbolic"));
++        up_row.append (up_label);
++
++        var speeds = new Gtk.Box (Gtk.Orientation.VERTICAL, 3) {
++            valign = Gtk.Align.CENTER
++        };
++        speeds.append (down_row);
++        speeds.append (up_row);
++
++        graph = new Gtk.DrawingArea () {
++            content_width = 120,
++            content_height = 34,
++            hexpand = true,
++            valign = Gtk.Align.CENTER
++        };
++        graph.set_draw_func (draw_graph);
++
++        append (speeds);
++        append (graph);
++
++        tooltip_text = _("Network throughput (all physical interfaces)");
++
++        // Sample continuously (one tiny /proc read per second) so the graph is already filled
++        // when the popover is opened.
++        timeout_id = Timeout.add_seconds (1, tick);
++        tick ();
++    }
++
++    public override void dispose () {
++        if (timeout_id != 0) {
++            Source.remove (timeout_id);
++            timeout_id = 0;
++        }
++
++        base.dispose ();
++    }
++
++    private bool tick () {
++        uint64 rx, tx;
++        if (!read_counters (out rx, out tx)) {
++            return Source.CONTINUE;
++        }
++
++        var now = get_monotonic_time ();
++        double down = 0;
++        double up = 0;
++
++        if (have_baseline && now > last_time) {
++            double elapsed = (now - last_time) / 1000000.0;
++            // Counters can go backwards when an interface disappears; treat that as zero.
++            if (rx >= last_rx) {
++                down = (rx - last_rx) / elapsed;
++            }
++
++            if (tx >= last_tx) {
++                up = (tx - last_tx) / elapsed;
++            }
++        }
++
++        last_rx = rx;
++        last_tx = tx;
++        last_time = now;
++        have_baseline = true;
++
++        for (int i = 0; i < HISTORY - 1; i++) {
++            rx_history[i] = rx_history[i + 1];
++            tx_history[i] = tx_history[i + 1];
++        }
++
++        rx_history[HISTORY - 1] = down;
++        tx_history[HISTORY - 1] = up;
++
++        down_label.label = format_rate (down);
++        up_label.label = format_rate (up);
++
++        if (get_mapped ()) {
++            graph.queue_draw ();
++        }
++
++        return Source.CONTINUE;
++    }
++
++    private static string format_rate (double bytes_per_second) {
++        if (bytes_per_second < 1000) {
++            return "%d B/s".printf ((int) bytes_per_second);
++        }
++
++        return format_size ((uint64) bytes_per_second) + "/s";
++    }
++
++    private bool is_virtual (string name) {
++        bool result;
++        if (virtual_cache.lookup_extended (name, null, out result)) {
++            return result;
++        }
++
++        try {
++            result = FileUtils.read_link ("/sys/class/net/" + name).contains ("/virtual/");
++        } catch (Error e) {
++            result = true;
++        }
++
++        virtual_cache.insert (name, result);
++        return result;
++    }
++
++    private bool read_counters (out uint64 rx, out uint64 tx) {
++        rx = 0;
++        tx = 0;
++
++        string contents;
++        try {
++            FileUtils.get_contents ("/proc/net/dev", out contents);
++        } catch (Error e) {
++            return false;
++        }
++
++        var lines = contents.split ("\n");
++        for (int i = 2; i < lines.length; i++) {
++            var line = lines[i];
++            var colon = line.index_of_char (':');
++            if (colon < 0) {
++                continue;
++            }
++
++            var name = line.substring (0, colon).strip ();
++            if (is_virtual (name)) {
++                continue;
++            }
++
++            // Fields: rx bytes is column 0, tx bytes is column 8 after the colon.
++            string[] fields = {};
++            foreach (unowned var token in line.substring (colon + 1).split (" ")) {
++                if (token != "") {
++                    fields += token;
++                }
++            }
++
++            if (fields.length >= 9) {
++                rx += uint64.parse (fields[0]);
++                tx += uint64.parse (fields[8]);
++            }
++        }
++
++        return true;
++    }
++
++    private void draw_graph (Gtk.DrawingArea area, Cairo.Context cr, int width, int height) {
++        double max = MIN_SCALE;
++        for (int i = 0; i < HISTORY; i++) {
++            max = double.max (max, double.max (rx_history[i], tx_history[i]));
++        }
++
++        max *= 1.1;
++
++        // Upload first so the (accent coloured) download series sits on top.
++        var up_color = up_label.get_color ();
++        draw_series (cr, tx_history, up_color, width, height, max, 0.12, 0.55);
++
++        var down_color = down_label.get_color ();
++        draw_series (cr, rx_history, down_color, width, height, max, 0.22, 0.95);
++    }
++
++    private void draw_series (Cairo.Context cr, double[] data, Gdk.RGBA color, int width, int height, double max, double fill_alpha, double line_alpha) {
++        double step = (double) width / (HISTORY - 1);
++        double usable = height - 3;
++
++        cr.new_path ();
++        for (int i = 0; i < HISTORY; i++) {
++            double x = i * step;
++            double y = height - 1.5 - (data[i] / max) * usable;
++            if (i == 0) {
++                cr.move_to (x, y);
++            } else {
++                cr.line_to (x, y);
++            }
++        }
++
++        cr.set_line_width (1.5);
++        cr.set_line_join (Cairo.LineJoin.ROUND);
++        cr.set_source_rgba (color.red, color.green, color.blue, line_alpha);
++        cr.stroke_preserve ();
++
++        cr.line_to (width, height);
++        cr.line_to (0, height);
++        cr.close_path ();
++        cr.set_source_rgba (color.red, color.green, color.blue, fill_alpha);
++        cr.fill ();
++    }
++}
+diff --git a/src/Widgets/UsageWidget.vala b/src/Widgets/UsageWidget.vala
+new file mode 100644
+index 0000000..c7e5620
+--- /dev/null
++++ b/src/Widgets/UsageWidget.vala
+@@ -0,0 +1,437 @@
++/*
++* SPDX-License-Identifier: LGPL-2.1-or-later
++* SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries
++*/
++
++/**
++ * Collapsible "Network Usage" section for the popover: top apps, hosts and DNS lookups, read from
++ * the SQLite database kept by the netusage user service. The database is only touched while the
++ * section is expanded and the popover is on screen; collapsed, this widget does no work at all.
++ */
++public class Network.Widgets.UsageWidget : Gtk.Box {
++    private const int ROWS = 6;
++    private const int REFRESH_SECONDS = 5;
++    // The logger flushes every 15 s; anything older than this means the service is not running.
++    private const int64 STALE_SECONDS = 120;
++
++    private enum Range { TODAY, WEEK, MONTH }
++    private enum Kind { APPS, HOSTS, DNS }
++
++    private Range range = Range.TODAY;
++    private Kind kind = Kind.APPS;
++    private uint timeout_id = 0;
++    // When set, the Apps/Hosts list is narrowed to this app (Apps tab) or host (Hosts tab).
++    private string? drill = null;
++
++    private Gtk.Revealer revealer;
++    private Gtk.Image chevron;
++    private Gtk.Box rows_box;
++    private Gtk.Label status_label;
++    private Gtk.Label total_label;
++
++    construct {
++        orientation = Gtk.Orientation.VERTICAL;
++
++        var title = new Gtk.Label (_("Network Usage")) {
++            hexpand = true,
++            xalign = 0
++        };
++
++        chevron = new Gtk.Image.from_icon_name ("pan-end-symbolic");
++
++        var header_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
++        header_box.append (title);
++        header_box.append (chevron);
++
++        var header = new Gtk.Button () {
++            child = header_box,
++            margin_start = 6,
++            margin_end = 6
++        };
++        header.add_css_class ("flat");
++        header.clicked.connect (toggle);
++
++        var kind_box = build_toggle_group ({ _("Apps"), _("Hosts"), _("DNS") }, (i) => {
++            kind = (Kind) i;
++            drill = null;
++            refresh ();
++        });
++        kind_box.hexpand = true;
++
++        var range_box = build_toggle_group ({ _("Today"), _("7 days"), _("30 days") }, (i) => {
++            range = (Range) i;
++            refresh ();
++        });
++
++        var controls = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12) {
++            margin_start = 12,
++            margin_end = 12,
++            margin_top = 3
++        };
++        controls.append (kind_box);
++        controls.append (range_box);
++
++        rows_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) {
++            margin_start = 12,
++            margin_end = 12,
++            margin_top = 9
++        };
++
++        status_label = new Gtk.Label ("") {
++            xalign = 0,
++            wrap = true,
++            margin_start = 12,
++            margin_end = 12,
++            visible = false
++        };
++        status_label.add_css_class (Granite.CssClass.DIM);
++
++        total_label = new Gtk.Label ("") {
++            xalign = 0,
++            margin_start = 12,
++            margin_end = 12,
++            margin_top = 6,
++            margin_bottom = 6
++        };
++        total_label.add_css_class (Granite.CssClass.DIM);
++        total_label.add_css_class ("numeric");
++
++        var content = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
++        content.append (controls);
++        content.append (rows_box);
++        content.append (status_label);
++        content.append (total_label);
++
++        revealer = new Gtk.Revealer () {
++            child = content
++        };
++
++        append (header);
++        append (revealer);
++        append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL) {
++            margin_top = 3,
++            margin_bottom = 3
++        });
++    }
++
++    public override void dispose () {
++        stop_timer ();
++        base.dispose ();
++    }
++
++    /** Called when the popover closes: stop polling the database. */
++    public void closed () {
++        stop_timer ();
++    }
++
++    /** Called when the popover opens. */
++    public void opened () {
++        if (revealer.reveal_child) {
++            refresh ();
++            start_timer ();
++        }
++    }
++
++    private delegate void ToggleCallback (int index);
++
++    private Gtk.Box build_toggle_group (string[] labels, owned ToggleCallback callback) {
++        var box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
++        box.add_css_class ("linked");
++
++        Gtk.ToggleButton? first = null;
++        for (int i = 0; i < labels.length; i++) {
++            var button = new Gtk.ToggleButton.with_label (labels[i]);
++            if (first == null) {
++                first = button;
++                button.active = true;
++            } else {
++                button.group = first;
++            }
++
++            int index = i;
++            button.toggled.connect (() => {
++                if (button.active) {
++                    callback (index);
++                }
++            });
++            box.append (button);
++        }
++
++        return box;
++    }
++
++    private void toggle () {
++        revealer.reveal_child = !revealer.reveal_child;
++        chevron.icon_name = revealer.reveal_child ? "pan-down-symbolic" : "pan-end-symbolic";
++
++        if (revealer.reveal_child) {
++            refresh ();
++            start_timer ();
++        } else {
++            stop_timer ();
++        }
++    }
++
++    private void start_timer () {
++        if (timeout_id == 0) {
++            timeout_id = Timeout.add_seconds (REFRESH_SECONDS, () => {
++                if (!get_mapped ()) {
++                    timeout_id = 0;
++                    return Source.REMOVE;
++                }
++
++                refresh ();
++                return Source.CONTINUE;
++            });
++        }
++    }
++
++    private void stop_timer () {
++        if (timeout_id != 0) {
++            Source.remove (timeout_id);
++            timeout_id = 0;
++        }
++    }
++
++    private static string db_path () {
++        return Path.build_filename (Environment.get_user_data_dir (), "netusage", "usage.db");
++    }
++
++    private int64 range_start () {
++        var now = new DateTime.now_local ();
++        switch (range) {
++            case Range.WEEK:
++                return now.to_unix () - 7 * 86400;
++            case Range.MONTH:
++                return now.to_unix () - 30 * 86400;
++            default:
++                var midnight = new DateTime.local (now.get_year (), now.get_month (), now.get_day_of_month (), 0, 0, 0);
++                return midnight.to_unix ();
++        }
++    }
++
++    private void show_status (string? text) {
++        status_label.label = text ?? "";
++        status_label.visible = text != null;
++    }
++
++    private void set_drill (string? name) {
++        drill = name;
++        refresh ();
++    }
++
++    private void clear_rows () {
++        Gtk.Widget? child;
++        while ((child = rows_box.get_first_child ()) != null) {
++            rows_box.remove (child);
++        }
++    }
++
++    private void refresh () {
++        clear_rows ();
++        total_label.label = "";
++
++        var path = db_path ();
++        if (!FileUtils.test (path, FileTest.EXISTS)) {
++            show_status (_("Usage logging is not running. Enable it with: systemctl --user enable --now netusage"));
++            return;
++        }
++
++        Sqlite.Database db;
++        if (Sqlite.Database.open_v2 (path, out db, Sqlite.OPEN_READONLY) != Sqlite.OK) {
++            show_status (_("Could not open the usage database."));
++            return;
++        }
++
++        db.busy_timeout (500);
++
++        if (is_stale (db)) {
++            show_status (_("Usage logging is not running. Start it with: systemctl --user start netusage"));
++            return;
++        }
++
++        show_status (null);
++
++        if (kind == Kind.DNS) {
++            load_dns (db);
++        } else {
++            load_usage (db);
++        }
++    }
++
++    private bool is_stale (Sqlite.Database db) {
++        Sqlite.Statement stmt;
++        if (db.prepare_v2 ("SELECT value FROM meta WHERE key = 'last_flush'", -1, out stmt) != Sqlite.OK) {
++            return true;
++        }
++
++        if (stmt.step () != Sqlite.ROW) {
++            return true;
++        }
++
++        return new DateTime.now_utc ().to_unix () - int64.parse (stmt.column_text (0)) > STALE_SECONDS;
++    }
++
++    private void load_usage (Sqlite.Database db) {
++        // Drilled in: an app lists its hosts, a host lists the apps that talked to it.
++        unowned string column = (kind == Kind.APPS) == (drill == null) ? "proc" : "host";
++        unowned string filter = kind == Kind.APPS ? "proc" : "host";
++        unowned string table = range == Range.TODAY ? "usage_minute" : "usage_hour";
++
++        var sql = "SELECT %s, SUM(rx), SUM(tx) FROM %s WHERE ts >= ?%s GROUP BY %s ORDER BY SUM(rx) + SUM(tx) DESC".printf (
++            column, table, drill != null ? " AND %s = ?".printf (filter) : "", column
++        );
++
++        Sqlite.Statement stmt;
++        if (db.prepare_v2 (sql, -1, out stmt) != Sqlite.OK) {
++            show_status (_("Could not read the usage database."));
++            return;
++        }
++
++        stmt.bind_int64 (1, range_start ());
++        if (drill != null) {
++            stmt.bind_text (2, drill);
++        }
++
++        uint64 total_rx = 0;
++        uint64 total_tx = 0;
++        string[] names = {};
++        uint64[] rxs = {};
++        uint64[] txs = {};
++
++        while (stmt.step () == Sqlite.ROW) {
++            var rx = (uint64) stmt.column_int64 (1);
++            var tx = (uint64) stmt.column_int64 (2);
++            total_rx += rx;
++            total_tx += tx;
++            if (names.length < ROWS) {
++                names += stmt.column_text (0);
++                rxs += rx;
++                txs += tx;
++            }
++        }
++
++        if (drill != null) {
++            rows_box.append (build_back_row (drill));
++        }
++
++        if (names.length == 0) {
++            show_status (_("No traffic recorded yet."));
++            return;
++        }
++
++        double max = (double) (rxs[0] + txs[0]);
++        for (int i = 0; i < names.length; i++) {
++            var detail = "↓ %s  ↑ %s".printf (format_size (rxs[i]), format_size (txs[i]));
++            var row = build_row (names[i], detail, max > 0 ? (rxs[i] + txs[i]) / max : 0);
++            if (drill == null) {
++                make_clickable (row, names[i]);
++            }
++
++            rows_box.append (row);
++        }
++
++        total_label.label = _("Total  ↓ %s  ↑ %s").printf (format_size (total_rx), format_size (total_tx));
++    }
++
++    private void load_dns (Sqlite.Database db) {
++        Sqlite.Statement stmt;
++        if (db.prepare_v2 ("SELECT name, SUM(queries), SUM(failures) FROM dns_hour WHERE ts >= ? GROUP BY name ORDER BY SUM(queries) DESC", -1, out stmt) != Sqlite.OK) {
++            show_status (_("Could not read the usage database."));
++            return;
++        }
++
++        // Hourly buckets: align the "today" cutoff down to the hour.
++        stmt.bind_int64 (1, range_start () / 3600 * 3600);
++
++        string[] names = {};
++        int64[] counts = {};
++        int64[] failures = {};
++        int64 total = 0;
++        int64 total_failed = 0;
++
++        while (stmt.step () == Sqlite.ROW) {
++            total += stmt.column_int64 (1);
++            total_failed += stmt.column_int64 (2);
++            if (names.length < ROWS) {
++                names += stmt.column_text (0);
++                counts += stmt.column_int64 (1);
++                failures += stmt.column_int64 (2);
++            }
++        }
++
++        if (names.length == 0) {
++            show_status (_("No DNS lookups recorded yet."));
++            return;
++        }
++
++        double max = (double) counts[0];
++        for (int i = 0; i < names.length; i++) {
++            var detail = failures[i] > 0
++                ? _("%s lookups (%s failed)").printf (counts[i].to_string (), failures[i].to_string ())
++                : _("%s lookups").printf (counts[i].to_string ());
++            rows_box.append (build_row (names[i], detail, counts[i] / max));
++        }
++
++        total_label.label = _("Total  %s lookups, %s failed").printf (total.to_string (), total_failed.to_string ());
++    }
++
++    private Gtk.Widget build_back_row (string name) {
++        var back = new Gtk.Button () {
++            child = new Gtk.Label ("‹  " + name) {
++                xalign = 0,
++                ellipsize = Pango.EllipsizeMode.MIDDLE
++            },
++            tooltip_text = _("Back to the full list")
++        };
++        back.add_css_class ("flat");
++        back.clicked.connect (() => set_drill (null));
++        return back;
++    }
++
++    private void make_clickable (Gtk.Widget row, string name) {
++        row.tooltip_text = _("Show details for %s").printf (name);
++        row.add_css_class ("usage-row");
++
++        var click = new Gtk.GestureClick ();
++        click.released.connect (() => {
++            // Rebuilding the list destroys this row, so do it after the handler returns.
++            Idle.add (() => {
++                set_drill (name);
++                return Source.REMOVE;
++            });
++        });
++        row.add_controller (click);
++        row.set_cursor_from_name ("pointer");
++    }
++
++    private Gtk.Widget build_row (string name, string detail, double fraction) {
++        var name_label = new Gtk.Label (name) {
++            xalign = 0,
++            hexpand = true,
++            ellipsize = Pango.EllipsizeMode.MIDDLE,
++            max_width_chars = 24,
++            tooltip_text = name
++        };
++
++        var detail_label = new Gtk.Label (detail) {
++            xalign = 1
++        };
++        detail_label.add_css_class (Granite.CssClass.DIM);
++        detail_label.add_css_class ("numeric");
++
++        var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
++        line.append (name_label);
++        line.append (detail_label);
++
++        var bar = new Gtk.ProgressBar () {
++            fraction = fraction.clamp (0.0, 1.0)
++        };
++        bar.add_css_class ("usage-bar");
++
++        var row = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
++        row.append (line);
++        row.append (bar);
++        return row;
++    }
++}
+diff --git a/src/Widgets/WifiInterface.vala b/src/Widgets/WifiInterface.vala
+index e7eebb4..24818c8 100644
+--- a/src/Widgets/WifiInterface.vala
++++ b/src/Widgets/WifiInterface.vala
+@@ -22,6 +22,9 @@ public class Network.WifiInterface : Network.WidgetNMInterface {
+     private WifiMenuItem? active_wifi_item;
+     private Gtk.CheckButton blank_item;
+     private Gtk.Stack placeholder;
++    private Gtk.ToggleButton others_button;
++    // While connected, only the active network is listed unless the user expands the list.
++    private bool show_others = false;
+ 
+     private bool locked;
+     private bool software_locked;
+@@ -103,6 +106,9 @@ public class Network.WifiInterface : Network.WidgetNMInterface {
+         wifi_list = new Gtk.ListBox ();
+         wifi_list.set_sort_func (sort_func);
+         wifi_list.set_placeholder (placeholder);
++        wifi_list.set_filter_func ((row) => {
++            return show_others || !is_collapsible () || row == active_wifi_item;
++        });
+ 
+         wifi_item = new Granite.SwitchModelButton (display_title);
+         wifi_item.add_css_class (Granite.STYLE_CLASS_H4_LABEL);
+@@ -118,8 +124,27 @@ public class Network.WifiInterface : Network.WidgetNMInterface {
+             child = scrolled_box
+         };
+ 
++        others_button = new Gtk.ToggleButton () {
++            icon_name = "pan-end-symbolic",
++            tooltip_text = _("Show other networks"),
++            valign = Gtk.Align.CENTER,
++            margin_end = 6,
++            visible = false
++        };
++        others_button.add_css_class ("flat");
++        others_button.toggled.connect (() => {
++            show_others = others_button.active;
++            others_button.icon_name = show_others ? "pan-down-symbolic" : "pan-end-symbolic";
++            wifi_list.invalidate_filter ();
++        });
++
++        wifi_item.hexpand = true;
++        var header = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
++        header.append (wifi_item);
++        header.append (others_button);
++
+         orientation = Gtk.Orientation.VERTICAL;
+-        append (wifi_item);
++        append (header);
+         append (revealer);
+ 
+         bind_property ("display-title", wifi_item, "text");
+@@ -220,6 +245,7 @@ public class Network.WifiInterface : Network.WidgetNMInterface {
+         wifi_item.active = !locked;
+ 
+         active_ap = wifi_device.get_active_access_point ();
++        update_collapsed ();
+ 
+         if (wifi_device.state == NM.DeviceState.UNAVAILABLE || state == Network.State.FAILED_WIFI) {
+             revealer.reveal_child = false;
+@@ -360,6 +386,8 @@ public class Network.WifiInterface : Network.WidgetNMInterface {
+ 
+     public void cancel_scanning () {
+         wifi_scan_cancellable.cancel ();
++        // Start collapsed again the next time the popover opens.
++        others_button.active = false;
+     }
+ 
+     private NM.Connection? get_valid_connection (NM.AccessPoint ap, GenericArray<NM.Connection> ap_connections) {
+@@ -540,6 +568,21 @@ public class Network.WifiInterface : Network.WidgetNMInterface {
+         }
+     }
+ 
++    /** True while connected to a network, in which case the other networks are hidden by default. */
++    private bool is_collapsible () {
++        return wifi_device.state == NM.DeviceState.ACTIVATED && active_wifi_item != null;
++    }
++
++    private void update_collapsed () {
++        var collapsible = is_collapsible ();
++        others_button.visible = collapsible;
++        if (!collapsible) {
++            others_button.active = false;
++        }
++
++        wifi_list.invalidate_filter ();
++    }
++
+     private void cancel_scan () {
+         if (timeout_scan > 0) {
+             Source.remove (timeout_scan);
