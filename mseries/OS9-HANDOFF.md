@@ -112,6 +112,19 @@ documented on the `re/usb4-exp2` branch, which also carries experiment 2
 in `DP-TUNNEL-RE.md`; consolidating them is a git-ownership decision, not one to
 make silently here.
 
+Prepared for the next hardware session (dock returns tomorrow): an offline
+runbook, an experiment-2-aware evidence collector, and a byte-level device-tree
+tool that makes the crossbar/`apple,dp-tunnel` A/B a one-byte edit plus a reboot
+instead of a CI build.
+
+- [`fairydust/usb4/EXP2-RUNBOOK.md`](fairydust/usb4/EXP2-RUNBOOK.md) — the
+  step-by-step plan, decision tree, ablation matrix, hazards, rollback.
+- `fairydust/usb4/boot-dt.py` — inspect the live device tree inside
+  `boot.bin`, or patch `mux-controls` / ablate `apple,dp-tunnel`.
+- `fairydust/usb4/test-dp-tunnel.sh` — now reports `dprx_bypass`, the
+  `apple,dp-tunnel` property, `force_link` handles, and gives an
+  experiment-2 verdict.
+
 ## Monitor / dock-video decision — 2026-10-15
 
 Checked the current upstream state for external-display video and recorded a

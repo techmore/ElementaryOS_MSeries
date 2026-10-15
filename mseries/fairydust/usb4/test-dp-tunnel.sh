@@ -1,39 +1,54 @@
 #!/usr/bin/env bash
-# test-dp-tunnel.sh — collect the evidence for the USB4 DP-tunnel experiment
-# (see DP-TUNNEL-RE.md). Read-only: it prints state and a verdict, changes
-# nothing. Run:  bash mseries/fairydust/usb4/test-dp-tunnel.sh
+# test-dp-tunnel.sh — collect the evidence for the USB4 DP-tunnel experiments
+# (see DP-TUNNEL-RE.md and EXP2-RUNBOOK.md). Read-only: it prints state and a
+# verdict and changes nothing.
 #
-# Optional follow-up to force the display controller to drive the DP IN adapter:
-#   echo 1 | sudo tee /sys/kernel/debug/dri/*/*DP-1/force_link
+#   bash mseries/fairydust/usb4/test-dp-tunnel.sh
+#
+# Experiment 2 adds two runtime knobs this script reports:
+#   * dprx_bypass  — skip the DPRX_DONE wait (the wall experiment 1 hit)
+#   * force_link   — per-connector debugfs handle to make the DCP drive the link
 set -u
 
 say() { printf '%s\n' "$*"; }
-kv()  { printf '  %-30s %s\n' "$1" "$2"; }
+kv()  { printf '  %-34s %s\n' "$1" "$2"; }
 hr()  { say "------------------------------------------------------------"; }
+param() { # name default
+	if [ -r "/sys/module/thunderbolt/parameters/$1" ]; then
+		cat "/sys/module/thunderbolt/parameters/$1"
+	else
+		printf '%s' "$2"
+	fi
+}
 
 kver=$(uname -r)
 say "== Host =="
 kv "kernel" "$kver"
-kv "cmdline" "$(tr ' ' '\n' </proc/cmdline | grep -E 'allow_dp_tunnel' || echo '(no allow_dp_tunnel)')"
+kv "budget (boot params)" "$(tr ' ' '\n' </proc/cmdline | grep -E 'thunderbolt' | paste -sd' ' - || echo '(none)')"
 
-say ""; say "== thunderbolt module parameter =="
+say ""; say "== thunderbolt module parameters =="
 if [ -r /sys/module/thunderbolt/parameters/allow_dp_tunnel ]; then
-	kv "allow_dp_tunnel" "$(cat /sys/module/thunderbolt/parameters/allow_dp_tunnel)"
+	kv "allow_dp_tunnel" "$(param allow_dp_tunnel -)"
+	kv "dprx_timeout" "$(param dprx_timeout -)"
+	kv "dprx_bypass" "$(param dprx_bypass -)   (1 = skip the DPRX_DONE wait)"
 else
-	kv "allow_dp_tunnel" "ABSENT (not the experimental kernel, or thunderbolt builtin)"
+	kv "allow_dp_tunnel" "ABSENT (not the experimental kernel)"
 fi
 
-say ""; say "== Device-tree wiring =="
-dt_mux="$(xxd -p /proc/device-tree/soc/dcp@28cc00000/mux-controls 2>/dev/null)"
-# mux-controls is <phandle cells...>; last 4 bytes are the mux control index.
+say ""; say "== Device-tree wiring (live tree) =="
+dt=/proc/device-tree/soc/dcp@28cc00000
+dt_mux="$(xxd -p "$dt/mux-controls" 2>/dev/null)"
 idx="?"
 [ -n "$dt_mux" ] && idx=$((16#${dt_mux: -8}))
 kv "dcpext1 mux-controls idx" "$idx  (0=dpphy 1=dpin0 2=dpin1)"
-kv "dcpext1 mux-index" "$(xxd -p /proc/device-tree/soc/dcp@28cc00000/mux-index 2>/dev/null | sed 's/^/0x/')"
-for x in 130304c000 b0304c000; do
-	[ -d "/proc/device-tree/soc/mux@$x" ] && \
-		kv "crossbar $x" "$(tr -d '\0' < /proc/device-tree/soc/mux@$x/status 2>/dev/null)"
-done
+kv "dcpext1 mux-index" "$(xxd -p "$dt/mux-index" 2>/dev/null | sed 's/^/0x/')"
+if [ -e "$dt/apple,dp-tunnel" ]; then
+	kv "apple,dp-tunnel" "PRESENT (experiment 2: DCP leaves the ATC PHY alone)"
+else
+	kv "apple,dp-tunnel" "absent (experiment 1 behaviour: DCP attaches atcphy1)"
+fi
+kv "dcp@289c00000 (HDMI) idx" \
+	"$((16#$(xxd -p /proc/device-tree/soc/dcp@289c00000/mux-controls 2>/dev/null | tail -c 9)))  (must stay 0)"
 
 say ""; say "== DRM connectors =="
 for c in /sys/class/drm/card*/card*-*; do
@@ -42,49 +57,77 @@ for c in /sys/class/drm/card*/card*-*; do
 done
 
 say ""; say "== USB4 / Thunderbolt =="
-if [ -d /sys/bus/thunderbolt/devices ]; then
-	for d in /sys/bus/thunderbolt/devices/*/; do
-		n=$(basename "$d")
-		kv "$n" "$(cat "$d/device_name" 2>/dev/null || echo '-')"
-	done
-else
-	kv "thunderbolt" "no /sys/bus/thunderbolt/devices"
-fi
+found_dev=0
+for d in /sys/bus/thunderbolt/devices/*/; do
+	[ -e "$d/device_name" ] || continue
+	found_dev=1
+	kv "$(basename "$d")" "$(cat "$d/device_name" 2>/dev/null || echo '-')"
+done
+[ "$found_dev" = 1 ] || kv "thunderbolt" "no devices attached (dock not plugged in?)"
+
+logs=$(journalctl -k -b --no-pager 2>/dev/null || dmesg 2>/dev/null)
 
 say ""; say "== Crossbar switches this boot =="
-journalctl -k -b --no-pager 2>/dev/null | grep -i 'apple-display-crossbar' | tail -n 8 ||
-	dmesg 2>/dev/null | grep -i 'apple-display-crossbar' | tail -n 8
+printf '%s\n' "$logs" | grep -i 'apple-display-crossbar' | tail -n 8
+
+say ""; say "== Tunnel bring-up this boot (last 20) =="
+printf '%s\n' "$logs" \
+	| grep -v 'Kernel command line' \
+	| grep -iE 'DP IN|DP OUT|DPRX|dp tunnel|activating|activation complete|deactivat' \
+	| tail -n 20
 
 say ""; say "== DCP link attempts =="
-(logs=$(journalctl -k -b --no-pager 2>/dev/null || dmesg 2>/dev/null)
- printf '%s\n' "$logs" | grep -iE 'dcp_dptx_connect|link complete|DPRX|dp tunnel|DP2HDMI' | tail -n 15)
+printf '%s\n' "$logs" | grep -iE 'dcp_dptx_connect|dcp_dptx_disconnect|link complete|DP2HDMI|DCP index' | tail -n 12
 
 say ""; say "== Counters =="
-logs=$(journalctl -k -b --no-pager 2>/dev/null || dmesg 2>/dev/null)
 kv "DPRX read timeout" "$(printf '%s\n' "$logs" | grep -c 'DPRX read timeout')"
-kv "dp tunnel lines" "$(printf '%s\n' "$logs" | grep -ci 'dp tunnel')"
-kv "dcp_dptx_connect" "$(printf '%s\n' "$logs" | grep -c 'dcp_dptx_connect')"
+kv "DPRX bypass engaged" "$(printf '%s\n' "$logs" | grep -c 'DPRX bypass enabled')"
+kv "Video/AUX path activation complete" "$(printf '%s\n' "$logs" | grep -c 'activation complete')"
+kv "dcp_dptx_connect(port=0)" "$(printf '%s\n' "$logs" | grep -c 'dcp_dptx_connect(port=0)')"
 
-say ""; say "== force_link handles =="
+say ""; say "== force_link handles (experiment 2 / experiment 1 builds) =="
 found=0
-for f in /sys/kernel/debug/dri/*/*/force_link; do
-	[ -e "$f" ] && { kv "$f" "present"; found=1; }
-done
-[ "$found" = 1 ] || kv "force_link" "none (debugfs not mounted, or non-experimental kernel)"
+while IFS= read -r f; do
+	[ -e "$f" ] || continue
+	kv "$f" "present"; found=1
+done < <(find /sys/kernel/debug/dri -name force_link 2>/dev/null)
+[ "$found" = 1 ] || kv "force_link" "none (needs sudo, or non-experimental kernel)"
 
 hr
 say "== Verdict =="
 timeouts=$(printf '%s\n' "$logs" | grep -c 'DPRX read timeout')
+activations=$(printf '%s\n' "$logs" | grep -c 'activation complete')
+connect=$(printf '%s\n' "$logs" | grep -c 'dcp_dptx_connect(port=0)')
+bypass="$(param dprx_bypass 0)"
+connected=$(cat /sys/class/drm/card*/card*-*/status 2>/dev/null | grep -c '^connected$')
+
 if [ "${idx:-0}" = 0 ]; then
-	say "  Crossbar still routes dcpext1 -> dpphy (DP Alt Mode). Not the tunnel build,"
-	say "  or the device tree did not change. Expected idx=1 (dpin0) here."
-elif [ "$timeouts" = 0 ]; then
-	say "  dcpext1 -> dpin0 and no DPRX timeouts: the DP IN adapter answered."
-	say "  Check '== DCP link attempts ==' for a completed link / allocated tunnel."
+	say "  Crossbar still routes dcpext1 -> dpphy (DP Alt Mode). The tree is not armed"
+	say "  for the tunnel; expected idx=1 (dpin0). Check with boot-dt.py, not the build."
+elif [ "$connected" -gt 0 ] && [ "$activations" -gt 0 ]; then
+	say "  A connector is CONNECTED and paths activated: the tunnel is up and a display"
+	say "  attached. If the panel is still dark, it is a mode-set problem, not link one."
+elif [ "$bypass" = 1 ]; then
+	say "  dprx_bypass=1 and idx=$idx. If the DPRX storm stopped and the paths report"
+	say "  'activation complete', the tunnel is up -- the remaining question is whether"
+	say "  the DCP drives the DP IN adapter. Check 'DCP link attempts' for"
+	say "  dcp_dptx_connect(port=0); if absent, force it:"
+	say "    sudo sh -c 'echo 1 > $(find /sys/kernel/debug/dri -name force_link | head -1)'"
+	say "  Note there is usually a force_link per connector: pick the one under DP-1."
+elif [ "$timeouts" -gt 100 ]; then
+	say "  Crossbar armed (idx=$idx) but a DPRX retry storm is running ($timeouts lines)."
+	say "  This is the experiment-1 wall. Arm the bypass *now*, before touching the cable:"
+	say "    echo 1 | sudo tee /sys/module/thunderbolt/parameters/dprx_bypass"
+elif [ "$activations" -gt 0 ]; then
+	say "  Paths activated ($activations) with idx=$idx and no storm. Look at whether the"
+	say "  DCP connected ($connect attempt(s)) and whether a connector came up."
 else
-	say "  dcpext1 -> dpin0 but DPRX still timing out ($timeouts)."
-	say "  Next: force the DCP to drive --"
-	say "    echo 1 | sudo tee /sys/kernel/debug/dri/*/*DP-1/force_link"
-	say "  then re-run this script. If timeouts persist, try the dpin1 route"
-	say "  (<&atcphy1_xbar 2> in t600x-j314-j316.dtsi, DP-TUNNEL-RE.md section 6)."
+	say "  Nothing yet: no DP IN/OUT pairing and no tunnel attempt in this boot. Either the"
+	say "  dock has no display attached, or the sink port is not the one wired to the ACIO."
+	say "  Re-check the monitor is live on the dock's HDMI/DP and that the dock is on USB-C"
+	say "  Left Front (atcphy1)."
 fi
+say ""
+say "Hazard: do NOT unplug the dock while a DPRX read is in flight (it deadlocks"
+say "apple_nhi_remove and wedges the Type-C port until reboot). Disarm first with"
+say "  echo 1 | sudo tee /sys/module/thunderbolt/parameters/dprx_bypass"

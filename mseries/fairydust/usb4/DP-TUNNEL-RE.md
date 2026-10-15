@@ -1,6 +1,8 @@
 # USB4 DisplayPort tunneling on M1 Pro (dock video) — reverse-engineering map
 
-Status: **experiment 1 building; experiment 2 identified** (2026-10-15).
+Status: **experiment 1 installed and tested on hardware — the tunnel activates, the
+sink never answers; experiment 2 built and installed; runbook ready** (2026-10-15).
+Next hardware session: [`EXP2-RUNBOOK.md`](EXP2-RUNBOOK.md).
 Scope: make the Dell WD22TB4's HDMI/DP outputs work, i.e. tunnel DisplayPort
 from the display controller (`DCP`) through the USB4 host router (`ACIO`) to the
 dock. This is the "Monitor through the dock" open problem in
