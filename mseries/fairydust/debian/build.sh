@@ -39,7 +39,7 @@ fi
 check_hash 0d3540afc18751b236d816312b7a0d7311d2860476b1fce6668f6565ea04c3fd "$kit/config"
 check_hash 1b9e6d925cdfe768360880c1d3e10eb0d46ecfe66985b4b9fbf39812c3f9fdfd "$kit/0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch"
 if [[ $dp_tunnel == 1 ]]; then
-    check_hash b251b71679e350f889abcd6c8b2d10d5191dbe1b1b9fa6e41660acd3dd836aa9 "$kit/0002-experimental-dp-tunnel.patch"
+    check_hash c962eff07c54b2d3e6d066dd85c5a969a5130e0d61c7f55daaccd999589da6ac "$kit/0002-experimental-dp-tunnel.patch"
 fi
 src="$work/source"
 if [[ $mode == --prepare || $mode == --build ]]; then

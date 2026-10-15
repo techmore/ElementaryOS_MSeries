@@ -342,6 +342,28 @@ it says which DTB m1n1 actually served.
 
 ## 6. Next experiments
 
+**Status 2026-10-15:** experiment 2 below is now implemented in
+`0002-experimental-dp-tunnel.patch`, together with a runtime DPRX bypass knob:
+
+- `t600x-j314-j316.dtsi`: `&dcpext1` gains `apple,dp-tunnel;` (inside the
+  `ENABLE_DCPEXT_TB_TUNNEL` guard).
+- `dcp.c`: reads `apple,dp-tunnel` and, when set, leaves `dptxport[port].atcphy`
+  NULL in `dcp_dptx_connect()` so the DCP never reconfigures `atcphy1` (it must
+  stay in USB4 mode).
+- `dptxep.c`: `dptxport_call_get_max_lane_count()` returns the 4-lane default
+  when `atcphy` is NULL instead of failing the apcall.
+- `tunnel.c`: new `dprx_bypass` module parameter
+  (`/sys/module/thunderbolt/parameters/dprx_bypass`, writable at runtime). When
+  set, `tb_dp_wait_dprx()` returns 0 immediately so the tunnel activates even
+  though the host router never sets `DP_COMMON_CAP.DPRX_DONE`. This separates
+  "does experiment 2 fix the DCP link?" from "does activating the tunnel bring
+  the display up?" without needing two builds.
+
+Test order: boot with `thunderbolt.allow_dp_tunnel=1 dprx_timeout=-1` and watch
+whether the DCP still reports `DEVICE_NOT_RESPONDING` (experiment 2 effect); then
+`echo 1 | sudo tee /sys/module/thunderbolt/parameters/dprx_bypass` and watch for
+the tunnel to go active and the monitor to light.
+
 2. **Unbind the tunnelled connector's DPTX endpoint from the ATC DP PHY.** While
    `dptx->atcphy` is `atcphy1`, every link-rate change makes the DCP poke
    `atcphy_dp_configure(atcphy1)` although that PHY must stay in USB4 mode.
