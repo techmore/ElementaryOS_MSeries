@@ -359,10 +359,13 @@ it says which DTB m1n1 actually served.
   "does experiment 2 fix the DCP link?" from "does activating the tunnel bring
   the display up?" without needing two builds.
 
-Test order: boot with `thunderbolt.allow_dp_tunnel=1 dprx_timeout=-1` and watch
-whether the DCP still reports `DEVICE_NOT_RESPONDING` (experiment 2 effect); then
+Test order: boot with `thunderbolt.allow_dp_tunnel=1 dprx_timeout=3600000` (a
+*bounded* timeout — see §9: an in-flight DPRX read makes a cable unplug deadlock
+the port) and watch whether the DCP still reports `DEVICE_NOT_RESPONDING`
+(experiment 2 effect); then
 `echo 1 | sudo tee /sys/module/thunderbolt/parameters/dprx_bypass` and watch for
-the tunnel to go active and the monitor to light.
+the tunnel to go active and the monitor to light. Setting `dprx_bypass=1` also
+stops the polling, which is what makes the port safe to unplug again.
 
 2. **Unbind the tunnelled connector's DPTX endpoint from the ATC DP PHY.** While
    `dptx->atcphy` is `atcphy1`, every link-rate change makes the DCP poke
@@ -441,3 +444,84 @@ attached); it is the one genuinely blocking dependency.
 - Upstream state: `fairydust` HEAD `ce9f2eba72c061a50b2d790450e90af3439d8c24`
   (2026-09-08, = our build baseline). DP Alt Mode is "WIP"; Thunderbolt is
   "WIP" with no DP tunneling. Asahi feature table, M1 Pro/Max/Ultra.
+
+## 9. Hazard — unplugging the dock with a DPRX read in flight (measured 2026-10-15)
+
+**Do not unplug the dock while the experiment is armed** (`allow_dp_tunnel=1`
+with a DPRX read in flight). Measured at 14:55:47: the dock was unplugged while
+`dprx_timeout=-1` had `tb_dp_wait_dprx()` polling, and the Type-C port wedged
+permanently — no hotplug, no USB, no Ethernet, no charging — until reboot.
+
+What happens (stock code; experiment 1/2 do not touch this path):
+
+```
+cd321x_update_work [tps6598x_core]          # cable removal, holds the tps6598x mutex
+  -> cd321x_deactivate_altmodes -> typec_altmode_update_active
+  -> apple_cio_altmode_notify -> apple_cio_set_cable_info(0)
+  -> apple_cio_stop -> of_platform_depopulate          # removes the NHI device
+  -> apple_nhi_remove -> tb_domain_remove
+       -> wait_for_completion(&anhi->nhi.domain_released)      # never completes
+```
+
+`domain_released` is completed in `tb_domain_release()` (`domain.c`) when the tb
+domain's last reference drops. `tb_domain_remove()` calls `tb->cm_ops->stop()`
+(= `tb_stop()`), which drops the reference to DP tunnels **without deactivating
+them**, so nothing cancels a `dprx_work` still waiting for DPRX; the tunnel
+outlives `tb_switch_remove` and its references keep the domain alive. The
+waiting kworker holds the `tps6598x` mutex the whole time, so the Type-C IRQ
+thread (`irq/129-0-003f`) and every later module unload block on it as well.
+There is no userspace recovery — only a reboot clears it (no process holds an fd
+on the tb char device; the reference is kernel-side).
+
+Known upstream, described in exactly these terms: *"This can be triggered by
+unbinding the driver while a DP tunnel is still waiting for the DPRX
+capabilities read to finish. On the Apple NHI unplugging the cable runs into
+just that reliably because the read can never finish right now and because the
+unplug powers down the entire USB4 complex and removes the NHI device."*
+(linux-kernel, "thunderbolt: Hold a router reference for each path", v2 1/7,
+2026-08-24). The same thread explains why a full ACIO teardown per cable is
+unavoidable: the cable-info VSE register "appears to be effectively write-once
+after each boot of the co-processor", and writing a second connection's value
+crashes it ("assert 4357 violated").
+
+Operational rules for this machine:
+
+1. While the experiment is armed, treat unplugging the dock as "will need a
+   reboot".
+2. Prefer a **bounded** `dprx_timeout` (the test entry now uses `3600000` = 1 h)
+   over `-1`: when the deadline passes the tunnel tears down cleanly and the port
+   becomes safe again by itself.
+3. To disarm at runtime, set `dprx_bypass=1`: `tb_dp_wait_dprx()` then returns 0
+   immediately, so no DPRX read is ever in flight again and the tunnel either
+   activates or tears down.
+4. Recovery when it does wedge: reboot. `sudo reboot` works — neither
+   `tps6598x` nor the Apple thunderbolt driver registers a `.shutdown` callback,
+   so the stuck mutex does not block `device_shutdown()`.
+
+### Experiment-2 install (2026-10-15 15:23) and an installer bug
+
+Installed from CI run 38788230910 (`build-kernel` 18:45:22Z → 19:11:21Z):
+
+```
+sudo bash mseries/fairydust/usb4/install-ci-kernel.sh /tmp/opencode/art-exp2 \
+  --apply --swap-dtb --suffix fairydust-usb4-dptunnel \
+  --entry-id elementary-usb4-dptunnel \
+  --cmdline "thunderbolt.allow_dp_tunnel=1 thunderbolt.dprx_timeout=3600000"
+```
+
+Verified in the artifact before installing: `thunderbolt.ko` contains
+`dprx_bypass`, `appledrm.ko` contains `apple,dp-tunnel`, and the packaged
+`t6000-j314s.dtb` carries the new property. The kernel `Image` is byte-identical
+to the experiment-1 build — expected, because every experiment-2 change lives in
+modules and in the device tree, not in the built-in kernel.
+
+**Bug found and fixed in `install-ci-kernel.sh`:** `cp -a
+"$stage/lib/modules/$kv" "/usr/lib/modules/$kv"` nests the tree as
+`<kv>/<kv>/…` when the target already exists (a second install of the same
+variant), so the old modules stayed in place and the new ones were invisible to
+`modprobe`. The same happened to the Arch-root copy used by `mkinitcpio`, which
+then baked the *old* `appledrm.ko` (loaded by the `kms` hook) into the initramfs.
+The script now copies directory *contents* (`"$stage/lib/modules/$kv/."`). On
+this machine both module trees were fixed by hand and the initramfs was rebuilt;
+it now contains the experiment-2 `appledrm.ko` (`zcat | grep apple,dp-tunnel` =
+1).

@@ -103,7 +103,10 @@ run install -Dm644 "$stage/boot/vmlinuz-$kv" $esp/vmlinuz-linux-asahi-$sfx
 # The modules must be in the system that BOOTS (this running root, subvol @elementary), not only in the
 # Arch root used for mkinitcpio below. Without them /boot (FAT, needs nls_iso8859-1) cannot mount and
 # boot drops to emergency mode (seen 2026-10-14).
-run cp -a "$stage/lib/modules/$kv" "/usr/lib/modules/$kv"
+# Copy the *contents*: `cp -a src dst` nests as dst/$(basename src) when dst
+# already exists (second install of the same variant), which silently left the
+# old modules in place on 2026-10-15.
+run cp -a "$stage/lib/modules/$kv/." "/usr/lib/modules/$kv/"
 run depmod -a "$kv"
 
 echo "== 3. initramfs, built in the Arch root (subvol @) with mkinitcpio so cryptdevice= unlock works"
@@ -114,7 +117,7 @@ for m in dev proc sys; do mountpoint -q $R/$m || run mount --bind /$m $R/$m; don
 mountpoint -q $R/run || run mount -t tmpfs -o mode=755 tmpfs $R/run
 mountpoint -q $R/boot || run mount --bind $esp $R/boot
 run mkdir -p "$R/usr/lib/modules"
-run cp -a "$stage/lib/modules/$kv" "$R/usr/lib/modules/$kv"
+run cp -a "$stage/lib/modules/$kv/." "$R/usr/lib/modules/$kv/"
 run chroot $R mkinitcpio -k "$kv" -g /boot/initramfs-linux-asahi-$sfx.img
 
 echo "== 4. m1n1 boot image"

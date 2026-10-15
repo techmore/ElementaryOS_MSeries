@@ -50,6 +50,36 @@ Design, expected signals, and rollback:
 precondition for a meaningful test is a live display sink on the dock (Dell
 WD22TB4, currently on the dock's HDMI output via an HDMI-to-HDMI cable).
 
+## Dock video experiment 2 installed + unplug deadlock found — 2026-10-15 15:30
+
+- **Incident:** at 14:55:47 the dock was unplugged while experiment 1 was armed
+  with `dprx_timeout=-1`. The Type-C port deadlocked in stock code
+  (`apple_nhi_remove` waits forever for `domain_released` while holding the
+  `tps6598x` mutex), killing USB/Ethernet/hotplug/charging on that port. Only a
+  reboot clears it; the Mac's own display, session and wifi were unaffected.
+  Analysis, stack trace and upstream references: `mseries/fairydust/usb4/DP-TUNNEL-RE.md` §9.
+- **Mitigation:** the test entry now boots with a bounded
+  `thunderbolt.dprx_timeout=3600000` (1 h) instead of `-1`, and `dprx_bypass=1`
+  disarms the polling at runtime. Rule: do not unplug the dock while armed.
+- **Experiment 2 installed** from CI run 38788230910 (`build-kernel` completed
+  19:11:21Z) into the `elementary-usb4-dptunnel` entry: kernel
+  `7.1.13-elementary-fairydust-usb4-dptunnel`, DTB swapped inside
+  `/boot/m1n1/boot.bin`. Verified: `dprx_bypass` present in `thunderbolt.ko`,
+  `apple,dp-tunnel` present in `appledrm.ko` *and* in the rebuilt initramfs, and
+  `apple,dp-tunnel` present in the boot.bin device tree.
+- **Installer bug fixed:** `cp -a` nested the module tree on a repeat install, so
+  the old modules (and the old `appledrm.ko` in the initramfs) would have been
+  used; `install-ci-kernel.sh` now copies directory contents (`dir/.`). Both
+  module trees and the initramfs were repaired by hand on this machine.
+- **Next:** reboot into the `elementary OS (M-series, fairydust-usb4-dptunnel test)`
+  entry, check whether the DCP still reports `DEVICE_NOT_RESPONDING`
+  (experiment 2 alone), then
+  `echo 1 | sudo tee /sys/module/thunderbolt/parameters/dprx_bypass` and watch
+  `DP-1` / the monitor.
+- Rollback: normal GRUB entry; pre-install `boot.bin` copies in
+  `/root/usb4-backup-20261015-152345/` and
+  `/boot/m1n1/boot.bin.KNOWN-GOOD-pre-usb4-20261015-152345`.
+
 ## Dock video experiment 2 built (CI in progress) — 2026-10-15
 
 Experiment 1 was booted and measured: the crossbar route is live (`Switched
