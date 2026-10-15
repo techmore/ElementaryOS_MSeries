@@ -1364,3 +1364,7 @@ Open and needs the owner: a kernel build/boot test of the back-off patch; YouTub
 ### Idle GPU traffic attributed; owner-run lean test — 2026-10-15
 
 Tracing `gpu_scheduler:drm_sched_job_queue` for 4 s: 2,662 jobs (about 665/s): `claude-desktop` 55%, `io.elementary.terminal` 27% (hosting an OpenCode TUI session), `gala` 18%. So the agent UIs used for this work are the largest idle GPU load; the measuring session itself inflates it. A fair lean-profile and video result needs them closed, which only the owner can do. Added `powerlab/lean-test.sh` to the optimization repo (commit `42ec532`): owner-run, needs `--yes`, changes nothing on screen, opens one fullscreen muted video, reports watts and battery hours. Goal ("exceed Apple") remains NOT met; remaining levers are owner-gated: kernel build/boot of the DPRX back-off patch and a tick change, an H.264 route for YouTube in the browser, and an agent-UIs-closed lean measurement.
+
+### Kernel build blocker — 2026-10-15
+
+Could not build the DPRX back-off patch into the running `...-dptunnel` kernel: its source tree and `.config` are not on the M1 Pro (no `/boot/config-*`, no module build dir), the fork's `asahi` branch (`77cb8f2`, 20 Aug) does not match the 12 Oct build, and `flex`/`bison`/`clang`/`bindgen`/`pahole` are not installed. The repo's debian pipeline builds a different, older base. Needs from the owner: the branch/commit and `.config` of the dptunnel kernel and a go-ahead for a low-priority build. See optimization repo `kernel/README.md`. The "exceed Apple" goal remains NOT met.
