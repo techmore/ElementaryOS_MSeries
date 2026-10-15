@@ -1307,3 +1307,11 @@ First boot after the pending sudo steps (kernel `7.1.13-elementary-fairydust-usb
 ### Efficiency goal — 2026-10-15
 
 Owner asked for a goal and efficiency patches so the Mac runs minimal and scales quickly for AI. Wrote `mseries/EFFICIENCY-GOALS.md`: Apple's published light-use figures (about 4 to 6 W, from memory, unverified), our measured 11.7 W, three target tiers, a median-based measurement method, ranked suspects and a power-profile hold design for bursts. No new patch beyond the earlier audio timeout; next step is the measurement script and the display-coprocessor wakeup investigation.
+
+### Optimization repo created — 2026-10-15
+
+Owner approved the proposal; created public `techmore/ElementaryOS_MSeries_Optimization` (GPL-3.0) with README, AGENTS.md, `docs/` (goals, method, results), `powerlab/sample.py` + test (passes; live smoke run works), `tuning/wireplumber` (30 s sink suspend), `patches/`, `rust/` placeholder and a CI workflow. First commit `7d65b03`. Linked from `mseries/OPTIMIZATION.md`. The Rust scaffold on `deb/mseries-plugin-repo` was not touched or moved.
+
+Measurement note: after the reboot the panel backlight was back at 500/500 (it was 105 before) and a smoke sample read 19.2 W median with the charger connected and the battery above the 80% limit. That is not comparable with the earlier 11.7 W; set brightness before any comparison. Brightness is not restored at boot; relevant to the minimum-brightness request.
+
+Polkit prompt: a capture caught `org.freedesktop.login1.inhibit-delay-sleep` with no interaction flag, which is not itself a password prompt; no helper line has fired since the 14:14 reboot as of 14:30, so the cause is still unconfirmed. Repeat the capture across the next 10-minute mark.
