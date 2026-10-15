@@ -1349,3 +1349,14 @@ Also: DRM flip tracing showed 0 vblank events in 4 s at idle, so the display mai
 ### Video playback test — 2026-10-15
 
 Ran at the owner's display settings (no changes): stock Brave on YouTube 18.84 W median at 500/500 brightness (about 3.4 h; software decode, AVD interrupts 0); local 1080p30 H.264 in mpv with VA-API hardware decode 13.23 W at 325/500 (about 4.9 h, 5,402 AVD interrupts); same clip in software 18.53 W. Hardware decode saves about 5.3 W; the browser does not use it on YouTube (VP9/AV1). Apple's figure is 17 h (about 4.1 W). Not at parity. Installed `mpv` and `ffmpeg` with apt for the test. Details and next levers: optimization repo `docs/RESULTS.md`. The owner asked me to stop putting windows on their screen; no more display-visible tests without asking.
+
+### Kernel and scheduler work, honest status — 2026-10-15
+
+Goal ("beat Apple") still NOT met: light use about 9 to 10 W at 60 Hz, video 13.2 W with hardware decode (18.8 W for stock Brave on YouTube) vs Apple's implied 4.1 W (video) and 6.4 W (web). Done this round, none visible on screen, all in the optimization repo (`8851f65`, docs `kernel/README.md`, `docs/RESULTS.md`):
+- Idle governor: `teo` is worse than `menu` (+0.8 W); stays `menu` (restored after the test).
+- CPU scale-up: P-cluster reaches 90% of 3,036 MHz in about 78 ms, so scaling quickly is not the problem.
+- Found why the dock loop never stops: `thunderbolt.dprx_timeout` is `-1` (wait forever, deliberate for the dock work) and the poll is every 50 ms + 25 ms. Wrote `kernel/0001-thunderbolt-dprx-poll-backoff.patch` (50 ms doubling to 1 s; applies cleanly to the fork's `drivers/thunderbolt/tunnel.[ch]`). Not built, not booted, not measured; owner decides whether to build it.
+- `CONFIG_HZ=1000` + `NO_HZ_FULL` listed as candidates for 250 Hz / `NO_HZ_IDLE`; unmeasured.
+- Omarchy's Mac packages contain little power tuning; their `asahi-audio-no-suspend.conf` is the 1.2 W cost we found. Drafted (not sent) an upstream note.
+- CPU hotplug is not writable on this kernel; no data on "fewer cores".
+Open and needs the owner: a kernel build/boot test of the back-off patch; YouTube H.264 route for the browser (extension or driver VP9 support); any further on-screen test.
