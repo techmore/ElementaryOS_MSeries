@@ -165,6 +165,27 @@ or the `.github/workflows/daily-9.0.yml` dispatch with `fairydust_tunnel = true`
 The experimental kernel uses release `7.1.13-elementary-fairydust-usb4-dptunnel`
 so it cannot be confused with the working `...-usb4` kernel.
 
+### Install (from the CI artifact)
+
+The experimental kernel installs *side by side* with the working one, as its own
+GRUB entry, and the device-tree change is applied by swapping just the `j314s`
+DTB inside the existing boot image:
+
+```
+A=<artifact-dir>
+KERNEL_SUFFIX=fairydust-usb4-dptunnel \
+KERNEL_ENTRY_ID=elementary-usb4-dptunnel \
+KERNEL_EXTRA_CMDLINE=thunderbolt.allow_dp_tunnel=1 \
+  sudo bash mseries/fairydust/usb4/install-ci-kernel.sh "$A" --swap-dtb          # dry run
+# ... repeat with --apply to actually install
+```
+
+`--with-ci-bootbin` replaces the whole boot image instead of swapping one DTB.
+Then reboot and pick the `fairydust-usb4-dptunnel test` entry; the default entry
+is untouched. The command-line parameter is belt-and-braces — the module
+parameter can also be flipped at runtime with
+`modprobe thunderbolt allow_dp_tunnel=1`.
+
 ### Test
 
 Boot the experimental kernel with `thunderbolt.allow_dp_tunnel=1` (or

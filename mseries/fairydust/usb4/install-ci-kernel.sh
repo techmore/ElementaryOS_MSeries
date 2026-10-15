@@ -5,6 +5,14 @@
 #   sudo bash install-ci-kernel.sh /path/to/artifact-dir            # dry run: prints every step, changes nothing
 #   sudo bash install-ci-kernel.sh /path/to/artifact-dir --apply    # does it
 #
+# --swap-dtb replaces only the j314s device tree inside the existing /boot/m1n1/boot.bin
+# (keeping its newer m1n1) so a device-tree change such as the DP-tunnel experiment
+# takes effect without replacing the whole boot image.
+#
+# Env vars select a variant so kernels can be installed side by side:
+#   KERNEL_SUFFIX=fairydust-usb4-dptunnel KERNEL_ENTRY_ID=elementary-usb4-dptunnel \
+#   KERNEL_EXTRA_CMDLINE=thunderbolt.allow_dp_tunnel=1 sudo bash install-ci-kernel.sh ...
+#
 # Adds a TEST entry to /boot/grub/custom.cfg that is NOT the default; the stock entry stays the default.
 # Unlike install-stage1/2.sh this takes the root, ESP and LUKS UUIDs from the running system.
 #
@@ -13,12 +21,21 @@
 # Pass --with-ci-bootbin to install the CI image anyway (USB2 side of the dock only, expected).
 set -euo pipefail
 
-art=${1:?usage: $0 <artifact-dir> [--apply] [--with-ci-bootbin]}; shift || true
-apply=0; with_bootbin=0
-for a in "$@"; do case $a in --apply) apply=1 ;; --with-ci-bootbin) with_bootbin=1 ;; *) echo "unknown: $a" >&2; exit 2 ;; esac; done
+art=${1:?usage: $0 <artifact-dir> [--apply] [--with-ci-bootbin] [--swap-dtb]}; shift || true
+apply=0; with_bootbin=0; swap_dtb=0
+for a in "$@"; do case $a in --apply) apply=1 ;; --with-ci-bootbin) with_bootbin=1 ;; --swap-dtb) swap_dtb=1 ;; *) echo "unknown: $a" >&2; exit 2 ;; esac; done
 
 run() { echo "+ $*"; (( apply )) && "$@" || true; }
 die() { echo "ERROR: $*" >&2; exit 1; }
+
+# Variant selection. Defaults reproduce the original fairydust-usb4 install; the
+# experimental USB4 DP-tunnel kernel uses
+#   KERNEL_SUFFIX=fairydust-usb4-dptunnel KERNEL_ENTRY_ID=elementary-usb4-dptunnel \
+#   KERNEL_EXTRA_CMDLINE=thunderbolt.allow_dp_tunnel=1
+# so both kernels can be installed side by side as separate GRUB entries.
+sfx=${KERNEL_SUFFIX:-fairydust-usb4}
+entry_id=${KERNEL_ENTRY_ID:-elementary-usb4-test}
+extra=${KERNEL_EXTRA_CMDLINE:-}
 
 [[ $EUID -eq 0 ]] || die "run as root (sudo)"
 [[ $(uname -m) == aarch64 ]] || die "aarch64 only"
@@ -39,7 +56,7 @@ echo "root=$root_uuid luks=$luks_uuid esp=$esp_uuid"
 kv=$(dpkg-deb -c "$deb" | awk '{print $6}' | sed -n 's#^\./lib/modules/\([^/]*\)/$#\1#p' | head -1)
 [[ -n $kv ]] || die "cannot read kernel release from $deb"
 echo "kernel release: $kv"
-[[ -e $esp/vmlinuz-linux-asahi-fairydust-usb4 ]] && die "already installed; remove it first"
+[[ -e $esp/vmlinuz-linux-asahi-$sfx ]] && die "already installed; remove it first"
 
 stamp=$(date +%Y%m%d-%H%M%S); bak=/root/usb4-backup-$stamp
 echo "== 1. backups (boot.bin lives on the ESP and runs before GRUB: keep a copy)"
@@ -52,7 +69,7 @@ run cp -a $esp/grub/grub.cfg "$bak/grub.cfg"
 echo "== 2. unpack the kernel package"
 stage=$(mktemp -d /var/tmp/usb4-stage.XXXXXX)
 run dpkg-deb -x "$deb" "$stage"
-run install -Dm644 "$stage/boot/vmlinuz-$kv" $esp/vmlinuz-linux-asahi-fairydust-usb4
+run install -Dm644 "$stage/boot/vmlinuz-$kv" $esp/vmlinuz-linux-asahi-$sfx
 # The modules must be in the system that BOOTS (this running root, subvol @elementary), not only in the
 # Arch root used for mkinitcpio below. Without them /boot (FAT, needs nls_iso8859-1) cannot mount and
 # boot drops to emergency mode (seen 2026-10-14).
@@ -68,11 +85,20 @@ mountpoint -q $R/run || run mount -t tmpfs -o mode=755 tmpfs $R/run
 mountpoint -q $R/boot || run mount --bind $esp $R/boot
 run mkdir -p "$R/usr/lib/modules"
 run cp -a "$stage/lib/modules/$kv" "$R/usr/lib/modules/$kv"
-run chroot $R mkinitcpio -k "$kv" -g /boot/initramfs-linux-asahi-fairydust-usb4.img
+run chroot $R mkinitcpio -k "$kv" -g /boot/initramfs-linux-asahi-$sfx.img
 
 echo "== 4. m1n1 boot image"
 if (( with_bootbin )); then
   run install -m755 "$art/fairydust-m1n1-boot.bin" $esp/m1n1/boot.bin
+elif (( swap_dtb )); then
+  # Keep the current boot.bin (and its m1n1), replace only the j314s device tree
+  # so the experimental crossbar routing takes effect. Byte-identical otherwise.
+  dtb="$stage/usr/lib/linux-image-$kv/apple/t6000-j314s.dtb"
+  here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+  run python3 "$here/swap-dtb.py" --in $esp/m1n1/boot.bin --dtb "$dtb" \
+      --match apple,j314s --out $esp/m1n1/boot.bin.new
+  run install -m755 $esp/m1n1/boot.bin.new $esp/m1n1/boot.bin
+  run rm -f $esp/m1n1/boot.bin.new
 else
   echo "(skipped: keeping the current boot.bin; see header comment)"
 fi
@@ -80,15 +106,15 @@ fi
 echo "== 5. TEST grub entry (not the default)"
 entry=$(cat <<EOG
 
-menuentry 'elementary OS (M-series, fairydust + USB4 test)' --id elementary-usb4-test {
+menuentry 'elementary OS (M-series, $sfx test)' --id $entry_id {
     search --no-floppy --fs-uuid --set=root $esp_uuid
-    linux /vmlinuz-linux-asahi-fairydust-usb4 root=UUID=$root_uuid cryptdevice=UUID=$luks_uuid:root:allow-discards loglevel=3 quiet appledrm.show_notch=0 rootflags=subvol=@elementary rw quiet splash
-    initrd /initramfs-linux-asahi-fairydust-usb4.img
+    linux /vmlinuz-linux-asahi-$sfx root=UUID=$root_uuid cryptdevice=UUID=$luks_uuid:root:allow-discards loglevel=3 quiet appledrm.show_notch=0 rootflags=subvol=@elementary rw quiet splash $extra
+    initrd /initramfs-linux-asahi-$sfx.img
 }
 EOG
 )
 if (( apply )); then
-  grep -q elementary-usb4-test $esp/grub/custom.cfg 2>/dev/null || printf '%s\n' "$entry" >>$esp/grub/custom.cfg
+  grep -q "$entry_id" $esp/grub/custom.cfg 2>/dev/null || printf '%s\n' "$entry" >>$esp/grub/custom.cfg
 else
   echo "+ append to $esp/grub/custom.cfg:$entry"
 fi
@@ -101,7 +127,7 @@ run rm -rf "$stage"
 cat <<EOM
 
 Done. $( ((apply)) || echo '(dry run: nothing was changed.)' )
-Reboot and pick "fairydust + USB4 test" in GRUB. The default entry is unchanged.
+Reboot and pick the "$sfx test" entry in GRUB. The default entry is unchanged.
 Checks: uname -r; lsmod | grep thunderbolt; ls /sys/bus/thunderbolt/devices; lsusb -t
 Rollback: pick the normal entry in GRUB. If the Mac stops before GRUB, restore boot.bin from macOS
 (mseries/fairydust/usb4/RECOVERY.md); the copy is $bak/boot.bin and $esp/m1n1/boot.bin.KNOWN-GOOD-pre-usb4-$stamp.

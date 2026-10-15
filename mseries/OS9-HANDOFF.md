@@ -48,6 +48,11 @@ Landed (experiment 1, off by default):
   / package `7.1.13+elementary.usb4-dp1` (distinct, so it cannot be confused with
   the working `-usb4` kernel). `.github/workflows/daily-9.0.yml` gained a
   `fairydust_tunnel` dispatch input.
+- `fairydust/usb4/install-ci-kernel.sh` can now select a variant
+  (`KERNEL_SUFFIX`/`KERNEL_ENTRY_ID`/`KERNEL_EXTRA_CMDLINE`; defaults unchanged)
+  and swap just the `j314s` DTB inside the existing boot image (`--swap-dtb`), so
+  the experimental kernel installs side by side as its own GRUB entry. Nothing
+  was installed or booted.
 
 Verified: patch applies cleanly to the prepared source, hashes match, `build.sh`
 syntax and the workflow YAML parse. **Not yet done: the actual kernel build/boot
