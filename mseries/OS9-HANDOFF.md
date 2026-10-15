@@ -104,9 +104,13 @@ host-router <-> dock-router and do not involve the crossbar at all. Both are the
 next cheapest steps; `fairydust/usb4/DP-TUNNEL-RE.md` has the log excerpt.
 
 Related: suspend with the dock attached remains unsafe — the next boot hung at
-`PM: suspend entry (s2idle)` and needed a power-cycle. The GRUB entry also
-accumulated `thunderbolt.dprx_timeout=3600000`, which multiplies the retry storm
-rather than helping and should go back to a small value.
+`PM: suspend entry (s2idle)` and needed a power-cycle. More importantly, the test
+boot's unplug wedged the Type-C port (deadlock in `apple_nhi_remove` vs the
+`tps6598x` mutex, triggered by a DPRX read in flight); that is diagnosed and
+documented on the `re/usb4-exp2` branch, which also carries experiment 2
+(`dprx_bypass`) and its install. The two branches have diverged in this file and
+in `DP-TUNNEL-RE.md`; consolidating them is a git-ownership decision, not one to
+make silently here.
 
 ## Monitor / dock-video decision — 2026-10-15
 

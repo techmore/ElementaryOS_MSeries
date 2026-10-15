@@ -385,10 +385,14 @@ route into `dpin0`. Because the tree is global (see above), no boot has yet run
 crossbar change was operative. Restoring the backup `boot.bin` and rebooting the
 same kernel settles that in one reboot, and is now the cheapest experiment here.
 
-Also observed: the owner added `thunderbolt.dprx_timeout=3600000` to the GRUB
-entry (custom.cfg, 15:23). That is the wrong direction — the timeout bounds the
-poll loop, so raising it to an hour multiplies the retry storm (the 25533 lines
-above came from the 12 s default). Use a *small* value when iterating.
+Also observed: the test boot itself carried no `dprx_timeout` (only
+`allow_dp_tunnel=1`), so those 25533 lines came from the module default, and the
+storm ran continuously from 14:23:00 until the dock was unplugged at 14:55:47.
+That unplug is what wedged the Type-C port — see the hazard write-up on
+`re/usb4-exp2`: unplugging while a DPRX read is in flight deadlocks
+`apple_nhi_remove` against the `tps6598x` mutex, and only a reboot clears it. The
+GRUB entry has since been changed to `thunderbolt.dprx_timeout=3600000`; prefer a
+short bound, and disarm at runtime with `dprx_bypass=1` before touching the cable.
 
 And in the next boot (boot `-1`, 15:34) the suspend attempt ends at
 `PM: suspend entry (s2idle)` with nothing after it and the machine had to be
