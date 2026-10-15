@@ -1360,3 +1360,7 @@ Goal ("beat Apple") still NOT met: light use about 9 to 10 W at 60 Hz, video 13.
 - Omarchy's Mac packages contain little power tuning; their `asahi-audio-no-suspend.conf` is the 1.2 W cost we found. Drafted (not sent) an upstream note.
 - CPU hotplug is not writable on this kernel; no data on "fewer cores".
 Open and needs the owner: a kernel build/boot test of the back-off patch; YouTube H.264 route for the browser (extension or driver VP9 support); any further on-screen test.
+
+### Idle GPU traffic attributed; owner-run lean test — 2026-10-15
+
+Tracing `gpu_scheduler:drm_sched_job_queue` for 4 s: 2,662 jobs (about 665/s): `claude-desktop` 55%, `io.elementary.terminal` 27% (hosting an OpenCode TUI session), `gala` 18%. So the agent UIs used for this work are the largest idle GPU load; the measuring session itself inflates it. A fair lean-profile and video result needs them closed, which only the owner can do. Added `powerlab/lean-test.sh` to the optimization repo (commit `42ec532`): owner-run, needs `--yes`, changes nothing on screen, opens one fullscreen muted video, reports watts and battery hours. Goal ("exceed Apple") remains NOT met; remaining levers are owner-gated: kernel build/boot of the DPRX back-off patch and a tick change, an H.264 route for YouTube in the browser, and an agent-UIs-closed lean measurement.
