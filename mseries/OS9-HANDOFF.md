@@ -25,6 +25,20 @@ Next: run the long-uptime decode check, complete the encrypted backup using the
 owner's normal backup procedure, and keep the installer and factory-image
 qualification work separate from the already-running transformed desktop.
 
+## Monitor / dock-video decision — 2026-10-15
+
+Checked the current upstream state for external-display video and recorded a
+decision in [`fairydust/usb4/DOCK-VIDEO-DECISION.md`](fairydust/usb4/DOCK-VIDEO-DECISION.md):
+use the Mac's **built-in HDMI port** (supported; DCP firmware 13.5 confirmed
+locally) as the everyday external display, or a **direct USB-C→HDMI/DP adapter
+on the front-left port** for the DP Alt Mode route. **Dock video (HDMI or DP on
+the WD22TB4) is not targeted** — it needs USB4 DisplayPort tunnelling, which is
+unimplemented; dock HDMI and dock DP are the same problem. The `fairydust` HEAD
+is `ce9f2eba` (2026-09-08), the revision this repo already builds, so there is
+nothing new to rebuild. Added read-only helper `mseries/check-display-paths.sh`
+(DCP firmware, support modules, DRM connectors, per-path verdict) and updated the
+ROADMAP open-problem row. No kernel, bootloader or audio change was made.
+
 ## New desktop bugs reported — 2026-10-13
 
 Added three separate owner-reported findings to
