@@ -527,10 +527,25 @@ before the tunnel can outlive the switch.
 
 **Our build predates it** (verified against this tree): `tb_dp_dprx_start()` still
 takes its tunnel reference unconditionally *before* the callback check
-(`tunnel.c:1123`) and `tb_stop` does not deactivate DP tunnels. A backport of that
-series is the principled way to make "unplug during a DPRX read" safe instead of
-relying on arming `dprx_bypass` first. It is not needed to run experiment 2, but
-it is the fix we should carry eventually.
+(`tunnel.c:1123`) and `tb_stop` does not deactivate DP tunnels.
+
+Concrete backport notes (v3, 7 patches, base-commit `8d3ae592…`; patches 1–6 were
+applied to `thunderbolt.git/fixes`, patch 7 is a deferred cleanup):
+
+1. `thunderbolt: Hold a router reference for each allocated HopID`
+2. `thunderbolt: Make the DP tunnel activation callback mandatory`
+3. `thunderbolt: Fix domain reference leak when DPRX read is canceled`
+4. `thunderbolt: Don't access a DP tunnel after its DPRX read was canceled`
+5. `thunderbolt: Mark discovered tunnels as active`
+6. `thunderbolt: Tear down inactive DP tunnels when the domain is stopped`
+7. `thunderbolt: Drop the DP tunnel activation callback data` (deferred)
+
+It touches `switch.c`, `tb.c`, `test.c`, `tunnel.c`, `tunnel.h` — and it rewrites
+`tb_dp_wait_dprx` / `tb_dp_dprx_work` and `tb_stop`, **exactly where experiment 2
+inserts `dprx_bypass`**. A backport therefore has to be rebased *on top of*
+`0002-experimental-dp-tunnel.patch`, not applied beside it. It is not needed to
+run experiment 2 — the bypass plus a bounded timeout already close the hazard — so
+this is a deliberate later step, not a test-day change.
 
 ### 6.4 The macOS crossbar trace already exists — and it matches experiment 1
 
@@ -726,13 +741,18 @@ is the principled fix rather than relying on the bypass.
   (`tb_dp_wait_dprx`, `tb_dp_dprx_work`), `drivers/thunderbolt/tb.c`
   (`tb_dp_tunnel_active`), `drivers/thunderbolt/switch.c` (`tb_dp_port_enable`).
 - Upstream teardown fix (predates our base): Sven Peter, "thunderbolt: Fix DP
-  tunnel teardown while an async DPRX read is running", v3, 2026-08-29
-  (`patchew.org/linux/20260829-b4-tbt-fixes-v3-0-e1fab6ac54fe@kernel.org`); six
-  of seven applied to `thunderbolt.git/fixes`.
+  tunnel teardown while an async DPRX read is running", v1 5-patch series
+  2026-08-17 (later v3, 7 patches, 2026-08-29); six of seven applied to
+  `thunderbolt.git/fixes`. Our base is pre-fix: `tb_dp_dprx_start()` still takes
+  its reference unconditionally (`tunnel.c:1123`) and `tb_stop()` does not
+  deactivate DP tunnels.
 - "Two separate MMIO blocks … DP IN PHY … display crossbar": Sven Peter, LKML
-  2026-08-18, `Re: [PATCH 1/5] thunderbolt: Fix tunnel reference leak…`.
-- Asahi USB4 status (`tbt-reset-wip`, XDomain only) and the 19-patch upstream
-  series (Phoronix, 2026-08-31, "no PCIe or DisplayPort tunneling yet").
+  2026-08-18, `Re: [PATCH 1/5] thunderbolt: Fix tunnel reference leak…`
+  (`spinics.net/lists/kernel/msg6385777.html`).
+- Asahi USB4 bring-up WIP: `github.com/AsahiLinux/linux/commits/tbt-reset-wip/`
+  (tip 2026-08-24; ACIO/NHI/quirks only, **no DP bring-up**), plus the 19-patch
+  upstream series (Phoronix, 2026-08-31, "no PCIe or DisplayPort tunneling yet").
+  Checked 2026-10-15: nothing newer to import.
 - macOS crossbar MMIO traces: Janne Grunau gists
   `b9d6826fa649b712463c10f7651dd01d` (TB dock) and
   `80a8330219920295d534b76c2b4cabec` (4 displays).
