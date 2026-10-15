@@ -76,7 +76,7 @@ step_wattmeter() {
   run bash "$repo/mseries/install-battery-eta.sh"
 }
 
-[[ $dry -eq 1 ]] && echo "DRY RUN: nothing will be changed." || { echo "Applying: ${only[*]}"; sudo -v; }
+[[ $dry -eq 1 ]] && echo "DRY RUN: nothing will be changed." || { echo "Applying: ${only[*]}"; sudo -n true 2>/dev/null || sudo -v; }
 for step in "${only[@]}"; do
   echo "== $step"
   if ! "step_$step"; then failures+=("$step"); echo "  step $step FAILED; continuing" >&2; fi
