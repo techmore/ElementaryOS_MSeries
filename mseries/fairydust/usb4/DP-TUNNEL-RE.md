@@ -217,6 +217,20 @@ is untouched. The command-line parameter is belt-and-braces — the module
 parameter can also be flipped at runtime with
 `modprobe thunderbolt allow_dp_tunnel=1`.
 
+Verified non-root on this machine (`swap-dtb.py` against the live
+`/boot/m1n1/boot.bin`): the DTB run is found (110 trees, offsets 3932160 to
+8725127), exactly one tree matches `apple,j314s` (#25, 93189 bytes), and an
+identity swap reproduces the input byte for byte
+(`sha256 5cbc5f30019209072d32fdd2d53122a81348129f6ab4c58959b5a2fdf8539d55`). The
+script re-parses its own output and asserts the gzip U-Boot tail is unchanged.
+Because it splices the tree in place, later trees and the tail shift by the size
+delta; that is fine because the consumers scan the magic/size headers rather
+than using absolute offsets.
+
+`install-ci-kernel.sh` requires root (it writes to the ESP, `depmod`, a chroot
+`mkinitcpio` and GRUB), and `sudo` on this machine asks for a password, so the
+dry run and the `--apply` both have to be launched from a real terminal.
+
 ### Test
 
 Boot the experimental kernel with `thunderbolt.allow_dp_tunnel=1` (or

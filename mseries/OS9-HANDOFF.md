@@ -59,6 +59,12 @@ Landed (experiment 1, off by default):
   Verified `proxyclient/tools/run_guest.py --help` and the tracer imports work.
   `proxyclient/hv/` already ships `trace_dcp.py` (AFK/ASC endpoint tracer) and
   `trace_dptx.py`, so the macOS trace is now a tooling-free step.
+- Validated the `--swap-dtb` install step without root: against the live
+  `/boot/m1n1/boot.bin`, `swap-dtb.py` finds the 110-tree DTB run, matches
+  exactly one `apple,j314s` tree (#25, 93189 bytes) and an identity swap
+  reproduces the input byte for byte (sha256 `5cbc5f30…`). `sudo` here wants a
+  password and there is no TTY for the agent, so the dry run and `--apply` must
+  be launched from a real terminal.
 
 Verified: patch applies cleanly to the prepared source, hashes match, `build.sh`
 syntax and the workflow YAML parse. **Not yet done: the actual kernel build/boot
