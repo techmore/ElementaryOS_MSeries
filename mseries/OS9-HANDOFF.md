@@ -65,6 +65,14 @@ Landed (experiment 1, off by default):
   reproduces the input byte for byte (sha256 `5cbc5f30…`). `sudo` here wants a
   password and there is no TTY for the agent, so the dry run and `--apply` must
   be launched from a real terminal.
+- CI run `38776005043` built the experiment-1 kernel (25m17s; the ISO job in the
+  same run failed and is unrelated) from `083f3a19`. Verified without root: the
+  `.deb` checksums pass, release is `7.1.13-elementary-fairydust-usb4-dptunnel`,
+  the DTB is at the path `--swap-dtb` expects, the compiled DTB has
+  `dcp@28cc00000` (dcpext1) `mux-controls = (153,1)` (dpin0) vs `(153,0)`
+  (dpphy) in the working boot.bin with the HDMI node unchanged, and
+  `appledrm.ko`/`thunderbolt.ko` carry `force_link` and the `allow_dp_tunnel`
+  module parameter respectively. Nothing installed or booted.
 
 Verified: patch applies cleanly to the prepared source, hashes match, `build.sh`
 syntax and the workflow YAML parse. **Not yet done: the actual kernel build/boot

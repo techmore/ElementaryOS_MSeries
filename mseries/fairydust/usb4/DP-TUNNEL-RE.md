@@ -196,6 +196,29 @@ or the `.github/workflows/daily-9.0.yml` dispatch with `fairydust_tunnel = true`
 The experimental kernel uses release `7.1.13-elementary-fairydust-usb4-dptunnel`
 so it cannot be confused with the working `...-usb4` kernel.
 
+### Built artifact (2026-10-15, CI run 38776005043)
+
+The run for branch `docs/dock-video-decision`, source commit
+`083f3a19ef63de52f8ad8f4ae81c1607c4b3c2aa`, produced the package; it checks out
+statically without root:
+
+- `linux-image-7.1.13-elementary-fairydust-usb4-dptunnel_7.1.13+elementary.usb4-dp1_arm64.deb`
+  with a clean `SHA256SUMS`; release string
+  `7.1.13-elementary-fairydust-usb4-dptunnel` (so `uname -r` distinguishes it).
+- The DTB ships at `usr/lib/linux-image-<release>/apple/t6000-j314s.dtb`, i.e.
+  exactly the path `install-ci-kernel.sh --swap-dtb` uses.
+- **The device-tree change is in the compiled DTB.** `dcp@28cc00000` (dcpext1)
+  has `mux-controls = (phandle 153, 1)` — index 1 is `dpin0` — where the working
+  boot.bin has `(phandle 153, 0)`, `dpphy`. `mux-index` is still 2, and the HDMI
+  node `dcp@289c00000` is unchanged at `(146, 0)`.
+- **The code changes are in the modules.** `appledrm.ko` exports the `force_link`
+  debugfs attribute, and `modinfo -p thunderbolt.ko` lists
+  `allow_dp_tunnel:leave DP tunneling enabled on Apple host routers
+  (experimental) (bool)`.
+
+The ISO job in the same run fails ("Build experimental arm64 image", unrelated
+to the kernel); only the `fairydust-kernel-packages-*` artifact is used here.
+
 ### Install (from the CI artifact)
 
 The experimental kernel installs *side by side* with the working one, as its own
@@ -253,7 +276,8 @@ sudo bash mseries/fairydust/usb4/test-dp-tunnel.sh
   route is wrong (try `dpin1`, `<&atcphy1_xbar 2>`), the DCP did not actually
   start (check `dcp_dptx_connect` lines and the crossbar
   `Switched dpin0 to dispext1,0` line), or the ACIO DP IN adapter needs
-  explicit enablement.
+  explicit enablement. The `thunderbolt.dprx_timeout` parameter (ms, `-1` waits
+  forever) makes a single attempt easier to watch in `dmesg`.
 - **Danger signal:** loss of the USB4 link / dock USB devices when the DCP
   drives. `dcpext1` has no Type-C-mux fwnode (`fwnode_typec_mux_get() returned:
   0`), so its `typec_mux_set()` is never called and it cannot reconfigure
