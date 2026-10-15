@@ -12,6 +12,7 @@ depends on.
     boot-dt.py --in boot.bin --mux-arg 0 --out new.bin  # crossbar back to dpphy
     boot-dt.py --in boot.bin --ablate-dp-tunnel --out new.bin
     boot-dt.py --in boot.bin --restore-dp-tunnel --out new.bin
+    boot-dt.py --in /boot/m1n1/boot.bin --variants DIR  # all four A/B/C/D images
 
 Every edit is a length-preserving byte patch, so m1n1, the other DTBs and the
 gzip tail stay byte-identical and nothing has to be rebuilt or recompressed.
@@ -212,6 +213,88 @@ def patch(buf, base, size, args):
         print("(dry run: no --out given, nothing written)")
 
 
+# The ablation matrix from EXP2-RUNBOOK.md section 3: one byte each (the
+# mux-controls arg) plus one property-name rename, no rebuild, no CI.
+CONFIGS = [
+    ("A", 1, True, "experiments 1+2 together (the installed state)"),
+    ("B", 1, False, "experiment 2 alone: DCP leaves atcphy NULL; crossbar still dpin0"),
+    ("C", 0, True, "experiment 1 alone: crossbar back to dpphy; DCP change still on"),
+    ("D", 0, False, "baseline tree: only allow_dp_tunnel=1 differs from stock"),
+]
+
+
+def apply_state(buf, base, size, mux_arg, tunnel):
+    """Return (bytes, [change...]) forcing the requested mux arg and tunnel state.
+
+    Unlike patch(), this is idempotent and always usable, so every variant can
+    be generated from any starting image (installed, ablated or stock).
+    """
+    out = bytearray(buf)
+    changed = []
+    props = {}
+    for path, name, off, val in parse_tree(buf, base, size):
+        props.setdefault(path, {})[name] = (off, val)
+
+    node = [q for q in props if q.endswith("/dcp@28cc00000")]
+    if not node:
+        raise SystemExit("node dcp@28cc00000 not found")
+    node = props[node[0]]
+
+    off, val = node["mux-controls"]
+    old = struct.unpack(">I", val[4:8])[0]
+    if old != mux_arg:
+        out[off + 4:off + 8] = struct.pack(">I", mux_arg)
+        changed.append(f"mux-controls arg {old} -> {mux_arg}")
+
+    if tunnel and TUNNEL_ALIAS.decode() in node:
+        i = bytes(out).find(TUNNEL_ALIAS + b"\0")
+        out[i:i + len(TUNNEL_ALIAS)] = TUNNEL_PROP
+        changed.append("apple,dp-tunnel restored")
+    elif not tunnel and TUNNEL_PROP.decode() in node:
+        i = bytes(out).find(TUNNEL_PROP + b"\0")
+        out[i:i + len(TUNNEL_PROP)] = TUNNEL_ALIAS
+        changed.append("apple,dp-tunnel ablated")
+
+    return bytes(out), changed
+
+
+def variants(args):
+    buf = args.src.read_bytes()
+    start, run, end = find_run(buf)
+    key = args.match.encode()
+    hits = [(k, o, n) for k, (o, n) in enumerate(run) if key + b"\0" in buf[o:o + n]]
+    if len(hits) != 1:
+        raise SystemExit(f"expected exactly one DTB matching {args.match}, found {len(hits)}")
+    k, base, size = hits[0]
+    tail = buf[end:]
+
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+    lines = [
+        f"source : {args.src}",
+        f"source sha256 : {hashlib.sha256(buf).hexdigest()}",
+        f"DTB match #{k}, {size} bytes, tree sha256 {hashlib.sha256(buf[base:base + size]).hexdigest()}",
+        "",
+        "Each file is a complete boot.bin. To test one:",
+        "  sudo cp config-X.bin /boot/m1n1/boot.bin   # reboot after",
+        "Restore the working image with the pre-experiment backup, not config-A,",
+        "unless config-A IS the installed state (check the sha256 above).",
+        "",
+    ]
+    for letter, mux, tunnel, why in CONFIGS:
+        out, changed = apply_state(buf, base, size, mux, tunnel)
+        assert out[end:] == tail, "tail (gzip U-Boot) changed"
+        path = args.out_dir / f"config-{letter}.bin"
+        path.write_bytes(out)
+        route = "dpin0" if mux == 1 else "dpphy"
+        state = "present" if tunnel else "ablated"
+        print(f"config {letter}: --mux-arg {mux} ({route}), apple,dp-tunnel {state} "
+              f"({len(changed)} edit(s)): {why}")
+        lines.append(f"config-{letter}.bin  mux-arg={mux} ({route})  "
+                     f"apple,dp-tunnel={state}  sha256={hashlib.sha256(out).hexdigest()}  {why}")
+    (args.out_dir / "MANIFEST.txt").write_text("\n".join(lines) + "\n")
+    print(f"\nwrote {len(CONFIGS)} images + MANIFEST.txt to {args.out_dir}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -226,12 +309,18 @@ def main():
     ap.add_argument("--restore-dp-tunnel", action="store_true",
                     help="restore the real apple,dp-tunnel name")
     ap.add_argument("--out", type=Path, help="write the patched boot.bin here")
+    ap.add_argument("--variants", dest="out_dir", type=Path,
+                    help="write the A/B/C/D boot.bin variants + MANIFEST.txt to this directory")
     a = ap.parse_args()
 
     if a.ablate_dp_tunnel and a.restore_dp_tunnel:
         ap.error("--ablate-dp-tunnel and --restore-dp-tunnel are mutually exclusive")
     if not a.src.is_file():
         ap.error(f"{a.src} not found (boot.bin is root-only readable on some systems; use sudo)")
+
+    if a.out_dir:
+        variants(a)
+        return
 
     buf = a.src.read_bytes()
     start, run, end = find_run(buf)

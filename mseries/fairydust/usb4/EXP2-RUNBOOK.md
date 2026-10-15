@@ -7,6 +7,34 @@ than one question per reboot without waiting for CI.
 
 Background and the full reverse-engineering map: [`DP-TUNNEL-RE.md`](DP-TUNNEL-RE.md).
 The measured hazard that cost us the last machine: `DP-TUNNEL-RE.md` section 9.
+Offline source/upstream analysis (what `dprx_bypass` really does, and the missing
+upstream "DP IN PHY"): `DP-TUNNEL-RE.md` section 6.
+
+---
+
+## Resume map — where everything lives (2026-10-15)
+
+If this session is lost, this is the fastest way back.
+
+- **Doc branch:** `docs/dock-video-decision` — this runbook, `DP-TUNNEL-RE.md`,
+  `boot-dt.py`, `test-dp-tunnel.sh`, installer (PR #53). The experiment-2 kernel
+  *implementation* is on branch `re/usb4-exp2` (`94c6e84`, CI run `38788230910`);
+  the two are deliberately kept separate. If you rebuild locally, sync **both**
+  `mseries/fairydust/usb4/0002-experimental-dp-tunnel.patch` **and** the sha256 pin
+  in `mseries/fairydust/debian/build.sh` from `re/usb4-exp2`, or just reinstall
+  from the stash below.
+- **Reinstallable artifact stash:** `/home/sdolbec/dp-tunnel-artifacts/exp2/`
+  (exp-2 kernel `.deb`, `fairydust-m1n1-boot.bin`, checksums, build log). No
+  download needed to reinstall.
+- **Pre-generated tree variants:** `/home/sdolbec/dp-tunnel-artifacts/boot-variants/`
+  (`config-A..D.bin` + `MANIFEST.txt`) — the ablation matrix as ready files.
+  Regenerate any time: `boot-dt.py --in /boot/m1n1/boot.bin --variants DIR`.
+- **Experiment-1 boot evidence:** `/home/sdolbec/dptunnel-logs/`
+  (`dmesg-failed-boot.txt`, `journal-failed-boot.txt`, `state-failed-boot.txt`).
+- **Live-image backups:** `/boot/m1n1/boot.bin.KNOWN-GOOD-pre-usb4-20261015-140455`
+  and `/root/usb4-backup-20261015-140455/boot.bin`.
+- **`/tmp` is tmpfs** and does not survive a reboot; keep everything under
+  `/home`.
 
 ---
 
@@ -131,6 +159,14 @@ Read the collector's counters:
 | `card2-DP-1 status: connected` | **first light** — link up, EDID over AUX worked | if still black it is now a mode-set problem, not a link problem: check `drm_info` / Gala display settings |
 | `activation complete 0` and no `DP IN available` | the CM never paired anything: no live sink on the dock's port | try the dock's other DP/HDMI port (below) |
 
+**Hold the right expectation for `dprx_bypass`.** By the source (`DP-TUNNEL-RE.md`
+section 6.1) the bypass only stops the *kernel* waiting: the router's DP IN
+adapter still has to fill `DP_LOCAL_CAP` from its own AUX read of the sink. If the
+sink never answered, the bypass gets you "tunnel active" but a picture cannot
+follow. So treat it as a **fabric probe**, not a fix: "the tunnel reaches
+activation complete and the timeout storm stops" is success *for the probe*, and
+still expects `card2-DP-1: disconnected`.
+
 The DCP firmware does its own sink detection on the tunnelled path (measured:
 `acking unhandled call 20` = `INACTIVE_SINK_DETECTED`, `DP-TUNNEL-RE.md`). The
 collector prints a call census, so watch it: calls 5/6/7/9 (link config, link
@@ -158,6 +194,25 @@ signal than a quiet log.
 each of these is a one-byte change to `boot.bin` (no rebuild, no CI, no
 recompression) followed by a reboot. Keep the known-good image safe and always
 write to a copy first.
+
+The whole matrix is **already generated** in
+`/home/sdolbec/dp-tunnel-artifacts/boot-variants/` (`config-A..D.bin` +
+`MANIFEST.txt`), so each config is a single `cp` + reboot:
+
+```bash
+D=/home/sdolbec/dp-tunnel-artifacts/boot-variants
+sudo cp $D/config-A.bin /boot/m1n1/boot.bin    # then reboot
+python3 mseries/fairydust/usb4/boot-dt.py --in /boot/m1n1/boot.bin   # confirm
+```
+
+Regenerate them from the current image at any time (idempotent; `config-A.bin`
+comes out byte-identical when the live tree is the installed state):
+
+```bash
+python3 mseries/fairydust/usb4/boot-dt.py --in /boot/m1n1/boot.bin --variants $D
+```
+
+The individual edits are still available if you want one-off changes:
 
 ```bash
 sudo cp -n /boot/m1n1/boot.bin /boot/m1n1/boot.bin.$(date +%Y%m%d-%H%M%S)   # once

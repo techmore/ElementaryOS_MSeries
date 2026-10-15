@@ -1,7 +1,10 @@
 # USB4 DisplayPort tunneling on M1 Pro (dock video) — reverse-engineering map
 
 Status: **experiment 1 installed and tested on hardware — the tunnel activates, the
-sink never answers; experiment 2 built and installed; runbook ready** (2026-10-15).
+sink never answers; experiment 2 built and installed; runbook ready. Offline
+source/upstream analysis added 2026-10-15 (section 6): `dprx_bypass` can bring the
+fabric up but cannot produce video, and the missing piece is upstream's "DP IN
+PHY".** (2026-10-15).
 Next hardware session: [`EXP2-RUNBOOK.md`](EXP2-RUNBOOK.md).
 Scope: make the Dell WD22TB4's HDMI/DP outputs work, i.e. tunnel DisplayPort
 from the display controller (`DCP`) through the USB4 host router (`ACIO`) to the
@@ -390,9 +393,9 @@ same kernel settles that in one reboot, and is now the cheapest experiment here.
 Also observed: the test boot itself carried no `dprx_timeout` (only
 `allow_dp_tunnel=1`), so those 25533 lines came from the module default, and the
 storm ran continuously from 14:23:00 until the dock was unplugged at 14:55:47.
-That unplug is what wedged the Type-C port — see the hazard write-up on
-`re/usb4-exp2`: unplugging while a DPRX read is in flight deadlocks
-`apple_nhi_remove` against the `tps6598x` mutex, and only a reboot clears it. The
+That unplug is what wedged the Type-C port — see section 9: unplugging while a
+DPRX read is in flight deadlocks `apple_nhi_remove` against the `tps6598x` mutex,
+and only a reboot clears it. The
 GRUB entry has since been changed to `thunderbolt.dprx_timeout=3600000`; prefer a
 short bound, and disarm at runtime with `dprx_bypass=1` before touching the cable.
 
@@ -429,7 +432,144 @@ for the best..."), and call 20 is `DPTX_APCALL_INACTIVE_SINK_DETECTED`
   firmware is driving the link — a much better success signal than a clean log.
   `test-dp-tunnel.sh` now prints a call census.
 
-## 6. Next experiments
+## 6. What the source and upstream say — offline analysis, 2026-10-15
+
+Written while the dock was unavailable, by reading the pinned tree
+(`ce9f2eba`, fairydust on 7.1) and the public Asahi/LKML record. No hardware was
+touched. This is the interpretation the next hardware session should carry.
+
+### 6.1 Who sets `DPRX_DONE`, and what `dprx_bypass` actually buys
+
+`tb_dp_wait_dprx()` (`tunnel.c:1063`) polls the **host router's own DP IN
+adapter** — `tunnel->src_port`, our `0:5` — for bit 31 of `DP_COMMON_CAP`
+(`DP_COMMON_CAP_DPRX_DONE`). The kernel does not do the AUX exchange: the router
+hardware does, and it sets the bit (and fills `DP_LOCAL_CAP` / `DP_REMOTE_CAP`)
+once its read of the downstream sink completes. The DP IN adapter is armed at the
+end of `tb_dp_activate()` by `tb_dp_port_enable(in, true)`
+(`switch.c:1535`), which sets `ADP_DP_CS_0_VE | ADP_DP_CS_0_AE` (Video Enable +
+AUX Enable) — that is the trigger for the state machine.
+
+Experiment 2's `dprx_bypass=1` makes `tb_dp_wait_dprx()` return 0 immediately.
+Consequences, exactly:
+
+- the retry storm stops (the collector's `DPRX read timeout` counter freezes);
+- `tb_dp_dprx_work()` marks the tunnel active at once;
+- the activation callback `tb_dp_tunnel_active()` (`tb.c:1907`) then reads the
+  consumed bandwidth; because the wait now returns 0 it takes the
+  bandwidth-allocation-mode branch (`tb_dp_bandwidth_mode_consumed_bandwidth()`),
+  which reads `DP_LOCAL_CAP`.
+
+And here is the limit: the comment at `tunnel.c:1203` states that `DP_LOCAL_CAP`
+"gets updated to the lowest AUX read parameter values". If the AUX read never
+happened, that register still holds its reset/default value — not the sink's real
+caps. **Therefore `dprx_bypass` can bring the fabric up but cannot produce video.
+It is a fabric probe, not a fix.** Treat "tunnel active + no picture" under bypass
+as the expected, informative outcome, not a regression.
+
+Upstream says the same thing in its own words: `tb_dp_tunnel_active()`'s failure
+branch warns that DPRX negotiation most likely did not complete "because there is
+no graphics driver loaded or **not all DP cables where connected to the discrete
+router**" (`tb.c:1949`). That is a sink/cable-side symptom, which is why tomorrow
+is as much a sink question as a host question.
+
+### 6.2 Upstream status: nothing newer to import, and the pieces named
+
+- Asahi's own documentation states the hardware *can* do it: `dcp`/`dcpext`
+  "USB-C ports: DP altmode, or USB4 tunneling with 2 controllers max per port."
+  The controller support is the gap, not the silicon.
+- The author of the Apple drivers, Sven Peter, on why DP tunnels do not work on
+  Apple yet (LKML, 2026-08-18, `Re: [PATCH 1/5] thunderbolt: Fix tunnel reference
+  leak...`):
+
+  > the only reason DP tunnels don't work yet is because they need **two separate
+  > MMIO blocks** (what macOS calls **"DP IN PHY"** and **"display crossbar"**) and
+  > possibly also the **display co-processor** to be up. Once that's done they
+  > should come up normally.
+
+  Mapping onto this document: *display crossbar* = `apple-display-crossbar`
+  (experiment 1); *display co-processor* = the DCP (experiment 2); **"DP IN PHY"
+  is a third block we have not identified or programmed.**
+- The Asahi `tbt-reset-wip` branch is the bring-up work: "only XDomain works
+  since pcie, dp and usb3 tunnels need more bringup work, and not all cables work
+  because I'm not forwarding the information like Apple's NHI expects them just
+  yet." So there is no finished upstream DP-tunnel implementation to adopt; the
+  most up-to-date method *is* mimicking macOS (section 8).
+- Phoronix, 2026-08-31, on the 19-patch USB4/Thunderbolt series for M1/M2/M3:
+  "Right now only XDomain connections and USB3-via-USB4 tunnels are supported.
+  Both PCIe and DisplayPort tunnels will come later since those require
+  additional work and reverse engineering that is not done yet."
+- The DRM core does now ship DP-tunnel helpers (`DRM_DISPLAY_DP_TUNNEL`,
+  `drivers/gpu/drm/display/drm_dp_tunnel.c`, Imre Deak) — but they are written for
+  i915/discrete-GPU BWA, and the Apple DCP does not use them. They are useful as a
+  *description* of the DP-tunnel register model (tunneling OUI, DP IN adapter
+  info, BW granularity, allocated/estimated BW, DPTX bandwidth-allocation mode).
+
+### 6.3 Our unplug hazard is a known upstream bug, with a fix we predate
+
+`DP-TUNNEL-RE.md` section 9 records that unplugging the dock with a DPRX read in
+flight wedges the Type-C port. That is not our bug:
+
+> On the Apple NHI unplugging the cable runs into just that reliably because the
+> read can never finish right now and because the unplug powers down the entire
+> USB4 complex and removes the NHI device.
+
+It is the motivation for Sven's series **"thunderbolt: Fix DP tunnel teardown
+while an async DPRX read is running"** (v1 2026-08-17, v2 08-23, v3 08-29; six of
+seven patches applied to `thunderbolt.git/fixes`). It makes `tb_stop` tear down
+inactive DP tunnels, holds a router reference per HopID, and cancels the DPRX work
+before the tunnel can outlive the switch.
+
+**Our build predates it** (verified against this tree): `tb_dp_dprx_start()` still
+takes its tunnel reference unconditionally *before* the callback check
+(`tunnel.c:1123`) and `tb_stop` does not deactivate DP tunnels. A backport of that
+series is the principled way to make "unplug during a DPRX read" safe instead of
+relying on arming `dprx_bypass` first. It is not needed to run experiment 2, but
+it is the fix we should carry eventually.
+
+### 6.4 The macOS crossbar trace already exists — and it matches experiment 1
+
+The crossbar MMIO reference we planned to capture from macOS is already in the
+Asahi record, captured by Janne Grunau's `DisplayCrossbarTracer`:
+
+- `gist.github.com/jannau/b9d6826fa649b712463c10f7651dd01d` — *m1 Max → HP G4
+  Thunderbolt dock → TB3 display + DP display*
+- `gist.github.com/jannau/80a8330219920295d534b76c2b4cabec` — *M1 Max, 4 external
+  displays: atc1 DP-alt, atc2 TB dock + TB + HDMI, atc3 built-in HDMI*
+
+For the dock port (`atc2-dpxbar`), macOS writes, in order:
+`CROSSBAR_MUX_CTRL = 0x2000` then `0x2002` → `DPIN0_SELECT0` / `DPIN0_SELECT1 =
+0x2 = DISPEXT_1_0`; `UNK_TUNABLE = 0x5 (T6000)`; a `FIFO_WR/RD_N_CLK_EN` clock
+dance; `OUT_N_CLK_EN`; `OUT_UNK_EN = 0x1 (DPIN0)`; `FIFO_WR_DPTX_CLK_EN`;
+`FIFO_RD_PCLK1_EN`; `OUT_PCLK1_EN = 0x1`; `CROSSBAR_ATC_EN = 0x1 (DPIN0)`;
+`CROSSBAR_DISPEXT_EN = 0x4 (DISPEXT_1_0)`.
+
+Two conclusions:
+
+1. **macOS routes `dispext1,0` to `DPIN0`** — literally experiment 1's
+   `&atcphy1_xbar 1` (mux state 2). The crossbar choice was right.
+2. Our `apple_dpxbar_set()` (`apple-display-crossbar.c:224`, MUX_DPIN0) writes the
+   same register set, and the driver writes the T6000 `UNK_TUNABLE = 5` at probe
+   (`apple_dpxbar_hw_t6000.tunable = 5`). So the crossbar half is
+   upstream-equivalent — it is **not** the missing piece, which is consistent with
+   experiment 1 reaching path activation.
+
+### 6.5 The open lead: the "DP IN PHY"
+
+There is no `dp-in-phy` node or driver in our tree. The crossbar is a single
+16 KiB `mux@…304c000`; the host router and NHI live inside the ACIO
+(`cio@b01ac0000`, with `nhi@f00000` as a child); and the DP IN adapters are
+reached *only* through router config space via `tb_dp_port_enable()` and friends.
+So whatever macOS programs as a second "DP IN PHY" block is, by our model,
+unaccounted for — and it is the best explanation for a host router whose DPRX
+state machine never reports a sink even though the crossbar, the DCP and the
+tunnel fabric are all up.
+
+Next finding target (still needs the macOS trace / ioreg or a device-tree dump
+under m1n1): identify that block, its MMIO range, and its bring-up sequence. That
+is a sharper question than "who triggers the DCP", because experiment 1 already
+showed the firmware does its own sink detection (section 5, call 20).
+
+## 7. Next experiments
 
 1. **A/B the crossbar route, and exercise `force_link`** (cheapest — do this
    first). The hardware run above leaves one ambiguity: no boot has yet combined
@@ -472,7 +612,7 @@ for the best..."), and call 20 is `DPTX_APCALL_INACTIVE_SINK_DETECTED`
 6. Only then: the DCP firmware protocol for a *tunnelled* DPTX endpoint, guided
    by a macOS trace.
 
-## 7. The sanctioned RE method (for step 6)
+## 8. The sanctioned RE method
 
 Per [`README.md`](README.md) and [`RECOVERY.md`](RECOVERY.md), and per the
 ice3186/linux prototype, the last unknown — how the DCP starts a *tunnelled*
@@ -510,11 +650,51 @@ for a tunnelled endpoint, AUX routing, HPD direction, and the
 This cannot be done from this machine alone (one computer, no second host
 attached); it is the one genuinely blocking dependency.
 
-## 8. References
+## 9. Hazard: unplugging the dock with a DPRX read in flight
+
+**Measured 2026-10-15.** During experiment 1 the dock was unplugged at 14:55:47
+while the host router's DPRX read was still running (`dprx_timeout=-1`/module
+default, so the read never stopped). The Type-C port wedged: `apple_nhi_remove`
+deadlocked against the `tps6598x` (CD321x) mutex, and the port stayed dead — no
+hotplug, no USB, no charging — until a hard power-cycle. Nothing at runtime
+clears it.
+
+Rules that follow, in order of preference:
+
+1. **Never unplug the dock while a DPRX read is in flight.** Arm
+   `dprx_bypass=1` *before* attaching the dock (runbook section 1.2): with the
+   bypass the read returns instantly, which removes the window.
+2. If the bypass is not armed, bound the read instead of leaving it open:
+   `thunderbolt.dprx_timeout=<a few seconds>`, not `-1`/an hour. The entry
+   currently carries `3600000` ms; a short value is safer.
+3. Do not suspend with the USB4 dock attached (the next boot hung at
+   `PM: suspend entry (s2idle)` and needed a power-cycle; `CUTOVER.md` warns of
+   the same).
+
+This is a known upstream bug with a fix we predate — see section 6.3; backporting
+Sven Peter's "Fix DP tunnel teardown while an async DPRX read is running" series
+is the principled fix rather than relying on the bypass.
+
+## 10. References
 
 - Crossbar: `drivers/mux/apple-display-crossbar.c` (Sven Peter).
 - DCP DPTX endpoint: `drivers/gpu/drm/apple/dptxep.c`, `dptxep.h`.
 - Host router: `drivers/thunderbolt/apple.c` (block diagram in the header).
+- DPRX / async activation: `drivers/thunderbolt/tunnel.c`
+  (`tb_dp_wait_dprx`, `tb_dp_dprx_work`), `drivers/thunderbolt/tb.c`
+  (`tb_dp_tunnel_active`), `drivers/thunderbolt/switch.c` (`tb_dp_port_enable`).
+- Upstream teardown fix (predates our base): Sven Peter, "thunderbolt: Fix DP
+  tunnel teardown while an async DPRX read is running", v3, 2026-08-29
+  (`patchew.org/linux/20260829-b4-tbt-fixes-v3-0-e1fab6ac54fe@kernel.org`); six
+  of seven applied to `thunderbolt.git/fixes`.
+- "Two separate MMIO blocks … DP IN PHY … display crossbar": Sven Peter, LKML
+  2026-08-18, `Re: [PATCH 1/5] thunderbolt: Fix tunnel reference leak…`.
+- Asahi USB4 status (`tbt-reset-wip`, XDomain only) and the 19-patch upstream
+  series (Phoronix, 2026-08-31, "no PCIe or DisplayPort tunneling yet").
+- macOS crossbar MMIO traces: Janne Grunau gists
+  `b9d6826fa649b712463c10f7651dd01d` (TB dock) and
+  `80a8330219920295d534b76c2b4cabec` (4 displays).
+- DRM DP-tunnel helpers (i915-side model): `drivers/gpu/drm/display/drm_dp_tunnel.c`.
 - Upstream state: `fairydust` HEAD `ce9f2eba72c061a50b2d790450e90af3439d8c24`
   (2026-09-08, = our build baseline). DP Alt Mode is "WIP"; Thunderbolt is
   "WIP" with no DP tunneling. Asahi feature table, M1 Pro/Max/Ultra.

@@ -2,6 +2,38 @@
 
 Updated 2026-10-15. Repository: techmore/ElementaryOS_MSeries.
 
+## USB4 dock video — resume here (2026-10-15)
+
+Active workstream: make the Dell WD22TB4's HDMI/DP output work on the 14-inch M1
+Pro over USB4 DisplayPort tunnelling. The dock is unavailable until 2026-10-16, so
+the state below is "prepared and waiting", not "finished".
+
+- **Experiment 1** (crossbar route `dispext1 -> dpin0` plus
+  `thunderbolt.allow_dp_tunnel=1`) is installed and was tested on hardware on
+  2026-10-15: the USB4 connection manager activates the Video and AUX paths, but
+  every attempt dies at the sink's DPCD read (`DPRX read timeout` ×25533). No
+  picture. Full result: `fairydust/usb4/DP-TUNNEL-RE.md` section 5.
+- **Experiment 2** — kernel `7.1.13-elementary-fairydust-usb4-dptunnel`, built by
+  CI run `38788230910` from branch `re/usb4-exp2` — is installed side by side with
+  the working kernel and is the next thing to test. It adds a runtime
+  `thunderbolt.dprx_bypass`, leaves the ATC DP PHY unbound for the tunnelled
+  connector (`apple,dp-tunnel`), and a per-connector `force_link` debugfs handle.
+- **Start with `fairydust/usb4/EXP2-RUNBOOK.md`**: it has the resume map, the
+  step-by-step test, the decision tree and the ablation matrix, and the four
+  boot-tree variants (`config-A..D.bin`) are pre-generated under
+  `/home/sdolbec/dp-tunnel-artifacts/boot-variants/`.
+- The full reverse-engineering map, the 2026-10-15 offline analysis (why
+  `dprx_bypass` can bring the fabric up but cannot produce video; upstream's
+  missing "DP IN PHY" block; the upstream teardown fix we predate) and the cable
+  hazard are in `fairydust/usb4/DP-TUNNEL-RE.md`.
+- **Measured hazard:** do *not* unplug the dock while a DPRX read is in flight —
+  it deadlocks `apple_nhi_remove` against the `tps6598x` mutex and wedges the
+  Type-C port until a hard reboot. Arm `dprx_bypass=1` before attaching the dock.
+- **Where the work lives:** documentation on branch `docs/dock-video-decision`
+  (PR #53); the experiment-2 kernel implementation on branch `re/usb4-exp2`;
+  durable artifacts (kernel `.deb`, boot images, logs, backups) under
+  `/home/sdolbec/dp-tunnel-artifacts/` and `/home/sdolbec/dptunnel-logs/`.
+
 ## Current hardware state — 2026-10-14
 
 The transformed elementary OS 9 desktop is running on a 14-inch M1 Pro through
