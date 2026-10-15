@@ -1285,3 +1285,13 @@ dependency/license audit used repository installers and installed package
 metadata, and the build refuses missing upstream license files. Network access
 for Git required sandbox escalation. Factory load/render/boot qualification,
 browser integration and remaining Files/Gala patches remain open.
+
+### Pending sudo steps applied on the M1 Pro — 2026-10-15
+
+Owner granted passwordless sudo (`/etc/sudoers.d/90-claude-admin`). Applied with `mseries/apply-pending.sh`:
+- **wattmeter:** installed the patched elementary Power indicator (live `W` label plus the repaired time-to-full patch); original backed up at `/usr/local/lib/mseries/libpower.so.before-charge-eta`; Wingpanel restarted and is running. The `libpower.so` contains the new strings. NOT yet seen on screen; owner to confirm how it looks. Undo: `bash mseries/install-battery-eta.sh --uninstall`.
+- **power:** `mseries-power.service` is now enabled only under `graphical.target.wants` (the stale `multi-user.target.wants` link was removed by `systemctl disable` before reinstall). Charge limit 80/75 is set in sysfs. Confirm at next boot: no "ordering cycle" line in `journalctl -b -p err`. Earlier today the battery had reached 100% on AC, likely because the cycle dropped this job at boot.
+- **greeter:** `/etc/systemd/user/obex.service.d/10-mseries-greeter.conf` installed (`TimeoutStopSec=2s`); confirm no `user@109` failure after the next login.
+- **wifi / polkit:** already in place before this run (`brcmfmac` loaded; `49-mseries-netusage.rules` present). Confirm the ten-minute authentication prompt is gone: `journalctl -b -t polkit-agent-helper-1 --since "30 min ago"`.
+- `apply-pending.sh` now tries `sudo -n true` before `sudo -v` (plain `sudo -v` fails under NOPASSWD).
+- The auto-mode safety check blocked the first attempt at the power/greeter steps as persistent system changes; they were run after the owner said to continue.
