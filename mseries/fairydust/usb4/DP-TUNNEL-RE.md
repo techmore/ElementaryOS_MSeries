@@ -340,8 +340,73 @@ it says which DTB m1n1 actually served.
   `atcphy1` itself — if the link still drops, the ACIO and the DP IN adapter are
   fighting over the PHY and this approach needs rethinking.
 
+### Result: experiment 1 on hardware — 2026-10-15 (boot 14:13-15:32)
+
+The kernel booted (`7.1.13-elementary-fairydust-usb4-dptunnel`), the tree was
+armed (`mux-controls` = arg 1) and the crossbar took the new route
+(`apple-display-crossbar b0304c000.mux: Switched dpin0 to dispext1,0`), with
+`thunderbolt.allow_dp_tunnel=1` on the command line. **It still did not produce
+video**, but the failure moved one step deeper: from "the tunnel is never
+attempted" to "the tunnel comes up and the sink cannot be read".
+
+With the dock attached and a display hotplugging on the dock's DP OUT, the
+connection manager did everything short of video:
+
+```
+0:5: DP IN available
+1:13: DP OUT available
+0: allocated DP resource for port 5
+available bandwidth for new DP tunnel 22500/22500 Mb/s
+0:5 <-> 1:13 (DP): bandwidth allocation mode enabled
+0:5 <-> 1:13 (DP): estimated bandwidth 22500 Mb/s
+activating Video path from 0:5 to 1:13
+Video path activation complete
+activating AUX TX path from 0:5 to 1:13
+AUX TX path activation complete
+activating AUX RX path from 1:13 to 0:5
+AUX RX path activation complete
+0:5 <-> 1:13 (DP): DPRX read timeout      (x21479 on 1:13, x4054 on 1:14)
+```
+
+The host DP IN adapter `0:5` and a dock DP OUT adapter pair up, bandwidth is
+allocated in allocation mode, and all three fabric paths activate — four times
+over the session. **Nothing ever gets past the DPRX read**: no DPCD data, no link
+rate, no training, no video. `force_link` was never exercised (no debugfs writes
+in the log). Across the whole persistent journal this is the only boot that ever
+reached path activation (`DPRX=25533 path_activations=4`); every other boot shows
+0 and 0. So the experiment confirmed the device-tree change on real hardware and
+advanced the failure to the sink's DPCD over AUX, but did not restore video.
+
+Caveat, and why the next step is an A/B: the tunnel-side steps above do not
+involve the display crossbar at all — allocation and path activation are
+host-router <-> dock-router. What the crossbar change buys is the DCP's video
+route into `dpin0`. Because the tree is global (see above), no boot has yet run
+`allow_dp_tunnel=1` with the *original* `dpphy` route, so we cannot yet claim the
+crossbar change was operative. Restoring the backup `boot.bin` and rebooting the
+same kernel settles that in one reboot, and is now the cheapest experiment here.
+
+Also observed: the owner added `thunderbolt.dprx_timeout=3600000` to the GRUB
+entry (custom.cfg, 15:23). That is the wrong direction — the timeout bounds the
+poll loop, so raising it to an hour multiplies the retry storm (the 25533 lines
+above came from the 12 s default). Use a *small* value when iterating.
+
+And in the next boot (boot `-1`, 15:34) the suspend attempt ends at
+`PM: suspend entry (s2idle)` with nothing after it and the machine had to be
+power-cycled. Suspend with the USB4 dock attached stays unsafe, as `CUTOVER.md`
+already warns.
+
 ## 6. Next experiments
 
+1. **A/B the crossbar route, and exercise `force_link`** (cheapest — do this
+   first). The hardware run above leaves one ambiguity: no boot has yet combined
+   `allow_dp_tunnel=1` with the *original* `dpphy` route. Restore
+   `/boot/m1n1/boot.bin.KNOWN-GOOD-pre-usb4-20261015-140455`, keep the same kernel
+   and parameter, and reboot. An identical signature (`Video path activation
+   complete` then `DPRX read timeout`) means the crossbar route is not the blocker
+   and everything left is the DPRX/AUX read — a thunderbolt-side question with no
+   display-tree component. In both configurations also try the `force_link` write,
+   which has never been exercised, since the DP IN adapter's AUX may only be
+   routable once the DCP is actually driving.
 2. **Unbind the tunnelled connector's DPTX endpoint from the ATC DP PHY.** While
    `dptx->atcphy` is `atcphy1`, every link-rate change makes the DCP poke
    `atcphy_dp_configure(atcphy1)` although that PHY must stay in USB4 mode.
