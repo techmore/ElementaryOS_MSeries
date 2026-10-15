@@ -401,6 +401,34 @@ And in the next boot (boot `-1`, 15:34) the suspend attempt ends at
 power-cycled. Suspend with the USB4 dock attached stays unsafe, as `CUTOVER.md`
 already warns.
 
+### Clue: the DCP firmware does its own sink detection — measured 2026-10-15 16:06
+
+Seventeen minutes into an idle boot **with no dock attached**, the DCP on the
+tunnelled connector said this twice:
+
+```
+apple-dcp 28cc00000.dcp: DPTXPort: acking unhandled call 20
+apple-dcp 28cc00000.dcp: dcp_dptx_disconnect(port=0)
+```
+
+`dptxep.c` ACKs DPTXPort calls it does not implement ("just try to ACK and hope
+for the best..."), and call 20 is `DPTX_APCALL_INACTIVE_SINK_DETECTED`
+(`dptxep.h`). Two consequences:
+
+* The **firmware** owns sink detection on the tunnelled path, and it starts
+  probing on its own — no driver `dcp_dptx_connect` was logged in that boot. The
+  router's `DP_COMMON_CAP_DPRX_DONE` bit is therefore almost certainly set by the
+  firmware *after* it reads the sink, which is exactly why experiment 1 saw a
+  live tunnel and then nothing: DPRX_DONE never came because the firmware found
+  no active sink. `dprx_bypass` can bring the fabric up but cannot make the
+  firmware see a sink it cannot reach.
+* Call numbers are now worth watching in any session (`dptxep.h`): 5/6 will/did
+  change link config, 7-9 link rate, 10-12 lanes, 18 HPD support, 19 force
+  hotplug detect, 20 `INACTIVE_SINK_DETECTED`, 21 tiled hints, 22-24 device not
+  responding / busy / not started. Calls 5/6/7/9 appearing would mean the
+  firmware is driving the link — a much better success signal than a clean log.
+  `test-dp-tunnel.sh` now prints a call census.
+
 ## 6. Next experiments
 
 1. **A/B the crossbar route, and exercise `force_link`** (cheapest — do this

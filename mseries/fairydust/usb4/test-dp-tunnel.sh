@@ -79,6 +79,16 @@ printf '%s\n' "$logs" \
 say ""; say "== DCP link attempts =="
 printf '%s\n' "$logs" | grep -iE 'dcp_dptx_connect|dcp_dptx_disconnect|link complete|DP2HDMI|DCP index' | tail -n 12
 
+say ""; say "== DCP DPTXPort calls (DCP firmware -> driver) =="
+# The DCP firmware owns sink detection on the tunnelled path: it asks the driver
+# for link parameters and reports sink state. Call numbers (dptxep.h):
+#   5/6 will/did change link config   7/8/9 link rate   10/11/12 lanes
+#   18 supports HPD   19 force hotplug detect   20 INACTIVE_SINK_DETECTED
+#   21 tiled display hints   22/23/24 device not responding / busy / not started
+printf '%s\n' "$logs" | grep -o 'acking unhandled call [0-9]*' | awk '{print $NF}' \
+	| sort -n | uniq -c | awk '{printf "  call %-3s x%s\n", $2, $1}'
+printf '%s\n' "$logs" | grep -i 'DPTXPort:' | tail -n 8
+
 say ""; say "== Counters =="
 kv "DPRX read timeout" "$(printf '%s\n' "$logs" | grep -c 'DPRX read timeout')"
 kv "DPRX bypass engaged" "$(printf '%s\n' "$logs" | grep -c 'DPRX bypass enabled')"
@@ -100,20 +110,29 @@ activations=$(printf '%s\n' "$logs" | grep -c 'activation complete')
 connect=$(printf '%s\n' "$logs" | grep -c 'dcp_dptx_connect(port=0)')
 bypass="$(param dprx_bypass 0)"
 connected=$(cat /sys/class/drm/card*/card*-*/status 2>/dev/null | grep -c '^connected$')
+inactive=$(printf '%s\n' "$logs" | grep -c 'acking unhandled call 20')
 
 if [ "${idx:-0}" = 0 ]; then
 	say "  Crossbar still routes dcpext1 -> dpphy (DP Alt Mode). The tree is not armed"
 	say "  for the tunnel; expected idx=1 (dpin0). Check with boot-dt.py, not the build."
 elif [ "$connected" -gt 0 ] && [ "$activations" -gt 0 ]; then
 	say "  A connector is CONNECTED and paths activated: the tunnel is up and a display"
-	say "  attached. If the panel is still dark, it is a mode-set problem, not link one."
+	say "  attached. If the panel is still dark, it is a mode-set problem, not a link one."
+elif [ "$inactive" -gt 0 ]; then
+	say "  The DCP firmware ran its own sink detection on the tunnelled connector and"
+	say "  reported INACTIVE_SINK_DETECTED ($inactive x) with $connect dcp_dptx_connect"
+	say "  call(s) -- i.e. it probes the DP IN path on its own. It sees no live sink, so"
+	say "  the router's DPRX_DONE will never be set. Work the sink: monitor powered and"
+	say "  on that exact input, dock's HDMI rather than a DP adapter, or the dock's other"
+	say "  output. Watch for calls 5/6/7/9 (link config / link rate): those mean the"
+	say "  firmware is actually driving the link."
 elif [ "$bypass" = 1 ]; then
 	say "  dprx_bypass=1 and idx=$idx. If the DPRX storm stopped and the paths report"
 	say "  'activation complete', the tunnel is up -- the remaining question is whether"
 	say "  the DCP drives the DP IN adapter. Check 'DCP link attempts' for"
 	say "  dcp_dptx_connect(port=0); if absent, force it:"
 	say "    sudo sh -c 'echo 1 > $(find /sys/kernel/debug/dri -name force_link | head -1)'"
-	say "  Note there is usually a force_link per connector: pick the one under DP-1."
+	say "  Note there is one force_link per connector: use the one under DP-1."
 elif [ "$timeouts" -gt 100 ]; then
 	say "  Crossbar armed (idx=$idx) but a DPRX retry storm is running ($timeouts lines)."
 	say "  This is the experiment-1 wall. Arm the bypass *now*, before touching the cable:"

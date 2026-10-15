@@ -131,6 +131,12 @@ Read the collector's counters:
 | `card2-DP-1 status: connected` | **first light** — link up, EDID over AUX worked | if still black it is now a mode-set problem, not a link problem: check `drm_info` / Gala display settings |
 | `activation complete 0` and no `DP IN available` | the CM never paired anything: no live sink on the dock's port | try the dock's other DP/HDMI port (below) |
 
+The DCP firmware does its own sink detection on the tunnelled path (measured:
+`acking unhandled call 20` = `INACTIVE_SINK_DETECTED`, `DP-TUNNEL-RE.md`). The
+collector prints a call census, so watch it: calls 5/6/7/9 (link config, link
+rate) would mean the firmware is driving the link, which is a far better success
+signal than a quiet log.
+
 **Two probes worth doing regardless of the outcome**
 
 1. **Which dock DP OUT adapter is which physical port?** The log only ever says
