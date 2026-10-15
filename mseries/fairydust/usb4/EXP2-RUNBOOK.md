@@ -228,6 +228,7 @@ The whole matrix is **already generated** in
 `MANIFEST.txt`), so each config is a single `cp` + reboot:
 
 ```bash
+cd /home/sdolbec/wt-dockvideo
 D=/home/sdolbec/dp-tunnel-artifacts/boot-variants
 sudo cp $D/config-A.bin /boot/m1n1/boot.bin    # then reboot
 python3 mseries/fairydust/usb4/boot-dt.py --in /boot/m1n1/boot.bin   # confirm
@@ -244,7 +245,7 @@ The individual edits are still available if you want one-off changes:
 
 ```bash
 sudo cp -n /boot/m1n1/boot.bin /boot/m1n1/boot.bin.$(date +%Y%m%d-%H%M%S)   # once
-cd /home/sdolbec/ElementaryOS_MSeries
+cd /home/sdolbec/wt-dockvideo
 sudo python3 mseries/fairydust/usb4/boot-dt.py --in /boot/m1n1/boot.bin \
      --ablate-dp-tunnel --out /tmp/boot.bin.new      # 1 byte differs
 sudo cp /tmp/boot.bin.new /boot/m1n1/boot.bin
