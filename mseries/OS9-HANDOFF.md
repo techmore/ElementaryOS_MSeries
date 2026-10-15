@@ -215,8 +215,9 @@ read the sink's DPCD over AUX.
 
 Experiment 2 (unbind the tunnelled DPTX from the ATC DP PHY) is now built into
 `0002-experimental-dp-tunnel.patch`, together with a runtime `dprx_bypass`
-parameter, on branch `re/usb4-exp2` (commit 94c6e84). CI run 38788230910 builds
-the matching kernel package; nothing is installed or booted from it yet.
+parameter, on branch `re/usb4-exp2` (commit 94c6e84). CI run 38788230910 built
+the matching kernel package; it was installed later that day (see the section
+above).
 
 The remaining unknown — the DCP's tunnelled-DPTX protocol and the DPIN crossbar
 programming — still needs a macOS trace captured from a second computer with the
