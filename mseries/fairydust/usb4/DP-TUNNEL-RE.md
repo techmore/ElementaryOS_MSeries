@@ -45,21 +45,23 @@ Four hardware blocks are involved, all with Linux drivers present in our tree:
 | Type-C PHY | `drivers/phy/apple/atc.c` | Alt-mode DP and USB3/USB4 lanes |
 
 The crossbar is the pivot: **the same driver that already implements DP Alt Mode
-already knows how to reach the USB4 DP IN adapters.** Its header comment says so:
-
-> "the display crossbar used to route display controller streams to the three
-> different modes (DP AltMode, USB4 Tunnel #0/#1) of the Type-C ports."
+already knows how to reach the USB4 DP IN adapters.** Each port's crossbar
+exposes three outputs — `dpphy`, `dpin0`, `dpin1` — and enabling one does
+`dpxbar_set32(OUT_PCLK1_EN, atc_bit)` + `dpxbar_set32(CROSSBAR_ATC_EN, atc_bit)`
+with `atc_bit` = `ATC_DPPHY`/`ATC_DPIN0`/`ATC_DPIN1`. The two `dpin*` outputs are
+the ACIO DP IN adapters (USB4 tunnel 0 and 1); only `dpphy` is used today.
 
 ## 2. Register / device-tree level facts
 
 Crossbar (`drivers/mux/apple-display-crossbar.c`):
 
-- A mux controller exposes three mux controls, index
-  `0 = dpphy`, `1 = dpin0`, `2 = dpin1`.
-- The *state* written to a control is the input stream:
-  `dispext(state >> 1)`, `pipe(state & 1)`; `state = 9` is disconnected.
-- `dpin0`/`dpin1` set `ATC_DPIN0`/`ATC_DPIN1` in `CROSSBAR_ATC_EN` and
-  `OUT_PCLK1_EN`, which is exactly the route to the ACIO DP IN adapters.
+- A mux controller exposes three mux controls, index `0 = dpphy`, `1 = dpin0`,
+  `2 = dpin1` (`enum { MUX_DPPHY = 0, MUX_DPIN0 = 1, MUX_DPIN1 = 2 }`).
+- The *state* is the input stream: states `0..8` select `dispext(state >> 1)`,
+  pipe `state & 1`; `MUX_IDLE_DISCONNECT` (`-2`) disconnects.
+- Enabling an output sets `OUT_PCLK1_EN` and `CROSSBAR_ATC_EN` with
+  `ATC_DPPHY` / `ATC_DPIN0` / `ATC_DPIN1`, which is exactly the route to the
+  ACIO DP IN adapters for `dpin0` / `dpin1`.
 
 DCP (`drivers/gpu/drm/apple/dcp.c`):
 
@@ -74,16 +76,15 @@ dptxport_set_hpd(service, true);   /* only when connector_type == DisplayPort */
 So the DCP is told to drive "remote port" = ATC *n*; the crossbar decides whether
 that lands on the Type-C DP PHY or on the ACIO DP IN adapter.
 
-Host router DP IN adapters exist in the device tree but are unwired
-(`arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi`, added by
-`0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch`):
+Each of the three host routers in the device tree lists its two DP IN adapters as
+bare comments — there are no endpoints:
 
 ```
 /* 5: DP0 */
 /* 6: DP1 */
 ```
 
-— the comments are there, the endpoints are not.
+— the comments are there, the wiring is not.
 
 The quirk that hides all of this
 (`drivers/thunderbolt/quirks.c`):
@@ -101,6 +102,8 @@ host router: thunderbolt-apple-acio b01ac0000.cio   -> usb4_1_acio -> atcphy1
 
 dmesg:  apple-display-crossbar b0304c000.mux: Switched dpphy to dispext1,0
         apple-display-crossbar 130304c000.mux: Switched dpphy to dispext0,0
+        apple-dcp 289c00000.dcp: typec_mux_set() returned: 0        # dcpext0/HDMI
+        apple-dcp 28cc00000.dcp: fwnode_typec_mux_get() returned: 0  # dcpext1: no Type-C mux
 ```
 
 - `b0304c000.mux` is `atcphy1_xbar`, the crossbar of the port the dock is on.
@@ -211,9 +214,10 @@ sudo bash mseries/fairydust/usb4/test-dp-tunnel.sh
   `Switched dpin0 to dispext1,0` line), or the ACIO DP IN adapter needs
   explicit enablement.
 - **Danger signal:** loss of the USB4 link / dock USB devices when the DCP
-  drives. That would mean the DCP's `typec_mux_set()` in `dcp_platform_probe()`
-  is stealing `atcphy1` from the ACIO. Mitigation: drop `mux-index`/
-  `typec_mux_set()` for tunnelled connectors.
+  drives. `dcpext1` has no Type-C-mux fwnode (`fwnode_typec_mux_get() returned:
+  0`), so its `typec_mux_set()` is never called and it cannot reconfigure
+  `atcphy1` itself — if the link still drops, the ACIO and the DP IN adapter are
+  fighting over the PHY and this approach needs rethinking.
 
 ## 6. Next experiments
 
