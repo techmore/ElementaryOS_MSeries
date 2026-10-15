@@ -226,13 +226,19 @@ GRUB entry, and the device-tree change is applied by swapping just the `j314s`
 DTB inside the existing boot image:
 
 ```
-A=<artifact-dir>
-KERNEL_SUFFIX=fairydust-usb4-dptunnel \
-KERNEL_ENTRY_ID=elementary-usb4-dptunnel \
-KERNEL_EXTRA_CMDLINE=thunderbolt.allow_dp_tunnel=1 \
-  sudo bash mseries/fairydust/usb4/install-ci-kernel.sh "$A" --swap-dtb          # dry run
+A=<artifact-dir>          # may be the download dir or the artifact dir inside it
+sudo bash mseries/fairydust/usb4/install-ci-kernel.sh "$A" --swap-dtb \
+     --suffix fairydust-usb4-dptunnel \
+     --entry-id elementary-usb4-dptunnel \
+     --cmdline thunderbolt.allow_dp_tunnel=1            # dry run
 # ... repeat with --apply to actually install
 ```
+
+Use the flags rather than the `KERNEL_*` environment variables: `VAR=... sudo
+cmd` is stripped by sudo's `env_reset`, so the variables would silently fall back
+to the default variant (which then collides with the working kernel and aborts).
+`gh run download -D dir` nests the files under `dir/<artifact-name>/`; the script
+accepts either layout.
 
 `--with-ci-bootbin` replaces the whole boot image instead of swapping one DTB.
 Then reboot and pick the `fairydust-usb4-dptunnel test` entry; the default entry

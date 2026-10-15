@@ -9,9 +9,11 @@
 # (keeping its newer m1n1) so a device-tree change such as the DP-tunnel experiment
 # takes effect without replacing the whole boot image.
 #
-# Env vars select a variant so kernels can be installed side by side:
-#   KERNEL_SUFFIX=fairydust-usb4-dptunnel KERNEL_ENTRY_ID=elementary-usb4-dptunnel \
-#   KERNEL_EXTRA_CMDLINE=thunderbolt.allow_dp_tunnel=1 sudo bash install-ci-kernel.sh ...
+# Flags select a variant so kernels can be installed side by side:
+#   sudo bash install-ci-kernel.sh <dir> --suffix fairydust-usb4-dptunnel \
+#        --entry-id elementary-usb4-dptunnel --cmdline thunderbolt.allow_dp_tunnel=1
+# (the KERNEL_SUFFIX / KERNEL_ENTRY_ID / KERNEL_EXTRA_CMDLINE env vars also work
+# when the script is invoked directly, i.e. not through sudo.)
 #
 # Adds a TEST entry to /boot/grub/custom.cfg that is NOT the default; the stock entry stays the default.
 # Unlike install-stage1/2.sh this takes the root, ESP and LUKS UUIDs from the running system.
@@ -21,21 +23,34 @@
 # Pass --with-ci-bootbin to install the CI image anyway (USB2 side of the dock only, expected).
 set -euo pipefail
 
-art=${1:?usage: $0 <artifact-dir> [--apply] [--with-ci-bootbin] [--swap-dtb]}; shift || true
+art=${1:?usage: $0 <artifact-dir> [--apply] [--with-ci-bootbin] [--swap-dtb]
+                  [--suffix S] [--entry-id ID] [--cmdline C]}; shift || true
 apply=0; with_bootbin=0; swap_dtb=0
-for a in "$@"; do case $a in --apply) apply=1 ;; --with-ci-bootbin) with_bootbin=1 ;; --swap-dtb) swap_dtb=1 ;; *) echo "unknown: $a" >&2; exit 2 ;; esac; done
-
-run() { echo "+ $*"; (( apply )) && "$@" || true; }
-die() { echo "ERROR: $*" >&2; exit 1; }
-
 # Variant selection. Defaults reproduce the original fairydust-usb4 install; the
 # experimental USB4 DP-tunnel kernel uses
-#   KERNEL_SUFFIX=fairydust-usb4-dptunnel KERNEL_ENTRY_ID=elementary-usb4-dptunnel \
-#   KERNEL_EXTRA_CMDLINE=thunderbolt.allow_dp_tunnel=1
+#   --suffix fairydust-usb4-dptunnel --entry-id elementary-usb4-dptunnel \
+#   --cmdline thunderbolt.allow_dp_tunnel=1
 # so both kernels can be installed side by side as separate GRUB entries.
+# Flags are the reliable way to pass these: `VAR=... sudo cmd` is stripped by
+# sudo's env_reset, so the KERNEL_* env vars only work for direct invocation.
 sfx=${KERNEL_SUFFIX:-fairydust-usb4}
 entry_id=${KERNEL_ENTRY_ID:-elementary-usb4-test}
 extra=${KERNEL_EXTRA_CMDLINE:-}
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --apply) apply=1 ;;
+    --with-ci-bootbin) with_bootbin=1 ;;
+    --swap-dtb) swap_dtb=1 ;;
+    --suffix) sfx=${2:?--suffix needs a value}; shift ;;
+    --entry-id) entry_id=${2:?--entry-id needs a value}; shift ;;
+    --cmdline) extra=${2:?--cmdline needs a value}; shift ;;
+    *) echo "unknown option: $1" >&2; exit 2 ;;
+  esac
+  shift
+done
+
+run() { echo "+ $*"; (( apply )) && "$@" || true; }
+die() { echo "ERROR: $*" >&2; exit 1; }
 
 [[ $EUID -eq 0 ]] || die "run as root (sudo)"
 [[ $(uname -m) == aarch64 ]] || die "aarch64 only"
