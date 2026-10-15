@@ -18,10 +18,13 @@ the state below is "prepared and waiting", not "finished".
   the working kernel and is the next thing to test. It adds a runtime
   `thunderbolt.dprx_bypass`, leaves the ATC DP PHY unbound for the tunnelled
   connector (`apple,dp-tunnel`), and a per-connector `force_link` debugfs handle.
-- **Start with `fairydust/usb4/EXP2-RUNBOOK.md`**: it has the resume map, the
-  step-by-step test, the decision tree and the ablation matrix, and the four
-  boot-tree variants (`config-A..D.bin`) are pre-generated under
-  `/home/sdolbec/dp-tunnel-artifacts/boot-variants/`.
+- **Start with `fairydust/usb4/EXP2-RUNBOOK.md`**: its top box is the *one*
+  question the session answers — does the sink answer the router's DPRX/DPCD read?
+  — with an explicit early-stop (if the sink stays silent, no driver change can
+  help; pivot to the macOS trace), plus §8 "do not spend tomorrow on this". It
+  also has the resume map, the step-by-step test, the decision tree and the
+  ablation matrix; the four boot-tree variants (`config-A..D.bin`) are
+  pre-generated under `/home/sdolbec/dp-tunnel-artifacts/boot-variants/`.
 - The full reverse-engineering map, the 2026-10-15 offline analysis (why
   `dprx_bypass` can bring the fabric up but cannot produce video; upstream's
   missing "DP IN PHY" block; the upstream teardown fix we predate) and the cable

@@ -592,6 +592,25 @@ showed the firmware does its own sink detection (section 5, call 20).
 
 ## 7. Next experiments
 
+**Priority, revised 2026-10-15 after experiment 1 ran.** The host side is now
+known to work (crossbar + host tunnel + AUX path activation, §5), so these items
+are no longer equal:
+
+1. **Capture the macOS trace for the "DP IN PHY" (§6.5, §8).** It is the one
+   unaccounted-for block and the best explanation for a router that never
+   completes its DPRX read. Needs a second computer and the macOS iBoot payload;
+   it is the real unblocker — `MACOS-TRACE-RUNBOOK.md`.
+2. **Answer the sink question on the dock** (`EXP2-RUNBOOK.md`): does a real,
+   powered HDMI sink answer DPCD at all? If it does not, nothing below matters —
+   see the runbook's early-stop.
+3. The driver/DT experiments below (crossbar A/B, `dpin1`, ACIO DP IN wiring,
+   a real HPD trigger) are **secondary**: they can confirm the host model but
+   cannot make a silent sink answer. The runbook records why, so a dock session
+   does not spend its hours here.
+
+The recorded experiments, in their original order (item 1 is now folded into the
+runbook's ablation matrix):
+
 1. **A/B the crossbar route, and exercise `force_link`** (cheapest — do this
    first). The hardware run above leaves one ambiguity: no boot has yet combined
    `allow_dp_tunnel=1` with the *original* `dpphy` route. Restore

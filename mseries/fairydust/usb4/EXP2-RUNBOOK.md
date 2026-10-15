@@ -1,14 +1,27 @@
-# Tomorrow's runbook — dock video over USB4 DP tunnelling (2026-10-16)
+# Dock-video session — USB4 DisplayPort tunnelling (2026-10-16)
 
-Everything here is prepared offline. The dock and monitor are the only missing
-pieces. Read section 0, then run section 1 top to bottom; the decision tree in
-section 2 tells you what each outcome means, and section 3 is how to answer more
-than one question per reboot without waiting for CI.
+> **Read this box first. It is the whole session in one question.**
+>
+> Tomorrow has exactly **one** question that can move the frontier, and one
+> unambiguous early-stop:
+>
+> **Does the sink answer?** Attach the dock and look for a completed DPRX read /
+> a DCP "sink present" — or the opposite (`INACTIVE_SINK_DETECTED`, `DPRX read
+> timeout`, `card2-DP-1: disconnected`).
+>
+> - **Sink answers** → the host path is proven end to end; continue to the
+>   DCP / DPTX / mode-set side (section 2, row 4–5).
+> - **Sink stays silent** → **stop, do not start patching the driver.** No code
+>   change on this machine can complete a sink read that the router cannot make
+>   (`DP-TUNNEL-RE.md` §6.1). Save the evidence, and pivot to the macOS trace
+>   (`MACOS-TRACE-RUNBOOK.md`) — the only way to learn the missing "DP IN PHY".
+>
+> Section 1 is the command sequence, section 2 the go/no-go table, and
+> **section 8 lists the things that would waste your day.**
 
-Background and the full reverse-engineering map: [`DP-TUNNEL-RE.md`](DP-TUNNEL-RE.md).
-The measured hazard that cost us the last machine: `DP-TUNNEL-RE.md` section 9.
-Offline source/upstream analysis (what `dprx_bypass` really does, and the missing
-upstream "DP IN PHY"): `DP-TUNNEL-RE.md` section 6.
+Background and the full reverse-engineering map: [`DP-TUNNEL-RE.md`](DP-TUNNEL-RE.md)
+(measured state §5, offline analysis §6, hazard §9). The trace path and its
+prerequisites: [`MACOS-TRACE-RUNBOOK.md`](MACOS-TRACE-RUNBOOK.md).
 
 ---
 
@@ -53,10 +66,9 @@ If this session is lost, this is the fastest way back.
 | artifact stash | `/home/sdolbec/dp-tunnel-artifacts/exp2/` (kernel .deb, `fairydust-m1n1-boot.bin`, checksums, build log) — no download needed to reinstall |
 
 **If you ever rebuild locally:** `debian/build.sh` pins the sha256 of
-`0002-experimental-dp-tunnel.patch`, and on this branch that pin is still
-experiment 1's (`b251b716…`), while experiment 2's patch lives on `re/usb4-exp2`
-(pin `c962eff0…`). Sync *both* files from that branch, or just reinstall from the
-stash above — the CI build is what produced the installed kernel either way.
+`0002-experimental-dp-tunnel.patch`, and on this branch the pin matches the
+committed patch (`c962eff0…`, experiment 2), so a checkout of this branch builds
+the kernel that is installed. Otherwise just reinstall from the stash above.
 
 **What experiment 1 achieved (measured 2026-10-15, boot `-2`)**
 
@@ -172,22 +184,27 @@ collector prints a call census, so watch it: calls 5/6/7/9 (link config, link
 rate) would mean the firmware is driving the link, which is a far better success
 signal than a quiet log.
 
-**Two probes worth doing regardless of the outcome**
+**Two cheap probes**
 
-1. **Which dock DP OUT adapter is which physical port?** The log only ever says
-   `1:13` / `1:14`. Attach the monitor to exactly one dock output at a time and
-   note which adapter acks the hotplug (`acking hot plug event on 1:1x`). That
-   mapping is free and removes a whole class of confusion tomorrow.
-2. **Which host DP IN adapter is our dpin0?** We route the crossbar to `dpin0`
-   and the CM independently picks `0:5`. The `0:5` <-> `dpin0` correspondence is
-   inferred, not measured. `boot-dt.py --mux-arg 2` (dpin1) is the cheap test: if
-   `0:6` then pairs and behaves the same, the mapping is "5=dpin0, 6=dpin1"; if
-   the crossbar route stops mattering, then the crossbar is not in the path at
-   all — a genuinely useful negative result.
+1. **Which dock DP OUT adapter is which physical port?** (free). The log only
+   ever says `1:13` / `1:14`. Attach the monitor to exactly one dock output at a
+   time and note which adapter acks the hotplug (`acking hot plug event on 1:1x`).
+   That mapping removes a whole class of confusion, and costs nothing.
+2. **Which host DP IN adapter is our dpin0?** (costs a reboot — only if the sink
+   answered or you still have time). We route the crossbar to `dpin0` and the CM
+   independently picks `0:5`. The `0:5` <-> `dpin0` correspondence is inferred, not
+   measured. `boot-dt.py --mux-arg 2` (dpin1) is the cheap test: if `0:6` then
+   pairs and behaves the same, the mapping is "5=dpin0, 6=dpin1"; if the crossbar
+   route stops mattering, then the crossbar is not in the path at all — a
+   genuinely useful negative result.
 
 ---
 
-## 3. One reboot, several answers: the ablation matrix
+## 3. The ablation matrix (secondary — only after the sink question is answered)
+
+**Deprioritise this.** Each row costs a reboot, and experiment 1 already showed
+the host side works. Run it only if the sink answers and you still have time; it
+will not produce a picture by itself.
 
 `boot-dt.py` makes the tree patchable with **length-preserving byte edits**, so
 each of these is a one-byte change to `boot.bin` (no rebuild, no CI, no
@@ -293,18 +310,47 @@ the default and cost nothing while unused.
 
 ---
 
-## 7. Open questions this run should close
+## 7. What this run should settle (and what is already settled)
 
-1. Does `dprx_bypass=1` actually get the tunnel to `activation complete`
-   **without** the DPRX storm? (Expect `DPRX bypass enabled, pretending DPRX
-   completed` per attempt.)
-2. Once the tunnel is up, does the DCP drive it by itself, or does it need
-   `force_link`? This is the single most important observation: it decides
-   whether experiment 3 has to synthesise a trigger or only a mode set.
-3. Sink side: does a real, powered sink on the dock's **HDMI** answer DPCD at
-   all (`card2-DP-1` `connected`, EDID read), unlike the DP→HDMI adapter?
-4. The `1:13`/`1:14` -> physical port mapping, and whether the CM's `0:5` really
-   is our `dpin0`.
-5. Bookkeeping: the `re/usb4-exp2` notes date the last storm to
-   `dprx_timeout=-1`, while the boot-`-2` command line carried no `dprx_timeout`
-   at all (module default). Worth settling so the operational rule is right.
+The run's purpose is the one question at the top. In priority order:
+
+1. **Does a real, powered sink on the dock's HDMI answer DPCD at all** — i.e.
+   does `card2-DP-1` go `connected` with modes, unlike the DP→HDMI adapter in
+   experiment 1? This is the frontier question.
+2. If it answers: once the tunnel is up, does the DCP drive it by itself, or only
+   after `force_link`? That decides whether experiment 3 needs a trigger or only
+   a mode set.
+3. Does `dprx_bypass=1` reach `activation complete` with the storm stopped
+   (`DPRX bypass enabled, pretending DPRX completed`)? This only proves the
+   fabric — it cannot produce video (`DP-TUNNEL-RE.md` §6.1) — so it is
+   diagnostic, not a goal.
+
+**Already settled — do not re-derive:** the crossbar route is correct and the host
+tunnel forms (§5); `dprx_bypass` cannot fill `DP_LOCAL_CAP`; the DCP firmware
+owns sink detection (call 20). Not worth a reboot unless you have spare time: the
+`1:13`/`1:14` ↔ physical-port mapping, the `0:5` ↔ `dpin0` mapping, and the
+`dprx_timeout` bookkeeping.
+
+---
+
+## 8. Do NOT spend tomorrow on this
+
+Lessons from 2026-10-15, a full day that produced no picture:
+
+1. **Do not write more driver/DT "triggers" to force video.** The DCP firmware —
+   not the Linux driver — detects the sink on the tunnelled path, and it reports
+   none (`acking unhandled call 20` = `INACTIVE_SINK_DETECTED`). `dprx_bypass`
+   cannot fill `DP_LOCAL_CAP`, so forcing activation cannot yield a picture
+   (`DP-TUNNEL-RE.md` §6.1). A silent sink *is* an answer.
+2. **Do not build a new kernel.** Experiment 2 is installed and running; a CI
+   round trip + install + reboot is about an hour for no new information.
+3. **Do not run the whole A/B/C/D ablation** unless the sink answered and you
+   still have time (section 3) — four reboots, and the host side is already
+   proven.
+4. **Do not unplug the dock with the experiment armed** (section 4): it wedges
+   the port until a hard reboot. Disarm first.
+5. **Do not chase the adapter/port mappings or the `dprx_timeout` bookkeeping**
+   before the sink question is answered.
+
+When the sink stays silent, the correct pivot is the macOS trace
+([`MACOS-TRACE-RUNBOOK.md`](MACOS-TRACE-RUNBOOK.md)) — not more time at the dock.
