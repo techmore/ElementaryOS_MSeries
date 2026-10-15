@@ -241,10 +241,38 @@ to the default variant (which then collides with the working kernel and aborts).
 accepts either layout.
 
 `--with-ci-bootbin` replaces the whole boot image instead of swapping one DTB.
-Then reboot and pick the `fairydust-usb4-dptunnel test` entry; the default entry
-is untouched. The command-line parameter is belt-and-braces — the module
-parameter can also be flipped at runtime with
-`modprobe thunderbolt allow_dp_tunnel=1`.
+Then reboot and pick the `fairydust-usb4-dptunnel test` entry. The command-line
+parameter is belt-and-braces — the module parameter can also be flipped at
+runtime with `modprobe thunderbolt allow_dp_tunnel=1`.
+
+The GRUB entry is separate from the working one, but **the device tree is not**.
+There is no `devicetree` line in any `grub.cfg`/`custom.cfg` entry on this
+machine and no DTB under `/boot`, so the tree always comes from the one shared
+`/boot/m1n1/boot.bin`, which m1n1/u-boot consume *before* GRUB runs. Swapping the
+DTB therefore changes the tree for every entry, including the working one. This
+is acceptable here because the delta is a single property (measured, see below)
+and the routed path is already exercised on the current kernel — the boot log
+already shows `Switched dpphy to dispext1,0` — so the working entry would boot
+with `dispext1 -> dpin0` instead of `dispext1 -> dpphy`. `--apply` copies the
+original image to `/root/usb4-backup-<stamp>/boot.bin` and
+`/boot/m1n1/boot.bin.KNOWN-GOOD-pre-usb4-<stamp>` first;
+`cp /boot/m1n1/boot.bin.KNOWN-GOOD-pre-usb4-<stamp> /boot/m1n1/boot.bin` while
+running either kernel restores it. If the tree itself ever prevented Linux from
+booting, the restore has to be done from macOS (the ESP is readable there) — see
+`RECOVERY.md`.
+
+The delta was measured by parsing the live tree out of `boot.bin` and the
+experimental DTB from the `.deb` (`/soc/dcp@28cc00000/mux-controls`, phandle 153
+= `mux@b0304c000` = `atcphy1_xbar`):
+
+```
+live: 00 00 00 99 00 00 00 00     # arg 0 = dpphy
+exp : 00 00 00 99 00 00 00 01     # arg 1 = dpin0
+```
+
+Both are 93189 bytes with identical structure/strings offsets and the same 578
+nodes, and that is the *only* property that differs, so the splice cannot shift
+anything and nothing else about the tree changes.
 
 Verified non-root on this machine (`swap-dtb.py` against the live
 `/boot/m1n1/boot.bin`): the DTB run is found (110 trees, offsets 3932160 to
@@ -266,11 +294,19 @@ Boot the experimental kernel with `thunderbolt.allow_dp_tunnel=1` (or
 `modprobe thunderbolt allow_dp_tunnel=1`), then:
 
 ```
+# 0. confirm the experimental device tree is actually the one that booted:
+#    arg 1 = dpin0; arg 0 would mean the original tree (experiment not armed)
+xxd -p /proc/device-tree/soc/dcp@28cc00000/mux-controls      # expect ...00000099 00000001
+
 sudo bash mseries/fairydust/usb4/test-dp-tunnel.sh
 # if the DCP did not start by itself:
 echo 1 | sudo tee /sys/kernel/debug/dri/*/*DP-1/force_link
 sudo bash mseries/fairydust/usb4/test-dp-tunnel.sh
 ```
+
+The step-0 read is the one check that separates "the route is wrong" from "the
+experiment never ran": `/proc/device-tree` is the tree the kernel was handed, so
+it says which DTB m1n1 actually served.
 
 ### How to read the result
 
