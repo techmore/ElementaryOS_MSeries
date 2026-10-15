@@ -1314,4 +1314,4 @@ Owner approved the proposal; created public `techmore/ElementaryOS_MSeries_Optim
 
 Measurement note: after the reboot the panel backlight was back at 500/500 (it was 105 before) and a smoke sample read 19.2 W median with the charger connected and the battery above the 80% limit. That is not comparable with the earlier 11.7 W; set brightness before any comparison. Brightness is not restored at boot; relevant to the minimum-brightness request.
 
-Polkit prompt: a capture caught `org.freedesktop.login1.inhibit-delay-sleep` with no interaction flag, which is not itself a password prompt; no helper line has fired since the 14:14 reboot as of 14:30, so the cause is still unconfirmed. Repeat the capture across the next 10-minute mark.
+Polkit prompt: a capture caught `org.freedesktop.login1.inhibit-delay-sleep` with no interaction flag, which is not itself a password prompt; no helper line has fired since the 14:14 reboot as of 14:22, so the cause is still unconfirmed. Repeat the capture across the next 10-minute mark.
