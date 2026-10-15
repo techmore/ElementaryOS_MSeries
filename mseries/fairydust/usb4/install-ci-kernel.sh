@@ -92,7 +92,12 @@ run cp -a $esp/grub/grub.cfg "$bak/grub.cfg"
 [[ -f $esp/grub/custom.cfg ]] && run cp -a $esp/grub/custom.cfg "$bak/custom.cfg"
 
 echo "== 2. unpack the kernel package"
-stage=$(mktemp -d /var/tmp/usb4-stage.XXXXXX)
+# A dry run must leave nothing behind, so don't create the staging directory.
+if (( apply )); then
+  stage=$(mktemp -d /var/tmp/usb4-stage.XXXXXX)
+else
+  stage=/var/tmp/usb4-stage.DRYRUN
+fi
 run dpkg-deb -x "$deb" "$stage"
 run install -Dm644 "$stage/boot/vmlinuz-$kv" $esp/vmlinuz-linux-asahi-$sfx
 # The modules must be in the system that BOOTS (this running root, subvol @elementary), not only in the
