@@ -32,8 +32,11 @@ the state below is "prepared and waiting", not "finished".
 - **Measured hazard:** do *not* unplug the dock while a DPRX read is in flight —
   it deadlocks `apple_nhi_remove` against the `tps6598x` mutex and wedges the
   Type-C port until a hard reboot. Arm `dprx_bypass=1` before attaching the dock.
-- **Where the work lives:** branch `docs/dock-video-decision` (PR #53) now carries
-  **both** the documentation and the experiment-2 implementation
+- **Where the work lives:** branch `docs/dock-video-decision` (PR #53), checked
+  out at `/home/sdolbec/wt-dockvideo` — **run the session from there**; the shared
+  checkout `/home/sdolbec/ElementaryOS_MSeries` is on another branch and its
+  collector is stale. The branch carries **both** the documentation and the
+  experiment-2 implementation
   (`0002-experimental-dp-tunnel.patch` + the matching `debian/build.sh` pin), so a
   build from this one branch reproduces the installed kernel; `re/usb4-exp2`
   remains the original implementation branch. Durable artifacts (kernel `.deb`,

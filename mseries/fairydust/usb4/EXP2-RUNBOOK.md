@@ -29,12 +29,15 @@ prerequisites: [`MACOS-TRACE-RUNBOOK.md`](MACOS-TRACE-RUNBOOK.md).
 
 If this session is lost, this is the fastest way back.
 
-- **Doc branch:** `docs/dock-video-decision` — this runbook, `DP-TUNNEL-RE.md`,
-  `boot-dt.py`, `test-dp-tunnel.sh`, installer (PR #53). It now carries **both**
-  the documentation and the experiment-2 kernel implementation
-  (`0002-experimental-dp-tunnel.patch` + the matching `debian/build.sh` pin), so a
-  build from this branch reproduces the installed kernel. `re/usb4-exp2` is the
-  original implementation branch (same patch, sha256 `c962eff0…`).
+- **Doc branch:** `docs/dock-video-decision`, checked out at
+  `/home/sdolbec/wt-dockvideo` — **run the session from there**, not from
+  `/home/sdolbec/ElementaryOS_MSeries` (that checkout is on a different branch
+  and its collector is stale). The branch holds this runbook, `DP-TUNNEL-RE.md`,
+  `boot-dt.py`, `test-dp-tunnel.sh`, the installer (PR #53), **and** the
+  experiment-2 kernel implementation (`0002-experimental-dp-tunnel.patch` + the
+  matching `debian/build.sh` pin), so a build from this branch reproduces the
+  installed kernel. `re/usb4-exp2` is the original implementation branch (same
+  patch, sha256 `c962eff0…`).
 - **Reinstallable artifact stash:** `/home/sdolbec/dp-tunnel-artifacts/exp2/`
   (exp-2 kernel `.deb`, `fairydust-m1n1-boot.bin`, checksums, build log). No
   download needed to reinstall.
@@ -103,10 +106,18 @@ experiment 2's own message).
 
 ### 1.1 Before you boot: check the arm state (no root needed, no dock needed)
 
+Run everything from the branch that carries the experiment. This worktree is it:
+
 ```bash
-cd /home/sdolbec/ElementaryOS_MSeries
+cd /home/sdolbec/wt-dockvideo     # branch docs/dock-video-decision = the experiment
 python3 mseries/fairydust/usb4/boot-dt.py --in /boot/m1n1/boot.bin
 ```
+
+> Do **not** run from `/home/sdolbec/ElementaryOS_MSeries`: that checkout is on a
+> different branch (`codex/guide-collapsed-by-default`) and its
+> `test-dp-tunnel.sh` is **stale**. Confirm you are in the right place first —
+> `git -C /home/sdolbec/wt-dockvideo branch --show-current` must print
+> `docs/dock-video-decision`.
 
 Expect `mux-controls … arg 1 -> dpin0 (ACIO DP IN 0)` and `apple,dp-tunnel:
 present`. If either is wrong, stop and fix the tree before spending a reboot.
@@ -137,6 +148,7 @@ The DP→HDMI cable over the dock's DP output is the cross-check for later.
 ### 1.3 Collect the verdict
 
 ```bash
+cd /home/sdolbec/wt-dockvideo
 bash mseries/fairydust/usb4/test-dp-tunnel.sh 2>&1 | tee ~/dptunnel-logs/test-exp2-$(date +%H%M).txt
 ```
 
