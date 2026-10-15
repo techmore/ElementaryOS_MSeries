@@ -1333,3 +1333,8 @@ Owner asked to check the report that Michael Dell gave $1 million to the Omarchy
 ### Password prompt fix: early check only — 2026-10-15
 
 Owner ran `journalctl -b -t polkit-agent-helper-1 --since "14:25"` and it showed no entries, but that was before the 14:33 and 14:43 marks the old pattern fired at, so it is not confirmation yet (an earlier entry in this file claimed it was; corrected). Cause remains `netusage`'s `resolvectl show-cache` (`resolve1.dump-cache`); fix is `--no-ask-password` plus the extended polkit rule (`b7e2dae`). Re-run the same command after 14:45 and record the result.
+
+### Refresh rate is the biggest power lever found so far — 2026-10-15
+
+Alternating A/B with `powerlab` (optimization repo, commit after `c04d093`): at 21% brightness the panel drew about **2.0 W (15%) less at 60 Hz than at 120 Hz** (11.4 and 10.9 W vs 13.4 and 12.9 W medians); at 500/500 about 1.7 W (9%). Built `tuning/refresh-rate/mseries-refresh` (60 Hz on battery, 120 Hz on AC, config file, `--status`/`--once`, installer with `--dry-run`/`--enable`/`--uninstall`, tests pass) in the optimization repo. NOT enabled on the Mac: it changes how the screen feels; the owner decides. Panel left at 120 Hz and 21% brightness after testing. Open: something reset the backlight to 500/500 after the reboot and again between 14:27 and 14:38; the mode switch is not the cause.
+Also: DRM flip tracing showed 0 vblank events in 4 s at idle, so the display mailbox rate is not compositor flips (negative result in the optimization repo).
