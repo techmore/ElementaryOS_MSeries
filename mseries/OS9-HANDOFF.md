@@ -25,6 +25,35 @@ Next: run the long-uptime decode check, complete the encrypted backup using the
 owner's normal backup procedure, and keep the installer and factory-image
 qualification work separate from the already-running transformed desktop.
 
+## USB4 DP-tunnel experiment 1 — 2026-10-15
+
+Owner direction: **make the dock carry video** (they will not plug a display
+into the Mac's own ports), so the RE path is active. Reverse-engineered the
+missing data path and wrote it up in
+[`fairydust/usb4/DP-TUNNEL-RE.md`](fairydust/usb4/DP-TUNNEL-RE.md). Key finding:
+the display crossbar driver already supports routing a controller stream to the
+ACIO DP IN adapters (`dpin0`/`dpin1` ⇒ "USB4 Tunnel #0/#1"), and on this machine
+`atcphy1_xbar` (`b0304c000`, the dock's port) currently routes `dispext1,0` to
+`dpphy` instead. The only missing pieces are (a) the crossbar mux selection and
+(b) the trigger that makes the DCP drive the DP IN adapter.
+
+Landed (experiment 1, off by default):
+- `fairydust/usb4/0002-experimental-dp-tunnel.patch` — device tree routing of
+  `dcpext1` to `<&atcphy1_xbar 1>` (dpin0), a `thunderbolt.allow_dp_tunnel`
+  module parameter that un-suppresses Apple DP tunnels, and a per-connector
+  `force_link` debugfs to drive the DPTX endpoint by hand.
+- `fairydust/usb4/test-dp-tunnel.sh` — read-only evidence collector + verdict.
+- `fairydust/debian/build.sh` builds the experimental kernel only when
+  `FAIRYDUST_DP_TUNNEL=1`, as release `7.1.13-elementary-fairydust-usb4-dptunnel`
+  / package `7.1.13+elementary.usb4-dp1` (distinct, so it cannot be confused with
+  the working `-usb4` kernel). `.github/workflows/daily-9.0.yml` gained a
+  `fairydust_tunnel` dispatch input.
+
+Verified: patch applies cleanly to the prepared source, hashes match, `build.sh`
+syntax and the workflow YAML parse. **Not yet done: the actual kernel build/boot
+and the real DCP trigger** — the latter needs a macOS m1n1-hypervisor trace from
+a second computer. No change to the running kernel or bootloader.
+
 ## Monitor / dock-video decision — 2026-10-15
 
 Checked the current upstream state for external-display video and recorded a

@@ -9,6 +9,13 @@ the upstream state checked on 2026-10-15.
 
 ## TL;DR
 
+> **Update 2026-10-15 (later):** the owner directed the RE path, so the dock is
+> now the target after all. The everyday alternatives below are still valid, but
+> the active work is experiment 1 in
+> [`DP-TUNNEL-RE.md`](DP-TUNNEL-RE.md) ("route the controller into the ACIO DP IN
+> adapter and let the tunnel allocate"). This page stays as the record of the
+> non-dock fallbacks.
+
 There are three different things people call "the monitor", and only two of them
 are reachable today:
 
