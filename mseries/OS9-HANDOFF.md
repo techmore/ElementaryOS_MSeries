@@ -1,6 +1,6 @@
 # OS 9 implementation / Claude Code handoff
 
-Updated 2026-10-14. Repository: techmore/ElementaryOS_MSeries.
+Updated 2026-10-15. Repository: techmore/ElementaryOS_MSeries.
 
 ## Current hardware state — 2026-10-14
 
@@ -25,73 +25,30 @@ Next: run the long-uptime decode check, complete the encrypted backup using the
 owner's normal backup procedure, and keep the installer and factory-image
 qualification work separate from the already-running transformed desktop.
 
-## USB4 DP-tunnel experiment 1 — 2026-10-15
+## Dock video experiment installed, not yet booted — 2026-10-15
 
-Owner direction: **make the dock carry video** (they will not plug a display
-into the Mac's own ports), so the RE path is active. Reverse-engineered the
-missing data path and wrote it up in
-[`fairydust/usb4/DP-TUNNEL-RE.md`](fairydust/usb4/DP-TUNNEL-RE.md). Key finding:
-the display crossbar driver already supports routing a controller stream to the
-ACIO DP IN adapters (`dpin0`/`dpin1` ⇒ "USB4 Tunnel #0/#1"), and on this machine
-`atcphy1_xbar` (`b0304c000`, the dock's port) currently routes `dispext1,0` to
-`dpphy` instead. The only missing pieces are (a) the crossbar mux selection and
-(b) the trigger that makes the DCP drive the DP IN adapter.
+The USB4 DP-tunnelling experiment is now installed *side by side* with the
+working kernel, as its own non-default GRUB entry (`elementary OS (M-series,
+fairydust-usb4-dptunnel test)`, id `elementary-usb4-dptunnel`): kernel release
+`7.1.13-elementary-fairydust-usb4-dptunnel`, built by CI run 38776005043 from
+branch `docs/dock-video-decision`. It has **not been booted yet**, so nothing
+here is a result — dock video is still unsupported until a run says otherwise.
 
-Landed (experiment 1, off by default):
-- `fairydust/usb4/0002-experimental-dp-tunnel.patch` — device tree routing of
-  `dcpext1` to `<&atcphy1_xbar 1>` (dpin0), a `thunderbolt.allow_dp_tunnel`
-  module parameter that un-suppresses Apple DP tunnels, and a per-connector
-  `force_link` debugfs to drive the DPTX endpoint by hand.
-- `fairydust/usb4/test-dp-tunnel.sh` — read-only evidence collector + verdict.
-- `fairydust/debian/build.sh` builds the experimental kernel only when
-  `FAIRYDUST_DP_TUNNEL=1`, as release `7.1.13-elementary-fairydust-usb4-dptunnel`
-  / package `7.1.13+elementary.usb4-dp1` (distinct, so it cannot be confused with
-  the working `-usb4` kernel). `.github/workflows/daily-9.0.yml` gained a
-  `fairydust_tunnel` dispatch input.
-- `fairydust/usb4/install-ci-kernel.sh` can now select a variant
-  (`KERNEL_SUFFIX`/`KERNEL_ENTRY_ID`/`KERNEL_EXTRA_CMDLINE`; defaults unchanged)
-  and swap just the `j314s` DTB inside the existing boot image (`--swap-dtb`), so
-  the experimental kernel installs side by side as its own GRUB entry. Nothing
-  was installed or booted.
-- Cleared the proxyclient dependency blocker without touching the system:
-  `fairydust/usb4/m1n1-trace-deps.sh` vendors `construct==2.10.70` and
-  `pyserial==3.5` into `~/.local/share/m1n1-proxyclient/site` (no pip/apt/sudo).
-  Verified `proxyclient/tools/run_guest.py --help` and the tracer imports work.
-  `proxyclient/hv/` already ships `trace_dcp.py` (AFK/ASC endpoint tracer) and
-  `trace_dptx.py`, so the macOS trace is now a tooling-free step.
-- Validated the `--swap-dtb` install step without root: against the live
-  `/boot/m1n1/boot.bin`, `swap-dtb.py` finds the 110-tree DTB run, matches
-  exactly one `apple,j314s` tree (#25, 93189 bytes) and an identity swap
-  reproduces the input byte for byte (sha256 `5cbc5f30…`). `sudo` here wants a
-  password and there is no TTY for the agent, so the dry run and `--apply` must
-  be launched from a real terminal.
-- CI run `38776005043` built the experiment-1 kernel (25m17s; the ISO job in the
-  same run failed and is unrelated) from `083f3a19`. Verified without root: the
-  `.deb` checksums pass, release is `7.1.13-elementary-fairydust-usb4-dptunnel`,
-  the DTB is at the path `--swap-dtb` expects, the compiled DTB has
-  `dcp@28cc00000` (dcpext1) `mux-controls = (153,1)` (dpin0) vs `(153,0)`
-  (dpphy) in the working boot.bin with the HDMI node unchanged, and
-  `appledrm.ko`/`thunderbolt.ko` carry `force_link` and the `allow_dp_tunnel`
-  module parameter respectively. Nothing installed or booted.
+Verified after installing, before any reboot: the ESP holds the new
+`vmlinuz`/`initramfs`; `thunderbolt.ko` in the new module tree exposes
+`allow_dp_tunnel` (and `dprx_timeout`); the GRUB default (`GRUB_DEFAULT=0`, the
+first entry) is untouched; and the experimental device tree is live in
+`/boot/m1n1/boot.bin`, whose *only* difference from the pre-install backup is a
+single byte — `mux-controls` for `dcp@28cc00000` moved from arg 0 (`dpphy`) to
+arg 1 (`dpin0`), with the HDMI route unchanged. Note that this tree is shared by
+*every* GRUB entry, because m1n1 consumes `boot.bin` before GRUB runs; the
+original is kept at `/boot/m1n1/boot.bin.KNOWN-GOOD-pre-usb4-20261015-140455`
+and `/root/usb4-backup-20261015-140455/boot.bin`.
 
-Verified: patch applies cleanly to the prepared source, hashes match, `build.sh`
-syntax and the workflow YAML parse. **Not yet done: the actual kernel build/boot
-and the real DCP trigger** — the latter needs a macOS m1n1-hypervisor trace from
-a second computer. No change to the running kernel or bootloader.
-
-## Monitor / dock-video decision — 2026-10-15
-
-Checked the current upstream state for external-display video and recorded a
-decision in [`fairydust/usb4/DOCK-VIDEO-DECISION.md`](fairydust/usb4/DOCK-VIDEO-DECISION.md):
-use the Mac's **built-in HDMI port** (supported; DCP firmware 13.5 confirmed
-locally) as the everyday external display, or a **direct USB-C→HDMI/DP adapter
-on the front-left port** for the DP Alt Mode route. **Dock video (HDMI or DP on
-the WD22TB4) is not targeted** — it needs USB4 DisplayPort tunnelling, which is
-unimplemented; dock HDMI and dock DP are the same problem. The `fairydust` HEAD
-is `ce9f2eba` (2026-09-08), the revision this repo already builds, so there is
-nothing new to rebuild. Added read-only helper `mseries/check-display-paths.sh`
-(DCP firmware, support modules, DRM connectors, per-path verdict) and updated the
-ROADMAP open-problem row. No kernel, bootloader or audio change was made.
+Design, expected signals, and rollback:
+[`fairydust/usb4/DP-TUNNEL-RE.md`](fairydust/usb4/DP-TUNNEL-RE.md). The
+precondition for a meaningful test is a live display sink on the dock (Dell
+WD22TB4, currently on the dock's HDMI output via an HDMI-to-HDMI cable).
 
 ## New desktop bugs reported — 2026-10-13
 
@@ -1303,53 +1260,3 @@ still require build-time integration; factory hardware qualification is open.
 - **Phone tether:** bug logged with the observed disconnect at 17:39:26 and the unmanaged/no-lease NetworkManager sequence; symptom details still needed from the owner.
 - **Minimum brightness:** panel floor is 5/500 (1%); needs the owner's look. See `BUG-FIX-ROADMAP.md`.
 - Applied on this Mac without sudo: user-level WirePlumber override only (reversible).
-
-## Factory video-decode bridge candidate — 2026-10-14
-
-Added `build-video-decode` using the existing manual installer's exact c653eaa
-archive and SHA256. Meson builds/installs the stripped VA-API shared library;
-finalize retains it, the Asahi alias and GPL/source/support documentation.
-Competing canonical libraries or foreign Asahi aliases fail closed. Runtime
-libva/libdrm and vainfo are declared in both arm64 consumers. The fragmentation
-mitigation is shared with the manual installer and exported as a factory default.
-Added the source to GitHub watch subscriptions and corrected stale PORT-MAP rows.
-
-This packages a bridge candidate, not qualified hardware decode. The pinned
-upstream explicitly has no supported matrix rows, and its M1/T8103 hardware
-evidence does not qualify M1 Pro. AV1 compilation requires modern UAPI headers
-but proves no hardware AV1 support. Kernel `apple_avd`, matching firmware,
-codec/client checks and factory build/boot qualification remain open.
-Subagent source/implementation review; no tests or image build run.
-
-Final live/sysupdate post-install hooks also check package ownership of both
-VA driver paths, catching a consumer Mesa package collision after overlay
-application. Missing ownership metadata or inconsistent payload fails the build.
-
-### Watt meter in the menu bar; ETA patch repaired; power-draw probe — 2026-10-14
-
-- **Watt meter (owner request):** `mseries/patches/panel-power-watts.patch` adds a live power label (UPower `EnergyRate`, e.g. `12.1 W`, charging or discharging, hidden below 0.1 W) beside the battery icon in elementary's Power indicator. Applied after the ETA patch by `install-battery-eta.sh`. Verified in a scratch tree at `elementary/panel-power` e05723d: both patches apply in order and the indicator compiles to `libpower.so` (valac 0.56.19; the unused `libgtop-2.0` meson dependency was dropped in scratch only because `libgtop2-dev` is not installed here). NOT installed and not seen in the panel: it needs `sudo apt install libgtop2-dev ...` and a module replace + Wingpanel restart. Run `bash mseries/apply-pending.sh --dry-run --only wattmeter`, then without `--dry-run`. Undo: `bash mseries/install-battery-eta.sh --uninstall`.
-- **Bug found and fixed:** the old `panel-power-charge-eta.patch` had zero-context hunks; current `git apply` put them after the end of the class in `DisplayWidget.vala`, which cannot compile, so the battery-ETA installer would have failed on a rebuild. Regenerated with context.
-- **Power-draw investigation (in progress):** baseline on battery 12.79 W (min 11.62, max 15.02, 15 samples/30 s), screen 105/500, CPU about 87% idle. Interrupt rates per second: DCP mailbox `38bc08000.mbox-recv` 479, mailbox `406408000.mbox-recv` 385, SPI HID `39b10c000.spi` 228 (it read about 1000 earlier, so it follows touching the keyboard/trackpad), Wi-Fi PCIe 60. The `38bc08000` mailbox belongs to the display coprocessor, so Gala/compositor redraws are a suspect. One-change-at-a-time tests are not done yet.
-
-## Factory sound/keyboard fixes and panel artifact checks — 2026-10-14
-
-Added pinned sound and keyboard builds to the Apple overlay and matching
-packages/dependencies to both consumers. Pruning retains their plugins, licenses,
-patches and build recipes. `panel-factory-pins.json` inventories all four panel
-plugins; each builder records the actual plugin SHA256 and its source metadata.
-Both final-image hooks reject missing/changed plugin bytes, incompatible package
-versions and mismatched provenance. The recorder checks the build script's
-source revision against the pin table before recording it.
-
-Version checks now allow Debian epochs/packaging suffixes while rejecting
-`8.0.30` as a substitute for `8.0.3`. The keyboard patch also initializes an
-already-active layout's checked state before listening for subsequent changes.
-Added the two elementary sources to GitHub subscriptions.
-
-Subagent implemented/reviewed source/dependency and artifact-check pieces;
-parent integrated image hooks and initial-state fix. No tests or build run.
-Pinned upstream Meson/license contents could not be fetched in this turn;
-dependency/license audit used repository installers and installed package
-metadata, and the build refuses missing upstream license files. Network access
-for Git required sandbox escalation. Factory load/render/boot qualification,
-browser integration and remaining Files/Gala patches remain open.

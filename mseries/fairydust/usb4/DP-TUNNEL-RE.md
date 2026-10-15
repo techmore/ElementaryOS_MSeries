@@ -288,6 +288,20 @@ than using absolute offsets.
 `mkinitcpio` and GRUB), and `sudo` on this machine asks for a password, so the
 dry run and the `--apply` both have to be launched from a real terminal.
 
+**Applied on this machine 2026-10-15 (not yet booted).** Log:
+`/tmp/opencode/logs/install-apply-20261015-140455.log`. `swap-dtb.py` reported
+`110 DTBs from offset 3932160 to 8725127; replacing #25 (93189 -> 93189 bytes)`
+and `5cbc5f30…` → `4f793ffa…`. Independent re-check after the fact: byte-diffing
+the installed `boot.bin` against the backup shows **exactly one differing byte**
+(offset 4478434) inside the DTB run; the installed `j314s` tree reads
+`mux-controls = 00 00 00 99 00 00 00 01` (arg 1, `dpin0`) with `mux-index` still
+2, the HDMI node still arg 0, the experimental DTB bytes present once and the
+original zero times. The backup still hashes to the original `5cbc5f30…`, so the
+rollback is exact. ESP went 229 MB → 184 MB free. `mkinitcpio` warned about
+`xhci_pci`/`dockchannel_hid` firmware, the aarch64 microcode hook, and a missing
+`drm_privacy_screen_register` symbol — same warnings the working kernel's
+initramfs build produces, and the image was generated successfully.
+
 ### Test
 
 Boot the experimental kernel with `thunderbolt.allow_dp_tunnel=1` (or
