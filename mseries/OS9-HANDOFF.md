@@ -1372,3 +1372,9 @@ Could not build the DPRX back-off patch into the running `...-dptunnel` kernel: 
 ### Watt meter fixed to show whole-machine power — 2026-10-15
 
 Owner: "we lost our realtime watt monitor". Cause: the label read UPower's battery flow, which is 0 W when the charger is connected and the battery sits at the 80% limit, and the patch hid the label below 0.1 W. Found the SMC sensor "Total System Power" (hwmon `macsmc_hwmon`, also AC input, 3.8 V rail and heatpipe power) and rebuilt `panel-power-watts.patch` to read it every 2 s; installed (panel restarted once). The optimization repo's `powerlab/sample.py` uses the same sensor, which makes measurements valid on AC; the earlier lever run was void (battery "Not charging"). Spot reading: about 16 W at brightness 325/500, 120 Hz, agent UIs running. Owner asked for about 6 W on the running instance: not reachable without the screen levers (brightness, 60 Hz) and closing the agent UIs; non-visual levers still to be re-tested with the SMC sensor.
+
+### Kernel ownership respected; non-visual levers re-tested — 2026-10-15
+
+- Per the owner, DeepSeek owns the kernel feature set. Claude withdrew the kernel-build request and treats the DPRX back-off patch as an untested reference sketch only. Kernel-relevant power findings were posted as a context-only comment on issue #46 (`#issuecomment-6201042382`); no kernel, bootloader or m1n1 change was made.
+- Non-visual system levers re-tested with the SMC whole-machine sensor (30 s medians, alternating baselines 14.2 to 15.6 W): PCIe `powersupersave` -0.3 W, USB autosuspend 0 (no USB devices; dock unplugged), CPU battery cap inconclusive, Bluetooth off -0.2 W. Nothing above noise; all settings restored. The big watts are the display and the agent UIs, not system tuning.
+- The YouTube H.264 test (own MV3 extension that hides VP9/AV1) was interrupted when the session ended; re-run pending. The goal ("exceed Apple") remains NOT met.
