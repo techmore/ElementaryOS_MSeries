@@ -66,6 +66,7 @@ jobs:
           python3 -m py_compile mseries/apply-desktop-settings.py
           python3 -m py_compile mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness
           python3 mseries/test-wifi-resume.py
+          python3 mseries/test-power-cap.py
           python3 mseries/local-ai/test_people_watch.py
           python3 mseries/test-image-wiring.py
           python3 mseries/test-kernel-config.py
