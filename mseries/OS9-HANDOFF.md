@@ -50,6 +50,24 @@ Design, expected signals, and rollback:
 precondition for a meaningful test is a live display sink on the dock (Dell
 WD22TB4, currently on the dock's HDMI output via an HDMI-to-HDMI cable).
 
+## Dock video experiment 2 built (CI in progress) — 2026-10-15
+
+Experiment 1 was booted and measured: the crossbar route is live (`Switched
+dpin0 to dispext1,0`) and the USB4 DP tunnel forms (`0:5 <-> 1:13 (DP)`), but
+the host router never sets `DP_COMMON_CAP.DPRX_DONE`, so the tunnel never
+activates and `DP-1` stays `disconnected`. Both the ACIO (DPRX) and the DCP
+firmware (apcalls 22/24 = `DEVICE_NOT_RESPONDING`/`DEVICE_NOT_STARTED`) fail to
+read the sink's DPCD over AUX.
+
+Experiment 2 (unbind the tunnelled DPTX from the ATC DP PHY) is now built into
+`0002-experimental-dp-tunnel.patch`, together with a runtime `dprx_bypass`
+parameter, on branch `re/usb4-exp2` (commit 94c6e84). CI run 38788230910 builds
+the matching kernel package; nothing is installed or booted from it yet.
+
+The remaining unknown — the DCP's tunnelled-DPTX protocol and the DPIN crossbar
+programming — still needs a macOS trace captured from a second computer with the
+m1n1 hypervisor (see `fairydust/usb4/DP-TUNNEL-RE.md` §6/§7).
+
 ## New desktop bugs reported — 2026-10-13
 
 Added three separate owner-reported findings to
