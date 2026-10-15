@@ -85,6 +85,6 @@ crossbar sequence — i.e. write experiment 5 instead of guessing.
 ## Meanwhile
 
 Everything that does not need this trace is tracked in `DP-TUNNEL-RE.md`
-section 6 (experiments 1-4): the crossbar route is already buildable, and the
+section 6 (experiments 1-5): the crossbar route is already buildable, and the
 trigger can be exercised by hand through the debugfs `force_link` attribute, so
 experiment 1 can be judged without the trace.

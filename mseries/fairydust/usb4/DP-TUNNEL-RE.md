@@ -1,6 +1,6 @@
 # USB4 DisplayPort tunneling on M1 Pro (dock video) — reverse-engineering map
 
-Status: **experiment 1 ready to build** (2026-10-15).
+Status: **experiment 1 building; experiment 2 identified** (2026-10-15).
 Scope: make the Dell WD22TB4's HDMI/DP outputs work, i.e. tunnel DisplayPort
 from the display controller (`DCP`) through the USB4 host router (`ACIO`) to the
 dock. This is the "Monitor through the dock" open problem in
@@ -122,19 +122,46 @@ missing.
 1. **Config change (cheap, this patch):** point `dcpext1` at the crossbar's
    `dpin0` mux control instead of `dpphy`, and stop suppressing DP tunnels.
    One cell in the device tree plus a module parameter.
-2. **Protocol glue (needs RE):** *something* must tell the DCP to start driving
-   the DP IN adapter, and the DP sink's HPD/AUX must reach the DCP. Today the
-   DCP is triggered by (a) the Type-C alt-mode bridge
-   (`apple_connector_oob_hotplug -> dcp_dptx_connect_oob`) for alt mode, or
-   (b) the DP2HDMI HPD GPIO for the HDMI dcpext. Neither exists for a tunnelled
-   DP link, so the DCP sits idle and the thunderbolt core's DPRX read times out.
-
-   For USB4 the DPRX capabilities are read from the DP IN adapter *before* the
-   tunnel is extended, so the sequence in macOS is almost certainly
+2. **Protocol glue (needs RE):** *something* must make the DCP drive its stream
+   into the ACIO. For USB4 the DPRX capabilities are read from the DP IN adapter
+   *before* the tunnel is extended, so the macOS sequence is almost certainly
    "start the DCP on the DP IN adapter → read DPRX → extend tunnel". The exact
    apcall/sequence (and whether `dptxport_connect()` takes a different remote
    port, or a new "tunnel" parameter, for a tunnelled endpoint) is the part that
    needs a macOS trace.
+
+### What the DCP side actually looks like (source facts, 2026-10-15)
+
+Reading `drivers/gpu/drm/apple/dptxep.c`, `dcp.c` and `drivers/phy/apple/atc.c`
+answers more than expected — and changes experiment 2:
+
+- The DCP's external stream is `dispextN` and the crossbar routes it to one of
+  `dpphy` / `dpin0` / `dpin1`. **The ATC PHY is not in the DP path for a
+  tunnel:** `dpphy` is the ATC-lane output, while `dpin0`/`dpin1` are the ACIO's
+  DP IN adapters. So `dpin0` is the whole display-side change; the DP stream is
+  encapsulated by the ACIO from there.
+- `dcp_dptx_connect()` (run at probe for externals, and from
+  `apple_connector_oob_hotplug`) does
+  `dptxport_connect(service, core = 0, atc = dptx_phy, die = dptx_die)`, then
+  `dptxport_request_display()`, then `dptxport_set_hpd(true)` for a DP
+  connector. For `dcpext1` that is core 0, atc 1, die 0, `CONNECTED`. The
+  remote-port encoding is `CORE = bits 3:0`, `ATC = bits 7:4`, `DIE = bits 11:8`,
+  `CONNECTED = bit 15` (`dptxep.h`), so a *tunnelled* endpoint may use a
+  different `atc`/`die` — one of the things the trace must settle.
+- **Hazard:** `dptx->atcphy = dcp->phy` (the `dp-phy`, here `atcphy1`), and
+  `dptxport_call_set_link_rate()` / `set_active_lane_count()` call
+  `phy_configure(atcphy1, ...)` → `atcphy_dpphy_configure()` →
+  `atcphy_dp_configure()` (DP PLL/lane registers). For the dock, `atcphy1` must
+  stay in `APPLE_ATCPHY_MODE_USB4`, so reconfiguring it for DP is at best noise
+  and at worst fatal to the USB4 link. macOS must point a tunnelled endpoint
+  somewhere else — hence the new experiment 2.
+- `dptx->phy_ops.dp.set_lanes = (dcp->dptx_phy > 3)`: an `apple,dptx-phy` above
+  3 marks a standalone dptx/lpdptx PHY instead of one behind the ATC PHY.
+  `dcpext1` uses 1, `dcpext0`/HDMI uses 3.
+- The ATC PHY's DP-vs-USB4 mode comes from its **Type-C mux** (the typec mux set
+  path calls `atcphy_configure(target_mode)`). `dcpext1` has no Type-C-mux
+  fwnode, so `dcp->typec_mux == NULL` and the dock is what puts `atcphy1` into
+  `USB4` mode — which is why there are no DP lanes to "take".
 
 ## 5. Experiment 1 — `0002-experimental-dp-tunnel.patch`
 
@@ -221,18 +248,25 @@ sudo bash mseries/fairydust/usb4/test-dp-tunnel.sh
 
 ## 6. Next experiments
 
-2. Try `dpin1` (`<&atcphy1_xbar 2>`) and both. Confirm from the crossbar and
+2. **Unbind the tunnelled connector's DPTX endpoint from the ATC DP PHY.** While
+   `dptx->atcphy` is `atcphy1`, every link-rate change makes the DCP poke
+   `atcphy_dp_configure(atcphy1)` although that PHY must stay in USB4 mode. Make
+   a tunnelled `dcpext` end up with no `atcphy` bound (DT marker or code), and
+   confirm the `dptx->atcphy`-only paths (`phy_validate`, `phy_configure`,
+   `phy_set_mode_ext`) then degrade to the existing "default to 4 lanes" branch
+   instead of dereferencing a NULL PHY.
+3. Try `dpin1` (`<&atcphy1_xbar 2>`) and both. Confirm from the crossbar and
    ACIO state which DP IN adapter index the tunnel is expected to use.
-3. Wire the ACIO DP IN endpoints (`port@5`/`port@6`, "DP0"/"DP1") in the device
+4. Wire the ACIO DP IN endpoints (`port@5`/`port@6`, "DP0"/"DP1") in the device
    tree so the thunderbolt core can associate a DP IN adapter with a source, and
    see what the core does with it.
-4. Replace the debugfs hammer with the real trigger: on sink HPD / DP bandwidth
+5. Replace the debugfs hammer with the real trigger: on sink HPD / DP bandwidth
    request, call `dcp_dptx_connect()` for the DP IN adapter that the tunnel will
    use, then let the core read DPRX.
-5. Only then: the DCP firmware protocol for a *tunnelled* DPTX endpoint, guided
+6. Only then: the DCP firmware protocol for a *tunnelled* DPTX endpoint, guided
    by a macOS trace.
 
-## 7. The sanctioned RE method (for step 5)
+## 7. The sanctioned RE method (for step 6)
 
 Per [`README.md`](README.md) and [`RECOVERY.md`](RECOVERY.md), and per the
 ice3186/linux prototype, the last unknown — how the DCP starts a *tunnelled*
