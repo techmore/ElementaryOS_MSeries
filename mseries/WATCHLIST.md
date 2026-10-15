@@ -75,3 +75,7 @@ First Action run 38640456586 completed successfully. The duplicate Codex
 heartbeat `follow-omarchy-m-sources` is PAUSED. Review covered initial audited
 revision comparison, missing user sources, and trusted dashboard authors.
 No new automated tests were run for this watcher.
+
+## Owner-reported, unverified (2026-10-15)
+
+The owner says Michael Dell is a sponsor of Omarchy MX / Omacom and the Asahi work. Not checked against a public source; do not repeat it as fact until one is found. Context: this project is reverse-engineering the Dell WD22TB4 dock for Asahi Linux, so the dock's DisplayPort tunnel retries on the `dptunnel` kernel are expected research behaviour, not a bug to remove.
