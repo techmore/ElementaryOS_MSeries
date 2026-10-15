@@ -250,11 +250,24 @@ sudo bash mseries/fairydust/usb4/test-dp-tunnel.sh
 
 2. **Unbind the tunnelled connector's DPTX endpoint from the ATC DP PHY.** While
    `dptx->atcphy` is `atcphy1`, every link-rate change makes the DCP poke
-   `atcphy_dp_configure(atcphy1)` although that PHY must stay in USB4 mode. Make
-   a tunnelled `dcpext` end up with no `atcphy` bound (DT marker or code), and
-   confirm the `dptx->atcphy`-only paths (`phy_validate`, `phy_configure`,
-   `phy_set_mode_ext`) then degrade to the existing "default to 4 lanes" branch
-   instead of dereferencing a NULL PHY.
+   `atcphy_dp_configure(atcphy1)` although that PHY must stay in USB4 mode.
+
+   The framework paths are already NULL-safe — `phy_validate(NULL, ...)` returns
+   `-EINVAL`, `phy_configure(NULL, ...)` returns `-EINVAL`, and
+   `phy_set_mode_ext(NULL, ...)` returns `0` — and `set_link_rate()` /
+   `set_active_lane_count()` are already guarded by `if (dptx->atcphy)`. So the
+   change is small:
+
+   1. DT: mark the tunnelled connector (`apple,dp-tunnel;`, or reuse
+      `ENABLE_DCPEXT_TB_TUNNEL`).
+   2. `dcp_dptx_connect()`: skip `dptxport[port].atcphy = dcp->phy` for such a
+      connector so it stays NULL (the array comes from `kzalloc`).
+   3. `dptxport_call_get_max_lane_count()`: when `!dptx->atcphy`, take the
+      existing "default to 4 lanes" branch instead of the `-EINVAL` error path
+      that currently reports 0 lanes.
+
+   `dcp->phy` itself must stay present, because `dcp_dptx_connect()` refuses to
+   run without it (`missing phy` / `-ENODEV`).
 3. Try `dpin1` (`<&atcphy1_xbar 2>`) and both. Confirm from the crossbar and
    ACIO state which DP IN adapter index the tunnel is expected to use.
 4. Wire the ACIO DP IN endpoints (`port@5`/`port@6`, "DP0"/"DP1") in the device
