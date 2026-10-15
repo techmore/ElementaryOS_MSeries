@@ -140,8 +140,9 @@ Off by default; the normal build is unchanged.
 
 Changes:
 
-1. `arch/arm64/boot/dts/apple/t6000-j314s.dts` — define `ENABLE_DCPEXT_TYPEC`
-   (so `dcpext1` exists at all) and `ENABLE_DCPEXT_TB_TUNNEL`.
+1. `arch/arm64/boot/dts/apple/t6000-j314s.dts` — define
+   `ENABLE_DCPEXT_TB_TUNNEL` (`dcpext1` itself is already enabled for the
+   J314/J316 family by `t600x-j314-j316.dtsi`).
 2. `arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi` — under
    `ENABLE_DCPEXT_TB_TUNNEL`, `dcpext1` gets `mux-controls = <&atcphy1_xbar 1>`
    (dpin0) instead of `<&atcphy1_xbar 0>` (dpphy).

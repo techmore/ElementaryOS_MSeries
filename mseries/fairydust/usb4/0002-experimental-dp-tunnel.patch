@@ -1,23 +1,17 @@
 diff -ruN a/arch/arm64/boot/dts/apple/t6000-j314s.dts b/arch/arm64/boot/dts/apple/t6000-j314s.dts
 --- a/arch/arm64/boot/dts/apple/t6000-j314s.dts	2026-10-15 13:06:14.519518122 -0400
-+++ b/arch/arm64/boot/dts/apple/t6000-j314s.dts	2026-10-15 13:06:24.871059599 -0400
-@@ -10,6 +10,21 @@
++++ b/arch/arm64/boot/dts/apple/t6000-j314s.dts	2026-10-15 13:16:11.161469247 -0400
+@@ -10,6 +10,15 @@
  /dts-v1/;
  
  #include "t6000.dtsi"
 +
 +/*
-+ * Fairydust display support on the front-left Type-C port.
-+ *
-+ *   ENABLE_DCPEXT_TYPEC      instantiate dcpext1, the external "DP" display
-+ *                            controller that feeds the front-left port.
-+ *   ENABLE_DCPEXT_TB_TUNNEL  experimental: route that stream into the ACIO
-+ *                            DP IN adapter (USB4 / Thunderbolt DP tunnel)
-+ *                            instead of the Type-C DP PHY.
-+ *
-+ * See mseries/fairydust/usb4/DP-TUNNEL-RE.md.
++ * Experimental: route the external display controller of the front-left Type-C
++ * port (dcpext1; already enabled for the J314/J316 family) into the ACIO DP IN
++ * adapter for a USB4 / Thunderbolt DisplayPort tunnel, instead of the Type-C DP
++ * PHY. See mseries/fairydust/usb4/DP-TUNNEL-RE.md.
 + */
-+#define ENABLE_DCPEXT_TYPEC
 +#define ENABLE_DCPEXT_TB_TUNNEL
 +
  #include "t600x-j314-j316.dtsi"
