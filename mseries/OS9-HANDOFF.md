@@ -1295,3 +1295,11 @@ Owner granted passwordless sudo (`/etc/sudoers.d/90-claude-admin`). Applied with
 - **wifi / polkit:** already in place before this run (`brcmfmac` loaded; `49-mseries-netusage.rules` present). Confirm the ten-minute authentication prompt is gone: `journalctl -b -t polkit-agent-helper-1 --since "30 min ago"`.
 - `apply-pending.sh` now tries `sudo -n true` before `sudo -v` (plain `sudo -v` fails under NOPASSWD).
 - The auto-mode safety check blocked the first attempt at the power/greeter steps as persistent system changes; they were run after the owner said to continue.
+
+### Post-reboot verification — 2026-10-15
+
+First boot after the pending sudo steps (kernel `7.1.13-elementary-fairydust-usb4-dptunnel`, a different kernel build from the one earlier in the session; not built or installed by this agent):
+- `systemctl --failed` empty (system and user); no "ordering cycle" line; no `user@109` or `omarchy-wifi-resume-fix` failure in `journalctl -b -p err`; `brcmfmac` loaded on its own. This confirms the `mseries-power` `graphical.target` fix and the Wi-Fi script fix at boot. The `user@109` fix still needs one logout/login to be conclusive.
+- Remaining error-level lines are the known harmless ones: growfs LUKS resize "Operation not permitted", wpa_supplicant/brcmfmac P2P interface -52, tas2764 devicetree parse on two amps, USB mixer "sticky" values.
+- Panel: Wingpanel answers on D-Bus and `libpower.so` carries the watt strings; UPower reported 23.8 W discharging two minutes after boot (boot activity). The on-screen look of the watt label is not yet confirmed by the owner.
+- Still open: the ten-minute authentication helper (the netusage polkit rule has been installed since 2026-10-14 yet the helper fired at 13:49, 13:59 and 14:09 on 2026-10-15, so another action is responsible); a capture of the exact action id is running.
