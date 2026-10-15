@@ -17,12 +17,11 @@ upstream "DP IN PHY"): `DP-TUNNEL-RE.md` section 6.
 If this session is lost, this is the fastest way back.
 
 - **Doc branch:** `docs/dock-video-decision` — this runbook, `DP-TUNNEL-RE.md`,
-  `boot-dt.py`, `test-dp-tunnel.sh`, installer (PR #53). The experiment-2 kernel
-  *implementation* is on branch `re/usb4-exp2` (`94c6e84`, CI run `38788230910`);
-  the two are deliberately kept separate. If you rebuild locally, sync **both**
-  `mseries/fairydust/usb4/0002-experimental-dp-tunnel.patch` **and** the sha256 pin
-  in `mseries/fairydust/debian/build.sh` from `re/usb4-exp2`, or just reinstall
-  from the stash below.
+  `boot-dt.py`, `test-dp-tunnel.sh`, installer (PR #53). It now carries **both**
+  the documentation and the experiment-2 kernel implementation
+  (`0002-experimental-dp-tunnel.patch` + the matching `debian/build.sh` pin), so a
+  build from this branch reproduces the installed kernel. `re/usb4-exp2` is the
+  original implementation branch (same patch, sha256 `c962eff0…`).
 - **Reinstallable artifact stash:** `/home/sdolbec/dp-tunnel-artifacts/exp2/`
   (exp-2 kernel `.deb`, `fairydust-m1n1-boot.bin`, checksums, build log). No
   download needed to reinstall.

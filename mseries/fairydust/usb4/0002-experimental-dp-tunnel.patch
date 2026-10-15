@@ -1,6 +1,6 @@
 diff -ruN a/arch/arm64/boot/dts/apple/t6000-j314s.dts b/arch/arm64/boot/dts/apple/t6000-j314s.dts
---- a/arch/arm64/boot/dts/apple/t6000-j314s.dts	2026-10-15 13:06:14.519518122 -0400
-+++ b/arch/arm64/boot/dts/apple/t6000-j314s.dts	2026-10-15 13:16:11.161469247 -0400
+--- a/arch/arm64/boot/dts/apple/t6000-j314s.dts	2026-10-15 14:43:37.101250095 -0400
++++ b/arch/arm64/boot/dts/apple/t6000-j314s.dts	2026-10-15 14:43:40.545702102 -0400
 @@ -10,6 +10,15 @@
  /dts-v1/;
  
@@ -18,9 +18,9 @@ diff -ruN a/arch/arm64/boot/dts/apple/t6000-j314s.dts b/arch/arm64/boot/dts/appl
  
  / {
 diff -ruN a/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi b/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi
---- a/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi	2026-10-15 13:06:14.524082873 -0400
-+++ b/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi	2026-10-15 13:06:24.871059599 -0400
-@@ -289,7 +289,16 @@
+--- a/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi	2026-10-15 14:43:37.106759853 -0400
++++ b/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi	2026-10-15 14:43:55.547717730 -0400
+@@ -289,7 +289,24 @@
  	apple,dptx-phy = <1>;
  	phys = <&atcphy1 PHY_TYPE_DP>;
  	phy-names = "dp-phy";
@@ -31,6 +31,14 @@ diff -ruN a/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi b/arch/arm64/boot/dts
 +	 * the Type-C DP PHY ("dpphy", index 0).
 +	 */
 +	mux-controls = <&atcphy1_xbar 1>;
++
++	/*
++	 * Mark this connector as driven through the USB4 DP tunnel. The DCP
++	 * must not attach the ATC DP PHY (atcphy1 has to stay in USB4 mode);
++	 * the ACIO DP IN adapter owns the link instead. See
++	 * mseries/fairydust/usb4/DP-TUNNEL-RE.md (experiment 2).
++	 */
++	apple,dp-tunnel;
 +#else
  	mux-controls = <&atcphy1_xbar 0>;
 +#endif
@@ -38,8 +46,8 @@ diff -ruN a/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi b/arch/arm64/boot/dts
  	mux-index = <2>;
  };
 diff -ruN a/drivers/gpu/drm/apple/connector.c b/drivers/gpu/drm/apple/connector.c
---- a/drivers/gpu/drm/apple/connector.c	2026-10-15 13:06:14.536816499 -0400
-+++ b/drivers/gpu/drm/apple/connector.c	2026-10-15 13:06:38.072061535 -0400
+--- a/drivers/gpu/drm/apple/connector.c	2026-10-15 14:43:37.112429863 -0400
++++ b/drivers/gpu/drm/apple/connector.c	2026-10-15 14:43:40.545867019 -0400
 @@ -15,6 +15,26 @@
  #include <drm/drm_managed.h>
  
@@ -76,9 +84,74 @@ diff -ruN a/drivers/gpu/drm/apple/connector.c b/drivers/gpu/drm/apple/connector.
  
  	switch (connector->connector_type) {
  	case DRM_MODE_CONNECTOR_DisplayPort:
+diff -ruN a/drivers/gpu/drm/apple/dcp-internal.h b/drivers/gpu/drm/apple/dcp-internal.h
+--- a/drivers/gpu/drm/apple/dcp-internal.h	2026-10-15 14:43:37.124503007 -0400
++++ b/drivers/gpu/drm/apple/dcp-internal.h	2026-10-15 14:43:56.947719985 -0400
+@@ -265,6 +265,8 @@
+ 
+ 	u32 dptx_phy;
+ 	u32 dptx_die;
++	/* Connector is driven through the USB4 DP tunnel (DP-TUNNEL-RE.md) */
++	bool dp_tunnel;
+ 	int hdmi_hpd_irq;
+ };
+ 
+diff -ruN a/drivers/gpu/drm/apple/dcp.c b/drivers/gpu/drm/apple/dcp.c
+--- a/drivers/gpu/drm/apple/dcp.c	2026-10-15 14:43:37.118297539 -0400
++++ b/drivers/gpu/drm/apple/dcp.c	2026-10-15 14:44:02.485728907 -0400
+@@ -378,7 +378,13 @@
+ 		goto out_unlock;
+ 
+ 	reinit_completion(&dcp->dptxport[port].linkcfg_completion);
+-	dcp->dptxport[port].atcphy = dcp->phy;
++	/*
++	 * Experiment 2: for a tunnelled connector leave atcphy NULL so the DCP
++	 * never reconfigures the ATC DP PHY (it has to stay in USB4 mode); the
++	 * ACIO DP IN adapter handles the link. See DP-TUNNEL-RE.md.
++	 */
++	if (!dcp->dp_tunnel)
++		dcp->dptxport[port].atcphy = dcp->phy;
+ 	dptxport_connect(dcp->dptxport[port].service, 0, dcp->dptx_phy, dcp->dptx_die);
+ 	dptxport_request_display(dcp->dptxport[port].service);
+ 	dcp->dptxport[port].connected = true;
+@@ -992,9 +998,10 @@
+ 					   &dcp->dptx_phy);
+ 	of_property_read_u32(dev->of_node, "apple,dptx-die",
+ 					   &dcp->dptx_die);
++	dcp->dp_tunnel = of_property_read_bool(dev->of_node, "apple,dp-tunnel");
+ 	if (dcp->index || dcp->dptx_phy || dcp->dptx_die)
+-		dev_info(dev, "DCP index:%u dptx target phy: %u dptx die: %u\n",
+-			 dcp->index, dcp->dptx_phy, dcp->dptx_die);
++		dev_info(dev, "DCP index:%u dptx target phy: %u dptx die: %u tunnel: %d\n",
++			 dcp->index, dcp->dptx_phy, dcp->dptx_die, dcp->dp_tunnel);
+ 	mutex_init(&dcp->hpd_mutex);
+ 
+ 	if (!show_notch)
+diff -ruN a/drivers/gpu/drm/apple/dptxep.c b/drivers/gpu/drm/apple/dptxep.c
+--- a/drivers/gpu/drm/apple/dptxep.c	2026-10-15 14:43:37.130845017 -0400
++++ b/drivers/gpu/drm/apple/dptxep.c	2026-10-15 14:44:05.386733581 -0400
+@@ -257,6 +257,18 @@
+ 	if (reply_size < sizeof(*reply))
+ 		return -EINVAL;
+ 
++	/*
++	 * Experiment 2: a tunnelled connector has no ATC PHY attached (the ACIO
++	 * DP IN adapter owns the link), so default to 4 lanes instead of failing
++	 * the apcall. See DP-TUNNEL-RE.md.
++	 */
++	if (!dptx->atcphy) {
++		dptx->lane_count = 4;
++		reply->retcode = cpu_to_le32(0);
++		reply->lane_count = cpu_to_le64(dptx->lane_count);
++		return 0;
++	}
++
+ 	ret = phy_validate(dptx->atcphy, PHY_MODE_DP, 0, &phy_ops);
+ 	if (ret < 0) {
+ 		dev_err(dcp->dev, "phy_validate failed: %d\n", ret);
 diff -ruN a/drivers/thunderbolt/quirks.c b/drivers/thunderbolt/quirks.c
---- a/drivers/thunderbolt/quirks.c	2026-10-15 13:06:14.528901165 -0400
-+++ b/drivers/thunderbolt/quirks.c	2026-10-15 13:06:31.744060607 -0400
+--- a/drivers/thunderbolt/quirks.c	2026-10-15 14:43:37.137701820 -0400
++++ b/drivers/thunderbolt/quirks.c	2026-10-15 14:43:40.545920894 -0400
 @@ -7,6 +7,22 @@
  
  #include "tb.h"
@@ -113,3 +186,36 @@ diff -ruN a/drivers/thunderbolt/quirks.c b/drivers/thunderbolt/quirks.c
  	sw->quirks |= QUIRK_NO_DP_TUNNEL;
  	tb_sw_dbg(sw, "disabling DP tunneling\n");
  }
+diff -ruN a/drivers/thunderbolt/tunnel.c b/drivers/thunderbolt/tunnel.c
+--- a/drivers/thunderbolt/tunnel.c	2026-10-15 14:43:37.146997210 -0400
++++ b/drivers/thunderbolt/tunnel.c	2026-10-15 14:44:10.332741549 -0400
+@@ -91,6 +91,17 @@
+ 		 "DPRX capability read timeout in ms, -1 waits forever (default: "
+ 		 __MODULE_STRING(TB_DPRX_TIMEOUT) ")");
+ 
++/*
++ * Experimental: pretend the DPRX capabilities read completed even when the host
++ * router never sets DP_COMMON_CAP.DPRX_DONE. Used to test whether the DP tunnel
++ * activates and whether the display then comes up. See
++ * mseries/fairydust/usb4/DP-TUNNEL-RE.md. Writable at runtime.
++ */
++static bool dprx_bypass;
++module_param(dprx_bypass, bool, 0644);
++MODULE_PARM_DESC(dprx_bypass,
++		 "skip the DPRX_DONE wait and pretend DPRX completed (experimental)");
++
+ static unsigned int dma_credits = TB_DMA_CREDITS;
+ module_param(dma_credits, uint, 0444);
+ MODULE_PARM_DESC(dma_credits, "specify custom credits for DMA tunnels (default: "
+@@ -1065,6 +1076,11 @@
+ 	ktime_t timeout = dprx_timeout_to_ktime(timeout_msec);
+ 	struct tb_port *in = tunnel->src_port;
+ 
++	if (dprx_bypass) {
++		tb_tunnel_dbg(tunnel, "DPRX bypass enabled, pretending DPRX completed\n");
++		return 0;
++	}
++
+ 	/*
+ 	 * Wait for DPRX done. Normally it should be already set for
+ 	 * active tunnel.

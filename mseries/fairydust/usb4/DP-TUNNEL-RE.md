@@ -5,6 +5,12 @@ sink never answers; experiment 2 built and installed; runbook ready. Offline
 source/upstream analysis added 2026-10-15 (section 6): `dprx_bypass` can bring the
 fabric up but cannot produce video, and the missing piece is upstream's "DP IN
 PHY".** (2026-10-15).
+
+This branch now carries the experiment-2 **implementation** as well as the docs:
+`0002-experimental-dp-tunnel.patch` (sha256 `c962eff0…`) matches the pin in
+`debian/build.sh`, so a build from here reproduces the installed
+`7.1.13-elementary-fairydust-usb4-dptunnel` kernel. `re/usb4-exp2` remains the
+upstream/ownership branch; the two no longer need syncing by hand.
 Next hardware session: [`EXP2-RUNBOOK.md`](EXP2-RUNBOOK.md).
 Scope: make the Dell WD22TB4's HDMI/DP outputs work, i.e. tunnel DisplayPort
 from the display controller (`DCP`) through the USB4 host router (`ACIO`) to the
@@ -581,7 +587,11 @@ showed the firmware does its own sink detection (section 5, call 20).
    display-tree component. In both configurations also try the `force_link` write,
    which has never been exercised, since the DP IN adapter's AUX may only be
    routable once the DCP is actually driving.
-2. **Unbind the tunnelled connector's DPTX endpoint from the ATC DP PHY.** While
+2. **Unbind the tunnelled connector's DPTX endpoint from the ATC DP PHY.**
+   *Implemented* — this branch's `0002-experimental-dp-tunnel.patch`
+   (`apple,dp-tunnel`, NULL `atcphy`, 4-lane default), installed as the
+   `…-dptunnel` kernel. The open question is only whether it changes the DCP's
+   behaviour at all. While
    `dptx->atcphy` is `atcphy1`, every link-rate change makes the DCP poke
    `atcphy_dp_configure(atcphy1)` although that PHY must stay in USB4 mode.
 
@@ -659,6 +669,35 @@ deadlocked against the `tps6598x` (CD321x) mutex, and the port stayed dead — n
 hotplug, no USB, no charging — until a hard power-cycle. Nothing at runtime
 clears it.
 
+What happens, in stock code (experiments 1 and 2 do not touch this path):
+
+    cd321x_update_work [tps6598x_core]        # cable removal, holds the tps6598x mutex
+      -> cd321x_deactivate_altmodes -> typec_altmode_update_active
+      -> apple_cio_altmode_notify -> apple_cio_set_cable_info(0)
+      -> apple_cio_stop -> of_platform_depopulate        # removes the NHI device
+      -> apple_nhi_remove -> tb_domain_remove
+           -> wait_for_completion(&anhi->nhi.domain_released)   # never completes
+
+`domain_released` is completed in `tb_domain_release()` (`domain.c`) when the tb
+domain's last reference drops. `tb_domain_remove()` calls `tb->cm_ops->stop()`
+(= `tb_stop()`), which drops DP-tunnel references **without deactivating the
+tunnels**, so nothing cancels the `dprx_work` still waiting for DPRX; the tunnel
+outlives `tb_switch_remove` and its references keep the domain alive. The waiting
+kworker holds the `tps6598x` mutex the whole time, so the Type-C IRQ thread and
+every later module unload block on it too. No userspace recovery exists — no
+process holds an fd on the tb char device; the reference is kernel-side.
+
+Upstream describes it in exactly these terms: *"This can be triggered by
+unbinding the driver while a DP tunnel is still waiting for the DPRX capabilities
+read to finish. On the Apple NHI unplugging the cable runs into just that
+reliably because the read can never finish right now and because the unplug
+powers down the entire USB4 complex and removes the NHI device."* (linux-kernel,
+"thunderbolt: Hold a router reference for each path", v2 1/7, 2026-08-24). The
+same thread explains why a full ACIO teardown per cable is unavoidable: the
+cable-info VSE register "appears to be effectively write-once after each boot of
+the co-processor", and writing a second connection's value crashes it ("assert
+4357 violated").
+
 Rules that follow, in order of preference:
 
 1. **Never unplug the dock while a DPRX read is in flight.** Arm
@@ -670,6 +709,9 @@ Rules that follow, in order of preference:
 3. Do not suspend with the USB4 dock attached (the next boot hung at
    `PM: suspend entry (s2idle)` and needed a power-cycle; `CUTOVER.md` warns of
    the same).
+4. Recovery when it does wedge: **reboot**. `sudo reboot` works — neither
+   `tps6598x` nor the Apple thunderbolt driver registers a `.shutdown` callback,
+   so the stuck mutex does not block `device_shutdown()`.
 
 This is a known upstream bug with a fix we predate — see section 6.3; backporting
 Sven Peter's "Fix DP tunnel teardown while an async DPRX read is running" series

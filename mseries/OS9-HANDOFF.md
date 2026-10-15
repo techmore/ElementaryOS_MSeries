@@ -29,10 +29,13 @@ the state below is "prepared and waiting", not "finished".
 - **Measured hazard:** do *not* unplug the dock while a DPRX read is in flight —
   it deadlocks `apple_nhi_remove` against the `tps6598x` mutex and wedges the
   Type-C port until a hard reboot. Arm `dprx_bypass=1` before attaching the dock.
-- **Where the work lives:** documentation on branch `docs/dock-video-decision`
-  (PR #53); the experiment-2 kernel implementation on branch `re/usb4-exp2`;
-  durable artifacts (kernel `.deb`, boot images, logs, backups) under
-  `/home/sdolbec/dp-tunnel-artifacts/` and `/home/sdolbec/dptunnel-logs/`.
+- **Where the work lives:** branch `docs/dock-video-decision` (PR #53) now carries
+  **both** the documentation and the experiment-2 implementation
+  (`0002-experimental-dp-tunnel.patch` + the matching `debian/build.sh` pin), so a
+  build from this one branch reproduces the installed kernel; `re/usb4-exp2`
+  remains the original implementation branch. Durable artifacts (kernel `.deb`,
+  boot images, logs, backups) are under `/home/sdolbec/dp-tunnel-artifacts/` and
+  `/home/sdolbec/dptunnel-logs/`.
 
 ## Current hardware state — 2026-10-14
 
@@ -170,6 +173,54 @@ is `ce9f2eba` (2026-09-08), the revision this repo already builds, so there is
 nothing new to rebuild. Added read-only helper `mseries/check-display-paths.sh`
 (DCP firmware, support modules, DRM connectors, per-path verdict) and updated the
 ROADMAP open-problem row. No kernel, bootloader or audio change was made.
+
+## Dock video experiment 2 installed + unplug deadlock found — 2026-10-15 15:30
+
+- **Incident:** at 14:55:47 the dock was unplugged while experiment 1 was armed
+  with `dprx_timeout=-1`. The Type-C port deadlocked in stock code
+  (`apple_nhi_remove` waits forever for `domain_released` while holding the
+  `tps6598x` mutex), killing USB/Ethernet/hotplug/charging on that port. Only a
+  reboot clears it; the Mac's own display, session and wifi were unaffected.
+  Analysis, stack trace and upstream references: `mseries/fairydust/usb4/DP-TUNNEL-RE.md` §9.
+- **Mitigation:** the test entry now boots with a bounded
+  `thunderbolt.dprx_timeout=3600000` (1 h) instead of `-1`, and `dprx_bypass=1`
+  disarms the polling at runtime. Rule: do not unplug the dock while armed.
+- **Experiment 2 installed** from CI run 38788230910 (`build-kernel` completed
+  19:11:21Z) into the `elementary-usb4-dptunnel` entry: kernel
+  `7.1.13-elementary-fairydust-usb4-dptunnel`, DTB swapped inside
+  `/boot/m1n1/boot.bin`. Verified: `dprx_bypass` present in `thunderbolt.ko`,
+  `apple,dp-tunnel` present in `appledrm.ko` *and* in the rebuilt initramfs, and
+  `apple,dp-tunnel` present in the boot.bin device tree.
+- **Installer bug fixed:** `cp -a` nested the module tree on a repeat install, so
+  the old modules (and the old `appledrm.ko` in the initramfs) would have been
+  used; `install-ci-kernel.sh` now copies directory contents (`dir/.`). Both
+  module trees and the initramfs were repaired by hand on this machine.
+- **Next:** reboot into the `elementary OS (M-series, fairydust-usb4-dptunnel test)`
+  entry, check whether the DCP still reports `DEVICE_NOT_RESPONDING`
+  (experiment 2 alone), then
+  `echo 1 | sudo tee /sys/module/thunderbolt/parameters/dprx_bypass` and watch
+  `DP-1` / the monitor.
+- Rollback: normal GRUB entry; pre-install `boot.bin` copies in
+  `/root/usb4-backup-20261015-152345/` and
+  `/boot/m1n1/boot.bin.KNOWN-GOOD-pre-usb4-20261015-152345`.
+
+## Dock video experiment 2 built (CI in progress) — 2026-10-15
+
+Experiment 1 was booted and measured: the crossbar route is live (`Switched
+dpin0 to dispext1,0`) and the USB4 DP tunnel forms (`0:5 <-> 1:13 (DP)`), but
+the host router never sets `DP_COMMON_CAP.DPRX_DONE`, so the tunnel never
+activates and `DP-1` stays `disconnected`. Both the ACIO (DPRX) and the DCP
+firmware (apcalls 22/24 = `DEVICE_NOT_RESPONDING`/`DEVICE_NOT_STARTED`) fail to
+read the sink's DPCD over AUX.
+
+Experiment 2 (unbind the tunnelled DPTX from the ATC DP PHY) is now built into
+`0002-experimental-dp-tunnel.patch`, together with a runtime `dprx_bypass`
+parameter, on branch `re/usb4-exp2` (commit 94c6e84). CI run 38788230910 builds
+the matching kernel package; nothing is installed or booted from it yet.
+
+The remaining unknown — the DCP's tunnelled-DPTX protocol and the DPIN crossbar
+programming — still needs a macOS trace captured from a second computer with the
+m1n1 hypervisor (see `fairydust/usb4/DP-TUNNEL-RE.md` §6/§7).
 
 ## New desktop bugs reported — 2026-10-13
 
