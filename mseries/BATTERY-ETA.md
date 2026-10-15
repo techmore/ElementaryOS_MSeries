@@ -40,3 +40,6 @@ regenerated with three lines of context and now lands in the right place.
 
 Install: `sudo apt install libgtop2-dev` (build dependency), then `bash mseries/install-battery-eta.sh`
 (or `bash mseries/apply-pending.sh --only wattmeter`).
+
+Spacing (2026-10-15): at the owner's request the watt label has an 8 px left margin so it sits clear of the
+battery icon and percentage. Installed on the M1 Pro; the owner confirms the look.

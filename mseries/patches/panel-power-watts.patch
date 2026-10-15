@@ -15,7 +15,7 @@ index 0154cb8..7d59216 100644
          }
      }
 diff --git a/src/Widgets/DisplayWidget.vala b/src/Widgets/DisplayWidget.vala
-index aa60b0a..2531a03 100644
+index aa60b0a..e2302dc 100644
 --- a/src/Widgets/DisplayWidget.vala
 +++ b/src/Widgets/DisplayWidget.vala
 @@ -38,6 +38,8 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
@@ -27,13 +27,15 @@ index aa60b0a..2531a03 100644
      private Gtk.Image image;
  
      construct {
-@@ -64,7 +66,16 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
+@@ -64,7 +66,18 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
  
          append (image);
          append (percent_revealer);
 +        power_draw_label = new Gtk.Label (null);
 +        power_draw_label.add_css_class ("dim-label");
 +        power_draw_label.add_css_class ("numeric");
++        // Keep the reading clear of the battery icon and percentage.
++        power_draw_label.margin_start = 8;
 +        power_draw_revealer = new Gtk.Revealer () {
 +            transition_type = Gtk.RevealerTransitionType.SLIDE_RIGHT,
 +            child = power_draw_label,
@@ -44,7 +46,7 @@ index aa60b0a..2531a03 100644
  
          settings.bind ("show-percentage", percent_revealer, "reveal-child", GLib.SettingsBindFlags.GET);
          bind_property ("allow-percent", percent_revealer, "visible", GLib.BindingFlags.SYNC_CREATE);
-@@ -80,6 +91,23 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
+@@ -80,6 +93,23 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
          percent_revealer.reveal_child = show;
      }
  
