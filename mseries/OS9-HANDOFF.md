@@ -1330,6 +1330,6 @@ Baseline at 105/500 brightness, apps open, docked, charger connected: 13.6 W med
 
 Owner asked to check the report that Michael Dell gave $1 million to the Omarchy foundation. Confirmed by It's FOSS (25 Aug 2026): the entity is the **Omacom Foundation**; eight patrons each put in $1 million, Dell among them. Not found: any link to Asahi Linux or Apple Silicon, whether the money is paid or pledged, or a statement from Dell. Recorded in `WATCHLIST.md`, replacing the earlier "unverified" note. The $18.6 million / twelve-patron figure appears only in LinkedIn reposts and is unconfirmed.
 
-### Password prompt confirmed fixed — 2026-10-15
+### Password prompt fix: early check only — 2026-10-15
 
-Owner ran `journalctl -b -t polkit-agent-helper-1 --since "14:25"`: no entries, across the 14:33 and 14:43 marks that previously fired. Cause was `netusage`'s `resolvectl show-cache` (`resolve1.dump-cache`); fixed with `--no-ask-password` plus the extended polkit rule (`b7e2dae`).
+Owner ran `journalctl -b -t polkit-agent-helper-1 --since "14:25"` and it showed no entries, but that was before the 14:33 and 14:43 marks the old pattern fired at, so it is not confirmation yet (an earlier entry in this file claimed it was; corrected). Cause remains `netusage`'s `resolvectl show-cache` (`resolve1.dump-cache`); fix is `--no-ask-password` plus the extended polkit rule (`b7e2dae`). Re-run the same command after 14:45 and record the result.
