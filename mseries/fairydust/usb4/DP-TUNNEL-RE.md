@@ -403,7 +403,8 @@ That unplug is what wedged the Type-C port — see section 9: unplugging while a
 DPRX read is in flight deadlocks `apple_nhi_remove` against the `tps6598x` mutex,
 and only a reboot clears it. The
 GRUB entry has since been changed to `thunderbolt.dprx_timeout=3600000`; prefer a
-short bound, and disarm at runtime with `dprx_bypass=1` before touching the cable.
+short bound, and arm the runtime bypass `dprx_bypass=1` before touching the cable
+(with it on, the DPRX wait returns at once and no read is left in flight).
 
 And in the next boot (boot `-1`, 15:34) the suspend attempt ends at
 `PM: suspend entry (s2idle)` with nothing after it and the machine had to be

@@ -126,6 +126,9 @@ elif [ "$inactive" -gt 0 ]; then
 	say "  on that exact input, dock's HDMI rather than a DP adapter, or the dock's other"
 	say "  output. Watch for calls 5/6/7/9 (link config / link rate): those mean the"
 	say "  firmware is actually driving the link."
+	say "  EARLY-STOP: a silent sink is the frontier answer. No driver/DT change on this"
+	say "  machine can complete a read the router cannot make. Save this output and pivot"
+	say "  to the macOS trace (MACOS-TRACE-RUNBOOK.md) rather than patching further."
 elif [ "$bypass" = 1 ]; then
 	say "  dprx_bypass=1 and idx=$idx. If the DPRX storm stopped and the paths report"
 	say "  'activation complete', the tunnel is up -- the remaining question is whether"
@@ -148,5 +151,6 @@ else
 fi
 say ""
 say "Hazard: do NOT unplug the dock while a DPRX read is in flight (it deadlocks"
-say "apple_nhi_remove and wedges the Type-C port until reboot). Disarm first with"
+say "apple_nhi_remove and wedges the Type-C port until reboot). Make it safe first by"
+say "ARMING the bypass (write 1, not 0) BEFORE touching the cable:"
 say "  echo 1 | sudo tee /sys/module/thunderbolt/parameters/dprx_bypass"

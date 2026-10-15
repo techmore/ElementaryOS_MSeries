@@ -153,7 +153,7 @@ sudo sh -c 'echo 1 > "$(find /sys/kernel/debug/dri -name force_link | head -1)"'
 cat /sys/class/drm/card2/card2-DP-1/status
 ```
 
-Disarm before you touch the cable (see section 4).
+Arm the bypass before you touch the cable (see section 4).
 
 ---
 
@@ -261,7 +261,8 @@ input `dispext1` selects), but it means "boot the other entry to compare" does
 1. **Never unplug the dock while a DPRX read is in flight.** It deadlocks
    `apple_nhi_remove` against the `tps6598x` mutex and wedges the Type-C port
    (no hotplug, no USB, no charging) until a hard reboot — this is measured, see
-   `DP-TUNNEL-RE.md` section 9. Disarm first:
+   `DP-TUNNEL-RE.md` section 9. Make the port safe *first* by **arming** the
+   bypass (write `1`; `0` restores the normal wait):
    `echo 1 | sudo tee /sys/module/thunderbolt/parameters/dprx_bypass`.
    With the bypass armed the read returns instantly, which is exactly why arming
    it *before* attaching the dock is the first step of section 1.
@@ -347,8 +348,9 @@ Lessons from 2026-10-15, a full day that produced no picture:
 3. **Do not run the whole A/B/C/D ablation** unless the sink answered and you
    still have time (section 3) — four reboots, and the host side is already
    proven.
-4. **Do not unplug the dock with the experiment armed** (section 4): it wedges
-   the port until a hard reboot. Disarm first.
+4. **Do not unplug the dock while a DPRX read can be in flight** — i.e. unless
+   the bypass is armed (section 4). It wedges the port until a hard reboot; arm
+   the bypass (write `1`) first.
 5. **Do not chase the adapter/port mappings or the `dprx_timeout` bookkeeping**
    before the sink question is answered.
 

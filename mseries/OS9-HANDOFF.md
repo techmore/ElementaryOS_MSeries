@@ -187,7 +187,8 @@ ROADMAP open-problem row. No kernel, bootloader or audio change was made.
   Analysis, stack trace and upstream references: `mseries/fairydust/usb4/DP-TUNNEL-RE.md` §9.
 - **Mitigation:** the test entry now boots with a bounded
   `thunderbolt.dprx_timeout=3600000` (1 h) instead of `-1`, and `dprx_bypass=1`
-  disarms the polling at runtime. Rule: do not unplug the dock while armed.
+  (runtime-writable) makes `tb_dp_wait_dprx()` return at once, so no read is left
+  in flight. Rule: arm the bypass (write 1) before unplugging the dock.
 - **Experiment 2 installed** from CI run 38788230910 (`build-kernel` completed
   19:11:21Z) into the `elementary-usb4-dptunnel` entry: kernel
   `7.1.13-elementary-fairydust-usb4-dptunnel`, DTB swapped inside
