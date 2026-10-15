@@ -53,6 +53,12 @@ Landed (experiment 1, off by default):
   and swap just the `j314s` DTB inside the existing boot image (`--swap-dtb`), so
   the experimental kernel installs side by side as its own GRUB entry. Nothing
   was installed or booted.
+- Cleared the proxyclient dependency blocker without touching the system:
+  `fairydust/usb4/m1n1-trace-deps.sh` vendors `construct==2.10.70` and
+  `pyserial==3.5` into `~/.local/share/m1n1-proxyclient/site` (no pip/apt/sudo).
+  Verified `proxyclient/tools/run_guest.py --help` and the tracer imports work.
+  `proxyclient/hv/` already ships `trace_dcp.py` (AFK/ASC endpoint tracer) and
+  `trace_dptx.py`, so the macOS trace is now a tooling-free step.
 
 Verified: patch applies cleanly to the prepared source, hashes match, `build.sh`
 syntax and the workflow YAML parse. **Not yet done: the actual kernel build/boot

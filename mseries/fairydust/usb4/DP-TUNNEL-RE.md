@@ -234,16 +234,38 @@ sudo bash mseries/fairydust/usb4/test-dp-tunnel.sh
 
 ## 7. The sanctioned RE method (for step 5)
 
-Per [`README.md`](README.md) and [`RECOVERY.md`](RECOVERY.md), the missing
-protocol details must come from a trace of macOS driving the same dock, captured
-from a second computer with the m1n1 hypervisor:
+Per [`README.md`](README.md) and [`RECOVERY.md`](RECOVERY.md), and per the
+ice3186/linux prototype, the last unknown — how the DCP starts a *tunnelled*
+DPTX endpoint, and the DPIN0/DPIN1 crossbar programming — must come from a trace
+of macOS driving the same dock, captured from a second computer with the m1n1
+hypervisor.
 
-- `m1n1-build/m1n1/proxyclient/` (`hv`, `experiments`, `tools`) on the second
-  machine; `pyserial` and `construct` are required.
-- Boot macOS on the Mac with the dock attached, capture MMIO/AFK traffic for the
-  DCP DPTX endpoint and the ACIO DP IN adapter, and diff against the Linux boot.
-- Targets: the AFK call that starts a tunnelled DPTX endpoint, the remote-port
-  encoding, AUX routing, and HPD direction.
+The tooling already exists, and its dependencies are now vendored off-system
+(no `pip`, no `apt`, no `sudo`):
+
+```
+bash mseries/fairydust/usb4/m1n1-trace-deps.sh
+```
+
+That fetches the two pure-Python wheels `proxyclient` needs
+(`construct==2.10.70`, `pyserial==3.5`) into
+`~/.local/share/m1n1-proxyclient/site` and prints the `PYTHONPATH`. From the
+**second** computer, with the Mac booted into m1n1 and the WD22TB4 + monitor
+attached:
+
+```
+export PYTHONPATH=~/.local/share/m1n1-proxyclient/site:<m1n1>/proxyclient
+python3 <m1n1>/proxyclient/tools/run_guest.py \
+  -m <m1n1>/proxyclient/hv/trace_dcp.py  <m1n1>.macho   # DCP / AFK / ASC traffic
+python3 <m1n1>/proxyclient/tools/run_guest.py \
+  -m <m1n1>/proxyclient/hv/trace_dptx.py <m1n1>.macho   # DPTX PHY MMIO
+```
+
+`proxyclient/hv/` already ships DCP- and DPTX-specific tracers (`trace_dcp.py`
+is a full AFK/ASC endpoint tracer built on `m1n1.fw.dcp.ipc`). Targets: the
+sequence the DCP uses when the dock's DP sink appears, the remote-port encoding
+for a tunnelled endpoint, AUX routing, HPD direction, and the
+`CROSSBAR_ATC_EN` / `CROSSBAR_MUX_CTRL` writes that select `dpin0`/`dpin1`.
 
 This cannot be done from this machine alone (one computer, no second host
 attached); it is the one genuinely blocking dependency.
