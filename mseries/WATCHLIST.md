@@ -76,6 +76,20 @@ heartbeat `follow-omarchy-m-sources` is PAUSED. Review covered initial audited
 revision comparison, missing user sources, and trusted dashboard authors.
 No new automated tests were run for this watcher.
 
-## Owner-reported, unverified (2026-10-15)
+## Funding: Michael Dell and the Omacom Foundation (checked 2026-10-15)
 
-The owner says Michael Dell is a sponsor of Omarchy MX / Omacom and the Asahi work. Not checked against a public source; do not repeat it as fact until one is found. Context: this project is reverse-engineering the Dell WD22TB4 dock for Asahi Linux, so the dock's DisplayPort tunnel retries on the `dptunnel` kernel are expected research behaviour, not a bug to remove.
+[It's FOSS, 25 Aug 2026](https://itsfoss.com/news/omarchy-launches-omacom-foundation/) reports that the
+**Omacom Foundation** (the nonprofit behind Omarchy; not called the "Omarchy Foundation") launched with eight patrons who
+"each put in a million dollars": Michael Dell (Dell Technologies), Patrick Collison (Stripe), Tobi Lutke
+(Shopify), Jack Dorsey (Block), Matthew Prince (Cloudflare), Jason Fried (37signals), Brendan Iribe (Sesame) and
+DHH. The foundation is to hold the Omarchy trademark, fund infrastructure and promotion, and pay the open
+source developers the project depends on; the first named beneficiary is Hyprland. LinkedIn posts later
+repeat a larger "$18.6 million" figure with twelve patrons; that was not confirmed from a primary source.
+
+What was **not** found: any statement that this money goes to Asahi Linux or to the Apple Silicon work, whether
+Dell's $1 million is paid or pledged, or a statement from Dell himself. The owner's recollection that Dell
+also sponsors the Asahi work is therefore unconfirmed. Check the foundation's own site or announcement
+before repeating it.
+
+Context: this project is reverse-engineering the Dell WD22TB4 dock for Asahi Linux, so the dock's
+DisplayPort tunnel retries on the `dptunnel` kernel are expected research behaviour, not a bug to remove.
