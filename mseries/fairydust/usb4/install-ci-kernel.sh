@@ -40,7 +40,17 @@ extra=${KERNEL_EXTRA_CMDLINE:-}
 [[ $EUID -eq 0 ]] || die "run as root (sudo)"
 [[ $(uname -m) == aarch64 ]] || die "aarch64 only"
 deb=$(compgen -G "$art/linux-image-*usb4*.deb" | head -1) || true
-[[ -n $deb ]] || die "no linux-image-*usb4*.deb in $art"
+if [[ -z $deb ]]; then
+  # `gh run download -D dir` puts the files in dir/<artifact-name>/, so also
+  # accept exactly one level of nesting.
+  nested=$(compgen -G "$art/*/linux-image-*usb4*.deb" | head -1) || true
+  if [[ -n $nested ]]; then
+    art=$(dirname "$nested")
+    deb=$nested
+    echo "using nested artifact dir: $art"
+  fi
+fi
+[[ -n $deb ]] || die "no linux-image-*usb4*.deb in $art (looked there and one level down)"
 (cd "$art" && sha256sum -c SHA256SUMS --ignore-missing --quiet) || die "checksum mismatch in $art"
 
 esp=/boot
