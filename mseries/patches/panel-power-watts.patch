@@ -1,21 +1,93 @@
 diff --git a/src/Indicator.vala b/src/Indicator.vala
-index 0154cb8..7d59216 100644
+index 0154cb8..75c1699 100644
 --- a/src/Indicator.vala
 +++ b/src/Indicator.vala
-@@ -161,6 +161,11 @@ public class Power.Indicator : Wingpanel.Indicator {
+@@ -55,10 +55,74 @@ public class Power.Indicator : Wingpanel.Indicator {
+         settings = new GLib.Settings ("io.elementary.panel.power");
+     }
+ 
++    private string? system_power_path = null;
++
++    /* Apple Silicon's SMC exposes the whole machine's power ("Total System Power"), which is what the
++     * owner wants to see on battery and on the charger alike. */
++    private string? find_system_power_path () {
++        try {
++            var dir = Dir.open ("/sys/class/hwmon");
++            string? name;
++            while ((name = dir.read_name ()) != null) {
++                var base_dir = Path.build_filename ("/sys/class/hwmon", name);
++                string chip;
++                if (!FileUtils.get_contents (Path.build_filename (base_dir, "name"), out chip) ||
++                    chip.strip () != "macsmc_hwmon") {
++                    continue;
++                }
++
++                for (int i = 1; i <= 8; i++) {
++                    string label;
++                    if (FileUtils.get_contents (Path.build_filename (base_dir, "power%d_label".printf (i)), out label) &&
++                        label.strip () == "Total System Power") {
++                        return Path.build_filename (base_dir, "power%d_input".printf (i));
++                    }
++                }
++            }
++        } catch (Error e) {
++            debug ("No system power sensor: %s", e.message);
++        }
++
++        return null;
++    }
++
++    private double read_system_watts () {
++        if (system_power_path == null) {
++            return -1.0;
++        }
++
++        try {
++            string contents;
++            FileUtils.get_contents (system_power_path, out contents);
++            return double.parse (contents.strip ()) / 1000000.0;
++        } catch (FileError e) {
++            return -1.0;
++        }
++    }
++
++    private void update_power_draw () {
++        if (display_widget == null || display_device == null) {
++            return;
++        }
++
++        double watts = read_system_watts ();
++        if (watts < 0.0) {
++            watts = display_device.energy_rate;
++        }
++
++        display_widget.show_power_draw (watts, display_device.is_charging);
++    }
++
+     public override Gtk.Widget get_display_widget () {
+         if (display_widget == null) {
+             display_widget = new Widgets.DisplayWidget ();
+ 
++            system_power_path = find_system_power_path ();
++            Timeout.add_seconds (2, () => {
++                update_power_draw ();
++                return Source.CONTINUE;
++            });
++
+             /* No need to display the indicator when the device is completely in AC mode */
+             if (dm.has_battery || dm.backlight.present) {
+                 update_visibility ();
+@@ -161,6 +225,8 @@ public class Power.Indicator : Wingpanel.Indicator {
                  display_device.is_charging ? display_device.time_to_full : 0
              );
  
-+            display_widget.show_power_draw (
-+                display_device.energy_rate,
-+                display_device.is_charging
-+            );
++            update_power_draw ();
 +
              update_tooltip ();
          }
      }
 diff --git a/src/Widgets/DisplayWidget.vala b/src/Widgets/DisplayWidget.vala
-index aa60b0a..e2302dc 100644
+index aa60b0a..f764806 100644
 --- a/src/Widgets/DisplayWidget.vala
 +++ b/src/Widgets/DisplayWidget.vala
 @@ -38,6 +38,8 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
@@ -46,7 +118,7 @@ index aa60b0a..e2302dc 100644
  
          settings.bind ("show-percentage", percent_revealer, "reveal-child", GLib.SettingsBindFlags.GET);
          bind_property ("allow-percent", percent_revealer, "visible", GLib.BindingFlags.SYNC_CREATE);
-@@ -80,6 +93,23 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
+@@ -80,6 +93,21 @@ public class Power.Widgets.DisplayWidget : Gtk.Box {
          percent_revealer.reveal_child = show;
      }
  
@@ -61,9 +133,7 @@ index aa60b0a..e2302dc 100644
 +
 +        ///Translators: This represents battery power in watts with one decimal, e.g. "12.3 W"
 +        power_draw_label.label = _("%.1f W").printf (watts);
-+        power_draw_label.tooltip_text = charging
-+            ? _("Battery is charging at %.1f W").printf (watts)
-+            : _("The computer is using %.1f W from the battery").printf (watts);
++        power_draw_label.tooltip_text = _("The whole computer is using %.1f W right now").printf (watts);
 +        power_draw_revealer.reveal_child = true;
 +    }
 +
