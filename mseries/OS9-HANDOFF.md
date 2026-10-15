@@ -1303,3 +1303,7 @@ First boot after the pending sudo steps (kernel `7.1.13-elementary-fairydust-usb
 - Remaining error-level lines are the known harmless ones: growfs LUKS resize "Operation not permitted", wpa_supplicant/brcmfmac P2P interface -52, tas2764 devicetree parse on two amps, USB mixer "sticky" values.
 - Panel: Wingpanel answers on D-Bus and `libpower.so` carries the watt strings; UPower reported 23.8 W discharging two minutes after boot (boot activity). The on-screen look of the watt label is not yet confirmed by the owner.
 - Still open: the ten-minute authentication helper (the netusage polkit rule has been installed since 2026-10-14 yet the helper fired at 13:49, 13:59 and 14:09 on 2026-10-15, so another action is responsible); a capture of the exact action id is running.
+
+### Efficiency goal — 2026-10-15
+
+Owner asked for a goal and efficiency patches so the Mac runs minimal and scales quickly for AI. Wrote `mseries/EFFICIENCY-GOALS.md`: Apple's published light-use figures (about 4 to 6 W, from memory, unverified), our measured 11.7 W, three target tiers, a median-based measurement method, ranked suspects and a power-profile hold design for bursts. No new patch beyond the earlier audio timeout; next step is the measurement script and the display-coprocessor wakeup investigation.
