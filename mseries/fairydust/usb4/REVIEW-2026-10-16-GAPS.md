@@ -61,6 +61,47 @@ are not in CI yet.
 Provenance notes: the 09:00 reboot was the missing session's, not the reviewer's;
 the 24x AT-register timeouts are benign per-lane-init retries.
 
+## Codex (ChatGPT) status report — recorded 2026-10-16
+
+Reported by the owner as pasted Codex output; I did not inspect the bundle.
+Treat as claims until the artifacts are checked.
+
+- **Constraint change (as reported):** owner now allows a reboot or cable change
+  when needed, batched to avoid repeated switching. `STATE-OF-PLAY.md` still says
+  "no kernel installation, no M1 reboot, no cable moves"; it needs the owner's
+  confirmation and an edit by whoever holds the Git write on that file.
+- **Done (reported):** bridge implemented and offline-tested (14 new test groups,
+  earlier 29 + 2 still pass); Thunderbolt/Apple DRM objects compile; DT validates
+  after a quoting fix; HDMI-adapter fix (0003) added to the build tree; a
+  domain-reference leak on cancelled DPRX work fixed; a boot-time-discovered
+  tunnel now also starts DCP (my design point 3, hook must cover discovery).
+- **Prepared (reported):** module-only build against the running kernel with the
+  exact version string and the running kernel's BTF module layout (a mismatch the
+  version string alone did not catch), plus a `boot.bin` whose DT differs only by
+  two DP-IN nodes, the DCP PHY reference and the NHI-to-DCP mapping. Nothing
+  installed or loaded yet. First boot keeps `dprx_bypass`; only real driver
+  responses and display evidence count as progress.
+- **DeepSeek's review of this bundle failed with a transport error in Codex's
+  session**; the separate read-only DeepSeek review above (B1-B8) is the one on record.
+
+### Gate before the batched reboot (cross-reference, not new analysis)
+
+The pasted report does not say whether these were addressed; verify each is closed
+or consciously accepted before the owner reboots:
+
+1. **B1** (brick-USB4 on inconsistent DT): the DT and modules ship as a pair, which
+   is right; confirm deep-validation failure degrades to a warning, or accept the
+   risk with `/boot/m1n1/boot.bin.KNOWN-GOOD-*` and `RECOVERY.md` ready.
+2. **B2** (PHY provider load order / `CONFIG_PHY_APPLE_DPIN` in the module set):
+   a module-only bundle must actually contain `phy-apple-dpin` and load it before
+   `appledrm`; otherwise every source start is `-EINVAL` and the run is wasted.
+3. **B3/B4**: unmapped-port behaviour and double status read; B4's missing
+   `tb_dp_dprx_work` coverage matters because bypass stays armed on the first run.
+4. Short `dprx_timeout` (not 3600000) and bypass armed before any cable move
+   (`DP-TUNNEL-RE.md` §9).
+5. Confirm the initramfs contains the new modules (the stash notes say the old
+   initramfs once carried stale `appledrm.ko`).
+
 ## Tooling
 
 | # | Defect | Status |
