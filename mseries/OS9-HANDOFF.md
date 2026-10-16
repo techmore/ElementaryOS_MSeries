@@ -305,6 +305,16 @@ the state below is "prepared and waiting", not "finished".
   boot images, logs, backups) are under `/home/sdolbec/dp-tunnel-artifacts/` and
   `/home/sdolbec/dptunnel-logs/`.
 
+
+## Repo hygiene audit — 2026-10-16
+
+Read-only audit of branches, worktrees and PRs: `REPO-HYGIENE.md`. Nothing was
+deleted or merged. Headlines: PR #53 (dock video) is mergeable against main; four
+local branches are fully merged; `brightness-sub-floor` and
+`codex/guide-collapsed-by-default` need PRs; the shared checkout holds uncommitted
+work from several agents and stale copies of dock-video docs (read the dock branch,
+not the checkout). Cleanup steps need the owner's yes.
+
 ## Current hardware state — 2026-10-14
 
 The transformed elementary OS 9 desktop is running on a 14-inch M1 Pro through
@@ -1752,3 +1762,146 @@ dependency/license audit used repository installers and installed package
 metadata, and the build refuses missing upstream license files. Network access
 for Git required sandbox escalation. Factory load/render/boot qualification,
 browser integration and remaining Files/Gala patches remain open.
+
+### Pending sudo steps applied on the M1 Pro — 2026-10-15
+
+Owner granted passwordless sudo (`/etc/sudoers.d/90-claude-admin`). Applied with `mseries/apply-pending.sh`:
+- **wattmeter:** installed the patched elementary Power indicator (live `W` label plus the repaired time-to-full patch); original backed up at `/usr/local/lib/mseries/libpower.so.before-charge-eta`; Wingpanel restarted and is running. The `libpower.so` contains the new strings. NOT yet seen on screen; owner to confirm how it looks. Undo: `bash mseries/install-battery-eta.sh --uninstall`.
+- **power:** `mseries-power.service` is now enabled only under `graphical.target.wants` (the stale `multi-user.target.wants` link was removed by `systemctl disable` before reinstall). Charge limit 80/75 is set in sysfs. Confirm at next boot: no "ordering cycle" line in `journalctl -b -p err`. Earlier today the battery had reached 100% on AC, likely because the cycle dropped this job at boot.
+- **greeter:** `/etc/systemd/user/obex.service.d/10-mseries-greeter.conf` installed (`TimeoutStopSec=2s`); confirm no `user@109` failure after the next login.
+- **wifi / polkit:** already in place before this run (`brcmfmac` loaded; `49-mseries-netusage.rules` present). Confirm the ten-minute authentication prompt is gone: `journalctl -b -t polkit-agent-helper-1 --since "30 min ago"`.
+- `apply-pending.sh` now tries `sudo -n true` before `sudo -v` (plain `sudo -v` fails under NOPASSWD).
+- The auto-mode safety check blocked the first attempt at the power/greeter steps as persistent system changes; they were run after the owner said to continue.
+
+### Post-reboot verification — 2026-10-15
+
+First boot after the pending sudo steps (kernel `7.1.13-elementary-fairydust-usb4-dptunnel`, a different kernel build from the one earlier in the session; not built or installed by this agent):
+- `systemctl --failed` empty (system and user); no "ordering cycle" line; no `user@109` or `omarchy-wifi-resume-fix` failure in `journalctl -b -p err`; `brcmfmac` loaded on its own. This confirms the `mseries-power` `graphical.target` fix and the Wi-Fi script fix at boot. The `user@109` fix still needs one logout/login to be conclusive.
+- Remaining error-level lines are the known harmless ones: growfs LUKS resize "Operation not permitted", wpa_supplicant/brcmfmac P2P interface -52, tas2764 devicetree parse on two amps, USB mixer "sticky" values.
+- Panel: Wingpanel answers on D-Bus and `libpower.so` carries the watt strings; UPower reported 23.8 W discharging two minutes after boot (boot activity). The on-screen look of the watt label is not yet confirmed by the owner.
+- Still open: the ten-minute authentication helper (the netusage polkit rule has been installed since 2026-10-14 yet the helper fired at 13:49, 13:59 and 14:09 on 2026-10-15, so another action is responsible); a capture of the exact action id is running.
+
+### Efficiency goal — 2026-10-15
+
+Owner asked for a goal and efficiency patches so the Mac runs minimal and scales quickly for AI. Wrote `mseries/EFFICIENCY-GOALS.md`: Apple's published light-use figures (about 4 to 6 W, from memory, unverified), our measured 11.7 W, three target tiers, a median-based measurement method, ranked suspects and a power-profile hold design for bursts. No new patch beyond the earlier audio timeout; next step is the measurement script and the display-coprocessor wakeup investigation.
+
+### Optimization repo created — 2026-10-15
+
+Owner approved the proposal; created public `techmore/ElementaryOS_MSeries_Optimization` (GPL-3.0) with README, AGENTS.md, `docs/` (goals, method, results), `powerlab/sample.py` + test (passes; live smoke run works), `tuning/wireplumber` (30 s sink suspend), `patches/`, `rust/` placeholder and a CI workflow. First commit `7d65b03`. Linked from `mseries/OPTIMIZATION.md`. The Rust scaffold on `deb/mseries-plugin-repo` was not touched or moved.
+
+Measurement note: after the reboot the panel backlight was back at 500/500 (it was 105 before) and a smoke sample read 19.2 W median with the charger connected and the battery above the 80% limit. That is not comparable with the earlier 11.7 W; set brightness before any comparison. Brightness is not restored at boot; relevant to the minimum-brightness request.
+
+Polkit prompt: a capture caught `org.freedesktop.login1.inhibit-delay-sleep` with no interaction flag, which is not itself a password prompt; no helper line has fired since the 14:14 reboot as of 14:22, so the cause is still unconfirmed. Repeat the capture across the next 10-minute mark.
+
+### Polling inventory; DP tunnel retry loop on the dptunnel kernel — 2026-10-15
+
+Owner's point: much of the optimization is polling of chips and CPU run levels. First inventory and baselines are in the optimization repo (`docs/POLLING.md`, `docs/RESULTS.md`, commit `7ae6cd1`). Main finding with the Dell WD22TB4 dock attached on kernel `7.1.13-elementary-fairydust-usb4-dptunnel`: `thunderbolt-apple-nhi ... (DP): DPRX read timeout` repeats every ~76 ms (1,684 times by 722 s uptime, still running), producing about 1,290 interrupts/s on each of the USB4 NHI rx and tx rings. It began when the dock came up. This is the same family as the `dock-dp-retry-silent` verify check. Cost in watts is not yet measured (needs the same scenario undocked). Proposed kernel fix: back off or stop after N DPRX timeouts. The kernel is the owner's; not changed. Other rows: display-coprocessor mailbox ~480/s, second mailbox ~385/s, SPI HID up to 1,000/s, deep idle (CPU PD) entered ~1.8% as often as WFI.
+Baseline at 105/500 brightness, apps open, docked, charger connected: 13.6 W median (p10 12.7, p90 16.2).
+
+### Password prompt cause found and fixed; dock note — 2026-10-15
+
+- **Root cause of the ten-minute authentication prompt:** a `dbus-monitor` capture caught `org.freedesktop.resolve1.dump-cache` (flags: interaction allowed) from the netusage logger's `resolvectl show-cache`, at 14:23:17 exactly when the helper logged. The 2026-10-14 rule only allowed `subscribe-query-results`. Fix: `--no-ask-password` on that call plus `dump-cache` in `49-mseries-netusage.rules` (read-only, `sudo` group). Installed with `sh mseries/netspeed/netusage/install.sh`; `resolvectl --no-ask-password show-cache` returns data without a prompt and `netusage` is active. Confirm that no helper line appears after 14:33 and 14:43.
+- **Dell dock:** the owner states this project is reverse-engineering the Dell WD22TB4 dock for Asahi. The `DPRX read timeout` retry loop on the `dptunnel` kernel (see the polling entry above) is therefore research-kernel behaviour; keep it in the optimization inventory as a power cost to quantify when not experimenting, do not propose removing it. Owner also says Michael Dell sponsors Omarchy MX/Omacom/Asahi; unverified (noted in `WATCHLIST.md`).
+
+### Dell funding looked up — 2026-10-15
+
+Owner asked to check the report that Michael Dell gave $1 million to the Omarchy foundation. Confirmed by It's FOSS (25 Aug 2026): the entity is the **Omacom Foundation**; eight patrons each put in $1 million, Dell among them. Not found: any link to Asahi Linux or Apple Silicon, whether the money is paid or pledged, or a statement from Dell. Recorded in `WATCHLIST.md`, replacing the earlier "unverified" note. The $18.6 million / twelve-patron figure appears only in LinkedIn reposts and is unconfirmed.
+
+### Password prompt fix: early check only — 2026-10-15
+
+Owner ran `journalctl -b -t polkit-agent-helper-1 --since "14:25"` and it showed no entries, but that was before the 14:33 and 14:43 marks the old pattern fired at, so it is not confirmation yet (an earlier entry in this file claimed it was; corrected). Cause remains `netusage`'s `resolvectl show-cache` (`resolve1.dump-cache`); fix is `--no-ask-password` plus the extended polkit rule (`b7e2dae`). Re-run the same command after 14:45 and record the result.
+
+### Refresh rate is the biggest power lever found so far — 2026-10-15
+
+Alternating A/B with `powerlab` (optimization repo, commit after `c04d093`): at 21% brightness the panel drew about **2.0 W (15%) less at 60 Hz than at 120 Hz** (11.4 and 10.9 W vs 13.4 and 12.9 W medians); at 500/500 about 1.7 W (9%). Built `tuning/refresh-rate/mseries-refresh` (60 Hz on battery, 120 Hz on AC, config file, `--status`/`--once`, installer with `--dry-run`/`--enable`/`--uninstall`, tests pass) in the optimization repo. NOT enabled on the Mac: it changes how the screen feels; the owner decides. Panel left at 120 Hz and 21% brightness after testing. Open: something reset the backlight to 500/500 after the reboot and again between 14:27 and 14:38; the mode switch is not the cause.
+Also: DRM flip tracing showed 0 vblank events in 4 s at idle, so the display mailbox rate is not compositor flips (negative result in the optimization repo).
+
+### Prompt fix confirmed; goal work and a display-testing lesson — 2026-10-15
+
+- **Password prompt:** confirmed fixed. A scheduled check at 14:46:11 found zero `polkit-agent-helper-1` entries since 14:25, across the 14:33 and 14:43 marks (cause and fix: see the earlier entry, `b7e2dae`).
+- **Efficiency goal ("exceed Apple"):** NOT met. Measured light-use draw is about 9 to 10 W at 60 Hz and low brightness (11 W at 120 Hz) versus Apple's implied 4.1 W (video) and 6.4 W (web). Lever results and next steps are in the optimization repo `docs/RESULTS.md`. Biggest real levers so far: 60 Hz (about -2 W) and low brightness (about -0.7 W from 21% to 5%).
+- **Lesson:** the owner objected to display experiments (brightness 5 to 21%, refresh 48/60/120 Hz, display off). All were reverted (display on, 120 Hz, 500/500). No further display tests without asking; stored as a standing rule. The earlier unexplained backlight "reset to 500" was most likely the owner turning it back up.
+- **Owner request:** control the refresh rate dynamically (low when idle, ramp up when needed). The existing `tuning/refresh-rate/mseries-refresh` switches by power source only and a mode switch blanks the screen briefly; true variable refresh needs checking read-only first.
+
+### Video playback test — 2026-10-15
+
+Ran at the owner's display settings (no changes): stock Brave on YouTube 18.84 W median at 500/500 brightness (about 3.4 h; software decode, AVD interrupts 0); local 1080p30 H.264 in mpv with VA-API hardware decode 13.23 W at 325/500 (about 4.9 h, 5,402 AVD interrupts); same clip in software 18.53 W. Hardware decode saves about 5.3 W; the browser does not use it on YouTube (VP9/AV1). Apple's figure is 17 h (about 4.1 W). Not at parity. Installed `mpv` and `ffmpeg` with apt for the test. Details and next levers: optimization repo `docs/RESULTS.md`. The owner asked me to stop putting windows on their screen; no more display-visible tests without asking.
+
+### Kernel and scheduler work, honest status — 2026-10-15
+
+Goal ("beat Apple") still NOT met: light use about 9 to 10 W at 60 Hz, video 13.2 W with hardware decode (18.8 W for stock Brave on YouTube) vs Apple's implied 4.1 W (video) and 6.4 W (web). Done this round, none visible on screen, all in the optimization repo (`8851f65`, docs `kernel/README.md`, `docs/RESULTS.md`):
+- Idle governor: `teo` is worse than `menu` (+0.8 W); stays `menu` (restored after the test).
+- CPU scale-up: P-cluster reaches 90% of 3,036 MHz in about 78 ms, so scaling quickly is not the problem.
+- Found why the dock loop never stops: `thunderbolt.dprx_timeout` is `-1` (wait forever, deliberate for the dock work) and the poll is every 50 ms + 25 ms. Wrote `kernel/0001-thunderbolt-dprx-poll-backoff.patch` (50 ms doubling to 1 s; applies cleanly to the fork's `drivers/thunderbolt/tunnel.[ch]`). Not built, not booted, not measured; owner decides whether to build it.
+- `CONFIG_HZ=1000` + `NO_HZ_FULL` listed as candidates for 250 Hz / `NO_HZ_IDLE`; unmeasured.
+- Omarchy's Mac packages contain little power tuning; their `asahi-audio-no-suspend.conf` is the 1.2 W cost we found. Drafted (not sent) an upstream note.
+- CPU hotplug is not writable on this kernel; no data on "fewer cores".
+Open and needs the owner: a kernel build/boot test of the back-off patch; YouTube H.264 route for the browser (extension or driver VP9 support); any further on-screen test.
+
+### Idle GPU traffic attributed; owner-run lean test — 2026-10-15
+
+Tracing `gpu_scheduler:drm_sched_job_queue` for 4 s: 2,662 jobs (about 665/s): `claude-desktop` 55%, `io.elementary.terminal` 27% (hosting an OpenCode TUI session), `gala` 18%. So the agent UIs used for this work are the largest idle GPU load; the measuring session itself inflates it. A fair lean-profile and video result needs them closed, which only the owner can do. Added `powerlab/lean-test.sh` to the optimization repo (commit `42ec532`): owner-run, needs `--yes`, changes nothing on screen, opens one fullscreen muted video, reports watts and battery hours. Goal ("exceed Apple") remains NOT met; remaining levers are owner-gated: kernel build/boot of the DPRX back-off patch and a tick change, an H.264 route for YouTube in the browser, and an agent-UIs-closed lean measurement.
+
+### Kernel build blocker — 2026-10-15
+
+Could not build the DPRX back-off patch into the running `...-dptunnel` kernel: its source tree and `.config` are not on the M1 Pro (no `/boot/config-*`, no module build dir), the fork's `asahi` branch (`77cb8f2`, 20 Aug) does not match the 12 Oct build, and `flex`/`bison`/`clang`/`bindgen`/`pahole` are not installed. The repo's debian pipeline builds a different, older base. Needs from the owner: the branch/commit and `.config` of the dptunnel kernel and a go-ahead for a low-priority build. See optimization repo `kernel/README.md`. The "exceed Apple" goal remains NOT met.
+
+### Watt meter fixed to show whole-machine power — 2026-10-15
+
+Owner: "we lost our realtime watt monitor". Cause: the label read UPower's battery flow, which is 0 W when the charger is connected and the battery sits at the 80% limit, and the patch hid the label below 0.1 W. Found the SMC sensor "Total System Power" (hwmon `macsmc_hwmon`, also AC input, 3.8 V rail and heatpipe power) and rebuilt `panel-power-watts.patch` to read it every 2 s; installed (panel restarted once). The optimization repo's `powerlab/sample.py` uses the same sensor, which makes measurements valid on AC; the earlier lever run was void (battery "Not charging"). Spot reading: about 16 W at brightness 325/500, 120 Hz, agent UIs running. Owner asked for about 6 W on the running instance: not reachable without the screen levers (brightness, 60 Hz) and closing the agent UIs; non-visual levers still to be re-tested with the SMC sensor.
+
+### Kernel ownership respected; non-visual levers re-tested — 2026-10-15
+
+- Per the owner, DeepSeek owns the kernel feature set. Claude withdrew the kernel-build request and treats the DPRX back-off patch as an untested reference sketch only. Kernel-relevant power findings were posted as a context-only comment on issue #46 (`#issuecomment-6201042382`); no kernel, bootloader or m1n1 change was made.
+- Non-visual system levers re-tested with the SMC whole-machine sensor (30 s medians, alternating baselines 14.2 to 15.6 W): PCIe `powersupersave` -0.3 W, USB autosuspend 0 (no USB devices; dock unplugged), CPU battery cap inconclusive, Bluetooth off -0.2 W. Nothing above noise; all settings restored. The big watts are the display and the agent UIs, not system tuning.
+- The YouTube H.264 test (own MV3 extension that hides VP9/AV1) was interrupted when the session ended; re-run pending. The goal ("exceed Apple") remains NOT met.
+
+### Incident note: stray commit in the shared checkout, fully reverted — 2026-10-15
+
+A Claude command ran `git add -A && git commit` in `~/ElementaryOS_MSeries` (branch `deb/mseries-plugin-repo`) after a `cd` into a wiped scratch directory failed. It committed another agent's uncommitted work (DP-tunnel patch `0002-experimental-dp-tunnel.patch`, `DP-TUNNEL-RE.md`, `MACOS-TRACE-RUNBOOK.md`, `m1n1-trace-deps.sh`, `test-dp-tunnel.sh`, and edits to `daily-9.0.yml`, `debian/build.sh`, `install-ci-kernel.sh`, `OS9-HANDOFF.md`) under the message "kernel/: reference only...". The push was rejected, so nothing reached GitHub. The commit was removed with `git reset --mixed HEAD~1`; HEAD is back at `4c398f4` and every file is intact and uncommitted (modified or untracked) as before. Owners of that work: please check `git status` there. Claude now commits only from `~/ElementaryOS_MSeries-main` or a fresh clone, with explicit paths (see memory note `feedback-git-hygiene`).
+
+### YouTube H.264 test done — 2026-10-15
+
+Re-ran after the session restart (Brave windows closed by process id, display settings untouched: 325/500, 120 Hz, charger connected, SMC whole-machine power). Stock 19.27 W; own MV3 extension that hides VP9/AV1 18.52 W; extension plus VA-API flags 17.72 W (about -1.5 W). The idle floor is about 14 to 15.5 W, so video adds only about 2 to 4 W; Apple's 4.1 W for video cannot be reached by decoder work alone. Extension and numbers are in the optimization repo (`browser/`, `docs/RESULTS.md`, commit `fd895ff`). Goal ("exceed Apple") still NOT met. Kernel-side items belong to DeepSeek (context posted on issue #46).
+
+### mseries-profile tool and a burst gap — 2026-10-15
+
+Optimization repo `64e9340`: `profiles/mseries-profile` applies only measured levers as named profiles (`battery`, `balanced`, `burst -- CMD`), dry run by default, no root, never touches brightness, kernel, bootloader, `speakersafetyd` or the charge limit; `--display` adds the one visible lever (refresh rate). Tests pass (5). Finding: power-profiles-daemon here has no `performance` profile ("not available") and only allows holds on `performance` or `power-saver`, so `burst` switches to `balanced` for the command and restores the previous profile (tested: power-saver -> balanced -> power-saver). On battery `mseries-power` caps CPU frequency directly (2064/2208 MHz) and that is not lifted by a profile switch; making the cap follow the active profile is the missing piece for a real "ramp up when needed" on battery (fits the Rust port of `mseries-power`). Goal ("exceed Apple") still NOT met; remaining gated items: kernel work (DeepSeek), brightness/refresh decisions and the lean test (owner).
+
+### Battery CPU ceiling now follows the power profile — 2026-10-15
+
+Closes the gap found earlier ("burst" could not lift the battery CPU cap). `mseries/power/mseries-power` gained `cap` (set the ceiling from power source AND active profile: only on battery in `power-saver`) and `follow` (watch power-profiles-daemon over D-Bus and re-apply on every profile change); sysfs root and config path are overridable (`MSERIES_SYS`, `MSERIES_CONF`) so the policy is testable. New `mseries-power-follow.service` installed by `install-power.sh` (also removed by `--uninstall`). `mseries/test-power-cap.py` (3 cases: battery+power-saver capped on the performance clusters only; battery+balanced uncapped; AC never capped) passes and is in CI. Verified only against a fake tree; not exercised on real battery (the owner would need to unplug). Pre-existing, unrelated: `test-elementary-mac-setup.sh` fails on the user-enhance timer stop check with or without this change. With this, `mseries-profile burst -- CMD` (optimization repo) lifts the cap while CMD runs.
+
+### Universal dark mode tool — 2026-10-16
+
+Added `mseries/dark-mode/mseries-dark-mode` (on/off/toggle/auto/schedule/status), `install-dark-mode.sh [--schedule|--uninstall]` and a user timer. Verified: `status`, `--dry-run` output, the schedule window logic (overnight and same-day windows) and a no-op AccountsService write (`PrefersColorScheme` 0 to 0) succeed on the M1 Pro. NOT verified: a live switch to dark and back, Brave/Flatpak following it, or the timer; the owner's theme was left unchanged. Gaps: Qt apps and Ghostty. Next: owner runs `install-dark-mode.sh` and `mseries-dark-mode toggle`, then reports which apps do not follow.
+
+### Dark mode now cuts over at sunset/sunrise — 2026-10-16
+
+`mseries-dark-mode auto` defaults to sunset/sunrise from Night Light's stored coordinates (NOAA maths; 07:10/18:21 for 2026-10-16 matches Philadelphia), acts only on a day/night change so manual toggles stick, and books a one-shot `mseries-dark-mode-next` timer. Installed and exercised on the M1 Pro (status, `auto` twice, timer listed). The real cut-over (first fires at 07:10) is not yet observed. `schedule START END` still gives fixed hours.
+
+### Dark mode follow-through — 2026-10-16
+
+Portal check on the M1 Pro: `org.freedesktop.appearance color-scheme` = 1 (dark) after the switch, so Brave and Flatpak apps have the signal; a visual look at them is still pending. Added the tool, installer and units to the `enhance.sh` payload (`bash -n` clean; image not rebuilt). Qt (needs `adwaita-qt` or a forced style) and Ghostty (dark-only palette) remain open and are not worth changing blind.
+
+### Network speed turns pastel green when the link saturates — 2026-10-15
+
+Owner request. New `mseries/patches/network-saturation.patch` (applied last by `install-network-throughput.sh`, after `network-panel-speed.patch`). The popover down/up labels and graph lines, and the optional panel readout, switch to pastel green (`#9be3b0`, bold text) for a direction while its rate is at or above the active link's capacity. Capacity comes from NetworkManager (Ethernet speed, Wi-Fi bitrate; the faster active device wins), scaled to what is really reachable: 90% of the Ethernet rate, 60% of the Wi-Fi PHY rate. Those two factors are guesses, not measured; tune `WIRED_USABLE` / `WIFI_USABLE`. If NM reports no speed, nothing is highlighted. The panel readout is a 10 s average, so brief bursts will not light it.
+
+Verified: the four patches apply cleanly in installer order on upstream `8685ec8` and the plugin compiles and links. NOT installed, so not seen on screen and not tested under a real saturating transfer. To install: `bash mseries/install-network-throughput.sh` (needs sudo, restarts the panel once). Not committed (shared checkout; see git-hygiene note). `netspeed/panel-network.patch` was not changed.
+
+Update 2026-10-15: `install-network-throughput.sh` ran successfully (passwordless sudo; panel restarted once). The green state has still not been seen on screen or under a real saturating transfer.
+
+Update 2026-10-16: owner saw the green on a temporary low-threshold build (about 125 KB/s) and confirmed it. Real thresholds (90% wired, 60% Wi-Fi PHY) reinstalled; they are still unmeasured guesses and the real-threshold green has not been seen under a saturating transfer.
+
+### Power opportunities survey — 2026-10-16
+
+Read-only survey (nothing changed, display untouched): see `mseries/POWER-OPPORTUNITIES-2026-10-16.md`. New observations: Gala at 12.7% of a core on average (72 CPU-min in 9.5 h); the speaker PCM and the speaker-safety capture PCM have been `RUNNING` since boot despite the 30 s suspend override (probably the always-on DSP chain; audio stack is owner-gated); 17.6 W whole-machine reading on battery with the agent apps open. Next: owner call on 60 Hz/VRR; app-mix A/B and Gala profile need no display change.
+
+### GPU job attribution: ChatGPT/Codex desktop app dominates — 2026-10-16
+
+Three 5 s traces of `drm_sched_job_queue` (read-only): the ChatGPT desktop app submits 4,000 to 5,000 GPU jobs/s versus gala 840, claude-desktop 360. Details in `POWER-OPPORTUNITIES-2026-10-16.md`. Power impact not isolated; the app was left running (may belong to an agent session). Next: owner closes or approves closing it for a paired `powerlab/ab.py` A/B; then test Electron flags in a throwaway profile.
+
+### Power roadmap and Electron Wayland hint — 2026-10-16
+
+Owner declined closing the ChatGPT/Codex app, so no A/B was run. New finding: that app is an X11 client under Xwayland while Claude Desktop and Brave are native Wayland. Installed `~/.config/environment.d/60-mseries-electron-wayland.conf` (`ELECTRON_OZONE_PLATFORM_HINT=auto`; script `mseries/install-electron-wayland.sh`, `--uninstall` removes it); takes effect at next login, effect NOT yet measured. Also found: s2idle is the only sleep mode, deep idle is ~7% of CPU0 idle time, sleep drain is unmeasured. Full plan: `mseries/POWER-ROADMAP.md` (workstreams A to G, phases 0 to 4, six owner decisions). Next: after the next login, re-trace GPU jobs/s for the ChatGPT app and compare with the 4,000 to 5,000/s baseline.

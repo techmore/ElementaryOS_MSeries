@@ -1,7 +1,10 @@
-// Administrators may read DNS query events for the background usage logger.
-// This grants no permission to change DNS configuration or run root commands.
+// Administrators may read DNS query events and the DNS cache for the background usage logger.
+// Both are read-only: they grant no permission to change DNS configuration or run root commands.
+// "dump-cache" is what `resolvectl show-cache` asks for; without it the logger caused a password
+// prompt about every ten minutes (captured 2026-10-15 14:23:17).
 polkit.addRule(function(action, subject) {
-    if (action.id == "org.freedesktop.resolve1.subscribe-query-results" &&
+    if ((action.id == "org.freedesktop.resolve1.subscribe-query-results" ||
+         action.id == "org.freedesktop.resolve1.dump-cache") &&
         subject.isInGroup("sudo")) {
         return polkit.Result.YES;
     }

@@ -664,3 +664,29 @@ The built-in 3024x1890 panel defaults to a 2.0 scale, which looks large. Gala
 offers 1.0, 1.5, 1.75 and 2.0; 1.5 is the practical smaller setting. Apply it
 through `org.gnome.Mutter.DisplayConfig.ApplyMonitorsConfig` (method 2,
 persistent) or Pantheon's Displays settings.
+
+## Universal dark mode
+
+`mseries/dark-mode/mseries-dark-mode` is one switch for the whole desktop: Pantheon, GTK 3/4,
+libadwaita, Flatpak apps (through the settings portal) and Chromium-based browsers such as Brave
+(which follow the portal's colour scheme). It sets Pantheon's AccountsService `PrefersColorScheme`
+(1 dark, 2 light) and `org.gnome.desktop.interface color-scheme`. It never touches brightness,
+refresh rate or power.
+
+```bash
+mseries/install-dark-mode.sh              # install to ~/.local/bin
+mseries-dark-mode on | off | toggle | status
+mseries/install-dark-mode.sh --schedule  # user timer runs `auto` at login and every 15 minutes
+mseries-dark-mode schedule 20:00 06:30   # fixed hours instead of sunset/sunrise
+mseries-dark-mode schedule sun           # back to sunset/sunrise (default)
+mseries-dark-mode location LAT LON       # override the stored Night Light coordinates
+```
+
+`auto` is the macOS-style cut-over: dark from sunset to sunrise, computed from the coordinates
+Night Light already stores (NOAA solar maths, checked against Philadelphia: 07:10/18:21 on
+2026-10-16). It acts only when day/night changes, so a manual toggle sticks until the next
+transition, and it books a one-shot timer for that moment.
+
+The pastel accent overrides in `theme/gtk-*.css` already use dark label text on pale fills, so they
+read in both schemes. Verified 2026-10-16: the settings portal reports dark (`org.freedesktop.appearance color-scheme` = 1), which is what Brave and Flatpak apps read. Not covered yet: Qt apps (`adwaita-qt` is not installed and no Qt style is forced) and Ghostty
+(its palette is dark-only). Not verified on the M1 Pro in a live switch; see the handoff.

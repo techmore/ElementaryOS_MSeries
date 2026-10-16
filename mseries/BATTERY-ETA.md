@@ -40,3 +40,12 @@ regenerated with three lines of context and now lands in the right place.
 
 Install: `sudo apt install libgtop2-dev` (build dependency), then `bash mseries/install-battery-eta.sh`
 (or `bash mseries/apply-pending.sh --only wattmeter`).
+
+Spacing (2026-10-15): at the owner's request the watt label has an 8 px left margin so it sits clear of the
+battery icon and percentage. Installed on the M1 Pro; the owner confirms the look.
+
+Update (2026-10-15): the label now shows the whole machine's power from the SMC ("Total System Power" in
+`/sys/class/hwmon/*/power*_input`, chip `macsmc_hwmon`), updated every 2 s, on battery and on the charger. The first
+version showed UPower's battery flow, which is exactly 0 W when the charger is connected and the battery sits at the 80%
+limit, so the label hid and the owner reported the meter as lost. Falls back to UPower's rate if the sensor is missing.
+Compiled and installed on the M1 Pro; how it looks in the panel is for the owner to confirm.

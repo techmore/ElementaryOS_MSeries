@@ -1,0 +1,9 @@
+[Unit]
+Description=Apply the scheduled light or dark appearance
+
+[Timer]
+OnStartupSec=20
+OnUnitActiveSec=15min
+
+[Install]
+WantedBy=timers.target

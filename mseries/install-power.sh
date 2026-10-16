@@ -9,8 +9,8 @@ repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 if [[ ${1:-} == --uninstall ]]; then
   sudo mseries-power limit 100 >/dev/null || true
   sudo sh -c 'for p in /sys/devices/system/cpu/cpufreq/policy*; do cat "$p/cpuinfo_max_freq" > "$p/scaling_max_freq"; done'
-  sudo systemctl disable --now mseries-power.service 2>/dev/null || true
-  sudo rm -f /usr/share/polkit-1/actions/org.techmore.mseries.power.policy /usr/local/sbin/mseries-power /etc/systemd/system/mseries-power.service /etc/udev/rules.d/80-mseries-power.rules /etc/mseries/power.conf
+  sudo systemctl disable --now mseries-power.service mseries-power-follow.service 2>/dev/null || true
+  sudo rm -f /usr/share/polkit-1/actions/org.techmore.mseries.power.policy /usr/local/sbin/mseries-power /etc/systemd/system/mseries-power.service /etc/systemd/system/mseries-power-follow.service /etc/udev/rules.d/80-mseries-power.rules /etc/mseries/power.conf
   sudo udevadm control --reload; sudo systemctl daemon-reload
   echo 'Removed; charge limit back to 100% and CPU ceiling lifted.'
   exit 0
@@ -31,11 +31,24 @@ ExecStart=/usr/local/sbin/mseries-power apply
 [Install]
 WantedBy=graphical.target
 UNIT
+# Lifts the battery CPU ceiling while the balanced profile is active (a burst) and restores it in power-saver.
+sudo tee /etc/systemd/system/mseries-power-follow.service >/dev/null <<'UNIT'
+[Unit]
+Description=Re-apply the battery CPU ceiling when the power profile changes
+After=power-profiles-daemon.service
+
+[Service]
+ExecStart=/usr/local/sbin/mseries-power follow
+Restart=on-failure
+
+[Install]
+WantedBy=graphical.target
+UNIT
 sudo tee /etc/udev/rules.d/80-mseries-power.rules >/dev/null <<'RULE'
 # Plugging or unplugging the charger re-applies the policy.
 SUBSYSTEM=="power_supply", KERNEL=="macsmc-ac", ACTION=="change", TAG+="systemd", ENV{SYSTEMD_WANTS}+="mseries-power.service"
 RULE
 sudo udevadm control --reload
 sudo systemctl daemon-reload
-sudo systemctl enable --now mseries-power.service
+sudo systemctl enable --now mseries-power.service mseries-power-follow.service
 mseries-power status

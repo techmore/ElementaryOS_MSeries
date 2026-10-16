@@ -101,3 +101,7 @@ requires and retains the actual upstream license, local patch and recipe.
 Each built plugin records its source and SHA256. Both final consumers compare
 package versions and retained binary hashes before image publication.
 These checks do not establish that the plugins load or render on hardware.
+
+## Optimization repository (2026-10-15)
+
+`techmore/ElementaryOS_MSeries_Optimization` at `7d65b03` (powerlab sampler, tuning drop-in, docs). Not consumed by the image yet; see `OPTIMIZATION.md`.

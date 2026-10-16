@@ -127,7 +127,7 @@ def load_cache_dump():
     """Seed ip -> name from resolved's cache so we have names for connections that predate us."""
     try:
         out = subprocess.run(
-            ["resolvectl", "show-cache", "--json=short"], capture_output=True, timeout=10
+            ["resolvectl", "--no-ask-password", "show-cache", "--json=short"], capture_output=True, timeout=10
         ).stdout
         for link in json.loads(out):
             for item in link.get("cache", ()):
