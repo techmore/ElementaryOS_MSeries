@@ -305,3 +305,6 @@ dependency/license audit used repository installers and installed package
 metadata, and the build refuses missing upstream license files. Network access
 for Git required sandbox escalation. Factory load/render/boot qualification,
 browser integration and remaining Files/Gala patches remain open.
+
+- Universal dark mode switch built 2026-10-16 (`mseries/dark-mode/`, `install-dark-mode.sh`);
+  live switch, Brave/Flatpak follow-through and the timer await the owner; Qt and Ghostty open.
