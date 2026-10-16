@@ -15,7 +15,9 @@ USB-C DP-Alt-Mode adapter — both were ruled out by the owner.
 
 The dock enumerates and USB4 DP tunnels activate, but **the host never feeds the
 tunnel**, so the sink never answers and there is no picture. The cause is
-localised to exactly one missing block (see "The unknown").
+localised to exactly one missing block, and as of 2026-10-16 **that block's
+enable protocol has been recovered from Apple's own driver** (see "The missing
+block"). No pixel yet.
 
 ## MILESTONES — measured in pixels, not knowledge
 
@@ -32,8 +34,9 @@ observable pass criterion. Current position: **before M0.**
 
 M1 is the true frontier milestone: it is the first point where the host proves it
 can drive the tunnelled link. Everything after it is "normal" display bring-up.
-**M1 is blocked by exactly one thing: the DP-IN enable sequence (see "The
-unknown").** No amount of Linux-side crossbar/tunnel work reaches it.
+**M1 is blocked by the DP-IN enable sequence — now recovered (see "The missing
+block").** The crossbar select that we kept trying is the *last* of four steps,
+not the enable; that is why it never worked.
 
 ## The chain, as measured on this machine
 
@@ -67,9 +70,12 @@ fb -> dispext0/1 (dcp@289c00000, dcp@28cc00000, both "apple,dcpext")
    `CROSSBAR_MUX_CTRL_DPIN{0,1}_SELECT{0,1}` plus the `ATC_DPIN0/DPIN1` enable
    bits (`drivers/mux/apple-display-crossbar.c`). Routing to the DP-IN inputs is
    **already implemented and was exercised** by experiment 1 (`--mux-arg 1`).
-8. The DP-IN blocks (candidates `0xb01e50000`, `0xb01e58000`) are referenced by
-   **no source we hold** — not the Asahi kernel, not m1n1 `src/`, not the m1n1
-   `proxyclient/`. `drivers/thunderbolt/apple.c` mentions "DP IN" only in a
+8. The DP-IN blocks are **`0xb01e50000`** (`dpin0`) and **`0xb01e58000`**
+   (`dpin1`), `atc-dpin,t600x`, size `0x4000` each — confirmed from the shipped
+   `j314sap` ADT (`evidence/2026-10-16-j314sap-dpin-derived.json`). They appear
+   in **no** Linux source and are **absent from the Linux DT**, but Apple's
+   driver for them is now disassembled and its protocol recovered (see "The
+   missing block"). `drivers/thunderbolt/apple.c` mentions "DP IN" only in a
    comment diagram.
 9. **The macOS kernelcache is already on this machine's ESP** and does *not*
    need a macOS boot to obtain:
@@ -80,16 +86,34 @@ fb -> dispext0/1 (dcp@289c00000, dcp@28cc00000, both "apple,dcpext")
    `all_firmware.tar.gz` / `vendorfw` bundles hold only wifi/Bluetooth/input
    firmware — **not** the display firmware.
 
-## The unknown — this is the entire problem
+## The missing block — SOLVED by static RE (2026-10-16)
 
-Nothing enables or programs the **ACIO DP-IN adapter and its DP-IN block**. So
-the crossbar's `dpin0`/`dpin1` output is a dead end, and DCP's DPTX never
-reaches the sink over AUX. The sequence that does this exists only in Apple's
-display driver / firmware (macOS). It is not in any open-source tree.
+Nothing on Linux enables or programs the **ACIO DP-IN adapter and its DP-IN
+block**, so the crossbar's `dpin0`/`dpin1` output is a dead end and DCP's DPTX
+never reaches the sink over AUX.
 
-We **do** now hold Apple's kernelcache locally (PROVEN 9), so the static route
-can start immediately. The DCP **firmware** blob is still missing and is the
-harder half.
+That sequence is **no longer unknown.** It was recovered by disassembling Apple's
+own `com.apple.driver.AppleDisplayCrossbar` out of the kernelcache we already
+had (PROVEN 9):
+
+- **Block bases** (shipped board ADT, cross-checked): `dpin0` = `0xb01e50000`,
+  `dpin1` = `0xb01e58000`, size `0x4000`, compatible `atc-dpin,t600x`, with
+  parents `acio1` + `atc-phy1` + `atc1-dpxbar`, `transport-tunneled=1`,
+  IRQ 1354 / 1355. **Absent from the Linux DT entirely.**
+- **Register protocol:** `0x00` control, `0x04` polled handshake, `0x08`
+  bits[1:0] = tunnel/lane use (`orReg(8,3)` on tunnel-up, `andReg(8,~3)` on
+  down), `0x0c` bit 0 = **"DP-IN adapter port active"**.
+- **Control flow:** the adapter is an `IOTBTTunnelClientInterface` client. On
+  tunnel state change it calls ACIO `startUsingTunnel()` and ATC-PHY
+  `open()` / `openTunnel()` / `setActiveLaneCount()`, then sets `0x0c` bit 0.
+
+Full detail, every call site and exact reproduction commands:
+`evidence/2026-10-16-dpin-adapter-enable-protocol-recovered.md`.
+Tool committed: `tools/kc-slice.py`.
+
+Still genuinely unknown: the register effects *inside* ACIO
+`startUsingTunnel()` and ATC-PHY `open/openTunnel/setActiveLaneCount()` (two
+other drivers), and the DCP **firmware** blob (not on this machine).
 
 ## RULED OUT (do not retry)
 
@@ -129,19 +153,19 @@ costs 60 seconds and requires a sink actually present on the dock.
 
 ## NEXT (cheapest first)
 
-0. **[no hardware] Disassemble Apple's `AppleDisplayCrossbar`** — specifically
-   `AppleATCDPINAdapterPort` / `AppleT600xDisplayCrossbar::bringConnectionUp` —
-   and recover the DP-IN adapter enable sequence. The binary is already
-   extracted: see
-   `evidence/2026-10-16-apple-display-binaries-extracted-locally.md`.
-   Cross-check the recovered offsets against
-   `drivers/mux/apple-display-crossbar.c`. **This is the current frontier task
-   and it needs no hardware and no macOS boot.**
-1. (hardware) Put a sink on the dock; confirm `1:13`/`1:14` exist. Nothing is
-   measurable without this — milestone M0.
-2. Smallest driver change -> CI build -> one hardware test.
-3. A macOS visit is now needed **only** for the DCP *firmware* blob and the
-   dynamic trace — do not schedule it until step 0 is exhausted.
+0. **[done, no hardware] DP-IN enable sequence recovered.** See
+   `evidence/2026-10-16-dpin-adapter-enable-protocol-recovered.md`; tool
+   `tools/kc-slice.py`.
+1. **[no hardware] Finish the enable sequence**: recover the register effects of
+   ACIO `startUsingTunnel()` / `stopUsingTunnel()` and ATC-PHY
+   `open()` / `openTunnel()` / `setActiveLaneCount()`. Same method; RE targets
+   `AppleATCDPXBAR`, `AppleT6000TypeCPhy`, and the ACIO service.
+2. (hardware) Put a sink on the dock; confirm `1:13`/`1:14` exist. Nothing is
+   measurable without this — milestone **M0**.
+3. Add the `atc-dpin` DT nodes, then the smallest driver change -> CI build ->
+   one hardware test.
+4. A macOS visit is now needed **only** for the DCP *firmware* blob — do not
+   schedule it before step 1 is exhausted.
 
 ## Honest assessment
 
@@ -153,6 +177,10 @@ Apple's display firmware as a reference.
 
 - `~/dptunnel-logs/` — `dp-sink-test-*.log`, `collector-*.txt`, `live-monitor.txt`
 - `~/dp-tunnel-artifacts/exp2/` — reinstallable exp-2 kernel `.deb` + checksums
+- `~/dp-tunnel-artifacts/apple/` — **extracted Apple display kexts (do not publish)**
 - RE map: `DP-TUNNEL-RE.md`; audit: `DPIN-AUX-AUDIT.md`; decision: `DOCK-VIDEO-DECISION.md`
 - macOS baseline helper: `run-macos-baseline.sh`
+- `evidence/2026-10-16-apple-display-binaries-extracted-locally.md` — how to get Apple's binaries
+- `evidence/2026-10-16-dpin-adapter-enable-protocol-recovered.md` — **the enable sequence**
+- `tools/kc-slice.py` — kernelcache/slice symbol + disassembly tool
 - This file is the entry point.
