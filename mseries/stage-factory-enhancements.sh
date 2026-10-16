@@ -50,6 +50,7 @@ install -m644 "$work/local" "$stage/etc/dconf/db/local"
 
 # Recompile persistent /etc after new leaf defaults arrive on image updates.
 # Merely copying a compiled database would preserve an older existing database.
+mkdir -p "$stage/usr/lib/systemd/system"
 cat > "$stage/usr/lib/systemd/system/mseries-desktop-defaults.service" <<'EOF'
 [Unit]
 Description=Compile M-series desktop defaults before login

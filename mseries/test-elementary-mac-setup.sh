@@ -115,7 +115,9 @@ export -f systemctl
 XDG_STATE_HOME="$state" ELEMENTARY_MAC_PAYLOAD="$root/usr/share/elementary-mac/mseries" \
   bash "$here/user-enhance.sh"
 unset -f systemctl
-eq '--user stop elementary-mac-user-enhance.timer' "$(cat "$mseries_timer_calls")" "completed user setup stops timer"
+# widevine is done too, so the path unit is stopped as well (user-enhance.sh).
+eq $'--user stop elementary-mac-user-enhance.timer\n--user stop elementary-mac-user-enhance.path' \
+  "$(cat "$mseries_timer_calls")" "completed user setup stops timer and path"
 find "$root" "$state" -mindepth 1 -delete; rmdir "$root" "$state"
 
 (( fails == 0 )) && echo "all tests passed" || { echo "$fails failure(s)" >&2; exit 1; }
