@@ -1,0 +1,16 @@
+{
+  "VEVENT": {
+    "synthetic_component_read": true,
+    "error_count": 0,
+    "private_contents_published": false
+  },
+  "VTODO": {
+    "synthetic_component_read": true,
+    "error_count": 0,
+    "private_contents_published": false
+  },
+  "cleanup": {
+    "owned_sources_removed": 2,
+    "errors": 0
+  }
+}

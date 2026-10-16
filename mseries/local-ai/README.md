@@ -20,9 +20,9 @@ The initial setup downloads pinned Qwen9 and Qwen4 weights (roughly 8 GB combine
 
 ## Memory and cooling
 
-`~/.config/mseries-ai/profiles.json` owns the policy. One supervised inference worker holds `~/.local/state/mseries-ai/worker.lock`. Launchers switch between managed profiles and check the model identity at readiness. Initial admission budgets are 8 GiB for everyday/coding, 4.5 GiB for compact, and 11 GiB for experimental 64K Hermes, in addition to a 6 GiB desktop reserve. The pinned upstream estimate for the 16K coding context with one retained cache is 7.93 GiB, including its workspace estimate. These are admission estimates; live telemetry still enforces the reserve.
+`~/.config/mseries-ai/profiles.json` owns the policy. One supervised inference worker holds `~/.local/state/mseries-ai/worker.lock`. Launchers switch between managed profiles and check the model identity at readiness. Initial admission budgets are 7.5 GiB for everyday (the upstream 8K estimate is 7.43), 8 GiB for coding (16K estimate 7.93), 4.5 GiB for the older compact model, 5.5 GiB for the optional newer 4B challenger, and 11 GiB for experimental 64K Hermes, in addition to a 6 GiB desktop reserve. Estimates include workspace/cache allowance; live telemetry still enforces the reserve.
 
-The supervisor samples every three seconds. It pauses only its own process group for cooling, then resumes it using hysteresis. Fan pause defaults to the measured launch baseline plus 300 RPM, capped at 3300; resume defaults to baseline plus 100 RPM below that threshold. Temperature pause/resume is 70/65 C. If a changed idle baseline prevents a full resume, six-second work bursts after thirty-second cooling intervals preserve progress below the hard limits. Three consecutive samples below the memory reserve, above 3500 RPM, or above 80 C stop the owned model. Missing fan/temperature telemetry refuses admission. Fan RPM is a noise proxy, not a dBA measurement. A cooling pause increases response time; it does not change governors or fan control. Unrelated workloads can still make the whole computer loud and can stop a model.
+Fresh profiles sample every second, pause owned submissions at 2700 fan RPM and resume at 2600, with 70/65 C temperature hysteresis. Three-second work bursts after thirty-second cooling intervals permit progress when the idle baseline shifts. Three consecutive samples below the six-GiB reserve, above 3500 RPM, or above 80 C stop the owned model. Missing fan/temperature telemetry refuses admission. Existing policy files are preserved on upgrades; absent soft thresholds use the launch baseline plus 300/100 RPM and a three-second sample interval. Fan RPM is a noise proxy, not a dBA measurement. A cooling pause increases response time; it does not change governors or fan control. Unrelated workloads can still make the whole computer loud and stop a model.
 
 ```sh
 systemctl --user status mseries-ai-everyday
@@ -63,9 +63,14 @@ python3 mseries/local-ai/tool-benchmark.py --label Qwen9 --output tools.json
 # Stop managed models before a runtime-native microbenchmark:
 python3 mseries/local-ai/microbenchmark.py everyday --prompt 512 --output micro.json
 python3 mseries/local-ai/branch-watch.py
+# Optional newer 4B challenger; verified weights and closed-schema registration:
+python3 mseries/local-ai/prepare-compact35.py
+# Local app data services; creates/removes owned synthetic sources only:
+python3 mseries/local-ai/eds-smoke.py --output eds.json
+python3 mseries/local-ai/app-benchmark.py --label baseline --output apps.json
 ```
 
-Task tests record answers, first-text latency, estimated decode rate, caching and machine telemetry. MCP workflow tests use the real stdio adapter in synthetic workspaces. Interrupted streams are excluded from quality scoring. Microbenchmarks have a shared lock, three trials with cooling delays, and bounded resource monitoring; their native runtime workloads differ and should not be treated as identical cross-runtime tests. Run only in a quiet window; preserve interrupted receipts.
+Task tests record answers, first-text latency, estimated decode rate, caching and machine telemetry. MCP workflow v3 tests use the real stdio adapter in synthetic workspaces, an explicit exact-text note instruction and a recorded fifteen-second cooling delay. The earlier ambiguous note instruction is preserved as exploratory data. Interrupted streams are excluded from quality scoring. Microbenchmarks have a shared lock, three trials with cooling delays and the same cooling/stop policy; their native runtime workloads differ and should not be treated as identical cross-runtime tests. Run only in a quiet window; preserve interrupted receipts.
 
 The existing six-hour GitHub watcher now discovers all public branch heads in the selected Mac/MLX/Mesa/ANE/kernel repositories, plus all open PR heads and detailed comparisons for named branches and the ten most recently updated PRs. Complete head lists are saved as workflow artifacts; compact digests fit the issue dashboard. A changed digest signals even an unselected personal experiment. Fetch/pagination failures remain visible. Discovery never updates pins, merges code, or qualifies hardware.
 

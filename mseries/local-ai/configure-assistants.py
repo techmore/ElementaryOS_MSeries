@@ -27,9 +27,11 @@ def main():
     LIB.mkdir(parents=True, exist_ok=True)
     for name in ['machine.py', 'model-worker.py', 'os-mcp.py', 'brief.py']:
         shutil.copy2(HERE / name, LIB / name)
-    config = {'policy': {'reserve_gib': 6, 'max_fan_rpm': 3500, 'max_temp_c': 80}, 'profiles': {
-        'everyday': {'engine': 'mlx', 'model': 'qwen3.5-9b-mlx-4bit', 'context': 8192, 'port': 8766, 'admission_gib': 8},
+    config = {'policy': {'reserve_gib': 6, 'max_fan_rpm': 3500, 'max_temp_c': 80,
+                         'cool_fan_rpm': 2700, 'resume_fan_rpm': 2600, 'burst_s': 3, 'sample_s': 1}, 'profiles': {
+        'everyday': {'engine': 'mlx', 'model': 'qwen3.5-9b-mlx-4bit', 'context': 8192, 'port': 8766, 'admission_gib': 7.5},
         'compact': {'engine': 'mlx', 'model': 'qwen3-4b-instruct-2507-4bit', 'context': 4096, 'port': 8766, 'admission_gib': 4.5},
+        'compact35': {'engine': 'mlx', 'model': 'qwen3.5-4b-mseries-4bit', 'context': 16384, 'port': 8768, 'admission_gib': 5.5},
         'personal': {'engine': 'mlx', 'model': 'qwen3.5-9b-mlx-4bit', 'context': 64000, 'port': 8766,
                      'prompt_cache_size': 1, 'admission_gib': 11},
         'coder': {'engine': 'mlx', 'model': 'qwen3.5-9b-mlx-4bit',
@@ -38,6 +40,8 @@ def main():
                   'context': 16384, 'port': 8768, 'admission_gib': 7},
         'liquid': {'engine': 'llama', 'model': str(HOME / '.local/share/mseries-ai/models/LFM2.5-1.2B-Instruct-Q4_K_M.gguf'),
                    'context': 4096, 'port': 8768, 'admission_gib': 2},
+        'bonsai': {'engine': 'llama', 'model': str(HOME / '.local/share/mseries-ai/models/Ternary-Bonsai-2-9B-Q2_0.gguf'),
+                   'context': 8192, 'port': 8768, 'admission_gib': 5.5},
         'coder-large': {'engine': 'llama', 'model': str(HOME / '.local/share/mseries-ai/models/Qwen3-Coder-30B-A3B-Instruct-Q4_K_M.gguf'),
                   'context': 8192, 'port': 8768, 'admission_gib': 21}}}
     # Policy and selected profiles are user settings; upgrades never reset them.
@@ -49,7 +53,7 @@ def main():
             if name not in existing['profiles']:
                 existing['profiles'][name] = config['profiles'][name]
         put(CONFIG / 'profiles.json', json.dumps(existing, indent=2) + '\n')
-    for profile in ['everyday', 'compact', 'personal', 'coder', 'coder7', 'liquid']:
+    for profile in ['everyday', 'compact', 'compact35', 'personal', 'coder', 'coder7', 'liquid', 'bonsai']:
         unit = f'''[Unit]
 Description=MSeries {profile} local model with desktop reserve
 [Service]
@@ -68,7 +72,7 @@ p=argparse.ArgumentParser(); p.add_argument('app', choices=['desktop','personal'
 profile={'coding':'coder','hermes':'personal','personal':'everyday','desktop':'everyday'}[a.app]
 if a.app in ('desktop','personal') and subprocess.run(['systemctl','--user','is-active','--quiet','mseries-ai-personal.service']).returncode==0: profile='personal'
 # One supervised worker owns the GPU/model budget at a time.
-subprocess.run(['systemctl','--user','stop']+['mseries-ai-'+x+'.service' for x in ['everyday','compact','personal','coder','coder7','liquid'] if x!=profile],check=True)
+subprocess.run(['systemctl','--user','stop']+['mseries-ai-'+x+'.service' for x in ['everyday','compact','compact35','personal','coder','coder7','liquid','bonsai'] if x!=profile],check=True)
 subprocess.run(['systemctl','--user','start','mseries-ai-'+profile+'.service'],check=True)
 port=8768 if profile=='coder' else 8766
 opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
@@ -139,6 +143,18 @@ Gio.Settings.sync()
     if not backup.exists():
         put(backup, result.stdout)
     subprocess.run(['flatpak', 'override', '--user', '--talk-name=org.freedesktop.Flatpak', 'io.github.qwersyk.Newelle'], check=True)
+    # Newelle caches schemas by command/args. Our renamed tools must be fetched
+    # before its controller builds the first request; retain other MCP servers.
+    cache = HOME / '.var/app/io.github.qwersyk.Newelle/cache/extensions_cache/mcp_tool_cache.json'
+    if cache.exists():
+        try:
+            metadata = json.loads(cache.read_text())
+            identifier = 'stdio:/usr/bin/python3:' + str(LIB / 'os-mcp.py')
+            if isinstance(metadata, dict) and identifier in metadata:
+                del metadata[identifier]
+                put(cache, json.dumps(metadata, indent=2) + '\n')
+        except (OSError, ValueError):
+            pass  # Newelle itself ignores an unreadable cache and fetches schemas.
     subprocess.run(['systemctl', '--user', 'daemon-reload'], check=True)
     print('Configured local Desktop, Personal and Coding Assistant launchers; no windows opened.')
 

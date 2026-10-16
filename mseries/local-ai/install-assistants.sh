@@ -56,6 +56,12 @@ Nice=10
 WantedBy=default.target
 EOF
 systemctl --user daemon-reload
+# Migrate the earlier MLX resident-pair login worker before enabling this one.
+# Leave an unrelated/custom command using that unit name untouched.
+legacy=$(systemctl --user show mlx-omarchy-chat.service -p ExecStart --value 2>/dev/null || true)
+if [[ $legacy == *'/mlx-omarchy-chat '* ]]; then
+  systemctl --user disable --now mlx-omarchy-chat.service
+fi
 systemctl --user enable --now mseries-crash-watch.service
 systemctl --user enable --now mseries-ai-everyday.service
 echo 'Installed assistant profiles and fault watcher. Quiet policy may refuse a model when desktop headroom is short.'

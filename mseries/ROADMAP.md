@@ -314,3 +314,5 @@ browser integration and remaining Files/Gala patches remain open.
 
 - Power and battery roadmap written 2026-10-16 (`POWER-ROADMAP.md`): goals, baseline, workstreams A to G, phases 0 to 4,
   owner decisions list. First free change installed: Electron apps to native Wayland at next login.
+
+- Local AI follow-through (October 16): newer Qwen3.5 4B 9/15 short tasks and 9/9 corrected MCP workflows; older Qwen3 4B 6/9 corrected workflows. Final app, coding and native throughput tests wait for idle windows while other owner tests continue. See the October 16 qualification receipt for current status.

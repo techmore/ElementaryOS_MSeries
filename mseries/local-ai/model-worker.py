@@ -113,7 +113,7 @@ def main():
                 cooling = False
                 burst_until = now + policy.get('burst_s', 6) if action == 'burst' else 0
                 print('QUIET COOLING: resuming owned model' + (' for a bounded burst' if burst_until else ''), flush=True)
-            time.sleep(3)
+            time.sleep(policy.get('sample_s', 3))
     finally:
         if child.poll() is None:
             stop()

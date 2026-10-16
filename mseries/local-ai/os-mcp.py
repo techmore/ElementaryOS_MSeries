@@ -52,6 +52,7 @@ def scoped_path(name):
 def apps():
     found = {}
     for base in [Path('/usr/share/applications'), Path.home() / '.local/share/applications',
+                 Path('/var/lib/flatpak/exports/share/applications'),
                  Path.home() / '.local/share/flatpak/exports/share/applications']:
         for path in sorted(base.glob('*.desktop')):
             try:
@@ -65,6 +66,7 @@ def apps():
             except (OSError, configparser.Error, ValueError):
                 continue
     for app, adapter in {'io.elementary.files': 'Assistant Workspace files',
+                         'io.elementary.calendar': 'read calendar components through EDS',
                          'io.elementary.tasks': 'read tasks through EDS',
                          'org.techmore.HomeboardBoard': 'read tasks through EDS'}.items():
         if app in found:
