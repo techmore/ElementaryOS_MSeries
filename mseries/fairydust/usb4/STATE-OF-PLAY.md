@@ -159,5 +159,6 @@ a DP-altmode reference, not the M1 USB4 tunnel protocol.
 - [Host stack decomposed: only DP-IN + routing missing](evidence/2026-10-16-host-stack-decomposed-dpin-and-crossbar-routing.md)
 - [Router vs DCP activation ordering (answers handoff item 2)](evidence/2026-10-16-router-vs-dcp-activation-ordering.md)
 - [Original audit](DPIN-AUX-AUDIT.md), [routing RE](DP-TUNNEL-RE.md)
+- [Gap ledger from the 2026-10-16 offline review (owners, status)](REVIEW-2026-10-16-GAPS.md)
 
 Keep raw Apple binaries, decompiler output and raw machine captures private.

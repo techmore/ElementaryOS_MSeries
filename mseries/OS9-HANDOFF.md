@@ -2,6 +2,18 @@
 
 Updated 2026-10-16. Repository: techmore/ElementaryOS_MSeries.
 
+
+## Dock video: offline review and gap ledger — 2026-10-16
+
+Claude reviewed `DP-TUNNEL-RE.md` §6-7 against the pinned tree and the newer
+audit/REA/ordering notes (read-only; no kernel, boot, cable or Neo action).
+Findings are one ledger with owners: `fairydust/usb4/REVIEW-2026-10-16-GAPS.md`
+(linked from `STATE-OF-PLAY.md`). Fixed `test-dp-tunnel.sh`, which counted eDP
+as a connected display; it now counts only DP/HDMI connectors (checked live:
+old count would include eDP, new count 0). Not done: router-side DP-IN hook
+design and the refcount question (G1/G2, DeepSeek), DPRX teardown backport (G3),
+any hardware step (G4/G5, owner-gated).
+
 ## DP-IN source milestone — offline implementation, 2026-10-16
 
 [Implementation and DeepSeek handoff](fairydust/usb4/DPIN-IMPLEMENTATION.md)

@@ -109,7 +109,11 @@ timeouts=$(printf '%s\n' "$logs" | grep -c 'DPRX read timeout')
 activations=$(printf '%s\n' "$logs" | grep -c 'activation complete')
 connect=$(printf '%s\n' "$logs" | grep -c 'dcp_dptx_connect(port=0)')
 bypass="$(param dprx_bypass 0)"
-connected=$(cat /sys/class/drm/card*/card*-*/status 2>/dev/null | grep -c '^connected$')
+# External connectors only: the built-in eDP is always connected and must not
+# turn "paths activated" into a display-success verdict.
+connected=$(for c in /sys/class/drm/card*/card*-DP-* /sys/class/drm/card*/card*-HDMI-*; do
+	[ -e "$c/status" ] && cat "$c/status"
+done 2>/dev/null | grep -c '^connected$')
 inactive=$(printf '%s\n' "$logs" | grep -c 'acking unhandled call 20')
 
 if [ "${idx:-0}" = 0 ]; then
