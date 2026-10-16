@@ -7,6 +7,15 @@ GIB = 1024 ** 3
 DEFAULT_POLICY = {'reserve_gib': 6, 'max_fan_rpm': 3500, 'max_temp_c': 80}
 
 
+def runtime_prefix(home=None):
+    user = (Path.home() if home is None else home) / '.local/share/mlx-omarchy'
+    # A factory user's catalog/cache creates this directory without installing
+    # a runtime. Select the private user runtime only when it is complete.
+    if (user / 'venv/bin/python').is_file() and (user / 'vulkan/honeykrisp_icd.aarch64.json').is_file():
+        return user
+    return Path('/usr/lib/omarchy-mlx')
+
+
 def number(path):
     try:
         return float(path.read_text().strip())

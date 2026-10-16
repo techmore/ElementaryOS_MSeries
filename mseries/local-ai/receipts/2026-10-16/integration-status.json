@@ -1,1 +1,18 @@
-{"date":"2026-10-16","mlx_numerical_smoke":"passed","newelle_visible_window":"opened, selected model verified, closed","newelle_full_ui_chat_xvfb":"passed before final tool narrowing; final-profile retest queued","personal_summary_memory":"synthetic reconstruction/recall passed","tasks_calendar":"real EDS synthetic round trips passed and cleaned","crush":"8K mismatch and cooling-stall issues found; real file-edit retest pending idle/headroom","kernel_watcher":"enabled and active, previous-boot evidence available","factory_runtime":"36 wheels verified and staged offline; pruning and effective mkosi config passed; full build and hardware boot unqualified","publication":"draft PR 58; main deployment and enhanced recurring workflow pending merge"}
+{
+  "date": "2026-10-16",
+  "mlx_numerical_smoke": "passed",
+  "newelle_visible_window": "opened, selected model verified, closed",
+  "newelle_full_ui_chat_xvfb": "passed: isolated configured local profile, actual MCP clock dispatch, exactly ten enabled tools",
+  "personal_summary_memory": "passed: synthetic keyfile summary persisted and recalled across separate processes",
+  "tasks_calendar": "real EDS synthetic round trips passed and cleaned",
+  "crush": "passed: real 4B file edit, independent tests unchanged, 87.31 seconds, minimum 8.506 GiB available, maximum 2513 RPM",
+  "kernel_watcher": "enabled and active, previous-boot evidence available",
+  "factory_runtime": "36 wheels verified and staged offline; pruning and effective mkosi config passed; full build and hardware boot unqualified",
+  "publication": "draft PR 58; main deployment and enhanced recurring workflow pending merge",
+  "follow_up": "Hourly completion heartbeat active in originating chat; durable mseries-ai-qualification user service waits for idle windows",
+  "newer_4b": "Qwen3.5-4B short suite 9/15; corrected MCP v3 9/9; older Qwen3 4B corrected v3 6/9",
+  "default_model": "Qwen3.5 4B at 8K everyday/16K coding; 6.5 GiB admission plus six-GiB reserve",
+  "diagnostic_quality": "Small model failed two repair-advice checks and is excluded from dedicated diagnosis; optional 9B needs fifteen GiB available and remains unqualified on retained app mix",
+  "pending": "Tasks-to-note smoke; final independent Bonsai request, tool workflows and native throughput; final main/Pages publication and enhanced watcher activation",
+  "owned_queue": "mseries-ai-final-qualification user unit; hourly completion heartbeat active"
+}

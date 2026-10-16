@@ -29,6 +29,9 @@ def main():
                'exit_code': result.returncode, 'private_report_mode': report_mode,
                'answer': answer, 'scope': 'synthetic chosen-file path through the production CLI; no real journal input'}
     receipt['passed'] = result.returncode == 0 and report_mode == 0o600 and bool(re.search(r'panel|SIGSEGV', answer, re.I))
+    receipt['unsupported_action'] = bool(re.search(r'\*\*Fix:\*\*[^\n]*(?:restart|reboot|toggl)', answer, re.I))
+    receipt['wifi_failure_denied'] = bool(re.search(r'(?:not|no|cannot|doesn.t)[^\n.]{0,90}(?:prove|establish|evidence)[^\n.]{0,90}wi.?fi|no[^\n.]{0,90}wi.?fi[^\n.]{0,90}(?:fail|error)', answer, re.I))
+    receipt['passed'] = receipt['passed'] and receipt['wifi_failure_denied'] and not receipt['unsupported_action']
     # This smoke proves transport/reporting, not comprehensive diagnostic
     # accuracy. The full synthetic answer is reviewable.
     args.output.parent.mkdir(parents=True, exist_ok=True)

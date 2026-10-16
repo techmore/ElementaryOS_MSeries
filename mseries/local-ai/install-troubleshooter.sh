@@ -37,4 +37,4 @@ Exec=/usr/bin/python3 "$HOME/.local/libexec/mseries-troubleshooter-ui" --perform
 EOF
 systemctl --user daemon-reload
 echo 'Installed. Run: mseries-troubleshoot --start "Why is my desktop crashing?"'
-echo 'Release model memory with: systemctl --user stop mseries-ai-everyday'
+echo 'Optional 9B diagnosis needs 15 GiB available before loading; release it with: systemctl --user stop mseries-ai-quality'

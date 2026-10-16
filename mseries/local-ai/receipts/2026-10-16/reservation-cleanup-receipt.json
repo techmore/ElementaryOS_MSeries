@@ -1,0 +1,8 @@
+{
+  "source": "Interrupted Qwen3.5 4B run at 14:04; owned CLI PID 152101",
+  "owner_pid_absent": true,
+  "process_group_absent": true,
+  "cleared_count": 1,
+  "method": "upstream atomic clear_reservation with matching owner token; token excluded from receipt",
+  "fix": "Supervisor stop is idempotent and permits thirty seconds for CLI cleanup"
+}

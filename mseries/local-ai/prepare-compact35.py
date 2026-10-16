@@ -6,14 +6,13 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+from machine import runtime_prefix
 
 HERE = Path(__file__).resolve().parent
 
 
 def main():
-    prefix = Path.home() / '.local/share/mlx-omarchy'
-    if not prefix.exists():
-        prefix = Path('/usr/lib/omarchy-mlx')
+    prefix = runtime_prefix()
     python = prefix / 'venv/bin/python'
     entry = json.loads((HERE / 'qwen35-4b-catalog-entry.json').read_text())
     # Download uses the runtime's pinned hub client, not an unpinned host package.

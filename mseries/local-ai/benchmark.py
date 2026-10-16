@@ -77,12 +77,15 @@ def code_score(text, case):
     allowed_calls = {'len', 'range', 'enumerate', 'sorted', 'list', 'tuple', 'set', 'dict',
                      'min', 'max', 'sum', 'zip', 'reversed', 'isinstance', 'int', 'str', 'bool', 'abs'}
     allowed_attrs = {'append', 'add', 'extend', 'sort', 'copy', 'get', 'items', 'values', 'keys', 'fromkeys'}
+    forbidden_refs = {'eval', 'exec', 'compile', 'globals', 'locals', 'vars', 'open', 'input',
+                      'getattr', 'setattr', 'delattr', 'help', 'breakpoint', 'quit', 'exit',
+                      'license', 'credits', 'copyright'}
     if not tree.body or any(not isinstance(node, ast.FunctionDef) for node in tree.body):
         return False
     for node in ast.walk(tree):
         if isinstance(node, (ast.Import, ast.ImportFrom, ast.Global, ast.Nonlocal, ast.ClassDef)):
             return False
-        if isinstance(node, ast.Name) and node.id.startswith('__'):
+        if isinstance(node, ast.Name) and (node.id.startswith('__') or node.id in forbidden_refs):
             return False
         if isinstance(node, ast.Attribute) and node.attr not in allowed_attrs:
             return False
@@ -123,6 +126,24 @@ def score(case, answer):
     return answer.strip() == expected
 
 
+def resume_rows(previous, current, repeats):
+    for key in ['label', 'model', 'fixtures_sha256', 'kernel', 'governors', 'cpu_max_khz']:
+        if previous.get(key) != current.get(key):
+            raise ValueError('Resume metadata differs: ' + key)
+    if previous.get('delay_s', 0) != current['delay_s']:
+        raise ValueError('Resume cooling delay differs')
+    valid = {(case['id'], repeat) for repeat in range(repeats) for case in CASES}
+    done, rows = set(), []
+    for row in previous['cases']:
+        key = row['id'], row['repeat']
+        if key not in valid:
+            raise ValueError('Resume case is outside this suite')
+        if isinstance(row.get('passed'), bool) and not row.get('error'):
+            if key in done: raise ValueError('Duplicate completed resume case')
+            done.add(key); rows.append(row)
+    return rows, done
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--endpoint', default='http://127.0.0.1:8766/v1')
@@ -130,6 +151,7 @@ def main():
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--repeat', type=int, default=3)
     p.add_argument('--delay', type=float, default=0, help='Optional cooling seconds between cases, recorded in receipt')
+    p.add_argument('--resume', type=Path, help='Retain completed independent trials from a matching receipt; caller must retain identical runtime/model pins')
     args = p.parse_args()
     if not 0 <= args.delay <= 300:
         p.error('Cooling delay must be between zero and 300 seconds')
@@ -152,6 +174,15 @@ def main():
               'method': 'Synthetic task suite v2; first request separately labeled; fan RPM is not dBA; no cache isolation claim.', 'delay_s': args.delay,
               'fixtures_sha256': hashlib.sha256(json.dumps(CASES, sort_keys=True).encode()).hexdigest(),
               'policy': {'reserve_gib': 6, 'max_fan_rpm': 3500, 'max_temp_c': 80}, 'cases': [], 'samples': []}
+    completed, new_requests = set(), 0
+    if args.resume:
+        previous = json.loads(args.resume.read_text())
+        report['cases'], completed = resume_rows(previous, report, args.repeat)
+        report['samples'] = list(previous.get('samples', []))
+        report['resumed_from'] = {'receipt': args.resume.name,
+            'sha256_before_publication_redaction': hashlib.sha256(args.resume.read_bytes()).hexdigest(),
+            'completed_trials': len(completed), 'prior_interruption': previous.get('stopped')}
+        report['method'] += ' Resumed independent requests; cache state resets between segments, and original resource samples/interruptions are retained.'
     done = threading.Event()
     def sample():
         while not done.is_set():
@@ -162,7 +193,9 @@ def main():
     try:
         for repeat in range(args.repeat):
             for case in CASES:
-                if report['cases']:
+                if (case['id'], repeat) in completed:
+                    continue
+                if new_requests:
                     time.sleep(args.delay)
                 refusal = violations(snapshot())
                 if refusal:
@@ -175,12 +208,13 @@ def main():
                         'temperature': 0, 'max_tokens': 512,
                         'chat_template_kwargs': {'enable_thinking': False}})
                     result.update(id=case['id'], repeat=repeat, passed=score(case, result['answer']),
-                                  first_request=not report['cases'])
+                                  first_request=new_requests == 0)
                 except Exception as error:
                     result = {'id': case['id'], 'repeat': repeat, 'passed': None, 'error': str(error)[:300],
                               'answer': getattr(error, 'partial_answer', '')}
                     report['stopped'] = result['error']
                 report['cases'].append(result)
+                new_requests += 1
                 print(json.dumps({k: v for k, v in result.items() if k != 'answer'}), flush=True)
                 if result.get('error'):
                     return 3

@@ -10,12 +10,12 @@ import subprocess
 import sys
 import time
 
-from machine import DEFAULT_POLICY, GIB, snapshot, violations, cooling_action
+from machine import DEFAULT_POLICY, GIB, snapshot, violations, cooling_action, runtime_prefix
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('profile', choices=['everyday', 'compact', 'personal', 'coder', 'coder7', 'coder-large', 'liquid', 'bonsai', 'compact35'])
+    parser.add_argument('profile', choices=['everyday', 'quality', 'coder9', 'compact', 'personal', 'coder', 'coder7', 'coder-large', 'liquid', 'bonsai', 'compact35'])
     args = parser.parse_args()
     home = Path.home()
     config = json.loads((home / '.config/mseries-ai/profiles.json').read_text())
@@ -40,24 +40,18 @@ def main():
     print(f"QUIET POLICY: baseline {baseline:.0f} RPM; pause {policy['cool_fan_rpm']:.0f}; resume {policy['resume_fan_rpm']:.0f}; hard stop {policy['max_fan_rpm']}", flush=True)
     env = dict(os.environ, OMP_NUM_THREADS='2', OPENBLAS_NUM_THREADS='2',
                HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1', HF_HUB_DISABLE_TELEMETRY='1')
-    prefix = home / '.local/share/mlx-omarchy'
-    if not prefix.exists():
-        prefix = Path('/usr/lib/omarchy-mlx')
+    prefix = runtime_prefix(home)
     env['OMARCHY_MLX_SYSTEM_PREFIX'] = str(prefix)
     env['VK_DRIVER_FILES'] = str(prefix / 'vulkan/honeykrisp_icd.aarch64.json')
     if profile['engine'] == 'mlx':
-        launcher = home / '.local/bin/mlx-omarchy-serve'
-        if not launcher.exists():
-            launcher = Path('/usr/bin/mlx-omarchy-serve')
+        launcher = home / '.local/bin/mlx-omarchy-serve' if prefix == home / '.local/share/mlx-omarchy' else Path('/usr/bin/mlx-omarchy-serve')
         command = [str(launcher), 'serve', profile['model'],
                    '--context', str(profile['context']), '--prompt-cache-size', str(profile.get('prompt_cache_size', 1)),
                    '--host', '127.0.0.1', '--port', str(profile['port']), '--offline', '--yes']
         if 'weights_gib' in profile:
             command += ['--weights-gib', str(profile['weights_gib'])]
     else:
-        driver = home / '.local/share/mlx-omarchy/vulkan/honeykrisp_icd.aarch64.json'
-        if not driver.exists():
-            driver = Path('/usr/lib/omarchy-mlx/vulkan/honeykrisp_icd.aarch64.json')
+        driver = prefix / 'vulkan/honeykrisp_icd.aarch64.json'
         env['VK_DRIVER_FILES'] = str(driver)
         binary = home / '.local/share/mseries-ai/llama/bin/llama-server'
         if not binary.exists():
@@ -81,6 +75,8 @@ def main():
 
     def stop(_sig=None, _frame=None):
         nonlocal stopping
+        if stopping:
+            return  # Repeated SIGTERM must not interrupt the CLI's reservation cleanup.
         stopping = True
         if child.poll() is None:
             group_signal(signal.SIGCONT)
@@ -118,7 +114,7 @@ def main():
         if child.poll() is None:
             stop()
             try:
-                child.wait(timeout=20)
+                child.wait(timeout=30)
             except subprocess.TimeoutExpired:
                 group_signal(signal.SIGKILL)
                 child.wait()

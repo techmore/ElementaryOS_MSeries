@@ -32,6 +32,7 @@
       "branches": [
         "feat/cpu-governor-on-ac"
       ],
+      "open_prs": true,
       "discover_branches": true
     },
     {

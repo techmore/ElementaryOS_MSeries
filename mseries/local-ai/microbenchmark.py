@@ -9,12 +9,12 @@ import signal
 import subprocess
 import time
 
-from machine import GIB, snapshot, violations, cooling_action
+from machine import GIB, snapshot, violations, cooling_action, runtime_prefix
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('profile', choices=['everyday', 'compact', 'compact35', 'coder7', 'liquid', 'bonsai'])
+    p.add_argument('profile', choices=['everyday', 'quality', 'compact', 'compact35', 'coder7', 'liquid', 'bonsai'])
     p.add_argument('--prompt', type=int, choices=[512, 4096], default=512)
     p.add_argument('--output', required=True, type=Path)
     args = p.parse_args()
@@ -32,15 +32,15 @@ def main():
     baseline = max(initial['fans_rpm'].values())
     policy.setdefault('cool_fan_rpm', min(baseline + 300, policy['max_fan_rpm'] - 200))
     policy.setdefault('resume_fan_rpm', min(baseline + 100, policy['cool_fan_rpm'] - 100))
-    prefix = home / '.local/share/mlx-omarchy'
-    if not prefix.exists(): prefix = Path('/usr/lib/omarchy-mlx')
+    prefix = runtime_prefix(home)
     env = dict(os.environ, OMP_NUM_THREADS='2', OPENBLAS_NUM_THREADS='2', HF_HUB_OFFLINE='1',
                HF_HUB_DISABLE_TELEMETRY='1', OMARCHY_MLX_SYSTEM_PREFIX=str(prefix),
                VK_DRIVER_FILES=str(prefix / 'vulkan/honeykrisp_icd.aarch64.json'))
     if profile['engine'] == 'mlx':
         pins = {'compact': 'models--mlx-community--Qwen3-4B-Instruct-2507-4bit/snapshots/50d427756c6b1b2fe0c0a10f67fbda1fc8e82c1b',
                 'compact35': 'models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3',
-                'everyday': 'models--mlx-community--Qwen3.5-9B-MLX-4bit/snapshots/938d8919941c6e7efd3c7150eff7fe9d12afa631'}
+                'everyday': 'models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3',
+                'quality': 'models--mlx-community--Qwen3.5-9B-MLX-4bit/snapshots/938d8919941c6e7efd3c7150eff7fe9d12afa631'}
         model = str(home / '.cache/huggingface/hub' / pins[args.profile])
         command = [str(prefix / 'venv/bin/python'), '-m', 'mlx_lm.benchmark', '--model', model,
                    '-p', str(args.prompt), '-g', '128', '-n', '3', '--prefill-step-size', '256', '--delay', '15']
@@ -58,6 +58,7 @@ def main():
     started = time.monotonic()
     with log.open('w') as output:
         child = subprocess.Popen(['nice', '-n', '10'] + command, env=env, stdout=output, stderr=subprocess.STDOUT, start_new_session=True)
+        report['launcher_nice'] = os.getpriority(os.PRIO_PROCESS, 0)
         def interrupted(_sig, _frame):
             raise KeyboardInterrupt
         signal.signal(signal.SIGTERM, interrupted)
@@ -68,6 +69,8 @@ def main():
         report['cooling_events'] = []
         try:
             while child.poll() is None:
+                try: report['child_nice'] = os.getpriority(os.PRIO_PROCESS, child.pid)
+                except ProcessLookupError: pass
                 sample = snapshot(); report['samples'].append(sample)
                 reasons = violations(sample, policy)
                 count = count + 1 if reasons else 0

@@ -54,7 +54,8 @@
     {
       "repo": "mlx-community/Qwen3.5-9B-MLX-4bit",
       "revision": "938d8919941c6e7efd3c7150eff7fe9d12afa631",
-      "license": "Apache-2.0"
+      "license": "Apache-2.0",
+      "status": "optional larger preset, short 12/15; corrected MCP interrupted by memory reserve; diagnosis/native trials not qualified on retained app mix"
     },
     {
       "repo": "mlx-community/Qwen3-4B-Instruct-2507-4bit",
@@ -87,7 +88,7 @@
       "repo": "mlx-community/Qwen3.5-4B-MLX-4bit",
       "revision": "32f3e8ecf65426fc3306969496342d504bfa13f3",
       "license": "Apache-2.0",
-      "status": "short task suite 9/15; corrected MCP v3 9/9; long coding and native performance pending"
+      "status": "default compact preset: short 9/15, corrected MCP 9/9, actual Newelle chat/tools, separate-process memory, Crush edit and native trials passed; kernel/log repair advice failed"
     }
   ]
 }

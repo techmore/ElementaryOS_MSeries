@@ -18,8 +18,10 @@ from urllib.parse import urlsplit
 MODEL_REPO = 'mlx-community/Qwen3.5-9B-MLX-4bit'
 REVISION = '938d8919941c6e7efd3c7150eff7fe9d12afa631'
 DEFAULT_ENDPOINT = 'http://127.0.0.1:8766'
-MODEL_UNIT = 'mseries-ai-everyday.service'
+MODEL_UNIT = 'mseries-ai-quality.service'
 PERSONAL_UNIT = 'mseries-ai-personal.service'
+QUALITY_UNIT = 'mseries-ai-quality.service'
+QUALITY_REVISION = '938d8919941c6e7efd3c7150eff7fe9d12afa631'
 CHAT_UNIT = 'mlx-omarchy-chat.service'
 MAX_LOG_CHARS = 8000
 SYSTEM = '''You are a Linux/elementary OS Apple Silicon troubleshooting assistant.
@@ -29,7 +31,8 @@ Write for the owner of this computer, who is not a developer: plain words, no ja
 no unexplained service or file names. Keep the whole answer under 250 words in exactly
 this shape:
 ## Verdict
-One sentence: is the computer healthy, or does something need attention?
+One sentence stating what the supplied evidence establishes. Undated or historical
+logs alone cannot establish current health: say that current status is unknown.
 ## Needs attention
 Only real problems the owner should act on, at most three bullets, each exactly in this form:
 - **Short title.** What is happening and why it matters, in everyday language. **Fix:** one simple step. Prefer actions in the desktop over commands; put a read-only command in backticks only when it is the clearest way to check something.
@@ -42,6 +45,12 @@ Only mention commands, services or files that appear in the evidence; never inve
 names. Do not guess why something failed or what it means for the user beyond what
 the evidence shows; say "the logs do not say why" instead. A single past failure does not
 mean a feature is permanently broken. Do not suggest restarting unless the evidence shows it would fix something.
+Name the failing component exactly as the excerpt names it; do not replace it with
+an invented label such as "critical system process". Do not infer causal links
+between unrelated subsystems. Successful initialization is not evidence of failure.
+Never propose reboots, restarts, resets, or connectivity toggles from a crash line
+alone. When no supported fix is established, suggest checking for a repeat occurrence
+and say the logs do not establish a fix. Do not invent a fix to fill a template.
 If nothing needs doing, say so. If evidence is insufficient, say what is missing. Do not propose destructive commands, firmware,
 bootloader, kernel replacement, or disabling speaker protection. If evidence is
 insufficient, say what is missing. Be concise. This machine runs Pantheon on M1 Pro;
@@ -233,7 +242,7 @@ def analysis_session(args, endpoint):
                 stage('releasing', 'Releasing model memory for the desktop…')
                 try:
                     result = subprocess.run(['systemctl', '--user', 'stop', MODEL_UNIT],
-                                            capture_output=True, text=True, timeout=25)
+                                            capture_output=True, text=True, timeout=45)
                     if result.returncode:
                         stage('release-failed', 'Analysis finished, but model memory could not be released: ' + redact(result.stderr)[:200])
                     else:
@@ -260,15 +269,17 @@ def start_server(endpoint):
     model = Path.home() / '.cache/huggingface/hub' / ('models--' + MODEL_REPO.replace('/', '--')) / 'snapshots' / REVISION
     if not (model / 'config.json').is_file():
         raise ValueError('Pinned model missing; run install-troubleshooter.sh first')
-    unit = PERSONAL_UNIT if unit_state(PERSONAL_UNIT) in ('active', 'activating') else MODEL_UNIT
+    unit = next((u for u in (PERSONAL_UNIT, MODEL_UNIT)
+                 if unit_state(u) in ('active', 'activating')), MODEL_UNIT)
     if unit == MODEL_UNIT and any(unit_state('mseries-ai-' + name + '.service') in ('active', 'activating')
-                                 for name in ('compact', 'coder', 'coder7', 'liquid', 'bonsai')):
+                                 for name in ('everyday', 'compact', 'compact35', 'coder', 'coder9', 'coder7', 'liquid', 'bonsai')):
         raise ValueError('Another assistant profile is using the model budget. Fault evidence remains saved; retry analysis when it is free.')
     subprocess.run(['systemctl', '--user', 'start', unit], check=True)
     for attempt in range(120):
         try:
             models = api(endpoint, '/v1/models')['data']
-            if not any(m['id'].endswith('/' + REVISION) for m in models):
+            expected = REVISION if unit == MODEL_UNIT else QUALITY_REVISION
+            if not any(m['id'].endswith('/' + expected) for m in models):
                 raise ValueError('Unexpected model on the default local endpoint')
             return
         except (OSError, ValueError):
@@ -277,7 +288,7 @@ def start_server(endpoint):
             if attempt % 10 == 0:
                 stage("model-loading", f"Waiting for the model to load into memory · {attempt}s elapsed (up to 120s)…")
             time.sleep(1)
-    raise ValueError('Model not ready; inspect journalctl --user -u mseries-ai-everyday')
+    raise ValueError('Model not ready; inspect journalctl --user -u mseries-ai-quality')
 
 
 def main():

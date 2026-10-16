@@ -22,8 +22,8 @@ flatpak update --user --assumeyes --noninteractive --commit=7f106d29dc4fd3ee0320
 "$runtime" - <<'PY'
 from huggingface_hub import snapshot_download
 snapshot_download('mlx-community/Qwen3.5-9B-MLX-4bit',revision='938d8919941c6e7efd3c7150eff7fe9d12afa631',max_workers=2)
-snapshot_download('mlx-community/Qwen3-4B-Instruct-2507-4bit',revision='50d427756c6b1b2fe0c0a10f67fbda1fc8e82c1b',max_workers=2)
 PY
+python3 "$here/prepare-compact35.py"
 base="$HOME/.local/share/mseries-assistants/hermes"
 pin=848fc0ad8be766b9dc10fe42bd80b5fc2d45d95c
 if [[ ! -d $base/source/.git ]]; then
@@ -40,7 +40,7 @@ python3 -m venv "$base/venv"
 "$base/venv/bin/pip" install --no-deps -e "$base/source[mcp]"
 python3 "$here/install-crush.py"
 python3 "$here/prepare-coder.py" --python "$runtime" --runtime-only
-python3 "$here/configure-assistants.py"
+python3 "$here/configure-assistants.py" --adopt-compact-defaults
 bash "$here/install-troubleshooter.sh"
 install -Dm755 "$here/crash-watch.py" "$HOME/.local/libexec/mseries-crash-watch"
 mkdir -p "$HOME/.config/systemd/user"

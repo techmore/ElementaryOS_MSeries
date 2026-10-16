@@ -28,9 +28,78 @@ branch = load('branch_test', 'branch-watch.py')
 bench = load('bench_test', 'benchmark.py')
 worker = load('worker_test', 'model-worker.py')
 dashboard = load('dashboard_test', 'github-watch.py')
+setup = load('setup_test', 'configure-assistants.py')
 
 
 class AssistantContracts(unittest.TestCase):
+    def test_unsafe_builtin_alias_is_rejected_before_execution(self):
+        source = 'def unique(items):\n dict = eval\n return dict("items")\n'
+        with patch.object(bench.subprocess, 'run') as execute:
+            self.assertFalse(bench.code_score(source, 'code-dedupe'))
+            execute.assert_not_called()
+
+    def test_resume_retains_quality_failures_and_retries_only_incomplete_trials(self):
+        meta = {'label': 'fixture', 'model': 'pinned', 'fixtures_sha256': 'same',
+                'kernel': 'same', 'governors': ['same'], 'cpu_max_khz': ['same'], 'delay_s': 15}
+        previous = meta | {'cases': [{'id': 'extract', 'repeat': 0, 'passed': True},
+            {'id': 'arithmetic', 'repeat': 0, 'passed': False},
+            {'id': 'code-intervals', 'repeat': 0, 'passed': None, 'error': 'interrupted'}]}
+        rows, completed = bench.resume_rows(previous, meta, 3)
+        self.assertEqual(len(rows), 2)
+        self.assertIn(('arithmetic', 0), completed)
+        self.assertNotIn(('code-intervals', 0), completed)
+        with self.assertRaises(ValueError): bench.resume_rows(previous, meta | {'model': 'different'}, 3)
+
+    def test_preset_adoption_preserves_policy_and_other_profiles(self):
+        with tempfile.TemporaryDirectory() as root:
+            home = Path(root); config = home / '.config/mseries-ai'; config.mkdir(parents=True)
+            original = {'policy': {'reserve_gib': 9, 'max_fan_rpm': 3000, 'max_temp_c': 75}, 'profiles': {
+                'everyday': {'engine': 'mlx', 'model': 'qwen3.5-9b-mlx-4bit', 'context': 8192, 'port': 8766, 'admission_gib': 10},
+                'bespoke': {'model': 'user-choice'}}}
+            (config / 'profiles.json').write_text(json.dumps(original))
+            with patch.object(setup, 'HOME', home), patch.object(setup, 'CONFIG', config), \
+                 patch.object(setup, 'LIB', home / '.local/libexec/mseries-ai'), \
+                 patch.object(setup.subprocess, 'run', return_value=MagicMock(stdout='{}')), \
+                 patch('sys.argv', ['configure']), patch('sys.stdout', io.StringIO()):
+                setup.main()
+                retained = json.loads((config / 'profiles.json').read_text())
+                self.assertEqual(retained['profiles']['everyday'], original['profiles']['everyday'])
+                with patch('sys.argv', ['configure', '--adopt-compact-defaults']): setup.main()
+            adopted = json.loads((config / 'profiles.json').read_text())
+            self.assertEqual(adopted['policy'], original['policy'])
+            self.assertEqual(adopted['profiles']['bespoke'], original['profiles']['bespoke'])
+            self.assertEqual(adopted['profiles']['everyday']['model'], 'qwen3.5-4b-mseries-4bit')
+            self.assertEqual(adopted['profiles']['coder']['admission_gib'], 6.5)
+            launcher = compile((home / '.local/bin/mseries-assistant').read_text(), 'launcher', 'exec')
+            live, failed = {'everyday'}, set()
+            def control(command, **kwargs):
+                action = command[2]
+                names = [v.removeprefix('mseries-ai-').removesuffix('.service') for v in command[3:] if v.endswith('.service')]
+                if action == 'stop':
+                    live.difference_update(names); failed.difference_update(names)
+                elif action == 'start':
+                    for name in names:
+                        (failed if name == 'quality' else live).add(name)
+                state = 'active' if names and names[-1] in live else ('failed' if names and names[-1] in failed else 'inactive')
+                return MagicMock(returncode=(0 if action != 'is-active' or state == 'active' else 3), stdout=state)
+            with patch.object(Path, 'home', return_value=home), patch.object(subprocess, 'run', side_effect=control), \
+                 patch('sys.argv', ['assistant', '--quality', 'desktop']):
+                with self.assertRaises(SystemExit): exec(launcher, {'__name__': '__main__'})
+            self.assertIn('everyday', live)
+            self.assertNotIn('quality', live)
+
+    def test_factory_cache_directory_does_not_shadow_system_runtime(self):
+        with tempfile.TemporaryDirectory() as root:
+            home = Path(root); prefix = home / '.local/share/mlx-omarchy'
+            (prefix / 'cache').mkdir(parents=True)
+            self.assertEqual(machine.runtime_prefix(home), Path('/usr/lib/omarchy-mlx'))
+            (prefix / 'venv/bin').mkdir(parents=True)
+            (prefix / 'venv/bin/python').touch()
+            self.assertEqual(machine.runtime_prefix(home), Path('/usr/lib/omarchy-mlx'))
+            (prefix / 'vulkan').mkdir()
+            (prefix / 'vulkan/honeykrisp_icd.aarch64.json').touch()
+            self.assertEqual(machine.runtime_prefix(home), prefix)
+
     def test_scoped_notes_refuse_traversal_links_and_overwrite(self):
         with tempfile.TemporaryDirectory() as root:
             os_mcp.ROOT = Path(root) / 'workspace'
@@ -130,7 +199,9 @@ class AssistantContracts(unittest.TestCase):
             def wait(timeout): child.poll.return_value = 0; child.returncode = 0
             child.terminate.side_effect = terminate; child.wait.side_effect = wait
             def register(sig, fn): handlers[sig] = fn
-            def tick(_): handlers[signal.SIGTERM]()
+            def tick(_):
+                handlers[signal.SIGTERM]()
+                handlers[signal.SIGTERM]()  # Quiet stop can race an external systemd stop.
             with patch.object(worker.Path, 'home', return_value=home), \
                  patch('sys.argv', ['worker', 'coder']), \
                  patch.object(worker, 'snapshot', side_effect=[base, base | {'fans_rpm': {'fan': 3000}}]), \
@@ -142,6 +213,7 @@ class AssistantContracts(unittest.TestCase):
             self.assertEqual(calls.count(signal.SIGSTOP), 1)
             self.assertLess(calls.index(signal.SIGCONT), calls.index('terminate'))
             child.wait.assert_called_once()
+            child.terminate.assert_called_once()
 
     def test_kernel_events_and_changing_addresses_are_grouped(self):
         event = {'_TRANSPORT': 'kernel', 'MESSAGE': 'asahi gpu fault at 0xabcdef1234 pid 44'}
