@@ -37,6 +37,13 @@ when the DRM pipeline is enabled for a connector. For a real tunnelled sink that
 needs the connector reported connected with a valid mode — i.e. HPD plus EDID —
 both of which are downstream of the DP-IN adapter being enabled.
 
+This is **not an unavoidable synchronous deadlock**: in this setup DCP can also
+be started by the existing debugfs force-link / OOB-hotplug path, which can
+overlap the DPRX window. But that start is manual, so there is **no automatic
+start bridge** in 0005. `DPIN-IMPLEMENTATION.md` reaches the same conclusion
+("a candidate future notification boundary is after both DP adapters are
+enabled, before DPRX work starts"); that file is the normative one.
+
 **4. HPD cannot be the trigger, because HPD is read *during* activation.** Per
 the superseding protocol in `DPIN-IMPLEMENTATION.md`, activation clears the
 inactive request at `+0x0c`, polls the ACK at `+0x10`, and reads HPD at `+0x00`
