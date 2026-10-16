@@ -1,5 +1,12 @@
 # MacBook Neo recorder preparation — 2026-10-16
 
+**Latest:** [bounded live-status report](evidence/2026-10-16-neo-live-status.md).
+Sleep assertions remain active. A Dell dock enumerates on Neo, but its physical
+identity relative to the target WD22TB4 is unconfirmed. No proxy endpoints or
+display entries were observed and no proxy handshake was attempted. Remote
+checks must run in delegated workers with hard timeouts so SSH never holds the
+primary chat. Recorder tool readiness is separate from target video success.
+
 The separate recorder has now been identified and accessed successfully.
 It is a **MacBook Neo, Mac17,5, Apple A18 Pro, 8 GB RAM**, running
 **macOS 26.6.2 (25G83)**, with approximately 402 GiB free at inspection.

@@ -2,6 +2,26 @@
 
 Updated 2026-10-16. Repository: techmore/ElementaryOS_MSeries.
 
+## Latest bounded live checks — 2026-10-16
+
+[Published live-status report](fairydust/usb4/evidence/2026-10-16-neo-live-status.md):
+Neo sleep assertions remain active and a Dell dock/hubs/USB LAN/headset enumerate
+there. No `/dev/cu.usb*` proxy endpoints and no display entries were observed;
+no handshake was attempted and no monitor picture is confirmed. USB inventory
+does not prove this is the same physical target WD22TB4 or that cables moved.
+The M1 Pro remains Linux at the latest check, with bypass `Y`, no USB or
+Thunderbolt devices observed, DP/HDMI disconnected and eDP connected. The
+target dock test needs the dock host cable on the M1 Pro and a separate direct
+recorder cable; do not infer physical cable changes from enumeration alone.
+Recorder Python,
+HV import, real ARMAsm smoke and loader help have passed. Target baseline,
+guest boot qualification and hardware trace remain outstanding.
+
+Owner requires the primary chat never to wait on SSH: remote checks belong to
+delegated workers with hard timeouts; long remote work must run as tracked
+jobs independent of SSH. Give progress updates every 30 seconds during active
+work. Do not ask the owner to repeat already-confirmed cable actions.
+
 ## Neo recorder accessed / sleep inhibited — 2026-10-16
 
 Latest result: **Neo recorder core tools ready**. Official LLVM archive
@@ -25,12 +45,12 @@ fresh matching source/build at `c6a89b908ac4bf1f7b495f20531f3ea029148adb`.
 Twelve offline tests, HV import and guest-loader help pass on Neo. Native
 collector self-test confirms registry/profiler/log commands; the Preboot
 search fails without root and its error is retained. This is recorder
-validation, not M1 Pro dock evidence. The portable LLVM compiler bundle is
-being prepared; no serial handshake, target guest or boot change yet.
+validation, not M1 Pro dock evidence. The portable LLVM compiler smoke has
+passed; no serial handshake, target guest or boot change yet.
 
 Leave the dock/HDMI attached to the M1 Pro. Add only a direct USB data cable
-from the Neo to a free target Thunderbolt port when ready. Next: complete
-compiler smoke test, collect native target macOS metadata/cache and confirm
+from the Neo to a free target Thunderbolt port when ready. Next: verify
+physical topology, collect native target macOS metadata/cache and confirm
 its guest boot route. Neo's macOS 26 is the recorder OS, not the XNU guest.
 
 ## macOS cutover package — start here (2026-10-16)

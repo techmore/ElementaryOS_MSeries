@@ -4,11 +4,17 @@ Last updated 2026-10-14. Day-to-day pending checks live in the robot: `mseries-v
 (seed: `mseries/local-ai/verify-checks.json`). This file is the human-readable plan.
 
 Dock-video update 2026-10-16:
+[Latest bounded live checks](fairydust/usb4/evidence/2026-10-16-neo-live-status.md)
+confirm Neo sleep assertions and Dell USB inventory, but no proxy endpoint or
+external display picture. The physical dock identity/topology remains
+unconfirmed. Compiler smoke has passed; the M1 Pro native baseline, approved
+guest route and hardware trace remain. Keep SSH work off the primary chat.
+
 MacBook Neo recorder now reached by SSH; key login installed and verified.
 Sleep assertions are active on Neo and the Linux target. Private Python,
 matching m1n1 source/build and dependencies are staged; offline checks pass
 on Darwin ARM64. See [recorder setup](fairydust/usb4/NEO-RECORDER-SETUP.md)
-for verified results and compiler/USB/guest gates still remaining.
+for verified results and USB/guest gates still remaining.
 
 [`Complete macOS cutover checklist`](fairydust/usb4/MACOS-CUTOVER-CHECKLIST.md)
 is published with a native collector, IORegistry metadata parser and raw
