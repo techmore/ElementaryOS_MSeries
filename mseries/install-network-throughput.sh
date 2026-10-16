@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Add live download/upload speed and a 60 s graph to the Wingpanel network indicator's dropdown.
 # Builds io.elementary.panel.network (elementary/panel-network) with
-# mseries/patches/network-throughput.patch and replaces only libnetwork.so.
+# mseries/patches/network-throughput.patch (plus network-saturation.patch, which turns the
+# speeds pastel green when a direction saturates the link) and replaces only libnetwork.so.
 #
 #   bash mseries/install-network-throughput.sh              # build + install + reload the panel
 #   bash mseries/install-network-throughput.sh --uninstall  # restore the original plugin
@@ -56,6 +57,7 @@ git -C "$source_dir" checkout -q --detach FETCH_HEAD
 git -C "$source_dir" apply "$repo/mseries/patches/network-throughput.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/network-null-devices.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/network-panel-speed.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/network-saturation.patch"
 git -C "$source_dir" apply \
   --include=data/Indicator.css \
   --include=src/Widgets/UsageWidget.vala \

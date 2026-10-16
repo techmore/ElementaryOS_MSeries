@@ -1,0 +1,181 @@
+diff --git a/src/Widgets/PanelSpeed.vala b/src/Widgets/PanelSpeed.vala
+index c98d4de..33da909 100644
+--- a/src/Widgets/PanelSpeed.vala
++++ b/src/Widgets/PanelSpeed.vala
+@@ -60,7 +60,9 @@ public class Network.Widgets.PanelSpeed : Gtk.Box {
+     private bool have_baseline = false;
+ 
+     construct {
+-        speed_label = new Gtk.Label (null);
++        speed_label = new Gtk.Label (null) {
++            use_markup = true
++        };
+         speed_label.add_css_class ("numeric");
+         append (speed_label);
+         margin_start = 4;
+@@ -98,9 +100,14 @@ public class Network.Widgets.PanelSpeed : Gtk.Box {
+         var now = get_monotonic_time ();
+         if (have_baseline && now > last_time && rx >= last_rx && tx >= last_tx) {
+             double seconds = (now - last_time) / 1000000.0;
++            double down = (rx - last_rx) / seconds;
++            double up = (tx - last_tx) / seconds;
++            double down_capacity, up_capacity;
++            ThroughputWidget.get_capacity (out down_capacity, out up_capacity);
++
+             speed_label.label = "↓ %s  ↑ %s".printf (
+-                ThroughputWidget.format_rate ((rx - last_rx) / seconds),
+-                ThroughputWidget.format_rate ((tx - last_tx) / seconds)
++                ThroughputWidget.tint (ThroughputWidget.format_rate (down), ThroughputWidget.is_saturated (down, down_capacity)),
++                ThroughputWidget.tint (ThroughputWidget.format_rate (up), ThroughputWidget.is_saturated (up, up_capacity))
+             );
+         }
+ 
+diff --git a/src/Widgets/ThroughputWidget.vala b/src/Widgets/ThroughputWidget.vala
+index 9d8ad98..451ba34 100644
+--- a/src/Widgets/ThroughputWidget.vala
++++ b/src/Widgets/ThroughputWidget.vala
+@@ -14,6 +14,15 @@ public class Network.Widgets.ThroughputWidget : Gtk.Box {
+     // Floor for the graph scale, so idle background chatter does not look like a full-height spike.
+     private const double MIN_SCALE = 50000.0;
+ 
++    // Pastel green shown while a direction is using (nearly) all the link can carry.
++    public const string SATURATED_COLOR = "#9be3b0";
++    // Share of the reported link rate that counts as saturated. Wi-Fi reports its PHY rate,
++    // of which roughly 60% is real throughput; wired links can actually reach ~90%.
++    private const double WIRED_USABLE = 0.9;
++    private const double WIFI_USABLE = 0.6;
++
++    private static NM.Client? nm_client = null;
++
+     private double[] rx_history = new double[HISTORY];
+     private double[] tx_history = new double[HISTORY];
+ 
+@@ -24,6 +33,9 @@ public class Network.Widgets.ThroughputWidget : Gtk.Box {
+     private bool have_baseline = false;
+     private uint timeout_id = 0;
+ 
++    private bool down_saturated = false;
++    private bool up_saturated = false;
++
+     private Gtk.Label down_label;
+     private Gtk.Label up_label;
+     private Gtk.DrawingArea graph;
+@@ -38,14 +50,16 @@ public class Network.Widgets.ThroughputWidget : Gtk.Box {
+ 
+         down_label = new Gtk.Label ("0 B/s") {
+             xalign = 0,
+-            width_chars = 10
++            width_chars = 10,
++            use_markup = true
+         };
+         down_label.add_css_class (Granite.CssClass.ACCENT);
+         down_label.add_css_class ("numeric");
+ 
+         up_label = new Gtk.Label ("0 B/s") {
+             xalign = 0,
+-            width_chars = 10
++            width_chars = 10,
++            use_markup = true
+         };
+         up_label.add_css_class ("numeric");
+ 
+@@ -126,8 +140,13 @@ public class Network.Widgets.ThroughputWidget : Gtk.Box {
+         rx_history[HISTORY - 1] = down;
+         tx_history[HISTORY - 1] = up;
+ 
+-        down_label.label = format_rate (down);
+-        up_label.label = format_rate (up);
++        double down_capacity, up_capacity;
++        get_capacity (out down_capacity, out up_capacity);
++        down_saturated = is_saturated (down, down_capacity);
++        up_saturated = is_saturated (up, up_capacity);
++
++        down_label.label = tint (format_rate (down), down_saturated);
++        up_label.label = tint (format_rate (up), up_saturated);
+ 
+         if (get_mapped ()) {
+             graph.queue_draw ();
+@@ -136,6 +155,65 @@ public class Network.Widgets.ThroughputWidget : Gtk.Box {
+         return Source.CONTINUE;
+     }
+ 
++    /**
++     * Wraps text in the saturated colour when asked to.
++     */
++    public static string tint (string text, bool saturated) {
++        if (!saturated) {
++            return text;
++        }
++
++        return "<span foreground=\"%s\" weight=\"bold\">%s</span>".printf (SATURATED_COLOR, text);
++    }
++
++    public static bool is_saturated (double bytes_per_second, double capacity) {
++        return capacity > 0 && bytes_per_second >= capacity;
++    }
++
++    /**
++     * What the active connection can carry per direction, in bytes/s, already scaled to the
++     * share that counts as saturated. Zero when NetworkManager has no link speed (then nothing
++     * is highlighted). When Wi-Fi and Ethernet are both up, the faster one is used.
++     */
++    public static void get_capacity (out double down, out double up) {
++        down = 0;
++        up = 0;
++
++        if (nm_client == null) {
++            try {
++                nm_client = new NM.Client ();
++            } catch (Error e) {
++                warning ("Could not read link speed from NetworkManager: %s", e.message);
++                return;
++            }
++        }
++
++        if (nm_client == null || !nm_client.nm_running) {
++            return;
++        }
++
++        double best = 0;
++        foreach (unowned var device in nm_client.get_devices ()) {
++            if (device.get_state () != NM.DeviceState.ACTIVATED) {
++                continue;
++            }
++
++            double rate = 0;
++            if (device is NM.DeviceEthernet) {
++                // Mbit/s -> bytes/s
++                rate = ((NM.DeviceEthernet) device).get_speed () * 125000.0 * WIRED_USABLE;
++            } else if (device is NM.DeviceWifi) {
++                // kbit/s -> bytes/s
++                rate = ((NM.DeviceWifi) device).get_bitrate () * 125.0 * WIFI_USABLE;
++            }
++
++            best = double.max (best, rate);
++        }
++
++        down = best;
++        up = best;
++    }
++
+     public static string format_rate (double bytes_per_second) {
+         if (bytes_per_second < 1000) {
+             return "%d B/s".printf ((int) bytes_per_second);
+@@ -216,9 +294,17 @@ public class Network.Widgets.ThroughputWidget : Gtk.Box {
+ 
+         // Upload first so the (accent coloured) download series sits on top.
+         var up_color = up_label.get_color ();
++        if (up_saturated) {
++            up_color.parse (SATURATED_COLOR);
++        }
++
+         draw_series (cr, tx_history, up_color, width, height, max, 0.12, 0.55);
+ 
+         var down_color = down_label.get_color ();
++        if (down_saturated) {
++            down_color.parse (SATURATED_COLOR);
++        }
++
+         draw_series (cr, rx_history, down_color, width, height, max, 0.22, 0.95);
+     }
+ 
