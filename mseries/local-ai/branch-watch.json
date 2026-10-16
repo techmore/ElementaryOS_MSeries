@@ -1,0 +1,69 @@
+{
+  "description": "Discover public developer branches and PR heads. Tracking is not update approval or hardware qualification.",
+  "sources": [
+    {
+      "repo": "joshuaswarren/omarchy-mlx",
+      "base": "main",
+      "branches": [
+        "agent/fambonsai",
+        "agent/bonsai2-serving",
+        "agent/OmlxCache-rows",
+        "w71/muse-gate-up-fusion"
+      ],
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "omacom/mesa",
+      "base": "main",
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "omacom/omarchy-mac-pkgs",
+      "base": "main",
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "joshuaswarren/omarchy-mac-pkgs",
+      "base_repo": "omacom/omarchy-mac-pkgs",
+      "base": "main",
+      "branches": [
+        "feat/cpu-governor-on-ac"
+      ],
+      "discover_branches": true
+    },
+    {
+      "repo": "joshuaswarren/omarchy-ane",
+      "base": "main",
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "aurora-silicon/linux",
+      "base": "aurora-stable",
+      "branches": [
+        "aurora-rc",
+        "aurora-edge",
+        "fix/m1m2-regressions",
+        "fix/m1m2-typec-usb4-router"
+      ],
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "omacom/omarchy-mac",
+      "base": "quattro-upstream",
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "joshuaswarren/mesa-1",
+      "base_repo": "omacom/mesa",
+      "base": "main",
+      "discover_branches": true,
+      "open_prs": true
+    }
+  ]
+}

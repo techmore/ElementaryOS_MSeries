@@ -302,6 +302,20 @@ mod_payload() {
   for f in "$here"/patches/*.patch; do
     copy 0644 "$f" "$prefix/mseries/patches/$(basename "$f")"
   done
+  # User setup works from immutable /usr and keeps models/state in the user's home.
+  for f in "$here"/local-ai/*.py "$here"/local-ai/*.sh "$here"/local-ai/*.json "$here"/local-ai/*.patch "$here"/local-ai/*.lock; do
+    copy 0644 "$f" "$prefix/mseries/local-ai/$(basename "$f")"
+  done
+  put 0644 /usr/share/applications/mseries-assistant-setup.desktop <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Set Up Local Assistants
+Comment=Install local desktop, personal and coding assistants with a quiet memory policy
+Exec=bash /usr/share/elementary-mac/mseries/local-ai/install-assistants.sh
+Icon=utilities-system-monitor
+Terminal=true
+Categories=Utility;
+EOF
   # sudo is a no-op for root; the scripts were written for a user account.
   put 0755 $prefix/shim/sudo <<'EOF'
 #!/bin/sh

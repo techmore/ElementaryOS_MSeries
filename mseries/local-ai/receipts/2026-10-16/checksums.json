@@ -1,0 +1,16 @@
+{
+  "qwen4-v2.json": "119fded7d382a02a0590cf19267decf61b989153c9ba82dd4cf49e1403e56b8a",
+  "qwen9-v2.json": "9541a414a89702e2ccbc1d7b64b7de9708cc3777f40bf38092a2cd26a7d31f3f",
+  "coder7-v2.json": "a74f150bc499defe17515afd872845700ebaf9dcd37c052d52ec9a038fce3ac8",
+  "liquid-v2.json": "df37e60d60fe32fbc919153f2487322caf8ef7ca13e887be3f02836490d6fe1e",
+  "qwen4-tools.json": "44660b5525beb1ba300a0a20d05b5de7e397d7274a5049dbfa8282c34b78e272",
+  "qwen9-tools-v2.json": "1a3196bc82e78496257006ff8b779a66a498caba7ae3389e848fae6462b30d6b",
+  "liquid-tools.json": "4c63c89edba6f046ea72c17da191218b8aa2165bc0dd85766345d4f00241961d",
+  "mlx-smoke.json": "7fd57355328b6a0ec98d4a201016b0d522d00128522728316dd23d3d5029ac49",
+  "eds-adapter-receipt.json": "096a37e31736fbd204e8f1812f8d1e00d2ec36bcaa0854beda7bfdc038c07a80",
+  "newelle-memory-receipt.json": "cbf20cfec359828d05968b5a49326d961fb34aa1160082f8e400856237cf98e5",
+  "bonsai9-weight.json": "238096a1de501be2f5ee0411f50b281793733ef83bad3d1448507b208d27e7b6",
+  "m1pro-local-ai-source-audit.json": "c1f5283544223b063971632d464acfcf197948ae26b5ac6a2f23b8bbe57e682c",
+  "checksums.json": "622257e3ef7c2dd98ac28632b3b5657c9c3de2d479ccec144941d60c4f0a2180",
+  "source-pins.json": "51bf905641184e040805c41a95ca5e99652f68cd65a9e7def0fbf19efaa20108"
+}

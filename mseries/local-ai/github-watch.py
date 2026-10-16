@@ -6,6 +6,8 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import base64
+import gzip
 from urllib.parse import quote
 
 HERE = Path(__file__).resolve().parent
@@ -28,9 +30,34 @@ def reconcile(previous, observations, errors, acknowledged=False):
     for key, current in observations.items():
         old = snapshots.get(key)
         if old is not None and old != current:
-            pending[key] = {'from': pending.get(key, {}).get('from', old), 'to': current}
+            pending[key] = {'from': pending.get(key, {}).get('from', change_marker(old)),
+                            'to': change_marker(current)}
         snapshots[key] = current
     return {'snapshots': snapshots, 'pending': pending, 'errors': errors}
+
+
+def change_marker(value):
+    """Keep enough change evidence without duplicating long metadata in the issue state."""
+    if not isinstance(value, dict):
+        return value
+    fields = ('sha', 'base_sha', 'branch', 'release', 'sha256', 'count', 'latest', 'pushed', 'ahead', 'behind', 'status')
+    return {k: value[k] for k in fields if k in value}
+
+
+def encode_state(state):
+    raw = json.dumps(state, sort_keys=True, separators=(',', ':')).encode()
+    return {'encoding': 'gzip+base64', 'data': base64.b64encode(gzip.compress(raw, mtime=0)).decode()}
+
+
+def decode_state(value):
+    if value.get('encoding') != 'gzip+base64':
+        return value  # Migrate the earlier plain-JSON dashboard without losing acknowledgments.
+    import zlib
+    packed = base64.b64decode(value['data'], validate=True)
+    raw = zlib.decompressobj(31).decompress(packed, 2 * 1024 * 1024 + 1)
+    if len(raw) > 2 * 1024 * 1024:
+        raise ValueError('Dashboard state exceeds the bounded decoder')
+    return json.loads(raw)
 
 
 def render(state):
@@ -39,14 +66,16 @@ def render(state):
              'New changes reopen this same issue. Review licenses, hardware applicability and diffs before importing.', '',
              'This watcher does not merge, deploy, change build pins, or qualify hardware.', '',
              '## Changes awaiting review', '']
-    for key, change in sorted(state['pending'].items()):
+    for key, change in sorted(state['pending'].items())[:20]:
         lines += [f'- **{key}**', '  - Before: `' + json.dumps(change['from'], sort_keys=True) + '`',
                   '  - Now: `' + json.dumps(change['to'], sort_keys=True) + '`']
     if not state['pending']:
         lines += ['No unacknowledged changes. Initial observations establish a baseline.']
+    elif len(state['pending']) > 20:
+        lines += [f"{len(state['pending']) - 20} additional changes are retained in the dashboard state. Closing acknowledges all {len(state['pending'])} changes."]
     lines += ['', '## Fetch failures', ''] + (['- ' + e for e in state['errors']] or ['None.'])
     lines += ['', f"Tracking {len(state['snapshots'])} successfully observed sources.", '',
-              '<!-- mseries-watch-state\n' + json.dumps(state, sort_keys=True) + '\n-->']
+              '<!-- mseries-watch-state\n' + json.dumps(encode_state(state), sort_keys=True) + '\n-->']
     return '\n'.join(lines)
 
 
@@ -76,7 +105,7 @@ def main():
         match = re.search(r'<!-- mseries-watch-state\n(.*?)\n-->', issue['body'], re.S)
         if not match:
             raise RuntimeError('Dashboard state missing; refusing to discard observations')
-        previous = json.loads(match.group(1))
+        previous = decode_state(json.loads(match.group(1)))
     observations, errors = {}, []
     for entry in entries:
         key = entry.get('repo') or '@' + entry['user']
@@ -99,11 +128,22 @@ def main():
                 observations[key] = {'latest': repos[0]['full_name'], 'pushed': repos[0]['pushed_at']} if repos else {'latest': None, 'pushed': None}
         except Exception as error:
             errors.append(f'{key}: {type(error).__name__}: {error}')
+    branch_spec = importlib.util.spec_from_file_location('branch_watch', HERE / 'branch-watch.py')
+    branch_watch = importlib.util.module_from_spec(branch_spec)
+    branch_spec.loader.exec_module(branch_watch)
+    raw_heads = {}
+    branch_observations, branch_errors = branch_watch.collect(
+        watch.get, json.loads((HERE / 'branch-watch.json').read_text())['sources'], raw_heads)
+    Path('mseries-upstream-branch-heads.json').write_text(json.dumps(raw_heads, indent=2) + '\n')
+    observations.update(branch_observations)
+    errors.extend(branch_errors)
     if not issue:
         previous = {'snapshots': {e['repo']: dict(observations[e['repo']], sha=e['observed_revision'])
                                   for e in refs if e['repo'] in observations}}
     state = reconcile(previous, observations, errors, bool(issue and issue['state'] == 'closed'))
     body = render(state)
+    if len(body) > 65000:
+        raise ValueError('Dashboard exceeds GitHub issue size; observations retained in the workflow artifact, refusing to discard state')
     if not issue:
         issue = api(f'repos/{repository}/issues', 'POST', {'title': TITLE, 'body': body})
     elif body != issue['body'] or (issue['state'] == 'closed' and (state['pending'] or errors)):
