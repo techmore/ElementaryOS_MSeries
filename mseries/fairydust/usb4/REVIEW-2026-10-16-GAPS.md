@@ -197,6 +197,21 @@ printed the plan and GRUB entry without writing anything. It has **not** been ru
 the existing `elementary-usb4-dptunnel` entry loses USB4 after install (use the new entry or
 roll back). Remaining before use: Codex freezes the bundle so the manifests are final.
 
+## Controlled-test first boot (11:45) — result recorded 2026-10-16
+
+Full analysis: [evidence/2026-10-16-controlled-test-first-boot.md](evidence/2026-10-16-controlled-test-first-boot.md).
+Summary: bridge and DT mapping probe correctly; DP-IN activation failed immediately with
+`-ENOLINK` (`phy poweron failed --> -67`) because `apple_dpin_set_inactive()` aborts on HPD
+low in its first poll, before the ACK can change (probable cause, from code plus one log
+line); a second, separate NULL-deref occurred when the DCP kept a stale `dpin` PHY after the
+ACIO re-probed. DPRX was never reached, so this says nothing about the sink. New items:
+
+| # | Item | Owner |
+|---|---|---|
+| R1 | Instrument the DP-IN registers on failure, then make activation wait for the ACK instead of aborting on first-poll HPD low (update the offline test that asserts the immediate abort) | Codex/DeepSeek |
+| R2 | Stale-PHY guard: per-start lookup or bound-provider check so a start after ACIO re-probe fails with `-ENODEV` and never oopses | Codex/DeepSeek |
+| R3 | `STATE-OF-PLAY.md` still says no reboot has happened; the first boot did | Codex |
+
 ## Tooling
 
 | # | Defect | Status |

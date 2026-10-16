@@ -202,5 +202,6 @@ a DP-altmode reference, not the M1 USB4 tunnel protocol.
 - [DPRX teardown series backport plan (ledger G3)](DPRX-TEARDOWN-BACKPORT-PLAN.md)
 - [Batched reboot: pre-flight, GRUB entry, post-reboot checks](POST-REBOOT-CHECKLIST.md)
 - [HDMI: what works today, decision frame and plan (read this first for priorities)](HDMI-FASTEST-PATH.md)
+- [Controlled test, first hardware boot: DP-IN activation aborted at once; stale-PHY oops](evidence/2026-10-16-controlled-test-first-boot.md)
 
 Keep raw Apple binaries, decompiler output and raw machine captures private.
