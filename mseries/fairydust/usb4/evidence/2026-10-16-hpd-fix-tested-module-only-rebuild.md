@@ -1,5 +1,12 @@
 # First live test of the DP-OUT/HPD fix — results, and the module-only rebuild unlock
 
+
+> Interpretation update: retain the live measurements below. HPD proves sink
+> presence, not a working pixel chain, and the remaining timeout does not
+> prove DP-IN is the only possible failure. See [current ledger](../STATE-OF-PLAY.md).
+> The new DP-IN patch series is offline only; the historical deployment
+> recipe below is not authorized by the owner's current constraints.
+
 **Date:** 2026-10-16
 **Tested on:** the live M1 Pro (`j314s`), Dell WD22TB4 attached, monitor on the
 dock's HDMI, kernel `7.1.13-elementary-fairydust-usb4-dptunnel`.

@@ -1,5 +1,12 @@
 # DP-IN adapter: enable protocol recovered from Apple's own driver
 
+
+> Superseded register interpretation: use [REA-DPIN-FINDINGS](../REA-DPIN-FINDINGS.md)
+> and [DPIN-IMPLEMENTATION](../DPIN-IMPLEMENTATION.md). `+0x04` is IRQ status,
+> `+0x08` IRQ enables, `+0x0c` inactive request (clear to activate),
+> `+0x10` inactive ACK. The historical guesses below are retained as a record,
+> not implementation instructions. Static RE does not establish hardware success.
+
 **Date:** 2026-10-16
 **Status:** static RE **done** for the DP-IN control path. This is the sequence
 `STATE-OF-PLAY.md` called "the unknown". It is no longer unknown.

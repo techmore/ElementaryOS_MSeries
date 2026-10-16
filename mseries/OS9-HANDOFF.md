@@ -2,6 +2,25 @@
 
 Updated 2026-10-16. Repository: techmore/ElementaryOS_MSeries.
 
+## DP-IN source milestone — offline implementation, 2026-10-16
+
+[Implementation and DeepSeek handoff](fairydust/usb4/DPIN-IMPLEMENTATION.md)
+now contains additional patches 0004–0006: DP-IN resources/IRQ, inactive/ACK
+handshake, shared ATC tunnel clocks and DCP callback/HPD/error integration.
+29 production-logic groups and 2 compiled-board checks pass; complete Apple
+DRM/PHY relocatable objects and target/control DTBs build, binding documents
+and DP-IN-filtered DTB schema validate. Ghidra independently corroborates
+selected REA findings. Full MODPOST/production-config/runtime checks remain.
+No new module/DTB/kernel was installed, no reboot or cable move performed.
+
+The [frontier ledger](fairydust/usb4/STATE-OF-PLAY.md) incorporates the separate
+recorded live 0003 HPD-selection fix: `0:5 <-> 1:14`, but DPRX still times out.
+Dock HPD establishes sink presence, not a working pixel chain. DP-IN source
+is a draft, not a solved hardware path. Next resolve router DPRX versus DCP
+ACTIVATE ordering using existing inputs; do not repeat discovery or count
+another build as monitor detection. Current no-install/no-reboot/no-unplug
+constraint remains. One Git writer; preserve other agents' notes.
+
 ## Owner constraint: NO M1 Pro reboot or power cycle — 2026-10-16
 
 The owner explicitly forbids rebooting or power-cycling the M1 Pro. This

@@ -267,8 +267,8 @@ The proxy's `connectTo` at `0xfffffe00092fed98` and `validateConnection` at
 commands **11** and **12**, consistent with current Linux. The connection
 argument includes role and HPD-support attributes in the low word and the
 target address in the high word. Linux currently sends zero in the connect
-low word and `0x100` for validation. The correct DP-IN attribute values remain
-to be traced; do not change them based only on the formerly unknown field.
+low word and `0x100` for validation. The DP-IN low word is now traced as `0x101`, as detailed below. Keep the
+physical DP values unchanged.
 
 Next work:
 
@@ -297,3 +297,30 @@ when facing the laptop's left side. The other port is USB 2. This is relevant
 to a future owner-authorized Neo baseline, not evidence of USB4 DP tunneling
 on the M1 Pro. Preserve the owner's occupied firmware connection; no move is
 requested by this investigation.
+
+## Implementation update and independently checked attributes — 2026-10-16
+
+[DPIN-IMPLEMENTATION](DPIN-IMPLEMENTATION.md) supersedes the proposed next-work
+list above with source patches 0004–0006, offline validation and the explicit
+router/DCP activation-ordering gap. No new live hardware result is claimed.
+
+`IODPTXPort::getAttributes` at `0xfffffe000a4dc4b4` loads the value at object
+`+0x1a6` (BTI, add, load, return). DP-IN `handleStart` at
+`0xfffffe0009389264` initializes role byte `+0x1a6` to 1 and ORs flag byte
+`+0x1a7` with 1. `getSupportsHPD` at `0xfffffe000938df94` extracts attribute
+bit 8. Original instructions therefore establish low word **0x101** for this
+DP-IN port: role 1 plus HPD support. This supports changing tunneled
+connect/validate attributes, not guessing another core or transport index.
+
+The fixed tunnel descriptor maps to Linux DESC_A `0x1e0e021c`, DESC_B zero
+within its defined field mask, DESC_C `0x00654a00` within bits 22:0. PCLK
+selection for 1620/2700/5400/8100 Mb/s is 4/3/1/0. Tunnel APB sequence is
+0, lock poll up to 500ms, 0x2000; final shutdown command is 3. Physical DP's
+per-rate descriptor and 0x2800 command are not substituted for this path.
+
+An actual [Ghidra headless second pass](evidence/2026-10-16-ghidra-dpin-crosscheck.md)
+completed on the same matching extracted drivers. It corroborates the
+inactive/ACK/HPD semantics, exact status/HPD/status IRQ capture and selected
+clock functions. Indirect-call reconstruction remains checked against
+original instructions/authenticated pointer chains. This corroboration is
+static, not evidence the proposed Linux callback order works on hardware.

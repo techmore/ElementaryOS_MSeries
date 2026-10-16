@@ -1,12 +1,14 @@
 # fairydust + USB4/Thunderbolt (Apple M1 Pro, j314s)
 
-Dock-video capture handoff (2026-10-16): start with
-[`MACOS-CUTOVER-CHECKLIST.md`](MACOS-CUTOVER-CHECKLIST.md).
-It covers a single-computer macOS baseline with no cable changes, the full
-trace's separate-recorder requirement, exact artifacts and acceptance gates.
-The [DP-IN/AUX audit](DPIN-AUX-AUDIT.md) and
-[Linux snapshot](evidence/2026-10-16-linux-baseline.json) distinguish measured
-state from assumptions. No dock-video success is claimed.
+Dock-video current entry point: [STATE-OF-PLAY](STATE-OF-PLAY.md).
+The [DP-IN implementation draft / DeepSeek handoff](DPIN-IMPLEMENTATION.md)
+contains additional experimental patches 0004–0006 and offline checks.
+They are not enabled by the stable package. The separate 0003 adapter fix
+was tested live; DPRX still times out and no dock picture is demonstrated.
+No installation, reboot or cable changes are authorized for the new draft.
+The retained [macOS cutover checklist](MACOS-CUTOVER-CHECKLIST.md) is future
+reference, not the current next step. Matching Apple inputs are already
+available for offline analysis.
 
 Makes USB4 docks/hubs enumerate on Apple Silicon by porting Sven Peter's
 USB4/Thunderbolt host support (Asahi branch `b4/apple-soc-tbt`, posted to LKML

@@ -1,5 +1,12 @@
 # RE foothold: the exact Apple functions for the remaining sub-sequences
 
+
+> Follow-up: [REA-DPIN-FINDINGS](../REA-DPIN-FINDINGS.md) now resolves the
+> T6000 inherited clock dispatch and records matching T600x DCP firmware
+> already acquired locally. [Implementation handoff](../DPIN-IMPLEMENTATION.md)
+> contains the draft source and remaining activation-order question. Preserve
+> this address map; do not repeat acquisition based on the older absence claim.
+
 **Date:** 2026-10-16
 **Status:** addresses and symbol names verified by disassembly. This is a
 *foothold map*, not a completed recovery. No Apple binaries or bulk

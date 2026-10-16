@@ -4,15 +4,23 @@ Last updated 2026-10-16. Day-to-day pending checks live in the robot: `mseries-v
 (seed: `mseries/local-ai/verify-checks.json`). This file is the human-readable plan.
 
 Dock-video update 2026-10-16:
-[REA / DeepSeek static-analysis handoff](fairydust/usb4/REA-DPIN-FINDINGS.md)
-now records matching T6000/13.5 Apple binary analysis and exact shipped-board
-DP-IN ranges. Separate DP-IN inactive/ack/HPD activation and per-tunnel PHY
-PCLK/lifetime integration are concrete missing host-driver paths. Existing
-USB4 common power/CIO PLL handling remains present. Next: finish T6000
-dispatch/clock-plan and interrupt/endpoint mapping, then prepare a guarded
-resource-based implementation for review. No live writes or kernel changes.
-Latest target check: port2 host/USB4, Dell dock enumerated, bypass Y, external
-DP/HDMI disconnected. Older no-device snapshots below are historical.
+
+[Implementation and DeepSeek handoff](fairydust/usb4/DPIN-IMPLEMENTATION.md)
+now contains additional patches 0004–0006: DP-IN resources/IRQ, inactive/ACK
+handshake, shared ATC tunnel clocks and DCP callback/HPD/error integration.
+29 production-logic groups and 2 compiled-board checks pass; complete Apple
+DRM/PHY relocatable objects and target/control DTBs build, binding documents
+and DP-IN-filtered DTB schema validate. Ghidra independently corroborates
+selected REA findings. Full MODPOST/production-config/runtime checks remain.
+No new module/DTB/kernel was installed, no reboot or cable move performed.
+
+The [frontier ledger](fairydust/usb4/STATE-OF-PLAY.md) incorporates the separate
+recorded live 0003 HPD-selection fix: `0:5 <-> 1:14`, but DPRX still times out.
+Dock HPD establishes sink presence, not a working pixel chain. DP-IN source
+is a draft, not a solved hardware path. Next resolve router DPRX versus DCP
+ACTIVATE ordering using existing inputs; do not repeat discovery or count
+another build as monitor detection. Current no-install/no-reboot/no-unplug
+constraint remains. One Git writer; preserve other agents' notes.
 
 **Owner constraint: no M1 Pro reboot or power cycle.** Earlier macOS cutover
 and guest-boot instructions are future reference only. Current next work is

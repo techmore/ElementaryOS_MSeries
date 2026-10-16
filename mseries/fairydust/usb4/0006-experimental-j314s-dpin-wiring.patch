@@ -1,0 +1,73 @@
+From: sdolbec <sdolbec1@gmail.com>
+Subject: [PATCH] arm64: dts: apple: wire j314s experimental DP-IN provider
+
+Experimental, offline-validated only. Hardware qualification is pending.
+Apply after fairydust ce9f2eba, then
+0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch and
+0002-experimental-dp-tunnel.patch. Retain the independent
+0003-dp-out-prefer-adapter-with-hpd.patch.
+See DPIN-IMPLEMENTATION.md and REA-DPIN-FINDINGS.md for provenance,
+validation scope and remaining lifecycle/firmware questions.
+
+Signed-off-by: sdolbec <sdolbec1@gmail.com>
+---
+diff --git a/arch/arm64/boot/dts/apple/t600x-dieX.dtsi b/arch/arm64/boot/dts/apple/t600x-dieX.dtsi
+index 679d1d1..b93da74 100644
+--- a/arch/arm64/boot/dts/apple/t600x-dieX.dtsi
++++ b/arch/arm64/boot/dts/apple/t600x-dieX.dtsi
+@@ -652,6 +652,32 @@ DIE_NODE(usb4_1_acio): cio@b01ac0000 {
+ 		ranges = <0x0 0xb 0x01000000 0x1000000>;
+ 		nonposted-mmio;
+ 
++		/* Shipped j314sap ADT: atc1-dpin0; explicitly enabled per board. */
++		DIE_NODE(dpin1_0): phy@e50000 {
++			compatible = "apple,t6000-dpin";
++			reg = <0xe50000 0x4000>;
++			interrupt-parent = <&aic>;
++			interrupts = <AIC_IRQ DIE_NO 1354 IRQ_TYPE_LEVEL_HIGH>;
++			phys = <&DIE_NODE(atcphy1) PHY_TYPE_DP>;
++			phy-names = "atc-phy";
++			apple,transport-index = <0>;
++			#phy-cells = <0>;
++			status = "disabled";
++		};
++
++		/* Shipped j314sap ADT: atc1-dpin1; explicitly enabled per board. */
++		DIE_NODE(dpin1_1): phy@e58000 {
++			compatible = "apple,t6000-dpin";
++			reg = <0xe58000 0x4000>;
++			interrupt-parent = <&aic>;
++			interrupts = <AIC_IRQ DIE_NO 1355 IRQ_TYPE_LEVEL_HIGH>;
++			phys = <&DIE_NODE(atcphy1) PHY_TYPE_DP>;
++			phy-names = "atc-phy";
++			apple,transport-index = <1>;
++			#phy-cells = <0>;
++			status = "disabled";
++		};
++
+ 		DIE_NODE(usb4_1_dart): iommu@a80000 {
+ 			compatible = "apple,t6000-dart";
+ 			reg = <0xa80000 0x4000>;
+diff --git a/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi b/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi
+index 4facffe..15932b6 100644
+--- a/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi
++++ b/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi
+@@ -290,6 +290,8 @@ &dcpext1 {
+ 	phys = <&atcphy1 PHY_TYPE_DP>;
+ 	phy-names = "dp-phy";
+ #ifdef ENABLE_DCPEXT_TB_TUNNEL
++	/* Dedicated DP-IN provider, not the external Type-C DP PHY. */
++	phys = <&dpin1_0>;
+ 	/*
+ 	 * Select the "dpin0" mux control (index 1) so the crossbar routes
+ 	 * dispext1,0 into the ACIO DP IN adapter for USB4 tunnel 0 instead of
+@@ -863,3 +865,9 @@ &pmp_report_isp_sys {
+ #include "hwmon-common.dtsi"
+ #include "hwmon-fan-dual.dtsi"
+ #include "hwmon-laptop.dtsi"
++
++#ifdef ENABLE_DCPEXT_TB_TUNNEL
++&dpin1_0 {
++	status = "okay";
++};
++#endif
