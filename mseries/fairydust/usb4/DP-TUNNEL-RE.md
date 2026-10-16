@@ -605,7 +605,7 @@ are no longer equal:
 
 1. **Capture the macOS trace for the "DP IN PHY" (§6.5, §8).** It is the one
    unaccounted-for block and the best explanation for a router that never
-   completes its DPRX read. Needs a second computer and the macOS iBoot payload;
+   completes its DPRX read. Needs a second computer and matching XNU kernelcache;
    it is the real unblocker — `MACOS-TRACE-RUNBOOK.md`.
 2. **Answer the sink question on the dock** (`EXP2-RUNBOOK.md`): does a real,
    powered HDMI sink answer DPCD at all? If it does not, nothing below matters —
@@ -671,35 +671,21 @@ DPTX endpoint, and the DPIN0/DPIN1 crossbar programming — must come from a tra
 of macOS driving the same dock, captured from a second computer with the m1n1
 hypervisor.
 
-The tooling already exists, and its dependencies are now vendored off-system
-(no `pip`, no `apt`, no `sudo`):
+The current execution plan is
+[`MACOS-CUTOVER-CHECKLIST.md`](MACOS-CUTOVER-CHECKLIST.md), with the exact
+guest preparation/launch in [`MACOS-TRACE-RUNBOOK.md`](MACOS-TRACE-RUNBOOK.md).
+These supersede the former two-client / standalone-DPTX recipe.
 
-```
-bash mseries/fairydust/usb4/m1n1-trace-deps.sh
-```
+Only this target Mac is currently available. Start with the native macOS
+collector, keeping the dock and HDMI attached. A complete hypervisor capture
+requires a second recorder, matching XNU `kernelcache.macho`, a validated
+macOS guest boot context and one guest carrying DP-IN, DCP and raw DPTX hooks.
+Neither an iBoot payload nor m1n1's own Mach-O is the guest kernel.
 
-That fetches the two pure-Python wheels `proxyclient` needs
-(`construct==2.10.70`, `pyserial==3.5`) into
-`~/.local/share/m1n1-proxyclient/site` and prints the `PYTHONPATH`. From the
-**second** computer, with the Mac booted into m1n1 and the WD22TB4 + monitor
-attached:
-
-```
-export PYTHONPATH=~/.local/share/m1n1-proxyclient/site:<m1n1>/proxyclient
-python3 <m1n1>/proxyclient/tools/run_guest.py \
-  -m <m1n1>/proxyclient/hv/trace_dcp.py  <m1n1>.macho   # DCP / AFK / ASC traffic
-python3 <m1n1>/proxyclient/tools/run_guest.py \
-  -m <m1n1>/proxyclient/hv/trace_dptx.py <m1n1>.macho   # DPTX PHY MMIO
-```
-
-`proxyclient/hv/` already ships DCP- and DPTX-specific tracers (`trace_dcp.py`
-is a full AFK/ASC endpoint tracer built on `m1n1.fw.dcp.ipc`). Targets: the
-sequence the DCP uses when the dock's DP sink appears, the remote-port encoding
-for a tunnelled endpoint, AUX routing, HPD direction, and the
-`CROSSBAR_ATC_EN` / `CROSSBAR_MUX_CTRL` writes that select `dpin0`/`dpin1`.
-
-This cannot be done from this machine alone (one computer, no second host
-attached); it is the one genuinely blocking dependency.
+The dependency helper still prepares `construct` and `pyserial` off-system;
+it now links to the corrected plan instead of printing the obsolete recipe.
+The full register sequence remains unmeasured. Native metadata is a distinct,
+valuable first step and does not eliminate the separate-recorder requirement.
 
 ## 9. Hazard: unplugging the dock with a DPRX read in flight
 

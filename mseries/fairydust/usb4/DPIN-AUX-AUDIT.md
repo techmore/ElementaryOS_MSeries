@@ -1,5 +1,11 @@
 # DP-IN / AUX audit — 2026-10-16
 
+Execution handoff: [complete macOS cutover checklist](MACOS-CUTOVER-CHECKLIST.md).
+Only this target Mac is available. The native macOS collector can obtain a
+working baseline and IODeviceTree metadata without moving cables. The
+full m1n1 MMIO trace still requires a second recorder. The guest payload
+is matching XNU's extracted kernelcache, correcting the earlier iBoot claim.
+
 Target: M1 Pro / MacBookPro18,3, WD22TB4, dock HDMI to an Amazon Basics
 monitor. The owner confirmed that the monitor is powered on and HDMI is
 selected. No kernel, boot image, audio, or device register was changed by this
@@ -57,9 +63,11 @@ running kernel configuration confirms `CONFIG_STRICT_DEVMEM=y` and
 with the refusal even under real sudo, independently of the chat runner's
 `NoNewPrivs=1` restriction. No successful live ADT read has occurred.
 
-Do not retry with broader sudo or weaken memory protections. Obtain the ADT
-through the m1n1 proxy during an explicitly approved capture session instead.
-The parser has passed synthetic tests only.
+Do not retry with broader sudo or weaken memory protections. Obtain a macOS
+IODeviceTree archive using `collect-macos-dock.sh` and parse it with
+`inspect-dpin-adt.py --from-ioreg FILE`, or obtain the original ADT through
+the proxy when a separate recorder is available. Neither import has yet
+been qualified against this Mac's real original metadata; fixtures pass.
 
 ### 2. AUX path activation proves routing configuration, not AUX traffic
 
@@ -142,14 +150,15 @@ has no DP-IN block. The DCP trace must target the controller at
 ## What is still missing before an implementation is justified
 
 1. This machine's translated DP-IN register ranges and relationship graph.
-   The live Linux ADT export above was refused. Obtain the original ADT
-   through the m1n1 proxy during the approved capture session; that route
-   requires a second computer and rebooting this target.
+   The live Linux ADT export above was refused. Obtain the IODeviceTree
+   archive during the normal macOS visit, or the original ADT through the
+   m1n1 proxy when a second computer is available.
 2. The macOS writes/readbacks to those DP-IN blocks: power/clock/reset,
    endpoint selection, interrupt handling, and AUX/HPD enable ordering.
    The existing sources do not provide trustworthy register offsets/values
    for a driver implementation. **This capture requires a second computer,
-   a macOS iBoot payload, and rebooting the target into the hypervisor.**
+   a matching extracted XNU kernelcache and validated macOS boot context,
+   and rebooting the target into the hypervisor.**
 3. Correlate DP-IN0/1, host router adapters 0:5/0:6, DCP remote target/role,
    and the dock's adapter used by its actual HDMI path. Do not assume a
    one-to-one physical HDMI/DP mapping from adapter numbers alone.
@@ -176,12 +185,16 @@ an automated go/no-go decision. The collector was not changed in this batch.
 
 ## Validation and provenance
 
-- `python3 mseries/fairydust/usb4/test-inspect-dpin-adt.py`: 4 tests passed
+- `python3 mseries/fairydust/usb4/test-inspect-dpin-adt.py`: 6 tests passed
   (range translation / relationship resolution, privacy filtering,
-  truncation, invalid input).
+  truncation, invalid input, IORegistry import and ambiguous roots).
 - `python3 mseries/fairydust/usb4/test-trace-dpin.py`: 3 tests passed
   (all three blocks included, wrong/removed target, missing DP-IN fails
   before partial capture).
+- `python3 mseries/fairydust/usb4/test-trace-dcp-raw.py`: 3 tests passed
+  (all service directions, raw preservation before decode failure, repeat install).
+- The native macOS collector passes shell syntax and Linux refusal checks;
+  its real macOS commands have not yet been executed here.
 - Live kernel, DT, drivers, audio, and probe parameters were not modified
   by this batch. No real macOS trace or video qualification was performed.
 - Kernel reference: Fairydust `ce9f2eba72c061a50b2d790450e90af3439d8c24`

@@ -2,6 +2,32 @@
 
 Updated 2026-10-16. Repository: techmore/ElementaryOS_MSeries.
 
+## macOS cutover package — start here (2026-10-16)
+
+Owner wants one thoroughly prepared visit, retaining the USB4/HDMI cables.
+Only this target Mac is available: no separate trace recorder. Follow
+[`MACOS-CUTOVER-CHECKLIST.md`](fairydust/usb4/MACOS-CUTOVER-CHECKLIST.md)
+for the native macOS baseline, exact commands, kernelcache inventory,
+return checklist and reviewed public evidence. `collect-macos-dock.sh`
+needs no Python/Xcode/sudo and does not change settings or upload files.
+Raw registry/log/Apple binary data remain local; publish inspected metadata
+and relevant engineering evidence. The repository is confirmed public.
+
+Corrected the trace payload: **extracted matching XNU kernelcache.macho**,
+not iBoot or the m1n1 boot bundle. A complete m1n1 trace still requires a
+separate host and a reviewed guest boot route; native macOS cannot trace
+its own MMIO with that Python client. Added IORegistry import to the ADT
+inspector and a raw DPTX hook so validateConnection bytes are retained.
+Twelve offline tests pass; collector syntax/Linux refusal checks pass.
+No real macOS run, kernel/boot/audio change, or cable change was performed.
+
+The [Linux snapshot](fairydust/usb4/evidence/2026-10-16-linux-baseline.json)
+records bypass `N` and dock DP disconnected at capture time. Arm and verify
+bypass from the regular Terminal before any detach/shutdown preparation;
+the exact command is in the checklist. Next: collect native macOS metadata
+and visible HDMI result with zero cable changes, then resolve register
+mapping and the recorder/guest prerequisites before a trace attempt.
+
 ## DP-IN / AUX independent audit — 2026-10-16
 
 Read [`fairydust/usb4/DPIN-AUX-AUDIT.md`](fairydust/usb4/DPIN-AUX-AUDIT.md)
@@ -28,9 +54,9 @@ was made. The owner attempted the ADT export under sudo in their regular
 Asahi Terminal: `errno 1: Operation not permitted`; the JSON file is empty.
 Running config has `CONFIG_STRICT_DEVMEM=y` and no `CONFIG_MTD_PHRAM`,
 consistent with the RAM read being refused even under root. Do not weaken
-protections or retry via broader sudo. Next: obtain the ADT through m1n1,
-then capture DP-IN MMIO bring-up in a two-host macOS session, requiring
-explicit owner approval before rebooting. The HDMI watchdog
+protections or retry via broader sudo. Next: obtain the macOS IODeviceTree
+baseline above (or ADT through m1n1 when a recorder is available), then
+capture DP-IN bring-up in a separately prepared two-host session. The HDMI watchdog
 has not produced a new, unbypassed sink result and cannot yet close H1.
 
 ## USB4 dock video — resume here (2026-10-15)

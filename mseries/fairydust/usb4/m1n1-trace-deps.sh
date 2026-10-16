@@ -43,21 +43,14 @@ cat <<EOF
 
 Dependencies vendored in $DEST/site (nothing installed system-wide).
 
-== Trace recipe (run on the SECOND computer) ==
-Boot the Mac into m1n1 with the WD22TB4 and its monitor attached, then:
+== Recorder dependencies ready ==
+Use these on the SECOND computer, not the target Mac:
 
   export PYTHONPATH=$DEST/site:$M1N1/proxyclient
 
-  # 1. DCP / AFK / ASC traffic: EDID, HPD, link config, the dp->tunnel gluing
-  python3 $M1N1/proxyclient/tools/run_guest.py \\
-    -m $M1N1/proxyclient/hv/trace_dcp.py <m1n1>.macho
-
-  # 2. DPTX PHY MMIO
-  python3 $M1N1/proxyclient/tools/run_guest.py \\
-    -m $M1N1/proxyclient/hv/trace_dptx.py <m1n1>.macho
-
-<m1n1>.macho comes from the m1n1 build (build/m1n1.macho) or from this Mac's
-/boot/m1n1/boot.bin. Look for: the sequence the DCP uses when the dock's DP sink
-appears, the remote-port encoding for a tunnelled endpoint, AUX routing, HPD
-direction, and the CROSSBAR_ATC_EN / CROSSBAR_MUX_CTRL writes for dpin0/dpin1.
+Read MACOS-CUTOVER-CHECKLIST.md and MACOS-TRACE-RUNBOOK.md in this directory.
+The guest payload is an extracted matching XNU kernelcache.macho, NOT iBoot,
+build/m1n1.macho, or /boot/m1n1/boot.bin. Run one guest with DP-IN, correct DCP
+and raw DPTX hooks. Normal macOS on the target can collect the baseline without
+a second host; it cannot record this hypervisor trace itself.
 EOF

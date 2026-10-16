@@ -1,5 +1,13 @@
 # fairydust + USB4/Thunderbolt (Apple M1 Pro, j314s)
 
+Dock-video capture handoff (2026-10-16): start with
+[`MACOS-CUTOVER-CHECKLIST.md`](MACOS-CUTOVER-CHECKLIST.md).
+It covers a single-computer macOS baseline with no cable changes, the full
+trace's separate-recorder requirement, exact artifacts and acceptance gates.
+The [DP-IN/AUX audit](DPIN-AUX-AUDIT.md) and
+[Linux snapshot](evidence/2026-10-16-linux-baseline.json) distinguish measured
+state from assumptions. No dock-video success is claimed.
+
 Makes USB4 docks/hubs enumerate on Apple Silicon by porting Sven Peter's
 USB4/Thunderbolt host support (Asahi branch `b4/apple-soc-tbt`, posted to LKML
 2026-08-30) onto the `fairydust` kernel this repo already builds.

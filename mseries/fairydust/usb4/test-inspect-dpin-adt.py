@@ -2,6 +2,7 @@
 """Offline fixtures: address translation, privacy filtering, malformed ADTs."""
 import importlib.util
 from pathlib import Path
+import plistlib
 import struct
 import sys
 import unittest
@@ -39,6 +40,26 @@ def fixture():
 
 
 class InspectionTests(unittest.TestCase):
+    def test_ioreg_archive_preserves_ranges_and_phandles(self):
+        archive = [{"IORegistryEntryName": "Root", "IOPlatformSerialNumber": "PRIVATE",
+                    "IORegistryEntryChildren": [{"name": b"arm-io\0",
+                        "ranges": struct.pack("<QQQ", 0, 0xb00000000, 0x40000000),
+                        "IORegistryEntryChildren": [
+                            {"IORegistryEntryName": "atc1-dpin0@1e50000",
+                             "reg": struct.pack("<QQ", 0x1e50000, 0x4000),
+                             "acio-parent": integer(7)},
+                            {"name": b"acio1\0", "AAPL,phandle": integer(7)}]}]}]
+        nodes = adt.summarize(adt.parse_ioreg(plistlib.dumps(archive)))
+        self.assertEqual(nodes[0]["registers"][0]["address"], "0xb01e50000")
+        self.assertEqual(nodes[0]["acio-parent"]["path"], "/arm-io/acio1")
+        self.assertNotIn("PRIVATE", str(nodes))
+
+    def test_ioreg_rejects_ambiguous_archive(self):
+        for archive in ([], [{}, {}], [{"IORegistryEntryName": "Root",
+                                         "IORegistryEntryChildren": "bad"}]):
+            with self.subTest(archive=archive), self.assertRaises(ValueError):
+                adt.parse_ioreg(plistlib.dumps(archive))
+
     def test_translates_bus_address_and_resolves_relationship(self):
         nodes = adt.summarize(adt.parse_adt(fixture()))
         self.assertEqual(len(nodes), 1)
