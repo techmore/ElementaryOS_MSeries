@@ -63,6 +63,7 @@ jobs:
           bash mseries/test-greeter-obex-fix.sh
           bash -n mseries/install-signal.sh
           bash -n mseries/install-codexbar.sh
+          python3 mseries/test-codexbar-sessions.py
           python3 -m py_compile mseries/apply-desktop-settings.py
           python3 -m py_compile mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness
           python3 mseries/test-wifi-resume.py

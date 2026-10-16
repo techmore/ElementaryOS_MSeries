@@ -2,6 +2,27 @@
 
 Updated 2026-10-14. Repository: techmore/ElementaryOS_MSeries.
 
+## CodexBar sessions section — 2026-10-16
+
+Audit: `codexbar usage` works for Codex (account quota, Pro Lite). Claude has
+no CodexBar fetch strategy here (no `~/.claude/.credentials.json`, no claude
+CLI; sign-in is via the desktop app). `opencodego` fails with "no session
+cookies" and the owner's OpenCode history is the free `opencode` provider, so
+the old Go-only local estimate always said "No cost-bearing records".
+
+Added `mseries/codexbar-sessions.py` (+ `test-codexbar-sessions.py`, 4 tests,
+added to CI) and a **Sessions** section in the Wingpanel menu replacing the
+Go-only block: status dot per ChatGPT/Codex, Claude Code and OpenCode, plus
+5h/7d requests and tokens for Claude Code (transcripts, deduplicated streamed
+responses) and OpenCode (all providers). Local activity only, not quota.
+Verified: helper output on this machine (Claude 99 req/5h, OpenCode 41 req/5h),
+meson build and 2 existing tests pass, new module installed to
+`/usr/lib/aarch64-linux-gnu/wingpanel-9/libcodexbar.so` (rollback copy
+`/usr/local/lib/mseries/libcodexbar.so.before-sessions`). Wingpanel was not
+restarted; the panel UI is not visually verified until next login.
+Next: confirm the Sessions section after re-login; Claude account quota needs
+credentials CodexBar can read.
+
 ## Current hardware state — 2026-10-14
 
 The transformed elementary OS 9 desktop is running on a 14-inch M1 Pro through
