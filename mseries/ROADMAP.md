@@ -308,3 +308,6 @@ browser integration and remaining Files/Gala patches remain open.
 
 - Universal dark mode switch built 2026-10-16 (`mseries/dark-mode/`, `install-dark-mode.sh`);
   live switch, Brave/Flatpak follow-through and the timer await the owner; Qt and Ghostty open.
+
+- Power and battery roadmap written 2026-10-16 (`POWER-ROADMAP.md`): goals, baseline, workstreams A to G, phases 0 to 4,
+  owner decisions list. First free change installed: Electron apps to native Wayland at next login.

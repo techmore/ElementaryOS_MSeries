@@ -1,5 +1,7 @@
 # Efficiency goal: run minimal, scale fast
 
+> Current plan, workstreams and roadmap: [POWER-ROADMAP.md](POWER-ROADMAP.md) (2026-10-16). This file keeps the original targets.
+
 Requested 2026-10-14/15. Goal: the M1 Pro should sip power when idle or lightly used and still reach full
 CPU/GPU speed within seconds when work (local AI, builds) needs it. Status: **plan; no efficiency patch beyond
 the audio sink timeout has been applied.**

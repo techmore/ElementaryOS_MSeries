@@ -1424,3 +1424,7 @@ Read-only survey (nothing changed, display untouched): see `mseries/POWER-OPPORT
 ### GPU job attribution: ChatGPT/Codex desktop app dominates — 2026-10-16
 
 Three 5 s traces of `drm_sched_job_queue` (read-only): the ChatGPT desktop app submits 4,000 to 5,000 GPU jobs/s versus gala 840, claude-desktop 360. Details in `POWER-OPPORTUNITIES-2026-10-16.md`. Power impact not isolated; the app was left running (may belong to an agent session). Next: owner closes or approves closing it for a paired `powerlab/ab.py` A/B; then test Electron flags in a throwaway profile.
+
+### Power roadmap and Electron Wayland hint — 2026-10-16
+
+Owner declined closing the ChatGPT/Codex app, so no A/B was run. New finding: that app is an X11 client under Xwayland while Claude Desktop and Brave are native Wayland. Installed `~/.config/environment.d/60-mseries-electron-wayland.conf` (`ELECTRON_OZONE_PLATFORM_HINT=auto`; script `mseries/install-electron-wayland.sh`, `--uninstall` removes it); takes effect at next login, effect NOT yet measured. Also found: s2idle is the only sleep mode, deep idle is ~7% of CPU0 idle time, sleep drain is unmeasured. Full plan: `mseries/POWER-ROADMAP.md` (workstreams A to G, phases 0 to 4, six owner decisions). Next: after the next login, re-trace GPU jobs/s for the ChatGPT app and compare with the 4,000 to 5,000/s baseline.
