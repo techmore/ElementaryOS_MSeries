@@ -50,6 +50,28 @@ initramfs and an extra `phy-apple-dpin` dependency), which widened the race wind
 `systemctl daemon-reload`). lightdm was **not** restarted, so it takes effect at the next boot;
 revert by deleting that file. Not yet verified on a dptunnel boot.
 
+### Why appledrm registered 3.6 s late (measured, cause not proven)
+
+Kernel-log timeline, good boot (-3) versus the controlled entry (-2):
+
+| Event | -3 (good) | -2 (controlled) |
+|---|---|---|
+| crossbar `Switched dpin0 to dispext1,0` | 6.88 s | 8.18 s |
+| `bound 38bc / 289c / 28cc` | 6.88 / 6.88 / 6.88 s | 8.18 / 8.21 / 8.22 s |
+| `DCP booted` 38bc / 289c / 28cc | 6.888 / 6.891 / 6.893 s | **8.25 / 9.28 / 10.37 s** |
+| `[drm] Initialized apple ... minor 2` | 6.893 s | **10.503 s** |
+
+Two separate delays: (1) everything starts ~1.2 s later (`Failed to get dp-xbar: -517` at 7.0 s, then
+the NHI/thunderbolt module probes at 8.17 s; the new initramfs also carries `thunderbolt`,
+`thunderbolt_apple` and `phy-apple-dpin`, and it is 5 MB larger), and (2) the three DCP firmware
+boots finish about 1 s apart instead of within 5 ms. The DRM device registers only after the last
+DCP boots, so it lands at 10.5 s. The old-entry boot (-1) shows the early pattern (DRM at 6.63 s),
+so the new modules/initramfs are the common factor in the late registration. Which of the new
+pieces causes the serialised DCP boots is the open question for Codex/DeepSeek (candidates: the
+managed `apple,dp-tunnel-phy` lookup deferring DCP 28cc until the ACIO child exists, and the extra
+module-load work in the initramfs). The lightdm drop-in removes the *symptom* (gala starting
+first) but registration at 10.5 s still delays the desktop by ~3.6 s on these entries.
+
 ## Boot -1 (old entry after the new boot.bin) is not explained by this
 
 There appledrm registered early (6.63 s) and gala was `KILL`ed (status 9) 0.7 s after start,
