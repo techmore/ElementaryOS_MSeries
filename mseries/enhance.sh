@@ -290,7 +290,8 @@ mod_payload() {
            install-sound-indicator-fix.sh install-keyboard-indicator-fix.sh \
            install-files-portal-fix.sh install-gala-osk-fix.sh install-netusage-policy.sh \
            install-codexbar.sh install-brave-widevine.sh codexbar-opencode-local.py \
-           codexbar-opencode-wrapper.py user-enhance.sh \
+           codexbar-opencode-wrapper.py user-enhance.sh install-dark-mode.sh \
+           dark-mode/mseries-dark-mode dark-mode/mseries-dark-mode.service dark-mode/mseries-dark-mode.timer \
            netspeed/netusage/install.sh netspeed/netusage/netusage.py \
            netspeed/netusage/netusage.service netspeed/netusage/49-mseries-netusage.rules \
            quick-settings/ScreenBrightness.vala quick-settings/KeyboardBrightness.vala \

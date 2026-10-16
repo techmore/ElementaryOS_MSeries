@@ -688,5 +688,5 @@ Night Light already stores (NOAA solar maths, checked against Philadelphia: 07:1
 transition, and it books a one-shot timer for that moment.
 
 The pastel accent overrides in `theme/gtk-*.css` already use dark label text on pale fills, so they
-read in both schemes. Not covered yet: Qt apps (no Qt platform theme is installed) and Ghostty
+read in both schemes. Verified 2026-10-16: the settings portal reports dark (`org.freedesktop.appearance color-scheme` = 1), which is what Brave and Flatpak apps read. Not covered yet: Qt apps (`adwaita-qt` is not installed and no Qt style is forced) and Ghostty
 (its palette is dark-only). Not verified on the M1 Pro in a live switch; see the handoff.

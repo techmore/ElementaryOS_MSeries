@@ -1402,3 +1402,7 @@ Added `mseries/dark-mode/mseries-dark-mode` (on/off/toggle/auto/schedule/status)
 ### Dark mode now cuts over at sunset/sunrise — 2026-10-16
 
 `mseries-dark-mode auto` defaults to sunset/sunrise from Night Light's stored coordinates (NOAA maths; 07:10/18:21 for 2026-10-16 matches Philadelphia), acts only on a day/night change so manual toggles stick, and books a one-shot `mseries-dark-mode-next` timer. Installed and exercised on the M1 Pro (status, `auto` twice, timer listed). The real cut-over (first fires at 07:10) is not yet observed. `schedule START END` still gives fixed hours.
+
+### Dark mode follow-through — 2026-10-16
+
+Portal check on the M1 Pro: `org.freedesktop.appearance color-scheme` = 1 (dark) after the switch, so Brave and Flatpak apps have the signal; a visual look at them is still pending. Added the tool, installer and units to the `enhance.sh` payload (`bash -n` clean; image not rebuilt). Qt (needs `adwaita-qt` or a forced style) and Ghostty (dark-only palette) remain open and are not worth changing blind.
