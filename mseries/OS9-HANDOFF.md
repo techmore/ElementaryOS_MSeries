@@ -1416,3 +1416,7 @@ Verified: the four patches apply cleanly in installer order on upstream `8685ec8
 Update 2026-10-15: `install-network-throughput.sh` ran successfully (passwordless sudo; panel restarted once). The green state has still not been seen on screen or under a real saturating transfer.
 
 Update 2026-10-16: owner saw the green on a temporary low-threshold build (about 125 KB/s) and confirmed it. Real thresholds (90% wired, 60% Wi-Fi PHY) reinstalled; they are still unmeasured guesses and the real-threshold green has not been seen under a saturating transfer.
+
+### Power opportunities survey — 2026-10-16
+
+Read-only survey (nothing changed, display untouched): see `mseries/POWER-OPPORTUNITIES-2026-10-16.md`. New observations: Gala at 12.7% of a core on average (72 CPU-min in 9.5 h); the speaker PCM and the speaker-safety capture PCM have been `RUNNING` since boot despite the 30 s suspend override (probably the always-on DSP chain; audio stack is owner-gated); 17.6 W whole-machine reading on battery with the agent apps open. Next: owner call on 60 Hz/VRR; app-mix A/B and Gala profile need no display change.
