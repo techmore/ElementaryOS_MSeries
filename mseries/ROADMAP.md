@@ -1,9 +1,19 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
-Last updated 2026-10-14. Day-to-day pending checks live in the robot: `mseries-verify status`
+Last updated 2026-10-16. Day-to-day pending checks live in the robot: `mseries-verify status`
 (seed: `mseries/local-ai/verify-checks.json`). This file is the human-readable plan.
 
 Dock-video update 2026-10-16:
+[REA / DeepSeek static-analysis handoff](fairydust/usb4/REA-DPIN-FINDINGS.md)
+now records matching T6000/13.5 Apple binary analysis and exact shipped-board
+DP-IN ranges. Separate DP-IN inactive/ack/HPD activation and per-tunnel PHY
+PCLK/lifetime integration are concrete missing host-driver paths. Existing
+USB4 common power/CIO PLL handling remains present. Next: finish T6000
+dispatch/clock-plan and interrupt/endpoint mapping, then prepare a guarded
+resource-based implementation for review. No live writes or kernel changes.
+Latest target check: port2 host/USB4, Dell dock enumerated, bypass Y, external
+DP/HDMI disconnected. Older no-device snapshots below are historical.
+
 **Owner constraint: no M1 Pro reboot or power cycle.** Earlier macOS cutover
 and guest-boot instructions are future reference only. Current next work is
 read-only live enumeration/recovery diagnosis using the Neo where useful,
@@ -16,7 +26,7 @@ is prepared for the owner's regular Terminal; six offline tests and sysfs
 dry-run pass. No task/configuration writes or live I2C reads were performed
 by this preparation. EIO cause remains unresolved; see the current handoff.
 
-[Latest bounded live checks](fairydust/usb4/evidence/2026-10-16-neo-live-status.md)
+[Earlier bounded live checks](fairydust/usb4/evidence/2026-10-16-neo-live-status.md)
 confirm Neo sleep assertions and Dell USB inventory, but no proxy endpoint or
 external display picture. The physical dock identity/topology remains
 unconfirmed. Compiler smoke has passed; the M1 Pro native baseline, approved

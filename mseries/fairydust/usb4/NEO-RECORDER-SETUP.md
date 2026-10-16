@@ -7,7 +7,16 @@ only. The Neo cannot add boot-time hypervisor tracing to an already-running
 target; boot-dependent work requires fresh owner authorization. Keep SSH in
 delegated workers with hard timeouts and the primary chat responsive.
 
-**Latest:** [bounded live-status report](evidence/2026-10-16-neo-live-status.md).
+**Latest static-analysis work:** [REA DP-IN findings](REA-DPIN-FINDINGS.md).
+Readable native Neo boot/restore IMG4 caches were unpacked successfully into
+ARM64e FILESET images without sudo; the ordinary KernelCollections files are
+x86_64 compatibility images. Exact T6000/13.5 Apple restore components are
+used for target analysis rather than assuming Neo's A18 code matches.
+The owner reported Neo applied updates; a later bounded reconnect confirms
+macOS 26.7.1 (25G241), saved analysis files survived, and our tracked
+keep-awake process was restarted after its prior process disappeared.
+
+**Earlier:** [bounded live-status report](evidence/2026-10-16-neo-live-status.md).
 Sleep assertions remain active. A Dell dock enumerates on Neo, but its physical
 identity relative to the target WD22TB4 is unconfirmed. No proxy endpoints or
 display entries were observed and no proxy handshake was attempted. Remote

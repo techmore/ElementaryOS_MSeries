@@ -7,6 +7,12 @@ Working branch: `docs/dock-video-decision`.
 
 ## Current authorization: NO reboot or power cycle
 
+Current work and shared Codex/DeepSeek notes:
+[REA DP-IN static findings](REA-DPIN-FINDINGS.md). Exact T6000/13.5 restore
+kernelcache, DCP firmware and shipped j314sap device tree are now extracted
+for offline analysis without booting the target. This does not confirm the
+target's installed macOS version, qualify a guest, or authorize booting it.
+
 The owner explicitly forbids rebooting or power-cycling the M1 Pro. **Do not
 execute the shutdown, startup-picker, macOS cutover or guest-boot steps below.**
 This checklist is retained as future reference only; the earlier cutover plan
@@ -37,8 +43,9 @@ attached, using `collect-macos-dock.sh` below. No security downgrade or boot
 modification is needed for that visit. Native macOS tools are sufficient.
 
 **Future trace prerequisites:** recorder tools have passed smoke checks, but
-the target's installed macOS build is unconfirmed, and no matching XNU kernelcache has
-been selected or extracted. A successful capture may expose more than one
+the target's installed macOS build is unconfirmed. A matching board's 13.5
+XNU kernelcache is now extracted for static analysis; guest compatibility
+and installed-build correspondence remain unqualified. A capture may expose more than one
 missing operation; we cannot promise an immediate working Linux driver.
 
 The older recipe incorrectly requested an **iBoot payload** and, in one

@@ -1,5 +1,14 @@
 # DP-IN / AUX audit — 2026-10-16
 
+**New static evidence:** [REA DP-IN findings](REA-DPIN-FINDINGS.md) supersedes
+the address-candidate and unknown-sequence state below. The exact shipped
+j314sap/13.5 ADT confirms DP-IN windows `0xb01e50000` and `0xb01e58000`,
+size `0x4000` each, alongside the known `0xb0304c000` crossbar. Actual
+AppleDisplayCrossbar analysis identifies inactive/ack/HPD byte offsets and
+tunnel/PHY/interrupt lifecycle. These are shipped metadata and static
+derivations, not a live MMIO trace or working display. No reboot or cable
+change is authorized; current work continues offline and in public notes.
+
 Execution handoff: [complete macOS cutover checklist](MACOS-CUTOVER-CHECKLIST.md).
 The [MacBook Neo recorder](NEO-RECORDER-SETUP.md) is now available over SSH.
 The native macOS collector can obtain a

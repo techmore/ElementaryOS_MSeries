@@ -19,11 +19,38 @@ hard timeouts, never hold the primary chat on SSH, and report active progress
 every 30 seconds. No kernel, boot, audio or system changes are authorized by
 this diagnosis.
 
-## Port2 role attempt: EIO; fixed read diagnostic prepared — 2026-10-16
+## REA / DeepSeek dock-video handoff — 2026-10-16
+
+Read [REA DP-IN findings](fairydust/usb4/REA-DPIN-FINDINGS.md) before proposing
+the next patch. Exact T6000 macOS 13.5 kernelcache, DCP firmware and j314sap
+device tree were selectively obtained from official Apple restore components,
+CRC/hash checked and analyzed locally. Native ARM64e caches were also found
+on Neo; the x86_64 compatibility KCs were the wrong inputs. REA/Kuna actually
+analyzed extracted AppleDisplayCrossbar/DCP proxy functions; original-byte
+and independent decoder checks support the findings.
+
+Shipped board metadata confirms separate DP-IN bases `0xb01e50000` and
+`0xb01e58000`, each `0x4000`, Apple IRQ values 1354/1355. Apple DP-IN activation
+uses a distinct inactive/ack/HPD handshake and tunnel/PHY/interrupt lifecycle
+absent from the inspected Linux crossbar path. PHY tunnel PCLK selection is
+also separate from existing USB4 common/CIO PLL initialization. Do not copy
+physical DP-altmode configuration into USB4 or treat static analysis as
+hardware qualification. Exact routine addresses, byte offsets, tool pins,
+limitations and the next implementation design are in the linked report.
+
+Latest read-only Linux check now shows port2 host, USB4 partner, Dell dock
+enumerated, bypass Y, external DP/HDMI disconnected, eDP connected. This
+supersedes older no-enumeration observations below; no agent reboot or cable
+change was performed. Static analysis and public handoff notes are authorized;
+live kernel/register changes remain outside the current authorization.
+Keep proprietary binaries and full decompiler outputs private.
+
+## Earlier port2 role attempt: EIO; read diagnostic prepared — 2026-10-16
 
 The owner's regular-Terminal role-change attempt returned `Input/output error`
 from `printf`, with no observed role change and no more detailed kernel error.
-The driver uses the `SWDF` task for a device-role request. `EIO` is not an
+The driver uses `SWDF` for a host-role request (`SWUF` requests device role).
+`EIO` is not an
 `EPERM` authorization rejection: transport failure or a short I2C length prefix
 can produce it, and the current evidence does not distinguish the cause.
 Neo before/after capture files remain private; no raw registry or credentials
@@ -51,7 +78,7 @@ no device open in dry-run. The real sysfs `--dry-run` passed. No hardware I2C
 transaction was executed by this preparation; runner sudo remains blocked by
 `NoNewPrivs`. No reboot, power cycle or system setting change was performed.
 
-## Latest bounded live checks — 2026-10-16
+## Earlier bounded live checks — 2026-10-16
 
 [Published live-status report](fairydust/usb4/evidence/2026-10-16-neo-live-status.md):
 Neo sleep assertions remain active and a Dell dock/hubs/USB LAN/headset enumerate
