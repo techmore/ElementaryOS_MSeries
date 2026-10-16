@@ -20,11 +20,46 @@ Hardware truth lives in [STATE-OF-PLAY](STATE-OF-PLAY.md); do not duplicate it h
 
 | # | Gap | Next step | Owner |
 |---|---|---|---|
-| G1 | (design sketch: [DPIN-ROUTER-HOOK-DESIGN.md](DPIN-ROUTER-HOOK-DESIGN.md)) No router-side DP-IN hook: 0004-0006 touch nothing under `drivers/thunderbolt/`. Placement is settled by `evidence/2026-10-16-router-vs-dcp-activation-ordering.md` (`tb_dp_activate()`, after `tb_dp_port_enable(src)`, before `tb_dp_dprx_start()`, mirrored in the inactive branch). | Reference design incl. provider lookup (a/b/c in that note). Kernel feature set is DeepSeek's: post as a comment, no tree change. | DeepSeek |
+| G1 | **bridge implemented, reviewed (B1-B8)**; (design sketch: [DPIN-ROUTER-HOOK-DESIGN.md](DPIN-ROUTER-HOOK-DESIGN.md)) No router-side DP-IN hook: 0004-0006 touch nothing under `drivers/thunderbolt/`. Placement is settled by `evidence/2026-10-16-router-vs-dcp-activation-ordering.md` (`tb_dp_activate()`, after `tb_dp_port_enable(src)`, before `tb_dp_dprx_start()`, mirrored in the inactive branch). | Reference design incl. provider lookup (a/b/c in that note). Kernel feature set is DeepSeek's: post as a comment, no tree change. | DeepSeek |
 | G2 | Host DP-IN adapter is refcounted by Apple (`incrementTunnelUse`/`decrementTunnelUse`); Linux has no equivalent, so activate-per-tunnel could double-activate when two tunnels share an adapter. | Decide refcount shape before wiring G1. | DeepSeek |
 | G3 | (plan: [DPRX-TEARDOWN-BACKPORT-PLAN.md](DPRX-TEARDOWN-BACKPORT-PLAN.md)) Sven Peter's DP-teardown series (6 patches applied to `thunderbolt.git/fixes`) is not in our tree and must be rebased on top of `0002` (same functions as `dprx_bypass`). Not needed for the next experiment; needed before leaving bypass-based testing. | Backport plan only. | DeepSeek |
 | G4 | The register *sequence* around DP-IN (power/clock/reset ordering, ACIO `startUsingTunnel()`) is unmeasured; static REA gives offsets, not order. | Live hypervisor trace needs a second Mac plus a reboot (owner-gated). Neo link exists; follow `MACOS-CUTOVER-CHECKLIST.md`. | owner + Codex |
 | G5 | Real-sink question: bypass-off DPRX/DPCD answer from the dock HDMI sink. Watchdog data cannot qualify it (bypass epoch/adapter not correlated). | Needs bypass-off run; hazard in `DP-TUNNEL-RE.md` §9. Owner-gated. | owner |
+
+## Bridge implementation review (DeepSeek, read-only) — recorded 2026-10-16
+
+An uncommitted ~606-line Thunderbolt-to-DCP "DP source" bridge exists in the
+isolated tree `~/Documents/Codex/2026-10-16/hey-x20/work/dpin-implementation/source`
+(HEAD `aa02910`; the review cites baseline `af5c00e`, so re-check line anchors).
+It implements the hook shape from [DPIN-ROUTER-HOOK-DESIGN.md](DPIN-ROUTER-HOOK-DESIGN.md)
+(G1/G2): source request after both adapters are enabled, DPRX gated on source
+status, blocking DCP work on an ordered workqueue outside `tb->lock`. The reviewer
+judged the five ordering claims to hold. Hardware untested, not in CI, not committed.
+
+Concerns, in the reviewer's order. "Spot-checked" means I confirmed the cited code
+exists; I did not re-derive the rest.
+
+| # | Sev | Concern | Status |
+|---|---|---|---|
+| B1 | high | `apple_dp_source_init()` deep-validation failure returns `-EINVAL` and fails the whole NHI probe (`apple.c:763-765`): a half-consistent repacked DT would drop all USB4 (dock Ethernet, mouse). Degrade deep failures to warn + disabled; keep `-EINVAL` only for the NHI property-pair violation. Offline FDT diff before any reboot. | spot-checked, open |
+| B2 | high | `devm_phy_optional_get(dev, "dp-phy")` (`dcp.c:1356`) with no deferral: if `appledrm` probes before the DP-IN PHY provider, `dcp->phy` stays NULL and every start is `-EINVAL`. Use non-optional get when `apple,dp-tunnel` is set, or add a softdep. `CONFIG_PHY_APPLE_DPIN` is only in `dpin-offline.config`, not production config. | spot-checked, open |
+| B3 | med | `-EOPNOTSUPP` now fails activation for the unmapped host DP-IN port (6); previously it established then timed out/bypassed. Decide intent; likely return 0 for unmapped ports. | open |
+| B4 | med | Worker reads source status twice per 50 ms iteration (pre-read, then inside `tb_dp_wait_dprx`). Read once. `test-bridge.py` does not extract `tb_dp_dprx_work`, so the fail-fast retry classification has no offline coverage. | open |
+| B5 | low | `-EBUSY` from source stop on DCP unbind logs `dev_err` during normal unload; downgrade. | open |
+| B6 | low | `comp_unbind` holds `dp_source_lock` across full teardown; no deadlock found, NHI stop may block for the DCP unbind duration. | accepted |
+| B7 | low | Port<->transport-index relation not validated (port 5 + index 1 passes). Add or document. | open |
+| B8 | info | Pre-existing: an executing DPRX worker cannot be cancelled and may log "not active, tearing down"; not a bridge failure. | note |
+
+Batch-run conditions from the review (all owner-gated): kernel/modules and the
+repacked `boot.bin` DT must go together (a mismatched pair is B1); first run
+with bypass armed and a short `dprx_timeout` (not 3600000); then bypass off ->
+DPRX -> EDID -> pixels. Errno hints: `-EAGAIN/-EPROBE_DEFER/-ETIMEDOUT` DCP not
+ready, `-EINVAL/-ENODEV` phy NULL (B2), `-EBUSY` provider owned (B5).
+Build wiring: production `build.sh` applies a fixed hash-pinned list (0001; 0002
+only with `FAIRYDUST_DP_TUNNEL=1`), so 0004-0006 plus the bridge and DP-IN config
+are not in CI yet.
+Provenance notes: the 09:00 reboot was the missing session's, not the reviewer's;
+the 24x AT-register timeouts are benign per-lane-init retries.
 
 ## Tooling
 
