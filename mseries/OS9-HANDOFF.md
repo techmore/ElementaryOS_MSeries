@@ -1398,3 +1398,7 @@ Closes the gap found earlier ("burst" could not lift the battery CPU cap). `mser
 ### Universal dark mode tool — 2026-10-16
 
 Added `mseries/dark-mode/mseries-dark-mode` (on/off/toggle/auto/schedule/status), `install-dark-mode.sh [--schedule|--uninstall]` and a user timer. Verified: `status`, `--dry-run` output, the schedule window logic (overnight and same-day windows) and a no-op AccountsService write (`PrefersColorScheme` 0 to 0) succeed on the M1 Pro. NOT verified: a live switch to dark and back, Brave/Flatpak following it, or the timer; the owner's theme was left unchanged. Gaps: Qt apps and Ghostty. Next: owner runs `install-dark-mode.sh` and `mseries-dark-mode toggle`, then reports which apps do not follow.
+
+### Dark mode now cuts over at sunset/sunrise — 2026-10-16
+
+`mseries-dark-mode auto` defaults to sunset/sunrise from Night Light's stored coordinates (NOAA maths; 07:10/18:21 for 2026-10-16 matches Philadelphia), acts only on a day/night change so manual toggles stick, and books a one-shot `mseries-dark-mode-next` timer. Installed and exercised on the M1 Pro (status, `auto` twice, timer listed). The real cut-over (first fires at 07:10) is not yet observed. `schedule START END` still gives fixed hours.

@@ -677,8 +677,15 @@ refresh rate or power.
 mseries/install-dark-mode.sh              # install to ~/.local/bin
 mseries-dark-mode on | off | toggle | status
 mseries/install-dark-mode.sh --schedule  # user timer runs `auto` at login and every 15 minutes
-mseries-dark-mode schedule 20:00 06:30   # change the dark window (default 19:00-07:00)
+mseries-dark-mode schedule 20:00 06:30   # fixed hours instead of sunset/sunrise
+mseries-dark-mode schedule sun           # back to sunset/sunrise (default)
+mseries-dark-mode location LAT LON       # override the stored Night Light coordinates
 ```
+
+`auto` is the macOS-style cut-over: dark from sunset to sunrise, computed from the coordinates
+Night Light already stores (NOAA solar maths, checked against Philadelphia: 07:10/18:21 on
+2026-10-16). It acts only when day/night changes, so a manual toggle sticks until the next
+transition, and it books a one-shot timer for that moment.
 
 The pastel accent overrides in `theme/gtk-*.css` already use dark label text on pale fills, so they
 read in both schemes. Not covered yet: Qt apps (no Qt platform theme is installed) and Ghostty

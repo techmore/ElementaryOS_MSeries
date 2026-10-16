@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install the universal dark-mode switch for the current user, plus an optional schedule timer.
 #   install-dark-mode.sh              install the tool (manual: mseries-dark-mode on|off|toggle)
-#   install-dark-mode.sh --schedule   also run `mseries-dark-mode auto` at login and every 15 minutes
+#   install-dark-mode.sh --schedule   also run `mseries-dark-mode auto` at login and every 15 minutes (a one-shot timer also fires at each sunrise and sunset)
 #   install-dark-mode.sh --uninstall  remove the tool and the timer (the current theme is left as is)
 set -euo pipefail
 

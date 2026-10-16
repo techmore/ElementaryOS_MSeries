@@ -2,20 +2,23 @@
 """Universal dark mode for ElementaryOS_MSeries: one switch for Pantheon, GTK 3/4, libadwaita,
 Flatpak apps (through the settings portal) and Chromium-based browsers (which follow the portal).
 
-  mseries-dark-mode status | on | off | toggle | auto | schedule [START END] [--dry-run]
+  mseries-dark-mode status | on | off | toggle | auto | sun | schedule [sun | START END] [--dry-run]
 
-`auto` picks dark between START and END (default 19:00-07:00, local time) and is what the user timer
-runs. Pantheon keeps the choice in AccountsService (PrefersColorScheme: 0 none, 1 dark, 2 light) and
+`auto` is the macOS-style cut-over: by default dark from sunset to sunrise, using the coordinates the
+desktop already stores for Night Light (override with `location LAT LON`). `schedule START END` uses
+fixed times instead. `auto` only acts when the day/night state changes, so a manual `on`/`off`/`toggle`
+sticks until the next sunrise or sunset. It also books a one-shot timer for that next transition. Pantheon keeps the choice in AccountsService (PrefersColorScheme: 0 none, 1 dark, 2 light) and
 mirrors it to org.gnome.desktop.interface color-scheme; both are set so the change is immediate.
 Display brightness, refresh rate and power are never touched.
 """
 import datetime
 import json
+import math
 import os
 import subprocess
 import sys
 
-DEFAULTS = {"start": "19:00", "end": "07:00"}
+DEFAULTS = {"mode": "sun", "start": "19:00", "end": "07:00"}
 CONF = os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "mseries/dark-mode.json")
 ACCOUNTS = ("org.freedesktop.Accounts", f"/org/freedesktop/Accounts/User{os.getuid()}",
             "io.elementary.pantheon.AccountsService")
@@ -61,6 +64,76 @@ def apply(mode, dry):
         print(f"Dark mode {'on' if mode == 'dark' else 'off'} (apps follow within a moment).")
 
 
+def coordinates(cfg):
+    if "lat" in cfg and "lon" in cfg:
+        return cfg["lat"], cfg["lon"]
+    out = sh("gsettings", "get", "org.gnome.settings-daemon.plugins.color", "night-light-last-coordinates").stdout
+    try:
+        lat, lon = (float(x) for x in out.strip().strip("()").split(","))
+        if abs(lat) <= 90 and abs(lon) <= 180 and (lat or lon):
+            return lat, lon
+    except ValueError:
+        pass
+    return None
+
+
+def sun_times(day, lat, lon):
+    """NOAA sunrise/sunset as aware local datetimes for `day` (None during polar day/night)."""
+    n = day.timetuple().tm_yday
+    g = 2 * math.pi / 365 * (n - 1)
+    eqt = 229.18 * (0.000075 + 0.001868 * math.cos(g) - 0.032077 * math.sin(g)
+                    - 0.014615 * math.cos(2 * g) - 0.040849 * math.sin(2 * g))
+    decl = (0.006918 - 0.399912 * math.cos(g) + 0.070257 * math.sin(g) - 0.006758 * math.cos(2 * g)
+            + 0.000907 * math.sin(2 * g) - 0.002697 * math.cos(3 * g) + 0.00148 * math.sin(3 * g))
+    la = math.radians(lat)
+    c = (math.cos(math.radians(90.833)) / (math.cos(la) * math.cos(decl))) - math.tan(la) * math.tan(decl)
+    if abs(c) > 1:
+        return None
+    ha = math.degrees(math.acos(c))
+    utc = datetime.datetime(day.year, day.month, day.day, tzinfo=datetime.timezone.utc)
+    rise = utc + datetime.timedelta(minutes=720 - 4 * (lon + ha) - eqt)
+    sset = utc + datetime.timedelta(minutes=720 - 4 * (lon - ha) - eqt)
+    return rise.astimezone(), sset.astimezone()
+
+
+def sun_state(now, lat, lon):
+    """Return ('dark'|'light', next_transition) for aware local `now`."""
+    events = []
+    for off in (-1, 0, 1, 2):
+        t = sun_times(now.date() + datetime.timedelta(days=off), lat, lon)
+        if t:
+            events += [(t[0], "light"), (t[1], "dark")]
+    events.sort()
+    past = [e for e in events if e[0] <= now]
+    future = [e for e in events if e[0] > now]
+    if not past or not future:
+        return ("dark" if lat * (1 if now.month in (10, 11, 12, 1, 2, 3) else -1) > 0 else "light"), None
+    return past[-1][1], future[0][0]
+
+
+STATE = CONF.replace("dark-mode.json", "dark-mode.state")
+
+
+def state_get():
+    try:
+        return open(STATE).read().strip()
+    except OSError:
+        return None
+
+
+def state_set(value):
+    os.makedirs(os.path.dirname(STATE), exist_ok=True)
+    with open(STATE, "w") as f:
+        f.write(value)
+
+
+def save(cfg, dry):
+    if not dry:
+        os.makedirs(os.path.dirname(CONF), exist_ok=True)
+        with open(CONF, "w") as f:
+            json.dump(cfg, f)
+
+
 def minutes(text):
     h, m = text.split(":")
     return int(h) * 60 + int(m)
@@ -78,25 +151,51 @@ def main(argv):
     cfg = load()
     if cmd == "status":
         pv = {0: "no preference", 1: "dark", 2: "light"}.get(pantheon_value(), "unknown")
-        print(f"apps see: {current()}  |  Pantheon preference: {pv}  |  schedule: {cfg['start']}-{cfg['end']}")
+        sched = "sunset-sunrise" if cfg["mode"] == "sun" else f"{cfg['start']}-{cfg['end']}"
+        print(f"apps see: {current()}  |  Pantheon preference: {pv}  |  schedule: {sched}")
     elif cmd in ("on", "off"):
         apply("dark" if cmd == "on" else "light", dry)
     elif cmd == "toggle":
         apply("light" if current() == "dark" else "dark", dry)
-    elif cmd == "auto":
-        want = wanted(datetime.datetime.now(), cfg["start"], cfg["end"])
-        if want != current() or dry:
-            apply(want, dry)
+    elif cmd in ("auto", "sun"):
+        coords = coordinates(cfg) if cfg["mode"] == "sun" else None
+        nxt = None
+        if cfg["mode"] == "sun" and coords:
+            want, nxt = sun_state(datetime.datetime.now().astimezone(), *coords)
+        else:
+            want = wanted(datetime.datetime.now(), cfg["start"], cfg["end"])
+        if cmd == "sun":
+            print(f"{want} now; next change {nxt:%a %H:%M}" if nxt else f"{want} now")
+            return 0
+        last = state_get()
+        if want != last or dry:
+            if want != last:
+                apply(want, dry)
+            else:
+                print(f"would keep {want} (already decided)")
+            if not dry:
+                state_set(want)
+        if nxt and not dry:
+            sh("systemd-run", "--user", "--quiet", "--unit=mseries-dark-mode-next", "--collect",
+               f"--on-calendar={nxt + datetime.timedelta(seconds=5):%Y-%m-%d %H:%M:%S}",
+               os.path.realpath(sys.argv[0]), "auto")
+    elif cmd == "location":
+        cfg = {**load(), "lat": float(args[1]), "lon": float(args[2])}
+        save(cfg, dry)
+        print(f"Location set to {cfg['lat']}, {cfg['lon']}.")
     elif cmd == "schedule":
         if len(args) == 3:
             for t in args[1:]:
                 minutes(t)
-            if not dry:
-                os.makedirs(os.path.dirname(CONF), exist_ok=True)
-                with open(CONF, "w") as f:
-                    json.dump({"start": args[1], "end": args[2]}, f)
-            cfg = {"start": args[1], "end": args[2]}
-        print(f"Dark from {cfg['start']} to {cfg['end']} when `auto` runs.")
+            cfg = {**load(), "mode": "fixed", "start": args[1], "end": args[2]}
+            save(cfg, dry)
+        elif len(args) == 2 and args[1] == "sun":
+            cfg = {**load(), "mode": "sun"}
+            save(cfg, dry)
+        if cfg["mode"] == "sun":
+            print("Dark from sunset to sunrise when `auto` runs.")
+        else:
+            print(f"Dark from {cfg['start']} to {cfg['end']} when `auto` runs.")
     else:
         print(__doc__)
         return 2
