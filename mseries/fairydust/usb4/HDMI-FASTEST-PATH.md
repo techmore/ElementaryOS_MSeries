@@ -55,7 +55,10 @@ deliver it today. If the goal is specifically to use the Dell dock's HDMI, that
 is Track 3 and is research with an uncertain end. The owner should say which one
 is the real requirement so effort is spent on the right one.
 
-## Owner's answer (2026-10-16)
+## Owner's answer (2026-10-16): final
 
-The requirement is the Dell dock's HDMI (the monitor stays on the dock). Track 3 is therefore the
-main line; Tracks 1-2 remain a cheap fallback only. The stop rule above still applies.
+The only goal is the Dell dock's HDMI. The Mac's own HDMI port and USB-C adapters are
+**out of scope**; Tracks 1-2 above are kept only as background and must not be proposed
+again. Track 3 is the whole plan, with its stop rule: one batched boot answers whether the
+bridge yields a real (unbypassed) DPRX answer; if not, the owner decides whether a
+second-computer macOS trace is worth more time instead of more offline rounds.
