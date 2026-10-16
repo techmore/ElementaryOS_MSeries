@@ -1420,3 +1420,7 @@ Update 2026-10-16: owner saw the green on a temporary low-threshold build (about
 ### Power opportunities survey — 2026-10-16
 
 Read-only survey (nothing changed, display untouched): see `mseries/POWER-OPPORTUNITIES-2026-10-16.md`. New observations: Gala at 12.7% of a core on average (72 CPU-min in 9.5 h); the speaker PCM and the speaker-safety capture PCM have been `RUNNING` since boot despite the 30 s suspend override (probably the always-on DSP chain; audio stack is owner-gated); 17.6 W whole-machine reading on battery with the agent apps open. Next: owner call on 60 Hz/VRR; app-mix A/B and Gala profile need no display change.
+
+### GPU job attribution: ChatGPT/Codex desktop app dominates — 2026-10-16
+
+Three 5 s traces of `drm_sched_job_queue` (read-only): the ChatGPT desktop app submits 4,000 to 5,000 GPU jobs/s versus gala 840, claude-desktop 360. Details in `POWER-OPPORTUNITIES-2026-10-16.md`. Power impact not isolated; the app was left running (may belong to an agent session). Next: owner closes or approves closing it for a paired `powerlab/ab.py` A/B; then test Electron flags in a throwaway profile.

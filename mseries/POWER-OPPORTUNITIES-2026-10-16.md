@@ -21,6 +21,19 @@ Apple's implied figures: about 4.1 W video, 6.4 W web. Goal still **not met**.
 | 7 | **Brightness** | 21% -> 5% saved about 0.7 W; 500 -> 105 about 4 W | Up to ~4 W vs full | Display: owner decides |
 | 8 | Dynamic refresh (VRR) | Mutter experimental VRR, DCP support unverified | Possible, between 120 and 60 Hz | Investigate read-only, then ask |
 
+## Follow-up measurement, same day: GPU job submission by process
+
+`gpu_scheduler:drm_sched_job_queue` traced three times for 5 s each (read-only, tracing switched off and cleared afterwards), on battery:
+
+| Process | Jobs per 5 s (runs 1 / 2 / 3) | About per second |
+| --- | --- | --- |
+| **ChatGPT desktop app** (`/usr/lib/chatgpt/ChatGPT`, profile `~/.config/Codex`) | 22,276 / 20,777 / 25,246 | 4,000 to 5,000 |
+| gala | 4,199 / 4,200 / 4,200 | 840 |
+| claude-desktop | 1,794 / 1,800 / 1,794 | 360 |
+| Xwayland | 1,215 (once) | 240 |
+
+The ChatGPT/Codex desktop app alone submits about 3x the GPU work of everything else combined, steadily, and earlier traces (about 665 jobs/s total, Claude Desktop 55%) were before it was running. Whole-machine power read 17.6 W before it and 20.5 W during the third run (single readings, not a controlled pair). So item 2 above has a prime suspect. Gala's CPU (bursts of 9 to 60% of a core) tracks client redraws, consistent with it compositing this app. Not yet measured: power with the app quit versus open. It was not closed because it may belong to a running agent session; a paired A/B needs the owner's okay, or the owner closing it.
+
 ## Checked and not worth doing (measured under noise, or worse)
 
 - Background services and sensor pollers (avahi, cups, geoclue, zeitgeist, evolution, iio-sensor-proxy, keyboard backlight): each group under 0.1 W in paired runs. `rpcbind`/`rpc-statd`/`cups` are running with no use here, so disabling is hygiene and attack-surface, not battery.
