@@ -61,25 +61,30 @@ Decoded live from debugfs (see the regression guard below for how):
 
 Hypothesis: the DP resource allocation picks the dock's first free DP OUT
 adapter (`1:13`) rather than the one the monitor is actually on (`1:14`).
-DPRX is then read through an adapter with nothing behind it, which produces
-exactly the observed `DPRX read timeout` -> `RESULT=SILENT` — **without the
-Apple DP-IN block being involved at all.**
 
-This is upstream of the missing-block work and is one experiment away from
-being confirmed or killed. It has never been tested.
+**TESTED 2026-10-16 — the fix works, the hypothesis was NOT the root cause:**
 
-Test options, cheapest first:
-1. Put the monitor on the dock's **other** video socket and re-check whether the
-   allocation follows it (needs to be established which of 13/14 is which, and
-   what cable the monitor has — see "Open question" below).
-2. Force/pin the tunnel to `1:14` in the experimental patch and rebuild.
-3. Read the dock's `1:13` vs `1:14` DP_LOCAL_CAP/HPD state during an allocation.
+* `0003-dp-out-prefer-adapter-with-hpd.patch` makes `tb_find_dp_out()` prefer
+  the HPD adapter. Built as a module and loaded on the live machine.
+* The tunnel moved from `0:5 <-> 1:13` (empty socket) to **`0:5 <-> 1:14`**
+  (the monitor's adapter). Verified live.
+* `DPRX read timeout` **still repeats** on the correct socket, with VE/AE, the
+  video hop (9) and the AUX hops (8/8) programmed on both ends and HPD reaching
+  the host DP IN adapter.
+* Conclusion: the wrong socket was a real bug (now fixed, keep the patch) but
+  **not** the cause of the DPRX failure. Upstream's diagnosis is confirmed under
+  controlled conditions — the ACIO/DP-IN block is the wall, and now the *only*
+  wall. Details: `evidence/2026-10-16-hpd-fix-tested-module-only-rebuild.md`.
 
-**Open question for the owner:** what inputs does the monitor have, and what
-video cables exist (HDMI/HDMI, HDMI/DP, DP/DP)? This decides test 1.
+Do **not** re-open the socket question. Do **not** re-derive the adapter map.
 
-Until this is resolved, do **not** assume the DP-IN/missing-block work is the
-only cause of the DPRX timeout.
+Two big practical unlocks from that run (use them, do not rediscover):
+* a module-only rebuild (`make M=drivers/thunderbolt` against `/proc/config.gz`
+  with `RUST`/`DEBUG_INFO_BTF_MODULES` off, `KBUILD_MODPOST_WARN=1`) takes
+  minutes and produces a loadable module with the exact right vermagic — no
+  1-3 h kernel build, no rustup, no pahole;
+* `modprobe -r thunderbolt_apple thunderbolt` + reload brings the dock back in
+  seconds — no reboot needed to test the TB stack.
 
 ## PROVEN (do not re-derive)
 

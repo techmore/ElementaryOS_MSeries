@@ -1,0 +1,87 @@
+--- a/drivers/thunderbolt/tb.c	2026-10-16 09:51:29.137597641 -0400
++++ b/drivers/thunderbolt/tb.c	2026-10-16 09:51:29.138305517 -0400
+@@ -1865,40 +1865,59 @@
+ {
+ 	struct tb_port *host_port, *port;
+ 	struct tb_cm *tcm = tb_priv(tb);
++	int pass;
+ 
+ 	host_port = tb_route(in->sw) ?
+ 		tb_port_at(tb_route(in->sw), tb->root_switch) : NULL;
+ 
+-	list_for_each_entry(port, &tcm->dp_resources, list) {
+-		if (!tb_port_is_dpout(port))
+-			continue;
+-
+-		if (tb_port_is_enabled(port)) {
+-			tb_port_dbg(port, "DP OUT in use\n");
+-			continue;
+-		}
++	/*
++	 * Devices with several video outputs (e.g. docks) expose more than one
++	 * DP OUT adapter, and only the ones that actually have a display or
++	 * converter behind them report HPD. Walking the list in order can pair
++	 * the DP IN adapter with an empty socket, after which the DPRX/AUX
++	 * read has nothing to talk to and the tunnel activation fails.
++	 *
++	 * Prefer an adapter with HPD asserted; fall back to the previous
++	 * first-available behaviour when none reports HPD.
++	 */
++	for (pass = 0; pass < 2; pass++) {
++		list_for_each_entry(port, &tcm->dp_resources, list) {
++			if (!tb_port_is_dpout(port))
++				continue;
+ 
+-		/* Needs to be on different routers */
+-		if (in->sw == port->sw) {
+-			tb_port_dbg(port, "skipping DP OUT on same router\n");
+-			continue;
+-		}
++			if (tb_port_is_enabled(port)) {
++				tb_port_dbg(port, "DP OUT in use\n");
++				continue;
++			}
+ 
+-		tb_port_dbg(port, "DP OUT available\n");
++			/* Needs to be on different routers */
++			if (in->sw == port->sw) {
++				tb_port_dbg(port, "skipping DP OUT on same router\n");
++				continue;
++			}
+ 
+-		/*
+-		 * Keep the DP tunnel under the topology starting from
+-		 * the same host router downstream port.
+-		 */
+-		if (host_port && tb_route(port->sw)) {
+-			struct tb_port *p;
++			/*
++			 * Keep the DP tunnel under the topology starting from
++			 * the same host router downstream port.
++			 */
++			if (host_port && tb_route(port->sw)) {
++				struct tb_port *p;
++
++				p = tb_port_at(tb_route(port->sw), tb->root_switch);
++				if (p != host_port)
++					continue;
++			}
++
++			if (pass == 0) {
++				if (tb_dp_port_hpd_is_active(port) != 1)
++					continue;
++				tb_port_dbg(port, "DP OUT has HPD, using it\n");
++			} else {
++				tb_port_dbg(port, "DP OUT available\n");
++			}
+ 
+-			p = tb_port_at(tb_route(port->sw), tb->root_switch);
+-			if (p != host_port)
+-				continue;
++			return port;
+ 		}
+-
+-		return port;
+ 	}
+ 
+ 	return NULL;
