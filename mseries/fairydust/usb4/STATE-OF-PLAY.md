@@ -44,9 +44,42 @@ not the enable; that is why it never worked.
 fb -> dispext0/1 (dcp@289c00000, dcp@28cc00000, both "apple,dcpext")
    -> display crossbar (mux@b0304c000, "apple,t6000-display-crossbar")
    -> one of { dpphy | dpin0 | dpin1 }
-   -> ACIO DP IN adapter (USB4 host router adapter 0:5)
-   -> USB4 tunnel -> dock (1:13 = DP, 1:14 = HDMI) -> monitor
+   -> ACIO DP IN adapter (host router 0:5 = dpin0, 0:6 = dpin1)
+   -> USB4 tunnel -> dock adapter (1:13 or 1:14) -> monitor
 ```
+
+## NEW LEAD (2026-10-16): is the tunnel aimed at the wrong socket?
+
+Decoded live from debugfs (see the regression guard below for how):
+
+* host has **two** DP IN adapters: `0:5` (dpin0) and `0:6` (dpin1)
+* dock has **two** DP OUT adapters: `1:13` and `1:14`
+* with the monitor on the dock's **HDMI**, `1:14` carries live config state and
+  `1:13` is idle/empty
+* the only DP tunnel we ever observed was **`0:5 <-> 1:13`** — host dpin0 into
+  the dock's **idle** adapter
+
+Hypothesis: the DP resource allocation picks the dock's first free DP OUT
+adapter (`1:13`) rather than the one the monitor is actually on (`1:14`).
+DPRX is then read through an adapter with nothing behind it, which produces
+exactly the observed `DPRX read timeout` -> `RESULT=SILENT` — **without the
+Apple DP-IN block being involved at all.**
+
+This is upstream of the missing-block work and is one experiment away from
+being confirmed or killed. It has never been tested.
+
+Test options, cheapest first:
+1. Put the monitor on the dock's **other** video socket and re-check whether the
+   allocation follows it (needs to be established which of 13/14 is which, and
+   what cable the monitor has — see "Open question" below).
+2. Force/pin the tunnel to `1:14` in the experimental patch and rebuild.
+3. Read the dock's `1:13` vs `1:14` DP_LOCAL_CAP/HPD state during an allocation.
+
+**Open question for the owner:** what inputs does the monitor have, and what
+video cables exist (HDMI/HDMI, HDMI/DP, DP/DP)? This decides test 1.
+
+Until this is resolved, do **not** assume the DP-IN/missing-block work is the
+only cause of the DPRX timeout.
 
 ## PROVEN (do not re-derive)
 
@@ -146,8 +179,20 @@ costs 60 seconds and requires a sink actually present on the dock.
   deadlocks the port.
 - The USB4 NHI can disappear from the bus (`b01f00000.nhi` missing). ACIO
   `unbind`/`bind` does **not** restore it; only a reboot does.
-- The dock exposes DP adapters **only** when a live sink is present. Zero sink
-  means there is nothing to measure (this wasted a session on day 9).
+- **CORRECTED 2026-10-16 (this bit was WRONG before — it wasted a session):**
+  the dock's DP adapters are **always present** and are **not** sysfs devices.
+  Read them from debugfs, not `/sys/bus/thunderbolt/devices`:
+  `sudo cat /sys/kernel/debug/thunderbolt/0-1/port13/regs` etc.
+  Live decoded map (offset 0x0002, `type:24|tbt_version:8`):
+  ```
+  HOST 0-0 port5 = 0x0e0101 DP_HDMI_IN    <- dpin0
+  HOST 0-0 port6 = 0x0e0101 DP_HDMI_IN    <- dpin1
+  DOCK 0-1 port13 = 0x0e0102 DP_HDMI_OUT  <- idle/empty (one socket)
+  DOCK 0-1 port14 = 0x0e0102 DP_HDMI_OUT  <- has live state (the monitor)
+  ```
+  Both dock DP OUT adapters exist with **no** tunnel allocated. Earlier notes
+  claiming "the dock exposes DP adapters only when a live sink is present, and
+  exposed zero on day 9" are **false** — they came from looking in sysfs.
 - Run session scripts from the `wt-dockvideo` worktree; the shared checkout is
   stale and edited by another agent.
 
