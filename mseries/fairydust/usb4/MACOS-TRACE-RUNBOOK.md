@@ -4,9 +4,11 @@ Updated 2026-10-16. Start with the complete
 [cutover checklist](MACOS-CUTOVER-CHECKLIST.md), including cable planning,
 ordinary macOS collection, acceptance gates and publication rules.
 
-**Current blocker:** only the target Mac is available. The Python recorder
-must run on another computer while this Mac runs macOS under m1n1. A normal
-macOS boot can collect the baseline, but cannot record its own MMIO trace.
+**Recorder update:** the MacBook Neo is now reached by SSH, with key login,
+private Python and matching m1n1 source/build staged. See
+[verified recorder setup](NEO-RECORDER-SETUP.md). Compiler, USB handshake,
+target guest and ADT still need qualification. A normal macOS boot can
+collect the baseline but cannot record its own MMIO trace.
 
 ## Corrections to older recipes
 
@@ -21,10 +23,11 @@ macOS boot can collect the baseline, but cannot record its own MMIO trace.
 
 ## Prepare the second host first
 
-Use a Linux/macOS recorder independent of the dock's keyboard, network and
+Use the prepared Neo recorder independent of the dock's keyboard, network and
 storage. Prepare Python, construct and pyserial, plus a matching m1n1
 binary/client source tree and its recorded revision. Our dependency helper
-vendors Python modules without installing them system-wide:
+vendors pinned Python modules without installing them system-wide. Current
+source needs ASN.1 dependencies in addition to construct/pyserial:
 
 ~~~bash
 git clone --recursive https://github.com/AsahiLinux/m1n1.git

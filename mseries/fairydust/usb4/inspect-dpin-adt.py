@@ -79,6 +79,10 @@ def parse_ioreg(data):
     append @unit-address. Refuse ambiguous multiple roots and invalid names.
     """
     archive = plistlib.loads(data)
+    # macOS 26 ioreg emits the root dictionary directly; older exports may
+    # wrap it in a one-item array. Neither form permits multiple roots.
+    if isinstance(archive, dict):
+        archive = [archive]
     if not isinstance(archive, list) or len(archive) != 1:
         raise ValueError("Expected one IODeviceTree archive root")
     total = 0
@@ -93,6 +97,14 @@ def parse_ioreg(data):
         name = props.get("name", entry.get("IORegistryEntryName", ""))
         if isinstance(name, bytes):
             name = name.split(b"\0", 1)[0].decode("ascii")
+        if not name:
+            # Some live exports blank the original ADT name (memory-map),
+            # while retaining the registry name. Anonymous IOMedia leaves
+            # have neither and carry no ADT wiring; omit those leaves only.
+            name = entry.get("IORegistryEntryName", "")
+        if not name and parent is not None and not entry.get("IORegistryEntryChildren"):
+            if not any(key in props for key in ("reg", "ranges", "AAPL,phandle")):
+                return None
         if not isinstance(name, str) or not name:
             raise ValueError("Missing IODeviceTree node name")
         props["name"] = name.split("@", 1)[0].encode("ascii") + b"\0"
@@ -100,7 +112,8 @@ def parse_ioreg(data):
         children = entry.get("IORegistryEntryChildren", [])
         if not isinstance(children, list):
             raise ValueError("Invalid IODeviceTree children")
-        current.children = [node(child, current, depth + 1) for child in children]
+        current.children = [parsed for child in children
+                            if (parsed := node(child, current, depth + 1)) is not None]
         return current
 
     return node(archive[0])

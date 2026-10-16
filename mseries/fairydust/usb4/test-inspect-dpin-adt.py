@@ -48,11 +48,15 @@ class InspectionTests(unittest.TestCase):
                             {"IORegistryEntryName": "atc1-dpin0@1e50000",
                              "reg": struct.pack("<QQ", 0x1e50000, 0x4000),
                              "acio-parent": integer(7)},
-                            {"name": b"acio1\0", "AAPL,phandle": integer(7)}]}]}]
-        nodes = adt.summarize(adt.parse_ioreg(plistlib.dumps(archive)))
-        self.assertEqual(nodes[0]["registers"][0]["address"], "0xb01e50000")
-        self.assertEqual(nodes[0]["acio-parent"]["path"], "/arm-io/acio1")
-        self.assertNotIn("PRIVATE", str(nodes))
+                            {"name": b"acio1\0", "AAPL,phandle": integer(7)},
+                            {"name": b"\0", "IORegistryEntryName": "memory-map"},
+                            {"IORegistryEntryName": "", "UUID": "PRIVATE"}]}]}]
+        for shape in (archive, archive[0]):
+            with self.subTest(shape=type(shape).__name__):
+                nodes = adt.summarize(adt.parse_ioreg(plistlib.dumps(shape)))
+                self.assertEqual(nodes[0]["registers"][0]["address"], "0xb01e50000")
+                self.assertEqual(nodes[0]["acio-parent"]["path"], "/arm-io/acio1")
+                self.assertNotIn("PRIVATE", str(nodes))
 
     def test_ioreg_rejects_ambiguous_archive(self):
         for archive in ([], [{}, {}], [{"IORegistryEntryName": "Root",

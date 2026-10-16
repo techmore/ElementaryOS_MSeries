@@ -1,9 +1,10 @@
 # DP-IN / AUX audit — 2026-10-16
 
 Execution handoff: [complete macOS cutover checklist](MACOS-CUTOVER-CHECKLIST.md).
-Only this target Mac is available. The native macOS collector can obtain a
+The [MacBook Neo recorder](NEO-RECORDER-SETUP.md) is now available over SSH.
+The native macOS collector can obtain a
 working baseline and IODeviceTree metadata without moving cables. The
-full m1n1 MMIO trace still requires a second recorder. The guest payload
+full m1n1 MMIO trace still requires its USB handshake and a qualified guest. The guest payload
 is matching XNU's extracted kernelcache, correcting the earlier iBoot claim.
 
 Target: M1 Pro / MacBookPro18,3, WD22TB4, dock HDMI to an Amazon Basics
@@ -193,8 +194,11 @@ an automated go/no-go decision. The collector was not changed in this batch.
   before partial capture).
 - `python3 mseries/fairydust/usb4/test-trace-dcp-raw.py`: 3 tests passed
   (all service directions, raw preservation before decode failure, repeat install).
-- The native macOS collector passes shell syntax and Linux refusal checks;
-  its real macOS commands have not yet been executed here.
+- The native macOS collector passes shell syntax and Linux refusal checks.
+  Its registry/profiler/log commands were validated on the Neo recorder;
+  denied Preboot search is retained as a failure. The importer now accepts
+  the Neo's actual dictionary-root plist, blank ADT names with registry-name
+  fallback and anonymous non-ADT leaves. Target collection remains pending.
 - Live kernel, DT, drivers, audio, and probe parameters were not modified
   by this batch. No real macOS trace or video qualification was performed.
 - Kernel reference: Fairydust `ce9f2eba72c061a50b2d790450e90af3439d8c24`

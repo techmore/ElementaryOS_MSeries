@@ -7,19 +7,21 @@ Working branch: `docs/dock-video-decision`.
 
 ## Read this before switching operating systems
 
-The owner has **one computer available**, this Mac. A normal macOS boot can
+The owner has now supplied a **MacBook Neo recorder**, successfully reached
+over SSH; see [recorder setup and verified checks](NEO-RECORDER-SETUP.md).
+The earlier single-computer blocker is resolved. A normal macOS boot can
 collect the missing device-tree metadata and prove whether this exact HDMI
 chain works. It cannot record macOS register accesses through the Python
 m1n1 hypervisor client: that client must run on another computer while this
-Mac runs the guest. Borrowing a Linux or macOS computer is sufficient in
-principle; we do not need another Apple Silicon Mac for the recorder.
+Mac runs the guest. The Neo's macOS 26.6.2 is its recorder OS, not the
+hypervisor guest version that must be confirmed on this M1 Pro.
 
 **Ready now:** an ordinary macOS baseline visit with the dock and HDMI left
 attached, using `collect-macos-dock.sh` below. No security downgrade or boot
 modification is needed for that visit. Native macOS tools are sufficient.
 
-**Not ready now:** a full register trace. No second host is available, the
-installed macOS build is unconfirmed, and no matching XNU kernelcache has
+**Not ready now:** a full register trace. Recorder tools are being prepared,
+the target's installed macOS build is unconfirmed, and no matching XNU kernelcache has
 been selected or extracted. A successful capture may expose more than one
 missing operation; we cannot promise an immediate working Linux driver.
 
@@ -235,15 +237,15 @@ after the Linux boot before any future dock detach; module parameters do
 not necessarily persist across boots. No new unbypassed probe is part of
 this baseline handoff.
 
-## E. Full trace readiness — do not start this with only one computer
+## E. Full trace readiness — recorder identified, guest still unqualified
 
 | Requirement | Acceptance criterion | Current status |
 |---|---|---|
-| Separate recorder | Linux/macOS machine with Python, USB serial access, storage and data cable; usable without this dock | **Missing: owner has this Mac only** |
+| Separate recorder | Linux/macOS machine with Python, USB serial access, storage and data cable; usable without this dock | Neo reached by SSH; key login, runtime and imports verified; compiler/cable/handshake still to qualify |
 | Physical topology | Dock retains one port; recorder uses another directly; original ADT confirms both | Physical port labels still to record |
 | Working reference | Same dock HDMI chain produces a visible macOS picture | Not yet collected |
 | macOS guest | Exact supported version/build, accessible matching volume and extracted XNU Mach-O | Version/cache not yet collected |
-| Matching m1n1 | Source revision recorded; build and Python client from the same tree; ABI verified by chainload | Local extracted tree/build exists; recorder not prepared |
+| Matching m1n1 | Source revision recorded; build and Python client from the same tree; ABI verified by chainload | Fresh source/build at c6a89b9 staged on Neo; no chainload yet |
 | Boot route | Tested proxy entry and correct macOS boot context; recoverable existing boot entries | Not validated for a macOS guest |
 | Target metadata | Confirmed xbar/DP-IN0/1 ranges, correct external DCP and DART aliases | Awaiting macOS baseline |
 | Instrumentation | Both DP-IN blocks+xbar, correct DCP, raw DPTX payload hook, initial boot coverage | Offline hooks prepared; hardware untested |
@@ -320,8 +322,9 @@ and clean recovery are required before declaring the objective solved.
 
 ## Tool validation and sources
 
-- The macOS shell collector has a Linux refusal check and shell syntax check;
-  its native macOS commands have not yet been run on this machine.
+- The macOS shell collector passes Linux refusal and shell syntax checks.
+  On the Neo, native registry/profiler/log commands passed; the Preboot search
+  correctly reported denied access. This is recorder validation, not target evidence.
 - The ADT parser has six offline tests, including IORegistry address-range
   translation, phandle relationships and exclusion of unrelated identity data.
 - The DP-IN trace hook has three offline target/atomicity tests.

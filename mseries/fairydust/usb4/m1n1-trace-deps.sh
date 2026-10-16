@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Vendor the two pure-Python dependencies the m1n1 hypervisor proxyclient needs
-# (construct, pyserial) without touching the system: no pip, no apt, no sudo.
+# Vendor the pinned pure-Python dependencies for the prepared m1n1 revision
+# without touching the system: no pip, no apt, no sudo.
 # Prints the resulting PYTHONPATH and the trace recipe.
 #
 #   bash mseries/fairydust/usb4/m1n1-trace-deps.sh
@@ -13,8 +13,8 @@ DEST=${M1N1_PROXYCLIENT_DEPS:-$HOME/.local/share/m1n1-proxyclient}
 
 [[ -d $M1N1/proxyclient ]] || { echo "m1n1 tree not found at $M1N1 (set M1N1=...)" >&2; exit 2; }
 
-python3 - "$DEST" 'construct==2.10.70' 'pyserial==3.5' <<'PY'
-import io, json, os, sys, urllib.request, zipfile
+python3 - "$DEST" 'asn1==3.3.0' 'construct==2.10.70' 'enum-compat==0.0.3' 'pyserial==3.5' <<'PY'
+import hashlib, io, json, os, sys, urllib.request, zipfile
 
 dest, *specs = sys.argv[1:]
 os.makedirs(f"{dest}/wheels", exist_ok=True)
@@ -29,9 +29,12 @@ def fetch(url):
 for spec in specs:
     pkg, ver = spec.split("==")
     meta = json.loads(fetch(f"https://pypi.org/pypi/{pkg}/{ver}/json"))
-    url = next(u["url"] for u in meta["urls"] if u["filename"].endswith(".whl"))
+    wheel = next(u for u in meta["urls"] if u["filename"].endswith(".whl"))
+    url = wheel["url"]
     name = url.rsplit("/", 1)[1]
     data = fetch(url)
+    if hashlib.sha256(data).hexdigest() != wheel["digests"]["sha256"]:
+        raise ValueError(f"Wheel SHA-256 mismatch for {name}")
     with open(f"{dest}/wheels/{name}", "wb") as fh:
         fh.write(data)
     with zipfile.ZipFile(io.BytesIO(data)) as z:

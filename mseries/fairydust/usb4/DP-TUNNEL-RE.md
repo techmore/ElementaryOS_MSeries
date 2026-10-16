@@ -676,9 +676,10 @@ The current execution plan is
 guest preparation/launch in [`MACOS-TRACE-RUNBOOK.md`](MACOS-TRACE-RUNBOOK.md).
 These supersede the former two-client / standalone-DPTX recipe.
 
-Only this target Mac is currently available. Start with the native macOS
-collector, keeping the dock and HDMI attached. A complete hypervisor capture
-requires a second recorder, matching XNU `kernelcache.macho`, a validated
+The MacBook Neo recorder is now reached over SSH; see
+[`NEO-RECORDER-SETUP.md`](NEO-RECORDER-SETUP.md). Start with the native target
+macOS collector, keeping the dock and HDMI attached. A complete capture
+requires the recorder's qualified USB link, matching XNU `kernelcache.macho`, a validated
 macOS guest boot context and one guest carrying DP-IN, DCP and raw DPTX hooks.
 Neither an iBoot payload nor m1n1's own Mach-O is the guest kernel.
 

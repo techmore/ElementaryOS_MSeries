@@ -4,11 +4,17 @@ Last updated 2026-10-14. Day-to-day pending checks live in the robot: `mseries-v
 (seed: `mseries/local-ai/verify-checks.json`). This file is the human-readable plan.
 
 Dock-video update 2026-10-16:
+MacBook Neo recorder now reached by SSH; key login installed and verified.
+Sleep assertions are active on Neo and the Linux target. Private Python,
+matching m1n1 source/build and dependencies are staged; offline checks pass
+on Darwin ARM64. See [recorder setup](fairydust/usb4/NEO-RECORDER-SETUP.md)
+for verified results and compiler/USB/guest gates still remaining.
+
 [`Complete macOS cutover checklist`](fairydust/usb4/MACOS-CUTOVER-CHECKLIST.md)
 is published with a native collector, IORegistry metadata parser and raw
-DPTX trace hook. Only the target Mac is available, so collect a native
+DPTX trace hook. Collect a native
 baseline with the dock/HDMI left connected first. Full MMIO capture needs
-a separate recorder and matching XNU kernelcache; the earlier iBoot recipe
+the Neo recorder and matching target XNU kernelcache; the earlier iBoot recipe
 was incorrect. Twelve offline tests pass; no macOS trace or picture yet.
 
 [`DP-IN/AUX audit`](fairydust/usb4/DPIN-AUX-AUDIT.md) identifies the missing

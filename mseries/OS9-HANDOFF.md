@@ -2,10 +2,35 @@
 
 Updated 2026-10-16. Repository: techmore/ElementaryOS_MSeries.
 
+## Neo recorder accessed / sleep inhibited — 2026-10-16
+
+The owner supplied the second machine: MacBook Neo / Mac17,5 / A18 Pro,
+macOS 26.6.2 (25G83), 8 GB RAM, about 402 GiB free. SSH succeeded; at the
+owner's explicit request `ssh-copy-id` installed the existing Linux public
+key, followed by a successful password-free BatchMode login. No credentials,
+serial/hostname or network addresses are published.
+
+See [`NEO-RECORDER-SETUP.md`](fairydust/usb4/NEO-RECORDER-SETUP.md).
+A tracked `caffeinate -dimsu` runs on Neo and `pmset` verified its assertions;
+a sleep-blocking systemd inhibitor is active on the Linux target too. Both
+are reversible session measures, with logs/stop instructions retained.
+The Neo has private CPython 3.13.16, all four pinned m1n1 dependencies and
+fresh matching source/build at `c6a89b908ac4bf1f7b495f20531f3ea029148adb`.
+Twelve offline tests, HV import and guest-loader help pass on Neo. Native
+collector self-test confirms registry/profiler/log commands; the Preboot
+search fails without root and its error is retained. This is recorder
+validation, not M1 Pro dock evidence. The portable LLVM compiler bundle is
+being prepared; no serial handshake, target guest or boot change yet.
+
+Leave the dock/HDMI attached to the M1 Pro. Add only a direct USB data cable
+from the Neo to a free target Thunderbolt port when ready. Next: complete
+compiler smoke test, collect native target macOS metadata/cache and confirm
+its guest boot route. Neo's macOS 26 is the recorder OS, not the XNU guest.
+
 ## macOS cutover package — start here (2026-10-16)
 
 Owner wants one thoroughly prepared visit, retaining the USB4/HDMI cables.
-Only this target Mac is available: no separate trace recorder. Follow
+The Neo recorder is now available; see the newer setup status above. Follow
 [`MACOS-CUTOVER-CHECKLIST.md`](fairydust/usb4/MACOS-CUTOVER-CHECKLIST.md)
 for the native macOS baseline, exact commands, kernelcache inventory,
 return checklist and reviewed public evidence. `collect-macos-dock.sh`
@@ -19,7 +44,8 @@ separate host and a reviewed guest boot route; native macOS cannot trace
 its own MMIO with that Python client. Added IORegistry import to the ADT
 inspector and a raw DPTX hook so validateConnection bytes are retained.
 Twelve offline tests pass; collector syntax/Linux refusal checks pass.
-No real macOS run, kernel/boot/audio change, or cable change was performed.
+No target macOS run, kernel/boot/audio change, or cable change was performed;
+the newer Neo self-test is separately recorded above.
 
 The [Linux snapshot](fairydust/usb4/evidence/2026-10-16-linux-baseline.json)
 records bypass `N` and dock DP disconnected at capture time. Arm and verify
