@@ -305,6 +305,8 @@ namespace MSeries {
                 }
             }
 
+            append_spending (snapshot);
+
             var parts = new string[0];
             if (codex_panel_summary.length > 0) {
                 parts += (claude_panel_summary.length > 0 ? "CX " : "") + codex_panel_summary;
@@ -330,6 +332,35 @@ namespace MSeries {
                 update_status += " · " + snapshot_error;
             }
             status_label.set_text (update_status);
+        }
+
+        private void append_spending (Json.Object snapshot) {
+            if (!snapshot.has_member ("spending")) {
+                return;
+            }
+            var spending = snapshot.get_array_member ("spending");
+            if (spending == null || spending.get_length () == 0) {
+                return;
+            }
+            var section = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
+            section.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
+            var title = new Gtk.Label ("Estimated spend · list price") { xalign = 0 };
+            title.add_css_class ("heading");
+            section.append (title);
+            for (uint i = 0; i < spending.get_length (); i++) {
+                var item = spending.get_object_element (i);
+                var provider = (item.get_string_member ("provider") ?? "").down ();
+                var name = provider == "codex" ? "OpenAI Codex" : provider == "claude" ? "Claude" : provider;
+                append_section_metric (section, name, "$%0.2f today · $%0.2f month".printf (
+                    item.get_double_member ("today"), item.get_double_member ("month")));
+            }
+            var note = new Gtk.Label ("Pay-as-you-go equivalent of local token use, not your bill") {
+                xalign = 0, wrap = true
+            };
+            note.add_css_class ("dim-label");
+            note.add_css_class ("caption");
+            section.append (note);
+            providers_box.append (section);
         }
 
         private async void refresh_local_sessions () {
