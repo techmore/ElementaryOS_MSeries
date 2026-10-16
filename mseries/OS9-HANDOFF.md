@@ -19,6 +19,38 @@ hard timeouts, never hold the primary chat on SSH, and report active progress
 every 30 seconds. No kernel, boot, audio or system changes are authorized by
 this diagnosis.
 
+## Port2 role attempt: EIO; fixed read diagnostic prepared — 2026-10-16
+
+The owner's regular-Terminal role-change attempt returned `Input/output error`
+from `printf`, with no observed role change and no more detailed kernel error.
+The driver uses the `SWDF` task for a device-role request. `EIO` is not an
+`EPERM` authorization rejection: transport failure or a short I2C length prefix
+can produce it, and the current evidence does not distinguish the cause.
+Neo before/after capture files remain private; no raw registry or credentials
+are included here. Do not repeat role writes based only on this error.
+
+Prepared [`inspect-cd321x-io.py`](fairydust/usb4/inspect-cd321x-io.py), a stdlib
+diagnostic fixed to bus0/address0x3f, after verifying port2's sysfs ancestry,
+`tps6598x` binding and OF `i2c@39b040000/usb-pd@3f` mapping. It reads CMD1 and
+STATUS, then reads one DATA1 result byte only if the earlier CMD1 value was
+valid and idle. Each combined I2C read includes only a one-byte register
+address selector followed by read data; it does not write task/config payloads,
+scan, reset, unbind or change a role. Raw bytes, length prefixes and errno are
+reported. Driver activity can occur between transfers; this is a snapshot,
+not proof that DATA1 belongs to the earlier role attempt.
+
+Exact owner regular-Terminal command, after source review:
+
+```bash
+sudo python3 /home/sdolbec/wt-dockvideo/mseries/fairydust/usb4/inspect-cd321x-io.py
+```
+
+Six offline tests validate combined-message construction, error preservation,
+conditional DATA1, fixed read whitelist, wrong mapping/driver refusal and
+no device open in dry-run. The real sysfs `--dry-run` passed. No hardware I2C
+transaction was executed by this preparation; runner sudo remains blocked by
+`NoNewPrivs`. No reboot, power cycle or system setting change was performed.
+
 ## Latest bounded live checks — 2026-10-16
 
 [Published live-status report](fairydust/usb4/evidence/2026-10-16-neo-live-status.md):

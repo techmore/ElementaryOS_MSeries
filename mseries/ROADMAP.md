@@ -10,6 +10,12 @@ read-only live enumeration/recovery diagnosis using the Neo where useful,
 with hard timeouts in delegated workers and 30-second progress updates. The
 Neo cannot install a boot-time hypervisor under the already-running target.
 
+Owner's port2 role attempt returned EIO without a role change. A fixed,
+mapping-checked [CD321x read diagnostic](fairydust/usb4/inspect-cd321x-io.py)
+is prepared for the owner's regular Terminal; six offline tests and sysfs
+dry-run pass. No task/configuration writes or live I2C reads were performed
+by this preparation. EIO cause remains unresolved; see the current handoff.
+
 [Latest bounded live checks](fairydust/usb4/evidence/2026-10-16-neo-live-status.md)
 confirm Neo sleep assertions and Dell USB inventory, but no proxy endpoint or
 external display picture. The physical dock identity/topology remains
