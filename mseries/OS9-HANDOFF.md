@@ -24,8 +24,13 @@ and the older helper has incompatible IPC encoding.
 Added a filtered, read-only ADT inspector and a DP-IN/crossbar m1n1 trace hook;
 7 offline tests pass. Corrected `MACOS-TRACE-RUNBOOK.md` to run both hooks in
 one guest with explicit targets. No live capture or kernel/boot/audio change
-was made. Next: obtain `dptunnel-logs/dpin-adt.json`, then capture the missing
-DP-IN MMIO bring-up in the approved two-host macOS session. The HDMI watchdog
+was made. The owner attempted the ADT export under sudo in their regular
+Asahi Terminal: `errno 1: Operation not permitted`; the JSON file is empty.
+Running config has `CONFIG_STRICT_DEVMEM=y` and no `CONFIG_MTD_PHRAM`,
+consistent with the RAM read being refused even under root. Do not weaken
+protections or retry via broader sudo. Next: obtain the ADT through m1n1,
+then capture DP-IN MMIO bring-up in a two-host macOS session, requiring
+explicit owner approval before rebooting. The HDMI watchdog
 has not produced a new, unbypassed sink result and cannot yet close H1.
 
 ## USB4 dock video — resume here (2026-10-15)

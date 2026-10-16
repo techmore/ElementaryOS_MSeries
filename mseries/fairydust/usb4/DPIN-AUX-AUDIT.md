@@ -49,8 +49,17 @@ sudo python3 /home/sdolbec/wt-dockvideo/mseries/fairydust/usb4/inspect-dpin-adt.
   > /home/sdolbec/dptunnel-logs/dpin-adt.json
 ```
 
-At initial publication the live export is pending. The parser has passed
-synthetic tests; that is not a successful read of the live ADT.
+The owner attempted this command from their regular Terminal on Asahi and
+reported `errno 1: Operation not permitted`. The output file is empty. The
+running kernel configuration confirms `CONFIG_STRICT_DEVMEM=y` and
+`# CONFIG_MTD_PHRAM is not set`; the inspected kernel's `read_mem()` returns
+`EPERM` when `devmem_is_allowed()` rejects a RAM page. This is consistent
+with the refusal even under real sudo, independently of the chat runner's
+`NoNewPrivs=1` restriction. No successful live ADT read has occurred.
+
+Do not retry with broader sudo or weaken memory protections. Obtain the ADT
+through the m1n1 proxy during an explicitly approved capture session instead.
+The parser has passed synthetic tests only.
 
 ### 2. AUX path activation proves routing configuration, not AUX traffic
 
@@ -133,7 +142,9 @@ has no DP-IN block. The DCP trace must target the controller at
 ## What is still missing before an implementation is justified
 
 1. This machine's translated DP-IN register ranges and relationship graph.
-   Obtain the filtered ADT export above. This requires no reboot.
+   The live Linux ADT export above was refused. Obtain the original ADT
+   through the m1n1 proxy during the approved capture session; that route
+   requires a second computer and rebooting this target.
 2. The macOS writes/readbacks to those DP-IN blocks: power/clock/reset,
    endpoint selection, interrupt handling, and AUX/HPD enable ordering.
    The existing sources do not provide trustworthy register offsets/values

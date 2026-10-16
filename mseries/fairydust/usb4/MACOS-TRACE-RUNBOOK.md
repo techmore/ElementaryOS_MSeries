@@ -26,7 +26,7 @@ by tracing macOS driving the WD22TB4 on this exact machine.
 | m1n1 with the proxy (the Mac already boots it) | present — `/boot/m1n1/boot.bin`, m1n1 tree at `~/m1n1-build/m1n1` |
 | proxyclient Python deps (`construct`, `pyserial`) | **done** — `bash mseries/fairydust/usb4/m1n1-trace-deps.sh` (vendored off-system) |
 | DCP / DP-IN tracers | `proxyclient/hv/trace_dcp.py` plus this directory's `trace-dpin.py`; offline fixture tests pass, actual capture unverified |
-| Exact DP-IN addresses / Apple ATC index | Obtain `inspect-dpin-adt.py` output; resolve the target by physical crossbar address rather than guessing the Apple ATC index |
+| Exact DP-IN addresses / Apple ATC index | Linux export refused with `EPERM`; obtain the ADT via m1n1 during an approved capture, then resolve the target by physical crossbar address |
 | A **second computer** on the USB proxy port | not attached; required — the Mac cannot drive its own m1n1 proxy |
 | The **macOS iBoot payload** for `run_guest.py` | not on the ESP (`/boot/asahi/all_firmware.tar.gz` is the installer's factory/camera set, not macOS) |
 
@@ -35,9 +35,11 @@ original `trace_dptx.py` only traces standalone `dptx-phy`/`lpdptx-phy*` nodes;
 it does not capture the missing ATC DP-IN blocks. `trace_dcp.py` defaults to
 `dcp0`, so select the external controller explicitly.
 
-## Confirm the address mapping without rebooting
+## Linux ADT export attempt — refused on this kernel
 
-From the regular host Terminal (this chat runner cannot elevate with sudo):
+The owner already attempted this from their regular Asahi Terminal (this
+chat runner cannot elevate with sudo). It failed with `errno 1: Operation
+not permitted`, leaving an empty output file. Recorded command:
 
 ```bash
 sudo python3 /home/sdolbec/wt-dockvideo/mseries/fairydust/usb4/inspect-dpin-adt.py \
@@ -45,8 +47,9 @@ sudo python3 /home/sdolbec/wt-dockvideo/mseries/fairydust/usb4/inspect-dpin-adt.
 ```
 
 This only reads preserved ADT RAM and outputs filtered device metadata. It
-does not read guessed DP-IN MMIO. If `/dev/mem` policy refuses the read, save
-the error and obtain the ADT from the m1n1 proxy during the approved capture;
+does not read guessed DP-IN MMIO. The running kernel has
+`CONFIG_STRICT_DEVMEM=y` and no `CONFIG_MTD_PHRAM`. Obtain the ADT from the
+m1n1 proxy during the approved capture instead of repeating this command;
 do not change kernel security settings or load modules to work around it.
 
 ## Procedure (shape; confirm the two flagged items first)

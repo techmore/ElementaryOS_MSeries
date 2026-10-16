@@ -7,8 +7,10 @@ Dock-video update 2026-10-16:
 [`DP-IN/AUX audit`](fairydust/usb4/DPIN-AUX-AUDIT.md) identifies the missing
 Apple DP-IN node family and corrects the macOS capture plan. The current
 force-link probe reaches DCP but leaves the display disconnected. Next:
-confirm the original ADT's DP-IN ranges, then capture their bring-up with
-the DCP in one approved, two-host macOS hypervisor session. Seven offline
+confirm the original ADT's DP-IN ranges through m1n1, then capture their bring-up
+with the DCP in one approved, two-host macOS hypervisor session. The owner's
+sudo ADT export on Asahi failed with `EPERM`; strict `/dev/mem` is enabled
+and the ADT memory driver is not built. Seven offline
 tooling checks pass; no display, kernel, or hardware qualification is claimed.
 The specific regression reports and reproduction steps are tracked in
 [`BUG-FIX-ROADMAP.md`](BUG-FIX-ROADMAP.md).
