@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Orchard
+GenericName=Incus Manager
+Comment=Manage Incus containers and VMs
+Exec=orchard-incus
+Icon=io.github.techmore.OrchardIncus
+Categories=System;
+Keywords=incus;lxc;container;vm;
+StartupWMClass=io.github.techmore.OrchardIncus
+StartupNotify=true
