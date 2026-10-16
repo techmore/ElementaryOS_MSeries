@@ -58,6 +58,7 @@ as a connected display; it now counts only DP/HDMI connectors (checked live:
 old count would include eDP, new count 0). Not done: router-side DP-IN hook
 design and the refcount question (G1/G2, DeepSeek), DPRX teardown backport (G3),
 any hardware step (G4/G5, owner-gated).
+Update 2026-10-16 (later): recorded the DeepSeek bridge review (B1-B8) and Codex bundle status; read-only pre-reboot inspection found the GRUB entry lacks `dprx_bypass=1` (N1), `RECOVERY.md` named missing files (N2, repo copy corrected), no initramfs/install script yet (N3), a 5 s source deadline (N4). Reboot plan and post-reboot checks: `fairydust/usb4/POST-REBOOT-CHECKLIST.md`. Nothing applied.
 
 ## DP-IN source milestone — offline implementation, 2026-10-16
 

@@ -1,5 +1,7 @@
 # Recovery if the bootloader (m1n1 boot.bin) breaks
 
+> **Stale file names (checked 2026-10-16):** the quoted note below names `boot.bin.KNOWN-GOOD-usb4-test` and `boot.bin.KNOWN-GOOD-fairydust-original`, which are not present in `/boot/m1n1/`. Files that exist: `boot.bin.KNOWN-GOOD-pre-usb4-20261015-152345` (most recent), `...-20261015-140455`, `...-pre-usb4-20261014-135219`, `...-pre-m1n1-20261014-142142`, `...-pre-dtb-20261014-141046`. Use one of those in step 4 and re-check with `ls` first. See `REVIEW-2026-10-16-GAPS.md`.
+
 > Copy of `/boot/m1n1/RECOVERY.txt` on the Asahi ESP (the ESP copy is readable from macOS).
 
 ```

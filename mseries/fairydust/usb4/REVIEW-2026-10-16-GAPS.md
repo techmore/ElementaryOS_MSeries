@@ -102,6 +102,48 @@ or consciously accepted before the owner reboots:
 5. Confirm the initramfs contains the new modules (the stash notes say the old
    initramfs once carried stale `appledrm.ko`).
 
+## Pre-reboot gate: findings from inspecting the prepared bundle (Claude, read-only)
+
+Inspected `~/Documents/Codex/2026-10-16/hey-x20/work/dpin-implementation/`
+(`source/`, `deployment/`) and the live `/boot`. Nothing installed, loaded or
+edited. Bundle claims about validation were not re-run.
+
+| Item | Result |
+|---|---|
+| **B2** PHY load order | **Largely refuted, downgrade.** `appledrm.ko` declares `depends: phy-apple-dpin`, which depends on `phy-apple-atc`, and `phy-apple-dpin` has the `of:...apple,t6000-dpin` alias, so loading `appledrm` loads the PHY first. Separately `phy_get()` returns `-EPROBE_DEFER` when a `phys` phandle's provider is not registered (`phy-core.c:641`), and `devm_phy_optional_get` only maps `-ENODEV` to NULL. The review's "NULL forever, no deferral" does not hold when the DT has `phys`. Remaining check: all five `.ko` (including `phy-apple-dpin`) must be installed under `/usr/lib/modules/<kv>/`, `depmod` run, and the initramfs must carry them. |
+| **B1** probe-fail | **Still open in the code** (`apple.c:685-728,763-765`: deep-validation failure returns `-EINVAL` and fails the NHI probe). Mitigation is pairing: the prepared `boot-dpin.bin` DT diff is exactly the three intended properties plus two `phy@e50000/e58000` nodes, and the modules ship with it. Residual risk: `boot.bin` loads for **every** GRUB entry, so a DT/module mismatch on any entry loses USB4 on that entry. |
+| **NEW N1 (blocker for the stated plan)** | The `elementary-usb4-dptunnel` GRUB entry in `/boot/grub/custom.cfg` has `thunderbolt.allow_dp_tunnel=1 thunderbolt.dprx_timeout=3600000` and **no `thunderbolt.dprx_bypass=1`**. The live `Y` is a runtime write and resets on reboot (`DP-TUNNEL-RE.md`: "bypass resets on module reload/boot"). So the "first boot keeps the bypass safeguard" plan does not hold as configured: with the dock attached at boot, DPRX runs **unbypassed with a 1-hour timeout** until someone writes sysfs after login. That is the retry storm (1,684+ lines) and the section 9 unplug-wedge window. `dprx_timeout` is `0444`, so it can only be set on the command line. Fix: a separate new GRUB entry (leave the current one as fallback) with `thunderbolt.dprx_bypass=1 thunderbolt.dprx_timeout=15000`. Editing GRUB is the owner's call. |
+| **NEW N2** | `RECOVERY.md` (and its ESP copy text) tell the owner to copy `boot.bin.KNOWN-GOOD-usb4-test` / `-fairydust-original`. Those files are **not present** in `/boot/m1n1/`. Existing known-good images: `...-pre-dtb-20261014-141046`, `...-pre-m1n1-20261014-142142`, `...-pre-usb4-20261014-135219`, `...-pre-usb4-20261015-140455`, `...-pre-usb4-20261015-152345`. No `RECOVERY.txt` is listed in `/boot/m1n1/` either. The recovery steps need a corrected file name before a boot.bin change. |
+| **N3** | `deployment/` has the five modules and `boot-dpin.bin`, but no repacked initramfs and no install script yet (`repack-dpin-initramfs.py` exists). Not ready to apply; the order (modules + `depmod`, initramfs, `boot.bin`, GRUB entry) should be written down and the old `appledrm.ko` in the current initramfs is known to have been stale once. |
+| **B3/B4** | Unchanged by this inspection; still open. |
+
+### Suggested one-boot batch (owner decides each step)
+
+1. Fix `RECOVERY.md`/ESP note to name a file that exists; keep the 20261015-152345 image as the rollback target.
+2. New GRUB entry with `dprx_bypass=1` and `dprx_timeout=15000` (N1); do not alter the current entry.
+3. Install modules + `depmod`, repack initramfs, then `boot.bin`; verify with `modinfo`/`lsinitramfs` before rebooting.
+4. First boot: expect "DP source ready ... before DPRX" and no timeout storm; a bypassed DPRX line is not progress.
+
+### Follow-up spot-checks of B3/B4 (Claude, read-only, same tree)
+
+- **B3 confirmed:** `apple_nhi_dp_source_get()` returns `-EOPNOTSUPP` when
+  `port != source->port || !async` (`apple.c:613-614`), and `tb_dp_activate()`
+  now propagates a negative return. A tunnel on host DP-IN port 6 would fail
+  activation instead of timing out. The dock's current pairing is `0:5 <-> 1:14`
+  (port 5, the mapped one), so today's dock is unaffected; other docks or a port
+  swap would be.
+- **B4 confirmed:** the status is read in `tb_dp_dprx_work` (new `source_failed`
+  pre-read) and again in the gate before the bypass check in `tb_dp_wait_dprx`.
+- **New N4 (timing):** `apple_nhi_dp_source_get()` sets a **5 s** source deadline
+  (`apple.c:622`), shorter than the 12 s default DPRX window. If DCP start takes
+  longer than 5 s the source is marked failed and the tunnel fails fast, even with
+  bypass armed. Fine as a design if intended; the first boot log should show which
+  limit was hit, and it is a candidate cause of a "failed" first run that is not a
+  hardware wall.
+- The ordering itself (adapters enabled, then source requested, status gate before
+  bypass, discovered tunnels adopted via `tb_tunnel_start_dp_source`) reads as
+  described.
+
 ## Tooling
 
 | # | Defect | Status |
