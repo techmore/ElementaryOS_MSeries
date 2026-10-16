@@ -1,0 +1,361 @@
+{
+  "research_date": "2026-10-16",
+  "target": {
+    "chip": "M1 Pro",
+    "soc": "T6000",
+    "board": "j314s",
+    "memory_gb": 32
+  },
+  "project": {
+    "repo": "techmore/ElementaryOS_MSeries",
+    "sha": "247d5c064dc93029d7944d9f60879feb64cc5ef8"
+  },
+  "branch_comparisons": [
+    {
+      "source": "https://github.com/joshuaswarren/omarchy-mlx/compare/f856bf864e3a...agent/OmlxCache-rows",
+      "status": "diverged",
+      "ahead_by": 13,
+      "behind_by": 687,
+      "base": "f856bf864e3adf64fbdd7a8881b05e5c0f8dbf67",
+      "merge_base": "776d506c206b79ff18c50df60ed368f712e23ae2",
+      "unique_commits": [
+        {
+          "sha": "150c6d60c09eb91174c71db2a2900a09e2720625",
+          "subject": "omlx rows A4-A21: pre-registered harness (run_rows.sh legs, devbox protocol tests) + compat patch 0004 (memory-monitor active-memory probe)"
+        },
+        {
+          "sha": "96218141f16ffc022fc4449db35df798efc12725",
+          "subject": "rows a8/a20 legs: engine reload after settings PUT (scheduler reads turboquant/specprefill settings at init)"
+        },
+        {
+          "sha": "aded63ef6a5c9493a27b86254e0e752f400a529c",
+          "subject": "rows README: M2 queue uses the transferred /tmp/omlx-rows/run_rows.sh path"
+        },
+        {
+          "sha": "37baa77fe111684716b78faffa7ae8a8a649d99e",
+          "subject": "rows README: v0.7.28 wheel (5c15fba) staged + sha-verified for the a4 leg"
+        },
+        {
+          "sha": "ea74d93897618aeeba34ff643b844e6aecc7b8d2",
+          "subject": "rows legs: per-run OMLX_BASE_PATH so shared-venv settings.json is never touched"
+        },
+        {
+          "sha": "cef85222cf8103bff2a613cd9e748e4ba173990c",
+          "subject": "rows legs: discovery reads the real HF hub cache read-only (glob-resolved, no committed user path); a8 draft glob follows"
+        },
+        {
+          "sha": "5c3edb41665dfd89d765bf9b4e9f9056ed390ef8",
+          "subject": "rows legs: greedy-equality compares CONTENT digests + token counts, never raw bodies (request ids/timings differ per request); found by the live a4 run where text equality held but body-hash compared FAIL"
+        },
+        {
+          "sha": "9fe3438c5e1db90740c54c43cf651a244fed720a",
+          "subject": "merge origin/main (mcp installer fix, v0.7.28 receipts) into agent/OmlxCache-rows"
+        },
+        {
+          "sha": "ea2be8a3239f2c4c3353fe3b8ec924942940734b",
+          "subject": "rows a15: pass balanced guard tier, not boolean flag"
+        },
+        {
+          "sha": "6fab502a22198390f597f2f507800d7299d884c6",
+          "subject": "rows a15/a5: capture enforcer even when baseline hook is absent; start server before a5 references"
+        },
+        {
+          "sha": "2333c6312f3118832174de9e5d7201d2a9dd28fc",
+          "subject": "rows legs: prefix admin settings/stats/model APIs with /admin"
+        },
+        {
+          "sha": "3c9d8b87664e5eaa885d91b1b5ef773f8b857956",
+          "subject": "rows runner: write isolated settings.json at OMLX_BASE_PATH root"
+        },
+        {
+          "sha": "f5b6478fee3385adadcae26fc5036a90376a3d9f",
+          "subject": "rows runner: checksum nested artifact files without sha256sum directory errors"
+        }
+      ]
+    },
+    {
+      "source": "https://github.com/joshuaswarren/omarchy-mlx/compare/f856bf864e3a...agent/bonsai2-serving",
+      "status": "diverged",
+      "ahead_by": 5,
+      "behind_by": 1651,
+      "base": "f856bf864e3adf64fbdd7a8881b05e5c0f8dbf67",
+      "merge_base": "e86387695727164c8515ee42c0dec7d2d691fdbe",
+      "unique_commits": [
+        {
+          "sha": "446a9a8427aaaee061e6cf7a32f3100eb90b2b10",
+          "subject": "bonsai2: pass owner token in _release_reservation - finally owns clean-exit path"
+        },
+        {
+          "sha": "adaa6c2c0d7d5314d8741021c5bb8ba1d6f46aec",
+          "subject": "tests: REPO/serve only; no /tmp shadow; skip cleanly when MLX absent"
+        },
+        {
+          "sha": "d69f6e763654939c2bce1c94974df4e9e3b61643",
+          "subject": "bonsai2: validate_artifact hook reuses pack_footprint (no tensor load)"
+        },
+        {
+          "sha": "ee19d8fcb387d19aa427f7e3bba31c288551b491",
+          "subject": "bonsai2: validate_artifact hook on server.py + hardened tests (Main review)"
+        },
+        {
+          "sha": "98373d10b9b33dd58903bb90765701e1b535eabb",
+          "subject": "bonsai2: remove skipUnless for mlx_omarchy_serve -- it is OUR checked-in package"
+        }
+      ]
+    },
+    {
+      "source": "https://github.com/joshuaswarren/omarchy-mlx/compare/f856bf864e3a...agent/fambonsai",
+      "status": "diverged",
+      "ahead_by": 5,
+      "behind_by": 752,
+      "base": "f856bf864e3adf64fbdd7a8881b05e5c0f8dbf67",
+      "merge_base": "9f4f4f74753e0abf05590dcd7d15ee57ab6da054",
+      "unique_commits": [
+        {
+          "sha": "897f3b01a697e4038efe4607a16c67c5583d508e",
+          "subject": "Bonsai family: Vulkan shaders + dispatch + mlx fast op + patch"
+        },
+        {
+          "sha": "ecd23fbab201ed3650df7f49c295d10eccc4990d",
+          "subject": "Bonsai: parity tests for fast op + composed fallback chain"
+        },
+        {
+          "sha": "ef82ce4f8e13fef7ed4a48920d08d34f02e3dc61",
+          "subject": "Bonsai: GPU-path parity tests for the native dispatched path"
+        },
+        {
+          "sha": "41a205f51c3947faa90d11184746884683ccfcf4",
+          "subject": "receipt: parity matrix v1.7b - A8 stock macOS SpecPrefill pass narrows but does not prove Vulkan cause"
+        },
+        {
+          "sha": "a25544592a3428fa5a3c656e4b4a4109a5392dfa",
+          "subject": "bonsai-qmv: fix patch drift against MLX 0.32.3 (array(uint32_t{1}) for bitwise_and; reshape free-fn; const biases copy; quantized_matmul mode arg)"
+        }
+      ]
+    },
+    {
+      "source": "https://github.com/joshuaswarren/omarchy-mlx/compare/f856bf864e3a...agent/jw16-decode-gap7",
+      "status": "diverged",
+      "ahead_by": 8,
+      "behind_by": 1284,
+      "base": "f856bf864e3adf64fbdd7a8881b05e5c0f8dbf67",
+      "merge_base": "b791539ed9350fbd381aab605b40a5dbecabb7b5",
+      "unique_commits": [
+        {
+          "sha": "0e827551cff7c94bd53c2e0681525a5a99042139",
+          "subject": "decode: fold the attention q/k RMSNorm into the rope dispatch (rope_rms_norm, F3)"
+        },
+        {
+          "sha": "601a616bd48f540fc51e8727726d64bdb7c495bf",
+          "subject": "rope_rms_norm: default the internal rope norm tail args (build fix)"
+        },
+        {
+          "sha": "15241ef40d7b0eba56ba755fdee4128edeae11aa",
+          "subject": "rope-norm eval: std::bit_cast for the eps push-constant bits"
+        },
+        {
+          "sha": "cddf450dcd1108b05888105dd73061b493fb2824",
+          "subject": "chain-dep-bench: folded-arm fusion-feasibility prototype (DecodeGap7)"
+        },
+        {
+          "sha": "92ff89e7aee4c36abf82c4e344c31d9d48ebcec4",
+          "subject": "rope_rms_norm: capture output shape/dtype before the weight push_back"
+        },
+        {
+          "sha": "17abfbfeb858ad4c82e484b9e2a011b734cea021",
+          "subject": "receipt: F3 rope-norm fusion W2 gate-fail (refute; no land)"
+        },
+        {
+          "sha": "5a3b85035a97c79b31c94f3cd79eebd56ac071bb",
+          "subject": "rope_norm: reload value across the reduction barrier + precise chain (DecodeGap9)"
+        },
+        {
+          "sha": "43be36e4b9ea0b830d6bfb787d7b9a0b1b6ca3b0",
+          "subject": "rope_norm: reorder multiply chain to match production (weight * norm) * value"
+        }
+      ]
+    },
+    {
+      "source": "https://github.com/joshuaswarren/omarchy-mlx/compare/f856bf864e3a...agent/laya-head-latency",
+      "status": "diverged",
+      "ahead_by": 1,
+      "behind_by": 996,
+      "base": "f856bf864e3adf64fbdd7a8881b05e5c0f8dbf67",
+      "merge_base": "0edb6f6d7cac41eb5b45a7dff48418303396ec8a",
+      "unique_commits": [
+        {
+          "sha": "e3a4f044f2e566b9d75ce31d6d8a26bf3230a85a",
+          "subject": "probe: resume ab runs from per-arm checkpoints"
+        }
+      ]
+    },
+    {
+      "source": "https://github.com/omacom/omarchy-mac-pkgs/compare/ffe5246c98a8...joshuaswarren:feat/cpu-governor-on-ac",
+      "status": "diverged",
+      "ahead_by": 1,
+      "behind_by": 19,
+      "base": "ffe5246c98a858a315dc87ade808162f07f55d59",
+      "merge_base": "d8100ec9442a7612e5a686939cc6bbb1bd4fc2bd",
+      "unique_commits": [
+        {
+          "sha": "62c9527cba23580a2780f670cf8ea760d79c670f",
+          "subject": "omarchy-mac: run the CPUs on the performance governor on AC"
+        }
+      ]
+    },
+    {
+      "source": "https://github.com/joshuaswarren/omarchy-mlx/compare/f856bf864e3a...mlx-lm-0.32-series",
+      "status": "diverged",
+      "ahead_by": 2,
+      "behind_by": 995,
+      "base": "f856bf864e3adf64fbdd7a8881b05e5c0f8dbf67",
+      "merge_base": "972772e6c85ebba56a9461f71ea43474645c6113",
+      "unique_commits": [
+        {
+          "sha": "7efcdb8ae63f4adb1352659e098dd83055856deb",
+          "subject": "mlx-lm 0.32 patch series, so oMLX runs on the Omarchy stack"
+        },
+        {
+          "sha": "2d67dc1c34e428b240c4f31ee36b8d30ef46a195",
+          "subject": "Review round 1: drop .orig sections, clear error when the 0.32 series is absent"
+        }
+      ]
+    },
+    {
+      "source": "https://github.com/joshuaswarren/omarchy-mlx/compare/f856bf864e3a...w71/muse-gate-up-fusion",
+      "status": "diverged",
+      "ahead_by": 2,
+      "behind_by": 1,
+      "base": "f856bf864e3adf64fbdd7a8881b05e5c0f8dbf67",
+      "merge_base": "75cc013be5a7092c1ea5ff09a8f5396aecd526d4",
+      "unique_commits": [
+        {
+          "sha": "cf16e2a406917df265e3cc41a947c28f909eeece",
+          "subject": "Muse adapter: opt-in gate+up expert fusion (MLX_OMARCHY_MUSE_FUSE_GATE_UP=1), CPU bit-identity tests"
+        },
+        {
+          "sha": "2da255d8a7ba972bd55c6e85d0f1593a9e251848",
+          "subject": "Muse adapter: gate+up fusion skips ring ranks (sharded_load order), with a test"
+        }
+      ]
+    }
+  ],
+  "repositories": [
+    {
+      "full_name": "joshuaswarren/omarchy-ane",
+      "html_url": "https://github.com/joshuaswarren/omarchy-ane",
+      "default_branch": "main",
+      "pushed_at": "2026-10-16T01:53:56Z",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "spdx_id": "MIT",
+        "url": "https://api.github.com/licenses/mit",
+        "node_id": "MDc6TGljZW5zZTEz"
+      }
+    },
+    {
+      "full_name": "joshuaswarren/omarchy-mlx",
+      "html_url": "https://github.com/joshuaswarren/omarchy-mlx",
+      "default_branch": "main",
+      "pushed_at": "2026-10-16T13:09:08Z",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "spdx_id": "MIT",
+        "url": "https://api.github.com/licenses/mit",
+        "node_id": "MDc6TGljZW5zZTEz"
+      }
+    },
+    {
+      "full_name": "maralcbr/omarchy-mx-mac",
+      "html_url": "https://github.com/maralcbr/omarchy-mx-mac",
+      "default_branch": "main",
+      "pushed_at": "2026-10-12T06:52:08Z",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "spdx_id": "MIT",
+        "url": "https://api.github.com/licenses/mit",
+        "node_id": "MDc6TGljZW5zZTEz"
+      }
+    },
+    {
+      "full_name": "omacom/omarchy-mac-pkgs",
+      "html_url": "https://github.com/omacom/omarchy-mac-pkgs",
+      "default_branch": "main",
+      "pushed_at": "2026-10-16T10:15:24Z",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "spdx_id": "MIT",
+        "url": "https://api.github.com/licenses/mit",
+        "node_id": "MDc6TGljZW5zZTEz"
+      }
+    },
+    {
+      "full_name": "omacom/omarchy-mac",
+      "html_url": "https://github.com/omacom/omarchy-mac",
+      "default_branch": "quattro",
+      "pushed_at": "2026-10-08T03:03:41Z",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "spdx_id": "MIT",
+        "url": "https://api.github.com/licenses/mit",
+        "node_id": "MDc6TGljZW5zZTEz"
+      }
+    },
+    {
+      "full_name": "omacom/omarchy",
+      "html_url": "https://github.com/omacom/omarchy",
+      "default_branch": "quattro",
+      "pushed_at": "2026-10-16T15:48:33Z",
+      "license": {
+        "key": "mit",
+        "name": "MIT License",
+        "spdx_id": "MIT",
+        "url": "https://api.github.com/licenses/mit",
+        "node_id": "MDc6TGljZW5zZTEz"
+      }
+    }
+  ],
+  "reviewed_pull_requests": [
+    {
+      "html_url": "https://github.com/joshuaswarren/omarchy-mlx/pull/201",
+      "title": "Muse adapter: opt-in gate+up expert fusion",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "updated_at": "2026-10-16T11:57:09Z",
+      "head": "2da255d8a7ba972bd55c6e85d0f1593a9e251848",
+      "branch": "joshuaswarren:w71/muse-gate-up-fusion"
+    },
+    {
+      "html_url": "https://github.com/omacom/mesa/pull/6",
+      "title": "honeykrisp: M1 compute speedups and the deferred CDM barrier on G13G (stacked on #3, #4, #5)",
+      "state": "open",
+      "draft": false,
+      "merged": false,
+      "updated_at": "2026-10-15T13:00:52Z",
+      "head": "f144c7949b7d960f26677b671341d5a123057ddf",
+      "branch": "joshuaswarren:honeykrisp-omarchy-v3"
+    },
+    {
+      "html_url": "https://github.com/omacom/omarchy-mac-pkgs/pull/33",
+      "title": "omarchy-mac: run the CPUs on the performance governor on AC",
+      "state": "open",
+      "draft": true,
+      "merged": false,
+      "updated_at": "2026-10-12T01:37:01Z",
+      "head": "62c9527cba23580a2780f670cf8ea760d79c670f",
+      "branch": "joshuaswarren:feat/cpu-governor-on-ac"
+    }
+  ],
+  "mlx_release_to_main": {
+    "html_url": "https://github.com/joshuaswarren/omarchy-mlx/compare/v0.7.33...f856bf864e3a",
+    "status": "ahead",
+    "ahead_by": 4,
+    "behind_by": 0
+  }
+}

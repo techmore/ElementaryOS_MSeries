@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Local AI benchmarks on M1 Pro 32 GB</title>
+<style>body{font-family:system-ui,sans-serif;max-width:62rem;margin:2rem auto;padding:0 1rem;line-height:1.6;color:#17212b}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}td,th{padding:.65rem;border:1px solid #ccd3db;text-align:left}th{background:#edf3f8}.table{overflow-x:auto}.note{padding:1rem;background:#f3f6fa;border-left:4px solid #3975b8}a{color:#205da1}code{background:#eef2f6;padding:.15rem .3rem}footer{margin:2rem 0;color:#526170}</style></head><body>
+<p><a href="index.html">ElementaryOS M-Series</a> · <a href="features.html">Features</a></p>
+<h1>Local AI on the M1 Pro 32 GB</h1>
+<p>Measured October 16, 2026 on the working elementary OS 9 desktop. Qwen3.5 4B through private Linux MLX is the practical default: it passed 9/15 short tasks, 9/9 corrected MCP workflows and real Newelle/memory/coding checks. Qwen9 scored 12/15 short tasks but later crossed the desktop RAM reserve; it now requires a larger optional budget.</p>
+<div class="note">Newelle provides local desktop chat and personal summary memory. The coding client uses a separate 16K profile. A six-GiB desktop memory reserve and fan/temperature limits take priority over completing an inference request. The real coding edit passed in 87.31 seconds, leaving at least 8.51 GiB available at no more than 2513 fan RPM. Bonsai completed a resumed 12/15 quality composite; its tool/native qualification remains in progress.</div>
+<h2>Completed short task trials</h2>
+<div class="table"><table><thead><tr><th>Model and runtime</th><th>Tasks</th><th>Estimated decode tok/s</th><th>Minimum free GiB</th><th>Peak fan RPM</th></tr></thead><tbody>
+<tr><td>Qwen3.5 9B 4-bit · MLX</td><td>12/15</td><td>14.73</td><td>9.45</td><td>2533</td></tr>
+<tr><td>Qwen3.5 4B 4-bit · MLX</td><td>9/15</td><td>19.76</td><td>10.65</td><td>2538</td></tr>
+<tr><td>Qwen3 4B Instruct 2507 · MLX</td><td>6/15</td><td>11.55</td><td>14.64</td><td>2529</td></tr>
+<tr><td>Qwen2.5 Coder 7B Q4_K_M · llama.cpp</td><td>6/15</td><td>15.13</td><td>11.80</td><td>2662</td></tr>
+<tr><td>Liquid LFM2.5 1.2B Q4_K_M · llama.cpp</td><td>9/15</td><td>63.59</td><td>14.90</td><td>2528</td></tr>
+</tbody></table></div>
+<p>Five fixed cases repeated three times: extraction, scheduling arithmetic, log calibration with an injected instruction, and two pure Python functions. These deterministic trials test this small workload, not general model intelligence. Decode rates are API timing estimates; cache behavior differs between runtimes. Fan RPM is a noise proxy, not a dBA measurement. Existing desktop apps remained open, but their memory footprint changed between runs; headroom differences are not model allocation measurements.</p>
+<h2>Tools and apps</h2>
+<p>The corrected MCP workflow suite has completed at 9/9 for the newer Qwen3.5 4B and 6/9 for the older Qwen3 4B. Liquid completed 3/9 and the 7B coder 0/9. Qwen9's corrected run was interrupted by the memory guard. Earlier note instructions had ambiguous punctuation; those counts are retained as exploratory data. The workflows calculate a time, create and read back a note, and ignore instructions planted in a file. Tasks and Calendar also passed real data-service tests using temporary synthetic records that were removed afterwards. Newelle's summary memory recalled a synthetic preference after its handler was reconstructed.</p>
+<p>The initial MCP OS layer supplies typed tools for Tasks, Calendar, scoped workspace files, system measurements, the Energy Monitor cache and fault signatures. Other installed apps are inventoried with explicit adapter coverage. Mail, messaging, arbitrary windows and complete browser control still require dedicated adapters and end-to-end tests.</p>
+<p>Native 4B trials averaged 221.74 prompt tokens/s (512-token input) and 25.17 decode tokens/s (128-token output). Native and API timing workloads differ; see the methods and raw logs. The small model failed kernel/log repair-advice checks and is excluded from dedicated diagnosis. Deterministic fault collection remains active; automatic model diagnosis is off.</p>
+<p>A real Tasks-to-model-to-note workflow passed through production EDS and stdio MCP, followed by note creation and read-back. Private records were removed from eval input, and owned test data was cleaned up.</p>
+<h2>Runtime and fault tracking</h2>
+<p>Private MLX v0.7.33 passes matrix, integer-shift and compiled rsqrt/RMSNorm smoke checks. Its private Honeykrisp compute driver leaves desktop Mesa separate. The kernel/app fault watcher is active at login, records bounded signatures and previous-boot evidence, and does not execute model-generated repairs.</p>
+<p>The six-hour upstream workflow discovers public developer branches and PR heads across the selected Mac, MLX, Mesa, ANE and kernel repositories. The recorded snapshot contains 1,103 public branch heads. Discovery produces review candidates; it does not update pins or qualify hardware.</p>
+<h2>Reproduce and inspect</h2>
+<ul><li><a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/local-ai/receipts/2026-10-16.md">Methods, observed failures, app capability matrix and long-trial status</a></li>
+<li><a href="https://github.com/techmore/ElementaryOS_MSeries/tree/main/mseries/local-ai/receipts/2026-10-16">Raw synthetic answers, tool traces, resources, source pins and interrupted runs</a></li>
+<li><a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/local-ai/README.md">Setup, launchers, resource policy and removal</a></li></ul>
+<p>The offline factory runtime stages successfully and image pruning/configuration checks pass. A complete image build and hardware boot with this AI layer remain separate qualification steps.</p>
+<footer>Updated October 16, 2026. Personal task/calendar contents, memory, journals, credentials and screenshots are excluded from publication.</footer>
+</body></html>

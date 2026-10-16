@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# Stage a pinned offline MLX runtime and compute-only ICD. Never start a worker.
+set -euo pipefail
+work=$(mktemp -d "${TMPDIR:-/tmp}/mseries-local-ai.XXXXXX")
+trap 'rm -rf "$work"' EXIT
+checkout() {
+  local repo=$1 pin=$2 dest=$3
+  git init -q "$dest"
+  git -C "$dest" remote add origin "https://github.com/$repo.git"
+  git -C "$dest" fetch -q --depth 1 origin "$pin"
+  git -C "$dest" checkout -q --detach FETCH_HEAD
+  [[ $(git -C "$dest" rev-parse HEAD) == "$pin" ]]
+}
+checkout joshuaswarren/omarchy-mlx 33630f9c1eeefe5fc985a28bed0585432c2c014e "$work/mlx"
+checkout joshuaswarren/mesa-1 7faf04c065c5376d2d58a1e5b33a60118109c99e "$work/mesa"
+curl -fsSL --retry 3 --proto '=https' \
+  https://github.com/joshuaswarren/omarchy-mlx/releases/download/v0.7.33/omarchy-mlx-vendor-wheels-v0.7.33-cp314-aarch64.tar \
+  -o "$work/vendor.tar"
+printf '%s  %s\n' bc9f8c7527e1324d25212922ca0afd2acc2411ec7cdd4b26e2773bffdef32f0e "$work/vendor.tar" | sha256sum --check --status
+tar -xf "$work/vendor.tar" -C "$work"
+vendor=$work/omarchy-mlx-vendor-wheels-v0.7.33-cp314-aarch64
+bash "$work/mlx/install.sh" --system --dest-root "$DESTDIR" --vendor "$vendor" \
+  --lock "$vendor/requirements-lock.txt" --python /usr/bin/python3.14
+python3 "$SRCDIR/mseries/local-ai/configure-prefill.py" "$DESTDIR/usr/lib/omarchy-mlx/venv/lib/python3.14/site-packages/mlx_omarchy_serve/__main__.py"
+python3 - "$DESTDIR/usr/bin" <<'PY'
+from pathlib import Path
+import sys
+for path in Path(sys.argv[1]).glob('*mlx*'):
+    if path.is_file() and path.read_bytes().startswith(b'#!/usr/bin/env bash'):
+        text=path.read_text()
+        line='export OMARCHY_MLX_SYSTEM_PREFIX=/usr/lib/omarchy-mlx\n'
+        if line not in text:
+            path.write_text(text.replace('\n','\n'+line,1))
+PY
+meson setup "$work/build" "$work/mesa" --prefix=/usr/lib/omarchy-mlx/compute --libdir=lib \
+  -Dgallium-drivers= -Dvulkan-drivers=asahi -Dplatforms= -Dglx=disabled \
+  -Degl=disabled -Dgbm=disabled -Dgles1=disabled -Dgles2=disabled \
+  -Dopengl=false -Dllvm=enabled -Dbuildtype=release
+ninja -C "$work/build" -j "${MSERIES_AI_JOBS:-2}"
+DESTDIR="$work/stage" meson install -C "$work/build"
+prefix=$DESTDIR/usr/lib/omarchy-mlx
+install -Dm755 "$work/stage/usr/lib/omarchy-mlx/compute/lib/libvulkan_asahi.so" "$prefix/vulkan/libvulkan_asahi.so"
+python3 - "$work/stage/usr/lib/omarchy-mlx/compute/share/vulkan/icd.d" "$prefix/vulkan/honeykrisp_icd.aarch64.json" <<'PY'
+import json,sys
+from pathlib import Path
+sources=list(Path(sys.argv[1]).glob('*asahi*.json'))
+assert len(sources)==1, 'Expected exactly one generated Asahi ICD'
+data=json.loads(sources[0].read_text())
+data['ICD']['library_path']='/usr/lib/omarchy-mlx/vulkan/libvulkan_asahi.so'
+Path(sys.argv[2]).write_text(json.dumps(data,indent=2)+'\n')
+PY
+printf '%s\n' 7faf04c065 > "$prefix/vulkan/mesa-git-sha"
+checkout ggml-org/llama.cpp 7182ef71e6d5dd0c8ea76486fac134fcd25025d4 "$work/llama"
+cmake -S "$work/llama" -B "$work/llama-build" -G Ninja -DGGML_VULKAN=ON \
+  -DGGML_NATIVE=OFF -DLLAMA_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release
+cmake --build "$work/llama-build" --target llama-server llama-bench -j "${MSERIES_AI_JOBS:-2}"
+install -d "$DESTDIR/usr/lib/mseries-ai/llama/bin"
+cp -a "$work/llama-build/bin/llama-server" "$work/llama-build/bin/llama-bench" \
+  "$work/llama-build/bin"/lib*.so* "$DESTDIR/usr/lib/mseries-ai/llama/bin/"
+doc=$DESTDIR/usr/share/doc/mseries-local-ai
+install -Dm644 "$work/mlx/LICENSE" "$doc/MLX-LICENSE"
+install -Dm644 "$work/mesa/docs/license.rst" "$doc/MESA-LICENSE.rst"
+install -Dm644 "$work/llama/LICENSE" "$doc/LLAMA-LICENSE"
+install -m644 "${BASH_SOURCE[0]}" "$doc/build-local-ai.sh"
+printf '%s\n' 'MLX source: joshuaswarren/omarchy-mlx@33630f9c1eeefe5fc985a28bed0585432c2c014e' \
+  'Compute ICD source: joshuaswarren/mesa-1@7faf04c065c5376d2d58a1e5b33a60118109c99e' \
+  'Model weights are not included; first-user setup downloads explicit pinned models.' > "$doc/SOURCE"

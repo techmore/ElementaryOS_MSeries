@@ -1,6 +1,6 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
-Last updated 2026-10-14. Day-to-day pending checks live in the robot: `mseries-verify status`
+Last updated 2026-10-16. Day-to-day pending checks live in the robot: `mseries-verify status`
 (seed: `mseries/local-ai/verify-checks.json`). This file is the human-readable plan.
 The specific regression reports and reproduction steps are tracked in
 [`BUG-FIX-ROADMAP.md`](BUG-FIX-ROADMAP.md).
@@ -17,6 +17,9 @@ with the corrected live-session hardware overlay before progressing.
 
 | Feature | How | Evidence |
 |---|---|---|
+| Local desktop and personal AI | Private MLX v0.7.33 + Newelle summary memory + typed OS MCP | Qwen9 12/15 short tasks, 9/9 tool workflows; synthetic EDS calendar/task round trips and personal-memory recall; [full qualification](local-ai/receipts/2026-10-16.md) |
+| Quiet inference and coding profiles | One worker, six-GiB reserve, early cooling and hard fan/temperature limits; Crush 16K profile | Short suites measured with apps retained; long coding/Bonsai tests are queued for idle windows, with interrupted runs retained |
+| Kernel and developer branch watch | Live fault signatures/previous boot; six-hour all-head and PR discovery | 41 assistant tests and 4 image wiring tests; 1,103 public branch heads observed; recurring enhancement activates on main |
 | CodexBar quota ETA | Visible per-limit forecasts and the earliest available limit in the bar; exhausted quotas show reset time | 11 ETA tests, 5 refresh tests, GTK render probe, and installed-module/live-snapshot checks passed |
 | CodexBar usage freshness | One-minute backend polling; asynchronous five-second panel reads; throttled refresh on open | Meson policy tests and delayed-IPC GTK probe passed; installed on the working desktop |
 | Login-screen stall fixed | `lightdm` drop-in waits for the eDP connector; display crossbar in the fairydust initramfs (`install-initramfs-crossbar.sh`) | greeter 119.7 s -> 0.82 s; dp-xbar deferrals 14 -> 0; first-dcp -> DRM 2.57 s -> 0.01 s |
@@ -311,3 +314,7 @@ browser integration and remaining Files/Gala patches remain open.
 
 - Power and battery roadmap written 2026-10-16 (`POWER-ROADMAP.md`): goals, baseline, workstreams A to G, phases 0 to 4,
   owner decisions list. First free change installed: Electron apps to native Wayland at next login.
+
+- Local AI follow-through (October 16): newer Qwen3.5 4B 9/15 short tasks and 9/9 corrected MCP workflows; older Qwen3 4B 6/9 corrected workflows. Final app, coding and native throughput tests wait for idle windows while other owner tests continue. See the October 16 qualification receipt for current status.
+
+- Measured default is now Qwen3.5 4B: real Newelle/MCP, separate-process memory and Crush edit passed. Qwen9 moved to larger-budget optional presets after the live reserve guard stopped it. Small-model repair advice failed and is excluded; deterministic kernel/app watching is active. Bonsai and the synthetic Tasks-to-note bridge remain in qualification.

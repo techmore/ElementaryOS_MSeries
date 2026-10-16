@@ -1,0 +1,174 @@
+{
+  "label": "Desktop baseline, no managed inference",
+  "method": "Real stdio MCP, three sequential read-only adapter calls per surface. Backend response latency, not GUI frame latency. No private contents published.",
+  "calls": [
+    {
+      "tool": "system_status",
+      "repeat": 1,
+      "elapsed_s": 0.005398762999902829,
+      "transport_ok": true
+    },
+    {
+      "tool": "list_apps",
+      "repeat": 1,
+      "elapsed_s": 0.022370640999724856,
+      "transport_ok": true,
+      "apps_count": 45
+    },
+    {
+      "tool": "list_tasks",
+      "repeat": 1,
+      "elapsed_s": 0.05137984100019821,
+      "transport_ok": true,
+      "tasks_count": 5,
+      "errors_count": 0
+    },
+    {
+      "tool": "list_calendar_events",
+      "repeat": 1,
+      "elapsed_s": 0.006856893000076525,
+      "transport_ok": true,
+      "events_count": 0,
+      "errors_count": 0
+    },
+    {
+      "tool": "get_energy",
+      "repeat": 1,
+      "elapsed_s": 0.0013497110003299895,
+      "transport_ok": true,
+      "available": false
+    },
+    {
+      "tool": "recent_faults",
+      "repeat": 1,
+      "elapsed_s": 9.333399975730572e-05,
+      "transport_ok": true,
+      "events_count": 1
+    },
+    {
+      "tool": "workspace_list_files",
+      "repeat": 1,
+      "elapsed_s": 6.875100007164292e-05,
+      "transport_ok": true,
+      "files_count": 1
+    },
+    {
+      "tool": "workspace_read_file",
+      "repeat": 1,
+      "elapsed_s": 7.991699931153562e-05,
+      "transport_ok": true
+    },
+    {
+      "tool": "system_status",
+      "repeat": 2,
+      "elapsed_s": 0.00522272200032603,
+      "transport_ok": true
+    },
+    {
+      "tool": "list_apps",
+      "repeat": 2,
+      "elapsed_s": 0.020043634999638016,
+      "transport_ok": true,
+      "apps_count": 45
+    },
+    {
+      "tool": "list_tasks",
+      "repeat": 2,
+      "elapsed_s": 0.005297847000292677,
+      "transport_ok": true,
+      "tasks_count": 5,
+      "errors_count": 0
+    },
+    {
+      "tool": "list_calendar_events",
+      "repeat": 2,
+      "elapsed_s": 0.006649184000707464,
+      "transport_ok": true,
+      "events_count": 0,
+      "errors_count": 0
+    },
+    {
+      "tool": "get_energy",
+      "repeat": 2,
+      "elapsed_s": 0.0004319179997764877,
+      "transport_ok": true,
+      "available": false
+    },
+    {
+      "tool": "recent_faults",
+      "repeat": 2,
+      "elapsed_s": 7.512499996664701e-05,
+      "transport_ok": true,
+      "events_count": 1
+    },
+    {
+      "tool": "workspace_list_files",
+      "repeat": 2,
+      "elapsed_s": 5.6707999647187535e-05,
+      "transport_ok": true,
+      "files_count": 1
+    },
+    {
+      "tool": "workspace_read_file",
+      "repeat": 2,
+      "elapsed_s": 6.9625999458367e-05,
+      "transport_ok": true
+    },
+    {
+      "tool": "system_status",
+      "repeat": 3,
+      "elapsed_s": 0.0053486389997488,
+      "transport_ok": true
+    },
+    {
+      "tool": "list_apps",
+      "repeat": 3,
+      "elapsed_s": 0.020554094000544865,
+      "transport_ok": true,
+      "apps_count": 45
+    },
+    {
+      "tool": "list_tasks",
+      "repeat": 3,
+      "elapsed_s": 0.006848017000265827,
+      "transport_ok": true,
+      "tasks_count": 5,
+      "errors_count": 0
+    },
+    {
+      "tool": "list_calendar_events",
+      "repeat": 3,
+      "elapsed_s": 0.025182606999806012,
+      "transport_ok": true,
+      "events_count": 0,
+      "errors_count": 0
+    },
+    {
+      "tool": "get_energy",
+      "repeat": 3,
+      "elapsed_s": 0.0006095850003475789,
+      "transport_ok": true,
+      "available": false
+    },
+    {
+      "tool": "recent_faults",
+      "repeat": 3,
+      "elapsed_s": 0.0003059170003325562,
+      "transport_ok": true,
+      "events_count": 1
+    },
+    {
+      "tool": "workspace_list_files",
+      "repeat": 3,
+      "elapsed_s": 0.00011587499921006383,
+      "transport_ok": true,
+      "files_count": 1
+    },
+    {
+      "tool": "workspace_read_file",
+      "repeat": 3,
+      "elapsed_s": 0.0001077919996532728,
+      "transport_ok": true
+    }
+  ]
+}

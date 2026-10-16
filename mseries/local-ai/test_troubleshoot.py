@@ -17,7 +17,7 @@ class TriageTests(unittest.TestCase):
                         'http://127.0.0.1/?redirect=evil', 'file:///tmp/api'):
             with self.subTest(address=address), self.assertRaises(ValueError):
                 triage.local_endpoint(address)
-        self.assertEqual(triage.local_endpoint('http://127.0.0.1:8767/'), triage.DEFAULT_ENDPOINT)
+        self.assertEqual(triage.local_endpoint('http://127.0.0.1:8766/'), triage.DEFAULT_ENDPOINT)
 
     def test_authorization_and_common_secret_redaction(self):
         text = 'Authorization: Bearer abc123\npassword=hunter2 token=hello api_key=abc'
@@ -109,6 +109,7 @@ class WatchLoopTests(unittest.TestCase):
             state = Path(directory)
             (state / 'auto-diagnose').touch()
             with patch.object(watcher, 'STATE', state), \
+                 patch.object(watcher, 'previous_boot', return_value={'available': False, 'events': []}), \
                  patch.object(watcher.subprocess, 'Popen', side_effect=[context, worker]) as launch:
                 with self.assertRaises(SystemExit):
                     watcher.main()
@@ -141,6 +142,7 @@ class PerformanceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory, \
              patch.object(triage.Path, 'home', return_value=Path(directory)), \
              patch.object(triage, 'start_server') as start, \
+             patch.object(triage, 'unit_state', return_value='inactive'), \
              patch.object(triage.subprocess, 'run') as stop, \
              patch.object(triage, 'stage'):
             stop.return_value.returncode = 0
@@ -150,7 +152,7 @@ class PerformanceTests(unittest.TestCase):
                         self.fail('concurrent inference allowed')
             start.assert_called_once()
             stop.assert_called_once()
-            self.assertIn('mseries-troubleshooter-model.service', stop.call_args.args[0])
+            self.assertIn(triage.MODEL_UNIT, stop.call_args.args[0])
 
     def test_failed_inference_still_releases_dedicated_model(self):
         from types import SimpleNamespace
@@ -158,6 +160,7 @@ class PerformanceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory, \
              patch.object(triage.Path, 'home', return_value=Path(directory)), \
              patch.object(triage, 'start_server'), \
+             patch.object(triage, 'unit_state', return_value='inactive'), \
              patch.object(triage.subprocess, 'run') as stop, \
              patch.object(triage, 'stage'):
             stop.return_value.returncode = 0
