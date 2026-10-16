@@ -49,6 +49,11 @@ CM creates the replacement tunnel before the old one finishes tearing down. The
 count turns that overlap into a no-op instead of a double activate or an early
 deactivate.
 
+Executable model of these semantics (overlap, cancel-before-run, stop without
+start, failed ACK, discovery): [`test-dpin-refcount-model.py`](test-dpin-refcount-model.py),
+6 tests pass. It checks the *design* is self-consistent; it is not kernel code and
+proves nothing about hardware.
+
 ## Open questions this design does not close
 
 - DP-IN index vs router adapter number: `0:5`->dpin0 and `0:6`->dpin1 comes from
