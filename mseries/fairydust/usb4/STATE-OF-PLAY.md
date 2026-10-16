@@ -129,20 +129,19 @@ costs 60 seconds and requires a sink actually present on the dock.
 
 ## NEXT (cheapest first)
 
-0. Put a sink on the dock; confirm `1:13`/`1:14` exist. Nothing is measurable
-   without this.
-1. Extract the macOS kernelcache **we already have**
-   (`/boot/asahi/kernelcache.release.mac13j`) and pull the display kexts
-   (`AppleDCP`, crossbar, DPTX). `img4tool -eo`, or a pure-Python IM4P
-   extractor if `img4tool` is absent (it is absent today). This starts the
-   static path with **no** macOS boot and no hardware.
-   A macOS visit is only needed for the DCP **firmware** blob and the dynamic
-   trace.
-2. Recover the DP-IN enable sequence, either:
-   - **dynamic:** m1n1 hypervisor trace of a macOS guest (heavy), or
-   - **static:** Ghidra/REA on `AppleDCP` / `AppleDisplayCrossbar` and the DCP
-     firmware out of the kernelcache (far cheaper **if** it works).
-3. Smallest driver change -> CI build -> one hardware test.
+0. **[no hardware] Disassemble Apple's `AppleDisplayCrossbar`** — specifically
+   `AppleATCDPINAdapterPort` / `AppleT600xDisplayCrossbar::bringConnectionUp` —
+   and recover the DP-IN adapter enable sequence. The binary is already
+   extracted: see
+   `evidence/2026-10-16-apple-display-binaries-extracted-locally.md`.
+   Cross-check the recovered offsets against
+   `drivers/mux/apple-display-crossbar.c`. **This is the current frontier task
+   and it needs no hardware and no macOS boot.**
+1. (hardware) Put a sink on the dock; confirm `1:13`/`1:14` exist. Nothing is
+   measurable without this — milestone M0.
+2. Smallest driver change -> CI build -> one hardware test.
+3. A macOS visit is now needed **only** for the DCP *firmware* blob and the
+   dynamic trace — do not schedule it until step 0 is exhausted.
 
 ## Honest assessment
 
