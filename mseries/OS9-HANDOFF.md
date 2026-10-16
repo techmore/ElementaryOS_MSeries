@@ -4,6 +4,12 @@ Updated 2026-10-16. Repository: techmore/ElementaryOS_MSeries.
 
 ## Neo recorder accessed / sleep inhibited — 2026-10-16
 
+Latest result: **Neo recorder core tools ready**. Official LLVM archive
+SHA-256 verified, and `READY-CHECK.sh` passed Python/HV imports, loader help,
+and actual AArch64 assembly/link/objcopy/nm (`nop; ret` ->
+`1f2003d5c0035fd6`). Sleep assertions remain active. Target macOS baseline,
+USB proxy handshake and guest qualification remain; no dock-video success.
+
 The owner supplied the second machine: MacBook Neo / Mac17,5 / A18 Pro,
 macOS 26.6.2 (25G83), 8 GB RAM, about 402 GiB free. SSH succeeded; at the
 owner's explicit request `ssh-copy-id` installed the existing Linux public

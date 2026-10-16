@@ -102,17 +102,27 @@ Do not equate these source revisions or reuse their binaries interchangeably.
 
 ## Compiler completion and remaining capture gates
 
+**Completed:** the official LLVM archive passed SHA-256 verification and
+the recorder's `READY-CHECK.sh` passed on the Neo: Python 3.13.16, m1n1 HV
+import, guest-loader help, and actual AArch64 assemble/link/objcopy/nm test
+producing `1f2003d5c0035fd6` for `nop; ret`. Sleep assertions were still
+active. The recorder's core tools are ready; the remaining gates below are
+the physical USB link and target guest/metadata, not a compiler download.
+Extraction of any remaining bundle contents continues locally on Neo in a
+tracked nohup job, independent of SSH; see `finish-llvm.log` and
+`finish-llvm.done` in the recorder folder.
+
 m1n1's host Python client assembles small target-side instruction stubs.
 Python imports alone are insufficient: the Neo also needs a working AArch64
 assembler, ELF linker, objcopy and nm. The official portable LLVM bundle is
-being prepared under this project folder, without a system installation:
+prepared under this project folder, without a system installation:
 
 - [LLVM 23.1.3 release](https://github.com/llvm/llvm-project/releases/tag/llvmorg-23.1.3).
 - File: `LLVM-23.1.3-macOS-ARM64.tar.xz` (about 1.57 GB download).
 - Expected SHA-256:
   `3dcfd88aec10be204a24037bcb0dc0ad777882e9dbe8ac60e2639060d8a794b1`.
-- Before calling the toolchain ready, verify that hash, extract the bundle,
-  select its `bin/` directory in `env.sh`, and test `ARMAsm("nop; ret")`.
+- Hash verification and `ARMAsm("nop; ret")` have passed using the bundle's
+  `bin/` directory selected in `env.sh`.
 
 After compiler completion, the still-required items are:
 
