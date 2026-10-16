@@ -116,6 +116,11 @@
         "apple_atcphy_dp_tunnel_get",
         "apple_atcphy_dp_tunnel_put"
       ]
+    },
+    {
+      "check": "compiled j314s crossbar phandle/status",
+      "exit_code": 0,
+      "output": "/soc/mux@b0304c000 status=okay; tunnel mux control index=1; no runtime DT claim"
     }
   ],
   "checkpatch": [

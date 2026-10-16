@@ -175,6 +175,24 @@ firmware scheduling. Configured OpenCode's scoped build-log review also
 identified the distinction between object/DTB checks and full kernel/runtime
 qualification; it did not perform a hardware test.
 
+## Coordination correction for the concurrent host-stack draft
+
+A concurrent `evidence/2026-10-16-host-stack-decomposed-dpin-and-crossbar-routing.md`
+draft was observed after this series landed. Its register interpretation and
+"PHY was never the wall" conclusion are superseded by the original-byte,
+dispatch and Ghidra checks here. Existing common wake/lane-mode definitions
+are not proof that experiment 2's null-PHY callback path programs tunnel
+PCLK/AUSPLL. `+0x04` is IRQ status, not the handshake; clearing `+0x0c` requests
+activation, and ACK is `+0x10`. Do not build a driver from those older guesses.
+
+The candidate compiled j314s DTB was also explicitly checked: the tunnel's
+mux phandle resolves to `/soc/mux@b0304c000`, **status okay**, control index 1.
+This is an offline artifact result, not a claim the running boot.bin contains
+that tree. Keep runtime DT, source DT and compiled candidate distinct. Do not
+repack/install boot.bin or reboot under the current constraint. The concurrent
+draft was left untouched; reconcile it against this handoff before publishing
+its conclusions or starting another implementation of the same provider.
+
 ## Next task for DeepSeek / Codex — advance the recorded frontier
 
 1. Review the actual new series, not the superseded guess that `+0x04` is
