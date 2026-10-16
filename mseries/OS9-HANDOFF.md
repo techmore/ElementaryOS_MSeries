@@ -388,6 +388,8 @@ restarted; the panel UI is not visually verified until next login.
 Next: confirm the Sessions section after re-login; Claude account quota needs
 credentials CodexBar can read.
 
+Follow-up: panel also shows CodexBar's own list-price spend estimate (today/month, from the snapshot `spending` field) and a clearer OpenCode Go quota message. Not visually verified.
+
 ## Current hardware state — 2026-10-14
 
 The transformed elementary OS 9 desktop is running on a 14-inch M1 Pro through
