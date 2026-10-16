@@ -54,3 +54,8 @@ If the goal is a working external monitor on this Mac, Tracks 1/2 may already
 deliver it today. If the goal is specifically to use the Dell dock's HDMI, that
 is Track 3 and is research with an uncertain end. The owner should say which one
 is the real requirement so effort is spent on the right one.
+
+## Owner's answer (2026-10-16)
+
+The requirement is the Dell dock's HDMI (the monitor stays on the dock). Track 3 is therefore the
+main line; Tracks 1-2 remain a cheap fallback only. The stop rule above still applies.

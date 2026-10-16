@@ -180,6 +180,23 @@ Ordered work, smallest first, each with its done-criterion:
 
 Report back by appending to this ledger (status column) and the PR #53 thread.
 
+## Status update after Codex checkpoint (patches 0007-0009) — Claude, 2026-10-16
+
+Codex's handoff (`DCP-SOURCE-BRIDGE.md`) says B1-B8 are addressed in the checkpoint.
+I spot-checked the committed `0008` patch and found: B1 `dev_warn("DP source disabled ...
+retaining USB4 data support")` replaces the probe failure; B2 `devm_phy_get` (mandatory)
+when `apple,dp-tunnel` is set, else optional; B7 the `apple,transport-index` check with
+`index > 1`; B3 test asserts `-EOPNOTSUPP` for the non-async case. B4/B5/B8 I did not
+re-verify. Treat B1, B2, B7 as **fixed (spot-checked)** and the rest as **fixed per Codex,
+unverified by me**; runtime qualification is still outstanding.
+
+N3 (install script): a reviewed draft now exists, [`install-dpin-batch.sh`](install-dpin-batch.sh).
+Dry-run by default; it verified the current (unfrozen) bundle's SHA-256s and vermagic and
+printed the plan and GRUB entry without writing anything. It has **not** been run with
+`--apply`. Known side effect, documented in the script header: the shared module tree means
+the existing `elementary-usb4-dptunnel` entry loses USB4 after install (use the new entry or
+roll back). Remaining before use: Codex freezes the bundle so the manifests are final.
+
 ## Tooling
 
 | # | Defect | Status |

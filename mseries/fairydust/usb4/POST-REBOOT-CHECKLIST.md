@@ -50,6 +50,9 @@ line can set either before the dock enumerates. The current entry has
 
 ## C. Apply order (owner-approved, one write at a time)
 
+`bash install-dpin-batch.sh --bundle DIR` prints this whole plan as a dry run (no root, writes nothing);
+`sudo bash install-dpin-batch.sh --bundle DIR --apply` performs it. Read its header first (shared-module-tree side effect).
+
 1. Modules into `/usr/lib/modules/<kv>/` + `depmod -a <kv>` (no nested `<kv>/<kv>`).
 2. Repacked initramfs under the new entry's name only.
 3. New GRUB entry.
