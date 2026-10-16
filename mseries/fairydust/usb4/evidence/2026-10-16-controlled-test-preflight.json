@@ -1,0 +1,168 @@
+{
+  "date": "2026-10-16",
+  "source_revision": "c6fd9068fb69a3d4235a705fef2e0364748ff2b4",
+  "source_tree_clean_after_build": true,
+  "patch_sha256": "c25c8eb2580dd461212a759890539a36b63e9d105eed0b11888fd1391d6a03c0",
+  "patch_reconstructed_source_files": 8,
+  "module_validation": {
+    "kernelrelease": "7.1.13-elementary-fairydust-usb4-dptunnel",
+    "module_layout_reference": "original installed phy-apple-atc.ko",
+    "module_init_cleanup_offsets": [
+      "0000000000000130",
+      "00000000000004a8"
+    ],
+    "loaded_export_count": 16181,
+    "staged_export_count": 58,
+    "modules": [
+      {
+        "file": "phy-apple-atc.ko",
+        "vermagic": "7.1.13-elementary-fairydust-usb4-dptunnel SMP preempt mod_unload aarch64",
+        "module_init_cleanup_offsets": [
+          "0000000000000130",
+          "00000000000004a8"
+        ],
+        "undefined_count": 30,
+        "missing_exports": [],
+        "sha256": "4af34975549a0b49312d453b92fcdcdd43c480855a2466f577fdc6c9beec7587",
+        "depends": ""
+      },
+      {
+        "file": "phy-apple-dpin.ko",
+        "vermagic": "7.1.13-elementary-fairydust-usb4-dptunnel SMP preempt mod_unload aarch64",
+        "module_init_cleanup_offsets": [
+          "0000000000000130",
+          "00000000000004a8"
+        ],
+        "undefined_count": 50,
+        "missing_exports": [],
+        "sha256": "0d13ee3b962cdbb184cbc8ffba8c4461dd24a9c15425e9674dba1ba262ac6e2b",
+        "depends": "phy-apple-atc"
+      },
+      {
+        "file": "appledrm.ko",
+        "vermagic": "7.1.13-elementary-fairydust-usb4-dptunnel SMP preempt mod_unload aarch64",
+        "module_init_cleanup_offsets": [
+          "0000000000000130",
+          "00000000000004a8"
+        ],
+        "undefined_count": 286,
+        "missing_exports": [],
+        "sha256": "47bb23677528a4e39203a227e7969b628e3bdae49c907b295c857d3fbc78b930",
+        "depends": "phy-apple-dpin"
+      },
+      {
+        "file": "thunderbolt.ko",
+        "vermagic": "7.1.13-elementary-fairydust-usb4-dptunnel SMP preempt mod_unload aarch64",
+        "module_init_cleanup_offsets": [
+          "0000000000000130",
+          "00000000000004a8"
+        ],
+        "undefined_count": 203,
+        "missing_exports": [],
+        "sha256": "111643a9d74b96326c252c8d771d5c7eb3c676b58062ca4fb0a7a917a35ab6b2",
+        "depends": ""
+      },
+      {
+        "file": "thunderbolt_apple.ko",
+        "vermagic": "7.1.13-elementary-fairydust-usb4-dptunnel SMP preempt mod_unload aarch64",
+        "module_init_cleanup_offsets": [
+          "0000000000000130",
+          "00000000000004a8"
+        ],
+        "undefined_count": 91,
+        "missing_exports": [],
+        "sha256": "84d9fb4d168be1d25af4c312cff36652869a7460a62bb46fa61f021d37ac6947",
+        "depends": "thunderbolt,appledrm"
+      }
+    ],
+    "btf_module_layout_retained": true,
+    "note": "Rust disabled only for C-module build. BTF module layout retained; BTF data generation skipped without vmlinux. MODPOST uses KBUILD_MODPOST_WARN=1 without full kernel Module.symvers; every undefined symbol independently matches an actual loaded or bundled export. Hardware ABI/runtime qualification remains."
+  },
+  "boot_validation": {
+    "status": "prepared only; no system write",
+    "valid_embedded_trees": 110,
+    "replaced_tree": "apple,j314s",
+    "old_offset": 4441711,
+    "old_size": 93217,
+    "new_size": 93776,
+    "semantic_property_changes": [
+      [
+        "/soc/cio@b01ac0000/nhi@f00000",
+        "apple,dp-in-port"
+      ],
+      [
+        "/soc/cio@b01ac0000/nhi@f00000",
+        "apple,dp-source"
+      ],
+      [
+        "/soc/dcp@28cc00000",
+        "apple,dp-tunnel-phy"
+      ]
+    ],
+    "added_nodes": [
+      "/soc/cio@b01ac0000/phy@e50000",
+      "/soc/cio@b01ac0000/phy@e58000"
+    ],
+    "boot_sha256": "871591e2f447fdc7faace07d24dd82c86675f25e04a05d10c8b81e9b72ec782b",
+    "dtb_sha256": "3bd762b0fc4098d76868e05434fb09682646314b4578e5b15b5b0e278843ed15",
+    "output_sha256": "6702f2c7f88f166187183d9fc32776a22d2ba3bbf804854ed74533db93d4f8a6",
+    "prefix_suffix_unchanged": true
+  },
+  "fallback_compatibility": {
+    "fallback_compatible": true,
+    "original_dcp_phys_preserved": true,
+    "all_existing_phys_dependencies_preserved": true,
+    "root_modules_untouched": true,
+    "boot_candidate_sha256": "6702f2c7f88f166187183d9fc32776a22d2ba3bbf804854ed74533db93d4f8a6",
+    "scope": "Static/source compatibility reviewed independently; fallback boot not exercised. Existing supplier properties are preserved, old drivers ignore vendor phandles, root modules/original initramfs/default entry remain unchanged. New DPIN nodes unclaimed by old kernels. No unbind/reload during first test.",
+    "source_revision": "c6fd9068fb69a3d4235a705fef2e0364748ff2b4"
+  },
+  "logic_groups": {
+    "managed_phy_lookup": 11,
+    "bridge": 27,
+    "previous_handshake_clock_connection": 29
+  },
+  "compiled_board_checks": 2,
+  "fresh_clean_module_builds": [
+    "phy",
+    "drm",
+    "thunderbolt"
+  ],
+  "schema": "binding docs and target/control NHI schemas pass without diagnostics",
+  "checkpatch": "0 errors; 4 warnings (line length, binding split, allocation style, generic MAINTAINERS)",
+  "initramfs": {
+    "sha256": "89c245f58d71d3b71c5e936697310297b5810a8bc6eefdb4353688b8da6b9acb",
+    "all_five_module_hashes_match_final_bundle": true,
+    "unrelated_entries_preserved": true,
+    "original_initramfs_untouched": true,
+    "module_preload_before_udev_verified": true
+  },
+  "test_entry": {
+    "id": "elementary-usb4-dpin-controlled",
+    "dprx_bypass": 1,
+    "dprx_timeout": 15000,
+    "default_unchanged": true
+  },
+  "hardware_result": "No hardware test yet; no new wake/EDID/picture claim.",
+  "final_image_verification": {
+    "status": "PASS: actual final image verified offline",
+    "source_revision": "c6fd9068fb69a3d4235a705fef2e0364748ff2b4",
+    "initramfs_sha256": "89c245f58d71d3b71c5e936697310297b5810a8bc6eefdb4353688b8da6b9acb",
+    "all_five_archived_module_hashes_match": true,
+    "ordered_preload_before_udev_coldplug": true,
+    "archived_thunderbolt_option_overrides": false,
+    "unique_test_parameters": {
+      "thunderbolt.allow_dp_tunnel": "1",
+      "thunderbolt.dprx_bypass": "1",
+      "thunderbolt.dprx_timeout": "15000"
+    },
+    "original_grub_entries_preserved": true,
+    "note": "Host modprobe --show-depends inherits current host /proc/cmdline (3600000); that display is not a staged boot option. Actual first-boot /proc/cmdline and /sys/module parameters remain required hardware evidence."
+  },
+  "installer_regression_groups": [
+    "real nlink0 plus hardlink/shared inode rejection",
+    "GRUB unique parameters and collisions",
+    "scratch apply/external-writer refusal/rollback"
+  ],
+  "install_manifest_sha256": "e163c4fdaab41905aafa56fb2ce22f033d351aec878652c66e1af5edfab13a7f"
+}

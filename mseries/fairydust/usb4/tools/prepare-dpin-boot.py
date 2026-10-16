@@ -41,10 +41,11 @@ def normalized(nodes):
     arrays={'phys':'#phy-cells','power-domains':'#power-domain-cells',
             'iommus':'#iommu-cells','sound-dai':'#sound-dai-cells','mboxes':'#mbox-cells',
             'resets':'#reset-cells','pwms':'#pwm-cells','clocks':'#clock-cells',
+            'mux-controls':'#mux-control-cells',
             'assigned-clocks':'#clock-cells','assigned-clock-parents':'#clock-cells',
             'dmas':'#dma-cells','interrupts-extended':'#interrupt-cells'}
     bare={'remote-endpoint','panel','apple,sart','post-init-providers','interrupt-parent',
-          'apple,dp-source'}
+          'apple,dp-source','apple,dp-tunnel-phy','reset-domains'}
     result={}
     for p,v in nodes.items():
         result[p]={}
@@ -52,6 +53,9 @@ def normalized(nodes):
             if key=='phandle':continue
             if key in bare or key.startswith('pinctrl-') and key!='pinctrl-names':
                 value=tuple(ph[x] for x in cells(value))
+            elif key=='gpio-ranges':
+                seq=cells(value);assert len(seq)%4==0
+                value=tuple((ph[seq[i]],seq[i+1:i+4]) for i in range(0,len(seq),4))
             elif key in arrays:
                 seq=cells(value);i=0;items=[]
                 while i<len(seq):
@@ -85,12 +89,14 @@ def prepare(boot,dtb):
     added={base+'/phy@e50000',base+'/phy@e58000'}
     assert set(b)-set(a)==added and not set(a)-set(b),'unexpected added/removed nodes'
     allowed={(base+'/nhi@f00000','apple,dp-source'),(base+'/nhi@f00000','apple,dp-in-port'),
-             ('/soc/dcp@28cc00000','phys')}
+             ('/soc/dcp@28cc00000','apple,dp-tunnel-phy')}
     changed={(p,k) for p in a for k in a[p].keys()|b[p].keys() if a[p].get(k)!=b[p].get(k)}
     assert changed==allowed,('unexpected semantic DT changes',sorted(changed-allowed))
     nhi=new[base+'/nhi@f00000'];dcp=new['/soc/dcp@28cc00000'];dpin=new[base+'/phy@e50000']
     assert cells(nhi['apple,dp-in-port'])==(5,) and nhi['apple,dp-source']==dcp['phandle']
-    assert dcp['phys']==dpin['phandle'] and dpin['status']==b'okay\0'
+    assert dcp['apple,dp-tunnel-phy']==dpin['phandle'] and dpin['status']==b'okay\0'
+    assert a['/soc/dcp@28cc00000']['phys']==b['/soc/dcp@28cc00000']['phys'], 'legacy PHY changed'
+    assert all(a[p].get('phys')==b[p].get('phys') for p in a), 'existing PHY dependency changed'
     assert new[base+'/phy@e58000']['status']==b'disabled\0'
     result=boot[:off]+dtb+boot[off+old_size:]
     assert result[:off]==boot[:off] and result[off+len(dtb):]==boot[off+old_size:]

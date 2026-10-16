@@ -6,6 +6,20 @@ run or review the reboot without re-deriving it. Evidence behind each item is in
 facts stay in [STATE-OF-PLAY.md](STATE-OF-PLAY.md); append results there, not here.
 The owner approves each step that touches boot config, the ESP or `/usr/lib/modules`.
 
+## Current final-plan correction — Codex, 2026-10-16
+
+Use [CONTROLLED-TEST.md](CONTROLLED-TEST.md) and the final preflight evidence.
+Patch 0010 preserves all existing PHY dependencies; no fallback provider is
+replaced. The unique initramfs carries the five modules and private regenerated
+metadata, preloaded before udev. **Do not replace root modules or run root depmod
+for this test.** The old section C/module-replacing shell installer is superseded.
+Write unique initramfs, append entry, global boot payload last, with verified
+backups/hash guards. Default/original images/root modules stay untouched.
+Source is frozen/rebuilt and actual initramfs checks pass. Section D remains the
+postboot evidence checklist. No one-shot boot is armed by the installer.
+The owner already authorized batched boot preparation; no repeated per-file
+approval is required. Hardware qualification remains pending.
+
 ## Agreed order of work (DeepSeek's readiness verdict, 2026-10-16)
 
 DeepSeek found nothing broken but the first boot is **not ready**: the module

@@ -1,5 +1,23 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Controlled-test preparation resumed — 2026-10-16
+
+The owner resumed at fallback compatibility, with no repeated discovery.
+Patch 0010 preserves DCP's original phys and every existing PHY dependency;
+only the new driver consumes apple,dp-tunnel-phy through a managed getter.
+Independent source review and 11 lookup fault/refcount groups pass. Static
+fallback compatibility is addressed; fallback boot/runtime remains untested.
+
+The frozen source c6fd906 was clean-rebuilt for all five modules, followed by
+version/layout/export checks and actual staged-image verification. The new
+initramfs alone carries the new modules and metadata; root modules, original
+initramfs, kernel/default and existing GRUB entries remain untouched. The
+separate entry uses bypass=1 and timeout=15000. Exact artifacts, hash-guarded
+installer, rollback and collector: [CONTROLLED-TEST.md](fairydust/usb4/CONTROLLED-TEST.md).
+The earlier root-module-replacing installer is superseded for this test.
+No reboot, module reload/unbind, cable move or hardware success is claimed.
+Deployment status will be recorded here after final preflight/application.
+
 Last updated 2026-10-16. Day-to-day pending checks live in the robot: `mseries-verify status`
 (seed: `mseries/local-ai/verify-checks.json`). This file is the human-readable plan.
 

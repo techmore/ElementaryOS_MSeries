@@ -21,6 +21,9 @@
 # boot.bin, so they get the new device tree (extra DP-IN nodes they have no driver for).
 # Rollback restores everything from the saved directory.
 # Written 2026-10-16 by Claude; NOT YET RUN. Review before use; the bundle must be frozen first.
+# SUPERSEDED for the current controlled test: root modules must remain intact.
+# See CONTROLLED-TEST.md and tools/apply-controlled-test.py. Legacy dry-run
+# retained for comparison; --apply is disabled below to avoid mixing plans.
 set -euo pipefail
 
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -34,6 +37,10 @@ while (($#)); do
     *) echo "unknown argument: $1" >&2; exit 2;;
   esac
 done
+if ((apply)); then
+  echo 'Superseded: use the isolated-initramfs manifest installer in CONTROLLED-TEST.md.' >&2
+  exit 2
+fi
 [[ -n $bundle && -d $bundle ]] || { echo "need --bundle DIR (the 'deployment' directory)" >&2; exit 2; }
 bundle=$(cd -- "$bundle" && pwd)
 ((apply == 0)) || [[ $EUID -eq 0 ]] || { echo "--apply needs root (sudo)" >&2; exit 1; }

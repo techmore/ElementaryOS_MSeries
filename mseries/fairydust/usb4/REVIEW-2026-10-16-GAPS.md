@@ -223,3 +223,20 @@ not hardware closure or a complete upstream teardown-series qualification.
 Next resolve global-DT compatibility/rollback for default and fallback
 kernels before any deployment. No new modules/boot payload/initramfs were
 installed, and no reboot or cable change occurred in this batch.
+
+## DeepSeek current handoff — controlled test, 2026-10-16
+
+Resumed directly at fallback compatibility. Patch 0010 preserves ordinary
+DCP phys and uses a managed vendor-reference getter (11 fault/refcount groups,
+independently reviewed). Frozen source c6fd906 rebuilt from cleaned module
+outputs; all five version/layout/export checks pass. The final real initramfs
+was inspected for all five hashes, preload-before-coldplug and absence of
+Thunderbolt parameter overrides. Separate entry: bypass1/timeout15000. N1/N3
+preparation gaps addressed by the isolated initramfs, hash-guarded installer and
+rollback. Root modules/default/original images are preserved, superseding the
+root-module-replacing shell draft. Five-second source deadline remains N4.
+
+No hardware test has run. Next: one-shot controlled boot, confirm actual loaded
+module build IDs and parameters, capture PHY/source errors and external EDID/modes.
+No unbind/reload/cable exercises or repeated binary/port discovery. See
+CONTROLLED-TEST.md and evidence/2026-10-16-controlled-test-preflight.json.

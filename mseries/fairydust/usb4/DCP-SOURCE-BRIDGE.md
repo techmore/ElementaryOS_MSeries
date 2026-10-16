@@ -5,6 +5,14 @@ Keep the tested 0003 HDMI-adapter preference. This is original experimental
 Linux source plus attributed upstream lifetime fixes, not hardware-qualified
 USB4 video support. [STATE-OF-PLAY](STATE-OF-PLAY.md) records hardware results.
 
+## Later fallback fix and controlled-test plan
+
+Patch 0010 supersedes the earlier global-DT blocker and PHY lookup description
+below. It preserves legacy phys, adds a separate managed DP-IN reference and
+uses an isolated test initramfs. Read [CONTROLLED-TEST.md](CONTROLLED-TEST.md)
+for final artifacts, fresh build evidence and current deployment status.
+The earlier checkpoint and qualification limits remain historical evidence.
+
 ## Stopped at source checkpoint — 2026-10-16
 
 The owner requested a natural stopping point. Patches 0007–0009 now save the

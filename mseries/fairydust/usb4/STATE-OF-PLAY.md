@@ -3,6 +3,24 @@
 Updated 2026-10-16. This is the cumulative frontier ledger. Preserve measured
 advances and do not re-run discovery without a new reason.
 
+## Controlled-test preparation resumed — 2026-10-16
+
+The owner resumed at fallback compatibility, with no repeated discovery.
+Patch 0010 preserves DCP's original phys and every existing PHY dependency;
+only the new driver consumes apple,dp-tunnel-phy through a managed getter.
+Independent source review and 11 lookup fault/refcount groups pass. Static
+fallback compatibility is addressed; fallback boot/runtime remains untested.
+
+The frozen source c6fd906 was clean-rebuilt for all five modules, followed by
+version/layout/export checks and actual staged-image verification. The new
+initramfs alone carries the new modules and metadata; root modules, original
+initramfs, kernel/default and existing GRUB entries remain untouched. The
+separate entry uses bypass=1 and timeout=15000. Exact artifacts, hash-guarded
+installer, rollback and collector: [CONTROLLED-TEST.md](CONTROLLED-TEST.md).
+The earlier root-module-replacing installer is superseded for this test.
+No reboot, module reload/unbind, cable move or hardware success is claimed.
+Deployment status will be recorded here after final preflight/application.
+
 ## Current result
 
 **No monitor picture through the dock. No unbypassed DPRX completion or EDID

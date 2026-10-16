@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-only OR MIT
 """Replace a named set of regular files in one gzip/newc initramfs, offline."""
-import argparse, gzip, hashlib, json, pathlib, stat, struct
+import argparse, collections, gzip, hashlib, json, pathlib, stat, struct
 
 def canonical(name):
     while name.startswith('./'):name=name[2:]
@@ -37,12 +37,13 @@ def encode(rows,trailer):
 
 def repack(image,replacements):
     rows,trailer=parse(gzip.decompress(image));initial={canonical(n):(v,d) for n,v,d in rows}
+    identities=collections.Counter((v[7],v[8],v[0]) for n,v,d in rows if stat.S_ISREG(v[1]))
     replace={canonical(n):pathlib.Path(p).read_bytes() for n,p in replacements.items()}
     updated=[];changed=[];ino=max(v[0] for n,v,d in rows)+1
     for name,values,data in rows:
         key=canonical(name)
         if key in replace:
-            if not stat.S_ISREG(values[1]) or values[4]!=1:raise ValueError('replace only regular non-hardlinked files')
+            if not stat.S_ISREG(values[1]) or values[4] not in (0,1) or identities[(values[7],values[8],values[0])]!=1:raise ValueError('replace only regular non-hardlinked files')
             data=replace.pop(key);changed.append(key)
         updated.append((name,values,data))
     existing={canonical(n) for n,v,d in updated}
