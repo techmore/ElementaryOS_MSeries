@@ -2,6 +2,16 @@
 
 Updated 2026-10-14. Repository: techmore/ElementaryOS_MSeries.
 
+
+## Repo hygiene audit — 2026-10-16
+
+Read-only audit of branches, worktrees and PRs: `REPO-HYGIENE.md`. Nothing was
+deleted or merged. Headlines: PR #53 (dock video) is mergeable against main; four
+local branches are fully merged; `brightness-sub-floor` and
+`codex/guide-collapsed-by-default` need PRs; the shared checkout holds uncommitted
+work from several agents and stale copies of dock-video docs (read the dock branch,
+not the checkout). Cleanup steps need the owner's yes.
+
 ## Current hardware state — 2026-10-14
 
 The transformed elementary OS 9 desktop is running on a 14-inch M1 Pro through
