@@ -114,3 +114,17 @@ or consciously accepted before the owner reboots:
 Already closed elsewhere (see STATE-OF-PLAY "Do not repeat"): port guessing,
 `/dev/mem` ADT reads, ACIO unbind/bind recovery, crossbar-only writes, further
 `force_link` probes to manufacture evidence.
+
+## Codex source checkpoint disposition — 2026-10-16
+
+The owner requested stopping. Patches 0007–0009 and DCP-SOURCE-BRIDGE.md now
+record the implementation against B1–B8: graceful optional bridge disable,
+mandatory tunneled PHY, unmapped-port no-op, one readiness read, retained
+cleanup ownership, serialized unbind, T6000 mapping validation, locked
+cancellation and HopID router references. Final changed modules compile and
+27 bridge production-function groups pass. These are source dispositions,
+not hardware closure or a complete upstream teardown-series qualification.
+
+Next resolve global-DT compatibility/rollback for default and fallback
+kernels before any deployment. No new modules/boot payload/initramfs were
+installed, and no reboot or cable change occurred in this batch.

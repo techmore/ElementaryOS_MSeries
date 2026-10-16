@@ -10,12 +10,26 @@ has been demonstrated.** A separate live test fixed selection of the dock's
 HDMI-facing DP OUT adapter. The new DP-IN handshake/tunnel-clock series is
 implemented and offline checked, but has not been installed or tested live.
 
-Owner constraints remain **no kernel installation, no M1 reboot, no cable
-moves** for this implementation. Keep the Dell dock on M1 Pro left-front
-(nearest trackpad), HDMI on the Amazon Basics monitor, and the Neo connected
-separately. Preserve the Neo's occupied firmware connection. Primary chat
-must not block on SSH; remote work needs delegated workers and hard timeouts.
+Current authorization: the owner now permits installation, reboot and cable
+changes when needed, but wants them batched. This supersedes earlier bans.
+The current bridge batch is stopped at a saved source checkpoint at the owner's
+request; no new driver or boot payload has been installed/loaded. Preserve the current cable layout
+unless a concrete test requires a change. Codex owns Git writes for this
+batch; scoped DeepSeek review was requested but transport failed.
+Keep the dock on M1 Pro left-front, HDMI on the Amazon Basics monitor and
+Neo connected separately. Preserve the occupied Neo firmware connection.
+Primary chat must not block on SSH; delegate remote work with hard timeouts.
 Active progress updates are requested every 30 seconds.
+
+An automatic NHI-to-DCP source bridge is now implemented in the isolated
+source. Its 27 production-logic test groups and final changed-module builds pass.
+Patches 0007–0009 and [the handoff](DCP-SOURCE-BRIDGE.md) save that checkpoint.
+Before deployment, resolve compatibility/rollback for default and fallback
+kernels: the candidate global DT introduces a DP-IN PHY they may not provide.
+No single-boot test has occurred.
+Hardware M1/M2/M3 below remain unproven. A discovered BTF-module layout hazard
+in the earlier module-only recipe is recorded at the top of OS9-HANDOFF;
+retain module layout even when BTF data generation is skipped.
 
 ## Milestones — observable evidence, not analysis
 

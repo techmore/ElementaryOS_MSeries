@@ -3,6 +3,51 @@
 Updated 2026-10-16. Repository: techmore/ElementaryOS_MSeries.
 
 
+## Stopped at source checkpoint — 2026-10-16
+
+The owner requested a natural stopping point. Patches 0007–0009 now save the
+DCP-before-DPRX bridge with source ownership, cancellation and router lifetime
+handling. Final changed module builds pass; 27 bridge groups plus the earlier
+29 logic groups pass, along with two board checks. Clean patch application
+byte-matches 14 reviewed source files. These are offline checks, not monitor
+progress: no new wake, unbypassed DPRX response, EDID/modes or picture.
+
+No new driver, initramfs or boot payload was installed or loaded; no reboot
+or cable change occurred in this batch. Only the build dependency pahole was
+installed. The prepared boot payload remains a private candidate.
+
+**Resume blocker:** the global boot.bin device tree replaces DCP's PHY with a
+new DP-IN provider. Resolve default/fallback-kernel compatibility and a tested
+rollback plan before deployment; a stock kernel may lack that provider.
+Initramfs/module staging and the first hardware test remain undone. Do not
+install the prepared payload merely because the source checks passed.
+
+See [bridge implementation and validation](fairydust/usb4/DCP-SOURCE-BRIDGE.md).
+
+## Current authorization and bridge implementation — 2026-10-16
+
+The owner now authorizes installing dependencies/drivers and rebooting or
+changing cables **if needed**, while requiring changes to be batched rather
+than constant switching. This explicitly supersedes the earlier no-install/
+no-reboot/no-cable instructions below. Codex owns implementation and Git
+writes for the current bridge batch; DeepSeek was asked for a scoped review.
+No new driver, initramfs or boot payload has been deployed yet.
+
+The isolated source now implements explicit NHI/DCP mapping, queued DCP
+preparation before DPRX reads, matched get/put, stale-result rejection and
+cleanup. 27 production bridge/gate/cancellation/adoption groups pass in addition to
+the earlier tests. Changed modules and target/control DTBs compile. Work is
+stopped at the source checkpoint above; deployment preparation is incomplete.
+
+**Compatibility correction:** do not disable CONFIG_DEBUG_INFO_BTF_MODULES
+when building C modules for this running kernel. It changes struct module's
+cleanup offset even when vermagic and total structure size match. Original
+ATC uses init offset 0x130 / cleanup 0x4a8; a BTF-disabled trial had cleanup
+0x490. Nothing from that trial was installed here. Retain the layout; a
+missing vmlinux may legitimately skip BTF data generation. Compare actual
+module init/exit relocation offsets, version and required exported symbols.
+The older module-only recipe claiming BTF-off is ABI-neutral is superseded.
+
 ## Dock video: offline review and gap ledger — 2026-10-16
 
 Claude reviewed `DP-TUNNEL-RE.md` §6-7 against the pinned tree and the newer

@@ -3,6 +3,27 @@
 Last updated 2026-10-16. Day-to-day pending checks live in the robot: `mseries-verify status`
 (seed: `mseries/local-ai/verify-checks.json`). This file is the human-readable plan.
 
+## Stopped at source checkpoint — 2026-10-16
+
+The owner requested a natural stopping point. Patches 0007–0009 now save the
+DCP-before-DPRX bridge with source ownership, cancellation and router lifetime
+handling. Final changed module builds pass; 27 bridge groups plus the earlier
+29 logic groups pass, along with two board checks. Clean patch application
+byte-matches 14 reviewed source files. These are offline checks, not monitor
+progress: no new wake, unbypassed DPRX response, EDID/modes or picture.
+
+No new driver, initramfs or boot payload was installed or loaded; no reboot
+or cable change occurred in this batch. Only the build dependency pahole was
+installed. The prepared boot payload remains a private candidate.
+
+**Resume blocker:** the global boot.bin device tree replaces DCP's PHY with a
+new DP-IN provider. Resolve default/fallback-kernel compatibility and a tested
+rollback plan before deployment; a stock kernel may lack that provider.
+Initramfs/module staging and the first hardware test remain undone. Do not
+install the prepared payload merely because the source checks passed.
+
+See [bridge implementation and validation](fairydust/usb4/DCP-SOURCE-BRIDGE.md).
+
 Dock-video update 2026-10-16:
 
 [Implementation and DeepSeek handoff](fairydust/usb4/DPIN-IMPLEMENTATION.md)
@@ -19,10 +40,11 @@ recorded live 0003 HPD-selection fix: `0:5 <-> 1:14`, but DPRX still times out.
 Dock HPD establishes sink presence, not a working pixel chain. DP-IN source
 is a draft, not a solved hardware path. Next resolve router DPRX versus DCP
 ACTIVATE ordering using existing inputs; do not repeat discovery or count
-another build as monitor detection. Current no-install/no-reboot/no-unplug
-constraint remains. One Git writer; preserve other agents' notes.
+another build as monitor detection. The owner now allows batched deployment/reboot/cable changes if needed, but
+subsequently requested stopping at the source checkpoint above. One Git writer; preserve other agents' notes.
 
-**Owner constraint: no M1 Pro reboot or power cycle.** Earlier macOS cutover
+**Historical constraint (superseded by the authorization above): no M1 Pro
+reboot or power cycle.** Earlier macOS cutover
 and guest-boot instructions are future reference only. Current next work is
 read-only live enumeration/recovery diagnosis using the Neo where useful,
 with hard timeouts in delegated workers and 30-second progress updates. The
