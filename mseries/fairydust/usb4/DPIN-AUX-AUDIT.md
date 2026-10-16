@@ -151,6 +151,12 @@ force-link probe armed bypass. That watchdog output cannot close H1 or
 qualify any future "ANSWERED" result without checking the bypass epoch and
 matching adapter. Do not repeat force-link to manufacture new evidence.
 
+Live-state update during publication: the HDMI watchdog was restarted at
+08:00:50, with a new start line 2795, and bypass was read as `N`. There was
+still no new DP hotplug/DPRX result in the inspected log. This audit did not
+restart the watchdog or change the parameter. The earlier `Y` reading is a
+point-in-time observation, not a claim about the current state.
+
 An additional confirmed collector defect: `test-dp-tunnel.sh` counts all
 connected DRM connectors, including eDP. Combined with any earlier path
 activation it can claim display success while `card2-DP-1` is disconnected.

@@ -8,7 +8,10 @@ Read [`fairydust/usb4/DPIN-AUX-AUDIT.md`](fairydust/usb4/DPIN-AUX-AUDIT.md)
 before interpreting the older resume notes below. Owner confirmed dock HDMI
 to a powered Amazon Basics monitor on HDMI input. The owner ran one
 `force_link` off/on probe: DCP disconnect/connect and "powering nub" were
-followed by APCALL 22/24; `card2-DP-1` stayed disconnected. Bypass is `Y`.
+followed by APCALL 22/24; `card2-DP-1` stayed disconnected. Bypass was `Y`
+after that probe. A later read found it `N`: the HDMI watchdog was restarted
+at 08:00:50, watching from live-log line 2795. This audit made no parameter
+writes. Read the current parameter and watchdog output before any cable action.
 
 New source-grounded findings: activation logs prove routing configuration,
 not end-to-end AUX traffic; the original trace recipe misses the separate
