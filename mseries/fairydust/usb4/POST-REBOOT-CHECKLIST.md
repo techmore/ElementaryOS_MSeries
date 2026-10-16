@@ -6,6 +6,19 @@ run or review the reboot without re-deriving it. Evidence behind each item is in
 facts stay in [STATE-OF-PLAY.md](STATE-OF-PLAY.md); append results there, not here.
 The owner approves each step that touches boot config, the ESP or `/usr/lib/modules`.
 
+## Agreed order of work (DeepSeek's readiness verdict, 2026-10-16)
+
+DeepSeek found nothing broken but the first boot is **not ready**: the module
+bundle was stale (Codex was rebuilding), and the repacked initramfs and install
+script are missing. Order:
+
+1. Codex freezes the bridge revision and rebuilds the bundle (record SHA-256s).
+2. `wt-dockvideo` is synced with `origin/docs/dock-video-decision` before any batch
+   commit (one Git writer; it is behind the remote and has uncommitted edits to
+   `OS9-HANDOFF.md` and `STATE-OF-PLAY.md`).
+3. Section A below is run against the **final** hashes.
+4. Owner decides the GRUB entry (section B); then the batched reboot (C, D).
+
 ## A. Pre-flight (all read-only, do before any write)
 
 1. Bundle present and consistent: `deployment/` has `phy-apple-atc.ko`,
