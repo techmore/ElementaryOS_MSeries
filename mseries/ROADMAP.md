@@ -318,3 +318,5 @@ browser integration and remaining Files/Gala patches remain open.
 - Local AI follow-through (October 16): newer Qwen3.5 4B 9/15 short tasks and 9/9 corrected MCP workflows; older Qwen3 4B 6/9 corrected workflows. Final app, coding and native throughput tests wait for idle windows while other owner tests continue. See the October 16 qualification receipt for current status.
 
 - Measured default is now Qwen3.5 4B: real Newelle/MCP, separate-process memory and Crush edit passed. Qwen9 moved to larger-budget optional presets after the live reserve guard stopped it. Small-model repair advice failed and is excluded; deterministic kernel/app watching is active. Bonsai and the synthetic Tasks-to-note bridge remain in qualification.
+
+- Local AI publication/candidate follow-through (October 16): PR #58 merged, benchmark page live, enhanced six-hour branch watch verified (1,105 heads; zero fetch errors). Bonsai completed 9/9 corrected MCP and native 5.571 decode tokens/s; resumed task 12/15 includes prior fan interruption and is not a quiet-policy pass. Tested Qwen3.5 4B remains default. Broad app adapters and full factory hardware qualification remain open.
