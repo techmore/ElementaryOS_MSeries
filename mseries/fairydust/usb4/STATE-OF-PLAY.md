@@ -149,9 +149,24 @@ Full detail, every call site and exact reproduction commands:
 `evidence/2026-10-16-dpin-adapter-enable-protocol-recovered.md`.
 Tool committed: `tools/kc-slice.py`.
 
-Still genuinely unknown: the register effects *inside* ACIO
-`startUsingTunnel()` and ATC-PHY `open/openTunnel/setActiveLaneCount()` (two
-other drivers), and the DCP **firmware** blob (not on this machine).
+The register effects *inside* ACIO `startUsingTunnel()` and ATC-PHY
+`open/openTunnel/setActiveLaneCount()` are still not recovered, **but they now have
+named functions and addresses** — do not restart from strings or the class list:
+
+- **PHY side is fully mapped** (`com.apple.driver.AppleT8103TypeCPhy`, the base
+  class the T6000 kext subclasses): `configureDPTunnelMode` @`0xfffffe0009d60088`,
+  `configureACIOPhyLaneMode` @`0xfffffe0009d34c24`, `applyACIOPHYTunables`
+  @`0xfffffe0009d5fae4`, `configureACIOPhyLaneMode` first finding = a 3-bit
+  per-lane mode field at **offset `0x48`** of the PHY register block
+  (`[obj+0x160]`).
+- **Negative result:** `startUsingTunnel` is **not** implemented in this
+  kernelcache (only interface-name strings exist). It likely lives in an
+  **auxiliary kernel collection**. Do not hunt it in `AppleConvergedPCI`.
+
+Address table, reproduction commands, and the "filter `_os_log_fmt`" gotcha:
+`evidence/2026-10-16-re-foothold-for-remaining-subsequences.md`.
+
+The DCP **firmware** blob is still absent from this machine.
 
 ## RULED OUT (do not retry)
 
@@ -166,11 +181,16 @@ other drivers), and the DCP **firmware** blob (not on this machine).
 - `/dev/mem` ADT read: `EPERM` (`STRICT_DEVMEM=y`). Not retried.
 - Stock `trace_atc.py` / `trace_pmgr.py`: contain hardcoded addresses/ports.
 
-## H1 caveat (still open)
+## H1 (is the dock's video path dead?) — CLOSED 2026-10-16
 
-We have **never** confirmed a picture on the dock from any OS in this session.
-If the dock's video output is itself dead, everything above is moot. Closing H1
-costs 60 seconds and requires a sink actually present on the dock.
+The dock's **own** config space proves it detects the monitor and propagates HPD:
+`0-1 port14 ADP_DP_CS_2 = 0x000a0040` (HPD = BIT(6) = 1) while `0-1 port13 =
+0x000fff00` (HPD = 0, empty socket). Verified twice, either side of a full
+Thunderbolt-stack reload. Monitor, cable and the dock's HDMI input are good.
+
+What this does **not** prove is a *rendered picture* — that needs the DP-IN enable
+sequence below, not a different cable or socket. Do not re-run cable tests to
+"close H1"; it is closed.
 
 ## Regression guards (each one has already bitten us)
 
@@ -208,8 +228,10 @@ costs 60 seconds and requires a sink actually present on the dock.
    `tools/kc-slice.py`.
 1. **[no hardware] Finish the enable sequence**: recover the register effects of
    ACIO `startUsingTunnel()` / `stopUsingTunnel()` and ATC-PHY
-   `open()` / `openTunnel()` / `setActiveLaneCount()`. Same method; RE targets
-   `AppleATCDPXBAR`, `AppleT6000TypeCPhy`, and the ACIO service.
+   `open()` / `openTunnel()` / `setActiveLaneCount()`. **Addresses are already
+   mapped** — start at
+   `evidence/2026-10-16-re-foothold-for-remaining-subsequences.md`; the PHY side
+   is `AppleT8103TypeCPhy::configureDPTunnelMode` @`0xfffffe0009d60088`.
 2. (hardware) Put a sink on the dock; confirm `1:13`/`1:14` exist. Nothing is
    measurable without this — milestone **M0**.
 3. Add the `atc-dpin` DT nodes, then the smallest driver change -> CI build ->
@@ -232,5 +254,8 @@ Apple's display firmware as a reference.
 - macOS baseline helper: `run-macos-baseline.sh`
 - `evidence/2026-10-16-apple-display-binaries-extracted-locally.md` — how to get Apple's binaries
 - `evidence/2026-10-16-dpin-adapter-enable-protocol-recovered.md` — **the enable sequence**
+- `evidence/2026-10-16-re-foothold-for-remaining-subsequences.md` — **where the remaining sub-sequences live: symbol + address map**
+- `evidence/2026-10-16-hpd-fix-tested-module-only-rebuild.md` — live test, module-only rebuild + no-reboot reload recipes
+- `evidence/2026-10-16-dpout-hpd-selection-bug.md` — the DP-OUT/HPD selection bug (fixed)
 - `tools/kc-slice.py` — kernelcache/slice symbol + disassembly tool
 - This file is the entry point.
