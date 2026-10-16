@@ -222,7 +222,7 @@ SIGKILLed for an unexplained reason. The stock default is fine.
 
 | # | Item | Owner |
 |---|---|---|
-| R4 | Cause found for the controlled entry: appledrm registered at 10.5 s, after gala started (known race, README). Mitigation `lightdm-wait-for-drm.conf` was not installed; Claude installed it 2026-10-16 (effective next boot, unverified). Remaining: reduce appledrm registration delay on dptunnel entries | Codex/DeepSeek |
+| R4 | Cause found for the controlled entry: appledrm registered at 10.5 s, after gala started (known race, README). Mitigation `lightdm-wait-for-drm.conf` was not installed; Claude installed it 2026-10-16 (effective next boot, unverified). Remaining: reduce appledrm registration delay on dptunnel entries — static probe-chain analysis added 2026-10-16 (DCP probe now waits for the DP-IN phy under the USB4 ACIO; fw_devlink edges NHI→dispext1 and dispext1→dpin1_0), see the evidence file | Codex/DeepSeek |
 | R5 | Re-evaluate "fallback boot is statically safe" in `CONTROLLED-TEST.md`: the old entry failed after the new `boot.bin`; decide whether to restore the pre-change `boot.bin` outside test windows | owner + Codex |
 
 ## Tooling

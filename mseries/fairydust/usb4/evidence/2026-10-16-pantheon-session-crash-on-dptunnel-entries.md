@@ -88,3 +88,45 @@ was in place. Treat the old entry as unreliable until a boot with the drop-in in
 - Engineering follow-up (Codex/DeepSeek): shorten appledrm registration on the dptunnel
   entries or keep `dcpext1`'s phy dependency from delaying the whole display subsystem.
 - Rolling `boot.bin` back to `boot.bin.KNOWN-GOOD-pre-usb4-20261015-152345` stays an owner call.
+
+## Probe-chain analysis of the late registration (DeepSeek/OpenCode, static)
+
+Source-level check of the probe graph (revision `46bb8b6`; public patches
+0004/0007/0010):
+
+- `dcp_platform_probe` now calls `devm_apple_dpin_phy_get()` at probe time for
+  nodes with `apple,dp-tunnel`, and the getter returns `-EPROBE_DEFER` until
+  the DP-IN provider device is **bound**. So `dispext1`'s probe — and the DCP
+  firmware boot and DRM registration that wait for it — is now gated behind
+  the DP-IN phy binding.
+- The DP-IN phy (`dpin1_0`) is a **child of the USB4 ACIO node**
+  (`cio@b01ac0000` in `t600x-dieX.dtsi`) and its probe needs `atcphy1`
+  (`devm_phy_get("atc-phy")`). The ACIO and ATC PHY are bound by the USB4
+  modules (`thunderbolt_apple`, `phy-apple-atc`).
+- `fw_devlink` additionally creates edges from the new phandles:
+  `dispext1 → dpin1_0` (`apple,dp-tunnel-phy`) and `NHI → dispext1`
+  (`apple,dp-source` on the NHI, consumed at NHI probe by
+  `apple_dp_source_init`). The USB4 NHI therefore also waits for the DCP:
+  the display and USB4 stacks now probe in one ordering chain instead of
+  independently.
+
+Net: on the controlled entry the external DCP cannot probe before the USB4
+stack is up, and the ~1 s steps in the measured DCP boots
+(8.25 → 9.28 → 10.37 s) match deferred-probe retries, ending with appledrm at
+10.5 s (vs 6.9 s). This is a probe-ordering effect of the new binding, not a
+regression in a single driver; the `-ENOLINK`/Oops fixes are unrelated to it.
+
+To confirm on the next test boot (read-only): `journalctl -k -b | grep -iE
+"deferred|cycle|EPROBE"`, `cat /sys/kernel/debug/devices_deferred` after
+login, and the `[drm] Initialized apple` / DCP timestamps.
+
+Options for review (not implemented):
+
+1. **Accept**: the drop-in removes the session crash; the desktop starts
+   ~3.6 s later only on the dptunnel entries.
+2. **Remove the probe-time edge**: make the DCP↔DP-IN reference non-phandle
+   (resolve at connect time through the existing `apple_dp_source` mapping and
+   the ACIO parent) so `dispext1` no longer waits for the USB4 stack. This
+   changes binding 0004/0007 and needs a review pass.
+3. **Keep the binding, shorten the USB4 bring-up**: the ACIO/ATC/NHI probes
+   currently complete at ~8.2 s; the DCP chain then adds two ~1 s retries.
