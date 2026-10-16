@@ -216,13 +216,13 @@ re-probed. DPRX was never reached, so this says nothing about the sink. New item
 ### Owner report: Pantheon does not start on the dptunnel entries (recorded 2026-10-16)
 
 Evidence: [evidence/2026-10-16-pantheon-session-crash-on-dptunnel-entries.md](evidence/2026-10-16-pantheon-session-crash-on-dptunnel-entries.md).
-gala (mutter) aborts in `meta_kms_update_mode_set` after a DRM hot-plug uevent at session
-start on both the controlled entry (coredump saved) and the old dptunnel entry (after the
-11:20 `boot.bin`); the stock default is fine.
+gala (mutter) aborts in `meta_kms_update_mode_set` because the Apple DRM device registered
+after gala started (controlled entry, coredump saved); the old dptunnel entry's gala was
+SIGKILLed for an unexplained reason. The stock default is fine.
 
 | # | Item | Owner |
 |---|---|---|
-| R4 | Identify the uevent/connector that makes mutter assert; keep the external DCP connector from reporting connected/invalid-mode to userspace until a real mode exists | Codex/DeepSeek |
+| R4 | Cause found for the controlled entry: appledrm registered at 10.5 s, after gala started (known race, README). Mitigation `lightdm-wait-for-drm.conf` was not installed; Claude installed it 2026-10-16 (effective next boot, unverified). Remaining: reduce appledrm registration delay on dptunnel entries | Codex/DeepSeek |
 | R5 | Re-evaluate "fallback boot is statically safe" in `CONTROLLED-TEST.md`: the old entry failed after the new `boot.bin`; decide whether to restore the pre-change `boot.bin` outside test windows | owner + Codex |
 
 ## Tooling
