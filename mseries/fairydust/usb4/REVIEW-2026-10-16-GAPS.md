@@ -144,6 +144,36 @@ edited. Bundle claims about validation were not re-run.
   bypass, discovered tunnels adopted via `tb_tunnel_start_dp_source`) reads as
   described.
 
+## Brief for DeepSeek's next pass (kernel/bridge lane)
+
+Start here: [STATE-OF-PLAY](STATE-OF-PLAY.md) -> this ledger -> [POST-REBOOT-CHECKLIST](POST-REBOOT-CHECKLIST.md).
+Bridge tree: `~/Documents/Codex/2026-10-16/hey-x20/work/dpin-implementation/source`
+(Codex holds the Git write there; send results as a comment on PR #53, not edits).
+Do not repeat: port guessing, `/dev/mem` ADT reads, ACIO unbind/bind, crossbar-only
+writes, extra `force_link` probes. Constraints: bypass armed on any run that touches
+the dock; no change to the owner's default boot entry.
+
+Ordered work, smallest first, each with its done-criterion:
+
+1. **B4** read the source status once per worker iteration and pass it to the gate;
+   extend `tools/testing/apple-dpin/test-bridge.py` to extract `tb_dp_dprx_work` and
+   cover fail-fast on source error versus retry on `-EINPROGRESS/-EAGAIN/-ETIMEDOUT`.
+2. **B3** decide unmapped-port behaviour (return 0 like "no source", keep
+   `-EOPNOTSUPP` only for the truly unsupported combination) and test it.
+3. **B1** degrade deep DT validation failures to `dev_warn` + source disabled; keep
+   `-EINVAL` only for the `apple,dp-source`/`apple,dp-in-port` pair violation. Add the
+   port<->transport-index relation (**B7**) while there.
+4. **B5** downgrade the expected `-EBUSY` on stop during DCP unbind from `dev_err`.
+5. **N4** confirm the 5 s source deadline is intended versus the 12 s DPRX window;
+   if kept, make the log say which limit fired.
+6. **N3** a reviewed install script and repacked initramfs in `deployment/` (apply
+   order in POST-REBOOT-CHECKLIST section C), plus a `lsinitramfs` check of the five modules.
+7. **G3 step 0** fetch Sven Peter's v3 series from `thunderbolt.git/fixes`, record
+   SHA-1s in `DPRX-TEARDOWN-BACKPORT-PLAN.md`; patch 6 (stop-time DP teardown) must
+   precede any hook that relies on `tunnel_stop()` at shutdown.
+
+Report back by appending to this ledger (status column) and the PR #53 thread.
+
 ## Tooling
 
 | # | Defect | Status |
