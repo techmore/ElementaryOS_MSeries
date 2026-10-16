@@ -2,6 +2,23 @@
 
 Updated 2026-10-16. Repository: techmore/ElementaryOS_MSeries.
 
+## Owner constraint: NO M1 Pro reboot or power cycle — 2026-10-16
+
+The owner explicitly forbids rebooting or power-cycling the M1 Pro. This
+revokes the earlier macOS cutover plan for the current session. Do not switch
+its operating system, start a hypervisor guest, or execute the shutdown/
+startup instructions in the retained cutover checklist. Those procedures
+are future reference only and require fresh owner authorization.
+
+Current work is read-only live enumeration and recovery diagnosis, preserving
+the running system's stability. Use the Neo for bounded remote diagnostics
+and offline analysis; it cannot add m1n1 hypervisor instrumentation underneath
+the already-running M1 Pro. Boot-time capture requires booting the target,
+which is currently forbidden. Keep remote work in delegated workers with
+hard timeouts, never hold the primary chat on SSH, and report active progress
+every 30 seconds. No kernel, boot, audio or system changes are authorized by
+this diagnosis.
+
 ## Latest bounded live checks — 2026-10-16
 
 [Published live-status report](fairydust/usb4/evidence/2026-10-16-neo-live-status.md):
@@ -49,17 +66,17 @@ validation, not M1 Pro dock evidence. The portable LLVM compiler smoke has
 passed; no serial handshake, target guest or boot change yet.
 
 Leave the dock/HDMI attached to the M1 Pro. Add only a direct USB data cable
-from the Neo to a free target Thunderbolt port when ready. Next: verify
-physical topology, collect native target macOS metadata/cache and confirm
-its guest boot route. Neo's macOS 26 is the recorder OS, not the XNU guest.
+from the Neo to a free target Thunderbolt port when ready. Current next step:
+read-only live topology/recovery diagnosis; no reboot or macOS cutover.
+Neo's macOS 26 is the recorder OS, not the XNU guest.
 
-## macOS cutover package — start here (2026-10-16)
+## macOS cutover package — future reference only (2026-10-16)
 
 Owner wants one thoroughly prepared visit, retaining the USB4/HDMI cables.
-The Neo recorder is now available; see the newer setup status above. Follow
+The Neo recorder is now available; see the newer setup status above. Retain
 [`MACOS-CUTOVER-CHECKLIST.md`](fairydust/usb4/MACOS-CUTOVER-CHECKLIST.md)
-for the native macOS baseline, exact commands, kernelcache inventory,
-return checklist and reviewed public evidence. `collect-macos-dock.sh`
+for a future, freshly authorized native macOS baseline, exact commands,
+kernelcache inventory, return checklist and reviewed public evidence. `collect-macos-dock.sh`
 needs no Python/Xcode/sudo and does not change settings or upload files.
 Raw registry/log/Apple binary data remain local; publish inspected metadata
 and relevant engineering evidence. The repository is confirmed public.

@@ -5,6 +5,22 @@ dock HDMI → HDMI cable → powered Amazon Basics monitor. Repository:
 [techmore/ElementaryOS_MSeries](https://github.com/techmore/ElementaryOS_MSeries).
 Working branch: `docs/dock-video-decision`.
 
+## Current authorization: NO reboot or power cycle
+
+The owner explicitly forbids rebooting or power-cycling the M1 Pro. **Do not
+execute the shutdown, startup-picker, macOS cutover or guest-boot steps below.**
+This checklist is retained as future reference only; the earlier cutover plan
+is no longer authorized for the current session.
+
+Next work is read-only live enumeration and recovery diagnosis, preserving the
+running system. The Neo can support bounded diagnostics and offline analysis;
+it cannot instrument the already-running M1 Pro with a boot-time m1n1
+hypervisor. Full MMIO capture requires a target boot and is therefore outside
+the current authorization. Remote checks belong to delegated workers with
+hard timeouts; the primary chat must never wait on SSH. Report active progress
+every 30 seconds. Revisit boot-dependent collection only after fresh owner
+authorization.
+
 ## Read this before switching operating systems
 
 The owner has now supplied a **MacBook Neo recorder**, successfully reached
@@ -16,11 +32,11 @@ m1n1 hypervisor client: that client must run on another computer while this
 Mac runs the guest. The Neo's macOS 26.6.2 is its recorder OS, not the
 hypervisor guest version that must be confirmed on this M1 Pro.
 
-**Ready now:** an ordinary macOS baseline visit with the dock and HDMI left
+**Future baseline procedure:** an ordinary macOS visit with the dock and HDMI left
 attached, using `collect-macos-dock.sh` below. No security downgrade or boot
 modification is needed for that visit. Native macOS tools are sufficient.
 
-**Not ready now:** a full register trace. Recorder tools are being prepared,
+**Future trace prerequisites:** recorder tools have passed smoke checks, but
 the target's installed macOS build is unconfirmed, and no matching XNU kernelcache has
 been selected or extracted. A successful capture may expose more than one
 missing operation; we cannot promise an immediate working Linux driver.

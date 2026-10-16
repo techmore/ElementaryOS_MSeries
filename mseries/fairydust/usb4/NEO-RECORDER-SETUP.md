@@ -1,5 +1,12 @@
 # MacBook Neo recorder preparation — 2026-10-16
 
+**Current owner constraint: NO M1 Pro reboot or power cycle.** Use the Neo
+for bounded diagnostics and offline analysis while the target stays running.
+The earlier macOS cutover and full m1n1 guest capture plan is future reference
+only. The Neo cannot add boot-time hypervisor tracing to an already-running
+target; boot-dependent work requires fresh owner authorization. Keep SSH in
+delegated workers with hard timeouts and the primary chat responsive.
+
 **Latest:** [bounded live-status report](evidence/2026-10-16-neo-live-status.md).
 Sleep assertions remain active. A Dell dock enumerates on Neo, but its physical
 identity relative to the target WD22TB4 is unconfirmed. No proxy endpoints or

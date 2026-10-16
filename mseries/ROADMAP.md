@@ -4,6 +4,12 @@ Last updated 2026-10-14. Day-to-day pending checks live in the robot: `mseries-v
 (seed: `mseries/local-ai/verify-checks.json`). This file is the human-readable plan.
 
 Dock-video update 2026-10-16:
+**Owner constraint: no M1 Pro reboot or power cycle.** Earlier macOS cutover
+and guest-boot instructions are future reference only. Current next work is
+read-only live enumeration/recovery diagnosis using the Neo where useful,
+with hard timeouts in delegated workers and 30-second progress updates. The
+Neo cannot install a boot-time hypervisor under the already-running target.
+
 [Latest bounded live checks](fairydust/usb4/evidence/2026-10-16-neo-live-status.md)
 confirm Neo sleep assertions and Dell USB inventory, but no proxy endpoint or
 external display picture. The physical dock identity/topology remains
@@ -18,16 +24,16 @@ for verified results and USB/guest gates still remaining.
 
 [`Complete macOS cutover checklist`](fairydust/usb4/MACOS-CUTOVER-CHECKLIST.md)
 is published with a native collector, IORegistry metadata parser and raw
-DPTX trace hook. Collect a native
-baseline with the dock/HDMI left connected first. Full MMIO capture needs
+DPTX trace hook. Native baseline collection is deferred until fresh reboot
+authorization. Full MMIO capture needs
 the Neo recorder and matching target XNU kernelcache; the earlier iBoot recipe
 was incorrect. Twelve offline tests pass; no macOS trace or picture yet.
 
 [`DP-IN/AUX audit`](fairydust/usb4/DPIN-AUX-AUDIT.md) identifies the missing
 Apple DP-IN node family and corrects the macOS capture plan. The current
-force-link probe reaches DCP but leaves the display disconnected. Next:
-confirm DP-IN ranges from macOS IODeviceTree or the m1n1 ADT, then capture bring-up
-with the DCP in one approved, two-host macOS hypervisor session. The owner's
+force-link probe reaches DCP but leaves the display disconnected. Future
+capture needs DP-IN ranges from macOS IODeviceTree or the m1n1 ADT and the DCP
+in a two-host macOS hypervisor session; this is not currently authorized. The owner's
 sudo ADT export on Asahi failed with `EPERM`; strict `/dev/mem` is enabled
 and the ADT memory driver is not built. No display, kernel, or hardware
 qualification is claimed.

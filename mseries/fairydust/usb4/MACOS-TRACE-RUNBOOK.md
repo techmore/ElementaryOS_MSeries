@@ -1,14 +1,21 @@
 # macOS / m1n1 trace: prerequisites and capture sequence
 
+**Future reference only: the owner currently forbids rebooting or
+power-cycling the M1 Pro.** Do not execute guest-boot or macOS cutover steps.
+Boot-time capture requires a target boot; the Neo cannot add this hypervisor
+under the running Linux session. Current work is read-only live enumeration
+and recovery diagnosis with bounded delegated remote checks. See the current
+authorization at the top of the [cutover checklist](MACOS-CUTOVER-CHECKLIST.md).
+
 Updated 2026-10-16. Start with the complete
 [cutover checklist](MACOS-CUTOVER-CHECKLIST.md), including cable planning,
 ordinary macOS collection, acceptance gates and publication rules.
 
 **Recorder update:** the MacBook Neo is now reached by SSH, with key login,
 private Python and matching m1n1 source/build staged. See
-[verified recorder setup](NEO-RECORDER-SETUP.md). Compiler, USB handshake,
-target guest and ADT still need qualification. A normal macOS boot can
-collect the baseline but cannot record its own MMIO trace.
+[verified recorder setup](NEO-RECORDER-SETUP.md). Compiler smoke checks passed;
+USB handshake, target guest and ADT still need qualification. A future
+authorized macOS boot can collect the baseline but cannot record its own MMIO trace.
 
 ## Corrections to older recipes
 
