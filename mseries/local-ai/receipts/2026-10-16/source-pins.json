@@ -82,7 +82,8 @@
       "file": "Ternary-Bonsai-2-9B-Q2_0.gguf",
       "size": 2556640128,
       "sha256": "1f884aa56aacd2bbbb2e4b7abaead2b1102b74a9c75a23fc33dab916813a384d",
-      "license": "Apache-2.0"
+      "license": "Apache-2.0",
+      "status": "optional comparison: resumed task quality 12/15 (prior fan interruption; composite policy_passed false), corrected MCP 9/9, native pp512 56.634/tg128 5.571 tokens/s; not tested in Newelle or Crush"
     },
     {
       "repo": "mlx-community/Qwen3.5-4B-MLX-4bit",
