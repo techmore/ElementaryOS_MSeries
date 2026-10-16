@@ -1,4 +1,5 @@
 {
+  "app-workflow-smoke.json": "461624a65df9a579799d4ddd6d28adc7280fc0f16b2fd84a750ebfdcd5490fc5",
   "apps-baseline.json": "85f17dd19db4e4de63e3141eef28ca3dc761a3458439d8cb37009f833a14d209",
   "bonsai9-v2.json": "bf6f6490c0fceb4ce6cabaaf42ab33f882c047337c2a9d858e77b970cb44a028",
   "bonsai9-weight.json": "238096a1de501be2f5ee0411f50b281793733ef83bad3d1448507b208d27e7b6",
@@ -10,6 +11,7 @@
   "developer-branches.json": "02e81927741e14b3ce677f70509c0e4ce3525310f06991e8e135bf667b6924b4",
   "eds-adapter-receipt.json": "096a37e31736fbd204e8f1812f8d1e00d2ec36bcaa0854beda7bfdc038c07a80",
   "eds-smoke-final.json": "15ca61fec83ad47870669774baaf4766086ce3832500f357288996f4c3ffba94",
+  "exploratory/bonsai-tools-v3-attempt0.json": "20bbb738d3352355ec4d9a91d5ce055b824a713df413f279a07da36c96930b26",
   "exploratory/bonsai9-final-attempt0.json": "4405a01f4bca497fc1ff67a624bb4abcc43916a29999cb85d2eb439371da275f",
   "exploratory/bonsai9-interrupted.json": "f71d3a60e5560425b272982f41e6ff132d8f8e9ee46be5694d9f265318d8af1a",
   "exploratory/compact35-tools-v3-attempt0.json": "ec191f86e132011f1a3a7f397e8fe9e11cd66512ef34f3ca15bc85ed08f7bec0",
@@ -22,7 +24,7 @@
   "exploratory/qwen4.json": "226815da0638664e8f7e264d812cb733ae46c0cd54f04004894fcfd1fda4b134",
   "exploratory/qwen9-tools-v2.json": "1a3196bc82e78496257006ff8b779a66a498caba7ae3389e848fae6462b30d6b",
   "exploratory/qwen9-tools.json": "7d35ca5814b46bd84237cd94b3b31753ce4f09c621a7ce488c76029c4aeb1e8e",
-  "integration-status.json": "a9f6a033805d01312793523d49c077f772172208a07c61d1fbbcf7a535f8d448",
+  "integration-status.json": "e0d3736bd9d8ef2e91160c39a844334c88b5aed572a5b39d9c13af2517a3fd4c",
   "liquid-tools-v3.json": "70f88466c5650270771cfb3f53b56d8eb4b14e545b59ec286bcfcc4c34b92075",
   "liquid-v2.json": "df37e60d60fe32fbc919153f2487322caf8ef7ca13e887be3f02836490d6fe1e",
   "m1pro-local-ai-investigation.md": "e73ae69f575af364793d7bdaa6e3874fea610e7ff931ac517de9fe91cd800827",

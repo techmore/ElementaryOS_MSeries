@@ -13,6 +13,7 @@
   "newer_4b": "Qwen3.5-4B short suite 9/15; corrected MCP v3 9/9; older Qwen3 4B corrected v3 6/9",
   "default_model": "Qwen3.5 4B at 8K everyday/16K coding; 6.5 GiB admission plus six-GiB reserve",
   "diagnostic_quality": "Small model failed two repair-advice checks and is excluded from dedicated diagnosis; optional 9B needs fifteen GiB available and remains unqualified on retained app mix",
-  "pending": "Tasks-to-note smoke; final independent Bonsai request, tool workflows and native throughput; final main/Pages publication and enhanced watcher activation",
-  "owned_queue": "mseries-ai-final-qualification user unit; hourly completion heartbeat active"
+  "pending": "Bonsai MCP/native trials; final main/Pages publication and enhanced watcher activation",
+  "owned_queue": "mseries-ai-final-qualification user unit; hourly completion heartbeat active",
+  "app_to_app": "passed: real EDS Tasks -> model -> scoped note -> read-back; private records filtered and owned source removed"
 }
