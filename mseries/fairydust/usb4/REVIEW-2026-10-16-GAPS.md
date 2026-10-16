@@ -201,14 +201,15 @@ roll back). Remaining before use: Codex freezes the bundle so the manifests are 
 
 Full analysis: [evidence/2026-10-16-controlled-test-first-boot.md](evidence/2026-10-16-controlled-test-first-boot.md).
 Summary: bridge and DT mapping probe correctly; DP-IN activation failed immediately with
-`-ENOLINK` (`phy poweron failed --> -67`) because `apple_dpin_set_inactive()` aborts on HPD
-low in its first poll, before the ACK can change (probable cause, from code plus one log
-line); a second, separate NULL-deref occurred when the DCP kept a stale `dpin` PHY after the
-ACIO re-probed. DPRX was never reached, so this says nothing about the sink. New items:
+`-ENOLINK` (`phy poweron failed --> -67`) because activation requires HPD already high and it
+was low. **Apple's own `makeDPINAdapterPortActive` (local REA output) aborts the same way**,
+so this is an ordering/timing question (activate after HPD has propagated), not a Linux copy
+bug. A separate NULL-deref occurred when the DCP kept a stale `dpin` PHY after the ACIO
+re-probed. DPRX was never reached, so this says nothing about the sink. New items:
 
 | # | Item | Owner |
 |---|---|---|
-| R1 | Instrument the DP-IN registers on failure, then make activation wait for the ACK instead of aborting on first-poll HPD low (update the offline test that asserts the immediate abort) | Codex/DeepSeek |
+| R1 | Retry the source start on `-ENOLINK` until the 5 s deadline (or wait for the DP-IN plug IRQ) and log INACTIVE/ACK/HPD/IRQ registers on failure; keep Apple's abort semantics | Codex/DeepSeek |
 | R2 | Stale-PHY guard: per-start lookup or bound-provider check so a start after ACIO re-probe fails with `-ENODEV` and never oopses | Codex/DeepSeek |
 | R3 | `STATE-OF-PLAY.md` still says no reboot has happened; the first boot did | **Fixed** in the outcome record commit (STATE-OF-PLAY updated) |
 
