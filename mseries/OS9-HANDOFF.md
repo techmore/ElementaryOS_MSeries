@@ -1406,3 +1406,13 @@ Added `mseries/dark-mode/mseries-dark-mode` (on/off/toggle/auto/schedule/status)
 ### Dark mode follow-through — 2026-10-16
 
 Portal check on the M1 Pro: `org.freedesktop.appearance color-scheme` = 1 (dark) after the switch, so Brave and Flatpak apps have the signal; a visual look at them is still pending. Added the tool, installer and units to the `enhance.sh` payload (`bash -n` clean; image not rebuilt). Qt (needs `adwaita-qt` or a forced style) and Ghostty (dark-only palette) remain open and are not worth changing blind.
+
+### Network speed turns pastel green when the link saturates — 2026-10-15
+
+Owner request. New `mseries/patches/network-saturation.patch` (applied last by `install-network-throughput.sh`, after `network-panel-speed.patch`). The popover down/up labels and graph lines, and the optional panel readout, switch to pastel green (`#9be3b0`, bold text) for a direction while its rate is at or above the active link's capacity. Capacity comes from NetworkManager (Ethernet speed, Wi-Fi bitrate; the faster active device wins), scaled to what is really reachable: 90% of the Ethernet rate, 60% of the Wi-Fi PHY rate. Those two factors are guesses, not measured; tune `WIRED_USABLE` / `WIFI_USABLE`. If NM reports no speed, nothing is highlighted. The panel readout is a 10 s average, so brief bursts will not light it.
+
+Verified: the four patches apply cleanly in installer order on upstream `8685ec8` and the plugin compiles and links. NOT installed, so not seen on screen and not tested under a real saturating transfer. To install: `bash mseries/install-network-throughput.sh` (needs sudo, restarts the panel once). Not committed (shared checkout; see git-hygiene note). `netspeed/panel-network.patch` was not changed.
+
+Update 2026-10-15: `install-network-throughput.sh` ran successfully (passwordless sudo; panel restarted once). The green state has still not been seen on screen or under a real saturating transfer.
+
+Update 2026-10-16: owner saw the green on a temporary low-threshold build (about 125 KB/s) and confirmed it. Real thresholds (90% wired, 60% Wi-Fi PHY) reinstalled; they are still unmeasured guesses and the real-threshold green has not been seen under a saturating transfer.
