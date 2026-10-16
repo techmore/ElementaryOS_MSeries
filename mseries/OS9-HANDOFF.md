@@ -1,6 +1,29 @@
 # OS 9 implementation / Claude Code handoff
 
-Updated 2026-10-15. Repository: techmore/ElementaryOS_MSeries.
+Updated 2026-10-16. Repository: techmore/ElementaryOS_MSeries.
+
+## DP-IN / AUX independent audit — 2026-10-16
+
+Read [`fairydust/usb4/DPIN-AUX-AUDIT.md`](fairydust/usb4/DPIN-AUX-AUDIT.md)
+before interpreting the older resume notes below. Owner confirmed dock HDMI
+to a powered Amazon Basics monitor on HDMI input. The owner ran one
+`force_link` off/on probe: DCP disconnect/connect and "powering nub" were
+followed by APCALL 22/24; `card2-DP-1` stayed disconnected. Bypass is `Y`.
+
+New source-grounded findings: activation logs prove routing configuration,
+not end-to-end AUX traffic; the original trace recipe misses the separate
+`atcN-dpin0/1` blocks and defaults to the wrong DCP unless selected explicitly.
+A public dump from this exact Mac model names the DP-IN blocks. Their exact
+physical ranges and Apple ATC index still need the preserved ADT export.
+Do not blindly change DCP `core=0`: a public macOS log uses core0 for dpin0,
+and the older helper has incompatible IPC encoding.
+
+Added a filtered, read-only ADT inspector and a DP-IN/crossbar m1n1 trace hook;
+7 offline tests pass. Corrected `MACOS-TRACE-RUNBOOK.md` to run both hooks in
+one guest with explicit targets. No live capture or kernel/boot/audio change
+was made. Next: obtain `dptunnel-logs/dpin-adt.json`, then capture the missing
+DP-IN MMIO bring-up in the approved two-host macOS session. The HDMI watchdog
+has not produced a new, unbypassed sink result and cannot yet close H1.
 
 ## USB4 dock video — resume here (2026-10-15)
 

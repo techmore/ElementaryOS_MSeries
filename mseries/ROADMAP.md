@@ -2,6 +2,14 @@
 
 Last updated 2026-10-14. Day-to-day pending checks live in the robot: `mseries-verify status`
 (seed: `mseries/local-ai/verify-checks.json`). This file is the human-readable plan.
+
+Dock-video update 2026-10-16:
+[`DP-IN/AUX audit`](fairydust/usb4/DPIN-AUX-AUDIT.md) identifies the missing
+Apple DP-IN node family and corrects the macOS capture plan. The current
+force-link probe reaches DCP but leaves the display disconnected. Next:
+confirm the original ADT's DP-IN ranges, then capture their bring-up with
+the DCP in one approved, two-host macOS hypervisor session. Seven offline
+tooling checks pass; no display, kernel, or hardware qualification is claimed.
 The specific regression reports and reproduction steps are tracked in
 [`BUG-FIX-ROADMAP.md`](BUG-FIX-ROADMAP.md).
 OS 9 implementation progress and Claude Code takeover tasks are in

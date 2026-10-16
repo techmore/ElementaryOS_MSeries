@@ -1,5 +1,10 @@
 # macOS trace runbook — the last unknown for dock DP tunneling
 
+Updated 2026-10-16 after the [DP-IN/AUX audit](DPIN-AUX-AUDIT.md).
+**Preparing this capture is safe on Linux; executing it requires a second
+computer and a reboot into macOS under m1n1.** No such boot has been performed
+for this audit. Do not execute the capture without the owner's approval.
+
 Goal: learn three things that no amount of Linux-side source reading can give us,
 by tracing macOS driving the WD22TB4 on this exact machine.
 
@@ -20,13 +25,29 @@ by tracing macOS driving the WD22TB4 on this exact machine.
 |---|---|
 | m1n1 with the proxy (the Mac already boots it) | present — `/boot/m1n1/boot.bin`, m1n1 tree at `~/m1n1-build/m1n1` |
 | proxyclient Python deps (`construct`, `pyserial`) | **done** — `bash mseries/fairydust/usb4/m1n1-trace-deps.sh` (vendored off-system) |
-| DCP / DPTX tracers | **present** — `proxyclient/hv/trace_dcp.py`, `proxyclient/hv/trace_dptx.py` |
+| DCP / DP-IN tracers | `proxyclient/hv/trace_dcp.py` plus this directory's `trace-dpin.py`; offline fixture tests pass, actual capture unverified |
+| Exact DP-IN addresses / Apple ATC index | Obtain `inspect-dpin-adt.py` output; resolve the target by physical crossbar address rather than guessing the Apple ATC index |
 | A **second computer** on the USB proxy port | not attached; required — the Mac cannot drive its own m1n1 proxy |
 | The **macOS iBoot payload** for `run_guest.py` | not on the ESP (`/boot/asahi/all_firmware.tar.gz` is the installer's factory/camera set, not macOS) |
 
-The two rows in bold are the whole reason this is "super annoying": it is a
-two-computer, boot-macOS operation, and the macOS payload has to be produced the
-same way the Asahi installer does.
+The second host, payload and address mapping are capture prerequisites. The
+original `trace_dptx.py` only traces standalone `dptx-phy`/`lpdptx-phy*` nodes;
+it does not capture the missing ATC DP-IN blocks. `trace_dcp.py` defaults to
+`dcp0`, so select the external controller explicitly.
+
+## Confirm the address mapping without rebooting
+
+From the regular host Terminal (this chat runner cannot elevate with sudo):
+
+```bash
+sudo python3 /home/sdolbec/wt-dockvideo/mseries/fairydust/usb4/inspect-dpin-adt.py \
+  > /home/sdolbec/dptunnel-logs/dpin-adt.json
+```
+
+This only reads preserved ADT RAM and outputs filtered device metadata. It
+does not read guessed DP-IN MMIO. If `/dev/mem` policy refuses the read, save
+the error and obtain the ADT from the m1n1 proxy during the approved capture;
+do not change kernel security settings or load modules to work around it.
 
 ## Procedure (shape; confirm the two flagged items first)
 
@@ -43,18 +64,31 @@ python3 proxyclient/tools/run_guest.py --help                 # sanity check
    dock and its monitor attached.
 2. Connect the second computer to the Mac's USB proxy port.
    **[confirm]** which port the t6000 m1n1 proxy uses on this 14" M1 Pro.
+   Use a different physical port from the dock: m1n1 removes the proxy port's
+   ACIO/ATC/DP-IN nodes from the guest ADT. Stop if the target nodes are missing.
 3. Obtain the macOS iBoot Mach-O. **[confirm]** the current Asahi method for
    pulling it out of the macOS Boot volume (the installer does this behind the
    scenes; `/boot/asahi` here only holds the restore/factory set).
-4. Run macOS under the hypervisor with the DCP tracer attached:
+4. Copy this directory's `trace-dpin.py` to the second host. Confirm the
+   guest's external DCP node/alias resolves to physical `0x28cc00000`, and
+   confirm the dock crossbar's address from the ADT (Linux uses
+   `0xb0304c000`). Run **one guest with both hooks**, not two proxy clients:
 
 ```
+# Example only after confirming these two target selectors against the ADT:
+TRACE_DCP=dcpext1 TRACE_DPIN_XBAR=0xb0304c000 \
 python3 proxyclient/tools/run_guest.py \
-  -m proxyclient/hv/trace_dcp.py  <macOS-iBoot>.macho
-# in a second shell, MMIO-level DPTX/PHY activity:
-python3 proxyclient/tools/run_guest.py \
-  -m proxyclient/hv/trace_dptx.py <macOS-iBoot>.macho
+  -l dpin-capture.log \
+  -m /path/to/trace-dpin.py \
+  -m proxyclient/hv/trace_dcp.py \
+  <macOS-iBoot>.macho 2>&1 | tee dpin-capture-console.log
 ```
+
+   The guest runner supports repeated `-m`. Verify the console lists
+   `DPIN_TRACE` ranges for the selected crossbar **and both** DP-IN nodes.
+   If a hook reports an error, abort the capture rather than continuing from
+   the fallback shell with missing instrumentation. The hook validates its
+   complete target set before registering a partial trace.
 
 5. Once macOS is up and the dock's display is live, unplug/replug the monitor so
    a clean attach/detach sequence is in the log. Save the whole log.
@@ -63,11 +97,18 @@ python3 proxyclient/tools/run_guest.py \
 
 - The full `trace_dcp.py` log around the dock's DP sink appearing/disappearing
   (the AFK/ASC frames, not a summary).
-- The `trace_dptx.py` log around the same window.
+- The `trace-dpin.py` MMIO records around the same window, including the
+  `DPIN_TRACE` node/address/range inventory from the console.
 - `dcpext1`'s DT node from macOS's perspective if it is easy to dump.
+- The target DP-IN nodes' `reg`, parent relationships, interrupt properties
+  and transport indices; the actual dock adapter used by HDMI; the raw
+  DCP `connectTo` / `validateConnection` requests and replies.
 
-From that we can name the tunnelled-endpoint call, its parameters, and the
-crossbar sequence — i.e. write experiment 5 instead of guessing.
+From that we can identify the DP-IN enable/reset/AUX sequence and correlate
+its ordering with the DCP transport request and router DPRX completion.
+Do not infer a firmware IPC selector from the older `dcpav.py` constants:
+that helper uses a different target layout. See the audit for the limits of
+the public `core0 -> dpin0` observation.
 
 ## What has already been ruled out (so nobody re-does it)
 

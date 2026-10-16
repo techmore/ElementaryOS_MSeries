@@ -1,5 +1,11 @@
 # USB4 DisplayPort tunneling on M1 Pro (dock video) — reverse-engineering map
 
+**2026-10-16 audit:** read [DPIN-AUX-AUDIT.md](DPIN-AUX-AUDIT.md) for the
+identified Apple DP-IN node names, the limits of the AUX activation evidence,
+the latest owner-run force-link result, and the corrected trace instrumentation.
+It supersedes the early sections' inference that crossbar selection alone
+completes the host path. Exact DP-IN programming remains unverified.
+
 Status: **experiment 1 installed and tested on hardware — the tunnel activates, the
 sink never answers; experiment 2 built and installed; runbook ready. Offline
 source/upstream analysis added 2026-10-15 (section 6): `dprx_bypass` can bring the
