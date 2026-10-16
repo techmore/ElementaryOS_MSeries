@@ -479,7 +479,9 @@ namespace MSeries {
             }
             var provider_error = entry.get_string_member ("error") ?? "";
             if (provider_error.length > 0) {
-                append_subtle_row (provider_error);
+                append_subtle_row (provider.down () == "opencodego"
+                    ? "Account quota needs an OpenCode Go web sign-in. Local activity is under Sessions."
+                    : provider_error);
             }
             providers_box = previous_provider_box;
         }
