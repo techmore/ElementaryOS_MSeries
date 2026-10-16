@@ -236,5 +236,6 @@ a DP-altmode reference, not the M1 USB4 tunnel protocol.
 - [Batched reboot: pre-flight, GRUB entry, post-reboot checks](POST-REBOOT-CHECKLIST.md)
 - [HDMI: what works today, decision frame and plan (read this first for priorities)](HDMI-FASTEST-PATH.md)
 - [Controlled test, first hardware boot: DP-IN activation aborted at once; stale-PHY oops](evidence/2026-10-16-controlled-test-first-boot.md)
+- [Pantheon fails to start on the dptunnel entries: gala aborts in mutter KMS modeset after a DRM hotplug](evidence/2026-10-16-pantheon-session-crash-on-dptunnel-entries.md)
 
 Keep raw Apple binaries, decompiler output and raw machine captures private.

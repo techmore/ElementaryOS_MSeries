@@ -213,6 +213,18 @@ re-probed. DPRX was never reached, so this says nothing about the sink. New item
 | R2 | Stale-PHY guard: per-start lookup or bound-provider check so a start after ACIO re-probe fails with `-ENODEV` and never oopses | Codex/DeepSeek |
 | R3 | `STATE-OF-PLAY.md` still says no reboot has happened; the first boot did | **Fixed** in the outcome record commit (STATE-OF-PLAY updated) |
 
+### Owner report: Pantheon does not start on the dptunnel entries (recorded 2026-10-16)
+
+Evidence: [evidence/2026-10-16-pantheon-session-crash-on-dptunnel-entries.md](evidence/2026-10-16-pantheon-session-crash-on-dptunnel-entries.md).
+gala (mutter) aborts in `meta_kms_update_mode_set` after a DRM hot-plug uevent at session
+start on both the controlled entry (coredump saved) and the old dptunnel entry (after the
+11:20 `boot.bin`); the stock default is fine.
+
+| # | Item | Owner |
+|---|---|---|
+| R4 | Identify the uevent/connector that makes mutter assert; keep the external DCP connector from reporting connected/invalid-mode to userspace until a real mode exists | Codex/DeepSeek |
+| R5 | Re-evaluate "fallback boot is statically safe" in `CONTROLLED-TEST.md`: the old entry failed after the new `boot.bin`; decide whether to restore the pre-change `boot.bin` outside test windows | owner + Codex |
+
 ## Tooling
 
 | # | Defect | Status |
