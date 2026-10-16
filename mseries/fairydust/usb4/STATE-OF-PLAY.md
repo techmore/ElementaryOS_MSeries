@@ -161,5 +161,6 @@ a DP-altmode reference, not the M1 USB4 tunnel protocol.
 - [Original audit](DPIN-AUX-AUDIT.md), [routing RE](DP-TUNNEL-RE.md)
 - [Gap ledger from the 2026-10-16 offline review (owners, status)](REVIEW-2026-10-16-GAPS.md)
 - [Router-side DP-IN hook and refcount design sketch (ledger G1/G2)](DPIN-ROUTER-HOOK-DESIGN.md)
+- [DPRX teardown series backport plan (ledger G3)](DPRX-TEARDOWN-BACKPORT-PLAN.md)
 
 Keep raw Apple binaries, decompiler output and raw machine captures private.
