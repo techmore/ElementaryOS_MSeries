@@ -124,6 +124,26 @@ edited. Bundle claims about validation were not re-run.
 3. Install modules + `depmod`, repack initramfs, then `boot.bin`; verify with `modinfo`/`lsinitramfs` before rebooting.
 4. First boot: expect "DP source ready ... before DPRX" and no timeout storm; a bypassed DPRX line is not progress.
 
+### Follow-up spot-checks of B3/B4 (Claude, read-only, same tree)
+
+- **B3 confirmed:** `apple_nhi_dp_source_get()` returns `-EOPNOTSUPP` when
+  `port != source->port || !async` (`apple.c:613-614`), and `tb_dp_activate()`
+  now propagates a negative return. A tunnel on host DP-IN port 6 would fail
+  activation instead of timing out. The dock's current pairing is `0:5 <-> 1:14`
+  (port 5, the mapped one), so today's dock is unaffected; other docks or a port
+  swap would be.
+- **B4 confirmed:** the status is read in `tb_dp_dprx_work` (new `source_failed`
+  pre-read) and again in the gate before the bypass check in `tb_dp_wait_dprx`.
+- **New N4 (timing):** `apple_nhi_dp_source_get()` sets a **5 s** source deadline
+  (`apple.c:622`), shorter than the 12 s default DPRX window. If DCP start takes
+  longer than 5 s the source is marked failed and the tunnel fails fast, even with
+  bypass armed. Fine as a design if intended; the first boot log should show which
+  limit was hit, and it is a candidate cause of a "failed" first run that is not a
+  hardware wall.
+- The ordering itself (adapters enabled, then source requested, status gate before
+  bypass, discovered tunnels adopted via `tb_tunnel_start_dp_source`) reads as
+  described.
+
 ## Tooling
 
 | # | Defect | Status |
