@@ -1,28 +1,40 @@
 # One controlled DP-IN test
 
 2026-10-16. This supersedes the paused deployment blocker in the earlier handoff.
-Apply patches 0001–0010 in order. Frozen source: private reconstruction commit
-`c6fd9068fb69a3d4235a705fef2e0364748ff2b4`; public patch hashes and final module,
-DT, initramfs evidence are in
-[evidence/2026-10-16-controlled-test-preflight.json](evidence/2026-10-16-controlled-test-preflight.json).
+Apply patches 0001–0011 in order. Current frozen source: private reconstruction
+commit `46bb8b63089c0fed0ccdc3bd8b62fc87e99ee88c` (patch 0011 adds the
+first-boot R1/R2 fixes on top of `c6fd9068fb69a3d4235a705fef2e0364748ff2b4`);
+public patch hashes and final module, DT, initramfs evidence for 0001–0010 are
+in
+[evidence/2026-10-16-controlled-test-preflight.json](evidence/2026-10-16-controlled-test-preflight.json),
+and the fix/re-stage record is
+[evidence/2026-10-16-r1-r2-fix-and-restage.md](evidence/2026-10-16-r1-r2-fix-and-restage.md).
 No repeated binary/port/dock discovery was needed.
 
 ## Current deployment status
 
-**Staged and verified; first boot executed — 2026-10-16.** The one-shot entry
-ran 11:45:04–11:47:13 with the exact intended parameters (`allow_dp_tunnel=1
-dprx_bypass=1 dprx_timeout=15000`) and all five rebuilt modules loaded. The
-bridge engaged automatically on the dock tunnel (`0:5 <-> 1:14`) and failed in
-the DP-IN path: the first attempt returned `-67` (`-ENOLINK`) from
-`phy_power_on` (DP-IN HPD low at activation, ~4 s after bring-up); the second
-attempt Oopsed in `dpin_init` (NULL device passed to `pm_runtime_resume`). A
-Gala/simpledrm boot race also crashed the desktop, so the collector was not
-run. Full record and excerpts:
+**Re-staged with the R1/R2 fixes; no boot armed — 2026-10-16.** The first
+one-shot entry ran 11:45:04–11:47:13 with the exact intended parameters
+(`allow_dp_tunnel=1 dprx_bypass=1 dprx_timeout=15000`) and all five rebuilt
+modules loaded. The bridge engaged automatically on the dock tunnel
+(`0:5 <-> 1:14`) and failed in the DP-IN path: the first attempt returned
+`-67` (`-ENOLINK`) from `phy_power_on` (DP-IN HPD low at activation, ~4 s
+after bring-up); the second attempt Oopsed in `dpin_init` (stale PHY after
+the ACIO re-probe). A Gala/simpledrm boot race also crashed the desktop, so
+the collector was not run. Full record and excerpts:
 [evidence/2026-10-16-controlled-test-first-boot-outcome.md](evidence/2026-10-16-controlled-test-first-boot-outcome.md).
-Do not re-arm the test entry until the `dpin_init` Oops and the session race
-are fixed. The staged install and rollback set are intact; `next_entry` is
-empty; root modules/original initramfs/kernel/default remain unchanged.
-Do not re-run apply: its collision checks will refuse the existing installation.
+
+Revision `46bb8b6` (patch 0011) fixes both DP-IN failures. The refreshed
+payload was installed through the reviewed rollback → stage → verify → plan →
+apply sequence: image `486be1d9…`, same append-only `custom.cfg` (`9eadf091…`)
+and fallback-safe `boot.bin` (`6702f2c7…`); rollback set
+`/home/sdolbec/dptunnel-logs/rollback-46bb8b6` (the c6fd906 set is superseded).
+`next_entry` is empty; root modules/original initramfs/kernel/default/grubenv
+remain unchanged. Re-arm only when the session race (R4) is addressed or
+accepted — its cause is recorded and the `lightdm-wait-for-drm.conf` drop-in
+is installed (effective next boot, unverified); the fixed payload is otherwise
+ready for one re-run with the collector. Record:
+[evidence/2026-10-16-r1-r2-fix-and-restage.md](evidence/2026-10-16-r1-r2-fix-and-restage.md).
 
 ## Fallback compatibility
 
@@ -60,10 +72,10 @@ provider unbind or cable moves are part of this first test.
 
 Workspace:
 `/home/sdolbec/Documents/Codex/2026-10-16/hey-x20/work/dpin-implementation`.
-Final staging directory: `controlled-test-c6fd906`.
+Final staging directory: `controlled-test-46bb8b6` (previous: `controlled-test-c6fd906`).
 Boot candidate: `deployment/boot-fallback-safe-c6fd906.bin`.
-Install manifest: `controlled-test-c6fd906/install-manifest.json`.
-Rollback directory: `/home/sdolbec/dptunnel-logs/rollback-c6fd906`.
+Install manifest: `controlled-test-46bb8b6/install-manifest.json`.
+Rollback directory: `/home/sdolbec/dptunnel-logs/rollback-46bb8b6` (previous set `rollback-c6fd906` is superseded).
 
 The installer checks frozen input/output hashes and the separate compatibility
 record. It backs up the original boot payload, custom.cfg and grubenv, writes
@@ -72,12 +84,13 @@ last. It never modifies root modules, the default entry or grubenv and never
 reboots. It refuses stale targets and collisions. Scratch tests exercised
 apply, exact rollback and refusal after another writer modifies a target.
 
-From that workspace, the reviewed manifest can be applied with:
+From that workspace, the current reviewed manifest was applied with (the
+installer refuses re-application by design):
 
 ```sh
 sudo python3 test-staging/apply-controlled-test.py apply \
-  --manifest controlled-test-c6fd906/install-manifest.json \
-  --expect-manifest-sha256 e163c4fdaab41905aafa56fb2ce22f033d351aec878652c66e1af5edfab13a7f
+  --manifest controlled-test-46bb8b6/install-manifest.json \
+  --expect-manifest-sha256 fdfe9ab56a58107b46f4293e2d3fd67e810396f1ce8d8bca0ab70e58fb8f10a5
 ```
 
 Check deployment status at the top of OS9-HANDOFF before running it. The same
@@ -103,8 +116,8 @@ After login, collect without touching drivers or cables:
 
 ```sh
 sudo python3 /home/sdolbec/wt-dockvideo/mseries/fairydust/usb4/tools/collect-controlled-test.py \
-  --stage-manifest /home/sdolbec/Documents/Codex/2026-10-16/hey-x20/work/dpin-implementation/controlled-test-c6fd906/stage-manifest.json \
-  --output /home/sdolbec/dptunnel-logs/controlled-c6fd906-first-boot
+  --stage-manifest /home/sdolbec/Documents/Codex/2026-10-16/hey-x20/work/dpin-implementation/controlled-test-46bb8b6/stage-manifest.json \
+  --output /home/sdolbec/dptunnel-logs/controlled-46bb8b6-first-boot
 ```
 
 First require the intended kernel, bypass Y, timeout 15000 and all five loaded
@@ -113,6 +126,8 @@ EDID checks and kernel log. The collector excludes eDP and cannot infer a
 picture from bypassed DPRX, tunnel activation or USB enumeration. A bypass-off
 DPRX qualification is a later test, not part of this one.
 
-DeepSeek: fallback source fix, fresh bundle, real initramfs and guarded installer
-are now prepared. The five-second source-start deadline remains unchanged;
-record its errno/timing if it fires. Hardware results remain pending.
+DeepSeek: the R1/R2 fixes, fresh bundle, re-staged initramfs and re-installed
+payload are recorded in
+[evidence/2026-10-16-r1-r2-fix-and-restage.md](evidence/2026-10-16-r1-r2-fix-and-restage.md).
+The five-second source-start deadline remains unchanged; record its
+errno/timing if it fires. Hardware results remain pending.

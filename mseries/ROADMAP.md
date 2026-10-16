@@ -1,5 +1,24 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## R1/R2 first-boot fixes staged — 2026-10-16
+
+The first controlled boot (11:45:04–11:47:13) ran with the exact intended
+parameters and all five rebuilt modules loaded; the bridge engaged on the dock
+tunnel (`0:5 <-> 1:14`) and failed in the DP-IN path (first attempt
+`-ENOLINK` with HPD low; second attempt a `dpin_init` Oops on a stale PHY),
+and a Gala/simpledrm race crashed the desktop before collection. Source
+revision `46bb8b6` (public patch 0011) fixes both DP-IN failures; five
+modules rebuilt, all offline suites pass, and the refreshed payload was
+re-staged and re-installed through the reviewed sequence (rollback → stage →
+verify → plan → apply): image `486be1d9…`, same `custom.cfg` (`9eadf091…`)
+and fallback-safe `boot.bin` (`6702f2c7…`); rollback set
+`/home/sdolbec/dptunnel-logs/rollback-46bb8b6` (the c6fd906 set is
+superseded). `next_entry` is empty; no boot armed or performed. The
+`mseries-gala-failed` marker was removed and the `lightdm-wait-for-drm.conf`
+drop-in is installed (effective next boot, unverified); the remaining
+session-race item is shortening appledrm registration. Record:
+[evidence/2026-10-16-r1-r2-fix-and-restage.md](fairydust/usb4/evidence/2026-10-16-r1-r2-fix-and-restage.md).
+
 ## Controlled-test preparation resumed — 2026-10-16
 
 The owner resumed at fallback compatibility, with no repeated discovery.
@@ -16,13 +35,15 @@ separate entry uses bypass=1 and timeout=15000. Exact artifacts, hash-guarded
 installer, rollback and collector: [CONTROLLED-TEST.md](fairydust/usb4/CONTROLLED-TEST.md).
 The earlier root-module-replacing installer is superseded for this test.
 No reboot, module reload/unbind, cable move or hardware success is claimed.
-**Deployment status: STAGED AND VERIFIED.** The new initramfs, append-only
+**Deployment status: STAGED AND VERIFIED (superseded by the re-stage above).**
+The new initramfs, append-only
 custom.cfg and fallback-compatible boot.bin are installed and hash-checked.
-Original boot/config/grubenv backups are verified at
+Original boot/config/grubenv backups were verified at
 `/home/sdolbec/dptunnel-logs/rollback-c6fd906`. Root modules, original initramfs,
 kernel/default and grubenv are unchanged. No reboot is armed (`next_entry` empty)
 or performed; running modules remain unchanged. Next is one deliberate one-shot
-boot of `elementary-usb4-dpin-controlled`, then the recorded read-only collector.
+boot of `elementary-usb4-dpin-controlled` (with the `46bb8b6` payload), then
+the recorded read-only collector.
 
 Last updated 2026-10-16. Day-to-day pending checks live in the robot: `mseries-verify status`
 (seed: `mseries/local-ai/verify-checks.json`). This file is the human-readable plan.

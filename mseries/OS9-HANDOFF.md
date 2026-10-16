@@ -1,5 +1,26 @@
 # OS 9 implementation / Claude Code handoff
 
+## R1/R2 first-boot fixes staged — 2026-10-16 (DeepSeek/OpenCode)
+
+Source revision `46bb8b6` (public patch `0011`) implements R1 (retry the
+source start on `-ENOLINK` every 50 ms until the 5 s deadline; one-shot
+INACTIVE/ACK/HPD/IRQ register dump on failure; Apple's abort semantics kept)
+and R2 (bound-provider guards in every dpin op and the DCP connect path —
+`-ENODEV` instead of the `dpin_init` Oops). Five modules rebuilt; all offline
+suites pass (28 bridge groups incl. the new `-ENOLINK` retry group);
+checkpatch clean; the refreshed bundle re-validated (the only new undefined
+symbol versus the booted bundle is `_dev_info`, referenced by the target
+tree's own `appledrm.ko`). The controlled-test payload was re-staged and
+re-installed through the reviewed sequence (rollback → stage → verify → plan →
+apply): image `486be1d9…`, same `custom.cfg` (`9eadf091…`) and fallback-safe
+`boot.bin` (`6702f2c7…`); fresh rollback set
+`/home/sdolbec/dptunnel-logs/rollback-46bb8b6` (the c6fd906 set is
+superseded). `next_entry` empty; no boot armed or performed. The
+`mseries-gala-failed` marker was removed and the `lightdm-wait-for-drm.conf`
+drop-in is installed (effective next boot, unverified); the remaining
+session-race item is shortening appledrm registration. Record:
+[evidence/2026-10-16-r1-r2-fix-and-restage.md](fairydust/usb4/evidence/2026-10-16-r1-r2-fix-and-restage.md).
+
 ## Controlled-test preparation resumed — 2026-10-16
 
 The owner resumed at fallback compatibility, with no repeated discovery.
@@ -25,9 +46,11 @@ attempt Oopsed in `dpin_init` (NULL device passed to `pm_runtime_resume`). A
 Gala/simpledrm boot race also crashed the desktop, so the collector was not run.
 Full record:
 [evidence/2026-10-16-controlled-test-first-boot-outcome.md](fairydust/usb4/evidence/2026-10-16-controlled-test-first-boot-outcome.md).
-The staged install and rollback set are intact; `next_entry` is empty; root
+The R1/R2 fixes are staged (rev `46bb8b6`, image `486be1d9…`, rollback set
+`/home/sdolbec/dptunnel-logs/rollback-46bb8b6`); `next_entry` is empty; root
 modules, original initramfs, kernel/default and grubenv are unchanged. Do not
-re-arm the test entry until the `dpin_init` Oops and the session race are fixed.
+re-arm the test entry until the session race (R4) is addressed or accepted
+(the drop-in takes effect at the next boot; appledrm-registration work remains).
 
 Updated 2026-10-16. Repository: techmore/ElementaryOS_MSeries.
 

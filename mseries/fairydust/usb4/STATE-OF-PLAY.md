@@ -20,13 +20,37 @@ loaded). The bridge engaged automatically on the real dock tunnel
   11:46:27–30): kernel Oops in `dpin_init` — `pm_runtime_resume` called with a
   NULL device (`dpin->dev`); worker killed; tunnel torn down again at 11:46:48.
 - A Gala/simpledrm boot race crashed the desktop before the collector could
-  run; patched Gala is disabled by `/home/sdolbec/.cache/mseries-gala-failed`
-  until removed.
+  run. The `~/.cache/mseries-gala-failed` marker was removed on 2026-10-16
+  (self-healing launcher); the race cause is recorded (appledrm registers
+  after gala on the dptunnel entries) and the `lightdm-wait-for-drm.conf`
+  drop-in is installed (effective next boot, unverified).
 
 No picture; M1–M4 remain unmet. Full record:
 [evidence/2026-10-16-controlled-test-first-boot-outcome.md](evidence/2026-10-16-controlled-test-first-boot-outcome.md).
-Next: fix the `dpin_init` Oops and the `-ENOLINK` handling, fix the session
-race, then one re-run of the controlled boot with the collector.
+Next: re-run the controlled boot with the collector (R1/R2 fixes staged at
+revision `46bb8b6`; boot owner-gated). The session-race cause is recorded and
+the drop-in takes effect at the next boot.
+
+## First-boot failures fixed and re-staged — 2026-10-16
+
+R1/R2 are implemented in source revision `46bb8b6` (public patch 0011):
+`apple_dp_source_work` retries `-ENOLINK` every 50 ms until the existing 5 s
+deadline (Apple's abort semantics kept), `dpin_power_on` logs
+INACTIVE/ACK/HPD/IRQ registers once per state change on failure, and every
+dpin op plus the DCP connect path fail with `-ENODEV` on a stale PHY instead
+of oopsing. Five modules rebuilt; all offline suites pass (28 bridge groups
+including the new `-ENOLINK` retry group); checkpatch clean; the refreshed
+bundle re-validated (the only new undefined symbol versus the booted bundle
+is `_dev_info`, referenced by the target tree's own `appledrm.ko`).
+
+The controlled-test payload was re-staged and re-installed with the reviewed
+tooling (rollback → stage → verify → plan → apply): new image `486be1d9…`
+(verified offline: five module hashes, preload order, unique test
+parameters), same append-only `custom.cfg` (`9eadf091…`) and fallback-safe
+`boot.bin` (`6702f2c7…`). Fresh rollback set
+`/home/sdolbec/dptunnel-logs/rollback-46bb8b6`; the c6fd906 rollback set is
+superseded. `next_entry` stays empty; no boot armed or performed. Record:
+[evidence/2026-10-16-r1-r2-fix-and-restage.md](evidence/2026-10-16-r1-r2-fix-and-restage.md).
 
 ## Controlled-test preparation resumed — 2026-10-16
 
@@ -46,8 +70,9 @@ The earlier root-module-replacing installer is superseded for this test.
 No reboot, module reload/unbind, cable move or hardware success is claimed.
 **Deployment status: STAGED AND VERIFIED.** The new initramfs, append-only
 custom.cfg and fallback-compatible boot.bin are installed and hash-checked.
-Original boot/config/grubenv backups are verified at
-`/home/sdolbec/dptunnel-logs/rollback-c6fd906`. Root modules, original initramfs,
+Original boot/config/grubenv backups were verified at
+`/home/sdolbec/dptunnel-logs/rollback-c6fd906` (superseded by
+`rollback-46bb8b6`, see the re-stage section above). Root modules, original initramfs,
 kernel/default and grubenv are unchanged. No reboot is armed (`next_entry` empty)
 or performed; running modules remain unchanged. That one-shot boot ran on 2026-10-16 (outcome in the first section above);
 the collector was not run (desktop race).

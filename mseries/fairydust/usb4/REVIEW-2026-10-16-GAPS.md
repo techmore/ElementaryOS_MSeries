@@ -209,8 +209,8 @@ re-probed. DPRX was never reached, so this says nothing about the sink. New item
 
 | # | Item | Owner |
 |---|---|---|
-| R1 | Retry the source start on `-ENOLINK` until the 5 s deadline (or wait for the DP-IN plug IRQ) and log INACTIVE/ACK/HPD/IRQ registers on failure; keep Apple's abort semantics | Codex/DeepSeek |
-| R2 | Stale-PHY guard: per-start lookup or bound-provider check so a start after ACIO re-probe fails with `-ENODEV` and never oopses | Codex/DeepSeek |
+| R1 | Retry the source start on `-ENOLINK` until the 5 s deadline (or wait for the DP-IN plug IRQ) and log INACTIVE/ACK/HPD/IRQ registers on failure; keep Apple's abort semantics | **Implemented + staged** (rev `46bb8b6`, patch 0011, image `486be1d9…`); boot pending. Record: [evidence/2026-10-16-r1-r2-fix-and-restage.md](evidence/2026-10-16-r1-r2-fix-and-restage.md) |
+| R2 | Stale-PHY guard: per-start lookup or bound-provider check so a start after ACIO re-probe fails with `-ENODEV` and never oopses | **Implemented + staged** (rev `46bb8b6`, patch 0011, image `486be1d9…`); boot pending. Record: [evidence/2026-10-16-r1-r2-fix-and-restage.md](evidence/2026-10-16-r1-r2-fix-and-restage.md) |
 | R3 | `STATE-OF-PLAY.md` still says no reboot has happened; the first boot did | **Fixed** in the outcome record commit (STATE-OF-PLAY updated) |
 
 ### Owner report: Pantheon does not start on the dptunnel entries (recorded 2026-10-16)

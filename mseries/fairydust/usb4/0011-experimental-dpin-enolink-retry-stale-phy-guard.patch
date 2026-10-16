@@ -1,0 +1,246 @@
+From: sdolbec <sdolbec1@gmail.com>
+Subject: [PATCH] phy: apple: retry DP-IN activation on -ENOLINK and guard a stale PHY
+
+Apply after 0001 through 0010. The first hardware boot of the bridge showed
+the DP-IN activation returning -ENOLINK (HPD still low) on the first poll,
+which the worker treats as final, and a later start Oopsing in dpin_init when
+the cached PHY outlived its ACIO provider re-probe. Retry the source start on
+-ENOLINK every 50 ms until the existing 5 s deadline (Apple's abort semantics
+are kept; only the deadline bounds retries) and log the DP-IN
+INACTIVE/ACK/HPD/IRQ registers once per state change on failure. Guard every
+dpin op and the DCP connect path with a bound-provider check so a start after
+a re-probe fails with -ENODEV instead of dereferencing an unregistered PHY.
+See evidence/2026-10-16-r1-r2-fix-and-restage.md for the re-staged
+controlled-test payload and offline verification.
+
+Signed-off-by: sdolbec <sdolbec1@gmail.com>
+---
+
+diff --git a/drivers/gpu/drm/apple/dcp.c b/drivers/gpu/drm/apple/dcp.c
+index 1ade342..bcb0268 100644
+--- a/drivers/gpu/drm/apple/dcp.c
++++ b/drivers/gpu/drm/apple/dcp.c
+@@ -390,6 +390,12 @@ static int dcp_dptx_connect_source(struct apple_dcp *dcp, u32 port, bool prepare
+ 			ret = -EBUSY;
+ 			goto out;
+ 		}
++		/* A provider re-probe can leave the cached PHY unregistered. */
++		if (!device_is_registered(&dcp->phy->dev)) {
++			mutex_unlock(&dptx->phy_lock);
++			ret = -ENODEV;
++			goto out;
++		}
+ 		ret = phy_init(dcp->phy);
+ 		if (!ret) {
+ 			dptx->phy_initialized = true;
+diff --git a/drivers/phy/apple/dpin.c b/drivers/phy/apple/dpin.c
+index fd76df3..06ffc73 100644
+--- a/drivers/phy/apple/dpin.c
++++ b/drivers/phy/apple/dpin.c
+@@ -33,6 +33,8 @@ struct apple_dpin {
+ 	bool initialized;
+ 	bool active;
+ 	bool fault;
++	bool logged_failure;
++	unsigned int logged_state;
+ };
+ 
+ static unsigned int dpin_read(void *ctx, unsigned int offset)
+@@ -59,6 +61,43 @@ static void dpin_sleep(void *ctx, unsigned int min_us, unsigned int max_us)
+ 	usleep_range(min_us, max_us);
+ }
+ 
++/*
++ * A cached PHY can outlive its provider: after the ACIO re-probes, the
++ * consumer's reference keeps the struct alive while the device is
++ * unregistered and the driver data is gone. Never touch it; fail cleanly.
++ */
++static struct apple_dpin *dpin_live(struct phy *phy)
++{
++	struct apple_dpin *dpin;
++
++	if (!device_is_registered(&phy->dev))
++		return NULL;
++	dpin = phy_get_drvdata(phy);
++	if (!dpin || !dpin->dev)
++		return NULL;
++	return dpin;
++}
++
++static void dpin_log_activation_failure(struct apple_dpin *dpin, int ret)
++{
++	unsigned int inactive = dpin_read(dpin, APPLE_DPIN_INACTIVE);
++	unsigned int ack = dpin_read(dpin, APPLE_DPIN_INACTIVE_ACK);
++	unsigned int hpd = dpin_read(dpin, APPLE_DPIN_HPD);
++	unsigned int irq_status = dpin_read(dpin, APPLE_DPIN_IRQ_STATUS);
++	unsigned int irq_enable = dpin_read(dpin, APPLE_DPIN_IRQ_ENABLE);
++	unsigned int state = (inactive & 1U) | ((ack & 1U) << 1) |
++			     (hpd & APPLE_DPIN_HPD_LEVEL);
++
++	/* One line per state change: the retries answer whether HPD ever rose. */
++	if (dpin->logged_failure && state == dpin->logged_state)
++		return;
++	dpin->logged_failure = true;
++	dpin->logged_state = state;
++	dev_info(dpin->dev,
++		 "DP-IN activation failed: %d (INACTIVE=%#x ACK=%#x HPD=%#x STATUS=%#x ENABLE=%#x)\n",
++		 ret, inactive, ack, hpd, irq_status, irq_enable);
++}
++
+ static irqreturn_t dpin_irq(int irq, void *data)
+ {
+ 	struct apple_dpin *dpin = data;
+@@ -93,9 +132,11 @@ static irqreturn_t dpin_irq(int irq, void *data)
+ 
+ static int dpin_init(struct phy *phy)
+ {
+-	struct apple_dpin *dpin = phy_get_drvdata(phy);
++	struct apple_dpin *dpin = dpin_live(phy);
+ 	int ret;
+ 
++	if (!dpin)
++		return -ENODEV;
+ 	ret = pm_runtime_resume_and_get(dpin->dev);
+ 	if (ret < 0)
+ 		return ret;
+@@ -118,9 +159,11 @@ static int dpin_init(struct phy *phy)
+ 
+ static int dpin_exit(struct phy *phy)
+ {
+-	struct apple_dpin *dpin = phy_get_drvdata(phy);
++	struct apple_dpin *dpin = dpin_live(phy);
+ 	int ret;
+ 
++	if (!dpin)
++		return -ENODEV;
+ 	mutex_lock(&dpin->lock);
+ 	if (dpin->active) {
+ 		mutex_unlock(&dpin->lock);
+@@ -148,9 +191,11 @@ static int dpin_exit(struct phy *phy)
+ 
+ static int dpin_power_on(struct phy *phy)
+ {
+-	struct apple_dpin *dpin = phy_get_drvdata(phy);
++	struct apple_dpin *dpin = dpin_live(phy);
+ 	int ret, rollback;
+ 
++	if (!dpin)
++		return -ENODEV;
+ 	mutex_lock(&dpin->lock);
+ 	if (!dpin->initialized || dpin->fault) {
+ 		ret = -EIO;
+@@ -158,6 +203,7 @@ static int dpin_power_on(struct phy *phy)
+ 	}
+ 	ret = apple_dpin_set_inactive(&dpin->io, 0);
+ 	if (ret) {
++		dpin_log_activation_failure(dpin, ret);
+ 		rollback = apple_dpin_set_inactive(&dpin->io, 1);
+ 		if (rollback) {
+ 			dpin->fault = true;
+@@ -165,6 +211,7 @@ static int dpin_power_on(struct phy *phy)
+ 		}
+ 	} else {
+ 		dpin->active = true;
++		dpin->logged_failure = false;
+ 	}
+ out:
+ 	mutex_unlock(&dpin->lock);
+@@ -173,9 +220,11 @@ static int dpin_power_on(struct phy *phy)
+ 
+ static int dpin_power_off(struct phy *phy)
+ {
+-	struct apple_dpin *dpin = phy_get_drvdata(phy);
++	struct apple_dpin *dpin = dpin_live(phy);
+ 	int ret;
+ 
++	if (!dpin)
++		return -ENODEV;
+ 	mutex_lock(&dpin->lock);
+ 	if (!dpin->initialized) {
+ 		mutex_unlock(&dpin->lock);
+@@ -203,9 +252,12 @@ static int dpin_validate(struct phy *phy, enum phy_mode mode, int submode,
+ 
+ static int dpin_configure(struct phy *phy, union phy_configure_opts *opts)
+ {
+-	struct apple_dpin *dpin = phy_get_drvdata(phy);
++	struct apple_dpin *dpin = dpin_live(phy);
+ 	int ret = 0;
+ 
++	if (!dpin)
++		return -ENODEV;
++
+ 	if (opts->dp.set_voltages)
+ 		return -EOPNOTSUPP;
+ 	if (opts->dp.set_lanes && opts->dp.lanes != 0 && opts->dp.lanes != 1 &&
+@@ -321,7 +373,9 @@ int apple_dpin_get_hpd(struct phy *phy)
+ 
+ 	if (!phy || phy->ops != &dpin_ops)
+ 		return -EINVAL;
+-	dpin = phy_get_drvdata(phy);
++	dpin = dpin_live(phy);
++	if (!dpin)
++		return -ENODEV;
+ 	mutex_lock(&dpin->lock);
+ 	ret = dpin->initialized && !dpin->fault ?
+ 		!!(dpin_read(dpin, APPLE_DPIN_HPD) & APPLE_DPIN_HPD_LEVEL) : -ENODEV;
+@@ -336,7 +390,9 @@ int apple_dpin_register_hpd(struct phy *phy, struct notifier_block *nb)
+ 
+ 	if (!phy || phy->ops != &dpin_ops)
+ 		return -EINVAL;
+-	dpin = phy_get_drvdata(phy);
++	dpin = dpin_live(phy);
++	if (!dpin)
++		return -ENODEV;
+ 	return blocking_notifier_chain_register(&dpin->hpd_notifiers, nb);
+ }
+ EXPORT_SYMBOL_GPL(apple_dpin_register_hpd);
+@@ -347,7 +403,9 @@ int apple_dpin_unregister_hpd(struct phy *phy, struct notifier_block *nb)
+ 
+ 	if (!phy || phy->ops != &dpin_ops)
+ 		return -EINVAL;
+-	dpin = phy_get_drvdata(phy);
++	dpin = dpin_live(phy);
++	if (!dpin)
++		return -ENODEV;
+ 	return blocking_notifier_chain_unregister(&dpin->hpd_notifiers, nb);
+ }
+ EXPORT_SYMBOL_GPL(apple_dpin_unregister_hpd);
+diff --git a/drivers/thunderbolt/apple.c b/drivers/thunderbolt/apple.c
+index 096abb1..6afc1c2 100644
+--- a/drivers/thunderbolt/apple.c
++++ b/drivers/thunderbolt/apple.c
+@@ -578,8 +578,8 @@ static void apple_dp_source_work(struct work_struct *work)
+ 			mutex_unlock(&source->lock);
+ 			continue;
+ 		}
+-		if ((ret == -EAGAIN || ret == -EPROBE_DEFER || ret == -EINPROGRESS) &&
+-		    time_before(jiffies, source->deadline)) {
++		if ((ret == -EAGAIN || ret == -EPROBE_DEFER || ret == -EINPROGRESS ||
++		     ret == -ENOLINK) && time_before(jiffies, source->deadline)) {
+ 			source->status = -EINPROGRESS;
+ 			mutex_unlock(&source->lock);
+ 			queue_delayed_work(source->wq, &source->work, msecs_to_jiffies(50));
+@@ -587,7 +587,8 @@ static void apple_dp_source_work(struct work_struct *work)
+ 		}
+ 		if (ret) {
+ 			source->status = ret == -EAGAIN || ret == -EPROBE_DEFER ||
+-					 ret == -EINPROGRESS ? -ETIMEDOUT : ret;
++					 ret == -EINPROGRESS || ret == -ENOLINK ?
++					 -ETIMEDOUT : ret;
+ 			source->failed = true;
+ 			source->stop_pending = true;
+ 			mutex_unlock(&source->lock);
+diff --git a/tools/testing/apple-dpin/test-bridge.py b/tools/testing/apple-dpin/test-bridge.py
+index ccbe212..d7ccf03 100644
+--- a/tools/testing/apple-dpin/test-bridge.py
++++ b/tools/testing/apple-dpin/test-bridge.py
+@@ -181,6 +181,9 @@ int main(void) {
+  reset();assert(apple_nhi_dp_source_get(&owner.nhi,5,true)==1);source_mode=-EAGAIN;
+  run_worker();assert(queued && owner.dp_source.status==-EINPROGRESS && !stops);
+  jiffies=5000;run_worker();assert(owner.dp_source.status==-ETIMEDOUT && stops==1 && !owner.dp_source.ready);groups++;
++ reset();assert(apple_nhi_dp_source_get(&owner.nhi,5,true)==1);source_mode=-ENOLINK;
++ run_worker();assert(queued && owner.dp_source.status==-EINPROGRESS && !stops && !owner.dp_source.failed);
++ jiffies=5000;run_worker();assert(owner.dp_source.status==-ETIMEDOUT && stops==1 && !owner.dp_source.ready);groups++;
+  reset();t.dp_source_requested=false;assert(tb_dp_activate(&t,true)==-EINPROGRESS);source_mode=-EIO;run_worker();
+  dprx_bypass=true;assert(tb_dp_wait_dprx(&t,25,NULL)==-EIO && !polls && stops==1);groups++;
+  reset();assert(apple_nhi_dp_source_get(&owner.nhi,6,true)==0);
