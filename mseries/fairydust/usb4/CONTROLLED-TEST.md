@@ -7,6 +7,15 @@ DT, initramfs evidence are in
 [evidence/2026-10-16-controlled-test-preflight.json](evidence/2026-10-16-controlled-test-preflight.json).
 No repeated binary/port/dock discovery was needed.
 
+## Current deployment status
+
+**Staged and verified.** New initramfs, appended GRUB entry and fallback-safe
+boot.bin are installed. Installed hashes/backups and GRUB syntax pass. Root
+modules/original initramfs/kernel/default remain unchanged. No reboot is armed
+or performed; next_entry is empty. Do not re-run apply: its collision checks
+will refuse the existing installation. The commands below retain the reproducible
+plan and rollback instructions. Next is the one-shot boot and collector.
+
 ## Fallback compatibility
 
 Patch 0010 leaves DCP's original `phys` and every existing PHY supplier

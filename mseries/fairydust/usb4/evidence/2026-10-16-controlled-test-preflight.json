@@ -164,5 +164,21 @@
     "GRUB unique parameters and collisions",
     "scratch apply/external-writer refusal/rollback"
   ],
-  "install_manifest_sha256": "e163c4fdaab41905aafa56fb2ce22f033d351aec878652c66e1af5edfab13a7f"
+  "install_manifest_sha256": "e163c4fdaab41905aafa56fb2ce22f033d351aec878652c66e1af5edfab13a7f",
+  "deployment": {
+    "status": "staged and verified; no reboot armed or performed",
+    "source_revision": "c6fd9068fb69a3d4235a705fef2e0364748ff2b4",
+    "installed_target_sha256": {
+      "/boot/initramfs-linux-asahi-fairydust-usb4-dpin-controlled.img": "89c245f58d71d3b71c5e936697310297b5810a8bc6eefdb4353688b8da6b9acb",
+      "/boot/grub/custom.cfg": "9eadf0917bb5edb609d6b98c102039c00d72e34f979ea584d24bb9bc9aefbc98",
+      "/boot/m1n1/boot.bin": "6702f2c7f88f166187183d9fc32776a22d2ba3bbf804854ed74533db93d4f8a6"
+    },
+    "original_backups_verified": true,
+    "grubenv_unchanged": true,
+    "original_initramfs_kernel_and_build_inputs_unchanged": true,
+    "root_module_tree_not_written": true,
+    "grub_syntax_valid": true,
+    "rollback_directory": "/home/sdolbec/dptunnel-logs/rollback-c6fd906",
+    "hardware_result": "No new hardware test. Existing running modules remain loaded."
+  }
 }

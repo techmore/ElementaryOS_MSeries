@@ -240,3 +240,9 @@ No hardware test has run. Next: one-shot controlled boot, confirm actual loaded
 module build IDs and parameters, capture PHY/source errors and external EDID/modes.
 No unbind/reload/cable exercises or repeated binary/port discovery. See
 CONTROLLED-TEST.md and evidence/2026-10-16-controlled-test-preflight.json.
+
+Deployment completion: the reviewed three-target plan is now staged and verified.
+Exact original boot/config/grubenv backups verified; root modules and original
+image/kernel unchanged. No reboot armed/performed. DeepSeek's next task is to
+review the controlled boot's actual module IDs/parameters/source timing and
+external connector evidence, not rebuild or rediscover the dock.

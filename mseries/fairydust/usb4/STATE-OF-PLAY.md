@@ -19,7 +19,13 @@ separate entry uses bypass=1 and timeout=15000. Exact artifacts, hash-guarded
 installer, rollback and collector: [CONTROLLED-TEST.md](CONTROLLED-TEST.md).
 The earlier root-module-replacing installer is superseded for this test.
 No reboot, module reload/unbind, cable move or hardware success is claimed.
-Deployment status will be recorded here after final preflight/application.
+**Deployment status: STAGED AND VERIFIED.** The new initramfs, append-only
+custom.cfg and fallback-compatible boot.bin are installed and hash-checked.
+Original boot/config/grubenv backups are verified at
+`/home/sdolbec/dptunnel-logs/rollback-c6fd906`. Root modules, original initramfs,
+kernel/default and grubenv are unchanged. No reboot is armed (`next_entry` empty)
+or performed; running modules remain unchanged. Next is one deliberate one-shot
+boot of `elementary-usb4-dpin-controlled`, then the recorded read-only collector.
 
 ## Current result
 

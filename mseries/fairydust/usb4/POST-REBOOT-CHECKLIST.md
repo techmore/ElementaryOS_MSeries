@@ -1,6 +1,8 @@
 # Batched reboot: pre-flight, GRUB entry, post-reboot checks
 
-2026-10-16, Claude. **Nothing here has been applied.** Written so any agent can
+2026-10-16, Claude; later Codex update: **the isolated plan is staged, no reboot
+armed/performed** (CONTROLLED-TEST.md). Earlier apply instructions below are
+historical. Written so any agent can
 run or review the reboot without re-deriving it. Evidence behind each item is in
 [REVIEW-2026-10-16-GAPS.md](REVIEW-2026-10-16-GAPS.md) (IDs N1-N4, B1-B8). Hardware
 facts stay in [STATE-OF-PLAY.md](STATE-OF-PLAY.md); append results there, not here.
