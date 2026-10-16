@@ -16,13 +16,18 @@ separate entry uses bypass=1 and timeout=15000. Exact artifacts, hash-guarded
 installer, rollback and collector: [CONTROLLED-TEST.md](fairydust/usb4/CONTROLLED-TEST.md).
 The earlier root-module-replacing installer is superseded for this test.
 No reboot, module reload/unbind, cable move or hardware success is claimed.
-**Deployment status: STAGED AND VERIFIED.** The new initramfs, append-only
-custom.cfg and fallback-compatible boot.bin are installed and hash-checked.
-Original boot/config/grubenv backups are verified at
-`/home/sdolbec/dptunnel-logs/rollback-c6fd906`. Root modules, original initramfs,
-kernel/default and grubenv are unchanged. No reboot is armed (`next_entry` empty)
-or performed; running modules remain unchanged. Next is one deliberate one-shot
-boot of `elementary-usb4-dpin-controlled`, then the recorded read-only collector.
+**Deployment status: STAGED AND VERIFIED; first boot executed — 2026-10-16.**
+The one-shot entry ran 11:45:04–11:47:13 with the exact intended parameters and
+all five rebuilt modules loaded. The bridge engaged automatically on the dock
+tunnel (`0:5 <-> 1:14`) and failed in the DP-IN path: first attempt
+`phy poweron failed --> -67` (`-ENOLINK`; DP-IN HPD low at activation), second
+attempt Oopsed in `dpin_init` (NULL device passed to `pm_runtime_resume`). A
+Gala/simpledrm boot race also crashed the desktop, so the collector was not run.
+Full record:
+[evidence/2026-10-16-controlled-test-first-boot-outcome.md](fairydust/usb4/evidence/2026-10-16-controlled-test-first-boot-outcome.md).
+The staged install and rollback set are intact; `next_entry` is empty; root
+modules, original initramfs, kernel/default and grubenv are unchanged. Do not
+re-arm the test entry until the `dpin_init` Oops and the session race are fixed.
 
 Updated 2026-10-16. Repository: techmore/ElementaryOS_MSeries.
 

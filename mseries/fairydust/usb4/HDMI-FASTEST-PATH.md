@@ -62,3 +62,13 @@ The only goal is the Dell dock's HDMI. The Mac's own HDMI port and USB-C adapter
 again. Track 3 is the whole plan, with its stop rule: one batched boot answers whether the
 bridge yields a real (unbypassed) DPRX answer; if not, the owner decides whether a
 second-computer macOS trace is worth more time instead of more offline rounds.
+
+## First batched boot result (2026-10-16)
+
+The ordered one-shot boot ran. With bypass armed, the bridge fired
+automatically on the dock tunnel and failed in the DP-IN path (`-ENOLINK` at
+activation — DP-IN HPD low at that moment — and a `dpin_init` kernel Oops on
+the retry); the desktop also hit a Gala/simpledrm boot race, so the collector
+did not run. This does not yet answer the unbypassed DPRX question; fix the
+two bridge bugs and the session race, then re-run. Details:
+[evidence/2026-10-16-controlled-test-first-boot-outcome.md](evidence/2026-10-16-controlled-test-first-boot-outcome.md).

@@ -210,7 +210,7 @@ ACIO re-probed. DPRX was never reached, so this says nothing about the sink. New
 |---|---|---|
 | R1 | Instrument the DP-IN registers on failure, then make activation wait for the ACK instead of aborting on first-poll HPD low (update the offline test that asserts the immediate abort) | Codex/DeepSeek |
 | R2 | Stale-PHY guard: per-start lookup or bound-provider check so a start after ACIO re-probe fails with `-ENODEV` and never oopses | Codex/DeepSeek |
-| R3 | `STATE-OF-PLAY.md` still says no reboot has happened; the first boot did | Codex |
+| R3 | `STATE-OF-PLAY.md` still says no reboot has happened; the first boot did | **Fixed** in the outcome record commit (STATE-OF-PLAY updated) |
 
 ## Tooling
 

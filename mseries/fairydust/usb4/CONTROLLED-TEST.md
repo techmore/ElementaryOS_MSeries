@@ -9,12 +9,20 @@ No repeated binary/port/dock discovery was needed.
 
 ## Current deployment status
 
-**Staged and verified.** New initramfs, appended GRUB entry and fallback-safe
-boot.bin are installed. Installed hashes/backups and GRUB syntax pass. Root
-modules/original initramfs/kernel/default remain unchanged. No reboot is armed
-or performed; next_entry is empty. Do not re-run apply: its collision checks
-will refuse the existing installation. The commands below retain the reproducible
-plan and rollback instructions. Next is the one-shot boot and collector.
+**Staged and verified; first boot executed — 2026-10-16.** The one-shot entry
+ran 11:45:04–11:47:13 with the exact intended parameters (`allow_dp_tunnel=1
+dprx_bypass=1 dprx_timeout=15000`) and all five rebuilt modules loaded. The
+bridge engaged automatically on the dock tunnel (`0:5 <-> 1:14`) and failed in
+the DP-IN path: the first attempt returned `-67` (`-ENOLINK`) from
+`phy_power_on` (DP-IN HPD low at activation, ~4 s after bring-up); the second
+attempt Oopsed in `dpin_init` (NULL device passed to `pm_runtime_resume`). A
+Gala/simpledrm boot race also crashed the desktop, so the collector was not
+run. Full record and excerpts:
+[evidence/2026-10-16-controlled-test-first-boot-outcome.md](evidence/2026-10-16-controlled-test-first-boot-outcome.md).
+Do not re-arm the test entry until the `dpin_init` Oops and the session race
+are fixed. The staged install and rollback set are intact; `next_entry` is
+empty; root modules/original initramfs/kernel/default remain unchanged.
+Do not re-run apply: its collision checks will refuse the existing installation.
 
 ## Fallback compatibility
 

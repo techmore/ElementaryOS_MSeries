@@ -3,6 +3,31 @@
 Updated 2026-10-16. This is the cumulative frontier ledger. Preserve measured
 advances and do not re-run discovery without a new reason.
 
+## First live boot of the bridge — outcome (2026-10-16)
+
+The controlled one-shot boot ran (11:45:04–11:47:13, dptunnel kernel, exactly
+`allow_dp_tunnel=1 dprx_bypass=1 dprx_timeout=15000`; all five rebuilt modules
+loaded). The bridge engaged automatically on the real dock tunnel
+(`0:5 <-> 1:14`): `apple_dp_source_work` → `apple_dcp_dp_source_start` →
+`dcp_dptx_connect_source` → `phy_init` → `dpin_init`. Live results:
+
+- First attempt: `phy poweron failed --> -67` (`-ENOLINK` from the DP-IN
+  activation gate; DP-IN HPD level was low at activation, ~4 s after bring-up)
+  → `DP source preparation failed: -67` → tunnel torn down. `-ENOLINK` is final
+  to the worker (only `-EAGAIN`/`-EPROBE_DEFER`/`-EINPROGRESS` retry to the 5 s
+  deadline), so no retry happened.
+- Second attempt (after the USB4 link dropped and re-initialized at
+  11:46:27–30): kernel Oops in `dpin_init` — `pm_runtime_resume` called with a
+  NULL device (`dpin->dev`); worker killed; tunnel torn down again at 11:46:48.
+- A Gala/simpledrm boot race crashed the desktop before the collector could
+  run; patched Gala is disabled by `/home/sdolbec/.cache/mseries-gala-failed`
+  until removed.
+
+No picture; M1–M4 remain unmet. Full record:
+[evidence/2026-10-16-controlled-test-first-boot-outcome.md](evidence/2026-10-16-controlled-test-first-boot-outcome.md).
+Next: fix the `dpin_init` Oops and the `-ENOLINK` handling, fix the session
+race, then one re-run of the controlled boot with the collector.
+
 ## Controlled-test preparation resumed — 2026-10-16
 
 The owner resumed at fallback compatibility, with no repeated discovery.
@@ -24,15 +49,17 @@ custom.cfg and fallback-compatible boot.bin are installed and hash-checked.
 Original boot/config/grubenv backups are verified at
 `/home/sdolbec/dptunnel-logs/rollback-c6fd906`. Root modules, original initramfs,
 kernel/default and grubenv are unchanged. No reboot is armed (`next_entry` empty)
-or performed; running modules remain unchanged. Next is one deliberate one-shot
-boot of `elementary-usb4-dpin-controlled`, then the recorded read-only collector.
+or performed; running modules remain unchanged. That one-shot boot ran on 2026-10-16 (outcome in the first section above);
+the collector was not run (desktop race).
 
 ## Current result
 
 **No monitor picture through the dock. No unbypassed DPRX completion or EDID
 has been demonstrated.** A separate live test fixed selection of the dock's
-HDMI-facing DP OUT adapter. The new DP-IN handshake/tunnel-clock series is
-implemented and offline checked, but has not been installed or tested live.
+HDMI-facing DP OUT adapter. The new DP-IN handshake/tunnel-clock series was installed and ran live once
+(2026-10-16): the bridge engaged on the real dock tunnel and failed in the
+DP-IN activation gate (`-ENOLINK`) plus a `dpin_init` Oops on the retry — see
+the first section above.
 
 Current authorization: the owner now permits installation, reboot and cable
 changes when needed, but wants them batched. This supersedes earlier bans.
@@ -50,7 +77,7 @@ source. Its 27 production-logic test groups and final changed-module builds pass
 Patches 0007–0009 and [the handoff](DCP-SOURCE-BRIDGE.md) save that checkpoint.
 Before deployment, resolve compatibility/rollback for default and fallback
 kernels: the candidate global DT introduces a DP-IN PHY they may not provide.
-No single-boot test has occurred.
+One single-boot test has occurred (2026-10-16); see the first section above.
 Hardware M1/M2/M3 below remain unproven. A discovered BTF-module layout hazard
 in the earlier module-only recipe is recorded at the top of OS9-HANDOFF;
 retain module layout even when BTF data generation is skipped.
@@ -160,7 +187,12 @@ Thunderbolt-to-DCP start bridge. See the implementation handoff's exact
 function chain. Starting DCP only after DPRX success would be too late if
 DPRX needs DCP; this is not proof of an unavoidable synchronous deadlock.
 Keep manual force-link as the current experiment entry, not an automatic
-connect triggered solely by HPD. No new live action is authorized here.
+connect triggered solely by HPD. No new live action is authorized here. **Update 2026-10-16:** the ordered
+one-shot boot has now run (outcome above): with bypass armed, the router-side
+hook does fire and the bridge runs automatically on tunnel activation; the
+remaining live blockers are the DP-IN activation `-ENOLINK` gate and the
+`dpin_init` Oops. Bypass-off DPRX ordering remains to be qualified after those
+fixes.
 
 Next: review the published series and resolve that call order using the
 already acquired source/binaries, complete normal-config/MODPOST coverage,
@@ -188,6 +220,7 @@ a DP-altmode reference, not the M1 USB4 tunnel protocol.
 
 ## Evidence index
 
+- [First controlled-test boot outcome](evidence/2026-10-16-controlled-test-first-boot-outcome.md)
 - [Current implementation / DeepSeek next task](DPIN-IMPLEMENTATION.md)
 - [Offline validation record](evidence/2026-10-16-dpin-offline-validation.json)
 - [REA derived findings](REA-DPIN-FINDINGS.md)

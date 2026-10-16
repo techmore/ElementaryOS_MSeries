@@ -7,6 +7,8 @@
 The boot was started by the owner/Codex; nothing here was run by this analysis.
 Raw journal is not stored in the repo; the lines quoted below are enough to reproduce
 the reading. The older entry (boot at 11:48) and the stock kernel (now) are unrelated.
+Companion record (outcome, saved-journal hashes and continuation):
+[2026-10-16-controlled-test-first-boot-outcome.md](2026-10-16-controlled-test-first-boot-outcome.md).
 
 ## Timeline (seconds since kernel start)
 
