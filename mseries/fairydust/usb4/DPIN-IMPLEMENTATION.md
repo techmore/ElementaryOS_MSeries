@@ -76,6 +76,38 @@ experiment. HPD alone does not automatically connect DCP: it does not prove
 which router tunnel is allocated. Do not declare the full tunnel protocol
 implemented or assume a dependency cycle has been resolved.
 
+### Linux call order established from the pinned source
+
+The source narrows the ordering question further:
+
+- `tb_tunnel_one_dp()` allocates the tunnel with callback
+  `tb_dp_tunnel_active`, then calls `tb_tunnel_activate()`.
+- `tb_tunnel_activate()` runs DP capability exchange/CM handshake, activates
+  the paths, and calls `tb_dp_activate(true)`.
+- `tb_dp_activate(true)` programs HopIDs and enables both adapters, then
+  calls `tb_dp_dprx_start()`. Because this tunnel has a callback, it queues
+  DPRX work and returns **-EINPROGRESS**; it does not block until completion.
+- `tb_dp_dprx_work()` polls DPRX in 25ms attempts separated by 50ms scheduling
+  delays, with a default 12-second overall deadline. Only success marks the
+  tunnel active. The final callback then handles bandwidth or tears it down.
+- This Thunderbolt path contains no call into Apple DCP connection setup.
+  DCP starts via the existing debugfs force-link/OOB-hotplug path; the
+  ordinary Type-C DP-altmode hotplug path is not a USB4 tunnel-start signal.
+  DP-IN IRQ forwarding in the draft begins only after DCP connects and
+  initializes the provider.
+
+Thus there is **no automatic start bridge** in this draft, and activation
+is asynchronous rather than a proven unavoidable synchronous deadlock.
+A manual DCP start could overlap the DPRX window, but has not been qualified.
+Waiting for `tb_dp_tunnel_active()` success before first starting DCP would
+be too late if DPRX depends on DCP. A candidate future notification boundary
+is after both DP adapters are enabled, before DPRX work starts. It needs an
+explicit, lifetime-safe host DP-IN-to-DCP mapping, work outside `tb->lock`,
+and matching teardown; do not call blocking AFK requests under that lock or
+use bare HPD/guessed host-port numbers as a substitute. ACIO depopulates its
+children on shutdown, so provider/consumer removal also needs qualification.
+These are design constraints from source, not a new tested hardware result.
+
 Other unqualified areas: live boot-patched ADT/resource ownership, opaque
 ACIO `startUsingTunnel` effects versus existing Linux routing, firmware
 callback ordering, failed-teardown/device-removal races, runtime PM, distinct

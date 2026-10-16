@@ -116,6 +116,11 @@ DP-IN on DCP's ACTIVATE callback, while the USB4 router waits for DPRX during
 tunnel activation. Establish whether an earlier router hook is required;
 do not assume the dependency is resolved or blindly bypass it. Compare
 opaque ACIO tunnel-use ownership with Linux's existing routing/lifetime.
+The pinned source confirms DPRX activation is asynchronous (`-EINPROGRESS`,
+25ms polls / 50ms delays, default 12s deadline), and contains no automatic
+Thunderbolt-to-DCP start bridge. See the implementation handoff's exact
+function chain. Starting DCP only after DPRX success would be too late if
+DPRX needs DCP; this is not proof of an unavoidable synchronous deadlock.
 Keep manual force-link as the current experiment entry, not an automatic
 connect triggered solely by HPD. No new live action is authorized here.
 
