@@ -147,8 +147,14 @@ edited. Bundle claims about validation were not re-run.
 ## Brief for DeepSeek's next pass (kernel/bridge lane)
 
 Start here: [STATE-OF-PLAY](STATE-OF-PLAY.md) -> this ledger -> [POST-REBOOT-CHECKLIST](POST-REBOOT-CHECKLIST.md).
-Bridge tree: `~/Documents/Codex/2026-10-16/hey-x20/work/dpin-implementation/source`
-(Codex holds the Git write there; send results as a comment on PR #53, not edits).
+Bridge source is now checkpointed in the repo as patches 0007-0009 with the handoff
+[DCP-SOURCE-BRIDGE.md](DCP-SOURCE-BRIDGE.md) (Codex checkpoint `1985a0c`; the working tree is
+`~/Documents/Codex/2026-10-16/hey-x20/work/dpin-implementation/source`). Codex holds the
+Git write; send results as a comment on PR #53 or ledger edits, not patches to its tree.
+STATE-OF-PLAY says the batch is paused at that checkpoint at the owner's request, and
+flags default/fallback-kernel compatibility of the global DT (a DP-IN PHY those kernels
+may not provide) as the pre-deployment question: that is B1's residual risk, so item 3
+below comes first if the owner resumes.
 Do not repeat: port guessing, `/dev/mem` ADT reads, ACIO unbind/bind, crossbar-only
 writes, extra `force_link` probes. Constraints: bypass armed on any run that touches
 the dock; no change to the owner's default boot entry.
