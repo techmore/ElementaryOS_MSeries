@@ -177,5 +177,6 @@ a DP-altmode reference, not the M1 USB4 tunnel protocol.
 - [Router-side DP-IN hook and refcount design sketch (ledger G1/G2)](DPIN-ROUTER-HOOK-DESIGN.md)
 - [DPRX teardown series backport plan (ledger G3)](DPRX-TEARDOWN-BACKPORT-PLAN.md)
 - [Batched reboot: pre-flight, GRUB entry, post-reboot checks](POST-REBOOT-CHECKLIST.md)
+- [HDMI: what works today, decision frame and plan (read this first for priorities)](HDMI-FASTEST-PATH.md)
 
 Keep raw Apple binaries, decompiler output and raw machine captures private.
