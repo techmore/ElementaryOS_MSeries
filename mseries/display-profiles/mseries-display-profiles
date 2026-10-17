@@ -199,6 +199,33 @@ def cmd_watch(b):
             GLib.source_remove(st["timer"])
         st["timer"] = GLib.timeout_add(2500, settle)
 
+    def gala_outputs():
+        try:
+            return sorted(read_state(b)[1])
+        except Exception:
+            return None
+
+    def after_unplug(t0):
+        """Time how long Gala takes to drop the monitor, then restore a saved built-in-only profile."""
+        left = {"n": 0}
+
+        def check():
+            left["n"] += 1
+            outs = gala_outputs()
+            gone = outs is not None and all(o.startswith("eDP") for o in outs)
+            if gone or left["n"] > 40:
+                log(f"gala {'dropped the external output after' if gone else 'still lists it after'} {time.monotonic() - t0:.1f}s")
+                if gone:
+                    try:
+                        if cmd_apply(b) == 0:  # profile with no external displays; silent when none is saved
+                            st["quiet_until"] = time.monotonic() + 4.0
+                    except Exception as e:
+                        log(f"restore failed: {e}")
+                return False
+            return True
+
+        GLib.timeout_add(250, check)
+
     def poll():
         now = drm_status()
         for k, v in now.items():
@@ -207,6 +234,7 @@ def cmd_watch(b):
         for k, v in st["drm"].items():
             if v == "connected" and now.get(k) != "connected":
                 log(f"{k} disconnected")
+                after_unplug(time.monotonic())
                 if st["timer"]:  # do not apply a layout for a monitor that just went away
                     GLib.source_remove(st["timer"])
                     st["timer"] = 0
