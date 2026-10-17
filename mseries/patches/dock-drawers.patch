@@ -374,7 +374,7 @@ index a3e7e96..0377885 100644
  
          var drop_target_file = new Gtk.DropTarget (typeof (File), COPY) {
 diff --git a/src/MainWindow.vala b/src/MainWindow.vala
-index 2d05ae0..4b3e6b8 100644
+index 2d05ae0..8f4f20e 100644
 --- a/src/MainWindow.vala
 +++ b/src/MainWindow.vala
 @@ -27,6 +27,15 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
@@ -405,7 +405,7 @@ index 2d05ae0..4b3e6b8 100644
          child = overlay;
  
          remove_css_class ("background");
-@@ -78,6 +92,80 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -78,6 +92,74 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
          }
  
          window_drag_manager = new WindowDragManager (this);
@@ -420,24 +420,18 @@ index 2d05ae0..4b3e6b8 100644
 +        panel_click = new Gtk.GestureClick () {
 +            button = Gdk.BUTTON_PRIMARY
 +        };
++        // Capture phase is what makes this reachable at all. In the default bubble
++        // phase, a press on an app icon is claimed by the launcher's own click
++        // gesture, which cancels this one before it ever fires; and the rest of the
++        // dock is outside the input region. Capturing first means the press is seen
++        // here before any child can take it.
++        panel_click.set_propagation_phase (Gtk.PropagationPhase.CAPTURE);
 +        panel_click.pressed.connect ((n_press, x, y) => {
 +            var state = panel_click.get_current_event_state ();
 +            if ((state & Gdk.ModifierType.CONTROL_MASK) == 0 ||
 +                    (state & Gdk.ModifierType.ALT_MASK) == 0) {
 +                panel_click.set_state (Gtk.EventSequenceState.DENIED);
 +                return;
-+            }
-+
-+            // A click that landed on an app icon must still launch the app, so
-+            // leave the sequence alone and let the icon handle it.
-+            unowned Gtk.Widget? target = pick (x, y, Gtk.PickFlags.DEFAULT);
-+            while (target != null) {
-+                if (target is Launcher) {
-+                    panel_click.set_state (Gtk.EventSequenceState.DENIED);
-+                    return;
-+                }
-+
-+                target = target.get_parent ();
 +            }
 +
 +            drawers_panel.toggle ();
@@ -486,7 +480,7 @@ index 2d05ae0..4b3e6b8 100644
      }
  
      private void update_transparency () {
-@@ -91,7 +179,7 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -91,7 +173,7 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
  
      public void registry_handle_global (Wl.Registry wl_registry, uint32 name, string @interface, uint32 version) {
          if (@interface == "io_elementary_pantheon_shell_v1") {
@@ -495,7 +489,7 @@ index 2d05ae0..4b3e6b8 100644
              unowned var surface = get_surface ();
              if (surface is Gdk.Wayland.Surface) {
                  unowned var wl_surface = ((Gdk.Wayland.Surface) surface).get_wl_surface ();
-@@ -124,12 +212,22 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -124,12 +206,22 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
              var item_manager_width = ItemManager.get_default ().get_width ();
              var shadow_size = (width - item_manager_width) / 2;
              var top_margin = TOP_MARGIN + shadow_size;
