@@ -2229,3 +2229,11 @@ matched the option synopsis and always fell back to four samplers, omitting supp
 collectors. Discovery now reads the explicit supported-samplers section from either output stream. Added
 coverage for that ambiguity and for exclusion of interrupted raw plists (28 total offline power regressions).
 The PR's final head must pass the same Linux check before merge readiness is reported.
+
+### Merge-check configuration repair
+
+Both power validation runs passed. GitHub also rejected the pre-existing upstream-only proposed-release
+caller before evaluating its repository gate: nested build-and-release requests contents: write while
+the caller allowed only contents: read. Added the matching permission only to that gated call job.
+The elementary/os repository condition is unchanged; no release build, signing or upload is enabled in
+this fork. Final-head validation must confirm normal skipped release jobs plus passing M-series checks.
