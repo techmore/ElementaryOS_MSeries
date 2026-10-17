@@ -1,5 +1,9 @@
 # WD22TB4 dock video — state of play (read first)
 
+> Historical snapshot on `power-usage`. Newer dock investigation lives on
+> `docs/dock-video-decision`; see the [branch frontier and evidence gates](../../power/README.md#dock-hdmi-and-suspend)
+> before using the experiments or status below as current guidance.
+
 Updated 2026-10-16. This is the cumulative frontier ledger. Preserve measured
 advances and do not re-run discovery without a new reason.
 

@@ -74,7 +74,11 @@ jobs:
           python3 -m py_compile mseries/apply-desktop-settings.py
           python3 -m py_compile mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness
           python3 mseries/test-wifi-resume.py
+          bash -n mseries/power/mseries-power mseries/power/vrr-check.sh mseries/power/macos-baseline/make_test_videos.sh
+          python3 -m py_compile mseries/power/macos-baseline/*.py
           python3 mseries/test-power-cap.py
+          python3 -m unittest discover -s mseries/power/macos-baseline -p 'test_*.py'
+          python3 mseries/test-power-install.py
           python3 mseries/aurora-sep/test_touchid_core.py
           python3 mseries/local-ai/test_people_watch.py
           python3 mseries/test-image-wiring.py

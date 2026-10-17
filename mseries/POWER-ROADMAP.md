@@ -8,6 +8,14 @@ Honesty rules (from earlier incidents): report medians and p10/p90, alternate A/
 from one run, label every number *measured* or *estimate*, never change brightness, refresh rate or display power without
 the owner's explicit yes, and leave the kernel to DeepSeek and the audio stack and `speakersafetyd` to the owner.
 
+## Measurement workflow update (2026-10-17)
+
+See the [power documentation map](power/README.md), [baseline instructions](power/macos-baseline/README.md)
+and [generated parity checklist](power/macos-baseline/PARITY.md) (11 categories, 52 items).
+The retained macOS capture contains inventory and historical sleep only; active scenarios and matched Linux
+trials remain open. The fixed watt targets below are planning targets, pending measured macOS workload baselines.
+Dock HDMI has a separate branch frontier linked from the power map; older dock notes are historical evidence.
+
 ## 1. Goals
 
 | Goal | Today | Target (tier 2, within 1.5x of macOS) | Parity (tier 3) |

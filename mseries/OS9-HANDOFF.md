@@ -1,5 +1,17 @@
 # OS 9 implementation / Claude Code handoff
 
+## macOS power baseline and parity checklist — 2026-10-17 (Claude)
+
+Owner asked to profile everything macOS does on this Mac, set a minimal baseline per category, and check categories
+off as Linux matches them. New `mseries/power/macos-baseline/`: `macos_profile.py` (macOS, sudo: powermetrics rails,
+cluster residency, per-process energy and wakeups, SMC `SystemLoad`, inventory of processes/launchd jobs/pmset
+settings, lid-closed drain from `pmset -g log`), `linux_profile.py` (same seven scenarios and summary shape on
+elementary OS, no root, never touches display/audio/kernel), and `parity.json`/`parity.py` (11 categories, 41 items;
+pass = within 10% of macOS, close = within 1.5x) which regenerates `PARITY.md`. Tested only against synthetic
+powermetrics plists and a fake sysfs tree; **no real run on either OS yet**. Next: owner runs the macOS profiler on
+the 14-inch M1 Pro booted into macOS (on battery, brightness noted), then `linux_profile.py` at the same brightness,
+then `parity.py --mac ... --linux-run ...`. Not measured on Linux yet: CPU/GPU rails (C1, G1), sleep drain (F1).
+
 ## Hotkey "drawers" Gala plugin staged — 2026-10-16 (DeepSeek/OpenCode)
 
 Owner asked for per-app hotkeys that pop windows up/down snapped into fixed
@@ -2156,3 +2168,72 @@ Verification: `meson test` 3/3 (refresh-policy, quota-eta, presentation); 16 ren
 Not done / not verified: Wingpanel was deliberately not restarted, so the live panel still shows the old layout until the next login; the new UI has not been seen on the real panel or real Wingpanel popover chrome (the probe uses a plain window with the elementary stylesheet). Sizes moved from 7.5 pt to 9 pt body / 8 pt captions; revert in `install_style` if the owner prefers the old density. Spend and Sessions stay read-only; a Sessions-tab link to OpenCode sign-in would need a URL-open action.
 
 Next: log out and in, look at the real panel, adjust density/colors from the owner's feedback; sign in to OpenCode Go in a browser to get a real quota row.
+
+## 2026-10-17 — power and dock documentation organization
+
+Branch: `power-usage`, reviewed from `d581ac4`; dock documentation frontier inspected at
+`docs/dock-video-decision` tip `189cbda`. No branch merge or hardware change.
+
+- Added `power/README.md` as the evidence/navigation map, with canonical planning, baseline,
+  implementation and historical audit links; pinned the newer dock branch's goal and ledger.
+- Added `power/macos-baseline/results/README.md`: the committed 1220 macOS run has inventory,
+  historical battery sleep (two periods, median 0.391%/h), and no active scenarios. It does not
+  qualify active-use power parity. The original worktree's untracked 1225 capture was preserved
+  and not imported or scored.
+- Indexed power work in `DOCS.md`, linked the map from both roadmaps, corrected the baseline
+  README from 41 to 52 items, and clarified brightness matching and no-root inventory collection.
+- Marked older dock reports as historical; public feature text now distinguishes experimental
+  tunnel allocation from a visible HDMI picture. Newer dock notes retain G3 as their stated
+  blocker and unresolved G2 acceptance on the alternate route; no G5 success is claimed.
+- Verification: checked 96 local Markdown file links across the indexes/roadmaps/baseline README
+  (zero missing), verified 11 categories / 52 items against `parity.json`, checked empty active
+  scenarios and historical sleep median against the retained summary, and ran `git diff --check`.
+  This is documentation validation, not a hardware, profiler, kernel or factory boot test.
+- Next: record comparable battery-powered active scenarios on macOS and Linux, retain conditions
+  and repeated A/B distributions, then regenerate the parity checklist. Dock experiments should
+  start from the pinned branch frontier, not the older snapshot on this branch.
+
+## 2026-10-17 — power code audit and merge preparation
+
+- Policy: failed writes now exit nonzero; cap values are bounded to each performance cluster's hardware
+  range; absent status sensors do not crash. Failed charge-limit application does not persist a success.
+  Charger events explicitly restart the oneshot (rather than relying on device activation), and profile
+  monitor disconnects fail so systemd restarts it. Uninstall stops the watcher before lifting caps;
+  reinstall restarts running services to pick up the updated helper.
+- Packaging: enhancement roots now include/enable the profile watcher, and factory staging rewrites both
+  units to `/usr/libexec/mseries/power`. Added staging/idempotence coverage and immutable-path assertions.
+- Collectors: cleanup runs on interruption/setup failure, owned workers are stopped, blanked displays restored,
+  early mpv exit rejected, and QuickTime loops/closes only its requested file (already-open clips rejected).
+  Seconds/microseconds in run names prevent same-minute overwrite; quick CPU runs retain a full load/recovery
+  window. Initial summaries retain inventory even if later collection fails. Incomplete macOS raw files lacking
+  completion metadata are excluded. Linux charge units no longer masquerade as energy; guest CPU ticks are
+  not double-counted. Missing CPU rail data does not produce a zero ramp.
+- Parity: unknown IDs, nonfinite numbers and manual numeric passes are rejected before writes. Partial Linux
+  imports clear missing mapped values. Missing top-list processes and decoder stats remain unmeasured.
+  Linux clock ramp/activity recovery use distinct diagnostic names; C5 no longer carries a clock measurement
+  as CPU-power ramp. VRR evidence discovers the labelled SMC sensor and uses interpolated percentiles.
+- Validation before publication: 9 policy/VRR tests, 16 collector/parity tests and 1 offline staged-install test
+  pass on macOS; shell syntax, Python compilation and `git diff --check` pass. New suites are wired into the
+  Linux validation workflow. The full image-wiring fixture cannot run natively here because BSD `install`
+  lacks GNU `install -D`; Linux CI must supply the authoritative broader result.
+- Original worktrees and their untracked baseline data are untouched. No live service, display, audio,
+  kernel or bootloader changes were applied. Existing drawers OSD crash fix already on this branch is retained.
+- Remaining qualification: physical AC/battery transitions and profile switches, media/blanking restore on
+  each target OS, matched battery scenarios and Linux suspend. These are hardware evidence gaps, not claimed wins.
+
+### Final power review follow-up
+
+Linux PR validation passed on `db0bbc8`: full script/unit/image wiring checks and mkosi config parsing.
+A read-only check of the installed `powermetrics -h` then reproduced one more parser bug: sampler discovery
+matched the option synopsis and always fell back to four samplers, omitting supported ANE/network/disk/battery
+collectors. Discovery now reads the explicit supported-samplers section from either output stream. Added
+coverage for that ambiguity and for exclusion of interrupted raw plists (28 total offline power regressions).
+The PR's final head must pass the same Linux check before merge readiness is reported.
+
+### Merge-check configuration repair
+
+Both power validation runs passed. GitHub also rejected the pre-existing upstream-only proposed-release
+caller before evaluating its repository gate: nested build-and-release requests contents: write while
+the caller allowed only contents: read. Added the matching permission only to that gated call job.
+The elementary/os repository condition is unchanged; no release build, signing or upload is enabled in
+this fork. Final-head validation must confirm normal skipped release jobs plus passing M-series checks.

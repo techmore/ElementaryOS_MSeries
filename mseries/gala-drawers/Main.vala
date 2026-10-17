@@ -541,7 +541,11 @@ namespace Gala.Plugins.Drawers {
                 var builder = new GLib.VariantBuilder (new GLib.VariantType ("a{sv}"));
                 builder.add ("{sv}", "icon", new GLib.Variant ("s", icon));
                 builder.add ("{sv}", "label", new GLib.Variant ("s", label));
-                var params = new GLib.Variant ("(a{sv})", builder.end ());
+                // ShowOSD takes a single a{sv}, so the parameters must be a
+                // (a{sv}) TUPLE. Building that from a format string while the
+                // child variant is already built makes GVariant abort, which takes
+                // the whole compositor down - Variant.tuple() is the correct way.
+                var params = new GLib.Variant.tuple ({ builder.end () });
                 connection.call_sync (
                     "org.gnome.Shell",
                     "/org/gnome/Shell",

@@ -24,6 +24,7 @@ mkdir -p "$stage/usr/bin"
 ln -s ../libexec/mseries/power "$stage/usr/bin/mseries-power"
 sed -i 's|/usr/local/sbin/mseries-power|/usr/libexec/mseries/power|g' \
     "$stage/etc/systemd/system/mseries-power.service" \
+    "$stage/etc/systemd/system/mseries-power-follow.service" \
     "$stage/usr/share/polkit-1/actions/org.techmore.mseries.power.policy"
 # Empty staging roots cannot disable an inherited enabled unit.
 ln -s /dev/null "$stage/etc/systemd/system/ModemManager.service"
