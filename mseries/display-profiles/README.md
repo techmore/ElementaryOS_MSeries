@@ -31,3 +31,10 @@ mseries-display-profiles watch          # autostarted: apply on every hotplug
 - Preview without touching the display: `MSERIES_DISPLAY_FAKE=1 mseries-display-settings`.
 - Tests: `python3 -I mseries/display-settings/test_display_diag.py`.
 - Verified: unit tests and headless renders only. Drag, Apply and the diagnostics against the live system are not yet exercised in a real session.
+
+## After an unplug
+
+Gala falls back to its own saved single-monitor layout, which can differ from yours (observed: built-in scale 2.0 with
+the monitor attached, 1.5 after unplugging). Save the layout you want with only the built-in display attached
+(`mseries-display-profiles save laptop-only`, or "Save layout as profile" in Display Settings); the watcher then
+re-applies it after an unplug. The watcher also logs how long Gala took to drop the external output.
