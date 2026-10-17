@@ -2,6 +2,19 @@
 
 Updated 2026-10-14. Repository: techmore/ElementaryOS_MSeries.
 
+## Window snapping persistence — 2026-10-16
+
+Owner had to re-request snapping after reboots. Found `org.gnome.mutter
+edge-tiling=false` and empty `toggle-tiled-left/right` in the user dconf
+(Pantheon's own default is `true`; the user value overrode it). Writer unknown.
+Added `mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-desktop-defaults`
++ `etc/xdg/autostart/mseries-desktop-defaults.desktop` (allowlisted in
+`mkosi.finalize`) to re-assert tiling each login; installed under `~/.local`
+and applied live (verified with gsettings: edge-tiling true, Super+Left bound).
+Not verified: survival across an actual reboot, image build, drag-to-edge by
+hand. Next: after next reboot, check `gsettings get org.gnome.mutter edge-tiling`;
+if it is false before the autostart ran, find the writer (`dconf watch /`).
+
 ## CodexBar sessions section — 2026-10-16
 
 Audit: `codexbar usage` works for Codex (account quota, Pro Lite). Claude has
@@ -22,8 +35,6 @@ meson build and 2 existing tests pass, new module installed to
 restarted; the panel UI is not visually verified until next login.
 Next: confirm the Sessions section after re-login; Claude account quota needs
 credentials CodexBar can read.
-
-Follow-up: panel also shows CodexBar's own list-price spend estimate (today/month, from the snapshot `spending` field) and a clearer OpenCode Go quota message. Not visually verified.
 
 ## Current hardware state — 2026-10-14
 
@@ -1413,3 +1424,58 @@ Re-ran after the session restart (Brave windows closed by process id, display se
 ### mseries-profile tool and a burst gap — 2026-10-15
 
 Optimization repo `64e9340`: `profiles/mseries-profile` applies only measured levers as named profiles (`battery`, `balanced`, `burst -- CMD`), dry run by default, no root, never touches brightness, kernel, bootloader, `speakersafetyd` or the charge limit; `--display` adds the one visible lever (refresh rate). Tests pass (5). Finding: power-profiles-daemon here has no `performance` profile ("not available") and only allows holds on `performance` or `power-saver`, so `burst` switches to `balanced` for the command and restores the previous profile (tested: power-saver -> balanced -> power-saver). On battery `mseries-power` caps CPU frequency directly (2064/2208 MHz) and that is not lifted by a profile switch; making the cap follow the active profile is the missing piece for a real "ramp up when needed" on battery (fits the Rust port of `mseries-power`). Goal ("exceed Apple") still NOT met; remaining gated items: kernel work (DeepSeek), brightness/refresh decisions and the lean test (owner).
+
+### Orchard for Incus (first cut) — 2026-10-15
+
+New `mseries/orchard-incus/`: single-file Python/GTK 4 app (`orchard-incus` + `.desktop` + README) that ports the idea of [andrew-waters/orchard](https://github.com/andrew-waters/orchard) (MIT; reviewed at `2c78257`) to Incus. Independent reimplementation driving the `incus` CLI (upstream is SwiftUI for Apple `container`). Features: live instance list (5 s refresh), start/stop/restart, shell via elementary Terminal, info+log, snapshot, delete (confirmed), create container/VM. Verified: window launched 6 s on this host with no errors against Incus 6.0.5 (two existing instances); button actions and the create flow are NOT yet exercised, and there is no screenshot. Not ported: dashboard graphs, compose, k8s, AI sandboxes, profiles/networks/storage. Next: exercise actions, add a .deb/install step, icon. Not committed (shared checkout; see git-hygiene note).
+
+### Network speed turns pastel green when the link saturates — 2026-10-15
+
+Owner request. New `mseries/patches/network-saturation.patch` (applied last by `install-network-throughput.sh`, after `network-panel-speed.patch`). The popover down/up labels and graph lines, and the optional panel readout, switch to pastel green (`#9be3b0`, bold text) for a direction while its rate is at or above the active link's capacity. Capacity comes from NetworkManager (Ethernet speed, Wi-Fi bitrate; the faster active device wins), scaled to what is really reachable: 90% of the Ethernet rate, 60% of the Wi-Fi PHY rate. Those two factors are guesses, not measured; tune `WIRED_USABLE` / `WIFI_USABLE`. If NM reports no speed, nothing is highlighted. The panel readout is a 10 s average, so brief bursts will not light it.
+
+Verified: the four patches apply cleanly in installer order on upstream `8685ec8` and the plugin compiles and links. NOT installed, so not seen on screen and not tested under a real saturating transfer. To install: `bash mseries/install-network-throughput.sh` (needs sudo, restarts the panel once). Not committed (shared checkout; see git-hygiene note). `netspeed/panel-network.patch` was not changed.
+
+Update 2026-10-15: `install-network-throughput.sh` ran successfully (passwordless sudo; panel restarted once). The green state has still not been seen on screen or under a real saturating transfer.
+
+Update 2026-10-16: owner saw the green on a temporary low-threshold build (about 125 KB/s) and confirmed it. Real thresholds (90% wired, 60% Wi-Fi PHY) reinstalled; they are still unmeasured guesses and the real-threshold green has not been seen under a saturating transfer.
+
+## Minimum brightness: sub-5-nit control — 2026-10-16
+
+- **Cause:** Mutter's sysfs backlight sets `min = MAX(1, max/100)` = 5 of 500; every control (keys, slider, bridge) went through Mutter. The Asahi DCP driver (`dcp_backlight.c`, identical in OpenBSD and maralcbr/linux) maps 0-2 nits to one DAC value, so the hardware floor is 2 nits. Keys moved 25 nits per press (30 -> 5).
+- **Prior art:** omacom/omarchy, omacom/omarchy-mac and maralcbr/omarchy-mx-mac use `brightnessctl set N%` with a 1% floor (same 5 nits) and 1% steps at or below 5%. No branch, issue or fork has sub-floor code. Nothing to copy except the finer dim-end steps.
+- **Change:** `mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness` now reads sysfs, writes through logind `Session.SetBrightness` (Mutter fallback), uses `nits = 2 + (max-2)*level^2.2`, steps a 25-value ladder (2, 3, 4, 5, 7, 10, 13, 16, 20, 26, 37 ... 500), adds `--nits N` and read-only `--status`; `--set N` is now a perceptual level. `mseries/quick-settings/ScreenBrightness.vala` uses the same curve and path. New tests: `mseries/brightness/test_keys.py` (12 brightness tests pass). `DESKTOP-SETUP.md` updated.
+- **Verified:** unit tests; `valac -C` typecheck of the widget; `--status` read-only on this Mac (105 of 500). **Not verified:** any write to the live panel (none made, by instruction), Mutter's reaction to a sub-5 value, the Quick Settings build, and a 2-3 nit look in the dark. `test-image-wiring.py` has one failing finalize test that fails identically without these edits.
+- **Next:** install (`mseries/apply-desktop-settings.py` copies the helper; restart it or re-login; rebuild Quick Settings with `install-quick-settings-brightness.sh`), then owner looks at 2-3 nits. If too bright, add a software dim layer below the floor.
+
+### Follow-up: sub-floor software dim — 2026-10-16
+
+- **Dead ends (read-only probes):** the CRTC reports a gamma LUT size of 0 (`GetCrtcGamma` returns empty arrays; `NightLightSupported=false`, `supports-color-transform=false`), so gamma/night-light dimming is unavailable on this DCP. The compositor offers no `wlr-layer-shell`, so a separate overlay client is not possible. The one workable route is a Gala actor, as the screen-corner masks already do.
+- **Added:** `mseries/patches/gala-screen-dim.patch` (applies on top of `gala-screen-corners.patch` at f0791434; `install-gala-screen-corners.sh` applies both). `ScreenDim` is a click-through black layer over the built-in panel, topmost except the corner masks, alpha (capped 0.85) read from `$XDG_RUNTIME_DIR/mseries-dim` and re-read on change, publishes its PID in `mseries-dim.gala`, and is hidden while `ScreenshotManager.take_screenshot` paints. `mseries-brightness` adds four steps below 2 nits (luminance 0.7, 0.5, 0.35, 0.25 of the floor, alpha corrected for gamma 2.2) only while that Gala is alive; the Quick Settings slider clears the dim when it writes.
+- **Verified:** 20 brightness tests pass; the patched Gala typechecks and its dim, layout and screenshot objects compile (`gnome-bg-4` dev headers are missing here, so the full binary was not linked); both patches apply in order to a fresh checkout. **Not verified:** running the patched Gala (needs sudo install and a re-login), banding at the deepest step, screen-recording (PipeWire) capture still including the layer, and anything on the panel.
+- **Installed on this Mac:** the new helper at `~/.local/libexec/mseries-brightness` (running, key handler restarted, no brightness write). Not installed: the patched Gala and the Quick Settings plugin (needs `libadwaita-1-dev`).
+- **Installed 2026-10-16 (owner approved):** apt dev packages `libgnome-bg-4-dev libadwaita-1-dev libpackagekit-glib2-dev libaccountsservice-dev libportal-dev`; patched Gala with corners and dim in `/usr/local/lib/mseries/gala` (user drop-in `mseries-screen-corners.conf`, active at next login, stock fallback launcher); rebuilt Quick Settings plugin with the new slider (backup via `lib-backup.sh`; reload Wingpanel or log in). Pending owner check after re-login: `mseries-brightness --status` should report the dim layer running; keys then go below 2 nits.
+
+### Brightness documentation and ladder refinement — 2026-10-16
+
+- New `mseries/BRIGHTNESS.md`: goals and acceptance (A1–A7), findings with sources, dead ends (no gamma LUT, no layer-shell), prior-art survey, full design with data flow and failure table, implementation inventory, verification matrix, the owner's 10-step test protocol, risk register and the phased roadmap BR-01..BR-21 with owners and acceptance.
+- The key ladder was refined: where neighbours differed by more than 1.45x (the dim end), integer geometric midpoints are inserted, giving 2, 3, 4, 5, 7, 10, 13, 16, 20, 26, 37, 51, 68, 88, 110 ... 500 (25 steps; before: 2, 3, 5, 10, 16, 26, which doubled at 5 → 10). Updated helper installed and key handler restarted (no brightness write); 23 tests pass, including three that fail if `BRIGHTNESS.md` stops matching the code.
+- Still waiting on: the owner's login to the patched Gala and the `BRIGHTNESS.md` section 6 protocol (BR-01).
+
+
+## Sound Output switcher in the Quick Settings gear menu — 2026-10-16
+
+- **Owner request:** a Mac-style output picker in the top-right menu (where dark mode is): built-in, Bluetooth and AirPlay outputs in one list, each labelled with its connection type.
+- **Added:** `quick-settings/AudioOutputModel.vala` (pure parsing of `pw-dump` into outputs; classifies Built-in / Bluetooth / AirPlay / USB / HDMI-DisplayPort, skips virtual sinks, marks the default from the `default.audio.sink` metadata) and `quick-settings/AudioOutput.vala` (the GTK list under the charge-limit switch; click runs `wpctl set-default <id>`, WirePlumber moves playing streams; re-read on open and every 3 s while open). `patches/quick-settings-audio-output.patch` (applies after `quick-settings-brightness.patch`: adds the widget to `PopoverWidget.vala`, sources and a `json-glib-1.0` dependency to meson). Wired into `install-quick-settings-brightness.sh`, `mkosi.images/apple-silicon/build-quick-settings`, `enhance.sh` payload list, and `libjson-glib-dev` added to the `[quick]` first-boot deps and the Apple image build packages.
+- **AirPlay:** `install-airplay-discovery.sh` copies PipeWire's `50-raop.conf` (RAOP mDNS discovery) into `~/.config/pipewire/pipewire.conf.d/`. It does NOT restart PipeWire; devices appear after the next login or pipewire restart. Needs `avahi-daemon` (active here). `avahi-browse` is not installed, so no AirPlay receiver has been seen on this network yet.
+- **Verified:** `audio/test_audio_output_model.sh` (14 checks) runs the model against the real `pw-dump` of this Mac plus synthetic Bluetooth, AirPlay, USB, HDMI and null-sink nodes; the whole Quick Settings plugin builds and links against upstream `fb721d4` with all four patches and has no missing libraries; `wpctl set-default` on the current default (id 81, the speaker filter chain) succeeded as a no-op.
+- **Not verified:** the list on screen, switching between real outputs, a real Bluetooth sink or AirPlay receiver (this Mac currently has only speakers and the headphone jack). **Not installed:** the plugin build would also carry the uncommitted `ScreenBrightness.vala` edits, and loading it needs a Wingpanel reload.
+- **Known gaps:** only connected Bluetooth devices appear (pair/connect still goes through the Bluetooth indicator); no per-device volume. `test-image-wiring.py` fails in `mkosi.finalize` on the staged `mseries-desktop-defaults.service` work (not from this change).
+- **Next:** install, open the menu, switch speakers/headphones, connect a Bluetooth headset, then enable AirPlay discovery and test with an AirPlay speaker.
+
+### Sound Output: installed and live-tested — 2026-10-16
+
+- Installed with `install-quick-settings-brightness.sh` (passwordless sudo) and Wingpanel reloaded. An earlier install was interrupted mid-copy and left a 0-byte `libquick-settings.so`; rerunning the installer fixed it (354 KB, loaded by the new Wingpanel).
+- **Found on the live stack:** `wpctl set-default 61` (headphone jack, nothing plugged in) changes `default.configured.audio.sink` but WirePlumber keeps `default.audio.sink` on the speakers because the Headphones route is `available: no`. The list would have shown a row that does nothing, so the model now hides ALSA outputs whose every EnumRoute is `no`. Default was restored to the speaker filter chain (id 81).
+- Tests: 13 model checks pass, including the unplugged-jack case from this Mac's real dump. Headphones appear when plugged in. Not yet seen on screen or tested with real Bluetooth/AirPlay.
+- Fix after the owner saw nothing: `AudioOutput` set `visible = false` in its constructor and refreshed on `map`, but a hidden widget is never mapped, so it never populated. It now stays visible and only hides its title/rows when there is nothing to list. Reinstalled and Wingpanel reloaded.
+- AirPlay: `install-airplay-discovery.sh` run (drop-in at `~/.config/pipewire/pipewire.conf.d/50-raop.conf`). Live `pw-cli load-module` did not load it; PipeWire not restarted (owner will restart later). A one-shot mDNS `_raop._tcp` query saw 7 responders on 192.168.222.x, so devices should appear after the restart. Untested until then.
