@@ -32,6 +32,7 @@ enhancement layer are the current focus, the factory-ISO documents describe an u
 | [KERNEL-SOURCE.md](KERNEL-SOURCE.md) | Where the kernel source comes from |
 | [fairydust/debian/README.md](fairydust/debian/README.md) | The patched kernel package (USB4, Apple Video Decoder fix) and how it is built |
 | [fairydust/usb4/CUTOVER.md](fairydust/usb4/CUTOVER.md) | Verified M1 Pro USB4 kernel, dock results, limits and recovery pointers |
+| [aurora-sep/README.md](aurora-sep/README.md) | Optional Aurora SEP kernel lane: Touch ID via the Secure Enclave |
 
 ## Status and planning
 
