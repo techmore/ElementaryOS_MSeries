@@ -36,6 +36,15 @@ sink question, the documented §9 hazard, arm the bypass before touching a cable
 then the macOS m1n1-hypervisor trace (`MACOS-TRACE-RUNBOOK.md`) if E2/E3 do not
 resolve it.
 
+**E3 is now staged (2026-10-16).** Patch `0014` adds DP-IN HPD producer logging
+(`DPINDBG irq:` / `hpd_notifier event=`, plus `init/exit/power_on/power_off`
+state dumps). `phy-apple-dpin.ko` `9d43d6e7…`, build-id `7beaacf6…`. The E3
+image `2c036651…` is installed on `elementary-usb4-dpin-controlled` (bypass=1);
+a paired, **un-armed** E2 entry `elementary-usb4-dpin-nobypass`
+(`dprx_bypass=0`, same image) was added to `custom.cfg` so one reboot can run
+both. **Nothing is armed** (`next_entry` empty). Record:
+[evidence/2026-10-16-e3-dpin-hpd-instrumentation.md](evidence/2026-10-16-e3-dpin-hpd-instrumentation.md).
+
 ## First live boot of the bridge — outcome (2026-10-16)
 
 The controlled one-shot boot ran (11:45:04–11:47:13, dptunnel kernel, exactly
@@ -305,6 +314,7 @@ a DP-altmode reference, not the M1 USB4 tunnel protocol.
 
 ## Evidence index
 
+- [E3: DP-IN HPD producer instrumentation — prepared and staged](evidence/2026-10-16-e3-dpin-hpd-instrumentation.md)
 - [E1 boot result: `set_hpd` cleared as the wall, firmware reports the sink "device not responding"](evidence/2026-10-16-e1-boot-outcome-firmware-device-not-responding.md)
 - [Second controlled-test boot: DP-IN gate cleared, DCP link-config timeout](evidence/2026-10-16-controlled-test-second-boot-dpin-gate-cleared.md)
 - [DP-IN debug boot: instrumenting the DCP link-config path](evidence/2026-10-16-dpin-dbgboot-instrumentation.md) (patch `0012`, armed 2026-10-16)

@@ -85,7 +85,8 @@ say ""; say "== DCP DPTXPort calls (DCP firmware -> driver) =="
 #   5/6 will/did change link config   7/8/9 link rate   10/11/12 lanes
 #   18 supports HPD   19 force hotplug detect   20 INACTIVE_SINK_DETECTED
 #   21 tiled display hints   22/23/24 device not responding / busy / not started
-printf '%s\n' "$logs" | grep -o 'acking unhandled call [0-9]*' | awk '{print $NF}' \
+printf '%s\n' "$logs" | grep -oE 'acking unhandled call [0-9]+|DPINDBG apcall idx=[0-9]+' \
+	| awk '{print $NF}' | sed 's/idx=//' \
 	| sort -n | uniq -c | awk '{printf "  call %-3s x%s\n", $2, $1}'
 printf '%s\n' "$logs" | grep -i 'DPTXPort:' | tail -n 8
 
@@ -93,7 +94,7 @@ say ""; say "== Counters =="
 kv "DPRX read timeout" "$(printf '%s\n' "$logs" | grep -c 'DPRX read timeout')"
 kv "DPRX bypass engaged" "$(printf '%s\n' "$logs" | grep -c 'DPRX bypass enabled')"
 kv "Video/AUX path activation complete" "$(printf '%s\n' "$logs" | grep -c 'activation complete')"
-kv "dcp_dptx_connect(port=0)" "$(printf '%s\n' "$logs" | grep -c 'dcp_dptx_connect(port=0)')"
+kv "dcp_dptx_connect(port=0)" "$(printf '%s\n' "$logs" | grep -cE 'dcp_dptx_connect\(port=0\)|dcp_dptx_connect_source')"
 
 say ""; say "== force_link handles (experiment 2 / experiment 1 builds) =="
 found=0
@@ -107,16 +108,40 @@ hr
 say "== Verdict =="
 timeouts=$(printf '%s\n' "$logs" | grep -c 'DPRX read timeout')
 activations=$(printf '%s\n' "$logs" | grep -c 'activation complete')
-connect=$(printf '%s\n' "$logs" | grep -c 'dcp_dptx_connect(port=0)')
+connect=$(printf '%s\n' "$logs" | grep -cE 'dcp_dptx_connect\(port=0\)|dcp_dptx_connect_source')
+# dprx_bypass sysfs reports Y/N (the boot parameter is 1/0); accept both.
 bypass="$(param dprx_bypass 0)"
+case "$bypass" in 1|[Yy]) bypass_on=1 ;; *) bypass_on=0 ;; esac
 # External connectors only: the built-in eDP is always connected and must not
 # turn "paths activated" into a display-success verdict.
 connected=$(for c in /sys/class/drm/card*/card*-DP-* /sys/class/drm/card*/card*-HDMI-*; do
 	[ -e "$c/status" ] && cat "$c/status"
 done 2>/dev/null | grep -c '^connected$')
-inactive=$(printf '%s\n' "$logs" | grep -c 'acking unhandled call 20')
+inactive=$(printf '%s\n' "$logs" | grep -cE 'acking unhandled call 20|DPINDBG apcall idx=20')
+# patches 0012/0013: the DP-IN-to-DCP bridge now runs automatically and logs
+# the tunnel source connect directly. Prefer this over the legacy wording.
+src=$(printf '%s\n' "$logs" | grep -o 'DPINDBG connect_source: waited=[0-9]* ret=-*[0-9]*' | tail -n 1)
 
-if [ "${idx:-0}" = 0 ]; then
+if [ -n "$src" ]; then
+	say "  DPINDBG tunnel source connect: $src"
+	if printf '%s\n' "$src" | grep -q 'ret=0'; then
+		say "  ret=0 — the DCP configured the link. If no external connector above is"
+		say "  connected, the remaining problem is a mode set, not the link."
+	elif printf '%s\n' "$src" | grep -q 'ret=-67'; then
+		say "  ret=-67 (-ENOLINK). In tunnel mode the driver maps the firmware's"
+		say "  calls 22/24/20 (DEVICE_NOT_RESPONDING / NOT_STARTED /"
+		say "  INACTIVE_SINK_DETECTED) to -ENOLINK, so this is normally the firmware"
+		say "  reporting that the tunnelled sink does not respond — not a"
+		say "  firmware-returned error and not a timeout. Work the sink/AUX path"
+		say "  (patches 0012/0013). Keep bypass armed before touching any cable."
+	elif printf '%s\n' "$src" | grep -q 'ret=-110'; then
+		say "  ret=-110 (-ETIMEDOUT). On the tunnel path check for an"
+		say "  'E1 set_hpd(1) ... ignored (tunnel)' line (patch 0013): if absent, a"
+		say "  tunnel-mode set_hpd failure is still fatal here."
+	else
+		say "  See the DPINDBG trace above for the failing layer."
+	fi
+elif [ "${idx:-0}" = 0 ]; then
 	say "  Crossbar still routes dcpext1 -> dpphy (DP Alt Mode). The tree is not armed"
 	say "  for the tunnel; expected idx=1 (dpin0). Check with boot-dt.py, not the build."
 elif [ "$connected" -gt 0 ] && [ "$activations" -gt 0 ]; then
@@ -133,7 +158,7 @@ elif [ "$inactive" -gt 0 ]; then
 	say "  EARLY-STOP: a silent sink is the frontier answer. No driver/DT change on this"
 	say "  machine can complete a read the router cannot make. Save this output and pivot"
 	say "  to the macOS trace (MACOS-TRACE-RUNBOOK.md) rather than patching further."
-elif [ "$bypass" = 1 ]; then
+elif [ "$bypass_on" = 1 ]; then
 	say "  dprx_bypass=1 and idx=$idx. If the DPRX storm stopped and the paths report"
 	say "  'activation complete', the tunnel is up -- the remaining question is whether"
 	say "  the DCP drives the DP IN adapter. Check 'DCP link attempts' for"

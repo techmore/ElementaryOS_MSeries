@@ -21,6 +21,15 @@ one reboot each: E3 (DP-IN HPD notifier + host DP-IN AUX/DPCD status
 instrumentation), then E2 (unbypassed DPRX, `dprx_bypass=0` — §9 hazard), then
 the macOS m1n1-hypervisor trace.
 
+**E3 staged (OpenCode, 2026-10-16).** Patch `0014` adds DP-IN HPD producer
+logging (`DPINDBG irq:`/`hpd_notifier`) plus `init/exit/power_on/power_off`
+register dumps; `phy-apple-dpin.ko` `9d43d6e7…`. E3 image `2c036651…` installed
+on `elementary-usb4-dpin-controlled` (bypass=1); a paired **un-armed** E2 entry
+`elementary-usb4-dpin-nobypass` (`dprx_bypass=0`, same image) added to
+`custom.cfg` so one reboot runs both. Nothing armed (`next_entry` empty).
+`test-dp-tunnel.sh` verdict fixed in the same batch. Record:
+[evidence/2026-10-16-e3-dpin-hpd-instrumentation.md](fairydust/usb4/evidence/2026-10-16-e3-dpin-hpd-instrumentation.md).
+
 ## R1/R2 first-boot fixes staged — 2026-10-16 (DeepSeek/OpenCode)
 
 Source revision `46bb8b6` (public patch `0011`) implements R1 (retry the
