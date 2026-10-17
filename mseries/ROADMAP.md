@@ -1,5 +1,10 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+> **Everything currently staged and waiting for a reboot is listed in
+> [`REBOOT-QUEUE.md`](REBOOT-QUEUE.md)** — what each reboot unlocks, what to
+> verify, how to revert, and what does *not* need one. Start there before
+> rebooting for any feature below.
+
 ## R1/R2 first-boot fixes staged — 2026-10-16
 
 The first controlled boot (11:45:04–11:47:13) ran with the exact intended
