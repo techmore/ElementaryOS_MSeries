@@ -7,6 +7,7 @@ Switching a dot only loads/unloads that one extra PipeWire module; the rest of t
 graph and the default output are never touched unless you press the button.
 
   mseries-airplay-outputs                GTK window
+  mseries-airplay-outputs json           the same, as JSON (used by the Quick Settings menu)
   mseries-airplay-outputs list           receivers and whether they are active
   mseries-airplay-outputs enable|disable|toggle NAME_OR_KEY
   mseries-airplay-outputs apply          make the graph match the saved choice (login autostart)
@@ -68,7 +69,13 @@ def resolve(arg):
 
 def cli(argv):
     cmd = argv[0]
-    if cmd == "list":
+    if cmd == "json":
+        saved = set(core.load_state())
+        dump = pw_dump()
+        live = core.group_members(dump)
+        print(json.dumps([{"key": d["key"], "name": d["name"], "enabled": d["key"] in saved,
+                           "active": d["key"] in live} for d in core.destinations(dump)]))
+    elif cmd == "list":
         saved = set(core.load_state())
         live = core.group_members(pw_dump())
         for d in core.destinations(pw_dump()):
