@@ -59,14 +59,26 @@ save automatically with native timestamped filenames and notifications.
 GNOME settings daemon 50 expects GNOME Shell to handle screen brightness
 keys. Pantheon has no GNOME Shell brightness implementation. The new
 `mseries-brightness` user helper grabs `XF86MonBrightnessUp/Down` through
-Gala's existing accelerator API and changes the internal `eDP-1` panel
-through Mutter DisplayConfig `SetBacklight`, showing Gala's brightness OSD.
-It reads the current backlight serial for each request and clamps to the
-panel's minimum/maximum, in 5% steps. Requires `python3-gi`.
+Gala's existing accelerator API and shows Gala's brightness OSD. The DCP
+panel backlight is calibrated in nits (0-500) and its hardware floor is
+2 nits, but Mutter's `SetBacklight` clamps to 1% (5 nits) and a linear 5% key
+step is 25 nits. The helper therefore writes `apple-panel-bl` through logind
+`Session.SetBrightness` (unprivileged for the active session, no floor; Mutter
+is only a fallback) and follows a perceptual curve,
+`nits = 2 + (max - 2) * level^2.2`. The keys walk a ladder of 25 distinct
+values (2, 3, 4, 5, 7, 10, 13, 16, 20, 26, 37, 51, 68, 88, 110, ... 500), so the dim end
+has fine steps. The Quick Settings slider uses the same curve and path.
+Below 2 nits the keys add four software steps (about 0.7, 0.5, 0.35 and 0.25 of the 2-nit
+luminance) when the patched Gala from `install-gala-screen-corners.sh` is running: it paints a
+click-through black layer (`patches/gala-screen-dim.patch`) with the alpha in
+`$XDG_RUNTIME_DIR/mseries-dim`, hidden during screenshots. Without that Gala the keys stop at
+2 nits. Requires `python3-gi`.
 
 The user installer enables it on Pantheon login. Start immediately with
 `~/.local/libexec/mseries-brightness`; set a one-time level with
-`~/.local/libexec/mseries-brightness --set 60`. It never forces 60% at login.
+`~/.local/libexec/mseries-brightness --set 60` (60% on the perceptual scale, not 60% of
+nits) or an exact value with `--nits 3`; `--status` prints the level read-only. It never
+forces a level at login.
 Remove `~/.config/autostart/mseries-brightness.desktop` to disable it.
 The arm64 image overlay also includes the helper and autostart entry.
 Confirmed live: SetBacklight and OSD calls succeed; owner confirms brighter
@@ -667,6 +679,15 @@ minute. Raise the volume slowly. Revert: `bash mseries/install-audio-stack.sh --
 edge to snap it to that half. `Super+Left` and `Super+Right` tile the focused
 window to a half (`org.gnome.mutter.keybindings toggle-tiled-left/right`); with
 the Command/Ctrl swap that is physical left Ctrl plus the arrow key.
+
+**Persistence (2026-10-16).** After reboots snapping was found off
+(`edge-tiling=false`, both `toggle-tiled-*` bindings empty in the user's dconf,
+which overrides Pantheon's default of `true`). The writer was not identified
+(a leftover `tiling-assistant` key in dconf points at an old GNOME-era
+extension; kernel experiments are not a plausible cause). Snapping is now a
+shipped feature: the image installs `/usr/libexec/mseries-desktop-defaults` and
+an `/etc/xdg/autostart` entry that re-assert edge tiling and `Super+Left/Right`
+at every Pantheon login. Installed live for this user under `~/.local`.
 
 The built-in 3024x1890 panel defaults to a 2.0 scale, which looks large. Gala
 offers 1.0, 1.5, 1.75 and 2.0; 1.5 is the practical smaller setting. Apply it

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=M-series desktop defaults
+Exec=/usr/libexec/mseries-desktop-defaults
+OnlyShowIn=Pantheon;
+NoDisplay=true
+X-GNOME-Autostart-Phase=Initialization

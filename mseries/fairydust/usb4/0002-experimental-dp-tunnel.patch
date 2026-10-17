@@ -1,0 +1,115 @@
+diff -ruN a/arch/arm64/boot/dts/apple/t6000-j314s.dts b/arch/arm64/boot/dts/apple/t6000-j314s.dts
+--- a/arch/arm64/boot/dts/apple/t6000-j314s.dts	2026-10-15 13:06:14.519518122 -0400
++++ b/arch/arm64/boot/dts/apple/t6000-j314s.dts	2026-10-15 13:16:11.161469247 -0400
+@@ -10,6 +10,15 @@
+ /dts-v1/;
+ 
+ #include "t6000.dtsi"
++
++/*
++ * Experimental: route the external display controller of the front-left Type-C
++ * port (dcpext1; already enabled for the J314/J316 family) into the ACIO DP IN
++ * adapter for a USB4 / Thunderbolt DisplayPort tunnel, instead of the Type-C DP
++ * PHY. See mseries/fairydust/usb4/DP-TUNNEL-RE.md.
++ */
++#define ENABLE_DCPEXT_TB_TUNNEL
++
+ #include "t600x-j314-j316.dtsi"
+ 
+ / {
+diff -ruN a/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi b/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi
+--- a/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi	2026-10-15 13:06:14.524082873 -0400
++++ b/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi	2026-10-15 13:06:24.871059599 -0400
+@@ -289,7 +289,16 @@
+ 	apple,dptx-phy = <1>;
+ 	phys = <&atcphy1 PHY_TYPE_DP>;
+ 	phy-names = "dp-phy";
++#ifdef ENABLE_DCPEXT_TB_TUNNEL
++	/*
++	 * Select the "dpin0" mux control (index 1) so the crossbar routes
++	 * dispext1,0 into the ACIO DP IN adapter for USB4 tunnel 0 instead of
++	 * the Type-C DP PHY ("dpphy", index 0).
++	 */
++	mux-controls = <&atcphy1_xbar 1>;
++#else
+ 	mux-controls = <&atcphy1_xbar 0>;
++#endif
+ 	mux-control-names = "dp-xbar";
+ 	mux-index = <2>;
+ };
+diff -ruN a/drivers/gpu/drm/apple/connector.c b/drivers/gpu/drm/apple/connector.c
+--- a/drivers/gpu/drm/apple/connector.c	2026-10-15 13:06:14.536816499 -0400
++++ b/drivers/gpu/drm/apple/connector.c	2026-10-15 13:06:38.072061535 -0400
+@@ -15,6 +15,26 @@
+ #include <drm/drm_managed.h>
+ 
+ #include "dcp-internal.h"
++#include "dcp.h"
++
++/*
++ * Experimental: force the display controller's DPTX endpoint for this connector
++ * to start/stop driving its link, bypassing the usual Type-C alt-mode or DCP
++ * hot-plug trigger. Needed to drive the ACIO DP IN adapter for the USB4 DP
++ * tunnel experiment (see mseries/fairydust/usb4/DP-TUNNEL-RE.md).
++ *
++ *   echo 1 > .../force_link   # dcp_dptx_connect_oob()
++ *   echo 0 > .../force_link   # dcp_dptx_disconnect_oob()
++ */
++static int dcp_force_link_set(void *data, u64 val)
++{
++	struct apple_connector *apple_con = data;
++
++	if (val)
++		return dcp_dptx_connect_oob(apple_con->dcp, 0);
++	return dcp_dptx_disconnect_oob(apple_con->dcp, 0);
++}
++DEFINE_DEBUGFS_ATTRIBUTE(dcp_force_link_fops, NULL, dcp_force_link_set, "%llu\n");
+ 
+ enum dcp_chunk_type {
+ 	DCP_CHUNK_COLOR_ELEMENTS,
+@@ -110,6 +130,8 @@
+                             &chunk_display_attribs_fops);
+         debugfs_create_file("Transport", 0444, root, apple_con,
+                             &chunk_transport_fops);
++        debugfs_create_file("force_link", 0200, root, apple_con,
++                            &dcp_force_link_fops);
+ 
+ 	switch (connector->connector_type) {
+ 	case DRM_MODE_CONNECTOR_DisplayPort:
+diff -ruN a/drivers/thunderbolt/quirks.c b/drivers/thunderbolt/quirks.c
+--- a/drivers/thunderbolt/quirks.c	2026-10-15 13:06:14.528901165 -0400
++++ b/drivers/thunderbolt/quirks.c	2026-10-15 13:06:31.744060607 -0400
+@@ -7,6 +7,22 @@
+ 
+ #include "tb.h"
+ 
++/*
++ * Experimental knob for Apple Silicon USB4 DP tunneling.
++ *
++ * On Apple host routers the DP IN adapters are only fed once the display
++ * controller drives them through the display crossbar
++ * (see mseries/fairydust/usb4/DP-TUNNEL-RE.md). Until that is wired up the
++ * default quirk below skips DP tunneling entirely, which avoids ~300 DPRX
++ * read timeouts per tunnel attempt. Set allow_dp_tunnel=1 (or boot with
++ * thunderbolt.allow_dp_tunnel=1) to leave DP tunneling enabled so the
++ * experiment can run.
++ */
++static bool allow_dp_tunnel;
++module_param(allow_dp_tunnel, bool, 0644);
++MODULE_PARM_DESC(allow_dp_tunnel,
++	"leave DP tunneling enabled on Apple host routers (experimental)");
++
+ static void quirk_force_power_link(struct tb_switch *sw)
+ {
+ 	sw->quirks |= QUIRK_FORCE_POWER_LINK_CONTROLLER;
+@@ -54,6 +70,10 @@
+ 
+ static void quirk_no_dp_tunnel(struct tb_switch *sw)
+ {
++	if (allow_dp_tunnel) {
++		tb_sw_dbg(sw, "leaving DP tunneling enabled\n");
++		return;
++	}
+ 	sw->quirks |= QUIRK_NO_DP_TUNNEL;
+ 	tb_sw_dbg(sw, "disabling DP tunneling\n");
+ }

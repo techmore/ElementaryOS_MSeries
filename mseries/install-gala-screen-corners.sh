@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Rounded screen-corner masks on the built-in display (like macOS), via a patched Gala.
+# Rounded screen-corner masks on the built-in display (like macOS), plus a software dim layer
+# below the panel's 2-nit backlight floor (mseries-brightness keys use it; patches/gala-screen-dim.patch),
+# via a patched Gala.
 #
 #   bash mseries/install-gala-screen-corners.sh [--radius N]   # build, install privately, enable for your session
 #   bash mseries/install-gala-screen-corners.sh --disable      # go back to the stock Gala for your session
@@ -64,6 +66,7 @@ git -C "$source_dir" remote add origin https://github.com/elementary/gala.git
 git -C "$source_dir" fetch -q --depth=1 origin "$commit"
 git -C "$source_dir" checkout -q --detach FETCH_HEAD
 git -C "$source_dir" apply "$repo/mseries/patches/gala-screen-corners.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/gala-screen-dim.patch"
 
 meson setup "$build_dir" "$source_dir" --prefix="$prefix" --libdir=lib --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null
@@ -112,5 +115,5 @@ EOF
 systemctl --user daemon-reload
 systemd-analyze --user verify io.elementary.gala@wayland.service 2>&1 | grep -v '^$' | head -3 || true
 
-echo "Installed. Log out and back in to see the rounded corners (radius ${radius}px)."
+echo "Installed. Log out and back in to see the rounded corners (radius ${radius}px) and get the brightness keys' sub-2-nit steps."
 echo "Revert: bash mseries/install-gala-screen-corners.sh --disable   (or delete $dropin)"

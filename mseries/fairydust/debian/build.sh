@@ -4,6 +4,16 @@ set -euo pipefail
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 kit="$here/../usb4"
 mode=${1:---prepare}
+# Opt-in experimental USB4 DisplayPort-tunnel kernel. Off by default so the
+# normal build is byte-for-byte unchanged. See usb4/DP-TUNNEL-RE.md.
+dp_tunnel=${FAIRYDUST_DP_TUNNEL:-0}
+if [[ $dp_tunnel == 1 ]]; then
+    localversion='-elementary-fairydust-usb4-dptunnel'
+    pkgversion='7.1.13+elementary.usb4-dp1'
+else
+    localversion='-elementary-fairydust-usb4'
+    pkgversion='7.1.13+elementary.usb4.4'
+fi
 [[ $mode == --prepare || $mode == --build || $mode == --compile || $mode == --reconfigure ]] || { echo 'Usage: build.sh [--prepare|--reconfigure|--compile|--build]' >&2; exit 2; }
 : "${FAIRYDUST_WORKDIR:?Set FAIRYDUST_WORKDIR to a private build directory}"
 if [[ $mode != --compile && $mode != --reconfigure ]]; then
@@ -28,6 +38,9 @@ if [[ $mode != --compile && $mode != --reconfigure ]]; then
 fi
 check_hash 0d3540afc18751b236d816312b7a0d7311d2860476b1fce6668f6565ea04c3fd "$kit/config"
 check_hash 1b9e6d925cdfe768360880c1d3e10eb0d46ecfe66985b4b9fbf39812c3f9fdfd "$kit/0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch"
+if [[ $dp_tunnel == 1 ]]; then
+    check_hash b251b71679e350f889abcd6c8b2d10d5191dbe1b1b9fa6e41660acd3dd836aa9 "$kit/0002-experimental-dp-tunnel.patch"
+fi
 src="$work/source"
 if [[ $mode == --prepare || $mode == --build ]]; then
 [[ ! -e $src ]] || { echo 'Use a fresh work directory; source already exists' >&2; exit 2; }
@@ -36,13 +49,16 @@ tar xzf "$FAIRYDUST_SOURCE_ARCHIVE" --strip-components=1 -C "$src"
 cd "$src"
 patch --batch --fuzz=0 -p1 < "$kit/0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch"
 patch --batch --fuzz=0 -p1 < "$here/0001-runtime-dependencies.patch"
+if [[ $dp_tunnel == 1 ]]; then
+    patch --batch --fuzz=0 -p1 < "$kit/0002-experimental-dp-tunnel.patch"
+fi
 mkdir "$work/output"
 out="$work/output"
 cp "$kit/config" "$out/.config"
 for symbol in TYPEC_DP_ALTMODE TYPEC_NVIDIA_ALTMODE TYPEC_TBT_ALTMODE USB4 USB4_APPLE_SOC RESET_APPLE_CIO; do
     scripts/config --file "$out/.config" --module "$symbol"
 done
-scripts/config --file "$out/.config" --set-str LOCALVERSION '-elementary-fairydust-usb4' --disable LOCALVERSION_AUTO
+scripts/config --file "$out/.config" --set-str LOCALVERSION "$localversion" --disable LOCALVERSION_AUTO
 make O="$out" olddefconfig
 printf '%s\n' ce9f2eba72c061a50b2d790450e90af3439d8c24 > "$work/prepared-source.txt"
 elif [[ $mode == --reconfigure ]]; then
@@ -54,7 +70,7 @@ elif [[ $mode == --reconfigure ]]; then
     for symbol in TYPEC_DP_ALTMODE TYPEC_NVIDIA_ALTMODE TYPEC_TBT_ALTMODE USB4 USB4_APPLE_SOC RESET_APPLE_CIO; do
         scripts/config --file "$out/.config" --module "$symbol"
     done
-    scripts/config --file "$out/.config" --set-str LOCALVERSION '-elementary-fairydust-usb4' --disable LOCALVERSION_AUTO
+    scripts/config --file "$out/.config" --set-str LOCALVERSION "$localversion" --disable LOCALVERSION_AUTO
     make O="$out" olddefconfig
     make O="$out" rustavailable
     echo 'Prepared kernel config refreshed from repository config; kernel not compiled.'
@@ -112,7 +128,7 @@ trap 'exit 143' TERM
 # The kernel packaging target passes -j1 to dpkg; override it explicitly.
 setsid make O="$out" -j "$jobs" bindeb-pkg DPKG_FLAGS="-j$jobs" \
     KDEB_SOURCENAME=linux-elementary-fairydust-usb4 \
-    KDEB_PKGVERSION=7.1.13+elementary.usb4.4 LOCALVERSION= &
+    KDEB_PKGVERSION="$pkgversion" LOCALVERSION= &
 build_pid=$!
 (
     while kill -0 "$build_pid" 2>/dev/null; do
@@ -134,6 +150,6 @@ kill "$watch_pid" 2>/dev/null || true
 wait "$watch_pid" 2>/dev/null || true
 (( result == 0 )) || exit "$result"
 # bindeb-pkg places .deb files in the parent of the output directory.
-find "$work" -maxdepth 1 -name '*_7.1.13+elementary.usb4.4_arm64.deb' -print0 | sort -z | xargs -0 -r sha256sum > "$work/debian-packages.txt"
+find "$work" -maxdepth 1 -name "*_${pkgversion}_arm64.deb" -print0 | sort -z | xargs -0 -r sha256sum > "$work/debian-packages.txt"
 [[ -s $work/debian-packages.txt ]] || { echo 'No Debian packages produced' >&2; exit 1; }
 echo 'Built only. Inspect package contents/hooks before any image integration.'

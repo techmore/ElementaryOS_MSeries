@@ -31,6 +31,7 @@ find "$BUILDROOT" -xdev -mindepth 1 -depth \
     ! -path "$BUILDROOT/usr/sbin/mseries-wifi-firmware" \
     ! -path "$BUILDROOT/usr/libexec" \
     ! -path "$BUILDROOT/usr/libexec/mseries-brightness" \
+    ! -path "$BUILDROOT/usr/libexec/mseries-desktop-defaults" \
     ! -path "$BUILDROOT/usr/lib" \
     ! -path "$BUILDROOT/usr/lib/aarch64-linux-gnu" \
     ! -path "$BUILDROOT/usr/lib/aarch64-linux-gnu/dri" \
@@ -52,6 +53,7 @@ find "$BUILDROOT" -xdev -mindepth 1 -depth \
     ! -path "$BUILDROOT/etc/xdg" \
     ! -path "$BUILDROOT/etc/xdg/autostart" \
     ! -path "$BUILDROOT/etc/xdg/autostart/mseries-brightness.desktop" \
+    ! -path "$BUILDROOT/etc/xdg/autostart/mseries-desktop-defaults.desktop" \
     ! -path "$BUILDROOT/etc/modprobe.d*" \
     ! -path "$BUILDROOT/etc/initramfs-tools*" \
     ! -path "$BUILDROOT/etc/systemd*" \

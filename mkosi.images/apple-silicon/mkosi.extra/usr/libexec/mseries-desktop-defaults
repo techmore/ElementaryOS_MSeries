@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+"""Re-assert M-series desktop defaults at every login (window snapping).
+
+Something (a GNOME-era extension, a settings reset, kernel/desktop experiments) can leave
+org.gnome.mutter edge-tiling off and the tiling keybindings empty in the user's dconf, which
+beats Pantheon's default. Snapping is a native feature here, so put it back each login.
+"""
+from gi.repository import Gio
+
+Gio.Settings.new("org.gnome.mutter").set_boolean("edge-tiling", True)
+keys = Gio.Settings.new("org.gnome.mutter.keybindings")
+keys.set_strv("toggle-tiled-left", ["<Super>Left"])
+keys.set_strv("toggle-tiled-right", ["<Super>Right"])
+Gio.Settings.sync()
