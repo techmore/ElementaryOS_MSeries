@@ -76,8 +76,34 @@ content is imported.
 
 ## Files
 
-- `install-aurora-sep.sh` — the installer (dry-run by default)
+- `install-aurora-sep.sh` — the kernel lane installer (dry-run by default)
+- `install-touchid-gui.sh` — installs the settings app for the current user
+- `mseries-touchid-settings` — the GTK3 settings app (enroll / verify / remove)
+- `touchid_core.py` — pure logic behind the app (messages, PAM state, findings)
+- `test_touchid_core.py` — 9 unit tests, no session needed
+- `mseries-aurora-touchid-apply-pam` — root helper the app calls via pkexec
+- `mseries-touchid-settings.desktop` — applications menu entry
 - this README
+
+## GUI enrollment
+
+`aurora-touchid-setup` (terminal) enrolls one finger and wires PAM. The
+settings app does the same without a terminal, the way GNOME's Users panel
+does for USB readers:
+
+```sh
+bash mseries/aurora-sep/install-touchid-gui.sh
+```
+
+Then "Touch ID (M-series)" appears in the applications menu: sensor status
+with plain-language findings, enrolled fingers with per-finger removal,
+enroll and verify dialogs driven by fprintd's D-Bus signals, and a PAM
+section that adds (or removes) `pam_fprintd` for sudo and polkit via pkexec.
+
+Verified without a session: 9 unit tests and `py_compile`. Not yet exercised
+against the real sensor (the kernel is not booted here yet) — the fprintd
+D-Bus Device interface members should be re-checked against the live device
+after the first boot.
 
 ## Related
 

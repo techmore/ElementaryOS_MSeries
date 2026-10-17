@@ -1,0 +1,460 @@
+#!/usr/bin/env python3
+"""Touch ID settings (M-series): enroll, verify and remove fingers.
+
+Talks to fprintd over the system bus (net.reactivated.Fprint) exactly like the
+GNOME settings panel does, and can wire pam_fprintd into sudo/polkit through
+pkexec. All wording and state logic lives in touchid_core.py, which is tested
+without a session.
+"""
+import os
+import subprocess
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+import touchid_core as core
+
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gio, GLib, Gtk  # noqa: E402
+
+BUS_NAME = "net.reactivated.Fprint"
+MANAGER_PATH = "/net/reactivated/Fprint/Manager"
+MANAGER_IFACE = "net.reactivated.Fprint.Manager"
+DEVICE_IFACE = "net.reactivated.Fprint.Device"
+
+PAM_PATHS = {"sudo": "/etc/pam.d/sudo", "polkit": "/etc/pam.d/polkit-1"}
+PAM_HELPER = "mseries-aurora-touchid-apply-pam"
+
+
+class TouchIdWindow(Gtk.Window):
+    def __init__(self):
+        super().__init__(title="Touch ID (M-series)")
+        self.set_default_size(480, 460)
+        self.set_border_width(12)
+
+        self.bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+        self.manager = None
+        self.device = None
+        self.device_path = None
+        self.user = os.environ.get("USER") or subprocess.run(
+            ["id", "-un"], capture_output=True, text=True).stdout.strip()
+        self.enrolling = False
+        self.verifying = False
+        self._dialog = None
+
+        outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        self.add(outer)
+
+        self.status_label = Gtk.Label(xalign=0)
+        self.status_label.set_line_wrap(True)
+        outer.pack_start(self.status_label, False, False, 0)
+
+        findings = Gtk.ListBox()
+        findings.set_selection_mode(Gtk.SelectionMode.NONE)
+        outer.pack_start(findings, False, False, 6)
+        self.findings_box = findings
+
+        self.fingers_frame = self._build_fingers_section()
+        outer.pack_start(self.fingers_frame, True, True, 6)
+
+        self.pam_frame = self._build_pam_section()
+        outer.pack_start(self.pam_frame, False, False, 6)
+
+        refresh = Gtk.Button(label="Refresh")
+        refresh.connect("clicked", lambda *_: self.refresh())
+        outer.pack_start(refresh, False, False, 0)
+
+        self.refresh()
+
+    # ---- UI construction -------------------------------------------------
+
+    def _build_fingers_section(self):
+        frame = Gtk.Frame(label="Enrolled fingers")
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        box.set_border_width(8)
+        frame.add(box)
+
+        self.fingers_list = Gtk.ListBox()
+        self.fingers_list.set_selection_mode(Gtk.SelectionMode.NONE)
+        box.pack_start(self.fingers_list, True, True, 0)
+
+        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        enroll = Gtk.Button(label="Enroll a finger…")
+        enroll.connect("clicked", self.on_enroll)
+        row.pack_start(enroll, True, True, 0)
+        verify = Gtk.Button(label="Verify a finger")
+        verify.connect("clicked", self.on_verify)
+        row.pack_start(verify, True, True, 0)
+        box.pack_start(row, False, False, 0)
+        return frame
+
+    def _build_pam_section(self):
+        frame = Gtk.Frame(label="Password prompts that use your finger")
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        box.set_border_width(8)
+        frame.add(box)
+
+        self.pam_rows = Gtk.ListBox()
+        self.pam_rows.set_selection_mode(Gtk.SelectionMode.NONE)
+        box.pack_start(self.pam_rows, True, True, 0)
+
+        self.pam_apply = Gtk.Button(label="Add fingerprint unlock…")
+        self.pam_apply.connect("clicked", self.on_pam_apply)
+        box.pack_start(self.pam_apply, False, False, 0)
+        return frame
+
+    # ---- state ------------------------------------------------------------
+
+    def refresh(self):
+        self.status_label.set_text("Checking the Touch ID sensor…")
+        facts = self.collect_facts()
+        for child in self.findings_box.get_children():
+            self.findings_box.remove(child)
+        for severity, title, detail, fix in core.sep_findings(facts):
+            icon = {core.OK: "✓", core.INFO: "ℹ", core.WARN: "!", core.BAD: "✗"}[severity]
+            row = Gtk.Label(xalign=0)
+            text = f"{icon} {title}: {detail}"
+            if fix:
+                text += f"\n    → {fix}"
+            row.set_text(text)
+            row.set_line_wrap(True)
+            self.findings_box.add(row)
+        self.findings_box.show_all()
+
+        usable = all(f[0] == core.OK for f in core.sep_findings(facts))
+        self.status_label.set_text(
+            f"Kernel {facts.get('kernel')} — "
+            + ("Touch ID ready." if usable else "Touch ID unavailable (see above)."))
+
+        self._connect_device(usable)
+        self.list_fingers()
+        self.refresh_pam()
+
+    def collect_facts(self):
+        import platform
+        import subprocess as sp
+        facts = {"kernel": platform.release(),
+                 "sep_bio": os.path.exists("/dev/sep-bio"),
+                 "apple_sep": self._unit_state("apple-sep.service"),
+                 "fprintd": self._unit_state("fprintd.service"),
+                 "device": False}
+        try:
+            path = self.manager.GetDefaultDevice()
+            if path:
+                facts["device"] = True
+                self.device_path = path
+        except Exception:
+            pass
+        return facts
+
+    @staticmethod
+    def _unit_state(unit):
+        try:
+            out = subprocess.run(["systemctl", "is-active", unit],
+                                 capture_output=True, text=True, timeout=5)
+            return out.stdout.strip() or "unknown"
+        except Exception:
+            return "unknown"
+
+    def _connect_device(self, usable):
+        if not usable:
+            self.device = None
+            return
+        try:
+            if self.manager is None:
+                self.manager = Gio.DBusProxy.new_sync(
+                    self.bus, Gio.DBusProxyFlags.NONE, None,
+                    BUS_NAME, MANAGER_PATH, MANAGER_IFACE, None)
+            path = self.manager.GetDefaultDevice()
+            self.device_path = path
+            self.device = Gio.DBusProxy.new_sync(
+                self.bus, Gio.DBusProxyFlags.NONE, None,
+                BUS_NAME, path, DEVICE_IFACE, None)
+            self.device.connect("g-signal", self._on_g_signal)
+        except GLib.Error as err:
+            self.device = None
+            self.status_label.set_text(f"Could not reach fprintd: {err.message}")
+
+    def list_fingers(self):
+        for child in self.fingers_list.get_children():
+            self.fingers_list.remove(child)
+        if self.device is None:
+            row = Gtk.Label(label="No sensor available.", xalign=0)
+            self.fingers_list.add(row)
+            self.fingers_list.show_all()
+            return
+        try:
+            fingers = self.device.ListEnrolledFingers("(s)", self.user)
+        except GLib.Error as err:
+            row = Gtk.Label(label=f"Could not list fingers: {err.message}", xalign=0)
+            self.fingers_list.add(row)
+            self.fingers_list.show_all()
+            return
+        if not fingers:
+            row = Gtk.Label(label="No fingers enrolled yet.", xalign=0)
+            self.fingers_list.add(row)
+        for finger in fingers:
+            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+            row.pack_start(Gtk.Label(label=core.finger_label(finger), xalign=0), True, True, 0)
+            delete = Gtk.Button(label="Remove")
+            delete.connect("clicked", self.on_delete, finger)
+            row.pack_start(delete, False, False, 0)
+            self.fingers_list.add(row)
+        self.fingers_list.show_all()
+
+    def refresh_pam(self):
+        for child in self.pam_rows.get_children():
+            self.pam_rows.remove(child)
+        state = core.pam_state(PAM_PATHS)
+        for entry in state:
+            row = Gtk.Label(xalign=0)
+            if entry["state"] == "fingerprint":
+                text = f"✓ {entry['name']} — unlocks with a finger"
+            elif entry["state"] == "password-only":
+                text = f"• {entry['name']} — password only"
+            else:
+                text = f"• {entry['name']} — not configured (no {entry['path']})"
+            row.set_text(text)
+            row.set_line_wrap(True)
+            self.pam_rows.add(row)
+        self.pam_rows.show_all()
+        self.pam_apply.set_label(core.pam_plan(state))
+
+    # ---- D-Bus helpers ----------------------------------------------------
+
+    def _call(self, method, args=None):
+        return self.device.call_sync(method, args,
+                                     Gio.DBusCallFlags.NONE, -1, None)
+
+    def _release(self):
+        try:
+            if self.device is not None:
+                self._call("Release")
+        except GLib.Error:
+            pass
+
+    def _on_g_signal(self, proxy, sender, signal_name, params):
+        if self._dialog is None:
+            return
+        if signal_name == "EnrollStatus" and self.enrolling:
+            status, done = params.unpack()
+            self._dialog.enroll_status(status, done)
+        elif signal_name == "VerifyStatus" and self.verifying:
+            status, done = params.unpack()
+            self._dialog.verify_status(status, done)
+
+    # ---- actions ----------------------------------------------------------
+
+    def on_enroll(self, button):
+        if self.device is None:
+            return
+        dialog = EnrollDialog(self)
+        self._dialog = dialog
+        dialog.run()
+
+    def on_verify(self, button):
+        if self.device is None:
+            return
+        dialog = VerifyDialog(self)
+        self._dialog = dialog
+        dialog.run()
+
+    def on_delete(self, button, finger):
+        if self.device is None:
+            return
+        try:
+            self._call("DeleteEnrolledFinger", GLib.Variant("(ss)", (self.user, finger)))
+        except GLib.Error:
+            try:
+                self._call("DeleteEnrolledFingers", GLib.Variant("(s)", (self.user,)))
+            except GLib.Error as err:
+                self.status_label.set_text(f"Could not remove: {err.message}")
+                return
+        self.list_fingers()
+
+    def on_pam_apply(self, button):
+        if subprocess.run(["which", PAM_HELPER], capture_output=True).returncode != 0:
+            self.status_label.set_text(
+                f"{PAM_HELPER} is not installed yet (see aurora-sep/install-aurora-sep.sh).")
+            return
+        result = subprocess.run(["pkexec", PAM_HELPER], capture_output=True, text=True)
+        if result.returncode == 0:
+            self.status_label.set_text("PAM updated. Password still works everywhere.")
+        else:
+            self.status_label.set_text("PAM update cancelled or failed; nothing changed.")
+        self.refresh_pam()
+
+
+class EnrollDialog:
+    """Modeless-free simple flow: pick a finger, scan until done."""
+
+    def __init__(self, win):
+        self.win = win
+        self.dialog = Gtk.Dialog(title="Enroll a finger", transient_for=win, modal=True)
+        self.dialog.set_default_size(380, 220)
+        self.dialog.add_button("Close", Gtk.ResponseType.CLOSE)
+        box = self.dialog.get_content_area()
+        box.set_spacing(8)
+        box.set_border_width(12)
+
+        self.finger = Gtk.ComboBoxText()
+        for name in core.FINGERS:
+            self.finger.append(name, core.finger_label(name))
+        self.finger.set_active(0)
+        box.pack_start(self.finger, False, False, 0)
+
+        self.instruction = Gtk.Label(
+            label="Press Start, then place that finger on Touch ID "
+                  "and lift it between scans until it says Enrolled.")
+        self.instruction.set_line_wrap(True)
+        box.pack_start(self.instruction, False, False, 0)
+
+        self.stage = Gtk.Label(label="Not started.", xalign=0)
+        box.pack_start(self.stage, False, False, 0)
+
+        self.progress = Gtk.ProgressBar()
+        box.pack_start(self.progress, False, False, 0)
+
+        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        self.start = Gtk.Button(label="Start")
+        self.start.connect("clicked", self.on_start)
+        row.pack_start(self.start, True, True, 0)
+        self.stop = Gtk.Button(label="Stop")
+        self.stop.connect("clicked", self.on_stop)
+        self.stop.set_sensitive(False)
+        row.pack_start(self.stop, True, True, 0)
+        box.pack_start(row, False, False, 0)
+
+        self.dialog.connect("response", self.on_response)
+        self.dialog.show_all()
+
+    def run(self):
+        self.dialog.run()
+
+    def on_start(self, button):
+        finger = self.finger.get_active_id()
+        try:
+            self.win._call("Claim", GLib.Variant("(s)", (self.win.user,)))
+            self.win._call("EnrollStart", GLib.Variant("(s)", (finger,)))
+        except GLib.Error as err:
+            self.instruction.set_text(f"Could not start enrollment: {err.message}")
+            return
+        self.win.enrolling = True
+        self.start.set_sensitive(False)
+        self.stop.set_sensitive(True)
+        self.stage.set_text("Waiting for the first scan…")
+        self.progress.set_fraction(0.0)
+
+    def on_stop(self, button):
+        self._stop("Stopped.")
+
+    def _stop(self, final):
+        try:
+            self.win._call("EnrollStop")
+        except GLib.Error:
+            pass
+        self.win._release()
+        self.win.enrolling = False
+        self.start.set_sensitive(True)
+        self.stop.set_sensitive(False)
+        self.stage.set_text(final)
+
+    def enroll_status(self, status, done):
+        text, finished = core.enroll_message(status, done)
+        self.stage.set_text(text)
+        if status == "enroll-stage-passed":
+            self.progress.pulse()
+        if finished:
+            self._stop(text)
+            self.win.list_fingers()
+            self.progress.set_fraction(1.0)
+
+    def on_response(self, dialog, response):
+        if self.win.enrolling:
+            self._stop("Stopped.")
+        self.win._dialog = None
+        self.dialog.destroy()
+
+
+class VerifyDialog:
+    def __init__(self, win):
+        self.win = win
+        self.dialog = Gtk.Dialog(title="Verify a finger", transient_for=win, modal=True)
+        self.dialog.set_default_size(380, 160)
+        self.dialog.add_button("Close", Gtk.ResponseType.CLOSE)
+        box = self.dialog.get_content_area()
+        box.set_spacing(8)
+        box.set_border_width(12)
+        self.instruction = Gtk.Label(
+            label="Press Start, then place an enrolled finger on Touch ID.")
+        self.instruction.set_line_wrap(True)
+        box.pack_start(self.instruction, False, False, 0)
+        self.result = Gtk.Label(label="Not started.", xalign=0)
+        box.pack_start(self.result, False, False, 0)
+        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        self.start = Gtk.Button(label="Start")
+        self.start.connect("clicked", self.on_start)
+        row.pack_start(self.start, True, True, 0)
+        self.stop = Gtk.Button(label="Stop")
+        self.stop.connect("clicked", self.on_stop)
+        self.stop.set_sensitive(False)
+        row.pack_start(self.stop, True, True, 0)
+        box.pack_start(row, False, False, 0)
+        self.dialog.connect("response", self.on_response)
+        self.dialog.show_all()
+
+    def on_start(self, button):
+        try:
+            self.win._call("Claim", GLib.Variant("(s)", (self.win.user,)))
+            fingers = self.win.device.ListEnrolledFingers("(s)", self.win.user)
+            if not fingers:
+                self.result.set_text("Enroll a finger first.")
+                self.win._release()
+                return
+            self.win._call("VerifyStart", GLib.Variant("(s)", (fingers[0],)))
+        except GLib.Error as err:
+            self.result.set_text(f"Could not start: {err.message}")
+            return
+        self.win.verifying = True
+        self.start.set_sensitive(False)
+        self.stop.set_sensitive(True)
+        self.result.set_text("Waiting for a scan…")
+
+    def _finish(self, final):
+        try:
+            self.win._call("VerifyStop")
+        except GLib.Error:
+            pass
+        self.win._release()
+        self.win.verifying = False
+        self.start.set_sensitive(True)
+        self.stop.set_sensitive(False)
+        self.result.set_text(final)
+
+    def on_stop(self, button):
+        self._finish("Stopped.")
+
+    def verify_status(self, status, done):
+        text, finished = core.verify_message(status, done)
+        self.result.set_text(text)
+        if finished:
+            self._finish(text)
+
+    def on_response(self, dialog, response):
+        if self.win.verifying:
+            self.on_stop(None)
+        self.win._dialog = None
+        self.win.verifying = False
+        self.dialog.destroy()
+
+
+def main():
+    win = TouchIdWindow()
+    win.connect("destroy", Gtk.main_quit)
+    win.show_all()
+    Gtk.main()
+
+
+if __name__ == "__main__":
+    main()

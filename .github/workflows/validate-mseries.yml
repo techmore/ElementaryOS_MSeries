@@ -48,7 +48,7 @@ jobs:
           bash -n transform/elementary-grow.sh
           bash -n bin/elementary-mac-setup
           for f in mseries/install-*.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/disable-notch-for-pantheon.sh; do bash -n "$f"; done
-          shellcheck -S warning bin/elementary-mac-setup transform/elementary-grow.sh mseries/install-unlock-screen.sh mseries/install-boot-isolation.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/enhance.sh mseries/enhance-firstboot.sh mseries/install-brave.sh mseries/install-video-decode.sh mseries/test-installer-flow.sh mseries/aurora-sep/install-aurora-sep.sh
+          shellcheck -S warning bin/elementary-mac-setup transform/elementary-grow.sh mseries/install-unlock-screen.sh mseries/install-boot-isolation.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/enhance.sh mseries/enhance-firstboot.sh mseries/install-brave.sh mseries/install-video-decode.sh mseries/test-installer-flow.sh mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh
           bash mseries/test-elementary-mac-setup.sh
           bash mseries/test-installer-flow.sh
           bash -n assemble-iso.sh
@@ -56,6 +56,7 @@ jobs:
           bash -n mseries/fairydust/debian/build.sh
           bash -n mseries/fairydust/debian/fetch-asahi-boot-packages.sh
           bash -n mseries/aurora-sep/install-aurora-sep.sh
+          bash -n mseries/aurora-sep/install-touchid-gui.sh
           python3 -m py_compile mseries/fairydust/debian/assemble-m1n1-bootbin.py
           python3 mseries/fairydust/debian/test-assemble-m1n1-bootbin.py
           python3 -m py_compile mseries/fairydust/debian/verify-m1n1-esp.py
@@ -74,6 +75,7 @@ jobs:
           python3 -m py_compile mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness
           python3 mseries/test-wifi-resume.py
           python3 mseries/test-power-cap.py
+          python3 mseries/aurora-sep/test_touchid_core.py
           python3 mseries/local-ai/test_people_watch.py
           python3 mseries/test-image-wiring.py
           python3 mseries/test-kernel-config.py

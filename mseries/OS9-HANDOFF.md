@@ -2111,6 +2111,16 @@ Owner asked for Touch ID on the M1 Pro like macOS "unlock everything". Asahi lis
 - Known limits to keep in docs: fingerprint cannot unlock LUKS at boot (SEP asleep that early, no TPM); the lock screen PAM service is undetermined (Gala does not link PAM; `sudo`/polkit are the confirmed surfaces); suspend/resume untested.
 - Next: after the owner's boot — check `/dev/sep-bio`, `apple-sep.service`, `fprintd-list`; enrol with `aurora-touchid-setup`; determine the lock screen's PAM service and wire `pam_fprintd` there if one exists; then update `BUG-FIX-ROADMAP.md` (P2 row), `ROADMAP.md`, and the public `docs/features.html` row with measured results only.
 
+## 2026-10-17 (OpenCode) — Touch ID settings app (GUI enrollment)
+
+Owner asked for a GUI for enrollment instead of the terminal. Pantheon's Settings has no fingerprint panel, so this is the first-class path.
+
+- Added `mseries/aurora-sep/mseries-touchid-settings` (GTK3, PyGObject) with `touchid_core.py` holding all wording/state/PAM logic as pure functions — the same split as `display-settings/display_diag.py`. It talks to fprintd over the system bus (`net.reactivated.Fprint`, Manager `GetDevices`/`GetDefaultDevice` + the Device interface `Claim`/`EnrollStart`/`ListEnrolledFingers`/`VerifyStart`/`DeleteEnrolledFinger`), mirrors `EnrollStatus`/`VerifyStatus` into plain language, and applies PAM changes through `pkexec` on `mseries-aurora-touchid-apply-pam` (idempotent, timestamped backups, creates a full `/etc/pam.d/polkit-1` stack where elementary has none).
+- `install-touchid-gui.sh` installs it per-user (`~/.local/bin` + applications entry) following `install-display-profiles.sh`.
+- Verified: 9 unit tests pass (`python3 mseries/aurora-sep/test_touchid_core.py`), `py_compile` clean, `bash -n`/shellcheck clean, and the real fprintd Manager D-Bus interface introspected on the running system.
+- Not verified: not once run against a sensor (still on the old kernel). The `aurora` kernel marker turned out to be absent from the new kernel's uname (`7.1.12-2-20261015.19-sep-ARCH`), so `on_aurora_kernel()` matches `sep-ARCH`/`aurora`; Device interface member names and the exact EnrollStatus/VerifyStatus vocabulary need a live check on the first boot, as do enrollment, verify, delete and the pkexec PAM apply.
+- Next: after the owner's boot, install the app, enroll a finger in the GUI, and confirm the D-Bus behavior matches the tests; then move the public `docs/features.html` row and `BUG-FIX-ROADMAP.md` P2 entry to measured status.
+
 ## 2026-10-16 (Claude) — OpenCode Desktop arm64 port
 
 - The owner's apt error was an amd64 `opencode-desktop-linux-amd64.deb` on arm64, not missing libraries. Built the arm64 desktop from `anomalyco/opencode` branch `v2` (4617210) with bun 1.4.2 (`~/.bun`, source in `~/src/opencode-v2`): `bun install`, `bun run prebuild && bun run build`, `electron-builder --linux deb`.
