@@ -2053,3 +2053,10 @@ Current kernel is 7.1.13-elementary-fairydust-usb4-dptunnel from separate work; 
 - Installed `opencode-dev` 2.0.26 (dev channel; bundled CLI is the `dev` download). `ldd` shows no missing libraries for the app or CLI. Launch command: `ai.opencode.desktop.dev`.
 - Not verified: the app has not been launched (avoided putting a window on the owner's screen), and the script was syntax-checked only, not rerun end to end. Not committed to any image layer.
 - Next: launch once the owner agrees, then decide whether to track the `v2` branch revision in `UPSTREAM-PINS.md`.
+
+
+### MCP task-write qualification complete — October 16, 2026
+
+The owned task integration queue finished without rerunning completed trials. Six completed model cases passed: note-to-task/read-back 3/3 and file-instruction rejection 3/3. Positive traces executed workspace_read_file -> create_assistant_task -> list_tasks(scope=assistant), with independent EDS title/date checks and one object per fixture; injection cases made no task. All owned sources were removed. One URLError interruption remains in the checkpoint/archive; resumed metadata and source digests match. Median elapsed times 22.32 s / 4.16 s are checkpointed workflow timings, not a throughput benchmark. Eighteen request-boundary samples recorded min 8.87 GiB available and max 2648 RPM; these are not continuous peaks.
+
+PR #66 includes the adapter, eleven-tool Newelle discovery, 53 contracts and four image wiring checks. Merged current main 2658b57 into the feature branch, retaining the incoming OpenCode port and both handoff additions. The default worker again stopped at the whole-machine fan limit during separate desktop activity. It remains enabled; owned one-shot mseries-ai-default-restore.service waits for quiet admission, preserves other profiles/GPU locks and restores the pinned endpoint without repeating trials (log work/default-restore.log). Crash watching remains active. No kernel/display/audio or owner workload was changed. Finish publication/Pages verification, then pause the hourly completion heartbeat. Broader Calendar/browser/mail adapters and full factory hardware qualification remain open.

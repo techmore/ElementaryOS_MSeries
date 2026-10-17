@@ -6,13 +6,13 @@ The local MCP adapter now has eleven typed tools. Version 0.2 adds task creation
 |---|---|---|
 | Newelle | Local chat, user-summary memory and MCP tools | Earlier chat, clock dispatch and separate-process memory passed. Updated eleven-tool controller discovery passed without requesting inference; new task workflow qualification is pending. |
 | Files / notes | Scoped UTF-8 reads and create-only Markdown notes | Earlier create/read, traversal, symlink and overwrite checks passed. No arbitrary file access. |
-| Tasks / Homeboard | Read open EDS tasks; create in local Assistant Tasks | Live concurrent/retry/conflict checks passed. Model note-to-task qualification is queued for idle windows. |
+| Tasks / Homeboard | Read open EDS tasks; create in local Assistant Tasks | Live concurrent/retry/conflict checks passed. Model note-to-task and scoped read-back passed in all three repeats. |
 | Calendar | Read upcoming local EDS calendar components | Synthetic VEVENT round trip passed. Recurrences are labeled, not expanded; no calendar writes yet. |
 | Energy Monitor | Cache reads and freshness | Adapter checked; signed-in live collector qualification remains separate. |
 | System and fault watcher | Measurements and bounded fault signatures | Read-only; automatic model diagnosis remains off after failed repair-advice checks. |
 | Browser, mail and messaging | App inventory | Dedicated adapters are not implemented. Inventory does not establish control. No messages are sent. |
 
-[Synthetic receipts and source digests](receipts/task-integration-2026-10-16/) record the completed adapter/discovery checks and pending model status.
+[Synthetic receipts and source digests](receipts/task-integration-2026-10-16/) record adapter/discovery checks, all six completed model trials and the interrupted checkpoint.
 
 ## Task writes and retries
 
@@ -24,7 +24,9 @@ The first live write check used two concurrent MCP processes plus a third retry 
 
 ## Qualification and reproduction
 
-Current contract count: **53 passing tests**. These include input/date validation, synced-source refusal, private ownership markers, settings-preserving tool refresh, and distinguishing malformed model tool calls from interrupted inference. The model suite separately checks note → task → scoped read-back and rejection of a file instruction to create an unwanted task, three repeats each. Checkpoint resumption keeps completed successes and failures, retrying only incomplete cases with matching metadata. Its six results are pending; completed failures will be retained. The tests explicitly name the intended workflow tools and do not establish unrestricted autonomous app discovery.
+Current contract count: **53 passing tests**. These include input/date validation, synced-source refusal, private ownership markers, settings-preserving tool refresh, and distinguishing malformed model tool calls from interrupted inference. The model suite separately checks note → task → scoped read-back and rejection of a file instruction to create an unwanted task, three repeats each. Checkpoint resumption keeps completed successes and failures, retrying only incomplete cases with matching metadata. All six completed trials passed: note-to-task 3/3 and file-instruction rejection 3/3. Each positive trace read the note, created exactly one task with the requested title/date/retry ID, and read it back through the scoped task tool. Independent EDS queries matched; all owned sources were removed. Injection trials created no task. One URLError interruption was preserved and only unfinished work resumed. This is a checkpointed quality result, not a single uninterrupted latency run. The tests explicitly name the intended workflow tools and do not establish unrestricted autonomous app discovery.
+
+Completed note-to-task workflows took a median 22.32 seconds; injection checks 4.16 seconds. At eighteen request-boundary samples, minimum available RAM was 8.87 GiB and maximum fan reading 2648 RPM. These sparse readings are not continuous peaks or acoustic measurements. The worker continuously enforced its existing reserve/fan/temperature policy. Tasks GUI rendering, reminder delivery and a Newelle GUI task-write conversation were not exercised by these API/stdio workflows.
 
 The current machine runs `7.1.13-elementary-fairydust-usb4-dptunnel`, changed by separate project work. This integration task does not change the kernel, display or audio. New workflow timings must not be treated as an identical-hardware-state continuation of the earlier `7.1.13-3-2-ARCH` model benchmark cohort.
 

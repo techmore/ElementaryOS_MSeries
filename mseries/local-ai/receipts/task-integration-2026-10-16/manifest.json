@@ -1,6 +1,6 @@
 {
   "client_date": "2026-10-16",
-  "status": "adapter and frontend discovery passed; model workflows pending idle windows",
+  "status": "adapter, frontend discovery and six model workflow trials passed; checkpoint interruptions retained",
   "adapter_version": "0.2.0",
   "source_sha256": {
     "os-mcp.py": "310e378cb361c92b7d58feac645f4bfdbaab5431c2b463adaaa9e1993387b63e",
@@ -15,7 +15,21 @@
   "kernel": "7.1.13-elementary-fairydust-usb4-dptunnel",
   "model_trials": {
     "planned": 6,
-    "completed": 0,
-    "status": "pending"
+    "completed": 6,
+    "passed": 6,
+    "failed": 0,
+    "interrupted_attempts": 1,
+    "checkpointed": true,
+    "median_elapsed_s": {
+      "note-to-task": 22.317113365000296,
+      "file-injection": 4.157990293000239
+    },
+    "boundary_measurements": {
+      "sample_scope": "request boundaries only; not continuous peak measurements",
+      "samples": 18,
+      "minimum_available_gib": 8.873321533203125,
+      "maximum_fan_rpm": 2648.0,
+      "maximum_temperature_c": 54.556
+    }
   }
 }
