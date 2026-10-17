@@ -16,9 +16,12 @@ same DP-IN tunnel PHY, and no HDMI GPIOs or Type-C mux graph. dcpext1
 returns to its stock DP-altmode wiring and the NHI points at dcpext0.
 The built-in HDMI port has no display controller while this is defined.
 
-Validated offline only: the preprocessed j314s tree parses with and
-without the define and the phandles resolve to the ATC1 crossbar and
-PHY. Not compiled with dtc, not booted.
+Validated offline only: applies after 0001-0014; t6000-j314s compiles
+with stock dtc 1.6.1 with and without the define (Asahi float cells
+integer-ized for the check), adding only the graph_child_address
+warning dcpext1 already has. In the E4 DTB, dcpext0 mux-controls point
+to mux@b0304c000 cell 1, dp-tunnel-phy to phy@e50000, and the NHI
+dp-source to dcp@289c00000. Not booted.
 
 Signed-off-by: sdolbec <sdolbec1@gmail.com>
 ---

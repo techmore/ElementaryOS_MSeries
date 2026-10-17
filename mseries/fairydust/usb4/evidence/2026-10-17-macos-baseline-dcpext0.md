@@ -92,19 +92,26 @@ endpoint removed, dpaudio1 link kept); `dcpext1` returns to stock DP-altmode
 wiring; the NHI points at `dcpext0`. Built-in HDMI has no display controller
 under E4 (already out of scope per `HDMI-FASTEST-PATH.md`).
 
-Offline validation: applies cleanly after 0001–0014; the preprocessed j314s
-tree parses with and without the define (Zephyr `dtlib`; float cells and
-alias-name rules relaxed, no `dtc` available here); phandles resolve to
-`mux@b0304c000` cell 1 and `phy@b03000000`. Not compiled with dtc, not in
-CI, not installed.
+Offline validation: applies cleanly after 0001–0014. `t6000-j314s` compiles
+with stock **dtc 1.6.1** with and without the define (Asahi float-literal
+cells integer-ized for the check only); the only added warning is the
+`graph_child_address` one `dcpext1` already has. In the E4 DTB (`fdtget`):
+`dcpext0` `mux-controls` → `mux@b0304c000` cell 1, `mux-index` 0,
+`apple,dptx-phy` 1, `apple,dp-tunnel-phy` → `phy@e50000`, `ports` keeps only
+`port@0` (dpaudio1); `dcpext1` → same crossbar cell 0, mux-index 2, no tunnel
+properties; NHI `apple,dp-source` → `dcp@289c00000`. An earlier draft that
+deleted the whole `ports` node broke the `dpaudio1` graph and was fixed.
+Not in CI, not installed, not booted.
 
 Gates before an E4 boot (owner decision):
 
 - Build the boot.bin DT with 0015 and keep the module set from E3; the
   bridge code does not depend on which DCP is the source.
-- `dcpext0` is `status = "disabled"` in the DT and enabled by the loader;
-  confirm m1n1 still enables it (it did for HDMI), or the source lookup
-  fails with no DCP.
+- `dcpext0` is `status = "disabled"` in the DT and enabled by the loader.
+  Current m1n1 (`56b77ba`, `kboot.c` `dt_carveout_reserved_regions` →
+  `dt_add_reserved_regions`) sets `status = "okay"` on every `dcpextN` whose
+  alias exists on t600x, independent of HDMI. Confirm on the installed m1n1
+  revision: E4's log must show `289c00000.dcp` probing.
 - Keep bypass armed (`dprx_bypass=1`, `dprx_timeout=15000`) for the first
   E4 boot. **E2 (`next_entry=elementary-usb4-dpin-nobypass`) is still armed
   and still targets `dcpext1`;** clear it first if E4 should go first.
