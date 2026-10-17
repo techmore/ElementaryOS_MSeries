@@ -186,7 +186,15 @@ when the current selection allows it. Other explicit single-provider
 selections are preserved; switch to **custom** and add `opencodego` in
 Settings → Providers to request CodexBar's account-level OpenCode Go provider.
 
-The Wingpanel menu also reads OpenCode v2's `~/.local/share/opencode/opencode.db`
+The Wingpanel menu has a **Sessions** section (`codexbar-sessions.py`,
+read-only, ~0.1 s) with a status dot for ChatGPT/Codex, Claude Code and
+OpenCode: signed-in state is judged from each tool's own files (never
+printed), and Claude Code and OpenCode show requests and tokens over 5 hours
+and 7 days from their local history. This is local activity, not account
+quota. Claude account quota in CodexBar needs a claude.ai session or Claude
+CLI credentials, which a desktop-app-only sign-in does not provide.
+
+The OpenCode v2 reader (`codexbar-opencode-local.py`) also reads `~/.local/share/opencode/opencode.db`
 directly in SQLite read-only mode. It shows local cost-bearing OpenCode Go
 assistant records over 5 hours, 7 days, and 30 days, labeled **local estimate ·
 not account quota**. This works with the v2 OAuth credential stored in

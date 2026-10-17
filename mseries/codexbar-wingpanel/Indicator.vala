@@ -17,7 +17,7 @@ namespace MSeries {
         private uint refresh_poll_source = 0;
         private string executable;
         private bool request_in_flight = false;
-        private bool local_opencode_request_in_flight = false;
+        private bool local_sessions_request_in_flight = false;
         private bool snapshot_busy = false;
         private bool snapshot_stale = false;
         private uint refresh_poll_count = 0;
@@ -220,7 +220,7 @@ namespace MSeries {
                 yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
                 if (!process.get_successful () || stdout_text.strip ().length == 0) {
                     show_unavailable ("Start CodexBar and sign in to see quota.");
-                    refresh_local_opencode_usage.begin ();
+                    refresh_local_sessions.begin ();
                     return;
                 }
 
@@ -229,18 +229,18 @@ namespace MSeries {
                 var root = parser.get_root ();
                 if (root == null || root.get_node_type () != Json.NodeType.OBJECT) {
                     show_unavailable ("CodexBar returned an unsupported snapshot.");
-                    refresh_local_opencode_usage.begin ();
+                    refresh_local_sessions.begin ();
                     return;
                 }
                 var snapshot = root.get_object ();
                 update_snapshot (snapshot);
-                refresh_local_opencode_usage.begin ();
+                refresh_local_sessions.begin ();
                 if (refresh_after_snapshot && should_refresh_on_open (snapshot)) {
                     refresh_usage ();
                 }
             } catch (Error e) {
                 show_unavailable ("Could not read CodexBar usage: " + e.message);
-                refresh_local_opencode_usage.begin ();
+                refresh_local_sessions.begin ();
             } finally {
                 request_in_flight = false;
                 refresh_after_snapshot = false;
@@ -305,6 +305,8 @@ namespace MSeries {
                 }
             }
 
+            append_spending (snapshot);
+
             var parts = new string[0];
             if (codex_panel_summary.length > 0) {
                 parts += (claude_panel_summary.length > 0 ? "CX " : "") + codex_panel_summary;
@@ -332,13 +334,42 @@ namespace MSeries {
             status_label.set_text (update_status);
         }
 
-        private async void refresh_local_opencode_usage () {
-            if (local_opencode_request_in_flight) {
+        private void append_spending (Json.Object snapshot) {
+            if (!snapshot.has_member ("spending")) {
                 return;
             }
-            local_opencode_request_in_flight = true;
+            var spending = snapshot.get_array_member ("spending");
+            if (spending == null || spending.get_length () == 0) {
+                return;
+            }
+            var section = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
+            section.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
+            var title = new Gtk.Label ("Estimated spend · list price") { xalign = 0 };
+            title.add_css_class ("heading");
+            section.append (title);
+            for (uint i = 0; i < spending.get_length (); i++) {
+                var item = spending.get_object_element (i);
+                var provider = (item.get_string_member ("provider") ?? "").down ();
+                var name = provider == "codex" ? "OpenAI Codex" : provider == "claude" ? "Claude" : provider;
+                append_section_metric (section, name, "$%0.2f today · $%0.2f month".printf (
+                    item.get_double_member ("today"), item.get_double_member ("month")));
+            }
+            var note = new Gtk.Label ("Pay-as-you-go equivalent of local token use, not your bill") {
+                xalign = 0, wrap = true
+            };
+            note.add_css_class ("dim-label");
+            note.add_css_class ("caption");
+            section.append (note);
+            providers_box.append (section);
+        }
+
+        private async void refresh_local_sessions () {
+            if (local_sessions_request_in_flight) {
+                return;
+            }
+            local_sessions_request_in_flight = true;
             var helper = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "lib",
-                "codexbar-cli", "codexbar-opencode-local.py");
+                "codexbar-cli", "codexbar-sessions.py");
             try {
                 var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
                     "python3", helper);
@@ -346,55 +377,81 @@ namespace MSeries {
                 string stderr_text;
                 yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
                 if (!process.get_successful () || stdout_text.strip ().length == 0) {
-                    append_local_opencode_status ("OpenCode local usage helper could not run.");
+                    append_sessions_status ("Session check could not run. Reinstall the CodexBar panel.");
                     return;
                 }
                 var parser = new Json.Parser ();
                 parser.load_from_data (stdout_text, -1);
                 var root = parser.get_root ();
                 if (root == null || root.get_node_type () != Json.NodeType.OBJECT) {
-                    append_local_opencode_status ("OpenCode local usage returned invalid data.");
+                    append_sessions_status ("Session check returned invalid data.");
                     return;
                 }
-                var usage = root.get_object ();
-                var state = usage.get_string_member ("status") ?? "unavailable";
+                var sessions = root.get_object ().get_array_member ("sessions");
+                if (sessions == null) {
+                    append_sessions_status ("Session check returned no sessions.");
+                    return;
+                }
                 var section = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
                 section.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
-                var title = new Gtk.Label ("OpenCode Go · local estimate") { xalign = 0 };
+                var title = new Gtk.Label ("Sessions") { xalign = 0 };
                 title.add_css_class ("heading");
                 section.append (title);
-                var source_note = new Gtk.Label ("Not account quota · from OpenCode v2 local history") {
-                    xalign = 0, wrap = true
-                };
-                source_note.add_css_class ("dim-label");
-                source_note.add_css_class ("caption");
-                section.append (source_note);
-
-                if (state == "available") {
-                    var periods = usage.get_array_member ("periods");
-                    if (periods != null) {
-                        for (uint i = 0; i < periods.get_length (); i++) {
-                            var period = periods.get_object_element (i);
-                            var label = period.get_string_member ("label") ?? "Usage";
-                            var cost = period.get_double_member ("costUSD");
-                            var requests = period.get_int_member ("requests");
-                            append_section_metric (section, label,
-                                "$%0.2f · %s requests".printf (cost, requests.to_string ()));
-                        }
-                    }
-                } else {
-                    var message = usage.get_string_member ("message") ?? "Local usage is unavailable.";
-                    var detail = new Gtk.Label (message) { xalign = 0, wrap = true };
-                    detail.add_css_class ("dim-label");
-                    section.append (detail);
+                for (uint i = 0; i < sessions.get_length (); i++) {
+                    append_session (section, sessions.get_object_element (i));
                 }
-
                 providers_box.append (section);
             } catch (Error e) {
-                append_local_opencode_status ("OpenCode local usage is unavailable: " + e.message);
+                append_sessions_status ("Session check is unavailable: " + e.message);
             } finally {
-                local_opencode_request_in_flight = false;
+                local_sessions_request_in_flight = false;
             }
+        }
+
+        private void append_session (Gtk.Box section, Json.Object session) {
+            var state = session.get_string_member ("state") ?? "off";
+            var color = state == "ok" ? "#3a9104" : state == "warn" ? "#f9c440" : "#888888";
+            var name = session.get_string_member ("name") ?? "Session";
+            var heading = new Gtk.Label (null) { xalign = 0, margin_top = 4 };
+            heading.set_markup ("<span foreground=\"%s\">●</span> <b>%s</b>".printf (color, GLib.Markup.escape_text (name)));
+            section.append (heading);
+            var detail = new Gtk.Label (session.get_string_member ("detail") ?? "") { xalign = 0, wrap = true };
+            detail.add_css_class ("dim-label");
+            detail.add_css_class ("caption");
+            section.append (detail);
+
+            var periods = session.has_member ("periods") ? session.get_array_member ("periods") : null;
+            if (periods == null || periods.get_length () == 0) {
+                return;
+            }
+            // 5 hours and 7 days are the windows the plans are limited by.
+            for (uint i = 0; i < periods.get_length () && i < 2; i++) {
+                var period = periods.get_object_element (i);
+                var cost = period.get_double_member ("costUSD");
+                var value = "%s req · %s tok".printf (period.get_int_member ("requests").to_string (),
+                    compact_count (period.get_int_member ("tokens")));
+                if (cost > 0) {
+                    value += " · $%0.2f".printf (cost);
+                }
+                append_section_metric (section, period.get_string_member ("label") ?? "Usage", value);
+            }
+            var note = session.get_string_member ("note") ?? "";
+            if (note.length > 0) {
+                var note_label = new Gtk.Label (note) { xalign = 0, wrap = true };
+                note_label.add_css_class ("dim-label");
+                note_label.add_css_class ("caption");
+                section.append (note_label);
+            }
+        }
+
+        private string compact_count (int64 value) {
+            if (value >= 1000000) {
+                return "%.1fM".printf ((double) value / 1000000.0);
+            }
+            if (value >= 1000) {
+                return "%.0fK".printf ((double) value / 1000.0);
+            }
+            return value.to_string ();
         }
 
         private void append_section_metric (Gtk.Box section, string name, string value) {
@@ -406,10 +463,10 @@ namespace MSeries {
             section.append (row);
         }
 
-        private void append_local_opencode_status (string message) {
+        private void append_sessions_status (string message) {
             var section = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
             section.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
-            var title = new Gtk.Label ("OpenCode Go · local estimate") { xalign = 0 };
+            var title = new Gtk.Label ("Sessions") { xalign = 0 };
             title.add_css_class ("heading");
             section.append (title);
             var detail = new Gtk.Label (message) { xalign = 0, wrap = true };
@@ -453,7 +510,9 @@ namespace MSeries {
             }
             var provider_error = entry.get_string_member ("error") ?? "";
             if (provider_error.length > 0) {
-                append_subtle_row (provider_error);
+                append_subtle_row (provider.down () == "opencodego"
+                    ? "Account quota needs an OpenCode Go web sign-in. Local activity is under Sessions."
+                    : provider_error);
             }
             providers_box = previous_provider_box;
         }
