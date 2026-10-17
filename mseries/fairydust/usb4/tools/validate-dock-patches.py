@@ -68,6 +68,8 @@ def main():
         logfile.write('$ ' + ' '.join(map(str, argv)) + '\n' + result.stdout + result.stderr)
         logfile.flush()
         if result.returncode:
+            # Keep compiler/test errors visible in CI; its scratch directory is not retained.
+            print((result.stdout + result.stderr)[-12000:], file=sys.stderr)
             raise RuntimeError(f'command failed ({result.returncode}); inspect {output / "validation.log"}: {argv[0]}')
         return result.stdout
     run(['git', 'init', '-q'])
