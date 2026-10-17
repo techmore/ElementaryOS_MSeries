@@ -54,6 +54,7 @@ STAGES=(
   "codexbar-panel|system|on|install-codexbar-wingpanel.sh|CodexBar quota and usage indicator in Wingpanel"
   "corners|system|off|install-gala-screen-corners.sh|rounded screen corners (patched Gala)"
   "clockright|system|off|install-clockright-wingpanel.sh|right-side clock while the notch area is fixed"
+  "drawers|system|off|install-gala-drawers.sh|hotkey drawers: pop an app up/down into a fixed screen zone"
 )
 
 # Preferred apps: `apps` expands to these in --with/--only. brave and codexbar

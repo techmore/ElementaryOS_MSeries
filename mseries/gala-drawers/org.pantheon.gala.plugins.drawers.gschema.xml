@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Hotkeys for the Gala "hotkey drawers" plugin.
+
+  Only the accelerators live here (mutter requires keybindings to be declared in
+  a gsettings schema). The apps, matches and zones live in
+  ~/.config/mseries/gala-drawers.ini, which the plugin watches so edits apply
+  without a restart.
+
+  drawer-N  pops drawer N up/down. Default: left Command (Control) + N.
+  assign-N  captures the focused window into drawer N. Default: Control+Alt+N.
+
+  Bind with:  gsettings set org.pantheon.gala.plugins.drawers drawer-1 "['<Super>1']"
+  Clear with: gsettings set org.pantheon.gala.plugins.drawers drawer-1 "[]"
+-->
+<schemalist>
+  <schema id="org.pantheon.gala.plugins.drawers" path="/org/pantheon/gala/plugins/drawers/">
+    <key type="as" name="drawer-1">
+      <default><![CDATA[['<Control>1']]]></default>
+      <summary>Toggle drawer 1</summary>
+      <description>The shortcut to pop drawer 1 up or down. Configure the app and zone in ~/.config/mseries/gala-drawers.ini.</description>
+    </key>
+    <key type="as" name="drawer-2">
+      <default><![CDATA[['<Control>2']]]></default>
+      <summary>Toggle drawer 2</summary>
+      <description>The shortcut to pop drawer 2 up or down. Configure the app and zone in ~/.config/mseries/gala-drawers.ini.</description>
+    </key>
+    <key type="as" name="drawer-3">
+      <default><![CDATA[['<Control>3']]]></default>
+      <summary>Toggle drawer 3</summary>
+      <description>The shortcut to pop drawer 3 up or down. Configure the app and zone in ~/.config/mseries/gala-drawers.ini.</description>
+    </key>
+    <key type="as" name="drawer-4">
+      <default><![CDATA[['<Control>4']]]></default>
+      <summary>Toggle drawer 4</summary>
+      <description>The shortcut to pop drawer 4 up or down. Configure the app and zone in ~/.config/mseries/gala-drawers.ini.</description>
+    </key>
+    <key type="as" name="drawer-5">
+      <default><![CDATA[['<Control>5']]]></default>
+      <summary>Toggle drawer 5</summary>
+      <description>The shortcut to pop drawer 5 up or down. Configure the app and zone in ~/.config/mseries/gala-drawers.ini.</description>
+    </key>
+    <key type="as" name="drawer-6">
+      <default><![CDATA[['<Control>6']]]></default>
+      <summary>Toggle drawer 6</summary>
+      <description>The shortcut to pop drawer 6 up or down. Configure the app and zone in ~/.config/mseries/gala-drawers.ini.</description>
+    </key>
+    <key type="as" name="drawer-7">
+      <default><![CDATA[['<Control>7']]]></default>
+      <summary>Toggle drawer 7</summary>
+      <description>The shortcut to pop drawer 7 up or down. Configure the app and zone in ~/.config/mseries/gala-drawers.ini.</description>
+    </key>
+    <key type="as" name="drawer-8">
+      <default><![CDATA[['<Control>8']]]></default>
+      <summary>Toggle drawer 8</summary>
+      <description>The shortcut to pop drawer 8 up or down. Configure the app and zone in ~/.config/mseries/gala-drawers.ini.</description>
+    </key>
+    <key type="as" name="drawer-9">
+      <default><![CDATA[['<Control>9']]]></default>
+      <summary>Toggle drawer 9</summary>
+      <description>The shortcut to pop drawer 9 up or down. Configure the app and zone in ~/.config/mseries/gala-drawers.ini.</description>
+    </key>
+    <key type="as" name="assign-1">
+      <default><![CDATA[['<Control><Alt>1']]]></default>
+      <summary>Assign the focused window to drawer 1</summary>
+      <description>Captures the focused window's app into drawer 1 (writes ~/.config/mseries/gala-drawers.ini) and confirms on screen.</description>
+    </key>
+    <key type="as" name="assign-2">
+      <default><![CDATA[['<Control><Alt>2']]]></default>
+      <summary>Assign the focused window to drawer 2</summary>
+      <description>Captures the focused window's app into drawer 2 (writes ~/.config/mseries/gala-drawers.ini) and confirms on screen.</description>
+    </key>
+    <key type="as" name="assign-3">
+      <default><![CDATA[['<Control><Alt>3']]]></default>
+      <summary>Assign the focused window to drawer 3</summary>
+      <description>Captures the focused window's app into drawer 3 (writes ~/.config/mseries/gala-drawers.ini) and confirms on screen.</description>
+    </key>
+    <key type="as" name="assign-4">
+      <default><![CDATA[['<Control><Alt>4']]]></default>
+      <summary>Assign the focused window to drawer 4</summary>
+      <description>Captures the focused window's app into drawer 4 (writes ~/.config/mseries/gala-drawers.ini) and confirms on screen.</description>
+    </key>
+    <key type="as" name="assign-5">
+      <default><![CDATA[['<Control><Alt>5']]]></default>
+      <summary>Assign the focused window to drawer 5</summary>
+      <description>Captures the focused window's app into drawer 5 (writes ~/.config/mseries/gala-drawers.ini) and confirms on screen.</description>
+    </key>
+    <key type="as" name="assign-6">
+      <default><![CDATA[['<Control><Alt>6']]]></default>
+      <summary>Assign the focused window to drawer 6</summary>
+      <description>Captures the focused window's app into drawer 6 (writes ~/.config/mseries/gala-drawers.ini) and confirms on screen.</description>
+    </key>
+    <key type="as" name="assign-7">
+      <default><![CDATA[['<Control><Alt>7']]]></default>
+      <summary>Assign the focused window to drawer 7</summary>
+      <description>Captures the focused window's app into drawer 7 (writes ~/.config/mseries/gala-drawers.ini) and confirms on screen.</description>
+    </key>
+    <key type="as" name="assign-8">
+      <default><![CDATA[['<Control><Alt>8']]]></default>
+      <summary>Assign the focused window to drawer 8</summary>
+      <description>Captures the focused window's app into drawer 8 (writes ~/.config/mseries/gala-drawers.ini) and confirms on screen.</description>
+    </key>
+    <key type="as" name="assign-9">
+      <default><![CDATA[['<Control><Alt>9']]]></default>
+      <summary>Assign the focused window to drawer 9</summary>
+      <description>Captures the focused window's app into drawer 9 (writes ~/.config/mseries/gala-drawers.ini) and confirms on screen.</description>
+    </key>
+  </schema>
+</schemalist>

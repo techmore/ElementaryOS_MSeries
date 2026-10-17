@@ -1,5 +1,22 @@
 # OS 9 implementation / Claude Code handoff
 
+## Hotkey "drawers" Gala plugin staged — 2026-10-16 (DeepSeek/OpenCode)
+
+Owner asked for per-app hotkeys that pop windows up/down snapped into fixed
+zones. Chosen route: a **Gala plugin** (the only layer that can grab a global
+hotkey and place a window on Pantheon — Gala is not GNOME Shell, has no
+`wlr-layer-shell`, and exposes no window-move D-Bus method). New
+`mseries/gala-drawers/` (`Main.vala`, gsettings schema `drawer-1..9`, INI config,
+meson) plus `install-gala-drawers.sh` and an opt-in `drawers` stage in
+`post-install.sh`. Built and linked against gala 8.6.2 / mutter 50.1; schema
+compiles; installed into the running patched Gala
+(`/usr/local/lib/mseries/gala/lib/gala/plugins`), `drawer-1` bound to
+`<Control><Alt>t` (terminal -> top 40%). Found: gala 8.6.2 drops its
+plugin-directory watch (`PluginManager` never retains the `FileMonitor`), so new
+plugins load only at the next Gala start, not live. Owner will log out/in to test.
+Not verified: placement/show-hide, multi-monitor zones, launch-then-place.
+Details and resume checklist: [gala-drawers/HANDOFF.md](gala-drawers/HANDOFF.md).
+
 ## R1/R2 first-boot fixes staged — 2026-10-16 (DeepSeek/OpenCode)
 
 Source revision `46bb8b6` (public patch `0011`) implements R1 (retry the
