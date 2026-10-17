@@ -1,0 +1,305 @@
+diff --git a/data/Application.css b/data/Application.css
+index bfd5c8a..5a6d3dd 100644
+--- a/data/Application.css
++++ b/data/Application.css
+@@ -176,3 +176,31 @@ backgrounditem .close-button {
+ .running-indicator:disabled {
+     color: @fg_color;
+ }
++
++.drawers-chevron {
++    margin: 0 2px;
++    min-width: 24px;
++    min-height: 24px;
++}
++
++.drawers-popover {
++    padding: 0;
++}
++
++.drawer-slot {
++    border-radius: 6px;
++    padding: 4px;
++    min-width: 48px;
++    min-height: 48px;
++    background: alpha(@fg_color, 0.06);
++    border: 1px dashed alpha(@fg_color, 0.25);
++}
++
++.drawer-slot.assigned {
++    background: alpha(@accent_color, 0.2);
++    border: 1px solid alpha(@accent_color, 0.5);
++}
++
++.drawer-slot .caption {
++    font-size: 0.75em;
++}
+diff --git a/src/Drawers.vala b/src/Drawers.vala
+new file mode 100644
+index 0000000..f918b23
+--- /dev/null
++++ b/src/Drawers.vala
+@@ -0,0 +1,236 @@
++/*
++ * SPDX-License-Identifier: GPL-3.0
++ * SPDX-FileCopyrightText: 2026 M-series / elementary-mseries
++ *
++ * Drawer assignment, on the dock.
++ *
++ * A chevron at the end of the dock opens a strip of drop targets. Drag an app
++ * from the dock (or drop a .desktop file) onto a slot to assign it to that
++ * drawer hotkey; the slot shows the app and the change is written to
++ * ~/.config/mseries/gala-drawers.ini, which the Gala "drawers" plugin watches
++ * and reloads live.
++ *
++ * The strip shows five slots by default; the arrow (or clicking it) reveals the
++ * remaining four.
++ */
++
++namespace Dock {
++    private const int DRAWERS_COLLAPSED = 5;
++    private const int DRAWERS_MAX = 9;
++
++    private static string drawers_config_path () {
++        return Path.build_filename (Environment.get_user_config_dir (), "mseries", "gala-drawers.ini");
++    }
++
++    private static string strip_desktop (string id) {
++        return id.has_suffix (".desktop") ? id.substring (0, id.length - ".desktop".length) : id;
++    }
++
++    /**
++     * One drop target. Dropping a dock launcher, or a .desktop file, assigns that
++     * app to this drawer.
++     */
++    private class DrawerSlot : Gtk.Box {
++        public int index { get; construct; }
++
++        private Gtk.Image image;
++        private Gtk.Label caption;
++
++        public DrawerSlot (int index) {
++            Object (index: index);
++        }
++
++        construct {
++            orientation = Gtk.Orientation.VERTICAL;
++            spacing = 2;
++            width_request = 56;
++            height_request = 56;
++            halign = Gtk.Align.CENTER;
++            valign = Gtk.Align.CENTER;
++            add_css_class ("drawer-slot");
++
++            image = new Gtk.Image () { pixel_size = 32, valign = Gtk.Align.END };
++            caption = new Gtk.Label (index.to_string ()) { valign = Gtk.Align.START };
++            caption.add_css_class ("caption");
++            append (image);
++            append (caption);
++
++            // Drag from the dock itself (an internal BaseItem, e.g. a Launcher).
++            var base_drop = new Gtk.DropTarget (typeof (BaseItem), Gdk.DragAction.MOVE);
++            add_controller (base_drop);
++            base_drop.drop.connect (on_drop_base);
++
++            // Drop a .desktop file from Files or the applications menu.
++            var file_drop = new Gtk.DropTarget (typeof (GLib.File), Gdk.DragAction.COPY);
++            add_controller (file_drop);
++            file_drop.drop.connect (on_drop_file);
++
++            refresh ();
++        }
++
++        private bool on_drop_base (GLib.Value value) {
++            var object = value.get_object ();
++            if (object == null || !(object is Launcher)) {
++                return false;
++            }
++            return assign (((Launcher) object).app.app_info.get_id ());
++        }
++
++        private bool on_drop_file (GLib.Value value) {
++            var object = value.get_object ();
++            if (object == null || !(object is GLib.File)) {
++                return false;
++            }
++            var info = new DesktopAppInfo.from_filename (((GLib.File) object).get_path ());
++            if (info == null) {
++                return false;
++            }
++            return assign (info.get_id ());
++        }
++
++        private bool assign (string app_id) {
++            var key_file = new KeyFile ();
++            try {
++                key_file.load_from_file (drawers_config_path (), KeyFileFlags.NONE);
++            } catch (Error e) {
++                // No file yet: the key file starts empty.
++            }
++
++            var group = @"drawer-$index";
++            key_file.set_string (group, "command", app_id);
++            key_file.set_string (group, "match", strip_desktop (app_id));
++
++            bool has_zone = false;
++            try {
++                has_zone = key_file.has_key (group, "zone");
++            } catch (Error e) {
++                has_zone = false;
++            }
++            if (!has_zone) {
++                key_file.set_string (group, "zone", "0.0 0.0 1.0 0.5");
++            }
++
++            try {
++                var path = drawers_config_path ();
++                DirUtils.create_with_parents (Path.get_dirname (path), 0755);
++                size_t length;
++                var data = key_file.to_data (out length);
++                FileUtils.set_contents (path, data, (ssize_t) length);
++            } catch (Error e) {
++                warning ("drawers: could not write the config: %s", e.message);
++                return false;
++            }
++
++            refresh ();
++            return true;
++        }
++
++        private void refresh () {
++            string? app_id = null;
++            try {
++                var key_file = new KeyFile ();
++                key_file.load_from_file (drawers_config_path (), KeyFileFlags.NONE);
++                var group = @"drawer-$index";
++                if (key_file.has_group (group) && key_file.has_key (group, "command")) {
++                    var command = key_file.get_string (group, "command").split (";")[0].strip ();
++                    if (command != "") {
++                        app_id = command;
++                    }
++                }
++            } catch (Error e) {
++                // Not configured, or unreadable: show the empty slot.
++            }
++
++            if (app_id == null) {
++                image.icon_name = "list-add-symbolic";
++                image.add_css_class ("dim-label");
++                caption.label = index.to_string ();
++                remove_css_class ("assigned");
++                tooltip_text = @"Assign an app to drawer $index";
++                return;
++            }
++
++            var info = new DesktopAppInfo (app_id);
++            if (info != null) {
++                image.gicon = info.get_icon ();
++                caption.label = info.get_display_name ();
++            } else {
++                image.icon_name = "application-x-executable-symbolic";
++                caption.label = app_id;
++            }
++            image.remove_css_class ("dim-label");
++            add_css_class ("assigned");
++            tooltip_text = @"Drawer $index";
++        }
++    }
++
++    /**
++     * The chevron on the dock. Opens the slot strip.
++     *
++     * (Not a Gtk.MenuButton subclass: GTK4's GtkMenuButton is an opaque type and
++     * cannot be subclassed from Vala, so this is a box that holds one.)
++     */
++    public class DrawersChevron : Gtk.Box {
++        private Gee.ArrayList<DrawerSlot> slots;
++        private Gtk.Button expander;
++        private bool expanded = false;
++
++        construct {
++            halign = Gtk.Align.CENTER;
++            valign = Gtk.Align.CENTER;
++            add_css_class ("drawers-chevron");
++
++            slots = new Gee.ArrayList<DrawerSlot> ();
++
++            var slots_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
++            for (int i = 1; i <= DRAWERS_MAX; i++) {
++                var slot = new DrawerSlot (i);
++                slot.visible = i <= DRAWERS_COLLAPSED;
++                slots.add (slot);
++                slots_box.append (slot);
++            }
++
++            expander = new Gtk.Button.from_icon_name ("go-next-symbolic") {
++                valign = Gtk.Align.CENTER,
++                tooltip_text = "Show all nine slots"
++            };
++            expander.add_css_class ("flat");
++            expander.clicked.connect (() => {
++                expanded = !expanded;
++                update_expanded ();
++            });
++
++            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) {
++                margin_start = 6,
++                margin_end = 6,
++                margin_top = 6,
++                margin_bottom = 6
++            };
++            row.append (slots_box);
++            row.append (expander);
++
++            var pop = new Gtk.Popover () {
++                child = row,
++                position = Gtk.PositionType.TOP
++            };
++            pop.add_css_class ("drawers-popover");
++            pop.show.connect (() => update_expanded ());
++
++            var trigger = new Gtk.MenuButton () {
++                icon_name = "pan-down-symbolic",
++                tooltip_text = "Assign apps to drawer hotkeys",
++                popover = pop
++            };
++            trigger.add_css_class ("flat");
++            append (trigger);
++        }
++
++        private void update_expanded () {
++            for (int i = 0; i < slots.size; i++) {
++                slots[i].visible = expanded || i < DRAWERS_COLLAPSED;
++            }
++            expander.icon_name = expanded ? "go-previous-symbolic" : "go-next-symbolic";
++            expander.tooltip_text = expanded ? "Show five slots" : "Show all nine slots";
++        }
++    }
++}
+diff --git a/src/ItemManager.vala b/src/ItemManager.vala
+index a3e7e96..85995a5 100644
+--- a/src/ItemManager.vala
++++ b/src/ItemManager.vala
+@@ -46,6 +46,10 @@
+         append (new ItemGroup (WorkspaceSystem.get_default ().workspaces, (obj) => new WorkspaceIconGroup ((Workspace) obj)));
+         append (dynamic_workspace_item);
+ #endif
++
++        // Drawer assignment: a chevron with drop targets at the end of the dock.
++        append (new DrawersChevron ());
++
+         overflow = VISIBLE;
+ 
+         var drop_target_file = new Gtk.DropTarget (typeof (File), COPY) {
+diff --git a/src/meson.build b/src/meson.build
+index 4e860de..034e3ce 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -4,6 +4,7 @@ sources = [
+     'BaseItem.vala',
+     'BottomMargin.vala',
+     'ContainerItem.vala',
++    'Drawers.vala',
+     'ItemGroup.vala',
+     'ItemManager.vala',
+     'MainWindow.vala',
