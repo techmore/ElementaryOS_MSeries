@@ -42,7 +42,8 @@ state dumps). `phy-apple-dpin.ko` `9d43d6e7…`, build-id `7beaacf6…`. The E3
 image `2c036651…` is installed on `elementary-usb4-dpin-controlled` (bypass=1);
 a paired, **un-armed** E2 entry `elementary-usb4-dpin-nobypass`
 (`dprx_bypass=0`, same image) was added to `custom.cfg` so one reboot can run
-both. **Nothing is armed** (`next_entry` empty). Record:
+both. **E2 is now ARMED for the next reboot** (`next_entry=elementary-usb4-dpin-nobypass`,
+bypass=0, E3 image; owner decision 2026-10-16). Record:
 [evidence/2026-10-16-e3-dpin-hpd-instrumentation.md](evidence/2026-10-16-e3-dpin-hpd-instrumentation.md).
 
 ## First live boot of the bridge — outcome (2026-10-16)

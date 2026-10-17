@@ -26,7 +26,8 @@ logging (`DPINDBG irq:`/`hpd_notifier`) plus `init/exit/power_on/power_off`
 register dumps; `phy-apple-dpin.ko` `9d43d6e7…`. E3 image `2c036651…` installed
 on `elementary-usb4-dpin-controlled` (bypass=1); a paired **un-armed** E2 entry
 `elementary-usb4-dpin-nobypass` (`dprx_bypass=0`, same image) added to
-`custom.cfg` so one reboot runs both. Nothing armed (`next_entry` empty).
+`custom.cfg` so one reboot runs both. E2 is ARMED for the next reboot
+(`next_entry=elementary-usb4-dpin-nobypass`).
 `test-dp-tunnel.sh` verdict fixed in the same batch. Record:
 [evidence/2026-10-16-e3-dpin-hpd-instrumentation.md](fairydust/usb4/evidence/2026-10-16-e3-dpin-hpd-instrumentation.md).
 

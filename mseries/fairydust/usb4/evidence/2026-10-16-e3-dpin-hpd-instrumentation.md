@@ -5,7 +5,9 @@ Author: OpenCode. Implements **E3** from
 and the E1 follow-up. Read [STATE-OF-PLAY](../STATE-OF-PLAY.md) first.
 
 **Status: instrumentation written, module built, initramfs repacked, staged on the
-`elementary-usb4-dpin-controlled` entry. No boot armed or performed.**
+`elementary-usb4-dpin-controlled` entry. The paired E2 entry
+`elementary-usb4-dpin-nobypass` (`dprx_bypass=0`, same image) is ARMED for the
+next reboot (owner decision, 2026-10-16); `next_entry=elementary-usb4-dpin-nobypass`.**
 
 ## Why E3, and what it can and cannot answer
 
@@ -75,7 +77,10 @@ sudo install -m0644 "$OUT/initramfs-dpin-e3boot.img" \
 - installed image sha256 verified `2c036651415dbd363d7fed1a744e35b174a35037a7763ddcb19b37f7f958a20e`.
 - E1 image preserved: `$OUT/initramfs-controlled-e1-installed.img` (`46116374…`).
 - `custom.cfg` backed up at `$OUT/custom.cfg.before-e3`.
-- **Nothing was armed.** `grub-editenv list` → `next_entry=` (empty).
+- **E2 is ARMED for the next reboot** (owner decision):
+  `next_entry=elementary-usb4-dpin-nobypass` (`dprx_bypass=0`). Hazard: do not
+  unplug the dock while the DPRX read is in flight; with `dprx_timeout=15000` it
+  completes or times out in ≤15 s.
 
 ## The paired E2 entry (staged, not armed)
 
