@@ -11,6 +11,10 @@ gi.require_version("Granite", "7.0")
 from gi.repository import Gdk, Gio, GLib, Granite, Graphene, Gtk, Pango  # noqa: E402,F401
 
 from .backend import (
+    PERIOD,
+    chart_ready as backend_chart_ready,
+    chart_top,
+    span_text,
     parse_progress,
     progress_text,  # noqa: E402
     BLUE,
@@ -115,9 +119,9 @@ class Spark(Gtk.Widget):
     """Bar sparkline drawn with GTK snapshots (no cairo bridge needed)."""
     __gtype_name__ = "OrchardSpark"
 
-    def __init__(self, color=GREEN, height=56, fixed_max=None, name="Chart", fmt=lambda v: f"{v:.0f}"):
+    def __init__(self, color=GREEN, height=56, fixed_max=None, name="Chart", fmt=lambda v: f"{v:.0f}", floor=0.0):
         super().__init__(hexpand=True)
-        self.values, self.fixed_max, self.h, self.name, self.fmt = [], fixed_max, height, name, fmt
+        self.values, self.fixed_max, self.h, self.name, self.fmt, self.floor = [], fixed_max, height, name, fmt, floor
         self.set_accessible_role(Gtk.AccessibleRole.IMG)
         a11y(self, name)
         self.token = color
@@ -128,10 +132,27 @@ class Spark(Gtk.Widget):
     def set(self, values):
         self.values = list(values)
         if self.values:
-            text = f"{self.name}: now {self.fmt(self.values[-1])}, peak {self.fmt(max(self.values))}"
+            text = f"{self.name}: now {self.fmt(self.values[-1])}, peak {self.fmt(max(self.values))}, {span_text(HIST, PERIOD)}"
             self.set_tooltip_text(text)
             a11y(self, text)
         self.queue_draw()
+
+    def text(self, snap, text, x, y, alpha, centre=False, right=False):
+        layout = self.create_pango_layout(text)
+        attrs = Pango.AttrList()
+        attrs.insert(Pango.attr_scale_new(0.85))
+        layout.set_attributes(attrs)
+        col = self.get_color()
+        col.alpha = alpha
+        if right:
+            x -= layout.get_pixel_size()[0]
+        if centre:
+            x -= layout.get_pixel_size()[0] / 2
+            y -= layout.get_pixel_size()[1] / 2
+        snap.save()
+        snap.translate(Graphene.Point().init(x, y))
+        snap.append_layout(layout, col)
+        snap.restore()
 
     def do_snapshot(self, snap):
         w, h = self.get_width(), self.get_height()
@@ -141,8 +162,12 @@ class Spark(Gtk.Widget):
         for frac in (0.25, 0.5, 0.75):
             snap.append_color(grid, Graphene.Rect().init(0, h * frac, w, 1))
         v = self.values
-        if not v:
-            return
+        labels = h >= 60  # the small sidebar/dashboard sparklines stay uncluttered
+        if not backend_chart_ready(v):
+            if labels:
+                self.text(snap, "Collecting data…", w / 2, h * 0.38, 0.55, centre=True)
+            if not v:
+                return
         ctx = self.get_style_context()
         _, bg = ctx.lookup_color("theme_bg_color")
         found, bar = ctx.lookup_color(self.token)
@@ -151,7 +176,11 @@ class Spark(Gtk.Widget):
             bar.red, bar.green, bar.blue = RGB_FALLBACK[self.token]
         bar = legible(bar, bg)
         bar.alpha = 0.9
-        top = self.fixed_max or max(max(v) * 1.25, 1e-9)
+        top = chart_top(v, self.fixed_max, self.floor)
+        if labels:
+            self.text(snap, self.fmt(top), 4, 2, 0.6)
+            if backend_chart_ready(v):
+                self.text(snap, span_text(HIST, PERIOD), w - 4, 2, 0.6, right=True)
         step = w / HIST
         bw = max(step - 1, 1)
         x = w - step * len(v)
@@ -250,7 +279,7 @@ class DashRow(Gtk.Box):
         self.dot.add_css_class("dot")
         t = lbl(name, "inst-name", width_chars=16, max_width_chars=16, ellipsize=Pango.EllipsizeMode.END)
         self.cpu_l, self.mem_l = lbl("", "dim", xalign=1.0, width_chars=9), lbl("", "dim", xalign=1.0, width_chars=11)
-        self.cpu, self.mem = Spark(GREEN, 34, fixed_max=100, name=f"{name} CPU", fmt=lambda v: f"{v:.0f}%"), Spark(BLUE, 34, name=f"{name} memory", fmt=human)
+        self.cpu, self.mem = Spark(GREEN, 34, floor=10, name=f"{name} CPU", fmt=lambda v: f"{v:.0f}%"), Spark(BLUE, 34, name=f"{name} memory", fmt=human)
         self.cpu.set_size_request(160, -1); self.mem.set_size_request(160, -1)
         for w in (self.dot, t, self.cpu, self.cpu_l, self.mem, self.mem_l):
             self.append(w)

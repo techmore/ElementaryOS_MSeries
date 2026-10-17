@@ -316,6 +316,34 @@ class ImageLabels(unittest.TestCase):
         self.assertEqual(b.image_label({"fingerprint": "ef" * 32, "type": ""})["kind"], "Image")
 
 
+class ChartScale(unittest.TestCase):
+    def test_auto_scale_has_headroom(self):
+        self.assertAlmostEqual(b.chart_top([40.0, 80.0]), 100.0)
+
+    def test_floor_keeps_idle_charts_honest(self):
+        self.assertEqual(b.chart_top([0.0, 0.5, 1.0], floor=10), 10)
+        self.assertEqual(b.chart_top([], floor=10), 10)
+
+    def test_floor_does_not_clip_a_busy_chart(self):
+        self.assertEqual(b.chart_top([400.0], floor=10), 500.0)
+
+    def test_fixed_max_wins(self):
+        self.assertEqual(b.chart_top([5.0, 500.0], fixed_max=100), 100)
+
+    def test_all_zero_without_floor_is_not_zero(self):
+        self.assertGreater(b.chart_top([0.0, 0.0]), 0)
+
+    def test_span_text_matches_history_and_period(self):
+        self.assertEqual(b.span_text(90, 3), "last 4.5 min")
+        self.assertEqual(b.span_text(20, 3), "last 1 min")
+        self.assertEqual(b.span_text(5, 3), "last 15 s")
+
+    def test_enough_to_draw(self):
+        self.assertFalse(b.chart_ready([]))
+        self.assertFalse(b.chart_ready([1.0, 2.0]))
+        self.assertTrue(b.chart_ready([1.0, 2.0, 3.0]))
+
+
 class StopOrForce(unittest.TestCase):
     def setUp(self):
         self._orig = b.incus

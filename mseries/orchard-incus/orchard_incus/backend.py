@@ -281,3 +281,24 @@ def image_label(im):
     title = (im.get("properties") or {}).get("description") or alias or fp[:12]
     kind = {"container": "Container", "virtual-machine": "VM"}.get(im.get("type", ""), "Image")
     return {"title": title, "kind": kind, "alias": alias}
+
+
+def chart_top(values, fixed_max=None, floor=0.0):
+    """Top of a chart's scale: fixed, else 25% headroom over the peak but never below `floor`."""
+    if fixed_max:
+        return fixed_max
+    return max(max(values, default=0.0) * 1.25, floor, 1e-9)
+
+
+def chart_ready(values):
+    """A chart needs a few samples before bars mean anything; until then the UI says it is collecting data."""
+    return len(values) >= 3
+
+
+def span_text(samples, period):
+    """Human label for the time the chart covers, e.g. 'last 4.5 min'."""
+    secs = samples * period
+    if secs < 60:
+        return f"last {secs:.0f} s"
+    mins = secs / 60
+    return f"last {mins:.1f} min" if mins % 1 else f"last {mins:.0f} min"
