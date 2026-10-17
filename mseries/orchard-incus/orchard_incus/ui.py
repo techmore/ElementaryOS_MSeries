@@ -49,12 +49,14 @@ entry.error { border-color: @error_color; box-shadow: 0 0 0 1px @error_color; }
 .status-bar { padding: 6px 14px; }
 .section-title { font-weight: 800; font-size: 12pt; margin-top: 4px; }
 .drop-hover { box-shadow: inset 0 0 0 2px @theme_selected_bg_color; border-radius: 12px; }
+.destructive-item { color: @error_color; }
+.destructive-item:hover { background: alpha(@error_color,.15); }
 .list-card { background: alpha(@theme_fg_color,.06); border-radius: 12px; padding: 12px 14px; margin: 4px 0; }
 """
 
 # ---------------------------------------------------------------- helpers
 LIGHT_EXTRA = """
-.error-text { color: mix(@error_color, black, .55); }
+.error-text, .destructive-item { color: mix(@error_color, black, .55); }
 entry.error { border-color: mix(@error_color, black, .4); box-shadow: 0 0 0 1px mix(@error_color, black, .4); }
 """
 

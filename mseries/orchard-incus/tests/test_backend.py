@@ -253,6 +253,69 @@ class Timeouts(unittest.TestCase):
             b.incus = orig
 
 
+class ActionVisibility(unittest.TestCase):
+    def test_running_shows_live_actions_only(self):
+        v = b.visible_actions("running")
+        self.assertEqual(set(v), {"stop", "restart", "pause", "shell", "snap"})
+
+    def test_stopped_offers_start_and_snapshot_only(self):
+        self.assertEqual(set(b.visible_actions("stopped")), {"start", "snap"})
+
+    def test_frozen_can_resume_and_stop_but_not_open_a_shell(self):
+        v = b.visible_actions("frozen")
+        self.assertIn("pause", v)
+        self.assertIn("stop", v)
+        self.assertNotIn("shell", v)
+        self.assertNotIn("start", v)
+
+    def test_delete_is_never_a_primary_button(self):
+        for k in ("running", "stopped", "frozen"):
+            self.assertNotIn("delete", b.visible_actions(k))
+
+
+class SpaceParsing(unittest.TestCase):
+    INFO = "info:\n  description: \"\"\n  driver: btrfs\nspace used: 99.30GiB\ntotal space: 202.06GiB\n"
+
+    def test_parse_units(self):
+        self.assertAlmostEqual(b.parse_size("99.30GiB"), 99.30 * 1024 ** 3)
+        self.assertEqual(b.parse_size("512MiB"), 512 * 1024 ** 2)
+        self.assertEqual(b.parse_size("1kB"), 1000)
+        self.assertEqual(b.parse_size("42B"), 42)
+        self.assertIsNone(b.parse_size("lots"))
+        self.assertIsNone(b.parse_size(""))
+
+    def test_space_fraction(self):
+        used, total, frac = b.parse_space(self.INFO)
+        self.assertAlmostEqual(frac, 99.30 / 202.06, places=3)
+        self.assertGreater(total, used)
+
+    def test_space_missing_or_zero_total(self):
+        self.assertEqual(b.parse_space("driver: dir\n"), (None, None, None))
+        self.assertEqual(b.parse_space("space used: 1GiB\ntotal space: 0B\n")[2], None)
+
+    def test_space_clamped_to_one(self):
+        self.assertEqual(b.parse_space("space used: 3GiB\ntotal space: 2GiB\n")[2], 1.0)
+
+
+class ImageLabels(unittest.TestCase):
+    def test_container_and_vm_are_distinguished(self):
+        base = {"fingerprint": "ab" * 32, "properties": {"description": "Alpine edge arm64"}, "aliases": [], "size": 1}
+        c = b.image_label({**base, "type": "container"})
+        v = b.image_label({**base, "type": "virtual-machine"})
+        self.assertEqual(c["kind"], "Container")
+        self.assertEqual(v["kind"], "VM")
+        self.assertEqual(c["title"], v["title"])
+
+    def test_falls_back_to_alias_then_fingerprint(self):
+        im = {"fingerprint": "cd" * 32, "properties": {}, "aliases": [{"name": "mine"}], "type": "container"}
+        self.assertEqual(b.image_label(im)["title"], "mine")
+        im["aliases"] = []
+        self.assertEqual(b.image_label(im)["title"], "cd" * 6)
+
+    def test_unknown_type_is_not_a_crash(self):
+        self.assertEqual(b.image_label({"fingerprint": "ef" * 32, "type": ""})["kind"], "Image")
+
+
 class StopOrForce(unittest.TestCase):
     def setUp(self):
         self._orig = b.incus

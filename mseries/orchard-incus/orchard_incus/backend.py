@@ -235,3 +235,49 @@ def cleanup_loop(name, run, sleep=time.sleep, clock=time.monotonic, patience=120
             return True
         sleep(1 if deadline - clock() > patience - 30 else 3)
     return False
+
+
+# ---------------------------------------------------------------- UI decisions kept display-free so they can be tested
+
+ACTIONS = {
+    "running": ("stop", "restart", "pause", "shell", "snap"),
+    "frozen": ("stop", "restart", "pause", "snap"),
+    "stopped": ("start", "snap"),
+}
+
+
+def visible_actions(key):
+    """Primary instance buttons that make sense in a state (Delete lives in the More menu, never beside Stop)."""
+    return ACTIONS.get(key, ACTIONS["stopped"])
+
+
+_UNITS = {"B": 1, "KB": 1000, "MB": 1000 ** 2, "GB": 1000 ** 3, "TB": 1000 ** 4,
+          "KIB": 1024, "MIB": 1024 ** 2, "GIB": 1024 ** 3, "TIB": 1024 ** 4}
+
+
+def parse_size(text):
+    """Bytes from an Incus size string such as '99.30GiB' or '512MiB'; None if it isn't one."""
+    m = re.fullmatch(r"\s*(\d+(?:\.\d+)?)\s*([KMGT]?i?B)\s*", text or "", re.I)
+    return float(m.group(1)) * _UNITS[m.group(2).upper()] if m else None
+
+
+def parse_space(info):
+    """(used, total, fraction) bytes from `incus storage info` text; fraction is clamped to 0..1, None when unknown."""
+    used = total = None
+    for line in info.splitlines():
+        k, _, v = line.strip().partition(":")
+        if k == "space used":
+            used = parse_size(v)
+        elif k == "total space":
+            total = parse_size(v)
+    frac = min(1.0, used / total) if used is not None and total else None
+    return used, total, frac
+
+
+def image_label(im):
+    """Title, kind badge and alias for a cached image row, so containers and VMs of one image can be told apart."""
+    fp = im.get("fingerprint", "")
+    alias = (im.get("aliases") or [{}])[0].get("name")
+    title = (im.get("properties") or {}).get("description") or alias or fp[:12]
+    kind = {"container": "Container", "virtual-machine": "VM"}.get(im.get("type", ""), "Image")
+    return {"title": title, "kind": kind, "alias": alias}

@@ -1,5 +1,27 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Orchard for Incus UI/UX pass — 2026-10-17
+
+Reviewed every page from headless screenshots (`mseries/orchard-incus/tools/shoot.py`
+under Xvfb with the cairo renderer, a throwaway XDG_STATE_HOME and no D-Bus
+session; read-only against the live Incus; nothing shown on the real display).
+Changes, all in `mseries/orchard-incus/`:
+- Instance actions are contextual (`backend.visible_actions`): running shows
+  Stop/Restart/Pause/Shell/Snapshot, stopped shows Start/Snapshot. Delete moved
+  out of the primary row into the More menu ("Delete…", red, still confirms).
+- Images: Container/VM badge per row (identical-title rows are now
+  distinguishable), alias shown, Delete is a quiet icon button with tooltip and
+  accessible name.
+- Storage: usage gauge (LevelBar, warns at 85%/95%) with percentage, from
+  `backend.parse_space`.
+- Filter box only shows on the Instances page; Ctrl+F jumps there first.
+- Tests: 62 run, 6 live skipped, all pass (11 new). Screenshots checked in light
+  1180x740 and dark 900x600. Installed with `./install.sh` (backup in `.prev`).
+- Not verified: real-display rendering with the elementary stylesheet and
+  Wayland (screenshots use the default GTK theme under X11); clicking through
+  actions (nothing was started, stopped or deleted); narrow 760 px layout; the
+  More-menu popover; keyboard focus order. Dashboard/chart axis labels and the
+  empty-history look of the charts are still open.
 ## Orchard for Incus (Python) audit and fixes — 2026-10-17
 
 Audit of `mseries/orchard-incus/` (installed copy was identical to source):

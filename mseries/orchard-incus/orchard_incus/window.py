@@ -112,7 +112,7 @@ class Window(Gtk.ApplicationWindow):
             sc.set_child(inner)
             self.lists[key] = (lb, fn)
             self.pages.add_titled(sc, key, title)
-        self.pages.connect("notify::visible-child-name", lambda *_: self.load_page())
+        self.pages.connect("notify::visible-child-name", lambda *_: (self.load_page(), self.sync_search()))
 
         self.status = lbl("", "dim status-bar", wrap=True, selectable=True)
         self.status.set_accessible_role(Gtk.AccessibleRole.STATUS)
@@ -137,18 +137,27 @@ class Window(Gtk.ApplicationWindow):
         self.pages.connect("notify::visible-child-name", lambda *_: self.save_state())
 
         for name, fn, accel in [("new", self.on_new, "<primary>n"), ("refresh", lambda *_: self.refresh_all(), "F5"),
-                                ("search", lambda *_: self.search.grab_focus(), "<primary>f")]:
+                                ("search", lambda *_: self.focus_search(), "<primary>f")]:
             a = Gio.SimpleAction.new(name, None)
             a.connect("activate", lambda _a, _p, f=fn: f())
             self.add_action(a)
             app.set_accels_for_action(f"win.{name}", [accel])
 
         self.name_controls()
+        self.sync_search()
         self.check_incus()
         GLib.timeout_add_seconds(PERIOD, self.tick)
         GLib.timeout_add_seconds(10, lambda: (self.ok and self.is_active() and self.load_page(auto=True), True)[1])
 
     # ------------------------------------------------------ dashboard
+    def sync_search(self):
+        """The filter only filters instances, so it only shows on the Instances page."""
+        self.search.set_visible(self.pages.get_visible_child_name() == "inst")
+
+    def focus_search(self):
+        self.pages.set_visible_child_name("inst")
+        self.search.grab_focus()
+
     def name_controls(self):
         """Explicit accessible names: placeholder text alone isn't reliably announced, and some controls have none."""
         for widget, name in ((self.fentry, "Folder path"), (self.fw_listen, "Host port"), (self.fw_connect, "Instance port"),
@@ -234,7 +243,6 @@ class Window(Gtk.ApplicationWindow):
             ("pause", "Pause", "media-playback-pause-symbolic", self.toggle_pause, ""),
             ("shell", "Shell", "utilities-terminal-symbolic", self.shell, ""),
             ("snap", "Snapshot", "camera-photo-symbolic", self.snapshot, ""),
-            ("delete", "Delete", "user-trash-symbolic", self.delete, "destructive-action"),
         ]:
             self.btn[key] = pill_button(label, icon, css, fn)
             actions.append(self.btn[key])
@@ -248,6 +256,13 @@ class Window(Gtk.ApplicationWindow):
             b.get_child().set_halign(Gtk.Align.START)
             b.connect("clicked", lambda _b, f=fn: (pop.popdown(), f()))
             pb.append(b)
+        pb.append(Gtk.Separator(margin_top=4, margin_bottom=4))
+        dele = Gtk.Button(label="Delete…", has_frame=False, halign=Gtk.Align.FILL)
+        dele.get_child().set_halign(Gtk.Align.START)
+        dele.add_css_class("destructive-item")
+        dele.connect("clicked", lambda _b: (pop.popdown(), self.delete()))
+        self.btn["delete"] = dele
+        pb.append(dele)
         pop.set_child(pb)
         more.set_popover(pop)
         self.btn["more"] = more
@@ -803,6 +818,9 @@ class Window(Gtk.ApplicationWindow):
         self.info["created"].set_text(i.get("created_at", "—")[:19].replace("T", " "))
         self.info["pid"].set_text(str(st.get("pid") or "—"))
         busy = n in self.busy
+        show = backend.visible_actions(k)
+        for key in ("start", "stop", "restart", "pause", "shell", "snap"):
+            self.btn[key].set_visible(key in show)
         self.btn["start"].set_sensitive(k == "stopped" and not busy)
         for key in ("stop", "restart"):
             self.btn[key].set_sensitive(live and not busy)
@@ -912,13 +930,17 @@ class Window(Gtk.ApplicationWindow):
         def show(imgs):
             rows = []
             for im in sorted(imgs, key=lambda x: x.get("uploaded_at", ""), reverse=True):
-                p, fp = im.get("properties", {}), im["fingerprint"]
-                alias = (im.get("aliases") or [{}])[0].get("name")
-                title = p.get("description") or alias or fp[:12]
-                sub = f"{fp[:12]} · {human(im.get('size', 0))} · {im.get('type', '')} · {im.get('uploaded_at', '')[:10]}"
+                fp = im["fingerprint"]
+                lab = backend.image_label(im)
+                title = lab["title"]
+                sub = " · ".join(x for x in (lab["alias"], fp[:12], human(im.get("size", 0)), im.get("uploaded_at", "")[:10]) if x)
                 launch = pill_button("Launch", "media-playback-start-symbolic", None, lambda f=fp: self.launch_from(f))
-                rm = pill_button("Delete", "user-trash-symbolic", "destructive-action", lambda f=fp, t=title: self.del_image(f, t))
-                rows.append(self.item(title, sub, launch, rm))
+                rm = Gtk.Button(icon_name="user-trash-symbolic", has_frame=False, valign=Gtk.Align.CENTER,
+                                tooltip_text=f"Delete cached image “{title}”")
+                rm.add_css_class("destructive-item")
+                a11y(rm, f"Delete image {title}")
+                rm.connect("clicked", lambda _b, f=fp, t=title: self.del_image(f, t))
+                rows.append(self.item(title, sub, launch, rm, badges=(lab["kind"],)))
             self.put(lb, rows)
         self.bg(lambda: backend.ijson("image", "list"), show)
 
@@ -953,15 +975,19 @@ class Window(Gtk.ApplicationWindow):
         def show(pools):
             rows = []
             for p, info in pools:
-                used = total = None
-                for line in info.splitlines():
-                    line = line.strip()
-                    if line.startswith("space used:"):
-                        used = line.split(":", 1)[1].strip()
-                    if line.startswith("total space:"):
-                        total = line.split(":", 1)[1].strip()
-                sub = f"{p['config'].get('source', '')} · {used or '?'} used of {total or '?'} · {len(p.get('used_by') or [])} users"
-                rows.append(self.item(p["name"], sub, badges=(p["driver"],)))
+                used, total, frac = backend.parse_space(info)
+                gauge = None
+                if frac is not None:
+                    pct = round(frac * 100)
+                    sub = f"{p['config'].get('source', '')} · {human(used)} used of {human(total)} ({pct}%) · {len(p.get('used_by') or [])} users"
+                    gauge = Gtk.LevelBar(min_value=0, max_value=1, value=frac, valign=Gtk.Align.CENTER, width_request=160)
+                    gauge.add_offset_value("low", 0.0)
+                    gauge.add_offset_value("high", 0.85)
+                    gauge.add_offset_value("full", 0.95)
+                    a11y(gauge, f"{p['name']} storage {pct}% full")
+                else:
+                    sub = f"{p['config'].get('source', '')} · usage unknown · {len(p.get('used_by') or [])} users"
+                rows.append(self.item(p["name"], sub, *([gauge] if gauge else []), badges=(p["driver"],)))
             self.put(lb, rows)
         self.bg(get, show)
 
