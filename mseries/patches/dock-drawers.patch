@@ -87,10 +87,10 @@ index 1006411..0dadb04 100644
      [CCode (cheader_filename = "pantheon-desktop-shell-client-protocol.h", cname = "struct io_elementary_pantheon_widget_v1", cprefix = "io_elementary_pantheon_widget_v1_", free_function = "io_elementary_pantheon_widget_v1_destroy")]
 diff --git a/src/Drawers.vala b/src/Drawers.vala
 new file mode 100644
-index 0000000..8e450f0
+index 0000000..331c76b
 --- /dev/null
 +++ b/src/Drawers.vala
-@@ -0,0 +1,237 @@
+@@ -0,0 +1,270 @@
 +/*
 + * SPDX-License-Identifier: GPL-3.0
 + * SPDX-FileCopyrightText: 2026 M-series / elementary-mseries
@@ -229,7 +229,7 @@ index 0000000..8e450f0
 +            return true;
 +        }
 +
-+        private void refresh () {
++        public void refresh () {
 +            string? app_id = null;
 +            try {
 +                var key_file = new KeyFile ();
@@ -313,10 +313,43 @@ index 0000000..8e450f0
 +            append (expander);
 +
 +            set_visible (false);
++            watch_config ();
 +        }
 +
 +        public void toggle () {
-+            set_visible (!get_visible ());
++            var show = !get_visible ();
++            set_visible (show);
++            if (show) {
++                // Pick up anything assigned from the keyboard or the settings app
++                // since the panel was last shown.
++                refresh_all ();
++            }
++        }
++
++        public void refresh_all () {
++            foreach (var slot in slots) {
++                slot.refresh ();
++            }
++        }
++
++        /**
++         * Keep the tiles in step with the config file. The Gala plugin reloads it
++         * live, and assignments can also come from the keyboard (Command+Option+
++         * Shift+N) or the settings app, none of which touch this widget.
++         */
++        private void watch_config () {
++            var dir = File.new_for_path (Path.get_dirname (drawers_config_path ()));
++            try {
++                var monitor = dir.monitor_directory (FileMonitorFlags.NONE, null);
++                monitor.changed.connect ((file, other_file, event_type) => {
++                    if (event_type == FileMonitorEvent.CHANGED &&
++                            file.get_basename () == "gala-drawers.ini") {
++                        refresh_all ();
++                    }
++                });
++            } catch (Error e) {
++                // No config directory yet: there is nothing to watch.
++            }
 +        }
 +
 +        private void update_expanded () {
@@ -341,7 +374,7 @@ index a3e7e96..0377885 100644
  
          var drop_target_file = new Gtk.DropTarget (typeof (File), COPY) {
 diff --git a/src/MainWindow.vala b/src/MainWindow.vala
-index 2d05ae0..3b2fa72 100644
+index 2d05ae0..4b3e6b8 100644
 --- a/src/MainWindow.vala
 +++ b/src/MainWindow.vala
 @@ -27,6 +27,15 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
@@ -372,7 +405,7 @@ index 2d05ae0..3b2fa72 100644
          child = overlay;
  
          remove_css_class ("background");
-@@ -78,6 +92,68 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -78,6 +92,80 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
          }
  
          window_drag_manager = new WindowDragManager (this);
@@ -393,6 +426,18 @@ index 2d05ae0..3b2fa72 100644
 +                    (state & Gdk.ModifierType.ALT_MASK) == 0) {
 +                panel_click.set_state (Gtk.EventSequenceState.DENIED);
 +                return;
++            }
++
++            // A click that landed on an app icon must still launch the app, so
++            // leave the sequence alone and let the icon handle it.
++            unowned Gtk.Widget? target = pick (x, y, Gtk.PickFlags.DEFAULT);
++            while (target != null) {
++                if (target is Launcher) {
++                    panel_click.set_state (Gtk.EventSequenceState.DENIED);
++                    return;
++                }
++
++                target = target.get_parent ();
 +            }
 +
 +            drawers_panel.toggle ();
@@ -441,7 +486,7 @@ index 2d05ae0..3b2fa72 100644
      }
  
      private void update_transparency () {
-@@ -91,7 +167,7 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -91,7 +179,7 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
  
      public void registry_handle_global (Wl.Registry wl_registry, uint32 name, string @interface, uint32 version) {
          if (@interface == "io_elementary_pantheon_shell_v1") {
@@ -450,7 +495,7 @@ index 2d05ae0..3b2fa72 100644
              unowned var surface = get_surface ();
              if (surface is Gdk.Wayland.Surface) {
                  unowned var wl_surface = ((Gdk.Wayland.Surface) surface).get_wl_surface ();
-@@ -124,12 +200,22 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -124,12 +212,22 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
              var item_manager_width = ItemManager.get_default ().get_width ();
              var shadow_size = (width - item_manager_width) / 2;
              var top_margin = TOP_MARGIN + shadow_size;
