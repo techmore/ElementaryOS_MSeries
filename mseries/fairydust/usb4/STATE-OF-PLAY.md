@@ -3,6 +3,22 @@
 Updated 2026-10-16. This is the cumulative frontier ledger. Preserve measured
 advances and do not re-run discovery without a new reason.
 
+## Resume pointer — 2026-10-16 (evening)
+
+Latest measured result: the second controlled boot **cleared the DP-IN
+activation gate** (`-67` did not recur) and now fails one layer up at
+`DP source preparation failed: -110` — the DCP firmware never completes
+`linkcfg_completion` within the 2 s `DPTX_CONNECT_TIMEOUT` (`dcp.c:436`). See
+[evidence/2026-10-16-controlled-test-second-boot-dpin-gate-cleared.md](evidence/2026-10-16-controlled-test-second-boot-dpin-gate-cleared.md).
+
+In progress: patch `0012` (`0012-experimental-appledrm-dpin-diagnostics.patch`)
+adds `DPINDBG` logging to the DCP link-config path. Built against rev `46bb8b6`,
+installed into the `elementary-usb4-dpin-controlled` initramfs
+(`486be1d9…` → `a6db46fa…`; original saved as `initramfs-controlled-original.img`),
+and that one-shot boot is armed (`next_entry=elementary-usb4-dpin-controlled`).
+After the boot: `sudo dmesg | grep DPINDBG`. Full state, rollback and artifacts:
+[evidence/2026-10-16-dpin-dbgboot-instrumentation.md](evidence/2026-10-16-dpin-dbgboot-instrumentation.md).
+
 ## First live boot of the bridge — outcome (2026-10-16)
 
 The controlled one-shot boot ran (11:45:04–11:47:13, dptunnel kernel, exactly
