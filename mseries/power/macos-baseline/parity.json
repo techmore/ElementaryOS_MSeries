@@ -1,0 +1,705 @@
+{
+  "title": "Power parity: macOS baseline vs elementary OS on the M1 Pro",
+  "updated": "2026-10-17",
+  "rules": {
+    "pass": "Linux within 10% of macOS (lower-is-better: linux <= mac x 1.10; higher-is-better: linux >= mac / 1.10)",
+    "close": "Within 1.5x of macOS (tier 2 in EFFICIENCY-GOALS.md)",
+    "gap": "Worse than 1.5x",
+    "conditions": "Same machine, on battery, same brightness and app state, medians with p10/p90, paired runs (POWER-ROADMAP.md honesty rules)"
+  },
+  "mac_run": null,
+  "categories": [
+    {
+      "id": "whole",
+      "name": "Whole machine",
+      "blurb": "What the battery sees in each fixed scenario. These are the headline numbers; every other category explains them.",
+      "items": [
+        {
+          "id": "W1",
+          "name": "Idle floor, screen on, nothing open",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "s:idle_minimal.system_load_w",
+          "linux": {
+            "value": 9.5,
+            "kind": "estimate",
+            "text": "~9 to 10 W best realistic, 60 Hz, 20% brightness",
+            "source": "POWER-ROADMAP.md §1"
+          },
+          "linux_how": "powerlab/ab.py idle, apps closed, same brightness",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "W2",
+          "name": "Idle, display asleep",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "s:idle_screen_off.system_load_w",
+          "linux": {
+            "value": null,
+            "kind": "unmeasured",
+            "text": "not measured",
+            "source": ""
+          },
+          "linux_how": "same as W1 with the panel blanked (owner-gated: display power)",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "W3",
+          "name": "Idle with usual apps open",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "s:idle_as_used.system_load_w",
+          "linux": {
+            "value": 17.6,
+            "kind": "measured",
+            "text": "17.6 W (single reading; 14 to 20.5 W range)",
+            "source": "POWER-OPPORTUNITIES-2026-10-16.md"
+          },
+          "linux_how": "same app set as the macOS run",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "W4",
+          "name": "Scripted web browsing",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "s:web_loop.system_load_w",
+          "linux": {
+            "value": null,
+            "kind": "unmeasured",
+            "text": "no scripted loop yet; light use 14 to 17.6 W",
+            "source": "POWER-ROADMAP.md §1"
+          },
+          "linux_how": "same 6 URLs every 15 s in the default browser",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "W5",
+          "name": "Local 1080p H.264 file",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "s:video_local.system_load_w",
+          "linux": {
+            "value": 13.2,
+            "kind": "measured",
+            "text": "13.2 W with hardware decode (mpv/VA-API)",
+            "source": "POWER-ROADMAP.md §1"
+          },
+          "linux_how": "same file, mpv --hwdec=vaapi, windowed",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "W6",
+          "name": "YouTube 1080p in the browser",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "s:video_web.system_load_w",
+          "linux": {
+            "value": 18.5,
+            "kind": "measured",
+            "text": "17.7 to 19.3 W in Brave",
+            "source": "POWER-ROADMAP.md §1"
+          },
+          "linux_how": "same video, Brave, windowed",
+          "status": "awaiting-mac"
+        }
+      ]
+    },
+    {
+      "id": "cpu",
+      "name": "CPU and scheduling",
+      "blurb": "How deeply and how often the cores sleep, and how fast they wake for work.",
+      "items": [
+        {
+          "id": "C1",
+          "name": "CPU rail power at idle",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "s:idle_minimal.cpu_w",
+          "linux": {
+            "value": null,
+            "kind": "unmeasured",
+            "text": "rail split not read on Linux yet (SMC keys)",
+            "source": ""
+          },
+          "linux_how": "macsmc hwmon CPU rail, if exposed",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "C2",
+          "name": "E-cluster idle time spent power-gated",
+          "unit": "%",
+          "dir": "higher",
+          "mac": "s:idle_minimal.e_deep_idle_share_pct",
+          "linux": {
+            "value": 7,
+            "kind": "measured",
+            "text": "CPU0: CPU PD 1.4 s vs WFI 19.8 s (~7%)",
+            "source": "POWER-ROADMAP.md §2"
+          },
+          "linux_how": "cpuidle state time deltas over 60 s, CPU0-1",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "C3",
+          "name": "P-cluster idle time spent power-gated",
+          "unit": "%",
+          "dir": "higher",
+          "mac": "s:idle_minimal.p0_deep_idle_share_pct",
+          "linux": {
+            "value": null,
+            "kind": "unmeasured",
+            "text": "not split by cluster yet",
+            "source": ""
+          },
+          "linux_how": "cpuidle deltas, CPU2-9",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "C4",
+          "name": "Wakeups per second, whole system",
+          "unit": "/s",
+          "dir": "lower",
+          "mac": "s:idle_minimal.idle_wakeups_per_s",
+          "linux": {
+            "value": 3900,
+            "kind": "measured",
+            "text": "arch_timer ~3.9k/s across cores (HZ=1000)",
+            "source": "POWER-OPPORTUNITIES-2026-10-16.md"
+          },
+          "linux_how": "/proc/interrupts arch_timer delta; compare with powertop wakeups",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "C5",
+          "name": "Burst: time to 90% of peak CPU power",
+          "unit": "ms",
+          "dir": "lower",
+          "mac": "b:ramp_to_90pct_ms",
+          "linux": {
+            "value": 78,
+            "kind": "measured",
+            "text": "P cluster at 90% clock in 76 to 79 ms",
+            "source": "POWER-OPPORTUNITIES-2026-10-16.md"
+          },
+          "linux_how": "same 20 s all-core burst",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "C6",
+          "name": "Burst: back to idle after load ends",
+          "unit": "s",
+          "dir": "lower",
+          "mac": "b:back_to_idle_s",
+          "linux": {
+            "value": null,
+            "kind": "unmeasured",
+            "text": "goal <= 30 s",
+            "source": "EFFICIENCY-GOALS.md"
+          },
+          "linux_how": "power trace after the burst",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "C7",
+          "name": "Burst: peak P-core clock on battery",
+          "unit": "MHz",
+          "dir": "higher",
+          "mac": "b:peak_p_mhz",
+          "linux": {
+            "value": 2208,
+            "kind": "measured",
+            "text": "power-saver cap 2064/2208 MHz on battery",
+            "source": "EFFICIENCY-GOALS.md"
+          },
+          "linux_how": "scaling_cur_freq during the burst",
+          "status": "awaiting-mac"
+        }
+      ]
+    },
+    {
+      "id": "gfx",
+      "name": "Graphics and compositor",
+      "blurb": "WindowServer on macOS, Gala/Mutter on Linux, and the apps that keep them busy.",
+      "items": [
+        {
+          "id": "G1",
+          "name": "GPU rail power at idle",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "s:idle_minimal.gpu_w",
+          "linux": {
+            "value": null,
+            "kind": "unmeasured",
+            "text": "rail not read yet",
+            "source": ""
+          },
+          "linux_how": "SMC GPU rail if exposed",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "G2",
+          "name": "GPU busy at idle",
+          "unit": "%",
+          "dir": "lower",
+          "mac": "s:idle_minimal.gpu_active_pct",
+          "linux": {
+            "value": null,
+            "kind": "unmeasured",
+            "text": "only job counts so far (gala 840/s)",
+            "source": "POWER-ROADMAP.md §2"
+          },
+          "linux_how": "asahi GPU utilisation counter",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "G3",
+          "name": "Compositor CPU, nothing open",
+          "unit": "ms/s",
+          "dir": "lower",
+          "mac": "p:idle_minimal:WindowServer:cpu_ms_per_s",
+          "linux": {
+            "value": 127,
+            "kind": "measured",
+            "text": "Gala 12.7% of a core average",
+            "source": "POWER-OPPORTUNITIES-2026-10-16.md"
+          },
+          "linux_how": "pidstat -p $(pgrep gala) 1 60, median",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "G4",
+          "name": "Compositor CPU, usual apps open",
+          "unit": "ms/s",
+          "dir": "lower",
+          "mac": "p:idle_as_used:WindowServer:cpu_ms_per_s",
+          "linux": {
+            "value": null,
+            "kind": "unmeasured",
+            "text": "bursts 9 to 60% of a core",
+            "source": "POWER-ROADMAP.md §2"
+          },
+          "linux_how": "pidstat gala with the same app set",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "G5",
+          "name": "ChatGPT app background cost",
+          "unit": "energy",
+          "dir": "info",
+          "mac": "p:idle_as_used:ChatGPT:energy_impact",
+          "linux": {
+            "value": null,
+            "kind": "measured",
+            "text": "4,000 to 5,000 GPU jobs/s under Xwayland (different unit)",
+            "source": "POWER-OPPORTUNITIES-2026-10-16.md"
+          },
+          "linux_how": "paired A/B open vs closed (A2)",
+          "status": "info"
+        }
+      ]
+    },
+    {
+      "id": "display",
+      "name": "Display",
+      "blurb": "Panel and backlight cost, refresh behaviour, and the display coprocessor.",
+      "items": [
+        {
+          "id": "D1",
+          "name": "Display cost (screen on minus screen off)",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "d:idle_minimal.system_load_w-idle_screen_off.system_load_w",
+          "linux": {
+            "value": null,
+            "kind": "unmeasured",
+            "text": "500 to 105 brightness saved ~4 W",
+            "source": "POWER-OPPORTUNITIES-2026-10-16.md"
+          },
+          "linux_how": "W1 minus W2 at matched brightness",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "D2",
+          "name": "Brightness during the macOS run",
+          "unit": "%",
+          "dir": "info",
+          "mac": "i:brightness.pct",
+          "linux": {
+            "value": null,
+            "kind": "measured",
+            "text": "105/500 typical; match this before comparing",
+            "source": "EFFICIENCY-GOALS.md"
+          },
+          "linux_how": "set the same percentage on Linux for every scenario",
+          "status": "info"
+        },
+        {
+          "id": "D3",
+          "name": "Refresh at idle (ProMotion vs fixed)",
+          "unit": "",
+          "dir": "info",
+          "mac": "i:display",
+          "linux": {
+            "value": null,
+            "kind": "measured",
+            "text": "fixed 120 Hz; 60 Hz saves 1.7 to 2.0 W (B1, owner decides)",
+            "source": "POWER-ROADMAP.md B1/B2"
+          },
+          "linux_how": "adaptive refresh is the parity feature (B2)",
+          "status": "info"
+        },
+        {
+          "id": "D4",
+          "name": "Display coprocessor mailbox traffic",
+          "unit": "/s",
+          "dir": "lower",
+          "mac": null,
+          "linux": {
+            "value": 480,
+            "kind": "measured",
+            "text": "~480 interrupts/s at idle",
+            "source": "POWER-ROADMAP.md §2"
+          },
+          "linux_how": "not visible from macOS; target is near zero when nothing repaints",
+          "status": "awaiting-mac"
+        }
+      ]
+    },
+    {
+      "id": "media",
+      "name": "Video and media",
+      "blurb": "Cost of playback above the idle floor, and which codecs run in hardware.",
+      "items": [
+        {
+          "id": "M1",
+          "name": "Local 1080p: extra over idle",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "d:video_local.system_load_w-idle_minimal.system_load_w",
+          "linux": {
+            "value": 3.7,
+            "kind": "estimate",
+            "text": "13.2 W minus ~9.5 W idle",
+            "source": "derived"
+          },
+          "linux_how": "W5 minus W1, same session",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "M2",
+          "name": "YouTube 1080p: extra over idle",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "d:video_web.system_load_w-idle_minimal.system_load_w",
+          "linux": {
+            "value": 9.0,
+            "kind": "estimate",
+            "text": "~18.5 W minus ~9.5 W idle",
+            "source": "derived"
+          },
+          "linux_how": "W6 minus W1",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "M3",
+          "name": "VP9/AV1 web video decoded in hardware",
+          "unit": "",
+          "dir": "info",
+          "mac": null,
+          "linux": {
+            "value": null,
+            "kind": "measured",
+            "text": "H.264 only in the AVD driver; VP9/AV1 is kernel work (D3)",
+            "source": "POWER-ROADMAP.md D"
+          },
+          "linux_how": "H.264-only extension + VA-API in Brave saves ~1.5 W meanwhile (D1)",
+          "status": "info"
+        }
+      ]
+    },
+    {
+      "id": "audio",
+      "name": "Audio",
+      "blurb": "Whether the speaker path sleeps when nothing plays.",
+      "items": [
+        {
+          "id": "A1",
+          "name": "Audio daemon CPU at idle",
+          "unit": "ms/s",
+          "dir": "lower",
+          "mac": "p:idle_minimal:coreaudiod:cpu_ms_per_s",
+          "linux": {
+            "value": null,
+            "kind": "unmeasured",
+            "text": "pipewire + filter chain + speakersafetyd",
+            "source": ""
+          },
+          "linux_how": "pidstat on pipewire, wireplumber, speakersafetyd",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "A2",
+          "name": "Speaker PCM stops when silent",
+          "unit": "",
+          "dir": "info",
+          "mac": null,
+          "linux": {
+            "value": null,
+            "kind": "measured",
+            "text": "FAIL: speaker and sense PCMs RUNNING since boot (~1.2 W, low confidence)",
+            "source": "POWER-OPPORTUNITIES-2026-10-16.md #4"
+          },
+          "linux_how": "cat /proc/asound/card*/pcm*/sub0/status at idle; owner-gated (C1)",
+          "status": "info"
+        }
+      ]
+    },
+    {
+      "id": "net",
+      "name": "Wireless and I/O",
+      "blurb": "Wi-Fi, Bluetooth, USB, and background traffic.",
+      "items": [
+        {
+          "id": "N1",
+          "name": "Network traffic at idle",
+          "unit": "B/s",
+          "dir": "lower",
+          "mac": "s:idle_minimal.net_in_Bps",
+          "linux": {
+            "value": null,
+            "kind": "unmeasured",
+            "text": "",
+            "source": ""
+          },
+          "linux_how": "/proc/net/dev delta over the idle run",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "N2",
+          "name": "Bluetooth state during the run",
+          "unit": "",
+          "dir": "info",
+          "mac": "i:bluetooth_on",
+          "linux": {
+            "value": 0.2,
+            "kind": "measured",
+            "text": "~0.2 W saved when off",
+            "source": "POWER-OPPORTUNITIES-2026-10-16.md"
+          },
+          "linux_how": "match the macOS state",
+          "status": "info"
+        },
+        {
+          "id": "N3",
+          "name": "Wi-Fi power save / PCIe ASPM / USB autosuspend",
+          "unit": "",
+          "dir": "info",
+          "mac": null,
+          "linux": {
+            "value": null,
+            "kind": "measured",
+            "text": "power save on; powersupersave -0.3 W; USB autosuspend 0 W",
+            "source": "POWER-OPPORTUNITIES-2026-10-16.md"
+          },
+          "linux_how": "already checked; no macOS counterpart to measure",
+          "status": "info"
+        }
+      ]
+    },
+    {
+      "id": "storage",
+      "name": "Storage and memory",
+      "blurb": "Background disk writes and memory rails.",
+      "items": [
+        {
+          "id": "S1",
+          "name": "Disk writes at idle",
+          "unit": "B/s",
+          "dir": "lower",
+          "mac": "s:idle_minimal.disk_write_Bps",
+          "linux": {
+            "value": null,
+            "kind": "unmeasured",
+            "text": "btrfs commits, journald, swap (1.1 GB swapped)",
+            "source": "POWER-OPPORTUNITIES-2026-10-16.md"
+          },
+          "linux_how": "/proc/diskstats delta over the idle run",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "S2",
+          "name": "DRAM rail at idle",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "s:idle_minimal.dram_w",
+          "linux": {
+            "value": null,
+            "kind": "unmeasured",
+            "text": "",
+            "source": ""
+          },
+          "linux_how": "SMC if exposed (macOS may not report it on M1 Pro)",
+          "status": "awaiting-mac"
+        }
+      ]
+    },
+    {
+      "id": "background",
+      "name": "Background activity",
+      "blurb": "What the OS keeps running when you are not doing anything.",
+      "items": [
+        {
+          "id": "B1",
+          "name": "Processes running",
+          "unit": "",
+          "dir": "lower",
+          "mac": "i:process_count",
+          "linux": {
+            "value": null,
+            "kind": "unmeasured",
+            "text": "",
+            "source": ""
+          },
+          "linux_how": "ps -e | wc -l in the same idle state",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "B2",
+          "name": "Service jobs (launchd vs systemd)",
+          "unit": "",
+          "dir": "info",
+          "mac": "i:launchd_system_jobs",
+          "linux": {
+            "value": null,
+            "kind": "unmeasured",
+            "text": "rpcbind, cups, avahi etc. each < 0.1 W",
+            "source": "POWER-ROADMAP.md G1"
+          },
+          "linux_how": "systemctl list-units --state=running | wc -l",
+          "status": "info"
+        },
+        {
+          "id": "B3",
+          "name": "CPU used by everything at idle",
+          "unit": "ms/s",
+          "dir": "lower",
+          "mac": "s:idle_minimal.cpu_ms_per_s_all",
+          "linux": {
+            "value": 1700,
+            "kind": "measured",
+            "text": "CPU 83% idle across 10 cores (~1.7 cores busy, apps open)",
+            "source": "POWER-OPPORTUNITIES-2026-10-16.md"
+          },
+          "linux_how": "sum of /proc/stat busy jiffies, nothing open",
+          "status": "awaiting-mac"
+        }
+      ]
+    },
+    {
+      "id": "sleep",
+      "name": "Sleep and standby",
+      "blurb": "Lid-closed drain and how often the machine wakes itself.",
+      "items": [
+        {
+          "id": "Z1",
+          "name": "Lid-closed drain on battery",
+          "unit": "%/h",
+          "dir": "lower",
+          "mac": "i:sleep_history.pct_per_hour.median",
+          "linux": {
+            "value": null,
+            "kind": "unmeasured",
+            "text": "s2idle only; F1 test not run",
+            "source": "POWER-ROADMAP.md F1"
+          },
+          "linux_how": "rtcwake -m freeze, 30 min and overnight, charge delta",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "Z2",
+          "name": "Self-wakes per hour asleep",
+          "unit": "/h",
+          "dir": "lower",
+          "mac": "i:sleep_history.darkwakes_per_hour.median",
+          "linux": {
+            "value": null,
+            "kind": "unmeasured",
+            "text": "",
+            "source": ""
+          },
+          "linux_how": "wakeup sources during the F1 test",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "Z3",
+          "name": "Standby/hibernate after hours asleep",
+          "unit": "",
+          "dir": "info",
+          "mac": "i:pmset.battery.standby",
+          "linux": {
+            "value": null,
+            "kind": "measured",
+            "text": "none: suspend stays s2idle indefinitely",
+            "source": "POWER-ROADMAP.md F3"
+          },
+          "linux_how": "owner decides (F3)",
+          "status": "info"
+        }
+      ]
+    },
+    {
+      "id": "battery",
+      "name": "Battery and thermals",
+      "blurb": "Cross-checks that both OSes read the same pack the same way.",
+      "items": [
+        {
+          "id": "T1",
+          "name": "Battery health",
+          "unit": "%",
+          "dir": "info",
+          "mac": "i:battery_health_pct",
+          "linux": {
+            "value": 92,
+            "kind": "measured",
+            "text": "92%, 93 cycles",
+            "source": "POWER-ROADMAP.md §1"
+          },
+          "linux_how": "should agree within a couple of percent",
+          "status": "info"
+        },
+        {
+          "id": "T2",
+          "name": "Battery temperature at idle",
+          "unit": "°C",
+          "dir": "lower",
+          "mac": "s:idle_minimal.temp_c",
+          "linux": {
+            "value": 32.1,
+            "kind": "measured",
+            "text": "32.1 °C at rest",
+            "source": "POWER-ROADMAP.md F5"
+          },
+          "linux_how": "same ambient, after the same settle time",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "T3",
+          "name": "Charge limit",
+          "unit": "",
+          "dir": "info",
+          "mac": null,
+          "linux": {
+            "value": null,
+            "kind": "measured",
+            "text": "80% cap active on Linux",
+            "source": "POWER-ROADMAP.md"
+          },
+          "linux_how": "keep",
+          "status": "info"
+        }
+      ]
+    }
+  ]
+}

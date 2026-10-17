@@ -1,0 +1,52 @@
+# macOS power baseline and the parity checklist
+
+Owner request 2026-10-17: profile everything macOS does on this M1 Pro, set a minimal baseline per category, and check
+categories off as elementary OS matches them. This replaces Apple's marketing figures (EFFICIENCY-GOALS.md) with numbers
+measured on **this** machine, same battery, same panel.
+
+## 1. Record the macOS baseline (on the Mac, booted into macOS)
+
+```bash
+git clone -b power-usage https://github.com/techmore/ElementaryOS_MSeries && cd ElementaryOS_MSeries
+# unplug the charger; set brightness to what you use on Linux and note it
+sudo python3 mseries/power/macos-baseline/macos_profile.py --video ~/Movies/test-1080p-h264.mp4
+```
+
+About 25 minutes, guided: it tells you what to open or quit before each scenario and waits for Enter.
+Quick dry run: `--scale 0.2 --only idle_minimal`. Inventory only (what macOS is running, settings, sleep history):
+`--inventory-only`. `python3` comes with the Xcode command-line tools.
+
+| Scenario | What happens | Linux counterpart |
+| --- | --- | --- |
+| `idle_minimal` | nothing open, screen on, 180 s | the floor (W1) |
+| `idle_screen_off` | display put to sleep, woken after | W2, and display cost D1 |
+| `idle_as_used` | your usual apps open | W3 |
+| `web_loop` | Safari opens 6 fixed pages, one per 15 s | W4 |
+| `video_local` | QuickTime plays the file you pass | W5 (use the same file in mpv) |
+| `video_web` | you start YouTube 1080p | W6 |
+| `cpu_burst` | all cores for 20 s at 100 ms sampling | C5 to C7 |
+
+It does not change brightness, refresh rate, Wi-Fi or Bluetooth; it records them. Output goes to
+`results/macos-<stamp>/`: `summary.json` (medians, p10/p90), `raw/` (powermetrics plists, battery samples) and
+`inventory/` (processes, launchd jobs, pmset settings and log, assertions, displays, Wi-Fi, Bluetooth).
+
+Whole-machine power is `PowerTelemetryData.SystemLoad` from `AppleSmartBattery`, the macOS equivalent of the SMC
+`Total System Power` used on Linux. CPU/GPU/ANE are powermetrics rails; `rest_of_machine_w` is the difference
+(panel, backlight, Wi-Fi, SSD, amps, regulator losses). Sleep drain comes from battery-only sleep periods already in
+`pmset -g log`, so there is a lid-closed baseline without running a new overnight test.
+
+## 2. Score it
+
+```bash
+python3 mseries/power/macos-baseline/parity.py --mac mseries/power/macos-baseline/results/macos-<stamp>/summary.json
+python3 mseries/power/macos-baseline/parity.py --linux W1=8.9 --source W1="powerlab ab.py 2026-10-18"
+python3 mseries/power/macos-baseline/parity.py --check A2 --note A2="speaker PCM suspends after 30 s"
+```
+
+`parity.json` holds 11 super-categories and 41 items, each with the macOS source, the current Linux number (labelled
+measured or estimate, with its source doc) and how to measure it on Linux. `PARITY.md` is regenerated with a checkbox
+per item: **pass** within 10% of macOS, **close** within 1.5x (tier 2), otherwise **gap**. Yes/no items (speaker PCM
+idle, codecs, refresh mode) are passed by hand with `--check`.
+
+Linux numbers carried in today are from `POWER-ROADMAP.md` and `POWER-OPPORTUNITIES-2026-10-16.md`; several are single
+readings or estimates and must be re-measured with paired runs before an item is checked off.
