@@ -2046,3 +2046,8 @@ The owned final-qualification unit finished successfully. The enabled everyday Q
 - Installed `opencode-dev` 2.0.26 (dev channel; bundled CLI is the `dev` download). `ldd` shows no missing libraries for the app or CLI. Launch command: `ai.opencode.desktop.dev`.
 - Not verified: the app has not been launched (avoided putting a window on the owner's screen), and the script was syntax-checked only, not rerun end to end. Not committed to any image layer.
 - Next: launch once the owner agrees, then decide whether to track the `v2` branch revision in `UPSTREAM-PINS.md`.
+
+## 2026-10-16 (Claude) — preferred apps group in post-install
+
+- `mseries/post-install.sh` gained an `opencode` stage (`install-opencode-desktop.sh`, off by default, builds from source so it is slow) and an `apps` group: `--with apps` / `--only apps` expand to brave, firefox, signal, tether, codexbar, opencode. Edit the `APPS` array to change the set.
+- Verified: `bash -n`, `--list`, and `--dry-run` output only. No stage was run. Owner chose this shape (group in the existing runner) over a manifest or a local apt repo; those remain options if the set grows.
