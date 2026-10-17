@@ -100,7 +100,10 @@ def main():
     # Execute actual production helper/functions against deterministic fake I/O, not a separate model.
     shims = output/'shims/linux'
     shims.mkdir(parents=True)
-    (shims/'errno.h').write_text('#include <errno.h>\n')
+    # Linux glibc's errno.h already includes linux/errno.h; a shim there would recurse.
+    # Only non-Linux hosts need this compatibility header for the userspace harness.
+    if sys.platform != 'linux':
+        (shims/'errno.h').write_text('#include <errno.h>\n')
     helper = output/'dpin-offline'
     run([cc, '-std=gnu11', '-Wall', '-Wextra', '-Werror', '-fsanitize=undefined',
          '-I'+str(shims.parent), '-Idrivers/phy/apple', 'tools/testing/apple-dpin/dpin-offline.c', '-o', helper])
