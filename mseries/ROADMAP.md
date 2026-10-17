@@ -193,7 +193,7 @@ sudo available to enable DNS collection without dialogs.
 |---|---|---|
 | Deferred per-user setup | Firstboot prepares CodexBar and Widevine tools and DNS policy; the user timer installs apps/services and stops after completion. Staged-root tests cover payload delivery, timer enablement and completion handling. | Verify a fresh desktop user's setup, including starting then quitting Brave to create its profile. |
 | Keyboard brightness slider | Added to Pantheon's Quick Settings gear menu by `install-quick-settings-brightness.sh`; included in manual post-install, transform firstboot, and now the Apple Silicon overlay build. | Rebuild the image, then confirm it appears and changes the keyboard backlight on the live desktop. |
-| OpenCode Go in M-series CodexBar | The installer enables the provider and passes the existing OpenCode Go CLI credential to CodexBar at runtime. | Install on the working desktop, sign in through OpenCode, and confirm the quota row. |
+| OpenCode Go in M-series CodexBar | The installer enables the provider; the wrapper passes an OpenCode Go API key from `~/.local/share/opencode/auth.json` when one exists. Current OpenCode keeps its login (an OAuth account, not a Go API key) in `opencode.db`, so on this desktop no key is found and quota needs a browser sign-in at opencode.ai (upstream reads session cookies). The panel shows an explanatory row; local activity is under Sessions. | Sign in to OpenCode Go in a browser on the desktop and confirm the quota row appears. |
 
 ## Open problems
 

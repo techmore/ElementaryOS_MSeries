@@ -367,6 +367,29 @@ local branches are fully merged; `brightness-sub-floor` and
 work from several agents and stale copies of dock-video docs (read the dock branch,
 not the checkout). Cleanup steps need the owner's yes.
 
+## CodexBar sessions section — 2026-10-16
+
+Audit: `codexbar usage` works for Codex (account quota, Pro Lite). Claude has
+no CodexBar fetch strategy here (no `~/.claude/.credentials.json`, no claude
+CLI; sign-in is via the desktop app). `opencodego` fails with "no session
+cookies" and the owner's OpenCode history is the free `opencode` provider, so
+the old Go-only local estimate always said "No cost-bearing records".
+
+Added `mseries/codexbar-sessions.py` (+ `test-codexbar-sessions.py`, 4 tests,
+added to CI) and a **Sessions** section in the Wingpanel menu replacing the
+Go-only block: status dot per ChatGPT/Codex, Claude Code and OpenCode, plus
+5h/7d requests and tokens for Claude Code (transcripts, deduplicated streamed
+responses) and OpenCode (all providers). Local activity only, not quota.
+Verified: helper output on this machine (Claude 99 req/5h, OpenCode 41 req/5h),
+meson build and 2 existing tests pass, new module installed to
+`/usr/lib/aarch64-linux-gnu/wingpanel-9/libcodexbar.so` (rollback copy
+`/usr/local/lib/mseries/libcodexbar.so.before-sessions`). Wingpanel was not
+restarted; the panel UI is not visually verified until next login.
+Next: confirm the Sessions section after re-login; Claude account quota needs
+credentials CodexBar can read.
+
+Follow-up: panel also shows CodexBar's own list-price spend estimate (today/month, from the snapshot `spending` field) and a clearer OpenCode Go quota message. Not visually verified.
+
 ## Current hardware state — 2026-10-14
 
 The transformed elementary OS 9 desktop is running on a 14-inch M1 Pro through
@@ -2038,6 +2061,20 @@ The owned final-qualification unit finished successfully. The enabled everyday Q
 - Audio ticks on hub unplug: not investigated; audio stack left untouched.
 - 2026-10-16 night (Claude) — **correction to my earlier "HDMI works" reports.** I treated `set_digital_out_mode finished` plus `connector connected` as success; those only show the display coprocessor accepted a mode. The owner's observation is that the screen can stay black/"no signal" while those lines are present. The log line that matches the black screen is `swallowed swap … fControllerPowerState is 0 … timings are not enabled` (the coprocessor discarding Gala's frames). Confirmed by the owner as a real picture: only the moments they said it worked. On the 21:27 boot (instrumented DP-IN debug kernel, 154 `DPINDBG` lines versus 0 on the previous boot) the built-in HDMI went black after replugs; cause is open, the owner suspects the driver implementation. The Diagnose tab now reports "discarding frames" when swaps are swallowed after the last modeset, and no longer claims "showing a picture" from a modeset alone.
 - 2026-10-16 (Claude): owner reports delays returning to a normal screen after unplugging HDMI. Measured after an unplug: Gala's built-in scale changed 2.0 -> 1.5 (Gala applies its own single-monitor config). The DCP powered the external pipe off ~3.9 s after the HPD drop (`dcp_poweroff` 3.9 s after `HPD irq, connected:0`). Watcher now logs Gala's drop time after an unplug and re-applies a saved built-in-only profile if one exists. Not yet exercised on a real unplug; no built-in-only profile saved yet (owner picks the scale).
+
+## CodexBar wrapper hardening (2026-10-17)
+
+Audit of the locally customized CodexBar (upstream v0.74.1 CLI/desktop, our wrapper `~/.local/bin/codexbar`, helpers in `~/.local/lib/codexbar-cli/`, Wingpanel indicator). Work is on branch `codexbar-improve`, based on `origin/feat/codexbar-sessions-and-spend`: that branch (Sessions section, spend, OpenCode Go error row) had never been merged into `main` or `power-usage`, so `power-usage` lacked the Sessions helper and tests that are installed on the desktop.
+
+Findings: installed wrapper, `codexbar-opencode-local.py` and `codexbar-sessions.py` are byte-identical to the branch sources. The wrapper ran at import time (untestable) and crashed with a traceback if `codexbar-upstream` was missing. `install-codexbar.sh` deleted `~/.local/bin/codexbar` before reinstalling it. OpenCode no longer writes `auth.json`; its login is an OAuth row in `opencode.db`, not a Go API key, so the wrapper's key injection finds nothing here. `codexbar usage --provider opencodego` fails with "No OpenCode Go session cookies found in browsers" (needs a browser sign-in at opencode.ai); Claude is not in `providerOrder`, so it reports no strategy by design.
+
+Changes: wrapper is now `main()` with a clear exit-127 message when upstream is missing; new `mseries/test-codexbar-wrapper.py` (8 cases); wrapper install is now write-then-rename; CI runs the wrapper and OpenCode-local tests; roadmap row for OpenCode Go corrected.
+
+Verification: wrapper 8, sessions 3, opencode-local 3 Python tests and Meson (2 suites) pass; `test-image-wiring.py` passes; `git diff --check` clean. New wrapper installed to `~/.local/bin` (previous copy kept as `codexbar.pre-wrapper-fix.<epoch>`); live `codexbar usage --provider codex` returns data. Not verified: the Wingpanel module was not rebuilt or reinstalled (no indicator change), and the live panel was not inspected.
+
+Upgrade notes: `version=v0.74.1` is pinned in `install-codexbar.sh`; the indicator parses upstream pace wording and the `--snapshot` JSON schema (`schemaVersion` 1), and the wrapper assumes the binary lands at `codexbar-upstream`. Recheck all three on a version bump.
+
+Next: sign in to OpenCode Go in a browser to get a real quota row; merge `codexbar-improve` (it carries the sessions branch) into `main`, then bring `power-usage` up to date.
 
 
 ### MCP task-write continuation — October 16, 2026
