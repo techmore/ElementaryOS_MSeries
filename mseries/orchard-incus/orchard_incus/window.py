@@ -43,6 +43,7 @@ from .ui import (  # noqa: E402
     LIGHT_EXTRA,
     Row,
     Spark,
+    TileRow,
     a11y,
     card,
     lbl,
@@ -60,7 +61,7 @@ class Window(Gtk.ApplicationWindow):
     def __init__(self, app):
         self.state = self.load_state()
         super().__init__(application=app, title="Orchard", default_width=self.state.get("w", 1180), default_height=self.state.get("h", 740))
-        self.set_size_request(760, 480)
+        self.set_size_request(780, 480)
         if self.state.get("max"):
             self.maximize()
         self.data, self.rows, self.dash_rows = {}, {}, {}
@@ -93,7 +94,7 @@ class Window(Gtk.ApplicationWindow):
         a11y(refresh, "Refresh")
         refresh.connect("clicked", lambda *_: self.refresh_all())
         hb.pack_end(refresh)
-        self.search = Gtk.SearchEntry(placeholder_text="Filter instances (Ctrl+F)", width_chars=20)
+        self.search = Gtk.SearchEntry(placeholder_text="Filter (Ctrl+F)", tooltip_text="Filter instances (Ctrl+F)", width_chars=11)
         a11y(self.search, "Filter instances")
         self.search.connect("search-changed", lambda *_: self.list.invalidate_filter())
         hb.pack_end(self.search)
@@ -170,11 +171,11 @@ class Window(Gtk.ApplicationWindow):
         sc = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER)
         d = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16, margin_top=22, margin_bottom=22, margin_start=28, margin_end=28)
         d.append(lbl("Dashboard", "title-big"))
-        tiles = Gtk.Box(spacing=12, homogeneous=True)
+        tiles = TileRow()
         self.tile = {}
         for k, t in [("run", "Running"), ("cpu", "CPU"), ("mem", "Memory"), ("proc", "Processes")]:
             self.tile[k] = lbl("—", "stat-val")
-            tiles.append(card(lbl(t, "dim"), self.tile[k]))
+            tiles.add(card(lbl(t, "dim"), self.tile[k]))
         d.append(tiles)
         charts = Gtk.Box(spacing=12, homogeneous=True)
         self.tot_cpu, self.tot_mem = Spark(GREEN, 90, floor=10, name="Total CPU", fmt=lambda v: f"{v:.0f}%"), Spark(BLUE, 90, name="Total memory", fmt=human)
@@ -207,7 +208,7 @@ class Window(Gtk.ApplicationWindow):
         kc.connect("key-pressed", self.on_list_key)
         self.list.add_controller(kc)
         self.summary = lbl("", "dim", margin_start=16, margin_top=10, margin_bottom=6)
-        side = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, width_request=290)
+        side = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, width_request=240)
         side.append(self.summary)
         self.job_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         side.append(self.job_box)
@@ -223,7 +224,7 @@ class Window(Gtk.ApplicationWindow):
         return Gtk.Paned(start_child=side, end_child=self.stack, shrink_start_child=False, resize_start_child=False)
 
     def build_detail(self):
-        outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14, margin_top=22, margin_bottom=14, margin_start=28, margin_end=28)
+        outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14, margin_top=22, margin_bottom=14, margin_start=20, margin_end=20)
         top = Gtk.Box(spacing=12)
         self.d_title = lbl("", "title-big", ellipsize=Pango.EllipsizeMode.END)
         self.d_state = lbl("", "oi-badge", valign=Gtk.Align.CENTER)
@@ -234,7 +235,8 @@ class Window(Gtk.ApplicationWindow):
         self.d_sub = lbl("", "dim")
         outer.append(self.d_sub)
 
-        actions = Gtk.Box(spacing=8)
+        actions = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, column_spacing=8, row_spacing=8, max_children_per_line=12,
+                              homogeneous=False, halign=Gtk.Align.START)
         self.btn = {}
         for key, label, icon, fn, css in [
             ("start", "Start", "media-playback-start-symbolic", lambda: self.act("start"), ""),
@@ -246,6 +248,7 @@ class Window(Gtk.ApplicationWindow):
         ]:
             self.btn[key] = pill_button(label, icon, css, fn)
             actions.append(self.btn[key])
+            self.btn[key].get_parent().set_focusable(False)
         more = Gtk.MenuButton(icon_name="view-more-symbolic", tooltip_text="More actions")
         a11y(more, "More actions")
         more.add_css_class("pill")
@@ -267,6 +270,7 @@ class Window(Gtk.ApplicationWindow):
         more.set_popover(pop)
         self.btn["more"] = more
         actions.append(more)
+        more.get_parent().set_focusable(False)
         outer.append(actions)
 
         self.tabs = Gtk.Stack(vexpand=True, transition_type=Gtk.StackTransitionType.CROSSFADE)
@@ -287,11 +291,11 @@ class Window(Gtk.ApplicationWindow):
     def build_overview(self):
         sc = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER, vexpand=True)
         d = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14, margin_end=6)
-        stats = Gtk.Box(spacing=12, homogeneous=True)
+        stats = TileRow()
         self.stat = {}
         for k, t in [("mem", "Memory"), ("cpu", "CPU"), ("disk", "Disk"), ("proc", "Processes")]:
             self.stat[k] = lbl("—", "stat-val")
-            stats.append(card(lbl(t, "dim"), self.stat[k]))
+            stats.add(card(lbl(t, "dim"), self.stat[k]))
         d.append(stats)
         charts = Gtk.Box(spacing=12, homogeneous=True)
         self.d_cpu, self.d_mem = Spark(GREEN, 70, floor=10, name="CPU", fmt=lambda v: f"{v:.0f}%"), Spark(BLUE, 70, name="Memory", fmt=human)
@@ -821,6 +825,7 @@ class Window(Gtk.ApplicationWindow):
         show = backend.visible_actions(k)
         for key in ("start", "stop", "restart", "pause", "shell", "snap"):
             self.btn[key].set_visible(key in show)
+            self.btn[key].get_parent().set_visible(key in show)  # the FlowBoxChild, so hidden buttons leave no gap
         self.btn["start"].set_sensitive(k == "stopped" and not busy)
         for key in ("stop", "restart"):
             self.btn[key].set_sensitive(live and not busy)

@@ -80,6 +80,19 @@ def card(*children, css="oi-card", orientation=Gtk.Orientation.VERTICAL, spacing
     return b
 
 
+class TileRow(Gtk.FlowBox):
+    """Stat tiles that sit in one row when there is room and wrap to two rows when the window is narrow."""
+
+    def __init__(self):
+        super().__init__(selection_mode=Gtk.SelectionMode.NONE, homogeneous=True, column_spacing=12, row_spacing=12,
+                         min_children_per_line=2, max_children_per_line=4)
+
+    def add(self, child):
+        child.set_size_request(190, -1)  # wide enough that a narrow window wraps 2+2 rather than 3+1
+        self.append(child)
+        child.get_parent().set_focusable(False)
+
+
 def pill_button(label, icon=None, css=None, fn=None):
     b = Gtk.Button()
     row = Gtk.Box(spacing=6)

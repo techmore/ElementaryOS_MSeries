@@ -1,5 +1,21 @@
 # OS 9 implementation / Claude Code handoff
 
+## Orchard for Incus narrow-window fixes — 2026-10-17
+
+Found at 760 px: the window was forced to ~850 px, and the instance action row
+(with the More menu holding Clone/Rename/Delete) was clipped off-screen.
+Fixes in `mseries/orchard-incus/`: action row is a wrapping FlowBox (hidden
+buttons leave no gap, FlowBox children are not extra tab stops); stat tiles use
+`ui.TileRow` and wrap 2+2 when narrow; filter box shortened; instance sidebar
+240 px (was 290); detail margins 20 px; declared minimum window is now 780x480
+(was 760x480, which the content could not honour). Screenshots checked at
+780x480 and 1180x740, no clipping; wide layout unchanged.
+- Tests: 71 run, 6 live skipped, all pass; `tests/test_layout.py` (2, need a
+  display; run under xvfb-run) guards tile wrapping and action-row shrink.
+- Installed with `./install.sh`. Not verified: elementary stylesheet/Wayland,
+  the other tabs (Snapshots/Run/Files/Devices/Settings) and dialogs at narrow
+  width, More-menu popover contents, keyboard focus order. Sidebar IPs truncate
+  at 240 px.
 ## Orchard for Incus charts — 2026-10-17
 
 `mseries/orchard-incus/`: charts now say what they show. Large charts (Dashboard
