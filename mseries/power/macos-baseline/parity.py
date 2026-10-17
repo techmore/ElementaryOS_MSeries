@@ -7,6 +7,8 @@
     python3 parity.py --check A2 --note A2="PCM suspends after 30 s"  # mark a yes/no item as passed
     python3 parity.py                                               # just re-score and rewrite PARITY.md
 
+Expressions: s:<scen>.<metric> median, d:<a>-<b> difference, p:<scen>:<proc>:<field> per process,
+b:<field> cpu burst, i:<key> inventory, k:<number> fixed target, v:<scen>.<mpv property> playback stats.
 Status per item: pass (within 10%), close (within 1.5x, tier 2), gap, awaiting-mac, awaiting-linux, info.
 """
 import argparse
@@ -55,6 +57,17 @@ def resolve(summary, expr):
         return dig(summary, f"scenarios.cpu_burst.burst.{rest}")
     if kind == "i":
         return dig(summary, f"inventory.{rest}")
+    if kind == "k":                               # a fixed target, e.g. k:0 dropped frames
+        return float(rest)
+    if kind == "v":                               # mpv playback stats (Linux): v:<scenario>.<property>
+        scen, prop = rest.split(".", 1)
+        val = dig(summary, f"scenarios.{scen}.playback")
+        if not val:
+            return None
+        val = val.get(prop)
+        if prop == "hwdec-current":               # 1 when a hardware decoder is really in use
+            return 0.0 if val in (None, "", "no") else 1.0
+        return val
     return None
 
 

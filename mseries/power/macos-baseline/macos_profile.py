@@ -71,19 +71,52 @@ SCENARIOS = {
         seconds=180, interval_ms=1000, action="web_loop"),
     "video_local": dict(
         title="Local 1080p H.264 file in QuickTime",
-        prep="Pass --video /path/to/1080p.mp4 (same file you use on Linux). QuickTime opens and plays it windowed.",
-        seconds=150, interval_ms=1000, action="video_local"),
+        prep="QuickTime opens test-1080p-h264.mp4 (make_test_videos.sh, same file on Linux) and plays it windowed.",
+        seconds=150, interval_ms=1000, action="video_local", video="test-1080p-h264.mp4"),
+    "video_local_1440p": dict(
+        title="Local 1440p (2K) H.264 file in QuickTime",
+        prep="QuickTime opens test-1440p-h264.mp4 and plays it windowed.",
+        seconds=150, interval_ms=1000, action="video_local", video="test-1440p-h264.mp4"),
+    "video_local_2160p": dict(
+        title="Local 2160p (4K) H.264 file in QuickTime",
+        prep="QuickTime opens test-2160p-h264.mp4 and plays it windowed.",
+        seconds=150, interval_ms=1000, action="video_local", video="test-2160p-h264.mp4"),
     "video_web": dict(
         title="YouTube 1080p in the browser",
         prep="Start a 1080p YouTube video windowed (Safari, and repeat with Brave to compare with Linux). "
              "Press Enter once it is playing.",
+        seconds=150, interval_ms=1000),
+    "video_web_1440p": dict(
+        title="YouTube 1440p (2K) in the browser",
+        prep="Same video, quality set to 1440p (gear icon), windowed. Press Enter once it is playing at 1440p.",
+        seconds=150, interval_ms=1000),
+    "video_web_2160p": dict(
+        title="YouTube 2160p (4K) in the browser",
+        prep="Same video, quality set to 2160p (gear icon), windowed. Press Enter once it is playing at 2160p.",
         seconds=150, interval_ms=1000),
     "cpu_burst": dict(
         title="All-core burst and return to idle",
         prep="Same app state as idle_minimal. The script loads every core for 20 s, then stops and watches it settle.",
         seconds=60, interval_ms=100, action="cpu_burst"),
 }
-DEFAULT_ORDER = ["idle_minimal", "idle_screen_off", "idle_as_used", "web_loop", "video_local", "video_web", "cpu_burst"]
+DEFAULT_ORDER = ["idle_minimal", "idle_screen_off", "idle_as_used", "web_loop",
+                 "video_local", "video_local_1440p", "video_local_2160p",
+                 "video_web", "video_web_1440p", "video_web_2160p", "cpu_burst"]
+
+
+def video_file(cfg, args):
+    """The clip a video_local scenario plays: --video overrides 1080p, the rest come from --video-dir."""
+    if cfg.get("video") == "test-1080p-h264.mp4" and args.video:
+        return args.video
+    path = Path(args.video_dir).expanduser() / cfg["video"]
+    return str(path) if path.is_file() else None
+
+
+def default_video_dir():
+    """~/Movies of the person who ran sudo, not root's."""
+    user = os.environ.get("SUDO_USER")
+    home = Path(f"~{user}").expanduser() if user else Path.home()
+    return str(home / "Movies")
 
 
 # ---------------------------------------------------------------- helpers
@@ -452,8 +485,9 @@ def sleep_drain(log):
 
 def run_scenario(name, cfg, outdir: Path, samplers, args):
     print(f"\n=== {name}: {cfg['title']} ===\n{cfg['prep']}")
-    if cfg.get("action") == "video_local" and not args.video:
-        print("  skipped: no --video file given")
+    video = video_file(cfg, args) if cfg.get("action") == "video_local" else None
+    if cfg.get("action") == "video_local" and not video:
+        print(f"  skipped: {cfg['video']} not in {args.video_dir} (run make_test_videos.sh)")
         return None
     if not args.yes:
         input("Press Enter to start (Ctrl-C to skip the rest)... ")
@@ -477,7 +511,7 @@ def run_scenario(name, cfg, outdir: Path, samplers, args):
         helper = threading.Thread(target=web_loop, args=(stop_evt,), daemon=True)
         helper.start()
     elif action == "video_local":
-        video_local(args.video)
+        video_local(video)
         time.sleep(5)
 
     batt.start()
@@ -512,7 +546,7 @@ def run_scenario(name, cfg, outdir: Path, samplers, args):
     if err.strip():
         (outdir / "raw" / f"{name}.stderr.txt").write_text(err)
     (outdir / "raw" / f"{name}.battery.json").write_text(json.dumps(batt.samples))
-    meta = {"name": name, "title": cfg["title"], "interval_ms": cfg["interval_ms"], "started": t0}
+    meta = {"name": name, "title": cfg["title"], "interval_ms": cfg["interval_ms"], "started": t0, "video": video}
     if action == "cpu_burst":
         meta["burst_offset_s"] = burst_start - t0
     (outdir / "raw" / f"{name}.meta.json").write_text(json.dumps(meta))
@@ -586,7 +620,7 @@ def write_summary(outdir: Path, inv, scen):
         m = s["metrics"]
         def g(k):
             return f"{m[k]['median']:.2f}" if k in m and "median" in m[k] else "-"
-        print(f"  {name:<16} system {g('system_load_w'):>6} W  SoC {g('soc_combined_w'):>6} W  "
+        print(f"  {name:<18} system {g('system_load_w'):>6} W  SoC {g('soc_combined_w'):>6} W  "
               f"CPU {g('cpu_w'):>5}  GPU {g('gpu_w'):>5}  rest {g('rest_of_machine_w'):>6}  "
               f"wakeups/s {g('idle_wakeups_per_s')}")
 
@@ -594,7 +628,9 @@ def write_summary(outdir: Path, inv, scen):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--only", help="comma-separated scenarios (default: all)")
-    ap.add_argument("--video", help="local 1080p H.264 file for video_local (use the same file as on Linux)")
+    ap.add_argument("--video", help="1080p file for video_local (default: test-1080p-h264.mp4 in --video-dir)")
+    ap.add_argument("--video-dir", default=default_video_dir(),
+                    help="where make_test_videos.sh put test-{1080p,1440p,2160p}-h264.mp4 (default ~/Movies)")
     ap.add_argument("--settle", type=int, default=20, help="seconds to wait before each sample (default 20)")
     ap.add_argument("--scale", type=float, default=1.0, help="multiply every scenario length (0.2 for a quick try)")
     ap.add_argument("--yes", action="store_true", help="do not wait for Enter between scenarios")
@@ -606,7 +642,7 @@ def main():
 
     if args.list:
         for k in DEFAULT_ORDER:
-            print(f"{k:<16} {SCENARIOS[k]['title']}")
+            print(f"{k:<18} {SCENARIOS[k]['title']}")
         return
     if args.resummarize:
         outdir = Path(args.resummarize)

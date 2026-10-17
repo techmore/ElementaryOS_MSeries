@@ -8,11 +8,12 @@ measured on **this** machine, same battery, same panel.
 
 ```bash
 git clone -b power-usage https://github.com/techmore/ElementaryOS_MSeries && cd ElementaryOS_MSeries
+bash mseries/power/macos-baseline/make_test_videos.sh      # 1080p, 1440p and 4K clips into ~/Movies (needs ffmpeg)
 # unplug the charger; set brightness to what you use on Linux and note it
-sudo python3 mseries/power/macos-baseline/macos_profile.py --video ~/Movies/test-1080p-h264.mp4
+sudo python3 mseries/power/macos-baseline/macos_profile.py
 ```
 
-About 25 minutes, guided: it tells you what to open or quit before each scenario and waits for Enter.
+About 40 minutes, guided: it tells you what to open or quit before each scenario and waits for Enter.
 Quick dry run: `--scale 0.2 --only idle_minimal`. Inventory only (what macOS is running, settings, sleep history):
 `--inventory-only`. `python3` comes with the Xcode command-line tools.
 
@@ -22,8 +23,12 @@ Quick dry run: `--scale 0.2 --only idle_minimal`. Inventory only (what macOS is 
 | `idle_screen_off` | display put to sleep, woken after | W2, and display cost D1 |
 | `idle_as_used` | your usual apps open | W3 |
 | `web_loop` | Safari opens 6 fixed pages, one per 15 s | W4 |
-| `video_local` | QuickTime plays the file you pass | W5 (use the same file in mpv) |
-| `video_web` | you start YouTube 1080p | W6 |
+| `video_local` | QuickTime plays `test-1080p-h264.mp4` | W5, M1 (same file in mpv) |
+| `video_local_1440p` | QuickTime plays `test-1440p-h264.mp4` (2K) | W7, M4, M9 (dropped frames) |
+| `video_local_2160p` | QuickTime plays `test-2160p-h264.mp4` (4K) | W8, M5, M8 (hardware decode), M10 |
+| `video_web` | you start YouTube 1080p | W6, M2 |
+| `video_web_1440p` | same video switched to 1440p | W9, M6 |
+| `video_web_2160p` | same video switched to 2160p | W10, M7 |
 | `cpu_burst` | all cores for 20 s at 100 ms sampling | C5 to C7 |
 
 It does not change brightness, refresh rate, Wi-Fi or Bluetooth; it records them. Output goes to
@@ -38,13 +43,16 @@ Whole-machine power is `PowerTelemetryData.SystemLoad` from `AppleSmartBattery`,
 ## 2. Record the Linux side (on the same Mac, booted into elementary OS)
 
 ```bash
-python3 mseries/power/macos-baseline/linux_profile.py --video ~/Videos/test-1080p-h264.mp4
+bash mseries/power/macos-baseline/make_test_videos.sh      # same clips into ~/Videos
+python3 mseries/power/macos-baseline/linux_profile.py
 ```
 
 Same scenarios and output shape, no root. Set brightness to the percentage the macOS run recorded first. Whole-machine
 power comes from the SMC `Total System Power` hwmon sensor (falls back to battery `power_now`); CPU numbers come from
 cpuidle residency per cluster, `/proc/stat` and `/proc/interrupts` (arch_timer stands in for macOS idle wakeups);
-per-process CPU replaces Energy Impact, with `gala` in place of `WindowServer`. It does not read the CPU/GPU rails yet
+per-process CPU replaces Energy Impact, with `gala` in place of `WindowServer`. For local video it asks mpv over IPC
+whether a hardware decoder is really in use and how many frames it dropped (M8 to M10); the target is what QuickTime
+does: hardware decode, no drops. It does not read the CPU/GPU rails yet
 (C1, G1), and `idle_screen_off` only blanks the panel with `--allow-blank`, because display power is owner-gated.
 
 ## 3. Score it

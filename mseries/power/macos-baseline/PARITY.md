@@ -4,9 +4,9 @@ Updated 2026-10-17. macOS run: `not yet`.
 
 Pass = Linux within 10% of macOS (lower-is-better: linux <= mac x 1.10; higher-is-better: linux >= mac / 1.10). Close = Within 1.5x of macOS (tier 2 in EFFICIENCY-GOALS.md). Same machine, on battery, same brightness and app state, medians with p10/p90, paired runs (POWER-ROADMAP.md honesty rules).
 
-Scoreboard: ⏳ mac 30, ℹ️ 11
+Scoreboard: ⏳ mac 41, ℹ️ 11
 
-## Whole machine (0/6 passed)
+## Whole machine (0/10 passed)
 
 What the battery sees in each fixed scenario. These are the headline numbers; every other category explains them.
 
@@ -18,6 +18,10 @@ What the battery sees in each fixed scenario. These are the headline numbers; ev
 | [ ] | W4 | Scripted web browsing | – | (unmeasured) no scripted loop yet; light use 14 to 17.6 W | ⏳ mac |
 | [ ] | W5 | Local 1080p H.264 file | – | 13.20 W (measured) 13.2 W with hardware decode (mpv/VA-API) | ⏳ mac |
 | [ ] | W6 | YouTube 1080p in the browser | – | 18.50 W (measured) 17.7 to 19.3 W in Brave | ⏳ mac |
+| [ ] | W7 | Local 1440p (2K) H.264 file | – | (estimate) not measured | ⏳ mac |
+| [ ] | W8 | Local 2160p (4K) H.264 file | – | (estimate) not measured | ⏳ mac |
+| [ ] | W9 | YouTube 1440p (2K) in the browser | – | (estimate) not measured; VP9/AV1 at this size is software decode (M3) | ⏳ mac |
+| [ ] | W10 | YouTube 2160p (4K) in the browser | – | (estimate) not measured; VP9/AV1 at 4K in software is the worst case (M3) | ⏳ mac |
 
 ## CPU and scheduling (0/7 passed)
 
@@ -56,15 +60,22 @@ Panel and backlight cost, refresh behaviour, and the display coprocessor.
 | [ ] | D3 | Refresh at idle (ProMotion vs fixed) | – | (measured) fixed 120 Hz; 60 Hz saves 1.7 to 2.0 W (B1, owner decides) | ℹ️ |
 | [ ] | D4 | Display coprocessor mailbox traffic | – | 480 /s (measured) ~480 interrupts/s at idle | ⏳ mac |
 
-## Video and media (0/2 passed)
+## Video and media (0/9 passed)
 
-Cost of playback above the idle floor, and which codecs run in hardware.
+Cost of playback above the idle floor at 1080p, 1440p and 4K, whether 4K stays in hardware, dropped frames, and which codecs run in hardware.
 
 | | ID | Item | macOS | Linux now | Status |
 |---|---|---|---|---|---|
 | [ ] | M1 | Local 1080p: extra over idle | – | 3.70 W (estimate) 13.2 W minus ~9.5 W idle | ⏳ mac |
 | [ ] | M2 | YouTube 1080p: extra over idle | – | 9.00 W (estimate) ~18.5 W minus ~9.5 W idle | ⏳ mac |
 | [ ] | M3 | VP9/AV1 web video decoded in hardware | – | (measured) H.264 only in the AVD driver; VP9/AV1 is kernel work (D3) | ℹ️ |
+| [ ] | M4 | Local 1440p: extra over idle | – | (estimate) not measured | ⏳ mac |
+| [ ] | M5 | Local 4K: extra over idle | – | (estimate) not measured | ⏳ mac |
+| [ ] | M6 | YouTube 1440p: extra over idle | – | (estimate) not measured | ⏳ mac |
+| [ ] | M7 | YouTube 4K: extra over idle | – | (estimate) not measured | ⏳ mac |
+| [ ] | M8 | Local 4K decoded in hardware (1 = yes) | – | (estimate) not checked; AVD H.264 at 4K untested | ⏳ mac |
+| [ ] | M9 | Local 1440p: frames dropped in 150 s | – | (estimate) not measured | ⏳ mac |
+| [ ] | M10 | Local 4K: frames dropped in 150 s | – | (estimate) not measured | ⏳ mac |
 
 ## Audio (0/1 passed)
 

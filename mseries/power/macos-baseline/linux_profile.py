@@ -3,7 +3,8 @@
 
 Run on the M1 Pro under elementary OS, on battery, at the brightness the macOS run recorded:
 
-    python3 mseries/power/macos-baseline/linux_profile.py --video ~/Videos/test-1080p-h264.mp4
+    bash mseries/power/macos-baseline/make_test_videos.sh          # same 1080p/1440p/2160p clips as macOS
+    python3 mseries/power/macos-baseline/linux_profile.py
     python3 mseries/power/macos-baseline/linux_profile.py --only idle_minimal --scale 0.2     # quick try
     python3 mseries/power/macos-baseline/parity.py --linux-run results/linux-<stamp>/summary.json
 
@@ -37,7 +38,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from macos_profile import SCENARIOS, DEFAULT_ORDER, WEB_LOOP_URLS, stats, _busy  # noqa: E402
+from macos_profile import SCENARIOS, DEFAULT_ORDER, WEB_LOOP_URLS, stats, _busy, video_file  # noqa: E402
 
 RESULTS = HERE / "results"
 SYS = Path(os.environ.get("MSERIES_SYS", "/sys"))
@@ -301,6 +302,32 @@ def blank(on):
          "org.gnome.Mutter.DisplayConfig", "PowerSaveMode", f"<{0 if on else 3}>"])
 
 
+def mpv_query(sock, props):
+    """Read playback properties from mpv's IPC socket: is hwdec really on, how many frames dropped."""
+    import socket
+    out = {}
+    try:
+        with socket.socket(socket.AF_UNIX) as c:
+            c.settimeout(2)
+            c.connect(sock)
+            f = c.makefile("rw")
+            for i, prop in enumerate(props):
+                f.write(json.dumps({"command": ["get_property", prop], "request_id": i}) + "\n")
+                f.flush()
+                while True:
+                    msg = json.loads(f.readline())
+                    if msg.get("request_id") == i:
+                        out[prop] = msg.get("data")
+                        break
+    except Exception as exc:  # noqa: BLE001 - playback stats are a bonus, power numbers still count
+        out["error"] = str(exc)
+    return out
+
+
+MPV_PROPS = ["hwdec-current", "video-codec", "width", "height", "estimated-vf-fps",
+             "frame-drop-count", "decoder-frame-drop-count", "vo-delayed-frame-count", "mistimed-frame-count"]
+
+
 def web_loop(stop_evt, browser):
     i = 0
     while not stop_evt.is_set():
@@ -315,8 +342,9 @@ def run_scenario(name, cfg, outdir: Path, cl, args):
     prep = cfg["prep"].replace("Safari", args.browser).replace("QuickTime", "mpv (--hwdec=vaapi)")
     print(prep)
     action = cfg.get("action")
-    if action == "video_local" and not args.video:
-        print("  skipped: no --video file given")
+    video = video_file(cfg, args) if action == "video_local" else None
+    if action == "video_local" and not video:
+        print(f"  skipped: {cfg['video']} not in {args.video_dir} (run make_test_videos.sh)")
         return None
     if action == "display_off" and not args.allow_blank:
         print("  skipped: blanking the panel is a display-power change; rerun with --allow-blank if the owner agrees")
@@ -336,7 +364,10 @@ def run_scenario(name, cfg, outdir: Path, cl, args):
         helper = threading.Thread(target=web_loop, args=(stop_evt, args.browser), daemon=True)
         helper.start()
     elif action == "video_local":
-        player = subprocess.Popen(["mpv", "--hwdec=vaapi", "--loop=inf", "--really-quiet", args.video])
+        # short path: AF_UNIX paths are capped near 108 bytes and the results dir can be deeper than that
+        mpv_sock = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), f"mseries-mpv-{os.getpid()}.sock")
+        player = subprocess.Popen(["mpv", "--hwdec=vaapi", "--loop=inf", "--really-quiet",
+                                   f"--input-ipc-server={mpv_sock}", video])
         time.sleep(5)
 
     pw = PowerSampler(period=min(1.0, max(step, 0.2)))
@@ -369,8 +400,13 @@ def run_scenario(name, cfg, outdir: Path, cl, args):
     pw.stop()
     if action == "display_off":
         blank(True)
+    playback = None
     if player:
+        playback = mpv_query(mpv_sock, MPV_PROPS)
         player.terminate()
+        Path(mpv_sock).unlink(missing_ok=True)
+        print(f"  mpv: hwdec {playback.get('hwdec-current')}, dropped {playback.get('frame-drop-count')} "
+              f"(decoder {playback.get('decoder-frame-drop-count')}), {playback.get('estimated-vf-fps')} fps")
 
     raw = outdir / "raw"
     raw.mkdir(parents=True, exist_ok=True)
@@ -383,7 +419,8 @@ def run_scenario(name, cfg, outdir: Path, cl, args):
             top[key[1]] = top.get(key[1], 0) + d
     tops = sorted(({"process": k, "cpu_ms_per_s": round(v * 1000 / CLK / elapsed, 2)} for k, v in top.items()),
                   key=lambda r: r["cpu_ms_per_s"], reverse=True)[:15]
-    meta = {"name": name, "title": cfg["title"], "interval_ms": cfg["interval_ms"], "top_processes": tops}
+    meta = {"name": name, "title": cfg["title"], "interval_ms": cfg["interval_ms"], "top_processes": tops,
+            "video": video, "playback": playback}
     if burst_offset is not None:
         meta["burst_offset_s"] = burst_offset
     (raw / f"{name}.meta.json").write_text(json.dumps(meta))
@@ -413,6 +450,8 @@ def summarize(outdir: Path, name):
     comp = [r for r in out["top_processes"] if r["process"] in COMPOSITOR]
     if comp:
         out["compositor"] = comp[0]
+    if meta.get("playback"):
+        out["playback"] = meta["playback"]
     if "burst_offset_s" in meta:
         out["burst"] = burst(rows, pw, meta)
     return out
@@ -445,7 +484,7 @@ def write_summary(outdir, inv, scen):
         if s:
             mm = s["metrics"]
             g = lambda k: f"{mm[k]['median']:.2f}" if k in mm else "-"  # noqa: E731
-            print(f"  {name:<16} system {g('system_load_w'):>6} W  CPU busy {g('cpu_ms_per_s_all'):>7} ms/s  "
+            print(f"  {name:<18} system {g('system_load_w'):>6} W  CPU busy {g('cpu_ms_per_s_all'):>7} ms/s  "
                   f"timer {g('idle_wakeups_per_s'):>7}/s  E deep {g('e_deep_idle_share_pct')}%")
 
 
@@ -453,7 +492,9 @@ def main():
     global SYS_POWER
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--only")
-    ap.add_argument("--video", help="the same 1080p H.264 file used on macOS")
+    ap.add_argument("--video", help="1080p file for video_local (default: test-1080p-h264.mp4 in --video-dir)")
+    ap.add_argument("--video-dir", default=str(Path.home() / "Videos"),
+                    help="where make_test_videos.sh put test-{1080p,1440p,2160p}-h264.mp4 (default ~/Videos)")
     ap.add_argument("--browser", default="xdg-open", help="browser command for web_loop (default xdg-open)")
     ap.add_argument("--settle", type=int, default=20)
     ap.add_argument("--scale", type=float, default=1.0)

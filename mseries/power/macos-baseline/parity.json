@@ -103,6 +103,66 @@
           },
           "linux_how": "same video, Brave, windowed",
           "status": "awaiting-mac"
+        },
+        {
+          "id": "W7",
+          "name": "Local 1440p (2K) H.264 file",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "s:video_local_1440p.system_load_w",
+          "linux": {
+            "value": null,
+            "kind": "estimate",
+            "text": "not measured",
+            "source": "not measured yet"
+          },
+          "linux_how": "test-1440p-h264.mp4, mpv --hwdec=vaapi, windowed",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "W8",
+          "name": "Local 2160p (4K) H.264 file",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "s:video_local_2160p.system_load_w",
+          "linux": {
+            "value": null,
+            "kind": "estimate",
+            "text": "not measured",
+            "source": "not measured yet"
+          },
+          "linux_how": "test-2160p-h264.mp4, mpv --hwdec=vaapi, windowed",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "W9",
+          "name": "YouTube 1440p (2K) in the browser",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "s:video_web_1440p.system_load_w",
+          "linux": {
+            "value": null,
+            "kind": "estimate",
+            "text": "not measured; VP9/AV1 at this size is software decode (M3)",
+            "source": "not measured yet"
+          },
+          "linux_how": "same video at 1440p, Brave, windowed",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "W10",
+          "name": "YouTube 2160p (4K) in the browser",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "s:video_web_2160p.system_load_w",
+          "linux": {
+            "value": null,
+            "kind": "estimate",
+            "text": "not measured; VP9/AV1 at 4K in software is the worst case (M3)",
+            "source": "not measured yet"
+          },
+          "linux_how": "same video at 2160p, Brave, windowed",
+          "status": "awaiting-mac"
         }
       ]
     },
@@ -377,7 +437,7 @@
     {
       "id": "media",
       "name": "Video and media",
-      "blurb": "Cost of playback above the idle floor, and which codecs run in hardware.",
+      "blurb": "Cost of playback above the idle floor at 1080p, 1440p and 4K, whether 4K stays in hardware, dropped frames, and which codecs run in hardware.",
       "items": [
         {
           "id": "M1",
@@ -423,6 +483,114 @@
           },
           "linux_how": "H.264-only extension + VA-API in Brave saves ~1.5 W meanwhile (D1)",
           "status": "info"
+        },
+        {
+          "id": "M4",
+          "name": "Local 1440p: extra over idle",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "d:video_local_1440p.system_load_w-idle_minimal.system_load_w",
+          "linux": {
+            "value": null,
+            "kind": "estimate",
+            "text": "not measured",
+            "source": "not measured yet"
+          },
+          "linux_how": "W7 minus W1, same session",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "M5",
+          "name": "Local 4K: extra over idle",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "d:video_local_2160p.system_load_w-idle_minimal.system_load_w",
+          "linux": {
+            "value": null,
+            "kind": "estimate",
+            "text": "not measured",
+            "source": "not measured yet"
+          },
+          "linux_how": "W8 minus W1, same session",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "M6",
+          "name": "YouTube 1440p: extra over idle",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "d:video_web_1440p.system_load_w-idle_minimal.system_load_w",
+          "linux": {
+            "value": null,
+            "kind": "estimate",
+            "text": "not measured",
+            "source": "not measured yet"
+          },
+          "linux_how": "W9 minus W1",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "M7",
+          "name": "YouTube 4K: extra over idle",
+          "unit": "W",
+          "dir": "lower",
+          "mac": "d:video_web_2160p.system_load_w-idle_minimal.system_load_w",
+          "linux": {
+            "value": null,
+            "kind": "estimate",
+            "text": "not measured",
+            "source": "not measured yet"
+          },
+          "linux_how": "W10 minus W1",
+          "status": "awaiting-mac"
+        },
+        {
+          "id": "M8",
+          "name": "Local 4K decoded in hardware (1 = yes)",
+          "unit": "",
+          "dir": "higher",
+          "mac": "k:1",
+          "linux": {
+            "value": null,
+            "kind": "estimate",
+            "text": "not checked; AVD H.264 at 4K untested",
+            "source": "not measured yet"
+          },
+          "linux_how": "linux_profile.py reads mpv hwdec-current over IPC",
+          "status": "awaiting-mac",
+          "lx": "v:video_local_2160p.hwdec-current"
+        },
+        {
+          "id": "M9",
+          "name": "Local 1440p: frames dropped in 150 s",
+          "unit": "",
+          "dir": "lower",
+          "mac": "k:0",
+          "linux": {
+            "value": null,
+            "kind": "estimate",
+            "text": "not measured",
+            "source": "not measured yet"
+          },
+          "linux_how": "mpv frame-drop-count over IPC; QuickTime drops none on macOS",
+          "status": "awaiting-mac",
+          "lx": "v:video_local_1440p.frame-drop-count"
+        },
+        {
+          "id": "M10",
+          "name": "Local 4K: frames dropped in 150 s",
+          "unit": "",
+          "dir": "lower",
+          "mac": "k:0",
+          "linux": {
+            "value": null,
+            "kind": "estimate",
+            "text": "not measured",
+            "source": "not measured yet"
+          },
+          "linux_how": "mpv frame-drop-count over IPC; QuickTime drops none on macOS",
+          "status": "awaiting-mac",
+          "lx": "v:video_local_2160p.frame-drop-count"
         }
       ]
     },
