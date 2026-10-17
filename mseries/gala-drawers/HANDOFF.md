@@ -61,13 +61,21 @@ already watches live.
 
 ### Dock status (this session)
 
-- **Chevron + slots: implemented and compiling.** `mseries/patches/dock-drawers.patch`
-  adds `src/Drawers.vala` (a `DrawersChevron` holding a `Gtk.MenuButton` popover of
-  `DrawerSlot` drop targets — 5 shown, an arrow reveals the other 4), appends the
-  chevron to `ItemManager`, and adds CSS. It builds clean against dock 8.3.3
-  (`ninja -C build`). Not run live.
-  * Gotcha: GTK4 `GtkMenuButton` is opaque, so Vala cannot subclass it — the
-    chevron *contains* one instead (a subclass fails with "incomplete type").
+- **Chevron + slots: implemented and live.** `mseries/patches/dock-drawers.patch`
+  adds `src/Drawers.vala` (a `DrawersChevron` plus `DrawerSlot` drop targets —
+  5 shown, an arrow reveals the other 4), appends the chevron to `ItemManager`,
+  and adds CSS. Builds clean against dock 8.3.3.
+  * The strip expands **inline in the dock**, not in a popover. The first cut used
+    a `Gtk.Popover`, and it was unusable: GTK 4.22's `GtkPopover` has **no `modal`
+    property**, so the popover always takes an input grab — pressing a dock icon to
+    start a drag is consumed by the popover, which closes before the drag can reach
+    a slot. `autohide=false` is not enough, because the grab remains. Keeping the
+    slots in the dock's own widget tree means the drag never crosses a surface.
+  * Source kept at `~/dock-drawers-src` (the installer's temp dir is deleted, and
+    `/tmp` had been cleaned once already).
+  * To restart the dock without a reboot: kill the wrapper **and** the binary
+    (killing the binary alone trips the wrapper's stock fallback), then relaunch
+    the wrapper with the environment harvested from the dying process.
 - **Install:** `mseries/install-dock-drawers.sh` — private build under
   `~/.local/lib/mseries/dock`, plus a wrapper at `~/.local/bin/io.elementary.dock`
   with a stock fallback. **Installed** this session (binary links cleanly, wrapper

@@ -1,5 +1,5 @@
 diff --git a/data/Application.css b/data/Application.css
-index bfd5c8a..5a6d3dd 100644
+index bfd5c8a..0de4aee 100644
 --- a/data/Application.css
 +++ b/data/Application.css
 @@ -176,3 +176,31 @@ backgrounditem .close-button {
@@ -13,8 +13,8 @@ index bfd5c8a..5a6d3dd 100644
 +    min-height: 24px;
 +}
 +
-+.drawers-popover {
-+    padding: 0;
++.drawers-strip {
++    margin: 0 4px;
 +}
 +
 +.drawer-slot {
@@ -88,10 +88,10 @@ index 1006411..0dadb04 100644
      [CCode (cheader_filename = "pantheon-desktop-shell-client-protocol.h", cname = "struct io_elementary_pantheon_widget_v1", cprefix = "io_elementary_pantheon_widget_v1_", free_function = "io_elementary_pantheon_widget_v1_destroy")]
 diff --git a/src/Drawers.vala b/src/Drawers.vala
 new file mode 100644
-index 0000000..f918b23
+index 0000000..afce296
 --- /dev/null
 +++ b/src/Drawers.vala
-@@ -0,0 +1,236 @@
+@@ -0,0 +1,243 @@
 +/*
 + * SPDX-License-Identifier: GPL-3.0
 + * SPDX-FileCopyrightText: 2026 M-series / elementary-mseries
@@ -259,24 +259,50 @@ index 0000000..f918b23
 +    }
 +
 +    /**
-+     * The chevron on the dock. Opens the slot strip.
++     * The chevron on the dock. Clicking it expands a strip of drawer slots
++     * *inline*, as part of the dock itself.
 +     *
-+     * (Not a Gtk.MenuButton subclass: GTK4's GtkMenuButton is an opaque type and
-+     * cannot be subclassed from Vala, so this is a box that holds one.)
++     * Why inline and not a popover: GTK 4.22's GtkPopover has no "modal"
++     * property, so a popover always takes an input grab. That makes the obvious
++     * interaction impossible — pressing a dock icon to start a drag is consumed
++     * by the popover, which then closes before the drag can reach a slot. Keeping
++     * the slots in the dock's own widget tree means the drag never crosses a
++     * surface, and nothing has to stay open against GTK's will.
 +     */
 +    public class DrawersChevron : Gtk.Box {
 +        private Gee.ArrayList<DrawerSlot> slots;
++        private Gtk.Button trigger;
++        private Gtk.Box slots_box;
 +        private Gtk.Button expander;
++        private bool open = false;
 +        private bool expanded = false;
 +
 +        construct {
++            orientation = Gtk.Orientation.HORIZONTAL;
++            spacing = 4;
 +            halign = Gtk.Align.CENTER;
 +            valign = Gtk.Align.CENTER;
 +            add_css_class ("drawers-chevron");
 +
-+            slots = new Gee.ArrayList<DrawerSlot> ();
++            trigger = new Gtk.Button.from_icon_name ("pan-end-symbolic") {
++                tooltip_text = "Assign apps to drawer hotkeys",
++                valign = Gtk.Align.CENTER
++            };
++            trigger.add_css_class ("flat");
++            trigger.clicked.connect (() => {
++                open = !open;
++                slots_box.visible = open;
++                trigger.icon_name = open ? "pan-down-symbolic" : "pan-end-symbolic";
++                trigger.tooltip_text = open
++                    ? "Hide the drawer slots"
++                    : "Assign apps to drawer hotkeys";
++            });
 +
-+            var slots_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
++            slots = new Gee.ArrayList<DrawerSlot> ();
++            slots_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4) {
++                valign = Gtk.Align.CENTER
++            };
++            slots_box.add_css_class ("drawers-strip");
 +            for (int i = 1; i <= DRAWERS_MAX; i++) {
 +                var slot = new DrawerSlot (i);
 +                slot.visible = i <= DRAWERS_COLLAPSED;
@@ -293,30 +319,11 @@ index 0000000..f918b23
 +                expanded = !expanded;
 +                update_expanded ();
 +            });
++            slots_box.append (expander);
 +
-+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) {
-+                margin_start = 6,
-+                margin_end = 6,
-+                margin_top = 6,
-+                margin_bottom = 6
-+            };
-+            row.append (slots_box);
-+            row.append (expander);
-+
-+            var pop = new Gtk.Popover () {
-+                child = row,
-+                position = Gtk.PositionType.TOP
-+            };
-+            pop.add_css_class ("drawers-popover");
-+            pop.show.connect (() => update_expanded ());
-+
-+            var trigger = new Gtk.MenuButton () {
-+                icon_name = "pan-down-symbolic",
-+                tooltip_text = "Assign apps to drawer hotkeys",
-+                popover = pop
-+            };
-+            trigger.add_css_class ("flat");
 +            append (trigger);
++            append (slots_box);
++            slots_box.visible = false;
 +        }
 +
 +        private void update_expanded () {
