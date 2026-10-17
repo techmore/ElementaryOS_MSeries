@@ -18,14 +18,24 @@ def titles(f):
 
 
 class Diag(unittest.TestCase):
-    def test_no_picture_after_replug(self):
+    def test_frames_dropped_after_replug(self):
         r = d.diagnose(facts([MS, HP, SW]))
         self.assertTrue(any(x[0] == d.BAD and x[3] == "reapply" for x in r))
 
-    def test_picture_ok_when_modeset_after_hotplug(self):
-        r = d.diagnose(facts([HP, SW, MS]))
-        self.assertTrue(any(x[0] == d.OK and "showing a picture" in x[1] for x in r))
-        self.assertFalse(any(x[0] == d.BAD for x in r))
+    def test_frames_dropped_even_after_a_completed_modeset(self):
+        # the black-screen case: modeset finished, then the engine still swallows swaps
+        r = d.diagnose(facts([HP, MS, SW]))
+        self.assertTrue(any(x[0] == d.BAD and "discarding frames" in x[1] for x in r))
+        self.assertFalse(any(x[0] == d.OK for x in r))
+
+    def test_modeset_without_drops_is_not_claimed_as_a_picture(self):
+        r = d.diagnose(facts([SW, HP, MS]))
+        self.assertFalse(any(x[0] in (d.BAD, d.OK) for x in r if "HDMI-A-1" in x[1]))
+        self.assertTrue(any("cannot confirm" in x[2] for x in r))
+
+    def test_hotplug_without_modeset_waits(self):
+        r = d.diagnose(facts([MS, HP]))
+        self.assertTrue(any(x[0] == d.WARN and "waiting for a video mode" in x[1] for x in r))
 
     def test_nothing_connected(self):
         r = d.diagnose(facts([], conn="disconnected"))

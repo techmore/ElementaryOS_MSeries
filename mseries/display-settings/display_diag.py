@@ -61,17 +61,24 @@ def diagnose(f):
         if gname is None:
             out.append((BAD, f"{n}: detected by the kernel but not in the desktop",
                         "The display driver reports a monitor, but the desktop has no output for it.", "reapply"))
-    # Detected + enabled but no picture: hotplug came after the last successful modeset.
+    # A completed modeset is not a picture: the display coprocessor logs "swallowed swap" when it
+    # discards frames Gala submits (controller power 0 / timings not enabled). Judge by those.
     hp = _last(log, r"DP2HDMI HPD irq, connected:1")
     ms = _last(log, r"set_digital_out_mode finished")
     swallowed = _last(log, r"swallowed swap")
     for n in connected:
-        if hp > ms and swallowed > ms:
-            out.append((BAD, f"{n}: detected, but the screen is not getting a picture",
-                        "The monitor was plugged in and the link trained, but no video mode was set afterwards "
-                        "(the screen will say 'no signal'). This happens after a replug.", "reapply"))
-        elif ms >= 0:
-            out.append((OK, f"{n}: monitor detected and showing a picture", "A video mode was set after the last plug-in.", None))
+        if swallowed > ms:
+            out.append((BAD, f"{n}: detected, but the display engine is discarding frames",
+                        "The monitor is plugged in and a mode may have been set, but the display coprocessor is "
+                        "dropping the frames the desktop sends ('controller power 0, timings not enabled'). The "
+                        "screen will be black or say 'no signal'. Re-applying the mode sometimes recovers it.", "reapply"))
+        elif ms >= 0 and ms >= hp:
+            out.append((INFO, f"{n}: mode set, no dropped frames logged",
+                        "The display engine accepted a mode and is not discarding frames. This cannot confirm that "
+                        "the monitor is showing a picture; if it is black, report it.", None))
+        elif hp > ms:
+            out.append((WARN, f"{n}: plugged in, waiting for a video mode",
+                        "The link came up but no mode has been set since the plug-in.", "reapply"))
         else:
             out.append((INFO, f"{n}: monitor detected", "No mode-set recorded yet in this boot's log.", None))
     if not connected:
