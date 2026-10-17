@@ -3,6 +3,15 @@
 Updated 2026-10-16. This is the cumulative frontier ledger. Preserve measured
 advances and do not re-run discovery without a new reason.
 
+## Resume pointer — 2026-10-17 (E4 ARMED)
+
+**E4 is installed and armed for the next boot.** `boot.bin` now carries the
+patch-0015 j314s tree (dcpext0 drives the tunnel) plus today's Touch ID DT
+edits; `next_entry=elementary-usb4-dpin-controlled` (bypass=1, E3 image). E2
+was already disarmed. Built-in HDMI has no controller while E4 is installed.
+Record, checks and rollback:
+[evidence/2026-10-17-e4-armed.md](evidence/2026-10-17-e4-armed.md).
+
 ## Resume pointer — 2026-10-17 (macOS baseline captured)
 
 **Read first:** [evidence/2026-10-17-macos-baseline-dcpext0.md](evidence/2026-10-17-macos-baseline-dcpext0.md).
