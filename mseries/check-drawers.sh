@@ -49,7 +49,7 @@ if gsettings writable "$schema" drawer-1 >/dev/null 2>&1; then
             "$(gsettings get "$schema" "drawer-$n" 2>/dev/null)" "$n" \
             "$(gsettings get "$schema" "assign-$n" 2>/dev/null)"
     done
-    ok "schema readable (left Command = Control here: Control+N toggles, Control+Alt+N assigns)"
+    ok "schema readable (Command+Option+N toggles, Command+Option+Shift+N assigns)"
 else
     warn "schema $schema not visible to gsettings (install it per-user)"
 fi

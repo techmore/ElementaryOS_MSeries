@@ -79,10 +79,13 @@ Hotkeys, in `org.pantheon.gala.plugins.drawers` (defaults below — left Command
 Control on the M-series keyboard):
 
 ```sh
-gsettings set org.pantheon.gala.plugins.drawers drawer-1 "['<Control>1']"   # toggle
-gsettings set org.pantheon.gala.plugins.drawers assign-1 "['<Control><Alt>1']"  # capture
-gsettings set org.pantheon.gala.plugins.drawers drawer-2 "[]"              # clear
+gsettings set org.pantheon.gala.plugins.drawers drawer-1 "['<Control><Alt>1']"        # toggle
+gsettings set org.pantheon.gala.plugins.drawers assign-1 "['<Control><Alt><Shift>1']" # capture
+gsettings set org.pantheon.gala.plugins.drawers drawer-2 "[]"                         # clear
 ```
+
+`Command+number` is left free on purpose: it switches tabs inside apps, and a
+drawer grab at the Gala level would swallow it before the app ever saw the key.
 
 ## Drawer Shortcuts
 

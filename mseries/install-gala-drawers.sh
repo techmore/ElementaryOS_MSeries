@@ -123,10 +123,10 @@ install -Dm0644 "$src/mseries-drawers-settings.desktop" \
 command -v update-desktop-database >/dev/null && \
   update-desktop-database "$HOME/.local/share/applications" >/dev/null 2>&1 || true
 
-# Apply the defaults: left Command + N toggles a drawer, Control+Alt+N assigns
-# the focused window to it. Skip any slot the user has already customised.
+# Apply the defaults: Command+Option+N toggles a drawer, Command+Option+Shift+N
+# assigns the focused window to it. Skip any slot the user has already customised.
 for i in 1 2 3 4 5 6 7 8 9; do
-  [[ $(gsettings get "$schema_id" "drawer-$i" 2>/dev/null) == "['<Control>$i']" ]] || \
+  [[ $(gsettings get "$schema_id" "drawer-$i" 2>/dev/null) == "['<Control><Alt>$i']" ]] || \
     gsettings reset "$schema_id" "drawer-$i" 2>/dev/null || true
   gsettings reset "$schema_id" "assign-$i" 2>/dev/null || true
 done

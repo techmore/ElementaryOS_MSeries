@@ -24,8 +24,8 @@ MAX_DRAWERS = 9
 CONFIG = os.path.join(GLib.get_user_config_dir(), "mseries", "gala-drawers.ini")
 HEADER = (
     "# Gala hotkey drawers — managed by mseries-drawers-settings.\n"
-    "# Left Command + N toggles a drawer; Control+Alt+N assigns the focused\n"
-    "# window to it. Edit here or by hand; the plugin reloads on save.\n\n"
+    "# Command+Option+N toggles a drawer; Command+Option+Shift+N assigns the\n"
+    "# focused window to it. Edit here or by hand; the plugin reloads on save.\n\n"
 )
 
 # Preset zones, as fractions (x, y, w, h) of the monitor.

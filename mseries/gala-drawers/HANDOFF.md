@@ -28,7 +28,9 @@ the owner asked for, and a settings app was added. All committed together.
   on `;`, so the space-separated zones in the example silently never parsed. It
   now splits on spaces/commas/semicolons.
 - **Defaults.** The installer resets `drawer-N`/`assign-N` so the schema defaults
-  apply: left Command (Control) + N toggles, Control+Alt+N assigns.
+  apply: Command+Option+N (Control+Alt+N) toggles, Command+Option+Shift+N
+  (Control+Alt+Shift+N) assigns. `Command+N` is deliberately left alone — it
+  switches tabs inside apps, and a Gala-level grab would swallow it.
 
 Verified: plugin builds and links (gala 8.6.2 / mutter 18); schema compiles
 under `--strict`; settings app passes `py_compile`; installer passes `bash -n`.
