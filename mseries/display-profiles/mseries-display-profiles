@@ -156,27 +156,61 @@ def cmd_apply(b, name=None, nudge=False):
     return 0
 
 
+def drm_status():
+    import glob
+    out = {}
+    for d in glob.glob("/sys/class/drm/card*-*"):
+        try:
+            with open(d + "/status") as f:
+                out[os.path.basename(d)] = f.read().strip()
+        except OSError:
+            pass
+    return out
+
+
 def cmd_watch(b):
+    """Re-apply on hotplug. Gala does not signal a replug of the same monitor, so also poll the kernel's
+    connector status once a second and treat disconnected->connected as a hotplug."""
     from gi.repository import Gio, GLib
     loop = GLib.MainLoop()
-    st = {"timer": 0, "quiet_until": 0.0}
+    st = {"timer": 0, "quiet_until": 0.0, "drm": drm_status()}
+
+    def log(msg):
+        print(time.strftime("%H:%M:%S"), msg, flush=True)
 
     def settle():
         st["timer"] = 0
-        if cmd_apply(b, nudge=True) == 0:
-            st["quiet_until"] = time.monotonic() + 6.0  # our own change fires the signal again
+        try:
+            if cmd_apply(b, nudge=True) == 0:
+                st["quiet_until"] = time.monotonic() + 6.0  # our own change fires the signal again
+        except Exception as e:  # keep watching whatever happens
+            log(f"apply failed: {e}")
         return False
 
-    def changed(*_a):
+    def trigger(why):
         if time.monotonic() < st["quiet_until"]:
             return
+        log(why)
         if st["timer"]:
             GLib.source_remove(st["timer"])
         st["timer"] = GLib.timeout_add(2500, settle)
 
+    def poll():
+        now = drm_status()
+        for k, v in now.items():
+            if v == "connected" and st["drm"].get(k) != "connected":
+                trigger(f"{k} connected")
+        for k, v in st["drm"].items():
+            if v == "connected" and now.get(k) != "connected":
+                log(f"{k} disconnected")
+        st["drm"] = now
+        return True
+
     b.signal_subscribe("org.gnome.Mutter.DisplayConfig", "org.gnome.Mutter.DisplayConfig", "MonitorsChanged",
-                       "/org/gnome/Mutter/DisplayConfig", None, Gio.DBusSignalFlags.NONE, changed)
-    print("watching for display changes", flush=True)
+                       "/org/gnome/Mutter/DisplayConfig", None, Gio.DBusSignalFlags.NONE,
+                       lambda *_a: trigger("MonitorsChanged"))
+    GLib.timeout_add(1000, poll)
+    log("watching for display changes")
     loop.run()
 
 
