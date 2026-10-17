@@ -1,5 +1,9 @@
 # Dock HDMI (M1 Pro USB4 DP-IN) — diagnosis and staged experiment
 
+> Historical snapshot on `power-usage`. Newer dock investigation lives on
+> `docs/dock-video-decision`; see the [branch frontier and evidence gates](README.md#dock-hdmi-and-suspend)
+> before using the experiments or status below as current guidance.
+
 2026-10-17. Goal from the owner: **"success is we get HDMI in this dock working"**.
 
 ## Measured state of the running kernel

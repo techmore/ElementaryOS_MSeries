@@ -4,6 +4,9 @@ Owner request 2026-10-17: profile everything macOS does on this M1 Pro, set a mi
 categories off as elementary OS matches them. This replaces Apple's marketing figures (EFFICIENCY-GOALS.md) with numbers
 measured on **this** machine, same battery, same panel.
 
+[Power documentation map](../README.md) · [Retained runs and limitations](results/README.md).
+The committed macOS capture is inventory-only; active-use parity still needs matching runs.
+
 ## 1. Record the macOS baseline (on the Mac, booted into macOS)
 
 ```bash
@@ -15,7 +18,7 @@ sudo python3 mseries/power/macos-baseline/macos_profile.py
 
 About 40 minutes, guided: it tells you what to open or quit before each scenario and waits for Enter.
 Quick dry run: `--scale 0.2 --only idle_minimal`. Inventory only (what macOS is running, settings, sleep history):
-`--inventory-only`. `python3` comes with the Xcode command-line tools.
+`python3 mseries/power/macos-baseline/macos_profile.py --inventory-only` (no sudo needed). `python3` comes with the Xcode command-line tools.
 
 | Scenario | What happens | Linux counterpart |
 | --- | --- | --- |
@@ -47,7 +50,7 @@ bash mseries/power/macos-baseline/make_test_videos.sh      # same clips into ~/V
 python3 mseries/power/macos-baseline/linux_profile.py
 ```
 
-Same scenarios and output shape, no root. Set brightness to the percentage the macOS run recorded first. Whole-machine
+Same scenarios and output shape, no root. Match display luminance where possible and record both OS brightness settings; equal percentages do not establish equal luminance. Whole-machine
 power comes from the SMC `Total System Power` hwmon sensor (falls back to battery `power_now`); CPU numbers come from
 cpuidle residency per cluster, `/proc/stat` and `/proc/interrupts` (arch_timer stands in for macOS idle wakeups);
 per-process CPU replaces Energy Impact, with `gala` in place of `WindowServer`. For local video it asks mpv over IPC
@@ -64,7 +67,7 @@ python3 mseries/power/macos-baseline/parity.py --linux W1=8.9 --source W1="power
 python3 mseries/power/macos-baseline/parity.py --check A2 --note A2="speaker PCM suspends after 30 s"
 ```
 
-`parity.json` holds 11 super-categories and 41 items, each with the macOS source, the current Linux number (labelled
+`parity.json` holds 11 super-categories and 52 items, each with the macOS source, the current Linux number (labelled
 measured or estimate, with its source doc) and how to measure it on Linux. `PARITY.md` is regenerated with a checkbox
 per item: **pass** within 10% of macOS, **close** within 1.5x (tier 2), otherwise **gap**. Yes/no items (speaker PCM
 idle, codecs, refresh mode) are passed by hand with `--check`.

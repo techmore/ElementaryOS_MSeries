@@ -2168,3 +2168,27 @@ Verification: `meson test` 3/3 (refresh-policy, quota-eta, presentation); 16 ren
 Not done / not verified: Wingpanel was deliberately not restarted, so the live panel still shows the old layout until the next login; the new UI has not been seen on the real panel or real Wingpanel popover chrome (the probe uses a plain window with the elementary stylesheet). Sizes moved from 7.5 pt to 9 pt body / 8 pt captions; revert in `install_style` if the owner prefers the old density. Spend and Sessions stay read-only; a Sessions-tab link to OpenCode sign-in would need a URL-open action.
 
 Next: log out and in, look at the real panel, adjust density/colors from the owner's feedback; sign in to OpenCode Go in a browser to get a real quota row.
+
+## 2026-10-17 — power and dock documentation organization
+
+Branch: `power-usage`, reviewed from `d581ac4`; dock documentation frontier inspected at
+`docs/dock-video-decision` tip `189cbda`. No branch merge or hardware change.
+
+- Added `power/README.md` as the evidence/navigation map, with canonical planning, baseline,
+  implementation and historical audit links; pinned the newer dock branch's goal and ledger.
+- Added `power/macos-baseline/results/README.md`: the committed 1220 macOS run has inventory,
+  historical battery sleep (two periods, median 0.391%/h), and no active scenarios. It does not
+  qualify active-use power parity. The original worktree's untracked 1225 capture was preserved
+  and not imported or scored.
+- Indexed power work in `DOCS.md`, linked the map from both roadmaps, corrected the baseline
+  README from 41 to 52 items, and clarified brightness matching and no-root inventory collection.
+- Marked older dock reports as historical; public feature text now distinguishes experimental
+  tunnel allocation from a visible HDMI picture. Newer dock notes retain G3 as their stated
+  blocker and unresolved G2 acceptance on the alternate route; no G5 success is claimed.
+- Verification: checked 96 local Markdown file links across the indexes/roadmaps/baseline README
+  (zero missing), verified 11 categories / 52 items against `parity.json`, checked empty active
+  scenarios and historical sleep median against the retained summary, and ran `git diff --check`.
+  This is documentation validation, not a hardware, profiler, kernel or factory boot test.
+- Next: record comparable battery-powered active scenarios on macOS and Linux, retain conditions
+  and repeated A/B distributions, then regenerate the parity checklist. Dock experiments should
+  start from the pinned branch frontier, not the older snapshot on this branch.

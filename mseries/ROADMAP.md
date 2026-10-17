@@ -1,5 +1,13 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Power and dock documentation entry point (2026-10-17)
+
+Use the [power evidence map](power/README.md) for the canonical plan, 52-item parity checklist,
+retained baseline runs and newer dock branch frontier. Active macOS/Linux workload parity is not yet measured;
+the committed macOS capture contains inventory and historical sleep only. Older dock rows below are historical
+planning context; consult the pinned dock branch ledger before continuing display experiments.
+
+
 > **Everything currently staged and waiting for a reboot is listed in
 > [`REBOOT-QUEUE.md`](REBOOT-QUEUE.md)** — what each reboot unlocks, what to
 > verify, how to revert, and what does *not* need one. Start there before
