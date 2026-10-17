@@ -1,20 +1,18 @@
 diff --git a/data/Application.css b/data/Application.css
-index bfd5c8a..c322517 100644
+index bfd5c8a..d97686d 100644
 --- a/data/Application.css
 +++ b/data/Application.css
-@@ -176,3 +176,32 @@ backgrounditem .close-button {
+@@ -176,3 +176,30 @@ backgrounditem .close-button {
  .running-indicator:disabled {
      color: @fg_color;
  }
 +
-+.drawers-chevron {
-+    margin: 0 2px;
-+    min-width: 24px;
-+    min-height: 24px;
-+}
-+
-+.drawers-strip {
-+    margin: 0 4px;
++.drawers-panel {
++    margin: 0 4px 4px 4px;
++    padding: 6px;
++    border-radius: 10px;
++    background: alpha(@bg_color, 0.92);
++    border: 1px solid alpha(@fg_color, 0.15);
 +}
 +
 +.drawer-slot {
@@ -89,10 +87,10 @@ index 1006411..0dadb04 100644
      [CCode (cheader_filename = "pantheon-desktop-shell-client-protocol.h", cname = "struct io_elementary_pantheon_widget_v1", cprefix = "io_elementary_pantheon_widget_v1_", free_function = "io_elementary_pantheon_widget_v1_destroy")]
 diff --git a/src/Drawers.vala b/src/Drawers.vala
 new file mode 100644
-index 0000000..fe655df
+index 0000000..8e450f0
 --- /dev/null
 +++ b/src/Drawers.vala
-@@ -0,0 +1,253 @@
+@@ -0,0 +1,237 @@
 +/*
 + * SPDX-License-Identifier: GPL-3.0
 + * SPDX-FileCopyrightText: 2026 M-series / elementary-mseries
@@ -270,55 +268,37 @@ index 0000000..fe655df
 +    }
 +
 +    /**
-+     * The chevron on the dock. Clicking it expands a strip of drawer slots
-+     * *inline*, as part of the dock itself.
++     * The drawer assignment panel. Hold Command+Option and click the dock to show
++     * it; it sits above the icon row, inside the dock's own window. Drag an app
++     * (or a .desktop file) onto a slot to assign it.
 +     *
-+     * Why inline and not a popover: GTK 4.22's GtkPopover has no "modal"
-+     * property, so a popover always takes an input grab. That makes the obvious
-+     * interaction impossible — pressing a dock icon to start a drag is consumed
-+     * by the popover, which then closes before the drag can reach a slot. Keeping
-+     * the slots in the dock's own widget tree means the drag never crosses a
-+     * surface, and nothing has to stay open against GTK's will.
++     * Two reasons it is not a popover: GTK 4.22's GtkPopover has no "modal"
++     * property, so a popover always takes an input grab and would eat the press
++     * that starts a drag; and living in the dock's own window means the drag never
++     * crosses a surface. It also avoids widening the dock, which an inline strip
++     * does. The trade-off is that the strip above the icons is normally excluded
++     * from the dock's input region, so MainWindow opens that up while the panel
++     * is visible.
 +     */
-+    public class DrawersChevron : Gtk.Box {
++    public class DrawersPanel : Gtk.Box {
 +        private Gee.ArrayList<DrawerSlot> slots;
-+        private Gtk.Button trigger;
-+        private Gtk.Box slots_box;
 +        private Gtk.Button expander;
-+        private bool open = false;
 +        private bool expanded = false;
 +
 +        construct {
 +            orientation = Gtk.Orientation.HORIZONTAL;
-+            spacing = 4;
++            spacing = 6;
 +            halign = Gtk.Align.CENTER;
-+            valign = Gtk.Align.CENTER;
-+            add_css_class ("drawers-chevron");
-+
-+            trigger = new Gtk.Button.from_icon_name ("pan-end-symbolic") {
-+                tooltip_text = "Assign apps to drawer hotkeys",
-+                valign = Gtk.Align.CENTER
-+            };
-+            trigger.add_css_class ("flat");
-+            trigger.clicked.connect (() => {
-+                open = !open;
-+                slots_box.visible = open;
-+                trigger.icon_name = open ? "pan-down-symbolic" : "pan-end-symbolic";
-+                trigger.tooltip_text = open
-+                    ? "Hide the drawer slots"
-+                    : "Assign apps to drawer hotkeys";
-+            });
++            valign = Gtk.Align.START;
++            margin_bottom = 4;
++            add_css_class ("drawers-panel");
 +
 +            slots = new Gee.ArrayList<DrawerSlot> ();
-+            slots_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4) {
-+                valign = Gtk.Align.CENTER
-+            };
-+            slots_box.add_css_class ("drawers-strip");
 +            for (int i = 1; i <= DRAWERS_MAX; i++) {
 +                var slot = new DrawerSlot (i);
 +                slot.visible = i <= DRAWERS_COLLAPSED;
 +                slots.add (slot);
-+                slots_box.append (slot);
++                append (slot);
 +            }
 +
 +            expander = new Gtk.Button.from_icon_name ("go-next-symbolic") {
@@ -330,11 +310,13 @@ index 0000000..fe655df
 +                expanded = !expanded;
 +                update_expanded ();
 +            });
-+            slots_box.append (expander);
++            append (expander);
 +
-+            append (trigger);
-+            append (slots_box);
-+            slots_box.visible = false;
++            set_visible (false);
++        }
++
++        public void toggle () {
++            set_visible (!get_visible ());
 +        }
 +
 +        private void update_expanded () {
@@ -347,25 +329,22 @@ index 0000000..fe655df
 +    }
 +}
 diff --git a/src/ItemManager.vala b/src/ItemManager.vala
-index a3e7e96..85995a5 100644
+index a3e7e96..0377885 100644
 --- a/src/ItemManager.vala
 +++ b/src/ItemManager.vala
-@@ -46,6 +46,10 @@
+@@ -46,6 +46,7 @@
          append (new ItemGroup (WorkspaceSystem.get_default ().workspaces, (obj) => new WorkspaceIconGroup ((Workspace) obj)));
          append (dynamic_workspace_item);
  #endif
-+
-+        // Drawer assignment: a chevron with drop targets at the end of the dock.
-+        append (new DrawersChevron ());
 +
          overflow = VISIBLE;
  
          var drop_target_file = new Gtk.DropTarget (typeof (File), COPY) {
 diff --git a/src/MainWindow.vala b/src/MainWindow.vala
-index 2d05ae0..1dafdf5 100644
+index 2d05ae0..3b2fa72 100644
 --- a/src/MainWindow.vala
 +++ b/src/MainWindow.vala
-@@ -27,6 +27,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -27,6 +27,15 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
      private bool initialized_blur = false;
      private int border_radius = 0;
  
@@ -374,15 +353,53 @@ index 2d05ae0..1dafdf5 100644
 +    private int panel_drag_start_offset = 0;
 +    private bool draging_panel = false;
 +
++    // Drawers: the assignment panel shown above the icon row.
++    private DrawersPanel? drawers_panel = null;
++    private Gtk.GestureClick panel_click;
++
      class construct {
          set_css_name ("dock-window");
      }
-@@ -78,6 +83,46 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -52,6 +61,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+         size_group.add_widget (dock_box);
+         size_group.add_widget (launcher_manager);
+ 
++        // Sits above the icon row, inside this window (see DrawersPanel for why
++        // it is not a popover).
++        drawers_panel = new DrawersPanel ();
++        overlay.add_overlay (drawers_panel);
++
+         child = overlay;
+ 
+         remove_css_class ("background");
+@@ -78,6 +92,68 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
          }
  
          window_drag_manager = new WindowDragManager (this);
 +
 +        init_panel_move ();
++        init_drawers_panel_gesture ();
++    }
++
++    // Hold Command (Control) + Option and click the dock to show or hide the drawer
++    // assignment panel. Any other click is denied, so icons still launch normally.
++    private void init_drawers_panel_gesture () {
++        panel_click = new Gtk.GestureClick () {
++            button = Gdk.BUTTON_PRIMARY
++        };
++        panel_click.pressed.connect ((n_press, x, y) => {
++            var state = panel_click.get_current_event_state ();
++            if ((state & Gdk.ModifierType.CONTROL_MASK) == 0 ||
++                    (state & Gdk.ModifierType.ALT_MASK) == 0) {
++                panel_click.set_state (Gtk.EventSequenceState.DENIED);
++                return;
++            }
++
++            drawers_panel.toggle ();
++        });
++        // Cast to Widget: Gtk.Window also implements Gtk.ShortcutManager, whose
++        // add_controller (Gtk.ShortcutController) otherwise shadows Gtk.Widget's.
++        ((Gtk.Widget) this).add_controller (panel_click);
 +    }
 +
 +    // M-series: Command (Control) + left-drag slides the dock along its edge. Only active
@@ -424,7 +441,7 @@ index 2d05ae0..1dafdf5 100644
      }
  
      private void update_transparency () {
-@@ -91,7 +136,7 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -91,7 +167,7 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
  
      public void registry_handle_global (Wl.Registry wl_registry, uint32 name, string @interface, uint32 version) {
          if (@interface == "io_elementary_pantheon_shell_v1") {
@@ -433,6 +450,35 @@ index 2d05ae0..1dafdf5 100644
              unowned var surface = get_surface ();
              if (surface is Gdk.Wayland.Surface) {
                  unowned var wl_surface = ((Gdk.Wayland.Surface) surface).get_wl_surface ();
+@@ -124,12 +200,22 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+             var item_manager_width = ItemManager.get_default ().get_width ();
+             var shadow_size = (width - item_manager_width) / 2;
+             var top_margin = TOP_MARGIN + shadow_size;
+-            surface.set_input_region (new Cairo.Region.rectangle ({
+-                shadow_size,
+-                top_margin,
+-                item_manager_width,
+-                height - top_margin
+-            }));
++
++            if (drawers_panel != null && drawers_panel.get_visible ()) {
++                // The strip above the icons is normally excluded from the input
++                // region so clicks fall through to the desktop. The drawer panel
++                // lives there, so while it is up the whole window takes input.
++                surface.set_input_region (new Cairo.Region.rectangle ({
++                    0, 0, width, height
++                }));
++            } else {
++                surface.set_input_region (new Cairo.Region.rectangle ({
++                    shadow_size,
++                    top_margin,
++                    item_manager_width,
++                    height - top_margin
++                }));
++            }
+ 
+             if (initialized_blur) {
+                 return;
 diff --git a/src/meson.build b/src/meson.build
 index 4e860de..034e3ce 100644
 --- a/src/meson.build
