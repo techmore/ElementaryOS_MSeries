@@ -2,6 +2,6 @@
 Type=Application
 Name=M-series display profiles
 Comment=Re-apply the saved monitor layout when a display is plugged in
-Exec=%h/.local/bin/mseries-display-profiles watch
+Exec=sh -c "mkdir -p ~/.cache && exec %h/.local/bin/mseries-display-profiles watch >> ~/.cache/mseries-display-profiles.log 2>&1"
 X-GNOME-Autostart-enabled=true
 NoDisplay=true

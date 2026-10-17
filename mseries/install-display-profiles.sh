@@ -21,5 +21,6 @@ install -m 644 "$app/display_diag.py" "$bin/display_diag.py"
 install -m 644 "$app/mseries-display-settings.desktop" "$apps/mseries-display-settings.desktop"
 update-desktop-database "$apps" 2>/dev/null || true
 pkill -f "$bin/mseries-display-profiles watch" 2>/dev/null || true
-setsid nohup "$bin/mseries-display-profiles" watch >/dev/null 2>&1 &
+mkdir -p "$HOME/.cache"
+setsid nohup "$bin/mseries-display-profiles" watch >>"$HOME/.cache/mseries-display-profiles.log" 2>&1 &
 echo "Display profiles watcher running. Save a layout with: mseries-display-profiles save NAME"
