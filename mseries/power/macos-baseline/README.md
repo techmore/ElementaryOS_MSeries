@@ -35,10 +35,23 @@ Whole-machine power is `PowerTelemetryData.SystemLoad` from `AppleSmartBattery`,
 (panel, backlight, Wi-Fi, SSD, amps, regulator losses). Sleep drain comes from battery-only sleep periods already in
 `pmset -g log`, so there is a lid-closed baseline without running a new overnight test.
 
-## 2. Score it
+## 2. Record the Linux side (on the same Mac, booted into elementary OS)
+
+```bash
+python3 mseries/power/macos-baseline/linux_profile.py --video ~/Videos/test-1080p-h264.mp4
+```
+
+Same scenarios and output shape, no root. Set brightness to the percentage the macOS run recorded first. Whole-machine
+power comes from the SMC `Total System Power` hwmon sensor (falls back to battery `power_now`); CPU numbers come from
+cpuidle residency per cluster, `/proc/stat` and `/proc/interrupts` (arch_timer stands in for macOS idle wakeups);
+per-process CPU replaces Energy Impact, with `gala` in place of `WindowServer`. It does not read the CPU/GPU rails yet
+(C1, G1), and `idle_screen_off` only blanks the panel with `--allow-blank`, because display power is owner-gated.
+
+## 3. Score it
 
 ```bash
 python3 mseries/power/macos-baseline/parity.py --mac mseries/power/macos-baseline/results/macos-<stamp>/summary.json
+python3 mseries/power/macos-baseline/parity.py --linux-run mseries/power/macos-baseline/results/linux-<stamp>/summary.json
 python3 mseries/power/macos-baseline/parity.py --linux W1=8.9 --source W1="powerlab ab.py 2026-10-18"
 python3 mseries/power/macos-baseline/parity.py --check A2 --note A2="speaker PCM suspends after 30 s"
 ```

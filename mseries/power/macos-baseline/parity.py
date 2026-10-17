@@ -2,6 +2,7 @@
 """Fill parity.json from a macOS run and from Linux measurements, then score each item.
 
     python3 parity.py --mac results/macos-<stamp>/summary.json      # macOS column
+    python3 parity.py --linux-run results/linux-<stamp>/summary.json  # Linux column, from linux_profile.py
     python3 parity.py --linux W1=8.9 --source W1="powerlab ab.py 2026-10-18" --kind W1=measured
     python3 parity.py --check A2 --note A2="PCM suspends after 30 s"  # mark a yes/no item as passed
     python3 parity.py                                               # just re-score and rewrite PARITY.md
@@ -116,6 +117,7 @@ def write_md(doc):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--mac", help="summary.json from macos_profile.py")
+    ap.add_argument("--linux-run", help="summary.json from linux_profile.py (fills every item it can measure)")
     ap.add_argument("--linux", action="append", default=[], help="ID=value")
     ap.add_argument("--source", action="append", default=[], help="ID=where the Linux number came from")
     ap.add_argument("--kind", action="append", default=[], help="ID=measured|estimate")
@@ -131,6 +133,11 @@ def main():
         doc["mac_run"] = str(Path(args.mac).parent.name)
         doc["mac_inventory"] = {k: summary["inventory"].get(k) for k in
                                 ("macos", "model", "chip", "brightness", "on_battery", "process_count")}
+    lsum = json.loads(Path(args.linux_run).read_text()) if args.linux_run else None
+    if lsum:
+        doc["linux_run"] = str(Path(args.linux_run).parent.name)
+        doc["linux_inventory"] = {k: lsum["inventory"].get(k) for k in
+                                  ("os", "kernel", "brightness", "on_battery", "power_profile", "system_power_source")}
     kv = lambda pairs: dict(p.split("=", 1) for p in pairs)  # noqa: E731
     lin, src, kind, note = kv(args.linux), kv(args.source), kv(args.kind), kv(args.note)
     for c in doc["categories"]:
@@ -138,6 +145,14 @@ def main():
             i = it["id"]
             if summary:
                 it["mac_value"] = resolve(summary, it.get("mac"))
+            if lsum:
+                expr = it.get("lx", it.get("mac"))
+                v = resolve(lsum, expr) if expr else None
+                if isinstance(v, (int, float)) and not isinstance(v, bool):
+                    old = it["linux"].get("text", "")
+                    it["linux"].update(value=round(float(v), 3), kind="measured",
+                                       source=f"linux_profile.py {doc['linux_run']}",
+                                       text=f"linux_profile.py run (was: {old})" if old and "was:" not in old else old)
             if i in lin:
                 it["linux"]["value"] = float(lin[i])
                 it["linux"]["kind"] = kind.get(i, "measured")

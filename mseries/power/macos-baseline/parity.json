@@ -124,7 +124,8 @@
             "source": ""
           },
           "linux_how": "macsmc hwmon CPU rail, if exposed",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "lx": null
         },
         {
           "id": "C2",
@@ -236,7 +237,8 @@
             "source": ""
           },
           "linux_how": "SMC GPU rail if exposed",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "lx": null
         },
         {
           "id": "G2",
@@ -251,7 +253,8 @@
             "source": "POWER-ROADMAP.md §2"
           },
           "linux_how": "asahi GPU utilisation counter",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "lx": null
         },
         {
           "id": "G3",
@@ -266,7 +269,8 @@
             "source": "POWER-OPPORTUNITIES-2026-10-16.md"
           },
           "linux_how": "pidstat -p $(pgrep gala) 1 60, median",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "lx": "p:idle_minimal:gala:cpu_ms_per_s"
         },
         {
           "id": "G4",
@@ -281,7 +285,8 @@
             "source": "POWER-ROADMAP.md §2"
           },
           "linux_how": "pidstat gala with the same app set",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "lx": "p:idle_as_used:gala:cpu_ms_per_s"
         },
         {
           "id": "G5",
@@ -296,7 +301,8 @@
             "source": "POWER-OPPORTUNITIES-2026-10-16.md"
           },
           "linux_how": "paired A/B open vs closed (A2)",
-          "status": "info"
+          "status": "info",
+          "lx": "p:idle_as_used:ChatGPT:cpu_ms_per_s"
         }
       ]
     },
@@ -363,7 +369,8 @@
             "source": "POWER-ROADMAP.md §2"
           },
           "linux_how": "not visible from macOS; target is near zero when nothing repaints",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "lx": null
         }
       ]
     },
@@ -437,7 +444,8 @@
             "source": ""
           },
           "linux_how": "pidstat on pipewire, wireplumber, speakersafetyd",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "lx": "p:idle_minimal:pipewire:cpu_ms_per_s"
         },
         {
           "id": "A2",
@@ -489,7 +497,8 @@
             "source": "POWER-OPPORTUNITIES-2026-10-16.md"
           },
           "linux_how": "match the macOS state",
-          "status": "info"
+          "status": "info",
+          "lx": null
         },
         {
           "id": "N3",
@@ -541,7 +550,8 @@
             "source": ""
           },
           "linux_how": "SMC if exposed (macOS may not report it on M1 Pro)",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "lx": null
         }
       ]
     },
@@ -578,7 +588,8 @@
             "source": "POWER-ROADMAP.md G1"
           },
           "linux_how": "systemctl list-units --state=running | wc -l",
-          "status": "info"
+          "status": "info",
+          "lx": "i:systemd_running_services"
         },
         {
           "id": "B3",
@@ -615,7 +626,8 @@
             "source": "POWER-ROADMAP.md F1"
           },
           "linux_how": "rtcwake -m freeze, 30 min and overnight, charge delta",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "lx": null
         },
         {
           "id": "Z2",
@@ -630,7 +642,8 @@
             "source": ""
           },
           "linux_how": "wakeup sources during the F1 test",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "lx": null
         },
         {
           "id": "Z3",
@@ -645,7 +658,8 @@
             "source": "POWER-ROADMAP.md F3"
           },
           "linux_how": "owner decides (F3)",
-          "status": "info"
+          "status": "info",
+          "lx": null
         }
       ]
     },
