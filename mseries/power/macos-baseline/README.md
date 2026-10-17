@@ -74,3 +74,28 @@ idle, codecs, refresh mode) are passed by hand with `--check`.
 
 Linux numbers carried in today are from `POWER-ROADMAP.md` and `POWER-OPPORTUNITIES-2026-10-16.md`; several are single
 readings or estimates and must be re-measured with paired runs before an item is checked off.
+
+## Validation and collection limits
+
+Run the offline regressions before changing the collectors or scoring:
+
+```bash
+python3 mseries/test-power-cap.py
+python3 mseries/test-power-install.py
+python3 -m unittest discover -s mseries/power/macos-baseline -p 'test_*.py'
+```
+
+Quick CPU runs retain a minimum 30 seconds (lead-in, full 20-second load, recovery).
+Collectors clean up owned workers and restore a blanked display on interruption. Run directories
+include seconds and microseconds so repeated collections cannot overwrite an earlier run in the same minute.
+Interrupted macOS raw plists without completion metadata are excluded from resummarization.
+QuickTime loops and closes only the requested clip; mpv early exits invalidate a local video collection.
+
+Linux clock ramp and activity recovery are diagnostic fields, not CPU-rail power ramp/recovery equivalents;
+C5/C6 remain unmeasured until comparable rail data is available. A partial Linux import clears missing
+mapped values instead of retaining measurements from an older run. Omission from a top-process list means
+unknown, not zero. Unknown decoder properties also remain unmeasured. Numeric/informational items cannot
+be manually checked off; `--check` is reserved for qualitative items.
+
+These checks validate software behavior with fixtures; actual battery unplug/replug, suspend, display
+restore, media automation and rail readings still need validation on the target OS and hardware.

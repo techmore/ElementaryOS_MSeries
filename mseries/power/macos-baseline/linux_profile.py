@@ -30,6 +30,7 @@ import multiprocessing as mp
 import os
 import platform
 import shutil
+import signal
 import subprocess
 import sys
 import threading
@@ -38,7 +39,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from macos_profile import SCENARIOS, DEFAULT_ORDER, WEB_LOOP_URLS, stats, _busy, video_file  # noqa: E402
+from macos_profile import SCENARIOS, DEFAULT_ORDER, WEB_LOOP_URLS, stats, _busy, video_file, cleanup_process, validate_run_args, stop_requested  # noqa: E402
 
 RESULTS = HERE / "results"
 SYS = Path(os.environ.get("MSERIES_SYS", "/sys"))
@@ -101,7 +102,8 @@ def read_power():
         out["system_load_w"] = out["battery_flow_w"]
         out["system_load_source"] = "battery"
     out["charge_pct"] = num(BAT / "capacity")
-    out["energy_uwh"] = num(BAT / "energy_now") or num(BAT / "charge_now")
+    # charge_now is in microamp-hours, not microwatt-hours; never use it as energy.
+    out["energy_uwh"] = num(BAT / "energy_now")
     t = num(BAT / "temp")
     out["temp_c"] = t / 10 if t is not None else None
     out["external"] = (rd(BAT / "status") or "").lower() not in ("discharging",)
@@ -157,8 +159,10 @@ def cpuidle_times(cpu):
 def proc_stat():
     line = (rd(PROC / "stat") or "cpu 0").splitlines()[0].split()[1:]
     v = [int(x) for x in line]
+    v += [0] * max(0, 5 - len(v))
     idle = v[3] + (v[4] if len(v) > 4 else 0)
-    return sum(v) - idle
+    # guest/guest_nice are already included in user/nice.
+    return sum(v[:8]) - idle
 
 
 def interrupts():
@@ -226,7 +230,7 @@ def delta_row(a, b, cl):
     row = {"cpu_ms_per_s_all": (b["busy"] - a["busy"]) * 1000 / CLK / dt_s,
            "intr_wakeups_per_s": (b["intr"][0] - a["intr"][0]) / dt_s,
            # arch_timer ticks are the closest analogue to macOS idle wakeups; absent counter = unmeasured, not 0
-           "idle_wakeups_per_s": (b["intr"][1] - a["intr"][1]) / dt_s if a["intr"][1] is not None else None,
+           "idle_wakeups_per_s": (b["intr"][1] - a["intr"][1]) / dt_s if a["intr"][1] is not None and b["intr"][1] is not None else None,
            "net_in_Bps": (b["net"][0] - a["net"][0]) / dt_s, "net_out_Bps": (b["net"][1] - a["net"][1]) / dt_s,
            "disk_read_Bps": (b["disk"][0] - a["disk"][0]) / dt_s,
            "disk_write_Bps": (b["disk"][1] - a["disk"][1]) / dt_s}
@@ -356,57 +360,73 @@ def run_scenario(name, cfg, outdir: Path, cl, args):
 
     step = cfg["interval_ms"] / 1000.0
     seconds = cfg["seconds"] * args.scale
+    if action == "cpu_burst":
+        seconds = max(seconds, 30)
     stop_evt, helper, player, procs = threading.Event(), None, None, []
-    if action == "display_off":
-        blank(False)
-        time.sleep(3)
-    elif action == "web_loop":
-        helper = threading.Thread(target=web_loop, args=(stop_evt, args.browser), daemon=True)
-        helper.start()
-    elif action == "video_local":
-        # short path: AF_UNIX paths are capped near 108 bytes and the results dir can be deeper than that
-        mpv_sock = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), f"mseries-mpv-{os.getpid()}.sock")
-        player = subprocess.Popen(["mpv", "--hwdec=vaapi", "--loop=inf", "--really-quiet",
-                                   f"--input-ipc-server={mpv_sock}", video])
-        time.sleep(5)
-
-    pw = PowerSampler(period=min(1.0, max(step, 0.2)))
-    pw.start()
-    t0 = time.monotonic()
-    procs_before = per_process()
-    rows, prev = [], snapshot(cl)
-    burst_offset = None
-    while time.monotonic() - t0 < seconds:
-        el = time.monotonic() - t0
-        if action == "cpu_burst" and burst_offset is None and el >= 5:
-            burst_offset = el
-            stop_at = time.time() + 20
-            procs = [mp.Process(target=_busy, args=(stop_at,)) for _ in range(os.cpu_count() or 10)]
-            for p in procs:
-                p.start()
-        time.sleep(step)
-        cur = snapshot(cl)
-        r = delta_row(prev, cur, cl)
-        r["cpu_w"] = None                                   # rails not read on Linux yet (C1, G1)
-        rows.append(r)
-        prev = cur
-        print(f"\r  sampling {int(el):>4}/{int(seconds)} s", end="", flush=True)
-    print()
-    procs_after = per_process()
-    elapsed = time.monotonic() - t0
-    for p in procs:
-        p.join()
-    stop_evt.set()
-    pw.stop()
-    if action == "display_off":
-        blank(True)
+    pw = None
     playback = None
-    if player:
-        playback = mpv_query(mpv_sock, MPV_PROPS)
-        player.terminate()
-        Path(mpv_sock).unlink(missing_ok=True)
-        print(f"  mpv: hwdec {playback.get('hwdec-current')}, dropped {playback.get('frame-drop-count')} "
-              f"(decoder {playback.get('decoder-frame-drop-count')}), {playback.get('estimated-vf-fps')} fps")
+    try:
+        if action == "display_off":
+            blank(False)
+            time.sleep(3)
+        elif action == "web_loop":
+            helper = threading.Thread(target=web_loop, args=(stop_evt, args.browser), daemon=True)
+            helper.start()
+        elif action == "video_local":
+            # short path: AF_UNIX paths are capped near 108 bytes and the results dir can be deeper than that
+            mpv_sock = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), f"mseries-mpv-{os.getpid()}.sock")
+            player = subprocess.Popen(["mpv", "--hwdec=vaapi", "--loop=inf", "--really-quiet",
+                                       f"--input-ipc-server={mpv_sock}", video])
+            time.sleep(5)
+            if player.poll() is not None:
+                raise RuntimeError("mpv exited before sampling; check the clip and decoder")
+
+        pw = PowerSampler(period=min(1.0, max(step, 0.2)))
+        pw.start()
+        t0 = time.monotonic()
+        procs_before = per_process()
+        rows, prev = [], snapshot(cl)
+        burst_offset = None
+        while time.monotonic() - t0 < seconds:
+            el = time.monotonic() - t0
+            if action == "cpu_burst" and burst_offset is None and el >= 5:
+                burst_offset = el
+                stop_at = time.time() + 20
+                for _ in range(os.cpu_count() or 10):
+                    proc = mp.Process(target=_busy, args=(stop_at,))
+                    proc.start()
+                    procs.append(proc)
+            time.sleep(step)
+            cur = snapshot(cl)
+            r = delta_row(prev, cur, cl)
+            r["cpu_w"] = None                                   # rails not read on Linux yet (C1, G1)
+            rows.append(r)
+            prev = cur
+            print(f"\r  sampling {int(el):>4}/{int(seconds)} s", end="", flush=True)
+        print()
+        if player and player.poll() is not None:
+            raise RuntimeError("mpv exited during sampling; refusing a video baseline")
+        if player:
+            playback = mpv_query(mpv_sock, MPV_PROPS)
+        procs_after = per_process()
+        elapsed = time.monotonic() - t0
+    finally:
+        stop_evt.set()
+        try:
+            cleanup_process(player)
+        finally:
+            if pw and pw.ident is not None:
+                pw.stop()
+            for proc in procs:
+                if proc.is_alive():
+                    proc.terminate()
+                proc.join(timeout=5)
+            if action == "display_off":
+                blank(True)
+            if player:
+                Path(mpv_sock).unlink(missing_ok=True)
+            if helper:
+                helper.join(timeout=5)
 
     raw = outdir / "raw"
     raw.mkdir(parents=True, exist_ok=True)
@@ -458,7 +478,7 @@ def summarize(outdir: Path, name):
 
 
 def burst(rows, pw, meta):
-    """Ramp from P-cluster clock (CPU rail is not readable yet); back-to-idle from whole-machine power."""
+    """Clock/activity diagnostics; these are not equivalent to the macOS CPU-rail metrics."""
     step = meta["interval_ms"] / 1000.0
     start = int(meta["burst_offset_s"] / step)
     pm = [r.get("p0_mhz") or 0 for r in rows]
@@ -470,8 +490,8 @@ def burst(rows, pw, meta):
     act = [r.get("p0_active_pct") or 0 for r in rows]
     idle = sorted(act[:max(start, 1)])[len(act[:max(start, 1)]) // 2] if start else 0
     back = next((i for i in range(end, len(act)) if act[i] <= idle + 5), None)
-    return {"ramp_to_90pct_ms": round((ramp - start) * step * 1000) if ramp is not None else None,
-            "back_to_idle_s": round((back - end) * step, 2) if back is not None else None,
+    return {"clock_ramp_to_90pct_ms": round((ramp - start) * step * 1000) if ramp is not None else None,
+            "activity_back_to_idle_s": round((back - end) * step, 2) if back is not None else None,
             "peak_p_mhz": round(peak), "note": "ramp from P-cluster clock, back-to-idle from P-cluster activity"}
 
 
@@ -503,6 +523,7 @@ def main():
     ap.add_argument("--inventory-only", action="store_true")
     ap.add_argument("--resummarize")
     args = ap.parse_args()
+    order = validate_run_args(ap, args)
 
     SYS_POWER = find_system_power()
     if args.resummarize:
@@ -513,8 +534,9 @@ def main():
         return
     if platform.system() != "Linux":
         sys.exit("Run this on elementary OS on the M1 Pro; macos_profile.py is the macOS side.")
-    outdir = RESULTS / f"linux-{dt.datetime.now().strftime('%Y-%m-%d-%H%M')}"
-    outdir.mkdir(parents=True, exist_ok=True)
+    signal.signal(signal.SIGTERM, stop_requested)
+    outdir = RESULTS / f"linux-{dt.datetime.now().strftime('%Y-%m-%d-%H%M%S-%f')}"
+    outdir.mkdir(parents=True, exist_ok=False)
     print(f"Output: {outdir}\nWhole-machine power from: {SYS_POWER or 'battery power_now (SMC sensor not found)'}")
     if not (rd(BAT / "status") or "").lower() == "discharging":
         print("WARNING: not discharging. Unplug the charger for comparable numbers.")
@@ -522,10 +544,10 @@ def main():
     print(f"  {inv['os']} {inv['kernel']}, {inv['process_count']} processes, {inv['systemd_running_services']} running "
           f"services, brightness {inv['brightness']}, profile {inv['power_profile']}")
     scen = {}
+    write_summary(outdir, inv, scen)
     if not args.inventory_only:
         cl = clusters()
         print("clusters: " + ", ".join(f"{k}={v[1]}" for k, v in cl.items()))
-        order = args.only.split(",") if args.only else DEFAULT_ORDER
         try:
             for name in order:
                 scen[name] = run_scenario(name, SCENARIOS[name], outdir, cl, args)

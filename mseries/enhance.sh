@@ -73,9 +73,9 @@ copy() { install -D -m "$1" "$2" "$R$3"; }
 
 # Enable units by planting symlinks; never starts anything.
 enable() {
-  local flag=()
-  [[ $1 == --global ]] && { flag=(--global); shift; }
-  systemctl --root="${ROOT}" "${flag[@]}" enable "$@" >/dev/null 2>&1 ||
+  local flag=""
+  [[ $1 == --global ]] && { flag=--global; shift; }
+  systemctl --root="${ROOT}" ${flag:+"$flag"} enable "$@" >/dev/null 2>&1 ||
     log "could not enable $* (unit missing in this root?); continuing"
 }
 
@@ -128,8 +128,22 @@ WantedBy=graphical.target
 EOF
   put 0644 /etc/udev/rules.d/80-mseries-power.rules <<'EOF'
 # Plugging or unplugging the charger re-applies the policy.
-SUBSYSTEM=="power_supply", KERNEL=="macsmc-ac", ACTION=="change", TAG+="systemd", ENV{SYSTEMD_WANTS}+="mseries-power.service"
+SUBSYSTEM=="power_supply", KERNEL=="macsmc-ac", ACTION=="change", RUN+="/usr/bin/systemctl --no-block restart mseries-power.service"
 EOF
+  put 0644 /etc/systemd/system/mseries-power-follow.service <<'EOF'
+[Unit]
+Description=Re-apply the battery CPU ceiling when the power profile changes
+After=power-profiles-daemon.service
+
+[Service]
+ExecStart=/usr/local/sbin/mseries-power follow
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target
+EOF
+  enable mseries-power-follow.service
   enable mseries-power.service
   log "power: 80% charge limit and battery CPU policy (change with: sudo mseries-power limit 100)"
 }

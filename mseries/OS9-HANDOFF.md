@@ -2192,3 +2192,31 @@ Branch: `power-usage`, reviewed from `d581ac4`; dock documentation frontier insp
 - Next: record comparable battery-powered active scenarios on macOS and Linux, retain conditions
   and repeated A/B distributions, then regenerate the parity checklist. Dock experiments should
   start from the pinned branch frontier, not the older snapshot on this branch.
+
+## 2026-10-17 — power code audit and merge preparation
+
+- Policy: failed writes now exit nonzero; cap values are bounded to each performance cluster's hardware
+  range; absent status sensors do not crash. Failed charge-limit application does not persist a success.
+  Charger events explicitly restart the oneshot (rather than relying on device activation), and profile
+  monitor disconnects fail so systemd restarts it. Uninstall stops the watcher before lifting caps;
+  reinstall restarts running services to pick up the updated helper.
+- Packaging: enhancement roots now include/enable the profile watcher, and factory staging rewrites both
+  units to `/usr/libexec/mseries/power`. Added staging/idempotence coverage and immutable-path assertions.
+- Collectors: cleanup runs on interruption/setup failure, owned workers are stopped, blanked displays restored,
+  early mpv exit rejected, and QuickTime loops/closes only its requested file (already-open clips rejected).
+  Seconds/microseconds in run names prevent same-minute overwrite; quick CPU runs retain a full load/recovery
+  window. Initial summaries retain inventory even if later collection fails. Incomplete macOS raw files lacking
+  completion metadata are excluded. Linux charge units no longer masquerade as energy; guest CPU ticks are
+  not double-counted. Missing CPU rail data does not produce a zero ramp.
+- Parity: unknown IDs, nonfinite numbers and manual numeric passes are rejected before writes. Partial Linux
+  imports clear missing mapped values. Missing top-list processes and decoder stats remain unmeasured.
+  Linux clock ramp/activity recovery use distinct diagnostic names; C5 no longer carries a clock measurement
+  as CPU-power ramp. VRR evidence discovers the labelled SMC sensor and uses interpolated percentiles.
+- Validation before publication: 9 policy/VRR tests, 16 collector/parity tests and 1 offline staged-install test
+  pass on macOS; shell syntax, Python compilation and `git diff --check` pass. New suites are wired into the
+  Linux validation workflow. The full image-wiring fixture cannot run natively here because BSD `install`
+  lacks GNU `install -D`; Linux CI must supply the authoritative broader result.
+- Original worktrees and their untracked baseline data are untouched. No live service, display, audio,
+  kernel or bootloader changes were applied. Existing drawers OSD crash fix already on this branch is retained.
+- Remaining qualification: physical AC/battery transitions and profile switches, media/blanking restore on
+  each target OS, matched battery scenarios and Linux suspend. These are hardware evidence gaps, not claimed wins.

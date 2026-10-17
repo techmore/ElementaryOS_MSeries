@@ -13,6 +13,7 @@ Status per item: pass (within 10%), close (within 1.5x, tier 2), gap, awaiting-m
 """
 import argparse
 import json
+import math
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -52,7 +53,7 @@ def resolve(summary, expr):
         for row in sc.get("top_processes", []):
             if row["process"].lower().startswith(proc.lower()):
                 return row.get(field)
-        return 0.0                                # not among the top consumers
+        return None                               # omitted from a truncated top list is unmeasured
     if kind == "b":
         return dig(summary, f"scenarios.cpu_burst.burst.{rest}")
     if kind == "i":
@@ -66,20 +67,25 @@ def resolve(summary, expr):
             return None
         val = val.get(prop)
         if prop == "hwdec-current":               # 1 when a hardware decoder is really in use
-            return 0.0 if val in (None, "", "no") else 1.0
+            return None if val is None else (0.0 if val in ("", "no") else 1.0)
         return val
     return None
 
 
+def numeric(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
 def score(item):
+    item.pop("ratio", None)
     if item.get("checked"):
         return "pass"
     mac, lin, d = item.get("mac_value"), item["linux"].get("value"), item["dir"]
     if d == "info":
         return "info"
-    if not isinstance(mac, (int, float)):
+    if not numeric(mac):
         return "awaiting-mac"
-    if not isinstance(lin, (int, float)):
+    if not numeric(lin):
         return "awaiting-linux"
     if d == "lower":
         ratio = lin / mac if mac > 0 else (1.0 if lin <= 0 else float("inf"))
@@ -91,6 +97,10 @@ def score(item):
     if ratio <= 1.5:
         return "close"
     return "gap"
+
+
+def cell(value):
+    return str(value).replace("|", "\\|").replace("\n", " ").replace("\r", " ")
 
 
 def fmt(v, unit=""):
@@ -122,8 +132,8 @@ def write_md(doc):
             lin = it["linux"]
             lv = fmt(lin.get("value"), it["unit"]) if lin.get("value") is not None else ""
             ltxt = f"{lv} ({lin['kind']}) {lin.get('text', '')}".strip()
-            lines.append(f"| {box} | {it['id']} | {it['name']} | {fmt(it.get('mac_value'), it['unit'])} | "
-                         f"{ltxt} | {icon.get(it['status'], it['status'])} |")
+            lines.append(f"| {box} | {it['id']} | {it['name']} | {cell(fmt(it.get('mac_value'), it['unit']))} | "
+                         f"{cell(ltxt)} | {icon.get(it['status'], it['status'])} |")
     MD.write_text("\n".join(lines) + "\n")
 
 
@@ -151,8 +161,30 @@ def main():
         doc["linux_run"] = str(Path(args.linux_run).parent.name)
         doc["linux_inventory"] = {k: lsum["inventory"].get(k) for k in
                                   ("os", "kernel", "brightness", "on_battery", "power_profile", "system_power_source")}
-    kv = lambda pairs: dict(p.split("=", 1) for p in pairs)  # noqa: E731
+    items = {it["id"]: it for c in doc["categories"] for it in c["items"]}
+    def kv(pairs):
+        result = {}
+        for pair in pairs:
+            key, sep, value = pair.partition("=")
+            if not sep or key not in items:
+                ap.error(f"expected known ID=value, got {pair!r}")
+            result[key] = value
+        return result
     lin, src, kind, note = kv(args.linux), kv(args.source), kv(args.kind), kv(args.note)
+    for i, value in lin.items():
+        try:
+            value = float(value)
+        except ValueError:
+            ap.error(f"{i}: expected a finite number")
+        if not numeric(value):
+            ap.error(f"{i}: expected a finite number")
+    if any(value not in ("measured", "estimate") for value in kind.values()):
+        ap.error("--kind must be measured or estimate")
+    for i in args.check + args.uncheck:
+        if i not in items:
+            ap.error(f"unknown item {i}")
+        if i in args.check and (items[i].get("mac") is not None or items[i]["dir"] == "info"):
+            ap.error(f"{i}: numeric/informational items cannot be passed by hand")
     for c in doc["categories"]:
         for it in c["items"]:
             i = it["id"]
@@ -161,7 +193,13 @@ def main():
             if lsum:
                 expr = it.get("lx", it.get("mac"))
                 v = resolve(lsum, expr) if expr else None
-                if isinstance(v, (int, float)) and not isinstance(v, bool):
+                if expr:
+                    # A partial new run must not silently reuse an older run's measurements.
+                    it.pop("checked", None)
+                    it["linux"].update(value=None, kind="unmeasured",
+                                       source=f"linux_profile.py {doc['linux_run']}",
+                                       text="not measured in this run")
+                if numeric(v):
                     old = it["linux"].get("text", "")
                     it["linux"].update(value=round(float(v), 3), kind="measured",
                                        source=f"linux_profile.py {doc['linux_run']}",

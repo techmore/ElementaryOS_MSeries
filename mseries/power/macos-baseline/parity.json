@@ -253,10 +253,10 @@
           "dir": "lower",
           "mac": "b:ramp_to_90pct_ms",
           "linux": {
-            "value": 78,
-            "kind": "measured",
-            "text": "P cluster at 90% clock in 76 to 79 ms",
-            "source": "POWER-OPPORTUNITIES-2026-10-16.md"
+            "value": null,
+            "kind": "unmeasured",
+            "text": "Linux reports clock ramp separately; CPU-rail ramp is not measured",
+            "source": "linux_profile.py: clock_ramp_to_90pct_ms is not a CPU power measurement"
           },
           "linux_how": "same 20 s all-core burst",
           "status": "awaiting-mac",

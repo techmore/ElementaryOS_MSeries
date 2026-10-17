@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import math
 import multiprocessing as mp
 import os
 import platform
@@ -107,7 +108,8 @@ DEFAULT_ORDER = ["idle_minimal", "idle_screen_off", "idle_as_used", "web_loop",
 def video_file(cfg, args):
     """The clip a video_local scenario plays: --video overrides 1080p, the rest come from --video-dir."""
     if cfg.get("video") == "test-1080p-h264.mp4" and args.video:
-        return args.video
+        path = Path(args.video).expanduser()
+        return str(path) if path.is_file() else None
     path = Path(args.video_dir).expanduser() / cfg["video"]
     return str(path) if path.is_file() else None
 
@@ -132,7 +134,7 @@ def run(cmd, timeout=60, user=False):
 
 
 def stats(values):
-    vals = sorted(v for v in values if isinstance(v, (int, float)))
+    vals = sorted(v for v in values if isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v))
     if not vals:
         return None
     def pct(p):
@@ -153,7 +155,10 @@ def signed(v):
 # ---------------------------------------------------------------- battery / system load sampler
 
 def read_battery():
-    raw = subprocess.run(["ioreg", "-arn", "AppleSmartBattery"], capture_output=True).stdout
+    try:
+        raw = subprocess.run(["ioreg", "-arn", "AppleSmartBattery"], capture_output=True, timeout=10).stdout
+    except (OSError, subprocess.TimeoutExpired):
+        return {}
     try:
         b = plistlib.loads(raw)[0]
     except Exception:  # noqa: BLE001
@@ -320,13 +325,55 @@ def web_loop(stop_evt):
 
 
 def video_local(path):
-    run(["open", "-a", "QuickTime Player", path], user=True)
-    time.sleep(3)
-    run(["osascript", "-e", 'tell application "QuickTime Player" to play document 1'], user=True)
+    # QuickTime's document dictionary exposes file/name, not a stable document ID.
+    path = str(Path(path).resolve())
+    script = ('tell application "QuickTime Player"\n'
+              f'set targetFile to POSIX file {json.dumps(path)}\n'
+              'repeat with existing in documents\n'
+              'try\nif (file of existing as text) is (targetFile as text) then return "already-open"\nend try\n'
+              'end repeat\nset clip to open targetFile\n'
+              'set looping of clip to true\nplay clip\nreturn playing of clip\nend tell')
+    result = run(["osascript", "-e", script], user=True).strip()
+    if result != "true":
+        raise RuntimeError("QuickTime could not play the requested clip (close an already-open test clip first)")
+    return path
 
 
-def video_stop():
-    run(["osascript", "-e", 'tell application "QuickTime Player" to close every document saving no'], user=True)
+def video_stop(path):
+    if path:
+        script = ('tell application "QuickTime Player"\n'
+                  f'set targetFile to POSIX file {json.dumps(path)}\n'
+                  'repeat with clip in documents\ntry\n'
+                  'if (file of clip as text) is (targetFile as text) then\n'
+                  'close clip saving no\nexit repeat\nend if\nend try\nend repeat\nend tell')
+        run(["osascript", "-e", script], user=True)
+
+
+def stop_requested(_signum, _frame):
+    raise KeyboardInterrupt
+
+
+def cleanup_process(proc):
+    if proc is None:
+        return
+    if proc.poll() is None:
+        proc.terminate()
+    try:
+        proc.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
+
+
+def validate_run_args(ap, args):
+    if not math.isfinite(args.scale) or args.scale <= 0:
+        ap.error("--scale must be finite and greater than zero")
+    if args.settle < 0:
+        ap.error("--settle must be nonnegative")
+    order = args.only.split(",") if args.only else DEFAULT_ORDER
+    if any(name not in SCENARIOS for name in order):
+        ap.error("--only contains an unknown scenario")
+    return order
 
 
 # ---------------------------------------------------------------- inventory: what macOS is doing
@@ -509,52 +556,62 @@ def run_scenario(name, cfg, outdir: Path, samplers, args):
 
     raw = outdir / "raw" / f"{name}.plist"
     raw.parent.mkdir(parents=True, exist_ok=True)
-    count = int(cfg["seconds"] * 1000 / cfg["interval_ms"])
-    count = int(count * args.scale) or 1
+    seconds = cfg["seconds"] * args.scale
+    if cfg.get("action") == "cpu_burst":
+        seconds = max(seconds, 30)  # retain the 5 s lead-in, 20 s load and recovery even in quick runs
+    count = max(1, math.ceil(seconds * 1000 / cfg["interval_ms"]))
     batt = BatterySampler(period=1.0 if cfg["interval_ms"] >= 1000 else 0.5)
-
     stop_evt = threading.Event()
-    helper = None
+    helper = pm = clip = None
     action = cfg.get("action")
-    if action == "display_off":
-        display_off()
-        time.sleep(3)
-    elif action == "web_loop":
-        helper = threading.Thread(target=web_loop, args=(stop_evt,), daemon=True)
-        helper.start()
-    elif action == "video_local":
-        video_local(video)
-        time.sleep(5)
-
-    batt.start()
-    pm = start_powermetrics(raw, cfg["interval_ms"], count, samplers)
-    t0 = time.time()
     procs = []
-    if action == "cpu_burst":
-        time.sleep(5)                               # 5 s of idle lead-in
-        burst_start = time.time()
-        stop_at = burst_start + 20
-        procs = [mp.Process(target=_busy, args=(stop_at,)) for _ in range(os.cpu_count() or 10)]
-        for p in procs:
-            p.start()
+    t0 = time.time()
     try:
+        if action == "display_off":
+            display_off()
+            time.sleep(3)
+        elif action == "web_loop":
+            helper = threading.Thread(target=web_loop, args=(stop_evt,), daemon=True)
+            helper.start()
+        elif action == "video_local":
+            clip = video_local(video)
+            time.sleep(5)
+        batt.start()
+        pm = start_powermetrics(raw, cfg["interval_ms"], count, samplers)
+        t0 = time.time()
+        if action == "cpu_burst":
+            time.sleep(5)
+            burst_start = time.time()
+            stop_at = burst_start + 20
+            for _ in range(os.cpu_count() or 10):
+                proc = mp.Process(target=_busy, args=(stop_at,))
+                proc.start()
+                procs.append(proc)
         while pm.poll() is None:
             el = int(time.time() - t0)
-            print(f"\r  sampling {el:>4}/{int(cfg['seconds'] * args.scale)} s", end="", flush=True)
+            print(f"\r  sampling {el:>4}/{int(seconds)} s", end="", flush=True)
             time.sleep(1)
-    except KeyboardInterrupt:
-        pm.send_signal(signal.SIGINT)
-        pm.wait()
+    finally:
+        stop_evt.set()
+        try:
+            cleanup_process(pm)
+        finally:
+            if batt.ident is not None:
+                batt.stop()
+            for proc in procs:
+                if proc.is_alive():
+                    proc.terminate()
+                proc.join(timeout=5)
+            if action == "display_off":
+                display_on()
+            if clip:
+                video_stop(clip)
+            if helper:
+                helper.join(timeout=5)
     print()
-    for p in procs:
-        p.join()
-    stop_evt.set()
-    batt.stop()
-    if action == "display_off":
-        display_on()
-    if action == "video_local":
-        video_stop()
-    err = pm.stderr.read().decode(errors="replace") if pm.stderr else ""
+    err = pm.stderr.read().decode(errors="replace") if pm and pm.stderr else ""
+    if pm and pm.returncode:
+        raise RuntimeError(f"powermetrics failed ({pm.returncode}): {err.strip()}")
     if err.strip():
         (outdir / "raw" / f"{name}.stderr.txt").write_text(err)
     (outdir / "raw" / f"{name}.battery.json").write_text(json.dumps(batt.samples))
@@ -571,7 +628,10 @@ def summarize_scenario(outdir: Path, name):
         return None
     samples = parse_powermetrics(raw)
     meta_p = outdir / "raw" / f"{name}.meta.json"
-    meta = json.loads(meta_p.read_text()) if meta_p.exists() else {"name": name}
+    # Metadata is committed only after successful collection and cleanup. Do not score interrupted raw files.
+    if not samples or not meta_p.exists():
+        return None
+    meta = json.loads(meta_p.read_text())
     batt_p = outdir / "raw" / f"{name}.battery.json"
     batt = json.loads(batt_p.read_text()) if batt_p.exists() else []
     rows = [flatten_sample(s) for s in samples]
@@ -590,7 +650,7 @@ def summarize_scenario(outdir: Path, name):
             metrics["drain_mah_per_h"] = {"median": round((batt[0]["raw_charge_mah"] - batt[-1]["raw_charge_mah"]) / hrs, 1),
                                            "note": "first vs last raw charge; coarse over short runs"}
     out = {"name": name, "title": meta.get("title"), "samples": len(samples),
-           "on_battery": bool(batt) and not any(b.get("external") for b in batt),
+           "on_battery": bool(batt) and all(b.get("external") is False for b in batt),
            "metrics": {k: v for k, v in metrics.items() if v},
            "top_processes": task_table(samples)}
     if "burst_offset_s" in meta:
@@ -602,7 +662,7 @@ def burst_analysis(rows, meta):
     """Time from load start until CPU power reaches 90% of peak, and until it falls back near idle."""
     step = meta.get("interval_ms", 100) / 1000.0
     cpu = [r.get("cpu_w") or 0 for r in rows]
-    if not cpu:
+    if not cpu or not any(r.get("cpu_w") is not None for r in rows):
         return None
     start_i = int(meta["burst_offset_s"] / step)
     lead = cpu[:max(start_i, 1)]
@@ -651,6 +711,7 @@ def main():
     ap.add_argument("--list", action="store_true", help="list scenarios and exit")
     ap.add_argument("--any-mac", action="store_true", help="allow a Mac other than the 14-inch M1 Pro")
     args = ap.parse_args()
+    order = validate_run_args(ap, args)
 
     if args.list:
         for k in DEFAULT_ORDER:
@@ -668,15 +729,16 @@ def main():
     if os.geteuid() != 0 and not args.inventory_only:      # inventory and sleep history need no root
         sys.exit("powermetrics needs root: sudo python3 " + " ".join(sys.argv))
 
+    signal.signal(signal.SIGTERM, stop_requested)
     model = run(["sysctl", "-n", "hw.model"]).strip()
     chip = run(["sysctl", "-n", "machdep.cpu.brand_string"]).strip()
     print(f"This Mac: {model}, {chip}")
     if model not in ("MacBookPro18,3", "MacBookPro18,4") and not args.any_mac:
         sys.exit("The Linux numbers are from the 14-inch M1 Pro (MacBookPro18,3/18,4). Run this on that machine, "
                  "booted into macOS, or pass --any-mac to record this Mac anyway (not comparable).")
-    stamp = dt.datetime.now().strftime("%Y-%m-%d-%H%M")
+    stamp = dt.datetime.now().strftime("%Y-%m-%d-%H%M%S-%f")
     outdir = RESULTS / f"macos-{stamp}"
-    outdir.mkdir(parents=True, exist_ok=True)
+    outdir.mkdir(parents=True, exist_ok=False)
     print(f"Output: {outdir}")
     b = read_battery()
     if b.get("external"):
@@ -687,10 +749,10 @@ def main():
           f"{inv.get('launchd_system_jobs')} system + {inv.get('launchd_user_jobs')} user launchd jobs, "
           f"brightness {inv.get('brightness')}")
     scen = {}
+    write_summary(outdir, inv, scen)
     if not args.inventory_only:
         samplers = available_samplers()
         print(f"powermetrics samplers: {', '.join(samplers)}")
-        order = args.only.split(",") if args.only else DEFAULT_ORDER
         try:
             for name in order:
                 scen[name] = run_scenario(name, SCENARIOS[name], outdir, samplers, args)

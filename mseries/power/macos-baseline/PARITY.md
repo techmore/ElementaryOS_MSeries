@@ -33,7 +33,7 @@ How deeply and how often the cores sleep, and how fast they wake for work.
 | [ ] | C2 | E-cluster idle time spent power-gated | – | 7 % (measured) CPU0: CPU PD 1.4 s vs WFI 19.8 s (~7%) | ⏳ mac |
 | [ ] | C3 | P-cluster idle time spent power-gated | – | (unmeasured) not split by cluster yet | ⏳ mac |
 | [ ] | C4 | Wakeups per second, whole system | – | 3900 /s (measured) arch_timer ~3.9k/s across cores (HZ=1000) | ⏳ mac |
-| [ ] | C5 | Burst: time to 90% of peak CPU power | – | 78 ms (measured) P cluster at 90% clock in 76 to 79 ms | ⏳ mac |
+| [ ] | C5 | Burst: time to 90% of peak CPU power | – | (unmeasured) Linux reports clock ramp separately; CPU-rail ramp is not measured | ⏳ mac |
 | [ ] | C6 | Burst: back to idle after load ends | – | (unmeasured) goal <= 30 s | ⏳ mac |
 | [ ] | C7 | Burst: peak P-core clock on battery | – | 2208 MHz (measured) power-saver cap 2064/2208 MHz on battery | ⏳ mac |
 

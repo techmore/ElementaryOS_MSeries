@@ -1,5 +1,13 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Power code audit (2026-10-17)
+
+Power policy now reports write failures, bounds CPU caps, restarts policy on charger change,
+and ships the profile watcher through both the live and immutable image paths. Baseline collectors
+clean up interrupted workloads/display blanking and avoid stale parity imports. Offline power regressions
+are in CI. No battery-life gain or hardware qualification is implied: paired battery runs, real unplug/replug,
+profile switches, media playback, suspend and display restore still require target-device validation.
+
 ## Power and dock documentation entry point (2026-10-17)
 
 Use the [power evidence map](power/README.md) for the canonical plan, 52-item parity checklist,
