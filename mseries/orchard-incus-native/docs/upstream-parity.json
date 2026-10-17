@@ -1,0 +1,1324 @@
+{
+  "upstream": "https://github.com/andrew-waters/orchard",
+  "upstream_revision": "2c78257c8602ffed61f383ee6e737bfc37b142ee",
+  "owner_scope": "Incus-only; document incompatible OCI and Apple-runtime functionality",
+  "features": [
+    {
+      "id": "F001",
+      "group": "Instances",
+      "feature": "Create from image",
+      "status": "adapted",
+      "note": "MainWindow creates native Incus system containers or VMs from simplestreams images; OCI entrypoints are not applicable.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F002",
+      "group": "Instances",
+      "feature": "Start and graceful stop",
+      "status": "implemented",
+      "note": "MainWindow actions use Incus state operations; per-instance locks prevent duplicate requests.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F003",
+      "group": "Instances",
+      "feature": "Force stop",
+      "status": "implemented",
+      "note": "InstanceDetails exposes a confirmed force-stop action.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F004",
+      "group": "Instances",
+      "feature": "Restart",
+      "status": "implemented",
+      "note": "InstanceDetails and the command palette expose native restart operations.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F005",
+      "group": "Instances",
+      "feature": "Pause and resume",
+      "status": "implemented",
+      "note": "InstanceDetails exposes freeze/unfreeze; verified on an owned live test container.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F006",
+      "group": "Instances",
+      "feature": "Delete with confirmation",
+      "status": "implemented",
+      "note": "MainWindow confirms deletion and refuses to continue after a failed stop.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F007",
+      "group": "Instances",
+      "feature": "Bulk lifecycle and deletion",
+      "status": "implemented",
+      "note": "Persistent check selections support start/stop/confirmed deletion, with per-item locks and aggregate failure reporting.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F008",
+      "group": "Instances",
+      "feature": "Automatic removal after stop",
+      "status": "adapted",
+      "note": "New instance offers Incus ephemeral lifecycle, which deletes on stop.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F009",
+      "group": "Instances",
+      "feature": "Automatic recovery and recreate",
+      "status": "adapted",
+      "note": "Incus-native snapshots/restore and cloning provide explicit recovery. The Apple-daemon-specific automatic delete/recreate workaround is intentionally not copied.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F010",
+      "group": "Instances",
+      "feature": "Export filesystem archive",
+      "status": "adapted",
+      "note": "InstanceDetails streams an Incus backup archive to a private local file and cleans up its expiring temporary backup; fixture and live tests passed.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F011",
+      "group": "Instances",
+      "feature": "Reclaim container disk space",
+      "status": "incompatible",
+      "note": "Upstream itself gates filesystem trim on runtime support; an Incus storage-driver-specific reclaim contract is not provided.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F012",
+      "group": "Instances",
+      "feature": "Inspect full configuration",
+      "status": "implemented",
+      "note": "InstanceDetails displays the actual Incus instance document.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F013",
+      "group": "Instances",
+      "feature": "Edit configuration without losing concurrent changes",
+      "status": "implemented",
+      "note": "InstanceDetails applies nonvolatile settings using ETags; stop/apply/start refreshes runtime-managed metadata and rejects intervening user-config edits.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F014",
+      "group": "Instances",
+      "feature": "CPU and memory at creation",
+      "status": "implemented",
+      "note": "MainWindow has CPU and memory controls; values are included in create requests.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F015",
+      "group": "Instances",
+      "feature": "Environment variables",
+      "status": "implemented",
+      "note": "Create dialog accepts KEY=value lines; configuration editor supports environment.*. VM environment values apply to Incus exec, rather than an OCI entrypoint.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F016",
+      "group": "Instances",
+      "feature": "Host port publishing",
+      "status": "adapted",
+      "note": "DeviceEditor publishes native TCP/UDP proxy endpoints, retaining explicit host bind addresses.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F017",
+      "group": "Instances",
+      "feature": "Bind mounts and read-only mounts",
+      "status": "implemented",
+      "note": "DeviceEditor supports absolute source/target folders and defaults mounts to read-only; device preservation was verified live.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F018",
+      "group": "Instances",
+      "feature": "Working directory and entrypoint overrides",
+      "status": "incompatible",
+      "note": "Incus system containers boot an init system rather than an OCI image command; use explicit exec processes instead.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F019",
+      "group": "Instances",
+      "feature": "Launch labels",
+      "status": "adapted",
+      "note": "Create dialog writes user.* labels; configuration editing and label grouping use native Incus keys.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F020",
+      "group": "Instances",
+      "feature": "Group instances by label",
+      "status": "implemented",
+      "note": "Main list groups/sorts by a chosen user.* label; the label preference persists.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F021",
+      "group": "Instances",
+      "feature": "Search and fuzzy matching",
+      "status": "implemented",
+      "note": "Ctrl+K focuses the fuzzy instance name/image/status search.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F022",
+      "group": "Instances",
+      "feature": "Sortable lists and saved sort preferences",
+      "status": "implemented",
+      "note": "Instance and resource lists have saved sort choices; statistics columns are sortable with saved direction.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F023",
+      "group": "Instances",
+      "feature": "Cluster and sandbox badges/cross-links",
+      "status": "incompatible",
+      "note": "Apple plugin labels cannot safely identify Incus cluster/sandbox workloads; no such plugin backend is selected.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F024",
+      "group": "Instances",
+      "feature": "Operation progress and errors",
+      "status": "adapted",
+      "note": "Native operations are inspectable/cancellable in Resources; image downloads report real daemon progress. Other actions report async completion/errors without invented progress.",
+      "upstream": [
+        "Orchard/Services/ContainerListService.swift"
+      ]
+    },
+    {
+      "id": "F025",
+      "group": "Machines / VMs",
+      "feature": "List and filter persistent machines",
+      "status": "adapted",
+      "note": "Incus virtual machines appear separately through the VM filter.",
+      "upstream": [
+        "Orchard/Services/MachineService.swift"
+      ]
+    },
+    {
+      "id": "F026",
+      "group": "Machines / VMs",
+      "feature": "Create VM from image",
+      "status": "adapted",
+      "note": "Create dialog selects Incus virtual-machine type with CPU/memory limits.",
+      "upstream": [
+        "Orchard/Services/MachineService.swift"
+      ]
+    },
+    {
+      "id": "F027",
+      "group": "Machines / VMs",
+      "feature": "Start and stop VM",
+      "status": "adapted",
+      "note": "Shared Incus instance lifecycle path handles VMs.",
+      "upstream": [
+        "Orchard/Services/MachineService.swift"
+      ]
+    },
+    {
+      "id": "F028",
+      "group": "Machines / VMs",
+      "feature": "Delete VM",
+      "status": "adapted",
+      "note": "Shared confirmed deletion path handles VMs.",
+      "upstream": [
+        "Orchard/Services/MachineService.swift"
+      ]
+    },
+    {
+      "id": "F029",
+      "group": "Machines / VMs",
+      "feature": "Set default machine",
+      "status": "incompatible",
+      "note": "Apple machine-plugin default has no corresponding Incus runtime concept; Incus profiles/projects serve different purposes.",
+      "upstream": [
+        "Orchard/Services/MachineService.swift"
+      ]
+    },
+    {
+      "id": "F030",
+      "group": "Machines / VMs",
+      "feature": "Edit VM resources",
+      "status": "adapted",
+      "note": "Version-checked config editor supports limits.cpu and limits.memory.",
+      "upstream": [
+        "Orchard/Services/MachineService.swift"
+      ]
+    },
+    {
+      "id": "F031",
+      "group": "Machines / VMs",
+      "feature": "Stop/apply/restart workflow",
+      "status": "implemented",
+      "note": "InstanceDetails offers confirmed stop/apply/start; native config ETags and intervening-change checks protect the edit.",
+      "upstream": [
+        "Orchard/Services/MachineService.swift"
+      ]
+    },
+    {
+      "id": "F032",
+      "group": "Machines / VMs",
+      "feature": "Home directory sharing",
+      "status": "adapted",
+      "note": "Native disk-device editor shares an explicit host folder; the app never mounts the entire home directory implicitly.",
+      "upstream": [
+        "Orchard/Services/MachineService.swift"
+      ]
+    },
+    {
+      "id": "F033",
+      "group": "Machines / VMs",
+      "feature": "Nested virtualization",
+      "status": "incompatible",
+      "note": "Apple machine virtualization flag is not an Incus setting; availability depends on host KVM and guest CPU configuration.",
+      "upstream": [
+        "Orchard/Services/MachineService.swift"
+      ]
+    },
+    {
+      "id": "F034",
+      "group": "Machines / VMs",
+      "feature": "Custom Apple machine kernel",
+      "status": "incompatible",
+      "note": "Incus VMs boot their own guest disks/firmware; Orchard Apple kernel selection is not transferable.",
+      "upstream": [
+        "Orchard/Services/MachineService.swift"
+      ]
+    },
+    {
+      "id": "F035",
+      "group": "Machines / VMs",
+      "feature": "Init-image guardrails",
+      "status": "adapted",
+      "note": "Native simplestreams system images replace OCI init-capability guessing; invalid images fail through Incus.",
+      "upstream": [
+        "Orchard/Services/MachineService.swift"
+      ]
+    },
+    {
+      "id": "F036",
+      "group": "Machines / VMs",
+      "feature": "VM stats and boot/output logs",
+      "status": "adapted",
+      "note": "Per-instance statistics include VM state. Boot/runtime logs are read through Incus, and systemd guest journals are explicit snapshots.",
+      "upstream": [
+        "Orchard/Services/MachineService.swift"
+      ]
+    },
+    {
+      "id": "F037",
+      "group": "Dashboard and metrics",
+      "feature": "Aggregate CPU/memory/network/disk dashboard",
+      "status": "adapted",
+      "note": "Default dashboard measures CPU core equivalents, memory, network rates, reported root-disk use, image sizes and storage-pool accounting. Disk I/O throughput is not reported as if it were disk space.",
+      "upstream": [
+        "Orchard/Services/StatsService.swift"
+      ]
+    },
+    {
+      "id": "F038",
+      "group": "Dashboard and metrics",
+      "feature": "CPU deltas and counter resets",
+      "status": "implemented",
+      "note": "Dashboard uses elapsed monotonic time and ignores reset counters and first-sample rates.",
+      "upstream": [
+        "Orchard/Services/StatsService.swift"
+      ]
+    },
+    {
+      "id": "F039",
+      "group": "Dashboard and metrics",
+      "feature": "Live sparklines",
+      "status": "implemented",
+      "note": "Native Cairo sparklines display bounded histories of aggregate resource use.",
+      "upstream": [
+        "Orchard/Services/StatsService.swift"
+      ]
+    },
+    {
+      "id": "F040",
+      "group": "Dashboard and metrics",
+      "feature": "Per-instance and VM charts",
+      "status": "implemented",
+      "note": "InstanceDetails Statistics samples the selected instance and retains its own recorded history.",
+      "upstream": [
+        "Orchard/Services/StatsService.swift"
+      ]
+    },
+    {
+      "id": "F041",
+      "group": "Dashboard and metrics",
+      "feature": "Sortable stats table",
+      "status": "implemented",
+      "note": "Dashboard columns sort by instance, memory, CPU, network or disk, with saved preferences.",
+      "upstream": [
+        "Orchard/Services/StatsService.swift"
+      ]
+    },
+    {
+      "id": "F042",
+      "group": "Dashboard and metrics",
+      "feature": "Persistent 24-hour stats history",
+      "status": "implemented",
+      "note": "Aggregate and per-instance histories retain up to 24 hours / 28,800 recorded points, save locally and leave sampling gaps disconnected.",
+      "upstream": [
+        "Orchard/Services/StatsService.swift"
+      ]
+    },
+    {
+      "id": "F043",
+      "group": "Dashboard and metrics",
+      "feature": "Dashboard disk-usage tiles",
+      "status": "adapted",
+      "note": "Dashboard reports cached-image sizes and per-pool used/total values separately, avoiding double counting shared backing filesystems.",
+      "upstream": [
+        "Orchard/Services/StatsService.swift"
+      ]
+    },
+    {
+      "id": "F044",
+      "group": "Dashboard and metrics",
+      "feature": "Sampling lifecycle and stale/error indication",
+      "status": "implemented",
+      "note": "Refresh guards avoid overlapping state reads; stale/unavailable measurements are labeled, first samples/counter resets are excluded and histories are bounded.",
+      "upstream": [
+        "Orchard/Services/StatsService.swift"
+      ]
+    },
+    {
+      "id": "F045",
+      "group": "Images and builds",
+      "feature": "List cached images",
+      "status": "adapted",
+      "note": "ResourceBrowser lists native Incus image cache entries.",
+      "upstream": [
+        "Orchard/Services/ImageService.swift"
+      ]
+    },
+    {
+      "id": "F046",
+      "group": "Images and builds",
+      "feature": "Inspect image metadata and sizes",
+      "status": "adapted",
+      "note": "ResourceBrowser exposes the actual image metadata, architecture, size and aliases.",
+      "upstream": [
+        "Orchard/Services/ImageService.swift"
+      ]
+    },
+    {
+      "id": "F047",
+      "group": "Images and builds",
+      "feature": "Delete cached image",
+      "status": "adapted",
+      "note": "ResourceBrowser confirms deletion and delegates in-use protection to Incus.",
+      "upstream": [
+        "Orchard/Services/ImageService.swift"
+      ]
+    },
+    {
+      "id": "F048",
+      "group": "Images and builds",
+      "feature": "Bulk image deletion",
+      "status": "implemented",
+      "note": "Resource check selections support confirmed batch deletion with per-image errors; in-use images are refused by Incus.",
+      "upstream": [
+        "Orchard/Services/ImageService.swift"
+      ]
+    },
+    {
+      "id": "F049",
+      "group": "Images and builds",
+      "feature": "Search Docker Hub",
+      "status": "incompatible",
+      "note": "Docker Hub OCI references are not runnable Incus 6.0 system images; owner selected Incus-only.",
+      "upstream": [
+        "Orchard/Services/ImageService.swift"
+      ]
+    },
+    {
+      "id": "F050",
+      "group": "Images and builds",
+      "feature": "Pull arbitrary OCI image",
+      "status": "incompatible",
+      "note": "Requires OCI application-container support absent from the installed Incus 6.0.5 target. Newer Incus versions would need a separately implemented and verified OCI workflow.",
+      "upstream": [
+        "Orchard/Services/ImageService.swift"
+      ]
+    },
+    {
+      "id": "F051",
+      "group": "Images and builds",
+      "feature": "Live OCI byte/blob pull progress",
+      "status": "incompatible",
+      "note": "No OCI pull backend is selected; native image operation progress is a separate capability.",
+      "upstream": [
+        "Orchard/Services/ImageService.swift"
+      ]
+    },
+    {
+      "id": "F052",
+      "group": "Images and builds",
+      "feature": "Native system-image pull",
+      "status": "implemented",
+      "note": "ImagePullWindow downloads native simplestreams container/VM images, reports real operation progress and exposes cancellation when the daemon supports it.",
+      "upstream": [
+        "Orchard/Services/ImageService.swift"
+      ]
+    },
+    {
+      "id": "F053",
+      "group": "Images and builds",
+      "feature": "Sort images and persist preferences",
+      "status": "implemented",
+      "note": "ResourceBrowser supports name and image-size ordering with saved preferences.",
+      "upstream": [
+        "Orchard/Services/ImageService.swift"
+      ]
+    },
+    {
+      "id": "F054",
+      "group": "Images and builds",
+      "feature": "Dockerfile/Containerfile builds",
+      "status": "incompatible",
+      "note": "Incus system-image construction is not Dockerfile/BuildKit; owner selected Incus-only.",
+      "upstream": [
+        "Orchard/Services/ImageService.swift"
+      ]
+    },
+    {
+      "id": "F055",
+      "group": "Images and builds",
+      "feature": "Build architecture and context selection",
+      "status": "incompatible",
+      "note": "Part of the unselected OCI builder contract.",
+      "upstream": [
+        "Orchard/Services/ImageService.swift"
+      ]
+    },
+    {
+      "id": "F056",
+      "group": "Images and builds",
+      "feature": "Concurrent build cancellation and streamed logs",
+      "status": "incompatible",
+      "note": "No OCI build engine selected.",
+      "upstream": [
+        "Orchard/Services/ImageService.swift"
+      ]
+    },
+    {
+      "id": "F057",
+      "group": "Images and builds",
+      "feature": "Persistent build records and image cross-links",
+      "status": "incompatible",
+      "note": "No OCI build engine selected; no fake build history is shown.",
+      "upstream": [
+        "Orchard/Services/ImageService.swift"
+      ]
+    },
+    {
+      "id": "F058",
+      "group": "Images and builds",
+      "feature": "Builder start/stop/delete",
+      "status": "incompatible",
+      "note": "Apple BuildKit-builder lifecycle has no matching Incus daemon object.",
+      "upstream": [
+        "Orchard/Services/ImageService.swift"
+      ]
+    },
+    {
+      "id": "F059",
+      "group": "Networks and DNS",
+      "feature": "List and inspect networks",
+      "status": "implemented",
+      "note": "ResourceBrowser includes managed and physical network metadata.",
+      "upstream": [
+        "Orchard/Services/NetworkService.swift"
+      ]
+    },
+    {
+      "id": "F060",
+      "group": "Networks and DNS",
+      "feature": "Create network with subnet",
+      "status": "adapted",
+      "note": "Native bridge dialog accepts IPv4 subnet or auto allocation and NAT.",
+      "upstream": [
+        "Orchard/Services/NetworkService.swift"
+      ]
+    },
+    {
+      "id": "F061",
+      "group": "Networks and DNS",
+      "feature": "Delete managed network",
+      "status": "implemented",
+      "note": "Confirmed deletion; unmanaged physical networks have no delete action.",
+      "upstream": [
+        "Orchard/Services/NetworkService.swift"
+      ]
+    },
+    {
+      "id": "F062",
+      "group": "Networks and DNS",
+      "feature": "Bulk network deletion",
+      "status": "implemented",
+      "note": "ResourceBrowser supports confirmed batch network deletion; unmanaged interfaces have no destructive controls.",
+      "upstream": [
+        "Orchard/Services/NetworkService.swift"
+      ]
+    },
+    {
+      "id": "F063",
+      "group": "Networks and DNS",
+      "feature": "Attach instance to network",
+      "status": "implemented",
+      "note": "DeviceEditor adds a native managed-network NIC with an explicit interface name.",
+      "upstream": [
+        "Orchard/Services/NetworkService.swift"
+      ]
+    },
+    {
+      "id": "F064",
+      "group": "Networks and DNS",
+      "feature": "Inspect instance addresses and hostnames",
+      "status": "adapted",
+      "note": "Main list and native inspection expose addresses/configuration; network and instance views are searchable through the palette.",
+      "upstream": [
+        "Orchard/Services/NetworkService.swift"
+      ]
+    },
+    {
+      "id": "F065",
+      "group": "Networks and DNS",
+      "feature": "DNS domain list/create/delete",
+      "status": "adapted",
+      "note": "ResourceBrowser uses Incus DNS zones. Zones are not host resolver registrations.",
+      "upstream": [
+        "Orchard/Services/NetworkService.swift"
+      ]
+    },
+    {
+      "id": "F066",
+      "group": "Networks and DNS",
+      "feature": "Default DNS domain preference",
+      "status": "adapted",
+      "note": "Managed-network Settings exposes dns.domain and other native DNS options. This configures the bridge, not Apple host-resolver registrations.",
+      "upstream": [
+        "Orchard/Services/NetworkService.swift"
+      ]
+    },
+    {
+      "id": "F067",
+      "group": "Networks and DNS",
+      "feature": "DNS domain pointing at host localhost",
+      "status": "incompatible",
+      "note": "Apple host DNS redirect has different resolver semantics; Incus zones alone cannot reproduce it.",
+      "upstream": [
+        "Orchard/Services/NetworkService.swift"
+      ]
+    },
+    {
+      "id": "F068",
+      "group": "Networks and DNS",
+      "feature": "DNS nameservers/search/options",
+      "status": "adapted",
+      "note": "Managed-network settings expose the actual supported dns.* options. Guest DNS behavior follows its system distribution, not OCI process flags.",
+      "upstream": [
+        "Orchard/Services/NetworkService.swift"
+      ]
+    },
+    {
+      "id": "F069",
+      "group": "Networks and DNS",
+      "feature": "Network labels",
+      "status": "adapted",
+      "note": "Managed-network Settings supports native user.* keys with version checks.",
+      "upstream": [
+        "Orchard/Services/NetworkService.swift"
+      ]
+    },
+    {
+      "id": "F070",
+      "group": "Mounts and storage",
+      "feature": "Unique mount inventory across instances",
+      "status": "adapted",
+      "note": "MountsWindow inventories every effective disk with instance links, source, target, pool, readonly/inherited state. Rows remain per-instance instead of hiding attachment differences in a deduplicated aggregate.",
+      "upstream": [
+        "Orchard/Views/Features/Mounts/ListMounts.swift"
+      ]
+    },
+    {
+      "id": "F071",
+      "group": "Mounts and storage",
+      "feature": "Mount source/target/read-only inspection",
+      "status": "implemented",
+      "note": "MountsWindow displays local and inherited disk metadata; Instance details exposes the full document.",
+      "upstream": [
+        "Orchard/Views/Features/Mounts/ListMounts.swift"
+      ]
+    },
+    {
+      "id": "F072",
+      "group": "Mounts and storage",
+      "feature": "Remove mount with apply/restart",
+      "status": "adapted",
+      "note": "MountsWindow removes local non-root devices using version-checked preserved instance configuration. Root/inherited devices are protected; VM hotplug limitations remain daemon-enforced.",
+      "upstream": [
+        "Orchard/Views/Features/Mounts/ListMounts.swift"
+      ]
+    },
+    {
+      "id": "F073",
+      "group": "Mounts and storage",
+      "feature": "Storage pool inventory",
+      "status": "implemented",
+      "note": "ResourceBrowser lists and inspects native storage pools.",
+      "upstream": [
+        "Orchard/Views/Features/Mounts/ListMounts.swift"
+      ]
+    },
+    {
+      "id": "F074",
+      "group": "Mounts and storage",
+      "feature": "Storage volume management",
+      "status": "Incus addition",
+      "note": "Custom volume CRUD is an Incus-specific follow-up, not an upstream bind-mount parity requirement. Pool inventory and folder mounts are implemented.",
+      "upstream": [
+        "Orchard/Views/Features/Mounts/ListMounts.swift"
+      ]
+    },
+    {
+      "id": "F075",
+      "group": "Logs",
+      "feature": "Read per-instance runtime/boot logs",
+      "status": "adapted",
+      "note": "InstanceDetails reads lxc.log, console.log or qemu.log through the Incus logs API.",
+      "upstream": [
+        "Orchard/Views/Features/Logs/MultiLogView.swift"
+      ]
+    },
+    {
+      "id": "F076",
+      "group": "Logs",
+      "feature": "Application stdout/stderr logs",
+      "status": "incompatible",
+      "note": "System containers do not have one OCI entrypoint stdout stream; a journal/service log workflow must be explicitly selected.",
+      "upstream": [
+        "Orchard/Views/Features/Logs/MultiLogView.swift"
+      ]
+    },
+    {
+      "id": "F077",
+      "group": "Logs",
+      "feature": "Live log streaming",
+      "status": "adapted",
+      "note": "LogViewer refreshes bounded runtime/console tails every three seconds. Guest system journals use explicit snapshots to avoid spawning unbounded persistent exec sessions.",
+      "upstream": [
+        "Orchard/Views/Features/Logs/MultiLogView.swift"
+      ]
+    },
+    {
+      "id": "F078",
+      "group": "Logs",
+      "feature": "Log search and highlighting",
+      "status": "implemented",
+      "note": "Each native log pane highlights matches and can show only matching lines.",
+      "upstream": [
+        "Orchard/Views/Features/Logs/MultiLogView.swift"
+      ]
+    },
+    {
+      "id": "F079",
+      "group": "Logs",
+      "feature": "Multiple simultaneous log panes",
+      "status": "implemented",
+      "note": "LogViewer coordinates independently selected instance panes, each with its own source/search and close control.",
+      "upstream": [
+        "Orchard/Views/Features/Logs/MultiLogView.swift"
+      ]
+    },
+    {
+      "id": "F080",
+      "group": "Logs",
+      "feature": "ANSI normalization and per-container colours",
+      "status": "implemented",
+      "note": "LogViewer strips CSI/OSC control sequences and uses distinct pane-heading colours.",
+      "upstream": [
+        "Orchard/Views/Features/Logs/MultiLogView.swift"
+      ]
+    },
+    {
+      "id": "F081",
+      "group": "Logs",
+      "feature": "System daemon logs",
+      "status": "adapted",
+      "note": "SystemWindow reads the local Incus systemd journal; it never substitutes guest output for daemon logs.",
+      "upstream": [
+        "Orchard/Views/Features/Logs/MultiLogView.swift"
+      ]
+    },
+    {
+      "id": "F082",
+      "group": "Panel and navigation",
+      "feature": "Persistent native panel icon",
+      "status": "implemented",
+      "note": "Wingpanel session module stays present after closing the main window; excluded from greeter.",
+      "upstream": [
+        "Orchard/Views/Features/MenuBar/MenuBarDashboard.swift"
+      ]
+    },
+    {
+      "id": "F083",
+      "group": "Panel and navigation",
+      "feature": "Running-instance badge",
+      "status": "implemented",
+      "note": "Badge handles zero, errors and recovery; tested against disposable socket fixtures.",
+      "upstream": [
+        "Orchard/Views/Features/MenuBar/MenuBarDashboard.swift"
+      ]
+    },
+    {
+      "id": "F084",
+      "group": "Panel and navigation",
+      "feature": "Per-instance status list",
+      "status": "implemented",
+      "note": "Panel menu lists current local instance states.",
+      "upstream": [
+        "Orchard/Views/Features/MenuBar/MenuBarDashboard.swift"
+      ]
+    },
+    {
+      "id": "F085",
+      "group": "Panel and navigation",
+      "feature": "Panel start/stop controls",
+      "status": "implemented",
+      "note": "Per-instance guarded native async state actions are now exposed in the panel.",
+      "upstream": [
+        "Orchard/Views/Features/MenuBar/MenuBarDashboard.swift"
+      ]
+    },
+    {
+      "id": "F086",
+      "group": "Panel and navigation",
+      "feature": "Panel CPU/memory rings and histories",
+      "status": "implemented",
+      "note": "Wingpanel companion shows host-normalized CPU/memory rings and bounded recent graphs, with unknown/baseline states.",
+      "upstream": [
+        "Orchard/Views/Features/MenuBar/MenuBarDashboard.swift"
+      ]
+    },
+    {
+      "id": "F087",
+      "group": "Panel and navigation",
+      "feature": "Open manager from panel",
+      "status": "implemented",
+      "note": "Canonical desktop launcher opens the native Vala app.",
+      "upstream": [
+        "Orchard/Views/Features/MenuBar/MenuBarDashboard.swift"
+      ]
+    },
+    {
+      "id": "F088",
+      "group": "Panel and navigation",
+      "feature": "Cross-resource command palette with verbs",
+      "status": "implemented",
+      "note": "Ctrl+K ranks native instances/resources and exposes start/stop/restart, shell/console, logs, creation and navigation actions.",
+      "upstream": [
+        "Orchard/Views/Features/MenuBar/MenuBarDashboard.swift"
+      ]
+    },
+    {
+      "id": "F089",
+      "group": "Panel and navigation",
+      "feature": "Deep links to container/machine",
+      "status": "implemented",
+      "note": "Application handles orchard:// container/machine links with native instance details and filtered lists; desktop file declares the scheme.",
+      "upstream": [
+        "Orchard/Views/Features/MenuBar/MenuBarDashboard.swift"
+      ]
+    },
+    {
+      "id": "F090",
+      "group": "Panel and navigation",
+      "feature": "Deep links to every upstream tab/resource",
+      "status": "adapted",
+      "note": "All implemented Incus destinations resolve; unsupported Apple/OCI tabs show a clear unavailable message rather than pretending to work.",
+      "upstream": [
+        "Orchard/Views/Features/MenuBar/MenuBarDashboard.swift"
+      ]
+    },
+    {
+      "id": "F091",
+      "group": "Panel and navigation",
+      "feature": "Multi-window resource navigation",
+      "status": "implemented",
+      "note": "Native detail, resources, mounts, logs, models, sandbox and system windows provide direct resource handoffs.",
+      "upstream": [
+        "Orchard/Views/Features/MenuBar/MenuBarDashboard.swift"
+      ]
+    },
+    {
+      "id": "F092",
+      "group": "Compose",
+      "feature": "Discover projects from labels",
+      "status": "incompatible",
+      "note": "Apple OCI Compose labels/runtime contract does not map to Incus system containers.",
+      "upstream": [
+        "Orchard/Services/ComposeService.swift"
+      ]
+    },
+    {
+      "id": "F093",
+      "group": "Compose",
+      "feature": "Import compose.yaml with diagnostics and line numbers",
+      "status": "incompatible",
+      "note": "No Compose engine is selected; unsupported keys must not be silently converted.",
+      "upstream": [
+        "Orchard/Services/ComposeService.swift"
+      ]
+    },
+    {
+      "id": "F094",
+      "group": "Compose",
+      "feature": "Plan idempotent up/recreate/remove operations",
+      "status": "incompatible",
+      "note": "Would require a separate Incus stacks specification, not claimed as Compose compatibility.",
+      "upstream": [
+        "Orchard/Services/ComposeService.swift"
+      ]
+    },
+    {
+      "id": "F095",
+      "group": "Compose",
+      "feature": "Dependency ordering and service/network inspection",
+      "status": "incompatible",
+      "note": "No Compose backend selected.",
+      "upstream": [
+        "Orchard/Services/ComposeService.swift"
+      ]
+    },
+    {
+      "id": "F096",
+      "group": "Compose",
+      "feature": "Lifecycle hooks and streamed step logs",
+      "status": "incompatible",
+      "note": "No Compose backend selected.",
+      "upstream": [
+        "Orchard/Services/ComposeService.swift"
+      ]
+    },
+    {
+      "id": "F097",
+      "group": "Compose",
+      "feature": "Build integration and persistent project state",
+      "status": "incompatible",
+      "note": "No OCI builder or Compose backend selected.",
+      "upstream": [
+        "Orchard/Services/ComposeService.swift"
+      ]
+    },
+    {
+      "id": "F098",
+      "group": "Compose",
+      "feature": "Install standalone container compose plugin",
+      "status": "incompatible",
+      "note": "Upstream Swift plugin targets apple/container and cannot run against Incus.",
+      "upstream": [
+        "Orchard/Services/ComposeService.swift"
+      ]
+    },
+    {
+      "id": "F099",
+      "group": "Kubernetes",
+      "feature": "Discover/group node containers",
+      "status": "incompatible",
+      "note": "Upstream apple/container k8s labels/plugin do not describe arbitrary Incus workloads.",
+      "upstream": [
+        "Orchard/Services/ClusterService.swift"
+      ]
+    },
+    {
+      "id": "F100",
+      "group": "Kubernetes",
+      "feature": "Create/delete/recreate clusters",
+      "status": "incompatible",
+      "note": "Apple k8s plugin cannot run on Incus; a separately scoped K3s/Kubernetes provisioner is required.",
+      "upstream": [
+        "Orchard/Services/ClusterService.swift"
+      ]
+    },
+    {
+      "id": "F101",
+      "group": "Kubernetes",
+      "feature": "Choose Kubernetes/node image/CNI/resources",
+      "status": "incompatible",
+      "note": "No Incus Kubernetes provisioner selected.",
+      "upstream": [
+        "Orchard/Services/ClusterService.swift"
+      ]
+    },
+    {
+      "id": "F102",
+      "group": "Kubernetes",
+      "feature": "Load local OCI image into containerd",
+      "status": "incompatible",
+      "note": "No OCI image backend or Kubernetes integration selected.",
+      "upstream": [
+        "Orchard/Services/ClusterService.swift"
+      ]
+    },
+    {
+      "id": "F103",
+      "group": "Kubernetes",
+      "feature": "Write/merge kubeconfig and copy path",
+      "status": "incompatible",
+      "note": "No managed Incus Kubernetes cluster backend selected.",
+      "upstream": [
+        "Orchard/Services/ClusterService.swift"
+      ]
+    },
+    {
+      "id": "F104",
+      "group": "Kubernetes",
+      "feature": "Open context-selected kubectl terminal",
+      "status": "incompatible",
+      "note": "Depends on a managed cluster/context backend not selected here.",
+      "upstream": [
+        "Orchard/Services/ClusterService.swift"
+      ]
+    },
+    {
+      "id": "F105",
+      "group": "Kubernetes",
+      "feature": "Cluster stats and cross-links",
+      "status": "incompatible",
+      "note": "No managed Incus Kubernetes backend selected; do not infer clusters from names.",
+      "upstream": [
+        "Orchard/Services/ClusterService.swift"
+      ]
+    },
+    {
+      "id": "F106",
+      "group": "Local AI and sandboxes",
+      "feature": "Discover Ollama/LM Studio/OpenAI-compatible endpoints",
+      "status": "implemented",
+      "note": "ModelsWindow scans configured enabled endpoints and lists models through OpenAI-compatible local APIs; unavailable/auth-required endpoints are distinguished.",
+      "upstream": [
+        "Orchard/Services/ModelService.swift"
+      ]
+    },
+    {
+      "id": "F107",
+      "group": "Local AI and sandboxes",
+      "feature": "Configure endpoints and enable/disable/reset",
+      "status": "implemented",
+      "note": "ModelsWindow stores endpoint bookmarks and per-endpoint enable state, supports reset, and honors disabled state before requests.",
+      "upstream": [
+        "Orchard/Services/ModelService.swift"
+      ]
+    },
+    {
+      "id": "F108",
+      "group": "Local AI and sandboxes",
+      "feature": "API key storage in OS secret store",
+      "status": "implemented",
+      "note": "ModelService uses desktop libsecret for optional per-endpoint API keys; no keys are stored in preferences or injected into guests.",
+      "upstream": [
+        "Orchard/Services/ModelService.swift"
+      ]
+    },
+    {
+      "id": "F109",
+      "group": "Local AI and sandboxes",
+      "feature": "In-app model chat tester",
+      "status": "implemented",
+      "note": "ModelsWindow sends a test prompt and displays a text completion; HTTP discovery/chat/auth/error paths use disposable fixtures.",
+      "upstream": [
+        "Orchard/Services/ModelService.swift"
+      ]
+    },
+    {
+      "id": "F110",
+      "group": "Local AI and sandboxes",
+      "feature": "Start/stop supervised mlx_lm.server",
+      "status": "incompatible",
+      "note": "Upstream MLX/macOS process/GPU workflow is not provided by the selected Incus backend.",
+      "upstream": [
+        "Orchard/Services/ModelService.swift"
+      ]
+    },
+    {
+      "id": "F111",
+      "group": "Local AI and sandboxes",
+      "feature": "Server crash surfacing and logs",
+      "status": "incompatible",
+      "note": "Depends on the unselected MLX supervision workflow; generic Linux services are a separate design.",
+      "upstream": [
+        "Orchard/Services/ModelService.swift"
+      ]
+    },
+    {
+      "id": "F112",
+      "group": "Local AI and sandboxes",
+      "feature": "Compute container-reachable model endpoint",
+      "status": "implemented",
+      "note": "ModelBridge uses the actual managed-network host gateway for loopback model URLs and refuses ambiguous multi-network guessing.",
+      "upstream": [
+        "Orchard/Services/ModelService.swift"
+      ]
+    },
+    {
+      "id": "F113",
+      "group": "Local AI and sandboxes",
+      "feature": "Inject OPENAI_BASE_URL or OLLAMA_HOST",
+      "status": "adapted",
+      "note": "Native model connection writes environment.OPENAI_BASE_URL and a nonsecret endpoint marker. Existing OLLAMA_HOST environments are detected; VM variables apply to exec processes.",
+      "upstream": [
+        "Orchard/Services/ModelService.swift"
+      ]
+    },
+    {
+      "id": "F114",
+      "group": "Local AI and sandboxes",
+      "feature": "Create sandbox with host-only vs internet isolation",
+      "status": "adapted",
+      "note": "SandboxCreateWindow uses native system images, explicit root/NIC devices and no inherited profiles/host mounts. Host-only policy is required by default; routed networking requires an explicit choice.",
+      "upstream": [
+        "Orchard/Services/ModelService.swift"
+      ]
+    },
+    {
+      "id": "F115",
+      "group": "Local AI and sandboxes",
+      "feature": "Sandbox isolation badges and detection",
+      "status": "adapted",
+      "note": "SandboxesWindow identifies managed/detected model connections and distinguishes shared-kernel containers from VMs, host mounts and current network policy. Badges are configuration observations, not security attestations.",
+      "upstream": [
+        "Orchard/Services/ModelService.swift"
+      ]
+    },
+    {
+      "id": "F116",
+      "group": "Local AI and sandboxes",
+      "feature": "Sandbox chat, shell and kill switch",
+      "status": "implemented",
+      "note": "SandboxesWindow links to model testing, guest shell/details and a confirmed immediate stop action.",
+      "upstream": [
+        "Orchard/Services/ModelService.swift"
+      ]
+    },
+    {
+      "id": "F117",
+      "group": "Settings, system and platform",
+      "feature": "Native typed runtime integration",
+      "status": "adapted",
+      "note": "libsoup/JSON-GLib use Incus REST over its local Unix socket; no polling CLI subprocesses.",
+      "upstream": [
+        "Orchard/Services/SystemService.swift"
+      ]
+    },
+    {
+      "id": "F118",
+      "group": "Settings, system and platform",
+      "feature": "Daemon availability/version state",
+      "status": "implemented",
+      "note": "SystemWindow reports actual Incus version/resources; main dashboard and panel display connection/stale errors.",
+      "upstream": [
+        "Orchard/Services/SystemService.swift"
+      ]
+    },
+    {
+      "id": "F119",
+      "group": "Settings, system and platform",
+      "feature": "Daemon start/stop/restart",
+      "status": "adapted",
+      "note": "SystemWindow offers confirmed pkexec/systemd service+socket actions affecting the local daemon. These privileged controls are not invoked during tests.",
+      "upstream": [
+        "Orchard/Services/SystemService.swift"
+      ]
+    },
+    {
+      "id": "F120",
+      "group": "Settings, system and platform",
+      "feature": "Host kernel recommendation/custom kernel selection",
+      "status": "incompatible",
+      "note": "Changing this machine kernel is not part of an Incus frontend; Apple per-runtime kernel provisioning does not apply.",
+      "upstream": [
+        "Orchard/Services/SystemService.swift"
+      ]
+    },
+    {
+      "id": "F121",
+      "group": "Settings, system and platform",
+      "feature": "Inspect system properties and disk usage",
+      "status": "implemented",
+      "note": "SystemWindow exposes safe server properties and native resources; dashboard reports image and per-pool accounting.",
+      "upstream": [
+        "Orchard/Services/SystemService.swift"
+      ]
+    },
+    {
+      "id": "F122",
+      "group": "Settings, system and platform",
+      "feature": "Registry settings",
+      "status": "incompatible",
+      "note": "Apple OCI registry TOML has no equivalent Incus image remote configuration; native remotes would be a separate integration.",
+      "upstream": [
+        "Orchard/Services/SystemService.swift"
+      ]
+    },
+    {
+      "id": "F123",
+      "group": "Settings, system and platform",
+      "feature": "Terminal application choice",
+      "status": "implemented",
+      "note": "Preferences supports elementary Terminal, GNOME Terminal, Console and xterm; shell/instance arguments and socket overrides are passed safely.",
+      "upstream": [
+        "Orchard/Services/SystemService.swift"
+      ]
+    },
+    {
+      "id": "F124",
+      "group": "Settings, system and platform",
+      "feature": "Persistent shell preference",
+      "status": "implemented",
+      "note": "Preferences stores absolute shell path; default /bin/sh also works in Alpine.",
+      "upstream": [
+        "Orchard/Services/SystemService.swift"
+      ]
+    },
+    {
+      "id": "F125",
+      "group": "Settings, system and platform",
+      "feature": "Hide Dock icon preference",
+      "status": "incompatible",
+      "note": "macOS activation-policy/Dock behavior is not a Pantheon app setting; closing the manager retains its panel icon.",
+      "upstream": [
+        "Orchard/Services/SystemService.swift"
+      ]
+    },
+    {
+      "id": "F126",
+      "group": "Settings, system and platform",
+      "feature": "Custom runtime binary",
+      "status": "incompatible",
+      "note": "Native REST uses an Incus socket rather than an Apple CLI binary.",
+      "upstream": [
+        "Orchard/Services/SystemService.swift"
+      ]
+    },
+    {
+      "id": "F127",
+      "group": "Settings, system and platform",
+      "feature": "Custom Incus socket",
+      "status": "implemented",
+      "note": "Preferences persists an absolute Unix-socket override; INCUS_SOCKET takes precedence. Terminal handoffs carry the same connection override.",
+      "upstream": [
+        "Orchard/Services/SystemService.swift"
+      ]
+    },
+    {
+      "id": "F128",
+      "group": "Settings, system and platform",
+      "feature": "Signed/notarized macOS updater",
+      "status": "incompatible",
+      "note": "Linux package/release distribution replaces Apple signing and Sparkle; not yet packaged as a Linux release.",
+      "upstream": [
+        "Orchard/Services/SystemService.swift"
+      ]
+    },
+    {
+      "id": "F129",
+      "group": "Settings, system and platform",
+      "feature": "Native alerts and validation",
+      "status": "implemented",
+      "note": "Native confirmations protect destructive actions; structured fields are validated and backend errors/version conflicts surface without silent writes. Window startup is checked with fatal GLib criticals.",
+      "upstream": [
+        "Orchard/Services/SystemService.swift"
+      ]
+    },
+    {
+      "id": "F130",
+      "group": "Settings, system and platform",
+      "feature": "Resource profiles/projects",
+      "status": "Incus addition",
+      "note": "Native create/list/inspect/version-checked configuration editing/delete are provided. Selecting a different project context is a separate Incus-specific extension, not upstream parity.",
+      "upstream": [
+        "Orchard/Services/SystemService.swift"
+      ]
+    },
+    {
+      "id": "F131",
+      "group": "Settings, system and platform",
+      "feature": "Snapshots take/list/restore/delete",
+      "status": "implemented",
+      "note": "Native snapshot workflow predates the panel; restore and deletion require confirmation. This is an Incus addition.",
+      "upstream": [
+        "Orchard/Services/SystemService.swift"
+      ]
+    }
+  ],
+  "verification": "Validated on aarch64 elementary OS with Incus 6.0.5: application and Wingpanel module compile; five automated suites pass (Incus protocol/JSON/config round trips, model HTTP/auth and bridge policy, restart/ETag races, indicator states, and construction of native windows against disposable fixtures). Live owned-container checks cover config/device preservation, stop/apply/start with runtime ETag changes, snapshots, copy, pause/resume, restore and streamed export. A temporary host-only bridge allowed a host service and blocked cross-network guest traffic without an IPv6 default route. A newly created native Alpine VM booted and its guest agent executed a command with the configured environment. All temporary instances/networks were cleaned up; existing Rupert and orchard-test workloads were not changed. GTK fixture tests validate construction and initial reads, not a complete manual click-through. Actual keyring credential storage, external model generation, privileged host daemon controls, and every possible image/network configuration have not been live-tested. No production SER8 changes or runtime upgrade are included.",
+  "runtime_version": "Incus 6.0.5",
+  "compatibility_note": "OCI application-container support was introduced in Incus 6.3; the incompatible OCI classifications here describe this installed 6.0.5 target and this implementation, not all future Incus versions. No host runtime upgrade is performed.",
+  "runtime_sources": [
+    "https://discuss.linuxcontainers.org/t/incus-6-3-has-been-released/21019",
+    "https://github.com/lxc/incus/blob/v6.0.5/doc/rest-api.yaml"
+  ]
+}

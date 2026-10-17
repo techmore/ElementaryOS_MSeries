@@ -1,5 +1,26 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Orchard for Incus upstreamed into this repo — 2026-10-17
+
+Both Orchard for Incus implementations now live in `ElementaryOS_MSeries`
+(previously only on the `claude/airplay-destinations` branch and in the
+separate `techmore/orchard-incus` repo):
+
+- `mseries/orchard-incus/` — Python/GTK 4 app (installed to
+  `~/.local/share/orchard-incus`, launcher `~/.local/bin/orchard-incus`),
+  imported from `claude/airplay-destinations` @ 0eeefa7. Tests:
+  `cd mseries/orchard-incus && python3 -m unittest discover -s tests`
+  (42 run, 6 live tests skipped).
+- `mseries/orchard-incus-native/` — Vala/Granite app + Wingpanel indicator,
+  imported from `techmore/orchard-incus` `codex/wingpanel-indicator` @ 3913611
+  (no build output; MIT LICENSE and NOTICE.md with Orchard attribution kept).
+  Not rebuilt or re-tested during the import.
+- Installed copy of the Python app was byte-identical to the source (diff clean).
+- Not done: audit/fix pass (error states, install idempotence), Vala build
+  and tests, deciding which implementation is canonical.
+- Next: choose canonical implementation, then audit failure states
+  (incus missing/permission denied/daemon down) with tests first.
+
 ## R1/R2 first-boot fixes staged — 2026-10-16
 
 The first controlled boot (11:45:04–11:47:13) ran with the exact intended

@@ -1,0 +1,467 @@
+source,line,declaration
+Orchard/Services/ANSIText.swift,32,static func plain(_ line: String) -> String {
+Orchard/Services/ANSIText.swift,39,static func segments(_ line: String) -> [Segment] {
+Orchard/Services/ANSIText.swift,44,func flush() {
+Orchard/Services/ANSIText.swift,125,"private static func flushed(_ segments: [Segment], _ current: String, _ style: Style) -> [Segment] {"
+Orchard/Services/ANSIText.swift,132,private static func isCSIFinalByte(_ ch: Character) -> Bool {
+Orchard/Services/ANSIText.swift,137,"private static func apply(parameters: String, to style: Style) -> Style {"
+Orchard/Services/ANSIText.swift,177,"private static func extendedColor(_ codes: [Int], from index: Int) -> (NSColor?, Int) {"
+Orchard/Services/ANSIText.swift,204,private static func color256(_ n: Int) -> NSColor {
+Orchard/Services/ANSIText.swift,216,"private static func rgb(_ r: Int, _ g: Int, _ b: Int) -> NSColor {"
+Orchard/Services/AlertCenter.swift,45,"func error(_ message: String, source: AlertSource = .user, alertButtons: [AlertButton] = []) {"
+Orchard/Services/AlertCenter.swift,53,"func error(_ error: OrchardError, source: AlertSource = .user) {"
+Orchard/Services/AlertCenter.swift,58,"func dismiss() -> Task<Void, Never> {"
+Orchard/Services/AppServices.swift,34,static func forLaunch() -> AppServices {
+Orchard/Services/BuilderService.swift,41,func loadBuilders() async {
+Orchard/Services/BuilderService.swift,102,"func startBuilder() async { await runBuilderCommand(""start"") { await self.loadBuilders() } }"
+Orchard/Services/BuilderService.swift,103,"func stopBuilder() async { await runBuilderCommand(""stop"") { await self.loadBuilders() } }"
+Orchard/Services/BuilderService.swift,104,"func deleteBuilder() async { await runBuilderCommand(""delete"") { self.builders = [] } }"
+Orchard/Services/BuilderService.swift,108,"private func runBuilderCommand(_ verb: String, onSuccess: @escaping () async -> Void) async {"
+Orchard/Services/BuildsPersistence.swift,12,static func defaultURL() -> URL {
+Orchard/Services/BuildsPersistence.swift,28,func save(_ builds: [ImageBuild]) throws {
+Orchard/Services/BuildsPersistence.swift,48,func load() -> [ImageBuild] {
+Orchard/Services/ByteFormat.swift,6,static func string(_ bytes: Int64) -> String {
+Orchard/Services/ByteFormat.swift,10,static func string(_ bytes: Int) -> String {
+Orchard/Services/ByteFormat.swift,17,static func memory(_ bytes: Int64) -> String {
+Orchard/Services/ByteFormat.swift,23,static func memory(_ bytes: Int) -> String {
+Orchard/Services/CLIParsers.swift,19,func parseBuilderStatus(stdout: String) -> BuilderParseResult {
+Orchard/Services/CLIParsers.swift,46,"func parseDNSDomains(json output: String, defaultDomain: String?) -> [DNSDomain] {"
+Orchard/Services/CLIParsers.swift,63,func parseLocalhostRedirect(resolverConfig: String) -> String? {
+Orchard/Services/CLIParsers.swift,81,func parseSystemProperties(json output: String) -> [SystemProperty] {
+Orchard/Services/CLIParsers.swift,142,"private func normalizeSystemPropertyValue(_ raw: Any) -> (SystemProperty.PropertyType, String) {"
+Orchard/Services/CLIParsers.swift,160,func parseDockerHubSearch(data: Data) -> [RegistrySearchResult] {
+Orchard/Services/CLIParsers.swift,186,func splitCommandLine(_ line: String) -> [String] {
+Orchard/Services/CLIParsers.swift,230,func joinCommandLine(_ args: [String]) -> String {
+Orchard/Services/ClusterService.swift,39,static func clusterName(for container: Container) -> String? {
+Orchard/Services/ClusterService.swift,49,static func group(containers: [Container]) -> [K8sCluster] {
+Orchard/Services/ClusterService.swift,185,private func rememberedOptions(for name: String) -> RememberedOptions? {
+Orchard/Services/ClusterService.swift,192,"private func setRememberedOptions(_ options: RememberedOptions?, for name: String) {"
+Orchard/Services/ClusterService.swift,203,func prepareRecreate(_ cluster: K8sCluster) async -> ClusterRecreateSettings {
+Orchard/Services/ClusterService.swift,213,func recreateSettings(for cluster: K8sCluster) -> ClusterRecreateSettings {
+Orchard/Services/ClusterService.swift,252,nonisolated static func kubectlTerminalCommand(cluster: String) -> String {
+Orchard/Services/ClusterService.swift,261,func probePluginAvailability() async {
+Orchard/Services/ClusterService.swift,289,func loadNodeImageOptions() async {
+Orchard/Services/ClusterService.swift,310,"func create(name: String, cpus: Int?, memory: String?, nodeImage: String?, cni: String? = nil) async -> Bool {"
+Orchard/Services/ClusterService.swift,323,private func performCreate(
+Orchard/Services/ClusterService.swift,361,nonisolated static func outputIndicatesNodePrepFailure(_ output: String) -> Bool {
+Orchard/Services/ClusterService.swift,368,func delete(name: String) async {
+Orchard/Services/ClusterService.swift,381,"func recreate(name: String, cpus: Int?, memory: String?, nodeImage: String?, cni: String?) async -> Bool {"
+Orchard/Services/ClusterService.swift,394,"func loadImage(cluster: String, reference: String) async -> Bool {"
+Orchard/Services/ClusterService.swift,404,func writeConfig(cluster: String) async -> Bool {
+Orchard/Services/ClusterService.swift,414,private func runClusterCommand(
+Orchard/Services/CommandPaletteCatalog.swift,120,static func entries(
+Orchard/Services/CommandPaletteCatalog.swift,236,"static func rank(_ entries: [PaletteEntry], query: String) -> [PaletteEntry] {"
+Orchard/Services/CommandPaletteCatalog.swift,272,private static func actionEntries(systemRunning: Bool) -> [PaletteEntry] {
+Orchard/Services/CommandPaletteCatalog.swift,399,private static func navigationEntries() -> [PaletteEntry] {
+Orchard/Services/CommandPaletteCatalog.swift,411,private static func containerEntries(_ container: Container) -> [PaletteEntry] {
+Orchard/Services/CommandPaletteCatalog.swift,464,private static func machineEntries(_ machine: Machine) -> [PaletteEntry] {
+Orchard/Services/CommandRunner.swift,14,"func run(program: String, arguments: [String]) async throws -> ProcessResult"
+Orchard/Services/CommandRunner.swift,15,"func runWithSudo(program: String, arguments: [String]) async throws -> ProcessResult"
+Orchard/Services/CommandRunner.swift,19,func runStreaming(
+Orchard/Services/CommandRunner.swift,29,func runStreaming(
+Orchard/Services/CommandRunner.swift,47,"func run(program: String, arguments: [String]) async throws -> ProcessResult {"
+Orchard/Services/CommandRunner.swift,61,"func runWithSudo(program: String, arguments: [String]) async throws -> ProcessResult {"
+Orchard/Services/CommandRunner.swift,68,static func shellQuote(_ token: String) -> String {
+Orchard/Services/CommandRunner.swift,77,"static func adminScript(program: String, arguments: [String]) -> String {"
+Orchard/Services/CommandRunner.swift,85,func runStreaming(
+Orchard/Services/CommandRunner.swift,111,func ingest(_ data: Data) {
+Orchard/Services/CommandRunner.swift,127,func finish() -> String? {
+Orchard/Services/CommandRunner.swift,187,"static func runProcessSync(program: String, arguments: [String]) throws -> ProcessResult {"
+Orchard/Services/ComposeHooks.swift,23,static func name(of hook: HookOperation) -> String {
+Orchard/Services/ComposeHooks.swift,31,"static func outcome(of hook: HookOperation, failingWith error: any Error, later: Int) -> Outcome {"
+Orchard/Services/ComposeHooks.swift,85,func append(_ line: String) {
+Orchard/Services/ComposePluginService.swift,60,func note(for step: Step) -> String? {
+Orchard/Services/ComposePluginService.swift,145,func refresh() async {
+Orchard/Services/ComposePluginService.swift,172,nonisolated static func indicatesMissingPlugin(_ output: String) -> Bool {
+Orchard/Services/ComposePluginService.swift,180,nonisolated static func searchedDirectories(inCLIError output: String) -> [String] {
+Orchard/Services/ComposePluginService.swift,192,"nonisolated static func needsAdministrator(toWrite path: String, fileManager: FileManager = .default) -> Bool {"
+Orchard/Services/ComposePluginService.swift,207,func installedBinaryPath() -> String? {
+Orchard/Services/ComposePluginService.swift,218,"private static func version(of binary: String, using runner: any CommandRunner) async -> String? {"
+Orchard/Services/ComposePluginService.swift,241,func beginInstall() {
+Orchard/Services/ComposePluginService.swift,250,func cancelInstall() {
+Orchard/Services/ComposePluginService.swift,262,func install() async {
+Orchard/Services/ComposePluginService.swift,312,private func latestRelease() async throws -> Release {
+Orchard/Services/ComposePluginService.swift,350,"private func download(_ url: URL, to destination: URL) async throws {"
+Orchard/Services/ComposePluginService.swift,367,"private func unpack(_ tarball: URL, in directory: URL) async throws -> URL {"
+Orchard/Services/ComposePluginService.swift,391,private func copyIntoPlace(from unpacked: URL) async throws -> Bool {
+Orchard/Services/ComposeProjects.swift,45,func container(forService service: String) -> Container? {
+Orchard/Services/ComposeProjects.swift,51,"static func group(containers: [Container], records: [ComposeProjectRecord]) -> [ComposeProject] {"
+Orchard/Services/ComposeProjects.swift,111,static func defaultURL() -> URL {
+Orchard/Services/ComposeProjects.swift,120,func save(_ records: [ComposeProjectRecord]) throws {
+Orchard/Services/ComposeProjects.swift,134,func load() -> [ComposeProjectRecord]? {
+Orchard/Services/ComposeService.swift,84,func preview(fileURL: URL) throws -> ComposeFilePreview {
+Orchard/Services/ComposeService.swift,101,func beginAdd(fileURL: URL) {
+Orchard/Services/ComposeService.swift,111,func clearPendingPreview() {
+Orchard/Services/ComposeService.swift,116,func add(_ preview: ComposeFilePreview) {
+Orchard/Services/ComposeService.swift,134,func acknowledgeFindings(for name: String) {
+Orchard/Services/ComposeService.swift,143,func forget(_ name: String) {
+Orchard/Services/ComposeService.swift,159,func refreshParses() {
+Orchard/Services/ComposeService.swift,174,func findings(for name: String) -> [Finding] {
+Orchard/Services/ComposeService.swift,180,func unacknowledgedFindings(for name: String) -> [Finding] {
+Orchard/Services/ComposeService.swift,188,func fileIsMissing(for project: ComposeProject) -> Bool {
+Orchard/Services/ComposeService.swift,193,private func modificationDate(of url: URL) -> Date? {
+Orchard/Services/ComposeService.swift,200,private func ensureLoaded() -> Bool {
+Orchard/Services/ComposeService.swift,211,private func persist() {
+Orchard/Services/ComposeService.swift,221,"func up(project: ComposeProject, options: UpOptions = UpOptions()) async {"
+Orchard/Services/ComposeService.swift,236,"func down(project: ComposeProject, options: DownOptions = DownOptions()) async {"
+Orchard/Services/ComposeService.swift,247,nonisolated static func fileFromLabels(_ project: ComposeProject) -> ComposeFile {
+Orchard/Services/ComposeService.swift,255,private func runPlan(
+Orchard/Services/ComposeService.swift,298,private func snapshot() async throws -> CurrentState {
+Orchard/Services/ComposeService.swift,310,nonisolated static func containerState(of container: Container) -> ComposePlanner.ContainerState {
+Orchard/Services/ComposeService.swift,322,"private func execute(_ plan: Plan, project: String, verb: String) async {"
+Orchard/Services/ComposeService.swift,386,nonisolated static func step(for operation: ComposePlanner.Operation) -> ComposeRun.Step {
+Orchard/Services/ComposeService.swift,421,private func perform(
+Orchard/Services/ComposeService.swift,461,"private func runHook(_ hook: HookOperation, stepIndex: Int) async throws {"
+Orchard/Services/ComposeService.swift,486,"private func updateDetail(at index: Int, to detail: String?) {"
+Orchard/Services/ComposeService.swift,493,nonisolated static func pullDetail(_ metrics: ImagePullMetrics) -> String? {
+Orchard/Services/ComposeService.swift,504,private func build(_ operation: BuildOperation) async throws {
+Orchard/Services/ComposeService.swift,547,nonisolated static func ensureBindSources(of operation: CreateOperation) throws -> [String] {
+Orchard/Services/ComposeService.swift,567,nonisolated static func createSpec(from operation: CreateOperation) -> ContainerCreateSpec {
+Orchard/Services/ContainerBackend.swift,75,"func resolveProcessArguments(imageEntrypoint: [String]?, imageCmd: [String]?, override: [String]) -> [String] {"
+Orchard/Services/ContainerBackend.swift,97,"func mergeEnvironment(_ base: [String], overriddenBy overrides: [String]) -> [String] {"
+Orchard/Services/ContainerBackend.swift,98,func name(_ entry: String) -> Substring {
+Orchard/Services/ContainerBackend.swift,119,static func isMachine(labels: [String: String]) -> Bool {
+Orchard/Services/ContainerBackend.swift,129,func listContainers() async throws -> [Container]
+Orchard/Services/ContainerBackend.swift,130,func stopContainer(id: String) async throws
+Orchard/Services/ContainerBackend.swift,131,"func killContainer(id: String, signal: Int32) async throws"
+Orchard/Services/ContainerBackend.swift,132,"func deleteContainer(id: String, force: Bool) async throws"
+Orchard/Services/ContainerBackend.swift,133,func bootstrapAndStart(id: String) async throws
+Orchard/Services/ContainerBackend.swift,140,func runProcess(
+Orchard/Services/ContainerBackend.swift,148,func containerLogs(id: String) async throws -> [FileHandle]
+Orchard/Services/ContainerBackend.swift,151,"func exportContainer(id: String, to destination: URL) async throws"
+Orchard/Services/ContainerBackend.swift,154,func cleanContainer(id: String) async throws
+Orchard/Services/ContainerBackend.swift,155,func stats(id: String) async throws -> Orchard.ContainerStats
+Orchard/Services/ContainerBackend.swift,156,func createContainer(_ spec: ContainerCreateSpec) async throws
+Orchard/Services/ContainerBackend.swift,157,func listImages() async throws -> [ContainerImage]
+Orchard/Services/ContainerBackend.swift,158,"func pullImage(reference: String, onProgress: (@Sendable (ImagePullMetrics) -> Void)?) async throws"
+Orchard/Services/ContainerBackend.swift,159,func deleteImage(reference: String) async throws
+Orchard/Services/ContainerBackend.swift,160,func inspectImage(reference: String) async throws -> ImageInspection
+Orchard/Services/ContainerBackend.swift,161,func listNetworks() async throws -> [ContainerNetwork]
+Orchard/Services/ContainerBackend.swift,162,"func createNetwork(name: String, subnet: String?, labels: [String: String]) async throws"
+Orchard/Services/ContainerBackend.swift,163,func deleteNetwork(id: String) async throws
+Orchard/Services/ContainerBackend.swift,164,func ping() async throws -> SystemHealthInfo
+Orchard/Services/ContainerBackend.swift,165,func diskUsage() async throws -> SystemDiskUsage
+Orchard/Services/ContainerBackend.swift,170,func mapContainerError(_ error: Error) -> Error {
+Orchard/Services/ContainerBackend.swift,181,func isContainerVersionMismatch(_ error: Error) -> Bool {
+Orchard/Services/ContainerBackend.swift,186,func isContainerServiceUnavailable(_ error: Error) -> Bool {
+Orchard/Services/ContainerBackend.swift,207,private func loadContainerSystemConfig() async throws -> ContainerSystemConfig {
+Orchard/Services/ContainerBackend.swift,211,func listContainers() async throws -> [Container] {
+Orchard/Services/ContainerBackend.swift,220,func stopContainer(id: String) async throws {
+Orchard/Services/ContainerBackend.swift,226,"func killContainer(id: String, signal: Int32) async throws {"
+Orchard/Services/ContainerBackend.swift,234,func cleanContainer(id: String) async throws {
+Orchard/Services/ContainerBackend.swift,242,"func exportContainer(id: String, to destination: URL) async throws {"
+Orchard/Services/ContainerBackend.swift,266,"func deleteContainer(id: String, force: Bool) async throws {"
+Orchard/Services/ContainerBackend.swift,276,func bootstrapAndStart(id: String) async throws {
+Orchard/Services/ContainerBackend.swift,284,func runProcess(
+Orchard/Services/ContainerBackend.swift,373,func relay(_ handle: FileHandle) async {
+Orchard/Services/ContainerBackend.swift,389,"func drain(streams: Int, within limit: Duration) async {"
+Orchard/Services/ContainerBackend.swift,399,func containerLogs(id: String) async throws -> [FileHandle] {
+Orchard/Services/ContainerBackend.swift,405,func stats(id: String) async throws -> Orchard.ContainerStats {
+Orchard/Services/ContainerBackend.swift,412,func createContainer(_ spec: ContainerCreateSpec) async throws {
+Orchard/Services/ContainerBackend.swift,512,func listImages() async throws -> [ContainerImage] {
+Orchard/Services/ContainerBackend.swift,519,"func pullImage(reference: String, onProgress: (@Sendable (ImagePullMetrics) -> Void)?) async throws {"
+Orchard/Services/ContainerBackend.swift,543,func handle(_ events: [ProgressUpdateEvent]) {
+Orchard/Services/ContainerBackend.swift,570,func deleteImage(reference: String) async throws {
+Orchard/Services/ContainerBackend.swift,576,func inspectImage(reference: String) async throws -> ImageInspection {
+Orchard/Services/ContainerBackend.swift,620,func listNetworks() async throws -> [ContainerNetwork] {
+Orchard/Services/ContainerBackend.swift,627,"func createNetwork(name: String, subnet: String?, labels: [String: String]) async throws {"
+Orchard/Services/ContainerBackend.swift,641,func deleteNetwork(id: String) async throws {
+Orchard/Services/ContainerBackend.swift,647,func ping() async throws -> SystemHealthInfo {
+Orchard/Services/ContainerBackend.swift,654,func diskUsage() async throws -> SystemDiskUsage {
+Orchard/Services/ContainerListService.swift,65,private static func computeMounts(_ containers: [Container]) -> [ContainerMount] {
+Orchard/Services/ContainerListService.swift,84,"private func areContainersEqual(_ old: [Container], _ new: [Container]) -> Bool {"
+Orchard/Services/ContainerListService.swift,88,func loadContainers(showLoading: Bool = false) async {
+Orchard/Services/ContainerListService.swift,130,func forceStopContainer(_ id: String) async {
+Orchard/Services/ContainerListService.swift,146,func stopContainer(_ id: String) async {
+Orchard/Services/ContainerListService.swift,162,"func startContainer(_ id: String, maxRetries: Int = 3, retryDelay: TimeInterval = 1.0) async {"
+Orchard/Services/ContainerListService.swift,186,"private func startContainerWithRetry(_ id: String, maxRetries: Int, retryDelay: TimeInterval) async {"
+Orchard/Services/ContainerListService.swift,253,private func refreshUntilContainerStopped(_ id: String) async {
+Orchard/Services/ContainerListService.swift,283,private func refreshUntilContainerStarted(_ id: String) async {
+Orchard/Services/ContainerListService.swift,312,func removeContainer(_ id: String) async {
+Orchard/Services/ContainerListService.swift,333,func removeContainers(_ ids: [String]) async {
+Orchard/Services/ContainerListService.swift,342,"func exportContainer(_ id: String, to destination: URL) async -> Bool {"
+Orchard/Services/ContainerListService.swift,362,func cleanContainer(_ id: String) async -> Bool {
+Orchard/Services/ContainerListService.swift,386,func cleanContainers(_ ids: [String]) async {
+Orchard/Services/ContainerListService.swift,392,"func fetchContainerLogs(containerId: String, tailLines: Int = 5000) async throws -> [String] {"
+Orchard/Services/ContainerListService.swift,413,"func recreateContainer(oldContainerId: String, newConfig: ContainerRunConfig) async {"
+Orchard/Services/ContainerListService.swift,430,private func recoverContainer(_ id: String) async -> Bool {
+Orchard/Services/ContainerListService.swift,495,func runContainer(config: ContainerRunConfig) async -> Bool {
+Orchard/Services/ContainerListService.swift,551,func deleteMounts(_ mounts: [ContainerMount]) async {
+Orchard/Services/DNSService.swift,34,func load(showLoading: Bool = true) async {
+Orchard/Services/DNSService.swift,79,private func withLocalhostRedirect(_ domain: DNSDomain) -> DNSDomain {
+Orchard/Services/DNSService.swift,87,private func markedDefault(_ domain: DNSDomain) -> DNSDomain {
+Orchard/Services/DNSService.swift,97,"func create(_ domain: String, localhost: String? = nil) async -> Bool {"
+Orchard/Services/DNSService.swift,118,func delete(_ domain: String) async {
+Orchard/Services/DNSService.swift,141,func setDefault(_ domain: String?) {
+Orchard/Services/DNSService.swift,145,func deleteDNSDomains(_ domains: [String]) async {
+Orchard/Services/DeepLink.swift,22,static func parse(_ url: URL) -> DeepLink? {
+Orchard/Services/DockIconPolicy.swift,14,static func apply(hidden: Bool) {
+Orchard/Services/FuzzyMatch.swift,15,"static func score(query: String, candidate: String) -> Int? {"
+Orchard/Services/ImageBuildService.swift,97,func build(id: UUID) -> ImageBuild? {
+Orchard/Services/ImageBuildService.swift,103,nonisolated static func referenceCandidates(forTag tag: String) -> [String] {
+Orchard/Services/ImageBuildService.swift,114,func build(forImageReference reference: String) -> ImageBuild? {
+Orchard/Services/ImageBuildService.swift,124,nonisolated static func arguments(for request: Request) -> [String] {
+Orchard/Services/ImageBuildService.swift,147,"nonisolated static func validationError(for request: Request, fileManager: FileManager = .default) -> String? {"
+Orchard/Services/ImageBuildService.swift,176,nonisolated static func failureSummary(from result: ProcessResult) -> String {
+Orchard/Services/ImageBuildService.swift,188,func startBuild(_ request: Request) -> UUID {
+Orchard/Services/ImageBuildService.swift,227,func wait(for id: UUID) async {
+Orchard/Services/ImageBuildService.swift,231,func cancel(_ id: UUID) {
+Orchard/Services/ImageBuildService.swift,239,func clearFinished() {
+Orchard/Services/ImageBuildService.swift,245,func remove(_ id: UUID) {
+Orchard/Services/ImageBuildService.swift,253,"private func mutate(_ id: UUID, _ change: (inout ImageBuild) -> Void) {"
+Orchard/Services/ImageBuildService.swift,258,"private func append(_ line: String, to id: UUID) {"
+Orchard/Services/ImageBuildService.swift,267,"private func finish(_ id: UUID, as phase: ImageBuild.Phase) {"
+Orchard/Services/ImageBuildService.swift,279,private func persist() {
+Orchard/Services/ImageBuildService.swift,287,private func pruneFinished() {
+Orchard/Services/ImageService.swift,29,func canonicalImageReference(_ ref: String) -> String {
+Orchard/Services/ImageService.swift,53,"func resolveRunImageReference(_ input: String, localReferences: [String]) -> String {"
+Orchard/Services/ImageService.swift,76,func hostVariantSize(_ variants: [ImageInspection.Variant]) -> Int64 {
+Orchard/Services/ImageService.swift,84,"func dockerHubSearchURL(query: String, page: Int) -> URL? {"
+Orchard/Services/ImageService.swift,107,"func resume(_ continuation: CheckedContinuation<Value, Error>, with result: Result<Value, Error>) -> Bool {"
+Orchard/Services/ImageService.swift,121,private func isCancellation(_ error: Error) -> Bool {
+Orchard/Services/ImageService.swift,126,"private func inspectImageWithTimeout(reference: String, backend: ContainerBackend) async throws -> ImageInspection {"
+Orchard/Services/ImageService.swift,161,func enter() async {
+Orchard/Services/ImageService.swift,169,func leave() {
+Orchard/Services/ImageService.swift,208,func load(showLoading: Bool = false) async {
+Orchard/Services/ImageService.swift,239,func inspect(reference: String) async throws -> ImageInspection {
+Orchard/Services/ImageService.swift,243,func sizeText(for image: ContainerImage) -> String {
+Orchard/Services/ImageService.swift,247,func sizeText(forReference reference: String) -> String {
+Orchard/Services/ImageService.swift,258,func sortSize(for image: ContainerImage) -> Int64 {
+Orchard/Services/ImageService.swift,265,private func enrichImageSizes(for images: [ContainerImage]) {
+Orchard/Services/ImageService.swift,307,func dismissPullProgress(_ imageName: String) {
+Orchard/Services/ImageService.swift,313,"private func applyPullMetrics(_ imageName: String, _ metrics: ImagePullMetrics) {"
+Orchard/Services/ImageService.swift,325,func pull(_ imageName: String) async {
+Orchard/Services/ImageService.swift,359,func search(_ query: String) async {
+Orchard/Services/ImageService.swift,386,func loadMoreSearchResults() async {
+Orchard/Services/ImageService.swift,402,"private func fetchSearchPage(query: String, page: Int, append: Bool, generation: Int) async {"
+Orchard/Services/ImageService.swift,452,func clearSearchResults() {
+Orchard/Services/ImageService.swift,461,func delete(_ imageReference: String) async {
+Orchard/Services/ImageService.swift,472,func deleteImages(_ references: [String]) async {
+Orchard/Services/InputValidation.swift,8,static func isValidDomainName(_ domain: String) -> Bool {
+Orchard/Services/InputValidation.swift,14,static func isValidNetworkName(_ name: String) -> Bool {
+Orchard/Services/InputValidation.swift,20,static func isValidIPv4(_ address: String) -> Bool {
+Orchard/Services/InputValidation.swift,27,static func isValidSubnet(_ subnet: String) -> Bool {
+Orchard/Services/K8sNodeImages.swift,35,static func parsePluginDefault(helpText: String) -> String? {
+Orchard/Services/K8sNodeImages.swift,43,static func tag(of reference: String) -> String? {
+Orchard/Services/K8sNodeImages.swift,61,static func parseHubTags(_ data: Data) throws -> [HubTag] {
+Orchard/Services/K8sNodeImages.swift,67,static func options(from tags: [HubTag]) -> [K8sNodeImageOption] {
+Orchard/Services/K8sNodeImages.swift,82,static func fetchTags() async throws -> [HubTag] {
+Orchard/Services/MachineBackend.swift,43,func listMachines() async throws -> [Machine]
+Orchard/Services/MachineBackend.swift,44,func inspectMachine(id: String) async throws -> Machine
+Orchard/Services/MachineBackend.swift,45,func createMachine(_ spec: MachineCreateSpec) async throws
+Orchard/Services/MachineBackend.swift,47,"func setMachineConfig(id: String, config: MachineConfigSpec) async throws"
+Orchard/Services/MachineBackend.swift,48,func bootMachine(id: String) async throws
+Orchard/Services/MachineBackend.swift,49,func stopMachine(id: String) async throws
+Orchard/Services/MachineBackend.swift,51,func deleteMachine(id: String) async throws
+Orchard/Services/MachineBackend.swift,52,func setDefaultMachine(id: String) async throws
+Orchard/Services/MachineBackend.swift,53,func machineLogs(id: String) async throws -> [FileHandle]
+Orchard/Services/MachineBackend.swift,62,func listMachines() async throws -> [Machine] {
+Orchard/Services/MachineBackend.swift,75,func inspectMachine(id: String) async throws -> Machine {
+Orchard/Services/MachineBackend.swift,86,func createMachine(_ spec: MachineCreateSpec) async throws {
+Orchard/Services/MachineBackend.swift,140,"func setMachineConfig(id: String, config: MachineConfigSpec) async throws {"
+Orchard/Services/MachineBackend.swift,164,func bootMachine(id: String) async throws {
+Orchard/Services/MachineBackend.swift,172,func stopMachine(id: String) async throws {
+Orchard/Services/MachineBackend.swift,180,func deleteMachine(id: String) async throws {
+Orchard/Services/MachineBackend.swift,188,func setDefaultMachine(id: String) async throws {
+Orchard/Services/MachineBackend.swift,196,func machineLogs(id: String) async throws -> [FileHandle] {
+Orchard/Services/MachineBackend.swift,210,"func mapMachine(_ snapshot: MachineSnapshot, isDefault: Bool) -> Machine {"
+Orchard/Services/MachineBackend.swift,242,func mapMachineError(_ error: Error) -> Error {
+Orchard/Services/MachineBackend.swift,250,func isMachineServiceUnavailable(_ error: Error) -> Bool {
+Orchard/Services/MachineImageAdvisor.swift,22,static func likelyLacksInit(_ imageRef: String) -> Bool {
+Orchard/Services/MachineImageAdvisor.swift,40,static func logsIndicateMissingInit(_ logLines: [String]) -> Bool {
+Orchard/Services/MachineService.swift,22,func load(showLoading: Bool = true) async {
+Orchard/Services/MachineService.swift,51,func create(_ spec: MachineCreateSpec) async -> Bool {
+Orchard/Services/MachineService.swift,68,"func applyConfig(_ config: MachineConfigSpec, to id: String, restartNow: Bool) async -> Bool {"
+Orchard/Services/MachineService.swift,84,func boot(_ id: String) async {
+Orchard/Services/MachineService.swift,93,func stop(_ id: String) async {
+Orchard/Services/MachineService.swift,102,func delete(_ id: String) async {
+Orchard/Services/MachineService.swift,111,func setDefault(_ id: String) async {
+Orchard/Services/MachineService.swift,122,"func fetchLogs(id: String, boot: Bool = false, tailLines: Int = 5000) async throws -> [String] {"
+Orchard/Services/MainWindows.swift,13,static func register(_ window: NSWindow) {
+Orchard/Services/MainWindows.swift,20,static func bringToFront() -> Bool {
+Orchard/Services/ModelBackend.swift,19,"static func containerBaseURL(gateway: String, hostPort: UInt16, api: ModelAPIStyle) -> String {"
+Orchard/Services/ModelBackend.swift,31,"static func containerBaseURL(gateway: String, host: String, hostPort: UInt16, api: ModelAPIStyle) -> String {"
+Orchard/Services/ModelBackend.swift,39,"static func injectionEnvironment(baseURL: String, api: ModelAPIStyle, apiKey: String? = nil) -> [(key: String, value: String)] {"
+Orchard/Services/ModelBackend.swift,67,"func detectProviders(endpoints: [ModelEndpoint], apiKeys: [String: String]) async -> [ModelProvider]"
+Orchard/Services/ModelBackend.swift,72,"func complete(host: String, port: UInt16, api: ModelAPIStyle, model: String, messages: [ChatMessage], apiKey: String?) async throws -> String"
+Orchard/Services/ModelBackend.swift,84,func urlSession(
+Orchard/Services/ModelBackend.swift,105,"func detectProviders(endpoints: [ModelEndpoint], apiKeys: [String: String]) async -> [ModelProvider] {"
+Orchard/Services/ModelBackend.swift,122,"static func probe(_ endpoint: ModelEndpoint, session: URLSession, apiKey: String?) async -> ModelProvider? {"
+Orchard/Services/ModelBackend.swift,140,"static func provider(from status: Int, data: Data, endpoint: ModelEndpoint) -> ModelProvider? {"
+Orchard/Services/ModelBackend.swift,169,"static func refineKind(_ kind: ModelProvider.Kind, data: Data, api: ModelAPIStyle) -> ModelProvider.Kind {"
+Orchard/Services/ModelBackend.swift,181,"func complete(host: String, port: UInt16, api: ModelAPIStyle, model: String, messages: [ChatMessage], apiKey: String?) async throws -> String {"
+Orchard/Services/ModelBackend.swift,228,"static func parseCompletion(_ data: Data, api: ModelAPIStyle) throws -> String {"
+Orchard/Services/ModelBackend.swift,245,"static func parseModels(_ data: Data, api: ModelAPIStyle) -> [String] {"
+Orchard/Services/ModelMapping.swift,8,func mapContainer(_ snapshot: ContainerSnapshot) -> Container {
+Orchard/Services/ModelMapping.swift,18,func mapContainerConfiguration(_ config: ContainerResource.ContainerConfiguration) -> ContainerConfiguration {
+Orchard/Services/ModelMapping.swift,42,func mapAttachment(_ attachment: Attachment) -> Network {
+Orchard/Services/ModelMapping.swift,53,func mapProcessConfiguration(_ process: ProcessConfiguration) -> initProcess {
+Orchard/Services/ModelMapping.swift,76,func mapFilesystem(_ fs: Filesystem) -> Mount {
+Orchard/Services/ModelMapping.swift,99,func mapPlatform(_ platform: ContainerizationOCI.Platform) -> Orchard.Platform {
+Orchard/Services/ModelMapping.swift,109,func mapImageDescription(_ image: ImageDescription) -> Image {
+Orchard/Services/ModelMapping.swift,120,func mapClientImage(_ image: ClientImage) -> ContainerImage {
+Orchard/Services/ModelMapping.swift,134,func mapDNSConfiguration(_ dns: ContainerResource.ContainerConfiguration.DNSConfiguration?) -> DNS {
+Orchard/Services/ModelMapping.swift,148,func mapResources(_ resources: ContainerResource.ContainerConfiguration.Resources) -> Orchard.Resources {
+Orchard/Services/ModelMapping.swift,157,func mapPublishPort(_ port: PublishPort) -> PublishedPort {
+Orchard/Services/ModelMapping.swift,168,func mapContainerStats(_ stats: ContainerResource.ContainerStats) -> Orchard.ContainerStats {
+Orchard/Services/ModelMapping.swift,184,func mapDiskUsageStats(_ stats: DiskUsageStats) -> SystemDiskUsage {
+Orchard/Services/ModelMapping.swift,192,func mapResourceUsage(_ usage: ResourceUsage) -> DiskUsageSection {
+Orchard/Services/ModelMapping.swift,207,func mapNetworkResource(_ resource: NetworkResource) -> ContainerNetwork {
+Orchard/Services/ModelServerEngine.swift,11,func terminate()
+Orchard/Services/ModelServerEngine.swift,31,func terminate() {
+Orchard/Services/ModelServerEngine.swift,42,func locateBinary() -> String?
+Orchard/Services/ModelServerEngine.swift,44,"func launch(model: String, host: String, port: UInt16, logURL: URL) throws -> ServerProcess"
+Orchard/Services/ModelServerEngine.swift,62,"static func launchArguments(model: String, host: String, port: UInt16) -> [String] {"
+Orchard/Services/ModelServerEngine.swift,66,func locateBinary() -> String? {
+Orchard/Services/ModelServerEngine.swift,75,"func launch(model: String, host: String, port: UInt16, logURL: URL) throws -> ServerProcess {"
+Orchard/Services/ModelServerService.swift,40,func stopAll() {
+Orchard/Services/ModelServerService.swift,51,"private static func serverID(model: String, port: UInt16) -> String { ""\(model)@\(port)"" }"
+Orchard/Services/ModelServerService.swift,53,private static func logURL(for id: String) -> URL {
+Orchard/Services/ModelServerService.swift,61,"func start(model: String, host: String, port: UInt16) -> Bool {"
+Orchard/Services/ModelServerService.swift,90,func stop(_ id: String) {
+Orchard/Services/ModelServerService.swift,96,"private func handleTermination(id: String, code: Int32) {"
+Orchard/Services/ModelService.swift,32,func load(showLoading: Bool = true) async {
+Orchard/Services/ModelService.swift,57,func refreshTick() async {
+Orchard/Services/ModelService.swift,71,"func complete(host: String = ModelEndpoint.defaultHost, port: UInt16, api: ModelAPIStyle, model: String, messages: [ChatMessage]) async throws -> String {"
+Orchard/Services/ModelService.swift,85,"func setAPIKey(_ key: String, host: String = ModelEndpoint.defaultHost, port: UInt16) async throws {"
+Orchard/Services/ModelService.swift,93,"func hasAPIKey(host: String, port: UInt16) -> Bool {"
+Orchard/Services/ModelService.swift,101,func updateEndpoint(_ endpoint: ModelEndpoint) async {
+Orchard/Services/ModelService.swift,108,"func setEndpointEnabled(_ enabled: Bool, id: String) async {"
+Orchard/Services/ModelService.swift,113,func restoreDefaultEndpoint(id: String) async {
+Orchard/Services/ModelService.swift,121,"func bridgeEnvironment(for provider: ModelProvider, on network: ContainerNetwork) -> [(key: String, value: String)]? {"
+Orchard/Services/ModelService.swift,132,"func containerBaseURL(for provider: ModelProvider, on network: ContainerNetwork) -> String? {"
+Orchard/Services/NetworkService.swift,17,func load(showLoading: Bool = true) async {
+Orchard/Services/NetworkService.swift,38,"func create(name: String, subnet: String? = nil, labels: [String] = []) async -> Bool {"
+Orchard/Services/NetworkService.swift,59,func delete(_ networkId: String) async {
+Orchard/Services/NetworkService.swift,67,func deleteNetworks(_ networkIds: [String]) async {
+Orchard/Services/OrchardError.swift,72,"static func classifyStartError(_ error: Error, id: String) -> OrchardError {"
+Orchard/Services/OrchardError.swift,95,"static func classifyCleanError(_ error: Error, id: String) -> OrchardError {"
+Orchard/Services/OrchardError.swift,109,static func isAlreadyExistsError(_ stderr: String) -> Bool {
+Orchard/Services/Sandbox.swift,17,static func hasSandboxLabel(_ labels: [String: String]) -> Bool {
+Orchard/Services/Sandbox.swift,23,"static func modelEndpoint(labels: [String: String], environment: [String]) -> String? {"
+Orchard/Services/Sandbox.swift,36,static func labels(endpoint: String) -> [String: String] {
+Orchard/Services/Sandbox.swift,44,"static func chatAPIStyle(labels: [String: String], environment: [String]) -> ModelAPIStyle? {"
+Orchard/Services/Sandbox.swift,85,"static func from(container: Container, hostOnlyNetworks: Set<String>) -> Sandbox? {"
+Orchard/Services/Sandbox.swift,108,"func detectSandboxes(containers: [Container], networks: [ContainerNetwork]) -> [Sandbox] {"
+Orchard/Services/SecretsStore.swift,8,func secret(for account: String) -> String?
+Orchard/Services/SecretsStore.swift,13,"func setSecret(_ value: String?, for account: String) throws"
+Orchard/Services/SecretsStore.swift,14,func allSecrets() -> [String: String]
+Orchard/Services/SecretsStore.swift,25,func secret(for account: String) -> String? {
+Orchard/Services/SecretsStore.swift,35,"func setSecret(_ value: String?, for account: String) throws {"
+Orchard/Services/SecretsStore.swift,53,"private static func error(_ status: OSStatus, doing verb: String) -> Error {"
+Orchard/Services/SecretsStore.swift,58,func allSecrets() -> [String: String] {
+Orchard/Services/SecretsStore.swift,80,private func baseQuery(account: String) -> [String: Any] {
+Orchard/Services/SecretsStore.swift,94,func secret(for account: String) -> String? {
+Orchard/Services/SecretsStore.swift,98,"func setSecret(_ value: String?, for account: String) throws {"
+Orchard/Services/SecretsStore.swift,108,func allSecrets() -> [String: String] {
+Orchard/Services/SettingsStore.swift,84,func setHideDockIcon(_ hidden: Bool) {
+Orchard/Services/SettingsStore.swift,89,private func loadCustomBinaryPath() {
+Orchard/Services/SettingsStore.swift,95,func setCustomBinaryPath(_ path: String?) {
+Orchard/Services/SettingsStore.swift,105,func resetToDefaultBinary() {
+Orchard/Services/SettingsStore.swift,109,func validateAndSetCustomBinaryPath(_ path: String?) -> Bool {
+Orchard/Services/SettingsStore.swift,128,private func loadPreferredTerminal() {
+Orchard/Services/SettingsStore.swift,140,func setPreferredTerminal(_ terminal: TerminalApp) {
+Orchard/Services/SettingsStore.swift,145,private func loadContainerShell() {
+Orchard/Services/SettingsStore.swift,152,func setContainerShell(_ shell: String) {
+Orchard/Services/SettingsStore.swift,164,func setDefaultDNSDomain(_ domain: String?) {
+Orchard/Services/SettingsStore.swift,174,private func validateBinaryPath(_ path: String) -> Bool {
+Orchard/Services/SettingsStore.swift,192,func safeContainerBinaryPath() -> String {
+Orchard/Services/SettingsStore.swift,217,private func loadModelEndpoints() {
+Orchard/Services/SettingsStore.swift,231,private func persistModelEndpoints() {
+Orchard/Services/SettingsStore.swift,239,func updateModelEndpoint(_ endpoint: ModelEndpoint) {
+Orchard/Services/SettingsStore.swift,246,"func setModelEndpointEnabled(_ enabled: Bool, id: String) {"
+Orchard/Services/SettingsStore.swift,254,func restoreDefaultModelEndpoint(id: String) {
+Orchard/Services/SettingsStore.swift,269,"func modelAPIKey(host: String = ModelEndpoint.defaultHost, port: UInt16) -> String? {"
+Orchard/Services/SettingsStore.swift,280,"private func account(_ host: String, _ port: UInt16) -> String { ""\(host):\(port)"" }"
+Orchard/Services/SettingsStore.swift,284,"func setModelAPIKey(_ key: String?, host: String = ModelEndpoint.defaultHost, port: UInt16) throws {"
+Orchard/Services/SettingsStore.swift,297,func modelAPIKeys(for endpoints: [ModelEndpoint]) -> [String: String] {
+Orchard/Services/StatsHistory.swift,53,func computeSample(
+Orchard/Services/StatsHistory.swift,63,"func perSecond(_ previous: Int, _ current: Int) -> Double {"
+Orchard/Services/StatsHistory.swift,98,func aggregate(_ histories: [[StatsSample]]) -> [StatsSample] {
+Orchard/Services/StatsHistory.swift,134,"func record(_ sample: StatsSample, for key: StatsKey) {"
+Orchard/Services/StatsHistory.swift,151,func samples(for key: StatsKey) -> [StatsSample] {
+Orchard/Services/StatsHistory.swift,155,func latest(for key: StatsKey) -> StatsSample? {
+Orchard/Services/StatsHistory.swift,160,func allSamples() -> [[StatsSample]] {
+Orchard/Services/StatsHistory.swift,165,func snapshot() -> [StatsKey: [StatsSample]] {
+Orchard/Services/StatsHistory.swift,170,func replaceAll(_ snapshot: [StatsKey: [StatsSample]]) {
+Orchard/Services/StatsHistory.swift,178,func mergeRestored(_ restored: [StatsKey: [StatsSample]]) {
+Orchard/Services/StatsHistory.swift,191,"func evictSeries(olderThan cutoff: Date, keeping liveKeys: Set<StatsKey>) {"
+Orchard/Services/StatsHistory.swift,201,func clear(for key: StatsKey) {
+Orchard/Services/StatsHistory.swift,205,func removeAll() {
+Orchard/Services/StatsPersistence.swift,12,static func defaultURL() -> URL {
+Orchard/Services/StatsPersistence.swift,24,func save(_ snapshot: [StatsKey: [StatsSample]]) throws {
+Orchard/Services/StatsPersistence.swift,38,"func load(retention: TimeInterval = 86_400, now: Date = Date()) -> [StatsKey: [StatsSample]] {"
+Orchard/Services/StatsService.swift,63,"nonisolated static func machineStatKey(_ machineId: String) -> String { ""machine::\(machineId)"" }"
+Orchard/Services/StatsService.swift,129,func activate() {
+Orchard/Services/StatsService.swift,165,func beginSampling() {
+Orchard/Services/StatsService.swift,172,func endSampling() {
+Orchard/Services/StatsService.swift,180,func beginMenuBarSampling() {
+Orchard/Services/StatsService.swift,187,func endMenuBarSampling() {
+Orchard/Services/StatsService.swift,197,private func reconfigureSampler() {
+Orchard/Services/StatsService.swift,224,private func tick() async {
+Orchard/Services/StatsService.swift,236,private func persistNow(inBackground: Bool) {
+Orchard/Services/StatsService.swift,246,func load(showLoading: Bool = true) async {
+Orchard/Services/StatsService.swift,389,private func recordFailure(_ message: String) {
+Orchard/Services/StatsService.swift,403,func menuBarHistoryState() -> MenuBarHistoryState {
+Orchard/Services/StatsService.swift,419,func machineSample(_ machineId: String) -> StatsSample? {
+Orchard/Services/StatsService.swift,424,func machineRawStats(_ machineId: String) -> ContainerStats? {
+Orchard/Services/StatsService.swift,429,func machineHistory(_ machineId: String) -> [StatsSample] {
+Orchard/Services/StatsService.swift,441,"private func recordSamples(_ reads: [ContainerStats], cpuCounts: [String: Int]) -> Bool {"
+Orchard/Services/SystemService.swift,70,func checkSystemStatus() async {
+Orchard/Services/SystemService.swift,94,func checkSystemStatusIgnoreVersion() async {
+Orchard/Services/SystemService.swift,99,func checkContainerVersion() async {
+Orchard/Services/SystemService.swift,103,func startSystem() async {
+Orchard/Services/SystemService.swift,165,func stopSystem() async {
+Orchard/Services/SystemService.swift,192,func restartSystem() async {
+Orchard/Services/SystemService.swift,221,func loadSystemDiskUsage(showLoading: Bool = true) async {
+Orchard/Services/SystemService.swift,241,func loadKernelConfig() async {
+Orchard/Services/SystemService.swift,280,func setRecommendedKernel() async {
+Orchard/Services/SystemService.swift,312,"func setCustomKernel(binary: String?, tar: String?, arch: KernelArch) async {"
+Orchard/Services/SystemService.swift,341,func loadSystemProperties(showLoading: Bool = true) async {
+Orchard/Services/TerminalLauncher.swift,22,"func openTerminal(for containerId: String, shell: String? = nil) {"
+Orchard/Services/TerminalLauncher.swift,39,func openTerminalWithBash(for containerId: String) {
+Orchard/Services/TerminalLauncher.swift,45,func openTerminal(runningCommand command: String) {
+Orchard/Services/TerminalLauncher.swift,60,private func openInTerminalApp(command: String) {
+Orchard/Services/TerminalLauncher.swift,75,private func openInITerm2(command: String) {
+Orchard/Services/TerminalLauncher.swift,93,"private func openInGhostty(containerBinary: String, containerId: String, shell: String) {"
+Orchard/Services/TerminalLauncher.swift,108,private func openInGhostty(command fullCommand: String) {
+Orchard/Services/TerminalLauncher.swift,143,private func executeAppleScript(_ script: String) {
+Orchard/Services/TerminalLauncher.swift,159,nonisolated static func userMessage(for error: NSDictionary) -> String {
+Orchard/Services/UITestSupport.swift,24,"private func container(id: String, status: String) -> Container {"
+Orchard/Services/UITestSupport.swift,70,func listContainers() async throws -> [Container] {
+Orchard/Services/UITestSupport.swift,74,func stopContainer(id: String) async throws {
+Orchard/Services/UITestSupport.swift,79,"func killContainer(id: String, signal: Int32) async throws {}"
+Orchard/Services/UITestSupport.swift,80,"func deleteContainer(id: String, force: Bool) async throws {}"
+Orchard/Services/UITestSupport.swift,81,func bootstrapAndStart(id: String) async throws {}
+Orchard/Services/UITestSupport.swift,82,func runProcess(
+Orchard/Services/UITestSupport.swift,90,func containerLogs(id: String) async throws -> [FileHandle] { [] }
+Orchard/Services/UITestSupport.swift,91,"func exportContainer(id: String, to destination: URL) async throws {}"
+Orchard/Services/UITestSupport.swift,92,func cleanContainer(id: String) async throws {}
+Orchard/Services/UITestSupport.swift,93,func stats(id: String) async throws -> ContainerStats {
+Orchard/Services/UITestSupport.swift,97,func createContainer(_ spec: ContainerCreateSpec) async throws {}
+Orchard/Services/UITestSupport.swift,98,func listImages() async throws -> [ContainerImage] {
+Orchard/Services/UITestSupport.swift,105,"func pullImage(reference: String, onProgress: (@Sendable (ImagePullMetrics) -> Void)?) async throws {}"
+Orchard/Services/UITestSupport.swift,106,func deleteImage(reference: String) async throws {}
+Orchard/Services/UITestSupport.swift,107,func inspectImage(reference: String) async throws -> ImageInspection {
+Orchard/Services/UITestSupport.swift,110,func listNetworks() async throws -> [ContainerNetwork] {
+Orchard/Services/UITestSupport.swift,115,"func createNetwork(name: String, subnet: String?, labels: [String: String]) async throws {}"
+Orchard/Services/UITestSupport.swift,116,func deleteNetwork(id: String) async throws {}
+Orchard/Services/UITestSupport.swift,117,"func ping() async throws -> SystemHealthInfo { SystemHealthInfo(apiServerVersion: ""1.0.0"") }"
+Orchard/Services/UITestSupport.swift,118,func diskUsage() async throws -> SystemDiskUsage {
+Orchard/Services/UITestSupport.swift,127,"private func machine(id: String, status: String) -> Machine {"
+Orchard/Services/UITestSupport.swift,149,"func listMachines() async throws -> [Machine] { [machine(id: UITestSeed.machineID, status: ""running"")] }"
+Orchard/Services/UITestSupport.swift,150,"func inspectMachine(id: String) async throws -> Machine { machine(id: id, status: ""running"") }"
+Orchard/Services/UITestSupport.swift,151,func createMachine(_ spec: MachineCreateSpec) async throws {}
+Orchard/Services/UITestSupport.swift,152,"func setMachineConfig(id: String, config: MachineConfigSpec) async throws {}"
+Orchard/Services/UITestSupport.swift,153,func bootMachine(id: String) async throws {}
+Orchard/Services/UITestSupport.swift,154,func stopMachine(id: String) async throws {}
+Orchard/Services/UITestSupport.swift,155,func deleteMachine(id: String) async throws {}
+Orchard/Services/UITestSupport.swift,156,func setDefaultMachine(id: String) async throws {}
+Orchard/Services/UITestSupport.swift,157,func machineLogs(id: String) async throws -> [FileHandle] { [] }
+Orchard/Services/UITestSupport.swift,163,"func detectProviders(endpoints: [ModelEndpoint], apiKeys: [String: String]) async -> [ModelProvider] {"
+Orchard/Services/UITestSupport.swift,175,"func complete(host: String, port: UInt16, api: ModelAPIStyle, model: String, messages: [ChatMessage], apiKey: String?) async throws -> String {"
+Orchard/Services/UITestSupport.swift,184,func locateBinary() -> String? { nil }
+Orchard/Services/UITestSupport.swift,185,"func launch(model: String, host: String, port: UInt16, logURL: URL) throws -> ServerProcess {"
+Orchard/Services/UITestSupport.swift,193,"func run(program: String, arguments: [String]) async throws -> ProcessResult {"
+Orchard/Services/UITestSupport.swift,196,"func runWithSudo(program: String, arguments: [String]) async throws -> ProcessResult {"
+Orchard/Services/UpdaterService.swift,32,func checkForUpdates() {
