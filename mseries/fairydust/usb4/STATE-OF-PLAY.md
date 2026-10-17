@@ -266,6 +266,8 @@ a DP-altmode reference, not the M1 USB4 tunnel protocol.
 
 ## Evidence index
 
+- [Second controlled-test boot: DP-IN gate cleared, DCP link-config timeout](evidence/2026-10-16-controlled-test-second-boot-dpin-gate-cleared.md)
+- [DP-IN debug boot: instrumenting the DCP link-config path](evidence/2026-10-16-dpin-dbgboot-instrumentation.md) (patch `0012`, armed 2026-10-16)
 - [First controlled-test boot outcome](evidence/2026-10-16-controlled-test-first-boot-outcome.md)
 - [Current implementation / DeepSeek next task](DPIN-IMPLEMENTATION.md)
 - [Offline validation record](evidence/2026-10-16-dpin-offline-validation.json)

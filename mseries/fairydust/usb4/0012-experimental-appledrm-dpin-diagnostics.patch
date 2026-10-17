@@ -1,0 +1,119 @@
+diff --git a/drivers/gpu/drm/apple/dcp.c b/drivers/gpu/drm/apple/dcp.c
+index bcb0268..db70eee 100644
+--- a/drivers/gpu/drm/apple/dcp.c
++++ b/drivers/gpu/drm/apple/dcp.c
+@@ -409,6 +409,8 @@ static int dcp_dptx_connect_source(struct apple_dcp *dcp, u32 port, bool prepare
+ 				dptx->phy_powered = true;
+ 		}
+ 		mutex_unlock(&dptx->phy_lock);
++		dev_info(dcp->dev, "DPINDBG connect_source phy ret=%d initialized=%d powered=%d\n",
++			 ret, READ_ONCE(dptx->phy_initialized), READ_ONCE(dptx->phy_powered));
+ 		if (ret)
+ 			goto fail;
+ 	}
+@@ -434,6 +436,10 @@ static int dcp_dptx_connect_source(struct apple_dcp *dcp, u32 port, bool prepare
+ 	waited = wait_for_completion_timeout(&dptx->linkcfg_completion,
+ 					     DPTX_CONNECT_TIMEOUT);
+ 	ret = waited ? READ_ONCE(dptx->link_error) : -ETIMEDOUT;
++	dev_info(dcp->dev,
++		 "DPINDBG connect_source: waited=%lu ret=%d powered=%d rate=%u lanes=%u link_error=%d\n",
++		 waited, ret, READ_ONCE(dptx->phy_powered), READ_ONCE(dptx->link_rate),
++		 READ_ONCE(dptx->lane_count), READ_ONCE(dptx->link_error));
+ 	if (ret) {
+ 		dcp_dptx_disconnect(dcp, port);
+ 		return ret;
+diff --git a/drivers/gpu/drm/apple/dptxep.c b/drivers/gpu/drm/apple/dptxep.c
+index 746bdb7..851b9b5 100644
+--- a/drivers/gpu/drm/apple/dptxep.c
++++ b/drivers/gpu/drm/apple/dptxep.c
+@@ -133,7 +133,10 @@ int dptxport_connect(struct apple_epic_service *service, u8 core, u8 atc,
+ 
+ int dptxport_request_display(struct apple_epic_service *service)
+ {
+-	return afk_service_call(service, 0, 6, NULL, 0, 16, NULL, 0, 16);
++	int __ret = afk_service_call(service, 0, 6, NULL, 0, 16, NULL, 0, 16);
++
++	dev_info(service->ep->dcp->dev, "DPINDBG request_display ret=%d\n", __ret);
++	return __ret;
+ }
+ 
+ int dptxport_release_display(struct apple_epic_service *service)
+@@ -153,10 +156,16 @@ int dptxport_set_hpd(struct apple_epic_service *service, bool hpd)
+ 
+ 	ret = afk_service_call(service, 8, 8, &cmd, sizeof(cmd), 12, &resp,
+ 			       sizeof(resp), 12);
+-	if (ret)
++	if (ret) {
++		dev_info(service->ep->dcp->dev, "DPINDBG set_hpd hpd=%d afk_ret=%d\n", hpd, ret);
+ 		return ret;
+-	if (le32_to_cpu(resp.unk) != 1)
++	}
++	if (le32_to_cpu(resp.unk) != 1) {
++		dev_info(service->ep->dcp->dev, "DPINDBG set_hpd hpd=%d resp=%u\n",
++			 hpd, le32_to_cpu(resp.unk));
+ 		return -EINVAL;
++	}
++	dev_info(service->ep->dcp->dev, "DPINDBG set_hpd hpd=%d ok\n", hpd);
+ 	return 0;
+ }
+ 
+@@ -245,8 +254,12 @@ static void dptxport_hpd_work(struct work_struct *work)
+ 	mutex_lock(&dptx->phy_lock);
+ 	phy = dptx->phy_initialized && !dptx->tearing_down ? dptx->atcphy : NULL;
+ 	mutex_unlock(&dptx->phy_lock);
+-	if (!phy)
++	if (!phy) {
++		dev_info(dptx->service->ep->dcp->dev,
++			 "DPINDBG hpd_work: no phy (init=%d tearing=%d)\n",
++			 READ_ONCE(dptx->phy_initialized), READ_ONCE(dptx->tearing_down));
+ 		return;
++	}
+ 	hpd = apple_dpin_get_hpd(phy);
+ 	if (READ_ONCE(dptx->tearing_down))
+ 		return;
+@@ -255,6 +268,7 @@ static void dptxport_hpd_work(struct work_struct *work)
+ 		complete_all(&dptx->linkcfg_completion);
+ 		hpd = 0;
+ 	}
++	dev_info(dptx->service->ep->dcp->dev, "DPINDBG hpd_work: hpd=%d\n", hpd);
+ 	ret = dptxport_set_hpd(dptx->service, hpd);
+ 	if (ret) {
+ 		WRITE_ONCE(dptx->link_error, ret);
+@@ -267,6 +281,8 @@ static int dptxport_hpd_notify(struct notifier_block *nb,
+ {
+ 	struct dptx_port *dptx = container_of(nb, struct dptx_port, hpd_nb);
+ 
++	dev_info(dptx->service->ep->dcp->dev, "DPINDBG hpd_notify event=%lu tearing=%d\n",
++		 event, READ_ONCE(dptx->tearing_down));
+ 	if (!READ_ONCE(dptx->tearing_down)) {
+ 		if (event == APPLE_DPIN_HPD_ERROR) {
+ 			WRITE_ONCE(dptx->link_error, -EIO);
+@@ -285,6 +301,10 @@ static int dptxport_tunnel_reply(struct dptx_port *dptx, void *reply,
+ 		WRITE_ONCE(dptx->link_error, ret);
+ 		complete_all(&dptx->linkcfg_completion);
+ 	}
++	dev_info(dptx->service->ep->dcp->dev,
++		 "DPINDBG tunnel_reply ret=%d powered=%d rate=%u lanes=%u link_error=%d\n",
++		 ret, READ_ONCE(dptx->phy_powered), READ_ONCE(dptx->link_rate),
++		 READ_ONCE(dptx->lane_count), READ_ONCE(dptx->link_error));
+ 	if (reply_size < sizeof(__le32))
+ 		return -EINVAL;
+ 	if (!ret && READ_ONCE(dptx->phy_powered) && READ_ONCE(dptx->link_rate) &&
+@@ -476,6 +496,8 @@ static int dptxport_call_set_active_lane_count(struct apple_epic_service *servic
+ 
+ 	u64 lane_count = le64_to_cpu(request->lane_count);
+ 
++	dev_info(dcp->dev, "DPINDBG set_active_lane_count request lanes=%llu\n", lane_count);
++
+ 	if (dcp->dp_tunnel) {
+ 		ret = dptxport_tunnel_lanes(dptx, lane_count, reply, reply_size);
+ 		reply->lane_count = cpu_to_le64(dptx->lane_count);
+@@ -713,6 +735,8 @@ static int dptxport_call(struct apple_epic_service *service, u32 idx,
+ {
+ 	struct dptx_port *dptx = service->cookie;
+ 	trace_dptxport_apcall(dptx, idx, data_size);
++	dev_info(service->ep->dcp->dev, "DPINDBG apcall idx=%u dp_tunnel=%d\n",
++		 idx, service->ep->dcp->dp_tunnel);
+ 
+ 	if (service->ep->dcp->dp_tunnel &&
+ 	    (idx == DPTX_APCALL_DEVICE_NOT_RESPONDING ||
