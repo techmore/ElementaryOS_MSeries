@@ -204,9 +204,15 @@ class BatterySampler(threading.Thread):
 # ---------------------------------------------------------------- powermetrics
 
 def available_samplers():
-    text = run(["powermetrics", "-h"], timeout=20)
-    m = re.search(r"--samplers.*?\n(.*?)\n\s*\n", text, re.S)
-    found = set(re.findall(r"\b([a-z_]+)\b", m.group(1))) if m else set()
+    try:
+        help_result = subprocess.run(["powermetrics", "-h"], capture_output=True, text=True, timeout=20)
+        text = help_result.stdout + "\n" + help_result.stderr
+    except (OSError, subprocess.TimeoutExpired):
+        text = ""
+    # Match the supported-samplers section, not the earlier --samplers option synopsis.
+    section = text.partition("The following samplers are supported by --samplers:")[2]
+    section = section.split("and the following sampler groups", 1)[0]
+    found = set(re.findall(r"^\s+([a-z_]+)\s+", section, re.M))
     wanted = ["cpu_power", "gpu_power", "ane_power", "thermal", "tasks", "network", "disk", "battery"]
     have = [s for s in wanted if s in found]
     return have or ["cpu_power", "gpu_power", "tasks", "thermal"]

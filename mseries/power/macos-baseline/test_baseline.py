@@ -77,6 +77,23 @@ class ParityTests(unittest.TestCase):
 
 
 class MeasurementTests(unittest.TestCase):
+    def test_sampler_discovery_uses_supported_section_on_either_stream(self):
+        help_text = ("-s | --samplers <samplers> options\n-t | --wakeup-cost value\n\n"
+                     "The following samplers are supported by --samplers:\n\n"
+                     "    cpu_power cpu rails\n    ane_power ane rails\n    network network counters\n"
+                     "and the following sampler groups are supported by --samplers:\n    all all samplers\n")
+        for stdout, stderr in ((help_text, ''), ('', help_text)):
+            with patch.object(mac.subprocess, 'run', return_value=SimpleNamespace(stdout=stdout, stderr=stderr)):
+                self.assertEqual(mac.available_samplers(), ['cpu_power', 'ane_power', 'network'])
+
+    def test_interrupted_raw_plist_without_metadata_is_excluded(self):
+        import plistlib
+        with tempfile.TemporaryDirectory() as directory:
+            raw = Path(directory)/'raw'
+            raw.mkdir()
+            (raw/'idle_minimal.plist').write_bytes(plistlib.dumps({'processor': {'cpu_power': 1000}}))
+            self.assertIsNone(mac.summarize_scenario(Path(directory), 'idle_minimal'))
+
     def test_statistics_ignore_invalid_samples(self):
         self.assertEqual(mac.stats([None, True, float('nan'), float('inf'), 0, 10]),
                          {'median': 5.0, 'p10': 1.0, 'p90': 9.0, 'n': 2})

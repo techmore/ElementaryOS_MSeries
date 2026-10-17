@@ -2220,3 +2220,12 @@ Branch: `power-usage`, reviewed from `d581ac4`; dock documentation frontier insp
   kernel or bootloader changes were applied. Existing drawers OSD crash fix already on this branch is retained.
 - Remaining qualification: physical AC/battery transitions and profile switches, media/blanking restore on
   each target OS, matched battery scenarios and Linux suspend. These are hardware evidence gaps, not claimed wins.
+
+### Final power review follow-up
+
+Linux PR validation passed on `db0bbc8`: full script/unit/image wiring checks and mkosi config parsing.
+A read-only check of the installed `powermetrics -h` then reproduced one more parser bug: sampler discovery
+matched the option synopsis and always fell back to four samplers, omitting supported ANE/network/disk/battery
+collectors. Discovery now reads the explicit supported-samplers section from either output stream. Added
+coverage for that ambiguity and for exclusion of interrupted raw plists (28 total offline power regressions).
+The PR's final head must pass the same Linux check before merge readiness is reported.
