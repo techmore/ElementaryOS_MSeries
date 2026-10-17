@@ -1,8 +1,8 @@
 diff --git a/data/Application.css b/data/Application.css
-index bfd5c8a..0de4aee 100644
+index bfd5c8a..c322517 100644
 --- a/data/Application.css
 +++ b/data/Application.css
-@@ -176,3 +176,31 @@ backgrounditem .close-button {
+@@ -176,3 +176,32 @@ backgrounditem .close-button {
  .running-indicator:disabled {
      color: @fg_color;
  }
@@ -18,10 +18,10 @@ index bfd5c8a..0de4aee 100644
 +}
 +
 +.drawer-slot {
-+    border-radius: 6px;
++    border-radius: 8px;
 +    padding: 4px;
-+    min-width: 48px;
-+    min-height: 48px;
++    min-width: 56px;
++    min-height: 60px;
 +    background: alpha(@fg_color, 0.06);
 +    border: 1px dashed alpha(@fg_color, 0.25);
 +}
@@ -32,7 +32,8 @@ index bfd5c8a..0de4aee 100644
 +}
 +
 +.drawer-slot .caption {
-+    font-size: 0.75em;
++    font-size: 0.7em;
++    opacity: 0.65;
 +}
 diff --git a/protocol/pantheon-desktop-shell-v1.xml b/protocol/pantheon-desktop-shell-v1.xml
 index fcd0f17..ac5a907 100644
@@ -88,10 +89,10 @@ index 1006411..0dadb04 100644
      [CCode (cheader_filename = "pantheon-desktop-shell-client-protocol.h", cname = "struct io_elementary_pantheon_widget_v1", cprefix = "io_elementary_pantheon_widget_v1_", free_function = "io_elementary_pantheon_widget_v1_destroy")]
 diff --git a/src/Drawers.vala b/src/Drawers.vala
 new file mode 100644
-index 0000000..afce296
+index 0000000..fe655df
 --- /dev/null
 +++ b/src/Drawers.vala
-@@ -0,0 +1,243 @@
+@@ -0,0 +1,253 @@
 +/*
 + * SPDX-License-Identifier: GPL-3.0
 + * SPDX-FileCopyrightText: 2026 M-series / elementary-mseries
@@ -137,14 +138,25 @@ index 0000000..afce296
 +        construct {
 +            orientation = Gtk.Orientation.VERTICAL;
 +            spacing = 2;
-+            width_request = 56;
-+            height_request = 56;
++            width_request = 64;
++            height_request = 68;
 +            halign = Gtk.Align.CENTER;
 +            valign = Gtk.Align.CENTER;
 +            add_css_class ("drawer-slot");
 +
-+            image = new Gtk.Image () { pixel_size = 32, valign = Gtk.Align.END };
-+            caption = new Gtk.Label (index.to_string ()) { valign = Gtk.Align.START };
++            // Sized to match the dock's own launcher icons (48px) so the strip
++            // does not look bolted on. The number stays visible at all times; the
++            // app name lives in the tooltip, because it does not fit in a tile.
++            image = new Gtk.Image () {
++                pixel_size = 48,
++                halign = Gtk.Align.CENTER,
++                valign = Gtk.Align.CENTER,
++                hexpand = true,
++                vexpand = true
++            };
++            caption = new Gtk.Label (index.to_string ()) {
++                halign = Gtk.Align.CENTER
++            };
 +            caption.add_css_class ("caption");
 +            append (image);
 +            append (caption);
@@ -238,23 +250,22 @@ index 0000000..afce296
 +            if (app_id == null) {
 +                image.icon_name = "list-add-symbolic";
 +                image.add_css_class ("dim-label");
-+                caption.label = index.to_string ();
 +                remove_css_class ("assigned");
 +                tooltip_text = @"Assign an app to drawer $index";
 +                return;
 +            }
 +
 +            var info = new DesktopAppInfo (app_id);
++            var name = app_id;
 +            if (info != null) {
 +                image.gicon = info.get_icon ();
-+                caption.label = info.get_display_name ();
++                name = info.get_display_name ();
 +            } else {
 +                image.icon_name = "application-x-executable-symbolic";
-+                caption.label = app_id;
 +            }
 +            image.remove_css_class ("dim-label");
 +            add_css_class ("assigned");
-+            tooltip_text = @"Drawer $index";
++            tooltip_text = @"Drawer $index — $name";
 +        }
 +    }
 +
