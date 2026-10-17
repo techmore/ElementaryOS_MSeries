@@ -111,6 +111,7 @@ old count would include eDP, new count 0). Not done: router-side DP-IN hook
 design and the refcount question (G1/G2, DeepSeek), DPRX teardown backport (G3),
 any hardware step (G4/G5, owner-gated).
 Update 2026-10-16 (later): recorded the DeepSeek bridge review (B1-B8) and Codex bundle status; read-only pre-reboot inspection found the GRUB entry lacks `dprx_bypass=1` (N1), `RECOVERY.md` named missing files (N2, repo copy corrected), no initramfs/install script yet (N3), a 5 s source deadline (N4). Reboot plan and post-reboot checks: `fairydust/usb4/POST-REBOOT-CHECKLIST.md`. Nothing applied.
+Update 2026-10-16 (late, OpenCode): the `DPINDBG` debug boot ran and the fatal `-110` is **our own `set_hpd(hpd=1)` AFK call timing out after 1 s**, not the 2 s `DPTX_CONNECT_TIMEOUT` (`waited=949`, a signalled completion; corrected in the second-boot record). After `ACTIVATE` the tunnel DCP firmware goes silent (1 connect-time syslog line vs 360 on a working HDMI path) and never configures the link. New reference: the firmware's complete working link-config sequence on built-in HDMI (`idx=7,13,15,5,12,9,6`) — which never calls `set_hpd`. Next: E1/E2/E3 (non-fatal HPD delivery / unbypassed DPRX / more instrumentation). Record: [`fairydust/usb4/evidence/2026-10-16-dbgboot-dcp-silent-never-configures-link.md`](fairydust/usb4/evidence/2026-10-16-dbgboot-dcp-silent-never-configures-link.md).
 
 ## DP-IN source milestone — offline implementation, 2026-10-16
 

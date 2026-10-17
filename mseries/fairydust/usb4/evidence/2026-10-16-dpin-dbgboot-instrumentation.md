@@ -73,3 +73,12 @@ acked, which `apcall idx` values arrive and in what order, and the
 `connect_source` line — `waited=0` with everything else zero confirms the DCP
 never requested lane configuration; `waited>0` nonzero `link_error` would point
 elsewhere.
+
+## RESULT (boot ran 2026-10-16, read back)
+
+The `waited>0` branch happened: `waited=949 ret=-110 … link_error=-110`. The
+`-110` is our **`set_hpd(hpd=1)` AFK call timing out after 1 s**, promoted into
+`link_error` by `dptxport_hpd_work` — not the 2 s `DPTX_CONNECT_TIMEOUT`. The
+firmware sent only `idx=18,10,0` and then went silent. Full decode, the
+corrected attribution, and the working-path reference trace:
+[2026-10-16-dbgboot-dcp-silent-never-configures-link.md](2026-10-16-dbgboot-dcp-silent-never-configures-link.md).

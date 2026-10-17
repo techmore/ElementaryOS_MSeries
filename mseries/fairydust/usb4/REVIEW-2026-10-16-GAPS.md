@@ -301,3 +301,35 @@ and the tunnel is torn down. Prime suspect is that `dprx_bypass=1` hides the rea
 sink handshake the DCP needs; qualifying it needs a bypass-off run (owner-gated,
 `DP-TUNNEL-RE.md` §9). Suggested instrumentation: log `dptxport_set_hpd` calls and
 every `linkcfg_completion` post.
+
+## Debug boot result — the `-110` attributed; firmware silent — OpenCode, 2026-10-16 (late)
+
+The suggested instrumentation (patch `0012`, the `DPINDBG` debug boot) was built,
+installed and run. Results:
+[evidence/2026-10-16-dbgboot-dcp-silent-never-configures-link.md](evidence/2026-10-16-dbgboot-dcp-silent-never-configures-link.md).
+
+- **Attribution corrected.** The fatal `-110` is **our** `set_hpd(hpd=1)` AFK call
+  timing out after 1 s (`afk.c`, `MSEC_PER_SEC`), promoted to `link_error` by
+  `dptxport_hpd_work()`. `connect_source` returned `waited=949` — a signalled
+  completion, **not** the 2 s `DPTX_CONNECT_TIMEOUT`. The paragraph above (and the
+  second-boot record) overstated the timeout mechanism; the "firmware never sent
+  `set_active_lane_count`/`SET_LINK_RATE`" conclusion still stands.
+- **New measured wall.** After `ACTIVATE` the tunnel DCP firmware emits **one**
+  syslog line (`[AFK]powering nub`) and nothing else (13 lines for the whole boot vs
+  **360** on the working HDMI DCP). It never starts link training.
+- **New reference asset.** A monitor on the built-in HDMI produced the firmware's
+  complete working link-config sequence (`idx=7,13,15,5,12,9,6` →
+  `set_active_lane_count lanes=4`, `connect_source ret=0 rate=20 lanes=4`) and it
+  **never calls `set_hpd`** (non-DisplayPort connector). The `DEVICE_NOT_RESPONDING`
+  / `DEVICE_NOT_STARTED` / `INACTIVE_SINK_DETECTED` calls also appear on the working
+  path's teardown — do not read them as the diagnosis.
+
+New/changed gap items:
+
+| # | Item | Owner | Status |
+|---|---|---|---|
+| E1 | Make tunnel-mode HPD delivery non-fatal (log, don't set `link_error`) and observe whether the firmware then drives `idx=7,13,15,5,12,9,6` | owner + OpenCode | Proposed, needs one reboot |
+| E2 | Unbypassed DPRX qualification (`dprx_bypass=0`) — the documented §9 hazard | owner | Proposed, highest risk |
+| E3 | Log the DP-IN HPD notifier separately (it did **not** fire this boot) and the host DP-IN AUX/DPCD status at failure, to separate "no sink" from "no AUX" | OpenCode | Proposed |
+| H2 | `set_hpd` (group 8 / command 8) correctness for the tunnelled endpoint is unverified; it is only exercised for a physical DisplayPort connector. Do not invent a replacement command without evidence | DeepSeek + owner | Open |
+| N4 | 5 s source deadline vs DPRX window | DeepSeek | Still open; the 1 s AFK `set_hpd` timeout is what actually fires now |
