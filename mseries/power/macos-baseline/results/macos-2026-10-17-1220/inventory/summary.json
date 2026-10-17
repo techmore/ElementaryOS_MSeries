@@ -1,0 +1,111 @@
+{
+  "macos": "27.0.1 (26A434)",
+  "model": "MacBookPro18,3",
+  "chip": "Apple M1 Pro",
+  "process_count": 1053,
+  "launchd_system_jobs": null,
+  "launchd_user_jobs": 576,
+  "battery_cycles": 94,
+  "on_battery": false,
+  "brightness": {
+    "raw": 32768,
+    "min": 0,
+    "max": 65536,
+    "pct": 50.0,
+    "nits": 381.8
+  },
+  "display": {
+    "_name": "Color LCD",
+    "_spdisplays_display-product-id": "a04e",
+    "_spdisplays_display-vendor-id": "610",
+    "_spdisplays_display-week": "0",
+    "_spdisplays_display-year": "0",
+    "_spdisplays_displayID": "1",
+    "_spdisplays_pixels": "3600 x 2338",
+    "_spdisplays_resolution": "1800 x 1169 @ 120.00Hz",
+    "spdisplays_ambient_brightness": "spdisplays_no",
+    "spdisplays_connection_type": "spdisplays_internal",
+    "spdisplays_display_type": "spdisplays_built-in-liquid-retina-xdr",
+    "spdisplays_main": "spdisplays_yes",
+    "spdisplays_mirror": "spdisplays_off",
+    "spdisplays_online": "spdisplays_yes",
+    "spdisplays_pixelresolution": "spdisplays_3024x1964Retina"
+  },
+  "pmset": {
+    "battery": {
+      "Sleep": "On Power Button 1",
+      "lowpowermode": "0",
+      "standby": "1",
+      "ttyskeepawake": "1",
+      "hibernatemode": "3",
+      "powernap": "1",
+      "hibernatefile": "/var/vm/sleepimage",
+      "displaysleep": "180",
+      "womp": "0",
+      "networkoversleep": "0",
+      "sleep": "1",
+      "lessbright": "0",
+      "tcpkeepalive": "1",
+      "disksleep": "10"
+    },
+    "ac": {
+      "Sleep": "On Power Button 1",
+      "lowpowermode": "0",
+      "standby": "1",
+      "ttyskeepawake": "1",
+      "hibernatemode": "3",
+      "powernap": "1",
+      "hibernatefile": "/var/vm/sleepimage",
+      "displaysleep": "10",
+      "womp": "1",
+      "networkoversleep": "0",
+      "sleep": "1",
+      "tcpkeepalive": "1",
+      "disksleep": "10"
+    }
+  },
+  "sleep_history": {
+    "periods": [
+      {
+        "start": "2026-10-10T12:30:52-04:00",
+        "hours": 42.37,
+        "pct_lost": 16,
+        "pct_per_hour": 0.378,
+        "darkwakes": 210,
+        "darkwakes_per_hour": 4.96,
+        "ended": "charger or log end"
+      },
+      {
+        "start": "2026-10-14T21:12:34-04:00",
+        "hours": 9.89,
+        "pct_lost": 4,
+        "pct_per_hour": 0.404,
+        "darkwakes": 40,
+        "darkwakes_per_hour": 4.04,
+        "ended": "charger or log end"
+      }
+    ],
+    "pct_per_hour": {
+      "median": 0.391,
+      "p10": 0.381,
+      "p90": 0.401,
+      "n": 2
+    },
+    "darkwakes_per_hour": {
+      "median": 4.5,
+      "p10": 4.132,
+      "p90": 4.868,
+      "n": 2
+    }
+  },
+  "assertions": [
+    "pid 437(WindowServer): [0x0000001f00098007] 00:00:44 UserIsActive named: \"com.apple.iohideventsystem.queue.tickle serviceID:100000ae7 service:AppleMultitouchDevice product:Apple Internal Keyboard / Trackpad eventType:11\"",
+    "pid 14564(Claude): [0x00000e8500019298] 00:24:47 NoIdleSleepAssertion named: \"Electron\"",
+    "pid 380(powerd): [0x000000200001800b] 01:26:11 PreventUserIdleSystemSleep named: \"Powerd - Prevent sleep while display is on\"",
+    "pid 380(powerd): [0x0000132900108c6e] 00:02:15 InternalPreventDisplaySleep named: \"com.apple.powermanagement.delayDisplayOff\""
+  ],
+  "bluetooth_on": "attrib_on",
+  "wifi": {
+    "spairport_network_type": "spairport_network_type_station"
+  }
+}

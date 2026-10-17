@@ -1,0 +1,43 @@
+# Gala hotkey drawers — example configuration.
+#
+# Copy to ~/.config/mseries/gala-drawers.ini and edit, or use the settings app
+# (mseries-drawers-settings). Groups are drawer-1 .. drawer-9 and must line up
+# with the accelerator in org.pantheon.gala.plugins.drawers (e.g. left
+# Command+1 -> the [drawer-1] group).
+#
+# The plugin watches this file: save it and the change applies immediately, no
+# need to restart Gala or log out.
+#
+# Keys:
+#   command  One or more commands to run when their app is not already open.
+#            Separate several with ';' to make a "series" that comes and goes
+#            together (a desktop entry id such as io.elementary.terminal, or any
+#            command line).
+#   match    Value(s) matched against a window's GTK application id or WM class
+#            (case-insensitive), in the same order as `command`. Defaults to
+#            `command` when omitted.
+#   monitor  Monitor index (0-based) or -1 / omitted for the primary monitor.
+#   zone     x y w h, each a fraction (0.0 .. 1.0) of the monitor's geometry.
+#            Give one zone for the whole drawer, or one zone per app (in the
+#            same order as `command`) to lay a series out side by side.
+
+# Quake-style terminal: full width, top 40% of the built-in panel.
+[drawer-1]
+command=io.elementary.terminal
+match=io.elementary.terminal
+monitor=-1
+zone=0.0 0.0 1.0 0.4
+
+# Notes / to-do app on the right third, full height.
+[drawer-2]
+command=io.elementary.tasks
+match=io.elementary.tasks
+zone=0.66 0.0 0.34 1.0
+
+# A "series": a terminal and an editor come in together along the bottom, each
+# with its own zone (the first pair of `zone` numbers is the terminal, the
+# second the editor), and leave together on the same hotkey.
+# [drawer-3]
+# command=io.elementary.terminal; io.elementary.code
+# match=io.elementary.terminal; io.elementary.code
+# zone=0.0 0.5 0.5 0.5  0.5 0.5 0.5 0.5

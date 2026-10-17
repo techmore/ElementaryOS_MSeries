@@ -14,6 +14,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output-dir', required=True, type=Path)
     parser.add_argument('--isolated', action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--discovery-only', action='store_true', help='Verify the configured tool surface without sending inference requests')
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
     state = args.output_dir / 'newelle-ui-state'
@@ -38,7 +39,8 @@ def main():
         env = dict(os.environ, GSETTINGS_BACKEND='memory', XDG_CONFIG_HOME=str(state / 'config'),
                    XDG_DATA_HOME=str(state / 'data'), XDG_CACHE_HOME=str(state / 'cache'))
         subprocess.run([sys.executable, str(Path(__file__).resolve()), '--output-dir',
-                        str(args.output_dir), '--isolated'], env=env, check=True, timeout=600)
+                        str(args.output_dir), '--isolated'] + (['--discovery-only'] if args.discovery_only else []),
+                       env=env, check=True, timeout=600)
         return
     gettext.install('newelle', '/app/share/locale')
     sys.path.insert(0, '/app/share/newelle')
@@ -64,7 +66,9 @@ def main():
     app = MyApp(application_id='io.github.qwersyk.Newelle', version='1.6.0')
     app.set_flags(app.get_flags() | Gio.ApplicationFlags.NON_UNIQUE)
     phase, receipt = 0, {'test': 'actual Newelle Send/response and MCP clock through Xvfb; configured provider/tool settings cloned into isolated test storage'}
-    expected = {'system_status', 'list_apps', 'list_tasks', 'list_calendar_events', 'add_minutes',
+    if args.discovery_only:
+        receipt['test'] = 'Actual Newelle controller discovery through Xvfb; isolated clone of configured tools; no chat/memory inference requested'
+    expected = {'system_status', 'list_apps', 'list_tasks', 'create_assistant_task', 'list_calendar_events', 'add_minutes',
                 'get_energy', 'workspace_list_files', 'workspace_read_file', 'workspace_write_note', 'recent_faults'}
     def probe():
         nonlocal phase
@@ -79,6 +83,8 @@ def main():
                         return True  # MCP discovery is asynchronous on a fresh cache.
                     if set(receipt['enabled_tools']) != expected:
                         raise RuntimeError('Unexpected enabled tools in final Newelle profile')
+                    if args.discovery_only:
+                        phase = 1; app.quit(); return False
                     tab.input_panel.set_text('Reply only: Newelle local test passed')
                     tab.on_entry_button_clicked(); phase = 1
                 elif phase == 1 and tab.status:
@@ -102,10 +108,13 @@ def main():
     GLib.timeout_add_seconds(2, probe)
     GLib.timeout_add_seconds(180, lambda: (app.quit(), False)[1])
     app.run(['newelle-ui-smoke'])
-    receipt['passed'] = phase == 3
+    receipt['passed'] = phase == (1 if args.discovery_only else 3)
     (args.output_dir / 'newelle-final-ui-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
     if not receipt['passed']:
         raise SystemExit('Final Newelle UI profile test failed; inspect bounded receipt.')
+    if args.discovery_only:
+        print('Newelle discovered the exact configured tool set; no inference requested.')
+        return
     here = Path(__file__).resolve().parent
     model = json.loads(settings.get_string('llm-settings'))['openai']['model']
     for step in ['write', 'read']:

@@ -14,6 +14,20 @@ enhancement layer are the current focus, the factory-ISO documents describe an u
 | [FIRMWARE-WIFI.md](FIRMWARE-WIFI.md) | Wi-Fi firmware provisioning |
 | [USB-C-DOCK-DP-ALT-MODE.md](USB-C-DOCK-DP-ALT-MODE.md) | External displays through a dock |
 
+## Power, battery and dock investigations
+
+Start with the [power documentation map](power/README.md) for current evidence, branch ownership and next steps.
+
+| Document | What it covers |
+|---|---|
+| [POWER-ROADMAP.md](POWER-ROADMAP.md) | Canonical priorities, goals, gates and verification plan |
+| [power/macos-baseline/README.md](power/macos-baseline/README.md) | Collect matching macOS/Linux scenarios and update the checklist |
+| [power/macos-baseline/PARITY.md](power/macos-baseline/PARITY.md) | Generated comparison: 11 categories, 52 items |
+| [power/macos-baseline/results/README.md](power/macos-baseline/results/README.md) | Retained runs and their limits |
+| [POWER-OPPORTUNITIES-2026-10-16.md](POWER-OPPORTUNITIES-2026-10-16.md) | Dated Linux power observations |
+| [power/DYNAMIC-REFRESH-AUDIT.md](power/DYNAMIC-REFRESH-AUDIT.md) | Dynamic refresh investigation and experimental patch |
+| [power/README.md#dock-hdmi-and-suspend](power/README.md#dock-hdmi-and-suspend) | Newer dock branch frontier, older diagnosis and sleep implications |
+
 ## How it works
 
 | Document | What it covers |
@@ -32,6 +46,7 @@ enhancement layer are the current focus, the factory-ISO documents describe an u
 | [KERNEL-SOURCE.md](KERNEL-SOURCE.md) | Where the kernel source comes from |
 | [fairydust/debian/README.md](fairydust/debian/README.md) | The patched kernel package (USB4, Apple Video Decoder fix) and how it is built |
 | [fairydust/usb4/CUTOVER.md](fairydust/usb4/CUTOVER.md) | Verified M1 Pro USB4 kernel, dock results, limits and recovery pointers |
+| [aurora-sep/README.md](aurora-sep/README.md) | Optional Aurora SEP kernel lane: Touch ID via the Secure Enclave |
 
 ## Status and planning
 

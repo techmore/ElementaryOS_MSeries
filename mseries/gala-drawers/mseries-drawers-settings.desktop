@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Drawer Shortcuts
+Comment=Choose the apps that the Command+1..9 drawer hotkeys pop up
+Exec=mseries-drawers-settings
+Icon=input-dialpad
+Terminal=false
+Categories=Settings;DesktopSettings;GTK;
+Keywords=hotkey;shortcut;drawer;quake;zone;dock;

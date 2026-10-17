@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Touch ID (M-series)
+Comment=Enroll, verify and remove fingerprints, and choose which prompts use them
+Exec=mseries-touchid-settings
+Icon=fingerprint
+Terminal=false
+Categories=Settings;HardwareSettings;

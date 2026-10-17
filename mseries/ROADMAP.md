@@ -5,6 +5,27 @@
 > Aurora (`omacom/linux-aurora`) already does this on a j314s; check it before more RE.
 > Gates, prior art and rules: [fairydust/usb4/PRIMARY-GOAL.md](fairydust/usb4/PRIMARY-GOAL.md).
 
+## Power code audit (2026-10-17)
+
+Power policy now reports write failures, bounds CPU caps, restarts policy on charger change,
+and ships the profile watcher through both the live and immutable image paths. Baseline collectors
+clean up interrupted workloads/display blanking and avoid stale parity imports. Offline power regressions
+are in CI. No battery-life gain or hardware qualification is implied: paired battery runs, real unplug/replug,
+profile switches, media playback, suspend and display restore still require target-device validation.
+
+## Power and dock documentation entry point (2026-10-17)
+
+Use the [power evidence map](power/README.md) for the canonical plan, 52-item parity checklist,
+retained baseline runs and newer dock branch frontier. Active macOS/Linux workload parity is not yet measured;
+the committed macOS capture contains inventory and historical sleep only. Older dock rows below are historical
+planning context; consult the pinned dock branch ledger before continuing display experiments.
+
+
+> **Everything currently staged and waiting for a reboot is listed in
+> [`REBOOT-QUEUE.md`](REBOOT-QUEUE.md)** — what each reboot unlocks, what to
+> verify, how to revert, and what does *not* need one. Start there before
+> rebooting for any feature below.
+
 ## R1/R2 first-boot fixes staged — 2026-10-16
 
 The first controlled boot (11:45:04–11:47:13) ran with the exact intended
@@ -152,6 +173,7 @@ with the corrected live-session hardware overlay before progressing.
 | Quiet inference and coding profiles | One worker, six-GiB reserve, early cooling and hard fan/temperature limits; Crush 16K profile | Short suites measured with apps retained; long coding/Bonsai tests are queued for idle windows, with interrupted runs retained |
 | Kernel and developer branch watch | Live fault signatures/previous boot; six-hour all-head and PR discovery | 41 assistant tests and 4 image wiring tests; 1,103 public branch heads observed; recurring enhancement activates on main |
 | CodexBar quota ETA | Visible per-limit forecasts and the earliest available limit in the bar; exhausted quotas show reset time | 11 ETA tests, 5 refresh tests, GTK render probe, and installed-module/live-snapshot checks passed |
+| CodexBar popover redesign | Quota / Sessions / Spend tabs so nothing sits below the fold; level-colored limits with one caption line each; a quiet bar that only adds ETA on a real warning, labels non-session windows ("7D 35%") and dims when cached; plan chips, status dots, explained empty/error states with actions; no rebuild or flicker between unchanged polls; accessible labels | 3 Meson suites (incl. 9 presentation cases), 16 headless Xvfb renders (8 states x light/dark), no-rebuild stability probe (verified against a mutant), module installed; takes effect at next login |
 | CodexBar usage freshness | One-minute backend polling; asynchronous five-second panel reads; throttled refresh on open | Meson policy tests and delayed-IPC GTK probe passed; installed on the working desktop |
 | Login-screen stall fixed | `lightdm` drop-in waits for the eDP connector; display crossbar in the fairydust initramfs (`install-initramfs-crossbar.sh`) | greeter 119.7 s -> 0.82 s; dp-xbar deferrals 14 -> 0; first-dcp -> DRM 2.57 s -> 0.01 s |
 | USB4 dock data (hub, mouse, headset, 1 Gb/s Ethernet) | Custom kernel `fairydust-usb4`, m1n1 + DTBs, thunderbolt quirks (`mseries/fairydust/usb4/`) | checks `dock-usb4-ethernet`, `dock-dp-retry-silent` passed |
@@ -198,7 +220,7 @@ sudo available to enable DNS collection without dialogs.
 |---|---|---|
 | Deferred per-user setup | Firstboot prepares CodexBar and Widevine tools and DNS policy; the user timer installs apps/services and stops after completion. Staged-root tests cover payload delivery, timer enablement and completion handling. | Verify a fresh desktop user's setup, including starting then quitting Brave to create its profile. |
 | Keyboard brightness slider | Added to Pantheon's Quick Settings gear menu by `install-quick-settings-brightness.sh`; included in manual post-install, transform firstboot, and now the Apple Silicon overlay build. | Rebuild the image, then confirm it appears and changes the keyboard backlight on the live desktop. |
-| OpenCode Go in M-series CodexBar | The installer enables the provider and passes the existing OpenCode Go CLI credential to CodexBar at runtime. | Install on the working desktop, sign in through OpenCode, and confirm the quota row. |
+| OpenCode Go in M-series CodexBar | The installer enables the provider; the wrapper passes an OpenCode Go API key from `~/.local/share/opencode/auth.json` when one exists. Current OpenCode keeps its login (an OAuth account, not a Go API key) in `opencode.db`, so on this desktop no key is found and quota needs a browser sign-in at opencode.ai (upstream reads session cookies). The panel shows an explanatory row; local activity is under Sessions. | Sign in to OpenCode Go in a browser on the desktop and confirm the quota row appears. |
 
 ## Open problems
 
@@ -451,3 +473,7 @@ browser integration and remaining Files/Gala patches remain open.
 - Measured default is now Qwen3.5 4B: real Newelle/MCP, separate-process memory and Crush edit passed. Qwen9 moved to larger-budget optional presets after the live reserve guard stopped it. Small-model repair advice failed and is excluded; deterministic kernel/app watching is active. Bonsai and the synthetic Tasks-to-note bridge remain in qualification.
 
 - Local AI publication/candidate follow-through (October 16): PR #58 merged, benchmark page live, enhanced six-hour branch watch verified (1,105 heads; zero fetch errors). Bonsai completed 9/9 corrected MCP and native 5.571 decode tokens/s; resumed task 12/15 includes prior fan interruption and is not a quiet-policy pass. Tested Qwen3.5 4B remains default. Broad app adapters and full factory hardware qualification remain open.
+
+- MCP app follow-through: create-only local Assistant Tasks adapter and settings-preserving tool refresh implemented. Concurrent/retry/conflict EDS checks and 53 contracts pass. Model note-to-task/instruction rejection (three repeats) wait for cool/idle windows; see local-ai/APP-INTEGRATION.md. Calendar writes and browser/mail/messaging adapters remain open.
+
+- MCP Tasks qualification complete: note-to-task/scoped read-back 3/3 and file-instruction rejection 3/3; all synthetic sources removed. URLError checkpoint retained. PR #66 publishes data and app coverage; default restore waits for quiet admission. Calendar writes, browser/mail adapters, Tasks GUI/reminders and full factory hardware qualification remain open.

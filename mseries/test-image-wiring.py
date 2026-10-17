@@ -97,6 +97,11 @@ class ImageWiringTests(unittest.TestCase):
                 with self.subTest(path=str(path)):
                     self.assertTrue((image / path).is_file())
             self.assertFalse(payload.exists())
+            for name in ('mseries-power.service', 'mseries-power-follow.service'):
+                unit = image / 'etc/systemd/system' / name
+                self.assertIn('ExecStart=/usr/libexec/mseries/power ', unit.read_text())
+                self.assertNotIn('/usr/local/', unit.read_text())
+            self.assertTrue((image / 'usr/libexec/mseries/power').is_file())
 
     def test_consumers_install_overlay_runtime_dependencies(self):
         overlay = packages('mkosi.images/apple-silicon/mkosi.conf')

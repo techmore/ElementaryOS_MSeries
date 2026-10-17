@@ -1,0 +1,20 @@
+option(
+    'plugindir',
+    type: 'string',
+    value: '',
+    description: 'Directory Gala loads plugins from (default: <libdir>/gala/plugins)'
+)
+
+option(
+    'vapidir',
+    type: 'string',
+    value: '',
+    description: 'Directory holding Gala\'s vendored mutter/clutter vapi files (a Gala source checkout\'s vapi/)'
+)
+
+option(
+    'mutter_version',
+    type: 'string',
+    value: '18',
+    description: 'Mutter vapi major version shipped by Gala (18 for the gala 8.6.2 pin)'
+)

@@ -27,7 +27,7 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <tr><td>Battery charge limit</td><td class="ok">Ported</td><td>Limit reads 80%; a quick-settings switch toggles it.</td></tr>
 <tr><td>Ambient keyboard light</td><td class="ok">Ported</td><td>Adjusted 0 to 59/255 at 141 lx; lock, lid and suspend behavior still to be qualified.</td></tr>
 <tr><td>Early Apple input loading</td><td class="ok">Ported</td><td>initramfs module list; factory-image path not verified.</td></tr>
-<tr><td>Dock hub, mouse and Ethernet</td><td class="ok">Working</td><td>Dell WD22TB4 verified 2026-10-14. Display through the dock is not available (no DisplayPort tunnelling).</td></tr>
+<tr><td>Dock hub, mouse and Ethernet</td><td class="ok">Working</td><td>Dell WD22TB4 verified 2026-10-14. Dock HDMI picture remains unverified; experimental tunnel allocation does not establish a working display. See the <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/power-usage/mseries/power/README.md">power and dock evidence map</a>.</td></tr>
 <tr><td>Docked lid mode</td><td class="part">Running</td><td>Locks instead of retrying suspend while a USB4 dock is attached; lid-close with a dock needs a repeat test.</td></tr>
 <tr><td>Audio watchdog</td><td class="ok">Installed 2026-10-14</td><td>Restarts PipeWire and WirePlumber if the audio server stops answering, with a restart limit. It runs as a user service; the unit and tests are in the repo.</td></tr>
 <tr><td>Speaker and headset-mic rules</td><td class="part">Installed; apply at next login</td><td>Keeps the speaker and headphone outputs open (no pop between sounds) and stops apps preferring the unplugged headset mic.</td></tr>
@@ -49,7 +49,7 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <tr><td>Screenshots</td><td>Ctrl+Shift+3 and 4 save to Downloads/Screenshots; a thumbnail appears bottom-right (drag to use without keeping, hold Alt to also keep) and offers Markup (Swappy for images, Papers for PDFs)</td><td class="part">Built; to try</td></tr>
 <tr><td>Look and feel</td><td>Softer blue and rose accents, larger window corners, rounded screen corners (patched Gala), brightness and keyboard-light sliders in quick settings, ambient keyboard light</td><td class="ok">Installed</td></tr>
 <tr><td>Top bar</td><td>Network speed and usage indicator; AI usage forecast (CodexBar); a repositioned clock; Signal, energy monitor, Homeboard and Troubleshooter indicators</td><td class="ok">Installed</td></tr>
-<tr><td>Power</td><td>80% battery charge limit with a switch, battery CPU policy, zram swap, docked lid mode</td><td class="ok">Installed</td></tr>
+<tr><td>Power</td><td>80% battery charge limit with a switch, battery CPU policy, zram swap, docked lid mode. Policy and baseline collector regression tests cover failure handling; physical battery transitions and matched power runs remain to be qualified</td><td class="ok">Installed</td></tr>
 <tr><td>Audio</td><td>Speaker safety and DSP chain, audio watchdog, speaker and headset-mic rules (apply at next login)</td><td class="ok">Installed</td></tr>
 <tr><td>Local AI</td><td>Private MLX v0.7.33, Newelle desktop/personal memory, guarded coding profiles and kernel/app fault collection. <a href="local-ai.html">Benchmarks and app coverage</a></td><td class="part">Tested defaults; broader app coverage open</td></tr>
 <tr><td>Apps</td><td>Native Firefox and Brave (no snaps), Signal, Claude, ChatGPT and OpenCode desktop apps</td><td class="ok">Installed</td></tr>

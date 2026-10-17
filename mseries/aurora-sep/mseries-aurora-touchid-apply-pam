@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# Wire pam_fprintd into the password prompts (run as root via pkexec).
+#
+#   mseries-aurora-touchid-apply-pam            add fingerprint unlock
+#   mseries-aurora-touchid-apply-pam --remove   take it back out
+#
+# Same lines the upstream aurora-touchid-setup writes, kept here so the GUI
+# does not need a terminal. Idempotent; timestamped backups; the password
+# stays a working fallback in every stack.
+set -euo pipefail
+
+log()  { printf '%s\n' "$*"; }
+die()  { printf 'error: %s\n' "$*" >&2; exit 1; }
+[[ $EUID -eq 0 ]] || die "must run as root (the GUI calls this with pkexec)"
+
+add_line='auth      sufficient pam_fprintd.so'
+stamp=$(date +%Y%m%d-%H%M%S)
+
+apply() {
+  local file=$1
+  if grep -q pam_fprintd.so "$file"; then
+    log "$file: already has pam_fprintd"
+    return
+  fi
+  cp -a "$file" "$file.pre-touchid.$stamp"
+  sed -i "1i $add_line" "$file"
+  log "$file: fingerprint unlock added (password still works)"
+}
+
+remove() {
+  local file=$1
+  [[ -f $file ]] || return 0
+  if grep -q pam_fprintd.so "$file"; then
+    cp -a "$file" "$file.pre-touchid-remove.$stamp"
+    sed -i '/pam_fprintd\.so/d' "$file"
+    log "$file: fingerprint unlock removed"
+  fi
+}
+
+case ${1:-} in
+  --remove)
+    remove /etc/pam.d/sudo
+    remove /etc/pam.d/polkit-1
+    log "done. Enrolled fingerprints stay; clear with: fprintd-delete \$USER"
+    ;;
+  "")
+    apply /etc/pam.d/sudo
+    if [[ ! -f /etc/pam.d/polkit-1 ]]; then
+      # polkit has no stock PAM file on elementary; give it a full stack.
+      cat > /etc/pam.d/polkit-1 <<EOF
+auth      sufficient pam_fprintd.so
+auth      required pam_unix.so
+
+account   required pam_unix.so
+password  required pam_unix.so
+session   required pam_unix.so
+EOF
+      log "/etc/pam.d/polkit-1: created with fingerprint unlock (password still works)"
+    else
+      apply /etc/pam.d/polkit-1
+    fi
+    log "done. Try: sudo -k; sudo true"
+    ;;
+  *)
+    die "unknown option: $1 (use --remove)"
+    ;;
+esac
