@@ -19,6 +19,7 @@ public class QuickSettings.AudioOutput : Gtk.Box {
         rows = new Gtk.Box (VERTICAL, 0);
         append (title);
         append (rows);
+        append (new AirPlayOutputs ());
 
         map.connect (() => {
             refresh.begin ();

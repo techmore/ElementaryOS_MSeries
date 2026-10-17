@@ -23,6 +23,7 @@ install -m644 "$repo/mseries/quick-settings/ChargeLimit.vala" "$work/source/src/
 git -C "$work/source" apply "$repo/mseries/patches/quick-settings-audio-output.patch"
 install -m644 "$repo/mseries/quick-settings/AudioOutputModel.vala" "$work/source/src/Widgets/AudioOutputModel.vala"
 install -m644 "$repo/mseries/quick-settings/AudioOutput.vala" "$work/source/src/Widgets/AudioOutput.vala"
+install -m644 "$repo/mseries/quick-settings/AirPlayOutputs.vala" "$work/source/src/Widgets/AirPlayOutputs.vala"
 meson setup "$work/build" "$work/source" --prefix=/usr --libdir=lib/aarch64-linux-gnu --buildtype=release
 ninja -C "$work/build"
 if ldd "$work/build/src/libquick-settings.so" | grep -q 'not found'; then

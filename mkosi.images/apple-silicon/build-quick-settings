@@ -30,6 +30,7 @@ install -m 0644 "$SRCDIR/mseries/quick-settings/ChargeLimit.vala" "$source_dir/s
 git -C "$source_dir" apply "$SRCDIR/mseries/patches/quick-settings-audio-output.patch"
 install -m 0644 "$SRCDIR/mseries/quick-settings/AudioOutputModel.vala" "$source_dir/src/Widgets/AudioOutputModel.vala"
 install -m 0644 "$SRCDIR/mseries/quick-settings/AudioOutput.vala" "$source_dir/src/Widgets/AudioOutput.vala"
+install -m 0644 "$SRCDIR/mseries/quick-settings/AirPlayOutputs.vala" "$source_dir/src/Widgets/AirPlayOutputs.vala"
 # Factory sysupdate ships immutable /usr; /usr/local is a separate mutable tree.
 sed -i "s|/usr/local/sbin/mseries-power|/usr/libexec/mseries/power|g" "$source_dir/src/Widgets/ChargeLimit.vala"
 

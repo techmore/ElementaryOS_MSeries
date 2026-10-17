@@ -26,12 +26,13 @@ diff --git a/src/meson.build b/src/meson.build
 index 913b296..2b1905e 100644
 --- a/src/meson.build
 +++ b/src/meson.build
-@@ -29,6 +29,8 @@ sources = [
+@@ -29,6 +29,9 @@ sources = [
      'Widgets' / 'ScreenBrightness.vala',
      'Widgets' / 'KeyboardBrightness.vala',
      'Widgets' / 'ChargeLimit.vala',
 +    'Widgets' / 'AudioOutputModel.vala',
 +    'Widgets' / 'AudioOutput.vala',
++    'Widgets' / 'AirPlayOutputs.vala',
      'Widgets' / 'UserList.vala',
      'Widgets' / 'UserRow.vala',
  ]
