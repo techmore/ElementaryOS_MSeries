@@ -1957,3 +1957,11 @@ Three 5 s traces of `drm_sched_job_queue` (read-only): the ChatGPT desktop app s
 ### Power roadmap and Electron Wayland hint — 2026-10-16
 
 Owner declined closing the ChatGPT/Codex app, so no A/B was run. New finding: that app is an X11 client under Xwayland while Claude Desktop and Brave are native Wayland. Installed `~/.config/environment.d/60-mseries-electron-wayland.conf` (`ELECTRON_OZONE_PLATFORM_HINT=auto`; script `mseries/install-electron-wayland.sh`, `--uninstall` removes it); takes effect at next login, effect NOT yet measured. Also found: s2idle is the only sleep mode, deep idle is ~7% of CPU0 idle time, sleep drain is unmeasured. Full plan: `mseries/POWER-ROADMAP.md` (workstreams A to G, phases 0 to 4, six owner decisions). Next: after the next login, re-trace GPU jobs/s for the ChatGPT app and compare with the 4,000 to 5,000/s baseline.
+
+## 2026-10-16 (Claude) — dock HDMI sink tests and built-in HDMI reference
+
+- DP-port sink test (07:23–07:27, bypass off): `RESULT=SILENT`, 6 x `DPRX read timeout`; bypass re-armed.
+- Dock HDMI (`1:14`) sink test before reboot: no hotplug event at all; debugfs `port14/regs` CS2 (0x3b) had HPD (bit 6) clear while `port13` had it set. Watcher timed out, then was aborted by the owner; bypass re-armed (`Y`). No verdict from that run.
+- After reboot (kernel 7.1.13-elementary-fairydust-usb4-dptunnel, bypass=1): `1:14` HPD set, tunnel `0:5 <-> 1:14` forms, `DP source preparation failed: -110` at ~22 s. Matches DeepSeek/OpenCode commit 9fb6ff1.
+- Built-in HDMI works (38 modes, desktop extended). Working DCP (`289c`) sequence: DP2HDMI HPD irq -> `powering nub` -> `acking unhandled call 21` -> `set_drive_settings` x2 (link training) -> `plug_gated` -> `set_digital_out_mode`. The dock tunnel DCP (`28cc`) stops after `powering nub`. Saved as `mseries/fairydust/usb4/DCP-REFERENCE-BUILTIN-HDMI-20261016.txt`.
+- No driver, kernel, bootloader or display change made. Next task: DeepSeek drives the DCP to run the call 21 / drive-settings stage for the tunnelled port.

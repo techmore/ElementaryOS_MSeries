@@ -1,0 +1,83 @@
+[  971.812189] apple-dcp 289c00000.dcp: DP2HDMI HPD irq, connected:1
+[  972.314022] apple-dcp 289c00000.dcp: DP2HDMI HPD irq, 500ms debounce: connected:1
+[  972.314885] apple-dcp 289c00000.dcp: RTKit: syslog message: AppleDCPDPTX.cpp:355: [AFK]powering nub 0x864428
+[  972.925512] apple-dcp 289c00000.dcp: RTKit: syslog message: DCPDP13Service.cpp:60: [AFK]version: 14
+[  972.925522] apple-dcp 289c00000.dcp: RTKit: syslog message: DCPDPService.cpp:76: [AFK]version: 14
+[  972.925931] apple-dcp 289c00000.dcp: RTKit: syslog message: AppleDCPMCDP29XX.cpp:94: [AFK]matched 30000
+[  972.949399] apple-dcp 289c00000.dcp: AFK[ep:28]: new service AppleDCPMCDP29XX on channel 1
+[  972.955483] apple-dcp 289c00000.dcp: AFK[ep:28]: new service AppleDCPMCDP29XX on channel 3
+[  973.022211] apple-dcp 289c00000.dcp: DPTXPort: acking unhandled call 21
+[  973.043508] apple-dcp 289c00000.dcp: set_drive_settings: 4:0:14:0:0:0:0
+[  973.061009] apple-dcp 289c00000.dcp: set_drive_settings: 4:0:16:0:0:0:0
+[  973.158907] apple-dcp 289c00000.dcp: RTKit: syslog message: eoInterfaceIOAV.cpp:135: IOMFB: IOAVVideoInterface published
+[  973.158994] apple-dcp 289c00000.dcp: RTKit: syslog message: eoInterfaceIOAV.cpp:714: IOMFBStatus VideoInterfaceIOAV::plug_gated(IOAVVideoInterface *, bool): display HPD asserted
+[  973.222025] apple-dcp 289c00000.dcp: cb_hotplug() connected:1, valid_mode:0
+[  973.222050] apple-dcp 289c00000.dcp: dcp_hotplug() connected:1 valid_mode:0 nr_modes:38
+[  973.314912] apple-dcp 289c00000.dcp: dcp_poweron: DP2HDMI HPD connected:1
+[  973.314922] apple-dcp 289c00000.dcp: dcp_poweron() starting
+[  973.315119] apple-dcp 289c00000.dcp: RTKit: syslog message: FramebufferDCP.cpp:5931: IOMFBParameter_adaptive_sync Req minRR = 0x0, mediaTargetRate = 0x0, Fractional Rate = 0
+[  973.315233] apple-dcp 289c00000.dcp: RTKit: syslog message: nifiedPipeline.cpp:1356: set_device_enabled_gated: current state: 0, requested state: 1
+[  973.315652] apple-dcp 289c00000.dcp: RTKit: syslog message: PPipeDCP_H13P.cpp:10468: set_run_mode_safe: no need to defer: 0 -> 1
+[  973.315920] apple-dcp 289c00000.dcp: RTKit: syslog message: PPipeDCP_H13P.cpp:10468: set_run_mode_safe: no need to defer: 1 -> 2
+[  973.316403] apple-dcp 289c00000.dcp: dcp_set_power_state_req returned, 9998 ms remaining
+[  973.316407] apple-dcp 289c00000.dcp: set_digital_out_mode(color:98 timing:66) "3840x2160": 30 297000 3840 4016 4104 4400 2160 2168 2178 2250 0x48 0x0
+[  973.316412] apple-dcp 289c00000.dcp: set_digital_out_mode() color mode depth:8 format:0 colorimetry:10 eotf:0 range:0 vrr:0
+[  973.316504] apple-dcp 289c00000.dcp: RTKit: syslog message: nifiedPipeline.cpp:7462: set_digital_out_mode: Modeset requested for colorID: 98, timingID: 66
+[  973.316553] apple-dcp 289c00000.dcp: RTKit: syslog message: PPipeDCP_H13P.cpp:18011: Dual pipe disabled offset 0
+[  973.316817] apple-dcp 289c00000.dcp: RTKit: syslog message: PPipeDCP_H13P.cpp:10468: set_run_mode_safe: no need to defer: 2 -> 1
+[  973.316925] apple-dcp 289c00000.dcp: RTKit: syslog message: PPipeDCP_H13P.cpp:10468: set_run_mode_safe: no need to defer: 1 -> 0
+[  973.317359] apple-dcp 289c00000.dcp: RTKit: syslog message: nifiedPipeline.cpp:1356: set_device_enabled_gated: current state: 1, requested state: 0
+[  973.517727] apple-dcp 289c00000.dcp: RTKit: syslog message: nifiedPipeline.cpp:7700: set_mode: timingID: 66 colorID: 98
+[  973.536545] apple-dcp 289c00000.dcp: set_drive_settings: 4:0:28:0:0:0:0
+[  973.554005] apple-dcp 289c00000.dcp: set_drive_settings: 4:0:30:0:0:0:0
+[  973.613752] apple-dcp 289c00000.dcp: RTKit: syslog message: PPipeDCP_H13P.cpp:11092: IOMFB updateFrequencies: minimum-frequency property not found, using getClockFrequency(0) instead.
+[  973.614028] apple-dcp 289c00000.dcp: RTKit: syslog message: PPipeDCP_H13P.cpp:11109: IOMFB updateFrequencies EDT ERROR: getClockFrequency(0) (0) < videoClock 148500000! Giving up on frequencies.
+[  973.614672] apple-dcp 289c00000.dcp: RTKit: syslog message: nifiedPipeline.cpp:7356: IOMFBStatus UnifiedPipeline::mode_set_gated(uint32_t, uint32_t): 3840x2160@30 Hz link: 1
+[  973.614768] apple-dcp 289c00000.dcp: RTKit: syslog message: nifiedPipeline.cpp:1356: set_device_enabled_gated: current state: 0, requested state: 1
+[  973.615234] apple-dcp 289c00000.dcp: RTKit: syslog message: PPipeDCP_H13P.cpp:10468: set_run_mode_safe: no need to defer: 0 -> 1
+[  973.615341] apple-dcp 289c00000.dcp: RTKit: syslog message: ck_Config_H13P.cpp:1771: program_frame_size: pixel_clock 297000000, vid0 148500000, 00009480 000001ba
+[  973.615614] apple-dcp 289c00000.dcp: RTKit: syslog message: PPipeDCP_H13P.cpp:10468: set_run_mode_safe: no need to defer: 1 -> 2
+[  973.615814] apple-dcp 289c00000.dcp: RTKit: syslog message: PPipeDCP_H13P.cpp:12351: IOMFB: Ext XPan M3 pixel_clock 297000000, htot 4400 vtot 2250
+[  973.615822] apple-dcp 289c00000.dcp: RTKit: syslog message: PPipeDCP_H13P.cpp:12353: IOMFB: Ext XPan M3 SFM lines 2250, piodma_duration_lines 68, TSQ 2171
+[  973.615830] apple-dcp 289c00000.dcp: RTKit: syslog message: PPipeDCP_H13P.cpp:12355: IOMFB: Ext XPan M3 SFM dur 800000, DisplayLead 28800
+[  973.616189] apple-dcp 289c00000.dcp: RTKit: syslog message: oTimingElement.cpp:1349: [AFK]SPLIT is 0
+[  973.616299] apple-dcp 289c00000.dcp: RTKit: syslog message: PPipeDCP_H13P.cpp:10490: set_run_mode_safe: deferring: 2 -> 4
+[  973.616307] apple-dcp 289c00000.dcp: RTKit: syslog message: PPipeDCP_H13P.cpp:10395: virtual IOMFBStatus IOMFB::UPPipeDCP_H13P::ready_for_run_mode_change(IOMFB::AppleRegisterStream *): initiating deferred run mod
+[  973.617483] apple-dcp 289c00000.dcp: RTKit: syslog message: M3Hal_v1.cpp:197: IOMFB: load APT M3 IMem : size 0x7960
+[  973.617846] apple-dcp 289c00000.dcp: RTKit: syslog message: M3Hal_v1.cpp:197: IOMFB: load APT M3 DMem : size 0x70ac
+[  973.618051] apple-dcp 289c00000.dcp: RTKit: syslog message: CAHandler.cpp:188: IOMFB load_ca_data: Unrecognized data version 0 (expected 1 or 2)
+[  973.618060] apple-dcp 289c00000.dcp: RTKit: syslog message: UPPipe.cpp:3767: IOMFB read_pmu_data_sync: pmu ram read error (e00002d8)
+[  973.619151] apple-dcp 289c00000.dcp: RTKit: syslog message: PPipeDCP_H13P.cpp:14085: IOMFB Ext RTBandwidth: program_M3_rt_config: Using Dashboard 28e3d0990
+[  973.619161] apple-dcp 289c00000.dcp: RTKit: syslog message: UPTSQManager.cpp:133: IOMFB: clearing M3 reset
+[  973.619269] apple-dcp 289c00000.dcp: RTKit: syslog message: UPTSQ_Hal_v1.cpp:349: IOMFB: timebase_offset = 4
+[  973.648587] apple-dcp 289c00000.dcp: RTKit: syslog message: UPTSQManager.cpp:105: IOMFB: switch to normal mode succeeded
+[  973.649813] apple-dcp 289c00000.dcp: set_digital_out_mode finished:8167
+[  982.516349] apple-dcp 289c00000.dcp: DP2HDMI HPD irq, connected:0
+[  982.610729] apple-dcp 289c00000.dcp: RTKit: syslog message: eoInterfaceIOAV.cpp:146: IOMFB: IOAVVideoInterface terminated
+[  982.610806] apple-dcp 289c00000.dcp: RTKit: syslog message: oInterfaceIOAV.cpp:1094: void VideoInterfaceIOAV::unplug_gated(IOAVVideoInterface *): display HPD removed
+[  982.617759] apple-dcp 289c00000.dcp: RTKit: syslog message: PPipeDCP_H13P.cpp:10490: set_run_mode_safe: deferring: 4 -> 1
+[  982.617774] apple-dcp 289c00000.dcp: RTKit: syslog message: PPipeDCP_H13P.cpp:10395: virtual IOMFBStatus IOMFB::UPPipeDCP_H13P::ready_for_run_mode_change(IOMFB::AppleRegisterStream *): initiating deferred run mod
+[  982.617777] apple-dcp 289c00000.dcp: RTKit: syslog message: UPTSQManager.cpp:150: IOMFBStatus IOMFB::UPTSQManager::power_down_M3(IOMFB::AppleRegisterStream *, UPTSQManager::ModeChangeWaiter *): request mode ch
+[  982.651177] apple-dcp 289c00000.dcp: RTKit: syslog message: UPTSQManager.cpp:162: IOMFBStatus IOMFB::UPTSQManager::power_down_M3(IOMFB::AppleRegisterStream *, UPTSQManager::ModeChangeWaiter *): disabling M3
+[  982.651485] apple-dcp 289c00000.dcp: RTKit: syslog message: PPipeDCP_H13P.cpp:10468: set_run_mode_safe: no need to defer: 1 -> 0
+[  982.734108] apple-dcp 289c00000.dcp: RTKit: syslog message: nifiedPipeline.cpp:1356: set_device_enabled_gated: current state: 1, requested state: 0
+[  982.734523] apple-dcp 289c00000.dcp: cb_hotplug() connected:0, valid_mode:1
+[  982.734589] apple-dcp 289c00000.dcp: RTKit: syslog message: FramebufferDCP.cpp:1962: IOMFB: swap_submit_dcp: swallowed swap ID 78 as fControllerPowerState is 0 for External Display
+[  982.734597] apple-dcp 289c00000.dcp: RTKit: syslog message: FramebufferDCP.cpp:1967: IOMFB: swap_submit_dcp: swallowed swap ID 78 as timinsg are not enabled for External Display
+[  982.735723] apple-dcp 289c00000.dcp: DPTXPort: acking unhandled call 21
+[  982.736109] apple-dcp 289c00000.dcp: DPTXPort: acking unhandled call 20
+[  982.736365] apple-dcp 289c00000.dcp: DPTXPort: acking unhandled call 20
+[  982.737088] apple-dcp 289c00000.dcp: DPTXPort: acking unhandled call 20
+[  982.739573] apple-dcp 289c00000.dcp: dcp_hotplug() connected:0 valid_mode:0 nr_modes:38
+[  983.126213] apple-dcp 289c00000.dcp: DPTXPort: acking unhandled call 20
+[  983.260276] apple-dcp 289c00000.dcp: DP2HDMI HPD irq, connected:1
+[  983.419033] apple-dcp 289c00000.dcp: DPTXPort: acking unhandled call 21
+[  983.436027] apple-dcp 289c00000.dcp: set_drive_settings: 4:0:54:0:0:0:0
+[  983.453468] apple-dcp 289c00000.dcp: set_drive_settings: 4:0:56:0:0:0:0
+[  983.550985] apple-dcp 289c00000.dcp: RTKit: syslog message: eoInterfaceIOAV.cpp:135: IOMFB: IOAVVideoInterface published
+[  983.550998] apple-dcp 289c00000.dcp: RTKit: syslog message: eoInterfaceIOAV.cpp:714: IOMFBStatus VideoInterfaceIOAV::plug_gated(IOAVVideoInterface *, bool): display HPD asserted
+[  983.614775] apple-dcp 289c00000.dcp: cb_hotplug() connected:1, valid_mode:0
+[  983.614788] apple-dcp 289c00000.dcp: dcp_hotplug() connected:1 valid_mode:0 nr_modes:38
+[  983.633550] apple-dcp 289c00000.dcp: RTKit: syslog message: FramebufferDCP.cpp:1962: IOMFB: swap_submit_dcp: swallowed swap ID 79 as fControllerPowerState is 0 for External Display
+[  983.633559] apple-dcp 289c00000.dcp: RTKit: syslog message: FramebufferDCP.cpp:1967: IOMFB: swap_submit_dcp: swallowed swap ID 79 as timinsg are not enabled for External Display
+[  983.762005] apple-dcp 289c00000.dcp: DP2HDMI HPD irq, 500ms debounce: connected:1
