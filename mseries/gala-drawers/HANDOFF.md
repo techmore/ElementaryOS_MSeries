@@ -73,12 +73,21 @@ already watches live.
   `/etc/xdg/io.elementary.desktop.wm.shell` (`[io.elementary.dock] args=io.elementary.dock`),
   and `~/.local/bin` precedes `/usr/bin` in the session PATH — which is why the
   per-user PATH wrapper is the clean override seam.
-- **Move-the-dock is blocked on the protocol.** `pantheon-desktop-shell.v1`
-  exposes only `set_anchor (TOP|BOTTOM|LEFT|RIGHT)` and `set_size` — there is no
-  horizontal offset, so the dock can move between edges but cannot slide along the
-  bottom. Free sliding needs a new protocol request (a Gala change too) and, for a
-  left/right anchor to look right, a vertical layout mode in the dock. Flagged for
-  the owner.
+- **Move-the-dock: protocol extended (owner chose free slide).** `pantheon-desktop-shell.v1`
+  only exposed `set_anchor`/`set_size`, with no offset, so a panel could not slide
+  along its edge. Added `io_elementary_pantheon_panel_v1.set_offset (int)` at
+  protocol version 2 in **both** forks:
+  * Gala (`mseries/patches/gala-panel-offset.patch`): the XML/vapi bump the shell
+    and panel interfaces to 2, `PantheonShell` handles it, `ShellClientsManager`
+    forwards it, and `PanelWindow` applies it to the centred `x` (and repositions).
+    `install-gala-screen-corners.sh` now applies this patch too and builds the
+    combined Gala.
+  * Dock (`dock-drawers.patch`): binds the shell at version 2 and adds a
+    Command (Control) + left-drag `GestureDrag` that calls `set_offset`, guarded by
+    `panel.get_version () >= 2` so an older Gala stays centred instead of erroring.
+  * Caveat: the offset is **in-memory** — it resets to centred when the dock
+    restarts. Persisting it needs a settings key (the dock's schema is system-wide).
+
 
 
 

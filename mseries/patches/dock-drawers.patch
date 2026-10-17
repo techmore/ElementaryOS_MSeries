@@ -34,6 +34,58 @@ index bfd5c8a..5a6d3dd 100644
 +.drawer-slot .caption {
 +    font-size: 0.75em;
 +}
+diff --git a/protocol/pantheon-desktop-shell-v1.xml b/protocol/pantheon-desktop-shell-v1.xml
+index fcd0f17..ac5a907 100644
+--- a/protocol/pantheon-desktop-shell-v1.xml
++++ b/protocol/pantheon-desktop-shell-v1.xml
+@@ -6,7 +6,7 @@
+     SPDX-License-Identifier: LGPL-2.1-or-later
+   ]]></copyright>
+ 
+-  <interface name="io_elementary_pantheon_shell_v1" version="1">
++  <interface name="io_elementary_pantheon_shell_v1" version="2">
+     <description summary="create panel, widget and get more control">
+       This interface is used by the Pantheon Wayland shell to communicate with
+       the compositor.
+@@ -37,7 +37,7 @@
+     </request>
+   </interface>
+ 
+-  <interface name="io_elementary_pantheon_panel_v1" version="1">
++  <interface name="io_elementary_pantheon_panel_v1" version="2">
+     <request name="destroy" type="destructor"/>
+ 
+     <enum name="anchor">
+@@ -122,6 +122,17 @@
+         Tell the window manager to remove blur that was set in set_blur_region.
+       </description>
+     </request>
++
++    <request name="set_offset" since="2">
++      <description summary="offset the panel along its edge">
++        Move the panel by the given number of logical pixels along the edge it is
++        anchored to. Positive values move it right for a top/bottom anchor and down
++        for a left/right anchor. The compositor still centres the panel, so an
++        offset of 0 means centred.
++      </description>
++
++      <arg name="offset" type="int" summary="offset from centre, in logical pixels"/>
++    </request>
+   </interface>
+ 
+   <interface name="io_elementary_pantheon_widget_v1" version="1">
+diff --git a/protocol/pantheon-desktop-shell.vapi b/protocol/pantheon-desktop-shell.vapi
+index 1006411..0dadb04 100644
+--- a/protocol/pantheon-desktop-shell.vapi
++++ b/protocol/pantheon-desktop-shell.vapi
+@@ -48,6 +48,7 @@ namespace Pantheon.Desktop {
+         public void request_visible_in_multitasking_view ();
+         public void add_blur (uint left, uint right, uint top, uint bottom, uint clip_radius);
+         public void remove_blur ();
++        public void set_offset (int offset);
+     }
+ 
+     [CCode (cheader_filename = "pantheon-desktop-shell-client-protocol.h", cname = "struct io_elementary_pantheon_widget_v1", cprefix = "io_elementary_pantheon_widget_v1_", free_function = "io_elementary_pantheon_widget_v1_destroy")]
 diff --git a/src/Drawers.vala b/src/Drawers.vala
 new file mode 100644
 index 0000000..f918b23
@@ -291,6 +343,78 @@ index a3e7e96..85995a5 100644
          overflow = VISIBLE;
  
          var drop_target_file = new Gtk.DropTarget (typeof (File), COPY) {
+diff --git a/src/MainWindow.vala b/src/MainWindow.vala
+index 2d05ae0..1dafdf5 100644
+--- a/src/MainWindow.vala
++++ b/src/MainWindow.vala
+@@ -27,6 +27,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+     private bool initialized_blur = false;
+     private int border_radius = 0;
+ 
++    // Drawers/M-series: Command (Control) + left-drag moves the dock along its edge.
++    private int panel_offset = 0;
++    private int panel_drag_start_offset = 0;
++    private bool draging_panel = false;
++
+     class construct {
+         set_css_name ("dock-window");
+     }
+@@ -78,6 +83,46 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+         }
+ 
+         window_drag_manager = new WindowDragManager (this);
++
++        init_panel_move ();
++    }
++
++    // M-series: Command (Control) + left-drag slides the dock along its edge. Only active
++    // when the compositor speaks protocol version 2 (io_elementary_pantheon_panel_v1.set_offset).
++    private void init_panel_move () {
++        var drag = new Gtk.GestureDrag () {
++            button = Gdk.BUTTON_PRIMARY
++        };
++        drag.drag_begin.connect ((start_x, start_y) => {
++            if (panel == null || panel.get_version () < 2 ||
++                    (drag.get_current_event_state () & Gdk.ModifierType.CONTROL_MASK) == 0) {
++                drag.set_state (Gtk.EventSequenceState.DENIED);
++                return;
++            }
++
++            draging_panel = true;
++            panel_drag_start_offset = panel_offset;
++        });
++        drag.drag_update.connect ((offset_x, offset_y) => {
++            if (!draging_panel) {
++                return;
++            }
++
++            panel_offset = panel_drag_start_offset + (int) offset_x;
++            apply_panel_offset ();
++        });
++        drag.drag_end.connect (() => {
++            draging_panel = false;
++        });
++        // Cast to Widget: Gtk.Window also implements Gtk.ShortcutManager, whose
++        // add_controller (Gtk.ShortcutController) otherwise shadows Gtk.Widget's.
++        ((Gtk.Widget) this).add_controller (drag);
++    }
++
++    private void apply_panel_offset () {
++        if (panel != null && panel.get_version () >= 2) {
++            panel.set_offset (panel_offset);
++        }
+     }
+ 
+     private void update_transparency () {
+@@ -91,7 +136,7 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+ 
+     public void registry_handle_global (Wl.Registry wl_registry, uint32 name, string @interface, uint32 version) {
+         if (@interface == "io_elementary_pantheon_shell_v1") {
+-            desktop_shell = wl_registry.bind<Pantheon.Desktop.Shell> (name, ref Pantheon.Desktop.Shell.iface, uint32.min (version, 1));
++            desktop_shell = wl_registry.bind<Pantheon.Desktop.Shell> (name, ref Pantheon.Desktop.Shell.iface, uint32.min (version, 2));
+             unowned var surface = get_surface ();
+             if (surface is Gdk.Wayland.Surface) {
+                 unowned var wl_surface = ((Gdk.Wayland.Surface) surface).get_wl_surface ();
 diff --git a/src/meson.build b/src/meson.build
 index 4e860de..034e3ce 100644
 --- a/src/meson.build
