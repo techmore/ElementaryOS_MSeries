@@ -31,6 +31,22 @@ Next: re-run the controlled boot with the collector (R1/R2 fixes staged at
 revision `46bb8b6`; boot owner-gated). The session-race cause is recorded and
 the drop-in takes effect at the next boot.
 
+## Second controlled-test boot — DP-IN gate cleared, DCP link-config timeout (2026-10-16 20:50)
+
+The re-staged controlled entry ran (verified: the five in-memory module build-ids
+equal the ones inside `initramfs-linux-asahi-fairydust-usb4-dpin-controlled.img`;
+bypass armed on the boot itself). The automatic bridge engaged on the real dock
+tunnel `0:5 <-> 1:14`, the crossbar routed `dpin0 to dispext1,0`, and the
+previously-blocking DP-IN activation gate **cleared**: `phy poweron failed` = 0
+occurrences and no `DP-IN activation failed:` line, so the INACTIVE-ACK handshake
+succeeded with DP-IN HPD high. The failure moved one layer up: `DP source
+preparation failed: -110` = `-ETIMEDOUT` from `dcp.c:436`, the DCP firmware's
+`linkcfg_completion` never firing within `DPTX_CONNECT_TIMEOUT` (2 s) — the DCP
+never sent the `set_active_lane_count` request, i.e. it never configured the
+sink-facing DP link. Tunnel torn down; DRM external connectors still disconnected;
+**no picture**, M1–M4 unmet. Full record:
+[evidence/2026-10-16-controlled-test-second-boot-dpin-gate-cleared.md](evidence/2026-10-16-controlled-test-second-boot-dpin-gate-cleared.md).
+
 ## First-boot failures fixed and re-staged — 2026-10-16
 
 R1/R2 are implemented in source revision `46bb8b6` (public patch 0011):
@@ -84,7 +100,10 @@ has been demonstrated.** A separate live test fixed selection of the dock's
 HDMI-facing DP OUT adapter. The new DP-IN handshake/tunnel-clock series was installed and ran live once
 (2026-10-16): the bridge engaged on the real dock tunnel and failed in the
 DP-IN activation gate (`-ENOLINK`) plus a `dpin_init` Oops on the retry — see
-the first section above.
+the first section above. **Update (second controlled boot):** the `dpin_init`
+Oops did not recur (0011 stale-PHY guard holds) and the DP-IN activation gate
+cleared; the failure is now the DCP firmware link-config timeout (`-110`, 2 s) —
+see the second-boot section above.
 
 Current authorization: the owner now permits installation, reboot and cable
 changes when needed, but wants them batched. This supersedes earlier bans.
@@ -113,6 +132,8 @@ retain module layout even when BTF data generation is skipped.
 | --- | --- | --- |
 | M0: downstream sink presence | dock DP OUT reports HPD | **MET**: `1:14` HPD=1, `1:13` HPD=0 in the recorded live test |
 | Correct tunnel target | host DP IN paired with HPD adapter | **MET** after independent 0003: `0:5 <-> 1:14` |
+| Host DP-IN activation | DP-IN INACTIVE-ACK handshake succeeds with HPD high (no `phy poweron failed`, no activation-failure log) | **MET** on the second controlled boot (2026-10-16 20:50) |
+| DCP DP link configured | DCP firmware sends `set_active_lane_count` (linkcfg completion) | **NOT MET**: `-110` (`DPTX_CONNECT_TIMEOUT`, 2 s) |
 | Visible monitor wake | monitor visibly leaves standby/searches for source in response to a recorded action | **NOT DEMONSTRATED** |
 | M1: host feeds the tunnel | real DPRX completion with bypass OFF, no timeout | **NOT MET**: timeouts remain on `0:5 <-> 1:14` |
 | M2: display detected | DRM connected, EDID/valid mode, no firmware link failure | **NOT MET** |

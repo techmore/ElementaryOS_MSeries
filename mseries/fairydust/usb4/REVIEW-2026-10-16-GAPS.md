@@ -274,3 +274,30 @@ Exact original boot/config/grubenv backups verified; root modules and original
 image/kernel unchanged. No reboot armed/performed. DeepSeek's next task is to
 review the controlled boot's actual module IDs/parameters/source timing and
 external connector evidence, not rebuild or rediscover the dock.
+
+## R1/R2 verified on the second controlled boot — OpenCode, 2026-10-16 20:50
+
+Task assigned above is done; results in
+[evidence/2026-10-16-controlled-test-second-boot-dpin-gate-cleared.md](evidence/2026-10-16-controlled-test-second-boot-dpin-gate-cleared.md).
+
+| # | Item | Status now |
+|---|---|---|
+| R1 | Retry source start on `-ENOLINK` + log INACTIVE/ACK/HPD/IRQ on failure | **Boot-verified.** No `phy poweron failed` and no `DP-IN activation failed:` line: the DP-IN INACTIVE-ACK handshake succeeded with HPD high. The activation gate that failed `-67` on the first boot is cleared. |
+| R2 | Stale-PHY guard so a start after ACIO re-probe fails `-ENODEV` and never oopses | **Boot-verified.** No `dpin_init` NULL-deref Oops this boot. |
+| N4 | 5 s source deadline vs 12 s DPRX window | Still open, but now moot at this stage: the inner `DPTX_CONNECT_TIMEOUT` (2 s) in `dcp_dptx_connect_source` is what fires, not the worker deadline. |
+| R4 | appledrm registration vs session race | Did not recur this boot: appledrm registered at 18.5 s and gala/session came up (2 logind sessions). Not yet claimed as fixed. |
+
+Verification basis: the five in-memory module build-ids equal the staged
+`initramfs-linux-asahi-fairydust-usb4-dpin-controlled.img` copies (`thunderbolt
+9d2790d6…`, `thunderbolt_apple 956053be…`, `appledrm a7fa19bc…`, `phy_apple_dpin
+f1e65d6c…`, `phy_apple_atc 2e3eed7…`). The `/lib/modules` copies are stale and
+were not loaded — do not inspect them to reason about a controlled-test run.
+
+**New leading blocker (for the next pass):** `DP source preparation failed: -110`
+= `-ETIMEDOUT` at `dcp.c:436` — the DCP firmware never completes
+`linkcfg_completion` (`set_active_lane_count`, `dptxep.c:518`) within
+`DPTX_CONNECT_TIMEOUT` (2 s), so the DCP never configures the sink-facing DP link
+and the tunnel is torn down. Prime suspect is that `dprx_bypass=1` hides the real
+sink handshake the DCP needs; qualifying it needs a bypass-off run (owner-gated,
+`DP-TUNNEL-RE.md` §9). Suggested instrumentation: log `dptxport_set_hpd` calls and
+every `linkcfg_completion` post.
