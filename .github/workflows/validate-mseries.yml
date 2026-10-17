@@ -40,6 +40,9 @@ jobs:
           bash -n mkosi.images/apple-silicon/mkosi.postinst.chroot
           bash -n mkosi.images/apple-silicon/mkosi.finalize
           bash -n mkosi.images/apple-silicon/build-network-indicator
+          bash -n mkosi.images/apple-silicon/build-local-ai
+          for f in mseries/local-ai/*.sh; do bash -n "$f"; done
+          python3 -m py_compile mseries/local-ai/*.py
           bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-resume-fix
           bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-firmware
           bash -n transform/elementary-grow.sh

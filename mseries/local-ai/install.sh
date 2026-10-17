@@ -5,8 +5,29 @@ set -euo pipefail
 grep -aq 'apple,' /proc/device-tree/compatible || { echo 'Requires Apple Silicon' >&2; exit 1; }
 python3 -c 'import sys; assert sys.version_info[:2] == (3,14), "Python 3.14 required"'
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-work=${MSERIES_AI_SOURCES:-$HOME/Documents}
+work=${MSERIES_AI_SOURCES:-$HOME/.local/share/mseries-ai/sources/v0.7.33}
 prefix=$HOME/.local/share/mlx-omarchy
+mkdir -p "$work"
+# The upstream installer clears its venv. Never replace a running worker.
+if pgrep -u "$(id -u)" -f "$prefix/venv/bin/python" >/dev/null; then
+  echo 'Stop MLX chat/model workers before updating the runtime.' >&2; exit 1
+fi
+backup=
+if [[ -e $prefix ]]; then
+  backup=${prefix}.before-v0.7.33-$(date +%s)
+  mv "$prefix" "$backup"
+fi
+installer=
+rollback() {
+  local rc=$?
+  [[ -z $installer ]] || rm -f "$installer"
+  if (( rc != 0 )) && [[ -n $backup ]]; then
+    [[ ! -e $prefix ]] || mv "$prefix" "${prefix}.failed-$(date +%s)"
+    mv "$backup" "$prefix"
+    echo 'Restored the previous MLX runtime after the failed update.' >&2
+  fi
+}
+trap rollback EXIT
 sudo apt-get install -y git curl build-essential meson ninja-build pkg-config python3-venv \
   libopenblas0 liblapack3 vulkan-tools llvm-21-dev libclang-21-dev clang-21 \
   libclc-21-dev libclc-21 libllvmspirvlib-21-dev spirv-tools spirv-tools-dev \
@@ -31,7 +52,7 @@ checkout() {
   }
 }
 checkout coreglass coreglass 25603cbf1f95fd2819b11d914afec58997ef1b8b
-checkout omarchy-mlx omarchy-mlx 17bfdff8731f23dc139bed56ae1c84bde6503a17
+checkout omarchy-mlx omarchy-mlx 33630f9c1eeefe5fc985a28bed0585432c2c014e
 checkout mesa-mlx-compute mesa-1 7faf04c065c5376d2d58a1e5b33a60118109c99e
 if git -C "$work/coreglass" apply --check "$script_dir/coreglass-local.patch" 2>/dev/null; then
   git -C "$work/coreglass" apply "$script_dir/coreglass-local.patch"
@@ -48,7 +69,7 @@ meson setup --reconfigure "$mesa/build-mlx" "$mesa" --prefix="$mesa/private" --l
   -Dgallium-drivers= -Dvulkan-drivers=asahi -Dplatforms= -Dglx=disabled \
   -Degl=disabled -Dgbm=disabled -Dgles1=disabled -Dgles2=disabled \
   -Dopengl=false -Dllvm=enabled -Dbuildtype=release
-ninja -C "$mesa/build-mlx" -j "${MSERIES_AI_JOBS:-4}"
+ninja -C "$mesa/build-mlx" -j "${MSERIES_AI_JOBS:-2}"
 meson install -C "$mesa/build-mlx"
 mkdir -p "$prefix/vulkan"
 install -m755 "$mesa/private/lib/libvulkan_asahi.so" "$prefix/vulkan/"
@@ -65,7 +86,6 @@ PY
 # Mesa reports its abbreviated git identity; pin exactly that identity.
 printf '%s\n' "$(git -C "$mesa" rev-parse --short=10 HEAD)" > "$prefix/vulkan/mesa-git-sha"
 installer=$(mktemp)
-trap 'rm -f "$installer"' EXIT
 python3 - "$work/omarchy-mlx" "$installer" <<'PY'
 from pathlib import Path
 import sys
@@ -78,7 +98,8 @@ text=text.replace(old,'ROOT="'+str(root)+'"',1)
 Path(sys.argv[2]).write_text(text)
 PY
 export OMARCHY_MLX_SYSTEM_PREFIX=$prefix
-MLX_OMARCHY_VERSION=v0.7.32 bash "$installer"
+MLX_OMARCHY_VERSION=v0.7.33 bash "$installer"
+python3 "$script_dir/configure-prefill.py" "$prefix/mlx_omarchy_serve/__main__.py"
 # Keep driver selection local to MLX launchers; never set global Vulkan variables.
 python3 - "$HOME/.local/bin" <<'PY'
 from pathlib import Path
@@ -101,3 +122,4 @@ if '[local]' not in text:
 CONFIG
 "$HOME/.local/bin/mlx-omarchy-info"
 echo 'Installed Coreglass and MLX Chat. Model downloads are selected in MLX Chat.'
+[[ -z $backup ]] || echo "Previous runtime retained at $backup"

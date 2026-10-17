@@ -15,10 +15,13 @@ import time
 import urllib.request
 from urllib.parse import urlsplit
 
-MODEL_REPO = 'ornith-ai/Ornith-1.5-9B-MLX-4bit'
-REVISION = 'a48173b246ac705be75c05bedf1a0666db522d53'
-DEFAULT_ENDPOINT = 'http://127.0.0.1:8767'
-MODEL_UNIT = 'mseries-troubleshooter-model.service'
+MODEL_REPO = 'mlx-community/Qwen3.5-9B-MLX-4bit'
+REVISION = '938d8919941c6e7efd3c7150eff7fe9d12afa631'
+DEFAULT_ENDPOINT = 'http://127.0.0.1:8766'
+MODEL_UNIT = 'mseries-ai-quality.service'
+PERSONAL_UNIT = 'mseries-ai-personal.service'
+QUALITY_UNIT = 'mseries-ai-quality.service'
+QUALITY_REVISION = '938d8919941c6e7efd3c7150eff7fe9d12afa631'
 CHAT_UNIT = 'mlx-omarchy-chat.service'
 MAX_LOG_CHARS = 8000
 SYSTEM = '''You are a Linux/elementary OS Apple Silicon troubleshooting assistant.
@@ -28,7 +31,8 @@ Write for the owner of this computer, who is not a developer: plain words, no ja
 no unexplained service or file names. Keep the whole answer under 250 words in exactly
 this shape:
 ## Verdict
-One sentence: is the computer healthy, or does something need attention?
+One sentence stating what the supplied evidence establishes. Undated or historical
+logs alone cannot establish current health: say that current status is unknown.
 ## Needs attention
 Only real problems the owner should act on, at most three bullets, each exactly in this form:
 - **Short title.** What is happening and why it matters, in everyday language. **Fix:** one simple step. Prefer actions in the desktop over commands; put a read-only command in backticks only when it is the clearest way to check something.
@@ -41,6 +45,12 @@ Only mention commands, services or files that appear in the evidence; never inve
 names. Do not guess why something failed or what it means for the user beyond what
 the evidence shows; say "the logs do not say why" instead. A single past failure does not
 mean a feature is permanently broken. Do not suggest restarting unless the evidence shows it would fix something.
+Name the failing component exactly as the excerpt names it; do not replace it with
+an invented label such as "critical system process". Do not infer causal links
+between unrelated subsystems. Successful initialization is not evidence of failure.
+Never propose reboots, restarts, resets, or connectivity toggles from a crash line
+alone. When no supported fix is established, suggest checking for a repeat occurrence
+and say the logs do not establish a fix. Do not invent a fix to fill a template.
 If nothing needs doing, say so. If evidence is insufficient, say what is missing. Do not propose destructive commands, firmware,
 bootloader, kernel replacement, or disabling speaker protection. If evidence is
 insufficient, say what is missing. Be concise. This machine runs Pantheon on M1 Pro;
@@ -201,7 +211,7 @@ def performance_snapshot():
         ('Processes by resident memory (RSS in kB)', ['ps', '-eo', 'comm,pcpu,pmem,rss', '--sort=-rss']),
         ('Native power profile', ['powerprofilesctl', 'get']),
         ('Root disk space', ['df', '-h', '/']),
-        ('Local model state', ['systemctl', '--user', 'show', 'mseries-troubleshooter-model.service',
+        ('Local model state', ['systemctl', '--user', 'show', MODEL_UNIT,
                                '-p', 'ActiveState', '-p', 'MemoryCurrent']),
     ):
         sections.append(title + '\n' + '\n'.join(command(args).splitlines()[:9]))
@@ -220,31 +230,25 @@ def analysis_session(args, endpoint):
         except BlockingIOError:
             raise ValueError('Another local analysis is running. Let it finish and retry.') from None
         started = False
-        chat_paused = []
         try:
             if args.start:
-                started = True
-                start_server(endpoint, chat_paused)
+                # Borrow a warm assistant worker without unloading it afterwards.
+                started = not any(unit_state(unit) in ('active', 'activating')
+                                  for unit in (MODEL_UNIT, PERSONAL_UNIT))
+                start_server(endpoint)
             yield
         finally:
             if started and args.release_model:
                 stage('releasing', 'Releasing model memory for the desktop…')
                 try:
-                    result = subprocess.run(['systemctl', '--user', 'stop', 'mseries-troubleshooter-model.service'],
-                                            capture_output=True, text=True, timeout=25)
+                    result = subprocess.run(['systemctl', '--user', 'stop', MODEL_UNIT],
+                                            capture_output=True, text=True, timeout=45)
                     if result.returncode:
                         stage('release-failed', 'Analysis finished, but model memory could not be released: ' + redact(result.stderr)[:200])
                     else:
                         stage('released', 'Model stopped; model memory released for the desktop.')
                 except (OSError, subprocess.SubprocessError) as error:
                     stage('release-failed', 'Could not release model memory: ' + redact(str(error))[:200])
-            if chat_paused and unit_state(MODEL_UNIT) not in ('active', 'activating'):
-                stage('chat-resume', 'Restarting the MLX chat you had running…')
-                try:
-                    subprocess.run(['systemctl', '--user', 'start', CHAT_UNIT],
-                                   capture_output=True, text=True, timeout=25)
-                except (OSError, subprocess.SubprocessError) as error:
-                    stage('chat-resume-failed', 'Could not restart MLX chat: ' + redact(str(error))[:200])
 
 
 def unit_state(unit):
@@ -252,52 +256,39 @@ def unit_state(unit):
     return result.stdout.strip()
 
 
-def refused_for_memory():
-    """True when the model server's admission check, not a crash, stopped the unit."""
-    result = subprocess.run(['journalctl', '--user', '-u', MODEL_UNIT, '-n', '40', '--no-pager', '-o', 'cat'],
-                            capture_output=True, text=True, timeout=10)
-    return 'DOES NOT FIT' in result.stdout
-
-
 def served_model(models):
-    """Pin to the model the server was started with (its absolute path).
-
-    The server also lists other cached models and swaps to whichever one a request names, so taking the first
-    listed id can silently run a different model than the one the service loaded."""
+    """Prefer the loaded absolute snapshot over other cached model aliases."""
     ids = [m['id'] for m in models]
     return next((i for i in ids if i.startswith('/')), ids[0])
 
 
-def start_server(endpoint, chat_paused=None):
+def start_server(endpoint):
     stage("model-start", "Starting the local model service…")
     if endpoint != DEFAULT_ENDPOINT:
         raise ValueError('--start is only supported for the dedicated default endpoint')
     model = Path.home() / '.cache/huggingface/hub' / ('models--' + MODEL_REPO.replace('/', '--')) / 'snapshots' / REVISION
     if not (model / 'config.json').is_file():
         raise ValueError('Pinned model missing; run install-troubleshooter.sh first')
-    subprocess.run(['systemctl', '--user', 'start', MODEL_UNIT], check=True)
+    unit = next((u for u in (PERSONAL_UNIT, MODEL_UNIT)
+                 if unit_state(u) in ('active', 'activating')), MODEL_UNIT)
+    if unit == MODEL_UNIT and any(unit_state('mseries-ai-' + name + '.service') in ('active', 'activating')
+                                 for name in ('everyday', 'compact', 'compact35', 'coder', 'coder9', 'coder7', 'liquid', 'bonsai')):
+        raise ValueError('Another assistant profile is using the model budget. Fault evidence remains saved; retry analysis when it is free.')
+    subprocess.run(['systemctl', '--user', 'start', unit], check=True)
     for attempt in range(120):
         try:
-            api(endpoint, '/v1/models')
+            models = api(endpoint, '/v1/models')['data']
+            expected = REVISION if unit == MODEL_UNIT else QUALITY_REVISION
+            if not any(m['id'].endswith('/' + expected) for m in models):
+                raise ValueError('Unexpected model on the default local endpoint')
             return
         except (OSError, ValueError):
-            # The server refuses to start (no swap/OOM gambles) when free memory is short. Pause the resident MLX
-            # chat once to make room; the admission check itself is never bypassed or lowered.
-            if (chat_paused is not None and not chat_paused and unit_state(MODEL_UNIT) == 'failed'
-                    and refused_for_memory() and unit_state(CHAT_UNIT) == 'active'):
-                stage('chat-pause', 'Not enough free memory with MLX chat loaded; pausing it for this analysis…')
-                subprocess.run(['systemctl', '--user', 'stop', CHAT_UNIT], capture_output=True, text=True, timeout=30)
-                chat_paused.append(CHAT_UNIT)
-                time.sleep(3)
-                subprocess.run(['systemctl', '--user', 'reset-failed', MODEL_UNIT], capture_output=True, text=True)
-                subprocess.run(['systemctl', '--user', 'start', MODEL_UNIT], check=True)
-            elif unit_state(MODEL_UNIT) == 'failed' and refused_for_memory():
-                raise ValueError('Not enough free memory to load the model (it needs about 8 GiB free). '
-                                 'Close a few large apps and try again.')
+            if unit_state(unit) in ('failed', 'inactive'):
+                raise ValueError('Local model refused or stopped for memory/quiet limits. Evidence is retained; retry when the desktop has headroom.') from None
             if attempt % 10 == 0:
                 stage("model-loading", f"Waiting for the model to load into memory · {attempt}s elapsed (up to 120s)…")
             time.sleep(1)
-    raise ValueError('Model not ready; inspect journalctl --user -u mseries-troubleshooter-model')
+    raise ValueError('Model not ready; inspect journalctl --user -u mseries-ai-quality')
 
 
 def main():

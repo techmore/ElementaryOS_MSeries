@@ -1,0 +1,56 @@
+{
+  "method": "Production EDS read through real stdio MCP. Before model input/publication, retain only the owned synthetic list; discard private records. Model creates and reads a note in a temporary workspace.",
+  "task_title": "Review battery measurements",
+  "trace": [
+    {
+      "name": "list_tasks",
+      "arguments": {},
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"tasks\": [{\"list\": \"MSeries synthetic workflow\", \"title\": \"Review battery measurements\", \"due\": null}], \"errors\": [], \"read_only\": true}"
+          }
+        ],
+        "isError": false
+      }
+    },
+    {
+      "name": "workspace_write_note",
+      "arguments": {
+        "name": "Plan.md",
+        "text": "Review battery measurements"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"created\": \"Plan.md\", \"bytes\": 27}"
+          }
+        ],
+        "isError": false
+      }
+    },
+    {
+      "name": "workspace_read_file",
+      "arguments": {
+        "path": "Plan.md"
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"path\": \"Plan.md\", \"text\": \"Review battery measurements\", \"truncated\": false}"
+          }
+        ],
+        "isError": false
+      }
+    }
+  ],
+  "passed": true,
+  "model": "$HOME/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3",
+  "answer": "Plan.md created and verified with title: \"Review battery measurements\".",
+  "note": "Review battery measurements",
+  "owned_source_removed": true,
+  "elapsed_s": 18.501236052999957
+}

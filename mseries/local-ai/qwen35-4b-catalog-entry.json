@@ -1,0 +1,73 @@
+{
+  "id": "qwen3.5-4b-mseries-4bit",
+  "repo": "mlx-community/Qwen3.5-4B-MLX-4bit",
+  "revision": "32f3e8ecf65426fc3306969496342d504bfa13f3",
+  "kind": "chat",
+  "priority": 20,
+  "recommended": false,
+  "license": "apache-2.0",
+  "quant": {
+    "bits": 4,
+    "group_size": 64,
+    "mode": "affine"
+  },
+  "memory": {
+    "weights_bytes": 3034300695,
+    "kv_bytes_per_token": 32768,
+    "peak_estimate_bytes": null
+  },
+  "context": {
+    "max_tokens": 262144
+  },
+  "capability": {
+    "min_mem_gib": 5,
+    "arch": null
+  },
+  "qualification": {
+    "generation": {
+      "status": "untested",
+      "receipt": null,
+      "date": null
+    },
+    "http": {
+      "status": "untested",
+      "receipt": null,
+      "date": null
+    },
+    "managed": {
+      "status": "untested",
+      "receipt": null,
+      "date": null
+    }
+  },
+  "availability": {
+    "size_bytes": 3061132920,
+    "refreshed_at": "2026-10-16T00:00:00Z"
+  },
+  "family": "qwen3.5-4b",
+  "extension": {
+    "model_type": "qwen3_5_text",
+    "multimodal": true,
+    "variant": "4bit",
+    "model_architecture": "Qwen3_5ForConditionalGeneration",
+    "kv_basis": "32768 B/token = 2 (K+V) x 8 full-attention layers (32/4) x 4 KV heads x 256 head_dim x 2 bytes (bf16); linear-attention layers carry recurrent state, not a growing KV cache.",
+    "benchmark_receipt": "mseries/local-ai/receipts/2026-10-16.md",
+    "license_source": "Hugging Face model card (README.md) and API cardData.license at this pinned revision; public and ungated.",
+    "files": [
+      {
+        "path": "config.json",
+        "size_bytes": 3366,
+        "sha256": "f3efc81b2ea8d96a45301037d3ccccbcccdef44a961845c87f286aaddbc6eaaa"
+      },
+      {
+        "path": "model.safetensors",
+        "size_bytes": 3034300695,
+        "sha256": "5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db"
+      }
+    ]
+  },
+  "serve": {
+    "backend": "mlx-lm",
+    "module": null
+  }
+}

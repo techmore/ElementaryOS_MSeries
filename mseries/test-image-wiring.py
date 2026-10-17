@@ -71,9 +71,19 @@ class ImageWiringTests(unittest.TestCase):
             # The real build installs this compiled component before finalize.
             unit = image / 'usr/lib/systemd/system/touchegg.service'
             unit.write_text('[Service]\nExecStart=/usr/bin/touchegg --daemon\n[Install]\nWantedBy=multi-user.target\n')
+            # Runtime paths must survive package pruning and sysupdate's /usr boundary.
+            for path in ['usr/lib/omarchy-mlx/venv/bin/python',
+                         'usr/lib/omarchy-mlx/vulkan/honeykrisp_icd.aarch64.json',
+                         'usr/lib/mseries-ai/llama/bin/llama-server',
+                         'usr/bin/mlx-omarchy-serve',
+                         'usr/share/omarchy-mlx/serve-catalog.json',
+                         'usr/share/doc/mseries-local-ai/SOURCE']:
+                target = image / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text('synthetic local AI payload')
             expected = {p.relative_to(image) for p in image.rglob('*') if p.is_file()}
             payload = image / 'usr/bin/package-payload'
-            payload.parent.mkdir(parents=True)
+            payload.parent.mkdir(parents=True, exist_ok=True)
             payload.write_text('must be pruned')
             tools = Path(directory) / 'tools'
             tools.mkdir()

@@ -1,0 +1,16 @@
+{
+  "workflow_run": 38957234351,
+  "workflow_conclusion": "success",
+  "artifact_id": 12071007064,
+  "dashboard_issue": 51,
+  "dashboard_updated_at": "2026-10-16T19:47:26Z",
+  "encoding": "gzip+base64",
+  "decoder_verified": true,
+  "observations": 92,
+  "pending": 10,
+  "errors": [],
+  "branch_heads": 1105,
+  "repositories": 8,
+  "verified_at": "2026-10-16T19:50:02.791046+00:00",
+  "raw_heads_sha256": "97cc6e171faf3bcd43997a449172721eff58477cbdabcf14d4dc051fa2b4059b"
+}
