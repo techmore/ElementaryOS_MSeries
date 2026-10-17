@@ -335,12 +335,13 @@ run "create windows" "$cli" create windows --iso "$fake_iso" --memory 3072
 wconf=$work/vms/windows/vm.conf
 grep_ok "windows GUEST" '^GUEST=windows$' "$wconf"
 grep_ok "windows TPM on" '^TPM=on$' "$wconf"
-grep_ok "windows SMM on" '^SMM=on$' "$wconf"
+grep_not "windows conf has no x86-only SMM" '^SMM=' "$wconf"
 grep_ok "windows NVMe disk" '^DISK_BUS=nvme$' "$wconf"
 grep_ok "windows Secure Boot firmware" '^FIRMWARE=AAVMF_CODE.ms.fd$' "$wconf"
 run "start windows headless" "$cli" start windows --headless
 exists "swtpm launched" "$work/vms/windows/swtpm.pid"
 grep_ok "qemu TPM device" 'tpm-tis-device' "$work/qemu-invocation"
+grep_not "qemu args have no x86-only smm" 'smm=on' "$work/qemu-invocation"
 grep_ok "qemu NVMe device" 'nvme,serial=mseries-windows' "$work/qemu-invocation"
 run "wait matches windows serial" "$cli" wait windows --pattern BANNER-MARKER-OK --timeout 30
 run "stop windows" "$cli" stop windows

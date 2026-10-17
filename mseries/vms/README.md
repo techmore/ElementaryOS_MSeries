@@ -52,7 +52,7 @@ cd ~/ElementaryOS_MSeries
 | `info` | host prerequisites and capabilities |
 | `list` / `status NAME` | VM inventory and run state |
 | `create elementary [name] [--iso PATH] [--memory MiB] [--cpus N] [--disk GiB] [--boot iso\|disk]` | new Linux-ish VM |
-| `create windows [name] --iso PATH [...]` | new Windows VM (TPM, SMM, NVMe by default) |
+| `create windows [name] --iso PATH [...]` | new Windows VM (TPM 2.0, Secure Boot, NVMe by default) |
 | `import-omarchy IMAGE.zip [--name NAME] [--delete-source]` | UTM bundle → plain qcow2 + `vm.conf` |
 | `start NAME [--headless [--daemon]] [--force]` | boot it (GTK window, or none + QMP) |
 | `stop NAME [--force]` | graceful ACPI powerdown, then TERM, then KILL |
@@ -72,8 +72,9 @@ variables copy), `qemu.args` (the exact last command line), `serial.log`, and `q
 
 ## Windows specifics
 
-`create windows` sets `TPM=on` (swtpm, state in `tpm/`), `SMM=on` with `AAVMF_CODE.ms.fd` for Secure Boot,
-and an NVMe disk so the installer needs no virtio driver. `--virtio-media virtio-win.iso` attaches extra
+`create windows` sets `TPM=on` (swtpm, state in `tpm/`) and `AAVMF_CODE.ms.fd` for Secure Boot —
+on ARM the firmware alone enforces Secure Boot; there is no x86-style SMM (and QEMU's `virt`
+machine has no `smm` property). The disk is NVMe so the installer needs no virtio driver. `--virtio-media virtio-win.iso` attaches extra
 read-only media when you want virtio drivers for network or balloon devices.
 
 The UUP download uses the official JSON API (`api.uupdump.net`) and the converter script from
@@ -98,7 +99,7 @@ like the website's "Download and convert to ISO" flow.
 ./mseries/vms/test-mseries-vm.sh
 ```
 
-79 hermetic checks: PATH-stubbed `qemu-system-aarch64`, `swtpm`, `qemu-img`, `gh`, `curl`, `aria2c` and
+80 hermetic checks: PATH-stubbed `qemu-system-aarch64`, `swtpm`, `qemu-img`, `gh`, `curl`, `aria2c` and
 `git`, a temporary `MSERIES_VM_DIR`, no KVM, no network, no root. CI runs it on every push.
 
 ## macOS

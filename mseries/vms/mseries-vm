@@ -223,7 +223,6 @@ EXTRA_MEDIA=
 BOOT=iso
 VARS_FILE=vars.fd
 FIRMWARE=AAVMF_CODE.no-secboot.fd
-SMM=off
 TPM=off
 NET=user
 HOSTFWD=
@@ -314,9 +313,10 @@ cmd_create() {
     if [[ $guest == windows ]]; then
         cat >> "$dir/vm.conf" <<'EOF'
 # Windows 11 needs TPM 2.0 and Secure Boot; NVMe avoids requiring virtio drivers.
+# (Secure Boot on ARM comes from AAVMF_CODE.ms.fd alone; QEMU's virt machine has
+# no x86-style SMM, so none is configured.)
 DISK_BUS=nvme
 FIRMWARE=AAVMF_CODE.ms.fd
-SMM=on
 TPM=on
 EOF
         : > "$dir/notes.txt"
@@ -375,7 +375,6 @@ cmd_start() {
     rm -f "$dir/qmp.sock"
 
     local machine="virt,accel=kvm"
-    [[ $SMM == on ]] && machine="virt,accel=kvm,smm=on"
 
     local -a cmd=("$qemu" -name "mseries-$name" -machine "$machine" -cpu host
         -smp "$CPUS" -m "$MEMORY_MB"
@@ -614,7 +613,7 @@ cmd_set() {
         BOOT) [[ $value == iso || $value == disk ]] || die "BOOT must be iso or disk" ;;
         NET) [[ $value == user || $value == none ]] || die "NET must be user or none" ;;
         HOSTFWD) [[ $value != *[[:space:]]* ]] || die "HOSTFWD must be a hostfwd rule, e.g. tcp::2222-:22" ;;
-        TPM|SMM) [[ $value == on || $value == off ]] || die "$key must be on or off" ;;
+        TPM) [[ $value == on || $value == off ]] || die "$key must be on or off" ;;
         AUDIO|GL) [[ $value == on || $value == off ]] || die "$key must be on or off" ;;
         CPUS|MEMORY_MB) [[ $value =~ ^[1-9][0-9]*$ ]] || die "$key must be a positive integer" ;;
         DISK_BUS) [[ $value == virtio || $value == nvme ]] || die "DISK_BUS must be virtio or nvme" ;;
