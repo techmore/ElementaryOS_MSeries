@@ -1,16 +1,19 @@
 #!/usr/bin/python3
 """MSeries local MCP tools. No shell execution or arbitrary filesystem writes."""
 import configparser
+import fcntl
 import json
 import os
 from pathlib import Path
 import re
 import sys
+import time
+import uuid
 from datetime import datetime, timedelta, timezone
 
 from machine import snapshot
 
-VERSION = '0.1.0'
+VERSION = '0.2.0'
 ROOT = Path(os.environ.get('MSERIES_ASSISTANT_WORKSPACE', Path.home() / 'Documents/Assistant Workspace')).resolve()
 STATE = Path(os.environ.get('MSERIES_MCP_STATE', Path.home() / '.local/state/mseries-os-mcp'))
 
@@ -25,7 +28,15 @@ def tool(name, description, properties=None, required=None, readonly=True):
 TOOLS = [
     tool('system_status', 'Read measured RAM headroom, pressure, temperatures, fan RPM and system watts.'),
     tool('list_apps', 'List installed desktop applications and which adapters are implemented.'),
-    tool('list_tasks', 'Read open tasks from the local elementary Tasks/Evolution Data Server.'),
+    tool('list_tasks', 'Read open tasks through EDS. Use scope assistant for only the dedicated local Assistant Tasks list.',
+         {'scope': {'type': 'string', 'enum': ['all', 'assistant']}}),
+    tool('create_assistant_task', 'Create a task only in the dedicated local Assistant Tasks list. Reuse request_id on retries; never edits existing tasks or writes to synced accounts.',
+         {'title': {'type': 'string', 'maxLength': 240},
+          'request_id': {'type': 'string', 'minLength': 8, 'maxLength': 80,
+                         'pattern': '^[A-Za-z0-9][A-Za-z0-9_-]{7,79}$',
+                         'description': 'Stable retry label, for example battery-review-1.'},
+          'due': {'type': 'string', 'maxLength': 10, 'description': 'Optional date YYYY-MM-DD.'},
+          'details': {'type': 'string', 'maxLength': 4000}}, ['title', 'request_id'], False),
     tool('list_calendar_events', 'Read local calendar components occurring in the next seven days. Recurrences are labeled, not expanded.'),
     tool('add_minutes', 'Calculate a clock time plus minutes deterministically; returns HH:MM and day offset.',
          {'time': {'type': 'string'}, 'minutes': {'type': 'string'}}, ['time', 'minutes']),
@@ -67,21 +78,126 @@ def apps():
                 continue
     for app, adapter in {'io.elementary.files': 'Assistant Workspace files',
                          'io.elementary.calendar': 'read calendar components through EDS',
-                         'io.elementary.tasks': 'read tasks through EDS',
-                         'org.techmore.HomeboardBoard': 'read tasks through EDS'}.items():
+                         'io.elementary.tasks': 'read tasks; create in local Assistant Tasks only',
+                         'org.techmore.HomeboardBoard': 'read tasks; create in local Assistant Tasks only'}.items():
         if app in found:
             found[app]['adapter'] = adapter
     return {'apps': list(found.values())[:150], 'scope': 'Inventory does not imply control of every app'}
 
 
-def read_tasks():
+def assistant_source_uid(create=False):
+    marker = STATE / 'task-source.json'
+    if marker.is_symlink():
+        raise ValueError('Assistant Tasks ownership marker must not be a symlink')
+    if not marker.exists():
+        if not create:
+            return None
+        STATE.mkdir(parents=True, exist_ok=True, mode=0o700)
+        uid = 'mseries-assistant-tasks-' + str(uuid.uuid4())
+        temporary = STATE / ('.task-source-' + str(uuid.uuid4()))
+        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+        try:
+            with os.fdopen(fd, 'w') as handle:
+                json.dump({'schema': 1, 'source_uid': uid}, handle)
+            os.replace(temporary, marker)
+        finally:
+            temporary.unlink(missing_ok=True)
+    fd = os.open(marker, os.O_RDONLY | os.O_NOFOLLOW)
+    with os.fdopen(fd) as handle:
+        value = json.loads(handle.read(4097))
+    uid = value.get('source_uid') if isinstance(value, dict) else None
+    if not isinstance(value, dict) or value.get('schema') != 1 or not isinstance(uid, str) or not re.fullmatch(
+            r'mseries-assistant-tasks-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', uid):
+        raise ValueError('Invalid Assistant Tasks ownership marker')
+    return uid
+
+
+def validate_task_input(args):
+    title, request_id = args['title'], args['request_id']
+    details, due = args.get('details', ''), args.get('due', '')
+    if not title.strip() or any(ord(c) < 32 or ord(c) == 127 for c in title):
+        raise ValueError('Task title must be nonempty single-line text')
+    if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]{7,79}', request_id):
+        raise ValueError('request_id must be 8–80 ASCII letters, digits, underscores or hyphens')
+    if any(ord(c) < 32 and c not in '\n\t' for c in details) or '\x7f' in details:
+        raise ValueError('Task details contain control characters')
+    if due:
+        if not re.fullmatch(r'[0-9]{4}-[0-9]{2}-[0-9]{2}', due):
+            raise ValueError('Use a due date in YYYY-MM-DD format')
+        datetime.strptime(due, '%Y-%m-%d')
+    return title, request_id, details, due
+
+
+def validate_task_source(source, extension):
+    if source is None or source.get_parent() != 'local-stub' or not source.has_extension(extension) or \
+            source.get_extension(extension).get_backend_name() != 'local':
+        raise ValueError('Assistant Tasks source is not an owned local task list')
+
+
+def create_assistant_task(args):
+    title, request_id, details, due = validate_task_input(args)
+    import gi
+    gi.require_version('EDataServer', '1.2'); gi.require_version('ECal', '2.0'); gi.require_version('ICalGLib', '3.0')
+    from gi.repository import EDataServer, ECal, ICalGLib, GLib
+    STATE.mkdir(parents=True, exist_ok=True, mode=0o700)
+    fd = os.open(STATE / 'tasks.lock', os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, 'w') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        source_uid = assistant_source_uid(create=True)
+        registry = EDataServer.SourceRegistry.new_sync(None)
+        extension = EDataServer.SOURCE_EXTENSION_TASK_LIST
+        source = registry.ref_source(source_uid)
+        if source is None:
+            source = EDataServer.Source.new_with_uid(source_uid, None)
+            source.set_display_name('Assistant Tasks'); source.set_parent('local-stub')
+            source.get_extension(extension).set_backend_name('local')
+            registry.commit_source_sync(source, None)
+            source = registry.ref_source(source_uid)
+        validate_task_source(source, extension)
+        client = ECal.Client.connect_sync(source, ECal.ClientSourceType.TASKS, 5, None)
+        uid = str(uuid.uuid5(uuid.UUID(source_uid.removeprefix('mseries-assistant-tasks-')), request_id))
+        existing = None
+        try:
+            ok, existing = client.get_object_sync(uid, None, None)
+            if not ok:
+                raise ValueError('Task lookup failed')
+        except GLib.Error as error:
+            if not error.matches(ECal.Client.error_quark(), ECal.ClientError.OBJECT_NOT_FOUND):
+                raise
+        if existing is not None:
+            existing_due = existing.get_due()
+            actual_due = existing_due.as_ical_string() if existing_due and not existing_due.is_null_time() else ''
+            if existing.get_summary() != title or (existing.get_description() or '') != details or actual_due != due.replace('-', ''):
+                raise ValueError('request_id already belongs to different task data; existing task unchanged')
+        else:
+            component = ICalGLib.Component.new(ICalGLib.ComponentKind.VTODO_COMPONENT)
+            component.set_uid(uid); component.set_summary(title)
+            component.set_description(details)
+            component.set_status(ICalGLib.PropertyStatus.NEEDSACTION)
+            component.set_dtstamp(ICalGLib.Time.new_from_timet_with_zone(int(time.time()), False, ICalGLib.Timezone.get_utc_timezone()))
+            if due:
+                component.set_due(ICalGLib.Time.new_from_string(due.replace('-', '')))
+            ok, actual_uid = client.create_object_sync(component, ECal.OperationFlags.NONE, None)
+            if not ok or actual_uid != uid:
+                raise ValueError('Local backend did not confirm the requested task UID')
+        return {'created': existing is None, 'uid': uid, 'list': source.get_display_name(),
+                'title': title, 'due': due or None, 'scope': 'local Assistant Tasks only'}
+
+
+def read_tasks(scope='all'):
     import gi
     gi.require_version('EDataServer', '1.2')
     gi.require_version('ECal', '2.0')
     from gi.repository import EDataServer, ECal
     registry = EDataServer.SourceRegistry.new_sync(None)
     result, errors = [], []
-    for source in registry.list_sources(EDataServer.SOURCE_EXTENSION_TASK_LIST):
+    sources = registry.list_sources(EDataServer.SOURCE_EXTENSION_TASK_LIST)
+    if scope == 'assistant':
+        uid = assistant_source_uid()
+        sources = [s for s in sources if s.get_uid() == uid]
+        for source in sources:
+            validate_task_source(source, EDataServer.SOURCE_EXTENSION_TASK_LIST)
+    for source in sources:
         try:
             client = ECal.Client.connect_sync(source, ECal.ClientSourceType.TASKS, 5, None)
             ok, items = client.get_object_list_as_comps_sync('(not (is-completed?))', None)
@@ -90,7 +206,7 @@ def read_tasks():
             for item in items[:40]:
                 summary = item.get_summary()
                 due = item.get_due()
-                result.append({'list': source.get_display_name(), 'title': summary.get_value() if summary else '',
+                result.append({'list': source.get_display_name(), 'uid': item.get_icalcomponent().get_uid(), 'title': summary.get_value() if summary else '',
                                'due': due.get_value().as_ical_string() if due else None})
         except Exception as error:
             errors.append({'list': source.get_display_name(), 'error': type(error).__name__})
@@ -115,7 +231,9 @@ def call(name, args):
     if name == 'list_apps':
         return apps()
     if name == 'list_tasks':
-        return read_tasks()
+        return read_tasks(args.get('scope', 'all'))
+    if name == 'create_assistant_task':
+        return create_assistant_task(args)
     if name == 'add_minutes':
         start = datetime.strptime(args['time'], '%H:%M')
         minutes = int(args['minutes'])
