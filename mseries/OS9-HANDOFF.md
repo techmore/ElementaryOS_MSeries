@@ -2030,3 +2030,4 @@ The owned final-qualification unit finished successfully. The enabled everyday Q
 - Not verified: the automatic replug path. On hotplug the watcher sets 1080p for ~2 s then the saved mode (applying 1080p then 4K by hand is what recovered "no signal" on the built-in HDMI). Test by replugging the built-in HDMI.
 - Known limit: the TV only advertises 3840x2160 at 30 Hz.
 - Next: a graphical display settings app (drag-and-drop arrangement, all modes/refresh rates, scale, preferred/recommended markers) on top of the same DisplayConfig calls.
+- Added `mseries/display-settings/` (GTK3 "Display Settings (M-series)": drag-and-drop arrangement, per-monitor resolution/refresh/scale/rotation, profiles, and a Diagnose tab built on `display_diag.py`). Verified: 7 + 6 unit tests, headless renders under xvfb with fake monitors. Not yet exercised on the live display (drag/apply) or after a real replug.

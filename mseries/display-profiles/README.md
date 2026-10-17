@@ -18,3 +18,16 @@ mseries-display-profiles watch          # autostarted: apply on every hotplug
   Reproduced by applying 1080p then 4K by hand; the automatic replug path is not yet tested.
 - The 3840x2160 mode on that TV is offered at 30 Hz only (no 60 Hz mode is advertised).
 - Saved profiles: `~/.config/mseries/display-profiles.json`. Tests: `python3 -I test_display_profiles.py`.
+
+## Display Settings app
+
+`mseries-display-settings` (installed by `install-display-profiles.sh`, appears as "Display Settings (M-series)"):
+
+- **Arrange:** drag monitors (snap edge to edge), resolution / refresh rate / scale / rotation from what each
+  monitor actually offers, "recommended" markers, primary, on/off, full mode list, 15 s keep-or-revert on Apply,
+  save/apply profiles.
+- **Diagnose:** plain-language findings from DRM, Gala, the kernel log and Thunderbolt, e.g. "detected, but the screen
+  is not getting a picture" (with a re-apply button), "dock connected for USB but no video yet", "4K only offered at 30 Hz".
+- Preview without touching the display: `MSERIES_DISPLAY_FAKE=1 mseries-display-settings`.
+- Tests: `python3 -I mseries/display-settings/test_display_diag.py`.
+- Verified: unit tests and headless renders only. Drag, Apply and the diagnostics against the live system are not yet exercised in a real session.

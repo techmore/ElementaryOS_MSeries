@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Display Settings (M-series)
+Comment=Arrange monitors, pick resolution and refresh rate, diagnose displays
+Exec=mseries-display-settings
+Icon=preferences-desktop-display
+Categories=Settings;HardwareSettings;
