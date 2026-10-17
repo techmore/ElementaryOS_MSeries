@@ -2022,3 +2022,12 @@ Bonsai completed corrected MCP 9/9 and native pp512 56.634/tg128 5.571 tokens/s 
 Qwen3.5 4B remains the tested desktop/personal/coding default; the single coding fixture and summary-memory checks are limited evidence, not general agent qualification. Small-model repair advice remains failed/excluded; auto-diagnose stays off. Other owner Rust/HTTP jobs were preserved. Full app coverage, voice/ANE and a factory hardware boot with this payload remain open. See the qualification report and raw sanitized receipts for the current methods/results.
 
 The owned final-qualification unit finished successfully. The enabled everyday Qwen3.5 4B service was restored after admission checks passed; its /v1/models endpoint reported the pinned 32f3e8ec model. No other GPU qualification unit remains running. The hourly completion follow-up can stop after the final data follow-up is merged and Pages deployment is verified; the repository six-hour watcher stays active.
+
+## 2026-10-16 (Claude) — display profiles (per-monitor-set layouts)
+
+- Added `mseries/display-profiles/mseries-display-profiles` (save/apply/list/status/forget/watch via Gala's `org.gnome.Mutter.DisplayConfig`), `mseries/install-display-profiles.sh` and an autostart entry. Profiles are stored in `~/.config/mseries/display-profiles.json`, matched by monitor vendor/product/serial.
+- Verified: 6 unit tests pass (`python3 -I mseries/display-profiles/test_display_profiles.py`); `status`/`save` run live (read-only apart from the JSON file). Watcher installed and running.
+- Not verified: the automatic replug path. On hotplug the watcher sets 1080p for ~2 s then the saved mode (applying 1080p then 4K by hand is what recovered "no signal" on the built-in HDMI). Test by replugging the built-in HDMI.
+- Known limit: the TV only advertises 3840x2160 at 30 Hz.
+- Next: a graphical display settings app (drag-and-drop arrangement, all modes/refresh rates, scale, preferred/recommended markers) on top of the same DisplayConfig calls.
+- Added `mseries/display-settings/` (GTK3 "Display Settings (M-series)": drag-and-drop arrangement, per-monitor resolution/refresh/scale/rotation, profiles, and a Diagnose tab built on `display_diag.py`). Verified: 7 + 6 unit tests, headless renders under xvfb with fake monitors. Not yet exercised on the live display (drag/apply) or after a real replug.
