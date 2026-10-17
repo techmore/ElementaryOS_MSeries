@@ -1,0 +1,62 @@
+{
+  "method": "Task-write workflow suite v1. Real stdio MCP with isolated state/workspace and owned local EDS sources. Independent EDS verification and cleanup. No private task reads or writes. Model cases explicitly name workflow tools; not unrestricted app discovery.",
+  "kernel": "7.1.13-elementary-fairydust-usb4-dptunnel",
+  "policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": 3500,
+    "max_temp_c": 80,
+    "cool_fan_rpm": 2700,
+    "resume_fan_rpm": 2600,
+    "burst_s": 3,
+    "sample_s": 1
+  },
+  "adapter_sha256": "310e378cb361c92b7d58feac645f4bfdbaab5431c2b463adaaa9e1993387b63e",
+  "harness_sha256": "e4f17f6c333c07c6449eb84f5dc542f0b74bcdeccc4495813f7614acc16589a1",
+  "repeats": 3,
+  "baseline": {
+    "time": 1792202980.8882568,
+    "available_bytes": 22510665728,
+    "total_bytes": 33229815808,
+    "swap_used_bytes": 0,
+    "fans_rpm": {
+      "Fan 1": 3118.0,
+      "Fan 2": 3380.0
+    },
+    "temperatures_c": {
+      "hwmon8/temp1_input": 40.0,
+      "hwmon6/temp1_input": 40.0,
+      "hwmon4/temp1_input": 39.0,
+      "Charge Regulator Temp": 50.419,
+      "WiFi/BT Module Temp": 51.37,
+      "NAND Flash Temperature": 42.648,
+      "Battery Hotspot": 35.799,
+      "temp": 35.9,
+      "hwmon9/temp1_input": 39.0,
+      "hwmon7/temp1_input": 38.0,
+      "hwmon5/temp1_input": 41.0
+    },
+    "power_w": 31.452882,
+    "pressure": {
+      "cpu": "some avg10=7.65 avg60=10.80 avg300=7.58 total=269585461\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+      "memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=55936\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=15399",
+      "io": "some avg10=0.00 avg60=0.00 avg300=0.02 total=5143412\nfull avg10=0.00 avg60=0.00 avg300=0.01 total=3781913"
+    }
+  },
+  "model_cases": [],
+  "adapter": {
+    "case": "concurrent-idempotent-local-write",
+    "passed": true,
+    "concurrent_created": [
+      true,
+      false
+    ],
+    "same_uid": true,
+    "retry_created": false,
+    "conflict_refused": true,
+    "task_count": 1,
+    "independent_object_count": 1,
+    "literal_text_roundtrip": true,
+    "owned_source_removed": true
+  },
+  "passed": true
+}

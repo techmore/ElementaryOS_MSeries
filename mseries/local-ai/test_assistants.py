@@ -29,9 +29,102 @@ bench = load('bench_test', 'benchmark.py')
 worker = load('worker_test', 'model-worker.py')
 dashboard = load('dashboard_test', 'github-watch.py')
 setup = load('setup_test', 'configure-assistants.py')
+task_smoke = load('task_smoke_test', 'task-write-smoke.py')
 
 
 class AssistantContracts(unittest.TestCase):
+    def test_task_resume_retains_completed_failures_and_rejects_changed_runtime(self):
+        meta = {'method': 'v1', 'kernel': 'same', 'adapter_sha256': 'same', 'harness_sha256': 'same', 'policy': {}, 'repeats': 1}
+        previous = meta | {'model_cases': [{'case': 'note-to-task', 'repeat': 1, 'passed': False},
+                                          {'case': 'file-injection', 'repeat': 1, 'passed': None}]}
+        rows, completed, interrupted = task_smoke.resume_cases(previous, meta, 1)
+        self.assertEqual(len(rows), 1)
+        self.assertIn(('note-to-task', 1), completed)
+        self.assertEqual(len(interrupted), 1)
+        with self.assertRaises(ValueError): task_smoke.resume_cases(previous, meta | {'kernel': 'changed'}, 1)
+
+    def test_malformed_model_task_arguments_are_quality_failure_not_interruption(self):
+        model = '/pinned/32f3e8ecf65426fc3306969496342d504bfa13f3'
+        for arguments in ['{invalid', '[]']:
+            responses = [{'data': [{'id': model}]}, {'choices': [{'message': {'content': '', 'tool_calls': [
+                {'id': 'bad-call', 'function': {'name': 'create_assistant_task', 'arguments': arguments}}]}}]}]
+            with patch.object(task_smoke, 'MCP') as client, patch.object(task_smoke, 'api', side_effect=responses), \
+                 patch.object(task_smoke, 'snapshot', return_value={}), patch.object(task_smoke, 'violations', return_value=[]), \
+                 patch.object(task_smoke, 'cleanup', return_value=True):
+                client.return_value.rpc.return_value = {'tools': []}
+                result = task_smoke.model_case('http://127.0.0.1:8766/v1', 'note-to-task', 1)
+            self.assertIs(result['passed'], False)
+            self.assertIn('invalid_tool_call', result)
+
+    def test_interrupted_model_request_is_not_a_completed_task_quality_failure(self):
+        responses = [{'data': [{'id': '/pinned/32f3e8ecf65426fc3306969496342d504bfa13f3'}]}, TimeoutError('Interrupted')]
+        with patch.object(task_smoke, 'MCP') as client, patch.object(task_smoke, 'api', side_effect=responses), \
+             patch.object(task_smoke, 'snapshot', return_value={}), patch.object(task_smoke, 'violations', return_value=[]), \
+             patch.object(task_smoke, 'cleanup', return_value=True):
+            client.return_value.rpc.return_value = {'tools': []}
+            result = task_smoke.model_case('http://127.0.0.1:8766/v1', 'note-to-task', 1)
+        self.assertIsNone(result['passed'])
+
+    def test_tool_refresh_preserves_profiles_and_other_mcp_caches(self):
+        with tempfile.TemporaryDirectory() as root:
+            home = Path(root); lib = home / '.local/libexec/mseries-ai'; lib.mkdir(parents=True)
+            (lib / 'os-mcp.py').write_text('old adapter')
+            config = home / '.config/mseries-ai'; config.mkdir(parents=True)
+            profiles = config / 'profiles.json'; profiles.write_text('{"user":"choice"}')
+            cache = home / '.var/app/io.github.qwersyk.Newelle/cache/extensions_cache/mcp_tool_cache.json'
+            cache.parent.mkdir(parents=True)
+            cache.write_text(json.dumps({'stdio:/usr/bin/python3:' + str(lib / 'os-mcp.py'): 'old schema', 'other-server': 'retain'}))
+            with patch.object(setup, 'HOME', home), patch.object(setup, 'CONFIG', config), patch.object(setup, 'LIB', lib), \
+                 patch.object(setup.subprocess, 'run') as flatpak, patch('sys.argv', ['configure', '--refresh-tools']), \
+                 patch('sys.stdout', io.StringIO()): setup.main()
+            self.assertEqual(profiles.read_text(), '{"user":"choice"}')
+            self.assertEqual(json.loads(cache.read_text()), {'other-server': 'retain'})
+            self.assertEqual((lib / 'os-mcp.py').read_text(), (HERE / 'os-mcp.py').read_text())
+            self.assertEqual(flatpak.call_count, 1)
+
+    def test_task_input_rejects_invalid_dates_ids_and_calendar_injection(self):
+        valid = {'title': 'Review battery measurements', 'request_id': 'battery-review-1'}
+        for change in [{'title': ''}, {'title': 'Task\nBEGIN:VEVENT'}, {'request_id': '../private'},
+                       {'due': '2026-02-30'}, {'due': '20261023'}, {'details': 'a\x00b'}]:
+            with self.assertRaises(ValueError):
+                os_mcp.call('create_assistant_task', valid | change)
+        with self.assertRaises(ValueError):
+            os_mcp.call('create_assistant_task', valid | {'title': 'x' * 241})
+        self.assertEqual(os_mcp.validate_task_input(valid | {'due': '2026-10-23'})[-1], '2026-10-23')
+
+    def test_task_scope_is_closed_and_write_is_annotated(self):
+        with self.assertRaises(ValueError): os_mcp.call('list_tasks', {'scope': 'arbitrary-account'})
+        spec = next(t for t in os_mcp.TOOLS if t['name'] == 'create_assistant_task')
+        self.assertFalse(spec['annotations']['readOnlyHint'])
+        self.assertFalse(spec['inputSchema']['additionalProperties'])
+
+    def test_task_source_marker_stable_private_and_cannot_target_existing_personal_uid(self):
+        with tempfile.TemporaryDirectory() as root, patch.object(os_mcp, 'STATE', Path(root)):
+            self.assertIsNone(os_mcp.assistant_source_uid())
+            uid = os_mcp.assistant_source_uid(create=True)
+            self.assertEqual(os_mcp.assistant_source_uid(), uid)
+            marker = Path(root) / 'task-source.json'
+            self.assertEqual(marker.stat().st_mode & 0o777, 0o600)
+            for value in [[], {'schema': 1, 'source_uid': 'personal-existing-list'}]:
+                marker.write_text(json.dumps(value))
+                with self.assertRaises(ValueError): os_mcp.assistant_source_uid()
+            marker.unlink(); marker.symlink_to(Path(root) / 'absent')
+            with self.assertRaises(ValueError): os_mcp.assistant_source_uid(create=True)
+
+    def test_task_writes_refuse_synced_and_non_task_sources(self):
+        source = MagicMock()
+        source.get_parent.return_value = 'local-stub'
+        source.has_extension.return_value = True
+        source.get_extension.return_value.get_backend_name.return_value = 'local'
+        os_mcp.validate_task_source(source, 'Task List')
+        for parent, extension, backend in [('remote-account', True, 'local'),
+                                            ('local-stub', True, 'caldav'),
+                                            ('local-stub', False, 'local')]:
+            source.get_parent.return_value = parent
+            source.has_extension.return_value = extension
+            source.get_extension.return_value.get_backend_name.return_value = backend
+            with self.assertRaises(ValueError): os_mcp.validate_task_source(source, 'Task List')
+
     def test_unsafe_builtin_alias_is_rejected_before_execution(self):
         source = 'def unique(items):\n dict = eval\n return dict("items")\n'
         with patch.object(bench.subprocess, 'run') as execute:

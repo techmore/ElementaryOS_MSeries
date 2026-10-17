@@ -39,7 +39,7 @@ Hermes is installed at a pinned revision with pinned dependencies and an isolate
 
 ## MCP app coverage
 
-`os-mcp.py` is a stdio MCP server with ten typed tools. It has no generic shell tool. Workspace paths are relative to `~/Documents/Assistant Workspace`; reads reject traversal/symlink escapes and note creation refuses overwrites. OS measurements, app inventory and fault collection are read-only. Calendar recurrences are labeled, not expanded. Tasks and Calendar use Evolution Data Server. Energy uses the existing Energy Monitor cache and reports stale/missing data.
+`os-mcp.py` is a stdio MCP server with eleven typed tools. It has no generic shell tool. Workspace paths are relative to `~/Documents/Assistant Workspace`; reads reject traversal/symlink escapes and note creation refuses overwrites. OS measurements, app inventory and fault collection are read-only. Calendar recurrences are labeled, not expanded. Tasks and Calendar use Evolution Data Server. Task creation is restricted to a dedicated local Assistant Tasks list; retries reuse a stable request ID and cannot overwrite an existing task. `list_tasks` can limit reads to that list with `scope=assistant`. See [app integration coverage](APP-INTEGRATION.md) for qualification and limits. Energy uses the existing Energy Monitor cache and reports stale/missing data.
 
 The installed-app inventory identifies adapter coverage. It does not imply that every app can be controlled. Mail, browser interaction, messaging, arbitrary windows, and cross-app writes beyond new workspace notes need dedicated adapters and tests. The capability matrix in the results records this boundary. This is the first MCP OS layer, not a claim of complete app automation.
 
@@ -80,3 +80,7 @@ The existing six-hour GitHub watcher now discovers all public branch heads in th
 ## Removal
 
 Disable/stop the `mseries-ai-*` and `mseries-crash-watch` user units, remove the generated launchers and desktop files, and reload user systemd. Model downloads, Newelle memory, Hermes state and troubleshooting reports are retained unless deliberately removed. Newelle settings before configuration are backed up at `~/.config/mseries-ai/newelle-before.json`. The prior private MLX runtime, when present, is kept beside the prefix with a `before-v0.7.33` suffix. The Coreglass and CodexBar integrations remain independent; their earlier receipts are retained in this directory and Git history.
+
+### Update the task adapter without resetting preferences
+
+For an existing installation, run `python3 mseries/local-ai/configure-assistants.py --refresh-tools`. This updates the MCP adapter, enables its task-creation tool and invalidates only its schema cache. It preserves model profiles, memory settings, other MCP servers and other tool settings. Fresh installs include the same capability.

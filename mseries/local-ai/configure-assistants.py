@@ -25,10 +25,43 @@ def put(path, value, mode=0o600):
     path.chmod(mode)
 
 
+def invalidate_mcp_cache():
+    cache = HOME / '.var/app/io.github.qwersyk.Newelle/cache/extensions_cache/mcp_tool_cache.json'
+    if cache.exists():
+        try:
+            metadata = json.loads(cache.read_text())
+            identifier = 'stdio:/usr/bin/python3:' + str(LIB / 'os-mcp.py')
+            if isinstance(metadata, dict) and identifier in metadata:
+                del metadata[identifier]
+                put(cache, json.dumps(metadata, indent=2) + '\n')
+        except (OSError, ValueError):
+            pass  # Newelle itself refetches unreadable schema caches.
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--adopt-compact-defaults', action='store_true', help='Adopt the measured 4B everyday/coding presets; retain policy and other profiles')
+    parser.add_argument('--refresh-tools', action='store_true', help='Update only the installed MCP adapter and enable its new task tool; retain model, memory, policy and other settings')
     args = parser.parse_args()
+    if args.refresh_tools:
+        if args.adopt_compact_defaults or not (LIB / 'os-mcp.py').exists():
+            parser.error('--refresh-tools requires an existing installation and cannot adopt presets')
+        body = '''import json,sys
+from gi.repository import Gio
+s=Gio.Settings.new('io.github.qwersyk.Newelle')
+servers=json.loads(s.get_string('mcp-servers'))
+if not any(x.get('command')=='/usr/bin/python3' and x.get('args')==[sys.argv[1]] for x in servers):
+    raise SystemExit('The installed MSeries MCP server is not configured in Newelle')
+tools=json.loads(s.get_string('tools-settings'))
+tools['create_assistant_task']={'enabled':True,'lazy_load':False}
+s.set_string('tools-settings',json.dumps(tools)); Gio.Settings.sync()
+'''
+        subprocess.run(['flatpak', 'run', '--command=python3', 'io.github.qwersyk.Newelle', '-c', body,
+                        str(LIB / 'os-mcp.py')], check=True)
+        put(LIB / 'os-mcp.py', (HERE / 'os-mcp.py').read_text(), 0o755)
+        invalidate_mcp_cache()
+        print('Updated MCP adapter/task tool; retained model, memory, policy and other settings.')
+        return
     LIB.mkdir(parents=True, exist_ok=True)
     for name in ['machine.py', 'model-worker.py', 'os-mcp.py', 'brief.py']:
         shutil.copy2(HERE / name, LIB / name)
@@ -155,7 +188,7 @@ print(json.dumps(backup))
 disabled=['execute_command','show_image','read_image','take_screenshot','show_video','read_file','write_file','edit','glob','list_directory','grep_search','run_subagent','schedule_task','ask_user','sleep','switch_mode','todo','activate_skill','memory_search','memory_save','memory_recall','website','rag_search_files','tool_search']
 tools=json.loads(s.get_string('tools-settings'))
 tools.update({k:{'enabled':False} for k in disabled})
-tools.update({k:{'enabled':True,'lazy_load':False} for k in ['system_status','list_apps','list_tasks','list_calendar_events','add_minutes','get_energy','workspace_list_files','workspace_read_file','workspace_write_note','recent_faults']})
+tools.update({k:{'enabled':True,'lazy_load':False} for k in ['system_status','list_apps','list_tasks','create_assistant_task','list_calendar_events','add_minutes','get_energy','workspace_list_files','workspace_read_file','workspace_write_note','recent_faults']})
 s.set_string('tools-settings',json.dumps(tools))
 s.set_string('memory-model','user-summary')
 s.set_int('context-max',8192)
@@ -173,16 +206,7 @@ Gio.Settings.sync()
     subprocess.run(['flatpak', 'override', '--user', '--talk-name=org.freedesktop.Flatpak', 'io.github.qwersyk.Newelle'], check=True)
     # Newelle caches schemas by command/args. Our renamed tools must be fetched
     # before its controller builds the first request; retain other MCP servers.
-    cache = HOME / '.var/app/io.github.qwersyk.Newelle/cache/extensions_cache/mcp_tool_cache.json'
-    if cache.exists():
-        try:
-            metadata = json.loads(cache.read_text())
-            identifier = 'stdio:/usr/bin/python3:' + str(LIB / 'os-mcp.py')
-            if isinstance(metadata, dict) and identifier in metadata:
-                del metadata[identifier]
-                put(cache, json.dumps(metadata, indent=2) + '\n')
-        except (OSError, ValueError):
-            pass  # Newelle itself ignores an unreadable cache and fetches schemas.
+    invalidate_mcp_cache()
     subprocess.run(['systemctl', '--user', 'daemon-reload'], check=True)
     print('Configured local Desktop, Personal and Coding Assistant launchers; no windows opened.')
 

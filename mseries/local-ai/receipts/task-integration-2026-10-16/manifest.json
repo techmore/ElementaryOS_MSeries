@@ -1,0 +1,21 @@
+{
+  "client_date": "2026-10-16",
+  "status": "adapter and frontend discovery passed; model workflows pending idle windows",
+  "adapter_version": "0.2.0",
+  "source_sha256": {
+    "os-mcp.py": "310e378cb361c92b7d58feac645f4bfdbaab5431c2b463adaaa9e1993387b63e",
+    "configure-assistants.py": "b99dc1c3e797b7a7da78d41233a9a40986adaf261bf0a9100042644101f6912e",
+    "newelle-ui-smoke.py": "f79a68a3cd1a1f59e32e5079382e60b43bc38fac7cc1c61523c2fd3414af925c",
+    "task-write-smoke.py": "e4f17f6c333c07c6449eb84f5dc542f0b74bcdeccc4495813f7614acc16589a1"
+  },
+  "installed_adapter_matches_source": true,
+  "contract_tests_passed": 53,
+  "image_wiring_tests_passed": 4,
+  "baseline_software_model_pins": "../2026-10-16/source-pins.json",
+  "kernel": "7.1.13-elementary-fairydust-usb4-dptunnel",
+  "model_trials": {
+    "planned": 6,
+    "completed": 0,
+    "status": "pending"
+  }
+}
