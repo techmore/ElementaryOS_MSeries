@@ -196,6 +196,63 @@ class Preflight(unittest.TestCase):
         self.assertIn("responding", b.preflight()[0])
 
 
+class PreflightUnknownError(unittest.TestCase):
+    def setUp(self):
+        self._orig = b.incus
+
+    def tearDown(self):
+        b.incus = self._orig
+
+    def test_unexpected_error_keeps_the_real_message(self):
+        b.incus = FakeIncus(RuntimeError("Error: Get \"https://x/1.0\": x509: certificate expired"))
+        title, detail, _ = b.preflight()
+        self.assertIn("certificate expired", detail)
+
+    def test_service_down_wording_still_used_for_socket_errors(self):
+        b.incus = FakeIncus(RuntimeError("dial unix /var/lib/incus/unix.socket: connect: no such file or directory"))
+        self.assertIn("running", b.preflight()[0])
+
+    def test_incus_timeout_is_reported_as_not_responding(self):
+        b.incus = FakeIncus(b.IncusTimeout("incus list timed out after 20s"))
+        self.assertIn("responding", b.preflight()[0])
+
+
+class Timeouts(unittest.TestCase):
+    def setUp(self):
+        self._run = subprocess.run
+
+    def tearDown(self):
+        subprocess.run = self._run
+
+    def test_timeout_becomes_a_readable_runtime_error(self):
+        def boom(*a, **k):
+            raise subprocess.TimeoutExpired(a[0], k["timeout"])
+        subprocess.run = boom
+        with self.assertRaises(b.IncusTimeout) as cm:
+            b.incus("list", timeout=5)
+        self.assertIsInstance(cm.exception, RuntimeError)
+        self.assertIn("timed out after 5s", str(cm.exception))
+
+    def test_polling_calls_use_a_short_timeout(self):
+        seen = {}
+        def fake(*a, **k):
+            seen["t"] = k["timeout"]
+            return types.SimpleNamespace(returncode=0, stdout="[]", stderr="")
+        subprocess.run = fake
+        b.ijson("list", timeout=b.POLL_TIMEOUT)
+        self.assertEqual(seen["t"], b.POLL_TIMEOUT)
+        self.assertLessEqual(b.POLL_TIMEOUT, 30)
+
+    def test_stop_or_force_still_forces_after_a_timeout(self):
+        orig = b.incus
+        b.incus = FakeIncus(b.IncusTimeout("slow"), "")
+        try:
+            b.stop_or_force("stop", "x")
+            self.assertIn("--force", b.incus.calls[1])
+        finally:
+            b.incus = orig
+
+
 class StopOrForce(unittest.TestCase):
     def setUp(self):
         self._orig = b.incus

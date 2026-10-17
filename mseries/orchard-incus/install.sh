@@ -31,9 +31,16 @@ fi
 
 WAS_PINNED=0; dock_has && WAS_PINNED=1
 mkdir -p "$SHARE/orchard-incus" "$BIN" "$SHARE/applications" "$SHARE/icons/hicolor/scalable/apps"
-rm -rf "$SHARE/orchard-incus/orchard_incus"
-cp -r "$HERE/orchard_incus" "$SHARE/orchard-incus/"
-find "$SHARE/orchard-incus" -name __pycache__ -prune -exec rm -rf {} +
+# stage, then swap: the previous code is kept once as orchard_incus.prev, and a failed copy leaves the install alone
+PKG="$SHARE/orchard-incus"
+rm -rf "$PKG/orchard_incus.new"
+cp -r "$HERE/orchard_incus" "$PKG/orchard_incus.new"
+find "$PKG/orchard_incus.new" -name __pycache__ -prune -exec rm -rf {} +
+if [ -d "$PKG/orchard_incus" ]; then
+    rm -rf "$PKG/orchard_incus.prev"
+    mv "$PKG/orchard_incus" "$PKG/orchard_incus.prev"
+fi
+mv "$PKG/orchard_incus.new" "$PKG/orchard_incus"
 install -m755 "$HERE/orchard-incus" "$BIN/orchard-incus"
 install -m644 "$HERE/$ID.svg" "$SHARE/icons/hicolor/scalable/apps/$ID.svg"
 # replace the desktop file atomically: the dock unpins a launcher whose desktop file disappears, even for a moment

@@ -41,15 +41,25 @@ RGB_FALLBACK = {"success_color": (0.24, 0.77, 0.43), "accent_color": (0.21, 0.54
 MIN_GRAPHIC_CONTRAST = 3.0  # WCAG 1.4.11
 
 
+POLL_TIMEOUT = 20  # seconds; background list/refresh calls must never hang for the 10-minute default
+
+
+class IncusTimeout(RuntimeError):
+    """An incus command ran past its timeout (a RuntimeError so callers' error paths handle it)."""
+
+
 def incus(*args, timeout=600, stdin=None):
-    p = subprocess.run(["incus", *args], capture_output=True, text=True, timeout=timeout, input=stdin)
+    try:
+        p = subprocess.run(["incus", *args], capture_output=True, text=True, timeout=timeout, input=stdin)
+    except subprocess.TimeoutExpired:
+        raise IncusTimeout(f"incus {args[0] if args else ''} timed out after {timeout}s") from None
     if p.returncode:
         raise RuntimeError((p.stderr or p.stdout).strip() or f"incus {args[0]} failed")
     return p.stdout
 
 
-def ijson(*args):
-    return json.loads(incus(*args, "--format", "json"))
+def ijson(*args, timeout=600):
+    return json.loads(incus(*args, "--format", "json", timeout=timeout))
 
 
 def stop_or_force(verb, name):
@@ -83,14 +93,16 @@ def preflight():
         incus("version", timeout=10)
     except FileNotFoundError:
         return ("Incus isn't installed", "Orchard needs the Incus container manager.", "sudo apt install incus")
-    except subprocess.TimeoutExpired:
+    except (subprocess.TimeoutExpired, IncusTimeout):
         return ("Incus isn't responding", "The Incus service didn't answer in time.", "sudo systemctl restart incus")
     except RuntimeError as e:
         msg = str(e).lower()
         if "permission" in msg or "denied" in msg:
             return ("No permission to use Incus", "Your account isn't allowed to talk to the Incus service. Add it to the incus-admin group, then sign out and back in.",
                     "sudo usermod -aG incus-admin $USER")
-        return ("Incus isn't running", "Orchard couldn't reach the Incus service.", "sudo systemctl start incus")
+        if any(k in msg for k in ("socket", "connect", "no such file", "refused", "not running", "reachable")):
+            return ("Incus isn't running", "Orchard couldn't reach the Incus service.", "sudo systemctl start incus")
+        return ("Incus reported an error", f"Orchard couldn't use Incus: {str(e).strip()[:300]}", "incus version")
     return None
 
 

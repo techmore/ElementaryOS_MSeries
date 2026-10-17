@@ -1,5 +1,32 @@
 # OS 9 implementation / Claude Code handoff
 
+## Orchard for Incus (Python) audit and fixes — 2026-10-17
+
+Audit of `mseries/orchard-incus/` (installed copy was identical to source):
+- Fixed: every `incus` call defaulted to a 600 s timeout, so a hung daemon
+  stacked a new `incus list` thread every 3 s and never tripped the
+  two-failure check. Now `backend.IncusTimeout` (a RuntimeError), a 20 s
+  `POLL_TIMEOUT` for the list refresh, and an in-flight guard in `refresh()`.
+- Fixed: any unrecognised Incus error was shown as "Incus isn't running" and
+  the real message dropped. Socket/connect errors keep that wording; others now
+  show "Incus reported an error" with the message.
+- Fixed: `install.sh` deleted the old code before copying. It now stages,
+  keeps one backup as `~/.local/share/orchard-incus/orchard_incus.prev`, then
+  swaps; a stale `.new` dir from a crashed run is cleaned.
+- Tests: `cd mseries/orchard-incus && python3 -m unittest discover -s tests`
+  = 51 run, 6 live skipped, all pass (9 new: timeouts, preflight wording,
+  install idempotence/backup/uninstall in a temp HOME).
+- Live read-only check: `preflight()` None in 0.01 s, `list` 2 instances 0.01 s.
+- Installed with `./install.sh` (backup in `orchard_incus.prev`).
+- Not verified: the GTK window itself (refresh guard and problem page were
+  compile-checked only, not exercised; app was not running, nothing relaunched);
+  the 6 live tests; the Vala app build. Not changed: the monitor thread
+  flaps `monitor_ok` every ~5 s when the daemon is down.
+- Noted, not touched: stale `com.github.techmore.orchard-incus` launcher,
+  desktop file and `liborchard-incus.so` (Vala app) coexist with the Python
+  app's `io.github.techmore.OrchardIncus.desktop`: two menu entries.
+- Next: pick the canonical implementation; build/test the Vala app.
+
 ## Orchard for Incus upstreamed into this repo — 2026-10-17
 
 Both Orchard for Incus implementations now live in `ElementaryOS_MSeries`

@@ -646,12 +646,20 @@ class Window(Gtk.ApplicationWindow):
         self.load_tab()
 
     def refresh(self):
+        if getattr(self, "_listing", False):
+            return  # a list call is still running (hung daemon): don't stack threads
+        self._listing = True
         self.last_refresh = time.monotonic()
         def fail():
+            self._listing = False
             self.fails += 1
             if self.fails >= 2:
                 self.check_incus()
-        self.bg(lambda: backend.ijson("list"), lambda d: (setattr(self, "fails", 0), self.show(d)), fail)
+        def done(d):
+            self._listing = False
+            self.fails = 0
+            self.show(d)
+        self.bg(lambda: backend.ijson("list", timeout=backend.POLL_TIMEOUT), done, fail)
 
     def sample(self, data):
         """Totals always; history only at chart cadence so bursty event-driven refreshes don't skew the charts."""
