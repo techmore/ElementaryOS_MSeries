@@ -36,6 +36,15 @@ is installed (effective next boot, unverified); the fixed payload is otherwise
 ready for one re-run with the collector. Record:
 [evidence/2026-10-16-r1-r2-fix-and-restage.md](evidence/2026-10-16-r1-r2-fix-and-restage.md).
 
+> **Current applied payload (2026-10-16 late).** The base image `486be1d9…`
+> above has since been superseded twice on the `elementary-usb4-dpin-controlled`
+> entry only: first by the `DPINDBG` diagnostic image `a6db46fa…`, now by the
+> **E1** image `46116374…` (patch `0013`, only `appledrm.ko` changed) which is
+> installed and armed (`next_entry=elementary-usb4-dpin-controlled`). `boot.bin`,
+> `custom.cfg`, kernel, default entry and root modules are unchanged. Stage/
+> rollback:
+> [evidence/2026-10-16-e1-nonfatal-tunnel-hpd-boot.md](evidence/2026-10-16-e1-nonfatal-tunnel-hpd-boot.md).
+
 ## Fallback compatibility
 
 Patch 0010 leaves DCP's original `phys` and every existing PHY supplier

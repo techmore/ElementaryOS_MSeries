@@ -328,7 +328,7 @@ New/changed gap items:
 
 | # | Item | Owner | Status |
 |---|---|---|---|
-| E1 | Make tunnel-mode HPD delivery non-fatal (log, don't set `link_error`) and observe whether the firmware then drives `idx=7,13,15,5,12,9,6` | owner + OpenCode | Proposed, needs one reboot |
+| E1 | Make tunnel-mode HPD delivery non-fatal (log, don't set `link_error`) and observe whether the firmware then drives `idx=7,13,15,5,12,9,6` | owner + OpenCode | **Implemented + armed.** Patch `0013` (non-fatal tunnel `set_hpd` + 8 s tunnel linkcfg window on top of `0012`); module `90eec845…`/`882c4445…`; initramfs `46116374…` installed on `elementary-usb4-dpin-controlled`; `next_entry` set. Boot pending. Record: [evidence/2026-10-16-e1-nonfatal-tunnel-hpd-boot.md](evidence/2026-10-16-e1-nonfatal-tunnel-hpd-boot.md) |
 | E2 | Unbypassed DPRX qualification (`dprx_bypass=0`) — the documented §9 hazard | owner | Proposed, highest risk |
 | E3 | Log the DP-IN HPD notifier separately (it did **not** fire this boot) and the host DP-IN AUX/DPCD status at failure, to separate "no sink" from "no AUX" | OpenCode | Proposed |
 | H2 | `set_hpd` (group 8 / command 8) correctness for the tunnelled endpoint is unverified; it is only exercised for a physical DisplayPort connector. Do not invent a replacement command without evidence | DeepSeek + owner | Open |

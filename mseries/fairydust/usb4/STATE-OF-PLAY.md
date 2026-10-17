@@ -5,31 +5,31 @@ advances and do not re-run discovery without a new reason.
 
 ## Resume pointer — 2026-10-16 (late)
 
-The `DPINDBG` debug boot **ran** (verified: live `appledrm` build-id
-`cdca5ea2…` equals the instrumented ko) and answered the open question. The
-fatal `-110` is **our** `set_hpd(hpd=1)` AFK call timing out after 1 s, which
-`dptxport_hpd_work` promotes into `link_error` and `connect_source` then treats
-as fatal — **not** the 2 s `DPTX_CONNECT_TIMEOUT` (the trace shows `waited=949`,
-a signalled completion).
+**Boot pending: E1 is armed.** `next_entry=elementary-usb4-dpin-controlled`; the
+E1 initramfs (`46116374…`, only `appledrm.ko` changed) is installed on that
+entry. Owner reboots, then read `sudo dmesg | grep DPINDBG`.
 
-The deeper result: after `ACTIVATE` + `request_display` the DCP firmware on the
-tunnel connector **goes silent** — 13 firmware syslog lines all boot, one
-`[AFK]powering nub`, then nothing; it never begins link configuration and never
-answers `set_hpd`. The new asset is a **working-path reference**: a monitor on
-the built-in HDMI (`289c00000`, `dp_tunnel=0`) produced the firmware's full
-link-config sequence (`idx=7,13,15,5,12,9,6` → `set_active_lane_count lanes=4`,
-`connect_source ret=0 rate=20 lanes=4`) — and that path never calls `set_hpd`.
-
-Full decode, the corrected attribution, the reference trace and ranked
-hypotheses:
+The previous `DPINDBG` debug boot **ran** and answered the open question. The
+fatal `-110` was **our** `set_hpd(hpd=1)` AFK call timing out after 1 s, which
+`dptxport_hpd_work` promoted into `link_error` — **not** the 2 s
+`DPTX_CONNECT_TIMEOUT` (the trace shows `waited=949`, a signalled completion).
+The firmware goes silent after `ACTIVATE` (13 syslog lines for the whole boot,
+one connect-time, vs 360 on a working HDMI path) and never configures the link.
+New asset: the firmware's complete working link-config sequence on built-in HDMI
+(`idx=7,13,15,5,12,9,6`), which never calls `set_hpd`. Decode, corrected
+attribution and the reference trace:
 [evidence/2026-10-16-dbgboot-dcp-silent-never-configures-link.md](evidence/2026-10-16-dbgboot-dcp-silent-never-configures-link.md).
 
-Next experiment options (each owner-gated, one reboot): **E1** make tunnel-mode
-HPD delivery non-fatal and watch whether the firmware then drives the link;
-**E2** unbypassed DPRX (`dprx_bypass=0`) — the documented hazard; **E3** more
-instrumentation (DP-IN HPD notifier, host DP-IN AUX/DPCD status). The
-instrumented initramfs (`a6db46fa…`) is still installed on the
-`elementary-usb4-dpin-controlled` entry; rollback in the evidence doc above.
+**E1 (what is armed).** Patch `0013` makes a tunnel-mode `set_hpd` failure
+non-fatal and gives the tunnel path an 8 s linkcfg window, so the firmware gets a
+real chance to drive the link. If it does, the wall moves forward; if it stays
+silent for 8 s, H1 (the firmware itself is blocked on the sink) is confirmed and
+the next step is the sink/AUX question. Full state, build hashes, install/rollback:
+[evidence/2026-10-16-e1-nonfatal-tunnel-hpd-boot.md](evidence/2026-10-16-e1-nonfatal-tunnel-hpd-boot.md).
+
+Later options: **E2** unbypassed DPRX (`dprx_bypass=0`) — the documented §9
+hazard; **E3** more instrumentation (DP-IN HPD notifier, host DP-IN AUX/DPCD
+status).
 
 ## First live boot of the bridge — outcome (2026-10-16)
 

@@ -60,6 +60,17 @@ The trace shows `waited=949` — a **non-zero** return, i.e. `linkcfg_completion
 The first boot's `-67` gate did **not** recur: the `-ENOLINK` retry (patch 0011)
 now powers the DP-IN PHY on the second attempt. `phy poweron failed` = 0.
 
+### The firmware answered `set_hpd(0)` but not `set_hpd(1)`
+
+One asymmetry worth keeping: at teardown the firmware **did** reply to
+`set_hpd(hpd=0)` — `[66.984654] … DPINDBG set_hpd hpd=0 resp=0` — within the AFK
+window, whereas it never replied to `set_hpd(hpd=1)` during the connect. So the
+firmware implements group 8 / command 8; it just did not service the *assert*
+within 1 s. That is consistent with it blocking while it tries to bring the sink
+up. Note also that our reply check (`resp.unk != 1` → `-EINVAL`) rejects
+`resp=0`, which may be the correct answer for a *deassert*; that check is not
+changed here, only recorded.
+
 ### The firmware's own voice is silent
 
 RTKit syslog lines emitted this boot:
