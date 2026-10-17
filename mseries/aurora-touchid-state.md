@@ -210,3 +210,41 @@ firmware and the SEP are already in place, so that node is the last step.
 
 Backups: `/boot/m1n1/boot.bin.pre-sep-20261017-100328` (status only) and
 `boot.bin.pre-sep-alias-20261017-102233` (both patches).
+
+## Fingerprint sensor node ported — 2026-10-17 (completed)
+
+The `spi@39b108000` controller and its `fingerprint@0` child are now in the boot
+DTB. Our boot device tree (an older Asahi t6000 revision) had `spi1-pins` and
+`spi3-pins` but no `spi2-pins` and no controller for that bus at all, so the
+sensor had nowhere to attach. Added both; 33 lines, nothing removed.
+
+Phandle map, resolved by matching node identity across the two revisions — not
+guessed:
+
+| aurora | node | ours |
+|---|---|---|
+| `0x13` | `interrupt-controller@28e100000` (AIC) | `0x13` (same) |
+| `0x34` | `clock-ref`, fixed-clock 24 MHz "clkref" | `0x2c` (identical node) |
+| `0x6b` | `spi2-pins`, `pinmux = <0x10030 0x10031 0x10032>` | **added** as `0x114` |
+| `0x6c` | `power-controller@200`, `apple,t6000-pmgr-pwrstate` | `0xa3` (same reg) |
+| `0x4d` | `pinctrl@39b028000` (gpio) | `0x44` |
+
+Cross-checks that made this safe: the shared `spi1-pins`/`spi3-pins` pinmux values
+are **byte-identical** between the two trees, so the pin numbering matches; the new
+controller's IRQ `0x454` sits exactly between our existing `0x453` and `0x455`; and
+`dtc` caught a phandle collision on the first attempt (the max is `0x113`, and a
+lexical sort had wrongly said `0xff`), which is what a wrong reference would have
+looked like.
+
+Backup: `/boot/m1n1/boot.bin.pre-fingerprint-20261017-103254`.
+
+After rebooting into Aurora, the whole chain should be live:
+
+```bash
+ls -l /dev/sep-bio /dev/spi*                 # SEP + the new SPI bus
+sudo systemctl start fprintd && fprintd-list "$USER"
+sudo aurora-touchid-setup                    # enrol, then wire PAM
+```
+
+If `fprintd-list` still says no devices, `dmesg | grep -iE "mesa|fingerprint|spi"`
+will say whether the controller probed and whether the sensor answered.
