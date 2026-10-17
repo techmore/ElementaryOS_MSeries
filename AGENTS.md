@@ -1,5 +1,10 @@
 # Working agreement for Codex, Claude Code, and OpenCode
 
+> **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
+> Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
+> Aurora (`omacom/linux-aurora`) already does this on a j314s; check it before more RE.
+> Gates, prior art and rules: [mseries/fairydust/usb4/PRIMARY-GOAL.md](mseries/fairydust/usb4/PRIMARY-GOAL.md).
+
 - Keep `mseries/OS9-HANDOFF.md`, `mseries/ROADMAP.md`, and relevant public
   status pages current as work lands. Record concrete changes, commands,
   verification results, blockers, and the next task.

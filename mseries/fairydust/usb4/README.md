@@ -1,5 +1,10 @@
 # fairydust + USB4/Thunderbolt (Apple M1 Pro, j314s)
 
+> **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
+> Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
+> Aurora (`omacom/linux-aurora`) already does this on a j314s; check it before more RE.
+> Gates, prior art and rules: [PRIMARY-GOAL.md](PRIMARY-GOAL.md).
+
 Dock-video current entry point: [STATE-OF-PLAY](STATE-OF-PLAY.md).
 The [DP-IN implementation draft / DeepSeek handoff](DPIN-IMPLEMENTATION.md)
 contains additional experimental patches 0004–0006 and offline checks.

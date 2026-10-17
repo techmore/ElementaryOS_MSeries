@@ -1,5 +1,10 @@
 # OS 9 implementation / Claude Code handoff
 
+> **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
+> Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
+> Aurora (`omacom/linux-aurora`) already does this on a j314s; check it before more RE.
+> Gates, prior art and rules: [fairydust/usb4/PRIMARY-GOAL.md](fairydust/usb4/PRIMARY-GOAL.md).
+
 ## Dock video E1 boot result — set_hpd cleared, sink/AUX is the frontier — 2026-10-16 (OpenCode)
 
 The armed E1 one-shot boot (`elementary-usb4-dpin-controlled`, image

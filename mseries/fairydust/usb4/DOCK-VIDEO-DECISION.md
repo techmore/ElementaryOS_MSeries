@@ -1,5 +1,10 @@
 # Dock / external-monitor video on the M1 Pro — decision and methods
 
+> **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
+> Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
+> Aurora (`omacom/linux-aurora`) already does this on a j314s; check it before more RE.
+> Gates, prior art and rules: [PRIMARY-GOAL.md](PRIMARY-GOAL.md).
+
 Date: 2026-10-15. Machine: `MacBookPro18,3` (`apple,j314s`, M1 Pro, 14-inch),
 elementary OS 9 on kernel `7.1.13-elementary-fairydust-usb4`.
 

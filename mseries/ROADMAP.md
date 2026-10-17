@@ -1,5 +1,10 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+> **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
+> Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
+> Aurora (`omacom/linux-aurora`) already does this on a j314s; check it before more RE.
+> Gates, prior art and rules: [fairydust/usb4/PRIMARY-GOAL.md](fairydust/usb4/PRIMARY-GOAL.md).
+
 ## R1/R2 first-boot fixes staged — 2026-10-16
 
 The first controlled boot (11:45:04–11:47:13) ran with the exact intended
