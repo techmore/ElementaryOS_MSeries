@@ -1,5 +1,17 @@
 # OS 9 implementation / Claude Code handoff
 
+## macOS power baseline and parity checklist — 2026-10-17 (Claude)
+
+Owner asked to profile everything macOS does on this Mac, set a minimal baseline per category, and check categories
+off as Linux matches them. New `mseries/power/macos-baseline/`: `macos_profile.py` (macOS, sudo: powermetrics rails,
+cluster residency, per-process energy and wakeups, SMC `SystemLoad`, inventory of processes/launchd jobs/pmset
+settings, lid-closed drain from `pmset -g log`), `linux_profile.py` (same seven scenarios and summary shape on
+elementary OS, no root, never touches display/audio/kernel), and `parity.json`/`parity.py` (11 categories, 41 items;
+pass = within 10% of macOS, close = within 1.5x) which regenerates `PARITY.md`. Tested only against synthetic
+powermetrics plists and a fake sysfs tree; **no real run on either OS yet**. Next: owner runs the macOS profiler on
+the 14-inch M1 Pro booted into macOS (on battery, brightness noted), then `linux_profile.py` at the same brightness,
+then `parity.py --mac ... --linux-run ...`. Not measured on Linux yet: CPU/GPU rails (C1, G1), sleep drain (F1).
+
 ## Hotkey "drawers" Gala plugin staged — 2026-10-16 (DeepSeek/OpenCode)
 
 Owner asked for per-app hotkeys that pop windows up/down snapped into fixed
