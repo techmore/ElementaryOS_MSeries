@@ -68,7 +68,8 @@ already watches live.
     chevron *contains* one instead (a subclass fails with "incomplete type").
 - **Install:** `mseries/install-dock-drawers.sh` — private build under
   `~/.local/lib/mseries/dock`, plus a wrapper at `~/.local/bin/io.elementary.dock`
-  with a stock fallback. Not run yet.
+  with a stock fallback. **Installed** this session (binary links cleanly, wrapper
+  is in the session PATH ahead of /usr/bin); takes effect at the next login.
 - **Launch mechanism:** gnome-session starts the dock by name from
   `/etc/xdg/io.elementary.desktop.wm.shell` (`[io.elementary.dock] args=io.elementary.dock`),
   and `~/.local/bin` precedes `/usr/bin` in the session PATH — which is why the
@@ -81,7 +82,8 @@ already watches live.
     and panel interfaces to 2, `PantheonShell` handles it, `ShellClientsManager`
     forwards it, and `PanelWindow` applies it to the centred `x` (and repositions).
     `install-gala-screen-corners.sh` now applies this patch too and builds the
-    combined Gala.
+    combined Gala. **Reinstalled** this session (`set_offset` present in the
+    installed binary; the drawers plugins survive the install); next login.
   * Dock (`dock-drawers.patch`): binds the shell at version 2 and adds a
     Command (Control) + left-drag `GestureDrag` that calls `set_offset`, guarded by
     `panel.get_version () >= 2` so an older Gala stays centred instead of erroring.
