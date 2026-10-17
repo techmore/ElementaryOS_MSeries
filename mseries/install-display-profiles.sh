@@ -15,12 +15,12 @@ command -v python3 >/dev/null && python3 -c "import gi.repository.Gtk" 2>/dev/nu
 dpkg -s python3-gi-cairo >/dev/null 2>&1 || sudo apt-get install -y python3-gi-cairo
 mkdir -p "$bin" "$auto" "$apps"
 install -m 755 "$here/mseries-display-profiles" "$bin/mseries-display-profiles"
-install -m 644 "$here/mseries-display-profiles.desktop" "$auto/mseries-display-profiles.desktop"
+sed "s#@BIN@#$bin#" "$here/mseries-display-profiles.desktop" > "$auto/mseries-display-profiles.desktop"
 install -m 755 "$app/mseries-display-settings" "$bin/mseries-display-settings"
 install -m 644 "$app/display_diag.py" "$bin/display_diag.py"
 install -m 644 "$app/mseries-display-settings.desktop" "$apps/mseries-display-settings.desktop"
 update-desktop-database "$apps" 2>/dev/null || true
 pkill -f "$bin/mseries-display-profiles watch" 2>/dev/null || true
 mkdir -p "$HOME/.cache"
-setsid nohup "$bin/mseries-display-profiles" watch >>"$HOME/.cache/mseries-display-profiles.log" 2>&1 &
+setsid nohup "$bin/mseries-display-profiles" watch >/dev/null 2>&1 &
 echo "Display profiles watcher running. Save a layout with: mseries-display-profiles save NAME"

@@ -235,6 +235,12 @@ def main(argv):
         data["profiles"].pop(rest[0], None)
         store(data)
         return 0
+    if cmd == "watch" and not sys.stdout.isatty():  # autostart: keep a log, no shell wrapper needed
+        log = os.path.expanduser("~/.cache/mseries-display-profiles.log")
+        os.makedirs(os.path.dirname(log), exist_ok=True)
+        fd = os.open(log, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
+        os.dup2(fd, 1)
+        os.dup2(fd, 2)
     b = bus()
     if cmd == "save" and rest:
         cmd_save(b, rest[0])
