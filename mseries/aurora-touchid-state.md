@@ -74,49 +74,57 @@ or by porting the j414s node. It is not reachable by starting services or settin
 module parameters. Everything else is already in place, so the DT node is the
 only remaining work.
 
-## Precise blocker + next step — 2026-10-17 (from the kernel source)
+## Precise blocker, and the fix — 2026-10-17 (corrected)
 
-Source: `omacom/linux-aurora` @ `5ec1028c` (branch `integration/aurora`; the tip
-is the release merge for this exact build, so there is nothing newer to wait for).
+> **Correction:** an earlier version of this section claimed the aurora kernel
+> ships no SEP node for t6000 and that the ADT had to be dumped from macOS. That
+> was wrong — a `head -5` truncated the grep and hid `t600x-die0.dtsi`. The node
+> exists, is complete, and the fix needed no macOS at all.
 
-The driver matches **`compatible = "apple,sep"`**
-(`drivers/soc/apple/sep.rs`, `OF_TABLE`). It is Rust; `/dev/sep-bio` is published
-by a one-shot boot-time bring-up (`bio_shim.c` `misc_register`), and Touch ID is
-activated by the **first open** of that node.
+Source: `omacom/linux-aurora` @ `5ec1028c` (branch `integration/aurora`; the tip is
+the release merge for this exact build, so there is nothing newer to wait for).
 
-SEP nodes ship for **t8103 (M1), t602x (M2), t8112, t8122, t8140** — and are
-**missing for t6000/t6001/t6002** (M1 Pro/Max/Ultra). This machine is
-`apple,j314s` / `apple,t6000`, hence zero devices bound.
+The driver matches **`compatible = "apple,sep"`** (`drivers/soc/apple/sep.rs`,
+`OF_TABLE`); it is Rust. `/dev/sep-bio` is published by a one-shot boot-time
+bring-up (`bio_shim.c` `misc_register`), and Touch ID is activated by the **first
+open** of that node.
 
-Node to add, to `arch/arm64/boot/dts/apple/t600x-die0.dtsi` (that file already has
-six `apple,t6000-asc-mailbox` instances, so only a seventh is needed), modelled on
-`t602x-die0.dtsi:733`:
+**The real cause:** the SEP node exists and is complete for t6000 —
+`t600x-die0.dtsi` defines `sep@396400000`, `sep_mbox@396408000` (four IRQs),
+`sep_dart@3952c0000`, and `t600x-pmgr.dtsi` defines `ps_sep`. The aurora package
+even ships `dtbs/t6000-j314s.dtb` with `status = "okay"`.
 
-    sep: sep@... {
-        compatible = "apple,sep";
-        reg = <... 0x6C000>;
-        mboxes = <&sep_mbox>;
-        mbox-names = "mbox";
-        iommus = <&sep_dart 0>;
-        power-domains = <&ps_sep>;
-        status = "disabled";
-    };
-    sep_mbox: mbox@... {
-        compatible = "apple,t6000-asc-mailbox", "apple,asc-mailbox-v4";
-        reg = <... 0x4000>;
-        interrupts = <AIC_IRQ a>, <AIC_IRQ b>, <AIC_IRQ c>, <AIC_IRQ d>;
-        interrupt-names = "send-empty", "send-not-empty",
-            "recv-empty", "recv-not-empty";
-        #mbox-cells = <0>;
-    };
+But the boot chain does not use that file. The DTBs are **embedded in
+`/boot/m1n1/boot.bin`** (m1n1 | run of 110 concatenated DTBs | gzip U-Boot), and
+the j314s copy in there had `status = "disabled"` — so the driver had nothing
+enabled to bind to. That is the whole bug.
 
-The probe takes no MMIO `reg` and no IRQ; what it actually needs is the mailbox
-(`Mailbox::new_byname(dev, c"mbox")`) plus power domains and the IOMMU.
+**Fix applied 2026-10-17:**
 
-**Unknown, and the only thing blocking:** t6000's SEP mailbox base address and its
-four interrupt numbers, plus the SEP DART. These are silicon-specific and must
-come from the ADT — boot macOS (still installed: nvme0n1p1/2/3/6 are APFS) and read
-`ioreg -l -p IODeviceTree`, or dump the ADT through m1n1. Do not guess from the
-t8103/t602x values: wrong MMIO or IRQs can hang the boot. Keep a stock-kernel
-entry available, and flip `status` to `"okay"` only once the addresses are
-confirmed.
+```bash
+# extract the booting j314s DTB out of boot.bin, flip only the sep status,
+# recompile, and swap it back in place
+python3 mseries/fairydust/usb4/swap-dtb.py \
+    --in /boot/m1n1/boot.bin \
+    --dtb patched-j314s.dtb --match apple,j314s --out boot.bin.new
+sudo install -m755 boot.bin.new /boot/m1n1/boot.bin
+```
+
+Verified: the decompiled before/after differs by exactly one line
+(`status = "disabled"` -> `"okay"`); the other 25 disabled nodes are untouched;
+`swap-dtb.py` re-parses the output and confirms the m1n1 binary, the other 109
+DTBs and the gzip U-Boot tail are byte-identical.
+
+Backup: `/boot/m1n1/boot.bin.pre-sep-20261017-100328` (alongside the existing
+`boot.bin.KNOWN-GOOD-*` copies).
+
+**This affects every boot entry**, because m1n1 is below the kernel — which is
+why the patch was kept to the single `sep` node rather than swapping in the
+aurora DTB wholesale (the two differ by ~1580 lines).
+
+**Untested:** whether the SEP actually brings up once enabled. The probe takes no
+MMIO `reg` and no IRQ; it needs the mailbox, the power domain and the IOMMU, all
+of which are present. Reboot into Aurora and check `/dev/sep-bio`.
+
+**Rollback:** `sudo install -m755 /boot/m1n1/boot.bin.pre-sep-20261017-100328
+/boot/m1n1/boot.bin`.

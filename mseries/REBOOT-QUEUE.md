@@ -100,15 +100,14 @@ sudo aurora-touchid-setup                                    # enroll; needs a f
 **Still open:** which PAM service the lock screen uses, so `pam_fprintd` can be
 wired into it. sudo and polkit are handled by the setup script.
 
-**Blocker, now pinned down (2026-10-17):** the SEP driver matches
-`compatible = "apple,sep"` and ships device-tree nodes for t8103 (M1), t602x (M2),
-t8112, t8122 and t8140 — but **not for t6000/t6001/t6002** (M1 Pro/Max/Ultra).
-This machine is `apple,j314s` / `apple,t6000`, so the driver binds to nothing and
-never publishes `/dev/sep-bio`. The `integration/aurora` branch tip is the release
-merge for this exact build, so there is nothing newer to wait for. Everything on
-the userspace side is already in place; the only missing piece is the device-tree
-node. Full analysis, the node template, and what addresses are still needed:
-[`aurora-touchid-state.md`](aurora-touchid-state.md).
+**Fixed 2026-10-17 — the DTBs live in m1n1, not the kernel.** The SEP node is
+complete for t6000 (`sep`, `sep_mbox`, `sep_dart`, `ps_sep` all exist) and the
+aurora package even ships `t6000-j314s.dtb` with it enabled — but the boot chain
+uses the DTBs **embedded in `/boot/m1n1/boot.bin`**, whose j314s copy had
+`status = "disabled"`. That single property is why the driver bound to nothing.
+Patched in place with `fairydust/usb4/swap-dtb.py` (one line changed, everything
+else byte-identical, backup kept). Reboot into Aurora and check `/dev/sep-bio`.
+Details and rollback: [`aurora-touchid-state.md`](aurora-touchid-state.md).
 
 **Note on this entry's cmdline:** it uses the *fairydust* DP-IN parameter names
 (`thunderbolt.allow_dp_tunnel`, `thunderbolt.dprx_bypass`). Those don't exist on
