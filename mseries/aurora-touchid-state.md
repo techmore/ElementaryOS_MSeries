@@ -128,3 +128,85 @@ of which are present. Reboot into Aurora and check `/dev/sep-bio`.
 
 **Rollback:** `sudo install -m755 /boot/m1n1/boot.bin.pre-sep-20261017-100328
 /boot/m1n1/boot.bin`.
+
+## Touch ID: the SEP is LIVE on j314s — 2026-10-17 (major)
+
+Two m1n1 device-tree patches took it from "driver binds to nothing" to a working
+SEP. Both are in `/boot/m1n1/boot.bin`, applied with `fairydust/usb4/swap-dtb.py`
+(one property / one alias changed, everything else byte-identical):
+
+1. `status = "disabled"` -> `"okay"` on `/soc/sep@396400000`
+2. added the alias `sep = "/soc/sep@396400000"`
+
+The alias was the real unlock. m1n1's `dt_set_sep()` (`src/kboot.c`) reads the
+SEP's firmware blobs from the ADT and injects them — but it looks the node up
+**by alias** and silently returns when there is none. With the alias present,
+m1n1 injects `local-policy-manifest` (2902 B) and `iboot-manifest` (5443 B).
+
+Result, verified:
+
+```
+/dev/sep-bio                      exists (char 10:261)
+apple_sep 396400000.sep:          bound
+apple_sep: sks: identity keybag provisioned
+apple_sep: hwrng: registered after ready-phase survey
+```
+
+### The calibration firmware — extracted locally, no macOS needed
+
+`/usr/lib/aurora-touchid/extract-mesa-calibration` carves the per-device Mesa
+calibration out of the **iBoot System Container** (`nvme0n1p1`), which is why
+`apple-sep.path` watches for it. Run:
+
+```bash
+sudo python3 /usr/lib/aurora-touchid/extract-mesa-calibration \
+    -o /lib/firmware/apple/mesacal-j314s.bin
+```
+
+Produced 65046 bytes — exactly the path the device tree asks for
+(`firmware-name = "apple/mesacal-j314s.bin"`).
+
+### What is left: one device-tree node
+
+`fprintd` starts and finds the SEP, then says *"the secure enclave reports no
+fingerprint sensor attached"*. The sensor is an SPI device and our boot DTB has
+**no `spi@39b108000` controller at all** — the aurora package's
+`dtbs/t6000-j314s.dtb` has it, with a `fingerprint@0` child that is already
+j314s-specific:
+
+    spi@39b108000 {
+        compatible = "apple,t6000-spi", "apple,spi";
+        reg = <0x03 0x9b108000 0x00 0x4000>;
+        interrupt-parent = <0x13>;                 /* AIC - same phandle in both */
+        interrupts = <0x00 0x00 0x454 0x04>;       /* fits between our 453 and 455 */
+        clocks = <0x34>;  pinctrl-0 = <0x6b>;
+        power-domains = <0x6c>;  status = "okay";
+        fingerprint@0 {
+            compatible = "apple,mesa-fingerprint";
+            reg = <0x00>;  spi-max-frequency = <0x7a1200>;  spi-cpol;
+            status = "okay";
+            enable-gpios = <0x4d 0xc4 0x00>;       /* pinctrl -> OUR 0x44 */
+            interrupt-parent = <0x4d>;             /* -> OUR 0x44 */
+            interrupts = <0xc3 0x01>;
+            firmware-name = "apple/mesacal-j314s.bin";
+        };
+    };
+
+Phandle map (aurora -> ours), resolved by matching node identity:
+
+| aurora | node | ours |
+|---|---|---|
+| `0x13` | `interrupt-controller@28e100000` (AIC) | `0x13` (same) |
+| `0x34` | fixed-clock | `0x14` *— but our `spi@39b10c000` uses `0x2c` for the same role; unresolved* |
+| `0x6b` | pinctrl state under `pinctrl@39b028000` | **unresolved** |
+| `0x6c` | `power-controller@200` (pmgr-pwrstate) | `0xa3` |
+| `0x4d` | `pinctrl@39b028000` (gpio) | `0x44` |
+
+**Stopped deliberately.** The clock and pinmux references do not line up cleanly
+between the two device-tree revisions (ours is an older Asahi t6000 revision), and
+a wrong reference there would misconfigure a live hardware block rather than fail
+safely. Resolve those two, port the node, `swap-dtb.py` it in, and reboot — the
+firmware and the SEP are already in place, so that node is the last step.
+
+Backups: `/boot/m1n1/boot.bin.pre-sep-20261017-100328` (status only) and
+`boot.bin.pre-sep-alias-20261017-102233` (both patches).
