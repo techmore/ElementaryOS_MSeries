@@ -2055,3 +2055,17 @@ Bonsai completed corrected MCP 9/9 and native pp512 56.634/tg128 5.571 tokens/s 
 Qwen3.5 4B remains the tested desktop/personal/coding default; the single coding fixture and summary-memory checks are limited evidence, not general agent qualification. Small-model repair advice remains failed/excluded; auto-diagnose stays off. Other owner Rust/HTTP jobs were preserved. Full app coverage, voice/ANE and a factory hardware boot with this payload remain open. See the qualification report and raw sanitized receipts for the current methods/results.
 
 The owned final-qualification unit finished successfully. The enabled everyday Qwen3.5 4B service was restored after admission checks passed; its /v1/models endpoint reported the pinned 32f3e8ec model. No other GPU qualification unit remains running. The hourly completion follow-up can stop after the final data follow-up is merged and Pages deployment is verified; the repository six-hour watcher stays active.
+
+
+### WD22TB4 dock video — macOS baseline (October 17, 2026)
+
+Ran the read-only `run-macos-baseline.sh` on the M1 Pro under macOS 27.0.1.
+The dock HDMI chain works on macOS: IORegistry event logs show a 4-lane HBR3
+link trained ~90 ms after HPD, driven by **dcpext0 port 0** (crossbar
+`ufp0,0-dfp1,1`), whereas Linux has only tried dcpext1. Live ADT confirms the
+DP-IN addresses/IRQs already in 0004–0006. Recorded in
+`mseries/fairydust/usb4/evidence/2026-10-17-macos-baseline-dcpext0.md`; staged
+E4 as patch `0015-experimental-j314s-dcpext0-tunnel.patch` (offline parse
+check only, not built/booted). E2 remains armed for the next Linux boot and
+targets dcpext1 — owner to decide order. Kernelcache was not copied by the run.
+

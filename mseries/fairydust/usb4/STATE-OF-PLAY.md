@@ -3,6 +3,20 @@
 Updated 2026-10-16. This is the cumulative frontier ledger. Preserve measured
 advances and do not re-run discovery without a new reason.
 
+## Resume pointer — 2026-10-17 (macOS baseline captured)
+
+**Read first:** [evidence/2026-10-17-macos-baseline-dcpext0.md](evidence/2026-10-17-macos-baseline-dcpext0.md).
+On macOS 27.0.1 the same Mac → WD22TB4 → dock HDMI → monitor chain trains a
+4-lane HBR3 link ~90 ms after HPD, so the sink path works. macOS routed
+`atc1-dpin0` to **`dispext0,0` (dcpext0, DPTX port 0)**; every Linux run used
+`dcpext1` (`dispext1,0`). The live ADT matches the shipped DP-IN metadata
+(no DT address/IRQ change). Timing (2 s connect timeout) is ruled out.
+
+**Next: E4** — patch `0015` (`ENABLE_DCPEXT0_TB_TUNNEL`) moves the tunnel to
+dcpext0; staged in the repo only, not built or booted. E2 is still armed for
+the next Linux boot and still targets dcpext1; the owner decides whether to
+clear it and run E4 first. Gates are in the evidence note.
+
 ## Resume pointer — 2026-10-16 (after the E1 boot)
 
 **E1 has RUN. Read its result first.** The one-shot boot

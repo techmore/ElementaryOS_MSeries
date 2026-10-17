@@ -1,0 +1,108 @@
+From: sdolbec <sdolbec1@gmail.com>
+Subject: [PATCH] arm64: dts: apple: j314s: E4 - drive the dock tunnel from dcpext0
+
+Opt-in experiment; apply after 0001 through 0014.
+
+The 2026-10-17 macOS baseline on this MacBookPro18,3 (macOS 27.0.1,
+WD22TB4 attached) shows macOS routing atc1-dpin0 to dispext0 port 0
+(display-crossbar0 "ufp0,0-dfp1,1"), on DPTX port 0, and training a
+4-lane HBR3 link to the dock HDMI sink about 90 ms after HPD. Linux has
+only ever tried dcpext1 (dispext1,0), whose firmware answers the tunnel
+connect with DEVICE_NOT_RESPONDING (E1).
+
+Under ENABLE_DCPEXT0_TB_TUNNEL, give the tunnel role to dcpext0: ATC1
+crossbar "dpin0" control with mux state 0 (dispext0,0), dptx-phy 1, the
+same DP-IN tunnel PHY, and no HDMI GPIOs or Type-C mux graph. dcpext1
+returns to its stock DP-altmode wiring and the NHI points at dcpext0.
+The built-in HDMI port has no display controller while this is defined.
+
+Validated offline only: the preprocessed j314s tree parses with and
+without the define and the phandles resolve to the ATC1 crossbar and
+PHY. Not compiled with dtc, not booted.
+
+Signed-off-by: sdolbec <sdolbec1@gmail.com>
+---
+  arch/arm64/boot/dts/apple/t6000-j314s.dts      |  6 +++
+  arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi | 52 ++++++++++++++++++++++++++
+  2 files changed, 58 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/apple/t6000-j314s.dts b/arch/arm64/boot/dts/apple/t6000-j314s.dts
+index af6838d..dbfc45e 100644
+--- a/arch/arm64/boot/dts/apple/t6000-j314s.dts
++++ b/arch/arm64/boot/dts/apple/t6000-j314s.dts
+@@ -18,6 +18,12 @@
+  * PHY. See mseries/fairydust/usb4/DP-TUNNEL-RE.md.
+  */
+ #define ENABLE_DCPEXT_TB_TUNNEL
++/*
++ * E4 (experimental): use dcpext0 for the tunnel, as macOS does on this
++ * machine. Disables the built-in HDMI port. See
++ * mseries/fairydust/usb4/evidence/2026-10-17-macos-baseline-dcpext0.md.
++ */
++#define ENABLE_DCPEXT0_TB_TUNNEL
+ 
+ #include "t600x-j314-j316.dtsi"
+ 
+diff --git a/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi b/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi
+index 9877b8d..a36a981 100644
+--- a/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi
++++ b/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi
+@@ -875,4 +875,56 @@
+ &dpin1_0 {
+ 	status = "okay";
+ };
++
++#ifdef ENABLE_DCPEXT0_TB_TUNNEL
++/*
++ * E4: drive the dock tunnel from dcpext0 instead of dcpext1.
++ *
++ * The 2026-10-17 macOS baseline (macOS 27.0.1, dock attached) shows macOS
++ * routing atc1-dpin0 to dispext0 port 0 (crossbar "ufp0,0-dfp1,1") and
++ * training a 4-lane HBR3 link to the dock HDMI sink within ~90 ms of HPD.
++ * Linux has only tried dcpext1 (dispext1,0), whose firmware answers
++ * DEVICE_NOT_RESPONDING. This swaps the tunnel role to the proven DCP.
++ *
++ * Cost: dcpext0 normally drives the built-in HDMI port (atcphy3). With this
++ * define the built-in HDMI has no display controller; dcpext1 returns to its
++ * stock Type-C DP-altmode wiring. Opt-in only: drop the define to revert.
++ */
++&dcpext0 {
++	apple,connector-type = "DP";
++	/delete-property/ hdmi-hpd-gpios;
++	/delete-property/ hdmi-pwren-gpios;
++	/delete-property/ dp2hdmi-pwren-gpios;
++	apple,dptx-phy = <1>;
++	phys = <&atcphy1 PHY_TYPE_DP>;
++	phy-names = "dp-phy";
++	apple,dp-tunnel-phy = <&dpin1_0>;
++	/* "dpin0" mux control of the ATC1 crossbar; state 0 = dispext0,0. */
++	mux-controls = <&atcphy1_xbar 1>;
++	mux-control-names = "dp-xbar";
++	mux-index = <0>;
++	apple,dp-tunnel;
++	/*
++	 * Drop only the HDMI DP-out endpoint (port@1) so no Type-C mux graph is
++	 * found; keep port@0, the dpaudio1 link.
++	 */
++	ports {
++		/delete-node/ port@1;
++	};
++};
++
++&atcphy3_dp {
++	/delete-property/ remote-endpoint;
++};
++
++&dcpext1 {
++	/delete-property/ apple,dp-tunnel;
++	/delete-property/ apple,dp-tunnel-phy;
++	mux-controls = <&atcphy1_xbar 0>;
++};
++
++&usb4_1_nhi {
++	apple,dp-source = <&dcpext0>;
++};
++#endif /* ENABLE_DCPEXT0_TB_TUNNEL */
+ #endif
+-- 
+2.47.0
