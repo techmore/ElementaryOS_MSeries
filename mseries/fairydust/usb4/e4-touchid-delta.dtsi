@@ -1,0 +1,36 @@
+/* Re-applies the 2026-10-17 Touch ID boot.bin edits (mseries/aurora-touchid-state.md) on top of E4. */
+/ {
+	aliases { sep = "/soc/sep@396400000"; };
+};
+&{/soc/sep@396400000} { status = "okay"; };
+&{/soc/pinctrl@39b028000} {
+	spi2_pins_touchid: spi2-pins { pinmux = <0x10030 0x10031 0x10032>; };
+};
+&{/soc} {
+	spi@39b108000 {
+		compatible = "apple,t6000-spi", "apple,spi";
+		reg = <0x03 0x9b108000 0x00 0x4000>;
+		interrupt-parent = <&{/soc/interrupt-controller@28e100000}>;
+		interrupts = <0x00 0x00 0x454 0x04>;
+		clocks = <&{/clock-ref}>;
+		pinctrl-0 = <&spi2_pins_touchid>;
+		pinctrl-names = "default";
+		power-domains = <&{/soc/power-management@28e080000/power-controller@200}>;
+		#address-cells = <0x01>;
+		#size-cells = <0x00>;
+		status = "okay";
+		fingerprint@0 {
+			compatible = "apple,mesa-fingerprint";
+			reg = <0x00>;
+			spi-max-frequency = <0x7a1200>;
+			spi-cpol;
+			spi-cs-hold-delay-ns = <0x14>;
+			spi-cs-setup-delay-ns = <0x14>;
+			status = "okay";
+			enable-gpios = <&{/soc/pinctrl@39b028000} 0xc4 0x00>;
+			interrupt-parent = <&{/soc/pinctrl@39b028000}>;
+			interrupts = <0xc3 0x01>;
+			firmware-name = "apple/mesacal-j314s.bin";
+		};
+	};
+};

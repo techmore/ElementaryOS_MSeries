@@ -1,0 +1,41 @@
+{
+  "production_test_groups": {
+    "helper": 11,
+    "clock": 11,
+    "connection": 7,
+    "bridge": 28,
+    "lookup": 11,
+    "hpd": 8
+  },
+  "source_pin": "ce9f2eba72c061a50b2d790450e90af3439d8c24",
+  "archive_sha256": "20ce358acffff4b3de86201975cd68c7aaf241ae010ec3cca9422bbe2b7f34aa",
+  "patches": {
+    "0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch": "1b9e6d925cdfe768360880c1d3e10eb0d46ecfe66985b4b9fbf39812c3f9fdfd",
+    "0002-experimental-dp-tunnel.patch": "c962eff07c54b2d3e6d066dd85c5a969a5130e0d61c7f55daaccd999589da6ac",
+    "0003-dp-out-prefer-adapter-with-hpd.patch": "29570e8c43f8304734757daadbb6c01a5008d115a4fc1ded639a16f43adef7d4",
+    "0004-experimental-dpin-bindings.patch": "d325d31838055b3a94e2ef6d3e6145bb5f99eea56fa71805bff04696e968c6d8",
+    "0005-experimental-dpin-handshake-tunnel-clocks.patch": "9f1d0fc79fd8bc09528493aac49ea9cb66dca9708a54accdcac94ed4754157a3",
+    "0006-experimental-j314s-dpin-wiring.patch": "9a365a09a0e8823a53905aaccf4dbc2bfc8258adfa4b8bd57e4dc928dbacc2bd",
+    "0007-experimental-dcp-source-binding.patch": "cb0b89238985a49903b6473e85fbd6229d1891f71ba5841c22f96c0f55182205",
+    "0008-experimental-dcp-source-before-dprx.patch": "9180d5204f6d89680fd69ac87efaed63959012605892ec50b20a3d65192e0a55",
+    "0009-experimental-j314s-dcp-source-map.patch": "7ebb3668e7502c49306fb4b053e890cbcd308674253f43916ce7e97955c6dd99",
+    "0010-experimental-fallback-safe-dpin-lookup.patch": "c25c8eb2580dd461212a759890539a36b63e9d105eed0b11888fd1391d6a03c0",
+    "0011-experimental-dpin-enolink-retry-stale-phy-guard.patch": "db72a7bcbd154e4081911d0614852fe696ea9c6b5d4dc61d8aed731c29029d37",
+    "0012-experimental-appledrm-dpin-diagnostics.patch": "26f7070a2d864e513cda0271c9f44216e60db551d1721d11f9df53adcb17d07d",
+    "0013-experimental-appledrm-e1-nonfatal-tunnel-hpd.patch": "c0ab2ad74ea41c0d40a1d7028df9243ce817054787a3aed016c420d83aafa96c",
+    "0014-experimental-dpin-hpd-instrumentation.patch": "1960982eb8987a9b9020adedc891075e671e31dae1321a3a228720f7b3cdd7d9",
+    "0015-experimental-j314s-dcpext0-tunnel.patch": "d86a5c10c038d7bdaca3616087d307dcec3bb88f04d1c1e3ced2a82bba0263ac"
+  },
+  "dtb_sha256": {
+    "e3-j314s.dtb": "3bd762b0fc4098d76868e05434fb09682646314b4578e5b15b5b0e278843ed15",
+    "e4-j314s.dtb": "3cb948504b0d7315bcd5fae89c90bfbe79164940661c1fa7650ee73d725b0862",
+    "e4-touchid-j314s.dtb": "52df3f4432cdf7a0bf1623378873dca74132cfdb6cdfe499b05436442170ac6f",
+    "e3-control-j314c.dtb": "4b457de35e1f8ae43dbab9b71b22944f14ef974087faf850151356bfaddfd555",
+    "e4-control-j314c.dtb": "4b457de35e1f8ae43dbab9b71b22944f14ef974087faf850151356bfaddfd555"
+  },
+  "status": "PASS: 0001-0015 apply; production helper/contracts and E3/E4 DT checks pass",
+  "touchid_delta_preserves_dock_routing": true,
+  "non_target_board_unchanged": true,
+  "full_kernel_or_module_build": false,
+  "hardware_boot_or_dock_picture_verified": false
+}

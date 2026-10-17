@@ -14,6 +14,28 @@ def read(path):
  try:return Path(path).read_text().strip()
  except OSError as e:return 'ERROR: '+str(e)
 
+def module_identity(filename, manifest, sysroot=Path('/sys')):
+ name=filename[:-3].replace('-','_')
+ item={'module':name,'matches_frozen_bundle':False}
+ try:
+  candidates=[path for path in manifest['inputs'] if Path(path).name==filename]
+  if len(candidates)!=1:raise ValueError('expected exactly one frozen module input')
+  frozen=Path(candidates[0])
+  if hashlib.sha256(frozen.read_bytes()).hexdigest()!=manifest['inputs'][candidates[0]]:
+   raise ValueError('frozen module input changed after staging')
+  identity=run(['readelf','-n',str(frozen)])
+  match=re.search(r'Build ID: ([0-9a-f]+)',identity.get('stdout',''))
+  if identity.get('returncode')!=0 or not match:raise ValueError('module build ID unavailable')
+  raw=(sysroot/'module'/name/'notes/.note.gnu.build-id').read_bytes()
+  namesz,descsz,kind=struct.unpack_from('<III',raw)
+  offset=12+((namesz+3)&~3)
+  if kind!=3 or namesz!=4 or descsz==0 or offset+descsz>len(raw) or raw[12:16]!=b'GNU\0':
+   raise ValueError('unexpected or truncated loaded build note')
+  loaded=raw[offset:offset+descsz].hex()
+  item.update({'expected_build_id':match[1],'loaded_build_id':loaded,'matches_frozen_bundle':loaded==match[1]})
+ except (OSError,ValueError,struct.error) as error:item['error']=str(error)
+ return item
+
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',required=True,type=Path);p.add_argument('--stage-manifest',required=True,type=Path);a=p.parse_args()
  output=a.output.resolve()
@@ -21,28 +43,11 @@ def main():
  a.output.mkdir(parents=True,exist_ok=False)
  manifest=json.loads(a.stage_manifest.read_text());cmdline=read('/proc/cmdline')
  params={name:read('/sys/module/thunderbolt/parameters/'+name) for name in ('allow_dp_tunnel','dprx_bypass','dprx_timeout')}
- checks={'kernelrelease_matches':os.uname().release==manifest['kernelrelease'],'bypass_on':params['dprx_bypass']=='Y','timeout_15000':params['dprx_timeout']=='15000'}
+ checks={'kernelrelease_matches':os.uname().release==manifest['kernelrelease'],'bypass_on':params['dprx_bypass'].lower() in ('y','1'),'tunnel_allowed':params['allow_dp_tunnel'].lower() in ('y','1'),'timeout_15000':params['dprx_timeout']=='15000'}
  for token in ('thunderbolt.allow_dp_tunnel=1','thunderbolt.dprx_bypass=1','thunderbolt.dprx_timeout=15000'):
   checks['cmdline_'+token]=cmdline.split().count(token)==1
  modules={name:(Path('/sys/module')/name).is_dir() for name in ('phy_apple_atc','phy_apple_dpin','appledrm','thunderbolt','thunderbolt_apple')}
- loaded_identity={}
- for filename in ('phy-apple-atc.ko','phy-apple-dpin.ko','appledrm.ko','thunderbolt.ko','thunderbolt_apple.ko'):
-  name=filename[:-3].replace('-','_')
-  candidates=[path for path in manifest['inputs'] if Path(path).name==filename]
-  item={'module':name}
-  try:
-   if len(candidates)!=1:raise ValueError('expected exactly one frozen module input')
-   identity=run(['readelf','-n',candidates[0]])
-   match=re.search(r'Build ID: ([0-9a-f]+)',identity.get('stdout',''))
-   if not match:raise ValueError('module build ID unavailable')
-   raw=(Path('/sys/module')/name/'notes/.note.gnu.build-id').read_bytes()
-   namesz,descsz,kind=struct.unpack_from('<III',raw)
-   offset=12+((namesz+3)&~3)
-   if kind!=3 or raw[12:12+namesz]!=b'GNU\0':raise ValueError('unexpected loaded build note')
-   loaded=raw[offset:offset+descsz].hex()
-   item.update({'expected_build_id':match[1],'loaded_build_id':loaded,'matches_frozen_bundle':loaded==match[1]})
-  except (OSError,ValueError,struct.error) as e:item['error']=str(e)
-  loaded_identity[name]=item
+ loaded_identity={filename[:-3].replace('-','_'): module_identity(filename,manifest) for filename in ('phy-apple-atc.ko','phy-apple-dpin.ko','appledrm.ko','thunderbolt.ko','thunderbolt_apple.ko')}
  connectors=[]
  for path in sorted(Path('/sys/class/drm').glob('card*-*')):
   if not re.fullmatch(r'card\d+-(?:DP-\d+(?:-\d+)*|HDMI-[A-Za-z]+-\d+)',path.name):continue

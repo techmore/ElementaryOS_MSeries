@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Install deps
-        run: sudo apt-get update && sudo apt-get install just podman zstd -y
+        run: sudo apt-get update && sudo apt-get install just podman zstd bison flex -y
 
       - name: Shell syntax check (M-series scripts)
         run: |
@@ -79,6 +79,10 @@ jobs:
           python3 mseries/test-power-cap.py
           python3 -m unittest discover -s mseries/power/macos-baseline -p 'test_*.py'
           python3 mseries/test-power-install.py
+          bash -n mseries/fairydust/usb4/test-dp-tunnel.sh
+          python3 -m py_compile mseries/fairydust/usb4/*.py mseries/fairydust/usb4/tools/*.py
+          for f in mseries/fairydust/usb4/test-*.py; do python3 "$f"; done
+          python3 mseries/fairydust/usb4/tools/test-staging-tools.py
           python3 mseries/aurora-sep/test_touchid_core.py
           python3 mseries/local-ai/test_people_watch.py
           python3 mseries/test-image-wiring.py
@@ -90,6 +94,12 @@ jobs:
           python3 -m unittest discover -s mseries/keyboard-backlight -p 'test_*.py'
           python3 -m unittest discover -s mseries/audio -p 'test_*.py'
           python3 -m unittest discover -s mseries/local-ai -p 'test_*.py'
+
+      - name: Validate experimental dock patches offline
+        run: |
+          set -euo pipefail
+          curl -fL --retry 2 https://codeload.github.com/AsahiLinux/linux/tar.gz/ce9f2eba72c061a50b2d790450e90af3439d8c24 -o "$RUNNER_TEMP/fairydust.tar.gz"
+          python3 mseries/fairydust/usb4/tools/validate-dock-patches.py --archive "$RUNNER_TEMP/fairydust.tar.gz" --output "$RUNNER_TEMP/dock-patch-validation"
 
       - name: mkosi config parse check (all images)
         run: |

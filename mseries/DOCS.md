@@ -45,6 +45,7 @@ Start with the [power documentation map](power/README.md) for current evidence, 
 | [KERNEL-REPORT.md](KERNEL-REPORT.md) | Kernel verdict |
 | [KERNEL-SOURCE.md](KERNEL-SOURCE.md) | Where the kernel source comes from |
 | [fairydust/debian/README.md](fairydust/debian/README.md) | The patched kernel package (USB4, Apple Video Decoder fix) and how it is built |
+| [fairydust/usb4/DOCK-CODE-REVIEW.md](fairydust/usb4/DOCK-CODE-REVIEW.md) | Dock code review, fixture tests, reproducible patch/DT validation and hardware limits |
 | [fairydust/usb4/CUTOVER.md](fairydust/usb4/CUTOVER.md) | Verified M1 Pro USB4 kernel, dock results, limits and recovery pointers |
 | [aurora-sep/README.md](aurora-sep/README.md) | Optional Aurora SEP kernel lane: Touch ID via the Secure Enclave |
 

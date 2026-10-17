@@ -65,6 +65,14 @@ let HPD propagate first.
 
 ## The new wall: DCP firmware link-config completion never fires
 
+> **Correction (2026-10-16, after the `DPINDBG` debug boot).** The attribution
+> below is wrong about the *mechanism*. The debug boot measured
+> `waited=949 ret=-110 … link_error=-110`: the completion **did** fire, and the
+> `-110` was our own `set_hpd(hpd=1)` AFK call timing out after 1 s. The
+> conclusion that the DCP never sent `set_active_lane_count`/`SET_LINK_RATE`
+> still stands. See
+> [2026-10-16-dbgboot-dcp-silent-never-configures-link.md](2026-10-16-dbgboot-dcp-silent-never-configures-link.md).
+
 `-110` is `-ETIMEDOUT`, and the only `-110` a DCP DP-source start can return is
 `dcp.c:436`:
 

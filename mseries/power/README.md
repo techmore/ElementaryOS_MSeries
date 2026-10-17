@@ -39,8 +39,9 @@ Do not add another worktree's untracked run to a report without reviewing its co
 
 ## Dock HDMI and suspend
 
-The existing `docs/dock-video-decision` branch owns the newer dock investigation. Its reviewed tip here is
-`189cbda`; these links are pinned so they remain an auditable snapshot:
+The dock investigation now has a local [frontier ledger](../fairydust/usb4/STATE-OF-PLAY.md),
+[goal and gates](../fairydust/usb4/PRIMARY-GOAL.md), and [code review](../fairydust/usb4/DOCK-CODE-REVIEW.md).
+The following links retain the earlier `189cbda` snapshot for historical provenance:
 
 - [Primary goal and G0–G5 evidence gates](https://github.com/techmore/ElementaryOS_MSeries/blob/189cbda/mseries/fairydust/usb4/PRIMARY-GOAL.md)
 - [Cumulative state and next experiment](https://github.com/techmore/ElementaryOS_MSeries/blob/189cbda/mseries/fairydust/usb4/STATE-OF-PLAY.md)
