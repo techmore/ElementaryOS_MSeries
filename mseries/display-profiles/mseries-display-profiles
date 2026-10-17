@@ -150,7 +150,11 @@ def cmd_apply(b, name=None, nudge=False):
         step = build_config(data[name], mons, nudge_modes)
         apply_config(b, serial, step)
         time.sleep(2.0)
+        before = externals(mons)
         serial, mons, _lms = read_state(b)
+        if externals(mons) != before:  # unplugged mid-nudge: leave Gala to sort it out
+            print("displays changed during the nudge; not applying", flush=True)
+            return 1
     apply_config(b, serial, build_config(data[name], mons))
     print(f"applied '{name}'")
     return 0
@@ -203,6 +207,9 @@ def cmd_watch(b):
         for k, v in st["drm"].items():
             if v == "connected" and now.get(k) != "connected":
                 log(f"{k} disconnected")
+                if st["timer"]:  # do not apply a layout for a monitor that just went away
+                    GLib.source_remove(st["timer"])
+                    st["timer"] = 0
         st["drm"] = now
         return True
 
@@ -228,6 +235,12 @@ def main(argv):
         data["profiles"].pop(rest[0], None)
         store(data)
         return 0
+    if cmd == "watch" and not sys.stdout.isatty():  # autostart: keep a log, no shell wrapper needed
+        log = os.path.expanduser("~/.cache/mseries-display-profiles.log")
+        os.makedirs(os.path.dirname(log), exist_ok=True)
+        fd = os.open(log, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
+        os.dup2(fd, 1)
+        os.dup2(fd, 2)
     b = bus()
     if cmd == "save" and rest:
         cmd_save(b, rest[0])
