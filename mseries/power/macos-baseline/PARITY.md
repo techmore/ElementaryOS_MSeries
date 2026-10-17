@@ -1,10 +1,10 @@
 # Power parity: macOS baseline vs elementary OS on the M1 Pro
 
-Updated 2026-10-17. macOS run: `not yet`.
+Updated 2026-10-17. macOS run: `macos-2026-10-17-1220`.
 
 Pass = Linux within 10% of macOS (lower-is-better: linux <= mac x 1.10; higher-is-better: linux >= mac / 1.10). Close = Within 1.5x of macOS (tier 2 in EFFICIENCY-GOALS.md). Same machine, on battery, same brightness and app state, medians with p10/p90, paired runs (POWER-ROADMAP.md honesty rules).
 
-Scoreboard: ⏳ mac 41, ℹ️ 11
+Scoreboard: ⏳ linux 6, ⏳ mac 35, ℹ️ 11
 
 ## Whole machine (0/10 passed)
 
@@ -56,8 +56,8 @@ Panel and backlight cost, refresh behaviour, and the display coprocessor.
 | | ID | Item | macOS | Linux now | Status |
 |---|---|---|---|---|---|
 | [ ] | D1 | Display cost (screen on minus screen off) | – | (unmeasured) 500 to 105 brightness saved ~4 W | ⏳ mac |
-| [ ] | D2 | Brightness during the macOS run | – | (measured) 105/500 typical; match this before comparing | ℹ️ |
-| [ ] | D3 | Refresh at idle (ProMotion vs fixed) | – | (measured) fixed 120 Hz; 60 Hz saves 1.7 to 2.0 W (B1, owner decides) | ℹ️ |
+| [ ] | D2 | Brightness during the macOS run | 50.00 % | (measured) 105/500 typical; match this before comparing | ℹ️ |
+| [ ] | D3 | Refresh at idle (ProMotion vs fixed) | {"_name": "Color LCD", "_spdisplays_display-product-id": "a0 | (measured) fixed 120 Hz; 60 Hz saves 1.7 to 2.0 W (B1, owner decides) | ℹ️ |
 | [ ] | D4 | Display coprocessor mailbox traffic | – | 480 /s (measured) ~480 interrupts/s at idle | ⏳ mac |
 
 ## Video and media (0/9 passed)
@@ -73,9 +73,9 @@ Cost of playback above the idle floor at 1080p, 1440p and 4K, whether 4K stays i
 | [ ] | M5 | Local 4K: extra over idle | – | (estimate) not measured | ⏳ mac |
 | [ ] | M6 | YouTube 1440p: extra over idle | – | (estimate) not measured | ⏳ mac |
 | [ ] | M7 | YouTube 4K: extra over idle | – | (estimate) not measured | ⏳ mac |
-| [ ] | M8 | Local 4K decoded in hardware (1 = yes) | – | (estimate) not checked; AVD H.264 at 4K untested | ⏳ mac |
-| [ ] | M9 | Local 1440p: frames dropped in 150 s | – | (estimate) not measured | ⏳ mac |
-| [ ] | M10 | Local 4K: frames dropped in 150 s | – | (estimate) not measured | ⏳ mac |
+| [ ] | M8 | Local 4K decoded in hardware (1 = yes) | 1.00 | (estimate) not checked; AVD H.264 at 4K untested | ⏳ linux |
+| [ ] | M9 | Local 1440p: frames dropped in 150 s | 0.00 | (estimate) not measured | ⏳ linux |
+| [ ] | M10 | Local 4K: frames dropped in 150 s | 0.00 | (estimate) not measured | ⏳ linux |
 
 ## Audio (0/1 passed)
 
@@ -93,7 +93,7 @@ Wi-Fi, Bluetooth, USB, and background traffic.
 | | ID | Item | macOS | Linux now | Status |
 |---|---|---|---|---|---|
 | [ ] | N1 | Network traffic at idle | – | (unmeasured) | ⏳ mac |
-| [ ] | N2 | Bluetooth state during the run | – | 0.20 (measured) ~0.2 W saved when off | ℹ️ |
+| [ ] | N2 | Bluetooth state during the run | attrib_on | 0.20 (measured) ~0.2 W saved when off | ℹ️ |
 | [ ] | N3 | Wi-Fi power save / PCIe ASPM / USB autosuspend | – | (measured) power save on; powersupersave -0.3 W; USB autosuspend 0 W | ℹ️ |
 
 ## Storage and memory (0/2 passed)
@@ -111,7 +111,7 @@ What the OS keeps running when you are not doing anything.
 
 | | ID | Item | macOS | Linux now | Status |
 |---|---|---|---|---|---|
-| [ ] | B1 | Processes running | – | (unmeasured) | ⏳ mac |
+| [ ] | B1 | Processes running | 1053 | (unmeasured) | ⏳ linux |
 | [ ] | B2 | Service jobs (launchd vs systemd) | – | (unmeasured) rpcbind, cups, avahi etc. each < 0.1 W | ℹ️ |
 | [ ] | B3 | CPU used by everything at idle | – | 1700 ms/s (measured) CPU 83% idle across 10 cores (~1.7 cores busy, apps open) | ⏳ mac |
 
@@ -121,9 +121,9 @@ Lid-closed drain and how often the machine wakes itself.
 
 | | ID | Item | macOS | Linux now | Status |
 |---|---|---|---|---|---|
-| [ ] | Z1 | Lid-closed drain on battery | – | (unmeasured) s2idle only; F1 test not run | ⏳ mac |
-| [ ] | Z2 | Self-wakes per hour asleep | – | (unmeasured) | ⏳ mac |
-| [ ] | Z3 | Standby/hibernate after hours asleep | – | (measured) none: suspend stays s2idle indefinitely | ℹ️ |
+| [ ] | Z1 | Lid-closed drain on battery | 0.39 %/h | (unmeasured) s2idle only; F1 test not run | ⏳ linux |
+| [ ] | Z2 | Self-wakes per hour asleep | 4.50 /h | (unmeasured) | ⏳ linux |
+| [ ] | Z3 | Standby/hibernate after hours asleep | 1 | (measured) none: suspend stays s2idle indefinitely | ℹ️ |
 
 ## Battery and thermals (0/1 passed)
 

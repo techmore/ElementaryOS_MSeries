@@ -7,7 +7,7 @@
     "gap": "Worse than 1.5x",
     "conditions": "Same machine, on battery, same brightness and app state, medians with p10/p90, paired runs (POWER-ROADMAP.md honesty rules)"
   },
-  "mac_run": null,
+  "mac_run": "macos-2026-10-17-1220",
   "categories": [
     {
       "id": "whole",
@@ -27,7 +27,8 @@
             "source": "POWER-ROADMAP.md §1"
           },
           "linux_how": "powerlab/ab.py idle, apps closed, same brightness",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "W2",
@@ -42,7 +43,8 @@
             "source": ""
           },
           "linux_how": "same as W1 with the panel blanked (owner-gated: display power)",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "W3",
@@ -57,7 +59,8 @@
             "source": "POWER-OPPORTUNITIES-2026-10-16.md"
           },
           "linux_how": "same app set as the macOS run",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "W4",
@@ -72,7 +75,8 @@
             "source": "POWER-ROADMAP.md §1"
           },
           "linux_how": "same 6 URLs every 15 s in the default browser",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "W5",
@@ -87,7 +91,8 @@
             "source": "POWER-ROADMAP.md §1"
           },
           "linux_how": "same file, mpv --hwdec=vaapi, windowed",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "W6",
@@ -102,7 +107,8 @@
             "source": "POWER-ROADMAP.md §1"
           },
           "linux_how": "same video, Brave, windowed",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "W7",
@@ -117,7 +123,8 @@
             "source": "not measured yet"
           },
           "linux_how": "test-1440p-h264.mp4, mpv --hwdec=vaapi, windowed",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "W8",
@@ -132,7 +139,8 @@
             "source": "not measured yet"
           },
           "linux_how": "test-2160p-h264.mp4, mpv --hwdec=vaapi, windowed",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "W9",
@@ -147,7 +155,8 @@
             "source": "not measured yet"
           },
           "linux_how": "same video at 1440p, Brave, windowed",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "W10",
@@ -162,7 +171,8 @@
             "source": "not measured yet"
           },
           "linux_how": "same video at 2160p, Brave, windowed",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         }
       ]
     },
@@ -185,7 +195,8 @@
           },
           "linux_how": "macsmc hwmon CPU rail, if exposed",
           "status": "awaiting-mac",
-          "lx": null
+          "lx": null,
+          "mac_value": null
         },
         {
           "id": "C2",
@@ -200,7 +211,8 @@
             "source": "POWER-ROADMAP.md §2"
           },
           "linux_how": "cpuidle state time deltas over 60 s, CPU0-1",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "C3",
@@ -215,7 +227,8 @@
             "source": ""
           },
           "linux_how": "cpuidle deltas, CPU2-9",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "C4",
@@ -230,7 +243,8 @@
             "source": "POWER-OPPORTUNITIES-2026-10-16.md"
           },
           "linux_how": "/proc/interrupts arch_timer delta; compare with powertop wakeups",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "C5",
@@ -245,7 +259,8 @@
             "source": "POWER-OPPORTUNITIES-2026-10-16.md"
           },
           "linux_how": "same 20 s all-core burst",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "C6",
@@ -260,7 +275,8 @@
             "source": "EFFICIENCY-GOALS.md"
           },
           "linux_how": "power trace after the burst",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "C7",
@@ -275,7 +291,8 @@
             "source": "EFFICIENCY-GOALS.md"
           },
           "linux_how": "scaling_cur_freq during the burst",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         }
       ]
     },
@@ -298,7 +315,8 @@
           },
           "linux_how": "SMC GPU rail if exposed",
           "status": "awaiting-mac",
-          "lx": null
+          "lx": null,
+          "mac_value": null
         },
         {
           "id": "G2",
@@ -314,7 +332,8 @@
           },
           "linux_how": "asahi GPU utilisation counter",
           "status": "awaiting-mac",
-          "lx": null
+          "lx": null,
+          "mac_value": null
         },
         {
           "id": "G3",
@@ -330,7 +349,8 @@
           },
           "linux_how": "pidstat -p $(pgrep gala) 1 60, median",
           "status": "awaiting-mac",
-          "lx": "p:idle_minimal:gala:cpu_ms_per_s"
+          "lx": "p:idle_minimal:gala:cpu_ms_per_s",
+          "mac_value": null
         },
         {
           "id": "G4",
@@ -346,7 +366,8 @@
           },
           "linux_how": "pidstat gala with the same app set",
           "status": "awaiting-mac",
-          "lx": "p:idle_as_used:gala:cpu_ms_per_s"
+          "lx": "p:idle_as_used:gala:cpu_ms_per_s",
+          "mac_value": null
         },
         {
           "id": "G5",
@@ -362,7 +383,8 @@
           },
           "linux_how": "paired A/B open vs closed (A2)",
           "status": "info",
-          "lx": "p:idle_as_used:ChatGPT:cpu_ms_per_s"
+          "lx": "p:idle_as_used:ChatGPT:cpu_ms_per_s",
+          "mac_value": null
         }
       ]
     },
@@ -384,7 +406,8 @@
             "source": "POWER-OPPORTUNITIES-2026-10-16.md"
           },
           "linux_how": "W1 minus W2 at matched brightness",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "D2",
@@ -399,7 +422,8 @@
             "source": "EFFICIENCY-GOALS.md"
           },
           "linux_how": "set the same percentage on Linux for every scenario",
-          "status": "info"
+          "status": "info",
+          "mac_value": 50.0
         },
         {
           "id": "D3",
@@ -414,7 +438,24 @@
             "source": "POWER-ROADMAP.md B1/B2"
           },
           "linux_how": "adaptive refresh is the parity feature (B2)",
-          "status": "info"
+          "status": "info",
+          "mac_value": {
+            "_name": "Color LCD",
+            "_spdisplays_display-product-id": "a04e",
+            "_spdisplays_display-vendor-id": "610",
+            "_spdisplays_display-week": "0",
+            "_spdisplays_display-year": "0",
+            "_spdisplays_displayID": "1",
+            "_spdisplays_pixels": "3600 x 2338",
+            "_spdisplays_resolution": "1800 x 1169 @ 120.00Hz",
+            "spdisplays_ambient_brightness": "spdisplays_no",
+            "spdisplays_connection_type": "spdisplays_internal",
+            "spdisplays_display_type": "spdisplays_built-in-liquid-retina-xdr",
+            "spdisplays_main": "spdisplays_yes",
+            "spdisplays_mirror": "spdisplays_off",
+            "spdisplays_online": "spdisplays_yes",
+            "spdisplays_pixelresolution": "spdisplays_3024x1964Retina"
+          }
         },
         {
           "id": "D4",
@@ -430,7 +471,8 @@
           },
           "linux_how": "not visible from macOS; target is near zero when nothing repaints",
           "status": "awaiting-mac",
-          "lx": null
+          "lx": null,
+          "mac_value": null
         }
       ]
     },
@@ -452,7 +494,8 @@
             "source": "derived"
           },
           "linux_how": "W5 minus W1, same session",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "M2",
@@ -467,7 +510,8 @@
             "source": "derived"
           },
           "linux_how": "W6 minus W1",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "M3",
@@ -482,7 +526,8 @@
             "source": "POWER-ROADMAP.md D"
           },
           "linux_how": "H.264-only extension + VA-API in Brave saves ~1.5 W meanwhile (D1)",
-          "status": "info"
+          "status": "info",
+          "mac_value": null
         },
         {
           "id": "M4",
@@ -497,7 +542,8 @@
             "source": "not measured yet"
           },
           "linux_how": "W7 minus W1, same session",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "M5",
@@ -512,7 +558,8 @@
             "source": "not measured yet"
           },
           "linux_how": "W8 minus W1, same session",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "M6",
@@ -527,7 +574,8 @@
             "source": "not measured yet"
           },
           "linux_how": "W9 minus W1",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "M7",
@@ -542,7 +590,8 @@
             "source": "not measured yet"
           },
           "linux_how": "W10 minus W1",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "M8",
@@ -557,8 +606,9 @@
             "source": "not measured yet"
           },
           "linux_how": "linux_profile.py reads mpv hwdec-current over IPC",
-          "status": "awaiting-mac",
-          "lx": "v:video_local_2160p.hwdec-current"
+          "status": "awaiting-linux",
+          "lx": "v:video_local_2160p.hwdec-current",
+          "mac_value": 1.0
         },
         {
           "id": "M9",
@@ -573,8 +623,9 @@
             "source": "not measured yet"
           },
           "linux_how": "mpv frame-drop-count over IPC; QuickTime drops none on macOS",
-          "status": "awaiting-mac",
-          "lx": "v:video_local_1440p.frame-drop-count"
+          "status": "awaiting-linux",
+          "lx": "v:video_local_1440p.frame-drop-count",
+          "mac_value": 0.0
         },
         {
           "id": "M10",
@@ -589,8 +640,9 @@
             "source": "not measured yet"
           },
           "linux_how": "mpv frame-drop-count over IPC; QuickTime drops none on macOS",
-          "status": "awaiting-mac",
-          "lx": "v:video_local_2160p.frame-drop-count"
+          "status": "awaiting-linux",
+          "lx": "v:video_local_2160p.frame-drop-count",
+          "mac_value": 0.0
         }
       ]
     },
@@ -613,7 +665,8 @@
           },
           "linux_how": "pidstat on pipewire, wireplumber, speakersafetyd",
           "status": "awaiting-mac",
-          "lx": "p:idle_minimal:pipewire:cpu_ms_per_s"
+          "lx": "p:idle_minimal:pipewire:cpu_ms_per_s",
+          "mac_value": null
         },
         {
           "id": "A2",
@@ -628,7 +681,8 @@
             "source": "POWER-OPPORTUNITIES-2026-10-16.md #4"
           },
           "linux_how": "cat /proc/asound/card*/pcm*/sub0/status at idle; owner-gated (C1)",
-          "status": "info"
+          "status": "info",
+          "mac_value": null
         }
       ]
     },
@@ -650,7 +704,8 @@
             "source": ""
           },
           "linux_how": "/proc/net/dev delta over the idle run",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "N2",
@@ -666,7 +721,8 @@
           },
           "linux_how": "match the macOS state",
           "status": "info",
-          "lx": null
+          "lx": null,
+          "mac_value": "attrib_on"
         },
         {
           "id": "N3",
@@ -681,7 +737,8 @@
             "source": "POWER-OPPORTUNITIES-2026-10-16.md"
           },
           "linux_how": "already checked; no macOS counterpart to measure",
-          "status": "info"
+          "status": "info",
+          "mac_value": null
         }
       ]
     },
@@ -703,7 +760,8 @@
             "source": "POWER-OPPORTUNITIES-2026-10-16.md"
           },
           "linux_how": "/proc/diskstats delta over the idle run",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "S2",
@@ -719,7 +777,8 @@
           },
           "linux_how": "SMC if exposed (macOS may not report it on M1 Pro)",
           "status": "awaiting-mac",
-          "lx": null
+          "lx": null,
+          "mac_value": null
         }
       ]
     },
@@ -741,7 +800,8 @@
             "source": ""
           },
           "linux_how": "ps -e | wc -l in the same idle state",
-          "status": "awaiting-mac"
+          "status": "awaiting-linux",
+          "mac_value": 1053
         },
         {
           "id": "B2",
@@ -757,7 +817,8 @@
           },
           "linux_how": "systemctl list-units --state=running | wc -l",
           "status": "info",
-          "lx": "i:systemd_running_services"
+          "lx": "i:systemd_running_services",
+          "mac_value": null
         },
         {
           "id": "B3",
@@ -772,7 +833,8 @@
             "source": "POWER-OPPORTUNITIES-2026-10-16.md"
           },
           "linux_how": "sum of /proc/stat busy jiffies, nothing open",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         }
       ]
     },
@@ -794,8 +856,9 @@
             "source": "POWER-ROADMAP.md F1"
           },
           "linux_how": "rtcwake -m freeze, 30 min and overnight, charge delta",
-          "status": "awaiting-mac",
-          "lx": null
+          "status": "awaiting-linux",
+          "lx": null,
+          "mac_value": 0.391
         },
         {
           "id": "Z2",
@@ -810,8 +873,9 @@
             "source": ""
           },
           "linux_how": "wakeup sources during the F1 test",
-          "status": "awaiting-mac",
-          "lx": null
+          "status": "awaiting-linux",
+          "lx": null,
+          "mac_value": 4.5
         },
         {
           "id": "Z3",
@@ -827,7 +891,8 @@
           },
           "linux_how": "owner decides (F3)",
           "status": "info",
-          "lx": null
+          "lx": null,
+          "mac_value": "1"
         }
       ]
     },
@@ -849,7 +914,8 @@
             "source": "POWER-ROADMAP.md §1"
           },
           "linux_how": "should agree within a couple of percent",
-          "status": "info"
+          "status": "info",
+          "mac_value": null
         },
         {
           "id": "T2",
@@ -864,7 +930,8 @@
             "source": "POWER-ROADMAP.md F5"
           },
           "linux_how": "same ambient, after the same settle time",
-          "status": "awaiting-mac"
+          "status": "awaiting-mac",
+          "mac_value": null
         },
         {
           "id": "T3",
@@ -879,9 +946,24 @@
             "source": "POWER-ROADMAP.md"
           },
           "linux_how": "keep",
-          "status": "info"
+          "status": "info",
+          "mac_value": null
         }
       ]
     }
-  ]
+  ],
+  "mac_inventory": {
+    "macos": "27.0.1 (26A434)",
+    "model": "MacBookPro18,3",
+    "chip": "Apple M1 Pro",
+    "brightness": {
+      "raw": 32768,
+      "min": 0,
+      "max": 65536,
+      "pct": 50.0,
+      "nits": 381.8
+    },
+    "on_battery": false,
+    "process_count": 1053
+  }
 }

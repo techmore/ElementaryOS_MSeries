@@ -354,7 +354,7 @@ def inventory(outdir: Path):
         "wifi.json": ["system_profiler", "-json", "SPAirPortDataType"],
         "usb.json": ["system_profiler", "-json", "SPUSBDataType"],
         "audio.json": ["system_profiler", "-json", "SPAudioDataType"],
-        "backlight.txt": ["ioreg", "-r", "-d", "1", "-c", "AppleARMBacklight"],
+        "backlight.txt": ["ioreg", "-w0", "-r", "-d", "1", "-c", "AppleARMBacklight"],   # -w0: no 80-column cut
         "battery_ioreg.plist": ["ioreg", "-arn", "AppleSmartBattery"],
     }
     for name, cmd in cmds.items():
@@ -369,7 +369,9 @@ def inventory(outdir: Path):
     summary["model"] = run(["sysctl", "-n", "hw.model"]).strip()
     summary["chip"] = run(["sysctl", "-n", "machdep.cpu.brand_string"]).strip()
     summary["process_count"] = max(len((inv / "ps.txt").read_text().splitlines()) - 1, 0)
-    summary["launchd_system_jobs"] = max(len((inv / "launchctl_system.txt").read_text().splitlines()) - 1, 0)
+    # without root, launchctl list shows the user domain, so the system count is unknown
+    summary["launchd_system_jobs"] = (max(len((inv / "launchctl_system.txt").read_text().splitlines()) - 1, 0)
+                                      if os.geteuid() == 0 else None)
     summary["launchd_user_jobs"] = max(len(user_agents.splitlines()) - 1, 0)
     b = read_battery()
     if b.get("raw_max_mah") and b.get("design_mah"):
@@ -407,15 +409,19 @@ def _json_find(path, key):
 
 
 def parse_brightness(text):
-    m = re.search(r'"brightness"=\{[^}]*"max"=(\d+)[^}]*"min"=(\d+)[^}]*"value"=(\d+)', text)
-    if not m:
-        m2 = re.search(r'"brightness"=\{[^}]*"value"=(\d+)[^}]*"max"=(\d+)', text)
-        if not m2:
-            return None
-        val, mx, mn = int(m2.group(1)), int(m2.group(2)), 0
-    else:
-        mx, mn, val = int(m.group(1)), int(m.group(2)), int(m.group(3))
-    return {"raw": val, "min": mn, "max": mx, "pct": round(100 * (val - mn) / max(mx - mn, 1), 1)}
+    """IODisplayParameters on AppleARMBacklight: slider position and, on newer macOS, the panel's nits."""
+    def block(key):
+        m = re.search(r'"%s"=\{([^}]*)\}' % key, text)
+        return {k: int(v) for k, v in re.findall(r'"(\w+)"=(-?\d+)', m.group(1))} if m else None
+    b = block("brightness")
+    if not b or "value" not in b:
+        return None
+    mn, mx = b.get("min", 0), b.get("max", 65536)
+    out = {"raw": b["value"], "min": mn, "max": mx, "pct": round(100 * (b["value"] - mn) / max(mx - mn, 1), 1)}
+    nits = block("BrightnessMilliNits")
+    if nits and "value" in nits:
+        out["nits"] = round(nits["value"] / 1000, 1)      # match Linux by nits, not by slider percent
+    return out
 
 
 def parse_display(path):
@@ -424,7 +430,8 @@ def parse_display(path):
         for gpu in d.get("SPDisplaysDataType", []):
             for disp in gpu.get("spdisplays_ndrvs", []):
                 if "internal" in json.dumps(disp).lower():
-                    return {k: v for k, v in disp.items() if not isinstance(v, (dict, list))}
+                    return {k: v for k, v in disp.items()             # serial stays local (public repo)
+                            if not isinstance(v, (dict, list)) and "serial" not in k}
     except Exception:  # noqa: BLE001
         pass
     return None
@@ -447,35 +454,40 @@ SLEEP_RE = re.compile(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d [+-]\d{4})\s+(Sleep|Wak
 
 
 def sleep_drain(log):
-    """Battery-only sleep periods from pmset's log: % per hour and DarkWakes per hour."""
+    """Battery-only sleep periods from pmset's log: % per hour and DarkWakes per hour.
+
+    A period runs from the first Sleep after a full wake to the next full Wake. In between macOS logs DarkWakes and
+    'Back to Sleep' Sleep lines (maintenance, Power Nap); those count as the same period. If the charger is attached
+    mid-sleep, the period ends at the last reading still on battery.
+    """
     events = []
     for line in log.splitlines():
         m = SLEEP_RE.search(line)
         if not m:
             continue
-        on_batt = "batt" in line.lower()
+        on_batt = bool(re.search(r"Using Batt", line, re.I))
         when = dt.datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S %z")
         events.append((when, m.group(2).lower(), int(m.group(3)), on_batt))
     periods = []
     i = 0
     while i < len(events):
         w, kind, chg, batt = events[i]
-        if kind == "sleep" and batt:
-            darkwakes, j = 0, i + 1
-            while j < len(events) and events[j][1] == "darkwake":
-                darkwakes += 1
-                j += 1
-            if j < len(events) and events[j][1] == "wake" and events[j][3]:
-                hours = (events[j][0] - w).total_seconds() / 3600
-                if hours >= 0.5:
-                    periods.append({"start": w.isoformat(), "hours": round(hours, 2),
-                                    "pct_lost": chg - events[j][2],
-                                    "pct_per_hour": round((chg - events[j][2]) / hours, 3),
-                                    "darkwakes": darkwakes,
-                                    "darkwakes_per_hour": round(darkwakes / hours, 2)})
-            i = j
-        else:
+        if kind != "sleep" or not batt:
             i += 1
+            continue
+        darkwakes, last, j = 0, events[i], i + 1
+        while j < len(events) and events[j][1] != "wake" and events[j][3]:
+            darkwakes += events[j][1] == "darkwake"
+            last = events[j]
+            j += 1
+        end = events[j] if j < len(events) and events[j][1] == "wake" and events[j][3] else last
+        hours = (end[0] - w).total_seconds() / 3600
+        if hours >= 0.5:
+            periods.append({"start": w.isoformat(), "hours": round(hours, 2), "pct_lost": chg - end[2],
+                            "pct_per_hour": round((chg - end[2]) / hours, 3), "darkwakes": darkwakes,
+                            "darkwakes_per_hour": round(darkwakes / hours, 2),
+                            "ended": "wake" if end is not last else "charger or log end"})
+        i = max(j, i + 1)
     rates = [p["pct_per_hour"] for p in periods]
     return {"periods": periods[-20:], "pct_per_hour": stats(rates),
             "darkwakes_per_hour": stats([p["darkwakes_per_hour"] for p in periods])}
@@ -653,7 +665,7 @@ def main():
         return
     if platform.system() != "Darwin":
         sys.exit("Run this on macOS (it is the reference side). Use --resummarize to re-read a run elsewhere.")
-    if os.geteuid() != 0:
+    if os.geteuid() != 0 and not args.inventory_only:      # inventory and sleep history need no root
         sys.exit("powermetrics needs root: sudo python3 " + " ".join(sys.argv))
 
     model = run(["sysctl", "-n", "hw.model"]).strip()
