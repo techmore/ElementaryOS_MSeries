@@ -1,7 +1,133 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## R1/R2 first-boot fixes staged — 2026-10-16
+
+The first controlled boot (11:45:04–11:47:13) ran with the exact intended
+parameters and all five rebuilt modules loaded; the bridge engaged on the dock
+tunnel (`0:5 <-> 1:14`) and failed in the DP-IN path (first attempt
+`-ENOLINK` with HPD low; second attempt a `dpin_init` Oops on a stale PHY),
+and a Gala/simpledrm race crashed the desktop before collection. Source
+revision `46bb8b6` (public patch 0011) fixes both DP-IN failures; five
+modules rebuilt, all offline suites pass, and the refreshed payload was
+re-staged and re-installed through the reviewed sequence (rollback → stage →
+verify → plan → apply): image `486be1d9…`, same `custom.cfg` (`9eadf091…`)
+and fallback-safe `boot.bin` (`6702f2c7…`); rollback set
+`/home/sdolbec/dptunnel-logs/rollback-46bb8b6` (the c6fd906 set is
+superseded). `next_entry` is empty; no boot armed or performed. The
+`mseries-gala-failed` marker was removed and the `lightdm-wait-for-drm.conf`
+drop-in is installed (effective next boot, unverified); the remaining
+session-race item is shortening appledrm registration. Record:
+[evidence/2026-10-16-r1-r2-fix-and-restage.md](fairydust/usb4/evidence/2026-10-16-r1-r2-fix-and-restage.md).
+
+## Controlled-test preparation resumed — 2026-10-16
+
+The owner resumed at fallback compatibility, with no repeated discovery.
+Patch 0010 preserves DCP's original phys and every existing PHY dependency;
+only the new driver consumes apple,dp-tunnel-phy through a managed getter.
+Independent source review and 11 lookup fault/refcount groups pass. Static
+fallback compatibility is addressed; fallback boot/runtime remains untested.
+
+The frozen source c6fd906 was clean-rebuilt for all five modules, followed by
+version/layout/export checks and actual staged-image verification. The new
+initramfs alone carries the new modules and metadata; root modules, original
+initramfs, kernel/default and existing GRUB entries remain untouched. The
+separate entry uses bypass=1 and timeout=15000. Exact artifacts, hash-guarded
+installer, rollback and collector: [CONTROLLED-TEST.md](fairydust/usb4/CONTROLLED-TEST.md).
+The earlier root-module-replacing installer is superseded for this test.
+No reboot, module reload/unbind, cable move or hardware success is claimed.
+**Deployment status: STAGED AND VERIFIED (superseded by the re-stage above).**
+The new initramfs, append-only
+custom.cfg and fallback-compatible boot.bin are installed and hash-checked.
+Original boot/config/grubenv backups were verified at
+`/home/sdolbec/dptunnel-logs/rollback-c6fd906`. Root modules, original initramfs,
+kernel/default and grubenv are unchanged. No reboot is armed (`next_entry` empty)
+or performed; running modules remain unchanged. Next is one deliberate one-shot
+boot of `elementary-usb4-dpin-controlled` (with the `46bb8b6` payload), then
+the recorded read-only collector.
+
 Last updated 2026-10-16. Day-to-day pending checks live in the robot: `mseries-verify status`
 (seed: `mseries/local-ai/verify-checks.json`). This file is the human-readable plan.
+
+## Stopped at source checkpoint — 2026-10-16
+
+The owner requested a natural stopping point. Patches 0007–0009 now save the
+DCP-before-DPRX bridge with source ownership, cancellation and router lifetime
+handling. Final changed module builds pass; 27 bridge groups plus the earlier
+29 logic groups pass, along with two board checks. Clean patch application
+byte-matches 14 reviewed source files. These are offline checks, not monitor
+progress: no new wake, unbypassed DPRX response, EDID/modes or picture.
+
+No new driver, initramfs or boot payload was installed or loaded; no reboot
+or cable change occurred in this batch. Only the build dependency pahole was
+installed. The prepared boot payload remains a private candidate.
+
+**Resume blocker:** the global boot.bin device tree replaces DCP's PHY with a
+new DP-IN provider. Resolve default/fallback-kernel compatibility and a tested
+rollback plan before deployment; a stock kernel may lack that provider.
+Initramfs/module staging and the first hardware test remain undone. Do not
+install the prepared payload merely because the source checks passed.
+
+See [bridge implementation and validation](fairydust/usb4/DCP-SOURCE-BRIDGE.md).
+
+Dock-video update 2026-10-16:
+
+[Implementation and DeepSeek handoff](fairydust/usb4/DPIN-IMPLEMENTATION.md)
+now contains additional patches 0004–0006: DP-IN resources/IRQ, inactive/ACK
+handshake, shared ATC tunnel clocks and DCP callback/HPD/error integration.
+29 production-logic groups and 2 compiled-board checks pass; complete Apple
+DRM/PHY relocatable objects and target/control DTBs build, binding documents
+and DP-IN-filtered DTB schema validate. Ghidra independently corroborates
+selected REA findings. Full MODPOST/production-config/runtime checks remain.
+No new module/DTB/kernel was installed, no reboot or cable move performed.
+
+The [frontier ledger](fairydust/usb4/STATE-OF-PLAY.md) incorporates the separate
+recorded live 0003 HPD-selection fix: `0:5 <-> 1:14`, but DPRX still times out.
+Dock HPD establishes sink presence, not a working pixel chain. DP-IN source
+is a draft, not a solved hardware path. Next resolve router DPRX versus DCP
+ACTIVATE ordering using existing inputs; do not repeat discovery or count
+another build as monitor detection. The owner now allows batched deployment/reboot/cable changes if needed, but
+subsequently requested stopping at the source checkpoint above. One Git writer; preserve other agents' notes.
+
+**Historical constraint (superseded by the authorization above): no M1 Pro
+reboot or power cycle.** Earlier macOS cutover
+and guest-boot instructions are future reference only. Current next work is
+read-only live enumeration/recovery diagnosis using the Neo where useful,
+with hard timeouts in delegated workers and 30-second progress updates. The
+Neo cannot install a boot-time hypervisor under the already-running target.
+
+Owner's port2 role attempt returned EIO without a role change. A fixed,
+mapping-checked [CD321x read diagnostic](fairydust/usb4/inspect-cd321x-io.py)
+is prepared for the owner's regular Terminal; six offline tests and sysfs
+dry-run pass. No task/configuration writes or live I2C reads were performed
+by this preparation. EIO cause remains unresolved; see the current handoff.
+
+[Earlier bounded live checks](fairydust/usb4/evidence/2026-10-16-neo-live-status.md)
+confirm Neo sleep assertions and Dell USB inventory, but no proxy endpoint or
+external display picture. The physical dock identity/topology remains
+unconfirmed. Compiler smoke has passed; the M1 Pro native baseline, approved
+guest route and hardware trace remain. Keep SSH work off the primary chat.
+
+MacBook Neo recorder now reached by SSH; key login installed and verified.
+Sleep assertions are active on Neo and the Linux target. Private Python,
+matching m1n1 source/build and dependencies are staged; offline checks pass
+on Darwin ARM64. See [recorder setup](fairydust/usb4/NEO-RECORDER-SETUP.md)
+for verified results and USB/guest gates still remaining.
+
+[`Complete macOS cutover checklist`](fairydust/usb4/MACOS-CUTOVER-CHECKLIST.md)
+is published with a native collector, IORegistry metadata parser and raw
+DPTX trace hook. Native baseline collection is deferred until fresh reboot
+authorization. Full MMIO capture needs
+the Neo recorder and matching target XNU kernelcache; the earlier iBoot recipe
+was incorrect. Twelve offline tests pass; no macOS trace or picture yet.
+
+[`DP-IN/AUX audit`](fairydust/usb4/DPIN-AUX-AUDIT.md) identifies the missing
+Apple DP-IN node family and corrects the macOS capture plan. The current
+force-link probe reaches DCP but leaves the display disconnected. Future
+capture needs DP-IN ranges from macOS IODeviceTree or the m1n1 ADT and the DCP
+in a two-host macOS hypervisor session; this is not currently authorized. The owner's
+sudo ADT export on Asahi failed with `EPERM`; strict `/dev/mem` is enabled
+and the ADT memory driver is not built. No display, kernel, or hardware
+qualification is claimed.
 The specific regression reports and reproduction steps are tracked in
 [`BUG-FIX-ROADMAP.md`](BUG-FIX-ROADMAP.md).
 OS 9 implementation progress and Claude Code takeover tasks are in
@@ -82,7 +208,7 @@ on October 14 did not enumerate the dock's mouse or Ethernet.
 | Homeboard elementary Tasks sync bridge | It needs `gir1.2-ecal-2.0` and `gir1.2-edataserver-1.2`, then owner Google sign-in. Only the browser launcher is installed so far. | Install the two system packages with admin access, run the upstream Linux installer, and let the owner complete Google sign-in. Do not save credentials in this repository. |
 | Emporia elementary desktop client | The Linux client requires WebKitGTK 6; the public HTTPS origin is still gated on TLS and authentication, while a second local poller could duplicate the active SER8 collector. | Install the WebKit dependency, configure only the owner's existing collector tunnel or a verified authenticated HTTPS origin, and test the client without enabling a collector. |
 | **Expand elementary root using the 112 GiB gap** | Gap is before the Asahi stub/EFI/root unit; the added Btrfs member would require early LUKS unlock and initramfs discovery | Verify gap was prepared by Asahi Installer, review read-only preflight and verified backups; see [`procedures/ROOT-EXPANSION.md`](procedures/ROOT-EXPANSION.md) |
-| **Monitor through the dock** (2 DP + HDMI on a WD22TB4) | Needs DisplayPort tunnelling inside USB4 (unimplemented upstream; Sven Peter: "requires reverse engineering that is not done yet"). The CD321x firmware picks USB4 and Linux has no mode control, so a fall-back to plain DP Alt Mode can't be forced. | Watch upstream (`upstream-dp-watch` check). To push it ourselves: m1n1-hypervisor trace of macOS driving the dock, from a second computer (see below). |
+| **Monitor through the dock** (2 DP + HDMI on a WD22TB4) | Needs DisplayPort tunnelling inside USB4 (unimplemented upstream; Sven Peter: "requires reverse engineering that is not done yet"). The CD321x firmware picks USB4 and Linux has no mode control, so a fall-back to plain DP Alt Mode can't be forced. **Owner directed the RE path (2026-10-15): make the dock work, not the Mac's own ports.** The display crossbar already knows how to route the controller to the ACIO DP IN adapters (`dpin0`/`dpin1`); the missing piece is "who drives the DP IN adapter, and when". Experiment 1 is implemented and awaiting a hardware boot — see [`fairydust/usb4/DP-TUNNEL-RE.md`](fairydust/usb4/DP-TUNNEL-RE.md). Non-dock fallbacks are in [`fairydust/usb4/DOCK-VIDEO-DECISION.md`](fairydust/usb4/DOCK-VIDEO-DECISION.md). | Build the `-dptunnel` kernel (`FAIRYDUST_DP_TUNNEL=1`, or the `fairydust_tunnel` CI dispatch), boot it with `thunderbolt.allow_dp_tunnel=1`, run [`fairydust/usb4/test-dp-tunnel.sh`](fairydust/usb4/test-dp-tunnel.sh), and force the controller link through the connector `force_link` debugfs. Then replace the hammer with the real trigger; the last step needs a macOS m1n1-hypervisor trace from a second computer. |
 | Suspend with a USB4 dock attached | `thunderbolt-apple-acio` vetoes suspend by design; the Mac stays awake with the display off | Needs the ACIO sleep/wake handshake (large). Cheap option: a clean "docked lid" mode that locks and stops the 30 s retries. |
 | USB-C (non-USB4) devices lost across suspend | `phy-apple-atc` / `dwc3-apple` have no system-sleep PM; tipd resume only re-enables the IRQ | Kernel fix, tested with the user present. |
 | Lid-open login needs a power-button press | Resume and greeter start correctly in the log; the panel or input does not respond until the power key | Trace one resume (see BUG-FIX-ROADMAP.md). |

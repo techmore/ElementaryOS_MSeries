@@ -1,0 +1,1227 @@
+From: sdolbec <sdolbec1@gmail.com>
+Subject: [PATCH] thunderbolt: apple: prepare DCP source before DPRX polling
+
+Opt-in experimental source bridge; apply after 0001 through 0006.
+Prepare DCP outside the TB lock before any DPRX read. Match source
+ownership and asynchronous cancellation to the tunnel lifetime.
+Adopt discovered host tunnels and keep domain references until destroy.
+See DCP-SOURCE-BRIDGE.md for validation and qualification limits.
+
+HopID lifetime and cancellation guards adapt Sven Peter's published
+v3 patches; source links and scope are in DCP-SOURCE-BRIDGE.md.
+
+Signed-off-by: sdolbec <sdolbec1@gmail.com>
+---
+diff --git a/drivers/gpu/drm/apple/dcp-internal.h b/drivers/gpu/drm/apple/dcp-internal.h
+index c692d87..48b3014 100644
+--- a/drivers/gpu/drm/apple/dcp-internal.h
++++ b/drivers/gpu/drm/apple/dcp-internal.h
+@@ -115,6 +115,8 @@ struct apple_dcp_hw_data {
+ 
+ /* TODO: move IOMFB members to its own struct */
+ struct apple_dcp {
++	struct mutex dp_source_lock;
++	bool dp_source_removing;
+ 	struct device *dev;
+ 	struct platform_device *piodma;
+ 	struct iommu_domain *iommu_dom;
+diff --git a/drivers/gpu/drm/apple/dcp.c b/drivers/gpu/drm/apple/dcp.c
+index 3f069e3..8094a94 100644
+--- a/drivers/gpu/drm/apple/dcp.c
++++ b/drivers/gpu/drm/apple/dcp.c
+@@ -21,6 +21,7 @@
+ #include <linux/of_platform.h>
+ #include <linux/slab.h>
+ #include <linux/soc/apple/rtkit.h>
++#include <linux/soc/apple/dp-source.h>
+ #include <linux/string.h>
+ #include <linux/usb/typec_altmode.h>
+ #include <linux/usb/typec_dp.h>
+@@ -360,7 +361,7 @@ int dcp_get_connector_type(struct platform_device *pdev)
+ 
+ static int dcp_dptx_disconnect(struct apple_dcp *dcp, u32 port);
+ 
+-static int dcp_dptx_connect(struct apple_dcp *dcp, u32 port)
++static int dcp_dptx_connect_source(struct apple_dcp *dcp, u32 port, bool prepare)
+ {
+ 	struct dptx_port *dptx;
+ 	unsigned long waited;
+@@ -395,9 +396,15 @@ static int dcp_dptx_connect(struct apple_dcp *dcp, u32 port)
+ 			dptx->atcphy = dcp->phy;
+ 			dptx->tearing_down = false;
+ 		}
++		/* Router-triggered startup must not wait for DCP's ACTIVATE. */
++		if (!ret && prepare) {
++			ret = phy_power_on(dptx->atcphy);
++			if (!ret)
++				dptx->phy_powered = true;
++		}
+ 		mutex_unlock(&dptx->phy_lock);
+ 		if (ret)
+-			goto out;
++			goto fail;
+ 	}
+ 	if (!dcp->dp_tunnel)
+ 		dptx->atcphy = dcp->phy;
+@@ -451,6 +458,11 @@ static int dcp_dptx_connect(struct apple_dcp *dcp, u32 port)
+ 	return ret;
+ }
+ 
++static int dcp_dptx_connect(struct apple_dcp *dcp, u32 port)
++{
++	return dcp_dptx_connect_source(dcp, port, false);
++}
++
+ static void disconnected_hpd_event(struct apple_connector *con)
+ {
+ 	if (con && con->connected) {
+@@ -512,6 +524,86 @@ int dcp_dptx_disconnect_oob(struct platform_device *pdev, u32 port)
+ 	return dcp_dptx_disconnect(dcp, port);
+ }
+ 
++/*
++ * NHI source workers call these without the TB domain lock. device_lock
++ * serializes against platform remove; component readiness is checked below.
++ */
++int apple_dcp_dp_source_start(struct device_node *node)
++{
++	struct platform_device *pdev;
++	struct apple_dcp *dcp;
++	struct dptx_port *dptx;
++	int ret;
++
++	pdev = of_find_device_by_node(node);
++	if (!pdev)
++		return -EPROBE_DEFER;
++	device_lock(&pdev->dev);
++	dcp = platform_get_drvdata(pdev);
++	if (!device_is_bound(&pdev->dev) || !dcp) {
++		ret = -EAGAIN;
++		goto out_device;
++	}
++	mutex_lock(&dcp->dp_source_lock);
++	if (dcp->dp_source_removing || !dcp->connector || !dcp->active ||
++	    !dcp->dptxep || !dcp->dptxport[0].enabled) {
++		ret = -EAGAIN;
++		goto out;
++	}
++	if (dcp->crashed) {
++		ret = -ENODEV;
++		goto out;
++	}
++	if (!dcp->dp_tunnel || !dcp->phy) {
++		ret = -EINVAL;
++		goto out;
++	}
++	ret = dcp_dptx_connect_source(dcp, 0, true);
++	if (ret)
++		goto out;
++	dptx = &dcp->dptxport[0];
++	mutex_lock(&dptx->phy_lock);
++	ret = READ_ONCE(dptx->link_error);
++	if (!ret && (!dptx->phy_initialized || !dptx->phy_powered ||
++		     !dptx->link_rate || !dptx->lane_count))
++		ret = -EINPROGRESS;
++	mutex_unlock(&dptx->phy_lock);
++out:
++	mutex_unlock(&dcp->dp_source_lock);
++out_device:
++	device_unlock(&pdev->dev);
++	put_device(&pdev->dev);
++	return ret;
++}
++EXPORT_SYMBOL_GPL(apple_dcp_dp_source_start);
++
++int apple_dcp_dp_source_stop(struct device_node *node)
++{
++	struct platform_device *pdev;
++	struct apple_dcp *dcp;
++	int ret = 0;
++
++	pdev = of_find_device_by_node(node);
++	if (!pdev)
++		return 0;
++	device_lock(&pdev->dev);
++	dcp = platform_get_drvdata(pdev);
++	/* Unbind already tears down the tunnel before stopping its endpoint. */
++	if (device_is_bound(&pdev->dev) && dcp) {
++		mutex_lock(&dcp->dp_source_lock);
++		if (!dcp->dp_source_removing && dcp->connector &&
++		    dcp->dp_tunnel && dcp->dptxep)
++			ret = dcp_dptx_disconnect_oob(pdev, 0);
++		else if (READ_ONCE(dcp->dptxport[0].phy_initialized))
++			ret = -EBUSY;
++		mutex_unlock(&dcp->dp_source_lock);
++	}
++	device_unlock(&pdev->dev);
++	put_device(&pdev->dev);
++	return ret;
++}
++EXPORT_SYMBOL_GPL(apple_dcp_dp_source_stop);
++
+ static irqreturn_t dcp_dp2hdmi_hpd(int irq, void *data)
+ {
+ 	struct apple_dcp *dcp = data;
+@@ -1144,6 +1236,9 @@ static int dcp_comp_bind(struct device *dev, struct device *main, void *data)
+ 	if (ret)
+ 		return dev_err_probe(dev, ret,
+ 				     "Failed to boot RTKit: %d\n", ret);
++	mutex_lock(&dcp->dp_source_lock);
++	dcp->dp_source_removing = false;
++	mutex_unlock(&dcp->dp_source_lock);
+ 	return ret;
+ }
+ 
+@@ -1157,6 +1252,8 @@ static void dcp_comp_unbind(struct device *dev, struct device *main, void *data)
+ 
+ 	if (!dcp)
+ 		return;
++	mutex_lock(&dcp->dp_source_lock);
++	dcp->dp_source_removing = true;
+ 
+ 	if (dcp->dp_tunnel && dcp->dptxep) {
+ 		int ret = dcp_dptx_disconnect(dcp, 0);
+@@ -1213,6 +1310,9 @@ static void dcp_comp_unbind(struct device *dev, struct device *main, void *data)
+ 
+ 	devm_clk_put(dev, dcp->clk);
+ 	dcp->clk = NULL;
++	dcp->active = false;
++	dcp->connector = NULL;
++	mutex_unlock(&dcp->dp_source_lock);
+ }
+ 
+ static const struct component_ops dcp_comp_ops = {
+@@ -1249,13 +1349,16 @@ static int dcp_platform_probe(struct platform_device *pdev)
+ 	dcp->dev = dev;
+ 	dcp->hw = *(struct apple_dcp_hw_data *)of_device_get_match_data(dev);
+ 
++	mutex_init(&dcp->dp_source_lock);
++	dcp->dp_source_removing = true;
+ 	platform_set_drvdata(pdev, dcp);
+ 
+-	dcp->phy = devm_phy_optional_get(dev, "dp-phy");
+-	if (IS_ERR(dcp->phy)) {
+-		dev_err(dev, "Failed to get dp-phy: %ld\n", PTR_ERR(dcp->phy));
+-		return PTR_ERR(dcp->phy);
+-	}
++	if (of_property_read_bool(dev->of_node, "apple,dp-tunnel"))
++		dcp->phy = devm_phy_get(dev, "dp-phy");
++	else
++		dcp->phy = devm_phy_optional_get(dev, "dp-phy");
++	if (IS_ERR(dcp->phy))
++		return dev_err_probe(dev, PTR_ERR(dcp->phy), "Failed to get dp-phy\n");
+ 
+ 	bitmap_zero(dcp->iomfb_surfaces, DCP_MAX_PLANES);
+ 	if (!of_property_present(dev->of_node, "apple,iomfb-surfaces"))
+diff --git a/drivers/thunderbolt/apple.c b/drivers/thunderbolt/apple.c
+index f4b16f6..a2b4ff5 100644
+--- a/drivers/thunderbolt/apple.c
++++ b/drivers/thunderbolt/apple.c
+@@ -91,6 +91,7 @@
+ #include <linux/property.h>
+ #include <linux/reset.h>
+ #include <linux/soc/apple/rtkit.h>
++#include <linux/soc/apple/dp-source.h>
+ #include <linux/soc/apple/tunable.h>
+ #include <linux/spinlock.h>
+ #include <linux/types.h>
+@@ -197,6 +198,22 @@ struct apple_cio {
+ 	struct apple_cio_altmode usb4_altmode;
+ };
+ 
++struct apple_dp_source {
++	struct device_node *node;
++	struct workqueue_struct *wq;
++	struct delayed_work work;
++	struct mutex lock;
++	u32 port;
++	unsigned int users;
++	unsigned int generation;
++	unsigned long deadline;
++	int status;
++	bool attempted;
++	bool ready;
++	bool stop_pending;
++	bool failed;
++};
++
+ /**
+  * struct apple_nhi - Apple Native Host Interface
+  * @dev: NHI device
+@@ -211,6 +228,7 @@ struct apple_cio {
+  * @rx_irqs: Receive ring interrupts indexed by HopID
+  * @tx_irq_names: Names of the transmit ring interrupts
+  * @rx_irq_names: Names of the receive ring interrupts
++ * @dp_source: Optional explicitly mapped host DisplayPort source
+  * @nrings: Number of rings in each direction
+  */
+ struct apple_nhi {
+@@ -226,6 +244,7 @@ struct apple_nhi {
+ 	int *rx_irqs;
+ 	const char **tx_irq_names;
+ 	const char **rx_irq_names;
++	struct apple_dp_source dp_source;
+ 	size_t nrings;
+ };
+ 
+@@ -516,6 +535,208 @@ static bool apple_nhi_add_links(struct tb_nhi *nhi)
+ 	return !!link;
+ }
+ 
++/* Never call DCP/AFK with the TB lock or this state mutex held. */
++static void apple_dp_source_work(struct work_struct *work)
++{
++	struct apple_nhi *anhi = container_of(to_delayed_work(work),
++					    struct apple_nhi, dp_source.work);
++	struct apple_dp_source *source = &anhi->dp_source;
++	unsigned int generation;
++	int ret;
++
++	for (;;) {
++		mutex_lock(&source->lock);
++		if (source->stop_pending) {
++			if (source->attempted) {
++				mutex_unlock(&source->lock);
++				ret = apple_dcp_dp_source_stop(source->node);
++				mutex_lock(&source->lock);
++				if (ret) {
++					source->status = ret;
++					source->failed = true;
++					mutex_unlock(&source->lock);
++					dev_err(anhi->dev, "DP source stop failed: %d\n", ret);
++					return;
++				}
++			}
++			source->attempted = false;
++			source->ready = false;
++			source->stop_pending = false;
++		}
++		if (!source->users || source->failed || source->ready) {
++			mutex_unlock(&source->lock);
++			return;
++		}
++		generation = source->generation;
++		source->attempted = true;
++		mutex_unlock(&source->lock);
++
++		ret = apple_dcp_dp_source_start(source->node);
++
++		mutex_lock(&source->lock);
++		if (generation != source->generation || source->stop_pending) {
++			mutex_unlock(&source->lock);
++			continue;
++		}
++		if ((ret == -EAGAIN || ret == -EPROBE_DEFER || ret == -EINPROGRESS) &&
++		    time_before(jiffies, source->deadline)) {
++			source->status = -EINPROGRESS;
++			mutex_unlock(&source->lock);
++			queue_delayed_work(source->wq, &source->work, msecs_to_jiffies(50));
++			return;
++		}
++		if (ret) {
++			source->status = ret == -EAGAIN || ret == -EPROBE_DEFER ||
++					 ret == -EINPROGRESS ? -ETIMEDOUT : ret;
++			source->failed = true;
++			source->stop_pending = true;
++			mutex_unlock(&source->lock);
++			dev_err(anhi->dev, "DP source preparation failed: %d\n", ret);
++			continue;
++		}
++		source->ready = true;
++		source->status = 0;
++		mutex_unlock(&source->lock);
++		dev_info(anhi->dev, "DP source ready for host port %u before DPRX\n",
++			 source->port);
++		return;
++	}
++}
++
++static int apple_nhi_dp_source_get(struct tb_nhi *nhi, u8 port, bool async)
++{
++	struct apple_dp_source *source = &nhi_to_anhi(nhi)->dp_source;
++	int ret = 1;
++
++	if (!source->node)
++		return 0;
++	if (port != source->port)
++		return 0;
++	if (!async)
++		return -EOPNOTSUPP;
++	mutex_lock(&source->lock);
++	if (source->users == UINT_MAX) {
++		ret = -EOVERFLOW;
++	} else if (!source->users++) {
++		source->generation++;
++		source->status = -EINPROGRESS;
++		source->failed = false;
++		source->deadline = jiffies + msecs_to_jiffies(5000);
++		mod_delayed_work(source->wq, &source->work, 0);
++	}
++	mutex_unlock(&source->lock);
++	return ret;
++}
++
++static int apple_nhi_dp_source_status(struct tb_nhi *nhi, u8 port)
++{
++	struct apple_dp_source *source = &nhi_to_anhi(nhi)->dp_source;
++	int ret;
++
++	if (!source->node)
++		return 0;
++	if (port != source->port)
++		return -EOPNOTSUPP;
++	mutex_lock(&source->lock);
++	ret = source->users ? source->status : -ENOLINK;
++	mutex_unlock(&source->lock);
++	return ret;
++}
++
++static void apple_nhi_dp_source_put(struct tb_nhi *nhi, u8 port)
++{
++	struct apple_dp_source *source = &nhi_to_anhi(nhi)->dp_source;
++
++	if (!source->node || port != source->port)
++		return;
++	mutex_lock(&source->lock);
++	if (WARN_ON(!source->users))
++		goto out;
++	if (!--source->users) {
++		source->generation++;
++		source->status = -ENOLINK;
++		source->stop_pending = true;
++		mod_delayed_work(source->wq, &source->work, 0);
++	}
++out:
++	mutex_unlock(&source->lock);
++}
++
++/* Called after domain removal, outside tb->lock, before ACIO powers off. */
++static void apple_dp_source_shutdown(void *data)
++{
++	struct apple_nhi *anhi = data;
++	struct apple_dp_source *source = &anhi->dp_source;
++
++	if (!source->wq)
++		return;
++	mutex_lock(&source->lock);
++	source->users = 0;
++	source->generation++;
++	source->stop_pending = true;
++	mutex_unlock(&source->lock);
++	mod_delayed_work(source->wq, &source->work, 0);
++	flush_delayed_work(&source->work);
++	cancel_delayed_work_sync(&source->work);
++	destroy_workqueue(source->wq);
++	source->wq = NULL;
++	of_node_put(source->node);
++	source->node = NULL;
++}
++
++static int apple_dp_source_init(struct apple_nhi *anhi)
++{
++	struct apple_dp_source *source = &anhi->dp_source;
++	struct device_node *phy, *parent;
++	u32 index;
++	int ret;
++
++	if (!of_property_present(anhi->np, "apple,dp-source"))
++		return of_property_present(anhi->np, "apple,dp-in-port") ? -EINVAL : 0;
++	if (!of_property_present(anhi->np, "apple,dp-in-port"))
++		return -EINVAL;
++	source->node = of_parse_phandle(anhi->np, "apple,dp-source", 0);
++	if (!source->node) {
++		ret = -EINVAL;
++		goto put_source;
++	}
++	ret = of_property_read_u32(anhi->np, "apple,dp-in-port", &source->port);
++	if (ret || !source->port || source->port > U8_MAX ||
++	    !of_device_is_available(source->node) ||
++	    !of_property_read_bool(source->node, "apple,dp-tunnel")) {
++		ret = -EINVAL;
++		goto put_source;
++	}
++	/* The declared source must consume this ACIO's enabled DP-IN provider. */
++	phy = of_parse_phandle(source->node, "phys", 0);
++	parent = of_get_parent(phy);
++	ret = !phy || !of_device_is_compatible(phy, "apple,t6000-dpin") ||
++	      !of_device_is_available(phy) || parent != anhi->acio->np ||
++	      of_property_read_u32(phy, "apple,transport-index", &index) || index > 1 ||
++	      source->port != 5 + index ?
++	      -EINVAL : 0;
++	of_node_put(parent);
++	of_node_put(phy);
++	if (ret)
++		goto put_source;
++	mutex_init(&source->lock);
++	INIT_DELAYED_WORK(&source->work, apple_dp_source_work);
++	source->status = -ENOLINK;
++	source->wq = alloc_ordered_workqueue("apple-dp-source", WQ_FREEZABLE | WQ_MEM_RECLAIM);
++	if (!source->wq) {
++		ret = -ENOMEM;
++		goto put_source;
++	}
++	ret = devm_add_action_or_reset(anhi->dev, apple_dp_source_shutdown, anhi);
++	if (!ret)
++		return 0;
++put_source:
++	dev_warn(anhi->dev, "DP source disabled (%d); retaining USB4 data support\n", ret);
++	of_node_put(source->node);
++	source->node = NULL;
++	return 0;
++}
++
+ static const struct tb_nhi_ops apple_nhi_ops = {
+ 	.request_ring_irq = apple_nhi_request_irq,
+ 	.release_ring_irq = apple_nhi_release_irq,
+@@ -525,6 +746,9 @@ static const struct tb_nhi_ops apple_nhi_ops = {
+ 	.ring_interrupt_mask = apple_nhi_ring_interrupt_mask,
+ 	.ring_configure = apple_nhi_ring_configure,
+ 	.add_links = apple_nhi_add_links,
++	.dp_source_get = apple_nhi_dp_source_get,
++	.dp_source_status = apple_nhi_dp_source_status,
++	.dp_source_put = apple_nhi_dp_source_put,
+ };
+ 
+ static int apple_nhi_probe(struct platform_device *pdev)
+@@ -546,6 +770,9 @@ static int apple_nhi_probe(struct platform_device *pdev)
+ 	anhi->np = pdev->dev.of_node;
+ 	anhi->acio = acio;
+ 	platform_set_drvdata(pdev, anhi);
++	ret = apple_dp_source_init(anhi);
++	if (ret)
++		goto err;
+ 
+ 	/*
+ 	 * Only 42 bits seem to be wired up for the IOVA space but this may be further
+@@ -667,6 +894,7 @@ static void apple_nhi_remove(struct platform_device *pdev)
+ 
+ 	tb_domain_remove(anhi->tb);
+ 	wait_for_completion(&anhi->nhi.domain_released);
++	apple_dp_source_shutdown(anhi);
+ }
+ 
+ static const struct of_device_id apple_nhi_match[] = {
+diff --git a/drivers/thunderbolt/nhi.h b/drivers/thunderbolt/nhi.h
+index addb8bc..669c092 100644
+--- a/drivers/thunderbolt/nhi.h
++++ b/drivers/thunderbolt/nhi.h
+@@ -68,6 +68,9 @@ extern const struct dev_pm_ops nhi_pm_ops;
+  * @add_links: NHI specific hook to add device links to tunneled native ports
+  * @is_present: Whether the device is currently present on the parent bus
+  * @init_interrupts: NHI specific interrupt initialization hook
++ * @dp_source_get: Queue source preparation; 1 holds a reference, 0 is a no-op
++ * @dp_source_status: Return 0 when prepared, -EINPROGRESS while pending, or errno
++ * @dp_source_put: Queue release of a matching source reference, without blocking
+  * @reset_interface: Resets the host interface
+  */
+ struct tb_nhi_ops {
+@@ -90,6 +93,9 @@ struct tb_nhi_ops {
+ 	bool (*is_present)(struct tb_nhi *nhi);
+ 	int (*init_interrupts)(struct tb_nhi *nhi);
+ 	void (*reset_interface)(struct tb_nhi *nhi);
++	int (*dp_source_get)(struct tb_nhi *nhi, u8 port, bool async);
++	int (*dp_source_status)(struct tb_nhi *nhi, u8 port);
++	void (*dp_source_put)(struct tb_nhi *nhi, u8 port);
+ };
+ 
+ /*
+diff --git a/drivers/thunderbolt/switch.c b/drivers/thunderbolt/switch.c
+index 3f54a5a..789789e 100644
+--- a/drivers/thunderbolt/switch.c
++++ b/drivers/thunderbolt/switch.c
+@@ -774,6 +774,7 @@ static int tb_port_alloc_hopid(struct tb_port *port, bool in, int min_hopid,
+ {
+ 	int port_max_hopid;
+ 	struct ida *ida;
++	int ret;
+ 
+ 	if (in) {
+ 		port_max_hopid = port->config.max_in_hop_id;
+@@ -793,7 +794,11 @@ static int tb_port_alloc_hopid(struct tb_port *port, bool in, int min_hopid,
+ 	if (max_hopid < 0 || max_hopid > port_max_hopid)
+ 		max_hopid = port_max_hopid;
+ 
+-	return ida_alloc_range(ida, min_hopid, max_hopid, GFP_KERNEL);
++	ret = ida_alloc_range(ida, min_hopid, max_hopid, GFP_KERNEL);
++	if (ret >= 0)
++		tb_switch_get(port->sw);
++
++	return ret;
+ }
+ 
+ /**
+@@ -832,6 +837,7 @@ int tb_port_alloc_out_hopid(struct tb_port *port, int min_hopid, int max_hopid)
+ void tb_port_release_in_hopid(struct tb_port *port, int hopid)
+ {
+ 	ida_free(&port->in_hopids, hopid);
++	tb_switch_put(port->sw);
+ }
+ 
+ /**
+@@ -842,6 +848,7 @@ void tb_port_release_in_hopid(struct tb_port *port, int hopid)
+ void tb_port_release_out_hopid(struct tb_port *port, int hopid)
+ {
+ 	ida_free(&port->out_hopids, hopid);
++	tb_switch_put(port->sw);
+ }
+ 
+ static inline bool tb_switch_is_reachable(const struct tb_switch *parent,
+diff --git a/drivers/thunderbolt/tb.c b/drivers/thunderbolt/tb.c
+index d39d51d..53bb602 100644
+--- a/drivers/thunderbolt/tb.c
++++ b/drivers/thunderbolt/tb.c
+@@ -374,6 +374,9 @@ static int tb_enable_tmu(struct tb_switch *sw)
+ 	return tb_switch_tmu_enable(sw);
+ }
+ 
++static void tb_dp_tunnel_destroy(struct tb_tunnel *tunnel);
++static void tb_dp_tunnel_active(struct tb_tunnel *tunnel, void *data);
++
+ static void tb_switch_discover_tunnels(struct tb_switch *sw,
+ 				       struct list_head *list,
+ 				       bool alloc_hopids)
+@@ -402,6 +405,21 @@ static void tb_switch_discover_tunnels(struct tb_switch *sw,
+ 			break;
+ 		}
+ 
++		if (tunnel && tb_tunnel_is_dp(tunnel)) {
++			struct tb *ref = tb_domain_get(tb);
++			int ret = tb_tunnel_start_dp_source(tunnel, tb_dp_tunnel_active, ref);
++
++			if (ret == -EINPROGRESS) {
++				tunnel->destroy = tb_dp_tunnel_destroy;
++			} else {
++				tb_domain_put(ref);
++				if (ret) {
++					tb_tunnel_deactivate(tunnel);
++					tb_tunnel_put(tunnel);
++					tunnel = NULL;
++				}
++			}
++		}
+ 		if (tunnel)
+ 			list_add_tail(&tunnel->list, list);
+ 	}
+@@ -1923,6 +1941,12 @@ static struct tb_port *tb_find_dp_out(struct tb *tb, struct tb_port *in)
+ 	return NULL;
+ }
+ 
++/* The tunnel owns the domain reference, including canceled DPRX work. */
++static void tb_dp_tunnel_destroy(struct tb_tunnel *tunnel)
++{
++	tb_domain_put(tunnel->callback_data);
++}
++
+ static void tb_dp_tunnel_active(struct tb_tunnel *tunnel, void *data)
+ {
+ 	struct tb_port *in = tunnel->src_port;
+@@ -1930,6 +1954,10 @@ static void tb_dp_tunnel_active(struct tb_tunnel *tunnel, void *data)
+ 	struct tb *tb = data;
+ 
+ 	mutex_lock(&tb->lock);
++	if (tunnel->dprx_canceled) {
++		mutex_unlock(&tb->lock);
++		return;
++	}
+ 	if (tb_tunnel_is_active(tunnel)) {
+ 		int consumed_up, consumed_down, ret;
+ 
+@@ -1985,7 +2013,6 @@ static void tb_dp_tunnel_active(struct tb_tunnel *tunnel, void *data)
+ 	}
+ 	mutex_unlock(&tb->lock);
+ 
+-	tb_domain_put(tb);
+ }
+ 
+ static void tb_tunnel_one_dp(struct tb *tb, struct tb_port *in,
+@@ -2049,9 +2076,11 @@ static void tb_tunnel_one_dp(struct tb *tb, struct tb_port *in,
+ 				    available_down, tb_dp_tunnel_active,
+ 				    tb_domain_get(tb));
+ 	if (!tunnel) {
++		tb_domain_put(tb);
+ 		tb_port_dbg(out, "could not allocate DP tunnel\n");
+ 		goto err_reclaim_usb;
+ 	}
++	tunnel->destroy = tb_dp_tunnel_destroy;
+ 
+ 	list_add_tail(&tunnel->list, &tcm->tunnel_list);
+ 
+@@ -2068,7 +2097,6 @@ static void tb_tunnel_one_dp(struct tb *tb, struct tb_port *in,
+ 	tb_tunnel_put(tunnel);
+ err_reclaim_usb:
+ 	tb_reclaim_usb3_bandwidth(tb, in, out);
+-	tb_domain_put(tb);
+ err_detach_group:
+ 	tb_detach_bandwidth_group(in);
+ err_dealloc_dp:
+@@ -2975,11 +3003,12 @@ static void tb_stop(struct tb *tb)
+ 	/* tunnels are only present after everything has been initialized */
+ 	list_for_each_entry_safe(tunnel, n, &tcm->tunnel_list, list) {
+ 		/*
+-		 * DMA tunnels require the driver to be functional so we
+-		 * tear them down. Other protocol tunnels can be left
+-		 * intact.
++		 * Tear down pending DP and source-owned DP tunnels as well as
++		 * DMA. Source ownership must end before ACIO powers down.
+ 		 */
+-		if (tb_tunnel_is_dma(tunnel))
++		if (tb_tunnel_is_dma(tunnel) ||
++		    (tb_tunnel_is_dp(tunnel) &&
++		     (!tb_tunnel_is_active(tunnel) || tunnel->dp_source_requested)))
+ 			tb_tunnel_deactivate(tunnel);
+ 		tb_tunnel_put(tunnel);
+ 	}
+diff --git a/drivers/thunderbolt/test.c b/drivers/thunderbolt/test.c
+index 05652ee..799ada9 100644
+--- a/drivers/thunderbolt/test.c
++++ b/drivers/thunderbolt/test.c
+@@ -33,6 +33,18 @@ static void kunit_ida_init(struct kunit *test, struct ida *ida)
+ 	kunit_alloc_resource(test, __ida_init, __ida_destroy, GFP_KERNEL, ida);
+ }
+ 
++static void tb_test_switch_release(struct device *dev)
++{
++	/* The memory is owned by KUnit, nothing to do here */
++}
++
++static void tb_test_switch_put(void *data)
++{
++	struct tb_switch *sw = data;
++
++	put_device(&sw->dev);
++}
++
+ static struct tb_switch *alloc_switch(struct kunit *test, u64 route,
+ 				      u8 upstream_port, u8 max_port_number)
+ {
+@@ -44,6 +56,15 @@ static struct tb_switch *alloc_switch(struct kunit *test, u64 route,
+ 	if (!sw)
+ 		return NULL;
+ 
++	/*
++	 * HopID allocations take a reference to their routers and those devices
++	 * have to be initialized for that to work.
++	 */
++	sw->dev.release = tb_test_switch_release;
++	device_initialize(&sw->dev);
++	if (kunit_add_action_or_reset(test, tb_test_switch_put, sw))
++		return NULL;
++
+ 	sw->config.upstream_port_number = upstream_port;
+ 	sw->config.depth = tb_route_length(route);
+ 	sw->config.route_hi = upper_32_bits(route);
+diff --git a/drivers/thunderbolt/tunnel.c b/drivers/thunderbolt/tunnel.c
+index d26d472..9d19364 100644
+--- a/drivers/thunderbolt/tunnel.c
++++ b/drivers/thunderbolt/tunnel.c
+@@ -12,6 +12,7 @@
+ #include <linux/ktime.h>
+ #include <linux/string_helpers.h>
+ 
++#include "nhi.h"
+ #include "tunnel.h"
+ #include "tb.h"
+ 
+@@ -189,6 +190,8 @@ static void tb_init_pm_support(struct tb_path_hop *hop)
+ 		hop->pm_support = true;
+ }
+ 
++static void tb_dp_dprx_work(struct work_struct *work);
++
+ static struct tb_tunnel *tb_tunnel_alloc(struct tb *tb, size_t npaths,
+ 					 enum tb_tunnel_type type)
+ {
+@@ -203,6 +206,8 @@ static struct tb_tunnel *tb_tunnel_alloc(struct tb *tb, size_t npaths,
+ 	INIT_LIST_HEAD(&tunnel->list);
+ 	tunnel->tb = tb;
+ 	tunnel->type = type;
++	if (type == TB_TUNNEL_DP)
++		INIT_DELAYED_WORK(&tunnel->dprx_work, tb_dp_dprx_work);
+ 	kref_init(&tunnel->kref);
+ 
+ 	return tunnel;
+@@ -1071,11 +1076,25 @@ static ktime_t dprx_timeout_to_ktime(int timeout_msec)
+ 		ktime_add_ms(ktime_get(), timeout_msec) : KTIME_MAX;
+ }
+ 
+-static int tb_dp_wait_dprx(struct tb_tunnel *tunnel, int timeout_msec)
++static int tb_dp_wait_dprx(struct tb_tunnel *tunnel, int timeout_msec,
++			   bool *source_failed)
+ {
+ 	ktime_t timeout = dprx_timeout_to_ktime(timeout_msec);
+ 	struct tb_port *in = tunnel->src_port;
++	struct tb_nhi *nhi = tunnel->tb->nhi;
++	int ret;
+ 
++	if (source_failed)
++		*source_failed = false;
++	/* The bypass must not skip source preparation or hide a source error. */
++	if (tunnel->dp_source_requested) {
++		ret = nhi->ops->dp_source_status(nhi, in->port);
++		if (ret) {
++			if (source_failed)
++				*source_failed = ret != -EINPROGRESS && ret != -EAGAIN;
++			return ret;
++		}
++	}
+ 	if (dprx_bypass) {
+ 		tb_tunnel_dbg(tunnel, "DPRX bypass enabled, pretending DPRX completed\n");
+ 		return 0;
+@@ -1109,11 +1128,19 @@ static void tb_dp_dprx_work(struct work_struct *work)
+ 	struct tb_tunnel *tunnel = container_of(work, typeof(*tunnel), dprx_work.work);
+ 	struct tb *tb = tunnel->tb;
+ 
++	mutex_lock(&tb->lock);
+ 	if (!tunnel->dprx_canceled) {
+-		mutex_lock(&tb->lock);
+-		if (tb_dp_is_usb4(tunnel->src_port->sw) &&
+-		    tb_dp_wait_dprx(tunnel, TB_DPRX_WAIT_TIMEOUT)) {
+-			if (ktime_before(ktime_get(), tunnel->dprx_timeout)) {
++		bool source_failed = false;
++		int ret;
++
++		ret = tb_dp_is_usb4(tunnel->src_port->sw) ?
++			tb_dp_wait_dprx(tunnel, TB_DPRX_WAIT_TIMEOUT, &source_failed) : 0;
++
++		if (ret) {
++			if (!source_failed &&
++			    (!tunnel->dp_source_requested || ret == -ETIMEDOUT ||
++			     ret == -EINPROGRESS || ret == -EAGAIN) &&
++			    ktime_before(ktime_get(), tunnel->dprx_timeout)) {
+ 				queue_delayed_work(tb->wq, &tunnel->dprx_work,
+ 						   msecs_to_jiffies(TB_DPRX_POLL_DELAY));
+ 				mutex_unlock(&tb->lock);
+@@ -1122,8 +1149,8 @@ static void tb_dp_dprx_work(struct work_struct *work)
+ 		} else {
+ 			tb_tunnel_set_active(tunnel, true);
+ 		}
+-		mutex_unlock(&tb->lock);
+ 	}
++	mutex_unlock(&tb->lock);
+ 
+ 	if (tunnel->callback)
+ 		tunnel->callback(tunnel, tunnel->callback_data);
+@@ -1132,6 +1159,10 @@ static void tb_dp_dprx_work(struct work_struct *work)
+ 
+ static int tb_dp_dprx_start(struct tb_tunnel *tunnel)
+ {
++	if (tunnel->dprx_started)
++		return -EINPROGRESS;
++	if (work_busy(&tunnel->dprx_work.work))
++		return -EBUSY;
+ 	/*
+ 	 * Bump up the reference to keep the tunnel around. It will be
+ 	 * dropped in tb_dp_dprx_stop() once the tunnel is deactivated.
+@@ -1139,6 +1170,7 @@ static int tb_dp_dprx_start(struct tb_tunnel *tunnel)
+ 	tb_tunnel_get(tunnel);
+ 
+ 	tunnel->dprx_started = true;
++	tunnel->dprx_canceled = false;
+ 
+ 	if (tunnel->callback) {
+ 		tunnel->dprx_timeout = dprx_timeout_to_ktime(dprx_timeout);
+@@ -1147,7 +1179,7 @@ static int tb_dp_dprx_start(struct tb_tunnel *tunnel)
+ 	}
+ 
+ 	return tb_dp_is_usb4(tunnel->src_port->sw) ?
+-		tb_dp_wait_dprx(tunnel, dprx_timeout) : 0;
++		tb_dp_wait_dprx(tunnel, dprx_timeout, NULL) : 0;
+ }
+ 
+ static void tb_dp_dprx_stop(struct tb_tunnel *tunnel)
+@@ -1162,8 +1194,13 @@ static void tb_dp_dprx_stop(struct tb_tunnel *tunnel)
+ 
+ static int tb_dp_activate(struct tb_tunnel *tunnel, bool active)
+ {
++	struct tb_nhi *nhi = tunnel->tb->nhi;
++	bool host_source = !tb_route(tunnel->src_port->sw) && nhi->ops &&
++			   nhi->ops->dp_source_get && nhi->ops->dp_source_status &&
++			   nhi->ops->dp_source_put;
+ 	int ret;
+ 
++
+ 	if (active) {
+ 		struct tb_path **paths;
+ 		int last;
+@@ -1182,6 +1219,10 @@ static int tb_dp_activate(struct tb_tunnel *tunnel, bool active)
+ 			paths[TB_DP_AUX_PATH_OUT]->hops[last].next_hop_index);
+ 	} else {
+ 		tb_dp_dprx_stop(tunnel);
++		if (tunnel->dp_source_requested) {
++			nhi->ops->dp_source_put(nhi, tunnel->src_port->port);
++			tunnel->dp_source_requested = false;
++		}
+ 		tb_dp_port_hpd_clear(tunnel->src_port);
+ 		tb_dp_port_set_hops(tunnel->src_port, 0, 0, 0);
+ 		if (tb_port_is_dpout(tunnel->dst_port))
+@@ -1198,9 +1239,40 @@ static int tb_dp_activate(struct tb_tunnel *tunnel, bool active)
+ 			return ret;
+ 	}
+ 
++	/* Paths and both adapters are enabled before requesting the source. */
++	if (active && host_source && !tunnel->dp_source_requested) {
++		ret = nhi->ops->dp_source_get(nhi, tunnel->src_port->port,
++					      !!tunnel->callback);
++		if (ret < 0)
++			return ret;
++		tunnel->dp_source_requested = ret > 0;
++	}
+ 	return active ? tb_dp_dprx_start(tunnel) : 0;
+ }
+ 
++/* Adopt a firmware-discovered host DP tunnel without toggling its paths. */
++int tb_tunnel_start_dp_source(struct tb_tunnel *tunnel,
++			      void (*callback)(struct tb_tunnel *, void *), void *data)
++{
++	struct tb_nhi *nhi = tunnel->tb->nhi;
++	int ret;
++
++	if (!tb_tunnel_is_dp(tunnel) || tb_route(tunnel->src_port->sw) ||
++	    !nhi->ops || !nhi->ops->dp_source_get || !nhi->ops->dp_source_status ||
++	    !nhi->ops->dp_source_put)
++		return 0;
++	if (tunnel->callback || !callback)
++		return -EINVAL;
++	ret = nhi->ops->dp_source_get(nhi, tunnel->src_port->port, true);
++	if (ret <= 0)
++		return ret;
++	tunnel->dp_source_requested = true;
++	tunnel->callback = callback;
++	tunnel->callback_data = data;
++	tunnel->state = TB_TUNNEL_ACTIVATING;
++	return tb_dp_dprx_start(tunnel);
++}
++
+ /**
+  * tb_dp_bandwidth_mode_maximum_bandwidth() - Maximum possible bandwidth
+  * @tunnel: DP tunnel to check
+@@ -1415,7 +1487,7 @@ static int tb_dp_consumed_bandwidth(struct tb_tunnel *tunnel, int *consumed_up,
+ 	int ret;
+ 
+ 	if (tb_dp_is_usb4(sw)) {
+-		ret = tb_dp_wait_dprx(tunnel, 0);
++		ret = tb_dp_wait_dprx(tunnel, 0, NULL);
+ 		if (ret) {
+ 			if (ret == -ETIMEDOUT) {
+ 				/*
+@@ -1737,7 +1809,6 @@ struct tb_tunnel *tb_tunnel_alloc_dp(struct tb *tb, struct tb_port *in,
+ 	tunnel->max_down = max_down;
+ 	tunnel->callback = callback;
+ 	tunnel->callback_data = callback_data;
+-	INIT_DELAYED_WORK(&tunnel->dprx_work, tb_dp_dprx_work);
+ 
+ 	paths = tunnel->paths;
+ 	pm_support = usb4_switch_version(in->sw) >= 2;
+diff --git a/drivers/thunderbolt/tunnel.h b/drivers/thunderbolt/tunnel.h
+index 4878763..a4ca3ff 100644
+--- a/drivers/thunderbolt/tunnel.h
++++ b/drivers/thunderbolt/tunnel.h
+@@ -62,6 +62,7 @@ enum tb_tunnel_state {
+  * @allocated_down: Allocated downstream bandwidth (only for USB3)
+  * @bw_mode: DP bandwidth allocation mode registers can be used to
+  *	     determine consumed and allocated bandwidth
++ * @dp_source_requested: NHI source preparation reference is held
+  * @dprx_started: DPRX negotiation was started (tb_dp_dprx_start() was called for it)
+  * @dprx_canceled: Was DPRX capabilities read poll canceled
+  * @dprx_timeout: If set DPRX capabilities read poll work will timeout after this passes
+@@ -100,6 +101,7 @@ struct tb_tunnel {
+ 	int allocated_up;
+ 	int allocated_down;
+ 	bool bw_mode;
++	bool dp_source_requested;
+ 	bool dprx_started;
+ 	bool dprx_canceled;
+ 	ktime_t dprx_timeout;
+@@ -137,6 +139,8 @@ struct tb_tunnel *tb_tunnel_alloc_usb3(struct tb *tb, struct tb_port *up,
+ 
+ void tb_tunnel_put(struct tb_tunnel *tunnel);
+ int tb_tunnel_activate(struct tb_tunnel *tunnel);
++int tb_tunnel_start_dp_source(struct tb_tunnel *tunnel,
++			      void (*callback)(struct tb_tunnel *, void *), void *data);
+ void tb_tunnel_deactivate(struct tb_tunnel *tunnel);
+ 
+ /**
+diff --git a/include/linux/soc/apple/dp-source.h b/include/linux/soc/apple/dp-source.h
+new file mode 100644
+index 0000000..9c2db5f
+--- /dev/null
++++ b/include/linux/soc/apple/dp-source.h
+@@ -0,0 +1,22 @@
++/* SPDX-License-Identifier: GPL-2.0-only OR MIT */
++#ifndef _LINUX_SOC_APPLE_DP_SOURCE_H
++#define _LINUX_SOC_APPLE_DP_SOURCE_H
++
++#include <linux/errno.h>
++#include <linux/kconfig.h>
++
++struct device_node;
++#if IS_REACHABLE(CONFIG_DRM_APPLE)
++int apple_dcp_dp_source_start(struct device_node *node);
++int apple_dcp_dp_source_stop(struct device_node *node);
++#else
++static inline int apple_dcp_dp_source_start(struct device_node *node)
++{
++	return -EOPNOTSUPP;
++}
++static inline int apple_dcp_dp_source_stop(struct device_node *node)
++{
++	return -EOPNOTSUPP;
++}
++#endif
++#endif
+diff --git a/tools/testing/apple-dpin/test-bridge.py b/tools/testing/apple-dpin/test-bridge.py
+new file mode 100644
+index 0000000..ccbe212
+--- /dev/null
++++ b/tools/testing/apple-dpin/test-bridge.py
+@@ -0,0 +1,231 @@
++#!/usr/bin/env python3
++# SPDX-License-Identifier: GPL-2.0-only OR MIT
++"""Run actual NHI source worker/hooks and DPRX gate with deterministic stubs."""
++import pathlib, subprocess, sys, tempfile
++root = pathlib.Path(sys.argv[1]).resolve()
++a = (root/'drivers/thunderbolt/apple.c').read_text()
++t = (root/'drivers/thunderbolt/tunnel.c').read_text()
++dprx_worker=t[t.index('static void tb_dp_dprx_work(struct work_struct *work)\n{'):t.index('static int tb_dp_dprx_start(')]
++sw=(root/'drivers/thunderbolt/switch.c').read_text()
++hopid=sw[sw.index('static int tb_port_alloc_hopid('):sw.index('static inline bool tb_switch_is_reachable(')]
++start_dprx = t[t.index('static int tb_dp_dprx_start('):t.index('static void tb_dp_dprx_stop(')]
++worker = a[a.index('static void apple_dp_source_work('):a.index('/* Called after domain removal,', a.index('static void apple_dp_source_work('))]
++state = a[a.index('struct apple_dp_source {'):a.index('};', a.index('struct apple_dp_source {'))+2]
++gate = t[t.index('static int tb_dp_wait_dprx('):t.index('static void tb_dp_dprx_work(',t.index('static int tb_dp_wait_dprx('))]
++activate = t[t.index('static int tb_dp_activate('):t.index('/**',t.index('static int tb_dp_activate('))]
++cm = (root/'drivers/thunderbolt/tb.c').read_text()
++destroy = cm[cm.index('static void tb_dp_tunnel_destroy(struct tb_tunnel *tunnel)\n{'):cm.index('static void tb_dp_tunnel_active(struct tb_tunnel *tunnel, void *data)\n{')]
++active_callback = cm[cm.index('static void tb_dp_tunnel_active(struct tb_tunnel *tunnel, void *data)\n{'):cm.index('static void tb_tunnel_one_dp(')]
++assert 'tb_domain_put(' not in active_callback
++assert active_callback.index('if (tunnel->dprx_canceled)') < active_callback.index('if (tb_tunnel_is_active(')
++alloc = cm[cm.index('static void tb_tunnel_one_dp('):cm.index('static void tb_tunnel_dp(')]
++assert 'tunnel->destroy = tb_dp_tunnel_destroy;' in alloc
++assert 'tb_domain_put(' not in alloc[alloc.index('err_reclaim_usb:'):]
++
++# Guard the DCP-specific preparation order as well as compiling it in-kernel.
++d = (root/'drivers/gpu/drm/apple/dcp.c').read_text()
++connect = d[d.index('static int dcp_dptx_connect_source('):d.index('static int dcp_dptx_connect(',d.index('static int dcp_dptx_connect_source('))]
++assert connect.index('phy_init(') < connect.index('phy_power_on(') < connect.index('dptxport_connect(')
++assert connect.index('dptxport_request_display(') < connect.index('wait_for_completion_timeout(')
++preamble = r'''
++#include <assert.h>
++#include <stdbool.h>
++#include <stdint.h>
++#include <stddef.h>
++#include <limits.h>
++#include <errno.h>
++#include <stdio.h>
++#include <string.h>
++typedef uint8_t u8; typedef uint32_t u32; typedef long long ktime_t;
++#define EPROBE_DEFER 517
++#define container_of(p,t,m) ((t *)((char *)(p)-offsetof(t,m)))
++struct work_struct { int dummy; };
++struct delayed_work { struct work_struct work; };
++#define to_delayed_work(p) container_of(p,struct delayed_work,work)
++struct mutex { int depth; };
++static void mutex_lock(struct mutex *m) { assert(!m->depth); m->depth++; }
++static void mutex_unlock(struct mutex *m) { assert(m->depth==1); m->depth--; }
++struct device_node { int dummy; }; struct device { int dummy; };
++struct workqueue_struct { int dummy; };
++struct tb_nhi;
++struct tb_nhi_ops {
++ int (*dp_source_get)(struct tb_nhi *,u8,bool);
++ int (*dp_source_status)(struct tb_nhi *,u8);
++ void (*dp_source_put)(struct tb_nhi *,u8);
++};
++struct tb_nhi { const struct tb_nhi_ops *ops; };
++static unsigned long jiffies;
++static unsigned long msecs_to_jiffies(unsigned long n) { return n; }
++static bool time_before(unsigned long a,unsigned long b) { return (long)(a-b)<0; }
++static bool queued;
++static int queued_dprx;
++static struct delayed_work *dprx_slot;
++static int mod_delayed_work(struct workqueue_struct *q,struct delayed_work *w,unsigned long d)
++{ (void)q;(void)d;if(w==dprx_slot)queued_dprx++;else queued=true;return 1; }
++#define queue_delayed_work mod_delayed_work
++#define WARN_ON(x) (x)
++#define dev_err(...) ((void)0)
++#define dev_info(...) ((void)0)
++static int apple_dcp_dp_source_start(struct device_node *node);
++static int apple_dcp_dp_source_stop(struct device_node *node);
++'''
++model = r'''
++struct apple_nhi { struct device *dev; struct tb_nhi nhi; struct apple_dp_source dp_source; };
++#define nhi_to_anhi(p) container_of(p,struct apple_nhi,nhi)
++struct tb { struct tb_nhi *nhi; struct workqueue_struct *wq; struct mutex lock; };
++struct tb_switch { unsigned int route; int refs; };
++struct ida { int dummy; };
++struct tb_port { struct tb_switch *sw; u8 port; int cap_adap;
++ struct { int max_in_hop_id,max_out_hop_id; } config; struct ida in_hopids,out_hopids; };
++#define TB_PATH_MIN_HOPID 8
++#define GFP_KERNEL 0
++static int allocated_hopid=8,freed_hopids;
++static bool tb_port_is_nhi(struct tb_port *p) { return p->port==0; }
++static struct tb_switch *tb_switch_get(struct tb_switch *s) { s->refs++;return s; }
++static void tb_switch_put(struct tb_switch *s) { assert(s->refs>0);s->refs--; }
++static int ida_alloc_range(struct ida *i,int min,int max,int f) { (void)i;(void)f;assert(min<=max);return allocated_hopid; }
++static void ida_free(struct ida *i,int id) { (void)i;assert(id>=0);freed_hopids++; }
++struct tb_hop { int in_hop_index,next_hop_index; };
++struct tb_path { struct tb_hop *hops; int path_length; };
++struct tb_tunnel {
++ struct tb *tb; struct tb_port *src_port,*dst_port;
++ struct tb_path **paths; void (*callback)(struct tb_tunnel *,void *);
++ bool dp_source_requested; ktime_t dprx_timeout; void *callback_data;
++ int state, refs; bool dprx_started,dprx_canceled; struct delayed_work dprx_work;
++};
++#define TB_TUNNEL_ACTIVATING 1
++#define TB_DPRX_WAIT_TIMEOUT 25
++#define TB_DPRX_POLL_DELAY 50
++static int active_changes,callback_count;
++static void tb_tunnel_put(struct tb_tunnel *t) { assert(t->refs>0);t->refs--; }
++static void tb_tunnel_set_active(struct tb_tunnel *t,bool v) { t->state=v?2:0;active_changes++; }
++static int dprx_timeout=12000;
++static bool busy;
++static int work_busy(struct work_struct *w) { (void)w;return busy; }
++static void tb_tunnel_get(struct tb_tunnel *t) { t->refs++; }
++static bool tb_tunnel_is_dp(struct tb_tunnel *t) { (void)t;return true; }
++static bool tb_dp_is_usb4(struct tb_switch *s) { (void)s;return true; }
++static int domain_refs;
++static void tb_domain_put(void *p) { assert(p && domain_refs>0); domain_refs--; }
++#define TB_DP_VIDEO_PATH_OUT 0
++#define TB_DP_AUX_PATH_OUT 1
++#define TB_DP_AUX_PATH_IN 2
++#define TB_CFG_PORT 0
++#define DP_COMMON_CAP 0
++#define DP_COMMON_CAP_DPRX_DONE 1
++static int polls,enables,requests,stops,source_mode,enable_error;
++static bool dprx_bypass,cancel_start,restart_start;
++static struct apple_nhi owner;
++static unsigned int tb_route(struct tb_switch *s) { return s->route; }
++static bool tb_port_is_dpout(struct tb_port *p) { return p->port==14; }
++static void tb_dp_port_set_hops(struct tb_port *p,int a,int b,int c)
++{ (void)p;(void)a;(void)b;(void)c; }
++static void tb_dp_port_hpd_clear(struct tb_port *p) { (void)p; }
++static int tb_dp_port_enable(struct tb_port *p,bool active)
++{ (void)p;if(active)enables++;return enable_error; }
++static void tb_dp_dprx_stop(struct tb_tunnel *t) { if(t->dprx_started)t->refs--;t->dprx_started=false;t->dprx_canceled=true; }
++static ktime_t dprx_timeout_to_ktime(int t) { return jiffies+t; }
++static ktime_t ktime_get(void) { return jiffies; }
++static bool ktime_before(ktime_t a,ktime_t b) { return a<b; }
++static void usleep_range(int a,int b) { (void)a;(void)b;jiffies++; }
++static int tb_port_read(struct tb_port *p,u32 *v,int c,int o,int n)
++{ (void)p;(void)c;(void)o;(void)n;polls++;*v=1;return 0; }
++#define tb_tunnel_dbg(...) ((void)0)
++'''
++tests = r'''
++static int apple_dcp_dp_source_start(struct device_node *node) {
++ assert(node && !owner.dp_source.lock.depth); requests++;
++ if(cancel_start) {
++  cancel_start=false; apple_nhi_dp_source_put(&owner.nhi,5);
++  if(restart_start) { restart_start=false; assert(apple_nhi_dp_source_get(&owner.nhi,5,true)==1); }
++ }
++ return source_mode;
++}
++static int stop_mode;
++static int apple_dcp_dp_source_stop(struct device_node *node) {
++ assert(node && !owner.dp_source.lock.depth); stops++; return stop_mode;
++}
++static const struct tb_nhi_ops ops={apple_nhi_dp_source_get,apple_nhi_dp_source_status,apple_nhi_dp_source_put};
++static struct device_node node;
++static void run_worker(void) { queued=false;apple_dp_source_work(&owner.dp_source.work.work); }
++static void reset(void) {
++ memset(&owner,0,sizeof(owner));owner.nhi.ops=&ops;owner.dp_source.node=&node;
++ owner.dp_source.port=5;owner.dp_source.status=-ENOLINK;
++ jiffies=polls=enables=requests=stops=source_mode=stop_mode=enable_error=queued_dprx=0;
++ queued=dprx_bypass=cancel_start=restart_start=false;active_changes=callback_count=0;
++}
++static void callback(struct tb_tunnel *t,void *data) { (void)data;assert(!t->tb->lock.depth);if(!t->dprx_canceled)callback_count++; }
++int main(void) {
++ struct tb tb={.nhi=&owner.nhi};struct tb_switch host={.route=0,.refs=1},dock={.route=1,.refs=1};
++ struct tb_port in={.sw=&host,.port=5,.cap_adap=1},out={.sw=&dock,.port=14,.cap_adap=1};
++ struct tb_hop hops[3]={{9,9},{8,8},{8,8}};
++ struct tb_path paths[3]={{hops,1},{hops+1,1},{hops+2,1}};
++ struct tb_path *pathp[3]={paths,paths+1,paths+2};
++ struct tb_tunnel t={.tb=&tb,.src_port=&in,.dst_port=&out,.paths=pathp,.callback=callback,.callback_data=&tb};int groups=0;
++ dprx_slot=&t.dprx_work;
++ reset(); assert(tb_dp_activate(&t,true)==-EINPROGRESS);
++ assert(enables==2 && queued && queued_dprx==1 && requests==0 && t.dp_source_requested);
++ assert(tb_dp_wait_dprx(&t,25,NULL)==-EINPROGRESS && !polls); groups++;
++ dprx_bypass=true; assert(tb_dp_wait_dprx(&t,25,NULL)==-EINPROGRESS && !polls);groups++;
++ run_worker();assert(requests==1 && apple_nhi_dp_source_status(&owner.nhi,5)==0);
++ dprx_bypass=false;assert(!tb_dp_wait_dprx(&t,25,NULL) && polls==1);groups++;
++ assert(apple_nhi_dp_source_get(&owner.nhi,5,true)==1);
++ assert(!tb_dp_activate(&t,false) && owner.dp_source.users==1 && !stops);run_worker();assert(!stops);
++ apple_nhi_dp_source_put(&owner.nhi,5);run_worker();assert(stops==1 && !owner.dp_source.ready);groups++;
++ reset();assert(apple_nhi_dp_source_get(&owner.nhi,5,true)==1);
++ apple_nhi_dp_source_put(&owner.nhi,5);run_worker();assert(!requests && !stops && !owner.dp_source.users);groups++;
++ reset();assert(apple_nhi_dp_source_get(&owner.nhi,5,true)==1);cancel_start=true;
++ run_worker();assert(requests==1 && stops==1 && !owner.dp_source.ready && !owner.dp_source.users);groups++;
++ reset();assert(apple_nhi_dp_source_get(&owner.nhi,5,true)==1);cancel_start=restart_start=true;
++ run_worker();assert(requests==2 && stops==1 && owner.dp_source.ready && owner.dp_source.users==1);groups++;
++ reset();assert(apple_nhi_dp_source_get(&owner.nhi,5,true)==1);source_mode=-EAGAIN;
++ run_worker();assert(queued && owner.dp_source.status==-EINPROGRESS && !stops);
++ jiffies=5000;run_worker();assert(owner.dp_source.status==-ETIMEDOUT && stops==1 && !owner.dp_source.ready);groups++;
++ reset();t.dp_source_requested=false;assert(tb_dp_activate(&t,true)==-EINPROGRESS);source_mode=-EIO;run_worker();
++ dprx_bypass=true;assert(tb_dp_wait_dprx(&t,25,NULL)==-EIO && !polls && stops==1);groups++;
++ reset();assert(apple_nhi_dp_source_get(&owner.nhi,6,true)==0);
++ assert(apple_nhi_dp_source_get(&owner.nhi,5,false)==-EOPNOTSUPP && !queued && !requests);groups++;
++ owner.dp_source.node=NULL;assert(!apple_nhi_dp_source_get(&owner.nhi,5,true));groups++;
++ reset();owner.dp_source.users=UINT_MAX;assert(apple_nhi_dp_source_get(&owner.nhi,5,true)==-EOVERFLOW);groups++;
++ reset();assert(apple_nhi_dp_source_get(&owner.nhi,5,true)==1);run_worker();
++ stop_mode=-EIO;apple_nhi_dp_source_put(&owner.nhi,5);run_worker();
++ assert(owner.dp_source.stop_pending && owner.dp_source.failed && owner.dp_source.attempted);
++ stop_mode=0;assert(apple_nhi_dp_source_get(&owner.nhi,5,true)==1);run_worker();
++ assert(stops==2 && requests==2 && owner.dp_source.ready);groups++;
++ reset();t.dp_source_requested=false;enable_error=-EIO;
++ assert(tb_dp_activate(&t,true)==-EIO && !owner.dp_source.users && !requests && !queued_dprx);groups++;
++ domain_refs=1;tb_dp_tunnel_destroy(&t);assert(!domain_refs);groups++;
++ t.dprx_started=false;t.refs=0;queued_dprx=0;busy=false;
++ assert(tb_dp_dprx_start(&t)==-EINPROGRESS && t.refs==1 && queued_dprx==1);
++ assert(tb_dp_dprx_start(&t)==-EINPROGRESS && t.refs==1 && queued_dprx==1);groups++;
++ tb_dp_dprx_stop(&t);busy=true;assert(tb_dp_dprx_start(&t)==-EBUSY && !t.refs);busy=false;groups++;
++ reset();t.callback=NULL;t.dp_source_requested=false;t.dprx_started=false;t.refs=0;
++ assert(tb_tunnel_start_dp_source(&t,callback,&tb)==-EINPROGRESS);
++ assert(t.dp_source_requested && t.callback==callback && t.refs==1 && !enables && !requests);groups++;
++ run_worker();assert(owner.dp_source.ready && !tb_dp_wait_dprx(&t,25,NULL));groups++;
++ tb_dp_dprx_stop(&t);apple_nhi_dp_source_put(&owner.nhi,5);run_worker();
++ reset();owner.dp_source.node=NULL;t.callback=NULL;t.dp_source_requested=false;
++ assert(!tb_tunnel_start_dp_source(&t,callback,&tb) && !t.dp_source_requested && !queued);groups++;
++ reset();t.callback=callback;t.src_port=&in;t.dp_source_requested=true;t.dprx_canceled=false;t.refs=1;t.dprx_timeout=12000;t.state=1;
++ owner.dp_source.users=1;owner.dp_source.status=-EINPROGRESS;queued_dprx=0;
++ tb_dp_dprx_work(&t.dprx_work.work);assert(queued_dprx==1 && t.refs==1 && !polls && !callback_count);groups++;
++ owner.dp_source.status=-ETIMEDOUT;queued_dprx=0;
++ tb_dp_dprx_work(&t.dprx_work.work);assert(!queued_dprx && !t.refs && !polls && callback_count==1 && t.state==1);groups++;
++ t.refs=1;t.dprx_canceled=true;t.src_port=NULL;callback_count=0;
++ tb_dp_dprx_work(&t.dprx_work.work);assert(!t.refs && !callback_count && !polls);groups++;
++ t.refs=1;t.src_port=&in;t.dprx_canceled=false;owner.dp_source.status=0;dprx_bypass=true;
++ tb_dp_dprx_work(&t.dprx_work.work);assert(t.state==2 && !t.refs && active_changes==1 && !polls);groups++;
++ in.config.max_in_hop_id=in.config.max_out_hop_id=15;host.refs=1;allocated_hopid=8;
++ assert(tb_port_alloc_in_hopid(&in,8,-1)==8 && host.refs==2);tb_port_release_in_hopid(&in,8);assert(host.refs==1);groups++;
++ assert(tb_port_alloc_out_hopid(&in,8,-1)==8 && host.refs==2);tb_port_release_out_hopid(&in,8);assert(host.refs==1 && freed_hopids==2);groups++;
++ allocated_hopid=-ENOSPC;assert(tb_port_alloc_in_hopid(&in,8,-1)==-ENOSPC && host.refs==1);groups++;
++ printf("PASS: %d production bridge/cancellation/DPRX-gate groups\n",groups);
++ return 0;
++}
++'''
++with tempfile.TemporaryDirectory(prefix='apple-bridge-test-') as tmp:
++    c=pathlib.Path(tmp)/'test.c'; exe=pathlib.Path(tmp)/'test'
++    c.write_text(preamble+'\n'+state+'\n'+model+'\n'+worker+'\n'+gate+'\n'+dprx_worker+'\n'+start_dprx+'\n'+activate+'\n'+destroy+'\n'+hopid+'\n'+tests)
++    subprocess.run(['gcc','-std=gnu11','-Wall','-Wextra','-Werror','-fsanitize=undefined',str(c),'-o',str(exe)],check=True)
++    subprocess.run([str(exe)],check=True)
++print('PASS: source preparation precedes DCP connect/requestDisplay')
+diff --git a/tools/testing/apple-dpin/test-dtb.py b/tools/testing/apple-dpin/test-dtb.py
+index 33a5d3a..ab285eb 100644
+--- a/tools/testing/apple-dpin/test-dtb.py
++++ b/tools/testing/apple-dpin/test-dtb.py
+@@ -40,6 +40,14 @@ def check(path,enabled):
+   assert v['status']==(b'okay\0' if enabled and i==0 else b'disabled\0')
+  tunneled=[v for v in n.values() if 'apple,dp-tunnel' in v]
+  assert len(tunneled)==int(enabled)
++ bridges=[(p,v) for p,v in n.items() if 'apple,dp-source' in v]
++ assert len(bridges)==int(enabled)
++ if enabled:
++  bp,bv=bridges[0]
++  assert cells(bv['apple,dp-in-port'])==(5,)
++  assert bv['apple,dp-source']==tunneled[0]['phandle']
++  assert bp.rsplit('/',1)[0]==next(iter(d)).rsplit('/',1)[0]
++
+  if enabled:
+   provider=next(v for v in d.values() if cells(v['apple,transport-index'])==(0,))
+   assert tunneled[0]['phys']==provider['phandle']

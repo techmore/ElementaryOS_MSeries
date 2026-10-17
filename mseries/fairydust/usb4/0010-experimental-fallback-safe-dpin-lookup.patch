@@ -1,0 +1,366 @@
+From: sdolbec <sdolbec1@gmail.com>
+Subject: [PATCH] phy: apple: preserve fallback wiring with managed DP-IN lookup
+
+Apply after 0001 through 0009. Keep all existing phys dependencies intact.
+The experimental driver consumes a separate apple,dp-tunnel-phy reference
+with managed module/device/link ownership; old kernels ignore that property.
+See CONTROLLED-TEST.md for the frozen build and isolated initramfs test plan.
+
+Signed-off-by: sdolbec <sdolbec1@gmail.com>
+---
+diff --git a/Documentation/devicetree/bindings/thunderbolt/apple,t8103-usb4-nhi.yaml b/Documentation/devicetree/bindings/thunderbolt/apple,t8103-usb4-nhi.yaml
+index e6c8eaf..15b981d 100644
+--- a/Documentation/devicetree/bindings/thunderbolt/apple,t8103-usb4-nhi.yaml
++++ b/Documentation/devicetree/bindings/thunderbolt/apple,t8103-usb4-nhi.yaml
+@@ -94,8 +94,10 @@ properties:
+     $ref: /schemas/types.yaml#/definitions/phandle
+     description: |
+       Experimental display controller feeding the host DP-IN adapter selected
+-      by apple,dp-in-port. Its phys must reference an enabled DP-IN provider
+-      under the same ACIO parent. Omit both properties for the normal NHI path.
++      by apple,dp-in-port. Its apple,dp-tunnel-phy must reference an enabled
++      DP-IN provider under the same ACIO parent. The existing phys property
++      stays unchanged for fallback kernels. Omit both NHI properties for the
++      normal NHI path.
+ 
+   apple,dp-in-port:
+     $ref: /schemas/types.yaml#/definitions/uint32
+diff --git a/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi b/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi
+index f365bd8..9877b8d 100644
+--- a/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi
++++ b/arch/arm64/boot/dts/apple/t600x-j314-j316.dtsi
+@@ -290,8 +290,8 @@ &dcpext1 {
+ 	phys = <&atcphy1 PHY_TYPE_DP>;
+ 	phy-names = "dp-phy";
+ #ifdef ENABLE_DCPEXT_TB_TUNNEL
+-	/* Dedicated DP-IN provider, not the external Type-C DP PHY. */
+-	phys = <&dpin1_0>;
++	/* Keep legacy phys intact; only the new driver consumes DP-IN. */
++	apple,dp-tunnel-phy = <&dpin1_0>;
+ 	/*
+ 	 * Select the "dpin0" mux control (index 1) so the crossbar routes
+ 	 * dispext1,0 into the ACIO DP IN adapter for USB4 tunnel 0 instead of
+diff --git a/drivers/gpu/drm/apple/dcp.c b/drivers/gpu/drm/apple/dcp.c
+index 8094a94..1ade342 100644
+--- a/drivers/gpu/drm/apple/dcp.c
++++ b/drivers/gpu/drm/apple/dcp.c
+@@ -1353,10 +1353,16 @@ static int dcp_platform_probe(struct platform_device *pdev)
+ 	dcp->dp_source_removing = true;
+ 	platform_set_drvdata(pdev, dcp);
+ 
+-	if (of_property_read_bool(dev->of_node, "apple,dp-tunnel"))
+-		dcp->phy = devm_phy_get(dev, "dp-phy");
+-	else
++	if (of_property_read_bool(dev->of_node, "apple,dp-tunnel")) {
++		struct device_node *np;
++
++		/* Preserve the legacy phys property for fallback kernels. */
++		np = of_parse_phandle(dev->of_node, "apple,dp-tunnel-phy", 0);
++		dcp->phy = devm_apple_dpin_phy_get(dev, np);
++		of_node_put(np);
++	} else {
+ 		dcp->phy = devm_phy_optional_get(dev, "dp-phy");
++	}
+ 	if (IS_ERR(dcp->phy))
+ 		return dev_err_probe(dev, PTR_ERR(dcp->phy), "Failed to get dp-phy\n");
+ 
+diff --git a/drivers/phy/apple/dpin.c b/drivers/phy/apple/dpin.c
+index 801551a..fd76df3 100644
+--- a/drivers/phy/apple/dpin.c
++++ b/drivers/phy/apple/dpin.c
+@@ -9,10 +9,12 @@
+ #include <linux/phy/phy-apple-dpin.h>
+ #include <linux/mutex.h>
+ #include <linux/of.h>
++#include <linux/of_platform.h>
+ #include <linux/phy/phy.h>
+ #include <linux/phy/phy-apple-atc.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
++#include <linux/slab.h>
+ 
+ #include "dpin-handshake.h"
+ 
+@@ -20,6 +22,7 @@ struct apple_dpin {
+ 	struct device *dev;
+ 	void __iomem *regs;
+ 	struct phy *atcphy;
++	struct phy *phy;
+ 	struct mutex lock;
+ 	struct blocking_notifier_head hpd_notifiers;
+ 	struct apple_dpin_io io;
+@@ -239,6 +242,78 @@ static const struct phy_ops dpin_ops = {
+ 	.owner = THIS_MODULE,
+ };
+ 
++struct apple_dpin_consumer {
++	struct device *dev;
++	struct phy *phy;
++};
++
++static void apple_dpin_consumer_release(void *data)
++{
++	struct apple_dpin_consumer *consumer = data;
++
++	phy_put(consumer->dev, consumer->phy);
++	kfree(consumer);
++}
++
++/* Preserve the ordinary "phys" wiring for kernels without DP-IN support. */
++struct phy *devm_apple_dpin_phy_get(struct device *dev, struct device_node *node)
++{
++	struct apple_dpin_consumer *consumer;
++	struct platform_device *pdev;
++	struct apple_dpin *dpin;
++	struct phy *phy;
++	int ret;
++
++	if (!node || !of_device_is_available(node) ||
++	    !of_device_is_compatible(node, "apple,t6000-dpin"))
++		return ERR_PTR(-EINVAL);
++
++	consumer = kzalloc(sizeof(*consumer), GFP_KERNEL);
++	if (!consumer)
++		return ERR_PTR(-ENOMEM);
++	pdev = of_find_device_by_node(node);
++	if (!pdev) {
++		ret = -EPROBE_DEFER;
++		goto free_consumer;
++	}
++
++	/* Do not race an incomplete probe or provider removal. */
++	device_lock(&pdev->dev);
++	dpin = platform_get_drvdata(pdev);
++	if (!device_is_bound(&pdev->dev) || !dpin || !dpin->phy) {
++		ret = -EPROBE_DEFER;
++		goto unlock_provider;
++	}
++	phy = dpin->phy;
++	if (!try_module_get(phy->ops->owner)) {
++		ret = -EPROBE_DEFER;
++		goto unlock_provider;
++	}
++	get_device(&phy->dev);
++	device_unlock(&pdev->dev);
++	put_device(&pdev->dev);
++
++	consumer->dev = dev;
++	consumer->phy = phy;
++	if (!device_link_add(dev, &phy->dev, DL_FLAG_STATELESS)) {
++		of_phy_put(phy);
++		ret = -ENOMEM;
++		goto free_consumer;
++	}
++	ret = devm_add_action_or_reset(dev, apple_dpin_consumer_release, consumer);
++	if (ret)
++		return ERR_PTR(ret);
++	return phy;
++
++unlock_provider:
++	device_unlock(&pdev->dev);
++	put_device(&pdev->dev);
++free_consumer:
++	kfree(consumer);
++	return ERR_PTR(ret);
++}
++EXPORT_SYMBOL_GPL(devm_apple_dpin_phy_get);
++
+ int apple_dpin_get_hpd(struct phy *phy)
+ {
+ 	struct apple_dpin *dpin;
+@@ -330,7 +405,11 @@ static int dpin_probe(struct platform_device *pdev)
+ 	if (ret)
+ 		return ret;
+ 	provider = devm_of_phy_provider_register(dev, of_phy_simple_xlate);
+-	return PTR_ERR_OR_ZERO(provider);
++	if (IS_ERR(provider))
++		return PTR_ERR(provider);
++	dpin->phy = phy;
++	platform_set_drvdata(pdev, dpin);
++	return 0;
+ }
+ 
+ static const struct of_device_id dpin_of_match[] = {
+diff --git a/drivers/thunderbolt/apple.c b/drivers/thunderbolt/apple.c
+index a2b4ff5..096abb1 100644
+--- a/drivers/thunderbolt/apple.c
++++ b/drivers/thunderbolt/apple.c
+@@ -708,7 +708,7 @@ static int apple_dp_source_init(struct apple_nhi *anhi)
+ 		goto put_source;
+ 	}
+ 	/* The declared source must consume this ACIO's enabled DP-IN provider. */
+-	phy = of_parse_phandle(source->node, "phys", 0);
++	phy = of_parse_phandle(source->node, "apple,dp-tunnel-phy", 0);
+ 	parent = of_get_parent(phy);
+ 	ret = !phy || !of_device_is_compatible(phy, "apple,t6000-dpin") ||
+ 	      !of_device_is_available(phy) || parent != anhi->acio->np ||
+diff --git a/include/linux/phy/phy-apple-dpin.h b/include/linux/phy/phy-apple-dpin.h
+index c14c0d7..d1a8a46 100644
+--- a/include/linux/phy/phy-apple-dpin.h
++++ b/include/linux/phy/phy-apple-dpin.h
+@@ -2,15 +2,22 @@
+ #ifndef _LINUX_PHY_APPLE_DPIN_H
+ #define _LINUX_PHY_APPLE_DPIN_H
+ #include <linux/errno.h>
++#include <linux/err.h>
+ #include <linux/kconfig.h>
+ #define APPLE_DPIN_HPD_ERROR 2
+ struct phy;
+ struct notifier_block;
++struct device;
++struct device_node;
+ #if IS_REACHABLE(CONFIG_PHY_APPLE_DPIN)
++struct phy *devm_apple_dpin_phy_get(struct device *dev, struct device_node *node);
+ int apple_dpin_get_hpd(struct phy *phy);
+ int apple_dpin_register_hpd(struct phy *phy, struct notifier_block *nb);
+ int apple_dpin_unregister_hpd(struct phy *phy, struct notifier_block *nb);
+ #else
++static inline struct phy *devm_apple_dpin_phy_get(struct device *dev,
++					       struct device_node *node)
++{ return ERR_PTR(-EOPNOTSUPP); }
+ static inline int apple_dpin_get_hpd(struct phy *phy) { return -EOPNOTSUPP; }
+ static inline int apple_dpin_register_hpd(struct phy *phy, struct notifier_block *nb)
+ { return -EOPNOTSUPP; }
+diff --git a/tools/testing/apple-dpin/test-dtb.py b/tools/testing/apple-dpin/test-dtb.py
+index ab285eb..2f85fbb 100644
+--- a/tools/testing/apple-dpin/test-dtb.py
++++ b/tools/testing/apple-dpin/test-dtb.py
+@@ -50,7 +50,9 @@ def check(path,enabled):
+ 
+  if enabled:
+   provider=next(v for v in d.values() if cells(v['apple,transport-index'])==(0,))
+-  assert tunneled[0]['phys']==provider['phandle']
++  assert tunneled[0]['apple,dp-tunnel-phy']==provider['phandle']
++  assert cells(tunneled[0]['phys'])[-1]==6
++  assert tunneled[0]['phys']!=provider['phandle']
+   assert cells(tunneled[0]['mux-controls'])[-1]==1
+  print('PASS: compiled DP-IN wiring',pathlib.Path(path).name,'enabled='+str(enabled))
+ check(sys.argv[1],True);check(sys.argv[2],False)
+diff --git a/tools/testing/apple-dpin/test-lookup.py b/tools/testing/apple-dpin/test-lookup.py
+new file mode 100644
+index 0000000..98e27d9
+--- /dev/null
++++ b/tools/testing/apple-dpin/test-lookup.py
+@@ -0,0 +1,122 @@
++#!/usr/bin/env python3
++# SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause
++"""Exercise the actual managed DP-IN getter with provider/refcount faults."""
++import pathlib
++import subprocess
++import sys
++import tempfile
++
++source = pathlib.Path(sys.argv[1]).resolve()
++text = (source / "drivers/phy/apple/dpin.c").read_text()
++production = text[text.index("struct apple_dpin_consumer {"):
++                  text.index("EXPORT_SYMBOL_GPL(devm_apple_dpin_phy_get);")]
++preamble = r'''
++#include <assert.h>
++#include <stdbool.h>
++#include <stdint.h>
++#include <stdlib.h>
++#include <string.h>
++#include <stdio.h>
++#include <errno.h>
++#define EPROBE_DEFER 517
++#define GFP_KERNEL 0
++#define DL_FLAG_STATELESS 1
++#define ERR_PTR(v) ((void *)(intptr_t)(v))
++#define PTR_ERR(v) ((int)(intptr_t)(v))
++#define IS_ERR(v) ((uintptr_t)(v) >= (uintptr_t)-4095)
++struct device { bool locked, bound; int refs; };
++struct device_node { bool available, compatible; };
++struct phy_ops { void *owner; };
++struct phy { struct device dev; const struct phy_ops *ops; };
++struct apple_dpin { struct phy *phy; };
++struct platform_device { struct device dev; struct apple_dpin *data; };
++static struct device consumer_dev;
++static struct device_node node;
++static struct phy_ops ops;
++static struct phy provider_phy;
++static struct apple_dpin dpin;
++static struct platform_device pdev;
++static bool absent_provider, fail_alloc, fail_module, fail_link, fail_action;
++static int allocations, module_refs, links;
++static void (*release_action)(void *);
++static void *release_data;
++static bool of_device_is_available(struct device_node *n) { return n->available; }
++static bool of_device_is_compatible(struct device_node *n, const char *s)
++{ assert(!strcmp(s, "apple,t6000-dpin")); return n->compatible; }
++static void *kzalloc(size_t size, int flags)
++{ (void)flags; if (fail_alloc) return NULL; allocations++; return calloc(1, size); }
++static void kfree(void *p) { assert(p && allocations > 0); allocations--; free(p); }
++static struct platform_device *of_find_device_by_node(struct device_node *n)
++{ assert(n == &node); if (absent_provider) return NULL; pdev.dev.refs++; return &pdev; }
++static void device_lock(struct device *d) { assert(!d->locked); d->locked = true; }
++static void device_unlock(struct device *d) { assert(d->locked); d->locked = false; }
++static bool device_is_bound(struct device *d) { assert(d->locked); return d->bound; }
++static struct apple_dpin *platform_get_drvdata(struct platform_device *p)
++{ assert(p->dev.locked); return p->data; }
++static bool try_module_get(void *owner)
++{ assert(pdev.dev.locked && owner == &ops); if (fail_module) return false;
++  module_refs++; return true; }
++static void get_device(struct device *d)
++{ assert(pdev.dev.locked && d == &provider_phy.dev); d->refs++; }
++static void put_device(struct device *d) { assert(d->refs > 0); d->refs--; }
++static void *device_link_add(struct device *dev, struct device *provider, int flags)
++{ assert(dev == &consumer_dev && provider == &provider_phy.dev);
++  assert(flags == DL_FLAG_STATELESS && !pdev.dev.locked);
++  if (fail_link) return NULL;
++  links++; return &links; }
++static void of_phy_put(struct phy *p)
++{ assert(p == &provider_phy && module_refs > 0); module_refs--; put_device(&p->dev); }
++static void phy_put(struct device *dev, struct phy *p)
++{ assert(dev == &consumer_dev && links == 1); links--; of_phy_put(p); }
++static int devm_add_action_or_reset(struct device *dev, void (*action)(void *), void *data)
++{ assert(dev == &consumer_dev && !release_action);
++  if (fail_action) { action(data); return -ENOMEM; }
++  release_action = action; release_data = data; return 0; }
++'''
++tests = r'''
++static void balanced(void)
++{
++ assert(!allocations && !module_refs && !links && !provider_phy.dev.refs);
++ assert(!pdev.dev.refs && !pdev.dev.locked && !release_action);
++}
++static void reset(void)
++{
++ balanced(); memset(&pdev, 0, sizeof(pdev)); memset(&provider_phy, 0, sizeof(provider_phy));
++ node.available = node.compatible = pdev.dev.bound = true;
++ ops.owner = &ops; provider_phy.ops = &ops; dpin.phy = &provider_phy; pdev.data = &dpin;
++ absent_provider = fail_alloc = fail_module = fail_link = fail_action = false;
++}
++static void fails(int error)
++{
++ struct phy *p = devm_apple_dpin_phy_get(&consumer_dev, &node);
++ assert(IS_ERR(p) && PTR_ERR(p) == error); balanced();
++}
++int main(void)
++{
++ int groups = 0; struct phy *p;
++ reset(); p = devm_apple_dpin_phy_get(&consumer_dev, &node);
++ assert(p == &provider_phy && allocations == 1 && module_refs == 1 && links == 1);
++ assert(provider_phy.dev.refs == 1 && !pdev.dev.refs && !pdev.dev.locked);
++ assert(release_action); release_action(release_data); release_action = NULL;
++ balanced(); groups++;
++ reset(); assert(PTR_ERR(devm_apple_dpin_phy_get(&consumer_dev, NULL)) == -EINVAL);
++ balanced(); node.available = false; fails(-EINVAL); groups++;
++ reset(); node.compatible = false; fails(-EINVAL); groups++;
++ reset(); fail_alloc = true; fails(-ENOMEM); groups++;
++ reset(); absent_provider = true; fails(-EPROBE_DEFER); groups++;
++ reset(); pdev.dev.bound = false; fails(-EPROBE_DEFER); groups++;
++ reset(); pdev.data = NULL; fails(-EPROBE_DEFER); groups++;
++ reset(); dpin.phy = NULL; fails(-EPROBE_DEFER); groups++;
++ reset(); fail_module = true; fails(-EPROBE_DEFER); groups++;
++ reset(); fail_link = true; fails(-ENOMEM); groups++;
++ reset(); fail_action = true; fails(-ENOMEM); groups++;
++ printf("PASS: %d production managed-PHY lookup groups\n", groups); return 0;
++}
++'''
++with tempfile.TemporaryDirectory(prefix="apple-dpin-lookup-") as tmp:
++    c = pathlib.Path(tmp) / "test.c"
++    exe = pathlib.Path(tmp) / "test"
++    c.write_text(preamble + production + tests)
++    subprocess.run(["gcc", "-std=c11", "-Wall", "-Wextra", "-Werror",
++                    "-fsanitize=undefined", str(c), "-o", str(exe)], check=True)
++    subprocess.run([str(exe)], check=True)

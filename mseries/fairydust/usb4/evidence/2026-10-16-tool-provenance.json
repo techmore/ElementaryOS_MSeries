@@ -1,0 +1,13 @@
+{
+  "checked_date": "2026-10-16",
+  "upstream_repository": "https://github.com/AsahiLinux/m1n1",
+  "upstream_main_at_check": "c6a89b908ac4bf1f7b495f20531f3ea029148adb",
+  "local_source_origin": "Extracted source tree without Git metadata; not asserted identical to upstream main",
+  "local_inspected_sha256": {
+    "proxyclient/tools/run_guest.py": "2c11188c237a9f427dd46fd4430090cf9e82f66bdbdd342f45627630f0751346",
+    "proxyclient/hv/trace_dcp.py": "8a5a135821debb2b00249f0ee2db992f8f6f7d51d2df599ae8c9fc7255dca21b",
+    "proxyclient/m1n1/hv/__init__.py": "091efc3a5d515a09223f399b6213ed100ab7e7c17e92cfbd2fa505a9db74d070",
+    "proxyclient/m1n1/adt.py": "cda8cc68e23a7b3c044259d0a33bd50c2126fe4fac80a3f25852ab8de348bff0"
+  },
+  "future_capture_requirement": "Use a recorded upstream commit with a matching freshly built m1n1 binary and proxyclient; revalidate hook compatibility. These hashes document inspected sources, not a hardware-qualified recorder."
+}

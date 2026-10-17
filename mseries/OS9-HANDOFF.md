@@ -1,6 +1,361 @@
 # OS 9 implementation / Claude Code handoff
 
-Updated 2026-10-14. Repository: techmore/ElementaryOS_MSeries.
+## R1/R2 first-boot fixes staged — 2026-10-16 (DeepSeek/OpenCode)
+
+Source revision `46bb8b6` (public patch `0011`) implements R1 (retry the
+source start on `-ENOLINK` every 50 ms until the 5 s deadline; one-shot
+INACTIVE/ACK/HPD/IRQ register dump on failure; Apple's abort semantics kept)
+and R2 (bound-provider guards in every dpin op and the DCP connect path —
+`-ENODEV` instead of the `dpin_init` Oops). Five modules rebuilt; all offline
+suites pass (28 bridge groups incl. the new `-ENOLINK` retry group);
+checkpatch clean; the refreshed bundle re-validated (the only new undefined
+symbol versus the booted bundle is `_dev_info`, referenced by the target
+tree's own `appledrm.ko`). The controlled-test payload was re-staged and
+re-installed through the reviewed sequence (rollback → stage → verify → plan →
+apply): image `486be1d9…`, same `custom.cfg` (`9eadf091…`) and fallback-safe
+`boot.bin` (`6702f2c7…`); fresh rollback set
+`/home/sdolbec/dptunnel-logs/rollback-46bb8b6` (the c6fd906 set is
+superseded). `next_entry` empty; no boot armed or performed. The
+`mseries-gala-failed` marker was removed and the `lightdm-wait-for-drm.conf`
+drop-in is installed (effective next boot, unverified); the remaining
+session-race item is shortening appledrm registration. Record:
+[evidence/2026-10-16-r1-r2-fix-and-restage.md](fairydust/usb4/evidence/2026-10-16-r1-r2-fix-and-restage.md).
+
+## Controlled-test preparation resumed — 2026-10-16
+
+The owner resumed at fallback compatibility, with no repeated discovery.
+Patch 0010 preserves DCP's original phys and every existing PHY dependency;
+only the new driver consumes apple,dp-tunnel-phy through a managed getter.
+Independent source review and 11 lookup fault/refcount groups pass. Static
+fallback compatibility is addressed; fallback boot/runtime remains untested.
+
+The frozen source c6fd906 was clean-rebuilt for all five modules, followed by
+version/layout/export checks and actual staged-image verification. The new
+initramfs alone carries the new modules and metadata; root modules, original
+initramfs, kernel/default and existing GRUB entries remain untouched. The
+separate entry uses bypass=1 and timeout=15000. Exact artifacts, hash-guarded
+installer, rollback and collector: [CONTROLLED-TEST.md](fairydust/usb4/CONTROLLED-TEST.md).
+The earlier root-module-replacing installer is superseded for this test.
+No reboot, module reload/unbind, cable move or hardware success is claimed.
+**Deployment status: STAGED AND VERIFIED; first boot executed — 2026-10-16.**
+The one-shot entry ran 11:45:04–11:47:13 with the exact intended parameters and
+all five rebuilt modules loaded. The bridge engaged automatically on the dock
+tunnel (`0:5 <-> 1:14`) and failed in the DP-IN path: first attempt
+`phy poweron failed --> -67` (`-ENOLINK`; DP-IN HPD low at activation), second
+attempt Oopsed in `dpin_init` (NULL device passed to `pm_runtime_resume`). A
+Gala/simpledrm boot race also crashed the desktop, so the collector was not run.
+Full record:
+[evidence/2026-10-16-controlled-test-first-boot-outcome.md](fairydust/usb4/evidence/2026-10-16-controlled-test-first-boot-outcome.md).
+The R1/R2 fixes are staged (rev `46bb8b6`, image `486be1d9…`, rollback set
+`/home/sdolbec/dptunnel-logs/rollback-46bb8b6`); `next_entry` is empty; root
+modules, original initramfs, kernel/default and grubenv are unchanged. Do not
+re-arm the test entry until the session race (R4) is addressed or accepted
+(the drop-in takes effect at the next boot; appledrm-registration work remains).
+
+Updated 2026-10-16. Repository: techmore/ElementaryOS_MSeries.
+
+
+## Stopped at source checkpoint — 2026-10-16
+
+The owner requested a natural stopping point. Patches 0007–0009 now save the
+DCP-before-DPRX bridge with source ownership, cancellation and router lifetime
+handling. Final changed module builds pass; 27 bridge groups plus the earlier
+29 logic groups pass, along with two board checks. Clean patch application
+byte-matches 14 reviewed source files. These are offline checks, not monitor
+progress: no new wake, unbypassed DPRX response, EDID/modes or picture.
+
+No new driver, initramfs or boot payload was installed or loaded; no reboot
+or cable change occurred in this batch. Only the build dependency pahole was
+installed. The prepared boot payload remains a private candidate.
+
+**Resume blocker:** the global boot.bin device tree replaces DCP's PHY with a
+new DP-IN provider. Resolve default/fallback-kernel compatibility and a tested
+rollback plan before deployment; a stock kernel may lack that provider.
+Initramfs/module staging and the first hardware test remain undone. Do not
+install the prepared payload merely because the source checks passed.
+
+See [bridge implementation and validation](fairydust/usb4/DCP-SOURCE-BRIDGE.md).
+
+## Current authorization and bridge implementation — 2026-10-16
+
+The owner now authorizes installing dependencies/drivers and rebooting or
+changing cables **if needed**, while requiring changes to be batched rather
+than constant switching. This explicitly supersedes the earlier no-install/
+no-reboot/no-cable instructions below. Codex owns implementation and Git
+writes for the current bridge batch; DeepSeek was asked for a scoped review.
+No new driver, initramfs or boot payload has been deployed yet.
+
+The isolated source now implements explicit NHI/DCP mapping, queued DCP
+preparation before DPRX reads, matched get/put, stale-result rejection and
+cleanup. 27 production bridge/gate/cancellation/adoption groups pass in addition to
+the earlier tests. Changed modules and target/control DTBs compile. Work is
+stopped at the source checkpoint above; deployment preparation is incomplete.
+
+**Compatibility correction:** do not disable CONFIG_DEBUG_INFO_BTF_MODULES
+when building C modules for this running kernel. It changes struct module's
+cleanup offset even when vermagic and total structure size match. Original
+ATC uses init offset 0x130 / cleanup 0x4a8; a BTF-disabled trial had cleanup
+0x490. Nothing from that trial was installed here. Retain the layout; a
+missing vmlinux may legitimately skip BTF data generation. Compare actual
+module init/exit relocation offsets, version and required exported symbols.
+The older module-only recipe claiming BTF-off is ABI-neutral is superseded.
+
+## Dock video: offline review and gap ledger — 2026-10-16
+
+Claude reviewed `DP-TUNNEL-RE.md` §6-7 against the pinned tree and the newer
+audit/REA/ordering notes (read-only; no kernel, boot, cable or Neo action).
+Findings are one ledger with owners: `fairydust/usb4/REVIEW-2026-10-16-GAPS.md`
+(linked from `STATE-OF-PLAY.md`). Fixed `test-dp-tunnel.sh`, which counted eDP
+as a connected display; it now counts only DP/HDMI connectors (checked live:
+old count would include eDP, new count 0). Not done: router-side DP-IN hook
+design and the refcount question (G1/G2, DeepSeek), DPRX teardown backport (G3),
+any hardware step (G4/G5, owner-gated).
+Update 2026-10-16 (later): recorded the DeepSeek bridge review (B1-B8) and Codex bundle status; read-only pre-reboot inspection found the GRUB entry lacks `dprx_bypass=1` (N1), `RECOVERY.md` named missing files (N2, repo copy corrected), no initramfs/install script yet (N3), a 5 s source deadline (N4). Reboot plan and post-reboot checks: `fairydust/usb4/POST-REBOOT-CHECKLIST.md`. Nothing applied.
+
+## DP-IN source milestone — offline implementation, 2026-10-16
+
+[Implementation and DeepSeek handoff](fairydust/usb4/DPIN-IMPLEMENTATION.md)
+now contains additional patches 0004–0006: DP-IN resources/IRQ, inactive/ACK
+handshake, shared ATC tunnel clocks and DCP callback/HPD/error integration.
+29 production-logic groups and 2 compiled-board checks pass; complete Apple
+DRM/PHY relocatable objects and target/control DTBs build, binding documents
+and DP-IN-filtered DTB schema validate. Ghidra independently corroborates
+selected REA findings. Full MODPOST/production-config/runtime checks remain.
+No new module/DTB/kernel was installed, no reboot or cable move performed.
+
+The [frontier ledger](fairydust/usb4/STATE-OF-PLAY.md) incorporates the separate
+recorded live 0003 HPD-selection fix: `0:5 <-> 1:14`, but DPRX still times out.
+Dock HPD establishes sink presence, not a working pixel chain. DP-IN source
+is a draft, not a solved hardware path. Next resolve router DPRX versus DCP
+ACTIVATE ordering using existing inputs; do not repeat discovery or count
+another build as monitor detection. Current no-install/no-reboot/no-unplug
+constraint remains. One Git writer; preserve other agents' notes.
+
+## Owner constraint: NO M1 Pro reboot or power cycle — 2026-10-16
+
+The owner explicitly forbids rebooting or power-cycling the M1 Pro. This
+revokes the earlier macOS cutover plan for the current session. Do not switch
+its operating system, start a hypervisor guest, or execute the shutdown/
+startup instructions in the retained cutover checklist. Those procedures
+are future reference only and require fresh owner authorization.
+
+Current work is read-only live enumeration and recovery diagnosis, preserving
+the running system's stability. Use the Neo for bounded remote diagnostics
+and offline analysis; it cannot add m1n1 hypervisor instrumentation underneath
+the already-running M1 Pro. Boot-time capture requires booting the target,
+which is currently forbidden. Keep remote work in delegated workers with
+hard timeouts, never hold the primary chat on SSH, and report active progress
+every 30 seconds. No kernel, boot, audio or system changes are authorized by
+this diagnosis.
+
+## REA / DeepSeek dock-video handoff — 2026-10-16
+
+Read [REA DP-IN findings](fairydust/usb4/REA-DPIN-FINDINGS.md) before proposing
+the next patch. Exact T6000 macOS 13.5 kernelcache, DCP firmware and j314sap
+device tree were selectively obtained from official Apple restore components,
+CRC/hash checked and analyzed locally. Native ARM64e caches were also found
+on Neo; the x86_64 compatibility KCs were the wrong inputs. REA/Kuna actually
+analyzed extracted AppleDisplayCrossbar/DCP proxy functions; original-byte
+and independent decoder checks support the findings.
+
+Shipped board metadata confirms separate DP-IN bases `0xb01e50000` and
+`0xb01e58000`, each `0x4000`, Apple IRQ values 1354/1355. Apple DP-IN activation
+uses a distinct inactive/ack/HPD handshake and tunnel/PHY/interrupt lifecycle
+absent from the inspected Linux crossbar path. PHY tunnel PCLK selection is
+also separate from existing USB4 common/CIO PLL initialization. Do not copy
+physical DP-altmode configuration into USB4 or treat static analysis as
+hardware qualification. Exact routine addresses, byte offsets, tool pins,
+limitations and the next implementation design are in the linked report.
+
+Latest read-only Linux check now shows port2 host, USB4 partner, Dell dock
+enumerated, bypass Y, external DP/HDMI disconnected, eDP connected. This
+supersedes older no-enumeration observations below; no agent reboot or cable
+change was performed. Static analysis and public handoff notes are authorized;
+live kernel/register changes remain outside the current authorization.
+Keep proprietary binaries and full decompiler outputs private.
+
+## Earlier port2 role attempt: EIO; read diagnostic prepared — 2026-10-16
+
+The owner's regular-Terminal role-change attempt returned `Input/output error`
+from `printf`, with no observed role change and no more detailed kernel error.
+The driver uses `SWDF` for a host-role request (`SWUF` requests device role).
+`EIO` is not an
+`EPERM` authorization rejection: transport failure or a short I2C length prefix
+can produce it, and the current evidence does not distinguish the cause.
+Neo before/after capture files remain private; no raw registry or credentials
+are included here. Do not repeat role writes based only on this error.
+
+Prepared [`inspect-cd321x-io.py`](fairydust/usb4/inspect-cd321x-io.py), a stdlib
+diagnostic fixed to bus0/address0x3f, after verifying port2's sysfs ancestry,
+`tps6598x` binding and OF `i2c@39b040000/usb-pd@3f` mapping. It reads CMD1 and
+STATUS, then reads one DATA1 result byte only if the earlier CMD1 value was
+valid and idle. Each combined I2C read includes only a one-byte register
+address selector followed by read data; it does not write task/config payloads,
+scan, reset, unbind or change a role. Raw bytes, length prefixes and errno are
+reported. Driver activity can occur between transfers; this is a snapshot,
+not proof that DATA1 belongs to the earlier role attempt.
+
+Exact owner regular-Terminal command, after source review:
+
+```bash
+sudo python3 /home/sdolbec/wt-dockvideo/mseries/fairydust/usb4/inspect-cd321x-io.py
+```
+
+Six offline tests validate combined-message construction, error preservation,
+conditional DATA1, fixed read whitelist, wrong mapping/driver refusal and
+no device open in dry-run. The real sysfs `--dry-run` passed. No hardware I2C
+transaction was executed by this preparation; runner sudo remains blocked by
+`NoNewPrivs`. No reboot, power cycle or system setting change was performed.
+
+## Earlier bounded live checks — 2026-10-16
+
+[Published live-status report](fairydust/usb4/evidence/2026-10-16-neo-live-status.md):
+Neo sleep assertions remain active and a Dell dock/hubs/USB LAN/headset enumerate
+there. No `/dev/cu.usb*` proxy endpoints and no display entries were observed;
+no handshake was attempted and no monitor picture is confirmed. USB inventory
+does not prove this is the same physical target WD22TB4 or that cables moved.
+The M1 Pro remains Linux at the latest check, with bypass `Y`, no USB or
+Thunderbolt devices observed, DP/HDMI disconnected and eDP connected. The
+target dock test needs the dock host cable on the M1 Pro and a separate direct
+recorder cable; do not infer physical cable changes from enumeration alone.
+Recorder Python,
+HV import, real ARMAsm smoke and loader help have passed. Target baseline,
+guest boot qualification and hardware trace remain outstanding.
+
+Owner requires the primary chat never to wait on SSH: remote checks belong to
+delegated workers with hard timeouts; long remote work must run as tracked
+jobs independent of SSH. Give progress updates every 30 seconds during active
+work. Do not ask the owner to repeat already-confirmed cable actions.
+
+## Neo recorder accessed / sleep inhibited — 2026-10-16
+
+Latest result: **Neo recorder core tools ready**. Official LLVM archive
+SHA-256 verified, and `READY-CHECK.sh` passed Python/HV imports, loader help,
+and actual AArch64 assembly/link/objcopy/nm (`nop; ret` ->
+`1f2003d5c0035fd6`). Sleep assertions remain active. Target macOS baseline,
+USB proxy handshake and guest qualification remain; no dock-video success.
+
+The owner supplied the second machine: MacBook Neo / Mac17,5 / A18 Pro,
+macOS 26.6.2 (25G83), 8 GB RAM, about 402 GiB free. SSH succeeded; at the
+owner's explicit request `ssh-copy-id` installed the existing Linux public
+key, followed by a successful password-free BatchMode login. No credentials,
+serial/hostname or network addresses are published.
+
+See [`NEO-RECORDER-SETUP.md`](fairydust/usb4/NEO-RECORDER-SETUP.md).
+A tracked `caffeinate -dimsu` runs on Neo and `pmset` verified its assertions;
+a sleep-blocking systemd inhibitor is active on the Linux target too. Both
+are reversible session measures, with logs/stop instructions retained.
+The Neo has private CPython 3.13.16, all four pinned m1n1 dependencies and
+fresh matching source/build at `c6a89b908ac4bf1f7b495f20531f3ea029148adb`.
+Twelve offline tests, HV import and guest-loader help pass on Neo. Native
+collector self-test confirms registry/profiler/log commands; the Preboot
+search fails without root and its error is retained. This is recorder
+validation, not M1 Pro dock evidence. The portable LLVM compiler smoke has
+passed; no serial handshake, target guest or boot change yet.
+
+Leave the dock/HDMI attached to the M1 Pro. Add only a direct USB data cable
+from the Neo to a free target Thunderbolt port when ready. Current next step:
+read-only live topology/recovery diagnosis; no reboot or macOS cutover.
+Neo's macOS 26 is the recorder OS, not the XNU guest.
+
+## macOS cutover package — future reference only (2026-10-16)
+
+Owner wants one thoroughly prepared visit, retaining the USB4/HDMI cables.
+The Neo recorder is now available; see the newer setup status above. Retain
+[`MACOS-CUTOVER-CHECKLIST.md`](fairydust/usb4/MACOS-CUTOVER-CHECKLIST.md)
+for a future, freshly authorized native macOS baseline, exact commands,
+kernelcache inventory, return checklist and reviewed public evidence. `collect-macos-dock.sh`
+needs no Python/Xcode/sudo and does not change settings or upload files.
+Raw registry/log/Apple binary data remain local; publish inspected metadata
+and relevant engineering evidence. The repository is confirmed public.
+
+Corrected the trace payload: **extracted matching XNU kernelcache.macho**,
+not iBoot or the m1n1 boot bundle. A complete m1n1 trace still requires a
+separate host and a reviewed guest boot route; native macOS cannot trace
+its own MMIO with that Python client. Added IORegistry import to the ADT
+inspector and a raw DPTX hook so validateConnection bytes are retained.
+Twelve offline tests pass; collector syntax/Linux refusal checks pass.
+No target macOS run, kernel/boot/audio change, or cable change was performed;
+the newer Neo self-test is separately recorded above.
+
+The [Linux snapshot](fairydust/usb4/evidence/2026-10-16-linux-baseline.json)
+records bypass `N` and dock DP disconnected at capture time. Arm and verify
+bypass from the regular Terminal before any detach/shutdown preparation;
+the exact command is in the checklist. Next: collect native macOS metadata
+and visible HDMI result with zero cable changes, then resolve register
+mapping and the recorder/guest prerequisites before a trace attempt.
+
+## DP-IN / AUX independent audit — 2026-10-16
+
+Read [`fairydust/usb4/DPIN-AUX-AUDIT.md`](fairydust/usb4/DPIN-AUX-AUDIT.md)
+before interpreting the older resume notes below. Owner confirmed dock HDMI
+to a powered Amazon Basics monitor on HDMI input. The owner ran one
+`force_link` off/on probe: DCP disconnect/connect and "powering nub" were
+followed by APCALL 22/24; `card2-DP-1` stayed disconnected. Bypass was `Y`
+after that probe. A later read found it `N`: the HDMI watchdog was restarted
+at 08:00:50, watching from live-log line 2795. This audit made no parameter
+writes. Read the current parameter and watchdog output before any cable action.
+
+New source-grounded findings: activation logs prove routing configuration,
+not end-to-end AUX traffic; the original trace recipe misses the separate
+`atcN-dpin0/1` blocks and defaults to the wrong DCP unless selected explicitly.
+A public dump from this exact Mac model names the DP-IN blocks. Their exact
+physical ranges and Apple ATC index still need the preserved ADT export.
+Do not blindly change DCP `core=0`: a public macOS log uses core0 for dpin0,
+and the older helper has incompatible IPC encoding.
+
+Added a filtered, read-only ADT inspector and a DP-IN/crossbar m1n1 trace hook;
+7 offline tests pass. Corrected `MACOS-TRACE-RUNBOOK.md` to run both hooks in
+one guest with explicit targets. No live capture or kernel/boot/audio change
+was made. The owner attempted the ADT export under sudo in their regular
+Asahi Terminal: `errno 1: Operation not permitted`; the JSON file is empty.
+Running config has `CONFIG_STRICT_DEVMEM=y` and no `CONFIG_MTD_PHRAM`,
+consistent with the RAM read being refused even under root. Do not weaken
+protections or retry via broader sudo. Next: obtain the macOS IODeviceTree
+baseline above (or ADT through m1n1 when a recorder is available), then
+capture DP-IN bring-up in a separately prepared two-host session. The HDMI watchdog
+has not produced a new, unbypassed sink result and cannot yet close H1.
+
+## USB4 dock video — resume here (2026-10-15)
+
+Active workstream: make the Dell WD22TB4's HDMI/DP output work on the 14-inch M1
+Pro over USB4 DisplayPort tunnelling. The dock is unavailable until 2026-10-16, so
+the state below is "prepared and waiting", not "finished".
+
+- **Experiment 1** (crossbar route `dispext1 -> dpin0` plus
+  `thunderbolt.allow_dp_tunnel=1`) is installed and was tested on hardware on
+  2026-10-15: the USB4 connection manager activates the Video and AUX paths, but
+  every attempt dies at the sink's DPCD read (`DPRX read timeout` ×25533). No
+  picture. Full result: `fairydust/usb4/DP-TUNNEL-RE.md` section 5.
+- **Experiment 2** — kernel `7.1.13-elementary-fairydust-usb4-dptunnel`, built by
+  CI run `38788230910` from branch `re/usb4-exp2` — is installed side by side with
+  the working kernel and is the next thing to test. It adds a runtime
+  `thunderbolt.dprx_bypass`, leaves the ATC DP PHY unbound for the tunnelled
+  connector (`apple,dp-tunnel`), and a per-connector `force_link` debugfs handle.
+- **Start with `fairydust/usb4/EXP2-RUNBOOK.md`**: its top box is the *one*
+  question the session answers — does the sink answer the router's DPRX/DPCD read?
+  — with an explicit early-stop (if the sink stays silent, no driver change can
+  help; pivot to the macOS trace), plus §8 "do not spend tomorrow on this". It
+  also has the resume map, the step-by-step test, the decision tree and the
+  ablation matrix; the four boot-tree variants (`config-A..D.bin`) are
+  pre-generated under `/home/sdolbec/dp-tunnel-artifacts/boot-variants/`.
+- The full reverse-engineering map, the 2026-10-15 offline analysis (why
+  `dprx_bypass` can bring the fabric up but cannot produce video; upstream's
+  missing "DP IN PHY" block; the upstream teardown fix we predate) and the cable
+  hazard are in `fairydust/usb4/DP-TUNNEL-RE.md`.
+- **Measured hazard:** do *not* unplug the dock while a DPRX read is in flight —
+  it deadlocks `apple_nhi_remove` against the `tps6598x` mutex and wedges the
+  Type-C port until a hard reboot. Arm `dprx_bypass=1` before attaching the dock.
+- **Where the work lives:** branch `docs/dock-video-decision` (PR #53), checked
+  out at `/home/sdolbec/wt-dockvideo` — **run the session from there**; the shared
+  checkout `/home/sdolbec/ElementaryOS_MSeries` is on another branch and its
+  collector is stale. The branch carries **both** the documentation and the
+  experiment-2 implementation
+  (`0002-experimental-dp-tunnel.patch` + the matching `debian/build.sh` pin), so a
+  build from this one branch reproduces the installed kernel; `re/usb4-exp2`
+  remains the original implementation branch. Durable artifacts (kernel `.deb`,
+  boot images, logs, backups) are under `/home/sdolbec/dp-tunnel-artifacts/` and
+  `/home/sdolbec/dptunnel-logs/`.
 
 
 ## Repo hygiene audit — 2026-10-16
@@ -34,6 +389,170 @@ desktop result as validation of either installation path.
 Next: run the long-uptime decode check, complete the encrypted backup using the
 owner's normal backup procedure, and keep the installer and factory-image
 qualification work separate from the already-running transformed desktop.
+
+## USB4 DP-tunnel experiment 1 — 2026-10-15
+
+Owner direction: **make the dock carry video** (they will not plug a display
+into the Mac's own ports), so the RE path is active. Reverse-engineered the
+missing data path and wrote it up in
+[`fairydust/usb4/DP-TUNNEL-RE.md`](fairydust/usb4/DP-TUNNEL-RE.md). Key finding:
+the display crossbar driver already supports routing a controller stream to the
+ACIO DP IN adapters (`dpin0`/`dpin1` ⇒ "USB4 Tunnel #0/#1"), and on this machine
+`atcphy1_xbar` (`b0304c000`, the dock's port) currently routes `dispext1,0` to
+`dpphy` instead. The only missing pieces are (a) the crossbar mux selection and
+(b) the trigger that makes the DCP drive the DP IN adapter.
+
+Landed (experiment 1, off by default):
+- `fairydust/usb4/0002-experimental-dp-tunnel.patch` — device tree routing of
+  `dcpext1` to `<&atcphy1_xbar 1>` (dpin0), a `thunderbolt.allow_dp_tunnel`
+  module parameter that un-suppresses Apple DP tunnels, and a per-connector
+  `force_link` debugfs to drive the DPTX endpoint by hand.
+- `fairydust/usb4/test-dp-tunnel.sh` — read-only evidence collector + verdict.
+- `fairydust/debian/build.sh` builds the experimental kernel only when
+  `FAIRYDUST_DP_TUNNEL=1`, as release `7.1.13-elementary-fairydust-usb4-dptunnel`
+  / package `7.1.13+elementary.usb4-dp1` (distinct, so it cannot be confused with
+  the working `-usb4` kernel). `.github/workflows/daily-9.0.yml` gained a
+  `fairydust_tunnel` dispatch input.
+- `fairydust/usb4/install-ci-kernel.sh` can now select a variant
+  (`KERNEL_SUFFIX`/`KERNEL_ENTRY_ID`/`KERNEL_EXTRA_CMDLINE`; defaults unchanged)
+  and swap just the `j314s` DTB inside the existing boot image (`--swap-dtb`), so
+  the experimental kernel installs side by side as its own GRUB entry. Nothing
+  was installed or booted.
+- Cleared the proxyclient dependency blocker without touching the system:
+  `fairydust/usb4/m1n1-trace-deps.sh` vendors `construct==2.10.70` and
+  `pyserial==3.5` into `~/.local/share/m1n1-proxyclient/site` (no pip/apt/sudo).
+  Verified `proxyclient/tools/run_guest.py --help` and the tracer imports work.
+  `proxyclient/hv/` already ships `trace_dcp.py` (AFK/ASC endpoint tracer) and
+  `trace_dptx.py`, so the macOS trace is now a tooling-free step.
+- Validated the `--swap-dtb` install step without root: against the live
+  `/boot/m1n1/boot.bin`, `swap-dtb.py` finds the 110-tree DTB run, matches
+  exactly one `apple,j314s` tree (#25, 93189 bytes) and an identity swap
+  reproduces the input byte for byte (sha256 `5cbc5f30…`). `sudo` here wants a
+  password and there is no TTY for the agent, so the dry run and `--apply` must
+  be launched from a real terminal.
+- CI run `38776005043` built the experiment-1 kernel (25m17s; the ISO job in the
+  same run failed and is unrelated) from `083f3a19`. Verified without root: the
+  `.deb` checksums pass, release is `7.1.13-elementary-fairydust-usb4-dptunnel`,
+  the DTB is at the path `--swap-dtb` expects, the compiled DTB has
+  `dcp@28cc00000` (dcpext1) `mux-controls = (153,1)` (dpin0) vs `(153,0)`
+  (dpphy) in the working boot.bin with the HDMI node unchanged, and
+  `appledrm.ko`/`thunderbolt.ko` carry `force_link` and the `allow_dp_tunnel`
+  module parameter respectively. Nothing installed or booted.
+
+Verified: patch applies cleanly to the prepared source, hashes match, `build.sh`
+syntax and the workflow YAML parse.
+
+**Installed 2026-10-15 and tested on hardware — no video yet.** The kernel was
+installed side by side as its own non-default GRUB entry (`elementary OS
+(M-series, fairydust-usb4-dptunnel test)`, via `--swap-dtb`), with the working
+entry and `GRUB_DEFAULT` untouched. Independent post-install check: the installed
+`boot.bin` differs from its pre-install backup by exactly one byte
+(`mux-controls` for `dcp@28cc00000`, arg 0 `dpphy` → arg 1 `dpin0`), the HDMI
+route and `mux-index` are unchanged, and the backup still hashes to the original
+`5cbc5f30…`. Because m1n1 consumes `boot.bin` before GRUB, that tree is shared by
+every entry; the original is kept at
+`/boot/m1n1/boot.bin.KNOWN-GOOD-pre-usb4-20261015-140455` and
+`/root/usb4-backup-20261015-140455/boot.bin`.
+
+On the booted test (2026-10-15 14:13-15:32) the tree was armed (`mux-controls`
+arg 1) and the crossbar logged the new route (`Switched dpin0 to dispext1,0`),
+but dock video still failed — one step later than before. The tunnel now reaches
+path activation: host DP IN `0:5` pairs with a dock DP OUT adapter, bandwidth is
+allocated in allocation mode (22500 Mb/s), and the Video, AUX TX and AUX RX paths
+all report `activation complete` (4x over the session). Every attempt then dies
+reading the sink's DPCD: `DPRX read timeout` x25533 (21479 on `1:13`, 4054 on
+`1:14`), with no link rate, no training, no video. Whole-journal check: this is
+the only boot that has ever reached path activation. `force_link` was never
+exercised, and no boot has yet A/B'd the old `dpphy` route against the new one, so
+the crossbar change's role is not isolated — the tunnel-side steps are
+host-router <-> dock-router and do not involve the crossbar at all. Both are the
+next cheapest steps; `fairydust/usb4/DP-TUNNEL-RE.md` has the log excerpt.
+
+Related: suspend with the dock attached remains unsafe — the next boot hung at
+`PM: suspend entry (s2idle)` and needed a power-cycle. More importantly, the test
+boot's unplug wedged the Type-C port (deadlock in `apple_nhi_remove` vs the
+`tps6598x` mutex, triggered by a DPRX read in flight); that is diagnosed and
+documented on the `re/usb4-exp2` branch, which also carries experiment 2
+(`dprx_bypass`) and its install. The two branches have diverged in this file and
+in `DP-TUNNEL-RE.md`; consolidating them is a git-ownership decision, not one to
+make silently here.
+
+Prepared for the next hardware session (dock returns tomorrow): an offline
+runbook, an experiment-2-aware evidence collector, and a byte-level device-tree
+tool that makes the crossbar/`apple,dp-tunnel` A/B a one-byte edit plus a reboot
+instead of a CI build.
+
+- [`fairydust/usb4/EXP2-RUNBOOK.md`](fairydust/usb4/EXP2-RUNBOOK.md) — the
+  step-by-step plan, decision tree, ablation matrix, hazards, rollback.
+- `fairydust/usb4/boot-dt.py` — inspect the live device tree inside
+  `boot.bin`, or patch `mux-controls` / ablate `apple,dp-tunnel`.
+- `fairydust/usb4/test-dp-tunnel.sh` — now reports `dprx_bypass`, the
+  `apple,dp-tunnel` property, `force_link` handles, and gives an
+  experiment-2 verdict.
+
+## Monitor / dock-video decision — 2026-10-15
+
+Checked the current upstream state for external-display video and recorded a
+decision in [`fairydust/usb4/DOCK-VIDEO-DECISION.md`](fairydust/usb4/DOCK-VIDEO-DECISION.md):
+use the Mac's **built-in HDMI port** (supported; DCP firmware 13.5 confirmed
+locally) as the everyday external display, or a **direct USB-C→HDMI/DP adapter
+on the front-left port** for the DP Alt Mode route. **Dock video (HDMI or DP on
+the WD22TB4) is not targeted** — it needs USB4 DisplayPort tunnelling, which is
+unimplemented; dock HDMI and dock DP are the same problem. The `fairydust` HEAD
+is `ce9f2eba` (2026-09-08), the revision this repo already builds, so there is
+nothing new to rebuild. Added read-only helper `mseries/check-display-paths.sh`
+(DCP firmware, support modules, DRM connectors, per-path verdict) and updated the
+ROADMAP open-problem row. No kernel, bootloader or audio change was made.
+
+## Dock video experiment 2 installed + unplug deadlock found — 2026-10-15 15:30
+
+- **Incident:** at 14:55:47 the dock was unplugged while experiment 1 was armed
+  with `dprx_timeout=-1`. The Type-C port deadlocked in stock code
+  (`apple_nhi_remove` waits forever for `domain_released` while holding the
+  `tps6598x` mutex), killing USB/Ethernet/hotplug/charging on that port. Only a
+  reboot clears it; the Mac's own display, session and wifi were unaffected.
+  Analysis, stack trace and upstream references: `mseries/fairydust/usb4/DP-TUNNEL-RE.md` §9.
+- **Mitigation:** the test entry now boots with a bounded
+  `thunderbolt.dprx_timeout=3600000` (1 h) instead of `-1`, and `dprx_bypass=1`
+  (runtime-writable) makes `tb_dp_wait_dprx()` return at once, so no read is left
+  in flight. Rule: arm the bypass (write 1) before unplugging the dock.
+- **Experiment 2 installed** from CI run 38788230910 (`build-kernel` completed
+  19:11:21Z) into the `elementary-usb4-dptunnel` entry: kernel
+  `7.1.13-elementary-fairydust-usb4-dptunnel`, DTB swapped inside
+  `/boot/m1n1/boot.bin`. Verified: `dprx_bypass` present in `thunderbolt.ko`,
+  `apple,dp-tunnel` present in `appledrm.ko` *and* in the rebuilt initramfs, and
+  `apple,dp-tunnel` present in the boot.bin device tree.
+- **Installer bug fixed:** `cp -a` nested the module tree on a repeat install, so
+  the old modules (and the old `appledrm.ko` in the initramfs) would have been
+  used; `install-ci-kernel.sh` now copies directory contents (`dir/.`). Both
+  module trees and the initramfs were repaired by hand on this machine.
+- **Next:** reboot into the `elementary OS (M-series, fairydust-usb4-dptunnel test)`
+  entry, check whether the DCP still reports `DEVICE_NOT_RESPONDING`
+  (experiment 2 alone), then
+  `echo 1 | sudo tee /sys/module/thunderbolt/parameters/dprx_bypass` and watch
+  `DP-1` / the monitor.
+- Rollback: normal GRUB entry; pre-install `boot.bin` copies in
+  `/root/usb4-backup-20261015-152345/` and
+  `/boot/m1n1/boot.bin.KNOWN-GOOD-pre-usb4-20261015-152345`.
+
+## Dock video experiment 2 built (CI in progress) — 2026-10-15
+
+Experiment 1 was booted and measured: the crossbar route is live (`Switched
+dpin0 to dispext1,0`) and the USB4 DP tunnel forms (`0:5 <-> 1:13 (DP)`), but
+the host router never sets `DP_COMMON_CAP.DPRX_DONE`, so the tunnel never
+activates and `DP-1` stays `disconnected`. Both the ACIO (DPRX) and the DCP
+firmware (apcalls 22/24 = `DEVICE_NOT_RESPONDING`/`DEVICE_NOT_STARTED`) fail to
+read the sink's DPCD over AUX.
+
+Experiment 2 (unbind the tunnelled DPTX from the ATC DP PHY) is now built into
+`0002-experimental-dp-tunnel.patch`, together with a runtime `dprx_bypass`
+parameter, on branch `re/usb4-exp2` (commit 94c6e84). CI run 38788230910 built
+the matching kernel package; it was installed later that day (see the section
+above).
+
+The remaining unknown — the DCP's tunnelled-DPTX protocol and the DPIN crossbar
+programming — still needs a macOS trace captured from a second computer with the
+m1n1 hypervisor (see `fairydust/usb4/DP-TUNNEL-RE.md` §6/§7).
 
 ## New desktop bugs reported — 2026-10-13
 
@@ -1439,6 +1958,13 @@ Three 5 s traces of `drm_sched_job_queue` (read-only): the ChatGPT desktop app s
 
 Owner declined closing the ChatGPT/Codex app, so no A/B was run. New finding: that app is an X11 client under Xwayland while Claude Desktop and Brave are native Wayland. Installed `~/.config/environment.d/60-mseries-electron-wayland.conf` (`ELECTRON_OZONE_PLATFORM_HINT=auto`; script `mseries/install-electron-wayland.sh`, `--uninstall` removes it); takes effect at next login, effect NOT yet measured. Also found: s2idle is the only sleep mode, deep idle is ~7% of CPU0 idle time, sleep drain is unmeasured. Full plan: `mseries/POWER-ROADMAP.md` (workstreams A to G, phases 0 to 4, six owner decisions). Next: after the next login, re-trace GPU jobs/s for the ChatGPT app and compare with the 4,000 to 5,000/s baseline.
 
+## 2026-10-16 (Claude) — dock HDMI sink tests and built-in HDMI reference
+
+- DP-port sink test (07:23–07:27, bypass off): `RESULT=SILENT`, 6 x `DPRX read timeout`; bypass re-armed.
+- Dock HDMI (`1:14`) sink test before reboot: no hotplug event at all; debugfs `port14/regs` CS2 (0x3b) had HPD (bit 6) clear while `port13` had it set. Watcher timed out, then was aborted by the owner; bypass re-armed (`Y`). No verdict from that run.
+- After reboot (kernel 7.1.13-elementary-fairydust-usb4-dptunnel, bypass=1): `1:14` HPD set, tunnel `0:5 <-> 1:14` forms, `DP source preparation failed: -110` at ~22 s. Matches DeepSeek/OpenCode commit 9fb6ff1.
+- Built-in HDMI works (38 modes, desktop extended). Working DCP (`289c`) sequence: DP2HDMI HPD irq -> `powering nub` -> `acking unhandled call 21` -> `set_drive_settings` x2 (link training) -> `plug_gated` -> `set_digital_out_mode`. The dock tunnel DCP (`28cc`) stops after `powering nub`. Saved as `mseries/fairydust/usb4/DCP-REFERENCE-BUILTIN-HDMI-20261016.txt`.
+- No driver, kernel, bootloader or display change made. Next task: DeepSeek drives the DCP to run the call 21 / drive-settings stage for the tunnelled port.
 
 ## October 16 local AI rollout and qualification
 

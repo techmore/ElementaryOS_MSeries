@@ -1,0 +1,135 @@
+{
+  "date": "2026-10-16",
+  "patch_sha256": {
+    "0007-experimental-dcp-source-binding.patch": "cb0b89238985a49903b6473e85fbd6229d1891f71ba5841c22f96c0f55182205",
+    "0008-experimental-dcp-source-before-dprx.patch": "9180d5204f6d89680fd69ac87efaed63959012605892ec50b20a3d65192e0a55",
+    "0009-experimental-j314s-dcp-source-map.patch": "7ebb3668e7502c49306fb4b053e890cbcd308674253f43916ce7e97955c6dd99"
+  },
+  "source_files_byte_matched": 14,
+  "logic_groups": {
+    "existing_handshake_irq": 11,
+    "existing_clocks": 11,
+    "existing_connection": 7,
+    "bridge_source_gate_refs_cancellation_adoption": 27
+  },
+  "compiled_board_checks": 2,
+  "payload_preparation_groups": {
+    "boot_payload": 5,
+    "initramfs_preservation": 5
+  },
+  "schema": "new binding documents and target/control NHI DTBs pass with no diagnostics",
+  "checkpatch": "zero errors; one generic new-file MAINTAINERS warning",
+  "module_validation": {
+    "kernelrelease": "7.1.13-elementary-fairydust-usb4-dptunnel",
+    "module_layout_reference": "original installed phy-apple-atc.ko",
+    "module_init_cleanup_offsets": [
+      "0000000000000130",
+      "00000000000004a8"
+    ],
+    "loaded_export_count": 16181,
+    "staged_export_count": 57,
+    "modules": [
+      {
+        "file": "phy-apple-atc.ko",
+        "vermagic": "7.1.13-elementary-fairydust-usb4-dptunnel SMP preempt mod_unload aarch64",
+        "module_init_cleanup_offsets": [
+          "0000000000000130",
+          "00000000000004a8"
+        ],
+        "undefined_count": 30,
+        "missing_exports": [],
+        "sha256": "4af34975549a0b49312d453b92fcdcdd43c480855a2466f577fdc6c9beec7587",
+        "depends": ""
+      },
+      {
+        "file": "phy-apple-dpin.ko",
+        "vermagic": "7.1.13-elementary-fairydust-usb4-dptunnel SMP preempt mod_unload aarch64",
+        "module_init_cleanup_offsets": [
+          "0000000000000130",
+          "00000000000004a8"
+        ],
+        "undefined_count": 37,
+        "missing_exports": [],
+        "sha256": "bdce990eae0035b70c03a2c3425ecdc209ff1dbc9cc8decec7f41f61fbdf4401",
+        "depends": "phy-apple-atc"
+      },
+      {
+        "file": "appledrm.ko",
+        "vermagic": "7.1.13-elementary-fairydust-usb4-dptunnel SMP preempt mod_unload aarch64",
+        "module_init_cleanup_offsets": [
+          "0000000000000130",
+          "00000000000004a8"
+        ],
+        "undefined_count": 286,
+        "missing_exports": [],
+        "sha256": "a36f1a6b68ab121c99926790a782861960039fa49194e63ca40759e89edad59b",
+        "depends": "phy-apple-dpin"
+      },
+      {
+        "file": "thunderbolt.ko",
+        "vermagic": "7.1.13-elementary-fairydust-usb4-dptunnel SMP preempt mod_unload aarch64",
+        "module_init_cleanup_offsets": [
+          "0000000000000130",
+          "00000000000004a8"
+        ],
+        "undefined_count": 203,
+        "missing_exports": [],
+        "sha256": "111643a9d74b96326c252c8d771d5c7eb3c676b58062ca4fb0a7a917a35ab6b2",
+        "depends": ""
+      },
+      {
+        "file": "thunderbolt_apple.ko",
+        "vermagic": "7.1.13-elementary-fairydust-usb4-dptunnel SMP preempt mod_unload aarch64",
+        "module_init_cleanup_offsets": [
+          "0000000000000130",
+          "00000000000004a8"
+        ],
+        "undefined_count": 91,
+        "missing_exports": [],
+        "sha256": "4f8b4486c9dd7f51ac35816b2e1593cb47326b4cb494b8124ded9118724818fd",
+        "depends": "thunderbolt,appledrm"
+      }
+    ],
+    "btf_module_layout_retained": true,
+    "note": "Final Thunderbolt rebuild exited successfully after fixing the remaining three-argument DPRX call. Rust disabled for C modules; BTF module layout retained, BTF data skipped without vmlinux. MODPOST warns without full Module.symvers; undefined names independently match actual loaded or bundled exports. Runtime ABI remains unqualified."
+  },
+  "boot_payload": {
+    "status": "prepared only; no system write",
+    "valid_embedded_trees": 110,
+    "replaced_tree": "apple,j314s",
+    "old_offset": 4441711,
+    "old_size": 93217,
+    "new_size": 93736,
+    "semantic_property_changes": [
+      [
+        "/soc/cio@b01ac0000/nhi@f00000",
+        "apple,dp-in-port"
+      ],
+      [
+        "/soc/cio@b01ac0000/nhi@f00000",
+        "apple,dp-source"
+      ],
+      [
+        "/soc/dcp@28cc00000",
+        "phys"
+      ]
+    ],
+    "added_nodes": [
+      "/soc/cio@b01ac0000/phy@e50000",
+      "/soc/cio@b01ac0000/phy@e58000"
+    ],
+    "boot_sha256": "871591e2f447fdc7faace07d24dd82c86675f25e04a05d10c8b81e9b72ec782b",
+    "dtb_sha256": "3652a517a726be58a7154593f15ca986f2c408c53cd4916424de86cacc48ee62",
+    "output_sha256": "b9e94b63c57460a5dcaf0c9451933e68073836ebf4679c24fc31ea9201ee8386",
+    "prefix_suffix_unchanged": true
+  },
+  "review": "Existing OpenCode session notified; standalone scoped review transport failed, no successful external review claimed. Shared Claude gap/design notes read and preserved. Local source review and production-function tests completed.",
+  "hardware_result": "Not tested; no new monitor wake, unbypassed DPRX response, EDID/modes or picture demonstrated.",
+  "upstream_source_sha256": {
+    "1": "068066e1c6f769f91a49be0b05f229aabc45a9a9f358e8d26f2a6f93489dba2e",
+    "4": "6f2da2d84e9914011e1212e569dcc7edd1781cf674c7e0741d83bf242bfc6bc6",
+    "6": "276caaee19b7d23cd6c47392bb777d9f006291ccede40b61e5300c6e5736070e"
+  },
+  "checkpoint": "Source saved; owner requested stopping. No new driver/initramfs/boot payload installed, no reboot or cable change. Only dependency pahole installed.",
+  "deployment_blocker": "Global boot.bin DT changes replace DCP phys with a new DP-IN provider. Resolve compatibility/rollback for the default and fallback kernels before deployment; a stock kernel may not have this provider."
+}

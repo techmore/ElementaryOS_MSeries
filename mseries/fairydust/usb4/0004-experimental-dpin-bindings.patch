@@ -1,0 +1,82 @@
+From: sdolbec <sdolbec1@gmail.com>
+Subject: [PATCH] dt-bindings: phy: describe experimental T6000 DP-IN bridge
+
+Experimental, offline-validated only. Hardware qualification is pending.
+Apply after fairydust ce9f2eba, then
+0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch and
+0002-experimental-dp-tunnel.patch. Retain the independent
+0003-dp-out-prefer-adapter-with-hpd.patch.
+See DPIN-IMPLEMENTATION.md and REA-DPIN-FINDINGS.md for provenance,
+validation scope and remaining lifecycle/firmware questions.
+
+Signed-off-by: sdolbec <sdolbec1@gmail.com>
+---
+diff --git a/Documentation/devicetree/bindings/phy/apple,t6000-dpin.yaml b/Documentation/devicetree/bindings/phy/apple,t6000-dpin.yaml
+new file mode 100644
+index 0000000..f001ad4
+--- /dev/null
++++ b/Documentation/devicetree/bindings/phy/apple,t6000-dpin.yaml
+@@ -0,0 +1,47 @@
++# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
++%YAML 1.2
++---
++$id: http://devicetree.org/schemas/phy/apple,t6000-dpin.yaml#
++$schema: http://devicetree.org/meta-schemas/core.yaml#
++
++title: Apple T6000 USB4 DisplayPort input adapter
++
++maintainers:
++  - sdolbec <sdolbec1@gmail.com>
++
++description: |
++  Internal DisplayPort input bridge for a USB4 host router. This is a child
++  of ACIO and inherits its powered lifetime and address translation. It is
++  separate from the display crossbar and external Type-C DP AUX PHY. The
++  referenced ATC PHY stays in USB4/Thunderbolt mode while providing shared
++  tunnel pixel clocks. Experimental; explicitly enabled per board.
++
++properties:
++  compatible:
++    const: apple,t6000-dpin
++  reg:
++    maxItems: 1
++  interrupts:
++    maxItems: 1
++  '#phy-cells':
++    const: 0
++  phys:
++    maxItems: 1
++    description: DP interface of the parent port's ATC PHY, used for tunnel clocks
++  phy-names:
++    const: atc-phy
++  apple,transport-index:
++    $ref: /schemas/types.yaml#/definitions/uint32
++    enum: [0, 1]
++    description: DP-IN index within this ACIO host router
++
++required:
++  - compatible
++  - reg
++  - interrupts
++  - '#phy-cells'
++  - phys
++  - phy-names
++  - apple,transport-index
++
++additionalProperties: false
+diff --git a/Documentation/devicetree/bindings/thunderbolt/apple,t8103-usb4-acio.yaml b/Documentation/devicetree/bindings/thunderbolt/apple,t8103-usb4-acio.yaml
+index 5bfe7a6..2970cbd 100644
+--- a/Documentation/devicetree/bindings/thunderbolt/apple,t8103-usb4-acio.yaml
++++ b/Documentation/devicetree/bindings/thunderbolt/apple,t8103-usb4-acio.yaml
+@@ -127,6 +127,11 @@ properties:
+     $ref: /schemas/thunderbolt/apple,t8103-usb4-nhi.yaml#
+     description: Native Host Interface exposed by ACIO
+ 
++patternProperties:
++  '^phy@e5[08]000$':
++    $ref: /schemas/phy/apple,t6000-dpin.yaml#
++    description: Internal DisplayPort input bridge, enabled explicitly per board
++
+ required:
+   - compatible
+   - reg

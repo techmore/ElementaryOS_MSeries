@@ -1,0 +1,46 @@
+From: sdolbec <sdolbec1@gmail.com>
+Subject: [PATCH] dt-bindings: thunderbolt: describe optional Apple DP source
+
+Opt-in experimental source bridge; apply after 0001 through 0006.
+Prepare DCP outside the TB lock before any DPRX read. Match source
+ownership and asynchronous cancellation to the tunnel lifetime.
+Adopt discovered host tunnels and keep domain references until destroy.
+See DCP-SOURCE-BRIDGE.md for validation and qualification limits.
+
+Signed-off-by: sdolbec <sdolbec1@gmail.com>
+---
+diff --git a/Documentation/devicetree/bindings/thunderbolt/apple,t8103-usb4-nhi.yaml b/Documentation/devicetree/bindings/thunderbolt/apple,t8103-usb4-nhi.yaml
+index a80c8db..e6c8eaf 100644
+--- a/Documentation/devicetree/bindings/thunderbolt/apple,t8103-usb4-nhi.yaml
++++ b/Documentation/devicetree/bindings/thunderbolt/apple,t8103-usb4-nhi.yaml
+@@ -90,6 +90,19 @@ properties:
+       T6030, T6031 and T8122 use 24 IOMMUs. These are most likely one DART
+       stream for each of the 12 transmit and 12 receive rings.
+ 
++  apple,dp-source:
++    $ref: /schemas/types.yaml#/definitions/phandle
++    description: |
++      Experimental display controller feeding the host DP-IN adapter selected
++      by apple,dp-in-port. Its phys must reference an enabled DP-IN provider
++      under the same ACIO parent. Omit both properties for the normal NHI path.
++
++  apple,dp-in-port:
++    $ref: /schemas/types.yaml#/definitions/uint32
++    minimum: 1
++    maximum: 255
++    description: Explicit host-router DP-IN adapter number for apple,dp-source
++
+   apple,thunderbolt-drom:
+     $ref: /schemas/types.yaml#/definitions/uint8-array
+     description:
+@@ -116,6 +129,10 @@ required:
+   - iommus
+   - apple,thunderbolt-drom
+ 
++dependentRequired:
++  apple,dp-source: ['apple,dp-in-port']
++  apple,dp-in-port: ['apple,dp-source']
++
+ allOf:
+   - if:
+       properties:

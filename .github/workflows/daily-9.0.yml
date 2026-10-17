@@ -9,6 +9,11 @@ on:
         type: boolean
         required: false
         default: false
+      fairydust_tunnel:
+        description: Also apply the experimental USB4 DP-tunnel patch (see mseries/fairydust/usb4/DP-TUNNEL-RE.md)
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -39,6 +44,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [[ "${{ inputs.fairydust_tunnel }}" == "true" ]]; then
+            export FAIRYDUST_DP_TUNNEL=1
+            kv='7.1.13-elementary-fairydust-usb4-dptunnel'
+            pkgv='7.1.13+elementary.usb4-dp1'
+          else
+            kv='7.1.13-elementary-fairydust-usb4'
+            pkgv='7.1.13+elementary.usb4.4'
+          fi
+          echo "kernel release: $kv (DP tunnel build: ${FAIRYDUST_DP_TUNNEL:-0})"
           archive="$RUNNER_TEMP/linux-ce9f2eba72c061a50b2d790450e90af3439d8c24.tar.gz"
           curl --fail --location --retry 4 --proto '=https' --tlsv1.2 \
             https://codeload.github.com/AsahiLinux/linux/tar.gz/ce9f2eba72c061a50b2d790450e90af3439d8c24 \
@@ -48,7 +62,7 @@ jobs:
           FAIRYDUST_SOURCE_ARCHIVE="$archive" \
             bash mseries/fairydust/debian/build.sh --build
           mkdir -p mkosi.packages
-          kernel_deb="$RUNNER_TEMP/fairydust/linux-image-7.1.13-elementary-fairydust-usb4_7.1.13+elementary.usb4.4_arm64.deb"
+          kernel_deb="$RUNNER_TEMP/fairydust/linux-image-${kv}_${pkgv}_arm64.deb"
           cp "$kernel_deb" mkosi.packages/
           mseries/fairydust/debian/fetch-asahi-boot-packages.sh mkosi.packages
           boot_inputs="$RUNNER_TEMP/fairydust-boot-inputs"
@@ -58,7 +72,7 @@ jobs:
           dpkg-deb -x mkosi.packages/u-boot-asahi_2025.10-2-1_arm64.deb "$boot_inputs/u-boot"
           python3 mseries/fairydust/debian/assemble-m1n1-bootbin.py \
             --m1n1 "$boot_inputs/m1n1/usr/lib/m1n1/m1n1.bin" \
-            --dtb-dir "$boot_inputs/kernel/usr/lib/linux-image-7.1.13-elementary-fairydust-usb4/apple" \
+            --dtb-dir "$boot_inputs/kernel/usr/lib/linux-image-${kv}/apple" \
             --u-boot "$boot_inputs/u-boot/usr/lib/u-boot/apple_m1/u-boot-nodtb.bin" \
             --output mkosi.packages/fairydust-m1n1-boot.bin
           (cd mkosi.packages && sha256sum fairydust-m1n1-boot.bin > FAIRYDUST-BOOT-SHA256SUMS)
