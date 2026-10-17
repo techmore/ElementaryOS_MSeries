@@ -18,6 +18,9 @@ for action, binding in [("screenshot", "<Control><Shift>3"), ("area-screenshot",
     if binding not in existing:
         keys.set_strv(action, existing + [binding])
 Gio.Settings.sync()
+# Mac-like inverted scrolling with a mouse.
+Gio.Settings.new("org.gnome.desktop.peripherals.mouse").set_boolean("natural-scroll", True)
+Gio.Settings.sync()
 # Command+Space launcher. mseries-launcher-keys binds <Control>space (Command is Ctrl here)
 # and <Super>space (right Command), frees Super+Space from the input-source switch, and
 # re-binds at every login because the shortcut list was once found emptied after a reboot.

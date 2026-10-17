@@ -174,6 +174,12 @@ mod_session() {
 ambient-enabled=false
 idle-dim=false
 EOF
+  put 0644 /etc/dconf/db/local.d/00-mseries-peripherals <<'EOF'
+# Mac-like inverted scrolling with a mouse; the touchpad already defaults to it.
+# Users can still override this default from their desktop settings.
+[org/gnome/desktop/peripherals/mouse]
+natural-scroll=true
+EOF
   if [[ -x $R/usr/bin/dconf ]]; then
     if [[ $ROOT == / ]]; then
       "$R/usr/bin/dconf" update || log "could not compile the system dconf defaults"
