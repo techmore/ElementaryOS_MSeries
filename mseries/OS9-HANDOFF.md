@@ -1,5 +1,26 @@
 # OS 9 implementation / Claude Code handoff
 
+## Dock video E1 boot result — set_hpd cleared, sink/AUX is the frontier — 2026-10-16 (OpenCode)
+
+The armed E1 one-shot boot (`elementary-usb4-dpin-controlled`, image
+`46116374…`, only `appledrm.ko` changed, patch `0013`) ran; `next_entry` is
+consumed. Verified live `appledrm` build-id `90eec845…` equals the E1 ko. E1
+made a tunnel-mode `set_hpd` failure non-fatal and widened the linkcfg window to
+8 s; the tunnel then survived the `-110` for ~5 s instead of 1 s, so the
+`set_hpd` timeout is **cleared** as the wall. The firmware still never configured
+the link (RTKit syslog 13 for the whole boot; no `idx=7,13,15,5,12,9,6`) and its
+last substantive word was `DEVICE_NOT_RESPONDING` (call 22). The `-67` in the
+`connect_source` line is **our** reply to that call (`dptxport_call` maps calls
+22/24/20 to `dptxport_tunnel_reply(..., -ENOLINK)`), not a firmware-returned error
+and not a timeout. H1 (firmware blocked on the sink-facing path) leads; H2
+(`set_hpd` wrong/unsupported for the tunnel) is not excluded. Monitor was on the
+dock HDMI throughout with no reaction; no picture, M1–M4 unmet. Full record:
+[evidence/2026-10-16-e1-boot-outcome-firmware-device-not-responding.md](fairydust/usb4/evidence/2026-10-16-e1-boot-outcome-firmware-device-not-responding.md);
+ledger: [STATE-OF-PLAY.md](fairydust/usb4/STATE-OF-PLAY.md). Next, owner-gated,
+one reboot each: E3 (DP-IN HPD notifier + host DP-IN AUX/DPCD status
+instrumentation), then E2 (unbypassed DPRX, `dprx_bypass=0` — §9 hazard), then
+the macOS m1n1-hypervisor trace.
+
 ## R1/R2 first-boot fixes staged — 2026-10-16 (DeepSeek/OpenCode)
 
 Source revision `46bb8b6` (public patch `0011`) implements R1 (retry the

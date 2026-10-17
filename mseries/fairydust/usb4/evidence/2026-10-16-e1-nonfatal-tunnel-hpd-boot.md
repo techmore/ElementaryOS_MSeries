@@ -5,7 +5,11 @@ Author: OpenCode. This implements **E1** from
 Read [STATE-OF-PLAY](../STATE-OF-PLAY.md) first.
 
 **Status: source patched, module built, initramfs repacked and installed, one-shot
-boot armed.** Nothing else was applied. The owner approves the reboot.
+boot armed and then RUN (2026-10-16).** Nothing else was applied.
+**Result:**
+[`2026-10-16-e1-boot-outcome-firmware-device-not-responding.md`](2026-10-16-e1-boot-outcome-firmware-device-not-responding.md)
+— E1 engaged and cleared the `set_hpd` wall, but the firmware then reported the
+tunnelled sink `DEVICE_NOT_RESPONDING`; the frontier is the sink/AUX path.
 
 ## Hypothesis under test
 

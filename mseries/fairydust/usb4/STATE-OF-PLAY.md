@@ -3,33 +3,38 @@
 Updated 2026-10-16. This is the cumulative frontier ledger. Preserve measured
 advances and do not re-run discovery without a new reason.
 
-## Resume pointer — 2026-10-16 (late)
+## Resume pointer — 2026-10-16 (after the E1 boot)
 
-**Boot pending: E1 is armed.** `next_entry=elementary-usb4-dpin-controlled`; the
-E1 initramfs (`46116374…`, only `appledrm.ko` changed) is installed on that
-entry. Owner reboots, then read `sudo dmesg | grep DPINDBG`.
+**E1 has RUN. Read its result first.** The one-shot boot
+(`next_entry=elementary-usb4-dpin-controlled`) was consumed; the E1 image
+(`46116374…`) is still installed on that entry. Outcome:
+[evidence/2026-10-16-e1-boot-outcome-firmware-device-not-responding.md](evidence/2026-10-16-e1-boot-outcome-firmware-device-not-responding.md).
 
-The previous `DPINDBG` debug boot **ran** and answered the open question. The
-fatal `-110` was **our** `set_hpd(hpd=1)` AFK call timing out after 1 s, which
-`dptxport_hpd_work` promoted into `link_error` — **not** the 2 s
-`DPTX_CONNECT_TIMEOUT` (the trace shows `waited=949`, a signalled completion).
-The firmware goes silent after `ACTIVATE` (13 syslog lines for the whole boot,
-one connect-time, vs 360 on a working HDMI path) and never configures the link.
-New asset: the firmware's complete working link-config sequence on built-in HDMI
-(`idx=7,13,15,5,12,9,6`), which never calls `set_hpd`. Decode, corrected
-attribution and the reference trace:
-[evidence/2026-10-16-dbgboot-dcp-silent-never-configures-link.md](evidence/2026-10-16-dbgboot-dcp-silent-never-configures-link.md).
+E1 did what it promised — a tunnel-mode `set_hpd` failure is no longer fatal and
+the tunnel waited ~5 s, not 1 s — but the firmware still never configured the
+link. The `-67` in the `connect_source` line is **our** reply to the firmware's
+call 22 (`dptxport_call` maps `DEVICE_NOT_RESPONDING`/`DEVICE_NOT_STARTED`/
+`INACTIVE_SINK_DETECTED` to `dptxport_tunnel_reply(..., -ENOLINK)`), **not** a
+firmware-returned error and **not** a timeout. So:
 
-**E1 (what is armed).** Patch `0013` makes a tunnel-mode `set_hpd` failure
-non-fatal and gives the tunnel path an 8 s linkcfg window, so the firmware gets a
-real chance to drive the link. If it does, the wall moves forward; if it stays
-silent for 8 s, H1 (the firmware itself is blocked on the sink) is confirmed and
-the next step is the sink/AUX question. Full state, build hashes, install/rollback:
-[evidence/2026-10-16-e1-nonfatal-tunnel-hpd-boot.md](evidence/2026-10-16-e1-nonfatal-tunnel-hpd-boot.md).
+- `set_hpd` (H3) is **cleared** as the wall.
+- The firmware's own last substantive word before teardown was
+  `DEVICE_NOT_RESPONDING` (call 22), with the tunnel DCP's RTKit syslog still
+  **13** for the whole boot and no `idx=7,13,15,5,12,9,6` link-config sequence.
+- H1 (firmware blocked on the sink-facing path) is the leading hypothesis; H2
+  (`set_hpd` is the wrong/unsupported tunnel command) is not excluded — the
+  firmware still never answers `set_hpd(1)` (it does answer `set_hpd(0)`).
 
-Later options: **E2** unbypassed DPRX (`dprx_bypass=0`) — the documented §9
-hazard; **E3** more instrumentation (DP-IN HPD notifier, host DP-IN AUX/DPCD
-status).
+Monitor ownership during that boot: **on the dock HDMI, no reaction** (no wake /
+no source search) — the visible-wake gate stays unmet. External connectors all
+`disconnected` (`card2-DP-1`, `card2-HDMI-A-1`); eDP only.
+
+**Next (owner-gated, one reboot each):** E3 (instrument the DP-IN HPD notifier
+and the host DP-IN AUX/DPCD status at failure — cheapest, distinguishes "no sink"
+from "no AUX"); then E2 (**unbypassed DPRX**, `dprx_bypass=0` — decisive on the
+sink question, the documented §9 hazard, arm the bypass before touching a cable);
+then the macOS m1n1-hypervisor trace (`MACOS-TRACE-RUNBOOK.md`) if E2/E3 do not
+resolve it.
 
 ## First live boot of the bridge — outcome (2026-10-16)
 
@@ -131,7 +136,13 @@ DP-IN activation gate (`-ENOLINK`) plus a `dpin_init` Oops on the retry — see
 the first section above. **Update (second controlled boot):** the `dpin_init`
 Oops did not recur (0011 stale-PHY guard holds) and the DP-IN activation gate
 cleared; the failure is now the DCP firmware link-config timeout (`-110`, 2 s) —
-see the second-boot section above.
+see the second-boot section above. **Update (E1 boot):** with the tunnel-mode
+`set_hpd` failure made non-fatal and an 8 s linkcfg window (patch `0013`), the
+`-110` wall is cleared (the tunnel waited ~5 s), but the firmware still never
+configured the link and reported `DEVICE_NOT_RESPONDING` (call 22). The `-67` is
+our reply to that call, not a firmware error and not a timeout; H1 (sink-facing)
+leads, H2 (`set_hpd`) is not excluded. Frontier = sink/AUX. Outcome:
+[evidence/2026-10-16-e1-boot-outcome-firmware-device-not-responding.md](evidence/2026-10-16-e1-boot-outcome-firmware-device-not-responding.md).
 
 Current authorization: the owner now permits installation, reboot and cable
 changes when needed, but wants them batched. This supersedes earlier bans.
@@ -161,8 +172,8 @@ retain module layout even when BTF data generation is skipped.
 | M0: downstream sink presence | dock DP OUT reports HPD | **MET**: `1:14` HPD=1, `1:13` HPD=0 in the recorded live test |
 | Correct tunnel target | host DP IN paired with HPD adapter | **MET** after independent 0003: `0:5 <-> 1:14` |
 | Host DP-IN activation | DP-IN INACTIVE-ACK handshake succeeds with HPD high (no `phy poweron failed`, no activation-failure log) | **MET** on the second controlled boot (2026-10-16 20:50) |
-| DCP DP link configured | DCP firmware sends `set_active_lane_count` (linkcfg completion) | **NOT MET**: `-110` (`DPTX_CONNECT_TIMEOUT`, 2 s) |
-| Visible monitor wake | monitor visibly leaves standby/searches for source in response to a recorded action | **NOT DEMONSTRATED** |
+| DCP DP link configured | DCP firmware sends `set_active_lane_count` (linkcfg completion) | **NOT MET**: E1 boot showed no link-config sequence; firmware reported `DEVICE_NOT_RESPONDING` (call 22) ~5 s after ACTIVATE |
+| Visible monitor wake | monitor visibly leaves standby/searches for source in response to a recorded action | **NOT DEMONSTRATED** (owner: monitor on dock HDMI, no reaction during the E1 boot) |
 | M1: host feeds the tunnel | real DPRX completion with bypass OFF, no timeout | **NOT MET**: timeouts remain on `0:5 <-> 1:14` |
 | M2: display detected | DRM connected, EDID/valid mode, no firmware link failure | **NOT MET** |
 | M3: picture through dock | visible output from dock HDMI with matching mode | **NOT MET** |
@@ -294,6 +305,7 @@ a DP-altmode reference, not the M1 USB4 tunnel protocol.
 
 ## Evidence index
 
+- [E1 boot result: `set_hpd` cleared as the wall, firmware reports the sink "device not responding"](evidence/2026-10-16-e1-boot-outcome-firmware-device-not-responding.md)
 - [Second controlled-test boot: DP-IN gate cleared, DCP link-config timeout](evidence/2026-10-16-controlled-test-second-boot-dpin-gate-cleared.md)
 - [DP-IN debug boot: instrumenting the DCP link-config path](evidence/2026-10-16-dpin-dbgboot-instrumentation.md) (patch `0012`, armed 2026-10-16)
 - [First controlled-test boot outcome](evidence/2026-10-16-controlled-test-first-boot-outcome.md)
