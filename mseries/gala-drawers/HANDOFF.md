@@ -61,16 +61,18 @@ already watches live.
 
 ### Dock status (this session)
 
-- **Chevron + slots: implemented and live.** `mseries/patches/dock-drawers.patch`
-  adds `src/Drawers.vala` (a `DrawersChevron` plus `DrawerSlot` drop targets —
-  5 shown, an arrow reveals the other 4), appends the chevron to `ItemManager`,
-  and adds CSS. Builds clean against dock 8.3.3.
-  * The strip expands **inline in the dock**, not in a popover. The first cut used
-    a `Gtk.Popover`, and it was unusable: GTK 4.22's `GtkPopover` has **no `modal`
-    property**, so the popover always takes an input grab — pressing a dock icon to
-    start a drag is consumed by the popover, which closes before the drag can reach
-    a slot. `autohide=false` is not enough, because the grab remains. Keeping the
-    slots in the dock's own widget tree means the drag never crosses a surface.
+- **Assignment panel: implemented and live.** `mseries/patches/dock-drawers.patch`
+  adds `src/Drawers.vala` (a `DrawersPanel` of `DrawerSlot` drop targets — 5 shown,
+  an arrow reveals the other 4). **Hold `Command+Option` and click the dock** to
+  show it; it sits above the icon row, inside the dock's own window.
+  * Three containers were tried. A `Gtk.Popover` is unusable: GTK 4.22's
+    `GtkPopover` has **no `modal` property**, so it always takes an input grab and
+    eats the press that starts a drag (`autohide=false` does not help, the grab
+    stays). An inline strip in `ItemManager` works but widens the dock and needs a
+    permanent chevron. The panel above the icons avoids both.
+  * Catch: the strip above the icons is normally excluded from the dock's input
+    region (so clicks fall through to the desktop). While the panel is visible,
+    `MainWindow` widens the region to the whole window.
   * Source kept at `~/dock-drawers-src` (the installer's temp dir is deleted, and
     `/tmp` had been cleaned once already).
   * To restart the dock without a reboot: kill the wrapper **and** the binary
