@@ -11,7 +11,14 @@ and the fix/re-stage record is
 [evidence/2026-10-16-r1-r2-fix-and-restage.md](evidence/2026-10-16-r1-r2-fix-and-restage.md).
 No repeated binary/port/dock discovery was needed.
 
-## Current deployment status
+## Current branch entry point
+
+The deployment records below describe older payloads. Use [STATE-OF-PLAY.md](STATE-OF-PLAY.md)
+for the latest retained E4 record and [DOCK-CODE-REVIEW.md](DOCK-CODE-REVIEW.md) for software checks.
+The existing fallback-preserving installer deliberately rejects E4's wider DT changes; do not bypass
+its compatibility check. This audit neither changes installed payloads nor arms another boot.
+
+## Historical deployment status
 
 **Re-staged with the R1/R2 fixes; no boot armed — 2026-10-16.** The first
 one-shot entry ran 11:45:04–11:47:13 with the exact intended parameters

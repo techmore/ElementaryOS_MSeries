@@ -1,8 +1,16 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Dock code review and validation — 2026-10-17
+
+The [dock code review](fairydust/usb4/DOCK-CODE-REVIEW.md) records collector/staging fixes,
+36 offline unittest cases, production-function contracts and reproducible E3/E4 DT checks now in CI.
+The last retained E4 record is armed without a recorded boot outcome; no dock HDMI picture is claimed.
+Keep E4's loss of built-in HDMI separate from the older fallback-compatible deployment contract.
+
+
 > **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
 > Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
-> Aurora (`omacom/linux-aurora`) already does this on a j314s; check it before more RE.
+> Aurora has j314s Thunderbolt-display prior art; check it before more RE. This dock HDMI path remains unqualified.
 > Gates, prior art and rules: [fairydust/usb4/PRIMARY-GOAL.md](fairydust/usb4/PRIMARY-GOAL.md).
 
 ## Power code audit (2026-10-17)

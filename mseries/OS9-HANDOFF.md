@@ -2,7 +2,7 @@
 
 > **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
 > Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
-> Aurora (`omacom/linux-aurora`) already does this on a j314s; check it before more RE.
+> Aurora has j314s Thunderbolt-display prior art; check it before more RE. This dock HDMI path remains unqualified.
 > Gates, prior art and rules: [fairydust/usb4/PRIMARY-GOAL.md](fairydust/usb4/PRIMARY-GOAL.md).
 
 ## Dock video E1 boot result — set_hpd cleared, sink/AUX is the frontier — 2026-10-16 (OpenCode)
@@ -2289,3 +2289,29 @@ caller before evaluating its repository gate: nested build-and-release requests 
 the caller allowed only contents: read. Added the matching permission only to that gated call job.
 The elementary/os repository condition is unchanged; no release build, signing or upload is enabled in
 this fork. Final-head validation must confirm normal skipped release jobs plus passing M-series checks.
+
+## 2026-10-17 — dock branch code audit and merge preparation
+
+Merged current main (including PR #76) into docs/dock-video-decision; resolved three document conflicts
+without dropping either power implementation/history or dock evidence. No original checkout was changed.
+
+Replaced test-dp-tunnel.sh's hardcoded DT assumptions and overconfident verdicts with a read-only Python
+collector: resolves NHI source phandle, handles dcpext0/E4 and dcpext1, tolerates absent properties, reads
+flat external DRM connectors and validates EDID blocks. Only the mapped controller's latest successful
+completion with rate/lanes is positive historical link evidence; no picture success is inferred.
+
+Controlled-test identity checks now verify frozen input SHA-256 before readelf comparison and reject
+truncated notes. Parameter normalization supports Y/N and 1/0. Fixed newc path aliases/non-directory
+parents and made staging tests use scratch grubenv. No deployment compatibility gate was weakened.
+
+Validation: 36 dock unittest cases and three staging groups pass. All 15 patches apply to the SHA-verified
+ce9f2eba source; 76 production helper/function groups pass (including UBSan). Built the pinned float-aware
+dtc, compiled E3/E4 and control DTBs, checked controller routing/HDMI endpoint removal, control-board byte
+identity and Touch ID delta preservation. No float-cell rewriting was needed. Receipt and method:
+fairydust/usb4/evidence/2026-10-17-offline-code-audit.json and fairydust/usb4/DOCK-CODE-REVIEW.md.
+These suites are wired into PR CI; final Linux check results must be reviewed before claiming merge readiness.
+
+No full kernel/module build or hardware boot was performed. E4 still disables built-in HDMI and is not
+accepted by the older fallback-preserving installer. Prior-art claims are scoped to the actual Aurora reports
+(zero tunnel churn on j314s display resume, different M2 Max dock chain). The next hardware task is a separately
+reviewed controlled boot using the actual current payload/state, with route/module/link/EDID/picture evidence.

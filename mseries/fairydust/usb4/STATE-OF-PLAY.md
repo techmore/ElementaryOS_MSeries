@@ -2,22 +2,26 @@
 
 > **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
 > Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
-> Aurora (`omacom/linux-aurora`) already does this on a j314s; check it before more RE.
+> Aurora has j314s Thunderbolt-display prior art; check it before more RE. This dock HDMI path remains unqualified.
 > Gates, prior art and rules: [PRIMARY-GOAL.md](PRIMARY-GOAL.md).
 
-Updated 2026-10-16. This is the cumulative frontier ledger. Preserve measured
+Reviewed 2026-10-17; historical hardware records follow. No new boot was performed by the code audit. This is the cumulative frontier ledger. Preserve measured
 advances and do not re-run discovery without a new reason.
 
-## Resume pointer — 2026-10-17 (E4 ARMED)
+## Latest recorded hardware state — 2026-10-17 (E4 armed; boot outcome not recorded)
 
-**E4 is installed and armed for the next boot.** `boot.bin` now carries the
+The following is the last retained installation record, not a fresh read of the machine.
+Read [the code-audit validation and limits](DOCK-CODE-REVIEW.md) before collecting another run.
+E4 disables built-in HDMI and is not covered by the older fallback-preserving installer contract.
+
+**The E4 record reports it installed and armed at capture time.** `boot.bin` now carries the
 patch-0015 j314s tree (dcpext0 drives the tunnel) plus today's Touch ID DT
 edits; `next_entry=elementary-usb4-dpin-controlled` (bypass=1, E3 image). E2
 was already disarmed. Built-in HDMI has no controller while E4 is installed.
 Record, checks and rollback:
 [evidence/2026-10-17-e4-armed.md](evidence/2026-10-17-e4-armed.md).
 
-## Resume pointer — 2026-10-17 (macOS baseline captured)
+## Earlier planning snapshot — 2026-10-17 (superseded by E4 armed record)
 
 **Read first:** [evidence/2026-10-17-macos-baseline-dcpext0.md](evidence/2026-10-17-macos-baseline-dcpext0.md).
 On macOS 27.0.1 the same Mac → WD22TB4 → dock HDMI → monitor chain trains a
@@ -26,7 +30,7 @@ On macOS 27.0.1 the same Mac → WD22TB4 → dock HDMI → monitor chain trains 
 `dcpext1` (`dispext1,0`). The live ADT matches the shipped DP-IN metadata
 (no DT address/IRQ change). Timing (2 s connect timeout) is ruled out.
 
-**Next: E4** — patch `0015` (`ENABLE_DCPEXT0_TB_TUNNEL`) moves the tunnel to
+**Plan at that earlier checkpoint (superseded): E4** — patch `0015` (`ENABLE_DCPEXT0_TB_TUNNEL`) moves the tunnel to
 dcpext0; staged in the repo only, not built or booted. E2 is still armed for
 the next Linux boot and still targets dcpext1; the owner decides whether to
 clear it and run E4 first. Gates are in the evidence note.

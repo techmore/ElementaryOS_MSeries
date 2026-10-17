@@ -2,7 +2,7 @@
 
 > **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
 > Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
-> Aurora (`omacom/linux-aurora`) already does this on a j314s; check it before more RE.
+> Aurora has j314s Thunderbolt-display prior art; check it before more RE. This dock HDMI path remains unqualified.
 > Gates, prior art and rules: [PRIMARY-GOAL.md](PRIMARY-GOAL.md).
 
 Date: 2026-10-15. Machine: `MacBookPro18,3` (`apple,j314s`, M1 Pro, 14-inch),
@@ -11,6 +11,12 @@ elementary OS 9 on kernel `7.1.13-elementary-fairydust-usb4`.
 This records the decision for the long-standing open problem
 **"Monitor through the dock"** in [`../../ROADMAP.md`](../../ROADMAP.md), with
 the upstream state checked on 2026-10-15.
+
+## Historical decision context
+
+The alternatives below retain the October 15 decision record. They do not describe the current
+experiment frontier or establish a working built-in HDMI path under E4. Use
+[STATE-OF-PLAY.md](STATE-OF-PLAY.md) and [DOCK-CODE-REVIEW.md](DOCK-CODE-REVIEW.md) first.
 
 ## TL;DR
 

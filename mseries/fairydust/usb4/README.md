@@ -2,8 +2,10 @@
 
 > **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
 > Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
-> Aurora (`omacom/linux-aurora`) already does this on a j314s; check it before more RE.
+> Aurora has j314s Thunderbolt-display prior art; check it before more RE. This dock HDMI path remains unqualified.
 > Gates, prior art and rules: [PRIMARY-GOAL.md](PRIMARY-GOAL.md).
+
+Code and validation: [DOCK-CODE-REVIEW.md](DOCK-CODE-REVIEW.md).
 
 Dock-video current entry point: [STATE-OF-PLAY](STATE-OF-PLAY.md).
 The [DP-IN implementation draft / DeepSeek handoff](DPIN-IMPLEMENTATION.md)
