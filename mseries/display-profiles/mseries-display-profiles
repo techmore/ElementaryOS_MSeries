@@ -1,0 +1,215 @@
+#!/usr/bin/env python3
+"""Remember monitor layouts per set of attached displays (home desk, work dock, ...).
+
+  mseries-display-profiles save NAME   store the current layout for the displays now attached
+  mseries-display-profiles apply [NAME] apply NAME, or the profile matching what is attached
+  mseries-display-profiles list | status | forget NAME
+  mseries-display-profiles watch       re-apply the matching profile on every hotplug
+
+Talks to Gala over org.gnome.Mutter.DisplayConfig. Profiles live in
+~/.config/mseries/display-profiles.json and match by monitor identity
+(vendor/product/serial), not by connector, so a monitor on a different port
+still matches. The built-in panel is always part of every layout.
+"""
+import json, os, sys, time
+
+CONFIG = os.path.expanduser("~/.config/mseries/display-profiles.json")
+SAFE_MODES = ("1920x1080@60.000", "1920x1080@59.940")  # nudge target, see nudge_modes()
+
+
+def monitor_key(spec):
+    connector, vendor, product, serial = spec
+    return "builtin" if connector.startswith("eDP") else f"{vendor}:{product}:{serial}"
+
+
+def parse_state(raw):
+    """GetCurrentState() result -> {connector: {key, builtin, modes, current, preferred}}, logical."""
+    serial, monitors, logical, _props = raw
+    mons = {}
+    for spec, modes, _p in monitors:
+        cur = pref = None
+        ids = []
+        for m in modes:
+            ids.append(m[0])
+            if m[6].get("is-current"):
+                cur = m[0]
+            if m[6].get("is-preferred"):
+                pref = m[0]
+        mons[spec[0]] = {"key": monitor_key(spec), "builtin": spec[0].startswith("eDP"),
+                         "modes": ids, "current": cur, "preferred": pref}
+    lms = [{"x": x, "y": y, "scale": scale, "transform": tr, "primary": bool(pri),
+            "connectors": [m[0] for m in mons_]} for (x, y, scale, tr, pri, mons_, _pp) in logical]
+    return serial, mons, lms
+
+
+def externals(mons):
+    return sorted(m["key"] for m in mons.values() if not m["builtin"])
+
+
+def snapshot(mons, lms):
+    """Current layout keyed by monitor identity."""
+    out = []
+    for lm in lms:
+        ms = [{"key": mons[c]["key"], "mode": mons[c]["current"]} for c in lm["connectors"]]
+        out.append({k: lm[k] for k in ("x", "y", "scale", "transform", "primary")} | {"monitors": ms})
+    return out
+
+
+def pick_profile(profiles, mons):
+    want = externals(mons)
+    for name, p in profiles.items():
+        if sorted(p["match"]) == want:
+            return name
+    return None
+
+
+def build_config(profile, mons, mode_override=None):
+    """Profile -> ApplyMonitorsConfig logical list; absent monitors are dropped, missing modes fall back to preferred."""
+    by_key = {m["key"]: c for c, m in mons.items()}
+    out = []
+    for lm in profile["layout"]:
+        ms = []
+        for m in lm["monitors"]:
+            c = by_key.get(m["key"])
+            if c is None:
+                continue
+            info = mons[c]
+            mode = m["mode"] if m["mode"] in info["modes"] else (info["preferred"] or info["current"])
+            if mode_override and not info["builtin"]:
+                mode = mode_override(info, mode)
+            ms.append((c, mode, {}))
+        if ms:
+            out.append((lm["x"], lm["y"], lm["scale"], lm["transform"], lm["primary"], ms))
+    if out and not any(lm[4] for lm in out):
+        out[0] = out[0][:4] + (True,) + out[0][5:]
+    return out
+
+
+def nudge_modes(info, mode):
+    """A different, safe mode for the external screen: forces the display coprocessor to modeset."""
+    for s in SAFE_MODES:
+        if s in info["modes"] and s != mode:
+            return s
+    return mode
+
+
+# ---- D-Bus / CLI -----------------------------------------------------------
+
+def bus():
+    from gi.repository import Gio
+    return Gio.bus_get_sync(Gio.BusType.SESSION, None)
+
+
+def dc_call(b, method, args=None):
+    from gi.repository import Gio
+    return b.call_sync("org.gnome.Mutter.DisplayConfig", "/org/gnome/Mutter/DisplayConfig",
+                       "org.gnome.Mutter.DisplayConfig", method, args, None, Gio.DBusCallFlags.NONE, -1, None)
+
+
+def read_state(b):
+    return parse_state(dc_call(b, "GetCurrentState").unpack())
+
+
+def apply_config(b, serial, logical):
+    from gi.repository import GLib
+    dc_call(b, "ApplyMonitorsConfig", GLib.Variant("(uua(iiduba(ssa{sv}))a{sv})", (serial, 1, logical, {})))
+
+
+def load():
+    try:
+        with open(CONFIG) as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"profiles": {}}
+
+
+def store(data):
+    os.makedirs(os.path.dirname(CONFIG), exist_ok=True)
+    tmp = CONFIG + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(data, f, indent=2, sort_keys=True)
+    os.replace(tmp, CONFIG)
+
+
+def cmd_save(b, name):
+    _s, mons, lms = read_state(b)
+    data = load()
+    data["profiles"][name] = {"match": externals(mons), "layout": snapshot(mons, lms)}
+    store(data)
+    print(f"saved '{name}' for {externals(mons) or 'built-in only'}")
+
+
+def cmd_apply(b, name=None, nudge=False):
+    data = load()["profiles"]
+    serial, mons, _lms = read_state(b)
+    name = name or pick_profile(data, mons)
+    if not name or name not in data:
+        print("no profile for the displays attached:", externals(mons) or "built-in only")
+        return 1
+    if nudge:
+        step = build_config(data[name], mons, nudge_modes)
+        apply_config(b, serial, step)
+        time.sleep(2.0)
+        serial, mons, _lms = read_state(b)
+    apply_config(b, serial, build_config(data[name], mons))
+    print(f"applied '{name}'")
+    return 0
+
+
+def cmd_watch(b):
+    from gi.repository import Gio, GLib
+    loop = GLib.MainLoop()
+    st = {"timer": 0, "quiet_until": 0.0}
+
+    def settle():
+        st["timer"] = 0
+        if cmd_apply(b, nudge=True) == 0:
+            st["quiet_until"] = time.monotonic() + 6.0  # our own change fires the signal again
+        return False
+
+    def changed(*_a):
+        if time.monotonic() < st["quiet_until"]:
+            return
+        if st["timer"]:
+            GLib.source_remove(st["timer"])
+        st["timer"] = GLib.timeout_add(2500, settle)
+
+    b.signal_subscribe("org.gnome.Mutter.DisplayConfig", "org.gnome.Mutter.DisplayConfig", "MonitorsChanged",
+                       "/org/gnome/Mutter/DisplayConfig", None, Gio.DBusSignalFlags.NONE, changed)
+    print("watching for display changes", flush=True)
+    loop.run()
+
+
+def main(argv):
+    if not argv or argv[0] in ("-h", "--help"):
+        print(__doc__)
+        return 0
+    cmd, rest = argv[0], argv[1:]
+    if cmd == "list":
+        for n, p in load()["profiles"].items():
+            print(f"{n}: {p['match'] or 'built-in only'}")
+        return 0
+    if cmd == "forget" and rest:
+        data = load()
+        data["profiles"].pop(rest[0], None)
+        store(data)
+        return 0
+    b = bus()
+    if cmd == "save" and rest:
+        cmd_save(b, rest[0])
+    elif cmd == "apply":
+        return cmd_apply(b, rest[0] if rest else None)
+    elif cmd == "status":
+        _s, mons, _l = read_state(b)
+        n = pick_profile(load()["profiles"], mons)
+        print("attached:", externals(mons) or "built-in only", "| matching profile:", n)
+    elif cmd == "watch":
+        cmd_watch(b)
+    else:
+        print(__doc__)
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
