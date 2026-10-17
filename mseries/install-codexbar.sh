@@ -28,8 +28,9 @@ install -m 0755 "$repo/mseries/codexbar-opencode-local.py" "$HOME/.local/lib/cod
 install -m 0755 "$repo/mseries/codexbar-sessions.py" "$HOME/.local/lib/codexbar-cli/codexbar-sessions.py"
 tar -xzf "CodexBarCLI-${version}-linux-aarch64.tar.gz" -C "$HOME/.local/lib/codexbar-cli"
 mv -f "$HOME/.local/lib/codexbar-cli/codexbar" "$HOME/.local/lib/codexbar-cli/codexbar-upstream"
-rm -f "$HOME/.local/bin/codexbar"
-install -m 0755 "$repo/mseries/codexbar-opencode-wrapper.py" "$HOME/.local/bin/codexbar"
+# Replace atomically so the panel never finds ~/.local/bin/codexbar missing mid-install.
+install -m 0755 "$repo/mseries/codexbar-opencode-wrapper.py" "$HOME/.local/bin/codexbar.new"
+mv -f "$HOME/.local/bin/codexbar.new" "$HOME/.local/bin/codexbar"
 tar -xzf "CodexBarDesktop-${version}-linux-aarch64.tar.gz"
 cd "CodexBarDesktop-${version}-linux-aarch64"
 python3 Integrations/Linux/install.py --cli "$HOME/.local/bin/codexbar"
