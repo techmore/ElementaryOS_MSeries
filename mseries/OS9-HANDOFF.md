@@ -1,5 +1,104 @@
 # OS 9 implementation / Claude Code handoff
 
+## Orchard for Incus narrow-window fixes — 2026-10-17
+
+Found at 760 px: the window was forced to ~850 px, and the instance action row
+(with the More menu holding Clone/Rename/Delete) was clipped off-screen.
+Fixes in `mseries/orchard-incus/`: action row is a wrapping FlowBox (hidden
+buttons leave no gap, FlowBox children are not extra tab stops); stat tiles use
+`ui.TileRow` and wrap 2+2 when narrow; filter box shortened; instance sidebar
+240 px (was 290); detail margins 20 px; declared minimum window is now 780x480
+(was 760x480, which the content could not honour). Screenshots checked at
+780x480 and 1180x740, no clipping; wide layout unchanged.
+- Tests: 71 run, 6 live skipped, all pass; `tests/test_layout.py` (2, need a
+  display; run under xvfb-run) guards tile wrapping and action-row shrink.
+- Installed with `./install.sh`. Not verified: elementary stylesheet/Wayland,
+  the other tabs (Snapshots/Run/Files/Devices/Settings) and dialogs at narrow
+  width, More-menu popover contents, keyboard focus order. Sidebar IPs truncate
+  at 240 px.
+## Orchard for Incus charts — 2026-10-17
+
+`mseries/orchard-incus/`: charts now say what they show. Large charts (Dashboard
+totals, instance Overview) draw the scale top-left and the covered time span
+("last 4.5 min") top-right, and show "Collecting data…" until 3 samples exist.
+CPU charts auto-scale with a 10% floor instead of a fixed 100% (idle looks idle,
+busy multi-core is no longer clipped); the scale label keeps that honest.
+Small sidebar/dashboard sparklines stay unlabelled. Logic in
+`backend.chart_top/chart_ready/span_text`.
+- Tests: 69 run, 6 live skipped, all pass (7 new). Checked headlessly: live
+  shoot.py pages (collecting state) and a synthetic full-history render, dark.
+- Installed with `./install.sh`. Not verified: light theme with full history,
+  real Wayland/elementary stylesheet, narrow 760 px.
+## Orchard for Incus UI/UX pass — 2026-10-17
+
+Reviewed every page from headless screenshots (`mseries/orchard-incus/tools/shoot.py`
+under Xvfb with the cairo renderer, a throwaway XDG_STATE_HOME and no D-Bus
+session; read-only against the live Incus; nothing shown on the real display).
+Changes, all in `mseries/orchard-incus/`:
+- Instance actions are contextual (`backend.visible_actions`): running shows
+  Stop/Restart/Pause/Shell/Snapshot, stopped shows Start/Snapshot. Delete moved
+  out of the primary row into the More menu ("Delete…", red, still confirms).
+- Images: Container/VM badge per row (identical-title rows are now
+  distinguishable), alias shown, Delete is a quiet icon button with tooltip and
+  accessible name.
+- Storage: usage gauge (LevelBar, warns at 85%/95%) with percentage, from
+  `backend.parse_space`.
+- Filter box only shows on the Instances page; Ctrl+F jumps there first.
+- Tests: 62 run, 6 live skipped, all pass (11 new). Screenshots checked in light
+  1180x740 and dark 900x600. Installed with `./install.sh` (backup in `.prev`).
+- Not verified: real-display rendering with the elementary stylesheet and
+  Wayland (screenshots use the default GTK theme under X11); clicking through
+  actions (nothing was started, stopped or deleted); narrow 760 px layout; the
+  More-menu popover; keyboard focus order. Dashboard/chart axis labels and the
+  empty-history look of the charts are still open.
+## Orchard for Incus (Python) audit and fixes — 2026-10-17
+
+Audit of `mseries/orchard-incus/` (installed copy was identical to source):
+- Fixed: every `incus` call defaulted to a 600 s timeout, so a hung daemon
+  stacked a new `incus list` thread every 3 s and never tripped the
+  two-failure check. Now `backend.IncusTimeout` (a RuntimeError), a 20 s
+  `POLL_TIMEOUT` for the list refresh, and an in-flight guard in `refresh()`.
+- Fixed: any unrecognised Incus error was shown as "Incus isn't running" and
+  the real message dropped. Socket/connect errors keep that wording; others now
+  show "Incus reported an error" with the message.
+- Fixed: `install.sh` deleted the old code before copying. It now stages,
+  keeps one backup as `~/.local/share/orchard-incus/orchard_incus.prev`, then
+  swaps; a stale `.new` dir from a crashed run is cleaned.
+- Tests: `cd mseries/orchard-incus && python3 -m unittest discover -s tests`
+  = 51 run, 6 live skipped, all pass (9 new: timeouts, preflight wording,
+  install idempotence/backup/uninstall in a temp HOME).
+- Live read-only check: `preflight()` None in 0.01 s, `list` 2 instances 0.01 s.
+- Installed with `./install.sh` (backup in `orchard_incus.prev`).
+- Not verified: the GTK window itself (refresh guard and problem page were
+  compile-checked only, not exercised; app was not running, nothing relaunched);
+  the 6 live tests; the Vala app build. Not changed: the monitor thread
+  flaps `monitor_ok` every ~5 s when the daemon is down.
+- Noted, not touched: stale `com.github.techmore.orchard-incus` launcher,
+  desktop file and `liborchard-incus.so` (Vala app) coexist with the Python
+  app's `io.github.techmore.OrchardIncus.desktop`: two menu entries.
+- Next: pick the canonical implementation; build/test the Vala app.
+
+## Orchard for Incus upstreamed into this repo — 2026-10-17
+
+Both Orchard for Incus implementations now live in `ElementaryOS_MSeries`
+(previously only on the `claude/airplay-destinations` branch and in the
+separate `techmore/orchard-incus` repo):
+
+- `mseries/orchard-incus/` — Python/GTK 4 app (installed to
+  `~/.local/share/orchard-incus`, launcher `~/.local/bin/orchard-incus`),
+  imported from `claude/airplay-destinations` @ 0eeefa7. Tests:
+  `cd mseries/orchard-incus && python3 -m unittest discover -s tests`
+  (42 run, 6 live tests skipped).
+- `mseries/orchard-incus-native/` — Vala/Granite app + Wingpanel indicator,
+  imported from `techmore/orchard-incus` `codex/wingpanel-indicator` @ 3913611
+  (no build output; MIT LICENSE and NOTICE.md with Orchard attribution kept).
+  Not rebuilt or re-tested during the import.
+- Installed copy of the Python app was byte-identical to the source (diff clean).
+- Not done: audit/fix pass (error states, install idempotence), Vala build
+  and tests, deciding which implementation is canonical.
+- Next: choose canonical implementation, then audit failure states
+  (incus missing/permission denied/daemon down) with tests first.
+
 ## R1/R2 first-boot fixes staged — 2026-10-16 (DeepSeek/OpenCode)
 
 Source revision `46bb8b6` (public patch `0011`) implements R1 (retry the
