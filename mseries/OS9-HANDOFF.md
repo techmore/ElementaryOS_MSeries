@@ -6,11 +6,16 @@
 Verified headless: the newest elementary OS 9 daily ISO (checksum-verified, booted to the
 installer, driven past GRUB with the new `key`/`wait`/`screenshot` commands) and Omarchy 4
 (the archive.org UTM image imported to a plain qcow2, booted to the Hyprland desktop).
-Windows 11 ARM64: the UUP set is downloaded (67 files, 8.8 GB, aria2 SHA-256 verified) and
+Windows 11 ARM64: the UUP set (67 files, 8.8 GB) verified against `files.json` SHA-256s and
 the pinned converter (`dbc65de`) is in place; ISO conversion was still running when this was
-written. macOS guests remain impossible (`mseries-vm macos`). `vms/test-mseries-vm.sh`
-(71 hermetic checks, PATH-stubbed tools, no KVM/network/root) runs in CI; `KVM-VMS.md`
-points at the toolkit.
+written. `fetch windows` was hardened after a live failure mode: aria2 with `--continue`
+re-hashes complete files and re-probes their signed URLs, which expire fast (stale-URL `403`
+storm, ~20 minutes of no progress). The script now verifies every local file against
+`files.json` itself and hands aria2 only the missing/corrupt subset with a fresh URL,
+skipping it entirely when nothing is owed. `vms/test-mseries-vm.sh` now covers the
+verify-first and repair paths (79 hermetic checks, PATH-stubbed tools, no KVM/network/root)
+and runs in CI; `KVM-VMS.md` points at the toolkit. macOS guests remain impossible
+(`mseries-vm macos`).
 
 Desktop fixes (repo defaults plus applied live on the M1):
 - Every standard window gets rounded corners through a second Gala patch,

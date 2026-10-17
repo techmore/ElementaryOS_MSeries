@@ -77,10 +77,12 @@ and an NVMe disk so the installer needs no virtio driver. `--virtio-media virtio
 read-only media when you want virtio drivers for network or balloon devices.
 
 The UUP download uses the official JSON API (`api.uupdump.net`) and the converter script from
-`git.uupdump.net/uup-dump/converter`, pinned to commit `dbc65de`; aria2 verifies each file's SHA-256 from the
-signed URLs, and every rerun resumes instead of restarting. Conversion runs locally and needs no Windows
-machine. The converted ISO is built from Microsoft's own update files, exactly like the website's
-"Download and convert to ISO" flow.
+`git.uupdump.net/uup-dump/converter`, pinned to commit `dbc65de`. Before aria2 is consulted, every local file is
+checked against the SHA-256 in `files.json`; only missing or corrupt files are (re-)downloaded, with a fresh URL
+from the API. This matters because the signed URL tokens expire: a naive `aria2c --continue` rerun re-hashes
+complete files and re-probes expired URLs, drowning in `403`s while doing nothing useful. Conversion runs
+locally and needs no Windows machine. The converted ISO is built from Microsoft's own update files, exactly
+like the website's "Download and convert to ISO" flow.
 
 ## Safety model
 
@@ -96,7 +98,7 @@ machine. The converted ISO is built from Microsoft's own update files, exactly l
 ./mseries/vms/test-mseries-vm.sh
 ```
 
-71 hermetic checks: PATH-stubbed `qemu-system-aarch64`, `swtpm`, `qemu-img`, `gh`, `curl`, `aria2c` and
+79 hermetic checks: PATH-stubbed `qemu-system-aarch64`, `swtpm`, `qemu-img`, `gh`, `curl`, `aria2c` and
 `git`, a temporary `MSERIES_VM_DIR`, no KVM, no network, no root. CI runs it on every push.
 
 ## macOS

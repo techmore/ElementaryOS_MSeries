@@ -166,13 +166,16 @@ chmod +x "$stubs/curl"
 cat > "$work/uup-listid.json" <<'JSON'
 {"response":{"builds":{"1":{"title":"Windows 11, version 24H2 (test)","arch":"arm64","build":"26100.0","created":1,"uuid":"test-uuid"}}}}
 JSON
-cat > "$work/uup-files.json" <<'JSON'
+acab_sha=$(printf 'aaaa' | sha256sum | cut -d' ' -f1)
+besd_sha=$(printf 'bb' | sha256sum | cut -d' ' -f1)
+cat > "$work/uup-files.json" <<JSON
 {"response":{"updateName":"Windows 11, version 24H2 (test)","arch":"arm64","build":"26100.0",
-"files":{"a.cab":{"url":"https://example.test/a.cab","sha256":"00aa","size":"10"},
-         "b.esd":{"url":"https://example.test/b.esd","sha256":"00bb","size":"20"}}}}
+"files":{"a.cab":{"url":"https://example.test/a.cab","sha256":"$acab_sha","size":"4"},
+         "b.esd":{"url":"https://example.test/b.esd","sha256":"$besd_sha","size":"2"}}}}
 JSON
 
-# aria2c stub: materialises one empty file per "  out=" line in the input list.
+# aria2c stub: materialises one file per "  out=" line in the input list, with
+# content matching the sizes/sha-256s in the fixture above.
 cat > "$stubs/aria2c" <<'STUB'
 #!/usr/bin/env bash
 input=""
@@ -186,7 +189,14 @@ done
 echo "$*" >> "$STUB_LOG/aria2-invocations"
 while IFS= read -r line; do
   case $line in
-    "  out="*) : > "$dir/${line#  out=}" ;;
+    "  out="*)
+      name=${line#  out=}
+      case $name in
+        a.cab) printf 'aaaa' > "$dir/$name" ;;
+        b.esd) printf 'bb' > "$dir/$name" ;;
+        *) : > "$dir/$name" ;;
+      esac
+      ;;
     "  checksum="*) ;; # checksum verification is aria2's job, not the stub's
   esac
 done < "$input"
@@ -360,9 +370,35 @@ exists "aria2 input generated" "$work/vms/downloads/windows-uup/aria2-input.txt"
 exists "UUP file a.cab" "$work/vms/downloads/windows-uup/UUPs/a.cab"
 exists "UUP file b.esd" "$work/vms/downloads/windows-uup/UUPs/b.esd"
 exists "converter checked out" "$work/vms/downloads/windows-uup/converter/convert.sh"
-grep_ok "aria2 received checksums" 'checksum=sha-256=00aa' "$work/vms/downloads/windows-uup/aria2-input.txt"
+grep_ok "aria2 received checksums" "checksum=sha-256=$acab_sha" "$work/vms/downloads/windows-uup/aria2-input.txt"
 run "fetch windows --convert" "$cli" fetch windows --convert
 exists "converter produced an ISO" "$work/vms/downloads/windows-uup/stub-windows-arm64.iso"
+
+# verify-first: a second fetch must not hand verified files back to aria2
+n_aria=$(wc -l < "$work/aria2-invocations")
+if out=$("$cli" fetch windows 2>&1); then
+  pass "second fetch windows runs"
+  case $out in *"sha-256 verified"*) pass "second fetch windows verifies locally" ;;
+                 *) fail "second fetch windows verifies locally" ;; esac
+else
+  fail "second fetch windows runs"
+fi
+[[ $(wc -l < "$work/aria2-invocations") == "$n_aria" ]] \
+  && pass "aria2 not re-invoked for verified files" || fail "aria2 not re-invoked for verified files"
+
+# a corrupted file is detected and re-fetched on its own
+printf 'zzzz' > "$work/vms/downloads/windows-uup/UUPs/a.cab"
+run "fetch windows repairs a corrupted file" "$cli" fetch windows
+[[ $(wc -l < "$work/aria2-invocations") -gt $n_aria ]] \
+  && pass "aria2 re-invoked for the corrupted file" || fail "aria2 re-invoked for the corrupted file"
+grep_ok "repair list includes a.cab" 'out=a.cab' "$work/vms/downloads/windows-uup/aria2-input.txt"
+grep_not "repair list excludes verified b.esd" 'out=b.esd' "$work/vms/downloads/windows-uup/aria2-input.txt"
+if out=$("$cli" fetch windows 2>&1); then
+  case $out in *"sha-256 verified"*) pass "repaired set verifies clean again" ;;
+                 *) fail "repaired set verifies clean again" ;; esac
+else
+  fail "repaired set verifies clean again"
+fi
 
 # -------------------------------------------------------------------- delete
 
