@@ -1,5 +1,11 @@
 # OS 9 implementation / Claude Code handoff
 
+## Battery History panel button — 2026-10-18 (Claude Code)
+
+New `patches/panel-power-battery-history.patch` (third in `install-battery-eta.sh`): "Battery History…" in the Power
+popover opens the Battery app. Built and library-checked with `--build-only`; **not installed** (Wingpanel restart
+awaits the owner). Install: `bash mseries/install-battery-eta.sh`.
+
 ## Battery pass 4 — 2026-10-18 (Claude Code)
 
 Battery: accessory batteries logged (new `devices` table) with an Accessories page and `mseries-battery devices`;

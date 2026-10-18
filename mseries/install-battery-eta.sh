@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Show the time-to-full estimate and the live battery power draw (watts) beside the native Wingpanel battery icon.
+# Show the time-to-full estimate and the live battery power draw (watts) beside the native Wingpanel battery icon,
+# and add a "Battery History…" button to its popover that opens the Battery app. `--build-only` builds and checks
+# without installing or restarting anything.
 set -euo pipefail
 
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
@@ -46,7 +48,7 @@ git -C "$source_dir" remote add origin https://github.com/elementary/panel-power
 git -C "$source_dir" fetch -q --depth=1 origin "$commit"
 git -C "$source_dir" checkout -q --detach FETCH_HEAD
 # Order matters: the watt meter patch is written against the source with the ETA patch applied.
-for patch in panel-power-charge-eta.patch panel-power-watts.patch; do
+for patch in panel-power-charge-eta.patch panel-power-watts.patch panel-power-battery-history.patch; do
   git -C "$source_dir" apply "$repo/mseries/patches/$patch"
 done
 
@@ -60,10 +62,15 @@ if [[ ! -f $staged_module ]] || ldd "$staged_module" | grep -q 'not found'; then
   exit 1
 fi
 
+if [[ ${1:-} == --build-only ]]; then
+  echo "Built and checked $staged_module; nothing installed, Wingpanel untouched."
+  exit 0
+fi
+
 if [[ ! -f $backup ]]; then
   sudo install -D -m 0644 "$target" "$backup"
 fi
 sudo install -m 0644 "$staged_module" "$target.new"
 sudo mv "$target.new" "$target"
 python3 "$repo/mseries/local-ai/repair-panel.py"
-echo 'Installed the native battery ETA and watt meter. Wingpanel shows the live power draw (and the time to full while charging).'
+echo 'Installed the native battery ETA, watt meter and Battery History button. Wingpanel shows the live power draw (and the time to full while charging).'

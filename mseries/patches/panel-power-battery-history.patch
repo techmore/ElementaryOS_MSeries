@@ -1,0 +1,41 @@
+diff --git a/src/Widgets/PopoverWidget.vala b/src/Widgets/PopoverWidget.vala
+index 587c11b..7e72d6e 100644
+--- a/src/Widgets/PopoverWidget.vala
++++ b/src/Widgets/PopoverWidget.vala
+@@ -90,6 +90,11 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
+             text = _("Power Settings…")
+         };
+ 
++        var battery_history_button = new Wingpanel.PopoverMenuItem () {
++            text = _("Battery History…")
++        };
++        var battery_app = new DesktopAppInfo ("org.mseries.Battery.desktop");
++
+         orientation = VERTICAL;
+         append (show_percent_revealer);
+         append (device_list_revealer);
+@@ -107,6 +112,9 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
+ 
+         if (is_in_session) {
+             append (last_separator_revealer);
++            if (battery_app != null) {
++                append (battery_history_button);
++            }
+             append (show_settings_button);
+         }
+ 
+@@ -137,6 +145,14 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
+             }
+         });
+ 
++        battery_history_button.clicked.connect (() => {
++            try {
++                battery_app.launch (null, null);
++            } catch (Error e) {
++                warning ("Failed to open Battery: %s", e.message);
++            }
++        });
++
+         dm.brightness_changed.connect ((brightness) => {
+             if (brightness != -1) {
+                 last_separator_revealer.reveal_child = true;

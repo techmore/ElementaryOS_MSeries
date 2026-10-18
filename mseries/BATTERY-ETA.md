@@ -49,3 +49,12 @@ Update (2026-10-15): the label now shows the whole machine's power from the SMC 
 version showed UPower's battery flow, which is exactly 0 W when the charger is connected and the battery sits at the 80%
 limit, so the label hid and the owner reported the meter as lost. Falls back to UPower's rate if the sensor is missing.
 Compiled and installed on the M1 Pro; how it looks in the panel is for the owner to confirm.
+
+## Battery History button (added 2026-10-18)
+
+`patches/panel-power-battery-history.patch` adds a "Battery History…" item above "Power Settings…" in the Power
+popover. It opens the Battery app (`org.mseries.Battery.desktop`, see BATTERY-PROFILER.md) and is only shown when that
+desktop file is installed. Applied third by `install-battery-eta.sh`. `--build-only` builds and checks the module
+without installing or restarting Wingpanel. Verified: all three patches apply in order to `e05723d` and the module
+builds (release, valac) with no unresolved libraries. **Not yet installed**: it needs a Wingpanel restart, which waits for
+the owner's go-ahead; the button's look and click are unverified.
