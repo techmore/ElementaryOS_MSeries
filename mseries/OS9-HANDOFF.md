@@ -1,5 +1,22 @@
 # OS 9 implementation / Claude Code handoff
 
+## CodexBar fixes activated and observed live — 2026-10-18
+
+Owner explicitly requested one menu-bar reload. Ran `bash mseries/deploy-codexbar.sh --restart`
+from the reviewed audit sources; all 12 native targets passed before installation. Our one reload
+activated the defensive JSON fixes and preserved CodexBar daemon PID 44641. `/proc/<pid>/maps`
+matched the installed `libcodexbar.so` inode (320683), rather than the previous deleted mapping.
+Two subsequent observation windows were interrupted by separate Bluetooth control installation/reload
+work; no Wingpanel coredump was recorded. No additional reload was issued by this task.
+
+Final uninterrupted live window: 182.7 seconds, Wingpanel PID 125428 unchanged,
+daemon PID 44641 unchanged, loaded module checked throughout. RSS 166.53–170.89 MiB,
+median sampled CPU 0.39%, file descriptors fixed at 49. No new journal messages for this
+panel during the window and no Wingpanel coredumps since activation. Read-only live snapshot:
+schema 1, two providers/four quota windows, not stale or busy, zero provider errors. All PR #164
+CI checks passed. This verifies activation and short-run polling survival; long-run behavior and
+owner interaction with the live popover/account switches remain unverified. No real account changed.
+
 ## CodexBar defensive data audit — 2026-10-18
 
 Audited the native indicator's delayed callbacks, async parameter ownership, JSON ingress/rendering,
