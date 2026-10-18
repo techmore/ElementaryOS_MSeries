@@ -40,6 +40,7 @@ GNOME_NAMES = {"teal": "mint", "gray": "slate", "grey": "slate"}
 REFERENCE = "#2c6bed"
 FAMILY = {
     "#2c6bed": None,     # primary: buttons, links, outgoing bubbles, focus rings
+    "#3b45fd": None,     # 2024 brand blue: the Signal logo and a few brand accents
     "#1851b4": -0.16,    # pressed / dark variant
     "#6191f3": +0.12,    # dark-theme accent, links on dark
     "#abc4f8": +0.28,    # pale tints (selection, hover backgrounds)
@@ -147,7 +148,7 @@ def patch(original, target, accent, write=True):
         blob = bytearray(handle.read())
     changed = {}
     for path, entry in walk(header):
-        if entry.get("unpacked") or not path.endswith((".css", ".js", ".html")):
+        if entry.get("unpacked") or not path.endswith((".css", ".js", ".html", ".svg")):
             continue
         start, size = base + int(entry["offset"]), entry["size"]
         data, count = recolour(bytes(blob[start:start + size]), mapping, rgb)
