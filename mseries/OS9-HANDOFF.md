@@ -20,7 +20,12 @@ then 0.188s with existing caches (one active transcript changed during the run).
 targets pass, including a real three-provider panel assertion and <=32 px height check; helper tests
 cover identical processed totals, duplicate/archive events, resets, malformed data, cache reuse and
 append invalidation. Full port check validates upstream v0.77.0 and live snapshot schema.
-Owner authorized one reload after checks; activation verification follows below when performed.
+Owner-authorized activation completed with exactly one `deploy-codexbar.sh --restart`.
+Confirmed installed module inode 320944 was loaded; Wingpanel PID 233125 stayed unchanged
+for 61.0 seconds, CodexBar daemon PID 44641 preserved. No new panel journal messages or
+coredumps since activation, sampled CPU median 0.30%, RSS 165.33–169.2 MiB,
+file descriptors fixed at 49. Both native typography and local token changes are active. No real
+account switch performed; long-run behavior and owner visual confirmation remain outside this smoke check.
 
 ## Consistent CodexBar panel typography — 2026-10-18
 
