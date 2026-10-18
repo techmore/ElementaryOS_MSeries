@@ -1,5 +1,13 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Power audit and dock status on `.20` — 2026-10-18
+
+[Power audit](power/AUDIT-2026-10-18.md): 19-22 W observed docked with two displays under an active desktop; no idle
+figure, no savings applied or claimed. Next: a quiet-machine A/B (all apps closed, fixed brightness, three
+alternating arms) and a docked-vs-undocked comparison. [Aurora status](aurora/STATUS-2026-10-18-AFTER-20.md): no
+release after `.20`; draft 7.2.10 PR #139 not J314S-tested. On `.20` the dock links, trains 4 lanes and exposes a 4K
+`DP-2` with EDID (G3/G4 by logs); owner to confirm picture/port (G5) and stability.
+
 ## Aurora energy and frozen feature releases — 2026-10-18
 
 [Implemented plan](aurora/ENERGY-PORT-PLAN-2026-10-18.md) refreshes 52 branches /

@@ -1,5 +1,22 @@
 # OS 9 implementation / Claude Code handoff
 
+## Power audit and Aurora status after `.20`; dock monitor seems live — 2026-10-18 (Claude Code)
+
+Read-only pass; nothing on the machine was changed. [Power audit](power/AUDIT-2026-10-18.md): docked on AC with a
+4K external panel, in-use desktop, SMC total-system power medians 19.7 / 21.4 W (and 25 W when my own probes
+ran), CPU 26-45 % busy. The watts-versus-CPU fit was inconsistent between runs, so no model or idle figure is
+claimed. Big userspace costs: gala 28 %, Claude desktop, a Brave renderer at 20 %, ChatGPT; system services
+total <40 s CPU each since boot. **Applied: none; proposals only** (find the Brave tab; hygiene trims need a quiet
+A/B). Scripts: `power/audit/`. Not measured: idle, battery drain, sleep drain on `.20`.
+
+[Aurora status](aurora/STATUS-2026-10-18-AFTER-20.md): no release since `.20`; only draft PR #139 (7.2.10 unified
+kernel, M2/Neo/J316S-on-7.2.10 results) moved. Its Touch ID attach/retry fix may address our probe crash but is
+untested on J314S. **Important and unrecorded before: on `.20` + matched `boot.bin` the dock now trains**
+(`SET_LINK_RATE 0x1e`, 4 lanes), reads the EDID and `DP-2` is a 3840x2160 logical monitor in Gala. That is G3 and G4
+by logs; G5 and the physical port need the owner's confirmation, and the sink re-trained every 10-15 s around
+04:51. SEP has run 75+ min without a hang (no Touch ID probe). Next: owner confirms the TV picture and port;
+long docked/idle/s2idle stability record; keep the Touch ID probe deferred.
+
 ## Aurora energy ports, hardware receipts and frozen releases — 2026-10-18
 
 Owner requested all Aurora energy/WIP improvements plus tested kernel labels
