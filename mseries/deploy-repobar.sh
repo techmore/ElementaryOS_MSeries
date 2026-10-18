@@ -22,8 +22,9 @@ install -d -m 0755 "$HOME/.local/bin"
 install -m 0755 "$build/mseries-repobar-settings" "$HOME/.local/bin/mseries-repobar-settings"
 indicators_dir=$(pkg-config --variable=indicatorsdir wingpanel-9)
 sudo install -m 0755 "$build/librepobar.so" "$indicators_dir/librepobar.so"
-sudo install -m 0644 "$repo/mseries/repobar-wingpanel/icons/github-symbolic.svg" \
-  /usr/share/icons/hicolor/symbolic/apps/github-symbolic.svg
+for icon in github-symbolic mseries-repobar-globe-symbolic; do
+  sudo install -m 0644 "$repo/mseries/repobar-wingpanel/icons/$icon.svg" "/usr/share/icons/hicolor/symbolic/apps/$icon.svg"
+done
 sudo gtk-update-icon-cache -f /usr/share/icons/hicolor >/dev/null
 
 if ! "$restart"; then

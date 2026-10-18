@@ -236,6 +236,8 @@ namespace MSeries {
                 ".mseries-repobar .detail-chips button:checked { background: alpha(@accent_color, 0.2); color: @accent_color; } " +
                 ".mseries-repobar .detail-list { margin-top: 2px; padding-top: 4px; border-top: 1px solid alpha(currentColor, 0.1); } " +
                 ".mseries-repobar .pinned-star { color: #d4a300; } " +
+                ".mseries-repobar button.site-link { opacity: 0.6; padding: 0 2px; } " +
+                ".mseries-repobar button.site-link:hover, .mseries-repobar button.site-link:focus { opacity: 1; color: @accent_color; } " +
                 ".mseries-repobar button.pin-off { opacity: 0; } " +
                 ".mseries-repobar row:hover button.pin-off, .mseries-repobar row:focus-within button.pin-off { opacity: 0.55; } " +
                 ".mseries-repobar row:hover button.pin-off:hover, .mseries-repobar button.pin-off:focus { opacity: 1; } " +
@@ -729,6 +731,25 @@ namespace MSeries {
                 padlock.add_css_class ("dim-label");
                 head.append (padlock);
             }
+            string pages = repo.get_string_member_with_default ("pagesUrl", "");
+            string homepage = repo.get_string_member_with_default ("homepage", "");
+            string site = pages.length > 0 ? pages : homepage;
+            if (site.length > 0) {
+                // Globe right of the name: the GitHub Pages site, or the repository's website when it has no Pages.
+                string globe = Gtk.IconTheme.get_for_display (Gdk.Display.get_default ()).has_icon ("mseries-repobar-globe-symbolic")
+                    ? "mseries-repobar-globe-symbolic" : "web-browser-symbolic";
+                var site_button = new Gtk.Button.from_icon_name (globe) {
+                    valign = Gtk.Align.CENTER,
+                    tooltip_text = (pages.length > 0 ? "Open GitHub Pages site" : "Open website") + "\n" + site
+                };
+                site_button.add_css_class ("flat");
+                site_button.add_css_class ("compact");
+                site_button.add_css_class ("site-link");
+                site_button.update_property (Gtk.AccessibleProperty.LABEL,
+                    (pages.length > 0 ? "Open GitHub Pages site for " : "Open website for ") + short_name, -1);
+                site_button.clicked.connect (() => open_url (site, site_button));
+                head.append (site_button);
+            }
             if (state == "hidden") {
                 var hidden = new Gtk.Image.from_icon_name ("view-conceal-symbolic") {
                     pixel_size = 12, tooltip_text = "Hidden from the dashboard · right-click to show"
@@ -760,7 +781,7 @@ namespace MSeries {
             card.append (build_details (full_name, url, details_toggle));
 
             var context = new Gtk.GestureClick () { button = 3 };
-            context.pressed.connect ((n, x, y) => show_card_menu (card, full_name, url, state, x, y));
+            context.pressed.connect ((n, x, y) => show_card_menu (card, full_name, url, site, state, x, y));
             card.add_controller (context);
             return card;
         }
@@ -894,13 +915,14 @@ namespace MSeries {
             return button;
         }
 
-        private void show_card_menu (Gtk.Widget card, string name, string url, string state, double x, double y) {
+        private void show_card_menu (Gtk.Widget card, string name, string url, string site, string state, double x, double y) {
             var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { margin_top = 4, margin_bottom = 4 };
             var popover = new Gtk.Popover () { child = box, has_arrow = false };
             popover.set_parent (card);
             popover.set_pointing_to ({ (int) x, (int) y, 1, 1 });
             popover.closed.connect (() => Idle.add (() => { popover.unparent (); return Source.REMOVE; }));
             box.append (menu_item ("Open on GitHub", () => open_url (url, card)));
+            if (site.length > 0) box.append (menu_item ("Open Website", () => open_url (site, card)));
             box.append (menu_item ("Copy Link", () => card.get_clipboard ().set_text (url)));
             box.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL) { margin_top = 3, margin_bottom = 3 });
             box.append (menu_item (state == "pinned" ? "Unpin from Dashboard" : "Pin to Dashboard",

@@ -25,7 +25,10 @@ QUERY = """query($cursor: String, $since1h: GitTimestamp!, $since24h: GitTimesta
       affiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER],
       orderBy: {field: UPDATED_AT, direction: DESC}) {
       nodes {
-        nameWithOwner url description isPrivate isArchived isFork stargazerCount forkCount updatedAt
+        nameWithOwner url description isPrivate isArchived isFork stargazerCount forkCount updatedAt homepageUrl
+        pagesDeploy: deployments(environments: ["github-pages"], first: 1, orderBy: {field: CREATED_AT, direction: DESC}) {
+          nodes { latestStatus { state environmentUrl } }
+        }
         primaryLanguage { name }
         repositoryTopics(first: 8) { nodes { topic { name } } }
         openIssues: issues(states: OPEN, first: 1, orderBy: {field: UPDATED_AT, direction: DESC}) {
@@ -209,6 +212,7 @@ def fetch_snapshot() -> dict:
         raise RuntimeError("Repository list exceeded the 1,000 repository safety limit")
 
     normalized = []
+    pages_names = _pages_repositories()
     settings = load_settings()
     local_by_name = {}
     if settings.get("localRoot"):
@@ -263,6 +267,8 @@ def fetch_snapshot() -> dict:
             "language": (repo.get("primaryLanguage") or {}).get("name", ""),
             "topics": [item.get("topic", {}).get("name", "") for item in (repo.get("repositoryTopics") or {}).get("nodes", [])],
             "recentActivity": recent[0] if recent else None,
+            "pagesUrl": _pages_url(repo, pages_names),
+            "homepage": _web_url(repo.get("homepageUrl") or ""),
             "local": local_by_name.get(repo.get("nameWithOwner", "")),
             "repoState": state if state in {"visible", "pinned", "hidden"} else "visible",
         })
@@ -275,6 +281,36 @@ def fetch_snapshot() -> dict:
     return {"schemaVersion": 1, "account": login, "host": _hostname(), "fetchedAt": now,
             "rateFetchedAt": rate_fetched_at, "rateLimits": rate_limit, "rateError": rate_error,
             "settings": settings, "stale": False, "repos": normalized}
+
+
+def _pages_repositories() -> set[str]:
+    """Names of repositories with a published GitHub Pages site; REST is the only listing that includes branch-built sites."""
+    try:
+        result = _run_gh(["--paginate", "user/repos?per_page=100&affiliation=owner,collaborator,organization_member",
+                          "--jq", ".[] | select(.has_pages) | .full_name"], timeout=60)
+    except RuntimeError:
+        return set()
+    return {line.strip() for line in result.stdout.splitlines() if REPO_RE.fullmatch(line.strip())}
+
+
+def _web_url(value: str) -> str:
+    value = value.strip()
+    parsed = urlparse(value)
+    return value if parsed.scheme in {"http", "https"} and parsed.netloc and "." in parsed.netloc else ""
+
+
+def _pages_url(repo: dict, pages_names: set[str]) -> str:
+    """The deployed Pages address (custom domains included) or, for branch-built sites, the github.io default."""
+    for node in (repo.get("pagesDeploy") or {}).get("nodes") or []:
+        status = node.get("latestStatus") or {}
+        if status.get("state") == "SUCCESS" and _web_url(status.get("environmentUrl") or ""):
+            return status["environmentUrl"]
+    name = repo.get("nameWithOwner", "")
+    if name not in pages_names or _hostname() != "github.com":
+        return ""
+    owner, repository = name.split("/", 1)
+    site = f"{owner.lower()}.github.io"
+    return f"https://{site}/" if repository.lower() == site else f"https://{site}/{repository}/"
 
 
 def write_cache(payload: dict) -> None:

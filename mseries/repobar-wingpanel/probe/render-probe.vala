@@ -10,6 +10,8 @@ int main (string[] args) {
     Gtk.init ();
     Granite.init ();
     var delay = args.length > 2 ? int.parse (args[2]) : 1500;
+    var icons = Environment.get_variable ("RB_ICONS");
+    if (icons != null) Gtk.IconTheme.get_for_display (Gdk.Display.get_default ()).add_search_path (icons);
     var indicator = new MSeries.RepoBarIndicator ();
     var bar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { height_request = 28, margin_start = 8, margin_end = 8 };
     bar.append (indicator.get_display_widget ());

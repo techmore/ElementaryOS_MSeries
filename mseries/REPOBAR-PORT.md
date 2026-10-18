@@ -24,6 +24,8 @@ implementation; no macOS source or binary is copied into this project.
   text, 8 pt captions, softly raised cards, consistent popover spacing, and a
   rounded refresh dock. Search, scope selection, and repository-specific details
   keep their own useful width and hierarchy.
+- A globe beside the repository name opens its GitHub Pages site (custom
+  domains included), or the repository's website when it has no Pages site.
 - Each repository card has a compact GTK disclosure menu for issues, pull
   requests, workflow runs, releases, activity, commits, branches, and tags.
   Categories fetch their data only when expanded; links open the matching GitHub

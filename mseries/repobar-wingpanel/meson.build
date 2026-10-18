@@ -16,6 +16,7 @@ shared_module(
 
 install_data(
   'icons/github-symbolic.svg',
+  'icons/mseries-repobar-globe-symbolic.svg',
   install_dir: icon_theme_dir,
 )
 
