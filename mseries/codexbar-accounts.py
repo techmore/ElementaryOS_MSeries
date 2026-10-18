@@ -166,7 +166,20 @@ def usage_for(home: pathlib.Path, cli: str) -> dict[str, Any]:
         if isinstance(window, dict) and window.get("usedPercent") is not None:
             windows.append({"key": key, "label": label, "remaining": max(0.0, 100.0 - float(window["usedPercent"])),
                             "resetsAt": window.get("resetsAt", "")})
-    return {"windows": windows}
+    return {"windows": windows, "resetCredits": reset_credits(row)}
+
+
+def reset_credits(row: dict[str, Any]) -> dict[str, Any] | None:
+    """Available rate-limit resets and when the first one expires, or None when the CLI does not report them."""
+    summary = row.get("resetCredits")
+    if not isinstance(summary, dict) or not isinstance(summary.get("available"), int):
+        return None
+    expires = summary.get("nextExpiresAt") if isinstance(summary.get("nextExpiresAt"), str) else ""
+    if not expires:  # older summaries carry only the count; fall back to the credit list
+        detail = (row.get("usage") or {}).get("codexResetCredits") or {}
+        dates = [c.get("expiresAt") for c in detail.get("credits", []) if isinstance(c, dict) and isinstance(c.get("expiresAt"), str)]
+        expires = min(dates) if dates else ""
+    return {"available": summary["available"], "nextExpiresAt": expires}
 
 
 def usage_report(cli: str) -> list[dict[str, Any]]:
