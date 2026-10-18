@@ -16,3 +16,23 @@
   1080p is upscaled by the TV regardless of source bitrate; see `../AV-SYNC-EXTERNAL-DISPLAY.md`.
 - Options not taken: running Brave with the media sandbox disabled to get VA-API (security trade-off,
   untested here); the Xwayland-native-scaling setting for X11 apps (display setting, owner approval).
+
+## `brave-youtube` — YouTube-only Brave, contained by bubblewrap (EXPERIMENTAL, 2026-10-18)
+
+[`brave-youtube`](brave-youtube) starts Brave with its own profile (`~/.config/brave-youtube`), in app mode on
+YouTube, inside `bwrap`. Chromium's own sandbox is off (`--no-sandbox`), so the container is the wall:
+only `/dev/dri`, `/dev/media*`, `/dev/video*`, the Wayland/PipeWire/Pulse sockets, read-only `/usr` `/etc`
+`/opt` `/sys`, an empty tmpfs `$HOME` and that one profile directory are visible. Your normal Brave and
+profile are untouched. Not installed as a menu entry by default (`brave-youtube.desktop` is a template).
+
+Verified (`brave-youtube --probe`, 2026-10-18): the container starts under this system's AppArmor rules;
+`$HOME` inside holds only `.config`; `~/.ssh` and other profiles are not visible; `vainfo` inside lists
+H.264 High, HEVC Main10 and VP9 Profile0 with driver `v4l2-request`.
+
+**NOT verified: that Brave actually uses hardware decode.** `brave-youtube --test` (headless, local 1080p VP9
+clip in the profile's `test/` dir) produced no result page, and Chromium logged
+`vaapi_wrapper.cc: GetHandle(): Either VADisplayStateSingleton::PreSandboxInitialization() hasn't been called
+or that method failed to find a suitable render node`. With the sandbox off the VA-API handle may never be
+initialised, so this approach may need a different flag set (or the render node selection patched upstream)
+before it helps. Headless mode also does not exercise the real GPU path. A visible-window test on YouTube
+(with `chrome://media-internals` / `chrome://gpu`) is the next step and needs the owner's screen.
