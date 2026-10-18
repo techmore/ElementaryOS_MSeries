@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import sys
 import subprocess
 import tempfile
 import time
@@ -15,6 +16,10 @@ from websockets.sync.client import connect
 import gi
 gi.require_version('IBus','1.0')
 from gi.repository import IBus,Gio,GLib
+
+if os.environ.get('MSERIES_INPUT_TEST_SESSION') != '1':
+    raise SystemExit(subprocess.run(['dbus-run-session','--','xvfb-run','-a','env','MSERIES_INPUT_TEST_SESSION=1',
+        'GSETTINGS_BACKEND=memory',sys.executable,str(Path(__file__).resolve())]).returncode)
 
 with tempfile.TemporaryDirectory(prefix='mseries-browser-input-') as directory:
     os.environ.update(IBUS_ADDRESS='unix:path='+directory+'/bus',XMODIFIERS='@im=ibus',
@@ -34,7 +39,7 @@ with tempfile.TemporaryDirectory(prefix='mseries-browser-input-') as directory:
         pump(1);assert bus.set_global_engine('mseries-dictation')
         profile=Path(directory)/'profile'
         browser=subprocess.Popen(['brave-browser','--user-data-dir='+str(profile),
-            '--ozone-platform=x11','--disable-gpu','--disable-background-networking',
+            '--force-renderer-accessibility','--ozone-platform=x11','--disable-gpu','--disable-background-networking',
             '--disable-extensions','--disable-sync','--no-first-run','--no-default-browser-check',
             '--password-store=basic','--remote-debugging-address=127.0.0.1',
             '--remote-debugging-port=0','--host-resolver-rules=MAP * ~NOTFOUND','about:blank'],
@@ -75,7 +80,7 @@ with tempfile.TemporaryDirectory(prefix='mseries-browser-input-') as directory:
             try:call('Begin')
             except GLib.Error:pass
             else:raise AssertionError('Browser password accepted dictation')
-            print(json.dumps({'browser':'Brave X11/XIM','unicode_field':True,'changed_field_untouched':True,
+            print(json.dumps({'browser':'Brave X11 with accessibility enabled','unicode_field':True,'changed_field_untouched':True,
                 'password_refused':True,'method':'Synthetic form in isolated real browser; no ASR, microphone or owner profile'}))
     finally:
         if browser:
@@ -83,5 +88,14 @@ with tempfile.TemporaryDirectory(prefix='mseries-browser-input-') as directory:
             except ProcessLookupError:pass
             try:browser.wait(timeout=5)
             except subprocess.TimeoutExpired:os.killpg(browser.pid,signal.SIGKILL);browser.wait()
+            # Chromium's parent can exit before its profile-writing children.
+            deadline=time.monotonic()+5
+            while time.monotonic()<deadline:
+                try:os.killpg(browser.pid,0)
+                except ProcessLookupError:break
+                time.sleep(.05)
+            try:os.killpg(browser.pid,signal.SIGKILL)
+            except ProcessLookupError:pass
+            time.sleep(.1)
         if engine:engine.terminate();engine.wait(timeout=5)
         daemon.terminate();daemon.wait(timeout=5)

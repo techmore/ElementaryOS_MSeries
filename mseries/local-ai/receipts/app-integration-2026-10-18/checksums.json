@@ -13,8 +13,10 @@
   "interrupted-attempts/attempt-5ce0f9b2-ebea-454d-8227-694764114578.json": "c20ea13c4f38e781d6d8676e7fe47aa5c6682ff2502b095939ec780c29da7b0f",
   "mail-ui.json": "60560103a73dad7bf0c4cffde9fc57c147fb83995137e8c5ded954d49a47b2a0",
   "newelle-client-discovery.json": "f7d34de4d42b41e5db1c94a1dc350a39be88e86f517839961cf5d0d33cdcbf19",
+  "newelle-client-negative.json": "1ca8689cac62d8c5cbc163ee05b54126754f08fd2181b437347b06fb7c5cf8ad",
+  "newelle-client-positive.json": "5f054fa54d523ccde6323f38d22ed5dc2f1a86378943107ef867d7742ab188f8",
   "newelle-discovery.json": "62332260c2f2a12864a102253ca17218bcd45baf5ff8034b59ff3c02c7f78750",
-  "publication.json": "58f46e1281ead96ced66e062ac58fa9c0102375cf4f0834ce726ee165d433490",
-  "quiet-guard.json": "53b4af35decb9341af4829428976cd93bfd349aedb15c4226f43650a8b2cde9a",
+  "publication.json": "db7d42211b417cb4b625bc9b2a4aab568dca784008af0e8d197cb1317e10384c",
+  "quiet-guard.json": "afc0a6992b710583ba7963b9831a2c97d260f748dbfa79318aba7fd8002a0629",
   "source-pins.json": "48ad4b26dcedc4027873388e052582b560bc6bfd971027495905b51c493b4886"
 }

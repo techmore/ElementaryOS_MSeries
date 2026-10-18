@@ -8,6 +8,10 @@ PATH = '/org/techmore/DictationInput'
 ENGINE = 'mseries-dictation'
 
 
+def safe_accessible(role, focused, editable, active_window):
+    return role in (61, 73, 79, 94, 95) and focused and editable and active_window
+
+
 class FocusSession:
     """A transcript belongs to one uninterrupted, non-sensitive input focus."""
     def __init__(self, clock=time.monotonic):
@@ -23,7 +27,7 @@ class FocusSession:
 
     def focus(self, target, client):
         self.invalidate()
-        # XIM omits password/content-purpose information (observed in Brave).
+        # XIM alone cannot establish password/content-purpose information.
         # Do not silently fall back to layout-dependent keys for that client.
         self.target = target if client not in ('fake', 'xim') else None
         self.purpose = None
@@ -61,6 +65,70 @@ def main():
     if not bus.is_connected():
         raise SystemExit('IBus is unavailable')
     state = FocusSession()
+    current = {'engine': None, 'client': None, 'metadata': None}
+
+    class FocusMetadata:
+        """Only field role/state/identity and active ancestors; never requests text."""
+        def __init__(self):
+            gi.require_version('Atspi', '2.0')
+            from gi.repository import Atspi
+            self.api = Atspi
+            self.source = None
+            self.listener = Atspi.EventListener.new(self.changed, None)
+            self.listener.register('object:state-changed:focused')
+            self.listener.register('window:deactivate')
+
+        def identity(self, source):
+            return source.get_process_id(), source.path
+
+        def changed(self, event, *_):
+            try:
+                if event.type.startswith('window:deactivate'):
+                    if self.source and event.source.get_process_id() == self.source.get_process_id():
+                        self.source = None
+                        state.invalidate()
+                elif event.detail1:
+                    self.source = event.source
+                    state.invalidate()
+                elif self.source and self.identity(event.source) == self.identity(self.source):
+                    self.source = None
+                    state.invalidate()
+            except Exception:
+                self.source = None
+                state.invalidate()
+
+        def validate(self):
+            try:
+                source = self.source
+                if source is None: raise ValueError('No accessible focused field')
+                source.clear_cache()
+                states = source.get_state_set()
+                role = int(source.get_role())
+                focused = states.contains(self.api.StateType.FOCUSED)
+                editable = states.contains(self.api.StateType.EDITABLE)
+                active = False
+                node = source
+                for _ in range(24):
+                    if node is None: break
+                    node.clear_cache()
+                    parent = node.get_parent()
+                    # Qt's top-level QWidget reports FILLER rather than FRAME.
+                    top_level = parent is not None and parent.get_role() == self.api.Role.APPLICATION
+                    window_role = node.get_role() in (self.api.Role.FRAME, self.api.Role.DIALOG, self.api.Role.WINDOW)
+                    if (window_role or top_level) and node.get_state_set().contains(self.api.StateType.ACTIVE):
+                        active = True
+                        break
+                    node = parent
+                if not safe_accessible(role, focused, editable, active):
+                    raise ValueError('Focused field is sensitive, inactive or not editable')
+                return self.identity(source)
+            except Exception:
+                raise ValueError('Accessible field metadata unavailable or unsafe') from None
+
+    try:
+        metadata = FocusMetadata()
+    except (ImportError, ValueError, GLib.Error):
+        metadata = None  # Refuse insertion if reliable field metadata is absent.
 
     class DictationEngine(IBus.Engine):
         __gtype_name__ = 'MSeriesDictationEngine'
@@ -69,15 +137,18 @@ def main():
             super().__init__(has_focus_id=True, **kwargs)
 
         def do_focus_in_id(self, path, client):
+            current.update(engine=self, client=client, metadata=None)
             state.focus(self, client)
 
         def do_focus_out_id(self, path):
+            current.update(engine=None, client=None, metadata=None)
             state.focus(None, 'fake')
 
         def do_set_content_type(self, purpose, hints):
             state.content(purpose, hints)
 
         def do_disable(self):
+            current.update(engine=None, client=None, metadata=None)
             state.focus(None, 'fake')
 
         def do_reset(self):
@@ -119,6 +190,9 @@ def main():
     def call(connection, sender, path, interface, method, parameters, invocation):
         try:
             if method == 'Begin':
+                if metadata is None: raise ValueError('Accessible field metadata is required')
+                current['metadata'] = metadata.validate()
+                state.target = current['engine']
                 # IBus suppresses SetContentType when a normal field keeps the
                 # default (0, 0); read the engine's cached type as well.
                 if state.target is not None:
@@ -126,6 +200,9 @@ def main():
                 invocation.return_value(GLib.Variant('(s)', (state.begin(),)))
             elif method == 'Commit':
                 token, text = parameters.unpack()
+                if metadata is None or metadata.validate() != current['metadata']:
+                    state.invalidate()
+                    raise ValueError('Accessible field focus changed')
                 state.accept(token, text)
                 state.target.commit_text(IBus.Text.new_from_string(text))
                 invocation.return_value(None)

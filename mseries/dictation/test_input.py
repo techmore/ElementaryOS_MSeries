@@ -27,6 +27,12 @@ class FocusTests(unittest.TestCase):
         s = self.ready(); s.focus(object(), 'xim'); s.content(0, 0)
         with self.assertRaises(ValueError): s.begin()
 
+    def test_accessible_metadata_gate(self):
+        self.assertTrue(module.safe_accessible(79, True, True, True))
+        for args in [(40, True, True, True), (79, False, True, True),
+                     (79, True, False, True), (79, True, True, False), (0, True, True, True), (67, True, True, True)]:
+            self.assertFalse(module.safe_accessible(*args))
+
     def test_focus_change_and_cancel(self):
         for action in [lambda s: s.focus(object(), 'gtk3-im:other'), lambda s: s.invalidate(), lambda s: s.content(8, 0)]:
             s = self.ready(); token = s.begin(); action(s)

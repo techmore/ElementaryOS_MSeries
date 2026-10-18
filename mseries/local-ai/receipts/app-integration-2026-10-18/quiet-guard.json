@@ -360,6 +360,54 @@
     {
       "time": 1792321365.495508,
       "message": "QUIET COOLING: resuming owned model"
+    },
+    {
+      "time": 1792321641.885951,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792321672.247337,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792321675.285423,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792321705.63121,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792321708.666508,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792321739.031868,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792321742.08895,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792321772.422913,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792321775.463464,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792321805.815679,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792321808.854379,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792321833.13867,
+      "message": "QUIET COOLING: resuming owned model"
     }
   ],
   "model_cases": [

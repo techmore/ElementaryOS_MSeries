@@ -1,11 +1,14 @@
 #!/usr/bin/python3
 """Run under dbus-run-session -- xvfb-run -a; never uses the owner IBus bus."""
-import os,subprocess,tempfile,time,json
+import os,subprocess,tempfile,time,json,sys
 from pathlib import Path
 import gi
 gi.require_version('IBus','1.0')
 from gi.repository import IBus,Gio,GLib
 script=Path(__file__).resolve().with_name('dictation-input.py')
+if os.environ.get('MSERIES_INPUT_TEST_SESSION') != '1':
+ raise SystemExit(subprocess.run(['dbus-run-session','--','xvfb-run','-a','env','MSERIES_INPUT_TEST_SESSION=1',
+  'GSETTINGS_BACKEND=memory',sys.executable,str(Path(__file__).resolve())]).returncode)
 with tempfile.TemporaryDirectory(prefix='mseries-ibus-') as d:
  os.environ['IBUS_ADDRESS']='unix:path='+d+'/bus'
  os.environ['GIO_USE_VFS']='local'
@@ -24,24 +27,18 @@ with tempfile.TemporaryDirectory(prefix='mseries-ibus-') as d:
   ctx=bus.create_input_context('gtk3-im:synthetic-dictation-test')
   ctx.set_capabilities(IBus.Capabilite.FOCUS);ctx.focus_in();assert bus.set_global_engine('mseries-dictation');pump(1)
   assert ctx.get_engine().get_name()=='mseries-dictation'; ctx.focus_out();pump();ctx.focus_in();pump();ctx.set_content_type(IBus.InputPurpose.FREE_FORM,IBus.InputHints.NONE);pump()
-  received=[]
-  def committed(connection,sender,path,interface,signal,parameters):
-   received.append(parameters.unpack()[0][2])
-  bus.get_connection().signal_subscribe(None,'org.freedesktop.IBus.InputContext','CommitText',ctx.get_object_path(),None,Gio.DBusSignalFlags.NONE,committed)
   conn=Gio.bus_get_sync(Gio.BusType.SESSION,None)
   def call(method,args=None):return conn.call_sync('org.techmore.DictationInput','/org/techmore/DictationInput','org.techmore.DictationInput',method,args,None,Gio.DBusCallFlags.NONE,2000,None)
-  token=call('Begin').unpack()[0]
-  text='Café — 日本語 + & $(literal)'
-  call('Commit',GLib.Variant('(ss)',(token,text)));pump();assert received==[text],received
+  try:call('Begin')
+  except GLib.Error as error:assert 'metadata' in str(error),str(error)
+  else:raise AssertionError('Unbacked input context accepted without accessible field')
   ctx.focus_out();pump()
-  try:call('Commit',GLib.Variant('(ss)',(token,'wrong field')))
-  except GLib.Error:pass
-  else:raise AssertionError('Focus-out accepted stale token')
-  ctx.focus_in();ctx.set_content_type(IBus.InputPurpose.PASSWORD,IBus.InputHints.NONE);pump()
   try:call('Begin')
   except GLib.Error:pass
-  else:raise AssertionError('Password accepted')
-  print(json.dumps({'unicode_commit':True,'focus_out_rejected':True,'password_rejected':True,'method':'Isolated real IBus InputContext; no owner desktop or microphone'}))
+  else:raise AssertionError('Unfocused context accepted')
+  print(json.dumps({'unbacked_context_refused':True,'unfocused_context_refused':True,
+    'method':'Isolated real IBus InputContext without accessible application; no text or microphone'}))
+
  finally:
   if engine:engine.terminate();engine.wait(timeout=5)
   daemon.terminate();daemon.wait(timeout=5)

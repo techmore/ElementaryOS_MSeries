@@ -21,9 +21,10 @@ Owner priority: universal F5 dictation, then deeper troubleshooting/optimization
 then a low-overhead everyday machine assistant. Gmail is the preferred mail path;
 local Mail drafts remain optional and do not establish Gmail support. Native
 float32 capture fix b20c808 is installed with its upstream loopback evidence.
-New IBus Unicode/focus-bound insertion is prepared: five session contracts and
-an isolated real InputContext check pass. App-field checks, warning review,
-deployment and owner speech-to-app confirmation remain. Grammar/translation
+New IBus/AT-SPI Unicode insertion is prepared: seven contracts and GTK3,
+native GTK4 Wayland, Qt6 and accessibility-enabled Brave field checks pass.
+The original browser password failure is retained separately. Deployment,
+streaming-ASR integration, remaining app coverage and owner F5 remain. Grammar/translation
 review is proposed. [Current scope and evidence](local-ai/SPEECH-INTEGRATION.md).
 
 ## Native full-height desktop and compact dock — 2026-10-18

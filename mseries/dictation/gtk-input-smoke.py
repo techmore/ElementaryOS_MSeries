@@ -4,6 +4,7 @@ Run: dbus-run-session -- xvfb-run -a python3 mseries/dictation/gtk-input-smoke.p
 """
 import json
 import argparse
+import sys
 import os
 from pathlib import Path
 import subprocess
@@ -12,11 +13,17 @@ import time
 
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--gtk4',action='store_true')
+parser.add_argument('--wayland',action='store_true',help='Use only inside an isolated nested Wayland desktop')
 args=parser.parse_args()
+if args.wayland:
+    assert os.environ.get('MSERIES_DICTATION_TEST_BUS') == '1' and os.environ.get('GSETTINGS_BACKEND') == 'memory', 'Use test-wayland-input.sh'
+elif os.environ.get('MSERIES_INPUT_TEST_SESSION') != '1':
+    raise SystemExit(subprocess.run(['dbus-run-session','--','xvfb-run','-a','env',
+        'MSERIES_INPUT_TEST_SESSION=1','GSETTINGS_BACKEND=memory',sys.executable,str(Path(__file__).resolve()),*sys.argv[1:]]).returncode)
 with tempfile.TemporaryDirectory(prefix='mseries-gtk-input-') as directory:
     os.environ.update(IBUS_ADDRESS='unix:path='+directory+'/bus', GTK_IM_MODULE='ibus',
-        GDK_BACKEND='x11', XDG_CACHE_HOME=directory+'/cache', XDG_CONFIG_HOME=directory+'/config',
-        NO_AT_BRIDGE='1', GIO_USE_VFS='local',GSK_RENDERER='cairo',LIBGL_ALWAYS_SOFTWARE='1')
+        GDK_BACKEND='wayland' if args.wayland else 'x11', XDG_CACHE_HOME=directory+'/cache', XDG_CONFIG_HOME=directory+'/config',
+        GTK_A11Y='atspi', GIO_USE_VFS='local',GSK_RENDERER='cairo',LIBGL_ALWAYS_SOFTWARE='1')
     import gi
     gi.require_version('IBus','1.0')
     gi.require_version('Gtk','4.0' if args.gtk4 else '3.0')
@@ -50,24 +57,33 @@ with tempfile.TemporaryDirectory(prefix='mseries-gtk-input-') as directory:
             return conn.call_sync('org.techmore.DictationInput','/org/techmore/DictationInput',
                 'org.techmore.DictationInput',method,args,None,Gio.DBusCallFlags.NONE,2000,None)
         client=['/usr/bin/python3',str(Path(__file__).with_name('dictation-input-client.py'))]
-        token=subprocess.run(client+['begin'],capture_output=True,text=True,check=True).stdout.strip()
+        def run_client(method,token=None,text=''):
+            command=client+[method]+([token] if token else [])
+            process=subprocess.Popen(command,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+            process.stdin.write(text);process.stdin.close();process.stdin=None
+            deadline=time.monotonic()+5
+            while process.poll() is None:
+                if time.monotonic()>deadline:
+                    process.kill();process.wait();raise TimeoutError('Bounded client request expired')
+                pump(.02)
+            stdout,stderr=process.communicate()
+            return subprocess.CompletedProcess(command,process.returncode,stdout,stderr)
+        result=run_client('begin');assert result.returncode==0,result.stderr
+        token=result.stdout.strip()
         text='Café — 日本語 + & $(literal)'
         for chunk in [text[:8],text[8:]]:
-            subprocess.run(client+['commit',token],input=chunk,text=True,capture_output=True,check=True);pump()
+            result=run_client('commit',token,chunk);assert result.returncode==0,result.stderr
+            pump()
         assert first.get_text()==text,first.get_text()
         second.grab_focus();pump()
-        try:call('Commit',GLib.Variant('(ss)',(token,'wrong field')))
-        except GLib.Error:pass
-        else:raise AssertionError('Focus change accepted stale insertion')
+        assert run_client('commit',token,'wrong field').returncode!=0,'Focus change accepted stale insertion'
         assert not second.get_text()
         password.grab_focus();pump()
-        try:call('Begin')
-        except GLib.Error:pass
-        else:raise AssertionError('Password accepted dictation')
+        assert run_client('begin').returncode!=0,'Password accepted dictation'
         assert not password.get_text()
         window.destroy();pump()
-        print(json.dumps({'gtk_version':4 if args.gtk4 else 3,'unicode_field':True,'changed_field_untouched':True,
-            'password_untouched':True,'method':'Actual Gtk.Entry fields, private Xvfb/IBus/session bus; no ASR or microphone'}))
+        print(json.dumps({'gtk_version':4 if args.gtk4 else 3,'display_backend':'wayland' if args.wayland else 'x11','unicode_field':True,'changed_field_untouched':True,
+            'password_untouched':True,'method':'Actual Gtk.Entry fields, private '+('headless Gala Wayland' if args.wayland else 'Xvfb')+'/IBus/session bus; no ASR or microphone'}))
     finally:
         if engine:engine.terminate();engine.wait(timeout=5)
         daemon.terminate();daemon.wait(timeout=5)

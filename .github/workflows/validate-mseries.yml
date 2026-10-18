@@ -118,6 +118,7 @@ jobs:
           python3 -m unittest discover -s mseries/audio -p 'test_*.py'
           python3 -m unittest discover -s mseries/airplay -p 'test_*.py'
           python3 -m unittest discover -s mseries/local-ai -p 'test_*.py'
+          python3 -m unittest discover -s mseries/dictation -p 'test_input.py'
 
       - name: Validate experimental dock patches offline
         run: |

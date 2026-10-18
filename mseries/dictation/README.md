@@ -1,6 +1,6 @@
 # F5 dictation (local speech to text)
 
-Hold **F5** (the microphone key), speak, release: the text is typed into the focused field of any app.
+Hold **F5** (the microphone key), speak, release: the compatibility service types recognized text into the focused field. Cross-app support and current limits are qualified below.
 Voxtype 1.1.1 (MIT) + whisper.cpp `base.en` on the CPU, ydotool for typing (same stack as Omarchy).
 Audio stays on the Mac; nothing is stored. Install: `bash mseries/install-dictation.sh` (`--uninstall` to remove).
 
@@ -20,7 +20,7 @@ Known gaps (2026-10-18)
 
 Hold F5: words are typed while you talk instead of after you release. transcribe.cpp 0.4.0 (MIT) + Parakeet Unified 0.6B Q4_K_M (CC-BY-4.0) via `stream-dictate.py`; start/stop chimes; Voxtype stays installed as the fallback (`systemctl --user stop mseries-stream-dictate; systemctl --user start voxtype`).
 Offline measurements on the 10.4 s LibriSpeech clip (3 warm runs, median, `stream-bench.py`, 6 threads): Parakeet Unified streaming RTF 0.29 on Vulkan (0.28-0.29 with private Mesa 26.2.4) and 0.37 on CPU, correct text with punctuation, first words about 3.3 s into speech, then roughly every second. Moonshine streaming small Q8_0 was too slow here (RTF 1.38 CPU, 1.56-1.68 Vulkan) and is not used.
-**Not verified:** a live F5 session with a person speaking and text landing in an app; the mic hiss and the untuned gain may cost accuracy; words already typed are never corrected if the model revises them. Streaming needs an 8 s lead-in at most on first use for model load; model uses ~600 MB RAM while the service runs.
+**Not verified:** a live F5 session with a person speaking and text landing in an app; human speech accuracy still needs confirmation; words already typed are never corrected if the model revises them. Streaming needs an 8 s lead-in at most on first use for model load; model uses ~600 MB RAM while the service runs.
 
 Streaming details: the mic (AOP `hw:1,0`) is opened by `stream-dictate.py` only while F5 is held (36 ms to first audio, measured); 3 raw channels are mixed, high-passed (120 Hz since the fix below), low-passed at 7 kHz and limited. The "-30 dBFS noise floor" measured here was the format bug described below, not the mic. 5 s of room silence typed nothing (2 runs); a "Listening…" notification and start/stop chimes mark recording. Rapid press/release cycles (0.4 to 2.5 s) reopened the mic cleanly. The grammar pass is not part of streaming: text is typed as it commits and is never retyped; Parakeet already outputs punctuation and capitals.
 
@@ -52,8 +52,22 @@ Streaming details: the mic (AOP `hw:1,0`) is opened by `stream-dictate.py` only 
 
 ## Universal insertion work — in qualification
 
-The owner prioritizes universal speech-to-text before the troubleshooting and everyday assistant tiers. `dictation-input.py` registers an IBus input method and a session-bound commit interface. `dictation-input-client.py` passes transcript chunks over stdin and the session bus; it does not use the clipboard or synthesize keyboard-layout-dependent characters. The streaming source has an optional `STREAM_OUTPUT=ibus` route and Escape cancellation. The installed service is unchanged until app acceptance/deployment; the compatibility default remains ydotool.
+The prepared IBus bridge commits Unicode text without the clipboard or keyboard-layout-dependent key synthesis. It binds a 120-second session to one focused field, rejects control characters/oversized text and supports Escape cancellation. It now requires both input-method hints and AT-SPI focused-field role/state/identity plus an active top-level window. It does not request surrounding text. Password, unknown/inaccessible and non-editable fields are refused. Qt top-level QWidget containers are recognized through their application parent.
 
-A session expires after 120 seconds and rejects stale focus, password/PIN/private field hints, control characters and oversized text. Ordinary keys pass through. Applications must support/configure IBus and accurately report sensitive fields; this is not a claim of every Linux app or custom canvas working. It does not read surrounding text. Grammar/translation review remains pending.
+The first browser trial incorrectly accepted a password-field session using input-method hints alone. That failure remains in [the original receipt](../local-ai/receipts/dictation-input-2026-10-18/qualification.json); the separate revised receipt records the stronger metadata gate. No password text was inserted by that failed test. The fix applies to every client, not only XIM. Browser tests explicitly enable accessibility; this does not establish support in an existing browser lacking that metadata.
 
-Checks: `python3 -m unittest discover -s mseries/dictation -p test_input.py` (six contracts), then `dbus-run-session -- xvfb-run -a python3 mseries/dictation/ibus-context-smoke.py` (real isolated IBus Unicode commit, stale-focus refusal and password refusal). The latter uses its own bus/address, no microphone or owner windows. Initial harness/factory construction failures were corrected before its passing run. Observing the serialized wire signal avoids the PyGObject test-callback floating-object warning; GTK field tests pass without it. Actual GTK3 and GTK4 Entry tests passed Unicode, focus changes and password refusal; GTK3 also passed multiple chunks through the stdin client. Brave X11/XIM passed normal insertion and field-change refusal but failed password metadata reporting. XIM is now refused entirely, with a regression contract, pending a reliable browser route. This is a retained failed acceptance result, not universal app coverage. Qt/browser completion, live F5 and deployment remain pending. This input service has no model worker.
+| Current revised-source checks | Result |
+|---|---|
+| Seven session/metadata contracts | Pass |
+| Real IBus context without an accessible field | Refused as required |
+| GTK3 X11 Entry, multi-chunk stdin client, changed field, password | Pass |
+| GTK4 native Wayland Entry in separate headless Gala | Pass |
+| Qt6 X11 QLineEdit/QTextEdit, Unicode/multiline, changed field, password | Pass |
+| Brave X11 synthetic form with accessibility enabled | Pass |
+| Electron, terminals/custom canvases, live human F5 | Pending; no universal coverage claim |
+
+Run `python3 mseries/dictation/gtk-input-smoke.py`, `python3 mseries/dictation/qt-input-smoke.py` (PyQt6 test dependency), `python3 mseries/dictation/browser-input-smoke.py`, and `bash mseries/dictation/test-wayland-input.sh`. X11 tests create private session buses/Xvfb automatically; the native Wayland wrapper creates its own headless software-rendered Gala with memory-backed settings. They do not capture audio, run ASR, change the owner engine or use owner profiles. Private full logs stay out of receipts. Transient private portal/AT-SPI cache startup warnings remain in logs; the original Python signal callback floating-object warning was avoided by wire-level testing and was absent from real field checks.
+
+The candidate is **not installed/activated**. The installed F5 service remains unchanged. New source supports optional `STREAM_OUTPUT=ibus`; the compatibility default is still ydotool. Remaining work: installer/activation/rollback, actual streaming-ASR-to-field checks, remaining app coverage, status/cancel usability and owner F5 confirmation. Optional grammar/translation review is not implemented. The input bridge has no model worker; deeper diagnosis and a lightweight everyday assistant follow this priority.
+
+Primary API references: [IBus text commit](https://ibus.github.io/docs/ibus-1.5/IBusEngine.html), [AT-SPI accessible role/state APIs](https://docs.gtk.org/atspi2/class.Accessible.html). Metadata availability is tested locally; API documentation alone does not establish app support.
