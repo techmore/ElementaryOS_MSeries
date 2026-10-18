@@ -814,13 +814,13 @@ def summary_extra(conn):
         out.append("app\t%s\t%.1f%% of CPU" % (item["name"], item["avg_cpu"]))
     for dev in device_summary(conn):
         shown = "%.0f%%" % dev["pct"] if dev["pct"] is not None else (dev["level"] or dev["status"] or "—")
-        extra = "about %.0f days left" % dev["days_left"] if dev["days_left"] else "since " + time.strftime("%a %d %b", time.localtime(dev["since"]))
-        out.append("device\t%s\t%s\t%s" % (dev["name"], shown, extra))
+        shown = shown + (" · ~%.0f days" % dev["days_left"] if dev["days_left"] else "")
+        out.append("device\t%s\t%s\t" % (dev["name"].replace("Advanced Ergonomic ", ""), shown))
     for item in profile_breakdown(rows):
         out.append("profile\t%s\t%.1f W avg\t%s" % (item["label"], item["avg_w"], "idle %.1f W" % item["idle_w"] if item["idle_w"] else "%s on battery" % fmt_hours(item["hours"])))
     for ev in [e for e in events(conn, now - 6 * 3600, limit=50) if e["kind"] in ("rise", "drop")][:3]:
-        out.append("event\t%s\t%+.1f W\t%s" % (time.strftime("%H:%M", time.localtime(ev["ts"])), ev["delta_w"],
-                   "%s%s" % (ev["detail"], " · " + ev["culprit"] if ev["culprit"] else "")))
+        cause = ev["detail"].replace("Other (GPU, display, radios, charging)", "Display, GPU or radios")
+        out.append("event\t%s\t%+.1f W\t%s" % (time.strftime("%H:%M", time.localtime(ev["ts"])), ev["delta_w"], cause))
     drain = standby_drain(conn, now - 14 * 86400)
     if drain["pct_per_hour"] is not None:
         out.append("stat\tSleep drain\t%.2f%% / h\tasleep %.0f h on battery" % (drain["pct_per_hour"], drain["hours"]))

@@ -91,3 +91,9 @@ show) and a Sleep drain stat once there is a night asleep on battery. Installed;
 Update (2026-10-18, dropdown 3): the dropdown adds "Recent power changes" (the last three rises/drops from the last 6 h
 with the likely cause and busiest process), "Power profiles" (average and idle draw per profile once more than one has
 been used on battery) and peak-watt / 6 h labels on the sparkline. Installed; Wingpanel restarted and stayed up.
+
+Update (2026-10-18, verified on the live bar): a screenshot of the real desktop (portal screenshot) shows the watts label
+("15.2 W") beside the battery icon and percentage. The dropdown card cannot be opened without a click on the owner's
+screen, so it was rendered from the same HistoryCard code against the real summary file under the installed elementary
+stylesheet; that showed wrapping rows and a collision between the sparkline label and the line, now fixed (ellipsized
+rows, shortened causes, peak label at the top right, "6 h ago" at the bottom left).

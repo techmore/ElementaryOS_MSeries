@@ -1,8 +1,8 @@
 diff --git a/src/Widgets/PopoverWidget.vala b/src/Widgets/PopoverWidget.vala
-index 587c11b..b9bfade 100644
+index 587c11b..4852f9e 100644
 --- a/src/Widgets/PopoverWidget.vala
 +++ b/src/Widgets/PopoverWidget.vala
-@@ -17,6 +17,282 @@
+@@ -17,6 +17,287 @@
   * Boston, MA 02110-1301, USA.
   */
  
@@ -95,7 +95,8 @@ index 587c11b..b9bfade 100644
 +        var label = new Gtk.Label (text) {
 +            halign = align,
 +            xalign = align == Gtk.Align.END ? 1 : 0,
-+            wrap = true
++            ellipsize = Pango.EllipsizeMode.END,
++            max_width_chars = 34
 +        };
 +        if (dim) {
 +            label.add_css_class ("dim-label");
@@ -183,24 +184,25 @@ index 587c11b..b9bfade 100644
 +                var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
 +                var name = small_label (f[1], false);
 +                name.hexpand = true;
++                name.max_width_chars = 24;
 +                row.append (name);
-+                row.append (small_label ("%s  %s".printf (f[2], f[3]), true, Gtk.Align.END));
++                row.append (small_label (f[2], false, Gtk.Align.END));
 +                devices.append (row);
 +            } else if ((f[0] == "profile" || f[0] == "event") && f.length >= 4) {
 +                var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
 +                var name = small_label (f[1], false);
-+                name.hexpand = false;
 +                row.append (name);
-+                var mid = small_label (f[0] == "event" ? f[3] : f[3], true);
++                var mid = small_label (f[3], true);
 +                mid.hexpand = true;
++                mid.max_width_chars = 22;
++                row.append (mid);
++                var value = small_label (f[2], false, Gtk.Align.END);
++                value.add_css_class ("numeric");
++                value.max_width_chars = 12;
++                row.append (value);
 +                if (f[0] == "event") {
-+                    row.append (mid);
-+                    row.append (small_label (f[2], false, Gtk.Align.END));
 +                    events.append (row);
 +                } else {
-+                    mid.hexpand = true;
-+                    row.append (mid);
-+                    row.append (small_label (f[2], false, Gtk.Align.END));
 +                    profiles.append (row);
 +                }
 +            } else if (f[0] == "tip" && f.length >= 3) {
@@ -275,17 +277,20 @@ index 587c11b..b9bfade 100644
 +
 +        cr.set_font_size (10);
 +        cr.set_source_rgba (fg.red, fg.green, fg.blue, 0.6);
-+        cr.move_to (2, 10);
-+        cr.show_text ("%.0f W".printf (peak));
-+        cr.move_to (width - 38, 10);
-+        cr.show_text (_("6 h"));
++        Cairo.TextExtents ext;
++        var top_text = "%.0f W".printf (peak);
++        cr.text_extents (top_text, out ext);
++        cr.move_to (width - ext.width - 2, 10);
++        cr.show_text (top_text);
++        cr.move_to (2, height - 4);
++        cr.show_text (_("6 h ago"));
 +    }
 +}
 +
  public class Power.Widgets.PopoverWidget : Gtk.Box {
      public bool is_in_session { get; construct; default = false; }
  
-@@ -90,8 +366,11 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
+@@ -90,8 +371,11 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
              text = _("Power Settings…")
          };
  
@@ -297,7 +302,7 @@ index 587c11b..b9bfade 100644
          append (device_list_revealer);
          append (device_separator_revealer);
  
-@@ -118,6 +397,12 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
+@@ -118,6 +402,12 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
  
          settings.bind ("show-percentage", show_percent_switch, "active", SettingsBindFlags.DEFAULT);
  
