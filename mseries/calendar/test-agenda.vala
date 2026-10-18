@@ -509,14 +509,38 @@ class AgendaTest : Object {
         yield expect ("Room <A> & B");
         yield expect ("Discuss <scope> & next steps");
         for (int n = 0; n < 5; n++) yield pause ();
+        assert (menu.popover.get_mapped ());
         preview (window, "time-grid-details");
+        var preview_dir = Environment.get_variable ("AGENDA_PREVIEW_DIR");
+        if (preview_dir != null) {
+            var paintable = new Gtk.WidgetPaintable (menu.popover);
+            var snapshot = new Gtk.Snapshot ();
+            paintable.snapshot (snapshot, menu.popover.get_width (), menu.popover.get_height ());
+            var node = snapshot.to_node ();
+            if (node != null) menu.popover.get_native ().get_renderer ().render_texture (node, null).save_to_png (
+                Path.build_filename (preview_dir, "time-grid-popup.png"));
+        }
         label_button (menu.popover, "Open in Calendar").clicked ();
         var log = Environment.get_variable ("AGENDA_OPEN_LOG");
         for (int n = 0; n < 100 && !FileUtils.test (log, FileTest.EXISTS); n++) yield pause ();
         string command;
         FileUtils.get_contents (log, out command);
         assert (command == "--show-day\n" + today.format ("%F") + "\n");
-        stdout.printf ("PASS literal block details and native Calendar date action through isolated launcher\n");
+        // A desktop without the native Calendar client still has full block
+        // details; it must not offer an action that cannot launch.
+        var old_path = Environment.get_variable ("PATH");
+        Environment.set_variable ("PATH", Path.get_dirname (log), true);
+        var without_client = menu_in (time_event (active_events (), "Overlap A"));
+        try {
+            without_client.popup ();
+            for (int n = 0; n < 5; n++) yield pause ();
+            assert (without_client.popover.get_mapped ());
+            assert (label_button (without_client.popover, "Open in Calendar") == null);
+            without_client.popdown ();
+        } finally {
+            Environment.set_variable ("PATH", old_path, true);
+        }
+        stdout.printf ("PASS literal block details, isolated Calendar action and missing-client fallback\n");
     }
 
     async void pause () {

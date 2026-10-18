@@ -36,7 +36,9 @@ Recurring instances and separate calendar identities are preserved. Events with
 an explicit iCalendar DURATION are supported as well as DTEND.
 
 Click a block for its full title, time range/time zones, calendar, location and
-description. **Open in Calendar** opens the native app on that block's date.
+description. When the native Calendar client is installed, **Open in Calendar**
+opens it on that block's date; otherwise the popover keeps the readable details
+and omits that action.
 These views read calendar data; editing remains in the Calendar app. Labels use
 plain text, including descriptions and locations containing markup characters.
 The grid uses local wall-clock hours; repeated DST-hour intervals retain a

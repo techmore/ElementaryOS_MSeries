@@ -731,7 +731,7 @@ index 0000000..21e8ef2
 +}
 diff --git a/src/Widgets/TimeGrid.vala b/src/Widgets/TimeGrid.vala
 new file mode 100644
-index 0000000..80ab468
+index 0000000..4f453dd
 --- /dev/null
 +++ b/src/Widgets/TimeGrid.vala
 @@ -0,0 +1,289 @@
@@ -815,7 +815,7 @@ index 0000000..80ab468
 +                if (weak_menu != null) weak_menu.popdown ();
 +                if (weak_owner != null) weak_owner.open_date (date);
 +            });
-+            details.append (open);
++            if (Environment.find_program_in_path ("io.elementary.calendar") != null) details.append (open);
 +            menu.popover = new Gtk.Popover () { child = new Gtk.ScrolledWindow () {
 +                child = details, hscrollbar_policy = Gtk.PolicyType.NEVER,
 +                min_content_width = 260, max_content_width = 330,
