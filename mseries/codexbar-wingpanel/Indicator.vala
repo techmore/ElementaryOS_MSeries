@@ -6,7 +6,9 @@ using Wingpanel;
 
 namespace MSeries {
     public class CodexBarIndicator : Wingpanel.Indicator {
-        private Gtk.Label panel_label;
+        private Gtk.Box panel_segments;
+        private string panel_digest = "";
+        private Json.Array? panel_entries = null;
         private delegate void ActionFunc ();
         private Gtk.Box panel_display;
         private Gtk.Box menu;
@@ -53,19 +55,12 @@ namespace MSeries {
         construct {
             executable = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "codexbar-linux");
 
-            var panel_icon = new Gtk.Image.from_icon_name ("mseries-codexbar-openai-symbolic") {
-                pixel_size = 12
-            };
-            panel_icon.add_css_class ("symbolic");
-            panel_label = new Gtk.Label ("—") {
-                ellipsize = Pango.EllipsizeMode.END,
-                max_width_chars = 52
-            };
-            panel_label.add_css_class ("caption");
-            panel_label.add_css_class ("mseries-codexbar-bar");
-            panel_display = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 5);
-            panel_display.append (panel_icon);
-            panel_display.append (panel_label);
+            // One dense segment per provider: company mark, % left of the binding limit, time to its reset.
+            panel_segments = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 9);
+            panel_segments.add_css_class ("mseries-codexbar-bar");
+            panel_display = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+            panel_display.append (panel_segments);
+            show_panel_placeholder ();
             panel_display.set_tooltip_text ("CodexBar · loading usage… · Middle-click to refresh");
             var refresh_gesture = new Gtk.GestureClick () { button = 2 };
             refresh_gesture.released.connect (() => refresh_usage ());
@@ -198,9 +193,13 @@ namespace MSeries {
                 ".mseries-codexbar button.compact { padding: 1px 8px; min-height: 0; min-width: 0; } " +
                 ".mseries-codexbar button.flat.compact { padding: 0 4px; } " +
                 ".mseries-codexbar .mseries-switcher button { padding: 2px 6px; } " +
-                "label.mseries-codexbar-bar.level-low { color: @warning_color; } " +
-                "label.mseries-codexbar-bar.level-critical { color: @error_color; } " +
-                "label.mseries-codexbar-bar.stale { opacity: 0.55; }");
+                ".mseries-codexbar-bar label { font-size: 8.5pt; font-feature-settings: \"tnum\"; } " +
+                ".mseries-codexbar-bar .seg-value { font-weight: 700; } " +
+                ".mseries-codexbar-bar .seg-reset { font-size: 7.5pt; opacity: 0.7; } " +
+                ".mseries-codexbar-bar .level-low { color: @warning_color; } " +
+                ".mseries-codexbar-bar .level-critical { color: @error_color; } " +
+                ".mseries-codexbar-bar .mark-claude { color: #d97757; } " +
+                ".mseries-codexbar-bar .stale { opacity: 0.55; }");
             Gtk.StyleContext.add_provider_for_display (display, style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         }
 
@@ -484,13 +483,16 @@ namespace MSeries {
             });
         }
 
-        private async void run_saver (string[] command, string ok_heading, string failure_heading) {
+        private async void run_saver (string[] command, string ok_heading, string failure_heading,
+                                      bool report_output = false) {
             try {
                 var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_MERGE);
                 string output;
                 yield process.communicate_utf8_async (null, null, out output, null);
                 if (process.get_successful ()) {
-                    tell (ok_heading, "It now appears under Accounts.");
+                    tell (ok_heading, report_output && output.strip ().length > 0
+                        ? output.strip () : "It now appears under Accounts.");
+                    if (report_output) refresh_usage ();
                 } else {
                     tell (failure_heading, output.strip ().length > 0 ? output.strip () : "The helper reported an error.");
                 }
@@ -502,6 +504,16 @@ namespace MSeries {
             last_digest = "";
             refresh_codex_accounts.begin ();
             refresh_claude.begin ();
+        }
+
+        // Upstream only imports opencode.ai cookies on macOS; our helper signs in and saves them as a manual session.
+        private void add_opencode_account () {
+            ask_to_save ("Sign in to OpenCode Go",
+                "A sign-in window for opencode.ai opens. After you sign in, CodexBar saves that session and reads your OpenCode Go quota from it.",
+                "Sign in", () => {
+                    run_saver.begin ({ "python3", helper_path ("codexbar-opencode-login.py"), "login" },
+                        "OpenCode Go signed in", "Couldn't sign in to OpenCode Go", true);
+                });
         }
 
         private void add_claude_account () {
@@ -628,11 +640,39 @@ namespace MSeries {
                     detail = "%.0f%%".printf (windows.get_object_element (windows.get_length () - 1)
                         .get_double_member_with_default ("remaining", 0));
                 }
+                detail = with_resets (detail, account.get_object_member ("resetCredits"));
                 box.append (build_account_line (email, detail,
                     "Make %s the active Codex account. Restart running Codex sessions to use it.".printf (email),
                     () => run_accounts_helper ({ "switch", account_id })));
             }
             return box;
+        }
+
+        /* "2 resets · 6%" for an account line: the reset count leads, quota follows. */
+        private static string with_resets (string detail, Json.Object? credits) {
+            if (credits == null || !credits.has_member ("available")) {
+                return detail;
+            }
+            var count = Presentation.reset_count_text (credits.get_int_member_with_default ("available", -1));
+            return count.length > 0 ? count + " · " + detail : detail;
+        }
+
+        /* Seconds until the first reset credit expires; 0 when unknown. */
+        private static int64 reset_expiry_seconds (Json.Object credits, int64 now_unix) {
+            var expires = credits.get_string_member_with_default ("nextExpiresAt", "");
+            var when = expires.length > 0 ? new GLib.DateTime.from_iso8601 (expires, null) : null;
+            return when != null ? when.to_unix () - now_unix : 0;
+        }
+
+        /* Available resets for the active account, with when the first one expires; red inside the last day. */
+        private Gtk.Widget build_reset_credits (Json.Object credits, int64 now_unix) {
+            var available = credits.get_int_member_with_default ("available", -1);
+            var seconds = reset_expiry_seconds (credits, now_unix);
+            var label = subtle_label (Presentation.reset_credits_line (available, seconds));
+            if (Presentation.reset_expiry_urgent (available, seconds)) {
+                label.add_css_class ("dot-bad");
+            }
+            return label;
         }
 
         private static string local_digest (Json.Object? usage) {
@@ -765,6 +805,9 @@ namespace MSeries {
             }
             refresh_header (now_unix);
 
+            // The panel's countdowns tick every poll; the popover is rebuilt only when its data changes.
+            panel_entries = entries;
+            update_panel (entries, now_unix);
             var digest = snapshot_digest (snapshot, now_unix);
             if (digest == last_digest) {
                 return;
@@ -772,7 +815,6 @@ namespace MSeries {
             last_digest = digest;
             render_quota (entries, now_unix);
             render_spend (snapshot);
-            update_panel (entries, now_unix);
         }
 
         private void refresh_header (int64 now_unix) {
@@ -798,69 +840,164 @@ namespace MSeries {
             }
         }
 
-        private void update_panel (Json.Array entries, int64 now_unix) {
-            var parts = new string[0];
-            var tags = new string[0];
-            var tooltip = new StringBuilder ();
+        private static int provider_rank (string provider) {
+            return provider == "codex" ? 0 : provider == "claude" ? 1 : provider == "opencodego" ? 2 : 3;
+        }
+
+        private void show_panel_placeholder () {
+            panel_digest = "";
+            clear (panel_segments);
+            panel_segments.append (new Gtk.Label ("—"));
+        }
+
+        /* Fills one segment's texts from a quota window list; returns the level of the binding window. */
+        private static QuotaLevel window_segment (Json.Array windows, int64 now_unix, out string value_text,
+                                                  out string reset_text, StringBuilder tooltip) {
+            value_text = "—";
+            reset_text = "";
             var level = QuotaLevel.UNKNOWN;
+            var binding = Presentation.binding_window (windows);
+            for (uint w = 0; w < windows.get_length (); w++) {
+                var window = windows.get_object_element (w);
+                var minutes = (int) window.get_int_member_with_default ("minutes", 0);
+                var short_label = Presentation.short_window_label (
+                    window.get_string_member_with_default ("label", "Quota"), minutes);
+                var node = window.get_member ("remaining");
+                if (node == null || node.get_node_type () != Json.NodeType.VALUE) {
+                    tooltip.append ("\n  %s  not reported yet".printf (short_label));
+                    continue;
+                }
+                var remaining = node.get_double ();
+                var reset = window.get_string_member_with_default ("resetText", "");
+                tooltip.append ("\n  %s  %0.0f%% left · %s".printf (short_label, remaining,
+                    reset.length > 0 ? reset.down () : "reset unknown"));
+                if ((int) w != binding) continue;
+                level = Presentation.level_for (remaining);
+                value_text = Presentation.quota_lead (short_label, minutes, "%0.0f%%".printf (remaining));
+                var resets_at = new DateTime.from_iso8601 (window.get_string_member_with_default ("resetsAt", ""), null);
+                reset_text = resets_at != null ? Presentation.countdown_text (resets_at.to_unix () - now_unix)
+                    : compact_reset (reset).replace (" ", "");
+            }
+            return level;
+        }
+
+        private void update_panel (Json.Array entries, int64 now_unix) {
+            string[] providers = {};
+            string[] values = {};
+            string[] resets = {};
+            QuotaLevel[] levels = {};
+            bool[] stales = {};
+            var tooltip = new StringBuilder ();
+            var has_claude = false;
+
             for (uint i = 0; i < entries.get_length (); i++) {
                 var entry = entries.get_object_element (i);
                 var provider = (entry.get_string_member ("provider") ?? "").down ();
+                has_claude = has_claude || provider == "claude";
                 var windows = entry.get_array_member ("windows");
-                if (windows == null || windows.get_length () == 0) {
-                    continue;
-                }
                 var stale = QuotaEta.entry_stale (entry, snapshot_stale, now_unix);
-                var eta = QuotaEta.for_entry (entry, stale, now_unix);
-                tooltip.append ("%s%s\n".printf (tooltip.len > 0 ? "\n" : "", provider_title (provider)));
-                string remaining_text = "—";
-                string lead_window = "";
-                bool first_measured = true;
-                for (uint w = 0; w < windows.get_length (); w++) {
-                    var window = windows.get_object_element (w);
-                    var node = window.get_member ("remaining");
-                    var short_label = Presentation.short_window_label (window.get_string_member ("label") ?? "Quota",
-                        (int) window.get_int_member ("minutes"));
-                    if (node == null || node.get_node_type () == Json.NodeType.NULL) {
-                        tooltip.append ("  %s  not reported yet\n".printf (short_label));
-                        continue;
+                var section = new StringBuilder (provider_title (provider));
+                string value_text = "—";
+                string reset_text = "";
+                var level = QuotaLevel.UNKNOWN;
+                if (windows != null && windows.get_length () > 0) {
+                    level = window_segment (windows, now_unix, out value_text, out reset_text, section);
+                } else if (provider == "opencodego" && opencode_local != null) {
+                    // No account quota without a web sign-in: show this machine's 7-day token count instead.
+                    var periods = opencode_local.get_array_member ("periods");
+                    for (uint p = 0; periods != null && p < periods.get_length (); p++) {
+                        var period = periods.get_object_element (p);
+                        var label = period.get_string_member_with_default ("label", "");
+                        var tokens = period.get_int_member_with_default ("tokens", 0);
+                        section.append ("\n  %s".printf (Presentation.local_usage_line (label,
+                            period.get_double_member_with_default ("costUSD", 0),
+                            period.get_int_member_with_default ("requests", 0), tokens)));
+                        if (label.contains ("7")) {
+                            value_text = Presentation.panel_count_text (tokens);
+                            reset_text = "7d tok";
+                        }
                     }
-                    var remaining = node.get_double ();
-                    level = Presentation.worse (level, Presentation.level_for (remaining));
-                    if (first_measured) {
-                        // The first measured window is the provider's session/general quota.
-                        var minutes = (int) window.get_int_member ("minutes");
-                        remaining_text = Presentation.quota_lead (short_label, minutes, "%0.0f%%".printf (remaining));
-                        lead_window = minutes > 360 ? short_label : "";
-                        first_measured = false;
-                    }
-                    tooltip.append ("  %s  %0.0f%% left · %s\n".printf (short_label, remaining,
-                        (window.get_string_member ("resetText") ?? "").length > 0
-                            ? window.get_string_member ("resetText").down () : "reset unknown"));
+                    section.append ("\n  Local estimate, not account quota");
+                    stale = false;
+                } else {
+                    var error = entry.get_string_member_with_default ("error", "");
+                    section.append ("\n  " + (error.length > 0 ? error : "Usage not reported yet"));
                 }
-                if (provider.contains ("codex") || provider.contains ("claude")) {
-                    tags += provider.contains ("codex") ? "CX" : "CL";
-                    parts += Presentation.bar_segment (remaining_text, eta.state, eta.compact,
-                        Presentation.limiting_window (
-                            Presentation.short_window_label (eta.window_label, eta.window_minutes), lead_window));
+                providers += provider;
+                values += value_text;
+                resets += reset_text;
+                levels += level;
+                stales += stale;
+                tooltip.append ((tooltip.len > 0 ? "\n\n" : "") + section.str);
+            }
+
+            // Claude quota comes from our claude-swap helper when upstream's snapshot has no Claude entry.
+            if (!has_claude && claude_data != null) {
+                var accounts = claude_data.get_array_member ("accounts");
+                for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
+                    var account = accounts.get_object_element (i);
+                    var windows = account.get_array_member ("windows");
+                    if (!account.get_boolean_member_with_default ("active", false) || windows == null
+                        || windows.get_length () == 0) continue;
+                    var section = new StringBuilder ("Claude");
+                    string value_text;
+                    string reset_text;
+                    var level = window_segment (windows, now_unix, out value_text, out reset_text, section);
+                    providers += "claude";
+                    values += value_text;
+                    resets += reset_text;
+                    levels += level;
+                    stales += false;
+                    tooltip.append ((tooltip.len > 0 ? "\n\n" : "") + section.str);
+                    break;
                 }
             }
 
-            var shown = new string[0];
-            for (int i = 0; i < parts.length; i++) {
-                shown += (parts.length > 1 ? tags[i] + " " : "") + parts[i];
-            }
-            panel_label.set_text (shown.length > 0 ? string.joinv ("   ", shown) : "—");
-            panel_label.remove_css_class ("level-low");
-            panel_label.remove_css_class ("level-critical");
-            panel_label.remove_css_class ("stale");
-            if (snapshot_stale) panel_label.add_css_class ("stale");
-            if (level == QuotaLevel.LOW) panel_label.add_css_class ("level-low");
-            if (level == QuotaLevel.CRITICAL) panel_label.add_css_class ("level-critical");
             panel_display.set_tooltip_text (tooltip.len > 0
-                ? tooltip.str.strip () + (snapshot_stale ? "\n\nCached: CodexBar couldn't reach a provider." : "")
+                ? tooltip.str + (snapshot_stale ? "\n\nCached: CodexBar couldn't reach a provider." : "")
                     + "\n\nMiddle-click to refresh"
                 : "Usage unavailable");
+
+            var digest = new StringBuilder ();
+            for (int i = 0; i < providers.length; i++) {
+                digest.append ("%s|%s|%s|%d|%s;".printf (providers[i], values[i], resets[i], (int) levels[i],
+                    stales[i].to_string ()));
+            }
+            if (digest.str == panel_digest) return;
+            panel_digest = digest.str;
+
+            clear (panel_segments);
+            for (int rank = 0; rank <= 3; rank++) {
+                for (int i = 0; i < providers.length; i++) {
+                    if (provider_rank (providers[i]) != rank) continue;
+                    panel_segments.append (build_panel_segment (providers[i], values[i], resets[i], levels[i], stales[i]));
+                }
+            }
+            if (providers.length == 0) panel_segments.append (new Gtk.Label ("—"));
+        }
+
+        private static Gtk.Widget build_panel_segment (string provider, string value_text, string reset_text,
+                                                       QuotaLevel level, bool stale) {
+            var segment = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3);
+            if (stale) segment.add_css_class ("stale");
+            var mark = build_provider_mark (provider, provider_title (provider));
+            var icon = mark as Gtk.Image;
+            if (icon != null) {
+                icon.pixel_size = 12;
+                icon.valign = Gtk.Align.CENTER;
+            }
+            segment.append (mark);
+            var value = new Gtk.Label (value_text) { valign = Gtk.Align.BASELINE_CENTER };
+            value.add_css_class ("seg-value");
+            if (level == QuotaLevel.LOW) value.add_css_class ("level-low");
+            if (level == QuotaLevel.CRITICAL) value.add_css_class ("level-critical");
+            segment.append (value);
+            if (reset_text.length > 0) {
+                var reset = new Gtk.Label (reset_text) { valign = Gtk.Align.BASELINE_CENTER };
+                reset.add_css_class ("seg-reset");
+                segment.append (reset);
+            }
+            return segment;
         }
 
         // ---- Pages --------------------------------------------------------------------
@@ -928,7 +1065,15 @@ namespace MSeries {
                 card.append (subtle_label ("Provider status · " + status));
             }
             if (provider == "codex") {
+                var active_resets = entry.get_member ("resetCredits");
+                if (active_resets != null && active_resets.get_node_type () == Json.NodeType.OBJECT) {
+                    card.append (build_reset_credits (active_resets.get_object (), now_unix));
+                }
                 card.append (build_codex_accounts ());
+            }
+            if (provider == "opencodego") {
+                card.append (build_accounts_header ("Sign in to opencode.ai so CodexBar can read your OpenCode Go quota",
+                    () => add_opencode_account ()));
             }
             if (error.length > 0 || windows == null || windows.get_length () == 0) {
                 var estimate = provider == "opencodego" ? opencode_local : null;
@@ -958,7 +1103,7 @@ namespace MSeries {
                 settings.clicked.connect (() => {
                     popdown_from (settings);
                     if (provider == "opencodego") {
-                        try { AppInfo.launch_default_for_uri ("https://opencode.ai", null); } catch (Error e) { }
+                        add_opencode_account ();
                     } else {
                         run_action ("--settings");
                     }
@@ -1269,9 +1414,8 @@ namespace MSeries {
         private void show_unavailable (string icon, string headline, string message) {
             snapshot_busy = false;
             last_digest = "";
-            panel_label.set_text ("—");
-            panel_label.remove_css_class ("level-low");
-            panel_label.remove_css_class ("level-critical");
+            panel_entries = null;
+            show_panel_placeholder ();
             panel_display.set_tooltip_text (headline + " · " + message);
             subtitle_label.set_text ("Usage unavailable");
             chip_label.set_visible (false);

@@ -52,6 +52,12 @@ namespace MSeries {
             return value.to_string ();
         }
 
+        /* count_text without the decimal once it adds nothing at panel density: "121M", "9.4M". */
+        public static string panel_count_text (int64 value) {
+            if (value >= 100000000 && value < 1000000000) return "%.0fM".printf ((double) value / 1000000.0);
+            return count_text (value);
+        }
+
         /* Label the bar number when its window isn't the short session limit, so "35%" is never ambiguous. */
         public static string quota_lead (string short_label, int minutes, string remaining_text) {
             return minutes > 360 && short_label.length > 0 ? short_label + " " + remaining_text : remaining_text;
@@ -70,6 +76,30 @@ namespace MSeries {
             return remaining_text;
         }
 
+        /* Compact time to a reset for the panel: "38m", "4h44m", "6d22h"; empty when unknown or already due. */
+        public static string countdown_text (int64 seconds) {
+            if (seconds <= 0) return "";
+            if (seconds < 3600) return "%dm".printf ((int) ((seconds + 59) / 60));
+            if (seconds < 86400) return "%dh%02dm".printf ((int) (seconds / 3600), (int) (seconds % 3600 / 60));
+            return "%dd%dh".printf ((int) (seconds / 86400), (int) (seconds % 86400 / 3600));
+        }
+
+        /* The window that will stop you first: lowest measured remaining; a tie keeps the earlier (shorter) one. */
+        public static int binding_window (Json.Array windows) {
+            int best = -1;
+            double best_remaining = 0;
+            for (uint i = 0; i < windows.get_length (); i++) {
+                var node = windows.get_object_element (i).get_member ("remaining");
+                if (node == null || node.get_node_type () != Json.NodeType.VALUE) continue;
+                var remaining = node.get_double ();
+                if (best < 0 || remaining < best_remaining) {
+                    best = (int) i;
+                    best_remaining = remaining;
+                }
+            }
+            return best;
+        }
+
         /* One line of local OpenCode Go activity: an estimate from this machine's history, not account quota. */
         public static string local_usage_line (string label, double cost_usd, int64 requests, int64 tokens) {
             return "%s · $%.2f · %s %s · %s tokens".printf (label, cost_usd, count_text (requests),
@@ -81,6 +111,25 @@ namespace MSeries {
             if (state == EtaState.EXHAUSTED) return eta_detail;
             var base_text = reset.length > 0 ? reset : "Reset time unknown";
             return state == EtaState.DEPLETING ? base_text + " · " + eta_detail : base_text;
+        }
+
+        /* "2 resets" for an account line; empty when the count is unknown. */
+        public static string reset_count_text (int64 available) {
+            if (available < 0) return "";
+            return "%s %s".printf (available.to_string (), available == 1 ? "reset" : "resets");
+        }
+
+        /* "2 resets available · first expires in 3d4h"; the expiry is dropped when unknown or past. */
+        public static string reset_credits_line (int64 available, int64 seconds_to_expiry) {
+            if (available < 0) return "";
+            var text = "%s available".printf (reset_count_text (available));
+            var countdown = countdown_text (seconds_to_expiry);
+            return available > 0 && countdown.length > 0 ? text + " · first expires in " + countdown : text;
+        }
+
+        /* Within a day of the first reset expiring, use it or lose it. */
+        public static bool reset_expiry_urgent (int64 available, int64 seconds_to_expiry) {
+            return available > 0 && seconds_to_expiry > 0 && seconds_to_expiry < 86400;
         }
     }
 }
