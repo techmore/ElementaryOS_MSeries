@@ -281,3 +281,6 @@ remains 60 seconds while open (15-second freshness on opening) and 900 seconds w
 Cached session updates repaint the panel directly, without an extra upstream snapshot/refresh.
 Totals share the second row with alternate accounts, respect percentage visibility, and remain
 explained in accessible provider tooltips. The local-token native probe checks all three and bar height.
+
+Routine deployment leaves identical provider marks and the global icon cache untouched. Rebuild the
+icon cache only when the SVG contents actually change, to avoid needless invalidation of the live panel.
