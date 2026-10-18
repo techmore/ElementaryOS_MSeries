@@ -81,6 +81,11 @@ class OpenCodeLocalUsageTests(unittest.TestCase):
 
 
 class AccountTest(unittest.TestCase):
+    def setUp(self):
+        patch = mock.patch.object(MODULE, "fetch_account_plan", return_value=None)
+        self.plan_fetch = patch.start()
+        self.addCleanup(patch.stop)
+
     def credential_database(self, rows):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
@@ -128,6 +133,37 @@ class AccountTest(unittest.TestCase):
         path = self.credential_database([("active", 1, self.credential("me@example.com"), 1)])
         self.assertEqual(MODULE.saved_accounts(path, "codexbar")[0]["plan"], "")
 
+    def test_console_plan_is_scoped_to_each_workspace_without_switching(self):
+        path = self.credential_database([("active", 1, self.credential("me@example.com", org="personal"), 1),
+            ("other", 0, self.credential("me@example.com", org="work"), 2)])
+        before = path.read_bytes()
+        self.plan_fetch.side_effect = lambda credential, now: (
+            "Go" if credential["metadata"]["orgID"] == "personal" else "Go Plus")
+        response = mock.Mock(returncode=0, stdout='[{"usage":{"primary":{"usedPercent":10}}}]')
+        with mock.patch.object(MODULE.subprocess, "run", return_value=response) as run:
+            accounts = MODULE.saved_accounts(path, "codexbar", now_ms=1900000000000)
+        self.assertEqual([a["plan"] for a in accounts], ["Go", "Go Plus"])
+        self.assertEqual([a["planSource"] for a in accounts], ["console", "console"])
+        self.assertEqual(self.plan_fetch.call_count, 2)
+        run.assert_called_once()  # only inactive quota, not an account switch
+        self.assertNotIn("NEVER-PRINT", json.dumps(accounts))
+        self.assertEqual(path.read_bytes(), before)
+
+    def test_console_without_current_access_clears_cached_paid_label(self):
+        credential = json.loads(self.credential("me@example.com"))
+        credential["metadata"]["plan"] = "Go Plus"
+        path = self.credential_database([("active", 1, json.dumps(credential), 1)])
+        self.plan_fetch.return_value = ""
+        account = MODULE.saved_accounts(path, "codexbar", now_ms=1900000000000)[0]
+        self.assertEqual(account["plan"], "")
+        self.assertEqual(account["planSource"], "console")
+
+    def test_expired_active_account_does_not_request_plan(self):
+        path = self.credential_database([("active", 1, self.credential("me@example.com", expires=1000), 1)])
+        accounts = MODULE.saved_accounts(path, "codexbar", now_ms=1900000000000)
+        self.plan_fetch.assert_not_called()
+        self.assertEqual(accounts[0]["plan"], "")
+
     def test_expired_alternate_login_is_labelled_without_querying_quota(self):
         path = self.credential_database([("old", 0, self.credential("other@example.com", expires=1800000000000), 1)])
         with mock.patch.object(MODULE.subprocess, "run") as run:
@@ -155,6 +191,72 @@ class AccountTest(unittest.TestCase):
             database = pathlib.Path(directory) / "x.db"
             sqlite3.connect(database).close()
             self.assertEqual(MODULE.read_account(database), "")
+
+
+class OpenCodePlanTests(unittest.TestCase):
+    NOW = 1900000000000
+
+    def status(self, product="go", end="2031-01-01T00:00:00Z"):
+        return {"product": product, "renewalProduct": "go-plus", "paymentMethodId": "PRIVATE-BILLING-ID",
+                "cancelAtPeriodEnd": True, "access": {"endsAt": end, "meters": {}}}
+
+    def credential(self):
+        return {"access": "NEVER-PRINT-ACCESS", "metadata": {
+            "server": "https://opencode.ai/console", "orgID": "workspace-a"}}
+
+    def test_current_product_is_used_instead_of_scheduled_renewal(self):
+        self.assertEqual(MODULE.plan_from_status(self.status(), self.NOW), "Go")
+        self.assertEqual(MODULE.plan_from_status(self.status("go-plus"), self.NOW), "Go Plus")
+        self.assertEqual(MODULE.plan_from_status(self.status("go_plus"), self.NOW), "Go Plus")
+
+    def test_expired_missing_and_unrecognized_subscriptions_remain_unknown(self):
+        for data in (None, [], {}, {"product": "go", "access": None},
+                     self.status(end="2020-01-01T00:00:00Z"), self.status(end="bad-date"),
+                     self.status(end="2031-01-01T00:00:00"), self.status("future-unknown-product")):
+            with self.subTest(data=data):
+                self.assertEqual(MODULE.plan_from_status(data, self.NOW), "")
+        data = self.status()
+        data.pop("product")
+        data["access"]["meters"] = {"fiveHour": {"limitMicroCents": "9999999999"}}
+        self.assertEqual(MODULE.plan_from_status(data, self.NOW), "")
+
+    def test_fetch_uses_official_host_and_workspace_and_returns_only_label(self):
+        response = mock.MagicMock()
+        response.__enter__.return_value.read.return_value = json.dumps(self.status()).encode()
+        opener = mock.Mock()
+        opener.open.return_value = response
+        with mock.patch.object(MODULE.urllib.request, "build_opener", return_value=opener) as build:
+            result = MODULE.fetch_account_plan(self.credential(), self.NOW)
+        self.assertEqual(result, "Go")
+        self.assertIsInstance(build.call_args.args[0], MODULE.NoPlanRedirect)
+        request = opener.open.call_args.args[0]
+        self.assertEqual(request.full_url, "https://opencode.ai/console/api/go/status")
+        headers = {k.lower(): v for k, v in request.header_items()}
+        self.assertEqual(headers["authorization"], "Bearer NEVER-PRINT-ACCESS")
+        self.assertEqual(headers["x-org-id"], "workspace-a")
+        self.assertEqual(opener.open.call_args.kwargs["timeout"], 8)
+        self.assertNotIn("PRIVATE", result)
+        self.assertNotIn("NEVER-PRINT", result)
+
+    def test_foreign_server_and_missing_workspace_never_receive_credentials(self):
+        for field, value in (("server", "https://untrusted.example/console"), ("orgID", ""),
+                             ("orgID", "workspace\nInjected: value")):
+            credential = self.credential()
+            credential["metadata"][field] = value
+            with mock.patch.object(MODULE.urllib.request, "build_opener") as build:
+                self.assertIsNone(MODULE.fetch_account_plan(credential, self.NOW))
+                build.assert_not_called()
+
+    def test_failures_malformed_and_oversized_responses_are_unavailable(self):
+        with mock.patch.object(MODULE.urllib.request, "build_opener") as build:
+            build.return_value.open.side_effect = OSError("offline")
+            self.assertIsNone(MODULE.fetch_account_plan(self.credential(), self.NOW))
+        for payload in (b"bad-json", b"[]", b"x" * 131073):
+            response = mock.MagicMock()
+            response.__enter__.return_value.read.return_value = payload
+            with mock.patch.object(MODULE.urllib.request, "build_opener") as build:
+                build.return_value.open.return_value = response
+                self.assertIsNone(MODULE.fetch_account_plan(self.credential(), self.NOW))
 
 
 if __name__ == "__main__":

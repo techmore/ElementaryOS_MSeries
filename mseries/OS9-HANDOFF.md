@@ -3354,3 +3354,34 @@ pass with plan formatting coverage; module/probe builds and port compatibility c
 fixtures show Pro/Plus/Max/Go and missing plans, with normal-width bottom-of-dropdown checks using new
 CB_HIDE_PANEL/CB_SCROLL probe controls. Upstream pin remains 0.77.0. Publish, merge to main and deploy
 the merged version as explicitly requested.
+
+
+## CodexBar: OpenCode's actual account level — 2026-10-18
+
+Owner requested replacing unavailable OpenCode plan labels where possible. Confirmed the official
+Console's read-only `GET https://opencode.ai/console/api/go/status` accepts the saved OAuth bearer
+credential plus its `x-org-id` workspace header. The live account returns current `product: go`.
+The raw usage API strips product data from the upstream quota model, and saved credential metadata
+has no plan field, which explains the earlier unavailable label.
+
+The account helper now reads this endpoint for distinct unexpired saved OAuth accounts, including
+the active one, and projects only Go/Go Plus plus a console-source marker. A valid access period and
+current product determine the label; renewal product, cancellation scheduled after the period, quota
+size and other accounts never determine it. Current Console data supersedes upstream's generic Go
+provider label. Missing/expired/unrecognized subscriptions remain unknown, while failed lookups can
+retain an existing reported metadata label. Billing identifiers and credentials are not exported.
+
+Requests are fixed to the official HTTPS host, workspace-scoped, redirect-blocked, bounded to 128 KiB
+and an eight-second timeout. OpenCode owns token refresh; its database is still opened read-only.
+Normal existing account polling drives refresh. API-key-only/custom-server records without this
+Console authorization retain the existing fallback rather than being assigned a guessed tier.
+
+References: OpenCode provider auth/header source at `214fb7fdbab9ad13773629839f1178382400cf97`
+(`packages/core/src/plugin/provider/opencode.ts`); CodexBar v0.77.0
+`OpenCodeGoUsageFetcher.swift` uses the same Console status endpoint for cookie-authenticated meters;
+https://dev.opencode.ai/v2/docs/console/go/ documents Go and Go Plus. No upstream code was imported.
+Upstream pin stays 0.77.0. Validation: 17 OpenCode tests, four Meson suites, module/probe builds, port
+check and light/dark normal-width fixtures with active Go Plus and secondary Go. Tests cover scoped
+headers, current versus renewal product, expired/malformed/missing data, network/oversize failure,
+foreign-host rejection, account isolation and credential exclusion. Live product resolution checked
+read-only. Merge to main and deploy as explicitly requested.

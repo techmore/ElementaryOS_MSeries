@@ -692,3 +692,12 @@ existing claims, Claude projects subscription labels from saved/live login metad
 uses reported plan metadata where available. Four Meson suites, 35 Claude/9 OpenCode tests, port
 compatibility, and light/dark normal-width render checks pass. Native Claude sessions and provider
 authentication methods are preserved; live reauthentication was not repeated for this UI change.
+
+
+### OpenCode actual subscription level — 2026-10-18
+
+OpenCode OAuth account badges now read the workspace's current Go/Go Plus product from the official
+Console status API. The live account resolves to Go. A future renewal tier or quota limit is never
+used as the current level; unreadable/expired subscriptions keep an unavailable label where no
+reported metadata is usable. Read-only workspace-scoped lookup, bounded timeout/body, no login or
+token mutation. Seventeen helper tests, four Meson suites, port check and light/dark renders pass.

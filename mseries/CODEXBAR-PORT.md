@@ -135,5 +135,14 @@ or per-account plan metadata when supplied. Missing or unreadable plans say **Pl
 quota size and the active account's plan are never used to guess another account's subscription.
 Known-plan tooltips say “Reported plan” because saved login metadata may be cached.
 
+OpenCode OAuth accounts now obtain the current workspace product from the official Console's
+`GET /console/api/go/status`, using that account's bearer token and `x-org-id`. Current Go/Go Plus
+access is labeled from `product` and an unexpired `access.endsAt`; scheduled `renewalProduct` and
+quota limits do not determine the badge. The verified helper product overrides upstream's generic
+“Go” provider label. Missing/unreadable data remains unavailable (or uses existing reported metadata).
+Requests allow only the official Console host, block redirects, limit response size and use an
+eight-second timeout. No token refresh, login switch or credential/database write is performed.
+[OpenCode Go plans](https://dev.opencode.ai/v2/docs/console/go/) describe the public level names.
+
 `CB_HIDE_PANEL=1 CB_SCROLL=end probe/run-probe.sh ...` renders the dropdown at its normal width,
 scrolled to the last provider, for checking secondary-account badges in light/dark themes.
