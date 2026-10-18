@@ -3097,4 +3097,4 @@ snapshot before changing either login.
 **Remaining user action / validation:** account 1 still needs its one-time native sign-in via **Set up
 app**, then **Save app login**. Authenticated switching between both real native accounts is unverified
 until that is done. The working Claude app was not interrupted during implementation. No kernel,
-bootloader or audio changes. Deployment/repository results are recorded after final verification.
+bootloader or audio changes. Deployed with `bash mseries/deploy-codexbar.sh`; Wingpanel and CodexBar restarted successfully. The running snapshot reports one Codex window and three OpenCode Go windows with no provider errors. Merged current `origin/main` without conflicts before publishing.
