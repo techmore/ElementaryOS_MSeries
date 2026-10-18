@@ -47,6 +47,11 @@ namespace MSeries {
         private Json.Object? opencode_local = null;
         private bool opencode_local_in_flight = false;
         private int64 opencode_local_fetched_us = 0;
+        private Json.Array? opencode_accounts = null;
+        private bool opencode_accounts_in_flight = false;
+        private int64 opencode_accounts_fetched_us = 0;
+        private Gtk.Label[] account_quota_labels = {};
+        private Json.Array[] account_quota_windows = {};
 
         public CodexBarIndicator () {
             GLib.Object (code_name: "codexbar");
@@ -196,6 +201,7 @@ namespace MSeries {
                 ".mseries-codexbar-bar label { font-size: 8.5pt; font-feature-settings: \"tnum\"; } " +
                 ".mseries-codexbar-bar .seg-value { font-weight: 700; } " +
                 ".mseries-codexbar-bar .seg-reset { font-size: 7.5pt; opacity: 0.7; } " +
+                ".mseries-codexbar-bar .seg-secondary { font-size: 7.5pt; } " +
                 ".mseries-codexbar-bar .level-low { color: @warning_color; } " +
                 ".mseries-codexbar-bar .level-critical { color: @error_color; } " +
                 ".mseries-codexbar-bar .mark-claude { color: #d97757; } " +
@@ -231,6 +237,9 @@ namespace MSeries {
         }
 
         private void refresh_usage () {
+            refresh_claude.begin ();
+            refresh_codex_accounts.begin ();
+            refresh_opencode_accounts.begin ();
             if (snapshot_busy || !run_action ("--refresh")) {
                 return;
             }
@@ -342,6 +351,10 @@ namespace MSeries {
         }
 
         private void ensure_sessions (int max_age_seconds) {
+            if (opencode_accounts_fetched_us == 0 ||
+                GLib.get_monotonic_time () - opencode_accounts_fetched_us > 120 * GLib.TimeSpan.SECOND) {
+                refresh_opencode_accounts.begin ();
+            }
             if (sessions_fetched_us == 0 ||
                 GLib.get_monotonic_time () - sessions_fetched_us > max_age_seconds * GLib.TimeSpan.SECOND) {
                 refresh_sessions.begin ();
@@ -436,14 +449,75 @@ namespace MSeries {
             }
         }
 
-        /* The helper answers {"ok", "message"}; show it, because a switch only moves Claude Code's command line and
-           the message says when the Claude app is still on another sign-in (it ignores claude-swap). */
-        private async void switch_claude_account (string number) {
+        private async void refresh_opencode_accounts () {
+            if (opencode_accounts_in_flight) return;
+            opencode_accounts_in_flight = true;
+            var before = codex_accounts_digest (opencode_accounts);
+            try {
+                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
+                    "python3", helper_path ("codexbar-opencode-local.py"), "accounts");
+                string output;
+                yield process.communicate_utf8_async (null, null, out output, null);
+                var parser = new Json.Parser ();
+                parser.load_from_data (output);
+                var root = parser.get_root ();
+                opencode_accounts = null;
+                if (process.get_successful () && root != null && root.get_node_type () == Json.NodeType.OBJECT
+                    && root.get_object ().has_member ("accounts")) {
+                    var accounts = root.get_object ().get_array_member ("accounts");
+                    if (accounts != null) opencode_accounts = accounts.ref ();
+                }
+            } catch (Error e) {
+                opencode_accounts = null;
+            } finally {
+                opencode_accounts_in_flight = false;
+                opencode_accounts_fetched_us = GLib.get_monotonic_time ();
+            }
+            if (before != codex_accounts_digest (opencode_accounts)) {
+                last_digest = "";
+                read_snapshot.begin ();
+            }
+        }
+
+        private bool claude_switch_in_flight = false;
+
+        private void choose_claude_switch (string number, string email, bool installed, bool ready) {
+            if (claude_switch_in_flight) return;
+            if (!installed) {
+                switch_claude_account.begin (number, false);
+                return;
+            }
+            var dialog = new Gtk.AlertDialog ("Switch to %s?", email);
+            dialog.detail = ready
+                ? "Switch both restarts the Claude app and changes its sign-in and Claude Code's command-line login. Finish any running work in Claude first."
+                : "This account needs one sign-in in the Claude app before fast switching works. Set up app saves the current app login and restarts Claude at its sign-in screen. Finish any running work first, sign in to this account, then choose Save app login here. CLI only changes Claude Code's command-line login.";
+            dialog.buttons = { "Cancel", "CLI only", ready ? "Switch both" : "Set up app" };
+            dialog.cancel_button = 0;
+            dialog.default_button = 0;
+            dialog.modal = false;
+            dialog.choose.begin (null, null, (obj, res) => {
+                try {
+                    var choice = dialog.choose.end (res);
+                    if (choice == 1 || choice == 2 && ready) {
+                        switch_claude_account.begin (number, choice == 2);
+                    } else if (choice == 2) {
+                        run_saver.begin ({ "python3", helper_path ("codexbar-claude.py"), "app-login", number },
+                            "Sign in to the Claude app", "Couldn't set up the app login", true);
+                    }
+                } catch (Error e) { }
+            });
+        }
+
+        // Runs outside Claude, so restarting the app cannot terminate this operation.
+        private async void switch_claude_account (string number, bool desktop) {
+            if (claude_switch_in_flight) return;
+            claude_switch_in_flight = true;
             var ok = false;
             var message = "";
             try {
-                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
-                    "python3", helper_path ("codexbar-claude.py"), "switch", number);
+                string[] command = { "python3", helper_path ("codexbar-claude.py"), "switch", number };
+                if (desktop) command += "--desktop";
+                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE);
                 string stdout_text;
                 string stderr_text;
                 yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
@@ -461,6 +535,7 @@ namespace MSeries {
             } catch (Error e) {
                 message = e.message;
             }
+            claude_switch_in_flight = false;
             tell (ok ? "Switched Claude account" : "Couldn't switch Claude account",
                 message.length > 0 ? message : "The helper reported an error.");
             claude_fetched_us = 0;
@@ -471,31 +546,22 @@ namespace MSeries {
 
         /* Adding an account needs a browser sign-in we can't drive, so ask in a small native dialog instead of a terminal. */
         private void ask_to_save (string heading, string detail, string save_label, owned ActionFunc on_save) {
-            var dialog = new Gtk.AlertDialog ("%s", heading);
-            dialog.detail = detail;
-            dialog.buttons = { "Cancel", save_label };
-            dialog.cancel_button = 0;
-            dialog.default_button = 1;
-            dialog.modal = false;
-            dialog.choose.begin (null, null, (obj, res) => {
-                try {
-                    if (dialog.choose.end (res) == 1) {
-                        on_save ();
-                    }
-                } catch (Error e) {
-                    // dismissed
-                }
+            var dialog = new Granite.MessageDialog.with_image_from_icon_name (heading, detail,
+                "system-users", Gtk.ButtonsType.NONE);
+            dialog.add_button ("Cancel", Gtk.ResponseType.CANCEL);
+            dialog.add_button (save_label, Gtk.ResponseType.ACCEPT).add_css_class ("suggested-action");
+            dialog.response.connect ((response) => {
+                dialog.close ();
+                if (response == Gtk.ResponseType.ACCEPT) on_save ();
             });
+            dialog.present ();
         }
 
         private void tell (string heading, string detail) {
-            var dialog = new Gtk.AlertDialog ("%s", heading);
-            dialog.detail = detail;
-            dialog.buttons = { "OK" };
-            dialog.modal = false;
-            dialog.choose.begin (null, null, (obj, res) => {
-                try { dialog.choose.end (res); } catch (Error e) { }
-            });
+            var dialog = new Granite.MessageDialog.with_image_from_icon_name (heading, detail,
+                "dialog-information", Gtk.ButtonsType.CLOSE);
+            dialog.response.connect (() => dialog.close ());
+            dialog.present ();
         }
 
         private async void run_saver (string[] command, string ok_heading, string failure_heading,
@@ -552,15 +618,17 @@ namespace MSeries {
             var accounts = claude_data.get_array_member ("accounts");
             head.append (build_identity (email));
             card.append (head);
-            // Code sessions in the Claude app use the app's own sign-in, which a switch here cannot change.
+            // CLI and desktop can be switched separately; always name both when they differ.
             var desktop = claude_data.has_member ("desktop") ? claude_data.get_object_member ("desktop") : null;
             if (desktop != null && desktop.get_boolean_member_with_default ("differs", false)) {
                 var there = desktop.get_string_member_with_default ("email", "");
-                var note = subtle_label ("Claude app: %s · switch it in the app".printf (
+                var note = subtle_label ("Claude app: %s".printf (
                     there.length > 0 ? there : "another account"));
                 note.set_tooltip_text (claude_data.get_string_member_with_default ("desktopNote", ""));
                 card.append (note);
             }
+            var snapshot_error = claude_data.get_string_member_with_default ("desktopSnapshotError", "");
+            if (snapshot_error.length > 0) card.append (subtle_label (snapshot_error));
 
             var shown_quota = false;
             if (accounts != null) {
@@ -586,22 +654,35 @@ namespace MSeries {
             var listed = accounts != null ? accounts.get_length () : 0;
             card.append (build_accounts_header ("Sign in to Claude Code, then save that login with claude-swap",
                 () => add_claude_account ()));
+            if (desktop != null && desktop.get_boolean_member_with_default ("installed", false)) {
+                var save_app = new Gtk.Button.with_label ("Save app login") {
+                    halign = Gtk.Align.START, tooltip_text = "Remember the Claude app's current sign-in for fast switching"
+                };
+                save_app.add_css_class ("compact");
+                save_app.clicked.connect (() => {
+                    popdown_from (save_app);
+                    run_saver.begin ({ "python3", helper_path ("codexbar-claude.py"), "app-save" },
+                        "Claude app login saved", "Couldn't save the app login", true);
+                });
+                card.append (save_app);
+            }
             for (uint i = 0; i < listed; i++) {
                 var account = accounts.get_object_element (i);
-                if (account.get_boolean_member_with_default ("active", false)) {
+                if (account.get_boolean_member_with_default ("active", false) &&
+                    (desktop == null || !desktop.get_boolean_member_with_default ("installed", false) ||
+                     account.get_boolean_member_with_default ("desktopActive", false))) {
                     continue;
                 }
                 var number = account.get_int_member_with_default ("number", 0).to_string ();
                 var name = account.get_string_member_with_default ("email", "");
                 var windows = account.get_array_member ("windows");
-                var detail = "—";
-                if (windows != null && windows.get_length () > 0) {
-                    detail = "%.0f%%".printf (windows.get_object_element (windows.get_length () - 1)
-                        .get_double_member_with_default ("remaining", 0));
-                }
+                var detail = "Quota unavailable";
+                var ready = account.get_boolean_member_with_default ("desktopReady", false);
+                var installed = desktop != null && desktop.get_boolean_member_with_default ("installed", false);
+                if (installed && !ready) detail += " · app sign-in needed";
                 card.append (build_account_line (name, detail,
-                    "Sign Claude Code's command line in as %s (the Claude app keeps its own sign-in)".printf (name),
-                    () => switch_claude_account.begin (number)));
+                    "Choose whether to switch Claude Code or the Claude app and CLI to %s".printf (name),
+                    () => choose_claude_switch (number, name, installed, ready), windows));
             }
             return card;
         }
@@ -637,13 +718,22 @@ namespace MSeries {
             }
         }
 
+        private AccountDialog? codex_login_dialog = null;
+
         private void add_codex_account () {
-            ask_to_save ("Add a ChatGPT account",
-                "Your current account is already remembered. Sign in to the other account in Codex, then choose Save account. You can switch back from the panel at any time.",
-                "Save account", () => {
-                    run_saver.begin ({ "python3", helper_path ("codexbar-accounts.py"), "save" },
-                        "Codex account saved", "Couldn't save the Codex account");
-                });
+            if (codex_login_dialog != null) {
+                codex_login_dialog.present ();
+                return;
+            }
+            codex_login_dialog = new AccountDialog ("Add a Codex account",
+                "Connect another ChatGPT account to CodexBar.",
+                "mseries-codexbar-openai-symbolic", { "python3", helper_path ("codexbar-accounts.py"), "login" });
+            codex_login_dialog.completed.connect (() => {
+                codex_accounts_fetched_us = 0;
+                refresh_codex_accounts.begin ();
+            });
+            codex_login_dialog.close_request.connect (() => { codex_login_dialog = null; return false; });
+            codex_login_dialog.present ();
         }
 
         private Gtk.Widget build_codex_accounts () {
@@ -659,15 +749,11 @@ namespace MSeries {
                 }
                 var email = account.get_string_member_with_default ("email", "");
                 var account_id = account.get_string_member_with_default ("id", email);
-                var windows = account.get_array_member ("windows");
+                var windows = account.has_member ("windows") ? account.get_array_member ("windows") : null;
                 var detail = account.has_member ("error") ? "unavailable" : "—";
-                if (windows != null && windows.get_length () > 0) {
-                    detail = "%.0f%%".printf (windows.get_object_element (windows.get_length () - 1)
-                        .get_double_member_with_default ("remaining", 0));
-                }
                 box.append (build_account_line (email, detail,
                     "Make %s the active Codex account. Restart running Codex sessions to use it.".printf (email),
-                    () => run_accounts_helper ({ "switch", account_id })));
+                    () => run_accounts_helper ({ "switch", account_id }), windows));
             }
             return box;
         }
@@ -683,7 +769,7 @@ namespace MSeries {
             return generator.to_data (null);
         }
 
-        // OpenCode Go's account quota needs a web sign-in, so show what this machine's own history says.
+        // Local history supplements OpenCode account quota and remains available while signed out.
         private async void refresh_opencode_local () {
             if (opencode_local_in_flight) {
                 return;
@@ -805,6 +891,9 @@ namespace MSeries {
             // The panel's countdowns tick every poll; the popover is rebuilt only when its data changes.
             panel_entries = entries;
             update_panel (entries, now_unix);
+            for (int i = 0; i < account_quota_labels.length; i++) {
+                account_quota_labels[i].set_markup (colored_account_quota (account_quota_labels[i], account_quota_windows[i], now_unix));
+            }
             var digest = snapshot_digest (snapshot, now_unix);
             if (digest == last_digest) {
                 return;
@@ -854,6 +943,16 @@ namespace MSeries {
             reset_text = "";
             var level = QuotaLevel.UNKNOWN;
             var binding = Presentation.binding_window (windows);
+            // Keep the five-hour balance visible even when a longer window is lower.
+            // Every window remains separate in the dropdown and account summaries.
+            for (uint w = 0; w < windows.get_length (); w++) {
+                var candidate = windows.get_object_element (w);
+                var minutes = candidate.get_int_member_with_default ("minutes", 0);
+                if (candidate.get_string_member_with_default ("key", "") == "primary" || minutes > 0 && minutes <= 360) {
+                    binding = (int) w;
+                    break;
+                }
+            }
             for (uint w = 0; w < windows.get_length (); w++) {
                 var window = windows.get_object_element (w);
                 var minutes = (int) window.get_int_member_with_default ("minutes", 0);
@@ -870,7 +969,7 @@ namespace MSeries {
                     reset.length > 0 ? reset.down () : "reset unknown"));
                 if ((int) w != binding) continue;
                 level = Presentation.level_for (remaining);
-                value_text = Presentation.quota_lead (short_label, minutes, "%0.0f%%".printf (remaining));
+                value_text = "%s %0.0f%%".printf (short_label, remaining);
                 var resets_at = new DateTime.from_iso8601 (window.get_string_member_with_default ("resetsAt", ""), null);
                 reset_text = resets_at != null ? Presentation.countdown_text (resets_at.to_unix () - now_unix)
                     : compact_reset (reset).replace (" ", "");
@@ -899,6 +998,13 @@ namespace MSeries {
                 var level = QuotaLevel.UNKNOWN;
                 if (windows != null && windows.get_length () > 0) {
                     level = window_segment (windows, now_unix, out value_text, out reset_text, section);
+                    if (provider == "opencodego") {
+                        var local_tokens = opencode_week_tokens ();
+                        if (local_tokens.length > 0) {
+                            value_text += " · " + local_tokens + " tok";
+                            section.append ("\n  " + local_tokens + " local tokens in 7 days (all local accounts)");
+                        }
+                    }
                 } else if (provider == "opencodego" && opencode_local != null) {
                     // No account quota without a web sign-in: show this machine's 7-day token count instead.
                     var periods = opencode_local.get_array_member ("periods");
@@ -956,6 +1062,9 @@ namespace MSeries {
                 : "Usage unavailable");
 
             var digest = new StringBuilder ();
+            foreach (var provider in new string[] { "codex", "claude", "opencodego" }) {
+                digest.append (alternate_account_text (provider, now_unix));
+            }
             for (int i = 0; i < providers.length; i++) {
                 digest.append ("%s|%s|%s|%d|%s;".printf (providers[i], values[i], resets[i], (int) levels[i],
                     stales[i].to_string ()));
@@ -973,7 +1082,7 @@ namespace MSeries {
             if (providers.length == 0) panel_segments.append (new Gtk.Label ("—"));
         }
 
-        private static Gtk.Widget build_panel_segment (string provider, string value_text, string reset_text,
+        private Gtk.Widget build_panel_segment (string provider, string value_text, string reset_text,
                                                        QuotaLevel level, bool stale) {
             var segment = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3);
             if (stale) segment.add_css_class ("stale");
@@ -994,7 +1103,58 @@ namespace MSeries {
                 reset.add_css_class ("seg-reset");
                 segment.append (reset);
             }
-            return segment;
+            var alternate = alternate_account_text (provider, new DateTime.now_utc ().to_unix ());
+            if (alternate.length == 0) return segment;
+            var stack = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { valign = Gtk.Align.CENTER };
+            stack.append (segment);
+            var label = new Gtk.Label (null) { xalign = 0, use_markup = true };
+            label.add_css_class ("seg-secondary");
+            var markup = new StringBuilder ();
+            var accounts = provider_accounts (provider);
+            for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
+                var account = accounts.get_object_element (i);
+                if (account.get_boolean_member_with_default ("active", false)) continue;
+                if (markup.len > 0) markup.append ("  ");
+                var windows = account.has_member ("windows") ? account.get_array_member ("windows") : null;
+                markup.append ("%lld: %s".printf (account.get_int_member_with_default ("number", i + 1),
+                    windows == null || windows.get_length () == 0 ? "—"
+                        : colored_account_quota (label, windows, new DateTime.now_utc ().to_unix ())));
+            }
+            label.set_markup (markup.str);
+            stack.append (label);
+            stack.set_tooltip_text (alternate_account_tooltip (provider));
+            return stack;
+        }
+
+        private Json.Array? provider_accounts (string provider) {
+            return provider == "codex" ? codex_accounts : provider == "opencodego" ? opencode_accounts
+                : provider == "claude" && claude_data != null ? claude_data.get_array_member ("accounts") : null;
+        }
+
+        private string alternate_account_text (string provider, int64 now_unix) {
+            var accounts = provider_accounts (provider);
+            var text = new StringBuilder ();
+            for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
+                var account = accounts.get_object_element (i);
+                if (account.get_boolean_member_with_default ("active", false)) continue;
+                var windows = account.has_member ("windows") ? account.get_array_member ("windows") : null;
+                if (text.len > 0) text.append ("  ");
+                text.append ("%lld: %s".printf (account.get_int_member_with_default ("number", i + 1),
+                    windows != null && windows.get_length () > 0 ? Presentation.account_quota (windows, now_unix) : "—"));
+            }
+            return text.str;
+        }
+
+        private string alternate_account_tooltip (string provider) {
+            var text = new StringBuilder (provider_title (provider) + " · alternate accounts · % quota left, ↻ reset countdown");
+            var accounts = provider_accounts (provider);
+            for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
+                var account = accounts.get_object_element (i);
+                if (account.get_boolean_member_with_default ("active", false)) continue;
+                text.append ("\n%lld: %s".printf (account.get_int_member_with_default ("number", i + 1),
+                    account.get_string_member_with_default ("email", "Saved account")));
+            }
+            return text.str;
         }
 
         // ---- Pages --------------------------------------------------------------------
@@ -1006,16 +1166,24 @@ namespace MSeries {
         }
 
         private void render_quota (Json.Array entries, int64 now_unix) {
+            account_quota_labels = {};
+            account_quota_windows = {};
             clear (quota_box);
-            for (uint i = 0; i < entries.get_length (); i++) {
-                quota_box.append (build_provider_card (entries.get_object_element (i), now_unix));
-            }
             var has_claude = false;
             for (uint i = 0; i < entries.get_length (); i++) {
-                has_claude = has_claude || entries.get_object_element (i).get_string_member_with_default ("provider", "") == "claude";
+                has_claude = has_claude || entries.get_object_element (i).get_string_member_with_default ("provider", "").down () == "claude";
             }
-            if (!has_claude && claude_data != null) {
-                quota_box.append (build_claude_card (now_unix));
+            // Match the panel order, including Claude's locally supplied accounts card.
+            for (int rank = 0; rank <= 3; rank++) {
+                if (rank == provider_rank ("claude") && !has_claude && claude_data != null) {
+                    quota_box.append (build_claude_card (now_unix));
+                }
+                for (uint i = 0; i < entries.get_length (); i++) {
+                    var entry = entries.get_object_element (i);
+                    if (provider_rank (entry.get_string_member_with_default ("provider", "").down ()) == rank) {
+                        quota_box.append (build_provider_card (entry, now_unix));
+                    }
+                }
             }
         }
 
@@ -1065,8 +1233,19 @@ namespace MSeries {
                 card.append (build_codex_accounts ());
             }
             if (provider == "opencodego") {
-                card.append (build_accounts_header ("Sign in to opencode.ai so CodexBar can read your OpenCode Go quota",
+                var local_tokens = opencode_week_tokens ();
+                if (windows != null && windows.get_length () > 0 && local_tokens.length > 0) {
+                    card.append (subtle_label (local_tokens + " local tokens · 7 days · all local accounts"));
+                }
+                card.append (build_accounts_header ("Connect another OpenCode Go key or browser sign-in",
                     () => add_opencode_account ()));
+                for (uint i = 0; opencode_accounts != null && i < opencode_accounts.get_length (); i++) {
+                    var account = opencode_accounts.get_object_element (i);
+                    if (account.get_boolean_member_with_default ("active", false)) continue;
+                    card.append (build_account_line (account.get_string_member_with_default ("email", "Saved account"),
+                        account.get_string_member_with_default ("error", "Quota unavailable"), "", null,
+                        account.has_member ("windows") ? account.get_array_member ("windows") : null));
+                }
             }
             if (error.length > 0 || windows == null || windows.get_length () == 0) {
                 var estimate = provider == "opencodego" ? opencode_local : null;
@@ -1084,10 +1263,10 @@ namespace MSeries {
                             period.get_int_member_with_default ("requests", 0),
                             period.get_int_member_with_default ("tokens", 0))));
                     }
-                    card.append (subtle_label ("Account quota needs a web sign-in at opencode.ai."));
+                    card.append (subtle_label ("Sign in to OpenCode or connect a Go API key to load account quota."));
                 } else {
                     card.append (subtle_label (provider == "opencodego"
-                        ? "Quota needs a web sign-in at opencode.ai. Local activity is under Sessions."
+                        ? "Sign in to OpenCode or connect a Go API key. Local activity is under Sessions."
                         : error.length > 0 ? error : "No usage reported yet."));
                 }
                 var settings = new Gtk.Button.with_label (provider == "opencodego" ? "Sign in…" : "Open Settings…") {
@@ -1104,6 +1283,17 @@ namespace MSeries {
                 card.append (settings);
             }
             return card;
+        }
+
+        private string opencode_week_tokens () {
+            var periods = opencode_local != null ? opencode_local.get_array_member ("periods") : null;
+            for (uint i = 0; periods != null && i < periods.get_length (); i++) {
+                var period = periods.get_object_element (i);
+                if (period.get_string_member_with_default ("label", "") == "7 days") {
+                    return Presentation.panel_count_text (period.get_int_member_with_default ("tokens", 0));
+                }
+            }
+            return "";
         }
 
         /* Dense building blocks shared by every provider card. */
@@ -1164,17 +1354,30 @@ namespace MSeries {
             return row;
         }
 
-        private Gtk.Widget build_account_line (string email, string detail, string switch_tooltip, owned ActionFunc on_switch) {
+        private Gtk.Widget build_account_line (string email, string detail, string switch_tooltip,
+                                               owned ActionFunc? on_switch, Json.Array? windows = null) {
             var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             line.add_css_class ("account-line");
             var name = new Gtk.Label (email) { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.MIDDLE };
             name.set_tooltip_text (email);
-            line.append (name);
-            var meta = new Gtk.Label (detail) { xalign = 1 };
+            var content = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { hexpand = true };
+            content.append (name);
+            var has_quota = windows != null && windows.get_length () > 0;
+            var meta = new Gtk.Label (has_quota ? Presentation.account_quota (windows, new DateTime.now_utc ().to_unix ()) : detail) {
+                xalign = 0, wrap = true, wrap_mode = Pango.WrapMode.WORD_CHAR
+            };
+            meta.set_tooltip_text ("Quota remaining · ↻ time until reset. " + detail);
             meta.add_css_class ("caption");
-            meta.add_css_class ("dim-label");
+            if (!has_quota) meta.add_css_class ("dim-label");
+            else meta.set_markup (colored_account_quota (meta, windows, new DateTime.now_utc ().to_unix ()));
             meta.add_css_class ("numeric");
-            line.append (meta);
+            content.append (meta);
+            line.append (content);
+            if (has_quota) {
+                account_quota_labels += meta;
+                account_quota_windows += windows;
+            }
+            if (on_switch == null) return line;
             var button = new Gtk.Button.with_label ("Switch") { valign = Gtk.Align.CENTER, tooltip_text = switch_tooltip };
             button.add_css_class ("compact");
             button.clicked.connect (() => {
@@ -1183,6 +1386,19 @@ namespace MSeries {
             });
             line.append (button);
             return line;
+        }
+
+        private static string quota_theme_color (Gtk.Widget widget, string name, string fallback) {
+            Gdk.RGBA color;
+            if (!widget.get_style_context ().lookup_color (name, out color)) return fallback;
+            return "#%02x%02x%02x".printf ((int) (color.red * 255), (int) (color.green * 255), (int) (color.blue * 255));
+        }
+
+        private static string colored_account_quota (Gtk.Widget widget, Json.Array? windows, int64 now_unix) {
+            return Presentation.account_quota_markup (windows, now_unix,
+                quota_theme_color (widget, "success_color", "#2e7d32"),
+                quota_theme_color (widget, "warning_color", "#a66300"),
+                quota_theme_color (widget, "error_color", "#c6262e"));
         }
 
         /* Which login a provider is tied to: quiet, under the title, never the focus of the card. */
@@ -1198,6 +1414,15 @@ namespace MSeries {
             }
             if (email.length == 0 && provider == "opencodego" && opencode_local != null) {
                 email = opencode_local.get_string_member_with_default ("accountEmail", "");
+            }
+            if (email.length == 0 && provider == "opencodego") {
+                for (uint i = 0; opencode_accounts != null && i < opencode_accounts.get_length (); i++) {
+                    var account = opencode_accounts.get_object_element (i);
+                    if (account.get_boolean_member_with_default ("active", false)) {
+                        email = account.get_string_member_with_default ("email", "");
+                        break;
+                    }
+                }
             }
             return email;
         }

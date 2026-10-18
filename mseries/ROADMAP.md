@@ -356,7 +356,7 @@ sudo available to enable DNS collection without dialogs.
 |---|---|---|
 | Deferred per-user setup | Firstboot prepares CodexBar and Widevine tools and DNS policy; the user timer installs apps/services and stops after completion. Staged-root tests cover payload delivery, timer enablement and completion handling. | Verify a fresh desktop user's setup, including starting then quitting Brave to create its profile. |
 | Keyboard brightness slider | Added to Pantheon's Quick Settings gear menu by `install-quick-settings-brightness.sh`; included in manual post-install, transform firstboot, and now the Apple Silicon overlay build. | Rebuild the image, then confirm it appears and changes the keyboard backlight on the live desktop. |
-| OpenCode Go in M-series CodexBar | The installer enables the provider; the wrapper passes an OpenCode Go API key from `~/.local/share/opencode/auth.json` when one exists. Current OpenCode keeps its login (an OAuth account, not a Go API key) in `opencode.db`, so on this desktop no key is found and quota needs a browser sign-in at opencode.ai (upstream reads session cookies). The panel's OpenCode Go card shows a local usage estimate (5h/7d/30d cost, requests, tokens from `opencode.db`, labelled not account quota) until a quota exists; local activity is also under Sessions. | Sign in to OpenCode Go in a browser on the desktop and confirm the quota row appears. |
+| OpenCode Go in M-series CodexBar | The wrapper passes an explicit API key from `auth.json`, falling back to the active unexpired OAuth access token in OpenCode v2’s `credential` table. Live account quota works; seven-day local token counts accompany it in the panel and card. | Live OAuth quota verified on 0.77.0; wrapper/helper tests and port checks pass. OAuth refresh remains OpenCode’s responsibility. |
 
 ## Open problems
 
@@ -617,3 +617,25 @@ browser integration and remaining Files/Gala patches remain open.
 - Developer watcher recovery (October 18): treat exact deleted named-ref responses as absent observations, preserving pending history and continuing branch/PR discovery. Two regression contracts and a full candidate dispatch pass; verify main dispatch after merge. This repair is independent of draft Calendar/browser/Mail GPU qualification (#86).
 
 - MCP Tasks qualification complete: note-to-task/scoped read-back 3/3 and file-instruction rejection 3/3; all synthetic sources removed. URLError checkpoint retained. PR #66 publishes data and app coverage; default restore waits for quiet admission. Calendar writes, browser/mail adapters, Tasks GUI/reminders and full factory hardware qualification remain open.
+
+## CodexBar native Claude account switching — 2026-10-18
+
+Implemented app session capture, one-time native sign-in setup, and **CLI only / Switch both** choices.
+The app restarts for a native switch; its encrypted login is restored without changing preferences.
+Missing sessions are labelled **app sign-in needed**. Both native accounts are now saved on this desktop. Automated snapshot round trips, rollback and
+setup recovery pass. A real native account-2 → account-1 round trip completed, and the owner confirmed
+the Gmail account’s chats remained visible without signing in again. See
+[CODEXBAR-PORT.md](CODEXBAR-PORT.md) for the repeatable workflow and limitations.
+
+
+### CodexBar account quota UX and sign-in — 2026-10-18
+
+Alternate accounts now expose 5-hour and weekly/monthly quota separately, each with a reset countdown,
+in dense dropdown rows and a second panel line. OpenCode duplicate OAuth records are collapsed into
+distinct account/workspace identities. Codex + provides browser sign-in without replacing the current
+login, using a native Granite window with progress and cancellation. Formatting, login isolation and
+OpenCode read-only/deduplication tests pass; port compatibility and headless light/dark probes pass. The owner verified that a second real Codex account appears after the new browser sign-in flow.
+
+Secondary quota balances are colour coded per window, matching the usage bar thresholds, while reset
+countdowns stay muted. The Codex account dialog now uses a centered brand panel, stronger typography,
+a compact instruction card and native actions. Light/dark render checks cover the visual changes.

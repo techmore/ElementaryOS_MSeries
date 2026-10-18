@@ -3095,3 +3095,148 @@ Verified headlessly (Xvfb): the window renders; a fake key shows upstream's "cre
 expired" and nothing is saved (real config unchanged); `set-api-key` into a temp config stores `apiKey` and
 upstream then reads it (error changes from "No OpenCode Go API key configured" to "invalid or expired").
 Not verified: a real key end to end (needs the owner's key).
+
+## Original plan (implemented below): Claude desktop-app switch, OpenCode OAuth, OpenCode bar — 2026-10-18
+
+Owner wants fast account switching for Claude, OpenAI and OpenCode, with Claude first. Usage ran out
+before any of this was built.
+
+1. **Claude desktop app switch.** The app keeps its own login in `~/.config/Claude`: the `Cookies` sqlite file
+   and the `oauth:tokenCache` / `oauth:tokenCacheV2` / `lastKnownAccountUuid` keys in `config.json`
+   (safeStorage-encrypted, so copy them without decrypting). claude-swap only changes the CLI login.
+   Plan, in `codexbar-claude.py`:
+   - `list` snapshots the app's current account to `~/.local/share/codexbar-claude-app/<uuid>/`
+     (0700): Cookies via the sqlite backup API, plus only those three keys.
+   - `app-switch <uuid>` must be spawned by the panel, not by a process inside the app. It quits
+     `/usr/lib/claude-desktop/claude-desktop` (SIGTERM the main pid, then wait), snapshots the current
+     account, restores the target (replace Cookies and remove `-journal`; merge the keys into
+     config.json), then relaunches with `gtk-launch com.anthropic.Claude`.
+   - Account 1 has no app snapshot yet. The owner signs in once in the app; `list` then saves it.
+   - The panel's Claude switch should do cswap plus app-switch, after a dialog warning that the app
+     restarts.
+   At 06:40 both accounts were out on the 5-hour limit (account 1 0%, resets ~08:30; account 2,
+   the app's, 2%, resets ~11:00).
+2. **OpenCode from `opencode auth login opencode`.** opencode v2 keeps credentials in the `credential`
+   table of `~/.local/share/opencode/opencode.db` (`integration_id='opencode'`, `active=1`). The value is
+   JSON: `type=oauth`, `access`, `refresh`, `expires` (~30 days), `metadata.orgID/email`. Verified:
+   `OPENCODE_API_KEY=<access>` with `codexbar usage --provider opencodego --source api` returns real
+   quota (5h/weekly/monthly windows). Make `codexbar-opencode-wrapper.py` fall back to this access
+   token, read-only and only when it hasn't expired, when auth.json has no key.
+3. **OpenCode usage bar with tokens.** Once (2) feeds the snapshot, the OpenCode segment and card get
+   real windows. Add the local token count (from `codexbar-opencode-local.py`) next to the bar.
+
+
+## CodexBar: finish native Claude switching and OpenCode OAuth — 2026-10-18
+
+Completed the interrupted `claude-app-switch` branch, keeping upstream pinned at **0.77.0** and preserving
+the existing native Settings, dense cards, helpers and port/deploy workflow.
+
+- `codexbar-claude.py` now snapshots the installed native app's encrypted `Cookies` SQLite database and
+  the three identity/token-cache config keys into atomic private bundles. Backup includes committed WAL
+  data and converts to DELETE journal mode so the snapshot is standalone. The panel offers **CLI only**
+  or **Switch both**; a native switch validates the saved target before touching the app or CLI, stops
+  the app gracefully, saves its final session, merges the target login, changes the CLI and restarts via
+  `gtk-launch com.anthropic.Claude`. Preferences are retained; old SQLite sidecars are removed. Failures
+  in restore/CLI switching attempt to restore the previous app session. No app tokens are decrypted or
+  returned in helper output. Launching this from within the app is refused to avoid killing its caller.
+- Accounts without a native snapshot say **app sign-in needed**. **Set up app** saves the current app
+  session, restarts with a locally cleared login (no server logout request), then the owner signs in
+  once in native Claude and uses **Save app login**. Setup can be cancelled by switching back to the
+  saved previous account; a private pending marker retains that recovery path. Sessions may expire or
+  be revoked; a valid local snapshot is not proof of server authentication.
+- The OpenCode wrapper now falls back from `auth.json` to an active OAuth row in `opencode.db`'s
+  `credential` table (`integration_id=opencode`). It only passes an access token with more than 60s
+  validity; reads are read-only, and refresh stays with OpenCode. Explicit environment/auth.json keys
+  take precedence. Live requests with both `--source api` and automatic source return real 5h, 7d and
+  monthly quota. The panel and card show seven-day local tokens beside the account quota, explicitly
+  labelled as local activity across local accounts.
+- Owner requested ordering: **Codex first, Claude second, OpenCode Go third**. This is now consistent
+  across the top-panel segments and quota/account cards, including Claude's injected helper card.
+
+Validation: 56 Python helper tests (29 Claude, 11 wrapper, 7 Codex accounts, 5 OpenCode local, 4 sessions),
+4 Meson suites, port compatibility check, syntax checks, light/dark headless connected-quota renders.
+Claude tests use temporary homes and fake process control; they cover two-account session round trips,
+private permissions, WAL backup, corrupted/missing targets, setup cancellation, rollback, restart failure
+reporting and inherited-token removal. Live `app-save` works, account 2 is app-ready, same-account
+`switch 2 --desktop` succeeds without restarting the app, and `switch 1 --desktop` refuses the missing
+snapshot before changing either login.
+
+**Remaining user action / validation:** account 1 still needs its one-time native sign-in via **Set up
+app**, then **Save app login**. Authenticated switching between both real native accounts is unverified
+until that is done. The working Claude app was not interrupted during implementation. No kernel,
+bootloader or audio changes. Deployed with `bash mseries/deploy-codexbar.sh`; Wingpanel and CodexBar restarted successfully. The running snapshot reports one Codex window and three OpenCode Go windows with no provider errors. Merged current `origin/main` without conflicts before publishing.
+
+
+## CodexBar: native Claude switching verified with owner — 2026-10-18
+
+The owner completed native sign-in for account 1. Live verification exposed two lifecycle bugs and a
+cookie-persistence gap that mocked process tests could not catch:
+
+- `gtk-launch` can leave its output pipes inherited by the GUI. Restart now detaches with DEVNULL
+  streams and checks native process presence rather than waiting for those pipes to close.
+- Chromium can rewrite the entire command line into argv[0], so looking for a separate `--type=` flag
+  misidentified utility processes. Stop now uses parent PID relationships and signals only the main
+  native app, then waits for the process tree to exit.
+- Native OAuth caches alone did not restore chat sign-in. The first test asked for login again.
+  Snapshots now require the actual `sessionKey` cookie, and Save app login waits up to 35 seconds for
+  Electron’s deferred cookie writes. Incomplete sign-ins cannot overwrite a good snapshot or be marked
+  app-ready. The owner signed in again, the complete cookie persisted, and the snapshot was saved.
+
+Real `switch 2 --desktop` and `switch 1 --desktop` both succeeded with app restarts after that save.
+The owner explicitly confirmed **“Yes, chats are visible”** on the returned Gmail account without
+signing in again. Both accounts now have complete native app snapshots. The app and CLI are left on
+account 1 (`sdolbec1@gmail.com`); Codex/Claude/OpenCode ordering is unchanged.
+
+Validation: 32 Claude helper tests now cover delayed cookie persistence, rejection of OAuth-only
+snapshots, detached launch and parent-based main-process selection (59 Python helper tests total).
+The existing PR validation run passed all three jobs before this follow-up; this push reruns CI.
+The fixed helper was installed atomically for the live test; the normal deployment runs after push.
+Upstream pin remains 0.77.0. PR #101 carries the completion and fixes.
+
+
+## CodexBar: dense alternate quotas, 5-hour priority and native account onboarding — 2026-10-18
+
+Owner asked to see non-main-account remaining quota and reset ETA, explicitly retaining both the 5h
+window and total weekly/monthly windows for Claude and OpenCode. Implemented shared dense formatting
+(`5H 0% ↻3h10m · 7D 72% ↻5d13h`, plus 30D where provided), a compact alternate-account second line in
+the panel, and two-line dropdown account rows with email/Switch above all quota windows. Panel account
+numbers map to identities in their tooltip. Main readouts now prioritize 5h rather than letting a lower
+weekly number hide it. All countdowns tick with normal polls; manual Refresh also updates saved accounts.
+The APIs provide quota percentages rather than raw remaining-token quantities.
+
+Added read-only `codexbar-opencode-local.py accounts`: deduplicates OAuth sessions by account/workspace,
+ignores expired credentials, and fetches inactive-account 5h/7d/30d quota without changing active login.
+The two real OpenCode credentials here share one account/workspace; the live helper correctly reports
+one active account rather than inventing a second. Temporary fixtures exercise genuinely distinct
+alternate OpenCode accounts and a 0% short-window balance alongside nonzero longer-term totals.
+
+Owner also reported Codex + could not add an account and requested native elementary styling. It
+previously only saved whichever account was already active elsewhere. New `codexbar-accounts.py login`
+uses the bundled/PATH Codex CLI's official browser login in a private temporary CODEX_HOME, forces file
+credential storage, saves the new account, and leaves ~/.codex/auth.json unchanged. Cancelling stops
+the login child and removes its temporary home. New Granite `AccountDialog.vala` keeps sign-in,
+progress, result and retry in one elementary window; other provider add prompts/results also use
+Granite. Native switch logic and tested Claude sessions are preserved.
+
+Validation: 65 Python helper tests (32 Claude, 10 Codex accounts, 11 wrapper, 8 OpenCode local, 4 sessions),
+4 Meson suites with short-window/long-window reset-format coverage; port compatibility check passes;
+light/dark headless account dialog and dense quota fixtures. Live OpenCode identity deduplication checked.
+Normal deployment installs the UI/helpers and restarts Wingpanel/CodexBar; Claude is not restarted.
+The owner completed the new browser flow and confirmed: “Yes, the second account appears.” Adding a second real Codex account is now verified.
+Owner explicitly requested **all work merged to GitHub main**; publish this batch through PR #101 after
+checks, merge it, and deploy the resulting main version.
+
+
+### Follow-up: colour cues and account-dialog visual polish — 2026-10-18
+
+Owner confirmed the new Codex browser flow worked, then requested colour-coded secondary usage and
+further dialog polish. Each saved-account window now gets the theme’s success/warning/error colour
+with exactly the usage bars’ thresholds (>25% healthy, >10% low, <=10% critical). A 0% 5h balance stays
+red alongside a healthy green weekly balance; reset ETAs remain quiet. This applies in both the top
+panel’s alternate-account line and the dropdown. Pure formatting tests assert independent colours.
+
+Replaced the basic message-dialog layout for Codex onboarding with a centered provider mark, stronger
+title, brief subtitle, a rounded instruction card and native footer actions. Progress/result/cancel
+behaviour is unchanged from the owner-verified sign-in flow. Rebuilt and passed four Meson suites;
+light/dark previews are checked. This follow-up is included in the owner-authorized merge of PR #101
+into main and subsequent desktop deployment.
