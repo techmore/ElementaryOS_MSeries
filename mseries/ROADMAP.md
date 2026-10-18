@@ -1,5 +1,19 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Dock hotplug/startup findings and obsolete module cleanup — 2026-10-18
+
+[Follow-up report](aurora/hardware-tests/2026-10-18-j314s-hotplug-and-module-cleanup.md)
+records the owner's audio-after-replug, initially stretched top bar and startup
+delay reports on running Aurora `.20`. Logs show a rejected saved 3024x1890 mode
+against current 3024x1964 full-height modes, a panel startup timeout, USB/Thunderbolt
+hotplug faults and missing dock Ethernet firmware. Audio causality remains unverified.
+Archived and content-verified 5,771 files before removing orphan `.19` and two
+Fairydust module trees; kept running `.20`, installed `.20-enh1` and stock Asahi.
+GRUB syntax checks pass; no boot, display or audio configuration changes. Earlier
+scoped visual/VRR results stand; symptoms and sustained stability remain open.
+Next: capture active/saved display profiles, identify the late panel, and collect
+before/after hotplug audio and kernel state. Cleanup is not a symptom fix.
+
 ## Native CodexBar display preferences — 2026-10-18
 
 Settings (gear in the popover) > Display > Wingpanel now has switches for quota percentages, time until reset,
