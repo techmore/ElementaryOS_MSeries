@@ -33,7 +33,8 @@ ported as `mseries-power` (see PORT-MAP.md); nothing else there profiles runtime
 
 ## Status (2026-10-18)
 Logger installed and running on the M1 Pro; 8 unit tests pass (`battery/test_battery_core.py`); CLI verified against live
-and synthetic history; the app renders all four pages under Xvfb (synthetic 8 h history). **Not verified:** the app's
-look in the real elementary theme (no window was opened on the owner's screen), real discharge sessions (the machine
+and synthetic history; the app (sidebar layout, battery gauge, usage bars, event icons, chart with hover readout) renders all four pages under
+Xvfb with the installed elementary blueberry stylesheet, light and dark (synthetic 8 h history). **Not verified:** the
+look on the owner's live session (no window was opened on their screen), real discharge sessions (the machine
 has been on the charger since logging began), and any claim about actual runtime. Runtime figures stay "—" until
 there is a 30 min unplugged run.
