@@ -40,7 +40,7 @@ if [[ ${1:-} == --uninstall ]]; then
 fi
 
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
-curl -fsS --max-redirs 0 -o "$tmp/wv.crx3" "$url"
+curl -fsS --connect-timeout 15 --max-time 120 --max-redirs 0 -o "$tmp/wv.crx3" "$url"
 [[ $(stat -c %s "$tmp/wv.crx3") == "$size" ]] || { echo 'Download size mismatch.' >&2; exit 1; }
 [[ $(sha512sum "$tmp/wv.crx3" | cut -d' ' -f1) == "$sha512" ]] || { echo 'Download SHA-512 mismatch.' >&2; exit 1; }
 
