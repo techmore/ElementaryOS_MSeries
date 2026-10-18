@@ -1,0 +1,8 @@
+{
+  "stage_only_rollback_passed": true,
+  "original_payload_restored": true,
+  "running_pid_unchanged": true,
+  "input_engine_unchanged": true,
+  "baseline_sha256": "9e9ba17fe03db37661f65babd706dee10752f730a9acdd6cf4b48cff8ff1f29a",
+  "scope": "Actual stage/restore; no recording, no service restart, no activation"
+}

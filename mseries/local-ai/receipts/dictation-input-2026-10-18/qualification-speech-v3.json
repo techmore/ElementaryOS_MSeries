@@ -1,0 +1,54 @@
+{
+  "passed": true,
+  "source_sha256": {
+    "stream-dictate.py": "a4a143a121563d9ea70c9f24ffb4f2f1d69783f6d9f749bb1d358389f78e1b07",
+    "dictation-input.py": "42eb5923c5b6e19a44dd4b97cf6f6145e384f589b73381fb62d9f80a72545d26",
+    "dictation-input-client.py": "33b3c5f08745202ab23a6adee4b8f477d0b0c00f8766892e3ace0505cb8ab36c",
+    "dictation_status.py": "f9430947910ca69cb8cc432eaa8a5395ebb401bcef881e3eb48060c173d38ed2",
+    "gtk-input-smoke.py": "e5b74a0963a3498ebc92720bf5393163ca4fcac8407b99f665a421ff81fda7d4"
+  },
+  "gtk_version": 3,
+  "display_backend": "x11",
+  "unicode_field": true,
+  "changed_field_untouched": true,
+  "password_untouched": true,
+  "speech": {
+    "backend": "cpu",
+    "wav_sha256": "33c6c68d943a22d5272bf8d5e1f86af9d89d901fb7da35961a692de7591a534c",
+    "normalized_word_error_rate": 0.0,
+    "widget_text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered, flour-fattened sauce",
+    "first_widget_text_s": 4.331697435000024,
+    "elapsed_s": 12.072180921999461,
+    "min_available_bytes": 13740097536,
+    "max_fan_rpm": 2524.0,
+    "max_temp_c": 47.913,
+    "samples": 56,
+    "quiet_policy_passed": true,
+    "microphone_recorded": false
+  },
+  "keyboard": {
+    "ordinary_keys": true,
+    "shift": true,
+    "backspace": true,
+    "dead_key_compose": true,
+    "layout": "private Xvfb us(intl)"
+  },
+  "method": "Actual Gtk.Entry fields, private Xvfb/IBus/session bus; CPU file ASR; no microphone",
+  "deployed": false,
+  "microphone_recorded": false,
+  "playback_performed": false,
+  "fixture": {
+    "name": "Existing project LibriSpeech English clip",
+    "source": "https://www.openslr.org/12",
+    "license": "CC-BY-4.0",
+    "attribution": "LibriSpeech, Vassil Panayotov, Guoguo Chen, Daniel Povey and Sanjeev Khudanpur; audio derived from LibriVox"
+  },
+  "versions": {
+    "transcribe_cpp": "0.4.0",
+    "transcribe_cpp_native": "0.4.0",
+    "numpy": "2.5.4"
+  },
+  "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "threads": 6,
+  "scope": "One public-clip functional check; first text includes cold process/model startup and paced input. Aggregated sampled metrics, not acoustic noise or cross-backend speed comparison. Earlier source versions retained separately."
+}

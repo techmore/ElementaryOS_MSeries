@@ -1,0 +1,8 @@
+{
+  "passed": false,
+  "stage": "Private fixture restart before Begin",
+  "reason": "Owned private IBus socket pathname remained after daemon TERM; rebinding failed. Fixed by removing only that owned socket after its owning process exited.",
+  "production_ibus_restarted": false,
+  "microphone_recorded": false,
+  "quality_score": null
+}

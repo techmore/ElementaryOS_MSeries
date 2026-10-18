@@ -1,0 +1,18 @@
+{
+  "activated": true,
+  "bridge_ready": true,
+  "input_active": true,
+  "stream_active": true,
+  "output": "ibus",
+  "backend": "cpu",
+  "phase": "ready",
+  "native_source_list_preserved": true,
+  "selection_policy": "Per-utterance acquisition and restoration; ordinary input method at idle",
+  "microphone_recorded": false,
+  "owner_windows_closed": false,
+  "human_f5_verified": false,
+  "source_sha256": {
+    "install-dictation-input.py": "b57a89080a7691f09667fd94ade77a69a9ff854c009517ed745a33d8f14f3857",
+    "mseries-dictation-input.service": "617b634fdedd3daeba0db8557d13ff61f60ca6fc9682f770b77942bacd1179d0"
+  }
+}

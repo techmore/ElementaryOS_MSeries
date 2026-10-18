@@ -69,7 +69,8 @@ def main():
     if args.discovery_only:
         receipt['test'] = 'Actual Newelle controller discovery through Xvfb; isolated clone of configured tools; no chat/memory inference requested'
     expected = {'system_status', 'list_apps', 'list_tasks', 'create_assistant_task', 'list_calendar_events', 'add_minutes',
-                'get_energy', 'workspace_list_files', 'workspace_read_file', 'workspace_write_note', 'recent_faults'}
+                'get_energy', 'workspace_list_files', 'workspace_read_file', 'workspace_write_note', 'recent_faults',
+                'create_assistant_event', 'browser_list_tabs', 'browser_read_page', 'create_mail_draft', 'read_mail_draft'}
     def probe():
         nonlocal phase
         try:

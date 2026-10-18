@@ -1,0 +1,66 @@
+{
+  "results": {
+    "qt6": {
+      "qt6_unicode_field": true,
+      "qt6_multiline": true,
+      "session_engine_restore": true,
+      "changed_field_untouched": true,
+      "password_untouched": true,
+      "method": "Real Qt6 X11 widgets in private Xvfb/IBus/session bus; no microphone or ASR"
+    },
+    "gtk4_wayland": {
+      "passed": true,
+      "source_sha256": {
+        "stream-dictate.py": "452b3213c6d48a8b554275997728d34e6142f5ce37e65c62a23d54e451141c44",
+        "dictation-input.py": "c32a00a80cde33db6ab6861299b9059130584497e10d0037018eb42b0c4725c3",
+        "dictation-input-client.py": "f25e53319d500d350c09a6e23ab254d728073ebf657b8b3b7dd83a99ca287c37",
+        "dictation_status.py": "50dadbf4f6a7f5edf8e4cb8b91d8931adf75cd899455285547d653c5af591903",
+        "dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+        "gtk-input-smoke.py": "82c188c890eacb14d8154c274a143fac3cd78e6aaf26ca91ce25fe849e4ae8dc",
+        "machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+      },
+      "gtk_version": 4,
+      "display_backend": "wayland",
+      "unicode_field": true,
+      "changed_field_untouched": true,
+      "password_untouched": true,
+      "session_engine_restore": true,
+      "overlapping_begin_refused": true,
+      "owner_selection_preserved": true,
+      "speech": null,
+      "keyboard": null,
+      "method": "Actual Gtk.Entry fields, private headless Gala Wayland/IBus/session bus; no ASR or microphone"
+    },
+    "brave": {
+      "browser": "Brave X11",
+      "accessibility": "forced",
+      "unicode_field": true,
+      "changed_field_untouched": true,
+      "password_refused": true,
+      "session_engine_restore": true,
+      "method": "Synthetic form in isolated real browser; no ASR, microphone or owner profile"
+    },
+    "electron44_synthetic": {
+      "browser": "Electron synthetic X11",
+      "accessibility": "forced",
+      "unicode_field": true,
+      "changed_field_untouched": true,
+      "password_refused": true,
+      "session_engine_restore": true,
+      "method": "Synthetic form in isolated real browser; no ASR, microphone or owner profile"
+    }
+  },
+  "retained_attempts": [
+    {
+      "name": "browser-deadline-v1",
+      "passed": false,
+      "stage": "Harness native-field readiness; Begin not attempted",
+      "reason": "Harness only accepted ENTRY role79; field may expose TEXT role61. Barrier now uses the production role/editable/focused contract and resets before requesting DOM focus."
+    }
+  ],
+  "human_f5": {
+    "passed": false,
+    "observation": "Owner reported a microphone desktop function instead of listening; exact prompt and app/field pending"
+  },
+  "microphone_recorded_by_tests": false
+}
