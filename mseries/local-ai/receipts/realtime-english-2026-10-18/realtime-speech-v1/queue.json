@@ -1,0 +1,17 @@
+{
+  "state": "terminal",
+  "scope": "Inspect retained worker/attempt receipts; failures and interruptions not repeated automatically",
+  "identity": {
+    "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+    "policy": {
+      "reserve_gib": 6,
+      "max_fan_rpm": 3500,
+      "max_temp_c": 80,
+      "cool_fan_rpm": 2700,
+      "resume_fan_rpm": 2600,
+      "burst_s": 3,
+      "sample_s": 1
+    },
+    "harness_sha256": "28ef14bdf53bdf8c1c3f2c0d8040fd6f3481a5d44ae3f65ba55ff323ef379d69"
+  }
+}

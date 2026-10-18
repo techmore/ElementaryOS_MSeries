@@ -6,7 +6,7 @@ import stat
 import tempfile
 import time
 
-PHASES = {'loading', 'waiting', 'ready', 'listening', 'finishing', 'error', 'stopped'}
+PHASES = {'loading', 'waiting', 'ready', 'listening', 'finishing', 'error', 'stopped', 'cancelled'}
 
 
 def status_path():

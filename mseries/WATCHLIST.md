@@ -35,6 +35,7 @@ once their repositories are confirmed. Do not guess handles.
 | bendews/apw | bendews | Apple Passwords CLI; GPL-3.0; 257 stars; last push 2026-08-24 |
 | dragosol/icloud-keychain-linux | dragosol | Read-only Keychain viewer; no license, so personal use only |
 | alex-mextner/passwords-app, deej1721/icloud-passwords-linux | | Two-way sync (MIT, created 2026-10-10) / Windows-helper-in-VM bridge (MIT) |
+| steipete/RepoBar | Peter Steinberger | macOS repository-dashboard reference for our independent elementary Wingpanel port |
 
 Their claims are leads, not evidence: Omarchy's post says Touch ID works and that M1/M2
 is the first release target, but its own status page still lists Touch ID as not in the

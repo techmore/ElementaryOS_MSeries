@@ -48,7 +48,7 @@ git -C "$source_dir" remote add origin https://github.com/elementary/panel-power
 git -C "$source_dir" fetch -q --depth=1 origin "$commit"
 git -C "$source_dir" checkout -q --detach FETCH_HEAD
 # Order matters: the watt meter patch is written against the source with the ETA patch applied.
-for patch in panel-power-charge-eta.patch panel-power-watts.patch panel-power-battery-history.patch; do
+for patch in panel-power-charge-eta.patch panel-power-watts.patch panel-power-watts-toggle.patch panel-power-battery-history.patch; do
   git -C "$source_dir" apply "$repo/mseries/patches/$patch"
 done
 

@@ -4,17 +4,24 @@
 Gala saves every screenshot to ~/Pictures/Screenshots (a link to ~/Downloads/Screenshots). This helper
 watches that folder and shows the newest shot as a draggable thumbnail, like macOS.
 
-  Drag it into an app      the shot is used and not kept: the saved file is deleted after the drop.
+  Drag it into an app      the shot is used and not kept: the saved file goes to the Trash after the drop.
   Hold Alt while dragging  the shot is used and a copy is kept (the thumbnail says so).
+  Click Copy               puts the image on the clipboard (paste it anywhere); the file is kept.
   Click it                 opens Markup on the saved file; the file is kept.
   Ignore it                the thumbnail stays (same size, same corner) for 4 seconds, longer while the pointer is on it; the file is kept.
   Click the x              dismisses it; the file is kept.
 
-A screenshot is only ever deleted by a drag without Alt, and only after the drag was accepted.
+A screenshot is only ever trashed (never hard-deleted) by a drag without Alt, and only after the drop was accepted.
+
+Flatpak apps (Signal, for one) cannot read files outside their sandbox, so the drag offers the screenshot
+through the document portal: a per-file, read-only export granted to the running Flatpak apps and
+revoked when the shelf cleans up. Native apps read the same path.
   mseries-screenshot-shelf             run (started from the desktop autostart)
   mseries-screenshot-shelf --snapshot out.png [image.png]   render the card to a PNG and exit
 """
+import configparser
 import ctypes
+import glob
 import os
 import shutil
 import subprocess
@@ -57,7 +64,7 @@ WATCH = os.path.realpath(os.environ.get("MSERIES_SHELF_WATCH", os.path.expanduse
 STAGE = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "mseries-shelf")
 LOG = os.path.expanduser("~/.cache/mseries-screenshot-shelf.log")
 MARKUP = os.environ.get("MSERIES_MARKUP", os.path.expanduser("~/.local/bin/mseries-markup"))
-DELETE_AFTER = 120      # seconds after an accepted drag before the unsaved file is removed
+DELETE_AFTER = 120      # seconds after an accepted drag before the unsaved file is moved to the Trash
 SHOW_SECONDS = 4        # how long the thumbnail stays when ignored (hover or drag keeps it)
 THUMB_WIDTH = 280       # the card is always THUMB_WIDTH x THUMB_HEIGHT, whatever the screenshot's shape
 THUMB_HEIGHT = 180
@@ -92,6 +99,78 @@ def clean_env():
         else:
             env[name] = value
     return env
+
+
+DOCS = ("org.freedesktop.portal.Documents", "/org/freedesktop/portal/documents", "org.freedesktop.portal.Documents")
+DOC_ROOT = os.path.join(os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}"), "doc")
+
+
+def running_flatpak_apps():
+    """App ids of running Flatpak instances (read from the instance info files, no subprocess)."""
+    apps = set()
+    for info in glob.glob(os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), ".flatpak", "*", "info")):
+        parser = configparser.ConfigParser(interpolation=None)
+        try:
+            parser.read(info)
+            apps.add(parser["Application"]["name"])
+        except (configparser.Error, KeyError, OSError):
+            pass
+    return apps
+
+
+class PortalExport:
+    """One file exported through the document portal, so sandboxed drop targets can read it.
+
+    The export lives at DOC_ROOT/<id>/<name>: the same path on the host and inside every sandbox it is
+    granted to. If the host's portal mount is missing (seen on this machine: the FUSE mount vanished while
+    the portal kept serving the sandboxes), a hard link stands in at that path for native apps.
+    """
+
+    def __init__(self, path):
+        self.bus = Gio.bus_get_sync(Gio.BusType.SESSION)
+        self.granted = set()
+        self.shadow = None
+        fds = Gio.UnixFDList()
+        fd = os.open(path, os.O_PATH | os.O_CLOEXEC)
+        try:
+            index = fds.append(fd)
+        finally:
+            os.close(fd)
+        # Add(h fd, b reuse_existing, b persistent): a transient export, readable by the host only until granted.
+        reply, _ = self.bus.call_with_unix_fd_list_sync(
+            *DOCS, "Add", GLib.Variant("(hbb)", (index, True, False)), GLib.VariantType("(s)"),
+            Gio.DBusCallFlags.NONE, 2000, fds, None)
+        self.doc = reply.unpack()[0]
+        self.path = os.path.join(DOC_ROOT, self.doc, os.path.basename(path))
+        if not os.path.ismount(DOC_ROOT) and not os.path.exists(self.path):
+            os.makedirs(os.path.dirname(self.path), exist_ok=True)
+            try:
+                os.link(path, self.path)
+            except OSError:
+                shutil.copy2(path, self.path)
+            self.shadow = self.path
+            log("document portal is not mounted on the host; using a stand-in link for native apps")
+
+    def grant_running(self):
+        for app in running_flatpak_apps() - self.granted:
+            try:
+                self.bus.call_sync(*DOCS, "GrantPermissions", GLib.Variant("(ssas)", (self.doc, app, ["read"])),
+                                   None, Gio.DBusCallFlags.NONE, 2000, None)
+                self.granted.add(app)
+            except GLib.Error as error:
+                log(f"could not grant {app}: {error.message}")
+
+    def remove(self):
+        if self.shadow:
+            for remove in (os.remove, os.rmdir):
+                try:
+                    remove(self.shadow if remove is os.remove else os.path.dirname(self.shadow))
+                except OSError:
+                    pass
+        try:
+            self.bus.call_sync(*DOCS, "Delete", GLib.Variant("(s)", (self.doc,)), None, Gio.DBusCallFlags.NONE, 2000, None)
+        except GLib.Error:
+            pass
 
 
 class Thumb(Gtk.Widget):
@@ -129,6 +208,7 @@ class Shelf(Gtk.Window):
         self.cancelled = False
         self.hover = False
         self.timer = None
+        self.export = None
         self.add_css_class("shelf")
         self.set_decorated(False)
         self.set_resizable(False)
@@ -152,6 +232,11 @@ class Shelf(Gtk.Window):
         self.hint = Gtk.Label(label="Drag to use  ·  Alt keeps", xalign=0, hexpand=True)
         self.hint.set_ellipsize(3)   # Pango.EllipsizeMode.END: never widen the card
         self.hint.add_css_class("shelf-hint")
+        copy = Gtk.Button(label="Copy")
+        copy.add_css_class("markup")
+        copy.set_tooltip_text("Copy the image to the clipboard")
+        copy.connect("clicked", lambda *_: self.copy_to_clipboard())
+        self.copy_button = copy
         markup = Gtk.Button(label="Markup")
         markup.add_css_class("markup")
         markup.connect("clicked", lambda *_: self.open_markup())
@@ -159,6 +244,7 @@ class Shelf(Gtk.Window):
         close.add_css_class("flat")
         close.connect("clicked", lambda *_: self.finish("dismissed"))
         row.append(self.hint)
+        row.append(copy)
         row.append(markup)
         row.append(close)
         card.append(row)
@@ -240,13 +326,23 @@ class Shelf(Gtk.Window):
         keyboard = self.get_display().get_default_seat().get_keyboard()
         return bool(keyboard and keyboard.get_modifier_state() & Gdk.ModifierType.ALT_MASK)
 
+    def drop_path(self):
+        """The path a drop target gets: a portal export when possible, so Flatpak apps can read it."""
+        try:
+            if self.export is None:
+                self.export = PortalExport(self.staged)
+            self.export.grant_running()
+            return self.export.path
+        except (GLib.Error, OSError) as error:
+            log(f"document portal unavailable ({error}); offering the staged path")
+            return self.staged
+
     def on_prepare(self, source, _x, _y):
         if self.alt_held():
             self.alt_seen = True
-        file = Gio.File.new_for_path(self.staged)
-        return Gdk.ContentProvider.new_union([
-            Gdk.ContentProvider.new_for_value(Gdk.FileList.new_from_list([file])),
-        ])
+        path = self.drop_path()
+        log(f"offering {path} (granted: {', '.join(sorted(self.export.granted)) if self.export else 'none'})")
+        return Gdk.ContentProvider.new_for_value(Gdk.FileList.new_from_list([Gio.File.new_for_path(path)]))
 
     def on_drag_begin(self, source, drag):
         self.dragging, self.cancelled = True, False
@@ -285,6 +381,19 @@ class Shelf(Gtk.Window):
 
     # ------------------------------------------------------------------ outcomes
 
+    def copy_to_clipboard(self):
+        """Full-size image on the clipboard: pasting needs no file access, so it works in any app."""
+        try:
+            texture = Gdk.Texture.new_from_filename(self.staged)
+        except GLib.Error as error:
+            log(f"could not copy: {error.message}")
+            return
+        self.get_clipboard().set_content(Gdk.ContentProvider.new_for_value(texture))
+        self.clip_texture = texture   # keep the data alive while this process owns the clipboard
+        self.copy_button.set_label("Copied")
+        GLib.timeout_add_seconds(2, lambda: self.copy_button.set_label("Copy") and False)
+        log(f"copied {os.path.basename(self.path)} to the clipboard")
+
     def open_markup(self):
         log(f"markup {os.path.basename(self.path)}")
         try:
@@ -306,16 +415,19 @@ class Shelf(Gtk.Window):
         self.close()
 
     def cleanup(self, delete_saved):
+        if self.export:
+            self.export.remove()
         try:
             os.remove(self.staged)
         except OSError:
             pass
         if delete_saved:
+            # Trash, not delete: an accepted drop does not prove the app could read the file.
             try:
-                os.remove(self.path)
-                log(f"deleted unsaved screenshot {os.path.basename(self.path)}")
-            except OSError:
-                pass
+                Gio.File.new_for_path(self.path).trash(None)
+                log(f"moved used screenshot to the Trash: {os.path.basename(self.path)}")
+            except GLib.Error as error:
+                log(f"kept {os.path.basename(self.path)}: could not trash it ({error.message})")
         return False
 
 

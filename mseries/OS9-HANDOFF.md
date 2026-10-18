@@ -1,5 +1,17 @@
 # OS 9 implementation / Claude Code handoff
 
+## PR #159 merge validation — 2026-10-18
+
+Merged current main (including calendar PR #211) into the startup repair branch,
+retaining both the startup report and all newer handoff/roadmap entries. On this
+composed tree: 12 display-space Python tests, native notch/crowding allocation,
+private actual-Gala startup test (old timeout reproduced, repaired timeout absent,
+finite pre-surface sizing and 20 clock transitions), and six image-wiring tests
+pass. New shell scripts pass ShellCheck; installer shell syntax passes. Non-patch
+changes pass whitespace checks; unified patch context lines retain their required
+leading spaces. No desktop installation or panel restart was performed in this
+merge review. Fresh-login timing and owner visual acceptance remain pending.
+
 ## Aurora .20 top bar and startup repair — 2026-10-18
 
 [Installed repair and tests](display-space/STARTUP-FIX-2026-10-18.md): Wingpanel
@@ -12,6 +24,705 @@ The patched panel is running. Native tests reproduce/remove the five-second
 panel timeout and pass initial sizing plus 20 clock transitions; 12 Python tests
 and existing native allocation checks pass. Fresh-login timing and owner visual
 confirmation remain pending. Kernel, bootloader and dock-disabled state preserved.
+
+## RepoBar 3× faster refresh and Traffic tab — 2026-10-18 (Claude Code)
+
+Refresh lists repository ids first (one cheap query), then loads details in parallel batches of 25 alongside the
+Pages, For You and contribution calls: 5.1–5.6 s vs 15.6–17.1 s for the old helper (three runs each, owner's 85
+repositories); output identical (same names, order and fields apart from time-based ones). New **Traffic** details
+tab (`mseries-repobar traffic OWNER/NAME`): 14-day views and clones as accent bars with totals and unique counts,
+opens GitHub's traffic graph; repositories without push access get a plain explanation. Rendered headless
+light/dark; reloaded and merged per the owner's standing instruction.
+
+## RepoBar local checkouts and worktrees — 2026-10-18 (Claude Code)
+
+The helper now keeps every local checkout per repository (`localCheckouts`; the folder named after the repository
+is primary) instead of only the first found, and a failed scan no longer breaks a refresh. Cards: the Local row
+opens the folder and shows "+N" more checkouts; a **Checkouts** details tab (no GitHub request) lists each with
+branch, modified/ahead/behind, Files and Terminal; right-click adds Open Folder / Open in Terminal, or **Clone to
+<projects folder>** (`mseries-repobar local clone OWNER/NAME`, never overwrites) for repositories not cloned yet.
+Local filter explains how to choose a projects folder when none is set. Owner's RepoBar set to `local-root ~`,
+`local-depth 2` (Settings → Local Checkouts to change): ElementaryOS_MSeries 11 checkouts, rupert 4,
+orchard-incus 1; refresh ~18 s. Rendered headless light/dark; deployed without restart. Clone and Terminal/Files
+launching not exercised (would act on the desktop). **Unverified:** live panel until reload.
+
+## RepoBar contribution graph, panel marks, instant open — 2026-10-18 (Claude Code)
+
+Dashboard gains a **Contributions** card (GitHub's contribution calendar: as many weeks as fit, newest right, shaded
+from the system accent; hover names the day and count; click opens the profile; "N this week · N this year").
+Setting `showContributions` (default on; RepoBar Settings → Dashboard). Helper adds `contributions` (one GraphQL
+call, ~8 KB). Panel item shows the pull request and issue marks instead of "PR"/"issues" text. The menu now draws the
+cached snapshot immediately at startup instead of "Loading repositories…" while a refresh (~15 s) runs. Rendered
+headless light/dark and with the owner's real data; deployed without restart. **Unverified:** live panel until reload.
+
+## RepoBar For You, CI notifications and GitHub marks — 2026-10-18 (Claude Code)
+
+Dashboard leads with a **For You** card (pull requests waiting on your review, issues assigned to you; hidden when
+empty — the owner has none today). Optional **CI notifications** (`notifyCi`, default on; switch in RepoBar Settings →
+Notifications): `notify-send` when a default branch starts failing (with Open on GitHub) or passes again; the first
+snapshot after login only records states (`~/.cache/mseries/repobar/ci-states.json`, 0600), unchanged failures are not
+re-announced, hidden/archived repositories stay quiet. Verified with a logging fake notifier (no desktop pop-ups).
+From the handoff session's ideas, implemented here: clickable status chip ("N failing" → Failing CI filter + All;
+"Cached"/"Offline" → retry with the error in the tooltip), a Failing CI filter, Attention sorted by severity, own
+filled-shape pull request / issue / commit symbolic icons in pills, activity rows, details and the dock, and
+activity rows that show only the age. Rendered headless light/dark + Attention + Settings; deployed without restart.
+**Unverified:** live panel until Wingpanel reloads; a real notification on the owner's desktop.
+
+## Native Signal + system accent — 2026-10-18 (Claude Code)
+
+Owner asked for a native Signal (suggested a source port) with system colours instead of Signal's blue.
+No source port: Signal ships an official signed ARM64 Linux beta, already wired up by `install-signal.sh`.
+Updated it on this machine 8.31.0-beta.1 → **8.32.0-beta.1** (signature VALIDSIG 4B16…D94C); the owner's
+account still lives in the Flatpak 8.31.0. New `migrate-signal-flatpak.sh` moves the profile (refuses while
+either Signal runs, skips caches/locks, hides the Flatpak launcher, keeps Flatpak data, `--rollback` sets the
+native profile aside). Tested migrate/re-run guard/rollback in a fake home; dry run on the real profile (79M)
+correctly refuses while the Flatpak runs. `signal-accent.py` recolours Signal's ultramarine family, the 2024
+brand blue `#3b45fd` and SVGs in place in `app.asar` (same-length replacements, integrity hashes recomputed,
+original kept as `app.asar.orig`); run from `install-signal-integration.sh` on every update. Applied here
+(265 uses, 26 files, accent `#3689e6`); Xvfb screenshot with a throwaway profile shows the link and logo in
+the accent. **Migrated 21:09** (owner approved): Flatpak was already closed; 79M copied, native 8.32.0-beta.1 opened,
+schema 1830 unchanged, existing sessions decrypt, key moved to `gnome_libsecret`. Only error: the built-in
+updater cannot watch `.signal-postinst` (expected; updates come from `install-signal.sh`). The Flatpak profile
+(plaintext key) stays as a stale backup. **Unverified:** the logged-in
+UI in the accent, and whether drops from the screenshot shelf reach native Signal (it is Wayland-native, the
+shelf is XWayland).
+
+## CodexBar inclusive15% quota display — 2026-10-18
+
+Owner clarified that Claude must reveal the bold red written percentage at15%
+as well as below it. The shared dot formatter now uses remaining<=15, preserving
+consistent behavior across providers and both account rows.15.1% remains dot-only.
+Dropdown quota bars and their percentage labels now share the dots' visual
+thresholds: green >70%, yellow25–70%, red<25%. The underlying ETA/alert warning
+thresholds remain separate. Native probes assert actual bar CSS matches remaining
+quota in literal and dot modes. Hover/reset behavior is unchanged.
+Boundary regression covers15%,15.1%,14%,10%,0% and missing values. Routine deploy
+stages the native update for next login; no additional panel reload was requested.
+
+
+## Screenshot shelf drag into Signal (Flatpak) — 2026-10-18 (Claude Code)
+
+Owner dragged a shelf thumbnail into Signal and nothing arrived. Cause: Signal is the `org.signal.Signal` Flatpak
+with no filesystem permission, so the dropped `/run/user/1000/mseries-shelf/...` path is invisible in its sandbox.
+The drop was accepted, so the shelf counted it as "used" and **hard-deleted** the 16:32 screenshot 2 minutes later
+(unrecoverable). Fix in `screenshot-shelf/mseries-screenshot-shelf`: the drag offers a transient document-portal
+export granted read-only to running Flatpak apps (revoked on cleanup); the used original goes to the **Trash**
+instead of being deleted; new **Copy** button (clipboard paste). Second finding: the host's portal FUSE mount at
+`/run/user/1000/doc` is gone while the portal still serves running sandboxes, so new Flatpak launches fail
+(`bwrap: Can't find source path .../doc/by-app/org.signal.Signal`). The shelf adds a hard-link stand-in for native
+apps in that state. Not restarted, because that would cut off the running Signal; it heals at next login. Verified
+headless (Xvfb + `flatpak enter` into the running Signal); deployed via `install-screenshot-shelf.sh`, autostart
+entries validate. **Unverified:** a real hand drag into Signal.
+
+## RepoBar website globe — 2026-10-18 (Claude Code)
+
+Owner asked for an easy way to open a repository's GitHub Pages site. Cards now show a globe right of the name that
+opens the Pages site, or the repository's website field when there is no Pages site; the right-click menu adds
+Open Website. The helper reads the `github-pages` deployment URL (custom domains) and REST `has_pages` for
+branch-built sites (github.io default URL); malformed website fields are ignored. Live: 23 Pages sites and 2 websites
+of 85 repositories; refresh time 13–15 s old vs 15–17 s new over two runs each (no clear difference). New
+`mseries-repobar-globe-symbolic` icon (filled paths for symbolic recoloring). Rendered headless light/dark; deployed
+without a panel restart. **Unverified:** live panel until Wingpanel reloads.
+
+## RepoBar UX pass 2 — 2026-10-18 (Claude Code)
+
+Owner asked for more repositories with scrolling: the dashboard now shows pins plus 20 recent repositories (was 5),
+the list scrolls to 560 px, and a "Show all N repositories" row jumps to All (85 on the owner's account). New native
+**RepoBar Settings** window (`mseries-repobar-settings`, dock gear): account/sign-in, dashboard size and sort, forks,
+archived, refresh interval, projects folder + depth, and a Hidden Repositories list with Show; every change applies
+through `mseries-repobar settings set`, and the indicator re-reads on `settings.json` changes. Popover: cards are list
+rows (arrow keys + Enter open), type-to-search, Ctrl+F / Ctrl+R / Alt+1…4, remembered tab and filter
+(`~/.config/mseries/repobar/panel.ini`), unpinned stars appear on hover/focus, activity shows age, Pinned/Attention/All
+follow the sort setting, and pin/hide raise a Granite toast with Undo. Rendered headless (light/dark, toast, details,
+real snapshot, Settings). Deployed with `deploy-repobar.sh` (no restart). **Unverified:** live panel until Wingpanel
+reloads; real keyboard and pointer input.
+
+## Gala CPU investigation — 2026-10-18 (Claude Code)
+
+Measured: Gala's main thread uses 25–35% of one core and presents about 100+ frames/s (505 `ADDFB2` in 5 s under strace)
+with the panel at 3024x1964 120 Hz VRR. The busiest Wayland client at that moment was `claude-desktop` (the app hosting this
+Claude Code session) at about 108 `sendmsg`/s while output streamed, which fits Gala redrawing for it; confirmation needs a
+measurement with Claude idle (`/tmp/gala-idle-result.txt`, written by a timed script). Earlier "Gala 16–20%" in the battery
+app was a bug in my cgroup grouping (Wingpanel/dock live in gala's service cgroup); fixed, user-session services keep their
+process name. Nothing in Gala or display settings was changed.
+
+## Battery app grouping and ETA — 2026-10-18 (Claude Code)
+
+Per-app CPU grouped by cgroup with desktop names; blended runtime estimate with range and basis; 24 core tests pass.
+Unverified on real unplugged data (the machine has been on the charger since the logger gained these).
+
+## RepoBar native UI pass — 2026-10-18 (Claude Code)
+
+Rebuilt the RepoBar Wingpanel popover in CodexBar's visual language: segmented Dashboard / Pinned / Attention N / All
+switcher, search with a filter menu (issues, PRs, local checkout), cards led by a CI status dot with PR/issue pills, a
+star to pin and a chevron for the details pane (category chips, lazy-loaded rows that open on GitHub), right-click menu
+(open, copy link, pin, hide/show), CodexBar-style empty/error/sign-in states, and the bottom bar (status chip,
+freshness + API %, icon dock: your PRs, your issues, GitHub, refresh with spinner). Panel item now reads `28 PR | 52
+issues` with a dot while CI fails. Unchanged snapshots no longer rebuild the cards, so open details survive polling.
+Headless probe: `mseries/repobar-wingpanel/probe/run-probe.sh BUILD OUT [light|dark]` (synthetic fixtures). Rendered
+light/dark, healthy/empty/error, expanded details, and the owner's real cached snapshot. New
+`mseries/deploy-repobar.sh` installed `librepobar.so` without restarting Wingpanel (`--restart` reloads the panel).
+**Unverified:** the new module on the owner's live panel (loads at next login or a panel reload); clicks by real input.
+## Battery condition, daily usage, diagnostics — 2026-10-18 (Claude Code)
+
+Condition label, 10-day usage list, Diagnostics page, `mseries-battery diagnose|daily`, diagnostics report export. Real data
+only (rendered from the live database). 22 core tests pass. Not seen on the owner's screen.
+
+## Claude pre-switch handoffs and reviewed GitHub backups — 2026-10-18
+
+Added automatic handoffs for the most recently focused active local Code
+conversation on cross-account desktop Switch (and first-time app sign-in setup).
+After the app flushes/exits but before either login changes, the helper saves a
+private brief from bounded recent visible transcript text and workspace Git status.
+Thinking/signature/tool blocks are excluded. A fresh, tool-free Claude Code print
+call uses the departing CLI account only when its identity matches the desktop;
+otherwise, or on quota/network/timeout failure, a labeled emergency excerpt brief
+is saved. The original conversation/transcript stays intact. The destination gets
+a separate top-of-list Handoff conversation with a new transcript ID containing
+only the plain-text brief, workspace bindings, and an original-conversation pointer.
+No prompt starts work automatically and no thinking is claimed to cross organizations.
+Same-account restarts do not spend tokens on another summary.
+
+Private 0600 brief/receipt files live under codexbar-claude-app/handoffs, including
+an immediately recoverable latest pointer before auth changes. Summary generation
+is bounded to45 seconds,64K visible input characters and2400 output tokens; briefs
+are lossy and explicitly say earlier details may be omitted. Source auth is never
+copied into artifacts. The helper has no ambient polling or new service/database.
+
+Owner chose each workspace's existing GitHub origin with reviewed public-safe
+summaries. Publishing is deliberately separate from Switch: a native editable
+review window requires an explicit Publish reviewed handoff action and writes a
+new codex/handoff-* branch plus draft PR. No owner working-tree/index/main changes.
+Emergency raw excerpts never prefill the public draft. Credential-pattern screening
+is an additional check, not a substitute for owner review. Retrying publication can
+reuse the same branch/PR; offline/failed publication retains the local handoff.
+The success dialog offers Review GitHub handoff; the standalone command is
+python3 ~/.local/lib/codexbar-cli/codexbar-claude.py handoff-review.
+
+Verified: Claude Code2.1.299 live synthetic summarization with OAuth, safe mode,
+no tools/hooks/MCP/session persistence; a separate live synthetic resume recalled
+the task from the handoff-only seed. Owner conversations/accounts were not changed
+for these tests. Review UI rendered under Xvfb; simulated publication remained
+idle until the explicit click and received only edited review text.16 handoff tests,
+41 switcher tests,15 history tests and deployment regression pass; all15 native
+targets and full port check pass. Upstream CodexBar remains v0.77.0. Actual GitHub
+publication awaits owner review by design; a live owner account switch with this
+new handoff feature remains unverified. Native review-button changes install for
+next login; helper changes apply on the next Switch. No panel reload is requested.
+
+
+## Emporia temperature dropdown — 2026-10-18 (Claude Code)
+
+Owner asked for a significantly better native Temperatures dropdown in the Emporia Energy Monitor Wingpanel
+indicator. Merged as techmore/Emporia-Vue3-Mac-Utility-Monitor#159 (`e869555`, version 2.3.63). New
+`linux/wingpanel/TemperatureView.vala`: indoor-average overview (warmest/coolest rooms, humidity, unplaced sensor,
+clickable comfort-scale strip), a needs-attention row (offline sensor, battery ≤20%, ≥3 °F/h change, humidity ≥65% or
+≤30%), and a sensor list sortable by floor/warmest/coolest/changing fastest with °F/h trend, humidity, check age and a
+hoverable 24-hour sparkline. Stale sensors stay greyed, never feed averages and sort last. View, sort and open sections
+persist in `~/.config/energy-monitor/wingpanel.ini`; the list no longer collapses on each refresh. The legend appears
+once and the embedded Home 3D view no longer repeats the summary and sensor list.
+
+Verified: clean meson build, new `meson test` helper test, `test_linux_client.py`, both existing native house tests,
+headless Xvfb renders against the live summary in dark and light themes. CI on main had been failing
+`native-house-preview` because WebKit's bubblewrap sandbox cannot start on GitHub runners; the offline fixture test now
+runs with the sandbox disabled and all four CI jobs pass. With owner approval, `libenergy-monitor.so` was installed to
+the wingpanel-9 indicators directory and Wingpanel restarted; the module is loaded. **Unverified:** hover and click in
+the real popover (they reuse the existing `--temperature` launch path). Next: owner look at the live dropdown.
+
+Follow-up (owner request): rooms are now hued by temperature in the 3D views — Emporia PR #160 (`973d314`, 2.3.64).
+Each room with a recent reading gets a translucent unlit volume in its band colour; stale or sensorless rooms stay
+clear; upper floors keep ≥55% of the hue under the Floors slider. An all-stale collector now shows one warning line.
+Bundles rebuilt with locked vite (clean main rebuilt byte-identical first); CI green. Verified by Xvfb/WebKit renders
+of whole home and each floor (first yellow, master blue, living room amber, attic blue). Installed to Wingpanel and
+restarted. Collector (owner approved, 2026-10-18 20:24 UTC): SER8 `energy-monitor` switched 2.3.62 → 2.3.64 from
+`973d314` with the existing backup-and-release-switch process. The script refused to run unless every server Python
+module, template and lock file matched 2.3.62 (only the Home 3D bundle and VERSION change server-side). Backup
+`/var/lib/energy-monitor/rollback-room-hues-20261018T202402Z`: manifest, dashboard/poller units, settings, house plan
+and an integrity-checked DB copy (367,909 readings). Dashboard and poller moved to `/opt/energy-monitor/releases/2.3.64`;
+integration collectors stay on 2.3.54 and were not restarted. Verified over the public origin: `/api/version` 2.3.64,
+served `home-3d.js` SHA-256 equals the merged bundle (`0924ea89…`), fresh reading after restart, house state/config
+200, anonymous state still 302, all six services active, no warnings. Rollback: restore the two units and
+`deployment.json` from that backup, `systemctl daemon-reload`, restart dashboard and poller. Scripts and receipt are kept
+with the earlier ones (`deploy_energy_2364.py`, `deployment-verification-2.3.64.json`) in the Codex work folder.
+
+2.3.65 (Emporia PR #161, `389d4a3`): a floor chosen on its own in the 3D views now keeps opaque floors and full room
+hues; Whole home still uses the Floors slider. Deployed to Wingpanel, then (owner approved) the collector switched
+2.3.64 → 2.3.65 with the same script and checks. Backup `rollback-floor-hue-20261018T203422Z` (368,118 readings).
+Verified: version 2.3.65, served bundle SHA-256 `b39b0246…` equals the merged bundle, fresh reading, state/config/home-3d
+200, anonymous state 302, six services active, no warnings. Also: roadmap PR #209 was merged before its checks
+finished (they then all passed); later merges wait for an explicit pass.
+
+## Battery real data — 2026-10-18 (Claude Code)
+
+Owner asked for real data only. Deleted my synthetic test database. Logger now backfills from UPower's real history
+(`mseries-battery import`): 24 real unplugged runs since 2026-10-14, typical runtime 4h 18m (8 runs of 30 min or more).
+The Wingpanel card and Overview use it. **Not seen on the owner's screen**; renders so far were headless.
+
+## Battery UI polish — 2026-10-18 (Claude Code)
+
+App icon, remembered page/range/size, keyboard shortcuts, `mseries-battery open`. 19 core tests + staging test pass; state
+restore verified headless. **Unverified:** the icon's look in the dock, shortcuts by real key press.
+
+## Claude account switch and Code context live verification — 2026-10-18
+
+Owner authorized switching from saved account1 to account2. The installed helper
+matches main's explicit-desktop-switch fix. Both saved app sessions and history
+preflights passed. The live combined switch stopped old main process72180 and
+reopened Claude as524238; CLI and desktop identity hints matched the requested
+target. Owner independently confirmed the correct main-UI account.
+
+The operation exported/imported34 local Code conversations, with zero unavailable.
+All34 destination records, transcripts and workspace directories exist; session,
+CLI transcript, cwd/originCwd, worktree and branch bindings match the source.
+Claude's own post-start logs loaded13 active records from the exact target index
+(nine imported plus four existing) and25 deferred archived records. Initial
+existingSessions=0 is logged before disk loading and is not a rejection signal.
+After clarification that the concern was the Code tab, owner confirmed the context
+is working. Separate CSP conversations are not merged with imported conversations.
+
+A read-only delegated loader review found no missing required schema fields or
+hidden-record flag defect. Regular Chat/Projects and Cowork remain outside this
+local Code import. An uncommitted optional automatic-focus experiment was removed:
+its launch did not yield reliable focus confirmation. No speculative navigation
+behavior is shipped. Production Claude helper40 and history15 tests pass.
+
+No credential values or raw conversations were printed or added to the repository.
+Wingpanel522634, Gala2678 and CodexBar daemon44641 remained running and healthy;
+no panel reload was needed for this live Claude verification. Account2 remains
+selected at the owner's request. The quiet crash watch continues.
+
+
+## CodexBar compact rows grouped by account — 2026-10-18
+
+Owner corrected the compact layout: the top row must contain multiple active
+account values, rather than only 7D. In dot mode the active 5H and 7D indicators
+now share the top row beside the provider mark; saved-account windows occupy the
+bottom row. Token visibility still follows its independent dropdown preference.
+Reset times stay hover-only. The same rule applies to all three providers, and
+single-account providers do not add an empty bottom row. Literal mode is unchanged.
+
+Native assertions check 5H/7D share a parent and alternate values appear below,
+in addition to existing percentages/hover/height checks. All 15 native targets passed the row correction; the light fixture was visually
+inspected before pushing. Owner then changed the numeric threshold: below 15%
+the written percentage is shown in bold red; 15% and above remains dot-only.
+Dot colors retain >70 green, 25–70 yellow, <25 red. Boundary tests cover 14/15. Owner's requested reload activated hover-only resets
+as panel PID513013 with Gala2678 and daemon44641 unchanged; the layout correction
+requires an additional reload under the same active request after deployment.
+No provider app switching or unrelated changes are part of this correction.
+
+
+## Claude desktop Switch no-op investigation and fix — 2026-10-18
+
+Owner clarified that confirming Switch never closes/reopens the main Claude app.
+A delegated investigation found the Indicator passes --desktop correctly and
+installed process matching points at the running main app. Saved desktop bundles
+have distinct non-expired session cookies; only sanitized identity/presence metadata
+was inspected, with no credential values printed or live account changes.
+
+Reproduced a concrete pre-stop no-op: app_switch returned early when config and
+capture UUIDs matched the target, calling only the CLI switch. Those UUIDs derive
+from lastKnownAccountUuid, a persisted hint rather than authenticated UI identity.
+Removed that shortcut. An explicit desktop switch now validates the target, stops
+the app, restores the pre-capture saved target, switches CLI if requested, and
+relaunches even when local hints match. Existing rollback and history checks stay.
+Regression verifies both app-only and combined flows restore the actual saved
+cookie fixture and invoke stop/restore/(CLI)/launch. All 40 Claude helper tests and
+15 history tests pass. No live Claude shutdown, switch, or session write was used
+for investigation/testing. This faulty path is reproduced in isolation; attribution
+to the owner's exact click and authenticated main-UI success remain unverified.
+Next: owner retries Switch and confirms the main UI identity; do not infer that
+identity from lastKnownAccountUuid or process existence alone.
+
+Helper takes effect on the next Switch after routine deployment, without any
+panel reload. Dot-mode hover-only reset code is installed but loads next login.
+Quiet Wingpanel/Gala watch remains healthy (panel491179, Gala2678, daemon44641).
+
+
+## CodexBar dot mode: reset details on hover — 2026-10-18
+
+Dot mode now omits bar reset countdowns for active five-hour/weekly quotas and
+alternate-account windows. Active-dot tooltips include the measured percentage
+and reset countdown (or explicit unknown/due-now state); alternate hover retains
+all window percentages and reset times. Literal mode and dropdown details keep
+their existing reset preference. No polling changes or new preferences.
+
+All 15 native targets pass, including no visible reset countdowns/arrows in dot
+mode, reset details on active hover, critical numeric values and <=32px height.
+Light compact rendering inspected: the same fixture's minimum width drops from
+about 634px with countdowns to 368px without them. This is a fixture measurement,
+not a promise for every account/provider combination. Upstream remains v0.77.0.
+Routine deployment installs native changes for next login; no new panel reload
+is requested by this batch. The existing quiet Wingpanel/Gala watch continues.
+
+
+## CodexBar second-row dots — 2026-10-18
+
+Owner requested matching visual dots for alternate accounts on the second row.
+The bar now uses the same remaining-quota thresholds and below-10 numeric rule
+for every saved-account window. Hover retains all account percentages and reset
+countdowns; popup account rows remain literal. All 15 native targets pass, with
+new assertions for alternate weekly dots and visible 5%/0% critical balances.
+Dark rendering inspected. Push to main and deploy with one owner-requested reload
+to activate this follow-up; the existing read-only stability watch continues.
+
+## CodexBar account caching and compact display choices — 2026-10-18
+
+OpenCode saved-account plans now cache for one hour and inactive-account quotas for
+five minutes, with per-endpoint locks, reset-boundary expiry, retry backoff and
+last-good stale results. Inventory is still read live from the read-only credential
+DB; active quota stays owned by upstream. Opaque account/workspace/sign-in hashes
+scope private 0600 JSON entries; credentials and raw provider replies are not saved.
+Refresh explicitly bypasses both caches, including a click during an in-flight read.
+
+Native Settings > Display adds Quota style (Literal percentages / Visual status
+dots) and Token counts (Menu bar and dropdown / Dropdown only). Active five-hour
+and weekly dots use remaining quota: green >70%, yellow 25–70%, red <25%; numbers
+appear below 10%, and hover always reports the measured percentage. Literal mode
+remains the default; dropdown quota details stay literal in either mode. Alternate account summaries use the same dots and retain all values on hover. Hidden bar tokens remain in all three
+provider dropdowns. Logos shrink from 14 to 13 px. Weekly quota/reset stays on the
+top row for Codex and Claude even when tokens are hidden.
+
+Validation: all 15 native targets pass, including dense-dot boundary checks,
+preference persistence, token visibility, hover text and <=32 px two-row rendering;
+31 OpenCode helper tests cover TTLs, force, backoff, reset crossing, concurrent
+misses, isolation/removal and cache sanitation. Light Settings and dark compact
+renders inspected. Upstream remains v0.77.0. Owner requested main push and local
+activation; deploy with one explicit reload after pushing. Prior panel PID432982,
+Gala launcher PID2678 and daemon PID44641 were healthy in the read-only watch.
+Commit 390f63f was pushed directly to main at the owner's request. Deployment
+passed all 15 native targets and reloaded Wingpanel once: PID432982 → PID477816.
+The short missing/recovered watch transition corresponds to that authorized reload,
+not a crash. Gala PID2678 and CodexBar daemon PID44641 stayed running. Enabled
+compactQuota=true and showTokens=false locally, preserving all other preferences.
+Initial post-reload watch is healthy; the known empty-FlowBox startup warning
+persists. The existing quiet watch continues; extended soak remains ongoing.
+
+
+## CodexBar weekly quota beside top-row tokens — 2026-10-18
+
+Owner clarified the top row must contain tokens AND the active seven-day percentage
+and reset countdown for both ChatGPT/Codex and Claude. Added those weekly values
+beside the token total; five-hour quota and alternate accounts stay below. Existing
+percentage/reset preferences and missing-data behavior apply. The bar digest includes
+weekly changes; the native probe verifies token/weekly percentage/reset share a row.
+All 15 native targets pass; two-row height remains <=32 px. No polling changes.
+
+The prior owner-requested single reload activated the previous build as PID 408824,
+with daemon PID 44641 preserved. Both survived 120 seconds without a new coredump
+or popup/accessibility errors. The known empty-FlowBox startup warning remains.
+This correction is staged by routine deployment; no additional reload is issued.
+
+## CodexBar: token totals lead ChatGPT/Codex and Claude — 2026-10-18
+
+Moved those providers' seven-day token counts to the top row beside their marks.
+Active quota/reset details and any alternate-account summaries share the lower row;
+OpenCode retains its quota-first layout. Missing totals retain the existing fallback,
+and display preferences/stale coloring remain respected. No helper or polling changes.
+All 15 native targets pass; the token probe now asserts actual vertical label positions
+for all three providers and the <=32 px two-row height. Light/dark and hidden-account
+renders checked. Routine deployment stages this native layout for next login without
+restarting Wingpanel; the quiet crash/launcher watch remains active.
+
+## CodexBar performance/modularity audit and quiet stability watch — 2026-10-18
+
+[Audit, evidence and remaining work](CODEXBAR-PERFORMANCE-AUDIT-2026-10-18.md).
+Shared read-only OpenCode history now filters the 30-day window before JSON decoding
+and streams period aggregation; no lifetime `fetchall`/record list. Synthetic unindexed
+20,000-old/100-recent-row comparison: equal totals, 371.25 → 17.56 ms median under
+tracemalloc, 46.96 → 0.01 MiB peak Python allocation. This is not a whole-panel benchmark.
+Native `HelperProcess` centralizes bounded asynchronous read helpers (5s snapshot,
+30s local, 120s account deadline, 4 MiB stdout); login/switch actions are excluded.
+Helper completion repaints cached data without extra snapshot IPC; session rendering
+uses already validated data. Common native source lists prevent probe/module drift.
+Backoff exponent arithmetic is bounded; effective retry policy/cadence is unchanged.
+Fifteen native targets, eight performance/watch regressions, helper/deployment and
+six image-wiring tests pass; full v0.77.0 live port/schema check passes.
+
+Installed `codexbar-wingpanel-watch.py`; this chat's “Watch Wingpanel stability”
+heartbeat runs every five minutes, quiet while unchanged. It observes the panel and
+Gala launcher, process identities/metrics and bounded categorized journal/core metadata;
+no raw core, environment, journal text or credentials are persisted, and it cannot
+restart the desktop. PID changes alone remain unclassified. No new core since the
+prior popup fix. Panel PID 335310 / Gala PID 2678 stayed healthy through 80.2 seconds,
+RSS 192,928 KiB, FDs 50; its earlier 14:23:25 restart has no crash attribution.
+Routine deployment installs Python improvements for their next invocation and stages
+the native performance changes for next login; no reload issued for this audit.
+Next: normal-use monitoring, then scoped account caching and large-transcript benchmarks.
+
+## CodexBar labels and confirmed popup lifetime defect — 2026-10-18
+
+Removed “local” from the seven-day panel/card labels and moved counting scope into
+Settings > About, using the native GTK About dialog. No polling or accounting changes.
+Saved-core analysis found GTK flushing a destroyed popup surface (zero references,
+NULL display). A pinned Wingpanel production-class fixture reproduces the matching
+finalization/accessibility failure when an open indicator is removed before a switch
+or close. The new lifetime patch keeps the previous anchor alive until detachment;
+all four switch/close × animations on/off regression cases pass. The original fails.
+The full patched Wingpanel build, 13 native CodexBar targets and v0.77.0 live port/schema
+check pass. Existing full-height/notch and clock-right patches remain applied.
+See [investigation and reproduction](CODEXBAR-CRASH-2026-10-18.md), including the
+fixture setup limitation and why the exact original indicator remains unidentified.
+Activated with one recovery `deploy-codexbar.sh --restart`; the patched core and
+module inodes were verified loaded in Wingpanel PID 319737 throughout 63.4 seconds.
+Daemon PID 44641 was preserved. No new coredump or popup/accessibility warnings;
+one initial empty-FlowBox warning is recorded separately in the investigation.
+Sampled RSS 194.72–199.19 MiB, descriptors 52–68, average CPU 1.21% of one core.
+This bounded observation does not establish long-run stability. The panel and About
+changes are active. Next: normal-use observation; do not reload again for routine deploys.
+
+## Orchard soak closed with existing evidence — 2026-10-18
+
+Final report: `docs/orchard-soak.html`; evidence and raw samples under
+`mseries/orchard-incus/audit/2026-10-18-soak/`. The installed Python manager
+(runtime hashes match merged `9747eb0`) ran on Wayland/Vulkan/blueberry for
+99.36 minutes, seven cycles 15 minutes apart. All 70 developer operation groups
+passed and owned guests were removed; the window closed before cycle eight.
+This is **not** a completed two-hour qualification. The separate ordinary
+window observer ended after 26 minutes and is not a full-duration control.
+
+Using 87 minutes of settled inactive idle intervals (discard first 60 seconds
+of each idle and last ten seconds before closure), app CPU averaged 0.1704%
+of one core; reaped CLI children 0.0513% separately. Incus/VM/compositor costs
+are excluded. Per-cycle idle CPU stayed 0.162–0.184%. Settled RSS medians rose
+186.25 → 190.14 MiB (+3.89); private 69.22 → 74.77 (+5.55); PSS +0.33 MiB.
+Output buffers returned to zero every cycle; rows/cards/histories stayed two,
+read/timer slots two; GC-tracked objects fell 30,682 → 29,881. FD baseline moved
+47 → 49, then 49–51 for the last three cycles. Small memory/descriptor growth
+is observed, not attributed to a proven leak or dismissed as cache growth.
+
+Three complete observed navigation probes: 18 actions each, p95 28.34/30.67/
+30.77 ms; highest action delay 68.11 ms. A six-action partial probe retained
+a 2,774 ms frame latency / 2,766 ms feedback gap. Three probes had unavailable
+presentation feedback and failed in the old empty-median calculation. Causes
+of sparse feedback, the large outlier and window closure remain unestablished;
+these are programmatic GTK actions, not physical input-to-photon measurements.
+
+Merged runner fixes explicitly classify absent/partial feedback, save each
+probe before reporting failure, require action coverage/cycle count/duration
+for a pass, and bound retries for transient Incus update-lock cleanup failures
+with owned-name/creation-token checks on every retry. Scheduling and per-cycle
+resource/frame receipts from the original soak extension are included. Removed
+the proposed focus-raising option. The application runtime is unchanged.
+
+Before the stop request: 123 Python tests, 117 passed and six opt-in tests
+skipped, including six new frame-feedback cases. Final cleanup retry and
+qualification bookkeeping are reviewed only; no further tests/CI, app launches
+or desktop reloads are performed under the owner's explicit instruction.
+The 4.5-second follow-up was cancelled; its busy-lock cleanup initially failed,
+then the stop cleanup removed its sole owned fixture. All audit processes and
+scheduled checks remain stopped. Next work requires a new owner request; do
+not restart soak testing, raise windows or reload the panel automatically.
+
+
+## Screenshot deployment repair — 2026-10-18 (Codex)
+
+Found why the first post-login test could still fail: installed Gala had the earlier click-only
+picker (`picked_point` symbols); rebuilt from main with Space/highlight (`update_hover` now present).
+New binary takes effect at next login. Shelf was absent: autostart generator rejected literal `%h`
+in Exec. Installer now renders quoted absolute paths for shelf and Markup. Installed both; desktop
+validation passes. A synthetic Screenshot PNG triggered `showing`, then `expired` four seconds later.
+Sound asset exists and event sounds enabled; audible capture and highlight/drag-out remain unverified.
+Next: owner re-login, Cmd+Shift+4 → Space → hover → click. Recovery commands in screenshot-shelf/README.md.
+
+## CodexBar deployment follow-up: avoid unchanged icon invalidation — 2026-10-18
+
+The local-token change was activated with one requested reload and passed its first 61-second
+observation. Later routine post-push deployments produced GTK popover/accessibility warnings at
+14:02:56 and 14:03:08, exactly when identical provider marks were reinstalled and the global icon cache
+refreshed. Wingpanel PID 233125 then SIGSEGVed in libgtk-4 at 14:03:09 and auto-recovered as 248867.
+This is a confirmed crash, not an intentional second reload. The stack does not prove which widget
+owned the bad popover, so the relationship to icon invalidation remains an inference.
+Deploy now byte-compares provider icons and refreshes the global icon cache only when a mark changes.
+This removes unnecessary live icon-theme invalidation during code/docs-only deploys. Stubbed deployment
+tests verify no icon/cache writes for identical marks, a single cache refresh for changed marks, and
+unchanged explicit-only panel reload behavior. Native token code is unchanged; no second intentional
+reload is needed. Quiet-path verification: all 13 native targets passed; no icon-cache command was invoked for
+unchanged SVGs. Recovered Wingpanel PID 248867 and daemon PID 44641 remained unchanged during
+61.1 seconds of observation, with no new panel journal messages. Sampled median CPU
+0.39%, RSS 193.55–248.36 MiB, descriptors 52–106;
+this is a short survival check, not proof of leak freedom or a resolved GTK root cause. The installed
+sessions helper confirms non-negative seven-day totals for all three applications. Counts remain active.
+No additional intentional menu-bar reload was issued.
+
+## Seven-day local tokens for all three providers — 2026-10-18
+
+Added `7d local` processed-token totals for Codex, Claude Code and OpenCode in the two-row panel.
+Counts sit beside alternate-account summaries when present; the tooltip explains machine-local scope,
+all local accounts/providers, cache inclusion and separation from account quota. All three now use the
+sessions helper rather than mixing OpenCode Go-only cost data with whole-application activity.
+Codex indexes active/archived JSONL token events, ignores repeated cumulative counters, deduplicates
+copied history by usage-event fingerprint, and uses last-call usage (or differences after a baseline),
+never a recent thread's lifetime sum. Claude now includes cache reads; its v2 cache invalidates old
+excluded-cache answers. Shared `codexbar_tokens.py` accounts for provider-specific disjoint fields:
+Codex authoritative total/input+output without adding cached/reasoning subsets again; Claude's four
+input/output/cache categories; OpenCode authoritative total or disjoint components. Both OpenCode
+readers share that function. Installers, deploy, image payload and deployment fixture ship the module.
+
+No new network requests or polling cadence changes. Only changed transcript files are reparsed;
+private caches store usage metadata, not transcript messages. A real-data first read took 1.608s,
+then 0.188s with existing caches (one active transcript changed during the run). Thirteen native Meson
+targets pass, including a real three-provider panel assertion and <=32 px height check; helper tests
+cover identical processed totals, duplicate/archive events, resets, malformed data, cache reuse and
+append invalidation. Full port check validates upstream v0.77.0 and live snapshot schema.
+Owner-authorized activation completed with exactly one `deploy-codexbar.sh --restart`.
+Confirmed installed module inode 320944 was loaded; Wingpanel PID 233125 stayed unchanged
+for 61.0 seconds, CodexBar daemon PID 44641 preserved. No new panel journal messages or
+coredumps since activation, sampled CPU median 0.30%, RSS 165.33–169.2 MiB,
+file descriptors fixed at 49. Both native typography and local token changes are active. No real
+account switch performed; long-run behavior and owner visual confirmation remain outside this smoke check.
+
+## RepoBar port in progress — 2026-10-18
+
+`codex/repobar-elementary-port` now includes a searchable GTK/Wingpanel
+dashboard, pin/hide filters, issue/PR/CI/release/activity summaries, API quota
+visibility, a scriptable CLI, private persistent caches/settings, and bounded
+local checkout scanning. Local sync requires explicit `--yes`, a clean attached
+branch, and a fast-forward-only update. The dashboard uses elementary OS GTK
+controls. Installed and activated in the live Pantheon session on 2026-10-18;
+the module appeared in Wingpanel and its toggle opened the indicator. An
+authenticated refresh returned 85 repositories. The first refresh exposed an
+invalid GraphQL connection query; that was fixed by moving pagination/order
+arguments to the connections and using smaller 25-repository pages. PR #175
+merged topic search, a Local view, and nested per-repository disclosure sections
+for issues, pull requests, CI, releases, activity, commits, branches, and tags;
+each category fetches only when expanded. Python syntax, the Vala/Meson build,
+and all eight authenticated endpoints passed. The merged module was installed
+with `sudo ninja -C /tmp/repobar-verify-codex install`; the user helper was
+copied and compared with the source, then Wingpanel was reloaded once and the
+indicator toggled open. The follow-up replaces the text badge with a bundled
+theme-tintable GitHub mark in the hicolor symbolic icon theme; the installer
+refreshes that theme's cache and uninstall removes the icon. GTK's icon-theme
+lookup found it as a symbolic icon, and the reloaded Wingpanel maps the latest
+module. The build emits a GTK CSS provider deprecation warning and generated C
+warnings. Traffic/cloner charts, a heatmap UI, multi-account UI, and launch-at-
+login controls remain outside this iteration; see `mseries/REPOBAR-PORT.md`.
+RepoBar now uses the installed CodexBar indicator's compact elementary OS
+tokens: matching 9 pt body and 8 pt caption typography, 6×10 px cards with the
+same subtle surface and radius, consistent popover insets, and a rounded
+refresh dock. The scope picker and repository details retain their needed
+width. Its native module builds and is installed in Wingpanel. The running
+panel was left alone; the new styling loads at next login or a later explicit
+panel reload. No CodexBar source or running panel process changed.
+The same repository snapshot now includes commit totals on each default branch
+for rolling 1-hour, 24-hour, and 30-day windows. The Wingpanel card presents
+the three counts together; GraphQL retrieves their aggregate totals alongside
+the existing paginated repository query, and the counts follow its five-minute
+cache. Built and installed the module without restarting Wingpanel, copied the
+helper to `~/.local/lib/mseries/repobar.py`, and confirmed it matches source.
+`$HOME/.local/bin/mseries-repobar --refresh snapshot` returned commit-count
+fields for all 85 repositories; aggregate totals were 60/550/3,471 across the
+three windows. The new indicator appearance is installed but awaits next login
+or an owner-requested panel reload.
+
+## Consistent CodexBar panel typography — 2026-10-18
+
+Owner approved the compact OpenCode appearance and requested the same text sizes for Codex/Claude.
+Promoted the OpenCode sizes into shared panel styles: primary values 7.5 pt, reset countdowns 7 pt,
+secondary rows 6.75 pt. Removed provider-specific font overrides; popover text is unchanged.
+Verified native light/dark render probes with all three providers, including alternate accounts;
+the routine deploy also builds and runs all 12 native targets. Upstream stays v0.77.0.
+Installed/staged without restarting Wingpanel; native appearance loads at next login or an explicit reload.
+
+## Compact two-row OpenCode panel — 2026-10-18
+
+Owner requested denser OpenCode information in the desktop bar. The active OpenCode quota/reset
+uses 7.5/7 pt text and 2 px spacing; its second row uses 6.75 pt text. With one saved account,
+move the machine-wide seven-day token count below the quota instead of appending it to the top row.
+With alternate accounts, retain their quota row and keep local tokens in the full tooltip/popover.
+The token count participates in the panel digest so cached local updates refresh the lower row.
+Existing percentage/reset/account visibility preferences remain respected; no polling changes.
+Verified: native build, all 12 Meson targets, isolated light/dark render probes for single/alternate
+OpenCode accounts. Upstream remains v0.77.0. Deploy stages the module without restarting Wingpanel;
+this appearance change loads at next login or an explicitly requested reload. Live appearance pending.
+
+## CodexBar fixes activated and observed live — 2026-10-18
+
+Owner explicitly requested one menu-bar reload. Ran `bash mseries/deploy-codexbar.sh --restart`
+from the reviewed audit sources; all 12 native targets passed before installation. Our one reload
+activated the defensive JSON fixes and preserved CodexBar daemon PID 44641. `/proc/<pid>/maps`
+matched the installed `libcodexbar.so` inode (320683), rather than the previous deleted mapping.
+Two subsequent observation windows were interrupted by separate Bluetooth control installation/reload
+work; no Wingpanel coredump was recorded. No additional reload was issued by this task.
+
+Final uninterrupted live window: 182.7 seconds, Wingpanel PID 125428 unchanged,
+daemon PID 44641 unchanged, loaded module checked throughout. RSS 166.53–170.89 MiB,
+median sampled CPU 0.39%, file descriptors fixed at 49. No new journal messages for this
+panel during the window and no Wingpanel coredumps since activation. Read-only live snapshot:
+schema 1, two providers/four quota windows, not stale or busy, zero provider errors. All PR #164
+CI checks passed. This verifies activation and short-run polling survival; long-run behavior and
+owner interaction with the live popover/account switches remain unverified. No real account changed.
+
+## CodexBar defensive data audit — 2026-10-18
+
+Audited the native indicator's delayed callbacks, async parameter ownership, JSON ingress/rendering,
+widget/JSON references, helper process targeting and polling guards. Generated C confirms the remaining
+string captures and post-yield dialog titles are copied; no additional dangling-array use was found.
+The concrete unsafe boundary was nested helper/snapshot data: null session/account/window elements and
+wrong scalar types reached native renderers. Added shared `JsonBoundary` validation at every external
+JSON ingress and checked optional getters in the indicator, presentation and quota code. Rejects wrong
+collection elements/types, excessive depth (>24) and traversal (>20,000 nodes), while preserving nullable
+optional fields and unknown keys. No extra polling. Claude Switch now also requires a successful helper
+exit, rather than trusting an `ok:true` reply from a failed process.
+
+Verified: old indicator aborts under fatal-critical ingestion probe (`build_session: session != NULL`);
+new code rejects seven malformed snapshot replies, tolerates malformed helper collections, and recovers
+on valid data with no GLib criticals. Five Switch interactions include Claude `ok:true` plus exit 1.
+Twelve native Meson targets and `bash mseries/check-codexbar-port.sh` pass. Upstream pin stays v0.77.0.
+Routine deploy stages the native module without reloading Wingpanel; changes load at next login.
+No real sign-in or account switch exercised. Follow-up: owner smoke-test after next login; native code
+still shares Wingpanel's process, so regression tests reduce risk rather than providing crash isolation.
+
+## CodexBar Switch crash and disruptive deployment — 2026-10-18
+
+Confirmed real Wingpanel SIGSEGV at 12:59:20 in `switch_codex_account_co` from `libcodexbar.so`.
+Reproduced with the current indicator in an isolated Xvfb Switch interaction: confirmation captured a borrowed
+argument array after its originating row callback had freed it. Replaced the array with an owned scalar account ID
+through confirmation and async execution. Invalid JSON helper replies are now rejected without object dereferences.
+The same interaction now passes for success, null, array and invalid replies, preserving the exact chosen account.
+
+Separately, our deploys intentionally restarted the whole panel at 13:21:50 and 13:22:21; later reloads coincide with
+other indicator installs. Routine `deploy-codexbar.sh` now installs without restarting Wingpanel or CodexBar;
+`--restart` explicitly reloads Wingpanel and never quits a running CodexBar daemon. Helper updates take effect on
+next invocation; native module changes wait for login or that explicit reload. Working agreement updated accordingly.
+Verified: reproducer SIGSEGV before fix; four successful headless interaction cases after fix; stubbed deployment
+checks default/--no-restart/--restart and invalid options without signaling real processes. All nine Meson targets
+pass, including four registered Switch interaction cases. Applied one controlled reload to activate the crash fix;
+the existing CodexBar daemon PID 44641 was preserved. No Claude/ChatGPT account was changed in testing.
+
+
+## Claude Code history across desktop account switches — 2026-10-18
+
+Root cause: transcripts persist in `~/.claude/projects`, but the desktop Code sidebar is account/organization scoped.
+New `codexbar_claude_history.py` privately exports the departing local Code history after the app exits, then adds
+only missing resume entries under the selected account/org before launch. IDs and workspace paths are preserved;
+existing records/transcripts are never overwritten. Backups include checksummed transcript bytes, reused by content.
+No regular Chat-tab/Cowork/cloud history import and no automatic message sending. The confirmation explains local
+Code context carry-over, and the result reports added/existing/unavailable counts. All installers/deploy and the
+image payload ship the module (payload also now includes the already-required cache/sessions helpers).
+[Evidence, storage, recovery and limitations](CODEXBAR-CLAUDE-HISTORY.md). Upstream remains v0.77.0.
+Verified: 15 isolated history tests, 39 Claude lifecycle tests and full `check-codexbar-port.sh` (all helper suites,
+native panel build, five Vala targets and live snapshot schema) passed; staged rehearsal of 38 real local records copied 34,
+then zero duplicates, then four back while retaining 34 existing; no live profile changes. Live desktop switch and
+opening a transferred conversation remain unverified. Next: owner switches once and resumes a prior Code workspace.
+
+## Orchard panel: icon and running-instance count — 2026-10-18
+
+Removed the CPU/memory circles from the native Vala Wingpanel companion.
+The panel display now contains exactly the Orchard tree icon and running-instance
+badge (including zero; a dash still means Incus is unavailable). CPU/memory
+captions and bounded graphs remain available in the popover. Removed the unused
+ring widget and its periodic `/proc/meminfo` read. Updated the source-pinned
+parity ledger to describe this owner-requested adaptation.
+
+Verification: native ARM64 build and all five Meson suites pass; the panel
+fixture also passes explicitly on Wayland through counts 2 → 0 → 0 → — → 1,
+asserting no third display widget throughout. Installed only `liborchard-incus.so`
+atomically and reloaded Wingpanel. The live accessibility tree contains one
+image and one label (`2`), matching the two running Incus guests; the loaded
+module's SHA256 matches the tested build. Manager windows/guests were not changed.
+Evidence: `mseries/orchard-incus-native/audit/2026-10-18-panel-icon-count.json`.
+This panel check is separate from the Python manager's unfinished multi-hour soak.
+
 
 ## Dock hotplug/startup findings and obsolete module cleanup — 2026-10-18
 
@@ -271,6 +982,38 @@ advancement, failure recovery and all existing agenda modes/navigation.
 The release build is installed; real task/event row comparisons are read-only
 and pass. Six image-wiring tests pass. No personal task was completed by tests.
 [Behavior and tests](calendar/README.md#completing-tasks-in-the-panel).
+
+## Speech catch-up: installed ANE branch reconciled, translation still pending — 2026-10-18
+
+Read-only inventory confirmed installed stream-dictate.py, dictation_ane.py and
+input client match claude/dictation-fallback d0ee4a655d0e7207942c1b6c87e3ee368d321a30
+exactly. Live speechPID1045220 selects ANE/toggle/no-popup; bridgePID918315 active.
+This supersedes the earlier CPU runtime checkpoint, without reassigning its human
+acceptance or benchmarks to ANE. Main already includes PR120/122. This integration
+preserves the newer rolling/toggle/fallback branch and all concurrent main changes;
+the only merge conflict was appended handoff entries, both retained. No live
+payload, settings, process, microphone, owner window or native runtime changed.
+
+52 main contracts and56 branch contracts pass without model/audio. Initial flat
+harness copy omitted relative imports; corrected directory layout passes56, original
+harness error retained privately. Installed-source hashes and scope are recorded
+in work/dictation-catchup-2026-10-18/receipt.json outside the public repo. The source
+README's offline ANE latency measurements are inherited evidence, not a new matched
+benchmark. Rolling ANE performs English transcription; native panel translation
+still waits until speech ends. The default4B is inactive after its fan-limit guard;
+no forced restart or duplicate worker. Permanent upstream-watch remains active.
+
+Integration is a candidate, not promotion on contract tests alone. Review must cover
+pending decode/warm threads on cancellation/pressure, bounded worker IPC/deadlines,
+typing-interrupt queue races and compatibility-fallback refusal paths. Existing
+contracts do not establish those ANE concurrency/runtime guarantees or sustained
+quiet behavior. Preserve the working installed version until a qualified update.
+Then build optional translated previews while speaking and final grammar, using
+one existing4B request at a time and preserving the six-GiB reserve/original text.
+
+PR118 merged73621aa, all5 checks39141068986 passed, Pages39141247806 succeeded.
+Canonical report200 matches current reviewed docs, SHAd11c654d144368af35986dbe251f1fb2d
+b497df147bc08530ace89e2c08f482d. Earlier failure/quality evidence remains retained.
 
 ## Native Dictation deployed; owner F5-to-field pass — 2026-10-18
 
@@ -4696,6 +5439,27 @@ provider/opencode.ts and integration.connection.resolve (native activation event
 https://dev.opencode.ai/v2/docs/cli/commands/ and /providers/. No upstream code was copied. CodexBar
 remains pinned to 0.77.0. Publish, merge to main and deploy as explicitly requested.
 
+## Network panel: compact low rates and Command-hover — 2026-10-18
+
+`network-panel-compact.patch`, applied after saturation by `install-network-throughput.sh`, shows `<1 MB/s` independently for down/up below 1,000,000 bytes/s. The panel retains decimal byte units and its existing 10-second average. Command (Super/Meta) while hovering reveals the existing measured B/s, kB/s or MB/s values; releasing it or leaving restores compact values. A motion controller samples modifiers every 50 ms only while hovered so pressing Command after entering works without keyboard focus. Unmap/dispose removes the hover timer; dispose also removes the rate timer. The less-than label is escaped before Pango markup, preserving saturation highlighting. The image payload already ships every patches/*.patch file.
+
+Verified: all installer patches apply against pinned panel-network `8685ec8e55a45e48da0c12931a353cd440d11664`, full release Meson/Ninja build and link, no missing shared libraries, bash syntax check. An isolated GTK/Xvfb harness checked 0, 999, 1,000, 999,999, 1,000,000 and 2,000,000 bytes/s in compact/exact modes and the rendered literal less-than. Installed with `bash mseries/install-network-throughput.sh`; Wingpanel reloaded and remains running, no network/markup errors in the reload logs. Live Command-hover by eye remains unverified; next check is owner hover/Command/release on the menu bar. This affects the compact panel text; popover graph readings retain their existing precision.
+
+## Battery watts switch and network hover repair — 2026-10-18
+
+Owner reported Command-hover did not work. This desktop uses `ctrl:swap_lwin_lctl`, so physical Command maps to Control, which the original mask missed. A keyboard injection harness confirmed Control support, but Wayland modifier updates also depend on keyboard focus. The final fix avoids this dependency: hovering anywhere over the network icon/readout reveals measured values, with Command optional; leaving/unmapping restores compact `<1 MB/s` values. The motion controller now attaches in capture phase to the whole display. The modifier polling timer was removed. The existing 10-second network sampling interval remains.
+
+Battery menu now includes **Show Watts in Menu Bar**, alongside Show Percentage. `panel-power-watts-toggle.patch` adds a shared per-user preference in `~/.config/mseries/battery-meter.ini`, enabled by default; binding it to the watts revealer visibility keeps it hidden across sensor updates and restores the latest reading when re-enabled. `install-battery-eta.sh` applies the third patch; no system GSettings schemas are changed.
+
+Verified: both full release Meson/Ninja builds; installer bash syntax; GTK harness for whole-display hover, leave and unmap transitions; battery switch binding, immediate hide/show, hidden state across fresh readings, saved-off reload in a second process. Both installers ran on the desktop; power restart passed the repair script's survival check. Final network build/reinstall and panel survival verified. Live hover and switch by eye remain for the owner. Changes committed/pushed on the dedicated network-panel-compact branch because the shared checkout branch has divergent remote history; unrelated working files are preserved.
+
+## Ethernet panel icon: recognizable socket — 2026-10-18
+
+Owner found elementary's connected Ethernet glyph (`<…>`) unrecognizable. `network-ethernet-icon.patch` replaces the bundled 16/24px connected wired assets with a monochrome Ethernet socket/contact glyph and preserves a padlock on the secure/VPN variant. Icon names, network-state selection and Wi-Fi/cellular assets are unchanged. The installer applies the new patch after the compact panel patch; image payload already includes all patches. New vector artwork is CC0-1.0, attributed in the SVG headers.
+
+Verified: full network module rebuild; connected and VPN assets rendered through GdkPixbuf and visually inspected; installer applied the full pinned patch series and installed/reloaded Wingpanel. Live panel appearance by eye remains for the owner.
+
+
 ## brave-youtube: Widevine provisioning hardened + tested — 2026-10-18
 
 `brave-youtube` now provisions Widevine (copy from the normal profile, else the pinned installer) before the first browser start, with a private (umask 077) profile, a per-launch D-Bus proxy dir so parallel profiles do not unlink each other's socket, and installer `curl` timeouts. New offline `video-decode/test-youtube-launch.py` (6 tests) runs in CI with `shellcheck -S warning`. Verified: tests pass, shellcheck clean. Not verified: a DRM movie playing in the container (an owner-side run; the 480p Edge of Tomorrow sample in a Codex test profile was not a 4K/DRM-quality result), and 4K playback in the container is still unmeasured.
@@ -4709,3 +5473,306 @@ Follow-up (same day): `STREAM_ENGINE=ane` integrates the ANE engine into the laz
 ### brave-youtube DRM movie result — 2026-10-18
 
 Owner opened *Live Die Repeat: Edge of Tomorrow* in `brave-youtube` (default Linux user agent, Widevine provisioned by the launcher): it plays, and the quality menu tops out at **480p**. That matches Widevine L3; no user-agent spoofing was applied or is planned (it would not change the license server's L3 cap). Non-DRM 4K VP9 in the same window is still unmeasured.
+## Dictation: ANE rolling streaming, press-once toggle, typing fallback — 2026-10-18
+
+Live F5 service (not the repo default) now runs `STREAM_ENGINE=ane STREAM_MODE=toggle STREAM_POPUP=0` from `~/.config/systemd/user/mseries-stream-dictate.service.d/50-ane.conf`. F5 sends one clean KEY_F14 (captured raw); the earlier "pulse" was the refusal notification, not a volume key. Apps with no accessible field (Electron) now type through ydotool (`STREAM_UNVERIFIED_FALLBACK=0` restores strict refusal; sensitive/non-editable stay refused). The ANE worker warms while recording; every 0.6 s the segment is re-decoded and agreed words are typed (append-only), tail 0.6 s after the second F5. Owner's first live dictation worked (56 chars, about 2.8 s wait, cold). Not measured: warm live latency, words-per-second feel, thermals of repeated passes, mic accuracy (hiss/sensitivity blocker unchanged), a WER set. Omarchy Mac (omacom/omarchy-mac-pkgs) has no mic/F5 dictation key handling to borrow. Next: owner trial of rolling mode, then read the `ane dictated` log lines.
+
+## English streaming candidate checkpoint — 2026-10-18
+
+Owner clarified English speech → English text only. The candidate native panel now
+removes foreign-language/mode controls, preserves original words, and offers English
+grammar after speech with opt-in previews while speaking. Latest-only requests,
+coalesced GTK edits, stale result rejection and cached final reuse are covered by
+66 dictation contracts plus a private GTK4 wiring smoke. Finish now waits for the
+queued input barrier before Ready; Escape has a separate cancelled state. The
+older private clipboard harness was adapted to the new English-only API (not rerun).
+New file-only CPU/Moonshine/Nemotron, actual ANE controller, MLX Vulkan and private
+English panel harnesses retain source identities and completed failures. Existing
+six-hour branch watcher gains four explicit upstream speech refs; no new schedule.
+
+This is a source checkpoint on draft PR155, not deployment or acceptance of the
+whole ANE/fallback branch. Native worker IPC deadlines, decoder-thread close/
+interrupt races and unverified ydotool pending output remain promotion gates.
+The English panel/model trial passed on its frozen pre-coalescing source; the
+current edit coalescing fix passed a separate synthetic native UI regression.
+Neither proves microphone/F5 acceptance of the current candidate or a factory boot.
+No owner runtime, microphone, other app window, kernel or audio stack changed here.
+Next: publish the completed public-file benchmark/source audit independently, then
+address lifecycle gates and qualify the selected F5 integration before deployment.
+
+
+
+
+### Network/battery main integration — 2026-10-18
+
+Merged current main into the feature branch, retaining Battery History summary-card changes and its installer patch alongside the watts toggle. The combined power installer passes `--build-only` (full release compile/link, no unresolved libraries; no panel restart). Both installer scripts pass bash syntax checks. Documentation preserves both feature histories.
+
+## Native realtime English results publication — 2026-10-18
+
+Completed owned CPU/Moonshine/Nemotron, native ANE controller, MLX Vulkan and
+English GTK4 panel queues; all terminal, no duplicate workers or repeated completed
+quality cases. [Report](dictation/REALTIME-ENGLISH.md) and sanitized receipts record
+first drafts, committed-policy differences, all final errors, thermal/memory
+limits, model/source pins and the unsupported original Nemotron format. English
+speech → English text only supersedes prior foreign-language feature assumptions.
+Nemotron160 first draft0.851s median; MLX1.452s; ANE2.97s warm committed/4.26s cold.
+The English panel showed raw words1.290s and English suggestions2.598s from launch;
+original preserved. The later GTK edit coalescing regression is distinct from its
+frozen real-model cohort. See report for exact scopes and gates.
+
+Implementation checkpoint b62f720 is pushed on draft PR155:66 dictation contracts,
+72 assistant contracts and private native English wiring pass. No installed
+runtime/model default change. Native IPC deadlines/close races and focus-bound
+F5 integration still require work. Receipt export allowlists JSON/public source,
+excludes logs/audio/settings/signed URLs; checksums and snapshot mapping accompany it.
+Explicit speech refs augment the existing six-hour watcher, not another schedule.
+Publication PR must pass checks and Pages bytes must be verified before claiming
+main/site completion. Preserve current main owner changes; no CodexBar files changed.
+
+### English realtime publication verified
+
+PR162 merged as87f4a7b88c947d6c0d8e59cf3dd54aaf636ff3d2 after all five CI
+checks passed on7c38d0098e6081d77ae7ba749616e4b68c5e3894 (run39150486986).
+Pages39150573206 succeeded. Canonical local-ai.html returned200 and matched
+reviewed SHA256b64867bbe26fdd60fd08ab55b7e4e9e7707ba1f7b9888c3ccc621c52829b758a.
+The permanent six-hour watcher remains active (last observed success39142505984);
+four explicit speech refs are merged. Everyday4B remains active PID1568. Speech
+was already inactive after the external reboot; this phase did not restart it.
+
+PR155 remains draft. Reconciled published main/owner changes into this branch;
+kept both handoff histories and used the new English-only README status instead
+of the superseded translation/catch-up text. No model or microphone trials repeated.
+Next: native IPC deadlines and interrupt/close races, focus-bound selected-engine
+integration with draft/final presentation, then quiet English human F5 acceptance.
+Do not promote draft source merely because its contract tests or CI pass.
+
+## English F5 implementation in qualification — 2026-10-18
+
+Owner authorized completion, app qualification, merge and deployment, retaining
+ANE/MLX. English Nemotron CPU160 is the default candidate; new MLX Nemotron8bit
+cache-aware probe also completed (three zero-WER clip trials, ~1.1s firstdraft
+and ~4s finalflush, min13.56GiB /2528RPM), slower than the priorCPU path.
+Pinned scratchmlx-audio0.5.9 only, no owner's runtime package replacement.
+Native preedit is now focus-leased via IBus, with clearing on Commit/Finish/
+Cancel/focus loss. Native ANE IPC has bounded deadlines/framing/close/process
+ownership; optional Parakeet MLX uses the same lifecycle. Typing/cancellation
+revokes queued output; native rolling failures propagate.88 no-model contracts
+pass at this checkpoint. Existing owner jobs/audio/display/kernel untouched.
+
+A serialized owned queue tests actual current controller across private GTK3/
+GTK4/Qt6/Brave fixtures. First GTK3 finalwords matched and appeared during
+speech; an over-strict harness incorrectly required nonempty speculative preedit
+even though this ASR committed words directly. Retain the original failure;
+evaluate recorded early visible words under the corrected criterion without
+repeating inference. Real installed-app and optional voice checks are separate
+new cohorts. No microphone or physical F5 claimed tested by fileinput fixtures.
+No deployment yet; agent-owned installer/voice/realapp additions still in progress.
+
+### F5 app/voice follow-through checkpoint
+
+The new English selector/installer retains mode, adds bounded0–900s residency,
+stages all native/MLX/voice dependencies, uses streamed model backups/rollback,
+and restarts only owned speech/input services. No deployment yet.131 contracts
+pass including late output after native feed/finalize/fallback cancellation.
+Model-load admission is engine-specific and resident pressure checks use the
+standing six-GiB/2700RPM/63C speech guards. Newelle's actual composer exceeded
+the old24ancestor focus scan:64nodes plus the same0.6s budget fixes it.
+
+Browser rich-compose testing exposed a real Chromium behavior: focus loss can
+confirm speculative composition before IBus clears it, even with CLEAR mode.
+Retain those failed receipts. The final input policy suppresses native speculative
+Preview globally and streams stable committed words. Nemotron already commits
+early, so its actual words-during-speech behavior remains. Own English cleanup
+previews stay in the review pane. Tests/harnesses were updated to this explicit
+policy; do not describe speculative app preedit as a delivered feature.
+
+The optional English Voice Assistant backend passed synthetic text→4B→eSpeak WAV:
+first token1.733s, first WAV2.200s; independently nonzero1.794s PCM. No playback
+or microphone, no tools. Native private GTK wiring passes; automatic replies
+after F5 are OFF by default. This is half-duplex/robotic synthesis, not tested
+full-duplex WebRTC or natural voice quality. Sustained62.61s resident CPU/MLX
+trials and final actual app checks are still completing; retained CPU errors are
+1.19% WER on the repeated clip, not a general accuracy result.
+
+
+## Bluetooth in the far-right Quick Settings menu — 2026-10-18
+
+`quick-settings/Bluetooth.vala` adds a Bluetooth switch, saved-device Connect/Disconnect buttons, and Bluetooth Settings… for pairing. It talks asynchronously to BlueZ on the system bus using ObjectManager and Properties/Device calls, follows external radio/device changes, handles missing adapters/service and failed connections, and does not scan or pair automatically. Devices are sorted connected-first and only paired/bonded/connected devices appear. Radio changes apply to available adapters. A refresh guard avoids nested GTK mapping refreshes; the Granite switch description remains constant because assigning it again can try to reparent its label on this installed version.
+
+Both `install-quick-settings-brightness.sh` and the factory `build-quick-settings` apply the new patch and copy the widget; `enhance.sh` includes it in first-boot payload. No new runtime library is needed beyond GLib/GIO and existing GTK/Granite.
+
+Verified: full pinned Quick Settings release build/link; production-widget integration test on a private fake BlueZ bus covers saved-device filtering, Connect, Disconnect, connection-failure recovery, and radio off/on with fatal GTK criticals enabled. CI runs this test. A read-only GTK preview against the real BlueZ service rendered. Installed/staged via the normal installer without a Wingpanel restart; activation awaits explicit owner reload approval or next login. No actual Bluetooth radio or device state was changed by tests.
+
+Bluetooth activation follow-up: owner explicitly requested “Reload menu bar now.” Ran `python3 mseries/local-ai/repair-panel.py`; Wingpanel restarted and passed the survival check, and `/proc` maps confirm the installed Quick Settings module is loaded. Owner visual/device interaction check remains.
+
+### Remove duplicate Bluetooth icon — 2026-10-18
+
+Owner clarified that Bluetooth should appear only inside Quick Settings, not as a separate bar icon. New pinned `install-bluetooth-control-center.sh` builds elementary/panel-bluetooth at `f67e65d09a8ab046f54895a326273dce5c491430` (8.0.0, LGPL-2.1-or-later) with `bluetooth-control-center.patch`: session visibility is false rather than bound to adapter presence; the greeter keeps the original binding. ObjectManager and ObexManager continue to run, so hiding the icon does not remove those background services. The installer refuses to hide the icon unless the replacement Quick Settings widget is installed, uses the version-aware backup helper and an atomic module replacement, supports `--build-only` / `--uninstall`, and leaves reloading to the caller. The quick-settings installer invokes it after installing the replacement controls; first-boot payload carries the installer and patch.
+
+Verified full release compile/link and dependency check; isolated production-Indicator harness with stubbed services verifies session stays hidden through adapter changes, greeter visibility still follows adapters, and both retain ObexManager. Installed and reloaded Wingpanel to correct the confirmed duplicate-icon defect using the already-approved menu-bar reload; panel restart survival check passed. No Bluetooth radio/device settings were changed by the visibility patch.
+
+### Ethernet icon scale — 2026-10-18
+
+Owner requested 15% smaller Ethernet artwork. Connected 16/24px and VPN-lock assets now use an 85% transform centered in their existing canvases; panel allocation and text remain unchanged. Verified SVG transforms and rendered alpha bounds (within 1% of 0.85 for each dimension), then rebuilt/installed the pinned network module and reloaded the panel using the session-approved reload.
+
+Ethernet size follow-up (October 18): owner requested another 5% reduction from the current size. Artwork now uses `0.85 × 0.95 = 0.8075` of the original, centered at translations 2.31px (24px canvas) / 1.54px (16px canvas), including VPN badge. Full installer patch series and release build passed; extracted installed GResources confirm the transforms. Module installed and panel reloaded with existing session authorization.
+
+Ethernet size follow-up (October 18, second 5% step): owner requested another 5% reduction and explicit local deployment. Artwork is now `0.8075 × 0.95 = 0.767125` of the original, centered in both canvas sizes and the VPN variant. Full network installer rebuilt and installed the module and reloaded Wingpanel. Extracted installed GResources verify the new transforms; the running panel maps the installed module.
+
+### Sustained comparison and actual app outcomes
+
+Both resident62.61s CPU trials completed with tails0.048/0.062s, firstwords
+0.854/0.858s and1.19% WER. Both resident MLX trials completed:88.797/89.430s
+(total) with26.187/26.820s tails,1.084/1.059s firstwords and0.595% WER. MLX
+used19.15/19.77CPU-seconds versus76.52/78.98CPU-seconds, but fell behind input.
+Retaining it did not solve this port's realtime backlog. CPU remains the default;
+no universal hardware/power claim. CPU sensor-summary receipt save failed after
+completion (source digest enumeration included __pycache__); keep its completed
+results and missing telemetry flag, do not repeat it. Only unstarted MLX resumed.
+
+Actual Code/Newelle/Tasks ASR passed exact normalized English words, first
+committed1.671/1.839/1.885s; no Send/save action requested. Tasks required a
+genuinely focused entry through private headless Gala's virtual keyboard, not
+a relaxed input guard. Rich compose/textarea stable-only regression passes;
+no authenticated Gmail account test. Failures and frozen sources are retained.
+Canonical QUALIFICATION-INDEX.md plus JSON records every cohort and equivalence
+key so future work inspects evidence before launching any worker.
+
+Joined voicev1 completed real ASR and the actual UI completion gate, but its
+private-session service-health check refused the existing model before inference;
+that harness failure is retained. Resume should reuse the recorded ASR event
+trace and finish only the unstarted voice stage. No new microphone or playback.
+
+### Qualification complete; merge/deploy gates
+
+Actual Tasks ASR passed at1.885s firstcommitted words, exact normalized final
+English; source/receipt and genuine focus are retained. Joined voicev2 passed
+using37recorded real-ASR events fromv1 to finish only the unstarted voice stage,
+not duplicate ASR. Actual focused VoiceAssistant gate produced one model reply
+and nonzero English WAVs2.294s after replayed audio end. No fresh live/acoustic
+latency claim. Max2511RPM49.1C /min11.22GiB, no playback/microphone/tools.
+
+133 dictation contracts,72 assistant contracts and6 image-wiring checks pass.
+Private native English panel/voice wiring and actual app fixtures are recorded.
+The canonical qualification index/JSON and sanitized receipts retain original
+failures/source identities; two watcher sources add mlx-audio/transcribe.cpp to
+the existing six-hour workflow. Default deployment remains CPU Nemotron; native
+ANE and MLX Parakeet are retained options, residency0–900s yields to guards.
+Next: head-specific CI, merge PR155, run English installer on merged source,
+verify installed exact bytes/service mode/reserve/input-selection preservation
+and private installed app input, then publish deployment receipts/Pages proof.
+No owner test window, microphone, menu-bar restart, kernel or audio-stack change.
+
+Ethernet size follow-up (October 18, third 5% step): owner requested another 5% reduction and local deployment. Artwork now uses `0.767125 × 0.95 = 0.72876875` of the original, centered in 16/24px canvases including the VPN variant. Full network installer/build passed and reloaded the bar; installed GResource transforms and the running panel’s loaded module were verified.
+
+Ethernet size follow-up (October 18, fourth 5% step): owner requested another 5% reduction and local deployment. Artwork now uses `0.72876875 × 0.95 = 0.6923303125` of the original, centered in 16/24px canvases including the VPN variant. Full network installer/build passed and reloaded the bar; installed GResource transforms and the running panel’s loaded module were verified.
+
+Ethernet size follow-up (October 18, fifth 5% step): owner requested another 5% reduction and local deployment. Artwork now uses `0.6923303125 × 0.95 = 0.657713796875` of the original, centered in 16/24px canvases including the VPN variant. Full network installer/build passed and reloaded the bar; installed GResource transforms and the running panel’s loaded module were verified.
+
+Ethernet size follow-up (October 18, additional 10% step): owner requested another 10% reduction and local deployment. Artwork now uses `0.657713796875 × 0.90 = 0.59194241718750` of the original, centered in 16/24px canvases including the VPN variant. Full network installer/build passed and reloaded the bar; installed GResource transforms and the running panel’s loaded module were verified.
+
+### English F5 deployment audit: inherited debug capture
+
+Read-only predeployment audit found inherited STREAM_KEEP=1 in an older speech
+drop-in. No new microphone capture was made. The managed engine drop-in now uses
+systemd UnsetEnvironment for capture retention, dry/file-test insertion and forced
+fallback controls; older drop-ins remain byte-for-byte intact for rollback. An
+actual no-inference transient user unit confirmed these variables are absent in
+the child even when inherited assignments are present. Its sanitized receipt is
+work/f5-debug-env-v1/receipt.json. Deployed verification must inspect the live
+process environment because systemctl Environment still lists unset assignments.
+
+## English F5 shipped: canonical evidence, installed checks — 2026-10-18
+
+Read dictation/QUALIFICATION-INDEX.md and qualification-index.json first. All
+model/app/sustained/voice cohorts are terminal; do not restart old drivers. Agent
+instructions and README entry points now require reuse of completed evidence,
+including failures, and remove executable recovery commands for finished queues.
+Public source snapshots and separately sanitized byte hashes are checked by the
+permanent refresh-qualification-index.py; no new baseline is needed.
+
+PR155 passed all six head-specific CI jobs in run39152857333, merged as
+5c26ff6c2ff38c89c401c0d109a61244146868d8, then deployed via the reviewed English
+installer with the qualified uppercase Q8_0 artifact and separate optional MLX
+assets. All installed runtime/voice/panel/manager and model/library hashes match;
+strict live CPU4/IBus, toggle preference, input fingerprint, enabled listener,
+bridge readiness and the unchanged default4B passed. Managed UnsetEnvironment
+removes inherited last-capture/debug/test controls while retaining old drop-ins
+and private rollback. No owner microphone/window/menu bar/kernel/audio changes.
+
+Installed GTK4 public-file ASR passed exact normalized English, first committed
+field text2.608s from controller launch. GTK3/Qt6/Brave installed fixtures passed.
+Code/Newelle/Tasks initially stopped in argparse before app launch because the
+private queue omitted required --model; three exit2 attempts remain preserved.
+Only their unstarted --fixtures-only stages continued in f5-installed-v2, all
+passed. Those three verify field discovery/lease/cancel/stale refusal/restoration,
+not new positive insertion or ASR; reuse earlier pinned actual-app ASR for that.
+Aggregate supervisor samples: min10.48GiB available, max2530RPM/49.006C, no guard
+interruption. Post-fixture read-only preservation/readiness passed; all queues
+terminal, everyday4B and CPU F5 listener active/enabled, optional ANE/MLX retained.
+
+Implementation Pages run39152966394 succeeded; canonical HTTP200 matched reviewed
+SHA dc5434eec3c707f70942f2468b941287af673328a9527b6775fbfee50dfa9b9a.
+That proof identifies the pre-deployment-evidence page. This follow-up publishes
+sanitized installed/deployment/source receipts; final documentation CI/Pages
+verification is recorded in its publication PR body and task output after success.
+Fresh physical-F5/microphone, authenticated Gmail, natural/full-duplex voice,
+Calendar GUI/reminders, indefinite soak, power/battery and factory boot remain
+separate work. Six-hour developer tracking remains the existing workflow; the
+old completion heartbeat is already PAUSED. No duplicate automation was created.
+
+## Calendar + tab: Verse of the Day — 2026-10-18
+
+Added a third **+** tab (icon `list-add-symbolic`, title "Verse of the Day") to
+the datetime agenda patch `mseries/patches/datetime-agenda-tabs.patch` (same pin
+d0b3a703, same installer and factory path). New `src/Widgets/DailyVerse.vala`:
+Granite.HeaderLabel (H4, date as secondary text), plain body verse, dim
+reference, Wingpanel.PopoverMenuItem links (SermonAudio search, YouTube sermon
+search, Bible Gateway WEB) that close the popup. Verse list is a GResource
+`data/daily-verses.tsv` generated by `mseries/calendar/build-verses.py` from
+`verse-references.txt` (400 refs) and eBible.org's public-domain WEB VPL text,
+copied unchanged. Daily pick: Fisher-Yates over the list seeded by the year,
+indexed by day of year; refreshed on every popup open.
+
+Verified: `test-agenda.sh` 22/22 groups in light and dark on Xvfb/private D-Bus
+(new group: tab present, today's verse matches the bundled list, links present,
+no repeats in 2026/2027/2028, DST-safe, per-year reshuffle). Patch applied to a
+fresh pin checkout rebuilds a byte-identical library. All three link targets
+returned HTTP 200 with results for "John 3:16" on 2026-10-18.
+Not verified: the panel's own popover padding for the new menu items (preview
+fixture lacks Wingpanel's stylesheet, same as existing rows); real link clicks
+in the live session; factory image build.
+
+### Verse tab UX pass — 2026-10-18 (same branch/PR #211)
+
+Changes: Psalm headings come from the WEB USFM `\d` markers into a third TSV
+column (11 entries; the builder stops unless the heading exactly prefixes verse 1)
+and show as a dim small caption. Verse text is 1.12em with line-height 1.4
+(`data/DailyVerse.css`), vertically centered. The header row adds the calendar's
+linked ◀ Today ▶ control (Today is insensitive on today, reset on popup open).
+The date line reads "Today/Yesterday/Tomorrow · Weekday, Month day". Added
+Copy Verse with an in-place "Copied" confirmation and a bolder reference.
+Verified: 22/22 groups light and dark (two consecutive clean light runs). One
+earlier light run failed in the pre-existing late-account step ("No such source
+for UID agenda-late-account"), an EDS registration timing flake unrelated to
+the verse tab. The patch rebuilds byte-identically from the pin;
+test-image-wiring OK. Not installed yet: the desktop still runs the first verse
+build from 17:01. Not verified in the live panel: real clicks and Wingpanel
+menu-item padding.
+
+### Seasonal verses — 2026-10-18 (same branch/PR #211)
+
+Ten reserved feast-day verses, marked `@season` in verse-references.txt and
+stored in a fourth TSV column (empty trailing columns dropped, so the patch has
+no trailing whitespace). Fixed dates are Jan 1, Jan 6, Dec 24 and Dec 25.
+Western Easter (anonymous Gregorian algorithm) gives Ash Wednesday, Palm Sunday,
+Good Friday, Easter and Pentecost. US Thanksgiving is the 4th Thursday of
+November. `DailyVerse.choose (day, seasons)` replaces `index_for`: the reserved
+verse on its day, otherwise a per-year shuffle of the 394 unreserved verses
+(no repeats). The header shows "<Feast> · <date>". Christmas widened to Luke
+2:10-12 so the angel's quotation closes. Fixed a padded-date bug (GLib %e uses
+a figure space): the date is now %-d. 22/22 light and dark; 14 feast-date
+assertions for 2026-2028; patch rebuilds byte-identically; image wiring OK.
+Open question for owner: ~70 verses carry an unpaired quotation mark from their
+neighbouring verse (WEB text kept unchanged on purpose).
+

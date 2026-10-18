@@ -1,0 +1,36 @@
+{
+  "engine": "moonshine-small-ort",
+  "exit_code": 0,
+  "interruption": null,
+  "wall_s": 33.564458763999994,
+  "model_sha256": {
+    "adapter.ort": "c665f742364febad597cc9ac1e0b341ffbee0e24a1466e2f3bde95e6e4771762",
+    "cross_kv.ort": "e2d3417144e9514055ebfefe8dcc4c0a55a55adcb8530435844c75c53e352bf6",
+    "decoder_kv.ort": "1a05465b1dd955858dfcbee039c0020fb5dd982b0f5094c34e61735d518d771b",
+    "encoder.ort": "2d4d973e91e8aca08c51e7e7efa28a46ab265b63d809d5294d18b86bcd85b993",
+    "frontend.model.ort": "09b1210ae30dc5f0f3e45f0ebab914c254741323114f53fbbe5ae62cca35058f",
+    "frontend.weights.ort": "7ef97521bd4bad3928f5bb6808586f4fcc6e92bd5990394112eed7d4052ec338",
+    "streaming_config.json": "26f02b6afb22d60871a5efd85c3d38e569cc0ddb6c5eb6e93d3260152ae8a47a",
+    "tokenizer.bin": "6884b35fd6377d4c4d32336a0bc152f36b64d1e45b6503683cdc238250a8472d"
+  },
+  "identity": {
+    "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+    "policy": {
+      "reserve_gib": 6,
+      "max_fan_rpm": 3500,
+      "max_temp_c": 80,
+      "cool_fan_rpm": 2700,
+      "resume_fan_rpm": 2600,
+      "burst_s": 3,
+      "sample_s": 1
+    },
+    "harness_sha256": "28ef14bdf53bdf8c1c3f2c0d8040fd6f3481a5d44ae3f65ba55ff323ef379d69"
+  },
+  "resources": {
+    "samples": 62,
+    "min_available_bytes": 20449067008,
+    "max_fan_rpm": 2519.0,
+    "max_temp_c": 45.34
+  },
+  "quality_score": "See each retained WER, not a pass/fail quality aggregate"
+}

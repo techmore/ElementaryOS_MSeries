@@ -1,0 +1,31 @@
+{
+  "scope": "Installed bundle inventory observed after completed trials; upstream e2e claims intentionally excluded. Not a new dispatch trace.",
+  "pin_file_sha256": "33ec6f35e48733b6c48ea39145e42fb462dd891fa6cd69ebd0fa1edb370450fe",
+  "assets": {
+    "bundles": {
+      "island-attn-a-kt": {
+        "manifest.json": "e398bb44c65171239f867487419b35a7e8d9fd2a8e2255f3e045a5029101c49f",
+        "program-0.anec": "cf0ecac223e6fc8e4ee49d31544ed878d12c7466ccd715cdf4b89eb30b92db45",
+        "program-1.anec": "b801f6212f65da3f5ffdab3d6e21cd49e5ae0c16b709ff945de9aaee93fcb629"
+      },
+      "island-pv": {
+        "manifest.json": "39a3caaccc5f26a3f403407082d04f78fd10ef361ba96363d01e7bba438a7a29",
+        "program-0.anec": "3ae36f21cc4d3800c160e8952cfe118b8bcb4573543234c3e0fa3356a8761b5b"
+      },
+      "island-select-8head": {
+        "manifest.json": "121f100085927c8f7b8eb1ecfab37cca22b5461c59327c3f5c2eb1c106ebced8",
+        "program-0.anec": "0879c6277cf3d89888735ea69ef96d29fb492d43eacfe42a0f154f8f0f91c8eb"
+      },
+      "parakeet-encoder-whole": {
+        "manifest.json": "08769793f8ee3299381f499bf90537d620e23635000a6dbc54b9b5c6a55a54ab",
+        "program-0.anec": "13c744231524d440b0a774155343df9ade0bbcbc37edc4b1ccf9698e580d5453"
+      }
+    },
+    "libane": {
+      "libane-strict.so": "d06222a86f3bff26aaf1cec1223ade32f27cad84b994dccb1af9cca965a7da8c"
+    },
+    "worker": {
+      "mlx-omarchy-ane-worker": "f0401b5280afe0863c771c6db58f8d1a85c0e7e34f05e3085a042236699fb30c"
+    }
+  }
+}

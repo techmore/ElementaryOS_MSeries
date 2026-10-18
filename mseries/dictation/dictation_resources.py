@@ -17,4 +17,12 @@ def load_policy():
 
 
 def reasons(policy, extra_bytes=0, sample=None):
-    return violations(snapshot() if sample is None else sample, policy, extra_bytes)
+    sample = snapshot() if sample is None else sample
+    found = violations(sample, policy, extra_bytes)
+    # Speech's quiet boundary is inclusive, even if the shared desktop policy
+    # admits its exact upper bound. Do not alter other workloads' policy.
+    if max(sample.get('fans_rpm', {}).values(), default=9999) >= min(2700, policy['max_fan_rpm']):
+        found.append('speech fan boundary')
+    if max(sample.get('temperatures_c', {}).values(), default=999) >= min(63, policy['max_temp_c']):
+        found.append('speech temperature boundary')
+    return found

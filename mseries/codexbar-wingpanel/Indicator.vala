@@ -39,8 +39,9 @@ namespace MSeries {
         // The popover is rebuilt only when the data it shows changes, so an open
         // popover never flickers and the five-second poll stays cheap.
         private string last_digest = "";
+        private uint cached_repaint_source = 0;
         private int64 newest_update_unix = 0;
-        private string sessions_text = "";
+        private Json.Array? local_sessions = null;
         private string sessions_error = "";
         private int64 sessions_fetched_us = 0;
         private Json.Object? claude_data = null;
@@ -54,6 +55,7 @@ namespace MSeries {
         private int64 opencode_local_fetched_us = 0;
         private Json.Array? opencode_accounts = null;
         private bool opencode_accounts_in_flight = false;
+        private bool opencode_force_pending = false;
         private int64 opencode_accounts_fetched_us = 0;
         private uint opencode_generation = 0;
         private bool opencode_switch_in_flight = false;
@@ -187,7 +189,9 @@ namespace MSeries {
             try {
                 var directory = File.new_for_path (GLib.Path.build_filename (Environment.get_user_config_dir (), "codexbar"));
                 preferences_monitor = directory.monitor_directory (FileMonitorFlags.NONE);
-                preferences_monitor.changed.connect (() => {
+                preferences_monitor.changed.connect ((file, other_file, event) => {
+                    if (file.get_basename () != "wingpanel.json" &&
+                        (other_file == null || other_file.get_basename () != "wingpanel.json")) return;
                     if (preferences_reload_source != 0) Source.remove (preferences_reload_source);
                     preferences_reload_source = Timeout.add (100, () => {
                         preferences_reload_source = 0;
@@ -252,9 +256,9 @@ namespace MSeries {
                 ".mseries-codexbar button.flat.compact { padding: 0 4px; } " +
                 ".mseries-codexbar .mseries-switcher button { padding: 2px 6px; } " +
                 ".mseries-codexbar-bar label { font-size: 8.5pt; font-feature-settings: \"tnum\"; } " +
-                ".mseries-codexbar-bar .seg-value { font-weight: 700; } " +
-                ".mseries-codexbar-bar .seg-reset { font-size: 7.5pt; opacity: 0.7; } " +
-                ".mseries-codexbar-bar .seg-secondary { font-size: 7.5pt; } " +
+                ".mseries-codexbar-bar .seg-value { font-size: 7.5pt; font-weight: 700; } " +
+                ".mseries-codexbar-bar .seg-reset { font-size: 7pt; opacity: 0.7; } " +
+                ".mseries-codexbar-bar .seg-secondary { font-size: 6.75pt; } " +
                 ".mseries-codexbar-bar .level-low { color: @warning_color; } " +
                 ".mseries-codexbar-bar .level-critical { color: @error_color; } " +
                 ".mseries-codexbar-bar .provider-mark { opacity: 0.92; } " +
@@ -294,7 +298,7 @@ namespace MSeries {
         private void refresh_usage (bool force = false) {
             refresh_claude.begin (force);
             refresh_codex_accounts.begin (force);
-            refresh_opencode_accounts.begin ();
+            refresh_opencode_accounts.begin (force);
             if (snapshot_busy || !run_action ("--refresh")) {
                 return;
             }
@@ -343,7 +347,9 @@ namespace MSeries {
         // ---- Reading data -------------------------------------------------------------
 
         private async void read_snapshot (bool refresh_if_old = false) {
+            // Poll fallback also covers replacing/deleting the monitored directory itself.
             reload_display_preferences ();
+            if (preferences_monitor == null) watch_display_preferences ();
             refresh_after_snapshot = refresh_after_snapshot || refresh_if_old;
             if (request_in_flight) {
                 return;
@@ -351,12 +357,8 @@ namespace MSeries {
             request_in_flight = true;
 
             try {
-                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
-                    executable, "--snapshot");
-                string stdout_text;
-                string stderr_text;
-                yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
-                if (!process.get_successful () || stdout_text.strip ().length == 0) {
+                var stdout_text = yield HelperProcess.read ({ executable, "--snapshot" }, 5000);
+                if (stdout_text.strip ().length == 0) {
                     show_unavailable ("dialog-warning-symbolic", "CodexBar isn't running", "Start CodexBar and sign in to see your quota.");
                     ensure_sessions (60);
                     return;
@@ -365,6 +367,7 @@ namespace MSeries {
                 var parser = new Json.Parser ();
                 parser.load_from_data (stdout_text, -1);
                 var root = parser.get_root ();
+                JsonBoundary.validate (root);
                 if (root == null || root.get_node_type () != Json.NodeType.OBJECT) {
                     show_unavailable ("dialog-warning-symbolic", "Unsupported CodexBar data", "CodexBar returned a snapshot this panel can't read. Update the panel after a CodexBar upgrade.");
                     ensure_sessions (60);
@@ -387,11 +390,11 @@ namespace MSeries {
 
         private bool should_refresh_on_open (Json.Object snapshot) {
             int64 oldest_update_unix = 0;
-            var entries = snapshot.get_array_member ("entries");
+            var entries = JsonBoundary.array (snapshot, "entries");
             if (entries != null) {
                 for (uint i = 0; i < entries.get_length (); i++) {
                     var entry = entries.get_object_element (i);
-                    var updated = entry.get_string_member ("updatedAt") ?? "";
+                    var updated = JsonBoundary.text (entry, "updatedAt", "");
                     var timestamp = new DateTime.from_iso8601 (updated, null);
                     if (timestamp == null) {
                         oldest_update_unix = 0;
@@ -402,12 +405,12 @@ namespace MSeries {
                     }
                 }
             }
-            return refresh_policy.should_refresh_on_open (snapshot.get_boolean_member ("busy"),
+            return refresh_policy.should_refresh_on_open (JsonBoundary.flag (snapshot, "busy"),
                 oldest_update_unix, new DateTime.now_utc ().to_unix (), GLib.get_monotonic_time ());
         }
 
         // Helper refreshes (sessions, Claude, Codex accounts, OpenCode) run when the popover is open. With it closed
-        // nothing in the panel bar depends on them, so they only refresh on a slow background tick.
+        // they refresh on a slow background tick; local token totals use the same cached cadence.
         private const int BACKGROUND_SECONDS = 900;
 
         private bool due (int64 fetched_us, int open_seconds) {
@@ -449,24 +452,20 @@ namespace MSeries {
                 if (force) {
                     command += "--force";
                 }
-                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE);
-                string stdout_text;
-                string stderr_text;
-                yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
+                var stdout_text = yield HelperProcess.read (command, 120000);
                 Json.Array? parsed = null;
-                if (process.get_successful () && stdout_text.strip ().length > 0) {
+                if (stdout_text.strip ().length > 0) {
                     var parser = new Json.Parser ();
                     parser.load_from_data (stdout_text, -1);
                     var root = parser.get_root ();
+                    JsonBoundary.validate (root);
                     if (root != null && root.get_node_type () == Json.NodeType.OBJECT) {
-                        var list = root.get_object ().get_array_member ("accounts");
+                        var list = JsonBoundary.array (root.get_object (), "accounts");
                         parsed = list != null ? list.ref () : null;
                     }
                 }
                 // A helper that failed to answer must not wipe what the panel already shows.
-                if (process.get_successful ()) {
-                    codex_accounts = parsed;
-                }
+                codex_accounts = parsed;
             } catch (Error e) {
                 // keep the last good list
             } finally {
@@ -474,8 +473,7 @@ namespace MSeries {
                 codex_accounts_fetched_us = GLib.get_monotonic_time ();
             }
             if (codex_accounts_digest (codex_accounts) != before) {
-                last_digest = "";
-                read_snapshot.begin ();
+                repaint_cached_quota ();
             }
         }
 
@@ -491,23 +489,19 @@ namespace MSeries {
                 if (force) {
                     command += "--force";
                 }
-                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE);
-                string stdout_text;
-                string stderr_text;
-                yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
+                var stdout_text = yield HelperProcess.read (command, 120000);
                 Json.Object? parsed = null;
-                if (process.get_successful () && stdout_text.strip ().length > 0) {
+                if (stdout_text.strip ().length > 0) {
                     var parser = new Json.Parser ();
                     parser.load_from_data (stdout_text, -1);
                     var root = parser.get_root ();
+                    JsonBoundary.validate (root);
                     if (root != null && root.get_node_type () == Json.NodeType.OBJECT
-                        && root.get_object ().get_boolean_member_with_default ("available", false)) {
+                        && JsonBoundary.flag (root.get_object (), "available", false)) {
                         parsed = root.get_object ().ref ();
                     }
                 }
-                if (process.get_successful ()) {
-                    claude_data = parsed;
-                }
+                claude_data = parsed;
             } catch (Error e) {
                 // keep the last good list
             } finally {
@@ -515,29 +509,31 @@ namespace MSeries {
                 claude_fetched_us = GLib.get_monotonic_time ();
             }
             if (local_digest (claude_data) != before) {
-                last_digest = "";
-                read_snapshot.begin ();
+                repaint_cached_quota ();
             }
         }
 
-        private async void refresh_opencode_accounts () {
-            if (opencode_accounts_in_flight) return;
+        private async void refresh_opencode_accounts (bool force = false) {
+            if (opencode_accounts_in_flight) {
+                opencode_force_pending = opencode_force_pending || force;
+                return;
+            }
             opencode_accounts_in_flight = true;
             var generation = opencode_generation;
             var before = codex_accounts_digest (opencode_accounts);
             try {
-                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
-                    "python3", helper_path ("codexbar-opencode-local.py"), "accounts");
-                string output;
-                yield process.communicate_utf8_async (null, null, out output, null);
+                string[] command = { "python3", helper_path ("codexbar-opencode-local.py"), "accounts" };
+                if (force) command += "--force";
+                var output = yield HelperProcess.read (command, 120000);
                 var parser = new Json.Parser ();
                 parser.load_from_data (output);
                 var root = parser.get_root ();
+                JsonBoundary.validate (root);
                 if (generation != opencode_generation) return;
                 opencode_accounts = null;
-                if (process.get_successful () && root != null && root.get_node_type () == Json.NodeType.OBJECT
+                if (root != null && root.get_node_type () == Json.NodeType.OBJECT
                     && root.get_object ().has_member ("accounts")) {
-                    var accounts = root.get_object ().get_array_member ("accounts");
+                    var accounts = JsonBoundary.array (root.get_object (), "accounts");
                     if (accounts != null) opencode_accounts = accounts.ref ();
                 }
             } catch (Error e) {
@@ -545,11 +541,14 @@ namespace MSeries {
             } finally {
                 opencode_accounts_in_flight = false;
                 opencode_accounts_fetched_us = generation == opencode_generation ? GLib.get_monotonic_time () : 0;
-                if (generation != opencode_generation) refresh_opencode_accounts.begin ();
+                if (opencode_force_pending || generation != opencode_generation) {
+                    var force_next = opencode_force_pending;
+                    opencode_force_pending = false;
+                    refresh_opencode_accounts.begin (force_next);
+                }
             }
             if (before != codex_accounts_digest (opencode_accounts)) {
-                last_digest = "";
-                read_snapshot.begin ();
+                repaint_cached_quota ();
             }
         }
 
@@ -566,9 +565,10 @@ namespace MSeries {
                 var parser = new Json.Parser ();
                 parser.load_from_data (output);
                 var root = parser.get_root ();
+                JsonBoundary.validate (root);
                 if (root != null && root.get_node_type () == Json.NodeType.OBJECT) {
-                    ok = process.get_successful () && root.get_object ().get_boolean_member_with_default ("ok", false);
-                    message = root.get_object ().get_string_member_with_default ("message", message);
+                    ok = process.get_successful () && JsonBoundary.flag (root.get_object (), "ok", false);
+                    message = JsonBoundary.text (root.get_object (), "message", message);
                 }
             } catch (Error e) { }
             opencode_switch_in_flight = false;
@@ -594,8 +594,8 @@ namespace MSeries {
             }
             var dialog = new Gtk.AlertDialog ("Switch to %s?", email);
             dialog.detail = ready
-                ? "Claude will close and reopen with this account, and Claude Code's command-line login will change too. Finish running work first. CodexBar stays running."
-                : "This account needs one sign-in in the Claude app before fast switching works. Claude will reopen at its sign-in screen. Sign in to the account shown above, then reopen CodexBar to save it. Finish running work first.";
+                ? "Claude will save a work handoff, close and reopen with this account, and Claude Code's command-line login will change too. Missing local Code conversations will carry over with their workspace context. Finish running work first. CodexBar stays running."
+                : "This account needs one sign-in in the Claude app before fast switching works. Claude will reopen at its sign-in screen. Sign in to the account shown above, then reopen CodexBar to save it. Missing local Code conversations will carry over. Finish running work first.";
             dialog.buttons = { "Cancel", ready ? "Switch Claude account" : "Set up app sign-in" };
             dialog.cancel_button = 0;
             dialog.default_button = 0;
@@ -620,6 +620,7 @@ namespace MSeries {
             claude_switch_in_flight = true;
             var ok = false;
             var message = "";
+            var handoff_ready = false;
             try {
                 string[] command = { "python3", helper_path ("codexbar-claude.py"), "switch", number };
                 if (desktop) command += "--desktop";
@@ -631,9 +632,11 @@ namespace MSeries {
                     var parser = new Json.Parser ();
                     parser.load_from_data (stdout_text ?? "", -1);
                     var root = parser.get_root ();
+                    JsonBoundary.validate (root);
                     if (root != null && root.get_node_type () == Json.NodeType.OBJECT) {
-                        ok = root.get_object ().get_boolean_member_with_default ("ok", false);
-                        message = root.get_object ().get_string_member_with_default ("message", "");
+                        ok = process.get_successful () && JsonBoundary.flag (root.get_object (), "ok", false);
+                        message = JsonBoundary.text (root.get_object (), "message", "");
+                        handoff_ready = JsonBoundary.flag (root.get_object (), "handoffReady", false);
                     }
                 } catch (Error e) {
                     message = (stderr_text ?? "").strip ();
@@ -643,17 +646,26 @@ namespace MSeries {
             }
             claude_switch_in_flight = false;
             tell (ok ? "Switched Claude account" : "Couldn't switch Claude account",
-                message.length > 0 ? message : "The helper reported an error.");
+                message.length > 0 ? message : "The helper reported an error.", ok && handoff_ready);
             claude_fetched_us = 0;
             last_digest = "";
             refresh_claude.begin ();
             read_snapshot.begin ();
         }
 
-        private void tell (string heading, string detail) {
+        private void tell (string heading, string detail, bool handoff_review = false) {
             var dialog = new Granite.MessageDialog.with_image_from_icon_name (heading, detail,
                 "dialog-information", Gtk.ButtonsType.CLOSE);
-            dialog.response.connect (() => dialog.close ());
+            if (handoff_review) dialog.add_button ("Review GitHub handoff…", Gtk.ResponseType.APPLY);
+            dialog.response.connect ((response) => {
+                dialog.close ();
+                if (handoff_review && response == Gtk.ResponseType.APPLY) {
+                    try {
+                        Process.spawn_async (null, { "python3", helper_path ("codexbar-claude.py"), "handoff-review" },
+                            null, SpawnFlags.SEARCH_PATH, null, null);
+                    } catch (Error e) { tell ("Could not open handoff review", "Run codexbar-claude.py handoff-review to retry."); }
+                }
+            });
             dialog.present ();
         }
 
@@ -751,30 +763,31 @@ namespace MSeries {
             head.append (dot);
             head.append (build_provider_mark ("claude", "Claude"));
             head.append (build_hint_badges ("claude", true));
-            var email = claude_data.get_string_member_with_default ("activeEmail", "");
-            var accounts = claude_data.get_array_member ("accounts");
-            head.append (build_identity (email, claude_data.get_string_member_with_default ("activePlan", "")));
+            var email = JsonBoundary.text (claude_data, "activeEmail", "");
+            var accounts = JsonBoundary.array (claude_data, "accounts");
+            head.append (build_identity (email, JsonBoundary.text (claude_data, "activePlan", "")));
             head.append (build_add_account_button ("Sign in to Claude Code, then save that login with claude-swap",
                 () => add_claude_account ()));
             card.append (head);
+            append_weekly_tokens (card, "claude");
             // CLI and desktop can be switched separately; always name both when they differ.
-            var desktop = claude_data.has_member ("desktop") ? claude_data.get_object_member ("desktop") : null;
-            if (desktop != null && desktop.get_boolean_member_with_default ("differs", false)) {
-                var there = desktop.get_string_member_with_default ("email", "");
+            var desktop = claude_data.has_member ("desktop") ? JsonBoundary.object_member (claude_data, "desktop") : null;
+            if (desktop != null && JsonBoundary.flag (desktop, "differs", false)) {
+                var there = JsonBoundary.text (desktop, "email", "");
                 var note = subtle_label ("Claude app: %s".printf (
                     there.length > 0 ? there : "another account"));
-                note.set_tooltip_text (claude_data.get_string_member_with_default ("desktopNote", ""));
+                note.set_tooltip_text (JsonBoundary.text (claude_data, "desktopNote", ""));
                 card.append (note);
             }
-            var snapshot_error = claude_data.get_string_member_with_default ("desktopSnapshotError", "");
+            var snapshot_error = JsonBoundary.text (claude_data, "desktopSnapshotError", "");
             if (snapshot_error.length > 0) card.append (subtle_label (snapshot_error));
 
             var shown_quota = false;
             if (accounts != null) {
                 for (uint i = 0; i < accounts.get_length (); i++) {
                     var account = accounts.get_object_element (i);
-                    var windows = account.get_array_member ("windows");
-                    if (account.get_boolean_member_with_default ("active", false) && windows != null) {
+                    var windows = JsonBoundary.array (account, "windows");
+                    if (JsonBoundary.flag (account, "active", false) && windows != null) {
                         dot.remove_css_class ("dot-off");
                         dot.add_css_class ("dot-ok");
                         for (uint w = 0; w < windows.get_length (); w++) {
@@ -793,10 +806,10 @@ namespace MSeries {
             var listed = accounts != null ? accounts.get_length () : 0;
             // The helper saves the Claude app's login by itself whenever it lists accounts, so a standing
             // button is noise. Offer it only when the app's current login is not one of the saved accounts.
-            var app_installed = desktop != null && desktop.get_boolean_member_with_default ("installed", false);
+            var app_installed = desktop != null && JsonBoundary.flag (desktop, "installed", false);
             var app_login_saved = false;
             for (uint i = 0; i < listed; i++) {
-                if (accounts.get_object_element (i).get_boolean_member_with_default ("desktopActive", false)) {
+                if (JsonBoundary.flag (accounts.get_object_element (i), "desktopActive", false)) {
                     app_login_saved = true;
                 }
             }
@@ -815,21 +828,21 @@ namespace MSeries {
             }
             for (uint i = 0; i < listed; i++) {
                 var account = accounts.get_object_element (i);
-                if (account.get_boolean_member_with_default ("active", false) &&
-                    (desktop == null || !desktop.get_boolean_member_with_default ("installed", false) ||
-                     account.get_boolean_member_with_default ("desktopActive", false))) {
+                if (JsonBoundary.flag (account, "active", false) &&
+                    (desktop == null || !JsonBoundary.flag (desktop, "installed", false) ||
+                     JsonBoundary.flag (account, "desktopActive", false))) {
                     continue;
                 }
-                var number = account.get_int_member_with_default ("number", 0).to_string ();
-                var name = account.get_string_member_with_default ("email", "");
-                var windows = account.get_array_member ("windows");
+                var number = JsonBoundary.integer (account, "number", 0).to_string ();
+                var name = JsonBoundary.text (account, "email", "");
+                var windows = JsonBoundary.array (account, "windows");
                 var detail = "Quota unavailable";
-                var ready = account.get_boolean_member_with_default ("desktopReady", false);
-                var installed = desktop != null && desktop.get_boolean_member_with_default ("installed", false);
+                var ready = JsonBoundary.flag (account, "desktopReady", false);
+                var installed = desktop != null && JsonBoundary.flag (desktop, "installed", false);
                 if (installed && !ready) detail += " · app sign-in needed";
                 card.append (build_account_line (name, detail,
                     "Choose whether to switch Claude Code or the Claude app and CLI to %s".printf (name),
-                    () => choose_claude_switch (number, name, installed, ready), windows, hint_id ("claude", account), account.get_string_member_with_default ("plan", "")));
+                    () => choose_claude_switch (number, name, installed, ready), windows, hint_id ("claude", account), JsonBoundary.text (account, "plan", "")));
             }
             return card;
         }
@@ -846,9 +859,9 @@ namespace MSeries {
         }
 
         /* Switch always answers on screen: success names the account, failure says why. Silence looked like "nothing happened". */
-        private void run_accounts_helper (string[] arguments) {
-            if (arguments.length < 2 || codex_switch_in_flight) return;
-            var email = arguments[1].split ("|")[0];
+        private void choose_codex_switch (owned string account_id) {
+            if (codex_switch_in_flight) return;
+            var email = account_id.split ("|")[0];
             var dialog = new Gtk.AlertDialog ("Switch ChatGPT to %s?", email);
             dialog.detail = "ChatGPT will close and reopen with this account. Finish running work first; unsaved drafts may be lost. CodexBar stays running.";
             dialog.buttons = { "Cancel", "Switch account" };
@@ -857,7 +870,7 @@ namespace MSeries {
             dialog.choose.begin (null, null, (obj, res) => {
                 try {
                     if (dialog.choose.end (res) == 1 && !codex_switch_in_flight) {
-                        switch_codex_account.begin (arguments);
+                        switch_codex_account.begin (account_id);
                     }
                 } catch (Error e) { }
             });
@@ -865,17 +878,13 @@ namespace MSeries {
 
         private bool codex_switch_in_flight = false;
 
-        private async void switch_codex_account (string[] arguments) {
+        private async void switch_codex_account (owned string account_id) {
             if (codex_switch_in_flight) return;
             codex_switch_in_flight = true;
             var ok = false;
             var message = "";
             try {
-                string[] command = { "python3", helper_path ("codexbar-accounts.py") };
-                foreach (var argument in arguments) {
-                    command += argument;
-                }
-                command += "--desktop";
+                string[] command = { "python3", helper_path ("codexbar-accounts.py"), "switch", account_id, "--desktop" };
                 var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_MERGE);
                 string output;
                 yield process.communicate_utf8_async (null, null, out output, null);
@@ -883,9 +892,19 @@ namespace MSeries {
                 try {
                     var parser = new Json.Parser ();
                     parser.load_from_data (output.strip (), -1);
-                    message = parser.get_root ().get_object ().get_string_member_with_default ("message", "");
+                    var root = parser.get_root ();
+                    JsonBoundary.validate (root);
+                    if (root == null || root.get_node_type () != Json.NodeType.OBJECT) {
+                        ok = false;
+                        message = "The account helper returned an invalid response.";
+                    } else {
+                        var response = root.get_object ();
+                        ok = ok && JsonBoundary.flag (response, "ok", false);
+                        message = JsonBoundary.text (response, "message", "");
+                    }
                 } catch (Error e) {
-                    message = output.strip ();
+                    ok = false;
+                    message = "The account helper returned an invalid response.";
                 }
             } catch (Error e) {
                 message = e.message;
@@ -929,27 +948,27 @@ namespace MSeries {
             }
             for (uint i = 0; i < codex_accounts.get_length (); i++) {
                 var account = codex_accounts.get_object_element (i);
-                if (account.get_boolean_member_with_default ("active", false)) {
+                if (JsonBoundary.flag (account, "active", false)) {
                     continue;
                 }
-                var email = account.get_string_member_with_default ("email", "");
-                var account_id = account.get_string_member_with_default ("id", email);
-                var windows = account.has_member ("windows") ? account.get_array_member ("windows") : null;
+                var email = JsonBoundary.text (account, "email", "");
+                var account_id = JsonBoundary.text (account, "id", email);
+                var windows = account.has_member ("windows") ? JsonBoundary.array (account, "windows") : null;
                 var detail = account.has_member ("error") ? "unavailable" : "—";
-                var resets = account.has_member ("resetCredits") ? account.get_object_member ("resetCredits") : null;
+                var resets = account.has_member ("resetCredits") ? JsonBoundary.object_member (account, "resetCredits") : null;
                 box.append (build_account_line (email, detail,
                     "Close and reopen ChatGPT with %s. CodexBar stays running.".printf (email)
-                        + (account.get_boolean_member_with_default ("stale", false)
+                        + (JsonBoundary.flag (account, "stale", false)
                             ? "\n\nShowing the previous quota: the latest refresh failed." : ""),
-                    () => run_accounts_helper ({ "switch", account_id }), windows, hint_id ("codex", account), account.get_string_member_with_default ("plan", ""), true, resets));
+                    () => choose_codex_switch (account_id), windows, hint_id ("codex", account), JsonBoundary.text (account, "plan", ""), true, resets));
             }
             return box;
         }
 
         /* Available resets for a Codex account as a one-row chip, with when the first expires; red inside the last day. */
         private Gtk.Label build_reset_credits (Json.Object credits, int64 now_unix) {
-            var available = credits.get_int_member_with_default ("available", -1);
-            var expires = credits.get_string_member_with_default ("nextExpiresAt", "");
+            var available = JsonBoundary.integer (credits, "available", -1);
+            var expires = JsonBoundary.text (credits, "nextExpiresAt", "");
             var when = expires.length > 0 ? new GLib.DateTime.from_iso8601 (expires, null) : null;
             var seconds = when != null ? when.to_unix () - now_unix : 0;
             var chip = new Gtk.Label (Presentation.reset_credits_chip (available, seconds)) { valign = Gtk.Align.CENTER };
@@ -982,19 +1001,16 @@ namespace MSeries {
                 "codexbar-cli", "codexbar-opencode-local.py");
             var changed = false;
             try {
-                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
-                    "python3", helper);
-                string stdout_text;
-                string stderr_text;
-                yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
+                var stdout_text = yield HelperProcess.read ({ "python3", helper });
                 Json.Object? parsed = null;
-                if (process.get_successful () && stdout_text.strip ().length > 0) {
+                if (stdout_text.strip ().length > 0) {
                     var parser = new Json.Parser ();
                     parser.load_from_data (stdout_text, -1);
                     var root = parser.get_root ();
+                    JsonBoundary.validate (root);
                     if (root != null && root.get_node_type () == Json.NodeType.OBJECT
-                        && (root.get_object ().get_string_member_with_default ("status", "") == "available"
-                            || root.get_object ().get_string_member_with_default ("accountEmail", "").length > 0)) {
+                        && (JsonBoundary.text (root.get_object (), "status", "") == "available"
+                            || JsonBoundary.text (root.get_object (), "accountEmail", "").length > 0)) {
                         parsed = root.get_object ().ref ();
                     }
                 }
@@ -1012,8 +1028,7 @@ namespace MSeries {
                 if (generation != opencode_generation) refresh_opencode_local.begin ();
             }
             if (changed) {
-                last_digest = "";
-                read_snapshot.begin ();
+                repaint_cached_quota ();
             }
         }
 
@@ -1022,18 +1037,20 @@ namespace MSeries {
                 return;
             }
             sessions_in_flight = true;
+            var before_tokens = weekly_tokens_digest ();
             var helper = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "lib",
                 "codexbar-cli", "codexbar-sessions.py");
             try {
-                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
-                    "python3", helper);
-                string stdout_text;
-                string stderr_text;
-                yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
-                if (!process.get_successful () || stdout_text.strip ().length == 0) {
+                var stdout_text = yield HelperProcess.read ({ "python3", helper });
+                if (stdout_text.strip ().length == 0) {
                     sessions_error = "The session check couldn't run. Reinstall the CodexBar panel.";
                 } else {
-                    sessions_text = stdout_text;
+                    var parser = new Json.Parser ();
+                    parser.load_from_data (stdout_text);
+                    JsonBoundary.validate (parser.get_root ());
+                    var parsed = JsonBoundary.array (parser.get_root ().get_object (), "sessions");
+                    if (parsed == null) throw new IOError.INVALID_DATA ("Missing local session data");
+                    local_sessions = parsed.ref ();
                     sessions_error = "";
                 }
             } catch (Error e) {
@@ -1042,7 +1059,32 @@ namespace MSeries {
                 sessions_in_flight = false;
                 sessions_fetched_us = GLib.get_monotonic_time ();
                 render_sessions ();
+                // Repaint cached panel data immediately; never request another provider poll.
+                if (panel_entries != null) update_panel (panel_entries, new DateTime.now_utc ().to_unix ());
+                if (before_tokens != weekly_tokens_digest ()) repaint_cached_quota ();
             }
+        }
+
+        private string weekly_tokens_digest () {
+            return local_week_tokens ("codex") + "|" + local_week_tokens ("claude") + "|" + local_week_tokens ("opencodego");
+        }
+
+        private void repaint_cached_quota () {
+            if (cached_repaint_source != 0) return;
+            cached_repaint_source = Idle.add (() => {
+                cached_repaint_source = 0;
+                if (panel_entries != null) {
+                    var now = new DateTime.now_utc ().to_unix ();
+                    var previous_digest = last_digest;
+                    update_account_hints (panel_entries, now);
+                    update_panel (panel_entries, now);
+                    render_quota (panel_entries, now);
+                    // This repaint already applied helper/hint invalidations; an unchanged
+                    // scheduled snapshot must not rebuild the same cards a second time.
+                    last_digest = previous_digest;
+                }
+                return Source.REMOVE;
+            });
         }
 
         // ---- Snapshot to UI -----------------------------------------------------------
@@ -1057,8 +1099,8 @@ namespace MSeries {
                     text.append (generator.to_data (null));
                 }
             }
-            text.append ("|%s|%s".printf (snapshot_stale.to_string (), snapshot.get_boolean_member ("busy").to_string ()));
-            var entries = snapshot.get_array_member ("entries");
+            text.append ("|%s|%s".printf (snapshot_stale.to_string (), JsonBoundary.flag (snapshot, "busy").to_string ()));
+            var entries = JsonBoundary.array (snapshot, "entries");
             if (entries != null) {
                 for (uint i = 0; i < entries.get_length (); i++) {
                     text.append (QuotaEta.entry_stale (entries.get_object_element (i), snapshot_stale, now_unix) ? "S" : "F");
@@ -1069,9 +1111,9 @@ namespace MSeries {
 
         private void update_snapshot (Json.Object snapshot) {
             var now_unix = new DateTime.now_utc ().to_unix ();
-            snapshot_stale = snapshot.get_boolean_member ("stale");
-            snapshot_busy = snapshot.get_boolean_member ("busy");
-            var entries = snapshot.get_array_member ("entries");
+            snapshot_stale = JsonBoundary.flag (snapshot, "stale");
+            snapshot_busy = JsonBoundary.flag (snapshot, "busy");
+            var entries = JsonBoundary.array (snapshot, "entries");
             if (entries == null || entries.get_length () == 0) {
                 last_digest = "";
                 newest_update_unix = 0;
@@ -1088,7 +1130,7 @@ namespace MSeries {
 
             newest_update_unix = 0;
             for (uint i = 0; i < entries.get_length (); i++) {
-                var timestamp = new DateTime.from_iso8601 (entries.get_object_element (i).get_string_member ("updatedAt") ?? "", null);
+                var timestamp = new DateTime.from_iso8601 (JsonBoundary.text (entries.get_object_element (i), "updatedAt", ""), null);
                 if (timestamp != null && timestamp.to_unix () > newest_update_unix) {
                     newest_update_unix = timestamp.to_unix ();
                 }
@@ -1139,10 +1181,10 @@ namespace MSeries {
         }
 
         private static string hint_id (string provider, Json.Object account) {
-            if (account.get_boolean_member_with_default ("active", false)) return provider + ":active";
-            var key = account.get_string_member_with_default ("id", "");
-            if (key.length == 0 && account.has_member ("number")) key = account.get_int_member ("number").to_string ();
-            if (key.length == 0) key = account.get_string_member_with_default ("email", "unknown");
+            if (JsonBoundary.flag (account, "active", false)) return provider + ":active";
+            var key = JsonBoundary.text (account, "id", "");
+            if (key.length == 0 && account.has_member ("number")) key = JsonBoundary.integer (account, "number").to_string ();
+            if (key.length == 0) key = JsonBoundary.text (account, "email", "unknown");
             return provider + ":saved:" + key;
         }
 
@@ -1160,11 +1202,11 @@ namespace MSeries {
             string[] supplied = {};
             for (uint i = 0; i < entries.get_length (); i++) {
                 var entry = entries.get_object_element (i);
-                var provider = entry.get_string_member_with_default ("provider", "").down ();
+                var provider = JsonBoundary.text (entry, "provider", "").down ();
                 supplied += provider;
                 hint_candidate (hint_candidates, provider + ":active", account_email_for (provider, entry),
-                    entry.get_array_member ("windows"), QuotaEta.entry_stale (entry, snapshot_stale, now_unix)
-                    || entry.get_string_member_with_default ("error", "").length > 0);
+                    JsonBoundary.array (entry, "windows"), QuotaEta.entry_stale (entry, snapshot_stale, now_unix)
+                    || JsonBoundary.text (entry, "error", "").length > 0);
             }
             foreach (var provider in new string[] { "codex", "claude", "opencodego" }) {
                 var accounts = provider_accounts (provider);
@@ -1173,9 +1215,9 @@ namespace MSeries {
                 var max_age = (provider == "codex" ? 600 : 240) * GLib.TimeSpan.SECOND;
                 for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
                     var account = accounts.get_object_element (i);
-                    if (account.get_boolean_member_with_default ("active", false) && provider in supplied) continue;
-                    hint_candidate (hint_candidates, hint_id (provider, account), account.get_string_member_with_default ("email", ""),
-                        account.has_member ("windows") ? account.get_array_member ("windows") : null,
+                    if (JsonBoundary.flag (account, "active", false) && provider in supplied) continue;
+                    hint_candidate (hint_candidates, hint_id (provider, account), JsonBoundary.text (account, "email", ""),
+                        account.has_member ("windows") ? JsonBoundary.array (account, "windows") : null,
                         fetched == 0 || GLib.get_monotonic_time () - fetched > max_age || account.has_member ("error"));
                 }
             }
@@ -1183,7 +1225,7 @@ namespace MSeries {
             var digest = local_digest (hint_selection);
             for (uint i = 0; i < hint_candidates.get_length (); i++) {
                 var candidate = hint_candidates.get_object_element (i);
-                digest += candidate.get_string_member ("id") + candidate.get_string_member ("email");
+                digest += JsonBoundary.text (candidate, "id") + JsonBoundary.text (candidate, "email");
             }
             if (digest != hints_digest) {
                 hints_digest = digest;
@@ -1193,7 +1235,7 @@ namespace MSeries {
         }
 
         private bool has_hint (string kind, string id, bool provider = false) {
-            var selected = hint_selection.has_member (kind) ? hint_selection.get_array_member (kind) : null;
+            var selected = hint_selection.has_member (kind) ? JsonBoundary.array (hint_selection, kind) : null;
             for (uint i = 0; selected != null && i < selected.get_length (); i++) {
                 var candidate = selected.get_string_element (i);
                 if (provider ? candidate.has_prefix (id + ":") : candidate == id) return true;
@@ -1207,11 +1249,11 @@ namespace MSeries {
                 : "Next weekly reset · earliest upcoming 7-day reset among accounts with current data.");
             for (uint i = 0; i < hint_candidates.get_length (); i++) {
                 var candidate = hint_candidates.get_object_element (i);
-                var key = candidate.get_string_member ("id");
+                var key = JsonBoundary.text (candidate, "id");
                 if (!(provider ? key.has_prefix (id + ":") : key == id) || !has_hint (kind, key)) continue;
-                text.append ("\n" + candidate.get_string_member ("email"));
+                text.append ("\n" + JsonBoundary.text (candidate, "email"));
                 if (kind == "weekly") {
-                    var reset = Presentation.account_weekly_reset (candidate.get_array_member ("windows"), new DateTime.now_utc ().to_unix ());
+                    var reset = Presentation.account_weekly_reset (JsonBoundary.array (candidate, "windows"), new DateTime.now_utc ().to_unix ());
                     if (reset > 0) text.append (" · " + new DateTime.from_unix_utc (reset).to_local ().format ("%a %b %d, %H:%M"));
                 }
             }
@@ -1267,30 +1309,30 @@ namespace MSeries {
             // Every window remains separate in the dropdown and account summaries.
             for (uint w = 0; w < windows.get_length (); w++) {
                 var candidate = windows.get_object_element (w);
-                var minutes = candidate.get_int_member_with_default ("minutes", 0);
-                if (candidate.get_string_member_with_default ("key", "") == "primary" || minutes > 0 && minutes <= 360) {
+                var minutes = JsonBoundary.integer (candidate, "minutes", 0);
+                if (JsonBoundary.text (candidate, "key", "") == "primary" || minutes > 0 && minutes <= 360) {
                     binding = (int) w;
                     break;
                 }
             }
             for (uint w = 0; w < windows.get_length (); w++) {
                 var window = windows.get_object_element (w);
-                var minutes = (int) window.get_int_member_with_default ("minutes", 0);
+                var minutes = (int) JsonBoundary.integer (window, "minutes", 0);
                 var short_label = Presentation.short_window_label (
-                    window.get_string_member_with_default ("label", "Quota"), minutes);
+                    JsonBoundary.text (window, "label", "Quota"), minutes);
                 var node = window.get_member ("remaining");
                 if (node == null || node.get_node_type () != Json.NodeType.VALUE) {
                     tooltip.append ("\n  %s  not reported yet".printf (short_label));
                     continue;
                 }
                 var remaining = node.get_double ();
-                var reset = window.get_string_member_with_default ("resetText", "");
+                var reset = JsonBoundary.text (window, "resetText", "");
                 tooltip.append ("\n  %s  %0.0f%% left · %s".printf (short_label, remaining,
                     reset.length > 0 ? reset.down () : "reset unknown"));
                 if ((int) w != binding) continue;
                 level = Presentation.level_for (remaining);
                 value_text = "%s %0.0f%%".printf (short_label, remaining);
-                var resets_at = new DateTime.from_iso8601 (window.get_string_member_with_default ("resetsAt", ""), null);
+                var resets_at = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt", ""), null);
                 reset_text = resets_at != null ? Presentation.countdown_text (resets_at.to_unix () - now_unix)
                     : compact_reset (reset).replace (" ", "");
             }
@@ -1308,9 +1350,9 @@ namespace MSeries {
 
             for (uint i = 0; i < entries.get_length (); i++) {
                 var entry = entries.get_object_element (i);
-                var provider = (entry.get_string_member ("provider") ?? "").down ();
+                var provider = (JsonBoundary.text (entry, "provider", "")).down ();
                 has_claude = has_claude || provider == "claude";
-                var windows = entry.get_array_member ("windows");
+                var windows = JsonBoundary.array (entry, "windows");
                 var stale = QuotaEta.entry_stale (entry, snapshot_stale, now_unix);
                 var section = new StringBuilder (provider_title (provider));
                 string value_text = "—";
@@ -1321,29 +1363,30 @@ namespace MSeries {
                     if (provider == "opencodego") {
                         var local_tokens = opencode_week_tokens ();
                         if (local_tokens.length > 0) {
-                            value_text += " · " + local_tokens + " tok";
-                            section.append ("\n  " + local_tokens + " local tokens in 7 days (all local accounts)");
+                            // Keep the primary row compact; local tokens use the lower row when
+                            // there is no alternate account, and remain in this tooltip in either case.
+                            section.append ("\n  " + local_tokens + " tokens in 7 days");
                         }
                     }
                 } else if (provider == "opencodego" && opencode_local != null) {
                     // No account quota without a web sign-in: show this machine's 7-day token count instead.
-                    var periods = opencode_local.get_array_member ("periods");
+                    var periods = JsonBoundary.array (opencode_local, "periods");
                     for (uint p = 0; periods != null && p < periods.get_length (); p++) {
                         var period = periods.get_object_element (p);
-                        var label = period.get_string_member_with_default ("label", "");
-                        var tokens = period.get_int_member_with_default ("tokens", 0);
+                        var label = JsonBoundary.text (period, "label", "");
+                        var tokens = JsonBoundary.integer (period, "tokens", 0);
                         section.append ("\n  %s".printf (Presentation.local_usage_line (label,
-                            period.get_double_member_with_default ("costUSD", 0),
-                            period.get_int_member_with_default ("requests", 0), tokens)));
+                            JsonBoundary.number (period, "costUSD", 0),
+                            JsonBoundary.integer (period, "requests", 0), tokens)));
                         if (label.contains ("7")) {
-                            value_text = Presentation.panel_count_text (tokens);
-                            reset_text = "7d tok";
+                            value_text = "Usage";
+                            reset_text = "";
                         }
                     }
                     section.append ("\n  Local estimate, not account quota");
                     stale = false;
                 } else {
-                    var error = entry.get_string_member_with_default ("error", "");
+                    var error = JsonBoundary.text (entry, "error", "");
                     section.append ("\n  " + (error.length > 0 ? error : "Usage not reported yet"));
                 }
                 providers += provider;
@@ -1356,11 +1399,11 @@ namespace MSeries {
 
             // Claude quota comes from our claude-swap helper when upstream's snapshot has no Claude entry.
             if (!has_claude && claude_data != null) {
-                var accounts = claude_data.get_array_member ("accounts");
+                var accounts = JsonBoundary.array (claude_data, "accounts");
                 for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
                     var account = accounts.get_object_element (i);
-                    var windows = account.get_array_member ("windows");
-                    if (!account.get_boolean_member_with_default ("active", false) || windows == null
+                    var windows = JsonBoundary.array (account, "windows");
+                    if (!JsonBoundary.flag (account, "active", false) || windows == null
                         || windows.get_length () == 0) continue;
                     var section = new StringBuilder ("Claude");
                     string value_text;
@@ -1376,6 +1419,10 @@ namespace MSeries {
                 }
             }
 
+            foreach (var provider in new string[] { "codex", "claude", "opencodego" }) {
+                var count = local_week_tokens (provider);
+                if (count.length > 0) tooltip.append ("\n\n%s · 7d: %s tokens".printf (provider_title (provider), count));
+            }
             set_panel_summary (tooltip.len > 0
                 ? tooltip.str + (snapshot_stale ? "\n\nCached: CodexBar couldn't reach a provider." : "")
                     + "\n\nMiddle-click to refresh"
@@ -1383,8 +1430,12 @@ namespace MSeries {
 
             var digest = new StringBuilder ();
             digest.append (hints_digest);
+            foreach (var provider in new string[] { "codex", "claude", "opencodego" })
+                digest.append (local_week_tokens (provider) + "|");
             foreach (var provider in new string[] { "codex", "claude", "opencodego" }) {
                 digest.append (alternate_account_text (provider, now_unix));
+                var windows = active_panel_windows (provider);
+                if (windows != null) digest.append (colored_account_quota (panel_display, windows, now_unix, true));
             }
             for (int i = 0; i < providers.length; i++) {
                 digest.append ("%s|%s|%s|%d|%s;".printf (providers[i], values[i], resets[i], (int) levels[i],
@@ -1408,60 +1459,185 @@ namespace MSeries {
             if (providers.length == 0) panel_segments.append (new Gtk.Label ("—"));
         }
 
+        private Json.Array? active_panel_windows (string provider) {
+            for (uint i = 0; panel_entries != null && i < panel_entries.get_length (); i++) {
+                var entry = panel_entries.get_object_element (i);
+                if (JsonBoundary.text (entry, "provider").down () == provider) {
+                    var windows = JsonBoundary.array (entry, "windows");
+                    if (windows != null && windows.get_length () > 0) return windows;
+                }
+            }
+            var accounts = provider_accounts (provider);
+            for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
+                var account = accounts.get_object_element (i);
+                if (JsonBoundary.flag (account, "active")) return JsonBoundary.array (account, "windows");
+            }
+            return null;
+        }
+
+        private static string quota_reset_tooltip (Json.Object window) {
+            var timestamp = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt"), null);
+            if (timestamp != null) {
+                var seconds = timestamp.to_unix () - new DateTime.now_utc ().to_unix ();
+                return seconds <= 0 ? "Reset due now" : "Resets in " + Presentation.countdown_text (seconds);
+            }
+            var reset = JsonBoundary.text (window, "resetText");
+            return reset.length > 0 ? reset : "Reset time unknown";
+        }
+
+        private void apply_quota_dot (Gtk.Label label, string caption, double remaining, string reset = "Reset time unknown") {
+            if (!display_preferences.get_bool ("compactQuota") || remaining < 0) return;
+            var color = quota_theme_color (label, Presentation.dot_color (remaining),
+                remaining > 70 ? "#2e7d32" : remaining >= 25 ? "#a66300" : "#c6262e");
+            label.remove_css_class ("level-low");
+            label.remove_css_class ("level-critical");
+            label.use_markup = true;
+            var percent = Presentation.dot_percent (remaining);
+            if (percent.length > 0) percent = "<span foreground=\"%s\" weight=\"bold\">%s</span>".printf (
+                quota_theme_color (label, "error_color", "#c6262e"), Markup.escape_text (percent));
+            label.label = "%s <span foreground=\"%s\">●</span>%s".printf (
+                Markup.escape_text (caption), color, percent);
+            label.tooltip_text = "%s · %g%% remaining · %s".printf (caption, remaining, reset);
+        }
+
+        private void apply_primary_quota_dot (Gtk.Label label, string provider) {
+            var windows = active_panel_windows (provider);
+            if (windows == null || windows.get_length () == 0) return;
+            int selected = Presentation.binding_window (windows);
+            for (uint i = 0; i < windows.get_length (); i++) {
+                var window = windows.get_object_element (i);
+                var minutes = JsonBoundary.integer (window, "minutes");
+                if (JsonBoundary.text (window, "key") == "primary" || (minutes > 0 && minutes <= 360)) {
+                    selected = (int) i;
+                    break;
+                }
+            }
+            if (selected < 0) return;
+            var window = windows.get_object_element ((uint) selected);
+            apply_quota_dot (label, Presentation.short_window_label (JsonBoundary.text (window, "label", "Quota"),
+                (int) JsonBoundary.integer (window, "minutes")), JsonBoundary.number (window, "remaining", -1), quota_reset_tooltip (window));
+        }
+
+        private void append_weekly_panel_quota (Gtk.Box heading, string provider) {
+            var windows = active_panel_windows (provider);
+            for (uint i = 0; windows != null && i < windows.get_length (); i++) {
+                var window = windows.get_object_element (i);
+                if (JsonBoundary.integer (window, "minutes") != 10080) continue;
+                var remaining = JsonBoundary.number (window, "remaining", -1);
+                if (remaining < 0) return;
+                var value = new Gtk.Label ("· 7D %0.0f%%".printf (remaining));
+                value.add_css_class ("seg-value");
+                var level = Presentation.level_for (remaining);
+                if (level == QuotaLevel.LOW) value.add_css_class ("level-low");
+                if (level == QuotaLevel.CRITICAL) value.add_css_class ("level-critical");
+                apply_quota_dot (value, "7D", remaining, quota_reset_tooltip (window));
+                if (display_preferences.get_bool ("showPercent")) heading.append (value);
+                if (display_preferences.get_bool ("showReset") && !display_preferences.get_bool ("compactQuota")) {
+                    var timestamp = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt"), null);
+                    var countdown = timestamp != null
+                        ? Presentation.countdown_text (timestamp.to_unix () - new DateTime.now_utc ().to_unix ())
+                        : compact_reset (JsonBoundary.text (window, "resetText")).replace (" ", "");
+                    if (countdown.length > 0) {
+                        var reset = new Gtk.Label (countdown);
+                        reset.add_css_class ("seg-reset");
+                        heading.append (reset);
+                    }
+                }
+                return;
+            }
+        }
+
         private Gtk.Widget build_panel_segment (string provider, string value_text, string reset_text,
                                                        QuotaLevel level, bool stale) {
-            var segment = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3);
+            var local_tokens = display_preferences.get_bool ("showTokens") ? local_week_tokens (provider) : "";
+            var dot_mode = display_preferences.get_bool ("compactQuota");
+            var details_on_top = dot_mode || (provider == "codex" || provider == "claude") && (local_tokens.length > 0 ||
+                ((display_preferences.get_bool ("showPercent") || display_preferences.get_bool ("showReset")) && active_panel_windows (provider) != null));
+            var segment = new Gtk.Box (Gtk.Orientation.HORIZONTAL, provider == "opencodego" ? 2 : 3);
+            if (provider == "opencodego") segment.add_css_class ("seg-opencode");
             if (stale) segment.add_css_class ("stale");
             var mark = build_provider_mark (provider, provider_title (provider));
             var icon = mark as Gtk.Image;
             if (icon != null) {
-                icon.pixel_size = 14;
+                icon.pixel_size = 13;
                 icon.valign = Gtk.Align.CENTER;
             }
-            segment.append (mark);
-            if (display_preferences.get_bool ("showHints")) segment.append (build_hint_badges (provider, true));
+            var heading = details_on_top ? new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3) : segment;
+            if (details_on_top && stale) heading.add_css_class ("stale");
+            heading.append (mark);
+            if (display_preferences.get_bool ("showHints")) heading.append (build_hint_badges (provider, true));
+            if (details_on_top) {
+                if (local_tokens.length > 0) {
+                    var tokens = new Gtk.Label ("7d · %s tok".printf (local_tokens)) { xalign = 0 };
+                    tokens.add_css_class ("seg-value");
+                    tokens.tooltip_text = "Tokens processed in seven days";
+                    heading.append (tokens);
+                }
+                if (!dot_mode) append_weekly_panel_quota (heading, provider);
+            }
             var value = new Gtk.Label (value_text) { valign = Gtk.Align.BASELINE_CENTER };
             value.add_css_class ("seg-value");
             if (level == QuotaLevel.LOW) value.add_css_class ("level-low");
             if (level == QuotaLevel.CRITICAL) value.add_css_class ("level-critical");
+            apply_primary_quota_dot (value, provider);
             if (display_preferences.get_bool ("showPercent")) {
-                segment.append (value);
+                if (dot_mode) heading.append (value);
+                else segment.append (value);
             } else {
                 if (level == QuotaLevel.LOW) mark.add_css_class ("level-low");
                 if (level == QuotaLevel.CRITICAL) mark.add_css_class ("level-critical");
             }
-            if (display_preferences.get_bool ("showReset") && reset_text.length > 0) {
+            if (dot_mode && !value.get_text ().has_prefix ("7D ")) append_weekly_panel_quota (heading, provider);
+            if (display_preferences.get_bool ("showReset") && !dot_mode && reset_text.length > 0) {
                 var reset = new Gtk.Label (reset_text) { valign = Gtk.Align.BASELINE_CENTER };
                 reset.add_css_class ("seg-reset");
                 segment.append (reset);
             }
             var alternate = alternate_account_text (provider, new DateTime.now_utc ().to_unix ());
-            if (!display_preferences.get_bool ("showAccounts") || alternate.length == 0 ||
-                (!display_preferences.get_bool ("showPercent") && !display_preferences.get_bool ("showReset"))) return segment;
+            var show_alternate = display_preferences.get_bool ("showAccounts") && alternate.length > 0;
+            if (!details_on_top && !show_alternate && local_tokens.length == 0) return segment;
             var stack = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { valign = Gtk.Align.CENTER };
-            stack.append (segment);
+            if (provider == "opencodego") stack.add_css_class ("seg-opencode");
+            stack.append (heading);
+            if (details_on_top && !show_alternate) {
+                if (segment.get_first_child () != null) stack.append (segment);
+                return stack;
+            }
             var label = new Gtk.Label (null) { xalign = 0, use_markup = true };
             label.add_css_class ("seg-secondary");
+            if (!show_alternate) {
+                label.label = "7d · %s tok".printf (local_tokens);
+                label.tooltip_text = "Tokens processed in seven days";
+                stack.append (label);
+                return stack;
+            }
             var markup = new StringBuilder ();
+            if (details_on_top && !dot_mode) markup.append ("· ");
+            if (!details_on_top && local_tokens.length > 0) markup.append (Markup.escape_text ("7d · %s tok  ·  ".printf (local_tokens)));
             var accounts = provider_accounts (provider);
             for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
                 var account = accounts.get_object_element (i);
-                if (account.get_boolean_member_with_default ("active", false)) continue;
+                if (JsonBoundary.flag (account, "active", false)) continue;
                 if (markup.len > 0) markup.append ("  ");
-                var windows = account.has_member ("windows") ? account.get_array_member ("windows") : null;
-                markup.append ("%s%lld: %s".printf ((display_preferences.get_bool ("showHints") ? hint_markup (hint_id (provider, account), label) : ""), account.get_int_member_with_default ("number", i + 1),
+                var windows = account.has_member ("windows") ? JsonBoundary.array (account, "windows") : null;
+                markup.append ("%s%lld: %s".printf ((display_preferences.get_bool ("showHints") ? hint_markup (hint_id (provider, account), label) : ""), JsonBoundary.integer (account, "number", i + 1),
                     windows == null || windows.get_length () == 0 ? "—"
-                        : colored_account_quota (label, windows, new DateTime.now_utc ().to_unix (), true)));
+                        : panel_account_quota (label, windows, new DateTime.now_utc ().to_unix ())));
             }
             label.set_markup (markup.str);
-            stack.append (label);
+            if (details_on_top) {
+                segment.append (label);
+                stack.append (segment);
+            } else {
+                stack.append (label);
+            }
             stack.set_tooltip_text (alternate_account_tooltip (provider));
             return stack;
         }
 
         private Json.Array? provider_accounts (string provider) {
             return provider == "codex" ? codex_accounts : provider == "opencodego" ? opencode_accounts
-                : provider == "claude" && claude_data != null ? claude_data.get_array_member ("accounts") : null;
+                : provider == "claude" && claude_data != null ? JsonBoundary.array (claude_data, "accounts") : null;
         }
 
         private string alternate_account_text (string provider, int64 now_unix) {
@@ -1469,10 +1645,10 @@ namespace MSeries {
             var text = new StringBuilder ();
             for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
                 var account = accounts.get_object_element (i);
-                if (account.get_boolean_member_with_default ("active", false)) continue;
-                var windows = account.has_member ("windows") ? account.get_array_member ("windows") : null;
+                if (JsonBoundary.flag (account, "active", false)) continue;
+                var windows = account.has_member ("windows") ? JsonBoundary.array (account, "windows") : null;
                 if (text.len > 0) text.append ("  ");
-                text.append ("%lld: %s".printf (account.get_int_member_with_default ("number", i + 1),
+                text.append ("%lld: %s".printf (JsonBoundary.integer (account, "number", i + 1),
                     windows != null && windows.get_length () > 0 ? Presentation.account_quota (windows, now_unix) : "—"));
             }
             return text.str;
@@ -1483,9 +1659,11 @@ namespace MSeries {
             var accounts = provider_accounts (provider);
             for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
                 var account = accounts.get_object_element (i);
-                if (account.get_boolean_member_with_default ("active", false)) continue;
-                text.append ("\n%lld: %s".printf (account.get_int_member_with_default ("number", i + 1),
-                    account.get_string_member_with_default ("email", "Saved account")));
+                if (JsonBoundary.flag (account, "active", false)) continue;
+                text.append ("\n%lld: %s".printf (JsonBoundary.integer (account, "number", i + 1),
+                    JsonBoundary.text (account, "email", "Saved account")));
+                var windows = JsonBoundary.array (account, "windows");
+                if (windows != null) text.append (" · " + Presentation.account_quota (windows, new DateTime.now_utc ().to_unix ()));
                 var id = hint_id (provider, account);
                 if (has_hint ("best", id)) text.append (" · ★ Most available quota");
                 if (has_hint ("weekly", id)) text.append (" · ! Next weekly reset");
@@ -1507,7 +1685,7 @@ namespace MSeries {
             clear (quota_box);
             var has_claude = false;
             for (uint i = 0; i < entries.get_length (); i++) {
-                has_claude = has_claude || entries.get_object_element (i).get_string_member_with_default ("provider", "").down () == "claude";
+                has_claude = has_claude || JsonBoundary.text (entries.get_object_element (i), "provider", "").down () == "claude";
             }
             // Match the panel order, including Claude's locally supplied accounts card.
             for (int rank = 0; rank <= 3; rank++) {
@@ -1516,19 +1694,24 @@ namespace MSeries {
                 }
                 for (uint i = 0; i < entries.get_length (); i++) {
                     var entry = entries.get_object_element (i);
-                    if (provider_rank (entry.get_string_member_with_default ("provider", "").down ()) == rank) {
+                    if (provider_rank (JsonBoundary.text (entry, "provider", "").down ()) == rank) {
                         quota_box.append (build_provider_card (entry, now_unix));
                     }
                 }
             }
         }
 
+        private void append_weekly_tokens (Gtk.Box card, string provider) {
+            var tokens = local_week_tokens (provider);
+            if (tokens.length > 0) card.append (subtle_label (tokens + " tokens · 7 days"));
+        }
+
         private Gtk.Widget build_provider_card (Json.Object entry, int64 now_unix) {
-            var provider = (entry.get_string_member ("provider") ?? "Provider").down ();
+            var provider = (JsonBoundary.text (entry, "provider", "Provider")).down ();
             var title_text = provider_title (provider);
-            var error = entry.get_string_member ("error") ?? "";
-            var status = entry.get_string_member ("status") ?? "";
-            var status_level = entry.get_string_member ("statusLevel") ?? "";
+            var error = JsonBoundary.text (entry, "error", "");
+            var status = JsonBoundary.text (entry, "status", "");
+            var status_level = JsonBoundary.text (entry, "statusLevel", "");
             var stale = QuotaEta.entry_stale (entry, snapshot_stale, now_unix);
 
             var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
@@ -1548,16 +1731,16 @@ namespace MSeries {
             head.append (build_provider_mark (provider, title_text));
             head.append (build_hint_badges (provider, true));
             var email = account_email_for (provider, entry);
-            var plan = entry.get_string_member_with_default ("plan", "");
+            var plan = JsonBoundary.text (entry, "plan", "");
             var accounts = provider_accounts (provider);
             for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
                 var account = accounts.get_object_element (i);
-                if (account.get_boolean_member_with_default ("active", false) && email.length > 0 &&
-                    account.get_string_member_with_default ("email", "").down () == email.down ()) {
+                if (JsonBoundary.flag (account, "active", false) && email.length > 0 &&
+                    JsonBoundary.text (account, "email", "").down () == email.down ()) {
                     // Upstream's generic "Go" describes this provider, not the workspace's tier.
                     if (plan.strip ().length == 0 || (provider == "opencodego" &&
-                        (plan.down () == "go" || account.get_string_member_with_default ("planSource", "") == "console"))) {
-                        plan = account.get_string_member_with_default ("plan", "");
+                        (plan.down () == "go" || JsonBoundary.text (account, "planSource", "") == "console"))) {
+                        plan = JsonBoundary.text (account, "plan", "");
                     }
                     break;
                 }
@@ -1574,8 +1757,9 @@ namespace MSeries {
                     () => add_opencode_account ()));
             }
             card.append (head);
+            append_weekly_tokens (card, provider);
 
-            var windows = entry.get_array_member ("windows");
+            var windows = JsonBoundary.array (entry, "windows");
             if (windows != null && windows.get_length () > 0) {
                 for (uint i = 0; i < windows.get_length (); i++) {
                     card.append (build_window (title_text, windows.get_object_element (i), stale, now_unix));
@@ -1590,41 +1774,37 @@ namespace MSeries {
                 card.append (build_codex_accounts ());
             }
             if (provider == "opencodego") {
-                var local_tokens = opencode_week_tokens ();
-                if (windows != null && windows.get_length () > 0 && local_tokens.length > 0) {
-                    card.append (subtle_label (local_tokens + " local tokens · 7 days · all local accounts"));
-                }
                 for (uint i = 0; opencode_accounts != null && i < opencode_accounts.get_length (); i++) {
                     var account = opencode_accounts.get_object_element (i);
-                    if (account.get_boolean_member_with_default ("active", false)) continue;
-                    var saved_email = account.get_string_member_with_default ("email", "Saved account");
-                    var workspace = account.get_string_member_with_default ("workspace", "");
+                    if (JsonBoundary.flag (account, "active", false)) continue;
+                    var saved_email = JsonBoundary.text (account, "email", "Saved account");
+                    var workspace = JsonBoundary.text (account, "workspace", "");
                     var caption = workspace.length > 0 ? saved_email + " · " + workspace : saved_email;
-                    var account_id = account.get_string_member_with_default ("id", "");
+                    var account_id = JsonBoundary.text (account, "id", "");
                     card.append (build_account_line (caption,
-                        account.get_string_member_with_default ("error", "Quota unavailable"),
+                        JsonBoundary.text (account, "error", "Quota unavailable"),
                         "Make %s active in OpenCode and refresh CodexBar usage".printf (caption),
                         () => switch_opencode_account.begin (account_id),
-                        account.has_member ("windows") ? account.get_array_member ("windows") : null,
-                        hint_id ("opencodego", account), account.get_string_member_with_default ("plan", ""),
-                        account.get_boolean_member_with_default ("switchable", true)));
+                        account.has_member ("windows") ? JsonBoundary.array (account, "windows") : null,
+                        hint_id ("opencodego", account), JsonBoundary.text (account, "plan", ""),
+                        JsonBoundary.flag (account, "switchable", true)));
                 }
             }
             if (error.length > 0 || windows == null || windows.get_length () == 0) {
                 var estimate = provider == "opencodego" ? opencode_local : null;
-                var periods = estimate != null ? estimate.get_array_member ("periods") : null;
+                var periods = estimate != null ? JsonBoundary.array (estimate, "periods") : null;
                 if (periods != null && periods.get_length () > 0) {
-                    card.append (subtle_label (estimate.get_string_member_with_default ("message", "Local usage estimate · not account quota")));
+                    card.append (subtle_label (JsonBoundary.text (estimate, "message", "Local usage estimate · not account quota")));
                     for (uint i = 0; i < periods.get_length (); i++) {
                         var period = periods.get_object_element (i);
-                        if (period.get_int_member_with_default ("requests", 0) == 0 && i + 1 < periods.get_length ()) {
+                        if (JsonBoundary.integer (period, "requests", 0) == 0 && i + 1 < periods.get_length ()) {
                             continue;
                         }
                         card.append (subtle_label (Presentation.local_usage_line (
-                            period.get_string_member_with_default ("label", ""),
-                            period.get_double_member_with_default ("costUSD", 0),
-                            period.get_int_member_with_default ("requests", 0),
-                            period.get_int_member_with_default ("tokens", 0))));
+                            JsonBoundary.text (period, "label", ""),
+                            JsonBoundary.number (period, "costUSD", 0),
+                            JsonBoundary.integer (period, "requests", 0),
+                            JsonBoundary.integer (period, "tokens", 0))));
                     }
                     card.append (subtle_label ("Sign in to OpenCode or connect a Go API key to load account quota."));
                 } else {
@@ -1649,11 +1829,21 @@ namespace MSeries {
         }
 
         private string opencode_week_tokens () {
-            var periods = opencode_local != null ? opencode_local.get_array_member ("periods") : null;
-            for (uint i = 0; periods != null && i < periods.get_length (); i++) {
-                var period = periods.get_object_element (i);
-                if (period.get_string_member_with_default ("label", "") == "7 days") {
-                    return Presentation.panel_count_text (period.get_int_member_with_default ("tokens", 0));
+            return local_week_tokens ("opencodego");
+        }
+
+        private string local_week_tokens (string provider) {
+            var session_id = provider == "opencodego" ? "opencode" : provider;
+            for (uint i = 0; local_sessions != null && i < local_sessions.get_length (); i++) {
+                var session = local_sessions.get_object_element (i);
+                if (JsonBoundary.text (session, "id") != session_id) continue;
+                var periods = JsonBoundary.array (session, "periods");
+                for (uint p = 0; periods != null && p < periods.get_length (); p++) {
+                    var period = periods.get_object_element (p);
+                    if (JsonBoundary.text (period, "label") == "7 days") {
+                        var tokens = JsonBoundary.integer (period, "tokens", -1);
+                        return tokens >= 0 ? Presentation.panel_count_text (tokens) : "";
+                    }
                 }
             }
             return "";
@@ -1787,6 +1977,24 @@ namespace MSeries {
             return "#%02x%02x%02x".printf ((int) (color.red * 255), (int) (color.green * 255), (int) (color.blue * 255));
         }
 
+        private string panel_account_quota (Gtk.Widget widget, Json.Array windows, int64 now_unix) {
+            if (!display_preferences.get_bool ("compactQuota"))
+                return colored_account_quota (widget, windows, now_unix, true);
+            if (!display_preferences.get_bool ("showPercent")) return "";
+            var text = new StringBuilder ();
+            for (uint i = 0; i < windows.get_length (); i++) {
+                var window = windows.get_object_element (i);
+                var remaining = JsonBoundary.number (window, "remaining", -1);
+                if (remaining < 0) continue;
+                if (text.len > 0) text.append (" · ");
+                var dot = new Gtk.Label (null);
+                apply_quota_dot (dot, Presentation.short_window_label (JsonBoundary.text (window, "label", "Quota"),
+                    (int) JsonBoundary.integer (window, "minutes")), remaining);
+                text.append (dot.label);
+            }
+            return text.str;
+        }
+
         /* quiet: healthy values keep the text color, so only low and critical quota draws the eye (panel bar). */
         private string colored_account_quota (Gtk.Widget widget, Json.Array? windows, int64 now_unix, bool quiet = false) {
             return Presentation.account_quota_markup (windows, now_unix,
@@ -1798,23 +2006,23 @@ namespace MSeries {
 
         /* Which login a provider is tied to: quiet, under the title, never the focus of the card. */
         private string account_email_for (string provider, Json.Object entry) {
-            var email = entry.get_string_member_with_default ("accountEmail", "");
+            var email = JsonBoundary.text (entry, "accountEmail", "");
             if (email.length == 0 && provider == "codex" && codex_accounts != null) {
                 for (uint i = 0; i < codex_accounts.get_length (); i++) {
                     var account = codex_accounts.get_object_element (i);
-                    if (account.get_boolean_member_with_default ("active", false)) {
-                        email = account.get_string_member_with_default ("email", "");
+                    if (JsonBoundary.flag (account, "active", false)) {
+                        email = JsonBoundary.text (account, "email", "");
                     }
                 }
             }
             if (email.length == 0 && provider == "opencodego" && opencode_local != null) {
-                email = opencode_local.get_string_member_with_default ("accountEmail", "");
+                email = JsonBoundary.text (opencode_local, "accountEmail", "");
             }
             if (email.length == 0 && provider == "opencodego") {
                 for (uint i = 0; opencode_accounts != null && i < opencode_accounts.get_length (); i++) {
                     var account = opencode_accounts.get_object_element (i);
-                    if (account.get_boolean_member_with_default ("active", false)) {
-                        email = account.get_string_member_with_default ("email", "");
+                    if (JsonBoundary.flag (account, "active", false)) {
+                        email = JsonBoundary.text (account, "email", "");
                         break;
                     }
                 }
@@ -1823,19 +2031,19 @@ namespace MSeries {
         }
 
         private Gtk.Widget build_window (string provider_title_text, Json.Object window, bool stale, int64 now_unix) {
-            var label = window.get_string_member ("label") ?? "Quota";
-            var reset = window.get_string_member ("resetText") ?? "";
-            var pace = window.get_string_member ("pace") ?? "";
+            var label = JsonBoundary.text (window, "label", "Quota");
+            var reset = JsonBoundary.text (window, "resetText", "");
+            var pace = JsonBoundary.text (window, "pace", "");
             var remaining_node = window.get_member ("remaining");
             var known = remaining_node != null && remaining_node.get_node_type () != Json.NodeType.NULL;
             var remaining = known
                 ? GLib.Math.fmin (100.0, GLib.Math.fmax (0.0, remaining_node.get_double ())) : -1.0;
-            var level = Presentation.level_for (remaining);
+            var level = Presentation.visual_level (remaining);
             var eta = QuotaEta.from_window (window, stale, now_unix);
 
             var group = new Gtk.Box (Gtk.Orientation.VERTICAL, 1);
             var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
-            var name = new Gtk.Label (Presentation.short_window_label (label, (int) window.get_int_member ("minutes"))) {
+            var name = new Gtk.Label (Presentation.short_window_label (label, (int) JsonBoundary.integer (window, "minutes"))) {
                 xalign = 0, width_request = 34
             };
             name.add_css_class ("window-name");
@@ -1886,7 +2094,7 @@ namespace MSeries {
 
         private void render_spend (Json.Object snapshot) {
             clear (spend_box);
-            var spending = snapshot.has_member ("spending") ? snapshot.get_array_member ("spending") : null;
+            var spending = snapshot.has_member ("spending") ? JsonBoundary.array (snapshot, "spending") : null;
             if (spending == null || spending.get_length () == 0) {
                 show_state (spend_box, "emblem-documents-symbolic", "No spend data yet",
                     "CodexBar estimates spend from local token use once it has seen some.", false);
@@ -1894,19 +2102,19 @@ namespace MSeries {
             }
             for (uint i = 0; i < spending.get_length (); i++) {
                 var item = spending.get_object_element (i);
-                var provider = (item.get_string_member ("provider") ?? "").down ();
+                var provider = (JsonBoundary.text (item, "provider", "")).down ();
                 var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
                 card.add_css_class ("card");
                 var title = new Gtk.Label (provider_title (provider)) { xalign = 0 };
                 title.add_css_class ("provider-title");
                 card.append (title);
-                var error = item.get_string_member ("error") ?? "";
+                var error = JsonBoundary.text (item, "error", "");
                 if (error.length > 0) {
                     card.append (subtle_label (error));
                 } else {
-                    append_metric (card, "Today", "$%0.2f".printf (item.get_double_member ("today")));
-                    append_metric (card, "This month", "$%0.2f".printf (item.get_double_member ("month")));
-                    append_metric (card, "Tokens this month", Presentation.count_text (item.get_int_member ("tokens")));
+                    append_metric (card, "Today", "$%0.2f".printf (JsonBoundary.number (item, "today")));
+                    append_metric (card, "This month", "$%0.2f".printf (JsonBoundary.number (item, "month")));
+                    append_metric (card, "Tokens this month", Presentation.count_text (JsonBoundary.integer (item, "tokens")));
                 }
                 spend_box.append (card);
             }
@@ -1919,17 +2127,7 @@ namespace MSeries {
                 show_state (sessions_box, "dialog-warning-symbolic", "Sessions unavailable", sessions_error, false);
                 return;
             }
-            var parser = new Json.Parser ();
-            Json.Array? sessions = null;
-            try {
-                parser.load_from_data (sessions_text, -1);
-                var root = parser.get_root ();
-                if (root != null && root.get_node_type () == Json.NodeType.OBJECT) {
-                    sessions = root.get_object ().get_array_member ("sessions");
-                }
-            } catch (Error e) {
-                sessions = null;
-            }
+            var sessions = local_sessions;
             if (sessions == null || sessions.get_length () == 0) {
                 show_state (sessions_box, "dialog-warning-symbolic", "No sessions found",
                     "The session check returned nothing to show.", false);
@@ -1941,7 +2139,7 @@ namespace MSeries {
         }
 
         private Gtk.Widget build_session (Json.Object session) {
-            var state = session.get_string_member ("state") ?? "off";
+            var state = JsonBoundary.text (session, "state", "off");
             var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
             card.add_css_class ("card");
             var head = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
@@ -1949,28 +2147,28 @@ namespace MSeries {
             dot.add_css_class (state == "ok" ? "dot-ok" : state == "warn" ? "dot-warn" : "dot-off");
             dot.set_tooltip_text (state == "ok" ? "Ready" : state == "warn" ? "Needs attention" : "Not set up");
             head.append (dot);
-            var title = new Gtk.Label (session.get_string_member ("name") ?? "Session") { xalign = 0, hexpand = true };
+            var title = new Gtk.Label (JsonBoundary.text (session, "name", "Session")) { xalign = 0, hexpand = true };
             title.add_css_class ("provider-title");
             head.append (title);
             card.append (head);
-            card.append (subtle_label (session.get_string_member ("detail") ?? ""));
+            card.append (subtle_label (JsonBoundary.text (session, "detail", "")));
 
-            var periods = session.has_member ("periods") ? session.get_array_member ("periods") : null;
+            var periods = session.has_member ("periods") ? JsonBoundary.array (session, "periods") : null;
             if (periods == null || periods.get_length () == 0) {
                 return card;
             }
             // 5 hours and 7 days are the windows the plans are limited by.
             for (uint i = 0; i < periods.get_length () && i < 2; i++) {
                 var period = periods.get_object_element (i);
-                var cost = period.get_double_member ("costUSD");
-                var value = "%s req · %s tok".printf (period.get_int_member ("requests").to_string (),
-                    Presentation.count_text (period.get_int_member ("tokens")));
+                var cost = JsonBoundary.number (period, "costUSD");
+                var value = "%s req · %s tok".printf (JsonBoundary.integer (period, "requests").to_string (),
+                    Presentation.count_text (JsonBoundary.integer (period, "tokens")));
                 if (cost > 0) {
                     value += " · $%0.2f".printf (cost);
                 }
-                append_metric (card, period.get_string_member ("label") ?? "Usage", value);
+                append_metric (card, JsonBoundary.text (period, "label", "Usage"), value);
             }
-            var note = session.get_string_member ("note") ?? "";
+            var note = JsonBoundary.text (session, "note", "");
             if (note.length > 0) {
                 card.append (subtle_label (note));
             }

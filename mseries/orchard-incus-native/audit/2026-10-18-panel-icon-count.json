@@ -1,0 +1,57 @@
+{
+  "checked_utc": "2026-10-18T17:17:16.634369+00:00",
+  "scope": "Vala Wingpanel companion; manager windows and Incus guests not changed",
+  "display_backend": "Wayland",
+  "running_instances": 2,
+  "panel": {
+    "description": "Orchard for Incus \u00b7 2 of 2 instances running \u00b7 CPU 0.0% of host \u00b7 Memory 814.0\u00a0MB",
+    "tree": [
+      {
+        "role": "table cell",
+        "name": "2",
+        "children": 1
+      },
+      {
+        "role": "panel",
+        "name": "",
+        "children": 1
+      },
+      {
+        "role": "grouping",
+        "name": "",
+        "children": 1
+      },
+      {
+        "role": "panel",
+        "name": "",
+        "children": 2
+      },
+      {
+        "role": "image",
+        "name": "",
+        "children": 0
+      },
+      {
+        "role": "label",
+        "name": "2",
+        "children": 0
+      }
+    ]
+  },
+  "module_sha256": "688bb48cf001c907ab64be5620ad32aa67367b5686c9079deed08502dc1d0d8f",
+  "automated_checks": {
+    "native_meson_suites": 5,
+    "passed": 5,
+    "wayland_panel_fixture_states": [
+      "2",
+      "0",
+      "0",
+      "\u2014",
+      "1"
+    ],
+    "display_children": [
+      "Gtk.Image",
+      "Gtk.Label"
+    ]
+  }
+}

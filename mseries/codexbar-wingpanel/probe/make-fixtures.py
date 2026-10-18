@@ -1,11 +1,24 @@
 #!/usr/bin/env python3
 """Generate deterministic snapshot + sessions fixtures for the render probe from fixtures/live.json."""
 import copy, datetime as dt, json, pathlib
+import os
+import tempfile
 
 here = pathlib.Path(__file__).parent / "fixtures"
 live = json.loads((here / "live.json").read_text())
 NOW = dt.datetime.now(dt.timezone.utc).replace(second=0, microsecond=0)
 iso = lambda t: t.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def write_fixture(path, value, **options):
+    # Native tests generate/read these files concurrently. Never expose truncated JSON.
+    descriptor, temporary = tempfile.mkstemp(dir=here, prefix=".fixture-")
+    try:
+        with os.fdopen(descriptor, "w") as handle:
+            json.dump(value, handle, **options)
+        os.replace(temporary, path)
+    finally:
+        pathlib.Path(temporary).unlink(missing_ok=True)
 
 
 def window(key, label, minutes, remaining, reset_in_min, pace=""):
@@ -51,16 +64,16 @@ scenarios = {
 busy = snap([]); busy["busy"] = True
 scenarios["busy"] = busy
 for name, value in scenarios.items():
-    (here / f"{name}.json").write_text(json.dumps(value, indent=1))
+    write_fixture(here / f"{name}.json", value, indent=1)
 
 sessions = {"updatedAt": iso(NOW), "sessions": [
-    {"id": "codex", "name": "ChatGPT · Codex", "state": "ok", "detail": "Signed in · account quota comes from CodexBar."},
+    {"id": "codex", "name": "ChatGPT · Codex", "state": "ok", "detail": "Signed in · account quota comes from CodexBar.", "periods": [{"label":"7 days","tokens":42000000,"requests":40,"costUSD":0}]},
     {"id": "claude", "name": "Claude Code", "state": "ok", "detail": "Signed in",
      "periods": [{"label": "5 hours", "requests": 42, "tokens": 1850000, "costUSD": 0},
                  {"label": "7 days", "requests": 610, "tokens": 31200000, "costUSD": 0}],
-     "note": "Local activity from Claude Code transcripts · not account quota (tokens exclude cache reads)"},
-    {"id": "opencode", "name": "OpenCode", "state": "warn", "detail": "OpenCode history uses an unsupported schema."}]}
-(here / "sessions.json").write_text(json.dumps(sessions))
+     "note": "Local activity from Claude Code transcripts · not account quota (tokens include cache reads/writes)"},
+    {"id": "opencode", "name": "OpenCode", "state": "ok", "detail": "Local activity", "periods": [{"label":"7 days","tokens":120813143,"requests":565,"costUSD":0}]}]}
+write_fixture(here / "sessions.json", sessions)
 print("fixtures:", ", ".join(sorted(scenarios)))
 
 # Complete saved-account fixtures exercise short-window exhaustion beside healthy totals.
@@ -82,12 +95,15 @@ accounts = {
             window("tertiary", "30 day", 43200, 63, 30000)]}]},
 }
 for provider, value in accounts.items():
-    (here / f"accounts-{provider}.json").write_text(json.dumps(value))
+    write_fixture(here / f"accounts-{provider}.json", value)
 
-(here / "hints.json").write_text(json.dumps(scenarios["connected"], indent=1))
+write_fixture(here / "hints.json", scenarios["connected"], indent=1)
 hint_accounts = copy.deepcopy(accounts)
 hint_accounts["claude"]["accounts"][1]["windows"] = [
     window("primary", "5 hour", 300, 95, 190), window("secondary", "7 day", 10080, 90, 8000)]
 hint_accounts["codex"]["accounts"][1]["windows"][1] = window("secondary", "7 day", 10080, 62, 45)
 for provider, value in hint_accounts.items():
-    (here / f"accounts-{provider}-hints.json").write_text(json.dumps(value))
+    write_fixture(here / f"accounts-{provider}-hints.json", value)
+
+write_fixture(here / "opencode-compact.json", scenarios["connected"], indent=1)
+write_fixture(here / "accounts-opencode-single.json", {"accounts": [accounts["opencode"]["accounts"][0]]})

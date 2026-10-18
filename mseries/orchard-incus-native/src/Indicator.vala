@@ -4,8 +4,6 @@ private class OrchardIndicator : Wingpanel.Indicator {
     private Gtk.Image icon;
     private Gtk.Box display;
     private Gtk.Label badge;
-    private OrchardPanelRing cpu_ring;
-    private OrchardPanelRing memory_ring;
     private HashTable<string, int64?> cpu_samples = new HashTable<string, int64?> (str_hash, str_equal);
     private int64 sample_time = 0;
     private Gtk.Label action_error;
@@ -35,9 +33,6 @@ private class OrchardIndicator : Wingpanel.Indicator {
         };
         display.append (icon);
         display.append (badge);
-        cpu_ring = new OrchardPanelRing ();
-        memory_ring = new OrchardPanelRing (true);
-        display.append (cpu_ring); display.append (memory_ring);
         var style = new Gtk.CssProvider ();
         style.load_from_string (
             ".orchard-running-badge { font-size: 0.8em; font-weight: 600; " +
@@ -146,19 +141,8 @@ private class OrchardIndicator : Wingpanel.Indicator {
                 "%d of %d instances running".printf (running, items.length);
             summary.tooltip_text = null;
             badge.label = running.to_string ();
-            cpu_ring.update (cores / get_num_processors (), cpu_ready == running);
             cpu_caption.label = cpu_ready == running ? "CPU · %.1f%% of host".printf (cores / get_num_processors () * 100) : "CPU · collecting baseline / unavailable";
             if (cpu_ready == running) cpu_history.record (cores);
-            int64 total_memory = 0;
-            try {
-                string info; FileUtils.get_contents ("/proc/meminfo", out info);
-                foreach (var line in info.split ("\n")) if (line.has_prefix ("MemTotal:")) {
-                    foreach (var part in line.substring (9).split (" ")) {
-                        int64 number; if (int64.try_parse (part, out number)) { total_memory = number * 1024; break; }
-                    }
-                }
-            } catch (Error e) { }
-            memory_ring.update (total_memory > 0 ? (double) memory_used / total_memory : 0, total_memory > 0 && memory_ready == running);
             memory_caption.label = memory_ready == running ? "Memory · " + format_size ((uint64) memory_used) : "Memory · unavailable";
             if (memory_ready == running) memory_history.record (memory_used);
             display.tooltip_text = "Orchard for Incus · " + summary.label + " · CPU " + (cpu_ready != running ? "collecting baseline" : "%.1f%% of host".printf (cores / get_num_processors () * 100)) + " · Memory " + format_size ((uint64) memory_used);
@@ -170,7 +154,6 @@ private class OrchardIndicator : Wingpanel.Indicator {
             summary.label = "Incus unavailable";
             summary.tooltip_text = e.message;
             badge.label = "—";
-            cpu_ring.update (0, false); memory_ring.update (0, false);
             cpu_caption.label = "CPU · unavailable"; memory_caption.label = "Memory · unavailable";
             sample_time = 0; cpu_samples.remove_all ();
             display.tooltip_text = "Orchard for Incus · Incus unavailable";

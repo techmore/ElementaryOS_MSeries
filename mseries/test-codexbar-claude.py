@@ -38,6 +38,10 @@ class ClaudeTest(unittest.TestCase):
     """Every test runs against a fake HOME: the helper reads ~/.claude.json and the desktop app's config."""
 
     def setUp(self):
+        summary = mock.patch.object(MODULE.handoff, "summarize", return_value=("Fixture handoff: goal, progress, next steps.", "model-summary"))
+        summary.start()
+        self.addCleanup(summary.stop)
+
         import tempfile
         self._home = tempfile.TemporaryDirectory()
         self.home = pathlib.Path(self._home.name)
@@ -254,6 +258,115 @@ class ClaudeTest(unittest.TestCase):
         with MODULE.app_lock():
             self.assertEqual(MODULE.capture_app(), account["accountUuid"])
 
+    def code_history(self):
+        sid = "local_55555555-5555-4555-8555-555555555555"
+        cli = "66666666-6666-4666-8666-666666666666"
+        self.save_in_cswap(1, WORK | {"organizationUuid": "org-work"})
+        self.write(f".config/Claude/claude-code-sessions/uuid-me/org-me/{sid}.json",
+                   {"sessionId": sid, "cliSessionId": cli, "cwd": str(self.home), "title": "Fixture context"})
+        transcript = self.home / f".claude/projects/project/{cli}.jsonl"
+        transcript.parent.mkdir(parents=True, exist_ok=True)
+        transcript.write_text('{"type":"user","message":"fixture only"}\n')
+        return MODULE.app_root() / f"claude-code-sessions/uuid-work/org-work/{sid}.json"
+
+    def test_switch_exports_after_stop_and_imports_before_launch(self):
+        self.app_session(WORK, "work-encrypted")
+        self.app_session(ME, "me-encrypted")
+        target_entry = self.code_history()
+        events = []
+        export = MODULE.history.export_history
+        import_missing = MODULE.history.import_missing
+        def do_export(plan, store):
+            self.assertEqual(events, ["stop"])
+            events.append("export")
+            return export(plan, store)
+        def do_cli(cli, number):
+            self.assertEqual(events, ["stop", "export", "import"])
+            self.assertEqual(number, "1")
+            self.assertEqual(MODULE.read_json(MODULE.app_root() / "config.json")["lastKnownAccountUuid"], "uuid-work")
+            events.append("cli")
+            return True, "done"
+        def do_import(plan, snapshot):
+            self.assertEqual(events, ["stop", "export"])
+            self.assertTrue((snapshot / "manifest.json").exists())
+            events.append("import")
+            return import_missing(plan, snapshot)
+        def launch():
+            self.assertTrue(target_entry.is_file())
+            events.append("launch")
+        with mock.patch.object(MODULE, "stop_app", side_effect=lambda: events.append("stop") or True), \
+             mock.patch.object(MODULE.history, "export_history", side_effect=do_export), \
+             mock.patch.object(MODULE.history, "import_missing", side_effect=do_import), \
+             mock.patch.object(MODULE, "switch", side_effect=do_cli), \
+             mock.patch.object(MODULE, "launch_app", side_effect=launch):
+            ok, message = MODULE.app_switch("uuid-work", "cswap", "1")
+        self.assertTrue(ok, message)
+        self.assertEqual(events, ["stop", "export", "import", "cli", "launch"])
+        self.assertIn("1 local Code conversation added", message)
+
+    def test_handoff_is_saved_before_account_change_and_seeded_before_relaunch(self):
+        self.app_session(WORK, "work-encrypted")
+        self.app_session(ME, "me-encrypted")
+        self.code_history()
+        events = []
+        prepare, install = MODULE.handoff.prepare, MODULE.handoff.install
+        def build(*args):
+            self.assertEqual(MODULE.read_json(MODULE.app_root() / "config.json")["lastKnownAccountUuid"], "uuid-me")
+            brief = prepare(*args)
+            self.assertTrue((brief["folder"] / "handoff.md").is_file())
+            events.append("summary-before-auth-change")
+            return brief
+        def seed(plan, brief):
+            self.assertEqual(MODULE.read_json(MODULE.app_root() / "config.json")["lastKnownAccountUuid"], "uuid-work")
+            install(plan, brief)
+            events.append("fresh-seed")
+        with mock.patch.object(MODULE, "stop_app", return_value=True), \
+             mock.patch.object(MODULE.handoff, "prepare", side_effect=build), \
+             mock.patch.object(MODULE.handoff, "install", side_effect=seed), \
+             mock.patch.object(MODULE, "launch_app", side_effect=lambda: events.append("launch")):
+            ok, message = MODULE.app_switch("uuid-work")
+        self.assertTrue(ok, message)
+        self.assertEqual(events, ["summary-before-auth-change", "fresh-seed", "launch"])
+        self.assertIn("fresh Code conversation", message)
+
+    def test_history_export_failure_restores_original_sign_in(self):
+        self.app_session(WORK, "work-encrypted")
+        self.app_session(ME, "me-encrypted")
+        destination = self.code_history()
+        with mock.patch.object(MODULE, "stop_app", return_value=True), \
+             mock.patch.object(MODULE.history, "export_history", side_effect=OSError("fixture disk full")), \
+             mock.patch.object(MODULE, "launch_app"), mock.patch.object(MODULE, "switch") as cli:
+            ok, _ = MODULE.app_switch("uuid-work", "cswap", "1")
+        self.assertFalse(ok)
+        self.assertEqual(MODULE.read_json(MODULE.app_root() / "config.json")["lastKnownAccountUuid"], "uuid-me")
+        self.assertFalse(destination.exists())
+        cli.assert_not_called()
+
+    def test_import_failure_does_not_change_cli_and_restores_app_sign_in(self):
+        self.app_session(WORK, "work-encrypted")
+        self.app_session(ME, "me-encrypted")
+        self.code_history()
+        with mock.patch.object(MODULE, "stop_app", return_value=True), \
+             mock.patch.object(MODULE.history, "import_missing", side_effect=MODULE.history.HistoryError("fixture history error")), \
+             mock.patch.object(MODULE, "launch_app"), mock.patch.object(MODULE, "switch") as cli:
+            ok, message = MODULE.app_switch("uuid-work", "cswap", "1")
+        self.assertFalse(ok)
+        self.assertIn("fixture history error", message)
+        self.assertEqual(MODULE.read_json(MODULE.app_root() / "config.json")["lastKnownAccountUuid"], "uuid-me")
+        cli.assert_not_called()
+
+    def test_first_time_app_setup_imports_context_before_launch(self):
+        self.app_session(ME, "me-encrypted")
+        destination = self.code_history()
+        def launch():
+            self.assertTrue(destination.is_file())
+            self.assertNotIn("lastKnownAccountUuid", MODULE.read_json(MODULE.app_root() / "config.json"))
+        with mock.patch.object(MODULE, "stop_app", return_value=True), \
+             mock.patch.object(MODULE, "launch_app", side_effect=launch):
+            ok, message = MODULE.app_login("1")
+        self.assertTrue(ok, message)
+        self.assertIn("1 local Code conversation added", message)
+
     def test_app_snapshot_is_private_atomic_and_includes_committed_wal(self):
         self.app_session(ME, SECRET)
         path = MODULE.cookie_path()
@@ -395,6 +508,41 @@ class ClaudeTest(unittest.TestCase):
              mock.patch.object(MODULE, "switch", side_effect=cli_switch):
             self.assertTrue(MODULE.app_switch("uuid-work", "cswap", "1")[0])
         self.assertEqual(events, ["stop-app", "switch-cli", "launch-app"])
+
+    def test_matching_desktop_hint_still_restores_saved_target_and_restarts(self):
+        # The config hint can name the requested account while the running UI
+        # still uses another session. Preserve the target loaded before capture.
+        for number in (None, "2"):
+            with self.subTest(number=number):
+                self.app_session(ME, "saved-target-encrypted")
+                with closing(sqlite3.connect(MODULE.cookie_path())) as db, db:
+                    db.execute("UPDATE cookies SET encrypted_value=?", (b"live-other-encrypted",))
+                events = []
+                restore = MODULE.restore_app
+
+                def do_restore(session):
+                    self.assertEqual(events, ["stop"])
+                    restore(session)
+                    with closing(sqlite3.connect(MODULE.cookie_path())) as db:
+                        self.assertEqual(db.execute("SELECT encrypted_value FROM cookies").fetchone()[0],
+                                         b"saved-target-encrypted")
+                    events.append("restore")
+
+                def do_cli(cli, account):
+                    self.assertEqual(events, ["stop", "restore"])
+                    self.assertEqual(account, "2")
+                    events.append("cli")
+                    return True, "done"
+
+                with mock.patch.object(MODULE, "stop_app", side_effect=lambda: events.append("stop") or True), \
+                     mock.patch.object(MODULE, "restore_app", side_effect=do_restore), \
+                     mock.patch.object(MODULE, "switch", side_effect=do_cli) as cli, \
+                     mock.patch.object(MODULE, "launch_app", side_effect=lambda: events.append("launch")):
+                    ok, message = MODULE.app_switch("uuid-me", "cswap", number)
+                self.assertTrue(ok, message)
+                self.assertEqual(events, ["stop", "restore"] + (["cli"] if number else []) + ["launch"])
+                if number is None:
+                    cli.assert_not_called()
 
     def test_relaunch_drops_inherited_claude_oauth_environment(self):
         with mock.patch.dict(MODULE.os.environ, {"CLAUDE_CODE_OAUTH_TOKEN": SECRET}), \

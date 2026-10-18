@@ -24,6 +24,8 @@ git -C "$work/source" apply "$repo/mseries/patches/quick-settings-audio-output.p
 install -m644 "$repo/mseries/quick-settings/AudioOutputModel.vala" "$work/source/src/Widgets/AudioOutputModel.vala"
 install -m644 "$repo/mseries/quick-settings/AudioOutput.vala" "$work/source/src/Widgets/AudioOutput.vala"
 install -m644 "$repo/mseries/quick-settings/AirPlayOutputs.vala" "$work/source/src/Widgets/AirPlayOutputs.vala"
+git -C "$work/source" apply "$repo/mseries/patches/quick-settings-bluetooth.patch"
+install -m644 "$repo/mseries/quick-settings/Bluetooth.vala" "$work/source/src/Widgets/Bluetooth.vala"
 meson setup "$work/build" "$work/source" --prefix=/usr --libdir=lib/aarch64-linux-gnu --buildtype=release
 ninja -C "$work/build"
 if ldd "$work/build/src/libquick-settings.so" | grep -q 'not found'; then
@@ -32,4 +34,5 @@ if ldd "$work/build/src/libquick-settings.so" | grep -q 'not found'; then
 fi
 mseries_backup "$plugin" io.elementary.quick-settings
 sudo install -m644 "$work/build/src/libquick-settings.so" "$plugin"
-echo 'Installed keyboard brightness, screen brightness and the charge-limit switch and the Sound Output list (built-in, Bluetooth, AirPlay) below the gear-menu toggles (the switch needs install-power.sh for its polkit action; AirPlay needs install-airplay-discovery.sh). Reload Wingpanel to activate.'
+bash "$repo/mseries/install-bluetooth-control-center.sh"
+echo 'Installed keyboard brightness, screen brightness and the charge-limit switch and Bluetooth power/device controls plus the Sound Output list (built-in, Bluetooth, AirPlay) below the gear-menu toggles (the switch needs install-power.sh for its polkit action; AirPlay needs install-airplay-discovery.sh). Reload Wingpanel to activate.'

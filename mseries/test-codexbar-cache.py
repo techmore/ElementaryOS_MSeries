@@ -194,7 +194,7 @@ class TranscriptIndexTest(Sandbox):
         self.assertEqual(sorted(t for _, t, _ in self.mod.read_claude_records(self.projects, self.now_ms)), [2, 12])
         self.file.unlink()
         self.assertEqual(self.mod.read_claude_records(self.projects, self.now_ms), [])
-        self.assertEqual(cache.load("claude-transcripts")["files"], {})
+        self.assertEqual(cache.load("claude-transcripts-v2")["files"], {})
 
 
 class ClaudeListingTest(Sandbox):

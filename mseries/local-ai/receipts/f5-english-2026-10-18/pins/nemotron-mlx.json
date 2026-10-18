@@ -1,0 +1,27 @@
+{
+  "repo": "animaslabs/nemotron-speech-streaming-en-0.6b-mlx-8bit",
+  "revision": "e226e5999c22a07a77bac5b02c7ca9578fe773ec",
+  "license": "other",
+  "files": [
+    {
+      "name": "README.md",
+      "bytes": 3892,
+      "sha256": "748be4b694fca5d568f82440785487fe9f5fc8ea9e500683e31fdd9062826ad6"
+    },
+    {
+      "name": "config.json",
+      "bytes": 15011,
+      "sha256": "6f0e9fbb406aa978279fe05577bb31a9a26a11290a825c33f5f149d7d887bc4d"
+    },
+    {
+      "name": "model.safetensors",
+      "bytes": 885693898,
+      "sha256": "5a3f8e4c4bad4a2361ba58b0a873b7bcf7122a808dfa61a39b8f398b322108c4"
+    },
+    {
+      "name": "tokenizer.model",
+      "bytes": 251056,
+      "sha256": "07d4e5a63840a53ab2d4d106d2874768143fb3fbdd47938b3910d2da05bfb0a9"
+    }
+  ]
+}

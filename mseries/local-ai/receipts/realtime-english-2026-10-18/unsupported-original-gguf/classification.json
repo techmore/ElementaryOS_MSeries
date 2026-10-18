@@ -1,0 +1,9 @@
+{
+  "outcome": "unsupported-runtime-format",
+  "native_status": 5,
+  "architecture_rejected": true,
+  "completed_quality_trials": 0,
+  "quality_failure": false,
+  "source_pin": "../pins/nemotron-source.json",
+  "scope": "Original evidence retained; correct transcribe.cpp port is a separate artifact/cohort"
+}

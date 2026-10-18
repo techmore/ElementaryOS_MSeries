@@ -20,12 +20,10 @@ import time
 from typing import Any
 
 import codexbar_cache
+import codexbar_tokens
+import codexbar_history
 
-WINDOWS = (
-    ("5 hours", 5 * 3600 * 1000),
-    ("7 days", 7 * 24 * 3600 * 1000),
-    ("30 days", 30 * 24 * 3600 * 1000),
-)
+WINDOWS = codexbar_history.WINDOWS
 MAX_TRANSCRIPT_FILES = 4000
 
 
@@ -72,13 +70,16 @@ def summarize(records: list[tuple[int, int, float]], now_ms: int) -> list[dict[s
     return periods
 
 
-def codex_session(home: pathlib.Path) -> dict[str, Any]:
+def codex_session(home: pathlib.Path, now_ms: int) -> dict[str, Any]:
     auth = load_json_object(home / ".codex/auth.json")
     entry: dict[str, Any] = {"id": "codex", "name": "ChatGPT · Codex"}
     if auth is None:
         entry.update(state="off", detail="Not signed in. Open the ChatGPT desktop app or run codex login.")
     else:
         entry.update(state="ok", detail="Signed in · account quota comes from CodexBar.")
+    records = codexbar_tokens.read_codex(home, now_ms, parse_timestamp)
+    entry["periods"] = summarize(records, now_ms) if records else []
+    entry["note"] = "Local Codex activity · all local accounts · includes cache reads/writes · not account quota"
     return entry
 
 
@@ -107,16 +108,15 @@ def parse_transcript(path: pathlib.Path) -> dict[str, list[int]]:
                 except json.JSONDecodeError:
                     continue
                 message = record.get("message") if isinstance(record, dict) else None
-                if record.get("type") != "assistant" or not isinstance(message, dict):
+                if not isinstance(record, dict) or record.get("type") != "assistant" or not isinstance(message, dict):
                     continue
                 usage = message.get("usage")
                 created = parse_timestamp(record.get("timestamp"))
                 if not isinstance(usage, dict) or created is None:
                     continue
                 try:
-                    tokens = sum(int(usage.get(key) or 0) for key in
-                                 ("input_tokens", "output_tokens", "cache_creation_input_tokens"))
-                except (TypeError, ValueError):
+                    tokens = codexbar_tokens.claude_tokens(usage)
+                except (TypeError, ValueError, OverflowError):
                     continue
                 key = str(record.get("requestId") or message.get("id") or record.get("uuid") or f"{path}:{len(responses)}")
                 responses[key] = [created, tokens]  # streaming repeats a response; the last copy wins
@@ -129,7 +129,7 @@ def read_claude_records(projects: pathlib.Path, now_ms: int) -> list[tuple[int, 
     """Token records from recent transcripts. Only files whose size or mtime changed are parsed again; the
     per-file results live in the cache so a repeat scan costs one stat per file."""
     oldest = (now_ms - WINDOWS[-1][1]) / 1000
-    index = codexbar_cache.load("claude-transcripts").get("files")
+    index = codexbar_cache.load("claude-transcripts-v2").get("files")
     index = index if isinstance(index, dict) else {}
     kept: dict[str, Any] = {}
     count = 0
@@ -149,7 +149,7 @@ def read_claude_records(projects: pathlib.Path, now_ms: int) -> list[tuple[int, 
         else:
             kept[str(path)] = {"size": info.st_size, "mtime": info.st_mtime_ns, "responses": parse_transcript(path)}
     if kept.keys() != index.keys() or any(kept[k] is not index.get(k) for k in kept):
-        codexbar_cache.store("claude-transcripts", {"files": kept})
+        codexbar_cache.store("claude-transcripts-v2", {"files": kept})
     # A response can appear in several transcripts (resumed sessions); count it once.
     responses: dict[str, tuple[int, int]] = {}
     for entry in kept.values():
@@ -167,7 +167,7 @@ def claude_session(home: pathlib.Path, now_ms: int) -> dict[str, Any]:
     projects = home / ".claude/projects"
     records = read_claude_records(projects, now_ms) if projects.is_dir() else []
     entry["periods"] = summarize(records, now_ms) if records else []
-    entry["note"] = "Local activity from Claude Code transcripts · not account quota (tokens exclude cache reads)"
+    entry["note"] = "Local activity from Claude Code transcripts · all local accounts · includes cache reads/writes · not account quota"
     if signed_in:
         where = "" if binary else " · desktop app session (no claude CLI on PATH)"
         entry.update(state="ok", detail="Signed in" + where)
@@ -182,54 +182,27 @@ def opencode_session(home: pathlib.Path, now_ms: int) -> dict[str, Any]:
     entry: dict[str, Any] = {"id": "opencode", "name": "OpenCode"}
     binary = find_binary("opencode", home, (".opencode/bin/opencode",))
     database = data_home(home) / "opencode/opencode.db"
-    entry["note"] = "Local activity from OpenCode history · OpenCode Go account quota needs its web session"
-    records: list[tuple[int, int, float]] = []
+    entry["note"] = "Local activity from OpenCode history · all local accounts/providers · includes cache reads/writes · not account quota"
+    periods: list[dict[str, Any]] = []
     providers: dict[str, int] = {}
     problem = ""
     if database.is_file():
         try:
-            connection = sqlite3.connect(f"file:{database}?mode=ro", uri=True, timeout=0.5)
-            try:
-                columns = {row[1] for row in connection.execute("PRAGMA table_info(session_message)")}
-                if {"type", "time_created", "data"}.issubset(columns):
-                    for created, data in connection.execute(
-                        "SELECT time_created, data FROM session_message WHERE type = 'assistant' AND json_valid(data)"
-                    ):
-                        try:
-                            payload = json.loads(data)
-                            tokens_info = payload.get("tokens") or {}
-                            if tokens_info.get("total") is not None:
-                                tokens = int(tokens_info["total"])
-                            else:
-                                cache = tokens_info.get("cache") or {}
-                                tokens = sum(int(value or 0) for value in (
-                                    tokens_info.get("input"), tokens_info.get("output"),
-                                    tokens_info.get("reasoning"), cache.get("read"), cache.get("write")))
-                            cost = payload.get("cost")
-                            cost = float(cost) if isinstance(cost, (int, float)) and cost >= 0 else 0.0
-                            provider = str((payload.get("model") or {}).get("providerID") or "unknown")
-                            records.append((int(created), tokens, cost))
-                            providers[provider] = providers.get(provider, 0) + 1
-                        except (TypeError, ValueError, AttributeError):
-                            continue
-                else:
-                    problem = "OpenCode history uses an unsupported schema."
-            finally:
-                connection.close()
+            periods, providers = codexbar_history.opencode_summary(database, now_ms)
         except (sqlite3.Error, OSError) as error:
             problem = f"Could not read OpenCode history: {error}"
-    entry["periods"] = summarize(records, now_ms) if records else []
+    entry["periods"] = periods if providers else []
     if providers:
         entry["providers"] = sorted(providers, key=providers.get, reverse=True)
     auth = load_json_object(data_home(home) / "opencode/auth.json")
     has_keys = bool(auth)
     if problem:
         entry.update(state="warn", detail=problem)
-    elif binary and (records or has_keys):
+    elif binary and (providers or has_keys):
         entry.update(state="ok", detail="Ready" + (" · signed-in providers: " + ", ".join(sorted(auth)) if has_keys else
                                                    " · using built-in free models"))
     elif binary:
-        entry.update(state="ok", detail="Installed · no sessions yet.")
+        entry.update(state="ok", detail="Installed · no activity in the last 30 days.")
     else:
         entry.update(state="off", detail="OpenCode is not installed.")
     return entry
@@ -240,7 +213,7 @@ def collect(home: pathlib.Path | None = None, now_ms: int | None = None) -> dict
     now_ms = int(time.time() * 1000) if now_ms is None else now_ms
     return {
         "updatedAt": iso_time(now_ms),
-        "sessions": [codex_session(home), claude_session(home, now_ms), opencode_session(home, now_ms)],
+        "sessions": [codex_session(home, now_ms), claude_session(home, now_ms), opencode_session(home, now_ms)],
     }
 
 

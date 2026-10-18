@@ -1,0 +1,120 @@
+{
+  "schema": 1,
+  "complete": false,
+  "passed": false,
+  "cases": [
+    {
+      "field": "rich",
+      "native_preview_visible": true,
+      "preview_clear_exact": true,
+      "multiline_literal_exact": true,
+      "cancel_drops_preview": true,
+      "stale_commit_refused": true,
+      "native_engine_restored": true,
+      "text": "Hello from the local English assistant.\nLiteral text: $() & <tag> \"quoted\".\nPlease keep these three lines.",
+      "composition_events": [
+        {
+          "field": "rich",
+          "type": "compositionstart",
+          "text": ""
+        },
+        {
+          "field": "rich",
+          "type": "compositionupdate",
+          "text": "Temporary English words while speaking"
+        }
+      ]
+    }
+  ],
+  "method": "Real Brave X11 private local synthetic contenteditable and textarea via current focus-bound IBus bridge",
+  "scope": "Gmail-style rich compose pattern only; no Gmail account or live mail integration tested",
+  "editor_empty_policy": "Contenteditable empty DOM and its sole <br> placeholder are treated as empty; all nonempty text and multiline whitespace remain exact",
+  "microphone_recorded": false,
+  "audio_played": false,
+  "inference": false,
+  "owner_windows_opened": false,
+  "owner_profile_used": false,
+  "mail_sent": false,
+  "keyboard_device_opened": false,
+  "physical_f5_tested": false,
+  "runtime": {
+    "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+    "browser": "Brave Browser 155.1.97.59"
+  },
+  "source_sha256": {
+    "dictation-input.py": "af551bb327dead5d22ae80b0f956357d7fb3964128deebe6045f572e7996b4d8",
+    "dictation-input-client.py": "7eb7a0d903663f3db075925e5a1bb3fbb31880fd335e852fefe0e1c3607d436d",
+    "f5-browser-editors-smoke.py": "a6f620a311f42bc8d281ff36130ca77e79b54b1824d47602e810de409d2f4168",
+    "machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+  },
+  "current_fixture": {
+    "field": "rich",
+    "after_focus_change": "Hello from the local English assistant.\nLiteral text: $() & <tag> \"quoted\".\nPlease keep these three lines.Do not move these provisional words",
+    "inner_html": "Hello from the local English assistant.<div>Literal text: $() &amp; &lt;tag&gt; \"quoted\".</div><div>Please keep these three lines.Do not move these provisional words</div>",
+    "composition_events": [
+      {
+        "field": "rich",
+        "type": "compositionstart",
+        "text": ""
+      },
+      {
+        "field": "rich",
+        "type": "compositionupdate",
+        "text": "Temporary English words while speaking"
+      },
+      {
+        "field": "rich",
+        "type": "compositionupdate",
+        "text": ""
+      },
+      {
+        "field": "rich",
+        "type": "compositionend",
+        "text": ""
+      },
+      {
+        "field": "rich",
+        "type": "compositionstart",
+        "text": ""
+      },
+      {
+        "field": "rich",
+        "type": "compositionupdate",
+        "text": "This preview must be cancelled"
+      },
+      {
+        "field": "rich",
+        "type": "compositionupdate",
+        "text": ""
+      },
+      {
+        "field": "rich",
+        "type": "compositionend",
+        "text": ""
+      },
+      {
+        "field": "rich",
+        "type": "compositionstart",
+        "text": ""
+      },
+      {
+        "field": "rich",
+        "type": "compositionupdate",
+        "text": "Do not move these provisional words"
+      },
+      {
+        "field": "rich",
+        "type": "compositionend",
+        "text": "Do not move these provisional words"
+      }
+    ]
+  },
+  "failure_kind": "AssertionError",
+  "failure_detail": "Focus change committed a provisional draft: 'Hello from the local English assistant.\\nLiteral text: $() & <tag> \"quoted\".\\nPlease keep these three lines.Do not move these provisional words'",
+  "resources": {
+    "samples": 4,
+    "min_available_bytes": 13199441920,
+    "max_fan_rpm": 2518.0,
+    "max_temp_c": 45.573
+  }
+}
