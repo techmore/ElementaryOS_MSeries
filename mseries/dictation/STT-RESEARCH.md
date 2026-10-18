@@ -163,3 +163,92 @@ Unverified or open questions:
 - omarchy-mlx (Vulkan/ANE MLX for Asahi): https://github.com/joshuaswarren/omarchy-mlx
 - whisper.cpp v1.9.5 (2026-10-06): https://github.com/ggml-org/whisper.cpp
 - Local: `mseries/local-ai/README.md`, `mseries/local-ai/ANE-PREFLIGHT.md`, `mseries/install-dictation.sh`, `mseries/dictation/config.toml`
+
+---
+
+# Addendum 2026-10-18 (b): macOS benchmark to match, and what ports to Asahi
+
+Scope: public sources read 2026-10-18 (web search, `gh`). Nothing installed, downloaded, run or timed here.
+"Unverified" = vendor, aggregator or model-card claim not reproduced. Extends sections 1 to 4 above; does not repeat them.
+Section 4's recommendation (Parakeet TDT v3 via Voxtype ONNX) stands as stage 1; this addendum adds a better runtime
+candidate for stages 3 and 4.
+
+## A. macOS on Apple Silicon: the quality and latency bar
+
+| Option | Engine / hardware path | Evidence found | Verdict |
+|---|---|---|---|
+| Apple SpeechAnalyzer / SpeechTranscriber (macOS 26) | Apple's own on-device model, system managed | One vendor-run test (Inscribe team, M2 Pro 32 GB, LibriSpeech): 2.12 % test-clean, 4.56 % test-other, versus Whisper Small (WhisperKit Core ML) 3.74 / 7.95, Whisper Base 5.42 / 12.51, legacy SFSpeechRecognizer 9.02 / 16.25. About 3x faster than Whisper Small. English only, read speech; the authors warn accents, meetings and distant audio may differ. No Parakeet in the test. Vendor-run, single machine | Strongest zero-install baseline on a Mac. Streaming volatile results exist in the API (Apple docs, not re-read today). No accent or technical-vocabulary data |
+| Parakeet TDT 0.6B v3 via FluidAudio (Core ML / ANE) | ANE | Core ML model card: about 110x realtime batch on **M4 Pro**; FluidAudio streaming Parakeet EOU 120M: 12x RTFx, 4.9 % WER, M4 Pro. Third-party speed test (M4, one short clip): FluidAudio 0.19 s, parakeet-mlx 0.50 s, mlx-whisper large-v3-turbo 1.02 s | Best latency on macOS; no M1 Pro numbers found |
+| parakeet-mlx, mlx-whisper, mlx-audio, mlx-qwen3-asr | MLX / Metal | Exist and work on macOS. mlx-audio and voxmlx (PyPI) offer Voxtral Realtime streaming with 4-bit weights; mlx-qwen3-asr offers 4/8-bit and streaming | Fine on a Mac. Not portable to Asahi as-is (MLX has no upstream Vulkan/Metal path on Linux) |
+| Qwen3-ASR 0.6B / 1.7B | Audio encoder plus Qwen3 LM, Apache-2.0 (GGUF cards) | Card claims LibriSpeech-other 3.38 (1.7B) versus 3.97 for Whisper-large-v3 (third-party doc, unverified) | LLM-style decoder, strong English plus 30 languages, no streaming in the transcribe.cpp port |
+| Qwen-Audio-3.0-ASR (arXiv 2609.07549, Sept 2026) | Closed or unknown; abstract only | Claims SOTA or competitive, a streaming variant, and native single-pass "transcription polishing" of disfluent speech. No numbers, sizes or weight release found on the abstract page | Watch item, not actionable |
+| Voxtral Mini 4B Realtime | MLX (voxmlx) on Mac | Configurable 80 ms to 2.4 s delay (earlier section). No Apple-Silicon latency or WER data found | Interesting for words-while-speaking on a Mac; too big for Asahi CPU |
+| Dictation apps | VoiceInk: whisper.cpp plus FluidAudio Parakeet plus GGUF; Hex, MacParakeet, Murmur: Parakeet TDT v3 via FluidAudio; Handy: Whisper plus Parakeet (v0.9.8, 2026-10-03, MIT, 34k stars); MacWhisper: Whisper family; Superwhisper: Whisper-family, an open feature request asks for MLX-accelerated Parakeet; Wispr Flow: cloud, about 700 ms, closed | App pages are mostly vendor or affiliate marketing; engine lists unverified except Handy and VoiceInk's own pages | The leading Mac apps converged on Parakeet TDT v3 locally; the premium products add an LLM cleanup stage (Wispr cloud, Superwhisper "modes") |
+
+Take-away for the bar: on a Mac, the quality target is roughly "SpeechAnalyzer or Parakeet TDT v3, plus LLM cleanup, text
+appearing at release or live". English WER of the best local models on LibriSpeech test-clean is 1.3 to 2.5 %; it is the
+**noisy, accented, jargon-heavy dictation** where the gap to base.en shows, and nobody publishes that. We must measure it ourselves.
+
+## B. Portability to Linux on Apple Silicon (Asahi, aarch64, Honeykrisp, no ANE)
+
+Not portable: SpeechAnalyzer, Core ML / FluidAudio (ANE), MLX Metal. Upstream MLX has aarch64 Linux CPU wheels only
+(section 2 above); the omarchy-mlx Vulkan fork is experimental. Voxtral Realtime and Qwen-class LLM-decoder models are
+too heavy for 10 CPU cores in a live loop (unverified for this box, no data).
+
+### New finding: transcribe.cpp (handy-computer) is the best portable runtime found
+
+- Repo https://github.com/handy-computer/transcribe.cpp (MIT, 2,059 stars, pushed 2026-10-18, latest v0.4.0 released 2026-10-12). By the Handy author (CJ Pais); announced on the Mozilla AI blog 2026-06-30 per a secondary summary.
+- ggml runtime with Metal, Vulkan, CUDA, HIP and a tinyBLAS CPU path. **v0.4.0 publishes a prebuilt `transcribe-native-0.4.0-linux-aarch64-cpu-vulkan.tar.gz`** (read from the GitHub release asset list). Vulkan build flag `-DTRANSCRIBE_VULKAN=ON`; the Arch AUR has `transcribe-cpp-vulkan`. Bindings: Python, Rust, Swift, TypeScript, C API.
+- 16 model families, 60+ variants as GGUF, each WER-tested against its reference. Includes everything this research cares about in one runtime: Parakeet (TDT 0.6B v2/v3, `parakeet-unified-en-0.6b` streaming), **Nemotron Speech Streaming EN 0.6B and Nemotron 3.5 ASR Streaming** (true cache-aware streaming, `--stream-chunk-ms`, lookahead 0/80/480/1040 ms), **Moonshine Streaming tiny/small/medium**, Whisper large-v3-turbo, Cohere Transcribe, Qwen3-ASR, Canary-Qwen, Granite Speech 4.1 and 5.0 TurboCTC (Apache-2.0, 470M, offline), Voxtral Realtime, Silero VAD.
+- Streaming API: `transcribe_stream_begin / feed / finalize`. This is the missing piece for "words appear while speaking": a small client can type stable partial text.
+- Accuracy, LibriSpeech test-clean, Q8_0, transcribe.cpp's own pipeline (greedy): Parakeet TDT v2 1.69 %, v3 1.94 %, Nemotron streaming EN 2.31 % offline and **2.29 to 2.31 % streaming at 1.12 s chunk**, Moonshine streaming tiny 4.52 / small 2.54 / medium 2.16 %, Qwen3-ASR 0.6B 2.11 % / 1.7B 1.62 %, Granite 5.0 TurboCTC 1.33 %. Clean read speech only; do not compare these with the leaderboard averages in section 1 (different datasets).
+- Speed published only for Apple M4 Max and Ryzen 7 4750U (mean of 3 after 1 warmup, not medians). Examples from the model cards: Moonshine streaming medium Q8_0 on M4 Max **CPU** 235 ms for an 11 s clip (46.8x), 1.12 s for 35 s; the Nemotron card shows about 330 ms CPU for the 11 s clip on M4 Max (Q4_K_M and Q8_0); on the Ryzen 4750U Vulkan, a 11 s clip took 424 to 426 ms for one table, and the Moonshine card shows Vulkan **slower** than CPU on some rigs. **No M1 Pro, Asahi or Honeykrisp numbers exist.** M4 Max CPU is certainly faster than an M1 Pro CPU; treat these as upper bounds.
+- Caveats: the release is 6 days old, v0.x API; no issue mentioning Asahi or Honeykrisp was found (search returned none); Honeykrisp Vulkan compute correctness for ggml is unproven (Voxtype's author called it unstable for ggml-Vulkan in Aug 2026, section 2). Nemotron license is NVIDIA Open Model License (not OSI); Parakeet v3 CC-BY-4.0; Moonshine MIT; Granite 5.0 TurboCTC Apache-2.0 (non-commercial variant exists, avoid). Handy itself uses WebKitGTK and wtype/dotool on Linux and has its own post-process LLM hook (`--toggle-post-process`), but is a separate app from Voxtype; adopting it would replace our service.
+
+### LLM-style cleanup (small local LLM post-process)
+
+- Evidence is thin and mostly community: small fine-tunes exist (a 0.5B Qwen2.5 cleaner aimed at CPU; a Qwen3.5-2B QLoRA cleaner; a Reddit-reported 0.8B model), all vendor or model-card claims, none benchmarked by us.
+- A second generation pass sits directly on the critical path between release and text (the Qwen-Audio-3.0 report states this cost explicitly). On this CPU, a 0.5B to 2B model emitting about 40 tokens will add roughly hundreds of ms to a few s (estimate, not measured).
+- Reported failure mode: small models delete real content or keep the wrong side of a self-correction; prompting did not fix it, training data did. Mitigations: thinking off, length and edit-distance guard that falls back to the raw transcript, and cleanup only above a word-count threshold or on a separate hotkey.
+- Parakeet TDT, Nemotron, Cohere and Qwen3-ASR already output punctuation and casing, so the cleanup LLM mostly removes fillers and fixes jargon. Test whether it is needed at all before shipping it.
+- The repo already has a local LLM stack (mseries/local-ai). Cleanup must obey its admission policy so it does not fight the GPU worker.
+
+### Ranked recommendation for Asahi (B)
+
+1. **Parakeet TDT 0.6B v3 (or v2, English only) via the Voxtype ONNX binary.** Unchanged from section 4: lowest effort, one third-party M1 Pro Asahi success report.
+2. **transcribe.cpp aarch64 prebuilt, Parakeet TDT v2/v3 Q8_0 on CPU, as the same-WAV A/B partner.** Same weights, different runtime; shows whether ggml/tinyBLAS beats ONNX Runtime on this CPU. Cheap: one tarball plus one GGUF.
+3. **transcribe.cpp Nemotron Speech Streaming EN 0.6B Q8_0 (CPU first, Vulkan second), with a thin client that types partial text.** Best accuracy-vs-latency curve (about 2.3 % clean WER at 1.12 s chunks), the only candidate here giving true words-while-speaking. Licence is not OSI; needs a new client (Voxtype cannot do it).
+4. **Moonshine Streaming small (140M, MIT).** Fallback streaming if Nemotron is too slow on CPU; lower accuracy margin unknown on noisy speech.
+5. Whisper large-v3-turbo CPU or Vulkan (section 4, stage 3): only if Parakeet fails on the owner's accent or vocabulary.
+6. Not recommended now: Voxtral Realtime 4B, Canary-Qwen, Qwen3-ASR 1.7B, Granite 4.1 2B (too heavy for live CPU use, unverified), MLX-based STT on Asahi.
+
+### Concrete next step (no installs without the owner's approval of the scratch location; Mac not required)
+
+Extend Stage 1 of section 4: in a scratch directory (not `/usr/local/bin`, not the live service), download the v0.4.0 aarch64 tarball and Q8_0 GGUFs for `parakeet-tdt-0.6b-v3`, `nemotron-speech-streaming-en-0.6b` and `moonshine-streaming-small`, verify SHA-256 against the release, and run `transcribe-cli` on the fixed WAV set. Then add the Voxtype ONNX Parakeet and the current Whisper `base.en` as comparators. Use WAV file input only; no microphone, no display, no services.
+
+### Honest benchmark protocol (additions to section 4)
+
+- Test set: 20 owner dictation clips (consent, hand-made references) with code terms, filenames, accented or fast speech, background noise, plus 20 public clips. LibriSpeech-clean alone proves nothing: every model above scores 1.3 to 2.5 % there.
+- Metrics per engine: normalised WER (jiwer, identical normaliser), separate WER on a jargon-term list, time from end-of-audio to final text (median and p90, at least 10 runs per clip, warm), cold load time, peak RSS, CPU-seconds per audio second, fan RPM.
+- Streaming: first-partial latency, final-minus-last-audio latency, and partial-text instability (percentage of words rewritten after first display) at chunk sizes 160, 560 and 1120 ms. Feed the WAV at real time pace.
+- Cleanup: A/B each engine raw versus raw plus LLM cleanup on the same clips; score WER against the reference, count deleted content words, and time. Count a cleanup as a win only if it lowers WER or edit distance on at least 3 rounds without deletion errors.
+- Protocol rules: ABBA ordering, discard first warm run, report N with every number, medians not means (vendor tables above are means of 3 and not comparable), CPU governor and thermals recorded, brightness, display and audio untouched. No word "confirmed" or "parity" from fewer than 3 rounds.
+
+### Still unverified
+
+- Any transcribe.cpp or Voxtype-ONNX speed on M1 Pro or Asahi; whether ggml-Vulkan is even correct on Honeykrisp for these encoders.
+- Real accented or noisy WER of every model above; all numbers here are LibriSpeech or vendor tests.
+- SpeechAnalyzer accuracy beyond the single Inscribe test; engines of Superwhisper, MacWhisper and Wispr Flow (only VoiceInk, Handy, Hex pages gave concrete lists).
+- Qwen-Audio-3.0-ASR weights, size and licence.
+
+### Sources (read 2026-10-18)
+
+- transcribe.cpp repo, README, models docs, catalog, v0.4.0 release assets (2026-10-12): https://github.com/handy-computer/transcribe.cpp ; model card https://huggingface.co/handy-computer/moonshine-streaming-tiny-gguf ; Arch AUR https://aur.archlinux.org/packages/transcribe-cpp-vulkan (search snippet only)
+- Handy v0.9.8 (2026-10-03) README: https://github.com/cjpais/Handy
+- Apple SpeechAnalyzer vs Whisper (Inscribe, reported 2026-07-14): https://www.gigazine.net/gsc_news/en/20260714-apple-speech-analyzer-benchmark/
+- FluidAudio benchmarks and Parakeet Core ML card: https://docs.fluidinference.com/reference/benchmarks.md , https://huggingface.co/FluidInference/parakeet-tdt-0.6b-v3-coreml
+- Mac speed test (M4, one clip, 2025): https://github.com/anvanvan/mac-whisper-speedtest ; MLX benchmark paper https://arxiv.org/abs/2510.18921
+- voxmlx: https://pypi.org/project/voxmlx/ ; mlx-audio https://github.com/Blaizzy/mlx-audio ; mlx-qwen3-asr https://github.com/moona3k/mlx-qwen3-asr/
+- Qwen3-ASR GGUF cards: https://huggingface.co/handy-computer/Qwen3-ASR-1.7B-gguf ; Qwen-Audio-3.0-ASR report: https://arxiv.org/abs/2609.07549
+- Mac dictation app comparisons (marketing, unverified): https://tryvoiceink.com/best-superwhisper-alternatives , https://wisprflow.ai/post/wispr-flow-vs-superwhisper , https://www.bitdoze.com/fluidvoice-mac-dictation/ , https://superwhisper.userjot.com/board/p/mlx-acceleration-for-local-parakeet-models
+- Cleanup models (community, unverified): https://huggingface.co/abhiram3040/simplewords-dictation-cleanup-v2 , https://app.alphaneural.io/models/Quobi/Quill
