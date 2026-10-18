@@ -184,7 +184,7 @@ class Dictation:
                 log(f"dictated {len(final)} chars in {time.time() - t0:.1f}s; audio peak {peak:.3f} rms {rms:.4f}")
                 if os.environ.get("STREAM_FORCE_FALLBACK"):
                     final = ""  # test hook: pretend streaming recognized nothing
-                if not final.strip() and peak > 0.03 and len(kept) > 16000 * 2:
+                if not final.strip() and peak > 0.2 and rms > 0.07 and len(kept) > 16000 * 2:
                     # streaming heard nothing but there was sound: let Whisper have one offline pass
                     redo = whisper_fallback(bytes(kept))
                     if redo and not DRY:
@@ -216,6 +216,8 @@ def main():
     dev = keyboard_device()
     log("ready, keyboard", dev, "model", os.path.basename(MODEL))
     signal.signal(signal.SIGTERM, lambda *a: os._exit(0))
+    # `systemctl --user kill -s USR1 mseries-stream-dictate` toggles recording (self-test without the key)
+    signal.signal(signal.SIGUSR1, lambda *a: d.stop() if d.active else d.start())
     fmt = "llHHi"
     size = struct.calcsize(fmt)
     with open(dev, "rb", buffering=0) as f:
