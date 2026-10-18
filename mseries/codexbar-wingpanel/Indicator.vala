@@ -211,6 +211,9 @@ namespace MSeries {
                 ".mseries-codexbar .mseries-dock button { padding: 6px 11px; border-radius: 9px; min-height: 0; } " +
                 ".mseries-codexbar .mseries-dock button:hover { background: alpha(currentColor, 0.1); } " +
                 ".mseries-codexbar .account-line { min-height: 0; } " +
+                ".mseries-codexbar .account-name { font-size: 8pt; } " +
+                ".mseries-codexbar .account-meta { font-size: 7pt; } " +
+                ".mseries-codexbar .account-line button { padding: 2px 8px; min-height: 0; } " +
                 ".mseries-codexbar .provider-mark { opacity: 0.9; } " +
                 ".mseries-codexbar .mark-claude { color: #d97757; opacity: 1; } " +
                 ".mseries-codexbar button.compact { padding: 1px 8px; min-height: 0; min-width: 0; } " +
@@ -667,9 +670,47 @@ namespace MSeries {
                 "Claude account added", "Couldn't add the Claude account");
         }
 
+        /* Clicking a provider's card opens its desktop app, or brings it forward when it is already running
+         * (these Electron apps are single-instance, so relaunching hands focus to the open window). Buttons inside
+         * the card claim their own clicks first. */
+        private static string? desktop_id_for (string provider) {
+            switch (provider) {
+                case "codex": return "chatgpt.desktop";
+                case "claude": return "com.anthropic.Claude.desktop";
+                case "opencodego": return "ai.opencode.desktop.dev.desktop";
+                default: return null;
+            }
+        }
+
+        private void open_desktop_app (string provider, Gtk.Widget from) {
+            var id = desktop_id_for (provider);
+            var app = id != null ? new GLib.DesktopAppInfo (id) : null;
+            if (app == null) {
+                subtitle_label.set_text ("%s isn't installed as a desktop app".printf (provider_title (provider)));
+                return;
+            }
+            popdown_from (from);
+            try {
+                app.launch (null, Gdk.Display.get_default ().get_app_launch_context ());
+            } catch (Error e) {
+                subtitle_label.set_text ("Could not open %s: %s".printf (provider_title (provider), e.message));
+            }
+        }
+
+        private void open_app_on_click (Gtk.Widget card, string provider) {
+            if (desktop_id_for (provider) == null) {
+                return;
+            }
+            var click = new Gtk.GestureClick () { button = 1 };
+            click.released.connect ((presses, x, y) => open_desktop_app (provider, card));
+            card.add_controller (click);
+            card.set_cursor_from_name ("pointer");
+        }
+
         private Gtk.Widget build_claude_card (int64 now_unix) {
             var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
             card.add_css_class ("card");
+            open_app_on_click (card, "claude");
             var head = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             var dot = new Gtk.Label ("●");
             dot.add_css_class ("dot-off");
@@ -770,26 +811,45 @@ namespace MSeries {
             return generator.to_data (null);
         }
 
+        /* Switch always answers on screen: success names the account, failure says why. Silence looked like "nothing happened". */
         private void run_accounts_helper (string[] arguments) {
+            switch_codex_account.begin (arguments);
+        }
+
+        private async void switch_codex_account (string[] arguments) {
+            var ok = false;
+            var message = "";
             try {
                 string[] command = { "python3", helper_path ("codexbar-accounts.py") };
                 foreach (var argument in arguments) {
                     command += argument;
                 }
-                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_SILENCE | SubprocessFlags.STDERR_SILENCE);
-                process.wait_async.begin (null, () => {
-                    // The active account changed: re-read quota and the account list from scratch.
-                    codex_accounts_fetched_us = 0;
-                    last_digest = "";
-                    run_action ("--refresh");
-                    refresh_codex_accounts.begin ();
-                    read_snapshot.begin ();
-                    if (arguments[0] == "switch" && process.get_successful ()) {
-                        offer_chatgpt_restart.begin (arguments[1].split ("|")[0]);
-                    }
-                });
+                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_MERGE);
+                string output;
+                yield process.communicate_utf8_async (null, null, out output, null);
+                ok = process.get_successful ();
+                try {
+                    var parser = new Json.Parser ();
+                    parser.load_from_data (output.strip (), -1);
+                    message = parser.get_root ().get_object ().get_string_member_with_default ("message", "");
+                } catch (Error e) {
+                    message = output.strip ();
+                }
             } catch (Error e) {
-                subtitle_label.set_text ("Could not switch account: " + e.message);
+                message = e.message;
+            }
+            // The active account changed (or didn't): re-read quota and the account list from scratch.
+            codex_accounts_fetched_us = 0;
+            last_digest = "";
+            run_action ("--refresh");
+            refresh_codex_accounts.begin (true);
+            read_snapshot.begin ();
+            if (!ok) {
+                tell ("Couldn't switch Codex account", message.length > 0 ? message : "The helper reported an error.");
+                return;
+            }
+            if (arguments.length > 1) {
+                offer_chatgpt_restart.begin (arguments[1].split ("|")[0]);
             }
         }
 
@@ -801,6 +861,7 @@ namespace MSeries {
                     SubprocessFlags.STDOUT_SILENCE | SubprocessFlags.STDERR_SILENCE);
                 yield check.wait_async (null);
                 if (!check.get_successful ()) {
+                    tell ("Switched Codex to " + email, "New Codex sessions and the ChatGPT app will use this account.");
                     return;
                 }
             } catch (Error e) {
@@ -1444,6 +1505,7 @@ namespace MSeries {
 
             var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
             card.add_css_class ("card");
+            open_app_on_click (card, provider);
 
             var head = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             var dot = new Gtk.Label ("●");
@@ -1643,28 +1705,34 @@ namespace MSeries {
             line.add_css_class ("account-line");
             var name = new Gtk.Label (email) { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.MIDDLE };
             name.set_tooltip_text (email);
-            var content = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { hexpand = true };
-            var identity = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
+            // One row: badges, name, plan and resets on the left, quota and time-to-reset to their right, then Switch.
+            name.add_css_class ("account-name");
+            name.ellipsize = Pango.EllipsizeMode.END;  // the start of an address identifies it better than the middle
+            name.width_chars = 8;
+            var identity = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4) { hexpand = true };
             identity.append (build_hint_badges (candidate_id));
             identity.append (name);
-            identity.append (build_plan_badge (email, plan));
+            // The plan lives in the tooltip here: the single row has no room for a badge beside the quota.
+            var plan_text = Presentation.plan_label (plan);
+            name.set_tooltip_text (plan_text.length > 0 ? "%s · %s".printf (email, plan_text) : email);
             if (resets != null) {
                 var chip = build_reset_credits (resets, new DateTime.now_utc ().to_unix ());
-                chip.margin_start = 6;
+                chip.margin_start = 2;
                 identity.append (chip);
             }
-            content.append (identity);
+            line.append (identity);
             var has_quota = windows != null && windows.get_length () > 0;
             var meta = new Gtk.Label (has_quota ? Presentation.account_quota (windows, new DateTime.now_utc ().to_unix ()) : detail) {
-                xalign = 0, wrap = true, wrap_mode = Pango.WrapMode.WORD_CHAR
-            };
+                xalign = 1, valign = Gtk.Align.CENTER, justify = Gtk.Justification.RIGHT,
+                wrap = true, wrap_mode = Pango.WrapMode.WORD_CHAR, max_width_chars = 34
+            };  // two windows fit on the row; a third wraps instead of widening the popover
             meta.set_tooltip_text ("Quota remaining · ↻ time until reset. " + detail);
             meta.add_css_class ("caption");
+            meta.add_css_class ("account-meta");
             if (!has_quota) meta.add_css_class ("dim-label");
             else meta.set_markup (colored_account_quota (meta, windows, new DateTime.now_utc ().to_unix ()));
             meta.add_css_class ("numeric");
-            content.append (meta);
-            line.append (content);
+            line.append (meta);
             if (has_quota) {
                 account_quota_labels += meta;
                 account_quota_windows += windows;
