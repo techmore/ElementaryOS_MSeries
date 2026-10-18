@@ -1,5 +1,14 @@
 # OS 9 implementation / Claude Code handoff
 
+## Consistent CodexBar panel typography — 2026-10-18
+
+Owner approved the compact OpenCode appearance and requested the same text sizes for Codex/Claude.
+Promoted the OpenCode sizes into shared panel styles: primary values 7.5 pt, reset countdowns 7 pt,
+secondary rows 6.75 pt. Removed provider-specific font overrides; popover text is unchanged.
+Verified native light/dark render probes with all three providers, including alternate accounts;
+the routine deploy also builds and runs all 12 native targets. Upstream stays v0.77.0.
+Installed/staged without restarting Wingpanel; native appearance loads at next login or an explicit reload.
+
 ## Compact two-row OpenCode panel — 2026-10-18
 
 Owner requested denser OpenCode information in the desktop bar. The active OpenCode quota/reset
