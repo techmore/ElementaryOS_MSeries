@@ -13,6 +13,7 @@ Start here; retain dated audits as evidence rather than treating them as current
 | Original efficiency goals | [Efficiency goals](../EFFICIENCY-GOALS.md) | Historical target rationale; use this machine's measurements for qualification |
 | Dynamic refresh / ProMotion | [Dynamic refresh audit](DYNAMIC-REFRESH-AUDIT.md) | Investigation and experimental patch; hardware behavior remains unqualified |
 | Charge limit and CPU policy | [Installer](../install-power.sh), [CLI](mseries-power), [policy](org.techmore.mseries.power.policy) | Implementation; see roadmap for outstanding physical checks |
+| Userspace trims and A/B tooling | [Optimization pass](OPTIMIZE-2026-10-18.md), [`optimize/`](optimize/) | Opt-in reversible trims (`mseries-power-tune`), alternating A/B (`power_ab.py`), per-app report (`app_hygiene.py`) |
 | Dock HDMI | [Dock investigation pointers](#dock-hdmi-and-suspend) | Separate kernel/display workstream, with power and suspend implications |
 | Project-wide status | [Handoff](../OS9-HANDOFF.md), [roadmap](../ROADMAP.md), [documentation index](../DOCS.md) | Record what changed and the next evidence needed |
 

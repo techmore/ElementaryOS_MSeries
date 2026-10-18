@@ -22,11 +22,10 @@ STATE=${MSERIES_TUNE_STATE:-/var/lib/mseries/power-tune}
 SYSTEMCTL=${MSERIES_SYSTEMCTL:-systemctl}
 DRY=0
 
-ITEMS=(cups-ondemand cups-browsed rpcbind smartd dock-lan-wake)
+ITEMS=(cups-browsed rpcbind smartd dock-lan-wake)
 
 describe() {
   case $1 in
-    cups-ondemand) echo "CUPS starts on demand via cups.socket/cups.path instead of at boot (printing still works)";;
     cups-browsed) echo "stop cups-browsed (network printer auto-discovery; no queues are configured)";;
     rpcbind) echo "stop rpcbind service+socket (NFS/RPC portmapper; refused while an NFS mount exists)";;
     smartd) echo "stop smartmontools (SMART polling every 30 min; loses disk-health warnings) [proposed only]";;
@@ -59,7 +58,6 @@ save_units() { # item unit...
   f=$STATE/$item.prev
   if (( DRY )); then echo "would save prior state of $* to $f"; return; fi
   mkdir -p "$STATE"
-  [[ -e $f ]] && die "$item is already applied (state in $f); revert it first"
   : > "$f.tmp"
   for u in "$@"; do printf 'unit %s %s %s\n' "$u" "$(unit_enabled "$u")" "$(unit_active "$u")" >> "$f.tmp"; done
   mv "$f.tmp" "$f"
@@ -90,12 +88,10 @@ usb_lan_wakeups() {
 
 apply_item() {
   local u
+  describe "$1" >/dev/null || die "unknown item $1 (try: list)"
+  # Idempotent: applying an applied item keeps the first saved prior state (A/B arms re-apply).
+  if [[ -f $STATE/$1.prev ]]; then echo "$1 already applied"; return 0; fi
   case $1 in
-    cups-ondemand)
-      [[ $(unit_enabled cups.socket) == enabled ]] || die "cups.socket is not enabled; on-demand start would break printing"
-      save_units "$1" cups.service
-      run "$SYSTEMCTL" disable cups.service
-      run "$SYSTEMCTL" stop cups.service;;
     cups-browsed)
       save_units "$1" cups-browsed.service
       run "$SYSTEMCTL" disable --now cups-browsed.service;;
@@ -108,7 +104,6 @@ apply_item() {
       run "$SYSTEMCTL" disable --now smartmontools.service;;
     dock-lan-wake)
       local f=$STATE/$1.prev
-      [[ -e $f ]] && die "$1 is already applied (state in $f); revert it first"
       if (( DRY )); then
         for u in $(usb_lan_wakeups); do echo "would write disabled to $u/power/wakeup (was $(cat "$u/power/wakeup"))"; done
         return
@@ -152,7 +147,7 @@ status() {
   local u d
   show
   echo "--- live state"
-  for u in cups.service cups.socket cups-browsed.service rpcbind.service rpcbind.socket smartmontools.service; do
+  for u in cups.service cups-browsed.service rpcbind.service rpcbind.socket smartmontools.service; do
     printf '%-22s %-10s %s\n' "$u" "$(unit_enabled "$u")" "$(unit_active "$u")"
   done
   for d in $(usb_lan_wakeups); do printf 'usb-lan %s wakeup=%s\n' "${d##*/}" "$(cat "$d/power/wakeup")"; done

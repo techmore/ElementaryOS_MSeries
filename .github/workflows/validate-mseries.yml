@@ -83,6 +83,9 @@ jobs:
           python3 mseries/test-power-cap.py
           python3 -m unittest discover -s mseries/power/macos-baseline -p 'test_*.py'
           python3 mseries/test-power-install.py
+          bash -n mseries/power/optimize/mseries-power-tune
+          shellcheck -S warning mseries/power/optimize/mseries-power-tune
+          python3 mseries/power/optimize/test_optimize.py
           bash -n mseries/fairydust/usb4/test-dp-tunnel.sh
           python3 -m py_compile mseries/fairydust/usb4/*.py mseries/fairydust/usb4/tools/*.py
           for f in mseries/fairydust/usb4/test-*.py; do python3 "$f"; done
