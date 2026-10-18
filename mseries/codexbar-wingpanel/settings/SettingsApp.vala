@@ -3,6 +3,8 @@
 namespace MSeries {
     internal class SettingsWindow : Gtk.ApplicationWindow {
         private SettingsModel model = new SettingsModel ();
+        private PanelPreferences panel_preferences = new PanelPreferences ();
+        private Gtk.Label panel_notice;
         private string app_path;
         private string cli_path;
         private string config_path;
@@ -166,6 +168,7 @@ namespace MSeries {
         private Gtk.Widget row (string title, string? subtitle, Gtk.Widget control) {
             var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
             line.add_css_class ("cb-row");
+            control.update_property (Gtk.AccessibleProperty.LABEL, title, -1);
             var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 1) { hexpand = true, valign = Gtk.Align.CENTER };
             text.append (new Gtk.Label (title) { xalign = 0, wrap = true });
             if (subtitle != null) {
@@ -184,6 +187,22 @@ namespace MSeries {
             sw.notify["active"].connect (() => {
                 model.values.set_boolean_member (key, sw.active);
                 changed (key);
+            });
+            return sw;
+        }
+
+        private Gtk.Switch panel_toggle (string key) {
+            var sw = new Gtk.Switch () { active = panel_preferences.get_bool (key) };
+            bool reverting = false;
+            sw.notify["active"].connect (() => {
+                if (loading || reverting) { return; }
+                if (!panel_preferences.save_bool (key, sw.active)) {
+                    reverting = true;
+                    sw.active = panel_preferences.get_bool (key);
+                    reverting = false;
+                }
+                panel_notice.label = panel_preferences.last_error;
+                panel_notice.visible = panel_preferences.last_error.length > 0;
             });
             return sw;
         }
@@ -277,14 +296,26 @@ namespace MSeries {
 
         private Gtk.Widget build_display () {
             var root = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
-            var quota = section ("Quota");
+            var panel = section ("Wingpanel");
+            add_row (panel, row ("Quota percentages", "Show percentages in the bar and quota text", panel_toggle ("showPercent")));
+            add_row (panel, row ("Time until reset", "Show reset countdowns in the bar and quota text", panel_toggle ("showReset")));
+            add_row (panel, row ("Other accounts in panel", "Show other accounts in the bar only", panel_toggle ("showAccounts")));
+            add_row (panel, row ("Account hints", "Mark the most available account and next weekly reset", panel_toggle ("showHints")));
+            root.append (panel);
+            panel_notice = new Gtk.Label (panel_preferences.last_error) {
+                xalign = 0, wrap = true, visible = panel_preferences.last_error.length > 0
+            };
+            panel_notice.add_css_class ("cb-notice");
+            root.append (panel_notice);
+
+            var quota = section ("CodexBar app", "Quota display in the separate CodexBar window");
             add_row (quota, row ("Show", null, choice ("quotaDisplay", { "remaining", "used" }, { "Remaining", "Used" })));
             add_row (quota, row ("Reset time", null, choice ("resetDisplay", { "countdown", "absolute", "both" }, { "Countdown", "Clock time", "Both" })));
             add_row (quota, row ("Highlight low quota", null, toggle ("warningColors")));
             add_row (quota, row ("Show pace", "Whether you're ahead of or behind an even pace", toggle ("showPace")));
             root.append (quota);
 
-            var bar = section ("Menu bar");
+            var bar = section ("Tray icon", "Detail in CodexBar’s tray icon");
             add_row (bar, row ("Providers in the bar", "How many to show side by side", spin ("barProviders", 0, 80, 1)));
             add_row (bar, row ("Session, weekly and pace", "More detail next to each provider", toggle ("showBarDetail")));
             add_row (bar, row ("Per-model caps", null, toggle ("showScopedCaps")));
@@ -294,7 +325,7 @@ namespace MSeries {
 
         private Gtk.Widget build_providers () {
             var root = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
-            var shown = section ("Providers", "The order here is the order in the panel. Sign in and switch accounts from the panel's Accounts section.");
+            var shown = section ("Providers", "The order here is the order in the panel. Use + on each card to add accounts, and Switch beside a saved account.");
             provider_list = new Gtk.ListBox () { selection_mode = Gtk.SelectionMode.NONE };
             provider_list.add_css_class ("cb-listbox");
             card_of (shown).append (provider_list);

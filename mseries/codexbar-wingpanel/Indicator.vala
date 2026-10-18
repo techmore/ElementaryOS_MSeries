@@ -8,6 +8,9 @@ namespace MSeries {
     public class CodexBarIndicator : Wingpanel.Indicator {
         private Gtk.Box panel_segments;
         private string panel_digest = "";
+        private PanelPreferences display_preferences = new PanelPreferences ();
+        private FileMonitor? preferences_monitor;
+        private uint preferences_reload_source = 0;
         private Json.Array? panel_entries = null;
         private delegate void ActionFunc ();
         private Gtk.Box panel_display;
@@ -89,6 +92,7 @@ namespace MSeries {
             };
             menu.add_css_class ("mseries-codexbar");
             install_style (menu.get_display ());
+            watch_display_preferences ();
 
             // No header: the quota cards lead. Freshness and refresh live in the bottom bar with the dock.
             subtitle_label = new Gtk.Label ("Loading usage…") { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.END };
@@ -148,7 +152,7 @@ namespace MSeries {
             actions.append (make_dock_button ("Quick View", "window-new-symbolic", "--quick-view"));
             actions.append (make_dock_button ("Usage details", "view-list-symbolic", "--usage"));
             actions.append (make_dock_button ("Spending details", "accessories-calculator-symbolic", "--spending"));
-            actions.append (make_dock_button ("Settings & sign in", "avatar-default-symbolic", "--settings"));
+            actions.append (make_dock_button ("Settings", "preferences-system-symbolic", "--settings"));
             actions.append (refresh_button);
             bar.append (actions);
             menu.append (bar);
@@ -177,6 +181,34 @@ namespace MSeries {
                 }
                 return Source.CONTINUE;
             });
+        }
+
+        private void watch_display_preferences () {
+            try {
+                var directory = File.new_for_path (GLib.Path.build_filename (Environment.get_user_config_dir (), "codexbar"));
+                preferences_monitor = directory.monitor_directory (FileMonitorFlags.NONE);
+                preferences_monitor.changed.connect (() => {
+                    if (preferences_reload_source != 0) Source.remove (preferences_reload_source);
+                    preferences_reload_source = Timeout.add (100, () => {
+                        preferences_reload_source = 0;
+                        reload_display_preferences ();
+                        return Source.REMOVE;
+                    });
+                });
+            } catch (Error e) {
+                // Also reload on ordinary snapshot reads if the config directory did not exist yet.
+            }
+        }
+
+        private void reload_display_preferences () {
+            if (!display_preferences.load ()) return;
+            panel_digest = "";
+            last_digest = "";
+            if (panel_entries != null) {
+                var now = new DateTime.now_utc ().to_unix ();
+                update_panel (panel_entries, now);
+                render_quota (panel_entries, now);
+            }
         }
 
         private static void install_style (Gdk.Display display) {
@@ -311,6 +343,7 @@ namespace MSeries {
         // ---- Reading data -------------------------------------------------------------
 
         private async void read_snapshot (bool refresh_if_old = false) {
+            reload_display_preferences ();
             refresh_after_snapshot = refresh_after_snapshot || refresh_if_old;
             if (request_in_flight) {
                 return;
@@ -1386,19 +1419,25 @@ namespace MSeries {
                 icon.valign = Gtk.Align.CENTER;
             }
             segment.append (mark);
-            segment.append (build_hint_badges (provider, true));
+            if (display_preferences.get_bool ("showHints")) segment.append (build_hint_badges (provider, true));
             var value = new Gtk.Label (value_text) { valign = Gtk.Align.BASELINE_CENTER };
             value.add_css_class ("seg-value");
             if (level == QuotaLevel.LOW) value.add_css_class ("level-low");
             if (level == QuotaLevel.CRITICAL) value.add_css_class ("level-critical");
-            segment.append (value);
-            if (reset_text.length > 0) {
+            if (display_preferences.get_bool ("showPercent")) {
+                segment.append (value);
+            } else {
+                if (level == QuotaLevel.LOW) mark.add_css_class ("level-low");
+                if (level == QuotaLevel.CRITICAL) mark.add_css_class ("level-critical");
+            }
+            if (display_preferences.get_bool ("showReset") && reset_text.length > 0) {
                 var reset = new Gtk.Label (reset_text) { valign = Gtk.Align.BASELINE_CENTER };
                 reset.add_css_class ("seg-reset");
                 segment.append (reset);
             }
             var alternate = alternate_account_text (provider, new DateTime.now_utc ().to_unix ());
-            if (alternate.length == 0) return segment;
+            if (!display_preferences.get_bool ("showAccounts") || alternate.length == 0 ||
+                (!display_preferences.get_bool ("showPercent") && !display_preferences.get_bool ("showReset"))) return segment;
             var stack = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { valign = Gtk.Align.CENTER };
             stack.append (segment);
             var label = new Gtk.Label (null) { xalign = 0, use_markup = true };
@@ -1410,7 +1449,7 @@ namespace MSeries {
                 if (account.get_boolean_member_with_default ("active", false)) continue;
                 if (markup.len > 0) markup.append ("  ");
                 var windows = account.has_member ("windows") ? account.get_array_member ("windows") : null;
-                markup.append ("%s%lld: %s".printf (hint_markup (hint_id (provider, account), label), account.get_int_member_with_default ("number", i + 1),
+                markup.append ("%s%lld: %s".printf ((display_preferences.get_bool ("showHints") ? hint_markup (hint_id (provider, account), label) : ""), account.get_int_member_with_default ("number", i + 1),
                     windows == null || windows.get_length () == 0 ? "—"
                         : colored_account_quota (label, windows, new DateTime.now_utc ().to_unix (), true)));
             }
@@ -1749,11 +1788,12 @@ namespace MSeries {
         }
 
         /* quiet: healthy values keep the text color, so only low and critical quota draws the eye (panel bar). */
-        private static string colored_account_quota (Gtk.Widget widget, Json.Array? windows, int64 now_unix, bool quiet = false) {
+        private string colored_account_quota (Gtk.Widget widget, Json.Array? windows, int64 now_unix, bool quiet = false) {
             return Presentation.account_quota_markup (windows, now_unix,
                 quiet ? "" : quota_theme_color (widget, "success_color", "#2e7d32"),
                 quota_theme_color (widget, "warning_color", "#a66300"),
-                quota_theme_color (widget, "error_color", "#c6262e"));
+                quota_theme_color (widget, "error_color", "#c6262e"),
+                display_preferences.get_bool ("showPercent"), display_preferences.get_bool ("showReset"));
         }
 
         /* Which login a provider is tied to: quiet, under the title, never the focus of the card. */
@@ -1816,19 +1856,20 @@ namespace MSeries {
             percent.add_css_class ("numeric");
             if (level == QuotaLevel.LOW) percent.add_css_class ("text-low");
             if (level == QuotaLevel.CRITICAL) percent.add_css_class ("text-critical");
-            row.append (percent);
+            if (display_preferences.get_bool ("showPercent")) row.append (percent);
             var reset_label = new Gtk.Label (compact_reset (reset)) { xalign = 1, width_request = 46 };
             reset_label.add_css_class ("caption");
             reset_label.add_css_class ("dim-label");
             reset_label.add_css_class ("numeric");
             reset_label.set_tooltip_text (reset);
-            row.append (reset_label);
+            if (display_preferences.get_bool ("showReset")) row.append (reset_label);
             group.append (row);
 
             // The forecast only gets its own line when it is a warning; otherwise the reset sits inline.
             if (!known || eta.state == EtaState.EXHAUSTED || eta.state == EtaState.DEPLETING) {
-                var caption_text = known ? Presentation.window_caption (reset, eta.state, eta.detail)
-                    : "Usage not reported yet";
+                var caption_text = !known ? "Usage not reported yet"
+                    : display_preferences.get_bool ("showReset") ? Presentation.window_caption (reset, eta.state, eta.detail)
+                    : eta.state == EtaState.EXHAUSTED ? "Limit reached" : eta.detail;
                 var caption = new Gtk.Label (caption_text) { xalign = 0, wrap = true, margin_start = 40 };
                 caption.add_css_class ("caption");
                 caption.add_css_class (eta.state == EtaState.EXHAUSTED ? "text-critical" :

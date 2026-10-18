@@ -209,3 +209,15 @@ closes only the current user's ChatGPT executable, saves the departing login, sw
 and reopens ChatGPT. Avoid signing out/revoking saved credentials, which would break fast switching.
 Claude's installed-app Switch uses `switch <number> --desktop` after confirmation. CodexBar stays running during
 both; deploy-codexbar.sh independently restarts the panel and daemon when loading a new build.
+
+### Wingpanel display preferences
+
+Use the popover gear > **Display > Wingpanel**. Percentage and reset-time switches control quota text in the
+bar and menu. Other-account rows and hints can be hidden in the panel bar separately. Tooltips and progress-bar
+accessible names retain full quota information. Local options live in `~/.config/codexbar/wingpanel.json`, loaded
+by `PanelPreferences.vala`, and are never sent to upstream `--configure`. A directory monitor handles atomic file
+replacement and updates cached widgets immediately, without provider requests. Preferences default to enabled;
+malformed files retain the last valid values and the Settings window reports save errors.
+
+Build/run `test-live-preferences` via `probe/run-live-preferences.sh BUILD_DIR` to check live changes against
+isolated backends. For render variants, pass `CB_DISPLAY_PREFS=/absolute/path/to/wingpanel.json` to `probe/run-probe.sh`.
