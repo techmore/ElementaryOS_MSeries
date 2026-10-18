@@ -9,6 +9,7 @@ import subprocess
 import sys
 import time
 import unittest
+import uuid
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from orchard_incus import backend as b  # noqa: E402
@@ -29,8 +30,7 @@ def run(args):
 @unittest.skipUnless(LIVE, "set ORCHARD_LIVE=1 to run against a real Incus")
 class Live(unittest.TestCase):
     def setUp(self):
-        self.name = f"oi-live-{os.getpid() % 10000}"
-        subprocess.run(["incus", "delete", "-f", self.name], capture_output=True)
+        self.name = f"oi-live-{uuid.uuid4().hex[:12]}"
 
     def tearDown(self):
         subprocess.run(["incus", "delete", "-f", self.name], capture_output=True)
@@ -58,11 +58,12 @@ class Live(unittest.TestCase):
         self.assertEqual(b.ijson("snapshot", "list", self.name), [])
 
     def test_cancelled_launch_is_cleaned_up_even_though_the_server_finishes_it(self):
-        proc = subprocess.Popen(["incus", "launch", IMG, self.name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        token = os.urandom(16).hex()
+        proc = subprocess.Popen(["incus", "launch", IMG, self.name, "-c", f"{b.CREATION_TOKEN_KEY}={token}"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         time.sleep(0.3)
         proc.send_signal(2)  # SIGINT, what Ctrl-C and the app's Cancel send
         proc.wait(timeout=30)
-        self.assertTrue(b.cleanup_loop(self.name, run, patience=90))
+        self.assertTrue(b.cleanup_loop(self.name, run, patience=90, token=token))
         self.assertNotIn(self.name, names())
 
     def test_monitor_emits_parseable_lifecycle_events(self):

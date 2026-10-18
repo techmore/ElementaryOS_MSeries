@@ -173,9 +173,11 @@ def validate_new(name, image, cpu, mem):
     return msgs
 
 
-def create_args(vm, cpu, mem):
+def create_args(vm, cpu, mem, secure_boot=True):
     """Extra `incus launch` arguments for the form's choices (after the image and optional name)."""
     extra = ["--vm"] if vm else []
+    if vm:
+        extra += ["-c", "security.secureboot=" + str(secure_boot).lower()]
     if cpu.strip():
         extra += ["-c", f"limits.cpu={cpu.strip()}"]
     if mem.strip():
@@ -212,27 +214,52 @@ def parse_images_csv(text, limit=60):
     return rows
 
 
-def cleanup_loop(name, run, sleep=time.sleep, clock=time.monotonic, patience=120):
-    """Delete an instance whose creation was cancelled or failed.
+CREATION_TOKEN_KEY = "user.orchard.creation-token"
 
-    `incus launch` is one server-side create-and-start operation, so interrupting the client does not stop it: the
-    instance still appears (stopped, then running) some seconds later. Keep cancelling related operations and
-    force-deleting until the instance is gone. `run(args)` returns (returncode, stdout, stderr). True if deleted."""
+
+def cleanup_loop(name, run, sleep=time.sleep, clock=time.monotonic, patience=120, *, token=None):
+    """Clean only a partial instance carrying this creation job's marker.
+
+    Call after the launch client exits. Names alone are not ownership evidence:
+    an 'already exists' failure must never delete the pre-existing instance.
+    Missing instances need several quiet observations because server operations
+    can outlive a disconnected client. Unknown/malformed responses fail closed.
+    """
+    if not token:
+        return False
     res = f"/1.0/instances/{name}"
-    deadline = clock() + patience
+    deadline, quiet = clock() + patience, 0
     while clock() < deadline:
-        rc, out, _ = run(["incus", "operation", "list", "--format", "json"])
+        rc, text, error = run(["incus", "query", res])
+        verified = False
         if rc == 0:
             try:
-                ops = json.loads(out)
-            except ValueError:
-                ops = []
-            for op in ops:
-                if res in ((op.get("resources") or {}).get("instances") or []) and op.get("status") in ("Running", "Pending"):
-                    run(["incus", "operation", "delete", op["id"]])
-        rc, _, _ = run(["incus", "delete", "-f", name])
-        if rc == 0:
-            return True
+                actual = json.loads(text).get("config", {}).get(CREATION_TOKEN_KEY)
+            except (ValueError, AttributeError, TypeError):
+                return False
+            if actual != token:
+                return False
+            verified = True
+        op_rc, out, _ = run(["incus", "operation", "list", "--format", "json"])
+        try:
+            ops = json.loads(out) if op_rc == 0 else None
+        except ValueError:
+            ops = None
+        related = [op for op in (ops if isinstance(ops, list) else [])
+                   if isinstance(op, dict) and res in ((op.get("resources") or {}).get("instances") or [])
+                   and op.get("status") in ("Running", "Pending")]
+        if verified:
+            for op in related:
+                run(["incus", "operation", "delete", op["id"]])
+            deleted, _, _ = run(["incus", "delete", "-f", name])
+            if deleted == 0:
+                return True
+        elif rc != 0 and "not found" in error.lower() and isinstance(ops, list) and not related:
+            quiet += 1
+            if quiet >= 5:
+                return True
+        else:
+            quiet = 0
         sleep(1 if deadline - clock() > patience - 30 else 3)
     return False
 

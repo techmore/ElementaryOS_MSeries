@@ -112,7 +112,7 @@ class NewInstanceForm(unittest.TestCase):
 
     def test_create_args(self):
         self.assertEqual(b.create_args(False, "", ""), [])
-        self.assertEqual(b.create_args(True, " 2 ", "1GiB"), ["--vm", "-c", "limits.cpu=2", "-c", "limits.memory=1GiB"])
+        self.assertEqual(b.create_args(True, " 2 ", "1GiB"), ["--vm", "-c", "security.secureboot=true", "-c", "limits.cpu=2", "-c", "limits.memory=1GiB"])
 
 
 class EventsAndImages(unittest.TestCase):
@@ -370,11 +370,15 @@ class CleanupLoop(unittest.TestCase):
 
     def make(self, instance_appears_after):
         t = {"now": 0.0}
-        log = {"ops_deleted": [], "deletes": 0}
+        log = {"ops_deleted": [], "deletes": 0, "queries": 0}
         def run(args):
+            if args[:2] == ["incus", "query"]:
+                log["queries"] += 1
+                if t["now"] < instance_appears_after:
+                    return 1, "", "Instance not found"
+                return 0, json.dumps({"config": {b.CREATION_TOKEN_KEY: "test-token"}}), ""
             if args[:3] == ["incus", "operation", "list"]:
-                busy = t["now"] < instance_appears_after
-                op = {"id": "op-1", "status": "Running" if busy else "Success", "resources": {"instances": [f"/1.0/instances/{self.NAME}"]}}
+                op = {"id": "op-1", "status": "Running", "resources": {"instances": [f"/1.0/instances/{self.NAME}"]}}
                 other = {"id": "op-2", "status": "Running", "resources": {"instances": ["/1.0/instances/other"]}}
                 return 0, json.dumps([op, other]), ""
             if args[:3] == ["incus", "operation", "delete"]:
@@ -392,36 +396,87 @@ class CleanupLoop(unittest.TestCase):
 
     def test_instance_already_there(self):
         run, sleep, clock, log = self.make(0)
-        self.assertTrue(b.cleanup_loop(self.NAME, run, sleep, clock))
+        self.assertTrue(b.cleanup_loop(self.NAME, run, sleep, clock, token="test-token"))
         self.assertEqual(log["deletes"], 1)
 
     def test_waits_for_a_late_instance(self):
         run, sleep, clock, log = self.make(25)  # appears 25 simulated seconds after the cancel
-        self.assertTrue(b.cleanup_loop(self.NAME, run, sleep, clock))
-        self.assertGreater(log["deletes"], 5)
+        self.assertTrue(b.cleanup_loop(self.NAME, run, sleep, clock, token="test-token"))
+        self.assertGreater(log["queries"], 5)
+        self.assertEqual(log["deletes"], 1)
 
     def test_cancels_only_this_instances_operations(self):
         run, sleep, clock, log = self.make(5)
-        b.cleanup_loop(self.NAME, run, sleep, clock)
+        b.cleanup_loop(self.NAME, run, sleep, clock, token="test-token")
         self.assertEqual(set(log["ops_deleted"]), {"op-1"})
 
     def test_gives_up_after_patience(self):
         run, sleep, clock, log = self.make(10_000)
-        self.assertFalse(b.cleanup_loop(self.NAME, run, sleep, clock, patience=40))
+        self.assertFalse(b.cleanup_loop(self.NAME, run, sleep, clock, patience=40, token="test-token"))
 
     def test_backs_off_after_30_seconds(self):
         run, sleep, clock, log = self.make(10_000)
-        b.cleanup_loop(self.NAME, run, sleep, clock, patience=120)
+        b.cleanup_loop(self.NAME, run, sleep, clock, patience=120, token="test-token")
         # ~30 one-second rounds, then 3-second rounds: well under 120 attempts
-        self.assertLess(log["deletes"], 70)
-        self.assertGreater(log["deletes"], 30)
+        self.assertLess(log["queries"], 70)
+        self.assertGreater(log["queries"], 30)
+        self.assertEqual(log["deletes"], 0)
 
     def test_survives_garbage_from_operation_list(self):
         def run(args):
             if args[:3] == ["incus", "operation", "list"]:
                 return 0, "not json", ""
+            if args[:2] == ["incus", "query"]:
+                return 0, json.dumps({"config": {b.CREATION_TOKEN_KEY: "test-token"}}), ""
             return 0, "", ""
-        self.assertTrue(b.cleanup_loop(self.NAME, run, lambda s: None, lambda: 0.0))
+        self.assertTrue(b.cleanup_loop(self.NAME, run, lambda s: None, lambda: 0.0, token="test-token"))
+
+
+
+
+class SecureBootChoice(unittest.TestCase):
+    def test_secure_boot_opt_out_is_explicit_and_vm_only(self):
+        self.assertEqual(b.create_args(True, "", "", secure_boot=False),
+                         ["--vm", "-c", "security.secureboot=false"])
+        self.assertEqual(b.create_args(False, "", "", secure_boot=False), [])
+
+
+class CleanupOwnership(unittest.TestCase):
+    def test_same_name_without_matching_job_marker_is_never_deleted(self):
+        for config in ({}, {b.CREATION_TOKEN_KEY: "another-job"}):
+            calls = []
+            def run(args):
+                calls.append(args)
+                return 0, json.dumps({"config": config}), ""
+            self.assertFalse(b.cleanup_loop("existing-dev", run, token="our-job"))
+            self.assertEqual(calls, [["incus", "query", "/1.0/instances/existing-dev"]])
+
+    def test_missing_token_fails_before_any_request(self):
+        calls = []
+        self.assertFalse(b.cleanup_loop("existing-dev", lambda args: calls.append(args)))
+        self.assertEqual(calls, [])
+
+    def test_corrupt_identity_document_fails_closed(self):
+        calls = []
+        def run(args):
+            calls.append(args)
+            return 0, "not-json", ""
+        self.assertFalse(b.cleanup_loop("existing-dev", run, token="our-job"))
+        self.assertEqual(len(calls), 1)
+
+    def test_already_absent_needs_repeated_quiet_observations(self):
+        elapsed = [0]
+        calls = []
+        def run(args):
+            calls.append(args)
+            if args[1] == "query":
+                return 1, "", "Instance not found"
+            return 0, "[]", ""
+        self.assertTrue(b.cleanup_loop("owned-dev", run,
+            sleep=lambda seconds: elapsed.__setitem__(0, elapsed[0] + seconds),
+            clock=lambda: elapsed[0], token="our-job"))
+        self.assertGreaterEqual(elapsed[0], 4)
+        self.assertFalse(any(args[1] == "delete" for args in calls))
 
 
 if __name__ == "__main__":

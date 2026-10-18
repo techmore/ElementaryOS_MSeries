@@ -68,12 +68,14 @@ class Window(Gtk.ApplicationWindow):
             self.maximize()
         self.data, self.rows, self.dash_rows = {}, {}, {}
         self._dashboard_rendering = False
+        self.select_after_refresh = None
         self.hist, self.cur, self.busy = {}, None, set()
         self.ok, self.fails, self.last_refresh, self.restored = True, 0, 0.0, False
         self.monitor_ok, self.mon_proc, self.mon_thread, self.closing = False, None, None, False
         self.last_sample, self.jobs, self._rf_pending, self.cleaning = 0.0, {}, False, set()
         self.sources = set()
         self.reads = {}
+        self.instance_writes = {}
         self.output = {}
         self.monitor_lock = threading.Lock()
         self._listing = self._refresh_again = self._checking = False
@@ -253,6 +255,7 @@ class Window(Gtk.ApplicationWindow):
         self.list.set_filter_func(lambda r: self.search.get_text().casefold().strip() in r.search_text)
         self.list.set_sort_func(lambda a, b: (a.name > b.name) - (a.name < b.name))
         self.list.connect("row-selected", self.on_select)
+        self.list.connect("row-activated", self.on_select)
         a11y(self.list, "Instances")
         rc = Gtk.GestureClick(button=3)
         rc.connect("pressed", self.on_row_menu)
@@ -324,11 +327,13 @@ class Window(Gtk.ApplicationWindow):
         more.add_css_class("pill")
         pop = Gtk.Popover()
         pb = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        for t, fn in [("Clone…", self.clone), ("Rename…", self.rename), ("Copy IPv4 address", self.copy_ip), ("Export backup…", self.export_backup)]:
+        for t, fn in [("Console…", self.console), ("Clone…", self.clone), ("Rename…", self.rename), ("Copy IPv4 address", self.copy_ip), ("Export backup…", self.export_backup)]:
             b = Gtk.Button(label=t, has_frame=False, halign=Gtk.Align.FILL)
             b.get_child().set_halign(Gtk.Align.START)
             b.connect("clicked", lambda _b, f=fn: (pop.popdown(), f()))
             pb.append(b)
+            if t == "Console…":
+                self.console_button = b
         pb.append(Gtk.Separator(margin_top=4, margin_bottom=4))
         dele = Gtk.Button(label="Delete…", has_frame=False, halign=Gtk.Align.FILL)
         dele.get_child().set_halign(Gtk.Align.START)
@@ -404,6 +409,9 @@ class Window(Gtk.ApplicationWindow):
 
     def build_exec(self):
         d = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        self.vm_agent_hint = lbl("VM commands and file access require the Incus guest agent. Initial boot may take a moment; Console in More actions works without the agent.",
+                                 "dim", wrap=True, visible=False)
+        d.append(self.vm_agent_hint)
         bar = Gtk.Box(spacing=8)
         self.cmd = Gtk.Entry(placeholder_text="Command to run inside the instance, e.g. uname -a", hexpand=True)
         self.cmd.connect("activate", lambda *_: self.run_cmd())
@@ -452,11 +460,9 @@ class Window(Gtk.ApplicationWindow):
 
     def build_devices(self):
         d = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        sc = Gtk.ScrolledWindow(vexpand=True, hscrollbar_policy=Gtk.PolicyType.NEVER)
         self.dev_list = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE)
         self.dev_list.add_css_class("sidebar-list")
-        sc.set_child(self.dev_list)
-        d.append(sc)
+        d.append(self.dev_list)
         fw = Gtk.Box(spacing=8)
         self.fw_listen = Gtk.Entry(placeholder_text="Host port", width_chars=7, hexpand=True)
         self.fw_connect = Gtk.Entry(placeholder_text="Instance port", width_chars=7, hexpand=True)
@@ -493,6 +499,7 @@ class Window(Gtk.ApplicationWindow):
         d.append(g)
         row = Gtk.Box(halign=Gtk.Align.START, spacing=8)
         self.settings_owner = None
+        self.settings_pending = set()
         self.settings_apply = pill_button("Apply", None, "suggested-action", self.apply_settings)
         self.settings_apply.set_sensitive(False)
         row.append(self.settings_apply)
@@ -545,6 +552,43 @@ class Window(Gtk.ApplicationWindow):
             threading.Thread(target=run, daemon=True).start()
         task = self.reads.setdefault(slot, LatestRead(launch))
         task.submit(fn, done, lambda e: self.status.set_text(f"Could not refresh: {str(e)[:240]}"))
+
+    def edit_instance(self, name, fn, done=None, fail=None, what="Update instance", key=None):
+        """Serialize metadata edits per instance; preserve external ETag conflicts."""
+        queue = self.instance_writes.setdefault(name, deque())
+        if key is not None and any(item[4] == key for item in queue):
+            self.flash("This change is already in progress")
+            return False
+        if len(queue) >= 16:
+            self.flash("Wait for pending changes to finish")
+            return False
+        queue.append((fn, done, fail, what, key))
+        if len(queue) == 1:
+            self.next_instance_edit(name)
+        return True
+
+    def next_instance_edit(self, name):
+        queue = self.instance_writes[name]
+        fn, done, fail, what, key = queue[0]
+        def advance():
+            queue.popleft()
+            if queue and not self.closing:
+                self.next_instance_edit(name)
+            else:
+                self.instance_writes.pop(name, None)
+        def completed(result):
+            try:
+                if done:
+                    done(result)
+            finally:
+                advance()
+        def failed():
+            try:
+                if fail:
+                    fail()
+            finally:
+                advance()
+        self.bgl(fn, done=completed, fail=failed, what=what)
 
     def bgl(self, fn, done=None, fail=None, what="Action"):
         """Like bg(), but a failure opens a dialog (used for anything the user asked for)."""
@@ -901,6 +945,11 @@ class Window(Gtk.ApplicationWindow):
         self.tot_cpu.set(self.tot["cpu"])
         self.tot_mem.set(self.tot["mem"])
         self.render_dashboard()
+        # Resolve rename selection only after the new inventory and rows agree.
+        target = self.select_after_refresh
+        if target in self.rows:
+            self.select_after_refresh = None
+            self.open_instance(target)
         # detail
         if self.cur not in self.data:
             self.cur = None
@@ -961,7 +1010,14 @@ class Window(Gtk.ApplicationWindow):
     def open_instance(self, name):
         self.pages.set_visible_child_name("inst")
         if name in self.rows:
-            self.list.select_row(self.rows[name])
+            row = self.rows[name]
+            query = self.search.get_text().casefold().strip()
+            if query not in row.search_text:
+                self.search.set_text("")
+                self.filter_instances()
+            self.list.select_row(row)
+            if self.cur != name:
+                self.on_select(self.list, row)
 
     def on_select(self, _l, row):
         self.cur = row.name if row else None
@@ -984,8 +1040,12 @@ class Window(Gtk.ApplicationWindow):
         n = i["name"]
         self.stack.set_visible_child_name("detail")
         self.d_title.set_text(n)
+        self.d_title.set_tooltip_text(n)
         self.d_state.set_text(i["status"])
         vm = i["type"] == "virtual-machine"
+        self.console_button.set_visible(vm)
+        self.console_button.set_sensitive(vm and run)
+        self.vm_agent_hint.set_visible(vm)
         for w, c in ((self.d_state, k), (self.d_type, "vm" if vm else "")):
             for x in ("running", "vm", "frozen"):
                 w.remove_css_class(x)
@@ -1089,18 +1149,32 @@ class Window(Gtk.ApplicationWindow):
         self.set_mem.set_text(cfg.get("limits.memory", ""))
         self.set_auto.set_active(cfg.get("boot.autostart") == "true")
         self.settings_owner = n
-        self.settings_apply.set_sensitive(True)
+        self.settings_apply.set_sensitive(n not in self.settings_pending)
 
     def apply_settings(self):
         n = self.cur
-        if not n or self.settings_owner != n:
+        if not n or self.settings_owner != n or n in self.settings_pending:
             return
         vals = {"limits.cpu": self.set_cpu.get_text().strip(), "limits.memory": self.set_mem.get_text().strip(),
                 "boot.autostart": "true" if self.set_auto.get_active() else ""}
+        self.settings_pending.add(n)
+        self.settings_apply.set_sensitive(False)
         def go():
-            for k, v in vals.items():
-                backend.incus("config", "set", n, f"{k}={v}") if v else backend.incus("config", "unset", n, k)
-        self.bgl(go, what="Apply settings", done=lambda _: (self.flash(f"Updated {n}"), self.load_tab(), self.refresh()))
+            # Incus accepts empty values as removal, including already absent keys.
+            # One bulk set validates/applies all three values in one update.
+            backend.incus("config", "set", n, *(f"{k}={v}" for k, v in vals.items()))
+        def finished(_=None):
+            self.settings_pending.discard(n)
+            if n == self.cur:
+                self.settings_apply.set_sensitive(self.settings_owner == n)
+            self.refresh()
+        def done(_):
+            finished()
+            self.flash(f"Updated {n}")
+            if n == self.cur:
+                self.load_tab()
+        if not self.edit_instance(n, go, what="Apply settings", done=done, fail=finished, key="settings"):
+            finished()
 
     # ------------------------------------------------------ other pages
     def load_page(self, auto=False):
@@ -1260,6 +1334,14 @@ class Window(Gtk.ApplicationWindow):
                 subprocess.Popen([TERMINAL, "-e", f"incus exec {n} -- sh -c 'exec $(command -v bash || echo sh) -l'"])
             except OSError as e:
                 self.error_dialog("Open shell", e)
+
+    def console(self):
+        n = self.cur
+        if n:
+            try:
+                subprocess.Popen([TERMINAL, "-e", f"incus console {n} --type=console"])
+            except OSError as e:
+                self.error_dialog("Open console", e)
 
     def copy_ip(self):
         n = self.cur
@@ -1459,8 +1541,15 @@ class Window(Gtk.ApplicationWindow):
                 row.append(pill_button("Remove", "user-trash-symbolic", "destructive-action", lambda nm=name: self.remove_device(n, nm)))
             self.dev_list.append(row)
 
+    def devices_changed(self, n, message):
+        self.flash(message)
+        if n == self.cur and self.tabs.get_visible_child_name() == "de":
+            self.load_tab()
+
     def remove_device(self, n, name):
-        self.bgl(lambda: backend.incus("config", "device", "remove", n, name), what="Remove device", done=lambda _: (self.flash(f"Removed {name}"), self.load_tab()))
+        self.edit_instance(n, lambda: backend.incus("config", "device", "remove", n, name),
+                           what="Remove device", key=("remove", name),
+                           done=lambda _: self.devices_changed(n, f"Removed {name}"))
 
     def add_forward(self):
         n = self.cur
@@ -1472,7 +1561,8 @@ class Window(Gtk.ApplicationWindow):
         name = f"fwd-{proto}-{a}"
         args = ["config", "device", "add", n, name, "proxy", f"listen={proto}:0.0.0.0:{a}", f"connect={proto}:127.0.0.1:{b}"]
         self.fw_listen.set_text(""); self.fw_connect.set_text("")
-        self.bgl(lambda: backend.incus(*args), what="Add port forward", done=lambda _: (self.flash(f"Forwarding host :{a} → {n}:{b}"), self.load_tab()))
+        self.edit_instance(n, lambda: backend.incus(*args), what="Add port forward", key=("add", name),
+                           done=lambda _: self.devices_changed(n, f"Forwarding host :{a} → {n}:{b}"))
 
     def pick_folder(self):
         dlg = Gtk.FileDialog(title="Choose a host folder")
@@ -1485,13 +1575,14 @@ class Window(Gtk.ApplicationWindow):
 
     def add_share(self):
         n, host, path = self.cur, self.sh_host.get_text().strip(), self.sh_path.get_text().strip()
-        if not (n and host and path.startswith("/")):
-            self.flash("Give a host folder and an absolute mount path")
+        if not (n and os.path.isabs(host) and path.startswith("/")):
+            self.flash("Use absolute paths for the host folder and the instance mount")
             return
         name = "share-" + "".join(c if c.isalnum() else "-" for c in path.strip("/"))[:30]
         args = ["config", "device", "add", n, name, "disk", f"source={host}", f"path={path}", "shift=true"]
         self.sh_host.set_text(""); self.sh_path.set_text("")
-        self.bgl(lambda: backend.incus(*args), what="Share folder", done=lambda _: (self.flash(f"Shared {host} at {path}"), self.load_tab()))
+        self.edit_instance(n, lambda: backend.incus(*args), what="Share folder", key=("add", name),
+                           done=lambda _: self.devices_changed(n, f"Shared {host} at {path}"))
 
     def export_backup(self):
         n = self.cur
@@ -1590,7 +1681,11 @@ class Window(Gtk.ApplicationWindow):
             self.flash("Stop the instance before renaming it")
             return
         def go(v):
-            self.bgl(lambda: backend.incus("rename", n, v), what="Rename", done=lambda _: (setattr(self, "cur", None), self.flash(f"Renamed to {v}"), self.refresh()))
+            def done(_):
+                self.select_after_refresh = v
+                self.flash(f"Renamed to {v}")
+                self.refresh()
+            self.bgl(lambda: backend.incus("rename", n, v), what="Rename", done=done)
         self.ask_name(f"Rename {n}", "new name", n, "Rename", go)
 
     def delete(self):
@@ -1642,15 +1737,16 @@ class Window(Gtk.ApplicationWindow):
 
     def start_create(self, name, img, extra):
         """Run `incus launch` as a cancellable job with a progress card in the sidebar."""
-        if name in self.jobs:
+        if name in self.jobs or name in self.data or name in self.cleaning:
+            self.flash(f"An instance or creation job named {name} already exists")
             return
         row = JobRow(name, lambda: self.cancel_create(name))
         self.job_box.append(row)
-        job = {"row": row, "proc": None, "cancelled": False, "t0": time.monotonic(), "tail": []}
+        job = {"row": row, "proc": None, "cancelled": False, "t0": time.monotonic(), "tail": [], "token": os.urandom(16).hex()}
         self.jobs[name] = job
         def pump():
             try:
-                proc = subprocess.Popen(["incus", "launch", img, name, *extra], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                proc = subprocess.Popen(["incus", "launch", img, name, *extra, "-c", f"{backend.CREATION_TOKEN_KEY}={job['token']}"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             except OSError as e:
                 GLib.idle_add(self.create_done, name, 127, str(e))
                 return
@@ -1663,7 +1759,7 @@ class Window(Gtk.ApplicationWindow):
                 if not chunk:
                     break
                 parts = re.split(rb"[\r\n]", buf + chunk)
-                buf = parts.pop()
+                buf = parts.pop()[-65536:]
                 for seg in parts:
                     txt = seg.decode(errors="replace").strip()
                     if not txt:
@@ -1682,15 +1778,15 @@ class Window(Gtk.ApplicationWindow):
         job["row"].cancelling()
         if job["proc"] and job["proc"].poll() is None:
             job["proc"].send_signal(signal.SIGINT)  # what Ctrl-C does: the client cancels its operation and exits
-        self.cleanup_instance(name)
+        self.cleaning.add(name)
 
     def create_done(self, name, rc, err=""):
         job = self.jobs.pop(name, None)
         if not job:
             return False
         self.job_box.remove(job["row"])
-        if rc != 0 and not job["cancelled"]:
-            self.cleanup_instance(name, patience=10)
+        if job["cancelled"] or rc != 0:
+            self.cleanup_instance(name, job["token"], patience=120 if job["cancelled"] else 10)
         if self.closing:
             return False
         if job["cancelled"]:
@@ -1703,27 +1799,34 @@ class Window(Gtk.ApplicationWindow):
                 self.notify("Orchard", f"{name} is ready")
         return False
 
-    def cleanup_instance(self, name, patience=120):
-        """Remove an instance whose creation was cancelled or failed (see backend.cleanup_loop); hide it meanwhile."""
-        self.cleaning.add(name)
+    def cleanup_instance(self, name, token, patience=120):
+        """Never remove a same-named guest unless this job's marker matches."""
         def run(args):
-            r = subprocess.run(args, capture_output=True, text=True)
-            return r.returncode, r.stdout, r.stderr
+            try:
+                r = subprocess.run(args, capture_output=True, text=True, timeout=backend.POLL_TIMEOUT)
+                return r.returncode, r.stdout, r.stderr
+            except subprocess.TimeoutExpired:
+                return 1, "", "Incus cleanup request timed out"
         def work():
-            backend.cleanup_loop(name, run, patience=patience)
-            GLib.idle_add(lambda: (self.cleaning.discard(name), self.refresh(), False)[2])
+            try:
+                backend.cleanup_loop(name, run, patience=patience, token=token)
+            finally:
+                GLib.idle_add(lambda: (self.cleaning.discard(name), self.refresh(), False)[2])
         threading.Thread(target=work, daemon=True).start()
 
     def on_new(self, *_):
-        d, area = self.dialog("New Instance", width=480, height=404)
+        d, area = self.dialog("New Instance", width=540, height=540)
         g = Gtk.Grid(row_spacing=10, column_spacing=14, margin_top=6, margin_bottom=6, margin_start=12, margin_end=12)
         name = Gtk.Entry(placeholder_text="auto-generated if empty", hexpand=True, activates_default=True)
         preset = Gtk.DropDown.new_from_strings([p[0] for p in PRESETS])
         image = Gtk.Entry(placeholder_text="remote:alias, e.g. images:debian/trixie", sensitive=False, hexpand=True)
         vm = Gtk.Switch(halign=Gtk.Align.START)
+        secure_boot = Gtk.Switch(halign=Gtk.Align.START, active=True, sensitive=False,
+                                 tooltip_text="Disable only for VM images that do not support Secure Boot.")
+        vm.connect("notify::active", lambda *_: secure_boot.set_sensitive(vm.get_active()))
         cpu = Gtk.Entry(placeholder_text="optional, e.g. 2")
         mem = Gtk.Entry(placeholder_text="optional, e.g. 1GiB")
-        for wdg, nm in ((name, "Instance name"), (preset, "Distribution"), (image, "Image"), (vm, "Virtual machine"), (cpu, "CPU limit"), (mem, "Memory limit")):
+        for wdg, nm in ((name, "Instance name"), (preset, "Distribution"), (image, "Image"), (vm, "Virtual machine"), (secure_boot, "Secure Boot"), (cpu, "CPU limit"), (mem, "Memory limit")):
             a11y(wdg, nm)
         def pick(*_):
             p = PRESETS[preset.get_selected()][1]
@@ -1731,7 +1834,7 @@ class Window(Gtk.ApplicationWindow):
             image.set_text(p)
         preset.connect("notify::selected", pick)
         pick()
-        fields = [("Name", name), ("Distribution", preset), ("Image", image), ("Virtual machine", vm), ("CPU limit", cpu), ("Memory limit", mem)]
+        fields = [("Name", name), ("Distribution", preset), ("Image", image), ("Virtual machine", vm), ("Secure Boot", secure_boot), ("CPU limit", cpu), ("Memory limit", mem)]
         for r, (t, wd) in enumerate(fields):
             g.attach(Granite.HeaderLabel(label=t, mnemonic_widget=wd, valign=Gtk.Align.CENTER), 0, r, 1, 1)
             g.attach(wd, 1, r, 1, 1)
@@ -1741,14 +1844,20 @@ class Window(Gtk.ApplicationWindow):
         g.attach(bb, 2, 2, 1, 1)
         err = lbl("", "error-text", max_width_chars=48, ellipsize=Pango.EllipsizeMode.END)
         g.attach(err, 0, len(fields), 3, 1)
-        area.append(g)
+        area.append(Gtk.ScrolledWindow(child=g, vexpand=True,
+                                       hscrollbar_policy=Gtk.PolicyType.NEVER,
+                                       propagate_natural_height=True,
+                                       min_content_height=300, max_content_height=500))
         d.add_button("Cancel", Gtk.ResponseType.CANCEL)
         ok = d.add_button("Create", Gtk.ResponseType.ACCEPT)
         ok.add_css_class("suggested-action")
         d.set_default_response(Gtk.ResponseType.ACCEPT)
 
         def problems():
-            return backend.validate_new(name.get_text(), image.get_text(), cpu.get_text(), mem.get_text())
+            messages = backend.validate_new(name.get_text(), image.get_text(), cpu.get_text(), mem.get_text())
+            if name.get_text().strip() in self.data or name.get_text().strip() in self.jobs:
+                messages.append("An instance or creation job with this name already exists.")
+            return messages
         def validate(*_):
             msgs = problems()
             nm = name.get_text().strip()
@@ -1766,7 +1875,7 @@ class Window(Gtk.ApplicationWindow):
                 return
             img = image.get_text().strip()
             given = name.get_text().strip()
-            extra = backend.create_args(vm.get_active(), cpu.get_text(), mem.get_text())
+            extra = backend.create_args(vm.get_active(), cpu.get_text(), mem.get_text(), secure_boot.get_active())
             dlg.destroy()
             self.start_create(given or backend.auto_name(img), img, extra)
         d.connect("response", resp)
