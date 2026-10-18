@@ -1,0 +1,40 @@
+--- a/icp/auth/gsa.py
++++ b/icp/auth/gsa.py
+@@ -65,18 +65,26 @@
+             "User-Agent": const.GSA_USER_AGENT,
+             "X-MMe-Client-Info": const.GSA_CLIENT_INFO,
+         }
+-        resp = requests.post(
+-            const.GSA_ENDPOINT, headers=headers, data=plist.dumps(body),
+-            verify=True, timeout=10,
+-        )
+-
+-        payload = plist.loads(resp.content)
+-        response = payload.get("Response")
+-
+-        if not isinstance(response, dict) or not resp.ok:
++        try:
++            resp = requests.post(
++                const.GSA_ENDPOINT, headers=headers, data=plist.dumps(body),
++                verify=True, timeout=10,
++            )
++        except requests.RequestException as exc:
++            raise GSAError(f"GSA {operation} request failed: {exc}") from exc
++        try:
++            payload = plist.loads(resp.content)
++        except Exception as exc:
++            content_type = resp.headers.get("Content-Type", "unknown")
+             raise GSAError(
+-                f"GSA {operation} failed: HTTP {resp.status_code}: {_status(response)}"
+-            )
++                f"GSA {operation} returned HTTP {resp.status_code}; expected a plist "
++                f"({content_type}, {len(resp.content)} bytes)"
++            ) from exc
++        response = payload.get("Response") if isinstance(payload, dict) else None
++        if not isinstance(response, dict):
++            raise GSAError(f"GSA {operation} returned HTTP {resp.status_code} without a Response dictionary")
++        if not resp.ok:
++            raise GSAError(f"GSA {operation} failed: HTTP {resp.status_code}: {_status(response)}")
+         return response
+ 
+     def authenticate(self, username: str, password: str, stage: str) -> tuple[dict, dict]:

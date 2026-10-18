@@ -13,7 +13,7 @@ bash mseries/install-icloud-passwords.sh --experimental
 ```
 
 Prerequisites: native Brave, Python 3.10+ with venv/pip support, git, rootless Podman,
-a systemd user session and an unlocked GNOME Keyring/Secret Service. This initial
+a systemd user session, GTK 4/Granite 7 with system Python GI bindings, and an unlocked GNOME Keyring/Secret Service. This initial
 container digest supports ARM64 only. Installation downloads dependencies and the
 helper image; no Apple credentials are requested by the installer.
 
@@ -23,23 +23,34 @@ helper image; no Apple credentials are requested by the installer.
 2. Select `~/.local/share/mseries/icloud-passwords/source/extension`
    (or `$XDG_DATA_HOME/mseries/icloud-passwords/source/extension` if configured).
 3. Confirm **Apple Passwords**, ID `hagjmolifioccmojhoplpopjklljajno`, is enabled.
-4. Open **Set Up Apple Passwords (Experimental)** from Applications, or run:
+4. Open **Apple Passwords (Experimental)** from Applications, or run:
 
 ```sh
-~/.local/bin/mseries-icloud-passwords login
+~/.local/bin/mseries-icloud-passwords-gui
 ```
 
-Enter your Apple account password, 2FA code and requested device passcode directly
-in that terminal. Never paste these in chat or public logs. Keep a trusted Apple
+Enter your Apple account email and password in the native window, then follow its
+verification-code and trusted-device prompts. Recovery requires a separate unchecked
+consent box before you enter the selected device’s known passcode. The GUI never
+automatically repeats a recovery attempt. Cancellation and closing are blocked while
+a submitted recovery attempt is in flight. Enter credentials directly in the app. Never paste these in chat or public logs. Keep a trusted Apple
 device available. Upstream warns that too many wrong recovery passcodes can
 permanently lock recovery: stop on an unexpected failure, do not guess or loop
 login attempts. Advanced Data Protection remains unqualified.
 
-After successful sign-in, click the extension on a site with a saved login. Test
-one known username/password, then a saved TOTP code if available. **Apple Passwords
-(Experimental)** opens the searchable terminal vault; **Sync Apple Passwords
-(Experimental)** refreshes it. Browser use can trigger a refresh after six hours.
+After successful sign-in, the native window displays a searchable saved-login list
+and masked password details with an explicit reveal control. **Sync Now** refreshes
+the snapshot. The header follows elementary light/dark preferences. The terminal
+client remains available as `~/.local/bin/mseries-icloud-passwords login|show|sync|logout`.
+Use the Brave extension for live autofill and saved TOTP codes. Browser use can
+trigger a refresh after six hours. The GUI does not display TOTP or Hide My Email yet.
 Never capture real credentials in test screenshots or diagnostics.
+
+The GUI does not save your Apple password unless you enable **Remember password**.
+That optional encrypted storage supports background token renewal and Hide My Email;
+without it, some renewals require signing in again. IPC carries secrets over private
+child pipes only; no password argv/environment fields, raw server errors or protocol
+logging. GUI error messages expose only known failure categories and numeric codes.
 
 The extension has access to HTTP/HTTPS pages for autofill. It reads a local encrypted
 snapshot, and can show existing Hide My Email aliases. It does not save edited/new
@@ -57,6 +68,11 @@ content, not an absence of account authentication or device registration.
 - Helper identity: rootless Podman volume `mseries-icloud-anisette`, preserved across
   restarts. Do not delete it during routine upgrades.
 - Native messaging registration: Brave's `NativeMessagingHosts/org.icp.native.json`.
+- GUI: `~/.local/share/mseries/icloud-passwords/gui` and `~/.local/bin/mseries-icloud-passwords-gui`.
+- Private-service CA roots: downloaded over verified HTTPS from Apple PKI with pinned
+  DER SHA-256 digests, combined with system roots in a client-only `ca-bundle.pem`.
+  Certificate verification is enabled in all patched authentication paths; the
+  operating system trust store is unchanged.
 - Installation receipt: `~/.local/share/mseries/icloud-passwords/installation.json`.
 
 An unlocked user session can access the vault through the host. No extra lock-screen
@@ -71,11 +87,15 @@ Disable the extension in `brave://extensions` and stop automatic helper startup:
 systemctl --user disable --now mseries-icloud-anisette.service
 ```
 
-To sign out locally, run `~/.local/bin/mseries-icloud-passwords logout`.
+The native **Sign Out** action clears the local session and cached passwords/aliases.
+It keeps the client and helper identities and does not revoke account devices.
+The terminal `~/.local/bin/mseries-icloud-passwords logout` retains upstream behavior:
+it clears the session but keeps the downloaded vault. Disable the extension when
+disabling the feature, since it reads this cache independently of the GUI.
 Upstream also supports `logout --wipe-device` to forget its local device identity;
 this is not represented as revoking a device from Apple's account website.
 The installer leaves encrypted data and the Podman volume in place when disabled.
-Remove the three `mseries-icloud-passwords-*.desktop` launchers and the dedicated
+Remove the `org.techmore.mseries.ApplePasswords.desktop` launcher and the dedicated
 Brave native-host JSON if uninstalling. Re-enable by rerunning the opt-in installer.
 
 ## Sources / changes / qualification
@@ -101,3 +121,33 @@ identity and patch-drift rejection. Shell syntax and shellcheck pass.
 Not yet verified: loading the extension in the owner's Brave UI, actual Apple login,
 keychain recovery, password download, live autofill, TOTP, Hide My Email, ADP, reboot
 behavior, or factory-image boot. The owner's authentication and live test are next.
+
+## Native GUI and failed-login follow-up — 2026-10-18
+
+The owner’s first terminal attempt failed at GSA init with `ec=-80045`, before
+2FA or recovery. No recovery passcode was submitted by that attempt.
+[anisette-v3-server issue 61](https://github.com/Dadoum/anisette-v3-server/issues/61)
+reports an endpoint-specific client-description workaround. This integration applies
+its Windows descriptions to GSA, loginDelegates and escrow, retaining the original
+Mac descriptions for account settings and CloudKit. This is a reported workaround,
+not proof that this account can now sign in, and Apple can change acceptance again.
+
+Added native GTK 4/Granite 7 sign-in, private worker prompts, explicit recovery consent,
+snapshot search/reveal, last-sync display, Sync Now and local sign-out. Deprecated
+terminal setup/sync shortcuts are replaced by one native Applications entry.
+`worker.py` does not expose authentication records or TOTP seeds to the GUI.
+
+Upstream disabled certificate verification for GSA/iCloud/web auth; this port now
+enables it and scopes [Apple PKI](https://www.apple.com/certificateauthority/) roots
+to the client bundle. Plain HTTPS probes without account data verified GSA, setup
+and idmsa TLS successfully. `gsa-errors.patch` adds safe non-plist/transport error
+handling so server failures do not crash onboarding.
+
+Validation: ten offline GUI/IPC/keyring/CA-pin integration tests, four mocked endpoint
+identity/TLS/consent tests in the client venv, and 129 upstream tests plus 11 subtests.
+One upstream fixture hardcoding the original Mac escrow header is deselected; its
+updated Windows-header and no-consent/no-network contract is covered by
+`test_network.py`. Repeat installation and compiled Python/shell checks pass.
+Native window constructed under Xvfb; installed native process launched locally.
+No real account authentication was attempted by the agent. Successful sign-in,
+recovery, sync, live autofill, ADP and factory-image boot remain unverified.

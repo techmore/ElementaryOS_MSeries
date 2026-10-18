@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import io
+from unittest.mock import patch
 
 HERE = Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location('setup', HERE / 'setup.py')
@@ -47,6 +49,13 @@ class IntegrationTests(unittest.TestCase):
             self.assertNotIn('browser_specific_settings', manifest)
             self.assertEqual(extension_id, 'hagjmolifioccmojhoplpopjklljajno')
             self.assertTrue(base64.b64decode(manifest['key'], validate=True))
+
+    def test_unexpected_apple_root_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            with patch.object(setup.urllib.request, 'urlopen', return_value=io.BytesIO(b'UNTRUSTED-CERTIFICATE')):
+                with self.assertRaisesRegex(RuntimeError, 'pin mismatch'):
+                    setup.install_ca_bundle(Path(d))
+            self.assertFalse((Path(d) / 'ca-bundle.pem').exists())
 
     def test_upstream_drift_rejected(self):
         with tempfile.TemporaryDirectory() as d:
