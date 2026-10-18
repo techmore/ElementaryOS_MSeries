@@ -15,6 +15,39 @@ brave=/opt/brave.com/brave/brave
 [[ -x $brave ]] || brave=$(readlink -f /usr/bin/brave-browser-stable)
 mkdir -p "$profile"
 
+# Widevine (DRM) for YouTube Movies: this profile is separate, so it never got the CDM the normal Brave has.
+# Only while this profile is not running (Brave rewrites Local State on exit). Copy the normal profile's CDM if it
+# loads here, else fetch the pinned one with install-brave-widevine.sh. Path must be inside $profile (only it is
+# visible in the container).
+ensure_widevine() {
+  local cdm=$profile/WidevineCdm main=$HOME/.config/BraveSoftware/Brave-Browser/WidevineCdm src ver
+  pgrep -u "$USER" -f -- "--user-data-dir=$profile( |$)" >/dev/null && return 0
+  [[ -f $profile/Local\ State ]] || return 0   # first run: Brave creates the profile; provisioned next launch
+  if [[ -s $cdm/latest-component-updated-widevine-cdm ]] &&
+     python3 -I -c 'import json,sys;sys.exit(0 if json.load(open(sys.argv[1])).get("brave",{}).get("widevine_opted_in") else 1)' "$profile/Local State" 2>/dev/null; then
+    return 0
+  fi
+  src=$(python3 -I -c 'import json,sys;print(json.load(open(sys.argv[1]))["Path"])' "$main/latest-component-updated-widevine-cdm" 2>/dev/null || true)
+  if [[ -n $src && -f $src/_platform_specific/linux_arm64/libwidevinecdm.so ]] &&
+     python3 -I -c 'import ctypes,sys; ctypes.CDLL(sys.argv[1])' "$src/_platform_specific/linux_arm64/libwidevinecdm.so" 2>/dev/null; then
+    ver=$(basename "$src")
+    rm -rf "${cdm:?}/$ver"; install -d -m 0700 "$cdm"; cp -r "$src" "$cdm/$ver"
+    printf '{"Path":"%s"}\n' "$cdm/$ver" > "$cdm/latest-component-updated-widevine-cdm"
+    python3 -I - "$profile/Local State" <<'PY'
+import json, sys
+p = sys.argv[1]
+s = json.load(open(p))
+s.setdefault('brave', {})['widevine_opted_in'] = True
+json.dump(s, open(p, 'w'), separators=(',', ':'))
+PY
+    echo "brave-youtube: Widevine $ver copied into $profile" >&2
+  else
+    BRAVE_PROFILE_DIR=$profile bash "$(dirname "$(readlink -f "$0")")/../install-brave-widevine.sh" >&2 ||
+      echo 'brave-youtube: Widevine setup failed; DRM movies will not play' >&2
+  fi
+}
+[[ ${1:-} == --probe || ${1:-} == --test ]] || ensure_widevine
+
 args=(--die-with-parent --unshare-pid --unshare-ipc --unshare-uts --share-net
   --ro-bind /usr /usr --symlink usr/lib /lib --symlink usr/bin /bin --symlink usr/sbin /sbin
   --ro-bind /etc /etc --ro-bind /opt /opt --ro-bind /sys /sys

@@ -30,6 +30,21 @@ is not possible from here: its login is encrypted Electron storage and we do not
 Owner: to use another account in Claude Code inside the Claude app, sign out and in again in the app. The panel
 Switch changes the `claude` command line only.
 
+## YouTube Movies fail in `brave-youtube`: Widevine missing from its profile — fixed — 2026-10-18 (Claude Code)
+
+- **Symptom (owner):** films such as *Edge of Tomorrow* say "your browser can't play this video" in the contained
+  YouTube window. **Cause:** `brave-youtube` uses its own profile (`~/.config/brave-youtube`); its `WidevineCdm/`
+  was empty and `brave.widevine_opted_in` unset. The normal Brave profile has Widevine 4.10.3112.0 and is opted in.
+- **Fix:** `mseries/video-decode/brave-youtube` now provisions Widevine before it starts Brave, only while that
+  profile is not running: it copies the normal profile's CDM if the library loads, writes the component path
+  inside the contained profile (the only part of `$HOME` the container shows), and sets the opt-in. If that fails it
+  falls back to `install-brave-widevine.sh` with `BRAVE_PROFILE_DIR`. That installer now checks only the target
+  profile is closed when `BRAVE_PROFILE_DIR` is set, so the normal Brave can stay open.
+- **Verified:** provisioning on a scratch copy of the profile copied the CDM, the library loads, and the opt-in is set.
+  A second run does nothing; with the live profile running it skips. **Not verified:** a DRM movie actually playing
+  in the container (the owner's window was open; needs a relaunch). L3 limits still apply: SD/720p for movies.
+- **Next:** owner closes and reopens the YouTube window, plays a movie; check `brave://components` there.
+
 ## .20-enh1 staged for one boot; .20 fallback and capture active — 2026-10-18 10:02 UTC
 
 Owner explicitly requested the next-boot trial, current .20 fallback and starting
@@ -402,6 +417,40 @@ J314S/WD22TB4 hardware boot, dock picture, Touch ID enrollment or recovery boot.
 Upstream `.20` explicitly does not qualify M1 Pro/Max/Touch ID on this release.
 Next task: review the matched payload/fallback contract, then a separately
 controlled hardware batch. Existing dock G2–G5 results have not advanced.
+
+## VM toolkit, window corners, mouse and chime fixes — 2026-10-16 (DeepSeek/OpenCode)
+
+`mseries/vms/mseries-vm` now creates, fetches media for and runs the ARM64 test guests.
+Verified headless: the newest elementary OS 9 daily ISO (checksum-verified, booted to the
+installer, driven past GRUB with the new `key`/`wait`/`screenshot` commands) and Omarchy 4
+(the archive.org UTM image imported to a plain qcow2, booted to the Hyprland desktop).
+Windows 11 ARM64: the UUP set (67 files, 8.8 GB) verified against `files.json` SHA-256s and
+the pinned converter (`dbc65de`) is in place; ISO conversion was still running when this was
+written. `fetch windows` was hardened after a live failure mode: aria2 with `--continue`
+re-hashes complete files and re-probes their signed URLs, which expire fast (stale-URL `403`
+storm, ~20 minutes of no progress). The script now verifies every local file against
+`files.json` itself and hands aria2 only the missing/corrupt subset with a fresh URL,
+skipping it entirely when nothing is owed. `vms/test-mseries-vm.sh` now covers the
+verify-first and repair paths (79 hermetic checks, PATH-stubbed tools, no KVM/network/root)
+and runs in CI; `KVM-VMS.md` points at the toolkit. macOS guests remain impossible
+(`mseries-vm macos`).
+
+Desktop fixes (repo defaults plus applied live on the M1):
+- Every standard window gets rounded corners through a second Gala patch,
+  `patches/gala-window-corners.patch` (a Clutter ShaderEffect that masks each
+  `Meta.WindowActor`'s frame rectangle inside its texture, so shadows survive;
+  `GALA_WINDOW_CORNER_RADIUS`, default 12). `install-gala-screen-corners.sh` now applies
+  both patches, builds, and installs 20 px screen + 12 px window corners for the owner's
+  session (effective next login; the visual pass after relogin is still pending).
+- Mouse natural (inverted) scrolling: `enhance.sh` dconf default and
+  `apply-desktop-settings.py`; set live (was `false`, now `true`).
+- Quieter volume chime: `install-quieter-sound-theme.sh` builds a user "mseries" sound
+  theme that inherits elementary and scales the stock chime by -10 dB (peak -11 dBFS ->
+  ~-21 dBFS); installed and active now, with `test-quieter-sound-theme.sh` in CI.
+
+Not verified: the window corners at next login (build compiles, both patches stack
+cleanly, compositor installed — needs the visual pass), Windows ISO conversion completion,
+logins inside the Omarchy guest.
 
 ## Dock video E1 boot result — set_hpd cleared, sink/AUX is the frontier — 2026-10-16 (OpenCode)
 
