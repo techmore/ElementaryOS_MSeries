@@ -1,6 +1,6 @@
 --- a/data/24/network-wired-connected-symbolic.svg
 +++ b/data/24/network-wired-connected-symbolic.svg
-@@ -1,23 +1,5 @@
+@@ -1,23 +1,7 @@
 -<svg
 -        xmlns='http://www.w3.org/2000/svg'
 -        xmlns:svg='http://www.w3.org/2000/svg'
@@ -25,12 +25,14 @@
 -  </path>
 +<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
 +  <!-- SPDX-License-Identifier: CC0-1.0; SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries -->
++  <g transform="translate(1.8 1.8) scale(0.85)">
 +  <path fill-rule="evenodd" d="M3 3h18v13h-5v5H8v-5H3z M5 5v9h5v5h4v-5h5V5z"/>
 +  <path d="M7 6h1v5H7z M10 6h1v5h-1z M13 6h1v5h-1z M16 6h1v5h-1z"/>
++  </g>
  </svg>
 --- a/data/16/network-wired-connected-symbolic.svg
 +++ b/data/16/network-wired-connected-symbolic.svg
-@@ -1,58 +1,5 @@
+@@ -1,58 +1,7 @@
 -<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 -<svg
 -   xmlns:dc="http://purl.org/dc/elements/1.1/"
@@ -90,12 +92,14 @@
 -     style="opacity:1;vector-effect:none;fill:#555761;fill-opacity:1;stroke-width:0.99999988;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
 +<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
 +  <!-- SPDX-License-Identifier: CC0-1.0; SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries -->
++  <g transform="translate(1.2 1.2) scale(0.85)">
 +  <path fill-rule="evenodd" d="M1 1h14v10h-4v4H5v-4H1z M3 3v6h4v4h2V9h4V3z"/>
 +  <path d="M4 4h1v3H4z M6 4h1v3H6z M8 4h1v3H8z M10 4h1v3h-1z"/>
++  </g>
  </svg>
 --- a/data/24/network-wired-secure-symbolic.svg
 +++ b/data/24/network-wired-secure-symbolic.svg
-@@ -1,23 +1,9 @@
+@@ -1,23 +1,11 @@
 -<svg
 -        xmlns='http://www.w3.org/2000/svg'
 -        xmlns:svg='http://www.w3.org/2000/svg'
@@ -120,10 +124,12 @@
 -  </path>
 +<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
 +  <!-- SPDX-License-Identifier: CC0-1.0; SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries -->
++  <g transform="translate(1.8 1.8) scale(0.85)">
 +  <defs><mask id="port"><rect width="24" height="24" fill="white"/><rect x="13" y="12" width="11" height="12" fill="black"/></mask></defs>
 +  <g mask="url(#port)">
 +  <path fill-rule="evenodd" d="M3 3h18v13h-5v5H8v-5H3z M5 5v9h5v5h4v-5h5V5z"/>
 +  <path d="M7 6h1v5H7z M10 6h1v5h-1z M13 6h1v5h-1z M16 6h1v5h-1z"/>
 +  </g>
 +  <path fill-rule="evenodd" d="M16 16v-2a3 3 0 0 1 6 0v2h1v7h-8v-7z M18 16h2v-2a1 1 0 0 0-2 0z"/>
++  </g>
  </svg>
