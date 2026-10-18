@@ -12,6 +12,10 @@ def emit(event_type, **fields):
 
 def prompt(kind, label, **fields):
     emit('prompt', kind=kind, label=label, **fields)
+    return read_reply()
+
+
+def read_reply():
     line = sys.stdin.readline(65536)
     if not line:
         raise KeyboardInterrupt
@@ -73,16 +77,38 @@ def main():
     if action not in ('login', 'sync', 'load', 'logout'):
         raise ValueError('Unknown operation')
     failed = False
+    phase = 'Sign-in'
+    code_box_open = False
+
+    # Show code entry before the notification HTTP request finishes. The request
+    # happens once; the actual code submission still waits for the user's reply.
+    from icp.auth.gsa import GSAClient
+    original_trigger = GSAClient.trigger_trusted_factor
+
+    def trigger(gsa, *args, **kwargs):
+        nonlocal phase, code_box_open
+        phase = 'Sending device approval'
+        code_box_open = True
+        emit('prompt', kind='code', label='Approve sign-in on your iPhone',
+             description='Tap Allow on your trusted Apple device, then enter its six-digit code here. This window will wait for you.')
+        return original_trigger(gsa, *args, **kwargs)
+
+    GSAClient.trigger_trusted_factor = trigger
 
     def error(message):
         nonlocal failed
         failed = True
-        emit('error', text=friendly_error(message))
+        emit('error', text=phase + ': ' + friendly_error(message))
 
     def ask(label):
+        nonlocal phase, code_box_open
         if 'Apple ID' in label:
             return prompt('email', 'Apple Account')
         if 'code' in label.lower():
+            phase = 'Verifying your device code'
+            if code_box_open:
+                code_box_open = False
+                return read_reply()
             return prompt('code', 'Verification code')
         raise RuntimeError('Unsupported sign-in prompt')
 
@@ -121,7 +147,11 @@ def main():
     argv = [action]
     if action == 'login' and '--remember-password' not in sys.argv[2:]:
         argv.append('--no-save-password')
-    result = app.main(argv)
+    try:
+        result = app.main(argv)
+    except Exception as exc:
+        error(exc)
+        result = 1
     if result == 0 and not failed:
         if action == 'logout':
             from icp import paths

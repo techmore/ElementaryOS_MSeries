@@ -94,12 +94,13 @@ def apply_network_patches(source):
         updated[path] = text
     for path, text in updated.items():
         path.write_text(text)
-    patch = str(HERE / "gsa-errors.patch")
-    applied = subprocess.run(["git", "-C", str(source), "apply", "--reverse", "--check", patch],
-                             capture_output=True)
-    if applied.returncode:
-        run("git", "-C", str(source), "apply", "--check", patch)
-        run("git", "-C", str(source), "apply", patch)
+    for filename in ("gsa-errors.patch", "notification-wait.patch"):
+        patch = str(HERE / filename)
+        applied = subprocess.run(["git", "-C", str(source), "apply", "--reverse", "--check", patch],
+                                 capture_output=True)
+        if applied.returncode:
+            run("git", "-C", str(source), "apply", "--check", patch)
+            run("git", "-C", str(source), "apply", patch)
 
 
 

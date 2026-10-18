@@ -270,7 +270,7 @@ class Passwords(Gtk.Application):
             control = Gtk.DropDown.new_from_strings(event.get('choices', []))
             body.append(Gtk.Label(label='Choose the device whose unlock passcode you know.', wrap=True))
         else:
-            body.append(Gtk.Label(label='Enter the code shown on your trusted device.' if kind == 'code' else
+            body.append(Gtk.Label(label=event.get('description', 'Tap Allow on your Apple device, then enter the six-digit code. This window will wait.') if kind == 'code' else
                                   'Enter the unlock passcode for the device you selected.', wrap=True))
             control = Gtk.PasswordEntry(show_peek_icon=kind != 'code')
             control.connect('activate', lambda *_: dialog.response(Gtk.ResponseType.OK))
