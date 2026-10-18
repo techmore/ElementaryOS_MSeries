@@ -79,7 +79,7 @@ class AccountsTest(unittest.TestCase):
         self.assertEqual(len(MODULE.list_accounts()), 2)
 
     def test_app_scan_excludes_codexbar_and_other_users(self):
-        entries = [mock.Mock(), mock.Mock(), mock.Mock()]
+        entries = [mock.MagicMock(), mock.MagicMock(), mock.MagicMock()]
         for entry, pid, uid in zip(entries, (100, 200, 300), (1000, 1000, 2000)):
             entry.name = str(pid)
             entry.stat.return_value.st_uid = uid
