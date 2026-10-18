@@ -18,3 +18,11 @@ install_data(
   'icons/github-symbolic.svg',
   install_dir: icon_theme_dir,
 )
+
+# Headless render probe (not installed): see probe/run-probe.sh.
+executable(
+  'render-probe',
+  'Indicator.vala', 'probe/render-probe.vala',
+  dependencies: [libwingpanel_dep, granite_dep, json_dep],
+  install: false,
+)

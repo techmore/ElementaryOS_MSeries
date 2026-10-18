@@ -1,5 +1,18 @@
 # OS 9 implementation / Claude Code handoff
 
+## RepoBar native UI pass — 2026-10-18 (Claude Code)
+
+Rebuilt the RepoBar Wingpanel popover in CodexBar's visual language: segmented Dashboard / Pinned / Attention N / All
+switcher, search with a filter menu (issues, PRs, local checkout), cards led by a CI status dot with PR/issue pills, a
+star to pin and a chevron for the details pane (category chips, lazy-loaded rows that open on GitHub), right-click menu
+(open, copy link, pin, hide/show), CodexBar-style empty/error/sign-in states, and the bottom bar (status chip,
+freshness + API %, icon dock: your PRs, your issues, GitHub, refresh with spinner). Panel item now reads `28 PR | 52
+issues` with a dot while CI fails. Unchanged snapshots no longer rebuild the cards, so open details survive polling.
+Headless probe: `mseries/repobar-wingpanel/probe/run-probe.sh BUILD OUT [light|dark]` (synthetic fixtures). Rendered
+light/dark, healthy/empty/error, expanded details, and the owner's real cached snapshot. New
+`mseries/deploy-repobar.sh` installed `librepobar.so` without restarting Wingpanel (`--restart` reloads the panel).
+**Unverified:** the new module on the owner's live panel (loads at next login or a panel reload); clicks by real input.
+
 ## Claude pre-switch handoffs and reviewed GitHub backups — 2026-10-18
 
 Added automatic handoffs for the most recently focused active local Code

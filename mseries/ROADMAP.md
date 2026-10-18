@@ -370,6 +370,11 @@ coredumps since activation, sampled CPU median 0.30%, RSS 165.33–169.2 MiB,
 file descriptors fixed at 49. Both native typography and local token changes are active. No real
 account switch performed; long-run behavior and owner visual confirmation remain outside this smoke check.
 
+## RepoBar native UI pass — 2026-10-18
+
+RepoBar's popover now matches CodexBar (switcher, status-dot cards, pills, details chips, icon dock, state pages);
+headless probe + `deploy-repobar.sh` added. Next: confirm on the live panel after a panel reload.
+
 ## RepoBar port in progress — 2026-10-18
 
 The optional elementary OS port now has a native GTK/Wingpanel dashboard with
