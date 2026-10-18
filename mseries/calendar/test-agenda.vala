@@ -156,6 +156,40 @@ class AgendaTest : Object {
             "\r\nDTEND;VALUE=DATE:" + end.format ("%Y%m%d") + "\r\n" + extra + "END:VEVENT\r\n";
     }
 
+    Gtk.Expander? details_for (Gtk.Widget node, string title) {
+        if (node is Gtk.Expander && contains (((Gtk.Expander) node).label_widget, title)) return (Gtk.Expander) node;
+        for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) {
+            var expander = details_for (child, title);
+            if (expander != null) return expander;
+        }
+        return null;
+    }
+
+    async void upcoming_checks () throws Error {
+        var now = new GLib.DateTime.now_local ();
+        var today = new GLib.DateTime.local (now.get_year (), now.get_month (), now.get_day_of_month (), 0, 0, 0);
+        add (events, dated_event ("upcoming-tomorrow", "Upcoming tomorrow", today.add_days (1), today.add_days (2)));
+        add (events, dated_event ("upcoming-end", "Last upcoming day", today.add_days (29), today.add_days (30)));
+        add (events, dated_event ("upcoming-outside", "Outside upcoming range", today.add_days (30), today.add_days (31)));
+        add (events, dated_event ("upcoming-past", "Ended yesterday", today.add_days (-1), today));
+        add (events, dated_event ("upcoming-ongoing", "Still ongoing", today.add_days (-1), today.add_days (2)));
+        assert (((Gtk.ToggleButton) named (widget, "agenda-upcoming")).active);
+        yield expect ("Upcoming · next 30 days");
+        yield expect ("Upcoming tomorrow");
+        yield expect ("Last upcoming day");
+        yield expect ("Still ongoing");
+        yield expect ("Outside upcoming range", false);
+        yield expect ("Ended yesterday", false);
+        assert (!named (widget, "agenda-previous").visible);
+        var next = find_button (widget, "pan-end-symbolic");
+        next.clicked ();
+        for (int i = 0; i < 12; i++) yield pause ();
+        yield expect ("Upcoming tomorrow");
+        yield expect ("Last upcoming day");
+        find_button (widget, "office-calendar-symbolic").clicked ();
+        stdout.printf ("PASS default Upcoming, month boundary, ongoing/past exclusion and calendar browsing\n");
+    }
+
     async void view_checks (Gtk.Window window) throws Error {
         var now = new GLib.DateTime.now_local ();
         var today = new GLib.DateTime.local (now.get_year (), now.get_month (), now.get_day_of_month (), 0, 0, 0);
@@ -179,6 +213,7 @@ class AgendaTest : Object {
         find_stack (widget).visible_child_name = "events";
         choose_view ("day");
         yield expect ("Detailed meeting");
+        details_for (widget, "Detailed meeting").expanded = true;
         yield expect ("Room <A> & B");
         yield expect ("Discuss <scope> & next steps");
         yield expect ("agenda-test-events");
@@ -323,8 +358,12 @@ class AgendaTest : Object {
             yield expect ("Calendar Accounts…");
             yield expect ("First calendar");
             yield expect ("Second calendar same UID");
+            yield upcoming_checks ();
+            choose_view ("day");
             yield navigation_checks ();
             yield view_checks (window);
+            choose_view ("upcoming");
+            yield expect ("Upcoming · next 30 days");
             preview (window, "calendar-events");
             find_stack (widget).visible_child_name = "tasks";
             yield expect ("Undated task");

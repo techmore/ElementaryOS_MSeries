@@ -1,7 +1,10 @@
 # Pantheon calendar agenda
 
 The datetime indicator has **Events** and **Tasks** tabs above the calendar's
-right pane. Events has **Month**, **Week** and **Day** agenda views. Tasks shows
+right pane. Events defaults to **Upcoming · next 30 days**, grouped by local
+date independently of the left calendar selection. Ended events are omitted;
+ongoing events remain visible. **Month**, **Week** and **Day** are available as
+explicit alternate views. Tasks shows
 all incomplete tasks
 from selected, enabled elementary Tasks lists, including tasks with no due
 date. Dated tasks sort first, then undated tasks alphabetically. Activate a
@@ -22,16 +25,19 @@ Wider views group rows under date headings, with all-day events before timed
 meetings. Multi-day events appear on each day they overlap; all-day end dates
 remain exclusive. Recurring instances and separate calendars retain their identities.
 
-Rows show the event title, all-day/time range, calendar name, location and a
-short description when available. Titles wrap and descriptions offer a tooltip
-for longer text. Calendar colors mark the edge of neutral cards for readable
-text in light and dark themes. The event list scrolls inside a bounded pane.
+Compact rows show title and time on one line, with full titles on hover. Expand
+an event to read its calendar name, location and description. Calendar colors
+mark the edge of neutral cards for readable text in light and dark themes.
+Task rows have compact spacing and hover text for shortened titles and details.
+The event list scrolls inside a bounded pane.
 
 The arrows beside the agenda heading move one month, week or day according to
 the selected mode. The arrows above the date grid always browse months.
-**Today** selects today's date without changing the agenda mode. Day is the
-initial default; the mode is retained while opening/closing the popup in the
-same panel process. Tasks remains an independent list of incomplete items.
+**Today** selects today's date without changing the agenda mode. Upcoming is
+the initial default; an explicitly chosen alternate mode is retained while
+opening/closing the popup in the same panel process. Upcoming ignores calendar
+browsing and hides period arrows. Its independent 30-day EDS view spans month
+boundaries; a minute timer updates expiry and daily range rollover while open. Tasks remains an independent list of incomplete items.
 Event activation opens the native Calendar app on that row's date.
 
 Navigation uses each grid's actual month, rejects stale carousel notifications,

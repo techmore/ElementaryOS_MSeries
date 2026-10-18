@@ -1,5 +1,5 @@
 diff --git a/data/EventRow.css b/data/EventRow.css
-index 96b8708..36d18cc 100644
+index 96b8708..9f22f6e 100644
 --- a/data/EventRow.css
 +++ b/data/EventRow.css
 @@ -1,11 +1,13 @@
@@ -11,7 +11,7 @@ index 96b8708..36d18cc 100644
 +    color: @theme_fg_color;
 +    border-left: 3px solid @accent_color;
 +    border-radius: 4px;
-+    padding: 8px;
++    padding: 3px 4px;
  }
 
  .event label,
@@ -54,16 +54,17 @@ index 383cf96..060d771 100644
  src/Services/TimeManager.vala
 +src/Widgets/TaskRow.vala
 diff --git a/src/Indicator.vala b/src/Indicator.vala
-index 7b6ec63..ac3afcb 100644
+index 7b6ec63..5ad4084 100644
 --- a/src/Indicator.vala
 +++ b/src/Indicator.vala
-@@ -25,5 +25,13 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -25,5 +25,14 @@ public class DateTime.Indicator : Wingpanel.Indicator {
      private Widgets.CalendarView calendar;
      private Gtk.ListBox component_listbox;
 +    private Gtk.Stack agenda_stack;
 +    private Gtk.ListBox task_listbox;
      private uint update_components_idle_source = 0;
-+    private string agenda_mode = "day";
++    private string agenda_mode = "upcoming";
++    private uint upcoming_timer = 0;
 +    private GLib.DateTime agenda_date = new GLib.DateTime.now_local ();
 +    private Gtk.Label period_label;
 +    private Gtk.Label empty_events;
@@ -71,7 +72,7 @@ index 7b6ec63..ac3afcb 100644
 +    private Gtk.Button period_next;
 
      public Indicator () {
-@@ -72,8 +80,10 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -72,8 +81,10 @@ public class DateTime.Indicator : Wingpanel.Indicator {
                  justify = Gtk.Justification.CENTER
              };
 +            empty_events = placeholder_label;
@@ -82,7 +83,7 @@ index 7b6ec63..ac3afcb 100644
 +                name = "agenda-events",
                  selection_mode = Gtk.SelectionMode.NONE
              };
-@@ -82,8 +92,90 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -82,8 +93,92 @@ public class DateTime.Indicator : Wingpanel.Indicator {
              component_listbox.set_sort_func (sort_function);
 
 -            var scrolled_window = new Gtk.ScrolledWindow () {
@@ -99,7 +100,7 @@ index 7b6ec63..ac3afcb 100644
 +            });
 +
 +            agenda_stack = new Gtk.Stack () { vexpand = true };
-+            var event_page = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
++            var event_page = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
 +            var view_buttons = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) {
 +                halign = Gtk.Align.CENTER
 +            };
@@ -107,11 +108,11 @@ index 7b6ec63..ac3afcb 100644
 +            var mode_style = new Gtk.CssProvider ();
 +            mode_style.load_from_resource ("/io/elementary/desktop/wingpanel/datetime/EventRow.css");
 +            Gtk.ToggleButton? first_view = null;
-+            foreach (var mode in new string[] { "month", "week", "day" }) {
-+                var caption = mode == "month" ? _("Month") : mode == "week" ? _("Week") : _("Day");
++            foreach (var mode in new string[] { "upcoming", "month", "week", "day" }) {
++                var caption = mode == "upcoming" ? _("Upcoming") : mode == "month" ? _("Month") : mode == "week" ? _("Week") : _("Day");
 +                var button = new Gtk.ToggleButton.with_label (caption) {
 +                    name = "agenda-" + mode,
-+                    tooltip_text = mode == "month" ? _("Events for the whole month") :
++                    tooltip_text = mode == "upcoming" ? _("Upcoming events in the next 30 days") : mode == "month" ? _("Events for the whole month") :
 +                        mode == "week" ? _("Events for the selected week") : _("Events for the selected day")
 +                };
 +                button.add_css_class ("agenda-view");
@@ -149,7 +150,9 @@ index 7b6ec63..ac3afcb 100644
 +            event_page.append (period_header);
 +            event_page.append (new Gtk.ScrolledWindow () {
 +                hscrollbar_policy = Gtk.PolicyType.NEVER, child = component_listbox,
-+                min_content_height = 260, max_content_height = 360,
++                min_content_width = 300, max_content_width = 340,
++                propagate_natural_width = true,
++                min_content_height = 220, max_content_height = 320,
 +                propagate_natural_height = true, vexpand = true
 +            });
 +            agenda_stack.add_titled (event_page, "events", _("Events"));
@@ -158,7 +161,7 @@ index 7b6ec63..ac3afcb 100644
 +            }, "tasks", _("Tasks"));
 +            var tabs = new Gtk.StackSwitcher () {
 +                stack = agenda_stack, halign = Gtk.Align.CENTER,
-+                margin_start = 6, margin_end = 6, margin_bottom = 6
++                margin_start = 6, margin_end = 6, margin_bottom = 3
 +            };
 +            var agenda = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
 +            agenda.append (tabs);
@@ -176,7 +179,11 @@ index 7b6ec63..ac3afcb 100644
 +            });
 
              var settings_button = new Wingpanel.PopoverMenuItem.with_text (_("Date & Time Settings…"));
-@@ -98,5 +190,6 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -95,8 +190,9 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+
+             main_grid = new Gtk.Grid () {
+-                margin_top = 12
++                margin_top = 6
              };
              main_grid.attach (calendar, 0, 0);
 -            main_grid.attach (scrolled_window, 1, 0);
@@ -184,20 +191,20 @@ index 7b6ec63..ac3afcb 100644
 +            main_grid.attach (accounts_button, 0, 4, 2, 1);
              main_grid.attach (sep, 0, 2, 2, 1);
              main_grid.attach (settings_button, 0, 3, 2, 1);
-@@ -104,5 +197,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -104,5 +200,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
              var size_group = new Gtk.SizeGroup (Gtk.SizeGroupMode.HORIZONTAL);
              size_group.add_widget (calendar);
 -            size_group.add_widget (component_listbox);
 +            size_group.add_widget (agenda);
 
              calendar.day_double_click.connect (() => {
-@@ -111,4 +204,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -111,4 +207,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
 
              calendar.selection_changed.connect ((date) => {
 +                agenda_date = date ?? Widgets.CalendarModel.get_default (ECal.ClientSourceType.EVENTS).month_start;
                  idle_update_components ();
              });
-@@ -138,4 +232,14 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -138,4 +235,14 @@ public class DateTime.Indicator : Wingpanel.Indicator {
              });
 
 +            task_listbox.row_activated.connect (() => {
@@ -212,11 +219,18 @@ index 7b6ec63..ac3afcb 100644
 +
              settings_button.clicked.connect (() => {
                  try {
-@@ -150,28 +254,20 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -150,48 +257,41 @@ public class DateTime.Indicator : Wingpanel.Indicator {
      }
 
--    private void header_update_func (Gtk.ListBoxRow lbrow, Gtk.ListBoxRow? lbbefore) {
--        var row = (DateTime.ComponentRow) lbrow;
++    private void move_period (int direction) {
++        if (agenda_mode == "upcoming") return;
++        var date = agenda_mode == "month" ? agenda_date.add_months (direction) :
++            agenda_date.add_days (agenda_mode == "week" ? 7 * direction : direction);
++        calendar.show_date (date);
++    }
++
+     private void header_update_func (Gtk.ListBoxRow lbrow, Gtk.ListBoxRow? lbbefore) {
+         var row = (DateTime.ComponentRow) lbrow;
 -        if (lbbefore != null) {
 -            var before = (DateTime.ComponentRow) lbbefore;
 -            if (row.is_allday == before.is_allday) {
@@ -227,35 +241,35 @@ index 7b6ec63..ac3afcb 100644
 -            if (row.is_allday != before.is_allday) {
 -                var header_label = new Granite.HeaderLabel (_("During the Day"));
 -                header_label.margin_start = header_label.margin_end = 6;
-+    private void move_period (int direction) {
-+        var date = agenda_mode == "month" ? agenda_date.add_months (direction) :
-+            agenda_date.add_days (agenda_mode == "week" ? 7 * direction : direction);
-+        calendar.show_date (date);
-+    }
-
+-
 -                row.set_header (header_label);
 -                return;
 -            }
-+    private void header_update_func (Gtk.ListBoxRow lbrow, Gtk.ListBoxRow? lbbefore) {
-+        var row = (ComponentRow) lbrow;
-+        var before = lbbefore as ComponentRow;
-+        if (agenda_mode != "day" && (before == null ||
-+            row.date.format ("%F") != before.date.format ("%F"))) {
-+            row.set_header (new Granite.HeaderLabel (row.date.format (_("%A, %B %e"))) {
-+                margin_start = 6, margin_end = 6, margin_top = 9
-+            });
-         } else {
+-        } else {
 -            if (row.is_allday) {
 -                var allday_header = new Granite.HeaderLabel (_("All Day"));
 -                allday_header.margin_start = allday_header.margin_end = 6;
 -
 -                row.set_header (allday_header);
 -            }
--            return;
++        if (agenda_mode == "day") { row.set_header (null); return; }
++        var before = lbbefore as DateTime.ComponentRow;
++        if (before != null && row.date.format ("%F") == before.date.format ("%F")) {
 +            row.set_header (null);
+             return;
          }
++        var today = Util.strip_time (new GLib.DateTime.now_local ());
++        var day = row.date.format ("%F");
++        string heading = row.date.format (row.date.get_year () == today.get_year () ? "%a, %b %e" : "%a, %b %e, %Y");
++        if (day == today.format ("%F")) heading = _("Today") + " · " + heading;
++        else if (day == today.add_days (1).format ("%F")) heading = _("Tomorrow") + " · " + heading;
++        var header = new Gtk.Label (heading) {
++            xalign = 0, margin_start = 6, margin_end = 6, margin_top = 5, margin_bottom = 2
++        };
++        header.add_css_class ("heading");
++        row.set_header (header);
      }
-@@ -179,19 +275,12 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+
      [CCode (instance_pos = -1)]
      private int sort_function (Gtk.ListBoxRow child1, Gtk.ListBoxRow child2) {
 -        var e1 = (ComponentRow) child1;
@@ -283,7 +297,7 @@ index 7b6ec63..ac3afcb 100644
 +        return GLib.strcmp (a.component.get_summary (), b.component.get_summary ());
      }
 
-@@ -208,43 +297,56 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -208,43 +308,80 @@ public class DateTime.Indicator : Wingpanel.Indicator {
      }
 
 -    private bool update_components () {
@@ -326,10 +340,17 @@ index 7b6ec63..ac3afcb 100644
          });
 
 -        tasks_model.source_components.@foreach ((source, component_map) => {
-+        var events_model = Widgets.CalendarModel.get_default (ECal.ClientSourceType.EVENTS);
++        var events_model = agenda_mode == "upcoming" ? Widgets.CalendarModel.get_upcoming () :
++            Widgets.CalendarModel.get_default (ECal.ClientSourceType.EVENTS);
++        period_previous.visible = period_next.visible = agenda_mode != "upcoming";
 +        var first = Util.strip_time (agenda_date);
 +        var end = first.add_days (1);
-+        if (agenda_mode == "month") {
++        if (agenda_mode == "upcoming") {
++            first = Util.strip_time (new GLib.DateTime.now_local ());
++            end = first.add_days (30);
++            period_label.label = _("Upcoming · next 30 days");
++            empty_events.label = _("No upcoming events in the next 30 days");
++        } else if (agenda_mode == "month") {
 +            first = Util.get_start_of_month (agenda_date);
 +            end = first.add_months (1);
 +            period_label.label = first.format (_("%B %Y"));
@@ -356,28 +377,63 @@ index 7b6ec63..ac3afcb 100644
 +        events_model.source_components.@foreach ((source, component_map) => {
              foreach (var comp in component_map.get_values ()) {
 -                if (Util.calcomp_is_on_day (comp, date)) {
-+                for (var date = first; date.compare (end) < 0; date = date.add_days (1)) {
-+                    if (!Util.calcomp_is_on_day (comp, date)) continue;
++                if (agenda_mode == "upcoming") {
                      unowned ICal.Component ical = comp.get_icalcomponent ();
 -                    var component_uid = ical.get_uid ();
 -                    if (!components_on_day.has_key (component_uid)) {
 -                        components_on_day[component_uid] = new DateTime.ComponentRow (date, ical, source);
 -
 -                        component_listbox.append (components_on_day[component_uid]);
--                    }
++                    var start = ical.get_dtstart ();
++                    if (start == null || start.is_null_time ()) continue;
++                    var date = Util.ical_to_date_time (start);
++                    if (!start.is_date ()) date = date.to_local ();
++                    date = Util.strip_time (date);
++                    if (date.compare (first) < 0) date = first;
++                    var row = new ComponentRow (date, ical, source);
++                    var now = new GLib.DateTime.now_local ();
++                    if (row.start_time.compare (end) < 0 &&
++                        ((row.end_time != null && row.end_time.compare (now) > 0) || row.start_time.compare (now) >= 0)) {
++                        var key = source.dup_uid () + ":" + ical.get_uid () + ":" + ical.get_dtstart ().as_ical_string ();
++                        if (displayed.add (key)) component_listbox.append (row);
+                     }
++                    continue;
++                }
++                for (var date = first; date.compare (end) < 0; date = date.add_days (1)) {
++                    if (!Util.calcomp_is_on_day (comp, date)) continue;
++                    unowned ICal.Component ical = comp.get_icalcomponent ();
 +                    var key = source.dup_uid () + ":" + ical.get_uid () + ":" +
 +                        ical.get_dtstart ().as_ical_string () + ":" + date.format ("%F");
 +                    if (displayed.add (key)) component_listbox.append (new ComponentRow (date, ical, source));
                  }
              }
-@@ -269,4 +371,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -268,8 +405,24 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+         tasks_model.components_removed.connect (update_components_model);
 
++        var upcoming = Widgets.CalendarModel.get_upcoming ();
++        upcoming.components_added.connect (update_components_model);
++        upcoming.components_updated.connect (update_components_model);
++        upcoming.components_removed.connect (update_components_model);
++        upcoming.refresh_upcoming ();
++        if (upcoming_timer == 0) upcoming_timer = Timeout.add_seconds (60, () => {
++            Widgets.CalendarModel.get_upcoming ().refresh_upcoming ();
++            if (agenda_mode == "upcoming") idle_update_components ();
++            return GLib.Source.CONTINUE;
++        });
          calendar.refresh ();
 +        idle_update_components ();
      }
 
+     public override void closed () {
++        if (upcoming_timer != 0) { GLib.Source.remove (upcoming_timer); upcoming_timer = 0; }
++        var upcoming = Widgets.CalendarModel.get_upcoming ();
++        upcoming.components_added.disconnect (update_components_model);
++        upcoming.components_updated.disconnect (update_components_model);
++        upcoming.components_removed.disconnect (update_components_model);
+         var events_model = Widgets.CalendarModel.get_default (ECal.ClientSourceType.EVENTS);
+         var tasks_model = Widgets.CalendarModel.get_default (ECal.ClientSourceType.TASKS);
 diff --git a/src/Widgets/ComponentRow.vala b/src/Widgets/ComponentRow.vala
-index 7a626ba..5635bd9 100644
+index 7a626ba..b9a2a7d 100644
 --- a/src/Widgets/ComponentRow.vala
 +++ b/src/Widgets/ComponentRow.vala
 @@ -20,6 +20,8 @@
@@ -416,9 +472,55 @@ index 7a626ba..5635bd9 100644
 -            }
          }
 
-@@ -124,4 +126,27 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
-         }
+@@ -89,5 +91,5 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
 
+         component_image = new Gtk.Image.from_icon_name (icon_name) {
+-            valign = Gtk.Align.START
++            valign = Gtk.Align.CENTER
+         };
+         component_image.get_style_context ().add_provider (css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+@@ -96,7 +98,9 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+             hexpand = true,
+             ellipsize = Pango.EllipsizeMode.END,
+-            lines = 3,
+-            max_width_chars = 30,
+-            wrap = true,
++            lines = 1,
++            width_chars = 12,
++            max_width_chars = 20,
++            wrap = false,
++            tooltip_text = component.get_summary (),
+             wrap_mode = Pango.WrapMode.WORD_CHAR,
+             xalign = 0
+@@ -107,5 +111,9 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+         time_label = new Gtk.Label (null) {
+             use_markup = true,
+-            xalign = 0,
++            xalign = 1,
++            halign = Gtk.Align.END,
++            valign = Gtk.Align.CENTER,
++            max_width_chars = 18,
++            ellipsize = Pango.EllipsizeMode.END
+         };
+         time_label.add_css_class (Granite.CssClass.DIM);
+@@ -113,19 +121,34 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+         grid = new Gtk.Grid () {
+             column_spacing = 6,
+-            margin_top = 3,
+-            margin_bottom = 3,
+-            margin_start = 6,
+-            margin_end = 6
++            margin_top = 1,
++            margin_bottom = 1,
++            margin_start = 2,
++            margin_end = 2
+         };
+         grid.attach (component_image, 0, 0);
+         grid.attach (name_label, 1, 0);
+-        if (!is_allday) {
+-            grid.attach (time_label, 1, 1);
++        grid.attach (time_label, 2, 0);
++
 +        var details = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
 +        details.append (new Gtk.Label (calendar_name) {
 +            xalign = 0, wrap = true, max_width_chars = 32, css_classes = { "dim-label", "caption" }
@@ -428,7 +530,12 @@ index 7a626ba..5635bd9 100644
 +            details.append (new Gtk.Label (location) {
 +                xalign = 0, wrap = true, max_width_chars = 32, selectable = true
 +            });
-+        }
+         }
+-
+-        grid.add_css_class ("event");
+-        grid.get_style_context ().add_provider (css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+-
+-        child = grid;
 +        var description = component.get_description ();
 +        if (description != null && description.strip () != "") {
 +            details.append (new Gtk.Label (description) {
@@ -436,15 +543,13 @@ index 7a626ba..5635bd9 100644
 +                ellipsize = Pango.EllipsizeMode.END, tooltip_text = description
 +            });
 +        }
-+        if (is_allday) {
-+            time_label.label = _("All day");
-+            grid.attach (time_label, 1, 1);
-+        }
-+        grid.attach (details, 1, 2);
-+
-         grid.add_css_class ("event");
-         grid.get_style_context ().add_provider (css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
-@@ -137,4 +162,8 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
++        var expander = new Gtk.Expander (null) { label_widget = grid, child = details };
++        expander.add_css_class ("event");
++        expander.get_style_context ().add_provider (css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
++        child = expander;
+
+         set_color ();
+@@ -137,4 +160,8 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
 
      private void update_timelabel () {
 +        if (is_allday) {
@@ -453,12 +558,18 @@ index 7a626ba..5635bd9 100644
 +        }
          var time_format = Granite.DateTime.get_default_time_format (time_manager.is_12h);
          if (source_selectable is E.SourceTaskList) {
+@@ -147,4 +174,5 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+     private void set_color () {
+         Util.set_component_calendar_color (source_selectable, grid);
++        Util.set_component_calendar_color (source_selectable, child);
+         Util.set_component_calendar_color (source_selectable, component_image);
+         Util.set_component_calendar_color (source_selectable, name_label);
 diff --git a/src/Widgets/TaskRow.vala b/src/Widgets/TaskRow.vala
 new file mode 100644
-index 0000000..8e1a96e
+index 0000000..9d8e65b
 --- /dev/null
 +++ b/src/Widgets/TaskRow.vala
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,39 @@
 +/* Copyright 2026 M-Series contributors. SPDX-License-Identifier: GPL-3.0-or-later */
 +public class DateTime.TaskRow : Gtk.ListBoxRow {
 +    public int64 due_sort { get; private set; default = int64.MAX; }
@@ -466,11 +577,11 @@ index 0000000..8e1a96e
 +
 +    public TaskRow (ICal.Component component, E.Source source) {
 +        title = component.get_summary () ?? _("Untitled task");
-+        var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 3) {
-+            margin_start = 12, margin_end = 12, margin_top = 6, margin_bottom = 6
++        var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 1) {
++            margin_start = 6, margin_end = 6, margin_top = 2, margin_bottom = 2
 +        };
 +        box.append (new Gtk.Label (title) {
-+            xalign = 0, wrap = true, max_width_chars = 28,
++            xalign = 0, wrap = false, max_width_chars = 28, tooltip_text = title,
 +            ellipsize = Pango.EllipsizeMode.END
 +        });
 +        var due = component.get_due ();
@@ -483,8 +594,12 @@ index 0000000..8e1a96e
 +        } else {
 +            detail += " · " + _("No due date");
 +        }
-+        var subtitle = new Gtk.Label (detail) { xalign = 0, wrap = true, max_width_chars = 28 };
++        var subtitle = new Gtk.Label (detail) { xalign = 0, wrap = false, max_width_chars = 28,
++            ellipsize = Pango.EllipsizeMode.END, tooltip_text = detail };
 +        subtitle.add_css_class ("dim-label");
++        var small = new Pango.AttrList ();
++        small.insert (Pango.attr_scale_new (0.85));
++        subtitle.attributes = small;
 +        box.append (subtitle);
 +        child = box;
 +    }
@@ -495,29 +610,54 @@ index 0000000..8e1a96e
 +    }
 +}
 diff --git a/src/Widgets/calendar/CalendarModel.vala b/src/Widgets/calendar/CalendarModel.vala
-index 9301281..b7bdd9f 100644
+index 9301281..b6bff8f 100644
 --- a/src/Widgets/calendar/CalendarModel.vala
 +++ b/src/Widgets/calendar/CalendarModel.vala
-@@ -43,4 +43,5 @@ namespace DateTime.Widgets {
+@@ -43,8 +43,23 @@ namespace DateTime.Widgets {
          public signal void components_removed (E.Source source, Gee.Collection<ECal.Component> components);
 
 +        private HashTable<string, uint> generations;
          private E.SourceRegistry registry { get; private set; }
          private HashTable<string, ECal.Client> source_client;
-@@ -69,5 +70,5 @@ namespace DateTime.Widgets {
+         private HashTable<string, ECal.ClientView> source_view;
+         public ECal.ClientSourceType source_type { get; construct; }
++        public bool upcoming_range { get; construct; default = false; }
++        private static CalendarModel upcoming_model;
++
++        public static CalendarModel get_upcoming () {
++            if (upcoming_model == null) upcoming_model = new CalendarModel (ECal.ClientSourceType.EVENTS, true);
++            return upcoming_model;
++        }
++
++        public void refresh_upcoming () {
++            var today = Util.strip_time (new GLib.DateTime.now_local ());
++            if (!upcoming_range || data_range.first_dt.equal (today)) return;
++            compute_ranges ();
++            load_all_sources ();
++        }
+
+         private static HashTable<ECal.ClientSourceType, CalendarModel> calendar_model;
+@@ -64,10 +79,10 @@ namespace DateTime.Widgets {
+         }
+
+-        public CalendarModel (ECal.ClientSourceType source_type) {
+-            Object (source_type: source_type);
++        public CalendarModel (ECal.ClientSourceType source_type, bool upcoming = false) {
++            Object (source_type: source_type, upcoming_range: upcoming);
+         }
 
          construct {
 -            open.begin ();
 +            generations = new HashTable<string, uint> (str_hash, str_equal);
 
              source_client = new HashTable<string, ECal.Client> (str_hash, str_equal);
-@@ -83,4 +84,5 @@ namespace DateTime.Widgets {
+@@ -83,4 +98,5 @@ namespace DateTime.Widgets {
              compute_ranges ();
              notify["month-start"].connect (on_parameter_changed);
 +            open.begin ();
          }
 
-@@ -90,4 +92,8 @@ namespace DateTime.Widgets {
+@@ -90,4 +106,8 @@ namespace DateTime.Widgets {
                  registry.source_removed.connect (remove_source);
                  registry.source_added.connect ((source) => add_source_async.begin (source));
 +                registry.source_changed.connect ((source) => {
@@ -526,7 +666,7 @@ index 9301281..b7bdd9f 100644
 +                });
 
                  // Add sources
-@@ -143,11 +149,10 @@ namespace DateTime.Widgets {
+@@ -143,11 +163,10 @@ namespace DateTime.Widgets {
              unowned string uid = source.get_uid ();
 
 -            if (!source_view.contains (uid)) {
@@ -541,7 +681,7 @@ index 9301281..b7bdd9f 100644
 +                if (current_view != null) current_view.stop ();
              } catch (Error e) {
                  warning (e.message);
-@@ -159,7 +164,11 @@ namespace DateTime.Widgets {
+@@ -159,7 +178,11 @@ namespace DateTime.Widgets {
              }
 
 -            var components = source_components.get (source).get_values ().read_only_view;
@@ -556,7 +696,17 @@ index 9301281..b7bdd9f 100644
 +            }
          }
 
-@@ -214,4 +223,16 @@ namespace DateTime.Widgets {
+@@ -175,4 +198,9 @@ namespace DateTime.Widgets {
+
+         private void compute_ranges () {
++            if (upcoming_range) {
++                var today = Util.strip_time (new GLib.DateTime.now_local ());
++                data_range = new Util.DateRange (today, today.add_days (29));
++                return;
++            }
+             var month_end = month_start.add_full (0, 1, -1);
+
+@@ -214,4 +242,16 @@ namespace DateTime.Widgets {
 
          private void load_source (E.Source source) {
 +            load_source_async.begin (source);
@@ -573,7 +723,7 @@ index 9301281..b7bdd9f 100644
 +            }
              /* create empty source-component map */
              var components = new Gee.TreeMultiMap<string, ECal.Component> (
-@@ -219,5 +240,9 @@ namespace DateTime.Widgets {
+@@ -219,5 +259,9 @@ namespace DateTime.Widgets {
                  (GLib.CompareDataFunc<ECal.Component>?) Util.calcomponent_compare_func
              );
 +            var previous = source_components.get (source);
@@ -583,14 +733,14 @@ index 9301281..b7bdd9f 100644
 +            if (removed.size > 0) components_removed (source, removed.read_only_view);
              /* query client view */
              var iso_first = ECal.isodate_from_time_t ((time_t)data_range.first_dt.to_unix ());
-@@ -226,5 +251,5 @@ namespace DateTime.Widgets {
+@@ -226,5 +270,5 @@ namespace DateTime.Widgets {
              var query = @"(occur-in-time-range? (make-time \"$iso_first\") (make-time \"$iso_last\"))";
              if (source_type == ECal.ClientSourceType.TASKS) {
 -                query = @"AND (NOT is-completed?) (due-in-time-range? (make-time \"$iso_first\") (make-time \"$iso_last\"))";
 +                query = "(not (is-completed?))";
              }
 
-@@ -238,18 +263,22 @@ namespace DateTime.Widgets {
+@@ -238,18 +282,22 @@ namespace DateTime.Widgets {
              }
 
 -            debug ("Getting client-view for source '%s'", source.dup_display_name ());
@@ -627,7 +777,7 @@ index 9301281..b7bdd9f 100644
 +            }
          }
 
-@@ -260,10 +289,20 @@ namespace DateTime.Widgets {
+@@ -260,10 +308,20 @@ namespace DateTime.Widgets {
              }
 
 +            var extension = source_type == ECal.ClientSourceType.TASKS ? E.SOURCE_EXTENSION_TASK_LIST : E.SOURCE_EXTENSION_CALENDAR;
@@ -650,7 +800,7 @@ index 9301281..b7bdd9f 100644
 +                return;
              }
 
-@@ -283,18 +322,5 @@ namespace DateTime.Widgets {
+@@ -283,18 +341,5 @@ namespace DateTime.Widgets {
          private void on_parameter_changed () {
              compute_ranges ();
 -            load_all_sources ();
@@ -670,7 +820,7 @@ index 9301281..b7bdd9f 100644
 +            if (source_type == ECal.ClientSourceType.EVENTS) load_all_sources ();
          }
 
-@@ -309,6 +335,12 @@ namespace DateTime.Widgets {
+@@ -309,6 +354,12 @@ namespace DateTime.Widgets {
              objects.foreach ((comp) => {
                  unowned string uid = comp.get_uid ();
 +                if (source_type == ECal.ClientSourceType.TASKS) {
@@ -684,7 +834,7 @@ index 9301281..b7bdd9f 100644
 +                client.generate_instances_for_object_sync (comp, (time_t) data_range.first_dt.to_unix (), (time_t) data_range.last_dt.add_days (1).to_unix (), null, (comp, start, end) => {
                      var component = new ECal.Component.from_icalcomponent (comp);
  #else
-@@ -331,16 +363,17 @@ namespace DateTime.Widgets {
+@@ -331,16 +382,17 @@ namespace DateTime.Widgets {
  #endif
              debug (@"Received $(objects.length()) modified component(s) for source '%s'", source.dup_display_name ());
 -            var updated_components = new Gee.ArrayList<ECal.Component> ((Gee.EqualDataFunc<ECal.Component>?) Util.calcomponent_equal_func);
@@ -713,7 +863,7 @@ index 9301281..b7bdd9f 100644
 -            components_updated (source, updated_components.read_only_view);
          }
 
-@@ -352,4 +385,8 @@ namespace DateTime.Widgets {
+@@ -352,4 +404,8 @@ namespace DateTime.Widgets {
              debug (@"Received $(cids.length()) removed component(s) for source '%s'", source.dup_display_name ());
              var components = source_components.get (source);
 +            if (source_type == ECal.ClientSourceType.EVENTS) {
@@ -722,7 +872,7 @@ index 9301281..b7bdd9f 100644
 +            }
              var removed_components = new Gee.ArrayList<ECal.Component> ((Gee.EqualDataFunc<ECal.Component>?) Util.calcomponent_equal_func);
 
-@@ -366,4 +403,7 @@ namespace DateTime.Widgets {
+@@ -366,4 +422,7 @@ namespace DateTime.Widgets {
              });
 
 +            foreach (var component in removed_components) {
@@ -963,10 +1113,18 @@ index 6907315..81f14f2 100644
              var today = new GLib.DateTime.now_local ();
 
 diff --git a/src/Widgets/calendar/Util.vala b/src/Widgets/calendar/Util.vala
-index f337717..9334d49 100644
+index f337717..74bc1ec 100644
 --- a/src/Widgets/calendar/Util.vala
 +++ b/src/Widgets/calendar/Util.vala
-@@ -187,4 +187,10 @@ namespace Util {
+@@ -31,5 +31,6 @@ namespace Util {
+
+     public GLib.DateTime strip_time (GLib.DateTime datetime) {
+-        return datetime.add_full (0, 0, 0, -datetime.get_hour (), -datetime.get_minute (), -datetime.get_second ());
++        return new GLib.DateTime (datetime.get_timezone (), datetime.get_year (),
++            datetime.get_month (), datetime.get_day_of_month (), 0, 0, 0);
+     }
+
+@@ -187,4 +188,10 @@ namespace Util {
          }
 
 +        if (start_time == null || start_time.is_null_time ()) return false;
