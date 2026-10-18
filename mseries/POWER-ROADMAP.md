@@ -158,3 +158,50 @@ The conditions differ between rows and between days, so these two rows cannot be
 a before/after. A real comparison needs: same workload script, same brightness and refresh,
 no external display, >=3 alternating runs per kernel (stock `7.1.13-3-2-ARCH` vs Aurora `.20`),
 medians with p10/p90, as the honesty rules above require.
+
+## Upstream power review: omacom/linux-aurora `aurora-wip`, published `.19`/`.20`, open issues — 2026-10-18
+
+`aurora-wip` (tip 2026-09-05) is fully contained in `.20` (0 commits ahead), so the published
+release is the thing to look at. Findings, with live checks on this Mac (read-only):
+
+1. **The PMP is running now.** `apple-pmgr-misc: PMP manages fabric and DCS p-states` and
+   `apple_pmp 28e700000.pmp: PMP firmware and endpoint ready` appear in this boot's log.
+   Upstream `.19` (PR #123, carrying @maralcbr's #91) describes the J314s PMP in its device
+   tree and fixes s2idle resume with it; "the PMP runs only when the boot loader switches it
+   on, otherwise the J314s keeps the previous power path". Our previous `boot.bin` did not run
+   it; the upstream-matched `m1n1-aurora` payload deployed today does. `pmp_report` also reports
+   AVD, ISP and the three DCP power states to the PMP. This is the most plausible source of any
+   idle-power change seen today, **but no before/after was measured**.
+2. **Idle fabric governor** (`apple_pmgr_misc.idle_fabric_pstate`, currently `0`, root-writable
+   at runtime): lowers the fabric p-state at idle; external CRTCs hold it up while scanning out.
+   Release notes: *not used while a PMP runs*, so with the PMP active toggling it is expected to
+   do nothing; not tested here.
+3. **CPU idle residency (cpu0, since boot, ~14 min):** WFI 394 s, deep `CPU PD` 154 s, i.e.
+   ~28% of idle time in the deep state. The earlier record in this file (2026-10-16, other kernel
+   and boot payload, different window) was WFI 19.8 s vs `CPU PD` 1.4 s (~7%). Direction is
+   encouraging; the windows and workloads differ, so this is an observation, not a result.
+4. **Thunderbolt/s2idle options, all off by default** (PR #124 carrying #92): `s2idle_teardown`
+   powers off connected ports with no PCIe tunnel during s2idle (drops USB/display/network behind
+   a dock until resume; run on one M1 Pro only), plus `resume_recovery` and `router_sleep`.
+   Candidate for sleep-drain work *without* a dock only; untested here.
+5. **`vrr` / `tb` branches:** ProMotion variable refresh (`drm: apple: support ProMotion variable
+   refresh rate`, 2026-09-12). Not confirmed to be in `.20`; our staged out-of-tree VRR module
+   (DeepSeek) is the other route. Variable refresh is the main display-power lever.
+6. **Open upstream issues that touch power:** #24 (M1 Max GPU firmware crash after loaded
+   s2idle resume), #59 (J516S s2idle keyboard wake / dark panel), #121 (external-display sleep
+   veto), #130 (J316S direct USB-C display: DCP crash after idle lock / s2idle). **None is about
+   idle watts or battery life** — an open niche where measured data from this Mac would be useful.
+
+Next, without rebooting: record `/sys/devices/system/cpu/cpu*/cpuidle/state*/{usage,time}`
+deltas over fixed 5-minute windows while idle and under the standard workload, plus the SMC power
+reading, so the same script can later be run on stock `7.1.13-3-2-ARCH` for an honest A/B. With a
+reboot: stock vs Aurora `.20`, >=3 alternations (see the honesty rules above).
+
+### Display audio on the dock monitor (owner report 2026-10-18)
+The monitor's speakers show as selectable but nothing plays. Live state: `appledrm.hdmi_audio=N`
+(the parameter is described as "Enable unstable HDMI audio support" and the `.20` notes say the audio
+changes take effect only with `appledrm.hdmi_audio=1`, off by default on M1-M3); only the
+internal ALSA card (`AppleJ314`) exists, and PipeWire's sink list shows the internal headphones
+plus network (AirPlay/RAOP) outputs, one of them named like a TV (`zTV-Living Room`), which is
+likely what appears. Upstream issue #48 ("qualify HDMI/DP audio before changing its default")
+is open. Needs a reboot with `appledrm.hdmi_audio=1` on the cmdline to test.
