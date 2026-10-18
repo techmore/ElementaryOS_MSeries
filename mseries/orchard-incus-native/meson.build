@@ -46,7 +46,7 @@ install_data('data/icons/orchard-incus-symbolic.svg',
 wingpanel = dependency('wingpanel-9', required: get_option('wingpanel'))
 if wingpanel.found()
   indicator_module = shared_module('orchard-incus',
-    'src/Indicator.vala', 'src/PanelRing.vala', 'src/Sparkline.vala', 'src/IncusClient.vala', 'src/Instance.vala', 'src/Preferences.vala',
+    'src/Indicator.vala', 'src/Sparkline.vala', 'src/IncusClient.vala', 'src/Instance.vala', 'src/Preferences.vala',
     dependencies: [wingpanel, dependency('libsoup-3.0'), dependency('json-glib-1.0'), dependency('gio-unix-2.0')],
     install: true,
     install_dir: wingpanel.get_variable(pkgconfig: 'indicatorsdir'))
