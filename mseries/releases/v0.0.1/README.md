@@ -78,6 +78,18 @@ A later retry also failed while the original process was still running without
 the new flags/environment. The fix has not activated. The current ChatGPT
 configuration remains an unresolved release gate above.
 
+## OS integration
+
+F5 is handled by the desktop speech service through the existing hardware
+microphone-key remap and IBus input bridge. Dictation does not require an app's
+own voice feature. The owner permits an OS-level override; the approved next
+step is a native Gala/session dictation broker with one shortcut owner, visible
+capture state, lock-screen suppression and focused text-purpose checks.
+That compositor integration is future work. The current safe route needs an
+app to expose its focused editable field; use the Dictation transcript field
+when an app does not. No blind keystroke injection or audio-stack change is
+needed for the staged ChatGPT compatibility fix.
+
 ## Rollback
 
 ```sh
@@ -97,7 +109,7 @@ python3 -B mseries/dictation/enable-app-input.py --app chatgpt --rollback
 The RC2 source was deployed after all seven exact-head CI checks passed. All 25
 read-only package/host checks and installed-byte/readiness/preservation checks
 pass. These do not establish physical F5 in ChatGPT; the unresolved gate above
-remains mandatory. [Sanitized candidate receipts](receipts/) retain both failures
+remains mandatory. [Sanitized candidate receipts](https://github.com/techmore/ElementaryOS_MSeries/tree/main/mseries/releases/v0.0.1/receipts) retain both failures
 and the corrected installer admission.
 
 The retained CPU/public-file results include two resident 62.61-second trials,
