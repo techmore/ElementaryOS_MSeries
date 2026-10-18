@@ -11,6 +11,8 @@ Both tabs use Evolution Data Server (EDS), the native Calendar/Tasks store.
 Updates, deletions, source selection and account additions are observed live.
 Identical UIDs in separate calendars do not hide each other's events.
 
+<a id="month-navigation-and-today"></a>
+
 ## Month, Week and Day views
 
 Choose **Month**, **Week** or **Day** inside Events. The month grid remains a

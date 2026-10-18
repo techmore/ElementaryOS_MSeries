@@ -1,5 +1,20 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Month/Week/Day agenda views — 2026-10-18
+
+Implemented and deployed period selectors and arrows, grouped dates, readable
+source-colored cards with time/calendar/location/description, bounded scrolling
+and synchronized date selection. Tasks stays independent; Today retains the
+chosen mode. Replaced relative carousel bookkeeping with actual grid months to
+reject stale page notifications during opening/navigation.
+
+Ten isolated real-plugin/EDS workflow groups pass in light and dark modes and
+against the installed production library. Five merged-tree image-wiring tests
+and focused shell/whitespace checks pass; synthetic previews inspected. Wingpanel
+reloaded and mapped-library inode verified. Next: owner acceptance on real
+accounts; Google remote sync, other locales and factory boot remain separate.
+[Views and validation](calendar/README.md#month-week-and-day-views).
+
 ## Fresh YouTube ISO qualification in progress — 2026-10-18
 
 Initial run 39126016747 failed before Brave staging because the calendar's GNOME
