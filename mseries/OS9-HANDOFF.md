@@ -1,5 +1,32 @@
 # OS 9 implementation / Claude Code handoff
 
+## Calendar Today navigation fixed and deployed — 2026-10-18
+
+Owner reported unexpected events after clicking the center month-navigation
+icon and requested a fix committed/merged to main. The icon is upstream's Today
+control, not a month/week/day selector. Added a real-plugin regression that
+selects another day, navigates three months in each direction, clicks Today
+repeatedly before animation completion, checks the month heading and today's
+events, verifies subsequent navigation, then retains the existing reopen test.
+The old installed plugin failed the current-month assertion and emitted invalid
+Adw.Carousel page/scroll criticals. Ordinary single-click checks had passed.
+
+The maintained patch now returns to the stored current-month grid immediately,
+resets relative position/model month/selected day together, suppresses callbacks
+during carousel rebuild, and bounds arrow navigation. The center control says
+Today; arrow tooltips name previous/next month. This fixes the reproduced state
+corruption; the owner's exact unexpected event contents were not inspected.
+
+Verification: fresh pinned ARM64 installer build and atomic install pass. All
+six real-plugin/EDS groups pass against the installed library, including the
+previously failing regression; final log has no carousel critical/assertion.
+Four image-wiring tests, focused shell checks and whitespace checks pass.
+Wingpanel reloaded and PID 671688 maps installed calendar inode 314053.
+Only the calendar library/launcher and panel process were deployed/reloaded;
+no personal event/account data was edited. Expected isolated portal/EDS teardown
+warnings and upstream build warnings remain. Next: owner checks Today on their
+real calendars; Google remote-sync and factory-boot acceptance remain separate.
+
 ## Dock startup/focus audit and merge preparation — 2026-10-18
 
 Reviewed PR #100 on current main in an isolated checkout, preserving the other

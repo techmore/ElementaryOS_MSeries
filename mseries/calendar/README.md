@@ -10,6 +10,17 @@ Both tabs use Evolution Data Server (EDS), the native Calendar/Tasks store.
 Updates, deletions, source selection and account additions are observed live.
 Identical UIDs in separate calendars do not hide each other's events.
 
+## Month navigation and Today
+
+The arrows move between months. **Today** returns to the current month and
+selects today's events; it is not a month/week/day view switch. The date grid
+remains a month view, and selecting a day updates the Events pane.
+
+The Today return is immediate and resets the month offset, model range and
+selection together. Repeated clicks cannot reuse an in-flight relative offset
+or request an invalid carousel page. Carousel rebuilding ignores intermediate
+page notifications, and the arrow handlers check their page bounds.
+
 ## Google Calendar
 
 Choose **Calendar Accounts…**, add **Google**, complete the browser sign-in and
@@ -56,7 +67,9 @@ qualify a factory image or a Google account connection.
 
 `bash mseries/calendar/test-agenda.sh /absolute/path/to/libdatetime.so` runs the
 actual plugin on Xvfb with a private D-Bus and private XDG config/data/cache.
-It creates only synthetic local EDS sources. It checks the tabs, undated tasks,
+It creates only synthetic local EDS sources. It checks Today after selecting another day, repeated Today clicks during
+month navigation in both directions, subsequent next-month navigation and
+reopening, plus the tabs, undated tasks,
 shared event UIDs across calendars, live edits/deletions/completion, and source
 enable/disable. It requires `xvfb xauth dbus-daemon` plus the development/runtime
 dependencies above. The fixture uses local GIO and disables file-portal activation only in its

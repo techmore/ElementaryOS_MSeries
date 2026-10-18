@@ -1,5 +1,16 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Calendar Today navigation regression resolved — 2026-10-18
+
+Repeated Today clicks during a return from another month could reuse the relative
+month offset, request invalid carousel pages and desynchronize the heading and
+agenda. Fixed the return/reset path and arrow bounds, and labeled the control
+Today. Fresh ARM64 build and six installed-plugin EDS groups pass, including a
+regression that fails on the previous library; four image-wiring tests also pass.
+Deployed and reloaded Wingpanel, verifying the installed library mapping.
+Remaining: owner confirmation with real accounts; no personal events were changed.
+See [calendar navigation](calendar/README.md#month-navigation-and-today).
+
 ## Factory YouTube browser included — 2026-10-18
 
 Brave 1.97.59 arm64 is now checksum-pinned and bundled under `/usr/lib/mseries-brave`

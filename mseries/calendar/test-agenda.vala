@@ -60,6 +60,72 @@ class AgendaTest : Object {
         return null;
     }
 
+    Gtk.Button? find_button (Gtk.Widget node, string icon) {
+        if (node is Gtk.Button && (((Gtk.Button) node).icon_name == icon ||
+            (icon == "office-calendar-symbolic" && ((Gtk.Button) node).label == "Today"))) return (Gtk.Button) node;
+        for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) {
+            var button = find_button (child, icon);
+            if (button != null) return button;
+        }
+        return null;
+    }
+
+    Gtk.Widget? find_day (Gtk.Widget node, GLib.DateTime date) {
+        if (node.get_type ().name () == "DateTimeWidgetsGridDay") {
+            GLib.DateTime day;
+            node.get ("date", out day);
+            if (day.get_year () == date.get_year () && day.get_day_of_year () == date.get_day_of_year ()) return node;
+        }
+        for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) {
+            var day = find_day (child, date);
+            if (day != null) return day;
+        }
+        return null;
+    }
+
+    async void navigation_checks () throws Error {
+        var today = new GLib.DateTime.now_local ();
+        var other = today.get_day_of_month () == 1 ? today.add_days (1) : today.add_days (-1);
+        var day = find_day (widget, other);
+        assert (day != null);
+        var controllers = day.observe_controllers ();
+        for (uint i = 0; i < controllers.get_n_items (); i++) {
+            var controller = controllers.get_item (i);
+            if (controller is Gtk.EventControllerFocus) Signal.emit_by_name (controller, "enter");
+        }
+        yield expect ("Second calendar same UID", false);
+        var today_button = find_button (widget, "office-calendar-symbolic");
+        assert (today_button != null);
+        today_button.clicked ();
+        yield expect ("Second calendar same UID");
+        for (int i = 0; i < 3; i++) today_button.clicked ();
+        yield expect ("Second calendar same UID");
+        var next = find_button (widget, "pan-end-symbolic");
+        var previous = find_button (widget, "pan-start-symbolic");
+        for (int pass = 0; pass < 2; pass++) {
+            for (int i = 0; i < 3; i++) {
+                (pass == 0 ? next : previous).clicked ();
+                for (int n = 0; n < 12; n++) yield pause ();
+            }
+            today_button.clicked ();
+            today_button.clicked ();
+            today_button.clicked ();
+            for (int n = 0; n < 12; n++) yield pause ();
+            yield expect (today.format ("%OB, %Y"));
+            yield expect ("Second calendar same UID");
+            today_button.clicked ();
+            yield expect ("Second calendar same UID");
+        }
+        next.clicked ();
+        for (int n = 0; n < 12; n++) yield pause ();
+        yield expect (today.add_months (1).format ("%OB, %Y"));
+        today_button.clicked ();
+        for (int n = 0; n < 12; n++) yield pause ();
+        yield expect (today.format ("%OB, %Y"));
+        yield expect ("Second calendar same UID");
+        stdout.printf ("PASS Today restores selected day and events after repeated clicks and month navigation\n");
+    }
+
     async void pause () {
         Timeout.add (50, () => { pause.callback (); return Source.REMOVE; });
         yield;
@@ -115,6 +181,7 @@ class AgendaTest : Object {
             yield expect ("Calendar Accounts…");
             yield expect ("First calendar");
             yield expect ("Second calendar same UID");
+            yield navigation_checks ();
             preview (window, "calendar-events");
             find_stack (widget).visible_child_name = "tasks";
             yield expect ("Undated task");

@@ -502,3 +502,121 @@ index f337717..9334d49 100644
 +
          time_t start_unix = start_time.as_timet_with_zone (system_timezone);
          time_t end_unix = end_time.as_timet_with_zone (system_timezone);
+diff --git a/src/Widgets/calendar/CalendarView.vala b/src/Widgets/calendar/CalendarView.vala
+index 1e0436c..b85833e 100644
+--- a/src/Widgets/calendar/CalendarView.vala
++++ b/src/Widgets/calendar/CalendarView.vala
+@@ -33,7 +33,7 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
+     private GLib.DateTime start_month;
+     private DateTime.Widgets.Grid start_month_grid;
+     private Gtk.Label label;
+-    private bool showtoday;
++    private bool resetting;
+
+     construct {
+         label = new Gtk.Label (new GLib.DateTime.now_local ().format (_("%OB, %Y"))) {
+@@ -51,11 +51,15 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
+
+         label.get_style_context ().add_provider (provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+-        var left_button = new Gtk.Button.from_icon_name ("pan-start-symbolic");
+-        var center_button = new Gtk.Button.from_icon_name ("office-calendar-symbolic") {
++        var left_button = new Gtk.Button.from_icon_name ("pan-start-symbolic") {
++            tooltip_text = _("Previous month")
++        };
++        var center_button = new Gtk.Button.with_label (_("Today")) {
+             tooltip_text = _("Go to today's date")
+         };
+-        var right_button = new Gtk.Button.from_icon_name ("pan-end-symbolic");
++        var right_button = new Gtk.Button.from_icon_name ("pan-end-symbolic") {
++            tooltip_text = _("Next month")
++        };
+
+         var box_buttons = new Granite.Box (HORIZONTAL, LINKED) {
+             margin_end = 6,
+@@ -101,7 +105,7 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
+
+         position = 1;
+         rel_postion = 0;
+-        showtoday = false;
++        resetting = false;
+
+         column_spacing = 6;
+         row_spacing = 6;
+@@ -111,11 +115,13 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
+         attach (carousel, 0, 1, 2);
+
+         left_button.clicked.connect (() => {
+-            carousel.scroll_to (carousel.get_nth_page ((uint) Math.round (carousel.position) - 1), true);
++            var index = (int) Math.round (carousel.position);
++            if (index > 0) carousel.scroll_to (carousel.get_nth_page ((uint) index - 1), true);
+         });
+
+         right_button.clicked.connect (() => {
+-            carousel.scroll_to (carousel.get_nth_page ((uint) Math.round (carousel.position) + 1), true);
++            var index = (uint) Math.round (carousel.position);
++            if (index + 1 < carousel.n_pages) carousel.scroll_to (carousel.get_nth_page (index + 1), true);
+         });
+
+         center_button.clicked.connect (() => {
+@@ -123,6 +129,7 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
+         });
+
+         carousel.page_changed.connect ((index) => {
++            if (resetting) return;
+             events_model.change_month (-rel_postion);
+             tasks_model.change_month (-rel_postion);
+             if (position > index) {
+@@ -131,13 +138,6 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
+             } else if (position < index) {
+                 rel_postion++;
+                 position++;
+-            } else if (showtoday) {
+-                showtoday = false;
+-                rel_postion = 0;
+-                position = (int) carousel.get_position ();
+-                label.label = events_model.month_start.format (_("%OB, %Y"));
+-                start_month_grid.set_focus_to_today ();
+-                return;
+             } else {
+                 events_model.change_month (rel_postion);
+                 tasks_model.change_month (rel_postion);
+@@ -191,13 +191,23 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
+     }
+
+     private void show_today (bool refresh = false) {
+-        showtoday = true;
++        // Reset navigation atomically: repeated Today clicks must not subtract
++        // the old relative offset while an animated return is still pending.
++        resetting = true;
+         var today = Util.strip_time (new GLib.DateTime.now_local ());
+         var start = Util.get_start_of_month (today);
+         selected_date = today;
+         if (start.equal (start_month) && !refresh) {
+-            position -= rel_postion;
+-            carousel.scroll_to (carousel.get_nth_page (position), true);
++            for (uint i = 0; i < carousel.n_pages; i++) {
++                if (carousel.get_nth_page (i) == start_month_grid) {
++                    position = i;
++                    break;
++                }
++            }
++            rel_postion = 0;
++            events_model.month_start = start;
++            tasks_model.month_start = start;
++            carousel.scroll_to (start_month_grid, false);
+         } else {
+             /*reset Carousel if center_child != the grid of the month of today*/
+             for (var child = carousel.get_first_child (); child != null; child = carousel.get_first_child ()) {
+@@ -234,6 +244,11 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
+             position = 1;
+             rel_postion = 0;
+         }
++        label.label = start.format (_("%OB, %Y"));
++        start_month_grid.set_focus_to_today ();
++        selected_date = today;
++        selection_changed (today);
++        resetting = false;
+     }
+
+     // TODO: As far as maya supports it use the Dbus Activation feature to run the calendar-app.
