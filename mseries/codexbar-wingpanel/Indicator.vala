@@ -35,6 +35,9 @@ namespace MSeries {
         private string sessions_text = "";
         private string sessions_error = "";
         private int64 sessions_fetched_us = 0;
+        private Json.Object? claude_data = null;
+        private bool claude_in_flight = false;
+        private int64 claude_fetched_us = 0;
         private Json.Array? codex_accounts = null;
         private bool codex_accounts_in_flight = false;
         private int64 codex_accounts_fetched_us = 0;
@@ -345,6 +348,10 @@ namespace MSeries {
                 GLib.get_monotonic_time () - sessions_fetched_us > max_age_seconds * GLib.TimeSpan.SECOND) {
                 refresh_sessions.begin ();
             }
+            if (claude_fetched_us == 0 ||
+                GLib.get_monotonic_time () - claude_fetched_us > 120 * GLib.TimeSpan.SECOND) {
+                refresh_claude.begin ();
+            }
             if (codex_accounts_fetched_us == 0 ||
                 GLib.get_monotonic_time () - codex_accounts_fetched_us > 300 * GLib.TimeSpan.SECOND) {
                 refresh_codex_accounts.begin ();
@@ -393,6 +400,164 @@ namespace MSeries {
                 last_digest = "";
                 read_snapshot.begin ();
             }
+        }
+
+        // Claude accounts come from claude-swap (cswap), the same tool upstream CodexBar drives on macOS.
+        private async void refresh_claude () {
+            if (claude_in_flight) {
+                return;
+            }
+            claude_in_flight = true;
+            var before = local_digest (claude_data);
+            try {
+                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
+                    "python3", helper_path ("codexbar-claude.py"), "list");
+                string stdout_text;
+                string stderr_text;
+                yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
+                Json.Object? parsed = null;
+                if (process.get_successful () && stdout_text.strip ().length > 0) {
+                    var parser = new Json.Parser ();
+                    parser.load_from_data (stdout_text, -1);
+                    var root = parser.get_root ();
+                    if (root != null && root.get_node_type () == Json.NodeType.OBJECT
+                        && root.get_object ().get_boolean_member_with_default ("available", false)) {
+                        parsed = root.get_object ().ref ();
+                    }
+                }
+                claude_data = parsed;
+            } catch (Error e) {
+                claude_data = null;
+            } finally {
+                claude_in_flight = false;
+                claude_fetched_us = GLib.get_monotonic_time ();
+            }
+            if (local_digest (claude_data) != before) {
+                last_digest = "";
+                read_snapshot.begin ();
+            }
+        }
+
+        private void run_claude_helper (string[] arguments) {
+            try {
+                string[] command = { "python3", helper_path ("codexbar-claude.py") };
+                foreach (var argument in arguments) {
+                    command += argument;
+                }
+                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_SILENCE | SubprocessFlags.STDERR_SILENCE);
+                process.wait_async.begin (null, () => {
+                    claude_fetched_us = 0;
+                    last_digest = "";
+                    refresh_claude.begin ();
+                    read_snapshot.begin ();
+                });
+            } catch (Error e) {
+                subtitle_label.set_text ("Could not switch Claude account: " + e.message);
+            }
+        }
+
+        private void add_claude_account () {
+            // Sign in to Claude Code first; this saves whichever login is active into claude-swap.
+            try {
+                new GLib.Subprocess (SubprocessFlags.NONE, "xdg-terminal-exec", "sh", "-c",
+                    "cswap add; printf '\\nPress Enter to close. '; read -r _");
+            } catch (Error e) {
+                subtitle_label.set_text ("Could not open a terminal: " + e.message);
+            }
+            claude_fetched_us = 0;
+        }
+
+        private Gtk.Widget build_claude_card (int64 now_unix) {
+            var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
+            card.add_css_class ("card");
+            var head = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            var dot = new Gtk.Label ("●");
+            dot.add_css_class ("dot-off");
+            head.append (dot);
+            var title = new Gtk.Label ("Claude") { xalign = 0, hexpand = true };
+            title.add_css_class ("provider-title");
+            head.append (title);
+            card.append (head);
+
+            var email = claude_data.get_string_member_with_default ("activeEmail", "");
+            var accounts = claude_data.get_array_member ("accounts");
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 5);
+            row.add_css_class ("account-row");
+            var icon = new Gtk.Image.from_icon_name ("avatar-default-symbolic") { pixel_size = 12 };
+            icon.add_css_class ("dim-label");
+            row.append (icon);
+            var who = new Gtk.Label (email.length > 0 ? email : "Account not detected") {
+                xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.MIDDLE
+            };
+            who.add_css_class ("caption");
+            who.add_css_class ("dim-label");
+            row.append (who);
+            card.append (row);
+
+            var shown_quota = false;
+            if (accounts != null) {
+                for (uint i = 0; i < accounts.get_length (); i++) {
+                    var account = accounts.get_object_element (i);
+                    var windows = account.get_array_member ("windows");
+                    if (account.get_boolean_member_with_default ("active", false) && windows != null) {
+                        dot.remove_css_class ("dot-off");
+                        dot.add_css_class ("dot-ok");
+                        for (uint w = 0; w < windows.get_length (); w++) {
+                            card.append (build_window ("Claude", windows.get_object_element (w), false, now_unix));
+                            shown_quota = true;
+                        }
+                    }
+                }
+            }
+            if (!shown_quota) {
+                card.append (subtle_label (accounts != null && accounts.get_length () > 0
+                    ? "Quota isn't available for this account yet."
+                    : "Add this login to see quota and switch between Claude accounts."));
+            }
+
+            var others = false;
+            if (accounts != null) {
+                for (uint i = 0; i < accounts.get_length (); i++) {
+                    var account = accounts.get_object_element (i);
+                    if (account.get_boolean_member_with_default ("active", false)) {
+                        continue;
+                    }
+                    if (!others) {
+                        card.append (subtle_label ("Other accounts"));
+                        others = true;
+                    }
+                    var number = account.get_int_member_with_default ("number", 0).to_string ();
+                    var name = account.get_string_member_with_default ("email", "");
+                    var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+                    var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { hexpand = true };
+                    text.append (new Gtk.Label (name) { xalign = 0, ellipsize = Pango.EllipsizeMode.END });
+                    var windows = account.get_array_member ("windows");
+                    var detail = "usage unavailable";
+                    if (windows != null && windows.get_length () > 0) {
+                        var last = windows.get_object_element (windows.get_length () - 1);
+                        detail = "%s %.0f%% left".printf (last.get_string_member_with_default ("label", "Quota"),
+                            last.get_double_member_with_default ("remaining", 0));
+                    }
+                    text.append (subtle_label (detail));
+                    line.append (text);
+                    var switch_button = new Gtk.Button.with_label ("Switch") { valign = Gtk.Align.CENTER };
+                    switch_button.set_tooltip_text ("Make %s the active Claude account".printf (name));
+                    switch_button.clicked.connect (() => {
+                        popdown_from (switch_button);
+                        run_claude_helper ({ "switch", number });
+                    });
+                    line.append (switch_button);
+                    card.append (line);
+                }
+            }
+            var add = new Gtk.Button.with_label ("Add account…") { halign = Gtk.Align.START };
+            add.set_tooltip_text ("Sign in to Claude Code, then save that login with claude-swap");
+            add.clicked.connect (() => {
+                popdown_from (add);
+                add_claude_account ();
+            });
+            card.append (add);
+            return card;
         }
 
         private static string codex_accounts_digest (Json.Array? accounts) {
@@ -725,6 +890,13 @@ namespace MSeries {
             clear (quota_box);
             for (uint i = 0; i < entries.get_length (); i++) {
                 quota_box.append (build_provider_card (entries.get_object_element (i), now_unix));
+            }
+            var has_claude = false;
+            for (uint i = 0; i < entries.get_length (); i++) {
+                has_claude = has_claude || entries.get_object_element (i).get_string_member_with_default ("provider", "") == "claude";
+            }
+            if (!has_claude && claude_data != null) {
+                quota_box.append (build_claude_card (now_unix));
             }
         }
 

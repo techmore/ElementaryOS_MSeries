@@ -2610,3 +2610,11 @@ Next: owner tries F5; tune gain; start the bridge only while recording; grammar 
 ## CodexBar panel: account per provider and icon dock — 2026-10-18
 
 Each provider card shows which login it is tied to, as a quiet caption with the person icon under the title (Codex: active email from `codexbar-accounts.py`; OpenCode Go: `accountEmail` from `codexbar-opencode-local.py`, which reads only the email of the active row in `opencode.db`; otherwise "Account not detected"). On this desktop `opencode.db` has no account rows, so the OpenCode Go card shows "Account not detected" until an account exists there. The footer is now an icon-only dock (Quick View, Usage details, Spending details, Settings & sign in = person silhouette) with names in tooltips; the header gear was removed. Helper tests (5 OpenCode, 6 accounts) and Meson (3 suites) pass; light and dark renders checked. Not verified: live Wingpanel popover (loads on next restart/login).
+
+## CodexBar custom port: Claude account switching and deploy script — 2026-10-18
+
+Claude switching uses claude-swap 0.27.2 (MIT, realiti4/claude-swap; PyPI wheel + `textual`, `rich`, `truststore`), installed into a private venv `~/.local/share/claude-swap-venv` with `~/.local/bin/cswap` linked (the same tool upstream CodexBar drives on macOS). `mseries/codexbar-claude.py` wraps `cswap list/status/switch --json` (5 tests with a faked cswap) and the Wingpanel gets a Claude card (active login, 5-hour and 7-day quota, other accounts with Switch, Add account… which opens a terminal running `cswap add`). If upstream CodexBar ever reports a `claude` entry itself, our card steps aside.
+
+Blocker found: this desktop has no Claude Code credentials file (`~/.claude/.credentials.json` is absent; `claude` is not on PATH), so `cswap add` answers "No credentials found for current account". `cswap status` does name the signed-in email, so the card shows it, but there is no quota and nothing to switch to until a login is saved: sign in with the Claude Code CLI, then use Add account….
+
+New `mseries/deploy-codexbar.sh` (helpers, wrapper, module build/tests/install, then restarts Wingpanel and the CodexBar app). AGENTS.md now says to run it after every push that touches CodexBar. Verified: 5 Claude tests, Meson, light and dark renders with a faked helper. Not verified: a real Claude switch (no saved account exists).
