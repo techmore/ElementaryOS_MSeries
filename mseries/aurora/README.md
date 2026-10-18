@@ -1,5 +1,16 @@
 # Aurora 20 kernel port for elementary
 
+## Current host update — 2026-10-18
+
+[Boot archive and VRR report](hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md):
+owner confirms the dock works on running .20. Builtin VRR stays selected in the
+desk profile with a visual pass; sustained kernel activation remains unqualified.
+Older Fairydust test files and six entries are now archived locally, with both
+Aurora kernels and stock recovery retained. Historical deployment/rollback
+instructions below describe earlier states; m1n1 backups no longer reside in
+`/boot/m1n1`. Recover them from the verified private archive before any deliberate
+shared-payload rollback. No recovery boot is established by retaining its files.
+
 **Current status, 2026-10-18:** `.20` is running on the owner's J314S with
 the matched boot payload. [Scoped hardware tests and frozen releases](hardware-tests/README.md)
 replace the historical "not booted" descriptions below for current status.
@@ -210,10 +221,15 @@ The staged upstream-matched `boot.bin.candidate` (sha256 `9c9c2d01c3bdb278…`: 
 `/boot/m1n1/boot.bin.pre-aurora20-20261018-043254` and as `~/aurora20-boot-candidate/boot.bin.rollback`.
 One-shot `grub-reboot elementary-aurora20` is armed; default entry unchanged.
 
-**Rollback** (from any working kernel): `sudo install -m755 /boot/m1n1/boot.bin.pre-aurora20-20261018-043254 /boot/m1n1/boot.bin`.
+**Historical rollback:** the backup has since moved to the verified private
+`bootloader-backups-20261018-060834` archive. Review current kernel/DTB
+compatibility, then use that archived `boot.bin.pre-aurora20-20261018-043254`
+with `sudo install -m755 ARCHIVED_FILE /boot/m1n1/boot.bin` if deliberately
+restoring the older shared payload. The former `/boot` source path no longer exists.
 **Expected side effect:** the fairydust dptunnel/DP-IN entries lose their dp-tunnel device-tree
 nodes until rollback. If the machine will not boot at all after this change, it needs the
-Asahi/recovery path to restore the m1n1 payload; this is why the rollback copy sits beside it.
+Asahi/recovery path to restore the m1n1 payload. The rollback copy now lives on
+the main filesystem in the verified private archive; it is no longer beside the active payload.
 
 First test (dock OUT): boot `elementary-aurora20`, idle 5 minutes, check `/dev/sep-bio`; only then
 one deliberate Touch ID probe; then dock. Record each result in `../AURORA-SECOND-BOOT.md`.

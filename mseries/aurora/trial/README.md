@@ -1,5 +1,16 @@
 # J314S .20-enh1 next-boot trial — 2026-10-18
 
+## Additional display acceptance for this trial
+
+The owner subsequently enabled built-in VRR in the current desk profile on .20.
+[Scoped smoke and explicit VRR/dock checklist](../hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md#next-kernel-vrr-acceptance)
+now accompany the next-kernel trial. Kernel activation appeared in only 3/25
+samples; sustained behavior remains open. Capture focus/presentation state,
+validate docking/sleep separately, and match VRR plus cropped/full-height modes
+on both kernels before any power comparison. The earlier frozen baseline is
+unchanged. Fairydust test boot files/entries were archived; both Aurora lanes
+and stock recovery remain. This documentation update does not arm a new reboot.
+
 Owner explicitly requested staging .20-enh1 for the next boot, retaining the
 running .20 as fallback, and beginning hardware/power measurements. The frozen
 build remains hardware-untested until a successful candidate boot is observed.

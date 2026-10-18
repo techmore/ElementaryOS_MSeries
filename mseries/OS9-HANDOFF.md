@@ -1,5 +1,35 @@
 # OS 9 implementation / Claude Code handoff
 
+## Boot archive and built-in VRR kept enabled — 2026-10-18
+
+Owner-approved cleanup archived four m1n1 backups and seven Fairydust test boot
+files with SHA256/fsync verification, removed six corresponding custom menu
+entries, and recovered 191.63 MiB total. `/boot` reached 214.02 MiB free (~58%
+used). Aurora .20/enh1, stock recovery, shared boot payload, generated menu and
+one-shot selection were verified unchanged at cleanup time; later full-height
+menu changes are independent. Binary archives and full rollback configs remain
+private in Codex outputs, with sanitized hashes in the
+[receipt and restore notes](aurora/hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md).
+
+On running `.20`, built-in `3024x1890@120.000+vrr` stays selected after changing
+only its saved mode in `desk-4k`; dock remains fixed 1080p/60, scale 1 at (1512,0),
+with built-in scale 2 at (0,0), primary. Watcher executable, laptop-only profile
+and monitors.xml unchanged. Owner: dock works, both screens look normal, keep VRR.
+The 12-second content probe observed built-in VRR_ENABLED=1 in 3/25 DRM samples
+(~1–2 seconds), then 0 while animation continued; external stayed connected at
+1080p/60 throughout those samples. This is partial qualification, not sustained
+VRR or a power result. Next kernel: explicitly capture active/fullscreen/focus
+and presentation timing, explain the brief activation, then test docking and
+sleep with rollback. New read-only DRM and controlled GTK content helpers plus
+that checklist are linked in the report. No original frozen receipts were edited.
+
+Publication checks: 23 Aurora qualification tests and six display-profile tests
+pass; both immutable freezes verify. The read-only libdrm helper compiles with
+`-Wall -Wextra -Werror` and reads the live display node. Python syntax, CLI refusal
+of external fullscreen/existing receipts, invalid DRM-node handling, all 11
+archived binary sizes/hashes, receipt sample counts, new links, privacy scan and
+Git whitespace checks pass. Publication does not rerun a fullscreen test.
+
 ## Queued .20-enh1 trial also uses full height — 2026-10-18
 
 Owner explicitly requested one reboot for the kernel trial and native notch

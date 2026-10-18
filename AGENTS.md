@@ -1,8 +1,10 @@
 # Working agreement for Codex, Claude Code, and OpenCode
 
 > **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
-> Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
-> Aurora has j314s Thunderbolt-display prior art; check it before more RE. This dock HDMI path remains unqualified.
+> Current J314S host: owner confirms the dock works on Aurora .20; external 1080p/60 is active.
+> [Scoped VRR/dock result](mseries/aurora/hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md)
+> records a visual pass and brief kernel VRR activation. Sustained VRR, long-run dock stability,
+> physical-port verification and suspend/resume remain open. Check this result before repeating older RE.
 > Gates, prior art and rules: [mseries/fairydust/usb4/PRIMARY-GOAL.md](mseries/fairydust/usb4/PRIMARY-GOAL.md).
 
 > **CODEXBAR IS A CUSTOM PORT, NOT STOCK UPSTREAM.** We run upstream
