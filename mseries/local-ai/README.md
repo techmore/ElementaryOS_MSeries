@@ -88,3 +88,5 @@ For an existing installation, run `python3 mseries/local-ai/configure-assistants
 ## Agent-first Pantheon direction
 
 [Proposed Pantheon MCP redesign](PANTHEON-MCP-DESIGN.md): a headless agent broker, kernel/app alert workflows, typed desktop capabilities, and native/WebRTC speech interaction. This is a feature write-up and phased acceptance plan; these proposed services are not installed by the current adapters.
+
+[Omarchy Mac/MX and MLX feature comparison](UPSTREAM-FEATURE-COMPARISON.md) records current source/branch pins, applicable performance options and exclusions, and the next controlled M1 Pro experiments.

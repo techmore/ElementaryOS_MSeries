@@ -23,6 +23,10 @@ Keep the existing Pantheon shell and applications usable throughout the rollout.
 
 Current Calendar/browser/Mail results remain in [app integration](APP-INTEGRATION.md). Universal app control, live speech insertion across apps, translation, autonomous repair and remote control are not established by those tests. The small model failed repair-advice checks; automatic model diagnosis stays off.
 
+## Upstream parity and performance
+
+The [Omarchy Mac/MX and MLX feature comparison](UPSTREAM-FEATURE-COMPARISON.md) pins current source revisions, compares notification/agent/voice contracts and serving options, and separates locally tested behavior from developer candidates. It identifies new native-GQA work, oMLX/batching opportunities, unsupported placement on this kernel, and rejected numerical shortcuts. These findings govern the next performance experiments; none changes the frozen app-integration cohort.
+
 ## Architecture
 
 ```mermaid
