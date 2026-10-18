@@ -7,22 +7,44 @@ using Wingpanel;
 namespace MSeries {
     public class CodexBarIndicator : Wingpanel.Indicator {
         private Gtk.Label panel_label;
+        private delegate void ActionFunc ();
         private Gtk.Box panel_display;
         private Gtk.Box menu;
-        private Gtk.Label status_label;
-        private Gtk.Box providers_box;
+        private Gtk.Label subtitle_label;
+        private Gtk.Label chip_label;
+        private Gtk.Stack pages;
+        private Gtk.Box quota_box;
+        private Gtk.Box sessions_box;
+        private Gtk.Box spend_box;
         private Gtk.Button refresh_button;
         private Gtk.Stack refresh_display;
         private Gtk.Spinner refresh_spinner;
         private uint refresh_poll_source = 0;
         private string executable;
         private bool request_in_flight = false;
-        private bool local_opencode_request_in_flight = false;
+        private bool sessions_in_flight = false;
         private bool snapshot_busy = false;
         private bool snapshot_stale = false;
         private uint refresh_poll_count = 0;
         private bool refresh_after_snapshot = false;
         private RefreshPolicy refresh_policy = new RefreshPolicy ();
+
+        // The popover is rebuilt only when the data it shows changes, so an open
+        // popover never flickers and the five-second poll stays cheap.
+        private string last_digest = "";
+        private int64 newest_update_unix = 0;
+        private string sessions_text = "";
+        private string sessions_error = "";
+        private int64 sessions_fetched_us = 0;
+        private Json.Object? claude_data = null;
+        private bool claude_in_flight = false;
+        private int64 claude_fetched_us = 0;
+        private Json.Array? codex_accounts = null;
+        private bool codex_accounts_in_flight = false;
+        private int64 codex_accounts_fetched_us = 0;
+        private Json.Object? opencode_local = null;
+        private bool opencode_local_in_flight = false;
+        private int64 opencode_local_fetched_us = 0;
 
         public CodexBarIndicator () {
             GLib.Object (code_name: "codexbar");
@@ -35,97 +57,97 @@ namespace MSeries {
                 pixel_size = 12
             };
             panel_icon.add_css_class ("symbolic");
-            panel_label = new Gtk.Label ("5H — · 7D —") {
+            panel_label = new Gtk.Label ("—") {
                 ellipsize = Pango.EllipsizeMode.END,
                 max_width_chars = 52
             };
             panel_label.add_css_class ("caption");
+            panel_label.add_css_class ("mseries-codexbar-bar");
             panel_display = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 5);
             panel_display.append (panel_icon);
             panel_display.append (panel_label);
-            panel_display.set_tooltip_text ("OpenAI Codex usage remaining · Middle-click to refresh");
+            panel_display.set_tooltip_text ("CodexBar · loading usage… · Middle-click to refresh");
             var refresh_gesture = new Gtk.GestureClick () { button = 2 };
             refresh_gesture.released.connect (() => refresh_usage ());
             panel_display.add_controller (refresh_gesture);
             this.visible = true;
 
-            menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) {
-                margin_top = 6,
+            menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) {
+                margin_top = 8,
                 margin_bottom = 6,
-                margin_start = 6,
-                margin_end = 6,
-                width_request = 320
+                margin_start = 8,
+                margin_end = 8,
+                width_request = 340
             };
+            menu.add_css_class ("mseries-codexbar");
+            install_style (menu.get_display ());
 
-            menu.add_css_class ("mseries-codexbar-compact");
-            var compact_style = new Gtk.CssProvider ();
-            compact_style.load_from_string (
-                ".mseries-codexbar-compact label { font-size: 7.5pt; } " +
-                ".mseries-codexbar-compact .h3 { font-size: 8.5pt; } " +
-                ".mseries-codexbar-compact button { padding: 3px 5px; } " +
-                ".mseries-codexbar-compact progressbar trough, " +
-                ".mseries-codexbar-compact progressbar progress { min-height: 3px; }");
-            Gtk.StyleContext.add_provider_for_display (menu.get_display (), compact_style,
-                Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
-
-            var title_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
-            var menu_icon = new Gtk.Image.from_icon_name ("mseries-codexbar-openai-symbolic") {
-                pixel_size = 14
-            };
-            menu_icon.add_css_class ("symbolic");
-            title_row.append (menu_icon);
-
-            var title_stack = new Gtk.Box (Gtk.Orientation.VERTICAL, 3) {
-                hexpand = true
-            };
-            var title = new Granite.HeaderLabel ("CodexBar") {
-                size = Granite.HeaderLabel.Size.H3
-            };
-            title_stack.append (title);
-            status_label = new Gtk.Label ("Loading usage…") {
-                xalign = 0,
-                wrap = true,
-                max_width_chars = 34
-            };
-            status_label.add_css_class ("dim-label");
-            status_label.add_css_class ("caption");
-            title_stack.append (status_label);
-            title_row.append (title_stack);
+            // No header: the quota cards lead. Freshness and refresh live in the bottom bar with the dock.
+            subtitle_label = new Gtk.Label ("Loading usage…") { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.END };
+            subtitle_label.add_css_class ("dim-label");
+            subtitle_label.add_css_class ("caption");
+            subtitle_label.add_css_class ("numeric");
+            chip_label = new Gtk.Label ("") { valign = Gtk.Align.CENTER, visible = false };
+            chip_label.add_css_class ("chip");
 
             refresh_display = new Gtk.Stack ();
-            refresh_display.add_named (new Gtk.Image.from_icon_name ("view-refresh-symbolic"), "idle");
+            refresh_display.add_named (new Gtk.Image.from_icon_name ("view-refresh-symbolic") { pixel_size = 18 }, "idle");
             refresh_spinner = new Gtk.Spinner ();
             refresh_display.add_named (refresh_spinner, "busy");
             refresh_button = new Gtk.Button () {
                 child = refresh_display,
-                tooltip_text = "Refresh usage",
-                valign = Gtk.Align.CENTER
+                tooltip_text = "Refresh usage"
             };
             refresh_button.add_css_class ("flat");
+            refresh_button.update_property (Gtk.AccessibleProperty.LABEL, "Refresh usage", -1);
             refresh_button.clicked.connect (() => refresh_usage ());
-            title_row.append (refresh_button);
-            menu.append (title_row);
 
-            providers_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
+            // Three pages keep every section above the fold; Quota is the default.
+            quota_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
+            sessions_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
+            spend_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
+            pages = new Gtk.Stack () {
+                hhomogeneous = true,
+                vhomogeneous = false,
+                transition_type = Gtk.StackTransitionType.CROSSFADE,
+                transition_duration = 120
+            };
+            pages.add_titled (quota_box, "quota", "Quota");
+            pages.add_titled (sessions_box, "sessions", "Sessions");
+            pages.add_titled (spend_box, "spend", "Spend");
+            var switcher = new Gtk.StackSwitcher () { stack = pages, halign = Gtk.Align.FILL };
+            switcher.add_css_class ("mseries-switcher");
+            menu.append (switcher);
+
             var scroll = new Gtk.ScrolledWindow () {
-                child = providers_box,
+                child = pages,
                 hscrollbar_policy = Gtk.PolicyType.NEVER,
                 vscrollbar_policy = Gtk.PolicyType.AUTOMATIC,
                 propagate_natural_height = true,
-                min_content_height = 180,
-                max_content_height = 252
+                min_content_height = 150,
+                max_content_height = 340
             };
             menu.append (scroll);
             menu.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
 
-            // Labeled, borderless action rows live inside Wingpanel's popover.
-            var actions = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
-            actions.append (make_action_button ("Quick View…", "view-reveal-symbolic", "--quick-view"));
-            actions.append (make_action_button ("Usage Details…", "view-list-symbolic", "--usage"));
-            actions.append (make_action_button ("Spending…", "accessories-calculator-symbolic", "--spending"));
-            
-            actions.append (make_action_button ("Settings & Sign In…", "preferences-system-symbolic", "--settings"));
-            menu.append (actions);
+            // Bottom bar: freshness on the left, an icon-only dock on the right (names in tooltips).
+            var bar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+            bar.add_css_class ("mseries-bar");
+            bar.append (chip_label);
+            bar.append (subtitle_label);
+            var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { homogeneous = true };
+            actions.add_css_class ("mseries-dock");
+            actions.append (make_dock_button ("Quick View", "window-new-symbolic", "--quick-view"));
+            actions.append (make_dock_button ("Usage details", "view-list-symbolic", "--usage"));
+            actions.append (make_dock_button ("Spending details", "accessories-calculator-symbolic", "--spending"));
+            actions.append (make_dock_button ("Settings & sign in", "avatar-default-symbolic", "--settings"));
+            actions.append (refresh_button);
+            bar.append (actions);
+            menu.append (bar);
+
+            show_state (quota_box, "content-loading-symbolic", "Loading usage…", "", false);
+            show_state (sessions_box, "content-loading-symbolic", "Checking sessions…", "", false);
+            show_state (spend_box, "content-loading-symbolic", "Loading spend…", "", false);
 
             // CodexBar owns provider authentication, polling and cached usage.
             // The indicator reads snapshots and requests refreshes through documented local IPC.
@@ -135,26 +157,72 @@ namespace MSeries {
                     SpawnFlags.SEARCH_PATH | SpawnFlags.STDOUT_TO_DEV_NULL | SpawnFlags.STDERR_TO_DEV_NULL,
                     null, out child_pid);
             } catch (Error e) {
-                status_label.set_text ("Could not start CodexBar: " + e.message);
+                subtitle_label.set_text ("Could not start CodexBar: " + e.message);
             }
 
             Timeout.add_seconds (5, () => { read_snapshot.begin (); return Source.CONTINUE; });
         }
 
-        private Gtk.Button make_action_button (string label, string icon_name, string action) {
-            var content = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 7);
-            content.append (new Gtk.Image.from_icon_name (icon_name) { pixel_size = 10 });
-            content.append (new Gtk.Label (label) { xalign = 0, hexpand = true });
-            var button = new Gtk.Button () { child = content };
+        private static void install_style (Gdk.Display display) {
+            var style = new Gtk.CssProvider ();
+            style.load_from_string (
+                ".mseries-codexbar { font-size: 9pt; } " +
+                ".mseries-codexbar .caption { font-size: 8pt; } " +
+                ".mseries-codexbar .provider-title { font-weight: 700; font-size: 9.5pt; } " +
+                ".mseries-codexbar .window-name { font-weight: 700; } " +
+                ".mseries-codexbar .numeric { font-feature-settings: \"tnum\"; } " +
+                ".mseries-codexbar .card { padding: 6px 10px; border-radius: 8px; background: alpha(currentColor, 0.06); } " +
+                ".mseries-codexbar .chip { padding: 1px 8px; border-radius: 99px; font-size: 7.5pt; font-weight: 700; " +
+                "  background: alpha(@warning_color, 0.22); color: @warning_color; } " +
+                ".mseries-codexbar .chip.busy { background: alpha(currentColor, 0.1); color: inherit; } " +
+                ".mseries-codexbar .plan { padding: 0 7px; border-radius: 99px; font-size: 7.5pt; background: alpha(currentColor, 0.1); } " +
+                ".mseries-codexbar progressbar trough, .mseries-codexbar progressbar progress { min-height: 6px; border-radius: 3px; } " +
+                ".mseries-codexbar progressbar.level-ok progress { background: @success_color; } " +
+                ".mseries-codexbar progressbar.level-low progress { background: @warning_color; } " +
+                ".mseries-codexbar progressbar.level-critical progress { background: @error_color; } " +
+                ".mseries-codexbar .text-low { color: @warning_color; } " +
+                ".mseries-codexbar .text-critical { color: @error_color; } " +
+                ".mseries-codexbar .dot-ok { color: @success_color; } " +
+                ".mseries-codexbar .dot-warn { color: @warning_color; } " +
+                ".mseries-codexbar .dot-bad { color: @error_color; } " +
+                ".mseries-codexbar .dot-off { opacity: 0.45; } " +
+                ".mseries-codexbar .state-title { font-weight: 700; } " +
+                ".mseries-codexbar button { padding: 3px 6px; } " +
+                ".mseries-codexbar .mseries-dock { padding: 3px; border-radius: 12px; background: alpha(currentColor, 0.06); } " +
+                ".mseries-codexbar .mseries-bar { margin-top: 2px; } " +
+                ".mseries-codexbar .mseries-dock button { padding: 6px 11px; border-radius: 9px; min-height: 0; } " +
+                ".mseries-codexbar .mseries-dock button:hover { background: alpha(currentColor, 0.1); } " +
+                ".mseries-codexbar .account-line { min-height: 0; } " +
+                ".mseries-codexbar .provider-mark { opacity: 0.9; } " +
+                ".mseries-codexbar .mark-claude { color: #d97757; opacity: 1; } " +
+                ".mseries-codexbar button.compact { padding: 1px 8px; min-height: 0; min-width: 0; } " +
+                ".mseries-codexbar button.flat.compact { padding: 0 4px; } " +
+                ".mseries-codexbar .mseries-switcher button { padding: 2px 6px; } " +
+                "label.mseries-codexbar-bar.level-low { color: @warning_color; } " +
+                "label.mseries-codexbar-bar.level-critical { color: @error_color; } " +
+                "label.mseries-codexbar-bar.stale { opacity: 0.55; }");
+            Gtk.StyleContext.add_provider_for_display (display, style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+        }
+
+        private Gtk.Button make_dock_button (string label, string icon_name, string action) {
+            var button = new Gtk.Button () {
+                child = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 18 },
+                tooltip_text = label
+            };
             button.add_css_class ("flat");
+            button.update_property (Gtk.AccessibleProperty.LABEL, label, -1);
             button.clicked.connect (() => {
-                var popover = button.get_ancestor (typeof (Gtk.Popover)) as Gtk.Popover;
-                if (popover != null) {
-                    popover.popdown ();
-                }
+                popdown_from (button);
                 run_action (action);
             });
             return button;
+        }
+
+        private static void popdown_from (Gtk.Widget widget) {
+            var popover = widget.get_ancestor (typeof (Gtk.Popover)) as Gtk.Popover;
+            if (popover != null) {
+                popover.popdown ();
+            }
         }
 
         private void set_refreshing (bool busy) {
@@ -168,7 +236,7 @@ namespace MSeries {
                 return;
             }
             refresh_policy.requested (GLib.get_monotonic_time ());
-            status_label.set_text ("Refreshing usage…");
+            subtitle_label.set_text ("Refreshing…");
             set_refreshing (true);
             if (refresh_poll_source != 0) {
                 Source.remove (refresh_poll_source);
@@ -189,21 +257,27 @@ namespace MSeries {
         private bool run_action (string action) {
             try {
                 Pid child_pid;
-                Process.spawn_async (null, { executable, action }, null,
+                // Settings open our native window when it is installed; upstream's Qt window is the fallback.
+                var native_settings = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "codexbar-settings");
+                var program = action == "--settings" && FileUtils.test (native_settings, FileTest.IS_EXECUTABLE) ? native_settings : executable;
+                string[] command = program == executable ? new string[] { executable, action } : new string[] { native_settings };
+                Process.spawn_async (null, command, null,
                     SpawnFlags.SEARCH_PATH | SpawnFlags.STDOUT_TO_DEV_NULL | SpawnFlags.STDERR_TO_DEV_NULL,
                     null, out child_pid);
                 return true;
             } catch (Error e) {
-                status_label.set_text ("Could not open CodexBar: " + e.message);
+                subtitle_label.set_text ("Could not open CodexBar: " + e.message);
                 return false;
             }
         }
 
-        private void clear_provider_rows () {
-            while (providers_box.get_first_child () != null) {
-                providers_box.remove (providers_box.get_first_child ());
+        private static void clear (Gtk.Box box) {
+            while (box.get_first_child () != null) {
+                box.remove (box.get_first_child ());
             }
         }
+
+        // ---- Reading data -------------------------------------------------------------
 
         private async void read_snapshot (bool refresh_if_old = false) {
             refresh_after_snapshot = refresh_after_snapshot || refresh_if_old;
@@ -219,8 +293,8 @@ namespace MSeries {
                 string stderr_text;
                 yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
                 if (!process.get_successful () || stdout_text.strip ().length == 0) {
-                    show_unavailable ("Start CodexBar and sign in to see quota.");
-                    refresh_local_opencode_usage.begin ();
+                    show_unavailable ("dialog-warning-symbolic", "CodexBar isn't running", "Start CodexBar and sign in to see your quota.");
+                    ensure_sessions (60);
                     return;
                 }
 
@@ -228,19 +302,19 @@ namespace MSeries {
                 parser.load_from_data (stdout_text, -1);
                 var root = parser.get_root ();
                 if (root == null || root.get_node_type () != Json.NodeType.OBJECT) {
-                    show_unavailable ("CodexBar returned an unsupported snapshot.");
-                    refresh_local_opencode_usage.begin ();
+                    show_unavailable ("dialog-warning-symbolic", "Unsupported CodexBar data", "CodexBar returned a snapshot this panel can't read. Update the panel after a CodexBar upgrade.");
+                    ensure_sessions (60);
                     return;
                 }
                 var snapshot = root.get_object ();
                 update_snapshot (snapshot);
-                refresh_local_opencode_usage.begin ();
+                ensure_sessions (60);
                 if (refresh_after_snapshot && should_refresh_on_open (snapshot)) {
                     refresh_usage ();
                 }
             } catch (Error e) {
-                show_unavailable ("Could not read CodexBar usage: " + e.message);
-                refresh_local_opencode_usage.begin ();
+                show_unavailable ("dialog-warning-symbolic", "Couldn't read usage", e.message);
+                ensure_sessions (60);
             } finally {
                 request_in_flight = false;
                 refresh_after_snapshot = false;
@@ -268,77 +342,358 @@ namespace MSeries {
                 oldest_update_unix, new DateTime.now_utc ().to_unix (), GLib.get_monotonic_time ());
         }
 
-        private void update_snapshot (Json.Object snapshot) {
-            snapshot_stale = snapshot.get_boolean_member ("stale");
-            var entries = snapshot.get_array_member ("entries");
-            if (entries == null || entries.get_length () == 0) {
-                if (snapshot.get_boolean_member ("busy")) {
-                    snapshot_busy = true;
-                    set_refreshing (true);
-                    status_label.set_text ("Fetching usage…");
-                    clear_provider_rows ();
-                    append_subtle_row ("Your limits will appear when the update completes.");
-                } else {
-                    show_unavailable ("No quota data yet. Open Settings to sign in.");
-                }
-                return;
+        private void ensure_sessions (int max_age_seconds) {
+            if (sessions_fetched_us == 0 ||
+                GLib.get_monotonic_time () - sessions_fetched_us > max_age_seconds * GLib.TimeSpan.SECOND) {
+                refresh_sessions.begin ();
             }
-
-            clear_provider_rows ();
-            snapshot_busy = snapshot.get_boolean_member ("busy");
-            set_refreshing (snapshot_busy);
-            string codex_panel_summary = "";
-            string claude_panel_summary = "";
-            var eta_tooltips = new string[0];
-            for (uint i = 0; i < entries.get_length (); i++) {
-                var entry = entries.get_object_element (i);
-                var provider = entry.get_string_member ("provider") ?? "Provider";
-                append_provider_entry (entry);
-                var now_unix = new DateTime.now_utc ().to_unix ();
-                var eta = QuotaEta.for_entry (entry, QuotaEta.entry_stale (entry, snapshot_stale, now_unix), now_unix);
-                eta_tooltips += provider + " · " + eta.detail +
-                    (eta.window_label.length > 0 ? " (" + eta.window_label + ")" : "");
-                if (provider.down ().contains ("codex")) {
-                    codex_panel_summary = compact_codex_summary (entry);
-                } else if (provider.down ().contains ("claude")) {
-                    claude_panel_summary = compact_codex_summary (entry);
-                }
+            if (claude_fetched_us == 0 ||
+                GLib.get_monotonic_time () - claude_fetched_us > 120 * GLib.TimeSpan.SECOND) {
+                refresh_claude.begin ();
             }
-
-            var parts = new string[0];
-            if (codex_panel_summary.length > 0) {
-                parts += (claude_panel_summary.length > 0 ? "CX " : "") + codex_panel_summary;
+            if (codex_accounts_fetched_us == 0 ||
+                GLib.get_monotonic_time () - codex_accounts_fetched_us > 300 * GLib.TimeSpan.SECOND) {
+                refresh_codex_accounts.begin ();
             }
-            if (claude_panel_summary.length > 0) {
-                parts += "CL " + claude_panel_summary;
+            if (opencode_local_fetched_us == 0 ||
+                GLib.get_monotonic_time () - opencode_local_fetched_us > max_age_seconds * GLib.TimeSpan.SECOND) {
+                refresh_opencode_local.begin ();
             }
-            var panel_text = string.joinv ("   ", parts);
-            panel_label.set_text (panel_text.length > 0 ? panel_text : "OpenAI —");
-            panel_display.set_tooltip_text (panel_text.length > 0
-                ? "Quota remaining · ETA at the current pace\n" + string.joinv ("\n", eta_tooltips) + "\nMiddle-click to refresh"
-                : "Usage unavailable");
-
-            var update_status = "Remaining · Updated " + (snapshot.get_string_member ("updated") ?? "recently");
-            if (snapshot_busy) {
-                update_status = "Refreshing usage… · " + update_status;
-            }
-            if (snapshot.get_boolean_member ("stale")) {
-                update_status += " · cached data";
-            }
-            var snapshot_error = snapshot.get_string_member ("error") ?? "";
-            if (snapshot_error.length > 0) {
-                update_status += " · " + snapshot_error;
-            }
-            status_label.set_text (update_status);
         }
 
-        private async void refresh_local_opencode_usage () {
-            if (local_opencode_request_in_flight) {
+        private static string helper_path (string name) {
+            return GLib.Path.build_filename (Environment.get_home_dir (), ".local", "lib", "codexbar-cli", name);
+        }
+
+        // Upstream's Codex account switching is macOS-only; our helper keeps one saved sign-in per account.
+        private async void refresh_codex_accounts () {
+            if (codex_accounts_in_flight) {
                 return;
             }
-            local_opencode_request_in_flight = true;
+            codex_accounts_in_flight = true;
+            var before = codex_accounts_digest (codex_accounts);
+            try {
+                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
+                    "python3", helper_path ("codexbar-accounts.py"), "usage");
+                string stdout_text;
+                string stderr_text;
+                yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
+                Json.Array? parsed = null;
+                if (process.get_successful () && stdout_text.strip ().length > 0) {
+                    var parser = new Json.Parser ();
+                    parser.load_from_data (stdout_text, -1);
+                    var root = parser.get_root ();
+                    if (root != null && root.get_node_type () == Json.NodeType.OBJECT) {
+                        var list = root.get_object ().get_array_member ("accounts");
+                        parsed = list != null ? list.ref () : null;
+                    }
+                }
+                codex_accounts = parsed;
+            } catch (Error e) {
+                codex_accounts = null;
+            } finally {
+                codex_accounts_in_flight = false;
+                codex_accounts_fetched_us = GLib.get_monotonic_time ();
+            }
+            if (codex_accounts_digest (codex_accounts) != before) {
+                last_digest = "";
+                read_snapshot.begin ();
+            }
+        }
+
+        // Claude accounts come from claude-swap (cswap), the same tool upstream CodexBar drives on macOS.
+        private async void refresh_claude () {
+            if (claude_in_flight) {
+                return;
+            }
+            claude_in_flight = true;
+            var before = local_digest (claude_data);
+            try {
+                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
+                    "python3", helper_path ("codexbar-claude.py"), "list");
+                string stdout_text;
+                string stderr_text;
+                yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
+                Json.Object? parsed = null;
+                if (process.get_successful () && stdout_text.strip ().length > 0) {
+                    var parser = new Json.Parser ();
+                    parser.load_from_data (stdout_text, -1);
+                    var root = parser.get_root ();
+                    if (root != null && root.get_node_type () == Json.NodeType.OBJECT
+                        && root.get_object ().get_boolean_member_with_default ("available", false)) {
+                        parsed = root.get_object ().ref ();
+                    }
+                }
+                claude_data = parsed;
+            } catch (Error e) {
+                claude_data = null;
+            } finally {
+                claude_in_flight = false;
+                claude_fetched_us = GLib.get_monotonic_time ();
+            }
+            if (local_digest (claude_data) != before) {
+                last_digest = "";
+                read_snapshot.begin ();
+            }
+        }
+
+        private void run_claude_helper (string[] arguments) {
+            try {
+                string[] command = { "python3", helper_path ("codexbar-claude.py") };
+                foreach (var argument in arguments) {
+                    command += argument;
+                }
+                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_SILENCE | SubprocessFlags.STDERR_SILENCE);
+                process.wait_async.begin (null, () => {
+                    claude_fetched_us = 0;
+                    last_digest = "";
+                    refresh_claude.begin ();
+                    read_snapshot.begin ();
+                });
+            } catch (Error e) {
+                subtitle_label.set_text ("Could not switch Claude account: " + e.message);
+            }
+        }
+
+        /* Adding an account needs a browser sign-in we can't drive, so ask in a small native dialog instead of a terminal. */
+        private void ask_to_save (string heading, string detail, string save_label, owned ActionFunc on_save) {
+            var dialog = new Gtk.AlertDialog ("%s", heading);
+            dialog.detail = detail;
+            dialog.buttons = { "Cancel", save_label };
+            dialog.cancel_button = 0;
+            dialog.default_button = 1;
+            dialog.modal = false;
+            dialog.choose.begin (null, null, (obj, res) => {
+                try {
+                    if (dialog.choose.end (res) == 1) {
+                        on_save ();
+                    }
+                } catch (Error e) {
+                    // dismissed
+                }
+            });
+        }
+
+        private void tell (string heading, string detail) {
+            var dialog = new Gtk.AlertDialog ("%s", heading);
+            dialog.detail = detail;
+            dialog.buttons = { "OK" };
+            dialog.modal = false;
+            dialog.choose.begin (null, null, (obj, res) => {
+                try { dialog.choose.end (res); } catch (Error e) { }
+            });
+        }
+
+        private async void run_saver (string[] command, string ok_heading, string failure_heading) {
+            try {
+                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_MERGE);
+                string output;
+                yield process.communicate_utf8_async (null, null, out output, null);
+                if (process.get_successful ()) {
+                    tell (ok_heading, "It now appears under Accounts.");
+                } else {
+                    tell (failure_heading, output.strip ().length > 0 ? output.strip () : "The helper reported an error.");
+                }
+            } catch (Error e) {
+                tell (failure_heading, e.message);
+            }
+            codex_accounts_fetched_us = 0;
+            claude_fetched_us = 0;
+            last_digest = "";
+            refresh_codex_accounts.begin ();
+            refresh_claude.begin ();
+        }
+
+        private void add_claude_account () {
+            ask_to_save ("Add a Claude account",
+                "CodexBar opens your browser to sign in to Claude, then saves the login so you can switch between accounts from here. Any account that is already signed in is saved first.",
+                "Sign in and save", () => {
+                    run_saver.begin ({ "python3", helper_path ("codexbar-claude.py"), "login" },
+                        "Claude account added", "Couldn't add the Claude account");
+                });
+        }
+
+        private Gtk.Widget build_claude_card (int64 now_unix) {
+            var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
+            card.add_css_class ("card");
+            var head = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            var dot = new Gtk.Label ("●");
+            dot.add_css_class ("dot-off");
+            head.append (dot);
+            head.append (build_provider_mark ("claude", "Claude"));
+            var email = claude_data.get_string_member_with_default ("activeEmail", "");
+            var accounts = claude_data.get_array_member ("accounts");
+            head.append (build_identity (email));
+            card.append (head);
+
+            var shown_quota = false;
+            if (accounts != null) {
+                for (uint i = 0; i < accounts.get_length (); i++) {
+                    var account = accounts.get_object_element (i);
+                    var windows = account.get_array_member ("windows");
+                    if (account.get_boolean_member_with_default ("active", false) && windows != null) {
+                        dot.remove_css_class ("dot-off");
+                        dot.add_css_class ("dot-ok");
+                        for (uint w = 0; w < windows.get_length (); w++) {
+                            card.append (build_window ("Claude", windows.get_object_element (w), false, now_unix));
+                            shown_quota = true;
+                        }
+                    }
+                }
+            }
+            if (!shown_quota) {
+                card.append (subtle_label (accounts != null && accounts.get_length () > 0
+                    ? "Quota isn't available for this account yet."
+                    : "Add this login to see quota and switch between Claude accounts."));
+            }
+
+            var listed = accounts != null ? accounts.get_length () : 0;
+            card.append (build_accounts_header ("Sign in to Claude Code, then save that login with claude-swap",
+                () => add_claude_account ()));
+            for (uint i = 0; i < listed; i++) {
+                var account = accounts.get_object_element (i);
+                if (account.get_boolean_member_with_default ("active", false)) {
+                    continue;
+                }
+                var number = account.get_int_member_with_default ("number", 0).to_string ();
+                var name = account.get_string_member_with_default ("email", "");
+                var windows = account.get_array_member ("windows");
+                var detail = "—";
+                if (windows != null && windows.get_length () > 0) {
+                    detail = "%.0f%%".printf (windows.get_object_element (windows.get_length () - 1)
+                        .get_double_member_with_default ("remaining", 0));
+                }
+                card.append (build_account_line (name, detail, "Make %s the active Claude account".printf (name),
+                    () => run_claude_helper ({ "switch", number })));
+            }
+            return card;
+        }
+
+        private static string codex_accounts_digest (Json.Array? accounts) {
+            if (accounts == null) {
+                return "";
+            }
+            var generator = new Json.Generator ();
+            var node = new Json.Node (Json.NodeType.ARRAY);
+            node.set_array (accounts);
+            generator.root = node;
+            return generator.to_data (null);
+        }
+
+        private void run_accounts_helper (string[] arguments) {
+            try {
+                string[] command = { "python3", helper_path ("codexbar-accounts.py") };
+                foreach (var argument in arguments) {
+                    command += argument;
+                }
+                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_SILENCE | SubprocessFlags.STDERR_SILENCE);
+                process.wait_async.begin (null, () => {
+                    // The active account changed: re-read quota and the account list from scratch.
+                    codex_accounts_fetched_us = 0;
+                    last_digest = "";
+                    run_action ("--refresh");
+                    refresh_codex_accounts.begin ();
+                    read_snapshot.begin ();
+                });
+            } catch (Error e) {
+                subtitle_label.set_text ("Could not switch account: " + e.message);
+            }
+        }
+
+        private void add_codex_account () {
+            ask_to_save ("Add a ChatGPT account",
+                "Your current account is already remembered. Sign in to the other account in Codex, then choose Save account. You can switch back from the panel at any time.",
+                "Save account", () => {
+                    run_saver.begin ({ "python3", helper_path ("codexbar-accounts.py"), "save" },
+                        "Codex account saved", "Couldn't save the Codex account");
+                });
+        }
+
+        private Gtk.Widget build_codex_accounts () {
+            var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
+            box.append (build_accounts_header ("Sign in to another ChatGPT account", () => add_codex_account ()));
+            if (codex_accounts == null) {
+                return box;
+            }
+            for (uint i = 0; i < codex_accounts.get_length (); i++) {
+                var account = codex_accounts.get_object_element (i);
+                if (account.get_boolean_member_with_default ("active", false)) {
+                    continue;
+                }
+                var email = account.get_string_member_with_default ("email", "");
+                var account_id = account.get_string_member_with_default ("id", email);
+                var windows = account.get_array_member ("windows");
+                var detail = account.has_member ("error") ? "unavailable" : "—";
+                if (windows != null && windows.get_length () > 0) {
+                    detail = "%.0f%%".printf (windows.get_object_element (windows.get_length () - 1)
+                        .get_double_member_with_default ("remaining", 0));
+                }
+                box.append (build_account_line (email, detail,
+                    "Make %s the active Codex account. Restart running Codex sessions to use it.".printf (email),
+                    () => run_accounts_helper ({ "switch", account_id })));
+            }
+            return box;
+        }
+
+        private static string local_digest (Json.Object? usage) {
+            if (usage == null) {
+                return "";
+            }
+            var generator = new Json.Generator ();
+            var node = new Json.Node (Json.NodeType.OBJECT);
+            node.set_object (usage);
+            generator.root = node;
+            return generator.to_data (null);
+        }
+
+        // OpenCode Go's account quota needs a web sign-in, so show what this machine's own history says.
+        private async void refresh_opencode_local () {
+            if (opencode_local_in_flight) {
+                return;
+            }
+            opencode_local_in_flight = true;
             var helper = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "lib",
                 "codexbar-cli", "codexbar-opencode-local.py");
+            var changed = false;
+            try {
+                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
+                    "python3", helper);
+                string stdout_text;
+                string stderr_text;
+                yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
+                Json.Object? parsed = null;
+                if (process.get_successful () && stdout_text.strip ().length > 0) {
+                    var parser = new Json.Parser ();
+                    parser.load_from_data (stdout_text, -1);
+                    var root = parser.get_root ();
+                    if (root != null && root.get_node_type () == Json.NodeType.OBJECT
+                        && (root.get_object ().get_string_member_with_default ("status", "") == "available"
+                            || root.get_object ().get_string_member_with_default ("accountEmail", "").length > 0)) {
+                        parsed = root.get_object ().ref ();
+                    }
+                }
+                changed = local_digest (parsed) != local_digest (opencode_local);
+                opencode_local = parsed;
+            } catch (Error e) {
+                changed = opencode_local != null;
+                opencode_local = null;
+            } finally {
+                opencode_local_in_flight = false;
+                opencode_local_fetched_us = GLib.get_monotonic_time ();
+            }
+            if (changed) {
+                last_digest = "";
+                read_snapshot.begin ();
+            }
+        }
+
+        private async void refresh_sessions () {
+            if (sessions_in_flight) {
+                return;
+            }
+            sessions_in_flight = true;
+            var helper = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "lib",
+                "codexbar-cli", "codexbar-sessions.py");
             try {
                 var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
                     "python3", helper);
@@ -346,264 +701,582 @@ namespace MSeries {
                 string stderr_text;
                 yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
                 if (!process.get_successful () || stdout_text.strip ().length == 0) {
-                    append_local_opencode_status ("OpenCode local usage helper could not run.");
-                    return;
-                }
-                var parser = new Json.Parser ();
-                parser.load_from_data (stdout_text, -1);
-                var root = parser.get_root ();
-                if (root == null || root.get_node_type () != Json.NodeType.OBJECT) {
-                    append_local_opencode_status ("OpenCode local usage returned invalid data.");
-                    return;
-                }
-                var usage = root.get_object ();
-                var state = usage.get_string_member ("status") ?? "unavailable";
-                var section = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
-                section.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
-                var title = new Gtk.Label ("OpenCode Go · local estimate") { xalign = 0 };
-                title.add_css_class ("heading");
-                section.append (title);
-                var source_note = new Gtk.Label ("Not account quota · from OpenCode v2 local history") {
-                    xalign = 0, wrap = true
-                };
-                source_note.add_css_class ("dim-label");
-                source_note.add_css_class ("caption");
-                section.append (source_note);
-
-                if (state == "available") {
-                    var periods = usage.get_array_member ("periods");
-                    if (periods != null) {
-                        for (uint i = 0; i < periods.get_length (); i++) {
-                            var period = periods.get_object_element (i);
-                            var label = period.get_string_member ("label") ?? "Usage";
-                            var cost = period.get_double_member ("costUSD");
-                            var requests = period.get_int_member ("requests");
-                            append_section_metric (section, label,
-                                "$%0.2f · %s requests".printf (cost, requests.to_string ()));
-                        }
-                    }
+                    sessions_error = "The session check couldn't run. Reinstall the CodexBar panel.";
                 } else {
-                    var message = usage.get_string_member ("message") ?? "Local usage is unavailable.";
-                    var detail = new Gtk.Label (message) { xalign = 0, wrap = true };
-                    detail.add_css_class ("dim-label");
-                    section.append (detail);
+                    sessions_text = stdout_text;
+                    sessions_error = "";
                 }
-
-                providers_box.append (section);
             } catch (Error e) {
-                append_local_opencode_status ("OpenCode local usage is unavailable: " + e.message);
+                sessions_error = "The session check is unavailable: " + e.message;
             } finally {
-                local_opencode_request_in_flight = false;
+                sessions_in_flight = false;
+                sessions_fetched_us = GLib.get_monotonic_time ();
+                render_sessions ();
             }
         }
 
-        private void append_section_metric (Gtk.Box section, string name, string value) {
-            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 7);
-            row.append (new Gtk.Label (name) { xalign = 0, hexpand = true });
-            var value_label = new Gtk.Label (value) { xalign = 1 };
-            value_label.add_css_class ("numeric");
-            row.append (value_label);
-            section.append (row);
+        // ---- Snapshot to UI -----------------------------------------------------------
+
+        private string snapshot_digest (Json.Object snapshot, int64 now_unix) {
+            var text = new StringBuilder ();
+            foreach (var name in new string[] { "entries", "spending" }) {
+                var node = snapshot.get_member (name);
+                if (node != null) {
+                    var generator = new Json.Generator ();
+                    generator.root = node;
+                    text.append (generator.to_data (null));
+                }
+            }
+            text.append ("|%s|%s".printf (snapshot_stale.to_string (), snapshot.get_boolean_member ("busy").to_string ()));
+            var entries = snapshot.get_array_member ("entries");
+            if (entries != null) {
+                for (uint i = 0; i < entries.get_length (); i++) {
+                    text.append (QuotaEta.entry_stale (entries.get_object_element (i), snapshot_stale, now_unix) ? "S" : "F");
+                }
+            }
+            return GLib.Checksum.compute_for_string (GLib.ChecksumType.MD5, text.str);
         }
 
-        private void append_local_opencode_status (string message) {
-            var section = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
-            section.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
-            var title = new Gtk.Label ("OpenCode Go · local estimate") { xalign = 0 };
-            title.add_css_class ("heading");
-            section.append (title);
-            var detail = new Gtk.Label (message) { xalign = 0, wrap = true };
-            detail.add_css_class ("dim-label");
-            section.append (detail);
-            providers_box.append (section);
+        private void update_snapshot (Json.Object snapshot) {
+            var now_unix = new DateTime.now_utc ().to_unix ();
+            snapshot_stale = snapshot.get_boolean_member ("stale");
+            snapshot_busy = snapshot.get_boolean_member ("busy");
+            var entries = snapshot.get_array_member ("entries");
+            if (entries == null || entries.get_length () == 0) {
+                last_digest = "";
+                newest_update_unix = 0;
+                set_refreshing (snapshot_busy);
+                if (snapshot_busy) {
+                    show_state (quota_box, "content-loading-symbolic", "Fetching usage…",
+                        "Your limits will appear when the update completes.", false);
+                    subtitle_label.set_text ("Refreshing…");
+                } else {
+                    show_unavailable ("dialog-information-symbolic", "No quota data yet", "Open Settings to sign in to a provider.");
+                }
+                return;
+            }
+
+            newest_update_unix = 0;
+            for (uint i = 0; i < entries.get_length (); i++) {
+                var timestamp = new DateTime.from_iso8601 (entries.get_object_element (i).get_string_member ("updatedAt") ?? "", null);
+                if (timestamp != null && timestamp.to_unix () > newest_update_unix) {
+                    newest_update_unix = timestamp.to_unix ();
+                }
+            }
+            refresh_header (now_unix);
+
+            var digest = snapshot_digest (snapshot, now_unix);
+            if (digest == last_digest) {
+                return;
+            }
+            last_digest = digest;
+            render_quota (entries, now_unix);
+            render_spend (snapshot);
+            update_panel (entries, now_unix);
         }
 
-        private void append_provider_entry (Json.Object entry) {
-            var provider = entry.get_string_member ("provider") ?? "Provider";
-            var title_text = provider.down () == "codex" ? "OpenAI Codex" :
-                provider.down () == "claude" ? "Claude" :
-                provider.down () == "opencodego" ? "OpenCode Go" : provider;
-            var title = new Gtk.Label (title_text) { xalign = 0 };
-            title.add_css_class ("heading");
+        private void refresh_header (int64 now_unix) {
+            set_refreshing (snapshot_busy);
+            if (snapshot_busy) {
+                subtitle_label.set_text ("Refreshing…");
+            } else if (newest_update_unix > 0) {
+                subtitle_label.set_text ("Updated " + Presentation.age_text (now_unix - newest_update_unix));
+            } else {
+                subtitle_label.set_text ("Waiting for data");
+            }
+            chip_label.remove_css_class ("busy");
+            if (snapshot_busy) {
+                chip_label.set_text ("Refreshing");
+                chip_label.add_css_class ("busy");
+                chip_label.set_visible (true);
+            } else if (snapshot_stale) {
+                chip_label.set_text ("Cached");
+                chip_label.set_tooltip_text ("CodexBar couldn't reach a provider; showing the last good data.");
+                chip_label.set_visible (true);
+            } else {
+                chip_label.set_visible (false);
+            }
+        }
 
-            var provider_section = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
-            provider_section.append (title);
-            providers_box.append (provider_section);
+        private void update_panel (Json.Array entries, int64 now_unix) {
+            var parts = new string[0];
+            var tags = new string[0];
+            var tooltip = new StringBuilder ();
+            var level = QuotaLevel.UNKNOWN;
+            for (uint i = 0; i < entries.get_length (); i++) {
+                var entry = entries.get_object_element (i);
+                var provider = (entry.get_string_member ("provider") ?? "").down ();
+                var windows = entry.get_array_member ("windows");
+                if (windows == null || windows.get_length () == 0) {
+                    continue;
+                }
+                var stale = QuotaEta.entry_stale (entry, snapshot_stale, now_unix);
+                var eta = QuotaEta.for_entry (entry, stale, now_unix);
+                tooltip.append ("%s%s\n".printf (tooltip.len > 0 ? "\n" : "", provider_title (provider)));
+                string remaining_text = "—";
+                string lead_window = "";
+                bool first_measured = true;
+                for (uint w = 0; w < windows.get_length (); w++) {
+                    var window = windows.get_object_element (w);
+                    var node = window.get_member ("remaining");
+                    var short_label = Presentation.short_window_label (window.get_string_member ("label") ?? "Quota",
+                        (int) window.get_int_member ("minutes"));
+                    if (node == null || node.get_node_type () == Json.NodeType.NULL) {
+                        tooltip.append ("  %s  not reported yet\n".printf (short_label));
+                        continue;
+                    }
+                    var remaining = node.get_double ();
+                    level = Presentation.worse (level, Presentation.level_for (remaining));
+                    if (first_measured) {
+                        // The first measured window is the provider's session/general quota.
+                        var minutes = (int) window.get_int_member ("minutes");
+                        remaining_text = Presentation.quota_lead (short_label, minutes, "%0.0f%%".printf (remaining));
+                        lead_window = minutes > 360 ? short_label : "";
+                        first_measured = false;
+                    }
+                    tooltip.append ("  %s  %0.0f%% left · %s\n".printf (short_label, remaining,
+                        (window.get_string_member ("resetText") ?? "").length > 0
+                            ? window.get_string_member ("resetText").down () : "reset unknown"));
+                }
+                if (provider.contains ("codex") || provider.contains ("claude")) {
+                    tags += provider.contains ("codex") ? "CX" : "CL";
+                    parts += Presentation.bar_segment (remaining_text, eta.state, eta.compact,
+                        Presentation.limiting_window (
+                            Presentation.short_window_label (eta.window_label, eta.window_minutes), lead_window));
+                }
+            }
 
-            var previous_provider_box = providers_box;
-            var limits = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
-            provider_section.append (limits);
-            providers_box = limits;
+            var shown = new string[0];
+            for (int i = 0; i < parts.length; i++) {
+                shown += (parts.length > 1 ? tags[i] + " " : "") + parts[i];
+            }
+            panel_label.set_text (shown.length > 0 ? string.joinv ("   ", shown) : "—");
+            panel_label.remove_css_class ("level-low");
+            panel_label.remove_css_class ("level-critical");
+            panel_label.remove_css_class ("stale");
+            if (snapshot_stale) panel_label.add_css_class ("stale");
+            if (level == QuotaLevel.LOW) panel_label.add_css_class ("level-low");
+            if (level == QuotaLevel.CRITICAL) panel_label.add_css_class ("level-critical");
+            panel_display.set_tooltip_text (tooltip.len > 0
+                ? tooltip.str.strip () + (snapshot_stale ? "\n\nCached: CodexBar couldn't reach a provider." : "")
+                    + "\n\nMiddle-click to refresh"
+                : "Usage unavailable");
+        }
+
+        // ---- Pages --------------------------------------------------------------------
+
+        private static string provider_title (string provider) {
+            return provider == "codex" ? "OpenAI Codex" :
+                provider == "claude" ? "Claude" :
+                provider == "opencodego" ? "OpenCode Go" : provider;
+        }
+
+        private void render_quota (Json.Array entries, int64 now_unix) {
+            clear (quota_box);
+            for (uint i = 0; i < entries.get_length (); i++) {
+                quota_box.append (build_provider_card (entries.get_object_element (i), now_unix));
+            }
+            var has_claude = false;
+            for (uint i = 0; i < entries.get_length (); i++) {
+                has_claude = has_claude || entries.get_object_element (i).get_string_member_with_default ("provider", "") == "claude";
+            }
+            if (!has_claude && claude_data != null) {
+                quota_box.append (build_claude_card (now_unix));
+            }
+        }
+
+        private Gtk.Widget build_provider_card (Json.Object entry, int64 now_unix) {
+            var provider = (entry.get_string_member ("provider") ?? "Provider").down ();
+            var title_text = provider_title (provider);
+            var error = entry.get_string_member ("error") ?? "";
+            var status = entry.get_string_member ("status") ?? "";
+            var status_level = entry.get_string_member ("statusLevel") ?? "";
+            var stale = QuotaEta.entry_stale (entry, snapshot_stale, now_unix);
+
+            var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
+            card.add_css_class ("card");
+
+            var head = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            var dot = new Gtk.Label ("●");
+            string dot_class = error.length > 0 ? "dot-bad" :
+                status_level == "none" ? "dot-ok" :
+                status_level == "minor" ? "dot-warn" :
+                status_level == "unknown" || status_level.length == 0 ? "dot-off" : "dot-bad";
+            dot.add_css_class (dot_class);
+            dot.set_tooltip_text (error.length > 0 ? "Problem fetching this provider" :
+                status.length > 0 ? status : "Provider status unknown");
+            head.append (dot);
+            head.append (build_provider_mark (provider, title_text));
+            var plan = Presentation.plan_label (entry.get_string_member ("plan") ?? "");
+            if (plan.length > 0) {
+                var plan_label = new Gtk.Label (plan) { valign = Gtk.Align.CENTER };
+                plan_label.add_css_class ("plan");
+                head.append (plan_label);
+            }
+            head.append (build_identity (account_email_for (provider, entry)));
+            card.append (head);
 
             var windows = entry.get_array_member ("windows");
-            var now_unix = new DateTime.now_utc ().to_unix ();
-            var eta_stale = QuotaEta.entry_stale (entry, snapshot_stale, now_unix);
             if (windows != null && windows.get_length () > 0) {
                 for (uint i = 0; i < windows.get_length (); i++) {
-                    append_window (windows.get_object_element (i), eta_stale);
+                    card.append (build_window (title_text, windows.get_object_element (i), stale, now_unix));
                 }
-            } else {
-                append_metric_row ("Usage", "Unavailable");
             }
 
-            providers_box = provider_section;
-            var provider_status = entry.get_string_member ("status") ?? "";
-            if (provider_status.length > 0) {
-                append_subtle_row ("Status · " + provider_status);
+            // Say so only when something is wrong; "All Systems Operational" is noise.
+            if (error.length == 0 && status.length > 0 && status_level != "none" && status_level != "unknown") {
+                card.append (subtle_label ("Provider status · " + status));
             }
-            var provider_error = entry.get_string_member ("error") ?? "";
-            if (provider_error.length > 0) {
-                append_subtle_row (provider_error);
+            if (provider == "codex") {
+                card.append (build_codex_accounts ());
             }
-            providers_box = previous_provider_box;
+            if (error.length > 0 || windows == null || windows.get_length () == 0) {
+                var estimate = provider == "opencodego" ? opencode_local : null;
+                var periods = estimate != null ? estimate.get_array_member ("periods") : null;
+                if (periods != null && periods.get_length () > 0) {
+                    card.append (subtle_label (estimate.get_string_member_with_default ("message", "Local usage estimate · not account quota")));
+                    for (uint i = 0; i < periods.get_length (); i++) {
+                        var period = periods.get_object_element (i);
+                        if (period.get_int_member_with_default ("requests", 0) == 0 && i + 1 < periods.get_length ()) {
+                            continue;
+                        }
+                        card.append (subtle_label (Presentation.local_usage_line (
+                            period.get_string_member_with_default ("label", ""),
+                            period.get_double_member_with_default ("costUSD", 0),
+                            period.get_int_member_with_default ("requests", 0),
+                            period.get_int_member_with_default ("tokens", 0))));
+                    }
+                    card.append (subtle_label ("Account quota needs a web sign-in at opencode.ai."));
+                } else {
+                    card.append (subtle_label (provider == "opencodego"
+                        ? "Quota needs a web sign-in at opencode.ai. Local activity is under Sessions."
+                        : error.length > 0 ? error : "No usage reported yet."));
+                }
+                var settings = new Gtk.Button.with_label (provider == "opencodego" ? "Sign in…" : "Open Settings…") {
+                    halign = Gtk.Align.START
+                };
+                settings.clicked.connect (() => {
+                    popdown_from (settings);
+                    if (provider == "opencodego") {
+                        try { AppInfo.launch_default_for_uri ("https://opencode.ai", null); } catch (Error e) { }
+                    } else {
+                        run_action ("--settings");
+                    }
+                });
+                card.append (settings);
+            }
+            return card;
         }
 
-        private string compact_codex_summary (Json.Object entry) {
-            var windows = entry.get_array_member ("windows");
-            if (windows == null || windows.get_length () == 0) return "";
-            string remaining = "—";
-            for (uint i = 0; i < windows.get_length (); i++) {
-                var window = windows.get_object_element (i);
-                var node = window.get_member ("remaining");
-                if (node == null || node.get_node_type () == Json.NodeType.NULL) continue;
-                remaining = "%0.0f%%".printf (node.get_double ());
-                // The first measured window is the provider's session/general quota.
-                break;
-            }
-            var now_unix = new DateTime.now_utc ().to_unix ();
-            var eta = QuotaEta.for_entry (entry, QuotaEta.entry_stale (entry, snapshot_stale, now_unix), now_unix);
-            var limit = eta.state == EtaState.DEPLETING || eta.state == EtaState.EXHAUSTED
-                ? short_window_label (eta.window_label, eta.window_minutes) + " " : "";
-            return remaining + " · " + limit + eta.compact;
+        /* Dense building blocks shared by every provider card. */
+        private static string compact_reset (string reset) {
+            return reset.has_prefix ("Resets in ") ? reset.substring (10) : reset;
         }
 
-        private string short_window_label (string label, int minutes) {
-            var normalized = label.down ();
-            if (normalized.contains ("hour") || minutes > 0 && minutes <= 360) {
-                var hours = minutes > 0 ? (minutes + 30) / 60 : 5;
-                return "%dH".printf (hours);
+        /* The company mark replaces the written provider name; the name stays in the tooltip and for screen readers. */
+        private static Gtk.Widget build_provider_mark (string provider, string title_text) {
+            var icon_name = provider == "codex" ? "mseries-codexbar-openai-symbolic" :
+                provider == "claude" ? "mseries-codexbar-claude-symbolic" :
+                provider == "opencodego" ? "mseries-codexbar-opencode-symbolic" : "";
+            if (icon_name.length == 0 || !Gtk.IconTheme.get_for_display (Gdk.Display.get_default ()).has_icon (icon_name)) {
+                var text = new Gtk.Label (title_text) { xalign = 0 };
+                text.add_css_class ("provider-title");
+                return text;
             }
-            if (normalized.contains ("week")) {
-                return "7D";
-            }
-            if (normalized.contains ("month")) {
-                return "30D";
-            }
-            if (normalized.contains ("day") || minutes >= 1440) {
-                var days = minutes > 0 ? (minutes + 720) / 1440 : 7;
-                return "%dD".printf (days);
-            }
-            return label;
+            var icon = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 18 };
+            icon.add_css_class ("provider-mark");
+            icon.add_css_class ("mark-" + provider);
+            icon.set_tooltip_text (title_text);
+            icon.update_property (Gtk.AccessibleProperty.LABEL, title_text, -1);
+            return icon;
         }
 
-        private void append_window (Json.Object window, bool eta_stale) {
+        private Gtk.Widget build_identity (string email) {
+            var identity = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4) { halign = Gtk.Align.END, hexpand = true };
+            identity.add_css_class ("account-row");
+            var icon = new Gtk.Image.from_icon_name ("avatar-default-symbolic") { pixel_size = 12 };
+            icon.add_css_class ("dim-label");
+            identity.append (icon);
+            var label = new Gtk.Label (email.length > 0 ? email : "Account not detected") {
+                xalign = 1, ellipsize = Pango.EllipsizeMode.MIDDLE, max_width_chars = 30
+            };
+            label.add_css_class ("caption");
+            label.add_css_class ("dim-label");
+            identity.set_tooltip_text (email.length > 0 ? "Signed in as " + email
+                : "CodexBar can't tell which account this is signed in with");
+            identity.append (label);
+            return identity;
+        }
+
+        private Gtk.Widget build_accounts_header (string tooltip, owned ActionFunc on_add) {
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
+            var title = new Gtk.Label ("Accounts") { xalign = 0, hexpand = true };
+            title.add_css_class ("caption");
+            title.add_css_class ("dim-label");
+            row.append (title);
+            var add = new Gtk.Button () { child = new Gtk.Image.from_icon_name ("list-add-symbolic") { pixel_size = 12 }, tooltip_text = tooltip, valign = Gtk.Align.CENTER };
+            add.add_css_class ("flat");
+            add.add_css_class ("compact");
+            add.update_property (Gtk.AccessibleProperty.LABEL, tooltip, -1);
+            add.clicked.connect (() => {
+                popdown_from (add);
+                on_add ();
+            });
+            row.append (add);
+            return row;
+        }
+
+        private Gtk.Widget build_account_line (string email, string detail, string switch_tooltip, owned ActionFunc on_switch) {
+            var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            line.add_css_class ("account-line");
+            var name = new Gtk.Label (email) { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.MIDDLE };
+            name.set_tooltip_text (email);
+            line.append (name);
+            var meta = new Gtk.Label (detail) { xalign = 1 };
+            meta.add_css_class ("caption");
+            meta.add_css_class ("dim-label");
+            meta.add_css_class ("numeric");
+            line.append (meta);
+            var button = new Gtk.Button.with_label ("Switch") { valign = Gtk.Align.CENTER, tooltip_text = switch_tooltip };
+            button.add_css_class ("compact");
+            button.clicked.connect (() => {
+                popdown_from (button);
+                on_switch ();
+            });
+            line.append (button);
+            return line;
+        }
+
+        /* Which login a provider is tied to: quiet, under the title, never the focus of the card. */
+        private string account_email_for (string provider, Json.Object entry) {
+            var email = entry.get_string_member_with_default ("accountEmail", "");
+            if (email.length == 0 && provider == "codex" && codex_accounts != null) {
+                for (uint i = 0; i < codex_accounts.get_length (); i++) {
+                    var account = codex_accounts.get_object_element (i);
+                    if (account.get_boolean_member_with_default ("active", false)) {
+                        email = account.get_string_member_with_default ("email", "");
+                    }
+                }
+            }
+            if (email.length == 0 && provider == "opencodego" && opencode_local != null) {
+                email = opencode_local.get_string_member_with_default ("accountEmail", "");
+            }
+            return email;
+        }
+
+        private Gtk.Widget build_window (string provider_title_text, Json.Object window, bool stale, int64 now_unix) {
             var label = window.get_string_member ("label") ?? "Quota";
             var reset = window.get_string_member ("resetText") ?? "";
             var pace = window.get_string_member ("pace") ?? "";
             var remaining_node = window.get_member ("remaining");
+            var known = remaining_node != null && remaining_node.get_node_type () != Json.NodeType.NULL;
+            var remaining = known
+                ? GLib.Math.fmin (100.0, GLib.Math.fmax (0.0, remaining_node.get_double ())) : -1.0;
+            var level = Presentation.level_for (remaining);
+            var eta = QuotaEta.from_window (window, stale, now_unix);
 
-            var remaining = remaining_node == null || remaining_node.get_node_type () == Json.NodeType.NULL
-                ? -1.0 : GLib.Math.fmin (100.0, GLib.Math.fmax (0.0, remaining_node.get_double ()));
-            var warning = window.get_boolean_member ("warning");
-            var detail = remaining < 0 ? "Usage not reported yet" : "%0.0f%% remaining".printf (remaining);
-            if (warning) {
-                detail += remaining <= 0 ? " · Quota exhausted" : " · Low remaining quota";
-            }
-            if (reset.length > 0) detail += " · " + reset;
-            if (pace.length > 0) detail += " · " + pace;
-
-            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8) { tooltip_text = label + " · " + detail };
-            var short_label = short_window_label (label, (int) window.get_int_member ("minutes"));
-            var name = new Gtk.Label (short_label) {
-                xalign = 0, width_request = 52, ellipsize = Pango.EllipsizeMode.END,
-                tooltip_text = label
+            var group = new Gtk.Box (Gtk.Orientation.VERTICAL, 1);
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            var name = new Gtk.Label (Presentation.short_window_label (label, (int) window.get_int_member ("minutes"))) {
+                xalign = 0, width_request = 34
             };
+            name.add_css_class ("window-name");
             row.append (name);
             var progress = new Gtk.ProgressBar () {
-                show_text = false, hexpand = true, valign = Gtk.Align.CENTER,
-                width_request = 64, sensitive = remaining >= 0
+                show_text = false, hexpand = true, valign = Gtk.Align.CENTER, sensitive = known
             };
-            progress.set_fraction (remaining < 0 ? 0 : remaining / 100.0);
-            if (warning) progress.add_css_class ("warning");
+            progress.set_fraction (known ? remaining / 100.0 : 0);
+            if (level == QuotaLevel.OK) progress.add_css_class ("level-ok");
+            if (level == QuotaLevel.LOW) progress.add_css_class ("level-low");
+            if (level == QuotaLevel.CRITICAL) progress.add_css_class ("level-critical");
+            var spoken = known ? "%0.0f percent remaining".printf (remaining) : "usage not reported yet";
+            progress.update_property (Gtk.AccessibleProperty.LABEL, "%s %s limit, %s".printf (provider_title_text, label, spoken), -1);
             row.append (progress);
-            var percent = new Gtk.Label (remaining < 0 ? "—" : "%0.0f%%".printf (remaining)) {
-                xalign = 1, width_request = 38, tooltip_text = detail
+            var percent = new Gtk.Label (known ? "%0.0f%% left".printf (remaining) : "—") {
+                xalign = 1, width_request = 58
             };
             percent.add_css_class ("numeric");
+            if (level == QuotaLevel.LOW) percent.add_css_class ("text-low");
+            if (level == QuotaLevel.CRITICAL) percent.add_css_class ("text-critical");
             row.append (percent);
-            var reset_label = new Gtk.Label (reset.length > 0 ? reset : "Reset unknown") {
-                xalign = 0, width_request = 108, max_width_chars = 18,
-                ellipsize = Pango.EllipsizeMode.END, tooltip_text = detail
-            };
+            var reset_label = new Gtk.Label (compact_reset (reset)) { xalign = 1, width_request = 46 };
+            reset_label.add_css_class ("caption");
             reset_label.add_css_class ("dim-label");
+            reset_label.add_css_class ("numeric");
+            reset_label.set_tooltip_text (reset);
             row.append (reset_label);
-            providers_box.append (row);
-            var eta = QuotaEta.from_window (window, eta_stale, new DateTime.now_utc ().to_unix ());
-            var eta_label = new Gtk.Label (eta.detail) {
-                xalign = 0, wrap = true, margin_start = 60,
-                tooltip_text = "Quota estimate from CodexBar's current usage pace. The menu bar shows the earliest available limit; reset times are separate."
-            };
-            eta_label.add_css_class ("caption");
-            eta_label.add_css_class (eta.state == EtaState.EXHAUSTED || eta.state == EtaState.DEPLETING ? "warning" : "dim-label");
-            providers_box.append (eta_label);
+            group.append (row);
+
+            // The forecast only gets its own line when it is a warning; otherwise the reset sits inline.
+            if (!known || eta.state == EtaState.EXHAUSTED || eta.state == EtaState.DEPLETING) {
+                var caption_text = known ? Presentation.window_caption (reset, eta.state, eta.detail)
+                    : "Usage not reported yet";
+                var caption = new Gtk.Label (caption_text) { xalign = 0, wrap = true, margin_start = 40 };
+                caption.add_css_class ("caption");
+                caption.add_css_class (eta.state == EtaState.EXHAUSTED ? "text-critical" :
+                    eta.state == EtaState.DEPLETING ? "text-low" : "dim-label");
+                group.append (caption);
+            }
+
+            var detail = known ? "%0.0f%% remaining".printf (remaining) : "Usage not reported yet";
+            if (reset.length > 0) detail += " · " + reset;
+            if (pace.length > 0) detail += " · " + pace;
+            group.set_tooltip_text (label + " · " + detail);
+            return group;
         }
 
-        private void append_metric_row (string name, string value) {
-            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 7) {
-                margin_top = 6, margin_bottom = 6,
-                margin_start = 6, margin_end = 6
-            };
-            var name_label = new Gtk.Label (name) {
-                xalign = 0,
-                hexpand = true,
-                halign = Gtk.Align.START
-            };
-            var value_label = new Gtk.Label (value) {
-                xalign = 1,
-                halign = Gtk.Align.END
-            };
-            value_label.add_css_class ("numeric");
-            row.append (name_label);
-            row.append (value_label);
-            providers_box.append (row);
-        }
-
-        private void append_subtle_row (string text) {
-            var label = new Gtk.Label (text) {
-                xalign = 0,
-                wrap = true,
-                halign = Gtk.Align.FILL
-            };
-            label.add_css_class ("dim-label");
-            providers_box.append (label);
-        }
-
-        private void show_unavailable (string message) {
-            snapshot_busy = false;
-            panel_label.set_text ("5H — · 7D —");
-            panel_display.set_tooltip_text (message);
-            status_label.set_text ("Usage unavailable");
-            set_refreshing (false);
-            clear_provider_rows ();
-            var empty = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) {
-                margin_top = 6,
-                margin_bottom = 6
-            };
-            var explanation = new Gtk.Label (message) { xalign = 0, wrap = true };
-            explanation.add_css_class ("dim-label");
-            empty.append (explanation);
-            var sign_in = new Gtk.Button.with_label ("Settings & Sign In…") {
-                halign = Gtk.Align.START
-            };
-            sign_in.clicked.connect (() => {
-                var popover = sign_in.get_ancestor (typeof (Gtk.Popover)) as Gtk.Popover;
-                if (popover != null) {
-                    popover.popdown ();
+        private void render_spend (Json.Object snapshot) {
+            clear (spend_box);
+            var spending = snapshot.has_member ("spending") ? snapshot.get_array_member ("spending") : null;
+            if (spending == null || spending.get_length () == 0) {
+                show_state (spend_box, "emblem-documents-symbolic", "No spend data yet",
+                    "CodexBar estimates spend from local token use once it has seen some.", false);
+                return;
+            }
+            for (uint i = 0; i < spending.get_length (); i++) {
+                var item = spending.get_object_element (i);
+                var provider = (item.get_string_member ("provider") ?? "").down ();
+                var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
+                card.add_css_class ("card");
+                var title = new Gtk.Label (provider_title (provider)) { xalign = 0 };
+                title.add_css_class ("provider-title");
+                card.append (title);
+                var error = item.get_string_member ("error") ?? "";
+                if (error.length > 0) {
+                    card.append (subtle_label (error));
+                } else {
+                    append_metric (card, "Today", "$%0.2f".printf (item.get_double_member ("today")));
+                    append_metric (card, "This month", "$%0.2f".printf (item.get_double_member ("month")));
+                    append_metric (card, "Tokens this month", Presentation.count_text (item.get_int_member ("tokens")));
                 }
-                run_action ("--settings");
-            });
-            empty.append (sign_in);
-            providers_box.append (empty);
+                spend_box.append (card);
+            }
+            spend_box.append (subtle_label ("List-price estimate of your local token use. It is not what you were billed."));
+        }
+
+        private void render_sessions () {
+            clear (sessions_box);
+            if (sessions_error.length > 0) {
+                show_state (sessions_box, "dialog-warning-symbolic", "Sessions unavailable", sessions_error, false);
+                return;
+            }
+            var parser = new Json.Parser ();
+            Json.Array? sessions = null;
+            try {
+                parser.load_from_data (sessions_text, -1);
+                var root = parser.get_root ();
+                if (root != null && root.get_node_type () == Json.NodeType.OBJECT) {
+                    sessions = root.get_object ().get_array_member ("sessions");
+                }
+            } catch (Error e) {
+                sessions = null;
+            }
+            if (sessions == null || sessions.get_length () == 0) {
+                show_state (sessions_box, "dialog-warning-symbolic", "No sessions found",
+                    "The session check returned nothing to show.", false);
+                return;
+            }
+            for (uint i = 0; i < sessions.get_length (); i++) {
+                sessions_box.append (build_session (sessions.get_object_element (i)));
+            }
+        }
+
+        private Gtk.Widget build_session (Json.Object session) {
+            var state = session.get_string_member ("state") ?? "off";
+            var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
+            card.add_css_class ("card");
+            var head = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            var dot = new Gtk.Label ("●");
+            dot.add_css_class (state == "ok" ? "dot-ok" : state == "warn" ? "dot-warn" : "dot-off");
+            dot.set_tooltip_text (state == "ok" ? "Ready" : state == "warn" ? "Needs attention" : "Not set up");
+            head.append (dot);
+            var title = new Gtk.Label (session.get_string_member ("name") ?? "Session") { xalign = 0, hexpand = true };
+            title.add_css_class ("provider-title");
+            head.append (title);
+            card.append (head);
+            card.append (subtle_label (session.get_string_member ("detail") ?? ""));
+
+            var periods = session.has_member ("periods") ? session.get_array_member ("periods") : null;
+            if (periods == null || periods.get_length () == 0) {
+                return card;
+            }
+            // 5 hours and 7 days are the windows the plans are limited by.
+            for (uint i = 0; i < periods.get_length () && i < 2; i++) {
+                var period = periods.get_object_element (i);
+                var cost = period.get_double_member ("costUSD");
+                var value = "%s req · %s tok".printf (period.get_int_member ("requests").to_string (),
+                    Presentation.count_text (period.get_int_member ("tokens")));
+                if (cost > 0) {
+                    value += " · $%0.2f".printf (cost);
+                }
+                append_metric (card, period.get_string_member ("label") ?? "Usage", value);
+            }
+            var note = session.get_string_member ("note") ?? "";
+            if (note.length > 0) {
+                card.append (subtle_label (note));
+            }
+            return card;
+        }
+
+        // ---- Small builders -----------------------------------------------------------
+
+        private static Gtk.Label subtle_label (string text) {
+            var label = new Gtk.Label (text) { xalign = 0, wrap = true, halign = Gtk.Align.FILL };
+            label.add_css_class ("dim-label");
+            label.add_css_class ("caption");
+            return label;
+        }
+
+        private static void append_metric (Gtk.Box card, string name, string value) {
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+            row.append (new Gtk.Label (name) { xalign = 0, hexpand = true });
+            var value_label = new Gtk.Label (value) { xalign = 1 };
+            value_label.add_css_class ("numeric");
+            row.append (value_label);
+            card.append (row);
+        }
+
+        /* A centred, explained state: never a bare "Unavailable". */
+        private void show_state (Gtk.Box page, string icon, string headline, string message, bool with_settings) {
+            clear (page);
+            var state = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) {
+                halign = Gtk.Align.CENTER, margin_top = 14, margin_bottom = 14
+            };
+            state.append (new Gtk.Image.from_icon_name (icon) { pixel_size = 32, opacity = 0.6 });
+            var title = new Gtk.Label (headline) { justify = Gtk.Justification.CENTER };
+            title.add_css_class ("state-title");
+            state.append (title);
+            if (message.length > 0) {
+                var detail = new Gtk.Label (message) {
+                    wrap = true, justify = Gtk.Justification.CENTER, max_width_chars = 36
+                };
+                detail.add_css_class ("dim-label");
+                detail.add_css_class ("caption");
+                state.append (detail);
+            }
+            if (with_settings) {
+                var settings = new Gtk.Button.with_label ("Open Settings…") { halign = Gtk.Align.CENTER, margin_top = 4 };
+                settings.add_css_class ("suggested-action");
+                settings.clicked.connect (() => {
+                    popdown_from (settings);
+                    run_action ("--settings");
+                });
+                state.append (settings);
+            }
+            page.append (state);
+        }
+
+        private void show_unavailable (string icon, string headline, string message) {
+            snapshot_busy = false;
+            last_digest = "";
+            panel_label.set_text ("—");
+            panel_label.remove_css_class ("level-low");
+            panel_label.remove_css_class ("level-critical");
+            panel_display.set_tooltip_text (headline + " · " + message);
+            subtitle_label.set_text ("Usage unavailable");
+            chip_label.set_visible (false);
+            set_refreshing (false);
+            show_state (quota_box, icon, headline, message, true);
         }
 
         public override Gtk.Widget get_display_widget () {
@@ -617,6 +1290,7 @@ namespace MSeries {
 
         public override void opened () {
             read_snapshot.begin (true);
+            ensure_sessions (15);
         }
 
         public override void closed () {

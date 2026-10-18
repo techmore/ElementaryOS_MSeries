@@ -1,0 +1,12 @@
+{
+  "VEVENT": {
+    "synthetic_component_read": true,
+    "errors": [],
+    "private_contents_published": false
+  },
+  "VTODO": {
+    "synthetic_component_read": true,
+    "errors": [],
+    "private_contents_published": false
+  }
+}

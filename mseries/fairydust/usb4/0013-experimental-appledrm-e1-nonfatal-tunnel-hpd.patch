@@ -1,0 +1,77 @@
+diff --git a/drivers/gpu/drm/apple/dcp.c b/drivers/gpu/drm/apple/dcp.c
+index db70eee..c6ccdd5 100644
+--- a/drivers/gpu/drm/apple/dcp.c
++++ b/drivers/gpu/drm/apple/dcp.c
+@@ -433,7 +433,15 @@ static int dcp_dptx_connect_source(struct apple_dcp *dcp, u32 port, bool prepare
+ 		schedule_work(&dptx->hpd_work);
+ 	mutex_unlock(&dcp->hpd_mutex);
+ 
++	/*
++	 * E1: the tunnel firmware was measured to answer neither set_hpd nor any
++	 * link-config call within the 2 s physical-path window. Give the tunnel
++	 * path a generous, still-bounded window so we can tell "slow" from
++	 * "stuck" in one boot.
++	 */
+ 	waited = wait_for_completion_timeout(&dptx->linkcfg_completion,
++					     dcp->dp_tunnel ?
++					     msecs_to_jiffies(8000) :
+ 					     DPTX_CONNECT_TIMEOUT);
+ 	ret = waited ? READ_ONCE(dptx->link_error) : -ETIMEDOUT;
+ 	dev_info(dcp->dev,
+diff --git a/drivers/gpu/drm/apple/dptxep.c b/drivers/gpu/drm/apple/dptxep.c
+index 851b9b5..bd68649 100644
+--- a/drivers/gpu/drm/apple/dptxep.c
++++ b/drivers/gpu/drm/apple/dptxep.c
+@@ -249,6 +249,7 @@ static void dptxport_hpd_work(struct work_struct *work)
+ {
+ 	struct dptx_port *dptx = container_of(work, struct dptx_port, hpd_work);
+ 	struct phy *phy;
++	bool tunnel;
+ 	int hpd, ret;
+ 
+ 	mutex_lock(&dptx->phy_lock);
+@@ -260,19 +261,40 @@ static void dptxport_hpd_work(struct work_struct *work)
+ 			 READ_ONCE(dptx->phy_initialized), READ_ONCE(dptx->tearing_down));
+ 		return;
+ 	}
++	tunnel = dptx->service->ep->dcp->dp_tunnel;
+ 	hpd = apple_dpin_get_hpd(phy);
+ 	if (READ_ONCE(dptx->tearing_down))
+ 		return;
+ 	if (hpd < 0) {
+-		WRITE_ONCE(dptx->link_error, hpd);
+-		complete_all(&dptx->linkcfg_completion);
++		/*
++		 * E1: a failed local HPD read is fatal on the physical path, but
++		 * in tunnel mode it must not fail the link.
++		 */
++		if (tunnel)
++			dev_info(dptx->service->ep->dcp->dev,
++				 "DPINDBG hpd_work: E1 get_hpd=%d ignored (tunnel)\n", hpd);
++		else {
++			WRITE_ONCE(dptx->link_error, hpd);
++			complete_all(&dptx->linkcfg_completion);
++		}
+ 		hpd = 0;
+ 	}
+ 	dev_info(dptx->service->ep->dcp->dev, "DPINDBG hpd_work: hpd=%d\n", hpd);
+ 	ret = dptxport_set_hpd(dptx->service, hpd);
+ 	if (ret) {
+-		WRITE_ONCE(dptx->link_error, ret);
+-		complete_all(&dptx->linkcfg_completion);
++		/*
++		 * E1: the tunnel firmware does not answer set_hpd (group 8 /
++		 * command 8) within the 1 s AFK window. Log it, but do not rob
++		 * connect_source of its full linkcfg window (see dcp.c).
++		 */
++		if (tunnel)
++			dev_info(dptx->service->ep->dcp->dev,
++				 "DPINDBG hpd_work: E1 set_hpd(%d) ret=%d ignored (tunnel)\n",
++				 hpd, ret);
++		else {
++			WRITE_ONCE(dptx->link_error, ret);
++			complete_all(&dptx->linkcfg_completion);
++		}
+ 	}
+ }
+ 

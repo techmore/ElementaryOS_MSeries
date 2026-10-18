@@ -1,0 +1,102 @@
+{
+  "basis": "Selected metadata derived from shipped board ADT; not live boot-patched ADT or hardware measurement",
+  "device_class": "j314sap",
+  "chip_id": "0x6000",
+  "board_id": "0x08",
+  "macos_version": "13.5",
+  "build": "22G74",
+  "source_zip_url": "https://updates.cdn-apple.com/2023SummerFCS/fullrestores/032-69606/D3E05CDF-E105-434C-A4A1-4E3DC7668DD0/UniversalMac_13.5_22G74_Restore.ipsw",
+  "source_zip_entry": "Firmware/all_flash/DeviceTree.j314sap.im4p",
+  "source_zip_crc_verified": true,
+  "im4p_sha256": "7a5351307bcb8b0b73141f78fb376399bd309e75cbccb4b88594eaea82b5bc72",
+  "adt_sha256": "9524a38c680238a434f951790a6a23f983a321e00f639bbd77d398cb99818cdf",
+  "nodes": [
+    {
+      "path": "/arm-io/atc1-dpxbar",
+      "registers": [
+        {
+          "bus_address": "0xb0304c000",
+          "address": "0xb0304c000",
+          "size": "0x4000"
+        }
+      ],
+      "compatible": [
+        "atc-dpxbar,t600x"
+      ]
+    },
+    {
+      "path": "/arm-io/atc1-dpin0",
+      "registers": [
+        {
+          "bus_address": "0xb01e50000",
+          "address": "0xb01e50000",
+          "size": "0x4000"
+        }
+      ],
+      "compatible": [
+        "atc-dpin,t600x"
+      ],
+      "acio-parent": {
+        "phandle": 95,
+        "path": "/arm-io/acio1"
+      },
+      "atc-phy": {
+        "phandle": 212,
+        "path": "/arm-io/atc-phy1"
+      },
+      "dpxbar-parent": {
+        "phandle": 115,
+        "path": "/arm-io/atc1-dpxbar"
+      },
+      "dp-switch-parent": {
+        "phandle": 110,
+        "path": "/arm-io/display-crossbar0"
+      },
+      "dp-switch-dfp-endpoint": 1,
+      "dp-switch-dfp-port": 1,
+      "transport-index": 0,
+      "transport-type": 5,
+      "transport-tunneled": 1,
+      "interrupts": [
+        1354
+      ]
+    },
+    {
+      "path": "/arm-io/atc1-dpin1",
+      "registers": [
+        {
+          "bus_address": "0xb01e58000",
+          "address": "0xb01e58000",
+          "size": "0x4000"
+        }
+      ],
+      "compatible": [
+        "atc-dpin,t600x"
+      ],
+      "acio-parent": {
+        "phandle": 95,
+        "path": "/arm-io/acio1"
+      },
+      "atc-phy": {
+        "phandle": 212,
+        "path": "/arm-io/atc-phy1"
+      },
+      "dpxbar-parent": {
+        "phandle": 115,
+        "path": "/arm-io/atc1-dpxbar"
+      },
+      "dp-switch-parent": {
+        "phandle": 110,
+        "path": "/arm-io/display-crossbar0"
+      },
+      "dp-switch-dfp-endpoint": 1,
+      "dp-switch-dfp-port": 2,
+      "transport-index": 1,
+      "transport-type": 5,
+      "transport-tunneled": 1,
+      "interrupts": [
+        1355
+      ]
+    }
+  ]
+}

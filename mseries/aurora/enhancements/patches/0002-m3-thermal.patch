@@ -1,0 +1,166 @@
+From 46b5a0981c4955cf33b7275c4001d820791b9f08 Mon Sep 17 00:00:00 2001
+From: garymeyerca <220751193+garymeyerca@users.noreply.github.com>
+Date: Fri, 16 Oct 2026 17:05:31 -0400
+Subject: [PATCH] drm/asahi: m3: keep the T8122 thermal fallback at state two
+
+With a T8122 ceiling from one to five, the generic fallback calculation
+selects that same state as both ceiling and fallback. Increasing the
+experimental ceiling therefore prevents thermal On/Hold from returning
+to the default state two.
+
+Use the T8122 default ceiling as the fallback while preserving lower
+requested ceilings and other SoCs. Keep thermal Off behavior unchanged.
+Cover overheating, failed, missing, stale and stuck readings, and hold
+mode. Preserve the current M3 Max thermal-zone requirements.
+
+The host suite passes 58 tests with compiler warnings denied. Restoring
+the old fallback calculation fails the four new tests. Full kernel
+build and higher-clock hardware qualification remain pending.
+
+Assisted-by: Codex:GPT-6
+---
+ drivers/gpu/drm/asahi/m3_adt_config.rs     | 16 ++++--
+ drivers/gpu/drm/asahi/m3_thermal.rs        | 11 ++--
+ drivers/gpu/drm/asahi/m3_thermal_policy.rs | 66 ++++++++++++++++++++++
+ 3 files changed, 83 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/gpu/drm/asahi/m3_adt_config.rs b/drivers/gpu/drm/asahi/m3_adt_config.rs
+index 2fa384c910688e..f3d3bec5aaa408 100644
+--- a/drivers/gpu/drm/asahi/m3_adt_config.rs
++++ b/drivers/gpu/drm/asahi/m3_adt_config.rs
+@@ -138,9 +138,10 @@ const _: () = assert!(storage::same_iomaps(
+ ));
+ 
+ /// Highest performance state device-tree InitData may use without the driver's thermal limit
+-/// (`asahi.m3_thermal=off`), and the runtime cap the thermal limit starts at and falls back to
+-/// (the "safe cap"). The InitData's fast-die temperature controller words stay 0, so the
+-/// firmware does not limit the die temperature by itself.
++/// (`asahi.m3_thermal=off`), and the default thermal fallback for other SoCs. The T8122
++/// experiment uses its lower default ceiling as the thermal fallback. The InitData's
++/// fast-die temperature controller words stay 0, so the firmware does not limit the die
++/// temperature by itself.
+ pub(crate) const ADT_MAX_PSTATE_LIMIT: u32 = 5;
+ 
+ /// The performance states the runtime backend lets the firmware use.
+@@ -231,10 +232,15 @@ impl PstatePolicy {
+             }
+         }
+         // Without the thermal limit the runtime cap is the ceiling; with it, the runtime cap
+-        // starts at (and never goes below) the cap used without it.
++        // starts at the board-specific no-feedback cap. The T8122 experiment may
++        // raise its ceiling, but must retain state 2 as its thermal fallback.
+         let safe = match thermal {
+             ThermalMode::Off => max,
+-            ThermalMode::Hold | ThermalMode::On => max.min(ADT_MAX_PSTATE_LIMIT),
++            ThermalMode::Hold | ThermalMode::On => crate::m3_thermal_policy::safe_cap(
++                max,
++                ceiling.is_some(),
++                ADT_MAX_PSTATE_LIMIT,
++            ),
+         };
+         let boot = m3_params::boot_pstate_param()
+             .unwrap_or(u64::from(safe))
+diff --git a/drivers/gpu/drm/asahi/m3_thermal.rs b/drivers/gpu/drm/asahi/m3_thermal.rs
+index 59a72187c96990..8a9ffd7fa5551e 100644
+--- a/drivers/gpu/drm/asahi/m3_thermal.rs
++++ b/drivers/gpu/drm/asahi/m3_thermal.rs
+@@ -12,12 +12,13 @@
+ //! "ceiling"), and what bounds the firmware is the runtime cap: the Globals performance-state
+ //! cap and power-interface state targets, which the firmware keeps reading while it runs (a
+ //! host moves the cap with a single store, with no message). The runtime cap starts at the
+-//! fixed cap of `off` (the "safe cap") and never goes below it, so at worst the GPU runs as it
+-//! does without the limit.
++//! board-specific fallback (the "safe cap") and never goes below it. The T8122 experiment
++//! retains state 2 as that fallback even when its ceiling is raised; other SoCs retain
++//! the cap used without the limit.
+ //!
+-//! - `hold`: the runtime cap stays at the safe cap for the whole boot. The GPU then runs exactly
+-//!   as with `off`, provided the firmware follows the runtime cap; the per-job check below
+-//!   proves or disproves that before `on` is used.
++//! - `hold`: the runtime cap stays at the safe cap for the whole boot, provided the firmware
++//!   follows the runtime cap; the per-job check below proves or disproves that before `on`
++//!   is used.
+ //! - `on`: the runtime cap follows the hottest SoC die temperature, read by a work item every
+ //!   500 ms while the GPU is busy (every 2 s when idle) from the thermal zones in [`ZONES`]
+ //!   that exist: the SMC's die sensors and the PMP's CPU cluster sensors (see [`ZONES`]):
+diff --git a/drivers/gpu/drm/asahi/m3_thermal_policy.rs b/drivers/gpu/drm/asahi/m3_thermal_policy.rs
+index 7774a582cbcb6f..5970cdee06e6ff 100644
+--- a/drivers/gpu/drm/asahi/m3_thermal_policy.rs
++++ b/drivers/gpu/drm/asahi/m3_thermal_policy.rs
+@@ -6,6 +6,16 @@
+ //! Times are monotonic nanoseconds from any fixed origin, temperatures millidegrees Celsius, and
+ //! states indices of the published performance-state table.
+ 
++/// Thermal fallback is independent of the experimental T8122 ceiling.
++/// Keep other SoCs' existing fallback and never exceed a lower requested cap.
++pub(crate) fn safe_cap(max: u32, t8122: bool, legacy_limit: u32) -> u32 {
++    max.min(if t8122 {
++        crate::t8122_knobs::PSTATE_CAP
++    } else {
++        legacy_limit
++    })
++}
++
+ /// Required thermal-zone bits: SMC die (bit 0), PMP hotspot (bit 1).
+ /// A missing or malformed compatible list requires both zones. The M3 Max MacBook Pros (J514C,
+ /// J516C) require the SMC die zone: their PMP does not run, so it has no hotspot zone.
+@@ -295,3 +305,59 @@ mod zone_tests {
+         assert_eq!(required_zones(b"apple,t81220\0"), 0);
+     }
+ }
++
++#[cfg(test)]
++mod fallback_tests {
++    use super::*;
++
++    fn temp(mc: i32, at: i64) -> Reading {
++        Reading::Temp { mc, at, zones: 1 }
++    }
++
++    #[test]
++    fn t8122_higher_ceilings_keep_state_two_fallback() {
++        for ceiling in 1..=5 {
++            assert_eq!(safe_cap(ceiling, true, 5), ceiling.min(2));
++            assert_eq!(safe_cap(ceiling, false, 5), ceiling);
++        }
++        assert_eq!(safe_cap(8, false, 5), 5);
++    }
++
++    #[test]
++    fn next_state_returns_to_two_when_hot_or_reading_fails() {
++        for reading in [
++            temp(80_000, 3 * S),
++            temp(88_000, 3 * S),
++            Reading::None,
++            Reading::Failed { errno: -19, at: 3 * S },
++        ] {
++            let mut p = Policy::new(true, safe_cap(3, true, 5), 3, 80_000);
++            assert_eq!(p.cap(), 2);
++            let _ = p.update(0, temp(50_000, 0));
++            assert_eq!(p.cap(), 3);
++            let _ = p.update(3 * S, reading);
++            assert_eq!(p.cap(), 2);
++        }
++    }
++
++    #[test]
++    fn stale_or_stuck_sensor_returns_to_two() {
++        let mut p = Policy::new(true, safe_cap(3, true, 5), 3, 80_000);
++        let _ = p.update(0, temp(50_000, 0));
++        assert_eq!(p.cap(), 3);
++        let _ = p.update(4 * S, temp(50_000, 0));
++        assert_eq!(p.cap(), 2);
++        let _ = p.update(6 * S, temp(51_000, 6 * S));
++        assert_eq!(p.cap(), 3);
++        let _ = p.update(67 * S, temp(51_000, 67 * S));
++        assert_eq!(p.cap(), 2);
++    }
++
++    #[test]
++    fn hold_never_raises_t8122_above_two() {
++        let mut p = Policy::new(false, safe_cap(3, true, 5), 3, 80_000);
++        let _ = p.update(0, temp(50_000, 0));
++        let _ = p.update(3 * S, temp(50_000, 3 * S));
++        assert_eq!(p.cap(), 2);
++    }
++}

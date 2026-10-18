@@ -1,5 +1,23 @@
 # Port map: Omarchy Mac hardware behavior → elementary OS 9
 
+## October 17 userspace refresh
+
+[Candidate audit](OMACOM-IMPROVEMENTS.md) supersedes missing-feature assumptions
+for the new sleep/power diagnostics, gated opt-in Bluetooth recovery and Touch ID
+readiness refinements. The maintained default-branch refresh `222f7a8` to
+`ffe5246` changes tests/acceptance only. Historical rows below describe their
+original audit date; use the new audit for current implementation and gates.
+
+## Aurora source enhancements and package boundary — 2026-10-17
+
+[Enhancement candidate](aurora/enhancements/README.md) tracks public kernel
+patches and recipe hashes while producing native Debian payload packages.
+Arch's PKGBUILD/AUR packaging is not adopted by the Ubuntu/elementary base.
+The full recipe config is explicitly updated for udmabuf and optional eGPU
+profiles; copying the Asahi fragment alone would not configure this build.
+Existing Omarchy pacman/boot hooks remain outside the elementary port boundary.
+
+
 This map separates the historical scaffold from the maintained package
 reference and from hardware verification. Presence in the repository does not
 mean the mkosi image has been built or tested.
@@ -28,6 +46,7 @@ The source boundary is documented in
 | USB4 suspend behavior in the current Fairydust kernel | ACIO refuses suspend while a USB4 dock link is active. | A future kernel handshake or docked-lid policy is needed. | Known issue: system remains awake with its display off. |
 | Historical `omarchy-mac` quattro ambient keyboard automation | Adjust keyboard LEDs from the AOP illuminance sensor and pause for manual changes. | `mseries/keyboard-backlight/backlight.py` uses the ALS sensor and UPower in Pantheon. | Implemented; measured on the M1 Pro at 141 lx. Lock/lid and suspend qualification remains. |
 | `omarchy-mac/bin/omarchy-audio-watchdog` (checked 2026-10-14 at omarchy-mac-pkgs 222f7a8) | Restarts PipeWire/WirePlumber when asahi-audio's DSP filter chains wedge WirePlumber at logout or resume (hung `pactl`, full-CPU main thread). Restarts only while the screen is unlocked, with a restart budget. | We run the same asahi-audio DSP chain through the PipeWire LV2 plugin, so the same failure applies. Needs a Pantheon-safe port (no Quickshell handling). | **Ported 2026-10-14** as `mseries/audio/audio-watchdog.py` (user service, enabled by `enhance.sh`): same restart budget and settle rules, no Quickshell handling; lock state from logind `LockedHint` (unverified on Pantheon). |
+| OpenCode Desktop (anomalyco/opencode `v2`, Electron; not part of omarchy-mac-pkgs) | Upstream ships only an amd64 .deb. | `opencode-desktop/build-opencode-desktop.sh` builds the arm64 .deb from source (rev 4617210) and repacks its control file for Ubuntu 26.04 t64 names (`libgtk-3-0t64`, `libatspi2.0-0t64`). Dev channel, package `opencode-dev` 2.0.26, MIT. | Built and installed on the owner desktop 2026-10-16; `ldd` clean. **Not launched yet.** |
 | `omarchy-mac/bin/omarchy-mac-setup-keyboard` | Hands Apple function-key mode (`hid_apple fnmode`) to the kernel default (3, auto) and retires generated `hid_apple.conf` lines. | No `/etc/modprobe.d/hid_apple.conf` exists here, yet the running value is `fnmode=1` (media keys first). Find which initramfs or module option sets it and decide the default deliberately. | **Open.** Behavior differs from upstream's default; needs owner preference. |
 | `omarchy-mac/bin/omarchy-mac-setup-system` Broadcom quirk removal | Removes the Intel-only `brcmfmac feature_disable=0x82000` line, which breaks Apple Silicon Wi-Fi. | `/etc/modprobe.d/brcmfmac.conf` is absent on the M1 Pro. | **Verified clean 2026-10-14.** Keep the guard in the image tests. |
 | `omarchy-mac/bin/omarchy-battery-charge-limit` | Persistent SMC charge threshold. | `mseries-power` plus the quick-settings switch; `macsmc-battery/charge_control_end_threshold` reads 80. | **Ported and verified 2026-10-14.** |

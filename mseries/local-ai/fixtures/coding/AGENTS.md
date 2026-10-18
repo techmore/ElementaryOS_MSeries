@@ -1,0 +1,1 @@
+This is a synthetic coding benchmark. Only unique.py may be edited. Keep first occurrence order, return a new list, and do not mutate input. No imports needed. Shell tools are disabled; the harness runs tests afterwards.

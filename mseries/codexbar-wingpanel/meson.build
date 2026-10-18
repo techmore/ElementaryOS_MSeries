@@ -10,6 +10,7 @@ shared_module(
   'Indicator.vala',
   'RefreshPolicy.vala',
   'QuotaEta.vala',
+  'Presentation.vala',
   dependencies: [libwingpanel_dep, granite_dep, json_dep],
   install: true,
   install_dir: indicators_dir,
@@ -31,8 +32,48 @@ quota_eta_test = executable(
 )
 test('quota-eta', quota_eta_test)
 
+# Headless render probe (not installed): see probe/run-probe.sh.
+executable(
+  'render-probe',
+  'Indicator.vala', 'RefreshPolicy.vala', 'QuotaEta.vala', 'Presentation.vala', 'probe/render-probe.vala',
+  dependencies: [libwingpanel_dep, granite_dep, json_dep, meson.get_compiler('c').find_library('m')],
+  build_by_default: false,
+)
+
+presentation_test = executable(
+  'test-presentation',
+  'QuotaEta.vala',
+  'Presentation.vala',
+  'test-presentation.vala',
+  dependencies: json_dep,
+)
+test('presentation', presentation_test)
+
 install_data(
   'icons/openai.svg',
   install_dir: join_paths(get_option('datadir'), 'icons', 'hicolor', 'scalable', 'apps'),
   rename: 'mseries-codexbar-openai-symbolic.svg',
+)
+
+foreach provider : ['claude', 'opencode']
+  install_data(
+    'icons/@0@.svg'.format(provider),
+    install_dir: join_paths(get_option('datadir'), 'icons', 'hicolor', 'scalable', 'apps'),
+    rename: 'mseries-codexbar-@0@-symbolic.svg'.format(provider),
+  )
+endforeach
+
+settings_model_test = executable(
+  'test-settings-model',
+  'settings/SettingsModel.vala',
+  'settings/test-settings-model.vala',
+  dependencies: json_dep,
+)
+test('settings-model', settings_model_test)
+
+executable(
+  'codexbar-settings',
+  'settings/SettingsModel.vala',
+  'settings/SettingsApp.vala',
+  dependencies: [granite_dep, json_dep],
 )

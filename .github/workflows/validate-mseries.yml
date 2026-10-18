@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Install deps
-        run: sudo apt-get update && sudo apt-get install just podman zstd -y
+        run: sudo apt-get update && sudo apt-get install just podman zstd bison flex device-tree-compiler mtools fdisk shellcheck -y
 
       - name: Shell syntax check (M-series scripts)
         run: |
@@ -40,18 +40,26 @@ jobs:
           bash -n mkosi.images/apple-silicon/mkosi.postinst.chroot
           bash -n mkosi.images/apple-silicon/mkosi.finalize
           bash -n mkosi.images/apple-silicon/build-network-indicator
+          bash -n mkosi.images/apple-silicon/build-local-ai
+          for f in mseries/local-ai/*.sh; do bash -n "$f"; done
+          python3 -m py_compile mseries/local-ai/*.py
           bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-resume-fix
           bash -n mkosi.images/apple-silicon/mkosi.extra/usr/sbin/mseries-wifi-firmware
           bash -n transform/elementary-grow.sh
           bash -n bin/elementary-mac-setup
           for f in mseries/install-*.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/disable-notch-for-pantheon.sh; do bash -n "$f"; done
-          shellcheck -S warning bin/elementary-mac-setup transform/elementary-grow.sh mseries/install-unlock-screen.sh mseries/install-boot-isolation.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/enhance.sh mseries/enhance-firstboot.sh mseries/install-brave.sh mseries/install-video-decode.sh mseries/test-installer-flow.sh
+          shellcheck -S warning bin/elementary-mac-setup transform/elementary-grow.sh mseries/install-unlock-screen.sh mseries/install-boot-isolation.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/enhance.sh mseries/enhance-firstboot.sh mseries/install-brave.sh mseries/install-video-decode.sh mseries/test-installer-flow.sh mseries/vms/mseries-vm mseries/vms/test-mseries-vm.sh mseries/install-quieter-sound-theme.sh mseries/test-quieter-sound-theme.sh mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh
+          bash -n mseries/vms/mseries-vm
+          bash mseries/vms/test-mseries-vm.sh
+          bash mseries/test-quieter-sound-theme.sh
           bash mseries/test-elementary-mac-setup.sh
           bash mseries/test-installer-flow.sh
           bash -n assemble-iso.sh
           bash -n mseries/local-build-worker.sh
           bash -n mseries/fairydust/debian/build.sh
           bash -n mseries/fairydust/debian/fetch-asahi-boot-packages.sh
+          bash -n mseries/aurora-sep/install-aurora-sep.sh
+          bash -n mseries/aurora-sep/install-touchid-gui.sh
           python3 -m py_compile mseries/fairydust/debian/assemble-m1n1-bootbin.py
           python3 mseries/fairydust/debian/test-assemble-m1n1-bootbin.py
           python3 -m py_compile mseries/fairydust/debian/verify-m1n1-esp.py
@@ -63,10 +71,27 @@ jobs:
           bash mseries/test-greeter-obex-fix.sh
           bash -n mseries/install-signal.sh
           bash -n mseries/install-codexbar.sh
+          bash -n mseries/deploy-codexbar.sh
+          bash -n mseries/check-codexbar-port.sh
+          python3 mseries/test-codexbar-sessions.py
+          python3 mseries/test-codexbar-accounts.py
+          python3 mseries/test-codexbar-claude.py
+          python3 mseries/test-codexbar-wrapper.py
+          python3 mseries/test-codexbar-opencode-local.py
           python3 -m py_compile mseries/apply-desktop-settings.py
           python3 -m py_compile mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness
           python3 mseries/test-wifi-resume.py
+          bash -n mseries/power/mseries-power mseries/power/vrr-check.sh mseries/power/macos-baseline/make_test_videos.sh
+          python3 -m py_compile mseries/power/macos-baseline/*.py
           python3 mseries/test-power-cap.py
+          python3 -m unittest discover -s mseries/power/macos-baseline -p 'test_*.py'
+          python3 mseries/test-power-install.py
+          bash -n mseries/fairydust/usb4/test-dp-tunnel.sh
+          python3 -m py_compile mseries/fairydust/usb4/*.py mseries/fairydust/usb4/tools/*.py
+          for f in mseries/fairydust/usb4/test-*.py; do python3 "$f"; done
+          python3 mseries/fairydust/usb4/tools/test-staging-tools.py
+          python3 mseries/aurora-sep/test_touchid_core.py
+          python3 -m unittest discover -s mseries/aurora -p 'test_*.py'
           python3 mseries/local-ai/test_people_watch.py
           python3 mseries/test-image-wiring.py
           python3 mseries/test-kernel-config.py
@@ -78,8 +103,34 @@ jobs:
           python3 -m unittest discover -s mseries/audio -p 'test_*.py'
           python3 -m unittest discover -s mseries/local-ai -p 'test_*.py'
 
+      - name: Validate experimental dock patches offline
+        run: |
+          set -euo pipefail
+          curl -fL --retry 2 https://codeload.github.com/AsahiLinux/linux/tar.gz/ce9f2eba72c061a50b2d790450e90af3439d8c24 -o "$RUNNER_TEMP/fairydust.tar.gz"
+          python3 mseries/fairydust/usb4/tools/validate-dock-patches.py --archive "$RUNNER_TEMP/fairydust.tar.gz" --output "$RUNNER_TEMP/dock-patch-validation"
+
       - name: mkosi config parse check (all images)
         run: |
           set -euo pipefail
           just mkosi summary | tee /tmp/mseries-mkosi-summary.txt
           python3 mseries/test-image-wiring.py --summary /tmp/mseries-mkosi-summary.txt
+
+  hardware-support:
+    name: Hardware diagnostics and recovery fixtures
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install offline test tools
+        run: sudo apt-get update && sudo apt-get install -y mtools fdisk shellcheck
+      - name: Validate hardware ports without target hardware
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s mseries/aurora-sep -p 'test_touchid*.py'
+          python3 -m unittest discover -s mseries/power -p 'test_diagnostics.py'
+          MSERIES_REQUIRE_ESP_TOOLS=1 python3 -m unittest discover -s mseries/hardware -p 'test_*.py'
+          bash mseries/hardware/test-bluetooth.sh
+          shellcheck -S warning mseries/install-hardware-support.sh mseries/hardware/bluetooth-resume-fix mseries/hardware/bluetooth-supported mseries/power/mseries-sleep-cost-hook
+          bash -n mseries/enhance.sh mseries/stage-factory-enhancements.sh mseries/aurora-sep/install-touchid-gui.sh
+          python3 mseries/test-image-wiring.py
+          python3 mseries/test-power-install.py

@@ -10,7 +10,7 @@ mkdir -p "$stage"
 if [[ -f $root/etc/dconf/profile/user ]]; then
     install -Dm644 "$root/etc/dconf/profile/user" "$stage/etc/dconf/profile/user"
 fi
-bash "$here/enhance.sh" --root "$stage" --only tuning,power,audio,session,theme,payload
+bash "$here/enhance.sh" --root "$stage" --only tuning,power,diagnostics,audio,session,theme,payload
 install -Dm755 "$here/panel/verify-package-versions" "$stage/usr/libexec/mseries/verify-panel-packages"
 install -Dm644 "$here/panel-factory-pins.json" "$stage/usr/share/mseries/panel-factory-pins.json"
 install -Dm755 "$here/video-decode/verify-package-ownership" "$stage/usr/libexec/mseries/verify-video-driver-packaging"
@@ -24,6 +24,7 @@ mkdir -p "$stage/usr/bin"
 ln -s ../libexec/mseries/power "$stage/usr/bin/mseries-power"
 sed -i 's|/usr/local/sbin/mseries-power|/usr/libexec/mseries/power|g' \
     "$stage/etc/systemd/system/mseries-power.service" \
+    "$stage/etc/systemd/system/mseries-power-follow.service" \
     "$stage/usr/share/polkit-1/actions/org.techmore.mseries.power.policy"
 # Empty staging roots cannot disable an inherited enabled unit.
 ln -s /dev/null "$stage/etc/systemd/system/ModemManager.service"
@@ -50,6 +51,7 @@ install -m644 "$work/local" "$stage/etc/dconf/db/local"
 
 # Recompile persistent /etc after new leaf defaults arrive on image updates.
 # Merely copying a compiled database would preserve an older existing database.
+mkdir -p "$stage/usr/lib/systemd/system"
 cat > "$stage/usr/lib/systemd/system/mseries-desktop-defaults.service" <<'EOF'
 [Unit]
 Description=Compile M-series desktop defaults before login

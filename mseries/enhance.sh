@@ -11,6 +11,7 @@
 #             background daemon not autostarted for new users
 #   power     battery charge limit (80%) + lower CPU ceiling on battery, with the
 #             polkit action the Quick Settings switch uses
+#   diagnostics sleep-energy records and power report (Bluetooth recovery remains opt-in)
 #   audio     WirePlumber rules (speaker/headphone outputs stay open, no pop; headset
 #             mic is not the default) and an audio watchdog that restarts PipeWire
 #             when it stops answering
@@ -35,7 +36,7 @@ here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 ROOT=/
 only=""
 skip=""
-ALL=(tuning power audio session theme payload firstboot)
+ALL=(tuning power diagnostics audio session theme payload firstboot)
 
 log() { printf '[enhance] %s\n' "$*"; }
 
@@ -73,9 +74,9 @@ copy() { install -D -m "$1" "$2" "$R$3"; }
 
 # Enable units by planting symlinks; never starts anything.
 enable() {
-  local flag=()
-  [[ $1 == --global ]] && { flag=(--global); shift; }
-  systemctl --root="${ROOT}" "${flag[@]}" enable "$@" >/dev/null 2>&1 ||
+  local flag=""
+  [[ $1 == --global ]] && { flag=--global; shift; }
+  systemctl --root="${ROOT}" ${flag:+"$flag"} enable "$@" >/dev/null 2>&1 ||
     log "could not enable $* (unit missing in this root?); continuing"
 }
 
@@ -128,10 +129,28 @@ WantedBy=graphical.target
 EOF
   put 0644 /etc/udev/rules.d/80-mseries-power.rules <<'EOF'
 # Plugging or unplugging the charger re-applies the policy.
-SUBSYSTEM=="power_supply", KERNEL=="macsmc-ac", ACTION=="change", TAG+="systemd", ENV{SYSTEMD_WANTS}+="mseries-power.service"
+SUBSYSTEM=="power_supply", KERNEL=="macsmc-ac", ACTION=="change", RUN+="/usr/bin/systemctl --no-block restart mseries-power.service"
 EOF
+  put 0644 /etc/systemd/system/mseries-power-follow.service <<'EOF'
+[Unit]
+Description=Re-apply the battery CPU ceiling when the power profile changes
+After=power-profiles-daemon.service
+
+[Service]
+ExecStart=/usr/local/sbin/mseries-power follow
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target
+EOF
+  enable mseries-power-follow.service
   enable mseries-power.service
   log "power: 80% charge limit and battery CPU policy (change with: sudo mseries-power limit 100)"
+}
+
+mod_diagnostics() {
+  bash "$here/install-hardware-support.sh" --root "$ROOT"
 }
 
 mod_audio() {
@@ -174,6 +193,15 @@ mod_session() {
 ambient-enabled=false
 idle-dim=false
 EOF
+  put 0644 /etc/dconf/db/local.d/00-mseries-peripherals <<'EOF'
+# Mac-like inverted scrolling with a mouse; the touchpad already defaults to it.
+# Users can still override this default from their desktop settings.
+[org/gnome/desktop/peripherals/mouse]
+natural-scroll=true
+EOF
+  # Window snapping remains enabled even if an old user database disables it.
+  copy 0644 "$here/window-snapping/10-mseries-snapping" /etc/dconf/db/local.d/10-mseries-snapping
+  copy 0644 "$here/window-snapping/locks" /etc/dconf/db/local.d/locks/mseries-snapping
   if [[ -x $R/usr/bin/dconf ]]; then
     if [[ $ROOT == / ]]; then
       "$R/usr/bin/dconf" update || log "could not compile the system dconf defaults"
@@ -289,7 +317,7 @@ mod_payload() {
            install-network-throughput.sh install-quick-settings-brightness.sh \
            install-sound-indicator-fix.sh install-keyboard-indicator-fix.sh \
            install-files-portal-fix.sh install-gala-osk-fix.sh install-netusage-policy.sh \
-           install-codexbar.sh install-brave-widevine.sh codexbar-opencode-local.py \
+           install-codexbar.sh install-brave-widevine.sh codexbar-opencode-local.py codexbar-accounts.py codexbar-claude.py deploy-codexbar.sh \
            codexbar-opencode-wrapper.py user-enhance.sh install-dark-mode.sh \
            dark-mode/mseries-dark-mode dark-mode/mseries-dark-mode.service dark-mode/mseries-dark-mode.timer \
            netspeed/netusage/install.sh netspeed/netusage/netusage.py \
@@ -302,6 +330,20 @@ mod_payload() {
   for f in "$here"/patches/*.patch; do
     copy 0644 "$f" "$prefix/mseries/patches/$(basename "$f")"
   done
+  # User setup works from immutable /usr and keeps models/state in the user's home.
+  for f in "$here"/local-ai/*.py "$here"/local-ai/*.sh "$here"/local-ai/*.json "$here"/local-ai/*.patch "$here"/local-ai/*.lock; do
+    copy 0644 "$f" "$prefix/mseries/local-ai/$(basename "$f")"
+  done
+  put 0644 /usr/share/applications/mseries-assistant-setup.desktop <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Set Up Local Assistants
+Comment=Install local desktop, personal and coding assistants with a quiet memory policy
+Exec=bash /usr/share/elementary-mac/mseries/local-ai/install-assistants.sh
+Icon=utilities-system-monitor
+Terminal=true
+Categories=Utility;
+EOF
   # sudo is a no-op for root; the scripts were written for a user account.
   put 0755 $prefix/shim/sudo <<'EOF'
 #!/bin/sh

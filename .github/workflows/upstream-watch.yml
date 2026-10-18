@@ -21,3 +21,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: python3 mseries/local-ai/github-watch.py
+      - name: Preserve all discovered public branch heads
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: public-developer-branch-heads
+          path: mseries-upstream-branch-heads.json
+          retention-days: 90

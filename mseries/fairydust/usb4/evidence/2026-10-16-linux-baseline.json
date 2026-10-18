@@ -1,0 +1,236 @@
+{
+  "captured_utc": "2026-10-16T12:15:58.563499+00:00",
+  "source": "read-only live Linux sysfs and running kernel configuration",
+  "model": "MacBookPro18,3 / M1 Pro / j314s",
+  "kernel": "7.1.13-elementary-fairydust-usb4-dptunnel",
+  "topology_owner_confirmed": "Mac USB4 cable -> WD22TB4 -> HDMI cable -> Amazon Basics monitor; power on and HDMI selected",
+  "module_parameters": {
+    "dprx_bypass": "N",
+    "dprx_timeout": "3600000",
+    "allow_dp_tunnel": "Y"
+  },
+  "kernel_config": [
+    "# CONFIG_MTD_PHRAM is not set",
+    "CONFIG_DEVMEM=y",
+    "# CONFIG_SECURITY_LOCKDOWN_LSM is not set",
+    "CONFIG_STRICT_DEVMEM=y",
+    "# CONFIG_IO_STRICT_DEVMEM is not set"
+  ],
+  "drm_status": {
+    "card2-DP-1": "disconnected",
+    "card2-HDMI-A-1": "disconnected",
+    "card2-eDP-1": "connected"
+  },
+  "linux_dt_nodes": [
+    {
+      "path": "soc/dcp@289c00000",
+      "reg": [
+        {
+          "address": "0x289c00000",
+          "size": "0x4000"
+        },
+        {
+          "address": "0x288000000",
+          "size": "0x3000000"
+        },
+        {
+          "address": "0x289320000",
+          "size": "0x4000"
+        },
+        {
+          "address": "0x289344000",
+          "size": "0x4000"
+        },
+        {
+          "address": "0x289800000",
+          "size": "0x800000"
+        }
+      ],
+      "compatible": [
+        "apple,t6000-dcpext",
+        "apple,dcpext"
+      ]
+    },
+    {
+      "path": "soc/dcp@28cc00000",
+      "reg": [
+        {
+          "address": "0x28cc00000",
+          "size": "0x4000"
+        },
+        {
+          "address": "0x28b000000",
+          "size": "0x3000000"
+        },
+        {
+          "address": "0x28c320000",
+          "size": "0x4000"
+        },
+        {
+          "address": "0x28c344000",
+          "size": "0x4000"
+        },
+        {
+          "address": "0x28c800000",
+          "size": "0x800000"
+        }
+      ],
+      "compatible": [
+        "apple,t6000-dcpext",
+        "apple,dcpext"
+      ]
+    },
+    {
+      "path": "soc/dcp@38bc00000",
+      "reg": [
+        {
+          "address": "0x38bc00000",
+          "size": "0x4000"
+        },
+        {
+          "address": "0x38a000000",
+          "size": "0x3000000"
+        },
+        {
+          "address": "0x38b320000",
+          "size": "0x4000"
+        },
+        {
+          "address": "0x38b344000",
+          "size": "0x4000"
+        },
+        {
+          "address": "0x38b800000",
+          "size": "0x800000"
+        }
+      ],
+      "compatible": [
+        "apple,t6000-dcp",
+        "apple,dcp"
+      ]
+    },
+    {
+      "path": "soc/phy@1303000000",
+      "reg": [
+        {
+          "address": "0x1303000000",
+          "size": "0x4c000"
+        },
+        {
+          "address": "0x1303050000",
+          "size": "0x8000"
+        },
+        {
+          "address": "0x1300000000",
+          "size": "0x4000"
+        },
+        {
+          "address": "0x1302a90000",
+          "size": "0x4000"
+        },
+        {
+          "address": "0x1302a84000",
+          "size": "0x4000"
+        }
+      ],
+      "compatible": [
+        "apple,t6000-atcphy",
+        "apple,t8103-atcphy"
+      ]
+    },
+    {
+      "path": "soc/phy@703000000",
+      "reg": [
+        {
+          "address": "0x703000000",
+          "size": "0x4c000"
+        },
+        {
+          "address": "0x703050000",
+          "size": "0x8000"
+        },
+        {
+          "address": "0x700000000",
+          "size": "0x4000"
+        },
+        {
+          "address": "0x702a90000",
+          "size": "0x4000"
+        },
+        {
+          "address": "0x702a84000",
+          "size": "0x4000"
+        }
+      ],
+      "compatible": [
+        "apple,t6000-atcphy",
+        "apple,t8103-atcphy"
+      ]
+    },
+    {
+      "path": "soc/phy@b03000000",
+      "reg": [
+        {
+          "address": "0xb03000000",
+          "size": "0x4c000"
+        },
+        {
+          "address": "0xb03050000",
+          "size": "0x8000"
+        },
+        {
+          "address": "0xb00000000",
+          "size": "0x4000"
+        },
+        {
+          "address": "0xb02a90000",
+          "size": "0x4000"
+        },
+        {
+          "address": "0xb02a84000",
+          "size": "0x4000"
+        }
+      ],
+      "compatible": [
+        "apple,t6000-atcphy",
+        "apple,t8103-atcphy"
+      ]
+    },
+    {
+      "path": "soc/phy@f03000000",
+      "reg": [
+        {
+          "address": "0xf03000000",
+          "size": "0x4c000"
+        },
+        {
+          "address": "0xf03050000",
+          "size": "0x8000"
+        },
+        {
+          "address": "0xf00000000",
+          "size": "0x4000"
+        },
+        {
+          "address": "0xf02a90000",
+          "size": "0x4000"
+        },
+        {
+          "address": "0xf02a84000",
+          "size": "0x4000"
+        }
+      ],
+      "compatible": [
+        "apple,t6000-atcphy",
+        "apple,t8103-atcphy"
+      ]
+    }
+  ],
+  "adt_export": {
+    "owner_terminal_result": "errno 1: Operation not permitted",
+    "output_size_bytes": 0,
+    "no_kernel_or_memory_policy_change": true
+  },
+  "available_recorder": "Only this target Mac; no separate trace host confirmed",
+  "qualification": "No dock video or unbypassed sink response demonstrated by this snapshot"
+}

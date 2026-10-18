@@ -1,0 +1,98 @@
+# Apple T6000 DP-IN: force the tunnel clock from init, and let the
+# activation handshake wait for HPD instead of failing on a low read.
+#
+# Measured failure on the booted DP-IN kernel (dmesg):
+#   apple-dpin b01e50000.phy: DP-IN activation failed: -67 (INACTIVE=0x0 ACK=0x1 HPD=0x0 ...)
+#   apple-dcp 28cc00000.dcp: DPINDBG tunnel_reply ret=0 powered=1 rate=0 lanes=4 link_error=0
+#   apple-dcp 28cc00000.dcp: DPINDBG connect_source: waited=2986 ret=-67 ... link_error=-67
+#
+# Two independent blockers, separable by the force_tunnel_rate parameter:
+#   1. the tunnel AUSPLL/PCLK is never started: every tunnel_reply reports rate=0,
+#      so atcphy_tunnel_set_rate() has only ever seen 0. Apple's T6000 initDPTunnel
+#      is a no-op (REA-DPIN-FINDINGS.md) and the clock is only reached through the
+#      link-rate path, which never fires here.
+#   2. the activation handshake returned -ENOLINK the first time HPD read 0,
+#      instead of waiting on HPD for Apple's 1000 ms deadline. With no clock the
+#      ACK cannot clear, so this is what the log actually captured.
+--- a/drivers/phy/apple/dpin.c
++++ b/drivers/phy/apple/dpin.c
+@@ -18,6 +18,11 @@
+ 
+ #include "dpin-handshake.h"
+ 
++static unsigned int force_tunnel_rate;
++module_param(force_tunnel_rate, uint, 0644);
++MODULE_PARM_DESC(force_tunnel_rate,
++		 "Configure the DP-IN tunnel clock to this PHY rate in Mb/s from init (0=off; 1620/2700/5400/8100)");
++
+ struct apple_dpin {
+ 	struct device *dev;
+ 	void __iomem *regs;
+@@ -144,6 +149,30 @@
+ 	ret = apple_atcphy_dp_tunnel_get(dpin->atcphy, dpin->index);
+ 	if (ret)
+ 		goto out;
++
++	/*
++	 * Experiment: bring the tunnel clock up from init instead of waiting
++	 * for SET_LINK_RATE. Apple's T6000 initDPTunnel is a no-op and the
++	 * AUSPLL/PCLK is only reached through the link-rate path
++	 * (REA-DPIN-FINDINGS.md), which in the observed boot never fires:
++	 * every tunnel_reply reports rate=0, so atcphy_tunnel_set_rate() has
++	 * been called with 0 and the DP-IN has no clock to activate with.
++	 * A later SET_LINK_RATE simply re-selects the same clock. 0 leaves
++	 * the shipped behaviour unchanged.
++	 */
++	if (force_tunnel_rate) {
++		ret = apple_atcphy_dp_tunnel_configure(dpin->atcphy, dpin->index,
++						      force_tunnel_rate);
++		if (ret)
++			dev_warn(dpin->dev,
++				 "forced tunnel rate %u Mb/s failed: %d\n",
++				 force_tunnel_rate, ret);
++		else
++			dev_info(dpin->dev,
++				 "forced tunnel rate %u Mb/s configured\n",
++				 force_tunnel_rate);
++	}
++
+ 	dpin->fault = false;
+ 	dpin->initialized = true;
+ 	dpin->irq_enable = dpin_read(dpin, APPLE_DPIN_IRQ_ENABLE);
+--- a/drivers/phy/apple/dpin-handshake.h
++++ b/drivers/phy/apple/dpin-handshake.h
+@@ -25,17 +25,31 @@
+ {
+ 	unsigned long long deadline = io->time_us(io->ctx) + 1000000;
+ 	unsigned int value, waits = 0;
++	bool saw_hpd;
+ 
+ 	if (inactive > 1)
+ 		return -EINVAL;
+ 	value = io->read(io->ctx, APPLE_DPIN_INACTIVE);
+ 	io->write(io->ctx, APPLE_DPIN_INACTIVE, (value & ~1U) | inactive);
++	saw_hpd = !!(io->read(io->ctx, APPLE_DPIN_HPD) & APPLE_DPIN_HPD_LEVEL);
+ 	for (;;) {
+ 		if ((io->read(io->ctx, APPLE_DPIN_INACTIVE_ACK) & 1U) == inactive)
+ 			return 0;
+-		if (!inactive && !(io->read(io->ctx, APPLE_DPIN_HPD) &
+-				   APPLE_DPIN_HPD_LEVEL))
+-			return -ENOLINK;
++		if (!inactive) {
++			/*
++			 * Activation only completes once the source side (the
++			 * USB4 DPTX in the dock) is up: that needs the tunnel
++			 * clock configured and the sink driving HPD. Apple waits
++			 * on the HPD interrupt rather than polling the ACK first,
++			 * matching the 1000 ms deadline in REA-DPIN-FINDINGS.md.
++			 * Reporting ENOLINK while HPD has simply not risen yet
++			 * describes the sink's absence, not the ACK state.
++			 */
++			if (io->read(io->ctx, APPLE_DPIN_HPD) & APPLE_DPIN_HPD_LEVEL)
++				saw_hpd = true;
++			else if (saw_hpd)
++				return -ENOLINK;
++		}
+ 		if (io->time_us(io->ctx) >= deadline)
+ 			return -ETIMEDOUT;
+ 		if (waits++ < 5)

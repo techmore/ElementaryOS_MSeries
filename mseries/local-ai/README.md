@@ -1,270 +1,86 @@
-# Local AI on elementary Apple Silicon
+# Local assistants on the M1 Pro
 
-Installed and verified on M1 Pro / j314s, 2026-10-12.
+The October 16 setup uses private Linux MLX v0.7.33, Newelle for desktop and personal assistance, and a separate 16K coding profile for Crush. Qwen3.5 4B is the measured default for the 32 GB M1 Pro; Qwen9 is an optional larger preset. [Measured results, methods and limits](receipts/2026-10-16.md) explain the provisional model choices. [Exact revisions and licenses](receipts/2026-10-16/source-pins.json) accompany the synthetic raw results.
 
-- **Coreglass:** application launcher and `~/.local/bin/coreglass`.
-  Select `local`, then press `l` for live counters. `r` runs a benchmark only
-  when the laptop is quiet; it correctly refuses our current busy desktop.
-  `coreglass-local.patch` adds local subprocess execution for preflight and
-  scripted commands, matching the upstream sampler's existing local support.
-- **MLX Chat (Apple GPU):** application launcher or `~/.local/bin/mlx-omarchy-chat`.
-  Use the saved **Compact** pair (Qwen3 4B Instruct 4-bit plus Laya), initially
-  at 4096 context. Quality's 27B pair exceeded available memory during setup;
-  Compact was selected to resolve that admission failure. Model download
-  requirements are shown in the app. Voice and ANE are not installed.
-- **Local API:** run
-  `~/.local/bin/mlx-omarchy-serve serve qwen3-4b-instruct-2507-4bit --context 4096 --host 127.0.0.1 --port 8766 --yes`.
-  This keeps access on the laptop. `--yes` explicitly approves the model
-  download. The API test server was stopped after verification to release RAM
-  for desktop chat. Ollama is a separate runtime and was not installed.
+## Install and launch
 
-## Reproduce
+```sh
+bash mseries/local-ai/install-assistants.sh --runtime  # install/update the private MLX runtime first
+bash mseries/local-ai/install-assistants.sh            # explicit model/client downloads and user setup
+mseries-assistant desktop
+mseries-assistant personal
+mseries-assistant coding
+# Larger presets only when enough RAM is available:
+mseries-assistant --quality desktop
+mseries-assistant --quality coding
+```
 
-Run `bash mseries/local-ai/install.sh` from this repo, with Python 3.14 on an
-ARM64 Ubuntu-based Apple Silicon system. It installs Ubuntu build dependencies,
-builds only the Honeykrisp Vulkan driver, and installs a checksum-verified
-MLX v0.7.32 wheel into a private environment. No Arch packages are installed.
-Sources default to `~/Documents`; use `MSERIES_AI_SOURCES` for another directory.
-Build parallelism defaults to four; override with `MSERIES_AI_JOBS`.
+The Applications menu has Desktop Assistant, Personal Assistant, Coding Assistant and an experimental Hermes launcher. Desktop and Personal open Newelle, with a local user-summary memory that can be inspected and reset in Memory preferences. No embedding model is needed for this memory. Tasks, calendar components, workspace notes, system measurements and fault signatures are available through the local MCP adapter. Tool execution stays within the configured adapter surface. Broad Newelle shell, arbitrary-file, subagent, screenshot and network tools are hidden in the preconfigured profile. User-defined modes or later settings can expand that surface.
 
-The installer pins source commits and rejects unexpected tracked changes.
-It accepts only our recorded Coreglass patch. Do not reinstall while a chat or
-model server is running: upstream's installer recreates its Python environment.
+The initial setup downloads pinned Qwen3.5 4B and 9B weights (roughly 9 GB combined), Newelle's ARM64 Flatpak/runtime, and the pinned clients. Model weights and personal state stay in the user's home. Factory images stage the offline runtime and compute ICD under `/usr/lib/omarchy-mlx`, llama.cpp under `/usr/lib/mseries-ai/llama`, and user setup under `/usr/share/elementary-mac`. First-user setup uses those runtimes without apt writes to immutable `/usr`. Factory runtime staging and pruning pass; a full image build and hardware boot with this AI layer remain separate qualification steps.
 
-The private ICD lives in `~/.local/share/mlx-omarchy/vulkan/`. Only MLX launchers
-set `OMARCHY_MLX_SYSTEM_PREFIX`. System Mesa, Gala and other applications retain
-the distribution's graphics driver. `mlx-omarchy-info` must report `packaged`
-ICD selection and matching expected/actual driver SHA `7faf04c065`.
+`install.sh` preserves a previous runtime and restores it on failed updates, refuses active MLX workers, pins both MLX and the private compute Mesa, and defaults to two build jobs. System Mesa, the bootloader, kernel and audio stack are preserved. Our private patch bounds prefill to 256 tokens and disables thinking by default; an API request may explicitly enable thinking. The compiled rsqrt/RMSNorm check covers the numerical fix in v0.7.33.
 
-## Verification and limits
+## Memory and cooling
 
-See `receipts/2026-10-12.md`. Small float matrix and integer-shift/XOR checks
-passed against NumPy. Qwen3 4B returned the requested text over the local API.
-These checks establish basic operation, not comprehensive numerical correctness
-or performance parity. No inference speed comparison, ANE qualification,
-suspend test or reboot was performed.
+`~/.config/mseries-ai/profiles.json` owns the policy. One supervised inference worker holds `~/.local/state/mseries-ai/worker.lock`. Launchers switch between managed profiles and check the model identity at readiness. Admission budgets are 6.5 GiB for Qwen3.5 4B everyday/coding, 9 GiB for 9B/8K, 10 GiB for 9B/16K coding, and 13 GiB for experimental 64K Hermes, all in addition to a six-GiB desktop reserve. A real busy-desktop Qwen9 MCP run crossed that reserve despite the earlier upstream estimate, so its budgets were raised and it is no longer the everyday default. The 4B coding fixture completed with at least 8.51 GiB available. These are admission estimates; live telemetry stops inference if real use exceeds the available headroom. Full setup explicitly adopts these primary presets while retaining policy and unrelated profiles; standalone configuration preserves existing choices unless `--adopt-compact-defaults` is specified.
 
-Coreglass baseline recordings stay in `~/.local/share/coreglass/captures`,
-outside this public repo. They may contain local machine metadata. Use its
-anonymization options before sharing reports.
+Fresh profiles sample every second, pause owned submissions at 2700 fan RPM and resume at 2600, with 70/65 C temperature hysteresis. Three-second work bursts after thirty-second cooling intervals permit progress when the idle baseline shifts. Three consecutive samples below the six-GiB reserve, above 3500 RPM, or above 80 C stop the owned model. Missing fan/temperature telemetry refuses admission. Existing policy files are preserved on upgrades; absent soft thresholds use the launch baseline plus 300/100 RPM and a three-second sample interval. Fan RPM is a noise proxy, not a dBA measurement. A cooling pause increases response time; it does not change governors or fan control. Unrelated workloads can still make the whole computer loud and stop a model.
 
-For clean benchmark runs, record the experiment and check `coreglass hosts local`
-first. The configured GPU lock is `/tmp/mseries-ai-gpu.lock`. Avoid forcing runs
-while the user or another agent is using the GPU.
+```sh
+systemctl --user status mseries-ai-everyday
+journalctl --user -u mseries-ai-coder -n 40
+systemctl --user stop mseries-ai-everyday mseries-ai-quality mseries-ai-coder9 mseries-ai-compact mseries-ai-compact35 mseries-ai-personal mseries-ai-coder mseries-ai-coder7 mseries-ai-liquid mseries-ai-bonsai
+```
+
+Newelle uses the pinned Qwen3.5 4B on port 8766 with an 8K server cap. Crush uses the same weights on port 8768 with 16K: the initial full prompt exceeded 11K; disabling unused tools reduced the tested prompt to 7,720 tokens. Only one supervised model is resident at a time. `--quality` selects Qwen9 and a separate coding workspace; a refused switch attempts to restore the previous managed model. Older Qwen3 4B, 7B GGUF, Liquid and Bonsai profiles are optional comparisons. The uninstalled 30B plan budgets 21 GiB plus reserve and does not fit this retained app mix. No ANE or voice stack is qualified.
+
+Hermes is installed at a pinned revision with pinned dependencies and an isolated home. Its current 64K context minimum makes it a heavier option for a busy 32 GB desktop. `mseries-assistant hermes` is experimental; Newelle's tested memory is the default personal assistant. No cloud fallback is configured. The earlier `install-agent.sh`/port-8080 and Ornith/port-8767 instructions are historical; avoid running those workers alongside this setup.
+
+## MCP app coverage
+
+`os-mcp.py` is a stdio MCP server with eleven typed tools. It has no generic shell tool. Workspace paths are relative to `~/Documents/Assistant Workspace`; reads reject traversal/symlink escapes and note creation refuses overwrites. OS measurements, app inventory and fault collection are read-only. Calendar recurrences are labeled, not expanded. Tasks and Calendar use Evolution Data Server. Task creation is restricted to a dedicated local Assistant Tasks list; retries reuse a stable request ID and cannot overwrite an existing task. `list_tasks` can limit reads to that list with `scope=assistant`. See [app integration coverage](APP-INTEGRATION.md) for qualification and limits. Energy uses the existing Energy Monitor cache and reports stale/missing data.
+
+The installed-app inventory identifies adapter coverage. It does not imply that every app can be controlled. Mail, browser interaction, messaging, arbitrary windows, and cross-app writes beyond new workspace notes need dedicated adapters and tests. The capability matrix in the results records this boundary. This is the first MCP OS layer, not a claim of complete app automation.
+
+## Fault collection and local diagnosis
+
+`mseries-crash-watch` is enabled at login and retains ten bounded application/kernel event summaries. It groups changing addresses/PIDs, deduplicates kernel signatures for ten minutes, and inspects previous-boot warnings and pstore filenames. A missing previous journal does not prove a clean shutdown. It recognizes GPU faults, OOM, lockups, oops/panics, storage errors, suspend failures and selected USB4 errors without changing the kernel.
+
+```sh
+mseries-troubleshoot --start --release-model --file /path/to/log 'Explain this failure'
+mseries-troubleshoot --start --previous-boot 'Why did the last boot fail?'
+mseries-troubleshoot --performance --collect-only
+mseries-brief --collect-only
+mseries-ask 'Which tasks need attention?'
+```
+
+Optional model diagnosis borrows an existing Qwen9 quality/personal worker and releases only a worker it started. A different active profile causes a refusal rather than an eviction. Reports and exact excerpts stay mode 0600 in `~/.local/state/mseries-troubleshooter`. The small 4B model failed repair-advice checks and is excluded from this path. The optional 9B diagnosis needs at least 15 GiB available before loading and remains unqualified on the current retained app mix. The deterministic watcher is independently active and does not execute suggested repairs. Automatic diagnosis is controlled by the existing robot toggle and is off unless enabled; when enabled it is limited to one active analysis and three starts per fifteen minutes. The native robot menu is installed separately with `mseries/install-troubleshooter-wingpanel.sh`. The existing deterministic Restart Panel action and speaker protection are unchanged.
+
+## Benchmarks and updates
+
+```sh
+python3 -m unittest discover -s mseries/local-ai -p 'test_*.py'
+python3 mseries/local-ai/benchmark.py --label Qwen35-4B --output result.json
+python3 mseries/local-ai/tool-benchmark.py --label Qwen35-4B --output tools.json
+# Stop managed models before a runtime-native microbenchmark:
+python3 mseries/local-ai/microbenchmark.py everyday --prompt 512 --output micro.json
+python3 mseries/local-ai/branch-watch.py
+# Verify/register the default 4B target (also done by full setup):
+python3 mseries/local-ai/prepare-compact35.py
+# Local app data services; creates/removes owned synthetic sources only:
+python3 mseries/local-ai/eds-smoke.py --output eds.json
+python3 mseries/local-ai/app-benchmark.py --label baseline --output apps.json
+```
+
+Task tests record answers, first-text latency, estimated decode rate, caching and machine telemetry. MCP workflow v3 tests use the real stdio adapter in synthetic workspaces, an explicit exact-text note instruction and a recorded fifteen-second cooling delay. The earlier ambiguous note instruction is preserved as exploratory data. Interrupted streams are excluded from quality scoring. Microbenchmarks have a shared lock, three trials with cooling delays and the same cooling/stop policy; their native runtime workloads differ and should not be treated as identical cross-runtime tests. The real Crush fixture is published under `fixtures/coding/`; copy it to an isolated scratch directory, use a model-matching local `.crushrc`, allow only view/ls/grep/edit/write, deny bash/fetch/web_search, and run `check_unique.py` independently after the edit. Keep approval defaults for real projects. Run only in a quiet window; preserve interrupted receipts.
+
+The existing six-hour GitHub watcher now discovers all public branch heads in the selected Mac/MLX/Mesa/ANE/kernel repositories, plus all open PR heads and detailed comparisons for named branches and the ten most recently updated PRs. Complete head lists are saved as workflow artifacts; compact digests fit the issue dashboard. A changed digest signals even an unselected personal experiment. Fetch/pagination failures remain visible. Discovery never updates pins, merges code, or qualifies hardware.
 
 ## Removal
 
-Upstream MLX removal: `bash ~/Documents/omarchy-mlx/install.sh --uninstall`.
-It preserves chat history and model downloads; inspect its `--purge` behavior
-before deleting data. Our additional private `vulkan` directory can be removed
-separately after stopping MLX. Remove the Coreglass desktop entry, terminal link
-and source environment if no longer needed. Ubuntu build dependencies are not
-automatically removed because other projects may use them.
+Disable/stop the `mseries-ai-*` and `mseries-crash-watch` user units, remove the generated launchers and desktop files, and reload user systemd. Model downloads, Newelle memory, Hermes state and troubleshooting reports are retained unless deliberately removed. Newelle settings before configuration are backed up at `~/.config/mseries-ai/newelle-before.json`. The prior private MLX runtime, when present, is kept beside the prefix with a `before-v0.7.33` suffix. The Coreglass and CodexBar integrations remain independent; their earlier receipts are retained in this directory and Git history.
 
-## CodexBar reference
+### Update the task adapter without resetting preferences
 
-Reviewed `joshuaswarren/codexbar-omarchy` at
-`42f24d038c0102a49315383f11e6e408e81afbf2`. Its Quickshell frontend cannot be
-loaded into Wingpanel. Our native frontend already delegates provider data,
-authentication and spending to upstream CodexBar. This pass adds its convenient
-middle-click refresh interaction to the native panel item. Provider switchers,
-inline spending charts and adaptive polling remain future work; the separate
-Spending window and upstream refresh settings are available today.
-
-For the full upstream project screen, see [Joshua repository review](../JOSHUA-REPOSITORY-REVIEW.md).
-
-## General local agent (October 13)
-
-`bash mseries/local-ai/install-agent.sh` adds checksum-pinned Crush v0.98.1 for
-Linux ARM64 and **Local Agent** in Applications. It uses the existing MLX
-runtime with Qwen3.5-9B 4-bit, pinned to
-`938d8919941c6e7efd3c7150eff7fe9d12afa631`. Prepare that model first; the
-installer does not download model weights or start a model service.
-
-Run `mseries-agent` or open Local Agent. Its isolated workspace and Crush
-configuration live in `~/Documents/Local Agent`. It starts the on-demand
-`mseries-agent-model` user service on `127.0.0.1:8080`; stop it with
-`systemctl --user stop mseries-agent-model` to release model memory. It is not
-enabled at login. Cloud model providers, telemetry and provider catalog
-refresh are disabled in this workspace. Tool approval defaults are retained.
-This is a terminal frontend in elementary's terminal, not a GTK chat app.
-
-The private server uses the catalog ID so its 32K context has known KV memory
-facts. One retained prompt-cache entry is included in admission (8.93 GiB
-requirement on the final idle preflight, not a measured peak). The first attempt using a local snapshot path was rejected because it
-lost those facts; no memory admission check was bypassed. Prompt and output
-remain bounded by the server. Crush normal output is capped at 2048 tokens,
-and coding-specific LSP, Sourcegraph and Crush introspection tools are hidden
-to reduce unnecessary prompt overhead. The initial complete tool prompt
-caused a Vulkan allocation failure during prefill; `configure-prefill.py`
-reduces the private server's prefill chunk from the upstream default to 256
-tokens. It preserves context admission, serialization and cache settings.
-The patch refuses an unexpected runtime source and is idempotent.
-
-The short API answer and structured synthetic tool call passed on M1 Pro.
-NAS scope needs the owner's mounted path or share address before integration.
-The owner explicitly requested stopping the conflicting `whop2p` service;
-it is stopped and its login autostart disabled. Its executable and data remain.
-To restore it, first stop the model service, then run
-`systemctl --user enable --now whop2p` (both otherwise compete for port 8080).
-
-Crush configuration reference:
-https://github.com/charmbracelet/crush/blob/v0.98.1/docs/config/README.md
-
-## Ornith 1.5 9B local crash and log troubleshooting
-
-Install `bash mseries/local-ai/install-troubleshooter.sh`. This adds **Local
-Troubleshooter** to Applications and the `mseries-troubleshoot` command.
-Uses Joshua's Linux MLX runtime and private Honeykrisp driver, with
-`ornith-ai/Ornith-1.5-9B-MLX-4bit` pinned to
-`a48173b246ac705be75c05bedf1a0666db522d53` (about 5.0 GB download). It is a
-post-trained Qwen3.5 9B (same `qwen3_5` architecture and 4-bit grouping as
-before, so the same tuned kernels apply) and the model card states no license:
-check it before redistributing.
-
-History: Gemma 4 E4B, then Qwen3.5-9B, then Ornith (2026-10-13). On this Mac
-Ornith matched Qwen3.5-9B on speed (about 17.7 tok/s decode) and tool calls,
-was smaller (4.71 GiB against 5.57 GiB) and was better calibrated on a real
-journal: Qwen over-claimed a Wi-Fi firmware fault, Ornith ranked it as noise.
-Both refused a planted `rm -rf` line in a test log. One run each on two inputs,
-so a first look, not a benchmark.
-
-```sh
-mseries-troubleshoot --start "Why did my desktop crash?"
-mseries-troubleshoot --start --previous-boot "Why did the last boot fail?"
-mseries-troubleshoot --start --file /path/to/crash.log "Explain this failure"
-mseries-troubleshoot --collect-only
-systemctl --user stop mseries-troubleshooter-model
-```
-
-If the memory check refuses to start the model while MLX Chat is resident, the
-troubleshooter pauses `mlx-omarchy-chat` for the analysis and restarts it after.
-The admission check itself is never lowered. The native GTK application offers current/previous boot analysis and a release
-memory button. The model runs on demand, not at login. An existing MLX chat
-session is preserved; current free memory is admission-checked before the model
-loads. If admission fails, close other large workloads and retry. Do not bypass
-that check. No ANE driver, bootloader or system Mesa change is involved.
-
-The dedicated inference API binds only `127.0.0.1:8767`, with a 4096-token
-prompt/output cap, no prompt cache and serialized inference. Model serving
-uses offline Hugging Face/Transformers mode after installation. The client
-refuses non-loopback endpoints, redirects and environment HTTP proxies.
-Local programs can access the unauthenticated loopback API; it is intended
-for this single-user workstation, not a network service.
-
-Collection reads failed units, up to 70 kernel and 70 user-session warnings, eight user coredump summaries,
-or the tail of a user-selected log. Evidence is limited to 8000 characters
-before line numbering. The server rejects input/output combinations beyond
-its token cap; shorten unusually dense logs if necessary. Missing journal
-access or an unavailable previous boot is included as missing evidence.
-No root escalation or log permission changes are used. Basic redaction covers
-common token/password fields and the home path; it is not a comprehensive
-secret scrubber. Both inference and reports remain on-device.
-
-Reports are written with mode 0600 under
-`~/.local/state/mseries-troubleshooter/`. They include the exact supplied
-excerpt and model identity, so review before sharing. The model is instructed
-to cite evidence lines and separate facts from hypotheses. It does not run
-suggested commands or automatically repair the system. A plausible answer
-is not proof of a diagnosis; verify its cited evidence.
-
-Regression checks:
-
-```sh
-/usr/bin/python3 -m unittest discover -s mseries/local-ai -p 'test_*.py' -v
-```
-
-To remove: stop the service, remove its unit under `~/.config/systemd/user/`,
-`~/.local/bin/mseries-troubleshoot`, the UI under `~/.local/libexec/`, and
-`~/.local/share/applications/mseries-troubleshooter.desktop`, then run
-`systemctl --user daemon-reload`. Cached models and reports are retained.
-
-### Native robot menu and crash watcher
-
-```sh
-bash mseries/install-troubleshooter-wingpanel.sh
-```
-
-Builds a native Wingpanel indicator with a symbolic robot, bounded crash count,
-latest crash metadata, an **Analyze Logs** action, and an **Automatically diagnose
-new crashes** toggle. Reload Wingpanel after installation. Uses the installed
-GTK app; no Quickshell or Omarchy desktop session is needed.
-
-The user service `mseries-crash-watch` follows new systemd-coredump events and
-filters by `COREDUMP_UID` (the crashed process owner, not the collector's UID).
-It retains ten event summaries, deduplicates each program for sixty seconds,
-and does not replay historical crashes when restarted. The local snapshot
-contains only program/PID/signal/timestamp fields. It does not extract memory
-images, environment variables or command lines from coredumps.
-
-Automatic diagnosis is off by default. When enabled in the robot menu, a new
-crash starts the same local model command, with at most one watcher-launched
-analysis active. Reports appear in the app on its next launch. The idle watcher
-does not load a model; disable the toggle and use **Release Model Memory** to
-stop a previously loaded model. No generic repair commands are taken from model
-output.
-
-**Restart Panel** in the GTK app is a deterministic repair action: it sends
-SIGTERM only to a single Wingpanel owned by the current user, lets Gala respawn
-it, and checks the new process remains running for three seconds. It refuses
-ambiguous/missing panels. This restores a stuck panel; it does not establish
-that a recurring crash's root cause is fixed.
-
-The watcher is inspired by Omarchy Mac quattro's `omarchy-crash-watch` and
-`omarchy-agent-crash` at `ba546a61f881c1fe9d79d75ec050eab048b8cb63`.
-Those upstream scripts notify and open a selected coding agent; the watcher
-itself is not an autonomous repair loop. Our version uses a local model and a
-native elementary frontend.
-
-Remove the robot/watcher with
-`bash mseries/install-troubleshooter-wingpanel.sh --uninstall`, then reload
-Wingpanel. Reports and opt-in settings are retained.
-
-### Native performance checks and memory release
-
-Choose **Check Performance…** in the robot menu, or enable **Check native desktop
-performance** in the application. CLI equivalent:
-
-```sh
-mseries-troubleshoot --start --performance --release-model "Find native desktop bottlenecks"
-mseries-troubleshoot --performance --collect-only
-```
-
-The performance snapshot is collected before this request loads the model. It records
-available RAM/swap, CPU/memory/I/O pressure, load averages, cpufreq governors,
-thermal readings, the native power profile, disk space and top process names by
-CPU/memory. Process arguments and environments are excluded. Missing sensors or
-optional tools appear as missing evidence. CPU percentages are lifetime averages;
-a single snapshot and thermal readings alone do not prove a speedup or throttling.
-The model recommends reversible native changes with verification steps.
-
-**Release model memory after analysis** defaults on in the GTK app and automatic
-crash diagnoses. It stops only the dedicated troubleshooting model after the
-report is saved, or after inference fails, returning its memory to the desktop.
-Uncheck it for repeated warm requests. Other chat services are untouched. A
-same-user lock prevents the app and crash watcher from running competing analyses
-or unloading a model during an active analysis. The manual memory-release button
-uses the same lock and runs off the UI thread.
-
-## Daily task briefing
-
-`mseries-brief` reads the open tasks in the local **Homeboard** task list
-(read-only), asks the same on-device model for a short plan (do today, overdue,
-quick wins, needs clarifying) and unloads the model afterwards. Briefings are
-saved in `~/.local/state/mseries-brief/`. `mseries-brief --collect-only` prints
-exactly what the model would see. The tool only advises: it never edits tasks.
-It is installed as `~/.local/bin/mseries-brief` from `brief.py`.
-
-## Ask about tasks and energy
-
-`mseries-ask "question"` lets the on-device model use two **read-only** tools:
-`list_tasks` (open Homeboard tasks) and `get_energy` (power now, today, this
-month). It runs the tools, then answers from their results; it cannot add or
-change anything. Examples: `mseries-ask "Which tasks mention plumbing?"`,
-`mseries-ask "What costs the most today?"`.
-
-Energy data comes from the local file the Energy Monitor tray app publishes
-(`~/.local/state/energy-monitor/summary.json`), so it works on any network once
-that app is signed in to the collector. If the app is offline, signed out or
-the data is stale, the tool says so and the model must not invent readings.
-The model is started for the question and unloaded afterwards.
+For an existing installation, run `python3 mseries/local-ai/configure-assistants.py --refresh-tools`. This updates the MCP adapter, enables its task-creation tool and invalidates only its schema cache. It preserves model profiles, memory settings, other MCP servers and other tool settings. Fresh installs include the same capability.

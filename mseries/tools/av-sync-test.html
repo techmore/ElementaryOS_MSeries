@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A/V sync test - ElementaryOS M-Series</title>
+<style>
+html,body{height:100%;margin:0;background:#111;color:#eee;font:20px system-ui,sans-serif}
+#flash{position:fixed;inset:0;background:#000}
+#ui{position:fixed;left:0;right:0;bottom:0;padding:1rem 1.5rem;background:#000c;text-align:center}
+input[type=range]{width:min(40rem,90%)} b{font-size:2.2rem}
+</style></head><body>
+<div id="flash"></div>
+<div id="ui">
+  <p>Drag this window onto the <b>external monitor</b>, click Start, and play sound through the speakers you normally use.<br>
+  If you <i>hear the click before you see the flash</i>, raise the delay until they land together.</p>
+  <p>Audio delay: <b id="v">0</b> ms &nbsp; <input id="s" type="range" min="0" max="600" step="5" value="0">
+  &nbsp; <button id="go">Start</button></p>
+  <p id="info" style="font-size:.8em;opacity:.7"></p>
+</div>
+<script>
+let ctx, delay=0, running=false;
+const flash=document.getElementById('flash'), v=document.getElementById('v'), s=document.getElementById('s');
+s.oninput=()=>{delay=+s.value; v.textContent=delay; try{localStorage.setItem('avdelay',delay)}catch(e){}};
+try{const d=localStorage.getItem('avdelay'); if(d){s.value=d; s.oninput()}}catch(e){}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'){s.value=+s.value+5;s.oninput()}if(e.key==='ArrowLeft'){s.value=+s.value-5;s.oninput()}});
+function click(when){const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=1000;
+  g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(.8,when+.002);g.gain.linearRampToValueAtTime(0,when+.05);
+  o.connect(g).connect(ctx.destination);o.start(when);o.stop(when+.06);}
+document.getElementById('go').onclick=()=>{
+  if(running)return; running=true; ctx=new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});
+  document.getElementById('info').textContent='Browser-reported audio output latency: '+Math.round(((ctx.outputLatency||0)+(ctx.baseLatency||0))*1000)+' ms (already included in what you hear).';
+  const period=1000; let next=performance.now()+500;
+  (function tick(){
+    const now=performance.now();
+    if(now>=next-120 && !tick.sched){ // schedule the click 120 ms ahead so the flash and click are decoupled only by the slider
+      const t=ctx.currentTime+(next-now)/1000+delay/1000; click(t); tick.sched=next;
+    }
+    if(now>=next){flash.style.background='#fff'; setTimeout(()=>flash.style.background='#000',80); next+=period; tick.sched=0;}
+    requestAnimationFrame(tick);
+  })();
+};
+</script></body></html>

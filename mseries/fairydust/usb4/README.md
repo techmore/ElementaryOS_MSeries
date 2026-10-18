@@ -1,5 +1,22 @@
 # fairydust + USB4/Thunderbolt (Apple M1 Pro, j314s)
 
+> **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
+> Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
+> Aurora has j314s Thunderbolt-display prior art; check it before more RE. This dock HDMI path remains unqualified.
+> Gates, prior art and rules: [PRIMARY-GOAL.md](PRIMARY-GOAL.md).
+
+Code and validation: [DOCK-CODE-REVIEW.md](DOCK-CODE-REVIEW.md).
+
+Dock-video current entry point: [STATE-OF-PLAY](STATE-OF-PLAY.md).
+The [DP-IN implementation draft / DeepSeek handoff](DPIN-IMPLEMENTATION.md)
+contains additional experimental patches 0004–0006 and offline checks.
+They are not enabled by the stable package. The separate 0003 adapter fix
+was tested live; DPRX still times out and no dock picture is demonstrated.
+No installation, reboot or cable changes are authorized for the new draft.
+The retained [macOS cutover checklist](MACOS-CUTOVER-CHECKLIST.md) is future
+reference, not the current next step. Matching Apple inputs are already
+available for offline analysis.
+
 Makes USB4 docks/hubs enumerate on Apple Silicon by porting Sven Peter's
 USB4/Thunderbolt host support (Asahi branch `b4/apple-soc-tbt`, posted to LKML
 2026-08-30) onto the `fairydust` kernel this repo already builds.
@@ -193,7 +210,18 @@ unsupported upstream; log noise only). Turn debug off again with
 
 ## Dock video (HDMI/DP out of the dock): why it does not work, and where it stops
 
-Status: **not supported** on this kernel, with a USB4 dock on a fixed (captive) cable. Everything
+> **Current state (2026-10-15): everything below this box is history.** A hardware
+> run has since shown the *host* side works — the crossbar routes correctly, the
+> host tunnel forms, and the AUX path activates. The failure is isolated to the
+> router's DPRX/DPCD read of the **downstream sink**, which the DCP firmware owns
+> and which is probably gated by an un-written "DP IN PHY" block. Read
+> [`DP-TUNNEL-RE.md`](DP-TUNNEL-RE.md) (state §5, analysis §6, hazard §9) and run
+> the next dock session from [`EXP2-RUNBOOK.md`](EXP2-RUNBOOK.md): its top box is
+> the single question to answer, and its §8 lists what *not* to waste time on. The
+> `QUIRK_NO_DP_TUNNEL` retry-noise workaround described below is **intentionally
+> bypassed** for the experiment (the tunnel is enabled on purpose).
+
+Status (historical, 2026-10-13): **not supported** on this kernel, with a USB4 dock on a fixed (captive) cable. Everything
 else on the dock works (USB2/USB3 hubs, headset, mouse, 1 Gb/s Ethernet).
 
 What the kernel shows (Dell WD22TB4, monitor on the dock's DP out via a DP-to-HDMI cable):

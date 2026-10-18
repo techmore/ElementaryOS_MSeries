@@ -1,0 +1,186 @@
+{
+  "date": "2026-10-16",
+  "status": "offline draft; no hardware qualification",
+  "base_fairydust": "ce9f2eba72c061a50b2d790450e90af3439d8c24",
+  "required_previous_patches": [
+    "0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch",
+    "0002-experimental-dp-tunnel.patch",
+    "0003-dp-out-prefer-adapter-with-hpd.patch"
+  ],
+  "new_patches": {
+    "0004-experimental-dpin-bindings.patch": "d325d31838055b3a94e2ef6d3e6145bb5f99eea56fa71805bff04696e968c6d8",
+    "0005-experimental-dpin-handshake-tunnel-clocks.patch": "9f1d0fc79fd8bc09528493aac49ea9cb66dca9708a54accdcac94ed4754157a3",
+    "0006-experimental-j314s-dpin-wiring.patch": "9a365a09a0e8823a53905aaccf4dbc2bfc8258adfa4b8bd57e4dc928dbacc2bd"
+  },
+  "reconstructed_source_files": 20,
+  "checks": [
+    {
+      "check": "production helper compile",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "check": "production handshake and IRQ tests",
+      "exit_code": 0,
+      "output": "PASS: 11 offline production-helper test groups\n"
+    },
+    {
+      "check": "production tunnel clock tests",
+      "exit_code": 0,
+      "output": "PASS: 11 offline production-clock test groups\n"
+    },
+    {
+      "check": "production EPIC connection tests",
+      "exit_code": 0,
+      "output": "PASS: 7 offline production-EPIC test groups\n"
+    },
+    {
+      "check": "compiled target and control DTBs",
+      "exit_code": 0,
+      "output": "PASS: compiled DP-IN wiring t6000-j314s.dtb enabled=True\nPASS: compiled DP-IN wiring t6001-j314c.dtb enabled=False\n"
+    },
+    {
+      "check": "binding document schema",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "check": "schema processing",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "check": "DP-IN-filtered compiled DTB schema",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "check": "source whitespace",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "check": "clean apply 0003-dp-out-prefer-adapter-with-hpd.patch",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "check": "apply 0003-dp-out-prefer-adapter-with-hpd.patch",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "check": "clean apply 0004-experimental-dpin-bindings.patch",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "check": "apply 0004-experimental-dpin-bindings.patch",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "check": "clean apply 0005-experimental-dpin-handshake-tunnel-clocks.patch",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "check": "apply 0005-experimental-dpin-handshake-tunnel-clocks.patch",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "check": "clean apply 0006-experimental-j314s-dpin-wiring.patch",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "check": "apply 0006-experimental-j314s-dpin-wiring.patch",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "check": "drivers/gpu/drm/apple/appledrm.o new API references match drivers/phy/apple/phy-apple-dpin.o",
+      "exit_code": 0,
+      "symbols": [
+        "apple_dpin_get_hpd",
+        "apple_dpin_register_hpd",
+        "apple_dpin_unregister_hpd"
+      ]
+    },
+    {
+      "check": "drivers/phy/apple/phy-apple-dpin.o new API references match drivers/phy/apple/phy-apple-atc.o",
+      "exit_code": 0,
+      "symbols": [
+        "apple_atcphy_dp_tunnel_configure",
+        "apple_atcphy_dp_tunnel_get",
+        "apple_atcphy_dp_tunnel_put"
+      ]
+    },
+    {
+      "check": "compiled j314s crossbar phandle/status",
+      "exit_code": 0,
+      "output": "/soc/mux@b0304c000 status=okay; tunnel mux control index=1; no runtime DT claim"
+    }
+  ],
+  "checkpatch": [
+    {
+      "patch": "0004-experimental-dpin-bindings.patch",
+      "exit_code": 1,
+      "errors": 0,
+      "warnings": [
+        "WARNING: added, moved or deleted file(s), does MAINTAINERS need updating?"
+      ]
+    },
+    {
+      "patch": "0005-experimental-dpin-handshake-tunnel-clocks.patch",
+      "exit_code": 1,
+      "errors": 0,
+      "warnings": [
+        "WARNING: added, moved or deleted file(s), does MAINTAINERS need updating?"
+      ]
+    },
+    {
+      "patch": "0006-experimental-j314s-dpin-wiring.patch",
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": []
+    }
+  ],
+  "build": {
+    "exit_code": 0,
+    "architecture": "arm64",
+    "compiler": "aarch64-linux-gnu-gcc",
+    "config_fragment": "dpin-offline.config",
+    "scope": [
+      "ATC and DP-IN relocatable module objects",
+      "complete appledrm.o",
+      "t6000-j314s.dtb",
+      "t6001-j314c.dtb"
+    ],
+    "final_make_log_sha256": "939b94aa2b15014ad92cfe29d693647eb53a649ca4cae5e2f876f9d164865c9a",
+    "object_sha256": {
+      "drivers/phy/apple/phy-apple-atc.o": "a72b332b50164d3c14b00539335ddea863bf1a7602b5c71272353bfc42dc097d",
+      "drivers/phy/apple/phy-apple-dpin.o": "7266178a809fc4a5ce50e45093fd1297f1fbc3d8d09931d5048c59cf8f5108bd",
+      "drivers/gpu/drm/apple/appledrm.o": "6148306b3908bf04d4802976b0b0c0c98f945b7bbb9c672112a62e9d049dd379",
+      "arch/arm64/boot/dts/apple/t6000-j314s.dtb": "35627ddbef0fbc40704c99686369b4773c557b2e2536dd9aaed4433ea990c3fc",
+      "arch/arm64/boot/dts/apple/t6001-j314c.dtb": "4b457de35e1f8ae43dbab9b71b22944f14ef974087faf850151356bfaddfd555"
+    },
+    "warnings": "Existing DCP kernel-doc and unrelated DTS warnings; new ATC members documented."
+  },
+  "schema_tool": "dtschema 2026.9; actual CLI entry points executed, not python -m imports",
+  "not_tested": [
+    "final .ko MODPOST/full kernel Image",
+    "production Rust/BTF configuration",
+    "hardware DP-IN ACK or AUSPLL lock",
+    "router/DCP activation ordering",
+    "runtime PM, IRQ-HPD/MST, locking/concurrency, failed removal",
+    "unbypassed DPRX, EDID, monitor wake, picture, suspend"
+  ],
+  "hardware_actions": {
+    "installed_or_loaded": false,
+    "rebooted": false,
+    "unplugged": false,
+    "live_register_io": false
+  }
+}

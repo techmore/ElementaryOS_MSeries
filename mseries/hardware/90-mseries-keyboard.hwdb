@@ -1,0 +1,7 @@
+# MIT; adapted from omacom/omarchy-mac-pkgs 99fac5c5.
+# Optional: F4 screenshots, F5/F6 keyboard lighting on the built-in keyboard.
+evdev:name:Apple SPI [Kk]eyboard:*
+evdev:name:Apple MTP [Kk]eyboard:*
+ KEYBOARD_KEY_7003d=sysrq
+ KEYBOARD_KEY_7003e=kbdillumdown
+ KEYBOARD_KEY_7003f=kbdillumup

@@ -34,6 +34,13 @@ sets `brave.widevine_opted_in`. `--uninstall` reverses it. Nothing is patched.
 
 Check the log if it spins: `journalctl --since -10min | grep -iE 'cdm|widevine'`.
 
+## The contained YouTube window (`video-decode/brave-youtube`)
+
+It has its own profile (`~/.config/brave-youtube`), so the steps above do not reach it. Since 2026-10-18 the
+launcher sets up Widevine in that profile each time it starts and finds it missing: it copies the normal profile's
+CDM, or falls back to this installer with `BRAVE_PROFILE_DIR=~/.config/brave-youtube`. Close the YouTube window
+and reopen it for the change to apply.
+
 ## Limits that are not bugs
 
 - **L3 only.** Expect SD/720p on YouTube movies and similar. Nothing in Brave or this repo changes that.

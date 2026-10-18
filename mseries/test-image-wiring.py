@@ -71,9 +71,19 @@ class ImageWiringTests(unittest.TestCase):
             # The real build installs this compiled component before finalize.
             unit = image / 'usr/lib/systemd/system/touchegg.service'
             unit.write_text('[Service]\nExecStart=/usr/bin/touchegg --daemon\n[Install]\nWantedBy=multi-user.target\n')
+            # Runtime paths must survive package pruning and sysupdate's /usr boundary.
+            for path in ['usr/lib/omarchy-mlx/venv/bin/python',
+                         'usr/lib/omarchy-mlx/vulkan/honeykrisp_icd.aarch64.json',
+                         'usr/lib/mseries-ai/llama/bin/llama-server',
+                         'usr/bin/mlx-omarchy-serve',
+                         'usr/share/omarchy-mlx/serve-catalog.json',
+                         'usr/share/doc/mseries-local-ai/SOURCE']:
+                target = image / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text('synthetic local AI payload')
             expected = {p.relative_to(image) for p in image.rglob('*') if p.is_file()}
             payload = image / 'usr/bin/package-payload'
-            payload.parent.mkdir(parents=True)
+            payload.parent.mkdir(parents=True, exist_ok=True)
             payload.write_text('must be pruned')
             tools = Path(directory) / 'tools'
             tools.mkdir()
@@ -87,6 +97,17 @@ class ImageWiringTests(unittest.TestCase):
                 with self.subTest(path=str(path)):
                     self.assertTrue((image / path).is_file())
             self.assertFalse(payload.exists())
+            for name in ('mseries-power.service', 'mseries-power-follow.service'):
+                unit = image / 'etc/systemd/system' / name
+                self.assertIn('ExecStart=/usr/libexec/mseries/power ', unit.read_text())
+                self.assertNotIn('/usr/local/', unit.read_text())
+            self.assertTrue((image / 'usr/libexec/mseries/power').is_file())
+            for path in ('usr/libexec/mseries/sleep-cost', 'usr/bin/mseries-power-report',
+                         'usr/lib/systemd/system-sleep/mseries-sleep-cost',
+                         'usr/lib/systemd/user/graphical-session.target.wants/mseries-sleep-cost.service',
+                         'usr/libexec/mseries/bluetooth-resume-fix'):
+                self.assertTrue((image / path).is_file(), path)
+            self.assertFalse((image / 'etc/systemd/system/suspend.target.wants/mseries-bluetooth-resume-fix.service').is_symlink())
 
     def test_consumers_install_overlay_runtime_dependencies(self):
         overlay = packages('mkosi.images/apple-silicon/mkosi.conf')

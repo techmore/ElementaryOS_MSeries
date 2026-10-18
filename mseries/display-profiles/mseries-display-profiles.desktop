@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=M-series display profiles
+Comment=Re-apply the saved monitor layout when a display is plugged in
+Exec=@BIN@/mseries-display-profiles watch
+X-GNOME-Autostart-enabled=true
+NoDisplay=true
