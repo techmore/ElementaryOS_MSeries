@@ -601,3 +601,12 @@ Missing sessions are labelled **app sign-in needed**. Both native accounts are n
 setup recovery pass. A real native account-2 → account-1 round trip completed, and the owner confirmed
 the Gmail account’s chats remained visible without signing in again. See
 [CODEXBAR-PORT.md](CODEXBAR-PORT.md) for the repeatable workflow and limitations.
+
+
+### CodexBar account quota UX and sign-in — 2026-10-18
+
+Alternate accounts now expose 5-hour and weekly/monthly quota separately, each with a reset countdown,
+in dense dropdown rows and a second panel line. OpenCode duplicate OAuth records are collapsed into
+distinct account/workspace identities. Codex + provides browser sign-in without replacing the current
+login, using a native Granite window with progress and cancellation. Formatting, login isolation and
+OpenCode read-only/deduplication tests pass; port compatibility and headless light/dark probes pass. The owner verified that a second real Codex account appears after the new browser sign-in flow.

@@ -3125,3 +3125,36 @@ snapshots, detached launch and parent-based main-process selection (59 Python he
 The existing PR validation run passed all three jobs before this follow-up; this push reruns CI.
 The fixed helper was installed atomically for the live test; the normal deployment runs after push.
 Upstream pin remains 0.77.0. PR #101 carries the completion and fixes.
+
+
+## CodexBar: dense alternate quotas, 5-hour priority and native account onboarding — 2026-10-18
+
+Owner asked to see non-main-account remaining quota and reset ETA, explicitly retaining both the 5h
+window and total weekly/monthly windows for Claude and OpenCode. Implemented shared dense formatting
+(`5H 0% ↻3h10m · 7D 72% ↻5d13h`, plus 30D where provided), a compact alternate-account second line in
+the panel, and two-line dropdown account rows with email/Switch above all quota windows. Panel account
+numbers map to identities in their tooltip. Main readouts now prioritize 5h rather than letting a lower
+weekly number hide it. All countdowns tick with normal polls; manual Refresh also updates saved accounts.
+The APIs provide quota percentages rather than raw remaining-token quantities.
+
+Added read-only `codexbar-opencode-local.py accounts`: deduplicates OAuth sessions by account/workspace,
+ignores expired credentials, and fetches inactive-account 5h/7d/30d quota without changing active login.
+The two real OpenCode credentials here share one account/workspace; the live helper correctly reports
+one active account rather than inventing a second. Temporary fixtures exercise genuinely distinct
+alternate OpenCode accounts and a 0% short-window balance alongside nonzero longer-term totals.
+
+Owner also reported Codex + could not add an account and requested native elementary styling. It
+previously only saved whichever account was already active elsewhere. New `codexbar-accounts.py login`
+uses the bundled/PATH Codex CLI's official browser login in a private temporary CODEX_HOME, forces file
+credential storage, saves the new account, and leaves ~/.codex/auth.json unchanged. Cancelling stops
+the login child and removes its temporary home. New Granite `AccountDialog.vala` keeps sign-in,
+progress, result and retry in one elementary window; other provider add prompts/results also use
+Granite. Native switch logic and tested Claude sessions are preserved.
+
+Validation: 65 Python helper tests (32 Claude, 10 Codex accounts, 11 wrapper, 8 OpenCode local, 4 sessions),
+4 Meson suites with short-window/long-window reset-format coverage; port compatibility check passes;
+light/dark headless account dialog and dense quota fixtures. Live OpenCode identity deduplication checked.
+Normal deployment installs the UI/helpers and restarts Wingpanel/CodexBar; Claude is not restarted.
+The owner completed the new browser flow and confirmed: “Yes, the second account appears.” Adding a second real Codex account is now verified.
+Owner explicitly requested **all work merged to GitHub main**; publish this batch through PR #101 after
+checks, merge it, and deploy the resulting main version.

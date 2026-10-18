@@ -9,6 +9,18 @@ int main (string[] args) {
         assert (MSeries.Presentation.level_for (25.5) == MSeries.QuotaLevel.OK);
         assert (MSeries.Presentation.level_for (100) == MSeries.QuotaLevel.OK);
     });
+    GLib.Test.add_func ("/presentation/alternate-account-windows", () => {
+        var parser = new Json.Parser ();
+        try {
+            parser.load_from_data ("[{\"label\":\"5 hour\",\"minutes\":300,\"remaining\":0,\"resetsAt\":\"2026-10-18T13:30:00Z\"},{\"label\":\"7 day\",\"minutes\":10080,\"remaining\":72,\"resetsAt\":\"2026-10-20T12:00:00Z\"},{\"label\":\"30 day\",\"minutes\":43200,\"remaining\":91}]");
+        } catch (Error e) { assert_not_reached (); }
+        var now = new DateTime.from_iso8601 ("2026-10-18T12:00:00Z", null).to_unix ();
+        assert (MSeries.Presentation.account_quota (parser.get_root ().get_array (), now)
+            == "5H 0% ↻1h30m · 7D 72% ↻2d0h · 30D 91% ↻?");
+        assert (MSeries.Presentation.account_quota (parser.get_root ().get_array (), now + 5400)
+            .has_prefix ("5H 0% ↻now"));
+        assert (MSeries.Presentation.account_quota (null, now) == "Quota unavailable");
+    });
     GLib.Test.add_func ("/presentation/worst-level", () => {
         assert (MSeries.Presentation.worse (MSeries.QuotaLevel.OK, MSeries.QuotaLevel.LOW) == MSeries.QuotaLevel.LOW);
         assert (MSeries.Presentation.worse (MSeries.QuotaLevel.CRITICAL, MSeries.QuotaLevel.LOW) == MSeries.QuotaLevel.CRITICAL);

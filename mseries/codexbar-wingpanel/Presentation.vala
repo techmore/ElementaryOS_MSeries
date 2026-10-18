@@ -100,6 +100,24 @@ namespace MSeries {
             return best;
         }
 
+        /* Saved accounts retain every window: a weekly balance must never hide an empty 5-hour limit. */
+        public static string account_quota (Json.Array? windows, int64 now_unix) {
+            var parts = new StringBuilder ();
+            for (uint i = 0; windows != null && i < windows.get_length (); i++) {
+                var window = windows.get_object_element (i);
+                var node = window.get_member ("remaining");
+                if (node == null || node.get_node_type () != Json.NodeType.VALUE) continue;
+                var minutes = (int) window.get_int_member_with_default ("minutes", 0);
+                var label = short_window_label (window.get_string_member_with_default ("label", "Quota"), minutes);
+                var reset = new DateTime.from_iso8601 (window.get_string_member_with_default ("resetsAt", ""), null);
+                var eta = reset == null ? "?" : reset.to_unix () <= now_unix ? "now"
+                    : countdown_text (reset.to_unix () - now_unix);
+                if (parts.len > 0) parts.append (" · ");
+                parts.append ("%s %.0f%% ↻%s".printf (label, node.get_double ().clamp (0, 100), eta));
+            }
+            return parts.len > 0 ? parts.str : "Quota unavailable";
+        }
+
         /* One line of local OpenCode Go activity: an estimate from this machine's history, not account quota. */
         public static string local_usage_line (string label, double cost_usd, int64 requests, int64 tokens) {
             return "%s · $%.2f · %s %s · %s tokens".printf (label, cost_usd, count_text (requests),

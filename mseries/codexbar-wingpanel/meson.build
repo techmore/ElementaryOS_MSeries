@@ -8,6 +8,7 @@ indicators_dir = libwingpanel_dep.get_variable(pkgconfig: 'indicatorsdir')
 shared_module(
   'codexbar',
   'Indicator.vala',
+  'AccountDialog.vala',
   'RefreshPolicy.vala',
   'QuotaEta.vala',
   'Presentation.vala',
@@ -35,7 +36,7 @@ test('quota-eta', quota_eta_test)
 # Headless render probe (not installed): see probe/run-probe.sh.
 executable(
   'render-probe',
-  'Indicator.vala', 'RefreshPolicy.vala', 'QuotaEta.vala', 'Presentation.vala', 'probe/render-probe.vala',
+  'Indicator.vala', 'AccountDialog.vala', 'RefreshPolicy.vala', 'QuotaEta.vala', 'Presentation.vala', 'probe/render-probe.vala',
   dependencies: [libwingpanel_dep, granite_dep, json_dep, meson.get_compiler('c').find_library('m')],
   build_by_default: false,
 )

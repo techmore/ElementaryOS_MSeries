@@ -76,3 +76,28 @@ tree to signal only the main app, then waits for all app processes to exit. Rest
 `gtk-launch` with closed standard streams and verifies the app process, avoiding inherited-output-pipe
 hangs. The owner confirmed a real account-2 → account-1 native round trip retains the Gmail account's
 chats without another sign-in after these fixes.
+
+## Dense alternate-account quotas and adding Codex accounts
+
+Alternate Claude and Codex accounts show separate **5H** and **7D** percentages with `↻` reset
+countdowns. Saved distinct OpenCode OAuth accounts also show **30D** when supplied. Short-window
+exhaustion is never hidden behind a healthy weekly/monthly balance. The main panel prioritizes the
+five-hour window; a compact second line shows alternate accounts, numbered with identities in the
+tooltip. Dropdown account rows keep the email and Switch action above their compact quota summary.
+Countdowns update during normal polling without rebuilding the open dropdown. Refresh updates the
+account helpers too. Providers expose quota percentages, not an absolute remaining-token balance.
+
+`codexbar-opencode-local.py accounts` reads saved OpenCode credentials read-only and obtains quota
+for distinct inactive accounts without activating them. Duplicate sessions for the same account and
+workspace are collapsed, with the active record preferred. Tokens stay in process memory/environment;
+output only contains account identities, quota windows, and actionable errors. The active account's
+quota remains supplied by upstream's snapshot. Currently the two saved OpenCode login records on this
+machine belong to the same account/workspace and appear once.
+
+Codex **+** now opens `AccountDialog.vala`, a Granite message window with a browser sign-in action,
+inline progress/result, retry and cancellation. `codexbar-accounts.py login` finds the CLI on PATH or
+bundled with the desktop app, starts official `codex login` in a private temporary `CODEX_HOME` with
+file credential storage, and saves the result into the account store. It never replaces the live
+Codex auth file. Cancellation terminates the login child and removes temporary credentials. Initial
+Add account and result messages for the other providers use Granite as well.
+Official login/storage reference: https://learn.chatgpt.com/docs/auth .

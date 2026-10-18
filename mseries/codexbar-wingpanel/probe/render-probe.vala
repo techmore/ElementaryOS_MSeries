@@ -34,6 +34,17 @@ int main (string[] args) {
     Gtk.init ();
     Granite.init ();
     var delay = args.length > 2 ? int.parse (args[2]) : 1500;
+    if (Environment.get_variable ("CB_DIALOG") == "codex") {
+        var dialog = new MSeries.AccountDialog ("Add a Codex account",
+            "Sign in to another ChatGPT account in your browser. Your current Codex login stays active, and the added account appears here when sign-in finishes.",
+            "mseries-codexbar-openai-symbolic", { "/bin/true" });
+        dialog.present ();
+        var loop = new MainLoop ();
+        Timeout.add (delay, () => { capture (dialog, dialog, args[1], loop); return Source.REMOVE; });
+        loop.run ();
+        dialog.destroy ();
+        return render_failed ? 1 : 0;
+    }
 
     var indicator = new MSeries.CodexBarIndicator ();
     var bar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { height_request = 28, margin_start = 8, margin_end = 8 };
