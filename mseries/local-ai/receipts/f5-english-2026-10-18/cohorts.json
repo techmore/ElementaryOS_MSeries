@@ -1,0 +1,134 @@
+{
+  "f5-app-fixtures-v1": [
+    "gtk3/receipt.json",
+    "gtk4/receipt.json",
+    "qt6/receipt.json",
+    "brave/receipt.json"
+  ],
+  "f5-app-fixtures-v2": [
+    "brave/receipt.json",
+    "gtk3/receipt.json",
+    "gtk4/receipt.json",
+    "qt6/receipt.json"
+  ],
+  "f5-app-fixtures-v3": [
+    "brave/receipt.json"
+  ],
+  "f5-app-qualified-v1": [
+    "gtk3-attempt.json",
+    "gtk4-attempt.json",
+    "qt6-attempt.json",
+    "brave-attempt.json",
+    "gtk3/receipt.json",
+    "gtk4/receipt.json",
+    "qt6/receipt.json",
+    "brave/receipt.json"
+  ],
+  "f5-browser-editors-v1": [
+    "receipt.json"
+  ],
+  "f5-browser-editors-v2": [
+    "receipt.json"
+  ],
+  "f5-browser-editors-v3": [
+    "receipt.json"
+  ],
+  "f5-browser-editors-v4": [
+    "receipt.json"
+  ],
+  "f5-browser-editors-v5": [
+    "receipt.json"
+  ],
+  "f5-joined-voice-v1": [
+    "receipt.json"
+  ],
+  "f5-joined-voice-v2": [
+    "receipt.json"
+  ],
+  "f5-nemotron-mlx-v1": [
+    "receipt.json",
+    "attempt.json"
+  ],
+  "f5-optional-engines-v1": [
+    "ane.json",
+    "ane-attempt.json",
+    "mlx.json",
+    "mlx-attempt.json"
+  ],
+  "f5-payload-fixtures-v1": [
+    "gtk3/receipt.json",
+    "newelle/receipt.json"
+  ],
+  "f5-real-app-fixtures-v1": [
+    "code/receipt.json",
+    "newelle/receipt.json",
+    "tasks/receipt.json"
+  ],
+  "f5-real-app-fixtures-v10": [
+    "tasks/receipt.json"
+  ],
+  "f5-real-app-fixtures-v11": [
+    "tasks/receipt.json"
+  ],
+  "f5-real-app-fixtures-v12": [
+    "tasks/receipt.json"
+  ],
+  "f5-real-app-fixtures-v2": [
+    "code/receipt.json",
+    "newelle/receipt.json",
+    "tasks/receipt.json"
+  ],
+  "f5-real-app-fixtures-v3": [
+    "newelle/receipt.json",
+    "tasks/receipt.json"
+  ],
+  "f5-real-app-fixtures-v4": [
+    "newelle/receipt.json",
+    "tasks/receipt.json"
+  ],
+  "f5-real-app-fixtures-v5": [
+    "newelle/receipt.json",
+    "tasks/receipt.json"
+  ],
+  "f5-real-app-fixtures-v6": [
+    "newelle/receipt.json",
+    "tasks/receipt.json"
+  ],
+  "f5-real-app-fixtures-v7": [
+    "newelle/receipt.json",
+    "tasks/receipt.json"
+  ],
+  "f5-real-app-fixtures-v8": [
+    "newelle/receipt.json",
+    "tasks/receipt.json"
+  ],
+  "f5-real-app-fixtures-v9": [
+    "tasks/receipt.json"
+  ],
+  "f5-real-app-qualified-v1": [
+    "code-attempt.json",
+    "newelle-attempt.json",
+    "code/receipt.json",
+    "newelle/receipt.json"
+  ],
+  "f5-real-tasks-qualified-v1": [
+    "tasks-attempt.json",
+    "tasks/receipt.json"
+  ],
+  "f5-sustained-v1": [
+    "cpu.json",
+    "cpu-attempt.json",
+    "mlx.json",
+    "mlx-attempt.json"
+  ],
+  "f5-sustained-v2": [
+    "cpu.json",
+    "cpu-supervisor-receipt-failure.json",
+    "mlx.json",
+    "mlx-attempt.json"
+  ],
+  "f5-voice-v1": [
+    "receipt.json",
+    "audio-verification.json"
+  ]
+}

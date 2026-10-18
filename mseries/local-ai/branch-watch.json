@@ -81,6 +81,18 @@
       "base": "main",
       "discover_branches": true,
       "open_prs": true
+    },
+    {
+      "repo": "Blaizzy/mlx-audio",
+      "base": "main",
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "handy-computer/transcribe.cpp",
+      "base": "main",
+      "open_prs": true,
+      "discover_branches": true
     }
   ]
 }

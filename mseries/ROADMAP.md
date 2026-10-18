@@ -1,5 +1,16 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## English F5 completion and optional voice — 2026-10-18
+
+[Acceptance/deployment record](dictation/F5-ENGLISH-ACCEPTANCE.md) and
+[canonical qualification index](dictation/QUALIFICATION-INDEX.md) supersede earlier
+next-step lists. CPU Nemotron is the fastest quiet realtime candidate; native ANE
+and MLX remain selectable with bounded residency. Actual Code/Newelle and toolkit
+entry tests pass exact words; Chromium draft-autocommit failures are retained and
+speculative app composition is suppressed. Only stable words are inserted.
+Final sustained MLX, Tasks, joined voice and deployed checks are tracked in the
+index; do not repeat completed cases to improve scores or repair missing telemetry.
+
 ## CodexBar deployment follow-up: avoid unchanged icon invalidation — 2026-10-18
 
 The local-token change was activated with one requested reload and passed its first 61-second

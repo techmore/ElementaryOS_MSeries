@@ -1,0 +1,18 @@
+{
+  "phase": "English realtime publication",
+  "pull_request": "https://github.com/techmore/ElementaryOS_MSeries/pull/162",
+  "checked_head": "7c38d0098e6081d77ae7ba749616e4b68c5e3894",
+  "ci_run": 39150486986,
+  "ci_conclusion": "success",
+  "merge_commit": "87f4a7b88c947d6c0d8e59cf3dd54aaf636ff3d2",
+  "pages_verified": true,
+  "implementation_pr": "https://github.com/techmore/ElementaryOS_MSeries/pull/155",
+  "implementation_status": "draft, not deployed",
+  "report_sha256": "b64867bbe26fdd60fd08ab55b7e4e9e7707ba1f7b9888c3ccc621c52829b758a",
+  "pages_run": 39150573206,
+  "pages_conclusion": "success",
+  "canonical_url": "https://techmore.github.io/ElementaryOS_MSeries/local-ai.html",
+  "canonical_http_status": 200,
+  "canonical_matches_reviewed_bytes": true,
+  "canonical_sha256": "b64867bbe26fdd60fd08ab55b7e4e9e7707ba1f7b9888c3ccc621c52829b758a"
+}

@@ -31,6 +31,7 @@
   "pins/mlx-parakeet.json": "728d66b6c3be9af7148d7dbdf01b6b1265b4d6ac7b4c867ca5186e7129bedc02",
   "pins/nemotron-source.json": "29e0829419f02a83870cd2e16db7dfb60c150b3b7dce51fab971241f3584f27d",
   "pins/nemotron-transcribe-source.json": "bfcee008e39d1244804769cb6601b09949f6787d727bc4317f343c386822861c",
+  "publication-v1.json": "910b1b354af097b8607f1db9f1db9142fd31a93eedaab0bbf1d4ce2acdc5d3d6",
   "realtime-nemotron-v2/nemotron-160-cpu-attempt.json": "7bedb865b37f06fa79757b937a422e3e53edab129428377cd4a1fb317463abbf",
   "realtime-nemotron-v2/nemotron-160-cpu.json": "30476da640ca96dafe60360af6a9f55fade5ddb8e4851c0bba6b3b2271a38275",
   "realtime-nemotron-v2/nemotron-560-cpu-attempt.json": "5866bc55547a3364defe58e8c19ce8da64b0fbbdf12ac13cb11d1938477dae24",

@@ -1,0 +1,252 @@
+{
+  "schema": 1,
+  "complete": false,
+  "passed": false,
+  "framework": "brave",
+  "fixtures_only": false,
+  "source_sha256": {
+    "dictation/stream-bench.py": "eaf911d04496577f3b758b5b51513e7b6efb658f05444990c610003397b4d1a0",
+    "dictation/mic-eval.py": "fa72d370a720bbd60fc7199df3d6ae21a74a0d2034b475f3b8a4c57f85d4430a",
+    "dictation/test-dictation.py": "f9827b45dd44c6ff851f369538a498544bc9ab1ae80cd3bf30bca354e663259c",
+    "dictation/dictation-input.py": "489e6a1c329273a4707d98ef5b0f8cfaed71e36b5a18c91f1ac5007cc6703691",
+    "dictation/test_input.py": "f95ba73da5d867d7f51f8c2ab8bc0a5281dfa10804a55134314e386a2fa14276",
+    "dictation/ibus-context-smoke.py": "e1813c245c0312ac1d6af30e75ce28ae9a76d97322fc3cf046aa448cc8ff2a00",
+    "dictation/gtk-input-smoke.py": "65a9840d8b9a8d44afdf5d741d2bc013b4f4de5afeba16b1f7c05de20f188e00",
+    "dictation/browser-input-smoke.py": "f06729f7e1bfff0864c40abdcf00b6f1ce7a3d572eab0f9c6642148e2175ec35",
+    "dictation/qt-input-smoke.py": "a8927d916a5e54c8fb1c889152166e9210cdf2792c5c28e495be80605f342ef8",
+    "dictation/test_deploy.py": "195018c08f868bb5cd76edd978ac32ac98a7ebe1fdd53290b2610d34d63bef16",
+    "dictation/dictation-launch.py": "62cb332684b24140385d8e11f45d21538534649309933456af79c9e9e790167c",
+    "dictation/dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+    "dictation/dictation_review.py": "8489eafbeb3eb88cefde732f65247bf0e30db2250fa8b78933e0d3bfdcb3f943",
+    "dictation/test_review.py": "5b2cbbf0e32b055b120af4c2b7625a0cc27c52468558b21d9d6152cd509c7b62",
+    "dictation/review-smoke.py": "6743da49000db364d0b74bfda9da1292746d58bfc872a04190c378eb76d007a9",
+    "dictation/review-language-smoke.py": "524c1eb941afb27cacc6c26540376a5d8f58bb0fdd92cd93cbf409c03a5fcfb3",
+    "dictation/dictation_pipeline.py": "d03858f233622d7b8c9f6d8ae4215504b966b7586725234409e2d9d28e508376",
+    "dictation/test_pipeline.py": "e9aec7e9e8a9e16f7271867731156a546e06c26284bab6206a52b2d37e0323c1",
+    "dictation/dictation_model.py": "ce7b805e735c704ff7a22ce7ea272fb88e22f91d64e6c965185b8e5c4db41578",
+    "dictation/test_model.py": "cb9ae68b067271dcfff333de2d00947c94b2e3fa946da46ebfce825cab4bd015",
+    "dictation/lifecycle-smoke.py": "da69ddc38e080094efac3a51bea890f18b56e9d5ca5062ed0e3599f8b6fd8b1a",
+    "dictation/idle-expiry-smoke.py": "0b919abb6bf6c8e7f68f59c711c1a4764c91faa13faf674a47a45248b0c72143",
+    "dictation/capture-startup-smoke.py": "f04586b050f1efa9a40aff2bde782881eaaea92fc603b254bb88a13786deedf7",
+    "dictation/ane-dictate.py": "de6616bb994184fd30e44001b1b05112ef0904cdd3e9ee8a6c9d37c733555015",
+    "dictation/ane-worker-shim.py": "f5f3285aa9bb731bc49259e731b107e7b729b29c23e2fce0c46575be64c93935",
+    "dictation/ane-realtime-bench.py": "c309c7c60cad0e6dd9f4abed557129f5c3707a068de65c98fc7e1c25a562a5e6",
+    "dictation/dictation-input-client.py": "7eb7a0d903663f3db075925e5a1bb3fbb31880fd335e852fefe0e1c3607d436d",
+    "dictation/dictation-panel.py": "1ea7652dad1023a36bf18c85e7d981b7406bf52bc0075efc9a94a87fc10f4aac",
+    "dictation/dictation_ane.py": "fb7f752e8b64ea35e59611ad434d1e2aa86dc868ea817c78527aa3f51e1c617a",
+    "dictation/dictation_live.py": "a09251796e5d394b973c85184878878f43d88f93c78c8f49e2678b653f628c64",
+    "dictation/dictation_status.py": "2e7411beb6b59af53f97d90a9f37ef21c746984b068fe303a629f579b8e7ac9b",
+    "dictation/english-workflow-smoke.py": "159af1fdd51037cb170c604abe1f9961bb4080de5e09c72d0188430f3cdccc6a",
+    "dictation/mlx-realtime-bench.py": "1822b4d9a0352ad8b1a23f55dc52af0e8e17200e1c00f32ebb577cdb43f93d57",
+    "dictation/panel-smoke.py": "da1004fd496073ad4ef778b471463077b43177709b28467fbcc6e4d374975890",
+    "dictation/panel-workflow-smoke.py": "5c08caed1fa33ca05faf389ab5640979c18b95d07441a072503db3e996bcc73c",
+    "dictation/realtime-bench.py": "341cf7ed75f86248b9862d6dce7603c0d97bf86521e836482ee42452d00ff7a4",
+    "dictation/stream-dictate.py": "ccd1866bf2d9ac3c61d373d1134a27de7a7290dfe930afeb6475416bdfc302de",
+    "dictation/test_ane_dictate.py": "5cd1ec328a4ce2d5a78a77a9641a7caf0b1b9bcb9ada7ecfa0cb1e4aae6f66f3",
+    "dictation/test_live.py": "99489f6567188ac35354367e537a717d5997e58fdd03e0509ff583d0db4acd6e",
+    "dictation/test_stream_lifecycle.py": "5823ea547f6a148c867c91648a91ea315a49e5c827d54d993db29f3712d89c39",
+    "dictation/f5-app-qualification.py": "283f15e34f34b137dfce5eec40c1abb7e176e60a43e63cd3b6e3d47c7faaa0a9",
+    "dictation/mlx-nemotron-bench.py": "19d9b9f465fac54492b9027858b31090a0a344502a65159e054b1b55b8012513",
+    "dictation/test_ane_ipc.py": "586f9792c2840edfb9e6011dabd5f9625818c37228e224ae97f242aaf4fd8354",
+    "dictation/dictation_mlx.py": "216125b79063ea2de46478a90aa8a64161ecf501aabdf5a0fe758f09636dcf10",
+    "dictation/mlx-speech-worker.py": "ad7c96191556c602d442574489debbd05c8bcfddc24826ba266419cb494649cf",
+    "dictation/test_mlx_engine.py": "b6f0c75a3e3f1c6c931e7692c709fffaa1db48f3556c28cb1d5aa90830d1081a",
+    "local-ai/machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+  },
+  "microphone_recorded": false,
+  "audio_played": false,
+  "owner_windows_opened": false,
+  "keyboard_device_opened": false,
+  "physical_f5_tested": false,
+  "language": "English",
+  "method": "Public file through actual F5 controller TEST_INSERT in private Xvfb/IBus/session bus",
+  "safety": {
+    "native_provisional_visible_without_commit": true,
+    "cancel_revokes_lease_and_restores_engine": true,
+    "focus_change_rejected_and_other_field_untouched": true,
+    "password_refused_and_untouched": true
+  },
+  "field_events": [
+    {
+      "elapsed_s": 1.5720921440001803,
+      "text": "He"
+    },
+    {
+      "elapsed_s": 1.9104634320001423,
+      "text": "He hoped"
+    },
+    {
+      "elapsed_s": 2.088371895000364,
+      "text": "He hoped there"
+    },
+    {
+      "elapsed_s": 2.3005815490000714,
+      "text": "He hoped there would be"
+    },
+    {
+      "elapsed_s": 2.9043294060002154,
+      "text": "He hoped there would be stew"
+    },
+    {
+      "elapsed_s": 3.14777870800026,
+      "text": "He hoped there would be stew for din"
+    },
+    {
+      "elapsed_s": 3.213242005000211,
+      "text": "He hoped there would be stew for dinner"
+    },
+    {
+      "elapsed_s": 3.641272109000056,
+      "text": "He hoped there would be stew for dinner,"
+    },
+    {
+      "elapsed_s": 3.8806490330002816,
+      "text": "He hoped there would be stew for dinner, turn"
+    },
+    {
+      "elapsed_s": 3.9381575330003216,
+      "text": "He hoped there would be stew for dinner, turnip"
+    },
+    {
+      "elapsed_s": 4.1621179050002866,
+      "text": "He hoped there would be stew for dinner, turnips"
+    },
+    {
+      "elapsed_s": 4.3305928190002305,
+      "text": "He hoped there would be stew for dinner, turnips and"
+    },
+    {
+      "elapsed_s": 4.440844816000208,
+      "text": "He hoped there would be stew for dinner, turnips and car"
+    },
+    {
+      "elapsed_s": 4.675249695000275,
+      "text": "He hoped there would be stew for dinner, turnips and carrots"
+    },
+    {
+      "elapsed_s": 4.78497760800019,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and"
+    },
+    {
+      "elapsed_s": 5.124266772000283,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bru"
+    },
+    {
+      "elapsed_s": 5.228226722000272,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised"
+    },
+    {
+      "elapsed_s": 5.332569423000223,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised pot"
+    },
+    {
+      "elapsed_s": 5.489029829000174,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potato"
+    },
+    {
+      "elapsed_s": 5.650337780000427,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes"
+    },
+    {
+      "elapsed_s": 6.3019657960003315,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat"
+    },
+    {
+      "elapsed_s": 6.62481832200001,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat m"
+    },
+    {
+      "elapsed_s": 6.677408652000395,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton"
+    },
+    {
+      "elapsed_s": 7.00807476800037,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces"
+    },
+    {
+      "elapsed_s": 7.358920148000379,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to"
+    },
+    {
+      "elapsed_s": 7.6859705110000505,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be"
+    },
+    {
+      "elapsed_s": 7.79111700500016,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be lad"
+    },
+    {
+      "elapsed_s": 7.962050962000376,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled"
+    },
+    {
+      "elapsed_s": 8.132231461000174,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out"
+    },
+    {
+      "elapsed_s": 8.533282419999978,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick"
+    },
+    {
+      "elapsed_s": 9.165282337999997,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, pe"
+    },
+    {
+      "elapsed_s": 9.489644116000363,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered"
+    },
+    {
+      "elapsed_s": 9.911835798000084,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered flour"
+    },
+    {
+      "elapsed_s": 10.266015265000078,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered flour fatten"
+    },
+    {
+      "elapsed_s": 10.424515755000357,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered flour fattened"
+    },
+    {
+      "elapsed_s": 10.528912622999997,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered flour fattened sauce"
+    },
+    {
+      "elapsed_s": 10.792591606000315,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered flour fattened sauce,"
+    }
+  ],
+  "provisional_events": [
+    {
+      "elapsed_s": -9.053,
+      "text": ""
+    }
+  ],
+  "runtime": {
+    "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+    "engine": "nemotron",
+    "backend": "cpu",
+    "threads": 4,
+    "library_sha256": "9f1f839d89a6d3a874c939ecf3108007cc0964a338596a35adb47c7e6c5c921d",
+    "model_sha256": "90d8c89714cd31efc88be62a40c6b2bea57e0cc2063af1ffe2c28f1a228ca110",
+    "wav_sha256": "33c6c68d943a22d5272bf8d5e1f86af9d89d901fb7da35961a692de7591a534c"
+  },
+  "speech": {
+    "final_text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered flour fattened sauce,",
+    "reference": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered, flour-fattened sauce",
+    "first_widget_text_s": 1.5720921440001803,
+    "first_provisional_s": null,
+    "audio_duration_s": 10.435,
+    "elapsed_s": 11.105525709000176,
+    "actual_controller_started": true
+  },
+  "failure_kind": "AssertionError",
+  "failure_detail": "No real app provisional text observed",
+  "failure_scope": "Retain this attempt and completed stages; no quality score for interrupted/unstarted speech",
+  "resources": {
+    "samples": 11,
+    "min_available_bytes": 13447315456,
+    "max_fan_rpm": 2515.0,
+    "max_temp_c": 44.244
+  }
+}

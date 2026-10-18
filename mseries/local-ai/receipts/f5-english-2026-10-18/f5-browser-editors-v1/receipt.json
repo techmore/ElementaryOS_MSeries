@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "complete": false,
+  "passed": false,
+  "cases": [],
+  "method": "Real Brave X11 private local synthetic contenteditable and textarea via current focus-bound IBus bridge",
+  "scope": "Gmail-style rich compose pattern only; no Gmail account or live mail integration tested",
+  "microphone_recorded": false,
+  "audio_played": false,
+  "inference": false,
+  "owner_windows_opened": false,
+  "owner_profile_used": false,
+  "mail_sent": false,
+  "keyboard_device_opened": false,
+  "physical_f5_tested": false,
+  "runtime": {
+    "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+    "browser": "Brave Browser 155.1.97.59"
+  },
+  "source_sha256": {
+    "dictation-input.py": "da304944b46631607c7d1ddba9151c43a10e0813d34bd990bcfa30d0719ba48a",
+    "dictation-input-client.py": "7eb7a0d903663f3db075925e5a1bb3fbb31880fd335e852fefe0e1c3607d436d",
+    "f5-browser-editors-smoke.py": "caa0543c6c4ef60e3b2624fabc7e55f199d17ce49d1061bc0bef1e01f2a9a6da",
+    "machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+  },
+  "failure_kind": "AssertionError",
+  "failure_detail": "Clearing provisional text left editor words",
+  "resources": {
+    "samples": 4,
+    "min_available_bytes": 13221724160,
+    "max_fan_rpm": 2510.0,
+    "max_temp_c": 45.573
+  }
+}

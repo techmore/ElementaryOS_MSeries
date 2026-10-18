@@ -429,6 +429,38 @@ The release build is installed; real task/event row comparisons are read-only
 and pass. Six image-wiring tests pass. No personal task was completed by tests.
 [Behavior and tests](calendar/README.md#completing-tasks-in-the-panel).
 
+## Speech catch-up: installed ANE branch reconciled, translation still pending — 2026-10-18
+
+Read-only inventory confirmed installed stream-dictate.py, dictation_ane.py and
+input client match claude/dictation-fallback d0ee4a655d0e7207942c1b6c87e3ee368d321a30
+exactly. Live speechPID1045220 selects ANE/toggle/no-popup; bridgePID918315 active.
+This supersedes the earlier CPU runtime checkpoint, without reassigning its human
+acceptance or benchmarks to ANE. Main already includes PR120/122. This integration
+preserves the newer rolling/toggle/fallback branch and all concurrent main changes;
+the only merge conflict was appended handoff entries, both retained. No live
+payload, settings, process, microphone, owner window or native runtime changed.
+
+52 main contracts and56 branch contracts pass without model/audio. Initial flat
+harness copy omitted relative imports; corrected directory layout passes56, original
+harness error retained privately. Installed-source hashes and scope are recorded
+in work/dictation-catchup-2026-10-18/receipt.json outside the public repo. The source
+README's offline ANE latency measurements are inherited evidence, not a new matched
+benchmark. Rolling ANE performs English transcription; native panel translation
+still waits until speech ends. The default4B is inactive after its fan-limit guard;
+no forced restart or duplicate worker. Permanent upstream-watch remains active.
+
+Integration is a candidate, not promotion on contract tests alone. Review must cover
+pending decode/warm threads on cancellation/pressure, bounded worker IPC/deadlines,
+typing-interrupt queue races and compatibility-fallback refusal paths. Existing
+contracts do not establish those ANE concurrency/runtime guarantees or sustained
+quiet behavior. Preserve the working installed version until a qualified update.
+Then build optional translated previews while speaking and final grammar, using
+one existing4B request at a time and preserving the six-GiB reserve/original text.
+
+PR118 merged73621aa, all5 checks39141068986 passed, Pages39141247806 succeeded.
+Canonical report200 matches current reviewed docs, SHAd11c654d144368af35986dbe251f1fb2d
+b497df147bc08530ace89e2c08f482d. Earlier failure/quality evidence remains retained.
+
 ## Native Dictation deployed; owner F5-to-field pass — 2026-10-18
 
 The qualified lazy CPU speech controller, Unicode bridge and optional Dictation
@@ -4887,6 +4919,33 @@ Follow-up (same day): `STREAM_ENGINE=ane` integrates the ANE engine into the laz
 ### brave-youtube DRM movie result — 2026-10-18
 
 Owner opened *Live Die Repeat: Edge of Tomorrow* in `brave-youtube` (default Linux user agent, Widevine provisioned by the launcher): it plays, and the quality menu tops out at **480p**. That matches Widevine L3; no user-agent spoofing was applied or is planned (it would not change the license server's L3 cap). Non-DRM 4K VP9 in the same window is still unmeasured.
+## Dictation: ANE rolling streaming, press-once toggle, typing fallback — 2026-10-18
+
+Live F5 service (not the repo default) now runs `STREAM_ENGINE=ane STREAM_MODE=toggle STREAM_POPUP=0` from `~/.config/systemd/user/mseries-stream-dictate.service.d/50-ane.conf`. F5 sends one clean KEY_F14 (captured raw); the earlier "pulse" was the refusal notification, not a volume key. Apps with no accessible field (Electron) now type through ydotool (`STREAM_UNVERIFIED_FALLBACK=0` restores strict refusal; sensitive/non-editable stay refused). The ANE worker warms while recording; every 0.6 s the segment is re-decoded and agreed words are typed (append-only), tail 0.6 s after the second F5. Owner's first live dictation worked (56 chars, about 2.8 s wait, cold). Not measured: warm live latency, words-per-second feel, thermals of repeated passes, mic accuracy (hiss/sensitivity blocker unchanged), a WER set. Omarchy Mac (omacom/omarchy-mac-pkgs) has no mic/F5 dictation key handling to borrow. Next: owner trial of rolling mode, then read the `ane dictated` log lines.
+
+## English streaming candidate checkpoint — 2026-10-18
+
+Owner clarified English speech → English text only. The candidate native panel now
+removes foreign-language/mode controls, preserves original words, and offers English
+grammar after speech with opt-in previews while speaking. Latest-only requests,
+coalesced GTK edits, stale result rejection and cached final reuse are covered by
+66 dictation contracts plus a private GTK4 wiring smoke. Finish now waits for the
+queued input barrier before Ready; Escape has a separate cancelled state. The
+older private clipboard harness was adapted to the new English-only API (not rerun).
+New file-only CPU/Moonshine/Nemotron, actual ANE controller, MLX Vulkan and private
+English panel harnesses retain source identities and completed failures. Existing
+six-hour branch watcher gains four explicit upstream speech refs; no new schedule.
+
+This is a source checkpoint on draft PR155, not deployment or acceptance of the
+whole ANE/fallback branch. Native worker IPC deadlines, decoder-thread close/
+interrupt races and unverified ydotool pending output remain promotion gates.
+The English panel/model trial passed on its frozen pre-coalescing source; the
+current edit coalescing fix passed a separate synthetic native UI regression.
+Neither proves microphone/F5 acceptance of the current candidate or a factory boot.
+No owner runtime, microphone, other app window, kernel or audio stack changed here.
+Next: publish the completed public-file benchmark/source audit independently, then
+address lifecycle gates and qualify the selected F5 integration before deployment.
+
 
 
 
@@ -4916,6 +4975,71 @@ Explicit speech refs augment the existing six-hour watcher, not another schedule
 Publication PR must pass checks and Pages bytes must be verified before claiming
 main/site completion. Preserve current main owner changes; no CodexBar files changed.
 
+### English realtime publication verified
+
+PR162 merged as87f4a7b88c947d6c0d8e59cf3dd54aaf636ff3d2 after all five CI
+checks passed on7c38d0098e6081d77ae7ba749616e4b68c5e3894 (run39150486986).
+Pages39150573206 succeeded. Canonical local-ai.html returned200 and matched
+reviewed SHA256b64867bbe26fdd60fd08ab55b7e4e9e7707ba1f7b9888c3ccc621c52829b758a.
+The permanent six-hour watcher remains active (last observed success39142505984);
+four explicit speech refs are merged. Everyday4B remains active PID1568. Speech
+was already inactive after the external reboot; this phase did not restart it.
+
+PR155 remains draft. Reconciled published main/owner changes into this branch;
+kept both handoff histories and used the new English-only README status instead
+of the superseded translation/catch-up text. No model or microphone trials repeated.
+Next: native IPC deadlines and interrupt/close races, focus-bound selected-engine
+integration with draft/final presentation, then quiet English human F5 acceptance.
+Do not promote draft source merely because its contract tests or CI pass.
+
+## English F5 implementation in qualification — 2026-10-18
+
+Owner authorized completion, app qualification, merge and deployment, retaining
+ANE/MLX. English Nemotron CPU160 is the default candidate; new MLX Nemotron8bit
+cache-aware probe also completed (three zero-WER clip trials, ~1.1s firstdraft
+and ~4s finalflush, min13.56GiB /2528RPM), slower than the priorCPU path.
+Pinned scratchmlx-audio0.5.9 only, no owner's runtime package replacement.
+Native preedit is now focus-leased via IBus, with clearing on Commit/Finish/
+Cancel/focus loss. Native ANE IPC has bounded deadlines/framing/close/process
+ownership; optional Parakeet MLX uses the same lifecycle. Typing/cancellation
+revokes queued output; native rolling failures propagate.88 no-model contracts
+pass at this checkpoint. Existing owner jobs/audio/display/kernel untouched.
+
+A serialized owned queue tests actual current controller across private GTK3/
+GTK4/Qt6/Brave fixtures. First GTK3 finalwords matched and appeared during
+speech; an over-strict harness incorrectly required nonempty speculative preedit
+even though this ASR committed words directly. Retain the original failure;
+evaluate recorded early visible words under the corrected criterion without
+repeating inference. Real installed-app and optional voice checks are separate
+new cohorts. No microphone or physical F5 claimed tested by fileinput fixtures.
+No deployment yet; agent-owned installer/voice/realapp additions still in progress.
+
+### F5 app/voice follow-through checkpoint
+
+The new English selector/installer retains mode, adds bounded0–900s residency,
+stages all native/MLX/voice dependencies, uses streamed model backups/rollback,
+and restarts only owned speech/input services. No deployment yet.131 contracts
+pass including late output after native feed/finalize/fallback cancellation.
+Model-load admission is engine-specific and resident pressure checks use the
+standing six-GiB/2700RPM/63C speech guards. Newelle's actual composer exceeded
+the old24ancestor focus scan:64nodes plus the same0.6s budget fixes it.
+
+Browser rich-compose testing exposed a real Chromium behavior: focus loss can
+confirm speculative composition before IBus clears it, even with CLEAR mode.
+Retain those failed receipts. The final input policy suppresses native speculative
+Preview globally and streams stable committed words. Nemotron already commits
+early, so its actual words-during-speech behavior remains. Own English cleanup
+previews stay in the review pane. Tests/harnesses were updated to this explicit
+policy; do not describe speculative app preedit as a delivered feature.
+
+The optional English Voice Assistant backend passed synthetic text→4B→eSpeak WAV:
+first token1.733s, first WAV2.200s; independently nonzero1.794s PCM. No playback
+or microphone, no tools. Native private GTK wiring passes; automatic replies
+after F5 are OFF by default. This is half-duplex/robotic synthesis, not tested
+full-duplex WebRTC or natural voice quality. Sustained62.61s resident CPU/MLX
+trials and final actual app checks are still completing; retained CPU errors are
+1.19% WER on the repeated clip, not a general accuracy result.
+
 
 ## Bluetooth in the far-right Quick Settings menu — 2026-10-18
 
@@ -4941,6 +5065,50 @@ Ethernet size follow-up (October 18): owner requested another 5% reduction from 
 
 Ethernet size follow-up (October 18, second 5% step): owner requested another 5% reduction and explicit local deployment. Artwork is now `0.8075 × 0.95 = 0.767125` of the original, centered in both canvas sizes and the VPN variant. Full network installer rebuilt and installed the module and reloaded Wingpanel. Extracted installed GResources verify the new transforms; the running panel maps the installed module.
 
+### Sustained comparison and actual app outcomes
+
+Both resident62.61s CPU trials completed with tails0.048/0.062s, firstwords
+0.854/0.858s and1.19% WER. Both resident MLX trials completed:88.797/89.430s
+(total) with26.187/26.820s tails,1.084/1.059s firstwords and0.595% WER. MLX
+used19.15/19.77CPU-seconds versus76.52/78.98CPU-seconds, but fell behind input.
+Retaining it did not solve this port's realtime backlog. CPU remains the default;
+no universal hardware/power claim. CPU sensor-summary receipt save failed after
+completion (source digest enumeration included __pycache__); keep its completed
+results and missing telemetry flag, do not repeat it. Only unstarted MLX resumed.
+
+Actual Code/Newelle/Tasks ASR passed exact normalized English words, first
+committed1.671/1.839/1.885s; no Send/save action requested. Tasks required a
+genuinely focused entry through private headless Gala's virtual keyboard, not
+a relaxed input guard. Rich compose/textarea stable-only regression passes;
+no authenticated Gmail account test. Failures and frozen sources are retained.
+Canonical QUALIFICATION-INDEX.md plus JSON records every cohort and equivalence
+key so future work inspects evidence before launching any worker.
+
+Joined voicev1 completed real ASR and the actual UI completion gate, but its
+private-session service-health check refused the existing model before inference;
+that harness failure is retained. Resume should reuse the recorded ASR event
+trace and finish only the unstarted voice stage. No new microphone or playback.
+
+### Qualification complete; merge/deploy gates
+
+Actual Tasks ASR passed at1.885s firstcommitted words, exact normalized final
+English; source/receipt and genuine focus are retained. Joined voicev2 passed
+using37recorded real-ASR events fromv1 to finish only the unstarted voice stage,
+not duplicate ASR. Actual focused VoiceAssistant gate produced one model reply
+and nonzero English WAVs2.294s after replayed audio end. No fresh live/acoustic
+latency claim. Max2511RPM49.1C /min11.22GiB, no playback/microphone/tools.
+
+133 dictation contracts,72 assistant contracts and6 image-wiring checks pass.
+Private native English panel/voice wiring and actual app fixtures are recorded.
+The canonical qualification index/JSON and sanitized receipts retain original
+failures/source identities; two watcher sources add mlx-audio/transcribe.cpp to
+the existing six-hour workflow. Default deployment remains CPU Nemotron; native
+ANE and MLX Parakeet are retained options, residency0–900s yields to guards.
+Next: head-specific CI, merge PR155, run English installer on merged source,
+verify installed exact bytes/service mode/reserve/input-selection preservation
+and private installed app input, then publish deployment receipts/Pages proof.
+No owner test window, microphone, menu-bar restart, kernel or audio-stack change.
+
 Ethernet size follow-up (October 18, third 5% step): owner requested another 5% reduction and local deployment. Artwork now uses `0.767125 × 0.95 = 0.72876875` of the original, centered in 16/24px canvases including the VPN variant. Full network installer/build passed and reloaded the bar; installed GResource transforms and the running panel’s loaded module were verified.
 
 Ethernet size follow-up (October 18, fourth 5% step): owner requested another 5% reduction and local deployment. Artwork now uses `0.72876875 × 0.95 = 0.6923303125` of the original, centered in 16/24px canvases including the VPN variant. Full network installer/build passed and reloaded the bar; installed GResource transforms and the running panel’s loaded module were verified.
@@ -4948,3 +5116,14 @@ Ethernet size follow-up (October 18, fourth 5% step): owner requested another 5%
 Ethernet size follow-up (October 18, fifth 5% step): owner requested another 5% reduction and local deployment. Artwork now uses `0.6923303125 × 0.95 = 0.657713796875` of the original, centered in 16/24px canvases including the VPN variant. Full network installer/build passed and reloaded the bar; installed GResource transforms and the running panel’s loaded module were verified.
 
 Ethernet size follow-up (October 18, additional 10% step): owner requested another 10% reduction and local deployment. Artwork now uses `0.657713796875 × 0.90 = 0.59194241718750` of the original, centered in 16/24px canvases including the VPN variant. Full network installer/build passed and reloaded the bar; installed GResource transforms and the running panel’s loaded module were verified.
+
+### English F5 deployment audit: inherited debug capture
+
+Read-only predeployment audit found inherited STREAM_KEEP=1 in an older speech
+drop-in. No new microphone capture was made. The managed engine drop-in now uses
+systemd UnsetEnvironment for capture retention, dry/file-test insertion and forced
+fallback controls; older drop-ins remain byte-for-byte intact for rollback. An
+actual no-inference transient user unit confirmed these variables are absent in
+the child even when inherited assignments are present. Its sanitized receipt is
+work/f5-debug-env-v1/receipt.json. Deployed verification must inspect the live
+process environment because systemctl Environment still lists unset assignments.
