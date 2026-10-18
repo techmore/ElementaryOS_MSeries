@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 import fnmatch
 import hashlib
@@ -165,8 +166,11 @@ def _api_json(endpoint: str, *fields: str, force: bool = False) -> tuple[object,
     return data, fetched_at
 
 
-def _graphql(query: str, cursor: str | None = None, variables: dict[str, str] | None = None) -> dict:
+def _graphql(query: str, cursor: str | None = None, variables: dict[str, str] | None = None,
+             extra: list[str] | None = None) -> dict:
     args = ["graphql", "-f", f"query={query}"]
+    for item in extra or []:
+        args.extend(["-F", item])
     if cursor:
         args.extend(["-F", f"cursor={cursor}"])
     for name, value in (variables or {}).items():
@@ -182,39 +186,75 @@ def _graphql(query: str, cursor: str | None = None, variables: dict[str, str] | 
     return payload
 
 
+# Repository fields come from QUERY; listing ids first lets the expensive details load in parallel batches.
+REPO_FIELDS = QUERY[QUERY.index("nodes {", QUERY.index("repositories(")) + len("nodes {"):QUERY.index("pageInfo {")].rstrip().rstrip("}")
+IDS_QUERY = """query($cursor: String) {
+  viewer {
+    login
+    repositories(first: 100, after: $cursor,
+      affiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER],
+      orderBy: {field: UPDATED_AT, direction: DESC}) {
+      nodes { id }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+}"""
+DETAILS_QUERY = ("query($ids: [ID!]!, $since1h: GitTimestamp!, $since24h: GitTimestamp!, $since30d: GitTimestamp!) {\n"
+                 "  nodes(ids: $ids) { ... on Repository {" + REPO_FIELDS + "} }\n}")
+DETAIL_BATCH = 25
+
+
 def _query_page(cursor: str | None, since: dict[str, str]) -> dict:
     return _graphql(QUERY, cursor, since)
 
 
-def fetch_snapshot() -> dict:
+def _repository_ids() -> tuple[str, list[str]]:
     cursor = None
-    repos = []
     login = ""
+    ids: list[str] = []
+    for _ in range(10):
+        payload = _graphql(IDS_QUERY, cursor)
+        viewer = (payload.get("data") or {}).get("viewer")
+        if not viewer:
+            raise RuntimeError("GitHub did not return the signed-in account")
+        login = viewer.get("login", "")
+        connection = viewer.get("repositories") or {}
+        ids.extend(node["id"] for node in connection.get("nodes") or [] if node and node.get("id"))
+        page = connection.get("pageInfo") or {}
+        if not page.get("hasNextPage"):
+            return login, ids
+        cursor = page.get("endCursor")
+        if not cursor:
+            raise RuntimeError("GitHub pagination returned no cursor")
+    raise RuntimeError("Repository list exceeded the 1,000 repository safety limit")
+
+
+def _repository_details(ids: list[str], since: dict[str, str]) -> list[dict]:
+    payload = _graphql(DETAILS_QUERY, None, since, [f"ids[]={value}" for value in ids])
+    return [node for node in (payload.get("data") or {}).get("nodes") or [] if node]
+
+
+def fetch_snapshot() -> dict:
     now = int(time.time())
     since = {
         "since1h": datetime.fromtimestamp(now - 60 * 60, timezone.utc).isoformat().replace("+00:00", "Z"),
         "since24h": datetime.fromtimestamp(now - 24 * 60 * 60, timezone.utc).isoformat().replace("+00:00", "Z"),
         "since30d": datetime.fromtimestamp(now - 30 * 24 * 60 * 60, timezone.utc).isoformat().replace("+00:00", "Z"),
     }
-    for _ in range(40):
-        payload = _query_page(cursor, since)
-        viewer = payload.get("data", {}).get("viewer")
-        if not viewer:
-            raise RuntimeError("GitHub did not return the signed-in account")
-        login = viewer.get("login", "")
-        connection = viewer.get("repositories", {})
-        repos.extend(connection.get("nodes") or [])
-        page = connection.get("pageInfo") or {}
-        if not page.get("hasNextPage"):
-            break
-        cursor = page.get("endCursor")
-        if not cursor:
-            raise RuntimeError("GitHub pagination returned no cursor")
-    else:
-        raise RuntimeError("Repository list exceeded the 1,000 repository safety limit")
+    login, ids = _repository_ids()
+    batches = [ids[start:start + DETAIL_BATCH] for start in range(0, len(ids), DETAIL_BATCH)]
+    # Detail batches and the independent extras run side by side; each is one `gh` process.
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        detail_jobs = [pool.submit(_repository_details, batch, since) for batch in batches]
+        pages_job = pool.submit(_pages_repositories)
+        for_you_job = pool.submit(_for_you)
+        contributions_job = pool.submit(_contributions)
+        repos = [repo for job in detail_jobs for repo in job.result()]
+        pages_names = pages_job.result()
+        for_you = for_you_job.result()
+        contributions = contributions_job.result()
 
     normalized = []
-    pages_names = _pages_repositories()
     settings = load_settings()
     local_by_name: dict[str, list[dict]] = {}
     if settings.get("localRoot"):
@@ -285,8 +325,6 @@ def fetch_snapshot() -> dict:
             "repoState": state if state in {"visible", "pinned", "hidden"} else "visible",
         })
     normalized.sort(key=lambda item: item["updatedAt"], reverse=True)
-    for_you = _for_you()
-    contributions = _contributions()
     try:
         rate_limit, rate_fetched_at = _api_json("rate_limit")
         rate_error = ""
@@ -652,6 +690,16 @@ def _repo_details(name: str, endpoint: str, limit: int = 20, force: bool = False
         return _api_json(f"repos/{name}/events?per_page={max(1, min(100, limit))}", force=force)[0]
     if endpoint == "heatmap":
         return _api_json(f"repos/{name}/stats/commit_activity", force=force)[0]
+    if endpoint == "traffic":
+        # GitHub only shows the last 14 days of traffic, and only to people with push access.
+        try:
+            views, _ = _api_json(f"repos/{name}/traffic/views", force=force)
+            clones, _ = _api_json(f"repos/{name}/traffic/clones", force=force)
+        except RuntimeError as exc:
+            if "403" in str(exc) or "push access" in str(exc).lower() or "must have" in str(exc).lower():
+                raise RuntimeError("Traffic is visible only to people with push access") from exc
+            raise
+        return {"views": views, "clones": clones}
     raise RuntimeError("Unsupported repository detail")
 
 
@@ -784,7 +832,7 @@ def main() -> int:
     repos_cmd.add_argument("--limit", type=int, default=-1)
     repo_cmd = commands.add_parser("repo", help="show one repository summary")
     repo_cmd.add_argument("name")
-    for name in ("issues", "pulls", "ci", "releases", "activity", "commits", "branches", "tags", "heatmap"):
+    for name in ("issues", "pulls", "ci", "releases", "activity", "commits", "branches", "tags", "heatmap", "traffic"):
         item = commands.add_parser(name, help=f"show repository {name}")
         item.add_argument("name")
         item.add_argument("--limit", type=int, default=20)
@@ -826,7 +874,7 @@ def main() -> int:
             if not match:
                 raise RuntimeError("Repository is not visible to the active GitHub account")
             _emit(match, args.plain)
-        elif args.command in {"issues", "pulls", "ci", "releases", "activity", "commits", "branches", "tags", "heatmap"}:
+        elif args.command in {"issues", "pulls", "ci", "releases", "activity", "commits", "branches", "tags", "heatmap", "traffic"}:
             _emit(_repo_details(args.name, args.command, args.limit, args.refresh), args.plain)
         elif args.command in {"pin", "unpin", "hide", "show"}:
             _emit(set_repo_state(args.name, {"pin": "pinned", "unpin": "visible", "hide": "hidden", "show": "visible"}[args.command]))
