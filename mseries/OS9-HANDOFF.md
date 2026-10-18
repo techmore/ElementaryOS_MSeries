@@ -2595,3 +2595,7 @@ Added `mseries/codexbar-accounts.py` (list/save/switch/usage; one private saved 
 Verified: Python tests, Meson build and 3 suites, headless render with fake accounts. Not verified: a real second account switch on this desktop (only one Codex account is signed in), the 0.77.0 desktop app itself (not restarted), live Add account flow. Not built: Claude switching (needs `claude-swap`; panel hook not written).
 
 Next: sign in a second account via Add account…, confirm the Switch and the restart-Codex note; decide on installing `claude-swap` for Claude switching.
+
+## CodexBar panel footer redesign — 2026-10-18
+
+The bottom of the dropdown was four full-width flat buttons with 12px icons ("Quick View…", "Usage Details…", "Spending Details…", "Settings & Sign In…"), which read as tacked on. Now: three even icon-over-label tiles (Quick View, Usage, Spending, 16px icons, rounded hover) and Settings & sign in as a gear beside Refresh in the header. Headless renders checked in light and dark; Meson tests pass. Not verified: the live Wingpanel popover (module installed, loads on the next Wingpanel restart or login).

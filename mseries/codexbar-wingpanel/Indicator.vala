@@ -113,6 +113,17 @@ namespace MSeries {
             refresh_button.update_property (Gtk.AccessibleProperty.LABEL, "Refresh usage", -1);
             refresh_button.clicked.connect (() => refresh_usage ());
             title_row.append (refresh_button);
+            var settings_button = new Gtk.Button.from_icon_name ("preferences-system-symbolic") {
+                tooltip_text = "Settings & sign in",
+                valign = Gtk.Align.CENTER
+            };
+            settings_button.add_css_class ("flat");
+            settings_button.update_property (Gtk.AccessibleProperty.LABEL, "Settings and sign in", -1);
+            settings_button.clicked.connect (() => {
+                popdown_from (settings_button);
+                run_action ("--settings");
+            });
+            title_row.append (settings_button);
             menu.append (title_row);
 
             // Three pages keep every section above the fold; Quota is the default.
@@ -143,12 +154,12 @@ namespace MSeries {
             menu.append (scroll);
             menu.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
 
-            // Labeled, borderless action rows live inside Wingpanel's popover.
-            var actions = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
-            actions.append (make_action_button ("Quick View…", "view-reveal-symbolic", "--quick-view"));
-            actions.append (make_action_button ("Usage Details…", "view-list-symbolic", "--usage"));
-            actions.append (make_action_button ("Spending Details…", "accessories-calculator-symbolic", "--spending"));
-            actions.append (make_action_button ("Settings & Sign In…", "preferences-system-symbolic", "--settings"));
+            // Three even tiles (icon over label) instead of a list of full-width buttons; Settings is the header gear.
+            var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) { homogeneous = true };
+            actions.add_css_class ("mseries-tiles");
+            actions.append (make_action_button ("Quick View", "view-reveal-symbolic", "--quick-view"));
+            actions.append (make_action_button ("Usage", "view-list-symbolic", "--usage"));
+            actions.append (make_action_button ("Spending", "accessories-calculator-symbolic", "--spending"));
             menu.append (actions);
 
             show_state (quota_box, "content-loading-symbolic", "Loading usage…", "", false);
@@ -194,6 +205,8 @@ namespace MSeries {
                 ".mseries-codexbar .dot-off { opacity: 0.45; } " +
                 ".mseries-codexbar .state-title { font-weight: 700; } " +
                 ".mseries-codexbar button { padding: 3px 6px; } " +
+                ".mseries-codexbar .mseries-tiles button { padding: 8px 4px; border-radius: 8px; } " +
+                ".mseries-codexbar .mseries-tiles button:hover { background: alpha(currentColor, 0.08); } " +
                 ".mseries-codexbar .mseries-switcher button { padding: 2px 6px; } " +
                 "label.mseries-codexbar-bar.level-low { color: @warning_color; } " +
                 "label.mseries-codexbar-bar.level-critical { color: @error_color; } " +
@@ -202,9 +215,11 @@ namespace MSeries {
         }
 
         private Gtk.Button make_action_button (string label, string icon_name, string action) {
-            var content = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
-            content.append (new Gtk.Image.from_icon_name (icon_name) { pixel_size = 12 });
-            content.append (new Gtk.Label (label) { xalign = 0, hexpand = true });
+            var content = new Gtk.Box (Gtk.Orientation.VERTICAL, 4) { halign = Gtk.Align.CENTER };
+            content.append (new Gtk.Image.from_icon_name (icon_name) { pixel_size = 16 });
+            var text = new Gtk.Label (label);
+            text.add_css_class ("caption");
+            content.append (text);
             var button = new Gtk.Button () { child = content };
             button.add_css_class ("flat");
             button.clicked.connect (() => {
