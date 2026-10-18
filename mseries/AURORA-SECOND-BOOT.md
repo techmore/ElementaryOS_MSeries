@@ -308,3 +308,11 @@ judged. Kept deliberately: `boot.bin.pre-sep` (the fallback-safe payload),
 - Community note: their m1n1 for this is `m1n1-aurora-1.6.1.aurora17-5` (in the
   `.20` release; not installed here — our boot payload is the DeepSeek-managed
   `boot.bin`; replacing it is a bootloader change that needs the owner's explicit OK).
+
+## .19 deleted; repo .20 lane finished on the machine — 2026-10-18
+
+Deleted `.19` (kernel + initramfs from `/boot`, three GRUB entries; module dir stays while
+booted on it). Found that the repo already has the `.20` port (`mseries/aurora/`, PR #78); ran
+its `stage-boot.py` to stage the matched m1n1-aurora + J314S DTB `boot.bin` candidate in
+`~/aurora20-boot-candidate/` (not deployed). `/boot` is now 83% (89 MB free). Details and the
+recommended test order are in [aurora/README.md](aurora/README.md#status-on-the-owners-m1-pro--2026-10-18-claude-code).

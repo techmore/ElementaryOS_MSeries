@@ -137,3 +137,36 @@ Upstream evidence:
 [release 20](https://github.com/omacom/linux-aurora/releases/tag/aurora-2026.10.17.20),
 [J314S Thunderbolt display](https://github.com/omacom/linux-aurora/issues/38#issuecomment-6117263883),
 [M2 Max dock report](https://github.com/omacom/linux-aurora/issues/132).
+
+## Status on the owner's M1 Pro — 2026-10-18 (Claude Code)
+
+What was done on the real machine, beyond the offline checks above:
+
+- **`.19` removed.** Its kernel and initramfs are deleted from `/boot`, and its three GRUB entries
+  (`elementary-aurora-sep`, `-sep-clean`, `-nosep`) are removed from `custom.cfg` (backup
+  `custom.cfg.pre-remove-19-*`). Its module directory stays until the machine has booted off
+  it once more. Reason: on `.19` the Secure Enclave driver hung the whole machine within ~15-60 s
+  of boot (details: [AURORA-SECOND-BOOT.md](../AURORA-SECOND-BOOT.md)); with `apple_sep`
+  blocked the kernel was stable.
+- **`.20` hand-installed beside it** (before this lane's installer was run): modules in
+  `/usr/lib/modules/7.1.12-2-20261017.20-sep-ARCH`, `/boot/vmlinuz-aurora-sep-20261017.20`, and an
+  initramfs rebuilt in the transformed desktop's mkinitcpio layout (not Debian `update-initramfs`,
+  which ignores the `cryptdevice=` root option). Two GRUB entries, **not armed**:
+  `elementary-aurora20` and `elementary-aurora20-nosep`. These use the same ids as the
+  managed block `aurora-sep/install-aurora-sep.sh --apply` writes, so remove the hand-made
+  entries before running that installer to avoid duplicate ids.
+- **Matched boot payload staged, not deployed**, with `stage-boot.py` against a read-only copy of
+  the current `boot.bin`: `~/aurora20-boot-candidate/` (`boot.bin.candidate`, byte-exact
+  `boot.bin.rollback`, `report.json`). Candidate sha256 `9c9c2d01…14d5f`, built from
+  `m1n1-aurora 1.6.1.aurora17-5` and the release's `t6000-j314s.dtb`; all 109 other DTBs and
+  the U-Boot tail are byte-identical to the input. The release DTB already has
+  `/soc/sep@396400000` enabled, the `sep` alias and `spi@39b108000`/fingerprint wiring, which is
+  what was hand-patched into the current `boot.bin` (and may be what the `.19` hang was
+  about: an older device tree plus a hand-ported sensor node).
+- **Not done:** no boot of `.20`, no deployment of the candidate `boot.bin` (it is shared by all
+  kernel entries; fallback compatibility with the Fairydust/dptunnel lanes is unreviewed).
+
+Recommended order for the next hardware session (dock out): (1) boot `elementary-aurora20-nosep`
+on the current `boot.bin` to confirm `.20` itself is stable; (2) deploy the staged
+`boot.bin.candidate` (rollback on hand; DeepSeek owns the kernel/boot chain, so coordinate), boot
+`elementary-aurora20` and check `/dev/sep-bio`, then `aurora-touchid-setup`; (3) try the dock.
