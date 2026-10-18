@@ -312,4 +312,3 @@ browser integration and remaining Files/Gala patches remain open.
 
 - Power and battery roadmap written 2026-10-16 (`POWER-ROADMAP.md`): goals, baseline, workstreams A to G, phases 0 to 4,
   owner decisions list. First free change installed: Electron apps to native Wayland at next login.
-- Orchard for Incus (`mseries/orchard-incus/`): first cut landed 2026-10-15; needs action testing, packaging, icon, then dashboard/profiles/network views.
