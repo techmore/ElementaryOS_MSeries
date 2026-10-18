@@ -43,7 +43,9 @@ and reopen it for the change to apply.
 
 ## Limits that are not bugs
 
-- **L3 only.** Expect SD/720p on YouTube movies and similar. Nothing in Brave or this repo changes that.
+- **L3 only.** YouTube Movies & TV in any browser except Safari is capped at SD (480p observed here, 2026-10-18;
+  Google: <https://support.google.com/youtube/answer/78358>). Other services cap L3 at SD/720p. Nothing in Brave
+  or this repo changes that; use the TV's own app for HD films. See `audio/DOCK-TV-AUDIO.md`.
 - Widevine and hardware video decode are separate. If DRM playback still shows
   a green or blank picture while audio continues, the Omarchy Mac reports a
   Brave/AVD hardware-decode issue; test software decoding in `brave://flags`
