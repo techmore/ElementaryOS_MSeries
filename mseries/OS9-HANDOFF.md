@@ -1,35 +1,67 @@
 # OS 9 implementation / Claude Code handoff
 
 
-## Orchard session memory retention — 2026-10-18
+## Orchard session memory and native qualification — 2026-10-18
 
-The output churn probe reproduced retained GTK text: undo history kept trimmed
-read-only output, and caches retained deleted guests. The candidate disables
-output undo, prunes deleted-guest buffers after active commands finish, removes
-hidden dashboard cards on inventory refresh, preserves rename output across a
-stale listing, and releases the image picker read slot when selecting a result.
-The same synthetic 12-identity / 72 MiB UTF-8 probe now ends with no output
-buffers or undo history. Exact source hashes and RSS snapshots are recorded by
-`tools/probe-output-retention.py`; RSS is not a portable pass/fail threshold.
+Fixed three retained-object paths in the installed Python/GTK4 manager:
+read-only Run output now disables GTK undo; deleted guests release output
+buffers after active commands finish (rename preserves output across stale
+listings); creation/name/image-search forms disconnect owned signal callbacks
+on response/destruction. Hidden dashboard cards are pruned even off-page, and
+image selection releases its read slot. The synthetic 12-identity / 72 MiB UTF-8
+probe grew RSS 153.05 MiB before / 6.75 MiB after and ended with 12 / zero cached
+buffers. The 60-form probe retained 60 dialogs plus 540 input/support wrappers
+before / none after. RSS is not a portable pass/fail threshold.
 
-Creation/name/image-search forms also release their owned signal handlers on
-response/destruction. A 60-dialog negative control retained all 60 dialogs and
-540 input/support widgets before this fix; the candidate retains none after
-Python GC. Raw RSS is sensitive to allocator and system memory reclamation.
+Real Wayland/Vulkan + elementary blueberry qualification: baseline 12.7 minutes,
+candidate 14.7 minutes; three cycles each (33 main workflow groups per build),
+then another 11 groups against the installed candidate with stricter runner
+scope guards. Candidate runtime hashes match all probes and the installed
+package. All groups passed; owned guests were removed and original guest states
+preserved. Native logs contain no unexpected UI errors or GTK warnings/criticals.
+The separate Vala manager/panel was not requalified.
 
-Checks: 117 tests, 111 passed / six opt-in live tests skipped, fatal GTK criticals
-enabled. A new ARM64 GTK/Granite CI job runs these regressions without Incus.
-`tools/qualify-wayland.py` now supports repeated workflow cycles, before/after
-idle observations, five-second RSS/PSS/private/CPU/FD/thread/cache samples,
-source hashes and actual focus state. It rejects a non-Wayland backend early,
-stops when its window closes and returns failure for workflow/cleanup errors.
-The live runner also rejects backend writes/exec outside its exact fixture set,
-checks both transfer directions and host mounts, and guards direct Run/Terminal
-launches against a changed GUI selection. Seven scope tests cover original-guest
-rejection, both host-path directions and symlink escapes.
-Native long-session measurements and repeated live qualification are in progress;
-do not treat the preliminary XWayland/closed-window pilots as native results.
-Next: finish the native before/after sessions, publish scoped results and deploy.
+Candidate post-workflow idle lasted ten minutes; after the first minute settled,
+app CPU averaged 0.451% of one core, with 0.305% reaped CLI-client CPU separately.
+Focused intervals measured 0.526% app CPU (390 seconds), inactive 0.250% (143 seconds).
+Focus was sampled, not inferred; baseline idle was inactive, so these are not
+matched-focus speedup figures. Median RSS 149.88 MiB, PSS 91.69 MiB, private
+74.55 MiB; settled RSS fell 1.52 MiB and private fell 0.75 MiB. FDs varied 49–51
+and threads 13–14 with short-lived polls, ending at 49/13. Rows/cards/histories
+stayed at two; reads/timers at two, output buffers at zero. After-cycle buffers
+were 4→8→12 before / 0→0→0 after; GC-tracked process object counts (including
+the harness) were roughly flat after the fix. A bare GTK FileDialog control
+held 39 FDs through 20 API cancellations and a 60-second settle, with no retained
+FileDialog wrappers. Warm graphics/GVFS caches are distinct from object leaks.
+
+Repeated action-to-presentation p95 was 22.32–35.73 ms across the three candidate
+probes (18 programmatic actions each, 120 Hz feedback), without a material
+regression relative to these baseline runs. This is not physical input-to-photon
+or a zero-jank claim. Desktop applications/builds continued during the audit.
+
+Verification: 117 Python tests, 111 passed / six opt-in live tests skipped;
+all five ARM64 CI jobs passed, including the new GTK/Granite regression job.
+The live runner rejects non-Wayland sessions before waiting, records five-second
+RSS/PSS/private/CPU/FD/thread/cache samples, supports repeated unique fixtures,
+stops on window closure and fails on workflow/cleanup errors. Scope guards cover
+backend writes, direct Run/Terminal launches, both file-transfer directions,
+host mounts and symlink escapes. An additional installed-build live cycle
+verified these stricter guards. Earlier XWayland/interrupted pilots are excluded
+from the native comparison; the separate 30-minute installed-window observation
+is labeled XWayland in the receipt.
+
+From `mseries/orchard-incus`, reproduce with `GDK_BACKEND=wayland python3 tools/qualify-wayland.py --source "$PWD" --output /new/empty/dir --run --cycles 3 --idle-before 120 --idle-after 600`.
+Independent no-Incus probe: `xvfb-run -a env -u DBUS_SESSION_BUS_ADDRESS GSK_RENDERER=cairo GDK_BACKEND=x11 python3 tools/probe-output-retention.py --output /new/retention.json`.
+Evidence: `mseries/orchard-incus/audit/2026-10-18-session.json`, corresponding
+before/after JSONL samples, and `docs/orchard-incus.html`. The long-session driver
+revision is recorded separately from the later scope hardening; runtime hashes
+are identical. Installed with `sh mseries/orchard-incus/install.sh` and standard
+Orchard reopened as a native Wayland client, with a clean startup log.
+
+Remaining: multi-hour/day stability, controlled thermal/battery measurements,
+huge fleets, other themes/scales, physical keyboard/focus traversal and interactive
+upload/download/Console input. No kernel, bootloader, audio or global display
+settings were changed. Next: qualify these remaining environments as needed.
 
 ## Combined compact Upcoming and period views — 2026-10-18
 

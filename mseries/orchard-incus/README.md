@@ -69,8 +69,13 @@ Dashboard cards populate in batches of 16 and offscreen chart updates wait
 until scrolled into view. Rows are still retained GTK widgets, so very large
 fleets need future virtualization. The synthetic audit measures UI-thread updates. A separate real Wayland run
 verified 11 workflow groups and compositor presentation feedback (action latency
-26 ms median / 34 ms p95). It does not measure physical input-to-photon or a
-long-duration memory budget. See the receipt for exact conditions and limits.
+26 ms median / 34 ms p95). It does not measure physical input-to-photon or establish
+a universal memory budget. A separate 14.7-minute native session repeated three
+workflow cycles and a ten-minute post-workflow idle: buffers stayed at zero after
+each cleanup, median settled RSS was about 150 MiB, and CPU about 0.45% of one
+core plus 0.31% in reaped CLI clients. Focused app intervals measured 0.53%. See
+[`audit/2026-10-18-session.json`](audit/2026-10-18-session.json) for conditions,
+source hashes, focus differences and limits.
 
 ## Verification
 
