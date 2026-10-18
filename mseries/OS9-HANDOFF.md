@@ -1,5 +1,49 @@
 # OS 9 implementation / Claude Code handoff
 
+## Native full-height J314 desktop and persistent dock — 2026-10-18
+
+Owner requested reclaiming the notch strip, native dock optimization and a push
+to main. [Profile](display-space/README.md): `bash mseries/install-desktop-space.sh`.
+Pinned Wingpanel patch moves the existing clock/calendar beside the camera only
+on the full-height 14-inch M1 Pro internal panel. Equal scrollable halves protect
+a central gap; scale/monitor changes refresh geometry and move the native clock
+with removal from its old FlowBox before insertion into the other. Stock cropped
+and external layouts retain the centered clock and CodexBar placement.
+
+Native dock preserves drawers/apps, adds private persistent offset settings,
+clamps placement when screen/dock size changes, uses 40-pixel icons and hides
+when any window overlaps. Reuses Wingpanel's cached DisplayConfig implementation
+with SPDX attribution; no polling daemon. Installers, immutable source pins,
+version-aware panel backup, private dock/build/wrapper backup and reversible
+settings are in the repo and immutable-root payload; optional post-install stage
+`desktop-space`. Initial factory image stays cropped until a compatible profile
+is installed; no full-height factory boot is claimed.
+
+Applied on the running J314: native dock installed and restarted (PID 295165 at
+verification), settings read back as 40 / overlapping-window; new offset schema
+loads. Updated Wingpanel binary installed and SHA256-matched to the reviewed
+ARM64 build (loads on next login/reboot). Boot helper prepared a separate
+`mseries-full-height` normal-boot choice using the exact running `.20` kernel,
+initrd, root/encryption flags and `appledrm.show_notch=1`. All original entries
+remain, `grub-script-check` passes, and queued `next_entry=elementary-aurora20-enh1`
+is unchanged: that one-shot trial runs first. No forced reboot, kernel/initramfs,
+firmware, generated grub.cfg or audio changes.
+
+Verification: clean source builds via `install-desktop-space.sh --build-only`
+pass for both ARM64 components; dock schema validates. Eight boot helper tests
+pass (exact provenance/encryption, idempotence, revert, malformed/missing/ambiguous
+refusal). Production notch helper/GTK allocation under Xvfb passes full/cropped/
+external/other-model gating, fractional sizes and crowded-control clipping. Setup
+payload tests, shell syntax, focused ShellCheck and diff whitespace checks pass.
+The native dock stays running, with startup critical/warning messages from its
+upstream workspace/app-launcher integrations (missing chatgpt.desktop, initial
+DesktopIntegration and AppCenter interface); these were observed, not resolved
+or labelled a clean runtime log. No full-height hardware acceptance or energy
+saving is claimed. Next: after the pending trial, select the full-height entry
+and verify clock/calendar, crowded indicators, dock reveal/Command-drag across
+restart, scale changes and external monitor switching on hardware.
+
+
 ## Dock TV: no sound (display audio off in the kernel) and YouTube Movies 480p (YouTube rule) — 2026-10-18 (Claude Code)
 
 - **No TV sound:** no `apple_dcp` sound card exists because `appledrm.hdmi_audio=N`. The device tree already wires a

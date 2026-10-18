@@ -1,5 +1,19 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+
+## Native full-height desktop and compact dock — 2026-10-18
+
+The [J314 native desktop profile](display-space/README.md) restores the 74-pixel
+camera strip with a protected Wingpanel clock layout, compact overlap-hiding dock
+and persistent monitor-clamped placement. Installed on the current transformed
+M1 Pro; ARM64 builds, eight boot helper tests, GTK allocation and payload checks
+pass. The separate full-height normal-boot choice preserves recovery and the
+already queued one-shot kernel trial. Full-height hardware boot/clock/monitor
+switching and dock placement persistence still need post-reboot confirmation.
+Factory images retain their cropped initial mode. See the latest handoff for
+commands, runtime warnings and rollback.
+
+
 ## .20-enh1 one-shot hardware trial staged — 2026-10-18
 
 [Trial and rollback guide](aurora/trial/README.md): next boot selects

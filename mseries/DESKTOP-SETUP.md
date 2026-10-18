@@ -244,30 +244,22 @@ identified before enabling fingerprint login. See [the optimization audit](OMARC
 Issue [#8271](https://github.com/omacom/omarchy/issues/8271) concerns Intel T1
 firmware/EFI, not this Apple Silicon machine.
 
-## Camera notch and centered panel indicators
+## Camera notch and native dock
 
-Pantheon places its date/time indicator in the center of Wingpanel and does not
-avoid the MacBook camera notch. Keep `appledrm show_notch` disabled so the
-desktop receives the rectangular 16:10 mode; enabling the full-height mode can
-put the clock and other centered panel content behind the camera. The Apple
-Silicon image no longer opts in. On this transformed install, pass
-`appledrm.show_notch=0` on the custom elementary GRUB entry; the Asahi driver
-loads from an Arch-named initramfs, so regenerating Ubuntu's conventional
-`initrd.img-*` files does not change this boot entry.
+The [full-height desktop profile](display-space/README.md) restores the 74-pixel
+camera strip on the 14-inch M1 Pro. Run `bash mseries/install-desktop-space.sh`
+as the desktop user and reboot when ready. Wingpanel moves its native clock
+and calendar beside the camera and keeps controls in two protected halves.
+The native dock uses 40-pixel icons, hides when any window overlaps, and saves
+Command-drag placement across restarts. Existing pinned apps and drawers stay.
 
-Verified 2026-10-14 on the M1 Pro 14-inch: with `appledrm.show_notch=0` on the
-elementary GRUB entry, Pantheon's stock centered date/time is visible and
-working in the middle of Wingpanel, so the right-side replacement is not needed
-there.
+`--build-only` checks both builds without installing; `--revert` restores the
+previous profile. Existing recovery entries and queued kernel trials survive.
+A queued one-shot kernel trial runs before the new normal-boot choice.
 
-If the centered date/time remains hidden, install a temporary right-side
-replacement with `bash mseries/install-clockright-wingpanel.sh`. It follows
-Wingpanel's weekday, date, 12/24-hour, and seconds preferences. To place it
-after Alerts and before Quick Settings, run
-`bash mseries/install-wingpanel-clock-position.sh`. This rebuilds the matching
-Wingpanel 8.0.4 revision and saves the original panel executable for rollback
-with `bash mseries/install-wingpanel-clock-position.sh --uninstall`. Log out
-and back in to load the indicator and ordering.
+Stock Wingpanel still centers the clock: keep the cropped mode until this native
+profile has built and installed successfully. Factory-image full-height boot
+and on-device post-reboot behavior remain unqualified.
 
 ## Boot and login timing
 
