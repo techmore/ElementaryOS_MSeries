@@ -295,13 +295,19 @@ namespace MSeries {
 
             // Links: one flat menu-style item each, so the card reads as a short list.
             var links = card (null);
-            var link = client.viewer_link (state.viewer_base);
-            if (link != null) {
-                var cv = item ("insert-link-symbolic", "Copy viewer link",
-                    "until " + new GLib.DateTime.from_unix_local (client.link_expires).format ("%H:%M"), "Copy the link for your viewer");
-                cv.clicked.connect (() => copy (link, "Viewer link"));
-                links.append (cv);
-            } else {
+            var bases = state.link_bases ();
+            for (int bi = 0; bi < bases.length[0]; bi++) {
+                var label = bases[bi, 0];
+                var origin = bases[bi, 1];
+                var link = client.viewer_link (origin);
+                if (link != null) {
+                    var cv = item ("insert-link-symbolic", "Copy %s link".printf (label.down ()),
+                        bi == 0 ? "until " + new GLib.DateTime.from_unix_local (client.link_expires).format ("%H:%M") : null, "Copy the " + label.down () + " link for your viewer");
+                    cv.clicked.connect (() => copy (link, label + " link"));
+                    links.append (cv);
+                }
+            }
+            if (client.viewer_link (state.viewer_base) == null) {
                 var mk = item ("list-add-symbolic", "Create viewer link", null, "Make a link to send to your viewer");
                 mk.clicked.connect (() => { client.create_link.begin ((o, r) => { client.create_link.end (r); act (); }); });
                 links.append (mk);
