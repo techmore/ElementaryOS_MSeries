@@ -10,7 +10,8 @@ home=$(mktemp -d); trap 'rm -rf "$home" 2>/dev/null || true' EXIT
 mkdir -p "$home/.local/bin" "$home/.local/lib/codexbar-cli"
 printf '#!/bin/sh\n[ "$1" = --snapshot ] && cat "$CB_FIXTURE"\nexit 0\n' > "$home/.local/bin/codexbar-linux"
 printf '#!/usr/bin/env python3\nimport os,sys\nsys.stdout.write(open(os.environ["CB_SESSIONS"]).read())\n' > "$home/.local/lib/codexbar-cli/codexbar-sessions.py"
-chmod +x "$home/.local/bin/codexbar-linux" "$home/.local/lib/codexbar-cli/codexbar-sessions.py"
+printf '#!/usr/bin/env python3\nimport json\nprint(json.dumps({"status":"available","message":"Local usage estimate \\u00b7 not account quota","periods":[{"label":"5 hours","costUSD":0,"requests":0,"tokens":0},{"label":"7 days","costUSD":14.719468,"requests":565,"tokens":120813143}]}))\n' > "$home/.local/lib/codexbar-cli/codexbar-opencode-local.py"
+chmod +x "$home/.local/bin/codexbar-linux" "$home/.local/lib/codexbar-cli/codexbar-sessions.py" "$home/.local/lib/codexbar-cli/codexbar-opencode-local.py"
 scenarios=("$@"); [ ${#scenarios[@]} -gt 0 ] || scenarios=(healthy live depleting exhausted provider-error stale empty busy)
 theme=io.elementary.stylesheet.blueberry; [ "$scheme" = dark ] && theme="$theme:dark"
 for name in "${scenarios[@]}"; do

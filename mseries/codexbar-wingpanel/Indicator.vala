@@ -35,6 +35,9 @@ namespace MSeries {
         private string sessions_text = "";
         private string sessions_error = "";
         private int64 sessions_fetched_us = 0;
+        private Json.Object? opencode_local = null;
+        private bool opencode_local_in_flight = false;
+        private int64 opencode_local_fetched_us = 0;
 
         public CodexBarIndicator () {
             GLib.Object (code_name: "codexbar");
@@ -333,6 +336,61 @@ namespace MSeries {
                 GLib.get_monotonic_time () - sessions_fetched_us > max_age_seconds * GLib.TimeSpan.SECOND) {
                 refresh_sessions.begin ();
             }
+            if (opencode_local_fetched_us == 0 ||
+                GLib.get_monotonic_time () - opencode_local_fetched_us > max_age_seconds * GLib.TimeSpan.SECOND) {
+                refresh_opencode_local.begin ();
+            }
+        }
+
+        private static string local_digest (Json.Object? usage) {
+            if (usage == null) {
+                return "";
+            }
+            var generator = new Json.Generator ();
+            var node = new Json.Node (Json.NodeType.OBJECT);
+            node.set_object (usage);
+            generator.root = node;
+            return generator.to_data (null);
+        }
+
+        // OpenCode Go's account quota needs a web sign-in, so show what this machine's own history says.
+        private async void refresh_opencode_local () {
+            if (opencode_local_in_flight) {
+                return;
+            }
+            opencode_local_in_flight = true;
+            var helper = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "lib",
+                "codexbar-cli", "codexbar-opencode-local.py");
+            var changed = false;
+            try {
+                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
+                    "python3", helper);
+                string stdout_text;
+                string stderr_text;
+                yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
+                Json.Object? parsed = null;
+                if (process.get_successful () && stdout_text.strip ().length > 0) {
+                    var parser = new Json.Parser ();
+                    parser.load_from_data (stdout_text, -1);
+                    var root = parser.get_root ();
+                    if (root != null && root.get_node_type () == Json.NodeType.OBJECT
+                        && root.get_object ().get_string_member_with_default ("status", "") == "available") {
+                        parsed = root.get_object ().ref ();
+                    }
+                }
+                changed = local_digest (parsed) != local_digest (opencode_local);
+                opencode_local = parsed;
+            } catch (Error e) {
+                changed = opencode_local != null;
+                opencode_local = null;
+            } finally {
+                opencode_local_in_flight = false;
+                opencode_local_fetched_us = GLib.get_monotonic_time ();
+            }
+            if (changed) {
+                last_digest = "";
+                read_snapshot.begin ();
+            }
         }
 
         private async void refresh_sessions () {
@@ -570,9 +628,24 @@ namespace MSeries {
                 card.append (subtle_label ("Provider status · " + status));
             }
             if (error.length > 0 || windows == null || windows.get_length () == 0) {
-                card.append (subtle_label (provider == "opencodego"
-                    ? "Quota needs a web sign-in at opencode.ai. Local activity is under Sessions."
-                    : error.length > 0 ? error : "No usage reported yet."));
+                var estimate = provider == "opencodego" ? opencode_local : null;
+                var periods = estimate != null ? estimate.get_array_member ("periods") : null;
+                if (periods != null && periods.get_length () > 0) {
+                    card.append (subtle_label (estimate.get_string_member_with_default ("message", "Local usage estimate · not account quota")));
+                    for (uint i = 0; i < periods.get_length (); i++) {
+                        var period = periods.get_object_element (i);
+                        card.append (subtle_label (Presentation.local_usage_line (
+                            period.get_string_member_with_default ("label", ""),
+                            period.get_double_member_with_default ("costUSD", 0),
+                            period.get_int_member_with_default ("requests", 0),
+                            period.get_int_member_with_default ("tokens", 0))));
+                    }
+                    card.append (subtle_label ("Account quota needs a web sign-in at opencode.ai."));
+                } else {
+                    card.append (subtle_label (provider == "opencodego"
+                        ? "Quota needs a web sign-in at opencode.ai. Local activity is under Sessions."
+                        : error.length > 0 ? error : "No usage reported yet."));
+                }
                 var settings = new Gtk.Button.with_label (provider == "opencodego" ? "Sign in…" : "Open Settings…") {
                     halign = Gtk.Align.START
                 };

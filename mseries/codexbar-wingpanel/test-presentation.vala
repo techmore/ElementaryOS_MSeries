@@ -75,5 +75,9 @@ int main (string[] args) {
         assert (MSeries.Presentation.count_text (1850000) == "1.9M");
         assert (MSeries.Presentation.count_text (1744010089) == "1.7B");
     });
+    GLib.Test.add_func ("/presentation/local-usage", () => {
+        assert (MSeries.Presentation.local_usage_line ("7 days", 14.719468, 565, 120813143) == "7 days · $14.72 · 565 requests · 120.8M tokens");
+        assert (MSeries.Presentation.local_usage_line ("5 hours", 0, 1, 0) == "5 hours · $0.00 · 1 request · 0 tokens");
+    });
     return GLib.Test.run ();
 }
