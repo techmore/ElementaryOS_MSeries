@@ -311,9 +311,48 @@ namespace MSeries {
             return sw;
         }
 
+        private Gtk.DropDown token_location () {
+            var picker = new Gtk.DropDown (new Gtk.StringList ({ "Menu bar and dropdown", "Dropdown only" }), null) {
+                selected = panel_preferences.get_bool ("showTokens") ? 0 : 1
+            };
+            bool reverting = false;
+            picker.notify["selected"].connect (() => {
+                if (loading || reverting) return;
+                if (!panel_preferences.save_bool ("showTokens", picker.selected == 0)) {
+                    reverting = true;
+                    picker.selected = panel_preferences.get_bool ("showTokens") ? 0 : 1;
+                    reverting = false;
+                }
+                panel_notice.label = panel_preferences.last_error;
+                panel_notice.visible = panel_preferences.last_error.length > 0;
+            });
+            return picker;
+        }
+
+        private Gtk.DropDown quota_style () {
+            var picker = new Gtk.DropDown (new Gtk.StringList ({ "Literal percentages", "Visual status dots" }), null) {
+                selected = panel_preferences.get_bool ("compactQuota") ? 1 : 0
+            };
+            bool reverting = false;
+            picker.notify["selected"].connect (() => {
+                if (loading || reverting) return;
+                if (!panel_preferences.save_bool ("compactQuota", picker.selected == 1)) {
+                    reverting = true;
+                    picker.selected = panel_preferences.get_bool ("compactQuota") ? 1 : 0;
+                    reverting = false;
+                }
+                panel_notice.label = panel_preferences.last_error;
+                panel_notice.visible = panel_preferences.last_error.length > 0;
+            });
+            return picker;
+        }
+
         private Gtk.Widget build_display () {
             var root = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
             var panel = section ("Wingpanel");
+            add_row (panel, row ("Quota style", "Dots show remaining quota; hover for percentages", quota_style ()));
+            add_row (panel, row ("Token counts", "Keep seven-day totals in the dropdown to save bar space", token_location ()));
+
             add_row (panel, row ("Quota percentages", "Show percentages in the bar and quota text", panel_toggle ("showPercent")));
             add_row (panel, row ("Time until reset", "Show reset countdowns in the bar and quota text", panel_toggle ("showReset")));
             add_row (panel, row ("Other accounts in panel", "Show other accounts in the bar only", panel_toggle ("showAccounts")));

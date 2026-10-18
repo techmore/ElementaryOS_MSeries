@@ -322,3 +322,20 @@ for next login without reloading a healthy panel.
 ChatGPT/Codex and Claude's token-first heading also includes the active seven-day
 percentage and its reset countdown. Five-hour and alternate-account details remain
 on the lower row. The token probe asserts the weekly values share the token heading.
+
+## Saved OpenCode account cache and display density
+
+Saved-account console plans use a 3600-second cache and inactive quota uses 300
+seconds, scoped to database/account/workspace/sign-in identity. Manual Refresh
+bypasses both. Reset boundaries invalidate cached quota; failures back off and
+retain sanitized last-good values with a stale marker. The active account uses
+the upstream snapshot. Credential inventory stays live; no credentials or raw
+provider responses are persisted. Shared private JSON cache/locks require no new
+database or service.
+
+Native Display settings persist `showTokens` (default true) and `compactQuota`
+(default false) in Wingpanel's own preferences. Dropdown token counts remain
+available when hidden from the bar. Compact active quota dots show remaining
+balance (>70 green, 25–70 yellow, <25 red, percentage visible below 10); hover
+reports the measured percentage. Popup quotas and alternate accounts stay literal.
+Menu bar marks use 13px; card marks retain their existing size.

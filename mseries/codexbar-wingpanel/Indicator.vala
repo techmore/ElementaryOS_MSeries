@@ -55,6 +55,7 @@ namespace MSeries {
         private int64 opencode_local_fetched_us = 0;
         private Json.Array? opencode_accounts = null;
         private bool opencode_accounts_in_flight = false;
+        private bool opencode_force_pending = false;
         private int64 opencode_accounts_fetched_us = 0;
         private uint opencode_generation = 0;
         private bool opencode_switch_in_flight = false;
@@ -297,7 +298,7 @@ namespace MSeries {
         private void refresh_usage (bool force = false) {
             refresh_claude.begin (force);
             refresh_codex_accounts.begin (force);
-            refresh_opencode_accounts.begin ();
+            refresh_opencode_accounts.begin (force);
             if (snapshot_busy || !run_action ("--refresh")) {
                 return;
             }
@@ -512,14 +513,18 @@ namespace MSeries {
             }
         }
 
-        private async void refresh_opencode_accounts () {
-            if (opencode_accounts_in_flight) return;
+        private async void refresh_opencode_accounts (bool force = false) {
+            if (opencode_accounts_in_flight) {
+                opencode_force_pending = opencode_force_pending || force;
+                return;
+            }
             opencode_accounts_in_flight = true;
             var generation = opencode_generation;
             var before = codex_accounts_digest (opencode_accounts);
             try {
-                var output = yield HelperProcess.read (
-                    { "python3", helper_path ("codexbar-opencode-local.py"), "accounts" }, 120000);
+                string[] command = { "python3", helper_path ("codexbar-opencode-local.py"), "accounts" };
+                if (force) command += "--force";
+                var output = yield HelperProcess.read (command, 120000);
                 var parser = new Json.Parser ();
                 parser.load_from_data (output);
                 var root = parser.get_root ();
@@ -536,7 +541,11 @@ namespace MSeries {
             } finally {
                 opencode_accounts_in_flight = false;
                 opencode_accounts_fetched_us = generation == opencode_generation ? GLib.get_monotonic_time () : 0;
-                if (generation != opencode_generation) refresh_opencode_accounts.begin ();
+                if (opencode_force_pending || generation != opencode_generation) {
+                    var force_next = opencode_force_pending;
+                    opencode_force_pending = false;
+                    refresh_opencode_accounts.begin (force_next);
+                }
             }
             if (before != codex_accounts_digest (opencode_accounts)) {
                 repaint_cached_quota ();
@@ -749,6 +758,7 @@ namespace MSeries {
             head.append (build_add_account_button ("Sign in to Claude Code, then save that login with claude-swap",
                 () => add_claude_account ()));
             card.append (head);
+            append_weekly_tokens (card, "claude");
             // CLI and desktop can be switched separately; always name both when they differ.
             var desktop = claude_data.has_member ("desktop") ? JsonBoundary.object_member (claude_data, "desktop") : null;
             if (desktop != null && JsonBoundary.flag (desktop, "differs", false)) {
@@ -1016,6 +1026,7 @@ namespace MSeries {
                 return;
             }
             sessions_in_flight = true;
+            var before_tokens = weekly_tokens_digest ();
             var helper = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "lib",
                 "codexbar-cli", "codexbar-sessions.py");
             try {
@@ -1039,7 +1050,12 @@ namespace MSeries {
                 render_sessions ();
                 // Repaint cached panel data immediately; never request another provider poll.
                 if (panel_entries != null) update_panel (panel_entries, new DateTime.now_utc ().to_unix ());
+                if (before_tokens != weekly_tokens_digest ()) repaint_cached_quota ();
             }
+        }
+
+        private string weekly_tokens_digest () {
+            return local_week_tokens ("codex") + "|" + local_week_tokens ("claude") + "|" + local_week_tokens ("opencodego");
         }
 
         private void repaint_cached_quota () {
@@ -1448,6 +1464,36 @@ namespace MSeries {
             return null;
         }
 
+        private void apply_quota_dot (Gtk.Label label, string caption, double remaining) {
+            if (!display_preferences.get_bool ("compactQuota") || remaining < 0) return;
+            var color = quota_theme_color (label, Presentation.dot_color (remaining),
+                remaining > 70 ? "#2e7d32" : remaining >= 25 ? "#a66300" : "#c6262e");
+            label.remove_css_class ("level-low");
+            label.remove_css_class ("level-critical");
+            label.use_markup = true;
+            label.label = "%s <span foreground=\"%s\">●</span>%s".printf (
+                Markup.escape_text (caption), color, Presentation.dot_percent (remaining));
+            label.tooltip_text = "%s · %g%% remaining".printf (caption, remaining);
+        }
+
+        private void apply_primary_quota_dot (Gtk.Label label, string provider) {
+            var windows = active_panel_windows (provider);
+            if (windows == null || windows.get_length () == 0) return;
+            int selected = Presentation.binding_window (windows);
+            for (uint i = 0; i < windows.get_length (); i++) {
+                var window = windows.get_object_element (i);
+                var minutes = JsonBoundary.integer (window, "minutes");
+                if (JsonBoundary.text (window, "key") == "primary" || (minutes > 0 && minutes <= 360)) {
+                    selected = (int) i;
+                    break;
+                }
+            }
+            if (selected < 0) return;
+            var window = windows.get_object_element ((uint) selected);
+            apply_quota_dot (label, Presentation.short_window_label (JsonBoundary.text (window, "label", "Quota"),
+                (int) JsonBoundary.integer (window, "minutes")), JsonBoundary.number (window, "remaining", -1));
+        }
+
         private void append_weekly_panel_quota (Gtk.Box heading, string provider) {
             var windows = active_panel_windows (provider);
             for (uint i = 0; windows != null && i < windows.get_length (); i++) {
@@ -1460,6 +1506,7 @@ namespace MSeries {
                 var level = Presentation.level_for (remaining);
                 if (level == QuotaLevel.LOW) value.add_css_class ("level-low");
                 if (level == QuotaLevel.CRITICAL) value.add_css_class ("level-critical");
+                apply_quota_dot (value, "7D", remaining);
                 if (display_preferences.get_bool ("showPercent")) heading.append (value);
                 if (display_preferences.get_bool ("showReset")) {
                     var timestamp = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt"), null);
@@ -1478,32 +1525,36 @@ namespace MSeries {
 
         private Gtk.Widget build_panel_segment (string provider, string value_text, string reset_text,
                                                        QuotaLevel level, bool stale) {
-            var local_tokens = display_preferences.get_bool ("showPercent") ? local_week_tokens (provider) : "";
-            var tokens_on_top = (provider == "codex" || provider == "claude") && local_tokens.length > 0;
+            var local_tokens = display_preferences.get_bool ("showTokens") ? local_week_tokens (provider) : "";
+            var details_on_top = (provider == "codex" || provider == "claude") && (local_tokens.length > 0 ||
+                ((display_preferences.get_bool ("showPercent") || display_preferences.get_bool ("showReset")) && active_panel_windows (provider) != null));
             var segment = new Gtk.Box (Gtk.Orientation.HORIZONTAL, provider == "opencodego" ? 2 : 3);
             if (provider == "opencodego") segment.add_css_class ("seg-opencode");
             if (stale) segment.add_css_class ("stale");
             var mark = build_provider_mark (provider, provider_title (provider));
             var icon = mark as Gtk.Image;
             if (icon != null) {
-                icon.pixel_size = 14;
+                icon.pixel_size = 13;
                 icon.valign = Gtk.Align.CENTER;
             }
-            var heading = tokens_on_top ? new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3) : segment;
-            if (tokens_on_top && stale) heading.add_css_class ("stale");
+            var heading = details_on_top ? new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3) : segment;
+            if (details_on_top && stale) heading.add_css_class ("stale");
             heading.append (mark);
             if (display_preferences.get_bool ("showHints")) heading.append (build_hint_badges (provider, true));
-            if (tokens_on_top) {
-                var tokens = new Gtk.Label ("7d · %s tok".printf (local_tokens)) { xalign = 0 };
-                tokens.add_css_class ("seg-value");
-                tokens.tooltip_text = "Tokens processed in seven days";
-                heading.append (tokens);
+            if (details_on_top) {
+                if (local_tokens.length > 0) {
+                    var tokens = new Gtk.Label ("7d · %s tok".printf (local_tokens)) { xalign = 0 };
+                    tokens.add_css_class ("seg-value");
+                    tokens.tooltip_text = "Tokens processed in seven days";
+                    heading.append (tokens);
+                }
                 append_weekly_panel_quota (heading, provider);
             }
             var value = new Gtk.Label (value_text) { valign = Gtk.Align.BASELINE_CENTER };
             value.add_css_class ("seg-value");
             if (level == QuotaLevel.LOW) value.add_css_class ("level-low");
             if (level == QuotaLevel.CRITICAL) value.add_css_class ("level-critical");
+            apply_primary_quota_dot (value, provider);
             if (display_preferences.get_bool ("showPercent")) {
                 segment.append (value);
             } else {
@@ -1517,12 +1568,11 @@ namespace MSeries {
             }
             var alternate = alternate_account_text (provider, new DateTime.now_utc ().to_unix ());
             var show_alternate = display_preferences.get_bool ("showAccounts") && alternate.length > 0;
-            if ((!show_alternate && local_tokens.length == 0) ||
-                (!display_preferences.get_bool ("showPercent") && !display_preferences.get_bool ("showReset"))) return segment;
+            if (!details_on_top && !show_alternate && local_tokens.length == 0) return segment;
             var stack = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { valign = Gtk.Align.CENTER };
             if (provider == "opencodego") stack.add_css_class ("seg-opencode");
             stack.append (heading);
-            if (tokens_on_top && !show_alternate) {
+            if (details_on_top && !show_alternate) {
                 stack.append (segment);
                 return stack;
             }
@@ -1535,8 +1585,8 @@ namespace MSeries {
                 return stack;
             }
             var markup = new StringBuilder ();
-            if (tokens_on_top) markup.append ("· ");
-            if (!tokens_on_top && local_tokens.length > 0) markup.append (Markup.escape_text ("7d · %s tok  ·  ".printf (local_tokens)));
+            if (details_on_top) markup.append ("· ");
+            if (!details_on_top && local_tokens.length > 0) markup.append (Markup.escape_text ("7d · %s tok  ·  ".printf (local_tokens)));
             var accounts = provider_accounts (provider);
             for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
                 var account = accounts.get_object_element (i);
@@ -1548,7 +1598,7 @@ namespace MSeries {
                         : colored_account_quota (label, windows, new DateTime.now_utc ().to_unix (), true)));
             }
             label.set_markup (markup.str);
-            if (tokens_on_top) {
+            if (details_on_top) {
                 segment.append (label);
                 stack.append (segment);
             } else {
@@ -1622,6 +1672,11 @@ namespace MSeries {
             }
         }
 
+        private void append_weekly_tokens (Gtk.Box card, string provider) {
+            var tokens = local_week_tokens (provider);
+            if (tokens.length > 0) card.append (subtle_label (tokens + " tokens · 7 days"));
+        }
+
         private Gtk.Widget build_provider_card (Json.Object entry, int64 now_unix) {
             var provider = (JsonBoundary.text (entry, "provider", "Provider")).down ();
             var title_text = provider_title (provider);
@@ -1673,6 +1728,7 @@ namespace MSeries {
                     () => add_opencode_account ()));
             }
             card.append (head);
+            append_weekly_tokens (card, provider);
 
             var windows = JsonBoundary.array (entry, "windows");
             if (windows != null && windows.get_length () > 0) {
@@ -1689,10 +1745,6 @@ namespace MSeries {
                 card.append (build_codex_accounts ());
             }
             if (provider == "opencodego") {
-                var local_tokens = opencode_week_tokens ();
-                if (windows != null && windows.get_length () > 0 && local_tokens.length > 0) {
-                    card.append (subtle_label (local_tokens + " tokens · 7 days"));
-                }
                 for (uint i = 0; opencode_accounts != null && i < opencode_accounts.get_length (); i++) {
                     var account = opencode_accounts.get_object_element (i);
                     if (JsonBoundary.flag (account, "active", false)) continue;

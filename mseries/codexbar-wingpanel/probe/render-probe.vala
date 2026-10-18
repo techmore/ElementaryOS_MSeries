@@ -118,6 +118,23 @@ int main (string[] args) {
             bar.measure (Gtk.Orientation.VERTICAL, -1, out min, out nat, null, null);
             assert (nat <= 32); // Provider totals and alternate accounts still fit two rows.
         }
+        if (Environment.get_variable ("CB_ASSERT_HIDDEN_TOKENS") != null) {
+            var text = local_label_text (bar);
+            assert (!text.contains ("tok"));
+            assert (text.contains ("7D 64%") && text.contains ("7D 55%"));
+            var menu_text = local_label_text (popover_body);
+            assert (menu_text.contains ("42.0M tokens") && menu_text.contains ("31.2M tokens") && menu_text.contains ("121M tokens"));
+        }
+        if (Environment.get_variable ("CB_ASSERT_DOTS") != null) {
+            var text = local_label_text (bar);
+            assert (text.contains ("7D ●") && text.contains ("5H ●"));
+            assert (!text.contains ("7D 64%") && !text.contains ("5H 72%"));
+            var weekly = find_label (bar, "7D ●");
+            assert (weekly != null && weekly.tooltip_text.contains ("% remaining"));
+            int minimum, natural;
+            bar.measure (Gtk.Orientation.VERTICAL, -1, out minimum, out natural, null, null);
+            assert (natural <= 32);
+        }
         var page = Environment.get_variable ("CB_PAGE");
         var pages = find_pages (root);
         if (page != null && pages != null) {
@@ -204,7 +221,7 @@ Gtk.ScrolledWindow? find_scroll (Gtk.Widget root) {
 }
 
 string local_label_text (Gtk.Widget widget) {
-    var text = (widget is Gtk.Label) ? ((Gtk.Label) widget).label : "";
+    var text = (widget is Gtk.Label) ? ((Gtk.Label) widget).get_text () : "";
     for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ())
         text += " " + local_label_text (child);
     return text;

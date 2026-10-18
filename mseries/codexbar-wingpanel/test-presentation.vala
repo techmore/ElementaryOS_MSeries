@@ -225,5 +225,15 @@ int main (string[] args) {
         assert (MSeries.Presentation.local_usage_line ("7 days", 14.719468, 565, 120813143) == "7 days · $14.72 · 565 requests · 120.8M tokens");
         assert (MSeries.Presentation.local_usage_line ("5 hours", 0, 1, 0) == "5 hours · $0.00 · 1 request · 0 tokens");
     });
+    GLib.Test.add_func ("/presentation/dense-dots", () => {
+        assert (MSeries.Presentation.dot_color (71) == "success_color");
+        assert (MSeries.Presentation.dot_color (70) == "warning_color");
+        assert (MSeries.Presentation.dot_color (25) == "warning_color");
+        assert (MSeries.Presentation.dot_color (24) == "error_color");
+        assert (MSeries.Presentation.dot_percent (10) == "");
+        assert (MSeries.Presentation.dot_percent (9) == " 9%");
+        assert (MSeries.Presentation.dot_percent (0) == " 0%");
+        assert (MSeries.Presentation.dot_percent (-1) == "");
+    });
     return GLib.Test.run ();
 }

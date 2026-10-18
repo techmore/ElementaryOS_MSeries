@@ -3,6 +3,15 @@ namespace MSeries {
     internal enum QuotaLevel { UNKNOWN, OK, LOW, CRITICAL }
 
     internal class Presentation : GLib.Object {
+        // Dense bar dots deliberately use different thresholds from quota warnings.
+        public static string dot_color (double remaining) {
+            return remaining > 70 ? "success_color" : remaining >= 25 ? "warning_color" : "error_color";
+        }
+
+        public static string dot_percent (double remaining) {
+            return remaining >= 0 && remaining < 10 ? " %0.0f%%".printf (remaining) : "";
+        }
+
         public static QuotaLevel level_for (double remaining) {
             if (remaining < 0) return QuotaLevel.UNKNOWN;
             if (remaining <= 10) return QuotaLevel.CRITICAL;
