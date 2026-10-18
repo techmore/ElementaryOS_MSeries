@@ -103,8 +103,16 @@ int main (string[] args) {
                 Graphene.Rect token_bounds, quota_bounds;
                 assert (tokens.compute_bounds (bar, out token_bounds));
                 assert (quota.compute_bounds (bar, out quota_bounds));
-                if (i < 2) assert (token_bounds.origin.y < quota_bounds.origin.y);
-                else assert (token_bounds.origin.y > quota_bounds.origin.y);
+                if (i < 2) {
+                    assert (token_bounds.origin.y < quota_bounds.origin.y);
+                    var weekly = find_label (bar, i == 0 ? "7D 64%" : "7D 55%");
+                    assert (weekly != null && weekly.get_parent () == tokens.get_parent ());
+                    bool has_reset = false;
+                    for (var child = tokens.get_parent ().get_first_child (); child != null; child = child.get_next_sibling ()) {
+                        if (child.has_css_class ("seg-reset")) has_reset = true;
+                    }
+                    assert (has_reset);
+                } else assert (token_bounds.origin.y > quota_bounds.origin.y);
             }
             int min, nat;
             bar.measure (Gtk.Orientation.VERTICAL, -1, out min, out nat, null, null);

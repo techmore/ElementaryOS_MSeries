@@ -1407,6 +1407,8 @@ namespace MSeries {
                 digest.append (local_week_tokens (provider) + "|");
             foreach (var provider in new string[] { "codex", "claude", "opencodego" }) {
                 digest.append (alternate_account_text (provider, now_unix));
+                var windows = active_panel_windows (provider);
+                if (windows != null) digest.append (colored_account_quota (panel_display, windows, now_unix, true));
             }
             for (int i = 0; i < providers.length; i++) {
                 digest.append ("%s|%s|%s|%d|%s;".printf (providers[i], values[i], resets[i], (int) levels[i],
@@ -1428,6 +1430,50 @@ namespace MSeries {
                 }
             }
             if (providers.length == 0) panel_segments.append (new Gtk.Label ("—"));
+        }
+
+        private Json.Array? active_panel_windows (string provider) {
+            for (uint i = 0; panel_entries != null && i < panel_entries.get_length (); i++) {
+                var entry = panel_entries.get_object_element (i);
+                if (JsonBoundary.text (entry, "provider").down () == provider) {
+                    var windows = JsonBoundary.array (entry, "windows");
+                    if (windows != null && windows.get_length () > 0) return windows;
+                }
+            }
+            var accounts = provider_accounts (provider);
+            for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
+                var account = accounts.get_object_element (i);
+                if (JsonBoundary.flag (account, "active")) return JsonBoundary.array (account, "windows");
+            }
+            return null;
+        }
+
+        private void append_weekly_panel_quota (Gtk.Box heading, string provider) {
+            var windows = active_panel_windows (provider);
+            for (uint i = 0; windows != null && i < windows.get_length (); i++) {
+                var window = windows.get_object_element (i);
+                if (JsonBoundary.integer (window, "minutes") != 10080) continue;
+                var remaining = JsonBoundary.number (window, "remaining", -1);
+                if (remaining < 0) return;
+                var value = new Gtk.Label ("· 7D %0.0f%%".printf (remaining));
+                value.add_css_class ("seg-value");
+                var level = Presentation.level_for (remaining);
+                if (level == QuotaLevel.LOW) value.add_css_class ("level-low");
+                if (level == QuotaLevel.CRITICAL) value.add_css_class ("level-critical");
+                if (display_preferences.get_bool ("showPercent")) heading.append (value);
+                if (display_preferences.get_bool ("showReset")) {
+                    var timestamp = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt"), null);
+                    var countdown = timestamp != null
+                        ? Presentation.countdown_text (timestamp.to_unix () - new DateTime.now_utc ().to_unix ())
+                        : compact_reset (JsonBoundary.text (window, "resetText")).replace (" ", "");
+                    if (countdown.length > 0) {
+                        var reset = new Gtk.Label (countdown);
+                        reset.add_css_class ("seg-reset");
+                        heading.append (reset);
+                    }
+                }
+                return;
+            }
         }
 
         private Gtk.Widget build_panel_segment (string provider, string value_text, string reset_text,
@@ -1452,6 +1498,7 @@ namespace MSeries {
                 tokens.add_css_class ("seg-value");
                 tokens.tooltip_text = "Tokens processed in seven days";
                 heading.append (tokens);
+                append_weekly_panel_quota (heading, provider);
             }
             var value = new Gtk.Label (value_text) { valign = Gtk.Align.BASELINE_CENTER };
             value.add_css_class ("seg-value");
