@@ -1,0 +1,178 @@
+#!/bin/bash
+# Opt-in, reversible userspace power trims for the j314s (elementary OS 9, Aurora kernel).
+#
+#   mseries-power-tune list                 items, what they do, whether they are applied
+#   mseries-power-tune status               same as list, plus the live unit/sysfs state
+#   mseries-power-tune apply ITEM...        apply items (root); prior state is saved first
+#   mseries-power-tune revert ITEM...       restore exactly the saved prior state (root)
+#   mseries-power-tune revert-all           revert every applied item
+#   add --dry-run before the command to print what would change without touching anything
+#
+# Scope rules (see mseries/power/OPTIMIZE-2026-10-18.md):
+#   * nothing here touches display (brightness, refresh, VRR, DPMS), audio (PipeWire, WirePlumber,
+#     speakersafetyd), the kernel, kernel parameters or the bootloader; a unit guard refuses those names;
+#   * every item records the previous state under $STATE before changing it, and `revert` restores it;
+#   * none of these is a measured watt saving; measure with power_ab.py before claiming one.
+set -euo pipefail
+shopt -s nullglob
+
+SYS=${MSERIES_SYS:-/sys}
+PROC=${MSERIES_PROC:-/proc}
+STATE=${MSERIES_TUNE_STATE:-/var/lib/mseries/power-tune}
+SYSTEMCTL=${MSERIES_SYSTEMCTL:-systemctl}
+DRY=0
+
+ITEMS=(cups-ondemand cups-browsed rpcbind smartd dock-lan-wake)
+
+describe() {
+  case $1 in
+    cups-ondemand) echo "CUPS starts on demand via cups.socket/cups.path instead of at boot (printing still works)";;
+    cups-browsed) echo "stop cups-browsed (network printer auto-discovery; no queues are configured)";;
+    rpcbind) echo "stop rpcbind service+socket (NFS/RPC portmapper; refused while an NFS mount exists)";;
+    smartd) echo "stop smartmontools (SMART polling every 30 min; loses disk-health warnings) [proposed only]";;
+    dock-lan-wake) echo "disable wake-from-sleep on USB Ethernet adapters (dock LAN), runtime only [sleep-only effect]";;
+    *) return 1;;
+  esac
+}
+
+die() { echo "mseries-power-tune: $*" >&2; exit 1; }
+
+# Refuse anything that belongs to the display, audio or session stack, whatever an item says.
+guard_unit() {
+  case $1 in
+    *pipewire*|*wireplumber*|*speakersafety*|*pulse*|*alsa*|*gala*|*gdm*|*lightdm*|*display*|*colord*|*geoclue*|*backlight*|*brightness*)
+      die "refusing to touch $1: display/audio/session units are out of scope";;
+  esac
+}
+
+run() {
+  if (( DRY )); then echo "would run: $*"; else "$@"; fi
+}
+
+unit_enabled() { "$SYSTEMCTL" is-enabled "$1" 2>/dev/null || true; }
+unit_active() { "$SYSTEMCTL" is-active "$1" 2>/dev/null || true; }
+
+save_units() { # item unit...
+  local item=$1 u f
+  shift
+  for u in "$@"; do guard_unit "$u"; done
+  f=$STATE/$item.prev
+  if (( DRY )); then echo "would save prior state of $* to $f"; return; fi
+  mkdir -p "$STATE"
+  [[ -e $f ]] && die "$item is already applied (state in $f); revert it first"
+  : > "$f.tmp"
+  for u in "$@"; do printf 'unit %s %s %s\n' "$u" "$(unit_enabled "$u")" "$(unit_active "$u")" >> "$f.tmp"; done
+  mv "$f.tmp" "$f"
+}
+
+restore_units() { # item
+  local f=$STATE/$1.prev kind u en ac
+  [[ -f $f ]] || die "$1 is not applied (no $f)"
+  while read -r kind u en ac; do
+    [[ $kind == unit ]] || continue
+    guard_unit "$u"
+    [[ $en == enabled ]] && run "$SYSTEMCTL" enable "$u"
+    [[ $ac == active ]] && run "$SYSTEMCTL" start "$u"
+  done < "$f"
+  run rm -f "$f"
+}
+
+nfs_mounted() { grep -qE '[[:space:]]nfs4?[[:space:]]' "$PROC/mounts"; }
+
+usb_lan_wakeups() {
+  local d
+  for d in "$SYS"/bus/usb/devices/*; do
+    [[ -f $d/power/wakeup ]] || continue
+    # USB interfaces bound to an Ethernet driver (r8152, ax88179_178a, cdc_ether) mark their parent device.
+    if compgen -G "$d/*:*/net/*" >/dev/null; then echo "$d"; fi
+  done
+}
+
+apply_item() {
+  local u
+  case $1 in
+    cups-ondemand)
+      [[ $(unit_enabled cups.socket) == enabled ]] || die "cups.socket is not enabled; on-demand start would break printing"
+      save_units "$1" cups.service
+      run "$SYSTEMCTL" disable cups.service
+      run "$SYSTEMCTL" stop cups.service;;
+    cups-browsed)
+      save_units "$1" cups-browsed.service
+      run "$SYSTEMCTL" disable --now cups-browsed.service;;
+    rpcbind)
+      nfs_mounted && die "an NFS filesystem is mounted; rpcbind stays"
+      save_units "$1" rpcbind.socket rpcbind.service
+      run "$SYSTEMCTL" disable --now rpcbind.socket rpcbind.service;;
+    smartd)
+      save_units "$1" smartmontools.service
+      run "$SYSTEMCTL" disable --now smartmontools.service;;
+    dock-lan-wake)
+      local f=$STATE/$1.prev
+      [[ -e $f ]] && die "$1 is already applied (state in $f); revert it first"
+      if (( DRY )); then
+        for u in $(usb_lan_wakeups); do echo "would write disabled to $u/power/wakeup (was $(cat "$u/power/wakeup"))"; done
+        return
+      fi
+      mkdir -p "$STATE"; : > "$f.tmp"
+      for u in $(usb_lan_wakeups); do
+        printf 'wakeup %s %s\n' "$u" "$(cat "$u/power/wakeup")" >> "$f.tmp"
+        printf disabled > "$u/power/wakeup"
+      done
+      mv "$f.tmp" "$f";;
+    *) die "unknown item $1 (try: list)";;
+  esac
+  (( DRY )) || echo "applied $1"
+}
+
+revert_item() {
+  local f=$STATE/$1.prev kind path val
+  describe "$1" >/dev/null || die "unknown item $1"
+  [[ -f $f ]] || die "$1 is not applied (no $f)"
+  if grep -q '^wakeup ' "$f"; then
+    while read -r kind path val; do
+      [[ $kind == wakeup && -f $path/power/wakeup ]] || continue
+      if (( DRY )); then echo "would write $val to $path/power/wakeup"; else printf '%s' "$val" > "$path/power/wakeup"; fi
+    done < "$f"
+    run rm -f "$f"
+  else
+    restore_units "$1"
+  fi
+  (( DRY )) || echo "reverted $1"
+}
+
+show() {
+  local i mark
+  for i in "${ITEMS[@]}"; do
+    if [[ -f $STATE/$i.prev ]]; then mark=applied; else mark=-; fi
+    printf '%-14s %-8s %s\n' "$i" "$mark" "$(describe "$i")"
+  done
+}
+
+status() {
+  local u d
+  show
+  echo "--- live state"
+  for u in cups.service cups.socket cups-browsed.service rpcbind.service rpcbind.socket smartmontools.service; do
+    printf '%-22s %-10s %s\n' "$u" "$(unit_enabled "$u")" "$(unit_active "$u")"
+  done
+  for d in $(usb_lan_wakeups); do printf 'usb-lan %s wakeup=%s\n' "${d##*/}" "$(cat "$d/power/wakeup")"; done
+}
+
+need_root() {
+  (( DRY )) && return 0
+  [[ ${MSERIES_TUNE_ALLOW_NONROOT:-0} == 1 ]] && return 0
+  (( EUID == 0 )) || die "needs root (try sudo), or use --dry-run"
+}
+
+[[ ${1:-} == --dry-run ]] && { DRY=1; shift; }
+cmd=${1:-list}
+shift || true
+case $cmd in
+  list) show;;
+  status) status;;
+  apply) need_root; (( $# )) || die "apply which item?"; for i in "$@"; do apply_item "$i"; done;;
+  revert) need_root; (( $# )) || die "revert which item?"; for i in "$@"; do revert_item "$i"; done;;
+  revert-all) need_root; for i in "${ITEMS[@]}"; do [[ -f $STATE/$i.prev ]] && revert_item "$i"; done; true;;
+  -h|--help|help) sed -n '2,16p' "$0";;
+  *) die "unknown command $cmd";;
+esac
