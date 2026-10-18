@@ -41,6 +41,7 @@ import tempfile
 import time
 from typing import Any
 
+import codexbar_cache
 
 def cswap_path() -> str | None:
     local = pathlib.Path.home() / ".local/bin/cswap"
@@ -491,9 +492,35 @@ def listing(cli: str | None, now: dt.datetime | None = None) -> dict[str, Any]:
         except (OSError, ValueError):
             account["desktopReady"] = False
     note = desktop_note(desktop, active_email, cli_uuid)
-    return {"available": True, "accounts": accounts, "activeEmail": active_email, "activePlan": active_plan,
-            "desktop": {"installed": desktop["installed"], "email": desktop["email"], "differs": bool(note)},
-            "desktopNote": note, "desktopSnapshotError": snapshot_error}
+    result: dict[str, Any] = {
+        "available": True, "accounts": accounts, "activeEmail": active_email, "activePlan": active_plan,
+        "desktop": {"installed": desktop["installed"], "email": desktop["email"], "differs": bool(note)},
+        "desktopNote": note, "desktopSnapshotError": snapshot_error}
+    if listed is None:
+        result["failed"] = True  # cswap did not answer; the caller may prefer its last good listing
+    return result
+
+
+LIST_TTL_SECONDS = 120
+
+
+def cached_listing(cli: str | None, force: bool = False, now: float | None = None) -> dict[str, Any]:
+    """The account list, reusing a recent answer, and the last good one while claude-swap keeps failing."""
+    if not cli:
+        return listing(cli)
+    now = time.time() if now is None else now
+    entry = codexbar_cache.load("claude-list").get("entry")
+    entry = entry if isinstance(entry, dict) else None
+    usable = entry is not None and isinstance(entry.get("data"), dict)
+    if usable and not force and (codexbar_cache.is_fresh(entry, LIST_TTL_SECONDS, now) or codexbar_cache.in_backoff(entry, now)):
+        return entry["data"] | ({"stale": True} if entry.get("failures") else {})
+    result = listing(cli, dt.datetime.fromtimestamp(now, dt.timezone.utc))
+    if result.get("failed"):
+        entry = codexbar_cache.failed(entry, now)
+        codexbar_cache.store("claude-list", {"entry": entry})
+        return entry["data"] | {"stale": True} if usable else result
+    codexbar_cache.store("claude-list", {"entry": codexbar_cache.succeeded(result, now)})
+    return result
 
 
 def switch(cli: str | None, number: str) -> tuple[bool, str]:
@@ -581,6 +608,8 @@ def add(cli: str | None) -> tuple[bool, str]:
 def main(arguments: list[str]) -> int:
     command = arguments[0] if arguments else "list"
     cli = cswap_path()
+    if command != "list":
+        codexbar_cache.store("claude-list", {})  # every other command can change the accounts; never serve the old list
     if command == "app-login" and len(arguments) == 2:
         ok, message = app_login(arguments[1])
         print(message, file=sys.stdout if ok else sys.stderr)
@@ -601,7 +630,7 @@ def main(arguments: list[str]) -> int:
             print("The app login could not be saved. Sign in to Claude, then try again.", file=sys.stderr)
             return 1
     if command == "list":
-        print(json.dumps(listing(cli)))
+        print(json.dumps(cached_listing(cli, force="--force" in arguments)))
         return 0
     if command == "login":
         ok, message = login(cli, claude_cli())

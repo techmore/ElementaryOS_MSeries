@@ -7,7 +7,7 @@ one saved Codex home per account and swap ~/.codex/auth.json atomically.
   codexbar-accounts.py list [--json]      accounts (no tokens), active one marked
   codexbar-accounts.py save               remember the signed-in account
   codexbar-accounts.py switch <email|id>  make a saved account the active one
-  codexbar-accounts.py usage              list plus each account's weekly quota
+  codexbar-accounts.py usage [--force]    list plus each saved account's quota (cached 15 min; --force refetches)
   codexbar-accounts.py app-running        exit 0 when the ChatGPT desktop app is open
   codexbar-accounts.py restart-app        close and reopen the ChatGPT desktop app
 
@@ -26,7 +26,10 @@ import subprocess
 import sys
 import tempfile
 import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
+
+import codexbar_cache
 
 
 def codex_home() -> pathlib.Path:
@@ -109,13 +112,25 @@ def saved_homes() -> dict[str, pathlib.Path]:
     return homes
 
 
-def save_current() -> dict[str, str] | None:
+def state_lock() -> Any:
+    """Serialises every write to the saved sign-ins and to the live auth.json."""
+    return codexbar_cache.locked(store_dir().parent / "codex-accounts.state")
+
+
+def _save_current() -> dict[str, str] | None:
     auth = read_auth(codex_home() / "auth.json")
     ident = identity(auth) if auth else None
     if not auth or not ident:
         return None
+    for directory in (store_dir().parent, store_dir()):
+        codexbar_cache.private_dir(directory)
     write_private(store_dir() / slug(ident["id"]) / "auth.json", auth)
     return ident
+
+
+def save_current() -> dict[str, str] | None:
+    with state_lock():
+        return _save_current()
 
 
 def list_accounts() -> list[dict[str, Any]]:
@@ -140,14 +155,18 @@ def switch(target: str) -> tuple[bool, str]:
     wanted = matches[0]
     if wanted["active"]:
         return True, f"{wanted['email']} is already the active Codex account."
-    homes = saved_homes()
-    if wanted["id"] not in homes:
-        return False, f"{wanted['email']} has no saved sign-in."
-    saved = read_auth(homes[wanted["id"]] / "auth.json")
-    if not saved:
-        return False, f"{wanted['email']}'s saved sign-in could not be read."
-    save_current()  # never lose the account we are leaving
-    write_private(codex_home() / "auth.json", saved)
+    try:
+        with state_lock():
+            homes = saved_homes()
+            if wanted["id"] not in homes:
+                return False, f"{wanted['email']} has no saved sign-in."
+            saved = read_auth(homes[wanted["id"]] / "auth.json")
+            if not saved:
+                return False, f"{wanted['email']}'s saved sign-in could not be read."
+            _save_current()  # never lose the account we are leaving
+            write_private(codex_home() / "auth.json", saved)
+    except TimeoutError:
+        return False, "Another CodexBar action is changing the Codex sign-in. Try again in a moment."
     return True, f"Switched Codex to {wanted['email']}. Restart running Codex sessions to use it."
 
 
@@ -221,14 +240,58 @@ def reset_credits(row: dict[str, Any]) -> dict[str, Any] | None:
     return {"available": summary["available"], "nextExpiresAt": expires}
 
 
-def usage_report(cli: str) -> list[dict[str, Any]]:
+USAGE_TTL_SECONDS = 900
+
+
+def usage_report(cli: str, force: bool = False, now: float | None = None) -> list[dict[str, Any]]:
+    """Per-account quota. The active account is skipped: CodexBar's own snapshot already carries it, and running
+    the CLI against the live home could rewrite auth.json while a switch is replacing it. Saved accounts are served
+    from the cache while fresh or backing off, and fetched in parallel otherwise."""
+    now = time.time() if now is None else now
     homes = saved_homes()
-    report = []
-    for account in list_accounts():
-        home = codex_home() if account["active"] else homes.get(account["id"])
-        details = usage_for(home, cli) if home else {"error": "No saved sign-in."}
-        report.append({k: account[k] for k in ("email", "plan", "id", "active")} | details)
-    return report
+    accounts = list_accounts()
+    cache = codexbar_cache.load("codex-usage")
+    identities = {a["id"]: {k: a[k] for k in ("email", "plan", "id", "active")} for a in accounts}
+    details: dict[str, dict[str, Any]] = {}
+    pending: list[str] = []
+    for account in accounts:
+        account_id = account["id"]
+        entry = cache.get(account_id) if isinstance(cache.get(account_id), dict) else None
+        if account["active"]:
+            details[account_id] = {"source": "snapshot"}
+        elif account_id not in homes:
+            details[account_id] = {"error": "No saved sign-in."}
+        elif not force and (codexbar_cache.is_fresh(entry, USAGE_TTL_SECONDS, now) or codexbar_cache.in_backoff(entry, now)):
+            details[account_id] = cached_details(entry)
+        else:
+            pending.append(account_id)
+    if pending:
+        with ThreadPoolExecutor(max_workers=min(4, len(pending))) as pool:
+            fetched = dict(zip(pending, pool.map(lambda account_id: usage_for(homes[account_id], cli), pending)))
+        for account_id, result in fetched.items():
+            previous = cache.get(account_id) if isinstance(cache.get(account_id), dict) else None
+            if "error" in result:
+                entry = codexbar_cache.failed(previous, now)
+                entry["error"] = result["error"]
+            else:
+                entry = codexbar_cache.succeeded(result, now)
+            cache[account_id] = entry
+            details[account_id] = cached_details(entry)
+    codexbar_cache.store("codex-usage", {k: v for k, v in cache.items() if k in identities})
+    return [identities[a["id"]] | details[a["id"]] for a in accounts]
+
+
+def cached_details(entry: dict[str, Any] | None) -> dict[str, Any]:
+    """What the panel shows for a cached answer: the last good quota, flagged stale when the latest try failed."""
+    entry = entry or {}
+    data = entry.get("data")
+    if not isinstance(data, dict):
+        return {"error": str(entry.get("error") or "Usage unavailable.")}
+    result = dict(data) | {"fetchedAt": entry.get("fetchedAt")}
+    if entry.get("failures"):
+        result["stale"] = True
+        result["error"] = str(entry.get("error") or "Usage unavailable.")
+    return result
 
 
 def codex_cli() -> str | None:
@@ -311,7 +374,7 @@ def main(arguments: list[str]) -> int:
         return 0 if ok else 1
     if command == "usage":
         cli = str(pathlib.Path.home() / ".local/bin/codexbar")
-        print(json.dumps({"accounts": usage_report(cli)}))
+        print(json.dumps({"accounts": usage_report(cli, force="--force" in arguments)}))
         return 0
     if command == "list":
         save_current()

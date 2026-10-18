@@ -1,5 +1,20 @@
 # OS 9 implementation / Claude Code handoff
 
+## CodexBar polling limits and helper cache — 2026-10-18
+
+- The panel's helper refreshes (sessions, Claude, Codex accounts, OpenCode) now run only while the popover is open,
+  plus a 15-minute background tick. The snapshot read is 5 s while open or refreshing, 30 s otherwise. The Refresh
+  button bypasses the helper caches (`--force`); the automatic refresh on open does not.
+- New `codexbar_cache.py`: private JSON cache in `~/.cache/codexbar-mseries`, TTLs (Codex saved accounts 15 min, Claude
+  list 2 min), exponential backoff (60 s doubling to 1 h) with the last good answer kept and flagged `stale`, and an
+  `flock` helper. The panel keeps showing the last good list when a helper fails instead of blanking it.
+- Codex: saved accounts are fetched in parallel; the active account is no longer fetched by the helper (CodexBar's own
+  snapshot has it), which also removes a race where the CLI could rewrite `auth.json` during a switch. Switch and save
+  take one lock; the saved-sign-in directories are now `0700`.
+- Claude transcripts: per-file size/mtime index, only changed files are parsed.
+- Verified: all helper suites and the new `test-codexbar-cache.py` pass; Wingpanel module builds. Not measured: real
+  request counts before/after, and the dialogs on screen.
+
 ## Week/Day time slots and event blocks published and deployed — 2026-10-18
 
 Owner requested time-slot Week/Day views, tests, desktop deployment and merge.

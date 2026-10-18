@@ -4,10 +4,16 @@
 from contextlib import closing
 import datetime as dt
 import importlib.util
+import os
 import pathlib
 import sqlite3
 import unittest
 from unittest import mock
+
+import tempfile as _tempfile
+
+# Helpers cache under XDG_CACHE_HOME; keep the tests away from the real one.
+os.environ["XDG_CACHE_HOME"] = _tempfile.mkdtemp(prefix="codexbar-test-cache-")
 
 SCRIPT = pathlib.Path(__file__).with_name("codexbar-claude.py")
 SPEC = importlib.util.spec_from_file_location("codexbar_claude", SCRIPT)

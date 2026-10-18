@@ -11,6 +11,11 @@ import tempfile
 import unittest
 from unittest import mock
 
+import tempfile as _tempfile
+
+# Helpers cache under XDG_CACHE_HOME; keep the tests away from the real one.
+os.environ["XDG_CACHE_HOME"] = _tempfile.mkdtemp(prefix="codexbar-test-cache-")
+
 SCRIPT = pathlib.Path(__file__).with_name("codexbar-accounts.py")
 SPEC = importlib.util.spec_from_file_location("codexbar_accounts", SCRIPT)
 MODULE = importlib.util.module_from_spec(SPEC)

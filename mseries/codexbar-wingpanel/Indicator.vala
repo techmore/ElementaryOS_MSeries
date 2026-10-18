@@ -24,6 +24,8 @@ namespace MSeries {
         private uint refresh_poll_source = 0;
         private string executable;
         private bool request_in_flight = false;
+        private bool popover_open = false;
+        private uint snapshot_tick = 0;
         private bool sessions_in_flight = false;
         private bool snapshot_busy = false;
         private bool snapshot_stale = false;
@@ -74,7 +76,7 @@ namespace MSeries {
             show_panel_placeholder ();
             panel_display.set_tooltip_text ("CodexBar · loading usage… · Middle-click to refresh");
             var refresh_gesture = new Gtk.GestureClick () { button = 2 };
-            refresh_gesture.released.connect (() => refresh_usage ());
+            refresh_gesture.released.connect (() => refresh_usage (true));
             panel_display.add_controller (refresh_gesture);
             this.visible = true;
 
@@ -106,7 +108,7 @@ namespace MSeries {
             };
             refresh_button.add_css_class ("flat");
             refresh_button.update_property (Gtk.AccessibleProperty.LABEL, "Refresh usage", -1);
-            refresh_button.clicked.connect (() => refresh_usage ());
+            refresh_button.clicked.connect (() => refresh_usage (true));
 
             // Three pages keep every section above the fold; Quota is the default.
             quota_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
@@ -166,7 +168,15 @@ namespace MSeries {
                 subtitle_label.set_text ("Could not start CodexBar: " + e.message);
             }
 
-            Timeout.add_seconds (5, () => { read_snapshot.begin (); return Source.CONTINUE; });
+            // Read the snapshot every 5 s while the popover is open or a refresh runs; every 30 s otherwise,
+            // which is plenty for the panel-bar chip.
+            Timeout.add_seconds (5, () => {
+                snapshot_tick++;
+                if (popover_open || snapshot_busy || refresh_poll_source != 0 || snapshot_tick % 6 == 0) {
+                    read_snapshot.begin ();
+                }
+                return Source.CONTINUE;
+            });
         }
 
         private static void install_style (Gdk.Display display) {
@@ -244,9 +254,10 @@ namespace MSeries {
             refresh_button.set_sensitive (!busy);
         }
 
-        private void refresh_usage () {
-            refresh_claude.begin ();
-            refresh_codex_accounts.begin ();
+        // A click on Refresh bypasses the helpers' caches; the automatic refresh on open does not.
+        private void refresh_usage (bool force = false) {
+            refresh_claude.begin (force);
+            refresh_codex_accounts.begin (force);
             refresh_opencode_accounts.begin ();
             if (snapshot_busy || !run_action ("--refresh")) {
                 return;
@@ -358,25 +369,29 @@ namespace MSeries {
                 oldest_update_unix, new DateTime.now_utc ().to_unix (), GLib.get_monotonic_time ());
         }
 
+        // Helper refreshes (sessions, Claude, Codex accounts, OpenCode) run when the popover is open. With it closed
+        // nothing in the panel bar depends on them, so they only refresh on a slow background tick.
+        private const int BACKGROUND_SECONDS = 900;
+
+        private bool due (int64 fetched_us, int open_seconds) {
+            var limit = popover_open ? open_seconds : BACKGROUND_SECONDS;
+            return fetched_us == 0 || GLib.get_monotonic_time () - fetched_us > limit * GLib.TimeSpan.SECOND;
+        }
+
         private void ensure_sessions (int max_age_seconds) {
-            if (opencode_accounts_fetched_us == 0 ||
-                GLib.get_monotonic_time () - opencode_accounts_fetched_us > 120 * GLib.TimeSpan.SECOND) {
-                refresh_opencode_accounts.begin ();
-            }
-            if (sessions_fetched_us == 0 ||
-                GLib.get_monotonic_time () - sessions_fetched_us > max_age_seconds * GLib.TimeSpan.SECOND) {
+            if (due (sessions_fetched_us, max_age_seconds)) {
                 refresh_sessions.begin ();
             }
-            if (claude_fetched_us == 0 ||
-                GLib.get_monotonic_time () - claude_fetched_us > 120 * GLib.TimeSpan.SECOND) {
+            if (due (claude_fetched_us, 120)) {
                 refresh_claude.begin ();
             }
-            if (codex_accounts_fetched_us == 0 ||
-                GLib.get_monotonic_time () - codex_accounts_fetched_us > 300 * GLib.TimeSpan.SECOND) {
+            if (due (codex_accounts_fetched_us, 300)) {
                 refresh_codex_accounts.begin ();
             }
-            if (opencode_local_fetched_us == 0 ||
-                GLib.get_monotonic_time () - opencode_local_fetched_us > max_age_seconds * GLib.TimeSpan.SECOND) {
+            if (due (opencode_accounts_fetched_us, 120)) {
+                refresh_opencode_accounts.begin ();
+            }
+            if (due (opencode_local_fetched_us, max_age_seconds)) {
                 refresh_opencode_local.begin ();
             }
         }
@@ -386,15 +401,18 @@ namespace MSeries {
         }
 
         // Upstream's Codex account switching is macOS-only; our helper keeps one saved sign-in per account.
-        private async void refresh_codex_accounts () {
+        private async void refresh_codex_accounts (bool force = false) {
             if (codex_accounts_in_flight) {
                 return;
             }
             codex_accounts_in_flight = true;
             var before = codex_accounts_digest (codex_accounts);
             try {
-                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
-                    "python3", helper_path ("codexbar-accounts.py"), "usage");
+                string[] command = { "python3", helper_path ("codexbar-accounts.py"), "usage" };
+                if (force) {
+                    command += "--force";
+                }
+                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE);
                 string stdout_text;
                 string stderr_text;
                 yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
@@ -408,9 +426,12 @@ namespace MSeries {
                         parsed = list != null ? list.ref () : null;
                     }
                 }
-                codex_accounts = parsed;
+                // A helper that failed to answer must not wipe what the panel already shows.
+                if (process.get_successful ()) {
+                    codex_accounts = parsed;
+                }
             } catch (Error e) {
-                codex_accounts = null;
+                // keep the last good list
             } finally {
                 codex_accounts_in_flight = false;
                 codex_accounts_fetched_us = GLib.get_monotonic_time ();
@@ -422,15 +443,18 @@ namespace MSeries {
         }
 
         // Claude accounts come from claude-swap (cswap), the same tool upstream CodexBar drives on macOS.
-        private async void refresh_claude () {
+        private async void refresh_claude (bool force = false) {
             if (claude_in_flight) {
                 return;
             }
             claude_in_flight = true;
             var before = local_digest (claude_data);
             try {
-                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
-                    "python3", helper_path ("codexbar-claude.py"), "list");
+                string[] command = { "python3", helper_path ("codexbar-claude.py"), "list" };
+                if (force) {
+                    command += "--force";
+                }
+                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE);
                 string stdout_text;
                 string stderr_text;
                 yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
@@ -444,9 +468,11 @@ namespace MSeries {
                         parsed = root.get_object ().ref ();
                     }
                 }
-                claude_data = parsed;
+                if (process.get_successful ()) {
+                    claude_data = parsed;
+                }
             } catch (Error e) {
-                claude_data = null;
+                // keep the last good list
             } finally {
                 claude_in_flight = false;
                 claude_fetched_us = GLib.get_monotonic_time ();
@@ -1890,11 +1916,14 @@ namespace MSeries {
         }
 
         public override void opened () {
+            popover_open = true;
+            snapshot_tick = 0;
             read_snapshot.begin (true);
             ensure_sessions (15);
         }
 
         public override void closed () {
+            popover_open = false;
         }
     }
 }
