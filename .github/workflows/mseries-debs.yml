@@ -1,6 +1,6 @@
 # M-series plugin .debs: build pinned Wingpanel plugins once in CI so
 # first boot installs binaries instead of compiling (issue #52).
-# Manual dispatch. Without `publish`, produces artifacts only — no secrets,
+# Manual dispatch (and a build-only PR check). Without `publish`, produces artifacts only — no secrets,
 # no repository writes. Publishing needs the MSERIES_APT_KEY secret
 # (key-custody decision still open) and fails closed without it.
 name: M-series plugin packages
@@ -13,6 +13,12 @@ on:
         type: boolean
         required: false
         default: false
+  # Build-only check when the packaging itself changes (publish never runs:
+  # inputs.publish is unset outside workflow_dispatch).
+  pull_request:
+    paths:
+      - "mseries/debs/**"
+      - ".github/workflows/mseries-debs.yml"
 
 permissions:
   contents: read
