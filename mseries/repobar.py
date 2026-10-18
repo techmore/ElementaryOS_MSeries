@@ -20,20 +20,20 @@ from urllib.parse import urlparse
 QUERY = """query($cursor: String) {
   viewer {
     login
-    repositories(first: 100, after: $cursor,
+    repositories(first: 25, after: $cursor,
       affiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER],
       orderBy: {field: UPDATED_AT, direction: DESC}) {
       nodes {
         nameWithOwner url description isPrivate isArchived isFork stargazerCount forkCount updatedAt
         primaryLanguage { name }
         repositoryTopics(first: 8) { nodes { topic { name } } }
-        openIssues: issues(states: OPEN) {
+        openIssues: issues(states: OPEN, first: 1, orderBy: {field: UPDATED_AT, direction: DESC}) {
           totalCount
-          nodes(first: 1, orderBy: {field: UPDATED_AT, direction: DESC}) { title number updatedAt url }
+          nodes { title number updatedAt url }
         }
-        openPullRequests: pullRequests(states: OPEN) {
+        openPullRequests: pullRequests(states: OPEN, first: 1, orderBy: {field: UPDATED_AT, direction: DESC}) {
           totalCount
-          nodes(first: 1, orderBy: {field: UPDATED_AT, direction: DESC}) { title number updatedAt url }
+          nodes { title number updatedAt url }
         }
         defaultBranchRef {
           name
@@ -179,7 +179,7 @@ def fetch_snapshot() -> dict:
     cursor = None
     repos = []
     login = ""
-    for _ in range(10):
+    for _ in range(40):
         payload = _query_page(cursor)
         viewer = payload.get("data", {}).get("viewer")
         if not viewer:
