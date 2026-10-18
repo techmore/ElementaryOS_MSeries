@@ -187,3 +187,20 @@ currently need a boot-payload swap between them (rollback copy is byte-exact). T
 stated primary goal is the dock HDMI picture (AGENTS.md); owner and DeepSeek must decide
 which payload is the default before this is deployed. A merged tree (upstream J314S tree +
 the dptunnel/dpin nodes) would serve both but has not been built.
+
+### DEPLOYED 2026-10-18 04:32 (owner decision: "we want the Aurora functionality")
+
+The staged upstream-matched `boot.bin.candidate` (sha256 `9c9c2d01c3bdb278…`: m1n1-aurora
+1.6.1.aurora17-5 + the release's J314S tree) is now `/boot/m1n1/boot.bin`. Done by copying to
+`boot.bin.new`, `cmp` against the candidate, `sync`, then atomic `mv`. Previous payload (sha256
+`8b8e2bb0cdf7e434…`, the hand-patched SEP + DeepSeek dp-tunnel/dpin tree) is kept as
+`/boot/m1n1/boot.bin.pre-aurora20-20261018-043254` and as `~/aurora20-boot-candidate/boot.bin.rollback`.
+One-shot `grub-reboot elementary-aurora20` is armed; default entry unchanged.
+
+**Rollback** (from any working kernel): `sudo install -m755 /boot/m1n1/boot.bin.pre-aurora20-20261018-043254 /boot/m1n1/boot.bin`.
+**Expected side effect:** the fairydust dptunnel/DP-IN entries lose their dp-tunnel device-tree
+nodes until rollback. If the machine will not boot at all after this change, it needs the
+Asahi/recovery path to restore the m1n1 payload; this is why the rollback copy sits beside it.
+
+First test (dock OUT): boot `elementary-aurora20`, idle 5 minutes, check `/dev/sep-bio`; only then
+one deliberate Touch ID probe; then dock. Record each result in `../AURORA-SECOND-BOOT.md`.
