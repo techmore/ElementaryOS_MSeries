@@ -842,28 +842,26 @@ namespace MSeries {
                 var account_id = account.get_string_member_with_default ("id", email);
                 var windows = account.has_member ("windows") ? account.get_array_member ("windows") : null;
                 var detail = account.has_member ("error") ? "unavailable" : "—";
+                var resets = account.has_member ("resetCredits") ? account.get_object_member ("resetCredits") : null;
                 box.append (build_account_line (email, detail,
                     "Make %s the active Codex account. Restart running Codex sessions to use it.".printf (email),
-                    () => run_accounts_helper ({ "switch", account_id }), windows, hint_id ("codex", account), account.get_string_member_with_default ("plan", "")));
-                var resets = account.has_member ("resetCredits") ? account.get_object_member ("resetCredits") : null;
-                if (resets != null) {
-                    box.append (build_reset_credits (resets, new DateTime.now_utc ().to_unix ()));
-                }
+                    () => run_accounts_helper ({ "switch", account_id }), windows, hint_id ("codex", account), account.get_string_member_with_default ("plan", ""), true, resets));
             }
             return box;
         }
 
-        /* Available resets for a Codex account, with when the first one expires; red inside the last day. */
-        private Gtk.Widget build_reset_credits (Json.Object credits, int64 now_unix) {
+        /* Available resets for a Codex account as a one-row chip, with when the first expires; red inside the last day. */
+        private Gtk.Label build_reset_credits (Json.Object credits, int64 now_unix) {
             var available = credits.get_int_member_with_default ("available", -1);
             var expires = credits.get_string_member_with_default ("nextExpiresAt", "");
             var when = expires.length > 0 ? new GLib.DateTime.from_iso8601 (expires, null) : null;
             var seconds = when != null ? when.to_unix () - now_unix : 0;
-            var label = subtle_label (Presentation.reset_credits_line (available, seconds));
-            if (Presentation.reset_expiry_urgent (available, seconds)) {
-                label.add_css_class ("dot-bad");
-            }
-            return label;
+            var chip = new Gtk.Label (Presentation.reset_credits_chip (available, seconds)) { valign = Gtk.Align.CENTER };
+            chip.add_css_class ("caption");
+            chip.add_css_class ("numeric");
+            chip.add_css_class (Presentation.reset_expiry_urgent (available, seconds) ? "text-critical" : "dim-label");
+            chip.set_tooltip_text (Presentation.reset_credits_line (available, seconds));
+            return chip;
         }
 
         private static string local_digest (Json.Object? usage) {
@@ -1449,6 +1447,10 @@ namespace MSeries {
                 }
             }
             head.append (build_identity (email, plan));
+            var active_resets = provider == "codex" ? entry.get_member ("resetCredits") : null;
+            if (active_resets != null && active_resets.get_node_type () == Json.NodeType.OBJECT) {
+                head.append (build_reset_credits (active_resets.get_object (), now_unix));
+            }
             card.append (head);
 
             var windows = entry.get_array_member ("windows");
@@ -1463,10 +1465,6 @@ namespace MSeries {
                 card.append (subtle_label ("Provider status · " + status));
             }
             if (provider == "codex") {
-                var active_resets = entry.get_member ("resetCredits");
-                if (active_resets != null && active_resets.get_node_type () == Json.NodeType.OBJECT) {
-                    card.append (build_reset_credits (active_resets.get_object (), now_unix));
-                }
                 card.append (build_codex_accounts ());
             }
             if (provider == "opencodego") {
@@ -1613,7 +1611,8 @@ namespace MSeries {
         }
 
         private Gtk.Widget build_account_line (string email, string detail, string switch_tooltip,
-                                               owned ActionFunc? on_switch, Json.Array? windows = null, string candidate_id = "", string plan = "", bool switch_sensitive = true) {
+                                               owned ActionFunc? on_switch, Json.Array? windows = null, string candidate_id = "", string plan = "", bool switch_sensitive = true,
+                                               Json.Object? resets = null) {
             var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             line.add_css_class ("account-line");
             var name = new Gtk.Label (email) { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.MIDDLE };
@@ -1623,6 +1622,11 @@ namespace MSeries {
             identity.append (build_hint_badges (candidate_id));
             identity.append (name);
             identity.append (build_plan_badge (email, plan));
+            if (resets != null) {
+                var chip = build_reset_credits (resets, new DateTime.now_utc ().to_unix ());
+                chip.margin_start = 6;
+                identity.append (chip);
+            }
             content.append (identity);
             var has_quota = windows != null && windows.get_length () > 0;
             var meta = new Gtk.Label (has_quota ? Presentation.account_quota (windows, new DateTime.now_utc ().to_unix ()) : detail) {

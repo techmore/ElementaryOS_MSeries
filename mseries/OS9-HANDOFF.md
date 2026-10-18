@@ -14,6 +14,12 @@
 - Claude transcripts: per-file size/mtime index, only changed files are parsed.
 - Verified: all helper suites and the new `test-codexbar-cache.py` pass; Wingpanel module builds. Not measured: real
   request counts before/after, and the dialogs on screen.
+## CodexBar: Codex reset credits per account — 2026-10-18
+
+- Panel shows available rate-limit resets for the active Codex account (from the snapshot's `resetCredits`) and for each saved account (`codexbar-accounts.py usage` now returns `resetCredits`), with when the first one expires; red inside the last 24h. Merged in PR 117 and deployed with `deploy-codexbar.sh`.
+- Verified: unit tests pass (`presentation/reset-credits`), helper returns the field for both accounts. Unverified: a non-zero count on the live panel (both accounts report 0 today), and the `codexResetCredits.credits[].expiresAt` fallback (credit list was empty).
+- Claude: not done. claude-swap exposes only the 5-hour and 7-day windows and extra-usage spend; no reset count or expiry exists in its data.
+- Next: find where Claude exposes reset credits, if anywhere; re-check the Codex display when an account gains a credit.
 
 ## Week/Day time slots and event blocks published and deployed — 2026-10-18
 
@@ -4544,3 +4550,5 @@ remains pinned to 0.77.0. Publish, merge to main and deploy as explicitly reques
 ## Dictation on the ANE as an F5 engine candidate — 2026-10-18
 
 Built `mseries/dictation/ane-dictate.py` (+ `ane-worker-shim.py`, `mseries-ane-dictate.service`, `test_ane_dictate.py`). Offline on the pinned clip: 0.55-0.58 s for 10.4 s audio warm (RTF 0.055) vs 3.0 s for the installed streaming path, identical text; 41.7 s in 1.16 s. Upstream's dictation worker needed a shim for the installed 0.7.33 CLI (details in dictation/README.md). Not installed, not enabled, not wired into the lazy panel; no microphone or owner service touched. Not verified: a WER set beyond one clip, any live speech (mic sensitivity blocker still open, DeepSeek's area), panel integration. Next: decide whether to plug it into `dictation_pipeline` as the engine behind the lazy model, then a multi-clip WER run (ABBA vs CPU) before any parity claim.
+
+Follow-up (same day): `STREAM_ENGINE=ane` integrates the ANE engine into the lazy F5 controller (`dictation_ane.py`, `run_ane` in `stream-dictate.py`). Offline controller run on the pinned clip typed the exact sentence on release; default engine unchanged; not enabled on the owner's service; live mic and app insertion unverified.

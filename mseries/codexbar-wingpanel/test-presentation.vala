@@ -118,6 +118,10 @@ int main (string[] args) {
         assert (MSeries.Presentation.reset_credits_line (0, 5000) == "0 resets available");
         assert (MSeries.Presentation.reset_credits_line (2, 0) == "2 resets available");
         assert (MSeries.Presentation.reset_credits_line (2, 3600) == "2 resets available · first expires in 1h00m");
+        assert (MSeries.Presentation.reset_credits_chip (-1, 0) == "");
+        assert (MSeries.Presentation.reset_credits_chip (0, 3600) == "0 resets");
+        assert (MSeries.Presentation.reset_credits_chip (2, 3600) == "2 resets · exp 1h00m");
+        assert (MSeries.Presentation.reset_credits_chip (1, 0) == "1 reset");
         assert (MSeries.Presentation.reset_expiry_urgent (2, 3600));
         assert (!MSeries.Presentation.reset_expiry_urgent (2, 90000));
         assert (!MSeries.Presentation.reset_expiry_urgent (0, 3600));
