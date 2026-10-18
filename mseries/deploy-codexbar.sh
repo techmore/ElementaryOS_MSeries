@@ -1,13 +1,18 @@
 #!/bin/bash
-# Make the running desktop use what is in the repo for the CodexBar custom port. Run after every push that
-# touches CodexBar: installs the helpers, rebuilds and installs the Wingpanel module, then restarts
-# Wingpanel and the CodexBar app so this session is actually running the new code.
-#   bash mseries/deploy-codexbar.sh [--no-restart]
+# Install CodexBar's custom port without interrupting the menu bar. Helpers take effect on their next invocation;
+# Wingpanel loads a replaced module at next login. Use --restart only for an intentional panel reload.
+#   bash mseries/deploy-codexbar.sh [--restart|--no-restart]
 set -euo pipefail
+restart=false
+case ${1:-} in
+  ''|--no-restart) ;;
+  --restart) restart=true ;;
+  *) echo 'Usage: deploy-codexbar.sh [--restart|--no-restart]' >&2; exit 2 ;;
+esac
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 lib="$HOME/.local/lib/codexbar-cli"
 mkdir -p "$lib"
-for helper in codexbar_cache.py codexbar-opencode-local.py codexbar-sessions.py codexbar-accounts.py codexbar-claude.py codexbar-opencode-login.py; do
+for helper in codexbar_claude_history.py codexbar_cache.py codexbar-opencode-local.py codexbar-sessions.py codexbar-accounts.py codexbar-claude.py codexbar-opencode-login.py; do
   install -m 0755 "$repo/mseries/$helper" "$lib/$helper"
 done
 install -m 0755 "$repo/mseries/codexbar-opencode-wrapper.py" "$HOME/.local/bin/codexbar.new"
@@ -30,18 +35,19 @@ install -m 0755 "$build/codexbar-settings" "$HOME/.local/bin/codexbar-settings.n
 mv -f "$HOME/.local/bin/codexbar-settings.new" "$HOME/.local/bin/codexbar-settings"
 echo "Installed helpers, native settings, provider marks and $indicators_dir/libcodexbar.so"
 
-[[ ${1:-} == --no-restart ]] && { echo 'Not restarting; Wingpanel loads the new module at next login.'; exit 0; }
+if ! "$restart"; then
+  echo 'Installed without restarting Wingpanel or CodexBar. The panel module loads at next login (or an explicit --restart).'
+  exit 0
+fi
 if pgrep -x io.elementary.w >/dev/null; then
-  pkill -x io.elementary.w || true   # the session respawns it; fall back to launching it ourselves
+  pkill -x io.elementary.w || true
   for _ in 1 2 3 4 5 6 7 8 9 10; do sleep 1; pgrep -x io.elementary.w >/dev/null && break; done
-  pgrep -x io.elementary.w >/dev/null || { setsid -f io.elementary.wingpanel >/dev/null 2>&1; sleep 2; }
 fi
-if pgrep -f 'codexbar-linux --background' >/dev/null; then
-  "$HOME/.local/bin/codexbar-linux" --quit >/dev/null 2>&1 || true
-  sleep 2
+pgrep -x io.elementary.w >/dev/null || { setsid -f io.elementary.wingpanel >/dev/null 2>&1; sleep 2; }
+# The daemon and helpers do not need restarting to load a panel module. Never quit a running daemon here.
+if ! pgrep -f 'codexbar-linux --background' >/dev/null; then
+  setsid -f "$HOME/.local/bin/codexbar-linux" --background >/dev/null 2>&1
 fi
-setsid -f "$HOME/.local/bin/codexbar-linux" --background >/dev/null 2>&1
-"$HOME/.local/bin/codexbar-linux" --autostart enable >/dev/null 2>&1 || true  # keep start at login on
 sleep 2
 pgrep -x io.elementary.w >/dev/null && pgrep -f 'codexbar-linux --background' >/dev/null \
-  && echo 'Wingpanel and CodexBar are running the new build.' || { echo 'Restart check failed.' >&2; exit 1; }
+  && echo 'Wingpanel reloaded; CodexBar is running.' || { echo 'Reload check failed.' >&2; exit 1; }

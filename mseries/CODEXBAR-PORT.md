@@ -17,6 +17,7 @@ ones.** Upgrade by re-pinning, re-installing upstream, and re-verifying each ite
 | Codex multi-account switcher (upstream's is macOS-only) | `codexbar-accounts.py` | upstream `codexbar usage --provider codex` honoring `CODEX_HOME` |
 | OpenCode Go sign-in (upstream imports opencode.ai cookies only on macOS): native WebKit window, saves the `auth`/`__Host-console_session` session as `providers[opencodego].cookieSource=manual` + `cookieHeader`; the panel's OpenCode **+** runs it | `codexbar-opencode-login.py` | config path resolution (`CodexBarConfigStore.defaultURL`), `OpenCodeWebCookieSupport` cookie names, `usage --source web` |
 | Claude CLI accounts via claude-swap, plus native Claude desktop sessions. CLI only keeps the app login separate; Switch both validates the target session, quits the native app, saves its final encrypted session, merges the target login without changing preferences, switches the CLI, and relaunches the app. Set up app preserves the previous session and locally clears the login for one-time sign-in without sending a logout request. Save app login and automatic list capture remember it. | `codexbar-claude.py`, venv `~/.local/share/claude-swap-venv`, `cswap` | claude-swap `list/status/switch --json`, `schemaVersion` 1, `to.email`, `reason: already-active`, `configs/.claude-config-*.json`; installed Claude `config.json` keys `lastKnownAccountUuid`, `oauth:tokenCache`, `oauth:tokenCacheV2`, SQLite `Cookies` (or `Network/Cookies`), `gtk-launch com.anthropic.Claude` |
+| Claude local Code context carry-over | `codexbar_claude_history.py`, [design/evidence](CODEXBAR-CLAUDE-HISTORY.md) | installed Claude desktop account/org Code index and local `.claude/projects` transcripts; private exports and create-only imports after app exit |
 | Installers / deploy / CI | `install-codexbar.sh`, `install-codexbar-wingpanel.sh`, `deploy-codexbar.sh`, `check-codexbar-port.sh`, `.github/workflows/validate-mseries.yml`, `enhance.sh` payload list | version pin `version=vX.Y.Z` |
 
 ## Upgrade checklist
@@ -209,3 +210,36 @@ closes only the current user's ChatGPT executable, saves the departing login, sw
 and reopens ChatGPT. Avoid signing out/revoking saved credentials, which would break fast switching.
 Claude's installed-app Switch uses `switch <number> --desktop` after confirmation. CodexBar stays running during
 both; deploy-codexbar.sh independently restarts the panel and daemon when loading a new build.
+
+### Wingpanel display preferences
+
+Use the popover gear > **Display > Wingpanel**. Percentage and reset-time switches control quota text in the
+bar and menu. Other-account rows and hints can be hidden in the panel bar separately. Tooltips and progress-bar
+accessible names retain full quota information. Local options live in `~/.config/codexbar/wingpanel.json`, loaded
+by `PanelPreferences.vala`, and are never sent to upstream `--configure`. A directory monitor handles atomic file
+replacement and updates cached widgets immediately, without provider requests. Preferences default to enabled;
+malformed files retain the last valid values and the Settings window reports save errors.
+
+Build/run `test-live-preferences` via `probe/run-live-preferences.sh BUILD_DIR` to check live changes against
+isolated backends. For render variants, pass `CB_DISPLAY_PREFS=/absolute/path/to/wingpanel.json` to `probe/run-probe.sh`.
+
+### Claude conversation continuity
+
+Claude desktop keeps its Code sidebar per account and organization, even though Code transcripts remain locally
+available across logins. `codexbar-claude.py` now exports local Code context after exit, restores the selected app
+login, imports only missing sidebar records into its selected organization, and then switches the CLI/reopens Claude.
+Existing destination history is untouched. See [Claude Code history](CODEXBAR-CLAUDE-HISTORY.md) for backup locations,
+the read-only `history-preview` command, the inspected Claude app revision, and the remaining real-switch check.
+
+### Deploy without interrupting the menu bar
+
+`bash mseries/deploy-codexbar.sh` installs helpers, settings and the native module without restarting Wingpanel or
+quitting CodexBar. Helpers load on their next invocation; the module loads at next login. `--no-restart` remains an
+alias for the safe default. Use `--restart` only for an intentional panel reload or recovery from a confirmed defect;
+it reloads Wingpanel and leaves a running CodexBar daemon alone. Do not call a staged module “running” before reload.
+
+`probe/run-switch-probe.sh BUILD_DIR [success|null|array|invalid]` exercises the actual Switch row, delayed confirmation
+and async result with a fake backend in an isolated desktop. It reproduces the freed-argument-array crash before the
+owned account-ID fix. Meson registers all four cases when Xvfb/DBus are installed, so ordinary deploy checks and
+`check-codexbar-port.sh` run them before installing a build. `test-codexbar-deploy.py` checks that
+routine deployment cannot signal the live panel or quit the daemon.

@@ -1,0 +1,184 @@
+{
+  "complete": true,
+  "engine": "ane-rolling",
+  "microphone_recorded": false,
+  "keyboard_device_opened": false,
+  "owner_windows_opened": false,
+  "wav_sha256": "33c6c68d943a22d5272bf8d5e1f86af9d89d901fb7da35961a692de7591a534c",
+  "harness_sha256": "c309c7c60cad0e6dd9f4abed557129f5c3707a068de65c98fc7e1c25a562a5e6",
+  "controller_sha256": "e152524328aa87f177d66041bb52ae6a9046a6e91186efb6a98ba0de827e653f",
+  "trials": [
+    {
+      "run": 1,
+      "events": [
+        {
+          "wall_s": 4.264206323000053,
+          "text": "He hoped there would be stew for dinner, turnips and "
+        },
+        {
+          "wall_s": 4.8641639869999835,
+          "text": "carrots "
+        },
+        {
+          "wall_s": 5.4729865740000605,
+          "text": "and bruised "
+        },
+        {
+          "wall_s": 6.081954411999959,
+          "text": "potatoes "
+        },
+        {
+          "wall_s": 6.691357707999941,
+          "text": "and fat "
+        },
+        {
+          "wall_s": 7.3098370530001375,
+          "text": "mutton pieces "
+        },
+        {
+          "wall_s": 7.910590342999967,
+          "text": "to be "
+        },
+        {
+          "wall_s": 8.473423437000065,
+          "text": "ladled out "
+        },
+        {
+          "wall_s": 9.67217080599994,
+          "text": "in thick, peppered, "
+        },
+        {
+          "wall_s": 10.888004688000137,
+          "text": "flour-fattened sauce. "
+        }
+      ],
+      "elapsed_s": 10.889621814000066,
+      "first_text_s": 4.264206323000053,
+      "final_text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered, flour-fattened sauce.",
+      "controller_peak_rss_bytes": 41975808
+    },
+    {
+      "run": 2,
+      "events": [
+        {
+          "wall_s": 2.970867215999988,
+          "text": "He hoped there would "
+        },
+        {
+          "wall_s": 3.585496099000011,
+          "text": "be stew for dinner, "
+        },
+        {
+          "wall_s": 4.251435355000012,
+          "text": "turnips "
+        },
+        {
+          "wall_s": 4.797529019999956,
+          "text": "and carrots "
+        },
+        {
+          "wall_s": 5.3569433199998,
+          "text": "and bruised "
+        },
+        {
+          "wall_s": 5.955922899999905,
+          "text": "potatoes "
+        },
+        {
+          "wall_s": 6.515158699999802,
+          "text": "and "
+        },
+        {
+          "wall_s": 7.1165755319998425,
+          "text": "fat mutton "
+        },
+        {
+          "wall_s": 7.7257096609998825,
+          "text": "pieces to "
+        },
+        {
+          "wall_s": 8.272072535000007,
+          "text": "be ladled out "
+        },
+        {
+          "wall_s": 8.831151917999932,
+          "text": "in thick "
+        },
+        {
+          "wall_s": 9.40281030999995,
+          "text": "peppered "
+        },
+        {
+          "wall_s": 11.098773973999869,
+          "text": "flour-fattened sauce. "
+        }
+      ],
+      "elapsed_s": 11.099074806999852,
+      "first_text_s": 2.970867215999988,
+      "final_text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick peppered flour-fattened sauce.",
+      "controller_peak_rss_bytes": 43024384
+    },
+    {
+      "run": 3,
+      "events": [
+        {
+          "wall_s": 2.967025754000133,
+          "text": "He hoped there would "
+        },
+        {
+          "wall_s": 3.5889623509999637,
+          "text": "be stew for dinner, "
+        },
+        {
+          "wall_s": 4.200281566000058,
+          "text": "turnips "
+        },
+        {
+          "wall_s": 4.856104771999981,
+          "text": "and carrots "
+        },
+        {
+          "wall_s": 5.404573939000102,
+          "text": "and "
+        },
+        {
+          "wall_s": 6.019845990000022,
+          "text": "bruised potatoes "
+        },
+        {
+          "wall_s": 6.626226451000093,
+          "text": "and "
+        },
+        {
+          "wall_s": 7.183787790999986,
+          "text": "fat mutton pieces "
+        },
+        {
+          "wall_s": 7.782094537000148,
+          "text": "to be "
+        },
+        {
+          "wall_s": 8.391161916000101,
+          "text": "ladled out "
+        },
+        {
+          "wall_s": 8.942794752000054,
+          "text": "in thick "
+        },
+        {
+          "wall_s": 9.51881302300012,
+          "text": "peppered "
+        },
+        {
+          "wall_s": 10.685668159999977,
+          "text": "flour-fattened sauce. "
+        }
+      ],
+      "elapsed_s": 10.68610316000013,
+      "first_text_s": 2.967025754000133,
+      "final_text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick peppered flour-fattened sauce.",
+      "controller_peak_rss_bytes": 43024384
+    }
+  ],
+  "scope": "Actual rolling ANE controller and existing native runtime, file-paced ffmpeg. Synthetic immediate text sink; no desktop insertion. First run cold, later runs reuse the same worker. Controller RSS excludes native child workers; inspect supervised process-family resources separately."
+}

@@ -1,0 +1,56 @@
+{
+  "complete": true,
+  "engine": "unified-cpu",
+  "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "harness_sha256": "341cf7ed75f86248b9862d6dce7603c0d97bf86521e836482ee42452d00ff7a4",
+  "wav_sha256": "dc2d1218a61f131c0a8fd0fd432dfa4a889f40e3b162ba35e30acc06f3561b48",
+  "duration_s": 7.735,
+  "microphone_recorded": false,
+  "owner_windows_opened": false,
+  "trials": [
+    {
+      "run": 1,
+      "events": [
+        {
+          "wall_s": 3.4666008949998286,
+          "text": "Jack would become Eva's",
+          "final": false
+        },
+        {
+          "wall_s": 4.536266581999826,
+          "text": "Jack would become Eva's happy husband",
+          "final": false
+        },
+        {
+          "wall_s": 5.616852898999923,
+          "text": "Jack would become Eva's happy husband, and would",
+          "final": false
+        },
+        {
+          "wall_s": 6.802886600999955,
+          "text": "Jack would become Eva's happy husband, and would remain amidst",
+          "final": false
+        },
+        {
+          "wall_s": 7.875010079999811,
+          "text": "Jack would become Eva's happy husband, and would remain amidst the hurried duties",
+          "final": false
+        },
+        {
+          "wall_s": 8.568173417000025,
+          "text": "Jack would become Eva's happy husband, and would remain amidst the hurried duties of the eager world",
+          "final": true
+        }
+      ],
+      "first_text_s": 3.4666008949998286,
+      "final_after_audio_s": 0.8343474600001173,
+      "cpu_s": 11.818576204,
+      "final_text": "Jack would become Eva's happy husband, and would remain amidst the hurried duties of the eager world",
+      "normalized_wer": 0.0,
+      "peak_rss_bytes": 992428032,
+      "display_updates_before_audio_end": 4
+    }
+  ],
+  "scope": "One public LibriSpeech clip, wall-paced 100ms input; no microphone/app insertion, not a general accuracy test. Model load separate; first trial retained, not discarded.",
+  "load_s": 0.2658074209998631
+}

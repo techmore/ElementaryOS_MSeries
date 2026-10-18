@@ -1,0 +1,12 @@
+{
+  "complete": false,
+  "engine": "nemotron-cpu",
+  "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "harness_sha256": "9d0277e29ed82e6538aaf9d7b2ade30d2a5e175e1d84322b25fe93020f3e244b",
+  "wav_sha256": "33c6c68d943a22d5272bf8d5e1f86af9d89d901fb7da35961a692de7591a534c",
+  "duration_s": 10.435,
+  "microphone_recorded": false,
+  "owner_windows_opened": false,
+  "trials": [],
+  "scope": "One public LibriSpeech clip, wall-paced 100ms input; no microphone/app insertion, not a general accuracy test. Model load separate; first trial retained, not discarded."
+}

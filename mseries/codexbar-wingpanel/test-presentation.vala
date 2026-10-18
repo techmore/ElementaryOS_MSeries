@@ -96,6 +96,18 @@ int main (string[] args) {
             "#00aa00", "#ffaa00", "#ff0000");
         assert (colored.contains ("foreground=\"#ff0000\" weight=\"semibold\">5H 0%"));
         assert (colored.contains ("foreground=\"#00aa00\" weight=\"semibold\">7D 72%"));
+        var windows = parser.get_root ().get_array ();
+        var no_reset = MSeries.Presentation.account_quota (windows, now, true, false);
+        assert (no_reset == "5H 0% · 7D 72% · 30D 91%");
+        var no_percent = MSeries.Presentation.account_quota (windows, now, false, true);
+        assert (no_percent == "5H ↻1h30m · 7D ↻2d0h · 30D ↻?");
+        assert (MSeries.Presentation.account_quota (windows, now, false, false) == "");
+        var reset_only = MSeries.Presentation.account_quota_markup (windows, now,
+            "#00aa00", "#ffaa00", "#ff0000", false, true);
+        assert (!reset_only.contains ("72%"));
+        assert (reset_only.contains ("↻2d0h"));
+        assert (MSeries.Presentation.account_quota_markup (windows, now,
+            "", "", "", false, false) == "");
     });
     GLib.Test.add_func ("/presentation/worst-level", () => {
         assert (MSeries.Presentation.worse (MSeries.QuotaLevel.OK, MSeries.QuotaLevel.LOW) == MSeries.QuotaLevel.LOW);

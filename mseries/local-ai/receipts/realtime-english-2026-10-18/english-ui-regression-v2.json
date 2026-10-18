@@ -1,0 +1,27 @@
+{
+  "complete": true,
+  "passed": true,
+  "source_commit": "b62f720e791a8d8ead0507cd09920b3e02ca76b2",
+  "source_sha256": {
+    "dictation-panel.py": "1ea7652dad1023a36bf18c85e7d981b7406bf52bc0075efc9a94a87fc10f4aac",
+    "panel-smoke.py": "da1004fd496073ad4ef778b471463077b43177709b28467fbcc6e4d374975890",
+    "dictation_live.py": "a09251796e5d394b973c85184878878f43d88f93c78c8f49e2678b653f628c64",
+    "test_live.py": "99489f6567188ac35354367e537a717d5997e58fdd03e0509ff583d0db4acd6e"
+  },
+  "scope": "Separate current-source private GTK4 synthetic reviewer regression; not a rerun of completed model trials",
+  "checks": [
+    "English-only controls",
+    "original preserved",
+    "stale rejection",
+    "focus retry",
+    "prefix suggestions during updates",
+    "one outstanding request",
+    "no duplicate final request",
+    "coalesced GTK delete/insert"
+  ],
+  "dictation_contracts": 66,
+  "assistant_contracts": 72,
+  "model_inference": false,
+  "microphone_recorded": false,
+  "owner_windows_opened": false
+}

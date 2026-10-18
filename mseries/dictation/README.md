@@ -1,17 +1,16 @@
 # F5 dictation (local speech to text)
 
-**Current catch-up, October18:** the owner's running service selects the ANE engine,
-press-once toggle mode and suppressed listening popups. Installed speech/ANE/client
-files exactly match branch `claude/dictation-fallback` at `d0ee4a6`, now reconciled
-in this candidate. Rolling English transcription and the measurements at the end
-supersede the earlier whole-utterance-only description; historical results remain
-scoped to their evaluated versions. The native review panel is installed and has
-an earlier human F5-to-field pass. **Translation remains post-utterance**, not a
-live translated preview. The current panel's hold-F5 hint predates toggle mode;
-with the owner's toggle setting, press F5 again to finish. This catch-up changed
-no running service or owner preferences. Concurrency/quiet qualification of the
-integrated ANE candidate remains open; 56 Python contracts alone do not prove it.
-
+**Current English-only decision, October18:** [measured native ANE / MLX Vulkan /
+CPU streaming results](REALTIME-ENGLISH.md) supersede older recommendations below.
+Nemotron160 CPU produced first draft words in0.851s median; MLX Vulkan
+Parakeet1.452s; the existing ANE controller2.97s warm committed output. All
+retained the six-GiB reserve and stayed below2532RPM in these limited public-file
+trials. Output policies differ; these are not universal accuracy or live F5
+claims. A private native English panel showed raw words and optional English
+grammar suggestions during speech. The English-only source is on draft PR155;
+no runtime or owner preferences changed in this benchmark. Earlier
+foreign-language probes are historical, outside the owner's clarified scope.
+Candidate deployment, lifecycle gates and human F5 acceptance remain open.
 
 Hold **F5** (the microphone key), speak, release: the compatibility service types recognized text into the focused field. Cross-app support and current limits are qualified below.
 Voxtype 1.1.1 (MIT) + whisper.cpp `base.en` on the CPU, ydotool for typing (same stack as Omarchy).

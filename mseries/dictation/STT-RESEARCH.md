@@ -1,5 +1,7 @@
 # Speech-to-text research for F5 dictation (2026-10-18)
 
+**Superseded baseline:** this initial survey predates the executed native ANE, MLX Vulkan and Nemotron/Moonshine CPU trials. See [the measured English-only report](REALTIME-ENGLISH.md) for the current decision, pins and limits. The older observations below remain historical.
+
 Scope: public sources only, read 2026-10-18. Nothing was installed or run on this
 machine; no number below is a measurement of the M1 Pro. "Unverified" means it comes
 from a model card, README or secondary aggregator and was not reproduced.

@@ -1,0 +1,29 @@
+{
+  "engine": "nemotron-560-cpu",
+  "exit_code": 0,
+  "interruption": null,
+  "wall_s": 32.37206448500001,
+  "model_sha256": {
+    "weights": "90d8c89714cd31efc88be62a40c6b2bea57e0cc2063af1ffe2c28f1a228ca110"
+  },
+  "identity": {
+    "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+    "policy": {
+      "reserve_gib": 6,
+      "max_fan_rpm": 3500,
+      "max_temp_c": 80,
+      "cool_fan_rpm": 2700,
+      "resume_fan_rpm": 2600,
+      "burst_s": 3,
+      "sample_s": 1
+    },
+    "harness_sha256": "02474a9a24bbb33f5ddb0ba834b42b10219384935c785cc7d76c682071e78820"
+  },
+  "resources": {
+    "samples": 60,
+    "min_available_bytes": 18103615488,
+    "max_fan_rpm": 2518.0,
+    "max_temp_c": 45.606
+  },
+  "quality_score": "See each retained WER, not a pass/fail quality aggregate"
+}

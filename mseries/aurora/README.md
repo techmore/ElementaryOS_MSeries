@@ -1,5 +1,12 @@
 # Aurora 20 kernel port for elementary
 
+## Later hotplug and module cleanup — 2026-10-18
+
+[Follow-up report](hardware-tests/2026-10-18-j314s-hotplug-and-module-cleanup.md): orphan `.19`/Fairydust module trees archived and
+removed; `.20`, `.20-enh1` and stock fallback retained. Saved display-mode rejection,
+panel timeout and dock hotplug errors remain unresolved; audio-after-replug is an
+owner observation. Boot/display/audio configuration unchanged.
+
 ## Current host update — 2026-10-18
 
 [Boot archive and VRR report](hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md):
