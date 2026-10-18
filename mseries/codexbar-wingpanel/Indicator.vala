@@ -50,6 +50,8 @@ namespace MSeries {
         private Json.Array? opencode_accounts = null;
         private bool opencode_accounts_in_flight = false;
         private int64 opencode_accounts_fetched_us = 0;
+        private uint opencode_generation = 0;
+        private bool opencode_switch_in_flight = false;
         private Gtk.Label[] account_quota_labels = {};
         private Json.Array[] account_quota_windows = {};
         private Json.Array hint_candidates = new Json.Array ();
@@ -457,6 +459,7 @@ namespace MSeries {
         private async void refresh_opencode_accounts () {
             if (opencode_accounts_in_flight) return;
             opencode_accounts_in_flight = true;
+            var generation = opencode_generation;
             var before = codex_accounts_digest (opencode_accounts);
             try {
                 var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
@@ -466,6 +469,7 @@ namespace MSeries {
                 var parser = new Json.Parser ();
                 parser.load_from_data (output);
                 var root = parser.get_root ();
+                if (generation != opencode_generation) return;
                 opencode_accounts = null;
                 if (process.get_successful () && root != null && root.get_node_type () == Json.NodeType.OBJECT
                     && root.get_object ().has_member ("accounts")) {
@@ -473,15 +477,47 @@ namespace MSeries {
                     if (accounts != null) opencode_accounts = accounts.ref ();
                 }
             } catch (Error e) {
-                opencode_accounts = null;
+                if (generation == opencode_generation) opencode_accounts = null;
             } finally {
                 opencode_accounts_in_flight = false;
-                opencode_accounts_fetched_us = GLib.get_monotonic_time ();
+                opencode_accounts_fetched_us = generation == opencode_generation ? GLib.get_monotonic_time () : 0;
+                if (generation != opencode_generation) refresh_opencode_accounts.begin ();
             }
             if (before != codex_accounts_digest (opencode_accounts)) {
                 last_digest = "";
                 read_snapshot.begin ();
             }
+        }
+
+        private async void switch_opencode_account (string account_id) {
+            if (opencode_switch_in_flight) return;
+            opencode_switch_in_flight = true;
+            var ok = false;
+            var message = "OpenCode could not switch accounts. Open OpenCode and try again.";
+            try {
+                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
+                    "python3", helper_path ("codexbar-opencode-local.py"), "switch", account_id);
+                string output;
+                yield process.communicate_utf8_async (null, null, out output, null);
+                var parser = new Json.Parser ();
+                parser.load_from_data (output);
+                var root = parser.get_root ();
+                if (root != null && root.get_node_type () == Json.NodeType.OBJECT) {
+                    ok = process.get_successful () && root.get_object ().get_boolean_member_with_default ("ok", false);
+                    message = root.get_object ().get_string_member_with_default ("message", message);
+                }
+            } catch (Error e) { }
+            opencode_switch_in_flight = false;
+            // In-flight reads from the old selection must not replace the new account data.
+            opencode_generation++;
+            opencode_accounts_fetched_us = 0;
+            opencode_local_fetched_us = 0;
+            last_digest = "";
+            refresh_opencode_accounts.begin ();
+            refresh_opencode_local.begin ();
+            run_action ("--refresh");
+            read_snapshot.begin ();
+            tell (ok ? "Switched OpenCode account" : "Couldn't switch OpenCode account", message);
         }
 
         private bool claude_switch_in_flight = false;
@@ -760,6 +796,7 @@ namespace MSeries {
                 return;
             }
             opencode_local_in_flight = true;
+            var generation = opencode_generation;
             var helper = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "lib",
                 "codexbar-cli", "codexbar-opencode-local.py");
             var changed = false;
@@ -780,14 +817,18 @@ namespace MSeries {
                         parsed = root.get_object ().ref ();
                     }
                 }
+                if (generation != opencode_generation) return;
                 changed = local_digest (parsed) != local_digest (opencode_local);
                 opencode_local = parsed;
             } catch (Error e) {
-                changed = opencode_local != null;
-                opencode_local = null;
+                if (generation == opencode_generation) {
+                    changed = opencode_local != null;
+                    opencode_local = null;
+                }
             } finally {
                 opencode_local_in_flight = false;
-                opencode_local_fetched_us = GLib.get_monotonic_time ();
+                opencode_local_fetched_us = generation == opencode_generation ? GLib.get_monotonic_time () : 0;
+                if (generation != opencode_generation) refresh_opencode_local.begin ();
             }
             if (changed) {
                 last_digest = "";
@@ -1347,9 +1388,17 @@ namespace MSeries {
                 for (uint i = 0; opencode_accounts != null && i < opencode_accounts.get_length (); i++) {
                     var account = opencode_accounts.get_object_element (i);
                     if (account.get_boolean_member_with_default ("active", false)) continue;
-                    card.append (build_account_line (account.get_string_member_with_default ("email", "Saved account"),
-                        account.get_string_member_with_default ("error", "Quota unavailable"), "", null,
-                        account.has_member ("windows") ? account.get_array_member ("windows") : null, hint_id ("opencodego", account), account.get_string_member_with_default ("plan", "")));
+                    var saved_email = account.get_string_member_with_default ("email", "Saved account");
+                    var workspace = account.get_string_member_with_default ("workspace", "");
+                    var caption = workspace.length > 0 ? saved_email + " · " + workspace : saved_email;
+                    var account_id = account.get_string_member_with_default ("id", "");
+                    card.append (build_account_line (caption,
+                        account.get_string_member_with_default ("error", "Quota unavailable"),
+                        "Make %s active in OpenCode and refresh CodexBar usage".printf (caption),
+                        () => switch_opencode_account.begin (account_id),
+                        account.has_member ("windows") ? account.get_array_member ("windows") : null,
+                        hint_id ("opencodego", account), account.get_string_member_with_default ("plan", ""),
+                        account.get_boolean_member_with_default ("switchable", true)));
                 }
             }
             if (error.length > 0 || windows == null || windows.get_length () == 0) {
@@ -1473,7 +1522,7 @@ namespace MSeries {
         }
 
         private Gtk.Widget build_account_line (string email, string detail, string switch_tooltip,
-                                               owned ActionFunc? on_switch, Json.Array? windows = null, string candidate_id = "", string plan = "") {
+                                               owned ActionFunc? on_switch, Json.Array? windows = null, string candidate_id = "", string plan = "", bool switch_sensitive = true) {
             var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             line.add_css_class ("account-line");
             var name = new Gtk.Label (email) { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.MIDDLE };
@@ -1500,7 +1549,10 @@ namespace MSeries {
                 account_quota_windows += windows;
             }
             if (on_switch == null) return line;
-            var button = new Gtk.Button.with_label ("Switch") { valign = Gtk.Align.CENTER, tooltip_text = switch_tooltip };
+            var button = new Gtk.Button.with_label ("Switch") {
+                valign = Gtk.Align.CENTER, sensitive = switch_sensitive,
+                tooltip_text = switch_sensitive ? switch_tooltip : "Sign in to this account again in OpenCode before switching"
+            };
             button.add_css_class ("compact");
             button.clicked.connect (() => {
                 popdown_from (button);
