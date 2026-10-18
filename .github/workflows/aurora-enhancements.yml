@@ -3,7 +3,11 @@ name: Aurora enhancement candidate
 on:
   pull_request:
     paths:
-      - "mseries/aurora/**"
+      - "mseries/aurora/candidate.py"
+      - "mseries/aurora/release.py"
+      - "mseries/aurora/release.json"
+      - "mseries/aurora/enhancements/**"
+      - "mseries/aurora/unified72/series.json"
       - ".github/workflows/aurora-enhancements.yml"
   workflow_dispatch:
     inputs:
@@ -45,7 +49,7 @@ jobs:
           python3 -m unittest discover -s mseries/aurora -p 'test_*.py' -v
           python3 mseries/aurora/candidate.py prepare --cache "$RUNNER_TEMP/aurora-cache" \
             --output "$RUNNER_TEMP/aurora-prepared" --profile "$PROFILE"
-      - name: Exercise production thermal and battery-discovery logic
+      - name: Exercise selected production kernel logic
         env:
           RUSTUP_TOOLCHAIN: 1.93.1
         run: python3 mseries/aurora/candidate.py check --prepared "$RUNNER_TEMP/aurora-prepared"
