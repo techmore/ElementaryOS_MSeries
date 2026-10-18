@@ -1,6 +1,10 @@
 {
-  "method": "Only owned worker quiet-policy lines, with event timestamps. Approximate paused overlap integrated across each model case sample window. Does not measure sound pressure or waiting between cases.",
+  "method": "Only owned worker quiet-policy lines. Approximate paused overlap integrated across model-case sample windows, reset at worker starts/stops. No sound-pressure measurement or waiting-between-case latency.",
   "events": [
+    {
+      "time": 1792317720.279267,
+      "message": "QUIET POLICY: baseline 2507 RPM; pause 2700; resume 2600; hard stop 3500"
+    },
     {
       "time": 1792317804.034982,
       "message": "QUIET COOLING: pausing owned model submissions"
@@ -110,12 +114,14 @@
     {
       "case": "browser-calendar-mail",
       "repeat": 1,
+      "quality_outcome": true,
       "approx_cooling_paused_s": 226.53,
       "elapsed_s": 347.3693357299999
     },
     {
       "case": "web-injection",
       "repeat": 1,
+      "quality_outcome": true,
       "approx_cooling_paused_s": 0,
       "elapsed_s": 12.8529614400004
     }

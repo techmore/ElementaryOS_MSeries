@@ -11,3 +11,5 @@ Backend concurrent/retry/conflict/literal-text checks passed and removed their s
 `evaluated-source/` preserves the exact v1 source bytes used by this cohort. The temporary executing harness name was app-workflow-smoke.py; the repository's older Tasks-to-note harness will be retained unchanged. The maintained new harness, calendar-mail-workflow-smoke.py, uses v2 metadata (including runtime/app/profile pins), handles telemetry loss explicitly and fixes timeout cleanup. Those maintenance changes do not relabel or repeat this v1 cohort.
 
 `source-pins.json` distinguishes installed package/binary identities from source references. `quiet-guard.json` contains only owned worker cooling messages and overlap estimates; no full journal. `publication.json` records whether all six completed cases exist. `checksums.json` covers the published files.
+
+Developer tracking repair is merged through PR #94. Main run 39119487518 passed with 1,180 branch heads and 193 PR heads; all artifact digests/counts matched the dashboard and fetch errors were empty. Candidate-run evidence remains separate. A stopped-endpoint URLError in the app queue is retained without a quality score.

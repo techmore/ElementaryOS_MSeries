@@ -2664,6 +2664,12 @@ Merged origin/main 86582a0 into this branch, retaining owner hardware/audio/Code
 
 Public page is staged with explicit two-pass/four-pending status, exact source/receipt links, current 70-contract count, the Pantheon/WebRTC proposal and upstream comparison. Reconciliation checks pass (70 assistant contracts and 4 image-wiring tests). A known-missing-ref HTTPError handle is now closed after reading its bounded response; all 17 app/branch/harness contracts pass. Do not claim final publication or merge yet. The only intentional dirty runtime input is the executing temporary app-workflow-smoke.py (digest 93ee800a...), retained for the owned live queue.
 
+### Permanent developer tracking recovery verified on main
+
+PR #94 merged at b240b9abef82fbf4a4504b904d0060dab565a10a after CI (55 assistant contracts on that isolated branch; both validation jobs passed). Subsequent main changes are preserved: dispatch 39119487518 ran on 85926644e666c6babb403a763fe5f84c076e13ab, which contains the fix. It passed with 1,180 branch heads/193 PR heads and zero fetch errors. Every artifact bucket count/digest matches the decoded issue dashboard. Later main configuration selects aurora-rc/edge/wip rather than the deleted explicit refs; prior absent-ref observations and pending history remain. Candidate run 39117953694 separately exercised missing-ref handling (1,114 heads). No duplicate recurring watcher.
+
+App branch incorporates current main and canonical watcher tests, removing duplicate copies without changing the executing cohort. Seventy assistant contracts, four image-wiring tests and CI including native notch checks pass. Two model passes remain completed; the first attempt at repeat two found the fan-stopped endpoint offline and is retained as an unscored URLError interruption. The existing controller handles recovery only through quiet admission. work/collect-app-quiet.py refreshes sanitized worker pause overlap before final publication.
+
 ## October 16 local AI rollout and qualification
 
 Work is isolated on `feat/m1pro-local-assistants`, starting from main `247d5c0`. The actual host is M1 Pro T6000/j314s with 32 GB, elementary OS 9/resolute, kernel `7.1.13-3-2-ARCH`. Owner authorized a brief on-screen Newelle check, then explicitly chose to preserve other Rust/HTTP load tests and wait for idle windows. Other app windows, display settings, bootloader, kernel and audio were preserved.
