@@ -4868,3 +4868,29 @@ evaluate recorded early visible words under the corrected criterion without
 repeating inference. Real installed-app and optional voice checks are separate
 new cohorts. No microphone or physical F5 claimed tested by fileinput fixtures.
 No deployment yet; agent-owned installer/voice/realapp additions still in progress.
+
+### F5 app/voice follow-through checkpoint
+
+The new English selector/installer retains mode, adds bounded0–900s residency,
+stages all native/MLX/voice dependencies, uses streamed model backups/rollback,
+and restarts only owned speech/input services. No deployment yet.131 contracts
+pass including late output after native feed/finalize/fallback cancellation.
+Model-load admission is engine-specific and resident pressure checks use the
+standing six-GiB/2700RPM/63C speech guards. Newelle's actual composer exceeded
+the old24ancestor focus scan:64nodes plus the same0.6s budget fixes it.
+
+Browser rich-compose testing exposed a real Chromium behavior: focus loss can
+confirm speculative composition before IBus clears it, even with CLEAR mode.
+Retain those failed receipts. The final input policy suppresses native speculative
+Preview globally and streams stable committed words. Nemotron already commits
+early, so its actual words-during-speech behavior remains. Own English cleanup
+previews stay in the review pane. Tests/harnesses were updated to this explicit
+policy; do not describe speculative app preedit as a delivered feature.
+
+The optional English Voice Assistant backend passed synthetic text→4B→eSpeak WAV:
+first token1.733s, first WAV2.200s; independently nonzero1.794s PCM. No playback
+or microphone, no tools. Native private GTK wiring passes; automatic replies
+after F5 are OFF by default. This is half-duplex/robotic synthesis, not tested
+full-duplex WebRTC or natural voice quality. Sustained62.61s resident CPU/MLX
+trials and final actual app checks are still completing; retained CPU errors are
+1.19% WER on the repeated clip, not a general accuracy result.

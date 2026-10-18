@@ -86,7 +86,7 @@ def status(phase):
     if DRY or os.environ.get('STREAM_TEST_WAV') or os.environ.get('STREAM_TEST_RAW'):
         return
     try:
-        write_status(phase, OUTPUT, os.environ.get('STREAM_BACKEND', 'auto'))
+        write_status(phase, OUTPUT, ENGINE if ENGINE in ('ane','mlx') else ('cpu' if ENGINE=='nemotron' else os.environ.get('STREAM_BACKEND', 'auto')))
     except (OSError, ValueError):
         log('dictation lifecycle status unavailable')
 
@@ -231,11 +231,11 @@ class Typer(threading.Thread):
     def finish(self, token):
         if token: self.q.put((None, token, self.epoch))
 
-    def submit(self, text, token):
-        self.q.put((text, token, self.epoch))
+    def submit(self, text, token, epoch=None):
+        self.q.put((text, token, self.epoch if epoch is None else epoch))
 
-    def preview(self, text, token):
-        if token: self.submit(Preview(text), token)
+    def preview(self, text, token, epoch=None):
+        if token: self.submit(Preview(text), token, epoch)
 
     def discard(self):
         with self.process_lock:
@@ -246,7 +246,9 @@ class Typer(threading.Thread):
 
 class Dictation:
     def __init__(self):
-        self.models = LazyModel(self.load_model, idle_seconds=180 if ENGINE in ('ane', 'mlx') else 60)  # a warm ANE worker saves ~2 s per F5
+        idle = float(os.environ.get('STREAM_IDLE_SECONDS', '180' if ENGINE in ('ane', 'mlx') else '60'))
+        if not 0 <= idle <= 900: raise ValueError('Speech residency must be between0 and900seconds')
+        self.models = LazyModel(self.load_model, idle_seconds=idle)
         self.typer = Typer(self.insertion_failed)
         self.active = False
         self.worker = None
@@ -271,15 +273,23 @@ class Dictation:
         import transcribe_cpp as t
         return t.Model(MODEL, backend='cpu' if ENGINE == 'nemotron' else os.environ.get('STREAM_BACKEND', 'cpu'))
 
+    @staticmethod
+    def speech_policy():
+        policy = load_policy()
+        policy['reserve_gib'] = max(6, policy.get('reserve_gib',6))
+        policy['max_fan_rpm'] = min(2700, policy.get('max_fan_rpm',2700))
+        policy['max_temp_c'] = min(63, policy.get('max_temp_c',63))
+        return policy
+
     def idle_tick(self):
         if self.active or time.monotonic() < self.next_trim:
             return
         if not self.models.loaded and self.error != 'ResourceGuard':
             return
         self.next_trim = time.monotonic() + 5
-        if self.models.trim(force=bool(resource_reasons(load_policy(), 256 * 1024**2))):
+        if self.models.trim(force=bool(resource_reasons(self.speech_policy(), 256 * 1024**2))):
             log('idle speech model released; F5 listener remains ready')
-        if self.error == 'ResourceGuard' and not resource_reasons(load_policy(), 1024**3):
+        if self.error == 'ResourceGuard' and not resource_reasons(self.speech_policy(), 2*1024**3):
             self.error = None
             status('ready')
 
@@ -299,6 +309,7 @@ class Dictation:
         self.cancelled = False
         self.interrupted = False
         self.typer.failed = False
+        self.output_epoch = self.typer.epoch
         self.stop_evt.clear()
         self.input_token = None
         self.worker = threading.Thread(target=self.prepare, daemon=True)
@@ -308,9 +319,7 @@ class Dictation:
         capture_started = False
         test = os.environ.get('STREAM_TEST_WAV') or os.environ.get('STREAM_TEST_RAW')
         try:
-            self.policy = load_policy()
-            self.policy['max_fan_rpm'] = min(self.policy.get('max_fan_rpm',2700), 2700)
-            self.policy['max_temp_c'] = min(self.policy.get('max_temp_c',63), 63)
+            self.policy = self.speech_policy()
             if self.stop_evt.is_set(): return
             if resource_reasons(self.policy, 256 * 1024**2): raise ModelHeadroom()
             if OUTPUT == 'ibus' and (TEST_INSERT or not (DRY or test)):
@@ -330,7 +339,8 @@ class Dictation:
             if not self.models.loaded:
                 status('loading')
                 if not test: notify('Preparing speech model… Microphone is off. Wait for Listening.')
-            with self.models.use(lambda extra: not resource_reasons(self.policy, extra)) as model:
+            with self.models.use(lambda extra: not resource_reasons(self.policy,
+                    max(extra, (6 if ENGINE == 'mlx' else 2)*1024**3) if not self.models.loaded else extra)) as model:
                 if self.stop_evt.is_set(): return
                 if self.input_token:
                     # Loading can outlast the user's focus. Check the original
@@ -477,7 +487,7 @@ class Dictation:
             tail.extend(norm(w) for w in words)
             del tail[:-8]
             if words and not self.error and not self.cancelled and not self.interrupted:
-                self.typer.submit(" ".join(words) + " ", self.input_token)
+                self.typer.submit(" ".join(words) + " ", self.input_token, getattr(self, "output_epoch", None))
                 total_typed += len(words)
 
         def absorb(words):
@@ -592,7 +602,6 @@ class Dictation:
             if ENGINE == 'nemotron':
                 from transcribe_cpp import ParakeetStreamOptions
                 options['family'] = ParakeetStreamOptions(att_context_right=1)
-            previous_preview = None
             with model.session(n_threads=THREADS) as s, s.stream(**options) as st:
                 buf = pending
                 peak = sq = 0.0; n = 0
@@ -624,38 +633,35 @@ class Dictation:
                         sq += float((pcm ** 2).sum()); n += len(pcm)
                         buf = buf[CHUNK * 2:]
                         up = st.feed(pcm)
-                        if up.committed_changed and not self.error and not self.cancelled:
+                        if self.error or self.cancelled or self.interrupted: break
+                        if up.committed_changed:
                             c = st.text().committed
                             if c.startswith(typed) and len(c) > len(typed):
-                                self.typer.submit(c[len(typed):], self.input_token)
+                                self.typer.submit(c[len(typed):], self.input_token, getattr(self, "output_epoch", None))
                                 typed = c
-                        display = st.text().display
-                        preview = display[len(typed):] if display.startswith(typed) else ''
-                        if preview != previous_preview:
-                            self.typer.preview(preview, self.input_token)
-                            previous_preview = preview
                 if self.error or self.cancelled or self.interrupted:
                     final = typed
                 else:
                     st.finalize()
-                    final = st.text().display
+                    final = typed if self.error or self.cancelled or self.interrupted else st.text().display
                 if final.startswith(typed):
                     rest = final[len(typed):]
                 else:
                     rest = ""  # revised an already typed prefix: never retype or delete
                 if rest.strip():
-                    self.typer.submit(rest, self.input_token)
+                    self.typer.submit(rest, self.input_token, getattr(self, "output_epoch", None))
                 rms = (sq / max(n, 1)) ** 0.5
                 spread, active, floor = speech_stats(np.frombuffer(bytes(kept), np.int16).astype(np.float32) / 32768)
                 log(f"dictated {len(final)} chars in {time.time() - t0:.1f}s; audio peak {peak:.3f} rms {rms:.4f} "
                     f"floor {floor:.4f} spread {spread:.1f} dB active {active}")
                 if os.environ.get("STREAM_FORCE_FALLBACK"):
                     final = ""  # test hook: pretend streaming recognized nothing
-                if not self.error and not self.cancelled and not final.strip() and len(kept) > 16000 * 2 and spread >= SPEECH_SPREAD_DB and active >= 3:
+                if not self.error and not self.cancelled and not self.interrupted and not final.strip() and len(kept) > 16000 * 2 and spread >= SPEECH_SPREAD_DB and active >= 3:
                     # streaming heard nothing but there was sound: let Whisper have one offline pass
                     redo = whisper_fallback(bytes(kept))
+                    if self.error or self.cancelled or self.interrupted: redo = ""
                     if redo and not DRY:
-                        self.typer.submit(redo + " ", self.input_token)
+                        self.typer.submit(redo + " ", self.input_token, getattr(self, "output_epoch", None))
                     elif redo:
                         print("fallback:", redo, flush=True)
                     final = redo or ""

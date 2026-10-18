@@ -17,6 +17,10 @@ class QueuedOutput(unittest.TestCase):
    t.preview('stale','old');t.submit('late','old');t.discard();release.set();self.assertTrue(t.drain(2))
    t.preview('new draft','new');t.submit('final','new');t.finish('new');self.assertTrue(t.drain(2))
    self.assertEqual(calls,[('commit','old','blocked'),('preview','new','new draft'),('commit','new','final'),('finish','new',None)])
+ def test_old_session_epoch_rejects_result_enqueued_after_cancel(self):
+  with patch.object(s,'OUTPUT','ibus'),patch.object(s,'input_call') as send:
+   t=s.Typer();epoch=t.epoch;t.discard();t.submit('late','old',epoch);t.preview('late draft','old',epoch)
+   self.assertTrue(t.drain(1));send.assert_not_called()
  def test_no_preedit_is_sent_to_unverified_keyboard_fallback(self):
   with patch.object(s,'input_call') as send:
    t=s.Typer();t.preview('do not type',None);self.assertTrue(t.drain(1));send.assert_not_called()

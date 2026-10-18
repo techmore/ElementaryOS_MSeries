@@ -15,7 +15,7 @@ report={'complete':False,'engine':'ane-rolling','microphone_recorded':False,'key
 started=0;events=[]
 class Sink:
     def __init__(self,*_):self.q=types.SimpleNamespace(unfinished_tasks=0);self.failed=False
-    def submit(self,text,token):events.append({'wall_s':time.monotonic()-started,'text':text})
+    def submit(self,text,token,*_):events.append({'wall_s':time.monotonic()-started,'text':text})
     def finish(self,token):pass
     def drain(self,*_):return True
 controller.Typer=Sink;d=controller.Dictation()
