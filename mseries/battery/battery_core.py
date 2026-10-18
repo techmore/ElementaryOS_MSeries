@@ -16,6 +16,9 @@ SAMPLE_SECONDS = 15
 GAP_SECONDS = SAMPLE_SECONDS * 3      # a longer silence means suspend, shutdown or a crash
 SESSION_GAP_SECONDS = 300             # discharge runs split when samples are further apart than this
 RETENTION_DAYS = 90
+TOP_N = 5                             # processes stored per sample
+CONFIG_PATH = os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "mseries-battery", "config.json")
+DEFAULT_CONFIG = {"alerts": True, "alert_watts": 15.0, "alert_minutes": 5, "alert_cooldown_minutes": 30}
 EVENT_STEP_WATTS = 4.0                # system power change that is worth an event
 EVENT_MIN_GAP_SECONDS = 60            # at most one event per minute
 
@@ -26,6 +29,8 @@ CREATE TABLE IF NOT EXISTS samples (
 CREATE TABLE IF NOT EXISTS events (
     ts INTEGER, kind TEXT, delta_w REAL, before_w REAL, after_w REAL, cpu_pct REAL, culprit TEXT, detail TEXT);
 CREATE INDEX IF NOT EXISTS events_ts ON events(ts);
+CREATE TABLE IF NOT EXISTS daily (
+    day TEXT PRIMARY KEY, full_uwh INTEGER, design_uwh INTEGER, cycles INTEGER, limit_pct INTEGER);
 """
 
 
@@ -135,7 +140,7 @@ class Sampler:
                     if before and before[0] == name and used >= before[1]:
                         grouped[name] = grouped.get(name, 0) + used - before[1]
                 # process ticks are in the same units as /proc/stat, summed over all CPUs
-                ranked = sorted(grouped.items(), key=lambda kv: -kv[1])[:3]
+                ranked = sorted(grouped.items(), key=lambda kv: -kv[1])[:TOP_N]
                 top = [[name, round(100.0 * ticks / dt, 1)] for name, ticks in ranked if ticks > 0]
         self.prev_cpu, self.prev_procs = (total, idle), procs
 
@@ -346,3 +351,186 @@ def fmt_hours(hours):
         return "—"
     minutes = int(round(hours * 60))
     return "%dh %02dm" % (minutes // 60, minutes % 60) if minutes >= 60 else "%d min" % minutes
+
+
+# ---- configuration -------------------------------------------------------------------------
+def load_config():
+    config = dict(DEFAULT_CONFIG)
+    try:
+        with open(CONFIG_PATH) as handle:
+            config.update({k: v for k, v in json.load(handle).items() if k in DEFAULT_CONFIG})
+    except (OSError, ValueError):
+        pass
+    return config
+
+
+# ---- daily health snapshots ----------------------------------------------------------------
+def snapshot_daily(conn, day=None):
+    """One row per day with full-charge capacity and cycle count, for the health trend."""
+    health = battery_health()
+    if not health.get("full_wh"):
+        return
+    day = day or time.strftime("%Y-%m-%d")
+    conn.execute("INSERT OR REPLACE INTO daily VALUES (?,?,?,?,?)",
+                 (day, int(health["full_wh"] * 1e6), int((health["design_wh"] or 0) * 1e6),
+                  int(health["cycles"] or 0), int(health["limit_pct"]) if health["limit_pct"] is not None else None))
+
+
+def health_trend(conn):
+    try:
+        return [dict(r) for r in conn.execute("SELECT * FROM daily ORDER BY day")]
+    except sqlite3.OperationalError:  # database from before the logger added this table
+        return []
+
+
+# ---- energy by app -------------------------------------------------------------------------
+def energy_by_app(rows):
+    """Estimate where unplugged energy went.
+
+    The idle floor (10th percentile of draw) is charged to the system itself (display, radios, memory). Draw above
+    the floor is split among processes by their share of CPU use in each sample. This is an estimate: it sees CPU
+    time only, so GPU and display work shows up as the floor or as the app driving it.
+    """
+    on_battery = [r for r in rows if not r["ac"] and r["sys_w"] is not None and r["cpu_pct"] is not None]
+    if len(on_battery) < 4:
+        return {"apps": [], "floor_wh": 0.0, "total_wh": 0.0, "floor_w": None, "other_wh": 0.0}
+    watts = sorted(r["sys_w"] for r in on_battery)
+    floor = watts[len(watts) // 10]
+    apps, total, floor_wh, other = {}, 0.0, 0.0, 0.0
+    for index, r in enumerate(on_battery):
+        nxt = on_battery[index + 1]["ts"] if index + 1 < len(on_battery) else r["ts"] + SAMPLE_SECONDS
+        dt = min(nxt - r["ts"], GAP_SECONDS)
+        wh = r["sys_w"] * dt / 3600
+        total += wh
+        base = min(r["sys_w"], floor) * dt / 3600
+        floor_wh += base
+        dynamic = wh - base
+        listed = json.loads(r["top"] or "[]")
+        busy = max(r["cpu_pct"], 0.1)
+        used = 0.0
+        for name, cpu in listed:
+            share = min(cpu / busy, 1.0)
+            apps[name] = apps.get(name, 0.0) + dynamic * share
+            used += share
+        other += dynamic * max(0.0, 1.0 - used)
+    ranked = sorted(apps.items(), key=lambda kv: -kv[1])
+    return {"apps": [{"name": n, "wh": round(w, 3), "share": round(100 * w / total, 1) if total else 0} for n, w in ranked],
+            "floor_wh": round(floor_wh, 3), "floor_w": round(floor, 2), "other_wh": round(other, 3), "total_wh": round(total, 3)}
+
+
+# ---- charging and standby ------------------------------------------------------------------
+def charge_sessions(rows):
+    """Plugged-in runs where the battery was actually taking charge."""
+    result, current = [], []
+
+    def close():
+        if len(current) >= 2:
+            first, last = current[0], current[-1]
+            span = last["ts"] - first["ts"]
+            added = ((last["energy_uwh"] or 0) - (first["energy_uwh"] or 0)) / 1e6
+            into = [r["batt_w"] for r in current if r["batt_w"]]
+            if span >= 120 and added > 0:
+                result.append({"start": first["ts"], "end": last["ts"], "seconds": span, "pct_start": first["pct"],
+                               "pct_end": last["pct"], "wh_added": round(added, 2),
+                               "avg_w": round(added * 3600 / span, 2),
+                               "peak_w": round(max(into), 1) if into else None})
+        current.clear()
+
+    for row in rows:
+        if row["status"] != "Charging":
+            close()
+            continue
+        if current and row["ts"] - current[-1]["ts"] > SESSION_GAP_SECONDS:
+            close()
+        current.append(row)
+    close()
+    return result
+
+
+def standby_drain(conn, since):
+    """Charge lost per hour while the machine was asleep or off on battery (from the logged gaps)."""
+    seconds, lost = 0.0, 0.0
+    for ev in events(conn, since, limit=10000):
+        if ev["kind"] != "gap":
+            continue
+        info = json.loads(ev["detail"])
+        drop = (info["pct_from"] or 0) - (info["pct_to"] or 0)
+        if info["on_battery"] and info["seconds"] >= 600 and drop >= 0:
+            seconds += info["seconds"]
+            lost += drop
+    return {"hours": round(seconds / 3600, 1), "pct_lost": round(lost, 1),
+            "pct_per_hour": round(lost / (seconds / 3600), 2) if seconds >= 3600 else None}
+
+
+# ---- high drain alert ----------------------------------------------------------------------
+class DrainAlert:
+    """Decides when sustained high draw on battery deserves a notification."""
+
+    def __init__(self, config):
+        self.config = config
+        self.window = []
+        self.last_alert = None
+
+    def feed(self, row):
+        if row["ac"] or row["sys_w"] is None:
+            self.window = []
+            return None
+        self.window = [r for r in self.window + [row] if r["ts"] >= row["ts"] - self.config["alert_minutes"] * 60]
+        span = self.window[-1]["ts"] - self.window[0]["ts"]
+        if not self.config["alerts"] or span < self.config["alert_minutes"] * 60 - SAMPLE_SECONDS:
+            return None
+        avg = sum(r["sys_w"] for r in self.window) / len(self.window)
+        if avg < self.config["alert_watts"] or (self.last_alert is not None and row["ts"] - self.last_alert < self.config["alert_cooldown_minutes"] * 60):
+            return None
+        self.last_alert = row["ts"]
+        totals = {}
+        for r in self.window:
+            for name, cpu in json.loads(r["top"] or "[]"):
+                totals[name] = totals.get(name, 0) + cpu
+        culprit = max(totals, key=totals.get) if totals else None
+        left = (row["energy_uwh"] or 0) / 1e6 / avg
+        return {"watts": round(avg, 1), "culprit": culprit, "hours_left": round(left, 2)}
+
+
+# ---- written report ------------------------------------------------------------------------
+def report_markdown(conn, days=14):
+    now = int(time.time())
+    rows = fetch(conn, now - int(days * 86400))
+    runs = sessions(rows)
+    health = battery_health()
+    lines = ["# Battery report", "", "Generated %s, covering the last %g days (%d samples)." % (
+        time.strftime("%Y-%m-%d %H:%M"), days, len(rows)), ""]
+    if health:
+        lines += ["## Health", "", "- Full-charge capacity: %.1f Wh of %.1f Wh design (%s%%)" % (
+            health["full_wh"] or 0, health["design_wh"] or 0, health["health_pct"]),
+            "- Cycles: %d" % (health["cycles"] or 0),
+            "- Charge limit: %s%%" % (int(health["limit_pct"]) if health["limit_pct"] is not None else "none"), ""]
+    long_runs = [r for r in runs if r["seconds"] >= 1800 and r["projected_hours"]]
+    lines += ["## Runtime", ""]
+    if long_runs:
+        avg = sum(r["projected_hours"] for r in long_runs) / len(long_runs)
+        lines += ["- Average full-charge runtime: **%s** (from %d unplugged runs of 30 min or more)" % (fmt_hours(avg), len(long_runs))]
+    else:
+        lines += ["- Not enough time on battery yet for a runtime figure."]
+    lines += ["- Time on battery: %s over %d runs" % (fmt_hours(sum(r["seconds"] for r in runs) / 3600), len(runs)), ""]
+    lines += ["## Runtime by usage", "", "| Usage | CPU | Hours | Avg W | Full-charge runtime |", "|---|---|---|---|---|"]
+    for band in usage_profile(rows):
+        lines.append("| %s | %s | %.1f | %s | %s |" % (band["band"], band["cpu_range"], band["hours"],
+                     band["avg_w"] if band["avg_w"] is not None else "—", fmt_hours(band["runtime_h"])))
+    apps = energy_by_app(rows)
+    if apps["apps"]:
+        lines += ["", "## Where the energy went (estimate, on battery)", "",
+                  "Idle floor %.1f W = %.1f Wh; apps share the draw above it by CPU use." % (apps["floor_w"], apps["floor_wh"]), "",
+                  "| App | Wh | Share |", "|---|---|---|"]
+        lines += ["| %s | %.2f | %s%% |" % (a["name"], a["wh"], a["share"]) for a in apps["apps"][:10]]
+    if runs:
+        lines += ["", "## Unplugged runs", "", "| Start | Length | Charge | Used | Avg W | Full-charge runtime |", "|---|---|---|---|---|---|"]
+        for r in reversed(runs):
+            lines.append("| %s | %s | %.0f%% → %.0f%% | %.1f Wh | %s | %s |" % (
+                time.strftime("%Y-%m-%d %H:%M", time.localtime(r["start"])), fmt_hours(r["seconds"] / 3600),
+                r["pct_start"] or 0, r["pct_end"] or 0, r["wh_used"], r["avg_w"] or "—", fmt_hours(r["projected_hours"])))
+    drain = standby_drain(conn, now - int(days * 86400))
+    if drain["pct_per_hour"] is not None:
+        lines += ["", "## Standby", "", "- Asleep on battery %.1f h, losing %.2f%% per hour" % (drain["hours"], drain["pct_per_hour"])]
+    lines += ["", "_Figures are estimates from 15-second samples of the SMC system-power sensor; see mseries/BATTERY-PROFILER.md._", ""]
+    return "\n".join(lines)

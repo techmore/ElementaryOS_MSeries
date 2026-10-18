@@ -1,5 +1,12 @@
 # OS 9 implementation / Claude Code handoff
 
+## Battery pass 2 — 2026-10-18 (Claude Code)
+
+Battery: energy-by-app estimate, charging runs, sleep drain, daily health trend, high-drain notification (config in
+`~/.config/mseries-battery/config.json`), `mseries-battery apps|charging|health|report`, and Energy by app / Health
+pages plus a Markdown export button in the app. 13 unit tests pass; new pages rendered headless (elementary stylesheet,
+synthetic data). **Unverified:** notification appearance, live theme look, anything needing a real unplugged run.
+
 ## Battery history logger + app — 2026-10-18 (Claude Code)
 
 New `mseries/battery/` (see [BATTERY-PROFILER.md](BATTERY-PROFILER.md)): a 15 s user-service logger (SMC system power,

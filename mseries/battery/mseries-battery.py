@@ -5,6 +5,10 @@
   mseries-battery sessions [days]   each unplugged run: length, charge used, average watts, projected runtime
   mseries-battery profile [days]    average draw and runtime by CPU load band, plus the biggest CPU users
   mseries-battery events [days]     power steps and suspend gaps, with the likely cause
+  mseries-battery apps [days]       estimated energy by app while on battery
+  mseries-battery charging [days]   charging runs and standby drain
+  mseries-battery health            capacity and cycle trend by day
+  mseries-battery report [days]     Markdown report on stdout (e.g. > battery.md)
   mseries-battery export [days]     samples as CSV on stdout
 """
 import csv
@@ -79,6 +83,32 @@ def main(argv):
                 print("%s  %-4s %+5.1f W (%.1f → %.1f W)  CPU %s%%  top: %s  — %s" % (
                     stamp(ev["ts"]), ev["kind"], ev["delta_w"], ev["before_w"], ev["after_w"],
                     "%.0f" % ev["cpu_pct"] if ev["cpu_pct"] is not None else "—", ev["culprit"] or "—", ev["detail"]))
+    elif command == "apps":
+        apps = core.energy_by_app(core.fetch(conn, int(time.time() - days_arg(rest, 14) * 86400)))
+        if not apps["apps"]:
+            print("Not enough time on battery yet.")
+            return 0
+        print("Total %.1f Wh on battery; idle floor %.1f W = %.1f Wh (display, radios, memory)\n" % (
+            apps["total_wh"], apps["floor_w"], apps["floor_wh"]))
+        print("%-26s %8s %7s" % ("App", "Wh", "Share"))
+        for app in apps["apps"][:15]:
+            print("%-26s %8.2f %6.1f%%" % (app["name"], app["wh"], app["share"]))
+        print("%-26s %8.2f" % ("(other CPU, kernel)", apps["other_wh"]))
+    elif command == "charging":
+        since = int(time.time() - days_arg(rest, 14) * 86400)
+        print("%-18s %9s %11s %8s %7s" % ("Charging", "Length", "Charge", "Added", "Avg W"))
+        for run in reversed(core.charge_sessions(core.fetch(conn, since))):
+            print("%-18s %9s %5.0f→%3.0f%% %6.1fWh %7s" % (stamp(run["start"]), core.fmt_hours(run["seconds"] / 3600),
+                                                         run["pct_start"] or 0, run["pct_end"] or 0, run["wh_added"], run["avg_w"]))
+        drain = core.standby_drain(conn, since)
+        print("\nStandby: %.1f h asleep on battery, %.1f%% lost%s" % (
+            drain["hours"], drain["pct_lost"], " (%.2f%%/h)" % drain["pct_per_hour"] if drain["pct_per_hour"] is not None else ""))
+    elif command == "health":
+        for day in core.health_trend(conn):
+            print("%s  %.1f Wh  %4.1f%% of design  %d cycles" % (day["day"], day["full_uwh"] / 1e6,
+                  100.0 * day["full_uwh"] / day["design_uwh"] if day["design_uwh"] else 0, day["cycles"]))
+    elif command == "report":
+        print(core.report_markdown(conn, days_arg(rest, 14)))
     elif command == "export":
         writer = csv.writer(sys.stdout)
         writer.writerow(core.COLUMNS)
