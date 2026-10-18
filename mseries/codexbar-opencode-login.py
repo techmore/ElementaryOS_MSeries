@@ -133,6 +133,138 @@ def profile_session() -> Any:
     return session
 
 
+def build_connect_window(application: Any) -> Any:
+    """Build the native sheet independently of authentication (also used by the render probe)."""
+    import gi
+    gi.require_version("Gtk", "4.0")
+    gi.require_version("Granite", "7.0")
+    from gi.repository import Granite, Gtk, Pango
+
+    Granite.init()
+
+    class ConnectWindow(Granite.Dialog):
+        def __init__(self) -> None:
+            super().__init__(application=application, title="Connect OpenCode Go",
+                             default_width=440, resizable=False)
+            self.add_css_class("cb-opencode-connect")
+            css = Gtk.CssProvider()
+            css.load_from_string("""
+                .cb-opencode-connect .account-emblem {
+                    background: linear-gradient(to bottom, @theme_base_color, @theme_bg_color);
+                    border: 1px solid alpha(currentColor, 0.12); border-radius: 22px;
+                    box-shadow: 0 3px 6px alpha(black, 0.08), inset 0 1px alpha(white, 0.5);
+                    padding: 20px; margin: 4px 0 8px;
+                }
+                .cb-opencode-connect .account-heading {
+                    font-size: 1.65em; font-weight: 700; letter-spacing: -0.4px;
+                }
+                .cb-opencode-connect .account-steps {
+                    background: @theme_base_color; border: 1px solid alpha(currentColor, 0.14);
+                    border-radius: 9px; box-shadow: 0 1px 2px alpha(black, 0.04);
+                }
+                .cb-opencode-connect .account-step { padding: 14px 16px; }
+                .cb-opencode-connect .account-step-icon {
+                    color: @accent_color; background: alpha(@accent_color, 0.09);
+                    border-radius: 50%; padding: 9px;
+                }
+                .cb-opencode-connect .account-step-title { font-weight: 600; }
+                .cb-opencode-connect .account-caption { font-size: 0.92em; }
+                .cb-opencode-connect .account-note { font-size: 0.85em; }
+            """)
+            Gtk.StyleContext.add_provider_for_display(self.get_display(), css,
+                                                      Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+            body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12, margin_top=24,
+                           margin_bottom=18, margin_start=30, margin_end=30)
+            self.get_content_area().append(body)
+            emblem = Gtk.Box(halign=Gtk.Align.CENTER)
+            emblem.add_css_class("account-emblem")
+            emblem.append(Gtk.Image(icon_name="mseries-codexbar-opencode-symbolic", pixel_size=40))
+            body.append(emblem)
+            title = Gtk.Label(label="Connect OpenCode Go", justify=Gtk.Justification.CENTER, wrap=True)
+            title.add_css_class("account-heading")
+            body.append(title)
+            subtitle = Gtk.Label(label="Bring your OpenCode usage into CodexBar.",
+                                 justify=Gtk.Justification.CENTER, wrap=True, max_width_chars=40)
+            subtitle.add_css_class("dim-label")
+            body.append(subtitle)
+            steps = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, margin_top=12, margin_bottom=4)
+            steps.add_css_class("account-steps")
+            body.append(steps)
+
+            browser_row = Gtk.Box(spacing=12)
+            browser_row.add_css_class("account-step")
+            icon = Gtk.Image(icon_name="web-browser-symbolic", pixel_size=18, valign=Gtk.Align.START)
+            icon.add_css_class("account-step-icon")
+            browser_row.append(icon)
+            browser_copy = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, hexpand=True)
+            label = Gtk.Label(label="Sign in with your browser", xalign=0)
+            label.add_css_class("account-step-title")
+            browser_copy.append(label)
+            caption = Gtk.Label(label="Create an API key in the console. Passkeys work in your browser.",
+                                xalign=0, wrap=True, max_width_chars=30)
+            caption.add_css_class("dim-label")
+            caption.add_css_class("account-caption")
+            browser_copy.append(caption)
+            self.open_site = Gtk.Button(label="Open opencode.ai", halign=Gtk.Align.START)
+            browser_copy.append(self.open_site)
+            browser_row.append(browser_copy)
+            steps.append(browser_row)
+            steps.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
+            key_row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            key_row.add_css_class("account-step")
+            self.entry = Gtk.PasswordEntry(show_peek_icon=True, placeholder_text="Paste your API key",
+                                          hexpand=True)
+            label = Gtk.Label(label="_API key", use_underline=True, mnemonic_widget=self.entry, xalign=0)
+            label.add_css_class("account-step-title")
+            key_row.append(label)
+            key_row.append(self.entry)
+            caption = Gtk.Label(label="We'll check your key before saving it.", xalign=0, wrap=True)
+            caption.add_css_class("dim-label")
+            caption.add_css_class("account-caption")
+            key_row.append(caption)
+            steps.append(key_row)
+            self.status_row = Gtk.Box(spacing=8, visible=False)
+            self.spinner = Gtk.Spinner(visible=False, valign=Gtk.Align.CENTER)
+            self.status_row.append(self.spinner)
+            self.status = Gtk.Label(xalign=0, wrap=True, max_width_chars=40, lines=3,
+                                    ellipsize=Pango.EllipsizeMode.END, selectable=True, hexpand=True)
+            self.status_row.append(self.status)
+            body.append(self.status_row)
+            note = Gtk.Label(label="Your API key is saved on this computer.",
+                             justify=Gtk.Justification.CENTER, wrap=True, max_width_chars=44)
+            note.add_css_class("dim-label")
+            note.add_css_class("account-note")
+            body.append(note)
+            self.here = Gtk.Button(label="Use built-in sign-in instead", halign=Gtk.Align.CENTER,
+                                   tooltip_text="Email or GitHub sign-in in a built-in window (no passkeys)")
+            self.here.add_css_class("flat")
+            body.append(self.here)
+            self.add_button("Cancel", Gtk.ResponseType.CANCEL)
+            self.save = self.add_button("Connect", Gtk.ResponseType.ACCEPT)
+            self.save.set_sensitive(False)
+            self.save.add_css_class("suggested-action")
+            self.set_default_response(Gtk.ResponseType.ACCEPT)
+            self.entry.connect("changed", lambda e: self.save.set_sensitive(bool(e.get_text().strip())))
+
+        def show_status(self, text: str, error: bool) -> None:
+            self.status.set_label(text)
+            self.status.set_tooltip_text(text)
+            self.status_row.set_visible(True)
+            for css in ("error", "dim-label"):
+                self.status.remove_css_class(css)
+            self.status.add_css_class("error" if error else "dim-label")
+
+        def set_busy(self, busy: bool) -> None:
+            self.entry.set_sensitive(not busy)
+            self.here.set_sensitive(not busy)
+            self.open_site.set_sensitive(not busy)
+            self.save.set_sensitive(not busy and bool(self.entry.get_text().strip()))
+            self.spinner.set_visible(busy)
+            self.spinner.set_spinning(busy)
+
+    return ConnectWindow()
+
+
 def connect() -> str | None:
     """The Connect window. Returns the success message, or None if it was closed without connecting.
 
@@ -151,44 +283,12 @@ def connect() -> str | None:
     app = Gtk.Application(application_id="io.github.mseries.CodexBarOpenCodeLogin")
 
     def activate(application: Gtk.Application) -> None:
-        window = Gtk.ApplicationWindow(application=application, title="Connect OpenCode Go",
-                                       default_width=420, resizable=False)
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12, margin_top=18, margin_bottom=18,
-                      margin_start=18, margin_end=18)
-        window.set_child(box)
-        title = Gtk.Label(label="Connect OpenCode Go", xalign=0)
-        title.add_css_class("title-3")
-        box.append(title)
-        steps = Gtk.Label(xalign=0, wrap=True, max_width_chars=48, label=(
-            "1. Sign in to opencode.ai in your browser (passkeys work there).\n"
-            "2. In the console, create an API key and copy it.\n"
-            "3. Paste it below. CodexBar checks it before saving."))
-        box.append(steps)
-        open_site = Gtk.Button(label="Open opencode.ai", halign=Gtk.Align.START)
-        open_site.connect("clicked", lambda *_: Gio.AppInfo.launch_default_for_uri(SIGN_IN_URL, None))
-        box.append(open_site)
-        entry = Gtk.PasswordEntry(show_peek_icon=True, placeholder_text="OpenCode API key")
-        box.append(entry)
-        status = Gtk.Label(xalign=0, wrap=True, max_width_chars=48, visible=False)
-        status.add_css_class("dim-label")
-        box.append(status)
-        buttons = Gtk.Box(spacing=6)
-        here = Gtk.Button(label="Sign in here instead", hexpand=True, halign=Gtk.Align.START,
-                          tooltip_text="Email or GitHub sign-in in a built-in window (no passkeys)")
-        here.add_css_class("flat")
-        save = Gtk.Button(label="Connect", sensitive=False)
-        save.add_css_class("suggested-action")
-        buttons.append(here)
-        buttons.append(save)
-        box.append(buttons)
-        entry.connect("changed", lambda e: save.set_sensitive(bool(e.get_text().strip())))
+        window = build_connect_window(application)
+        entry, save = window.entry, window.save
+        window.open_site.connect("clicked", lambda *_: Gio.AppInfo.launch_default_for_uri(SIGN_IN_URL, None))
 
         def show(text: str, error: bool) -> None:
-            status.set_label(text)
-            status.set_visible(True)
-            for css in ("error", "dim-label"):
-                status.remove_css_class(css)
-            status.add_css_class("error" if error else "dim-label")
+            window.show_status(text, error)
 
         def finish(message: str) -> None:
             outcome["message"] = message
@@ -199,8 +299,7 @@ def connect() -> str | None:
             if not key or any(ch.isspace() for ch in key):
                 show("That doesn't look like an API key.", True)
                 return
-            save.set_sensitive(False)
-            entry.set_sensitive(False)
+            window.set_busy(True)
             show("Checking the key with opencode.ai…", False)
 
             def work() -> None:
@@ -208,16 +307,23 @@ def connect() -> str | None:
 
                 def done() -> bool:
                     if problem:
-                        save.set_sensitive(True)
-                        entry.set_sensitive(True)
+                        window.set_busy(False)
                         show(problem, True)
+                        entry.grab_focus()
                     else:
                         finish("OpenCode Go quota is now read with your API key.")
                     return False
                 GLib.idle_add(done)
             threading.Thread(target=work, daemon=True).start()
 
-        save.connect("clicked", check_key)
+        def respond(_window: Any, response: int) -> None:
+            if response == Gtk.ResponseType.ACCEPT:
+                if save.get_sensitive():
+                    check_key()
+            else:
+                window.close()
+
+        window.connect("response", respond)
         entry.connect("activate", lambda *_: save.get_sensitive() and check_key())
 
         def sign_in_here(*_args: Any) -> None:
@@ -260,8 +366,9 @@ def connect() -> str | None:
             view.load_uri(SIGN_IN_URL)
             web.present()
 
-        here.connect("clicked", sign_in_here)
+        window.here.connect("clicked", sign_in_here)
         window.present()
+        entry.grab_focus()
 
     app.connect("activate", activate)
     app.run([])

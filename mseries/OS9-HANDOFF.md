@@ -3287,3 +3287,26 @@ previews (three provider prompts plus waiting/success/failure in light/dark). `C
 use only mock commands, never the owner's sign-in or credentials. No live reauthentication was needed
 for this presentation change. Upstream pin remains 0.77.0. Publish through a PR, merge to main and run
 `bash mseries/deploy-codexbar.sh` after publishing and after deploying the merged revision.
+
+
+## CodexBar: native OpenCode API-key sheet — 2026-10-18
+
+Owner requested that the separate API-key window match the refined add-account dialog and land on
+main. `codexbar-opencode-login.py` now builds a Granite dialog with the same raised OpenCode emblem,
+heading/spacing, elementary accent icon, framed browser and key sections, and native Cancel/Connect
+response buttons. The masked/peekable key field has a mnemonic label; Enter submits, Cancel closes,
+and inline validation shows a spinner while editing and alternative sign-ins are disabled. Rejected
+keys restore focus and editing. Error detail wraps within the sheet and remains available on hover.
+
+Browser/passkey access, the built-in email/GitHub fallback, validation-before-storage, config paths
+and storage commands are preserved. The sheet factory imports GTK/Granite lazily so CLI status and
+non-GUI functions remain usable without GUI initialization. Installer explicitly includes the Python
+GI/Granite/WebKit runtime packages used by this helper. Upstream remains pinned to 0.77.0.
+
+Validation: Python compilation, installer shell syntax, all four Meson suites and the port check pass.
+Six headless previews cover initial/checking/error in light and dark; the committed
+`mseries/codexbar-wingpanel/probe/render-opencode.py` uses dummy masked keys and never calls auth or
+storage. Mocked end-to-end window response checks passed cancellation, invalid syntax, rejected key
+with retry enabled, and successful validation/storage. These checks used an isolated non-unique GTK
+application, dummy keys and mocked network/storage; no real account was changed. Live sign-in was
+not repeated for this visual refinement. Publish, merge to main and deploy as authorized by the owner.
