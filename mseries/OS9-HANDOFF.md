@@ -12,6 +12,10 @@ Headless probe: `mseries/repobar-wingpanel/probe/run-probe.sh BUILD OUT [light|d
 light/dark, healthy/empty/error, expanded details, and the owner's real cached snapshot. New
 `mseries/deploy-repobar.sh` installed `librepobar.so` without restarting Wingpanel (`--restart` reloads the panel).
 **Unverified:** the new module on the owner's live panel (loads at next login or a panel reload); clicks by real input.
+## Battery condition, daily usage, diagnostics — 2026-10-18 (Claude Code)
+
+Condition label, 10-day usage list, Diagnostics page, `mseries-battery diagnose|daily`, diagnostics report export. Real data
+only (rendered from the live database). 22 core tests pass. Not seen on the owner's screen.
 
 ## Claude pre-switch handoffs and reviewed GitHub backups — 2026-10-18
 
