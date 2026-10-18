@@ -665,3 +665,13 @@ states follow the same design with explicit keyboard defaults and bounded helper
 sign-in, account storage and Claude native-app sessions retain their existing behavior. Four Meson
 suites and 12 light/dark render previews pass; real authentication was previously owner-verified and
 was not repeated for this visual change. The separate OpenCode API-key entry window is unchanged.
+
+
+### OpenCode native API-key window — 2026-10-18
+
+The separate OpenCode key-entry window now matches CodexBar's Granite account sheet: raised brand
+mark, elementary theme accents, framed sections, labeled masked input and native Cancel/Connect
+buttons. Inline checking/error states provide progress and retry focus. Existing key validation,
+storage and browser/embedded sign-in methods are preserved. Six light/dark previews, mocked
+cancel/invalid/rejected/success checks, four Meson suites and the port compatibility check pass.
+No real authentication was repeated. Runtime GI dependencies are explicit in the panel installer.

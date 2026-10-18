@@ -19,7 +19,8 @@ fi
 
 mseries_apt_refresh
 sudo apt-get install -y meson ninja-build valac pkg-config \
-  libwingpanel-9-dev libgranite-7-dev libjson-glib-dev
+  libwingpanel-9-dev libgranite-7-dev libjson-glib-dev \
+  python3-gi gir1.2-granite-7.0 gir1.2-webkit-6.0
 
 mkdir -p "$HOME/.local/lib/codexbar-cli"
 install -m 0755 "$repo/mseries/codexbar-opencode-local.py" \
