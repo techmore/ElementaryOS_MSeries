@@ -19,6 +19,7 @@ from dictation_model import LazyModel, ModelHeadroom
 MODEL = os.environ.get("STREAM_MODEL", os.path.expanduser(
     "~/.local/share/mseries/stream/models/parakeet-unified-en-0.6b-Q4_K_M.gguf"))
 UNVERIFIED_FALLBACK = os.environ.get("STREAM_UNVERIFIED_FALLBACK", "1") == "1"  # ydotool when the focused app exposes no accessible field
+TOGGLE = os.environ.get("STREAM_MODE", "hold") == "toggle"  # toggle: press F5 once to start, again to finish
 ENGINE = os.environ.get("STREAM_ENGINE", "stream")  # "ane": Parakeet on the Neural Engine, typed after release
 SOURCE = os.environ.get("STREAM_SOURCE", "direct")  # "direct" = ALSA hw capture, or a PipeWire node name
 CARD = os.environ.get("STREAM_CARD", "hw:1,0")
@@ -265,7 +266,7 @@ class Dictation:
             if self.stop_evt.is_set(): return
             if not self.models.loaded:
                 status('loading')
-                if not test: notify('Preparing speech model… Microphone is off. Keep F5 held until Listening.')
+                if not test: notify('Preparing speech model… Microphone is off. Wait for Listening.')
             with self.models.use(lambda extra: not resource_reasons(self.policy, extra)) as model:
                 if self.stop_evt.is_set(): return
                 if self.input_token:
@@ -281,7 +282,7 @@ class Dictation:
                 status('listening')
                 if not test:
                     tone(880, 90)
-                    notify('Listening… Release F5 to finish; Escape cancels.', persistent=True)
+                    notify('Listening… Press F5 again to finish; Escape cancels.' if TOGGLE else 'Listening… Release F5 to finish; Escape cancels.', persistent=True)
                 self.run(model)
         except ModelHeadroom:
             self.error = 'ResourceGuard'
@@ -525,7 +526,14 @@ def main():
             _, _, typ, code, val = struct.unpack(fmt, raw)
             if typ == 1 and code == 1 and val == 1:  # Escape cancels pending IBus insertion
                 d.cancel()
-            if typ == 1 and code == KEY:
+            if typ == 1 and code == KEY and TOGGLE:
+                if val == 1:  # key repeat (val 2) and release are ignored
+                    if d.active:
+                        d.stop()
+                    else:
+                        log('F5 pressed; checking dictation admission and field metadata')
+                        d.start()
+            elif typ == 1 and code == KEY:
                 if val == 1:
                     log('F5 pressed; checking dictation admission and field metadata')
                     d.start()

@@ -148,3 +148,7 @@ Upstream `parakeet_dictation` is out of step with the installed mlx-omarchy 0.7.
 
 `STREAM_ENGINE=ane` makes `stream-dictate.py` (the lazy-model controller, with its resource guard, idle release, IBus/ydotool output and cancel handling) use `dictation_ane.AneModel` instead of transcribe.cpp: audio is collected while F5 is held and transcribed on release (`run_ane`), so there is no live partial text in this mode. The ANE worker starts on first F5 and is closed by the idle trim like the other model. Default stays `stream`; enable with `systemctl --user edit mseries-stream-dictate` and `Environment=STREAM_ENGINE=ane` (not done on the owner's service).
 Verified offline through the real controller (`STREAM_TEST_WAV` clip played at real time, dry output): the full 162-character sentence arrived as one commit about 1.8 s after the audio ended on the first (cold) call. `STREAM_ENGINE` unset: 12 lifecycle/contract tests unchanged and passing. Not verified: live microphone, IBus insertion in apps, idle release of the worker.
+
+### Press-once mode — 2026-10-18
+
+`STREAM_MODE=toggle` (default `hold`): press F5 once to start (chime, "Listening…"), press again to finish; Escape cancels; key repeat and release are ignored. Combine with `STREAM_ENGINE=ane` through a systemd drop-in (`Environment=STREAM_ENGINE=ane` and `Environment=STREAM_MODE=toggle`). Not done: a mic cursor. Pantheon/Gala has no API for changing the pointer over another app's text field; feedback is the start/stop chimes, the notification and the panel status.
