@@ -15,6 +15,7 @@
 #   audio     WirePlumber rules (speaker/headphone outputs stay open, no pop; headset
 #             mic is not the default) and an audio watchdog that restarts PipeWire
 #             when it stops answering
+#   battery   battery history logger (user service), `mseries-battery` command and the Battery app
 #   session   per-user helpers as system-wide user units: docked-lid mode, GNOME
 #             brightness compatibility, ambient keyboard lighting, deferred
 #             CodexBar/netusage/Widevine setup in the desktop user session
@@ -36,7 +37,7 @@ here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 ROOT=/
 only=""
 skip=""
-ALL=(tuning power diagnostics audio session theme payload firstboot)
+ALL=(tuning power diagnostics audio battery session theme payload firstboot)
 
 log() { printf '[enhance] %s\n' "$*"; }
 
@@ -173,6 +174,20 @@ WantedBy=default.target
 EOF
   enable --global mseries-audio-watchdog.service
   log "audio: WirePlumber no-suspend/headset-mic rules and the audio watchdog"
+}
+
+mod_battery() {
+  local lib=/usr/libexec/mseries/battery
+  copy 0644 "$here/battery/battery_core.py" $lib/battery_core.py
+  copy 0755 "$here/battery/mseries-battery-logger.py" $lib/mseries-battery-logger.py
+  copy 0755 "$here/battery/mseries-battery.py" $lib/mseries-battery.py
+  copy 0755 "$here/battery/mseries-battery-app.py" $lib/mseries-battery-app.py
+  copy 0644 "$here/battery/mseries-battery-logger.service" /usr/lib/systemd/user/mseries-battery-logger.service
+  copy 0644 "$here/battery/org.mseries.Battery.desktop" /usr/share/applications/org.mseries.Battery.desktop
+  mkdir -p "$R/usr/local/bin"
+  ln -sfn $lib/mseries-battery.py "$R/usr/local/bin/mseries-battery"
+  enable --global mseries-battery-logger.service
+  log "battery: history logger, mseries-battery command and Battery app"
 }
 
 mod_session() {
