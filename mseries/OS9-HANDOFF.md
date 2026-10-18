@@ -1,5 +1,11 @@
 # OS 9 implementation / Claude Code handoff
 
+## Battery image integration — 2026-10-18 (Claude Code)
+
+`enhance.sh` gains a `battery` module (default on); `battery/test_battery_enhance.py` stages it into a scratch root and
+passes. Wingpanel card install on the M1 Pro produced no crash or error in the user journal. Not done: panel card in the
+factory first-boot list (see BATTERY-PROFILER.md "Image integration"); factory image still unbooted.
+
 ## Battery summary card in the Power popover — 2026-10-18 (Claude Code)
 
 Owner asked for the Battery app to take over the battery dropdown. Logger now writes `~/.cache/mseries-battery/summary.txt`

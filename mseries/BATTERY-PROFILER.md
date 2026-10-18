@@ -44,6 +44,12 @@ top three CPU processes. Read-only: it never changes a setting.
 - **Logger cost, measured 2026-10-18 on the M1 Pro:** about 0.17 s of CPU per minute (~0.3 % of one core), 18 MB RSS,
   `Nice=15` and idle I/O class. The database grows by tens of KB per hour of use.
 
+## Image integration
+`enhance.sh` has a `battery` module (`--only battery`) that stages the logger, command, app, unit and desktop file and
+enables the user unit for every account (`battery/test_battery_enhance.py` checks it against a scratch root). The panel
+card is **not** in the factory first-boot path: that would need the ETA/watt/card patches added to the payload and the
+firstboot installer list, and the factory image is unqualified. Next step for that.
+
 ## Use
 ```
 bash mseries/install-battery.sh              # installs logger service, `mseries-battery`, and the Battery app
