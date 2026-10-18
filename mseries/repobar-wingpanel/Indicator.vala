@@ -50,6 +50,7 @@ namespace MSeries {
         private int64 last_notified_fetch = 0;
         private bool notify_ci = true;
         private bool show_contributions = true;
+        private string local_root = "";
 
         public RepoBarIndicator () {
             GLib.Object (code_name: "repobar");
@@ -456,6 +457,7 @@ namespace MSeries {
                 schedule_refresh ((uint) settings.get_int_member_with_default ("refreshInterval", 300));
                 notify_ci = settings.get_boolean_member_with_default ("notifyCi", true);
                 show_contributions = settings.get_boolean_member_with_default ("showContributions", true);
+                local_root = settings.get_string_member_with_default ("localRoot", "");
             }
             if (error.length == 0 && fetched_at > last_notified_fetch) {
                 last_notified_fetch = fetched_at;
@@ -563,6 +565,12 @@ namespace MSeries {
                 repo_list.append (new Gtk.ListBoxRow () { child = more, activatable = false });
             }
             if (shown == 0) {
+                if (filter == 3 && local_root.length == 0) {
+                    show_state ("folder-symbolic", "No projects folder",
+                        "Choose the folder that holds your clones in RepoBar Settings → Local Checkouts.", false);
+                    last_render_key = key;
+                    return;
+                }
                 bool searching = search_entry.get_text ().strip ().length > 0 || filter != 0;
                 show_state (searching ? "edit-find-symbolic" : scope == 2 ? "emblem-ok-symbolic" : "starred-symbolic",
                     searching ? "No matching repositories" : scope == 2 ? "Nothing needs attention" : "No pinned repositories",
@@ -1001,10 +1009,12 @@ namespace MSeries {
             var local = build_local_row (repo);
             if (local != null) summary.append (local);
 
-            card.append (build_details (full_name, url, details_toggle));
+            string local_path = has_object (repo, "local") ? repo.get_object_member ("local").get_string_member_with_default ("path", "") : "";
+            card.append (build_details (full_name, url, details_toggle,
+                repo.has_member ("localCheckouts") ? repo.get_array_member ("localCheckouts") : null));
 
             var context = new Gtk.GestureClick () { button = 3 };
-            context.pressed.connect ((n, x, y) => show_card_menu (card, full_name, url, site, state, x, y));
+            context.pressed.connect ((n, x, y) => show_card_menu (card, full_name, url, site, state, local_path, x, y));
             card.add_controller (context);
             return card;
         }
@@ -1090,8 +1100,7 @@ namespace MSeries {
             int behind = (int) local.get_int_member_with_default ("behind", 0);
             int ahead = (int) local.get_int_member_with_default ("ahead", 0);
             int dirty = (int) local.get_int_member_with_default ("dirtyFileCount", 0);
-            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) { margin_start = 4 };
-            row.set_tooltip_text (local.get_string_member_with_default ("path", ""));
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             row.append (new Gtk.Image.from_icon_name ("folder-symbolic") { pixel_size = 12, opacity = 0.7 });
             var branch = new Gtk.Label ("Local · " + local.get_string_member_with_default ("branch", "detached")) {
                 xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.END
@@ -1103,7 +1112,56 @@ namespace MSeries {
             if (behind > 0) row.append (status_text ("↓%d".printf (behind), "text-low"));
             if (ahead > 0) row.append (status_text ("↑%d".printf (ahead), "dim-label"));
             if (dirty == 0 && behind == 0 && ahead == 0) row.append (status_text ("up to date", "dim-label"));
-            return row;
+            int others = repo.has_member ("localCheckouts") ? (int) repo.get_array_member ("localCheckouts").get_length () - 1 : 0;
+            if (others > 0) {
+                var more = status_text ("+%d".printf (others), "dim-label");
+                more.add_css_class ("count");
+                more.set_tooltip_text ("%d more checkout%s (worktrees or clones) · see Details → Checkouts".printf (others, others == 1 ? "" : "s"));
+                row.append (more);
+            }
+            string path = local.get_string_member_with_default ("path", "");
+            var button = new Gtk.Button () { child = row, tooltip_text = "Open %s in Files".printf (path) };
+            button.add_css_class ("flat");
+            button.add_css_class ("link-row");
+            button.clicked.connect (() => open_folder (path, button));
+            return button;
+        }
+
+        /* One local checkout: folder name and branch, its state, and a terminal button; the row opens the folder. */
+        private static Gtk.Widget checkout_row (Json.Object checkout) {
+            string path = checkout.get_string_member_with_default ("path", "");
+            int dirty = (int) checkout.get_int_member_with_default ("dirtyFileCount", 0);
+            int behind = (int) checkout.get_int_member_with_default ("behind", 0);
+            int ahead = (int) checkout.get_int_member_with_default ("ahead", 0);
+            var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
+            var content = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            content.append (new Gtk.Image.from_icon_name ("folder-symbolic") { pixel_size = 12, opacity = 0.7 });
+            var folder = new Gtk.Label (GLib.Path.get_basename (path)) { xalign = 0, ellipsize = Pango.EllipsizeMode.MIDDLE, max_width_chars = 22 };
+            folder.add_css_class ("caption");
+            content.append (folder);
+            string branch_name = checkout.get_boolean_member_with_default ("detached", false) ? "detached" :
+                checkout.get_string_member_with_default ("branch", "");
+            var branch = new Gtk.Label (branch_name) { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.END };
+            branch.add_css_class ("caption");
+            branch.add_css_class ("dim-label");
+            content.append (branch);
+            if (dirty > 0) content.append (status_text ("%d modified".printf (dirty), "text-low"));
+            if (behind > 0) content.append (status_text ("↓%d".printf (behind), "text-low"));
+            if (ahead > 0) content.append (status_text ("↑%d".printf (ahead), "dim-label"));
+            if (dirty == 0 && behind == 0 && ahead == 0) content.append (status_text ("clean", "dim-label"));
+            var open = new Gtk.Button () { child = content, hexpand = true, tooltip_text = "Open %s in Files".printf (path) };
+            open.add_css_class ("flat");
+            open.add_css_class ("link-row");
+            open.clicked.connect (() => open_folder (path, open));
+            line.append (open);
+            var terminal = new Gtk.Button.from_icon_name ("utilities-terminal-symbolic") { tooltip_text = "Open in Terminal", valign = Gtk.Align.CENTER };
+            terminal.add_css_class ("flat");
+            terminal.add_css_class ("compact");
+            terminal.add_css_class ("dim-label");
+            terminal.update_property (Gtk.AccessibleProperty.LABEL, "Open %s in Terminal".printf (GLib.Path.get_basename (path)), -1);
+            terminal.clicked.connect (() => open_terminal (path, terminal));
+            line.append (terminal);
+            return line;
         }
 
         private static Gtk.Label status_text (string text, string css) {
@@ -1138,7 +1196,8 @@ namespace MSeries {
             return button;
         }
 
-        private void show_card_menu (Gtk.Widget card, string name, string url, string site, string state, double x, double y) {
+        private void show_card_menu (Gtk.Widget card, string name, string url, string site, string state, string local_path,
+                                     double x, double y) {
             var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { margin_top = 4, margin_bottom = 4 };
             var popover = new Gtk.Popover () { child = box, has_arrow = false };
             popover.set_parent (card);
@@ -1148,11 +1207,61 @@ namespace MSeries {
             if (site.length > 0) box.append (menu_item ("Open Website", () => open_url (site, card)));
             box.append (menu_item ("Copy Link", () => card.get_clipboard ().set_text (url)));
             box.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL) { margin_top = 3, margin_bottom = 3 });
+            if (local_path.length > 0) {
+                box.append (menu_item ("Open Folder", () => open_folder (local_path, card)));
+                box.append (menu_item ("Open in Terminal", () => open_terminal (local_path, card)));
+                box.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL) { margin_top = 3, margin_bottom = 3 });
+            } else if (local_root.length > 0) {
+                box.append (menu_item ("Clone to %s".printf (GLib.Path.get_basename (local_root)), () => clone_repository.begin (name)));
+                box.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL) { margin_top = 3, margin_bottom = 3 });
+            }
             box.append (menu_item (state == "pinned" ? "Unpin from Dashboard" : "Pin to Dashboard",
                 () => change_repo_state.begin (name, state == "pinned" ? "unpin" : "pin")));
             box.append (menu_item (state == "hidden" ? "Show Repository" : "Hide Repository",
                 () => change_repo_state.begin (name, state == "hidden" ? "show" : "hide")));
             popover.popup ();
+        }
+
+        private static void open_folder (string path, Gtk.Widget source) {
+            if (path.length == 0) return;
+            popdown_from (source);
+            new Gtk.FileLauncher (File.new_for_path (path)).launch.begin (null, null);
+        }
+
+        private static void open_terminal (string path, Gtk.Widget source) {
+            if (path.length == 0) return;
+            popdown_from (source);
+            try {
+                Process.spawn_async (path, { "io.elementary.terminal", "--working-directory=" + path }, null,
+                    SpawnFlags.SEARCH_PATH | SpawnFlags.STDOUT_TO_DEV_NULL | SpawnFlags.STDERR_TO_DEV_NULL, null, null);
+            } catch (Error e) {
+                open_folder (path, source);
+            }
+        }
+
+        private async void clone_repository (string name) {
+            string short_name = name.contains ("/") ? name.substring (name.index_of ("/") + 1) : name;
+            show_toast ("Cloning %s…".printf (short_name), null);
+            try {
+                var process = new Subprocess.newv (new string[] { executable, "--json", "local", "clone", name },
+                    SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE);
+                string output;
+                string error_text;
+                yield process.communicate_utf8_async (null, null, out output, out error_text);
+                var parser = new Json.Parser ();
+                parser.load_from_data (output);
+                var result = parser.get_root ().get_object ();
+                if (!process.get_successful () || result.has_member ("error")) {
+                    throw new IOError.FAILED (result.get_string_member_with_default ("error", error_text.strip ()));
+                }
+                string path = result.get_string_member_with_default ("path", "");
+                show_toast ("Cloned %s".printf (short_name), null);
+                if (path.length > 0) new Gtk.FileLauncher (File.new_for_path (path)).launch.begin (null, null);
+                refresh ();
+            } catch (Error e) {
+                show_toast ("Couldn't clone %s".printf (short_name), null);
+                subtitle_label.set_tooltip_text (e.message);
+            }
         }
 
         private delegate void MenuAction ();
@@ -1171,7 +1280,7 @@ namespace MSeries {
 
         // ---- Details pane: category chips, each fetched once on first selection ------------
 
-        private Gtk.Widget build_details (string name, string url, Gtk.ToggleButton toggle) {
+        private Gtk.Widget build_details (string name, string url, Gtk.ToggleButton toggle, Json.Array? checkouts) {
             var revealer = new Gtk.Revealer () {
                 transition_type = Gtk.RevealerTransitionType.SLIDE_DOWN, transition_duration = 120
             };
@@ -1185,6 +1294,19 @@ namespace MSeries {
             list.add_css_class ("detail-list");
             list.set_visible (false);
             Gtk.ToggleButton? first = null;
+            if (checkouts != null && checkouts.get_length () > 0) {
+                // Local checkouts come from the last scan, so this tab needs no GitHub request.
+                var chip = new Gtk.ToggleButton.with_label ("Checkouts %u".printf (checkouts.get_length ()));
+                chip.add_css_class ("flat");
+                first = chip;
+                chip.toggled.connect (() => {
+                    if (!chip.get_active ()) return;
+                    list.set_visible (true);
+                    clear_box (list);
+                    for (uint i = 0; i < checkouts.get_length (); i++) list.append (checkout_row (checkouts.get_object_element (i)));
+                });
+                chips.append (chip);
+            }
             for (int i = 0; i < DETAIL_KEYS.length; i++) {
                 string key = DETAIL_KEYS[i];
                 var chip = new Gtk.ToggleButton.with_label (DETAIL_TITLES[i]);
@@ -1371,11 +1493,14 @@ namespace MSeries {
         }
 
         public void probe_expand_first () {
-            var row = repo_list.get_row_at_index (0);
-            var card = row != null ? row.get_child () : null;
-            var head = card != null && card.get_first_child () != null ? card.get_first_child ().get_first_child () : null;
-            var toggle = head != null ? head.get_last_child () as Gtk.ToggleButton : null;
-            if (toggle != null) toggle.set_active (true);
+            for (int i = 0; ; i++) {
+                var row = repo_list.get_row_at_index (i);
+                if (row == null) return;
+                var card = row.get_child ();
+                var head = card != null && card.get_first_child () != null ? card.get_first_child ().get_first_child () : null;
+                var toggle = head != null ? head.get_last_child () as Gtk.ToggleButton : null;
+                if (toggle != null) { toggle.set_active (true); return; }
+            }
         }
 
         public override Gtk.Widget get_display_widget () {

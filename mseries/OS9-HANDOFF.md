@@ -1,5 +1,17 @@
 # OS 9 implementation / Claude Code handoff
 
+## RepoBar local checkouts and worktrees — 2026-10-18 (Claude Code)
+
+The helper now keeps every local checkout per repository (`localCheckouts`; the folder named after the repository
+is primary) instead of only the first found, and a failed scan no longer breaks a refresh. Cards: the Local row
+opens the folder and shows "+N" more checkouts; a **Checkouts** details tab (no GitHub request) lists each with
+branch, modified/ahead/behind, Files and Terminal; right-click adds Open Folder / Open in Terminal, or **Clone to
+<projects folder>** (`mseries-repobar local clone OWNER/NAME`, never overwrites) for repositories not cloned yet.
+Local filter explains how to choose a projects folder when none is set. Owner's RepoBar set to `local-root ~`,
+`local-depth 2` (Settings → Local Checkouts to change): ElementaryOS_MSeries 11 checkouts, rupert 4,
+orchard-incus 1; refresh ~18 s. Rendered headless light/dark; deployed without restart. Clone and Terminal/Files
+launching not exercised (would act on the desktop). **Unverified:** live panel until reload.
+
 ## RepoBar contribution graph, panel marks, instant open — 2026-10-18 (Claude Code)
 
 Dashboard gains a **Contributions** card (GitHub's contribution calendar: as many weeks as fit, newest right, shaded

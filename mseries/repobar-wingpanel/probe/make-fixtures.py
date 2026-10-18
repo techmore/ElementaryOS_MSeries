@@ -14,7 +14,10 @@ def repo(name, issues=0, prs=0, ci="SUCCESS", stars=0, release="", lang="Vala", 
             "openIssues": issues, "openPullRequests": prs, "branch": "main",
             "commitCounts": {"1h": counts[0], "24h": counts[1], "30d": counts[2]}, "ci": ci,
             "release": release, "language": lang, "topics": [], "recentActivity": activity,
-            "local": local, "repoState": state, "pagesUrl": pages, "homepage": homepage}
+            "local": local, "repoState": state, "pagesUrl": pages, "homepage": homepage,
+            "localCheckouts": ([dict(local, detached=False)] + [
+                {"path": "/home/me/Projects/panel-suite-wt/battery", "branch": "claude/battery", "dirtyFileCount": 0, "ahead": 2, "behind": 0, "detached": False},
+                {"path": "/home/me/Projects/panel-suite-wt/review", "branch": "HEAD", "dirtyFileCount": 0, "ahead": 0, "behind": 0, "detached": True}]) if local else []}
 
 
 repos = [
@@ -32,7 +35,7 @@ repos = [
 
 base = {"schemaVersion": 1, "account": "example", "host": "github.com", "fetchedAt": NOW - 120,
         "rateLimits": {"resources": {"core": {"remaining": 4876, "limit": 5000}}}, "stale": False,
-        "settings": {"refreshInterval": 300, "repoLimit": 5, "showForks": False, "showArchived": False}}
+        "settings": {"refreshInterval": 300, "repoLimit": 5, "localRoot": "/home/me/Projects", "showForks": False, "showArchived": False}}
 for_you = {"reviews": {"count": 2, "items": [
     {"title": "Add RepoBar Settings window", "number": 197, "url": "https://github.com/example/panel-suite/pull/197", "repo": "example/panel-suite"},
     {"title": "Fix dock focus on resume", "number": 14, "url": "https://github.com/example/dock/pull/14", "repo": "example/dock"}]},
