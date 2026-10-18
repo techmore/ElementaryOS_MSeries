@@ -1,0 +1,12 @@
+# Insert INSIDE the existing mdm.stoverparc.org site, before its fallback.
+# Use a random prefix generated with: openssl rand -hex 24
+# Existing catch-all reverse_proxy directives must be wrapped in `handle { ... }`
+# so both the new handle_path and the fallback are mutually exclusive.
+# Retain the site's existing bind/TLS policy. Do not create a duplicate site.
+handle_path /REPLACE_WITH_RANDOM_PREFIX/* {
+    reverse_proxy 127.0.0.1:18789
+}
+# Existing TM-Remote handler, preserved verbatim inside:
+# handle {
+#     ... existing proxy directives ...
+# }

@@ -1,5 +1,29 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## WebRTC screen sharing — 2026-10-17 (source implementation)
+
+`feat/webrtc` adds [Screen Share](webrtc/README.md): current-desktop browser
+capture/WebRTC, viewer-only friend links, a separate opt-in phone-control role,
+Mutter 50 relative input and local browser recording. New post-install stage,
+transform setup launcher, build-time locked runtime, factory launcher/user unit
+and both ARM64 consumer dependencies are wired. Capture stays owner-initiated;
+the factory service starts from the launcher.
+
+12 protocol/access tests, 3 input tests and 4 Linux image-pruning/wiring tests
+pass. SER8 assembled and health-checked the isolated Linux payload; no system
+runtime was installed. Real local browser peers received a synthetic moving
+canvas, saved a VP9 WebM, and cleared the stream on host stop. These do not
+establish real Pantheon portal/input, physical phone, ARM64 boot, performance
+or recovery. See the [qualification receipt](webrtc/qualification-2026-10-17.json).
+
+Owner selected **mdm.stoverparc.org/<random-path>/**; preserve TM-Remote routes.
+A private gateway candidate/environment and source are staged on SER8 at
+`/home/sdolbec/mseries-webrtc-review-20261017`; Caddy adaptation passed, no live
+config/reload occurred. Trusted Tailscale SSH works; the old LAN route timed
+out. Public mdm TLS fails and proxy edits require interactive sudo. Complete
+imported-config/upstream review before activation, then provision the desktop
+tunnel and TURN. Boot ElementaryOS for real capture, phone input, lock,
+LAN/cellular and recording acceptance. No kernel, boot or live audio change.
 
 ## Aurora branch enhancement inventory — 2026-10-17
 

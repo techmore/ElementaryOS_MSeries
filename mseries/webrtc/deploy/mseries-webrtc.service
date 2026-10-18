@@ -1,0 +1,14 @@
+[Unit]
+Description=M-series WebRTC screen sharing
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/node /usr/lib/mseries-webrtc/server.mjs
+EnvironmentFile=-%h/.config/mseries-webrtc/environment
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true

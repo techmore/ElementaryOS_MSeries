@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-17",
+  "scope": "source implementation and isolated validation; no production deployment",
+  "checks": {
+    "node_protocol_tests": 12,
+    "python_input_tests": 3,
+    "linux_image_wiring_tests": 4,
+    "linux_runtime_assembly": "passed on SER8; runtime not installed",
+    "linux_payload_health": "HTTP 200 on temporary localhost listener; stopped",
+    "user_unit_verify": "passed; unrelated installed spice-vdagent unit warning",
+    "browser_webrtc": "real local peer connection with synthetic canvas; 41 decoded frames observed",
+    "recording": "saved WebM; ffprobe VP9 320x180, 3 decoded frames at 0/1/1.999 seconds; background timer, not a performance measurement",
+    "revoke": "host stop cleared receiver stream and ended session",
+    "unsupported_input_backend": "macOS without GI refused control",
+    "npm_audit": "0 vulnerabilities at validation time",
+    "caddy_candidate": "adapter exited 0; not applied"
+  },
+  "gateway": {
+    "stage": "/home/sdolbec/mseries-webrtc-review-20261017",
+    "base_sha256": "a7a2fb74d16e6a33029eb2362c3ff75f055e0f4dfba446e9f6104f3ba2ff7b07",
+    "candidate_sha256": "0f68c5d5c84ce1bc4eaef3f2eb58bbf53f562625dc1a2e444c7cdfbd5770f351",
+    "applied": false
+  },
+  "remaining": [
+    "Build and boot actual ARM64 image",
+    "Run on owner ElementaryOS desktop",
+    "Physical phone viewing/input and logind lock revocation",
+    "Review imported gateway dependencies/upstream; activate mdm TLS with administrator privileges",
+    "Provision desktop tunnel and TURN; test LAN and cellular",
+    "Real portal, audio, Safari, recovery and resource acceptance"
+  ]
+}

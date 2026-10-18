@@ -1,0 +1,10 @@
+# ~/.config/mseries-webrtc/environment — systemd EnvironmentFile; chmod 600
+HOST=127.0.0.1
+PORT=8789
+MSERIES_WEBRTC_ORIGINS=http://localhost:8789,http://127.0.0.1:8789,https://mdm.stoverparc.org
+MSERIES_WEBRTC_PUBLIC_URL=https://mdm.stoverparc.org/REPLACE_WITH_RANDOM_PREFIX/
+# Explicit STUN provides server-reflexive candidates for LAN/NAT connections.
+STUN_URL=stun:stun.cloudflare.com:3478
+# Optional coturn relay. The same secret must be set on coturn; never commit it.
+# TURN_URL=turn:relay.stoverparc.org:3478?transport=udp
+# TURN_SECRET=replace-with-a-long-random-secret

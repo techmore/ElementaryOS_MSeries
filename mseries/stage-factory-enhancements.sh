@@ -68,3 +68,17 @@ RemainAfterExit=yes
 WantedBy=graphical.target
 EOF
 systemctl --root="$stage" enable mseries-desktop-defaults.service
+
+# Retain the build-time, dependency-complete WebRTC payload across overlay
+# pruning. The image launcher starts the user service only when requested.
+if [[ -f $root/usr/lib/mseries-webrtc/server.mjs ]]; then
+    mkdir -p "$stage/usr/lib"
+    cp -a "$root/usr/lib/mseries-webrtc" "$stage/usr/lib/"
+    for path in usr/bin/mseries-webrtc-open usr/lib/systemd/user/mseries-webrtc.service usr/share/applications/mseries-webrtc.desktop; do
+        install -Dm644 "$root/$path" "$stage/$path"
+    done
+    chmod 755 "$stage/usr/bin/mseries-webrtc-open"
+    mkdir -p "$stage/usr/share/doc"
+    cp -a "$root/usr/share/doc/mseries-webrtc" "$stage/usr/share/doc/"
+    rm -f "$stage/usr/share/applications/mseries-webrtc-setup.desktop"
+fi

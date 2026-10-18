@@ -29,6 +29,7 @@ STAGES=(
   "brightness|user|on|install-brightness-bridge.sh|brightness bridge for Pantheon"
   "kbd-backlight|user|on|install-keyboard-backlight.sh|keyboard backlight helper"
   "screenshots|user|on|install-screenshot-shelf.sh|screenshot thumbnail shelf and Markup"
+  "webrtc|user|on|install-webrtc.sh|phone remote desktop, view-only sharing and screen recording"
   "theme|user|on|install-theme-tweaks.sh|softer accents, larger corners, Ghostty palette"
   "docked-lid|user|on|install-docked-lid.sh|lock and blank panel instead of suspending when docked"
   "battery-eta|user|on|install-battery-eta.sh|time-to-full beside the battery icon"

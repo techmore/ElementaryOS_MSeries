@@ -1,0 +1,16 @@
+# Install as ~/.config/systemd/user/mseries-webrtc-tunnel.service on ElementaryOS.
+# First set up the dedicated mseries-screen SER8 SSH account as in README.md.
+[Unit]
+Description=Outbound M-series screen-sharing tunnel to SER8
+After=network-online.target mseries-webrtc.service
+Wants=network-online.target
+PartOf=graphical-session.target
+
+[Service]
+ExecStart=/usr/bin/ssh -NT -o BatchMode=yes -o ExitOnForwardFailure=yes -o ServerAliveInterval=15 -o ServerAliveCountMax=3 -o StrictHostKeyChecking=yes -i %h/.ssh/mseries-screen -R 127.0.0.1:18789:127.0.0.1:8789 mseries-screen@ser8
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+
+[Install]
+WantedBy=graphical-session.target

@@ -77,7 +77,13 @@ class ImageWiringTests(unittest.TestCase):
                          'usr/lib/mseries-ai/llama/bin/llama-server',
                          'usr/bin/mlx-omarchy-serve',
                          'usr/share/omarchy-mlx/serve-catalog.json',
-                         'usr/share/doc/mseries-local-ai/SOURCE']:
+                         'usr/share/doc/mseries-local-ai/SOURCE',
+                         'usr/lib/mseries-webrtc/server.mjs',
+                         'usr/lib/mseries-webrtc/node_modules/ws/LICENSE',
+                         'usr/bin/mseries-webrtc-open',
+                         'usr/lib/systemd/user/mseries-webrtc.service',
+                         'usr/share/applications/mseries-webrtc.desktop',
+                         'usr/share/doc/mseries-webrtc/WS-LICENSE']:
                 target = image / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text('synthetic local AI payload')
@@ -97,6 +103,8 @@ class ImageWiringTests(unittest.TestCase):
                 with self.subTest(path=str(path)):
                     self.assertTrue((image / path).is_file())
             self.assertFalse(payload.exists())
+            self.assertFalse((image / 'usr/share/applications/mseries-webrtc-setup.desktop').exists())
+            self.assertTrue(os.access(image / 'usr/bin/mseries-webrtc-open', os.X_OK))
             for name in ('mseries-power.service', 'mseries-power-follow.service'):
                 unit = image / 'etc/systemd/system' / name
                 self.assertIn('ExecStart=/usr/libexec/mseries/power ', unit.read_text())

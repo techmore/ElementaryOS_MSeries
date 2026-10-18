@@ -1,0 +1,35 @@
+name: WebRTC screen sharing
+on:
+  push:
+    paths: ['mseries/webrtc/**', 'mseries/install-webrtc.sh', 'mseries/enhance.sh', 'mseries/stage-factory-enhancements.sh', 'mseries/test-image-wiring.py', 'mkosi.images/**', '.github/workflows/webrtc.yml']
+  pull_request:
+    paths: ['mseries/webrtc/**', 'mseries/install-webrtc.sh', 'mseries/enhance.sh', 'mseries/stage-factory-enhancements.sh', 'mseries/test-image-wiring.py', 'mkosi.images/**', '.github/workflows/webrtc.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  protocol-and-input:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: mseries/webrtc/package-lock.json
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+        working-directory: mseries/webrtc
+      - run: npm test
+        working-directory: mseries/webrtc
+      - run: python3 -m unittest discover -s mseries/webrtc/test -p 'test_*.py'
+      - run: bash -n mseries/webrtc/install.sh && mseries/webrtc/install.sh --dry-run
+      - run: python3 mseries/test-image-wiring.py
+      - name: Assemble dependency-complete image payload
+        run: |
+          export DESTDIR=$(mktemp -d) SRCDIR=$PWD
+          bash mkosi.images/apple-silicon/build-webrtc
+          node --check "$DESTDIR/usr/lib/mseries-webrtc/server.mjs"
+          test -s "$DESTDIR/usr/lib/mseries-webrtc/node_modules/ws/LICENSE"
+          test -x "$DESTDIR/usr/bin/mseries-webrtc-open"
+          test -f "$DESTDIR/usr/lib/systemd/user/mseries-webrtc.service"
+      - run: bash mseries/test-elementary-mac-setup.sh

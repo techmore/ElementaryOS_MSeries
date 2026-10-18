@@ -313,6 +313,24 @@ mod_payload() {
            netspeed/panel-network.patch netspeed/wire-network-usage.py; do
     copy 0755 "$here/$f" "$prefix/mseries/$f"
   done
+  # Ship screen-sharing setup through the installed-system transform too.
+  copy 0755 "$here/install-webrtc.sh" "$prefix/mseries/install-webrtc.sh"
+  for f in server.mjs input_bridge.py open.py install.sh package.json package-lock.json README.md; do
+    copy 0644 "$here/webrtc/$f" "$prefix/mseries/webrtc/$f"
+  done
+  for f in "$here"/webrtc/public/* "$here"/webrtc/deploy/*; do
+    copy 0644 "$f" "$prefix/mseries/webrtc/${f#"$here/webrtc/"}"
+  done
+  put 0644 /usr/share/applications/mseries-webrtc-setup.desktop <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Set Up Screen Sharing
+Comment=Install phone remote desktop, screen sharing and recording
+Exec=bash /usr/share/elementary-mac/mseries/install-webrtc.sh
+Icon=video-display
+Terminal=true
+Categories=Network;RemoteAccess;
+EOF
   for f in "$here"/patches/*.patch; do
     copy 0644 "$f" "$prefix/mseries/patches/$(basename "$f")"
   done

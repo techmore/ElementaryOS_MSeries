@@ -1,0 +1,226 @@
+[
+  {
+    "repo": "ElementaryOS_MSeries",
+    "pushed_at": "2026-10-18T01:06:35Z",
+    "branches": [
+      {
+        "name": "apps-group",
+        "sha": "bfe7deee6f0e493569b6f1ab4e709541cec097ac"
+      },
+      {
+        "name": "brightness-sub-floor",
+        "sha": "d8725f6a5134dd6f933602a5dca6f65d9ead2ef7"
+      },
+      {
+        "name": "claude/airplay-destinations",
+        "sha": "0eeefa7e9da4f68586ae8ef98fe9654a88b73683"
+      },
+      {
+        "name": "codexbar-improve",
+        "sha": "e7ae7db130adbef8567a733e684979d5622281b9"
+      },
+      {
+        "name": "codexbar-ux",
+        "sha": "0d121b46c47fe7567bf7000b045ef6de66599ee2"
+      },
+      {
+        "name": "deb/mseries-plugin-repo",
+        "sha": "b4385a9b22e79a539fdcd17cd7f445033899fe8f"
+      },
+      {
+        "name": "docs/dock-video-decision",
+        "sha": "091d517361cd5e7b0ba8b26569e61e1ed83da6c0"
+      },
+      {
+        "name": "feat/aurora20-kernel-port",
+        "sha": "d7f081149f26fb43c8381df5febc2c30f5330cf7"
+      },
+      {
+        "name": "feat/aurora-enhancement-candidate",
+        "sha": "579c922a00dc74447761b08306963febe867386e"
+      },
+      {
+        "name": "feat/codexbar-sessions-and-spend",
+        "sha": "c6142e012cb10087fb346ccf751df344713e8f41"
+      },
+      {
+        "name": "feat/gala-drawers-hotkeys",
+        "sha": "bf8621747d4437d88a174409f75c2f06b7b8e826"
+      },
+      {
+        "name": "feat/mcp-task-writes",
+        "sha": "8d5b17c8eabec0d0673e007b05c88dc8f4a9e23d"
+      },
+      {
+        "name": "main",
+        "sha": "f114d865bfab7ee73610198d5f1b43d1a767581c"
+      },
+      {
+        "name": "opencode-desktop-arm64",
+        "sha": "4eb7649343929663505e3aaa0d4d5c535a50a599"
+      },
+      {
+        "name": "orchard-incus-import",
+        "sha": "b49e125248bd35fed34ace2ef744080cf16ff322"
+      },
+      {
+        "name": "power-usage",
+        "sha": "972ec7301f7b231c66193ab96b3f87b797bcf425"
+      },
+      {
+        "name": "vm-toolkit-desktop-fixes",
+        "sha": "e96c6598d429dce979f8ed5a8d15fe79eee2c1a4"
+      }
+    ]
+  },
+  {
+    "repo": "rupert",
+    "pushed_at": "2026-10-17T23:42:42Z",
+    "branches": [
+      {
+        "name": "main",
+        "sha": "726f2297876dd71e4bc9452c0e96da4e5ed8a887"
+      }
+    ]
+  },
+  {
+    "repo": "Emporia-Vue3-Mac-Utility-Monitor",
+    "pushed_at": "2026-10-17T13:29:43Z",
+    "branches": [
+      {
+        "name": "codex/house-control-integration",
+        "sha": "d1a04ff38979bfce92ed6843ead8d44dcdad12c5"
+      },
+      {
+        "name": "main",
+        "sha": "5d7ae0bbebdd5785846ce17274a8cf14b2a45345"
+      },
+      {
+        "name": "utc-migration-with-main",
+        "sha": "7d02c1407281bfffd8a26eb38abf4840a453c6cc"
+      }
+    ]
+  },
+  {
+    "repo": "cockpit-incus",
+    "pushed_at": "2026-10-17T02:32:06Z",
+    "branches": [
+      {
+        "name": "main",
+        "sha": "9ee2975a16b5af3f6f63ea835a141a90d2e9f746"
+      }
+    ]
+  },
+  {
+    "repo": "TM-NmapUI",
+    "pushed_at": "2026-10-17T02:32:01Z",
+    "branches": [
+      {
+        "name": "dependabot/npm_and_yarn/axios-1.20.0",
+        "sha": "c8fff2eba36b974d5d367adf234a5fc567d74414"
+      },
+      {
+        "name": "dependabot/npm_and_yarn/proxy-addr-2.0.8",
+        "sha": "4313bb5224f74ac21cae0e87a007650df8722eaf"
+      },
+      {
+        "name": "dependabot/npm_and_yarn/scripts/ui-assets/multi-d49ef80a9c",
+        "sha": "fbe5e4454c18713a18cf2bb7e767366276a446ed"
+      },
+      {
+        "name": "dependabot/npm_and_yarn/scripts/ui-assets/source-map-js-1.2.2",
+        "sha": "2b15cd1a6255a267cd68cdcf9611e8caac5cc823"
+      },
+      {
+        "name": "main",
+        "sha": "3dd49e1ff2e02c36e15f425123978527fe758d8f"
+      },
+      {
+        "name": "swift-native",
+        "sha": "01e6d892fc629ddfce820cfb45ad328cb4a010ef"
+      }
+    ]
+  },
+  {
+    "repo": "mtg-board-layout",
+    "pushed_at": "2026-10-17T02:31:56Z",
+    "branches": [
+      {
+        "name": "codex/default-expanded-hand",
+        "sha": "bf9ae5af5632d530a77f983f660c8e687defcf8a"
+      }
+    ]
+  },
+  {
+    "repo": "TM-Sonder",
+    "pushed_at": "2026-10-17T02:31:46Z",
+    "branches": [
+      {
+        "name": "main",
+        "sha": "fac3b4d25b0e5406ffb55e4c1c9871ec98a090e8"
+      }
+    ]
+  },
+  {
+    "repo": "swartzit",
+    "pushed_at": "2026-10-17T02:31:03Z",
+    "branches": [
+      {
+        "name": "dependabot/cargo/argon2-0.6.0",
+        "sha": "5e82701e1617e78343691ce347e80dfb16a047a6"
+      },
+      {
+        "name": "dependabot/cargo/libsqlite3-sys-0.37.0",
+        "sha": "14e7934aa6ecbff50201469071cdc91bbe3f42ac"
+      },
+      {
+        "name": "dependabot/cargo/serde_json-1.0.154",
+        "sha": "f8cf132845952e24aafd5cdfd1e54ec8891e2949"
+      },
+      {
+        "name": "dependabot/cargo/tokio-1.53.2",
+        "sha": "b5aa08cf90d21a4a22636cfb5c98a6f3bcd7eda3"
+      },
+      {
+        "name": "dependabot/npm_and_yarn/apps/web/svelte-5.57.2",
+        "sha": "b713003e3efced10b183edbec2885632bff69e2d"
+      },
+      {
+        "name": "dependabot/npm_and_yarn/apps/web/sveltejs/kit-3.0.1",
+        "sha": "b0aa76b96d393bfba6b01f8a67a2cfccb4e4470e"
+      },
+      {
+        "name": "dependabot/npm_and_yarn/apps/web/vite-8.3.4",
+        "sha": "e973c2bd11a33f257ba60f21096c2e646a030919"
+      },
+      {
+        "name": "main",
+        "sha": "9017030719982742deedbed7f8a3cc4e06b219f1"
+      }
+    ]
+  },
+  {
+    "repo": "ElementaryOS_MSeries_Optimization",
+    "pushed_at": "2026-10-17T02:14:03Z",
+    "branches": [
+      {
+        "name": "main",
+        "sha": "e88183d425fe4161d81d16376a6e20c0893422f7"
+      }
+    ]
+  },
+  {
+    "repo": "thril",
+    "pushed_at": "2026-10-15T13:33:10Z",
+    "branches": [
+      {
+        "name": "archive/vite-printer-station",
+        "sha": "8f6f34824154edfb9cf59407b2893fbacc005114"
+      },
+      {
+        "name": "main",
+        "sha": "ff5a2ba233a9d5590afa515654cc6017c22f2736"
+      }
+    ]
+  }
+]
