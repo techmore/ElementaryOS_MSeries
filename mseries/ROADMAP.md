@@ -1,5 +1,74 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Factory YouTube browser included — 2026-10-18
+
+Brave 1.97.59 arm64 is now checksum-pinned and bundled under `/usr/lib/mseries-brave`
+in both factory consumers. The YouTube launcher prefers it, without a first-login
+browser download. Vendor resources/licenses, provenance and hash manifest survive
+factory pruning; final hooks verify payload integrity and library resolution.
+Six packaging regressions, four image wiring tests, real staging/finalization,
+empty-profile Xvfb rendering and clean Resolute dependency checks pass. Headless
+DOM timeout is retained as a limitation. New ISO/hardware boot and YouTube/AVD/DRM
+playback still need qualification.
+[Packaging and update instructions](video-decode/README.md#factory-brave-runtime--2026-10-18).
+
+## Merged calendar desktop deployment — 2026-10-18
+
+Merged Events/Tasks plugin built and installed with the maintained installer;
+five isolated workflow groups pass against the deployed library. Wingpanel
+reloaded and its new process mapping matches the installed calendar inode.
+Next acceptance is the owner's clock-dropdown check and optional Google sign-in/
+remote event round trip; factory hardware qualification remains separate.
+
+## Calendar integration on main — 2026-10-18
+
+Events/Tasks agenda, account setup, installer and factory payload are integrated.
+Merged-source ARM64 build, five isolated EDS workflow groups, four image-wiring
+tests, focused shell checks and README links pass. README no longer labels the
+calendar work as awaiting integration. Remaining acceptance: owner Google OAuth
+and remote event sync, factory assembly/boot, and account-backed desktop use.
+See [calendar setup and checks](calendar/README.md). The test harness isolates
+portal activation so its temporary session cleans up without document mounts.
+
+## Calendar Events/Tasks tabs and Google account setup — 2026-10-18
+
+The clock dropdown's right pane now has Events and Tasks tabs. Events follows
+its selected day; Tasks reads all incomplete items from elementary Tasks' EDS
+lists, including due-only and undated items. Activating a task opens Tasks.
+Calendar Accounts opens the desktop Google/online-account sign-in. No desktop
+Google account was configured at verification time: owner OAuth consent and a
+real Google Calendar round trip remain required; local tests do not claim them.
+
+Pinned datetime source `d0b3a703a7efbb5b3040d7be1ccb616eeb919c54` plus
+`datetime-agenda-tabs.patch` retains upstream notices. Native ARM64 compilation
+and five isolated real-plugin/EDS test groups pass: tabs/shared event UIDs,
+live edits, completion/deletion, enable/disable and sources added/removed after
+opening. Async source connections and generation checks reject stale views;
+changed/deleted events requery their source, preserving recurring siblings.
+All-day events use date semantics; undated tasks do not create calendar dots.
+The release installer completed locally; the installed production plugin passes
+the same five test groups. Wingpanel was reloaded and its mapped plugin inode
+matched the newly installed library.
+Four image-wiring tests and shell/diff checks pass. Runtime account/Tasks/EDS
+packages are in both arm64 consumers; plugin and license survive pruning.
+Factory image assembly/boot and Google network sync are still unverified.
+
+[Build, install, restore, account setup and tests](calendar/README.md).
+Installer: `bash mseries/install-calendar-agenda.sh`; rollback:
+`bash mseries/install-calendar-agenda.sh --uninstall`. Reload Wingpanel after
+installation. Next: owner selects Calendar Accounts → Google, completes sign-in,
+enables Calendar and confirms a known remote event appears on its date.
+
+
+## README status overview — 2026-10-18
+
+The [README fixes/tests/remaining-work overview](../README.md#fixes-tests-and-remaining-work)
+summarizes desktop and external docks, panel, kernel, power/performance parity,
+CPU/GPU and local-LLM file access. Keep its pending gates aligned with the
+evidence linked there as results land. Full-height hardware acceptance, dock
+stability/sleep, Touch ID, factory hardware boot and matched macOS comparisons
+remain open; this documentation pass does not complete those gates.
+
 ## YouTube assets on fresh installs — 2026-10-18
 
 The default enhancement payload now installs the YouTube launcher and scalable

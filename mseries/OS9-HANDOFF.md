@@ -28,6 +28,118 @@ the complete root cause of the reported floating/attention-stealing incident.
 Next: after a deliberate decision to re-enable it, qualify physical typing,
 session restart and monitor transitions. See `display-space/README.md`.
 
+## Factory Brave runtime closes YouTube browser provisioning gap — 2026-10-18
+
+`build-brave` stages official Brave 1.97.59 arm64 (Chromium 155.0.8059.85), pinned
+to release SHA256 `5efdd235…4ba1d2`. It validates .deb identity before extraction,
+runs no maintainer scripts, and relocates the full runtime/resources to
+`/usr/lib/mseries-brave`. The YouTube launcher prefers this immutable runtime;
+transformed desktops retain the native package fallback. Both factory consumers
+carry the full runtime library list; post-install hooks fail on absent/changed
+payloads, wrong ELF architecture and missing libraries. License, release/source
+links, pin and per-file hashes survive pruning in `/usr/share/doc/mseries-brave`.
+No first-login browser download or `/opt` artifact is needed; browser security
+updates follow reviewed version/hash bumps and rebuilt images.
+
+Verified: six synthetic .deb regressions, four image wiring tests, real pinned
+.deb staging and finalization with hashes/ELF/library checks, desktop validation,
+Python/shell checks. Real browser rendered a local page in a fresh Xvfb profile.
+Clean Resolute ARM64 container installed the declared packages and ran the version
+and ldd checks. Minimal-container headless DOM dump timed out and is not a pass.
+Finalize fixture stubs only dconf compilation, as in the wiring suite. The owner’s
+browser, profile and running session were untouched. No full ISO build/fresh
+hardware boot or YouTube/AVD/DRM playback test: those qualifications remain next.
+Factory browser assets/provisioning are now implemented; kernel/firmware readiness
+remains governed by the existing hardware gates.
+
+## Merged calendar deployed and Wingpanel reloaded — 2026-10-18
+
+Owner requested desktop deployment of merged `6d62dfd`. Ran
+`bash mseries/install-calendar-agenda.sh`: pinned datetime ARM64 release build
+and atomic library/account-launcher installation completed, preserving the
+version-aware original backup. Ran `bash mseries/calendar/test-agenda.sh
+/usr/lib/aarch64-linux-gnu/wingpanel-9/libdatetime.so`: all five isolated EDS
+workflow groups pass against the installed production library; runner exits 0.
+Build warnings and expected isolated-session portal/EDS shutdown warnings remain.
+
+Sent SIGTERM only to Wingpanel; the session respawned it (595296 → 637927).
+Verified `/proc/637927/maps` uses the installed calendar library inode 313607,
+without a deleted mapping, and the Calendar Accounts launcher matches merged
+source. No Gala restart, account sign-in, kernel, boot or audio change.
+Next: owner opens the clock dropdown and completes Google account authorization
+if desired; remote Calendar sync and factory hardware boot remain unverified.
+
+## Calendar Events/Tasks merged into main — 2026-10-18
+
+Integrated `calendar-events-tasks` including the pinned native agenda plugin,
+installer/account launcher, runtime/build dependencies and factory staging.
+Resolved documentation insertion conflicts by retaining both status histories;
+merged enhancement payload lists to preserve main's YouTube launcher/icon and
+add calendar assets/pins. README now describes calendar as integrated and links
+to its local documentation. Google OAuth/sync and factory hardware boot remain
+unverified; this merge does not restart or redeploy the owner's desktop.
+
+Verification on the merged tree: pinned datetime ARM64 release build passes;
+all five isolated real-plugin/EDS integration groups pass; all four image-wiring
+tests pass; changed calendar shell scripts pass ShellCheck at warning severity;
+shell syntax, whitespace and all 34 README relative links pass. Initial agenda
+runs passed workflow assertions but failed temporary cleanup when auto-started
+GVFS/document portals left FUSE mounts. The test harness now uses local GIO and
+a private portal activation override; the final full run exits successfully.
+The override applies only to the synthetic test session; its expected portal
+unavailable warnings do not establish a clean runtime log.
+Next: owner Google sign-in and remote Calendar round trip, then factory image
+assembly/hardware qualification. No credentials, personal calendars or live
+panel state were changed by these checks.
+
+## Calendar Events/Tasks tabs and Google account setup — 2026-10-18
+
+The clock dropdown's right pane now has Events and Tasks tabs. Events follows
+its selected day; Tasks reads all incomplete items from elementary Tasks' EDS
+lists, including due-only and undated items. Activating a task opens Tasks.
+Calendar Accounts opens the desktop Google/online-account sign-in. No desktop
+Google account was configured at verification time: owner OAuth consent and a
+real Google Calendar round trip remain required; local tests do not claim them.
+
+Pinned datetime source `d0b3a703a7efbb5b3040d7be1ccb616eeb919c54` plus
+`datetime-agenda-tabs.patch` retains upstream notices. Native ARM64 compilation
+and five isolated real-plugin/EDS test groups pass: tabs/shared event UIDs,
+live edits, completion/deletion, enable/disable and sources added/removed after
+opening. Async source connections and generation checks reject stale views;
+changed/deleted events requery their source, preserving recurring siblings.
+All-day events use date semantics; undated tasks do not create calendar dots.
+The release installer completed locally; the installed production plugin passes
+the same five test groups. Wingpanel was reloaded and its mapped plugin inode
+matched the newly installed library.
+Four image-wiring tests and shell/diff checks pass. Runtime account/Tasks/EDS
+packages are in both arm64 consumers; plugin and license survive pruning.
+Factory image assembly/boot and Google network sync are still unverified.
+
+[Build, install, restore, account setup and tests](calendar/README.md).
+Installer: `bash mseries/install-calendar-agenda.sh`; rollback:
+`bash mseries/install-calendar-agenda.sh --uninstall`. Reload Wingpanel after
+installation. Next: owner selects Calendar Accounts → Google, completes sign-in,
+enables Calendar and confirms a known remote event appears on its date.
+
+
+## README fixes, verification and remaining work — 2026-10-18
+
+The root [README](../README.md#fixes-tests-and-remaining-work) now separates
+desktop dock/layout, OS bar, kernel, external USB4 dock, power parity, overall
+performance, CPU, GPU and local-LLM/file access. Each section lists implemented
+changes, recorded tests and remaining acceptance work, with links to evidence.
+The status table now distinguishes the owner-confirmed Aurora .20 dock display
+from historical Fairydust limitations and labels stock-kernel decode results
+with their original scope. macOS power/performance parity remains unproven.
+
+Verification: all nine sections have the three status labels; all relative
+documentation links in the project portion resolve; Git whitespace checks pass.
+This is a documentation update; hardware/model benchmarks were not rerun.
+Integrated the documentation commit onto main without its calendar implementation
+parent; calendar claims and its evidence link explicitly identify that branch.
+Preserved newer main handoff/roadmap entries while resolving insertion conflicts.
+Next: update the relevant section when its linked hardware or workload gates pass.
+
 ## YouTube launcher/logo included in fresh-install payload — 2026-10-18
 
 `enhance.sh` now stages the contained launcher, system desktop entry and YouTube
