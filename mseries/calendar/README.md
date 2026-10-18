@@ -8,7 +8,10 @@ explicit alternate views. Tasks shows
 all incomplete tasks
 from selected, enabled elementary Tasks lists, including tasks with no due
 date. Dated tasks sort first, then undated tasks alphabetically. Activate a
-task to open elementary Tasks; completion and editing stay in that app.
+task row to open elementary Tasks for editing. Check its checkbox to complete it
+directly in the panel; the same EDS record updates in Tasks. The checkbox is
+disabled while saving and for read-only/unavailable lists. A failed save restores
+it and shows a retry error. Repeating tasks advance using EDS recurrence handling.
 
 Both tabs use Evolution Data Server (EDS), the native Calendar/Tasks store.
 Updates, deletions, source selection and account additions are observed live.
@@ -105,3 +108,17 @@ Expected portal-unavailable warnings do not fail the agenda checks. Set
 to retain synthetic rendered previews.
 Google OAuth and remote round trips require the owner's
 Google sign-in and are separate from these local tests.
+
+## Completing tasks in the panel
+
+Checkboxes write to the existing source/UID/recurrence record. Before saving, the
+model fetches its latest version so newer edits are preserved. Completion records
+use EDS’s recurrence-aware helper, a UTC modification time and an incremented
+sequence. Repeated clicks are suppressed while a save is pending; checking a box
+does not open Tasks or close the dropdown. Completed tasks leave the incomplete
+list; repeating tasks retain their next occurrence. Undo/reopening and editing
+remain available in the Tasks app. No personal task is changed by the tests.
+
+The private-D-Bus fixture also checks persisted status/percent/timestamp, stale
+row edits, identical UIDs in different lists, recurring advancement, and a
+missing-record failure with checkbox/error recovery.
