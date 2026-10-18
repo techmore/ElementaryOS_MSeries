@@ -15,7 +15,7 @@ Exact root-private rollback directory: `/var/lib/mseries-kernel-tests/staging/20
 `prepare-trial-initrd.py` preserves the known-working Arch unlock userspace and
 10,240-byte early CPIO; replaces only modules/modlist with 93 candidate modules,
 resolved dependency closure and regenerated depmod indexes. Vermagic, CPIO
-preservation, both GRUB syntax checks and 56 offline regressions pass.
+preservation, both GRUB syntax checks and 58 offline regressions pass.
 
 Root-owned capture snapshot/config installed under `/usr/local/lib/mseries-kernel-trial/`
 and `/etc/mseries-kernel-trial.json`; user `mseries-kernel-trial.timer` enabled.

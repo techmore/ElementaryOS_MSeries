@@ -7,6 +7,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import re
 import shlex
 import shutil
 import stat
@@ -50,6 +51,11 @@ def split_image(image):
 def prepare(baseline, module_root, old_version, new_version, output, report):
     if output.exists() or report.exists():
         raise ValueError('choose new output/report paths')
+    if any(not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._+-]{1,127}', version) for version in (old_version, new_version)):
+        raise ValueError('kernel versions must be plain release names')
+    for target in (output, report):
+        if any(target.resolve().is_relative_to(Path(root)) for root in ('/boot', '/usr/lib/modules')):
+            raise ValueError('prepare in a private work directory, not a live boot/module path')
     module_root = module_root.resolve()
     source = module_root / 'lib/modules' / new_version
     if not source.is_dir() or new_version == old_version:
