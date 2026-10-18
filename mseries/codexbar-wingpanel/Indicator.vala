@@ -1464,7 +1464,17 @@ namespace MSeries {
             return null;
         }
 
-        private void apply_quota_dot (Gtk.Label label, string caption, double remaining) {
+        private static string quota_reset_tooltip (Json.Object window) {
+            var timestamp = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt"), null);
+            if (timestamp != null) {
+                var seconds = timestamp.to_unix () - new DateTime.now_utc ().to_unix ();
+                return seconds <= 0 ? "Reset due now" : "Resets in " + Presentation.countdown_text (seconds);
+            }
+            var reset = JsonBoundary.text (window, "resetText");
+            return reset.length > 0 ? reset : "Reset time unknown";
+        }
+
+        private void apply_quota_dot (Gtk.Label label, string caption, double remaining, string reset = "Reset time unknown") {
             if (!display_preferences.get_bool ("compactQuota") || remaining < 0) return;
             var color = quota_theme_color (label, Presentation.dot_color (remaining),
                 remaining > 70 ? "#2e7d32" : remaining >= 25 ? "#a66300" : "#c6262e");
@@ -1473,7 +1483,7 @@ namespace MSeries {
             label.use_markup = true;
             label.label = "%s <span foreground=\"%s\">●</span>%s".printf (
                 Markup.escape_text (caption), color, Presentation.dot_percent (remaining));
-            label.tooltip_text = "%s · %g%% remaining".printf (caption, remaining);
+            label.tooltip_text = "%s · %g%% remaining · %s".printf (caption, remaining, reset);
         }
 
         private void apply_primary_quota_dot (Gtk.Label label, string provider) {
@@ -1491,7 +1501,7 @@ namespace MSeries {
             if (selected < 0) return;
             var window = windows.get_object_element ((uint) selected);
             apply_quota_dot (label, Presentation.short_window_label (JsonBoundary.text (window, "label", "Quota"),
-                (int) JsonBoundary.integer (window, "minutes")), JsonBoundary.number (window, "remaining", -1));
+                (int) JsonBoundary.integer (window, "minutes")), JsonBoundary.number (window, "remaining", -1), quota_reset_tooltip (window));
         }
 
         private void append_weekly_panel_quota (Gtk.Box heading, string provider) {
@@ -1506,9 +1516,9 @@ namespace MSeries {
                 var level = Presentation.level_for (remaining);
                 if (level == QuotaLevel.LOW) value.add_css_class ("level-low");
                 if (level == QuotaLevel.CRITICAL) value.add_css_class ("level-critical");
-                apply_quota_dot (value, "7D", remaining);
+                apply_quota_dot (value, "7D", remaining, quota_reset_tooltip (window));
                 if (display_preferences.get_bool ("showPercent")) heading.append (value);
-                if (display_preferences.get_bool ("showReset")) {
+                if (display_preferences.get_bool ("showReset") && !display_preferences.get_bool ("compactQuota")) {
                     var timestamp = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt"), null);
                     var countdown = timestamp != null
                         ? Presentation.countdown_text (timestamp.to_unix () - new DateTime.now_utc ().to_unix ())
@@ -1561,7 +1571,7 @@ namespace MSeries {
                 if (level == QuotaLevel.LOW) mark.add_css_class ("level-low");
                 if (level == QuotaLevel.CRITICAL) mark.add_css_class ("level-critical");
             }
-            if (display_preferences.get_bool ("showReset") && reset_text.length > 0) {
+            if (display_preferences.get_bool ("showReset") && !display_preferences.get_bool ("compactQuota") && reset_text.length > 0) {
                 var reset = new Gtk.Label (reset_text) { valign = Gtk.Align.BASELINE_CENTER };
                 reset.add_css_class ("seg-reset");
                 segment.append (reset);
@@ -1951,27 +1961,19 @@ namespace MSeries {
         }
 
         private string panel_account_quota (Gtk.Widget widget, Json.Array windows, int64 now_unix) {
-            if (!display_preferences.get_bool ("showPercent") && !display_preferences.get_bool ("showReset")) return "";
             if (!display_preferences.get_bool ("compactQuota"))
                 return colored_account_quota (widget, windows, now_unix, true);
+            if (!display_preferences.get_bool ("showPercent")) return "";
             var text = new StringBuilder ();
             for (uint i = 0; i < windows.get_length (); i++) {
                 var window = windows.get_object_element (i);
                 var remaining = JsonBoundary.number (window, "remaining", -1);
                 if (remaining < 0) continue;
-                var single = new Json.Array ();
-                single.add_object_element (window.ref ());
-                var literal = Presentation.account_quota (single, now_unix,
-                    display_preferences.get_bool ("showPercent"), display_preferences.get_bool ("showReset"));
-                var parts = literal.split (" ↻", 2);
                 if (text.len > 0) text.append (" · ");
-                if (display_preferences.get_bool ("showPercent")) {
-                    var dot = new Gtk.Label (null);
-                    apply_quota_dot (dot, Presentation.short_window_label (JsonBoundary.text (window, "label", "Quota"),
-                        (int) JsonBoundary.integer (window, "minutes")), remaining);
-                    text.append (dot.label);
-                } else text.append (Markup.escape_text (parts[0]));
-                if (parts.length > 1) text.append ("<span alpha=\"65%\"> ↻%s</span>".printf (Markup.escape_text (parts[1])));
+                var dot = new Gtk.Label (null);
+                apply_quota_dot (dot, Presentation.short_window_label (JsonBoundary.text (window, "label", "Quota"),
+                    (int) JsonBoundary.integer (window, "minutes")), remaining);
+                text.append (dot.label);
             }
             return text.str;
         }

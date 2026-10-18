@@ -1,5 +1,22 @@
 # OS 9 implementation / Claude Code handoff
 
+## CodexBar dot mode: reset details on hover — 2026-10-18
+
+Dot mode now omits bar reset countdowns for active five-hour/weekly quotas and
+alternate-account windows. Active-dot tooltips include the measured percentage
+and reset countdown (or explicit unknown/due-now state); alternate hover retains
+all window percentages and reset times. Literal mode and dropdown details keep
+their existing reset preference. No polling changes or new preferences.
+
+All 15 native targets pass, including no visible reset countdowns/arrows in dot
+mode, reset details on active hover, critical numeric values and <=32px height.
+Light compact rendering inspected: the same fixture's minimum width drops from
+about 634px with countdowns to 368px without them. This is a fixture measurement,
+not a promise for every account/provider combination. Upstream remains v0.77.0.
+Routine deployment installs native changes for next login; no new panel reload
+is requested by this batch. The existing quiet Wingpanel/Gala watch continues.
+
+
 ## CodexBar second-row dots — 2026-10-18
 
 Owner requested matching visual dots for alternate accounts on the second row.

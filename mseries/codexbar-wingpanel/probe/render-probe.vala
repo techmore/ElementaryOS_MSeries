@@ -132,7 +132,10 @@ int main (string[] args) {
             assert (!text.contains ("7D 62%") && !text.contains ("7D 72%"));
             assert (text.contains ("5H ● 5%") && text.contains ("5H ● 0%"));
             var weekly = find_label (bar, "7D ●");
-            assert (weekly != null && weekly.tooltip_text.contains ("% remaining"));
+            assert (weekly != null && weekly.tooltip_text.contains ("% remaining") && weekly.tooltip_text.contains ("Resets in"));
+            var primary = find_label (bar, "5H ●");
+            assert (primary != null && primary.tooltip_text.contains ("Resets in"));
+            assert (!text.contains ("↻") && !text.contains ("3d11h") && !text.contains ("3h09m"));
             int minimum, natural;
             bar.measure (Gtk.Orientation.VERTICAL, -1, out minimum, out natural, null, null);
             assert (natural <= 32);

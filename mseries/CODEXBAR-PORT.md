@@ -339,3 +339,8 @@ available when hidden from the bar. Compact active quota dots show remaining
 balance (>70 green, 25–70 yellow, <25 red, percentage visible below 10); hover
 reports the measured percentage. Popup quotas stay literal; alternate bar accounts use matching dots with full values on hover.
 Menu bar marks use 13px; card marks retain their existing size.
+
+In visual dot mode, reset countdowns are hover-only on both bar rows, regardless
+of the literal-mode reset visibility preference. Active dot hover reports the
+measured percentage and reset state; alternate-account hover retains every window.
+The dropdown and literal mode still honor the existing reset preference.
