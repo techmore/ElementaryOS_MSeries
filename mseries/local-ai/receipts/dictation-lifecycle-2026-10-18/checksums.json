@@ -43,5 +43,6 @@
   "native-file-lifecycle-v1.json": "5a0c1a835863a0629d4d3a70c4dcc9355047996b05994d24f500f5338dafa1ad",
   "native-idle-expiry-v1.json": "5945bc6b1546905369a0ca73d1880a0caeb2262ff185faf1b0d9c254f955c702",
   "native-reload-soak-v1.json": "b4a9825f363becd22c66f9c7e466e7f43ff8a33e237bc5e35e201bcc2ee066c9",
-  "pre-capture-frameworks-v1.json": "13a1cd4d92a4f51fe619e9cccf48876c4ffcefe48f2dade90590454bbd9f6da8"
+  "pre-capture-frameworks-v1.json": "13a1cd4d92a4f51fe619e9cccf48876c4ffcefe48f2dade90590454bbd9f6da8",
+  "publication-v1.json": "bdbf98ebf85435ffe7ea2840cbadf8040cf001892ec62c81bfde61ee3755ea92"
 }

@@ -1,0 +1,17 @@
+{
+  "pull_request": "https://github.com/techmore/ElementaryOS_MSeries/pull/86",
+  "merged": true,
+  "merge_commit": "077bfe58013f110962d24f60a38b122bd6a05d90",
+  "checked_source": "cbc47edab994b56bd3b550e6bbee03c02690be3a",
+  "ci_run": 39130696811,
+  "ci_conclusion": "success",
+  "ci_jobs_passed": 5,
+  "pages_run": 39138713351,
+  "pages_conclusion": "success",
+  "pages_commit": "077bfe58013f110962d24f60a38b122bd6a05d90",
+  "page_url": "https://techmore.github.io/ElementaryOS_MSeries/local-ai.html",
+  "http_status": 200,
+  "page_matches_source_bytes": true,
+  "page_sha256": "7db1713ab2658c0ebdcc878c4ab4ab2af03c92b0c04b64d1fa25766c79ed0c46",
+  "publication_scope": "Initial main source and public report at this commit; not on-device lazy/panel deployment or physical F5 acceptance."
+}
