@@ -26,6 +26,9 @@ implementation; no macOS source or binary is copied into this project.
   keep their own useful width and hierarchy.
 - A globe beside the repository name opens its GitHub Pages site (custom
   domains included), or the repository's website when it has no Pages site.
+- With a projects folder set, cards show every local checkout and worktree
+  (Details → Checkouts) with branch and sync state, open them in Files or
+  Terminal, and offer Clone for repositories you have not cloned yet.
 - A contribution graph (GitHub's calendar, accent-shaded, hover for each day)
   sits at the top of the dashboard; turn it off in RepoBar Settings.
 - A For You card leads the dashboard with pull requests waiting on your review

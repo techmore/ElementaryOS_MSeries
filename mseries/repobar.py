@@ -216,12 +216,20 @@ def fetch_snapshot() -> dict:
     normalized = []
     pages_names = _pages_repositories()
     settings = load_settings()
-    local_by_name = {}
+    local_by_name: dict[str, list[dict]] = {}
     if settings.get("localRoot"):
-        for local_repo in scan_local_projects(settings["localRoot"], int(settings.get("localDepth", 4))):
+        try:
+            scanned = scan_local_projects(settings["localRoot"], int(settings.get("localDepth", 4)))
+        except RuntimeError:
+            scanned = []
+        for local_repo in scanned:
             remote_name = local_repo.get("name", "")
             if REPO_RE.fullmatch(remote_name):
-                local_by_name.setdefault(remote_name, local_repo)
+                local_by_name.setdefault(remote_name, []).append(local_repo)
+        # The primary checkout is the folder named after the repository; worktrees and other clones follow.
+        for remote_name, checkouts in local_by_name.items():
+            short = remote_name.split("/", 1)[1].casefold()
+            checkouts.sort(key=lambda item: (Path(item["path"]).name.casefold() != short, item["path"]))
     for repo in repos:
         branch = repo.get("defaultBranchRef") or {}
         target = branch.get("target") or {}
@@ -271,7 +279,9 @@ def fetch_snapshot() -> dict:
             "recentActivity": recent[0] if recent else None,
             "pagesUrl": _pages_url(repo, pages_names),
             "homepage": _web_url(repo.get("homepageUrl") or ""),
-            "local": local_by_name.get(repo.get("nameWithOwner", "")),
+            "local": (local_by_name.get(repo.get("nameWithOwner", "")) or [None])[0],
+            "localCheckouts": [{key: item.get(key) for key in ("path", "branch", "dirtyFileCount", "ahead", "behind", "detached")}
+                               for item in local_by_name.get(repo.get("nameWithOwner", ""), [])],
             "repoState": state if state in {"visible", "pinned", "hidden"} else "visible",
         })
     normalized.sort(key=lambda item: item["updatedAt"], reverse=True)
@@ -530,6 +540,25 @@ def scan_local_projects(root: str, depth: int = 4) -> list[dict]:
     return found
 
 
+def clone_local_repo(name: str, settings: dict) -> dict:
+    """Clone a repository into the projects folder; never overwrites an existing folder."""
+    name = _safe_repo_name(name)
+    root = settings.get("localRoot", "")
+    if not root:
+        raise RuntimeError("Choose a projects folder in RepoBar Settings first")
+    destination = Path(root).expanduser().resolve() / name.split("/", 1)[1]
+    if destination.exists():
+        raise RuntimeError(f"{destination} already exists")
+    try:
+        result = subprocess.run(["gh", "repo", "clone", name, str(destination)], capture_output=True, text=True,
+                                timeout=600, check=False, env={**os.environ, "GH_HOST": _hostname()})
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError("Clone did not finish within 10 minutes") from exc
+    if result.returncode:
+        raise RuntimeError(result.stderr.strip().splitlines()[-1] if result.stderr.strip() else "Clone failed")
+    return {"cloned": name, "path": str(destination)}
+
+
 def sync_local_repo(path: str, confirmed: bool = False) -> dict:
     repo = _git_repo_status(Path(path).expanduser())
     if repo["dirty"]:
@@ -773,7 +802,7 @@ def main() -> int:
     auth_cmd = commands.add_parser("auth", help="inspect or set up GitHub CLI authentication")
     auth_cmd.add_argument("action", choices=["status", "login"], default="status", nargs="?")
     local_cmd = commands.add_parser("local", help="scan local checkouts or explicitly fast-forward one")
-    local_cmd.add_argument("action", choices=["scan", "sync"], default="scan", nargs="?")
+    local_cmd.add_argument("action", choices=["scan", "sync", "clone"], default="scan", nargs="?")
     local_cmd.add_argument("path", nargs="?")
     local_cmd.add_argument("--root", default="")
     local_cmd.add_argument("--depth", type=int, default=0)
@@ -818,7 +847,11 @@ def main() -> int:
             _emit(_auth_status())
         elif args.command == "local":
             settings = load_settings()
-            if args.action == "sync":
+            if args.action == "clone":
+                if not args.path:
+                    raise RuntimeError("Use `local clone OWNER/NAME`")
+                _emit(clone_local_repo(args.path, settings))
+            elif args.action == "sync":
                 if not args.path:
                     raise RuntimeError("Use `local sync PATH_OR_REPO [--yes]`")
                 _emit(sync_local_repo(_find_local_repo(args.path, settings), args.yes))
