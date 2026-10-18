@@ -7,7 +7,7 @@ set -euo pipefail
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 lib="$HOME/.local/lib/codexbar-cli"
 mkdir -p "$lib"
-for helper in codexbar-opencode-local.py codexbar-sessions.py codexbar-accounts.py codexbar-claude.py; do
+for helper in codexbar-opencode-local.py codexbar-sessions.py codexbar-accounts.py codexbar-claude.py codexbar-opencode-login.py; do
   install -m 0755 "$repo/mseries/$helper" "$lib/$helper"
 done
 install -m 0755 "$repo/mseries/codexbar-opencode-wrapper.py" "$HOME/.local/bin/codexbar.new"
