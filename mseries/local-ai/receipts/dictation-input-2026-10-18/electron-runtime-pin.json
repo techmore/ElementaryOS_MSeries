@@ -1,0 +1,6 @@
+{
+  "version": "44.4.5",
+  "archive_sha256": "3bf0acab49c4ea3c9283cdb86bf3dd7204bd52a6fba6c8ae51101bdba2adae0e",
+  "official_checksum_matched": true,
+  "source": "https://github.com/electron/electron/releases/tag/v44.4.5"
+}

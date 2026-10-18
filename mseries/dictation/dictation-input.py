@@ -12,6 +12,14 @@ def safe_accessible(role, focused, editable, active_window):
     return role in (61, 73, 79, 94, 95) and focused and editable and active_window
 
 
+def bounded_children(node, count, deadline, clock=time.monotonic):
+    children = []
+    for index in reversed(range(min(count, 128))):
+        if clock() > deadline: break
+        children.append(node.get_child_at_index(index))
+    return children
+
+
 class FocusSession:
     """A transcript belongs to one uninterrupted, non-sensitive input focus."""
     def __init__(self, clock=time.monotonic):
@@ -73,6 +81,7 @@ def main():
             gi.require_version('Atspi', '2.0')
             from gi.repository import Atspi
             self.api = Atspi
+            Atspi.set_timeout(200, 500)
             self.source = None
             self.listener = Atspi.EventListener.new(self.changed, None)
             self.listener.register('object:state-changed:focused')
@@ -99,6 +108,8 @@ def main():
 
         def validate(self):
             try:
+                if self.source is None:
+                    self.discover_focus()
                 source = self.source
                 if source is None: raise ValueError('No accessible focused field')
                 source.clear_cache()
@@ -125,12 +136,41 @@ def main():
             except Exception:
                 raise ValueError('Accessible field metadata unavailable or unsafe') from None
 
+        def discover_focus(self):
+            # The service may start after a field already gained focus. Query
+            # only active top-levels, with a strict time/node bound; no labels
+            # or text are requested and there is no periodic desktop scan.
+            deadline = time.monotonic() + .6
+            desktop = self.api.get_desktop(0)
+            if desktop is None: return
+            visited = 0
+            for index in range(min(desktop.get_child_count(), 128)):
+                if time.monotonic() > deadline: return
+                application = desktop.get_child_at_index(index)
+                if application is None: continue
+                for window_index in range(min(application.get_child_count(), 32)):
+                    if time.monotonic() > deadline: return
+                    window = application.get_child_at_index(window_index)
+                    if window is None: continue
+                    window.clear_cache()
+                    if not window.get_state_set().contains(self.api.StateType.ACTIVE): continue
+                    pending = [window]
+                    while pending and visited < 1024 and time.monotonic() <= deadline:
+                        node = pending.pop(); visited += 1
+                        if node is None: continue
+                        states = node.get_state_set()
+                        if states.contains(self.api.StateType.FOCUSED):
+                            self.source = node
+                            return
+                        count = min(node.get_child_count(), 128)
+                        pending.extend(bounded_children(node, count, deadline))
+
     try:
         metadata = FocusMetadata()
     except (ImportError, ValueError, GLib.Error):
         metadata = None  # Refuse insertion if reliable field metadata is absent.
 
-    class DictationEngine(IBus.Engine):
+    class DictationEngine(IBus.EngineSimple):
         __gtype_name__ = 'MSeriesDictationEngine'
 
         def __init__(self, **kwargs):
@@ -143,6 +183,7 @@ def main():
         def do_focus_out_id(self, path):
             current.update(engine=None, client=None, metadata=None)
             state.focus(None, 'fake')
+            IBus.EngineSimple.do_focus_out_id(self, path)
 
         def do_set_content_type(self, purpose, hints):
             state.content(purpose, hints)
@@ -150,14 +191,16 @@ def main():
         def do_disable(self):
             current.update(engine=None, client=None, metadata=None)
             state.focus(None, 'fake')
+            IBus.EngineSimple.do_disable(self)
 
         def do_reset(self):
             state.invalidate()
+            IBus.EngineSimple.do_reset(self)
 
         def do_process_key_event(self, keyval, keycode, modifiers):
             if keyval == IBus.KEY_Escape:
                 state.invalidate()
-            return False
+            return IBus.EngineSimple.do_process_key_event(self, keyval, keycode, modifiers)
 
     class DictationFactory(IBus.Factory):
         def __init__(self):

@@ -17,15 +17,17 @@ from factory/source tooling.
 
 ## Universal speech-to-text priority — 2026-10-18
 
-Owner priority: universal F5 dictation, then deeper troubleshooting/optimization,
-then a low-overhead everyday machine assistant. Gmail is the preferred mail path;
-local Mail drafts remain optional and do not establish Gmail support. Native
-float32 capture fix b20c808 is installed with its upstream loopback evidence.
-New IBus/AT-SPI Unicode insertion is prepared: seven contracts and GTK3,
-native GTK4 Wayland, Qt6 and accessibility-enabled Brave field checks pass.
-The original browser password failure is retained separately. Deployment,
-streaming-ASR integration, remaining app coverage and owner F5 remain. Grammar/translation
-review is proposed. [Current scope and evidence](local-ai/SPEECH-INTEGRATION.md).
+Owner order: universal F5 dictation, deeper troubleshooting/optimization, then a
+low-overhead machine assistant; Gmail preferred for future mail coverage.
+Prepared IBus/AT-SPI output now preserves compose keys, uses shared resource
+limits, private lifecycle status and anonymous-RAM fallback. Fifteen contracts,
+GTK/Qt/Brave and synthetic Electron field checks pass. One guarded public-clip
+CPU speech-to-GTK check passed at 0% normalized WER, 4.31 s first text and max
+2525 RPM; no general accuracy/acoustic/speedup claim. Stage-only rollback passed
+without restarting the original F5. Actual activation/rollback, real human F5,
+remaining app sessions and optional grammar/translation review remain. Existing
+browsers need accessibility on their next launch; no owner window is closed.
+[Current implementation/evidence](dictation/README.md).
 
 ## Native full-height desktop and compact dock — 2026-10-18
 

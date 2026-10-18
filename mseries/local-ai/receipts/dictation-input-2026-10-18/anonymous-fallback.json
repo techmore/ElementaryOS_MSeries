@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "anonymous_memfd": true,
+  "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered, flour-faten sauce.",
+  "elapsed_s": 1.3225104909997754,
+  "microphone_recorded": false,
+  "scope": "Functional anonymous-RAM descriptor compatibility check only; no continuous telemetry or general accuracy claim.",
+  "function_sha256": "97f16cc2a72544ca667a73bed246cd74d060788e2028ab2243258bd5665fec3a"
+}

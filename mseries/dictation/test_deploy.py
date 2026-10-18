@@ -1,0 +1,102 @@
+import importlib.util
+import json
+import os
+from pathlib import Path
+import stat
+import subprocess
+import tempfile
+import unittest
+from unittest.mock import patch
+
+
+def load(name, path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    return module
+
+
+HERE = Path(__file__).resolve().parent
+deploy = load('dictation_deploy', HERE.parent / 'install-dictation-input.py')
+status = load('dictation_status_test', HERE / 'dictation_status.py')
+resources = load('dictation_resources_test', HERE / 'dictation_resources.py')
+
+
+class DeploymentTests(unittest.TestCase):
+    def test_browser_override_keeps_actions_and_urls(self):
+        text = '[Desktop Entry]\nName=Browser\nExec=/usr/bin/brave-browser-stable %U\n\n[Desktop Action private]\nExec=brave-browser --incognito %U\n'
+        result = deploy.brave_override(text)
+        self.assertIn('Exec=/usr/bin/brave-browser-stable --force-renderer-accessibility %U', result)
+        self.assertIn('Exec=brave-browser --force-renderer-accessibility --incognito %U', result)
+        self.assertIn('Name=Browser', result)
+        self.assertEqual(deploy.brave_override(result), result)
+        with self.assertRaises(ValueError): deploy.brave_override('Exec=custom-wrapper brave-browser %U\n')
+
+    def test_first_baseline_survives_repeated_stage_and_rollback(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); original = root / 'original'; added = root / 'added'
+            original.write_bytes(b'owner payload'); original.chmod(0o755)
+            payload = deploy.Payload(root / 'state')
+            payload.install(original, b'candidate 1', 0o644)
+            payload.install(original, b'candidate 2', 0o644)
+            payload.install(added, b'new helper', 0o755)
+            payload.restore()
+            self.assertEqual(original.read_bytes(), b'owner payload')
+            self.assertEqual(stat.S_IMODE(original.stat().st_mode), 0o755)
+            self.assertFalse(added.exists())
+            self.assertEqual(stat.S_IMODE(payload.path.stat().st_mode), 0o600)
+
+    def test_owner_edit_prevents_partial_restore(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); first = root / 'first'; second = root / 'second'
+            first.write_bytes(b'old 1'); second.write_bytes(b'old 2')
+            payload = deploy.Payload(root / 'state')
+            payload.install(first, b'new 1', 0o600); payload.install(second, b'new 2', 0o600)
+            second.write_bytes(b'owner edit')
+            with self.assertRaises(ValueError): payload.restore()
+            self.assertEqual(first.read_bytes(), b'new 1')
+            self.assertEqual(second.read_bytes(), b'owner edit')
+
+    def test_remember_only_file_cannot_delete_later_owner_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); target = root / 'dropin'; payload = deploy.Payload(root / 'state')
+            payload.remember(target); target.write_bytes(b'owner preference')
+            with self.assertRaises(ValueError): payload.restore()
+            with self.assertRaises(ValueError): payload.install(target, b'candidate', 0o600)
+            self.assertEqual(target.read_bytes(), b'owner preference')
+
+    def test_worker_thread_capture_is_detected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); main = root / '12/task/12'; worker = root / '12/task/13'
+            main.mkdir(parents=True); worker.mkdir(); (main / 'children').write_text('')
+            (worker / 'children').write_text('99')
+            (root / '99').mkdir(); (root / '99/stat').write_text('99 (ffmpeg) S 12')
+            result = subprocess.CompletedProcess([], 0, '12\n', '')
+            with patch.object(deploy, 'systemctl', return_value=result):
+                with self.assertRaises(ValueError): deploy.check_idle_capture(root)
+                (root / '99/stat').write_text('99 (notify-send) Z 12')
+                deploy.check_idle_capture(root)
+
+
+class StatusTests(unittest.TestCase):
+    def test_private_bounded_status_and_no_transcript_fields(self):
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {'XDG_RUNTIME_DIR': directory}):
+            status.write_status('ready', 'ibus', 'cpu')
+            row = status.read_status()
+            self.assertEqual(row['phase'], 'ready')
+            self.assertEqual(set(row), {'pid', 'phase', 'output', 'backend', 'updated_at'})
+            self.assertEqual(stat.S_IMODE(status.status_path().stat().st_mode), 0o600)
+            row['transcript'] = 'synthetic private text'
+            status.status_path().write_text(json.dumps(row))
+            self.assertIsNone(status.read_status())
+
+    def test_resource_guard_preserves_desktop_reserve_and_telemetry(self):
+        policy = {'reserve_gib': 6, 'max_fan_rpm': 3500, 'max_temp_c': 80}
+        sample = {'available_bytes': 7 * 1024 ** 3, 'fans_rpm': {'fan': 2500}, 'temperatures_c': {'temp': 50}}
+        self.assertEqual(resources.reasons(policy, sample=sample), [])
+        self.assertTrue(resources.reasons(policy, 2 * 1024 ** 3, sample))
+        self.assertTrue(resources.reasons(policy, sample=sample | {'fans_rpm': {'fan': 3501}}))
+        self.assertTrue(resources.reasons(policy, sample=sample | {'temperatures_c': {'temp': 81}}))
+        self.assertTrue(resources.reasons(policy, sample=sample | {'fans_rpm': {}}))
+
+
+if __name__ == '__main__': unittest.main()

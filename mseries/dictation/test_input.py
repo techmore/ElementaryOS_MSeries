@@ -33,6 +33,17 @@ class FocusTests(unittest.TestCase):
                      (79, True, False, True), (79, True, True, False), (0, True, True, True), (67, True, True, True)]:
             self.assertFalse(module.safe_accessible(*args))
 
+    def test_focus_scan_stops_requesting_children_after_budget(self):
+        class SlowNode:
+            elapsed = 0
+            def get_child_at_index(self, index):
+                self.elapsed += .3
+                return index
+        node = SlowNode()
+        children = module.bounded_children(node, 10000, .6, lambda: node.elapsed)
+        self.assertLessEqual(len(children), 3)
+        self.assertEqual(module.bounded_children(node, 10, 0, lambda: 1), [])
+
     def test_focus_change_and_cancel(self):
         for action in [lambda s: s.focus(object(), 'gtk3-im:other'), lambda s: s.invalidate(), lambda s: s.content(8, 0)]:
             s = self.ready(); token = s.begin(); action(s)

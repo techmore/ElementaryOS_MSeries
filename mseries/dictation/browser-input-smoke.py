@@ -3,6 +3,7 @@
 Run: dbus-run-session -- xvfb-run -a python3 mseries/dictation/browser-input-smoke.py
 """
 import json
+import argparse
 import os
 from pathlib import Path
 import signal
@@ -17,9 +18,15 @@ import gi
 gi.require_version('IBus','1.0')
 from gi.repository import IBus,Gio,GLib
 
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--automatic-accessibility',action='store_true')
+parser.add_argument('--enable-accessibility-status',action='store_true',help='Enable accessibility only on the private test bus')
+parser.add_argument('--electron',type=Path,help='Unpackaged Electron executable for a synthetic form')
+args=parser.parse_args()
+
 if os.environ.get('MSERIES_INPUT_TEST_SESSION') != '1':
     raise SystemExit(subprocess.run(['dbus-run-session','--','xvfb-run','-a','env','MSERIES_INPUT_TEST_SESSION=1',
-        'GSETTINGS_BACKEND=memory',sys.executable,str(Path(__file__).resolve())]).returncode)
+        'GSETTINGS_BACKEND=memory',sys.executable,str(Path(__file__).resolve()),*sys.argv[1:]]).returncode)
 
 with tempfile.TemporaryDirectory(prefix='mseries-browser-input-') as directory:
     os.environ.update(IBUS_ADDRESS='unix:path='+directory+'/bus',XMODIFIERS='@im=ibus',
@@ -37,13 +44,24 @@ with tempfile.TemporaryDirectory(prefix='mseries-browser-input-') as directory:
         time.sleep(1);IBus.init();bus=IBus.Bus.new();assert bus.is_connected()
         engine=subprocess.Popen(['/usr/bin/python3',str(Path(__file__).with_name('dictation-input.py'))])
         pump(1);assert bus.set_global_engine('mseries-dictation')
+        if args.enable_accessibility_status:
+            connection=Gio.bus_get_sync(Gio.BusType.SESSION,None)
+            connection.call_sync('org.a11y.Bus','/org/a11y/bus','org.freedesktop.DBus.Properties','Set',
+                GLib.Variant('(ssv)',('org.a11y.Status','IsEnabled',GLib.Variant('b',True))),None,Gio.DBusCallFlags.NONE,3000,None)
         profile=Path(directory)/'profile'
-        browser=subprocess.Popen(['brave-browser','--user-data-dir='+str(profile),
-            '--force-renderer-accessibility','--ozone-platform=x11','--disable-gpu','--disable-background-networking',
+        executable=['brave-browser']
+        if args.electron:
+            bootstrap=Path(directory)/'fixture.cjs'
+            bootstrap.write_text("const {app,BrowserWindow}=require('electron'); app.whenReady().then(()=>{ const window=new BrowserWindow({show:true,webPreferences:{sandbox:true,nodeIntegration:false,contextIsolation:true}}); window.loadURL('about:blank'); });")
+            executable=[str(args.electron.resolve()),str(bootstrap)]
+        flags=['--user-data-dir='+str(profile),'--ozone-platform=x11','--disable-gpu','--disable-background-networking',
             '--disable-extensions','--disable-sync','--no-first-run','--no-default-browser-check',
             '--password-store=basic','--remote-debugging-address=127.0.0.1',
-            '--remote-debugging-port=0','--host-resolver-rules=MAP * ~NOTFOUND','about:blank'],
+            '--remote-debugging-port=0','--host-resolver-rules=MAP * ~NOTFOUND']
+        if not args.automatic_accessibility:flags.append('--force-renderer-accessibility')
+        browser=subprocess.Popen(executable+flags+([] if args.electron else ['about:blank']),
             stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
+
         for _ in range(100):
             if (profile/'DevToolsActivePort').exists():break
             if browser.poll() is not None:raise RuntimeError('Owned browser exited')
@@ -80,7 +98,7 @@ with tempfile.TemporaryDirectory(prefix='mseries-browser-input-') as directory:
             try:call('Begin')
             except GLib.Error:pass
             else:raise AssertionError('Browser password accepted dictation')
-            print(json.dumps({'browser':'Brave X11 with accessibility enabled','unicode_field':True,'changed_field_untouched':True,
+            print(json.dumps({'browser':'Electron synthetic X11' if args.electron else 'Brave X11','accessibility':'automatic with OS support enabled' if args.enable_accessibility_status else ('automatic' if args.automatic_accessibility else 'forced'),'unicode_field':True,'changed_field_untouched':True,
                 'password_refused':True,'method':'Synthetic form in isolated real browser; no ASR, microphone or owner profile'}))
     finally:
         if browser:

@@ -58,16 +58,36 @@ The first browser trial incorrectly accepted a password-field session using inpu
 
 | Current revised-source checks | Result |
 |---|---|
-| Seven session/metadata contracts | Pass |
+| Fifteen session/deployment/status/resource contracts | Pass |
 | Real IBus context without an accessible field | Refused as required |
 | GTK3 X11 Entry, multi-chunk stdin client, changed field, password | Pass |
 | GTK4 native Wayland Entry in separate headless Gala | Pass |
 | Qt6 X11 QLineEdit/QTextEdit, Unicode/multiline, changed field, password | Pass |
 | Brave X11 synthetic form with accessibility enabled | Pass |
-| Electron, terminals/custom canvases, live human F5 | Pending; no universal coverage claim |
+| Electron 44.4.5 synthetic form with explicit accessibility | Pass (framework, not an actual Codex/OpenCode session) |
+| Terminals/custom canvases, live human F5 | Pending; no universal coverage claim |
 
 Run `python3 mseries/dictation/gtk-input-smoke.py`, `python3 mseries/dictation/qt-input-smoke.py` (PyQt6 test dependency), `python3 mseries/dictation/browser-input-smoke.py`, and `bash mseries/dictation/test-wayland-input.sh`. X11 tests create private session buses/Xvfb automatically; the native Wayland wrapper creates its own headless software-rendered Gala with memory-backed settings. They do not capture audio, run ASR, change the owner engine or use owner profiles. Private full logs stay out of receipts. Transient private portal/AT-SPI cache startup warnings remain in logs; the original Python signal callback floating-object warning was avoided by wire-level testing and was absent from real field checks.
 
-The candidate is **not installed/activated**. The installed F5 service remains unchanged. New source supports optional `STREAM_OUTPUT=ibus`; the compatibility default is still ydotool. Remaining work: installer/activation/rollback, actual streaming-ASR-to-field checks, remaining app coverage, status/cancel usability and owner F5 confirmation. Optional grammar/translation review is not implemented. The input bridge has no model worker; deeper diagnosis and a lightweight everyday assistant follow this priority.
+The candidate is **not activated**. The original F5 process is still running. Actual stage-only rollback restored the original payload and input source without restarting that process. Owner edits after staging are preserved by digest checks. Active capture/output children are checked across every worker thread; dead notification children do not block switching.
+
+To reproduce the file path, use `python3 mseries/dictation/gtk-input-smoke.py --keyboard-check --speech-file "$HOME/.local/share/mseries/stream/libri.wav" --receipt-dir /a/new/private/output` with the existing benchmark clip. This explicit option runs CPU ASR; default field commands do not.
+
+The guarded CPU speech-to-field check passed on one existing LibriSpeech English clip (CC-BY-4.0): 0% normalized WER, first widget text 4.31 s including cold process/model startup and paced input, total 12.02 s, min available 11.55 GiB, max sampled fan 2525 RPM and temperature 45.76 C. The earlier source revisions are retained separately. These are functional/sampled results, not acoustic measurements, general speech accuracy or a controlled CPU/GPU ranking. Exact evaluated source, model/SDK pins and failures are in [receipts](../local-ai/receipts/dictation-input-2026-10-18/). [Corpus attribution/license](https://www.openslr.org/12).
+
+Unicode activation uses CPU ASR so it does not add a competing GPU inference worker. It shares the six-GiB memory reserve and hard fan/temperature limits, waits before loading when admission fails, checks before recording and stops its own session on a limit violation. Other owner jobs are preserved. Recording status is a private bounded lifecycle file and persistent notification; Escape cancels. No text/audio is stored in that status. Whisper fallback uses an anonymous RAM descriptor, independently checked with the real CLI. Optional STREAM_KEEP debug capture remains explicit; full logs/debug audio are never public receipts.
+
+Existing pinned runtime:
+
+```sh
+python3 mseries/install-dictation-input.py --stage
+python3 mseries/install-dictation-input.py --activate
+python3 mseries/install-dictation-input.py --status
+python3 mseries/install-dictation-input.py --rollback
+```
+
+A fresh runtime can use `bash mseries/install-dictation-stream.sh --universal`. Installation pins the qualified NumPy 2.5.4 alongside transcribe.cpp 0.4.0. Activation enables toolkit accessibility, selects the Dictation input method, installs IBus environment defaults for future sessions and configures direct Brave launcher entries to enable accessibility on their next launch. It does not enable a screen reader, close a running browser or change audio routing. Existing Chromium instances without accessibility metadata remain unsupported until reopened; OS accessibility alone was insufficient in the retained default-browser test. Custom launcher wrappers are preserved. Other app launches can use `python3 ~/.local/share/mseries/stream/dictation-launch.py [--chromium] APP...`; flags affect new instances. Qt/GTK environments and actual app support still require the documented checks, not an all-app promise.
+
+Backups and preference baselines remain private. Rollback restores prior settings when they still match this feature's values, preserves subsequent owner edits and waits for quiet admission before reloading speech. Remaining: actual activation/rollback, owner F5 confirmation, app-specific Electron/other coverage and optional grammar/translation review. The low-overhead everyday assistant and stronger troubleshooting tier follow dictation.
 
 Primary API references: [IBus text commit](https://ibus.github.io/docs/ibus-1.5/IBusEngine.html), [AT-SPI accessible role/state APIs](https://docs.gtk.org/atspi2/class.Accessible.html). Metadata availability is tested locally; API documentation alone does not establish app support.

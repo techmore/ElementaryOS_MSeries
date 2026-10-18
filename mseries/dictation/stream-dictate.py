@@ -11,6 +11,9 @@ import math, os, queue, signal, struct, subprocess, sys, threading, time, wave, 
 import numpy as np
 import transcribe_cpp as t
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from dictation_status import write_status
+from dictation_resources import load_policy, reasons as resource_reasons
 
 MODEL = os.environ.get("STREAM_MODEL", os.path.expanduser(
     "~/.local/share/mseries/stream/models/parakeet-unified-en-0.6b-Q4_K_M.gguf"))
@@ -42,6 +45,13 @@ THREADS = int(os.environ.get("STREAM_THREADS", "6"))
 CHUNK = 1600  # 100 ms of 16 kHz samples
 OUTPUT = os.environ.get('STREAM_OUTPUT', 'ydotool')  # IBus is opt-in until app acceptance passes
 INPUT_CLIENT = str(Path(__file__).with_name('dictation-input-client.py'))
+TEST_INSERT = os.environ.get('STREAM_TEST_INSERT') == '1'
+if OUTPUT not in ('ibus', 'ydotool'):
+    raise SystemExit('Unsupported dictation output; choose ibus or ydotool explicitly')
+if TEST_INSERT and not (OUTPUT == 'ibus' and os.environ.get('MSERIES_INPUT_TEST_SESSION') == '1'
+                        and os.environ.get('GSETTINGS_BACKEND') == 'memory'
+                        and os.environ.get('STREAM_TEST_WAV') and not DRY):
+    raise SystemExit('File-to-input test requires isolated session, IBus and explicit test audio')
 
 
 def input_call(method, token=None, text=None):
@@ -58,6 +68,15 @@ def log(*a):
     print(*a, file=sys.stderr, flush=True)
 
 
+def status(phase):
+    if DRY or os.environ.get('STREAM_TEST_WAV') or os.environ.get('STREAM_TEST_RAW'):
+        return
+    try:
+        write_status(phase, OUTPUT, os.environ.get('STREAM_BACKEND', 'auto'))
+    except (OSError, ValueError):
+        log('dictation lifecycle status unavailable')
+
+
 def keyboard_device():
     block = open("/proc/bus/input/devices").read().split("\n\n")
     for b in block:
@@ -68,10 +87,10 @@ def keyboard_device():
     raise SystemExit("no Apple keyboard found")
 
 
-def notify(msg):
+def notify(msg, persistent=False):
     if QUIET:
         return
-    subprocess.Popen(["notify-send", "-t", "2500", "-i", "audio-input-microphone", "-a", "Dictation",
+    subprocess.Popen(["notify-send", "-t", "0" if persistent else "2500", "-i", "audio-input-microphone", "-a", "Dictation",
                       "-h", "string:x-canonical-private-synchronous:mseries-dictation", msg],
                      stderr=subprocess.DEVNULL)
 
@@ -92,22 +111,22 @@ def tone(freq, ms, vol=0.25):
 
 def whisper_fallback(pcm16):
     """One offline Voxtype/Whisper pass over the captured audio (kept in RAM only)."""
-    path = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "dictation-fallback.wav")
     try:
-        with wave.open(path, "wb") as w:
-            w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(pcm16)
-        r = subprocess.run(["/usr/local/bin/voxtype", "transcribe", path], capture_output=True,
-                           text=True, timeout=30)
-        lines = [l.strip() for l in r.stdout.splitlines() if l.strip()]
-        return lines[-1] if lines else ""
+        # An anonymous, explicitly inherited descriptor avoids persistent audio
+        # and predictable filenames, including when XDG_RUNTIME_DIR is absent.
+        with os.fdopen(os.memfd_create('mseries-stt-fallback', os.MFD_CLOEXEC), 'w+b') as audio:
+            os.fchmod(audio.fileno(), 0o600)
+            with wave.open(audio, "wb") as w:
+                w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(pcm16)
+            audio.flush(); audio.seek(0)
+            path = '/proc/self/fd/' + str(audio.fileno())
+            r = subprocess.run(["/usr/local/bin/voxtype", "transcribe", path], capture_output=True,
+                               text=True, timeout=30, check=True, pass_fds=(audio.fileno(),))
+            lines = [l.strip() for l in r.stdout.splitlines() if l.strip()]
+            return lines[-1] if lines else ""
     except Exception as e:
         log("fallback failed:", repr(e))
         return ""
-    finally:
-        try:
-            os.remove(path)
-        except OSError:
-            pass
 
 
 def speech_stats(pcm):
@@ -124,15 +143,17 @@ def speech_stats(pcm):
 
 class Typer(threading.Thread):
     """Types text through ydotool in order, off the audio thread."""
-    def __init__(self):
+    def __init__(self, failure=None):
         super().__init__(daemon=True)
         self.q = queue.Queue()
+        self.failed = False
+        self.failure = failure
         self.start()
 
     def run(self):
         while True:
             text, token = self.q.get()
-            if text and (os.environ.get("STREAM_TEST_WAV") or os.environ.get("STREAM_TEST_RAW") or DRY):
+            if text and (DRY or (not TEST_INSERT and (os.environ.get("STREAM_TEST_WAV") or os.environ.get("STREAM_TEST_RAW")))):
                 print(f"[{time.time() - T0:5.1f}s] type: {text!r}", flush=True)
             elif text:
                 try:
@@ -142,8 +163,10 @@ class Typer(threading.Thread):
                         subprocess.run(["ydotool", "type", "--key-delay", "2", "--", text],
                                        stderr=subprocess.DEVNULL)
                 except (subprocess.SubprocessError, OSError):
+                    first_failure = not self.failed
+                    self.failed = True
                     log('dictation insertion refused; no keyboard fallback')
-                    notify('Dictation stopped: text-field focus changed or input method unavailable')
+                    if first_failure and self.failure: self.failure()
             self.q.task_done()
 
     def submit(self, text, token):
@@ -152,35 +175,55 @@ class Typer(threading.Thread):
 
 class Dictation:
     def __init__(self):
-        self.model = t.Model(MODEL)
-        self.typer = Typer()
+        self.model = t.Model(MODEL, backend=os.environ.get('STREAM_BACKEND', 'auto'))
+        self.typer = Typer(self.insertion_failed)
         self.active = False
         self.worker = None
         self.stop_evt = threading.Event()
         self.input_token = None
+        self.error = None
+        self.cancelled = False
+
+    def insertion_failed(self):
+        self.stop_evt.set()
+        if not self.cancelled:
+            self.error = 'InputUnavailable'
+            status('error')
+            notify('Dictation stopped: text-field focus changed or input method unavailable')
 
     def start(self):
         if self.active:
             return
-        if OUTPUT == 'ibus' and not (DRY or os.environ.get('STREAM_TEST_WAV') or os.environ.get('STREAM_TEST_RAW')):
+        self.policy = load_policy() if OUTPUT == 'ibus' else None
+        if OUTPUT == 'ibus' and resource_reasons(self.policy, 256 * 1024 ** 2):
+            status('waiting')
+            notify('Dictation is waiting for memory or cooling headroom')
+            return
+        if OUTPUT == 'ibus' and (TEST_INSERT or not (DRY or os.environ.get('STREAM_TEST_WAV') or os.environ.get('STREAM_TEST_RAW'))):
             try:
                 self.input_token = input_call('begin')
             except (subprocess.SubprocessError, OSError):
                 notify('Select a normal text field with the Dictation input method')
                 return
         self.active = True
+        self.error = None
+        self.cancelled = False
+        self.typer.failed = False
         self.stop_evt.clear()
+        status('listening')
         if not (os.environ.get("STREAM_TEST_WAV") or os.environ.get("STREAM_TEST_RAW")):
             tone(880, 90)
-            notify("Listening…")
+            notify("Listening… Release F5 to finish; Escape cancels.", persistent=True)
         self.worker = threading.Thread(target=self.run, daemon=True)
         self.worker.start()
 
     def stop(self):
         if self.active:
             self.stop_evt.set()
+            status('finishing')
 
     def cancel(self):
+        self.cancelled = True
         self.stop()
         if OUTPUT == 'ibus':
             try:
@@ -211,6 +254,8 @@ class Dictation:
         else:
             log("could not open the microphone")
             self.active = False
+            status('error')
+            notify('Could not open the microphone')
             return
         pending = first
         typed = ""
@@ -221,7 +266,16 @@ class Dictation:
                 buf = pending
                 peak = sq = 0.0; n = 0
                 stopped_at = None
+                next_guard = 0
                 while True:
+                    now = time.monotonic()
+                    if OUTPUT == 'ibus' and now >= next_guard:
+                        next_guard = now + 1
+                        if resource_reasons(self.policy):
+                            self.error = 'ResourceGuard'
+                            self.stop_evt.set()
+                    if self.error or self.cancelled:
+                        break
                     if self.stop_evt.is_set() and stopped_at is None:
                         stopped_at = time.time()
                     if stopped_at and time.time() - stopped_at > 0.15:
@@ -237,13 +291,16 @@ class Dictation:
                         sq += float((pcm ** 2).sum()); n += len(pcm)
                         buf = buf[CHUNK * 2:]
                         up = st.feed(pcm)
-                        if up.committed_changed:
+                        if up.committed_changed and not self.error and not self.cancelled:
                             c = st.text().committed
                             if c.startswith(typed) and len(c) > len(typed):
                                 self.typer.submit(c[len(typed):], self.input_token)
                                 typed = c
-                st.finalize()
-                final = st.text().display
+                if self.error or self.cancelled:
+                    final = typed
+                else:
+                    st.finalize()
+                    final = st.text().display
                 if final.startswith(typed):
                     rest = final[len(typed):]
                 else:
@@ -256,7 +313,7 @@ class Dictation:
                     f"floor {floor:.4f} spread {spread:.1f} dB active {active}")
                 if os.environ.get("STREAM_FORCE_FALLBACK"):
                     final = ""  # test hook: pretend streaming recognized nothing
-                if not final.strip() and len(kept) > 16000 * 2 and spread >= SPEECH_SPREAD_DB and active >= 3:
+                if not self.error and not self.cancelled and not final.strip() and len(kept) > 16000 * 2 and spread >= SPEECH_SPREAD_DB and active >= 3:
                     # streaming heard nothing but there was sound: let Whisper have one offline pass
                     redo = whisper_fallback(bytes(kept))
                     if redo and not DRY:
@@ -271,6 +328,7 @@ class Dictation:
                     with wave.open(os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "dictation-last.wav"), "wb") as w:
                         w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(bytes(kept))
         except Exception as e:  # keep the daemon alive
+            self.error = type(e).__name__
             log("stream error:", repr(e))
         finally:
             cap.terminate()
@@ -281,13 +339,36 @@ class Dictation:
             if not (test or raw):
                 tone(440, 120)
             self.active = False
+            status('error' if self.error else 'ready')
+            if not (test or raw):
+                notify('Dictation cancelled' if self.cancelled else ('Dictation stopped to preserve cooling or desktop memory' if self.error == 'ResourceGuard' else ('Dictation finished' if not self.error else 'Dictation could not finish')))
 
 
 def main():
+    status('loading')
+    if OUTPUT == 'ibus':
+        while resource_reasons(load_policy(), 1024 ** 3):
+            status('waiting')
+            time.sleep(5)
     d = Dictation()
+    if TEST_INSERT:
+        d.start()
+        if d.worker is None:
+            raise SystemExit('File-to-input session refused')
+        d.worker.join(timeout=60)
+        if d.worker.is_alive():
+            d.cancel()
+            raise SystemExit('File-to-input session timed out')
+        deadline = time.monotonic() + 10
+        while d.typer.q.unfinished_tasks and time.monotonic() < deadline:
+            time.sleep(.02)
+        if d.error or d.typer.failed or d.typer.q.unfinished_tasks:
+            raise SystemExit('File-to-input session failed')
+        return
     dev = keyboard_device()
     log("ready, keyboard", dev, "model", os.path.basename(MODEL))
-    signal.signal(signal.SIGTERM, lambda *a: os._exit(0))
+    status('ready')
+    signal.signal(signal.SIGTERM, lambda *a: (status('stopped'), os._exit(0)))
     # `systemctl --user kill --kill-whom=main -s USR1 mseries-stream-dictate` toggles recording (self-test
     # without the key). Without --kill-whom=main systemd also signals the ffmpeg capture child, which dies.
     signal.signal(signal.SIGUSR1, lambda *a: d.stop() if d.active else d.start())
