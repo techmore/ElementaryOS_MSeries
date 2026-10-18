@@ -72,6 +72,13 @@ class CacheTest(Sandbox):
         self.assertFalse(cache.in_backoff(bad, 1061))
         self.assertFalse(cache.is_fresh(bad, 100, 1010), "a failing entry is never fresh")
 
+    def test_status_reports_age_and_failures(self):
+        cache.store("claude-list", {"entry": cache.failed(cache.succeeded({"v": 1}, 1000), 1100)})
+        cache.store("codex-usage", {"a@x.com|1": cache.succeeded({"v": 1}, 1000)})
+        lines = cache.status_lines(now=1130)
+        self.assertIn("claude-list: 130s old, 1 failures, retry in 30s", lines)
+        self.assertIn("codex-usage a@x.com: 130s old", lines)
+
     def test_lock_is_exclusive(self):
         target = self.root / "state" / "thing"
         with cache.locked(target):
@@ -143,6 +150,14 @@ class AccountsPollingTest(Sandbox):
         with mock.patch.object(self.mod, "usage_for", side_effect=slow):
             self.mod.usage_report("codexbar", now=1000)
         self.assertEqual(len(seen), 2)
+
+    def test_forget_usage_drops_only_that_account(self):
+        with mock.patch.object(self.mod, "usage_for", return_value=self.good):
+            self.mod.usage_report("codexbar", now=1000)
+        ids = set(cache.load("codex-usage"))
+        self.assertEqual(len(ids), 2)
+        self.mod.forget_usage(sorted(ids)[0])
+        self.assertEqual(set(cache.load("codex-usage")), {sorted(ids)[1]})
 
     def test_credential_store_is_private(self):
         self.assertEqual(stat.S_IMODE(self.mod.store_dir().stat().st_mode), 0o700)

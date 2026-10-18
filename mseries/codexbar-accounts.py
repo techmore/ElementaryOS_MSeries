@@ -281,6 +281,12 @@ def usage_report(cli: str, force: bool = False, now: float | None = None) -> lis
     return [identities[a["id"]] | details[a["id"]] for a in accounts]
 
 
+def forget_usage(account_id: str) -> None:
+    cache = codexbar_cache.load("codex-usage")
+    if cache.pop(account_id, None) is not None:
+        codexbar_cache.store("codex-usage", cache)
+
+
 def cached_details(entry: dict[str, Any] | None) -> dict[str, Any]:
     """What the panel shows for a cached answer: the last good quota, flagged stale when the latest try failed."""
     entry = entry or {}
@@ -304,8 +310,7 @@ def login(cli: str | None) -> tuple[bool, str]:
     if not cli:
         return False, "Codex was not found. Install or open the Codex app, then try again."
     save_current()
-    root = store_dir().parent
-    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    root = codexbar_cache.private_dir(store_dir().parent)
     previous_handler = signal.getsignal(signal.SIGTERM)
     def cancelled(*unused):
         raise InterruptedError()
@@ -333,12 +338,17 @@ def login(cli: str | None) -> tuple[bool, str]:
             ident = identity(auth) if auth else None
             if not auth or not ident:
                 return False, "No ChatGPT account was returned. Sign in with ChatGPT and try again."
-            write_private(store_dir() / slug(ident["id"]) / "auth.json", auth)
+            with state_lock():  # shares the lock with Switch so a sign-in can't land mid-switch
+                codexbar_cache.private_dir(store_dir())
+                write_private(store_dir() / slug(ident["id"]) / "auth.json", auth)
+            forget_usage(ident["id"])  # a re-added account must not wait out an old failure's backoff
             return True, f"Added {ident['email']}. Your current Codex account is unchanged; choose Switch when you're ready."
     except InterruptedError:
         return False, "Sign-in cancelled. Your current account is unchanged."
     except subprocess.TimeoutExpired:
         return False, "Sign-in timed out. Your current account is unchanged; try again."
+    except TimeoutError:
+        return False, "Another CodexBar action is changing the Codex sign-in. Try again in a moment."
     except OSError:
         return False, "Codex sign-in could not start. Open the Codex app, then try again."
     finally:

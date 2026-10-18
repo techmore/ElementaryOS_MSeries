@@ -43,6 +43,24 @@ ones.** Upgrade by re-pinning, re-installing upstream, and re-verifying each ite
 
 Quota and account cards, like the top-panel readout, always order Codex first, Claude second, OpenCode Go third.
 
+## Polling and cache
+
+Who polls what, so a new feature does not quietly add requests:
+
+| Source | Runs | Limit |
+|---|---|---|
+| `codexbar-linux --snapshot` (local IPC, upstream owns provider fetching) | panel timer | 5 s while the popover is open or a refresh runs, 30 s otherwise |
+| `codexbar-accounts.py usage` (saved Codex accounts; the active one comes from the snapshot) | popover open | cached 15 min per account, parallel, `--force` from the Refresh button |
+| `codexbar-claude.py list` | popover open | cached 2 min, cleared by any other Claude command |
+| `codexbar-sessions.py`, `codexbar-opencode-local.py` | popover open | local reads; transcripts are re-parsed only when their size or mtime changed |
+| Everything above with the popover closed | background tick | every 15 min |
+
+`codexbar_cache.py` owns the on-disk cache (`~/.cache/codexbar-mseries`, `0700`/`0600`), the failure backoff (60 s doubling
+to 1 h, last good answer kept and flagged `stale`) and the `flock` helper. `python3 ~/.local/lib/codexbar-cli/codexbar_cache.py status`
+prints how old each cached answer is and what is failing. Credential writes (Switch, Save, Add) share one lock in
+`codexbar-accounts.py`; never run the Codex CLI against the live `~/.codex` from a poller, because a token refresh can
+rewrite `auth.json` while a switch is replacing it.
+
 ## Native Claude app accounts
 
 Use **Switch → Set up app** once for a saved CLI account that says **app sign-in needed**. This restarts
