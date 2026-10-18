@@ -62,3 +62,18 @@ foreach provider : ['claude', 'opencode']
     rename: 'mseries-codexbar-@0@-symbolic.svg'.format(provider),
   )
 endforeach
+
+settings_model_test = executable(
+  'test-settings-model',
+  'settings/SettingsModel.vala',
+  'settings/test-settings-model.vala',
+  dependencies: json_dep,
+)
+test('settings-model', settings_model_test)
+
+executable(
+  'codexbar-settings',
+  'settings/SettingsModel.vala',
+  'settings/SettingsApp.vala',
+  dependencies: [granite_dep, json_dep],
+)
