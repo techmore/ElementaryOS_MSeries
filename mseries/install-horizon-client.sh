@@ -51,14 +51,14 @@ cat >"$dest/run.sh" <<RUN
 #!/bin/bash
 # Runs inside the FEX x64 rootfs.
 export LD_LIBRARY_PATH=$dest/usr/lib:$dest/usr/lib/omnissa:$dest/extra/usr/lib/x86_64-linux-gnu
-shift  # drop the -- that keeps FEXBash from reading client flags such as --help
 exec $dest/usr/lib/omnissa/horizon/bin/horizon-client "\$@"
 RUN
 chmod +x "$dest/run.sh"
 cat >"$bin" <<WRAP
 #!/usr/bin/env bash
 # x64 Horizon Client under FEX in a 4 KB-page microVM (see mseries/HORIZON-CLIENT.md).
-exec muvm -- FEXBash $dest/run.sh -- "\$@"
+# One quoted string: muvm would otherwise read client flags such as --help itself.
+exec muvm -- FEXBash -c "$dest/run.sh \$(printf '%q ' "\$@")"
 WRAP
 chmod +x "$bin"
 cat >"$entry" <<DESK
