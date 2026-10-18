@@ -1,5 +1,125 @@
 # OS 9 implementation / Claude Code handoff
 
+## Orchard real Wayland qualification and cleanup protection — 2026-10-18
+
+- Verified the installed Python/GTK4 foreground app on real `GdkWaylandDisplay`/`GdkWaylandToplevel`, Vulkan and the elementary blueberry stylesheet at 120 Hz. This was not Xvfb or forced Cairo. Final run: 11 live workflow groups passed, including stale-inventory duplicate-name preservation, container/VM creation, agent-backed VM Run, lifecycle/pause/resume, snapshots/restore, clone/rename/delete, real Terminal login, native elementary backup Save portal/archive validation, file listing and CLI transfer round trip, mounted-folder reads, TCP proxy, bounded Unicode output, and cancellation cleanup. All audit fixtures were swept; original guests were preserved.
+- Fixed a serious creation cleanup issue: names alone no longer authorize cleanup. Each launch carries `user.orchard.creation-token`; failed/cancelled cleanup verifies it before touching operations/instances, starts after client exit and uses bounded CLI requests. Missing/malformed ownership data fails closed. Duplicate names are rejected before launch and in the form. The live negative case confirmed an existing disposable guest survives a failed same-name request.
+- Also fixed idempotent bulk settings and per-instance metadata serialization (self-induced ETag races), duplicate clicks, stale rename/filtered selection, explicit VM Secure Boot choice, agent guidance/Console launcher, a scrolling creation form, full-name tooltip and the Devices page's nested-scroll collapse.
+- Final metrics (810 completed presentation records / 811 frames, eight seconds; 18 actions): frame-start→presentation median 21.923 ms / p95 29.630 / max 38.619; action→presentation median 26.257 / p95 33.620 / max 38.442; presented spacing p95 17.124 ms. Simple GTK control median 20.606 / p95 24.472 ms in a separate run. These are compositor feedback, not physical input-to-photon or a zero-jank guarantee; early action measurements used a different attribution rule and are not an improvement baseline.
+- Checks: 103 tests, 97 pass / six opt-in live tests skipped, with fatal GTK criticals enabled for the GUI checks; final live run had one expected duplicate-name error and no unexpected errors/GTK warnings. Source/install parity passed. Installed with `sh mseries/orchard-incus/install.sh`; reopen Orchard to load it.
+- Reproduction/evidence: `tools/qualify-wayland.py`, `tools/wayland-save-portal.py`, `tools/wayland-frame-control.py`, `audit/2026-10-18-wayland.json`, `docs/orchard-incus.html`. Driver waits for mapped/painted dialogs, guards fixture names/resources and records source hashes. An early pre-map driver response crashed GTK Wayland; invalid early attempts, foreground text interference and too-short agent waits are documented separately from the final passing run.
+- Remaining qualification: physical input/focus traversal, interactive upload/download chooser selection and Console input, long-duration RSS/thermal soak, very large real fleets, other themes/scales, and the separate Vala manager/panel. No kernel, bootloader, display or audio configuration was changed.
+
+
+## Orchard native developer UX and performance audit — 2026-10-18
+
+- Enhanced the installed Python/GTK4 app in `mseries/orchard-incus/`: sidebar name/image/status/IP search and no-match state; native keyboard-accessible dashboard buttons; shortcut help/menu and view shortcuts; 780px header and scrolling Devices form; refresh indicator and safer loading/settings ownership.
+- Bounded/coalesced work: latest-result-only tab/resource/catalog reads, 20s JSON reads, timer/theme/monitor cleanup, event follow-up debounce, chunked UTF-8 command output (64K-character pending mailbox/256K-character text tail), dashboard construction in 16-card batches, viewport-only chart updates, unchanged-presentation caching, linear history pruning. Busy operations no longer start twice or change another selected instance's detail.
+- Verified: 86 Python tests (80 pass, six live tests skipped), including real local noisy subprocess and fatal GTK critical checks; Vala manager + Wingpanel compiled and all five Meson suites passed under Xvfb. Live read-only preflight/list passed, two existing instances preserved.
+- Synthetic full-history 500-instance median UI-thread updates: Instances 55.57→4.72 ms, Dashboard 26.18→5.91 ms in one sequential run. Initial list update 93.93 ms excludes deferred dashboard construction. These are not real Wayland frame-latency or long-duration memory results.
+- Evidence/method: `mseries/orchard-incus/audit/2026-10-18.json`, `tools/audit-ui.py`, and `docs/orchard-incus.html`. Remaining: virtualized rows for very large fleets, real Wayland/manual workflow qualification, and choosing/removing duplicate manager launchers. Vala UI/performance was not modified.
+- Install: `sh mseries/orchard-incus/install.sh` preserves one previous package. Source/install parity checked after deployment. Reopen Orchard to load new Python code; no owner's running window, container, kernel, display or audio configuration was restarted.
+
+
+## Orchard for Incus narrow-window fixes — 2026-10-17
+
+Found at 760 px: the window was forced to ~850 px, and the instance action row
+(with the More menu holding Clone/Rename/Delete) was clipped off-screen.
+Fixes in `mseries/orchard-incus/`: action row is a wrapping FlowBox (hidden
+buttons leave no gap, FlowBox children are not extra tab stops); stat tiles use
+`ui.TileRow` and wrap 2+2 when narrow; filter box shortened; instance sidebar
+240 px (was 290); detail margins 20 px; declared minimum window is now 780x480
+(was 760x480, which the content could not honour). Screenshots checked at
+780x480 and 1180x740, no clipping; wide layout unchanged.
+- Tests: 71 run, 6 live skipped, all pass; `tests/test_layout.py` (2, need a
+  display; run under xvfb-run) guards tile wrapping and action-row shrink.
+- Installed with `./install.sh`. Not verified: elementary stylesheet/Wayland,
+  the other tabs (Snapshots/Run/Files/Devices/Settings) and dialogs at narrow
+  width, More-menu popover contents, keyboard focus order. Sidebar IPs truncate
+  at 240 px.
+## Orchard for Incus charts — 2026-10-17
+
+`mseries/orchard-incus/`: charts now say what they show. Large charts (Dashboard
+totals, instance Overview) draw the scale top-left and the covered time span
+("last 4.5 min") top-right, and show "Collecting data…" until 3 samples exist.
+CPU charts auto-scale with a 10% floor instead of a fixed 100% (idle looks idle,
+busy multi-core is no longer clipped); the scale label keeps that honest.
+Small sidebar/dashboard sparklines stay unlabelled. Logic in
+`backend.chart_top/chart_ready/span_text`.
+- Tests: 69 run, 6 live skipped, all pass (7 new). Checked headlessly: live
+  shoot.py pages (collecting state) and a synthetic full-history render, dark.
+- Installed with `./install.sh`. Not verified: light theme with full history,
+  real Wayland/elementary stylesheet, narrow 760 px.
+## Orchard for Incus UI/UX pass — 2026-10-17
+
+Reviewed every page from headless screenshots (`mseries/orchard-incus/tools/shoot.py`
+under Xvfb with the cairo renderer, a throwaway XDG_STATE_HOME and no D-Bus
+session; read-only against the live Incus; nothing shown on the real display).
+Changes, all in `mseries/orchard-incus/`:
+- Instance actions are contextual (`backend.visible_actions`): running shows
+  Stop/Restart/Pause/Shell/Snapshot, stopped shows Start/Snapshot. Delete moved
+  out of the primary row into the More menu ("Delete…", red, still confirms).
+- Images: Container/VM badge per row (identical-title rows are now
+  distinguishable), alias shown, Delete is a quiet icon button with tooltip and
+  accessible name.
+- Storage: usage gauge (LevelBar, warns at 85%/95%) with percentage, from
+  `backend.parse_space`.
+- Filter box only shows on the Instances page; Ctrl+F jumps there first.
+- Tests: 62 run, 6 live skipped, all pass (11 new). Screenshots checked in light
+  1180x740 and dark 900x600. Installed with `./install.sh` (backup in `.prev`).
+- Not verified: real-display rendering with the elementary stylesheet and
+  Wayland (screenshots use the default GTK theme under X11); clicking through
+  actions (nothing was started, stopped or deleted); narrow 760 px layout; the
+  More-menu popover; keyboard focus order. Dashboard/chart axis labels and the
+  empty-history look of the charts are still open.
+## Orchard for Incus (Python) audit and fixes — 2026-10-17
+
+Audit of `mseries/orchard-incus/` (installed copy was identical to source):
+- Fixed: every `incus` call defaulted to a 600 s timeout, so a hung daemon
+  stacked a new `incus list` thread every 3 s and never tripped the
+  two-failure check. Now `backend.IncusTimeout` (a RuntimeError), a 20 s
+  `POLL_TIMEOUT` for the list refresh, and an in-flight guard in `refresh()`.
+- Fixed: any unrecognised Incus error was shown as "Incus isn't running" and
+  the real message dropped. Socket/connect errors keep that wording; others now
+  show "Incus reported an error" with the message.
+- Fixed: `install.sh` deleted the old code before copying. It now stages,
+  keeps one backup as `~/.local/share/orchard-incus/orchard_incus.prev`, then
+  swaps; a stale `.new` dir from a crashed run is cleaned.
+- Tests: `cd mseries/orchard-incus && python3 -m unittest discover -s tests`
+  = 51 run, 6 live skipped, all pass (9 new: timeouts, preflight wording,
+  install idempotence/backup/uninstall in a temp HOME).
+- Live read-only check: `preflight()` None in 0.01 s, `list` 2 instances 0.01 s.
+- Installed with `./install.sh` (backup in `orchard_incus.prev`).
+- Not verified: the GTK window itself (refresh guard and problem page were
+  compile-checked only, not exercised; app was not running, nothing relaunched);
+  the 6 live tests; the Vala app build. Not changed: the monitor thread
+  flaps `monitor_ok` every ~5 s when the daemon is down.
+- Noted, not touched: stale `com.github.techmore.orchard-incus` launcher,
+  desktop file and `liborchard-incus.so` (Vala app) coexist with the Python
+  app's `io.github.techmore.OrchardIncus.desktop`: two menu entries.
+- Next: pick the canonical implementation; build/test the Vala app.
+
+## Orchard for Incus upstreamed into this repo — 2026-10-17
+
+Both Orchard for Incus implementations now live in `ElementaryOS_MSeries`
+(previously only on the `claude/airplay-destinations` branch and in the
+separate `techmore/orchard-incus` repo):
+
+- `mseries/orchard-incus/` — Python/GTK 4 app (installed to
+  `~/.local/share/orchard-incus`, launcher `~/.local/bin/orchard-incus`),
+  imported from `claude/airplay-destinations` @ 0eeefa7. Tests:
+  `cd mseries/orchard-incus && python3 -m unittest discover -s tests`
+  (42 run, 6 live tests skipped).
+- `mseries/orchard-incus-native/` — Vala/Granite app + Wingpanel indicator,
+  imported from `techmore/orchard-incus` `codex/wingpanel-indicator` @ 3913611
+  (no build output; MIT LICENSE and NOTICE.md with Orchard attribution kept).
+  Not rebuilt or re-tested during the import.
+- Installed copy of the Python app was byte-identical to the source (diff clean).
+- Not done: audit/fix pass (error states, install idempotence), Vala build
+  and tests, deciding which implementation is canonical.
+- Next: choose canonical implementation, then audit failure states
+  (incus missing/permission denied/daemon down) with tests first.
+
 ## YouTube launcher logo — 2026-10-18
 
 The contained hardware-decode Brave launcher now uses `Icon=mseries-youtube`

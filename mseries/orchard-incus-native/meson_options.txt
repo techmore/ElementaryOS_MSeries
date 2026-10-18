@@ -1,0 +1,1 @@
+option('wingpanel', type: 'feature', value: 'auto', description: 'Build the persistent Pantheon panel indicator')
