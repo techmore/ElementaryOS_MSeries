@@ -51,6 +51,23 @@ class TrialCaptureTests(unittest.TestCase):
                 trial.capture(self.config)
         collect.assert_not_called()
 
+    def test_failed_kernel_health_retains_evidence_and_skips_gpu_smoke(self):
+        original_read = Path.read_text
+        def read_text(path, *args, **kwargs):
+            return '600 900' if str(path) == '/proc/uptime' else original_read(path, *args, **kwargs)
+        with patch.object(trial.q, 'read', side_effect=self.read), patch.object(trial.q, 'live_kernel_identity', return_value={'kernel_image_matches_live_build_id': True}), patch.object(trial.q, 'read_active', return_value={'available': True}), patch.object(trial, 'cpu', return_value=[0] * 8), patch.object(trial, 'inventory', return_value={}), patch.object(Path, 'read_text', read_text), patch.object(trial.subprocess, 'run') as run:
+            def failed_record(*args):
+                record = {'checks': {'kernel_severe_log': {'result': 'fail'}}}
+                (self.output / 'test-kernel/boot-fixture/hardware.json').write_text(json.dumps(record))
+                return record
+            with patch.object(trial.q, 'collect', side_effect=failed_record):
+                with self.assertRaisesRegex(ValueError, 'skipped GPU'):
+                    trial.capture(self.config)
+        self.assertEqual(run.call_count, 1)  # journal read only; no active smoke subprocess
+        self.assertEqual(run.call_args.args[0][0], 'journalctl')
+        self.assertTrue((self.output / 'test-kernel/boot-fixture/hardware.json').exists())
+        self.assertFalse((self.output / 'test-kernel/boot-fixture/complete.json').exists())
+
     def test_timer_cannot_duplicate_a_completed_boot_capture(self):
         output = self.output / 'test-kernel/boot-fixture'; output.mkdir(parents=True)
         (output / 'complete.json').write_text('original completed receipt')

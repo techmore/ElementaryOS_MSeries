@@ -83,6 +83,8 @@ def capture(config_path):
             if receipt_path.exists():
                 raise ValueError('incomplete prior capture exists; retain it and use a new manual run directory')
             record = q.collect(Path('/'), receipt_path, image, boot_image, journal, config.get('duration_s', 120), 1)
+            if any(check['result'] == 'fail' for check in record['checks'].values()):
+                raise ValueError('kernel health check failed; retained evidence and skipped GPU/filesystem smoke')
             after = cpu()
             total = sum(b - a for a, b in zip(before, after))
             idle = (after[3] - before[3]) + (after[4] - before[4])

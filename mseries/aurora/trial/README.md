@@ -42,7 +42,8 @@ inventory, and runs the surfaceless GPU readback + 1 MiB fsync smoke tests.
 
 An unsupported kernel, changed image/module/boot hashes, or mismatched live GNU
 build ID is refused. Results never manufacture suspend, recovery, feature or
-energy A/B acceptance. No display/audio/power policy or experimental sleep
+energy A/B acceptance. A failed kernel-health check retains its receipt and
+skips the active GPU/filesystem smoke subprocess. No display/audio/power policy or experimental sleep
 parameter is changed; no Touch ID sensor is opened. The timer does not reboot,
 suspend, rearm the candidate, or promote a release.
 

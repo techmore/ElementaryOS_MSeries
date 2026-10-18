@@ -15,7 +15,7 @@ Exact root-private rollback directory: `/var/lib/mseries-kernel-tests/staging/20
 `prepare-trial-initrd.py` preserves the known-working Arch unlock userspace and
 10,240-byte early CPIO; replaces only modules/modlist with 93 candidate modules,
 resolved dependency closure and regenerated depmod indexes. Vermagic, CPIO
-preservation, both GRUB syntax checks and 55 offline regressions pass.
+preservation, both GRUB syntax checks and 56 offline regressions pass.
 
 Root-owned capture snapshot/config installed under `/usr/local/lib/mseries-kernel-trial/`
 and `/etc/mseries-kernel-trial.json`; user `mseries-kernel-trial.timer` enabled.
@@ -29,6 +29,7 @@ uncontrolled desktop observation, not idle, A/B or a saving.
 [Trial guide](aurora/trial/README.md): next login/boot auto capture requires the
 exact pinned image/DTB/modules/boot payload and matching live GNU build ID,
 waits for >=5 min uptime/display context, then records 120 s + smoke checks.
+A failed kernel-health check retains evidence and skips active smoke tests.
 One run per boot; no reboot/suspend/sensor probe/display/audio/power-policy or
 sleep-parameter changes. Candidate hardware boot remains pending. Next: reboot
 normally when ready, verify unlock/desktop and automatic receipts; then manual
