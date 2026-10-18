@@ -1,5 +1,12 @@
 # OS 9 implementation / Claude Code handoff
 
+## Battery pass 4 — 2026-10-18 (Claude Code)
+
+Battery: accessory batteries logged (new `devices` table) with an Accessories page and `mseries-battery devices`;
+measured logger overhead (~0.3 % of a core, 18 MB). 18 unit tests pass. The MX Vertical mouse exposes only a level
+(`capacity_level`), so there is no percentage or days-left for it. **Unverified:** Accessories page on live data
+beyond one level reading; panel-icon link still not started (would patch panel-power and restart Wingpanel).
+
 ## Battery pass 3 — 2026-10-18 (Claude Code)
 
 Battery: per-sample power profile (schema migrates in place), profile comparison at matching CPU load, data-backed

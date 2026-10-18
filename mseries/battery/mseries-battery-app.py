@@ -323,6 +323,7 @@ class BatteryWindow(Gtk.ApplicationWindow):
              ("history", "History", "view-statistics-symbolic"),
              ("sessions", "Sessions", "document-open-recent-symbolic"),
              ("apps", "Energy by app", "applications-system-symbolic"),
+             ("devices", "Accessories", "input-mouse-symbolic"),
              ("health", "Health", "emblem-default-symbolic"),
              ("events", "Power events", "dialog-information-symbolic"))
 
@@ -393,6 +394,7 @@ class BatteryWindow(Gtk.ApplicationWindow):
         self.build_history(conn, now)
         self.build_sessions(rows)
         self.build_apps(rows)
+        self.build_devices(conn, now)
         self.build_health(conn, rows, now)
         self.build_events(conn, now)
         return True
@@ -671,6 +673,34 @@ class BatteryWindow(Gtk.ApplicationWindow):
                 line.append(cell)
             listing.append(line)
         page.append(section("Where the energy went", listing))
+
+    def build_devices(self, conn, now):
+        page = self.pages["devices"]
+        devices = core.device_summary(conn)
+        if not devices:
+            page.append(empty("No accessories seen", "Bluetooth mice and keyboards that report a battery appear here.", "input-mouse-symbolic"))
+            return
+        listing = boxed_list()
+        for dev in devices:
+            line = Gtk.Box(spacing=14)
+            line.set_margin_top(12)
+            line.set_margin_bottom(12)
+            line.set_margin_start(14)
+            line.set_margin_end(14)
+            low = (dev["level"] or "").lower() in ("low", "critical")
+            line.append(Gtk.Image(icon_name="battery-level-20-symbolic" if low else "battery-level-80-symbolic", pixel_size=24))
+            text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, hexpand=True)
+            text.append(label(dev["name"], "row-title"))
+            text.append(label("%s since %s" % (dev["level"] or dev["status"] or "—", time.strftime("%a %d %b, %H:%M", time.localtime(dev["since"]))), "dim"))
+            line.append(text)
+            right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, halign=Gtk.Align.END)
+            right.append(label("%.0f%%" % dev["pct"] if dev["pct"] is not None else (dev["level"] or "—"), "stat-value" if dev["pct"] is not None else "numeric", xalign=1.0))
+            if dev["days_left"] is not None:
+                right.append(label("about %.0f days left" % dev["days_left"], "dim", "caption", xalign=1.0))
+            line.append(right)
+            listing.append(line)
+        page.append(section("Accessories", listing))
+        page.append(label("Some devices report only a level (Normal, Low, Critical) instead of a percentage; those show how long they have been at the current level.", "dim", "caption", wrap=True))
 
     def build_health(self, conn, rows, now):
         page = self.pages["health"]

@@ -32,6 +32,9 @@ CREATE TABLE IF NOT EXISTS samples (
 CREATE TABLE IF NOT EXISTS events (
     ts INTEGER, kind TEXT, delta_w REAL, before_w REAL, after_w REAL, cpu_pct REAL, culprit TEXT, detail TEXT);
 CREATE INDEX IF NOT EXISTS events_ts ON events(ts);
+CREATE TABLE IF NOT EXISTS devices (
+    ts INTEGER, name TEXT, level TEXT, pct REAL, status TEXT);
+CREATE INDEX IF NOT EXISTS devices_ts ON devices(ts);
 CREATE TABLE IF NOT EXISTS daily (
     day TEXT PRIMARY KEY, full_uwh INTEGER, design_uwh INTEGER, cycles INTEGER, limit_pct INTEGER);
 """
@@ -59,6 +62,55 @@ def find_battery():
         if rd(node + "/type") == "Battery" and rd(node + "/scope", "System") != "Device":
             return node
     return None
+
+
+def read_devices(root="/sys/class/power_supply"):
+    """Accessory batteries (mouse, keyboard, ...): scope=Device. Many report only a level, not a percentage."""
+    found = []
+    for node in sorted(glob.glob(root + "/*")):
+        if rd(node + "/type") == "Battery" and rd(node + "/scope") == "Device":
+            found.append({"name": rd(node + "/model_name") or os.path.basename(node),
+                          "level": rd(node + "/capacity_level"), "pct": rd_num(node + "/capacity"),
+                          "status": rd(node + "/status")})
+    return found
+
+
+def log_devices(conn, now, last):
+    """Store an accessory reading only when it changed (or hourly), so the table stays tiny. Returns the new state."""
+    for dev in read_devices():
+        key = (dev["level"], dev["pct"], dev["status"])
+        before = last.get(dev["name"])
+        if before is None or before[0] != key or now - before[1] >= 3600:
+            conn.execute("INSERT INTO devices VALUES (?,?,?,?,?)", (now, dev["name"], dev["level"], dev["pct"], dev["status"]))
+            last[dev["name"]] = (key, now)
+    return last
+
+
+def device_summary(conn):
+    """Latest reading and the time of the last level change per accessory."""
+    out = []
+    try:
+        names = [r[0] for r in conn.execute("SELECT DISTINCT name FROM devices")]
+        for name in names:
+            rows = [dict(r) for r in conn.execute("SELECT * FROM devices WHERE name=? ORDER BY ts", (name,))]
+            latest = rows[-1]
+            since = latest["ts"]
+            for older in reversed(rows[:-1]):
+                if older["level"] != latest["level"] or older["status"] != latest["status"]:
+                    break
+                since = older["ts"]
+            # percentage devices: days left from the slope of the last week, when it is falling
+            days_left = None
+            pts = [(r["ts"], r["pct"]) for r in rows if r["pct"] is not None and r["ts"] >= latest["ts"] - 7 * 86400]
+            if len(pts) >= 3 and pts[0][1] > pts[-1][1] and pts[-1][0] > pts[0][0]:
+                rate = (pts[0][1] - pts[-1][1]) / ((pts[-1][0] - pts[0][0]) / 86400)
+                days_left = round(pts[-1][1] / rate, 1) if rate > 0 else None
+            out.append({"name": name, "level": latest["level"], "pct": latest["pct"], "status": latest["status"],
+                        "since": since, "seen": latest["ts"], "days_left": days_left,
+                        "changes": [r for r in rows if r["ts"] >= rows[0]["ts"]][-8:]})
+    except sqlite3.OperationalError:
+        pass
+    return out
 
 
 def find_system_power():

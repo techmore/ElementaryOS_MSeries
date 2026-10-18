@@ -43,6 +43,8 @@ def main(argv):
     detector = core.EventDetector()
     alert = core.DrainAlert(core.load_config())
     last_day = None
+    devices = {}
+    last_devices = 0
     stop = []
     for sig in (signal.SIGTERM, signal.SIGINT):
         signal.signal(sig, lambda *_: stop.append(1))
@@ -60,6 +62,9 @@ def main(argv):
             if day != last_day:
                 core.snapshot_daily(conn, day)
                 last_day = day
+            if row["ts"] - last_devices >= 300:
+                core.log_devices(conn, row["ts"], devices)
+                last_devices = row["ts"]
             conn.commit()
             alert.config = core.load_config()     # picks up Preferences changes without a restart
             fired = alert.feed(row)
