@@ -54,7 +54,7 @@ index 383cf96..060d771 100644
  src/Services/TimeManager.vala
 +src/Widgets/TaskRow.vala
 diff --git a/src/Indicator.vala b/src/Indicator.vala
-index 7b6ec63..89439ed 100644
+index 7b6ec63..5ad4084 100644
 --- a/src/Indicator.vala
 +++ b/src/Indicator.vala
 @@ -25,5 +25,14 @@ public class DateTime.Indicator : Wingpanel.Indicator {
@@ -83,7 +83,7 @@ index 7b6ec63..89439ed 100644
 +                name = "agenda-events",
                  selection_mode = Gtk.SelectionMode.NONE
              };
-@@ -82,8 +93,90 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -82,8 +93,92 @@ public class DateTime.Indicator : Wingpanel.Indicator {
              component_listbox.set_sort_func (sort_function);
 
 -            var scrolled_window = new Gtk.ScrolledWindow () {
@@ -150,7 +150,9 @@ index 7b6ec63..89439ed 100644
 +            event_page.append (period_header);
 +            event_page.append (new Gtk.ScrolledWindow () {
 +                hscrollbar_policy = Gtk.PolicyType.NEVER, child = component_listbox,
-+                min_content_height = 260, max_content_height = 360,
++                min_content_width = 300, max_content_width = 340,
++                propagate_natural_width = true,
++                min_content_height = 220, max_content_height = 320,
 +                propagate_natural_height = true, vexpand = true
 +            });
 +            agenda_stack.add_titled (event_page, "events", _("Events"));
@@ -177,7 +179,7 @@ index 7b6ec63..89439ed 100644
 +            });
 
              var settings_button = new Wingpanel.PopoverMenuItem.with_text (_("Date & Time Settings…"));
-@@ -95,8 +188,9 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -95,8 +190,9 @@ public class DateTime.Indicator : Wingpanel.Indicator {
 
              main_grid = new Gtk.Grid () {
 -                margin_top = 12
@@ -189,20 +191,20 @@ index 7b6ec63..89439ed 100644
 +            main_grid.attach (accounts_button, 0, 4, 2, 1);
              main_grid.attach (sep, 0, 2, 2, 1);
              main_grid.attach (settings_button, 0, 3, 2, 1);
-@@ -104,5 +198,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -104,5 +200,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
              var size_group = new Gtk.SizeGroup (Gtk.SizeGroupMode.HORIZONTAL);
              size_group.add_widget (calendar);
 -            size_group.add_widget (component_listbox);
 +            size_group.add_widget (agenda);
 
              calendar.day_double_click.connect (() => {
-@@ -111,4 +205,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -111,4 +207,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
 
              calendar.selection_changed.connect ((date) => {
 +                agenda_date = date ?? Widgets.CalendarModel.get_default (ECal.ClientSourceType.EVENTS).month_start;
                  idle_update_components ();
              });
-@@ -138,4 +233,14 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -138,4 +235,14 @@ public class DateTime.Indicator : Wingpanel.Indicator {
              });
 
 +            task_listbox.row_activated.connect (() => {
@@ -217,7 +219,7 @@ index 7b6ec63..89439ed 100644
 +
              settings_button.clicked.connect (() => {
                  try {
-@@ -150,48 +255,41 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -150,48 +257,41 @@ public class DateTime.Indicator : Wingpanel.Indicator {
      }
 
 +    private void move_period (int direction) {
@@ -295,7 +297,7 @@ index 7b6ec63..89439ed 100644
 +        return GLib.strcmp (a.component.get_summary (), b.component.get_summary ());
      }
 
-@@ -208,43 +306,80 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -208,43 +308,80 @@ public class DateTime.Indicator : Wingpanel.Indicator {
      }
 
 -    private bool update_components () {
@@ -405,7 +407,7 @@ index 7b6ec63..89439ed 100644
 +                    if (displayed.add (key)) component_listbox.append (new ComponentRow (date, ical, source));
                  }
              }
-@@ -268,8 +403,24 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -268,8 +405,24 @@ public class DateTime.Indicator : Wingpanel.Indicator {
          tasks_model.components_removed.connect (update_components_model);
 
 +        var upcoming = Widgets.CalendarModel.get_upcoming ();
