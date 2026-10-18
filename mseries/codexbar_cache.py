@@ -109,3 +109,32 @@ def failed(previous: dict[str, Any] | None, now: float) -> dict[str, Any]:
     entry = dict(previous or {})
     entry.update(failures=failures, retryAt=now + backoff_seconds(failures))
     return entry
+
+
+def status_lines(now: float | None = None) -> list[str]:
+    """One line per cache file, for `python3 codexbar_cache.py status`: how old each answer is and what is failing."""
+    now = time.time() if now is None else now
+    lines = []
+    for path in sorted(cache_dir().glob("*.json")):
+        data = load(path.stem)
+        entries = data.get("entry") and [("", data["entry"])] or [
+            (key, value) for key, value in data.items() if isinstance(value, dict) and "fetchedAt" in value]
+        if not entries:
+            lines.append(f"{path.stem}: {path.stat().st_size} bytes")
+        for key, entry in entries:
+            fetched = entry.get("fetchedAt")
+            age = f"{int(now - fetched)}s old" if isinstance(fetched, (int, float)) else "never fetched"
+            retry = entry.get("retryAt")
+            wait = f", retry in {max(0, int(retry - now))}s" if entry.get("failures") and isinstance(retry, (int, float)) else ""
+            failing = f", {entry['failures']} failures" if entry.get("failures") else ""
+            lines.append(f"{path.stem}{' ' + key.split('|')[0] if key else ''}: {age}{failing}{wait}")
+    return lines
+
+
+if __name__ == "__main__":
+    import sys
+    if sys.argv[1:] == ["status"]:
+        print("\n".join(status_lines()) or "cache is empty")
+    else:
+        print("usage: codexbar_cache.py status", file=sys.stderr)
+        raise SystemExit(2)

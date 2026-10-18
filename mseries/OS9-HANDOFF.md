@@ -1,5 +1,15 @@
 # OS 9 implementation / Claude Code handoff
 
+## CodexBar audit pass — 2026-10-18
+
+- Fixed: Add-account (`codexbar-accounts.py login`) now writes under the same lock as Switch, uses a `0700` store and
+  clears that account's cached usage/backoff. Added `codexbar_cache.py status` to see cache age and failures.
+- Documented who polls what in `CODEXBAR-PORT.md` ("Polling and cache").
+- Cleaned up: deleted 15 merged local CodexBar/handoff branches and temp build dirs. Left alone: other agents' worktrees
+  and branches, and the shared checkout's unpushed commits (`claude/codexbar-reset-credits`).
+- Not done: moving CodexBar files into a subdirectory; open branches (`claude-app-switch`, the shared checkout) edit
+  these paths and would conflict.
+
 ## CodexBar polling limits and helper cache — 2026-10-18
 
 - The panel's helper refreshes (sessions, Claude, Codex accounts, OpenCode) now run only while the popover is open,
