@@ -1,41 +1,187 @@
 diff --git a/src/Widgets/PopoverWidget.vala b/src/Widgets/PopoverWidget.vala
-index 587c11b..7e72d6e 100644
+index 587c11b..755a6bb 100644
 --- a/src/Widgets/PopoverWidget.vala
 +++ b/src/Widgets/PopoverWidget.vala
-@@ -90,6 +90,11 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
-             text = _("Power Settings…")
-         };
+@@ -17,6 +17,157 @@
+  * Boston, MA 02110-1301, USA.
+  */
  
-+        var battery_history_button = new Wingpanel.PopoverMenuItem () {
-+            text = _("Battery History…")
-+        };
-+        var battery_app = new DesktopAppInfo ("org.mseries.Battery.desktop");
++/*
++ * Battery summary card: reads the one-line-per-field file the Battery logger keeps up to date
++ * (headline, detail, recent watts) and opens the Battery app when clicked. Hidden until the logger has data,
++ * in which case the stock device list stays.
++ */
++public class Power.Widgets.HistoryCard : Gtk.Button {
++    public bool has_data { get; private set; default = false; }
 +
-         orientation = VERTICAL;
-         append (show_percent_revealer);
-         append (device_list_revealer);
-@@ -107,6 +112,9 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
- 
-         if (is_in_session) {
-             append (last_separator_revealer);
-+            if (battery_app != null) {
-+                append (battery_history_button);
++    private Gtk.Label headline_label;
++    private Gtk.Label detail_label;
++    private Gtk.DrawingArea spark;
++    private double[] points = {};
++
++    construct {
++        add_css_class ("flat");
++        margin_bottom = 3;
++
++        headline_label = new Gtk.Label (null) {
++            halign = START,
++            xalign = 0
++        };
++        headline_label.add_css_class ("h3");
++
++        detail_label = new Gtk.Label (null) {
++            halign = START,
++            xalign = 0
++        };
++        detail_label.add_css_class ("dim-label");
++
++        var more = new Gtk.Label (_("Battery History…")) {
++            halign = END,
++            hexpand = true,
++            valign = END
++        };
++        more.add_css_class ("dim-label");
++
++        var top = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
++        var texts = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) {
++            hexpand = true
++        };
++        texts.append (headline_label);
++        texts.append (detail_label);
++        top.append (texts);
++        top.append (more);
++
++        spark = new Gtk.DrawingArea () {
++            content_height = 36,
++            hexpand = true
++        };
++        spark.set_draw_func (draw_spark);
++
++        var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) {
++            margin_top = 6,
++            margin_bottom = 6,
++            margin_start = 6,
++            margin_end = 6
++        };
++        box.append (top);
++        box.append (spark);
++        child = box;
++
++        refresh ();
++        map.connect (refresh);
++        Timeout.add_seconds (15, () => {
++            refresh ();
++            return Source.CONTINUE;
++        });
++
++        clicked.connect (() => {
++            var app = new DesktopAppInfo ("org.mseries.Battery.desktop");
++            if (app == null) {
++                return;
 +            }
-             append (show_settings_button);
-         }
- 
-@@ -137,6 +145,14 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
-             }
-         });
- 
-+        battery_history_button.clicked.connect (() => {
++
 +            try {
-+                battery_app.launch (null, null);
++                app.launch (null, null);
 +            } catch (Error e) {
 +                warning ("Failed to open Battery: %s", e.message);
 +            }
 +        });
++    }
 +
-         dm.brightness_changed.connect ((brightness) => {
-             if (brightness != -1) {
-                 last_separator_revealer.reveal_child = true;
++    private void refresh () {
++        string contents;
++        var path = Path.build_filename (Environment.get_user_cache_dir (), "mseries-battery", "summary.txt");
++        try {
++            FileUtils.get_contents (path, out contents);
++        } catch (Error e) {
++            set_data_present (false);
++            return;
++        }
++
++        var lines = contents.split ("\n");
++        if (lines.length < 1 || lines[0] == "") {
++            set_data_present (false);
++            return;
++        }
++
++        headline_label.label = lines[0];
++        detail_label.label = lines.length > 1 ? lines[1] : "";
++        double[] parsed = {};
++        if (lines.length > 2 && lines[2] != "") {
++            foreach (unowned string part in lines[2].split (",")) {
++                parsed += double.parse (part);
++            }
++        }
++        points = parsed;
++        spark.queue_draw ();
++        set_data_present (true);
++    }
++
++    private void set_data_present (bool present) {
++        visible = present;
++        if (has_data != present) {
++            has_data = present;
++        }
++    }
++
++    private void draw_spark (Gtk.DrawingArea area, Cairo.Context cr, int width, int height) {
++        if (points.length < 2) {
++            return;
++        }
++
++        double peak = 5;
++        foreach (var watts in points) {
++            peak = double.max (peak, watts);
++        }
++
++        Gdk.RGBA fg = area.get_color ();
++        cr.set_source_rgba (fg.red, fg.green, fg.blue, 0.12);
++        cr.set_line_width (1);
++        cr.move_to (0, height - 0.5);
++        cr.line_to (width, height - 0.5);
++        cr.stroke ();
++
++        var last = points.length - 1;
++        cr.move_to (0, height - height * points[0] / peak);
++        for (var i = 1; i <= last; i++) {
++            cr.line_to (width * i / (double) last, height - (height - 2) * points[i] / peak);
++        }
++        cr.set_source_rgba (0.21, 0.54, 0.90, 1);
++        cr.set_line_width (1.6);
++        cr.stroke_preserve ();
++        cr.line_to (width, height);
++        cr.line_to (0, height);
++        cr.close_path ();
++        cr.set_source_rgba (0.21, 0.54, 0.90, 0.16);
++        cr.fill ();
++    }
++}
++
+ public class Power.Widgets.PopoverWidget : Gtk.Box {
+     public bool is_in_session { get; construct; default = false; }
+ 
+@@ -90,8 +241,11 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
+             text = _("Power Settings…")
+         };
+ 
++        var history_card = new HistoryCard ();
++
+         orientation = VERTICAL;
+         append (show_percent_revealer);
++        append (history_card);
+         append (device_list_revealer);
+         append (device_separator_revealer);
+ 
+@@ -118,6 +272,12 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
+ 
+         settings.bind ("show-percentage", show_percent_switch, "active", SettingsBindFlags.DEFAULT);
+ 
++        // The card replaces the stock battery rows whenever the logger has data.
++        history_card.notify["visible"].connect (() => {
++            device_list_revealer.visible = !history_card.visible;
++        });
++        device_list_revealer.visible = !history_card.visible;
++
+         dm.bind_property (
+             "has-battery",
+             device_list_revealer,
