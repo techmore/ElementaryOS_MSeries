@@ -58,7 +58,12 @@ read-only active refresh/VRR/layout/display-power capture (no monitor serials).
 Exp1 had available-mode lists only, so stays an uncontrolled observation. A
 later diagnostic observed internal fixed 120 Hz and external 1080p fixed 60 Hz;
 no settings were applied. Local 43 regression checks and public dashboard
-checks pass. Update this entry with native CI results before merging follow-up.
+checks pass. Additional reviewed-source controls pass: original 7 GPU-reader
+tests, 14 selected M1/M2 clock controls, DCP route fixture and 42 Bluetooth
+recovery controls under sanitizers. `review-host-check.py` and the retained
+source-host receipt bind the input tree and production bodies; these are
+simulated-service host checks, not new hardware acceptance. Update this entry
+with native CI results before merging follow-up.
 
 ## Window snapping remains enabled; native quarters installed — 2026-10-18
 

@@ -54,6 +54,23 @@ hardware candidate. Keep 7.2 build-only until review parity is resolved and
 tested; a successful compile does not clear this gate.** Other forward-applying
 Wi-Fi and Neo corrections remain explicitly inventoried for that parity batch.
 
+The reviewed `.20` enhancement source also passes the original seven GPU
+reader tests (including unsupported fields/tails), 14 selected M1/M2 shared
+Thunderbolt clock controls, the DCP route fixture and 42 Bluetooth recovery
+controls under ASan/UBSan. [Source-host receipt](branch-audits/2026-10-18-review-host-controls.json)
+records the complete observed source-tree hash, production-body hashes, compiler
+versions and fixture results. These run simulated core/PCI/firmware services;
+they do not qualify actual sleep, radio or dock behavior. Reproduce with:
+
+```sh
+python3 mseries/aurora/review-host-check.py --source /absolute/prepared/source \
+  --output /absolute/work/review-host.json
+```
+
+The runner uses unmodified upstream harnesses plus a Result/EINVAL-only shim
+for the original GPU-reader tests. It refuses a source lacking the reviewed
+M1/M2 admission path and never manufactures hardware-test receipts.
+
 ## Energy and hardware disposition
 
 | Area / source | M1 Pro applicability | Implementation / next gate |
