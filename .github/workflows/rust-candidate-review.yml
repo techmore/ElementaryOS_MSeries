@@ -1,0 +1,114 @@
+name: Rust migration candidate review
+
+on:
+  schedule:
+    - cron: '17 4 * * *'
+    - cron: '41 5 * * 1'
+  workflow_dispatch:
+    inputs:
+      full_image:
+        description: Build a non-publishing arm64 image candidate after checks
+        type: boolean
+        required: false
+        default: false
+  pull_request:
+    paths:
+      - 'mseries/rust/**'
+      - 'mseries/panel/**'
+      - 'mseries/panel-factory-pins.json'
+      - 'mseries/netspeed/netusage/**'
+      - 'mseries/test-wifi-resume.py'
+      - 'mseries/test-power-cap.py'
+      - '.github/workflows/rust-candidate-review.yml'
+      - 'Justfile'
+      - 'mkosi.conf'
+      - 'mkosi.images/**'
+      - 'packages.arm64'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-candidate-review-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  rust-candidate:
+    name: Rust inventory, parity and release builds
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install Rust and SQLite tools
+        run: sudo apt-get update && sudo apt-get install -y cargo rustc rustfmt sqlite3
+      - name: Check the full scoped inventory
+        run: python3 mseries/rust/inventory.py --check
+      - name: Validate Rust candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          for crate in mseries-power wifi-resume netusage panel-provenance; do
+            manifest="mseries/rust/$crate/Cargo.toml"
+            cargo fmt --check --manifest-path "$manifest"
+            cargo test --manifest-path "$manifest" --locked
+            cargo clippy --manifest-path "$manifest" --locked --all-targets -- -D warnings
+            cargo build --release --manifest-path "$manifest" --locked
+          done
+          python3 mseries/rust/netusage/test-parity.py \
+            mseries/rust/netusage/target/release/mseries-netusage-rs
+          python3 mseries/rust/panel-provenance/test-parity.py \
+            mseries/rust/panel-provenance/target/release/mseries-panel-provenance-rs
+          python3 mseries/test-wifi-resume.py
+          python3 mseries/test-power-cap.py
+
+  weekly-image:
+    name: Weekly non-publishing arm64 image candidate
+    if: >-
+      (github.event_name == 'schedule' && github.event.schedule == '41 5 * * 1') ||
+      (github.event_name == 'workflow_dispatch' && inputs.full_image)
+    needs: rust-candidate
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v7
+      - name: Free build space
+        uses: jlumbroso/free-disk-space@v2
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+      - name: Install image build tools
+        run: sudo apt-get update && sudo apt-get install -y just mtools podman zstd rsync
+      - name: Record candidate source and pins
+        run: |
+          mkdir -p build-record
+          git rev-parse HEAD > build-record/source-commit.txt
+          cp mseries/UPSTREAM-PINS.md build-record/
+          cp mseries/rust/source-inventory.json build-record/
+          printf '%s\n' 'Weekly Rust-lane candidate; no signing or deployment.' > build-record/STATUS.txt
+      - name: Build unsigned local candidate image
+        shell: bash
+        run: |
+          set -euo pipefail
+          just genkey
+          just do-daily 2>&1 | tee build-record/build.log
+          python3 mseries/test-image-wiring.py --image-output mkosi.output \
+            | tee build-record/image-content.log
+          (cd mkosi.output && sha256sum elementaryos-*.iso > INSTALLER-SHA256SUMS)
+          cp mkosi.output/INSTALLER-SHA256SUMS build-record/
+      - name: Preserve candidate build and evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rust-image-candidate-${{ github.run_id }}
+          path: |
+            build-record/
+            mkosi.output/elementaryos-*.iso
+            mkosi.output/INSTALLER-SHA256SUMS
+          if-no-files-found: warn
+          compression-level: 0
+          retention-days: 14

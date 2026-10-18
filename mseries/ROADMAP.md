@@ -244,8 +244,8 @@ migration remain ongoing; announcement targets are not hardware test results.
 
 The local `rust` branch starts from the available `origin/main` snapshot
 `b0a03548fd7003eceaf191d60dcb097bdd0c3c99`. Its path inventory currently has
-741 file records (659 M-series-maintained paths and 82 elementary-owned upstream
-inputs) grouped into 227 first-pass, path-derived components. Semantic project
+742 file records (660 M-series-maintained paths and 82 elementary-owned upstream
+inputs) grouped into 228 first-pass, path-derived components. Semantic project
 boundaries, source/license pins and a complete local conversion schedule remain
 open.
 Power and Wi-Fi resume have independent, not-installed Rust candidates with
@@ -253,11 +253,14 @@ differential software suites. A network-usage daemon candidate now preserves the
 existing SQLite/panel contract, eight focused tests, and 16 shared-fixture
 socket/DNS cases against Python; daemon-level restart coverage and
 desktop-session qualification remain open. It is not installed beside the
-current Python service. The daily upstream watcher exists,
-but this branch still needs the daily/weekly build-and-review candidate lane.
+current Python service. The daily upstream watcher exists. The new daily/weekly
+candidate workflow is defined but its schedules activate only from the default
+branch.
 A Rust panel-provenance candidate also matches both Python factory tools on
 version, artifact, digest, ABI-path and filtering fixtures; the image build
-continues to use Python until an arm64 image candidate passes.
+continues to use Python until an arm64 image candidate passes. The new cadence
+workflow runs Rust checks daily and builds a non-publishing arm64 image weekly;
+the schedule only activates after the workflow reaches the default branch.
 
 ## Implemented; runtime validation pending
 

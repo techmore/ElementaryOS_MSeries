@@ -59,7 +59,7 @@ has been inventoried.
 its declared build/customization scope a path record and a first-pass
 `component_id`. It now includes documentation, extensionless hooks, presets,
 and packaged data as well as source files. Current grouping is path-derived:
-227 component groups cover 741 file records (659 local and 82 elementary-owned
+228 component groups cover 742 file records (660 local and 82 elementary-owned
 upstream inputs). Those IDs still need review against semantic project
 boundaries, source licenses, interfaces, and conversion contracts. Power and
 Wi-Fi and panel-provenance candidate files are marked `candidate-parity-verified-not-installed`;
@@ -211,10 +211,12 @@ individually.
   Its package/version checks, ABI-path checks, SHA-256 artifact records,
   `--only` filter and `--skip-plugins` behavior match the Python tools across
   fixture scenarios. The image build still calls Python pending integration review.
-- The full file inventory currently contains 741 items (659 M-series-maintained
-  and 82 elementary-owned upstream inputs) grouped into 227 first-pass
+- The full file inventory currently contains 742 items (660 M-series-maintained
+  and 82 elementary-owned upstream inputs) grouped into 228 first-pass
   components. Most local code/configuration/patch items still need semantic
   ownership review, a conversion contract, and a parity plan.
-- The source-by-source register is still incomplete. Daily upstream monitoring
-  exists elsewhere, but a daily/weekly build-and-review candidate lane is not
-  implemented here.
+- The source-by-source register is still incomplete. The existing upstream
+  watcher polls every six hours. A Rust candidate workflow now defines daily
+  Rust checks and a Monday non-publishing arm64 image build. GitHub schedules
+  execute only from the default branch; this unpublished local branch has not
+  activated those schedules.

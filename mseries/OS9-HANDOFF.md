@@ -2433,13 +2433,13 @@ same database.
 Focused Rust validation passed: `cargo fmt --check`, eight unit tests including
 SQLite flush/schema round trip and failure/retry restoration, 16 shared-fixture comparisons against the
 Python socket and DNS event parsers, `cargo clippy --all-targets -- -D warnings`,
-release build, inventory check (741 items: 659 local, 82 elementary) and
+release build, inventory check (742 items: 660 local, 82 elementary) and
 `git diff --check`. Socket and DNS event parsing have same-fixture differential
 coverage; full daemon restart/flush/retry comparison, install/rollback rehearsal and
 desktop-session qualification remain open. The candidate uses the `sqlite3` CLI.
 
 The inventory now includes all scoped files rather than only selected source
-extensions: 741 paths are assigned to 227 first-pass path-derived component
+extensions: 742 paths are assigned to 228 first-pass path-derived component
 groups. This added extensionless hooks, workflow files, documents and inputs;
 semantic component boundaries and conversion status still need review.
 
@@ -2449,9 +2449,23 @@ version acceptance/rejection, `--only`, `--skip-plugins`, artifact output,
 missing plugins and digest mismatch. The image still invokes the Python tools;
 full arm64 image admission remains open.
 
+Added `rust-candidate-review.yml`: it runs Rust parity/build checks daily and
+builds a non-publishing arm64 image artifact weekly after those checks pass.
+The repository's existing upstream watcher polls every six hours. GitHub only
+runs scheduled workflows from the default branch, so this schedule remains
+inactive while the Rust branch is only a local unpublished branch.
+
+Ran the workflow's Rust/parity command sequence locally on this checkout:
+13 power differential cases, 12 Wi-Fi differential cases, eight netusage unit
+cases plus 16 parser fixtures, and two panel-provenance unit checks plus four
+Python/Rust command tests all passed. Every crate passed format, Clippy and
+release build; inventory and workflow YAML checks passed. This is local CI
+evidence, not a GitHub Actions run or a completed arm64 image build.
+
 The Rust branch and this batch remain local. Public push was rejected by the
 automatic approval review because it would publish repository contents; no
-push or external publication has occurred. Next: qualify the Rust panel tools
+push or external publication has occurred. Next: get the panel tool candidate
 through a full arm64 image build, then continue with the brightness and keyboard
-backlight components. Full semantic inventory and daily/weekly candidate build
-automation remain open.
+backlight components. Full semantic inventory remains open; the cadence workflow
+is prepared but its scheduled runs are inactive until it reaches the default
+branch.

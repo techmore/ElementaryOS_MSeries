@@ -13,8 +13,8 @@
     "mkosi.conf",
     "packages.arm64"
   ],
-  "item_count": 741,
-  "component_count": 227,
+  "item_count": 742,
+  "component_count": 228,
   "components": [
     {
       "id": "apt-repository/common-files",
@@ -3020,6 +3020,17 @@
       ]
     },
     {
+      "id": "workflow/rust-candidate-review",
+      "ownership": "mseries-maintained",
+      "item_count": 1,
+      "rust_status_counts": {
+        "not-assessed": 1
+      },
+      "items": [
+        ".github/workflows/rust-candidate-review.yml"
+      ]
+    },
+    {
       "id": "workflow/stable-9.0",
       "ownership": "mseries-maintained",
       "item_count": 1,
@@ -3085,6 +3096,15 @@
       "id": ".github/workflows/proposed-9.0.yml",
       "path": ".github/workflows/proposed-9.0.yml",
       "component_id": "workflow/proposed-9.0",
+      "ownership": "mseries-maintained",
+      "language": "yaml",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": ".github/workflows/rust-candidate-review.yml",
+      "path": ".github/workflows/rust-candidate-review.yml",
+      "component_id": "workflow/rust-candidate-review",
       "ownership": "mseries-maintained",
       "language": "yaml",
       "role": "configuration-or-data",
