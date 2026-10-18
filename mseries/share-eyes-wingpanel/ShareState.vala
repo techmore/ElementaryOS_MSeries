@@ -69,6 +69,11 @@ namespace MSeries {
                 : "Sharing your screen · %d people watching".printf (viewers);
         }
 
+        /* Owner page with the login in the URL fragment (never sent to the server; the page clears it and signs in). */
+        public string login_url () {
+            return "%s#u=%s&p=%s".printf (share_page, GLib.Uri.escape_string (email, null, true), GLib.Uri.escape_string (password, null, true));
+        }
+
         public string login_text () {
             return "Screen share (this computer)\nOpen: %s\nUsername: %s\nPassword: %s\n".printf (share_page, email, password);
         }

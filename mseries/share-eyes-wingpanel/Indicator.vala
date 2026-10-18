@@ -88,18 +88,40 @@ namespace MSeries {
         }
 
         private Gtk.Widget header (string text) {
-            var l = new Gtk.Label (text) { halign = Gtk.Align.START, margin_top = 8 };
-            l.add_css_class ("h4");
+            var l = new Gtk.Label (text.up ()) { halign = Gtk.Align.START, margin_top = 6, margin_bottom = 2 };
+            l.add_css_class ("dim-label");
+            l.add_css_class ("caption-heading");
             return l;
         }
 
         private Gtk.Widget dim (string text) {
-            var l = new Gtk.Label (text) { halign = Gtk.Align.START, wrap = true, xalign = 0 };
+            var l = new Gtk.Label (text) { halign = Gtk.Align.START, wrap = true, xalign = 0, max_width_chars = 38 };
             l.add_css_class ("dim-label");
+            l.add_css_class ("caption");
             return l;
         }
 
-        private Gtk.Widget field_row (string label, string value, bool secret) {
+        private Gtk.Widget separator () {
+            return new Gtk.Separator (Gtk.Orientation.HORIZONTAL) { margin_top = 6, margin_bottom = 6 };
+        }
+
+        /* A flat, full-width menu row: icon, label, optional detail, like Wingpanel's own menu items. */
+        private Gtk.Button menu_row (string icon, string label, string? detail = null) {
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 9);
+            row.append (new Gtk.Image.from_icon_name (icon));
+            var l = new Gtk.Label (label) { halign = Gtk.Align.START, hexpand = true, xalign = 0, ellipsize = Pango.EllipsizeMode.END };
+            row.append (l);
+            if (detail != null) {
+                var d = new Gtk.Label (detail) { halign = Gtk.Align.END };
+                d.add_css_class ("dim-label");
+                row.append (d);
+            }
+            var b = new Gtk.Button () { child = row };
+            b.add_css_class ("flat");
+            return b;
+        }
+
+        private Gtk.Widget field_row (string label, string value) {
             var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
             var name = new Gtk.Label (label) { halign = Gtk.Align.START, width_chars = 9, xalign = 0 };
             name.add_css_class ("dim-label");
@@ -114,86 +136,106 @@ namespace MSeries {
             return row;
         }
 
+        private void act (owned GLib.AsyncReadyCallback? cb = null) {
+            last_digest = "";
+            tick.begin ();
+        }
+
         private void rebuild (string tip) {
             Gtk.Widget? child;
             while ((child = content.get_first_child ()) != null) content.remove (child);
 
-            var title = new Gtk.Label (state.running ? (client.live ? "Sharing your screen" : "Screen share") : "Screen share is off") { halign = Gtk.Align.START };
-            title.add_css_class ("title-3");
-            content.append (title);
-            content.append (dim (state.running ? tip : "Start the demo with core/scripts/share-demo.sh."));
+            // Status card: the icon says it at a glance, the line under it says what to do.
+            var head = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 10) { margin_bottom = 2 };
+            var big = new Gtk.Image.from_icon_name ("mseries-share-eyes-symbolic") { pixel_size = 32, valign = Gtk.Align.START };
+            if (client.live) big.add_css_class ("accent");
+            head.append (big);
+            var texts = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) { hexpand = true };
+            var title = new Gtk.Label (!state.running ? "Screen share is off" : client.live ? "Sharing your screen" : "Screen share")
+                { halign = Gtk.Align.START, xalign = 0 };
+            title.add_css_class ("title-4");
+            texts.append (title);
+            texts.append (dim (state.running ? tip : "Start the demo with core/scripts/share-demo.sh."));
+            head.append (texts);
+            content.append (head);
             if (!state.running) return;
             if (!client.reachable) {
                 content.append (dim ("The share server is not answering."));
                 return;
             }
 
-            // 1. Start / stop
             if (!client.live) {
-                content.append (dim ("Open the share page, sign in with the login below and click Start sharing. The browser asks which window to share."));
-                var open = new Gtk.Button.with_label ("Open share page");
+                var open = new Gtk.Button.with_label ("Open share page and sign in") { margin_top = 6 };
                 open.add_css_class ("suggested-action");
                 open.clicked.connect (() => {
-                    try { GLib.AppInfo.launch_default_for_uri (state.share_page, null); } catch (GLib.Error e) { warning ("%s", e.message); }
+                    try { GLib.AppInfo.launch_default_for_uri (state.login_url (), null); } catch (GLib.Error e) { warning ("%s", e.message); }
                 });
                 content.append (open);
-            }
-
-            // 2. Login
-            content.append (header ("Login"));
-            content.append (field_row ("Username", state.email, false));
-            content.append (field_row ("Password", state.password, true));
-            var copy_login = new Gtk.Button.with_label ("Copy login");
-            copy_login.clicked.connect (() => copy (state.login_text (), "Login"));
-            content.append (copy_login);
-
-            // 3. Link for the watcher
-            content.append (header ("Link for your viewer"));
-            var link = client.viewer_link (state.viewer_base);
-            if (link != null) {
-                content.append (field_row ("Link", link, false));
-                content.append (dim ("Valid until " + new GLib.DateTime.from_unix_local (client.link_expires).format ("%a %H:%M")
-                    + ". Anyone with it can ask to watch; you still approve them."));
+                content.append (dim ("Then click Start sharing and pick one window."));
             } else {
-                var mk = new Gtk.Button.with_label ("Create viewer link");
-                mk.clicked.connect (() => { client.create_link.begin ((o, r) => { client.create_link.end (r); last_digest = ""; tick.begin (); }); });
-                content.append (mk);
+                var stop = new Gtk.Button.with_label ("Stop sharing") { margin_top = 6 };
+                stop.add_css_class ("destructive-action");
+                stop.clicked.connect (() => client.stop.begin ((o, r) => { client.stop.end (r); act (); }));
+                content.append (stop);
             }
 
-            // 4. Watchers
+            // Watchers first once someone is waiting: that is the thing you have to act on.
+            content.append (separator ());
             content.append (header ("Watchers"));
             if (client.viewers.length == 0) {
                 content.append (dim ("Nobody yet."));
             }
             foreach (var v in client.viewers) {
-                var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
-                var who = new Gtk.Label (v.state == "pending" ? "Wants to watch · " + v.ip : "Watching · " + v.ip)
-                    { halign = Gtk.Align.START, hexpand = true, xalign = 0, ellipsize = Pango.EllipsizeMode.END };
-                row.append (who);
+                var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+                row.append (new Gtk.Image.from_icon_name (v.state == "pending" ? "avatar-default-symbolic" : "view-reveal-symbolic"));
+                var who = new Gtk.Label (v.state == "pending" ? "Wants to watch" : "Watching")
+                    { halign = Gtk.Align.START, xalign = 0 };
+                var where = new Gtk.Label (v.ip) { halign = Gtk.Align.START, hexpand = true, xalign = 0, ellipsize = Pango.EllipsizeMode.END };
+                where.add_css_class ("dim-label");
+                var names = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { hexpand = true };
+                names.append (who);
+                names.append (where);
+                row.append (names);
                 var vid = v.vid;
                 if (v.state == "pending") {
                     var deny = new Gtk.Button.with_label ("Deny");
-                    deny.clicked.connect (() => client.viewer_action.begin (vid, "deny", (o, r) => { client.viewer_action.end (r); last_digest = ""; tick.begin (); }));
+                    deny.clicked.connect (() => client.viewer_action.begin (vid, "deny", (o, r) => { client.viewer_action.end (r); act (); }));
                     var allow = new Gtk.Button.with_label ("Allow");
                     allow.add_css_class ("suggested-action");
-                    allow.clicked.connect (() => client.viewer_action.begin (vid, "admit", (o, r) => { client.viewer_action.end (r); last_digest = ""; tick.begin (); }));
+                    allow.clicked.connect (() => client.viewer_action.begin (vid, "admit", (o, r) => { client.viewer_action.end (r); act (); }));
                     row.append (deny);
                     row.append (allow);
                 } else {
                     var rm = new Gtk.Button.with_label ("Remove");
                     rm.add_css_class ("destructive-action");
-                    rm.clicked.connect (() => client.viewer_action.begin (vid, "kick", (o, r) => { client.viewer_action.end (r); last_digest = ""; tick.begin (); }));
+                    rm.clicked.connect (() => client.viewer_action.begin (vid, "kick", (o, r) => { client.viewer_action.end (r); act (); }));
                     row.append (rm);
                 }
                 content.append (row);
             }
 
-            if (client.live) {
-                var stop = new Gtk.Button.with_label ("Stop sharing") { margin_top = 8 };
-                stop.add_css_class ("destructive-action");
-                stop.clicked.connect (() => client.stop.begin ((o, r) => { client.stop.end (r); last_digest = ""; tick.begin (); }));
-                content.append (stop);
+            content.append (separator ());
+            content.append (header ("Share"));
+            var link = client.viewer_link (state.viewer_base);
+            if (link != null) {
+                var cl = menu_row ("insert-link-symbolic", "Copy viewer link",
+                    "until " + new GLib.DateTime.from_unix_local (client.link_expires).format ("%H:%M"));
+                cl.clicked.connect (() => copy (link, "Viewer link"));
+                content.append (cl);
+            } else {
+                var mk = menu_row ("list-add-symbolic", "Create viewer link");
+                mk.clicked.connect (() => { client.create_link.begin ((o, r) => { client.create_link.end (r); act (); }); });
+                content.append (mk);
             }
+            var cll = menu_row ("dialog-password-symbolic", "Copy login link");
+            cll.tooltip_text = "Opens the share page already signed in. For this computer only; never send it to your viewer.";
+            cll.clicked.connect (() => copy (state.login_url (), "Login link"));
+            content.append (cll);
+
+            content.append (separator ());
+            content.append (header ("Login"));
+            content.append (field_row ("Username", state.email));
+            content.append (field_row ("Password", state.password));
             if (toast != "") content.append (dim (toast));
         }
 
