@@ -22,17 +22,41 @@ if sys.argv[1] == 'switch':
     mode = os.environ['CB_SWITCH_MODE']
     print({'null':'null', 'array':'[]', 'invalid':'not json'}.get(mode, '{"ok":true,"message":"Fixture switched"}'))
 else:
+    if os.environ['CB_SWITCH_MODE'] == 'claude-failed-exit':
+        print('{"accounts":[]}')
+        sys.exit(0)
     print('{"accounts":[{"id":"source|one","email":"source@example.com","active":true},{"id":"target@example.com|two","email":"target@example.com","active":false}]}')
 PY
 printf 'print("{\\"available\\":false,\\"accounts\\":[],\\"sessions\\":[],\\"periods\\":[]}")\n' > "$profile/.local/lib/codexbar-cli/codexbar-claude.py"
 cp "$profile/.local/lib/codexbar-cli/codexbar-claude.py" "$profile/.local/lib/codexbar-cli/codexbar-sessions.py"
 cp "$profile/.local/lib/codexbar-cli/codexbar-claude.py" "$profile/.local/lib/codexbar-cli/codexbar-opencode-local.py"
+if [[ $mode == claude-failed-exit ]]; then
+  cat > "$profile/.local/lib/codexbar-cli/codexbar-claude.py" <<'PYCLAUDE'
+import json, os, pathlib, sys
+if sys.argv[1] == 'switch':
+    pathlib.Path(os.environ['CB_SWITCH_ARGS']).write_text(json.dumps(sys.argv[1:]))
+    print('{"ok":true,"message":"Fixture failed after reporting ok"}')
+    sys.exit(1)
+print('{"available":true,"desktop":{"installed":true},"accounts":[{"number":2,"email":"target@example.com","active":false,"desktopReady":true}]}')
+PYCLAUDE
+fi
+fixture="$here/fixtures/healthy.json"
+if [[ $mode == claude-failed-exit ]]; then
+  python3 - "$fixture" "$profile/snapshot.json" <<'PYFIXTURE'
+import json, sys
+data = json.load(open(sys.argv[1]))
+data['entries'] = [item for item in data['entries'] if item.get('provider') != 'claude']
+with open(sys.argv[2], 'w') as out: json.dump(data, out)
+PYFIXTURE
+  fixture="$profile/snapshot.json"
+fi
 expected_error=(); [[ $mode == success ]] || expected_error=(CB_SWITCH_EXPECT_ERROR=1)
 env -i PATH="$PATH" HOME="$profile" LANG=C.UTF-8 GTK_THEME=io.elementary.stylesheet.blueberry GSK_RENDERER=cairo GDK_BACKEND=x11 \
-  CB_FIXTURE="$here/fixtures/healthy.json" CB_SWITCH_MODE="$mode" CB_SWITCH_ARGS="$profile/args.json" "${expected_error[@]}" \
+  CB_FIXTURE="$fixture" CB_SWITCH_MODE="$mode" CB_SWITCH_ARGS="$profile/args.json" "${expected_error[@]}" \
   dbus-run-session -- xvfb-run -a "$build/test-switch"
-python3 - "$profile/args.json" <<'PY'
+python3 - "$profile/args.json" "$mode" <<'PY'
 import json, sys
-assert json.load(open(sys.argv[1])) == ['switch', 'target@example.com|two', '--desktop']
+expected = ['switch', '2' if sys.argv[2] == 'claude-failed-exit' else 'target@example.com|two', '--desktop']
+assert json.load(open(sys.argv[1])) == expected
 print('Exact selected account preserved; real accounts untouched')
 PY
