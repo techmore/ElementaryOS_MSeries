@@ -72,6 +72,7 @@ DEFAULT_SETTINGS = {
     "activityScope": "all",
     "localRoot": "",
     "localDepth": 4,
+    "notifyCi": True,
     "repoStates": {},
 }
 REPO_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
@@ -273,6 +274,7 @@ def fetch_snapshot() -> dict:
             "repoState": state if state in {"visible", "pinned", "hidden"} else "visible",
         })
     normalized.sort(key=lambda item: item["updatedAt"], reverse=True)
+    for_you = _for_you()
     try:
         rate_limit, rate_fetched_at = _api_json("rate_limit")
         rate_error = ""
@@ -280,7 +282,35 @@ def fetch_snapshot() -> dict:
         rate_limit, rate_fetched_at, rate_error = {}, 0, str(exc)
     return {"schemaVersion": 1, "account": login, "host": _hostname(), "fetchedAt": now,
             "rateFetchedAt": rate_fetched_at, "rateLimits": rate_limit, "rateError": rate_error,
-            "settings": settings, "stale": False, "repos": normalized}
+            "settings": settings, "stale": False, "forYou": for_you, "repos": normalized}
+
+
+FOR_YOU_QUERY = """{
+  reviews: search(query: "is:pr is:open archived:false review-requested:@me", type: ISSUE, first: 5) {
+    issueCount
+    nodes { ... on PullRequest { title number url updatedAt repository { nameWithOwner } } }
+  }
+  assigned: search(query: "is:issue is:open archived:false assignee:@me", type: ISSUE, first: 5) {
+    issueCount
+    nodes { ... on Issue { title number url updatedAt repository { nameWithOwner } } }
+  }
+}"""
+
+
+def _for_you() -> dict:
+    """Pull requests waiting for the viewer's review and issues assigned to them; empty when GitHub cannot answer."""
+    try:
+        data = _graphql(FOR_YOU_QUERY).get("data") or {}
+    except RuntimeError:
+        return {}
+    result = {}
+    for key in ("reviews", "assigned"):
+        conn = data.get(key) or {}
+        items = [{"title": node.get("title", ""), "number": node.get("number", 0), "url": node.get("url", ""),
+                  "updatedAt": node.get("updatedAt", ""), "repo": (node.get("repository") or {}).get("nameWithOwner", "")}
+                 for node in conn.get("nodes") or [] if node.get("url")]
+        result[key] = {"count": int(conn.get("issueCount") or 0), "items": items}
+    return result
 
 
 def _pages_repositories() -> set[str]:
@@ -621,10 +651,11 @@ def _settings_set(key: str, value: str) -> dict:
         if value not in {"activity", "issues", "prs", "stars", "repo", "pinned"}:
             raise RuntimeError("menu-sort must be activity, issues, prs, stars, repo, or pinned")
         settings["menuSort"] = value
-    elif normalized in {"show-forks", "show-archived"}:
+    elif normalized in {"show-forks", "show-archived", "notify-ci"}:
         if value.lower() not in {"true", "false"}:
             raise RuntimeError(f"{normalized} must be true or false")
-        settings["showForks" if normalized == "show-forks" else "showArchived"] = value.lower() == "true"
+        member = {"show-forks": "showForks", "show-archived": "showArchived", "notify-ci": "notifyCi"}[normalized]
+        settings[member] = value.lower() == "true"
     elif normalized == "activity-scope":
         if value not in {"all", "my"}:
             raise RuntimeError("activity-scope must be all or my")
@@ -645,7 +676,8 @@ def _settings_set(key: str, value: str) -> dict:
     return {"key": normalized, "value": settings.get({"refresh-interval": "refreshInterval", "repo-limit": "repoLimit",
                                                         "menu-sort": "menuSort", "show-forks": "showForks",
                                                         "show-archived": "showArchived", "activity-scope": "activityScope",
-                                                        "local-root": "localRoot", "local-depth": "localDepth"}.get(normalized, normalized))}
+                                                        "local-root": "localRoot", "local-depth": "localDepth",
+                                                        "notify-ci": "notifyCi"}.get(normalized, normalized))}
 
 
 def _auth_status() -> dict:

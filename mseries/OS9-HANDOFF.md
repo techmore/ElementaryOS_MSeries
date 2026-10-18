@@ -1,5 +1,18 @@
 # OS 9 implementation / Claude Code handoff
 
+## RepoBar For You, CI notifications and GitHub marks — 2026-10-18 (Claude Code)
+
+Dashboard leads with a **For You** card (pull requests waiting on your review, issues assigned to you; hidden when
+empty — the owner has none today). Optional **CI notifications** (`notifyCi`, default on; switch in RepoBar Settings →
+Notifications): `notify-send` when a default branch starts failing (with Open on GitHub) or passes again; the first
+snapshot after login only records states (`~/.cache/mseries/repobar/ci-states.json`, 0600), unchanged failures are not
+re-announced, hidden/archived repositories stay quiet. Verified with a logging fake notifier (no desktop pop-ups).
+From the handoff session's ideas, implemented here: clickable status chip ("N failing" → Failing CI filter + All;
+"Cached"/"Offline" → retry with the error in the tooltip), a Failing CI filter, Attention sorted by severity, own
+filled-shape pull request / issue / commit symbolic icons in pills, activity rows, details and the dock, and
+activity rows that show only the age. Rendered headless light/dark + Attention + Settings; deployed without restart.
+**Unverified:** live panel until Wingpanel reloads; a real notification on the owner's desktop.
+
 ## CodexBar inclusive15% quota display — 2026-10-18
 
 Owner clarified that Claude must reveal the bold red written percentage at15%

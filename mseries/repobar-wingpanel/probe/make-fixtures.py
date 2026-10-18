@@ -33,8 +33,14 @@ repos = [
 base = {"schemaVersion": 1, "account": "example", "host": "github.com", "fetchedAt": NOW - 120,
         "rateLimits": {"resources": {"core": {"remaining": 4876, "limit": 5000}}}, "stale": False,
         "settings": {"refreshInterval": 300, "repoLimit": 5, "showForks": False, "showArchived": False}}
+for_you = {"reviews": {"count": 2, "items": [
+    {"title": "Add RepoBar Settings window", "number": 197, "url": "https://github.com/example/panel-suite/pull/197", "repo": "example/panel-suite"},
+    {"title": "Fix dock focus on resume", "number": 14, "url": "https://github.com/example/dock/pull/14", "repo": "example/dock"}]},
+    "assigned": {"count": 7, "items": [
+    {"title": "Display link training times out on the dock", "number": 3, "url": "https://github.com/example/kernel-notes/issues/3", "repo": "example/kernel-notes"}]}}
 scenarios = {
-    "healthy": {**base, "repos": repos},
+    "healthy": {**base, "repos": repos, "forYou": for_you},
+    "quiet": {**base, "repos": repos},
     "empty": {**base, "repos": []},
     "error": {**base, "repos": repos[:3], "stale": True, "error": "gh: HTTP 502 from api.github.com"},
 }
