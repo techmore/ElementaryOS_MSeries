@@ -16,6 +16,9 @@ class AuditScope:
             raise RuntimeError('Audit rejected a host path outside its output directory')
 
     def check(self, args):
+        args = tuple(args)
+        if not args:
+            raise RuntimeError('Audit rejected an empty CLI operation')
         verb = args[0]
         if verb in ('list', 'info', 'version', 'monitor'):
             return

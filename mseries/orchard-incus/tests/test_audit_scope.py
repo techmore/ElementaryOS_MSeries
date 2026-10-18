@@ -41,6 +41,7 @@ class ScopeTests(unittest.TestCase):
                      ('file', 'pull', 'audit-a/root/file', str(self.out / 'file'))]:
             with self.subTest(args=args):
                 self.scope.check(args)
+                self.scope.check(list(args))
 
     def test_outside_host_paths_are_rejected_in_both_directions(self):
         outside = str(Path(self.tmp.name) / 'outside')
@@ -56,7 +57,7 @@ class ScopeTests(unittest.TestCase):
             self.scope.host_path(self.out / 'link' / 'escaped')
 
     def test_unknown_and_global_mutations_are_rejected(self):
-        for args in [('image', 'delete', 'cached'), ('launch', 'cached'), ('query', '-X', 'DELETE', '/1.0/instances/owner')]:
+        for args in [(), ('image', 'delete', 'cached'), ('launch', 'cached'), ('query', '-X', 'DELETE', '/1.0/instances/owner')]:
             with self.subTest(args=args), self.assertRaises(RuntimeError):
                 self.scope.check(args)
 
