@@ -1,5 +1,21 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Week/Day time-grid views — 2026-10-18
+
+Published and deployed native hourly/half-hour slots, all-day bands, overlap
+lanes, midnight clipping, bounded scrolling and readable block detail popovers.
+Upcoming/Month lists and main's task quick-add/checkbox completion are retained.
+Fixed UTC day filtering, explicit DURATION handling and untitled-event logging;
+month navigation now avoids stale carousel callbacks. Native Calendar launch
+appears only when its client is available; event views remain read-only.
+
+All 21 combined integration groups pass in light/dark and against the installed
+library; six image-wiring tests and focused shell/whitespace checks pass. Native
+ARM64 build, synthetic rendered previews and reloaded Wingpanel mapping verified.
+Next: owner acceptance on real calendars and physical touch/scale, with remote
+sync and factory boot qualification still separate.
+[Time-grid behavior and tests](calendar/README.md#month-week-and-day-views).
+
 ## Factory YouTube ISO: installed VM pass — 2026-10-18
 
 The new ISO from `5c0c60e` built successfully in run `39128555434`, passed its

@@ -102,7 +102,7 @@ qualify a factory image or a Google account connection.
 
 `bash mseries/calendar/test-agenda.sh /absolute/path/to/libdatetime.so` runs the
 actual plugin on Xvfb with a private D-Bus and private XDG config/data/cache.
-It creates only synthetic local EDS sources. Timetable workflow groups additionally
+All 21 workflow groups use synthetic local EDS sources. Timetable groups additionally
 check actual block positions against hour rules, overlap geometry, adjacent and
 short events, instant/DURATION events, overnight clipping, recurring week columns,
 live reflow and scroll retention, and a stubbed native Calendar date action.

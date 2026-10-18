@@ -1,5 +1,46 @@
 # OS 9 implementation / Claude Code handoff
 
+## Week/Day time slots and event blocks published and deployed — 2026-10-18
+
+Owner requested time-slot Week/Day views, tests, desktop deployment and merge.
+Published tested code at `4cf426c`, retaining main's task checkboxes, quick-add,
+Upcoming default, compact Month list and account setup. Week uses seven date
+columns with a bounded horizontal viewport; Day retains the date picker.
+Native blocks align with hourly/half-hour rules, separate all-day events,
+allocate overlap lanes and clip overnight intervals at local midnight. Short
+appointments reserve a minimum click target; a block at the end of the day
+stays clipped. Busy columns widen within the scrollable surface. Popovers show
+literal full details; native Calendar launch is offered only when its executable
+is installed (not present on this desktop). Its date argument and missing-client
+fallback were checked with an isolated launcher, without opening a real app.
+
+Corrected the existing day filter's UTC/local double conversion, explicit
+DURATION end times and an untitled-event logging critical. Replaced asynchronous
+month-carousel paging with a deterministic grid, preserving arrows, Today and
+touch-swipe handlers; hide/show/reopen and selected-day highlights now stay in
+sync. Source refreshes reflow blocks and preserve horizontal/vertical reading
+positions through temporarily empty data. GTK criticals are fatal in the test
+fixture; all generated records and launcher calls remain isolated from user data.
+
+Verification: fresh pinned ARM64 release build; all 21 combined real-plugin/EDS
+workflow groups pass in both forced light and dark themes, including task writes,
+recurring completion and quick-add. New checks compare actual block allocations
+to hour rules, overlap geometry, short/instant/untitled/DURATION entries, UTC
+midnight boundaries, live movement/deletion, scroll retention, recurring columns,
+mapped popovers and native-action fallback. Inspected synthetic rendered grid
+and popover previews. Six image-wiring tests and focused shell/whitespace checks
+pass. Existing compiler, isolated EGL/portal and EDS teardown warnings remain;
+no clean-runtime-log or independent Google-sync/factory-boot claim.
+
+Ran `bash mseries/install-calendar-agenda.sh` from the merged tree, then all 21
+groups against the installed library (exit 0). Reloaded only Wingpanel:
+941825 → 944021; its mapped calendar library matches installed
+inode 316340 without deleted mappings. Previous plugin retained privately in
+this chat's work directory; version-aware stock backup remains. No personal
+events/accounts, boot/kernel, audio settings or standalone Calendar installation
+were changed. Next: owner opens clock → Events → Week/Day; physical touch/scale
+acceptance and real-account synchronization remain separate from these fixtures.
+
 ## Factory ISO and installed YouTube qualification — 2026-10-18
 
 Build [39128555434](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39128555434)
