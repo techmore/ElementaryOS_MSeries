@@ -63,7 +63,7 @@ jobs:
             dpkg-deb -c "$deb" | grep '\.so$'
           done
           cat out/mseries-debs/BUILD-PROVENANCE.txt
-          sha256sum --check out/mseries-debs/SHA256SUMS
+          (cd out/mseries-debs && sha256sum --check SHA256SUMS)
 
       - name: Upload plugin packages
         uses: actions/upload-artifact@v4
