@@ -44,6 +44,12 @@ top three CPU processes. Read-only: it never changes a setting.
 - **Logger cost, measured 2026-10-18 on the M1 Pro:** about 0.17 s of CPU per minute (~0.3 % of one core), 18 MB RSS,
   `Nice=15` and idle I/O class. The database grows by tens of KB per hour of use.
 
+## UI/UX polish (2026-10-18)
+App icon (`org.mseries.Battery.svg`, installed to hicolor by the installer and `enhance.sh`); the window remembers its
+page, chart range and size (`~/.config/mseries-battery/ui.json`, verified across two headless launches); shortcuts
+Ctrl+1…6 switch pages, Ctrl+R refreshes, Ctrl+, opens Preferences, Ctrl+Q closes (not exercised by key press);
+auto-refresh runs only while the window is shown; `mseries-battery open` launches the app.
+
 ## Image integration
 `enhance.sh` has a `battery` module (`--only battery`) that stages the logger, command, app, unit and desktop file and
 enables the user unit for every account (`battery/test_battery_enhance.py` checks it against a scratch root). The panel

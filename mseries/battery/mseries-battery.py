@@ -1,6 +1,7 @@
 #!/usr/bin/python3 -I
 """mseries-battery: read the battery history the logger keeps.
 
+  mseries-battery open              open the Battery app
   mseries-battery status            health, current draw and runtime estimate
   mseries-battery sessions [days]   each unplugged run: length, charge used, average watts, projected runtime
   mseries-battery profile [days]    average draw and runtime by CPU load band, plus the biggest CPU users
@@ -37,6 +38,8 @@ def days_arg(argv, default):
 def main(argv):
     command = argv[0] if argv else "status"
     rest = argv[1:]
+    if command == "open":
+        os.execv("/usr/bin/python3", ["python3", os.path.join(os.path.dirname(os.path.realpath(__file__)), "mseries-battery-app.py")])
     try:
         conn = core.connect(readonly=True)
     except Exception:

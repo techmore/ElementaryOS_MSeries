@@ -184,6 +184,7 @@ mod_battery() {
   copy 0755 "$here/battery/mseries-battery-app.py" $lib/mseries-battery-app.py
   copy 0644 "$here/battery/mseries-battery-logger.service" /usr/lib/systemd/user/mseries-battery-logger.service
   copy 0644 "$here/battery/org.mseries.Battery.desktop" /usr/share/applications/org.mseries.Battery.desktop
+  copy 0644 "$here/battery/org.mseries.Battery.svg" /usr/share/icons/hicolor/scalable/apps/org.mseries.Battery.svg
   mkdir -p "$R/usr/local/bin"
   ln -sfn $lib/mseries-battery.py "$R/usr/local/bin/mseries-battery"
   enable --global mseries-battery-logger.service
