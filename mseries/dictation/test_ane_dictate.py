@@ -1,5 +1,5 @@
 import importlib.util, struct, unittest
-spec = importlib.util.spec_from_file_location("ane", __file__.replace("test_ane_dictate", "ane-dictate"))
+spec = importlib.util.spec_from_file_location("ane", __file__.replace("test_ane_dictate", "dictation_ane"))
 ane = importlib.util.module_from_spec(spec); spec.loader.exec_module(ane)
 
 
