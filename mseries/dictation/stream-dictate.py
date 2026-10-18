@@ -3,17 +3,18 @@
 
 transcribe.cpp + Parakeet Unified (cache-aware streaming). Committed text is append-only, so it is
 typed as soon as it commits; whatever is still tentative is typed when you release the key.
-Audio comes straight from the AOP mic (ALSA, float32) only while the key is held. Nothing is stored.
+Audio comes straight from the AOP mic (ALSA, float32) only while the key is held.
+Audio is not saved by default; STREAM_KEEP is an explicit last-capture debug option.
 Env: STREAM_MODEL, STREAM_SOURCE, STREAM_KEY (evdev code, default 184), STREAM_THREADS, STREAM_GAIN,
 STREAM_DRY (print, do not type), STREAM_QUIET (no chime/notification), STREAM_TEST_WAV / STREAM_TEST_RAW.
 """
-import math, os, queue, signal, struct, subprocess, sys, threading, time, wave, tempfile
+import math, os, queue, select, signal, struct, subprocess, sys, threading, time, wave, tempfile
 import numpy as np
-import transcribe_cpp as t
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from dictation_status import write_status
 from dictation_resources import load_policy, reasons as resource_reasons
+from dictation_model import LazyModel, ModelHeadroom
 
 MODEL = os.environ.get("STREAM_MODEL", os.path.expanduser(
     "~/.local/share/mseries/stream/models/parakeet-unified-en-0.6b-Q4_K_M.gguf"))
@@ -187,7 +188,7 @@ class Typer(threading.Thread):
 
 class Dictation:
     def __init__(self):
-        self.model = t.Model(MODEL, backend=os.environ.get('STREAM_BACKEND', 'auto'))
+        self.models = LazyModel(self.load_model)
         self.typer = Typer(self.insertion_failed)
         self.active = False
         self.worker = None
@@ -195,6 +196,26 @@ class Dictation:
         self.input_token = None
         self.error = None
         self.cancelled = False
+        self.next_trim = 0
+
+    @staticmethod
+    def load_model():
+        # Importing the SDK loads its native backends too. Keep even that work
+        # out of the listener's idle startup path.
+        import transcribe_cpp as t
+        return t.Model(MODEL, backend=os.environ.get('STREAM_BACKEND', 'auto'))
+
+    def idle_tick(self):
+        if self.active or time.monotonic() < self.next_trim:
+            return
+        if not self.models.loaded and self.error != 'ResourceGuard':
+            return
+        self.next_trim = time.monotonic() + 5
+        if self.models.trim(force=bool(resource_reasons(load_policy(), 256 * 1024**2))):
+            log('idle speech model released; F5 listener remains ready')
+        if self.error == 'ResourceGuard' and not resource_reasons(load_policy(), 1024**3):
+            self.error = None
+            status('ready')
 
     def insertion_failed(self):
         self.stop_evt.set()
@@ -206,30 +227,70 @@ class Dictation:
     def start(self):
         if self.active or self.typer.q.unfinished_tasks:
             return
-        self.policy = load_policy() if OUTPUT == 'ibus' else None
-        if OUTPUT == 'ibus' and resource_reasons(self.policy, 256 * 1024 ** 2):
-            status('waiting')
-            notify('Dictation is waiting for memory or cooling headroom')
-            return
-        if OUTPUT == 'ibus' and (TEST_INSERT or not (DRY or os.environ.get('STREAM_TEST_WAV') or os.environ.get('STREAM_TEST_RAW'))):
-            try:
-                self.input_token = input_call('begin')
-            except (subprocess.SubprocessError, OSError):
-                log('dictation input refused before microphone capture')
-                status('error')
-                notify('Dictation needs a supported editable text field. Focus the editor and try F5 again.')
-                return
         self.active = True
         self.error = None
         self.cancelled = False
         self.typer.failed = False
         self.stop_evt.clear()
-        status('listening')
-        if not (os.environ.get("STREAM_TEST_WAV") or os.environ.get("STREAM_TEST_RAW")):
-            tone(880, 90)
-            notify("Listening… Release F5 to finish; Escape cancels.", persistent=True)
-        self.worker = threading.Thread(target=self.run, daemon=True)
+        self.input_token = None
+        self.worker = threading.Thread(target=self.prepare, daemon=True)
         self.worker.start()
+
+    def prepare(self):
+        capture_started = False
+        test = os.environ.get('STREAM_TEST_WAV') or os.environ.get('STREAM_TEST_RAW')
+        try:
+            self.policy = load_policy()
+            if self.stop_evt.is_set(): return
+            if resource_reasons(self.policy, 256 * 1024**2): raise ModelHeadroom()
+            if OUTPUT == 'ibus' and (TEST_INSERT or not (DRY or test)):
+                try:
+                    self.input_token = input_call('begin')
+                except (subprocess.SubprocessError, OSError):
+                    self.error = 'InputUnavailable'
+                    log('dictation input refused before microphone capture')
+                    notify('Dictation needs a supported editable text field. Focus the editor and try F5 again.')
+                    return
+            if self.stop_evt.is_set(): return
+            if not self.models.loaded:
+                status('loading')
+                if not test: notify('Preparing speech model… Microphone is off. Keep F5 held until Listening.')
+            with self.models.use(lambda extra: not resource_reasons(self.policy, extra)) as model:
+                if self.stop_evt.is_set(): return
+                if self.input_token:
+                    # Loading can outlast the user's focus. Check the original
+                    # lease again without inserting text or reading field text.
+                    try: input_call('check', self.input_token)
+                    except (subprocess.SubprocessError, OSError):
+                        self.insertion_failed()
+                        return
+                if self.stop_evt.is_set(): return
+                if resource_reasons(self.policy, 256 * 1024**2): raise ModelHeadroom()
+                capture_started = True
+                status('listening')
+                if not test:
+                    tone(880, 90)
+                    notify('Listening… Release F5 to finish; Escape cancels.', persistent=True)
+                self.run(model)
+        except ModelHeadroom:
+            self.error = 'ResourceGuard'
+            notify('Dictation is waiting for memory or cooling headroom')
+        except Exception as error:
+            self.error = type(error).__name__
+            log('speech preparation failed:', type(error).__name__)
+            notify('Dictation could not prepare the speech model; microphone is off')
+        finally:
+            if OUTPUT == 'ibus' and not self.cancelled: self.typer.finish(self.input_token)
+            if not capture_started or self.error == 'ResourceGuard':
+                try: self.models.trim(force=True)
+                except Exception:
+                    self.error = 'ModelReleaseUnavailable'
+                    log('idle speech model release failed')
+            if capture_started and not test:
+                tone(440, 120)
+                notify('Dictation cancelled' if self.cancelled else ('Dictation stopped to preserve cooling or desktop memory' if self.error == 'ResourceGuard' else ('Dictation finished' if not self.error else 'Dictation could not finish')))
+            self.active = False
+            status('waiting' if self.error == 'ResourceGuard' else ('error' if self.error else 'ready'))
 
     def stop(self):
         if self.active:
@@ -245,7 +306,35 @@ class Dictation:
             except (subprocess.SubprocessError, OSError):
                 pass
 
-    def run(self):
+    @staticmethod
+    def close_capture(cap):
+        try:
+            cap.terminate()
+            try: cap.wait(2)
+            except subprocess.TimeoutExpired:
+                cap.kill(); cap.wait(2)
+        finally:
+            cap.stdout.close()
+
+    def open_capture(self, command):
+        for _ in range(8):
+            if self.stop_evt.is_set(): return None, None
+            cap = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            try:
+                deadline = time.monotonic() + 2
+                while not self.stop_evt.is_set() and time.monotonic() < deadline:
+                    if not select.select([cap.stdout], [], [], .1)[0]: continue
+                    first = cap.stdout.read1(CHUNK * 2)
+                    if first: return cap, first
+                    break
+            except BaseException:
+                self.close_capture(cap)
+                raise
+            self.close_capture(cap)
+            self.stop_evt.wait(.1)
+        return None, None
+
+    def run(self, model):
         test = os.environ.get("STREAM_TEST_WAV")  # offline test: play a file instead of the mic
         raw = os.environ.get("STREAM_TEST_RAW")  # offline test: a raw AOP capture (3ch f32 48 kHz) through CHAIN
         if test:
@@ -258,33 +347,27 @@ class Dictation:
         else:
             cmd = ["pw-cat", "--record", "--target", SOURCE, "--rate", "16000",
                    "--channels", "1", "--format", "s16", "--raw", "-"]
-        for attempt in range(8):  # the previous capture may still hold the device for a moment
-            cap = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-            first = cap.stdout.read1(CHUNK * 2)
-            if first:
-                break
-            cap.wait()
-            time.sleep(0.1)
-        else:
+        # A failed/blocked first read must not leave a capture child alive,
+        # and release during device startup must not start a later retry.
+        cap, pending = self.open_capture(cmd)
+        if cap is None:
+            if self.stop_evt.is_set(): return
             log("could not open the microphone")
-            if OUTPUT == 'ibus': self.typer.finish(self.input_token)
-            self.active = False
-            status('error')
+            self.error = 'CaptureUnavailable'
             notify('Could not open the microphone')
             return
-        pending = first
         typed = ""
         t0 = time.time()
         kept = bytearray()
         try:
-            with self.model.session(n_threads=THREADS) as s, s.stream() as st:
+            with model.session(n_threads=THREADS) as s, s.stream() as st:
                 buf = pending
                 peak = sq = 0.0; n = 0
                 stopped_at = None
                 next_guard = 0
                 while True:
                     now = time.monotonic()
-                    if OUTPUT == 'ibus' and now >= next_guard:
+                    if now >= next_guard:
                         next_guard = now + 1
                         if resource_reasons(self.policy):
                             self.error = 'ResourceGuard'
@@ -295,6 +378,8 @@ class Dictation:
                         stopped_at = time.time()
                     if stopped_at and time.time() - stopped_at > 0.15:
                         break  # short tail so the last word is not clipped
+                    if not select.select([cap.stdout], [], [], .1)[0]:
+                        continue  # Keep stop/resource guards live if capture stalls.
                     data = cap.stdout.read1(CHUNK * 2)
                     if not data:
                         break
@@ -346,26 +431,10 @@ class Dictation:
             self.error = type(e).__name__
             log("stream error:", repr(e))
         finally:
-            cap.terminate()
-            try:
-                cap.wait(2)
-            except Exception:
-                cap.kill()
-            if not (test or raw):
-                tone(440, 120)
-            if OUTPUT == 'ibus' and not self.cancelled: self.typer.finish(self.input_token)
-            self.active = False
-            status('error' if self.error else 'ready')
-            if not (test or raw):
-                notify('Dictation cancelled' if self.cancelled else ('Dictation stopped to preserve cooling or desktop memory' if self.error == 'ResourceGuard' else ('Dictation finished' if not self.error else 'Dictation could not finish')))
+            self.close_capture(cap)
 
 
 def main():
-    status('loading')
-    if OUTPUT == 'ibus':
-        while resource_reasons(load_policy(), 1024 ** 3):
-            status('waiting')
-            time.sleep(5)
     d = Dictation()
     if TEST_INSERT:
         d.start()
@@ -392,7 +461,10 @@ def main():
     size = struct.calcsize(fmt)
     with open(dev, "rb", buffering=0) as f:
         while True:
+            d.idle_tick()
+            if not select.select([f], [], [], 1)[0]: continue
             raw = f.read(size)
+            if len(raw) != size: raise SystemExit('Keyboard input device disconnected')
             _, _, typ, code, val = struct.unpack(fmt, raw)
             if typ == 1 and code == 1 and val == 1:  # Escape cancels pending IBus insertion
                 d.cancel()

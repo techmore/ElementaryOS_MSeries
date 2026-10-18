@@ -74,6 +74,15 @@ class FocusTests(unittest.TestCase):
         s.clock = lambda: s.deadline + 1
         with self.assertRaises(ValueError): s.accept(token, 'text')
 
+    def test_pre_capture_check_does_not_commit_or_extend_session(self):
+        s = self.ready(); token = s.begin(); deadline = s.deadline
+        s.check(token)
+        self.assertEqual(s.characters, 0)
+        self.assertEqual(s.deadline, deadline)
+        for action in [lambda: s.invalidate(), lambda: s.focus(object(), 'gtk3-im:other')]:
+            s = self.ready(); token = s.begin(); action()
+            with self.assertRaises(ValueError): s.check(token)
+
     def test_bounds_and_control_characters(self):
         for text in ['', 'x' * 4001, '\x00', '\x1b', '\x7f']:
             s = self.ready()

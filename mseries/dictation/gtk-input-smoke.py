@@ -21,8 +21,10 @@ parser.add_argument('--receipt-dir',type=Path,help='New private output folder fo
 parser.add_argument('--reconnect-check',action='store_true',help='Private IBus reconnect and selected-source recovery; synthetic fields only')
 parser.add_argument('--keyboard-check',action='store_true',help='Synthetic ordinary-key and US-international compose regression in private Xvfb')
 parser.add_argument('--speech-file',type=Path,help='Public synthetic test WAV; CPU ASR, no microphone')
+parser.add_argument('--lifecycle-check',action='store_true',help='One public-file run plus native model close/reload, no second inference')
 parser.add_argument('--wayland',action='store_true',help='Use only inside an isolated nested Wayland desktop')
 args=parser.parse_args()
+if args.lifecycle_check:assert args.speech_file and not args.wayland,'Lifecycle fixture requires the public-file private X11 path'
 if args.reconnect_check:assert not args.wayland and not args.speech_file,'Reconnect fixture uses private X11/keyfile settings; no ASR'
 if args.wayland:
     assert os.environ.get('MSERIES_DICTATION_TEST_BUS') == '1' and os.environ.get('GSETTINGS_BACKEND') == 'memory', 'Use test-wayland-input.sh'
@@ -41,7 +43,7 @@ with tempfile.TemporaryDirectory(prefix='mseries-gtk-input-') as directory:
         evaluated=args.receipt_dir/'evaluated-source'
     evaluated.mkdir(mode=0o700)
     source_hashes={}
-    for name in ['stream-dictate.py','dictation-input.py','dictation-input-client.py','dictation_status.py','dictation_resources.py','gtk-input-smoke.py']:
+    for name in ['stream-dictate.py','dictation-input.py','dictation-input-client.py','dictation_status.py','dictation_resources.py','dictation_model.py','lifecycle-smoke.py','gtk-input-smoke.py']:
         raw=Path(__file__).with_name(name).read_bytes()
         (evaluated/name).write_bytes(raw)
         source_hashes[name]=hashlib.sha256(raw).hexdigest()
@@ -124,6 +126,8 @@ with tempfile.TemporaryDirectory(prefix='mseries-gtk-input-') as directory:
             return subprocess.CompletedProcess(command,process.returncode,stdout,stderr)
         result=run_client('begin');assert result.returncode==0,result.stderr
         token=result.stdout.strip()
+        assert run_client('check',token).returncode==0
+        assert not first.get_text(),'Pre-capture check inserted text'
         text='Café — 日本語 + & $(literal)'
         for chunk in [text[:8],text[8:]]:
             result=run_client('commit',token,chunk);assert result.returncode==0,result.stderr
@@ -157,12 +161,14 @@ with tempfile.TemporaryDirectory(prefix='mseries-gtk-input-') as directory:
             first.set_text('');first.grab_focus();pump()
             env=dict(os.environ,STREAM_OUTPUT='ibus',STREAM_TEST_INSERT='1',STREAM_TEST_WAV=str(args.speech_file.resolve()),
                 STREAM_BACKEND='cpu',STREAM_THREADS='6',STREAM_QUIET='1')
-            env.pop('STREAM_DRY',None);env.pop('STREAM_TEST_RAW',None)
+            env.pop('STREAM_DRY',None);env.pop('STREAM_TEST_RAW',None);env.pop('STREAM_KEEP',None)
+            env['TRANSCRIBE_LIBRARY']=str(Path.home()/'.local/share/mseries/stream/native/transcribe-native-linux-aarch64-cpu-vulkan/libtranscribe.so')
             started=time.monotonic();first_text_s=None;samples=[]
             log=(args.receipt_dir or Path(directory))/'private-asr.log'
             with log.open('w') as output:
-                child=subprocess.Popen([str(Path.home()/'.local/share/mseries/stream/venv/bin/python'),
-                    str(evaluated/'stream-dictate.py')],env=env,stdout=output,stderr=output,start_new_session=True)
+                command=[str(Path.home()/'.local/share/mseries/stream/venv/bin/python'),'-I',str(evaluated/('lifecycle-smoke.py' if args.lifecycle_check else 'stream-dictate.py'))]
+                if args.lifecycle_check:command+=['--receipt',str((args.receipt_dir or Path(directory))/'lifecycle.json')]
+                child=subprocess.Popen(command,env=env,stdout=output,stderr=output,start_new_session=True)
                 try:
                     while child.poll() is None:
                         sample=snapshot();samples.append(sample)
@@ -226,6 +232,7 @@ with tempfile.TemporaryDirectory(prefix='mseries-gtk-input-') as directory:
         result=run_client('begin');assert result.returncode==0,result.stderr
         token=result.stdout.strip()
         second.grab_focus();pump()
+        assert run_client('check',token).returncode!=0,'Pre-capture check accepted a changed field'
         assert run_client('commit',token,'wrong field').returncode!=0,'Focus change accepted stale insertion'
         assert not second.get_text()
         # A deliberate owner layout change during a lease must win over the

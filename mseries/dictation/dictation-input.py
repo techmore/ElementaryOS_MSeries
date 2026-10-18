@@ -82,9 +82,12 @@ class FocusSession:
         self.characters = 0
         return self.token
 
-    def accept(self, token, text):
+    def check(self, token):
         if not self.token or not secrets.compare_digest(token, self.token) or self.clock() > self.deadline:
             raise ValueError('Dictation focus changed, was cancelled or expired')
+
+    def accept(self, token, text):
+        self.check(token)
         if not isinstance(text, str) or not text or len(text) > 4000 or self.characters + len(text) > 16000:
             raise ValueError('Dictation text exceeds the session bound')
         if any(ord(c) < 32 and c not in '\n\t' for c in text) or '\x7f' in text:
@@ -255,6 +258,7 @@ def main():
     xml = '''<node><interface name="org.techmore.DictationInput">
       <method name="Begin"><arg type="s" direction="out"/></method>
       <method name="Commit"><arg type="s" direction="in"/><arg type="s" direction="in"/></method>
+      <method name="Check"><arg type="s" direction="in"/></method>
       <method name="Cancel"/>
       <method name="Finish"><arg type="s" direction="in"/></method>
       <method name="Ready"><arg type="b" direction="out"/></method>
@@ -342,13 +346,17 @@ def main():
         try:
             if method == 'Begin':
                 begin(invocation)
-            elif method == 'Commit':
-                token, text = parameters.unpack()
+            elif method in ('Commit', 'Check'):
+                values = parameters.unpack()
+                token = values[0]
                 if metadata is None or metadata.validate() != current['metadata']:
                     state.invalidate()
                     raise ValueError('Accessible field focus changed')
-                state.accept(token, text)
-                state.target.commit_text(IBus.Text.new_from_string(text))
+                state.check(token)
+                if method == 'Commit':
+                    text = values[1]
+                    state.accept(token, text)
+                    state.target.commit_text(IBus.Text.new_from_string(text))
                 invocation.return_value(None)
             elif method == 'Cancel':
                 lease['epoch'] += 1

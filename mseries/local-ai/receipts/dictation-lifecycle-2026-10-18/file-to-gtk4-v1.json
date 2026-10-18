@@ -1,0 +1,38 @@
+{
+  "passed": true,
+  "source_sha256": {
+    "stream-dictate.py": "f62cd6fc942daa63b586b8503eff7e1fc5eb7b26d4393d6f92208b8c597fadf2",
+    "dictation-input.py": "73c30634a259af7ec86060f403e245a492963135ab692d5eb738169d7cc60d1e",
+    "dictation-input-client.py": "f9b0c59f6b941a5c670ea04156a796a7526c6945ea369f537d43a2e8c1b0305d",
+    "dictation_status.py": "50dadbf4f6a7f5edf8e4cb8b91d8931adf75cd899455285547d653c5af591903",
+    "dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+    "dictation_model.py": "ce7b805e735c704ff7a22ce7ea272fb88e22f91d64e6c965185b8e5c4db41578",
+    "lifecycle-smoke.py": "da69ddc38e080094efac3a51bea890f18b56e9d5ca5062ed0e3599f8b6fd8b1a",
+    "gtk-input-smoke.py": "65a9840d8b9a8d44afdf5d741d2bc013b4f4de5afeba16b1f7c05de20f188e00",
+    "machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+  },
+  "gtk_version": 4,
+  "display_backend": "x11",
+  "unicode_field": true,
+  "changed_field_untouched": true,
+  "password_untouched": true,
+  "session_engine_restore": true,
+  "overlapping_begin_refused": true,
+  "owner_selection_preserved": true,
+  "speech": {
+    "backend": "cpu",
+    "wav_sha256": "33c6c68d943a22d5272bf8d5e1f86af9d89d901fb7da35961a692de7591a534c",
+    "normalized_word_error_rate": 0.0,
+    "widget_text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered, flour-fattened sauce",
+    "first_widget_text_s": 5.033145760999105,
+    "elapsed_s": 13.076809414998934,
+    "min_available_bytes": 11965202432,
+    "max_fan_rpm": 0.0,
+    "max_temp_c": 39.518,
+    "samples": 60,
+    "quiet_policy_passed": true,
+    "microphone_recorded": false
+  },
+  "method": "Actual Gtk.Entry fields, private Xvfb/IBus/session bus; CPU file ASR; no microphone",
+  "scope": "Functional file-to-field regression for the new lazy controller; does not replace or rescore older completed quality cohorts."
+}

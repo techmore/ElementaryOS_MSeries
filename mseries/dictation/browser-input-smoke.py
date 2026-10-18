@@ -104,9 +104,14 @@ with tempfile.TemporaryDirectory(prefix='mseries-browser-input-') as directory:
             def call(method,args=None):return conn.call_sync('org.techmore.DictationInput','/org/techmore/DictationInput',
                 'org.techmore.DictationInput',method,args,None,Gio.DBusCallFlags.NONE,2000,None)
             token=call('Begin').unpack()[0];text='Café — 日本語 + & $(literal)'
+            call('Check',GLib.Variant('(s)',(token,)))
+            assert js('document.querySelector("#first").value')==''
             call('Commit',GLib.Variant('(ss)',(token,text)));pump()
             actual=js('document.querySelector("#first").value');assert actual==text,repr(actual)
             js('document.querySelector("#second").focus()');pump()
+            try:call('Check',GLib.Variant('(s)',(token,)))
+            except GLib.Error:pass
+            else:raise AssertionError('Pre-capture check accepted a changed browser field')
             try:call('Commit',GLib.Variant('(ss)',(token,'wrong field')))
             except GLib.Error:pass
             else:raise AssertionError('Browser field change accepted stale insertion')
@@ -118,7 +123,7 @@ with tempfile.TemporaryDirectory(prefix='mseries-browser-input-') as directory:
             except GLib.Error:pass
             else:raise AssertionError('Browser password accepted dictation')
             print(json.dumps({'browser':'Electron synthetic X11' if args.electron else 'Brave X11','accessibility':'automatic with OS support enabled' if args.enable_accessibility_status else ('automatic' if args.automatic_accessibility else 'forced'),'unicode_field':True,'changed_field_untouched':True,
-                'password_refused':True,'session_engine_restore':True,'method':'Synthetic form in isolated real browser; no ASR, microphone or owner profile'}))
+                'password_refused':True,'pre_capture_check':True,'session_engine_restore':True,'method':'Synthetic form in isolated real browser; no ASR, microphone or owner profile'}))
     finally:
         if browser:
             try:os.killpg(browser.pid,signal.SIGTERM)

@@ -183,7 +183,7 @@ def stage(payload):
             'activation_started': False, 'activated': False}
         payload.save()
     remember_preferences(payload)
-    for name in ['stream-dictate.py', 'dictation-input.py', 'dictation-input-client.py', 'dictation_status.py', 'dictation_resources.py', 'dictation-launch.py', 'dictation_review.py', 'dictation_pipeline.py', 'dictation-panel.py']:
+    for name in ['stream-dictate.py', 'dictation-input.py', 'dictation-input-client.py', 'dictation_status.py', 'dictation_resources.py', 'dictation_model.py', 'dictation-launch.py', 'dictation_review.py', 'dictation_pipeline.py', 'dictation-panel.py']:
         payload.install(BASE / name, (SOURCE / name).read_bytes(), 0o755)
     payload.install(BASE / 'dictation-manage.py', Path(__file__).read_bytes(), 0o755)
     machine = HERE / 'local-ai/machine.py' if (HERE / 'local-ai/machine.py').exists() else BASE / 'machine.py'

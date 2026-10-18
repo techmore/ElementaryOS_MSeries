@@ -1,5 +1,59 @@
 # OS 9 implementation / Claude Code handoff
 
+## On-demand speech lifecycle privately qualified; deployment/F5 pending — 2026-10-18
+
+Previous goal turn was progress: review/pipeline833b3c4 and main reconciliation77c51fd
+were pushed; CI39129646910 passed all5 jobs, all6 current image checks passed. PR86
+body has those completed results. Physical F5/app/prompt clarification is still pending;
+no new human acceptance evidence. Keep the full speech/control-panel goal active.
+
+New source LazyModel owns a single exclusive lease across load/capture/flush. Native
+SDK/model load on explicit start only, with1GiB+6GiB admission; Begin binds the original
+field before load and a new metadata/token-only Check revalidates it before capture.
+Release/Escape during preparation and stop before a capture retry prevent opening.
+Idle60s/pressure trim uses native close, never during active use. Main listener remains
+responsive, sampling5s only while resident/waiting; recovered admission clears waiting.
+46 contracts pass, including controlled load/Begin races and native-cache semantics.
+Installer stages the new module for both compatibility and Unicode paths.
+
+No owned trial is still running: native-file exec54189 and native-idle exec58731 are
+terminal success. work/dictation-lazy-lifecycle-v1 has one new CPU public-file→GTK4
+run, native close/reload, no second inference: RSS37.59→918.73→134.59MiB,784.14MiB
+reclaimed; reload930.97→187.86MiB. Retained allocator/library state is not zero and
+long-run growth remains unqualified. work/dictation-idle-expiry-v1 uses NO inference,
+actual controller timer release60.9955s, RSS888.25→121.17MiB (767.08MiB). min available
+11.07/11.33GiB, reported0RPM, max39.52/39.99C. No mic/physical keyboard/audio playback.
+Source and native/model/profile/kernel hashes are frozen per cohort. File fixture
+source precedes the waiting-state recovery/capture-retry additions; do not overwrite
+its source pins or rerun to improve a score. Later native timer/field tests pin those
+changes. No repeated original quality cohort or repair-advice regrading.
+
+Private Qt6, Brave forced-accessibility and headless GTK4 Wayland pre-capture Check
+and stale-focus refusal pass, no ASR. Frozen work/dictation-pre-capture-framework-v1
+preserves exact source. Only allowlisted JSON/frozen public code exported with
+work/publish-receipts.py --dictation-lifecycle; no private logs/settings/recordings.
+Native SDK is transcribe.cpp0.4.0/NumPy2.5.4; CPU strict, same kernel/native model pins.
+
+Live eager speechPID758179 and bridgePID787274 remain unchanged; do NOT claim the new
+memory behavior deployed. Everyday mseries-ai-everyday.service remains active. Optional
+panel is still uninstalled. These runtime/physical gates are separate from publishing
+tested opt-in source and retained failures to main. New lifecycle batch needs
+commit/push/current-source CI; then publish tested candidate with known gates explicit.
+Do not mark the goal complete on merge/publication alone. Human F5, rollout, realtime
+translation beyond explicit post-utterance review and hardware factory boot lack proof.
+
+Additional cleanup review found first-read/capture-stall paths could outlast release.
+Source now polls first/active pipe reads, closes owned children/stdout on read failure,
+and prevents later retry after release.46 contracts pass. Actual public-file first
+samples/close + silent-owned-child cancellation passed0.203s, no SDK/inference.
+work/dictation-capture-startup-v1 is terminal. Native reload-only8-cycle soak exec99822
+is terminal success: closed RSS119.92MiB initially, then107.14–107.20MiB; last4 span48KiB.
+min11.35GiB available/reported0RPM/max38.95C. This does not establish repeated-inference
+or indefinite stability. Its source is frozen at work/dictation-reload-soak-v1; preserve
+all completed observations.72 assistant and6 image contracts pass on this batch.
+All new receipts are allowlisted under dictation-lifecycle-2026-10-18; no logs/audio.
+Live speech/input/default4B PIDs758179/787274/795452 unchanged and active; no new F5 event.
+
 ## Review cohorts and actual panel workflow complete; physical F5 unresolved — 2026-10-18
 
 Both owned model-review units are terminal/missing; do not relaunch or duplicate.

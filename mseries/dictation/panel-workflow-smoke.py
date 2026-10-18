@@ -27,7 +27,7 @@ assert os.environ.get('GSETTINGS_BACKEND')=='memory'
 output=args.receipt_dir.resolve();output.mkdir(parents=True,mode=0o700,exist_ok=False)
 frozen=output/'evaluated-source';source=frozen/'dictation';source.mkdir(parents=True);(frozen/'local-ai').mkdir()
 for name in ['stream-dictate.py','dictation-input.py','dictation-input-client.py','dictation-panel.py',
-             'dictation_review.py','dictation_pipeline.py','dictation_resources.py','dictation_status.py',
+             'dictation_review.py','dictation_pipeline.py','dictation_resources.py','dictation_status.py','dictation_model.py',
              'review-smoke.py','panel-workflow-smoke.py']:
     (source/name).write_bytes((HERE/name).read_bytes())
 (frozen/'local-ai/machine.py').write_bytes((HERE.parent/'local-ai/machine.py').read_bytes())

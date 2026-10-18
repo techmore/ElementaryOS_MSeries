@@ -2,7 +2,7 @@
 
 Hold **F5** (the microphone key), speak, release: the compatibility service types recognized text into the focused field. Cross-app support and current limits are qualified below.
 Voxtype 1.1.1 (MIT) + whisper.cpp `base.en` on the CPU, ydotool for typing (same stack as Omarchy).
-Audio stays on the Mac; nothing is stored. Install: `bash mseries/install-dictation.sh` (`--uninstall` to remove).
+Audio stays on the Mac and is not saved by default. The explicit `STREAM_KEEP` debug option saves the last capture in the runtime directory; those recordings are private and excluded from published receipts. Install: `bash mseries/install-dictation.sh` (`--uninstall` to remove).
 
 Pieces
 - `91-mseries-dictation.hwdb`: F5 becomes KEY_F14 (hid-apple otherwise makes it backlight-down). Supersedes the opt-in F5 remap in `90-mseries-keyboard.hwdb`.
@@ -14,7 +14,7 @@ Known gaps (2026-10-18)
 - The live F5 round trip with a person speaking is **not yet verified**. Verified: key mapped to F14, service listening, bridge to Whisper end to end (a hiss recording transcribed as "Pshhh."), and offline speech through the same filter transcribed correctly.
 - The mic bridge (`mseries-aop-mic`) is only used by the Voxtype fallback and is started on demand; streaming mode opens the mic only while F5 is held.
 - Mic gain is 60 (`STREAM_GAIN` / `AOP_MIC_GAIN`) since the float fix below; typing assumes a US layout (ydotool).
-- Grammar clean-up by a local LLM is a stub in `config.toml` (`[output.post_process]`), not tested.
+- Automatic streamed grammar remains disabled; optional original/proposal review is qualified separately below.
 
 ## Streaming mode (2026-10-18, default after `install-dictation-stream.sh`)
 
@@ -118,8 +118,20 @@ Twenty-four contracts, a private actual GTK reconnect/insertion check, and actua
 
 Idle ASR currently retains its model and checks resource limits before loading/recording and during capture. Idle memory-pressure reclamation is still open; the optional local review queue waits for sufficient headroom and does not evict owner jobs.
 
+### On-demand model candidate — private native qualification complete
+
+New source keeps the F5 listener ready without loading the native SDK/model. Explicit start binds the original field, loads only with another1GiB above the6GiB desktop reserve, then rechecks that field before microphone capture. Release/Escape during preparation prevents capture. A single exclusive model lease covers load/capture/flush; idle cleanup cannot free an active model. Short utterances reuse it for60s; idle or memory pressure releases it, and the listener stays available. The idle loop samples every5s while resident/waiting. Missing headroom produces a waiting state that clears when admission recovers. There is no new worker or model download.
+
+Forty-six contracts cover release during load/Begin, focus loss, admission/recovery, overlap, warm reuse and close. Private actual Qt6, accessibility-enabled Brave and headless GTK4 Wayland checks pass the new no-insertion `Check` RPC and reject changed focus. One distinct CPU file-to-GTK4 lifecycle fixture passes; it does not replace prior accuracy results. Native RSS was37.59MiB before SDK import,918.73MiB after speech,134.59MiB after close (784.14MiB reclaimed). A reload without further inference closed successfully, ending187.86MiB. Retained library/allocator memory remains; repeated-cycle growth and long-run stability are not qualified.
+
+A separate no-inference native controller test automatically released the model at61.00s:888.25→121.17MiB RSS (767.08MiB reclaimed). Both tests preserved at least11.07GiB available, reported0RPM and stayed below40.0C. No microphone, physical keyboard, owner window or audio route was used. [Receipts and exact evaluated sources](../local-ai/receipts/dictation-lifecycle-2026-10-18/). RSS comparisons are within each process, not a cross-kernel speed ranking or acoustic measurement. The ASR fixture predates the final waiting-state/retry-guard additions; those are covered by unit checks, while native timeout and framework tests pin the later source. Completed model trials were not rerun.
+
+**Deployment remains pending:** the installed owner speech service still uses its earlier eager model. The candidate was tested privately without replacing it during the pending human F5 retry. The reported microphone-function prompt is unresolved; these tests do not prove physical-key delivery or human speech. The optional panel remains uninstalled. Source publication is not promotion to universal hardware acceptance.
+
 ### Review pilot result
 
 The pinned everyday4B finished6 synthetic text-review cases: **5/6 limited checks**, all within reserve/thermal guards (1.99–3.43s warm request path, min9.48GiB available, max2516RPM/42.75C). The failed French literal translation changed `PWNED` to `PWNÉ`; it did not execute that instruction. A grammar case also left capitalization/punctuation unpolished. [Exact outputs and frozen source](../local-ai/receipts/dictation-review-2026-10-18/qualification-v1.json) preserve the failure. The separate [English/German/Japanese probes](../local-ai/receipts/dictation-review-2026-10-18/additional-languages-v1.json) passed3/3 limited checks (3.21–3.64s, min11.51GiB available, sensors reported0RPM, max40.30C). These are small functional probes, not general translation accuracy, acoustic measurements or kernel-diagnosis evidence.
 
 The [actual private panel workflow](../local-ai/receipts/dictation-review-2026-10-18/panel-workflow-v1.json) used the existing public10.4s LibriSpeech clip:0% normalized WER, first widget text5.00s and complete ASR path12.80s including startup/streaming/flush. Translation and grammar requests took7.02s and7.09s. Original, intermediate and private clipboard checks passed; min11.04GiB available, reported0RPM and max40.17C. Meaning drift remains: “stew” became “soup” and “bruised potatoes” became “crushed potatoes”; the grammar stage returned that translation unchanged. Functional integration is qualified for this fixture, translation fidelity is not. No ambient microphone, physical key or owner app was used. Human F5 acceptance, panel rollout and main/Pages publication remain open.
+
+The follow-up eight-cycle native **reload-only** soak held closed RSS around107.14–107.20MiB after the first cycle; the last four samples spanned48KiB. This is a bounded no-inference observation, not a repeated-recognition or indefinite always-on soak. A separate public-file pipe-start/close and silent-child cancellation test passed (cancel0.203s, no native SDK/inference). Current source also polls a stalled active pipe so release/resource guards stay live, covered by the46-contract suite. These changes and frozen-source differences are retained separately rather than repeating completed ASR quality trials.

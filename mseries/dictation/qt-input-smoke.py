@@ -59,21 +59,24 @@ with tempfile.TemporaryDirectory(prefix='mseries-qt-input-') as directory:
             stdout,stderr=child.communicate()
             return subprocess.CompletedProcess(command,child.returncode,stdout,stderr)
         result=call('begin');assert result.returncode==0,result.stderr;token=result.stdout.strip()
+        assert call('check',token).returncode==0 and not first.text()
         text='Café — 日本語 + & $(literal)'
         for chunk in [text[:8],text[8:]]:
             result=call('commit',token,chunk);assert result.returncode==0,result.stderr;pump()
         assert first.text()==text,repr(first.text())
-        second.setFocus();pump();assert call('commit',token,'wrong field').returncode!=0
+        second.setFocus();pump();assert call('check',token).returncode!=0
+        assert call('commit',token,'wrong field').returncode!=0
         assert not second.text()
         assert call('finish',token).returncode==0;assert bus.get_global_engine().get_name()=='xkb:us::eng'
         password.setFocus();pump();assert call('begin').returncode!=0;assert not password.text()
         multiline.setFocus();pump();result=call('begin');assert result.returncode==0,result.stderr
         token=result.stdout.strip()
+        assert call('check',token).returncode==0 and not multiline.toPlainText()
         result=call('commit',token,'Line one\n日本語 & café');assert result.returncode==0,result.stderr;pump()
         assert multiline.toPlainText()=='Line one\n日本語 & café'
         assert call('finish',token).returncode==0;assert bus.get_global_engine().get_name()=='xkb:us::eng'
         window.close();pump()
-        print(json.dumps({'qt6_unicode_field':True,'qt6_multiline':True,'session_engine_restore':True,'changed_field_untouched':True,
+        print(json.dumps({'qt6_unicode_field':True,'qt6_multiline':True,'pre_capture_check':True,'session_engine_restore':True,'changed_field_untouched':True,
             'password_untouched':True,'method':'Real Qt6 X11 widgets in private Xvfb/IBus/session bus; no microphone or ASR'}))
     finally:
         if engine:engine.terminate();engine.wait(timeout=5)
