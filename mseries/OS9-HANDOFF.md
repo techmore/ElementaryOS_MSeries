@@ -1,5 +1,15 @@
 # OS 9 implementation / Claude Code handoff
 
+## RepoBar website globe — 2026-10-18 (Claude Code)
+
+Owner asked for an easy way to open a repository's GitHub Pages site. Cards now show a globe right of the name that
+opens the Pages site, or the repository's website field when there is no Pages site; the right-click menu adds
+Open Website. The helper reads the `github-pages` deployment URL (custom domains) and REST `has_pages` for
+branch-built sites (github.io default URL); malformed website fields are ignored. Live: 23 Pages sites and 2 websites
+of 85 repositories; refresh time 13–15 s old vs 15–17 s new over two runs each (no clear difference). New
+`mseries-repobar-globe-symbolic` icon (filled paths for symbolic recoloring). Rendered headless light/dark; deployed
+without a panel restart. **Unverified:** live panel until Wingpanel reloads.
+
 ## RepoBar UX pass 2 — 2026-10-18 (Claude Code)
 
 Owner asked for more repositories with scrolling: the dashboard now shows pins plus 20 recent repositories (was 5),

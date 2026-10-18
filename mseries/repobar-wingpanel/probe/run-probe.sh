@@ -23,7 +23,7 @@ for name in "${scenarios[@]}"; do
   cp "$here/fixtures/$name.json" "$home/.cache/mseries/repobar/snapshot.json"
   env -i PATH="$PATH" HOME="$home" LANG=C.UTF-8 GTK_THEME="$theme" GSK_RENDERER=cairo GDK_BACKEND=x11 \
     XDG_DATA_DIRS="$here/..:/usr/local/share:/usr/share" ${RB_SCOPE:+RB_SCOPE=$RB_SCOPE} ${RB_EXPAND:+RB_EXPAND=1} ${RB_TOAST:+RB_TOAST=1} \
-    RB_FIXTURE="$here/fixtures/$name.json" \
+    RB_FIXTURE="$here/fixtures/$name.json" RB_ICONS="$here/../icons" \
     xvfb-run -a -s "-screen 0 800x1000x24" "$build/render-probe" "$out/$name${RB_SCOPE:+-$RB_SCOPE}-$scheme.png" "${RB_DELAY:-2500}"
   echo "rendered $name ($scheme)"
 done
