@@ -230,7 +230,9 @@ int main (string[] args) {
         assert (MSeries.Presentation.dot_color (70) == "warning_color");
         assert (MSeries.Presentation.dot_color (25) == "warning_color");
         assert (MSeries.Presentation.dot_color (24) == "error_color");
-        assert (MSeries.Presentation.dot_percent (10) == "");
+        assert (MSeries.Presentation.dot_percent (15) == "");
+        assert (MSeries.Presentation.dot_percent (14) == " 14%");
+        assert (MSeries.Presentation.dot_percent (10) == " 10%");
         assert (MSeries.Presentation.dot_percent (9) == " 9%");
         assert (MSeries.Presentation.dot_percent (0) == " 0%");
         assert (MSeries.Presentation.dot_percent (-1) == "");

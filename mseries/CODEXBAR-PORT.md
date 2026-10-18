@@ -348,3 +348,9 @@ The dropdown and literal mode still honor the existing reset preference.
 Explicit Claude desktop switches always stop/restore/relaunch after target
 validation, even when local account UUID hints match. Persisted identity hints
 and process existence do not verify the account authenticated by the main UI.
+
+Compact bar rows group by account: active 5H and 7D share the top row; alternate
+account windows share the lower row. Token location remains independently set.
+
+Numeric dot-mode percentages now appear below 15% in bold red (superseding the
+earlier below-10 rule). The green/yellow/red dot thresholds are unchanged.

@@ -1,5 +1,24 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## CodexBar compact rows grouped by account — 2026-10-18
+
+Owner corrected the compact layout: the top row must contain multiple active
+account values, rather than only 7D. In dot mode the active 5H and 7D indicators
+now share the top row beside the provider mark; saved-account windows occupy the
+bottom row. Token visibility still follows its independent dropdown preference.
+Reset times stay hover-only. The same rule applies to all three providers, and
+single-account providers do not add an empty bottom row. Literal mode is unchanged.
+
+Native assertions check 5H/7D share a parent and alternate values appear below,
+in addition to existing percentages/hover/height checks. All 15 native targets passed the row correction; the light fixture was visually
+inspected before pushing. Owner then changed the numeric threshold: below 15%
+the written percentage is shown in bold red; 15% and above remains dot-only.
+Dot colors retain >70 green, 25–70 yellow, <25 red. Boundary tests cover 14/15. Owner's requested reload activated hover-only resets
+as panel PID513013 with Gala2678 and daemon44641 unchanged; the layout correction
+requires an additional reload under the same active request after deployment.
+No provider app switching or unrelated changes are part of this correction.
+
+
 ## Claude desktop Switch no-op investigation and fix — 2026-10-18
 
 Owner clarified that confirming Switch never closes/reopens the main Claude app.

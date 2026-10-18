@@ -1481,8 +1481,11 @@ namespace MSeries {
             label.remove_css_class ("level-low");
             label.remove_css_class ("level-critical");
             label.use_markup = true;
+            var percent = Presentation.dot_percent (remaining);
+            if (percent.length > 0) percent = "<span foreground=\"%s\" weight=\"bold\">%s</span>".printf (
+                quota_theme_color (label, "error_color", "#c6262e"), Markup.escape_text (percent));
             label.label = "%s <span foreground=\"%s\">●</span>%s".printf (
-                Markup.escape_text (caption), color, Presentation.dot_percent (remaining));
+                Markup.escape_text (caption), color, percent);
             label.tooltip_text = "%s · %g%% remaining · %s".printf (caption, remaining, reset);
         }
 
@@ -1536,7 +1539,8 @@ namespace MSeries {
         private Gtk.Widget build_panel_segment (string provider, string value_text, string reset_text,
                                                        QuotaLevel level, bool stale) {
             var local_tokens = display_preferences.get_bool ("showTokens") ? local_week_tokens (provider) : "";
-            var details_on_top = (provider == "codex" || provider == "claude") && (local_tokens.length > 0 ||
+            var dot_mode = display_preferences.get_bool ("compactQuota");
+            var details_on_top = dot_mode || (provider == "codex" || provider == "claude") && (local_tokens.length > 0 ||
                 ((display_preferences.get_bool ("showPercent") || display_preferences.get_bool ("showReset")) && active_panel_windows (provider) != null));
             var segment = new Gtk.Box (Gtk.Orientation.HORIZONTAL, provider == "opencodego" ? 2 : 3);
             if (provider == "opencodego") segment.add_css_class ("seg-opencode");
@@ -1558,7 +1562,7 @@ namespace MSeries {
                     tokens.tooltip_text = "Tokens processed in seven days";
                     heading.append (tokens);
                 }
-                append_weekly_panel_quota (heading, provider);
+                if (!dot_mode) append_weekly_panel_quota (heading, provider);
             }
             var value = new Gtk.Label (value_text) { valign = Gtk.Align.BASELINE_CENTER };
             value.add_css_class ("seg-value");
@@ -1566,12 +1570,14 @@ namespace MSeries {
             if (level == QuotaLevel.CRITICAL) value.add_css_class ("level-critical");
             apply_primary_quota_dot (value, provider);
             if (display_preferences.get_bool ("showPercent")) {
-                segment.append (value);
+                if (dot_mode) heading.append (value);
+                else segment.append (value);
             } else {
                 if (level == QuotaLevel.LOW) mark.add_css_class ("level-low");
                 if (level == QuotaLevel.CRITICAL) mark.add_css_class ("level-critical");
             }
-            if (display_preferences.get_bool ("showReset") && !display_preferences.get_bool ("compactQuota") && reset_text.length > 0) {
+            if (dot_mode && !value.get_text ().has_prefix ("7D ")) append_weekly_panel_quota (heading, provider);
+            if (display_preferences.get_bool ("showReset") && !dot_mode && reset_text.length > 0) {
                 var reset = new Gtk.Label (reset_text) { valign = Gtk.Align.BASELINE_CENTER };
                 reset.add_css_class ("seg-reset");
                 segment.append (reset);
@@ -1583,7 +1589,7 @@ namespace MSeries {
             if (provider == "opencodego") stack.add_css_class ("seg-opencode");
             stack.append (heading);
             if (details_on_top && !show_alternate) {
-                stack.append (segment);
+                if (segment.get_first_child () != null) stack.append (segment);
                 return stack;
             }
             var label = new Gtk.Label (null) { xalign = 0, use_markup = true };
@@ -1595,7 +1601,7 @@ namespace MSeries {
                 return stack;
             }
             var markup = new StringBuilder ();
-            if (details_on_top) markup.append ("· ");
+            if (details_on_top && !dot_mode) markup.append ("· ");
             if (!details_on_top && local_tokens.length > 0) markup.append (Markup.escape_text ("7d · %s tok  ·  ".printf (local_tokens)));
             var accounts = provider_accounts (provider);
             for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {

@@ -135,6 +135,14 @@ int main (string[] args) {
             assert (weekly != null && weekly.tooltip_text.contains ("% remaining") && weekly.tooltip_text.contains ("Resets in"));
             var primary = find_label (bar, "5H ●");
             assert (primary != null && primary.tooltip_text.contains ("Resets in"));
+            assert (primary.get_parent () == weekly.get_parent ());
+            var alternate = find_label (bar, "5H ● 5%");
+            assert (alternate != null && alternate.get_parent () != primary.get_parent ());
+            assert (alternate.label.contains ("weight=\"bold\"") && alternate.label.contains ("foreground="));
+            Graphene.Rect primary_bounds, alternate_bounds;
+            assert (primary.compute_bounds (bar, out primary_bounds));
+            assert (alternate.compute_bounds (bar, out alternate_bounds));
+            assert (primary_bounds.origin.y < alternate_bounds.origin.y);
             assert (!text.contains ("↻") && !text.contains ("3d11h") && !text.contains ("3h09m"));
             int minimum, natural;
             bar.measure (Gtk.Orientation.VERTICAL, -1, out minimum, out natural, null, null);

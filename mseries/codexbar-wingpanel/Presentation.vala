@@ -9,7 +9,7 @@ namespace MSeries {
         }
 
         public static string dot_percent (double remaining) {
-            return remaining >= 0 && remaining < 10 ? " %0.0f%%".printf (remaining) : "";
+            return remaining >= 0 && remaining < 15 ? " %0.0f%%".printf (remaining) : "";
         }
 
         public static QuotaLevel level_for (double remaining) {
