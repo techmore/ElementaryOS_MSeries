@@ -5,6 +5,15 @@ at `582e9ef3d44c93082e8abc740ad3e0a8dde29752`; moving branch tips never update
 the build implicitly. `series.json` pins the complete archive hash, source
 identity, package identity and host-test entrypoints.
 
+The first ARM64 build reproduced the known stock-bindgen layout assertion
+failure (`E0080` for namespace sizes). The series now carries Chris Kearney's
+unmodified [review fix 4c56f9cd](https://github.com/omacom/linux-aurora/commit/4c56f9cd3033e5f65ef9c61bc7b396d50bce23f7),
+already present in `.20` but missing from this WIP snapshot. It applies cleanly,
+restores the upstream stock-generator default and retains opt-in
+`BINDGEN_LAYOUT_TESTS=1` with the corrected private generator. Original author,
+license/trailers, documentation and hash are preserved. This is a build-policy
+port, not a new energy claim. The fixed native build must pass before promotion.
+
 ```sh
 python3 mseries/aurora/candidate.py prepare --profile unified72 \
   --cache /absolute/work/cache --output /absolute/work/unified72
