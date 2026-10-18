@@ -52,6 +52,12 @@ namespace MSeries {
             return value.to_string ();
         }
 
+        /* count_text without the decimal once it adds nothing at panel density: "121M", "9.4M". */
+        public static string panel_count_text (int64 value) {
+            if (value >= 100000000 && value < 1000000000) return "%.0fM".printf ((double) value / 1000000.0);
+            return count_text (value);
+        }
+
         /* Label the bar number when its window isn't the short session limit, so "35%" is never ambiguous. */
         public static string quota_lead (string short_label, int minutes, string remaining_text) {
             return minutes > 360 && short_label.length > 0 ? short_label + " " + remaining_text : remaining_text;
@@ -68,6 +74,30 @@ namespace MSeries {
                 return remaining_text + " · " + (window.length > 0 ? window + " " : "") + eta_compact;
             }
             return remaining_text;
+        }
+
+        /* Compact time to a reset for the panel: "38m", "4h44m", "6d22h"; empty when unknown or already due. */
+        public static string countdown_text (int64 seconds) {
+            if (seconds <= 0) return "";
+            if (seconds < 3600) return "%dm".printf ((int) ((seconds + 59) / 60));
+            if (seconds < 86400) return "%dh%02dm".printf ((int) (seconds / 3600), (int) (seconds % 3600 / 60));
+            return "%dd%dh".printf ((int) (seconds / 86400), (int) (seconds % 86400 / 3600));
+        }
+
+        /* The window that will stop you first: lowest measured remaining; a tie keeps the earlier (shorter) one. */
+        public static int binding_window (Json.Array windows) {
+            int best = -1;
+            double best_remaining = 0;
+            for (uint i = 0; i < windows.get_length (); i++) {
+                var node = windows.get_object_element (i).get_member ("remaining");
+                if (node == null || node.get_node_type () != Json.NodeType.VALUE) continue;
+                var remaining = node.get_double ();
+                if (best < 0 || remaining < best_remaining) {
+                    best = (int) i;
+                    best_remaining = remaining;
+                }
+            }
+            return best;
         }
 
         /* One line of local OpenCode Go activity: an estimate from this machine's history, not account quota. */

@@ -21,7 +21,43 @@ LIST = {"schemaVersion": 1, "activeAccountNumber": 2, "accounts": [
     {"number": 2, "email": "me@example.com", "active": True, "usageStatus": "unavailable", "usage": None}]}
 
 
+ME = {"emailAddress": "me@example.com", "accountUuid": "uuid-me"}
+WORK = {"emailAddress": "work@example.com", "accountUuid": "uuid-work"}
+SECRET = "sk-ant-oat01-NEVER-PRINT-ME"
+
+
 class ClaudeTest(unittest.TestCase):
+    """Every test runs against a fake HOME: the helper reads ~/.claude.json and the desktop app's config."""
+
+    def setUp(self):
+        import tempfile
+        self._home = tempfile.TemporaryDirectory()
+        self.home = pathlib.Path(self._home.name)
+        patches = [mock.patch.object(MODULE.pathlib.Path, "home", return_value=self.home),
+                   mock.patch.dict(MODULE.os.environ, {}, clear=False)]
+        for patch in patches:
+            patch.start()
+            self.addCleanup(patch.stop)
+        for name in ("CLAUDE_CONFIG_DIR", "XDG_DATA_HOME"):
+            MODULE.os.environ.pop(name, None)
+        self.addCleanup(self._home.cleanup)
+
+    def write(self, relative, data):
+        path = self.home / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(MODULE.json.dumps(data))
+
+    def sign_in_cli(self, account):
+        self.write(".claude.json", {"oauthAccount": account, "projects": {}})
+
+    def save_in_cswap(self, number, account):
+        self.write(f".local/share/claude-swap/configs/.claude-config-{number}-{account['emailAddress']}.json",
+                   {"oauthAccount": account})
+
+    def sign_in_desktop(self, account):
+        self.write(".config/Claude/config.json", {"lastKnownAccountUuid": account["accountUuid"],
+                                                  "oauth:tokenCacheV2": SECRET})
+
     def test_no_cswap_is_reported_unavailable(self):
         self.assertEqual(MODULE.listing(None), {"available": False, "accounts": [], "activeEmail": ""})
 
@@ -47,10 +83,74 @@ class ClaudeTest(unittest.TestCase):
         self.assertFalse(MODULE.switch("cswap", "1; rm -rf ~")[0])
         with mock.patch.object(MODULE, "run", return_value={"schemaVersion": 1, "switched": True}):
             self.assertTrue(MODULE.switch("cswap", "1")[0])
-        with mock.patch.object(MODULE, "run", return_value={"schemaVersion": 1, "switched": False, "reason": "already active"}):
-            self.assertEqual(MODULE.switch("cswap", "1"), (False, "already active"))
+        with mock.patch.object(MODULE, "run", return_value={"schemaVersion": 1, "switched": False, "reason": "locked"}):
+            self.assertEqual(MODULE.switch("cswap", "1"), (False, "locked"))
+        with mock.patch.object(MODULE, "run", return_value={"schemaVersion": 1, "error": {"message": "boom"}}):
+            self.assertEqual(MODULE.switch("cswap", "1"), (False, "boom"))
         with mock.patch.object(MODULE, "run", return_value=None):
             self.assertFalse(MODULE.switch("cswap", "1")[0])
+
+    def test_switch_is_checked_against_the_login_claude_code_reads(self):
+        switched = {"schemaVersion": 1, "switched": True, "reason": "switched",
+                    "to": {"number": 1, "email": "work@example.com"}}
+        self.sign_in_cli(ME)  # claude-swap says yes, but the live login did not change
+        with mock.patch.object(MODULE, "run", return_value=switched):
+            ok, message = MODULE.switch("cswap", "1")
+        self.assertFalse(ok)
+        self.assertIn("still signed in as me@example.com", message)
+        self.sign_in_cli(WORK)
+        with mock.patch.object(MODULE, "run", return_value=switched):
+            ok, message = MODULE.switch("cswap", "1")
+        self.assertTrue(ok)
+        self.assertIn("command line now uses work@example.com", message)
+        self.assertNotIn("Claude app", message)  # no desktop app installed in this HOME
+
+    def test_switch_says_the_desktop_app_keeps_its_own_sign_in(self):
+        """The owner's report: the switch 'did nothing' because Code sessions in the Claude app ignore it."""
+        self.save_in_cswap(1, WORK)
+        self.save_in_cswap(2, ME)
+        self.sign_in_desktop(ME)
+        self.sign_in_cli(WORK)
+        switched = {"schemaVersion": 1, "switched": True, "to": {"number": 1, "email": "work@example.com"}}
+        with mock.patch.object(MODULE, "run", return_value=switched):
+            ok, message = MODULE.switch("cswap", "1")
+        self.assertTrue(ok)
+        self.assertIn("Claude app is still signed in as me@example.com", message)
+        self.assertIn("sign in as that account", message)
+        self.assertNotIn(SECRET, message)
+        self.sign_in_desktop(WORK)  # app on the same account: no note
+        with mock.patch.object(MODULE, "run", return_value=switched):
+            self.assertNotIn("Claude app", MODULE.switch("cswap", "1")[1])
+
+    def test_already_active_is_not_a_failure(self):
+        self.sign_in_cli(WORK)
+        result = {"schemaVersion": 1, "switched": False, "reason": "already-active",
+                  "to": {"number": 1, "email": "work@example.com"}}
+        with mock.patch.object(MODULE, "run", return_value=result):
+            self.assertEqual(MODULE.switch("cswap", "1"),
+                             (True, "Claude Code's command line already uses work@example.com."))
+
+    def test_listing_follows_the_live_login_and_reports_the_desktop_app(self):
+        self.save_in_cswap(1, WORK)
+        self.save_in_cswap(2, ME)
+        self.sign_in_cli(WORK)  # claude-swap's record (LIST says #2 active) lags the live login
+        self.sign_in_desktop(ME)
+        with mock.patch.object(MODULE, "run", return_value=LIST):
+            data = MODULE.listing("cswap", NOW)
+        self.assertEqual(data["activeEmail"], "work@example.com")
+        self.assertEqual([a["active"] for a in data["accounts"]], [True, False])
+        self.assertEqual(data["desktop"], {"installed": True, "email": "me@example.com", "differs": True})
+        self.assertIn("me@example.com", data["desktopNote"])
+        self.assertNotIn(SECRET, MODULE.json.dumps(data))
+        self.assertNotIn("uuid-", MODULE.json.dumps(data))
+
+    def test_desktop_on_an_unsaved_account_is_still_flagged(self):
+        self.sign_in_cli(WORK)
+        self.write(".config/Claude/config.json", {"lastKnownAccountUuid": "uuid-unknown"})
+        with mock.patch.object(MODULE, "run", return_value=LIST):
+            data = MODULE.listing("cswap", NOW)
+        self.assertEqual(data["desktop"], {"installed": True, "email": "", "differs": True})
+        self.assertIn("a different account", data["desktopNote"])
 
     def test_add_explains_a_missing_login_and_reports_success(self):
         missing = mock.Mock(stdout="", stderr="Error: No credentials found for current account", returncode=0)
