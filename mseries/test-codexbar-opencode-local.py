@@ -3,6 +3,7 @@
 
 import importlib.util
 import json
+import os
 import pathlib
 import sqlite3
 import tempfile
@@ -82,6 +83,11 @@ class OpenCodeLocalUsageTests(unittest.TestCase):
 
 class AccountTest(unittest.TestCase):
     def setUp(self):
+        cache = tempfile.TemporaryDirectory()
+        self.addCleanup(cache.cleanup)
+        env = mock.patch.dict(os.environ, {"XDG_CACHE_HOME": cache.name})
+        env.start()
+        self.addCleanup(env.stop)
         patch = mock.patch.object(MODULE, "fetch_account_plan", return_value=None)
         self.plan_fetch = patch.start()
         self.addCleanup(patch.stop)
@@ -172,6 +178,94 @@ class AccountTest(unittest.TestCase):
         self.assertEqual(accounts[0]["windows"], [])
         self.assertIn("Select this account", accounts[0]["error"])
         self.assertTrue(accounts[0]["switchable"])
+
+    def response(self, used=10, reset=""):
+        return mock.Mock(returncode=0, stdout=json.dumps([{"usage": {
+            "primary": {"usedPercent": used, "resetsAt": reset}}}]))
+
+    def test_persistent_cache_ttls_force_and_private_secret_free_storage(self):
+        now = 1900000000000
+        path = self.credential_database([("other", 0, self.credential("me@example.com"), 1)])
+        self.plan_fetch.return_value = "Go"
+        with mock.patch.object(MODULE.subprocess, "run", return_value=self.response()) as run:
+            first = MODULE.saved_accounts(path, "codexbar", now_ms=now)
+            self.assertEqual(MODULE.saved_accounts(path, "codexbar", now_ms=now+1000), first)
+            self.assertEqual(run.call_count, 1)
+            MODULE.saved_accounts(path, "codexbar", now_ms=now+301000)
+            self.assertEqual(run.call_count, 2)
+            self.assertEqual(self.plan_fetch.call_count, 1)
+            MODULE.saved_accounts(path, "codexbar", now_ms=now+302000, force=True)
+            self.assertEqual(run.call_count, 3)
+            self.assertEqual(self.plan_fetch.call_count, 2)
+        files = list(MODULE.codexbar_cache.cache_dir().glob("opencode-*.json"))
+        self.assertEqual(len(files), 2)
+        for file in files:
+            self.assertEqual(file.stat().st_mode & 0o777, 0o600)
+            self.assertNotIn("NEVER-PRINT", file.read_text())
+            self.assertNotIn("me@example.com", file.read_text())
+
+    def test_failure_retains_last_good_quota_and_backs_off_then_force_recovers(self):
+        now = 1900000000000
+        path = self.credential_database([("other", 0, self.credential("me@example.com"), 1)])
+        with mock.patch.object(MODULE.subprocess, "run", return_value=self.response()) as run:
+            good = MODULE.saved_accounts(path, "codexbar", now_ms=now)[0]
+            run.side_effect = MODULE.subprocess.TimeoutExpired("fixture", 20)
+            stale = MODULE.saved_accounts(path, "codexbar", now_ms=now+301000)[0]
+            self.assertEqual(stale["windows"], good["windows"])
+            self.assertTrue(stale["stale"])
+            self.assertIn("cached", stale["error"])
+            count = run.call_count
+            MODULE.saved_accounts(path, "codexbar", now_ms=now+302000)
+            self.assertEqual(run.call_count, count)
+            run.side_effect = None
+            recovered = MODULE.saved_accounts(path, "codexbar", now_ms=now+303000, force=True)[0]
+            self.assertNotIn("stale", recovered)
+            self.assertEqual(run.call_count, count+1)
+
+    def test_workspace_and_signin_changes_do_not_reuse_another_scope(self):
+        now = 1900000000000
+        path = self.credential_database([("same", 0, self.credential("me@example.com"), 1)])
+        with mock.patch.object(MODULE.subprocess, "run", side_effect=[self.response(10),self.response(20),self.response(30)]) as run:
+            self.assertEqual(MODULE.saved_accounts(path, "codexbar", now_ms=now)[0]["windows"][0]["remaining"],90)
+            for field, value, expected in [("orgID", "other-workspace",80), ("access", "NEW-SECRET",70)]:
+                with closing(sqlite3.connect(path)) as db, db:
+                    credential = json.loads(db.execute("SELECT value FROM credential").fetchone()[0])
+                    (credential["metadata"] if field == "orgID" else credential)[field] = value
+                    db.execute("UPDATE credential SET value=?", (json.dumps(credential),))
+                self.assertEqual(MODULE.saved_accounts(path, "codexbar", now_ms=now)[0]["windows"][0]["remaining"],expected)
+            self.assertEqual(run.call_count,3)
+        with closing(sqlite3.connect(path)) as db, db: db.execute("DELETE FROM credential")
+        self.assertEqual(MODULE.saved_accounts(path, "codexbar", now_ms=now),[])
+        for file in MODULE.codexbar_cache.cache_dir().glob("*.json"):
+            self.assertNotIn("NEW-SECRET",file.read_text())
+
+    def test_crossing_reset_expires_quota_before_the_normal_ttl(self):
+        now = 1900000000000
+        path = self.credential_database([("other",0,self.credential("me@example.com"),1)])
+        reset = MODULE.iso_time(now+1000)
+        with mock.patch.object(MODULE.subprocess,"run",return_value=self.response(reset=reset)) as run:
+            MODULE.saved_accounts(path,"codexbar",now_ms=now)
+            MODULE.saved_accounts(path,"codexbar",now_ms=now+2000)
+            self.assertEqual(run.call_count,2)
+
+    def test_overlapping_misses_share_one_fetch(self):
+        import concurrent.futures
+        import time
+        calls = []
+        def fetch():
+            calls.append(1)
+            time.sleep(.1)
+            return "Go"
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(lambda _: MODULE.cached_account_value("fixture","plan",1900000000,False,fetch),range(2)))
+        self.assertEqual(results,[("Go",False)]*2)
+        self.assertEqual(len(calls),1)
+
+    def test_corrupt_metadata_is_ignored_without_exporting_extra_cache_fields(self):
+        MODULE.codexbar_cache.store("opencode-plan-fixture",{"entry":{
+            "data":"Go","failures":"broken","fetchedAt":"broken","secret":"NEVER-PRINT"}})
+        self.assertEqual(MODULE.cached_account_value("fixture","plan",1900000000,False,lambda:"Go Plus"),("Go Plus",False))
+        self.assertNotIn("NEVER-PRINT",str(MODULE.codexbar_cache.load("opencode-plan-fixture")))
 
     def test_reads_active_account_email_only(self):
         with tempfile.TemporaryDirectory() as directory:

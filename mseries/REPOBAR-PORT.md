@@ -15,8 +15,15 @@ implementation; no macOS source or binary is copied into this project.
   latest release, recent issue/PR/commit activity, and local branch health when
   a projects folder is configured. Repository and activity links open in the
   browser.
+- Each repository card includes default-branch commit counts for rolling 1-hour,
+  24-hour, and 30-day windows. Counts are returned with the paginated repository
+  snapshot and share its five-minute cache.
 - The panel badge is the GitHub mark rendered as a GTK symbolic icon, so it
   follows the current theme's foreground color.
+- The Wingpanel menu shares CodexBar's compact elementary OS styling: 9 pt body
+  text, 8 pt captions, softly raised cards, consistent popover spacing, and a
+  rounded refresh dock. Search, scope selection, and repository-specific details
+  keep their own useful width and hierarchy.
 - Each repository card has a compact GTK disclosure menu for issues, pull
   requests, workflow runs, releases, activity, commits, branches, and tags.
   Categories fetch their data only when expanded; links open the matching GitHub
@@ -47,8 +54,8 @@ integration.
 
 Run `bash mseries/install-repobar-wingpanel.sh`. Then connect GitHub with
 `gh auth login` (or `mseries-repobar auth login`), reopen Wingpanel, and use the
-`GH` panel item. The installer is optional and is not included in the base
-image. `gh` controls authentication; the port does not handle the token.
+GitHub icon in the panel. The installer is optional and is not included in the
+base image. `gh` controls authentication; the port does not handle the token.
 
 Useful commands after installation:
 

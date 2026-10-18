@@ -26,6 +26,16 @@ Gtk.Stack? find_pages (Gtk.Widget widget) {
     return null;
 }
 
+Gtk.Label? find_label (Gtk.Widget widget, string text) {
+    var label = widget as Gtk.Label;
+    if (label != null && label.get_text ().contains (text)) return label;
+    for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ()) {
+        var found = find_label (child, text);
+        if (found != null) return found;
+    }
+    return null;
+}
+
 int main (string[] args) {
     if (args.length < 2) {
         stderr.printf ("usage: render-probe OUT.png [delay-ms]\n");
@@ -84,9 +94,48 @@ int main (string[] args) {
             assert (text.contains ("42.0M tok"));
             assert (text.contains ("31.2M tok"));
             assert (text.contains ("121M tok"));
+            string[] counts = { "42.0M tok", "31.2M tok", "121M tok" };
+            string[] quotas = { "72%", "80%", "83%" };
+            for (int i = 0; i < counts.length; i++) {
+                var tokens = find_label (bar, counts[i]);
+                var quota = find_label (bar, quotas[i]);
+                assert (tokens != null && quota != null);
+                Graphene.Rect token_bounds, quota_bounds;
+                assert (tokens.compute_bounds (bar, out token_bounds));
+                assert (quota.compute_bounds (bar, out quota_bounds));
+                if (i < 2) {
+                    assert (token_bounds.origin.y < quota_bounds.origin.y);
+                    var weekly = find_label (bar, i == 0 ? "7D 64%" : "7D 55%");
+                    assert (weekly != null && weekly.get_parent () == tokens.get_parent ());
+                    bool has_reset = false;
+                    for (var child = tokens.get_parent ().get_first_child (); child != null; child = child.get_next_sibling ()) {
+                        if (child.has_css_class ("seg-reset")) has_reset = true;
+                    }
+                    assert (has_reset);
+                } else assert (token_bounds.origin.y > quota_bounds.origin.y);
+            }
             int min, nat;
             bar.measure (Gtk.Orientation.VERTICAL, -1, out min, out nat, null, null);
             assert (nat <= 32); // Provider totals and alternate accounts still fit two rows.
+        }
+        if (Environment.get_variable ("CB_ASSERT_HIDDEN_TOKENS") != null) {
+            var text = local_label_text (bar);
+            assert (!text.contains ("tok"));
+            assert (text.contains ("7D 64%") && text.contains ("7D 55%"));
+            var menu_text = local_label_text (popover_body);
+            assert (menu_text.contains ("42.0M tokens") && menu_text.contains ("31.2M tokens") && menu_text.contains ("121M tokens"));
+        }
+        if (Environment.get_variable ("CB_ASSERT_DOTS") != null) {
+            var text = local_label_text (bar);
+            assert (text.contains ("7D ●") && text.contains ("5H ●"));
+            assert (!text.contains ("7D 64%") && !text.contains ("5H 72%"));
+            assert (!text.contains ("7D 62%") && !text.contains ("7D 72%"));
+            assert (text.contains ("5H ● 5%") && text.contains ("5H ● 0%"));
+            var weekly = find_label (bar, "7D ●");
+            assert (weekly != null && weekly.tooltip_text.contains ("% remaining"));
+            int minimum, natural;
+            bar.measure (Gtk.Orientation.VERTICAL, -1, out minimum, out natural, null, null);
+            assert (natural <= 32);
         }
         var page = Environment.get_variable ("CB_PAGE");
         var pages = find_pages (root);
@@ -174,7 +223,7 @@ Gtk.ScrolledWindow? find_scroll (Gtk.Widget root) {
 }
 
 string local_label_text (Gtk.Widget widget) {
-    var text = (widget is Gtk.Label) ? ((Gtk.Label) widget).label : "";
+    var text = (widget is Gtk.Label) ? ((Gtk.Label) widget).get_text () : "";
     for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ())
         text += " " + local_label_text (child);
     return text;

@@ -1,0 +1,22 @@
+{
+  "fixture": {
+    "oldRows": 20000,
+    "recentRows": 100,
+    "paddingBytes": 2048,
+    "indexed": false
+  },
+  "baseline": "2235e9ed6a40f7066aaee639c1b19902c4d8d33e",
+  "repeats": 3,
+  "tracemalloc": true,
+  "periodsEqual": true,
+  "results": {
+    "before": {
+      "medianMs": 371.25,
+      "peakPythonMiB": 46.96
+    },
+    "after": {
+      "medianMs": 17.56,
+      "peakPythonMiB": 0.01
+    }
+  }
+}

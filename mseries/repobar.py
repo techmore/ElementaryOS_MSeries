@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import fnmatch
 import hashlib
 import json
@@ -17,7 +18,7 @@ import time
 from urllib.parse import urlparse
 
 
-QUERY = """query($cursor: String) {
+QUERY = """query($cursor: String, $since1h: GitTimestamp!, $since24h: GitTimestamp!, $since30d: GitTimestamp!) {
   viewer {
     login
     repositories(first: 25, after: $cursor,
@@ -40,6 +41,9 @@ QUERY = """query($cursor: String) {
           target { ... on Commit {
             statusCheckRollup { state }
             history(first: 1) { nodes { committedDate messageHeadline url } }
+            commits1h: history(first: 1, since: $since1h) { totalCount }
+            commits24h: history(first: 1, since: $since24h) { totalCount }
+            commits30d: history(first: 1, since: $since30d) { totalCount }
           } }
         }
         latestRelease { name tagName publishedAt url }
@@ -156,10 +160,12 @@ def _api_json(endpoint: str, *fields: str, force: bool = False) -> tuple[object,
     return data, fetched_at
 
 
-def _graphql(query: str, cursor: str | None = None) -> dict:
+def _graphql(query: str, cursor: str | None = None, variables: dict[str, str] | None = None) -> dict:
     args = ["graphql", "-f", f"query={query}"]
     if cursor:
         args.extend(["-F", f"cursor={cursor}"])
+    for name, value in (variables or {}).items():
+        args.extend(["-F", f"{name}={value}"])
     response = _run_gh(args)
     try:
         payload = json.loads(response.stdout)
@@ -171,16 +177,22 @@ def _graphql(query: str, cursor: str | None = None) -> dict:
     return payload
 
 
-def _query_page(cursor: str | None) -> dict:
-    return _graphql(QUERY, cursor)
+def _query_page(cursor: str | None, since: dict[str, str]) -> dict:
+    return _graphql(QUERY, cursor, since)
 
 
 def fetch_snapshot() -> dict:
     cursor = None
     repos = []
     login = ""
+    now = int(time.time())
+    since = {
+        "since1h": datetime.fromtimestamp(now - 60 * 60, timezone.utc).isoformat().replace("+00:00", "Z"),
+        "since24h": datetime.fromtimestamp(now - 24 * 60 * 60, timezone.utc).isoformat().replace("+00:00", "Z"),
+        "since30d": datetime.fromtimestamp(now - 30 * 24 * 60 * 60, timezone.utc).isoformat().replace("+00:00", "Z"),
+    }
     for _ in range(40):
-        payload = _query_page(cursor)
+        payload = _query_page(cursor, since)
         viewer = payload.get("data", {}).get("viewer")
         if not viewer:
             raise RuntimeError("GitHub did not return the signed-in account")
@@ -208,6 +220,11 @@ def fetch_snapshot() -> dict:
         branch = repo.get("defaultBranchRef") or {}
         target = branch.get("target") or {}
         rollup = target.get("statusCheckRollup") or {}
+        commit_counts = {
+            "1h": int((target.get("commits1h") or {}).get("totalCount") or 0),
+            "24h": int((target.get("commits24h") or {}).get("totalCount") or 0),
+            "30d": int((target.get("commits30d") or {}).get("totalCount") or 0),
+        }
         issue_conn = repo.get("openIssues") or {}
         pull_conn = repo.get("openPullRequests") or {}
         latest_issue = (issue_conn.get("nodes") or [{}])[0]
@@ -237,6 +254,7 @@ def fetch_snapshot() -> dict:
             "openIssues": int(issue_conn.get("totalCount") or 0),
             "openPullRequests": int(pull_conn.get("totalCount") or 0),
             "branch": branch.get("name", ""),
+            "commitCounts": commit_counts,
             "ci": rollup.get("state", "UNKNOWN").upper(),
             "release": release.get("tagName", ""),
             "releaseName": release.get("name") or release.get("tagName", ""),
@@ -249,7 +267,6 @@ def fetch_snapshot() -> dict:
             "repoState": state if state in {"visible", "pinned", "hidden"} else "visible",
         })
     normalized.sort(key=lambda item: item["updatedAt"], reverse=True)
-    now = int(time.time())
     try:
         rate_limit, rate_fetched_at = _api_json("rate_limit")
         rate_error = ""

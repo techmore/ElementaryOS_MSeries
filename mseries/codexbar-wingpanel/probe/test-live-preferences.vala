@@ -20,6 +20,8 @@ int main (string[] args) {
     GLib.Timeout.add (1000, () => {
         assert (labels (bar).contains ("%"));
         var before = snapshots ();
+        // Completing account/local helpers repaint cached data without extra IPC reads.
+        assert (before == "snapshot\n");
         var prefs = new MSeries.PanelPreferences ();
         foreach (var key in new string[] {"showPercent", "showReset", "showAccounts", "showHints"}) assert (prefs.save_bool (key, false));
         GLib.Timeout.add (450, () => {
