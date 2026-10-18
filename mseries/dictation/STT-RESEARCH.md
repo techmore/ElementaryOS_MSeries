@@ -252,3 +252,11 @@ Extend Stage 1 of section 4: in a scratch directory (not `/usr/local/bin`, not t
 - Qwen3-ASR GGUF cards: https://huggingface.co/handy-computer/Qwen3-ASR-1.7B-gguf ; Qwen-Audio-3.0-ASR report: https://arxiv.org/abs/2609.07549
 - Mac dictation app comparisons (marketing, unverified): https://tryvoiceink.com/best-superwhisper-alternatives , https://wisprflow.ai/post/wispr-flow-vs-superwhisper , https://www.bitdoze.com/fluidvoice-mac-dictation/ , https://superwhisper.userjot.com/board/p/mlx-acceleration-for-local-parakeet-models
 - Cleanup models (community, unverified): https://huggingface.co/abhiram3040/simplewords-dictation-cleanup-v2 , https://app.alphaneural.io/models/Quobi/Quill
+
+## Addendum 2026-10-18 (c): ANE status on this machine (checked, not run)
+
+- Running kernel `7.1.12-2-...-sep-ARCH` already loads `ane.ko`; `/dev/accel/accel0` exists (root:render). Nothing has been executed on it by us.
+- omarchy-ane v0.4.9 (2026-10-16, https://github.com/joshuaswarren/omarchy-ane) lists **M1 Pro (T6000) as "on by default"**: bind plus exact fp16 execution, one passing row (H13 smoke). Its Parakeet encoder was shown bit-exact on M1 and M2 Max, not on M1 Pro.
+- omarchy-mlx v0.7.33 (MIT, https://github.com/joshuaswarren/omarchy-mlx) ships `mlx-omarchy-parakeet` (Core ML Parakeet on the ANE; install with `install.sh --ane`) but marks the M1 Pro **Untested** for both GPU and ANE. No M1 Pro speed or WER figures exist publicly.
+- Risk: upstream says a hung ANE submission needs a reboot. Next step is `omarchy-ane-check` (read-only), then `--smoke` (20 add calls), then Parakeet on a fixed WAV against the CPU path, medians of 10+ warm runs. Kernel-side findings go to DeepSeek via GitHub.
+- Correction: ANE-PREFLIGHT.md (2026-10-12) says nothing is installed; the driver is now in the running kernel.
