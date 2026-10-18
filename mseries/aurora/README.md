@@ -170,3 +170,20 @@ Recommended order for the next hardware session (dock out): (1) boot `elementary
 on the current `boot.bin` to confirm `.20` itself is stable; (2) deploy the staged
 `boot.bin.candidate` (rollback on hand; DeepSeek owns the kernel/boot chain, so coordinate), boot
 `elementary-aurora20` and check `/dev/sep-bio`, then `aurora-touchid-setup`; (3) try the dock.
+
+### Deployment review of the staged `boot.bin.candidate` — 2026-10-18
+
+Compared the J314S device tree inside the current `/boot/m1n1/boot.bin` with the one in
+`~/aurora20-boot-candidate/boot.bin.candidate` (both decompiled with `dtc`, phandles
+normalised): 898 differing lines. Material difference: the **current tree carries the
+DeepSeek dock-video experiment nodes** (`apple,dp-tunnel`, `apple,dp-tunnel-phy`, two
+`apple,t6000-dpin` nodes, the dock PHY wiring) which the upstream-matched tree **does not
+have**. Deploying the candidate would therefore (a) fix the likely cause of the Touch ID
+probe hang (hand-ported SPI sensor node with unresolved clock/pinctrl references) and give
+`.20` the tree it was built against, but (b) disable the dptunnel/DP-IN entries
+(`elementary-usb4-dptunnel`, `-dpin-controlled`, `-dpin-clock`, `-vrr`) until the old
+`boot.bin` is put back. `boot.bin` is one file shared by every entry, so these two goals
+currently need a boot-payload swap between them (rollback copy is byte-exact). The repo's
+stated primary goal is the dock HDMI picture (AGENTS.md); owner and DeepSeek must decide
+which payload is the default before this is deployed. A merged tree (upstream J314S tree +
+the dptunnel/dpin nodes) would serve both but has not been built.
