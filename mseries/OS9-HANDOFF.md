@@ -1,5 +1,17 @@
 # OS 9 implementation / Claude Code handoff
 
+## Official Discord via FEX in a 4 KB-page microVM — 2026-10-18 (Claude Code)
+
+Owner required official Discord (amd64 only). FEX alone aborts here (16 KB pages, `<jemalloc>: Unsupported system
+page size`). `mseries/install-muvm.sh` builds muvm 0.7.0 + libkrun 1.19.6 + libkrunfw 5.6.2 (guest 6.12.109, 4K pages),
+installs FEX 2610 from its PPA and the Ubuntu 24.04 rootfs; verified `muvm -- FEXBash -c 'uname -m; getconf PAGESIZE'`
+= x86_64 / 4096. Discord 1.0.162's bundled Electron 42 (and stock 42.11.12) SIGTRAPs at startup under FEX; Electron 43
+(x86 Vesktop and stock 43.2.0) runs. `mseries/install-discord-official.sh` therefore runs Discord's official
+app.asar + modules on stock Electron 43.2.0 (`discord-official`). Discord started and stayed up 40 s; **login, voice,
+rendering, performance unverified**. System changes: FEX apt source + key, /usr/local libkrun/muvm,
+`/etc/ld.so.conf.d/mseries-libkrun.conf`. Prior art: no official Discord arm64 Linux build exists (support thread open
+for years); ArmCord/Legcord and Vesktop wrap the web app. macOS Discord is Mach-O; only its JS could be reused.
+
 ## Battery panel in first boot — 2026-10-18 (Claude Code)
 
 `install-battery-eta.sh` added to the payload and to `enhance-firstboot.sh` as `battery-panel` (default on, with build
