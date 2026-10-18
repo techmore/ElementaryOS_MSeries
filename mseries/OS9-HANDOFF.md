@@ -43,6 +43,24 @@ new handoff feature remains unverified. Native review-button changes install for
 next login; helper changes apply on the next Switch. No panel reload is requested.
 
 
+## Emporia temperature dropdown — 2026-10-18 (Claude Code)
+
+Owner asked for a significantly better native Temperatures dropdown in the Emporia Energy Monitor Wingpanel
+indicator. Merged as techmore/Emporia-Vue3-Mac-Utility-Monitor#159 (`e869555`, version 2.3.63). New
+`linux/wingpanel/TemperatureView.vala`: indoor-average overview (warmest/coolest rooms, humidity, unplaced sensor,
+clickable comfort-scale strip), a needs-attention row (offline sensor, battery ≤20%, ≥3 °F/h change, humidity ≥65% or
+≤30%), and a sensor list sortable by floor/warmest/coolest/changing fastest with °F/h trend, humidity, check age and a
+hoverable 24-hour sparkline. Stale sensors stay greyed, never feed averages and sort last. View, sort and open sections
+persist in `~/.config/energy-monitor/wingpanel.ini`; the list no longer collapses on each refresh. The legend appears
+once and the embedded Home 3D view no longer repeats the summary and sensor list.
+
+Verified: clean meson build, new `meson test` helper test, `test_linux_client.py`, both existing native house tests,
+headless Xvfb renders against the live summary in dark and light themes. CI on main had been failing
+`native-house-preview` because WebKit's bubblewrap sandbox cannot start on GitHub runners; the offline fixture test now
+runs with the sandbox disabled and all four CI jobs pass. With owner approval, `libenergy-monitor.so` was installed to
+the wingpanel-9 indicators directory and Wingpanel restarted; the module is loaded. **Unverified:** hover and click in
+the real popover (they reuse the existing `--temperature` launch path). Next: owner look at the live dropdown.
+
 ## Battery real data — 2026-10-18 (Claude Code)
 
 Owner asked for real data only. Deleted my synthetic test database. Logger now backfills from UPower's real history
