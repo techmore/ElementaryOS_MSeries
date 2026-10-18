@@ -1,5 +1,33 @@
 # OS 9 implementation / Claude Code handoff
 
+## Factory build environment and ARM64 nested-kernel fixes — 2026-10-18
+
+Retry [39126677360](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39126677360)
+passed account package selection and real Brave staging, then failed with
+`meson: command not found`. BuildPackages were installed in the image while
+plain BuildScripts ran in the separate tools tree. `build-in-image.chroot` now
+runs the existing builders in the native image, with BUILDROOT=/; their sources,
+version pins and staged DESTDIR contract are preserved.
+
+A disposable installation rehearsal of the older October 13 ISO also found a
+real installed-boot blocker: the generated generic UKI embedded Ubuntu's EFI
+wrapper (with relocations) instead of its `.linux` EFI payload. systemd-stub
+rejected it. `prepare-uki-kernels` now unwraps only that ARM64 build input before
+sysupdate UKI generation, retaining the original wrapper and SHA256 provenance.
+It leaves plain kernels/full UKIs alone and refuses to discard a distribution
+initrd/command line or accept a relocatable/truncated inner image. The original
+wrapper retains its bundled DTBs in the archive; firmware/Apple DTB qualification
+remains separate. No host kernel, bootloader or audio settings were changed.
+
+Diagnostic evidence: the old installed VM first rejected the nested image; after
+substituting the exact original `.linux` payload it booted kernel 7.0.0-38-generic,
+mounted /dev/mapper/usr as read-only erofs and reached the graphical first-boot
+language screen. Only that disposable diagnostic UKI had a serial/debug command
+line; the build fix adds no debug shell or boot parameters. This is not a pass
+for the forthcoming new ISO. Six kernel-input regressions, five image-wiring
+checks, six browser-packaging checks and focused syntax/ShellCheck pass. Next:
+new complete image build, installation to a blank VM disk, dock and YouTube tests.
+
 ## Combined compact Upcoming and period views — 2026-10-18
 
 Integrated main's Month/Week/Day agendas and readable neutral event cards with

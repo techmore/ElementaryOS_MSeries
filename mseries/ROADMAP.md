@@ -1,5 +1,16 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Installed-boot and image build blockers corrected — 2026-10-18
+
+The first retry staged Brave successfully, then exposed builders running outside
+the root containing BuildPackages. A `.chroot` build driver now runs them in that
+root. A separate older-image rehearsal found nested Ubuntu ARM64 EFI wrappers
+rejected by systemd-stub. Build-time kernel preparation now embeds the actual
+Linux payload and retains the vendor wrapper/provenance. A diagnostic guest
+reached its installed erofs /usr and first-boot GUI after this correction.
+Six kernel-input and five image-wiring regressions pass. New ISO assembly,
+blank-disk install, dock matching and YouTube playback remain pending.
+
 ## Combined compact Upcoming and period views — 2026-10-18
 
 Integrated main's Month/Week/Day agendas and readable neutral event cards with
