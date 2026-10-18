@@ -33,7 +33,7 @@
     "target": "elementary-m1 is offline; owner chose preparation before a later Linux boot",
     "python_tests": {
       "input": 3,
-      "gateway": 8,
+      "gateway": 9,
       "desktop_setup": 3
     },
     "gateway_import_review": "Both root-owned Caddy imports reviewed; captured by hash/metadata; production imports preserved, validation uses expanded capture",
@@ -42,9 +42,9 @@
       "request_sha256": "9e39a0c9346b9415305d8193c09b64b4565a3bd0a1e69e09772757302b3a73c9",
       "candidate_sha256": "454b11f40f9654b8a5ddabe75bc1fdeaa87f7da8baf67cdf440a45cbda17b9b6",
       "applied": false,
-      "helper_sha256": "bb1c09c6cc04641f5fd0fe1d59a5d1f752592e391f66686cb26a0be21f8855b2",
+      "helper_sha256": "b0746fd9b91c3110c625a45f5168465415ac677304e6e4dd72504408799a6286",
       "loader_sha256": "be21b3da35e90d4135c7d9185782081fd902f628e387318c7a38e0f9c2ece623",
-      "activation_command_sha256": "0db83edd323dbc1bf448f872137e033b29fc51e8375c1b70367d091d3fc3e086"
+      "activation_command_sha256": "2fa4da87a9f7b4ec430ffcbe8cd05537169e208b6121d4096ca531008a56ed75"
     },
     "upstream_https": "Trusted TLS to existing TM-Remote upstream returned HTTP 200",
     "reverse_ssh": "Temporary authenticated loopback reverse tunnel health passed; listener stopped",
@@ -57,6 +57,7 @@
       "production_changed": false
     },
     "linux_packaging": "Updated factory pruning, runtime assembly and installer regression passed; generated Python caches excluded",
-    "public_tls": "Still fails before gateway activation; sudo authentication and real target acceptance deferred"
+    "public_tls": "Still fails before gateway activation; sudo authentication and real target acceptance deferred",
+    "timeout_cleanup": "Real Linux grandchild ignoring SIGTERM stopped by private command-group timeout"
   }
 }

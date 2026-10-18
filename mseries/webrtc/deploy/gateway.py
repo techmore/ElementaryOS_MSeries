@@ -118,13 +118,13 @@ def private_write(path, data):
     sync_directory(path.parent)
 
 
-def run(command, directory, phase):
+def run(command, directory, phase, timeout=45):
     with open(directory / (phase + '.log'), 'xb') as log:
         os.chmod(log.name, 0o600)
         process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT,
                                    env={'PATH': '/usr/sbin:/usr/bin:/sbin:/bin'}, start_new_session=True)
         try:
-            code = process.wait(timeout=45)
+            code = process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
             # runuser may have a Caddy child: stop the entire private validation
             # group, never the separately supervised production Caddy service.

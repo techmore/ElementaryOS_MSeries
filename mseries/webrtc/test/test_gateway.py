@@ -2,6 +2,9 @@ import importlib.util
 import os
 from pathlib import Path
 import tempfile
+import sys
+import signal
+import time
 import unittest
 
 spec = importlib.util.spec_from_file_location('gateway', Path(__file__).parents[1] / 'deploy/gateway.py')
@@ -103,6 +106,41 @@ class GatewayTests(unittest.TestCase):
             gateway.transaction(config, base, b'candidate', meta, recovery,
                                 runner=lambda *args: None, check_dependencies=dependencies)
         self.assertEqual(config.read_bytes(), base)
+
+    @unittest.skipUnless(sys.platform.startswith('linux'), 'Linux process-state acceptance')
+    def test_timeout_leaves_no_running_grandchild(self):
+        _, recovery, _, _ = self.fixture()
+        pidfile = recovery / 'child.pid'
+        code = f"""import os,signal,time
+child=os.fork()
+if child == 0:
+ signal.signal(signal.SIGTERM, signal.SIG_IGN)
+ time.sleep(60)
+ os._exit(0)
+else:
+ open({str(pidfile)!r}, 'w').write(str(child))
+ time.sleep(60)
+"""
+        child = None
+        try:
+            with self.assertRaisesRegex(RuntimeError, 'timed out'):
+                gateway.run([sys.executable, '-c', code], recovery, 'timeout', timeout=1)
+            child = int(pidfile.read_text())
+            for _ in range(20):
+                path = Path(f'/proc/{child}/stat')
+                if not path.exists() or path.read_text().split()[2] == 'Z':
+                    break
+                time.sleep(0.05)
+            else:
+                self.fail('Private validation grandchild remained running after timeout')
+        finally:
+            if child is None and pidfile.exists():
+                child = int(pidfile.read_text())
+            if child:
+                try:
+                    os.kill(child, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
 
     def test_symlink_and_digest_drift_refused(self):
         config, _, _, _ = self.fixture()

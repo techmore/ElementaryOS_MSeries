@@ -18,7 +18,7 @@ a controlled restart with admin still off, and guarded rollback. No sudo or
 production activation occurred. Current private candidate:
 `/home/sdolbec/mseries-webrtc-review-20261017/activation/gateway-lwxiq5sj`.
 
-12 protocol tests, 14 Python tests (3 input, 8 gateway, 3 setup), 4 Linux image
+12 protocol tests, 15 Python tests (3 input, 9 gateway, 3 setup), 4 Linux image
 wiring tests and installer regression pass. A temporary real Caddy process
 verified random-path assets/API/authenticated WebSocket, existing fallback and
 revocation; a temporary operator SSH reverse tunnel passed health. All test
