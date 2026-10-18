@@ -23,7 +23,9 @@ class FocusSession:
 
     def focus(self, target, client):
         self.invalidate()
-        self.target = target if client != 'fake' else None
+        # XIM omits password/content-purpose information (observed in Brave).
+        # Do not silently fall back to layout-dependent keys for that client.
+        self.target = target if client not in ('fake', 'xim') else None
         self.purpose = None
         self.hints = 0
 

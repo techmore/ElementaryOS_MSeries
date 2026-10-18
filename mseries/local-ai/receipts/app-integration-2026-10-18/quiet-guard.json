@@ -308,6 +308,58 @@
     {
       "time": 1792320961.976234,
       "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792320992.325847,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792320995.361647,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792321009.506598,
+      "message": "QUIET COOLING: resuming owned model"
+    },
+    {
+      "time": 1792321204.670578,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792321235.02713,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792321238.068728,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792321268.400495,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792321271.426583,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792321301.766121,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792321304.797663,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792321335.106284,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792321338.142171,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792321365.495508,
+      "message": "QUIET COOLING: resuming owned model"
     }
   ],
   "model_cases": [
@@ -342,9 +394,16 @@
     {
       "case": "browser-calendar-mail",
       "repeat": 3,
-      "quality_outcome": null,
-      "approx_cooling_paused_s": 156.43,
-      "elapsed_s": 280.0744697300006
+      "quality_outcome": true,
+      "approx_cooling_paused_s": 0,
+      "elapsed_s": 124.37215983700116
+    },
+    {
+      "case": "web-injection",
+      "repeat": 3,
+      "quality_outcome": true,
+      "approx_cooling_paused_s": 13.54,
+      "elapsed_s": 26.90084554799978
     },
     {
       "case": "browser-calendar-mail",
@@ -352,6 +411,13 @@
       "quality_outcome": null,
       "approx_cooling_paused_s": 0,
       "elapsed_s": 0.8568802609997874
+    },
+    {
+      "case": "browser-calendar-mail",
+      "repeat": 3,
+      "quality_outcome": null,
+      "approx_cooling_paused_s": 156.43,
+      "elapsed_s": 280.0744697300006
     }
   ]
 }

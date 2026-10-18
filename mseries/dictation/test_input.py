@@ -23,6 +23,10 @@ class FocusTests(unittest.TestCase):
             s = self.ready(); s.content(purpose, hints)
             with self.assertRaises(ValueError): s.begin()
 
+    def test_xim_without_sensitive_field_metadata_is_refused(self):
+        s = self.ready(); s.focus(object(), 'xim'); s.content(0, 0)
+        with self.assertRaises(ValueError): s.begin()
+
     def test_focus_change_and_cancel(self):
         for action in [lambda s: s.focus(object(), 'gtk3-im:other'), lambda s: s.invalidate(), lambda s: s.content(8, 0)]:
             s = self.ready(); token = s.begin(); action(s)

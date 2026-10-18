@@ -1,6 +1,6 @@
 {
   "README.md": "95b578288f5ab95400973ba7dadfc99da7f8ce902c0c91400372913ee245d312",
-  "app-workflow-v1.json": "e6b253f87f17dd4fff9671f008d67ad18ac7d95a18f5dabed480f8c62d53d83d",
+  "app-workflow-v1.json": "48216703cb50a1c7f4849b29e952619c136a6e7d56db889b71e2a9650d584acf",
   "developer-watch-main.json": "bfaf3fefef1bac049c69b04029692411e3a16d5770886c7f8645ee46d11cdc94",
   "developer-watch.json": "0df54eeb91f3aebdba4827505383b5c33b10cdda380793d4e8aef9488e54c933",
   "evaluated-source/app-workflow-smoke.py": "93ee800ab5f1b8fe5270c6f9aaf306b4f318a94f80d5d305322fb5fcf37d361c",
@@ -9,10 +9,12 @@
   "evaluated-source/machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27",
   "evaluated-source/os-mcp.py": "7a7c6930f95f0792037fa1b3410e903398f526a5f20dfbad66d29a53e222125e",
   "evaluated-source/task-write-smoke.py": "e4f17f6c333c07c6449eb84f5dc542f0b74bcdeccc4495813f7614acc16589a1",
+  "interrupted-attempts/attempt-47d94da7-814d-4ff0-8beb-9c97c50e47c8.json": "29eb1227f182c97f1068d549ae1c0f4a5e010f2dd9b745179e959f9af115f6b3",
   "interrupted-attempts/attempt-5ce0f9b2-ebea-454d-8227-694764114578.json": "c20ea13c4f38e781d6d8676e7fe47aa5c6682ff2502b095939ec780c29da7b0f",
   "mail-ui.json": "60560103a73dad7bf0c4cffde9fc57c147fb83995137e8c5ded954d49a47b2a0",
+  "newelle-client-discovery.json": "f7d34de4d42b41e5db1c94a1dc350a39be88e86f517839961cf5d0d33cdcbf19",
   "newelle-discovery.json": "62332260c2f2a12864a102253ca17218bcd45baf5ff8034b59ff3c02c7f78750",
-  "publication.json": "20bbdf53134e5793eb855dcfb9a3eb232eb1b38a3965bde085e691c7912f9d96",
-  "quiet-guard.json": "12413776ab09eb3e87b99ba0132d835beecc66cc782ba0892ab1c204b6daf711",
+  "publication.json": "58f46e1281ead96ced66e062ac58fa9c0102375cf4f0834ce726ee165d433490",
+  "quiet-guard.json": "53b4af35decb9341af4829428976cd93bfd349aedb15c4226f43650a8b2cde9a",
   "source-pins.json": "48ad4b26dcedc4027873388e052582b560bc6bfd971027495905b51c493b4886"
 }

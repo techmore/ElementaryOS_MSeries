@@ -8,6 +8,7 @@ from gi.repository import IBus,Gio,GLib
 script=Path(__file__).resolve().with_name('dictation-input.py')
 with tempfile.TemporaryDirectory(prefix='mseries-ibus-') as d:
  os.environ['IBUS_ADDRESS']='unix:path='+d+'/bus'
+ os.environ['GIO_USE_VFS']='local'
  os.environ['XDG_CACHE_HOME']=d+'/cache';os.environ['XDG_CONFIG_HOME']=d+'/config'
  daemon=subprocess.Popen(['ibus-daemon','--single','--emoji-extension','disable','--address',os.environ['IBUS_ADDRESS'],'--cache','none'])
  engine=None
@@ -23,7 +24,10 @@ with tempfile.TemporaryDirectory(prefix='mseries-ibus-') as d:
   ctx=bus.create_input_context('gtk3-im:synthetic-dictation-test')
   ctx.set_capabilities(IBus.Capabilite.FOCUS);ctx.focus_in();assert bus.set_global_engine('mseries-dictation');pump(1)
   assert ctx.get_engine().get_name()=='mseries-dictation'; ctx.focus_out();pump();ctx.focus_in();pump();ctx.set_content_type(IBus.InputPurpose.FREE_FORM,IBus.InputHints.NONE);pump()
-  received=[];ctx.connect('commit-text',lambda _,t:received.append(t.get_text()))
+  received=[]
+  def committed(connection,sender,path,interface,signal,parameters):
+   received.append(parameters.unpack()[0][2])
+  bus.get_connection().signal_subscribe(None,'org.freedesktop.IBus.InputContext','CommitText',ctx.get_object_path(),None,Gio.DBusSignalFlags.NONE,committed)
   conn=Gio.bus_get_sync(Gio.BusType.SESSION,None)
   def call(method,args=None):return conn.call_sync('org.techmore.DictationInput','/org/techmore/DictationInput','org.techmore.DictationInput',method,args,None,Gio.DBusCallFlags.NONE,2000,None)
   token=call('Begin').unpack()[0]
