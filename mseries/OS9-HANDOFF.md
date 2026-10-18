@@ -2430,8 +2430,8 @@ DNS aggregation, SQLite tables and retention policy. The existing Python
 service remains the installed writer; do not run both services against the
 same database.
 
-Focused Rust validation passed: `cargo fmt --check`, six unit tests including
-SQLite flush/schema round trip, 16 shared-fixture comparisons against the
+Focused Rust validation passed: `cargo fmt --check`, eight unit tests including
+SQLite flush/schema round trip and failure/retry restoration, 16 shared-fixture comparisons against the
 Python socket and DNS event parsers, `cargo clippy --all-targets -- -D warnings`,
 release build, inventory check (735 items: 653 local, 82 elementary) and
 `git diff --check`. Socket and DNS event parsing have same-fixture differential

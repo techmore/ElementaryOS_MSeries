@@ -250,8 +250,8 @@ boundaries, source/license pins and a complete local conversion schedule remain
 open.
 Power and Wi-Fi resume have independent, not-installed Rust candidates with
 differential software suites. A network-usage daemon candidate now preserves the
-existing SQLite/panel contract, six focused tests, and 16 shared-fixture
-socket/DNS cases against Python; daemon-level restart/flush/retry coverage and
+existing SQLite/panel contract, eight focused tests, and 16 shared-fixture
+socket/DNS cases against Python; daemon-level restart coverage and
 desktop-session qualification remain open. It is not installed beside the
 current Python service. The daily upstream watcher exists,
 but this branch still needs the daily/weekly build-and-review candidate lane.

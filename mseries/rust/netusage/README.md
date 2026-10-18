@@ -23,7 +23,9 @@ cargo build --release --locked
 
 The candidate currently has focused unit tests for socket counter parsing,
 loopback filtering, process names, DNS address/name handling, query accounting,
-SQL quoting, and a SQLite schema/flush round trip. A same-fixture comparison
+socket counter deltas, SQL quoting, a SQLite schema/flush round trip, and
+restoring pending records after a failed database flush before a successful
+retry. A same-fixture comparison
 against the Python socket parser covers counters, missing counters, loopback,
 unowned sockets and IPv6 peers. A second same-fixture comparison covers eleven
 timestamped resolved events, including A/AAAA suppression, failures, ignored

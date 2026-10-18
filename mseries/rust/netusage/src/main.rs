@@ -434,6 +434,17 @@ struct Sampler {
     names: HashMap<u32, (String, String)>,
 }
 
+fn socket_delta(old: Option<&SocketUsage>, current: &SocketUsage) -> (u64, u64) {
+    let Some(old) = old.filter(|old| old.proc_name == current.proc_name) else {
+        return (current.rx, current.tx);
+    };
+    if current.rx < old.rx || current.tx < old.tx {
+        (current.rx, current.tx)
+    } else {
+        (current.rx - old.rx, current.tx - old.tx)
+    }
+}
+
 impl Sampler {
     fn new() -> Self {
         Self {
@@ -447,20 +458,7 @@ impl Sampler {
         if let Some(previous) = &self.previous {
             if let Ok(mut state) = pending.lock() {
                 for (key, socket) in &current {
-                    let old = previous.get(key);
-                    let (mut rx, mut tx) =
-                        if old.is_none_or(|old| old.proc_name != socket.proc_name) {
-                            (socket.rx, socket.tx)
-                        } else {
-                            (
-                                socket.rx.saturating_sub(old.unwrap().rx),
-                                socket.tx.saturating_sub(old.unwrap().tx),
-                            )
-                        };
-                    if old.is_some_and(|old| socket.rx < old.rx || socket.tx < old.tx) {
-                        rx = socket.rx;
-                        tx = socket.tx;
-                    }
+                    let (rx, tx) = socket_delta(previous.get(key), socket);
                     if rx != 0 || tx != 0 {
                         let host = state
                             .ip_names
@@ -765,6 +763,36 @@ mod tests {
     }
 
     #[test]
+    fn socket_counter_deltas_handle_new_owner_and_tuple_reuse() {
+        let old = SocketUsage {
+            proc_name: "browser".into(),
+            remote_ip: "203.0.113.2".into(),
+            rx: 100,
+            tx: 200,
+        };
+        let advanced = SocketUsage {
+            rx: 135,
+            tx: 240,
+            ..old.clone()
+        };
+        assert_eq!(socket_delta(Some(&old), &advanced), (35, 40));
+
+        let new_owner = SocketUsage {
+            proc_name: "other".into(),
+            ..advanced.clone()
+        };
+        assert_eq!(socket_delta(Some(&old), &new_owner), (135, 240));
+        assert_eq!(socket_delta(None, &advanced), (135, 240));
+
+        let reused = SocketUsage {
+            rx: 4,
+            tx: 7,
+            ..old.clone()
+        };
+        assert_eq!(socket_delta(Some(&old), &reused), (4, 7));
+    }
+
+    #[test]
     fn flush_preserves_panel_database_contract() {
         let db = env::temp_dir().join(format!("mseries-netusage-{}.db", std::process::id()));
         let _ = fs::remove_file(&db);
@@ -793,5 +821,49 @@ mod tests {
         let _ = fs::remove_file(&db);
         let _ = fs::remove_file(db.with_extension("db-wal"));
         let _ = fs::remove_file(db.with_extension("db-shm"));
+    }
+
+    #[test]
+    fn failed_flush_restores_data_for_successful_retry() {
+        let root = env::temp_dir().join(format!("mseries-netusage-retry-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        let pending = Arc::new(Mutex::new(Pending::default()));
+        {
+            let mut state = pending.lock().unwrap();
+            add_usage(
+                &mut state,
+                1_800,
+                "browser".into(),
+                "retry.example".into(),
+                21,
+                34,
+            );
+            add_dns(&mut state, 3_600, "retry.example".into(), true);
+        }
+
+        flush(&root, &pending); // a directory cannot be opened as a SQLite database
+        {
+            let state = pending.lock().unwrap();
+            assert_eq!(state.usage.values().next(), Some(&(21, 34)));
+            assert_eq!(state.dns.values().next(), Some(&(1, 1)));
+        }
+
+        let db = root.join("retry.db");
+        open_db(&db).unwrap();
+        flush(&db, &pending);
+        let output = Command::new("sqlite3")
+            .arg("-batch")
+            .arg(&db)
+            .arg("SELECT SUM(rx)||'|'||SUM(tx) FROM usage_minute; SELECT SUM(queries)||'|'||SUM(failures) FROM dns_hour;")
+            .output()
+            .unwrap();
+        assert!(output.status.success());
+        let rows = String::from_utf8_lossy(&output.stdout);
+        assert!(rows.contains("21|34"), "{rows}");
+        assert!(rows.contains("1|1"), "{rows}");
+        assert!(pending.lock().unwrap().usage.is_empty());
+        assert!(pending.lock().unwrap().dns.is_empty());
+        let _ = fs::remove_dir_all(root);
     }
 }
