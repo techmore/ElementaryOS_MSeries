@@ -1,5 +1,23 @@
 # Power and battery-life roadmap
 
+## Current Aurora implementation and qualification — 2026-10-18
+
+The owner's new kernel/release request authorizes the source port and frozen
+feature-release work in [the implemented plan](aurora/ENERGY-PORT-PLAN-2026-10-18.md).
+It supersedes the older "kernel: data only" task ownership below. The .20
+baseline already carries the J314S PMP/DCS fix, idle fabric governor, external
+scanout votes and optional Thunderbolt sleep controls. A fresh source comparison
+with the draft unified 7.2.10 rebase found no new M1 Pro energy implementation
+in those helpers to duplicate. VRR is already implemented in `.20` (the older
+"not confirmed" note below is superseded).
+
+The exact current kernel/boot/module/configuration identity now has scoped
+hardware evidence and an experimental freeze. Native source enhancement
+builds and a separately pinned PR #139 candidate are integrated. Suspend/
+recovery/steady workloads/paired energy results remain acceptance gates.
+No refresh, brightness, audio or sleep setting was changed; no watt saving is
+claimed. [Hardware status and policy](aurora/hardware-tests/README.md).
+
 Owner request 2026-10-16: investigate every opportunity to lower light-load power and extend battery runs; document goals
 and a comprehensive plan. This is the single plan; evidence is in `POWER-OPPORTUNITIES-2026-10-16.md` and the optimization
 repo (`techmore/ElementaryOS_MSeries_Optimization`, `docs/RESULTS.md`). `EFFICIENCY-GOALS.md` keeps the original targets.
