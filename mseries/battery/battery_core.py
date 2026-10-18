@@ -737,8 +737,7 @@ def summary_extra(conn):
         out.append("stat\tTypical runtime\t%s\tfull charge, %d runs" % (
             fmt_hours(sum(r["projected_hours"] for r in long_runs) / len(long_runs)), len(long_runs)))
     if health.get("health_pct"):
-        out.append("stat\tHealth\t%s%%\t%.1f of %.1f Wh · %d cycles" % (
-            health["health_pct"], health["full_wh"] or 0, health["design_wh"] or 0, health["cycles"] or 0))
+        out.append("stat\tHealth\t%s%%\t%s · %d cycles" % (health["health_pct"], condition()["label"], health["cycles"] or 0))
     for run in list(reversed([r for r in runs if r["seconds"] >= 600]))[:3]:
         out.append("run\t%s\t%s\t%.0f%% → %.0f%%\t%s" % (
             time.strftime("%a %H:%M", time.localtime(run["start"])), fmt_hours(run["seconds"] / 3600),
@@ -829,3 +828,91 @@ def import_upower(conn, directory=UPOWER_DIR):
         count += 1
     conn.commit()
     return count
+
+
+# ---- condition, daily usage and diagnostics ------------------------------------------------
+def condition():
+    """Apple-style battery condition from the gauge's own health flag and capacity versus design."""
+    bat = find_battery()
+    if not bat:
+        return {"label": "Unknown", "level": "unknown", "why": "No battery found"}
+    gauge = (rd(bat + "/health") or "").strip()
+    health = battery_health().get("health_pct")
+    if gauge and gauge.lower() not in ("good", "unknown"):
+        return {"label": "Service Recommended", "level": "bad", "why": "The battery gauge reports: %s" % gauge}
+    if health is not None and health < 80:
+        return {"label": "Service Recommended", "level": "bad", "why": "Capacity is %.0f%% of design (below 80%%)" % health}
+    if health is not None and health < 90:
+        return {"label": "Normal", "level": "ok", "why": "Capacity %.0f%% of design; gauge reports %s" % (health, gauge or "no fault")}
+    return {"label": "Normal", "level": "good", "why": "Capacity %s%% of design; gauge reports %s" % (health, gauge or "no fault")}
+
+
+def daily_usage(rows, days=10):
+    """Per local day: Wh drawn on battery, hours on battery, hours on the charger, lowest charge reached."""
+    out = {}
+    for i, r in enumerate(rows):
+        day = time.strftime("%Y-%m-%d", time.localtime(r["ts"]))
+        entry = out.setdefault(day, {"day": day, "wh": 0.0, "battery_h": 0.0, "charger_h": 0.0, "min_pct": None})
+        nxt = rows[i + 1]["ts"] if i + 1 < len(rows) else r["ts"] + SAMPLE_SECONDS
+        dt = min(nxt - r["ts"], GAP_SECONDS)
+        if r["ac"]:
+            entry["charger_h"] += dt / 3600
+        else:
+            entry["battery_h"] += dt / 3600
+            if r["sys_w"]:
+                entry["wh"] += r["sys_w"] * dt / 3600
+        if r["pct"] is not None and (entry["min_pct"] is None or r["pct"] < entry["min_pct"]):
+            entry["min_pct"] = r["pct"]
+    return [out[d] for d in sorted(out)][-days:]
+
+
+def diagnose(conn):
+    """Health checks on the battery stack: each (name, ok|warn|fail, detail)."""
+    checks = []
+    now = int(time.time())
+
+    def add(name, status, detail):
+        checks.append({"name": name, "status": status, "detail": detail})
+
+    bat = find_battery()
+    add("Battery sensor", "ok" if bat else "fail", os.path.basename(bat) if bat else "no laptop battery under /sys/class/power_supply")
+    add("System power sensor", "ok" if find_system_power() else "warn",
+        "SMC Total System Power" if find_system_power() else "missing; the logger falls back to battery flow while unplugged")
+    last = conn.execute("SELECT MAX(ts) FROM samples WHERE cpu_pct IS NOT NULL").fetchone()[0]
+    if last is None:
+        add("Logger", "fail", "no samples recorded; is mseries-battery-logger.service running?")
+    else:
+        age = now - last
+        add("Logger", "ok" if age <= GAP_SECONDS * 2 else "warn", "last live sample %d s ago" % age)
+    total = conn.execute("SELECT COUNT(*) FROM samples").fetchone()[0]
+    first = conn.execute("SELECT MIN(ts) FROM samples").fetchone()[0]
+    add("History", "ok" if total else "warn", "%d samples since %s" % (total, time.strftime("%Y-%m-%d %H:%M", time.localtime(first))) if first else "empty")
+    imported = conn.execute("SELECT COUNT(*) FROM samples WHERE cpu_pct IS NULL").fetchone()[0]
+    add("UPower backfill", "ok" if imported else "warn", "%d imported samples" % imported if imported else "none imported (history unavailable?)")
+    span = conn.execute("SELECT COUNT(*) FROM (SELECT 1 FROM samples WHERE cpu_pct IS NOT NULL AND ts > ? AND ac = 0 LIMIT 240)", (now - 14 * 86400,)).fetchone()[0]
+    add("Live data while unplugged", "ok" if span >= 240 else "warn",
+        "%d samples" % span if span >= 240 else "only %d live samples on battery; usage-level and per-app views need about an hour" % span)
+    try:
+        size = os.path.getsize(DB_PATH)
+        add("Database", "ok" if size < 200e6 else "warn", "%.1f MB, kept %d days" % (size / 1e6, RETENTION_DAYS))
+    except OSError:
+        add("Database", "warn", "size unknown")
+    cond = condition()
+    add("Battery condition", "ok" if cond["level"] in ("good", "ok") else "fail", "%s: %s" % (cond["label"], cond["why"]))
+    health = battery_health()
+    if health.get("temp_c") is not None:
+        add("Temperature", "ok" if health["temp_c"] < 40 else "warn", "%.0f °C" % health["temp_c"])
+    if health.get("limit_pct") is not None:
+        add("Charge limit", "ok", "charging stops at %d%%" % health["limit_pct"])
+    tool = shutil.which("notify-send")
+    add("Notifications", "ok" if tool else "warn", "notify-send available" if tool else "notify-send missing; high-drain alerts are silent")
+    return checks
+
+
+def diagnostics_markdown(conn):
+    lines = ["# Battery diagnostics", "", "Generated %s." % time.strftime("%Y-%m-%d %H:%M"), "",
+             "| Check | Result | Detail |", "|---|---|---|"]
+    for c in diagnose(conn):
+        lines.append("| %s | %s | %s |" % (c["name"], c["status"].upper(), c["detail"]))
+    lines += ["", report_markdown(conn, 14)]
+    return "\n".join(lines)

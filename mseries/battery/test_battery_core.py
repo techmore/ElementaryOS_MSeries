@@ -226,6 +226,21 @@ class CoreTests(unittest.TestCase):
         finally:
             core.SYS = old
 
+    def test_daily_usage_groups_by_day(self):
+        base = int(__import__("time").mktime((2026, 10, 10, 9, 0, 0, 0, 0, -1)))
+        rows = [row(base + i * 15, 90, 12.0) for i in range(240)]                 # one hour on battery
+        rows += [row(base + 3600 + i * 15, 80, 5.0, ac=1) for i in range(120)]    # half an hour plugged in
+        day = core.daily_usage(rows)[0]
+        self.assertAlmostEqual(day["wh"], 12.0, delta=0.3)
+        self.assertAlmostEqual(day["battery_h"], 1.0, delta=0.02)
+        self.assertAlmostEqual(day["charger_h"], 0.5, delta=0.02)
+
+    def test_diagnose_flags_empty_history(self):
+        conn = core.connect(os.path.join(tempfile.mkdtemp(), "h.db"))
+        found = {c["name"]: c for c in core.diagnose(conn)}
+        self.assertEqual(found["Logger"]["status"], "fail")
+        self.assertIn("# Battery diagnostics", core.diagnostics_markdown(conn))
+
     def test_fmt_hours(self):
         self.assertEqual(core.fmt_hours(7.5), "7h 30m")
         self.assertEqual(core.fmt_hours(0.5), "30 min")

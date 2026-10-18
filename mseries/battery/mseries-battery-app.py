@@ -345,6 +345,7 @@ class BatteryWindow(Gtk.ApplicationWindow):
              ("apps", "Energy by app", "applications-system-symbolic"),
              ("devices", "Accessories", "input-mouse-symbolic"),
              ("health", "Health", "emblem-default-symbolic"),
+             ("diagnostics", "Diagnostics", "dialog-information-symbolic"),
              ("events", "Power events", "dialog-information-symbolic"))
 
     def __init__(self, app):
@@ -441,11 +442,12 @@ class BatteryWindow(Gtk.ApplicationWindow):
         self.build_apps(rows)
         self.build_devices(conn, now)
         self.build_health(conn, rows, now)
+        self.build_diagnostics(conn)
         self.build_events(conn, now)
         return True
 
-    def on_export(self, _button):
-        dialog = Gtk.FileDialog(title="Save battery report", initial_name="battery-report-%s.md" % time.strftime("%Y-%m-%d"))
+    def on_export(self, _button, diagnostics=False):
+        dialog = Gtk.FileDialog(title="Save battery report", initial_name="battery-%s-%s.md" % ("diagnostics" if diagnostics else "report", time.strftime("%Y-%m-%d")))
         docs = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS)
         if docs:
             dialog.set_initial_folder(Gio.File.new_for_path(docs))
@@ -457,7 +459,7 @@ class BatteryWindow(Gtk.ApplicationWindow):
                 return
             conn = self.open()
             if conn is not None:
-                target.replace_contents(core.report_markdown(conn, 14).encode(), None, False, Gio.FileCreateFlags.NONE, None)
+                target.replace_contents((core.diagnostics_markdown(conn) if diagnostics else core.report_markdown(conn, 14)).encode(), None, False, Gio.FileCreateFlags.NONE, None)
 
         dialog.save(self, None, done)
 
@@ -747,18 +749,72 @@ class BatteryWindow(Gtk.ApplicationWindow):
         page.append(section("Accessories", listing))
         page.append(label("Some devices report only a level (Normal, Low, Critical) instead of a percentage; those show how long they have been at the current level.", "dim", "caption", wrap=True))
 
+    def build_diagnostics(self, conn):
+        page = self.pages["diagnostics"]
+        checks = core.diagnose(conn)
+        bad = sum(1 for c in checks if c["status"] != "ok")
+        page.append(label("%d checks, %s" % (len(checks), "all passing" if not bad else "%d need attention" % bad), "stat-value"))
+        listing = boxed_list()
+        icons = {"ok": "emblem-ok-symbolic", "warn": "dialog-warning-symbolic", "fail": "dialog-error-symbolic"}
+        for c in checks:
+            line = Gtk.Box(spacing=12)
+            line.set_margin_top(9)
+            line.set_margin_bottom(9)
+            line.set_margin_start(14)
+            line.set_margin_end(14)
+            line.append(Gtk.Image(icon_name=icons[c["status"]], pixel_size=18))
+            text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1, hexpand=True)
+            text.append(label(c["name"], "row-title"))
+            text.append(label(c["detail"], "dim", wrap=True))
+            line.append(text)
+            listing.append(line)
+        page.append(listing)
+        save = Gtk.Button(label="Save Diagnostics Report…", halign=Gtk.Align.START)
+        save.connect("clicked", lambda _b: self.on_export(None, diagnostics=True))
+        page.append(save)
+
     def build_health(self, conn, rows, now):
         page = self.pages["health"]
         health = core.battery_health()
         trend = core.health_trend(conn)
+        cond = core.condition()
+        banner = Gtk.Box(spacing=12)
+        banner.add_css_class("tile")
+        banner.append(Gtk.Image(icon_name="emblem-default-symbolic" if cond["level"] in ("good", "ok") else "dialog-warning-symbolic", pixel_size=28))
+        words = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        words.append(label("Battery condition: %s" % cond["label"], "stat-value"))
+        words.append(label(cond["why"], "dim", wrap=True))
+        banner.append(words)
+        page.append(banner)
         tiles = Gtk.Box(spacing=12, homogeneous=True)
         tiles.append(tile("Capacity", "%s%%" % health.get("health_pct", "—"), "%.1f of %.1f Wh design" % (health.get("full_wh") or 0, health.get("design_wh") or 0)))
         tiles.append(tile("Cycles", "%d" % (health.get("cycles") or 0), "full charge equivalents"))
         tiles.append(tile("Temperature", "%.0f °C" % health["temp_c"] if health.get("temp_c") is not None else "—",
                           "limit %d%%" % health["limit_pct"] if health.get("limit_pct") is not None else ""))
         page.append(tiles)
+        days = core.daily_usage(core.fetch(conn, now - 12 * 86400), 10)
+        if days:
+            peak = max([d["wh"] for d in days] + [1])
+            usage = boxed_list()
+            for d in reversed(days):
+                line = Gtk.Box(spacing=16)
+                line.set_margin_top(9)
+                line.set_margin_bottom(9)
+                line.set_margin_start(14)
+                line.set_margin_end(14)
+                title = label(time.strftime("%a %d %b", time.strptime(d["day"], "%Y-%m-%d")), "row-title")
+                title.set_size_request(110, -1)
+                line.append(title)
+                line.append(level_bar(d["wh"] / peak, "usage-bar"))
+                for text, width in (("%.1f Wh" % d["wh"], 66), (core.fmt_hours(d["battery_h"]), 70),
+                                    ("low %.0f%%" % d["min_pct"] if d["min_pct"] is not None else "—", 64)):
+                    cell = label(text, "numeric", xalign=1.0)
+                    cell.set_size_request(width, -1)
+                    line.append(cell)
+                usage.append(line)
+            page.append(section("Last 10 days on battery", usage))
         if len(trend) < 2:
-            page.append(label("The health trend builds up one point per day; check back tomorrow.", "dim"))
+            page.append(label("The capacity trend builds up one point per day; check back tomorrow.", "dim"))
             return
         listing = boxed_list()
         for day in reversed(trend[-30:]):

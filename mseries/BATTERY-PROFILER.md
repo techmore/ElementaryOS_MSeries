@@ -44,6 +44,15 @@ top three CPU processes. Read-only: it never changes a setting.
 - **Logger cost, measured 2026-10-18 on the M1 Pro:** about 0.17 s of CPU per minute (~0.3 % of one core), 18 MB RSS,
   `Nice=15` and idle I/O class. The database grows by tens of KB per hour of use.
 
+## Condition, daily usage and diagnostics
+- **Battery condition** (Normal / Service Recommended) from the gauge's own `health` flag and capacity versus design
+  (below 80% means Service Recommended). Shown on Health and in the dropdown.
+- **Last 10 days on battery** (Wh, time on battery, lowest charge) from the real history; `mseries-battery daily`.
+- **Diagnostics** page and `mseries-battery diagnose` (exit 1/2 on warn/fail): sensors, logger freshness, history,
+  UPower backfill, live-data coverage, database size, condition, temperature, charge limit, notifications. The page's
+  button saves a Markdown diagnostics report with the full report appended.
+First run on the M1 Pro: 10 of 11 checks pass; the one warning is "no live samples while unplugged yet".
+
 ## Real history from UPower
 The logger imports UPower's own battery history for this battery (`/var/lib/upower/history-charge/rate-*.dat`, since
 2026-10-14: charge % and watts) at start, and `mseries-battery import` redoes it. Imported rows have charge, watts and
