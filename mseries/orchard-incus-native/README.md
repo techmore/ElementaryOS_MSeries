@@ -5,8 +5,8 @@ inspired by [Orchard](https://github.com/andrew-waters/orchard). It uses the loc
 Incus Unix socket and includes an optional persistent Wingpanel indicator.
 
 The [upstream comparison](docs/UPSTREAM-PARITY.md) reviews 131 capability rows
-against Orchard revision `2c78257c8602ffed61f383ee6e737bfc37b142ee`: 55 implemented,
-37 native adaptations, 37 documented runtime/platform incompatibilities and two
+against Orchard revision `2c78257c8602ffed61f383ee6e737bfc37b142ee`: 54 implemented,
+38 native adaptations, 37 documented runtime/platform incompatibilities and two
 Incus-specific additions. Adaptations describe the differences explicitly; this
 is not a claim of identical behavior or complete manual UI verification.
 The CSV, source-view inventory and service-symbol index accompany the report.
@@ -46,8 +46,8 @@ The CSV, source-view inventory and service-symbol index accompany the report.
   gateway; desktop API keys are never injected into guests.
 - Ctrl+K command palette, fuzzy search, `orchard:` navigation links, preferences,
   server diagnostics and explicitly confirmed host daemon controls.
-- Wingpanel tree icon, running-instance badge (including zero), CPU/memory
-  rings and recent graphs, instance start/stop and manager launcher. A dash
+- Wingpanel tree icon and running-instance badge (including zero). CPU/memory
+  graphs, instance start/stop and manager launcher stay in the popover. A dash
   indicates an unavailable daemon; the indicator stays visible in the session
   and is excluded from the greeter.
 

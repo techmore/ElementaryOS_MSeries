@@ -14,6 +14,7 @@ int main (string[] args) {
     var display = (Gtk.Box) indicator.get_display_widget ();
     assert (((Gtk.Image) display.get_first_child ()).icon_name == "orchard-incus-symbolic");
     var badge = (Gtk.Label) display.get_first_child ().get_next_sibling ();
+    assert (badge.get_next_sibling () == null);
     assert (badge.label == "…");
 
     // One indicator instance must recover from an error and replace stale counts.
@@ -27,6 +28,7 @@ int main (string[] args) {
         if (stage == 2 && !display.tooltip_text.contains ("0 of 1")) return Source.CONTINUE;
         if (stage == 3) assert (display.tooltip_text.contains ("Incus unavailable"));
         assert (indicator.visible);
+        assert (badge.get_next_sibling () == null);
         print ("Badge stage %d: %s\n", stage, badge.label);
         if (++stage == expected.length) {
             loop.quit ();

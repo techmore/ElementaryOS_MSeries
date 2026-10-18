@@ -857,8 +857,8 @@
       "id": "F086",
       "group": "Panel and navigation",
       "feature": "Panel CPU/memory rings and histories",
-      "status": "implemented",
-      "note": "Wingpanel companion shows host-normalized CPU/memory rings and bounded recent graphs, with unknown/baseline states.",
+      "status": "adapted",
+      "note": "By owner preference, Wingpanel shows only the tree icon and running-instance count. Host-normalized CPU and bounded CPU/memory graphs remain in the popover; panel rings are intentionally omitted.",
       "upstream": [
         "Orchard/Views/Features/MenuBar/MenuBarDashboard.swift"
       ]
