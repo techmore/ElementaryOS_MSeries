@@ -1,5 +1,10 @@
 # OS 9 implementation / Claude Code handoff
 
+## Battery UI polish — 2026-10-18 (Claude Code)
+
+App icon, remembered page/range/size, keyboard shortcuts, `mseries-battery open`. 19 core tests + staging test pass; state
+restore verified headless. **Unverified:** the icon's look in the dock, shortcuts by real key press.
+
 ## Claude account switch and Code context live verification — 2026-10-18
 
 Owner authorized switching from saved account1 to account2. The installed helper

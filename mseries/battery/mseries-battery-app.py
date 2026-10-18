@@ -43,6 +43,26 @@ CSS = b"""
 """
 
 
+STATE_PATH = os.path.join(os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")), "mseries-battery", "ui.json")
+
+
+def load_ui():
+    try:
+        with open(STATE_PATH) as handle:
+            return json.load(handle)
+    except (OSError, ValueError):
+        return {}
+
+
+def save_ui(state):
+    try:
+        os.makedirs(os.path.dirname(STATE_PATH), exist_ok=True)
+        with open(STATE_PATH, "w") as handle:
+            json.dump(state, handle)
+    except OSError:
+        pass
+
+
 def when(ts, with_date=True):
     return time.strftime("%a %H:%M" if with_date else "%H:%M", time.localtime(ts))
 
@@ -328,8 +348,11 @@ class BatteryWindow(Gtk.ApplicationWindow):
              ("events", "Power events", "dialog-information-symbolic"))
 
     def __init__(self, app):
-        super().__init__(application=app, title="Battery", default_width=980, default_height=680)
-        self.range_seconds = RANGES[1][1]
+        ui = load_ui()
+        super().__init__(application=app, title="Battery", default_width=ui.get("width", 980), default_height=ui.get("height", 680))
+        self.range_seconds = ui.get("range", RANGES[1][1])
+        if self.range_seconds not in [r[1] for r in RANGES]:
+            self.range_seconds = RANGES[1][1]
         self.conn = None
         self.chart = Chart()
         header = Gtk.HeaderBar()
@@ -359,7 +382,29 @@ class BatteryWindow(Gtk.ApplicationWindow):
         layout.append(self.stack)
         self.set_child(layout)
         self.refresh()
-        GLib.timeout_add_seconds(core.SAMPLE_SECONDS, self.refresh)
+        if ui.get("page") in self.pages:
+            self.stack.set_visible_child_name(ui["page"])
+        GLib.timeout_add_seconds(core.SAMPLE_SECONDS, self.tick)
+        self.connect("close-request", self.on_close)
+        keys = Gtk.ShortcutController()
+        keys.set_scope(Gtk.ShortcutScope.GLOBAL)
+        for number, (name, _t, _i) in enumerate(self.PAGES, start=1):
+            keys.add_shortcut(Gtk.Shortcut.new(Gtk.ShortcutTrigger.parse_string("<Control>%d" % number),
+                                               Gtk.CallbackAction.new(lambda *_a, n=name: self.stack.set_visible_child_name(n) or True)))
+        keys.add_shortcut(Gtk.Shortcut.new(Gtk.ShortcutTrigger.parse_string("<Control>r"), Gtk.CallbackAction.new(lambda *_a: self.refresh() or True)))
+        keys.add_shortcut(Gtk.Shortcut.new(Gtk.ShortcutTrigger.parse_string("<Control>comma"), Gtk.CallbackAction.new(lambda *_a: PreferencesWindow(self).present() or True)))
+        keys.add_shortcut(Gtk.Shortcut.new(Gtk.ShortcutTrigger.parse_string("<Control>q"), Gtk.CallbackAction.new(lambda *_a: self.close() or True)))
+        self.add_controller(keys)
+
+    def tick(self):
+        if self.is_active() or self.get_surface() is not None and self.get_mapped():
+            self.refresh()
+        return True
+
+    def on_close(self, _window):
+        save_ui({"page": self.stack.get_visible_child_name(), "range": self.range_seconds,
+                 "width": self.get_width(), "height": self.get_height()})
+        return False
 
     # ---- data -------------------------------------------------------------------------------
     def open(self):
