@@ -1,5 +1,14 @@
 # Hardware test receipts and release freezes
 
+## Later local VRR and boot-archive observations
+
+[October 18 report](2026-10-18-j314s-vrr-and-boot-archive.md): built-in VRR retained
+in the current desk profile, owner visual pass and working dock confirmed.
+Kernel activation was observed briefly (3/25 samples), so sustained VRR remains
+unqualified. External fixed 1080p/60 configuration preserved. The report includes
+the next-kernel acceptance checklist and sanitized boot archive manifest.
+These observations follow exp1 and do not modify its frozen evidence or labels.
+
 Hardware labels belong to an exact board + kernel image + selected module/DTB
 hashes + m1n1 boot-payload hash + runtime feature parameters. Tests on a J316S
 are not automatically J314S tests. A successful compile, a bound driver and a

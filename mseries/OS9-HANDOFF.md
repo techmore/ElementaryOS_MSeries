@@ -1,5 +1,60 @@
 # OS 9 implementation / Claude Code handoff
 
+## Boot archive and built-in VRR kept enabled — 2026-10-18
+
+Owner-approved cleanup archived four m1n1 backups and seven Fairydust test boot
+files with SHA256/fsync verification, removed six corresponding custom menu
+entries, and recovered 191.63 MiB total. `/boot` reached 214.02 MiB free (~58%
+used). Aurora .20/enh1, stock recovery, shared boot payload, generated menu and
+one-shot selection were verified unchanged at cleanup time; later full-height
+menu changes are independent. Binary archives and full rollback configs remain
+private in Codex outputs, with sanitized hashes in the
+[receipt and restore notes](aurora/hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md).
+
+On running `.20`, built-in `3024x1890@120.000+vrr` stays selected after changing
+only its saved mode in `desk-4k`; dock remains fixed 1080p/60, scale 1 at (1512,0),
+with built-in scale 2 at (0,0), primary. Watcher executable, laptop-only profile
+and monitors.xml unchanged. Owner: dock works, both screens look normal, keep VRR.
+The 12-second content probe observed built-in VRR_ENABLED=1 in 3/25 DRM samples
+(~1–2 seconds), then 0 while animation continued; external stayed connected at
+1080p/60 throughout those samples. This is partial qualification, not sustained
+VRR or a power result. Next kernel: explicitly capture active/fullscreen/focus
+and presentation timing, explain the brief activation, then test docking and
+sleep with rollback. New read-only DRM and controlled GTK content helpers plus
+that checklist are linked in the report. No original frozen receipts were edited.
+
+Publication checks: 23 Aurora qualification tests and six display-profile tests
+pass; both immutable freezes verify. The read-only libdrm helper compiles with
+`-Wall -Wextra -Werror` and reads the live display node. Python syntax, CLI refusal
+of external fullscreen/existing receipts, invalid DRM-node handling, all 11
+archived binary sizes/hashes, receipt sample counts, new links, privacy scan and
+Git whitespace checks pass. Publication does not rerun a fullscreen test.
+
+## Queued .20-enh1 trial also uses full height — 2026-10-18
+
+Owner explicitly requested one reboot for the kernel trial and native notch
+layout. Changed only the existing `elementary-aurora20-enh1` stanza's
+`appledrm.show_notch=0` to `appledrm.show_notch=1` in `/boot/grub/custom.cfg`.
+`next_entry=elementary-aurora20-enh1` and every other entry/default remain intact;
+the separate `mseries-full-height` normal-boot choice still uses retained .20.
+The native panel/dock from the prior batch are already installed and running.
+
+Validation: `grub-script-check` passed before and after the atomic write. Byte
+comparison confirmed this single parameter change. GRUB environment bytes and
+SHA256 of the candidate kernel, candidate initrd and generated `grub.cfg` are
+unchanged. Exact pre-change backup:
+`/boot/grub/custom.cfg.pre-full-height-trial`. No reboot or kernel/audio change.
+The trial's display setting was changed separately from the desktop profile;
+profile `--revert` alone does not undo this trial-specific parameter. Restore
+that parameter to 0 as well before using the trial with stock Wingpanel.
+
+Next: one normal reboot selects the queued .20-enh1 trial with full height;
+confirm clock/calendar, dock, unlock and automatic trial receipts. Hardware
+success is still pending. The older cropped-mode baseline is not a matched
+energy comparison with this full-height trial; collect matching display controls
+on both kernels before comparing power.
+
+
 ## Native full-height J314 desktop and persistent dock — 2026-10-18
 
 Post-push deployment follow-up: required `bash mseries/deploy-codexbar.sh` passed
@@ -3046,3 +3101,18 @@ healthy, depleting, provider-error and live fixtures, light and dark; helper con
 config; the sign-in window loads opencode.ai's login page headlessly (`/console/login`, no cookies before
 sign-in, so it cannot close early); `check-codexbar-port.sh` passes. Not verified: a real opencode.ai sign-in
 end to end (needs the owner's credentials) and the panel on the live desktop by eye.
+
+## CodexBar: OpenCode Go connects with an API key so passkeys work — 2026-10-18
+
+The owner reported that the built-in OpenCode sign-in window does not allow passkeys: WebKitGTK has no
+WebAuthn support on Linux. Reading Brave's cookie store and keyring instead was rejected as credential access.
+`codexbar-opencode-login.py login` now opens a small Connect window: Open opencode.ai (default browser, so
+passkeys work), create and copy an API key in the console, paste it (masked). The key is checked with
+`codexbar usage --provider opencodego --source api` (key passed only in the environment) and stored with
+upstream's `codexbar config set-api-key --provider opencodego --stdin`. "Sign in here instead" keeps the
+built-in window for email or GitHub sign-ins, saving the web session as before. `status` counts either.
+
+Verified headlessly (Xvfb): the window renders; a fake key shows upstream's "credentials are invalid or
+expired" and nothing is saved (real config unchanged); `set-api-key` into a temp config stores `apiKey` and
+upstream then reads it (error changes from "No OpenCode Go API key configured" to "invalid or expired").
+Not verified: a real key end to end (needs the owner's key).

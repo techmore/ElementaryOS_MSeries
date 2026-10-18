@@ -1,5 +1,19 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Built-in VRR and boot space — 2026-10-18
+
+[Scoped result and next-kernel checklist](aurora/hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md):
+Aurora .20's builtin VRR is selected and retained in the current desk profile;
+owner confirms both displays look normal and the dock works. External fixed
+1080p/60 mode/layout preserved. Kernel VRR activation was brief (3/25 samples),
+so sustained VRR, focus/presentation behavior, docking transitions and sleep
+remain open. This display change must be controlled in future energy comparisons.
+Four bootloader backups and seven retired Fairydust test files were archived
+locally; six test entries removed. `/boot` reached 214.02 MiB free (~58% used
+at cleanup). Aurora and stock recovery files remain; historical Fairydust-default
+instructions below are superseded for the owner's current host, not removed
+from factory/source tooling.
+
 
 ## Native full-height desktop and compact dock — 2026-10-18
 
@@ -8,7 +22,9 @@ camera strip with a protected Wingpanel clock layout, compact overlap-hiding doc
 and persistent monitor-clamped placement. Installed on the current transformed
 M1 Pro; ARM64 builds, eight boot helper tests, GTK allocation and payload checks
 pass. The separate full-height normal-boot choice preserves recovery and the
-already queued one-shot kernel trial. Full-height hardware boot/clock/monitor
+already queued one-shot kernel trial. At the owner’s request, that queued
+`.20-enh1` trial now also uses `appledrm.show_notch=1`, so one normal reboot
+loads the trial and full-height layout together. Full-height hardware boot/clock/monitor
 switching and dock placement persistence still need post-reboot confirmation.
 Factory images retain their cropped initial mode. See the latest handoff for
 commands, runtime warnings and rollback.
