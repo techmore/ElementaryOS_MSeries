@@ -115,6 +115,12 @@ synthetic receipt remains available as the baseline for that separate method.
 
 ## Session resource and retention probes
 
+The final collected long-session evidence is in [the soak report](../../docs/orchard-soak.html).
+It covers 99.36 minutes and seven workflow cycles; it is not a two-hour pass.
+Small memory growth and incomplete frame feedback remain unqualified. The owner
+stopped testing; the runner and scheduled checks must remain stopped unless
+explicitly requested again. The commands below are manual opt-in tools.
+
 The native driver can repeat all workflows in one process with unique guest
 identities, and observe idle resources before and afterwards:
 
@@ -124,6 +130,27 @@ GDK_BACKEND=wayland python3 tools/qualify-wayland.py \
   --source "$PWD" --output "$audit_dir" --run \
   --cycles 3 --idle-before 300 --idle-after 600
 ```
+
+For a two-hour soak with eight workflow cycles distributed across the session:
+
+```sh
+audit_dir=$(mktemp -d)
+GDK_BACKEND=wayland python3 tools/qualify-wayland.py \
+  --source "$PWD" --output "$audit_dir" --run \
+  --cycles 8 --cycle-interval 900 --session-seconds 7200
+```
+
+`--cycle-interval` schedules starts relative to the beginning of the session;
+slow workflows run to completion before the next cycle. `--session-seconds`
+sets a minimum duration and adds a final idle interval as needed. Each cycle
+records its elapsed time and retains its raw `frames-cycle-N.json` presentation
+feedback, so early and late latency can be compared without overwriting evidence.
+Missing feedback is recorded as unavailable, and fewer than 16 matched actions
+makes a probe incomplete. Both fail qualification; raw feedback and actions are
+saved first. A pass also requires all cycles and the minimum duration. The runner
+does not raise or focus the window for frame measurement; keep it unobscured
+when deliberately running a future audit. Cleanup retries transient Incus update
+locks with an ownership-token check on each attempt.
 
 `resources.jsonl` samples process RSS, PSS, private memory, cumulative CPU,
 threads, file descriptors, actual focus/minimized state and cache sizes every
