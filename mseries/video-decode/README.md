@@ -49,3 +49,23 @@ see `../BUG-FIX-ROADMAP.md` (iCloud passwords evaluation) for the unofficial opt
 
 **Owner-verified 2026-10-18:** after the BlueZ proxy fix, the passkey QR-code flow worked in `brave-youtube` and
 the owner signed in (iPhone approving the sign-in). Hardware decode inside the container is still unconfirmed.
+
+## Hardware decode confirmed in `brave-youtube`; first playback report — 2026-10-18 05:51
+
+- **Brave uses the Apple Video Decoder.** While the owner played YouTube in the contained instance, the
+  browser's `--type=gpu-process` held `/dev/video0` and `/dev/media0` open (the AVD v4l2-request nodes) plus
+  `/dev/dri` fds; the other Brave processes held none. This is the first direct evidence that browser
+  hardware decode works with the sandbox off inside the container.
+- **VP9 decode is correct on a test clip.** `ffmpeg -hwaccel vaapi` (libva v4l2-request, "decoding vp9 via
+  /dev/video0 [avd]") vs software on a 1080p30 VP9 clip: 120/120 frames bit-identical. (Synthetic `testsrc2`
+  pattern, 4 s, so it proves the decode path, not every real-world stream.)
+- **Owner report:** at first a stutter that "comes and goes", brief odd artifacts, a feeling of buffering;
+  a few minutes later "smooth, really good" and the picture "looks better". No kernel messages about
+  AVD/DCP/vblank/allocation failures in the window (`journalctl -k`, 05:46-05:52). Free high-order memory was
+  low (buddyinfo: order-10 count 2, order-11 count 1, 747 MB MemFree with 17 GB available as cache); the AVD
+  needs a large contiguous allocation per job (see `90-mseries-avd.conf`), so early stutter after a long
+  uptime or while memory is fragmented is a plausible cause, **not proven**.
+- System power while playing 1080p YouTube with the dock TV lit: median 25.1 W over 10 s (single sample, many
+  other things running; not comparable to the idle numbers in `../POWER-ROADMAP.md`).
+- Still to do: a software-decode control (normal Brave, same video) for CPU/power and smoothness, and look at
+  `brave://media-internals`/`chrome://gpu` in the contained window to confirm the exact decoder per stream.
