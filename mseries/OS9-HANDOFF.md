@@ -4846,3 +4846,25 @@ of the superseded translation/catch-up text. No model or microphone trials repea
 Next: native IPC deadlines and interrupt/close races, focus-bound selected-engine
 integration with draft/final presentation, then quiet English human F5 acceptance.
 Do not promote draft source merely because its contract tests or CI pass.
+
+## English F5 implementation in qualification — 2026-10-18
+
+Owner authorized completion, app qualification, merge and deployment, retaining
+ANE/MLX. English Nemotron CPU160 is the default candidate; new MLX Nemotron8bit
+cache-aware probe also completed (three zero-WER clip trials, ~1.1s firstdraft
+and ~4s finalflush, min13.56GiB /2528RPM), slower than the priorCPU path.
+Pinned scratchmlx-audio0.5.9 only, no owner's runtime package replacement.
+Native preedit is now focus-leased via IBus, with clearing on Commit/Finish/
+Cancel/focus loss. Native ANE IPC has bounded deadlines/framing/close/process
+ownership; optional Parakeet MLX uses the same lifecycle. Typing/cancellation
+revokes queued output; native rolling failures propagate.88 no-model contracts
+pass at this checkpoint. Existing owner jobs/audio/display/kernel untouched.
+
+A serialized owned queue tests actual current controller across private GTK3/
+GTK4/Qt6/Brave fixtures. First GTK3 finalwords matched and appeared during
+speech; an over-strict harness incorrectly required nonempty speculative preedit
+even though this ASR committed words directly. Retain the original failure;
+evaluate recorded early visible words under the corrected criterion without
+repeating inference. Real installed-app and optional voice checks are separate
+new cohorts. No microphone or physical F5 claimed tested by fileinput fixtures.
+No deployment yet; agent-owned installer/voice/realapp additions still in progress.

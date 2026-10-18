@@ -57,8 +57,10 @@ class FocusSession:
         self.hints = 0
         self.token = None
         self.characters = 0
+        self.on_invalidate = lambda: None
 
     def invalidate(self):
+        self.on_invalidate()
         self.token = None
 
     def focus(self, target, client):
@@ -105,6 +107,10 @@ def main():
         raise SystemExit('IBus is unavailable')
     state = FocusSession()
     current = {'engine': None, 'client': None, 'metadata': None}
+    def clear_preview():
+        if state.target is not None:
+            state.target.update_preedit_text(IBus.Text.new_from_string(''), 0, False)
+    state.on_invalidate = clear_preview
 
     class FocusMetadata:
         """Only field role/state/identity and active ancestors; never requests text."""
@@ -258,6 +264,7 @@ def main():
     xml = '''<node><interface name="org.techmore.DictationInput">
       <method name="Begin"><arg type="s" direction="out"/></method>
       <method name="Commit"><arg type="s" direction="in"/><arg type="s" direction="in"/></method>
+      <method name="Preview"><arg type="s" direction="in"/><arg type="s" direction="in"/></method>
       <method name="Check"><arg type="s" direction="in"/></method>
       <method name="Cancel"/>
       <method name="Finish"><arg type="s" direction="in"/></method>
@@ -346,7 +353,7 @@ def main():
         try:
             if method == 'Begin':
                 begin(invocation)
-            elif method in ('Commit', 'Check'):
+            elif method in ('Commit', 'Check', 'Preview'):
                 values = parameters.unpack()
                 token = values[0]
                 if metadata is None or metadata.validate() != current['metadata']:
@@ -356,7 +363,13 @@ def main():
                 if method == 'Commit':
                     text = values[1]
                     state.accept(token, text)
+                    clear_preview()
                     state.target.commit_text(IBus.Text.new_from_string(text))
+                elif method == 'Preview':
+                    text = values[1]
+                    if len(text) > 4000 or any(ord(c) < 32 and c not in '\n\t' for c in text) or '\x7f' in text:
+                        raise ValueError('Invalid preview')
+                    state.target.update_preedit_text(IBus.Text.new_from_string(text), len(text), bool(text))
                 invocation.return_value(None)
             elif method == 'Cancel':
                 lease['epoch'] += 1

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Streaming F5 dictation: transcribe.cpp 0.4.0 (MIT) + Parakeet Unified 0.6B Q4_K_M (CC-BY-4.0).
+# Streaming F5 dictation: transcribe.cpp 0.4.0 (MIT) + English Nemotron 0.6B Q8 streaming (model license in source card).
 # Needs install-dictation.sh first (F5 remap, mic bridge, ydotool). Replaces the Voxtype service,
 # which stays installed as the fallback: `systemctl --user start voxtype` (the units conflict).
 #   --uninstall   stop streaming, re-enable Voxtype
@@ -12,9 +12,9 @@ tarball=transcribe-native-0.4.0-linux-aarch64-cpu-vulkan.tar.gz
 tar_sha=af7ee108923b74d3e727309ce4992714a25872ea77c6247da8be9a0ed54275dd
 whl=transcribe_cpp-0.4.0-py3-none-any.whl
 whl_sha=c6dd091848006c7881d46b4066aa687782f49302c4253c0cb45396976cb0abcd
-model=parakeet-unified-en-0.6b-Q4_K_M.gguf
-model_sha=a8bf3de2b393bd14ead5a858c3748d5e3b07a20fdeabdd3b498fba4f463fa929
-model_url=https://huggingface.co/handy-computer/parakeet-unified-en-0.6b-gguf/resolve/main/$model
+model=nemotron-speech-streaming-en-0.6b-Q8_0.gguf
+model_sha=90d8c89714cd31efc88be62a40c6b2bea57e0cc2063af1ffe2c28f1a228ca110
+model_url=https://huggingface.co/handy-computer/nemotron-speech-streaming-en-0.6b-gguf/resolve/7df420cc3fb915a3b334560dac712af44fc41ef5/$model
 numpy_version=2.5.4 # Qualified with transcribe.cpp 0.4.0 on this Python 3.14 ARM64 host.
 [[ $EUID != 0 ]] || { echo 'Run as your normal user.' >&2; exit 2; }
 

@@ -30,9 +30,9 @@ def main():
         if current is None or current.get_name() != name:
             raise SystemExit('Input method selection did not remain active')
         return
-    method = {'begin': 'Begin', 'commit': 'Commit', 'check': 'Check', 'cancel': 'Cancel', 'finish': 'Finish', 'ready': 'Ready'}[sys.argv[1]]
+    method = {'begin': 'Begin', 'commit': 'Commit', 'preview': 'Preview', 'check': 'Check', 'cancel': 'Cancel', 'finish': 'Finish', 'ready': 'Ready'}[sys.argv[1]]
     args = None
-    if method == 'Commit':
+    if method in ('Commit', 'Preview'):
         text = sys.stdin.read(4001)
         if len(text) > 4000:
             raise SystemExit('Dictation chunk too long')
@@ -45,7 +45,7 @@ def main():
     except GLib.Error as error:
         # The only refusal an unfocused/inaccessible app can cause is "no accessible field": say so
         # distinctly so the controller may fall back to typing. Anything else stays a hard refusal.
-        if method == 'Begin' and ('No accessible focused field' in str(error) or 'metadata unavailable' in str(error)):
+        if method == 'Begin' and 'No accessible focused field' in str(error):
             raise SystemExit('UNVERIFIED-FIELD: no accessible focused field')
         raise SystemExit('Dictation input unavailable, sensitive, cancelled or focus changed')
     if method == 'Ready' and not result.unpack()[0]: raise SystemExit('Dictation input is not ready')

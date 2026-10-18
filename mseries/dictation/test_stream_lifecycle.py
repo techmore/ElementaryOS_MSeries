@@ -20,7 +20,7 @@ class StreamTests(unittest.TestCase):
         for name, value in [('Typer', Mock()), ('load_policy', Mock(return_value={})),
                             ('resource_reasons', Mock(return_value=[])), ('status', Mock()),
                             ('notify', Mock()), ('tone', Mock()), ('input_call', Mock(return_value='token')),
-                            ('OUTPUT', 'ibus'), ('TEST_INSERT', False), ('DRY', False)]:
+                            ('ENGINE', 'stream'), ('OUTPUT', 'ibus'), ('TEST_INSERT', False), ('DRY', False)]:
             p = patch.object(stream, name, value)
             self.stack.append(p); p.start()
         stream.Typer.return_value.q.unfinished_tasks = 0
@@ -99,7 +99,7 @@ class StreamTests(unittest.TestCase):
 
     def test_focus_loss_after_load_prevents_capture_and_releases_unused_model(self):
         import subprocess
-        stream.input_call.side_effect = ['token', subprocess.TimeoutExpired('check', 4)]
+        stream.input_call.side_effect = ['token', subprocess.TimeoutExpired('check', 4), None]
         self.d.start(); self.finish()
         self.d.run.assert_not_called()
         self.model.close.assert_called_once()
