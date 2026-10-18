@@ -149,6 +149,15 @@ class ImageWiringTests(unittest.TestCase):
                 self.assertTrue((image / path).is_file(), path)
             self.assertFalse((image / 'etc/systemd/system/suspend.target.wants/mseries-bluetooth-resume-fix.service').is_symlink())
 
+    def test_factory_accounts_frontend_respects_elementary_package_policy(self):
+        policy = (ROOT / 'repos/common-files/etc/apt/preferences.d/deprioritize-gnome').read_text()
+        blocked = set(next(line for line in policy.splitlines() if line.startswith('Package:')).split()[1:])
+        for name in ('apple-silicon/mkosi.conf', 'liveiso/mkosi.conf.d/arch.arm64.conf',
+                     'sysupdate/mkosi.conf.d/arch.arm64.conf'):
+            selected = packages('mkosi.images/' + name)
+            self.assertFalse(selected & blocked, name + ' selects a prohibited package')
+            self.assertIn('gnome-online-accounts-gtk', selected)
+
     def test_consumers_install_overlay_runtime_dependencies(self):
         overlay = packages('mkosi.images/apple-silicon/mkosi.conf')
         self.assertTrue({'bubblewrap', 'xdg-dbus-proxy', 'desktop-file-utils', 'libgtk-3-bin'} <= overlay)

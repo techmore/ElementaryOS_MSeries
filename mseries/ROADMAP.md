@@ -1,5 +1,14 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Fresh YouTube ISO qualification in progress — 2026-10-18
+
+Initial run 39126016747 failed before Brave staging because the calendar's GNOME
+Settings dependency is excluded by elementary's package policy. Both ARM64
+consumers and the Apple overlay now use the existing launcher's supported
+`gnome-online-accounts-gtk` frontend. Five image-wiring tests pass, including the
+package-policy regression. ISO rebuild, blank-disk installation, dock matching and
+in-guest YouTube playback remain pending.
+
 ## Calendar Today navigation regression resolved — 2026-10-18
 
 Repeated Today clicks during a return from another month could reuse the relative
