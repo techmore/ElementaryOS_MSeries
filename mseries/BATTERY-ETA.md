@@ -87,3 +87,7 @@ installed on the M1 Pro (Wingpanel restarted and stayed up); its look on the liv
 
 Update (2026-10-18, dropdown 2): the dropdown also lists accessory batteries (the mouse, which the stock rows used to
 show) and a Sleep drain stat once there is a night asleep on battery. Installed; Wingpanel restarted and stayed up.
+
+Update (2026-10-18, dropdown 3): the dropdown adds "Recent power changes" (the last three rises/drops from the last 6 h
+with the likely cause and busiest process), "Power profiles" (average and idle draw per profile once more than one has
+been used on battery) and peak-watt / 6 h labels on the sparkline. Installed; Wingpanel restarted and stayed up.
