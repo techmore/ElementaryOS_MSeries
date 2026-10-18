@@ -675,3 +675,10 @@ buttons. Inline checking/error states provide progress and retry focus. Existing
 storage and browser/embedded sign-in methods are preserved. Six light/dark previews, mocked
 cancel/invalid/rejected/success checks, four Meson suites and the port compatibility check pass.
 No real authentication was repeated. Runtime GI dependencies are explicit in the panel installer.
+
+
+### OpenCode one-click account entry — 2026-10-18
+
+OpenCode **+** now opens the native API-key sheet directly; the redundant Continue popup is removed.
+The existing sign-in helper, validation/storage and result/refresh flow remain intact. Module build
+and four Meson suites pass; no live sign-in was required for this routing change.
