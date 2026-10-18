@@ -230,3 +230,16 @@ available across logins. `codexbar-claude.py` now exports local Code context aft
 login, imports only missing sidebar records into its selected organization, and then switches the CLI/reopens Claude.
 Existing destination history is untouched. See [Claude Code history](CODEXBAR-CLAUDE-HISTORY.md) for backup locations,
 the read-only `history-preview` command, the inspected Claude app revision, and the remaining real-switch check.
+
+### Deploy without interrupting the menu bar
+
+`bash mseries/deploy-codexbar.sh` installs helpers, settings and the native module without restarting Wingpanel or
+quitting CodexBar. Helpers load on their next invocation; the module loads at next login. `--no-restart` remains an
+alias for the safe default. Use `--restart` only for an intentional panel reload or recovery from a confirmed defect;
+it reloads Wingpanel and leaves a running CodexBar daemon alone. Do not call a staged module “running” before reload.
+
+`probe/run-switch-probe.sh BUILD_DIR [success|null|array|invalid]` exercises the actual Switch row, delayed confirmation
+and async result with a fake backend in an isolated desktop. It reproduces the freed-argument-array crash before the
+owned account-ID fix. Meson registers all four cases when Xvfb/DBus are installed, so ordinary deploy checks and
+`check-codexbar-port.sh` run them before installing a build. `test-codexbar-deploy.py` checks that
+routine deployment cannot signal the live panel or quit the daemon.

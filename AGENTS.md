@@ -16,13 +16,15 @@
 > When you bump upstream, **merge it
 > with our customizations**: never replace our files with the stock ones, re-check that the panel still reads
 > `codexbar-linux --snapshot` (schema), and keep the port current with each upstream release. After every push
-> that touches CodexBar, run `bash mseries/deploy-codexbar.sh` so the owner's running Wingpanel and CodexBar are
-> on the new build. Record the pin,
+> that touches CodexBar, run `bash mseries/deploy-codexbar.sh`. Routine deploys must leave Wingpanel and the
+> CodexBar daemon running; native-module changes load at next login. Use `--restart` only for an owner-requested
+> reload or recovery from a confirmed panel defect, and state when code is installed but not yet loaded. Record the pin,
 > what you re-verified and what is still unverified in `mseries/OS9-HANDOFF.md`.
 
 - Keep `mseries/OS9-HANDOFF.md`, `mseries/ROADMAP.md`, and relevant public
   status pages current as work lands. Record concrete changes, commands,
   verification results, blockers, and the next task.
+- Keep the owner’s menu bar stable: stage routine indicator updates without restarting Wingpanel. Reload only when the owner explicitly requests it or to recover from a confirmed panel defect.
 - Commit and push completed, reviewed batches to GitHub. Use one agent for
   Git writes at a time. A delegated worker must report to its coordinator
   instead of committing unless explicitly assigned ownership of Git writes.
