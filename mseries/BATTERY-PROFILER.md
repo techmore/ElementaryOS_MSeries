@@ -44,6 +44,15 @@ top three CPU processes. Read-only: it never changes a setting.
 - **Logger cost, measured 2026-10-18 on the M1 Pro:** about 0.17 s of CPU per minute (~0.3 % of one core), 18 MB RSS,
   `Nice=15` and idle I/O class. The database grows by tens of KB per hour of use.
 
+## App grouping and runtime estimate (2026-10-18)
+- Process CPU is grouped per application using the process's cgroup (`app-…-NAME-pid.scope`, `*.service`), so Brave's
+  helper processes count as one app, named from its `.desktop` file when there is one; apps started through the
+  launcher keep their own process name. The system exposes no GPU counters (no DRM fdinfo, no devfreq load), so
+  attribution is CPU-time only and GPU/display work stays in the idle floor.
+- The runtime estimate blends the last 10 minutes of draw with the last hour, shows a range (lighter vs heavier of the two)
+  and its basis ("recent use"), and with under five minutes on battery falls back to the median draw of your past unplugged
+  runs ("your typical use"). Nothing is shown when there is neither.
+
 ## Condition, daily usage and diagnostics
 - **Battery condition** (Normal / Service Recommended) from the gauge's own `health` flag and capacity versus design
   (below 80% means Service Recommended). Shown on Health and in the dropdown.
