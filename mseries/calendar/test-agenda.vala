@@ -31,8 +31,8 @@ class AgendaTest : Object {
             (complete ? "STATUS:COMPLETED\r\nPERCENT-COMPLETE:100\r\nCOMPLETED:20261018T120000Z\r\n" : "") + "END:VTODO\r\n";
     }
 
-    string event (string title, int offset = 0) {
-        var now = new GLib.DateTime.now_local ().add_days (offset);
+    string event (string title) {
+        var now = new GLib.DateTime.now_local ();
         var day = now.format ("%Y%m%d");
         return "BEGIN:VEVENT\r\nUID:shared-event\r\nSUMMARY:" + title +
             "\r\nDTSTART;VALUE=DATE:" + day + "\r\nDTEND;VALUE=DATE:" + now.add_days (1).format ("%Y%m%d") + "\r\nEND:VEVENT\r\n";
@@ -83,15 +83,6 @@ class AgendaTest : Object {
         return null;
     }
 
-    Gtk.Widget? find_calendar (Gtk.Widget node) {
-        if (node.get_type ().name () == "DateTimeWidgetsCalendarView") return node;
-        for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) {
-            var view = find_calendar (child);
-            if (view != null) return view;
-        }
-        return null;
-    }
-
     async void navigation_checks () throws Error {
         var today = new GLib.DateTime.now_local ();
         var other = today.get_day_of_month () == 1 ? today.add_days (1) : today.add_days (-1);
@@ -102,11 +93,12 @@ class AgendaTest : Object {
             var controller = controllers.get_item (i);
             if (controller is Gtk.EventControllerFocus) Signal.emit_by_name (controller, "enter");
         }
-        yield expect ("Second calendar same UID");
+        yield expect ("Second calendar same UID", false);
         var today_button = find_button (widget, "office-calendar-symbolic");
         assert (today_button != null);
         today_button.clicked ();
         yield expect ("Second calendar same UID");
+        assert ((find_day (widget, today).get_state_flags () & Gtk.StateFlags.SELECTED) != 0);
         for (int i = 0; i < 3; i++) today_button.clicked ();
         yield expect ("Second calendar same UID");
         var next = find_button (widget, "pan-end-symbolic");
@@ -132,10 +124,183 @@ class AgendaTest : Object {
         for (int n = 0; n < 12; n++) yield pause ();
         yield expect (today.format ("%OB, %Y"));
         yield expect ("Second calendar same UID");
-        GLib.DateTime selected;
-        find_calendar (widget).get ("selected-date", out selected);
-        assert (selected.format ("%F") == today.format ("%F"));
-        stdout.printf ("PASS Today navigation works and upcoming agenda remains visible while browsing\n");
+        stdout.printf ("PASS Today restores selected day and events after repeated clicks and month navigation\n");
+    }
+
+    Gtk.Widget? named (Gtk.Widget node, string name) {
+        if (node.name == name) return node;
+        for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) {
+            var found = named (child, name);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    void choose_view (string mode) {
+        ((Gtk.ToggleButton) named (widget, "agenda-" + mode)).active = true;
+    }
+
+    void period_move (bool next) {
+        ((Gtk.Button) named (widget, next ? "agenda-next" : "agenda-previous")).clicked ();
+    }
+
+    int count_title (Gtk.Widget node, string title) {
+        int count = node is Gtk.Label && ((Gtk.Label) node).label == title ? 1 : 0;
+        for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) count += count_title (child, title);
+        return count;
+    }
+
+    string dated_event (string uid, string title, GLib.DateTime start, GLib.DateTime end, string extra = "") {
+        return "BEGIN:VEVENT\r\nUID:" + uid + "\r\nSUMMARY:" + title +
+            "\r\nDTSTART;VALUE=DATE:" + start.format ("%Y%m%d") +
+            "\r\nDTEND;VALUE=DATE:" + end.format ("%Y%m%d") + "\r\n" + extra + "END:VEVENT\r\n";
+    }
+
+    Gtk.Expander? details_for (Gtk.Widget node, string title) {
+        if (node is Gtk.Expander && contains (((Gtk.Expander) node).label_widget, title)) return (Gtk.Expander) node;
+        for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) {
+            var expander = details_for (child, title);
+            if (expander != null) return expander;
+        }
+        return null;
+    }
+
+    async void upcoming_checks () throws Error {
+        var now = new GLib.DateTime.now_local ();
+        var today = new GLib.DateTime.local (now.get_year (), now.get_month (), now.get_day_of_month (), 0, 0, 0);
+        add (events, dated_event ("upcoming-tomorrow", "Upcoming tomorrow", today.add_days (1), today.add_days (2)));
+        add (events, dated_event ("upcoming-end", "Last upcoming day", today.add_days (29), today.add_days (30)));
+        add (events, dated_event ("upcoming-outside", "Outside upcoming range", today.add_days (30), today.add_days (31)));
+        add (events, dated_event ("upcoming-past", "Ended yesterday", today.add_days (-1), today));
+        add (events, dated_event ("upcoming-ongoing", "Still ongoing", today.add_days (-1), today.add_days (2)));
+        assert (((Gtk.ToggleButton) named (widget, "agenda-upcoming")).active);
+        yield expect ("Upcoming · next 30 days");
+        yield expect ("Upcoming tomorrow");
+        yield expect ("Last upcoming day");
+        yield expect ("Still ongoing");
+        yield expect ("Outside upcoming range", false);
+        yield expect ("Ended yesterday", false);
+        assert (!named (widget, "agenda-previous").visible);
+        var next = find_button (widget, "pan-end-symbolic");
+        next.clicked ();
+        for (int i = 0; i < 12; i++) yield pause ();
+        yield expect ("Upcoming tomorrow");
+        yield expect ("Last upcoming day");
+        find_button (widget, "office-calendar-symbolic").clicked ();
+        stdout.printf ("PASS default Upcoming, month boundary, ongoing/past exclusion and calendar browsing\n");
+    }
+
+    async void view_checks (Gtk.Window window) throws Error {
+        var now = new GLib.DateTime.now_local ();
+        var today = new GLib.DateTime.local (now.get_year (), now.get_month (), now.get_day_of_month (), 0, 0, 0);
+        var month = today.add_days (1 - today.get_day_of_month ());
+        var next_month = month.add_months (1);
+        // The fixture runs in C.UTF-8: Sunday is the first day of the week.
+        var week = today.add_days (-(today.get_day_of_week () % 7));
+        add (events, dated_event ("month-first", "Month first event", month, month.add_days (1)));
+        add (events, dated_event ("month-last", "Month last event", next_month.add_days (-1), next_month));
+        add (events, dated_event ("outside-month", "Outside month event", next_month, next_month.add_days (1)));
+        add (events, dated_event ("week-first", "Week first event", week, week.add_days (1)));
+        add (events, dated_event ("week-last", "Week last event", week.add_days (6), week.add_days (7)));
+        add (events, dated_event ("outside-week", "Outside week event", week.add_days (7), week.add_days (8)));
+        add (events, dated_event ("tomorrow", "Tomorrow event", today.add_days (1), today.add_days (2)));
+        add (events, dated_event ("multi-day", "Multi-day event", today.add_days (-1), today.add_days (2)));
+        add (events, dated_event ("recurring", "Recurring event", today, today.add_days (1), "RRULE:FREQ=DAILY;COUNT=3\r\n"));
+        var start = today.add_hours (10);
+        add (events, "BEGIN:VEVENT\r\nUID:timed-detail\r\nSUMMARY:Detailed meeting\r\nDTSTART:" +
+            start.to_utc ().format ("%Y%m%dT%H%M%SZ") + "\r\nDTEND:" + start.add_hours (1).to_utc ().format ("%Y%m%dT%H%M%SZ") +
+            "\r\nLOCATION:Room <A> & B\r\nDESCRIPTION:Discuss <scope> & next steps\r\nEND:VEVENT\r\n");
+        find_stack (widget).visible_child_name = "events";
+        choose_view ("day");
+        yield expect ("Detailed meeting");
+        details_for (widget, "Detailed meeting").expanded = true;
+        yield expect ("Room <A> & B");
+        yield expect ("Discuss <scope> & next steps");
+        yield expect ("agenda-test-events");
+        yield expect ("All day");
+        yield expect ("Tomorrow event", false);
+        assert (count_title (named (widget, "agenda-events"), "Multi-day event") == 1);
+        assert (count_title (named (widget, "agenda-events"), "Recurring event") == 1);
+        for (int n = 0; n < 5; n++) yield pause ();
+        preview (window, "agenda-day");
+        var scroll = (Gtk.ScrolledWindow) named (widget, "agenda-events").get_parent ().get_parent ();
+        scroll.vadjustment.value = scroll.vadjustment.upper - scroll.vadjustment.page_size;
+        for (int n = 0; n < 5; n++) yield pause ();
+        preview (window, "agenda-day-details");
+        scroll.vadjustment.value = 0;
+        period_move (true);
+        yield expect ("Tomorrow event");
+        yield expect ("Detailed meeting", false);
+        period_move (false);
+        yield expect ("Detailed meeting");
+        stdout.printf ("PASS Day details, literal text, all-day/multi-day/recurring events and period navigation\n");
+
+        choose_view ("week");
+        yield expect ("Week first event");
+        yield expect ("Week last event");
+        yield expect ("Outside week event", false);
+        var expected = int.min (3, 7 - (int) (today.get_day_of_week () % 7));
+        assert (count_title (named (widget, "agenda-events"), "Recurring event") == expected);
+        for (int n = 0; n < 5; n++) yield pause ();
+        preview (window, "agenda-week");
+        period_move (true);
+        yield expect ("Outside week event");
+        yield expect ("Week first event", false);
+        period_move (false);
+        yield expect ("Week first event");
+        stdout.printf ("PASS Week boundaries, recurring instances and previous/next week\n");
+
+        choose_view ("month");
+        yield expect ("Month first event");
+        yield expect ("Month last event");
+        yield expect ("Outside month event", false);
+        var multi_first = today.add_days (-1).compare (month) < 0 ? month : today.add_days (-1);
+        var multi_end = today.add_days (2).compare (next_month) > 0 ? next_month : today.add_days (2);
+        assert (count_title (named (widget, "agenda-events"), "Multi-day event") == (int) (multi_end.difference (multi_first) / TimeSpan.DAY));
+        for (int n = 0; n < 5; n++) yield pause ();
+        preview (window, "agenda-month");
+        period_move (true);
+        yield expect ("Outside month event");
+        yield expect ("Month first event", false);
+        period_move (false);
+        yield expect ("Month first event");
+        stdout.printf ("PASS Month boundaries, grouped multi-day events and previous/next month\n");
+
+        // Cross December/January and reopen while retaining the selected view.
+        for (int i = today.get_month (); i < 12; i++) {
+            period_move (true);
+            for (int n = 0; n < 3; n++) yield pause ();
+        }
+        period_move (true);
+        for (int n = 0; n < 5; n++) yield pause ();
+        var heading = (Gtk.Label) named (widget, "agenda-period");
+        assert (heading.label == new GLib.DateTime.local (today.get_year () + 1, 1, 1, 0, 0, 0).format ("%B %Y"));
+        yield expect ("No events this month");
+        choose_view ("week");
+        yield expect ("No events this week");
+        choose_view ("day");
+        yield expect ("No events this day");
+        choose_view ("month");
+        find_button (widget, "office-calendar-symbolic").clicked ();
+        yield expect ("Month first event");
+        indicator.closed (); indicator.opened ();
+        yield expect ("Month first event");
+        assert (((Gtk.ToggleButton) named (widget, "agenda-month")).active);
+        find_stack (widget).visible_child_name = "tasks";
+        yield expect ("Undated task");
+        find_stack (widget).visible_child_name = "events";
+        choose_view ("day");
+        yield expect ("Detailed meeting");
+        // Live changes must remain visible in the wider views, too.
+        choose_view ("month");
+        events.modify_object_sync (new ICal.Component.from_string (dated_event ("month-last", "Updated month event", next_month.add_days (-1), next_month)), ECal.ObjModType.ALL, ECal.OperationFlags.NONE, null);
+        yield expect ("Updated month event");
+        yield expect ("Month last event", false);
+        events.remove_object_sync ("month-last", null, ECal.ObjModType.ALL, ECal.OperationFlags.NONE, null);
+        yield expect ("Updated month event", false);
+        choose_view ("day");
+        yield expect ("Detailed meeting");
+        stdout.printf ("PASS year boundary, view retention, independent Tasks and live wider-view updates\n");
     }
 
     async void pause () {
@@ -179,13 +344,6 @@ class AgendaTest : Object {
             stderr.printf ("Creating fixtures\n");
             add (events, event ("First calendar"));
             add (events2, event ("Second calendar same UID"));
-            add (events, event ("Tomorrow event", 1).replace ("UID:shared-event", "UID:tomorrow"));
-            add (events, event ("Last upcoming day", 29).replace ("UID:shared-event", "UID:last-day"));
-            add (events, event ("Outside upcoming range", 30).replace ("UID:shared-event", "UID:outside"));
-            add (events, event ("Ended yesterday", -1).replace ("UID:shared-event", "UID:past"));
-            add (events, event ("Still ongoing", -1).replace ("UID:shared-event", "UID:ongoing").replace (
-                "DTEND;VALUE=DATE:" + new GLib.DateTime.now_local ().format ("%Y%m%d"),
-                "DTEND;VALUE=DATE:" + new GLib.DateTime.now_local ().add_days (2).format ("%Y%m%d")));
             add (tasks, todo ("Undated task"));
             var due = new GLib.DateTime.now_utc ().add_days (2).format ("%Y%m%dT%H%M%SZ");
             add (tasks, todo ("Due-only task", false, "DUE:" + due + "\r\n").replace ("UID:test-task", "UID:dated-task"));
@@ -200,16 +358,12 @@ class AgendaTest : Object {
             yield expect ("Calendar Accounts…");
             yield expect ("First calendar");
             yield expect ("Second calendar same UID");
-            yield expect ("Upcoming · next 30 days");
-            yield expect ("Tomorrow event");
-            yield expect ("Last upcoming day");
-            yield expect ("Still ongoing");
-            yield expect ("Outside upcoming range", false);
-            yield expect ("Ended yesterday", false);
-            stdout.printf ("PASS upcoming range crosses month, keeps ongoing events and excludes past/outside events\n");
+            yield upcoming_checks ();
+            choose_view ("day");
             yield navigation_checks ();
-            yield expect ("Tomorrow event");
-            yield expect ("Last upcoming day");
+            yield view_checks (window);
+            choose_view ("upcoming");
+            yield expect ("Upcoming · next 30 days");
             preview (window, "calendar-events");
             find_stack (widget).visible_child_name = "tasks";
             yield expect ("Undated task");
@@ -276,5 +430,6 @@ class AgendaTest : Object {
 int main (string[] args) {
     Gtk.init ();
     Adw.init ();
+    Adw.StyleManager.get_default ().color_scheme = Environment.get_variable ("AGENDA_TEST_DARK") == "1" ? Adw.ColorScheme.FORCE_DARK : Adw.ColorScheme.FORCE_LIGHT;
     return new AgendaTest ().execute (args[1]);
 }

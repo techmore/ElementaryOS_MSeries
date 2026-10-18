@@ -1,5 +1,19 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Combined compact Upcoming and period views — 2026-10-18
+
+Integrated main's Month/Week/Day agendas and readable neutral event cards with
+the compact Upcoming default. Upcoming remains independent of calendar browsing
+and spans the next 30 local dates; explicit period views and their navigation
+remain available. Event title/time share one compact row. Expand a row for its
+calendar/location/description; full titles retain hover text. Tasks stays compact.
+
+All eleven actual-plugin/EDS groups pass, covering Upcoming boundaries, all
+period modes, recurring/multi-day events, descriptions, navigation, retained
+mode, task completion and live source changes. Both earlier implementation
+histories are retained below. Factory build/boot remains unverified.
+
+
 ## Compact upcoming agenda — 2026-10-18
 
 Event title and time now share one line with tighter row padding and date
@@ -30,6 +44,21 @@ edit/completion/source tests. The release build is installed and Wingpanel
 loaded its new module. Authenticated read-only comparisons with real Google
 events and Tasks pass without logging titles or modifying records. Four image
 wiring tests pass. Factory build/boot remains unverified.
+
+## Month/Week/Day agenda views — 2026-10-18
+
+Implemented and deployed period selectors and arrows, grouped dates, readable
+source-colored cards with time/calendar/location/description, bounded scrolling
+and synchronized date selection. Tasks stays independent; Today retains the
+chosen mode. Replaced relative carousel bookkeeping with actual grid months to
+reject stale page notifications during opening/navigation.
+
+Ten isolated real-plugin/EDS workflow groups pass in light and dark modes and
+against the installed production library. Five merged-tree image-wiring tests
+and focused shell/whitespace checks pass; synthetic previews inspected. Wingpanel
+reloaded and mapped-library inode verified. Next: owner acceptance on real
+accounts; Google remote sync, other locales and factory boot remain separate.
+[Views and validation](calendar/README.md#month-week-and-day-views).
 
 ## Fresh YouTube ISO qualification in progress — 2026-10-18
 

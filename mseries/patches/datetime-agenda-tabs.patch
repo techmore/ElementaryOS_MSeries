@@ -1,14 +1,40 @@
 diff --git a/data/EventRow.css b/data/EventRow.css
-index 96b8708..a19965c 100644
+index 96b8708..9f22f6e 100644
 --- a/data/EventRow.css
 +++ b/data/EventRow.css
-@@ -2,5 +2,5 @@
-     background: @selected_bg_color;
-     border-radius: 3px;
+@@ -1,11 +1,13 @@
+ .event {
+-    background: @selected_bg_color;
+-    border-radius: 3px;
 -    padding: 6px;
++    background: alpha(@theme_fg_color, 0.04);
++    color: @theme_fg_color;
++    border-left: 3px solid @accent_color;
++    border-radius: 4px;
 +    padding: 3px 4px;
  }
 
+ .event label,
+ .event image {
+-    color: @selected_fg_color;
++    color: inherit;
+ }
+
+@@ -13,2 +15,14 @@
+     font-weight: 600;
+ }
++
++.agenda-view {
++    color: @theme_fg_color;
++    background-image: none;
++    background-color: transparent;
++    box-shadow: none;
++}
++
++.agenda-view:checked {
++    color: @theme_fg_color;
++    background-color: alpha(@theme_fg_color, 0.12);
++}
 diff --git a/meson.build b/meson.build
 index ec722ae..7d681c9 100644
 --- a/meson.build
@@ -28,25 +54,36 @@ index 383cf96..060d771 100644
  src/Services/TimeManager.vala
 +src/Widgets/TaskRow.vala
 diff --git a/src/Indicator.vala b/src/Indicator.vala
-index 7b6ec63..48702c8 100644
+index 7b6ec63..89439ed 100644
 --- a/src/Indicator.vala
 +++ b/src/Indicator.vala
-@@ -25,4 +25,7 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -25,5 +25,14 @@ public class DateTime.Indicator : Wingpanel.Indicator {
      private Widgets.CalendarView calendar;
      private Gtk.ListBox component_listbox;
 +    private Gtk.Stack agenda_stack;
 +    private Gtk.ListBox task_listbox;
-+    private uint upcoming_timer = 0;
      private uint update_components_idle_source = 0;
++    private string agenda_mode = "upcoming";
++    private uint upcoming_timer = 0;
++    private GLib.DateTime agenda_date = new GLib.DateTime.now_local ();
++    private Gtk.Label period_label;
++    private Gtk.Label empty_events;
++    private Gtk.Button period_previous;
++    private Gtk.Button period_next;
 
-@@ -64,5 +67,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+     public Indicator () {
+@@ -72,8 +81,10 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+                 justify = Gtk.Justification.CENTER
              };
++            empty_events = placeholder_label;
+             placeholder_label.add_css_class (Granite.CssClass.DIM);
+             placeholder_label.add_css_class (Granite.STYLE_CLASS_H3_LABEL);
 
--            var placeholder_label = new Gtk.Label (_("No events this day")) {
-+            var placeholder_label = new Gtk.Label (_("No upcoming events in the next 30 days")) {
-                 wrap = true,
-                 wrap_mode = Pango.WrapMode.WORD,
-@@ -82,8 +85,46 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+             component_listbox = new Gtk.ListBox () {
++                name = "agenda-events",
+                 selection_mode = Gtk.SelectionMode.NONE
+             };
+@@ -82,8 +93,90 @@ public class DateTime.Indicator : Wingpanel.Indicator {
              component_listbox.set_sort_func (sort_function);
 
 -            var scrolled_window = new Gtk.ScrolledWindow () {
@@ -63,23 +100,67 @@ index 7b6ec63..48702c8 100644
 +            });
 +
 +            agenda_stack = new Gtk.Stack () { vexpand = true };
-+            var events_page = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
-+            var upcoming_label = new Gtk.Label (_("Upcoming · next 30 days")) {
-+                xalign = 0, margin_start = 6, margin_end = 6
++            var event_page = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
++            var view_buttons = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) {
++                halign = Gtk.Align.CENTER
 +            };
-+            upcoming_label.add_css_class ("dim-label");
-+            events_page.append (upcoming_label);
-+            events_page.append (new Gtk.ScrolledWindow () {
-+                hscrollbar_policy = Gtk.PolicyType.NEVER, child = component_listbox, vexpand = true
++            view_buttons.add_css_class ("linked");
++            var mode_style = new Gtk.CssProvider ();
++            mode_style.load_from_resource ("/io/elementary/desktop/wingpanel/datetime/EventRow.css");
++            Gtk.ToggleButton? first_view = null;
++            foreach (var mode in new string[] { "upcoming", "month", "week", "day" }) {
++                var caption = mode == "upcoming" ? _("Upcoming") : mode == "month" ? _("Month") : mode == "week" ? _("Week") : _("Day");
++                var button = new Gtk.ToggleButton.with_label (caption) {
++                    name = "agenda-" + mode,
++                    tooltip_text = mode == "upcoming" ? _("Upcoming events in the next 30 days") : mode == "month" ? _("Events for the whole month") :
++                        mode == "week" ? _("Events for the selected week") : _("Events for the selected day")
++                };
++                button.add_css_class ("agenda-view");
++                button.get_style_context ().add_provider (mode_style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
++                if (first_view == null) first_view = button;
++                else button.group = first_view;
++                button.active = mode == agenda_mode;
++                var selected_mode = mode;
++                button.toggled.connect (() => {
++                    if (button.active) {
++                        agenda_mode = selected_mode;
++                        idle_update_components ();
++                    }
++                });
++                view_buttons.append (button);
++            }
++            period_label = new Gtk.Label (null) {
++                name = "agenda-period", hexpand = true, wrap = true,
++                justify = Gtk.Justification.CENTER, max_width_chars = 30
+             };
++            period_label.add_css_class ("heading");
++            period_previous = new Gtk.Button.from_icon_name ("pan-start-symbolic") {
++                name = "agenda-previous", valign = Gtk.Align.CENTER
++            };
++            period_next = new Gtk.Button.from_icon_name ("pan-end-symbolic") {
++                name = "agenda-next", valign = Gtk.Align.CENTER
++            };
++            period_previous.clicked.connect (() => move_period (-1));
++            period_next.clicked.connect (() => move_period (1));
++            var period_header = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
++            period_header.append (period_previous);
++            period_header.append (period_label);
++            period_header.append (period_next);
++            event_page.append (view_buttons);
++            event_page.append (period_header);
++            event_page.append (new Gtk.ScrolledWindow () {
++                hscrollbar_policy = Gtk.PolicyType.NEVER, child = component_listbox,
++                min_content_height = 260, max_content_height = 360,
++                propagate_natural_height = true, vexpand = true
 +            });
-+            agenda_stack.add_titled (events_page, "events", _("Events"));
++            agenda_stack.add_titled (event_page, "events", _("Events"));
 +            agenda_stack.add_titled (new Gtk.ScrolledWindow () {
 +                hscrollbar_policy = Gtk.PolicyType.NEVER, child = task_listbox
 +            }, "tasks", _("Tasks"));
 +            var tabs = new Gtk.StackSwitcher () {
 +                stack = agenda_stack, halign = Gtk.Align.CENTER,
 +                margin_start = 6, margin_end = 6, margin_bottom = 3
-             };
++            };
 +            var agenda = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
 +            agenda.append (tabs);
 +            agenda.append (agenda_stack);
@@ -96,7 +177,7 @@ index 7b6ec63..48702c8 100644
 +            });
 
              var settings_button = new Wingpanel.PopoverMenuItem.with_text (_("Date & Time Settings…"));
-@@ -95,8 +136,9 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -95,8 +188,9 @@ public class DateTime.Indicator : Wingpanel.Indicator {
 
              main_grid = new Gtk.Grid () {
 -                margin_top = 12
@@ -108,14 +189,20 @@ index 7b6ec63..48702c8 100644
 +            main_grid.attach (accounts_button, 0, 4, 2, 1);
              main_grid.attach (sep, 0, 2, 2, 1);
              main_grid.attach (settings_button, 0, 3, 2, 1);
-@@ -104,5 +146,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -104,5 +198,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
              var size_group = new Gtk.SizeGroup (Gtk.SizeGroupMode.HORIZONTAL);
              size_group.add_widget (calendar);
 -            size_group.add_widget (component_listbox);
 +            size_group.add_widget (agenda);
 
              calendar.day_double_click.connect (() => {
-@@ -138,4 +180,14 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -111,4 +205,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+
+             calendar.selection_changed.connect ((date) => {
++                agenda_date = date ?? Widgets.CalendarModel.get_default (ECal.ClientSourceType.EVENTS).month_start;
+                 idle_update_components ();
+             });
+@@ -138,4 +233,14 @@ public class DateTime.Indicator : Wingpanel.Indicator {
              });
 
 +            task_listbox.row_activated.connect (() => {
@@ -130,7 +217,16 @@ index 7b6ec63..48702c8 100644
 +
              settings_button.clicked.connect (() => {
                  try {
-@@ -152,27 +204,19 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -150,48 +255,41 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+     }
+
++    private void move_period (int direction) {
++        if (agenda_mode == "upcoming") return;
++        var date = agenda_mode == "month" ? agenda_date.add_months (direction) :
++            agenda_date.add_days (agenda_mode == "week" ? 7 * direction : direction);
++        calendar.show_date (date);
++    }
++
      private void header_update_func (Gtk.ListBoxRow lbrow, Gtk.ListBoxRow? lbbefore) {
          var row = (DateTime.ComponentRow) lbrow;
 -        if (lbbefore != null) {
@@ -154,6 +250,7 @@ index 7b6ec63..48702c8 100644
 -
 -                row.set_header (allday_header);
 -            }
++        if (agenda_mode == "day") { row.set_header (null); return; }
 +        var before = lbbefore as DateTime.ComponentRow;
 +        if (before != null && row.date.format ("%F") == before.date.format ("%F")) {
 +            row.set_header (null);
@@ -171,16 +268,34 @@ index 7b6ec63..48702c8 100644
 +        row.set_header (header);
      }
 
-@@ -187,5 +231,7 @@ public class DateTime.Indicator : Wingpanel.Indicator {
-
-         // If they have the same date, sort them wholeday first
+     [CCode (instance_pos = -1)]
+     private int sort_function (Gtk.ListBoxRow child1, Gtk.ListBoxRow child2) {
+-        var e1 = (ComponentRow) child1;
+-        var e2 = (ComponentRow) child2;
+-
+-        if (e1.start_time.compare (e2.start_time) != 0) {
+-            return e1.start_time.compare (e2.start_time);
+-        }
+-
+-        // If they have the same date, sort them wholeday first
 -        if (e1.is_allday) {
-+        if (e1.is_allday == e2.is_allday) {
-+            return 0;
-+        } else if (e1.is_allday) {
-             return -1;
-         } else if (e2.is_allday) {
-@@ -208,40 +254,40 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+-            return -1;
+-        } else if (e2.is_allday) {
+-            return 1;
+-        }
+-
+-        return 0;
++        var a = (ComponentRow) child1;
++        var b = (ComponentRow) child2;
++        var day = a.date.compare (b.date);
++        if (day != 0) return day;
++        if (a.is_allday != b.is_allday) return a.is_allday ? -1 : 1;
++        var time = a.start_time.compare (b.start_time);
++        if (time != 0) return time;
++        return GLib.strcmp (a.component.get_summary (), b.component.get_summary ());
+     }
+
+@@ -208,43 +306,80 @@ public class DateTime.Indicator : Wingpanel.Indicator {
      }
 
 -    private bool update_components () {
@@ -223,64 +338,120 @@ index 7b6ec63..48702c8 100644
          });
 
 -        tasks_model.source_components.@foreach ((source, component_map) => {
-+        var now = new GLib.DateTime.now_local ();
-+        var today = Util.strip_time (now);
-+        var events_model = Widgets.CalendarModel.get_upcoming ();
-+        var components_on_day = new Gee.TreeMap<string, DateTime.ComponentRow> ();
-+
++        var events_model = agenda_mode == "upcoming" ? Widgets.CalendarModel.get_upcoming () :
++            Widgets.CalendarModel.get_default (ECal.ClientSourceType.EVENTS);
++        period_previous.visible = period_next.visible = agenda_mode != "upcoming";
++        var first = Util.strip_time (agenda_date);
++        var end = first.add_days (1);
++        if (agenda_mode == "upcoming") {
++            first = Util.strip_time (new GLib.DateTime.now_local ());
++            end = first.add_days (30);
++            period_label.label = _("Upcoming · next 30 days");
++            empty_events.label = _("No upcoming events in the next 30 days");
++        } else if (agenda_mode == "month") {
++            first = Util.get_start_of_month (agenda_date);
++            end = first.add_months (1);
++            period_label.label = first.format (_("%B %Y"));
++            empty_events.label = _("No events this month");
++            period_previous.tooltip_text = _("Previous month");
++            period_next.tooltip_text = _("Next month");
++        } else if (agenda_mode == "week") {
++            int week_start = (int) events_model.week_starts_on;
++            if (week_start < 1 || week_start > 7) week_start = 7;
++            first = first.add_days (-((first.get_day_of_week () - week_start + 7) % 7));
++            end = first.add_days (7);
++            period_label.label = "%s – %s".printf (first.format (_("%b %e, %Y")), end.add_days (-1).format (_("%b %e, %Y")));
++            empty_events.label = _("No events this week");
++            period_previous.tooltip_text = _("Previous week");
++            period_next.tooltip_text = _("Next week");
++        } else {
++            period_label.label = first.format (_("%A, %B %e, %Y"));
++            empty_events.label = _("No events this day");
++            period_previous.tooltip_text = _("Previous day");
++            period_next.tooltip_text = _("Next day");
++        }
++        period_label.tooltip_text = period_label.label;
++        var displayed = new Gee.HashSet<string> ();
 +        events_model.source_components.@foreach ((source, component_map) => {
              foreach (var comp in component_map.get_values ()) {
 -                if (Util.calcomp_is_on_day (comp, date)) {
--                    unowned ICal.Component ical = comp.get_icalcomponent ();
++                if (agenda_mode == "upcoming") {
+                     unowned ICal.Component ical = comp.get_icalcomponent ();
 -                    var component_uid = ical.get_uid ();
-+                unowned ICal.Component ical = comp.get_icalcomponent ();
-+                var start = ical.get_dtstart ();
-+                if (start == null || start.is_null_time ()) continue;
-+                var date = Util.ical_to_date_time (start);
-+                if (!start.is_date ()) date = date.to_local ();
-+                if (date.compare (today) < 0) date = today;
-+                var candidate = new DateTime.ComponentRow (date, ical, source);
-+                if (candidate.start_time.compare (today.add_days (30)) < 0 &&
-+                    ((candidate.end_time != null && candidate.end_time.compare (now) > 0) || candidate.start_time.compare (now) >= 0)) {
-+                    var component_uid = source.dup_uid () + ":" + ical.get_uid () + ":" + ical.get_dtstart ().as_ical_string ();
-                     if (!components_on_day.has_key (component_uid)) {
+-                    if (!components_on_day.has_key (component_uid)) {
 -                        components_on_day[component_uid] = new DateTime.ComponentRow (date, ical, source);
-+                        components_on_day[component_uid] = candidate;
+-
+-                        component_listbox.append (components_on_day[component_uid]);
++                    var start = ical.get_dtstart ();
++                    if (start == null || start.is_null_time ()) continue;
++                    var date = Util.ical_to_date_time (start);
++                    if (!start.is_date ()) date = date.to_local ();
++                    date = Util.strip_time (date);
++                    if (date.compare (first) < 0) date = first;
++                    var row = new ComponentRow (date, ical, source);
++                    var now = new GLib.DateTime.now_local ();
++                    if (row.start_time.compare (end) < 0 &&
++                        ((row.end_time != null && row.end_time.compare (now) > 0) || row.start_time.compare (now) >= 0)) {
++                        var key = source.dup_uid () + ":" + ical.get_uid () + ":" + ical.get_dtstart ().as_ical_string ();
++                        if (displayed.add (key)) component_listbox.append (row);
+                     }
++                    continue;
++                }
++                for (var date = first; date.compare (end) < 0; date = date.add_days (1)) {
++                    if (!Util.calcomp_is_on_day (comp, date)) continue;
++                    unowned ICal.Component ical = comp.get_icalcomponent ();
++                    var key = source.dup_uid () + ":" + ical.get_uid () + ":" +
++                        ical.get_dtstart ().as_ical_string () + ":" + date.format ("%F");
++                    if (displayed.add (key)) component_listbox.append (new ComponentRow (date, ical, source));
+                 }
+             }
+@@ -268,8 +403,24 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+         tasks_model.components_removed.connect (update_components_model);
 
-                         component_listbox.append (components_on_day[component_uid]);
-@@ -256,5 +302,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
-
-     public override void opened () {
--        var events_model = Widgets.CalendarModel.get_default (ECal.ClientSourceType.EVENTS);
-+        var events_model = Widgets.CalendarModel.get_upcoming ();
-         var tasks_model = Widgets.CalendarModel.get_default (ECal.ClientSourceType.TASKS);
-
-@@ -269,8 +315,19 @@ public class DateTime.Indicator : Wingpanel.Indicator {
-
-         calendar.refresh ();
-+        events_model.refresh_upcoming ();
++        var upcoming = Widgets.CalendarModel.get_upcoming ();
++        upcoming.components_added.connect (update_components_model);
++        upcoming.components_updated.connect (update_components_model);
++        upcoming.components_removed.connect (update_components_model);
++        upcoming.refresh_upcoming ();
 +        if (upcoming_timer == 0) upcoming_timer = Timeout.add_seconds (60, () => {
 +            Widgets.CalendarModel.get_upcoming ().refresh_upcoming ();
-+            idle_update_components ();
++            if (agenda_mode == "upcoming") idle_update_components ();
 +            return GLib.Source.CONTINUE;
 +        });
+         calendar.refresh ();
 +        idle_update_components ();
      }
 
      public override void closed () {
--        var events_model = Widgets.CalendarModel.get_default (ECal.ClientSourceType.EVENTS);
-+        if (upcoming_timer != 0) {
-+            GLib.Source.remove (upcoming_timer);
-+            upcoming_timer = 0;
-+        }
-+        var events_model = Widgets.CalendarModel.get_upcoming ();
++        if (upcoming_timer != 0) { GLib.Source.remove (upcoming_timer); upcoming_timer = 0; }
++        var upcoming = Widgets.CalendarModel.get_upcoming ();
++        upcoming.components_added.disconnect (update_components_model);
++        upcoming.components_updated.disconnect (update_components_model);
++        upcoming.components_removed.disconnect (update_components_model);
+         var events_model = Widgets.CalendarModel.get_default (ECal.ClientSourceType.EVENTS);
          var tasks_model = Widgets.CalendarModel.get_default (ECal.ClientSourceType.TASKS);
-
 diff --git a/src/Widgets/ComponentRow.vala b/src/Widgets/ComponentRow.vala
-index 7a626ba..53b0e0e 100644
+index 7a626ba..b9a2a7d 100644
 --- a/src/Widgets/ComponentRow.vala
 +++ b/src/Widgets/ComponentRow.vala
-@@ -69,14 +69,13 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+@@ -20,6 +20,8 @@
+ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+     public GLib.DateTime date { get; construct; }
+-    public unowned ICal.Component component { get; construct; }
+-    public unowned E.SourceSelectable source_selectable { get; construct; }
++    public ICal.Component component { get; construct; }
++    public E.SourceSelectable source_selectable { get; construct; }
++
++    public string calendar_name { get; construct; }
+
+     public GLib.DateTime start_time { get; private set; }
+@@ -46,4 +48,5 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+         Object (
+             component: component,
++            calendar_name: source.dup_display_name (),
+             date: date,
+             source_selectable: source_selectable
+@@ -69,14 +72,13 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
          if (!(source_selectable is E.SourceTaskList)) {
              var dt_end = component.get_dtend ();
 -            if (dt_end.is_date ()) {
@@ -299,14 +470,14 @@ index 7a626ba..53b0e0e 100644
 -            }
          }
 
-@@ -89,5 +88,5 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+@@ -89,5 +91,5 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
 
          component_image = new Gtk.Image.from_icon_name (icon_name) {
 -            valign = Gtk.Align.START
 +            valign = Gtk.Align.CENTER
          };
          component_image.get_style_context ().add_provider (css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
-@@ -96,7 +95,9 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+@@ -96,7 +98,9 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
              hexpand = true,
              ellipsize = Pango.EllipsizeMode.END,
 -            lines = 3,
@@ -319,7 +490,7 @@ index 7a626ba..53b0e0e 100644
 +            tooltip_text = component.get_summary (),
              wrap_mode = Pango.WrapMode.WORD_CHAR,
              xalign = 0
-@@ -107,5 +108,9 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+@@ -107,5 +111,9 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
          time_label = new Gtk.Label (null) {
              use_markup = true,
 -            xalign = 0,
@@ -330,7 +501,7 @@ index 7a626ba..53b0e0e 100644
 +            ellipsize = Pango.EllipsizeMode.END
          };
          time_label.add_css_class (Granite.CssClass.DIM);
-@@ -113,14 +118,12 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+@@ -113,19 +121,34 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
          grid = new Gtk.Grid () {
              column_spacing = 6,
 -            margin_top = 3,
@@ -339,26 +510,58 @@ index 7a626ba..53b0e0e 100644
 -            margin_end = 6
 +            margin_top = 1,
 +            margin_bottom = 1,
-+            margin_start = 4,
-+            margin_end = 4
++            margin_start = 2,
++            margin_end = 2
          };
          grid.attach (component_image, 0, 0);
          grid.attach (name_label, 1, 0);
 -        if (!is_allday) {
 -            grid.attach (time_label, 1, 1);
--        }
 +        grid.attach (time_label, 2, 0);
++
++        var details = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
++        details.append (new Gtk.Label (calendar_name) {
++            xalign = 0, wrap = true, max_width_chars = 32, css_classes = { "dim-label", "caption" }
++        });
++        var location = component.get_location ();
++        if (location != null && location.strip () != "") {
++            details.append (new Gtk.Label (location) {
++                xalign = 0, wrap = true, max_width_chars = 32, selectable = true
++            });
+         }
+-
+-        grid.add_css_class ("event");
+-        grid.get_style_context ().add_provider (css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+-
+-        child = grid;
++        var description = component.get_description ();
++        if (description != null && description.strip () != "") {
++            details.append (new Gtk.Label (description) {
++                xalign = 0, wrap = true, max_width_chars = 32, lines = 3,
++                ellipsize = Pango.EllipsizeMode.END, tooltip_text = description
++            });
++        }
++        var expander = new Gtk.Expander (null) { label_widget = grid, child = details };
++        expander.add_css_class ("event");
++        expander.get_style_context ().add_provider (css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
++        child = expander;
 
-         grid.add_css_class ("event");
-@@ -138,5 +141,7 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+         set_color ();
+@@ -137,4 +160,8 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+
      private void update_timelabel () {
-         var time_format = Granite.DateTime.get_default_time_format (time_manager.is_12h);
--        if (source_selectable is E.SourceTaskList) {
 +        if (is_allday) {
-+            time_label.label = "<small>" + _("All day") + "</small>";
-+        } else if (source_selectable is E.SourceTaskList) {
-             time_label.label = "<small>Due by %s</small>".printf (start_time.format (time_format));
-         } else {
++            time_label.label = _("All day");
++            return;
++        }
+         var time_format = Granite.DateTime.get_default_time_format (time_manager.is_12h);
+         if (source_selectable is E.SourceTaskList) {
+@@ -147,4 +174,5 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+     private void set_color () {
+         Util.set_component_calendar_color (source_selectable, grid);
++        Util.set_component_calendar_color (source_selectable, child);
+         Util.set_component_calendar_color (source_selectable, component_image);
+         Util.set_component_calendar_color (source_selectable, name_label);
 diff --git a/src/Widgets/TaskRow.vala b/src/Widgets/TaskRow.vala
 new file mode 100644
 index 0000000..9d8e65b
@@ -676,17 +879,24 @@ index 9301281..b6bff8f 100644
              components_removed (source, removed_components.read_only_view);
          }
 diff --git a/src/Widgets/calendar/CalendarView.vala b/src/Widgets/calendar/CalendarView.vala
-index 1e0436c..b85833e 100644
+index 1e0436c..4a036b7 100644
 --- a/src/Widgets/calendar/CalendarView.vala
 +++ b/src/Widgets/calendar/CalendarView.vala
-@@ -34,5 +34,5 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
+@@ -27,6 +27,4 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
+
+     private Adw.Carousel carousel;
+-    private uint position;
+-    private int rel_postion;
+     private CalendarModel events_model;
+     private CalendarModel tasks_model;
+@@ -34,5 +32,5 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
      private DateTime.Widgets.Grid start_month_grid;
      private Gtk.Label label;
 -    private bool showtoday;
 +    private bool resetting;
 
      construct {
-@@ -52,9 +52,13 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
+@@ -52,9 +50,13 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
          label.get_style_context ().add_provider (provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 
 -        var left_button = new Gtk.Button.from_icon_name ("pan-start-symbolic");
@@ -703,14 +913,16 @@ index 1e0436c..b85833e 100644
 +        };
 
          var box_buttons = new Granite.Box (HORIZONTAL, LINKED) {
-@@ -102,5 +106,5 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
-         position = 1;
-         rel_postion = 0;
+@@ -100,7 +102,5 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
+         carousel.scroll_to (start_month_grid, false);
+
+-        position = 1;
+-        rel_postion = 0;
 -        showtoday = false;
 +        resetting = false;
 
          column_spacing = 6;
-@@ -112,9 +116,11 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
+@@ -112,9 +112,11 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
 
          left_button.clicked.connect (() => {
 -            carousel.scroll_to (carousel.get_nth_page ((uint) Math.round (carousel.position) - 1), true);
@@ -724,15 +936,17 @@ index 1e0436c..b85833e 100644
 +            if (index + 1 < carousel.n_pages) carousel.scroll_to (carousel.get_nth_page (index + 1), true);
          });
 
-@@ -124,4 +130,5 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
+@@ -124,52 +126,31 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
 
          carousel.page_changed.connect ((index) => {
-+            if (resetting) return;
-             events_model.change_month (-rel_postion);
-             tasks_model.change_month (-rel_postion);
-@@ -132,11 +139,4 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
-                 rel_postion++;
-                 position++;
+-            events_model.change_month (-rel_postion);
+-            tasks_model.change_month (-rel_postion);
+-            if (position > index) {
+-                rel_postion--;
+-                position--;
+-            } else if (position < index) {
+-                rel_postion++;
+-                position++;
 -            } else if (showtoday) {
 -                showtoday = false;
 -                rel_postion = 0;
@@ -740,48 +954,119 @@ index 1e0436c..b85833e 100644
 -                label.label = events_model.month_start.format (_("%OB, %Y"));
 -                start_month_grid.set_focus_to_today ();
 -                return;
-             } else {
-                 events_model.change_month (rel_postion);
-@@ -192,11 +192,21 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
+-            } else {
+-                events_model.change_month (rel_postion);
+-                tasks_model.change_month (rel_postion);
+-                return;
+-            }
+-            events_model.change_month (rel_postion);
+-            tasks_model.change_month (rel_postion);
+-            selected_date = null;
+-            selection_changed (selected_date);
+-
+-            /* creates a new Grid, when the Hdy.Carousel is on it's first/last page*/
+-            if (index + 1 == (int) carousel.get_n_pages ()) {
+-                events_model.change_month (1);
+-                tasks_model.change_month (1);
+-                var grid = create_grid ();
+-                grid.set_range (events_model.data_range, events_model.month_start);
+-                grid.update_weeks (events_model.data_range.first_dt, events_model.num_weeks);
+-                carousel.append (grid);
+-                events_model.change_month (-1);
+-                tasks_model.change_month (-1);
+-
+-            } else if (index == 0) {
+-                events_model.change_month (-1);
+-                tasks_model.change_month (-1);
++            // A queued notification may describe a page removed by show_date.
++            if (resetting || index >= carousel.n_pages ||
++                index != (uint) Math.round (carousel.position)) return;
++            var page = (DateTime.Widgets.Grid) carousel.get_nth_page (index);
++            var month = page.month_start;
++            bool changed = !events_model.month_start.equal (month);
++            resetting = true;
++            events_model.month_start = month;
++            tasks_model.month_start = month;
++            label.label = month.format (_("%OB, %Y"));
++            if (index + 1 == carousel.n_pages || index == 0) {
++                var adjacent = month.add_months (index == 0 ? -1 : 1);
++                events_model.month_start = adjacent;
++                tasks_model.month_start = adjacent;
+                 var grid = create_grid ();
+-                grid.set_range (events_model.data_range, events_model.month_start);
++                grid.set_range (events_model.data_range, adjacent);
+                 grid.update_weeks (events_model.data_range.first_dt, events_model.num_weeks);
+-                carousel.prepend (grid);
+-                events_model.change_month (1);
+-                tasks_model.change_month (1);
+-                position++;
++                if (index == 0) carousel.prepend (grid);
++                else carousel.append (grid);
++                events_model.month_start = month;
++                tasks_model.month_start = month;
++            }
++            resetting = false;
++            if (changed) {
++                selected_date = null;
++                selection_changed (null);
+             }
+-            label.label = events_model.month_start.format (_("%OB, %Y"));
+         });
+     }
+@@ -192,11 +173,18 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
 
      private void show_today (bool refresh = false) {
 -        showtoday = true;
-+        // Reset navigation atomically: repeated Today clicks must not subtract
-+        // the old relative offset while an animated return is still pending.
+-        var today = Util.strip_time (new GLib.DateTime.now_local ());
++        show_date (new GLib.DateTime.now_local (), refresh);
++    }
++
++    public void show_date (GLib.DateTime date, bool refresh = false) {
++        // Rebuild/select atomically; queued page notifications must not replace
++        // the explicitly selected day with an intermediate carousel month.
 +        resetting = true;
-         var today = Util.strip_time (new GLib.DateTime.now_local ());
++        var today = Util.strip_time (date);
          var start = Util.get_start_of_month (today);
          selected_date = today;
          if (start.equal (start_month) && !refresh) {
 -            position -= rel_postion;
 -            carousel.scroll_to (carousel.get_nth_page (position), true);
-+            for (uint i = 0; i < carousel.n_pages; i++) {
-+                if (carousel.get_nth_page (i) == start_month_grid) {
-+                    position = i;
-+                    break;
-+                }
-+            }
-+            rel_postion = 0;
 +            events_model.month_start = start;
 +            tasks_model.month_start = start;
 +            carousel.scroll_to (start_month_grid, false);
          } else {
              /*reset Carousel if center_child != the grid of the month of today*/
-@@ -235,4 +245,9 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
-             rel_postion = 0;
+@@ -205,5 +193,5 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
+             }
+
+-            start_month = Util.get_start_of_month ();
++            start_month = start;
+             events_model.month_start = start_month;
+             tasks_model.month_start = start_month;
+@@ -232,7 +220,10 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
+             label.label = events_model.month_start.format (_("%OB, %Y"));
+
+-            position = 1;
+-            rel_postion = 0;
          }
 +        label.label = start.format (_("%OB, %Y"));
-+        start_month_grid.set_focus_to_today ();
++        start_month_grid.set_focus_to_date (today);
 +        selected_date = today;
 +        selection_changed (today);
 +        resetting = false;
      }
 
 diff --git a/src/Widgets/calendar/Grid.vala b/src/Widgets/calendar/Grid.vala
-index 6907315..5af8708 100644
+index 6907315..81f14f2 100644
 --- a/src/Widgets/calendar/Grid.vala
 +++ b/src/Widgets/calendar/Grid.vala
-@@ -85,5 +85,7 @@ namespace DateTime.Widgets {
+@@ -27,4 +27,5 @@ namespace DateTime.Widgets {
+     public class Grid : Gtk.Grid {
+         public Util.DateRange grid_range { get; private set; }
++        public GLib.DateTime month_start { get; private set; }
+
+         /*
+@@ -85,5 +86,7 @@ namespace DateTime.Widgets {
                  unowned ICal.Component ical = component.get_icalcomponent ();
 
 -                var start_time = ical.get_dtstart ().as_timet ();
@@ -790,7 +1075,7 @@ index 6907315..5af8708 100644
 +                var start_time = start.as_timet ();
                  var date_time = new GLib.DateTime.from_unix_utc (start_time);
                  var date_hash = day_hash (date_time);
-@@ -99,5 +101,7 @@ namespace DateTime.Widgets {
+@@ -99,5 +102,7 @@ namespace DateTime.Widgets {
                  unowned ICal.Component ical = component.get_icalcomponent ();
 
 -                var start_time = ical.get_dtstart ().as_timet ();
@@ -799,6 +1084,32 @@ index 6907315..5af8708 100644
 +                var start_time = start.as_timet ();
                  var date_time = new GLib.DateTime.from_unix_utc (start_time);
                  var date_hash = day_hash (date_time);
+@@ -125,4 +130,8 @@ namespace DateTime.Widgets {
+
+         public void set_focus_to_today () {
++            set_focus_to_date (new GLib.DateTime.now_local ());
++        }
++
++        public void set_focus_to_date (GLib.DateTime selected) {
+             if (grid_range == null) {
+                 return;
+@@ -132,5 +141,9 @@ namespace DateTime.Widgets {
+                 var date = dates[i];
+                 GridDay? day = data[day_hash (date)];
+-                if (day != null && day.name == "today") {
++                if (day != null && day.date.get_year () == selected.get_year () &&
++                    day.date.get_day_of_year () == selected.get_day_of_year ()) {
++                    // Update the highlight even when another popup control
++                    // retains keyboard focus and no focus-enter signal fires.
++                    on_day_focus_in (day);
+                     day.grab_focus_force ();
+                     return;
+@@ -144,4 +157,5 @@ namespace DateTime.Widgets {
+          */
+         public void set_range (Util.DateRange new_range, GLib.DateTime month_start) {
++            this.month_start = month_start;
+             var today = new GLib.DateTime.now_local ();
+
 diff --git a/src/Widgets/calendar/Util.vala b/src/Widgets/calendar/Util.vala
 index f337717..74bc1ec 100644
 --- a/src/Widgets/calendar/Util.vala
