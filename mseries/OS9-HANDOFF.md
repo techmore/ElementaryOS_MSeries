@@ -1,5 +1,19 @@
 # OS 9 implementation / Claude Code handoff
 
+## Screenshot shelf drag into Signal (Flatpak) — 2026-10-18 (Claude Code)
+
+Owner dragged a shelf thumbnail into Signal and nothing arrived. Cause: Signal is the `org.signal.Signal` Flatpak
+with no filesystem permission, so the dropped `/run/user/1000/mseries-shelf/...` path is invisible in its sandbox.
+The drop was accepted, so the shelf counted it as "used" and **hard-deleted** the 16:32 screenshot 2 minutes later
+(unrecoverable). Fix in `screenshot-shelf/mseries-screenshot-shelf`: the drag offers a transient document-portal
+export granted read-only to running Flatpak apps (revoked on cleanup); the used original goes to the **Trash**
+instead of being deleted; new **Copy** button (clipboard paste). Second finding: the host's portal FUSE mount at
+`/run/user/1000/doc` is gone while the portal still serves running sandboxes, so new Flatpak launches fail
+(`bwrap: Can't find source path .../doc/by-app/org.signal.Signal`). The shelf adds a hard-link stand-in for native
+apps in that state. Not restarted, because that would cut off the running Signal; it heals at next login. Verified
+headless (Xvfb + `flatpak enter` into the running Signal); deployed via `install-screenshot-shelf.sh`, autostart
+entries validate. **Unverified:** a real hand drag into Signal.
+
 ## RepoBar website globe — 2026-10-18 (Claude Code)
 
 Owner asked for an easy way to open a repository's GitHub Pages site. Cards now show a globe right of the name that
