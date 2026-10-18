@@ -10,6 +10,7 @@ The safe Asahi DSP chain still needs image packaging (see below).
 
 - `pipewire-pulse`, `pipewire-alsa`, `rtkit` — see rationale in the
   previous revision of this file (commit history).
+- `dbus-bin`, `libnotify-bin`, `pciutils`, `rfkill` — sleep notifications and gated Bluetooth diagnostics/recovery.
 - `python3-gi` — the hardware helper's GObject bindings.
 - `initramfs-tools` — present so `mkosi.postinst.chroot` can append the
   HID early-load modules to `/etc/initramfs-tools/modules`; pruned from

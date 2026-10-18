@@ -1,0 +1,78 @@
+diff --git a/drivers/phy/apple/dpin.c b/drivers/phy/apple/dpin.c
+index 06ffc73..43fa282 100644
+--- a/drivers/phy/apple/dpin.c
++++ b/drivers/phy/apple/dpin.c
+@@ -98,6 +98,19 @@ static void dpin_log_activation_failure(struct apple_dpin *dpin, int ret)
+ 		 ret, inactive, ack, hpd, irq_status, irq_enable);
+ }
+ 
++/* DPINDBG (patch 0014): one-line DP-IN state dump for the E3 experiment. */
++static void dpin_dump_state(struct apple_dpin *dpin, const char *tag)
++{
++	dev_info(dpin->dev,
++		 "DPINDBG %s: INACTIVE=%#x ACK=%#x HPD=%#x STATUS=%#x ENABLE=%#x init=%d active=%d fault=%d\n",
++		 tag, dpin_read(dpin, APPLE_DPIN_INACTIVE),
++		 dpin_read(dpin, APPLE_DPIN_INACTIVE_ACK),
++		 dpin_read(dpin, APPLE_DPIN_HPD),
++		 dpin_read(dpin, APPLE_DPIN_IRQ_STATUS),
++		 dpin_read(dpin, APPLE_DPIN_IRQ_ENABLE),
++		 dpin->initialized, dpin->active, dpin->fault);
++}
++
+ static irqreturn_t dpin_irq(int irq, void *data)
+ {
+ 	struct apple_dpin *dpin = data;
+@@ -120,6 +133,9 @@ static irqreturn_t dpin_irq(int irq, void *data)
+ 		dev_dbg(dpin->dev, "HPD level=%u status=%#x\n",
+ 			!!(hpd & APPLE_DPIN_HPD_LEVEL), status);
+ 	}
++	/* DPINDBG (patch 0014): report every HPD interrupt/ack outcome. */
++	dev_info(dpin->dev, "DPINDBG irq: ack_ret=%d HPD=%#x STATUS=%#x\n",
++		 ret, hpd, status);
+ 	mutex_unlock(&dpin->lock);
+ 	if (ret < 0)
+ 		blocking_notifier_call_chain(&dpin->hpd_notifiers,
+@@ -127,6 +143,11 @@ static irqreturn_t dpin_irq(int irq, void *data)
+ 	else if (ret > 0)
+ 		blocking_notifier_call_chain(&dpin->hpd_notifiers,
+ 					    !!(hpd & APPLE_DPIN_HPD_LEVEL), NULL);
++	/* DPINDBG (patch 0014): did the HPD notifier fire, and with what event? */
++	if (ret)
++		dev_info(dpin->dev, "DPINDBG hpd_notifier event=%u\n",
++			 ret < 0 ? APPLE_DPIN_HPD_ERROR :
++			 (unsigned int)!!(hpd & APPLE_DPIN_HPD_LEVEL));
+ 	return ret ? IRQ_HANDLED : IRQ_NONE;
+ }
+ 
+@@ -148,6 +169,7 @@ static int dpin_init(struct phy *phy)
+ 	dpin->initialized = true;
+ 	dpin->irq_enable = dpin_read(dpin, APPLE_DPIN_IRQ_ENABLE);
+ 	dpin_write(dpin, APPLE_DPIN_IRQ_ENABLE, dpin->irq_enable | 3U);
++	dpin_dump_state(dpin, "init");
+ 	mutex_unlock(&dpin->lock);
+ 	enable_irq(dpin->irq);
+ 	return 0;
+@@ -183,6 +205,7 @@ static int dpin_exit(struct phy *phy)
+ 	}
+ 	dpin_write(dpin, APPLE_DPIN_IRQ_ENABLE, dpin->irq_enable);
+ 	dpin->initialized = false;
++	dpin_dump_state(dpin, "exit");
+ 	mutex_unlock(&dpin->lock);
+ 	disable_irq(dpin->irq);
+ 	pm_runtime_put(dpin->dev);
+@@ -213,6 +236,7 @@ static int dpin_power_on(struct phy *phy)
+ 		dpin->active = true;
+ 		dpin->logged_failure = false;
+ 	}
++	dpin_dump_state(dpin, ret ? "power_on-fail" : "power_on");
+ out:
+ 	mutex_unlock(&dpin->lock);
+ 	return ret;
+@@ -237,6 +261,7 @@ static int dpin_power_off(struct phy *phy)
+ 		dpin->active = false;
+ 		dpin->rate = 0;
+ 	}
++	dpin_dump_state(dpin, "power_off");
+ 	mutex_unlock(&dpin->lock);
+ 	return ret;
+ }

@@ -4,6 +4,7 @@
 set -euo pipefail
 
 version=2.0.18
+source_commit=fc30d316e163f4504043353d6610e670ce5c6439
 
 if [[ ${1:-} == --uninstall ]]; then
   sudo systemctl disable --now touchegg || true
@@ -20,10 +21,13 @@ sudo apt install cmake g++ git libinput-dev libudev-dev libpugixml-dev libcairo2
 
 build_dir=$(mktemp -d "${TMPDIR:-/tmp}/touchegg.XXXXXX")
 trap 'rm -rf "$build_dir"' EXIT
-git clone -q --depth 1 --branch "$version" https://github.com/JoseExposito/touchegg.git "$build_dir/src"
+git init -q "$build_dir/src"
+git -C "$build_dir/src" remote add origin https://github.com/JoseExposito/touchegg.git
+git -C "$build_dir/src" fetch -q --depth=1 origin "$source_commit"
+git -C "$build_dir/src" checkout -q --detach FETCH_HEAD
 # CMake 4 rejects the project's old minimum-version declaration; 3.5 restores the old behaviour.
 cmake -S "$build_dir/src" -B "$build_dir/build" -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+  -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_SYSCONFDIR=/etc -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 cmake --build "$build_dir/build" -j"$(nproc)"
 sudo cmake --install "$build_dir/build"
 # Gala handles gestures itself and only needs the daemon; the X11 client would act on the
@@ -31,4 +35,4 @@ sudo cmake --install "$build_dir/build"
 sudo rm -f /etc/xdg/autostart/touchegg.desktop
 sudo systemctl daemon-reload
 sudo systemctl enable --now touchegg
-echo 'Installed the Touchegg daemon. Log out and back in so Gala connects to it.'
+echo "Installed Touchegg $version ($source_commit). Log out and back in so Gala connects to it."

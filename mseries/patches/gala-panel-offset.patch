@@ -1,0 +1,163 @@
+diff --git a/protocol/pantheon-desktop-shell-v1.xml b/protocol/pantheon-desktop-shell-v1.xml
+index 210d3a2..dc6f4b1 100644
+--- a/protocol/pantheon-desktop-shell-v1.xml
++++ b/protocol/pantheon-desktop-shell-v1.xml
+@@ -6,7 +6,7 @@
+     SPDX-License-Identifier: LGPL-2.1-or-later
+   ]]></copyright>
+ 
+-  <interface name="io_elementary_pantheon_shell_v1" version="1">
++  <interface name="io_elementary_pantheon_shell_v1" version="2">
+     <description summary="create panel, widget and get more control">
+       This interface is used by the Pantheon Wayland shell to communicate with
+       the compositor.
+@@ -45,7 +45,7 @@
+     </request>
+   </interface>
+ 
+-  <interface name="io_elementary_pantheon_panel_v1" version="1">
++  <interface name="io_elementary_pantheon_panel_v1" version="2">
+     <request name="destroy" type="destructor"/>
+ 
+     <enum name="anchor">
+@@ -130,6 +130,17 @@
+         Tell the window manager to remove blur that was set in set_blur_region.
+       </description>
+     </request>
++
++    <request name="set_offset" since="2">
++      <description summary="offset the panel along its edge">
++        Move the panel by the given number of logical pixels along the edge it is
++        anchored to. Positive values move it right for a top/bottom anchor and down
++        for a left/right anchor. The compositor still centres the panel, so an
++        offset of 0 means centred.
++      </description>
++
++      <arg name="offset" type="int" summary="offset from centre, in logical pixels"/>
++    </request>
+   </interface>
+ 
+   <interface name="io_elementary_pantheon_widget_v1" version="1">
+diff --git a/protocol/pantheon-desktop-shell.vapi b/protocol/pantheon-desktop-shell.vapi
+index ba95c89..ddb7009 100644
+--- a/protocol/pantheon-desktop-shell.vapi
++++ b/protocol/pantheon-desktop-shell.vapi
+@@ -44,6 +44,7 @@ namespace Pantheon.Desktop {
+         public RequestVisibleInMultitaskingView request_visible_in_multitasking_view;
+         public AddBlur add_blur;
+         public RemoveBlur remove_blur;
++        public SetOffset set_offset;
+     }
+ 
+     [CCode (cheader_filename = "pantheon-desktop-shell-server-protocol.h", cname = "struct io_elementary_pantheon_widget_v1_interface")]
+@@ -96,6 +97,8 @@ namespace Pantheon.Desktop {
+     [CCode (has_target = false, has_typedef = false)]
+     public delegate void RemoveBlur (Wl.Client client, Wl.Resource resource);
+     [CCode (has_target = false, has_typedef = false)]
++    public delegate void SetOffset (Wl.Client client, Wl.Resource resource, int offset);
++    [CCode (has_target = false, has_typedef = false)]
+     public delegate void SetKeepAbove (Wl.Client client, Wl.Resource resource);
+     [CCode (has_target = false, has_typedef = false)]
+     public delegate void MakeCentered (Wl.Client client, Wl.Resource resource);
+diff --git a/src/PantheonShell.vala b/src/PantheonShell.vala
+index 2d18791..b1a769c 100644
+--- a/src/PantheonShell.vala
++++ b/src/PantheonShell.vala
+@@ -44,6 +44,7 @@ namespace Gala {
+             request_visible_in_multitasking_view,
+             add_blur,
+             remove_blur,
++            set_offset,
+         };
+ 
+         wayland_pantheon_widget_interface = {
+@@ -69,7 +70,7 @@ namespace Gala {
+         ExtendedBehaviorSurface.quark = GLib.Quark.from_string ("-gala-wayland-extended-behavior-surface-data");
+         GreeterSurface.quark = GLib.Quark.from_string ("-gala-wayland-greeter-surface-data");
+ 
+-        shell_global = Wl.Global.create (wl_disp, ref Pantheon.Desktop.ShellInterface.iface, 1, (client, version, id) => {
++        shell_global = Wl.Global.create (wl_disp, ref Pantheon.Desktop.ShellInterface.iface, 2, (client, version, id) => {
+             unowned var resource = client.create_resource (ref Pantheon.Desktop.ShellInterface.iface, (int) version, id);
+             resource.set_implementation (&wayland_pantheon_shell_interface, null, (res) => {});
+         });
+@@ -404,6 +405,23 @@ namespace Gala {
+         BlurManager.get_instance ().remove_blur (window);
+     }
+ 
++    internal static void set_offset (Wl.Client client, Wl.Resource resource, int offset) {
++        unowned PanelSurface? panel_surface = resource.get_user_data<PanelSurface> ();
++        if (panel_surface.wayland_surface == null) {
++            warning ("Window tried to set offset but wayland surface is null.");
++            return;
++        }
++
++        Meta.Window? window;
++        panel_surface.wayland_surface.get ("window", out window, null);
++        if (window == null) {
++            warning ("Window tried to set offset but wayland surface had no associated window.");
++            return;
++        }
++
++        ShellClientsManager.get_instance ().set_offset (window, offset);
++    }
++
+     internal static void set_keep_above (Wl.Client client, Wl.Resource resource) {
+         unowned ExtendedBehaviorSurface? eb_surface = resource.get_user_data<ExtendedBehaviorSurface> ();
+         if (eb_surface.wayland_surface == null) {
+diff --git a/src/ShellClients/PanelWindow.vala b/src/ShellClients/PanelWindow.vala
+index a800767..634ddd0 100644
+--- a/src/ShellClients/PanelWindow.vala
++++ b/src/ShellClients/PanelWindow.vala
+@@ -30,6 +30,17 @@ public class Gala.PanelWindow : ShellWindow, RootTarget {
+ 
+     public bool visible_in_multitasking_view { get; private set; default = false; }
+ 
++    private int _offset = 0;
++    public int offset {
++        get {
++            return _offset;
++        }
++        set {
++            _offset = value;
++            position_window ();
++        }
++    }
++
+     private GestureController user_gesture_controller;
+     private HideTracker hide_tracker;
+     private GestureController workspace_gesture_controller;
+@@ -266,12 +277,12 @@ public class Gala.PanelWindow : ShellWindow, RootTarget {
+         var monitor_rect = window.display.get_monitor_geometry (window.display.get_primary_monitor ());
+         switch (anchor) {
+             case TOP:
+-                x = monitor_rect.x + (monitor_rect.width - window_rect.width) / 2;
++                x = monitor_rect.x + (monitor_rect.width - window_rect.width) / 2 + offset;
+                 y = monitor_rect.y;
+                 break;
+ 
+             case BOTTOM:
+-                x = monitor_rect.x + (monitor_rect.width - window_rect.width) / 2;
++                x = monitor_rect.x + (monitor_rect.width - window_rect.width) / 2 + offset;
+                 y = monitor_rect.y + monitor_rect.height - window_rect.height;
+                 break;
+ 
+diff --git a/src/ShellClients/ShellClientsManager.vala b/src/ShellClients/ShellClientsManager.vala
+index 693962d..d244baf 100644
+--- a/src/ShellClients/ShellClientsManager.vala
++++ b/src/ShellClients/ShellClientsManager.vala
+@@ -194,6 +194,15 @@ public class Gala.ShellClientsManager : Object, GestureTarget {
+         panel_windows[window].set_size (width, height);
+     }
+ 
++    public void set_offset (Meta.Window window, int offset) {
++        if (!(window in panel_windows)) {
++            warning ("Set anchor for window before offset.");
++            return;
++        }
++
++        panel_windows[window].offset = offset;
++    }
++
+     public void set_hide_mode (Meta.Window window, Pantheon.Desktop.HideMode hide_mode) {
+         if (!(window in panel_windows)) {
+             warning ("Set anchor for window before hide mode.");

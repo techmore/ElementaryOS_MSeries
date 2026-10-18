@@ -1,0 +1,64 @@
+diff --git a/drivers/gpu/drm/apple/dcp.c b/drivers/gpu/drm/apple/dcp.c
+index bcb0268..b8a21e9 100644
+--- a/drivers/gpu/drm/apple/dcp.c
++++ b/drivers/gpu/drm/apple/dcp.c
+@@ -60,6 +60,10 @@ static bool unstable_edid = true;
+ module_param(unstable_edid, bool, 0644);
+ MODULE_PARM_DESC(unstable_edid, "Enable unstable EDID retrival support");
+ 
++bool force_vrr;
++module_param(force_vrr, bool, 0644);
++MODULE_PARM_DESC(force_vrr, "Force adaptive sync (ProMotion) on when the panel supports it");
++
+ /* copied and simplified from drm_vblank.c */
+ static void send_vblank_event(struct drm_device *dev,
+ 		struct drm_pending_vblank_event *e,
+diff --git a/drivers/gpu/drm/apple/dcp.h b/drivers/gpu/drm/apple/dcp.h
+index 2b42177..84810a7 100644
+--- a/drivers/gpu/drm/apple/dcp.h
++++ b/drivers/gpu/drm/apple/dcp.h
+@@ -29,6 +29,9 @@ struct apple_encoder {
+ 
+ #define to_apple_encoder(x) container_of(x, struct apple_encoder, base)
+ 
++/* Set by the appledrm.force_vrr module parameter (see dcp.c). */
++extern bool force_vrr;
++
+ void dcp_poweroff(struct platform_device *pdev);
+ void dcp_poweron(struct platform_device *pdev);
+ int dcp_set_crc(struct drm_crtc *crtc, bool enabled);
+diff --git a/drivers/gpu/drm/apple/iomfb_template.c b/drivers/gpu/drm/apple/iomfb_template.c
+index cf40e27..36cd03d 100644
+--- a/drivers/gpu/drm/apple/iomfb_template.c
++++ b/drivers/gpu/drm/apple/iomfb_template.c
+@@ -796,6 +796,14 @@ static void dcp_on_set_parameter(struct apple_dcp *dcp, void *out, void *cookie)
+ #endif
+ 	};
+ 
++	/*
++	 * IOMFBPARAM_ADAPTIVE_SYNC: value[0] is the minimum refresh rate in
++	 * 16.16 fixed point. Zero disables adaptive sync. The 14"/16" ProMotion
++	 * panels support a [24, 120] Hz range; 24 Hz << 16 = 0x180000.
++	 */
++	if (force_vrr)
++		param.value[0] = 24 << 16;
++
+ 	dcp_set_parameter_dcp(dcp, false, &param, dcp_on_set_power_state, cookie);
+ }
+ 
+@@ -817,7 +825,14 @@ void DCP_FW_NAME(iomfb_poweron)(struct apple_dcp *dcp)
+ 
+ 	if (dcp->main_display) {
+ 		handle = 0;
+-		dcp_set_display_device(dcp, false, &handle, dcp_on_set_power_state,
++		/*
++		 * For the internal panel this used to skip the adaptive sync
++		 * parameter. Route through dcp_on_set_parameter when force_vrr
++		 * so the minRR is programmed before the modeset below.
++		 */
++		dcp_set_display_device(dcp, false, &handle,
++				       force_vrr ? dcp_on_set_parameter :
++						   dcp_on_set_power_state,
+ 				       cookie);
+ 	} else {
+ 		handle = 2;

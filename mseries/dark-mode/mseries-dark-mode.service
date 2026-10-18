@@ -1,0 +1,6 @@
+[Unit]
+Description=Apply the scheduled light or dark appearance
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/mseries-dark-mode auto

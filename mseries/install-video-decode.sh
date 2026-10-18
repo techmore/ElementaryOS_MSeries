@@ -12,9 +12,11 @@
 # v4l2_request_drv_video.so and asahi_drv_video.so - the name libva derives from the DRM render node
 # on Apple Silicon - so applications find it with no environment variable.
 #
-# What it buys (omarchy-mac measured): about 84% less CPU time decoding; mpv, ffmpeg and GStreamer-
-# based players benefit. Chromium-based browsers need their own VA-API support to use it.
+# Applications need their own VA-API support to use this bridge. Codec correctness and CPU/power
+# benefits must be measured on the target hardware; compilation is not decode qualification.
 set -euo pipefail
+
+here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
 commit=c653eaa6234a02b5f31f77a8aa23f7a744650e87
 sha256=0d8368fe7d1fea304acdc4903e2442486c880daffc37819fef687c8cecf34cf3
@@ -73,10 +75,7 @@ sudo ln -sf v4l2_request_drv_video.so "$driverdir/asahi_drv_video.so"
 # stream failed twice, then decoded bit-exact after `echo 1 > /proc/sys/vm/compact_memory`). Until the
 # driver uses kvzalloc, ask the kernel to compact more eagerly in the background. This is a mitigation
 # for fragmentation, not a fix, and it is not proven to remove every failure.
-sudo install -D -m 0644 /dev/stdin /etc/sysctl.d/90-mseries-avd.conf <<'SYSCTL'
-# ElementaryOS_MSeries: the Apple Video Decoder driver needs a large contiguous allocation per decode job
-vm.compaction_proactiveness = 60
-SYSCTL
+sudo install -D -m 0644 "$here/video-decode/90-mseries-avd.conf" /etc/sysctl.d/90-mseries-avd.conf
 sudo sysctl -q -p /etc/sysctl.d/90-mseries-avd.conf 2>/dev/null || true
 
 # Verify: the driver must bind to the decoder and offer at least H.264.

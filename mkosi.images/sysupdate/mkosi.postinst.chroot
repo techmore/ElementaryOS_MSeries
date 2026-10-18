@@ -10,3 +10,13 @@ ln -s /var/usrlocal /usr/local
 cp -a /usr/local/. /var/usrlocal/
 rm -rf /usr/local
 ln -s /var/usrlocal /usr/local
+
+# Check final package ownership after overlay application, before publication.
+if [[ -x /usr/libexec/mseries/verify-video-driver-packaging ]]; then
+    /usr/libexec/mseries/verify-video-driver-packaging
+fi
+
+# The final installed panel versions must match every locally patched plugin.
+if [[ -x /usr/libexec/mseries/verify-panel-packages ]]; then
+    /usr/libexec/mseries/verify-panel-packages --root /
+fi

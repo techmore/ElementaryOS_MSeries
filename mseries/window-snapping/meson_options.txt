@@ -1,0 +1,2 @@
+option('vapidir', type: 'string', description: 'Pinned Gala vapi directory')
+option('plugindir', type: 'string', value: '/usr/local/lib/mseries/gala/lib/gala/plugins')

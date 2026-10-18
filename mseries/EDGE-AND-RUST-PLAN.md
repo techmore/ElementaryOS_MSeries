@@ -22,6 +22,12 @@ kernel or running audio stack as part of image work.
 
 ## 2. Port our code to Rust
 
+The later owner decision in `OMARCHY-M-ROADMAP.md` governs: integrate and qualify
+first, then inventory and migrate the maintained implementation to Rust. The
+older candidate ordering below is advisory; its exclusions are superseded.
+Performance improvements require measurements.
+
+
 Inventory (tracked files, excluding `repos/`): about 6,000 lines of shell, 4,800 Python,
 1,800 Vala, no Rust. Rust 1.99 is installed on the M1 Pro.
 

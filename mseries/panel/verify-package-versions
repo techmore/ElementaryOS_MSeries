@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+"""Fail image assembly when patched indicators have incompatible consumers."""
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import re
+import subprocess
+import sys
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--root", type=Path, required=True)
+parser.add_argument("--pins", type=Path, default=Path("/usr/share/mseries/panel-factory-pins.json"))
+parser.add_argument("--only", nargs="+", help="Check selected indicator names")
+parser.add_argument("--skip-plugins", action="store_true", help="Build dependency check before producing plugins")
+args = parser.parse_args()
+pins = json.loads(args.pins.read_text())
+if pins.get("schema") != 1:
+    parser.error("Unsupported panel pin schema")
+entries = pins["indicators"]
+if args.only:
+    unknown = set(args.only) - {entry["name"] for entry in entries}
+    if unknown:
+        parser.error("Unknown indicators: " + ", ".join(sorted(unknown)))
+    entries = [entry for entry in entries if entry["name"] in args.only]
+errors = []
+for entry in entries:
+    result = subprocess.run(
+        ["dpkg-query", "--admindir=" + str(args.root / "var/lib/dpkg"),
+         "-W", "-f=${db:Status-Status}\t${Version}", entry["package"]],
+        capture_output=True, text=True, check=False,
+    )
+    status, _, version = result.stdout.strip().partition("\t")
+    pattern = r"(?:[0-9]+:)?" + re.escape(entry["version"]) + r"(?:[+~.\-]|$)"
+    if result.returncode or status != "installed" or not re.match(pattern, version):
+        errors.append(f'{entry["package"]}: expected installed {entry["version"]} with packaging suffix; found {result.stdout.strip() or "missing"}')
+    plugin = Path(entry["plugin"])
+    expected_dir = Path("usr/lib/aarch64-linux-gnu/wingpanel-9")
+    if plugin.parent != expected_dir or plugin.is_absolute():
+        errors.append(f'{entry["name"]}: unexpected Wingpanel ABI path {plugin}')
+    elif not args.skip_plugins:
+        artifact = args.root / plugin
+        if not artifact.is_file() or artifact.stat().st_size == 0:
+            errors.append(f'{entry["name"]}: missing or empty plugin {artifact}')
+        else:
+            record_path = args.root / "usr/share/mseries/panel-artifacts" / (entry["name"] + ".json")
+            try:
+                record = json.loads(record_path.read_text())
+                if not isinstance(record, dict) or record.get("schema") != 1:
+                    raise ValueError("unsupported artifact record")
+                for key in ("name", "package", "version", "repository", "commit", "plugin"):
+                    if record.get(key) != entry[key]:
+                        raise ValueError("pin metadata mismatch: " + key)
+                digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
+                if record.get("sha256") != digest:
+                    raise ValueError("plugin SHA256 mismatch")
+            except (OSError, ValueError, TypeError) as error:
+                errors.append(f'{entry["name"]}: invalid artifact provenance {record_path}: {error}')
+if errors:
+    print("Factory panel compatibility check failed:\n" + "\n".join(errors), file=sys.stderr)
+    sys.exit(1)
+print("Factory panel package versions" + ("" if args.skip_plugins else " and plugins") + " match pinned requirements.")

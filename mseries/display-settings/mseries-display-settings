@@ -1,0 +1,621 @@
+#!/usr/bin/env python3
+"""Display settings for the M-series desktop: drag monitors into place, pick resolution,
+refresh rate, scale and rotation from what each monitor really offers, save layouts per
+set of attached displays, and see in plain words why a monitor is or is not working.
+
+Talks to Gala over org.gnome.Mutter.DisplayConfig. Set MSERIES_DISPLAY_FAKE=1 to run on
+made-up monitors (no changes are applied); --screenshot PATH renders the window to a PNG.
+"""
+import importlib.machinery, importlib.util, os, sys, json
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, Gdk, GLib, Gio
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, HERE)
+import display_diag
+
+
+def _load_profiles():
+    for d in (HERE, os.path.join(HERE, "..", "display-profiles"), os.path.expanduser("~/.local/bin")):
+        p = os.path.join(d, "mseries-display-profiles")
+        if os.path.exists(p):
+            loader = importlib.machinery.SourceFileLoader("mseries_display_profiles", p)
+            spec = importlib.util.spec_from_loader("mseries_display_profiles", loader)
+            mod = importlib.util.module_from_spec(spec)
+            loader.exec_module(mod)
+            return mod
+    raise SystemExit("mseries-display-profiles not found next to this app")
+
+
+profiles = _load_profiles()
+FAKE = bool(os.environ.get("MSERIES_DISPLAY_FAKE"))
+ROTATIONS = [("Normal", 0), ("90°", 1), ("180°", 2), ("270°", 3)]
+SEV_ICON = {"ok": "emblem-ok-symbolic", "info": "dialog-information-symbolic",
+            "warn": "dialog-warning-symbolic", "bad": "dialog-error-symbolic"}
+
+
+def fake_raw():
+    panel = (("eDP-1", "u", "u", "u"), [
+        ("3024x1890@120.000", 3024, 1890, 120.0, 2.0, [1.0, 1.5, 2.0, 3.0], {"is-current": True, "is-preferred": True}),
+        ("3024x1890@60.000", 3024, 1890, 60.0, 2.0, [1.0, 1.5, 2.0, 3.0], {})],
+        {"display-name": "Built-in display", "is-builtin": True})
+    tv = (("HDMI-1", "INS", "NS65DF710NA21", "0x01010101"), [
+        ("3840x2160@30.000", 3840, 2160, 30.0, 1.0, [1.0, 1.5, 2.0], {"is-current": True, "is-preferred": True}),
+        ("3840x2160@24.000", 3840, 2160, 24.0, 1.0, [1.0, 1.5, 2.0], {}),
+        ("1920x1080@60.000", 1920, 1080, 60.0, 1.0, [1.0, 2.0], {}),
+        ("1920x1080@30.000", 1920, 1080, 30.0, 1.0, [1.0, 2.0], {}),
+        ("1280x720@60.000", 1280, 720, 60.0, 1.0, [1.0], {})], {"display-name": "Insignia TV"})
+    return (1, [panel, tv], [(0, 0, 2.0, 0, True, [("eDP-1", "u", "u", "u")], {}),
+                             (1512, 0, 1.0, 0, False, [("HDMI-1", "INS", "NS65DF710NA21", "0x01010101")], {})], {})
+
+
+class Backend:
+    def __init__(self):
+        self.bus = None if FAKE else profiles.bus()
+
+    def raw(self):
+        return fake_raw() if FAKE else profiles.dc_call(self.bus, "GetCurrentState").unpack()
+
+    def apply(self, serial, logical):
+        if not FAKE:
+            profiles.apply_config(self.bus, serial, logical)
+
+
+class Output:
+    def __init__(self, spec, modes, mprops):
+        self.name, self.key = spec[0], profiles.monitor_key(spec)
+        self.label = mprops.get("display-name") or self.name
+        self.builtin = spec[0].startswith("eDP")
+        self.modes = [dict(id=m[0], w=m[1], h=m[2], rate=m[3], scales=list(m[5]), current=bool(m[6].get("is-current")),
+                           preferred=bool(m[6].get("is-preferred"))) for m in modes]
+        cur = next((m for m in self.modes if m["current"]), None)
+        self.preferred = next((m for m in self.modes if m["preferred"]), self.modes[0] if self.modes else None)
+        self.mode_id = (cur or self.preferred)["id"] if self.modes else None
+        self.enabled, self.scale, self.transform, self.x, self.y, self.primary = False, 1.0, 0, 0, 0, False
+
+    @property
+    def mode(self):
+        return next((m for m in self.modes if m["id"] == self.mode_id), None)
+
+    def size(self):
+        m = self.mode or {"w": 1920, "h": 1080}
+        w, h = m["w"] / self.scale, m["h"] / self.scale
+        return (h, w) if self.transform % 2 else (w, h)
+
+
+def parse(raw):
+    serial, monitors, logical, _ = raw
+    outs = {s[0]: Output(s, modes, mp) for s, modes, mp in monitors}
+    for x, y, scale, tr, pri, mons, _p in logical:
+        o = outs[mons[0][0]]
+        o.enabled, o.x, o.y, o.scale, o.transform, o.primary = True, x, y, scale, tr, bool(pri)
+    return serial, outs
+
+
+def build_logical(outs):
+    en = [o for o in outs.values() if o.enabled and o.mode]
+    if not en:
+        return []
+    mx, my = min(o.x for o in en), min(o.y for o in en)
+    lm = [(int(o.x - mx), int(o.y - my), o.scale, o.transform, o.primary, [(o.name, o.mode_id, {})]) for o in en]
+    if not any(l[4] for l in lm):
+        lm[0] = lm[0][:4] + (True,) + lm[0][5:]
+    return lm
+
+
+def snap(outs, moving):
+    """Drop `moving` flush against the nearest edge of another enabled output (Gala wants them touching)."""
+    others = [o for o in outs.values() if o.enabled and o is not moving]
+    if not others:
+        return
+    w, h = moving.size()
+    cands = []
+    for o in others:
+        ow, oh = o.size()
+        for cx, cy in ((o.x + ow, o.y), (o.x - w, o.y), (o.x, o.y + oh), (o.x, o.y - h),
+                       (o.x + ow, o.y + oh - h), (o.x - w, o.y + oh - h), (o.x + ow - w, o.y + oh), (o.x + ow - w, o.y - h)):
+            cands.append((cx, cy))
+    moving.x, moving.y = min(cands, key=lambda c: (c[0] - moving.x) ** 2 + (c[1] - moving.y) ** 2)
+
+
+class Canvas(Gtk.DrawingArea):
+    def __init__(self, app):
+        super().__init__()
+        self.app, self.drag = app, None
+        self.set_size_request(480, 260)
+        self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK | Gdk.EventMask.POINTER_MOTION_MASK)
+        self.connect("draw", self.on_draw)
+        self.connect("button-press-event", self.on_press)
+        self.connect("button-release-event", self.on_release)
+        self.connect("motion-notify-event", self.on_motion)
+
+    def transform(self):
+        en = [o for o in self.app.outs.values() if o.enabled]
+        if not en:
+            return 0, 0, 0.1
+        x0, y0 = min(o.x for o in en), min(o.y for o in en)
+        x1, y1 = max(o.x + o.size()[0] for o in en), max(o.y + o.size()[1] for o in en)
+        a = self.get_allocation()
+        s = min((a.width - 40) / max(x1 - x0, 1), (a.height - 40) / max(y1 - y0, 1))
+        return x0, y0, s * 0.9
+
+    def rect(self, o):
+        x0, y0, s = self.transform()
+        a = self.get_allocation()
+        en = [p for p in self.app.outs.values() if p.enabled]
+        bw = (max(p.x + p.size()[0] for p in en) - x0) * s
+        bh = (max(p.y + p.size()[1] for p in en) - y0) * s
+        ox, oy = (a.width - bw) / 2, (a.height - bh) / 2
+        w, h = o.size()
+        return ox + (o.x - x0) * s, oy + (o.y - y0) * s, w * s, h * s
+
+    def on_draw(self, _w, cr):
+        sc = self.get_style_context()
+        fg = sc.get_color(Gtk.StateFlags.NORMAL)
+        for o in self.app.outs.values():
+            if not o.enabled:
+                continue
+            x, y, w, h = self.rect(o)
+            sel = o is self.app.sel
+            cr.rectangle(x, y, w, h)
+            cr.set_source_rgba(0.21, 0.52, 0.89, 0.30 if sel else 0.14)
+            cr.fill_preserve()
+            cr.set_source_rgba(0.21, 0.52, 0.89, 1.0) if sel else cr.set_source_rgba(fg.red, fg.green, fg.blue, 0.5)
+            cr.set_line_width(2 if sel else 1)
+            cr.stroke()
+            cr.save()
+            cr.rectangle(x + 2, y + 2, w - 4, h - 4)
+            cr.clip()
+            cr.set_source_rgba(fg.red, fg.green, fg.blue, 1)
+            cr.select_font_face("Sans")
+            cr.set_font_size(13)
+            m = o.mode
+            for i, t in enumerate((o.label + (" (primary)" if o.primary else ""), f"{m['w']}×{m['h']} @ {m['rate']:.0f} Hz" if m else "")):
+                cr.move_to(x + 10, y + 22 + i * 18)
+                cr.show_text(t)
+            cr.restore()
+        return False
+
+    def hit(self, ex, ey):
+        for o in self.app.outs.values():
+            if o.enabled:
+                x, y, w, h = self.rect(o)
+                if x <= ex <= x + w and y <= ey <= y + h:
+                    return o
+
+    def on_press(self, _w, e):
+        o = self.hit(e.x, e.y)
+        if o:
+            self.app.select(o)
+            self.drag = (o, e.x, e.y, o.x, o.y)
+        return True
+
+    def on_motion(self, _w, e):
+        if self.drag:
+            o, sx, sy, ox, oy = self.drag
+            s = self.transform()[2]
+            o.x, o.y = ox + (e.x - sx) / s, oy + (e.y - sy) / s
+            self.queue_draw()
+        return True
+
+    def on_release(self, _w, _e):
+        if self.drag:
+            o = self.drag[0]
+            snap(self.app.outs, o)
+            self.drag = None
+            self.app.dirty()
+            self.queue_draw()
+        return True
+
+
+class App(Gtk.Window):
+    def __init__(self):
+        super().__init__(title="Displays")
+        self.set_default_size(980, 640)
+        self.be = Backend()
+        self.sel, self.outs, self.serial, self.updating = None, {}, 0, False
+        self.revert = None
+        self.reload()
+        root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.add(root)
+        self.info = Gtk.InfoBar()
+        self.info_label = Gtk.Label()
+        self.info.get_content_area().add(self.info_label)
+        self.info.add_button("Keep these settings", Gtk.ResponseType.ACCEPT)
+        self.info.add_button("Revert", Gtk.ResponseType.CANCEL)
+        self.info.connect("response", self.on_confirm)
+        self.info.set_no_show_all(True)
+        root.pack_start(self.info, False, False, 0)
+        nb = Gtk.Notebook()
+        root.pack_start(nb, True, True, 0)
+        nb.append_page(self.build_layout_page(), Gtk.Label(label="Arrange"))
+        nb.append_page(self.build_diag_page(), Gtk.Label(label="Diagnose"))
+        self.select(next((o for o in self.outs.values() if o.enabled), None))
+        self.refresh_diag()
+
+    # ---- state
+    def reload(self):
+        self.serial, self.outs = parse(self.be.raw())
+        self.sel = next((o for o in self.outs.values() if o.name == getattr(self.sel, "name", None)), None)
+
+    def dirty(self):
+        self.apply_btn.set_sensitive(True)
+        self.reset_btn.set_sensitive(True)
+
+    # ---- Arrange page
+    def build_layout_page(self):
+        page = Gtk.Box(spacing=12, margin=12)
+        left = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        self.canvas = Canvas(self)
+        fr = Gtk.Frame()
+        fr.add(self.canvas)
+        left.pack_start(fr, True, True, 0)
+        hint = Gtk.Label(label="Drag a screen to move it. Screens snap edge to edge.", xalign=0)
+        hint.get_style_context().add_class("dim-label")
+        left.pack_start(hint, False, False, 0)
+        pf = Gtk.Box(spacing=6)
+        self.prof_entry = Gtk.Entry(placeholder_text="Profile name, e.g. Home desk")
+        sv = Gtk.Button(label="Save layout as profile")
+        sv.connect("clicked", self.on_save_profile)
+        ap = Gtk.Button(label="Apply matching profile")
+        ap.connect("clicked", self.on_apply_profile)
+        for w in (self.prof_entry, sv, ap):
+            pf.pack_start(w, w is self.prof_entry, True, 0)
+        left.pack_start(pf, False, False, 0)
+        self.prof_label = Gtk.Label(xalign=0)
+        left.pack_start(self.prof_label, False, False, 0)
+        page.pack_start(left, True, True, 0)
+
+        right = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, width_request=300)
+        self.title = Gtk.Label(xalign=0)
+        self.title.set_markup("<b>Display</b>")
+        right.pack_start(self.title, False, False, 0)
+        grid = Gtk.Grid(row_spacing=8, column_spacing=10)
+        self.res_c, self.hz_c, self.scale_c, self.rot_c = (Gtk.ComboBoxText() for _ in range(4))
+        for i, (t, w) in enumerate((("Resolution", self.res_c), ("Refresh rate", self.hz_c),
+                                    ("Scale", self.scale_c), ("Rotation", self.rot_c))):
+            grid.attach(Gtk.Label(label=t, xalign=0), 0, i, 1, 1)
+            w.set_hexpand(True)
+            grid.attach(w, 1, i, 1, 1)
+        for t, c in (("Normal", self.rot_c),):
+            pass
+        for n, _v in ROTATIONS:
+            self.rot_c.append_text(n)
+        self.res_c.connect("changed", self.on_res)
+        self.hz_c.connect("changed", self.on_hz)
+        self.scale_c.connect("changed", self.on_scale)
+        self.rot_c.connect("changed", self.on_rot)
+        self.primary_c = Gtk.CheckButton(label="Primary display")
+        self.primary_c.connect("toggled", self.on_primary)
+        self.enabled_c = Gtk.CheckButton(label="Turn this display on")
+        self.enabled_c.connect("toggled", self.on_enabled)
+        grid.attach(self.primary_c, 1, 4, 1, 1)
+        grid.attach(self.enabled_c, 1, 5, 1, 1)
+        right.pack_start(grid, False, False, 0)
+        self.note = Gtk.Label(xalign=0, wrap=True)
+        self.note.get_style_context().add_class("dim-label")
+        right.pack_start(self.note, False, False, 0)
+        ex = Gtk.Expander(label="Everything this display offers")
+        sw = Gtk.ScrolledWindow(min_content_height=120)
+        self.modes_view = Gtk.Label(xalign=0, yalign=0, selectable=True)
+        sw.add(self.modes_view)
+        ex.add(sw)
+        right.pack_start(ex, True, True, 0)
+        btns = Gtk.Box(spacing=8, halign=Gtk.Align.END)
+        self.reset_btn = Gtk.Button(label="Reset")
+        self.reset_btn.connect("clicked", lambda *_: self.on_reset())
+        self.apply_btn = Gtk.Button(label="Apply")
+        self.apply_btn.get_style_context().add_class("suggested-action")
+        self.apply_btn.connect("clicked", lambda *_: self.on_apply())
+        self.apply_btn.set_sensitive(False)
+        self.reset_btn.set_sensitive(False)
+        btns.pack_start(self.reset_btn, False, False, 0)
+        btns.pack_start(self.apply_btn, False, False, 0)
+        right.pack_end(btns, False, False, 0)
+        page.pack_start(right, False, False, 0)
+        return page
+
+    def select(self, o):
+        self.sel = o
+        self.updating = True
+        has = o is not None
+        for w in (self.res_c, self.hz_c, self.scale_c, self.rot_c, self.primary_c, self.enabled_c):
+            w.set_sensitive(has)
+        if has:
+            self.title.set_markup(f"<b>{GLib.markup_escape_text(o.label)}</b>  <small>{o.name}</small>")
+            self.fill_combos()
+            self.rot_c.set_active(o.transform if o.transform < 4 else 0)
+            self.primary_c.set_active(o.primary)
+            self.enabled_c.set_active(o.enabled)
+            self.modes_view.set_text("\n".join(
+                f"{m['w']}×{m['h']} @ {m['rate']:.2f} Hz" + ("   ← preferred" if m["preferred"] else "")
+                + ("   (in use)" if m["id"] == o.mode_id else "") for m in o.modes))
+        self.updating = False
+        self.canvas.queue_draw()
+        self.refresh_profiles()
+
+    def fill_combos(self):
+        o = self.sel
+        m = o.mode
+        self.res_c.remove_all()
+        seen = []
+        for x in sorted(o.modes, key=lambda x: (-x["w"], -x["h"], -x["rate"])):
+            if (x["w"], x["h"]) not in seen:
+                seen.append((x["w"], x["h"]))
+        self.res_list = seen
+        for w, h in seen:
+            tag = " (recommended)" if o.preferred and (o.preferred["w"], o.preferred["h"]) == (w, h) else ""
+            self.res_c.append_text(f"{w} × {h}{tag}")
+        self.res_c.set_active(seen.index((m["w"], m["h"])) if m else 0)
+        self.fill_rates()
+
+    def fill_rates(self):
+        o, m = self.sel, self.sel.mode
+        self.hz_c.remove_all()
+        self.rate_modes = sorted([x for x in o.modes if (x["w"], x["h"]) == (m["w"], m["h"])], key=lambda x: -x["rate"])
+        for x in self.rate_modes:
+            self.hz_c.append_text(f"{x['rate']:.2f} Hz" + (" (recommended)" if x["preferred"] else ""))
+        self.hz_c.set_active(next((i for i, x in enumerate(self.rate_modes) if x["id"] == o.mode_id), 0))
+        self.scale_c.remove_all()
+        self.scale_list = m["scales"]
+        for s in self.scale_list:
+            self.scale_c.append_text(f"{round(s * 100)}%")
+        self.scale_c.set_active(min(range(len(self.scale_list)), key=lambda i: abs(self.scale_list[i] - o.scale)))
+        best = max((x["rate"] for x in o.modes if x["w"] == m["w"]), default=0)
+        self.note.set_text("" if len(self.rate_modes) > 1 or m["w"] < 3840 or best > 31 else
+                           "This display only offers this resolution at up to %d Hz." % best)
+
+    def on_res(self, c):
+        if self.updating or c.get_active() < 0:
+            return
+        w, h = self.res_list[c.get_active()]
+        o = self.sel
+        cands = [x for x in o.modes if (x["w"], x["h"]) == (w, h)]
+        pick = next((x for x in cands if x["preferred"]), max(cands, key=lambda x: x["rate"]))
+        o.mode_id = pick["id"]
+        if o.scale not in pick["scales"]:
+            o.scale = pick["scales"][0]
+        self.updating = True
+        self.fill_rates()
+        self.updating = False
+        self.after_change()
+
+    def on_hz(self, c):
+        if self.updating or c.get_active() < 0:
+            return
+        self.sel.mode_id = self.rate_modes[c.get_active()]["id"]
+        self.after_change()
+
+    def on_scale(self, c):
+        if self.updating or c.get_active() < 0:
+            return
+        self.sel.scale = self.scale_list[c.get_active()]
+        self.after_change()
+
+    def on_rot(self, c):
+        if self.updating or c.get_active() < 0:
+            return
+        self.sel.transform = ROTATIONS[c.get_active()][1]
+        self.after_change()
+
+    def on_primary(self, c):
+        if self.updating or not c.get_active():
+            return
+        for o in self.outs.values():
+            o.primary = o is self.sel
+        self.after_change()
+
+    def on_enabled(self, c):
+        if self.updating:
+            return
+        on = c.get_active()
+        if not on and sum(1 for o in self.outs.values() if o.enabled) <= 1:
+            self.updating = True
+            c.set_active(True)
+            self.updating = False
+            return
+        self.sel.enabled = on
+        if on:
+            right = max((p.x + p.size()[0] for p in self.outs.values() if p.enabled and p is not self.sel), default=0)
+            self.sel.x, self.sel.y = right, 0
+        self.after_change()
+
+    def after_change(self):
+        self.dirty()
+        self.canvas.queue_draw()
+
+    # ---- apply / revert
+    def on_apply(self):
+        self.revert = (self.serial, [o for o in build_logical_from_raw(self.be.raw())])
+        self.try_apply(build_logical(self.outs))
+        self.countdown = 15
+        self.info.set_no_show_all(False)
+        self.info.show_all()
+        self.tick()
+        self.timer = GLib.timeout_add_seconds(1, self.tick)
+
+    def try_apply(self, logical):
+        try:
+            self.be.apply(self.serial, logical)
+        except GLib.Error as e:
+            self.info_label.set_text("Could not apply: " + e.message)
+        GLib.timeout_add(1500, self.after_apply)
+
+    def after_apply(self):
+        try:
+            self.serial = self.be.raw()[0]
+        except Exception:
+            pass
+        self.refresh_diag()
+        return False
+
+    def tick(self):
+        self.info_label.set_text(f"Keep these display settings? Reverting in {self.countdown} s.")
+        if self.countdown <= 0:
+            self.on_confirm(None, Gtk.ResponseType.CANCEL)
+            return False
+        self.countdown -= 1
+        return True
+
+    def on_confirm(self, _bar, resp):
+        if getattr(self, "timer", None):
+            GLib.source_remove(self.timer)
+            self.timer = None
+        if resp == Gtk.ResponseType.CANCEL and self.revert:
+            self.try_apply(self.revert[1])
+            self.reload()
+            self.select(self.sel if self.sel and self.sel.name in self.outs else None)
+        self.revert = None
+        self.info.hide()
+        self.apply_btn.set_sensitive(False)
+        self.reset_btn.set_sensitive(False)
+
+    def on_reset(self):
+        self.reload()
+        self.select(self.sel if self.sel else next((o for o in self.outs.values() if o.enabled), None))
+        self.apply_btn.set_sensitive(False)
+        self.reset_btn.set_sensitive(False)
+
+    # ---- profiles
+    def attached(self):
+        return sorted(o.key for o in self.outs.values() if not o.builtin)
+
+    def refresh_profiles(self):
+        data = profiles.load()["profiles"]
+        names = ", ".join(data) or "none yet"
+        match = next((n for n, p in data.items() if sorted(p["match"]) == self.attached()), None)
+        self.prof_label.set_text(f"Saved profiles: {names}. Matches what is attached: {match or 'no'}.")
+
+    def on_save_profile(self, _b):
+        name = self.prof_entry.get_text().strip()
+        if not name:
+            self.prof_label.set_text("Type a profile name first.")
+            return
+        layout = [{"x": l[0], "y": l[1], "scale": l[2], "transform": l[3], "primary": l[4],
+                   "monitors": [{"key": self.outs[l[5][0][0]].key, "mode": l[5][0][1]}]} for l in build_logical(self.outs)]
+        data = profiles.load()
+        data["profiles"][name] = {"match": self.attached(), "layout": layout}
+        profiles.store(data) if not FAKE else None
+        self.refresh_profiles()
+
+    def on_apply_profile(self, _b):
+        data = profiles.load()["profiles"]
+        name = next((n for n, p in data.items() if sorted(p["match"]) == self.attached()), None)
+        if not name:
+            self.prof_label.set_text("No saved profile matches the displays attached right now.")
+            return
+        cfg = profiles.build_config(data[name], {o.name: {"key": o.key, "builtin": o.builtin, "modes": [m["id"] for m in o.modes],
+                                                          "preferred": o.preferred["id"] if o.preferred else None,
+                                                          "current": o.mode_id} for o in self.outs.values()})
+        self.revert = (self.serial, build_logical_from_raw(self.be.raw()))
+        self.try_apply(cfg)
+        self.countdown = 15
+        self.info.set_no_show_all(False)
+        self.info.show_all()
+        self.tick()
+        self.timer = GLib.timeout_add_seconds(1, self.tick)
+
+    # ---- Diagnose page
+    def build_diag_page(self):
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, margin=12)
+        top = Gtk.Box(spacing=8)
+        top.pack_start(Gtk.Label(label="What the system sees right now, in plain words.", xalign=0), True, True, 0)
+        rb = Gtk.Button(label="Check again")
+        rb.connect("clicked", lambda *_: self.refresh_diag())
+        top.pack_end(rb, False, False, 0)
+        box.pack_start(top, False, False, 0)
+        sw = Gtk.ScrolledWindow()
+        self.diag_list = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE)
+        sw.add(self.diag_list)
+        box.pack_start(sw, True, True, 0)
+        return box
+
+    def gala_view(self):
+        g = {}
+        for o in self.outs.values():
+            r = lambda m: (m["w"], m["h"], m["rate"]) if m else None
+            g[o.name] = {"modes": [(m["w"], m["h"], m["rate"]) for m in o.modes], "current": r(o.mode) if o.enabled else None,
+                         "preferred": r(o.preferred)}
+        return g
+
+    def refresh_diag(self):
+        try:
+            self.serial, outs = parse(self.be.raw())
+            for n, o in outs.items():
+                if n in self.outs and self.apply_btn.get_sensitive():
+                    continue
+            if not self.apply_btn.get_sensitive():
+                self.outs = outs
+                if self.sel:
+                    self.sel = self.outs.get(self.sel.name)
+                self.canvas.queue_draw()
+        except Exception:
+            pass
+        facts = display_diag.collect(self.gala_view()) if not FAKE else fake_facts(self.gala_view())
+        for c in self.diag_list.get_children():
+            self.diag_list.remove(c)
+        for sev, title, detail, fix in display_diag.diagnose(facts):
+            row = Gtk.Box(spacing=10, margin=8)
+            row.pack_start(Gtk.Image.new_from_icon_name(SEV_ICON[sev], Gtk.IconSize.LARGE_TOOLBAR), False, False, 0)
+            txt = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+            t = Gtk.Label(xalign=0, wrap=True)
+            t.set_markup(f"<b>{GLib.markup_escape_text(title)}</b>")
+            d = Gtk.Label(label=detail, xalign=0, wrap=True)
+            d.get_style_context().add_class("dim-label")
+            txt.pack_start(t, False, False, 0)
+            txt.pack_start(d, False, False, 0)
+            row.pack_start(txt, True, True, 0)
+            if fix == "reapply":
+                b = Gtk.Button(label="Re-apply display mode", valign=Gtk.Align.CENTER)
+                b.connect("clicked", lambda *_: self.nudge())
+                row.pack_end(b, False, False, 0)
+            self.diag_list.add(row)
+        self.diag_list.show_all()
+
+    def nudge(self):
+        """Set a different safe mode for external screens, then the wanted one: forces a fresh mode-set."""
+        step = {n: {"key": o.key, "builtin": o.builtin, "modes": [m["id"] for m in o.modes],
+                    "preferred": o.preferred["id"] if o.preferred else None, "current": o.mode_id} for n, o in self.outs.items()}
+        layout = {"layout": [{"x": l[0], "y": l[1], "scale": l[2], "transform": l[3], "primary": l[4],
+                              "monitors": [{"key": self.outs[l[5][0][0]].key, "mode": l[5][0][1]}]} for l in build_logical(self.outs)]}
+        self.try_apply(profiles.build_config(layout, step, profiles.nudge_modes))
+        GLib.timeout_add(2500, lambda: (self.try_apply(profiles.build_config(layout, step)), False)[1])
+
+
+def build_logical_from_raw(raw):
+    _s, outs = parse(raw)
+    return build_logical(outs)
+
+
+def fake_facts(gala):
+    return {"gala": gala, "drm": {"HDMI-A-1": {"status": "connected"}, "eDP-1": {"status": "connected"}},
+            "thunderbolt": ["WD22TB4 Thunderbolt Dock"], "dprx_bypass": "Y",
+            "log": ["[1] apple-dcp: set_digital_out_mode finished:1", "[2] apple-dcp: DP2HDMI HPD irq, connected:1",
+                    "[3] apple-dcp: swallowed swap ID 80 as timinsg are not enabled for External Display",
+                    "[4] thunderbolt-apple-nhi: 0:5 <-> 1:14 (DP): activating",
+                    "[5] thunderbolt-apple-nhi: DP source preparation failed: -110"]}
+
+
+def main():
+    app = App()
+    app.connect("destroy", Gtk.main_quit)
+    app.show_all()
+    app.info.hide()
+    if "--screenshot" in sys.argv:
+        path = sys.argv[sys.argv.index("--screenshot") + 1]
+        page = int(sys.argv[sys.argv.index("--page") + 1]) if "--page" in sys.argv else 0
+        nb = app.get_children()[0].get_children()[1]
+
+        def shot():
+            nb.set_current_page(page)
+            GLib.timeout_add(400, lambda: (Gdk.pixbuf_get_from_window(app.get_window(), 0, 0, app.get_allocated_width(),
+                                                                       app.get_allocated_height()).savev(path, "png", [], []),
+                                           Gtk.main_quit())[1])
+            return False
+        GLib.timeout_add(900, shot)
+    Gtk.main()
+
+
+if __name__ == "__main__":
+    main()

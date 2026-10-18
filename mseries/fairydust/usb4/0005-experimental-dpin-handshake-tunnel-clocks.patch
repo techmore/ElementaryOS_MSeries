@@ -1,0 +1,1920 @@
+From: sdolbec <sdolbec1@gmail.com>
+Subject: [PATCH] phy: apple: add experimental DP-IN handshake and tunnel clocks
+
+Experimental, offline-validated only. Hardware qualification is pending.
+Apply after fairydust ce9f2eba, then
+0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch and
+0002-experimental-dp-tunnel.patch. Retain the independent
+0003-dp-out-prefer-adapter-with-hpd.patch.
+See DPIN-IMPLEMENTATION.md and REA-DPIN-FINDINGS.md for provenance,
+validation scope and remaining lifecycle/firmware questions.
+
+Signed-off-by: sdolbec <sdolbec1@gmail.com>
+---
+diff --git a/drivers/gpu/drm/apple/dcp.c b/drivers/gpu/drm/apple/dcp.c
+index c3d1473..3f069e3 100644
+--- a/drivers/gpu/drm/apple/dcp.c
++++ b/drivers/gpu/drm/apple/dcp.c
+@@ -1,6 +1,7 @@
+ // SPDX-License-Identifier: GPL-2.0-only OR MIT
+ /* Copyright 2021 Alyssa Rosenzweig */
+ 
++#include <linux/phy/phy-apple-dpin.h>
+ #include <linux/align.h>
+ #include <linux/bitmap.h>
+ #include <linux/clk.h>
+@@ -357,59 +358,95 @@ int dcp_get_connector_type(struct platform_device *pdev)
+ 
+ #define DPTX_CONNECT_TIMEOUT msecs_to_jiffies(2000)
+ 
++static int dcp_dptx_disconnect(struct apple_dcp *dcp, u32 port);
++
+ static int dcp_dptx_connect(struct apple_dcp *dcp, u32 port)
+ {
+-	int ret = 0;
++	struct dptx_port *dptx;
++	unsigned long waited;
++	int ret, cleanup;
+ 
+-	if (!dcp->phy) {
+-		dev_warn(dcp->dev, "dcp_dptx_connect: missing phy\n");
++	if (port >= dcp->hw.num_dptx_ports || (dcp->dp_tunnel && port))
++		return -EINVAL;
++	if (!dcp->phy)
+ 		return -ENODEV;
+-	}
+-	dev_info(dcp->dev, "%s(port=%d)\n", __func__, port);
+-
++	dptx = &dcp->dptxport[port];
+ 	mutex_lock(&dcp->hpd_mutex);
+-	if (!dcp->dptxport[port].enabled) {
+-		dev_warn(dcp->dev, "dcp_dptx_connect: dptx service for port %d not enabled\n", port);
++	if (!dptx->enabled) {
+ 		ret = -ENODEV;
+-		goto out_unlock;
++		goto out;
++	}
++	if (dptx->connected) {
++		ret = 0;
++		goto out;
++	}
++	reinit_completion(&dptx->linkcfg_completion);
++	WRITE_ONCE(dptx->link_error, 0);
++	if (dcp->dp_tunnel) {
++		mutex_lock(&dptx->phy_lock);
++		if (dptx->phy_initialized) {
++			mutex_unlock(&dptx->phy_lock);
++			ret = -EBUSY;
++			goto out;
++		}
++		ret = phy_init(dcp->phy);
++		if (!ret) {
++			dptx->phy_initialized = true;
++			dptx->atcphy = dcp->phy;
++			dptx->tearing_down = false;
++		}
++		mutex_unlock(&dptx->phy_lock);
++		if (ret)
++			goto out;
+ 	}
+-
+-	if (dcp->dptxport[port].connected)
+-		goto out_unlock;
+-
+-	reinit_completion(&dcp->dptxport[port].linkcfg_completion);
+-	/*
+-	 * Experiment 2: for a tunnelled connector leave atcphy NULL so the DCP
+-	 * never reconfigures the ATC DP PHY (it has to stay in USB4 mode); the
+-	 * ACIO DP IN adapter handles the link. See DP-TUNNEL-RE.md.
+-	 */
+ 	if (!dcp->dp_tunnel)
+-		dcp->dptxport[port].atcphy = dcp->phy;
+-	dptxport_connect(dcp->dptxport[port].service, 0, dcp->dptx_phy, dcp->dptx_die);
+-	dptxport_request_display(dcp->dptxport[port].service);
+-	dcp->dptxport[port].connected = true;
+-
++		dptx->atcphy = dcp->phy;
++	if (dcp->dp_tunnel) {
++		ret = apple_dpin_register_hpd(dptx->atcphy, &dptx->hpd_nb);
++		if (ret)
++			goto fail;
++		dptx->hpd_registered = true;
++	}
++	ret = dptxport_connect(dptx->service, 0, dcp->dptx_phy, dcp->dptx_die);
++	if (ret)
++		goto fail;
++	ret = dptxport_request_display(dptx->service);
++	if (ret)
++		goto fail_release;
++	dptx->connected = true;
++	if (dcp->dp_tunnel)
++		schedule_work(&dptx->hpd_work);
+ 	mutex_unlock(&dcp->hpd_mutex);
+-	ret = wait_for_completion_timeout(&dcp->dptxport[port].linkcfg_completion,
+-				    DPTX_CONNECT_TIMEOUT);
+-	if (ret < 0)
+-		dev_warn(dcp->dev, "dcp_dptx_connect: port %d link complete failed:%d\n",
+-			 port, ret);
+-	else
+-		dev_dbg(dcp->dev, "dcp_dptx_connect: waited %d ms for link\n",
+-			jiffies_to_msecs(DPTX_CONNECT_TIMEOUT - ret));
+-
+-	usleep_range(5, 10);
+-
+-	if (dcp->connector_type == DRM_MODE_CONNECTOR_DisplayPort)
+-		dptxport_set_hpd(dcp->dptxport[port].service, true);
+ 
++	waited = wait_for_completion_timeout(&dptx->linkcfg_completion,
++					     DPTX_CONNECT_TIMEOUT);
++	ret = waited ? READ_ONCE(dptx->link_error) : -ETIMEDOUT;
++	if (ret) {
++		dcp_dptx_disconnect(dcp, port);
++		return ret;
++	}
++	if (!dcp->dp_tunnel && dcp->connector_type == DRM_MODE_CONNECTOR_DisplayPort) {
++		ret = dptxport_set_hpd(dptx->service, true);
++		if (ret) {
++			dcp_dptx_disconnect(dcp, port);
++			return ret;
++		}
++	}
+ 	if (dcp->avep)
+ 		av_service_connect(dcp);
+-
+ 	return 0;
+ 
+-out_unlock:
++fail_release:
++	dptxport_release_display(dptx->service);
++fail:
++	if (dcp->dp_tunnel) {
++		WRITE_ONCE(dptx->tearing_down, true);
++		cleanup = dptxport_tunnel_cleanup(dptx);
++		if (cleanup)
++			dev_err(dcp->dev, "DP-IN cleanup failed: %d (connect: %d)\n",
++				cleanup, ret);
++	}
++out:
+ 	mutex_unlock(&dcp->hpd_mutex);
+ 	return ret;
+ }
+@@ -424,16 +461,32 @@ static void disconnected_hpd_event(struct apple_connector *con)
+ 
+ static int dcp_dptx_disconnect(struct apple_dcp *dcp, u32 port)
+ {
+-	dev_info(dcp->dev, "%s(port=%d)\n", __func__, port);
++	struct dptx_port *dptx;
++	int ret = 0, cleanup;
+ 
++	if (port >= dcp->hw.num_dptx_ports || (dcp->dp_tunnel && port))
++		return -EINVAL;
++	dptx = &dcp->dptxport[port];
+ 	mutex_lock(&dcp->hpd_mutex);
+-	if (dcp->dptxport[port].enabled && dcp->dptxport[port].connected) {
+-		dptxport_release_display(dcp->dptxport[port].service);
+-		dcp->dptxport[port].connected = false;
++	if (dcp->dp_tunnel) {
++		mutex_lock(&dptx->phy_lock);
++		dptx->tearing_down = true;
++		if (!READ_ONCE(dptx->link_error))
++			WRITE_ONCE(dptx->link_error, -ESHUTDOWN);
++		complete_all(&dptx->linkcfg_completion);
++		mutex_unlock(&dptx->phy_lock);
++	}
++	if (dptx->enabled && dptx->connected)
++		ret = dptxport_release_display(dptx->service);
++	if (dcp->dp_tunnel) {
++		cleanup = dptxport_tunnel_cleanup(dptx);
++		if (cleanup && !ret)
++			ret = cleanup;
+ 	}
++	if (!ret)
++		dptx->connected = false;
+ 	mutex_unlock(&dcp->hpd_mutex);
+-
+-	return 0;
++	return ret;
+ }
+ 
+ int dcp_dptx_connect_oob(struct platform_device *pdev, u32 port)
+@@ -446,6 +499,8 @@ int dcp_dptx_disconnect_oob(struct platform_device *pdev, u32 port)
+ {
+ 	struct apple_dcp *dcp = platform_get_drvdata(pdev);
+ 
++	if (port >= dcp->hw.num_dptx_ports || (dcp->dp_tunnel && port))
++		return -EINVAL;
+ 	disconnected_hpd_event(dcp->connector);
+ 
+ 	if (dcp->avep)
+@@ -1103,6 +1158,13 @@ static void dcp_comp_unbind(struct device *dev, struct device *main, void *data)
+ 	if (!dcp)
+ 		return;
+ 
++	if (dcp->dp_tunnel && dcp->dptxep) {
++		int ret = dcp_dptx_disconnect(dcp, 0);
++
++		if (ret)
++			dev_err(dev, "DP-IN teardown failed: %d\n", ret);
++	}
++
+ 	if (dcp->hdmi_hpd_irq)
+ 		disable_irq(dcp->hdmi_hpd_irq);
+ 
+@@ -1315,6 +1377,10 @@ static int dcp_platform_suspend(struct device *dev)
+ {
+ 	struct apple_dcp *dcp = dev_get_drvdata(dev);
+ 
++	/* Experimental tunnel teardown across system suspend is unqualified. */
++	if (dcp->dp_tunnel && READ_ONCE(dcp->dptxport[0].phy_initialized))
++		return -EBUSY;
++
+ 	if (dcp->avep)
+ 		av_service_disconnect(dcp);
+ 
+diff --git a/drivers/gpu/drm/apple/dptxep.c b/drivers/gpu/drm/apple/dptxep.c
+index b2cd8a5..746bdb7 100644
+--- a/drivers/gpu/drm/apple/dptxep.c
++++ b/drivers/gpu/drm/apple/dptxep.c
+@@ -4,6 +4,7 @@
+ #include <linux/bitfield.h>
+ #include <linux/completion.h>
+ #include <linux/phy/phy.h>
++#include <linux/phy/phy-apple-dpin.h>
+ #include <linux/delay.h>
+ 
+ #include "afk.h"
+@@ -83,7 +84,7 @@ int dptxport_validate_connection(struct apple_epic_service *service, u8 core,
+ 	trace_dptxport_validate_connection(dptx, core, atc, die);
+ 
+ 	cmd.target = cpu_to_le32(target);
+-	cmd.unk = cpu_to_le32(0x100);
++	cmd.unk = cpu_to_le32(service->ep->dcp->dp_tunnel ? 0x101 : 0x100);
+ 	ret = afk_service_call(service, 0, 12, &cmd, sizeof(cmd), 40, &resp,
+ 			       sizeof(resp), 40);
+ 	if (ret)
+@@ -91,7 +92,7 @@ int dptxport_validate_connection(struct apple_epic_service *service, u8 core,
+ 
+ 	if (le32_to_cpu(resp.target) != target)
+ 		return -EINVAL;
+-	if (le32_to_cpu(resp.unk) != 0x100)
++	if (le32_to_cpu(resp.unk) != le32_to_cpu(cmd.unk))
+ 		return -EINVAL;
+ 
+ 	return 0;
+@@ -102,7 +103,7 @@ int dptxport_connect(struct apple_epic_service *service, u8 core, u8 atc,
+ {
+ 	struct dptx_port *dptx = service->cookie;
+ 	struct dcpdptx_connection_cmd cmd, resp;
+-	u32 unk_field = 0x0; // seen as 0x100 under some conditions
++	u32 unk_field = service->ep->dcp->dp_tunnel ? 0x101 : 0;
+ 	int ret;
+ 	u32 target = FIELD_PREP(DCPDPTX_REMOTE_PORT_CORE, core) |
+ 		     FIELD_PREP(DCPDPTX_REMOTE_PORT_ATC, atc) |
+@@ -120,9 +121,12 @@ int dptxport_connect(struct apple_epic_service *service, u8 core, u8 atc,
+ 
+ 	if (le32_to_cpu(resp.target) != target)
+ 		return -EINVAL;
+-	if (le32_to_cpu(resp.unk) != unk_field)
++	if (le32_to_cpu(resp.unk) != unk_field) {
+ 		dev_notice(service->ep->dcp->dev, "unexpected unk field in reply: 0x%x (0x%x)\n",
+ 			  le32_to_cpu(resp.unk), unk_field);
++		if (service->ep->dcp->dp_tunnel)
++			return -EPROTO;
++	}
+ 
+ 	return 0;
+ }
+@@ -231,6 +235,174 @@ dptxport_call_set_drive_settings(struct apple_epic_service *service,
+ 	return 0;
+ }
+ 
++/* IRQ callbacks only queue work: never send EPIC requests from the IRQ path. */
++static void dptxport_hpd_work(struct work_struct *work)
++{
++	struct dptx_port *dptx = container_of(work, struct dptx_port, hpd_work);
++	struct phy *phy;
++	int hpd, ret;
++
++	mutex_lock(&dptx->phy_lock);
++	phy = dptx->phy_initialized && !dptx->tearing_down ? dptx->atcphy : NULL;
++	mutex_unlock(&dptx->phy_lock);
++	if (!phy)
++		return;
++	hpd = apple_dpin_get_hpd(phy);
++	if (READ_ONCE(dptx->tearing_down))
++		return;
++	if (hpd < 0) {
++		WRITE_ONCE(dptx->link_error, hpd);
++		complete_all(&dptx->linkcfg_completion);
++		hpd = 0;
++	}
++	ret = dptxport_set_hpd(dptx->service, hpd);
++	if (ret) {
++		WRITE_ONCE(dptx->link_error, ret);
++		complete_all(&dptx->linkcfg_completion);
++	}
++}
++
++static int dptxport_hpd_notify(struct notifier_block *nb,
++			     unsigned long event, void *data)
++{
++	struct dptx_port *dptx = container_of(nb, struct dptx_port, hpd_nb);
++
++	if (!READ_ONCE(dptx->tearing_down)) {
++		if (event == APPLE_DPIN_HPD_ERROR) {
++			WRITE_ONCE(dptx->link_error, -EIO);
++			complete_all(&dptx->linkcfg_completion);
++		}
++		schedule_work(&dptx->hpd_work);
++	}
++	return NOTIFY_OK;
++}
++
++/* Callbacks and disconnect use this lock; never hold it over an AFK call. */
++static int dptxport_tunnel_reply(struct dptx_port *dptx, void *reply,
++				  size_t reply_size, int ret)
++{
++	if (ret) {
++		WRITE_ONCE(dptx->link_error, ret);
++		complete_all(&dptx->linkcfg_completion);
++	}
++	if (reply_size < sizeof(__le32))
++		return -EINVAL;
++	if (!ret && READ_ONCE(dptx->phy_powered) && READ_ONCE(dptx->link_rate) &&
++	    READ_ONCE(dptx->lane_count) && !READ_ONCE(dptx->link_error))
++		complete_all(&dptx->linkcfg_completion);
++	*(__le32 *)reply = cpu_to_le32(ret ? 1 : 0);
++	return 0;
++}
++
++int dptxport_tunnel_cleanup(struct dptx_port *dptx)
++{
++	int ret = 0;
++
++	mutex_lock(&dptx->phy_lock);
++	dptx->tearing_down = true;
++	if (dptx->hpd_registered) {
++		ret = apple_dpin_unregister_hpd(dptx->atcphy, &dptx->hpd_nb);
++		if (ret)
++			goto out;
++		dptx->hpd_registered = false;
++	}
++	mutex_unlock(&dptx->phy_lock);
++	cancel_work_sync(&dptx->hpd_work);
++	mutex_lock(&dptx->phy_lock);
++	if (dptx->phy_powered) {
++		ret = phy_power_off(dptx->atcphy);
++		if (ret)
++			goto out;
++		dptx->phy_powered = false;
++	}
++	if (dptx->phy_initialized) {
++		ret = phy_exit(dptx->atcphy);
++		if (ret)
++			goto out;
++		dptx->phy_initialized = false;
++	}
++	dptx->atcphy = NULL;
++	dptx->link_rate = dptx->pending_link_rate = 0;
++	dptx->lane_count = 0;
++out:
++	mutex_unlock(&dptx->phy_lock);
++	return ret;
++}
++
++static int dptxport_tunnel_rate(struct dptx_port *dptx, unsigned int rate,
++				 unsigned int phy_rate, void *reply, size_t size)
++{
++	union phy_configure_opts opts = { .dp = {
++		.link_rate = phy_rate, .set_rate = 1,
++	} };
++	int ret;
++
++	memset(reply, 0, size);
++	mutex_lock(&dptx->phy_lock);
++	if (!dptx->phy_initialized || dptx->tearing_down)
++		ret = -ESHUTDOWN;
++	else
++		ret = phy_configure(dptx->atcphy, &opts);
++	if (!ret)
++		dptx->link_rate = dptx->pending_link_rate = rate;
++	ret = dptxport_tunnel_reply(dptx, reply, size, ret);
++	mutex_unlock(&dptx->phy_lock);
++	return ret;
++}
++
++static int dptxport_tunnel_lanes(struct dptx_port *dptx, u64 lanes,
++				   void *reply, size_t size)
++{
++	union phy_configure_opts opts = { .dp = { .set_lanes = 1 } };
++	int ret;
++
++	memset(reply, 0, size);
++	mutex_lock(&dptx->phy_lock);
++	if (!dptx->phy_initialized || dptx->tearing_down)
++		ret = -ESHUTDOWN;
++	else if (lanes != 0 && lanes != 1 && lanes != 2 && lanes != 4)
++		ret = -EINVAL;
++	else {
++		opts.dp.lanes = lanes;
++		ret = phy_configure(dptx->atcphy, &opts);
++	}
++	if (!ret)
++		dptx->lane_count = lanes;
++	ret = dptxport_tunnel_reply(dptx, reply, size, ret);
++	mutex_unlock(&dptx->phy_lock);
++	return ret;
++}
++
++static int dptxport_tunnel_power(struct dptx_port *dptx, bool on,
++				   const void *data, size_t data_size,
++				   void *reply, size_t size)
++{
++	int ret = 0;
++
++	if (size < sizeof(__le32))
++		return -EINVAL;
++	memset(reply, 0, size);
++	memcpy(reply, data, min(size, data_size));
++	mutex_lock(&dptx->phy_lock);
++	if (!dptx->phy_initialized || (on && dptx->tearing_down))
++		ret = -ESHUTDOWN;
++	else if (on && !dptx->phy_powered) {
++		ret = phy_power_on(dptx->atcphy);
++		if (!ret)
++			dptx->phy_powered = true;
++	} else if (!on && dptx->phy_powered) {
++		ret = phy_power_off(dptx->atcphy);
++		if (!ret) {
++			dptx->phy_powered = false;
++			dptx->link_rate = dptx->pending_link_rate = 0;
++			dptx->lane_count = 0;
++		}
++	}
++	ret = dptxport_tunnel_reply(dptx, reply, size, ret);
++	mutex_unlock(&dptx->phy_lock);
++	return ret;
++}
++
+ static int dptxport_call_get_max_link_rate(struct apple_epic_service *service,
+ 					   void *reply_, size_t reply_size)
+ {
+@@ -257,15 +429,9 @@ static int dptxport_call_get_max_lane_count(struct apple_epic_service *service,
+ 	if (reply_size < sizeof(*reply))
+ 		return -EINVAL;
+ 
+-	/*
+-	 * Experiment 2: a tunnelled connector has no ATC PHY attached (the ACIO
+-	 * DP IN adapter owns the link), so default to 4 lanes instead of failing
+-	 * the apcall. See DP-TUNNEL-RE.md.
+-	 */
+ 	if (!dptx->atcphy) {
+-		dptx->lane_count = 4;
+-		reply->retcode = cpu_to_le32(0);
+-		reply->lane_count = cpu_to_le64(dptx->lane_count);
++		reply->retcode = cpu_to_le32(1);
++		reply->lane_count = 0;
+ 		return 0;
+ 	}
+ 
+@@ -310,6 +476,12 @@ static int dptxport_call_set_active_lane_count(struct apple_epic_service *servic
+ 
+ 	u64 lane_count = le64_to_cpu(request->lane_count);
+ 
++	if (dcp->dp_tunnel) {
++		ret = dptxport_tunnel_lanes(dptx, lane_count, reply, reply_size);
++		reply->lane_count = cpu_to_le64(dptx->lane_count);
++		return ret;
++	}
++
+ 	if (dptx->lane_count < lane_count)
+ 		dev_err(dcp->dev, "set_active_lane_count: unexpected lane "
+ 			"count:%llu phy: %d\n", lane_count, dptx->lane_count);
+@@ -433,6 +605,14 @@ static int dptxport_call_set_link_rate(struct apple_epic_service *service,
+ 		break;
+ 	}
+ 
++	if (service->ep->dcp->dp_tunnel) {
++		if (!phy_set_rate)
++			return dptxport_tunnel_reply(dptx, reply, reply_size, -EINVAL);
++		ret = dptxport_tunnel_rate(dptx, link_rate, phy_link_rate, reply, reply_size);
++		reply->link_rate = cpu_to_le32(dptx->link_rate);
++		return ret;
++	}
++
+ 	if (phy_set_rate) {
+ 		dptx->phy_ops.dp.link_rate = phy_link_rate;
+ 		dptx->phy_ops.dp.set_rate = 1;
+@@ -464,7 +644,7 @@ static int dptxport_call_get_supports_hpd(struct apple_epic_service *service,
+ 		return -EINVAL;
+ 
+ 	reply->retcode = cpu_to_le32(0);
+-	reply->supported = cpu_to_le32(0);
++	reply->supported = cpu_to_le32(service->ep->dcp->dp_tunnel);
+ 	return 0;
+ }
+ 
+@@ -490,6 +670,10 @@ dptxport_call_activate(struct apple_epic_service *service,
+ 	struct dptx_port *dptx = service->cookie;
+ 	const struct apple_dcp *dcp = service->ep->dcp;
+ 
++	if (dcp->dp_tunnel)
++		return dptxport_tunnel_power(dptx, true, data, data_size,
++					    reply, reply_size);
++
+ 	// TODO: hack, use phy_set_mode to select the correct DCP(EXT) input
+ 	// for standalone phy (i.e. not atc phy).
+ 	if (!dcp->typec_mux)
+@@ -509,6 +693,10 @@ dptxport_call_deactivate(struct apple_epic_service *service,
+ {
+ 	struct dptx_port *dptx = service->cookie;
+ 
++	if (service->ep->dcp->dp_tunnel)
++		return dptxport_tunnel_power(dptx, false, data, data_size,
++					    reply, reply_size);
++
+ 	/* deactivate phy */
+ 	phy_set_mode_ext(dptx->atcphy, PHY_MODE_INVALID, 0);
+ 
+@@ -526,6 +714,19 @@ static int dptxport_call(struct apple_epic_service *service, u32 idx,
+ 	struct dptx_port *dptx = service->cookie;
+ 	trace_dptxport_apcall(dptx, idx, data_size);
+ 
++	if (service->ep->dcp->dp_tunnel &&
++	    (idx == DPTX_APCALL_DEVICE_NOT_RESPONDING ||
++	     idx == DPTX_APCALL_DEVICE_NOT_STARTED ||
++	     idx == DPTX_APCALL_INACTIVE_SINK_DETECTED))
++		return dptxport_tunnel_reply(dptx, reply, reply_size, -ENOLINK);
++
++	if (service->ep->dcp->dp_tunnel && idx == DPTX_APCALL_FORCE_HOTPLUG_DETECT) {
++		if (!READ_ONCE(dptx->phy_initialized) || READ_ONCE(dptx->tearing_down))
++			return dptxport_tunnel_reply(dptx, reply, reply_size, -ESHUTDOWN);
++		schedule_work(&dptx->hpd_work);
++		return dptxport_tunnel_reply(dptx, reply, reply_size, 0);
++	}
++
+ 	switch (idx) {
+ 	case DPTX_APCALL_WILL_CHANGE_LINKG_CONFIG:
+ 		return dptxport_call_will_change_link_config(service);
+@@ -625,6 +826,12 @@ int dptxep_init(struct apple_dcp *dcp)
+ 	u32 port;
+ 	unsigned long timeout = msecs_to_jiffies(1000);
+ 
++	for (port = 0; port < ARRAY_SIZE(dcp->dptxport); port++) {
++		mutex_init(&dcp->dptxport[port].phy_lock);
++		INIT_WORK(&dcp->dptxport[port].hpd_work, dptxport_hpd_work);
++		dcp->dptxport[port].hpd_nb.notifier_call = dptxport_hpd_notify;
++	}
++
+ 	init_completion(&dcp->dptxport[0].enable_completion);
+ 	init_completion(&dcp->dptxport[1].enable_completion);
+ 	init_completion(&dcp->dptxport[0].linkcfg_completion);
+diff --git a/drivers/gpu/drm/apple/dptxep.h b/drivers/gpu/drm/apple/dptxep.h
+index 0bf2534..b165b12 100644
+--- a/drivers/gpu/drm/apple/dptxep.h
++++ b/drivers/gpu/drm/apple/dptxep.h
+@@ -2,6 +2,9 @@
+ #define __APPLE_DCP_DPTXEP_H__
+ 
+ #include <linux/phy/phy.h>
++#include <linux/mutex.h>
++#include <linux/notifier.h>
++#include <linux/workqueue.h>
+ #include <linux/mux/consumer.h>
+ 
+ enum dptx_apcall {
+@@ -48,6 +51,12 @@ struct apple_epic_service;
+ 
+ struct dptx_port {
+ 	bool enabled, connected;
++	bool phy_initialized, phy_powered, tearing_down;
++	struct mutex phy_lock;
++	int link_error;
++	bool hpd_registered;
++	struct notifier_block hpd_nb;
++	struct work_struct hpd_work;
+ 	struct completion enable_completion;
+ 	struct completion linkcfg_completion;
+ 	u32 unit;
+@@ -60,6 +69,8 @@ struct dptx_port {
+ 	u32 drive_settings[2];
+ };
+ 
++int dptxport_tunnel_cleanup(struct dptx_port *dptx);
++
+ int dptxport_validate_connection(struct apple_epic_service *service, u8 core,
+ 				 u8 atc, u8 die);
+ int dptxport_connect(struct apple_epic_service *service, u8 core, u8 atc,
+diff --git a/drivers/phy/apple/Kconfig b/drivers/phy/apple/Kconfig
+index 8409b67..12306de 100644
+--- a/drivers/phy/apple/Kconfig
++++ b/drivers/phy/apple/Kconfig
+@@ -21,3 +21,15 @@ config PHY_APPLE_DPTX
+ 	  such as the M2.
+ 	  This driver provides support for DisplayPort and is used on the
+ 	  Mac mini (M2 and M2 Pro, 2023).
++
++config PHY_APPLE_DPIN
++	tristate "Apple T6000 USB4 DisplayPort input PHY (experimental)"
++	depends on PHY_APPLE_ATC
++	depends on ARCH_APPLE || COMPILE_TEST
++	select GENERIC_PHY
++	help
++	  Enable the experimental DP-IN bridge on Apple T6000 systems. This
++	  provides the inactive/acknowledgment handshake, HPD interrupts and
++	  internal tunnel pixel clocks while Type-C lanes remain in USB4 mode.
++	  Hardware qualification is pending; a board must explicitly enable
++	  a separate DP-IN node. This module is called phy-apple-dpin.
+diff --git a/drivers/phy/apple/Makefile b/drivers/phy/apple/Makefile
+index b9e7bf3..ab9da1f 100644
+--- a/drivers/phy/apple/Makefile
++++ b/drivers/phy/apple/Makefile
+@@ -5,3 +5,6 @@ phy-apple-atc-y			:= atc.o
+ 
+ obj-$(CONFIG_PHY_APPLE_DPTX)	+= phy-apple-dptx.o
+ phy-apple-dptx-y		+= dptx.o
++
++obj-$(CONFIG_PHY_APPLE_DPIN)	+= phy-apple-dpin.o
++phy-apple-dpin-y			:= dpin.o
+diff --git a/drivers/phy/apple/atc-dp-tunnel.h b/drivers/phy/apple/atc-dp-tunnel.h
+new file mode 100644
+index 0000000..efd5813
+--- /dev/null
++++ b/drivers/phy/apple/atc-dp-tunnel.h
+@@ -0,0 +1,24 @@
++/* SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause */
++#ifndef APPLE_ATC_DP_TUNNEL_H
++#define APPLE_ATC_DP_TUNNEL_H
++
++/* Shared by the driver and offline tests. Values are PHY Mb/s, not DPCD codes. */
++static inline int apple_atc_tunnel_pclk_select(unsigned int rate)
++{
++	switch (rate) {
++	case 1620: return 4;
++	case 2700: return 3;
++	case 5400: return 1;
++	case 8100: return 0;
++	default: return -EINVAL;
++	}
++}
++
++/* Fixed tunnel AUSPLL descriptor, derived from T6000/13.5, not per-rate DP. */
++#define APPLE_ATC_TUNNEL_DESC_A ((540U) | (8U << 14) | (3U << 18) | \
++				(8U << 22) | (7U << 26))
++#define APPLE_ATC_TUNNEL_DESC_B 0U
++#define APPLE_ATC_TUNNEL_DESC_C ((5U << 9) | (1U << 14) | (5U << 16) | \
++				(2U << 20) | (1U << 22))
++
++#endif
+diff --git a/drivers/phy/apple/atc.c b/drivers/phy/apple/atc.c
+index e56d0b4..959d6a7 100644
+--- a/drivers/phy/apple/atc.c
++++ b/drivers/phy/apple/atc.c
+@@ -33,6 +33,7 @@
+ #include <linux/of.h>
+ #include <linux/of_device.h>
+ #include <linux/phy/phy.h>
++#include <linux/phy/phy-apple-atc.h>
+ #include <linux/platform_device.h>
+ #include <linux/reset-controller.h>
+ #include <linux/soc/apple/tunable.h>
+@@ -44,6 +45,8 @@
+ #include <linux/usb/typec_mux.h>
+ #include <linux/usb/typec_tbt.h>
+ 
++#include "atc-dp-tunnel.h"
++
+ #define AUSPLL_FSM_CTRL 0x1014
+ 
+ #define AUSPLL_APB_CMD_OVERRIDE 0x2000
+@@ -611,6 +614,10 @@ struct atcphy_hw {
+  * @tunables.lane_usb3: USB3 lane-specific tunables
+  * @tunables.lane_dp: DisplayPort lane-specific tunables
+  * @tunables.lane_usb4: USB4 lane-specific tunables
++ * @hw: SoC-specific PHY register layout
++ * @tunnel_users: Reservation count for each DP-IN clock
++ * @tunnel_rate: Configured tunnel link rate in Mb/s for each DP-IN
++ * @tunnel_fault: True if a tunnel PLL shutdown was not acknowledged
+  * @mode: Current PHY operating mode
+  * @swap_lanes: True if lanes must be swapped due to cable orientation
+  * @dp_link_rate: DisplayPort link rate
+@@ -651,6 +658,9 @@ struct apple_atcphy {
+ 	int dp_link_rate;
+ 	bool swap_lanes;
+ 	bool pipehandler_up;
++	unsigned int tunnel_users[2];
++	unsigned int tunnel_rate[2];
++	bool tunnel_fault;
+ 
+ 	struct {
+ 		void __iomem *core;
+@@ -1652,7 +1662,8 @@ static int atcphy_dp_configure_lane(struct apple_atcphy *atcphy, enum atcphy_lan
+ 	return 0;
+ }
+ 
+-static int atcphy_auspll_apb_command(struct apple_atcphy *atcphy, u32 command)
++static int atcphy_auspll_apb_command(struct apple_atcphy *atcphy, u32 command,
++				     unsigned int timeout_us)
+ {
+ 	int ret;
+ 	u32 reg;
+@@ -1665,14 +1676,240 @@ static int atcphy_auspll_apb_command(struct apple_atcphy *atcphy, u32 command)
+ 	writel(reg, atcphy->regs.core + AUSPLL_APB_CMD_OVERRIDE);
+ 
+ 	ret = readl_poll_timeout(atcphy->regs.core + AUSPLL_APB_CMD_OVERRIDE, reg,
+-				 (reg & AUSPLL_APB_CMD_OVERRIDE_ACK), 10, 10000);
++				 (reg & AUSPLL_APB_CMD_OVERRIDE_ACK), 10, timeout_us);
+ 	if (ret)
+ 		dev_warn(atcphy->dev, "AUSPLL APB command was not acked\n");
+ 
+ 	core_clear32(atcphy, AUSPLL_APB_CMD_OVERRIDE, AUSPLL_APB_CMD_OVERRIDE_REQ);
+ 
++	return ret;
++}
++
++/* Tunnel clocks share AUSPLL, but never use the physical DP lane/AUX path. */
++static bool atcphy_in_cio_mode(struct apple_atcphy *atcphy)
++{
++	return atcphy->mode == APPLE_ATCPHY_MODE_USB4 ||
++	       atcphy->mode == APPLE_ATCPHY_MODE_TBT;
++}
++
++static struct apple_atcphy *atcphy_tunnel_owner(struct phy *phy)
++{
++	struct apple_atcphy *atcphy;
++
++	if (!phy || !phy->dev.parent ||
++	    !of_device_is_compatible(phy->dev.parent->of_node, "apple,t6000-atcphy"))
++		return ERR_PTR(-ENODEV);
++	atcphy = phy_get_drvdata(phy);
++	if (!atcphy || atcphy->phys.dp != phy)
++		return ERR_PTR(-EINVAL);
++	return atcphy;
++}
++
++static void atcphy_tunnel_wake(struct apple_atcphy *atcphy)
++{
++	/* Common/TX wake and unclamp, without lane mux or CIO PLL changes. */
++	core_set32(atcphy, ACIOPHY_CFG0, BIT(2));
++	core_set32(atcphy, ACIOPHY_CFG0, BIT(3));
++	core_set32(atcphy, ACIOPHY_CFG0, BIT(0));
++	core_set32(atcphy, ACIOPHY_CFG0, BIT(1));
++	core_clear32(atcphy, ACIOPHY_CFG0, BIT(4));
++	core_set32(atcphy, ACIOPHY_CFG0, BIT(5));
++	core_set32(atcphy, ACIOPHY_SLEEP_CTRL, GENMASK(5, 4));
++	core_set32(atcphy, ACIOPHY_SLEEP_CTRL, GENMASK(7, 6));
++	core_set32(atcphy, ACIOPHY_SLEEP_CTRL, GENMASK(1, 0));
++	core_set32(atcphy, ACIOPHY_SLEEP_CTRL, GENMASK(3, 2));
++	core_clear32(atcphy, ACIOPHY_SLEEP_CTRL, GENMASK(9, 8));
++	core_set32(atcphy, ACIOPHY_SLEEP_CTRL, GENMASK(11, 10));
++	core_set32(atcphy, ACIOPHY_CFG0, GENMASK(11, 10));
++	core_set32(atcphy, ACIOPHY_CFG0, GENMASK(13, 12));
++	core_set32(atcphy, ACIOPHY_CFG0, GENMASK(7, 6));
++	core_set32(atcphy, ACIOPHY_CFG0, GENMASK(9, 8));
++	core_clear32(atcphy, ACIOPHY_CFG0, GENMASK(15, 14));
++	core_set32(atcphy, ACIOPHY_CFG0, GENMASK(17, 16));
++	core_set32(atcphy, ACIOPHY_LANE_DP_CFG_BLK_TX_DP_CTRL0,
++		   DPTXPHY_PMA_LANE_RESET_N | DPTXPHY_PMA_LANE_RESET_N_OV);
++}
++
++static int atcphy_tunnel_pll_start(struct apple_atcphy *atcphy)
++{
++	u32 reg;
++	int ret;
++
++	core_clear32(atcphy, AUSPLL_FREQ_CFG, AUSPLL_FREQ_REFCLK);
++	writel(APPLE_ATC_TUNNEL_DESC_A, atcphy->regs.core + AUSPLL_FREQ_DESC_A);
++	core_mask32(atcphy, AUSPLL_FREQ_DESC_B,
++		    AUSPLL_FD_FBDIVN_FRAC_DEN | AUSPLL_FD_FBDIVN_FRAC_NUM,
++		    APPLE_ATC_TUNNEL_DESC_B);
++	core_mask32(atcphy, AUSPLL_FREQ_DESC_C, GENMASK(22, 0),
++		    APPLE_ATC_TUNNEL_DESC_C);
++	core_mask32(atcphy, AUSPLL_CLKOUT_DIV, AUSPLL_CLKOUT_PLLA_REFBUFCLK_DI,
++		    FIELD_PREP(AUSPLL_CLKOUT_PLLA_REFBUFCLK_DI, 1));
++	core_set32(atcphy, AUSPLL_CLKOUT_DTC_VREG, AUSPLL_DTC_VREG_BYPASS);
++	core_set32(atcphy, AUSPLL_BGR, AUSPLL_BGR_CTRL_AVAIL);
++	core_set32(atcphy, AUSPLL_CLKOUT_MASTER,
++		   AUSPLL_CLKOUT_MASTER_PCLK_DRVR_EN |
++		   AUSPLL_CLKOUT_MASTER_PCLK2_DRVR_EN |
++		   AUSPLL_CLKOUT_MASTER_REFBUFCLK_DRVR_EN);
++
++	ret = atcphy_auspll_apb_command(atcphy, 0, 500000);
++	if (ret)
++		return ret;
++	ret = readl_poll_timeout(atcphy->regs.core + ACIOPHY_DP_PCLK_STAT,
++				reg, reg & ACIOPHY_AUSPLL_LOCK, 1000, 500000);
++	if (ret)
++		return ret;
++	return atcphy_auspll_apb_command(atcphy, 0x2000, 500000);
++}
++
++static int atcphy_tunnel_pll_stop(struct apple_atcphy *atcphy)
++{
++	core_clear32(atcphy, AUSPLL_CLKOUT_MASTER,
++		     AUSPLL_CLKOUT_MASTER_PCLK_DRVR_EN |
++		     AUSPLL_CLKOUT_MASTER_PCLK2_DRVR_EN |
++		     AUSPLL_CLKOUT_MASTER_REFBUFCLK_DRVR_EN);
++	return atcphy_auspll_apb_command(atcphy, 3, 500000);
++}
++
++/* Caller holds atcphy->lock. Software ownership changes only on success. */
++static int atcphy_tunnel_set_rate(struct apple_atcphy *atcphy,
++				unsigned int index, unsigned int rate)
++{
++	static const unsigned int snapshot_regs[] = {
++		ACIOPHY_CFG0, ACIOPHY_SLEEP_CTRL,
++		ACIOPHY_LANE_DP_CFG_BLK_TX_DP_CTRL0, AUSPLL_FREQ_CFG,
++		AUSPLL_FREQ_DESC_A, AUSPLL_FREQ_DESC_B, AUSPLL_FREQ_DESC_C,
++		AUSPLL_CLKOUT_DIV, AUSPLL_CLKOUT_DTC_VREG,
++		AUSPLL_BGR, AUSPLL_CLKOUT_MASTER,
++	};
++	u32 saved[ARRAY_SIZE(snapshot_regs)], reg;
++	u32 mask = index ? DPTX_PCLK2_SELECT : DPTX_PCLK1_SELECT;
++	u32 enable = index ? DPTX_PCLK2_ENABLE : DPTX_PCLK1_ENABLE;
++	int select, ret, stop_ret;
++	bool first;
++	unsigned int i;
++
++	lockdep_assert_held(&atcphy->lock);
++	if (rate && atcphy->tunnel_fault)
++		return -EIO;
++	if (atcphy->tunnel_rate[index] == rate) {
++		if (rate && !atcphy_in_cio_mode(atcphy))
++			return -ENOLINK;
++		if (!rate && atcphy->tunnel_fault) {
++			if (!atcphy_in_cio_mode(atcphy))
++				return -ENOLINK;
++			ret = atcphy_tunnel_pll_stop(atcphy);
++			if (!ret)
++				atcphy->tunnel_fault = false;
++			return ret;
++		}
++		return 0;
++	}
++	if (!atcphy_in_cio_mode(atcphy))
++		return -ENOLINK;
++	select = rate ? apple_atc_tunnel_pclk_select(rate) : 0;
++	if (select < 0)
++		return select;
++	first = !atcphy->tunnel_rate[0] && !atcphy->tunnel_rate[1];
++	if (rate && first) {
++		ret = readl_poll_timeout(atcphy->regs.core + ACIOPHY_CMN_SHM_STS_REG0,
++					reg, reg & ACIOPHY_CMN_SHM_STS_REG0_CMD_READY,
++					10, 10000);
++		if (ret)
++			return ret;
++	}
++	for (i = 0; i < ARRAY_SIZE(snapshot_regs); i++)
++		saved[i] = readl(atcphy->regs.core + snapshot_regs[i]);
++
++	if (rate) {
++		if (first)
++			atcphy_tunnel_wake(atcphy);
++		/* Enable only this DP-IN clock; never touch DPRX or physical lanes. */
++		core_set32(atcphy, ACIOPHY_LANE_DP_CFG_BLK_TX_DP_CTRL0, enable);
++		core_mask32(atcphy, ACIOPHY_LANE_DP_CFG_BLK_TX_DP_CTRL0, mask,
++			    (u32)select << (index ? 7 : 4));
++		if (first) {
++			ret = atcphy_tunnel_pll_start(atcphy);
++			if (ret) {
++				stop_ret = atcphy_tunnel_pll_stop(atcphy);
++				for (i = 0; i < ARRAY_SIZE(snapshot_regs); i++)
++					writel(saved[i], atcphy->regs.core + snapshot_regs[i]);
++				/* An unacknowledged shutdown has unknown PLL state. */
++				atcphy->tunnel_fault = !!stop_ret;
++				return ret;
++			}
++		}
++	} else {
++		core_clear32(atcphy, ACIOPHY_LANE_DP_CFG_BLK_TX_DP_CTRL0, enable);
++		if (!atcphy->tunnel_rate[index ^ 1]) {
++			ret = atcphy_tunnel_pll_stop(atcphy);
++			if (ret) {
++				atcphy->tunnel_fault = true;
++				return ret;
++			}
++			atcphy->tunnel_fault = false;
++		}
++	}
++	atcphy->tunnel_rate[index] = rate;
++	return 0;
++}
++
++int apple_atcphy_dp_tunnel_get(struct phy *phy, unsigned int index)
++{
++	struct apple_atcphy *atcphy = atcphy_tunnel_owner(phy);
++
++	if (IS_ERR(atcphy))
++		return PTR_ERR(atcphy);
++	if (index > 1)
++		return -EINVAL;
++	guard(mutex)(&atcphy->lock);
++	if (!atcphy_in_cio_mode(atcphy))
++		return -ENOLINK;
++	if (atcphy->tunnel_fault)
++		return -EIO;
++	if (atcphy->tunnel_users[index] == UINT_MAX)
++		return -EOVERFLOW;
++	atcphy->tunnel_users[index]++;
++	return 0;
++}
++EXPORT_SYMBOL_GPL(apple_atcphy_dp_tunnel_get);
++
++int apple_atcphy_dp_tunnel_configure(struct phy *phy, unsigned int index,
++				    unsigned int rate)
++{
++	struct apple_atcphy *atcphy = atcphy_tunnel_owner(phy);
++
++	if (IS_ERR(atcphy))
++		return PTR_ERR(atcphy);
++	if (index > 1)
++		return -EINVAL;
++	guard(mutex)(&atcphy->lock);
++	if (!atcphy->tunnel_users[index])
++		return -EINVAL;
++	return atcphy_tunnel_set_rate(atcphy, index, rate);
++}
++EXPORT_SYMBOL_GPL(apple_atcphy_dp_tunnel_configure);
++
++int apple_atcphy_dp_tunnel_put(struct phy *phy, unsigned int index)
++{
++	struct apple_atcphy *atcphy = atcphy_tunnel_owner(phy);
++	int ret;
++
++	if (IS_ERR(atcphy))
++		return PTR_ERR(atcphy);
++	if (index > 1)
++		return -EINVAL;
++	guard(mutex)(&atcphy->lock);
++	if (!atcphy->tunnel_users[index])
++		return -EINVAL;
++	if (atcphy->tunnel_users[index] == 1) {
++		ret = atcphy_tunnel_set_rate(atcphy, index, 0);
++		if (ret)
++			return ret;
++	}
++	atcphy->tunnel_users[index]--;
+ 	return 0;
+ }
++EXPORT_SYMBOL_GPL(apple_atcphy_dp_tunnel_put);
+ 
+ static int atcphy_dp_configure(struct apple_atcphy *atcphy, enum atcphy_dp_link_rate lr)
+ {
+@@ -1738,7 +1975,7 @@ static int atcphy_dp_configure(struct apple_atcphy *atcphy, enum atcphy_dp_link_
+ 	core_set32(atcphy, AUSPLL_CLKOUT_MASTER, AUSPLL_CLKOUT_MASTER_PCLK2_DRVR_EN);
+ 	core_set32(atcphy, AUSPLL_CLKOUT_MASTER, AUSPLL_CLKOUT_MASTER_REFBUFCLK_DRVR_EN);
+ 
+-	ret = atcphy_auspll_apb_command(atcphy, 0);
++	ret = atcphy_auspll_apb_command(atcphy, 0, 10000);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -1749,7 +1986,7 @@ static int atcphy_dp_configure(struct apple_atcphy *atcphy, enum atcphy_dp_link_
+ 		return ret;
+ 	}
+ 
+-	ret = atcphy_auspll_apb_command(atcphy, 0x2800);
++	ret = atcphy_auspll_apb_command(atcphy, 0x2800, 10000);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -1895,8 +2132,22 @@ static int atcphy_configure(struct apple_atcphy *atcphy, enum atcphy_mode mode)
+ 
+ 	lockdep_assert_held(&atcphy->lock);
+ 
++	if (atcphy->tunnel_fault && mode != APPLE_ATCPHY_MODE_OFF)
++		return -EIO;
++	if (atcphy->tunnel_rate[0] || atcphy->tunnel_rate[1]) {
++		if (mode != APPLE_ATCPHY_MODE_OFF)
++			return -EBUSY;
++		for (unsigned int i = 0; i < 2; i++) {
++			ret = atcphy_tunnel_set_rate(atcphy, i, 0);
++			if (ret)
++				return ret;
++		}
++	}
++
+ 	if (mode == APPLE_ATCPHY_MODE_OFF) {
+ 		ret = atcphy_power_off(atcphy);
++		if (!ret)
++			atcphy->tunnel_fault = false;
+ 		atcphy->mode = mode;
+ 		return ret;
+ 	}
+diff --git a/drivers/phy/apple/dpin-handshake.h b/drivers/phy/apple/dpin-handshake.h
+new file mode 100644
+index 0000000..175faad
+--- /dev/null
++++ b/drivers/phy/apple/dpin-handshake.h
+@@ -0,0 +1,69 @@
++/* SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause */
++#ifndef APPLE_DPIN_HANDSHAKE_H
++#define APPLE_DPIN_HANDSHAKE_H
++
++#include <linux/errno.h>
++
++#define APPLE_DPIN_HPD 0x00
++#define APPLE_DPIN_IRQ_STATUS 0x04
++#define APPLE_DPIN_IRQ_ENABLE 0x08
++#define APPLE_DPIN_INACTIVE 0x0c
++#define APPLE_DPIN_INACTIVE_ACK 0x10
++#define APPLE_DPIN_HPD_LEVEL (1U << 2)
++
++/* Injectable I/O keeps the production polling/ack algorithm testable offline. */
++struct apple_dpin_io {
++	unsigned int (*read)(void *ctx, unsigned int offset);
++	void (*write)(void *ctx, unsigned int offset, unsigned int value);
++	unsigned long long (*time_us)(void *ctx);
++	void (*sleep)(void *ctx, unsigned int min_us, unsigned int max_us);
++	void *ctx;
++};
++
++static inline int apple_dpin_set_inactive(const struct apple_dpin_io *io,
++					unsigned int inactive)
++{
++	unsigned long long deadline = io->time_us(io->ctx) + 1000000;
++	unsigned int value, waits = 0;
++
++	if (inactive > 1)
++		return -EINVAL;
++	value = io->read(io->ctx, APPLE_DPIN_INACTIVE);
++	io->write(io->ctx, APPLE_DPIN_INACTIVE, (value & ~1U) | inactive);
++	for (;;) {
++		if ((io->read(io->ctx, APPLE_DPIN_INACTIVE_ACK) & 1U) == inactive)
++			return 0;
++		if (!inactive && !(io->read(io->ctx, APPLE_DPIN_HPD) &
++				   APPLE_DPIN_HPD_LEVEL))
++			return -ENOLINK;
++		if (io->time_us(io->ctx) >= deadline)
++			return -ETIMEDOUT;
++		if (waits++ < 5)
++			io->sleep(io->ctx, 1000, 1500);
++		else
++			io->sleep(io->ctx, 5000, 5500);
++	}
++}
++
++/* Acknowledge the same captured values as Apple's handler, after stable reads. */
++static inline int apple_dpin_ack_irq(const struct apple_dpin_io *io,
++				   unsigned int *hpd, unsigned int *status)
++{
++	unsigned int old_status, i;
++
++	for (i = 0; i < 8; i++) {
++		old_status = io->read(io->ctx, APPLE_DPIN_IRQ_STATUS);
++		*hpd = io->read(io->ctx, APPLE_DPIN_HPD);
++		*status = io->read(io->ctx, APPLE_DPIN_IRQ_STATUS);
++		if (old_status != *status)
++			continue;
++		if (!*status)
++			return 0;
++		io->write(io->ctx, APPLE_DPIN_IRQ_STATUS, *status);
++		if (*status & 1U)
++			io->write(io->ctx, APPLE_DPIN_HPD, *hpd);
++		return 1;
++	}
++	return -EAGAIN;
++}
++#endif
+diff --git a/drivers/phy/apple/dpin.c b/drivers/phy/apple/dpin.c
+new file mode 100644
+index 0000000..801551a
+--- /dev/null
++++ b/drivers/phy/apple/dpin.c
+@@ -0,0 +1,352 @@
++// SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause
++/* Apple T6000 USB4 DP-IN. Static RE provenance: REA-DPIN-FINDINGS.md. */
++#include <linux/delay.h>
++#include <linux/interrupt.h>
++#include <linux/io.h>
++#include <linux/ktime.h>
++#include <linux/module.h>
++#include <linux/notifier.h>
++#include <linux/phy/phy-apple-dpin.h>
++#include <linux/mutex.h>
++#include <linux/of.h>
++#include <linux/phy/phy.h>
++#include <linux/phy/phy-apple-atc.h>
++#include <linux/platform_device.h>
++#include <linux/pm_runtime.h>
++
++#include "dpin-handshake.h"
++
++struct apple_dpin {
++	struct device *dev;
++	void __iomem *regs;
++	struct phy *atcphy;
++	struct mutex lock;
++	struct blocking_notifier_head hpd_notifiers;
++	struct apple_dpin_io io;
++	unsigned int index;
++	unsigned int irq_enable;
++	unsigned int rate;
++	int irq;
++	bool initialized;
++	bool active;
++	bool fault;
++};
++
++static unsigned int dpin_read(void *ctx, unsigned int offset)
++{
++	struct apple_dpin *dpin = ctx;
++
++	return readl(dpin->regs + offset);
++}
++
++static void dpin_write(void *ctx, unsigned int offset, unsigned int value)
++{
++	struct apple_dpin *dpin = ctx;
++
++	writel(value, dpin->regs + offset);
++}
++
++static unsigned long long dpin_time_us(void *ctx)
++{
++	return ktime_to_us(ktime_get());
++}
++
++static void dpin_sleep(void *ctx, unsigned int min_us, unsigned int max_us)
++{
++	usleep_range(min_us, max_us);
++}
++
++static irqreturn_t dpin_irq(int irq, void *data)
++{
++	struct apple_dpin *dpin = data;
++	unsigned int hpd = 0, status = 0;
++	int ret;
++
++	mutex_lock(&dpin->lock);
++	if (!dpin->initialized) {
++		mutex_unlock(&dpin->lock);
++		return IRQ_NONE;
++	}
++	ret = apple_dpin_ack_irq(&dpin->io, &hpd, &status);
++	if (ret < 0) {
++		/* Bounded unstable status: mask this source rather than storm. */
++		dpin_write(dpin, APPLE_DPIN_IRQ_ENABLE,
++			   dpin_read(dpin, APPLE_DPIN_IRQ_ENABLE) & ~3U);
++		dpin->fault = true;
++		dev_err_ratelimited(dpin->dev, "unstable DP-IN interrupt status\n");
++	} else if (ret) {
++		dev_dbg(dpin->dev, "HPD level=%u status=%#x\n",
++			!!(hpd & APPLE_DPIN_HPD_LEVEL), status);
++	}
++	mutex_unlock(&dpin->lock);
++	if (ret < 0)
++		blocking_notifier_call_chain(&dpin->hpd_notifiers,
++					    APPLE_DPIN_HPD_ERROR, NULL);
++	else if (ret > 0)
++		blocking_notifier_call_chain(&dpin->hpd_notifiers,
++					    !!(hpd & APPLE_DPIN_HPD_LEVEL), NULL);
++	return ret ? IRQ_HANDLED : IRQ_NONE;
++}
++
++static int dpin_init(struct phy *phy)
++{
++	struct apple_dpin *dpin = phy_get_drvdata(phy);
++	int ret;
++
++	ret = pm_runtime_resume_and_get(dpin->dev);
++	if (ret < 0)
++		return ret;
++	mutex_lock(&dpin->lock);
++	ret = apple_atcphy_dp_tunnel_get(dpin->atcphy, dpin->index);
++	if (ret)
++		goto out;
++	dpin->fault = false;
++	dpin->initialized = true;
++	dpin->irq_enable = dpin_read(dpin, APPLE_DPIN_IRQ_ENABLE);
++	dpin_write(dpin, APPLE_DPIN_IRQ_ENABLE, dpin->irq_enable | 3U);
++	mutex_unlock(&dpin->lock);
++	enable_irq(dpin->irq);
++	return 0;
++out:
++	mutex_unlock(&dpin->lock);
++	pm_runtime_put(dpin->dev);
++	return ret;
++}
++
++static int dpin_exit(struct phy *phy)
++{
++	struct apple_dpin *dpin = phy_get_drvdata(phy);
++	int ret;
++
++	mutex_lock(&dpin->lock);
++	if (dpin->active) {
++		mutex_unlock(&dpin->lock);
++		return -EBUSY;
++	}
++	if (dpin->fault) {
++		ret = apple_dpin_set_inactive(&dpin->io, 1);
++		if (ret) {
++			mutex_unlock(&dpin->lock);
++			return ret;
++		}
++	}
++	ret = apple_atcphy_dp_tunnel_put(dpin->atcphy, dpin->index);
++	if (ret) {
++		mutex_unlock(&dpin->lock);
++		return ret;
++	}
++	dpin_write(dpin, APPLE_DPIN_IRQ_ENABLE, dpin->irq_enable);
++	dpin->initialized = false;
++	mutex_unlock(&dpin->lock);
++	disable_irq(dpin->irq);
++	pm_runtime_put(dpin->dev);
++	return 0;
++}
++
++static int dpin_power_on(struct phy *phy)
++{
++	struct apple_dpin *dpin = phy_get_drvdata(phy);
++	int ret, rollback;
++
++	mutex_lock(&dpin->lock);
++	if (!dpin->initialized || dpin->fault) {
++		ret = -EIO;
++		goto out;
++	}
++	ret = apple_dpin_set_inactive(&dpin->io, 0);
++	if (ret) {
++		rollback = apple_dpin_set_inactive(&dpin->io, 1);
++		if (rollback) {
++			dpin->fault = true;
++			dev_err(dpin->dev, "DP-IN inactive rollback failed: %d\n", rollback);
++		}
++	} else {
++		dpin->active = true;
++	}
++out:
++	mutex_unlock(&dpin->lock);
++	return ret;
++}
++
++static int dpin_power_off(struct phy *phy)
++{
++	struct apple_dpin *dpin = phy_get_drvdata(phy);
++	int ret;
++
++	mutex_lock(&dpin->lock);
++	if (!dpin->initialized) {
++		mutex_unlock(&dpin->lock);
++		return -EINVAL;
++	}
++	ret = apple_dpin_set_inactive(&dpin->io, 1);
++	if (!ret)
++		ret = apple_atcphy_dp_tunnel_configure(dpin->atcphy, dpin->index, 0);
++	if (!ret) {
++		dpin->active = false;
++		dpin->rate = 0;
++	}
++	mutex_unlock(&dpin->lock);
++	return ret;
++}
++
++static int dpin_validate(struct phy *phy, enum phy_mode mode, int submode,
++			 union phy_configure_opts *opts)
++{
++	if (mode != PHY_MODE_DP || submode)
++		return -EINVAL;
++	opts->dp.lanes = 4;
++	return 0;
++}
++
++static int dpin_configure(struct phy *phy, union phy_configure_opts *opts)
++{
++	struct apple_dpin *dpin = phy_get_drvdata(phy);
++	int ret = 0;
++
++	if (opts->dp.set_voltages)
++		return -EOPNOTSUPP;
++	if (opts->dp.set_lanes && opts->dp.lanes != 0 && opts->dp.lanes != 1 &&
++	    opts->dp.lanes != 2 && opts->dp.lanes != 4)
++		return -EINVAL;
++	mutex_lock(&dpin->lock);
++	if (!dpin->initialized || dpin->fault) {
++		ret = -EIO;
++		goto out;
++	}
++	if (opts->dp.set_rate) {
++		/* Do not remove the clock underneath an active DP-IN handshake. */
++		if (!opts->dp.link_rate && dpin->active) {
++			ret = -EBUSY;
++			goto out;
++		}
++		ret = apple_atcphy_dp_tunnel_configure(dpin->atcphy, dpin->index,
++						     opts->dp.link_rate);
++		if (!ret)
++			dpin->rate = opts->dp.link_rate;
++	}
++out:
++	mutex_unlock(&dpin->lock);
++	return ret;
++}
++
++static const struct phy_ops dpin_ops = {
++	.init = dpin_init,
++	.exit = dpin_exit,
++	.power_on = dpin_power_on,
++	.power_off = dpin_power_off,
++	.validate = dpin_validate,
++	.configure = dpin_configure,
++	.owner = THIS_MODULE,
++};
++
++int apple_dpin_get_hpd(struct phy *phy)
++{
++	struct apple_dpin *dpin;
++	int ret;
++
++	if (!phy || phy->ops != &dpin_ops)
++		return -EINVAL;
++	dpin = phy_get_drvdata(phy);
++	mutex_lock(&dpin->lock);
++	ret = dpin->initialized && !dpin->fault ?
++		!!(dpin_read(dpin, APPLE_DPIN_HPD) & APPLE_DPIN_HPD_LEVEL) : -ENODEV;
++	mutex_unlock(&dpin->lock);
++	return ret;
++}
++EXPORT_SYMBOL_GPL(apple_dpin_get_hpd);
++
++int apple_dpin_register_hpd(struct phy *phy, struct notifier_block *nb)
++{
++	struct apple_dpin *dpin;
++
++	if (!phy || phy->ops != &dpin_ops)
++		return -EINVAL;
++	dpin = phy_get_drvdata(phy);
++	return blocking_notifier_chain_register(&dpin->hpd_notifiers, nb);
++}
++EXPORT_SYMBOL_GPL(apple_dpin_register_hpd);
++
++int apple_dpin_unregister_hpd(struct phy *phy, struct notifier_block *nb)
++{
++	struct apple_dpin *dpin;
++
++	if (!phy || phy->ops != &dpin_ops)
++		return -EINVAL;
++	dpin = phy_get_drvdata(phy);
++	return blocking_notifier_chain_unregister(&dpin->hpd_notifiers, nb);
++}
++EXPORT_SYMBOL_GPL(apple_dpin_unregister_hpd);
++
++static void dpin_pm_disable(void *data)
++{
++	pm_runtime_disable(data);
++}
++
++static int dpin_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct phy_provider *provider;
++	struct apple_dpin *dpin;
++	struct resource *res;
++	struct phy *phy;
++	int ret;
++
++	dpin = devm_kzalloc(dev, sizeof(*dpin), GFP_KERNEL);
++	if (!dpin)
++		return -ENOMEM;
++	dpin->dev = dev;
++	mutex_init(&dpin->lock);
++	BLOCKING_INIT_NOTIFIER_HEAD(&dpin->hpd_notifiers);
++	ret = of_property_read_u32(dev->of_node, "apple,transport-index", &dpin->index);
++	if (ret || dpin->index > 1)
++		return -EINVAL;
++	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
++	if (!res || resource_size(res) != 0x4000)
++		return -EINVAL;
++	dpin->regs = devm_ioremap_resource(dev, res);
++	if (IS_ERR(dpin->regs))
++		return PTR_ERR(dpin->regs);
++	dpin->atcphy = devm_phy_get(dev, "atc-phy");
++	if (IS_ERR(dpin->atcphy))
++		return dev_err_probe(dev, PTR_ERR(dpin->atcphy), "missing ATC PHY\n");
++	dpin->irq = platform_get_irq(pdev, 0);
++	if (dpin->irq < 0)
++		return dpin->irq;
++	dpin->io = (struct apple_dpin_io) {
++		.read = dpin_read, .write = dpin_write, .time_us = dpin_time_us,
++		.sleep = dpin_sleep, .ctx = dpin,
++	};
++	ret = devm_request_threaded_irq(dev, dpin->irq, NULL, dpin_irq,
++					IRQF_ONESHOT | IRQF_NO_AUTOEN,
++					dev_name(dev), dpin);
++	if (ret)
++		return ret;
++	phy = devm_phy_create(dev, NULL, &dpin_ops);
++	if (IS_ERR(phy))
++		return PTR_ERR(phy);
++	phy_set_drvdata(phy, dpin);
++	pm_runtime_enable(dev);
++	ret = devm_add_action_or_reset(dev, dpin_pm_disable, dev);
++	if (ret)
++		return ret;
++	provider = devm_of_phy_provider_register(dev, of_phy_simple_xlate);
++	return PTR_ERR_OR_ZERO(provider);
++}
++
++static const struct of_device_id dpin_of_match[] = {
++	{ .compatible = "apple,t6000-dpin" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, dpin_of_match);
++
++static struct platform_driver dpin_driver = {
++	.probe = dpin_probe,
++	.driver = {
++		.name = "apple-dpin",
++		.of_match_table = dpin_of_match,
++		.suppress_bind_attrs = true,
++	},
++};
++module_platform_driver(dpin_driver);
++MODULE_DESCRIPTION("Apple T6000 USB4 DisplayPort input PHY");
++MODULE_LICENSE("Dual BSD/GPL");
+diff --git a/include/linux/phy/phy-apple-atc.h b/include/linux/phy/phy-apple-atc.h
+new file mode 100644
+index 0000000..c6c2c86
+--- /dev/null
++++ b/include/linux/phy/phy-apple-atc.h
+@@ -0,0 +1,10 @@
++/* SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause */
++#ifndef _LINUX_PHY_APPLE_ATC_H
++#define _LINUX_PHY_APPLE_ATC_H
++struct phy;
++/* These operations preserve the ATC USB4 lane mode. index is DPIN0/DPIN1. */
++int apple_atcphy_dp_tunnel_get(struct phy *phy, unsigned int index);
++int apple_atcphy_dp_tunnel_put(struct phy *phy, unsigned int index);
++int apple_atcphy_dp_tunnel_configure(struct phy *phy, unsigned int index,
++				    unsigned int link_rate_mbps);
++#endif
+diff --git a/include/linux/phy/phy-apple-dpin.h b/include/linux/phy/phy-apple-dpin.h
+new file mode 100644
+index 0000000..c14c0d7
+--- /dev/null
++++ b/include/linux/phy/phy-apple-dpin.h
+@@ -0,0 +1,20 @@
++/* SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause */
++#ifndef _LINUX_PHY_APPLE_DPIN_H
++#define _LINUX_PHY_APPLE_DPIN_H
++#include <linux/errno.h>
++#include <linux/kconfig.h>
++#define APPLE_DPIN_HPD_ERROR 2
++struct phy;
++struct notifier_block;
++#if IS_REACHABLE(CONFIG_PHY_APPLE_DPIN)
++int apple_dpin_get_hpd(struct phy *phy);
++int apple_dpin_register_hpd(struct phy *phy, struct notifier_block *nb);
++int apple_dpin_unregister_hpd(struct phy *phy, struct notifier_block *nb);
++#else
++static inline int apple_dpin_get_hpd(struct phy *phy) { return -EOPNOTSUPP; }
++static inline int apple_dpin_register_hpd(struct phy *phy, struct notifier_block *nb)
++{ return -EOPNOTSUPP; }
++static inline int apple_dpin_unregister_hpd(struct phy *phy, struct notifier_block *nb)
++{ return -EOPNOTSUPP; }
++#endif
++#endif
+diff --git a/tools/testing/apple-dpin/README b/tools/testing/apple-dpin/README
+new file mode 100644
+index 0000000..9de7927
+--- /dev/null
++++ b/tools/testing/apple-dpin/README
+@@ -0,0 +1,26 @@
++Offline checks for the experimental T6000 DP-IN patch
++====================================================
++Run from the patched kernel source root. Nothing here opens a device,
++loads a module, writes registers or changes the running kernel.
++
++  gcc -std=gnu11 -Wall -Wextra -Werror -fsanitize=undefined \
++      -Idrivers/phy/apple tools/testing/apple-dpin/dpin-offline.c \
++      -o /tmp/apple-dpin-offline
++  /tmp/apple-dpin-offline
++  python3 tools/testing/apple-dpin/test-clock.py .
++  python3 tools/testing/apple-dpin/test-connection.py .
++  python3 tools/testing/apple-dpin/test-dtb.py \
++      /path/to/build/arch/arm64/boot/dts/apple/t6000-j314s.dtb \
++      /path/to/build/arch/arm64/boot/dts/apple/t6001-j314c.dtb
++
++Expected: 11 helper groups, 11 production-clock groups, 7 production-EPIC
++connection groups, and two compiled-board wiring checks.
++
++The C test includes the exact production handshake/IRQ helper. Clock and
++connection tests extract the actual function definitions from the supplied
++source and compile them against fake MMIO/transport. They do not validate
++firmware callback ordering, locking, workqueue races, hardware register
++semantics, real timeouts, runtime PM, EDID, video or suspend. Clock polling
++uses an immediate fake predicate; handshake time uses an injected clock.
++Source extraction deliberately fails if the expected function boundaries
++change. A passing suite is not hardware qualification.
+diff --git a/tools/testing/apple-dpin/dpin-offline.c b/tools/testing/apple-dpin/dpin-offline.c
+new file mode 100644
+index 0000000..521785b
+--- /dev/null
++++ b/tools/testing/apple-dpin/dpin-offline.c
+@@ -0,0 +1,124 @@
++// SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause
++#include <assert.h>
++#include <errno.h>
++#include <stdio.h>
++#include <string.h>
++#include "dpin-handshake.h"
++#include "atc-dp-tunnel.h"
++
++struct fake {
++	unsigned int regs[5];
++	unsigned long long now;
++	unsigned int sleeps, reads, writes;
++	unsigned int ack_after;
++	unsigned int hpd_after;
++	unsigned int unstable;
++	unsigned int offsets[16], values[16];
++};
++
++static unsigned int rd(void *ctx, unsigned int offset)
++{
++	struct fake *f = ctx;
++
++	f->reads++;
++	if (f->unstable && offset == APPLE_DPIN_IRQ_STATUS)
++		return f->reads;
++	if (offset == APPLE_DPIN_INACTIVE_ACK && f->ack_after &&
++	    f->sleeps >= f->ack_after)
++		return f->regs[APPLE_DPIN_INACTIVE / 4] & 1;
++	if (offset == APPLE_DPIN_HPD && f->hpd_after && f->sleeps >= f->hpd_after)
++		return 0;
++	return f->regs[offset / 4];
++}
++
++static void wr(void *ctx, unsigned int offset, unsigned int value)
++{
++	struct fake *f = ctx;
++
++	assert(f->writes < 16);
++	f->offsets[f->writes] = offset;
++	f->values[f->writes++] = value;
++	f->regs[offset / 4] = value;
++}
++
++static unsigned long long now(void *ctx)
++{
++	return ((struct fake *)ctx)->now;
++}
++
++static void sleep_fake(void *ctx, unsigned int min, unsigned int max)
++{
++	struct fake *f = ctx;
++
++	assert(max >= min);
++	f->now += min;
++	f->sleeps++;
++}
++
++static struct apple_dpin_io io_for(struct fake *f)
++{
++	return (struct apple_dpin_io) { rd, wr, now, sleep_fake, f };
++}
++
++int main(void)
++{
++	struct fake f = { .regs = { 4, 0, 0, 0xa5, 1 }, .ack_after = 3 };
++	struct apple_dpin_io io = io_for(&f);
++	unsigned int hpd, status;
++	int tests = 0;
++
++	/* Activation preserves unrelated bits and waits for a real ACK. */
++	assert(apple_dpin_set_inactive(&io, 0) == 0);
++	assert(f.writes == 1 && f.values[0] == 0xa4 && f.sleeps == 3);
++	tests++;
++	/* No sink during the wait returns ENOLINK, not fabricated success. */
++	f = (struct fake) { .regs = { 0, 0, 0, 1, 1 } };
++	assert(apple_dpin_set_inactive(&io, 0) == -ENOLINK);
++	assert(f.sleeps == 0);
++	tests++;
++	/* HPD disappearing during a pending ACK is bounded too. */
++	f = (struct fake) { .regs = { 4, 0, 0, 1, 1 }, .hpd_after = 2 };
++	assert(apple_dpin_set_inactive(&io, 0) == -ENOLINK);
++	assert(f.sleeps == 2);
++	tests++;
++	f = (struct fake) { .regs = { 4, 0, 0, 1, 1 } };
++	assert(apple_dpin_set_inactive(&io, 0) == -ETIMEDOUT);
++	assert(f.now >= 1000000 && f.now < 1005000 && f.sleeps < 210);
++	tests++;
++	/* Rollback/deactivation ignores HPD low and waits for inactive ACK. */
++	f = (struct fake) { .regs = { 0, 0, 0, 0xa4, 0 }, .ack_after = 2 };
++	assert(apple_dpin_set_inactive(&io, 1) == 0);
++	assert(f.values[0] == 0xa5 && f.sleeps == 2);
++	tests++;
++	f = (struct fake) { 0 };
++	assert(apple_dpin_set_inactive(&io, 2) == -EINVAL && f.writes == 0);
++	tests++;
++	/* Captured-value IRQ acknowledgment, not a made-up constant W1C mask. */
++	f = (struct fake) { .regs = { 7, 3, 0, 0, 0 } };
++	assert(apple_dpin_ack_irq(&io, &hpd, &status) == 1);
++	assert(f.writes == 2 && f.offsets[0] == 4 && f.values[0] == 3);
++	assert(f.offsets[1] == 0 && f.values[1] == 7);
++	tests++;
++	f = (struct fake) { .regs = { 4, 2, 0, 0, 0 } };
++	assert(apple_dpin_ack_irq(&io, &hpd, &status) == 1 && f.writes == 1);
++	tests++;
++	f = (struct fake) { .regs = { 4, 0, 0, 0, 0 } };
++	assert(apple_dpin_ack_irq(&io, &hpd, &status) == 0 && f.writes == 0);
++	tests++;
++	f = (struct fake) { .unstable = 1 };
++	assert(apple_dpin_ack_irq(&io, &hpd, &status) == -EAGAIN);
++	assert(f.writes == 0 && f.reads == 24);
++	tests++;
++	/* Independent facts decoded from Apple's fixed tunnel descriptor/rates. */
++	assert(apple_atc_tunnel_pclk_select(1620) == 4);
++	assert(apple_atc_tunnel_pclk_select(2700) == 3);
++	assert(apple_atc_tunnel_pclk_select(5400) == 1);
++	assert(apple_atc_tunnel_pclk_select(8100) == 0);
++	assert(apple_atc_tunnel_pclk_select(2160) == -EINVAL);
++	assert(APPLE_ATC_TUNNEL_DESC_A == 0x1e0e021cU);
++	assert(APPLE_ATC_TUNNEL_DESC_B == 0U);
++	assert(APPLE_ATC_TUNNEL_DESC_C == 0x00654a00U);
++	tests++;
++	printf("PASS: %d offline production-helper test groups\n", tests);
++	return 0;
++}
+diff --git a/tools/testing/apple-dpin/test-clock.py b/tools/testing/apple-dpin/test-clock.py
+new file mode 100644
+index 0000000..1de922e
+--- /dev/null
++++ b/tools/testing/apple-dpin/test-clock.py
+@@ -0,0 +1,145 @@
++#!/usr/bin/env python3
++# SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause
++"""Compile the actual ATC tunnel functions against bounded fake MMIO, then run."""
++import pathlib, re, subprocess, sys, tempfile
++source = pathlib.Path(sys.argv[1]).resolve()
++text = (source / 'drivers/phy/apple/atc.c').read_text()
++start = text.index('static int atcphy_auspll_apb_command(')
++end = text.index('static int atcphy_dp_configure(', start)
++production = text[start:end]
++defines = '\n'.join(line for line in text.splitlines() if line.startswith('#define ')
++                    and '(' not in line.split()[1])
++preamble = r'''
++#include <assert.h>
++#include <stdbool.h>
++#include <stdint.h>
++#include <limits.h>
++#include <errno.h>
++#include <stdio.h>
++#include <string.h>
++#include <stdlib.h>
++typedef uint32_t u32;
++#define __iomem
++#define BIT(n) (1U << (n))
++#define GENMASK(h,l) ((~0U >> (31-(h))) & (~0U << (l)))
++#define FIELD_PREP(m,v) (((u32)(v) << __builtin_ctz(m)) & (m))
++#define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
++#define ERR_PTR(v) ((void *)(intptr_t)(v))
++#define PTR_ERR(v) ((int)(intptr_t)(v))
++#define IS_ERR(v) ((uintptr_t)(v) >= (uintptr_t)-4095)
++#define EXPORT_SYMBOL_GPL(v)
++#define lockdep_assert_held(v) ((void)(v))
++#define dev_warn(...) ((void)0)
++#define guard(t) fake_guard
++static void fake_guard(void *lock) { (void)lock; }
++struct device { struct device *parent; void *of_node; };
++struct phy { struct device dev; void *data; };
++struct apple_atcphy {
++ struct { void *core; } regs;
++ struct { struct phy *dp; } phys;
++ struct device *dev;
++ unsigned int tunnel_users[2], tunnel_rate[2];
++ bool tunnel_fault;
++ int mode, lock;
++};
++enum { APPLE_ATCPHY_MODE_OFF, APPLE_ATCPHY_MODE_USB4, APPLE_ATCPHY_MODE_TBT };
++static void *phy_get_drvdata(struct phy *p) { return p->data; }
++static bool of_device_is_compatible(void *np, const char *s)
++{ return np && !strcmp(s,"apple,t6000-atcphy"); }
++static unsigned int mmio[0x8000/4], writes, apb_calls, fail_command = UINT_MAX;
++static bool fail_lock;
++static u32 readl(void *addr) {
++ size_t offset=(u32 *)addr-mmio;
++ assert(offset<ARRAY_SIZE(mmio));
++ if(offset == 0x2000/4) {
++  u32 command=(mmio[offset] >> 3) & 0x1ffffff;
++  return (mmio[offset]&~2U) | (command==fail_command?0:2U);
++ }
++ if(offset==0x7044/4 && fail_lock) return 0;
++ return mmio[offset];
++}
++static void writel(u32 v, void *addr) {
++ size_t offset=(u32 *)addr-mmio;
++ assert(offset<ARRAY_SIZE(mmio));
++ writes++;
++ if(offset == 0x2000/4 && (v&1)) apb_calls++;
++ mmio[offset]=v;
++}
++static void core_set32(struct apple_atcphy *a, u32 o, u32 v)
++{ writel(readl(a->regs.core+o)|v,a->regs.core+o); }
++static void core_clear32(struct apple_atcphy *a, u32 o, u32 v)
++{ writel(readl(a->regs.core+o)&~v,a->regs.core+o); }
++static void core_mask32(struct apple_atcphy *a, u32 o, u32 m, u32 v)
++{ writel((readl(a->regs.core+o)&~m)|v,a->regs.core+o); }
++#define readl_poll_timeout(addr,val,cond,sleep,timeout) \
++ ({ (void)(sleep); (void)(timeout); (val)=readl(addr); (cond)?0:-ETIMEDOUT; })
++#include "atc-dp-tunnel.h"
++'''
++tests = r'''
++static void reset(struct apple_atcphy *a,struct phy *p,struct device *d) {
++ memset(a,0,sizeof(*a)); memset(p,0,sizeof(*p)); memset(d,0,sizeof(*d));
++ memset(mmio,0,sizeof(mmio)); writes=apb_calls=0; fail_command=UINT_MAX; fail_lock=false;
++ mmio[0xa74/4]=1; mmio[0x7044/4]=8;
++ d->of_node=d; p->dev.parent=d; p->data=a; a->dev=d;
++ a->phys.dp=p; a->regs.core=mmio; a->mode=APPLE_ATCPHY_MODE_USB4;
++}
++int main(void) {
++ struct apple_atcphy a; struct phy p; struct device d; unsigned int before; int groups=0;
++ reset(&a,&p,&d);
++ a.mode=APPLE_ATCPHY_MODE_OFF;
++ assert(apple_atcphy_dp_tunnel_get(&p,0)==-ENOLINK && writes==0); groups++;
++ reset(&a,&p,&d);
++ assert(apple_atcphy_dp_tunnel_get(&p,2)==-EINVAL);
++ assert(apple_atcphy_dp_tunnel_configure(&p,0,5400)==-EINVAL);
++ assert(apple_atcphy_dp_tunnel_put(&p,0)==-EINVAL && writes==0); groups++;
++ assert(!apple_atcphy_dp_tunnel_get(&p,0));
++ assert(!apple_atcphy_dp_tunnel_get(&p,1));
++ assert(!apple_atcphy_dp_tunnel_configure(&p,0,1620));
++ assert(a.tunnel_rate[0]==1620 && apb_calls==2);
++ assert((mmio[0x7000/4] & 0x2070)==0x2040);
++ assert(mmio[0x2080/4]==0x1e0e021c && (mmio[0x2088/4]&0x7fffff)==0x654a00);
++ assert((mmio[0x2208/4]&0x1f0000)==0x10000); groups++;
++ assert(!apple_atcphy_dp_tunnel_configure(&p,1,2700));
++ assert(a.tunnel_rate[1]==2700 && apb_calls==2);
++ assert((mmio[0x7000/4] & 0x4380)==0x4180); groups++;
++ assert(!apple_atcphy_dp_tunnel_configure(&p,0,8100));
++ assert(apb_calls==2 && (mmio[0x7000/4]&0x70)==0);
++ before=writes;
++ assert(apple_atcphy_dp_tunnel_configure(&p,0,2160)==-EINVAL && writes==before); groups++;
++ assert(!apple_atcphy_dp_tunnel_put(&p,0));
++ assert(apb_calls==2 && a.tunnel_rate[1]==2700);
++ assert((mmio[0x2200/4]&0x54)==0x54); groups++;
++ assert(!apple_atcphy_dp_tunnel_put(&p,1));
++ assert(apb_calls==3 && a.tunnel_users[1]==0 && !a.tunnel_rate[1]);
++ assert((mmio[0x2200/4]&0x54)==0); groups++;
++ reset(&a,&p,&d); assert(!apple_atcphy_dp_tunnel_get(&p,0));
++ fail_lock=true;
++ assert(apple_atcphy_dp_tunnel_configure(&p,0,5400)==-ETIMEDOUT);
++ assert(!a.tunnel_rate[0] && !a.tunnel_fault && mmio[0x7000/4]==0);
++ assert(mmio[0x2080/4]==0 && mmio[0x2200/4]==0);
++ assert(!apple_atcphy_dp_tunnel_put(&p,0)); groups++;
++ reset(&a,&p,&d); assert(!apple_atcphy_dp_tunnel_get(&p,0));
++ fail_command=0x2000;
++ assert(apple_atcphy_dp_tunnel_configure(&p,0,5400)==-ETIMEDOUT);
++ assert(!a.tunnel_rate[0] && !a.tunnel_fault && mmio[0x7000/4]==0); groups++;
++ reset(&a,&p,&d); assert(!apple_atcphy_dp_tunnel_get(&p,0));
++ assert(!apple_atcphy_dp_tunnel_configure(&p,0,5400));
++ fail_command=3;
++ assert(apple_atcphy_dp_tunnel_put(&p,0)==-ETIMEDOUT);
++ assert(a.tunnel_users[0]==1 && a.tunnel_rate[0]==5400 && a.tunnel_fault);
++ assert(apple_atcphy_dp_tunnel_configure(&p,0,5400)==-EIO);
++ fail_command=UINT_MAX;
++ assert(!apple_atcphy_dp_tunnel_put(&p,0));
++ assert(!a.tunnel_users[0] && !a.tunnel_rate[0] && !a.tunnel_fault); groups++;
++ reset(&a,&p,&d); a.tunnel_users[0]=UINT_MAX;
++ assert(apple_atcphy_dp_tunnel_get(&p,0)==-EOVERFLOW && !writes); groups++;
++ printf("PASS: %d offline production-clock test groups\n",groups);
++ return 0;
++}
++'''
++with tempfile.TemporaryDirectory(prefix='apple-atc-test-') as tmp:
++ c = pathlib.Path(tmp)/'test.c'; exe=pathlib.Path(tmp)/'test'
++ c.write_text(preamble+'\n'+defines+'\n'+production+'\n'+tests)
++ subprocess.run(['gcc','-std=gnu11','-Wall','-Wextra','-Werror','-fsanitize=undefined',
++                 '-I',str(source/'drivers/phy/apple'),str(c),'-o',str(exe)],check=True)
++ subprocess.run([str(exe)],check=True)
+diff --git a/tools/testing/apple-dpin/test-connection.py b/tools/testing/apple-dpin/test-connection.py
+new file mode 100644
+index 0000000..15154e0
+--- /dev/null
++++ b/tools/testing/apple-dpin/test-connection.py
+@@ -0,0 +1,69 @@
++#!/usr/bin/env python3
++# SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause
++"""Run the actual EPIC connection command builders with a fake transport."""
++import pathlib,subprocess,sys,tempfile
++s=pathlib.Path(sys.argv[1]).resolve();t=(s/'drivers/gpu/drm/apple/dptxep.c').read_text()
++packet=t[t.index('struct dcpdptx_connection_cmd {'):t.index('struct dcpdptx_hotplug_cmd')]
++func=t[t.index('int dptxport_validate_connection('):t.index('int dptxport_request_display(')]
++pre=r'''
++#include <assert.h>
++#include <stdbool.h>
++#include <stdint.h>
++#include <stddef.h>
++#include <stdio.h>
++#include <string.h>
++#include <errno.h>
++typedef uint8_t u8; typedef uint32_t u32; typedef uint32_t __le32;
++#define GENMASK(h,l) ((~0U >> (31-(h))) & (~0U << (l)))
++#define BIT(n) (1U<<(n))
++#define FIELD_PREP(m,v) (((u32)(v)<<__builtin_ctz(m))&(m))
++#define DCPDPTX_REMOTE_PORT_CORE GENMASK(3,0)
++#define DCPDPTX_REMOTE_PORT_ATC GENMASK(7,4)
++#define DCPDPTX_REMOTE_PORT_DIE GENMASK(11,8)
++#define DCPDPTX_REMOTE_PORT_CONNECTED BIT(15)
++#define cpu_to_le32(x) (x)
++#define le32_to_cpu(x) (x)
++#define trace_dptxport_validate_connection(d,c,a,i) ((void)(d))
++#define trace_dptxport_connect(d,c,a,i) ((void)(d))
++#define dev_notice(...) ((void)0)
++struct dptx_port { int unused; };
++struct dcp { bool dp_tunnel; void *dev; };
++struct ep { struct dcp *dcp; };
++struct apple_epic_service { void *cookie; struct ep *ep; };
++static unsigned int got_low,got_target,got_cmd;
++static int transport_error,corrupt_target,corrupt_low;
++static int afk_service_call(struct apple_epic_service *s,unsigned int group,unsigned int cmd,
++                           void *tx,size_t txlen,unsigned int txoff,
++                           void *rx,size_t rxlen,unsigned int rxoff) {
++ (void)s;assert(group==0 && (cmd==11 || cmd==12));
++ assert(txlen==8 && rxlen==8 && txoff==rxoff);
++ assert(txoff==(cmd==11?24:40));
++ got_cmd=cmd;got_low=((u32 *)tx)[0];got_target=((u32 *)tx)[1];
++ memcpy(rx,tx,8);((u32 *)rx)[0]^=corrupt_low;((u32 *)rx)[1]^=corrupt_target;
++ return transport_error;
++}
++'''
++post=r'''
++int main(void) {
++ struct dcp d={.dp_tunnel=true};struct ep ep={&d};struct dptx_port p={0};
++ struct apple_epic_service s={&p,&ep};int groups=0;
++ assert(!dptxport_connect(&s,0,1,0));
++ assert(got_cmd==11 && got_low==0x101 && got_target==0x8010);groups++;
++ assert(!dptxport_validate_connection(&s,0,1,0));
++ assert(got_cmd==12 && got_low==0x101);groups++;
++ d.dp_tunnel=false;assert(!dptxport_connect(&s,0,1,0) && got_low==0);
++ assert(!dptxport_validate_connection(&s,0,1,0) && got_low==0x100);groups++;
++ d.dp_tunnel=true;transport_error=-EIO;
++ assert(dptxport_connect(&s,0,1,0)==-EIO);transport_error=0;groups++;
++ corrupt_target=1;assert(dptxport_connect(&s,0,1,0)==-EINVAL);
++ assert(dptxport_validate_connection(&s,0,1,0)==-EINVAL);corrupt_target=0;groups++;
++ corrupt_low=1;assert(dptxport_connect(&s,0,1,0)==-EPROTO);
++ assert(dptxport_validate_connection(&s,0,1,0)==-EINVAL);corrupt_low=0;groups++;
++ assert(!dptxport_connect(&s,2,3,1) && got_target==0x8132);groups++;
++ printf("PASS: %d offline production-EPIC test groups\n",groups);return 0;
++}
++'''
++with tempfile.TemporaryDirectory(prefix='apple-dpin-epic-') as tmp:
++ c=pathlib.Path(tmp)/'test.c';exe=pathlib.Path(tmp)/'test';c.write_text(pre+packet+func+post)
++ subprocess.run(['gcc','-std=c11','-Wall','-Wextra','-Werror','-fsanitize=undefined',str(c),'-o',str(exe)],check=True)
++ subprocess.run([str(exe)],check=True)
+diff --git a/tools/testing/apple-dpin/test-dtb.py b/tools/testing/apple-dpin/test-dtb.py
+new file mode 100644
+index 0000000..33a5d3a
+--- /dev/null
++++ b/tools/testing/apple-dpin/test-dtb.py
+@@ -0,0 +1,48 @@
++#!/usr/bin/env python3
++# SPDX-License-Identifier: GPL-2.0 OR BSD-2-Clause
++"""Check compiled DP-IN wiring and the unaffected control board, without hardware."""
++import pathlib,struct,sys
++
++def parse(path):
++ data=pathlib.Path(path).read_bytes()
++ h=struct.unpack_from('>10I',data);assert h[0]==0xd00dfeed
++ pos=h[2];strings=data[h[3]:h[3]+h[8]];stack=[];nodes={}
++ while True:
++  tok=struct.unpack_from('>I',data,pos)[0];pos+=4
++  if tok==1:
++   end=data.index(b'\0',pos);name=data[pos:end].decode();pos=(end+4)&~3
++   stack.append(name);nodes['/'+ '/'.join(stack[1:])]={}
++  elif tok==2:stack.pop()
++  elif tok==3:
++   size,off=struct.unpack_from('>II',data,pos);pos+=8
++   key=strings[off:strings.index(b'\0',off)].decode()
++   nodes['/'+'/'.join(stack[1:])][key]=data[pos:pos+size];pos=(pos+size+3)&~3
++  elif tok==4:pass
++  elif tok==9:return nodes
++  else:raise ValueError(tok)
++
++def cells(value):return struct.unpack('>'+str(len(value)//4)+'I',value)
++
++def check(path,enabled):
++ n=parse(path);d={p:v for p,v in n.items() if v.get('compatible')==b'apple,t6000-dpin\0'}
++ assert len(d)==2,(path,list(d))
++ for p,v in d.items():
++  i=cells(v['apple,transport-index'])[0];assert i in [0,1]
++  off,size=cells(v['reg']);assert off==0xe50000+i*0x8000 and size==0x4000
++  parent=n[p.rsplit('/',1)[0]];ranges=cells(parent['ranges'])
++  assert ranges[:4]==(0,0xb,0x01000000,0x1000000)
++  assert ((ranges[1]<<32)+ranges[2]+off)==0xb01e50000+i*0x8000
++  assert cells(v['interrupts'])[-2:]==(1354+i,4)
++  assert cells(v['#phy-cells'])==(0,)
++  atc,phytype=cells(v['phys']);assert phytype==6
++  owner=next(w for w in n.values() if w.get('phandle')==struct.pack('>I',atc))
++  assert cells(owner['reg'])[:2]==(0xb,0x03000000)
++  assert v['status']==(b'okay\0' if enabled and i==0 else b'disabled\0')
++ tunneled=[v for v in n.values() if 'apple,dp-tunnel' in v]
++ assert len(tunneled)==int(enabled)
++ if enabled:
++  provider=next(v for v in d.values() if cells(v['apple,transport-index'])==(0,))
++  assert tunneled[0]['phys']==provider['phandle']
++  assert cells(tunneled[0]['mux-controls'])[-1]==1
++ print('PASS: compiled DP-IN wiring',pathlib.Path(path).name,'enabled='+str(enabled))
++check(sys.argv[1],True);check(sys.argv[2],False)

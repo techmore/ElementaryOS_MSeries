@@ -20,3 +20,32 @@ On the M1 desktop, UPower reported a positive time-to-full while charging. The
 patched module built successfully, installed, and Wingpanel restarted and
 remained running. The original module was retained as a backup. A visual check
 of the panel label was not available in the isolated desktop command session.
+
+## Watt meter in the menu bar (added 2026-10-14)
+
+`patches/panel-power-watts.patch` adds a small label beside the battery icon with the live power draw from
+UPower's `EnergyRate` (for example `12.1 W`), whether discharging or charging; it hides below 0.1 W (fully
+charged on AC). The tooltip says whether the battery is charging at or the computer is using that power.
+It is applied after the ETA patch by the same installer (`install-battery-eta.sh`), so both ship together,
+and `--uninstall` restores the original module as before.
+
+Verified: both patches apply in order to `elementary/panel-power` at `e05723d` with plain `git apply`, and the
+patched indicator compiles with valac 0.56.19 into `libpower.so` (checked in a scratch tree with the
+build-only `libgtop-2.0` dependency removed, since no Vala code uses it). Not verified: installation on the
+running desktop and how the label looks in the panel (needs sudo and a login/panel restart).
+
+Fix in the same change: `panel-power-charge-eta.patch` used zero-context hunks. With current `git apply`
+they were placed after the end of the class in `DisplayWidget.vala`, which cannot compile; the patch was
+regenerated with three lines of context and now lands in the right place.
+
+Install: `sudo apt install libgtop2-dev` (build dependency), then `bash mseries/install-battery-eta.sh`
+(or `bash mseries/apply-pending.sh --only wattmeter`).
+
+Spacing (2026-10-15): at the owner's request the watt label has an 8 px left margin so it sits clear of the
+battery icon and percentage. Installed on the M1 Pro; the owner confirms the look.
+
+Update (2026-10-15): the label now shows the whole machine's power from the SMC ("Total System Power" in
+`/sys/class/hwmon/*/power*_input`, chip `macsmc_hwmon`), updated every 2 s, on battery and on the charger. The first
+version showed UPower's battery flow, which is exactly 0 W when the charger is connected and the battery sits at the 80%
+limit, so the label hid and the owner reported the meter as lost. Falls back to UPower's rate if the sensor is missing.
+Compiled and installed on the M1 Pro; how it looks in the panel is for the owner to confirm.

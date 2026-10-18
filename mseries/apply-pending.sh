@@ -12,10 +12,12 @@
 #   power     drop the old multi-user.target link, reinstall mseries-power (WantedBy=graphical.target)
 #   polkit    install the DNS-logger rule so the ten-minute password prompt stops
 #   greeter   install the obexd stop-timeout drop-in for the LightDM greeter
+#   wattmeter (optional, --only wattmeter) build the patched Power indicator with a live watts label and install it
 # It never touches the bootloader, kernel, initramfs or the audio stack (AGENTS.md).
 set -euo pipefail
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 ALL=(wifi power polkit greeter)
+OPTIONAL=(wattmeter)   # only with --only: builds and replaces a panel module, restarts Wingpanel
 dry=0 only=() failures=()
 
 usage() { sed -n '2,15p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
@@ -23,7 +25,7 @@ while [[ $# -gt 0 ]]; do
   case $1 in
     --dry-run) dry=1 ;;
     --only) shift; IFS=, read -r -a only <<<"${1:-}" ;;
-    --list) printf '%s\n' "${ALL[@]}"; exit 0 ;;
+    --list) printf '%s\n' "${ALL[@]}"; printf '%s (optional, use --only)\n' "${OPTIONAL[@]}"; exit 0 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -31,7 +33,7 @@ while [[ $# -gt 0 ]]; do
 done
 [[ $EUID -ne 0 ]] || { echo "Run this as your normal user, not root; it calls sudo where needed." >&2; exit 2; }
 for step in "${only[@]}"; do
-  [[ " ${ALL[*]} " == *" $step "* ]] || { echo "Unknown step: $step (see --list)" >&2; exit 2; }
+  [[ " ${ALL[*]} ${OPTIONAL[*]} " == *" $step "* ]] || { echo "Unknown step: $step (see --list)" >&2; exit 2; }
 done
 [[ ${#only[@]} -gt 0 ]] || only=("${ALL[@]}")
 
@@ -69,8 +71,12 @@ step_greeter() {
   run sudo bash "$repo/mseries/install-greeter-obex-fix.sh"
   run sudo systemctl daemon-reload
 }
+step_wattmeter() {
+  run sudo apt-get install -y git meson ninja-build valac gettext libgtop2-dev libudev-dev libwingpanel-9-dev libgranite-7-dev libgtk-4-dev libnotify-dev
+  run bash "$repo/mseries/install-battery-eta.sh"
+}
 
-[[ $dry -eq 1 ]] && echo "DRY RUN: nothing will be changed." || { echo "Applying: ${only[*]}"; sudo -v; }
+[[ $dry -eq 1 ]] && echo "DRY RUN: nothing will be changed." || { echo "Applying: ${only[*]}"; sudo -n true 2>/dev/null || sudo -v; }
 for step in "${only[@]}"; do
   echo "== $step"
   if ! "step_$step"; then failures+=("$step"); echo "  step $step FAILED; continuing" >&2; fi

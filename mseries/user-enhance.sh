@@ -14,7 +14,7 @@ mark_done() { touch "$STATE/$1.done"; }
 
 run_codexbar() {
   done_already codexbar && return 0
-  [[ -f $ROOT_STATE/desktop-user-deps.done ]] || { log 'codexbar: waiting for system dependencies'; return 0; }
+  [[ -f $ROOT_STATE/desktop-user-deps.done || -f ${PAYLOAD%/mseries}/factory-user-deps ]] || { log 'codexbar: waiting for system dependencies'; return 0; }
   log 'codexbar: installing ARM64 desktop and CLI for this user'
   if bash "$PAYLOAD/install-codexbar.sh" --skip-system-deps >>"$LOG" 2>&1; then
     mark_done codexbar
@@ -40,6 +40,8 @@ run_widevine() {
   done_already widevine && return 0
   local profile=${BRAVE_PROFILE_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/BraveSoftware/Brave-Browser}
   [[ -f $profile/Local\ State ]] || { log 'widevine: waiting for Brave to create a profile'; return 0; }
+  # A profile event wakes setup after polling was stopped without a browser.
+  systemctl --user start elementary-mac-user-enhance.timer >/dev/null 2>&1 || true
   pgrep -u "$(id -u)" -x brave >/dev/null && { log 'widevine: Brave is open; will retry after a later login'; return 0; }
   log 'widevine: installing DRM component for this Brave profile'
   if bash "$PAYLOAD/install-brave-widevine.sh" >>"$LOG" 2>&1; then
@@ -54,8 +56,12 @@ run_widevine() {
 run_codexbar
 run_netusage
 run_widevine
-if done_already codexbar && done_already netusage && done_already widevine; then
+profile=${BRAVE_PROFILE_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/BraveSoftware/Brave-Browser}
+if done_already codexbar && done_already netusage && { done_already widevine || [[ ! -f $profile/Local\ State && $profile == "$HOME/.config/BraveSoftware/Brave-Browser" ]]; }; then
   # The timer is enabled globally, so a user cannot remove its enable symlink.
   # Stop it for this session; next login performs a cheap completion check.
   systemctl --user stop elementary-mac-user-enhance.timer >/dev/null 2>&1 || true
+  if done_already widevine; then
+    systemctl --user stop elementary-mac-user-enhance.path >/dev/null 2>&1 || true
+  fi
 fi

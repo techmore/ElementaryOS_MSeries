@@ -103,8 +103,8 @@ jobs:
           gzip -kf apt/dists/stable/main/binary-arm64/Packages
           (cd apt/dists/stable && apt-ftparchive release . > Release)
           gpg --batch --import <(printf '%s' "$MSERIES_APT_KEY")
-          gpg --batch --yes --armor --detach-sign -o apt/dists/stable/InRelease \
-            --clearsign apt/dists/stable/Release
+          gpg --batch --yes --clearsign -o apt/dists/stable/InRelease \
+            apt/dists/stable/Release
           sha256sum apt/pool/*.deb > apt/SHA256SUMS
 
       - name: Commit the repo to gh-pages

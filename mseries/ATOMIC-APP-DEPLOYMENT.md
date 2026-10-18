@@ -1,7 +1,7 @@
 # Feature request: atomic app deployment and faster package delivery
 
-Requested by the owner on 2026-10-14. Status: proposed; backend selection and
-implementation remain open. This also informs the requested elementary/Nix spin
+Requested by the owner on 2026-10-14. Status: opt-in prepared-release prototype;
+backend selection and full rollout remain open. This also informs the elementary/Nix spin
 evaluation.
 
 Tracking: [GitHub issue #50](https://github.com/techmore/ElementaryOS_MSeries/issues/50).
@@ -13,6 +13,46 @@ refreshes are not cached, and standalone installs still refresh normally.
 Stage durations and refresh durations are logged. Behavior is covered by
 stubbed package-command tests; real M1 Pro performance measurements and backend
 selection remain pending.
+
+## Opt-in Signal prototype
+
+`bash mseries/install-signal.sh --atomic` downloads the upstream ARM64 beta,
+checks its signature against the existing pinned publisher fingerprint, extracts
+it, and passes the prepared tree to `atomic-app.py`. Default installation is
+unchanged. The utility accepts already verified trees; it does not verify a
+publisher merely because a fingerprint or digest was supplied on its CLI.
+
+Each deployment gets a new release directory and generation. A single atomic
+symlink replacement selects a generation containing both the app reference and
+its previous-generation reference. Writers share a per-app lock. Files and
+directories are synced before activation; if the final selector sync fails,
+the result explicitly reports `activation_durable: false` because the new app
+is already active but persistence across power loss is unconfirmed.
+
+The installed command and desktop launcher resolve the selected release once
+before execution, so later file opens stay with that retained release. The icon
+uses the selected release. Existing legacy app files are retained, and an
+existing CLI executable is backed up as `signal-desktop.before-atomic`.
+Signal account data stays in its existing user configuration directory.
+
+After at least two atomic installs, inspect or roll back with:
+
+```sh
+python3 ~/.local/libexec/mseries-atomic-app --app signal-desktop-beta status
+python3 ~/.local/libexec/mseries-atomic-app --app signal-desktop-beta rollback
+```
+
+Rollback changes the next app launch; quit the running instance before launching
+the selected older binary. The first atomic install has no earlier generation;
+the retained legacy installation provides the initial migration fallback.
+Releases are never pruned by this prototype. Applications must not self-update
+inside the retained release trees; use the verified installer for each update.
+
+Validation covers failed copying, failed activation, post-switch sync failure,
+concurrent writers, rollback, retained launch paths, unsafe symlinks and missing
+entrypoints. The existing extracted ARM64 Signal tree passes staging validation.
+Full Signal desktop update/rollback, account-data compatibility, automatic
+post-launch health recovery, cleanup and performance measurements remain open.
 
 ## Problem
 

@@ -1,6 +1,878 @@
 # OS 9 implementation / Claude Code handoff
 
-Updated 2026-10-14. Repository: techmore/ElementaryOS_MSeries.
+## YouTube Movies fail in `brave-youtube`: Widevine missing from its profile — fixed — 2026-10-18 (Claude Code)
+
+- **Symptom (owner):** films such as *Edge of Tomorrow* say "your browser can't play this video" in the contained
+  YouTube window. **Cause:** `brave-youtube` uses its own profile (`~/.config/brave-youtube`); its `WidevineCdm/`
+  was empty and `brave.widevine_opted_in` unset. The normal Brave profile has Widevine 4.10.3112.0 and is opted in.
+- **Fix:** `mseries/video-decode/brave-youtube` now provisions Widevine before it starts Brave, only while that
+  profile is not running: it copies the normal profile's CDM if the library loads, writes the component path
+  inside the contained profile (the only part of `$HOME` the container shows), and sets the opt-in. If that fails it
+  falls back to `install-brave-widevine.sh` with `BRAVE_PROFILE_DIR`. That installer now checks only the target
+  profile is closed when `BRAVE_PROFILE_DIR` is set, so the normal Brave can stay open.
+- **Verified:** provisioning on a scratch copy of the profile copied the CDM, the library loads, and the opt-in is set.
+  A second run does nothing; with the live profile running it skips. **Not verified:** a DRM movie actually playing
+  in the container (the owner's window was open; needs a relaunch). L3 limits still apply: SD/720p for movies.
+- **Next:** owner closes and reopens the YouTube window, plays a movie; check `brave://components` there.
+
+## .20-enh1 staged for one boot; .20 fallback and capture active — 2026-10-18 10:02 UTC
+
+Owner explicitly requested the next-boot trial, current .20 fallback and starting
+hardware/power tests. Installed frozen build1 package (SHA256 `185f1fa6…`),
+separate `/boot/vmlinuz-aurora20-enh1` and candidate initramfs. `grub-reboot elementary-aurora20-enh1` is armed. The managed custom.cfg block keeps that
+one-shot choice and defaults later boots to `elementary-aurora20`; it preserves
+all earlier entries and the five-second menu. No reboot was performed.
+
+[Staging proof](aurora/hardware-tests/2026-10-18-j314s-enh1-staging.json): candidate
+J314S DTB is byte-identical to .20 (`a29ff688…`). Existing .20 image/initramfs,
+shared `boot.bin` (`9c9c2d01…`) and generated grub.cfg hashes are unchanged.
+Exact root-private rollback directory: `/var/lib/mseries-kernel-tests/staging/20261018T095901Z/`.
+`prepare-trial-initrd.py` preserves the known-working Arch unlock userspace and
+10,240-byte early CPIO; replaces only modules/modlist with 93 candidate modules,
+resolved dependency closure and regenerated depmod indexes. Vermagic, CPIO
+preservation, both GRUB syntax checks and 58 offline regressions pass.
+
+Root-owned capture snapshot/config installed under `/usr/local/lib/mseries-kernel-trial/`
+and `/etc/mseries-kernel-trial.json`; user `mseries-kernel-trial.timer` enabled.
+The first baseline run completed: same .20 boot, 120 s SMC, median 24.46 W,
+p10 19.61 / p90 30.36, n=121; CPU busy 31.0%, controls before/after equal.
+Boot/PMP/idle + real GPU/fsync smoke checks pass. New baseline receipts are in
+`aurora/hardware-tests/*pre-enh1*.json`; raw local outputs/CPU/device inventory
+remain private under this chat's `outputs/aurora-kernel-trial/`. This is active
+uncontrolled desktop observation, not idle, A/B or a saving.
+
+[Trial guide](aurora/trial/README.md): next login/boot auto capture requires the
+exact pinned image/DTB/modules/boot payload and matching live GNU build ID,
+waits for >=5 min uptime/display context, then records 120 s + smoke checks.
+A failed kernel-health check retains evidence and skips active smoke tests.
+One run per boot; no reboot/suspend/sensor probe/display/audio/power-policy or
+sleep-parameter changes. Candidate hardware boot remains pending. Next: reboot
+normally when ready, verify unlock/desktop and automatic receipts; then manual
+ports/radio/suspend/recovery and controlled three-pair AB/BA qualification.
+Pending session changes must settle on both kernels before formal comparisons.
+Cancel just the pending trial with `sudo grub-editenv /boot/grub/grubenv unset next_entry`.
+
+## Power audit and Aurora status after `.20`; dock monitor seems live — 2026-10-18 (Claude Code)
+
+Read-only pass; nothing on the machine was changed. [Power audit](power/AUDIT-2026-10-18.md): docked on AC with a
+4K external panel, in-use desktop, SMC total-system power medians 19.7 / 21.4 W (and 25 W when my own probes
+ran), CPU 26-45 % busy. The watts-versus-CPU fit was inconsistent between runs, so no model or idle figure is
+claimed. Big userspace costs: gala 28 %, Claude desktop, a Brave renderer at 20 %, ChatGPT; system services
+total <40 s CPU each since boot. **Applied: none; proposals only** (find the Brave tab; hygiene trims need a quiet
+A/B). Scripts: `power/audit/`. Not measured: idle, battery drain, sleep drain on `.20`.
+
+[Aurora status](aurora/STATUS-2026-10-18-AFTER-20.md): no release since `.20`; only draft PR #139 (7.2.10 unified
+kernel, M2/Neo/J316S-on-7.2.10 results) moved. Its Touch ID attach/retry fix may address our probe crash but is
+untested on J314S. **Important and unrecorded before: on `.20` + matched `boot.bin` the dock now trains**
+(`SET_LINK_RATE 0x1e`, 4 lanes), reads the EDID and `DP-2` is a 3840x2160 logical monitor in Gala. That is G3 and G4
+by logs; G5 and the physical port need the owner's confirmation, and the sink re-trained every 10-15 s around
+04:51. SEP has run 75+ min without a hang (no Touch ID probe). Next: owner confirms the TV picture and port;
+long docked/idle/s2idle stability record; keep the Touch ID probe deferred.
+
+## Aurora energy ports, hardware receipts and frozen releases — 2026-10-18
+
+Owner requested all Aurora energy/WIP improvements plus tested kernel labels
+and frozen feature releases. Work is isolated in the aurora-energy-releases
+checkout; original power-usage checkout and its untracked rust work are intact.
+[Implemented plan](aurora/ENERGY-PORT-PLAN-2026-10-18.md): refreshed all 52 branch
+heads and 12 open PR heads; ten immutable energy-file comparisons. J314S DT,
+PMGR, CPU idle and PMP helpers/tests are identical between `.20` and the new
+draft PR #139 7.2.10 snapshot. Preserve already included behavior rather than
+reapplying historical patches. The draft's J316S results are not this J314S.
+
+Integrated PR #79's existing source-build lane and six authored, pinned patches
+with both documentation histories retained. Local adapter/promotion tests and
+production thermal/SMC checks pass. Added separately pinned `unified72` source
+preparation/check/build and another ARM64 CI profile; 12 production PMP tests
+pass locally. Release identities/package/module directories remain distinct.
+
+`qualification.py` now collects current-boot JSON-journal-bound read-only
+receipts and freezes/verifies exact source/recipe/kernel/boot/module/runtime
+parameter identities. Captured the running `.20` + matched 9c9c2d01… payload:
+boot >5 min, PMP ready/started/PMGR ownership, advancing idle counters and no
+selected severe-log messages. **Frozen experimental exp1**, not stable. The
+30-second SMC reading is during active work and is not an idle/A-B result.
+The released `.20` binary was repackaged into a native payload-only .deb with
+corresponding source/recipe retained; no installation occurred.
+
+The experimental exp1 freeze is now published with ten remotely checksum-verified
+assets at `releases/tag/mseries-aurora20-j314s-2026.10.18-exp1`. Afterwards, the
+same live J314S kernel passed a surfaceless GLES shader / 16-pixel readback on
+Apple M1 Pro G13S C0 and a 1 MiB temporary-file fsync/hash smoke test. Separate
+supplemental receipt and reusable runner are retained; frozen exp1 is unchanged.
+Neither smoke test is labelled a full GPU/storage/suspend acceptance result.
+
+Stable promotion refuses missing cases, failed results, mixed identities,
+fewer than three boots/sleep cycles or unmatched energy pairs; frozen IDs are
+write-once. Hardware wake/storage/GPU/ports/thermal/recovery and paired energy
+work remains. No kernel, bootloader, default/next-entry, refresh, brightness,
+sensor, audio or suspend action was changed by this batch. Next: use CI-built
+candidate artifacts for a reviewed non-default boot/rollback batch, then record
+the full J314S acceptance matrix before any stable promotion.
+
+### Follow-up release guard and WIP audit
+
+[64 original review fixes](aurora/branch-audits/2026-10-18-review-parity.json)
+were triaged against PR #139: 30 reverse-apply, 10 forward-apply, 24 need
+semantic/context review. All 64 are in `.20`/`.20-enh1`. Confirmed 7.2 gaps
+include GPU command-tail admission and SEP autoload/suspend behavior. Keep 7.2
+build-only; `.20-enh1` remains first hardware candidate. PR #83 merged the
+source/release groundwork. Merged PR #84 fixes stock-bindgen E0080 using the
+unmodified authored review commit 4c56f9cd and adds the real GPU/storage smoke
+receipt. Native ARM64 CI run 39114197052 passed both `.20-enh1` and `unified72`
+Image/modules/DTBs/package/inspection lanes at exact source head `20befbb3…`.
+PR #84 merged as `6ea6a062…`; passing compilation does not clear the 7.2 parity
+gate or qualify either new kernel on hardware.
+
+A Git history guard rejects edits/deletion of existing freeze/pin bytes; archived
+pins keep exp1 verifiable after future release changes. The next collector adds
+read-only active refresh/VRR/layout/display-power capture (no monitor serials).
+Exp1 had available-mode lists only, so stays an uncontrolled observation. A
+later diagnostic observed internal fixed 120 Hz and external 1080p fixed 60 Hz;
+no settings were applied. Local 47 regression checks and public dashboard
+checks pass. Additional reviewed-source controls pass: original 7 GPU-reader
+tests, 14 selected M1/M2 clock controls, DCP route fixture and 42 Bluetooth
+recovery controls under sanitizers. `review-host-check.py` and the retained
+source-host receipt bind the input tree and production bodies; these are
+simulated-service host checks, not new hardware acceptance. Disabled Python
+bytecode writes in the source-host runner, removed its private generated cache
+and re-ran all controls: the tested input tree now exactly matches CI's prepared
+source hash `98911503…`. Downloaded `.20-enh1` payload/source checksums verify.
+
+A separate same-boot proof binds live kernel GNU build ID `0d293a31…` to the
+exact `.20` ARM64 Image hash recorded in exp1. New captures hash and match a
+single image-byte snapshot; stable promotion requires the live build-ID match.
+Original exp1 assets/identity are unchanged; new-identity captures need their
+own freeze. Truncated/missing/mismatched notes fail closed in regression tests.
+
+### Frozen enhancement build published
+
+`mseries-aurora20-enh1-2026.10.18-build1` now permanently retains the successful
+`.20-enh1` payload, complete corresponding source, resolved config/provenance,
+authored patch series and checksums. Eight GitHub asset SHA256 digests match
+local publication files. It is **hardware-untested / frozen build candidate**,
+separate from the running `.20` experimental hardware freeze. Metadata lives in
+`aurora/frozen/builds/`; the history guard protects its bytes and rejects a
+hardware-qualified label. [Native build receipt](aurora/branch-audits/2026-10-18-native-builds.json)
+records both passing profiles and exact artifact/provenance identities. The
+7.2 binary remains build-only and is not a frozen hardware feature release.
+
+## Window snapping remains enabled; native quarters installed — 2026-10-18
+
+Owner requested permanent snapping and quarter layouts. Live edge-tiling was
+false and both half-snap shortcuts were empty despite the login helper.
+Enabled them immediately, then installed a local dconf profile/database with
+locks for those three keys. New clients report edge-tiling=true and
+`gsettings writable` false; old user overrides cannot disable the policy.
+`enhance.sh` stages the policy offline and the normal post-install menu now
+selects the quarter plugin installer by default.
+
+`mseries/window-snapping` is a native Gala 8.6.2 / Mutter 50 plugin. It adds
+40-logical-pixel corner targets, quarter previews, Super+Alt+U/I/J/K and
+Super+keypad 7/9/1/3. It respects monitor work areas and resizability; Escape
+cancels a drag. Installed schema and `.so` into the active private Gala prefix;
+the current compositor has not been restarted. **Quarters load at next sign-in.**
+Claude was focused and sent Super+Shift+Left to bring it toward the built-in
+display where Codex is open. No app/session restart was performed.
+
+Validation: native build; all four keyboard quarters, all four corner drags and
+Escape cancellation passed in an isolated headless Gala with a real GTK Wayland
+client (`bash mseries/window-snapping/test-nested.sh`). Shell syntax and scoped
+ShellCheck pass. No physical-monitor quarter verification or factory image
+boot is claimed; the factory currently stages only the half-snap policy.
+Next: sign in again, try the corner preview on both physical displays, then
+integrate the native plugin build into factory assembly if desired.
+
+## UPDATE 2026-10-18 04:25 — the crash is the Touch ID PROBE, not the boot (Claude Code)
+
+`.20` Aurora kernel (`7.1.12-2-20261017.20-sep-ARCH`, entry `elementary-aurora20`, SEP driver
+**enabled**) booted and ran **~141 s** with the SEP attached (7 endpoints, `/dev/sep-bio`,
+hwrng) and a normal desktop — far past the 15-60 s window where `.19` boots died. The
+journal ends at the moment the owner opened a Settings/Touch ID screen; owner report: **"when
+you probe the secure enclave / Touch ID it always crashes."** PAM is not wired (no
+`pam_fprintd` in sudo/polkit) and `fprintd` never ran, so the trigger is the first
+`/dev/sep-bio` open / sensor bring-up from the app. Leading suspect: the hand-ported
+`spi@39b108000` + `fingerprint@0` node in the current `boot.bin` (its clock and pinctrl phandles
+were flagged unresolved at port time). The upstream-matched J314S DTB is staged in
+`~/aurora20-boot-candidate/` (see `aurora/README.md`). **Do not open the Touch ID app or run
+`fprintd`/`aurora-touchid-setup` on the current `boot.bin`.** Next: with owner OK and DeepSeek
+coordination, deploy the matched `boot.bin.candidate` (rollback copy beside it), boot
+`elementary-aurora20`, wait 5 min idle, then one deliberate probe.
+
+(Older section below kept for history; its "SEP driver hangs the boot" conclusion is superseded.)
+
+## RESUME HERE — Aurora/Touch ID hang investigation — 2026-10-18 (Claude Code)
+
+**Problem:** every boot of the Aurora SEP kernel (`7.1.12-2-20261015.19-sep-ARCH`,
+GRUB entries `elementary-aurora-sep`, `-sep-clean`) hangs the whole machine within
+~15-60 s: mouse dies, then the Mac powers itself off about a minute later (looks
+like the SMC/PMU watchdog). Journal stops with no panic/oops (pstore empty).
+Dock is NOT required (happens undocked). Stock `7.1.13-3-2-ARCH` is stable on the
+same patched m1n1 DTB. The SEP does come up before the hang (firmware accepted,
+hwrng registered, `/dev/sep-bio` exists). No fingerprint enrolled yet. The dock
+(hub/mouse/Ethernet) does not work on Aurora (no fairydust USB4 code).
+
+**State of the machine right now:** default boot is stock. One-shot
+`grub-reboot elementary-aurora-nosep` was armed (Aurora with
+`module_blacklist=apple_sep`). A temporary journald drop-in
+`/etc/systemd/journald.conf.d/zz-aurora-freeze-hunt.conf` (1 s sync) is installed;
+remove it after the hunt. Touch ID app is installed ("Touch ID",
+`~/.local/bin/mseries-touchid-settings`); useless until Aurora runs stably.
+
+**Next steps, in order:**
+1. Result of the `nosep` boot: stable 10 min => the SEP driver causes the hang;
+   hangs => Aurora build itself or the ported fingerprint node.
+2. If still hanging: with owner approval, restore
+   `/boot/m1n1/boot.bin.pre-fingerprint-20261017-103254` (removes the ported
+   `spi@39b108000`/`fingerprint@0`; its clock/pinctrl phandles were flagged
+   unresolved at port time) and boot Aurora once.
+3. If SEP driver is guilty: report upstream (omacom/linux-aurora) with the logs in
+   AURORA-SECOND-BOOT.md; dock+Touch ID on one kernel is DeepSeek's area (kernel
+   work is DeepSeek's; coordinate via GitHub).
+4. Remove the journald drop-in when done.
+
+Full evidence and boot-by-boot table: [AURORA-SECOND-BOOT.md](AURORA-SECOND-BOOT.md);
+device-tree history: [aurora-touchid-state.md](aurora-touchid-state.md). Rollbacks:
+`/boot/grub/custom.cfg.pre-aurora-*`, `boot.bin.pre-*` in `/boot/m1n1/`.
+
+## Aurora SEP kernel: first boot froze — 2026-10-17 (Claude Code)
+
+Booted `7.1.12-2-20261015.19-sep-ARCH` with the patched m1n1 DTB (SEP enabled +
+alias + fingerprint SPI node). The SEP came up (firmware accepted, 12 endpoints,
+hwrng registered at 25.9 s) and the desktop started, then the journal stops at
+~34 s with no panic; next boot saw an unclean shutdown and pstore was empty.
+fprintd never started and nothing opened `/dev/sep-bio`, so enrollment is not
+the trigger. Cause unknown. Machine is back on stock `7.1.13-3-2-ARCH`. Public
+bugs page corrected (no longer claims Touch ID is just waiting on a boot test).
+Details: [aurora-touchid-state.md](aurora-touchid-state.md). Next: decide on a
+second boot with faster journal flushing; no boot files were changed by this note.
+
+## Omacom userspace improvements — 2026-10-17
+
+[Systematic audit](OMACOM-IMPROVEMENTS.md) records all candidate dispositions,
+immutable source pins and the 69-repository / 1,482-branch receipt. Ported sleep
+energy recording, a one-shot power report and Applications launcher through a
+new diagnostics enhancement module (manual, transform and factory staging).
+Root sleep hooks have a 3-second bound; logind notifications wait for an active
+unlocked session. Invalid clocks, charging/unknown readings, changed boot IDs
+and failed suspend attempts are excluded; CPU sampling handles PID reuse.
+
+Bluetooth recovery is shipped **disabled**, with hardware, rfkill and current
+suspend-cycle timeout gates. Explicit installer opt-in enables future events;
+it never rebinds on install. Built-in F4/F5/F6 remaps are separately opt-in.
+Touch ID settings now constructs its fprintd manager before probing, reads the
+sensor readiness diagnostic, avoids duplicate signal handlers, and fixes the
+installer's duplicated directory. No new SEP activation owner or PAM edit.
+
+The repo has no Omarchy Bolt poller to replace; audio/backlight references do
+not map directly to this desktop. Existing m1n1/video pins need no payload
+refresh. Kernel source work remains separate in PR #79. ESP mtools validation
+already existed; added a mandatory CI GPT/FAT fixture for its real readback.
+
+Local fixtures: 14 power diagnostics tests, 15 Touch ID tests, four installer/
+CI-dependency checks and 12 Bluetooth recovery groups pass. The real FAT fixture
+requires fdisk/mtools (skipped on this macOS host, required in the dedicated
+Linux CI job). Image pruning tests and broader wiring validation run there too.
+No target hardware, bootloader/kernel, audio, display, Bluetooth or key setting
+changed. No measured battery gain or factory boot claim. Initial Linux CI on `2ae80a5`
+passed both jobs ([run 39085829799](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39085829799)), including real FAT readback, ShellCheck, image pruning and power-install
+regressions. Follow-up hardens removal and error handling; check the final PR
+head results before merging. Next: install diagnostics on Linux and qualify suspend/unlock logs; opt in to
+Bluetooth recovery only after retaining its matching failure evidence.
+
+## Aurora enhancement integration — 2026-10-17 (source candidate)
+
+Owner clarified “merge all enhancements”, not all kernel branches. The separate
+[source candidate](aurora/enhancements/README.md) imports PR #67's udmabuf/system
+heap, PR #135 thermal fallback, PR #134 then #119 camera fixes, and a rebased
+optional-battery-property helper from `4676c48e`. Original public authors and
+patch hashes are retained. PR #67's AMD/Nouveau commit is a separate `egpu`
+build profile; those drivers stay disabled in the normal candidate. No higher
+GPU clock or compute-preemption broadening is enabled.
+
+`candidate.py prepare/check/build` verifies the existing .20 source/recipe,
+applies patches without fuzz, modifies the actual full config, resolves/checks
+Kconfig and creates a separate payload-only Debian package (zstd level 3,
+bounded parallel compression) plus complete
+patched corresponding source. Kernel identity: `7.1.12-elementary-aurora20-enh1`
+(or `-egpu`). The fixed .20 installer/stager intentionally does not install it.
+17 local adapter regressions, 58 upstream Rust tests and the production SMC
+helper's all-readable + 65 failure cases pass (ASan/UBSan). Native ARM64 full
+build and package inspection are in `aurora-enhancements.yml`; CI result will
+be recorded with the merge. Hardware boot and battery improvements unmeasured.
+
+Outstanding: rebase shared DCP changes #122/#127 with matched m1n1/DT and display
+regressions. Old Neo telemetry, J456 speaker experiments, old Omarchy-only
+package policy and superseded VRR/SEP/TB code are excluded as documented.
+No target kernel, boot.bin, live service, default/next_entry or reboot changed.
+Next target action remains the saved installed-Linux read-only preflight, then
+qualify the released .20 baseline before considering this source candidate.
+Keep native Debian packages for the Ubuntu/elementary base; source tracking is
+independent of Arch packaging. Future factory image updates can use existing
+mkosi/sysupdate wiring; installed-machine migration and install-speed profiling
+are separate work, not completed by this kernel integration.
+
+
+> **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
+> Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
+> Aurora has j314s Thunderbolt-display prior art; check it before more RE. This dock HDMI path remains unqualified.
+> Gates, prior art and rules: [fairydust/usb4/PRIMARY-GOAL.md](fairydust/usb4/PRIMARY-GOAL.md).
+
+## All Aurora branches audited — 2026-10-17 (read-only investigation)
+
+Owner requested all `omacom/linux-aurora` branches be investigated for useful
+imports. [Full report](aurora/UPSTREAM-BRANCH-AUDIT-2026-10-17.md) and the
+[immutable-head receipt](aurora/branch-audits/2026-10-17.json) cover all 51
+repository branches plus 11 open PR heads against our `.20` source `c46d7dcd`.
+41 branch tips are ancestors; two add only release tooling; eight diverge.
+Targeted code review distinguishes semantic duplicates from missing work.
+
+Important correction: `.20` already implements ProMotion/VRR KMS capability,
+atomic state, panel range and real swap timestamps. The earlier dynamic-refresh
+audit describes Fairydust; it now has a prominent Aurora correction. Test Gala/
+Mutter and actual panel behavior after boot, rather than reapply the old patch.
+
+16 public patch sets were checked without changing the baseline source. Six
+apply: PRs #67, #86, #110, #119, #134, #135. #86/#110 are Omarchy-only installer
+policy. #135's upstream host suite passes 54/54 on base and 58/58 on an isolated
+patched copy (macOS Rust 1.98.1, edition 2021, warnings denied). #134 then #119
+apply together to copied ISP files. No ARM64 kernel build or hardware test.
+
+Best further M1 Pro/local-AI research candidate is the udmabuf portion of draft
+#67, split from its unqualified AMD/Nouveau eGPU commit. M3 Air thermal/camera
+changes are scoped candidates for those boards. #122/#127 need a rebase; Neo
+SMC hardening needs a separate port. The 131-commit old Neo trial was reviewed
+selectively, not exhaustively. No branch was merged, no binary pin changed and
+no target kernel/boot/service/display/audio action occurred. Keep the saved
+installed-Linux preflight as the next hardware step.
+
+## Aurora 20 merged; resume on installed Linux — 2026-10-17
+
+Owner authorized merging PR #78; it is merged as
+`9ddade6d430492888df92bf47132b07e4e3233b7`. PR package inspection and M-series
+wiring checks passed. Owner then deferred target-machine checks and asked to
+save the note before booting back into Linux. No live kernel/bootloader change,
+boot arming or reboot was performed. The exact read-only preflight and upgrade
+resume sequence are saved at the top of [REBOOT-QUEUE.md](REBOOT-QUEUE.md).
+Read the actual root/ESP/initramfs/GRUB state before deployment; retained E4
+records are historical and the shared boot.bin fallback contract is unqualified.
+
+## Aurora 20 upstream kernel port — 2026-10-17 (source/package work only)
+
+The owner requested porting the new `omacom/linux-aurora` support. The new
+`mseries/aurora/` lane pins release `aurora-2026.10.17.20`, source
+`c46d7dcdb8712ea9aeb0ce47b439ffae76371e55`, and repackages the unchanged
+published kernel/modules/DTBs as a Debian payload with corresponding source,
+original recipe, licenses and checksum/provenance receipts. It does not run
+upstream's Arch installer or import its desktop/Mesa configuration.
+
+The installer now creates `elementary-aurora20`, preserving legacy .19 and
+Fairydust entries. Fixed download-status text contaminating captured filenames;
+repeat installs update only the versioned managed block. Both mkinitcpio and
+initramfs-tools explicitly include/check the new modular display dependencies. Userspace is reused unless `--with-touchid`
+is selected; no SDDM or automatic PAM edits. No reboot/default/next_entry writes.
+
+`stage-boot.py` builds a private candidate from an explicit copy of boot.bin,
+using pinned Aurora m1n1 and the complete J314S DTB; other board DTBs and the
+U-Boot/config tail are byte-identical. It writes a rollback copy/report and never
+deploys. The installed boot.bin is shared: compatibility of the newer J314S DTB
+with the fallback kernels must be reviewed before deployment, including E4 state.
+
+Local validation: 9 new offline regressions and 9 existing Touch ID tests pass;
+the real release package passed hash, module dependency and J314S DT admission,
+and the Debian payload was produced without installing it. Dedicated Linux CI
+also inspects the .deb using dpkg-deb. See [port guide](aurora/README.md).
+**Not done:** live deployment, kernel source rebuild, factory ISO integration,
+J314S/WD22TB4 hardware boot, dock picture, Touch ID enrollment or recovery boot.
+Upstream `.20` explicitly does not qualify M1 Pro/Max/Touch ID on this release.
+Next task: review the matched payload/fallback contract, then a separately
+controlled hardware batch. Existing dock G2–G5 results have not advanced.
+
+## VM toolkit, window corners, mouse and chime fixes — 2026-10-16 (DeepSeek/OpenCode)
+
+`mseries/vms/mseries-vm` now creates, fetches media for and runs the ARM64 test guests.
+Verified headless: the newest elementary OS 9 daily ISO (checksum-verified, booted to the
+installer, driven past GRUB with the new `key`/`wait`/`screenshot` commands) and Omarchy 4
+(the archive.org UTM image imported to a plain qcow2, booted to the Hyprland desktop).
+Windows 11 ARM64: the UUP set (67 files, 8.8 GB) verified against `files.json` SHA-256s and
+the pinned converter (`dbc65de`) is in place; ISO conversion was still running when this was
+written. `fetch windows` was hardened after a live failure mode: aria2 with `--continue`
+re-hashes complete files and re-probes their signed URLs, which expire fast (stale-URL `403`
+storm, ~20 minutes of no progress). The script now verifies every local file against
+`files.json` itself and hands aria2 only the missing/corrupt subset with a fresh URL,
+skipping it entirely when nothing is owed. `vms/test-mseries-vm.sh` now covers the
+verify-first and repair paths (79 hermetic checks, PATH-stubbed tools, no KVM/network/root)
+and runs in CI; `KVM-VMS.md` points at the toolkit. macOS guests remain impossible
+(`mseries-vm macos`).
+
+Desktop fixes (repo defaults plus applied live on the M1):
+- Every standard window gets rounded corners through a second Gala patch,
+  `patches/gala-window-corners.patch` (a Clutter ShaderEffect that masks each
+  `Meta.WindowActor`'s frame rectangle inside its texture, so shadows survive;
+  `GALA_WINDOW_CORNER_RADIUS`, default 12). `install-gala-screen-corners.sh` now applies
+  both patches, builds, and installs 20 px screen + 12 px window corners for the owner's
+  session (effective next login; the visual pass after relogin is still pending).
+- Mouse natural (inverted) scrolling: `enhance.sh` dconf default and
+  `apply-desktop-settings.py`; set live (was `false`, now `true`).
+- Quieter volume chime: `install-quieter-sound-theme.sh` builds a user "mseries" sound
+  theme that inherits elementary and scales the stock chime by -10 dB (peak -11 dBFS ->
+  ~-21 dBFS); installed and active now, with `test-quieter-sound-theme.sh` in CI.
+
+Not verified: the window corners at next login (build compiles, both patches stack
+cleanly, compositor installed — needs the visual pass), Windows ISO conversion completion,
+logins inside the Omarchy guest.
+
+## Dock video E1 boot result — set_hpd cleared, sink/AUX is the frontier — 2026-10-16 (OpenCode)
+
+The armed E1 one-shot boot (`elementary-usb4-dpin-controlled`, image
+`46116374…`, only `appledrm.ko` changed, patch `0013`) ran; `next_entry` is
+consumed. Verified live `appledrm` build-id `90eec845…` equals the E1 ko. E1
+made a tunnel-mode `set_hpd` failure non-fatal and widened the linkcfg window to
+8 s; the tunnel then survived the `-110` for ~5 s instead of 1 s, so the
+`set_hpd` timeout is **cleared** as the wall. The firmware still never configured
+the link (RTKit syslog 13 for the whole boot; no `idx=7,13,15,5,12,9,6`) and its
+last substantive word was `DEVICE_NOT_RESPONDING` (call 22). The `-67` in the
+`connect_source` line is **our** reply to that call (`dptxport_call` maps calls
+22/24/20 to `dptxport_tunnel_reply(..., -ENOLINK)`), not a firmware-returned error
+and not a timeout. H1 (firmware blocked on the sink-facing path) leads; H2
+(`set_hpd` wrong/unsupported for the tunnel) is not excluded. Monitor was on the
+dock HDMI throughout with no reaction; no picture, M1–M4 unmet. Full record:
+[evidence/2026-10-16-e1-boot-outcome-firmware-device-not-responding.md](fairydust/usb4/evidence/2026-10-16-e1-boot-outcome-firmware-device-not-responding.md);
+ledger: [STATE-OF-PLAY.md](fairydust/usb4/STATE-OF-PLAY.md). Next, owner-gated,
+one reboot each: E3 (DP-IN HPD notifier + host DP-IN AUX/DPCD status
+instrumentation), then E2 (unbypassed DPRX, `dprx_bypass=0` — §9 hazard), then
+the macOS m1n1-hypervisor trace.
+
+**E3 staged (OpenCode, 2026-10-16).** Patch `0014` adds DP-IN HPD producer
+logging (`DPINDBG irq:`/`hpd_notifier`) plus `init/exit/power_on/power_off`
+register dumps; `phy-apple-dpin.ko` `9d43d6e7…`. E3 image `2c036651…` installed
+on `elementary-usb4-dpin-controlled` (bypass=1); a paired **un-armed** E2 entry
+`elementary-usb4-dpin-nobypass` (`dprx_bypass=0`, same image) added to
+`custom.cfg` so one reboot runs both. E2 is ARMED for the next reboot
+(`next_entry=elementary-usb4-dpin-nobypass`).
+`test-dp-tunnel.sh` verdict fixed in the same batch. Record:
+[evidence/2026-10-16-e3-dpin-hpd-instrumentation.md](fairydust/usb4/evidence/2026-10-16-e3-dpin-hpd-instrumentation.md).
+
+## macOS power baseline and parity checklist — 2026-10-17 (Claude)
+
+Owner asked to profile everything macOS does on this Mac, set a minimal baseline per category, and check categories
+off as Linux matches them. New `mseries/power/macos-baseline/`: `macos_profile.py` (macOS, sudo: powermetrics rails,
+cluster residency, per-process energy and wakeups, SMC `SystemLoad`, inventory of processes/launchd jobs/pmset
+settings, lid-closed drain from `pmset -g log`), `linux_profile.py` (same seven scenarios and summary shape on
+elementary OS, no root, never touches display/audio/kernel), and `parity.json`/`parity.py` (11 categories, 41 items;
+pass = within 10% of macOS, close = within 1.5x) which regenerates `PARITY.md`. Tested only against synthetic
+powermetrics plists and a fake sysfs tree; **no real run on either OS yet**. Next: owner runs the macOS profiler on
+the 14-inch M1 Pro booted into macOS (on battery, brightness noted), then `linux_profile.py` at the same brightness,
+then `parity.py --mac ... --linux-run ...`. Not measured on Linux yet: CPU/GPU rails (C1, G1), sleep drain (F1).
+
+## Hotkey "drawers" Gala plugin staged — 2026-10-16 (DeepSeek/OpenCode)
+
+Owner asked for per-app hotkeys that pop windows up/down snapped into fixed
+zones. Chosen route: a **Gala plugin** (the only layer that can grab a global
+hotkey and place a window on Pantheon — Gala is not GNOME Shell, has no
+`wlr-layer-shell`, and exposes no window-move D-Bus method). New
+`mseries/gala-drawers/` (`Main.vala`, gsettings schema `drawer-1..9`, INI config,
+meson) plus `install-gala-drawers.sh` and an opt-in `drawers` stage in
+`post-install.sh`. Built and linked against gala 8.6.2 / mutter 50.1; schema
+compiles; installed into the running patched Gala
+(`/usr/local/lib/mseries/gala/lib/gala/plugins`), `drawer-1` bound to
+`<Control><Alt>t` (terminal -> top 40%). Found: gala 8.6.2 drops its
+plugin-directory watch (`PluginManager` never retains the `FileMonitor`), so new
+plugins load only at the next Gala start, not live. Owner will log out/in to test.
+Not verified: placement/show-hide, multi-monitor zones, launch-then-place.
+Details and resume checklist: [gala-drawers/HANDOFF.md](gala-drawers/HANDOFF.md).
+
+## R1/R2 first-boot fixes staged — 2026-10-16 (DeepSeek/OpenCode)
+
+Source revision `46bb8b6` (public patch `0011`) implements R1 (retry the
+source start on `-ENOLINK` every 50 ms until the 5 s deadline; one-shot
+INACTIVE/ACK/HPD/IRQ register dump on failure; Apple's abort semantics kept)
+and R2 (bound-provider guards in every dpin op and the DCP connect path —
+`-ENODEV` instead of the `dpin_init` Oops). Five modules rebuilt; all offline
+suites pass (28 bridge groups incl. the new `-ENOLINK` retry group);
+checkpatch clean; the refreshed bundle re-validated (the only new undefined
+symbol versus the booted bundle is `_dev_info`, referenced by the target
+tree's own `appledrm.ko`). The controlled-test payload was re-staged and
+re-installed through the reviewed sequence (rollback → stage → verify → plan →
+apply): image `486be1d9…`, same `custom.cfg` (`9eadf091…`) and fallback-safe
+`boot.bin` (`6702f2c7…`); fresh rollback set
+`/home/sdolbec/dptunnel-logs/rollback-46bb8b6` (the c6fd906 set is
+superseded). `next_entry` empty; no boot armed or performed. The
+`mseries-gala-failed` marker was removed and the `lightdm-wait-for-drm.conf`
+drop-in is installed (effective next boot, unverified); the remaining
+session-race item is shortening appledrm registration. Record:
+[evidence/2026-10-16-r1-r2-fix-and-restage.md](fairydust/usb4/evidence/2026-10-16-r1-r2-fix-and-restage.md).
+
+## Controlled-test preparation resumed — 2026-10-16
+
+The owner resumed at fallback compatibility, with no repeated discovery.
+Patch 0010 preserves DCP's original phys and every existing PHY dependency;
+only the new driver consumes apple,dp-tunnel-phy through a managed getter.
+Independent source review and 11 lookup fault/refcount groups pass. Static
+fallback compatibility is addressed; fallback boot/runtime remains untested.
+
+The frozen source c6fd906 was clean-rebuilt for all five modules, followed by
+version/layout/export checks and actual staged-image verification. The new
+initramfs alone carries the new modules and metadata; root modules, original
+initramfs, kernel/default and existing GRUB entries remain untouched. The
+separate entry uses bypass=1 and timeout=15000. Exact artifacts, hash-guarded
+installer, rollback and collector: [CONTROLLED-TEST.md](fairydust/usb4/CONTROLLED-TEST.md).
+The earlier root-module-replacing installer is superseded for this test.
+No reboot, module reload/unbind, cable move or hardware success is claimed.
+**Deployment status: STAGED AND VERIFIED; first boot executed — 2026-10-16.**
+The one-shot entry ran 11:45:04–11:47:13 with the exact intended parameters and
+all five rebuilt modules loaded. The bridge engaged automatically on the dock
+tunnel (`0:5 <-> 1:14`) and failed in the DP-IN path: first attempt
+`phy poweron failed --> -67` (`-ENOLINK`; DP-IN HPD low at activation), second
+attempt Oopsed in `dpin_init` (NULL device passed to `pm_runtime_resume`). A
+Gala/simpledrm boot race also crashed the desktop, so the collector was not run.
+Full record:
+[evidence/2026-10-16-controlled-test-first-boot-outcome.md](fairydust/usb4/evidence/2026-10-16-controlled-test-first-boot-outcome.md).
+The R1/R2 fixes are staged (rev `46bb8b6`, image `486be1d9…`, rollback set
+`/home/sdolbec/dptunnel-logs/rollback-46bb8b6`); `next_entry` is empty; root
+modules, original initramfs, kernel/default and grubenv are unchanged. Do not
+re-arm the test entry until the session race (R4) is addressed or accepted
+(the drop-in takes effect at the next boot; appledrm-registration work remains).
+
+Updated 2026-10-16. Repository: techmore/ElementaryOS_MSeries.
+
+
+## Stopped at source checkpoint — 2026-10-16
+
+The owner requested a natural stopping point. Patches 0007–0009 now save the
+DCP-before-DPRX bridge with source ownership, cancellation and router lifetime
+handling. Final changed module builds pass; 27 bridge groups plus the earlier
+29 logic groups pass, along with two board checks. Clean patch application
+byte-matches 14 reviewed source files. These are offline checks, not monitor
+progress: no new wake, unbypassed DPRX response, EDID/modes or picture.
+
+No new driver, initramfs or boot payload was installed or loaded; no reboot
+or cable change occurred in this batch. Only the build dependency pahole was
+installed. The prepared boot payload remains a private candidate.
+
+**Resume blocker:** the global boot.bin device tree replaces DCP's PHY with a
+new DP-IN provider. Resolve default/fallback-kernel compatibility and a tested
+rollback plan before deployment; a stock kernel may lack that provider.
+Initramfs/module staging and the first hardware test remain undone. Do not
+install the prepared payload merely because the source checks passed.
+
+See [bridge implementation and validation](fairydust/usb4/DCP-SOURCE-BRIDGE.md).
+
+## Current authorization and bridge implementation — 2026-10-16
+
+The owner now authorizes installing dependencies/drivers and rebooting or
+changing cables **if needed**, while requiring changes to be batched rather
+than constant switching. This explicitly supersedes the earlier no-install/
+no-reboot/no-cable instructions below. Codex owns implementation and Git
+writes for the current bridge batch; DeepSeek was asked for a scoped review.
+No new driver, initramfs or boot payload has been deployed yet.
+
+The isolated source now implements explicit NHI/DCP mapping, queued DCP
+preparation before DPRX reads, matched get/put, stale-result rejection and
+cleanup. 27 production bridge/gate/cancellation/adoption groups pass in addition to
+the earlier tests. Changed modules and target/control DTBs compile. Work is
+stopped at the source checkpoint above; deployment preparation is incomplete.
+
+**Compatibility correction:** do not disable CONFIG_DEBUG_INFO_BTF_MODULES
+when building C modules for this running kernel. It changes struct module's
+cleanup offset even when vermagic and total structure size match. Original
+ATC uses init offset 0x130 / cleanup 0x4a8; a BTF-disabled trial had cleanup
+0x490. Nothing from that trial was installed here. Retain the layout; a
+missing vmlinux may legitimately skip BTF data generation. Compare actual
+module init/exit relocation offsets, version and required exported symbols.
+The older module-only recipe claiming BTF-off is ABI-neutral is superseded.
+
+## Dock video: offline review and gap ledger — 2026-10-16
+
+Claude reviewed `DP-TUNNEL-RE.md` §6-7 against the pinned tree and the newer
+audit/REA/ordering notes (read-only; no kernel, boot, cable or Neo action).
+Findings are one ledger with owners: `fairydust/usb4/REVIEW-2026-10-16-GAPS.md`
+(linked from `STATE-OF-PLAY.md`). Fixed `test-dp-tunnel.sh`, which counted eDP
+as a connected display; it now counts only DP/HDMI connectors (checked live:
+old count would include eDP, new count 0). Not done: router-side DP-IN hook
+design and the refcount question (G1/G2, DeepSeek), DPRX teardown backport (G3),
+any hardware step (G4/G5, owner-gated).
+Update 2026-10-16 (later): recorded the DeepSeek bridge review (B1-B8) and Codex bundle status; read-only pre-reboot inspection found the GRUB entry lacks `dprx_bypass=1` (N1), `RECOVERY.md` named missing files (N2, repo copy corrected), no initramfs/install script yet (N3), a 5 s source deadline (N4). Reboot plan and post-reboot checks: `fairydust/usb4/POST-REBOOT-CHECKLIST.md`. Nothing applied.
+Update 2026-10-16 (late, OpenCode): the `DPINDBG` debug boot ran and the fatal `-110` is **our own `set_hpd(hpd=1)` AFK call timing out after 1 s**, not the 2 s `DPTX_CONNECT_TIMEOUT` (`waited=949`, a signalled completion; corrected in the second-boot record). After `ACTIVATE` the tunnel DCP firmware goes silent (1 connect-time syslog line vs 360 on a working HDMI path) and never configures the link. New reference: the firmware's complete working link-config sequence on built-in HDMI (`idx=7,13,15,5,12,9,6`) — which never calls `set_hpd`. Next: E1/E2/E3 (non-fatal HPD delivery / unbypassed DPRX / more instrumentation). Record: [`fairydust/usb4/evidence/2026-10-16-dbgboot-dcp-silent-never-configures-link.md`](fairydust/usb4/evidence/2026-10-16-dbgboot-dcp-silent-never-configures-link.md).
+Update 2026-10-16 (armed, OpenCode): **E1 prepared and armed, boot pending.** Patch `0013` makes a tunnel-mode `set_hpd` failure non-fatal and gives the tunnel path an 8 s linkcfg window; module `90eec845…`/`882c4445…`; initramfs `46116374…` installed on `elementary-usb4-dpin-controlled`; `next_entry` set; default entry and cables untouched. After reboot: `sudo dmesg | grep DPINDBG`. Record + rollback: [`fairydust/usb4/evidence/2026-10-16-e1-nonfatal-tunnel-hpd-boot.md`](fairydust/usb4/evidence/2026-10-16-e1-nonfatal-tunnel-hpd-boot.md).
+
+## DP-IN source milestone — offline implementation, 2026-10-16
+
+[Implementation and DeepSeek handoff](fairydust/usb4/DPIN-IMPLEMENTATION.md)
+now contains additional patches 0004–0006: DP-IN resources/IRQ, inactive/ACK
+handshake, shared ATC tunnel clocks and DCP callback/HPD/error integration.
+29 production-logic groups and 2 compiled-board checks pass; complete Apple
+DRM/PHY relocatable objects and target/control DTBs build, binding documents
+and DP-IN-filtered DTB schema validate. Ghidra independently corroborates
+selected REA findings. Full MODPOST/production-config/runtime checks remain.
+No new module/DTB/kernel was installed, no reboot or cable move performed.
+
+The [frontier ledger](fairydust/usb4/STATE-OF-PLAY.md) incorporates the separate
+recorded live 0003 HPD-selection fix: `0:5 <-> 1:14`, but DPRX still times out.
+Dock HPD establishes sink presence, not a working pixel chain. DP-IN source
+is a draft, not a solved hardware path. Next resolve router DPRX versus DCP
+ACTIVATE ordering using existing inputs; do not repeat discovery or count
+another build as monitor detection. Current no-install/no-reboot/no-unplug
+constraint remains. One Git writer; preserve other agents' notes.
+
+## Owner constraint: NO M1 Pro reboot or power cycle — 2026-10-16
+
+The owner explicitly forbids rebooting or power-cycling the M1 Pro. This
+revokes the earlier macOS cutover plan for the current session. Do not switch
+its operating system, start a hypervisor guest, or execute the shutdown/
+startup instructions in the retained cutover checklist. Those procedures
+are future reference only and require fresh owner authorization.
+
+Current work is read-only live enumeration and recovery diagnosis, preserving
+the running system's stability. Use the Neo for bounded remote diagnostics
+and offline analysis; it cannot add m1n1 hypervisor instrumentation underneath
+the already-running M1 Pro. Boot-time capture requires booting the target,
+which is currently forbidden. Keep remote work in delegated workers with
+hard timeouts, never hold the primary chat on SSH, and report active progress
+every 30 seconds. No kernel, boot, audio or system changes are authorized by
+this diagnosis.
+
+## REA / DeepSeek dock-video handoff — 2026-10-16
+
+Read [REA DP-IN findings](fairydust/usb4/REA-DPIN-FINDINGS.md) before proposing
+the next patch. Exact T6000 macOS 13.5 kernelcache, DCP firmware and j314sap
+device tree were selectively obtained from official Apple restore components,
+CRC/hash checked and analyzed locally. Native ARM64e caches were also found
+on Neo; the x86_64 compatibility KCs were the wrong inputs. REA/Kuna actually
+analyzed extracted AppleDisplayCrossbar/DCP proxy functions; original-byte
+and independent decoder checks support the findings.
+
+Shipped board metadata confirms separate DP-IN bases `0xb01e50000` and
+`0xb01e58000`, each `0x4000`, Apple IRQ values 1354/1355. Apple DP-IN activation
+uses a distinct inactive/ack/HPD handshake and tunnel/PHY/interrupt lifecycle
+absent from the inspected Linux crossbar path. PHY tunnel PCLK selection is
+also separate from existing USB4 common/CIO PLL initialization. Do not copy
+physical DP-altmode configuration into USB4 or treat static analysis as
+hardware qualification. Exact routine addresses, byte offsets, tool pins,
+limitations and the next implementation design are in the linked report.
+
+Latest read-only Linux check now shows port2 host, USB4 partner, Dell dock
+enumerated, bypass Y, external DP/HDMI disconnected, eDP connected. This
+supersedes older no-enumeration observations below; no agent reboot or cable
+change was performed. Static analysis and public handoff notes are authorized;
+live kernel/register changes remain outside the current authorization.
+Keep proprietary binaries and full decompiler outputs private.
+
+## Earlier port2 role attempt: EIO; read diagnostic prepared — 2026-10-16
+
+The owner's regular-Terminal role-change attempt returned `Input/output error`
+from `printf`, with no observed role change and no more detailed kernel error.
+The driver uses `SWDF` for a host-role request (`SWUF` requests device role).
+`EIO` is not an
+`EPERM` authorization rejection: transport failure or a short I2C length prefix
+can produce it, and the current evidence does not distinguish the cause.
+Neo before/after capture files remain private; no raw registry or credentials
+are included here. Do not repeat role writes based only on this error.
+
+Prepared [`inspect-cd321x-io.py`](fairydust/usb4/inspect-cd321x-io.py), a stdlib
+diagnostic fixed to bus0/address0x3f, after verifying port2's sysfs ancestry,
+`tps6598x` binding and OF `i2c@39b040000/usb-pd@3f` mapping. It reads CMD1 and
+STATUS, then reads one DATA1 result byte only if the earlier CMD1 value was
+valid and idle. Each combined I2C read includes only a one-byte register
+address selector followed by read data; it does not write task/config payloads,
+scan, reset, unbind or change a role. Raw bytes, length prefixes and errno are
+reported. Driver activity can occur between transfers; this is a snapshot,
+not proof that DATA1 belongs to the earlier role attempt.
+
+Exact owner regular-Terminal command, after source review:
+
+```bash
+sudo python3 /home/sdolbec/wt-dockvideo/mseries/fairydust/usb4/inspect-cd321x-io.py
+```
+
+Six offline tests validate combined-message construction, error preservation,
+conditional DATA1, fixed read whitelist, wrong mapping/driver refusal and
+no device open in dry-run. The real sysfs `--dry-run` passed. No hardware I2C
+transaction was executed by this preparation; runner sudo remains blocked by
+`NoNewPrivs`. No reboot, power cycle or system setting change was performed.
+
+## Earlier bounded live checks — 2026-10-16
+
+[Published live-status report](fairydust/usb4/evidence/2026-10-16-neo-live-status.md):
+Neo sleep assertions remain active and a Dell dock/hubs/USB LAN/headset enumerate
+there. No `/dev/cu.usb*` proxy endpoints and no display entries were observed;
+no handshake was attempted and no monitor picture is confirmed. USB inventory
+does not prove this is the same physical target WD22TB4 or that cables moved.
+The M1 Pro remains Linux at the latest check, with bypass `Y`, no USB or
+Thunderbolt devices observed, DP/HDMI disconnected and eDP connected. The
+target dock test needs the dock host cable on the M1 Pro and a separate direct
+recorder cable; do not infer physical cable changes from enumeration alone.
+Recorder Python,
+HV import, real ARMAsm smoke and loader help have passed. Target baseline,
+guest boot qualification and hardware trace remain outstanding.
+
+Owner requires the primary chat never to wait on SSH: remote checks belong to
+delegated workers with hard timeouts; long remote work must run as tracked
+jobs independent of SSH. Give progress updates every 30 seconds during active
+work. Do not ask the owner to repeat already-confirmed cable actions.
+
+## Neo recorder accessed / sleep inhibited — 2026-10-16
+
+Latest result: **Neo recorder core tools ready**. Official LLVM archive
+SHA-256 verified, and `READY-CHECK.sh` passed Python/HV imports, loader help,
+and actual AArch64 assembly/link/objcopy/nm (`nop; ret` ->
+`1f2003d5c0035fd6`). Sleep assertions remain active. Target macOS baseline,
+USB proxy handshake and guest qualification remain; no dock-video success.
+
+The owner supplied the second machine: MacBook Neo / Mac17,5 / A18 Pro,
+macOS 26.6.2 (25G83), 8 GB RAM, about 402 GiB free. SSH succeeded; at the
+owner's explicit request `ssh-copy-id` installed the existing Linux public
+key, followed by a successful password-free BatchMode login. No credentials,
+serial/hostname or network addresses are published.
+
+See [`NEO-RECORDER-SETUP.md`](fairydust/usb4/NEO-RECORDER-SETUP.md).
+A tracked `caffeinate -dimsu` runs on Neo and `pmset` verified its assertions;
+a sleep-blocking systemd inhibitor is active on the Linux target too. Both
+are reversible session measures, with logs/stop instructions retained.
+The Neo has private CPython 3.13.16, all four pinned m1n1 dependencies and
+fresh matching source/build at `c6a89b908ac4bf1f7b495f20531f3ea029148adb`.
+Twelve offline tests, HV import and guest-loader help pass on Neo. Native
+collector self-test confirms registry/profiler/log commands; the Preboot
+search fails without root and its error is retained. This is recorder
+validation, not M1 Pro dock evidence. The portable LLVM compiler smoke has
+passed; no serial handshake, target guest or boot change yet.
+
+Leave the dock/HDMI attached to the M1 Pro. Add only a direct USB data cable
+from the Neo to a free target Thunderbolt port when ready. Current next step:
+read-only live topology/recovery diagnosis; no reboot or macOS cutover.
+Neo's macOS 26 is the recorder OS, not the XNU guest.
+
+## macOS cutover package — future reference only (2026-10-16)
+
+Owner wants one thoroughly prepared visit, retaining the USB4/HDMI cables.
+The Neo recorder is now available; see the newer setup status above. Retain
+[`MACOS-CUTOVER-CHECKLIST.md`](fairydust/usb4/MACOS-CUTOVER-CHECKLIST.md)
+for a future, freshly authorized native macOS baseline, exact commands,
+kernelcache inventory, return checklist and reviewed public evidence. `collect-macos-dock.sh`
+needs no Python/Xcode/sudo and does not change settings or upload files.
+Raw registry/log/Apple binary data remain local; publish inspected metadata
+and relevant engineering evidence. The repository is confirmed public.
+
+Corrected the trace payload: **extracted matching XNU kernelcache.macho**,
+not iBoot or the m1n1 boot bundle. A complete m1n1 trace still requires a
+separate host and a reviewed guest boot route; native macOS cannot trace
+its own MMIO with that Python client. Added IORegistry import to the ADT
+inspector and a raw DPTX hook so validateConnection bytes are retained.
+Twelve offline tests pass; collector syntax/Linux refusal checks pass.
+No target macOS run, kernel/boot/audio change, or cable change was performed;
+the newer Neo self-test is separately recorded above.
+
+The [Linux snapshot](fairydust/usb4/evidence/2026-10-16-linux-baseline.json)
+records bypass `N` and dock DP disconnected at capture time. Arm and verify
+bypass from the regular Terminal before any detach/shutdown preparation;
+the exact command is in the checklist. Next: collect native macOS metadata
+and visible HDMI result with zero cable changes, then resolve register
+mapping and the recorder/guest prerequisites before a trace attempt.
+
+## DP-IN / AUX independent audit — 2026-10-16
+
+Read [`fairydust/usb4/DPIN-AUX-AUDIT.md`](fairydust/usb4/DPIN-AUX-AUDIT.md)
+before interpreting the older resume notes below. Owner confirmed dock HDMI
+to a powered Amazon Basics monitor on HDMI input. The owner ran one
+`force_link` off/on probe: DCP disconnect/connect and "powering nub" were
+followed by APCALL 22/24; `card2-DP-1` stayed disconnected. Bypass was `Y`
+after that probe. A later read found it `N`: the HDMI watchdog was restarted
+at 08:00:50, watching from live-log line 2795. This audit made no parameter
+writes. Read the current parameter and watchdog output before any cable action.
+
+New source-grounded findings: activation logs prove routing configuration,
+not end-to-end AUX traffic; the original trace recipe misses the separate
+`atcN-dpin0/1` blocks and defaults to the wrong DCP unless selected explicitly.
+A public dump from this exact Mac model names the DP-IN blocks. Their exact
+physical ranges and Apple ATC index still need the preserved ADT export.
+Do not blindly change DCP `core=0`: a public macOS log uses core0 for dpin0,
+and the older helper has incompatible IPC encoding.
+
+Added a filtered, read-only ADT inspector and a DP-IN/crossbar m1n1 trace hook;
+7 offline tests pass. Corrected `MACOS-TRACE-RUNBOOK.md` to run both hooks in
+one guest with explicit targets. No live capture or kernel/boot/audio change
+was made. The owner attempted the ADT export under sudo in their regular
+Asahi Terminal: `errno 1: Operation not permitted`; the JSON file is empty.
+Running config has `CONFIG_STRICT_DEVMEM=y` and no `CONFIG_MTD_PHRAM`,
+consistent with the RAM read being refused even under root. Do not weaken
+protections or retry via broader sudo. Next: obtain the macOS IODeviceTree
+baseline above (or ADT through m1n1 when a recorder is available), then
+capture DP-IN bring-up in a separately prepared two-host session. The HDMI watchdog
+has not produced a new, unbypassed sink result and cannot yet close H1.
+
+## USB4 dock video — resume here (2026-10-15)
+
+Active workstream: make the Dell WD22TB4's HDMI/DP output work on the 14-inch M1
+Pro over USB4 DisplayPort tunnelling. The dock is unavailable until 2026-10-16, so
+the state below is "prepared and waiting", not "finished".
+
+- **Experiment 1** (crossbar route `dispext1 -> dpin0` plus
+  `thunderbolt.allow_dp_tunnel=1`) is installed and was tested on hardware on
+  2026-10-15: the USB4 connection manager activates the Video and AUX paths, but
+  every attempt dies at the sink's DPCD read (`DPRX read timeout` ×25533). No
+  picture. Full result: `fairydust/usb4/DP-TUNNEL-RE.md` section 5.
+- **Experiment 2** — kernel `7.1.13-elementary-fairydust-usb4-dptunnel`, built by
+  CI run `38788230910` from branch `re/usb4-exp2` — is installed side by side with
+  the working kernel and is the next thing to test. It adds a runtime
+  `thunderbolt.dprx_bypass`, leaves the ATC DP PHY unbound for the tunnelled
+  connector (`apple,dp-tunnel`), and a per-connector `force_link` debugfs handle.
+- **Start with `fairydust/usb4/EXP2-RUNBOOK.md`**: its top box is the *one*
+  question the session answers — does the sink answer the router's DPRX/DPCD read?
+  — with an explicit early-stop (if the sink stays silent, no driver change can
+  help; pivot to the macOS trace), plus §8 "do not spend tomorrow on this". It
+  also has the resume map, the step-by-step test, the decision tree and the
+  ablation matrix; the four boot-tree variants (`config-A..D.bin`) are
+  pre-generated under `/home/sdolbec/dp-tunnel-artifacts/boot-variants/`.
+- The full reverse-engineering map, the 2026-10-15 offline analysis (why
+  `dprx_bypass` can bring the fabric up but cannot produce video; upstream's
+  missing "DP IN PHY" block; the upstream teardown fix we predate) and the cable
+  hazard are in `fairydust/usb4/DP-TUNNEL-RE.md`.
+- **Measured hazard:** do *not* unplug the dock while a DPRX read is in flight —
+  it deadlocks `apple_nhi_remove` against the `tps6598x` mutex and wedges the
+  Type-C port until a hard reboot. Arm `dprx_bypass=1` before attaching the dock.
+- **Where the work lives:** branch `docs/dock-video-decision` (PR #53), checked
+  out at `/home/sdolbec/wt-dockvideo` — **run the session from there**; the shared
+  checkout `/home/sdolbec/ElementaryOS_MSeries` is on another branch and its
+  collector is stale. The branch carries **both** the documentation and the
+  experiment-2 implementation
+  (`0002-experimental-dp-tunnel.patch` + the matching `debian/build.sh` pin), so a
+  build from this one branch reproduces the installed kernel; `re/usb4-exp2`
+  remains the original implementation branch. Durable artifacts (kernel `.deb`,
+  boot images, logs, backups) are under `/home/sdolbec/dp-tunnel-artifacts/` and
+  `/home/sdolbec/dptunnel-logs/`.
+
+
+## Repo hygiene audit — 2026-10-16
+
+Read-only audit of branches, worktrees and PRs: `REPO-HYGIENE.md`. Nothing was
+deleted or merged. Headlines: PR #53 (dock video) is mergeable against main; four
+local branches are fully merged; `brightness-sub-floor` and
+`codex/guide-collapsed-by-default` need PRs; the shared checkout holds uncommitted
+work from several agents and stale copies of dock-video docs (read the dock branch,
+not the checkout). Cleanup steps need the owner's yes.
+
+## CodexBar sessions section — 2026-10-16
+
+Audit: `codexbar usage` works for Codex (account quota, Pro Lite). Claude has
+no CodexBar fetch strategy here (no `~/.claude/.credentials.json`, no claude
+CLI; sign-in is via the desktop app). `opencodego` fails with "no session
+cookies" and the owner's OpenCode history is the free `opencode` provider, so
+the old Go-only local estimate always said "No cost-bearing records".
+
+Added `mseries/codexbar-sessions.py` (+ `test-codexbar-sessions.py`, 4 tests,
+added to CI) and a **Sessions** section in the Wingpanel menu replacing the
+Go-only block: status dot per ChatGPT/Codex, Claude Code and OpenCode, plus
+5h/7d requests and tokens for Claude Code (transcripts, deduplicated streamed
+responses) and OpenCode (all providers). Local activity only, not quota.
+Verified: helper output on this machine (Claude 99 req/5h, OpenCode 41 req/5h),
+meson build and 2 existing tests pass, new module installed to
+`/usr/lib/aarch64-linux-gnu/wingpanel-9/libcodexbar.so` (rollback copy
+`/usr/local/lib/mseries/libcodexbar.so.before-sessions`). Wingpanel was not
+restarted; the panel UI is not visually verified until next login.
+Next: confirm the Sessions section after re-login; Claude account quota needs
+credentials CodexBar can read.
+
+Follow-up: panel also shows CodexBar's own list-price spend estimate (today/month, from the snapshot `spending` field) and a clearer OpenCode Go quota message. Not visually verified.
 
 ## Current hardware state — 2026-10-14
 
@@ -24,6 +896,170 @@ desktop result as validation of either installation path.
 Next: run the long-uptime decode check, complete the encrypted backup using the
 owner's normal backup procedure, and keep the installer and factory-image
 qualification work separate from the already-running transformed desktop.
+
+## USB4 DP-tunnel experiment 1 — 2026-10-15
+
+Owner direction: **make the dock carry video** (they will not plug a display
+into the Mac's own ports), so the RE path is active. Reverse-engineered the
+missing data path and wrote it up in
+[`fairydust/usb4/DP-TUNNEL-RE.md`](fairydust/usb4/DP-TUNNEL-RE.md). Key finding:
+the display crossbar driver already supports routing a controller stream to the
+ACIO DP IN adapters (`dpin0`/`dpin1` ⇒ "USB4 Tunnel #0/#1"), and on this machine
+`atcphy1_xbar` (`b0304c000`, the dock's port) currently routes `dispext1,0` to
+`dpphy` instead. The only missing pieces are (a) the crossbar mux selection and
+(b) the trigger that makes the DCP drive the DP IN adapter.
+
+Landed (experiment 1, off by default):
+- `fairydust/usb4/0002-experimental-dp-tunnel.patch` — device tree routing of
+  `dcpext1` to `<&atcphy1_xbar 1>` (dpin0), a `thunderbolt.allow_dp_tunnel`
+  module parameter that un-suppresses Apple DP tunnels, and a per-connector
+  `force_link` debugfs to drive the DPTX endpoint by hand.
+- `fairydust/usb4/test-dp-tunnel.sh` — read-only evidence collector + verdict.
+- `fairydust/debian/build.sh` builds the experimental kernel only when
+  `FAIRYDUST_DP_TUNNEL=1`, as release `7.1.13-elementary-fairydust-usb4-dptunnel`
+  / package `7.1.13+elementary.usb4-dp1` (distinct, so it cannot be confused with
+  the working `-usb4` kernel). `.github/workflows/daily-9.0.yml` gained a
+  `fairydust_tunnel` dispatch input.
+- `fairydust/usb4/install-ci-kernel.sh` can now select a variant
+  (`KERNEL_SUFFIX`/`KERNEL_ENTRY_ID`/`KERNEL_EXTRA_CMDLINE`; defaults unchanged)
+  and swap just the `j314s` DTB inside the existing boot image (`--swap-dtb`), so
+  the experimental kernel installs side by side as its own GRUB entry. Nothing
+  was installed or booted.
+- Cleared the proxyclient dependency blocker without touching the system:
+  `fairydust/usb4/m1n1-trace-deps.sh` vendors `construct==2.10.70` and
+  `pyserial==3.5` into `~/.local/share/m1n1-proxyclient/site` (no pip/apt/sudo).
+  Verified `proxyclient/tools/run_guest.py --help` and the tracer imports work.
+  `proxyclient/hv/` already ships `trace_dcp.py` (AFK/ASC endpoint tracer) and
+  `trace_dptx.py`, so the macOS trace is now a tooling-free step.
+- Validated the `--swap-dtb` install step without root: against the live
+  `/boot/m1n1/boot.bin`, `swap-dtb.py` finds the 110-tree DTB run, matches
+  exactly one `apple,j314s` tree (#25, 93189 bytes) and an identity swap
+  reproduces the input byte for byte (sha256 `5cbc5f30…`). `sudo` here wants a
+  password and there is no TTY for the agent, so the dry run and `--apply` must
+  be launched from a real terminal.
+- CI run `38776005043` built the experiment-1 kernel (25m17s; the ISO job in the
+  same run failed and is unrelated) from `083f3a19`. Verified without root: the
+  `.deb` checksums pass, release is `7.1.13-elementary-fairydust-usb4-dptunnel`,
+  the DTB is at the path `--swap-dtb` expects, the compiled DTB has
+  `dcp@28cc00000` (dcpext1) `mux-controls = (153,1)` (dpin0) vs `(153,0)`
+  (dpphy) in the working boot.bin with the HDMI node unchanged, and
+  `appledrm.ko`/`thunderbolt.ko` carry `force_link` and the `allow_dp_tunnel`
+  module parameter respectively. Nothing installed or booted.
+
+Verified: patch applies cleanly to the prepared source, hashes match, `build.sh`
+syntax and the workflow YAML parse.
+
+**Installed 2026-10-15 and tested on hardware — no video yet.** The kernel was
+installed side by side as its own non-default GRUB entry (`elementary OS
+(M-series, fairydust-usb4-dptunnel test)`, via `--swap-dtb`), with the working
+entry and `GRUB_DEFAULT` untouched. Independent post-install check: the installed
+`boot.bin` differs from its pre-install backup by exactly one byte
+(`mux-controls` for `dcp@28cc00000`, arg 0 `dpphy` → arg 1 `dpin0`), the HDMI
+route and `mux-index` are unchanged, and the backup still hashes to the original
+`5cbc5f30…`. Because m1n1 consumes `boot.bin` before GRUB, that tree is shared by
+every entry; the original is kept at
+`/boot/m1n1/boot.bin.KNOWN-GOOD-pre-usb4-20261015-140455` and
+`/root/usb4-backup-20261015-140455/boot.bin`.
+
+On the booted test (2026-10-15 14:13-15:32) the tree was armed (`mux-controls`
+arg 1) and the crossbar logged the new route (`Switched dpin0 to dispext1,0`),
+but dock video still failed — one step later than before. The tunnel now reaches
+path activation: host DP IN `0:5` pairs with a dock DP OUT adapter, bandwidth is
+allocated in allocation mode (22500 Mb/s), and the Video, AUX TX and AUX RX paths
+all report `activation complete` (4x over the session). Every attempt then dies
+reading the sink's DPCD: `DPRX read timeout` x25533 (21479 on `1:13`, 4054 on
+`1:14`), with no link rate, no training, no video. Whole-journal check: this is
+the only boot that has ever reached path activation. `force_link` was never
+exercised, and no boot has yet A/B'd the old `dpphy` route against the new one, so
+the crossbar change's role is not isolated — the tunnel-side steps are
+host-router <-> dock-router and do not involve the crossbar at all. Both are the
+next cheapest steps; `fairydust/usb4/DP-TUNNEL-RE.md` has the log excerpt.
+
+Related: suspend with the dock attached remains unsafe — the next boot hung at
+`PM: suspend entry (s2idle)` and needed a power-cycle. More importantly, the test
+boot's unplug wedged the Type-C port (deadlock in `apple_nhi_remove` vs the
+`tps6598x` mutex, triggered by a DPRX read in flight); that is diagnosed and
+documented on the `re/usb4-exp2` branch, which also carries experiment 2
+(`dprx_bypass`) and its install. The two branches have diverged in this file and
+in `DP-TUNNEL-RE.md`; consolidating them is a git-ownership decision, not one to
+make silently here.
+
+Prepared for the next hardware session (dock returns tomorrow): an offline
+runbook, an experiment-2-aware evidence collector, and a byte-level device-tree
+tool that makes the crossbar/`apple,dp-tunnel` A/B a one-byte edit plus a reboot
+instead of a CI build.
+
+- [`fairydust/usb4/EXP2-RUNBOOK.md`](fairydust/usb4/EXP2-RUNBOOK.md) — the
+  step-by-step plan, decision tree, ablation matrix, hazards, rollback.
+- `fairydust/usb4/boot-dt.py` — inspect the live device tree inside
+  `boot.bin`, or patch `mux-controls` / ablate `apple,dp-tunnel`.
+- `fairydust/usb4/test-dp-tunnel.sh` — now reports `dprx_bypass`, the
+  `apple,dp-tunnel` property, `force_link` handles, and gives an
+  experiment-2 verdict.
+
+## Monitor / dock-video decision — 2026-10-15
+
+Checked the current upstream state for external-display video and recorded a
+decision in [`fairydust/usb4/DOCK-VIDEO-DECISION.md`](fairydust/usb4/DOCK-VIDEO-DECISION.md):
+use the Mac's **built-in HDMI port** (supported; DCP firmware 13.5 confirmed
+locally) as the everyday external display, or a **direct USB-C→HDMI/DP adapter
+on the front-left port** for the DP Alt Mode route. **Dock video (HDMI or DP on
+the WD22TB4) is not targeted** — it needs USB4 DisplayPort tunnelling, which is
+unimplemented; dock HDMI and dock DP are the same problem. The `fairydust` HEAD
+is `ce9f2eba` (2026-09-08), the revision this repo already builds, so there is
+nothing new to rebuild. Added read-only helper `mseries/check-display-paths.sh`
+(DCP firmware, support modules, DRM connectors, per-path verdict) and updated the
+ROADMAP open-problem row. No kernel, bootloader or audio change was made.
+
+## Dock video experiment 2 installed + unplug deadlock found — 2026-10-15 15:30
+
+- **Incident:** at 14:55:47 the dock was unplugged while experiment 1 was armed
+  with `dprx_timeout=-1`. The Type-C port deadlocked in stock code
+  (`apple_nhi_remove` waits forever for `domain_released` while holding the
+  `tps6598x` mutex), killing USB/Ethernet/hotplug/charging on that port. Only a
+  reboot clears it; the Mac's own display, session and wifi were unaffected.
+  Analysis, stack trace and upstream references: `mseries/fairydust/usb4/DP-TUNNEL-RE.md` §9.
+- **Mitigation:** the test entry now boots with a bounded
+  `thunderbolt.dprx_timeout=3600000` (1 h) instead of `-1`, and `dprx_bypass=1`
+  (runtime-writable) makes `tb_dp_wait_dprx()` return at once, so no read is left
+  in flight. Rule: arm the bypass (write 1) before unplugging the dock.
+- **Experiment 2 installed** from CI run 38788230910 (`build-kernel` completed
+  19:11:21Z) into the `elementary-usb4-dptunnel` entry: kernel
+  `7.1.13-elementary-fairydust-usb4-dptunnel`, DTB swapped inside
+  `/boot/m1n1/boot.bin`. Verified: `dprx_bypass` present in `thunderbolt.ko`,
+  `apple,dp-tunnel` present in `appledrm.ko` *and* in the rebuilt initramfs, and
+  `apple,dp-tunnel` present in the boot.bin device tree.
+- **Installer bug fixed:** `cp -a` nested the module tree on a repeat install, so
+  the old modules (and the old `appledrm.ko` in the initramfs) would have been
+  used; `install-ci-kernel.sh` now copies directory contents (`dir/.`). Both
+  module trees and the initramfs were repaired by hand on this machine.
+- **Next:** reboot into the `elementary OS (M-series, fairydust-usb4-dptunnel test)`
+  entry, check whether the DCP still reports `DEVICE_NOT_RESPONDING`
+  (experiment 2 alone), then
+  `echo 1 | sudo tee /sys/module/thunderbolt/parameters/dprx_bypass` and watch
+  `DP-1` / the monitor.
+- Rollback: normal GRUB entry; pre-install `boot.bin` copies in
+  `/root/usb4-backup-20261015-152345/` and
+  `/boot/m1n1/boot.bin.KNOWN-GOOD-pre-usb4-20261015-152345`.
+
+## Dock video experiment 2 built (CI in progress) — 2026-10-15
+
+Experiment 1 was booted and measured: the crossbar route is live (`Switched
+dpin0 to dispext1,0`) and the USB4 DP tunnel forms (`0:5 <-> 1:13 (DP)`), but
+the host router never sets `DP_COMMON_CAP.DPRX_DONE`, so the tunnel never
+activates and `DP-1` stays `disconnected`. Both the ACIO (DPRX) and the DCP
+firmware (apcalls 22/24 = `DEVICE_NOT_RESPONDING`/`DEVICE_NOT_STARTED`) fail to
+read the sink's DPCD over AUX.
+
+Experiment 2 (unbind the tunnelled DPTX from the ATC DP PHY) is now built into
+`0002-experimental-dp-tunnel.patch`, together with a runtime `dprx_bypass`
+parameter, on branch `re/usb4-exp2` (commit 94c6e84). CI run 38788230910 built
+the matching kernel package; it was installed later that day (see the section
+above).
+
+The remaining unknown — the DCP's tunnelled-DPTX protocol and the DPIN crossbar
+programming — still needs a macOS trace captured from a second computer with the
+m1n1 hypervisor (see `fairydust/usb4/DP-TUNNEL-RE.md` §6/§7).
 
 ## New desktop bugs reported — 2026-10-13
 
@@ -1102,3 +2138,670 @@ Owner: "we are going to need a Siri-like, Whisper-like speech to text, universal
 
 `mseries/apply-pending.sh` (run as your normal user): `--dry-run` prints every command and changes nothing; `--only wifi,power,polkit,greeter`; `--list`. Steps: install the fixed Wi-Fi resume script and load `brcmfmac` if missing, replace the `mseries-power` unit (drops the old multi-user link), install the DNS-logger polkit rule, install the greeter obex drop-in. Backs up any file it replaces to `<file>.pre-mseries`; never touches bootloader, kernel, initramfs or audio. Dry run checked on the live Mac; real run is the owner's.
 Facts checked for the speech-to-text request: the session is Wayland (Pantheon), IBus 1.5.34 is installed (so an IBus engine is viable), and ALSA lists a capture device `MacBook Pro J314 High-Power Audio Interface [aop_audio]`; whether it records usable speech is not yet tested. `pactl` is not installed here.
+## Atomic app prototype — 2026-10-14
+
+Added `atomic-app.py` with per-app writer locking, prepared release staging,
+synced release/generation files, atomic selector activation, retained history,
+status and explicit rollback. Its run command pins the resolved release path
+before execution. A directory-sync error after selector replacement is reported
+as an activated app with unconfirmed durability, rather than a false claim that
+activation did not occur. Newly created store ancestors are also synced.
+
+`install-signal.sh --atomic` is the first opt-in integration. The existing
+publisher-signature check precedes extraction/staging; the installed CLI and
+desktop launcher route through the selected release, and the icon follows it.
+Legacy installation files are retained. Default installs still use the existing
+path. No live app/profile was migrated during development.
+
+Validation: all nine `test-atomic-app.py` cases pass, covering rollback,
+concurrent updates, interrupted copying, failed selector replacement, sync
+failure after replacement, launch-path pinning, parent durability, unsafe links
+and invalid entrypoints. The existing extracted Signal tree passes read-only
+staging validation; installer shell syntax and whitespace checks pass. Desktop
+launch/data-migration qualification, automatic health recovery, cleanup and the
+Flatpak/Nix comparison remain open in issue #50.
+
+## Owner roadmap: upstream integration, then Rust — 2026-10-14
+
+The owner supplied the Introducing Omarchy M announcement and explicitly set
+the sequence: follow its people/projects, integrate the code into this port,
+then convert the maintained implementation to Rust for performance. Added
+`OMARCHY-M-ROADMAP.md` and `upstreams/omarchy-m.json` with seven observed public
+repository branches/revisions, GitHub license metadata, and unresolved source
+discovery areas. These are tracking baselines, not changed build pins.
+
+Verified refs through the GitHub API, including the installer (00489dd),
+Try Omarchy (afd4f2d), M2 Air DP-Alt-Mode (50b80f4) and MLX (9ab220f).
+The M2 Air DTB is not an M1 Pro DTB; MLX's M1 Pro GPU/ANE table is untested;
+the announcement's M1/M2 compatibility list is a target. Softened the older
+categorical Touch ID absence claim: compatible public source has not been
+obtained/verified. Missing code remains an integration task.
+
+The roadmap inventories every applicable component, source/license, model,
+elementary translation and qualification evidence before the broad Rust phase.
+The Rust phase preserves interfaces/recovery and measures performance against
+the integrated baseline. Third-party kernel/firmware/Pantheon feasibility must
+be recorded explicitly. No Rust rewrite or driver import happened in this batch.
+Created the active daily 10:00 America/New_York heartbeat
+`follow-omarchy-m-sources` for read-only source tracking with notifications only
+for meaningful actionable changes. JSON parsing and `git diff --check` pass.
+
+## GitHub upstream monitoring — 2026-10-14
+
+`Watch public upstreams` runs every six hours and on demand. It combines
+`local-ai/people-watch.json` subscriptions with the explicit branches in
+`upstreams/omarchy-m.json`, and maintains one issue with pending revisions,
+release changes and fetch failures. Closing the issue acknowledges observations;
+new changes reopen it. Failed fetches preserve the last successful observation
+and fail the Action. No upstream code is automatically merged or deployed.
+The native macOS installer remains reference-only, per the owner decision.
+
+Activated on main: [upstream dashboard #51](https://github.com/techmore/ElementaryOS_MSeries/issues/51).
+First Action run 38640456586 completed successfully. The duplicate Codex
+heartbeat `follow-omarchy-m-sources` is PAUSED. Review covered initial audited
+revision comparison, missing user sources, and trusted dashboard authors.
+No new automated tests were run for this watcher.
+
+## Factory configuration delivery — 2026-10-14
+
+The Apple overlay finalize hook now exports its surviving `/etc` files to
+`/usr/share/factory/etc` and generates individual tmpfiles copy/link entries.
+This carries Wi-Fi enablement, module options and brightness autostart into
+the `/usr`-only sysupdate artifact. Missing files are populated even when
+parent directories already exist; administrator edits are preserved.
+Export happens after pruning so unrelated base configuration is not claimed.
+Implementation reviewed; no tests or image build run in this batch.
+
+Remaining: build and boot qualification; shared enhancement-module integration,
+canonical power helper under `/usr`, baked application dependencies and an
+immutable-safe per-user setup path. The existing enhancement firstboot job
+uses apt/build writes to `/usr` and cannot be enabled unchanged on EROFS.
+
+## Offline factory enhancements integrated — 2026-10-14
+
+Apple overlay finalize now stages `tuning,power,audio,session,theme,payload`
+through the shared enhancement installer, then merges them after pruning.
+The immutable power helper, polkit policy and compiled Quick Settings now
+agree on `/usr/libexec/mseries/power`; `/usr/bin/mseries-power` supplies the CLI.
+Both arm64 consumers explicitly install the runtime and CodexBar Qt dependencies.
+Netusage authorization is baked, and a factory readiness file replaces the
+otherwise unreachable firstboot dependency marker for per-user setup.
+
+Dconf sources/profile are merged with distribution defaults and compiled with
+the target binary before pruning. An early service recompiles persistent
+`/etc` defaults before login after updates. Per-file factory copies preserve
+administrator settings, including existing profiles that do not select local
+defaults; those profiles require explicit selection to use these settings.
+
+Per-user setup stops polling after CodexBar/netusage finish if the default
+Brave profile is absent. A profile-change path unit wakes DRM setup later and
+restarts retries until Brave closes and installation succeeds. Custom profile
+locations retain timer polling. The image still does not bake Brave, video
+decode, gestures or the remaining patched desktop components; their apt/build
+firstboot modules stay disabled on immutable `/usr`. Speaker safety and full
+hardware qualification remain separate requirements.
+
+Reviewed twice by a subagent and corrected its findings. No tests or image
+build were run in this batch. Existing pruning fixture now mocks its absent
+target dconf compiler; that fixture is not target compilation evidence.
+Next: build/boot qualification and bake the remaining network-dependent modules.
+
+## Factory gestures baked at build time — 2026-10-14
+
+Added `build-touchegg` at upstream 2.0.18 commit
+`fc30d316e163f4504043353d6610e670ce5c6439` (GPL-3.0-or-later).
+CMake builds with the CMake 4 compatibility option and explicit /usr + /etc
+paths. Only the daemon, its configuration, service, license/provenance and
+build recipe survive pruning. The X11 client autostart is omitted because
+Gala consumes the daemon directly. Both image consumers install its runtime
+libraries. Offline enablement and a vendor preset cover live and immutable
+images; leaf factory export carries the service link. Udev's sysusers file
+provides the service's input group.
+
+The manual installer now fetches the same exact commit rather than a mutable
+tag. Added Touchegg to GitHub upstream subscriptions. Subagent reviewed source
+dependencies, paths, activation and licensing. No tests/build or physical
+gesture qualification were run. Remaining browser, video and desktop patches
+still require build-time integration; factory hardware qualification is open.
+
+
+### Battery drain, phone tether, minimum brightness — 2026-10-14
+
+- **Battery:** on battery the M1 Pro drew 12.9 W with the screen at 105/500 and the CPU 87% idle. The WirePlumber no-suspend rule (`session.suspend-timeout-seconds = 0`, from Omarchy, applied when PipeWire restarted at 17:35) kept the speaker stream RUNNING while idle. A user-level override of 30 s closed the stream and the draw fell to 11.7 W (about 1.2 W); `mseries/audio/asahi-audio-no-suspend.conf` now defaults to 30 s. Possible cost: a pop after 30 s of silence. Still unexplained: about 11.7 W total, with AOP mailbox interrupts about 460/s each, SPI HID about 1000/s and busy Electron apps. The power-profile code is working, so the Rust battery-profile migration (owner's idea) is not expected to fix this alone; it stays on the plan and will be judged by before/after power readings.
+- **Phone tether:** bug logged with the observed disconnect at 17:39:26 and the unmanaged/no-lease NetworkManager sequence; symptom details still needed from the owner.
+- **Minimum brightness:** panel floor is 5/500 (1%); needs the owner's look. See `BUG-FIX-ROADMAP.md`.
+- Applied on this Mac without sudo: user-level WirePlumber override only (reversible).
+
+## Factory video-decode bridge candidate — 2026-10-14
+
+Added `build-video-decode` using the existing manual installer's exact c653eaa
+archive and SHA256. Meson builds/installs the stripped VA-API shared library;
+finalize retains it, the Asahi alias and GPL/source/support documentation.
+Competing canonical libraries or foreign Asahi aliases fail closed. Runtime
+libva/libdrm and vainfo are declared in both arm64 consumers. The fragmentation
+mitigation is shared with the manual installer and exported as a factory default.
+Added the source to GitHub watch subscriptions and corrected stale PORT-MAP rows.
+
+This packages a bridge candidate, not qualified hardware decode. The pinned
+upstream explicitly has no supported matrix rows, and its M1/T8103 hardware
+evidence does not qualify M1 Pro. AV1 compilation requires modern UAPI headers
+but proves no hardware AV1 support. Kernel `apple_avd`, matching firmware,
+codec/client checks and factory build/boot qualification remain open.
+Subagent source/implementation review; no tests or image build run.
+
+Final live/sysupdate post-install hooks also check package ownership of both
+VA driver paths, catching a consumer Mesa package collision after overlay
+application. Missing ownership metadata or inconsistent payload fails the build.
+
+### Watt meter in the menu bar; ETA patch repaired; power-draw probe — 2026-10-14
+
+- **Watt meter (owner request):** `mseries/patches/panel-power-watts.patch` adds a live power label (UPower `EnergyRate`, e.g. `12.1 W`, charging or discharging, hidden below 0.1 W) beside the battery icon in elementary's Power indicator. Applied after the ETA patch by `install-battery-eta.sh`. Verified in a scratch tree at `elementary/panel-power` e05723d: both patches apply in order and the indicator compiles to `libpower.so` (valac 0.56.19; the unused `libgtop-2.0` meson dependency was dropped in scratch only because `libgtop2-dev` is not installed here). NOT installed and not seen in the panel: it needs `sudo apt install libgtop2-dev ...` and a module replace + Wingpanel restart. Run `bash mseries/apply-pending.sh --dry-run --only wattmeter`, then without `--dry-run`. Undo: `bash mseries/install-battery-eta.sh --uninstall`.
+- **Bug found and fixed:** the old `panel-power-charge-eta.patch` had zero-context hunks; current `git apply` put them after the end of the class in `DisplayWidget.vala`, which cannot compile, so the battery-ETA installer would have failed on a rebuild. Regenerated with context.
+- **Power-draw investigation (in progress):** baseline on battery 12.79 W (min 11.62, max 15.02, 15 samples/30 s), screen 105/500, CPU about 87% idle. Interrupt rates per second: DCP mailbox `38bc08000.mbox-recv` 479, mailbox `406408000.mbox-recv` 385, SPI HID `39b10c000.spi` 228 (it read about 1000 earlier, so it follows touching the keyboard/trackpad), Wi-Fi PCIe 60. The `38bc08000` mailbox belongs to the display coprocessor, so Gala/compositor redraws are a suspect. One-change-at-a-time tests are not done yet.
+
+## Factory sound/keyboard fixes and panel artifact checks — 2026-10-14
+
+Added pinned sound and keyboard builds to the Apple overlay and matching
+packages/dependencies to both consumers. Pruning retains their plugins, licenses,
+patches and build recipes. `panel-factory-pins.json` inventories all four panel
+plugins; each builder records the actual plugin SHA256 and its source metadata.
+Both final-image hooks reject missing/changed plugin bytes, incompatible package
+versions and mismatched provenance. The recorder checks the build script's
+source revision against the pin table before recording it.
+
+Version checks now allow Debian epochs/packaging suffixes while rejecting
+`8.0.30` as a substitute for `8.0.3`. The keyboard patch also initializes an
+already-active layout's checked state before listening for subsequent changes.
+Added the two elementary sources to GitHub subscriptions.
+
+Subagent implemented/reviewed source/dependency and artifact-check pieces;
+parent integrated image hooks and initial-state fix. No tests or build run.
+Pinned upstream Meson/license contents could not be fetched in this turn;
+dependency/license audit used repository installers and installed package
+metadata, and the build refuses missing upstream license files. Network access
+for Git required sandbox escalation. Factory load/render/boot qualification,
+browser integration and remaining Files/Gala patches remain open.
+
+### Pending sudo steps applied on the M1 Pro — 2026-10-15
+
+Owner granted passwordless sudo (`/etc/sudoers.d/90-claude-admin`). Applied with `mseries/apply-pending.sh`:
+- **wattmeter:** installed the patched elementary Power indicator (live `W` label plus the repaired time-to-full patch); original backed up at `/usr/local/lib/mseries/libpower.so.before-charge-eta`; Wingpanel restarted and is running. The `libpower.so` contains the new strings. NOT yet seen on screen; owner to confirm how it looks. Undo: `bash mseries/install-battery-eta.sh --uninstall`.
+- **power:** `mseries-power.service` is now enabled only under `graphical.target.wants` (the stale `multi-user.target.wants` link was removed by `systemctl disable` before reinstall). Charge limit 80/75 is set in sysfs. Confirm at next boot: no "ordering cycle" line in `journalctl -b -p err`. Earlier today the battery had reached 100% on AC, likely because the cycle dropped this job at boot.
+- **greeter:** `/etc/systemd/user/obex.service.d/10-mseries-greeter.conf` installed (`TimeoutStopSec=2s`); confirm no `user@109` failure after the next login.
+- **wifi / polkit:** already in place before this run (`brcmfmac` loaded; `49-mseries-netusage.rules` present). Confirm the ten-minute authentication prompt is gone: `journalctl -b -t polkit-agent-helper-1 --since "30 min ago"`.
+- `apply-pending.sh` now tries `sudo -n true` before `sudo -v` (plain `sudo -v` fails under NOPASSWD).
+- The auto-mode safety check blocked the first attempt at the power/greeter steps as persistent system changes; they were run after the owner said to continue.
+
+### Post-reboot verification — 2026-10-15
+
+First boot after the pending sudo steps (kernel `7.1.13-elementary-fairydust-usb4-dptunnel`, a different kernel build from the one earlier in the session; not built or installed by this agent):
+- `systemctl --failed` empty (system and user); no "ordering cycle" line; no `user@109` or `omarchy-wifi-resume-fix` failure in `journalctl -b -p err`; `brcmfmac` loaded on its own. This confirms the `mseries-power` `graphical.target` fix and the Wi-Fi script fix at boot. The `user@109` fix still needs one logout/login to be conclusive.
+- Remaining error-level lines are the known harmless ones: growfs LUKS resize "Operation not permitted", wpa_supplicant/brcmfmac P2P interface -52, tas2764 devicetree parse on two amps, USB mixer "sticky" values.
+- Panel: Wingpanel answers on D-Bus and `libpower.so` carries the watt strings; UPower reported 23.8 W discharging two minutes after boot (boot activity). The on-screen look of the watt label is not yet confirmed by the owner.
+- Still open: the ten-minute authentication helper (the netusage polkit rule has been installed since 2026-10-14 yet the helper fired at 13:49, 13:59 and 14:09 on 2026-10-15, so another action is responsible); a capture of the exact action id is running.
+
+### Efficiency goal — 2026-10-15
+
+Owner asked for a goal and efficiency patches so the Mac runs minimal and scales quickly for AI. Wrote `mseries/EFFICIENCY-GOALS.md`: Apple's published light-use figures (about 4 to 6 W, from memory, unverified), our measured 11.7 W, three target tiers, a median-based measurement method, ranked suspects and a power-profile hold design for bursts. No new patch beyond the earlier audio timeout; next step is the measurement script and the display-coprocessor wakeup investigation.
+
+### Optimization repo created — 2026-10-15
+
+Owner approved the proposal; created public `techmore/ElementaryOS_MSeries_Optimization` (GPL-3.0) with README, AGENTS.md, `docs/` (goals, method, results), `powerlab/sample.py` + test (passes; live smoke run works), `tuning/wireplumber` (30 s sink suspend), `patches/`, `rust/` placeholder and a CI workflow. First commit `7d65b03`. Linked from `mseries/OPTIMIZATION.md`. The Rust scaffold on `deb/mseries-plugin-repo` was not touched or moved.
+
+Measurement note: after the reboot the panel backlight was back at 500/500 (it was 105 before) and a smoke sample read 19.2 W median with the charger connected and the battery above the 80% limit. That is not comparable with the earlier 11.7 W; set brightness before any comparison. Brightness is not restored at boot; relevant to the minimum-brightness request.
+
+Polkit prompt: a capture caught `org.freedesktop.login1.inhibit-delay-sleep` with no interaction flag, which is not itself a password prompt; no helper line has fired since the 14:14 reboot as of 14:22, so the cause is still unconfirmed. Repeat the capture across the next 10-minute mark.
+
+### Polling inventory; DP tunnel retry loop on the dptunnel kernel — 2026-10-15
+
+Owner's point: much of the optimization is polling of chips and CPU run levels. First inventory and baselines are in the optimization repo (`docs/POLLING.md`, `docs/RESULTS.md`, commit `7ae6cd1`). Main finding with the Dell WD22TB4 dock attached on kernel `7.1.13-elementary-fairydust-usb4-dptunnel`: `thunderbolt-apple-nhi ... (DP): DPRX read timeout` repeats every ~76 ms (1,684 times by 722 s uptime, still running), producing about 1,290 interrupts/s on each of the USB4 NHI rx and tx rings. It began when the dock came up. This is the same family as the `dock-dp-retry-silent` verify check. Cost in watts is not yet measured (needs the same scenario undocked). Proposed kernel fix: back off or stop after N DPRX timeouts. The kernel is the owner's; not changed. Other rows: display-coprocessor mailbox ~480/s, second mailbox ~385/s, SPI HID up to 1,000/s, deep idle (CPU PD) entered ~1.8% as often as WFI.
+Baseline at 105/500 brightness, apps open, docked, charger connected: 13.6 W median (p10 12.7, p90 16.2).
+
+### Password prompt cause found and fixed; dock note — 2026-10-15
+
+- **Root cause of the ten-minute authentication prompt:** a `dbus-monitor` capture caught `org.freedesktop.resolve1.dump-cache` (flags: interaction allowed) from the netusage logger's `resolvectl show-cache`, at 14:23:17 exactly when the helper logged. The 2026-10-14 rule only allowed `subscribe-query-results`. Fix: `--no-ask-password` on that call plus `dump-cache` in `49-mseries-netusage.rules` (read-only, `sudo` group). Installed with `sh mseries/netspeed/netusage/install.sh`; `resolvectl --no-ask-password show-cache` returns data without a prompt and `netusage` is active. Confirm that no helper line appears after 14:33 and 14:43.
+- **Dell dock:** the owner states this project is reverse-engineering the Dell WD22TB4 dock for Asahi. The `DPRX read timeout` retry loop on the `dptunnel` kernel (see the polling entry above) is therefore research-kernel behaviour; keep it in the optimization inventory as a power cost to quantify when not experimenting, do not propose removing it. Owner also says Michael Dell sponsors Omarchy MX/Omacom/Asahi; unverified (noted in `WATCHLIST.md`).
+
+### Dell funding looked up — 2026-10-15
+
+Owner asked to check the report that Michael Dell gave $1 million to the Omarchy foundation. Confirmed by It's FOSS (25 Aug 2026): the entity is the **Omacom Foundation**; eight patrons each put in $1 million, Dell among them. Not found: any link to Asahi Linux or Apple Silicon, whether the money is paid or pledged, or a statement from Dell. Recorded in `WATCHLIST.md`, replacing the earlier "unverified" note. The $18.6 million / twelve-patron figure appears only in LinkedIn reposts and is unconfirmed.
+
+### Password prompt fix: early check only — 2026-10-15
+
+Owner ran `journalctl -b -t polkit-agent-helper-1 --since "14:25"` and it showed no entries, but that was before the 14:33 and 14:43 marks the old pattern fired at, so it is not confirmation yet (an earlier entry in this file claimed it was; corrected). Cause remains `netusage`'s `resolvectl show-cache` (`resolve1.dump-cache`); fix is `--no-ask-password` plus the extended polkit rule (`b7e2dae`). Re-run the same command after 14:45 and record the result.
+
+### Refresh rate is the biggest power lever found so far — 2026-10-15
+
+Alternating A/B with `powerlab` (optimization repo, commit after `c04d093`): at 21% brightness the panel drew about **2.0 W (15%) less at 60 Hz than at 120 Hz** (11.4 and 10.9 W vs 13.4 and 12.9 W medians); at 500/500 about 1.7 W (9%). Built `tuning/refresh-rate/mseries-refresh` (60 Hz on battery, 120 Hz on AC, config file, `--status`/`--once`, installer with `--dry-run`/`--enable`/`--uninstall`, tests pass) in the optimization repo. NOT enabled on the Mac: it changes how the screen feels; the owner decides. Panel left at 120 Hz and 21% brightness after testing. Open: something reset the backlight to 500/500 after the reboot and again between 14:27 and 14:38; the mode switch is not the cause.
+Also: DRM flip tracing showed 0 vblank events in 4 s at idle, so the display mailbox rate is not compositor flips (negative result in the optimization repo).
+
+### Prompt fix confirmed; goal work and a display-testing lesson — 2026-10-15
+
+- **Password prompt:** confirmed fixed. A scheduled check at 14:46:11 found zero `polkit-agent-helper-1` entries since 14:25, across the 14:33 and 14:43 marks (cause and fix: see the earlier entry, `b7e2dae`).
+- **Efficiency goal ("exceed Apple"):** NOT met. Measured light-use draw is about 9 to 10 W at 60 Hz and low brightness (11 W at 120 Hz) versus Apple's implied 4.1 W (video) and 6.4 W (web). Lever results and next steps are in the optimization repo `docs/RESULTS.md`. Biggest real levers so far: 60 Hz (about -2 W) and low brightness (about -0.7 W from 21% to 5%).
+- **Lesson:** the owner objected to display experiments (brightness 5 to 21%, refresh 48/60/120 Hz, display off). All were reverted (display on, 120 Hz, 500/500). No further display tests without asking; stored as a standing rule. The earlier unexplained backlight "reset to 500" was most likely the owner turning it back up.
+- **Owner request:** control the refresh rate dynamically (low when idle, ramp up when needed). The existing `tuning/refresh-rate/mseries-refresh` switches by power source only and a mode switch blanks the screen briefly; true variable refresh needs checking read-only first.
+
+### Video playback test — 2026-10-15
+
+Ran at the owner's display settings (no changes): stock Brave on YouTube 18.84 W median at 500/500 brightness (about 3.4 h; software decode, AVD interrupts 0); local 1080p30 H.264 in mpv with VA-API hardware decode 13.23 W at 325/500 (about 4.9 h, 5,402 AVD interrupts); same clip in software 18.53 W. Hardware decode saves about 5.3 W; the browser does not use it on YouTube (VP9/AV1). Apple's figure is 17 h (about 4.1 W). Not at parity. Installed `mpv` and `ffmpeg` with apt for the test. Details and next levers: optimization repo `docs/RESULTS.md`. The owner asked me to stop putting windows on their screen; no more display-visible tests without asking.
+
+### Kernel and scheduler work, honest status — 2026-10-15
+
+Goal ("beat Apple") still NOT met: light use about 9 to 10 W at 60 Hz, video 13.2 W with hardware decode (18.8 W for stock Brave on YouTube) vs Apple's implied 4.1 W (video) and 6.4 W (web). Done this round, none visible on screen, all in the optimization repo (`8851f65`, docs `kernel/README.md`, `docs/RESULTS.md`):
+- Idle governor: `teo` is worse than `menu` (+0.8 W); stays `menu` (restored after the test).
+- CPU scale-up: P-cluster reaches 90% of 3,036 MHz in about 78 ms, so scaling quickly is not the problem.
+- Found why the dock loop never stops: `thunderbolt.dprx_timeout` is `-1` (wait forever, deliberate for the dock work) and the poll is every 50 ms + 25 ms. Wrote `kernel/0001-thunderbolt-dprx-poll-backoff.patch` (50 ms doubling to 1 s; applies cleanly to the fork's `drivers/thunderbolt/tunnel.[ch]`). Not built, not booted, not measured; owner decides whether to build it.
+- `CONFIG_HZ=1000` + `NO_HZ_FULL` listed as candidates for 250 Hz / `NO_HZ_IDLE`; unmeasured.
+- Omarchy's Mac packages contain little power tuning; their `asahi-audio-no-suspend.conf` is the 1.2 W cost we found. Drafted (not sent) an upstream note.
+- CPU hotplug is not writable on this kernel; no data on "fewer cores".
+Open and needs the owner: a kernel build/boot test of the back-off patch; YouTube H.264 route for the browser (extension or driver VP9 support); any further on-screen test.
+
+### Idle GPU traffic attributed; owner-run lean test — 2026-10-15
+
+Tracing `gpu_scheduler:drm_sched_job_queue` for 4 s: 2,662 jobs (about 665/s): `claude-desktop` 55%, `io.elementary.terminal` 27% (hosting an OpenCode TUI session), `gala` 18%. So the agent UIs used for this work are the largest idle GPU load; the measuring session itself inflates it. A fair lean-profile and video result needs them closed, which only the owner can do. Added `powerlab/lean-test.sh` to the optimization repo (commit `42ec532`): owner-run, needs `--yes`, changes nothing on screen, opens one fullscreen muted video, reports watts and battery hours. Goal ("exceed Apple") remains NOT met; remaining levers are owner-gated: kernel build/boot of the DPRX back-off patch and a tick change, an H.264 route for YouTube in the browser, and an agent-UIs-closed lean measurement.
+
+### Kernel build blocker — 2026-10-15
+
+Could not build the DPRX back-off patch into the running `...-dptunnel` kernel: its source tree and `.config` are not on the M1 Pro (no `/boot/config-*`, no module build dir), the fork's `asahi` branch (`77cb8f2`, 20 Aug) does not match the 12 Oct build, and `flex`/`bison`/`clang`/`bindgen`/`pahole` are not installed. The repo's debian pipeline builds a different, older base. Needs from the owner: the branch/commit and `.config` of the dptunnel kernel and a go-ahead for a low-priority build. See optimization repo `kernel/README.md`. The "exceed Apple" goal remains NOT met.
+
+### Watt meter fixed to show whole-machine power — 2026-10-15
+
+Owner: "we lost our realtime watt monitor". Cause: the label read UPower's battery flow, which is 0 W when the charger is connected and the battery sits at the 80% limit, and the patch hid the label below 0.1 W. Found the SMC sensor "Total System Power" (hwmon `macsmc_hwmon`, also AC input, 3.8 V rail and heatpipe power) and rebuilt `panel-power-watts.patch` to read it every 2 s; installed (panel restarted once). The optimization repo's `powerlab/sample.py` uses the same sensor, which makes measurements valid on AC; the earlier lever run was void (battery "Not charging"). Spot reading: about 16 W at brightness 325/500, 120 Hz, agent UIs running. Owner asked for about 6 W on the running instance: not reachable without the screen levers (brightness, 60 Hz) and closing the agent UIs; non-visual levers still to be re-tested with the SMC sensor.
+
+### Kernel ownership respected; non-visual levers re-tested — 2026-10-15
+
+- Per the owner, DeepSeek owns the kernel feature set. Claude withdrew the kernel-build request and treats the DPRX back-off patch as an untested reference sketch only. Kernel-relevant power findings were posted as a context-only comment on issue #46 (`#issuecomment-6201042382`); no kernel, bootloader or m1n1 change was made.
+- Non-visual system levers re-tested with the SMC whole-machine sensor (30 s medians, alternating baselines 14.2 to 15.6 W): PCIe `powersupersave` -0.3 W, USB autosuspend 0 (no USB devices; dock unplugged), CPU battery cap inconclusive, Bluetooth off -0.2 W. Nothing above noise; all settings restored. The big watts are the display and the agent UIs, not system tuning.
+- The YouTube H.264 test (own MV3 extension that hides VP9/AV1) was interrupted when the session ended; re-run pending. The goal ("exceed Apple") remains NOT met.
+
+### Incident note: stray commit in the shared checkout, fully reverted — 2026-10-15
+
+A Claude command ran `git add -A && git commit` in `~/ElementaryOS_MSeries` (branch `deb/mseries-plugin-repo`) after a `cd` into a wiped scratch directory failed. It committed another agent's uncommitted work (DP-tunnel patch `0002-experimental-dp-tunnel.patch`, `DP-TUNNEL-RE.md`, `MACOS-TRACE-RUNBOOK.md`, `m1n1-trace-deps.sh`, `test-dp-tunnel.sh`, and edits to `daily-9.0.yml`, `debian/build.sh`, `install-ci-kernel.sh`, `OS9-HANDOFF.md`) under the message "kernel/: reference only...". The push was rejected, so nothing reached GitHub. The commit was removed with `git reset --mixed HEAD~1`; HEAD is back at `4c398f4` and every file is intact and uncommitted (modified or untracked) as before. Owners of that work: please check `git status` there. Claude now commits only from `~/ElementaryOS_MSeries-main` or a fresh clone, with explicit paths (see memory note `feedback-git-hygiene`).
+
+### YouTube H.264 test done — 2026-10-15
+
+Re-ran after the session restart (Brave windows closed by process id, display settings untouched: 325/500, 120 Hz, charger connected, SMC whole-machine power). Stock 19.27 W; own MV3 extension that hides VP9/AV1 18.52 W; extension plus VA-API flags 17.72 W (about -1.5 W). The idle floor is about 14 to 15.5 W, so video adds only about 2 to 4 W; Apple's 4.1 W for video cannot be reached by decoder work alone. Extension and numbers are in the optimization repo (`browser/`, `docs/RESULTS.md`, commit `fd895ff`). Goal ("exceed Apple") still NOT met. Kernel-side items belong to DeepSeek (context posted on issue #46).
+
+### mseries-profile tool and a burst gap — 2026-10-15
+
+Optimization repo `64e9340`: `profiles/mseries-profile` applies only measured levers as named profiles (`battery`, `balanced`, `burst -- CMD`), dry run by default, no root, never touches brightness, kernel, bootloader, `speakersafetyd` or the charge limit; `--display` adds the one visible lever (refresh rate). Tests pass (5). Finding: power-profiles-daemon here has no `performance` profile ("not available") and only allows holds on `performance` or `power-saver`, so `burst` switches to `balanced` for the command and restores the previous profile (tested: power-saver -> balanced -> power-saver). On battery `mseries-power` caps CPU frequency directly (2064/2208 MHz) and that is not lifted by a profile switch; making the cap follow the active profile is the missing piece for a real "ramp up when needed" on battery (fits the Rust port of `mseries-power`). Goal ("exceed Apple") still NOT met; remaining gated items: kernel work (DeepSeek), brightness/refresh decisions and the lean test (owner).
+
+### Battery CPU ceiling now follows the power profile — 2026-10-15
+
+Closes the gap found earlier ("burst" could not lift the battery CPU cap). `mseries/power/mseries-power` gained `cap` (set the ceiling from power source AND active profile: only on battery in `power-saver`) and `follow` (watch power-profiles-daemon over D-Bus and re-apply on every profile change); sysfs root and config path are overridable (`MSERIES_SYS`, `MSERIES_CONF`) so the policy is testable. New `mseries-power-follow.service` installed by `install-power.sh` (also removed by `--uninstall`). `mseries/test-power-cap.py` (3 cases: battery+power-saver capped on the performance clusters only; battery+balanced uncapped; AC never capped) passes and is in CI. Verified only against a fake tree; not exercised on real battery (the owner would need to unplug). Pre-existing, unrelated: `test-elementary-mac-setup.sh` fails on the user-enhance timer stop check with or without this change. With this, `mseries-profile burst -- CMD` (optimization repo) lifts the cap while CMD runs.
+
+### Universal dark mode tool — 2026-10-16
+
+Added `mseries/dark-mode/mseries-dark-mode` (on/off/toggle/auto/schedule/status), `install-dark-mode.sh [--schedule|--uninstall]` and a user timer. Verified: `status`, `--dry-run` output, the schedule window logic (overnight and same-day windows) and a no-op AccountsService write (`PrefersColorScheme` 0 to 0) succeed on the M1 Pro. NOT verified: a live switch to dark and back, Brave/Flatpak following it, or the timer; the owner's theme was left unchanged. Gaps: Qt apps and Ghostty. Next: owner runs `install-dark-mode.sh` and `mseries-dark-mode toggle`, then reports which apps do not follow.
+
+### Dark mode now cuts over at sunset/sunrise — 2026-10-16
+
+`mseries-dark-mode auto` defaults to sunset/sunrise from Night Light's stored coordinates (NOAA maths; 07:10/18:21 for 2026-10-16 matches Philadelphia), acts only on a day/night change so manual toggles stick, and books a one-shot `mseries-dark-mode-next` timer. Installed and exercised on the M1 Pro (status, `auto` twice, timer listed). The real cut-over (first fires at 07:10) is not yet observed. `schedule START END` still gives fixed hours.
+
+### Dark mode follow-through — 2026-10-16
+
+Portal check on the M1 Pro: `org.freedesktop.appearance color-scheme` = 1 (dark) after the switch, so Brave and Flatpak apps have the signal; a visual look at them is still pending. Added the tool, installer and units to the `enhance.sh` payload (`bash -n` clean; image not rebuilt). Qt (needs `adwaita-qt` or a forced style) and Ghostty (dark-only palette) remain open and are not worth changing blind.
+
+### Network speed turns pastel green when the link saturates — 2026-10-15
+
+Owner request. New `mseries/patches/network-saturation.patch` (applied last by `install-network-throughput.sh`, after `network-panel-speed.patch`). The popover down/up labels and graph lines, and the optional panel readout, switch to pastel green (`#9be3b0`, bold text) for a direction while its rate is at or above the active link's capacity. Capacity comes from NetworkManager (Ethernet speed, Wi-Fi bitrate; the faster active device wins), scaled to what is really reachable: 90% of the Ethernet rate, 60% of the Wi-Fi PHY rate. Those two factors are guesses, not measured; tune `WIRED_USABLE` / `WIFI_USABLE`. If NM reports no speed, nothing is highlighted. The panel readout is a 10 s average, so brief bursts will not light it.
+
+Verified: the four patches apply cleanly in installer order on upstream `8685ec8` and the plugin compiles and links. NOT installed, so not seen on screen and not tested under a real saturating transfer. To install: `bash mseries/install-network-throughput.sh` (needs sudo, restarts the panel once). Not committed (shared checkout; see git-hygiene note). `netspeed/panel-network.patch` was not changed.
+
+Update 2026-10-15: `install-network-throughput.sh` ran successfully (passwordless sudo; panel restarted once). The green state has still not been seen on screen or under a real saturating transfer.
+
+Update 2026-10-16: owner saw the green on a temporary low-threshold build (about 125 KB/s) and confirmed it. Real thresholds (90% wired, 60% Wi-Fi PHY) reinstalled; they are still unmeasured guesses and the real-threshold green has not been seen under a saturating transfer.
+
+### Power opportunities survey — 2026-10-16
+
+Read-only survey (nothing changed, display untouched): see `mseries/POWER-OPPORTUNITIES-2026-10-16.md`. New observations: Gala at 12.7% of a core on average (72 CPU-min in 9.5 h); the speaker PCM and the speaker-safety capture PCM have been `RUNNING` since boot despite the 30 s suspend override (probably the always-on DSP chain; audio stack is owner-gated); 17.6 W whole-machine reading on battery with the agent apps open. Next: owner call on 60 Hz/VRR; app-mix A/B and Gala profile need no display change.
+
+### GPU job attribution: ChatGPT/Codex desktop app dominates — 2026-10-16
+
+Three 5 s traces of `drm_sched_job_queue` (read-only): the ChatGPT desktop app submits 4,000 to 5,000 GPU jobs/s versus gala 840, claude-desktop 360. Details in `POWER-OPPORTUNITIES-2026-10-16.md`. Power impact not isolated; the app was left running (may belong to an agent session). Next: owner closes or approves closing it for a paired `powerlab/ab.py` A/B; then test Electron flags in a throwaway profile.
+
+### Power roadmap and Electron Wayland hint — 2026-10-16
+
+Owner declined closing the ChatGPT/Codex app, so no A/B was run. New finding: that app is an X11 client under Xwayland while Claude Desktop and Brave are native Wayland. Installed `~/.config/environment.d/60-mseries-electron-wayland.conf` (`ELECTRON_OZONE_PLATFORM_HINT=auto`; script `mseries/install-electron-wayland.sh`, `--uninstall` removes it); takes effect at next login, effect NOT yet measured. Also found: s2idle is the only sleep mode, deep idle is ~7% of CPU0 idle time, sleep drain is unmeasured. Full plan: `mseries/POWER-ROADMAP.md` (workstreams A to G, phases 0 to 4, six owner decisions). Next: after the next login, re-trace GPU jobs/s for the ChatGPT app and compare with the 4,000 to 5,000/s baseline.
+
+## 2026-10-16 (Claude) — dock HDMI sink tests and built-in HDMI reference
+
+- DP-port sink test (07:23–07:27, bypass off): `RESULT=SILENT`, 6 x `DPRX read timeout`; bypass re-armed.
+- Dock HDMI (`1:14`) sink test before reboot: no hotplug event at all; debugfs `port14/regs` CS2 (0x3b) had HPD (bit 6) clear while `port13` had it set. Watcher timed out, then was aborted by the owner; bypass re-armed (`Y`). No verdict from that run.
+- After reboot (kernel 7.1.13-elementary-fairydust-usb4-dptunnel, bypass=1): `1:14` HPD set, tunnel `0:5 <-> 1:14` forms, `DP source preparation failed: -110` at ~22 s. Matches DeepSeek/OpenCode commit 9fb6ff1.
+- Built-in HDMI works (38 modes, desktop extended). Working DCP (`289c`) sequence: DP2HDMI HPD irq -> `powering nub` -> `acking unhandled call 21` -> `set_drive_settings` x2 (link training) -> `plug_gated` -> `set_digital_out_mode`. The dock tunnel DCP (`28cc`) stops after `powering nub`. Saved as `mseries/fairydust/usb4/DCP-REFERENCE-BUILTIN-HDMI-20261016.txt`.
+- No driver, kernel, bootloader or display change made. Next task: DeepSeek drives the DCP to run the call 21 / drive-settings stage for the tunnelled port.
+
+## October 16 local AI rollout and qualification
+
+Work is isolated on `feat/m1pro-local-assistants`, starting from main `247d5c0`. The actual host is M1 Pro T6000/j314s with 32 GB, elementary OS 9/resolute, kernel `7.1.13-3-2-ARCH`. Owner authorized a brief on-screen Newelle check, then explicitly chose to preserve other Rust/HTTP load tests and wait for idle windows. Other app windows, display settings, bootloader, kernel and audio were preserved.
+
+Installed private MLX v0.7.33 (`33630f9c`), private compute Mesa `7faf04c065`, pinned Newelle 1.6.0 ARM64, Hermes `848fc0ad` with dependency lock, Crush 0.98.1 and llama.cpp `7182ef71`. Installed launchers and model-worker policy, Newelle user-summary memory and ten stdio MCP tools. Newelle broad tools are hidden, workspace tools namespaced, schemas eager, context 8K. Coding is Qwen9 at 16K on 8768; everyday on 8766. A separate 7B/16K profile is for comparison. Hermes has a real 64K minimum and is experimental; Newelle is the tested personal-memory default.
+
+Short synthetic task results: Qwen9 12/15 at estimated 14.73 tok/s, min 9.45 GiB available/max 2533 RPM; Qwen4 6/15 at 11.55, min 14.64/max 2529; coder7 6/15 at 15.13, min 11.80/max 2662; Liquid 9/15 at 63.59, min 14.90/max 2528. No dBA or old/new MLX speedup claim. Tool workflows Qwen9 9/9, Qwen4 6/9, Liquid 3/9. Raw receipts include failures and cache counts. Initial ambiguous extraction/weak mutation grading and interrupted runs are separated from the final suite.
+
+Real Newelle handler chat and summary-memory reconstruction/recall passed. Visible window startup/selected model checked, then closed; full Send/response tested in Xvfb after fixing the test's placeholder handling. Real EDS adapters read owned synthetic VEVENT/VTODO records; records and temporary sources were removed. The kernel/app watcher is installed and enabled at login, with bounded previous-boot collection, signature dedupe and opt-in diagnosis limits. `troubleshoot.py` borrows warm everyday/personal workers and never evicts other profiles.
+
+Long tests exposed an 8K Crush context mismatch and thermal overlap with unrelated load tests. Context is now 16K; upstream estimate 7.93 GiB including workspace/cache, model admission 8 GiB plus six GiB reserve. Final cooling controller pauses owned submissions before the hard limit, resumes with baseline-relative hysteresis, and permits bounded six-second bursts after thirty-second cooling pauses when the idle baseline shifts. Hard stops remain 3500 RPM/80 C/6 GiB available, three samples. KillMode=mixed and SIGCONT-before-termination allow reservation cleanup; one old stale reservation was removed only after verifying its owner exited. Interrupted streams now fail infrastructure completion, not model quality.
+
+Bonsai 2 9B official Q2_0 is downloaded at `5b2abb02`, SHA `1f884aa5…`, 2.56 GB; initial private Vulkan responses decoded about 5.6 tok/s. The first suite was interrupted during intervals by the fan guard while unrelated load tests were active; no completed ranking yet. PQ2_0/PTQ1_0 and the 27B dev artifact are not passed to upstream llama.cpp. No 30B coder/ANE/voice qualification.
+
+Factory `build-local-ai` stages the hash-locked offline MLX runtime, private ICD and llama binaries with licenses; generated launchers set the system prefix. Factory wheel install verified 36 wheels in a temporary root. Its CLI module lives in venv site-packages (unlike the user install); the prefill patch path was checked against that real staged tree. Four image wiring/pruning tests and `just mkosi summary` + effective-summary validation pass. Full factory build and hardware boot with AI payload remain unqualified.
+
+Branch discovery covers 1,103 public heads across eight Mac/MLX/Mesa/ANE/kernel repositories, including Joshua's personal Mesa fork. All open PR heads are captured; selected branches/ten most active PRs get immutable ahead/behind comparisons. Full lists are workflow artifacts; count/digest observations fit the issue dashboard. Fetch failures and incomplete pagination fail visibly. Schedule remains every six hours after landing on main.
+
+Validation currently: 41 local-ai tests, Python compile checks, shellcheck for changed install/build scripts, four image tests, mkosi effective summary, actual MLX numerical smoke, MCP adapter/app tests. Long coding, remaining model tools and microbenchmark queues wait for stable fan/headroom and no active `oha`; inspect current qualification receipt before claiming them passed. Publication paths: `docs/local-ai.html`, `mseries/local-ai/receipts/2026-10-16.md` and sanitized JSON directory. Personal data, journals, credentials, screenshots and settings backups stay outside the public repo.
+
+### Corrected MCP tests and idle-window follow-through
+
+Owner chose to keep the other Rust/HTTP tests running. New Qwen3.5 4B (`32f3e8ec`) is checksum-verified, with a closed-schema optional catalog entry (not upstream-recommended/qualified) and reproducible `prepare-compact35.py`. It passed 9/15 short tasks at estimated median 19.76 tok/s, minimum 10.65 GiB available and max 2538 RPM. The old note prompt had ambiguous punctuation; its counts moved to exploratory data. Corrected v3 workflows explicitly quote the note text and add fifteen-second cooling delays. New Qwen3.5 4B completed 9/9; older Qwen3 4B completed 6/9. Liquid was interrupted when the independent oha test resumed; its interrupted case is unscored and the idle queue retries it.
+
+Fresh quiet profiles now use one-second samples, 2700/2600 RPM pause/resume and three-second bounded bursts; hard limits and six-GiB reserve are unchanged. Everyday admission is 7.5 GiB, rounded above the pinned upstream 8K estimate of 7.43; 16K coding stays 8 GiB above its 7.93 estimate. Existing policy files are preserved on upgrades; this host was explicitly migrated with a backup. The stale Newelle MCP schema cache is invalidated for our exact stdio command only. The older inactive resident-pair login unit was disabled and the guarded everyday unit enabled, preventing two model services at next login.
+
+Live EDS synthetic tests passed again and removed both owned sources. `eds-smoke.py` and `app-benchmark.py` make the checks reproducible; all eight tested read-only MCP transports responded without EDS query errors. No GUI frame-latency claim. Final Newelle UI/MCP, separate-process synthetic memory, troubleshooting, Crush file-edit and native microbenchmarks are queued behind cool/headroom windows. Raw full Newelle logs stay private; only bounded synthetic receipts are publishable. Inspect work/idle-qualification.log before claiming completion.
+
+The completion queue now runs as a durable transient user unit `mseries-ai-qualification`, with checkpoints that retain completed comparable results. The originating chat has an hourly completion heartbeat (`finish-quiet-m1-pro-ai-qualification`); it stays quiet unless a meaningful result/action occurs, and should stop after qualification/publication. It must inspect the existing unit before starting any job. PR #58 is still draft; latest arm64 wiring CI passed in 31 seconds on `937b31a`. Remaining real UI and coding checks are not implied by that CI result. Final Newelle smoke observes the production MCP dispatcher and verifies actual clock arguments/output, rather than accepting a guessed answer.
+
+### Measured 4B default and real client results
+
+The Qwen9 retry crossed the six-GiB reserve with the current retained app mix (initial available roughly 14 GiB, service cgroup peak about 8.2 GiB). New default everyday/coding is checksum-verified Qwen3.5 4B at 8K/16K, admission 6.5 GiB plus reserve. Optional quality/coder9 use Qwen9 at 9/10 GiB admission; 64K experimental Hermes uses 13. `mseries-assistant --quality desktop|coding` selects larger presets; refused switches attempt to restore the previous managed model. Full setup explicitly adopts the new primary presets; policy and unrelated profiles remain preserved. Old 4B is no longer a default download.
+
+Newelle final isolated Xvfb chat/MCP passed with exactly ten tools; actual add_minutes dispatch observed. Separate-process synthetic keyfile memory recall passed. Two previously unhidden built-ins (website, memory_recall) are now disabled, and the test waits for asynchronous MCP discovery. Real Crush 4B file-edit passed in 87.31 s with independent tests unchanged, minimum 8.506 GiB available, max 2513 RPM/56.038 C. Native 4B benchmark averages pp512 221.735 tok/s, tg128 25.171 tok/s; internal MLX peak 2.661 GiB is not whole-machine allocation. Four native model trials completed; inspect receipts/logs for exact results.
+
+The small model failed repair-advice checks twice (unsupported restart). Those are completed quality failures, not thermal exclusions; retain them. It is excluded from default diagnosis. The deterministic journal watcher remains active, auto-diagnose off; optional 9B triage uses the quality unit only and is not qualified on this busy desktop. Do not conflate the successful Newelle memory/chat and watcher checks with diagnostic quality.
+
+Repeated stop signals could interrupt the upstream CLI's finally cleanup. stop() is now idempotent, with a thirty-second child wait; regression test sends repeated SIGTERM and asserts one termination. A verified-dead old PID/process group reservation was cleared atomically. Factory cache-only ~/.local/share/mlx-omarchy must not shadow the baked runtime; runtime_prefix requires both Python and ICD. Regression tests cover this and explicit preset migration/retention. Current local contract count is 43; full factory boot remains unqualified.
+
+Bonsai final task/tool/native qualification runs in the owned user unit mseries-ai-bonsai-qualification, log work/bonsai-qualification.log. Cooling can make its effective generation very slow; preserve all timings and distinguish native throughput from throttled API timing. Do not kill other owner jobs. New Tasks-to-model-to-note smoke is app-workflow-smoke.py and still needs an idle GPU slot; it filters private records out before model input/publication and cleans only its synthetic EDS source/workspace. The hourly completion heartbeat remains active. Publish/merge after checks, then activate the new six-hour decoder/watcher on main and verify Pages. Do not call the new dashboard writer before main has its decoder.
+
+Final continuation is the owned user unit `mseries-ai-final-qualification`, with log `work/final-qualification.log`, executing `work/finish-qualification.py`. It prioritizes the synthetic Tasks-to-note bridge, then resumes only Bonsai's unfinished independent trial from `work/benchmarks/exploratory/bonsai9-final-attempt0.json` (14 completed answers retained, including all quality failures). Resumption validates fixture/model label/kernel/governor/cap/delay metadata and records provenance/cache reset; it is not a single uninterrupted latency run. Then Bonsai MCP/native trials follow. Other owner HTTP/Rust tests still run. Current contract count is 45, including unsafe builtin alias rejection before generated-code execution. No new kernel or full factory boot qualification. The primary presets are tested; optional remaining benchmark and final publication remain pending.
+
+The Tasks-to-model-to-note smoke passed, with actual ordered list_tasks -> workspace_write_note -> workspace_read_file calls and the synthetic source removed. Bonsai resumed task quality completed 12/15 across segments (not one uninterrupted latency run); its MCP/native tests remain in the owned final-qualification unit. Latest pushed code is `7aa77c0`, arm64 wiring CI passed in 28 seconds. Local contracts: 45. Publication can expose these completed results while retaining the remaining candidate trials as in progress; do not label those passed until their receipts confirm it.
+
+
+### Local AI final candidate/publication receipt — October 16, 2026
+
+PR #58 merged at f8d33fc; Pages deployment 38957222588 passed and local-ai.html returned HTTP 200. The enhanced six-hour watcher run 38957234351 passed with zero fetch errors: 1,105 public heads, 92 observations, artifact 12071007064. Its gzip/base64 issue state decoded successfully; issue #51 retains pending review changes. No upstream pin is changed automatically.
+
+Bonsai completed corrected MCP 9/9 and native pp512 56.634/tg128 5.571 tokens/s (three trials). Native minimum available 11.21 GiB, maximum fan 2536 RPM/temperature 60.4 C, 0 cooling events. Native launcher/child nice 15/19 was recorded. Resumed task quality remains 12/15 across segments; the retained earlier 3620-RPM sample makes that composite policy_passed false. Do not claim all Bonsai sessions were quiet or repeat completed failures.
+
+Qwen3.5 4B remains the tested desktop/personal/coding default; the single coding fixture and summary-memory checks are limited evidence, not general agent qualification. Small-model repair advice remains failed/excluded; auto-diagnose stays off. Other owner Rust/HTTP jobs were preserved. Full app coverage, voice/ANE and a factory hardware boot with this payload remain open. See the qualification report and raw sanitized receipts for the current methods/results.
+
+The owned final-qualification unit finished successfully. The enabled everyday Qwen3.5 4B service was restored after admission checks passed; its /v1/models endpoint reported the pinned 32f3e8ec model. No other GPU qualification unit remains running. The hourly completion follow-up can stop after the final data follow-up is merged and Pages deployment is verified; the repository six-hour watcher stays active.
+
+
+### WD22TB4 dock video — macOS baseline (October 17, 2026)
+
+Ran the read-only `run-macos-baseline.sh` on the M1 Pro under macOS 27.0.1.
+The dock HDMI chain works on macOS: IORegistry event logs show a 4-lane HBR3
+link trained ~90 ms after HPD, driven by **dcpext0 port 0** (crossbar
+`ufp0,0-dfp1,1`), whereas Linux has only tried dcpext1. Live ADT confirms the
+DP-IN addresses/IRQs already in 0004–0006. Recorded in
+`mseries/fairydust/usb4/evidence/2026-10-17-macos-baseline-dcpext0.md`; staged
+E4 as patch `0015-experimental-j314s-dcpext0-tunnel.patch` (offline parse
+check only, not built/booted). E2 remains armed for the next Linux boot and
+targets dcpext1 — owner to decide order. Kernelcache was not copied by the run.
+
+
+## 2026-10-16 (Claude) — display profiles (per-monitor-set layouts)
+
+- Added `mseries/display-profiles/mseries-display-profiles` (save/apply/list/status/forget/watch via Gala's `org.gnome.Mutter.DisplayConfig`), `mseries/install-display-profiles.sh` and an autostart entry. Profiles are stored in `~/.config/mseries/display-profiles.json`, matched by monitor vendor/product/serial.
+- Verified: 6 unit tests pass (`python3 -I mseries/display-profiles/test_display_profiles.py`); `status`/`save` run live (read-only apart from the JSON file). Watcher installed and running.
+- Not verified: the automatic replug path. On hotplug the watcher sets 1080p for ~2 s then the saved mode (applying 1080p then 4K by hand is what recovered "no signal" on the built-in HDMI). Test by replugging the built-in HDMI.
+- Known limit: the TV only advertises 3840x2160 at 30 Hz.
+- Next: a graphical display settings app (drag-and-drop arrangement, all modes/refresh rates, scale, preferred/recommended markers) on top of the same DisplayConfig calls.
+- Added `mseries/display-settings/` (GTK3 "Display Settings (M-series)": drag-and-drop arrangement, per-monitor resolution/refresh/scale/rotation, profiles, and a Diagnose tab built on `display_diag.py`). Verified: 7 + 6 unit tests, headless renders under xvfb with fake monitors. Not yet exercised on the live display (drag/apply) or after a real replug.
+- 2026-10-16 fix: the display profile watcher did not react to a real replug (Gala sends no MonitorsChanged for a same-monitor replug). Manually applying the saved profile with the 1080p nudge worked (two `set_digital_out_mode finished`). The watcher now also polls `/sys/class/drm/*/status` every second and logs to `~/.cache/mseries-display-profiles.log`. Needs a live replug to confirm.
+- 2026-10-16: owner saw a glitch on a replug; Gala did not crash (no core, same PID) but logged `meta_monitor_manager_get_logical_monitor_from_number` assertions at the second unplug, consistent with the watcher's two-step nudge colliding with an unplug. The watcher now cancels its pending apply on disconnect and aborts the nudge if the attached set changed between the two steps. Cause is inferred from timing, not reproduced.
+- 2026-10-16 evening: owner reported a possible kernel crash after replugging. Previous boot journal shows no oops/panic; the dock re-enumerated at 21:26:40 and the log ends with SMC power-button events and `macsmc-input: Triggering forced shutdown!` (a long power-button press, i.e. the owner force-powered-off after the screen did not come back). The cause of the no-picture state before that is not established. Also fixed: the autostart entry I changed used `%h` (not expanded by `sh -c`) so the watcher did not start after the reboot; the installer now writes an absolute path and the watcher logs itself.
+- 2026-10-16 21:28 (Claude) — **stall on dock plug-in, for DeepSeek.** Owner reports: a couple of seconds after plugging the dock the system stops responding and the (dock-attached) mouse is lost; weird audio ticks when the USB hub was unplugged. Boot 21:27 timeline (kernel uptime): dock enumerates ~58 s; tunnel `0:5 <-> 1:13 (DP)` activates; 61.92 `DP-IN activation failed: -67`, retry ok at 61.97; 61.98 `hpd_work: hpd=1`; 63.03 `set_hpd afk_ret=-110`, `connect_source waited=949 ret=-110`; 64.05 `DP source preparation failed: -110`; 64.08 tear down; 65.08 `set_hpd hpd=0 afk_ret=-110`; 66.10 `DP source stop failed: -110`; 66.98 DCP `apcall idx=22/24` (NOT_RESPONDING/NOT_STARTED) replies. So the bridge blocks roughly 5 s (three ~1 s/2 s AFK timeouts) inside the thunderbolt tunnel path. Hypothesis, not proven: these synchronous waits hold the connection-manager/tunnel work, delaying the USB tunnels and input on the same dock, which would explain the lost mouse. Ask: make the DCP calls asynchronous/bounded (fail fast without holding `tb->lock`), and test with a USB mouse on the dock. No kernel change made by Claude. No oops/panic in the logs; the earlier reboot was a long power-button press (`macsmc-input: Triggering forced shutdown!`).
+- Audio ticks on hub unplug: not investigated; audio stack left untouched.
+- 2026-10-16 night (Claude) — **correction to my earlier "HDMI works" reports.** I treated `set_digital_out_mode finished` plus `connector connected` as success; those only show the display coprocessor accepted a mode. The owner's observation is that the screen can stay black/"no signal" while those lines are present. The log line that matches the black screen is `swallowed swap … fControllerPowerState is 0 … timings are not enabled` (the coprocessor discarding Gala's frames). Confirmed by the owner as a real picture: only the moments they said it worked. On the 21:27 boot (instrumented DP-IN debug kernel, 154 `DPINDBG` lines versus 0 on the previous boot) the built-in HDMI went black after replugs; cause is open, the owner suspects the driver implementation. The Diagnose tab now reports "discarding frames" when swaps are swallowed after the last modeset, and no longer claims "showing a picture" from a modeset alone.
+- 2026-10-16 (Claude): owner reports delays returning to a normal screen after unplugging HDMI. Measured after an unplug: Gala's built-in scale changed 2.0 -> 1.5 (Gala applies its own single-monitor config). The DCP powered the external pipe off ~3.9 s after the HPD drop (`dcp_poweroff` 3.9 s after `HPD irq, connected:0`). Watcher now logs Gala's drop time after an unplug and re-applies a saved built-in-only profile if one exists. Not yet exercised on a real unplug; no built-in-only profile saved yet (owner picks the scale).
+
+## CodexBar wrapper hardening (2026-10-17)
+
+Audit of the locally customized CodexBar (upstream v0.74.1 CLI/desktop, our wrapper `~/.local/bin/codexbar`, helpers in `~/.local/lib/codexbar-cli/`, Wingpanel indicator). Work is on branch `codexbar-improve`, based on `origin/feat/codexbar-sessions-and-spend`: that branch (Sessions section, spend, OpenCode Go error row) had never been merged into `main` or `power-usage`, so `power-usage` lacked the Sessions helper and tests that are installed on the desktop.
+
+Findings: installed wrapper, `codexbar-opencode-local.py` and `codexbar-sessions.py` are byte-identical to the branch sources. The wrapper ran at import time (untestable) and crashed with a traceback if `codexbar-upstream` was missing. `install-codexbar.sh` deleted `~/.local/bin/codexbar` before reinstalling it. OpenCode no longer writes `auth.json`; its login is an OAuth row in `opencode.db`, not a Go API key, so the wrapper's key injection finds nothing here. `codexbar usage --provider opencodego` fails with "No OpenCode Go session cookies found in browsers" (needs a browser sign-in at opencode.ai); Claude is not in `providerOrder`, so it reports no strategy by design.
+
+Changes: wrapper is now `main()` with a clear exit-127 message when upstream is missing; new `mseries/test-codexbar-wrapper.py` (8 cases); wrapper install is now write-then-rename; CI runs the wrapper and OpenCode-local tests; roadmap row for OpenCode Go corrected.
+
+Verification: wrapper 8, sessions 3, opencode-local 3 Python tests and Meson (2 suites) pass; `test-image-wiring.py` passes; `git diff --check` clean. New wrapper installed to `~/.local/bin` (previous copy kept as `codexbar.pre-wrapper-fix.<epoch>`); live `codexbar usage --provider codex` returns data. Not verified: the Wingpanel module was not rebuilt or reinstalled (no indicator change), and the live panel was not inspected.
+
+Upgrade notes: `version=v0.74.1` is pinned in `install-codexbar.sh`; the indicator parses upstream pace wording and the `--snapshot` JSON schema (`schemaVersion` 1), and the wrapper assumes the binary lands at `codexbar-upstream`. Recheck all three on a version bump.
+
+Next: sign in to OpenCode Go in a browser to get a real quota row; merge `codexbar-improve` (it carries the sessions branch) into `main`, then bring `power-usage` up to date.
+
+
+### MCP task-write continuation — October 16, 2026
+
+Continued from completed PRs #58/#59 on a fresh branch `feat/mcp-task-writes` based on main 4778b01; retained all incoming display/kernel work. Added create_assistant_task and list_tasks scope=assistant. Writes are restricted to an owned local EDS list, serialized/idempotent across MCP process restarts, with conflicts refused and libical setter escaping. Fifty-three local-AI contracts pass. Real concurrent EDS create/retry/conflict/literal-text checks passed and removed the synthetic source. Installed via configure-assistants.py --refresh-tools, which preserves model/memory/policy/other-server settings and invalidates only the owned schema cache.
+
+Current kernel is 7.1.13-elementary-fairydust-usb4-dptunnel from separate work; this task changes no kernel, display, audio or owner workload. The crash watcher remains active. The default 4B worker stopped at the whole-machine fan limit during other desktop activity; it stays enabled. The owned queue will restore it only after quiet/admission checks. Owned unit mseries-task-integration-qualification.service runs work/run-task-integration.py and task-write-smoke.py (three repeats of note-to-task and file-instruction rejection) and waits for cool/idle windows; log /home/sdolbec/Documents/Codex/2026-10-16/we/work/task-integration-qualification.log, receipt work/task-write-v1.json. Inspect it before starting anything; no duplicate GPU worker and no retries of completed quality failures. Newelle eleven-tool controller discovery passed separately without sending chat/memory inference. The queue can restore the default worker after quiet/admission checks when no other managed profile/GPU lock is in use. Checkpoint resumption preserves completed quality failures and validates matching runtime/kernel/policy/harness metadata. Publish sanitized synthetic receipts, update APP-INTEGRATION.md/public status, and merge after checks and completed results; do not call pending model workflows passed.
+
+## 2026-10-17 (OpenCode) — Aurora SEP kernel lane: Touch ID (installed, verification pending)
+
+Owner asked for Touch ID on the M1 Pro like macOS "unlock everything". Asahi lists Touch ID as unsupported (SEP-paired sensor); the community Aurora kernel now has a working driver, and the owner tracks that work closely.
+
+- New lane: `mseries/aurora-sep/install-aurora-sep.sh` (dry-run by default; `--apply`, `--uninstall`, `--suffix/--entry-id/--cmdline` overrides) + `mseries/aurora-sep/README.md`, registered in `DOCS.md`. Pattern follows `fairydust/usb4/install-ci-kernel.sh`: checksum-pinned downloads, modules to `/usr/lib/modules/<kver>`, image to the ESP as `/boot/vmlinuz-linux-asahi-<suffix>`, initramfs via `update-initramfs -c -k`, and a marked non-default block appended to `/boot/grub/custom.cfg`.
+- Installed on the owner's machine by hand first (same steps): release `aurora-2026.10.15.19`, kernel `7.1.12-2-20261015.19-sep-ARCH`, `aurora-touchid-20261003-2`, Aurora `libfprint` 1.94.100 (distro copy backed up, `/var/backups/aurora-sep-userspace-20261017-001635/`), `apple-sep.path` enabled. A one-shot `grub-reboot elementary-aurora-sep` is armed; the owner's default entry and all other entries are untouched. Rollback: any other entry, or `--uninstall`.
+- Verified so far (no hardware boot yet): `bash -n` and a dry run of the installer; package sha256s match the release `SHA256SUMS`; `apple-sep.ko` is in both the modules tree and the built initramfs; `modinfo` reads the driver; the ESP had room (26 MB left after install — prune old `initramfs-linux-asahi-*.img` test images before adding another kernel).
+- Not verified (the honest gaps): the owner has not yet booted the lane, so nothing is claimed about enrollment, matching, sudo/polkit unlock or the lock screen. Community reports for j314s are dev-branch evidence ("matches after two separate reboots", PR #69 merged 2026-10-08) with boot retries when a Thunderbolt display is attached — the owner was told to detach the Dell dock for the first boot.
+- Known limits to keep in docs: fingerprint cannot unlock LUKS at boot (SEP asleep that early, no TPM); the lock screen PAM service is undetermined (Gala does not link PAM; `sudo`/polkit are the confirmed surfaces); suspend/resume untested.
+- Next: after the owner's boot — check `/dev/sep-bio`, `apple-sep.service`, `fprintd-list`; enrol with `aurora-touchid-setup`; determine the lock screen's PAM service and wire `pam_fprintd` there if one exists; then update `BUG-FIX-ROADMAP.md` (P2 row), `ROADMAP.md`, and the public `docs/features.html` row with measured results only.
+
+## 2026-10-17 (OpenCode) — Touch ID settings app (GUI enrollment)
+
+Owner asked for a GUI for enrollment instead of the terminal. Pantheon's Settings has no fingerprint panel, so this is the first-class path.
+
+- Added `mseries/aurora-sep/mseries-touchid-settings` (GTK3, PyGObject) with `touchid_core.py` holding all wording/state/PAM logic as pure functions — the same split as `display-settings/display_diag.py`. It talks to fprintd over the system bus (`net.reactivated.Fprint`, Manager `GetDevices`/`GetDefaultDevice` + the Device interface `Claim`/`EnrollStart`/`ListEnrolledFingers`/`VerifyStart`/`DeleteEnrolledFinger`), mirrors `EnrollStatus`/`VerifyStatus` into plain language, and applies PAM changes through `pkexec` on `mseries-aurora-touchid-apply-pam` (idempotent, timestamped backups, creates a full `/etc/pam.d/polkit-1` stack where elementary has none).
+- `install-touchid-gui.sh` installs it per-user (`~/.local/bin` + applications entry) following `install-display-profiles.sh`.
+- Verified: 9 unit tests pass (`python3 mseries/aurora-sep/test_touchid_core.py`), `py_compile` clean, `bash -n`/shellcheck clean, and the real fprintd Manager D-Bus interface introspected on the running system.
+- Not verified: not once run against a sensor (still on the old kernel). The `aurora` kernel marker turned out to be absent from the new kernel's uname (`7.1.12-2-20261015.19-sep-ARCH`), so `on_aurora_kernel()` matches `sep-ARCH`/`aurora`; Device interface member names and the exact EnrollStatus/VerifyStatus vocabulary need a live check on the first boot, as do enrollment, verify, delete and the pkexec PAM apply.
+- Next: after the owner's boot, install the app, enroll a finger in the GUI, and confirm the D-Bus behavior matches the tests; then move the public `docs/features.html` row and `BUG-FIX-ROADMAP.md` P2 entry to measured status.
+
+## 2026-10-16 (Claude) — OpenCode Desktop arm64 port
+
+- The owner's apt error was an amd64 `opencode-desktop-linux-amd64.deb` on arm64, not missing libraries. Built the arm64 desktop from `anomalyco/opencode` branch `v2` (4617210) with bun 1.4.2 (`~/.bun`, source in `~/src/opencode-v2`): `bun install`, `bun run prebuild && bun run build`, `electron-builder --linux deb`.
+- The generated control file lists `libgtk-3-0` and `libatspi2.0-0`; Ubuntu 26.04 needs the `t64` names, so the deb is repacked. Scripted in `mseries/opencode-desktop/build-opencode-desktop.sh` (`--install` to apt install).
+- Installed `opencode-dev` 2.0.26 (dev channel; bundled CLI is the `dev` download). `ldd` shows no missing libraries for the app or CLI. Launch command: `ai.opencode.desktop.dev`.
+- Not verified: the app has not been launched (avoided putting a window on the owner's screen), and the script was syntax-checked only, not rerun end to end. Not committed to any image layer.
+- Next: launch once the owner agrees, then decide whether to track the `v2` branch revision in `UPSTREAM-PINS.md`.
+
+## 2026-10-16 (Claude) — preferred apps group in post-install
+
+- `mseries/post-install.sh` gained an `opencode` stage (`install-opencode-desktop.sh`, off by default, builds from source so it is slow) and an `apps` group: `--with apps` / `--only apps` expand to brave, firefox, signal, tether, codexbar, opencode. Edit the `APPS` array to change the set.
+- Verified: `bash -n`, `--list`, and `--dry-run` output only. No stage was run. Owner chose this shape (group in the existing runner) over a manifest or a local apt repo; those remain options if the set grows.
+
+
+### MCP task-write qualification complete — October 16, 2026
+
+The owned task integration queue finished without rerunning completed trials. Six completed model cases passed: note-to-task/read-back 3/3 and file-instruction rejection 3/3. Positive traces executed workspace_read_file -> create_assistant_task -> list_tasks(scope=assistant), with independent EDS title/date checks and one object per fixture; injection cases made no task. All owned sources were removed. One URLError interruption remains in the checkpoint/archive; resumed metadata and source digests match. Median elapsed times 22.32 s / 4.16 s are checkpointed workflow timings, not a throughput benchmark. Eighteen request-boundary samples recorded min 8.87 GiB available and max 2648 RPM; these are not continuous peaks.
+
+PR #66 includes the adapter, eleven-tool Newelle discovery, 53 contracts and four image wiring checks. Merged current main 2658b57 into the feature branch, retaining the incoming OpenCode port and both handoff additions. The default worker again stopped at the whole-machine fan limit during separate desktop activity. It remains enabled; owned one-shot mseries-ai-default-restore.service waits for quiet admission, preserves other profiles/GPU locks and restores the pinned endpoint without repeating trials (log work/default-restore.log). Crash watching remains active. No kernel/display/audio or owner workload was changed. Finish publication/Pages verification, then pause the hourly completion heartbeat. Broader Calendar/browser/mail adapters and full factory hardware qualification remain open.
+
+## CodexBar popover UX redesign (2026-10-17)
+
+Owner asked to master the UI/UX. Branch `codexbar-ux`, from `origin/main` after PR 74.
+
+Audit (rendered, not just read): Sessions and Spend were appended under the quota rows inside a 252 px scroller, so they sat below the fold; every five-second poll cleared and rebuilt all rows and re-spawned the Python sessions helper, so an open popover flickered; body text was forced to 7.5 pt; healthy rows repeated "ETA unavailable" lines; the bar read "CX 72% · ETA —"; a provider with only a 7-day window showed a bare "35%"; "All Systems Operational" took a row per provider; empty/error states were a sentence and a button.
+
+Changes: `Indicator.vala` UI layer rewritten (spawn, refresh policy and IPC unchanged). Quota / Sessions / Spend pages behind a switcher; provider cards with a health dot (green/amber/red, tooltip carries the status text), plan chip and level-colored bars (<=25% amber, <=10% red); one caption per limit (reset, plus the forecast only when depleting or exhausted); header shows "Updated N min ago" and a Cached/Refreshing chip; bar shows just the percentage unless depleting/exhausted, prefixes the window when it is not a session limit, turns amber/red by the worst limit and dims when cached; explained empty/offline/unsupported states with an Open Settings action; OpenCode Go error row has a Sign in action. The popover is rebuilt only when a digest of the entries/spending/staleness changes; sessions are fetched on open (>15 s) or every 60 s and cached. Progress bars and the refresh button carry accessible labels. New pure `Presentation.vala` holds the wording and level rules, with `test-presentation.vala` (9 cases).
+
+Probe (new): `mseries/codexbar-wingpanel/probe/` renders the real indicator headlessly (Xvfb, cairo renderer, throwaway HOME, fake backend serving fixtures; nothing touches the owner's display or apps). Build with `meson setup /tmp/b mseries/codexbar-wingpanel && ninja -C /tmp/b render-probe`, then `probe/run-probe.sh /tmp/b OUT light|dark [scenario...]`; `CB_PAGE=sessions|spend` selects a tab; `CB_STABILITY=1` fails if the popover is rebuilt across polls. Scenarios (healthy, live, depleting, exhausted, provider-error, stale, empty, busy) come from `make-fixtures.py`; `fixtures/live.json` is a sanitized copy of the owner's live snapshot (email replaced). The stability check was validated by disabling the digest guard in a copy: it reported REBUILT; the real build reports stable.
+
+Verification: `meson test` 3/3 (refresh-policy, quota-eta, presentation); 16 renders (8 states x light/dark) inspected plus Sessions and Spend tabs; wrapper/sessions/opencode-local Python tests and `test-image-wiring.py` pass; `git diff --check` clean. Installed with `sudo ninja install` from a `--prefix=/usr` build; built and installed module SHA-256 match. Previous module saved at `/usr/local/lib/mseries/libcodexbar.so.pre-ux-20261017-002457` (restore by copying it back to `/usr/lib/aarch64-linux-gnu/wingpanel-9/libcodexbar.so`).
+
+Not done / not verified: Wingpanel was deliberately not restarted, so the live panel still shows the old layout until the next login; the new UI has not been seen on the real panel or real Wingpanel popover chrome (the probe uses a plain window with the elementary stylesheet). Sizes moved from 7.5 pt to 9 pt body / 8 pt captions; revert in `install_style` if the owner prefers the old density. Spend and Sessions stay read-only; a Sessions-tab link to OpenCode sign-in would need a URL-open action.
+
+Next: log out and in, look at the real panel, adjust density/colors from the owner's feedback; sign in to OpenCode Go in a browser to get a real quota row.
+
+## 2026-10-17 — power and dock documentation organization
+
+Branch: `power-usage`, reviewed from `d581ac4`; dock documentation frontier inspected at
+`docs/dock-video-decision` tip `189cbda`. No branch merge or hardware change.
+
+- Added `power/README.md` as the evidence/navigation map, with canonical planning, baseline,
+  implementation and historical audit links; pinned the newer dock branch's goal and ledger.
+- Added `power/macos-baseline/results/README.md`: the committed 1220 macOS run has inventory,
+  historical battery sleep (two periods, median 0.391%/h), and no active scenarios. It does not
+  qualify active-use power parity. The original worktree's untracked 1225 capture was preserved
+  and not imported or scored.
+- Indexed power work in `DOCS.md`, linked the map from both roadmaps, corrected the baseline
+  README from 41 to 52 items, and clarified brightness matching and no-root inventory collection.
+- Marked older dock reports as historical; public feature text now distinguishes experimental
+  tunnel allocation from a visible HDMI picture. Newer dock notes retain G3 as their stated
+  blocker and unresolved G2 acceptance on the alternate route; no G5 success is claimed.
+- Verification: checked 96 local Markdown file links across the indexes/roadmaps/baseline README
+  (zero missing), verified 11 categories / 52 items against `parity.json`, checked empty active
+  scenarios and historical sleep median against the retained summary, and ran `git diff --check`.
+  This is documentation validation, not a hardware, profiler, kernel or factory boot test.
+- Next: record comparable battery-powered active scenarios on macOS and Linux, retain conditions
+  and repeated A/B distributions, then regenerate the parity checklist. Dock experiments should
+  start from the pinned branch frontier, not the older snapshot on this branch.
+
+## 2026-10-17 — power code audit and merge preparation
+
+- Policy: failed writes now exit nonzero; cap values are bounded to each performance cluster's hardware
+  range; absent status sensors do not crash. Failed charge-limit application does not persist a success.
+  Charger events explicitly restart the oneshot (rather than relying on device activation), and profile
+  monitor disconnects fail so systemd restarts it. Uninstall stops the watcher before lifting caps;
+  reinstall restarts running services to pick up the updated helper.
+- Packaging: enhancement roots now include/enable the profile watcher, and factory staging rewrites both
+  units to `/usr/libexec/mseries/power`. Added staging/idempotence coverage and immutable-path assertions.
+- Collectors: cleanup runs on interruption/setup failure, owned workers are stopped, blanked displays restored,
+  early mpv exit rejected, and QuickTime loops/closes only its requested file (already-open clips rejected).
+  Seconds/microseconds in run names prevent same-minute overwrite; quick CPU runs retain a full load/recovery
+  window. Initial summaries retain inventory even if later collection fails. Incomplete macOS raw files lacking
+  completion metadata are excluded. Linux charge units no longer masquerade as energy; guest CPU ticks are
+  not double-counted. Missing CPU rail data does not produce a zero ramp.
+- Parity: unknown IDs, nonfinite numbers and manual numeric passes are rejected before writes. Partial Linux
+  imports clear missing mapped values. Missing top-list processes and decoder stats remain unmeasured.
+  Linux clock ramp/activity recovery use distinct diagnostic names; C5 no longer carries a clock measurement
+  as CPU-power ramp. VRR evidence discovers the labelled SMC sensor and uses interpolated percentiles.
+- Validation before publication: 9 policy/VRR tests, 16 collector/parity tests and 1 offline staged-install test
+  pass on macOS; shell syntax, Python compilation and `git diff --check` pass. New suites are wired into the
+  Linux validation workflow. The full image-wiring fixture cannot run natively here because BSD `install`
+  lacks GNU `install -D`; Linux CI must supply the authoritative broader result.
+- Original worktrees and their untracked baseline data are untouched. No live service, display, audio,
+  kernel or bootloader changes were applied. Existing drawers OSD crash fix already on this branch is retained.
+- Remaining qualification: physical AC/battery transitions and profile switches, media/blanking restore on
+  each target OS, matched battery scenarios and Linux suspend. These are hardware evidence gaps, not claimed wins.
+
+### Final power review follow-up
+
+Linux PR validation passed on `db0bbc8`: full script/unit/image wiring checks and mkosi config parsing.
+A read-only check of the installed `powermetrics -h` then reproduced one more parser bug: sampler discovery
+matched the option synopsis and always fell back to four samplers, omitting supported ANE/network/disk/battery
+collectors. Discovery now reads the explicit supported-samplers section from either output stream. Added
+coverage for that ambiguity and for exclusion of interrupted raw plists (28 total offline power regressions).
+The PR's final head must pass the same Linux check before merge readiness is reported.
+
+### Merge-check configuration repair
+
+Both power validation runs passed. GitHub also rejected the pre-existing upstream-only proposed-release
+caller before evaluating its repository gate: nested build-and-release requests contents: write while
+the caller allowed only contents: read. Added the matching permission only to that gated call job.
+The elementary/os repository condition is unchanged; no release build, signing or upload is enabled in
+this fork. Final-head validation must confirm normal skipped release jobs plus passing M-series checks.
+
+## 2026-10-17 — dock branch code audit and merge preparation
+
+Merged current main (including PR #76) into docs/dock-video-decision; resolved three document conflicts
+without dropping either power implementation/history or dock evidence. No original checkout was changed.
+
+Replaced test-dp-tunnel.sh's hardcoded DT assumptions and overconfident verdicts with a read-only Python
+collector: resolves NHI source phandle, handles dcpext0/E4 and dcpext1, tolerates absent properties, reads
+flat external DRM connectors and validates EDID blocks. Only the mapped controller's latest successful
+completion with rate/lanes is positive historical link evidence; no picture success is inferred.
+
+Controlled-test identity checks now verify frozen input SHA-256 before readelf comparison and reject
+truncated notes. Parameter normalization supports Y/N and 1/0. Fixed newc path aliases/non-directory
+parents and made staging tests use scratch grubenv. No deployment compatibility gate was weakened.
+
+Validation: 36 dock unittest cases and three staging groups pass. All 15 patches apply to the SHA-verified
+ce9f2eba source; 76 production helper/function groups pass (including UBSan). Built the pinned float-aware
+dtc, compiled E3/E4 and control DTBs, checked controller routing/HDMI endpoint removal, control-board byte
+identity and Touch ID delta preservation. No float-cell rewriting was needed. Receipt and method:
+fairydust/usb4/evidence/2026-10-17-offline-code-audit.json and fairydust/usb4/DOCK-CODE-REVIEW.md.
+These suites are wired into PR CI; final Linux check results must be reviewed before claiming merge readiness.
+
+No full kernel/module build or hardware boot was performed. E4 still disables built-in HDMI and is not
+accepted by the older fallback-preserving installer. Prior-art claims are scoped to the actual Aurora reports
+(zero tunnel churn on j314s display resume, different M2 Max dock chain). The next hardware task is a separately
+reviewed controlled boot using the actual current payload/state, with route/module/link/EDID/picture evidence.
+
+## Dependency audit and CodexBar 0.77.0 pin — 2026-10-18
+
+Audit of pinned programs: touchegg 2.0.18, crush v0.98.1, elementary/dock 8.3.3 and tether 0.2.38 are already latest upstream; apt had nothing upgradable (lists refreshed 04:28). CodexBar was pinned at v0.74.1 while upstream is v0.77.0, so `install-codexbar.sh` now pins v0.77.0.
+
+Verification: CLI and Desktop tarballs downloaded to a scratch dir and sha256-checked; the unpacked CLI reports 0.77.0 and `usage --provider codex` returns the signed-in account (sdolbec1@gmail.com, prolite); `opencodego` still needs a browser sign-in, as before. Not verified: the installer was not re-run, the Desktop app was not installed, and the running panel was not restarted, so the live panel is still on 0.74.1 until `install-codexbar.sh --skip-system-deps` is run and the panel restarted.
+
+Flatpak: Signal 8.30.0 → 8.31.0 and the GNOME 50 runtime updated on this machine (not repo state).
+
+Left alone on purpose: Brave Widevine 4.10.3057.0 is pinned by SHA-512 from a Mozilla bug and a newer component cannot be verified the same way; `local-ai/install.sh` pins coreglass, omarchy-mlx and mesa-mlx-compute to reviewed commits that are behind upstream heads (omarchy-mlx moved today) and MLX_OMARCHY_VERSION v0.7.33 has no upstream release to compare. Bumping those needs a review of the new commits and redistribution terms first.
+
+## CodexBar custom port: multi-account Codex switcher — 2026-10-18
+
+`AGENTS.md` now carries a banner: CodexBar is our custom port (upstream pin + our Wingpanel/wrapper/helpers), merged with upstream on each bump, never replaced by stock files. Upstream 0.77.0's managed Codex accounts (`codexbar codex-accounts`) are macOS-only ("only available on macOS"); its Claude switching needs the external `claude-swap` tool, which is not installed here.
+
+Added `mseries/codexbar-accounts.py` (list/save/switch/usage; one private saved Codex home per account under `~/.local/share/codexbar-mseries/codex-accounts`, atomic `auth.json` swap, the account being left is saved first, emails shared by two workspaces need the exact id) with 6 tests in `test-codexbar-accounts.py` (throwaway homes only; the real `~/.codex` was not touched by tests). The Wingpanel Codex card now lists other accounts with plan and 7-day remaining, a Switch button, and an Add account… button (saves the current sign-in, then `codex login` in a terminal). Installers and `enhance.sh` ship the helper; CI runs the tests.
+
+Verified: Python tests, Meson build and 3 suites, headless render with fake accounts. Not verified: a real second account switch on this desktop (only one Codex account is signed in), the 0.77.0 desktop app itself (not restarted), live Add account flow. Not built: Claude switching (needs `claude-swap`; panel hook not written).
+
+Next: sign in a second account via Add account…, confirm the Switch and the restart-Codex note; decide on installing `claude-swap` for Claude switching.
+
+## CodexBar panel footer redesign — 2026-10-18
+
+The bottom of the dropdown was four full-width flat buttons with 12px icons ("Quick View…", "Usage Details…", "Spending Details…", "Settings & Sign In…"), which read as tacked on. Now: three even icon-over-label tiles (Quick View, Usage, Spending, 16px icons, rounded hover) and Settings & sign in as a gear beside Refresh in the header. Headless renders checked in light and dark; Meson tests pass. Not verified: the live Wingpanel popover (module installed, loads on the next Wingpanel restart or login).
+
+### F5 dictation (speech to text) — 2026-10-18
+
+Added `mseries/install-dictation.sh` + `mseries/dictation/` (see its README). Voxtype v1.1.1 aarch64 `cpu` (SHA-256 `f29bdbf6...5687`, matches the release's SHA256SUMS; the `.asc` signature was not checked) with Whisper `base.en`; ydotool/wl-clipboard from apt. F5 is remapped to KEY_F14 by hwdb; Voxtype listens on evdev (user is in group `input`). Prior art: Omarchy's `omarchy-install-dictation-voxtype`.
+Built-in mic: PipeWire exposes only the silent headset jack; the AOP array (`hw:1,0`, 3ch S32 48 kHz, big DC offset) is bridged by `aop-mic.sh` into source `mseries-builtin-mic`. Speech played at the laptop and recorded from `hw:1,0`, filtered offline, transcribed correctly.
+Installed live on this Mac (services `ydotool`, `mseries-aop-mic`, `voxtype`). **Not verified:** a real person holding F5 and text landing in an app; accuracy; power cost of the always-on bridge. Mistakes during testing: an early bridge version was auto-linked to the speakers (fixed with `node.autoconnect=false`), and test speech was played aloud; a silent dry run typed "Pshhh." into the focused window.
+Next: owner tries F5; tune gain; start the bridge only while recording; grammar pass via `[output.post_process]` with the local LLM; evaluate Parakeet via the Voxtype ONNX build per `STT-RESEARCH.md`.
+
+## CodexBar panel: account per provider and icon dock — 2026-10-18
+
+Each provider card shows which login it is tied to, as a quiet caption with the person icon under the title (Codex: active email from `codexbar-accounts.py`; OpenCode Go: `accountEmail` from `codexbar-opencode-local.py`, which reads only the email of the active row in `opencode.db`; otherwise "Account not detected"). On this desktop `opencode.db` has no account rows, so the OpenCode Go card shows "Account not detected" until an account exists there. The footer is now an icon-only dock (Quick View, Usage details, Spending details, Settings & sign in = person silhouette) with names in tooltips; the header gear was removed. Helper tests (5 OpenCode, 6 accounts) and Meson (3 suites) pass; light and dark renders checked. Not verified: live Wingpanel popover (loads on next restart/login).
+
+## CodexBar custom port: Claude account switching and deploy script — 2026-10-18
+
+Claude switching uses claude-swap 0.27.2 (MIT, realiti4/claude-swap; PyPI wheel + `textual`, `rich`, `truststore`), installed into a private venv `~/.local/share/claude-swap-venv` with `~/.local/bin/cswap` linked (the same tool upstream CodexBar drives on macOS). `mseries/codexbar-claude.py` wraps `cswap list/status/switch --json` (5 tests with a faked cswap) and the Wingpanel gets a Claude card (active login, 5-hour and 7-day quota, other accounts with Switch, Add account… which opens a terminal running `cswap add`). If upstream CodexBar ever reports a `claude` entry itself, our card steps aside.
+
+Blocker found: this desktop has no Claude Code credentials file (`~/.claude/.credentials.json` is absent; `claude` is not on PATH), so `cswap add` answers "No credentials found for current account". `cswap status` does name the signed-in email, so the card shows it, but there is no quota and nothing to switch to until a login is saved: sign in with the Claude Code CLI, then use Add account….
+
+New `mseries/deploy-codexbar.sh` (helpers, wrapper, module build/tests/install, then restarts Wingpanel and the CodexBar app). AGENTS.md now says to run it after every push that touches CodexBar. Verified: 5 Claude tests, Meson, light and dark renders with a faked helper. Not verified: a real Claude switch (no saved account exists).
+
+## CodexBar panel: dense cards, company marks, bottom bar, repeatable port — 2026-10-18
+
+Panel redesign: no header. Each card leads with the company mark (OpenAI, Claude, OpenCode icons, installed as `mseries-codexbar-*-symbolic`; names in tooltips/accessible labels; the Claude and OpenCode marks are our own simple drawings, not official artwork), the plan chip and the signed-in login on one line. Quota rows are one line (name, bar, % left, reset time inline); the forecast only gets its own line when it is a warning. Accounts are one line each (login, remaining %, Switch) under a small "Accounts" header with a + button. The bottom bar carries a live "Updated … ago" timer (and the Cached chip) on the left and the icon dock plus Refresh on the right. Same formatting is used for Codex, Claude and OpenCode Go.
+
+Repeatable upgrades: `mseries/CODEXBAR-PORT.md` lists every mod and the upgrade checklist; `mseries/check-codexbar-port.sh` verifies the upstream CLI flags, `CODEX_HOME`, helper tests, the Wingpanel build and the live `--snapshot` keys (all pass on 0.77.0). `deploy-codexbar.sh` also installs the provider marks. Verified: headless light and dark renders, Meson tests, port check. Not verified: the live popover by eye after restart.
+
+## CodexBar: Add account no longer opens a terminal — 2026-10-18
+
+The + under Accounts opened a full-size terminal running `codex login` / `cswap add`; neither `codex` nor `claude` is on PATH here, so it was both ugly and broken. It now opens a small native dialog (GTK AlertDialog): sign in to the other account in Codex or Claude Code, then press Save. Save runs `codexbar-accounts.py save` / `codexbar-claude.py add` silently and reports the result in a second small dialog, with plain-language errors (for example, Claude Code has no saved sign-in yet: sign in with the CLI first). Helper tests: Claude 6, accounts 7. Not verified: the dialogs on the live desktop by eye, and a real second-account save (only one login exists here).
+
+## CodexBar: Claude sign-in through the desktop app's bundled CLI — 2026-10-18
+
+The Claude desktop app's login lives in its own encrypted Electron storage (keyring item "Claude Safe Storage"), not in a file claude-swap can read; we deliberately do not decrypt it. The app does bundle Claude Code's CLI under `~/.config/Claude/claude-code/<version>/<hash>/claude`; `claude auth status` on this machine reports `loggedIn: false`, which is why the old Save login failed. `codexbar-claude.py login` now finds that CLI (or `claude` on PATH), saves any account already signed in, runs `claude auth login` (browser), then `cswap add`; the panel's + for Claude is "Sign in and save". 9 helper tests pass. Not verified: the real browser sign-in and the second dialog on the live desktop (no login was started from here).
+
+The Claude mark in the panel is tinted terracotta (#d97757) via the `mark-claude` CSS class; Codex and OpenCode marks stay neutral. Light render checked; dark not re-checked.
+
+### Streaming dictation + ANE bring-up — 2026-10-18
+
+F5 now streams: `install-dictation-stream.sh` (transcribe.cpp 0.4.0 + Parakeet Unified Q4_K_M, SHA-256 pinned) runs `mseries-stream-dictate.service`, which replaces the Voxtype service (kept as fallback). Voxtype tuned to 6 threads (auto 10 was 4x slower: 4.4 s vs 1.07 s median on 7 s of audio). ANE: smoke 20/20 bit-exact on t6000; Parakeet-on-ANE golden "match" only with a private Mesa 26.2.4 Honeykrisp (built under `~/.local/share/mseries/ane/mesa-hk`, system Mesa untouched), and not faster (1.98 s for 10.4 s) so it is not used for dictation. Details: `mseries/dictation/STT-RESEARCH.md`. Not verified: live speech through the streaming service; its first words come ~3.3 s in. Next: owner trial, mic gain/noise, grammar pass, recording indicator in the panel.
+
+#### Dictation blocker found — 2026-10-18 (built-in mic sensitivity)
+
+Owner's two live F5 attempts (05:56) recognized 0 characters. Reproduced without the owner: a human-read LibriSpeech clip played through the MacBook speakers (sink volume 0.66, player volume 1.0) leaves the live mic path at the same level as room silence (peak 0.147-0.158, rms 0.0352 vs 0.0353), and raw `arecord` band energy (300-3400 Hz) stays flat while it plays. The AOP array (`hw:1,0`, 3 channels, raw S32, no ALSA mixer controls) has a very large noise floor (in-band noise about -30 dBFS at our gain; channels uncorrelated) and no beamforming/noise suppression. Earlier louder TTS through the same mic was recognized, so the signal exists but sits at or below the noise. Software processing (mixing, filtering, afftdn) did not help measurably. Likely needs the kernel/DSP side (decimation, gain, beamforming of the AOP PDM channels), which DeepSeek owns: raise on GitHub rather than patch here. Meanwhile dictation works with a headset mic (`alsa_input.platform-sound.HiFi__Headset__source`): not tried by us.
+
+## CodexBar: native Settings window — 2026-10-18
+
+Upstream's Settings window (Qt Quick, `QQuickStyle::setStyle("Fusion")` hard-coded in `main.cpp`; confirmed that `QT_QUICK_CONTROLS_STYLE`, the GTK3 platform theme and the elementary stylesheet do not change it) looked dated. We now ship a native GTK4/Granite replacement, `codexbar-settings` (Vala, `mseries/codexbar-wingpanel/settings/`), with General, Display and Providers pages in elementary's settings style: cards with switches, spin buttons and drop-downs, company marks in the provider list, reorder/remove/add providers, start at login. No Save button: changes apply after a short pause through `codexbar-linux --configure` and an error from the app is shown inline. The panel's Settings button opens it (upstream's Qt window stays as the fallback, and the tray menu's Settings… still opens the Qt one). OpenCode Go's Sign in… now opens opencode.ai.
+
+Verified: model unit tests (3) and Meson (4 suites); headless renders of all pages in light and dark; an isolated headless app accepted a `--configure` patch (linux.json updated) and rejected `refreshSeconds: 5` with an error. Not verified: the window on the live desktop by eye, and start at login toggling for real. `deploy-codexbar.sh` installs the binary to `~/.local/bin/codexbar-settings`; `CODEXBAR-PORT.md` lists the files and the upgrade diff to check.

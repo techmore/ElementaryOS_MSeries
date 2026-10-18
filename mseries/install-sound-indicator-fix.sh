@@ -8,7 +8,7 @@ if [[ ${1:-} == --uninstall ]]; then
   exit
 fi
 version=$(dpkg-query -W -f='${Version}' io.elementary.panel.sound)
-[[ $version == 8.0.3* ]] || { echo "Patch targets sound indicator 8.0.3, found $version" >&2; exit 1; }
+[[ ${version#*:} =~ ^8\.0\.3([+~.-]|$) ]] || { echo "Patch targets sound indicator 8.0.3, found $version" >&2; exit 1; }
 work=$(mktemp -d /tmp/mseries-sound-fix.XXXXXX)
 trap 'rm -rf "$work"' EXIT
 git init -q "$work/source"

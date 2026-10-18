@@ -1,0 +1,33 @@
+{
+  "test": "actual Newelle Send/response and MCP clock through Xvfb; configured provider/tool settings cloned into isolated test storage",
+  "enabled_tools": [
+    "system_status",
+    "list_apps",
+    "list_tasks",
+    "list_calendar_events",
+    "add_minutes",
+    "get_energy",
+    "workspace_list_files",
+    "workspace_read_file",
+    "workspace_write_note",
+    "recent_faults"
+  ],
+  "chat_answer": "Newelle local test passed",
+  "clock_answer": "11:40",
+  "usage": {
+    "input_tokens": 2406,
+    "output_tokens": 6,
+    "total_tokens": 2412,
+    "cache_read_tokens": 1777
+  },
+  "clock_calls": [
+    {
+      "arguments": {
+        "time": "09:45",
+        "minutes": "115"
+      },
+      "output": "{\"time\": \"11:40\", \"day_offset\": 0}"
+    }
+  ],
+  "passed": true
+}

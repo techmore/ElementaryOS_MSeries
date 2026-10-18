@@ -1,0 +1,12 @@
+{
+  "fixture": "[1] wifi: firmware loaded successfully\n[2] panel: process exited with SIGSEGV\n",
+  "fixture_sha256": "abc161075ef822986a01585539357df9a36f7388f01d8778a780f355192e4b6c",
+  "exit_code": 0,
+  "private_report_mode": 384,
+  "answer": "## Verdict\nThe computer is not healthy; a critical crash occurred.\n\n## Needs attention\n- **Process crash.** A system process died unexpectedly, which can cause instability or data loss. **Fix:** Restart the computer to see if the process recovers or if the issue persists.\n- **Wi-Fi status.** The Wi-Fi firmware loaded successfully, so the logs do not prove a Wi-Fi failure. **Fix:** Check if Wi-Fi works in your settings; if it is down, try toggling it off and on.\n\n## Fine to ignore\n- **Firmware load.** The Wi-Fi firmware loaded successfully, which is a good sign. **Why it is harmless:** This confirms the hardware driver loaded correctly, even though another process crashed.\n",
+  "scope": "synthetic chosen-file path through the production CLI; no real journal input",
+  "passed": false,
+  "evaluated_model": "mlx-community/Qwen3.5-4B-MLX-4bit",
+  "evaluated_revision": "32f3e8ecf65426fc3306969496342d504bfa13f3",
+  "dedicated_diagnosis_qualified": false
+}
