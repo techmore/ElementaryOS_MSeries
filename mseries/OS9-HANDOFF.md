@@ -12,7 +12,10 @@ correctly refuses while the Flatpak runs. `signal-accent.py` recolours Signal's 
 brand blue `#3b45fd` and SVGs in place in `app.asar` (same-length replacements, integrity hashes recomputed,
 original kept as `app.asar.orig`); run from `install-signal-integration.sh` on every update. Applied here
 (265 uses, 26 files, accent `#3689e6`); Xvfb screenshot with a throwaway profile shows the link and logo in
-the accent. **Pending owner:** quit the Flatpak Signal, then run the migration. **Unverified:** the logged-in
+the accent. **Migrated 21:09** (owner approved): Flatpak was already closed; 79M copied, native 8.32.0-beta.1 opened,
+schema 1830 unchanged, existing sessions decrypt, key moved to `gnome_libsecret`. Only error: the built-in
+updater cannot watch `.signal-postinst` (expected; updates come from `install-signal.sh`). The Flatpak profile
+(plaintext key) stays as a stale backup. **Unverified:** the logged-in
 UI in the accent, and whether drops from the screenshot shelf reach native Signal (it is Wayland-native, the
 shelf is XWayland).
 
