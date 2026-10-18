@@ -1,6 +1,5 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
-<<<<<<< HEAD
 ## Quiet diagnostic agent foundation: disabled source draft — 2026-10-18
 
 [Implementation, evidence and promotion gates](local-ai/DIAGNOSTIC-AGENT-EXPERIMENT.md).
@@ -31,7 +30,7 @@ remain its release gate. The existing six-hour upstream watcher continues; the
 latest observed run 39142505984 succeeded. Do not duplicate it or old benchmarks.
 Next diagnostic work: uniquely attributable runtime ownership, resource-lifetime
 cleanup and staging/rollback, then an explicitly admitted quiet qualification.
-=======
+
 ## CodexBar second-row dots — 2026-10-18
 
 Owner requested matching visual dots for alternate accounts on the second row.
@@ -125,7 +124,6 @@ RSS 192,928 KiB, FDs 50; its earlier 14:23:25 restart has no crash attribution.
 Routine deployment installs Python improvements for their next invocation and stages
 the native performance changes for next login; no reload issued for this audit.
 Next: normal-use monitoring, then scoped account caching and large-transcript benchmarks.
->>>>>>> origin/main
 
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18
 
