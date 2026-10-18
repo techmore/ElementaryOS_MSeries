@@ -3240,3 +3240,28 @@ title, brief subtitle, a rounded instruction card and native footer actions. Pro
 behaviour is unchanged from the owner-verified sign-in flow. Rebuilt and passed four Meson suites;
 light/dark previews are checked. This follow-up is included in the owner-authorized merge of PR #101
 into main and subsequent desktop deployment.
+
+
+## CodexBar: best-available account and next-weekly-reset hints — 2026-10-18
+
+Owner requested a yellow star for the coding service/account with the most remaining tokens and a
+red exclamation near the account closest to its weekly reset. The providers do not report comparable
+absolute token budgets; the implementation explicitly compares available quota percentages instead.
+The star ranks each fresh account by its **lowest remaining percentage across reported windows**.
+Thus 0% 5h / 99% weekly cannot beat a usable account, nor can a high 5h balance hide a low weekly/monthly
+balance. Positive ties are all marked; exhausted, unknown, stale and awaiting-reset balances do not
+receive a star. Tooltips disclose the metric and name the account.
+
+The red ! independently selects the earliest future seven-day reset. Five-hour and monthly resets do
+not qualify; expired reset dates and stale accounts are excluded, and equal reset times all get marked.
+The tooltip identifies the account and local reset date. The ! means next weekly reset, with no arbitrary
+"within one day" threshold. Provider headers, alternate-account identities and both lines of the panel
+carry the hints. A provider-level marker may refer to its secondary login; the matching account row is
+marked too. Normal polling recalculates selection and updates the UI when a winner changes or a reset
+passes. No new network requests, credentials handling or account switching were added.
+
+Validation: four Meson suites pass, with three new selection cases covering session exhaustion,
+long-window bottlenecks, stale and unknown data, ties, reset boundaries, and monthly exclusion even
+without duration metadata. The `hints` render fixture deliberately makes a saved Claude account best
+and a saved Codex account next to reset; checked in light/dark. Upstream pin remains 0.77.0. Publish,
+merge to main and deploy as the owner requested for this ongoing CodexBar work.

@@ -52,6 +52,9 @@ namespace MSeries {
         private int64 opencode_accounts_fetched_us = 0;
         private Gtk.Label[] account_quota_labels = {};
         private Json.Array[] account_quota_windows = {};
+        private Json.Array hint_candidates = new Json.Array ();
+        private Json.Object hint_selection = new Json.Object ();
+        private string hints_digest = "";
 
         public CodexBarIndicator () {
             GLib.Object (code_name: "codexbar");
@@ -182,6 +185,8 @@ namespace MSeries {
                 ".mseries-codexbar progressbar.level-critical progress { background: @error_color; } " +
                 ".mseries-codexbar .text-low { color: @warning_color; } " +
                 ".mseries-codexbar .text-critical { color: @error_color; } " +
+                ".mseries-codexbar .account-star, .mseries-codexbar-bar .account-star { color: #d4a300; font-weight: 700; } " +
+                ".mseries-codexbar .account-reset-hint, .mseries-codexbar-bar .account-reset-hint { color: @error_color; font-weight: 800; } " +
                 ".mseries-codexbar .dot-ok { color: @success_color; } " +
                 ".mseries-codexbar .dot-warn { color: @warning_color; } " +
                 ".mseries-codexbar .dot-bad { color: @error_color; } " +
@@ -614,6 +619,7 @@ namespace MSeries {
             dot.add_css_class ("dot-off");
             head.append (dot);
             head.append (build_provider_mark ("claude", "Claude"));
+            head.append (build_hint_badges ("claude", true));
             var email = claude_data.get_string_member_with_default ("activeEmail", "");
             var accounts = claude_data.get_array_member ("accounts");
             head.append (build_identity (email));
@@ -682,7 +688,7 @@ namespace MSeries {
                 if (installed && !ready) detail += " · app sign-in needed";
                 card.append (build_account_line (name, detail,
                     "Choose whether to switch Claude Code or the Claude app and CLI to %s".printf (name),
-                    () => choose_claude_switch (number, name, installed, ready), windows));
+                    () => choose_claude_switch (number, name, installed, ready), windows, hint_id ("claude", account)));
             }
             return card;
         }
@@ -753,7 +759,7 @@ namespace MSeries {
                 var detail = account.has_member ("error") ? "unavailable" : "—";
                 box.append (build_account_line (email, detail,
                     "Make %s the active Codex account. Restart running Codex sessions to use it.".printf (email),
-                    () => run_accounts_helper ({ "switch", account_id }), windows));
+                    () => run_accounts_helper ({ "switch", account_id }), windows, hint_id ("codex", account)));
             }
             return box;
         }
@@ -890,6 +896,7 @@ namespace MSeries {
 
             // The panel's countdowns tick every poll; the popover is rebuilt only when its data changes.
             panel_entries = entries;
+            update_account_hints (entries, now_unix);
             update_panel (entries, now_unix);
             for (int i = 0; i < account_quota_labels.length; i++) {
                 account_quota_labels[i].set_markup (colored_account_quota (account_quota_labels[i], account_quota_windows[i], now_unix));
@@ -928,6 +935,110 @@ namespace MSeries {
 
         private static int provider_rank (string provider) {
             return provider == "codex" ? 0 : provider == "claude" ? 1 : provider == "opencodego" ? 2 : 3;
+        }
+
+        private static string hint_id (string provider, Json.Object account) {
+            if (account.get_boolean_member_with_default ("active", false)) return provider + ":active";
+            var key = account.get_string_member_with_default ("id", "");
+            if (key.length == 0 && account.has_member ("number")) key = account.get_int_member ("number").to_string ();
+            if (key.length == 0) key = account.get_string_member_with_default ("email", "unknown");
+            return provider + ":saved:" + key;
+        }
+
+        private static void hint_candidate (Json.Array candidates, string id, string email, Json.Array? windows, bool stale) {
+            var candidate = new Json.Object ();
+            candidate.set_string_member ("id", id);
+            candidate.set_string_member ("email", email.length > 0 ? email : "Active account");
+            candidate.set_boolean_member ("stale", stale);
+            candidate.set_array_member ("windows", windows != null ? windows.ref () : new Json.Array ());
+            candidates.add_object_element (candidate);
+        }
+
+        private void update_account_hints (Json.Array entries, int64 now_unix) {
+            hint_candidates = new Json.Array ();
+            string[] supplied = {};
+            for (uint i = 0; i < entries.get_length (); i++) {
+                var entry = entries.get_object_element (i);
+                var provider = entry.get_string_member_with_default ("provider", "").down ();
+                supplied += provider;
+                hint_candidate (hint_candidates, provider + ":active", account_email_for (provider, entry),
+                    entry.get_array_member ("windows"), QuotaEta.entry_stale (entry, snapshot_stale, now_unix)
+                    || entry.get_string_member_with_default ("error", "").length > 0);
+            }
+            foreach (var provider in new string[] { "codex", "claude", "opencodego" }) {
+                var accounts = provider_accounts (provider);
+                var fetched = provider == "codex" ? codex_accounts_fetched_us
+                    : provider == "claude" ? claude_fetched_us : opencode_accounts_fetched_us;
+                var max_age = (provider == "codex" ? 600 : 240) * GLib.TimeSpan.SECOND;
+                for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
+                    var account = accounts.get_object_element (i);
+                    if (account.get_boolean_member_with_default ("active", false) && provider in supplied) continue;
+                    hint_candidate (hint_candidates, hint_id (provider, account), account.get_string_member_with_default ("email", ""),
+                        account.has_member ("windows") ? account.get_array_member ("windows") : null,
+                        fetched == 0 || GLib.get_monotonic_time () - fetched > max_age || account.has_member ("error"));
+                }
+            }
+            hint_selection = Presentation.account_hints (hint_candidates, now_unix);
+            var digest = local_digest (hint_selection);
+            for (uint i = 0; i < hint_candidates.get_length (); i++) {
+                var candidate = hint_candidates.get_object_element (i);
+                digest += candidate.get_string_member ("id") + candidate.get_string_member ("email");
+            }
+            if (digest != hints_digest) {
+                hints_digest = digest;
+                last_digest = "";
+                panel_digest = "";
+            }
+        }
+
+        private bool has_hint (string kind, string id, bool provider = false) {
+            var selected = hint_selection.has_member (kind) ? hint_selection.get_array_member (kind) : null;
+            for (uint i = 0; selected != null && i < selected.get_length (); i++) {
+                var candidate = selected.get_string_element (i);
+                if (provider ? candidate.has_prefix (id + ":") : candidate == id) return true;
+            }
+            return false;
+        }
+
+        private string hint_description (string kind, string id, bool provider) {
+            var text = new StringBuilder (kind == "best"
+                ? "Most available quota · highest percentage across the account's tightest reported limit. Percentages are relative to each plan, not absolute token counts."
+                : "Next weekly reset · earliest upcoming 7-day reset among accounts with current data.");
+            for (uint i = 0; i < hint_candidates.get_length (); i++) {
+                var candidate = hint_candidates.get_object_element (i);
+                var key = candidate.get_string_member ("id");
+                if (!(provider ? key.has_prefix (id + ":") : key == id) || !has_hint (kind, key)) continue;
+                text.append ("\n" + candidate.get_string_member ("email"));
+                if (kind == "weekly") {
+                    var reset = Presentation.account_weekly_reset (candidate.get_array_member ("windows"), new DateTime.now_utc ().to_unix ());
+                    if (reset > 0) text.append (" · " + new DateTime.from_unix_utc (reset).to_local ().format ("%a %b %d, %H:%M"));
+                }
+            }
+            return text.str;
+        }
+
+        private Gtk.Widget build_hint_badges (string id, bool provider = false) {
+            var box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3) { valign = Gtk.Align.CENTER };
+            if (has_hint ("best", id, provider)) {
+                var star = new Gtk.Label ("★") { tooltip_text = hint_description ("best", id, provider) };
+                star.add_css_class ("account-star");
+                star.update_property (Gtk.AccessibleProperty.LABEL, "Most available quota", -1);
+                box.append (star);
+            }
+            if (has_hint ("weekly", id, provider)) {
+                var reset = new Gtk.Label ("!") { tooltip_text = hint_description ("weekly", id, provider) };
+                reset.add_css_class ("account-reset-hint");
+                reset.update_property (Gtk.AccessibleProperty.LABEL, "Next weekly reset", -1);
+                box.append (reset);
+            }
+            box.visible = box.get_first_child () != null;
+            return box;
+        }
+
+        private string hint_markup (string id, Gtk.Widget widget) {
+            return (has_hint ("best", id) ? "<span foreground=\"#d4a300\" weight=\"bold\">★</span> " : "")
+                + (has_hint ("weekly", id) ? "<span foreground=\"%s\" weight=\"bold\">!</span> ".printf (
+                    quota_theme_color (widget, "error_color", "#c6262e")) : "");
         }
 
         private void show_panel_placeholder () {
@@ -1062,6 +1173,7 @@ namespace MSeries {
                 : "Usage unavailable");
 
             var digest = new StringBuilder ();
+            digest.append (hints_digest);
             foreach (var provider in new string[] { "codex", "claude", "opencodego" }) {
                 digest.append (alternate_account_text (provider, now_unix));
             }
@@ -1093,6 +1205,7 @@ namespace MSeries {
                 icon.valign = Gtk.Align.CENTER;
             }
             segment.append (mark);
+            segment.append (build_hint_badges (provider, true));
             var value = new Gtk.Label (value_text) { valign = Gtk.Align.BASELINE_CENTER };
             value.add_css_class ("seg-value");
             if (level == QuotaLevel.LOW) value.add_css_class ("level-low");
@@ -1116,7 +1229,7 @@ namespace MSeries {
                 if (account.get_boolean_member_with_default ("active", false)) continue;
                 if (markup.len > 0) markup.append ("  ");
                 var windows = account.has_member ("windows") ? account.get_array_member ("windows") : null;
-                markup.append ("%lld: %s".printf (account.get_int_member_with_default ("number", i + 1),
+                markup.append ("%s%lld: %s".printf (hint_markup (hint_id (provider, account), label), account.get_int_member_with_default ("number", i + 1),
                     windows == null || windows.get_length () == 0 ? "—"
                         : colored_account_quota (label, windows, new DateTime.now_utc ().to_unix ())));
             }
@@ -1153,6 +1266,9 @@ namespace MSeries {
                 if (account.get_boolean_member_with_default ("active", false)) continue;
                 text.append ("\n%lld: %s".printf (account.get_int_member_with_default ("number", i + 1),
                     account.get_string_member_with_default ("email", "Saved account")));
+                var id = hint_id (provider, account);
+                if (has_hint ("best", id)) text.append (" · ★ Most available quota");
+                if (has_hint ("weekly", id)) text.append (" · ! Next weekly reset");
             }
             return text.str;
         }
@@ -1209,6 +1325,7 @@ namespace MSeries {
                 status.length > 0 ? status : "Provider status unknown");
             head.append (dot);
             head.append (build_provider_mark (provider, title_text));
+            head.append (build_hint_badges (provider, true));
             var plan = Presentation.plan_label (entry.get_string_member ("plan") ?? "");
             if (plan.length > 0) {
                 var plan_label = new Gtk.Label (plan) { valign = Gtk.Align.CENTER };
@@ -1244,7 +1361,7 @@ namespace MSeries {
                     if (account.get_boolean_member_with_default ("active", false)) continue;
                     card.append (build_account_line (account.get_string_member_with_default ("email", "Saved account"),
                         account.get_string_member_with_default ("error", "Quota unavailable"), "", null,
-                        account.has_member ("windows") ? account.get_array_member ("windows") : null));
+                        account.has_member ("windows") ? account.get_array_member ("windows") : null, hint_id ("opencodego", account)));
                 }
             }
             if (error.length > 0 || windows == null || windows.get_length () == 0) {
@@ -1355,13 +1472,16 @@ namespace MSeries {
         }
 
         private Gtk.Widget build_account_line (string email, string detail, string switch_tooltip,
-                                               owned ActionFunc? on_switch, Json.Array? windows = null) {
+                                               owned ActionFunc? on_switch, Json.Array? windows = null, string candidate_id = "") {
             var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             line.add_css_class ("account-line");
             var name = new Gtk.Label (email) { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.MIDDLE };
             name.set_tooltip_text (email);
             var content = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { hexpand = true };
-            content.append (name);
+            var identity = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
+            identity.append (build_hint_badges (candidate_id));
+            identity.append (name);
+            content.append (identity);
             var has_quota = windows != null && windows.get_length () > 0;
             var meta = new Gtk.Label (has_quota ? Presentation.account_quota (windows, new DateTime.now_utc ().to_unix ()) : detail) {
                 xalign = 0, wrap = true, wrap_mode = Pango.WrapMode.WORD_CHAR
