@@ -39,8 +39,9 @@ Do not add another worktree's untracked run to a report without reviewing its co
 
 ## Dock HDMI and suspend
 
-The existing `docs/dock-video-decision` branch owns the newer dock investigation. Its reviewed tip here is
-`189cbda`; these links are pinned so they remain an auditable snapshot:
+The dock investigation now has a local [frontier ledger](../fairydust/usb4/STATE-OF-PLAY.md),
+[goal and gates](../fairydust/usb4/PRIMARY-GOAL.md), and [code review](../fairydust/usb4/DOCK-CODE-REVIEW.md).
+The following links retain the earlier `189cbda` snapshot for historical provenance:
 
 - [Primary goal and G0–G5 evidence gates](https://github.com/techmore/ElementaryOS_MSeries/blob/189cbda/mseries/fairydust/usb4/PRIMARY-GOAL.md)
 - [Cumulative state and next experiment](https://github.com/techmore/ElementaryOS_MSeries/blob/189cbda/mseries/fairydust/usb4/STATE-OF-PLAY.md)
@@ -58,3 +59,13 @@ Docked lid locking is also separate from suspend: the recorded USB4 suspend veto
 can leave the machine awake. Measure docked and undocked sleep independently.
 
 No kernel, bootloader, display settings or running audio changes are part of this documentation organization.
+
+## Suspend energy and one-shot power report
+
+The [Omacom port](../OMACOM-IMPROVEMENTS.md) adds `mseries-power-report --sample 10`
+and a bounded sleep hook through `install-hardware-support.sh` / the diagnostics
+enhancement module. It records energy deltas across real suspended-clock
+intervals and notifies after a known unlock. Logs do not prove low-power
+residency; transition overhead is included, charging/invalid intervals are
+excluded, and the Linux hardware comparison still needs an actual run. Do not
+update the parity checklist from synthetic fixture results.

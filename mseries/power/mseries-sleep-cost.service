@@ -1,0 +1,14 @@
+[Unit]
+Description=Report energy used across suspend after unlock
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecCondition=/usr/bin/mseries-hw-apple-silicon
+ExecStart=/usr/bin/python3 -I /usr/libexec/mseries/sleep-cost watch
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=graphical-session.target

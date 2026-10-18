@@ -19,6 +19,9 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <h1>M1 Pro features and Omarchy parity</h1>
 <p>What the installed elementary OS 9 desktop does on a 14-inch MacBook Pro (M1 Pro), checked against the maintained Omarchy Apple Silicon packages (<a href="https://github.com/omacom/omarchy-mac-pkgs">omacom/omarchy-mac-pkgs</a>, audited at 222f7a8). This describes the installed system, not the unbuilt factory image. Updated 2026-10-14.</p>
 
+<h2>New repository candidates — October 17</h2>
+<p>Sleep-energy logging and a power-report launcher are implemented in the repository, with Touch ID readiness and setup fixes. Bluetooth resume recovery and built-in F-key remaps are separate opt-ins. These additions have offline regression coverage; target-machine qualification and factory-image boot remain pending. See the <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/OMACOM-IMPROVEMENTS.md">audit, installation options and measurement limits</a>. This does not change the installed-system results below or establish a battery-life improvement.</p>
+
 <h2>Omarchy M-series enhancements</h2>
 <table>
 <tr><th>Enhancement</th><th>Status on the M1 Pro</th><th>Notes</th></tr>
@@ -27,7 +30,7 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <tr><td>Battery charge limit</td><td class="ok">Ported</td><td>Limit reads 80%; a quick-settings switch toggles it.</td></tr>
 <tr><td>Ambient keyboard light</td><td class="ok">Ported</td><td>Adjusted 0 to 59/255 at 141 lx; lock, lid and suspend behavior still to be qualified.</td></tr>
 <tr><td>Early Apple input loading</td><td class="ok">Ported</td><td>initramfs module list; factory-image path not verified.</td></tr>
-<tr><td>Dock hub, mouse and Ethernet</td><td class="ok">Working</td><td>Dell WD22TB4 verified 2026-10-14. Dock HDMI picture remains unverified; experimental tunnel allocation does not establish a working display. See the <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/power-usage/mseries/power/README.md">power and dock evidence map</a>.</td></tr>
+<tr><td>Dock hub, mouse and Ethernet</td><td class="ok">Working</td><td>Dell WD22TB4 verified 2026-10-14. Dock HDMI picture remains unverified; experimental tunnel allocation does not establish a working display. See the <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/fairydust/usb4/DOCK-CODE-REVIEW.md">dock code review and qualification limits</a>.</td></tr>
 <tr><td>Docked lid mode</td><td class="part">Running</td><td>Locks instead of retrying suspend while a USB4 dock is attached; lid-close with a dock needs a repeat test.</td></tr>
 <tr><td>Audio watchdog</td><td class="ok">Installed 2026-10-14</td><td>Restarts PipeWire and WirePlumber if the audio server stops answering, with a restart limit. It runs as a user service; the unit and tests are in the repo.</td></tr>
 <tr><td>Speaker and headset-mic rules</td><td class="part">Installed; apply at next login</td><td>Keeps the speaker and headphone outputs open (no pop between sounds) and stops apps preferring the unplugged headset mic.</td></tr>

@@ -4,8 +4,49 @@ Updated 2026-10-17. This page exists because the work had spread across
 `ROADMAP.md`, `fairydust/usb4/*` and `gala-drawers/HANDOFF.md`, and the question
 "what is actually waiting for a reboot right now?" had no single answer.
 
-Everything below is **already installed/staged**. Nothing here needs building.
-The cost is only the reboot itself.
+## Next Linux session: Aurora 20 upgrade (saved 2026-10-17)
+
+[PR #78](https://github.com/techmore/ElementaryOS_MSeries/pull/78) is merged
+into main as `9ddade6d430492888df92bf47132b07e4e3233b7`. Both the Aurora Linux
+package inspection and full M-series wiring checks passed on the PR head.
+The owner deferred the target-machine preflight and asked to save this note
+before switching back to the installed Linux system.
+
+**Aurora 20 has NOT been installed or armed by this work.** This is an upgrade
+of the existing elementary installation; no OS reinstall is needed. The kernel,
+initramfs and matched m1n1/J314S DTB must be handled together. Package/source
+porting is complete; live hardware and fallback-kernel compatibility are not
+qualified. Guide: [Aurora port](aurora/README.md).
+
+First, on the installed Linux machine, collect this read-only preflight:
+
+```bash
+uname -r
+cat /etc/os-release
+findmnt -rn -o SOURCE,FSTYPE,UUID /boot
+cat /proc/cmdline
+command -v mkinitcpio mkinitramfs
+sudo grub-editenv /boot/grub/grubenv list
+```
+
+Then update/review the checkout on main and preview
+`bash mseries/aurora-sep/install-aurora-sep.sh` (dry-run). Use the preflight to
+choose the initramfs path and confirm root-unlock parameters, ESP identity and
+any existing one-shot boot. Earlier records show E4 armed; that is historical,
+not a current read. Do not assume a normal reboot will select the desired entry.
+
+After reviewing that state: install the non-default `elementary-aurora20`
+kernel candidate, stage the matched boot payload from a copy of the actual
+`/boot/m1n1/boot.bin`, review the report and accessible rollback, and only then
+plan deployment and a controlled candidate boot. The shared boot.bin affects
+all kernel entries; keeping .19/Fairydust menu entries alone does not establish
+recovery compatibility. Existing Touch ID userspace can be reused. No current
+boot, deployment, dock-picture or fingerprint result is claimed.
+
+## Earlier reboot queue (historical installation records)
+
+The entries below describe earlier installed/staged work, not a fresh read of
+the target machine. They do not mean the new Aurora 20 upgrade is installed.
 
 ## Two kinds of "reboot" — don't confuse them
 

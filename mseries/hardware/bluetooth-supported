@@ -1,0 +1,9 @@
+#!/bin/bash
+# MIT; behavior from omacom/omarchy-mac-pkgs aa747a8c.
+set -euo pipefail
+status=0
+mseries-hw-apple-silicon || status=$?
+(( status != 2 )) || exit 2
+(( status == 0 )) || exit 1
+devices=$(lspci -nn) || exit 2
+grep -E '14e4:(5f69|5f71|5f72)' <<<"$devices" >/dev/null

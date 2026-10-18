@@ -1,5 +1,145 @@
 # OS 9 implementation / Claude Code handoff
 
+## Omacom userspace improvements — 2026-10-17
+
+[Systematic audit](OMACOM-IMPROVEMENTS.md) records all candidate dispositions,
+immutable source pins and the 69-repository / 1,482-branch receipt. Ported sleep
+energy recording, a one-shot power report and Applications launcher through a
+new diagnostics enhancement module (manual, transform and factory staging).
+Root sleep hooks have a 3-second bound; logind notifications wait for an active
+unlocked session. Invalid clocks, charging/unknown readings, changed boot IDs
+and failed suspend attempts are excluded; CPU sampling handles PID reuse.
+
+Bluetooth recovery is shipped **disabled**, with hardware, rfkill and current
+suspend-cycle timeout gates. Explicit installer opt-in enables future events;
+it never rebinds on install. Built-in F4/F5/F6 remaps are separately opt-in.
+Touch ID settings now constructs its fprintd manager before probing, reads the
+sensor readiness diagnostic, avoids duplicate signal handlers, and fixes the
+installer's duplicated directory. No new SEP activation owner or PAM edit.
+
+The repo has no Omarchy Bolt poller to replace; audio/backlight references do
+not map directly to this desktop. Existing m1n1/video pins need no payload
+refresh. Kernel source work remains separate in PR #79. ESP mtools validation
+already existed; added a mandatory CI GPT/FAT fixture for its real readback.
+
+Local fixtures: 14 power diagnostics tests, 15 Touch ID tests, four installer/
+CI-dependency checks and 12 Bluetooth recovery groups pass. The real FAT fixture
+requires fdisk/mtools (skipped on this macOS host, required in the dedicated
+Linux CI job). Image pruning tests and broader wiring validation run there too.
+No target hardware, bootloader/kernel, audio, display, Bluetooth or key setting
+changed. No measured battery gain or factory boot claim. Initial Linux CI on `2ae80a5`
+passed both jobs ([run 39085829799](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39085829799)), including real FAT readback, ShellCheck, image pruning and power-install
+regressions. Follow-up hardens removal and error handling; check the final PR
+head results before merging. Next: install diagnostics on Linux and qualify suspend/unlock logs; opt in to
+Bluetooth recovery only after retaining its matching failure evidence.
+
+
+> **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
+> Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
+> Aurora has j314s Thunderbolt-display prior art; check it before more RE. This dock HDMI path remains unqualified.
+> Gates, prior art and rules: [fairydust/usb4/PRIMARY-GOAL.md](fairydust/usb4/PRIMARY-GOAL.md).
+
+## All Aurora branches audited — 2026-10-17 (read-only investigation)
+
+Owner requested all `omacom/linux-aurora` branches be investigated for useful
+imports. [Full report](aurora/UPSTREAM-BRANCH-AUDIT-2026-10-17.md) and the
+[immutable-head receipt](aurora/branch-audits/2026-10-17.json) cover all 51
+repository branches plus 11 open PR heads against our `.20` source `c46d7dcd`.
+41 branch tips are ancestors; two add only release tooling; eight diverge.
+Targeted code review distinguishes semantic duplicates from missing work.
+
+Important correction: `.20` already implements ProMotion/VRR KMS capability,
+atomic state, panel range and real swap timestamps. The earlier dynamic-refresh
+audit describes Fairydust; it now has a prominent Aurora correction. Test Gala/
+Mutter and actual panel behavior after boot, rather than reapply the old patch.
+
+16 public patch sets were checked without changing the baseline source. Six
+apply: PRs #67, #86, #110, #119, #134, #135. #86/#110 are Omarchy-only installer
+policy. #135's upstream host suite passes 54/54 on base and 58/58 on an isolated
+patched copy (macOS Rust 1.98.1, edition 2021, warnings denied). #134 then #119
+apply together to copied ISP files. No ARM64 kernel build or hardware test.
+
+Best further M1 Pro/local-AI research candidate is the udmabuf portion of draft
+#67, split from its unqualified AMD/Nouveau eGPU commit. M3 Air thermal/camera
+changes are scoped candidates for those boards. #122/#127 need a rebase; Neo
+SMC hardening needs a separate port. The 131-commit old Neo trial was reviewed
+selectively, not exhaustively. No branch was merged, no binary pin changed and
+no target kernel/boot/service/display/audio action occurred. Keep the saved
+installed-Linux preflight as the next hardware step.
+
+## Aurora 20 merged; resume on installed Linux — 2026-10-17
+
+Owner authorized merging PR #78; it is merged as
+`9ddade6d430492888df92bf47132b07e4e3233b7`. PR package inspection and M-series
+wiring checks passed. Owner then deferred target-machine checks and asked to
+save the note before booting back into Linux. No live kernel/bootloader change,
+boot arming or reboot was performed. The exact read-only preflight and upgrade
+resume sequence are saved at the top of [REBOOT-QUEUE.md](REBOOT-QUEUE.md).
+Read the actual root/ESP/initramfs/GRUB state before deployment; retained E4
+records are historical and the shared boot.bin fallback contract is unqualified.
+
+## Aurora 20 upstream kernel port — 2026-10-17 (source/package work only)
+
+The owner requested porting the new `omacom/linux-aurora` support. The new
+`mseries/aurora/` lane pins release `aurora-2026.10.17.20`, source
+`c46d7dcdb8712ea9aeb0ce47b439ffae76371e55`, and repackages the unchanged
+published kernel/modules/DTBs as a Debian payload with corresponding source,
+original recipe, licenses and checksum/provenance receipts. It does not run
+upstream's Arch installer or import its desktop/Mesa configuration.
+
+The installer now creates `elementary-aurora20`, preserving legacy .19 and
+Fairydust entries. Fixed download-status text contaminating captured filenames;
+repeat installs update only the versioned managed block. Both mkinitcpio and
+initramfs-tools explicitly include/check the new modular display dependencies. Userspace is reused unless `--with-touchid`
+is selected; no SDDM or automatic PAM edits. No reboot/default/next_entry writes.
+
+`stage-boot.py` builds a private candidate from an explicit copy of boot.bin,
+using pinned Aurora m1n1 and the complete J314S DTB; other board DTBs and the
+U-Boot/config tail are byte-identical. It writes a rollback copy/report and never
+deploys. The installed boot.bin is shared: compatibility of the newer J314S DTB
+with the fallback kernels must be reviewed before deployment, including E4 state.
+
+Local validation: 9 new offline regressions and 9 existing Touch ID tests pass;
+the real release package passed hash, module dependency and J314S DT admission,
+and the Debian payload was produced without installing it. Dedicated Linux CI
+also inspects the .deb using dpkg-deb. See [port guide](aurora/README.md).
+**Not done:** live deployment, kernel source rebuild, factory ISO integration,
+J314S/WD22TB4 hardware boot, dock picture, Touch ID enrollment or recovery boot.
+Upstream `.20` explicitly does not qualify M1 Pro/Max/Touch ID on this release.
+Next task: review the matched payload/fallback contract, then a separately
+controlled hardware batch. Existing dock G2–G5 results have not advanced.
+
+## Dock video E1 boot result — set_hpd cleared, sink/AUX is the frontier — 2026-10-16 (OpenCode)
+
+The armed E1 one-shot boot (`elementary-usb4-dpin-controlled`, image
+`46116374…`, only `appledrm.ko` changed, patch `0013`) ran; `next_entry` is
+consumed. Verified live `appledrm` build-id `90eec845…` equals the E1 ko. E1
+made a tunnel-mode `set_hpd` failure non-fatal and widened the linkcfg window to
+8 s; the tunnel then survived the `-110` for ~5 s instead of 1 s, so the
+`set_hpd` timeout is **cleared** as the wall. The firmware still never configured
+the link (RTKit syslog 13 for the whole boot; no `idx=7,13,15,5,12,9,6`) and its
+last substantive word was `DEVICE_NOT_RESPONDING` (call 22). The `-67` in the
+`connect_source` line is **our** reply to that call (`dptxport_call` maps calls
+22/24/20 to `dptxport_tunnel_reply(..., -ENOLINK)`), not a firmware-returned error
+and not a timeout. H1 (firmware blocked on the sink-facing path) leads; H2
+(`set_hpd` wrong/unsupported for the tunnel) is not excluded. Monitor was on the
+dock HDMI throughout with no reaction; no picture, M1–M4 unmet. Full record:
+[evidence/2026-10-16-e1-boot-outcome-firmware-device-not-responding.md](fairydust/usb4/evidence/2026-10-16-e1-boot-outcome-firmware-device-not-responding.md);
+ledger: [STATE-OF-PLAY.md](fairydust/usb4/STATE-OF-PLAY.md). Next, owner-gated,
+one reboot each: E3 (DP-IN HPD notifier + host DP-IN AUX/DPCD status
+instrumentation), then E2 (unbypassed DPRX, `dprx_bypass=0` — §9 hazard), then
+the macOS m1n1-hypervisor trace.
+
+**E3 staged (OpenCode, 2026-10-16).** Patch `0014` adds DP-IN HPD producer
+logging (`DPINDBG irq:`/`hpd_notifier`) plus `init/exit/power_on/power_off`
+register dumps; `phy-apple-dpin.ko` `9d43d6e7…`. E3 image `2c036651…` installed
+on `elementary-usb4-dpin-controlled` (bypass=1); a paired **un-armed** E2 entry
+`elementary-usb4-dpin-nobypass` (`dprx_bypass=0`, same image) added to
+`custom.cfg` so one reboot runs both. E2 is ARMED for the next reboot
+(`next_entry=elementary-usb4-dpin-nobypass`).
+`test-dp-tunnel.sh` verdict fixed in the same batch. Record:
+[evidence/2026-10-16-e3-dpin-hpd-instrumentation.md](fairydust/usb4/evidence/2026-10-16-e3-dpin-hpd-instrumentation.md).
+
 ## macOS power baseline and parity checklist — 2026-10-17 (Claude)
 
 Owner asked to profile everything macOS does on this Mac, set a minimal baseline per category, and check categories
@@ -140,6 +280,8 @@ old count would include eDP, new count 0). Not done: router-side DP-IN hook
 design and the refcount question (G1/G2, DeepSeek), DPRX teardown backport (G3),
 any hardware step (G4/G5, owner-gated).
 Update 2026-10-16 (later): recorded the DeepSeek bridge review (B1-B8) and Codex bundle status; read-only pre-reboot inspection found the GRUB entry lacks `dprx_bypass=1` (N1), `RECOVERY.md` named missing files (N2, repo copy corrected), no initramfs/install script yet (N3), a 5 s source deadline (N4). Reboot plan and post-reboot checks: `fairydust/usb4/POST-REBOOT-CHECKLIST.md`. Nothing applied.
+Update 2026-10-16 (late, OpenCode): the `DPINDBG` debug boot ran and the fatal `-110` is **our own `set_hpd(hpd=1)` AFK call timing out after 1 s**, not the 2 s `DPTX_CONNECT_TIMEOUT` (`waited=949`, a signalled completion; corrected in the second-boot record). After `ACTIVATE` the tunnel DCP firmware goes silent (1 connect-time syslog line vs 360 on a working HDMI path) and never configures the link. New reference: the firmware's complete working link-config sequence on built-in HDMI (`idx=7,13,15,5,12,9,6`) — which never calls `set_hpd`. Next: E1/E2/E3 (non-fatal HPD delivery / unbypassed DPRX / more instrumentation). Record: [`fairydust/usb4/evidence/2026-10-16-dbgboot-dcp-silent-never-configures-link.md`](fairydust/usb4/evidence/2026-10-16-dbgboot-dcp-silent-never-configures-link.md).
+Update 2026-10-16 (armed, OpenCode): **E1 prepared and armed, boot pending.** Patch `0013` makes a tunnel-mode `set_hpd` failure non-fatal and gives the tunnel path an 8 s linkcfg window; module `90eec845…`/`882c4445…`; initramfs `46116374…` installed on `elementary-usb4-dpin-controlled`; `next_entry` set; default entry and cables untouched. After reboot: `sudo dmesg | grep DPINDBG`. Record + rollback: [`fairydust/usb4/evidence/2026-10-16-e1-nonfatal-tunnel-hpd-boot.md`](fairydust/usb4/evidence/2026-10-16-e1-nonfatal-tunnel-hpd-boot.md).
 
 ## DP-IN source milestone — offline implementation, 2026-10-16
 
@@ -2075,6 +2217,20 @@ Qwen3.5 4B remains the tested desktop/personal/coding default; the single coding
 
 The owned final-qualification unit finished successfully. The enabled everyday Qwen3.5 4B service was restored after admission checks passed; its /v1/models endpoint reported the pinned 32f3e8ec model. No other GPU qualification unit remains running. The hourly completion follow-up can stop after the final data follow-up is merged and Pages deployment is verified; the repository six-hour watcher stays active.
 
+
+### WD22TB4 dock video — macOS baseline (October 17, 2026)
+
+Ran the read-only `run-macos-baseline.sh` on the M1 Pro under macOS 27.0.1.
+The dock HDMI chain works on macOS: IORegistry event logs show a 4-lane HBR3
+link trained ~90 ms after HPD, driven by **dcpext0 port 0** (crossbar
+`ufp0,0-dfp1,1`), whereas Linux has only tried dcpext1. Live ADT confirms the
+DP-IN addresses/IRQs already in 0004–0006. Recorded in
+`mseries/fairydust/usb4/evidence/2026-10-17-macos-baseline-dcpext0.md`; staged
+E4 as patch `0015-experimental-j314s-dcpext0-tunnel.patch` (offline parse
+check only, not built/booted). E2 remains armed for the next Linux boot and
+targets dcpext1 — owner to decide order. Kernelcache was not copied by the run.
+
+
 ## 2026-10-16 (Claude) — display profiles (per-monitor-set layouts)
 
 - Added `mseries/display-profiles/mseries-display-profiles` (save/apply/list/status/forget/watch via Gala's `org.gnome.Mutter.DisplayConfig`), `mseries/install-display-profiles.sh` and an autostart entry. Profiles are stored in `~/.config/mseries/display-profiles.json`, matched by monitor vendor/product/serial.
@@ -2237,3 +2393,29 @@ caller before evaluating its repository gate: nested build-and-release requests 
 the caller allowed only contents: read. Added the matching permission only to that gated call job.
 The elementary/os repository condition is unchanged; no release build, signing or upload is enabled in
 this fork. Final-head validation must confirm normal skipped release jobs plus passing M-series checks.
+
+## 2026-10-17 — dock branch code audit and merge preparation
+
+Merged current main (including PR #76) into docs/dock-video-decision; resolved three document conflicts
+without dropping either power implementation/history or dock evidence. No original checkout was changed.
+
+Replaced test-dp-tunnel.sh's hardcoded DT assumptions and overconfident verdicts with a read-only Python
+collector: resolves NHI source phandle, handles dcpext0/E4 and dcpext1, tolerates absent properties, reads
+flat external DRM connectors and validates EDID blocks. Only the mapped controller's latest successful
+completion with rate/lanes is positive historical link evidence; no picture success is inferred.
+
+Controlled-test identity checks now verify frozen input SHA-256 before readelf comparison and reject
+truncated notes. Parameter normalization supports Y/N and 1/0. Fixed newc path aliases/non-directory
+parents and made staging tests use scratch grubenv. No deployment compatibility gate was weakened.
+
+Validation: 36 dock unittest cases and three staging groups pass. All 15 patches apply to the SHA-verified
+ce9f2eba source; 76 production helper/function groups pass (including UBSan). Built the pinned float-aware
+dtc, compiled E3/E4 and control DTBs, checked controller routing/HDMI endpoint removal, control-board byte
+identity and Touch ID delta preservation. No float-cell rewriting was needed. Receipt and method:
+fairydust/usb4/evidence/2026-10-17-offline-code-audit.json and fairydust/usb4/DOCK-CODE-REVIEW.md.
+These suites are wired into PR CI; final Linux check results must be reviewed before claiming merge readiness.
+
+No full kernel/module build or hardware boot was performed. E4 still disables built-in HDMI and is not
+accepted by the older fallback-preserving installer. Prior-art claims are scoped to the actual Aurora reports
+(zero tunnel churn on j314s display resume, different M2 Max dock chain). The next hardware task is a separately
+reviewed controlled boot using the actual current payload/state, with route/module/link/EDID/picture evidence.

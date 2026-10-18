@@ -1,5 +1,52 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Omacom userspace support — 2026-10-17
+
+[Audit and implementation](OMACOM-IMPROVEMENTS.md): sleep-energy records and
+power report are staged by manual/transform/factory diagnostics. Touch ID
+readiness and first-refresh/installer fixes are implemented. Bluetooth recovery
+and built-in-key remaps are available as separate opt-ins. Offline fixtures
+cover charging/clock/failure cases, controller-specific recovery and staging;
+Linux CI also reads a real FAT ESP without root. Target-machine suspend,
+notification, SEP, radio recovery and keymap qualification remain open. No
+battery-life gain or factory hardware boot is claimed.
+
+
+
+## Aurora branch enhancement inventory — 2026-10-17
+
+[All-branch audit](aurora/UPSTREAM-BRANCH-AUDIT-2026-10-17.md): 51 upstream
+branches and 11 open PR heads reviewed against `.20`. Most are already in its
+history; VRR support is already in the current kernel too. First qualify the
+released J314S kernel and compositor. Further candidates are split udmabuf
+support for local AI, scoped M3 Air thermal/camera fixes and rebased M3 display
+work. Clean patch application/host tests are not hardware qualification. No
+additional source or runtime enhancement was enabled by this investigation.
+
+## Aurora 20 upstream kernel candidate — 2026-10-17
+
+The upstream `.20` kernel now has an optional Debian payload build, versioned
+`elementary-aurora20` entry and matched m1n1/J314S DT staging tool. Original
+source, build recipe, licenses and hashes are retained; 9 new offline regressions
+and the local package admission checks pass. [Port guide](aurora/README.md).
+Next: review shared boot.bin/fallback compatibility, then a controlled hardware
+batch on the J314S + WD22TB4. No deployment, dock-picture, Touch ID enrollment,
+recovery-boot or factory-ISO qualification is claimed by this port.
+
+
+## Dock code review and validation — 2026-10-17
+
+The [dock code review](fairydust/usb4/DOCK-CODE-REVIEW.md) records collector/staging fixes,
+36 offline unittest cases, production-function contracts and reproducible E3/E4 DT checks now in CI.
+The last retained E4 record is armed without a recorded boot outcome; no dock HDMI picture is claimed.
+Keep E4's loss of built-in HDMI separate from the older fallback-compatible deployment contract.
+
+
+> **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
+> Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
+> Aurora has j314s Thunderbolt-display prior art; check it before more RE. This dock HDMI path remains unqualified.
+> Gates, prior art and rules: [fairydust/usb4/PRIMARY-GOAL.md](fairydust/usb4/PRIMARY-GOAL.md).
+
 ## Power code audit (2026-10-17)
 
 Power policy now reports write failures, bounds CPU caps, restarts policy on charger change,

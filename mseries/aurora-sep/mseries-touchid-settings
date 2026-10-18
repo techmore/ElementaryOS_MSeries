@@ -13,6 +13,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import touchid_core as core
+from pathlib import Path
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -37,6 +38,7 @@ class TouchIdWindow(Gtk.Window):
         self.manager = None
         self.device = None
         self.device_path = None
+        self.device_signal = None
         self.user = os.environ.get("USER") or subprocess.run(
             ["id", "-un"], capture_output=True, text=True).stdout.strip()
         self.enrolling = False
@@ -133,19 +135,31 @@ class TouchIdWindow(Gtk.Window):
 
     def collect_facts(self):
         import platform
-        import subprocess as sp
+        self.device_path = None
         facts = {"kernel": platform.release(),
                  "sep_bio": os.path.exists("/dev/sep-bio"),
                  "apple_sep": self._unit_state("apple-sep.service"),
                  "fprintd": self._unit_state("fprintd.service"),
                  "device": False}
+        readiness = []
+        for path in Path("/sys/bus/platform/drivers/apple_sep").glob("*/diag/touchid"):
+            try:
+                readiness.append(path.read_text().strip())
+            except OSError:
+                pass
+        facts["readiness"] = "ready" if "ready" in readiness else next(iter(readiness), None)
         try:
-            path = self.manager.GetDefaultDevice()
+            if self.manager is None:
+                self.manager = Gio.DBusProxy.new_sync(
+                    self.bus, Gio.DBusProxyFlags.NONE, None,
+                    BUS_NAME, MANAGER_PATH, MANAGER_IFACE, None)
+            reply = self.manager.call_sync("GetDefaultDevice", None, Gio.DBusCallFlags.NONE, 3000, None)
+            path = reply.unpack()[0]
             if path:
                 facts["device"] = True
                 self.device_path = path
-        except Exception:
-            pass
+        except (GLib.Error, TypeError, IndexError) as err:
+            facts["device_error"] = str(err)
         return facts
 
     @staticmethod
@@ -158,20 +172,23 @@ class TouchIdWindow(Gtk.Window):
             return "unknown"
 
     def _connect_device(self, usable):
+        if self.device is not None and self.device_signal is not None:
+            self.device.disconnect(self.device_signal)
+            self.device_signal = None
+        self.device = None
         if not usable:
-            self.device = None
             return
         try:
             if self.manager is None:
                 self.manager = Gio.DBusProxy.new_sync(
                     self.bus, Gio.DBusProxyFlags.NONE, None,
                     BUS_NAME, MANAGER_PATH, MANAGER_IFACE, None)
-            path = self.manager.GetDefaultDevice()
+            path = self.device_path
             self.device_path = path
             self.device = Gio.DBusProxy.new_sync(
                 self.bus, Gio.DBusProxyFlags.NONE, None,
                 BUS_NAME, path, DEVICE_IFACE, None)
-            self.device.connect("g-signal", self._on_g_signal)
+            self.device_signal = self.device.connect("g-signal", self._on_g_signal)
         except GLib.Error as err:
             self.device = None
             self.status_label.set_text(f"Could not reach fprintd: {err.message}")

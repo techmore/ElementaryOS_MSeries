@@ -1,5 +1,13 @@
 # Power audit + dynamic-refresh (ProMotion) investigation
 
+> **Aurora 20 update, 2026-10-17:** the driver findings and `force_vrr` patch
+> below describe the older running Fairydust tree. The newly ported Aurora
+> `.20` source already has standard VRR capability/state handling, a ProMotion
+> range and architectural-counter timestamps. Do not reapply this historical
+> patch to Aurora. Gala/Mutter use and measured panel behavior still need
+> qualification after the target boot. See the
+> [complete upstream branch audit](../aurora/UPSTREAM-BRANCH-AUDIT-2026-10-17.md).
+
 Branch `power-usage`, 2026-10-16. Owner request: "deeply audit and optimize power usage" and
 "nail an implementation for dynamic refresh rate like Apple does" (idle/agents ~low fps,
 YouTube 120). Honesty rules from `POWER-ROADMAP.md` apply: every number is *measured* or
