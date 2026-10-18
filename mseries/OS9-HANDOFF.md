@@ -1,5 +1,17 @@
 # OS 9 implementation / Claude Code handoff
 
+## Aurora SEP kernel: first boot froze — 2026-10-17 (Claude Code)
+
+Booted `7.1.12-2-20261015.19-sep-ARCH` with the patched m1n1 DTB (SEP enabled +
+alias + fingerprint SPI node). The SEP came up (firmware accepted, 12 endpoints,
+hwrng registered at 25.9 s) and the desktop started, then the journal stops at
+~34 s with no panic; next boot saw an unclean shutdown and pstore was empty.
+fprintd never started and nothing opened `/dev/sep-bio`, so enrollment is not
+the trigger. Cause unknown. Machine is back on stock `7.1.13-3-2-ARCH`. Public
+bugs page corrected (no longer claims Touch ID is just waiting on a boot test).
+Details: [aurora-touchid-state.md](aurora-touchid-state.md). Next: decide on a
+second boot with faster journal flushing; no boot files were changed by this note.
+
 ## Omacom userspace improvements — 2026-10-17
 
 [Systematic audit](OMACOM-IMPROVEMENTS.md) records all candidate dispositions,
