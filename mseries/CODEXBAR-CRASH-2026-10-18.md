@@ -61,3 +61,8 @@ The 13 CodexBar native targets and full v0.77.0 port/schema check also pass.
 This fixes a concrete, reproduced lifetime defect consistent with the saved crash.
 It does not prove that every possible GTK crash has been eliminated. Live activation
 and observation are recorded in OS9-HANDOFF.md.
+
+A separate startup warning remains: `IndicatorBar.update_flow_box_max_children`
+passes zero to GTK when its model becomes empty. GTK rejects that value; no new
+panel coredump or subsequent popup/accessibility warning was observed during the
+activation check. This is recorded separately from the repaired popup lifetime bug.

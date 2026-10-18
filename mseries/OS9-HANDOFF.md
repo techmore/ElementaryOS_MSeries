@@ -13,7 +13,13 @@ The full patched Wingpanel build, 13 native CodexBar targets and v0.77.0 live po
 check pass. Existing full-height/notch and clock-right patches remain applied.
 See [investigation and reproduction](CODEXBAR-CRASH-2026-10-18.md), including the
 fixture setup limitation and why the exact original indicator remains unidentified.
-Activation pending; routine deploys still preserve the panel and daemon.
+Activated with one recovery `deploy-codexbar.sh --restart`; the patched core and
+module inodes were verified loaded in Wingpanel PID 319737 throughout 63.4 seconds.
+Daemon PID 44641 was preserved. No new coredump or popup/accessibility warnings;
+one initial empty-FlowBox warning is recorded separately in the investigation.
+Sampled RSS 194.72–199.19 MiB, descriptors 52–68, average CPU 1.21% of one core.
+This bounded observation does not establish long-run stability. The panel and About
+changes are active. Next: normal-use observation; do not reload again for routine deploys.
 
 ## Orchard soak closed with existing evidence — 2026-10-18
 
