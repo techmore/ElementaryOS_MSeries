@@ -2632,3 +2632,5 @@ The + under Accounts opened a full-size terminal running `codex login` / `cswap 
 ## CodexBar: Claude sign-in through the desktop app's bundled CLI — 2026-10-18
 
 The Claude desktop app's login lives in its own encrypted Electron storage (keyring item "Claude Safe Storage"), not in a file claude-swap can read; we deliberately do not decrypt it. The app does bundle Claude Code's CLI under `~/.config/Claude/claude-code/<version>/<hash>/claude`; `claude auth status` on this machine reports `loggedIn: false`, which is why the old Save login failed. `codexbar-claude.py login` now finds that CLI (or `claude` on PATH), saves any account already signed in, runs `claude auth login` (browser), then `cswap add`; the panel's + for Claude is "Sign in and save". 9 helper tests pass. Not verified: the real browser sign-in and the second dialog on the live desktop (no login was started from here).
+
+The Claude mark in the panel is tinted terracotta (#d97757) via the `mark-claude` CSS class; Codex and OpenCode marks stay neutral. Light render checked; dark not re-checked.

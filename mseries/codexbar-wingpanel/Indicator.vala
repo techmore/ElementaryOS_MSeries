@@ -194,6 +194,7 @@ namespace MSeries {
                 ".mseries-codexbar .mseries-dock button:hover { background: alpha(currentColor, 0.1); } " +
                 ".mseries-codexbar .account-line { min-height: 0; } " +
                 ".mseries-codexbar .provider-mark { opacity: 0.9; } " +
+                ".mseries-codexbar .mark-claude { color: #d97757; opacity: 1; } " +
                 ".mseries-codexbar button.compact { padding: 1px 8px; min-height: 0; min-width: 0; } " +
                 ".mseries-codexbar button.flat.compact { padding: 0 4px; } " +
                 ".mseries-codexbar .mseries-switcher button { padding: 2px 6px; } " +
@@ -976,6 +977,7 @@ namespace MSeries {
             }
             var icon = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 18 };
             icon.add_css_class ("provider-mark");
+            icon.add_css_class ("mark-" + provider);
             icon.set_tooltip_text (title_text);
             icon.update_property (Gtk.AccessibleProperty.LABEL, title_text, -1);
             return icon;
