@@ -1,5 +1,13 @@
 # Aurora status after `.20` — 2026-10-18 09:50 UTC (Claude Code, read-only)
 
+## Later host observation — 2026-10-18
+
+The snapshot below is historical. The [earlier visual/VRR report](hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md)
+records an owner-confirmed working dock. The [later hotplug/cleanup report](hardware-tests/2026-10-18-j314s-hotplug-and-module-cleanup.md)
+records startup/display-mode and dock faults, unverified audio-after-replug, and
+verified removal of orphan module trees. These observations do not invalidate the
+scoped visual pass or establish sustained stability. No new upstream audit here.
+
 Source: `gh` against `omacom/linux-aurora` at 2026-10-18T09:50Z.
 
 ## Later owner confirmation and VRR observation

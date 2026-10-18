@@ -7,7 +7,9 @@ one saved Codex home per account and swap ~/.codex/auth.json atomically.
   codexbar-accounts.py list [--json]      accounts (no tokens), active one marked
   codexbar-accounts.py save               remember the signed-in account
   codexbar-accounts.py switch <email|id>  make a saved account the active one
-  codexbar-accounts.py usage              list plus each account's weekly quota
+  codexbar-accounts.py usage [--force]    list plus each saved account's quota (cached 15 min; --force refetches)
+  codexbar-accounts.py app-running        exit 0 when the ChatGPT desktop app is open
+  codexbar-accounts.py restart-app        close and reopen the ChatGPT desktop app
 
 Running Codex sessions keep the account they started with; restart them.
 """
@@ -23,7 +25,11 @@ import signal
 import subprocess
 import sys
 import tempfile
+import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
+
+import codexbar_cache
 
 
 def codex_home() -> pathlib.Path:
@@ -106,13 +112,25 @@ def saved_homes() -> dict[str, pathlib.Path]:
     return homes
 
 
-def save_current() -> dict[str, str] | None:
+def state_lock() -> Any:
+    """Serialises every write to the saved sign-ins and to the live auth.json."""
+    return codexbar_cache.locked(store_dir().parent / "codex-accounts.state")
+
+
+def _save_current() -> dict[str, str] | None:
     auth = read_auth(codex_home() / "auth.json")
     ident = identity(auth) if auth else None
     if not auth or not ident:
         return None
+    for directory in (store_dir().parent, store_dir()):
+        codexbar_cache.private_dir(directory)
     write_private(store_dir() / slug(ident["id"]) / "auth.json", auth)
     return ident
+
+
+def save_current() -> dict[str, str] | None:
+    with state_lock():
+        return _save_current()
 
 
 def list_accounts() -> list[dict[str, Any]]:
@@ -137,15 +155,115 @@ def switch(target: str) -> tuple[bool, str]:
     wanted = matches[0]
     if wanted["active"]:
         return True, f"{wanted['email']} is already the active Codex account."
-    homes = saved_homes()
-    if wanted["id"] not in homes:
-        return False, f"{wanted['email']} has no saved sign-in."
-    saved = read_auth(homes[wanted["id"]] / "auth.json")
-    if not saved:
-        return False, f"{wanted['email']}'s saved sign-in could not be read."
-    save_current()  # never lose the account we are leaving
-    write_private(codex_home() / "auth.json", saved)
+    try:
+        with state_lock():
+            homes = saved_homes()
+            if wanted["id"] not in homes:
+                return False, f"{wanted['email']} has no saved sign-in."
+            saved = read_auth(homes[wanted["id"]] / "auth.json")
+            if not saved:
+                return False, f"{wanted['email']}'s saved sign-in could not be read."
+            _save_current()  # never lose the account we are leaving
+            write_private(codex_home() / "auth.json", saved)
+    except TimeoutError:
+        return False, "Another CodexBar action is changing the Codex sign-in. Try again in a moment."
     return True, f"Switched Codex to {wanted['email']}. Restart running Codex sessions to use it."
+
+
+APP_BINARY = "/usr/lib/chatgpt/ChatGPT"
+
+
+def app_pids() -> list[int]:
+    """Only this user's ChatGPT executables. Never match CodexBar by a command-line substring."""
+    pids = []
+    for entry in pathlib.Path("/proc").iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            if entry.stat().st_uid == os.getuid() and os.readlink(entry / "exe") == APP_BINARY:
+                pids.append(int(entry.name))
+        except OSError:
+            continue
+    return pids
+
+
+def stop_app() -> None:
+    pids = app_pids()
+    parent = os.getppid()
+    while parent > 1:
+        if parent in pids:
+            raise ValueError("Switch from the CodexBar panel, outside ChatGPT.")
+        try:
+            parent = int(pathlib.Path(f"/proc/{parent}/stat").read_text().rsplit(")", 1)[1].split()[1])
+        except (OSError, ValueError, IndexError):
+            break
+    for pid in pids:
+        try:
+            parent = int(pathlib.Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[1])
+            if parent not in pids:
+                os.kill(pid, signal.SIGTERM)
+        except (FileNotFoundError, ProcessLookupError):
+            pass
+    deadline = time.monotonic() + 15
+    while app_pids():
+        if time.monotonic() >= deadline:
+            raise ValueError("ChatGPT did not close. Quit it and try again; the login was not changed.")
+        time.sleep(0.2)
+
+
+def launch_app() -> None:
+    environment = {k: v for k, v in os.environ.items()
+                   if k not in {"OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN", "CODEX_HOME", "ELECTRON_RUN_AS_NODE"}}
+    subprocess.Popen(["chatgpt"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                     stderr=subprocess.DEVNULL, start_new_session=True, env=environment)
+
+
+def switch_desktop(target: str) -> tuple[bool, str]:
+    """Close the old app before replacing its sign-in, so its final writes cannot undo the switch."""
+    changed = False
+    stopped = False
+    try:
+        with state_lock():
+            matches = [a for a in list_accounts() if target in (a["email"], a["id"])]
+            if len(matches) != 1:
+                return False, "Choose one saved Codex account by its exact id."
+            wanted = matches[0]
+            saved_home = saved_homes().get(wanted["id"])
+            saved = read_auth(saved_home / "auth.json") if saved_home else None
+            if not saved or identity(saved) is None or identity(saved)["id"] != wanted["id"]:
+                return False, "The selected account's saved login could not be read. Add it again."
+            # The desktop app always uses the default home, independent of a CLI override.
+            if codex_home().resolve() != (pathlib.Path.home() / ".codex").resolve():
+                return False, "Desktop switching needs the default Codex home. Remove CODEX_HOME from the panel environment."
+            stop_app()
+            stopped = True
+            _save_current()
+            # Re-read after the departing app has flushed its login; it may have refreshed this account's tokens.
+            saved = read_auth(saved_home / "auth.json")
+            if not saved or not identity(saved) or identity(saved)["id"] != wanted["id"]:
+                raise ValueError("The selected account's saved login changed. Try again.")
+            write_private(codex_home() / "auth.json", saved)
+            changed = True
+        launch_app()
+        return True, f"ChatGPT reopened with {wanted['email']}. CodexBar stays running."
+    except (OSError, ValueError, TimeoutError) as e:
+        if changed:
+            return False, f"Login changed to {wanted['email']}, but ChatGPT could not reopen: {e}. Open ChatGPT manually."
+        if stopped:
+            try:
+                launch_app()
+            except OSError:
+                pass
+        return False, str(e)
+
+
+def restart_app() -> tuple[bool, str]:
+    try:
+        stop_app()
+        launch_app()
+        return True, "ChatGPT reopened."
+    except (OSError, ValueError) as e:
+        return False, str(e)
 
 
 def usage_for(home: pathlib.Path, cli: str) -> dict[str, Any]:
@@ -182,14 +300,64 @@ def reset_credits(row: dict[str, Any]) -> dict[str, Any] | None:
     return {"available": summary["available"], "nextExpiresAt": expires}
 
 
-def usage_report(cli: str) -> list[dict[str, Any]]:
+USAGE_TTL_SECONDS = 900
+
+
+def usage_report(cli: str, force: bool = False, now: float | None = None) -> list[dict[str, Any]]:
+    """Per-account quota. The active account is skipped: CodexBar's own snapshot already carries it, and running
+    the CLI against the live home could rewrite auth.json while a switch is replacing it. Saved accounts are served
+    from the cache while fresh or backing off, and fetched in parallel otherwise."""
+    now = time.time() if now is None else now
     homes = saved_homes()
-    report = []
-    for account in list_accounts():
-        home = codex_home() if account["active"] else homes.get(account["id"])
-        details = usage_for(home, cli) if home else {"error": "No saved sign-in."}
-        report.append({k: account[k] for k in ("email", "plan", "id", "active")} | details)
-    return report
+    accounts = list_accounts()
+    cache = codexbar_cache.load("codex-usage")
+    identities = {a["id"]: {k: a[k] for k in ("email", "plan", "id", "active")} for a in accounts}
+    details: dict[str, dict[str, Any]] = {}
+    pending: list[str] = []
+    for account in accounts:
+        account_id = account["id"]
+        entry = cache.get(account_id) if isinstance(cache.get(account_id), dict) else None
+        if account["active"]:
+            details[account_id] = {"source": "snapshot"}
+        elif account_id not in homes:
+            details[account_id] = {"error": "No saved sign-in."}
+        elif not force and (codexbar_cache.is_fresh(entry, USAGE_TTL_SECONDS, now) or codexbar_cache.in_backoff(entry, now)):
+            details[account_id] = cached_details(entry)
+        else:
+            pending.append(account_id)
+    if pending:
+        with ThreadPoolExecutor(max_workers=min(4, len(pending))) as pool:
+            fetched = dict(zip(pending, pool.map(lambda account_id: usage_for(homes[account_id], cli), pending)))
+        for account_id, result in fetched.items():
+            previous = cache.get(account_id) if isinstance(cache.get(account_id), dict) else None
+            if "error" in result:
+                entry = codexbar_cache.failed(previous, now)
+                entry["error"] = result["error"]
+            else:
+                entry = codexbar_cache.succeeded(result, now)
+            cache[account_id] = entry
+            details[account_id] = cached_details(entry)
+    codexbar_cache.store("codex-usage", {k: v for k, v in cache.items() if k in identities})
+    return [identities[a["id"]] | details[a["id"]] for a in accounts]
+
+
+def forget_usage(account_id: str) -> None:
+    cache = codexbar_cache.load("codex-usage")
+    if cache.pop(account_id, None) is not None:
+        codexbar_cache.store("codex-usage", cache)
+
+
+def cached_details(entry: dict[str, Any] | None) -> dict[str, Any]:
+    """What the panel shows for a cached answer: the last good quota, flagged stale when the latest try failed."""
+    entry = entry or {}
+    data = entry.get("data")
+    if not isinstance(data, dict):
+        return {"error": str(entry.get("error") or "Usage unavailable.")}
+    result = dict(data) | {"fetchedAt": entry.get("fetchedAt")}
+    if entry.get("failures"):
+        result["stale"] = True
+        result["error"] = str(entry.get("error") or "Usage unavailable.")
+    return result
 
 
 def codex_cli() -> str | None:
@@ -202,8 +370,7 @@ def login(cli: str | None) -> tuple[bool, str]:
     if not cli:
         return False, "Codex was not found. Install or open the Codex app, then try again."
     save_current()
-    root = store_dir().parent
-    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    root = codexbar_cache.private_dir(store_dir().parent)
     previous_handler = signal.getsignal(signal.SIGTERM)
     def cancelled(*unused):
         raise InterruptedError()
@@ -231,12 +398,17 @@ def login(cli: str | None) -> tuple[bool, str]:
             ident = identity(auth) if auth else None
             if not auth or not ident:
                 return False, "No ChatGPT account was returned. Sign in with ChatGPT and try again."
-            write_private(store_dir() / slug(ident["id"]) / "auth.json", auth)
+            with state_lock():  # shares the lock with Switch so a sign-in can't land mid-switch
+                codexbar_cache.private_dir(store_dir())
+                write_private(store_dir() / slug(ident["id"]) / "auth.json", auth)
+            forget_usage(ident["id"])  # a re-added account must not wait out an old failure's backoff
             return True, f"Added {ident['email']}. Your current Codex account is unchanged; choose Switch when you're ready."
     except InterruptedError:
         return False, "Sign-in cancelled. Your current account is unchanged."
     except subprocess.TimeoutExpired:
         return False, "Sign-in timed out. Your current account is unchanged; try again."
+    except TimeoutError:
+        return False, "Another CodexBar action is changing the Codex sign-in. Try again in a moment."
     except OSError:
         return False, "Codex sign-in could not start. Open the Codex app, then try again."
     finally:
@@ -261,12 +433,18 @@ def main(arguments: list[str]) -> int:
         if len(arguments) < 2:
             print("usage: codexbar-accounts.py switch <email|id>", file=sys.stderr)
             return 2
-        ok, message = switch(arguments[1])
+        ok, message = switch_desktop(arguments[1]) if "--desktop" in arguments else switch(arguments[1])
         print(json.dumps({"ok": ok, "message": message}))
+        return 0 if ok else 1
+    if command == "app-running":
+        return 0 if app_pids() else 1
+    if command == "restart-app":
+        ok, message = restart_app()
+        print(message)
         return 0 if ok else 1
     if command == "usage":
         cli = str(pathlib.Path.home() / ".local/bin/codexbar")
-        print(json.dumps({"accounts": usage_report(cli)}))
+        print(json.dumps({"accounts": usage_report(cli, force="--force" in arguments)}))
         return 0
     if command == "list":
         save_current()

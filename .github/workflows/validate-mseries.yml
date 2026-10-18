@@ -110,10 +110,13 @@ jobs:
           bash -n mseries/install-signal.sh
           bash -n mseries/install-codexbar.sh
           bash -n mseries/deploy-codexbar.sh
+          python3 mseries/test-codexbar-deploy.py
           bash -n mseries/check-codexbar-port.sh
+          python3 mseries/test-codexbar-cache.py
           python3 mseries/test-codexbar-sessions.py
           python3 mseries/test-codexbar-accounts.py
           python3 mseries/test-codexbar-claude.py
+          python3 mseries/test-codexbar-claude-history.py
           python3 mseries/test-codexbar-wrapper.py
           python3 mseries/test-codexbar-opencode-local.py
           python3 mseries/test-codexbar-opencode-login.py
@@ -137,6 +140,8 @@ jobs:
           python3 mseries/local-ai/test_people_watch.py
           python3 mseries/test-image-wiring.py
           python3 mseries/video-decode/test-brave-factory.py
+          python3 mseries/video-decode/test-youtube-launch.py
+          shellcheck -S warning mseries/video-decode/brave-youtube mseries/install-brave-widevine.sh
           python3 mseries/boot/test-prepare-uki-kernels.py
           python3 mseries/test-kernel-config.py
           python3 mseries/test-local-build-preflight.py
@@ -180,5 +185,6 @@ jobs:
           bash -n mseries/enhance.sh mseries/stage-factory-enhancements.sh mseries/aurora-sep/install-touchid-gui.sh
           python3 mseries/test-image-wiring.py
           python3 mseries/video-decode/test-brave-factory.py
+          python3 mseries/video-decode/test-youtube-launch.py
           python3 mseries/boot/test-prepare-uki-kernels.py
           python3 mseries/test-power-install.py

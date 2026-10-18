@@ -9,6 +9,7 @@ shared_module(
   'codexbar',
   'Indicator.vala',
   'AccountDialog.vala',
+  'PanelPreferences.vala',
   'RefreshPolicy.vala',
   'QuotaEta.vala',
   'Presentation.vala',
@@ -36,7 +37,7 @@ test('quota-eta', quota_eta_test)
 # Headless render probe (not installed): see probe/run-probe.sh.
 executable(
   'render-probe',
-  'Indicator.vala', 'AccountDialog.vala', 'RefreshPolicy.vala', 'QuotaEta.vala', 'Presentation.vala', 'probe/render-probe.vala',
+  'Indicator.vala', 'AccountDialog.vala', 'PanelPreferences.vala', 'RefreshPolicy.vala', 'QuotaEta.vala', 'Presentation.vala', 'probe/render-probe.vala',
   dependencies: [libwingpanel_dep, granite_dep, json_dep, meson.get_compiler('c').find_library('m')],
   build_by_default: false,
 )
@@ -76,5 +77,42 @@ executable(
   'codexbar-settings',
   'settings/SettingsModel.vala',
   'settings/SettingsApp.vala',
+  'PanelPreferences.vala',
   dependencies: [granite_dep, json_dep],
 )
+
+panel_preferences_test = executable(
+  'test-panel-preferences',
+  'PanelPreferences.vala',
+  'test-panel-preferences.vala',
+  dependencies: [json_dep, dependency('gio-2.0')],
+)
+test('panel-preferences', panel_preferences_test)
+
+# Run under Xvfb with probe/run-live-preferences.sh; all backends and configuration are isolated.
+executable(
+  'test-live-preferences',
+  'Indicator.vala', 'AccountDialog.vala', 'PanelPreferences.vala', 'RefreshPolicy.vala',
+  'QuotaEta.vala', 'Presentation.vala', 'probe/test-live-preferences.vala',
+  dependencies: [libwingpanel_dep, granite_dep, json_dep, meson.get_compiler('c').find_library('m')],
+  build_by_default: false,
+)
+
+switch_probe = executable(
+  'test-switch',
+  'Indicator.vala', 'AccountDialog.vala', 'PanelPreferences.vala', 'RefreshPolicy.vala',
+  'QuotaEta.vala', 'Presentation.vala', 'probe/test-switch.vala',
+  dependencies: [libwingpanel_dep, granite_dep, json_dep, meson.get_compiler('c').find_library('m')],
+  build_by_default: false,
+)
+
+# These are isolated interactions, not screenshots: the pre-fix code SIGSEGVs after confirmation.
+if find_program('xvfb-run', required: false).found() and find_program('dbus-run-session', required: false).found()
+  foreach scenario : ['success', 'null', 'array', 'invalid']
+    test('switch-' + scenario, find_program('bash'),
+      args: [join_paths(meson.current_source_dir(), 'probe/run-switch-probe.sh'), meson.current_build_dir(), scenario],
+      depends: switch_probe,
+      timeout: 30,
+    )
+  endforeach
+endif

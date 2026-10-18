@@ -21,32 +21,38 @@ Identical UIDs in separate calendars do not hide each other's events.
 
 ## Month, Week and Day views
 
-Choose **Month**, **Week** or **Day** inside Events. The month grid remains a
-compact date picker in every mode. Month lists the selected month's events;
-Week lists the selected locale-based week; Day shows the selected day's events.
-Wider views group rows under date headings, with all-day events before timed
-meetings. Multi-day events appear on each day they overlap; all-day end dates
-remain exclusive. Recurring instances and separate calendars retain their identities.
+Choose **Week** or **Day** for time slots with event blocks. Day shows one
+column beside the date picker; Week uses the popup width for seven date columns.
+Hour and half-hour lines cover the whole local day. Scroll vertically to reach
+other hours; busy weeks can scroll horizontally, keeping headers, all-day blocks
+and timed columns aligned. The all-day band has its own bounded scrolling area.
 
-Compact rows show title and time on one line, with full titles on hover. Expand
-an event to read its calendar name, location and description. Calendar colors
-mark the edge of neutral cards for readable text in light and dark themes.
-Task rows have compact spacing and hover text for shortened titles and details.
-The event list scrolls inside a bounded pane.
+Timed blocks follow their start time and duration. Simultaneous events share
+side-by-side lanes; touching events reclaim the full column. Very short events
+keep a minimum click target and reserve enough lane space to avoid covering
+nearby blocks. A short block ending at midnight stays clipped to that boundary.
+Overnight events split at local midnight, while all-day end dates stay exclusive.
+Recurring instances and separate calendar identities are preserved. Events with
+an explicit iCalendar DURATION are supported as well as DTEND.
 
-The arrows beside the agenda heading move one month, week or day according to
-the selected mode. The arrows above the date grid always browse months.
-**Today** selects today's date without changing the agenda mode. Upcoming is
-the initial default; an explicitly chosen alternate mode is retained while
-opening/closing the popup in the same panel process. Upcoming ignores calendar
-browsing and hides period arrows. Its independent 30-day EDS view spans month
-boundaries; a minute timer updates expiry and daily range rollover while open. Tasks remains an independent list of incomplete items.
-Event activation opens the native Calendar app on that row's date.
+Click a block for its full title, time range/time zones, calendar, location and
+description. When the native Calendar client is installed, **Open in Calendar**
+opens it on that block's date; otherwise the popover keeps the readable details
+and omits that action.
+These views read calendar data; editing remains in the Calendar app. Labels use
+plain text, including descriptions and locations containing markup characters.
+The grid uses local wall-clock hours; repeated DST-hour intervals retain a
+positive elapsed duration and their exact time zones in the details.
 
-Navigation uses each grid's actual month, rejects stale carousel notifications,
-and synchronizes the selected date and its highlight even when focus stays on
-a popup control. Returning to Today does not depend on an animated offset.
-These are agenda views; no hourly time grid or event editing is added to the panel.
+**Month** and the default **Upcoming** keep their compact, expandable lists.
+Task rows remain independent. The arrows beside the heading move one month,
+week or day in the selected mode. **Today** keeps the mode and selects today's
+date. The month-picker arrows and touch swipes browse months; returning to the
+picker does not depend on asynchronous carousel notifications. The chosen mode
+is retained while reopening the popup in the same panel process.
+
+Live updates reflow blocks and retain the reading position. The Upcoming view
+continues to use its separate rolling 30-day EDS model and minute refresh timer.
 
 ## Google Calendar
 
@@ -96,14 +102,20 @@ qualify a factory image or a Google account connection.
 
 `bash mseries/calendar/test-agenda.sh /absolute/path/to/libdatetime.so` runs the
 actual plugin on Xvfb with a private D-Bus and private XDG config/data/cache.
-It creates only synthetic local EDS sources. Seventeen workflow groups cover:
+All 21 workflow groups use synthetic local EDS sources. Timetable groups additionally
+check actual block positions against hour rules, overlap geometry, adjacent and
+short events, instant/DURATION events, overnight clipping, recurring week columns,
+live reflow and scroll retention, and a stubbed native Calendar date action.
+Existing workflow groups cover:
 Today/highlight/repeated navigation; Day details and literal text; Week and Month
 boundaries; recurring/multi-day events; period arrows and year rollover; empty
 states and mode retention; independent Tasks; live edits/deletions; and source
 changes. Test dates/labels use a fixed C.UTF-8 locale (Sunday-start weeks). It requires `xvfb xauth dbus-daemon` plus the development/runtime
 dependencies above. The fixture uses local GIO and disables file-portal activation only in its
 private D-Bus session, avoiding temporary document mounts during cleanup.
-Expected portal-unavailable warnings do not fail the agenda checks. Set
+GTK criticals are fatal in this fixture. The Calendar launcher is a temporary
+stub, so testing its date argument opens no real app. Expected portal-unavailable
+warnings do not fail the agenda checks. Set
 `AGENDA_TEST_DARK=1` for the dark-mode run and `AGENDA_PREVIEW_DIR=/path/to/dir`
 to retain synthetic rendered previews.
 Google OAuth and remote round trips require the owner's

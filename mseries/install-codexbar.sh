@@ -25,6 +25,8 @@ for component in CLI Desktop; do
 done
 mkdir -p "$HOME/.local/lib/codexbar-cli" "$HOME/.local/bin"
 install -m 0755 "$repo/mseries/codexbar-opencode-local.py" "$HOME/.local/lib/codexbar-cli/codexbar-opencode-local.py"
+install -m 0644 "$repo/mseries/codexbar_cache.py" "$HOME/.local/lib/codexbar-cli/codexbar_cache.py"
+install -m 0644 "$repo/mseries/codexbar_claude_history.py" "$HOME/.local/lib/codexbar-cli/codexbar_claude_history.py"
 install -m 0755 "$repo/mseries/codexbar-sessions.py" "$HOME/.local/lib/codexbar-cli/codexbar-sessions.py"
 install -m 0755 "$repo/mseries/codexbar-accounts.py" "$HOME/.local/lib/codexbar-cli/codexbar-accounts.py"
 install -m 0755 "$repo/mseries/codexbar-claude.py" "$HOME/.local/lib/codexbar-cli/codexbar-claude.py"
@@ -85,4 +87,6 @@ if config.get("provider") == "custom":
         pathlib.Path(temporary_name).unlink(missing_ok=True)
         raise
 PY
+# Start CodexBar at login (idempotent; the Wingpanel indicator also launches it when the session loads it).
+"$HOME/.local/bin/codexbar-linux" --autostart enable >/dev/null 2>&1 || echo 'Could not enable start at login; use Settings > Start at login.' >&2
 echo 'Open ~/.local/bin/codexbar-linux --settings. Runtime dependencies: see mseries/DESKTOP-SETUP.md.'

@@ -103,7 +103,8 @@ namespace MSeries {
         }
 
         /* Saved accounts retain every window: a weekly balance must never hide an empty 5-hour limit. */
-        public static string account_quota (Json.Array? windows, int64 now_unix) {
+        public static string account_quota (Json.Array? windows, int64 now_unix, bool show_percent = true, bool show_reset = true) {
+            if (!show_percent && !show_reset) return "";
             var parts = new StringBuilder ();
             for (uint i = 0; windows != null && i < windows.get_length (); i++) {
                 var window = windows.get_object_element (i);
@@ -115,13 +116,16 @@ namespace MSeries {
                 var eta = reset == null ? "?" : reset.to_unix () <= now_unix ? "now"
                     : countdown_text (reset.to_unix () - now_unix);
                 if (parts.len > 0) parts.append (" · ");
-                parts.append ("%s %.0f%% ↻%s".printf (label, node.get_double ().clamp (0, 100), eta));
+                parts.append (label);
+                if (show_percent) parts.append (" %.0f%%".printf (node.get_double ().clamp (0, 100)));
+                if (show_reset) parts.append (" ↻" + eta);
             }
             return parts.len > 0 ? parts.str : "Quota unavailable";
         }
 
         public static string account_quota_markup (Json.Array? windows, int64 now_unix,
-                                                    string healthy, string low, string critical) {
+                                                    string healthy, string low, string critical, bool show_percent = true, bool show_reset = true) {
+            if (!show_percent && !show_reset) return "";
             var text = new StringBuilder ();
             for (uint i = 0; windows != null && i < windows.get_length (); i++) {
                 var window = windows.get_object_element (i);
@@ -129,11 +133,13 @@ namespace MSeries {
                 if (remaining == null || remaining.get_node_type () != Json.NodeType.VALUE) continue;
                 var single = new Json.Array ();
                 single.add_object_element (window.ref ());
-                var parts = account_quota (single, now_unix).split (" ↻", 2);
+                var parts = account_quota (single, now_unix, show_percent, show_reset).split (" ↻", 2);
                 var level = level_for (remaining.get_double ());
                 var color = level == QuotaLevel.CRITICAL ? critical : level == QuotaLevel.LOW ? low : healthy;
                 if (text.len > 0) text.append (" · ");
-                text.append ("<span foreground=\"%s\" weight=\"semibold\">%s</span>".printf (color, Markup.escape_text (parts[0])));
+                text.append (color.length > 0
+                    ? "<span foreground=\"%s\" weight=\"semibold\">%s</span>".printf (color, Markup.escape_text (parts[0]))
+                    : "<span weight=\"semibold\">%s</span>".printf (Markup.escape_text (parts[0])));
                 if (parts.length > 1) text.append ("<span alpha=\"65%\"> ↻%s</span>".printf (Markup.escape_text (parts[1])));
             }
             return text.len > 0 ? text.str : "Quota unavailable";
@@ -228,6 +234,13 @@ namespace MSeries {
             var text = "%s available".printf (reset_count_text (available));
             var countdown = countdown_text (seconds_to_expiry);
             return available > 0 && countdown.length > 0 ? text + " · first expires in " + countdown : text;
+        }
+
+        /* One-row form for a header or account line: "2 resets · exp 3d4h"; the full sentence goes in the tooltip. */
+        public static string reset_credits_chip (int64 available, int64 seconds_to_expiry) {
+            var count = reset_count_text (available);
+            var countdown = countdown_text (seconds_to_expiry);
+            return available > 0 && countdown.length > 0 ? count + " · exp " + countdown : count;
         }
 
         /* Within a day of the first reset expiring, use it or lose it. */

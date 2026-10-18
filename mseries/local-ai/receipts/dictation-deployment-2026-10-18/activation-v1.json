@@ -1,0 +1,24 @@
+{
+  "activation_passed": true,
+  "idle_rss_bytes": 34258944,
+  "native_sdk_mapped_at_idle": false,
+  "capture_idle": true,
+  "input_settings_preserved": true,
+  "selected_engine_preserved": true,
+  "panel_launcher_installed": true,
+  "panel_window_opened": false,
+  "microphone_recorded": false,
+  "source_sha256": {
+    "stream-dictate.py": "113beb2474aa4192a5c6350c9367d1bc13b3623ad4184608a1bd3ec22d2cc13d",
+    "dictation_model.py": "ce7b805e735c704ff7a22ce7ea272fb88e22f91d64e6c965185b8e5c4db41578",
+    "dictation-input.py": "73c30634a259af7ec86060f403e245a492963135ab692d5eb738169d7cc60d1e",
+    "dictation-input-client.py": "f9b0c59f6b941a5c670ea04156a796a7526c6945ea369f537d43a2e8c1b0305d",
+    "dictation-panel.py": "61135c0cb979d7ed7e36c221e5330dd0ba53cfd6dcab50f6f282542cd17ed08d",
+    "dictation_pipeline.py": "d03858f233622d7b8c9f6d8ae4215504b966b7586725234409e2d9d28e508376",
+    "dictation_review.py": "8489eafbeb3eb88cefde732f65247bf0e30db2250fa8b78933e0d3bfdcb3f943"
+  },
+  "observed_at": 1792336939.728795,
+  "source_base_commit": "cbc47edab994b56bd3b550e6bbee03c02690be3a",
+  "physical_f5_accepted": false,
+  "scope": "Installed owned speech/bridge payload and optional native launcher; original input settings/selection preserved. Observed idle RSS is one deployed process, not a matched latency or acoustic benchmark. Panel retry fix follows separately. Private ledger, source backups, settings and logs excluded."
+}

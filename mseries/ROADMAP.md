@@ -1,5 +1,118 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## CodexBar Switch crash and disruptive deployment — 2026-10-18
+
+Confirmed real Wingpanel SIGSEGV at 12:59:20 in `switch_codex_account_co` from `libcodexbar.so`.
+Reproduced with the current indicator in an isolated Xvfb Switch interaction: confirmation captured a borrowed
+argument array after its originating row callback had freed it. Replaced the array with an owned scalar account ID
+through confirmation and async execution. Invalid JSON helper replies are now rejected without object dereferences.
+The same interaction now passes for success, null, array and invalid replies, preserving the exact chosen account.
+
+Separately, our deploys intentionally restarted the whole panel at 13:21:50 and 13:22:21; later reloads coincide with
+other indicator installs. Routine `deploy-codexbar.sh` now installs without restarting Wingpanel or CodexBar;
+`--restart` explicitly reloads Wingpanel and never quits a running CodexBar daemon. Helper updates take effect on
+next invocation; native module changes wait for login or that explicit reload. Working agreement updated accordingly.
+Verified: reproducer SIGSEGV before fix; four successful headless interaction cases after fix; stubbed deployment
+checks default/--no-restart/--restart and invalid options without signaling real processes. All nine Meson targets
+pass, including four registered Switch interaction cases. Applied one controlled reload to activate the crash fix;
+the existing CodexBar daemon PID 44641 was preserved. No Claude/ChatGPT account was changed in testing.
+
+
+## Claude Code history across desktop account switches — 2026-10-18
+
+Root cause: transcripts persist in `~/.claude/projects`, but the desktop Code sidebar is account/organization scoped.
+New `codexbar_claude_history.py` privately exports the departing local Code history after the app exits, then adds
+only missing resume entries under the selected account/org before launch. IDs and workspace paths are preserved;
+existing records/transcripts are never overwritten. Backups include checksummed transcript bytes, reused by content.
+No regular Chat-tab/Cowork/cloud history import and no automatic message sending. The confirmation explains local
+Code context carry-over, and the result reports added/existing/unavailable counts. All installers/deploy and the
+image payload ship the module (payload also now includes the already-required cache/sessions helpers).
+[Evidence, storage, recovery and limitations](CODEXBAR-CLAUDE-HISTORY.md). Upstream remains v0.77.0.
+Verified: isolated history tests and Claude lifecycle tests; staged rehearsal of 38 real local records copied 34,
+then zero duplicates, then four back while retaining 34 existing; no live profile changes. Live desktop switch and
+opening a transferred conversation remain unverified. Next: owner switches once and resumes a prior Code workspace.
+
+## Orchard panel: icon and running-instance count — 2026-10-18
+
+Removed the CPU/memory circles from the native Vala Wingpanel companion.
+The panel display now contains exactly the Orchard tree icon and running-instance
+badge (including zero; a dash still means Incus is unavailable). CPU/memory
+captions and bounded graphs remain available in the popover. Removed the unused
+ring widget and its periodic `/proc/meminfo` read. Updated the source-pinned
+parity ledger to describe this owner-requested adaptation.
+
+Verification: native ARM64 build and all five Meson suites pass; the panel
+fixture also passes explicitly on Wayland through counts 2 → 0 → 0 → — → 1,
+asserting no third display widget throughout. Installed only `liborchard-incus.so`
+atomically and reloaded Wingpanel. The live accessibility tree contains one
+image and one label (`2`), matching the two running Incus guests; the loaded
+module's SHA256 matches the tested build. Manager windows/guests were not changed.
+Evidence: `mseries/orchard-incus-native/audit/2026-10-18-panel-icon-count.json`.
+This panel check is separate from the Python manager's unfinished multi-hour soak.
+
+
+## Dock hotplug/startup findings and obsolete module cleanup — 2026-10-18
+
+[Follow-up report](aurora/hardware-tests/2026-10-18-j314s-hotplug-and-module-cleanup.md)
+records the owner's audio-after-replug, initially stretched top bar and startup
+delay reports on running Aurora `.20`. Logs show a rejected saved 3024x1890 mode
+against current 3024x1964 full-height modes, a panel startup timeout, USB/Thunderbolt
+hotplug faults and missing dock Ethernet firmware. Audio causality remains unverified.
+Archived and content-verified 5,771 files before removing orphan `.19` and two
+Fairydust module trees; kept running `.20`, installed `.20-enh1` and stock Asahi.
+GRUB syntax checks pass; no boot, display or audio configuration changes. Earlier
+scoped visual/VRR results stand; symptoms and sustained stability remain open.
+Next: capture active/saved display profiles, identify the late panel, and collect
+before/after hotplug audio and kernel state. Cleanup is not a symptom fix.
+
+## Native CodexBar display preferences — 2026-10-18
+
+Settings (gear in the popover) > Display > Wingpanel now has switches for quota percentages, time until reset,
+other accounts in the bar and account hints. Percentages/countdowns affect bar and quota text; progress bars,
+tooltips and accessible quota descriptions retain the data. Both off gives provider icons in the bar.
+Preferences save immediately in `~/.config/codexbar/wingpanel.json`, separate from upstream's config; the panel
+watches for changes and re-renders cached data without extra snapshot/provider requests. Defaults preserve the
+existing display. Upstream pin remains v0.77.0; no upstream files replaced.
+Verified: five Vala test targets; light/dark headless Settings and panel renders; live atomic-replacement test
+(`ninja -C BUILD test-live-preferences && bash mseries/codexbar-wingpanel/probe/run-live-preferences.sh BUILD`)
+updates the bar off/on without additional snapshot requests. Not yet owner-tested on the real desktop.
+
+
+## CodexBar Switch targets the provider app — 2026-10-18
+
+ChatGPT Switch now confirms the selected account before changes, closes only the owner's ChatGPT executable,
+saves its final login, installs the selected saved login under the account lock, and relaunches ChatGPT.
+A close failure leaves the login untouched; a launch failure reports that the login changed and asks for a manual open.
+Claude's installed-app Switch now switches both the app and CLI, or offers first-time app sign-in setup.
+The switching paths do not quit CodexBar. Deployment still restarts Wingpanel/CodexBar to load the new code.
+Verified: isolated account lifecycle tests, Claude and cache suites, native panel build and four Vala tests.
+Unverified: live desktop account switch; apps were not closed during testing. OpenCode switching still uses its
+existing CLI credential selection; desktop account synchronization is not established by this change.
+
+
+## Screenshots: Space window mode and 4 s shelf — 2026-10-18
+
+Command+Shift+4 drags an area; Space switches to window mode (blue highlight, click captures, shutter sound);
+the fixed 280x180 thumbnail floats bottom-right for 4 s. Code is on main (`patches/gala-screenshot-window-pick.patch`,
+`screenshot-shelf/`, details in [screenshot-shelf/README.md](screenshot-shelf/README.md)). **Next:** owner re-logs in
+so the patched Gala loads, then confirms highlight, sound and thumbnail; not yet seen working live.
+
+## Week/Day time-grid views — 2026-10-18
+
+Published and deployed native hourly/half-hour slots, all-day bands, overlap
+lanes, midnight clipping, bounded scrolling and readable block detail popovers.
+Upcoming/Month lists and main's task quick-add/checkbox completion are retained.
+Fixed UTC day filtering, explicit DURATION handling and untitled-event logging;
+month navigation now avoids stale carousel callbacks. Native Calendar launch
+appears only when its client is available; event views remain read-only.
+
+All 21 combined integration groups pass in light/dark and against the installed
+library; six image-wiring tests and focused shell/whitespace checks pass. Native
+ARM64 build, synthetic rendered previews and reloaded Wingpanel mapping verified.
+Next: owner acceptance on real calendars and physical touch/scale, with remote
+sync and factory boot qualification still separate.
+[Time-grid behavior and tests](calendar/README.md#month-week-and-day-views).
+
 ## Factory YouTube ISO: installed VM pass — 2026-10-18
 
 The new ISO from `5c0c60e` built successfully in run `39128555434`, passed its
@@ -1171,3 +1284,4 @@ passed and the original selection was restored; distinct-account round trips use
 - On-demand speech candidate:46 contracts plus actual private Qt6/Brave/GTK4 Wayland Check/stale-focus refusal pass. One new CPU file→field/close/reload fixture reclaimed784MiB; separate no-inference timer test released at61.00s, reclaiming767MiB. Both≥11.07GiB available, reported0RPM/<40.0C. Retained allocator/library memory and long-run stability remain limits. Not deployed over pending human F5 retry; optional panel uninstalled. Publish tested opt-in code/receipts with physical F5, rollout and continuous translation gates explicit; merge alone does not complete the goal.
 
 - Publication follow-through: PR86 merged077bfe5; current-source CI39130696811 passed all5 jobs. Initial Pages39138713351 succeeded and canonical report bytes matched reviewed source.46 dictation/72 assistant/6 image checks pass. Publishing the opt-in candidate does not complete physical F5, panel/lazy rollout or continuous translation gates.
+- Deployment follow-through (October18): qualified lazy CPU speech/IBus and Dictation launcher installed after idle/quiet/pref checks. Fresh listener32.67MiB before SDK load; not after-use memory. Owner reports physical F5 speech appears in Original transcript: native-app human pass, earlier popup failure retained. New installed focus-retry regression failed then passed after fix; receipts retain both and installed-source checks.46 contracts pass. Real spoken content/private backups excluded. Continuous translated previews and final grammar-after-release remain the next work; current translation is post-utterance.

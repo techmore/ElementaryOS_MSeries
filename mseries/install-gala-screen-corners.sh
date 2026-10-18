@@ -25,6 +25,10 @@
 # slide along its edge (io_elementary_pantheon_panel_v1.set_offset, protocol v2). The Dock's
 # Command-drag uses it; without this Gala the dock simply stays centred.
 # gala-dock-workarea.patch reserves visible dock space and releases it after hiding.
+
+#
+# And gala-screenshot-window-pick.patch: in the Command+Shift+4 selector, Space switches to
+# window mode (blue highlight on the window under the pointer, click captures it); dragging still selects an area.
 set -euo pipefail
 
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
@@ -80,6 +84,8 @@ git -C "$source_dir" apply "$repo/mseries/patches/gala-screen-dim.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/gala-window-corners.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/gala-panel-offset.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/gala-dock-workarea.patch"
+
+git -C "$source_dir" apply "$repo/mseries/patches/gala-screenshot-window-pick.patch"
 
 meson setup "$build_dir" "$source_dir" --prefix="$prefix" --libdir=lib --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null

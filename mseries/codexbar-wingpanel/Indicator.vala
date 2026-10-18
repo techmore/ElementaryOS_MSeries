@@ -8,6 +8,9 @@ namespace MSeries {
     public class CodexBarIndicator : Wingpanel.Indicator {
         private Gtk.Box panel_segments;
         private string panel_digest = "";
+        private PanelPreferences display_preferences = new PanelPreferences ();
+        private FileMonitor? preferences_monitor;
+        private uint preferences_reload_source = 0;
         private Json.Array? panel_entries = null;
         private delegate void ActionFunc ();
         private Gtk.Box panel_display;
@@ -24,6 +27,8 @@ namespace MSeries {
         private uint refresh_poll_source = 0;
         private string executable;
         private bool request_in_flight = false;
+        private bool popover_open = false;
+        private uint snapshot_tick = 0;
         private bool sessions_in_flight = false;
         private bool snapshot_busy = false;
         private bool snapshot_stale = false;
@@ -67,14 +72,14 @@ namespace MSeries {
             executable = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "codexbar-linux");
 
             // One dense segment per provider: company mark, % left of the binding limit, time to its reset.
-            panel_segments = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 9);
+            panel_segments = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
             panel_segments.add_css_class ("mseries-codexbar-bar");
             panel_display = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
             panel_display.append (panel_segments);
             show_panel_placeholder ();
-            panel_display.set_tooltip_text ("CodexBar · loading usage… · Middle-click to refresh");
+            set_panel_summary ("CodexBar · loading usage… · Middle-click to refresh");
             var refresh_gesture = new Gtk.GestureClick () { button = 2 };
-            refresh_gesture.released.connect (() => refresh_usage ());
+            refresh_gesture.released.connect (() => refresh_usage (true));
             panel_display.add_controller (refresh_gesture);
             this.visible = true;
 
@@ -87,6 +92,7 @@ namespace MSeries {
             };
             menu.add_css_class ("mseries-codexbar");
             install_style (menu.get_display ());
+            watch_display_preferences ();
 
             // No header: the quota cards lead. Freshness and refresh live in the bottom bar with the dock.
             subtitle_label = new Gtk.Label ("Loading usage…") { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.END };
@@ -106,7 +112,7 @@ namespace MSeries {
             };
             refresh_button.add_css_class ("flat");
             refresh_button.update_property (Gtk.AccessibleProperty.LABEL, "Refresh usage", -1);
-            refresh_button.clicked.connect (() => refresh_usage ());
+            refresh_button.clicked.connect (() => refresh_usage (true));
 
             // Three pages keep every section above the fold; Quota is the default.
             quota_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
@@ -146,7 +152,7 @@ namespace MSeries {
             actions.append (make_dock_button ("Quick View", "window-new-symbolic", "--quick-view"));
             actions.append (make_dock_button ("Usage details", "view-list-symbolic", "--usage"));
             actions.append (make_dock_button ("Spending details", "accessories-calculator-symbolic", "--spending"));
-            actions.append (make_dock_button ("Settings & sign in", "avatar-default-symbolic", "--settings"));
+            actions.append (make_dock_button ("Settings", "preferences-system-symbolic", "--settings"));
             actions.append (refresh_button);
             bar.append (actions);
             menu.append (bar);
@@ -166,7 +172,43 @@ namespace MSeries {
                 subtitle_label.set_text ("Could not start CodexBar: " + e.message);
             }
 
-            Timeout.add_seconds (5, () => { read_snapshot.begin (); return Source.CONTINUE; });
+            // Read the snapshot every 5 s while the popover is open or a refresh runs; every 30 s otherwise,
+            // which is plenty for the panel-bar chip.
+            Timeout.add_seconds (5, () => {
+                snapshot_tick++;
+                if (popover_open || snapshot_busy || refresh_poll_source != 0 || snapshot_tick % 6 == 0) {
+                    read_snapshot.begin ();
+                }
+                return Source.CONTINUE;
+            });
+        }
+
+        private void watch_display_preferences () {
+            try {
+                var directory = File.new_for_path (GLib.Path.build_filename (Environment.get_user_config_dir (), "codexbar"));
+                preferences_monitor = directory.monitor_directory (FileMonitorFlags.NONE);
+                preferences_monitor.changed.connect (() => {
+                    if (preferences_reload_source != 0) Source.remove (preferences_reload_source);
+                    preferences_reload_source = Timeout.add (100, () => {
+                        preferences_reload_source = 0;
+                        reload_display_preferences ();
+                        return Source.REMOVE;
+                    });
+                });
+            } catch (Error e) {
+                // Also reload on ordinary snapshot reads if the config directory did not exist yet.
+            }
+        }
+
+        private void reload_display_preferences () {
+            if (!display_preferences.load ()) return;
+            panel_digest = "";
+            last_digest = "";
+            if (panel_entries != null) {
+                var now = new DateTime.now_utc ().to_unix ();
+                update_panel (panel_entries, now);
+                render_quota (panel_entries, now);
+            }
         }
 
         private static void install_style (Gdk.Display display) {
@@ -201,6 +243,9 @@ namespace MSeries {
                 ".mseries-codexbar .mseries-dock button { padding: 6px 11px; border-radius: 9px; min-height: 0; } " +
                 ".mseries-codexbar .mseries-dock button:hover { background: alpha(currentColor, 0.1); } " +
                 ".mseries-codexbar .account-line { min-height: 0; } " +
+                ".mseries-codexbar .account-name { font-size: 8pt; } " +
+                ".mseries-codexbar .account-meta { font-size: 7pt; } " +
+                ".mseries-codexbar .account-line button { padding: 2px 8px; min-height: 0; } " +
                 ".mseries-codexbar .provider-mark { opacity: 0.9; } " +
                 ".mseries-codexbar .mark-claude { color: #d97757; opacity: 1; } " +
                 ".mseries-codexbar button.compact { padding: 1px 8px; min-height: 0; min-width: 0; } " +
@@ -212,7 +257,8 @@ namespace MSeries {
                 ".mseries-codexbar-bar .seg-secondary { font-size: 7.5pt; } " +
                 ".mseries-codexbar-bar .level-low { color: @warning_color; } " +
                 ".mseries-codexbar-bar .level-critical { color: @error_color; } " +
-                ".mseries-codexbar-bar .mark-claude { color: #d97757; } " +
+                ".mseries-codexbar-bar .provider-mark { opacity: 0.92; } " +
+                ".mseries-codexbar-bar .seg-divider { min-width: 1px; margin: 4px 0; background: alpha(currentColor, 0.22); } " +
                 ".mseries-codexbar-bar .stale { opacity: 0.55; }");
             Gtk.StyleContext.add_provider_for_display (display, style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         }
@@ -244,9 +290,10 @@ namespace MSeries {
             refresh_button.set_sensitive (!busy);
         }
 
-        private void refresh_usage () {
-            refresh_claude.begin ();
-            refresh_codex_accounts.begin ();
+        // A click on Refresh bypasses the helpers' caches; the automatic refresh on open does not.
+        private void refresh_usage (bool force = false) {
+            refresh_claude.begin (force);
+            refresh_codex_accounts.begin (force);
             refresh_opencode_accounts.begin ();
             if (snapshot_busy || !run_action ("--refresh")) {
                 return;
@@ -296,6 +343,7 @@ namespace MSeries {
         // ---- Reading data -------------------------------------------------------------
 
         private async void read_snapshot (bool refresh_if_old = false) {
+            reload_display_preferences ();
             refresh_after_snapshot = refresh_after_snapshot || refresh_if_old;
             if (request_in_flight) {
                 return;
@@ -358,25 +406,29 @@ namespace MSeries {
                 oldest_update_unix, new DateTime.now_utc ().to_unix (), GLib.get_monotonic_time ());
         }
 
+        // Helper refreshes (sessions, Claude, Codex accounts, OpenCode) run when the popover is open. With it closed
+        // nothing in the panel bar depends on them, so they only refresh on a slow background tick.
+        private const int BACKGROUND_SECONDS = 900;
+
+        private bool due (int64 fetched_us, int open_seconds) {
+            var limit = popover_open ? open_seconds : BACKGROUND_SECONDS;
+            return fetched_us == 0 || GLib.get_monotonic_time () - fetched_us > limit * GLib.TimeSpan.SECOND;
+        }
+
         private void ensure_sessions (int max_age_seconds) {
-            if (opencode_accounts_fetched_us == 0 ||
-                GLib.get_monotonic_time () - opencode_accounts_fetched_us > 120 * GLib.TimeSpan.SECOND) {
-                refresh_opencode_accounts.begin ();
-            }
-            if (sessions_fetched_us == 0 ||
-                GLib.get_monotonic_time () - sessions_fetched_us > max_age_seconds * GLib.TimeSpan.SECOND) {
+            if (due (sessions_fetched_us, max_age_seconds)) {
                 refresh_sessions.begin ();
             }
-            if (claude_fetched_us == 0 ||
-                GLib.get_monotonic_time () - claude_fetched_us > 120 * GLib.TimeSpan.SECOND) {
+            if (due (claude_fetched_us, 120)) {
                 refresh_claude.begin ();
             }
-            if (codex_accounts_fetched_us == 0 ||
-                GLib.get_monotonic_time () - codex_accounts_fetched_us > 300 * GLib.TimeSpan.SECOND) {
+            if (due (codex_accounts_fetched_us, 300)) {
                 refresh_codex_accounts.begin ();
             }
-            if (opencode_local_fetched_us == 0 ||
-                GLib.get_monotonic_time () - opencode_local_fetched_us > max_age_seconds * GLib.TimeSpan.SECOND) {
+            if (due (opencode_accounts_fetched_us, 120)) {
+                refresh_opencode_accounts.begin ();
+            }
+            if (due (opencode_local_fetched_us, max_age_seconds)) {
                 refresh_opencode_local.begin ();
             }
         }
@@ -386,15 +438,18 @@ namespace MSeries {
         }
 
         // Upstream's Codex account switching is macOS-only; our helper keeps one saved sign-in per account.
-        private async void refresh_codex_accounts () {
+        private async void refresh_codex_accounts (bool force = false) {
             if (codex_accounts_in_flight) {
                 return;
             }
             codex_accounts_in_flight = true;
             var before = codex_accounts_digest (codex_accounts);
             try {
-                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
-                    "python3", helper_path ("codexbar-accounts.py"), "usage");
+                string[] command = { "python3", helper_path ("codexbar-accounts.py"), "usage" };
+                if (force) {
+                    command += "--force";
+                }
+                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE);
                 string stdout_text;
                 string stderr_text;
                 yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
@@ -408,9 +463,12 @@ namespace MSeries {
                         parsed = list != null ? list.ref () : null;
                     }
                 }
-                codex_accounts = parsed;
+                // A helper that failed to answer must not wipe what the panel already shows.
+                if (process.get_successful ()) {
+                    codex_accounts = parsed;
+                }
             } catch (Error e) {
-                codex_accounts = null;
+                // keep the last good list
             } finally {
                 codex_accounts_in_flight = false;
                 codex_accounts_fetched_us = GLib.get_monotonic_time ();
@@ -422,15 +480,18 @@ namespace MSeries {
         }
 
         // Claude accounts come from claude-swap (cswap), the same tool upstream CodexBar drives on macOS.
-        private async void refresh_claude () {
+        private async void refresh_claude (bool force = false) {
             if (claude_in_flight) {
                 return;
             }
             claude_in_flight = true;
             var before = local_digest (claude_data);
             try {
-                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
-                    "python3", helper_path ("codexbar-claude.py"), "list");
+                string[] command = { "python3", helper_path ("codexbar-claude.py"), "list" };
+                if (force) {
+                    command += "--force";
+                }
+                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE);
                 string stdout_text;
                 string stderr_text;
                 yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
@@ -444,9 +505,11 @@ namespace MSeries {
                         parsed = root.get_object ().ref ();
                     }
                 }
-                claude_data = parsed;
+                if (process.get_successful ()) {
+                    claude_data = parsed;
+                }
             } catch (Error e) {
-                claude_data = null;
+                // keep the last good list
             } finally {
                 claude_in_flight = false;
                 claude_fetched_us = GLib.get_monotonic_time ();
@@ -531,20 +594,21 @@ namespace MSeries {
             }
             var dialog = new Gtk.AlertDialog ("Switch to %s?", email);
             dialog.detail = ready
-                ? "Switch both restarts the Claude app and changes its sign-in and Claude Code's command-line login. Finish any running work in Claude first."
-                : "This account needs one sign-in in the Claude app before fast switching works. Set up app saves the current app login and restarts Claude at its sign-in screen. Finish any running work first, sign in to this account, then choose Save app login here. CLI only changes Claude Code's command-line login.";
-            dialog.buttons = { "Cancel", "CLI only", ready ? "Switch both" : "Set up app" };
+                ? "Claude will close and reopen with this account, and Claude Code's command-line login will change too. Missing local Code conversations will carry over with their workspace context. Finish running work first. CodexBar stays running."
+                : "This account needs one sign-in in the Claude app before fast switching works. Claude will reopen at its sign-in screen. Sign in to the account shown above, then reopen CodexBar to save it. Missing local Code conversations will carry over. Finish running work first.";
+            dialog.buttons = { "Cancel", ready ? "Switch Claude account" : "Set up app sign-in" };
             dialog.cancel_button = 0;
             dialog.default_button = 0;
             dialog.modal = false;
             dialog.choose.begin (null, null, (obj, res) => {
                 try {
-                    var choice = dialog.choose.end (res);
-                    if (choice == 1 || choice == 2 && ready) {
-                        switch_claude_account.begin (number, choice == 2);
-                    } else if (choice == 2) {
-                        run_saver.begin ({ "python3", helper_path ("codexbar-claude.py"), "app-login", number },
-                            "Sign in to the Claude app", "Couldn't set up the app login", true);
+                    if (dialog.choose.end (res) == 1) {
+                        if (ready) {
+                            switch_claude_account.begin (number, true);
+                        } else {
+                            run_saver.begin ({ "python3", helper_path ("codexbar-claude.py"), "app-login", number },
+                                "Sign in to the Claude app", "Couldn't set up the app login", true);
+                        }
                     }
                 } catch (Error e) { }
             });
@@ -640,9 +704,47 @@ namespace MSeries {
                 "Claude account added", "Couldn't add the Claude account");
         }
 
+        /* Clicking a provider's card opens its desktop app, or brings it forward when it is already running
+         * (these Electron apps are single-instance, so relaunching hands focus to the open window). Buttons inside
+         * the card claim their own clicks first. */
+        private static string? desktop_id_for (string provider) {
+            switch (provider) {
+                case "codex": return "chatgpt.desktop";
+                case "claude": return "com.anthropic.Claude.desktop";
+                case "opencodego": return "ai.opencode.desktop.dev.desktop";
+                default: return null;
+            }
+        }
+
+        private void open_desktop_app (string provider, Gtk.Widget from) {
+            var id = desktop_id_for (provider);
+            var app = id != null ? new GLib.DesktopAppInfo (id) : null;
+            if (app == null) {
+                subtitle_label.set_text ("%s isn't installed as a desktop app".printf (provider_title (provider)));
+                return;
+            }
+            popdown_from (from);
+            try {
+                app.launch (null, Gdk.Display.get_default ().get_app_launch_context ());
+            } catch (Error e) {
+                subtitle_label.set_text ("Could not open %s: %s".printf (provider_title (provider), e.message));
+            }
+        }
+
+        private void open_app_on_click (Gtk.Widget card, string provider) {
+            if (desktop_id_for (provider) == null) {
+                return;
+            }
+            var click = new Gtk.GestureClick () { button = 1 };
+            click.released.connect ((presses, x, y) => open_desktop_app (provider, card));
+            card.add_controller (click);
+            card.set_cursor_from_name ("pointer");
+        }
+
         private Gtk.Widget build_claude_card (int64 now_unix) {
             var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
             card.add_css_class ("card");
+            open_app_on_click (card, "claude");
             var head = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             var dot = new Gtk.Label ("●");
             dot.add_css_class ("dot-off");
@@ -652,6 +754,8 @@ namespace MSeries {
             var email = claude_data.get_string_member_with_default ("activeEmail", "");
             var accounts = claude_data.get_array_member ("accounts");
             head.append (build_identity (email, claude_data.get_string_member_with_default ("activePlan", "")));
+            head.append (build_add_account_button ("Sign in to Claude Code, then save that login with claude-swap",
+                () => add_claude_account ()));
             card.append (head);
             // CLI and desktop can be switched separately; always name both when they differ.
             var desktop = claude_data.has_member ("desktop") ? claude_data.get_object_member ("desktop") : null;
@@ -687,13 +791,21 @@ namespace MSeries {
             }
 
             var listed = accounts != null ? accounts.get_length () : 0;
-            card.append (build_accounts_header ("Sign in to Claude Code, then save that login with claude-swap",
-                () => add_claude_account ()));
-            if (desktop != null && desktop.get_boolean_member_with_default ("installed", false)) {
-                var save_app = new Gtk.Button.with_label ("Save app login") {
-                    halign = Gtk.Align.START, tooltip_text = "Remember the Claude app's current sign-in for fast switching"
+            // The helper saves the Claude app's login by itself whenever it lists accounts, so a standing
+            // button is noise. Offer it only when the app's current login is not one of the saved accounts.
+            var app_installed = desktop != null && desktop.get_boolean_member_with_default ("installed", false);
+            var app_login_saved = false;
+            for (uint i = 0; i < listed; i++) {
+                if (accounts.get_object_element (i).get_boolean_member_with_default ("desktopActive", false)) {
+                    app_login_saved = true;
+                }
+            }
+            if (app_installed && (!app_login_saved || snapshot_error.length > 0)) {
+                var save_app = new Gtk.Button.with_label ("Save Claude app login") {
+                    halign = Gtk.Align.START, tooltip_text = "The Claude app's current sign-in isn't saved yet. Save it for fast switching."
                 };
-                save_app.add_css_class ("compact");
+                save_app.add_css_class ("flat");
+                save_app.add_css_class ("caption");
                 save_app.clicked.connect (() => {
                     popdown_from (save_app);
                     run_saver.begin ({ "python3", helper_path ("codexbar-claude.py"), "app-save" },
@@ -733,24 +845,68 @@ namespace MSeries {
             return generator.to_data (null);
         }
 
-        private void run_accounts_helper (string[] arguments) {
+        /* Switch always answers on screen: success names the account, failure says why. Silence looked like "nothing happened". */
+        private void choose_codex_switch (owned string account_id) {
+            if (codex_switch_in_flight) return;
+            var email = account_id.split ("|")[0];
+            var dialog = new Gtk.AlertDialog ("Switch ChatGPT to %s?", email);
+            dialog.detail = "ChatGPT will close and reopen with this account. Finish running work first; unsaved drafts may be lost. CodexBar stays running.";
+            dialog.buttons = { "Cancel", "Switch account" };
+            dialog.cancel_button = 0;
+            dialog.default_button = 0;
+            dialog.choose.begin (null, null, (obj, res) => {
+                try {
+                    if (dialog.choose.end (res) == 1 && !codex_switch_in_flight) {
+                        switch_codex_account.begin (account_id);
+                    }
+                } catch (Error e) { }
+            });
+        }
+
+        private bool codex_switch_in_flight = false;
+
+        private async void switch_codex_account (owned string account_id) {
+            if (codex_switch_in_flight) return;
+            codex_switch_in_flight = true;
+            var ok = false;
+            var message = "";
             try {
-                string[] command = { "python3", helper_path ("codexbar-accounts.py") };
-                foreach (var argument in arguments) {
-                    command += argument;
+                string[] command = { "python3", helper_path ("codexbar-accounts.py"), "switch", account_id, "--desktop" };
+                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_MERGE);
+                string output;
+                yield process.communicate_utf8_async (null, null, out output, null);
+                ok = process.get_successful ();
+                try {
+                    var parser = new Json.Parser ();
+                    parser.load_from_data (output.strip (), -1);
+                    var root = parser.get_root ();
+                    if (root == null || root.get_node_type () != Json.NodeType.OBJECT) {
+                        ok = false;
+                        message = "The account helper returned an invalid response.";
+                    } else {
+                        var response = root.get_object ();
+                        ok = ok && response.get_boolean_member_with_default ("ok", false);
+                        message = response.get_string_member_with_default ("message", "");
+                    }
+                } catch (Error e) {
+                    ok = false;
+                    message = "The account helper returned an invalid response.";
                 }
-                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_SILENCE | SubprocessFlags.STDERR_SILENCE);
-                process.wait_async.begin (null, () => {
-                    // The active account changed: re-read quota and the account list from scratch.
-                    codex_accounts_fetched_us = 0;
-                    last_digest = "";
-                    run_action ("--refresh");
-                    refresh_codex_accounts.begin ();
-                    read_snapshot.begin ();
-                });
             } catch (Error e) {
-                subtitle_label.set_text ("Could not switch account: " + e.message);
+                message = e.message;
             }
+            codex_switch_in_flight = false;
+            // The active account changed (or didn't): re-read quota and the account list from scratch.
+            codex_accounts_fetched_us = 0;
+            last_digest = "";
+            run_action ("--refresh");
+            refresh_codex_accounts.begin (true);
+            read_snapshot.begin ();
+            if (!ok) {
+                tell ("Couldn't switch Codex account", message.length > 0 ? message : "The helper reported an error.");
+                return;
+            }
+            tell ("Switched ChatGPT account", message);
         }
 
         private AccountDialog? codex_login_dialog = null;
@@ -773,7 +929,6 @@ namespace MSeries {
 
         private Gtk.Widget build_codex_accounts () {
             var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
-            box.append (build_accounts_header ("Sign in to another ChatGPT account", () => add_codex_account ()));
             if (codex_accounts == null) {
                 return box;
             }
@@ -786,28 +941,28 @@ namespace MSeries {
                 var account_id = account.get_string_member_with_default ("id", email);
                 var windows = account.has_member ("windows") ? account.get_array_member ("windows") : null;
                 var detail = account.has_member ("error") ? "unavailable" : "—";
-                box.append (build_account_line (email, detail,
-                    "Make %s the active Codex account. Restart running Codex sessions to use it.".printf (email),
-                    () => run_accounts_helper ({ "switch", account_id }), windows, hint_id ("codex", account), account.get_string_member_with_default ("plan", "")));
                 var resets = account.has_member ("resetCredits") ? account.get_object_member ("resetCredits") : null;
-                if (resets != null) {
-                    box.append (build_reset_credits (resets, new DateTime.now_utc ().to_unix ()));
-                }
+                box.append (build_account_line (email, detail,
+                    "Close and reopen ChatGPT with %s. CodexBar stays running.".printf (email)
+                        + (account.get_boolean_member_with_default ("stale", false)
+                            ? "\n\nShowing the previous quota: the latest refresh failed." : ""),
+                    () => choose_codex_switch (account_id), windows, hint_id ("codex", account), account.get_string_member_with_default ("plan", ""), true, resets));
             }
             return box;
         }
 
-        /* Available resets for a Codex account, with when the first one expires; red inside the last day. */
-        private Gtk.Widget build_reset_credits (Json.Object credits, int64 now_unix) {
+        /* Available resets for a Codex account as a one-row chip, with when the first expires; red inside the last day. */
+        private Gtk.Label build_reset_credits (Json.Object credits, int64 now_unix) {
             var available = credits.get_int_member_with_default ("available", -1);
             var expires = credits.get_string_member_with_default ("nextExpiresAt", "");
             var when = expires.length > 0 ? new GLib.DateTime.from_iso8601 (expires, null) : null;
             var seconds = when != null ? when.to_unix () - now_unix : 0;
-            var label = subtle_label (Presentation.reset_credits_line (available, seconds));
-            if (Presentation.reset_expiry_urgent (available, seconds)) {
-                label.add_css_class ("dot-bad");
-            }
-            return label;
+            var chip = new Gtk.Label (Presentation.reset_credits_chip (available, seconds)) { valign = Gtk.Align.CENTER };
+            chip.add_css_class ("caption");
+            chip.add_css_class ("numeric");
+            chip.add_css_class (Presentation.reset_expiry_urgent (available, seconds) ? "text-critical" : "dim-label");
+            chip.set_tooltip_text (Presentation.reset_credits_line (available, seconds));
+            return chip;
         }
 
         private static string local_digest (Json.Object? usage) {
@@ -1092,10 +1247,18 @@ namespace MSeries {
                     quota_theme_color (widget, "error_color", "#c6262e")) : "");
         }
 
+        /* The tooltip is for the pointer; assistive tech needs the same summary as the widget's name. */
+        private void set_panel_summary (string text) {
+            panel_display.set_tooltip_text (text);
+            panel_display.update_property (Gtk.AccessibleProperty.LABEL, text.replace ("\n\n", ". ").replace ("\n", ", "), -1);
+        }
+
         private void show_panel_placeholder () {
             panel_digest = "";
             clear (panel_segments);
-            panel_segments.append (new Gtk.Label ("—"));
+            var dash = new Gtk.Label ("—");
+            dash.add_css_class ("dim-label");
+            panel_segments.append (dash);
         }
 
         /* Fills one segment's texts from a quota window list; returns the level of the binding window. */
@@ -1218,7 +1381,7 @@ namespace MSeries {
                 }
             }
 
-            panel_display.set_tooltip_text (tooltip.len > 0
+            set_panel_summary (tooltip.len > 0
                 ? tooltip.str + (snapshot_stale ? "\n\nCached: CodexBar couldn't reach a provider." : "")
                     + "\n\nMiddle-click to refresh"
                 : "Usage unavailable");
@@ -1239,6 +1402,11 @@ namespace MSeries {
             for (int rank = 0; rank <= 3; rank++) {
                 for (int i = 0; i < providers.length; i++) {
                     if (provider_rank (providers[i]) != rank) continue;
+                    if (panel_segments.get_first_child () != null) {
+                        var divider = new Gtk.Separator (Gtk.Orientation.VERTICAL);
+                        divider.add_css_class ("seg-divider");
+                        panel_segments.append (divider);
+                    }
                     panel_segments.append (build_panel_segment (providers[i], values[i], resets[i], levels[i], stales[i]));
                 }
             }
@@ -1252,23 +1420,29 @@ namespace MSeries {
             var mark = build_provider_mark (provider, provider_title (provider));
             var icon = mark as Gtk.Image;
             if (icon != null) {
-                icon.pixel_size = 12;
+                icon.pixel_size = 14;
                 icon.valign = Gtk.Align.CENTER;
             }
             segment.append (mark);
-            segment.append (build_hint_badges (provider, true));
+            if (display_preferences.get_bool ("showHints")) segment.append (build_hint_badges (provider, true));
             var value = new Gtk.Label (value_text) { valign = Gtk.Align.BASELINE_CENTER };
             value.add_css_class ("seg-value");
             if (level == QuotaLevel.LOW) value.add_css_class ("level-low");
             if (level == QuotaLevel.CRITICAL) value.add_css_class ("level-critical");
-            segment.append (value);
-            if (reset_text.length > 0) {
+            if (display_preferences.get_bool ("showPercent")) {
+                segment.append (value);
+            } else {
+                if (level == QuotaLevel.LOW) mark.add_css_class ("level-low");
+                if (level == QuotaLevel.CRITICAL) mark.add_css_class ("level-critical");
+            }
+            if (display_preferences.get_bool ("showReset") && reset_text.length > 0) {
                 var reset = new Gtk.Label (reset_text) { valign = Gtk.Align.BASELINE_CENTER };
                 reset.add_css_class ("seg-reset");
                 segment.append (reset);
             }
             var alternate = alternate_account_text (provider, new DateTime.now_utc ().to_unix ());
-            if (alternate.length == 0) return segment;
+            if (!display_preferences.get_bool ("showAccounts") || alternate.length == 0 ||
+                (!display_preferences.get_bool ("showPercent") && !display_preferences.get_bool ("showReset"))) return segment;
             var stack = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { valign = Gtk.Align.CENTER };
             stack.append (segment);
             var label = new Gtk.Label (null) { xalign = 0, use_markup = true };
@@ -1280,9 +1454,9 @@ namespace MSeries {
                 if (account.get_boolean_member_with_default ("active", false)) continue;
                 if (markup.len > 0) markup.append ("  ");
                 var windows = account.has_member ("windows") ? account.get_array_member ("windows") : null;
-                markup.append ("%s%lld: %s".printf (hint_markup (hint_id (provider, account), label), account.get_int_member_with_default ("number", i + 1),
+                markup.append ("%s%lld: %s".printf ((display_preferences.get_bool ("showHints") ? hint_markup (hint_id (provider, account), label) : ""), account.get_int_member_with_default ("number", i + 1),
                     windows == null || windows.get_length () == 0 ? "—"
-                        : colored_account_quota (label, windows, new DateTime.now_utc ().to_unix ())));
+                        : colored_account_quota (label, windows, new DateTime.now_utc ().to_unix (), true)));
             }
             label.set_markup (markup.str);
             stack.append (label);
@@ -1364,6 +1538,7 @@ namespace MSeries {
 
             var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
             card.add_css_class ("card");
+            open_app_on_click (card, provider);
 
             var head = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             var dot = new Gtk.Label ("●");
@@ -1393,6 +1568,16 @@ namespace MSeries {
                 }
             }
             head.append (build_identity (email, plan));
+            var active_resets = provider == "codex" ? entry.get_member ("resetCredits") : null;
+            if (active_resets != null && active_resets.get_node_type () == Json.NodeType.OBJECT) {
+                head.append (build_reset_credits (active_resets.get_object (), now_unix));
+            }
+            if (provider == "codex") {
+                head.append (build_add_account_button ("Sign in to another ChatGPT account", () => add_codex_account ()));
+            } else if (provider == "opencodego") {
+                head.append (build_add_account_button ("Connect another OpenCode Go key or browser sign-in",
+                    () => add_opencode_account ()));
+            }
             card.append (head);
 
             var windows = entry.get_array_member ("windows");
@@ -1407,10 +1592,6 @@ namespace MSeries {
                 card.append (subtle_label ("Provider status · " + status));
             }
             if (provider == "codex") {
-                var active_resets = entry.get_member ("resetCredits");
-                if (active_resets != null && active_resets.get_node_type () == Json.NodeType.OBJECT) {
-                    card.append (build_reset_credits (active_resets.get_object (), now_unix));
-                }
                 card.append (build_codex_accounts ());
             }
             if (provider == "opencodego") {
@@ -1418,8 +1599,6 @@ namespace MSeries {
                 if (windows != null && windows.get_length () > 0 && local_tokens.length > 0) {
                     card.append (subtle_label (local_tokens + " local tokens · 7 days · all local accounts"));
                 }
-                card.append (build_accounts_header ("Connect another OpenCode Go key or browser sign-in",
-                    () => add_opencode_account ()));
                 for (uint i = 0; opencode_accounts != null && i < opencode_accounts.get_length (); i++) {
                     var account = opencode_accounts.get_object_element (i);
                     if (account.get_boolean_member_with_default ("active", false)) continue;
@@ -1538,13 +1717,12 @@ namespace MSeries {
             return identity;
         }
 
-        private Gtk.Widget build_accounts_header (string tooltip, owned ActionFunc on_add) {
-            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
-            var title = new Gtk.Label ("Accounts") { xalign = 0, hexpand = true };
-            title.add_css_class ("caption");
-            title.add_css_class ("dim-label");
-            row.append (title);
-            var add = new Gtk.Button () { child = new Gtk.Image.from_icon_name ("list-add-symbolic") { pixel_size = 12 }, tooltip_text = tooltip, valign = Gtk.Align.CENTER };
+        /* The "+" sits at the card's top right: no "Accounts" label row, the saved accounts speak for themselves. */
+        private Gtk.Widget build_add_account_button (string tooltip, owned ActionFunc on_add) {
+            var add = new Gtk.Button () {
+                child = new Gtk.Image.from_icon_name ("list-add-symbolic") { pixel_size = 12 },
+                tooltip_text = tooltip, valign = Gtk.Align.CENTER, halign = Gtk.Align.END
+            };
             add.add_css_class ("flat");
             add.add_css_class ("compact");
             add.update_property (Gtk.AccessibleProperty.LABEL, tooltip, -1);
@@ -1552,33 +1730,44 @@ namespace MSeries {
                 popdown_from (add);
                 on_add ();
             });
-            row.append (add);
-            return row;
+            return add;
         }
 
         private Gtk.Widget build_account_line (string email, string detail, string switch_tooltip,
-                                               owned ActionFunc? on_switch, Json.Array? windows = null, string candidate_id = "", string plan = "", bool switch_sensitive = true) {
+                                               owned ActionFunc? on_switch, Json.Array? windows = null, string candidate_id = "", string plan = "", bool switch_sensitive = true,
+                                               Json.Object? resets = null) {
             var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             line.add_css_class ("account-line");
             var name = new Gtk.Label (email) { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.MIDDLE };
             name.set_tooltip_text (email);
-            var content = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { hexpand = true };
-            var identity = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
+            // One row: badges, name, plan and resets on the left, quota and time-to-reset to their right, then Switch.
+            name.add_css_class ("account-name");
+            name.ellipsize = Pango.EllipsizeMode.END;  // the start of an address identifies it better than the middle
+            name.width_chars = 8;
+            var identity = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4) { hexpand = true };
             identity.append (build_hint_badges (candidate_id));
             identity.append (name);
-            identity.append (build_plan_badge (email, plan));
-            content.append (identity);
+            // The plan lives in the tooltip here: the single row has no room for a badge beside the quota.
+            var plan_text = Presentation.plan_label (plan);
+            name.set_tooltip_text (plan_text.length > 0 ? "%s · %s".printf (email, plan_text) : email);
+            if (resets != null) {
+                var chip = build_reset_credits (resets, new DateTime.now_utc ().to_unix ());
+                chip.margin_start = 2;
+                identity.append (chip);
+            }
+            line.append (identity);
             var has_quota = windows != null && windows.get_length () > 0;
             var meta = new Gtk.Label (has_quota ? Presentation.account_quota (windows, new DateTime.now_utc ().to_unix ()) : detail) {
-                xalign = 0, wrap = true, wrap_mode = Pango.WrapMode.WORD_CHAR
-            };
+                xalign = 1, valign = Gtk.Align.CENTER, justify = Gtk.Justification.RIGHT,
+                wrap = true, wrap_mode = Pango.WrapMode.WORD_CHAR, max_width_chars = 34
+            };  // two windows fit on the row; a third wraps instead of widening the popover
             meta.set_tooltip_text ("Quota remaining · ↻ time until reset. " + detail);
             meta.add_css_class ("caption");
+            meta.add_css_class ("account-meta");
             if (!has_quota) meta.add_css_class ("dim-label");
             else meta.set_markup (colored_account_quota (meta, windows, new DateTime.now_utc ().to_unix ()));
             meta.add_css_class ("numeric");
-            content.append (meta);
-            line.append (content);
+            line.append (meta);
             if (has_quota) {
                 account_quota_labels += meta;
                 account_quota_windows += windows;
@@ -1603,11 +1792,13 @@ namespace MSeries {
             return "#%02x%02x%02x".printf ((int) (color.red * 255), (int) (color.green * 255), (int) (color.blue * 255));
         }
 
-        private static string colored_account_quota (Gtk.Widget widget, Json.Array? windows, int64 now_unix) {
+        /* quiet: healthy values keep the text color, so only low and critical quota draws the eye (panel bar). */
+        private string colored_account_quota (Gtk.Widget widget, Json.Array? windows, int64 now_unix, bool quiet = false) {
             return Presentation.account_quota_markup (windows, now_unix,
-                quota_theme_color (widget, "success_color", "#2e7d32"),
+                quiet ? "" : quota_theme_color (widget, "success_color", "#2e7d32"),
                 quota_theme_color (widget, "warning_color", "#a66300"),
-                quota_theme_color (widget, "error_color", "#c6262e"));
+                quota_theme_color (widget, "error_color", "#c6262e"),
+                display_preferences.get_bool ("showPercent"), display_preferences.get_bool ("showReset"));
         }
 
         /* Which login a provider is tied to: quiet, under the title, never the focus of the card. */
@@ -1670,19 +1861,20 @@ namespace MSeries {
             percent.add_css_class ("numeric");
             if (level == QuotaLevel.LOW) percent.add_css_class ("text-low");
             if (level == QuotaLevel.CRITICAL) percent.add_css_class ("text-critical");
-            row.append (percent);
+            if (display_preferences.get_bool ("showPercent")) row.append (percent);
             var reset_label = new Gtk.Label (compact_reset (reset)) { xalign = 1, width_request = 46 };
             reset_label.add_css_class ("caption");
             reset_label.add_css_class ("dim-label");
             reset_label.add_css_class ("numeric");
             reset_label.set_tooltip_text (reset);
-            row.append (reset_label);
+            if (display_preferences.get_bool ("showReset")) row.append (reset_label);
             group.append (row);
 
             // The forecast only gets its own line when it is a warning; otherwise the reset sits inline.
             if (!known || eta.state == EtaState.EXHAUSTED || eta.state == EtaState.DEPLETING) {
-                var caption_text = known ? Presentation.window_caption (reset, eta.state, eta.detail)
-                    : "Usage not reported yet";
+                var caption_text = !known ? "Usage not reported yet"
+                    : display_preferences.get_bool ("showReset") ? Presentation.window_caption (reset, eta.state, eta.detail)
+                    : eta.state == EtaState.EXHAUSTED ? "Limit reached" : eta.detail;
                 var caption = new Gtk.Label (caption_text) { xalign = 0, wrap = true, margin_start = 40 };
                 caption.add_css_class ("caption");
                 caption.add_css_class (eta.state == EtaState.EXHAUSTED ? "text-critical" :
@@ -1843,7 +2035,7 @@ namespace MSeries {
             last_digest = "";
             panel_entries = null;
             show_panel_placeholder ();
-            panel_display.set_tooltip_text (headline + " · " + message);
+            set_panel_summary (headline + " · " + message);
             subtitle_label.set_text ("Usage unavailable");
             chip_label.set_visible (false);
             set_refreshing (false);
@@ -1860,11 +2052,14 @@ namespace MSeries {
         }
 
         public override void opened () {
+            popover_open = true;
+            snapshot_tick = 0;
             read_snapshot.begin (true);
             ensure_sessions (15);
         }
 
         public override void closed () {
+            popover_open = false;
         }
     }
 }

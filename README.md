@@ -172,11 +172,12 @@ Details: [desktop space](mseries/display-space/README.md),
   Tasks tabs backed by Evolution Data Server (EDS), plus an account-setup action.
   Tasks can be added to a chosen writable list and checked off directly in the panel, including repeating tasks.
   Events defaults to a compact upcoming 30-day list with optional Month, Week
-  and Day agendas. Expand rows for calendar, location and description details.
+  and Day views. Week/Day use time slots and event blocks with overlap lanes;
+  Month/Upcoming retain compact lists. Open blocks for full event details.
 - **Tested:** ARM64 builds and isolated notch-layout checks cover cropped,
-  full-height, external, fractional-scale and crowded layouts. Seventeen real-plugin
-  EDS workflow groups cover agenda ranges, navigation, task creation, checkbox saves, live edits,
-  completion/deletion and source changes. CodexBar has recorded build/
+  full-height, external, fractional-scale and crowded layouts. Twenty-one real-plugin
+  EDS workflow groups cover time-grid geometry, navigation, task creation,
+  checkbox saves, live edits, completion/deletion and source changes. CodexBar has recorded build/
   deploy checks and an owner-confirmed native Claude account-switch round trip.
 - **Left to do:** Accept the full-height layout after a hardware boot, including
   clock/popovers and crowded indicators. Complete Google sign-in and a real

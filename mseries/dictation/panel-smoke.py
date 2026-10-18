@@ -69,9 +69,17 @@ try:
     assert app.message.get_label()=='Waiting for headroom'
     app.read_status=lambda:{'phase':'listening'};app.poll();before=len(seen);app.start_review()
     assert not app.transform.get_sensitive() and len(seen)==before
+    for phase in ['error','waiting','stopped','unavailable','ready']:
+        app.read_status=lambda phase=phase:{'phase':phase};app.poll()
+        assert app.record.get_sensitive(),'Focus action must remain available after field refusal or waiting'
+        app.proposed.grab_focus();app.record.emit('clicked')
+        assert app.window.get_focus()==app.original,'Retry action did not focus the original transcript'
+    for phase in ['loading','listening','finishing']:
+        app.read_status=lambda phase=phase:{'phase':phase};app.poll()
+        assert not app.record.get_sensitive(),'Do not redirect focus during active speech preparation or capture'
     print(json.dumps({'passed':True,'native_gtk4_panel':True,'original_preserved':True,
         'mode_language_wiring':True,'stale_proposal_discarded':True,'unavailable_preserves_original':True,
         'review_blocked_while_listening':True,'translate_then_grammar_wiring':True,'partial_pipeline_preserves_translation':True,'model_inference':False,'microphone_recorded':False,
-        'owner_windows_opened':False,'scope':'UI wiring with synthetic transforms; no grammar or translation quality claim'}))
+        'owner_windows_opened':False,'focus_retry_after_error_or_waiting':True,'scope':'UI wiring with synthetic transforms; no grammar or translation quality claim'}))
 finally:
     app.window.close();app.quit()

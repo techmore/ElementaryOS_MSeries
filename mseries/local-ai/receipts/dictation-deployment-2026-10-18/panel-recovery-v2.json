@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "native_gtk4_panel": true,
+  "original_preserved": true,
+  "mode_language_wiring": true,
+  "stale_proposal_discarded": true,
+  "unavailable_preserves_original": true,
+  "review_blocked_while_listening": true,
+  "translate_then_grammar_wiring": true,
+  "partial_pipeline_preserves_translation": true,
+  "model_inference": false,
+  "microphone_recorded": false,
+  "owner_windows_opened": false,
+  "focus_retry_after_error_or_waiting": true,
+  "scope": "UI wiring with synthetic transforms; no grammar or translation quality claim",
+  "source_sha256": {
+    "dictation-panel.py": "7edadd447f19ea9f6b6581cc942d2a6491f39fc97e2b04b86d6828b90e45b047",
+    "dictation_review.py": "8489eafbeb3eb88cefde732f65247bf0e30db2250fa8b78933e0d3bfdcb3f943",
+    "dictation_pipeline.py": "d03858f233622d7b8c9f6d8ae4215504b966b7586725234409e2d9d28e508376",
+    "dictation_status.py": "50dadbf4f6a7f5edf8e4cb8b91d8931adf75cd899455285547d653c5af591903",
+    "dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+    "panel-smoke.py": "52de309b9f1e549320292ed4ae28c92a2cac609f5db799fb663926d6f5b382ad",
+    "machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+  }
+}

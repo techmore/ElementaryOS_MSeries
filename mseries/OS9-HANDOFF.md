@@ -1,5 +1,259 @@
 # OS 9 implementation / Claude Code handoff
 
+## CodexBar Switch crash and disruptive deployment — 2026-10-18
+
+Confirmed real Wingpanel SIGSEGV at 12:59:20 in `switch_codex_account_co` from `libcodexbar.so`.
+Reproduced with the current indicator in an isolated Xvfb Switch interaction: confirmation captured a borrowed
+argument array after its originating row callback had freed it. Replaced the array with an owned scalar account ID
+through confirmation and async execution. Invalid JSON helper replies are now rejected without object dereferences.
+The same interaction now passes for success, null, array and invalid replies, preserving the exact chosen account.
+
+Separately, our deploys intentionally restarted the whole panel at 13:21:50 and 13:22:21; later reloads coincide with
+other indicator installs. Routine `deploy-codexbar.sh` now installs without restarting Wingpanel or CodexBar;
+`--restart` explicitly reloads Wingpanel and never quits a running CodexBar daemon. Helper updates take effect on
+next invocation; native module changes wait for login or that explicit reload. Working agreement updated accordingly.
+Verified: reproducer SIGSEGV before fix; four successful headless interaction cases after fix; stubbed deployment
+checks default/--no-restart/--restart and invalid options without signaling real processes. All nine Meson targets
+pass, including four registered Switch interaction cases. Applied one controlled reload to activate the crash fix;
+the existing CodexBar daemon PID 44641 was preserved. No Claude/ChatGPT account was changed in testing.
+
+
+## Claude Code history across desktop account switches — 2026-10-18
+
+Root cause: transcripts persist in `~/.claude/projects`, but the desktop Code sidebar is account/organization scoped.
+New `codexbar_claude_history.py` privately exports the departing local Code history after the app exits, then adds
+only missing resume entries under the selected account/org before launch. IDs and workspace paths are preserved;
+existing records/transcripts are never overwritten. Backups include checksummed transcript bytes, reused by content.
+No regular Chat-tab/Cowork/cloud history import and no automatic message sending. The confirmation explains local
+Code context carry-over, and the result reports added/existing/unavailable counts. All installers/deploy and the
+image payload ship the module (payload also now includes the already-required cache/sessions helpers).
+[Evidence, storage, recovery and limitations](CODEXBAR-CLAUDE-HISTORY.md). Upstream remains v0.77.0.
+Verified: 15 isolated history tests, 39 Claude lifecycle tests and full `check-codexbar-port.sh` (all helper suites,
+native panel build, five Vala targets and live snapshot schema) passed; staged rehearsal of 38 real local records copied 34,
+then zero duplicates, then four back while retaining 34 existing; no live profile changes. Live desktop switch and
+opening a transferred conversation remain unverified. Next: owner switches once and resumes a prior Code workspace.
+
+## Orchard panel: icon and running-instance count — 2026-10-18
+
+Removed the CPU/memory circles from the native Vala Wingpanel companion.
+The panel display now contains exactly the Orchard tree icon and running-instance
+badge (including zero; a dash still means Incus is unavailable). CPU/memory
+captions and bounded graphs remain available in the popover. Removed the unused
+ring widget and its periodic `/proc/meminfo` read. Updated the source-pinned
+parity ledger to describe this owner-requested adaptation.
+
+Verification: native ARM64 build and all five Meson suites pass; the panel
+fixture also passes explicitly on Wayland through counts 2 → 0 → 0 → — → 1,
+asserting no third display widget throughout. Installed only `liborchard-incus.so`
+atomically and reloaded Wingpanel. The live accessibility tree contains one
+image and one label (`2`), matching the two running Incus guests; the loaded
+module's SHA256 matches the tested build. Manager windows/guests were not changed.
+Evidence: `mseries/orchard-incus-native/audit/2026-10-18-panel-icon-count.json`.
+This panel check is separate from the Python manager's unfinished multi-hour soak.
+
+
+## Dock hotplug/startup findings and obsolete module cleanup — 2026-10-18
+
+[Follow-up report](aurora/hardware-tests/2026-10-18-j314s-hotplug-and-module-cleanup.md)
+records the owner's audio-after-replug, initially stretched top bar and startup
+delay reports on running Aurora `.20`. Logs show a rejected saved 3024x1890 mode
+against current 3024x1964 full-height modes, a panel startup timeout, USB/Thunderbolt
+hotplug faults and missing dock Ethernet firmware. Audio causality remains unverified.
+Archived and content-verified 5,771 files before removing orphan `.19` and two
+Fairydust module trees; kept running `.20`, installed `.20-enh1` and stock Asahi.
+GRUB syntax checks pass; no boot, display or audio configuration changes. Earlier
+scoped visual/VRR results stand; symptoms and sustained stability remain open.
+Next: capture active/saved display profiles, identify the late panel, and collect
+before/after hotplug audio and kernel state. Cleanup is not a symptom fix.
+
+## Native CodexBar display preferences — 2026-10-18
+
+Settings (gear in the popover) > Display > Wingpanel now has switches for quota percentages, time until reset,
+other accounts in the bar and account hints. Percentages/countdowns affect bar and quota text; progress bars,
+tooltips and accessible quota descriptions retain the data. Both off gives provider icons in the bar.
+Preferences save immediately in `~/.config/codexbar/wingpanel.json`, separate from upstream's config; the panel
+watches for changes and re-renders cached data without extra snapshot/provider requests. Defaults preserve the
+existing display. Upstream pin remains v0.77.0; no upstream files replaced.
+Verified: five Vala test targets; light/dark headless Settings and panel renders; live atomic-replacement test
+(`ninja -C BUILD test-live-preferences && bash mseries/codexbar-wingpanel/probe/run-live-preferences.sh BUILD`)
+updates the bar off/on without additional snapshot requests. Full `check-codexbar-port.sh` passed against installed
+CLI 0.77.0; live snapshot keys match the fixture. Not yet owner-tested on the real desktop.
+
+
+## CodexBar Switch targets the provider app — 2026-10-18
+
+ChatGPT Switch now confirms the selected account before changes, closes only the owner's ChatGPT executable,
+saves its final login, installs the selected saved login under the account lock, and relaunches ChatGPT.
+A close failure leaves the login untouched; a launch failure reports that the login changed and asks for a manual open.
+Claude's installed-app Switch now switches both the app and CLI, or offers first-time app sign-in setup.
+The switching paths do not quit CodexBar. Deployment still restarts Wingpanel/CodexBar to load the new code.
+Verified: isolated account lifecycle tests, Claude and cache suites, native panel build and four Vala tests.
+Unverified: live desktop account switch; apps were not closed during testing. OpenCode switching still uses its
+existing CLI credential selection; desktop account synchronization is not established by this change.
+
+
+## Official Discord via FEX in a 4 KB-page microVM — 2026-10-18 (Claude Code)
+
+Owner required official Discord (amd64 only). FEX alone aborts here (16 KB pages, `<jemalloc>: Unsupported system
+page size`). `mseries/install-muvm.sh` builds muvm 0.7.0 + libkrun 1.19.6 + libkrunfw 5.6.2 (guest 6.12.109, 4K pages),
+installs FEX 2610 from its PPA and the Ubuntu 24.04 rootfs; verified `muvm -- FEXBash -c 'uname -m; getconf PAGESIZE'`
+= x86_64 / 4096. Discord 1.0.162's bundled Electron 42 (and stock 42.11.12) SIGTRAPs at startup under FEX; Electron 43
+(x86 Vesktop and stock 43.2.0) runs. `mseries/install-discord-official.sh` therefore runs Discord's official
+app.asar + modules on stock Electron 43.2.0 (`discord-official`). Discord started and stayed up 40 s; **login, voice,
+rendering, performance unverified**. System changes: FEX apt source + key, /usr/local libkrun/muvm,
+`/etc/ld.so.conf.d/mseries-libkrun.conf`. Prior art: no official Discord arm64 Linux build exists (support thread open
+for years); ArmCord/Legcord and Vesktop wrap the web app. macOS Discord is Mach-O; only its JS could be reused.
+
+## Battery panel in first boot — 2026-10-18 (Claude Code)
+
+`install-battery-eta.sh` added to the payload and to `enhance-firstboot.sh` as `battery-panel` (default on, with build
+deps; skipped, not forced, if the Power indicator is not 8.0.2). `post-install.sh` gained a `battery` row. Staging verified
+with `enhance.sh --only payload`; no first-boot run happened and the factory image is still unbooted.
+
+## Battery image integration — 2026-10-18 (Claude Code)
+
+`enhance.sh` gains a `battery` module (default on); `battery/test_battery_enhance.py` stages it into a scratch root and
+passes. Wingpanel card install on the M1 Pro produced no crash or error in the user journal. Not done: panel card in the
+factory first-boot list (see BATTERY-PROFILER.md "Image integration"); factory image still unbooted.
+
+## Battery summary card in the Power popover — 2026-10-18 (Claude Code)
+
+Owner asked for the Battery app to take over the battery dropdown. Logger now writes `~/.cache/mseries-battery/summary.txt`
+(headline, detail, watts sparkline CSV); `panel-power-battery-history.patch` replaced the menu item with a `HistoryCard`
+that shows it in place of the stock battery rows and opens the app on click. 19 unit tests pass; module builds with
+`--build-only`. **Not installed or seen**: needs a Wingpanel restart (owner approval). Install:
+`bash mseries/install-battery.sh && bash mseries/install-battery-eta.sh`.
+
+## Battery History panel button — 2026-10-18 (Claude Code)
+
+New `patches/panel-power-battery-history.patch` (third in `install-battery-eta.sh`): "Battery History…" in the Power
+popover opens the Battery app. Built and library-checked with `--build-only`; **not installed** (Wingpanel restart
+awaits the owner). Install: `bash mseries/install-battery-eta.sh`.
+
+## Battery pass 4 — 2026-10-18 (Claude Code)
+
+Battery: accessory batteries logged (new `devices` table) with an Accessories page and `mseries-battery devices`;
+measured logger overhead (~0.3 % of a core, 18 MB). 18 unit tests pass. The MX Vertical mouse exposes only a level
+(`capacity_level`), so there is no percentage or days-left for it. **Unverified:** Accessories page on live data
+beyond one level reading; panel-icon link still not started (would patch panel-power and restart Wingpanel).
+
+## Battery pass 3 — 2026-10-18 (Claude Code)
+
+Battery: per-sample power profile (schema migrates in place), profile comparison at matching CPU load, data-backed
+suggestions (`mseries-battery tips`, Overview, report), Preferences window for the drain alert. 16 unit tests pass;
+rendered headless on synthetic data (profiles and brightness seeded by hand). **Unverified:** suggestion wording on
+real data, Preferences on the live desktop. Possible next: open the app from the panel battery icon (needs a
+panel-power patch, not started).
+
+## Screenshots v2: Space for window mode, 4 s thumbnail — 2026-10-18 (Claude Code)
+
+Corrects the earlier click-to-capture: Command+Shift+4 drags an area, **Space** switches to window mode (the window
+under the pointer gets a blue highlight, click captures it, Space again returns to dragging), Esc cancels.
+`gala-screenshot-window-pick.patch` rewritten (SelectionArea does the picking/highlight). The shelf thumbnail is
+the fixed 280x180 card again but expires after 4 s (hover or drag keeps it). **Verified:** patched Gala builds;
+card renders at fixed size. **Not verified:** the highlight and capture on the live session (private Gala applies
+at next login), real drag-out. Next: re-login (running Gala PID predates the build; owner's first try hit the old Gala and cancelled), try Command+Shift+4, Space, click; expect blue highlight, shutter sound, then the thumbnail for 4 s. If not, read `journalctl --user -b | grep gala`.
+
+## Battery pass 2 — 2026-10-18 (Claude Code)
+
+Battery: energy-by-app estimate, charging runs, sleep drain, daily health trend, high-drain notification (config in
+`~/.config/mseries-battery/config.json`), `mseries-battery apps|charging|health|report`, and Energy by app / Health
+pages plus a Markdown export button in the app. 13 unit tests pass; new pages rendered headless (elementary stylesheet,
+synthetic data). **Unverified:** notification appearance, live theme look, anything needing a real unplugged run.
+
+## Battery history logger + app — 2026-10-18 (Claude Code)
+
+New `mseries/battery/` (see [BATTERY-PROFILER.md](BATTERY-PROFILER.md)): a 15 s user-service logger (SMC system power,
+CPU, top processes, brightness) into SQLite, a `mseries-battery` CLI (status/sessions/profile/events/export) and a
+GTK4+Granite "Battery" app. Installed with `install-battery.sh`; logger running here. 8 unit tests pass; app rendered
+headless on synthetic data. **Unverified:** look in the live theme, real unplugged sessions (still on the charger).
+Next: unplug for a few hours, read `mseries-battery sessions`, then consider a Wingpanel link to the app.
+
+## Screenshots v1 (superseded) — 2026-10-18 (Claude Code)
+
+First attempt used a plain click to pick a window; replaced by Space window mode (see v2 above). The fixed 280x180 shelf card from this entry stands.
+
+## Native Discord (Vesktop arm64) — 2026-10-18 (Claude Code)
+
+Added `mseries/install-discord.sh`: pinned Vesktop v1.6.7 aarch64 AppImage (SHA-256 checked), extracted to
+`~/.local/lib/vesktop`, `~/.local/bin/discord` launcher, `discord.desktop`. Official Discord has no Linux arm64
+build, so this third-party client is the native option. **Installed on this machine** and verified: checksum OK,
+`vesktop.bin` is ELF aarch64, desktop file validates, headless Xvfb start ran 15 s without crashing. **Not
+verified:** login, voice/video, screen share, tray, Wayland rendering on the real session (no window was opened
+on the owner's screen). Next: owner logs in; test a call.
+
+## CodexBar audit pass — 2026-10-18
+
+- Fixed: Add-account (`codexbar-accounts.py login`) now writes under the same lock as Switch, uses a `0700` store and
+  clears that account's cached usage/backoff. Added `codexbar_cache.py status` to see cache age and failures.
+- Documented who polls what in `CODEXBAR-PORT.md` ("Polling and cache").
+- Cleaned up: deleted 15 merged local CodexBar/handoff branches and temp build dirs. Left alone: other agents' worktrees
+  and branches, and the shared checkout's unpushed commits (`claude/codexbar-reset-credits`).
+- Not done: moving CodexBar files into a subdirectory; open branches (`claude-app-switch`, the shared checkout) edit
+  these paths and would conflict.
+
+## CodexBar polling limits and helper cache — 2026-10-18
+
+- The panel's helper refreshes (sessions, Claude, Codex accounts, OpenCode) now run only while the popover is open,
+  plus a 15-minute background tick. The snapshot read is 5 s while open or refreshing, 30 s otherwise. The Refresh
+  button bypasses the helper caches (`--force`); the automatic refresh on open does not.
+- New `codexbar_cache.py`: private JSON cache in `~/.cache/codexbar-mseries`, TTLs (Codex saved accounts 15 min, Claude
+  list 2 min), exponential backoff (60 s doubling to 1 h) with the last good answer kept and flagged `stale`, and an
+  `flock` helper. The panel keeps showing the last good list when a helper fails instead of blanking it.
+- Codex: saved accounts are fetched in parallel; the active account is no longer fetched by the helper (CodexBar's own
+  snapshot has it), which also removes a race where the CLI could rewrite `auth.json` during a switch. Switch and save
+  take one lock; the saved-sign-in directories are now `0700`.
+- Claude transcripts: per-file size/mtime index, only changed files are parsed.
+- Verified: all helper suites and the new `test-codexbar-cache.py` pass; Wingpanel module builds. Not measured: real
+  request counts before/after, and the dialogs on screen.
+## CodexBar: Codex reset credits per account — 2026-10-18
+
+- Panel shows available rate-limit resets for the active Codex account (from the snapshot's `resetCredits`) and for each saved account (`codexbar-accounts.py usage` now returns `resetCredits`), with when the first one expires; red inside the last 24h. Merged in PR 117 and deployed with `deploy-codexbar.sh`.
+- Verified: unit tests pass (`presentation/reset-credits`), helper returns the field for both accounts. Unverified: a non-zero count on the live panel (both accounts report 0 today), and the `codexResetCredits.credits[].expiresAt` fallback (credit list was empty).
+- Claude: not done. claude-swap exposes only the 5-hour and 7-day windows and extra-usage spend; no reset count or expiry exists in its data.
+- Next: find where Claude exposes reset credits, if anywhere; re-check the Codex display when an account gains a credit.
+
+## Week/Day time slots and event blocks published and deployed — 2026-10-18
+
+Owner requested time-slot Week/Day views, tests, desktop deployment and merge.
+Published tested code at `4cf426c`, retaining main's task checkboxes, quick-add,
+Upcoming default, compact Month list and account setup. Week uses seven date
+columns with a bounded horizontal viewport; Day retains the date picker.
+Native blocks align with hourly/half-hour rules, separate all-day events,
+allocate overlap lanes and clip overnight intervals at local midnight. Short
+appointments reserve a minimum click target; a block at the end of the day
+stays clipped. Busy columns widen within the scrollable surface. Popovers show
+literal full details; native Calendar launch is offered only when its executable
+is installed (not present on this desktop). Its date argument and missing-client
+fallback were checked with an isolated launcher, without opening a real app.
+
+Corrected the existing day filter's UTC/local double conversion, explicit
+DURATION end times and an untitled-event logging critical. Replaced asynchronous
+month-carousel paging with a deterministic grid, preserving arrows, Today and
+touch-swipe handlers; hide/show/reopen and selected-day highlights now stay in
+sync. Source refreshes reflow blocks and preserve horizontal/vertical reading
+positions through temporarily empty data. GTK criticals are fatal in the test
+fixture; all generated records and launcher calls remain isolated from user data.
+
+Verification: fresh pinned ARM64 release build; all 21 combined real-plugin/EDS
+workflow groups pass in both forced light and dark themes, including task writes,
+recurring completion and quick-add. New checks compare actual block allocations
+to hour rules, overlap geometry, short/instant/untitled/DURATION entries, UTC
+midnight boundaries, live movement/deletion, scroll retention, recurring columns,
+mapped popovers and native-action fallback. Inspected synthetic rendered grid
+and popover previews. Six image-wiring tests and focused shell/whitespace checks
+pass. Existing compiler, isolated EGL/portal and EDS teardown warnings remain;
+no clean-runtime-log or independent Google-sync/factory-boot claim.
+
+Ran `bash mseries/install-calendar-agenda.sh` from the merged tree, then all 21
+groups against the installed library (exit 0). Reloaded only Wingpanel:
+941825 → 944021; its mapped calendar library matches installed
+inode 316340 without deleted mappings. Previous plugin retained privately in
+this chat's work directory; version-aware stock backup remains. No personal
+events/accounts, boot/kernel, audio settings or standalone Calendar installation
+were changed. Next: owner opens clock → Events → Week/Day; physical touch/scale
+acceptance and real-account synchronization remain separate from these fixtures.
+
 ## Factory ISO and installed YouTube qualification — 2026-10-18
 
 Build [39128555434](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39128555434)
@@ -56,6 +310,38 @@ advancement, failure recovery and all existing agenda modes/navigation.
 The release build is installed; real task/event row comparisons are read-only
 and pass. Six image-wiring tests pass. No personal task was completed by tests.
 [Behavior and tests](calendar/README.md#completing-tasks-in-the-panel).
+
+## Native Dictation deployed; owner F5-to-field pass — 2026-10-18
+
+The qualified lazy CPU speech controller, Unicode bridge and optional Dictation
+launcher are installed. Private preflight verified idle capture, unchanged managed
+preferences, source integrity and quiet admission; original ledger/backups remain
+private. Fresh listener RSS was32.67MiB with no native SDK mapped. This is a fresh
+startup observation, not after-use RSS: native close tests retained121–188MiB.
+SpeechPID918340 and bridgePID918315 are active at this checkpoint. The default4B
+endpoint independently returned200 after guarded recovery (supervisorPID936091);
+no new inference was submitted. Its reserve guard may stop it again under load.
+
+The owner opened Dictation and reports words appearing in Original transcript after
+physical F5 speech. This is a human acceptance pass for that app path. It does not
+prove every app, multilingual capture, latency or general accuracy. The earlier
+microphone-popup failure remains retained with unknown original cause. No agent
+microphone recording, owner window opening or real spoken content was collected.
+
+A new installed-panel regression exposed a disabled focus-retry action after field
+errors/waiting. The original failure is retained. The fixed panel keeps this focus-only
+action available except during loading/listening/finishing; private native GTK4 tests
+verify actual focus movement against fixed and installed files.46 contracts pass.
+Sanitized deployment, failed/fixed/installed receipts and human report are in
+`local-ai/receipts/dictation-deployment-2026-10-18/`; private settings/backups/logs
+are excluded. Earlier model quality failures remain unchanged. No owner jobs,
+kernel/boot/audio/display or other windows were changed.
+
+Remaining goal: optional translated previews while speaking, then final grammar
+after release. Current translation is post-utterance only; do not claim a live
+interpreter or completion. Use the existing supervised4B, one bounded request at
+a time, original visible, six-GiB reserve and cooling guards. Existing six-hour
+upstream tracking stays active; no duplicate watcher or GPU queue.
 
 ## Speech/app candidate published on main; physical F5 and rollout remain open — 2026-10-18
 
@@ -4448,6 +4734,7 @@ References: OpenCode `214fb7fdbab9ad13773629839f1178382400cf97`, auth/switch.ts,
 provider/opencode.ts and integration.connection.resolve (native activation event and refresh behavior);
 https://dev.opencode.ai/v2/docs/cli/commands/ and /providers/. No upstream code was copied. CodexBar
 remains pinned to 0.77.0. Publish, merge to main and deploy as explicitly requested.
+
 ## Network panel: compact low rates and Command-hover — 2026-10-18
 
 `network-panel-compact.patch`, applied after saturation by `install-network-throughput.sh`, shows `<1 MB/s` independently for down/up below 1,000,000 bytes/s. The panel retains decimal byte units and its existing 10-second average. Command (Super/Meta) while hovering reveals the existing measured B/s, kB/s or MB/s values; releasing it or leaving restores compact values. A motion controller samples modifiers every 50 ms only while hovered so pressing Command after entering works without keyboard focus. Unmap/dispose removes the hover timer; dispose also removes the rate timer. The less-than label is escaped before Pango markup, preserving saturation highlighting. The image payload already ships every patches/*.patch file.
@@ -4467,3 +4754,23 @@ Verified: both full release Meson/Ninja builds; installer bash syntax; GTK harne
 Owner found elementary's connected Ethernet glyph (`<…>`) unrecognizable. `network-ethernet-icon.patch` replaces the bundled 16/24px connected wired assets with a monochrome Ethernet socket/contact glyph and preserves a padlock on the secure/VPN variant. Icon names, network-state selection and Wi-Fi/cellular assets are unchanged. The installer applies the new patch after the compact panel patch; image payload already includes all patches. New vector artwork is CC0-1.0, attributed in the SVG headers.
 
 Verified: full network module rebuild; connected and VPN assets rendered through GdkPixbuf and visually inspected; installer applied the full pinned patch series and installed/reloaded Wingpanel. Live panel appearance by eye remains for the owner.
+
+
+## brave-youtube: Widevine provisioning hardened + tested — 2026-10-18
+
+`brave-youtube` now provisions Widevine (copy from the normal profile, else the pinned installer) before the first browser start, with a private (umask 077) profile, a per-launch D-Bus proxy dir so parallel profiles do not unlink each other's socket, and installer `curl` timeouts. New offline `video-decode/test-youtube-launch.py` (6 tests) runs in CI with `shellcheck -S warning`. Verified: tests pass, shellcheck clean. Not verified: a DRM movie playing in the container (an owner-side run; the 480p Edge of Tomorrow sample in a Codex test profile was not a 4K/DRM-quality result), and 4K playback in the container is still unmeasured.
+
+## Dictation on the ANE as an F5 engine candidate — 2026-10-18
+
+Built `mseries/dictation/ane-dictate.py` (+ `ane-worker-shim.py`, `mseries-ane-dictate.service`, `test_ane_dictate.py`). Offline on the pinned clip: 0.55-0.58 s for 10.4 s audio warm (RTF 0.055) vs 3.0 s for the installed streaming path, identical text; 41.7 s in 1.16 s. Upstream's dictation worker needed a shim for the installed 0.7.33 CLI (details in dictation/README.md). Not installed, not enabled, not wired into the lazy panel; no microphone or owner service touched. Not verified: a WER set beyond one clip, any live speech (mic sensitivity blocker still open, DeepSeek's area), panel integration. Next: decide whether to plug it into `dictation_pipeline` as the engine behind the lazy model, then a multi-clip WER run (ABBA vs CPU) before any parity claim.
+
+Follow-up (same day): `STREAM_ENGINE=ane` integrates the ANE engine into the lazy F5 controller (`dictation_ane.py`, `run_ane` in `stream-dictate.py`). Offline controller run on the pinned clip typed the exact sentence on release; default engine unchanged; not enabled on the owner's service; live mic and app insertion unverified.
+
+### brave-youtube DRM movie result — 2026-10-18
+
+Owner opened *Live Die Repeat: Edge of Tomorrow* in `brave-youtube` (default Linux user agent, Widevine provisioned by the launcher): it plays, and the quality menu tops out at **480p**. That matches Widevine L3; no user-agent spoofing was applied or is planned (it would not change the license server's L3 cap). Non-DRM 4K VP9 in the same window is still unmeasured.
+
+
+### Network/battery main integration — 2026-10-18
+
+Merged current main into the feature branch, retaining Battery History summary-card changes and its installer patch alongside the watts toggle. The combined power installer passes `--build-only` (full release compile/link, no unresolved libraries; no panel restart). Both installer scripts pass bash syntax checks. Documentation preserves both feature histories.
