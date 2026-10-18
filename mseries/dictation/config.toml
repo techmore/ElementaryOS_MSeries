@@ -17,6 +17,12 @@ sample_rate = 16000
 max_duration_secs = 300
 pause_media = true
 
+[audio.feedback]
+# Start/stop chimes, like the Mac's dictation sound.
+enabled = true
+theme = "subtle"
+volume = 0.5
+
 [whisper]
 model = "base.en"
 language = "en"
