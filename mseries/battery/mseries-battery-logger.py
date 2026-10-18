@@ -45,6 +45,7 @@ def main(argv):
     last_day = None
     devices = {}
     last_devices = 0
+    last_summary = 0
     stop = []
     for sig in (signal.SIGTERM, signal.SIGINT):
         signal.signal(sig, lambda *_: stop.append(1))
@@ -66,6 +67,9 @@ def main(argv):
                 core.log_devices(conn, row["ts"], devices)
                 last_devices = row["ts"]
             conn.commit()
+            if row["ts"] - last_summary >= 60:
+                core.write_summary(conn)           # read by the panel menu item
+                last_summary = row["ts"]
             alert.config = core.load_config()     # picks up Preferences changes without a restart
             fired = alert.feed(row)
             if fired:

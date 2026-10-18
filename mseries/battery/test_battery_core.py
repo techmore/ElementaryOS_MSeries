@@ -169,6 +169,20 @@ class CoreTests(unittest.TestCase):
         names = [d["name"] for d in core.read_devices()]
         self.assertNotIn("bq40z651", names)
 
+    def test_summary_card(self):
+        conn = core.connect(os.path.join(tempfile.mkdtemp(), "h.db"))
+        self.assertEqual(core.summary_card(conn), ("", "", ""))
+        now = int(__import__("time").time())
+        for i in range(20):
+            core.store(conn, row(now - 300 + i * 15, 50, 10.0))
+        headline, detail, points = core.summary_card(conn)
+        self.assertEqual(headline, "3h 00m left")
+        self.assertEqual(detail, "50% · 10.0 W")
+        self.assertTrue(points.startswith("10.0"))
+        path = os.path.join(tempfile.mkdtemp(), "x", "summary.txt")
+        core.write_summary(conn, path)
+        self.assertEqual(len(open(path).read().split("\n")), 3)
+
     def test_fmt_hours(self):
         self.assertEqual(core.fmt_hours(7.5), "7h 30m")
         self.assertEqual(core.fmt_hours(0.5), "30 min")

@@ -680,3 +680,50 @@ def suggestions(conn, rows):
         tips.append({"kind": "health", "title": "Battery capacity is below 80%",
                      "body": "Full-charge capacity is %.0f%% of design after %d cycles." % (health["health_pct"], health["cycles"] or 0)})
     return tips
+
+
+# ---- summary card for the panel menu ------------------------------------------------------
+SUMMARY_PATH = os.path.join(os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")), "mseries-battery", "summary.txt")
+SPARK_POINTS = 48                     # 6 hours, one point per 7.5 minutes
+
+
+def summary_card(conn):
+    """Three lines for the Wingpanel menu card: headline, detail, and recent system watts for a sparkline.
+
+    "5h 40m left" / "Charging · 1h 24m to full" / "7h 12m typical runtime", then "78% · 7.8 W", then a CSV of watts.
+    Empty headline when there is no data yet.
+    """
+    now = int(time.time())
+    rows = fetch(conn, now - 14 * 86400)
+    if not rows:
+        return "", "", ""
+    last = rows[-1]
+    est = estimate_runtime(rows)
+    if est:
+        headline = "%s left" % fmt_hours(est["hours_left"])
+    elif last["status"] == "Charging" and last["batt_w"] and last["batt_w"] > 0.5 and last["energy_uwh"] and last["full_uwh"]:
+        to_full = (last["full_uwh"] - last["energy_uwh"]) / 1e6 / last["batt_w"]
+        headline = "Charging · %s to full" % fmt_hours(to_full)
+    else:
+        long_runs = [r for r in sessions(rows) if r["seconds"] >= 1800 and r["projected_hours"]]
+        headline = ("%s typical runtime" % fmt_hours(sum(r["projected_hours"] for r in long_runs) / len(long_runs))
+                    if long_runs else "Plugged in")
+    detail = ["%.0f%%" % last["pct"]] if last["pct"] is not None else []
+    if last["sys_w"] is not None:
+        detail.append("%.1f W" % last["sys_w"])
+    recent = [r for r in rows if r["ts"] >= now - 6 * 3600 and r["sys_w"] is not None]
+    points = []
+    if recent:
+        step = max(1, len(recent) // SPARK_POINTS)
+        for i in range(0, len(recent), step):
+            chunk = recent[i:i + step]
+            points.append("%.1f" % (sum(r["sys_w"] for r in chunk) / len(chunk)))
+    return headline, " · ".join(detail), ",".join(points)
+
+
+def write_summary(conn, path=SUMMARY_PATH):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "w") as handle:
+        handle.write("\n".join(summary_card(conn)))
+    os.replace(tmp, path)

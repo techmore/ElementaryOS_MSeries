@@ -63,3 +63,11 @@ Update (2026-10-18): the Battery History build is **installed** on the M1 Pro (`
 shows the new label); Wingpanel restarted and stayed up. The original module is still at
 `/usr/local/lib/mseries/libpower.so.before-charge-eta` for `--uninstall`. The button's look and the click are for the
 owner to confirm.
+
+Update (2026-10-18, later): the Battery History patch now replaces the "Battery History…" menu item with a **summary
+card** that takes the place of the stock battery rows in the Power popover while the Battery logger has data: headline
+("5h 40m left", "Charging · 1h 24m to full" or "7h 12m typical runtime"), charge and system watts, a six-hour watts
+sparkline, and a "Battery History…" hint; clicking it opens the Battery app. The card reads
+`~/.cache/mseries-battery/summary.txt` (three lines, written by the logger once a minute) and refreshes every 15 s and when
+the popover opens. Without that file the stock rows stay. Accessory batteries (mouse) leave the popover with the stock
+rows and live on the app's Accessories page. Builds clean with `--build-only`; not installed yet, appearance unverified.

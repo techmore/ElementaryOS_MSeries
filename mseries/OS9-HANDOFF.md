@@ -1,5 +1,13 @@
 # OS 9 implementation / Claude Code handoff
 
+## Battery summary card in the Power popover — 2026-10-18 (Claude Code)
+
+Owner asked for the Battery app to take over the battery dropdown. Logger now writes `~/.cache/mseries-battery/summary.txt`
+(headline, detail, watts sparkline CSV); `panel-power-battery-history.patch` replaced the menu item with a `HistoryCard`
+that shows it in place of the stock battery rows and opens the app on click. 19 unit tests pass; module builds with
+`--build-only`. **Not installed or seen**: needs a Wingpanel restart (owner approval). Install:
+`bash mseries/install-battery.sh && bash mseries/install-battery-eta.sh`.
+
 ## Battery History panel button — 2026-10-18 (Claude Code)
 
 New `patches/panel-power-battery-history.patch` (third in `install-battery-eta.sh`): "Battery History…" in the Power
