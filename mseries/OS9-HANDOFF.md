@@ -1,5 +1,30 @@
 # OS 9 implementation / Claude Code handoff
 
+## Queued .20-enh1 trial also uses full height — 2026-10-18
+
+Owner explicitly requested one reboot for the kernel trial and native notch
+layout. Changed only the existing `elementary-aurora20-enh1` stanza's
+`appledrm.show_notch=0` to `appledrm.show_notch=1` in `/boot/grub/custom.cfg`.
+`next_entry=elementary-aurora20-enh1` and every other entry/default remain intact;
+the separate `mseries-full-height` normal-boot choice still uses retained .20.
+The native panel/dock from the prior batch are already installed and running.
+
+Validation: `grub-script-check` passed before and after the atomic write. Byte
+comparison confirmed this single parameter change. GRUB environment bytes and
+SHA256 of the candidate kernel, candidate initrd and generated `grub.cfg` are
+unchanged. Exact pre-change backup:
+`/boot/grub/custom.cfg.pre-full-height-trial`. No reboot or kernel/audio change.
+The trial's display setting was changed separately from the desktop profile;
+profile `--revert` alone does not undo this trial-specific parameter. Restore
+that parameter to 0 as well before using the trial with stock Wingpanel.
+
+Next: one normal reboot selects the queued .20-enh1 trial with full height;
+confirm clock/calendar, dock, unlock and automatic trial receipts. Hardware
+success is still pending. The older cropped-mode baseline is not a matched
+energy comparison with this full-height trial; collect matching display controls
+on both kernels before comparing power.
+
+
 ## Native full-height J314 desktop and persistent dock — 2026-10-18
 
 Post-push deployment follow-up: required `bash mseries/deploy-codexbar.sh` passed

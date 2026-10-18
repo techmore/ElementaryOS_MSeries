@@ -31,7 +31,11 @@ The boot helper duplicates the **exact running kernel's existing stanza** from
 initrd, root/encryption arguments, all original entries and `next_entry`. It makes
 `mseries-full-height` the default on normal boots and preserves an already queued
 one-shot kernel trial. If a trial is queued, that trial runs first; select the
-full-height entry from GRUB or use the following normal boot. The generated
+full-height entry from GRUB or use the following normal boot. On 2026-10-18,
+the owner additionally authorized enabling full height in the already queued
+`.20-enh1` trial itself; that trial and the native layout now share one reboot.
+This separate trial edit is not undone by the profile's `--revert`: restore its
+notch parameter to 0 as well before using stock Wingpanel. The generated
 `grub.cfg`, kernel/initramfs, firmware and bootloader binaries are not modified.
 A missing or ambiguous matching stanza fails before installation. This profile
 currently targets the transformed J314 install; factory images remain cropped

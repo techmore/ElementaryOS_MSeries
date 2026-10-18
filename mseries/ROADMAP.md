@@ -8,7 +8,9 @@ camera strip with a protected Wingpanel clock layout, compact overlap-hiding doc
 and persistent monitor-clamped placement. Installed on the current transformed
 M1 Pro; ARM64 builds, eight boot helper tests, GTK allocation and payload checks
 pass. The separate full-height normal-boot choice preserves recovery and the
-already queued one-shot kernel trial. Full-height hardware boot/clock/monitor
+already queued one-shot kernel trial. At the owner’s request, that queued
+`.20-enh1` trial now also uses `appledrm.show_notch=1`, so one normal reboot
+loads the trial and full-height layout together. Full-height hardware boot/clock/monitor
 switching and dock placement persistence still need post-reboot confirmation.
 Factory images retain their cropped initial mode. See the latest handoff for
 commands, runtime warnings and rollback.

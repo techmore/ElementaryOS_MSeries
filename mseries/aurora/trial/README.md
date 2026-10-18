@@ -4,6 +4,9 @@ Owner explicitly requested staging .20-enh1 for the next boot, retaining the
 running .20 as fallback, and beginning hardware/power measurements. The frozen
 build remains hardware-untested until a successful candidate boot is observed.
 
+The previous cropped-mode energy baseline is not directly comparable to the
+full-height trial. Match display controls on both kernels before power A/B.
+
 ## Installed state
 
 - Package `linux-image-elementary-aurora-enhancements`, kernel
@@ -11,9 +14,14 @@ build remains hardware-untested until a successful candidate boot is observed.
   `185f1fa6135739d3129a9d44025b92321d926df82a8a07fd5a3bc3fd95d34992`.
 - Separate image `/boot/vmlinuz-aurora20-enh1` and initramfs
   `/boot/initrd.img-7.1.12-elementary-aurora20-enh1`.
-- `next_entry=elementary-aurora20-enh1`. GRUB consumes it once. The managed
-  block in `custom.cfg` selects `elementary-aurora20` on later boots when
-  `boot_once` is not true. The visible five-second menu remains available.
+- `next_entry=elementary-aurora20-enh1`. GRUB consumes it once. The owner-approved
+  trial now passes `appledrm.show_notch=1`, loading the installed native notch-aware
+  Wingpanel on that same reboot. Later normal boots select `mseries-full-height`,
+  which uses the retained .20 kernel with the same full-height setting. The
+  visible five-second menu and cropped .20 recovery entries remain available.
+  This display change is separate from the desktop profile; profile `--revert`
+  does not undo the trial's flag. Restore it to 0 before trialing stock Wingpanel.
+  Exact pre-change config: `/boot/grub/custom.cfg.pre-full-height-trial`.
 - Existing `.20` image/initramfs and shared `boot.bin` retain their exact hashes.
   The candidate J314S DTB is byte-identical to the active .20 DTB, so no shared
   m1n1/DTB change was needed. Other kernel entries remain present.
