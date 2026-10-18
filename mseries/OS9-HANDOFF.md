@@ -1,5 +1,37 @@
 # OS 9 implementation / Claude Code handoff
 
+## Aurora enhancement integration — 2026-10-17 (source candidate)
+
+Owner clarified “merge all enhancements”, not all kernel branches. The separate
+[source candidate](aurora/enhancements/README.md) imports PR #67's udmabuf/system
+heap, PR #135 thermal fallback, PR #134 then #119 camera fixes, and a rebased
+optional-battery-property helper from `4676c48e`. Original public authors and
+patch hashes are retained. PR #67's AMD/Nouveau commit is a separate `egpu`
+build profile; those drivers stay disabled in the normal candidate. No higher
+GPU clock or compute-preemption broadening is enabled.
+
+`candidate.py prepare/check/build` verifies the existing .20 source/recipe,
+applies patches without fuzz, modifies the actual full config, resolves/checks
+Kconfig and creates a separate payload-only Debian package plus complete
+patched corresponding source. Kernel identity: `7.1.12-elementary-aurora20-enh1`
+(or `-egpu`). The fixed .20 installer/stager intentionally does not install it.
+16 local adapter regressions, 58 upstream Rust tests and the production SMC
+helper's all-readable + 65 failure cases pass (ASan/UBSan). Native ARM64 full
+build and package inspection are in `aurora-enhancements.yml`; CI result will
+be recorded with the merge. Hardware boot and battery improvements unmeasured.
+
+Outstanding: rebase shared DCP changes #122/#127 with matched m1n1/DT and display
+regressions. Old Neo telemetry, J456 speaker experiments, old Omarchy-only
+package policy and superseded VRR/SEP/TB code are excluded as documented.
+No target kernel, boot.bin, live service, default/next_entry or reboot changed.
+Next target action remains the saved installed-Linux read-only preflight, then
+qualify the released .20 baseline before considering this source candidate.
+Keep native Debian packages for the Ubuntu/elementary base; source tracking is
+independent of Arch packaging. Future factory image updates can use existing
+mkosi/sysupdate wiring; installed-machine migration and install-speed profiling
+are separate work, not completed by this kernel integration.
+
+
 > **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
 > Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
 > Aurora has j314s Thunderbolt-display prior art; check it before more RE. This dock HDMI path remains unqualified.

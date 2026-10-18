@@ -1,5 +1,16 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Aurora enhancements source candidate — 2026-10-17
+
+[Integration guide](aurora/enhancements/README.md): udmabuf/system heap, scoped
+M3 Air thermal and camera fixes, rebased optional SMC battery properties, and
+an explicit eGPU config profile. Complete source-build/CI lane uses distinct
+kernel/package identities and retains the released .20 recovery candidate.
+Local tests pass; ARM64 build verification is tracked in the enhancement CI.
+No live deployment or measured power gain. #122/#127 display rebases and
+selective Neo work remain outstanding; older duplicate branches are not imported.
+
+
 
 ## Aurora branch enhancement inventory — 2026-10-17
 

@@ -1,0 +1,91 @@
+{
+  "schema": 1,
+  "base_source": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55",
+  "revision": 1,
+  "kernel_release": {
+    "candidate": "7.1.12-elementary-aurora20-enh1",
+    "egpu": "7.1.12-elementary-aurora20-enh1-egpu"
+  },
+  "patches": [
+    {
+      "file": "0001-udmabuf.patch",
+      "sha256": "980e441601ce890741a2bf9c741556e299e5c1ac8f05000991f333fcacbacc6e",
+      "upstream": "https://github.com/omacom/linux-aurora/pull/67",
+      "head": "6984b8c07e84b0cf528243db1838dade971ff513",
+      "profile": "candidate",
+      "note": "Unmodified public upstream patch"
+    },
+    {
+      "file": "0002-m3-thermal.patch",
+      "sha256": "510cff1505be35ed005079881d853f60fe86cc2f2a916d703aca293a3fe5f038",
+      "upstream": "https://github.com/omacom/linux-aurora/pull/135",
+      "head": "46b5a0981c4955cf33b7275c4001d820791b9f08",
+      "profile": "candidate",
+      "note": "Unmodified public upstream patch"
+    },
+    {
+      "file": "0003-j613-camera-147.patch",
+      "sha256": "5d868e19e9b0edbac4ce19d4954558f471800925937347bc902bd362a706ede0",
+      "upstream": "https://github.com/omacom/linux-aurora/pull/134",
+      "head": "06d77374e80cb1901fb2c283362abb242cd68c18",
+      "profile": "candidate",
+      "note": "Unmodified public upstream patch"
+    },
+    {
+      "file": "0004-t8122-camera-2662.patch",
+      "sha256": "d8938f63279a913640d7af6abf00932298828f8968eba8c97e1ed311d9e7e310",
+      "upstream": "https://github.com/omacom/linux-aurora/pull/119",
+      "head": "4cf3221edd6befc79489ff4e2636e0b01e002ac7",
+      "profile": "candidate",
+      "note": "Unmodified public upstream patch"
+    },
+    {
+      "file": "0005-macsmc-optional-properties.patch",
+      "sha256": "5b4f9ba92b99bf388be2c8a3ed11a8fb6caa760632e363aba3e53e5a6a66e5fe",
+      "upstream": "https://github.com/omacom/linux-aurora/commit/4676c48ecf1b1acaba7c442d33fe9aae0f037e77",
+      "head": "4676c48ecf1b1acaba7c442d33fe9aae0f037e77",
+      "profile": "candidate",
+      "note": "Rebased against .20; original author retained; only optional-property registration changed"
+    },
+    {
+      "file": "0006-egpu-config.patch",
+      "sha256": "e9e6ed734d2ffa8f569f8983c24952ccb0ffc3c3f384fa95a2da3d7436610c5b",
+      "upstream": "https://github.com/omacom/linux-aurora/pull/67",
+      "head": "d10d360a96f406f3b953eceb6e44e7be3f4c7c24",
+      "profile": "egpu",
+      "note": "Unmodified public upstream patch"
+    }
+  ],
+  "config": {
+    "candidate": {
+      "UDMABUF": "y",
+      "DMABUF_HEAPS": "y",
+      "DMABUF_HEAPS_SYSTEM": "y"
+    },
+    "egpu": {
+      "DRM_AMDGPU": "m",
+      "DRM_NOUVEAU": "m"
+    }
+  },
+  "qualification": "Source integration only; no hardware boot or battery-life qualification",
+  "excluded": {
+    "already_included_or_superseded": [
+      "41 ancestor branch tips",
+      "vrr",
+      "fix/j700-mtp-contact-position",
+      "PR #7 SEP",
+      "PR #9 old TB display"
+    ],
+    "conflicting_needs_rebase": [
+      "PR #122 HDMI hold",
+      "PR #127 J613 clamshell"
+    ],
+    "not_imported": [
+      "PR #8 unqualified J456 speaker amplifier",
+      "neo/j700-smc-telemetry historical 131-commit bring-up",
+      "candidate/g14x-compute-preemption broad untested auto-enable",
+      "PR #86/#110 Omarchy package-upgrade policy",
+      "old roadmap and release-only tooling"
+    ]
+  }
+}

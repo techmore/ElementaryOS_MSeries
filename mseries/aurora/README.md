@@ -1,5 +1,10 @@
 # Aurora 20 kernel port for elementary
 
+For the newer source-build enhancement candidate (udmabuf, scoped M3 thermal/
+camera fixes and SMC battery-reporting hardening), see
+[enhancements](enhancements/README.md). It has a separate kernel/package identity;
+the fixed `.20` installer and staging instructions below do not deploy it.
+
 This opt-in lane follows **omacom/linux-aurora release
 `aurora-2026.10.17.20`**, kernel source
 `c46d7dcdb8712ea9aeb0ce47b439ffae76371e55`. It brings the upstream display

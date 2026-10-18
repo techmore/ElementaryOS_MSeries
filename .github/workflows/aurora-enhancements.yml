@@ -1,0 +1,82 @@
+name: Aurora enhancement candidate
+
+on:
+  pull_request:
+    paths:
+      - "mseries/aurora/**"
+      - ".github/workflows/aurora-enhancements.yml"
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Kernel profile (eGPU remains an unqualified experiment)
+        type: choice
+        options: [candidate, egpu]
+        default: candidate
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ARM64 ${{ matrix.profile }} build and payload inspection
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.profile)) || fromJSON('["candidate","egpu"]') }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install native build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-essential cpio flex libelf-dev libssl-dev \
+            pahole clang-22 llvm-22 lld-22 libclang-22-dev bindgen zstd device-tree-compiler kmod rsync
+          rustup toolchain install 1.93.1 --profile minimal --component rust-src
+          echo /usr/lib/llvm-22/bin >> "$GITHUB_PATH"
+      - name: Prepare pinned sources and patches
+        env:
+          PROFILE: ${{ matrix.profile }}
+        run: |
+          python3 -m unittest discover -s mseries/aurora -p 'test_*.py' -v
+          python3 mseries/aurora/candidate.py prepare --cache "$RUNNER_TEMP/aurora-cache" \
+            --output "$RUNNER_TEMP/aurora-prepared" --profile "$PROFILE"
+      - name: Exercise production thermal and battery-discovery logic
+        env:
+          RUSTUP_TOOLCHAIN: 1.93.1
+        run: python3 mseries/aurora/candidate.py check --prepared "$RUNNER_TEMP/aurora-prepared"
+      - name: Build kernel, modules, DTBs and payload-only Debian package
+        env:
+          LIBCLANG_PATH: /usr/lib/llvm-22/lib
+        run: |
+          python3 mseries/aurora/candidate.py build --prepared "$RUNNER_TEMP/aurora-prepared" \
+            --output "$RUNNER_TEMP/aurora-enhancements" --jobs 4
+      - name: Inspect package boundaries
+        run: |
+          cd "$RUNNER_TEMP/aurora-enhancements"
+          sha256sum --check SHA256SUMS
+          deb=(linux-image-elementary-aurora-enhancements*.deb)
+          test "${#deb[@]}" -eq 1
+          dpkg-deb --info "${deb[0]}"
+          dpkg-deb --control "${deb[0]}" "$RUNNER_TEMP/candidate-control"
+          test "$(find "$RUNNER_TEMP/candidate-control" -type f | wc -l)" -eq 1
+          dpkg-deb --extract "${deb[0]}" "$RUNNER_TEMP/candidate-inspect"
+          test ! -e "$RUNNER_TEMP/candidate-inspect/boot"
+          test ! -e "$RUNNER_TEMP/candidate-inspect/etc"
+      - name: Preserve resolved configuration on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurora-enhancement-diagnostics-${{ matrix.profile }}-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/aurora-prepared/candidate.json
+            ${{ runner.temp }}/aurora-prepared/build/.config
+          retention-days: 7
+      - name: Preserve package, complete corresponding source and provenance
+        uses: actions/upload-artifact@v4
+        with:
+          name: elementary-aurora-enhancements-${{ matrix.profile }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/aurora-enhancements/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
