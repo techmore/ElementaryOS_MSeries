@@ -16,16 +16,17 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <body>
 <p><a href="index.html">← back</a></p>
 <h1>Support &amp; parity matrix</h1>
-<p><strong>Hardware evidence:</strong> elementary OS 9 Early Access boots to Pantheon on a 2021 14-inch MacBook Pro (MacBookPro18,3, M1 Pro). The running kernel is <code>7.1.13-1-2-fairydust-usb4-ARCH</code>. This is an installed transformed system, not our mkosi factory image. The factory ISO built successfully on October 13 but has not been booted on hardware. See the <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/DESKTOP-SETUP.md">desktop notes</a> and <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/BUG-FIX-ROADMAP.md">bug-fix audit</a>.</p>
+<p><strong>Hardware evidence:</strong> elementary OS 9 Early Access boots to Pantheon on a 2021 14-inch MacBook Pro (MacBookPro18,3, M1 Pro). As of 2026-10-18, the running kernel is Aurora .20, <code>7.1.12-2-20261017.20-sep-ARCH</code>, with its matched J314S boot payload. <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/aurora/hardware-tests/README.md">Exact hardware receipts</a> cover boot/PMP/idle accounting plus separate GPU and filesystem smoke tests; full release qualification remains incomplete. This is an installed transformed system, not our mkosi factory image. The factory ISO built successfully on October 13 but has not been booted on hardware. See the <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/DESKTOP-SETUP.md">desktop notes</a> and <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/BUG-FIX-ROADMAP.md">bug-fix audit</a>.</p>
+<p>Rows retain their evidence dates. October 14 results describe the earlier kernel and do not automatically qualify Aurora .20. <a href="https://github.com/techmore/ElementaryOS_MSeries/releases/tag/mseries-aurora20-j314s-2026.10.18-exp1">The current freeze is experimental.</a></p>
 <table>
 <tr><th>Feature</th><th>Observed on installed M1 Pro</th><th>Factory ISO</th></tr>
 <tr><td>Boot to Pantheon</td><td class="ok">Confirmed on the transformed installation</td><td class="part">ISO boots to the graphical installer in an ARM64 VM; Pantheon user session and Mac hardware boot remain unverified</td></tr>
 <tr><td>Display and brightness OSD</td><td class="part">Backlight and OSD calls succeed; physical keys and login persistence still need confirmation</td><td class="unk">Not tested</td></tr>
 <tr><td>Ambient keyboard lighting</td><td class="part">ALS and UPower adjusted keyboard from 0 to 59/255 at 141 lx; lock/lid and suspend behavior still need interactive qualification</td><td class="unk">Not tested</td></tr>
 <tr><td>USB-C dock hub and downstream input</td><td class="ok">Confirmed 2026-10-14 on a Dell WD22TB4: hub, mouse and wired Ethernet work. A fix for the Ethernet panel icon is installed and awaits a replug check</td><td class="unk">Not tested</td></tr>
-<tr><td>USB-C dock DisplayPort video</td><td class="no">Unavailable: DP tunnelling is not implemented in the current kernel</td><td class="unk">Not tested</td></tr>
+<tr><td>USB-C dock DisplayPort video</td><td class="part">Owner reported a picture through WD22TB4 HDMI on Aurora .20 with the matched boot payload (2026-10-18). Replug/suspend and complete mode qualification remain open. <a href="https://github.com/techmore/ElementaryOS_MSeries/commit/40db2c6">Recorded result</a></td><td class="unk">Not tested</td></tr>
 <tr><td>Lid-open resume without a dock</td><td class="ok">Traced 2026-10-14: suspends on lid close, wakes on lid open, login screen in about 2 seconds, no power button</td><td class="unk">Not tested</td></tr>
-<tr><td>Suspend with a USB4 dock</td><td class="no">The ACIO driver blocks suspend while the dock link is active</td><td class="unk">Not tested</td></tr>
+<tr><td>Suspend with a USB4 dock</td><td class="part">Earlier Fairydust blocked suspend with the dock. Aurora .20 dock suspend/resume is not yet qualified; optional teardown remains off.</td><td class="unk">Not tested</td></tr>
 <tr><td>Battery charge limit (80%) and switch</td><td class="ok">Limit reads 80%; switch installed</td><td class="unk">Not tested</td></tr>
 <tr><td>Docked lid mode</td><td class="part">Service running; lid-close with the dock not yet repeated</td><td class="unk">Not tested</td></tr>
 <tr><td>Network speed and usage indicator</td><td class="ok">Installed on the desktop; built into the image overlay</td><td class="unk">Not tested</td></tr>
@@ -41,7 +42,7 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <h2>Tested on</h2>
 <table>
 <tr><th>Machine</th><th>SoC</th><th>Image</th><th>Result</th><th>Tester</th></tr>
-<tr><td>MacBookPro18,3 (2021 14-inch)</td><td>M1 Pro</td><td>Installed transformed elementary OS 9 Early Access; custom Fairydust USB4 kernel</td><td>Boots to Pantheon. This does not test the factory ISO.</td><td>Owner</td></tr>
+<tr><td>MacBookPro18,3 (2021 14-inch)</td><td>M1 Pro</td><td>Installed transformed elementary OS 9 Early Access; Aurora .20 + matched J314S boot payload</td><td>Boot/PMP/idle accounting and separate GPU/filesystem smoke checks pass. Experimental freeze; full qualification pending. This does not test the factory ISO.</td><td>Owner / Codex scoped checks</td></tr>
 <tr><td>QEMU 10.2.1 / KVM / AAVMF UEFI</td><td>Virtual ARM64, 4 CPUs / 4 GiB</td><td>Corrected CI ISO at source 32877a7</td><td>Checksum and hardware-helper payload checks passed; reached graphical installer language selection. No installation or Mac hardware boot.</td><td>Codex</td></tr>
 </table>
 <p><a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/VM-SMOKE-TEST.md">Reproducible VM smoke test and limits</a></p>
@@ -49,6 +50,6 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 
 <h2>Out of scope (by design)</h2>
 <p>Intel Macs (T2, 2015–2017 SPI keyboard/NVMe, Broadcom STA offload tweaks) and Hyprland/Omarchy desktop behavior — see <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/PORT-MAP.md">PORT-MAP.md</a>.</p>
-<footer>Updated 2026-10-14. Results distinguish the running installation from the unverified factory image.</footer>
+<footer>Updated 2026-10-18. Results distinguish the running installation from the unverified factory image.</footer>
 </body>
 </html>

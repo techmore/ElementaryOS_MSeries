@@ -1,5 +1,48 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## .20-enh1 one-shot hardware trial staged — 2026-10-18
+
+[Trial and rollback guide](aurora/trial/README.md): next boot selects
+`elementary-aurora20-enh1`; later boots default to the retained .20 kernel.
+Matched J314S DTB/shared m1n1 payload and existing fallback files are unchanged.
+The first 120-second active-desktop baseline and GPU/filesystem smoke tests
+completed. Identity-pinned user capture runs automatically on the next trial
+boot after login/settling. Candidate boot, complete hardware/suspend/recovery
+and controlled AB/BA energy qualification remain open; no savings claimed.
+
+## Power audit and dock status on `.20` — 2026-10-18
+
+[Power audit](power/AUDIT-2026-10-18.md): 19-22 W observed docked with two displays under an active desktop; no idle
+figure, no savings applied or claimed. Next: a quiet-machine A/B (all apps closed, fixed brightness, three
+alternating arms) and a docked-vs-undocked comparison. [Aurora status](aurora/STATUS-2026-10-18-AFTER-20.md): no
+release after `.20`; draft 7.2.10 PR #139 not J314S-tested. On `.20` the dock links, trains 4 lanes and exposes a 4K
+`DP-2` with EDID (G3/G4 by logs); owner to confirm picture/port (G5) and stability.
+
+## Aurora energy and frozen feature releases — 2026-10-18
+
+[Implemented plan](aurora/ENERGY-PORT-PLAN-2026-10-18.md) refreshes 52 branches /
+12 PR heads, integrates existing source ports and pins a separate 7.2.10 unified
+WIP build. The running J314S `.20` baseline has measured artifact identities
+and scoped hardware receipts, frozen as experimental exp1. Stable promotion
+requires a complete feature matrix, three boot IDs, sleep cycles and matched
+energy pairs. A 64-fix review inventory keeps 7.2 build-only pending shared
+GPU/SEP parity; `.20-enh1` is the first hardware candidate. Freeze history is
+checked in CI; future captures include active refresh/VRR/display-power state.
+Native builds/inspection passed for both profiles. `.20-enh1` also has a
+[frozen, hardware-untested build prerelease](https://github.com/techmore/ElementaryOS_MSeries/releases/tag/mseries-aurora20-enh1-2026.10.18-build1)
+with complete source/config/provenance retained. Full hardware/energy
+qualification remains; no savings claimed.
+
+## Persistent window snapping — 2026-10-18
+
+Half snapping is now enforced by the OS dconf policy. A native Gala plugin adds
+corner drag quarters and Super+Alt+U/I/J/K (also Super+keypad 7/9/1/3).
+Installed on the working desktop, activation pending next sign-in. All four
+keyboard layouts, four corner drags and Escape cancellation pass in an isolated
+Wayland desktop. Physical multi-display checks remain. Factory staging includes
+the half-snap policy; native quarter plugin packaging is still separate.
+Details: [window-snapping/README.md](window-snapping/README.md).
+
 ## Omacom userspace support — 2026-10-17
 
 [Audit and implementation](OMACOM-IMPROVEMENTS.md): sleep-energy records and
@@ -10,6 +53,16 @@ cover charging/clock/failure cases, controller-specific recovery and staging;
 Linux CI also reads a real FAT ESP without root. Target-machine suspend,
 notification, SEP, radio recovery and keymap qualification remain open. No
 battery-life gain or factory hardware boot is claimed.
+
+## Aurora enhancements source candidate — 2026-10-17
+
+[Integration guide](aurora/enhancements/README.md): udmabuf/system heap, scoped
+M3 Air thermal and camera fixes, rebased optional SMC battery properties, and
+an explicit eGPU config profile. Complete source-build/CI lane uses distinct
+kernel/package identities and retains the released .20 recovery candidate.
+Local tests pass; ARM64 build verification is tracked in the enhancement CI.
+No live deployment or measured power gain. #122/#127 display rebases and
+selective Neo work remain outstanding; older duplicate branches are not imported.
 
 
 
@@ -262,7 +315,7 @@ sudo available to enable DNS collection without dialogs.
 |---|---|---|
 | Deferred per-user setup | Firstboot prepares CodexBar and Widevine tools and DNS policy; the user timer installs apps/services and stops after completion. Staged-root tests cover payload delivery, timer enablement and completion handling. | Verify a fresh desktop user's setup, including starting then quitting Brave to create its profile. |
 | Keyboard brightness slider | Added to Pantheon's Quick Settings gear menu by `install-quick-settings-brightness.sh`; included in manual post-install, transform firstboot, and now the Apple Silicon overlay build. | Rebuild the image, then confirm it appears and changes the keyboard backlight on the live desktop. |
-| OpenCode Go in M-series CodexBar | The installer enables the provider; the wrapper passes an OpenCode Go API key from `~/.local/share/opencode/auth.json` when one exists. Current OpenCode keeps its login (an OAuth account, not a Go API key) in `opencode.db`, so on this desktop no key is found and quota needs a browser sign-in at opencode.ai (upstream reads session cookies). The panel shows an explanatory row; local activity is under Sessions. | Sign in to OpenCode Go in a browser on the desktop and confirm the quota row appears. |
+| OpenCode Go in M-series CodexBar | The installer enables the provider; the wrapper passes an OpenCode Go API key from `~/.local/share/opencode/auth.json` when one exists. Current OpenCode keeps its login (an OAuth account, not a Go API key) in `opencode.db`, so on this desktop no key is found and quota needs a browser sign-in at opencode.ai (upstream reads session cookies). The panel's OpenCode Go card shows a local usage estimate (5h/7d/30d cost, requests, tokens from `opencode.db`, labelled not account quota) until a quota exists; local activity is also under Sessions. | Sign in to OpenCode Go in a browser on the desktop and confirm the quota row appears. |
 
 ## Open problems
 
@@ -307,7 +360,7 @@ Performance work stays measured: use `mseries/benchmarks/` before and after each
 0. **Optimization repo created** (2026-10-15): [techmore/ElementaryOS_MSeries_Optimization](https://github.com/techmore/ElementaryOS_MSeries_Optimization); see [`OPTIMIZATION.md`](OPTIMIZATION.md).
 0. **Efficiency goal: run minimal, scale fast** (requested 2026-10-15; targets, method and suspects in [`EFFICIENCY-GOALS.md`](EFFICIENCY-GOALS.md)). Today about 11.7 W on battery in light use, about 2x to 3x Apple's published light-use figures.
 0. **Battery drain, phone-tether internet and minimum brightness** (reported 2026-10-14; rows in `BUG-FIX-ROADMAP.md`). The owner suspects the planned Rust battery-profile migration might fix the drain; measurement says the largest found cause was an audio rule, not the profile code, so port it for safety (see `EDGE-AND-RUST-PLAN.md`) but test the claim with before and after power readings.
-0. **Universal Siri/Whisper-like speech to text** (requested 2026-10-14; see `BUG-FIX-ROADMAP.md`). Dictate into any focused text field in any app, plus a later voice-assistant layer. Local only (no audio leaves the Mac). Candidate engine: whisper.cpp or similar on the M1 Pro (Vulkan on Honeykrisp, or CPU); universal insertion through an IBus input method (works for GTK, Qt and Electron apps) rather than per-app plugins. Depends on the built-in microphone working: the Asahi mic mapping from Omarchy is not ported yet (parity list item 3). Not started.
+0. **Universal Siri/Whisper-like speech to text** (requested 2026-10-14; see `BUG-FIX-ROADMAP.md`). Dictate into any focused text field in any app, plus a later voice-assistant layer. Local only (no audio leaves the Mac). Candidate engine: whisper.cpp or similar on the M1 Pro (Vulkan on Honeykrisp, or CPU); universal insertion through an IBus input method (works for GTK, Qt and Electron apps) rather than per-app plugins. Depends on the built-in microphone working: the Asahi mic mapping from Omarchy is not ported yet (parity list item 3). F5 hold-to-talk dictation installed 2026-10-18 (Voxtype + Whisper base.en); live speech round trip unverified, see `mseries/dictation/README.md`.
 0. **Stay within 24 h of upstream, and port privileged code to Rust** (requested 2026-10-14; plan in [`EDGE-AND-RUST-PLAN.md`](EDGE-AND-RUST-PLAN.md)). Watched projects: [`WATCHLIST.md`](WATCHLIST.md).
 0. **True Tone-like display** (requested 2026-10-14; see `BUG-FIX-ROADMAP.md`). Shift the display's white point toward the room light. Apple's True Tone uses a multi-channel sensor; the M1 Pro ambient light sensor (`iio:device1`, `aop-sensors-als`) exposes only `in_illuminance_input` (lux) on this kernel, so a faithful version is not possible yet. Interim plan: map lux plus time of day to a colour temperature through the colour plugin's night-light path (`night-light-temperature`, currently 4500 K, night light off), with slow easing and an off switch. Must not touch brightness (ambient auto-brightness stays off, see the dimming fix).
 0. **Lid open shows the login screen, with Touch ID.** Today the login needs a power-button press after resume (bug tracked in `BUG-FIX-ROADMAP.md`). First fix the wake path; then investigate fingerprint login. No Linux driver for the Mac Touch ID sensor (Secure Enclave) is known to this project, so treat Touch ID as research, not a plan.

@@ -7,6 +7,7 @@ using Wingpanel;
 namespace MSeries {
     public class CodexBarIndicator : Wingpanel.Indicator {
         private Gtk.Label panel_label;
+        private delegate void ActionFunc ();
         private Gtk.Box panel_display;
         private Gtk.Box menu;
         private Gtk.Label subtitle_label;
@@ -35,6 +36,15 @@ namespace MSeries {
         private string sessions_text = "";
         private string sessions_error = "";
         private int64 sessions_fetched_us = 0;
+        private Json.Object? claude_data = null;
+        private bool claude_in_flight = false;
+        private int64 claude_fetched_us = 0;
+        private Json.Array? codex_accounts = null;
+        private bool codex_accounts_in_flight = false;
+        private int64 codex_accounts_fetched_us = 0;
+        private Json.Object? opencode_local = null;
+        private bool opencode_local_in_flight = false;
+        private int64 opencode_local_fetched_us = 0;
 
         public CodexBarIndicator () {
             GLib.Object (code_name: "codexbar");
@@ -72,42 +82,25 @@ namespace MSeries {
             menu.add_css_class ("mseries-codexbar");
             install_style (menu.get_display ());
 
-            // Header: name and freshness on the left, state chip and refresh on the right.
-            var title_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
-            var menu_icon = new Gtk.Image.from_icon_name ("mseries-codexbar-openai-symbolic") {
-                pixel_size = 16
-            };
-            menu_icon.add_css_class ("symbolic");
-            title_row.append (menu_icon);
-
-            var title_stack = new Gtk.Box (Gtk.Orientation.VERTICAL, 1) { hexpand = true };
-            var title = new Gtk.Label ("CodexBar") { xalign = 0 };
-            title.add_css_class ("provider-title");
-            title_stack.append (title);
-            subtitle_label = new Gtk.Label ("Loading usage…") { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
+            // No header: the quota cards lead. Freshness and refresh live in the bottom bar with the dock.
+            subtitle_label = new Gtk.Label ("Loading usage…") { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.END };
             subtitle_label.add_css_class ("dim-label");
             subtitle_label.add_css_class ("caption");
-            title_stack.append (subtitle_label);
-            title_row.append (title_stack);
-
+            subtitle_label.add_css_class ("numeric");
             chip_label = new Gtk.Label ("") { valign = Gtk.Align.CENTER, visible = false };
             chip_label.add_css_class ("chip");
-            title_row.append (chip_label);
 
             refresh_display = new Gtk.Stack ();
-            refresh_display.add_named (new Gtk.Image.from_icon_name ("view-refresh-symbolic"), "idle");
+            refresh_display.add_named (new Gtk.Image.from_icon_name ("view-refresh-symbolic") { pixel_size = 18 }, "idle");
             refresh_spinner = new Gtk.Spinner ();
             refresh_display.add_named (refresh_spinner, "busy");
             refresh_button = new Gtk.Button () {
                 child = refresh_display,
-                tooltip_text = "Refresh usage",
-                valign = Gtk.Align.CENTER
+                tooltip_text = "Refresh usage"
             };
             refresh_button.add_css_class ("flat");
             refresh_button.update_property (Gtk.AccessibleProperty.LABEL, "Refresh usage", -1);
             refresh_button.clicked.connect (() => refresh_usage ());
-            title_row.append (refresh_button);
-            menu.append (title_row);
 
             // Three pages keep every section above the fold; Quota is the default.
             quota_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
@@ -137,13 +130,20 @@ namespace MSeries {
             menu.append (scroll);
             menu.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
 
-            // Labeled, borderless action rows live inside Wingpanel's popover.
-            var actions = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
-            actions.append (make_action_button ("Quick View…", "view-reveal-symbolic", "--quick-view"));
-            actions.append (make_action_button ("Usage Details…", "view-list-symbolic", "--usage"));
-            actions.append (make_action_button ("Spending Details…", "accessories-calculator-symbolic", "--spending"));
-            actions.append (make_action_button ("Settings & Sign In…", "preferences-system-symbolic", "--settings"));
-            menu.append (actions);
+            // Bottom bar: freshness on the left, an icon-only dock on the right (names in tooltips).
+            var bar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+            bar.add_css_class ("mseries-bar");
+            bar.append (chip_label);
+            bar.append (subtitle_label);
+            var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { homogeneous = true };
+            actions.add_css_class ("mseries-dock");
+            actions.append (make_dock_button ("Quick View", "window-new-symbolic", "--quick-view"));
+            actions.append (make_dock_button ("Usage details", "view-list-symbolic", "--usage"));
+            actions.append (make_dock_button ("Spending details", "accessories-calculator-symbolic", "--spending"));
+            actions.append (make_dock_button ("Settings & sign in", "avatar-default-symbolic", "--settings"));
+            actions.append (refresh_button);
+            bar.append (actions);
+            menu.append (bar);
 
             show_state (quota_box, "content-loading-symbolic", "Loading usage…", "", false);
             show_state (sessions_box, "content-loading-symbolic", "Checking sessions…", "", false);
@@ -171,7 +171,7 @@ namespace MSeries {
                 ".mseries-codexbar .provider-title { font-weight: 700; font-size: 9.5pt; } " +
                 ".mseries-codexbar .window-name { font-weight: 700; } " +
                 ".mseries-codexbar .numeric { font-feature-settings: \"tnum\"; } " +
-                ".mseries-codexbar .card { padding: 8px 10px; border-radius: 8px; background: alpha(currentColor, 0.06); } " +
+                ".mseries-codexbar .card { padding: 6px 10px; border-radius: 8px; background: alpha(currentColor, 0.06); } " +
                 ".mseries-codexbar .chip { padding: 1px 8px; border-radius: 99px; font-size: 7.5pt; font-weight: 700; " +
                 "  background: alpha(@warning_color, 0.22); color: @warning_color; } " +
                 ".mseries-codexbar .chip.busy { background: alpha(currentColor, 0.1); color: inherit; } " +
@@ -188,6 +188,15 @@ namespace MSeries {
                 ".mseries-codexbar .dot-off { opacity: 0.45; } " +
                 ".mseries-codexbar .state-title { font-weight: 700; } " +
                 ".mseries-codexbar button { padding: 3px 6px; } " +
+                ".mseries-codexbar .mseries-dock { padding: 3px; border-radius: 12px; background: alpha(currentColor, 0.06); } " +
+                ".mseries-codexbar .mseries-bar { margin-top: 2px; } " +
+                ".mseries-codexbar .mseries-dock button { padding: 6px 11px; border-radius: 9px; min-height: 0; } " +
+                ".mseries-codexbar .mseries-dock button:hover { background: alpha(currentColor, 0.1); } " +
+                ".mseries-codexbar .account-line { min-height: 0; } " +
+                ".mseries-codexbar .provider-mark { opacity: 0.9; } " +
+                ".mseries-codexbar .mark-claude { color: #d97757; opacity: 1; } " +
+                ".mseries-codexbar button.compact { padding: 1px 8px; min-height: 0; min-width: 0; } " +
+                ".mseries-codexbar button.flat.compact { padding: 0 4px; } " +
                 ".mseries-codexbar .mseries-switcher button { padding: 2px 6px; } " +
                 "label.mseries-codexbar-bar.level-low { color: @warning_color; } " +
                 "label.mseries-codexbar-bar.level-critical { color: @error_color; } " +
@@ -195,12 +204,13 @@ namespace MSeries {
             Gtk.StyleContext.add_provider_for_display (display, style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         }
 
-        private Gtk.Button make_action_button (string label, string icon_name, string action) {
-            var content = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
-            content.append (new Gtk.Image.from_icon_name (icon_name) { pixel_size = 12 });
-            content.append (new Gtk.Label (label) { xalign = 0, hexpand = true });
-            var button = new Gtk.Button () { child = content };
+        private Gtk.Button make_dock_button (string label, string icon_name, string action) {
+            var button = new Gtk.Button () {
+                child = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 18 },
+                tooltip_text = label
+            };
             button.add_css_class ("flat");
+            button.update_property (Gtk.AccessibleProperty.LABEL, label, -1);
             button.clicked.connect (() => {
                 popdown_from (button);
                 run_action (action);
@@ -332,6 +342,344 @@ namespace MSeries {
             if (sessions_fetched_us == 0 ||
                 GLib.get_monotonic_time () - sessions_fetched_us > max_age_seconds * GLib.TimeSpan.SECOND) {
                 refresh_sessions.begin ();
+            }
+            if (claude_fetched_us == 0 ||
+                GLib.get_monotonic_time () - claude_fetched_us > 120 * GLib.TimeSpan.SECOND) {
+                refresh_claude.begin ();
+            }
+            if (codex_accounts_fetched_us == 0 ||
+                GLib.get_monotonic_time () - codex_accounts_fetched_us > 300 * GLib.TimeSpan.SECOND) {
+                refresh_codex_accounts.begin ();
+            }
+            if (opencode_local_fetched_us == 0 ||
+                GLib.get_monotonic_time () - opencode_local_fetched_us > max_age_seconds * GLib.TimeSpan.SECOND) {
+                refresh_opencode_local.begin ();
+            }
+        }
+
+        private static string helper_path (string name) {
+            return GLib.Path.build_filename (Environment.get_home_dir (), ".local", "lib", "codexbar-cli", name);
+        }
+
+        // Upstream's Codex account switching is macOS-only; our helper keeps one saved sign-in per account.
+        private async void refresh_codex_accounts () {
+            if (codex_accounts_in_flight) {
+                return;
+            }
+            codex_accounts_in_flight = true;
+            var before = codex_accounts_digest (codex_accounts);
+            try {
+                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
+                    "python3", helper_path ("codexbar-accounts.py"), "usage");
+                string stdout_text;
+                string stderr_text;
+                yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
+                Json.Array? parsed = null;
+                if (process.get_successful () && stdout_text.strip ().length > 0) {
+                    var parser = new Json.Parser ();
+                    parser.load_from_data (stdout_text, -1);
+                    var root = parser.get_root ();
+                    if (root != null && root.get_node_type () == Json.NodeType.OBJECT) {
+                        var list = root.get_object ().get_array_member ("accounts");
+                        parsed = list != null ? list.ref () : null;
+                    }
+                }
+                codex_accounts = parsed;
+            } catch (Error e) {
+                codex_accounts = null;
+            } finally {
+                codex_accounts_in_flight = false;
+                codex_accounts_fetched_us = GLib.get_monotonic_time ();
+            }
+            if (codex_accounts_digest (codex_accounts) != before) {
+                last_digest = "";
+                read_snapshot.begin ();
+            }
+        }
+
+        // Claude accounts come from claude-swap (cswap), the same tool upstream CodexBar drives on macOS.
+        private async void refresh_claude () {
+            if (claude_in_flight) {
+                return;
+            }
+            claude_in_flight = true;
+            var before = local_digest (claude_data);
+            try {
+                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
+                    "python3", helper_path ("codexbar-claude.py"), "list");
+                string stdout_text;
+                string stderr_text;
+                yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
+                Json.Object? parsed = null;
+                if (process.get_successful () && stdout_text.strip ().length > 0) {
+                    var parser = new Json.Parser ();
+                    parser.load_from_data (stdout_text, -1);
+                    var root = parser.get_root ();
+                    if (root != null && root.get_node_type () == Json.NodeType.OBJECT
+                        && root.get_object ().get_boolean_member_with_default ("available", false)) {
+                        parsed = root.get_object ().ref ();
+                    }
+                }
+                claude_data = parsed;
+            } catch (Error e) {
+                claude_data = null;
+            } finally {
+                claude_in_flight = false;
+                claude_fetched_us = GLib.get_monotonic_time ();
+            }
+            if (local_digest (claude_data) != before) {
+                last_digest = "";
+                read_snapshot.begin ();
+            }
+        }
+
+        private void run_claude_helper (string[] arguments) {
+            try {
+                string[] command = { "python3", helper_path ("codexbar-claude.py") };
+                foreach (var argument in arguments) {
+                    command += argument;
+                }
+                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_SILENCE | SubprocessFlags.STDERR_SILENCE);
+                process.wait_async.begin (null, () => {
+                    claude_fetched_us = 0;
+                    last_digest = "";
+                    refresh_claude.begin ();
+                    read_snapshot.begin ();
+                });
+            } catch (Error e) {
+                subtitle_label.set_text ("Could not switch Claude account: " + e.message);
+            }
+        }
+
+        /* Adding an account needs a browser sign-in we can't drive, so ask in a small native dialog instead of a terminal. */
+        private void ask_to_save (string heading, string detail, string save_label, owned ActionFunc on_save) {
+            var dialog = new Gtk.AlertDialog ("%s", heading);
+            dialog.detail = detail;
+            dialog.buttons = { "Cancel", save_label };
+            dialog.cancel_button = 0;
+            dialog.default_button = 1;
+            dialog.modal = false;
+            dialog.choose.begin (null, null, (obj, res) => {
+                try {
+                    if (dialog.choose.end (res) == 1) {
+                        on_save ();
+                    }
+                } catch (Error e) {
+                    // dismissed
+                }
+            });
+        }
+
+        private void tell (string heading, string detail) {
+            var dialog = new Gtk.AlertDialog ("%s", heading);
+            dialog.detail = detail;
+            dialog.buttons = { "OK" };
+            dialog.modal = false;
+            dialog.choose.begin (null, null, (obj, res) => {
+                try { dialog.choose.end (res); } catch (Error e) { }
+            });
+        }
+
+        private async void run_saver (string[] command, string ok_heading, string failure_heading) {
+            try {
+                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_MERGE);
+                string output;
+                yield process.communicate_utf8_async (null, null, out output, null);
+                if (process.get_successful ()) {
+                    tell (ok_heading, "It now appears under Accounts.");
+                } else {
+                    tell (failure_heading, output.strip ().length > 0 ? output.strip () : "The helper reported an error.");
+                }
+            } catch (Error e) {
+                tell (failure_heading, e.message);
+            }
+            codex_accounts_fetched_us = 0;
+            claude_fetched_us = 0;
+            last_digest = "";
+            refresh_codex_accounts.begin ();
+            refresh_claude.begin ();
+        }
+
+        private void add_claude_account () {
+            ask_to_save ("Add a Claude account",
+                "CodexBar opens your browser to sign in to Claude, then saves the login so you can switch between accounts from here. Any account that is already signed in is saved first.",
+                "Sign in and save", () => {
+                    run_saver.begin ({ "python3", helper_path ("codexbar-claude.py"), "login" },
+                        "Claude account added", "Couldn't add the Claude account");
+                });
+        }
+
+        private Gtk.Widget build_claude_card (int64 now_unix) {
+            var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
+            card.add_css_class ("card");
+            var head = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            var dot = new Gtk.Label ("●");
+            dot.add_css_class ("dot-off");
+            head.append (dot);
+            head.append (build_provider_mark ("claude", "Claude"));
+            var email = claude_data.get_string_member_with_default ("activeEmail", "");
+            var accounts = claude_data.get_array_member ("accounts");
+            head.append (build_identity (email));
+            card.append (head);
+
+            var shown_quota = false;
+            if (accounts != null) {
+                for (uint i = 0; i < accounts.get_length (); i++) {
+                    var account = accounts.get_object_element (i);
+                    var windows = account.get_array_member ("windows");
+                    if (account.get_boolean_member_with_default ("active", false) && windows != null) {
+                        dot.remove_css_class ("dot-off");
+                        dot.add_css_class ("dot-ok");
+                        for (uint w = 0; w < windows.get_length (); w++) {
+                            card.append (build_window ("Claude", windows.get_object_element (w), false, now_unix));
+                            shown_quota = true;
+                        }
+                    }
+                }
+            }
+            if (!shown_quota) {
+                card.append (subtle_label (accounts != null && accounts.get_length () > 0
+                    ? "Quota isn't available for this account yet."
+                    : "Add this login to see quota and switch between Claude accounts."));
+            }
+
+            var listed = accounts != null ? accounts.get_length () : 0;
+            card.append (build_accounts_header ("Sign in to Claude Code, then save that login with claude-swap",
+                () => add_claude_account ()));
+            for (uint i = 0; i < listed; i++) {
+                var account = accounts.get_object_element (i);
+                if (account.get_boolean_member_with_default ("active", false)) {
+                    continue;
+                }
+                var number = account.get_int_member_with_default ("number", 0).to_string ();
+                var name = account.get_string_member_with_default ("email", "");
+                var windows = account.get_array_member ("windows");
+                var detail = "—";
+                if (windows != null && windows.get_length () > 0) {
+                    detail = "%.0f%%".printf (windows.get_object_element (windows.get_length () - 1)
+                        .get_double_member_with_default ("remaining", 0));
+                }
+                card.append (build_account_line (name, detail, "Make %s the active Claude account".printf (name),
+                    () => run_claude_helper ({ "switch", number })));
+            }
+            return card;
+        }
+
+        private static string codex_accounts_digest (Json.Array? accounts) {
+            if (accounts == null) {
+                return "";
+            }
+            var generator = new Json.Generator ();
+            var node = new Json.Node (Json.NodeType.ARRAY);
+            node.set_array (accounts);
+            generator.root = node;
+            return generator.to_data (null);
+        }
+
+        private void run_accounts_helper (string[] arguments) {
+            try {
+                string[] command = { "python3", helper_path ("codexbar-accounts.py") };
+                foreach (var argument in arguments) {
+                    command += argument;
+                }
+                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_SILENCE | SubprocessFlags.STDERR_SILENCE);
+                process.wait_async.begin (null, () => {
+                    // The active account changed: re-read quota and the account list from scratch.
+                    codex_accounts_fetched_us = 0;
+                    last_digest = "";
+                    run_action ("--refresh");
+                    refresh_codex_accounts.begin ();
+                    read_snapshot.begin ();
+                });
+            } catch (Error e) {
+                subtitle_label.set_text ("Could not switch account: " + e.message);
+            }
+        }
+
+        private void add_codex_account () {
+            ask_to_save ("Add a ChatGPT account",
+                "Your current account is already remembered. Sign in to the other account in Codex, then choose Save account. You can switch back from the panel at any time.",
+                "Save account", () => {
+                    run_saver.begin ({ "python3", helper_path ("codexbar-accounts.py"), "save" },
+                        "Codex account saved", "Couldn't save the Codex account");
+                });
+        }
+
+        private Gtk.Widget build_codex_accounts () {
+            var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
+            box.append (build_accounts_header ("Sign in to another ChatGPT account", () => add_codex_account ()));
+            if (codex_accounts == null) {
+                return box;
+            }
+            for (uint i = 0; i < codex_accounts.get_length (); i++) {
+                var account = codex_accounts.get_object_element (i);
+                if (account.get_boolean_member_with_default ("active", false)) {
+                    continue;
+                }
+                var email = account.get_string_member_with_default ("email", "");
+                var account_id = account.get_string_member_with_default ("id", email);
+                var windows = account.get_array_member ("windows");
+                var detail = account.has_member ("error") ? "unavailable" : "—";
+                if (windows != null && windows.get_length () > 0) {
+                    detail = "%.0f%%".printf (windows.get_object_element (windows.get_length () - 1)
+                        .get_double_member_with_default ("remaining", 0));
+                }
+                box.append (build_account_line (email, detail,
+                    "Make %s the active Codex account. Restart running Codex sessions to use it.".printf (email),
+                    () => run_accounts_helper ({ "switch", account_id })));
+            }
+            return box;
+        }
+
+        private static string local_digest (Json.Object? usage) {
+            if (usage == null) {
+                return "";
+            }
+            var generator = new Json.Generator ();
+            var node = new Json.Node (Json.NodeType.OBJECT);
+            node.set_object (usage);
+            generator.root = node;
+            return generator.to_data (null);
+        }
+
+        // OpenCode Go's account quota needs a web sign-in, so show what this machine's own history says.
+        private async void refresh_opencode_local () {
+            if (opencode_local_in_flight) {
+                return;
+            }
+            opencode_local_in_flight = true;
+            var helper = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "lib",
+                "codexbar-cli", "codexbar-opencode-local.py");
+            var changed = false;
+            try {
+                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
+                    "python3", helper);
+                string stdout_text;
+                string stderr_text;
+                yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
+                Json.Object? parsed = null;
+                if (process.get_successful () && stdout_text.strip ().length > 0) {
+                    var parser = new Json.Parser ();
+                    parser.load_from_data (stdout_text, -1);
+                    var root = parser.get_root ();
+                    if (root != null && root.get_node_type () == Json.NodeType.OBJECT
+                        && (root.get_object ().get_string_member_with_default ("status", "") == "available"
+                            || root.get_object ().get_string_member_with_default ("accountEmail", "").length > 0)) {
+                        parsed = root.get_object ().ref ();
+                    }
+                }
+                changed = local_digest (parsed) != local_digest (opencode_local);
+                opencode_local = parsed;
+            } catch (Error e) {
+                changed = opencode_local != null;
+                opencode_local = null;
+            } finally {
+                opencode_local_in_flight = false;
+                opencode_local_fetched_us = GLib.get_monotonic_time ();
+            }
+            if (changed) {
+                last_digest = "";
+                read_snapshot.begin ();
             }
         }
 
@@ -524,6 +872,13 @@ namespace MSeries {
             for (uint i = 0; i < entries.get_length (); i++) {
                 quota_box.append (build_provider_card (entries.get_object_element (i), now_unix));
             }
+            var has_claude = false;
+            for (uint i = 0; i < entries.get_length (); i++) {
+                has_claude = has_claude || entries.get_object_element (i).get_string_member_with_default ("provider", "") == "claude";
+            }
+            if (!has_claude && claude_data != null) {
+                quota_box.append (build_claude_card (now_unix));
+            }
         }
 
         private Gtk.Widget build_provider_card (Json.Object entry, int64 now_unix) {
@@ -547,15 +902,14 @@ namespace MSeries {
             dot.set_tooltip_text (error.length > 0 ? "Problem fetching this provider" :
                 status.length > 0 ? status : "Provider status unknown");
             head.append (dot);
-            var title = new Gtk.Label (title_text) { xalign = 0, hexpand = true };
-            title.add_css_class ("provider-title");
-            head.append (title);
+            head.append (build_provider_mark (provider, title_text));
             var plan = Presentation.plan_label (entry.get_string_member ("plan") ?? "");
             if (plan.length > 0) {
                 var plan_label = new Gtk.Label (plan) { valign = Gtk.Align.CENTER };
                 plan_label.add_css_class ("plan");
                 head.append (plan_label);
             }
+            head.append (build_identity (account_email_for (provider, entry)));
             card.append (head);
 
             var windows = entry.get_array_member ("windows");
@@ -569,10 +923,31 @@ namespace MSeries {
             if (error.length == 0 && status.length > 0 && status_level != "none" && status_level != "unknown") {
                 card.append (subtle_label ("Provider status · " + status));
             }
+            if (provider == "codex") {
+                card.append (build_codex_accounts ());
+            }
             if (error.length > 0 || windows == null || windows.get_length () == 0) {
-                card.append (subtle_label (provider == "opencodego"
-                    ? "Quota needs a web sign-in at opencode.ai. Local activity is under Sessions."
-                    : error.length > 0 ? error : "No usage reported yet."));
+                var estimate = provider == "opencodego" ? opencode_local : null;
+                var periods = estimate != null ? estimate.get_array_member ("periods") : null;
+                if (periods != null && periods.get_length () > 0) {
+                    card.append (subtle_label (estimate.get_string_member_with_default ("message", "Local usage estimate · not account quota")));
+                    for (uint i = 0; i < periods.get_length (); i++) {
+                        var period = periods.get_object_element (i);
+                        if (period.get_int_member_with_default ("requests", 0) == 0 && i + 1 < periods.get_length ()) {
+                            continue;
+                        }
+                        card.append (subtle_label (Presentation.local_usage_line (
+                            period.get_string_member_with_default ("label", ""),
+                            period.get_double_member_with_default ("costUSD", 0),
+                            period.get_int_member_with_default ("requests", 0),
+                            period.get_int_member_with_default ("tokens", 0))));
+                    }
+                    card.append (subtle_label ("Account quota needs a web sign-in at opencode.ai."));
+                } else {
+                    card.append (subtle_label (provider == "opencodego"
+                        ? "Quota needs a web sign-in at opencode.ai. Local activity is under Sessions."
+                        : error.length > 0 ? error : "No usage reported yet."));
+                }
                 var settings = new Gtk.Button.with_label (provider == "opencodego" ? "Sign in…" : "Open Settings…") {
                     halign = Gtk.Align.START
                 };
@@ -583,6 +958,102 @@ namespace MSeries {
                 card.append (settings);
             }
             return card;
+        }
+
+        /* Dense building blocks shared by every provider card. */
+        private static string compact_reset (string reset) {
+            return reset.has_prefix ("Resets in ") ? reset.substring (10) : reset;
+        }
+
+        /* The company mark replaces the written provider name; the name stays in the tooltip and for screen readers. */
+        private static Gtk.Widget build_provider_mark (string provider, string title_text) {
+            var icon_name = provider == "codex" ? "mseries-codexbar-openai-symbolic" :
+                provider == "claude" ? "mseries-codexbar-claude-symbolic" :
+                provider == "opencodego" ? "mseries-codexbar-opencode-symbolic" : "";
+            if (icon_name.length == 0 || !Gtk.IconTheme.get_for_display (Gdk.Display.get_default ()).has_icon (icon_name)) {
+                var text = new Gtk.Label (title_text) { xalign = 0 };
+                text.add_css_class ("provider-title");
+                return text;
+            }
+            var icon = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 18 };
+            icon.add_css_class ("provider-mark");
+            icon.add_css_class ("mark-" + provider);
+            icon.set_tooltip_text (title_text);
+            icon.update_property (Gtk.AccessibleProperty.LABEL, title_text, -1);
+            return icon;
+        }
+
+        private Gtk.Widget build_identity (string email) {
+            var identity = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4) { halign = Gtk.Align.END, hexpand = true };
+            identity.add_css_class ("account-row");
+            var icon = new Gtk.Image.from_icon_name ("avatar-default-symbolic") { pixel_size = 12 };
+            icon.add_css_class ("dim-label");
+            identity.append (icon);
+            var label = new Gtk.Label (email.length > 0 ? email : "Account not detected") {
+                xalign = 1, ellipsize = Pango.EllipsizeMode.MIDDLE, max_width_chars = 30
+            };
+            label.add_css_class ("caption");
+            label.add_css_class ("dim-label");
+            identity.set_tooltip_text (email.length > 0 ? "Signed in as " + email
+                : "CodexBar can't tell which account this is signed in with");
+            identity.append (label);
+            return identity;
+        }
+
+        private Gtk.Widget build_accounts_header (string tooltip, owned ActionFunc on_add) {
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
+            var title = new Gtk.Label ("Accounts") { xalign = 0, hexpand = true };
+            title.add_css_class ("caption");
+            title.add_css_class ("dim-label");
+            row.append (title);
+            var add = new Gtk.Button () { child = new Gtk.Image.from_icon_name ("list-add-symbolic") { pixel_size = 12 }, tooltip_text = tooltip, valign = Gtk.Align.CENTER };
+            add.add_css_class ("flat");
+            add.add_css_class ("compact");
+            add.update_property (Gtk.AccessibleProperty.LABEL, tooltip, -1);
+            add.clicked.connect (() => {
+                popdown_from (add);
+                on_add ();
+            });
+            row.append (add);
+            return row;
+        }
+
+        private Gtk.Widget build_account_line (string email, string detail, string switch_tooltip, owned ActionFunc on_switch) {
+            var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            line.add_css_class ("account-line");
+            var name = new Gtk.Label (email) { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.MIDDLE };
+            name.set_tooltip_text (email);
+            line.append (name);
+            var meta = new Gtk.Label (detail) { xalign = 1 };
+            meta.add_css_class ("caption");
+            meta.add_css_class ("dim-label");
+            meta.add_css_class ("numeric");
+            line.append (meta);
+            var button = new Gtk.Button.with_label ("Switch") { valign = Gtk.Align.CENTER, tooltip_text = switch_tooltip };
+            button.add_css_class ("compact");
+            button.clicked.connect (() => {
+                popdown_from (button);
+                on_switch ();
+            });
+            line.append (button);
+            return line;
+        }
+
+        /* Which login a provider is tied to: quiet, under the title, never the focus of the card. */
+        private string account_email_for (string provider, Json.Object entry) {
+            var email = entry.get_string_member_with_default ("accountEmail", "");
+            if (email.length == 0 && provider == "codex" && codex_accounts != null) {
+                for (uint i = 0; i < codex_accounts.get_length (); i++) {
+                    var account = codex_accounts.get_object_element (i);
+                    if (account.get_boolean_member_with_default ("active", false)) {
+                        email = account.get_string_member_with_default ("email", "");
+                    }
+                }
+            }
+            if (email.length == 0 && provider == "opencodego" && opencode_local != null) {
+                email = opencode_local.get_string_member_with_default ("accountEmail", "");
+            }
+            return email;
         }
 
         private Gtk.Widget build_window (string provider_title_text, Json.Object window, bool stale, int64 now_unix) {
@@ -596,8 +1067,8 @@ namespace MSeries {
             var level = Presentation.level_for (remaining);
             var eta = QuotaEta.from_window (window, stale, now_unix);
 
-            var group = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
-            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+            var group = new Gtk.Box (Gtk.Orientation.VERTICAL, 1);
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             var name = new Gtk.Label (Presentation.short_window_label (label, (int) window.get_int_member ("minutes"))) {
                 xalign = 0, width_request = 34
             };
@@ -614,21 +1085,30 @@ namespace MSeries {
             progress.update_property (Gtk.AccessibleProperty.LABEL, "%s %s limit, %s".printf (provider_title_text, label, spoken), -1);
             row.append (progress);
             var percent = new Gtk.Label (known ? "%0.0f%% left".printf (remaining) : "—") {
-                xalign = 1, width_request = 62
+                xalign = 1, width_request = 58
             };
             percent.add_css_class ("numeric");
             if (level == QuotaLevel.LOW) percent.add_css_class ("text-low");
             if (level == QuotaLevel.CRITICAL) percent.add_css_class ("text-critical");
             row.append (percent);
+            var reset_label = new Gtk.Label (compact_reset (reset)) { xalign = 1, width_request = 46 };
+            reset_label.add_css_class ("caption");
+            reset_label.add_css_class ("dim-label");
+            reset_label.add_css_class ("numeric");
+            reset_label.set_tooltip_text (reset);
+            row.append (reset_label);
             group.append (row);
 
-            var caption_text = known ? Presentation.window_caption (reset, eta.state, eta.detail)
-                : "Usage not reported yet";
-            var caption = new Gtk.Label (caption_text) { xalign = 0, wrap = true, margin_start = 42 };
-            caption.add_css_class ("caption");
-            caption.add_css_class (eta.state == EtaState.EXHAUSTED ? "text-critical" :
-                eta.state == EtaState.DEPLETING ? "text-low" : "dim-label");
-            group.append (caption);
+            // The forecast only gets its own line when it is a warning; otherwise the reset sits inline.
+            if (!known || eta.state == EtaState.EXHAUSTED || eta.state == EtaState.DEPLETING) {
+                var caption_text = known ? Presentation.window_caption (reset, eta.state, eta.detail)
+                    : "Usage not reported yet";
+                var caption = new Gtk.Label (caption_text) { xalign = 0, wrap = true, margin_start = 40 };
+                caption.add_css_class ("caption");
+                caption.add_css_class (eta.state == EtaState.EXHAUSTED ? "text-critical" :
+                    eta.state == EtaState.DEPLETING ? "text-low" : "dim-label");
+                group.append (caption);
+            }
 
             var detail = known ? "%0.0f%% remaining".printf (remaining) : "Usage not reported yet";
             if (reset.length > 0) detail += " · " + reset;

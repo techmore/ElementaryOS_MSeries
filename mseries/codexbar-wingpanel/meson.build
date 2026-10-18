@@ -54,3 +54,11 @@ install_data(
   install_dir: join_paths(get_option('datadir'), 'icons', 'hicolor', 'scalable', 'apps'),
   rename: 'mseries-codexbar-openai-symbolic.svg',
 )
+
+foreach provider : ['claude', 'opencode']
+  install_data(
+    'icons/@0@.svg'.format(provider),
+    install_dir: join_paths(get_option('datadir'), 'icons', 'hicolor', 'scalable', 'apps'),
+    rename: 'mseries-codexbar-@0@-symbolic.svg'.format(provider),
+  )
+endforeach

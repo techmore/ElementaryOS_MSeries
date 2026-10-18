@@ -70,6 +70,12 @@ namespace MSeries {
             return remaining_text;
         }
 
+        /* One line of local OpenCode Go activity: an estimate from this machine's history, not account quota. */
+        public static string local_usage_line (string label, double cost_usd, int64 requests, int64 tokens) {
+            return "%s · $%.2f · %s %s · %s tokens".printf (label, cost_usd, count_text (requests),
+                requests == 1 ? "request" : "requests", count_text (tokens));
+        }
+
         /* The one line under a limit: when it resets, plus the forecast only when it is a warning. */
         public static string window_caption (string reset, EtaState state, string eta_detail) {
             if (state == EtaState.EXHAUSTED) return eta_detail;

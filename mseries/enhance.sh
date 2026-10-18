@@ -193,6 +193,9 @@ mod_session() {
 ambient-enabled=false
 idle-dim=false
 EOF
+  # Window snapping remains enabled even if an old user database disables it.
+  copy 0644 "$here/window-snapping/10-mseries-snapping" /etc/dconf/db/local.d/10-mseries-snapping
+  copy 0644 "$here/window-snapping/locks" /etc/dconf/db/local.d/locks/mseries-snapping
   if [[ -x $R/usr/bin/dconf ]]; then
     if [[ $ROOT == / ]]; then
       "$R/usr/bin/dconf" update || log "could not compile the system dconf defaults"
@@ -308,7 +311,7 @@ mod_payload() {
            install-network-throughput.sh install-quick-settings-brightness.sh \
            install-sound-indicator-fix.sh install-keyboard-indicator-fix.sh \
            install-files-portal-fix.sh install-gala-osk-fix.sh install-netusage-policy.sh \
-           install-codexbar.sh install-brave-widevine.sh codexbar-opencode-local.py \
+           install-codexbar.sh install-brave-widevine.sh codexbar-opencode-local.py codexbar-accounts.py codexbar-claude.py deploy-codexbar.sh \
            codexbar-opencode-wrapper.py user-enhance.sh install-dark-mode.sh \
            dark-mode/mseries-dark-mode dark-mode/mseries-dark-mode.service dark-mode/mseries-dark-mode.timer \
            netspeed/netusage/install.sh netspeed/netusage/netusage.py \

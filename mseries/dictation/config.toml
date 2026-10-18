@@ -1,0 +1,52 @@
+# Voxtype configuration for elementary OS on Apple Silicon (managed by
+# mseries/install-dictation.sh; copied once, then yours to edit).
+# Local only: audio never leaves the Mac and no recording is stored.
+state_file = "auto"
+
+[hotkey]
+# F5 (the microphone key) is remapped to KEY_F14 by 91-mseries-dictation.hwdb.
+enabled = true
+key = "F14"
+modifiers = []
+# Hold to talk, release to insert (like Siri/Dictation hold mode).
+mode = "push_to_talk"
+
+[audio]
+device = "pipewire"
+sample_rate = 16000
+max_duration_secs = 300
+pause_media = true
+
+[audio.feedback]
+# Start/stop chimes, like the Mac's dictation sound.
+enabled = true
+theme = "subtle"
+volume = 0.5
+
+[whisper]
+model = "base.en"
+language = "en"
+on_demand_loading = false
+# 10 auto threads is ~4x slower than 6 on the M1 Pro (2 slow E-cores stall the pool): median 4.4 s vs 1.07 s for 7 s of audio, 2026-10-18.
+threads = 6
+# Transcribe 2.5 s chunks while you are still talking, so text appears live.
+eager_processing = true
+eager_chunk_secs = 2.5
+
+[output]
+mode = "type"
+fallback_to_clipboard = true
+type_delay_ms = 1
+
+[output.notification]
+on_recording_start = false
+on_recording_stop = false
+on_transcription = false
+
+[osd]
+enabled = false
+
+# Grammar clean-up (addendum, off by default): pipe the text through a local LLM.
+# [output.post_process]
+# command = "python3 /home/YOU/ElementaryOS_MSeries/mseries/local-ai/ask.py 'Fix grammar and punctuation only. Output only the corrected text:'"
+# timeout_ms = 15000

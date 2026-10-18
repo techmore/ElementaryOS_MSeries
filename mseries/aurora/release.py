@@ -66,9 +66,9 @@ def extract(archive, destination, prefixes):
                 raise ValueError(f"zstd failed ({result}): {archive}")
 
 
-def validate_kernel(root):
+def validate_kernel(root, kernel_release=None):
     """Admission checks for the release payload, not a hardware qualification."""
-    modules = Path(root) / "usr/lib/modules" / PINS["kernel_release"]
+    modules = Path(root) / "usr/lib/modules" / (kernel_release or PINS["kernel_release"])
     required = (
         "vmlinuz", "modules.dep", "dtbs/t6000-j314s.dtb",
         "kernel/drivers/gpu/drm/apple/appledrm.ko",

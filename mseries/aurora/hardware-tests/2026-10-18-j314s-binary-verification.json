@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "upstream_archive": {
+    "name": "linux-aurora-7.1.12.aurora2-20261017.20-aarch64.pkg.tar.zst",
+    "sha256": "49efa0ec088059aaae6c1fc7fef49521171abbab2c21a3d62bf670148dc0c7d8"
+  },
+  "kernel_release": "7.1.12-2-20261017.20-sep-ARCH",
+  "evidence": "2026-10-18-j314s-aurora20.json",
+  "evidence_sha256": "55ca90fc778b02df50ce0cfd8acd914b0723c89d1e1bc54e87f7622ae6e79996",
+  "verified_files": {
+    "usr/lib/modules/7.1.12-2-20261017.20-sep-ARCH/dtbs/t6000-j314s.dtb": "a29ff68864e785f05f5f3e44d5bea8ab3166ac52958ea52023c2fa40740fd306",
+    "usr/lib/modules/7.1.12-2-20261017.20-sep-ARCH/kernel/drivers/gpu/drm/apple/appledrm.ko": "91ec359019aa9584a5c0947adbe585ef59ac6cde64e69d09b28ffcb400c4c7bc",
+    "usr/lib/modules/7.1.12-2-20261017.20-sep-ARCH/kernel/drivers/soc/apple/apple-sep.ko": "1b4bb51ed39222e2c35aed2c4d72e0dd08f03ed2c6e8243de9537c3604a0221e",
+    "usr/lib/modules/7.1.12-2-20261017.20-sep-ARCH/vmlinuz": "543d1efd2dffaf621d1d7d1ba092cec71ee955903ec63c112bbcd32d921edbbd"
+  },
+  "result": "exact byte match with checksum-pinned published .20 binary package",
+  "limits": "Installed module file hashes; does not independently measure already loaded module memory."
+}

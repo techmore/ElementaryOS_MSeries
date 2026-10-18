@@ -54,6 +54,7 @@ STAGES=(
   "codexbar|user|on|install-codexbar.sh|CodexBar ARM64 desktop and CLI"
   "codexbar-panel|system|on|install-codexbar-wingpanel.sh|CodexBar quota and usage indicator in Wingpanel"
   "corners|system|off|install-gala-screen-corners.sh|rounded screen corners (patched Gala)"
+  "snapping|system|on|install-window-snapping.sh|persistent half snapping and native corner quarter snaps"
   "clockright|system|off|install-clockright-wingpanel.sh|right-side clock while the notch area is fixed"
   "drawers|system|off|install-gala-drawers.sh|hotkey drawers: pop an app up/down into a fixed screen zone"
 )

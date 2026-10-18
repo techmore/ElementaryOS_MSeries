@@ -1,5 +1,237 @@
 # OS 9 implementation / Claude Code handoff
 
+## .20-enh1 staged for one boot; .20 fallback and capture active — 2026-10-18 10:02 UTC
+
+Owner explicitly requested the next-boot trial, current .20 fallback and starting
+hardware/power tests. Installed frozen build1 package (SHA256 `185f1fa6…`),
+separate `/boot/vmlinuz-aurora20-enh1` and candidate initramfs. `grub-reboot elementary-aurora20-enh1` is armed. The managed custom.cfg block keeps that
+one-shot choice and defaults later boots to `elementary-aurora20`; it preserves
+all earlier entries and the five-second menu. No reboot was performed.
+
+[Staging proof](aurora/hardware-tests/2026-10-18-j314s-enh1-staging.json): candidate
+J314S DTB is byte-identical to .20 (`a29ff688…`). Existing .20 image/initramfs,
+shared `boot.bin` (`9c9c2d01…`) and generated grub.cfg hashes are unchanged.
+Exact root-private rollback directory: `/var/lib/mseries-kernel-tests/staging/20261018T095901Z/`.
+`prepare-trial-initrd.py` preserves the known-working Arch unlock userspace and
+10,240-byte early CPIO; replaces only modules/modlist with 93 candidate modules,
+resolved dependency closure and regenerated depmod indexes. Vermagic, CPIO
+preservation, both GRUB syntax checks and 58 offline regressions pass.
+
+Root-owned capture snapshot/config installed under `/usr/local/lib/mseries-kernel-trial/`
+and `/etc/mseries-kernel-trial.json`; user `mseries-kernel-trial.timer` enabled.
+The first baseline run completed: same .20 boot, 120 s SMC, median 24.46 W,
+p10 19.61 / p90 30.36, n=121; CPU busy 31.0%, controls before/after equal.
+Boot/PMP/idle + real GPU/fsync smoke checks pass. New baseline receipts are in
+`aurora/hardware-tests/*pre-enh1*.json`; raw local outputs/CPU/device inventory
+remain private under this chat's `outputs/aurora-kernel-trial/`. This is active
+uncontrolled desktop observation, not idle, A/B or a saving.
+
+[Trial guide](aurora/trial/README.md): next login/boot auto capture requires the
+exact pinned image/DTB/modules/boot payload and matching live GNU build ID,
+waits for >=5 min uptime/display context, then records 120 s + smoke checks.
+A failed kernel-health check retains evidence and skips active smoke tests.
+One run per boot; no reboot/suspend/sensor probe/display/audio/power-policy or
+sleep-parameter changes. Candidate hardware boot remains pending. Next: reboot
+normally when ready, verify unlock/desktop and automatic receipts; then manual
+ports/radio/suspend/recovery and controlled three-pair AB/BA qualification.
+Pending session changes must settle on both kernels before formal comparisons.
+Cancel just the pending trial with `sudo grub-editenv /boot/grub/grubenv unset next_entry`.
+
+## Power audit and Aurora status after `.20`; dock monitor seems live — 2026-10-18 (Claude Code)
+
+Read-only pass; nothing on the machine was changed. [Power audit](power/AUDIT-2026-10-18.md): docked on AC with a
+4K external panel, in-use desktop, SMC total-system power medians 19.7 / 21.4 W (and 25 W when my own probes
+ran), CPU 26-45 % busy. The watts-versus-CPU fit was inconsistent between runs, so no model or idle figure is
+claimed. Big userspace costs: gala 28 %, Claude desktop, a Brave renderer at 20 %, ChatGPT; system services
+total <40 s CPU each since boot. **Applied: none; proposals only** (find the Brave tab; hygiene trims need a quiet
+A/B). Scripts: `power/audit/`. Not measured: idle, battery drain, sleep drain on `.20`.
+
+[Aurora status](aurora/STATUS-2026-10-18-AFTER-20.md): no release since `.20`; only draft PR #139 (7.2.10 unified
+kernel, M2/Neo/J316S-on-7.2.10 results) moved. Its Touch ID attach/retry fix may address our probe crash but is
+untested on J314S. **Important and unrecorded before: on `.20` + matched `boot.bin` the dock now trains**
+(`SET_LINK_RATE 0x1e`, 4 lanes), reads the EDID and `DP-2` is a 3840x2160 logical monitor in Gala. That is G3 and G4
+by logs; G5 and the physical port need the owner's confirmation, and the sink re-trained every 10-15 s around
+04:51. SEP has run 75+ min without a hang (no Touch ID probe). Next: owner confirms the TV picture and port;
+long docked/idle/s2idle stability record; keep the Touch ID probe deferred.
+
+## Aurora energy ports, hardware receipts and frozen releases — 2026-10-18
+
+Owner requested all Aurora energy/WIP improvements plus tested kernel labels
+and frozen feature releases. Work is isolated in the aurora-energy-releases
+checkout; original power-usage checkout and its untracked rust work are intact.
+[Implemented plan](aurora/ENERGY-PORT-PLAN-2026-10-18.md): refreshed all 52 branch
+heads and 12 open PR heads; ten immutable energy-file comparisons. J314S DT,
+PMGR, CPU idle and PMP helpers/tests are identical between `.20` and the new
+draft PR #139 7.2.10 snapshot. Preserve already included behavior rather than
+reapplying historical patches. The draft's J316S results are not this J314S.
+
+Integrated PR #79's existing source-build lane and six authored, pinned patches
+with both documentation histories retained. Local adapter/promotion tests and
+production thermal/SMC checks pass. Added separately pinned `unified72` source
+preparation/check/build and another ARM64 CI profile; 12 production PMP tests
+pass locally. Release identities/package/module directories remain distinct.
+
+`qualification.py` now collects current-boot JSON-journal-bound read-only
+receipts and freezes/verifies exact source/recipe/kernel/boot/module/runtime
+parameter identities. Captured the running `.20` + matched 9c9c2d01… payload:
+boot >5 min, PMP ready/started/PMGR ownership, advancing idle counters and no
+selected severe-log messages. **Frozen experimental exp1**, not stable. The
+30-second SMC reading is during active work and is not an idle/A-B result.
+The released `.20` binary was repackaged into a native payload-only .deb with
+corresponding source/recipe retained; no installation occurred.
+
+The experimental exp1 freeze is now published with ten remotely checksum-verified
+assets at `releases/tag/mseries-aurora20-j314s-2026.10.18-exp1`. Afterwards, the
+same live J314S kernel passed a surfaceless GLES shader / 16-pixel readback on
+Apple M1 Pro G13S C0 and a 1 MiB temporary-file fsync/hash smoke test. Separate
+supplemental receipt and reusable runner are retained; frozen exp1 is unchanged.
+Neither smoke test is labelled a full GPU/storage/suspend acceptance result.
+
+Stable promotion refuses missing cases, failed results, mixed identities,
+fewer than three boots/sleep cycles or unmatched energy pairs; frozen IDs are
+write-once. Hardware wake/storage/GPU/ports/thermal/recovery and paired energy
+work remains. No kernel, bootloader, default/next-entry, refresh, brightness,
+sensor, audio or suspend action was changed by this batch. Next: use CI-built
+candidate artifacts for a reviewed non-default boot/rollback batch, then record
+the full J314S acceptance matrix before any stable promotion.
+
+### Follow-up release guard and WIP audit
+
+[64 original review fixes](aurora/branch-audits/2026-10-18-review-parity.json)
+were triaged against PR #139: 30 reverse-apply, 10 forward-apply, 24 need
+semantic/context review. All 64 are in `.20`/`.20-enh1`. Confirmed 7.2 gaps
+include GPU command-tail admission and SEP autoload/suspend behavior. Keep 7.2
+build-only; `.20-enh1` remains first hardware candidate. PR #83 merged the
+source/release groundwork. Merged PR #84 fixes stock-bindgen E0080 using the
+unmodified authored review commit 4c56f9cd and adds the real GPU/storage smoke
+receipt. Native ARM64 CI run 39114197052 passed both `.20-enh1` and `unified72`
+Image/modules/DTBs/package/inspection lanes at exact source head `20befbb3…`.
+PR #84 merged as `6ea6a062…`; passing compilation does not clear the 7.2 parity
+gate or qualify either new kernel on hardware.
+
+A Git history guard rejects edits/deletion of existing freeze/pin bytes; archived
+pins keep exp1 verifiable after future release changes. The next collector adds
+read-only active refresh/VRR/layout/display-power capture (no monitor serials).
+Exp1 had available-mode lists only, so stays an uncontrolled observation. A
+later diagnostic observed internal fixed 120 Hz and external 1080p fixed 60 Hz;
+no settings were applied. Local 47 regression checks and public dashboard
+checks pass. Additional reviewed-source controls pass: original 7 GPU-reader
+tests, 14 selected M1/M2 clock controls, DCP route fixture and 42 Bluetooth
+recovery controls under sanitizers. `review-host-check.py` and the retained
+source-host receipt bind the input tree and production bodies; these are
+simulated-service host checks, not new hardware acceptance. Disabled Python
+bytecode writes in the source-host runner, removed its private generated cache
+and re-ran all controls: the tested input tree now exactly matches CI's prepared
+source hash `98911503…`. Downloaded `.20-enh1` payload/source checksums verify.
+
+A separate same-boot proof binds live kernel GNU build ID `0d293a31…` to the
+exact `.20` ARM64 Image hash recorded in exp1. New captures hash and match a
+single image-byte snapshot; stable promotion requires the live build-ID match.
+Original exp1 assets/identity are unchanged; new-identity captures need their
+own freeze. Truncated/missing/mismatched notes fail closed in regression tests.
+
+### Frozen enhancement build published
+
+`mseries-aurora20-enh1-2026.10.18-build1` now permanently retains the successful
+`.20-enh1` payload, complete corresponding source, resolved config/provenance,
+authored patch series and checksums. Eight GitHub asset SHA256 digests match
+local publication files. It is **hardware-untested / frozen build candidate**,
+separate from the running `.20` experimental hardware freeze. Metadata lives in
+`aurora/frozen/builds/`; the history guard protects its bytes and rejects a
+hardware-qualified label. [Native build receipt](aurora/branch-audits/2026-10-18-native-builds.json)
+records both passing profiles and exact artifact/provenance identities. The
+7.2 binary remains build-only and is not a frozen hardware feature release.
+
+## Window snapping remains enabled; native quarters installed — 2026-10-18
+
+Owner requested permanent snapping and quarter layouts. Live edge-tiling was
+false and both half-snap shortcuts were empty despite the login helper.
+Enabled them immediately, then installed a local dconf profile/database with
+locks for those three keys. New clients report edge-tiling=true and
+`gsettings writable` false; old user overrides cannot disable the policy.
+`enhance.sh` stages the policy offline and the normal post-install menu now
+selects the quarter plugin installer by default.
+
+`mseries/window-snapping` is a native Gala 8.6.2 / Mutter 50 plugin. It adds
+40-logical-pixel corner targets, quarter previews, Super+Alt+U/I/J/K and
+Super+keypad 7/9/1/3. It respects monitor work areas and resizability; Escape
+cancels a drag. Installed schema and `.so` into the active private Gala prefix;
+the current compositor has not been restarted. **Quarters load at next sign-in.**
+Claude was focused and sent Super+Shift+Left to bring it toward the built-in
+display where Codex is open. No app/session restart was performed.
+
+Validation: native build; all four keyboard quarters, all four corner drags and
+Escape cancellation passed in an isolated headless Gala with a real GTK Wayland
+client (`bash mseries/window-snapping/test-nested.sh`). Shell syntax and scoped
+ShellCheck pass. No physical-monitor quarter verification or factory image
+boot is claimed; the factory currently stages only the half-snap policy.
+Next: sign in again, try the corner preview on both physical displays, then
+integrate the native plugin build into factory assembly if desired.
+
+## UPDATE 2026-10-18 04:25 — the crash is the Touch ID PROBE, not the boot (Claude Code)
+
+`.20` Aurora kernel (`7.1.12-2-20261017.20-sep-ARCH`, entry `elementary-aurora20`, SEP driver
+**enabled**) booted and ran **~141 s** with the SEP attached (7 endpoints, `/dev/sep-bio`,
+hwrng) and a normal desktop — far past the 15-60 s window where `.19` boots died. The
+journal ends at the moment the owner opened a Settings/Touch ID screen; owner report: **"when
+you probe the secure enclave / Touch ID it always crashes."** PAM is not wired (no
+`pam_fprintd` in sudo/polkit) and `fprintd` never ran, so the trigger is the first
+`/dev/sep-bio` open / sensor bring-up from the app. Leading suspect: the hand-ported
+`spi@39b108000` + `fingerprint@0` node in the current `boot.bin` (its clock and pinctrl phandles
+were flagged unresolved at port time). The upstream-matched J314S DTB is staged in
+`~/aurora20-boot-candidate/` (see `aurora/README.md`). **Do not open the Touch ID app or run
+`fprintd`/`aurora-touchid-setup` on the current `boot.bin`.** Next: with owner OK and DeepSeek
+coordination, deploy the matched `boot.bin.candidate` (rollback copy beside it), boot
+`elementary-aurora20`, wait 5 min idle, then one deliberate probe.
+
+(Older section below kept for history; its "SEP driver hangs the boot" conclusion is superseded.)
+
+## RESUME HERE — Aurora/Touch ID hang investigation — 2026-10-18 (Claude Code)
+
+**Problem:** every boot of the Aurora SEP kernel (`7.1.12-2-20261015.19-sep-ARCH`,
+GRUB entries `elementary-aurora-sep`, `-sep-clean`) hangs the whole machine within
+~15-60 s: mouse dies, then the Mac powers itself off about a minute later (looks
+like the SMC/PMU watchdog). Journal stops with no panic/oops (pstore empty).
+Dock is NOT required (happens undocked). Stock `7.1.13-3-2-ARCH` is stable on the
+same patched m1n1 DTB. The SEP does come up before the hang (firmware accepted,
+hwrng registered, `/dev/sep-bio` exists). No fingerprint enrolled yet. The dock
+(hub/mouse/Ethernet) does not work on Aurora (no fairydust USB4 code).
+
+**State of the machine right now:** default boot is stock. One-shot
+`grub-reboot elementary-aurora-nosep` was armed (Aurora with
+`module_blacklist=apple_sep`). A temporary journald drop-in
+`/etc/systemd/journald.conf.d/zz-aurora-freeze-hunt.conf` (1 s sync) is installed;
+remove it after the hunt. Touch ID app is installed ("Touch ID",
+`~/.local/bin/mseries-touchid-settings`); useless until Aurora runs stably.
+
+**Next steps, in order:**
+1. Result of the `nosep` boot: stable 10 min => the SEP driver causes the hang;
+   hangs => Aurora build itself or the ported fingerprint node.
+2. If still hanging: with owner approval, restore
+   `/boot/m1n1/boot.bin.pre-fingerprint-20261017-103254` (removes the ported
+   `spi@39b108000`/`fingerprint@0`; its clock/pinctrl phandles were flagged
+   unresolved at port time) and boot Aurora once.
+3. If SEP driver is guilty: report upstream (omacom/linux-aurora) with the logs in
+   AURORA-SECOND-BOOT.md; dock+Touch ID on one kernel is DeepSeek's area (kernel
+   work is DeepSeek's; coordinate via GitHub).
+4. Remove the journald drop-in when done.
+
+Full evidence and boot-by-boot table: [AURORA-SECOND-BOOT.md](AURORA-SECOND-BOOT.md);
+device-tree history: [aurora-touchid-state.md](aurora-touchid-state.md). Rollbacks:
+`/boot/grub/custom.cfg.pre-aurora-*`, `boot.bin.pre-*` in `/boot/m1n1/`.
+
+## Aurora SEP kernel: first boot froze — 2026-10-17 (Claude Code)
+
+Booted `7.1.12-2-20261015.19-sep-ARCH` with the patched m1n1 DTB (SEP enabled +
+alias + fingerprint SPI node). The SEP came up (firmware accepted, 12 endpoints,
+hwrng registered at 25.9 s) and the desktop started, then the journal stops at
+~34 s with no panic; next boot saw an unclean shutdown and pstore was empty.
+fprintd never started and nothing opened `/dev/sep-bio`, so enrollment is not
+the trigger. Cause unknown. Machine is back on stock `7.1.13-3-2-ARCH`. Public
+bugs page corrected (no longer claims Touch ID is just waiting on a boot test).
+Details: [aurora-touchid-state.md](aurora-touchid-state.md). Next: decide on a
+second boot with faster journal flushing; no boot files were changed by this note.
+
 ## Omacom userspace improvements — 2026-10-17
 
 [Systematic audit](OMACOM-IMPROVEMENTS.md) records all candidate dispositions,
@@ -32,6 +264,38 @@ passed both jobs ([run 39085829799](https://github.com/techmore/ElementaryOS_MSe
 regressions. Follow-up hardens removal and error handling; check the final PR
 head results before merging. Next: install diagnostics on Linux and qualify suspend/unlock logs; opt in to
 Bluetooth recovery only after retaining its matching failure evidence.
+
+## Aurora enhancement integration — 2026-10-17 (source candidate)
+
+Owner clarified “merge all enhancements”, not all kernel branches. The separate
+[source candidate](aurora/enhancements/README.md) imports PR #67's udmabuf/system
+heap, PR #135 thermal fallback, PR #134 then #119 camera fixes, and a rebased
+optional-battery-property helper from `4676c48e`. Original public authors and
+patch hashes are retained. PR #67's AMD/Nouveau commit is a separate `egpu`
+build profile; those drivers stay disabled in the normal candidate. No higher
+GPU clock or compute-preemption broadening is enabled.
+
+`candidate.py prepare/check/build` verifies the existing .20 source/recipe,
+applies patches without fuzz, modifies the actual full config, resolves/checks
+Kconfig and creates a separate payload-only Debian package (zstd level 3,
+bounded parallel compression) plus complete
+patched corresponding source. Kernel identity: `7.1.12-elementary-aurora20-enh1`
+(or `-egpu`). The fixed .20 installer/stager intentionally does not install it.
+17 local adapter regressions, 58 upstream Rust tests and the production SMC
+helper's all-readable + 65 failure cases pass (ASan/UBSan). Native ARM64 full
+build and package inspection are in `aurora-enhancements.yml`; CI result will
+be recorded with the merge. Hardware boot and battery improvements unmeasured.
+
+Outstanding: rebase shared DCP changes #122/#127 with matched m1n1/DT and display
+regressions. Old Neo telemetry, J456 speaker experiments, old Omarchy-only
+package policy and superseded VRR/SEP/TB code are excluded as documented.
+No target kernel, boot.bin, live service, default/next_entry or reboot changed.
+Next target action remains the saved installed-Linux read-only preflight, then
+qualify the released .20 baseline before considering this source candidate.
+Keep native Debian packages for the Ubuntu/elementary base; source tracking is
+independent of Arch packaging. Future factory image updates can use existing
+mkosi/sysupdate wiring; installed-machine migration and install-speed profiling
+are separate work, not completed by this kernel integration.
 
 
 > **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
@@ -2419,3 +2683,66 @@ No full kernel/module build or hardware boot was performed. E4 still disables bu
 accepted by the older fallback-preserving installer. Prior-art claims are scoped to the actual Aurora reports
 (zero tunnel churn on j314s display resume, different M2 Max dock chain). The next hardware task is a separately
 reviewed controlled boot using the actual current payload/state, with route/module/link/EDID/picture evidence.
+
+## Dependency audit and CodexBar 0.77.0 pin — 2026-10-18
+
+Audit of pinned programs: touchegg 2.0.18, crush v0.98.1, elementary/dock 8.3.3 and tether 0.2.38 are already latest upstream; apt had nothing upgradable (lists refreshed 04:28). CodexBar was pinned at v0.74.1 while upstream is v0.77.0, so `install-codexbar.sh` now pins v0.77.0.
+
+Verification: CLI and Desktop tarballs downloaded to a scratch dir and sha256-checked; the unpacked CLI reports 0.77.0 and `usage --provider codex` returns the signed-in account (sdolbec1@gmail.com, prolite); `opencodego` still needs a browser sign-in, as before. Not verified: the installer was not re-run, the Desktop app was not installed, and the running panel was not restarted, so the live panel is still on 0.74.1 until `install-codexbar.sh --skip-system-deps` is run and the panel restarted.
+
+Flatpak: Signal 8.30.0 → 8.31.0 and the GNOME 50 runtime updated on this machine (not repo state).
+
+Left alone on purpose: Brave Widevine 4.10.3057.0 is pinned by SHA-512 from a Mozilla bug and a newer component cannot be verified the same way; `local-ai/install.sh` pins coreglass, omarchy-mlx and mesa-mlx-compute to reviewed commits that are behind upstream heads (omarchy-mlx moved today) and MLX_OMARCHY_VERSION v0.7.33 has no upstream release to compare. Bumping those needs a review of the new commits and redistribution terms first.
+
+## CodexBar custom port: multi-account Codex switcher — 2026-10-18
+
+`AGENTS.md` now carries a banner: CodexBar is our custom port (upstream pin + our Wingpanel/wrapper/helpers), merged with upstream on each bump, never replaced by stock files. Upstream 0.77.0's managed Codex accounts (`codexbar codex-accounts`) are macOS-only ("only available on macOS"); its Claude switching needs the external `claude-swap` tool, which is not installed here.
+
+Added `mseries/codexbar-accounts.py` (list/save/switch/usage; one private saved Codex home per account under `~/.local/share/codexbar-mseries/codex-accounts`, atomic `auth.json` swap, the account being left is saved first, emails shared by two workspaces need the exact id) with 6 tests in `test-codexbar-accounts.py` (throwaway homes only; the real `~/.codex` was not touched by tests). The Wingpanel Codex card now lists other accounts with plan and 7-day remaining, a Switch button, and an Add account… button (saves the current sign-in, then `codex login` in a terminal). Installers and `enhance.sh` ship the helper; CI runs the tests.
+
+Verified: Python tests, Meson build and 3 suites, headless render with fake accounts. Not verified: a real second account switch on this desktop (only one Codex account is signed in), the 0.77.0 desktop app itself (not restarted), live Add account flow. Not built: Claude switching (needs `claude-swap`; panel hook not written).
+
+Next: sign in a second account via Add account…, confirm the Switch and the restart-Codex note; decide on installing `claude-swap` for Claude switching.
+
+## CodexBar panel footer redesign — 2026-10-18
+
+The bottom of the dropdown was four full-width flat buttons with 12px icons ("Quick View…", "Usage Details…", "Spending Details…", "Settings & Sign In…"), which read as tacked on. Now: three even icon-over-label tiles (Quick View, Usage, Spending, 16px icons, rounded hover) and Settings & sign in as a gear beside Refresh in the header. Headless renders checked in light and dark; Meson tests pass. Not verified: the live Wingpanel popover (module installed, loads on the next Wingpanel restart or login).
+
+### F5 dictation (speech to text) — 2026-10-18
+
+Added `mseries/install-dictation.sh` + `mseries/dictation/` (see its README). Voxtype v1.1.1 aarch64 `cpu` (SHA-256 `f29bdbf6...5687`, matches the release's SHA256SUMS; the `.asc` signature was not checked) with Whisper `base.en`; ydotool/wl-clipboard from apt. F5 is remapped to KEY_F14 by hwdb; Voxtype listens on evdev (user is in group `input`). Prior art: Omarchy's `omarchy-install-dictation-voxtype`.
+Built-in mic: PipeWire exposes only the silent headset jack; the AOP array (`hw:1,0`, 3ch S32 48 kHz, big DC offset) is bridged by `aop-mic.sh` into source `mseries-builtin-mic`. Speech played at the laptop and recorded from `hw:1,0`, filtered offline, transcribed correctly.
+Installed live on this Mac (services `ydotool`, `mseries-aop-mic`, `voxtype`). **Not verified:** a real person holding F5 and text landing in an app; accuracy; power cost of the always-on bridge. Mistakes during testing: an early bridge version was auto-linked to the speakers (fixed with `node.autoconnect=false`), and test speech was played aloud; a silent dry run typed "Pshhh." into the focused window.
+Next: owner tries F5; tune gain; start the bridge only while recording; grammar pass via `[output.post_process]` with the local LLM; evaluate Parakeet via the Voxtype ONNX build per `STT-RESEARCH.md`.
+
+## CodexBar panel: account per provider and icon dock — 2026-10-18
+
+Each provider card shows which login it is tied to, as a quiet caption with the person icon under the title (Codex: active email from `codexbar-accounts.py`; OpenCode Go: `accountEmail` from `codexbar-opencode-local.py`, which reads only the email of the active row in `opencode.db`; otherwise "Account not detected"). On this desktop `opencode.db` has no account rows, so the OpenCode Go card shows "Account not detected" until an account exists there. The footer is now an icon-only dock (Quick View, Usage details, Spending details, Settings & sign in = person silhouette) with names in tooltips; the header gear was removed. Helper tests (5 OpenCode, 6 accounts) and Meson (3 suites) pass; light and dark renders checked. Not verified: live Wingpanel popover (loads on next restart/login).
+
+## CodexBar custom port: Claude account switching and deploy script — 2026-10-18
+
+Claude switching uses claude-swap 0.27.2 (MIT, realiti4/claude-swap; PyPI wheel + `textual`, `rich`, `truststore`), installed into a private venv `~/.local/share/claude-swap-venv` with `~/.local/bin/cswap` linked (the same tool upstream CodexBar drives on macOS). `mseries/codexbar-claude.py` wraps `cswap list/status/switch --json` (5 tests with a faked cswap) and the Wingpanel gets a Claude card (active login, 5-hour and 7-day quota, other accounts with Switch, Add account… which opens a terminal running `cswap add`). If upstream CodexBar ever reports a `claude` entry itself, our card steps aside.
+
+Blocker found: this desktop has no Claude Code credentials file (`~/.claude/.credentials.json` is absent; `claude` is not on PATH), so `cswap add` answers "No credentials found for current account". `cswap status` does name the signed-in email, so the card shows it, but there is no quota and nothing to switch to until a login is saved: sign in with the Claude Code CLI, then use Add account….
+
+New `mseries/deploy-codexbar.sh` (helpers, wrapper, module build/tests/install, then restarts Wingpanel and the CodexBar app). AGENTS.md now says to run it after every push that touches CodexBar. Verified: 5 Claude tests, Meson, light and dark renders with a faked helper. Not verified: a real Claude switch (no saved account exists).
+
+## CodexBar panel: dense cards, company marks, bottom bar, repeatable port — 2026-10-18
+
+Panel redesign: no header. Each card leads with the company mark (OpenAI, Claude, OpenCode icons, installed as `mseries-codexbar-*-symbolic`; names in tooltips/accessible labels; the Claude and OpenCode marks are our own simple drawings, not official artwork), the plan chip and the signed-in login on one line. Quota rows are one line (name, bar, % left, reset time inline); the forecast only gets its own line when it is a warning. Accounts are one line each (login, remaining %, Switch) under a small "Accounts" header with a + button. The bottom bar carries a live "Updated … ago" timer (and the Cached chip) on the left and the icon dock plus Refresh on the right. Same formatting is used for Codex, Claude and OpenCode Go.
+
+Repeatable upgrades: `mseries/CODEXBAR-PORT.md` lists every mod and the upgrade checklist; `mseries/check-codexbar-port.sh` verifies the upstream CLI flags, `CODEX_HOME`, helper tests, the Wingpanel build and the live `--snapshot` keys (all pass on 0.77.0). `deploy-codexbar.sh` also installs the provider marks. Verified: headless light and dark renders, Meson tests, port check. Not verified: the live popover by eye after restart.
+
+## CodexBar: Add account no longer opens a terminal — 2026-10-18
+
+The + under Accounts opened a full-size terminal running `codex login` / `cswap add`; neither `codex` nor `claude` is on PATH here, so it was both ugly and broken. It now opens a small native dialog (GTK AlertDialog): sign in to the other account in Codex or Claude Code, then press Save. Save runs `codexbar-accounts.py save` / `codexbar-claude.py add` silently and reports the result in a second small dialog, with plain-language errors (for example, Claude Code has no saved sign-in yet: sign in with the CLI first). Helper tests: Claude 6, accounts 7. Not verified: the dialogs on the live desktop by eye, and a real second-account save (only one login exists here).
+
+## CodexBar: Claude sign-in through the desktop app's bundled CLI — 2026-10-18
+
+The Claude desktop app's login lives in its own encrypted Electron storage (keyring item "Claude Safe Storage"), not in a file claude-swap can read; we deliberately do not decrypt it. The app does bundle Claude Code's CLI under `~/.config/Claude/claude-code/<version>/<hash>/claude`; `claude auth status` on this machine reports `loggedIn: false`, which is why the old Save login failed. `codexbar-claude.py login` now finds that CLI (or `claude` on PATH), saves any account already signed in, runs `claude auth login` (browser), then `cswap add`; the panel's + for Claude is "Sign in and save". 9 helper tests pass. Not verified: the real browser sign-in and the second dialog on the live desktop (no login was started from here).
+
+The Claude mark in the panel is tinted terracotta (#d97757) via the `mark-claude` CSS class; Codex and OpenCode marks stay neutral. Light render checked; dark not re-checked.
+
+### Streaming dictation + ANE bring-up — 2026-10-18
+
+F5 now streams: `install-dictation-stream.sh` (transcribe.cpp 0.4.0 + Parakeet Unified Q4_K_M, SHA-256 pinned) runs `mseries-stream-dictate.service`, which replaces the Voxtype service (kept as fallback). Voxtype tuned to 6 threads (auto 10 was 4x slower: 4.4 s vs 1.07 s median on 7 s of audio). ANE: smoke 20/20 bit-exact on t6000; Parakeet-on-ANE golden "match" only with a private Mesa 26.2.4 Honeykrisp (built under `~/.local/share/mseries/ane/mesa-hk`, system Mesa untouched), and not faster (1.98 s for 10.4 s) so it is not used for dictation. Details: `mseries/dictation/STT-RESEARCH.md`. Not verified: live speech through the streaming service; its first words come ~3.3 s in. Next: owner trial, mic gain/noise, grammar pass, recording indicator in the panel.
