@@ -4703,3 +4703,26 @@ Owner opened *Live Die Repeat: Edge of Tomorrow* in `brave-youtube` (default Lin
 ## Dictation: ANE rolling streaming, press-once toggle, typing fallback — 2026-10-18
 
 Live F5 service (not the repo default) now runs `STREAM_ENGINE=ane STREAM_MODE=toggle STREAM_POPUP=0` from `~/.config/systemd/user/mseries-stream-dictate.service.d/50-ane.conf`. F5 sends one clean KEY_F14 (captured raw); the earlier "pulse" was the refusal notification, not a volume key. Apps with no accessible field (Electron) now type through ydotool (`STREAM_UNVERIFIED_FALLBACK=0` restores strict refusal; sensitive/non-editable stay refused). The ANE worker warms while recording; every 0.6 s the segment is re-decoded and agreed words are typed (append-only), tail 0.6 s after the second F5. Owner's first live dictation worked (56 chars, about 2.8 s wait, cold). Not measured: warm live latency, words-per-second feel, thermals of repeated passes, mic accuracy (hiss/sensitivity blocker unchanged), a WER set. Omarchy Mac (omacom/omarchy-mac-pkgs) has no mic/F5 dictation key handling to borrow. Next: owner trial of rolling mode, then read the `ane dictated` log lines.
+
+## English streaming candidate checkpoint — 2026-10-18
+
+Owner clarified English speech → English text only. The candidate native panel now
+removes foreign-language/mode controls, preserves original words, and offers English
+grammar after speech with opt-in previews while speaking. Latest-only requests,
+coalesced GTK edits, stale result rejection and cached final reuse are covered by
+66 dictation contracts plus a private GTK4 wiring smoke. Finish now waits for the
+queued input barrier before Ready; Escape has a separate cancelled state. The
+older private clipboard harness was adapted to the new English-only API (not rerun).
+New file-only CPU/Moonshine/Nemotron, actual ANE controller, MLX Vulkan and private
+English panel harnesses retain source identities and completed failures. Existing
+six-hour branch watcher gains four explicit upstream speech refs; no new schedule.
+
+This is a source checkpoint on draft PR155, not deployment or acceptance of the
+whole ANE/fallback branch. Native worker IPC deadlines, decoder-thread close/
+interrupt races and unverified ydotool pending output remain promotion gates.
+The English panel/model trial passed on its frozen pre-coalescing source; the
+current edit coalescing fix passed a separate synthetic native UI regression.
+Neither proves microphone/F5 acceptance of the current candidate or a factory boot.
+No owner runtime, microphone, other app window, kernel or audio stack changed here.
+Next: publish the completed public-file benchmark/source audit independently, then
+address lifecycle gates and qualify the selected F5 integration before deployment.

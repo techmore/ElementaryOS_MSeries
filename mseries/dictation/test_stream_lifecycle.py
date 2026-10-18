@@ -48,6 +48,30 @@ class StreamTests(unittest.TestCase):
         self.d.run.assert_called_once_with(self.model)
         self.d.typer.finish.assert_called_once_with('token')
 
+    def test_ready_waits_for_final_field_output(self):
+        entered, release = threading.Event(), threading.Event()
+        def drain():
+            entered.set();self.assertTrue(release.wait(3));return True
+        self.d.typer.drain.side_effect=drain
+        self.d.start();self.assertTrue(entered.wait(2))
+        self.assertTrue(self.d.active)
+        self.assertEqual(stream.status.call_args.args,('finishing',))
+        release.set();self.finish()
+        self.assertEqual(stream.status.call_args.args,('ready',))
+
+    def test_drain_timeout_refuses_ready_and_revokes_field_lease(self):
+        self.d.typer.drain.return_value=False
+        self.d.start();self.finish()
+        self.assertEqual(self.d.error,'InputDrainTimeout')
+        self.assertEqual(stream.status.call_args.args,('error',))
+        self.assertEqual(stream.input_call.call_args.args,('cancel',))
+
+    def test_cancel_is_distinct_from_success_for_live_review(self):
+        self.d.run.side_effect=lambda _:self.d.cancel()
+        self.d.start();self.finish()
+        self.d.typer.finish.assert_not_called()
+        self.assertEqual(stream.status.call_args.args,('cancelled',))
+
     def test_release_during_load_does_not_open_capture(self):
         entered, release = threading.Event(), threading.Event()
         def slow():

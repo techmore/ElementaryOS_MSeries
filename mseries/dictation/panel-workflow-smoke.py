@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Public-file ASR → private GTK panel → local translation/grammar → private clipboard."""
+"""Public-file ASR → private GTK panel → English grammar → private clipboard."""
 import argparse
 import hashlib
 import importlib.util
@@ -27,7 +27,7 @@ assert os.environ.get('GSETTINGS_BACKEND')=='memory'
 output=args.receipt_dir.resolve();output.mkdir(parents=True,mode=0o700,exist_ok=False)
 frozen=output/'evaluated-source';source=frozen/'dictation';source.mkdir(parents=True);(frozen/'local-ai').mkdir()
 for name in ['stream-dictate.py','dictation-input.py','dictation-input-client.py','dictation-panel.py',
-             'dictation_review.py','dictation_pipeline.py','dictation_resources.py','dictation_status.py','dictation_model.py',
+             'dictation_review.py','dictation_live.py','dictation_pipeline.py','dictation_resources.py','dictation_status.py','dictation_model.py',
              'review-smoke.py','panel-workflow-smoke.py']:
     (source/name).write_bytes((HERE/name).read_bytes())
 (frozen/'local-ai/machine.py').write_bytes((HERE.parent/'local-ai/machine.py').read_bytes())
@@ -80,7 +80,7 @@ with tempfile.TemporaryDirectory(prefix='mseries-panel-workflow-') as directory:
         spec=importlib.util.spec_from_file_location('panel_workflow_ui',source/'dictation-panel.py')
         panel=importlib.util.module_from_spec(spec);spec.loader.exec_module(panel)
         app=panel.DictationPanel();phase=['listening'];app.read_status=lambda:{'phase':phase[0]}
-        assert app.register(None);app.activate();pump()
+        assert app.register(None);app.activate();app.live_toggle.set_active(False);pump()
         app.window.get_surface().focus(Gdk.CURRENT_TIME);app.original.grab_focus();pump(1)
         assert not app.transform.get_sensitive()
         env=dict(os.environ,STREAM_OUTPUT='ibus',STREAM_TEST_INSERT='1',STREAM_TEST_WAV=str(args.wav.resolve()),
@@ -112,7 +112,7 @@ with tempfile.TemporaryDirectory(prefix='mseries-panel-workflow-') as directory:
             'wav_sha256':hashlib.sha256(args.wav.read_bytes()).hexdigest(),'first_widget_text_s':first_text,
             'elapsed_s':time.monotonic()-started,'backend':'cpu'}
         checkpoint();assert actual and wer<=.1,'ASR-to-panel reference check failed'
-        phase[0]='ready';app.poll();app.mode.set_selected(2);app.language.set_selected(1)
+        phase[0]='ready';app.poll()
         def real_review(text,mode,language):
             started=time.monotonic()
             code="import json,sys;sys.path.insert(0,sys.argv[1]);from dictation_review import review;print(json.dumps({'proposal':review(**json.load(sys.stdin))},ensure_ascii=False))"
@@ -128,19 +128,18 @@ with tempfile.TemporaryDirectory(prefix='mseries-panel-workflow-') as directory:
             checkpoint()
             return proposal
         app.review=real_review;app.start_review();until(lambda:not app.busy,200)
-        assert len(report['model_stages'])==2,'Both local review stages must complete'
-        assert [x['mode'] for x in report['model_stages']]==['translate','grammar']
+        assert len(report['model_stages'])==1,'English grammar review must complete'
+        assert [(x['mode'],x['language']) for x in report['model_stages']]==[('grammar','English')]
         assert app.text(app.original)==original,'Original transcript changed'
-        assert app.text(app.intermediate_text)==report['model_stages'][0]['proposal']
-        proposed=app.text(app.proposed);assert proposed==report['model_stages'][1]['proposal']
+        proposed=app.text(app.proposed);assert proposed==report['model_stages'][0]['proposal']
         assert app.copy.get_sensitive()
         app.copy.emit('clicked');copied=[]
         def got_clipboard(clipboard,result,*_):copied.append(clipboard.read_text_finish(result))
         app.window.get_clipboard().read_text_async(None,got_clipboard,None)
         until(lambda:bool(copied),5);assert copied[0]==proposed,'Private clipboard did not receive the reviewed proposal'
         assert bench.metadata()==identity,'Runtime changed during workflow'
-        report.update(complete=True,passed=True,original_preserved=True,intermediate_visible=True,private_clipboard_matches=True,
-            automatic_owner_app_insertion=False,quality_scope='Functional client/pipeline check; inspect synthetic translation and polish separately')
+        report.update(complete=True,passed=True,original_preserved=True,language='English',private_clipboard_matches=True,
+            automatic_owner_app_insertion=False,quality_scope='Functional English client/pipeline check; inspect meaning separately')
     except Exception as error:
         report['failure_kind']=type(error).__name__
         report['failure_scope']='Inspect private harness log; retain completed stages and do not silently rescore/repeat'

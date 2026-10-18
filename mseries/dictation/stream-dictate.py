@@ -167,6 +167,10 @@ class Typer(threading.Thread):
     def run(self):
         while True:
             text, token = self.q.get()
+            if isinstance(text, threading.Event):
+                text.set()
+                self.q.task_done()
+                continue
             if text is None:
                 try:
                     input_call('finish', token)
@@ -184,13 +188,18 @@ class Typer(threading.Thread):
                         input_call('commit', token, text)
                     else:
                         subprocess.run(["ydotool", "type", "--key-delay", "2", "--", text],
-                                       stderr=subprocess.DEVNULL)
+                                       stderr=subprocess.DEVNULL, timeout=5, check=True)
                 except (subprocess.SubprocessError, OSError):
                     first_failure = not self.failed
                     self.failed = True
                     log('dictation insertion refused; no keyboard fallback')
                     if first_failure and self.failure: self.failure()
             self.q.task_done()
+
+    def drain(self, timeout=15):
+        finished = threading.Event()
+        self.q.put((finished, None))
+        return finished.wait(timeout)
 
     def finish(self, token):
         if token: self.q.put((None, token))
@@ -304,6 +313,14 @@ class Dictation:
             notify('Dictation could not prepare the speech model; microphone is off')
         finally:
             if OUTPUT == 'ibus' and not self.cancelled: self.typer.finish(self.input_token)
+            # Ready means the original field includes the final queued output.
+            # English grammar review must not polish a pre-flush prefix.
+            status('finishing')
+            if not self.typer.drain():
+                self.error = 'InputDrainTimeout'
+                if self.input_token:
+                    try: input_call('cancel')
+                    except (subprocess.SubprocessError, OSError): pass
             if not capture_started or self.error == 'ResourceGuard':
                 try: self.models.trim(force=True)
                 except Exception:
@@ -313,7 +330,7 @@ class Dictation:
                 tone(440, 120)
                 notify('Dictation cancelled' if self.cancelled else ('Dictation stopped to preserve cooling or desktop memory' if self.error == 'ResourceGuard' else ('Dictation finished' if not self.error else 'Dictation could not finish')))
             self.active = False
-            status('waiting' if self.error == 'ResourceGuard' else ('error' if self.error else 'ready'))
+            status('cancelled' if self.cancelled else ('waiting' if self.error == 'ResourceGuard' else ('error' if self.error else 'ready')))
 
     def stop(self):
         if self.active:
@@ -618,7 +635,7 @@ def main():
             if typ == 1 and code == 1 and val == 1:  # Escape cancels pending IBus insertion
                 d.cancel()
             elif typ == 1 and val == 1 and code != KEY and code not in MODIFIER_KEYS and d.active and ENGINE == 'ane':
-                d.interrupt()  # typing ends dictation, as on macOS
+                d.interrupt()  # End our append-only session to avoid interleaving typed text.
             if typ == 1 and code == KEY and TOGGLE:
                 if val == 1:  # key repeat (val 2) and release are ignored
                     if d.active:
