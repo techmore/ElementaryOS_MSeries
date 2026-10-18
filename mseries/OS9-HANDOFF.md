@@ -92,6 +92,14 @@ runs with the sandbox disabled and all four CI jobs pass. With owner approval, `
 the wingpanel-9 indicators directory and Wingpanel restarted; the module is loaded. **Unverified:** hover and click in
 the real popover (they reuse the existing `--temperature` launch path). Next: owner look at the live dropdown.
 
+Follow-up (owner request): rooms are now hued by temperature in the 3D views — Emporia PR #160 (`973d314`, 2.3.64).
+Each room with a recent reading gets a translucent unlit volume in its band colour; stale or sensorless rooms stay
+clear; upper floors keep ≥55% of the hue under the Floors slider. An all-stale collector now shows one warning line.
+Bundles rebuilt with locked vite (clean main rebuilt byte-identical first); CI green. Verified by Xvfb/WebKit renders
+of whole home and each floor (first yellow, master blue, living room amber, attic blue). Installed to Wingpanel and
+restarted. **Not deployed:** the collector's web Home 3D page still serves the previous bundle until the collector is
+updated.
+
 ## Battery real data — 2026-10-18 (Claude Code)
 
 Owner asked for real data only. Deleted my synthetic test database. Logger now backfills from UPower's real history
