@@ -58,7 +58,7 @@ def input_call(method, token=None, text=None):
     command = ['/usr/bin/python3', INPUT_CLIENT, method]
     if token is not None:
         command.append(token)
-    return subprocess.run(command, input=text, text=True, capture_output=True, timeout=3, check=True).stdout.strip()
+    return subprocess.run(command, input=text, text=True, capture_output=True, timeout=5, check=True).stdout.strip()
 
 
 T0 = time.time()
@@ -215,7 +215,9 @@ class Dictation:
             try:
                 self.input_token = input_call('begin')
             except (subprocess.SubprocessError, OSError):
-                notify('Select a normal text field for dictation')
+                log('dictation input refused before microphone capture')
+                status('error')
+                notify('Dictation needs a supported editable text field. Focus the editor and try F5 again.')
                 return
         self.active = True
         self.error = None
@@ -396,6 +398,7 @@ def main():
                 d.cancel()
             if typ == 1 and code == KEY:
                 if val == 1:
+                    log('F5 pressed; checking dictation admission and field metadata')
                     d.start()
                 elif val == 0:
                     d.stop()

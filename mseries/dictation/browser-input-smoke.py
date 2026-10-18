@@ -48,8 +48,11 @@ with tempfile.TemporaryDirectory(prefix='mseries-browser-input-') as directory:
         # test startup on field metadata; do not retry a rejected Begin.
         focused_entry=[False]
         def accessible_focus(event,*_):
-            if event.detail1 and int(event.source.get_role())==79:
-                focused_entry[0]=True
+            if event.detail1 and int(event.source.get_role()) in (61,73,79,94,95):
+                event.source.clear_cache()
+                states=event.source.get_state_set()
+                if states.contains(Atspi.StateType.FOCUSED) and states.contains(Atspi.StateType.EDITABLE):
+                    focused_entry[0]=True
         listener=Atspi.EventListener.new(accessible_focus,None)
         listener.register('object:state-changed:focused')
         engine=subprocess.Popen(['/usr/bin/python3',str(Path(__file__).with_name('dictation-input.py'))])
@@ -92,7 +95,8 @@ with tempfile.TemporaryDirectory(prefix='mseries-browser-input-') as directory:
             def js(expression):return cdp('Runtime.evaluate',{'expression':expression,'returnByValue':True})['result'].get('value')
             html='<meta charset="utf-8"><input id="first"><input id="second"><input id="password" type="password">'
             cdp('Page.navigate',{'url':'data:text/html,'+urllib.parse.quote(html)});pump(1)
-            cdp('Page.bringToFront');js('document.querySelector("#first").focus()');pump(1)
+            cdp('Page.bringToFront');focused_entry[0]=False
+            js('document.querySelector("#first").focus()');pump(1)
             deadline=time.monotonic()+5
             while not focused_entry[0] and time.monotonic()<deadline:pump(.05)
             assert focused_entry[0],'Browser did not expose focused native field metadata'

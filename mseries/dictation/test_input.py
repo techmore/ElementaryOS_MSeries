@@ -33,6 +33,18 @@ class FocusTests(unittest.TestCase):
                      (79, True, False, True), (79, True, True, False), (0, True, True, True), (67, True, True, True)]:
             self.assertFalse(module.safe_accessible(*args))
 
+    def test_metadata_budget_stops_slow_ancestor_queries(self):
+        elapsed=[0]
+        budget=module.MetadataBudget(.6,lambda:elapsed[0])
+        called=[]
+        def slow():
+            called.append(True);elapsed[0]+=.4
+            return 'metadata'
+        self.assertEqual(budget.call(slow),'metadata')
+        with self.assertRaises(ValueError):budget.call(slow)
+        with self.assertRaises(ValueError):budget.call(slow)
+        self.assertEqual(len(called),2)
+
     def test_focus_scan_stops_requesting_children_after_budget(self):
         class SlowNode:
             elapsed = 0

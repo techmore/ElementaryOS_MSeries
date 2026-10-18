@@ -1,5 +1,47 @@
 # OS 9 implementation / Claude Code handoff
 
+## Bounded F5 diagnostics deployed; review queue waiting — 2026-10-18
+
+Found and fixed a concrete timeout mismatch: stream input_call allowed3s but its
+D-Bus client allowed4s. Parent now allows5s. Accessible-field validation has one
+0.6s budget across discovery/ancestor RPCs, and async Begin has a2.75s startup
+deadline. Twenty-three contracts pass, including slow-ancestor refusal. Anonymous
+F5-press and pre-capture-refusal logs plus error lifecycle status distinguish
+hardware delivery from unsupported focus without logging typed/spoken contents.
+This is NOT proof of the owner's original popup cause; exact prompt/app still pending.
+
+Actual GTK3 keys/compose and session checks, Qt6, headless GTK4 Wayland and Brave pass.
+A browser harness readiness attempt failed before Begin: ENTRY-only barrier omitted
+other supported editable roles. New barrier uses the same role/state whitelist and
+resets just before DOM focus. Failure retained. Model ASR quality trials not repeated.
+
+Refreshed only the two owned runtime files using Payload digest checks; private
+work/refresh-dictation-deadlines.py records the operation. Speech was idle and quiet
+admission passed. Current speechPID709424/inputPID709401 are active CPU/IBus, bridge
+ready; native source list unchanged. No mic, owner window, kernel, display, boot or
+audio route changes. Optional panel launcher remains absent; its batch is not deployed.
+Installed streamSHA452b3213 / bridgeSHAc32a00a8 match frozen GTK evaluated source.
+The next human press can now be diagnosed from ONLY the F5/refusal log lines.
+
+Owned mseries-dictation-review-qualification.service PID699108 is live, waiting for
+additional default admission headroom. Never duplicate it. Driver is frozen at
+work/dictation-review-cohort-v1/dictation/review-smoke.py; log is
+work/dictation-review-qualification.log and checkpoint work/dictation-review-v1.json.
+Six new synthetic grammar/translation cases; completed responses/check failures are
+retained; transport/policy interruptions remain separate and stop for inspection.
+No model request has run yet. It preserves other profiles, locks, owner jobs and
+requires three quiet samples and6.5GiB+6GiB before restoring the enabled default.
+It does not stop any model or open audio/apps. Explicit backend actual-response
+meaning/grammar review remains required; synthetic UI checks are not model quality.
+
+New cohort kernel7.1.12-2-20261017.20-sep-ARCH, MLX pin33630f9c, mlx_lm0.31.3,
+transformers5.16.1/numpy2.5.4. Actual streamed hashes: libmlx1187d571,
+Vulkan e92aa6fe, model5fb9acd0; latter matches the earlier qualified4B weights.
+Runtime/library stats and exact policy/profile/source metadata prevent mixed resumes.
+PR86 b3fbee4 CI39126283599 passed all3 jobs. Later diagnostics/harness batch needs
+its own CI and reconciliation with current main. Human F5, review results, merge
+and Pages verification remain incomplete.
+
 ## Human F5 attempt failed; review panel remains source-only — 2026-10-18
 
 Owner reports that F5 prompted a microphone desktop function rather than listening.

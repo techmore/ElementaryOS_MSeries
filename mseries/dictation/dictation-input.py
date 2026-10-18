@@ -20,6 +20,19 @@ def bounded_children(node, count, deadline, clock=time.monotonic):
     return children
 
 
+class MetadataBudget:
+    """Bound a series of accessibility RPCs, including cached-field ancestors."""
+    def __init__(self, seconds=.6, clock=time.monotonic):
+        self.clock=clock
+        self.deadline=clock()+seconds
+
+    def call(self, function, *args):
+        if self.clock()>self.deadline:raise ValueError('Field metadata deadline exceeded')
+        result=function(*args)
+        if self.clock()>self.deadline:raise ValueError('Field metadata deadline exceeded')
+        return result
+
+
 class FocusSession:
     """A transcript belongs to one uninterrupted, non-sensitive input focus."""
     def __init__(self, clock=time.monotonic):
@@ -108,31 +121,32 @@ def main():
 
         def validate(self):
             try:
+                budget=MetadataBudget()
                 if self.source is None:
-                    self.discover_focus()
+                    budget.call(self.discover_focus)
                 source = self.source
                 if source is None: raise ValueError('No accessible focused field')
-                source.clear_cache()
-                states = source.get_state_set()
-                role = int(source.get_role())
+                budget.call(source.clear_cache)
+                states = budget.call(source.get_state_set)
+                role = int(budget.call(source.get_role))
                 focused = states.contains(self.api.StateType.FOCUSED)
                 editable = states.contains(self.api.StateType.EDITABLE)
                 active = False
                 node = source
                 for _ in range(24):
                     if node is None: break
-                    node.clear_cache()
-                    parent = node.get_parent()
+                    budget.call(node.clear_cache)
+                    parent = budget.call(node.get_parent)
                     # Qt's top-level QWidget reports FILLER rather than FRAME.
-                    top_level = parent is not None and parent.get_role() == self.api.Role.APPLICATION
-                    window_role = node.get_role() in (self.api.Role.FRAME, self.api.Role.DIALOG, self.api.Role.WINDOW)
-                    if (window_role or top_level) and node.get_state_set().contains(self.api.StateType.ACTIVE):
+                    top_level = parent is not None and budget.call(parent.get_role) == self.api.Role.APPLICATION
+                    window_role = budget.call(node.get_role) in (self.api.Role.FRAME, self.api.Role.DIALOG, self.api.Role.WINDOW)
+                    if (window_role or top_level) and budget.call(node.get_state_set).contains(self.api.StateType.ACTIVE):
                         active = True
                         break
                     node = parent
                 if not safe_accessible(role, focused, editable, active):
                     raise ValueError('Focused field is sensitive, inactive or not editable')
-                return self.identity(source)
+                return budget.call(self.identity,source)
             except Exception:
                 raise ValueError('Accessible field metadata unavailable or unsafe') from None
 
@@ -262,6 +276,7 @@ def main():
         if lease['busy'] or lease['token']:
             raise ValueError('A dictation session is already active or finishing')
         if metadata is None: raise ValueError('Accessible field metadata is required')
+        deadline=time.monotonic()+2.75
         identity = metadata.validate()  # Refuse sensitive fields BEFORE switching.
         desc = bus.get_global_engine()
         if desc is None: raise ValueError('No current input method')
@@ -279,11 +294,13 @@ def main():
             attempts = [0]
             def settle():
                 try:
+                    if time.monotonic()>deadline:raise ValueError('Dictation startup deadline exceeded')
                     if epoch != lease['epoch']: raise ValueError('Dictation was cancelled')
                     if metadata.validate() != identity: raise ValueError('Text-field focus changed while starting dictation')
                     if current['engine'] is None and attempts[0] < 8:
                         attempts[0] += 1
                         return True
+                    if time.monotonic()>deadline:raise ValueError('Dictation startup deadline exceeded')
                     current['metadata'] = identity
                     state.target = current['engine']
                     if state.target is not None: state.content(*state.target.get_content_type())
