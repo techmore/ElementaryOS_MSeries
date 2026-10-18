@@ -1,5 +1,21 @@
 # OS 9 implementation / Claude Code handoff
 
+## Dock TV: no sound (display audio off in the kernel) and YouTube Movies 480p (YouTube rule) — 2026-10-18 (Claude Code)
+
+- **No TV sound:** no `apple_dcp` sound card exists because `appledrm.hdmi_audio=N`. The device tree already wires a
+  display-audio controller to both external DCPs; the dock TV is on `dcp@289c00000` (`audio-controller@39b504000`,
+  bound). The flag is only read at DCP start and display-subsystem bind (Aurora `.20` `dcp.c`/`audio.c`), and
+  `appledrm` is in the initramfs, so it has to go on the kernel command line. **Installed** the inert `apple_dcp` UCM
+  profile (AsahiLinux/alsa-ucm-conf-asahi#9, BSD-3) via `mseries/audio/install-dcp-display-audio.sh`; sinks
+  unchanged. **Not done (owner decision):** a non-default GRUB entry with `appledrm.hdmi_audio=1`. The auto-mode check
+  blocked writing a GRUB-editing script; the `.20-enh1` one-shot trial is armed and says "no audio changes".
+  Upstream omacom/linux-aurora#48 has never tested dock/USB4 audio. Full write-up and test plan:
+  `mseries/audio/DOCK-TV-AUDIO.md`.
+- **480p films:** YouTube serves Movies & TV in HD only to Safari among browsers (Google help 78358). L3 Widevine,
+  not fixable here; corrected the earlier "SD/720p" wording. Workaround: the Fire TV's own YouTube app.
+- **Next:** owner decides on the display-audio boot entry; then run the test list in `DOCK-TV-AUDIO.md` and report on
+  linux-aurora#48.
+
 ## CodexBar: why the Claude account switch "did nothing", and the fix — 2026-10-18 (Claude Code)
 
 Pin unchanged: upstream CodexBar v0.77.0, claude-swap 0.27.2. Branch `claude/codexbar-claude-switch` (from
