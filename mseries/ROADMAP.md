@@ -22,6 +22,17 @@ physical F5 in the chat composer is the remaining acceptance gate. Preserve pass
 The owner permits OS-level dictation integration; it is not a reason to type into
 an unknown field. Native compositor input/broker work remains future development.
 
+RC2 archive `d5c0e9b2…` is built from exact source `13a8b847ef3c754cbe37fe68686463bb2ec9f269`.
+All 25 extracted-package/host checks passed. That exact head passed all seven CI
+jobs in run `39157224321`. The source-only STT payload is now installed: all 16
+runtime hashes and managers match, the transcript-only launcher is active for
+its next invocation, strict CPU/IBus is ready, all seven debug overrides are
+absent, native input preferences and everyday4B PID are preserved. One post-install
+sample had 13,683,703,808 bytes available, maximum 2,489 RPM / 42.331 C. This was
+static/readiness verification without microphone/model inference. It is not
+physical F5 acceptance in ChatGPT. RC1's terminal-error idle refusal was fixed
+without changing its retained receipt or any live status to obtain a pass.
+
 Release worktree: `ElementaryOS_MSeries-f5-v001`, branch `release/f5-v0.0.1`.
 Source-only deterministic Git-blob packaging, strict read-only preflight,
 versioned rollback and a transcript-only UI are prepared. Native/ANE/MLX assets
@@ -31,9 +42,8 @@ stay available on the host but are not bundled or requalified. See
 Advanced diagnostic work is isolated on `feat/quiet-diagnostic-agent`, disabled
 and not qualified; never add it to the STT artifact or use everyday4B for repairs.
 The existing six-hour developer watcher continues; do not duplicate it or rerun
-finished ASR benchmarks. Next: commit/push candidate, verify exact-commit archive
-and host preflight, record the owner's post-relaunch F5 result, then release only
-when that result passes. Preserve all owner main changes; one Git writer.
+finished ASR benchmarks. Next: verify ChatGPT actually restarts with the staged flags, record the owner's
+post-relaunch F5 result, then publish v0.0.1 only when that result passes. Preserve all owner main changes; one Git writer.
 
 ## CodexBar weekly quota beside top-row tokens — 2026-10-18
 

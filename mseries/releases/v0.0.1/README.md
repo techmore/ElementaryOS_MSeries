@@ -94,6 +94,12 @@ python3 -B mseries/dictation/enable-app-input.py --app chatgpt --rollback
 
 ## Qualification and limits
 
+The RC2 source was deployed after all seven exact-head CI checks passed. All 25
+read-only package/host checks and installed-byte/readiness/preservation checks
+pass. These do not establish physical F5 in ChatGPT; the unresolved gate above
+remains mandatory. [Sanitized candidate receipts](receipts/) retain both failures
+and the corrected installer admission.
+
 The retained CPU/public-file results include two resident 62.61-second trials,
 finishing 0.048/0.062 seconds after audio. Installed routes passed GTK4 public-file
 ASR; GTK3/Qt6/Brave fixtures; and Code/Newelle/Tasks lease/cancel fixtures, with

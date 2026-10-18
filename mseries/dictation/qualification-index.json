@@ -2228,8 +2228,16 @@
     "model_cohorts_repeated": false,
     "receipts": [
       {
+        "path": "../releases/v0.0.1/receipts/activation-rc2.json",
+        "sha256": "3430533589105c1331979b35617241b2ec9fe21ff051fad3db8c932240b0088e"
+      },
+      {
         "path": "../releases/v0.0.1/receipts/build-rc1.json",
         "sha256": "4118c9803f0ba43f9a43b457e2d06978aaf85170f8bf3a638f3a07c8ec5b999f"
+      },
+      {
+        "path": "../releases/v0.0.1/receipts/build-rc2.json",
+        "sha256": "7ba3c75b61d74d494afb530b4635cc950873e5fe9ecd245a8a8abd123d5fdfc0"
       },
       {
         "path": "../releases/v0.0.1/receipts/chatgpt-human-v1.json",
@@ -2243,6 +2251,11 @@
         "path": "../releases/v0.0.1/receipts/chatgpt-launcher-v1.json",
         "sha256": "62729514f7e2769a060b8c534861a428d9dd523dd4d7737fde0f388bb7e988e5"
       }
-    ]
+    ],
+    "candidate_source_commit": "13a8b847ef3c754cbe37fe68686463bb2ec9f269",
+    "candidate_ci_run": 39157224321,
+    "candidate_ci": "all seven jobs success",
+    "candidate_deployed": true,
+    "physical_chatgpt_f5": "pending activation of next-launch settings; failed reports preserved"
   }
 }
