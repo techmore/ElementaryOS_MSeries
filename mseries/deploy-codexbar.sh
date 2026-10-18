@@ -26,11 +26,20 @@ meson test -C "$build" --print-errorlogs
 indicators_dir=$(pkg-config --variable=indicatorsdir wingpanel-9)
 # install(1) replaces the file instead of overwriting it, so the loaded module is never truncated in place.
 sudo install -m 0755 "$build/libcodexbar.so" "$indicators_dir/libcodexbar.so"
+# Icon-theme invalidation affects the whole live panel. Do not rewrite unchanged marks
+# or refresh its icon cache on routine code/documentation deployments.
+icons_changed=false
 for mark in openai claude opencode; do
-  sudo install -m 0644 "$repo/mseries/codexbar-wingpanel/icons/$mark.svg" \
-    "/usr/share/icons/hicolor/scalable/apps/mseries-codexbar-$mark-symbolic.svg"
+  source_icon="$repo/mseries/codexbar-wingpanel/icons/$mark.svg"
+  installed_icon="/usr/share/icons/hicolor/scalable/apps/mseries-codexbar-$mark-symbolic.svg"
+  if ! cmp -s "$source_icon" "$installed_icon"; then
+    sudo install -m 0644 "$source_icon" "$installed_icon"
+    icons_changed=true
+  fi
 done
-command -v gtk-update-icon-cache >/dev/null && sudo gtk-update-icon-cache -f /usr/share/icons/hicolor >/dev/null
+if "$icons_changed" && command -v gtk-update-icon-cache >/dev/null; then
+  sudo gtk-update-icon-cache -f /usr/share/icons/hicolor >/dev/null
+fi
 install -m 0755 "$build/codexbar-settings" "$HOME/.local/bin/codexbar-settings.new"
 mv -f "$HOME/.local/bin/codexbar-settings.new" "$HOME/.local/bin/codexbar-settings"
 echo "Installed helpers, native settings, provider marks and $indicators_dir/libcodexbar.so"

@@ -1,5 +1,19 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## CodexBar deployment follow-up: avoid unchanged icon invalidation — 2026-10-18
+
+The local-token change was activated with one requested reload and passed its first 61-second
+observation. Later routine post-push deployments produced GTK popover/accessibility warnings at
+14:02:56 and 14:03:08, exactly when identical provider marks were reinstalled and the global icon cache
+refreshed. Wingpanel PID 233125 then SIGSEGVed in libgtk-4 at 14:03:09 and auto-recovered as 248867.
+This is a confirmed crash, not an intentional second reload. The stack does not prove which widget
+owned the bad popover, so the relationship to icon invalidation remains an inference.
+Deploy now byte-compares provider icons and refreshes the global icon cache only when a mark changes.
+This removes unnecessary live icon-theme invalidation during code/docs-only deploys. Stubbed deployment
+tests verify no icon/cache writes for identical marks, a single cache refresh for changed marks, and
+unchanged explicit-only panel reload behavior. Native token code is unchanged; no second intentional
+reload is needed. Follow-up validation of the quiet path is recorded below.
+
 ## Seven-day local tokens for all three providers — 2026-10-18
 
 Added `7d local` processed-token totals for Codex, Claude Code and OpenCode in the two-row panel.

@@ -36,13 +36,14 @@ case $name in
  meson) if [[ $1 == setup ]]; then mkdir -p "$2"; touch "$2/libcodexbar.so" "$2/codexbar-settings"; fi ;;
  pkg-config) echo "$TEST_ROOT/indicators"; mkdir -p "$TEST_ROOT/indicators" ;;
  sudo) exit 0 ;;
+ cmp) [[ ${TEST_ICONS_MATCH:-1} == 1 ]] ;;
  install) /usr/bin/install "$@" ;;
  pgrep) exit 0 ;;
  *) exit 0 ;;
 esac
 ''')
             fake.chmod(0o755)
-            for name in ('meson', 'ninja', 'pkg-config', 'sudo', 'gtk-update-icon-cache', 'pgrep', 'pkill', 'setsid', 'sleep', 'install'):
+            for name in ('meson', 'ninja', 'pkg-config', 'sudo', 'gtk-update-icon-cache', 'pgrep', 'pkill', 'setsid', 'sleep', 'install', 'cmp'):
                 (tools / name).symlink_to(fake)
             log = root / 'calls'
             env = os.environ | {'HOME': str(profile), 'PATH': str(tools) + ':/usr/bin:/bin',
@@ -53,8 +54,16 @@ esac
                 self.assertEqual(result.returncode, 0, result.stderr)
                 calls = log.read_text().splitlines()
                 self.assertEqual(sum(line.startswith('pkill ') for line in calls), int(args == ['--restart']))
+                self.assertFalse(any('gtk-update-icon-cache' in line for line in calls), 'unchanged icons never invalidate the live theme')
                 self.assertFalse(any('--quit' in line for line in calls))
                 self.assertFalse(any(line.startswith('setsid ') for line in calls), 'already-running processes are preserved')
+            log.write_text('')
+            result = subprocess.run(['bash', str(repo / SCRIPT.name)], env=env | {'TEST_ICONS_MATCH':'0'}, capture_output=True, text=True)
+            self.assertEqual(result.returncode,0,result.stderr)
+            calls=log.read_text().splitlines()
+            self.assertEqual(sum('sudo gtk-update-icon-cache' in line for line in calls),1)
+            self.assertEqual(sum(line.startswith('sudo install -m 0644') for line in calls),3)
+            self.assertFalse(any(line.startswith('pkill ') for line in calls))
             log.write_text('')
             result = subprocess.run(['bash', str(repo / SCRIPT.name), '--bad-option'], env=env, capture_output=True)
             self.assertEqual(result.returncode, 2)
