@@ -1307,15 +1307,17 @@ namespace MSeries {
             head.append (build_hint_badges (provider, true));
             var email = account_email_for (provider, entry);
             var plan = entry.get_string_member_with_default ("plan", "");
-            if (plan.strip ().length == 0) {
-                var accounts = provider_accounts (provider);
-                for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
-                    var account = accounts.get_object_element (i);
-                    if (account.get_boolean_member_with_default ("active", false) && email.length > 0 &&
-                        account.get_string_member_with_default ("email", "").down () == email.down ()) {
+            var accounts = provider_accounts (provider);
+            for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
+                var account = accounts.get_object_element (i);
+                if (account.get_boolean_member_with_default ("active", false) && email.length > 0 &&
+                    account.get_string_member_with_default ("email", "").down () == email.down ()) {
+                    // Upstream's generic "Go" describes this provider, not the workspace's tier.
+                    if (plan.strip ().length == 0 || (provider == "opencodego" &&
+                        (plan.down () == "go" || account.get_string_member_with_default ("planSource", "") == "console"))) {
                         plan = account.get_string_member_with_default ("plan", "");
-                        break;
                     }
+                    break;
                 }
             }
             head.append (build_identity (email, plan));
