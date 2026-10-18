@@ -1,0 +1,65 @@
+{
+  "complete": true,
+  "passed": true,
+  "cohort": "on-demand-speech-lifecycle-v1",
+  "phases": [
+    {
+      "phase": "idle-before-native-import",
+      "rss_bytes": 39419904
+    },
+    {
+      "phase": "resident-after-file-to-field",
+      "rss_bytes": 963362816
+    },
+    {
+      "phase": "released-after-file-to-field",
+      "rss_bytes": 141131776
+    },
+    {
+      "phase": "reloaded-without-second-inference",
+      "rss_bytes": 976191488
+    },
+    {
+      "phase": "released-after-reload",
+      "rss_bytes": 196984832
+    }
+  ],
+  "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": 3500,
+    "max_temp_c": 80,
+    "cool_fan_rpm": 2700,
+    "resume_fan_rpm": 2600,
+    "burst_s": 3,
+    "sample_s": 1
+  },
+  "wav_sha256": "33c6c68d943a22d5272bf8d5e1f86af9d89d901fb7da35961a692de7591a534c",
+  "model_sha256": "a8bf3de2b393bd14ead5a858c3748d5e3b07a20fdeabdd3b498fba4f463fa929",
+  "source_sha256": {
+    "stream-dictate.py": "f62cd6fc942daa63b586b8503eff7e1fc5eb7b26d4393d6f92208b8c597fadf2",
+    "dictation-input.py": "73c30634a259af7ec86060f403e245a492963135ab692d5eb738169d7cc60d1e",
+    "dictation-input-client.py": "f9b0c59f6b941a5c670ea04156a796a7526c6945ea369f537d43a2e8c1b0305d",
+    "dictation_status.py": "50dadbf4f6a7f5edf8e4cb8b91d8931adf75cd899455285547d653c5af591903",
+    "dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+    "dictation_model.py": "ce7b805e735c704ff7a22ce7ea272fb88e22f91d64e6c965185b8e5c4db41578",
+    "lifecycle-smoke.py": "da69ddc38e080094efac3a51bea890f18b56e9d5ca5062ed0e3599f8b6fd8b1a",
+    "gtk-input-smoke.py": "65a9840d8b9a8d44afdf5d741d2bc013b4f4de5afeba16b1f7c05de20f188e00",
+    "machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+  },
+  "native_library_sha256": "9f1f839d89a6d3a874c939ecf3108007cc0964a338596a35adb47c7e6c5c921d",
+  "released_rss_bytes": 822231040,
+  "inference_runs": 1,
+  "scope": "One new lifecycle fixture, not a repeated accuracy/throughput ranking; second load performs no inference.",
+  "resources": {
+    "samples": 114,
+    "min_available_bytes": 11892064256,
+    "max_fan_rpm": 0.0,
+    "max_temp_c": 39.518
+  },
+  "microphone_recorded": false,
+  "keyboard_device_opened": false,
+  "owner_windows_opened": false,
+  "deployment_scope": "Source candidate; existing owner speech service was not refreshed by this qualification.",
+  "memory_scope": "Within-process RSS observations on this pinned machine; freed native handles are checked. Retained library/allocator memory remains; no zero-overhead or long-run leak claim."
+}

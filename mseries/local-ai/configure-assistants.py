@@ -13,6 +13,7 @@ LIB = HOME / '.local/libexec/mseries-ai'
 CONFIG = HOME / '.config/mseries-ai'
 MODEL = str(HOME / '.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3')
 QUALITY_MODEL = str(HOME / '.cache/huggingface/hub/models--mlx-community--Qwen3.5-9B-MLX-4bit/snapshots/938d8919941c6e7efd3c7150eff7fe9d12afa631')
+ADDED_TOOLS = ['create_assistant_task', 'create_assistant_event', 'browser_list_tabs', 'browser_read_page', 'create_mail_draft', 'read_mail_draft']
 
 
 def put(path, value, mode=0o600):
@@ -38,10 +39,23 @@ def invalidate_mcp_cache():
             pass  # Newelle itself refetches unreadable schema caches.
 
 
+def app_helpers():
+    for name in ['app_adapters.py', 'mail-drafts-ui.py', 'runtime_recovery.py']:
+        put(LIB / name, (HERE / name).read_text(), 0o755)
+    for name, target, action in [('mseries-assistant-browser', 'app_adapters.py', 'browser'),
+                                  ('mseries-review-mail-draft', 'app_adapters.py', 'review-mail'),
+                                  ('mseries-mail-drafts', 'mail-drafts-ui.py', None)]:
+        argv = [str(LIB / target)] + ([action] if action else [])
+        put(HOME / '.local/bin' / name, '#!/usr/bin/python3\nimport os,sys\nos.execv("/usr/bin/python3",["python3"]+' + repr(argv) + '+sys.argv[1:])\n', 0o755)
+    for name, title in [('mseries-assistant-browser', 'Assistant Browser'), ('mseries-mail-drafts', 'Assistant Mail Drafts')]:
+        put(HOME / '.local/share/applications' / (name + '.desktop'),
+            f'[Desktop Entry]\nType=Application\nName={title}\nExec="{HOME}/.local/bin/{name}"\nIcon=applications-internet\nTerminal=false\nCategories=Network;\n', 0o644)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--adopt-compact-defaults', action='store_true', help='Adopt the measured 4B everyday/coding presets; retain policy and other profiles')
-    parser.add_argument('--refresh-tools', action='store_true', help='Update only the installed MCP adapter and enable its new task tool; retain model, memory, policy and other settings')
+    parser.add_argument('--refresh-tools', action='store_true', help='Update MCP/app helpers and added tools; retain model, memory, policy and other settings')
     args = parser.parse_args()
     if args.refresh_tools:
         if args.adopt_compact_defaults or not (LIB / 'os-mcp.py').exists():
@@ -53,18 +67,21 @@ servers=json.loads(s.get_string('mcp-servers'))
 if not any(x.get('command')=='/usr/bin/python3' and x.get('args')==[sys.argv[1]] for x in servers):
     raise SystemExit('The installed MSeries MCP server is not configured in Newelle')
 tools=json.loads(s.get_string('tools-settings'))
-tools['create_assistant_task']={'enabled':True,'lazy_load':False}
+for name in json.loads(sys.argv[2]):tools[name]={'enabled':True,'lazy_load':False}
 s.set_string('tools-settings',json.dumps(tools)); Gio.Settings.sync()
 '''
         subprocess.run(['flatpak', 'run', '--command=python3', 'io.github.qwersyk.Newelle', '-c', body,
-                        str(LIB / 'os-mcp.py')], check=True)
+                        str(LIB / 'os-mcp.py'), json.dumps(ADDED_TOOLS)], check=True)
+        app_helpers()
         put(LIB / 'os-mcp.py', (HERE / 'os-mcp.py').read_text(), 0o755)
+        put(LIB / 'model-worker.py', (HERE / 'model-worker.py').read_text(), 0o755)
         invalidate_mcp_cache()
-        print('Updated MCP adapter/task tool; retained model, memory, policy and other settings.')
+        print('Updated MCP/app helpers; retained model, memory, policy and other settings.')
         return
     LIB.mkdir(parents=True, exist_ok=True)
     for name in ['machine.py', 'model-worker.py', 'os-mcp.py', 'brief.py']:
         shutil.copy2(HERE / name, LIB / name)
+    app_helpers()
     config = {'policy': {'reserve_gib': 6, 'max_fan_rpm': 3500, 'max_temp_c': 80,
                          'cool_fan_rpm': 2700, 'resume_fan_rpm': 2600, 'burst_s': 3, 'sample_s': 1}, 'profiles': {
         'everyday': {'engine': 'mlx', 'model': 'qwen3.5-4b-mseries-4bit', 'context': 8192, 'port': 8766, 'admission_gib': 6.5},
@@ -188,7 +205,7 @@ print(json.dumps(backup))
 disabled=['execute_command','show_image','read_image','take_screenshot','show_video','read_file','write_file','edit','glob','list_directory','grep_search','run_subagent','schedule_task','ask_user','sleep','switch_mode','todo','activate_skill','memory_search','memory_save','memory_recall','website','rag_search_files','tool_search']
 tools=json.loads(s.get_string('tools-settings'))
 tools.update({k:{'enabled':False} for k in disabled})
-tools.update({k:{'enabled':True,'lazy_load':False} for k in ['system_status','list_apps','list_tasks','create_assistant_task','list_calendar_events','add_minutes','get_energy','workspace_list_files','workspace_read_file','workspace_write_note','recent_faults']})
+tools.update({k:{'enabled':True,'lazy_load':False} for k in ['system_status','list_apps','list_tasks','create_assistant_task','list_calendar_events','create_assistant_event','browser_list_tabs','browser_read_page','create_mail_draft','read_mail_draft','add_minutes','get_energy','workspace_list_files','workspace_read_file','workspace_write_note','recent_faults']})
 s.set_string('tools-settings',json.dumps(tools))
 s.set_string('memory-model','user-summary')
 s.set_int('context-max',8192)

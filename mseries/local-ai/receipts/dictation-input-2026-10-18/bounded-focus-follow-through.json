@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "source_sha256": "a4922cb6d890aefbcbbb6b9dba5721b6498e656af51c21abc77a8357b7090493",
+  "change": "Added per-child focus-discovery budget checks; speech decoder unchanged from guarded-v4 snapshot.",
+  "qt6": {
+    "qt6_unicode_field": true,
+    "qt6_multiline": true,
+    "changed_field_untouched": true,
+    "password_untouched": true,
+    "method": "Real Qt6 X11 widgets in private Xvfb/IBus/session bus; no microphone or ASR"
+  },
+  "contracts_passed": 15
+}

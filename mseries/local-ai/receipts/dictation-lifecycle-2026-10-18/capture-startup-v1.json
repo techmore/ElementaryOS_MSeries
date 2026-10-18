@@ -1,0 +1,23 @@
+{
+  "complete": true,
+  "passed": true,
+  "inference_runs": 0,
+  "microphone_recorded": false,
+  "keyboard_device_opened": false,
+  "owner_windows_opened": false,
+  "source_sha256": {
+    "stream-dictate.py": "e4c2b90ac87d35a879ec8d6fc7f08e8cb975da4bd3f79d688c07f261f51a799f",
+    "dictation_model.py": "ce7b805e735c704ff7a22ce7ea272fb88e22f91d64e6c965185b8e5c4db41578",
+    "dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+    "dictation_status.py": "50dadbf4f6a7f5edf8e4cb8b91d8931adf75cd899455285547d653c5af591903",
+    "capture-startup-smoke.py": "f04586b050f1efa9a40aff2bde782881eaaea92fc603b254bb88a13786deedf7",
+    "machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+  },
+  "wav_sha256": "33c6c68d943a22d5272bf8d5e1f86af9d89d901fb7da35961a692de7591a534c",
+  "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "public_file_first_bytes": 2048,
+  "owned_file_child_closed": true,
+  "release_during_first_read_closed_child": true,
+  "cancel_elapsed_s": 0.20295775399790728,
+  "scope": "Real public-file ffmpeg startup/close and cancellation of one owned silent Python child; no model, microphone or keyboard."
+}

@@ -1,0 +1,7 @@
+{
+  "part_of_graphical_session_wired": true,
+  "requires_bridge_cascade_removed": true,
+  "dropin_sha256": "020eb4dc01127ec36e6b20623f0bed62bf8d7df9426998531aa825af6240a87d",
+  "speech_restart_requested": false,
+  "actual_logout_tested": false
+}

@@ -28,4 +28,3 @@ class DeletedRefContracts(unittest.TestCase):
         def get(path):
             raise HTTPError(path, 422, 'Unprocessable', {}, io.BytesIO(b'{"message":"Validation Failed"}'))
         with self.assertRaises(HTTPError): branch_watch.tracked_tip(get, 'a/b', 'gone')
-

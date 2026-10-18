@@ -1,0 +1,36 @@
+{
+  "passed": true,
+  "source_sha256": {
+    "stream-dictate.py": "e2f0f746ab5668890ad97b3ade04b7798f9a111f20131836e369b9f932c164b3",
+    "dictation-input.py": "c4b926ae459c90ba9e5ccd2f4f355670dc2ab7fea9fd3a8d17ca39e85089589e",
+    "dictation-input-client.py": "f25e53319d500d350c09a6e23ab254d728073ebf657b8b3b7dd83a99ca287c37",
+    "dictation_status.py": "50dadbf4f6a7f5edf8e4cb8b91d8931adf75cd899455285547d653c5af591903",
+    "dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+    "gtk-input-smoke.py": "82c188c890eacb14d8154c274a143fac3cd78e6aaf26ca91ce25fe849e4ae8dc",
+    "machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+  },
+  "gtk_version": 3,
+  "display_backend": "x11",
+  "unicode_field": true,
+  "changed_field_untouched": true,
+  "password_untouched": true,
+  "session_engine_restore": true,
+  "overlapping_begin_refused": true,
+  "owner_selection_preserved": true,
+  "speech": {
+    "backend": "cpu",
+    "wav_sha256": "33c6c68d943a22d5272bf8d5e1f86af9d89d901fb7da35961a692de7591a534c",
+    "normalized_word_error_rate": 0.0,
+    "widget_text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered, flour-fattened sauce",
+    "first_widget_text_s": 5.09153421299925,
+    "elapsed_s": 12.613821042999916,
+    "min_available_bytes": 9666330624,
+    "max_fan_rpm": 2523.0,
+    "max_temp_c": 49.286,
+    "samples": 59,
+    "quiet_policy_passed": true,
+    "microphone_recorded": false
+  },
+  "keyboard": null,
+  "method": "Actual Gtk.Entry fields, private Xvfb/IBus/session bus; CPU file ASR; no microphone"
+}

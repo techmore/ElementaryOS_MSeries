@@ -1,0 +1,54 @@
+{
+  "results": [
+    {
+      "test": "contracts",
+      "exit_code": 0
+    },
+    {
+      "test": "unbacked-context",
+      "exit_code": 0
+    },
+    {
+      "test": "gtk3",
+      "exit_code": 0
+    },
+    {
+      "test": "gtk4-wayland",
+      "exit_code": 0
+    },
+    {
+      "test": "qt6",
+      "exit_code": 0
+    },
+    {
+      "test": "brave",
+      "exit_code": 0
+    }
+  ],
+  "source_sha256": {
+    "dictation-input.py": "d696195c4636103db7038dc1de464b2b8532c76e0aced337e3cf8327ad9617b8",
+    "dictation-input-client.py": "33b3c5f08745202ab23a6adee4b8f477d0b0c00f8766892e3ace0505cb8ab36c",
+    "stream-dictate.py": "b04d199035be27e23981c59ad449a1bcfba4415a4ce46a842bfa407462256219",
+    "test_input.py": "1f7bbc68944f6eb7c0df2be84040f4a3046192ad8632478c486692669d4578ac",
+    "ibus-context-smoke.py": "e1813c245c0312ac1d6af30e75ce28ae9a76d97322fc3cf046aa448cc8ff2a00",
+    "gtk-input-smoke.py": "82e9f57a44a346b4cf3790b7be022576516497afa687df04aa7cdc0db9197b71",
+    "browser-input-smoke.py": "b3704bc6f908273a30d0170de49f6854810488efd06f114f6467afc485c9ba72",
+    "qt-input-smoke.py": "9493042c9373382e01147b57c87f251ee50da3eeff40f8bc3907bf09b4daa962",
+    "test-wayland-input.sh": "1d2763cf6782c27ce6806ac5bd507b0d5fa8d9730c9c78f21fb8744d02e6cb27"
+  },
+  "complete": false,
+  "deployed": false,
+  "microphone_recorded": false,
+  "asr_exercised": false,
+  "owner_input_engine_changed": false,
+  "contracts_passed": 7,
+  "prior_failure": "qualification.json retains original browser password Begin acceptance; revised source now requires focused-field accessibility metadata for every client.",
+  "remaining": [
+    "installer/activation/rollback",
+    "streaming ASR to field",
+    "Electron and remaining app coverage",
+    "human F5 confirmation",
+    "optional grammar/translation review"
+  ],
+  "scope": "Synthetic private session buses, Xvfb or headless software-rendered Gala. These field checks do not measure ASR latency, acoustic noise or universal app support."
+}

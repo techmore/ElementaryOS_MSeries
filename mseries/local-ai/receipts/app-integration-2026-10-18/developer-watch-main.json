@@ -1,0 +1,29 @@
+{
+  "run_id": 39119487518,
+  "run_url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39119487518",
+  "head_branch": "main",
+  "head_sha": "85926644e666c6babb403a763fe5f84c076e13ab",
+  "conclusion": "success",
+  "merged_pr": 94,
+  "merge_sha": "b240b9abef82fbf4a4504b904d0060dab565a10a",
+  "errors": [],
+  "public_heads": 1180,
+  "open_pr_heads": 193,
+  "observed_sources": 135,
+  "pending_changes_retained": 24,
+  "absent_refs": [
+    "branch:aurora-silicon/linux:fix/m1m2-regressions",
+    "branch:aurora-silicon/linux:fix/m1m2-typec-usb4-router"
+  ],
+  "artifact_id": 12133518272,
+  "artifact_bucket_digests_match_dashboard": true,
+  "schedule": "existing six-hour workflow; no duplicate tracking automation",
+  "merged_fix_is_ancestor": true,
+  "main_recovery_code_present": true,
+  "main_aurora_named_branches": [
+    "aurora-rc",
+    "aurora-edge",
+    "aurora-wip"
+  ],
+  "absent_ref_scope": "Candidate run exercised exact absent-ref handling. Later main configuration retired those explicit names; their prior absent observations remain in dashboard state."
+}

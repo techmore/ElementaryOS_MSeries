@@ -1,0 +1,171 @@
+import hashlib
+import json
+from pathlib import Path
+import tempfile
+import signal
+import subprocess
+import importlib.util
+import unittest
+from unittest.mock import MagicMock, patch
+from urllib.parse import parse_qs, unquote, urlsplit
+
+import app_adapters as apps
+import runtime_recovery as recovery
+
+spec = importlib.util.spec_from_file_location('calendar_smoke_contracts', Path(__file__).with_name('calendar-mail-workflow-smoke.py'))
+workflow = importlib.util.module_from_spec(spec); spec.loader.exec_module(workflow)
+spec = importlib.util.spec_from_file_location('newelle_workflow_guards', Path(__file__).with_name('newelle-app-workflow-smoke.py'))
+newelle_ui = importlib.util.module_from_spec(spec); spec.loader.exec_module(newelle_ui)
+
+
+class AppContracts(unittest.TestCase):
+    def test_gui_evaluation_denies_private_reads_before_dispatch(self):
+        call=MagicMock()
+        for name,args in [('list_tasks',{'scope':'all'}),('recent_faults',{}),('get_energy',{'window':'today'}),
+                          ('list_calendar_events',{}),('list_calendar_events',{'scope':'all'}),('browser_read_page',None)]:
+            with self.assertRaises(ValueError):newelle_ui.guarded_call(call,name,args)
+        call.assert_not_called()
+        self.assertEqual(len(newelle_ui.EXPECTED),16)
+
+    def test_gui_evaluation_keeps_real_app_dispatch_for_allowed_calls(self):
+        call=MagicMock(return_value={'real':'result'})
+        args={'scope':'assistant'}
+        self.assertEqual(newelle_ui.guarded_call(call,'list_calendar_events',args),{'real':'result'})
+        call.assert_called_once_with('list_calendar_events',args)
+
+    def test_calendar_resume_preserves_failures_and_interrupted_evidence(self):
+        metadata = {'method':'v2', 'kernel':'same', 'policy':{}, 'digests':{}, 'runtime':{'wheel':'same'}}
+        failed = {'case':'browser-calendar-mail', 'repeat':1, 'passed':False, 'trace':['retained']}
+        interrupted = {'case':'web-injection', 'repeat':1, 'passed':None, 'trace':['retained interruption']}
+        previous = metadata | {'model_cases':[failed,interrupted]}
+        rows, done, stopped = workflow.resume_rows(previous,metadata)
+        self.assertEqual(rows,[failed]); self.assertIn(('browser-calendar-mail',1),done)
+        self.assertEqual(stopped,[interrupted])
+        for changed in [{'runtime':{'wheel':'different'}},{'kernel':'different'},{'policy':{'reserve_gib':5}},{'digests':{'machine':'different'}}]:
+            with self.assertRaises(ValueError): workflow.resume_rows(previous,metadata | changed)
+        with self.assertRaises(ValueError): workflow.resume_rows(metadata | {'model_cases':[failed,failed]},metadata)
+
+    def test_sampling_failure_is_explicit_not_a_silent_last_good_sample(self):
+        with patch.object(workflow,'snapshot',side_effect=OSError('telemetry disappeared')):
+            sampler=workflow.Sampler(); sampler.stop.wait(1); sampler.close()
+        self.assertEqual(sampler.error,'OSError'); self.assertEqual(sampler.rows,[])
+
+    def test_browser_timeout_cleanup_only_signals_its_owned_group(self):
+        fixture=workflow.Fixture.__new__(workflow.Fixture)
+        fixture.child=MagicMock(pid=12345); fixture.server=MagicMock(); fixture.thread=MagicMock()
+        fixture.child.wait.side_effect=[subprocess.TimeoutExpired('owned browser',10),0]
+        with patch.object(workflow.os,'killpg') as kill:
+            fixture.close()
+        self.assertEqual(kill.call_args_list,[unittest.mock.call(12345,signal.SIGTERM),unittest.mock.call(12345,signal.SIGKILL)])
+        fixture.server.shutdown.assert_called_once(); fixture.server.server_close.assert_called_once()
+
+    def test_event_offsets_preserve_instants_and_dst(self):
+        self.assertEqual(apps.event_time('2026-10-23T14:30:00-04:00'), apps.event_time('2026-10-23T18:30:00Z'))
+        self.assertNotEqual(apps.event_time('2026-11-01T01:30:00-04:00'), apps.event_time('2026-11-01T01:30:00-05:00'))
+        for value in ['2026-10-23T14:30:00', '2026-02-30T14:30:00Z', '2026-10-23T14:30:00-00:00', '2026-10-23T14:30:00+04:60']:
+            with self.assertRaises(ValueError): apps.event_time(value)
+
+    def test_event_invalid_inputs_never_create_state_or_connect(self):
+        with tempfile.TemporaryDirectory() as folder:
+            state = Path(folder) / 'state'
+            data = {'title': 'Fixture', 'request_id': 'event-fixture-1', 'start': '2026-10-23T18:30:00Z', 'end': '2026-10-23T19:30:00Z'}
+            for change in [{'title': 'x\nBEGIN:VEVENT'}, {'request_id': '../personal'}, {'end': '2026-10-23T17:30:00Z'}]:
+                with self.assertRaises(ValueError): apps.create_event(state, data | change)
+            self.assertFalse(state.exists())
+
+    def test_calendar_marker_is_private_and_does_not_select_a_personal_source(self):
+        with tempfile.TemporaryDirectory() as folder:
+            state = Path(folder)
+            self.assertIsNone(apps.calendar_uid(state))
+            uid = apps.calendar_uid(state, True)
+            self.assertEqual(apps.calendar_uid(state), uid)
+            marker = state / 'calendar-source.json'
+            self.assertEqual(marker.stat().st_mode & 0o777, 0o600)
+            marker.write_text(json.dumps({'schema': 1, 'source_uid': 'user-calendar'}))
+            with self.assertRaises(ValueError): apps.calendar_uid(state)
+
+    def test_calendar_refuses_nonlocal_sources(self):
+        source = MagicMock(); source.get_parent.return_value = 'local-stub'
+        source.has_extension.return_value = True
+        source.get_extension.return_value.get_backend_name.return_value = 'local'
+        apps.calendar_source(source, 'Calendar')
+        source.get_extension.return_value.get_backend_name.return_value = 'caldav'
+        with self.assertRaises(ValueError): apps.calendar_source(source, 'Calendar')
+
+    def test_draft_retries_do_not_duplicate_or_overwrite(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            data = {'to': 'review@example.invalid', 'subject': 'R&D + café', 'body': 'Hello,\nA + B = C & D.', 'request_id': 'mail-fixture-1'}
+            first = apps.create_draft(root, data); path = root / first['path']; original = path.read_bytes()
+            second = apps.create_draft(root, data)
+            self.assertTrue(first['created']); self.assertFalse(second['created'])
+            self.assertEqual(first['draft_id'], second['draft_id'])
+            self.assertEqual(apps.read_draft(root, first['draft_id'])['body'], data['body'])
+            with self.assertRaises(ValueError): apps.create_draft(root, data | {'subject': 'Replacement'})
+            self.assertEqual(path.read_bytes(), original)
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(len(list((root / 'Mail Drafts').glob('*.eml'))), 1)
+
+    def test_draft_recovery_after_message_write_and_metadata_tampering(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder); data = {'to': 'review@example.invalid', 'subject': 'Fixture', 'body': 'Literal text', 'request_id': 'mail-recover-1'}
+            first = apps.create_draft(root, data); marker = root / 'Mail Drafts' / (first['draft_id'] + '.json')
+            marker.unlink(); apps.create_draft(root, data)
+            value = json.loads(marker.read_text()); value['body'] = 'tampered'; marker.write_text(json.dumps(value))
+            with self.assertRaises(ValueError): apps.read_draft(root, first['draft_id'])
+
+    def test_mail_headers_and_recipient_lists_are_rejected_before_writes(self):
+        data = {'to': 'review@example.invalid', 'subject': 'Fixture', 'body': 'Text', 'request_id': 'mail-validate-1'}
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder) / 'workspace'
+            for change in [{'to': 'a@example.invalid,b@example.invalid'}, {'to': 'a..b@example.invalid'},
+                           {'to': 'a@example.invalid\r\nBcc: b@example.invalid'}, {'subject': 'Hi\nBcc: other'}, {'body': 'x\x00y'}]:
+                with self.assertRaises(ValueError): apps.create_draft(root, data | change)
+            self.assertFalse(root.exists())
+
+    def test_draft_folder_and_id_cannot_escape_workspace(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder) / 'workspace'; root.mkdir(); outside = Path(folder) / 'outside'; outside.mkdir()
+            (root / 'Mail Drafts').symlink_to(outside)
+            with self.assertRaises(ValueError): apps.drafts_dir(root)
+            with self.assertRaises(ValueError): apps.draft_id('../private')
+
+    def test_mailto_roundtrip_uses_percent_encoding_not_plus_for_spaces(self):
+        value = {'to': 'person+tag@example.invalid', 'subject': 'R&D + café', 'body': 'One\nA=B & C'}
+        uri = urlsplit(apps.mailto(value))
+        self.assertEqual(unquote(uri.path), value['to'])
+        self.assertEqual(parse_qs(uri.query)['subject'][0], value['subject'])
+        self.assertEqual(parse_qs(uri.query)['body'][0], 'One\r\nA=B & C')
+        # Match Mail 8: GUri decodes once, Composer splits fields and decodes again.
+        compat = urlsplit(apps.elementary_mailto(value))
+        decoded = unquote(compat.query)
+        fields = {k: unquote(v) for k, v in (part.split('=', 1) for part in decoded.split('&'))}
+        self.assertEqual(unquote(unquote(compat.path)), value['to'])
+        self.assertEqual(fields['subject'], value['subject'])
+
+    def test_browser_never_falls_back_to_an_unowned_process(self):
+        with tempfile.TemporaryDirectory() as folder:
+            state = Path(folder)
+            self.assertFalse(apps.browser_tabs(state)['available'])
+            (state / 'browser-session.json').write_text(json.dumps({'pid': 1, 'port': 9222, 'start_ticks': 'wrong'}))
+            with self.assertRaises(ValueError): apps.browser_endpoint(state)
+            for url in ['file:///etc/passwd', 'javascript:alert(1)', 'chrome://settings']:
+                with self.assertRaises(ValueError): apps.start_browser(state, url)
+
+    def test_recovery_preserves_live_unknown_and_pair_leases(self):
+        owner = 'pid1234-0123456789ab'; name = 'mlx-lm-launch-' + owner
+        row = {'owner': owner, 'bytes': 1}
+        self.assertEqual(recovery.stale_cli_entries({name: row}, dead=lambda p: p == 1234), [(name, owner)])
+        self.assertEqual(recovery.stale_cli_entries({name: row}, dead=lambda p: False), [])
+        for extra in [{'pair_id': 'managed'}, {'claimed': {'pid': 2222}}, {'parent': {'pid': 3333}}]:
+            self.assertEqual(recovery.stale_cli_entries({name: row | extra}, dead=lambda p: True), [])
+        self.assertEqual(recovery.stale_cli_entries({'different': row}, dead=lambda p: True), [])
+
+    def test_recovery_requires_both_process_and_group_absent(self):
+        with patch.object(recovery.os, 'kill', side_effect=ProcessLookupError), patch.object(recovery.os, 'killpg'):
+            self.assertFalse(recovery.dead_process_group(1234))
+        with patch.object(recovery.os, 'kill', side_effect=ProcessLookupError), patch.object(recovery.os, 'killpg', side_effect=ProcessLookupError):
+            self.assertTrue(recovery.dead_process_group(1234))
+
+
+if __name__ == '__main__': unittest.main()

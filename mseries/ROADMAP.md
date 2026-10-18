@@ -435,6 +435,20 @@ instructions below are superseded for the owner's current host, not removed
 from factory/source tooling.
 
 
+## Universal speech-to-text priority — 2026-10-18
+
+Owner order: universal F5 dictation, deeper troubleshooting/optimization, then a
+low-overhead machine assistant; Gmail preferred for future mail coverage.
+Prepared IBus/AT-SPI output now preserves compose keys, uses shared resource
+limits, private lifecycle status and anonymous-RAM fallback. Fifteen contracts,
+GTK/Qt/Brave and synthetic Electron field checks pass. One guarded public-clip
+CPU speech-to-GTK check passed at 0% normalized WER, 4.31 s first text and max
+2525 RPM; no general accuracy/acoustic/speedup claim. Stage-only rollback passed
+without restarting the original F5. Actual activation/rollback, real human F5,
+remaining app sessions and optional grammar/translation review remain. Existing
+browsers need accessibility on their next launch; no owner window is closed.
+[Current implementation/evidence](dictation/README.md).
+
 ## Native full-height desktop and compact dock — 2026-10-18
 
 The [J314 native desktop profile](display-space/README.md) restores the 74-pixel
@@ -714,9 +728,9 @@ with the corrected live-session hardware overlay before progressing.
 
 | Feature | How | Evidence |
 |---|---|---|
-| Local desktop and personal AI | Private MLX v0.7.33 + Newelle summary memory + typed OS MCP | Qwen9 12/15 short tasks, 9/9 tool workflows; synthetic EDS calendar/task round trips and personal-memory recall; [full qualification](local-ai/receipts/2026-10-16.md) |
-| Quiet inference and coding profiles | One worker, six-GiB reserve, early cooling and hard fan/temperature limits; Crush 16K profile | Short suites measured with apps retained; long coding/Bonsai tests are queued for idle windows, with interrupted runs retained |
-| Kernel and developer branch watch | Live fault signatures/previous boot; six-hour all-head and PR discovery | 41 assistant tests and 4 image wiring tests; 1,103 public branch heads observed; recurring enhancement activates on main |
+| Local desktop and personal AI | Private MLX v0.7.33 + Newelle summary memory + typed OS MCP | Default Qwen3.5 4B: 9/15 short tasks, 9/9 corrected MCP workflows and personal-memory recall; Qwen9: 12/15 short tasks, later reserve interruption; [full qualification](local-ai/receipts/2026-10-16.md) |
+| Quiet inference and coding profiles | One worker, six-GiB reserve, early cooling and hard fan/temperature limits; Crush 16K profile | Real Crush edit passed; Bonsai corrected MCP 9/9 and native decode 5.571 tokens/s complete; resumed 12/15 short tasks retain earlier fan interruption and are not a quiet-policy pass |
+| Kernel and developer branch watch | Live fault signatures/previous boot; six-hour all-head and PR discovery | Six-hour watcher active on main; verified repair run retained 1,180 public branch heads and 193 PR heads, zero fetch errors; small-model repair advice remains excluded after two failed trials |
 | CodexBar quota ETA | Visible per-limit forecasts and the earliest available limit in the bar; exhausted quotas show reset time | 11 ETA tests, 5 refresh tests, GTK render probe, and installed-module/live-snapshot checks passed |
 | CodexBar popover redesign | Quota / Sessions / Spend tabs so nothing sits below the fold; level-colored limits with one caption line each; a quiet bar that only adds ETA on a real warning, labels non-session windows ("7D 35%") and dims when cached; plan chips, status dots, explained empty/error states with actions; no rebuild or flicker between unchanged polls; accessible labels | 3 Meson suites (incl. 9 presentation cases), 16 headless Xvfb renders (8 states x light/dark), no-rebuild stability probe (verified against a mutant), module installed; takes effect at next login |
 | CodexBar usage freshness | One-minute backend polling; asynchronous five-second panel reads; throttled refresh on open | Meson policy tests and delayed-IPC GTK probe passed; installed on the working desktop |
@@ -1027,6 +1041,9 @@ browser integration and remaining Files/Gala patches remain open.
 
 - MCP Tasks qualification complete: note-to-task/scoped read-back 3/3 and file-instruction rejection 3/3; all synthetic sources removed. URLError checkpoint retained. PR #66 publishes data and app coverage; default restore waits for quiet admission. Calendar writes, browser/mail adapters, Tasks GUI/reminders and full factory hardware qualification remain open.
 
+- Agent-first Pantheon feature proposal (October 18): shared broker/permissions and durable alerts before UI, native app adapters, speech-to-text/speech-to-speech, and explicitly paired WebRTC interaction. See [design and acceptance plan](local-ai/PANTHEON-MCP-DESIGN.md). Proposal only; no new alert broker, voice conversation or WebRTC service installed.
+
+- Upstream performance review (October 18): MLX main d8ac5fe is 28 commits ahead of tested 33630f9. Native-GQA is a candidate; numerically rejected gather routes remain excluded. Mac/MX notification-agent/voice patterns and oMLX options inform the agent-first design. [Pinned comparison and experiment plan](local-ai/UPSTREAM-FEATURE-COMPARISON.md); no runtime/governor changes or M1 Pro speedup claimed.
 ## CodexBar native Claude account switching — 2026-10-18
 
 Implemented app session capture, one-time native sign-in setup, and **CLI only / Switch both** choices.
@@ -1057,6 +1074,10 @@ its tightest reported limit so an exhausted five-hour session does not win on we
 exclamation marks independently identify the next weekly reset, including secondary accounts. Markers
 include explanatory tooltips; ties are marked, stale/unknown data is excluded, and monthly resets do
 not qualify. Selection tests and light/dark fixtures cover the behavior.
+
+- Owner priority refinement (October 18): universal native dictation first, stronger on-demand troubleshooting/optimization second, lightweight everyday machine interface third. Share the existing worker and typed broker; deterministic idle alerts and command routing must not require continuous inference. Gmail is the preferred later mail adapter. See [three-tier acceptance requirements](local-ai/PANTHEON-MCP-DESIGN.md#owner-priority-three-tiers). Live dictation services have passed an activation/rollback cycle, but native input-source selection resets remain a blocker; isolated text insertion is not a stable desktop rollout.
+
+- Universal F5 input follow-through (October 18): activated CPU/IBus with per-utterance engine acquisition/restoration; no native source list edits or IBus restart. Seventeen contracts and GTK/Qt/Brave/synthetic-Electron field checks pass, including focus/password and owner-layout preservation. Changed-source public-clip speech-to-field WER0, first5.09s, maxfan2523RPM; failures retained. Human F5 and optional grammar/translation review remain pending. Everyday4B stopped itself on reserve guard and must pass admission before resuming; no simultaneous-residency claim.
 
 
 ### CodexBar native account-sheet refinement — 2026-10-18
@@ -1104,6 +1125,12 @@ used as the current level; unreadable/expired subscriptions keep an unavailable 
 reported metadata is usable. Read-only workspace-scoped lookup, bounded timeout/body, no login or
 token mutation. Seventeen helper tests, four Meson suites, port check and light/dark renders pass.
 
+- Human F5 acceptance remains failed: owner saw a microphone desktop function rather than listening. Physical F5 remap matches listenerF14; exact prompt/app context pending. Optional GTK4 review UI/local transformation path is source-only, with22 contracts and synthetic wiring pass; no model-quality or live deployment claim. Fix F5 before panel rollout; preserve reserve/quiet admission.
+
+- F5 diagnostics (October 18): fixed3s parent/4s client timeout mismatch, bounded field ancestor checks and async startup, deployed anonymous key/refusal tracing;23 contracts and isolated native/framework checks pass. Owner F5 failure remains unresolved pending popup/app detail. A single frozen six-case grammar/translation queue waits for quiet/default-model admission; preserve its service/checkpoint and completed failures.
+
+- IBus reconnect recovery (October 18): Always restart the owned bridge on clean disconnect; Wants+After avoids speech-model reloads; restore native input only when global engine is empty. Private GTK reconnect and exact installed-unit clean TERM/manual stop tests pass,24 contracts. Earlier recovery and fixture failures retained. Graphical-session lifetime wiring checked, actual logout untested. Human F5 retry/model review/merge remain pending. Idle ASR pressure-release coverage is still open.
+
 
 ### OpenCode dropdown account switching — 2026-10-18
 
@@ -1113,3 +1140,7 @@ with native OAuth refresh and pending-read invalidation. Workspace labels distin
 unusable sign-ins explain the need to sign in again. Twenty-five helper tests, 13 wrapper tests,
 four Meson suites, port check and light/dark previews pass. Live same-account saved-session round trip
 passed and the original selection was restored; distinct-account round trips use temporary fixtures.
+
+- Local review pilot:6 completed synthetic requests,5/6 limited checks; French identifier PWNED→PWNÉ remains failed, grammar literal remains unpolished. All within policy,1.99–3.43s warm path and≤2516RPM/min9.48GiB available. Separate English/German/Japanese probes complete3/3 limited checks. Actual public-file ASR→GTK4 panel→French translation→grammar→private copy passes functional checks, preserving semantic errors (stew→soup; bruised→crushed potatoes). Original/intermediate preserved; three explicit review modes,28 contracts. No physical F5 or broad translation-quality pass; panel rollout still waits for human F5 recovery. Main/Pages publication and idle ASR pressure release remain open.
+
+- On-demand speech candidate:46 contracts plus actual private Qt6/Brave/GTK4 Wayland Check/stale-focus refusal pass. One new CPU file→field/close/reload fixture reclaimed784MiB; separate no-inference timer test released at61.00s, reclaiming767MiB. Both≥11.07GiB available, reported0RPM/<40.0C. Retained allocator/library memory and long-run stability remain limits. Not deployed over pending human F5 retry; optional panel uninstalled. Publish tested opt-in code/receipts with physical F5, rollout and continuous translation gates explicit; merge alone does not complete the goal.

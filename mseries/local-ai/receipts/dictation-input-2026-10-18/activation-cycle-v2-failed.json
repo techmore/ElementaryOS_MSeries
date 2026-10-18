@@ -1,0 +1,10 @@
+{
+  "activation_health_passed": true,
+  "full_rollback_passed": false,
+  "rollback_files_and_preferences_restored": true,
+  "rollback_speech_active": true,
+  "rollback_engine_unset_after_provider_stop": true,
+  "repair": "Original engine restored explicitly using the API selector. Restore ordering must select it after stopping the dynamic provider.",
+  "microphone_recorded": false,
+  "owner_windows_closed": false
+}
