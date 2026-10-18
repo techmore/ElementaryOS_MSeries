@@ -129,6 +129,8 @@ int main (string[] args) {
             var text = local_label_text (bar);
             assert (text.contains ("7D ●") && text.contains ("5H ●"));
             assert (!text.contains ("7D 64%") && !text.contains ("5H 72%"));
+            assert (!text.contains ("7D 62%") && !text.contains ("7D 72%"));
+            assert (text.contains ("5H ● 5%") && text.contains ("5H ● 0%"));
             var weekly = find_label (bar, "7D ●");
             assert (weekly != null && weekly.tooltip_text.contains ("% remaining"));
             int minimum, natural;

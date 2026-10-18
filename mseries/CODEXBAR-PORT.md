@@ -337,5 +337,5 @@ Native Display settings persist `showTokens` (default true) and `compactQuota`
 (default false) in Wingpanel's own preferences. Dropdown token counts remain
 available when hidden from the bar. Compact active quota dots show remaining
 balance (>70 green, 25–70 yellow, <25 red, percentage visible below 10); hover
-reports the measured percentage. Popup quotas and alternate accounts stay literal.
+reports the measured percentage. Popup quotas stay literal; alternate bar accounts use matching dots with full values on hover.
 Menu bar marks use 13px; card marks retain their existing size.

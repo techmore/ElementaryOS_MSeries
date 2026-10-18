@@ -1595,7 +1595,7 @@ namespace MSeries {
                 var windows = account.has_member ("windows") ? JsonBoundary.array (account, "windows") : null;
                 markup.append ("%s%lld: %s".printf ((display_preferences.get_bool ("showHints") ? hint_markup (hint_id (provider, account), label) : ""), JsonBoundary.integer (account, "number", i + 1),
                     windows == null || windows.get_length () == 0 ? "—"
-                        : colored_account_quota (label, windows, new DateTime.now_utc ().to_unix (), true)));
+                        : panel_account_quota (label, windows, new DateTime.now_utc ().to_unix ())));
             }
             label.set_markup (markup.str);
             if (details_on_top) {
@@ -1635,6 +1635,8 @@ namespace MSeries {
                 if (JsonBoundary.flag (account, "active", false)) continue;
                 text.append ("\n%lld: %s".printf (JsonBoundary.integer (account, "number", i + 1),
                     JsonBoundary.text (account, "email", "Saved account")));
+                var windows = JsonBoundary.array (account, "windows");
+                if (windows != null) text.append (" · " + Presentation.account_quota (windows, new DateTime.now_utc ().to_unix ()));
                 var id = hint_id (provider, account);
                 if (has_hint ("best", id)) text.append (" · ★ Most available quota");
                 if (has_hint ("weekly", id)) text.append (" · ! Next weekly reset");
@@ -1946,6 +1948,32 @@ namespace MSeries {
             Gdk.RGBA color;
             if (!widget.get_style_context ().lookup_color (name, out color)) return fallback;
             return "#%02x%02x%02x".printf ((int) (color.red * 255), (int) (color.green * 255), (int) (color.blue * 255));
+        }
+
+        private string panel_account_quota (Gtk.Widget widget, Json.Array windows, int64 now_unix) {
+            if (!display_preferences.get_bool ("showPercent") && !display_preferences.get_bool ("showReset")) return "";
+            if (!display_preferences.get_bool ("compactQuota"))
+                return colored_account_quota (widget, windows, now_unix, true);
+            var text = new StringBuilder ();
+            for (uint i = 0; i < windows.get_length (); i++) {
+                var window = windows.get_object_element (i);
+                var remaining = JsonBoundary.number (window, "remaining", -1);
+                if (remaining < 0) continue;
+                var single = new Json.Array ();
+                single.add_object_element (window.ref ());
+                var literal = Presentation.account_quota (single, now_unix,
+                    display_preferences.get_bool ("showPercent"), display_preferences.get_bool ("showReset"));
+                var parts = literal.split (" ↻", 2);
+                if (text.len > 0) text.append (" · ");
+                if (display_preferences.get_bool ("showPercent")) {
+                    var dot = new Gtk.Label (null);
+                    apply_quota_dot (dot, Presentation.short_window_label (JsonBoundary.text (window, "label", "Quota"),
+                        (int) JsonBoundary.integer (window, "minutes")), remaining);
+                    text.append (dot.label);
+                } else text.append (Markup.escape_text (parts[0]));
+                if (parts.length > 1) text.append ("<span alpha=\"65%\"> ↻%s</span>".printf (Markup.escape_text (parts[1])));
+            }
+            return text.str;
         }
 
         /* quiet: healthy values keep the text color, so only low and critical quota draws the eye (panel bar). */

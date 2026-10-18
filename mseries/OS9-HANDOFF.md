@@ -1,5 +1,15 @@
 # OS 9 implementation / Claude Code handoff
 
+## CodexBar second-row dots — 2026-10-18
+
+Owner requested matching visual dots for alternate accounts on the second row.
+The bar now uses the same remaining-quota thresholds and below-10 numeric rule
+for every saved-account window. Hover retains all account percentages and reset
+countdowns; popup account rows remain literal. All 15 native targets pass, with
+new assertions for alternate weekly dots and visible 5%/0% critical balances.
+Dark rendering inspected. Push to main and deploy with one owner-requested reload
+to activate this follow-up; the existing read-only stability watch continues.
+
 ## CodexBar account caching and compact display choices — 2026-10-18
 
 OpenCode saved-account plans now cache for one hour and inactive-account quotas for
@@ -13,8 +23,7 @@ Native Settings > Display adds Quota style (Literal percentages / Visual status
 dots) and Token counts (Menu bar and dropdown / Dropdown only). Active five-hour
 and weekly dots use remaining quota: green >70%, yellow 25–70%, red <25%; numbers
 appear below 10%, and hover always reports the measured percentage. Literal mode
-remains the default; dropdown quota details stay literal in either mode. Other
-account summaries retain their full values. Hidden bar tokens remain in all three
+remains the default; dropdown quota details stay literal in either mode. Alternate account summaries use the same dots and retain all values on hover. Hidden bar tokens remain in all three
 provider dropdowns. Logos shrink from 14 to 13 px. Weekly quota/reset stays on the
 top row for Codex and Claude even when tokens are hidden.
 
