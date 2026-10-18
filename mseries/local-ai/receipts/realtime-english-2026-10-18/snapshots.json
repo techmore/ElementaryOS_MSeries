@@ -99,5 +99,8 @@
     "evaluated-source/dictation/ane-realtime-bench.py": "c309c7c60cad0e6dd9f4abed557129f5c3707a068de65c98fc7e1c25a562a5e6",
     "evaluated-source/dictation/mlx-realtime-bench.py": "1822b4d9a0352ad8b1a23f55dc52af0e8e17200e1c00f32ebb577cdb43f93d57",
     "evaluated-source/local-ai/machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+  },
+  "unsupported-original-gguf": {
+    "evaluated-source/realtime-bench.py": "9d0277e29ed82e6538aaf9d7b2ade30d2a5e175e1d84322b25fe93020f3e244b"
   }
 }

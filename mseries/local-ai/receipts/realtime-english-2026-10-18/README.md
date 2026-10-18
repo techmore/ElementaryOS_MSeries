@@ -11,6 +11,10 @@ current source. `english-ui-regression-v2.json` pins the later coalescing fix; i
 does not replace the English panel's real-model trial. Individual final transcripts
 and provisional events remain present, including Moonshine errors.
 
+`driver-snapshots/` preserves the exact queue/admission/resource samplers. These
+expect the original sibling workspace layout and matching reconstructed source;
+they are historical evidence, not an instruction to replay completed trials.
+
 `pins/` records model revisions/actual digests, public clip IDs and derived PCM
 digests. Weights/audio are not included. LibriSpeech CC-BY4.0: Vassil Panayotov,
 Guoguo Chen, Daniel Povey and Sanjeev Khudanpur, https://www.openslr.org/12 .
