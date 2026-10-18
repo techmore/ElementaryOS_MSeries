@@ -23,21 +23,23 @@
 set -euo pipefail
 
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-tag=8.3.3                                   # elementary/dock tag matching the daily build
+commit=8b45a68a122947ad3a6427bf6e159ec2acf04ad0 # elementary/dock 8.3.3
 prefix=${HOME}/.local/lib/mseries/dock
 wrapper=${HOME}/.local/bin/io.elementary.dock
 patched=$prefix/bin/io.elementary.dock
 stock=/usr/bin/io.elementary.dock
 patch=$repo/mseries/patches/dock-drawers.patch
 
-if [[ ${1:-} == --revert ]]; then
+mode=${1:-install}
+case $mode in install|--build-only|--revert) ;; *) echo "Usage: $0 [--build-only|--revert]" >&2; exit 2;; esac
+if [[ $mode == --revert ]]; then
   rm -f "$wrapper"
   echo "Reverted: the stock dock ($stock) is used at your next login."
   echo "The private build is left in $prefix (delete it to reclaim space)."
   exit 0
 fi
 
-for tool in git meson ninja valac pkg-config; do
+for tool in git meson ninja valac pkg-config glib-compile-schemas; do
   command -v "$tool" >/dev/null || { echo "Missing $tool." >&2; missing=1; }
 done
 for mod in gtk4 granite-7 libadwaita-1 gee-0.8 gala x11 wayland-client; do
@@ -62,14 +64,20 @@ build_dir="$work_dir/build"
 
 git init -q "$source_dir"
 git -C "$source_dir" remote add origin https://github.com/elementary/dock.git
-git -C "$source_dir" fetch -q --depth=1 origin "refs/tags/$tag"
+git -C "$source_dir" fetch -q --depth=1 origin "$commit"
 git -C "$source_dir" checkout -q --detach FETCH_HEAD
 git -C "$source_dir" apply "$patch"
 
 meson setup "$build_dir" "$source_dir" --prefix="$prefix" --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null
 test -x "$build_dir/src/io.elementary.dock"
+glib-compile-schemas --strict --dry-run "$source_dir/data"
+if [[ $mode == --build-only ]]; then
+  echo 'Native dock build and schema validation passed; installed dock unchanged.'
+  exit 0
+fi
 meson install -C "$build_dir" --no-rebuild >/dev/null
+glib-compile-schemas "$prefix/share/glib-2.0/schemas"
 
 # Per-user wrapper with automatic fallback to the stock dock.
 mkdir -p "$(dirname "$wrapper")"
@@ -91,7 +99,7 @@ use_stock() {
 ldd "\$patched" 2>/dev/null | grep -q 'not found' && use_stock "patched dock has unresolved libraries"
 
 start=\$(date +%s)
-"\$patched"
+GSETTINGS_SCHEMA_DIR="$prefix/share/glib-2.0/schemas" "\$patched"
 rc=\$?
 if [ "\$rc" -ne 0 ] && [ \$(( \$(date +%s) - start )) -lt 15 ]; then
   mkdir -p "\$(dirname "\$flag")" && : > "\$flag"
@@ -101,6 +109,8 @@ fi
 exit "\$rc"
 LAUNCHER
 chmod 0755 "$wrapper"
+# A successfully rebuilt dock gets another chance after a previous fallback.
+rm -f "${HOME}/.cache/mseries-dock-failed"
 
 echo "Installed the patched dock into $prefix."
 echo "Pointed $wrapper at it (falls back to stock on failure)."

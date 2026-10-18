@@ -94,3 +94,6 @@ omacom/linux-aurora#44, "Browser AVD integration", is still open); (4) possible 
 (DCP logs `range:0`, 10-bit). Upstream does show 4K60 over a USB4 dock on another Mac (#132, M2 Max + CalDigit TS5
 + HDMI 2.1 adapter), so a 4K path is possible in principle; ours needs the TV to advertise 4K60 ("HDMI UHD Color"
 on that input) and the 4K30 stall to be debugged.
+
+Update 2026-10-18: the display-audio path for the dock is traced in `audio/DOCK-TV-AUDIO.md` (UCM profile installed;
+boot entry with `appledrm.hdmi_audio=1` awaits the owner).

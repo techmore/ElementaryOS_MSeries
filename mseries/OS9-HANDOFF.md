@@ -1,5 +1,100 @@
 # OS 9 implementation / Claude Code handoff
 
+## Native full-height J314 desktop and persistent dock — 2026-10-18
+
+Post-push deployment follow-up: required `bash mseries/deploy-codexbar.sh` passed
+all four Meson suites and restarted Wingpanel/CodexBar successfully. Wingpanel
+PID 301437 and native dock PID 295165 are running. The new panel binary is now
+loaded in the existing cropped desktop; full-height hardware boot remains pending.
+
+Owner requested reclaiming the notch strip, native dock optimization and a push
+to main. [Profile](display-space/README.md): `bash mseries/install-desktop-space.sh`.
+Pinned Wingpanel patch moves the existing clock/calendar beside the camera only
+on the full-height 14-inch M1 Pro internal panel. Equal scrollable halves protect
+a central gap; scale/monitor changes refresh geometry and move the native clock
+with removal from its old FlowBox before insertion into the other. Stock cropped
+and external layouts retain the centered clock and CodexBar placement.
+
+Native dock preserves drawers/apps, adds private persistent offset settings,
+clamps placement when screen/dock size changes, uses 40-pixel icons and hides
+when any window overlaps. Reuses Wingpanel's cached DisplayConfig implementation
+with SPDX attribution; no polling daemon. Installers, immutable source pins,
+version-aware panel backup, private dock/build/wrapper backup and reversible
+settings are in the repo and immutable-root payload; optional post-install stage
+`desktop-space`. Initial factory image stays cropped until a compatible profile
+is installed; no full-height factory boot is claimed.
+
+Applied on the running J314: native dock installed and restarted (PID 295165 at
+verification), settings read back as 40 / overlapping-window; new offset schema
+loads. Updated Wingpanel binary installed and SHA256-matched to the reviewed
+ARM64 build (loads on next login/reboot). Boot helper prepared a separate
+`mseries-full-height` normal-boot choice using the exact running `.20` kernel,
+initrd, root/encryption flags and `appledrm.show_notch=1`. All original entries
+remain, `grub-script-check` passes, and queued `next_entry=elementary-aurora20-enh1`
+is unchanged: that one-shot trial runs first. No forced reboot, kernel/initramfs,
+firmware, generated grub.cfg or audio changes.
+
+Verification: clean source builds via `install-desktop-space.sh --build-only`
+pass for both ARM64 components; dock schema validates. Eight boot helper tests
+pass (exact provenance/encryption, idempotence, revert, malformed/missing/ambiguous
+refusal). Production notch helper/GTK allocation under Xvfb passes full/cropped/
+external/other-model gating, fractional sizes and crowded-control clipping. Setup
+payload tests, shell syntax, focused ShellCheck and diff whitespace checks pass.
+The native dock stays running, with startup critical/warning messages from its
+upstream workspace/app-launcher integrations (missing chatgpt.desktop, initial
+DesktopIntegration and AppCenter interface); these were observed, not resolved
+or labelled a clean runtime log. No full-height hardware acceptance or energy
+saving is claimed. Next: after the pending trial, select the full-height entry
+and verify clock/calendar, crowded indicators, dock reveal/Command-drag across
+restart, scale changes and external monitor switching on hardware.
+
+
+## Dock TV: no sound (display audio off in the kernel) and YouTube Movies 480p (YouTube rule) — 2026-10-18 (Claude Code)
+
+- **No TV sound:** no `apple_dcp` sound card exists because `appledrm.hdmi_audio=N`. The device tree already wires a
+  display-audio controller to both external DCPs; the dock TV is on `dcp@289c00000` (`audio-controller@39b504000`,
+  bound). The flag is only read at DCP start and display-subsystem bind (Aurora `.20` `dcp.c`/`audio.c`), and
+  `appledrm` is in the initramfs, so it has to go on the kernel command line. **Installed** the inert `apple_dcp` UCM
+  profile (AsahiLinux/alsa-ucm-conf-asahi#9, BSD-3) via `mseries/audio/install-dcp-display-audio.sh`; sinks
+  unchanged. **Not done (owner decision):** a non-default GRUB entry with `appledrm.hdmi_audio=1`. The auto-mode check
+  blocked writing a GRUB-editing script; the `.20-enh1` one-shot trial is armed and says "no audio changes".
+  Upstream omacom/linux-aurora#48 has never tested dock/USB4 audio. Full write-up and test plan:
+  `mseries/audio/DOCK-TV-AUDIO.md`.
+- **480p films:** YouTube serves Movies & TV in HD only to Safari among browsers (Google help 78358). L3 Widevine,
+  not fixable here; corrected the earlier "SD/720p" wording. Workaround: the Fire TV's own YouTube app.
+- **Next:** owner decides on the display-audio boot entry; then run the test list in `DOCK-TV-AUDIO.md` and report on
+  linux-aurora#48.
+
+## CodexBar: why the Claude account switch "did nothing", and the fix — 2026-10-18 (Claude Code)
+
+Pin unchanged: upstream CodexBar v0.77.0, claude-swap 0.27.2. Branch `claude/codexbar-claude-switch` (from
+`power-usage` 0b72150). Owner report: CodexBar could not switch Claude accounts.
+
+Root cause: the switch itself works. `cswap switch` rewrites Claude Code's file login (`~/.claude/.credentials.json`
+and `oauthAccount` in `~/.claude.json`); a real switch to account 1 and back to 2 changed `claude auth status` both
+ways. But the owner runs Claude Code inside the Claude desktop app (no `claude` on PATH), and the app gives every
+Code session its own sign-in through `CLAUDE_CODE_OAUTH_TOKEN`. That variable overrides the file, so the switch never
+reached anything the owner uses. The panel also ran the switch with its output thrown away, so there was no message.
+
+Fix: `codexbar-claude.py switch` now checks `~/.claude.json` names the target after cswap reports success, treats
+`already-active` as success, and reports the desktop app's account. It reads `lastKnownAccountUuid` from
+`~/.config/Claude/config.json` and matches it to claude-swap's saved configs (identity fields only; the app's
+encrypted tokens are never read). The list follows the live login when claude-swap's record lags behind it. The
+panel shows the switch result in a small dialog, plus a line "Claude app: <account> · switch it in the app" on the
+Claude card when the app is on another account. Claude helper tests: 14 (was 9), all on a fake HOME.
+
+Verified: all 5 CodexBar Python test files, Meson 4/4, `check-codexbar-port.sh` passed (before and after deploy,
+live `--snapshot` keys match the fixture, schema 1). A headless Xvfb render of the `live` fixture shows the new line.
+`deploy-codexbar.sh` reported success: the deployed helper matches the repo and Wingpanel and CodexBar are running.
+A real switch 1 then 2 through the new helper gave the right messages, and the machine ended on the original
+account (CLI, `~/.claude.json`, cswap and the desktop app all on account 2). Temporary credential backups were
+deleted after that check.
+Not verified: the dialog and card line on the live panel (I opened no windows on the owner's screen); a running CLI
+session picking up a switch on its next message (claude-swap's claim, not tested). Switching the desktop app itself
+is not possible from here: its login is encrypted Electron storage and we do not touch it.
+Owner: to use another account in Claude Code inside the Claude app, sign out and in again in the app. The panel
+Switch changes the `claude` command line only.
+
 ## YouTube Movies fail in `brave-youtube`: Widevine missing from its profile — fixed — 2026-10-18 (Claude Code)
 
 - **Symptom (owner):** films such as *Edge of Tomorrow* say "your browser can't play this video" in the contained
@@ -387,6 +482,38 @@ J314S/WD22TB4 hardware boot, dock picture, Touch ID enrollment or recovery boot.
 Upstream `.20` explicitly does not qualify M1 Pro/Max/Touch ID on this release.
 Next task: review the matched payload/fallback contract, then a separately
 controlled hardware batch. Existing dock G2–G5 results have not advanced.
+
+## Sound Output switcher and AirPlay destinations — 2026-10-16 (ported to main 2026-10-18)
+
+Ported from `claude/airplay-destinations` (commits `636b239`, `3b8f31c`, `0eeefa7`) onto
+current main as `claude/airplay-destinations-2`. That branch's CodexBar, fairydust/USB4,
+Orchard, brightness and window-snapping WIP were not ported: main already has or supersedes
+them, or they live elsewhere (brightness in PR #57, Orchard in its own repo, fairydust is
+kernel work owned by another agent).
+
+- **Sound Output list:** `quick-settings/AudioOutputModel.vala` parses `pw-dump` into
+  outputs (Built-in / Bluetooth / AirPlay / USB / HDMI-DisplayPort, skips virtual sinks and
+  unplugged jacks, marks the default from `default.audio.sink`); `AudioOutput.vala` shows it
+  in the gear menu, and a click runs `wpctl set-default`. `patches/quick-settings-audio-output.patch`
+  wires it in. It needs `libjson-glib-dev`, now in the image BuildPackages and the firstboot
+  `quick` deps. `install-airplay-discovery.sh` adds PipeWire's RAOP discovery drop-in. It does
+  not restart PipeWire.
+- **AirPlay destinations:** `airplay/` (`airplay_core.py`, the `mseries-airplay-outputs`
+  CLI/GTK window, tests) and `install-airplay-outputs.sh`. Each receiver gets a dot. Active
+  receivers join one combine-stream sink, **AirPlay Group**, which runs as its own PipeWire
+  client under the transient user unit `mseries-airplay-group`. The main PipeWire and
+  WirePlumber are never restarted. The choice is saved in `~/.config/mseries/airplay.json`.
+  `quick-settings/AirPlayOutputs.vala` puts the dots under the Sound Output list.
+- **Verified on the port (2026-10-18, headless):** 6 AirPlay core tests;
+  `audio/test_audio_output_model.sh` (all checks ok); `audio/test_airplay_outputs_render.sh`
+  under xvfb with fake receivers (the row expands and a dot toggles the saved state). The
+  brightness and audio-output patches apply in order to quick-settings `fb721d4`.
+- **Earlier (2026-10-16, branch):** the full plugin built and linked; on the live graph the
+  CLI created and removed the group sink for the chosen RAOP receivers, and a silent stream
+  opened their connections.
+- **Not verified:** audible AirPlay playback, sync between receivers, the popover on the real
+  panel after this port, real Bluetooth/AirPlay switching, and the login autostart. The CI
+  `.deb` build (`mseries/debs/build.sh`) does not yet include these widgets.
 
 ## VM toolkit, window corners, mouse and chime fixes — 2026-10-16 (DeepSeek/OpenCode)
 
@@ -2465,6 +2592,28 @@ Three 5 s traces of `drm_sched_job_queue` (read-only): the ChatGPT desktop app s
 
 Owner declined closing the ChatGPT/Codex app, so no A/B was run. New finding: that app is an X11 client under Xwayland while Claude Desktop and Brave are native Wayland. Installed `~/.config/environment.d/60-mseries-electron-wayland.conf` (`ELECTRON_OZONE_PLATFORM_HINT=auto`; script `mseries/install-electron-wayland.sh`, `--uninstall` removes it); takes effect at next login, effect NOT yet measured. Also found: s2idle is the only sleep mode, deep idle is ~7% of CPU0 idle time, sleep drain is unmeasured. Full plan: `mseries/POWER-ROADMAP.md` (workstreams A to G, phases 0 to 4, six owner decisions). Next: after the next login, re-trace GPU jobs/s for the ChatGPT app and compare with the 4,000 to 5,000/s baseline.
 
+## Minimum brightness: sub-5-nit control — 2026-10-16
+
+- **Cause:** Mutter's sysfs backlight sets `min = MAX(1, max/100)` = 5 of 500; every control (keys, slider, bridge) went through Mutter. The Asahi DCP driver (`dcp_backlight.c`, identical in OpenBSD and maralcbr/linux) maps 0-2 nits to one DAC value, so the hardware floor is 2 nits. Keys moved 25 nits per press (30 -> 5).
+- **Prior art:** omacom/omarchy, omacom/omarchy-mac and maralcbr/omarchy-mx-mac use `brightnessctl set N%` with a 1% floor (same 5 nits) and 1% steps at or below 5%. No branch, issue or fork has sub-floor code. Nothing to copy except the finer dim-end steps.
+- **Change:** `mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness` now reads sysfs, writes through logind `Session.SetBrightness` (Mutter fallback), uses `nits = 2 + (max-2)*level^2.2`, steps a 25-value ladder (2, 3, 4, 5, 7, 10, 13, 16, 20, 26, 37 ... 500), adds `--nits N` and read-only `--status`; `--set N` is now a perceptual level. `mseries/quick-settings/ScreenBrightness.vala` uses the same curve and path. New tests: `mseries/brightness/test_keys.py` (12 brightness tests pass). `DESKTOP-SETUP.md` updated.
+- **Verified:** unit tests; `valac -C` typecheck of the widget; `--status` read-only on this Mac (105 of 500). **Not verified:** any write to the live panel (none made, by instruction), Mutter's reaction to a sub-5 value, the Quick Settings build, and a 2-3 nit look in the dark. `test-image-wiring.py` has one failing finalize test that fails identically without these edits.
+- **Next:** install (`mseries/apply-desktop-settings.py` copies the helper; restart it or re-login; rebuild Quick Settings with `install-quick-settings-brightness.sh`), then owner looks at 2-3 nits. If too bright, add a software dim layer below the floor.
+
+### Follow-up: sub-floor software dim — 2026-10-16
+
+- **Dead ends (read-only probes):** the CRTC reports a gamma LUT size of 0 (`GetCrtcGamma` returns empty arrays; `NightLightSupported=false`, `supports-color-transform=false`), so gamma/night-light dimming is unavailable on this DCP. The compositor offers no `wlr-layer-shell`, so a separate overlay client is not possible. The one workable route is a Gala actor, as the screen-corner masks already do.
+- **Added:** `mseries/patches/gala-screen-dim.patch` (applies on top of `gala-screen-corners.patch` at f0791434; `install-gala-screen-corners.sh` applies both). `ScreenDim` is a click-through black layer over the built-in panel, topmost except the corner masks, alpha (capped 0.85) read from `$XDG_RUNTIME_DIR/mseries-dim` and re-read on change, publishes its PID in `mseries-dim.gala`, and is hidden while `ScreenshotManager.take_screenshot` paints. `mseries-brightness` adds four steps below 2 nits (luminance 0.7, 0.5, 0.35, 0.25 of the floor, alpha corrected for gamma 2.2) only while that Gala is alive; the Quick Settings slider clears the dim when it writes.
+- **Verified:** 20 brightness tests pass; the patched Gala typechecks and its dim, layout and screenshot objects compile (`gnome-bg-4` dev headers are missing here, so the full binary was not linked); both patches apply in order to a fresh checkout. **Not verified:** running the patched Gala (needs sudo install and a re-login), banding at the deepest step, screen-recording (PipeWire) capture still including the layer, and anything on the panel.
+- **Installed on this Mac:** the new helper at `~/.local/libexec/mseries-brightness` (running, key handler restarted, no brightness write). Not installed: the patched Gala and the Quick Settings plugin (needs `libadwaita-1-dev`).
+- **Installed 2026-10-16 (owner approved):** apt dev packages `libgnome-bg-4-dev libadwaita-1-dev libpackagekit-glib2-dev libaccountsservice-dev libportal-dev`; patched Gala with corners and dim in `/usr/local/lib/mseries/gala` (user drop-in `mseries-screen-corners.conf`, active at next login, stock fallback launcher); rebuilt Quick Settings plugin with the new slider (backup via `lib-backup.sh`; reload Wingpanel or log in). Pending owner check after re-login: `mseries-brightness --status` should report the dim layer running; keys then go below 2 nits.
+
+### Brightness documentation and ladder refinement — 2026-10-16
+
+- New `mseries/BRIGHTNESS.md`: goals and acceptance (A1–A7), findings with sources, dead ends (no gamma LUT, no layer-shell), prior-art survey, full design with data flow and failure table, implementation inventory, verification matrix, the owner's 10-step test protocol, risk register and the phased roadmap BR-01..BR-21 with owners and acceptance.
+- The key ladder was refined: where neighbours differed by more than 1.45x (the dim end), integer geometric midpoints are inserted, giving 2, 3, 4, 5, 7, 10, 13, 16, 20, 26, 37, 51, 68, 88, 110 ... 500 (25 steps; before: 2, 3, 5, 10, 16, 26, which doubled at 5 → 10). Updated helper installed and key handler restarted (no brightness write); 23 tests pass, including three that fail if `BRIGHTNESS.md` stops matching the code.
+- Still waiting on: the owner's login to the patched Gala and the `BRIGHTNESS.md` section 6 protocol (BR-01).
+
 ## 2026-10-16 (Claude) — dock HDMI sink tests and built-in HDMI reference
 
 - DP-port sink test (07:23–07:27, bypass off): `RESULT=SILENT`, 6 x `DPRX read timeout`; bypass re-armed.
@@ -2472,6 +2621,48 @@ Owner declined closing the ChatGPT/Codex app, so no A/B was run. New finding: th
 - After reboot (kernel 7.1.13-elementary-fairydust-usb4-dptunnel, bypass=1): `1:14` HPD set, tunnel `0:5 <-> 1:14` forms, `DP source preparation failed: -110` at ~22 s. Matches DeepSeek/OpenCode commit 9fb6ff1.
 - Built-in HDMI works (38 modes, desktop extended). Working DCP (`289c`) sequence: DP2HDMI HPD irq -> `powering nub` -> `acking unhandled call 21` -> `set_drive_settings` x2 (link training) -> `plug_gated` -> `set_digital_out_mode`. The dock tunnel DCP (`28cc`) stops after `powering nub`. Saved as `mseries/fairydust/usb4/DCP-REFERENCE-BUILTIN-HDMI-20261016.txt`.
 - No driver, kernel, bootloader or display change made. Next task: DeepSeek drives the DCP to run the call 21 / drive-settings stage for the tunnelled port.
+
+## Restore scheduled developer branch discovery — October 18, 2026
+
+Two explicitly watched Aurora refs were deleted. GitHub returns 422 (No commit found for SHA), so the previous watcher aborted Aurora PR comparisons even though its public branch-head artifact was retained. branch-watch.py now records these exact missing-ref responses as absent-ref observations and continues discovery. Historical pending changes remain; other 422/network/comparison failures still fail the run. Response handles are closed after bounded reads.
+
+Two regression contracts cover preserved PR/head discovery and genuine-error reporting. The same fix passed full candidate workflow 39117953694: 1,114 public heads, 111 observed sources, zero fetch errors and 24 pending changes retained. This small recovery is separated from draft app-integration PR #86 so the permanent six-hour schedule need not wait for quiet GPU qualification. Main dispatch/CI and merge must be verified before reporting recovery complete. No runtime, driver, kernel, boot or audio change.
+
+## Calendar/browser/Mail integration qualification — October 18, 2026
+
+Branch feat/mcp-calendar-browser-mail, draft PR #86, implementation a78bc9b. Sixteen typed MCP tools now cover create-only local Assistant Calendar events, a separate Assistant Browser profile's page reads, and local unsent Mail drafts with an explicit native review window. Quiet policy/reserve unchanged. `configure-assistants.py --refresh-tools` installed the adapters/launchers while preserving the user's other settings.
+
+Verified: 65 contracts; four image-wiring checks after adding GTK3/WebSocket dependencies to both overlay consumers; real Brave/CDP synthetic page read; concurrent/retry/conflict EDS Calendar writes with literal text and independent readback/owned cleanup; actual Assistant Mail Drafts review button → installed Mail composer with exact plus-address, Unicode/reserved subject and multiline body under isolated Xvfb/D-Bus/XDG; exact sixteen-tool Newelle controller discovery without inference. Send never activated, no inbox/account reads or real Calendar records in evaluation. Private full logs/settings clones are not for publication.
+
+Recovered six provably dead pre-reboot MLX CLI reservations via the pinned upstream owner-checked API; added recovery that preserves live/paired/unknown leases and requires both PID and group absent. Default 4B restarted through normal admission. Kernel is now 7.1.12-2-20261017.20-sep-ARCH from separate owner work; do not compare new timings as an identical-state extension of October 16.
+
+Owned `mseries-app-workflow-qualification.service` runs work/run-app-workflows.py and work/app-workflow-qualification.log. Never duplicate it/GPU workers. Its six model cases are browser→Calendar→Mail and hostile-page rejection, three repeats each, with per-second telemetry and retained checkpoints. Wait for quiet windows; preserve owner jobs. Final model outcome, sanitized receipts, public docs and merge are pending. Existing historical app-workflow-smoke.py must be retained; the new suite will be named calendar-mail-workflow-smoke.py when its executing snapshot is archived. Speech decision in local-ai/SPEECH-INTEGRATION.md extends existing F5 capture with future opt-in review; this phase does not change audio or claim grammar/translation shipped.
+
+Watcher follow-through in this branch: the last scheduled run 39097623225 failed because Aurora deleted the explicitly watched fix/m1m2-regressions and fix/m1m2-typec-usb4-router refs; GitHub returns HTTP 422, not 404. The watcher now records these exact absent-ref observations and continues public head/PR discovery, preserving earlier pending history. Other HTTP 422 errors still fail. Two regression contracts cover this distinction. Live recheck and the next dispatched watcher run must be inspected before calling tracking healthy.
+
+### Owner feature direction: agent-first Pantheon with WebRTC
+
+The owner requested kernel/app alerts connected to agents, speech-to-text/speech-to-speech and desktop control, then clarified this as a **feature write-up**, agent-first, with **WebRTC** (not WebMCP). `local-ai/PANTHEON-MCP-DESIGN.md` now proposes the headless broker/permission boundary, durable alert/workflow states, native app/desktop adapters, capture/review/TTS and paired WebRTC sessions. It distinguishes current evidence from proposed functionality and includes phased acceptance tests, cancellation/reconnect/idempotency, quiet limits and privacy boundaries. No new alert, capture, desktop-control or WebRTC daemon was started; current audio remains untouched. The local deliverable is outputs/pantheon-mcp-agent-first-feature.md.
+
+Full repaired developer watcher run 39117953694 succeeded: 1,114 public heads, 111 observed sources, zero fetch errors; two absent refs and 24 pending changes retained. First real Calendar/browser/Mail model chain passed in 347.37 s (cooling pauses included), followed by hostile-page rejection in 12.85 s. First chain has 345 per-second samples, min available 11.44 GiB, max sampled fan 3236 RPM and max temperature 58.40 C; not acoustic measurements or a fast uninterrupted run. Four model cases remain; do not repeat the completed pair.
+
+### Upstream feature/performance comparison requested by owner
+
+`local-ai/UPSTREAM-FEATURE-COMPARISON.md` now compares MX main e5714f9, Mac default quattro ba546a6 and canonical integration quattro-upstream a76179c, and MLX main d8ac5fe against our tested 33630f9 pin (28 commits behind; latest release still v0.7.33). Public source-audit.json records exact revisions, 27 file hashes/links, MIT license metadata and four detailed developer heads. No upstream source or runtime was imported/updated. The source comparison covers crash-agent/notification contracts, native voice options, Laya, oMLX/cache/batching and native Bonsai versus our distinct GGUF test.
+
+High-interest candidate: opt-in GDN_PF_GQA from merged PR #229 reports ~8–9% decode gain on M1 Max/M2 Max, not yet M1 Pro. WORD/WORD2 gather shortcuts stay excluded because upstream fidelity gates reject/do not accept them. Process uclamp already returns EPERM on this kernel; no governor change. A served M1 Max governor experiment's ~2.3% gain/~2 W idle cost is not an always-on quiet default. Test voice/ANE contention rather than assume concurrent ASR always helps. Named developer heads have unique commits but are substantially behind main; graph divergence is not patch novelty or a speed ranking. The existing all-head/PR watcher remains the discovery mechanism.
+
+Local deliverable: outputs/m1pro-upstream-feature-comparison.md. The Pantheon proposal links the comparison and its controlled experiment backlog. Current frozen model cohort still has two completed passes and is waiting on quiet admission for the remaining four; never replace its sources or rerun its completed pair.
+
+### Reproducibility and publication staging
+
+Frozen evaluated sources were copied to work/app-cohort-evaluated-source and SHA-checked against the executing v1 report. The new maintained calendar-mail-workflow-smoke.py is a separate v2 harness: includes runtime/app/profile/helper identities in checkpoint compatibility, explicitly records telemetry loss as interruption and fixes owned-browser timeout cleanup. Three regression cases bring the contract total to 70, all passing. Do not switch the running v1 queue to it or rerun completed v1 results. The dirty temporary app-workflow-smoke.py must remain until the owned queue exits, then restore its historical HEAD contents.
+
+work/publish-receipts.py --app-integration now uses an explicit allowlist, sanitizes paths, checks tool scopes/source digests/cleanup, and requires six completed cases for final publication. --allow-incomplete prepares a clearly labeled checkpoint only. Staged public app-integration-2026-10-18 receipts include two passes, exact evaluated source, installed source/package/binary pins, GUI booleans and only owned cooling-policy events. First positive workflow includes ~226.53 s cooling pause within 347.37 s elapsed. Full logs/settings/browser profiles/journals/private app contents remain excluded.
+
+Merged origin/main 86582a0 into this branch, retaining owner hardware/audio/CodexBar/VM changes and both handoff histories. Frozen executing app harness, adapter, MCP and helper digests still match; no installed owner services/apps were restarted by this reconciliation. The newly inherited dictation handoff reports two live F5 attempts with zero recognized characters and a native AOP signal/noise blocker. The feature proposal/speech decision now records that concrete failure and makes capture validation a gate; no automatic audio/kernel change or new mic recording was performed.
+
+Public page is staged with explicit two-pass/four-pending status, exact source/receipt links, current 70-contract count, the Pantheon/WebRTC proposal and upstream comparison. Reconciliation checks pass (70 assistant contracts and 4 image-wiring tests). A known-missing-ref HTTPError handle is now closed after reading its bounded response; all 17 app/branch/harness contracts pass. Do not claim final publication or merge yet. The only intentional dirty runtime input is the executing temporary app-workflow-smoke.py (digest 93ee800a...), retained for the owned live queue.
 
 ## October 16 local AI rollout and qualification
 
@@ -2806,38 +2997,30 @@ Upstream's Settings window (Qt Quick, `QQuickStyle::setStyle("Fusion")` hard-cod
 
 Verified: model unit tests (3) and Meson (4 suites); headless renders of all pages in light and dark; an isolated headless app accepted a `--configure` patch (linux.json updated) and rejected `refreshSeconds: 5` with an error. Not verified: the window on the live desktop by eye, and start at login toggling for real. `deploy-codexbar.sh` installs the binary to `~/.local/bin/codexbar-settings`; `CODEXBAR-PORT.md` lists the files and the upgrade diff to check.
 
-## Calendar/browser/Mail integration qualification — October 18, 2026
+## CodexBar: dense left-side panel readout and OpenCode Go sign-in — 2026-10-18
 
-Branch feat/mcp-calendar-browser-mail, draft PR #86, implementation a78bc9b. Sixteen typed MCP tools now cover create-only local Assistant Calendar events, a separate Assistant Browser profile's page reads, and local unsent Mail drafts with an explicit native review window. Quiet policy/reserve unchanged. `configure-assistants.py --refresh-tools` installed the adapters/launchers while preserving the user's other settings.
+The owner asked for CodexBar on the left of the top panel, showing all three providers densely with company
+marks, percentages and time to reset. The Wingpanel display widget now shows one segment per provider in the
+order Codex, Claude, OpenCode Go: the mark, % left of the window that will stop you first (lowest remaining;
+labelled `7D` when it isn't the 5-hour window), and a compact countdown to that window's reset (`4h44m`,
+`6d22h`) that ticks every poll while the popover is rebuilt only on data changes. Claude comes from the
+claude-swap helper's active account when upstream's snapshot has no Claude entry; OpenCode Go without account
+quota shows this machine's 7-day token count (`121M 7d tok`). Warnings colour the % and stale data dims the
+segment; the tooltip lists every window. The left placement uses the existing
+`install-wingpanel-codexbar-left.sh` patch, which was not installed (stock binary was running); it is now
+installed with the stock binary backed up at `/usr/local/lib/mseries/io.elementary.wingpanel.pre-codexbar-left`.
 
-Verified: 65 contracts; four image-wiring checks after adding GTK3/WebSocket dependencies to both overlay consumers; real Brave/CDP synthetic page read; concurrent/retry/conflict EDS Calendar writes with literal text and independent readback/owned cleanup; actual Assistant Mail Drafts review button → installed Mail composer with exact plus-address, Unicode/reserved subject and multiline body under isolated Xvfb/D-Bus/XDG; exact sixteen-tool Newelle controller discovery without inference. Send never activated, no inbox/account reads or real Calendar records in evaluation. Private full logs/settings clones are not for publication.
+OpenCode Go quota did not load because upstream v0.77.0 imports opencode.ai cookies only on macOS. New helper
+`codexbar-opencode-login.py login` opens a native WebKitGTK 6 sign-in window (private persistent profile in
+`~/.local/share/codexbar-opencode-login`), keeps only the `auth` / `__Host-auth` / `__Host-console_session`
+cookies upstream forwards, saves them as `providers[opencodego]` `cookieSource: manual` + `cookieHeader` in
+`~/.config/codexbar/config.json` (0600, locked, atomic), then checks `codexbar usage --provider opencodego
+--source web`. The OpenCode card now has an Accounts **+** like Claude's, and its Sign in… button runs the same
+flow. Side effect while probing: `codexbar config enable --provider opencodego` created
+`~/.config/codexbar/config.json` (previously absent; defaults plus OpenCode Go enabled).
 
-Recovered six provably dead pre-reboot MLX CLI reservations via the pinned upstream owner-checked API; added recovery that preserves live/paired/unknown leases and requires both PID and group absent. Default 4B restarted through normal admission. Kernel is now 7.1.12-2-20261017.20-sep-ARCH from separate owner work; do not compare new timings as an identical-state extension of October 16.
-
-Owned `mseries-app-workflow-qualification.service` runs work/run-app-workflows.py and work/app-workflow-qualification.log. Never duplicate it/GPU workers. Its six model cases are browser→Calendar→Mail and hostile-page rejection, three repeats each, with per-second telemetry and retained checkpoints. Wait for quiet windows; preserve owner jobs. Final model outcome, sanitized receipts, public docs and merge are pending. Existing historical app-workflow-smoke.py must be retained; the new suite will be named calendar-mail-workflow-smoke.py when its executing snapshot is archived. Speech decision in local-ai/SPEECH-INTEGRATION.md extends existing F5 capture with future opt-in review; this phase does not change audio or claim grammar/translation shipped.
-
-Watcher follow-through in this branch: the last scheduled run 39097623225 failed because Aurora deleted the explicitly watched fix/m1m2-regressions and fix/m1m2-typec-usb4-router refs; GitHub returns HTTP 422, not 404. The watcher now records these exact absent-ref observations and continues public head/PR discovery, preserving earlier pending history. Other HTTP 422 errors still fail. Two regression contracts cover this distinction. Live recheck and the next dispatched watcher run must be inspected before calling tracking healthy.
-
-### Owner feature direction: agent-first Pantheon with WebRTC
-
-The owner requested kernel/app alerts connected to agents, speech-to-text/speech-to-speech and desktop control, then clarified this as a **feature write-up**, agent-first, with **WebRTC** (not WebMCP). `local-ai/PANTHEON-MCP-DESIGN.md` now proposes the headless broker/permission boundary, durable alert/workflow states, native app/desktop adapters, capture/review/TTS and paired WebRTC sessions. It distinguishes current evidence from proposed functionality and includes phased acceptance tests, cancellation/reconnect/idempotency, quiet limits and privacy boundaries. No new alert, capture, desktop-control or WebRTC daemon was started; current audio remains untouched. The local deliverable is outputs/pantheon-mcp-agent-first-feature.md.
-
-Full repaired developer watcher run 39117953694 succeeded: 1,114 public heads, 111 observed sources, zero fetch errors; two absent refs and 24 pending changes retained. First real Calendar/browser/Mail model chain passed in 347.37 s (cooling pauses included), followed by hostile-page rejection in 12.85 s. First chain has 345 per-second samples, min available 11.44 GiB, max sampled fan 3236 RPM and max temperature 58.40 C; not acoustic measurements or a fast uninterrupted run. Four model cases remain; do not repeat the completed pair.
-
-### Upstream feature/performance comparison requested by owner
-
-`local-ai/UPSTREAM-FEATURE-COMPARISON.md` now compares MX main e5714f9, Mac default quattro ba546a6 and canonical integration quattro-upstream a76179c, and MLX main d8ac5fe against our tested 33630f9 pin (28 commits behind; latest release still v0.7.33). Public source-audit.json records exact revisions, 27 file hashes/links, MIT license metadata and four detailed developer heads. No upstream source or runtime was imported/updated. The source comparison covers crash-agent/notification contracts, native voice options, Laya, oMLX/cache/batching and native Bonsai versus our distinct GGUF test.
-
-High-interest candidate: opt-in GDN_PF_GQA from merged PR #229 reports ~8–9% decode gain on M1 Max/M2 Max, not yet M1 Pro. WORD/WORD2 gather shortcuts stay excluded because upstream fidelity gates reject/do not accept them. Process uclamp already returns EPERM on this kernel; no governor change. A served M1 Max governor experiment's ~2.3% gain/~2 W idle cost is not an always-on quiet default. Test voice/ANE contention rather than assume concurrent ASR always helps. Named developer heads have unique commits but are substantially behind main; graph divergence is not patch novelty or a speed ranking. The existing all-head/PR watcher remains the discovery mechanism.
-
-Local deliverable: outputs/m1pro-upstream-feature-comparison.md. The Pantheon proposal links the comparison and its controlled experiment backlog. Current frozen model cohort still has two completed passes and is waiting on quiet admission for the remaining four; never replace its sources or rerun its completed pair.
-
-### Reproducibility and publication staging
-
-Frozen evaluated sources were copied to work/app-cohort-evaluated-source and SHA-checked against the executing v1 report. The new maintained calendar-mail-workflow-smoke.py is a separate v2 harness: includes runtime/app/profile/helper identities in checkpoint compatibility, explicitly records telemetry loss as interruption and fixes owned-browser timeout cleanup. Three regression cases bring the contract total to 70, all passing. Do not switch the running v1 queue to it or rerun completed v1 results. The dirty temporary app-workflow-smoke.py must remain until the owned queue exits, then restore its historical HEAD contents.
-
-work/publish-receipts.py --app-integration now uses an explicit allowlist, sanitizes paths, checks tool scopes/source digests/cleanup, and requires six completed cases for final publication. --allow-incomplete prepares a clearly labeled checkpoint only. Staged public app-integration-2026-10-18 receipts include two passes, exact evaluated source, installed source/package/binary pins, GUI booleans and only owned cooling-policy events. First positive workflow includes ~226.53 s cooling pause within 347.37 s elapsed. Full logs/settings/browser profiles/journals/private app contents remain excluded.
-
-Merged origin/main 86582a0 into this branch, retaining owner hardware/audio/CodexBar/VM changes and both handoff histories. Frozen executing app harness, adapter, MCP and helper digests still match; no installed owner services/apps were restarted by this reconciliation. The newly inherited dictation handoff reports two live F5 attempts with zero recognized characters and a native AOP signal/noise blocker. The feature proposal/speech decision now records that concrete failure and makes capture validation a gate; no automatic audio/kernel change or new mic recording was performed.
-
-Public page is staged with explicit two-pass/four-pending status, exact source/receipt links, current 70-contract count, the Pantheon/WebRTC proposal and upstream comparison. Reconciliation checks pass (70 assistant contracts and 4 image-wiring tests). A known-missing-ref HTTPError handle is now closed after reading its bounded response; all 17 app/branch/harness contracts pass. Do not claim final publication or merge yet. The only intentional dirty runtime input is the executing temporary app-workflow-smoke.py (digest 93ee800a...), retained for the owned live queue.
+Verified: Meson 4/4 (new countdown, binding-window and panel-count tests); headless renders of the bar in
+healthy, depleting, provider-error and live fixtures, light and dark; helper config writes against a temp
+config; the sign-in window loads opencode.ai's login page headlessly (`/console/login`, no cookies before
+sign-in, so it cannot close early); `check-codexbar-port.sh` passes. Not verified: a real opencode.ai sign-in
+end to end (needs the owner's credentials) and the panel on the live desktop by eye.

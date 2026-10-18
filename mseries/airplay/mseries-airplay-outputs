@@ -1,0 +1,201 @@
+#!/usr/bin/env python3
+"""AirPlay outputs: a clickable dot per AirPlay receiver; filled = active.
+
+Active receivers are members of one combine-stream sink, "AirPlay Group", that plays to all of
+them at once. Choose "AirPlay Group" in Sound Output (or the button here) to send audio to it.
+Switching a dot only loads/unloads that one extra PipeWire module; the rest of the audio
+graph and the default output are never touched unless you press the button.
+
+  mseries-airplay-outputs                GTK window
+  mseries-airplay-outputs json           the same, as JSON (used by the Quick Settings menu)
+  mseries-airplay-outputs list           receivers and whether they are active
+  mseries-airplay-outputs enable|disable|toggle NAME_OR_KEY
+  mseries-airplay-outputs apply          make the graph match the saved choice (login autostart)
+  mseries-airplay-outputs --screenshot PATH   render the window to a PNG (use with MSERIES_AIRPLAY_FAKE=1)
+"""
+import json, os, subprocess, sys, time
+HERE = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, HERE)
+import airplay_core as core
+
+FAKE = bool(os.environ.get("MSERIES_AIRPLAY_FAKE"))
+
+
+def pw_dump():
+    if FAKE:
+        return [{"id": i, "type": "PipeWire:Interface:Node", "info": {"state": "suspended", "props": {
+            "media.class": "Audio/Sink", "node.description": n,
+            "node.name": "raop_sink.%s.local.10.0.0.%d.7000" % (h, i)}}}
+            for i, (h, n) in enumerate([("Sonos-1", "Living Room"), ("Sonos-2", "Bedroom"),
+                                        ("zTV", "zTV-Living Room"), ("Eve1", "Eve1")], 10)]
+    return json.loads(subprocess.run(["pw-dump"], capture_output=True, text=True, check=True, timeout=10).stdout)
+
+
+def apply(enabled):
+    """Make the running graph's group sink contain exactly `enabled` (receivers still on the network)."""
+    dump = pw_dump()
+    present = {d["key"] for d in core.destinations(dump)}
+    want = [k for k in enabled if k in present]
+    if FAKE:
+        return want
+    unit = core.GROUP_UNIT
+    systemctl = lambda *x: subprocess.run(["systemctl", "--user", *x], capture_output=True, text=True, timeout=20)
+    systemctl("stop", unit)
+    systemctl("reset-failed", unit)
+    if want:
+        conf = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "mseries-airplay-group.conf")
+        with open(conf, "w") as f:
+            f.write(core.client_conf(want))
+        r = subprocess.run(["systemd-run", "--user", "--collect", "--quiet", "--unit", unit,
+                            "pipewire", "-c", conf], capture_output=True, text=True, timeout=20)
+        if r.returncode != 0:
+            raise RuntimeError(r.stderr.strip() or "systemd-run failed")
+    return want
+
+
+def set_enabled(key, on):
+    cur = set(core.load_state())
+    (cur.add if on else cur.discard)(key)
+    core.save_state(cur)
+    apply(sorted(cur))
+
+
+def resolve(arg):
+    for d in core.destinations(pw_dump()):
+        if arg in (d["key"], d["name"]):
+            return d["key"]
+    raise SystemExit("No AirPlay receiver called %r" % arg)
+
+
+def cli(argv):
+    cmd = argv[0]
+    if cmd == "json":
+        saved = set(core.load_state())
+        dump = pw_dump()
+        live = core.group_members(dump)
+        print(json.dumps([{"key": d["key"], "name": d["name"], "enabled": d["key"] in saved,
+                           "active": d["key"] in live} for d in core.destinations(dump)]))
+    elif cmd == "list":
+        saved = set(core.load_state())
+        live = core.group_members(pw_dump())
+        for d in core.destinations(pw_dump()):
+            print("%s  %-24s %s%s" % ("●" if d["key"] in saved else "○", d["name"], d["key"],
+                                       "  (in group)" if d["key"] in live else ""))
+    elif cmd in ("enable", "disable", "toggle") and len(argv) == 2:
+        key = resolve(argv[1])
+        on = key not in core.load_state() if cmd == "toggle" else cmd == "enable"
+        set_enabled(key, on)
+        print("%s %s" % (argv[1], "enabled" if on else "disabled"))
+    elif cmd == "apply":
+        for _ in range(20):  # receivers appear a few seconds after login
+            if core.destinations(pw_dump()):
+                break
+            time.sleep(3)
+        print("group members:", ", ".join(apply(core.load_state())) or "none")
+    else:
+        raise SystemExit(__doc__)
+
+
+def gui(shot=None):
+    import gi
+    gi.require_version("Gtk", "3.0")
+    from gi.repository import Gtk, GLib
+    css = Gtk.CssProvider()
+    css.load_from_data(b"""
+      .dot { min-width: 22px; min-height: 22px; padding: 0; border-radius: 999px; border: 2px solid #8a8a8a; background: transparent; }
+      .dot.on { background: #3689e6; border-color: #3689e6; }
+      .dot:hover { border-color: #3689e6; }
+      .status { opacity: .65; }""")
+    Gtk.StyleContext.add_provider_for_screen(__import__("gi.repository.Gdk", fromlist=["Gdk"]).Screen.get_default(),
+                                             css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+    win = Gtk.Window(title="AirPlay Outputs")
+    win.set_default_size(360, -1)
+    win.set_border_width(12)
+    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+    win.add(box)
+    head = Gtk.Label(xalign=0)
+    head.set_markup("<b>AirPlay Outputs</b>")
+    box.pack_start(head, False, False, 0)
+    rows = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+    box.pack_start(rows, False, False, 0)
+    status = Gtk.Label(xalign=0, wrap=True)
+    status.get_style_context().add_class("status")
+    use = Gtk.Button(label="Play to AirPlay Group")
+    box.pack_start(status, False, False, 4)
+    box.pack_start(use, False, False, 0)
+    saved = set(core.load_state())
+
+    def say(text):
+        status.set_text(text)
+
+    def on_dot(btn, key, name):
+        nonlocal saved
+        was = key in saved
+        try:
+            set_enabled(key, not was)
+        except Exception as e:  # noqa: BLE001 - show any failure in the window
+            say("Could not change %s: %s" % (name, e))
+            return
+        saved = set(core.load_state())
+        say("%s %s." % (name, "off" if was else "on"))
+        rebuild()
+
+    def rebuild():
+        for c in rows.get_children():
+            rows.remove(c)
+        dests = core.destinations(pw_dump())
+        for d in dests:
+            row = Gtk.Box(spacing=10)
+            dot = Gtk.Button(relief=Gtk.ReliefStyle.NONE)
+            ctx = dot.get_style_context()
+            ctx.add_class("dot")
+            on = d["key"] in saved
+            if on:
+                ctx.add_class("on")
+            dot.set_tooltip_text("%s: %s" % (d["name"], "on – click to turn off" if on else "off – click to turn on"))
+            dot.get_accessible().set_name("%s, %s" % (d["name"], "on" if on else "off"))
+            dot.connect("clicked", on_dot, d["key"], d["name"])
+            row.pack_start(dot, False, False, 0)
+            row.pack_start(Gtk.Label(label=d["name"], xalign=0), True, True, 0)
+            rows.pack_start(row, False, False, 3)
+        if not dests:
+            rows.pack_start(Gtk.Label(label="No AirPlay receivers found on the network.", xalign=0), False, False, 0)
+        n = len([d for d in dests if d["key"] in saved])
+        use.set_sensitive(n > 0)
+        if not status.get_text():
+            say("%d active. Active receivers play together as “AirPlay Group”." % n)
+        rows.show_all()
+
+    def use_group(_b):
+        gid = core.group_sink(pw_dump())
+        if gid is None:
+            say("The AirPlay Group is not running yet.")
+            return
+        r = subprocess.run(["wpctl", "set-default", str(gid)], capture_output=True, text=True)
+        say("Default output is now AirPlay Group." if r.returncode == 0 else "wpctl failed: " + r.stderr.strip())
+
+    use.connect("clicked", use_group)
+    rebuild()
+    win.connect("destroy", Gtk.main_quit)
+    win.show_all()
+    if shot:
+        def snap():
+            from gi.repository import Gdk
+            w = win.get_window()
+            pb = Gdk.pixbuf_get_from_window(w, 0, 0, w.get_width(), w.get_height())
+            pb.savev(shot, "png", [], [])
+            Gtk.main_quit()
+        if FAKE and os.environ.get("MSERIES_AIRPLAY_CLICK"):
+            GLib.timeout_add(300, lambda: [b for b in rows.get_children()[0].get_children() if isinstance(b, Gtk.Button)][0].clicked() and False)
+        GLib.timeout_add(900, snap)
+    Gtk.main()
+
+
+if __name__ == "__main__":
+    a = sys.argv[1:]
+    if a[:1] == ["--screenshot"]:
+        gui(a[1])
+    elif a:
+        cli(a)
+    else:
+        gui()

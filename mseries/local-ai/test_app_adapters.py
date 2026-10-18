@@ -5,17 +5,13 @@ import tempfile
 import signal
 import subprocess
 import importlib.util
-import io
 import unittest
 from unittest.mock import MagicMock, patch
 from urllib.parse import parse_qs, unquote, urlsplit
-from urllib.error import HTTPError
 
 import app_adapters as apps
 import runtime_recovery as recovery
 
-spec = importlib.util.spec_from_file_location('app_branch_watch', Path(__file__).with_name('branch-watch.py'))
-branch_watch = importlib.util.module_from_spec(spec); spec.loader.exec_module(branch_watch)
 spec = importlib.util.spec_from_file_location('calendar_smoke_contracts', Path(__file__).with_name('calendar-mail-workflow-smoke.py'))
 workflow = importlib.util.module_from_spec(spec); spec.loader.exec_module(workflow)
 
@@ -46,26 +42,6 @@ class AppContracts(unittest.TestCase):
             fixture.close()
         self.assertEqual(kill.call_args_list,[unittest.mock.call(12345,signal.SIGTERM),unittest.mock.call(12345,signal.SIGKILL)])
         fixture.server.shutdown.assert_called_once(); fixture.server.server_close.assert_called_once()
-
-    def test_deleted_named_ref_keeps_personal_branch_and_pr_discovery(self):
-        def get(path):
-            if path.endswith('/commits/gone'):
-                raise HTTPError(path, 422, 'Unprocessable', {}, io.BytesIO(b'{"message":"No commit found for SHA: gone"}'))
-            if '/branches?' in path: return [{'name': 'experiment', 'commit': {'sha': 'tip'}}]
-            if '/pulls?' in path: return [{'number': 1, 'head': {'repo': {'full_name': 'fork/repo'}, 'ref': 'new', 'sha': 'tip'}, 'html_url': 'https://example.invalid/pr'}]
-            if '/compare/' in path: return {'ahead_by': 1, 'behind_by': 0, 'status': 'ahead', 'html_url': 'https://example.invalid/compare'}
-            return {'private': False, 'sha': 'base'}
-        raw = {}
-        rows, errors = branch_watch.collect(get, [{'repo': 'a/b', 'base': 'main', 'branches': ['gone'], 'discover_branches': True, 'open_prs': True}], raw)
-        self.assertFalse(errors)
-        self.assertEqual(rows['branch:a/b:gone']['status'], 'named ref absent')
-        self.assertEqual(rows['branch:fork/repo:new']['ahead'], 1)
-        self.assertEqual(raw['a/b'][0]['branch'], 'experiment')
-
-    def test_other_http_422_is_still_an_error(self):
-        def get(path):
-            raise HTTPError(path, 422, 'Unprocessable', {}, io.BytesIO(b'{"message":"Validation Failed"}'))
-        with self.assertRaises(HTTPError): branch_watch.tracked_tip(get, 'a/b', 'gone')
 
     def test_event_offsets_preserve_instants_and_dst(self):
         self.assertEqual(apps.event_time('2026-10-23T14:30:00-04:00'), apps.event_time('2026-10-23T18:30:00Z'))

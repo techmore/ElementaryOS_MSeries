@@ -53,6 +53,7 @@ STAGES=(
   "opencode|system|off|install-opencode-desktop.sh|OpenCode Desktop, built from source for arm64 (slow)"
   "codexbar|user|on|install-codexbar.sh|CodexBar ARM64 desktop and CLI"
   "codexbar-panel|system|on|install-codexbar-wingpanel.sh|CodexBar quota and usage indicator in Wingpanel"
+  "desktop-space|user|off|install-desktop-space.sh|full-height native M1 Pro panel and compact persistent dock"
   "corners|system|off|install-gala-screen-corners.sh|rounded screen corners (patched Gala)"
   "snapping|system|on|install-window-snapping.sh|persistent half snapping and native corner quarter snaps"
   "clockright|system|off|install-clockright-wingpanel.sh|right-side clock while the notch area is fixed"

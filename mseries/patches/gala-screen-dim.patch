@@ -1,0 +1,173 @@
+diff --git a/src/LayoutManager.vala b/src/LayoutManager.vala
+index 57195f5..4010f23 100644
+--- a/src/LayoutManager.vala
++++ b/src/LayoutManager.vala
+@@ -154,6 +154,9 @@ public class Gala.LayoutManager : Object {
+         session_locker = new SessionLocker (wm);
+         ui_group.add_child (session_locker);
+ 
++        // Software dim below the backlight floor; the corner masks stay above it.
++        ui_group.add_child (new ScreenDim (display));
++
+         // Rounded masks over the corners of the laptop panel; keep this the topmost child.
+         ui_group.add_child (new ScreenCorners (display));
+     }
+diff --git a/src/Misc/ScreenshotManager.vala b/src/Misc/ScreenshotManager.vala
+index 8d7eb19..97e329f 100644
+--- a/src/Misc/ScreenshotManager.vala
++++ b/src/Misc/ScreenshotManager.vala
+@@ -685,6 +685,8 @@ public class Gala.ScreenshotManager : Object {
+ 
+         var paint_flags = include_cursor ? Clutter.PaintFlag.FORCE_CURSORS : Clutter.PaintFlag.NO_CURSORS;
+ 
++        // The software dim layer must not tint the capture.
++        ScreenDim.set_capturing (true);
+         try {
+             if (GLib.ByteOrder.HOST == GLib.ByteOrder.LITTLE_ENDIAN) {
+                 wm.stage.paint_to_buffer (
+@@ -714,6 +716,7 @@ public class Gala.ScreenshotManager : Object {
+         } catch (Error e) {
+             warning (e.message);
+         }
++        ScreenDim.set_capturing (false);
+         return image;
+     }
+ 
+diff --git a/src/Widgets/ScreenDim.vala b/src/Widgets/ScreenDim.vala
+new file mode 100644
+index 0000000..7c252f2
+--- /dev/null
++++ b/src/Widgets/ScreenDim.vala
+@@ -0,0 +1,120 @@
++/*
++ * SPDX-License-Identifier: GPL-3.0-or-later
++ * SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries
++ */
++
++/**
++ * Software dimming below the Apple panel's hardware backlight floor (2 nits). A black layer
++ * over the built-in display(s), click-through and above everything but the corner masks.
++ *
++ * Its strength is read from $XDG_RUNTIME_DIR/mseries-dim (a number from 0 to 0.85, the alpha of
++ * the black layer in encoded colour) and re-read whenever that file changes, so any tool can
++ * set it with an atomic write. Gala records its PID in $XDG_RUNTIME_DIR/mseries-dim.gala so
++ * writers can tell whether this layer is running. Screenshots hide the layer so captures keep
++ * their real colours.
++ */
++public class Gala.ScreenDim : Clutter.Actor {
++    private const double MAX_ALPHA = 0.85;
++
++    public static unowned ScreenDim? instance = null;
++
++    public Meta.Display display { get; construct; }
++
++    private double alpha = 0.0;
++    private bool captured = false;
++    private File state_file;
++    private FileMonitor? monitor = null;
++
++    public ScreenDim (Meta.Display display) {
++        Object (display: display);
++    }
++
++    construct {
++        instance = this;
++        reactive = false;
++        name = "screen-dim";
++        visible = false;
++
++        var runtime = Environment.get_user_runtime_dir ();
++        state_file = File.new_for_path (Path.build_filename (runtime, "mseries-dim"));
++
++        unowned var monitor_manager = display.get_context ().get_backend ().get_monitor_manager ();
++        monitor_manager.monitors_changed.connect (update_geometry);
++        update_geometry ();
++
++        try {
++            monitor = state_file.monitor_file (FileMonitorFlags.NONE);
++            monitor.changed.connect (() => load ());
++        } catch (Error e) {
++            warning ("ScreenDim: cannot watch %s: %s", state_file.get_path (), e.message);
++        }
++
++        try {
++            FileUtils.set_contents (Path.build_filename (runtime, "mseries-dim.gala"), "%d\n".printf ((int) Posix.getpid ()));
++        } catch (Error e) {
++            warning ("ScreenDim: cannot publish readiness: %s", e.message);
++        }
++
++        load ();
++    }
++
++    ~ScreenDim () {
++        if (instance == this) {
++            instance = null;
++        }
++    }
++
++    private void load () {
++        double value = 0.0;
++        try {
++            string contents;
++            FileUtils.get_contents (state_file.get_path (), out contents);
++            value = double.parse (contents.strip ());
++        } catch (Error e) {
++            value = 0.0;
++        }
++
++        // NaN, negatives and anything over the cap can never black the screen out.
++        alpha = (value > 0.0 && value == value) ? double.min (value, MAX_ALPHA) : 0.0;
++        opacity = (uint8) Math.round (alpha * 255.0);
++        visible = alpha > 0.0 && !captured;
++    }
++
++    private void update_geometry () {
++        remove_all_children ();
++
++        unowned var monitor_manager = display.get_context ().get_backend ().get_monitor_manager ();
++        foreach (unowned var logical_monitor in monitor_manager.get_logical_monitors ()) {
++            foreach (unowned var panel in logical_monitor.get_monitors ()) {
++                if (!panel.is_builtin ()) {
++                    continue;
++                }
++                var geometry = display.get_monitor_geometry (logical_monitor.get_number ());
++                var layer = new Clutter.Actor () {
++                    background_color = { 0, 0, 0, 255 },
++                    reactive = false
++                };
++                layer.set_position (geometry.x, geometry.y);
++                layer.set_size (geometry.width, geometry.height);
++                add_child (layer);
++                break;
++            }
++        }
++
++        int stage_width, stage_height;
++        display.get_size (out stage_width, out stage_height);
++        set_position (0, 0);
++        set_size (stage_width, stage_height);
++    }
++
++    /**
++     * Hides the layer while a screenshot is painted (painting is synchronous).
++     */
++    public static void set_capturing (bool capturing) {
++        if (instance == null) {
++            return;
++        }
++        instance.captured = capturing;
++        instance.visible = instance.alpha > 0.0 && !capturing;
++    }
++}
+diff --git a/src/meson.build b/src/meson.build
+index c3e2666..2b2a6a9 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -64,6 +64,7 @@ gala_bin_sources = files(
+     'Widgets/DwellClickTimer.vala',
+     'Widgets/LockScreen.vala',
+     'Widgets/ScreenCorners.vala',
++    'Widgets/ScreenDim.vala',
+     'Widgets/MultitaskingView/MonitorClone.vala',
+     'Widgets/MultitaskingView/MultitaskingView.vala',
+     'Widgets/MultitaskingView/StaticWindowClone.vala',
