@@ -9,6 +9,7 @@
 #   bash mseries/post-install.sh --only power,brave     run just these
 #   bash mseries/post-install.sh --skip video           default stages minus these
 #   bash mseries/post-install.sh --with signal,tether   default stages plus optional ones
+#   bash mseries/post-install.sh --with apps           plus the preferred app set (APPS below)
 #   bash mseries/post-install.sh --status               result of the last run
 #
 # Run as your normal desktop user, not root: the user-level stages configure
@@ -32,6 +33,7 @@ STAGES=(
   "docked-lid|user|on|install-docked-lid.sh|lock and blank panel instead of suspending when docked"
   "battery-eta|user|on|install-battery-eta.sh|time-to-full beside the battery icon"
   "power|system|on|install-power.sh|80% charge limit, battery CPU ceiling"
+  "diagnostics|system|on|install-hardware-support.sh|suspend-energy logging and power diagnostics (next login)"
   "tuning|system|on|install-system-tuning.sh|system tuning from the 2026-10-12 audit"
   "audio|system|on|install-audio-stack.sh|speaker protection daemon"
   "brave|system|on|install-brave.sh|Brave from its apt repository"
@@ -48,11 +50,19 @@ STAGES=(
   "firefox|system|off|install-native-firefox.sh|Firefox from Mozilla's apt repository (no snap)"
   "signal|user|off|install-signal.sh|Signal Desktop ARM64 beta"
   "tether|user|off|install-tether.sh|Tether iPhone pairing"
+  "opencode|system|off|install-opencode-desktop.sh|OpenCode Desktop, built from source for arm64 (slow)"
   "codexbar|user|on|install-codexbar.sh|CodexBar ARM64 desktop and CLI"
   "codexbar-panel|system|on|install-codexbar-wingpanel.sh|CodexBar quota and usage indicator in Wingpanel"
+  "desktop-space|user|off|install-desktop-space.sh|full-height native M1 Pro panel and compact persistent dock"
   "corners|system|off|install-gala-screen-corners.sh|rounded screen corners (patched Gala)"
+  "snapping|system|on|install-window-snapping.sh|persistent half snapping and native corner quarter snaps"
   "clockright|system|off|install-clockright-wingpanel.sh|right-side clock while the notch area is fixed"
+  "drawers|system|off|install-gala-drawers.sh|hotkey drawers: pop an app up/down into a fixed screen zone"
 )
+
+# Preferred apps: `apps` expands to these in --with/--only. brave and codexbar
+# are already on by default, so they are listed to make --only apps complete.
+APPS=(brave firefox signal tether codexbar opencode)
 
 field() { local IFS='|'; local -a f=($1); echo "${f[$2]}"; }
 known() { local s; for s in "${STAGES[@]}"; do [[ $(field "$s" 0) == "$1" ]] && return 0; done; return 1; }
@@ -65,7 +75,7 @@ list_stages() {
   done
 }
 
-usage() { sed -n '2,19p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; }
 
 only=() skip=() with=() dry=0
 csv() { local IFS=,; read -ra "$1" <<<"$2"; }
@@ -82,6 +92,13 @@ while (( $# )); do
   esac
   shift
 done
+
+expand_apps() { # name of array var
+  local -n arr=$1; local out=() x
+  for x in "${arr[@]}"; do if [[ $x == apps ]]; then out+=("${APPS[@]}"); else out+=("$x"); fi; done
+  arr=("${out[@]}")
+}
+expand_apps only; expand_apps with; expand_apps skip
 
 for n in "${only[@]}" "${skip[@]}" "${with[@]}"; do
   [[ -z $n ]] || known "$n" || { echo "unknown stage: $n (see --list)" >&2; exit 2; }

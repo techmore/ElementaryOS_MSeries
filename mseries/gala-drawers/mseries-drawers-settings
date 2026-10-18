@@ -1,0 +1,417 @@
+#!/usr/bin/python3
+"""Drawer shortcuts — assign apps to the Command+1..9 drawer hotkeys.
+
+A drawer is one global shortcut that pops a set of apps up or down and snaps
+them into a zone of a monitor. This app edits the two things that define them:
+
+  * the accelerators, in the gsettings schema org.pantheon.gala.plugins.drawers
+    (drawer-N toggles the drawer, assign-N captures the focused window into it);
+  * the apps, matches and zones, in ~/.config/mseries/gala-drawers.ini.
+
+The Gala "drawers" plugin watches that file, so edits here apply immediately —
+no restart or logout. Left Command is Control on this keyboard, so the defaults
+read as Command+1..9.
+"""
+import os
+
+import gi
+
+gi.require_version("Gtk", "4.0")
+from gi.repository import Gdk, Gio, GLib, Gtk, Pango
+
+SCHEMA = "org.pantheon.gala.plugins.drawers"
+MAX_DRAWERS = 9
+CONFIG = os.path.join(GLib.get_user_config_dir(), "mseries", "gala-drawers.ini")
+HEADER = (
+    "# Gala hotkey drawers — managed by mseries-drawers-settings.\n"
+    "# Command+Option+N toggles a drawer; Command+Option+Shift+N assigns the\n"
+    "# focused window to it. Edit here or by hand; the plugin reloads on save.\n\n"
+)
+
+# Preset zones, as fractions (x, y, w, h) of the monitor.
+PRESETS = [
+    ("Top half", (0.0, 0.0, 1.0, 0.5)),
+    ("Bottom half", (0.0, 0.5, 1.0, 0.5)),
+    ("Left half", (0.0, 0.0, 0.5, 1.0)),
+    ("Right half", (0.5, 0.0, 0.5, 1.0)),
+    ("Top 40% (quake)", (0.0, 0.0, 1.0, 0.4)),
+    ("Left third", (0.0, 0.0, 0.34, 1.0)),
+    ("Right third", (0.66, 0.0, 0.34, 1.0)),
+    ("Centre 60%", (0.2, 0.2, 0.6, 0.6)),
+    ("Full screen", (0.0, 0.0, 1.0, 1.0)),
+]
+SPLIT_SIDE = ("Split side by side", None)
+SPLIT_STACK = ("Split stacked", None)
+
+
+def pretty(accel):
+    """Render a GTK/mutter accelerator with the Mac symbols the owner expects."""
+    if not accel:
+        return "Not set"
+    out = accel
+    for token, glyph in (("<Control>", "⌘"), ("<Primary>", "⌘"), ("<Super>", "⌘"),
+                         ("<Meta>", "⌘"), ("<Alt>", "⌥"), ("<Shift>", "⇧")):
+        out = out.replace(token, glyph)
+    return out
+
+
+def app_name(command):
+    """Friendly name for a stored command (a desktop id, or a raw command)."""
+    info = Gio.DesktopAppInfo.new(command)
+    return info.get_display_name() if info else command
+
+
+def read_config():
+    """Parse the INI into {slot: {commands, matches, monitor, zone}}."""
+    slots = {}
+    if not os.path.exists(CONFIG):
+        return slots
+
+    group = None
+    with open(CONFIG, encoding="utf-8") as fh:
+        for raw in fh:
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                if line.startswith("[") and line.endswith("]"):
+                    name = line[1:-1]
+                    group = name if name.startswith("drawer-") else None
+                    if group:
+                        slots[group] = {}
+                continue
+            if not group:
+                continue
+            key, value = line.split("=", 1)
+            slots[group][key.strip()] = value.strip()
+
+    parsed = {}
+    for group, raw in slots.items():
+        commands = [c.strip() for c in raw.get("command", "").split(";") if c.strip()]
+        if not commands:
+            continue
+        matches = [m.strip() for m in raw.get("match", "").split(";") if m.strip()]
+        zone = [float(n) for n in raw.get("zone", "").replace(",", " ").split()]
+        parsed[group] = {
+            "commands": commands,
+            "matches": matches,
+            "monitor": int(raw.get("monitor", "-1") or "-1"),
+            "zone": zone,
+        }
+    return parsed
+
+
+def write_config(slots):
+    """Write the INI back, atomically so the plugin's watcher fires once."""
+    os.makedirs(os.path.dirname(CONFIG), exist_ok=True)
+    lines = [HEADER]
+    for i in range(1, MAX_DRAWERS + 1):
+        slot = slots.get(f"drawer-{i}")
+        if not slot:
+            continue
+        lines.append(f"[drawer-{i}]")
+        lines.append("command=" + "; ".join(slot["commands"]))
+        if slot.get("matches"):
+            lines.append("match=" + "; ".join(slot["matches"]))
+        if slot.get("monitor", -1) != -1:
+            lines.append(f"monitor={slot['monitor']}")
+        if slot.get("zone"):
+            lines.append("zone=" + " ".join(f"{v:g}" for v in slot["zone"]))
+        lines.append("")
+
+    tmp = CONFIG + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines))
+    os.replace(tmp, CONFIG)
+
+
+class CaptureDialog(Gtk.Window):
+    """Ask for a key combination and return it as a mutter accelerator."""
+
+    def __init__(self, parent, on_done):
+        super().__init__(title="Press a shortcut", transient_for=parent, modal=True)
+        self.on_done = on_done
+        self.set_default_size(320, 120)
+
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12,
+                      margin_top=24, margin_bottom=24, margin_start=24, margin_end=24)
+        box.append(Gtk.Label(label="Press the shortcut you want…"))
+        hint = Gtk.Label(label="Esc to cancel, Backspace to clear", css_classes=["dim-label"])
+        box.append(hint)
+        self.set_child(box)
+
+        controller = Gtk.EventControllerKey()
+        controller.connect("key-pressed", self.on_key)
+        self.add_controller(controller)
+
+    def on_key(self, _controller, keyval, _keycode, state):
+        name = Gdk.keyval_name(keyval)
+        if name == "Escape":
+            self.close()
+            return False
+        if name == "BackSpace":
+            self.on_done("")
+            self.close()
+            return True
+        if name in ("Control_L", "Control_R", "Alt_L", "Alt_R", "Shift_L",
+                    "Shift_R", "Super_L", "Super_R", "Meta_L", "Meta_R"):
+            return False
+        mods = state & Gtk.accelerator_get_default_mod_mask()
+        accel = Gtk.accelerator_name(keyval, mods)
+        self.on_done(accel)
+        self.close()
+        return True
+
+
+class AppChooser(Gtk.Window):
+    """Multi-select list of installed apps."""
+
+    def __init__(self, parent, selected, on_done):
+        super().__init__(title="Choose apps", transient_for=parent, modal=True)
+        self.on_done = on_done
+        self.set_default_size(460, 560)
+        self.toggles = []
+
+        header = Gtk.HeaderBar()
+        self.set_titlebar(header)
+        choose = Gtk.Button(label="Choose")
+        choose.add_css_class("suggested-action")
+        choose.connect("clicked", self.on_choose)
+        header.pack_end(choose)
+
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8,
+                      margin_top=8, margin_bottom=8, margin_start=8, margin_end=8)
+        search = Gtk.SearchEntry(placeholder_text="Search apps")
+        box.append(search)
+
+        listbox = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE)
+        self.listbox = listbox
+        scroll = Gtk.ScrolledWindow(vexpand=True)
+        scroll.set_child(listbox)
+        box.append(scroll)
+        self.set_child(box)
+
+        apps = [a for a in Gio.AppInfo.get_all() if a.should_show()]
+        apps.sort(key=lambda a: (a.get_display_name() or "").casefold())
+        for app in apps:
+            row = Gtk.ListBoxRow()
+            toggle = Gtk.CheckButton(label=f"{app.get_display_name()}")
+            toggle.set_active(app.get_id() in selected)
+            toggle.app_id = app.get_id()
+            row.set_child(toggle)
+            row.search_text = f"{app.get_display_name()} {app.get_id()}".casefold()
+            self.toggles.append((row, toggle))
+            listbox.append(row)
+
+        search.connect("search-changed", self.on_search)
+        self.search = search
+
+    def on_search(self, entry):
+        self.listbox.set_filter_func(self.filter_row)
+
+    def filter_row(self, row):
+        text = self.search.get_text().casefold()
+        return not text or text in row.search_text
+
+    def on_choose(self, _button):
+        chosen = [t.app_id for _row, t in self.toggles if t.get_active()]
+        self.on_done(chosen)
+        self.close()
+
+
+class SlotRow(Gtk.ListBoxRow):
+    def __init__(self, index, window):
+        super().__init__()
+        self.index = index
+        self.window = window
+
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12,
+                      margin_top=8, margin_bottom=8, margin_start=8, margin_end=8)
+
+        box.append(Gtk.Label(label=f"{index}", width_chars=2, css_classes=["title-2"]))
+
+        text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, hexpand=True)
+        shortcuts = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        self.toggle_button = Gtk.Button()
+        self.toggle_button.connect("clicked", self.on_edit_accel, f"drawer-{index}")
+        self.assign_button = Gtk.Button()
+        self.assign_button.connect("clicked", self.on_edit_accel, f"assign-{index}")
+        shortcuts.append(self.toggle_button)
+        shortcuts.append(self.assign_button)
+        text.append(shortcuts)
+        self.summary = Gtk.Label(xalign=0, css_classes=["dim-label"], ellipsize=Pango.EllipsizeMode.END)
+        text.append(self.summary)
+        box.append(text)
+
+        apps_button = Gtk.Button(icon_name="view-app-grid-symbolic", tooltip_text="Choose apps")
+        apps_button.connect("clicked", self.on_choose_apps)
+        zone_button = Gtk.Button(icon_name="view-fullscreen-symbolic", tooltip_text="Zone")
+        zone_button.connect("clicked", self.on_zone)
+        clear_button = Gtk.Button(icon_name="edit-clear-symbolic", tooltip_text="Clear")
+        clear_button.connect("clicked", self.on_clear)
+        for button in (apps_button, zone_button, clear_button):
+            box.append(button)
+
+        self.set_child(box)
+        self.refresh()
+
+    # -- state ---------------------------------------------------------------
+
+    def slot(self):
+        return self.window.slots.get(f"drawer-{self.index}")
+
+    def refresh(self):
+        settings = self.window.settings
+        toggle = settings.get_strv(f"drawer-{self.index}")
+        assign = settings.get_strv(f"assign-{self.index}")
+        self.toggle_button.set_label("Toggle: " + pretty(toggle[0] if toggle else ""))
+        self.assign_button.set_label("Assign: " + pretty(assign[0] if assign else ""))
+
+        slot = self.slot()
+        if not slot:
+            self.summary.set_text("No apps yet — press Assign with an app focused, or choose apps")
+            self.summary.add_css_class("dim-label")
+        else:
+            names = ", ".join(app_name(c) for c in slot["commands"])
+            zone = slot.get("zone") or []
+            zone_text = " ".join(f"{v:g}" for v in zone) if zone else "full"
+            self.summary.set_text(f"{names}   ·   zone {zone_text}")
+
+    def save(self):
+        self.window.save()
+        self.refresh()
+
+    # -- actions -------------------------------------------------------------
+
+    def on_edit_accel(self, _button, key):
+        def done(accel):
+            self.window.settings.set_strv(key, [accel] if accel else [])
+            self.refresh()
+        CaptureDialog(self.window, done).present()
+
+    def on_choose_apps(self, _button):
+        slot = self.slot() or {}
+        selected = set(slot.get("commands", []))
+
+        def done(app_ids):
+            if not app_ids:
+                self.on_clear(_button)
+                return
+            commands = list(app_ids)
+            matches = [c[:-len(".desktop")] if c.endswith(".desktop") else c for c in commands]
+            existing = self.slot() or {}
+            self.window.slots[f"drawer-{self.index}"] = {
+                "commands": commands,
+                "matches": matches,
+                "monitor": existing.get("monitor", -1),
+                "zone": existing.get("zone") or [0.0, 0.0, 1.0, 0.5],
+            }
+            self.save()
+
+        AppChooser(self.window, selected, done).present()
+
+    def on_zone(self, _button):
+        slot = self.slot()
+        if not slot:
+            return
+
+        def done(zone, monitor):
+            slot["zone"] = zone
+            slot["monitor"] = monitor
+            self.save()
+
+        ZoneDialog(self.window, slot, done).present()
+
+    def on_clear(self, _button):
+        self.window.slots.pop(f"drawer-{self.index}", None)
+        self.save()
+
+
+class ZoneDialog(Gtk.Window):
+    def __init__(self, parent, slot, on_done):
+        super().__init__(title="Zone", transient_for=parent, modal=True)
+        self.on_done = on_done
+        self.set_default_size(360, 320)
+
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8,
+                      margin_top=12, margin_bottom=12, margin_start=12, margin_end=12)
+
+        count = len(slot["commands"])
+        labels = [p[0] for p in PRESETS]
+        if count > 1:
+            labels += [SPLIT_SIDE[0], SPLIT_STACK[0]]
+        dropdown = Gtk.DropDown.new_from_strings(labels)
+        box.append(Gtk.Label(label="Where the window(s) land", xalign=0))
+        box.append(dropdown)
+
+        monitor = Gtk.SpinButton.new_with_range(-1, 7, 1)
+        monitor.set_value(slot.get("monitor", -1))
+        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        row.append(Gtk.Label(label="Monitor (-1 = primary)", xalign=0, hexpand=True))
+        row.append(monitor)
+        box.append(row)
+
+        apply = Gtk.Button(label="Apply")
+        apply.add_css_class("suggested-action")
+        apply.connect("clicked", self.on_apply, dropdown, monitor, count)
+        box.append(apply)
+        self.set_child(box)
+
+    def on_apply(self, _button, dropdown, monitor, count):
+        index = dropdown.get_selected()
+        name = dropdown.get_model().get_string(index)
+        if name == SPLIT_SIDE[0]:
+            zone = []
+            for i in range(count):
+                zone += [i / count, 0.0, 1.0 / count, 1.0]
+        elif name == SPLIT_STACK[0]:
+            zone = []
+            for i in range(count):
+                zone += [0.0, i / count, 1.0, 1.0 / count]
+        else:
+            zone = list(dict(PRESETS)[name])
+        self.on_done(zone, monitor.get_value_as_int())
+        self.close()
+
+
+class Application(Gtk.Application):
+    def __init__(self):
+        super().__init__(application_id="org.pantheon.gala.drawers.settings")
+        self.settings = Gio.Settings.new(SCHEMA)
+        self.slots = read_config()
+
+    def do_activate(self):
+        window = Gtk.ApplicationWindow(application=self, title="Drawer Shortcuts")
+        window.set_default_size(680, 620)
+
+        header = Gtk.HeaderBar()
+        window.set_titlebar(header)
+
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        intro = Gtk.Label(
+            label=("Left ⌘ + 1–9 pops a drawer up or down. ⌘⌥ + 1–9 assigns the "
+                   "app you're looking at to that drawer."),
+            wrap=True, xalign=0, margin_top=12, margin_bottom=12,
+            margin_start=12, margin_end=12, css_classes=["dim-label"])
+        box.append(intro)
+
+        listbox = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE, show_separators=True)
+        listbox.add_css_class("boxed-list")
+        scroll = Gtk.ScrolledWindow(vexpand=True)
+        scroll.set_child(listbox)
+        box.append(scroll)
+        window.set_child(box)
+
+        for i in range(1, MAX_DRAWERS + 1):
+            listbox.append(SlotRow(i, self))
+
+        window.present()
+
+    def save(self):
+        write_config(self.slots)
+
+
+def main():
+    Application().run(None)
+
+
+if __name__ == "__main__":
+    main()

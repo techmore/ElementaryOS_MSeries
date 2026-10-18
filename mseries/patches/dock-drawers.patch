@@ -1,0 +1,702 @@
+diff --git a/data/Application.css b/data/Application.css
+index bfd5c8a..d97686d 100644
+--- a/data/Application.css
++++ b/data/Application.css
+@@ -176,3 +176,30 @@ backgrounditem .close-button {
+ .running-indicator:disabled {
+     color: @fg_color;
+ }
++
++.drawers-panel {
++    margin: 0 4px 4px 4px;
++    padding: 6px;
++    border-radius: 10px;
++    background: alpha(@bg_color, 0.92);
++    border: 1px solid alpha(@fg_color, 0.15);
++}
++
++.drawer-slot {
++    border-radius: 8px;
++    padding: 4px;
++    min-width: 56px;
++    min-height: 60px;
++    background: alpha(@fg_color, 0.06);
++    border: 1px dashed alpha(@fg_color, 0.25);
++}
++
++.drawer-slot.assigned {
++    background: alpha(@accent_color, 0.2);
++    border: 1px solid alpha(@accent_color, 0.5);
++}
++
++.drawer-slot .caption {
++    font-size: 0.7em;
++    opacity: 0.65;
++}
+diff --git a/data/meson.build b/data/meson.build
+index 3ff13d0..f4afedb 100644
+--- a/data/meson.build
++++ b/data/meson.build
+@@ -18,3 +18,8 @@ i18n.merge_file(
+     install: true,
+     install_dir: get_option('prefix') / get_option('datadir') / 'metainfo'
+ )
++
++install_data(
++    'org.techmore.mseries.dock.gschema.xml',
++    install_dir: get_option('prefix') / get_option('datadir') / 'glib-2.0' / 'schemas'
++)
+diff --git a/data/org.techmore.mseries.dock.gschema.xml b/data/org.techmore.mseries.dock.gschema.xml
+new file mode 100644
+index 0000000..3abd3f9
+--- /dev/null
++++ b/data/org.techmore.mseries.dock.gschema.xml
+@@ -0,0 +1,11 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<schemalist>
++  <schema id="org.techmore.mseries.dock" path="/org/techmore/mseries/dock/">
++    <key type="i" name="offset">
++      <range min="-8192" max="8192"/>
++      <default>0</default>
++      <summary>Dock offset from the screen centre in logical pixels</summary>
++      <description>Command-drag placement, clamped to the current monitor. Zero centres the dock.</description>
++    </key>
++  </schema>
++</schemalist>
+diff --git a/protocol/pantheon-desktop-shell-v1.xml b/protocol/pantheon-desktop-shell-v1.xml
+index fcd0f17..ac5a907 100644
+--- a/protocol/pantheon-desktop-shell-v1.xml
++++ b/protocol/pantheon-desktop-shell-v1.xml
+@@ -6,7 +6,7 @@
+     SPDX-License-Identifier: LGPL-2.1-or-later
+   ]]></copyright>
+ 
+-  <interface name="io_elementary_pantheon_shell_v1" version="1">
++  <interface name="io_elementary_pantheon_shell_v1" version="2">
+     <description summary="create panel, widget and get more control">
+       This interface is used by the Pantheon Wayland shell to communicate with
+       the compositor.
+@@ -37,7 +37,7 @@
+     </request>
+   </interface>
+ 
+-  <interface name="io_elementary_pantheon_panel_v1" version="1">
++  <interface name="io_elementary_pantheon_panel_v1" version="2">
+     <request name="destroy" type="destructor"/>
+ 
+     <enum name="anchor">
+@@ -122,6 +122,17 @@
+         Tell the window manager to remove blur that was set in set_blur_region.
+       </description>
+     </request>
++
++    <request name="set_offset" since="2">
++      <description summary="offset the panel along its edge">
++        Move the panel by the given number of logical pixels along the edge it is
++        anchored to. Positive values move it right for a top/bottom anchor and down
++        for a left/right anchor. The compositor still centres the panel, so an
++        offset of 0 means centred.
++      </description>
++
++      <arg name="offset" type="int" summary="offset from centre, in logical pixels"/>
++    </request>
+   </interface>
+ 
+   <interface name="io_elementary_pantheon_widget_v1" version="1">
+diff --git a/protocol/pantheon-desktop-shell.vapi b/protocol/pantheon-desktop-shell.vapi
+index 1006411..0dadb04 100644
+--- a/protocol/pantheon-desktop-shell.vapi
++++ b/protocol/pantheon-desktop-shell.vapi
+@@ -48,6 +48,7 @@ namespace Pantheon.Desktop {
+         public void request_visible_in_multitasking_view ();
+         public void add_blur (uint left, uint right, uint top, uint bottom, uint clip_radius);
+         public void remove_blur ();
++        public void set_offset (int offset);
+     }
+ 
+     [CCode (cheader_filename = "pantheon-desktop-shell-client-protocol.h", cname = "struct io_elementary_pantheon_widget_v1", cprefix = "io_elementary_pantheon_widget_v1_", free_function = "io_elementary_pantheon_widget_v1_destroy")]
+diff --git a/src/DisplayConfig.vala b/src/DisplayConfig.vala
+new file mode 100644
+index 0000000..067df84
+--- /dev/null
++++ b/src/DisplayConfig.vala
+@@ -0,0 +1,94 @@
++/*
++ * Copyright 2024 elementary, Inc. (https://elementary.io)
++ * SPDX-License-Identifier: GPL-3.0-or-later
++ */
++
++[DBus (name = "org.gnome.Mutter.DisplayConfig")]
++public interface Dock.Services.DisplayConfig : Object {
++    private static bool? _is_logical_layout = null;
++    private static DisplayConfig? proxy = null;
++
++    public static bool is_logical_layout () {
++        if (_is_logical_layout == null) {
++            init ();
++        }
++
++        return _is_logical_layout;
++    }
++
++    private static void init () {
++        try {
++            proxy = Bus.get_proxy_sync (BusType.SESSION, "org.gnome.Mutter.DisplayConfig", "/org/gnome/Mutter/DisplayConfig");
++            proxy.monitors_changed.connect (update);
++        } catch (Error e) {
++            critical (e.message);
++            _is_logical_layout = true;
++            return;
++        }
++
++        update ();
++    }
++
++    private static void update () {
++        uint current_serial;
++        MutterReadMonitor[] mutter_monitors;
++        MutterReadLogicalMonitor[] mutter_logical_monitors;
++        GLib.HashTable<string, GLib.Variant> properties;
++        try {
++            proxy.get_current_state (out current_serial, out mutter_monitors, out mutter_logical_monitors, out properties);
++        } catch (Error e) {
++            critical (e.message);
++            _is_logical_layout = true;
++            return;
++        }
++
++        uint layout_mode = 1; // Absence of "layout-mode" means logical (= 1) according to the documentation.
++        var layout_mode_variant = properties.lookup ("layout-mode");
++        if (layout_mode_variant != null) {
++            layout_mode = layout_mode_variant.get_uint32 ();
++        }
++
++        _is_logical_layout = layout_mode == 1;
++    }
++
++    public signal void monitors_changed ();
++    public abstract void get_current_state (out uint serial, out MutterReadMonitor[] monitors, out MutterReadLogicalMonitor[] logical_monitors, out GLib.HashTable<string, GLib.Variant> properties) throws Error;
++}
++
++public struct MutterReadMonitorInfo {
++    public string connector;
++    public string vendor;
++    public string product;
++    public string serial;
++    public uint hash {
++        get {
++            return (connector + vendor + product + serial).hash ();
++        }
++    }
++}
++
++public struct MutterReadMonitorMode {
++    public string id;
++    public int width;
++    public int height;
++    public double frequency;
++    public double preferred_scale;
++    public double[] supported_scales;
++    public GLib.HashTable<string, GLib.Variant> properties;
++}
++
++public struct MutterReadMonitor {
++    public MutterReadMonitorInfo monitor;
++    public MutterReadMonitorMode[] modes;
++    public GLib.HashTable<string, GLib.Variant> properties;
++}
++
++public struct MutterReadLogicalMonitor {
++    public int x;
++    public int y;
++    public double scale;
++    public uint transform;
++    public bool primary;
++    public MutterReadMonitorInfo[] monitors;
++    public GLib.HashTable<string, GLib.Variant> properties;
++}
+diff --git a/src/Drawers.vala b/src/Drawers.vala
+new file mode 100644
+index 0000000..331c76b
+--- /dev/null
++++ b/src/Drawers.vala
+@@ -0,0 +1,270 @@
++/*
++ * SPDX-License-Identifier: GPL-3.0
++ * SPDX-FileCopyrightText: 2026 M-series / elementary-mseries
++ *
++ * Drawer assignment, on the dock.
++ *
++ * A chevron at the end of the dock opens a strip of drop targets. Drag an app
++ * from the dock (or drop a .desktop file) onto a slot to assign it to that
++ * drawer hotkey; the slot shows the app and the change is written to
++ * ~/.config/mseries/gala-drawers.ini, which the Gala "drawers" plugin watches
++ * and reloads live.
++ *
++ * The strip shows five slots by default; the arrow (or clicking it) reveals the
++ * remaining four.
++ */
++
++namespace Dock {
++    private const int DRAWERS_COLLAPSED = 5;
++    private const int DRAWERS_MAX = 9;
++
++    private static string drawers_config_path () {
++        return Path.build_filename (Environment.get_user_config_dir (), "mseries", "gala-drawers.ini");
++    }
++
++    private static string strip_desktop (string id) {
++        return id.has_suffix (".desktop") ? id.substring (0, id.length - ".desktop".length) : id;
++    }
++
++    /**
++     * One drop target. Dropping a dock launcher, or a .desktop file, assigns that
++     * app to this drawer.
++     */
++    private class DrawerSlot : Gtk.Box {
++        public int index { get; construct; }
++
++        private Gtk.Image image;
++        private Gtk.Label caption;
++
++        public DrawerSlot (int index) {
++            Object (index: index);
++        }
++
++        construct {
++            orientation = Gtk.Orientation.VERTICAL;
++            spacing = 2;
++            width_request = 64;
++            height_request = 68;
++            halign = Gtk.Align.CENTER;
++            valign = Gtk.Align.CENTER;
++            add_css_class ("drawer-slot");
++
++            // Sized to match the dock's own launcher icons (48px) so the strip
++            // does not look bolted on. The number stays visible at all times; the
++            // app name lives in the tooltip, because it does not fit in a tile.
++            image = new Gtk.Image () {
++                pixel_size = 48,
++                halign = Gtk.Align.CENTER,
++                valign = Gtk.Align.CENTER,
++                hexpand = true,
++                vexpand = true
++            };
++            caption = new Gtk.Label (index.to_string ()) {
++                halign = Gtk.Align.CENTER
++            };
++            caption.add_css_class ("caption");
++            append (image);
++            append (caption);
++
++            // Drag from the dock itself (an internal BaseItem, e.g. a Launcher).
++            var base_drop = new Gtk.DropTarget (typeof (BaseItem), Gdk.DragAction.MOVE);
++            add_controller (base_drop);
++            base_drop.drop.connect (on_drop_base);
++
++            // Drop a .desktop file from Files or the applications menu.
++            var file_drop = new Gtk.DropTarget (typeof (GLib.File), Gdk.DragAction.COPY);
++            add_controller (file_drop);
++            file_drop.drop.connect (on_drop_file);
++
++            refresh ();
++        }
++
++        private bool on_drop_base (GLib.Value value) {
++            var object = value.get_object ();
++            if (object == null || !(object is Launcher)) {
++                return false;
++            }
++            return assign (((Launcher) object).app.app_info.get_id ());
++        }
++
++        private bool on_drop_file (GLib.Value value) {
++            var object = value.get_object ();
++            if (object == null || !(object is GLib.File)) {
++                return false;
++            }
++            var info = new DesktopAppInfo.from_filename (((GLib.File) object).get_path ());
++            if (info == null) {
++                return false;
++            }
++            return assign (info.get_id ());
++        }
++
++        private bool assign (string app_id) {
++            var key_file = new KeyFile ();
++            try {
++                key_file.load_from_file (drawers_config_path (), KeyFileFlags.NONE);
++            } catch (Error e) {
++                // No file yet: the key file starts empty.
++            }
++
++            var group = @"drawer-$index";
++            key_file.set_string (group, "command", app_id);
++            key_file.set_string (group, "match", strip_desktop (app_id));
++
++            bool has_zone = false;
++            try {
++                has_zone = key_file.has_key (group, "zone");
++            } catch (Error e) {
++                has_zone = false;
++            }
++            if (!has_zone) {
++                key_file.set_string (group, "zone", "0.0 0.0 1.0 0.5");
++            }
++
++            try {
++                var path = drawers_config_path ();
++                DirUtils.create_with_parents (Path.get_dirname (path), 0755);
++                size_t length;
++                var data = key_file.to_data (out length);
++                FileUtils.set_contents (path, data, (ssize_t) length);
++            } catch (Error e) {
++                warning ("drawers: could not write the config: %s", e.message);
++                return false;
++            }
++
++            refresh ();
++            return true;
++        }
++
++        public void refresh () {
++            string? app_id = null;
++            try {
++                var key_file = new KeyFile ();
++                key_file.load_from_file (drawers_config_path (), KeyFileFlags.NONE);
++                var group = @"drawer-$index";
++                if (key_file.has_group (group) && key_file.has_key (group, "command")) {
++                    var command = key_file.get_string (group, "command").split (";")[0].strip ();
++                    if (command != "") {
++                        app_id = command;
++                    }
++                }
++            } catch (Error e) {
++                // Not configured, or unreadable: show the empty slot.
++            }
++
++            if (app_id == null) {
++                image.icon_name = "list-add-symbolic";
++                image.add_css_class ("dim-label");
++                remove_css_class ("assigned");
++                tooltip_text = @"Assign an app to drawer $index";
++                return;
++            }
++
++            var info = new DesktopAppInfo (app_id);
++            var name = app_id;
++            if (info != null) {
++                image.gicon = info.get_icon ();
++                name = info.get_display_name ();
++            } else {
++                image.icon_name = "application-x-executable-symbolic";
++            }
++            image.remove_css_class ("dim-label");
++            add_css_class ("assigned");
++            tooltip_text = @"Drawer $index — $name";
++        }
++    }
++
++    /**
++     * The drawer assignment panel. Hold Command+Option and click the dock to show
++     * it; it sits above the icon row, inside the dock's own window. Drag an app
++     * (or a .desktop file) onto a slot to assign it.
++     *
++     * Two reasons it is not a popover: GTK 4.22's GtkPopover has no "modal"
++     * property, so a popover always takes an input grab and would eat the press
++     * that starts a drag; and living in the dock's own window means the drag never
++     * crosses a surface. It also avoids widening the dock, which an inline strip
++     * does. The trade-off is that the strip above the icons is normally excluded
++     * from the dock's input region, so MainWindow opens that up while the panel
++     * is visible.
++     */
++    public class DrawersPanel : Gtk.Box {
++        private Gee.ArrayList<DrawerSlot> slots;
++        private Gtk.Button expander;
++        private bool expanded = false;
++
++        construct {
++            orientation = Gtk.Orientation.HORIZONTAL;
++            spacing = 6;
++            halign = Gtk.Align.CENTER;
++            valign = Gtk.Align.START;
++            margin_bottom = 4;
++            add_css_class ("drawers-panel");
++
++            slots = new Gee.ArrayList<DrawerSlot> ();
++            for (int i = 1; i <= DRAWERS_MAX; i++) {
++                var slot = new DrawerSlot (i);
++                slot.visible = i <= DRAWERS_COLLAPSED;
++                slots.add (slot);
++                append (slot);
++            }
++
++            expander = new Gtk.Button.from_icon_name ("go-next-symbolic") {
++                valign = Gtk.Align.CENTER,
++                tooltip_text = "Show all nine slots"
++            };
++            expander.add_css_class ("flat");
++            expander.clicked.connect (() => {
++                expanded = !expanded;
++                update_expanded ();
++            });
++            append (expander);
++
++            set_visible (false);
++            watch_config ();
++        }
++
++        public void toggle () {
++            var show = !get_visible ();
++            set_visible (show);
++            if (show) {
++                // Pick up anything assigned from the keyboard or the settings app
++                // since the panel was last shown.
++                refresh_all ();
++            }
++        }
++
++        public void refresh_all () {
++            foreach (var slot in slots) {
++                slot.refresh ();
++            }
++        }
++
++        /**
++         * Keep the tiles in step with the config file. The Gala plugin reloads it
++         * live, and assignments can also come from the keyboard (Command+Option+
++         * Shift+N) or the settings app, none of which touch this widget.
++         */
++        private void watch_config () {
++            var dir = File.new_for_path (Path.get_dirname (drawers_config_path ()));
++            try {
++                var monitor = dir.monitor_directory (FileMonitorFlags.NONE, null);
++                monitor.changed.connect ((file, other_file, event_type) => {
++                    if (event_type == FileMonitorEvent.CHANGED &&
++                            file.get_basename () == "gala-drawers.ini") {
++                        refresh_all ();
++                    }
++                });
++            } catch (Error e) {
++                // No config directory yet: there is nothing to watch.
++            }
++        }
++
++        private void update_expanded () {
++            for (int i = 0; i < slots.size; i++) {
++                slots[i].visible = expanded || i < DRAWERS_COLLAPSED;
++            }
++            expander.icon_name = expanded ? "go-previous-symbolic" : "go-next-symbolic";
++            expander.tooltip_text = expanded ? "Show five slots" : "Show all nine slots";
++        }
++    }
++}
+diff --git a/src/ItemManager.vala b/src/ItemManager.vala
+index a3e7e96..0377885 100644
+--- a/src/ItemManager.vala
++++ b/src/ItemManager.vala
+@@ -46,6 +46,7 @@
+         append (new ItemGroup (WorkspaceSystem.get_default ().workspaces, (obj) => new WorkspaceIconGroup ((Workspace) obj)));
+         append (dynamic_workspace_item);
+ #endif
++
+         overflow = VISIBLE;
+ 
+         var drop_target_file = new Gtk.DropTarget (typeof (File), COPY) {
+diff --git a/src/MainWindow.vala b/src/MainWindow.vala
+index 2d05ae0..652c549 100644
+--- a/src/MainWindow.vala
++++ b/src/MainWindow.vala
+@@ -27,6 +27,17 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+     private bool initialized_blur = false;
+     private int border_radius = 0;
+ 
++    // Drawers/M-series: Command (Control) + left-drag moves the dock along its edge.
++    private static Settings mseries_settings = new Settings ("org.techmore.mseries.dock");
++    private int panel_offset = 0;
++    private int sent_panel_offset = int.MAX;
++    private int panel_drag_start_offset = 0;
++    private bool draging_panel = false;
++
++    // Drawers: the assignment panel shown above the icon row.
++    private DrawersPanel? drawers_panel = null;
++    private Gtk.GestureClick panel_click;
++
+     class construct {
+         set_css_name ("dock-window");
+     }
+@@ -52,6 +63,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+         size_group.add_widget (dock_box);
+         size_group.add_widget (launcher_manager);
+ 
++        // Sits above the icon row, inside this window (see DrawersPanel for why
++        // it is not a popover).
++        drawers_panel = new DrawersPanel ();
++        overlay.add_overlay (drawers_panel);
++
+         child = overlay;
+ 
+         remove_css_class ("background");
+@@ -78,6 +94,96 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+         }
+ 
+         window_drag_manager = new WindowDragManager (this);
++
++        panel_offset = mseries_settings.get_int ("offset");
++        mseries_settings.changed["offset"].connect (() => {
++            panel_offset = mseries_settings.get_int ("offset");
++            apply_panel_offset ();
++        });
++        init_panel_move ();
++        init_drawers_panel_gesture ();
++    }
++
++    // Hold Command (Control) + Option and click the dock to show or hide the drawer
++    // assignment panel. Any other click is denied, so icons still launch normally.
++    private void init_drawers_panel_gesture () {
++        panel_click = new Gtk.GestureClick () {
++            button = Gdk.BUTTON_PRIMARY
++        };
++        // Capture phase is what makes this reachable at all. In the default bubble
++        // phase, a press on an app icon is claimed by the launcher's own click
++        // gesture, which cancels this one before it ever fires; and the rest of the
++        // dock is outside the input region. Capturing first means the press is seen
++        // here before any child can take it.
++        panel_click.set_propagation_phase (Gtk.PropagationPhase.CAPTURE);
++        panel_click.pressed.connect ((n_press, x, y) => {
++            var state = panel_click.get_current_event_state ();
++            if ((state & Gdk.ModifierType.CONTROL_MASK) == 0 ||
++                    (state & Gdk.ModifierType.ALT_MASK) == 0) {
++                panel_click.set_state (Gtk.EventSequenceState.DENIED);
++                return;
++            }
++
++            drawers_panel.toggle ();
++        });
++        // Cast to Widget: Gtk.Window also implements Gtk.ShortcutManager, whose
++        // add_controller (Gtk.ShortcutController) otherwise shadows Gtk.Widget's.
++        ((Gtk.Widget) this).add_controller (panel_click);
++    }
++
++    // M-series: Command (Control) + left-drag slides the dock along its edge. Only active
++    // when the compositor speaks protocol version 2 (io_elementary_pantheon_panel_v1.set_offset).
++    private void init_panel_move () {
++        var drag = new Gtk.GestureDrag () {
++            button = Gdk.BUTTON_PRIMARY
++        };
++        drag.drag_begin.connect ((start_x, start_y) => {
++            if (panel == null || panel.get_version () < 2 ||
++                    (drag.get_current_event_state () & Gdk.ModifierType.CONTROL_MASK) == 0) {
++                drag.set_state (Gtk.EventSequenceState.DENIED);
++                return;
++            }
++
++            draging_panel = true;
++            panel_drag_start_offset = panel_offset;
++        });
++        drag.drag_update.connect ((offset_x, offset_y) => {
++            if (!draging_panel) {
++                return;
++            }
++
++            panel_offset = panel_drag_start_offset + (int) offset_x;
++            apply_panel_offset ();
++        });
++        drag.drag_end.connect (() => {
++            if (draging_panel) {
++                mseries_settings.set_int ("offset", panel_offset.clamp (-8192, 8192));
++            }
++            draging_panel = false;
++        });
++        // Cast to Widget: Gtk.Window also implements Gtk.ShortcutManager, whose
++        // add_controller (Gtk.ShortcutController) otherwise shadows Gtk.Widget's.
++        ((Gtk.Widget) this).add_controller (drag);
++    }
++
++    private void apply_panel_offset () {
++        if (panel != null && panel.get_version () >= 2) {
++            var offset = panel_offset;
++            var surface = get_surface ();
++            var monitor = get_display ().get_monitor_at_surface (surface);
++            if (monitor != null) {
++                var monitor_width = monitor.geometry.width;
++                if (!Services.DisplayConfig.is_logical_layout ()) {
++                    monitor_width /= get_scale_factor ();
++                }
++                var limit = int.max (0, (monitor_width - ItemManager.get_default ().get_width ()) / 2 - 8);
++                offset = offset.clamp (-limit, limit);
++            }
++            if (offset != sent_panel_offset) {
++                panel.set_offset (offset);
++                sent_panel_offset = offset;
++            }
++        }
+     }
+ 
+     private void update_transparency () {
+@@ -91,12 +197,13 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+ 
+     public void registry_handle_global (Wl.Registry wl_registry, uint32 name, string @interface, uint32 version) {
+         if (@interface == "io_elementary_pantheon_shell_v1") {
+-            desktop_shell = wl_registry.bind<Pantheon.Desktop.Shell> (name, ref Pantheon.Desktop.Shell.iface, uint32.min (version, 1));
++            desktop_shell = wl_registry.bind<Pantheon.Desktop.Shell> (name, ref Pantheon.Desktop.Shell.iface, uint32.min (version, 2));
+             unowned var surface = get_surface ();
+             if (surface is Gdk.Wayland.Surface) {
+                 unowned var wl_surface = ((Gdk.Wayland.Surface) surface).get_wl_surface ();
+                 panel = desktop_shell.get_panel (wl_surface);
+                 panel.set_anchor (BOTTOM);
++                apply_panel_offset ();
+                 panel.set_hide_mode (settings.get_enum ("autohide-mode"));
+ #if WORKSPACE_SWITCHER
+                 panel.request_visible_in_multitasking_view ();
+@@ -119,17 +226,28 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+         });
+
+         surface.layout.connect ((surface, width, height) => {
++            apply_panel_offset ();
+             // manually set input region since container's shadow are is the content of the window
+             // and it still gets window events
+             var item_manager_width = ItemManager.get_default ().get_width ();
+             var shadow_size = (width - item_manager_width) / 2;
+             var top_margin = TOP_MARGIN + shadow_size;
+-            surface.set_input_region (new Cairo.Region.rectangle ({
+-                shadow_size,
+-                top_margin,
+-                item_manager_width,
+-                height - top_margin
+-            }));
++
++            if (drawers_panel != null && drawers_panel.get_visible ()) {
++                // The strip above the icons is normally excluded from the input
++                // region so clicks fall through to the desktop. The drawer panel
++                // lives there, so while it is up the whole window takes input.
++                surface.set_input_region (new Cairo.Region.rectangle ({
++                    0, 0, width, height
++                }));
++            } else {
++                surface.set_input_region (new Cairo.Region.rectangle ({
++                    shadow_size,
++                    top_margin,
++                    item_manager_width,
++                    height - top_margin
++                }));
++            }
+ 
+             if (initialized_blur) {
+                 return;
+diff --git a/src/meson.build b/src/meson.build
+index 4e860de..052d4a5 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -4,9 +4,11 @@ sources = [
+     'BaseItem.vala',
+     'BottomMargin.vala',
+     'ContainerItem.vala',
++    'Drawers.vala',
+     'ItemGroup.vala',
+     'ItemManager.vala',
+     'MainWindow.vala',
++    'DisplayConfig.vala',
+     'RenderNodeWalker.vala',
+     'AppSystem' / 'App.vala',
+     'AppSystem' / 'AppSystem.vala',

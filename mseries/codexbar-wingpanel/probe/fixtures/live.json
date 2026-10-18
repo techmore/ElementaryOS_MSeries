@@ -1,0 +1,92 @@
+{
+ "barEntries": [
+  {
+   "provider": "codex",
+   "tag": "CX",
+   "text": "35%"
+  },
+  {
+   "provider": "opencodego",
+   "tag": "opencodego",
+   "text": "\u2014"
+  }
+ ],
+ "busy": false,
+ "costBusy": false,
+ "costError": "",
+ "costProviders": 2,
+ "entries": [
+  {
+   "credits": 0,
+   "error": "",
+   "extraUsage": {
+    "balance": null,
+    "currency": "Credits",
+    "limit": 0,
+    "period": "Extra usage",
+    "used": 0
+   },
+   "plan": "prolite",
+   "provider": "codex",
+   "resetCredits": {
+    "available": 0,
+    "nextExpiresAt": ""
+   },
+   "status": "All Systems Operational",
+   "statusLevel": "none",
+   "updatedAt": "2026-10-17T04:15:55Z",
+   "windows": [
+    {
+     "displaySuffix": "left",
+     "displayValue": 35,
+     "key": "secondary",
+     "label": "7 day",
+     "minutes": 10080,
+     "pace": "56% in deficit | Expected 9% used | Runs out in 7h 55m",
+     "paceDelta": 56,
+     "paceExpected": 9,
+     "remaining": 35,
+     "resetText": "Resets in 6d 9h",
+     "resetsAt": "2026-10-23T13:34:43Z",
+     "warning": false
+    }
+   ]
+  },
+  {
+   "credits": null,
+   "error": "Usage unavailable. Check this provider\u2019s CodexBar login/configuration.",
+   "extraUsage": null,
+   "plan": "",
+   "provider": "opencodego",
+   "resetCredits": null,
+   "status": "",
+   "statusLevel": "unknown",
+   "updatedAt": "",
+   "windows": []
+  }
+ ],
+ "error": "",
+ "quotaDisplay": "remaining",
+ "schemaVersion": 1,
+ "spending": [
+  {
+   "error": "",
+   "month": 353.97998264000034,
+   "provenance": "listPriceEstimate",
+   "provider": "codex",
+   "today": 0,
+   "tokens": 1744010089
+  },
+  {
+   "error": "",
+   "month": 74.96298190000003,
+   "provenance": "listPriceEstimate",
+   "provider": "claude",
+   "today": 0.1366564,
+   "tokens": 375457345
+  }
+ ],
+ "stale": false,
+ "summary": "CX 35%  \u00b7  opencodego \u2014",
+ "updated": "just now"
+}

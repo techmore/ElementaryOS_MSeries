@@ -120,6 +120,175 @@ separate `techmore/orchard-incus` repo):
 - Next: choose canonical implementation, then audit failure states
   (incus missing/permission denied/daemon down) with tests first.
 
+## YouTube launcher logo — 2026-10-18
+
+The contained Brave YouTube shortcut uses a bundled scalable YouTube play-button
+icon, also installed for the current user. Desktop entry, SVG and GTK icon lookup
+checks pass; live dock appearance after reopening remains to confirm.
+[Installation instructions](video-decode/README.md#youtube-launcher-icon--2026-10-18).
+
+## Dock-aware window space — 2026-10-18
+
+Visible dock space is reserved by the native compositor; hiding returns it to
+maximized and half/quarter-snapped windows. Quarter layouts reflow, manual sizes
+remain, fullscreen retains the monitor, and overlap hiding stays stable after
+reveal. Installed into the private Gala and both quarter-plugin directories;
+loads next sign-in. Ten isolated real-dock/GTK checks, nine existing snapping
+checks, ARM64 builds and shell checks pass. Physical-monitor confirmation remains.
+[Behavior, tests and install commands](display-space/README.md#dock-space-follows-visibility).
+
+
+## Built-in VRR and boot space — 2026-10-18
+
+[Scoped result and next-kernel checklist](aurora/hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md):
+Aurora .20's builtin VRR is selected and retained in the current desk profile;
+owner confirms both displays look normal and the dock works. External fixed
+1080p/60 mode/layout preserved. Kernel VRR activation was brief (3/25 samples),
+so sustained VRR, focus/presentation behavior, docking transitions and sleep
+remain open. This display change must be controlled in future energy comparisons.
+Four bootloader backups and seven retired Fairydust test files were archived
+locally; six test entries removed. `/boot` reached 214.02 MiB free (~58% used
+at cleanup). Aurora and stock recovery files remain; historical Fairydust-default
+instructions below are superseded for the owner's current host, not removed
+from factory/source tooling.
+
+
+## Native full-height desktop and compact dock — 2026-10-18
+
+The [J314 native desktop profile](display-space/README.md) restores the 74-pixel
+camera strip with a protected Wingpanel clock layout, compact overlap-hiding dock
+and persistent monitor-clamped placement. Installed on the current transformed
+M1 Pro; ARM64 builds, eight boot helper tests, GTK allocation and payload checks
+pass. The separate full-height normal-boot choice preserves recovery and the
+already queued one-shot kernel trial. At the owner’s request, that queued
+`.20-enh1` trial now also uses `appledrm.show_notch=1`, so one normal reboot
+loads the trial and full-height layout together. Full-height hardware boot/clock/monitor
+switching and dock placement persistence still need post-reboot confirmation.
+Factory images retain their cropped initial mode. See the latest handoff for
+commands, runtime warnings and rollback.
+
+
+## .20-enh1 one-shot hardware trial staged — 2026-10-18
+
+[Trial and rollback guide](aurora/trial/README.md): next boot selects
+`elementary-aurora20-enh1`; later boots default to the retained .20 kernel.
+Matched J314S DTB/shared m1n1 payload and existing fallback files are unchanged.
+The first 120-second active-desktop baseline and GPU/filesystem smoke tests
+completed. Identity-pinned user capture runs automatically on the next trial
+boot after login/settling. Candidate boot, complete hardware/suspend/recovery
+and controlled AB/BA energy qualification remain open; no savings claimed.
+
+## Power audit and dock status on `.20` — 2026-10-18
+
+[Power audit](power/AUDIT-2026-10-18.md): 19-22 W observed docked with two displays under an active desktop; no idle
+figure, no savings applied or claimed. Next: a quiet-machine A/B (all apps closed, fixed brightness, three
+alternating arms) and a docked-vs-undocked comparison. [Aurora status](aurora/STATUS-2026-10-18-AFTER-20.md): no
+release after `.20`; draft 7.2.10 PR #139 not J314S-tested. On `.20` the dock links, trains 4 lanes and exposes a 4K
+`DP-2` with EDID (G3/G4 by logs); owner to confirm picture/port (G5) and stability.
+
+## Aurora energy and frozen feature releases — 2026-10-18
+
+[Implemented plan](aurora/ENERGY-PORT-PLAN-2026-10-18.md) refreshes 52 branches /
+12 PR heads, integrates existing source ports and pins a separate 7.2.10 unified
+WIP build. The running J314S `.20` baseline has measured artifact identities
+and scoped hardware receipts, frozen as experimental exp1. Stable promotion
+requires a complete feature matrix, three boot IDs, sleep cycles and matched
+energy pairs. A 64-fix review inventory keeps 7.2 build-only pending shared
+GPU/SEP parity; `.20-enh1` is the first hardware candidate. Freeze history is
+checked in CI; future captures include active refresh/VRR/display-power state.
+Native builds/inspection passed for both profiles. `.20-enh1` also has a
+[frozen, hardware-untested build prerelease](https://github.com/techmore/ElementaryOS_MSeries/releases/tag/mseries-aurora20-enh1-2026.10.18-build1)
+with complete source/config/provenance retained. Full hardware/energy
+qualification remains; no savings claimed.
+
+## Persistent window snapping — 2026-10-18
+
+Half snapping is now enforced by the OS dconf policy. A native Gala plugin adds
+corner drag quarters and Super+Alt+U/I/J/K (also Super+keypad 7/9/1/3).
+Installed on the working desktop, activation pending next sign-in. All four
+keyboard layouts, four corner drags and Escape cancellation pass in an isolated
+Wayland desktop. Physical multi-display checks remain. Factory staging includes
+the half-snap policy; native quarter plugin packaging is still separate.
+Details: [window-snapping/README.md](window-snapping/README.md).
+
+## Omacom userspace support — 2026-10-17
+
+[Audit and implementation](OMACOM-IMPROVEMENTS.md): sleep-energy records and
+power report are staged by manual/transform/factory diagnostics. Touch ID
+readiness and first-refresh/installer fixes are implemented. Bluetooth recovery
+and built-in-key remaps are available as separate opt-ins. Offline fixtures
+cover charging/clock/failure cases, controller-specific recovery and staging;
+Linux CI also reads a real FAT ESP without root. Target-machine suspend,
+notification, SEP, radio recovery and keymap qualification remain open. No
+battery-life gain or factory hardware boot is claimed.
+
+## Aurora enhancements source candidate — 2026-10-17
+
+[Integration guide](aurora/enhancements/README.md): udmabuf/system heap, scoped
+M3 Air thermal and camera fixes, rebased optional SMC battery properties, and
+an explicit eGPU config profile. Complete source-build/CI lane uses distinct
+kernel/package identities and retains the released .20 recovery candidate.
+Local tests pass; ARM64 build verification is tracked in the enhancement CI.
+No live deployment or measured power gain. #122/#127 display rebases and
+selective Neo work remain outstanding; older duplicate branches are not imported.
+
+
+
+## Aurora branch enhancement inventory — 2026-10-17
+
+[All-branch audit](aurora/UPSTREAM-BRANCH-AUDIT-2026-10-17.md): 51 upstream
+branches and 11 open PR heads reviewed against `.20`. Most are already in its
+history; VRR support is already in the current kernel too. First qualify the
+released J314S kernel and compositor. Further candidates are split udmabuf
+support for local AI, scoped M3 Air thermal/camera fixes and rebased M3 display
+work. Clean patch application/host tests are not hardware qualification. No
+additional source or runtime enhancement was enabled by this investigation.
+
+## Aurora 20 upstream kernel candidate — 2026-10-17
+
+The upstream `.20` kernel now has an optional Debian payload build, versioned
+`elementary-aurora20` entry and matched m1n1/J314S DT staging tool. Original
+source, build recipe, licenses and hashes are retained; 9 new offline regressions
+and the local package admission checks pass. [Port guide](aurora/README.md).
+Next: review shared boot.bin/fallback compatibility, then a controlled hardware
+batch on the J314S + WD22TB4. No deployment, dock-picture, Touch ID enrollment,
+recovery-boot or factory-ISO qualification is claimed by this port.
+
+
+## Dock code review and validation — 2026-10-17
+
+The [dock code review](fairydust/usb4/DOCK-CODE-REVIEW.md) records collector/staging fixes,
+36 offline unittest cases, production-function contracts and reproducible E3/E4 DT checks now in CI.
+The last retained E4 record is armed without a recorded boot outcome; no dock HDMI picture is claimed.
+Keep E4's loss of built-in HDMI separate from the older fallback-compatible deployment contract.
+
+
+> **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
+> Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
+> Aurora has j314s Thunderbolt-display prior art; check it before more RE. This dock HDMI path remains unqualified.
+> Gates, prior art and rules: [fairydust/usb4/PRIMARY-GOAL.md](fairydust/usb4/PRIMARY-GOAL.md).
+
+## Power code audit (2026-10-17)
+
+Power policy now reports write failures, bounds CPU caps, restarts policy on charger change,
+and ships the profile watcher through both the live and immutable image paths. Baseline collectors
+clean up interrupted workloads/display blanking and avoid stale parity imports. Offline power regressions
+are in CI. No battery-life gain or hardware qualification is implied: paired battery runs, real unplug/replug,
+profile switches, media playback, suspend and display restore still require target-device validation.
+
+## Power and dock documentation entry point (2026-10-17)
+
+Use the [power evidence map](power/README.md) for the canonical plan, 52-item parity checklist,
+retained baseline runs and newer dock branch frontier. Active macOS/Linux workload parity is not yet measured;
+the committed macOS capture contains inventory and historical sleep only. Older dock rows below are historical
+planning context; consult the pinned dock branch ledger before continuing display experiments.
+
+
+> **Everything currently staged and waiting for a reboot is listed in
+> [`REBOOT-QUEUE.md`](REBOOT-QUEUE.md)** — what each reboot unlocks, what to
+> verify, how to revert, and what does *not* need one. Start there before
+> rebooting for any feature below.
+
 ## R1/R2 first-boot fixes staged — 2026-10-16
 
 The first controlled boot (11:45:04–11:47:13) ran with the exact intended
@@ -267,6 +436,7 @@ with the corrected live-session hardware overlay before progressing.
 | Quiet inference and coding profiles | One worker, six-GiB reserve, early cooling and hard fan/temperature limits; Crush 16K profile | Short suites measured with apps retained; long coding/Bonsai tests are queued for idle windows, with interrupted runs retained |
 | Kernel and developer branch watch | Live fault signatures/previous boot; six-hour all-head and PR discovery | 41 assistant tests and 4 image wiring tests; 1,103 public branch heads observed; recurring enhancement activates on main |
 | CodexBar quota ETA | Visible per-limit forecasts and the earliest available limit in the bar; exhausted quotas show reset time | 11 ETA tests, 5 refresh tests, GTK render probe, and installed-module/live-snapshot checks passed |
+| CodexBar popover redesign | Quota / Sessions / Spend tabs so nothing sits below the fold; level-colored limits with one caption line each; a quiet bar that only adds ETA on a real warning, labels non-session windows ("7D 35%") and dims when cached; plan chips, status dots, explained empty/error states with actions; no rebuild or flicker between unchanged polls; accessible labels | 3 Meson suites (incl. 9 presentation cases), 16 headless Xvfb renders (8 states x light/dark), no-rebuild stability probe (verified against a mutant), module installed; takes effect at next login |
 | CodexBar usage freshness | One-minute backend polling; asynchronous five-second panel reads; throttled refresh on open | Meson policy tests and delayed-IPC GTK probe passed; installed on the working desktop |
 | Login-screen stall fixed | `lightdm` drop-in waits for the eDP connector; display crossbar in the fairydust initramfs (`install-initramfs-crossbar.sh`) | greeter 119.7 s -> 0.82 s; dp-xbar deferrals 14 -> 0; first-dcp -> DRM 2.57 s -> 0.01 s |
 | USB4 dock data (hub, mouse, headset, 1 Gb/s Ethernet) | Custom kernel `fairydust-usb4`, m1n1 + DTBs, thunderbolt quirks (`mseries/fairydust/usb4/`) | checks `dock-usb4-ethernet`, `dock-dp-retry-silent` passed |
@@ -313,7 +483,7 @@ sudo available to enable DNS collection without dialogs.
 |---|---|---|
 | Deferred per-user setup | Firstboot prepares CodexBar and Widevine tools and DNS policy; the user timer installs apps/services and stops after completion. Staged-root tests cover payload delivery, timer enablement and completion handling. | Verify a fresh desktop user's setup, including starting then quitting Brave to create its profile. |
 | Keyboard brightness slider | Added to Pantheon's Quick Settings gear menu by `install-quick-settings-brightness.sh`; included in manual post-install, transform firstboot, and now the Apple Silicon overlay build. | Rebuild the image, then confirm it appears and changes the keyboard backlight on the live desktop. |
-| OpenCode Go in M-series CodexBar | The installer enables the provider and passes the existing OpenCode Go CLI credential to CodexBar at runtime. | Install on the working desktop, sign in through OpenCode, and confirm the quota row. |
+| OpenCode Go in M-series CodexBar | The wrapper passes an explicit API key from `auth.json`, falling back to the active unexpired OAuth access token in OpenCode v2’s `credential` table. Live account quota works; seven-day local token counts accompany it in the panel and card. | Live OAuth quota verified on 0.77.0; wrapper/helper tests and port checks pass. OAuth refresh remains OpenCode’s responsibility. |
 
 ## Open problems
 
@@ -358,15 +528,17 @@ Performance work stays measured: use `mseries/benchmarks/` before and after each
 0. **Optimization repo created** (2026-10-15): [techmore/ElementaryOS_MSeries_Optimization](https://github.com/techmore/ElementaryOS_MSeries_Optimization); see [`OPTIMIZATION.md`](OPTIMIZATION.md).
 0. **Efficiency goal: run minimal, scale fast** (requested 2026-10-15; targets, method and suspects in [`EFFICIENCY-GOALS.md`](EFFICIENCY-GOALS.md)). Today about 11.7 W on battery in light use, about 2x to 3x Apple's published light-use figures.
 0. **Battery drain, phone-tether internet and minimum brightness** (reported 2026-10-14; rows in `BUG-FIX-ROADMAP.md`). The owner suspects the planned Rust battery-profile migration might fix the drain; measurement says the largest found cause was an audio rule, not the profile code, so port it for safety (see `EDGE-AND-RUST-PLAN.md`) but test the claim with before and after power readings.
-0. **Universal Siri/Whisper-like speech to text** (requested 2026-10-14; see `BUG-FIX-ROADMAP.md`). Dictate into any focused text field in any app, plus a later voice-assistant layer. Local only (no audio leaves the Mac). Candidate engine: whisper.cpp or similar on the M1 Pro (Vulkan on Honeykrisp, or CPU); universal insertion through an IBus input method (works for GTK, Qt and Electron apps) rather than per-app plugins. Depends on the built-in microphone working: the Asahi mic mapping from Omarchy is not ported yet (parity list item 3). Not started.
+0. **Universal Siri/Whisper-like speech to text** (requested 2026-10-14; see `BUG-FIX-ROADMAP.md`). Dictate into any focused text field in any app, plus a later voice-assistant layer. Local only (no audio leaves the Mac). Candidate engine: whisper.cpp or similar on the M1 Pro (Vulkan on Honeykrisp, or CPU); universal insertion through an IBus input method (works for GTK, Qt and Electron apps) rather than per-app plugins. Depends on the built-in microphone working: the Asahi mic mapping from Omarchy is not ported yet (parity list item 3). F5 hold-to-talk dictation installed 2026-10-18 (Voxtype + Whisper base.en); live speech round trip unverified, see `mseries/dictation/README.md`.
 0. **Stay within 24 h of upstream, and port privileged code to Rust** (requested 2026-10-14; plan in [`EDGE-AND-RUST-PLAN.md`](EDGE-AND-RUST-PLAN.md)). Watched projects: [`WATCHLIST.md`](WATCHLIST.md).
+0. **Minimum brightness** (requested 2026-10-14). Investigated and implemented 2026-10-16: the hardware floor is 2 nits, Mutter capped controls at 5, keys now walk an even 25-step ladder through logind, and a patched Gala adds four software steps below 2 nits. Owner validation is the next step; the phased plan (BR-01..BR-21), acceptance criteria and test protocol are in `BRIGHTNESS.md`.
 0. **True Tone-like display** (requested 2026-10-14; see `BUG-FIX-ROADMAP.md`). Shift the display's white point toward the room light. Apple's True Tone uses a multi-channel sensor; the M1 Pro ambient light sensor (`iio:device1`, `aop-sensors-als`) exposes only `in_illuminance_input` (lux) on this kernel, so a faithful version is not possible yet. Interim plan: map lux plus time of day to a colour temperature through the colour plugin's night-light path (`night-light-temperature`, currently 4500 K, night light off), with slow easing and an off switch. Must not touch brightness (ambient auto-brightness stays off, see the dimming fix).
 0. **Lid open shows the login screen, with Touch ID.** Today the login needs a power-button press after resume (bug tracked in `BUG-FIX-ROADMAP.md`). First fix the wake path; then investigate fingerprint login. No Linux driver for the Mac Touch ID sensor (Secure Enclave) is known to this project, so treat Touch ID as research, not a plan.
 
 1. **Dock video via m1n1 hypervisor trace.** Needs a second computer (below). Result would also help every Asahi user.
 2. ~~**Panel toggle for the battery charge limit**~~ Done 2026-10-13: a switch in the gear menu (`quick-settings/ChargeLimit.vala`, polkit action in `power/`). Pending your click-through: check `charge-limit-toggle`.
+2b. **Sound Output switcher and AirPlay destinations** Built 2026-10-16, merged 2026-10-18: a Mac-style output list in the gear menu (`quick-settings/AudioOutput*.vala`) with a dot per AirPlay receiver (`quick-settings/AirPlayOutputs.vala`, `airplay/`). Discovery through `install-airplay-discovery.sh`, the helper through `install-airplay-outputs.sh`. Headless tests pass; audible AirPlay and the live panel are not verified.
 3. ~~**Docked lid mode**~~ Done 2026-10-13: `install-docked-lid.sh` (user service). Real lid close pending: check `docked-lid-works`.
-4. ~~**Linux VMs with KVM**~~ Guide written 2026-10-13: [`KVM-VMS.md`](KVM-VMS.md) (boot verified headless; graphics, networking address and benchmark overhead not yet measured).
+4. ~~**Linux VMs with KVM**~~ Guide written 2026-10-13: [`KVM-VMS.md`](KVM-VMS.md) (boot verified headless; graphics, networking address and benchmark overhead not yet measured). Scripted end to end 2026-10-16: [`vms/mseries-vm`](vms/README.md) creates, fetches media for and runs the guests (elementary OS, Windows 11 ARM64, Omarchy 4), with a 71-check hermetic suite in CI.
 5. **Publish benchmark history** for every kernel/Mesa update, plot trends.
 6. **Install media / transform script** for other M1/M2 Macs (see `TRANSFORM-DESIGN.md`).
 7. **Tether continuity add-on**: pinned, removable ARM64 package installer and optional Brave integration are implemented (merged to main 2026-10-14); iPhone/Brave qualification remains. Current BlueZ 5.85 is below Tether's 5.86 minimum for Messages. See [`TETHER-CONTINUITY.md`](TETHER-CONTINUITY.md).
@@ -569,4 +741,74 @@ browser integration and remaining Files/Gala patches remain open.
 
 - MCP app follow-through: create-only local Assistant Tasks adapter and settings-preserving tool refresh implemented. Concurrent/retry/conflict EDS checks and 53 contracts pass. Model note-to-task/instruction rejection (three repeats) wait for cool/idle windows; see local-ai/APP-INTEGRATION.md. Calendar writes and browser/mail/messaging adapters remain open.
 
+- Developer watcher recovery (October 18): treat exact deleted named-ref responses as absent observations, preserving pending history and continuing branch/PR discovery. Two regression contracts and a full candidate dispatch pass; verify main dispatch after merge. This repair is independent of draft Calendar/browser/Mail GPU qualification (#86).
+
 - MCP Tasks qualification complete: note-to-task/scoped read-back 3/3 and file-instruction rejection 3/3; all synthetic sources removed. URLError checkpoint retained. PR #66 publishes data and app coverage; default restore waits for quiet admission. Calendar writes, browser/mail adapters, Tasks GUI/reminders and full factory hardware qualification remain open.
+
+## CodexBar native Claude account switching — 2026-10-18
+
+Implemented app session capture, one-time native sign-in setup, and **CLI only / Switch both** choices.
+The app restarts for a native switch; its encrypted login is restored without changing preferences.
+Missing sessions are labelled **app sign-in needed**. Both native accounts are now saved on this desktop. Automated snapshot round trips, rollback and
+setup recovery pass. A real native account-2 → account-1 round trip completed, and the owner confirmed
+the Gmail account’s chats remained visible without signing in again. See
+[CODEXBAR-PORT.md](CODEXBAR-PORT.md) for the repeatable workflow and limitations.
+
+
+### CodexBar account quota UX and sign-in — 2026-10-18
+
+Alternate accounts now expose 5-hour and weekly/monthly quota separately, each with a reset countdown,
+in dense dropdown rows and a second panel line. OpenCode duplicate OAuth records are collapsed into
+distinct account/workspace identities. Codex + provides browser sign-in without replacing the current
+login, using a native Granite window with progress and cancellation. Formatting, login isolation and
+OpenCode read-only/deduplication tests pass; port compatibility and headless light/dark probes pass. The owner verified that a second real Codex account appears after the new browser sign-in flow.
+
+Secondary quota balances are colour coded per window, matching the usage bar thresholds, while reset
+countdowns stay muted. The Codex account dialog now uses a centered brand panel, stronger typography,
+a compact instruction card and native actions. Light/dark render checks cover the visual changes.
+
+
+### CodexBar account-choice hints — 2026-10-18
+
+Yellow stars identify the service/account with the highest usable remaining quota percentage, using
+its tightest reported limit so an exhausted five-hour session does not win on weekly balance. Red
+exclamation marks independently identify the next weekly reset, including secondary accounts. Markers
+include explanatory tooltips; ties are marked, stale/unknown data is excluded, and monthly resets do
+not qualify. Selection tests and light/dark fixtures cover the behavior.
+
+
+### CodexBar native account-sheet refinement — 2026-10-18
+
+All provider add prompts share a refined Granite sheet: raised brand emblem, elementary accent icons,
+framed instruction rows, concise copy and native footer buttons. Codex waiting, success and retry
+states follow the same design with explicit keyboard defaults and bounded helper detail. Browser
+sign-in, account storage and Claude native-app sessions retain their existing behavior. Four Meson
+suites and 12 light/dark render previews pass; real authentication was previously owner-verified and
+was not repeated for this visual change. The separate OpenCode API-key entry window is unchanged.
+
+
+### OpenCode native API-key window — 2026-10-18
+
+The separate OpenCode key-entry window now matches CodexBar's Granite account sheet: raised brand
+mark, elementary theme accents, framed sections, labeled masked input and native Cancel/Connect
+buttons. Inline checking/error states provide progress and retry focus. Existing key validation,
+storage and browser/embedded sign-in methods are preserved. Six light/dark previews, mocked
+cancel/invalid/rejected/success checks, four Meson suites and the port compatibility check pass.
+No real authentication was repeated. Runtime GI dependencies are explicit in the panel installer.
+
+
+### OpenCode one-click account entry — 2026-10-18
+
+OpenCode **+** now opens the native API-key sheet directly; the redundant Continue popup is removed.
+The existing sign-in helper, validation/storage and result/refresh flow remain intact. Module build
+and four Meson suites pass; no live sign-in was required for this routing change.
+
+
+### Direct Claude sign-in and account levels — 2026-10-18
+
+Claude **+** now starts browser sign-in immediately. Dropdown active and saved-account identities
+show their reported plan, with a quiet “Plan unavailable” when metadata is missing. Codex uses its
+existing claims, Claude projects subscription labels from saved/live login metadata, and OpenCode
+uses reported plan metadata where available. Four Meson suites, 35 Claude/9 OpenCode tests, port
+compatibility, and light/dark normal-width render checks pass. Native Claude sessions and provider
+authentication methods are preserved; live reauthentication was not repeated for this UI change.

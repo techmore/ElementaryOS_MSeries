@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=AirPlay Outputs
+Comment=Choose which AirPlay receivers are active
+Exec=@BIN@/mseries-airplay-outputs
+Icon=audio-speakers
+Categories=AudioVideo;Audio;Settings;

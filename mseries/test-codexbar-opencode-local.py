@@ -2,10 +2,13 @@
 """Tests for the read-only OpenCode v2 local usage adapter."""
 
 import importlib.util
+import json
 import pathlib
 import sqlite3
 import tempfile
 import unittest
+from unittest import mock
+from contextlib import closing
 
 
 SCRIPT = pathlib.Path(__file__).with_name("codexbar-opencode-local.py")
@@ -75,6 +78,83 @@ class OpenCodeLocalUsageTests(unittest.TestCase):
         usage = MODULE.read_usage(self.database, now_ms=5_000_000_000)
         self.assertEqual(usage["status"], "unavailable")
         self.assertIn("unsupported schema", usage["message"])
+
+
+class AccountTest(unittest.TestCase):
+    def credential_database(self, rows):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        path = pathlib.Path(temp.name) / "opencode.db"
+        with closing(sqlite3.connect(path)) as db, db:
+            db.execute("CREATE TABLE credential (id TEXT, integration_id TEXT, active INTEGER, value TEXT, time_updated INTEGER)")
+            db.executemany("INSERT INTO credential VALUES (?, 'opencode', ?, ?, ?)", rows)
+        return path
+
+    def credential(self, email, org="workspace", expires=2000000000000):
+        return json.dumps({"type": "oauth", "access": "NEVER-PRINT-ACCESS", "refresh": "NEVER-PRINT-REFRESH",
+                           "expires": expires, "metadata": {"email": email, "orgID": org}})
+
+    def test_duplicate_login_records_do_not_invent_another_account(self):
+        path = self.credential_database([("old", 0, self.credential("me@example.com"), 2),
+                                         ("active", 1, self.credential("me@example.com"), 1)])
+        before = path.read_bytes()
+        with mock.patch.object(MODULE.subprocess, "run") as run:
+            accounts = MODULE.saved_accounts(path, "codexbar", now_ms=1900000000000)
+        self.assertEqual(len(accounts), 1)
+        self.assertEqual(accounts[0]["id"], "active")
+        run.assert_not_called()
+        self.assertNotIn("NEVER-PRINT", json.dumps(accounts))
+        self.assertEqual(path.read_bytes(), before)
+
+    def test_alternate_account_keeps_short_weekly_and_monthly_quota(self):
+        path = self.credential_database([("active", 1, self.credential("me@example.com"), 1),
+                                         ("other", 0, self.credential("other@example.com"), 2)])
+        response = [{"usage": {"primary": {"usedPercent": 100, "resetsAt": "2026-10-18T13:30:00Z"},
+                               "secondary": {"usedPercent": 28}, "tertiary": {"usedPercent": 9}}}]
+        with mock.patch.object(MODULE.subprocess, "run", return_value=mock.Mock(returncode=0, stdout=json.dumps(response))) as run:
+            accounts = MODULE.saved_accounts(path, "codexbar", now_ms=1900000000000)
+        self.assertEqual([w["remaining"] for w in accounts[1]["windows"]], [0, 72, 91])
+        self.assertEqual([w["minutes"] for w in accounts[1]["windows"]], [300, 10080, 43200])
+        self.assertEqual(run.call_args.kwargs["env"]["OPENCODE_API_KEY"], "NEVER-PRINT-ACCESS")
+        self.assertNotIn("NEVER-PRINT", json.dumps(accounts))
+
+    def test_plan_is_account_metadata_and_missing_is_unknown(self):
+        credential = json.loads(self.credential("me@example.com"))
+        credential["metadata"]["plan"] = "go"
+        path = self.credential_database([("active", 1, json.dumps(credential), 1)])
+        accounts = MODULE.saved_accounts(path, "codexbar", now_ms=1900000000000)
+        self.assertEqual(accounts[0]["plan"], "go")
+        self.assertNotIn("NEVER-PRINT", json.dumps(accounts))
+        path = self.credential_database([("active", 1, self.credential("me@example.com"), 1)])
+        self.assertEqual(MODULE.saved_accounts(path, "codexbar")[0]["plan"], "")
+
+    def test_expired_alternate_login_is_labelled_without_querying_quota(self):
+        path = self.credential_database([("old", 0, self.credential("other@example.com", expires=1800000000000), 1)])
+        with mock.patch.object(MODULE.subprocess, "run") as run:
+            accounts = MODULE.saved_accounts(path, "codexbar", now_ms=1900000000000)
+        run.assert_not_called()
+        self.assertEqual(accounts[0]["windows"], [])
+        self.assertIn("Sign in", accounts[0]["error"])
+
+    def test_reads_active_account_email_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            database = pathlib.Path(directory) / "opencode.db"
+            connection = sqlite3.connect(database)
+            connection.execute("CREATE TABLE account (id TEXT PRIMARY KEY, email TEXT, access_token TEXT, time_updated INTEGER)")
+            connection.execute("CREATE TABLE account_state (id INTEGER PRIMARY KEY, active_account_id TEXT)")
+            connection.executemany("INSERT INTO account VALUES (?,?,?,?)",
+                                   [("a", "old@example.com", "secret-a", 9), ("b", "me@example.com", "secret-b", 1)])
+            connection.execute("INSERT INTO account_state VALUES (1, 'b')")
+            connection.commit()
+            connection.close()
+            self.assertEqual(MODULE.read_account(database), "me@example.com")
+
+    def test_missing_or_unsupported_database_gives_no_account(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.assertEqual(MODULE.read_account(pathlib.Path(directory) / "none.db"), "")
+            database = pathlib.Path(directory) / "x.db"
+            sqlite3.connect(database).close()
+            self.assertEqual(MODULE.read_account(database), "")
 
 
 if __name__ == "__main__":

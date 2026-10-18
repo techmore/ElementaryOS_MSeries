@@ -19,6 +19,9 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <h1>M1 Pro features and Omarchy parity</h1>
 <p>What the installed elementary OS 9 desktop does on a 14-inch MacBook Pro (M1 Pro), checked against the maintained Omarchy Apple Silicon packages (<a href="https://github.com/omacom/omarchy-mac-pkgs">omacom/omarchy-mac-pkgs</a>, audited at 222f7a8). This describes the installed system, not the unbuilt factory image. Updated 2026-10-14.</p>
 
+<h2>New repository candidates — October 17</h2>
+<p>Sleep-energy logging and a power-report launcher are implemented in the repository, with Touch ID readiness and setup fixes. Bluetooth resume recovery and built-in F-key remaps are separate opt-ins. These additions have offline regression coverage; target-machine qualification and factory-image boot remain pending. See the <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/OMACOM-IMPROVEMENTS.md">audit, installation options and measurement limits</a>. This does not change the installed-system results below or establish a battery-life improvement.</p>
+
 <h2>Omarchy M-series enhancements</h2>
 <table>
 <tr><th>Enhancement</th><th>Status on the M1 Pro</th><th>Notes</th></tr>
@@ -27,7 +30,8 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <tr><td>Battery charge limit</td><td class="ok">Ported</td><td>Limit reads 80%; a quick-settings switch toggles it.</td></tr>
 <tr><td>Ambient keyboard light</td><td class="ok">Ported</td><td>Adjusted 0 to 59/255 at 141 lx; lock, lid and suspend behavior still to be qualified.</td></tr>
 <tr><td>Early Apple input loading</td><td class="ok">Ported</td><td>initramfs module list; factory-image path not verified.</td></tr>
-<tr><td>Dock hub, mouse and Ethernet</td><td class="ok">Working</td><td>Dell WD22TB4 verified 2026-10-14. Display through the dock is not available (no DisplayPort tunnelling).</td></tr>
+<tr><td>Dock hub, mouse and Ethernet</td><td class="ok">Working</td><td>Dell WD22TB4 verified 2026-10-14. Dock HDMI picture remains unverified; experimental tunnel allocation does not establish a working display. See the <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/fairydust/usb4/DOCK-CODE-REVIEW.md">dock code review and qualification limits</a>.</td></tr>
+<tr><td>Full-height M1 Pro desktop and native dock</td><td class="part">Implemented; reboot check pending</td><td>Restores the camera strip with a protected Wingpanel layout; compact intelligent-hide dock saves placement. Visible dock space is reserved and released on hiding for maximized and snapped windows (next sign-in after installation). <a href="https://github.com/techmore/ElementaryOS_MSeries/blob/main/mseries/display-space/README.md">Install and rollback</a>. Factory full-height boot remains unqualified.</td></tr>
 <tr><td>Docked lid mode</td><td class="part">Running</td><td>Locks instead of retrying suspend while a USB4 dock is attached; lid-close with a dock needs a repeat test.</td></tr>
 <tr><td>Audio watchdog</td><td class="ok">Installed 2026-10-14</td><td>Restarts PipeWire and WirePlumber if the audio server stops answering, with a restart limit. It runs as a user service; the unit and tests are in the repo.</td></tr>
 <tr><td>Speaker and headset-mic rules</td><td class="part">Installed; apply at next login</td><td>Keeps the speaker and headphone outputs open (no pop between sounds) and stops apps preferring the unplugged headset mic.</td></tr>
@@ -43,13 +47,15 @@ footer{margin-top:2rem;font-size:.85rem;color:#555}
 <p>What has been added or changed on the installed M1 Pro desktop. "To confirm" means it was applied but the owner has not yet checked it.</p>
 <table>
 <tr><th>Area</th><th>Customization</th><th>Status</th></tr>
+<tr><td>Kernel and energy</td><td>Aurora PMP/idle/sleep support, separate source enhancement and pinned 7.2.10 WIP builds; immutable hardware receipts and release freezes</td><td class="part">J314S .20 boot/PMP/idle accounting tested; frozen experimental exp1. Full hardware/energy qualification pending; no savings claimed.</td></tr>
+<tr><td>Keyboard and windows</td><td>OS-enforced half snapping; native corner quarter snaps and Super+Alt+U/I/J/K (keypad 7/9/1/3 also supported)</td><td class="part">Half snaps enabled; quarter plugin installed, next sign-in required. Isolated Wayland integration passed; physical displays pending.</td></tr>
 <tr><td>Keyboard and windows</td><td>Command+Space app launcher with readable search text; shortcuts stay bound across reboots</td><td class="ok">Installed (text fix to confirm)</td></tr>
 <tr><td>Keyboard and windows</td><td>Window buttons together on the left (close, minimize, maximize), Mac style</td><td class="ok">Applied (to confirm)</td></tr>
 <tr><td>Keyboard and windows</td><td>Touchpad gestures through Touchegg</td><td class="ok">Running</td></tr>
 <tr><td>Screenshots</td><td>Ctrl+Shift+3 and 4 save to Downloads/Screenshots; a thumbnail appears bottom-right (drag to use without keeping, hold Alt to also keep) and offers Markup (Swappy for images, Papers for PDFs)</td><td class="part">Built; to try</td></tr>
 <tr><td>Look and feel</td><td>Softer blue and rose accents, larger window corners, rounded screen corners (patched Gala), brightness and keyboard-light sliders in quick settings, ambient keyboard light</td><td class="ok">Installed</td></tr>
 <tr><td>Top bar</td><td>Network speed and usage indicator; AI usage forecast (CodexBar); a repositioned clock; Signal, energy monitor, Homeboard and Troubleshooter indicators</td><td class="ok">Installed</td></tr>
-<tr><td>Power</td><td>80% battery charge limit with a switch, battery CPU policy, zram swap, docked lid mode</td><td class="ok">Installed</td></tr>
+<tr><td>Power</td><td>80% battery charge limit with a switch, battery CPU policy, zram swap, docked lid mode. Policy and baseline collector regression tests cover failure handling; physical battery transitions and matched power runs remain to be qualified</td><td class="ok">Installed</td></tr>
 <tr><td>Audio</td><td>Speaker safety and DSP chain, audio watchdog, speaker and headset-mic rules (apply at next login)</td><td class="ok">Installed</td></tr>
 <tr><td>Local AI</td><td>Private MLX v0.7.33, Newelle desktop/personal memory, guarded coding profiles and kernel/app fault collection. <a href="local-ai.html">Benchmarks and app coverage</a></td><td class="part">Tested defaults; broader app coverage open</td></tr>
 <tr><td>Apps</td><td>Native Firefox and Brave (no snaps), Signal, Claude, ChatGPT and OpenCode desktop apps</td><td class="ok">Installed</td></tr>

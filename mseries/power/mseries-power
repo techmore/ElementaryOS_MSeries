@@ -8,7 +8,8 @@
 # The CPU ceiling only applies on battery in the power-saver profile. Switching to balanced (e.g. a burst for local AI
 # or a build) lifts it; switching back or unplugging/replugging restores the policy.
 # Policy comes from /etc/mseries/power.conf. Needs root to change anything.
-set -u
+set -euo pipefail
+shopt -s nullglob
 SYS=${MSERIES_SYS:-/sys}   # overridable so the policy can be tested against a fake tree
 conf=${MSERIES_CONF:-/etc/mseries/power.conf}
 bat=$SYS/class/power_supply/macsmc-battery
@@ -21,40 +22,54 @@ BATTERY_CAP_KHZ=2400000   # performance-cluster ceiling on battery (hardware max
 # shellcheck disable=SC1090
 [[ -f $conf ]] && . "$conf"
 
-write() { printf '%s' "$2" > "$1" 2>/dev/null || echo "could not write $2 to $1" >&2; }
+write() {
+  if ! { printf '%s' "$2" > "$1"; } 2>/dev/null; then
+    echo "could not write $2 to $1" >&2
+    return 1
+  fi
+}
 
 apply_limit() {
   # The start threshold must stay below the end threshold, so lower/raise them in the right order.
   if (( CHARGE_LIMIT >= 100 )); then
-    write $bat/charge_control_end_threshold 100; write $bat/charge_control_start_threshold 95
+    write "$bat/charge_control_end_threshold" 100; write "$bat/charge_control_start_threshold" 95
   else
-    write $bat/charge_control_start_threshold "$CHARGE_START"; write $bat/charge_control_end_threshold "$CHARGE_LIMIT"
+    write "$bat/charge_control_start_threshold" "$CHARGE_START"; write "$bat/charge_control_end_threshold" "$CHARGE_LIMIT"
   fi
 }
 
 # CPU ceiling in kHz for the current state: 0 means no cap. Only on battery AND in the power-saver profile.
 wanted_cap() {
   local on_ac profile
-  on_ac=$(cat $ac 2>/dev/null || echo 1)
-  profile=$(powerprofilesctl get 2>/dev/null || echo "$BATTERY_PROFILE")
+  on_ac=$(cat "$ac" 2>/dev/null || echo 1)
+  profile=$(powerprofilesctl get 2>/dev/null || echo unknown)
   if [[ $on_ac == 1 || $profile != power-saver ]]; then echo 0; else echo "$BATTERY_CAP_KHZ"; fi
 }
 
 apply_cap() {
-  local cap p max
+  local cap p max min target
   cap=$(wanted_cap)
-  for p in $SYS/devices/system/cpu/cpufreq/policy*; do
+  for p in "$SYS"/devices/system/cpu/cpufreq/policy*; do
     max=$(cat "$p/cpuinfo_max_freq")
+    min=$(cat "$p/cpuinfo_min_freq")
+    [[ $max =~ ^[0-9]+$ && $min =~ ^[0-9]+$ && $cap =~ ^[0-9]+$ ]] || {
+      echo "invalid CPU frequency policy: $p" >&2; return 1;
+    }
     # Only the performance clusters are capped; the efficiency cores are already slow.
-    if (( max > 2500000 && cap > 0 )); then write "$p/scaling_max_freq" "$cap"; else write "$p/scaling_max_freq" "$max"; fi
+    if (( max > 2500000 && cap > 0 )); then
+      target=$cap
+      (( target > max )) && target=$max
+      (( target < min )) && target=$min
+    else target=$max; fi
+    write "$p/scaling_max_freq" "$target"
   done
 }
 
 apply_source() {
   local on_ac profile
-  on_ac=$(cat $ac 2>/dev/null || echo 1)
+  on_ac=$(cat "$ac" 2>/dev/null || echo 1)
   if [[ $on_ac == 1 ]]; then profile=$AC_PROFILE; else profile=$BATTERY_PROFILE; fi
-  powerprofilesctl set "$profile" 2>/dev/null || true
+  powerprofilesctl set "$profile"
   apply_cap
 }
 
@@ -62,7 +77,11 @@ follow() {
   apply_cap
   # Re-apply whenever power-profiles-daemon reports a profile change.
   gdbus monitor --system --dest net.hadess.PowerProfiles --object-path /net/hadess/PowerProfiles 2>/dev/null |
-    while read -r line; do [[ $line == *ActiveProfile* ]] && apply_cap; done
+    while read -r line; do
+      if [[ $line == *ActiveProfile* || $line == *'is owned by'* ]]; then apply_cap; fi
+    done
+  # A disconnected monitor is not a successful completion of this long-running service.
+  return 1
 }
 
 case ${1:-status} in
@@ -71,14 +90,25 @@ case ${1:-status} in
   follow) follow; exit 0 ;;
   limit)
     [[ ${2:-} =~ ^(80|100)$ ]] || { echo 'usage: mseries-power limit 80|100' >&2; exit 1; }
-    mkdir -p /etc/mseries; touch "$conf"
+    CHARGE_LIMIT=$2; apply_limit
+    mkdir -p "$(dirname "$conf")"; touch "$conf"
     if grep -q '^CHARGE_LIMIT=' "$conf"; then sed -i "s/^CHARGE_LIMIT=.*/CHARGE_LIMIT=$2/" "$conf"; else echo "CHARGE_LIMIT=$2" >> "$conf"; fi
-    CHARGE_LIMIT=$2; apply_limit ;;
+    ;;
   status) ;;
   *) echo 'usage: mseries-power status|limit 80|100|apply|cap|follow' >&2; exit 1 ;;
 esac
 
-echo "battery: $(cat $bat/capacity)% ($(cat $bat/status)), health $(( $(cat $bat/energy_full) * 100 / $(cat $bat/energy_full_design) ))%, $(cat $bat/cycle_count) cycles"
-echo "charge limit: stop at $(cat $bat/charge_control_end_threshold)%, resume at $(cat $bat/charge_control_start_threshold)%"
-echo "power source: $([[ $(cat $ac 2>/dev/null) == 1 ]] && echo AC || echo battery); profile: $(powerprofilesctl get 2>/dev/null)"
-for p in $SYS/devices/system/cpu/cpufreq/policy*; do echo "cpus $(cat "$p/related_cpus"): max $(( $(cat "$p/scaling_max_freq") / 1000 )) MHz (hardware $(( $(cat "$p/cpuinfo_max_freq") / 1000 )))"; done
+# Mutating commands report failures directly; status is best effort on machines missing a sensor.
+[[ ${1:-status} == status ]] || exit 0
+read_value() { cat "$1" 2>/dev/null || printf 'unknown'; }
+full=$(read_value "$bat/energy_full"); design=$(read_value "$bat/energy_full_design")
+health=unknown
+if [[ $full =~ ^[0-9]+$ && $design =~ ^[0-9]+$ ]] && (( design > 0 )); then
+  health=$(( full * 100 / design ))
+fi
+echo "battery: $(read_value "$bat/capacity")% ($(read_value "$bat/status")), health $health%, $(read_value "$bat/cycle_count") cycles"
+echo "charge limit: stop at $(read_value "$bat/charge_control_end_threshold")%, resume at $(read_value "$bat/charge_control_start_threshold")%"
+echo "power source online: $(read_value "$ac"); profile: $(powerprofilesctl get 2>/dev/null || echo unknown)"
+for p in "$SYS"/devices/system/cpu/cpufreq/policy*; do
+  echo "cpus $(read_value "$p/related_cpus"): max $(read_value "$p/scaling_max_freq") kHz (hardware $(read_value "$p/cpuinfo_max_freq"))"
+done

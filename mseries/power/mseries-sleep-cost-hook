@@ -1,0 +1,3 @@
+#!/bin/sh
+# Record only; never delay suspend indefinitely or make it fail for diagnostics.
+exec /usr/bin/timeout --kill-after=1s 3s /usr/bin/python3 -I /usr/libexec/mseries/sleep-cost "$@"

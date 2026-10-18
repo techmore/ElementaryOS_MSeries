@@ -17,6 +17,9 @@ concurrency:
 
 jobs:
   call-reusable-build:
+    # Reusable-workflow permissions are validated before the repository gate.
+    permissions:
+      contents: write
     # Upstream's release pipeline (signing key, R2 upload). On a fork it would
     # spend an hour of runner time per pull request and fail at the upload.
     if: >-

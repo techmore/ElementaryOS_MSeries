@@ -8,6 +8,8 @@ import json
 import os
 import pathlib
 import sqlite3
+import subprocess
+from contextlib import closing
 import sys
 import time
 from typing import Any
@@ -95,12 +97,96 @@ def read_usage(database: pathlib.Path, now_ms: int | None = None) -> dict[str, A
     }
 
 
+def read_account(database: pathlib.Path) -> str:
+    """The signed-in OpenCode account's email, read-only; never the tokens stored beside it."""
+    if not database.is_file():
+        return ""
+    try:
+        connection = sqlite3.connect(f"file:{database}?mode=ro", uri=True, timeout=0.5)
+        try:
+            row = connection.execute(
+                """SELECT account.email FROM account
+                   LEFT JOIN account_state ON account_state.active_account_id = account.id
+                   ORDER BY (account_state.id IS NOT NULL) DESC, account.time_updated DESC LIMIT 1"""
+            ).fetchone()
+        finally:
+            connection.close()
+    except (sqlite3.Error, OSError):
+        return ""
+    return row[0] if row and isinstance(row[0], str) else ""
+
+
 def iso_time(timestamp_ms: int) -> str:
     return dt.datetime.fromtimestamp(timestamp_ms / 1000, dt.timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def saved_accounts(database: pathlib.Path, cli: str, now_ms: int | None = None) -> list[dict[str, Any]]:
+    """Quota for saved distinct OAuth accounts, without activating one or exporting its credentials."""
+    now_ms = int(time.time() * 1000) if now_ms is None else now_ms
+    try:
+        with closing(sqlite3.connect(database.as_uri() + "?mode=ro", uri=True, timeout=0.5)) as db:
+            rows = db.execute("SELECT id, active, value FROM credential WHERE integration_id='opencode' "
+                              "ORDER BY active DESC, time_updated DESC").fetchall()
+    except (sqlite3.Error, OSError):
+        return []
+    report, seen = [], set()
+    for ident, active, value in rows:
+        try:
+            credential = json.loads(value)
+            if not isinstance(credential, dict) or credential.get("type") != "oauth":
+                continue
+            metadata = credential.get("metadata")
+            if not isinstance(metadata, dict):
+                continue
+            email = metadata.get("email")
+            if not isinstance(email, str) or not email:
+                continue
+            key = (metadata.get("accountID") or email.lower(), metadata.get("orgID") or "")
+            if key in seen:
+                continue
+            seen.add(key)
+            plan = metadata.get("plan")
+            account = {"id": ident, "email": email, "active": bool(active), "windows": [],
+                       "plan": plan if isinstance(plan, str) else ""}
+            report.append(account)
+            if active:
+                continue  # upstream's normal snapshot already supplies this account's quota
+            access, expires = credential.get("access"), credential.get("expires")
+            if not isinstance(access, str) or not access or isinstance(expires, bool) \
+                    or not isinstance(expires, (int, float)) or expires <= now_ms + 60000:
+                account["error"] = "Sign in to this OpenCode account again to read quota."
+                continue
+            result = subprocess.run([cli, "usage", "--provider", "opencodego", "--source", "api", "--format", "json"],
+                                    env={**os.environ, "OPENCODE_API_KEY": access}, capture_output=True,
+                                    text=True, timeout=20, check=False)
+            data = json.loads(result.stdout)
+            row = data[0] if isinstance(data, list) and data else {}
+            usage = row.get("usage") or {}
+            if result.returncode or row.get("error") or not isinstance(usage, dict):
+                account["error"] = "Quota unavailable for this saved account."
+                continue
+            for field, label, minutes in (("primary", "5 hour", 300), ("secondary", "7 day", 10080),
+                                           ("tertiary", "30 day", 43200)):
+                window = usage.get(field)
+                if isinstance(window, dict) and isinstance(window.get("usedPercent"), (int, float)):
+                    account["windows"].append({"key": field, "label": label, "minutes": minutes,
+                        "remaining": max(0, min(100, 100 - window["usedPercent"])), "resetsAt": window.get("resetsAt", "")})
+        except (ValueError, TypeError, OSError, subprocess.SubprocessError):
+            if report and report[-1].get("id") == ident:
+                report[-1]["error"] = "Quota unavailable for this saved account."
+    return report
+
+
 def main() -> int:
-    usage = read_usage(data_directory() / "opencode.db")
+    database = data_directory() / "opencode.db"
+    if sys.argv[1:] == ["accounts"]:
+        cli = str(pathlib.Path.home() / ".local/lib/codexbar-cli/codexbar-upstream")
+        print(json.dumps({"accounts": saved_accounts(database, cli)}))
+        return 0
+    usage = read_usage(database)
+    email = read_account(database)
+    if email:
+        usage["accountEmail"] = email
     print(json.dumps(usage, separators=(",", ":")))
     return 0
 

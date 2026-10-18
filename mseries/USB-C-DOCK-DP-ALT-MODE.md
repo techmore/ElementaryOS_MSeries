@@ -1,5 +1,9 @@
 # USB-C docks & DisplayPort Alt Mode on M-series (why the Dell WD19S is dead)
 
+> Historical snapshot on `power-usage`. Newer dock investigation lives on
+> `docs/dock-video-decision`; see the [branch frontier and evidence gates](power/README.md#dock-hdmi-and-suspend)
+> before using the experiments or status below as current guidance.
+
 Investigates why a USB-C dock's monitor and mouse do not work on the
 elementary/mkosi Apple Silicon target, with a live capture from
 `MacBookPro18,3` (J314s, M1 Pro, `apple,t6000`). Read with

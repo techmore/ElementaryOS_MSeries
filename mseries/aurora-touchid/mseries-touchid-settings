@@ -1,0 +1,261 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0
+#
+# Touch ID settings for the M-series (Aurora SEP kernel).
+#
+# Shows whether every link in the chain is present, and does the two things that
+# actually need doing: enrolling a finger, and putting the fingerprint into PAM.
+#
+#   mseries-touchid-settings
+#
+# The chain, in order — each row below is one of these:
+#   kernel        the Aurora SEP kernel is running
+#   dt-node       /soc/sep@396400000 is enabled in the device tree
+#   manifests     m1n1 injected local-policy-manifest / iboot-manifest
+#   sep-bio       /dev/sep-bio exists (the enclave is reachable)
+#   calibration   /lib/firmware/apple/mesacal-<machine>.bin
+#   sensor        the fingerprint SPI device is in the device tree
+#   reader        fprintd can see a fingerprint reader
+#   enrolled      at least one finger is enrolled for this user
+
+import os
+import shutil
+import subprocess
+
+import gi
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
+from gi.repository import Adw, GLib, Gio, Gtk  # noqa: E402
+
+APP_ID = "io.elementary.mseries.TouchID"
+SEP_NODE = "/proc/device-tree/soc/sep@396400000"
+
+
+def read_dt(path):
+    """A device-tree property as text, or None."""
+    try:
+        with open(path, "rb") as handle:
+            return handle.read().rstrip(b"\0").decode("utf-8", "replace")
+    except OSError:
+        return None
+
+
+def machine():
+    """e.g. j314s, from the first compatible string in the device tree."""
+    compat = read_dt("/proc/device-tree/compatible")
+    if not compat:
+        return "unknown"
+    first = compat.split("\x00")[0].strip()
+    return first.split(",")[1] if "," in first else first
+
+
+def run(argv, timeout=20):
+    """Run a command, returning (returncode, combined output)."""
+    try:
+        done = subprocess.run(
+            argv, capture_output=True, text=True, timeout=timeout
+        )
+        return done.returncode, (done.stdout + done.stderr).strip()
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return 1, str(error)
+
+
+def pam_has(file):
+    try:
+        with open(file, encoding="utf-8", errors="replace") as handle:
+            return "pam_fprintd" in handle.read()
+    except OSError:
+        return False
+
+
+def probe():
+    """Every link in the chain, as (label, ok, detail)."""
+    kernel = os.uname().release
+    on_sep_kernel = "sep-ARCH" in kernel
+
+    dt_status = read_dt(f"{SEP_NODE}/status")
+    lpm = os.path.exists(f"{SEP_NODE}/local-policy-manifest")
+    sep_bio = os.path.exists("/dev/sep-bio")
+
+    name = machine()
+    calibration = os.path.exists(f"/lib/firmware/apple/mesacal-{name}.bin")
+
+    sensor = any(
+        read_dt(f"/proc/device-tree/soc/spi@{bus}/fingerprint@0/compatible")
+        == "apple,mesa-fingerprint"
+        for bus in ("39b104000", "39b108000", "39b10c000")
+    )
+
+    code, out = run(["fprintd-list", os.environ.get("USER", "")])
+    reader = code == 0 and "No devices available" not in out
+    # fprintd-list prints one line per stored print; anything that names a finger
+    # and is not explicitly unenrolled counts as enrolled.
+    enrolled = reader and any(
+        "finger" in line.lower() and "not enrolled" not in line.lower()
+        for line in out.splitlines()
+    )
+
+    return [
+        ("Kernel", on_sep_kernel, f"running {kernel}"),
+        ("SEP device tree", dt_status == "okay", f"sep node status: {dt_status or 'absent'}"),
+        ("Firmware manifests", lpm, "m1n1 injected local-policy-manifest"),
+        ("Secure enclave", sep_bio, "/dev/sep-bio present" if sep_bio else "/dev/sep-bio missing"),
+        ("Calibration", calibration, f"/lib/firmware/apple/mesacal-{name}.bin"),
+        ("Fingerprint sensor", sensor, "apple,mesa-fingerprint in the device tree"),
+        ("Reader seen by fprintd", reader, out.splitlines()[0] if out else "fprintd gave no output"),
+        ("A finger is enrolled", enrolled, "at least one stored print" if enrolled
+            else "no stored print yet"),
+    ], [
+        ("sudo", pam_has("/etc/pam.d/sudo")),
+        ("polkit", pam_has("/etc/pam.d/polkit-1")),
+        ("lock screen", os.path.exists("/etc/pam.d/omarchy-lock-fingerprint")),
+    ]
+
+
+class Row(Adw.ActionRow):
+    """One check, with a tick or a cross and a plain-language detail line."""
+
+    def __init__(self, label, ok, detail):
+        super().__init__(title=label, subtitle=detail)
+        icon = Gtk.Image.new_from_icon_name(
+            "emblem-ok-symbolic" if ok else "process-stop-symbolic"
+        )
+        icon.add_css_class(ok and "success" or "error")
+        self.add_prefix(icon)
+
+
+class Window(Adw.ApplicationWindow):
+    def __init__(self, app):
+        super().__init__(application=app, title="Touch ID", default_width=520)
+        self.set_default_size(520, 620)
+
+        view = Adw.ToolbarView()
+        self.set_content(view)
+        view.add_top_bar(Adw.HeaderBar())
+
+        page = Adw.PreferencesPage()
+        view.set_content(page)
+
+        self.status_group = Adw.PreferencesGroup(
+            title="Status",
+            description="Every link the fingerprint has to travel through.",
+        )
+        self.pam_group = Adw.PreferencesGroup(title="Used for")
+
+        actions = Adw.PreferencesGroup(title="Actions")
+
+        self.enrol = Gtk.Button(label="Enrol a finger", css_classes=["suggested-action"])
+        self.enrol.connect("clicked", self.on_enrol)
+        self.verify = Gtk.Button(label="Verify a finger")
+        self.verify.connect("clicked", self.on_verify)
+        self.pam_on = Gtk.Button(label="Use for sudo, polkit and lock")
+        self.pam_on.connect("clicked", lambda _b: self.set_pam(True))
+        self.pam_off = Gtk.Button(label="Stop using it")
+        self.pam_off.connect("clicked", lambda _b: self.set_pam(False))
+        self.refresh = Gtk.Button(label="Refresh")
+        self.refresh.connect("clicked", lambda _b: self.rebuild())
+
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        box.set_homogeneous(True)
+        for widget in (self.enrol, self.verify, self.pam_on, self.pam_off, self.refresh):
+            widget.set_hexpand(True)
+            box.append(widget)
+        box.add_css_class("toolbar")
+        box.set_margin_top(6)
+        view.add_bottom_bar(box)
+
+        self.notice = Adw.PreferencesGroup()
+        page.add(self.status_group)
+        page.add(self.pam_group)
+        page.add(self.notice)
+        page.add(actions)
+
+        self.rebuild()
+
+    # -- plumbing ---------------------------------------------------------
+
+    def toast(self, message):
+        dialog = Adw.AlertDialog(heading="Touch ID", body=message)
+        dialog.add_response("ok", "Close")
+        dialog.present(self)
+
+    def privileged(self, argv):
+        """Run something as root via pkexec; returns (ok, output)."""
+        if shutil.which("pkexec"):
+            return run(["pkexec"] + argv, timeout=90)
+        return run(["sudo", "-n"] + argv, timeout=90)
+
+    def rebuild(self):
+        checks, pam = probe()
+
+        for child in list(self.status_group):
+            self.status_group.remove(child)
+        for label, ok, detail in checks:
+            self.status_group.add(Row(label, ok, detail))
+
+        for child in list(self.pam_group):
+            self.pam_group.remove(child)
+        for label, ok in pam:
+            row = Adw.ActionRow(title=label)
+            icon = Gtk.Image.new_from_icon_name(
+                "emblem-ok-symbolic" if ok else "process-stop-symbolic"
+            )
+            icon.add_css_class("success" if ok else "dim-label")
+            row.add_prefix(icon)
+            self.pam_group.add(row)
+
+        broken = [label for label, ok, _ in checks if not ok]
+        for child in list(self.notice):
+            self.notice.remove(child)
+        if broken:
+            self.notice.set_title("Not ready yet")
+            self.notice.set_description(
+                "Still missing: " + ", ".join(broken)
+                + ". The first missing link is the one to fix; the rest follow from it."
+            )
+        else:
+            self.notice.set_title("Ready")
+            self.notice.set_description(
+                "Everything is in place. Enrol a finger, then switch it on below."
+            )
+
+        self.enrol.set_sensitive(checks[6][1])
+        self.verify.set_sensitive(checks[7][1] or checks[6][1])
+
+    # -- actions ----------------------------------------------------------
+
+    def on_enrol(self, _button):
+        self.toast(
+            "Place the same finger on the sensor repeatedly until it stops "
+            "asking. This runs in a terminal, so watch for its prompts."
+        )
+        code, out = run(["fprintd-enroll", os.environ.get("USER", "")], timeout=300)
+        if code == 0:
+            self.toast("Enrolled. Now press “Use for sudo, polkit and lock”.")
+        else:
+            self.toast(f"Enrolment failed:\n{out[-400:]}")
+        self.rebuild()
+
+    def on_verify(self, _button):
+        code, out = run(["fprintd-verify", os.environ.get("USER", "")], timeout=120)
+        self.toast("Matched." if code == 0 else f"Did not match:\n{out[-400:]}")
+        self.rebuild()
+
+    def set_pam(self, enable):
+        argv = ["aurora-touchid-setup"] + ([] if enable else ["--remove"])
+        ok, out = self.privileged(argv)
+        self.toast("Done." if ok else f"Failed:\n{out[-400:]}")
+        self.rebuild()
+
+
+class App(Adw.Application):
+    def __init__(self):
+        super().__init__(application_id=APP_ID, flags=Gio.ApplicationFlags.FLAGS_NONE)
+
+    def do_activate(self):
+        Window(self).present()
+
+
+if __name__ == "__main__":
+    App().run([])

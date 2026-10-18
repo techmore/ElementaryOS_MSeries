@@ -59,14 +59,26 @@ save automatically with native timestamped filenames and notifications.
 GNOME settings daemon 50 expects GNOME Shell to handle screen brightness
 keys. Pantheon has no GNOME Shell brightness implementation. The new
 `mseries-brightness` user helper grabs `XF86MonBrightnessUp/Down` through
-Gala's existing accelerator API and changes the internal `eDP-1` panel
-through Mutter DisplayConfig `SetBacklight`, showing Gala's brightness OSD.
-It reads the current backlight serial for each request and clamps to the
-panel's minimum/maximum, in 5% steps. Requires `python3-gi`.
+Gala's existing accelerator API and shows Gala's brightness OSD. The DCP
+panel backlight is calibrated in nits (0-500) and its hardware floor is
+2 nits, but Mutter's `SetBacklight` clamps to 1% (5 nits) and a linear 5% key
+step is 25 nits. The helper therefore writes `apple-panel-bl` through logind
+`Session.SetBrightness` (unprivileged for the active session, no floor; Mutter
+is only a fallback) and follows a perceptual curve,
+`nits = 2 + (max - 2) * level^2.2`. The keys walk a ladder of 25 distinct
+values (2, 3, 4, 5, 7, 10, 13, 16, 20, 26, 37, 51, 68, 88, 110, ... 500), so the dim end
+has fine steps. The Quick Settings slider uses the same curve and path.
+Below 2 nits the keys add four software steps (about 0.7, 0.5, 0.35 and 0.25 of the 2-nit
+luminance) when the patched Gala from `install-gala-screen-corners.sh` is running: it paints a
+click-through black layer (`patches/gala-screen-dim.patch`) with the alpha in
+`$XDG_RUNTIME_DIR/mseries-dim`, hidden during screenshots. Without that Gala the keys stop at
+2 nits. Requires `python3-gi`.
 
 The user installer enables it on Pantheon login. Start immediately with
 `~/.local/libexec/mseries-brightness`; set a one-time level with
-`~/.local/libexec/mseries-brightness --set 60`. It never forces 60% at login.
+`~/.local/libexec/mseries-brightness --set 60` (60% on the perceptual scale, not 60% of
+nits) or an exact value with `--nits 3`; `--status` prints the level read-only. It never
+forces a level at login.
 Remove `~/.config/autostart/mseries-brightness.desktop` to disable it.
 The arm64 image overlay also includes the helper and autostart entry.
 Confirmed live: SetBacklight and OSD calls succeed; owner confirms brighter
@@ -186,7 +198,15 @@ when the current selection allows it. Other explicit single-provider
 selections are preserved; switch to **custom** and add `opencodego` in
 Settings → Providers to request CodexBar's account-level OpenCode Go provider.
 
-The Wingpanel menu also reads OpenCode v2's `~/.local/share/opencode/opencode.db`
+The Wingpanel menu has a **Sessions** section (`codexbar-sessions.py`,
+read-only, ~0.1 s) with a status dot for ChatGPT/Codex, Claude Code and
+OpenCode: signed-in state is judged from each tool's own files (never
+printed), and Claude Code and OpenCode show requests and tokens over 5 hours
+and 7 days from their local history. This is local activity, not account
+quota. Claude account quota in CodexBar needs a claude.ai session or Claude
+CLI credentials, which a desktop-app-only sign-in does not provide.
+
+The OpenCode v2 reader (`codexbar-opencode-local.py`) also reads `~/.local/share/opencode/opencode.db`
 directly in SQLite read-only mode. It shows local cost-bearing OpenCode Go
 assistant records over 5 hours, 7 days, and 30 days, labeled **local estimate ·
 not account quota**. This works with the v2 OAuth credential stored in
@@ -224,30 +244,22 @@ identified before enabling fingerprint login. See [the optimization audit](OMARC
 Issue [#8271](https://github.com/omacom/omarchy/issues/8271) concerns Intel T1
 firmware/EFI, not this Apple Silicon machine.
 
-## Camera notch and centered panel indicators
+## Camera notch and native dock
 
-Pantheon places its date/time indicator in the center of Wingpanel and does not
-avoid the MacBook camera notch. Keep `appledrm show_notch` disabled so the
-desktop receives the rectangular 16:10 mode; enabling the full-height mode can
-put the clock and other centered panel content behind the camera. The Apple
-Silicon image no longer opts in. On this transformed install, pass
-`appledrm.show_notch=0` on the custom elementary GRUB entry; the Asahi driver
-loads from an Arch-named initramfs, so regenerating Ubuntu's conventional
-`initrd.img-*` files does not change this boot entry.
+The [full-height desktop profile](display-space/README.md) restores the 74-pixel
+camera strip on the 14-inch M1 Pro. Run `bash mseries/install-desktop-space.sh`
+as the desktop user and reboot when ready. Wingpanel moves its native clock
+and calendar beside the camera and keeps controls in two protected halves.
+The native dock uses 40-pixel icons, hides when any window overlaps, and saves
+Command-drag placement across restarts. Existing pinned apps and drawers stay.
 
-Verified 2026-10-14 on the M1 Pro 14-inch: with `appledrm.show_notch=0` on the
-elementary GRUB entry, Pantheon's stock centered date/time is visible and
-working in the middle of Wingpanel, so the right-side replacement is not needed
-there.
+`--build-only` checks both builds without installing; `--revert` restores the
+previous profile. Existing recovery entries and queued kernel trials survive.
+A queued one-shot kernel trial runs before the new normal-boot choice.
 
-If the centered date/time remains hidden, install a temporary right-side
-replacement with `bash mseries/install-clockright-wingpanel.sh`. It follows
-Wingpanel's weekday, date, 12/24-hour, and seconds preferences. To place it
-after Alerts and before Quick Settings, run
-`bash mseries/install-wingpanel-clock-position.sh`. This rebuilds the matching
-Wingpanel 8.0.4 revision and saves the original panel executable for rollback
-with `bash mseries/install-wingpanel-clock-position.sh --uninstall`. Log out
-and back in to load the indicator and ordering.
+Stock Wingpanel still centers the clock: keep the cropped mode until this native
+profile has built and installed successfully. Factory-image full-height boot
+and on-device post-reboot behavior remain unqualified.
 
 ## Boot and login timing
 
@@ -659,6 +671,15 @@ minute. Raise the volume slowly. Revert: `bash mseries/install-audio-stack.sh --
 edge to snap it to that half. `Super+Left` and `Super+Right` tile the focused
 window to a half (`org.gnome.mutter.keybindings toggle-tiled-left/right`); with
 the Command/Ctrl swap that is physical left Ctrl plus the arrow key.
+
+`bash mseries/install-window-snapping.sh` installs OS-level dconf defaults and
+locks so snapping stays enabled after settings resets. It also builds native
+quarter snapping for Gala 8.6.2 / Mutter 50: drag into any screen corner, or use
+Super+Alt+U/I/J/K for top-left/top-right/bottom-left/bottom-right. Super+keypad
+7/9/1/3 also works. Quarters activate at the next sign-in; the installer leaves
+open apps running. See [window-snapping/README.md](window-snapping/README.md)
+for verification and removal. Factory staging carries the half-snap policy;
+the quarter plugin requires the native installer build.
 
 The built-in 3024x1890 panel defaults to a 2.0 scale, which looks large. Gala
 offers 1.0, 1.5, 1.75 and 2.0; 1.5 is the practical smaller setting. Apply it

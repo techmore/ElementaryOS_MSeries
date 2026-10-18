@@ -4,6 +4,24 @@ import json
 import hashlib
 from pathlib import Path
 from urllib.parse import quote
+from urllib.error import HTTPError
+
+
+def tracked_tip(get, repo, branch):
+    """GitHub uses 422, not 404, for a deleted named commit/ref."""
+    try:
+        return get('/repos/' + repo + '/commits/' + quote(branch, safe=''))
+    except HTTPError as error:
+        if error.code != 422: raise
+        try:
+            detail = json.loads(error.read(8193))
+        except (ValueError, OSError):
+            raise error
+        finally:
+            error.close()
+        if detail.get('message') != 'No commit found for SHA: ' + branch:
+            raise error
+        return None
 
 
 def pages(get, path, limit=5):
@@ -46,9 +64,12 @@ def collect(get, sources, raw_heads=None):
                 # Record every public head; named branches and PRs below get
                 # detailed comparisons against the immutable base commit.
             for branch in source.get('branches', []):
-                tip = get('/repos/' + repo + '/commits/' + quote(branch, safe=''))
+                tip = tracked_tip(get, repo, branch)
                 if not tip:
-                    raise ValueError('tracked branch unavailable: ' + branch)
+                    observations['branch:' + repo + ':' + branch] = {
+                        'repo': repo, 'branch': branch, 'sha': None, 'status': 'named ref absent',
+                        'qualification': 'Previously tracked ref is absent; public branch/PR discovery continues. No merge or hardware qualification inferred.'}
+                    continue
                 candidates.append({'repo': repo, 'branch': branch, 'sha': tip['sha']})
             if source.get('open_prs'):
                 prs = pages(get, '/repos/' + repo + '/pulls?state=open&sort=updated&direction=desc')

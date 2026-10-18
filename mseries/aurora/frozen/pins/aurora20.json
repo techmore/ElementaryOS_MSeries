@@ -1,0 +1,41 @@
+{
+  "repository": "omacom/linux-aurora",
+  "release": "aurora-2026.10.17.20",
+  "kernel_source": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55",
+  "kernel_release": "7.1.12-2-20261017.20-sep-ARCH",
+  "debian_package": "linux-image-elementary-aurora20",
+  "debian_version": "7.1.12+aurora.20261017.20-1",
+  "recipe_config_sha256": "c811698c5242d42850bef6669f29cd7b485e997d3ac1a423e2d3cbbb3fdc19b8",
+  "m1n1_source": "https://github.com/omacom/m1n1/tree/d05ba17dfb771871d608225be42968bbb1e75a18",
+  "assets": {
+    "kernel": {
+      "name": "linux-aurora-7.1.12.aurora2-20261017.20-aarch64.pkg.tar.zst",
+      "sha256": "49efa0ec088059aaae6c1fc7fef49521171abbab2c21a3d62bf670148dc0c7d8"
+    },
+    "recipe": {
+      "name": "linux-aurora-recipe-20261017.20.tar.gz",
+      "sha256": "6e5ff423f0ef07d6e478c39c8c9c0739a2cc12050afa8c9f90ec49e5bd0ddcc3"
+    },
+    "source": {
+      "name": "aurora-linux-c46d7dcdb8712ea9aeb0ce47b439ffae76371e55.tar.gz",
+      "sha256": "493ed9fb4a9e245fd59a92a2396d3c968516be932749b8059757a29380652509"
+    },
+    "m1n1": {
+      "name": "m1n1-aurora-1.6.1.aurora17-5-aarch64.pkg.tar.zst",
+      "sha256": "fd72ec6c7ff514a2fb17141ccd8ff94268e4412fc5660fb0db62564a036e30ca"
+    },
+    "m1n1_source": {
+      "name": "m1n1-d05ba17dfb771871d608225be42968bbb1e75a18.tar.gz",
+      "url": "https://codeload.github.com/omacom/m1n1/tar.gz/d05ba17dfb771871d608225be42968bbb1e75a18",
+      "sha256": "45ecb3c3efa13409b148c1b76397ec0c5cb747d3fc5f049455601b4c65295fe8"
+    },
+    "touchid": {
+      "name": "aurora-touchid-20261003-2-any.pkg.tar.zst",
+      "sha256": "84243a96fcabed344460c1dc67309730f03de34b9f1955faccbedc10c619c7c4"
+    },
+    "libfprint": {
+      "name": "libfprint-1.94.100-1.1-aarch64.pkg.tar.zst",
+      "sha256": "bc7d9762db6644f2cfb58ddb209602c1d513845eb1498c098e01f12600fcbdf9"
+    }
+  }
+}

@@ -1,12 +1,152 @@
 #!/usr/bin/python3
-"""Handle screen brightness keys in Pantheon with GNOME 50 (no GNOME Shell)."""
+"""Handle screen brightness keys in Pantheon with GNOME 50 (no GNOME Shell).
+
+The Apple DCP backlight is calibrated in nits (apple-panel-bl, 0-500) and the panel's hardware
+floor is 2 nits: values 0-2 all select the same lowest DAC setting. Mutter refuses to go below
+1% of the range (5 nits) and a linear 5% key step is 25 nits, so the old keys jumped from a dim
+screen straight to the Mutter floor. Here brightness follows a perceptual curve, the keys walk
+a ladder of distinct nit values that is fine at the dim end, and the panel is written through
+logind (unprivileged for the active session), which has no 5-nit floor.
+
+Below the 2-nit hardware floor the keys keep going with a software dim layer: the patched Gala
+(mseries/patches/gala-screen-dim.patch) paints black over the panel with the alpha found in
+$XDG_RUNTIME_DIR/mseries-dim. Those four extra steps exist only while that Gala is running.
+"""
 import argparse
+import glob
+import os
 import sys
-from gi.repository import Gio, GLib
+
+FLOOR = 2          # nits: the lowest value the DCP driver distinguishes (calculate_dac)
+GAMMA = 2.2        # perceptual exponent: level 0..1 maps to nits = FLOOR + (max-FLOOR) * level**GAMMA
+KEY_STEPS = 20     # brightness keys move 5% of the perceptual range
+MAX_STEP_RATIO = 1.45   # no key press may raise the light by more than this factor (eye is most sensitive when dim)
+SUB_FLOOR = (0.7, 0.5, 0.35, 0.25)   # luminance factors below the hardware floor, brightest first
+DISPLAY_GAMMA = 2.2                  # encoded value = luminance ** (1 / DISPLAY_GAMMA)
+MAX_DIM_ALPHA = 0.85                 # Gala never paints more than this
+BACKLIGHT = "apple-panel-bl"
+SYSFS = "/sys/class/backlight"
+
+
+def level_to_nits(level, maximum):
+    level = max(0.0, min(1.0, level))
+    return FLOOR + (maximum - FLOOR) * level ** GAMMA
+
+
+def nits_to_level(nits, maximum):
+    span = maximum - FLOOR
+    if span <= 0:
+        return 1.0
+    return max(0.0, min(1.0, (max(nits, FLOOR) - FLOOR) / span)) ** (1 / GAMMA)
+
+
+def ladder(maximum):
+    """Distinct integer nit values the keys step through, dimmest first.
+
+    The curve's own points are 5% of the perceptual range apart; where that still means more
+    than MAX_STEP_RATIO between neighbours (the dim end, where whole nits are coarse), integer
+    geometric midpoints are added until the gap closes or no new integer fits.
+    """
+    steps = sorted({round(level_to_nits(k / KEY_STEPS, maximum)) for k in range(KEY_STEPS + 1)})
+    result = steps[:1]
+    for high in steps[1:]:
+        pending = [high]
+        while pending:
+            low, top = result[-1], pending[-1]
+            middle = round((low * top) ** 0.5)
+            if top / low > MAX_STEP_RATIO and low < middle < top:
+                pending.append(middle)
+            else:
+                result.append(pending.pop())
+    return result
+
+
+def sub_floor_steps():
+    """Virtual nit values below the hardware floor, dimmest first (luminance = FLOOR * factor)."""
+    return sorted(FLOOR * factor for factor in SUB_FLOOR)
+
+
+def dim_alpha(virtual_nits):
+    """Alpha of the black layer that lowers the FLOOR-nit panel to the given virtual nits."""
+    if virtual_nits >= FLOOR:
+        return 0.0
+    luminance = max(virtual_nits, 0.0) / FLOOR
+    return min(MAX_DIM_ALPHA, 1.0 - luminance ** (1 / DISPLAY_GAMMA))
+
+
+def alpha_to_nits(alpha):
+    return FLOOR * (1.0 - max(0.0, min(MAX_DIM_ALPHA, alpha))) ** DISPLAY_GAMMA
+
+
+def key_target(current, direction, maximum, sub_floor=False):
+    """The next ladder value above (direction > 0) or below the current brightness.
+
+    With sub_floor the ladder continues below the hardware floor (virtual nits, see dim_alpha).
+    """
+    steps = (sub_floor_steps() if sub_floor else []) + ladder(maximum)
+    if direction > 0:
+        return next((n for n in steps if n > current + 1e-6), steps[-1])
+    return next((n for n in reversed(steps) if n < current - 1e-6), steps[0])
+
+
+def panel_path():
+    preferred = os.path.join(SYSFS, BACKLIGHT)
+    if os.path.isdir(preferred):
+        return preferred
+    # Never pick the Touch Bar's DSI backlight on machines that have one.
+    for path in sorted(glob.glob(os.path.join(SYSFS, "*"))):
+        if ".dsi" not in os.path.basename(path):
+            return path
+    raise RuntimeError("No internal panel backlight")
+
+
+def runtime_file(name):
+    return os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), name)
+
+
+def dim_supported():
+    """True while the patched Gala (with the software dim layer) is running in this session."""
+    try:
+        with open(runtime_file("mseries-dim.gala")) as handle:
+            pid = int(handle.read().strip())
+        with open(f"/proc/{pid}/comm") as handle:
+            return handle.read().strip() == "gala"
+    except (OSError, ValueError):
+        return False
+
+
+def read_dim():
+    try:
+        with open(runtime_file("mseries-dim")) as handle:
+            value = float(handle.read().strip())
+        return value if 0.0 < value <= 1.0 else 0.0
+    except (OSError, ValueError):
+        return 0.0
+
+
+def write_dim(alpha):
+    """Atomically publish the dim layer's alpha for Gala; 0 clears it."""
+    path = runtime_file("mseries-dim")
+    if alpha <= 0 and not os.path.exists(path):
+        return
+    temporary = f"{path}.{os.getpid()}"
+    with open(temporary, "w") as handle:
+        handle.write(f"{alpha:.4f}\n")
+    os.replace(temporary, path)
+
+
+def read_int(path, name):
+    with open(os.path.join(path, name)) as handle:
+        return int(handle.read().strip())
 
 
 class Brightness:
     def __init__(self):
+        from gi.repository import Gio, GLib
+        self.Gio, self.GLib = Gio, GLib
+        self.path = panel_path()
+        self.name = os.path.basename(self.path)
+        self.maximum = read_int(self.path, "max_brightness")
         self.display = Gio.DBusProxy.new_for_bus_sync(
             Gio.BusType.SESSION, Gio.DBusProxyFlags.NONE, None,
             "org.gnome.Mutter.DisplayConfig", "/org/gnome/Mutter/DisplayConfig",
@@ -14,10 +154,27 @@ class Brightness:
         self.shell = Gio.DBusProxy.new_for_bus_sync(
             Gio.BusType.SESSION, Gio.DBusProxyFlags.NONE, None,
             "org.gnome.Shell", "/org/gnome/Shell", "org.gnome.Shell", None)
+        self.logind = None
         self.actions = {}
 
-    def change(self, delta=0, percent=None):
-        # Fetch fresh values: SetBacklight requires the current serial.
+    def current(self):
+        """Brightness in virtual nits: the backlight, lowered by the dim layer when it is active."""
+        nits = read_int(self.path, "brightness")
+        alpha = read_dim() if dim_supported() else 0.0
+        return alpha_to_nits(alpha) if alpha > 0 and nits <= FLOOR else float(nits)
+
+    def write_logind(self, nits):
+        Gio, GLib = self.Gio, self.GLib
+        if self.logind is None:
+            self.logind = Gio.DBusProxy.new_for_bus_sync(
+                Gio.BusType.SYSTEM, Gio.DBusProxyFlags.NONE, None, "org.freedesktop.login1",
+                "/org/freedesktop/login1/session/auto", "org.freedesktop.login1.Session", None)
+        self.logind.call_sync("SetBrightness", GLib.Variant("(ssu)", ("backlight", self.name, nits)),
+                              Gio.DBusCallFlags.NONE, 3000, None)
+
+    def write_mutter(self, nits):
+        # Fallback only: Mutter clamps to its own 1% minimum.
+        Gio, GLib = self.Gio, self.GLib
         reply = self.display.get_connection().call_sync(
             "org.gnome.Mutter.DisplayConfig", "/org/gnome/Mutter/DisplayConfig",
             "org.freedesktop.DBus.Properties", "Get",
@@ -25,37 +182,58 @@ class Brightness:
             None, Gio.DBusCallFlags.NONE, 3000, None)
         serial, panels = reply.unpack()[0]
         for panel in panels:
-            if panel["connector"] != "eDP-1" or not panel["active"]:
-                continue
-            low, high = panel["min"], panel["max"]
-            value = round(high * percent / 100) if percent is not None else panel["value"] + round(high * delta / 100)
-            value = max(low, min(high, value))
-            self.display.call_sync("SetBacklight", GLib.Variant("(usi)",
-                (serial, panel["connector"], value)), Gio.DBusCallFlags.NONE, 3000, None)
-            self.shell.call_sync("ShowOSD", GLib.Variant("(a{sv})", ({
-                "icon": GLib.Variant("s", "display-brightness-symbolic"),
-                "level": GLib.Variant("d", value / high),
-            },)), Gio.DBusCallFlags.NONE, 3000, None)
-            return
+            if panel["connector"].startswith("eDP-") and panel["active"]:
+                value = max(panel["min"], min(panel["max"], nits))
+                self.display.call_sync("SetBacklight", GLib.Variant("(usi)",
+                    (serial, panel["connector"], value)), Gio.DBusCallFlags.NONE, 3000, None)
+                return
         raise RuntimeError("No active internal panel backlight")
+
+    def apply(self, virtual):
+        """Set the brightness; values under the hardware floor use the software dim layer."""
+        if virtual < FLOOR and dim_supported():
+            nits = FLOOR
+            alpha = dim_alpha(virtual)
+        else:
+            nits = max(FLOOR, min(self.maximum, int(round(virtual))))
+            alpha = 0.0
+        try:
+            self.write_logind(nits)
+        except self.GLib.Error as error:
+            print(f"logind SetBrightness failed ({error.message}); using Mutter (5-nit floor)",
+                  file=sys.stderr, flush=True)
+            self.write_mutter(nits)
+        write_dim(alpha)
+        try:
+            self.shell.call_sync("ShowOSD", self.GLib.Variant("(a{sv})", ({
+                "icon": self.GLib.Variant("s", "display-brightness-symbolic"),
+                "level": self.GLib.Variant("d", nits_to_level(nits, self.maximum)),
+            },)), self.Gio.DBusCallFlags.NONE, 3000, None)
+        except self.GLib.Error as error:
+            print(error.message, file=sys.stderr, flush=True)
+        return nits
+
+    def step(self, direction):
+        return self.apply(key_target(self.current(), direction, self.maximum, dim_supported()))
 
     def activated(self, proxy, sender, signal, parameters):
         if signal == "AcceleratorActivated":
             action = parameters.unpack()[0]
             if action in self.actions:
                 try:
-                    self.change(delta=self.actions[action])
-                except (GLib.Error, RuntimeError) as error:
+                    self.step(self.actions[action])
+                except (self.GLib.Error, RuntimeError, OSError, ValueError) as error:
                     print(error, file=sys.stderr, flush=True)
 
     def run(self):
+        Gio, GLib = self.Gio, self.GLib
         self.shell.connect("g-signal", self.activated)
-        for key, delta in [("XF86MonBrightnessUp", 5), ("XF86MonBrightnessDown", -5)]:
+        for key, direction in [("XF86MonBrightnessUp", 1), ("XF86MonBrightnessDown", -1)]:
             action = self.shell.call_sync("GrabAccelerator", GLib.Variant("(suu)",
                 (key, 0, 0)), Gio.DBusCallFlags.NONE, 3000, None).unpack()[0]
             if not action:
                 raise RuntimeError(f"Could not bind {key}; another handler may own it")
-            self.actions[action] = delta
+            self.actions[action] = direction
         try:
             GLib.MainLoop().run()
         finally:
@@ -64,12 +242,34 @@ class Brightness:
                     Gio.DBusCallFlags.NONE, 3000, None)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--set", type=int, choices=range(1, 101), metavar="1-100")
+def main():
+    parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--set", type=int, choices=range(1, 101), metavar="1-100",
+                       help="one-time level on the perceptual scale (not a percent of nits)")
+    group.add_argument("--nits", type=float, metavar="NITS",
+                       help=f"one-time exact brightness, up to the panel maximum; below {FLOOR} "
+                            "uses the software dim layer when the patched Gala is running")
+    group.add_argument("--status", action="store_true", help="print the brightness and exit (read-only)")
     args = parser.parse_args()
+    if args.status:
+        path = panel_path()
+        maximum = read_int(path, "max_brightness")
+        nits = read_int(path, "brightness")
+        dim = read_dim() if dim_supported() else 0.0
+        print(f"{nits} of {maximum} nits, level {100 * nits_to_level(nits, maximum):.0f}% "
+              f"(floor {FLOOR}; ladder {ladder(maximum)})")
+        print(f"software dim: {'running' if dim_supported() else 'not running'}, "
+              f"alpha {dim:.2f}" + (f" = {alpha_to_nits(dim):.2f} virtual nits" if dim else ""))
+        return
     brightness = Brightness()
-    if args.set is None:
-        brightness.run()
+    if args.set is not None:
+        brightness.apply(level_to_nits(args.set / 100, brightness.maximum))
+    elif args.nits is not None:
+        brightness.apply(max(0.0, args.nits))
     else:
-        brightness.change(percent=args.set)
+        brightness.run()
+
+
+if __name__ == "__main__":
+    main()

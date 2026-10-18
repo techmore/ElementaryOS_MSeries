@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Touch ID
+Comment=Enrol a finger and use it for sudo, polkit and the lock screen
+Exec=mseries-touchid-settings
+Icon=fingerprint
+Terminal=false
+Categories=System;Settings;Utility;
+Keywords=fingerprint;touchid;touch id;pam;sudo;

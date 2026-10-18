@@ -11,7 +11,14 @@ and the fix/re-stage record is
 [evidence/2026-10-16-r1-r2-fix-and-restage.md](evidence/2026-10-16-r1-r2-fix-and-restage.md).
 No repeated binary/port/dock discovery was needed.
 
-## Current deployment status
+## Current branch entry point
+
+The deployment records below describe older payloads. Use [STATE-OF-PLAY.md](STATE-OF-PLAY.md)
+for the latest retained E4 record and [DOCK-CODE-REVIEW.md](DOCK-CODE-REVIEW.md) for software checks.
+The existing fallback-preserving installer deliberately rejects E4's wider DT changes; do not bypass
+its compatibility check. This audit neither changes installed payloads nor arms another boot.
+
+## Historical deployment status
 
 **Re-staged with the R1/R2 fixes; no boot armed — 2026-10-16.** The first
 one-shot entry ran 11:45:04–11:47:13 with the exact intended parameters
@@ -35,6 +42,15 @@ accepted — its cause is recorded and the `lightdm-wait-for-drm.conf` drop-in
 is installed (effective next boot, unverified); the fixed payload is otherwise
 ready for one re-run with the collector. Record:
 [evidence/2026-10-16-r1-r2-fix-and-restage.md](evidence/2026-10-16-r1-r2-fix-and-restage.md).
+
+> **Current applied payload (2026-10-16 late).** The base image `486be1d9…`
+> above has since been superseded twice on the `elementary-usb4-dpin-controlled`
+> entry only: first by the `DPINDBG` diagnostic image `a6db46fa…`, now by the
+> **E1** image `46116374…` (patch `0013`, only `appledrm.ko` changed) which is
+> installed and armed (`next_entry=elementary-usb4-dpin-controlled`). `boot.bin`,
+> `custom.cfg`, kernel, default entry and root modules are unchanged. Stage/
+> rollback:
+> [evidence/2026-10-16-e1-nonfatal-tunnel-hpd-boot.md](evidence/2026-10-16-e1-nonfatal-tunnel-hpd-boot.md).
 
 ## Fallback compatibility
 

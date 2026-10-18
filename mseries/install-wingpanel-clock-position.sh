@@ -37,6 +37,7 @@ git init -q "$source_dir"
 git -C "$source_dir" remote add origin https://github.com/elementary/wingpanel.git
 git -C "$source_dir" fetch -q --depth=1 origin "$commit"
 git -C "$source_dir" checkout -q --detach FETCH_HEAD
+git -C "$source_dir" apply "$repo/mseries/patches/wingpanel-full-height.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/wingpanel-clockright-order.patch"
 
 meson setup "$build_dir" "$source_dir" --prefix=/usr --buildtype=release

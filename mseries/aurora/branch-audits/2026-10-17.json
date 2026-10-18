@@ -1,0 +1,1389 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-17",
+  "timezone": "America/New_York",
+  "repository": "omacom/linux-aurora",
+  "base_kernel_source": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55",
+  "default_branch_head": "5d570a78a4ab29ac383ec8988be2356dfc6c8a75",
+  "branch_count": 51,
+  "comparison_counts": {
+    "ancestor_branches": 41,
+    "diverged": 8,
+    "ahead": 2
+  },
+  "scope": "All 51 repository branches plus 11 open PR heads, including fork heads. Ancestry complete; targeted source/patch review, not an exhaustive audit of all historical changes. No deployment or hardware tests.",
+  "branches": [
+    {
+      "name": "asahi",
+      "head": "77cb8f24c2381a8abb7272d7bbdec548d6426a8a",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 2648,
+      "merge_base": "77cb8f24c2381a8abb7272d7bbdec548d6426a8a",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...77cb8f24c2381a8abb7272d7bbdec548d6426a8a"
+    },
+    {
+      "name": "aurora-wip",
+      "head": "4ec597a7427da2cf03c899406b7997c875d4a9fb",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 2242,
+      "merge_base": "4ec597a7427da2cf03c899406b7997c875d4a9fb",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...4ec597a7427da2cf03c899406b7997c875d4a9fb"
+    },
+    {
+      "name": "candidate/g14x-compute-preemption",
+      "head": "ab21a1ab046f23bf726645f23bcbca367cad489b",
+      "status": "diverged",
+      "ahead_by": 1,
+      "behind_by": 783,
+      "merge_base": "5dcdeb8cda8dafe203d4d2f03952ade392c3fe23",
+      "files_returned": 2,
+      "files_may_be_capped": false,
+      "decision": "do_not_merge_wholesale",
+      "reason": "The current kernel already has compute_preempt and auto-enables it for M2 Max (0x6021). This older branch auto-enables all G14X, including untested M2 Pro/Ultra, and fails a clean patch check.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...ab21a1ab046f23bf726645f23bcbca367cad489b"
+    },
+    {
+      "name": "candidate/installer-download-resume",
+      "head": "05b0b44fd19e4a07a83d200f1f0dc7341fd1a90e",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 772,
+      "merge_base": "05b0b44fd19e4a07a83d200f1f0dc7341fd1a90e",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...05b0b44fd19e4a07a83d200f1f0dc7341fd1a90e"
+    },
+    {
+      "name": "carry/pr80-ane-nodes",
+      "head": "b5ece52ad96b765370057c5f538fbe0f7f21f002",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 687,
+      "merge_base": "b5ece52ad96b765370057c5f538fbe0f7f21f002",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...b5ece52ad96b765370057c5f538fbe0f7f21f002"
+    },
+    {
+      "name": "carry/pr86-omarchy-arm-pins",
+      "head": "bb547a4ef6fc2b75bee79c254114dee98cb3d2aa",
+      "status": "diverged",
+      "ahead_by": 2,
+      "behind_by": 688,
+      "merge_base": "bbcd9c602e1e4939443da79414af3cc6d1c06b66",
+      "files_returned": 2,
+      "files_may_be_capped": false,
+      "decision": "not_applicable_to_elementary",
+      "reason": "PR110 is Omarchy/pacman pending-upgrade policy; the elementary adapter does not invoke that installer. Clean source patch check does not make it relevant.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...bb547a4ef6fc2b75bee79c254114dee98cb3d2aa"
+    },
+    {
+      "name": "carry/pr91-pmgr-misc",
+      "head": "604a84d0681206190f8d8edc74f86391c2c933fb",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 735,
+      "merge_base": "604a84d0681206190f8d8edc74f86391c2c933fb",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...604a84d0681206190f8d8edc74f86391c2c933fb"
+    },
+    {
+      "name": "carry/pr92-tb-s2idle",
+      "head": "ff507243bbacb14335f695cb9ddc8f76698f9d14",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 735,
+      "merge_base": "ff507243bbacb14335f695cb9ddc8f76698f9d14",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...ff507243bbacb14335f695cb9ddc8f76698f9d14"
+    },
+    {
+      "name": "carry/pr95-t8122-418c",
+      "head": "0d51a403693b9526bfc4268f22898faeb38a6704",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 687,
+      "merge_base": "0d51a403693b9526bfc4268f22898faeb38a6704",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...0d51a403693b9526bfc4268f22898faeb38a6704"
+    },
+    {
+      "name": "docs/aurora-roadmap",
+      "head": "64df7a4a2809b236900c79b7e5fbcf2e5f7e5d0b",
+      "status": "diverged",
+      "ahead_by": 1,
+      "behind_by": 956,
+      "merge_base": "8087c56eb7e9cde3f45b8230b2d681e49b21df2b",
+      "files_returned": 1,
+      "files_may_be_capped": false,
+      "decision": "reference_only",
+      "reason": "Documentation branch. Current source already has the roadmap file; the historical addition patch does not apply.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...64df7a4a2809b236900c79b7e5fbcf2e5f7e5d0b"
+    },
+    {
+      "name": "docs/m3pro-performance-profile-20261012",
+      "head": "42c56239e90004507abe332e72d7b94bae9f37e6",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 739,
+      "merge_base": "42c56239e90004507abe332e72d7b94bae9f37e6",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...42c56239e90004507abe332e72d7b94bae9f37e6"
+    },
+    {
+      "name": "docs/omacom-roadmap-current",
+      "head": "710b882e6976b9bd64ff7a0f9ab0a606ee3f4943",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 780,
+      "merge_base": "710b882e6976b9bd64ff7a0f9ab0a606ee3f4943",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...710b882e6976b9bd64ff7a0f9ab0a606ee3f4943"
+    },
+    {
+      "name": "docs/unified-launch-roadmap",
+      "head": "56029d635243516e0ae98a21086a7765eacaa6d4",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 753,
+      "merge_base": "56029d635243516e0ae98a21086a7765eacaa6d4",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...56029d635243516e0ae98a21086a7765eacaa6d4"
+    },
+    {
+      "name": "fix/bt4378-hardware-id-20261011",
+      "head": "bd58f8e0a4b8daed724d167d2b164fff71818358",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 748,
+      "merge_base": "bd58f8e0a4b8daed724d167d2b164fff71818358",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...bd58f8e0a4b8daed724d167d2b164fff71818358"
+    },
+    {
+      "name": "fix/dma-heap-allocation-result",
+      "head": "9c2cc3b3bba220236390075c81af1d1af7c9ee3d",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 756,
+      "merge_base": "9c2cc3b3bba220236390075c81af1d1af7c9ee3d",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...9c2cc3b3bba220236390075c81af1d1af7c9ee3d"
+    },
+    {
+      "name": "fix/esp-history-metadata",
+      "head": "519cfffb15e2b4f303e5d82895533991143de06b",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 770,
+      "merge_base": "519cfffb15e2b4f303e5d82895533991143de06b",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...519cfffb15e2b4f303e5d82895533991143de06b"
+    },
+    {
+      "name": "fix/frozen-ignorepkg-deps-20261011",
+      "head": "43ae7c9e85fbb3ce371b06dd516eaa3b46804110",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 742,
+      "merge_base": "43ae7c9e85fbb3ce371b06dd516eaa3b46804110",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...43ae7c9e85fbb3ce371b06dd516eaa3b46804110"
+    },
+    {
+      "name": "fix/hdmi-hold-review-followups",
+      "head": "11150ed2b47ac04d8b424a25ac52bfd63fe1a04f",
+      "status": "diverged",
+      "ahead_by": 4,
+      "behind_by": 671,
+      "merge_base": "fa2a2a70ae0f586015db1bb65d4df99ccea14bb4",
+      "files_returned": 9,
+      "files_may_be_capped": false,
+      "decision": "m3_pro_rebase_candidate",
+      "reason": "PR122 is draft, scoped primarily to T6030 HDMI/hold handling, and fails a clean application check on .20. No demonstrated M1 Pro dock fix.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...11150ed2b47ac04d8b424a25ac52bfd63fe1a04f"
+    },
+    {
+      "name": "fix/j493-bluetooth-resume-recovery",
+      "head": "3a8fd50539a50c72fd5f35078af909e5f759b815",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 767,
+      "merge_base": "3a8fd50539a50c72fd5f35078af909e5f759b815",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...3a8fd50539a50c72fd5f35078af909e5f759b815"
+    },
+    {
+      "name": "fix/j516s-hdmi-hold",
+      "head": "d4a128739e3d4ad0cc940010b1621c30d1517140",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 686,
+      "merge_base": "d4a128739e3d4ad0cc940010b1621c30d1517140",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...d4a128739e3d4ad0cc940010b1621c30d1517140"
+    },
+    {
+      "name": "fix/j700-mtp-contact-position",
+      "head": "ddb87a170804f05ee56b15f314ef15cda3b2d812",
+      "status": "diverged",
+      "ahead_by": 1,
+      "behind_by": 2242,
+      "merge_base": "4ec597a7427da2cf03c899406b7997c875d4a9fb",
+      "files_returned": 2,
+      "files_may_be_capped": false,
+      "decision": "substantially_superseded",
+      "reason": "Current hid-magicmouse already has J700 C1FE recognition, 32-byte header + 30-byte records + 8-byte trailer, position/presence handling and validation. The older patch conflicts.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...ddb87a170804f05ee56b15f314ef15cda3b2d812"
+    },
+    {
+      "name": "fix/kernel-only-package-contract-20261011",
+      "head": "7c2b4e8050cbf9da0504a0072189a2242e418801",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 744,
+      "merge_base": "7c2b4e8050cbf9da0504a0072189a2242e418801",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...7c2b4e8050cbf9da0504a0072189a2242e418801"
+    },
+    {
+      "name": "fix/m2max-compute-preemption",
+      "head": "3879421069964c46999312c5ffd50247ac4da17d",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 765,
+      "merge_base": "3879421069964c46999312c5ffd50247ac4da17d",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...3879421069964c46999312c5ffd50247ac4da17d"
+    },
+    {
+      "name": "fix/m3-failed-work-owner",
+      "head": "195a2bc8a080aa4d18d261852d4f557bc639dcb8",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 687,
+      "merge_base": "195a2bc8a080aa4d18d261852d4f557bc639dcb8",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...195a2bc8a080aa4d18d261852d4f557bc639dcb8"
+    },
+    {
+      "name": "fix/m3pro-display-submit-admission",
+      "head": "a85f8eee2fd54ed9e7237f25d1f085e9d7848111",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 790,
+      "merge_base": "a85f8eee2fd54ed9e7237f25d1f085e9d7848111",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...a85f8eee2fd54ed9e7237f25d1f085e9d7848111"
+    },
+    {
+      "name": "fix/m3pro-hdmi-thunderbolt",
+      "head": "13d2affbc4d176b528d0c5ef5b17d639c6daab19",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 739,
+      "merge_base": "13d2affbc4d176b528d0c5ef5b17d639c6daab19",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...13d2affbc4d176b528d0c5ef5b17d639c6daab19"
+    },
+    {
+      "name": "fix/macsmc-optional-battery-properties",
+      "head": "4676c48ecf1b1acaba7c442d33fe9aae0f037e77",
+      "status": "diverged",
+      "ahead_by": 1,
+      "behind_by": 2242,
+      "merge_base": "4ec597a7427da2cf03c899406b7997c875d4a9fb",
+      "files_returned": 1,
+      "files_may_be_capped": false,
+      "decision": "future_hardening_candidate",
+      "reason": "Current code checks existence of selected optional keys, but lacks this branch's full metadata/size/readability/short-read admission helper. Useful mainly for Neo; needs a port and cross-model uevent tests.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...4676c48ecf1b1acaba7c442d33fe9aae0f037e77"
+    },
+    {
+      "name": "fix/migration-test-fixtures",
+      "head": "833de07062944ae15213677cbb6d23149835a5ec",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 767,
+      "merge_base": "833de07062944ae15213677cbb6d23149835a5ec",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...833de07062944ae15213677cbb6d23149835a5ec"
+    },
+    {
+      "name": "fix/native-gl-glyph-package-20261012",
+      "head": "1c8bd8234712bddde3988b391717943813cb6e2f",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 717,
+      "merge_base": "1c8bd8234712bddde3988b391717943813cb6e2f",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...1c8bd8234712bddde3988b391717943813cb6e2f"
+    },
+    {
+      "name": "fix/native-msaa-package-20261013",
+      "head": "9593361be554b708ef26a0d110a2fb012f0fc0b9",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 714,
+      "merge_base": "9593361be554b708ef26a0d110a2fb012f0fc0b9",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...9593361be554b708ef26a0d110a2fb012f0fc0b9"
+    },
+    {
+      "name": "fix/typec-routes-under-off-dcp",
+      "head": "5ca53abe30ab0e6b0a57c06e2d6c3813c40d3bcf",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 636,
+      "merge_base": "5ca53abe30ab0e6b0a57c06e2d6c3813c40d3bcf",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...5ca53abe30ab0e6b0a57c06e2d6c3813c40d3bcf"
+    },
+    {
+      "name": "integration/aurora",
+      "head": "5d570a78a4ab29ac383ec8988be2356dfc6c8a75",
+      "status": "ahead",
+      "ahead_by": 2,
+      "behind_by": 0,
+      "merge_base": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55",
+      "files_returned": 18,
+      "files_may_be_capped": false,
+      "decision": "release_tools_only",
+      "reason": "Two commits beyond the pinned kernel source; changes are release20 installer/recipe/Mesa metadata and tests, not kernel drivers.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...5d570a78a4ab29ac383ec8988be2356dfc6c8a75"
+    },
+    {
+      "name": "max/t6031-display-20261011",
+      "head": "9f7ff5e87f954a012dda4063b6cd57c7e93c02c2",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 738,
+      "merge_base": "9f7ff5e87f954a012dda4063b6cd57c7e93c02c2",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...9f7ff5e87f954a012dda4063b6cd57c7e93c02c2"
+    },
+    {
+      "name": "max/t6031-gpu-20261011",
+      "head": "39562a87b0fe78565240dba98ee2f0b8c402a8fc",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 739,
+      "merge_base": "39562a87b0fe78565240dba98ee2f0b8c402a8fc",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...39562a87b0fe78565240dba98ee2f0b8c402a8fc"
+    },
+    {
+      "name": "max/t6031-gpu-groundwork-20261011",
+      "head": "40b438de003ce00c6157d521d3249c7a20d222e1",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 740,
+      "merge_base": "40b438de003ce00c6157d521d3249c7a20d222e1",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...40b438de003ce00c6157d521d3249c7a20d222e1"
+    },
+    {
+      "name": "max/t6031-kit-20261011",
+      "head": "af43b84b902aab0166849adffdf19542af05f18e",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 740,
+      "merge_base": "af43b84b902aab0166849adffdf19542af05f18e",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...af43b84b902aab0166849adffdf19542af05f18e"
+    },
+    {
+      "name": "max/t6031-kit-integration-20261011",
+      "head": "93af871ea4150ac80b32fa1eb75cb1fecc42a425",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 726,
+      "merge_base": "93af871ea4150ac80b32fa1eb75cb1fecc42a425",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...93af871ea4150ac80b32fa1eb75cb1fecc42a425"
+    },
+    {
+      "name": "merge/aurora-wip-pr131",
+      "head": "7638540a67d8a8fd1a0f228ba119e14193702f9e",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 1,
+      "merge_base": "7638540a67d8a8fd1a0f228ba119e14193702f9e",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...7638540a67d8a8fd1a0f228ba119e14193702f9e"
+    },
+    {
+      "name": "migrate/aurora",
+      "head": "e2f68afa23816d1dde226c432ce1d62f6dee4da6",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 788,
+      "merge_base": "e2f68afa23816d1dde226c432ce1d62f6dee4da6",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...e2f68afa23816d1dde226c432ce1d62f6dee4da6"
+    },
+    {
+      "name": "neo/j700-smc-telemetry",
+      "head": "e63dc3d7a9de2e2c80b70c0c39811a9b2671b4e2",
+      "status": "diverged",
+      "ahead_by": 131,
+      "behind_by": 3420,
+      "merge_base": "2609d60e2f6d0b8a96563baa08b56482962cebaa",
+      "files_returned": 300,
+      "files_may_be_capped": true,
+      "decision": "research_only_no_wholesale_merge",
+      "reason": "131 unique commits against an old lineage, 3420 commits behind .20. September J700 telemetry qualification and diagnostic DT variants, not a rebased current release. API file list is capped at 300; review was targeted, not exhaustive.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...e63dc3d7a9de2e2c80b70c0c39811a9b2671b4e2"
+    },
+    {
+      "name": "pr/m3pro-performance-kernel-20261012",
+      "head": "ac34611f8de50386b6c08872c07f857fdbc24cf2",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 730,
+      "merge_base": "ac34611f8de50386b6c08872c07f857fdbc24cf2",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...ac34611f8de50386b6c08872c07f857fdbc24cf2"
+    },
+    {
+      "name": "release/aurora-20261012-16",
+      "head": "61e46776a56ef966dd35a32e6938f2ecb9f3094a",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 720,
+      "merge_base": "61e46776a56ef966dd35a32e6938f2ecb9f3094a",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...61e46776a56ef966dd35a32e6938f2ecb9f3094a"
+    },
+    {
+      "name": "release/aurora-20261015-19",
+      "head": "0a8bd8bb4d5f96bd11bdfdc858b3b25ab5c52018",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 634,
+      "merge_base": "0a8bd8bb4d5f96bd11bdfdc858b3b25ab5c52018",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...0a8bd8bb4d5f96bd11bdfdc858b3b25ab5c52018"
+    },
+    {
+      "name": "release/aurora-20261017-20",
+      "head": "c8aad9a06bb5c25f1442ee4e78ab8f9c0ec8c55f",
+      "status": "ahead",
+      "ahead_by": 1,
+      "behind_by": 0,
+      "merge_base": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55",
+      "files_returned": 18,
+      "files_may_be_capped": false,
+      "decision": "release_tools_only",
+      "reason": "One release20 metadata commit beyond the pinned kernel source; no kernel-driver enhancement.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...c8aad9a06bb5c25f1442ee4e78ab8f9c0ec8c55f"
+    },
+    {
+      "name": "release/omacom-20261011-r14-tools",
+      "head": "feb42416b414462cb9ff1f7b28819c99b2d1743c",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 751,
+      "merge_base": "feb42416b414462cb9ff1f7b28819c99b2d1743c",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...feb42416b414462cb9ff1f7b28819c99b2d1743c"
+    },
+    {
+      "name": "release/omacom-20261011",
+      "head": "e70a953c9afc4db4d13cb9ff5b9053ecfaa0e253",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 784,
+      "merge_base": "e70a953c9afc4db4d13cb9ff5b9053ecfaa0e253",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...e70a953c9afc4db4d13cb9ff5b9053ecfaa0e253"
+    },
+    {
+      "name": "review/j613-external-dp",
+      "head": "d5224e9f10ba11d6b0cb99e7c9d9cea486849510",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 662,
+      "merge_base": "d5224e9f10ba11d6b0cb99e7c9d9cea486849510",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...d5224e9f10ba11d6b0cb99e7c9d9cea486849510"
+    },
+    {
+      "name": "tb",
+      "head": "38c14f6107dfdb3366dee3cdfc3226cf4cda9ca2",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 2158,
+      "merge_base": "38c14f6107dfdb3366dee3cdfc3226cf4cda9ca2",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...38c14f6107dfdb3366dee3cdfc3226cf4cda9ca2"
+    },
+    {
+      "name": "test/neo-association-event-ownership",
+      "head": "f7d9c785aeabd214939908d588018469975a1fa4",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 767,
+      "merge_base": "f7d9c785aeabd214939908d588018469975a1fa4",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...f7d9c785aeabd214939908d588018469975a1fa4"
+    },
+    {
+      "name": "usb4-base",
+      "head": "2daeae4fb0a91701c30cff53e23d42e23a9ae3ec",
+      "status": "behind",
+      "ahead_by": 0,
+      "behind_by": 2209,
+      "merge_base": "2daeae4fb0a91701c30cff53e23d42e23a9ae3ec",
+      "files_returned": 0,
+      "files_may_be_capped": false,
+      "decision": "no_unique_commits",
+      "reason": "Branch tip is an ancestor of the .20 source. No new commits to import; this alone is not a promise that every historical behavior survives later changes.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...2daeae4fb0a91701c30cff53e23d42e23a9ae3ec"
+    },
+    {
+      "name": "vrr",
+      "head": "e853c9eef448eed71b18f27df689ee0acae6c5f0",
+      "status": "diverged",
+      "ahead_by": 1,
+      "behind_by": 2161,
+      "merge_base": "443321db6f7add02a5f97cb8a1492c482ef43196",
+      "files_returned": 7,
+      "files_may_be_capped": false,
+      "decision": "already_present_by_semantics",
+      "reason": "PR3 was merged into historical tb lineage with a different commit identity. .20 already has VRR connector properties, atomic vrr_enabled handling, adaptive-sync programming, panel 24Hz floor and hardware-counter swap timestamps. Old patch conflicts; compositor/hardware use remains unqualified.",
+      "compare_url": "https://github.com/omacom/linux-aurora/compare/c46d7dcdb8712ea9aeb0ce47b439ffae76371e55...e853c9eef448eed71b18f27df689ee0acae6c5f0"
+    }
+  ],
+  "open_prs": [
+    {
+      "number": 135,
+      "title": "drm/asahi: retain state 2 as the T8122 thermal fallback",
+      "repository": "garymeyerca/aurora-linux",
+      "head": "46b5a0981c4955cf33b7275c4001d820791b9f08",
+      "branch": "garymeyerca/t8122-thermal-fallback",
+      "base": "integration/aurora",
+      "draft": false,
+      "ahead_by": 1,
+      "behind_by": 633,
+      "changed_files": [
+        "drivers/gpu/drm/asahi/m3_adt_config.rs",
+        "drivers/gpu/drm/asahi/m3_thermal.rs",
+        "drivers/gpu/drm/asahi/m3_thermal_policy.rs"
+      ],
+      "url": "https://github.com/omacom/linux-aurora/pull/135"
+    },
+    {
+      "number": 134,
+      "title": "media: apple: isp: restore J613 camera capture on 14.7 firmware",
+      "repository": "garymeyerca/aurora-linux",
+      "head": "06d77374e80cb1901fb2c283362abb242cd68c18",
+      "branch": "garymeyerca/j613-camera-147",
+      "base": "integration/aurora",
+      "draft": false,
+      "ahead_by": 2,
+      "behind_by": 633,
+      "changed_files": [
+        "drivers/media/platform/apple/isp/isp-drv.c"
+      ],
+      "url": "https://github.com/omacom/linux-aurora/pull/134"
+    },
+    {
+      "number": 127,
+      "title": "j613: second external display with the lid closed (internal pipe on the left-front port)",
+      "repository": "GehrmannSolutions/linux-aurora",
+      "head": "5bafd203b673723bd5950a0e23d08317509e10e2",
+      "branch": "fay/aurora-j613-clamshell-on-integration",
+      "base": "integration/aurora",
+      "draft": false,
+      "ahead_by": 6,
+      "behind_by": 637,
+      "changed_files": [
+        "arch/arm64/boot/dts/apple/t8122-j613.dts",
+        "drivers/gpu/drm/apple/Kconfig",
+        "drivers/gpu/drm/apple/apple_drv.c",
+        "drivers/gpu/drm/apple/dcp-fabric.c",
+        "drivers/gpu/drm/apple/dcp-fabric.h",
+        "drivers/gpu/drm/apple/dcp-internal.h",
+        "drivers/gpu/drm/apple/dcp.c",
+        "drivers/gpu/drm/apple/dcp.h",
+        "drivers/gpu/drm/apple/dptxep.c",
+        "drivers/gpu/drm/apple/dptxep.h",
+        "drivers/gpu/drm/apple/iomfb.c",
+        "drivers/gpu/drm/apple/iomfb_v14_7.c",
+        "drivers/gpu/drm/apple/iomfb_v14_7.h",
+        "drivers/soc/apple/t6030-display-gate.c"
+      ],
+      "url": "https://github.com/omacom/linux-aurora/pull/127"
+    },
+    {
+      "number": 122,
+      "title": "drm/apple: t6030: HDMI hold follow-ups from the #115 review",
+      "repository": "omacom/linux-aurora",
+      "head": "11150ed2b47ac04d8b424a25ac52bfd63fe1a04f",
+      "branch": "fix/hdmi-hold-review-followups",
+      "base": "integration/aurora",
+      "draft": true,
+      "ahead_by": 4,
+      "behind_by": 671,
+      "changed_files": [
+        "drivers/gpu/drm/apple/dcp-fabric.c",
+        "drivers/gpu/drm/apple/dcp-fabric.h",
+        "drivers/gpu/drm/apple/dcp.c",
+        "drivers/gpu/drm/apple/dcp.h",
+        "drivers/gpu/drm/apple/external-hold-test.c",
+        "drivers/gpu/drm/apple/iomfb.c",
+        "drivers/gpu/drm/apple/iomfb_v14_7.c",
+        "drivers/gpu/drm/apple/iomfb_v14_7.h",
+        "drivers/gpu/drm/apple/parser-test.c"
+      ],
+      "url": "https://github.com/omacom/linux-aurora/pull/122"
+    },
+    {
+      "number": 119,
+      "title": "Camera on the M3 MacBook Air (J613) with 26.6.2 firmware",
+      "repository": "scottjones/aurora-linux",
+      "head": "4cf3221edd6befc79489ff4e2636e0b01e002ac7",
+      "branch": "t8122-camera-pr",
+      "base": "integration/aurora",
+      "draft": false,
+      "ahead_by": 2,
+      "behind_by": 674,
+      "changed_files": [
+        "drivers/media/platform/apple/isp/isp-cam.c",
+        "drivers/media/platform/apple/isp/isp-drv.c",
+        "drivers/media/platform/apple/isp/isp-drv.h"
+      ],
+      "url": "https://github.com/omacom/linux-aurora/pull/119"
+    },
+    {
+      "number": 110,
+      "title": "aurora-sep: don't count Omarchy ARM's own-repository packages as pending",
+      "repository": "omacom/linux-aurora",
+      "head": "bb547a4ef6fc2b75bee79c254114dee98cb3d2aa",
+      "branch": "carry/pr86-omarchy-arm-pins",
+      "base": "integration/aurora",
+      "draft": false,
+      "ahead_by": 2,
+      "behind_by": 688,
+      "changed_files": [
+        "tools/aurora-sep/install-aurora-sep.sh",
+        "tools/aurora-sep/tests/test_m3_flow.py"
+      ],
+      "url": "https://github.com/omacom/linux-aurora/pull/110"
+    },
+    {
+      "number": 86,
+      "title": "aurora-sep: don't count Omarchy ARM's own-repository packages as pending",
+      "repository": "n0mahd/aurora-linux",
+      "head": "e66893bfddfaf30a11e5d1f65a3dd3ca52da7c4c",
+      "branch": "aurora-omarchy-arm-pins",
+      "base": "integration/aurora",
+      "draft": false,
+      "ahead_by": 1,
+      "behind_by": 743,
+      "changed_files": [
+        "tools/aurora-sep/install-aurora-sep.sh",
+        "tools/aurora-sep/tests/test_m3_flow.py"
+      ],
+      "url": "https://github.com/omacom/linux-aurora/pull/86"
+    },
+    {
+      "number": 67,
+      "title": "config: build udmabuf, the system dma-buf heap, and the AMD and Nouveau GPU drivers into the Aurora kernel",
+      "repository": "joshuaswarren/aurora-linux-tbnet",
+      "head": "d10d360a96f406f3b953eceb6e44e7be3f4c7c24",
+      "branch": "config/udmabuf-zero-copy-host-memory",
+      "base": "integration/aurora",
+      "draft": true,
+      "ahead_by": 2,
+      "behind_by": 768,
+      "changed_files": [
+        "arch/arm64/configs/asahi.config"
+      ],
+      "url": "https://github.com/omacom/linux-aurora/pull/67"
+    },
+    {
+      "number": 9,
+      "title": "Support USB4/TB DisplayPort Tunneling",
+      "repository": "zachfleeman/linux",
+      "head": "e707d60d5fdca4e0400a79795af5d26e1f5e2368",
+      "branch": "usb4_dp_tunneling",
+      "base": "tb",
+      "draft": false,
+      "ahead_by": 2,
+      "behind_by": 2158,
+      "changed_files": [
+        "Documentation/gpu/apple/usb4-dp.rst",
+        "Documentation/gpu/drivers.rst",
+        "arch/arm64/boot/dts/apple/t6001-j316c.dts",
+        "drivers/gpu/drm/apple/Kconfig",
+        "drivers/gpu/drm/apple/Makefile",
+        "drivers/gpu/drm/apple/afk.c",
+        "drivers/gpu/drm/apple/apple_drv.c",
+        "drivers/gpu/drm/apple/connector.h",
+        "drivers/gpu/drm/apple/dcp-internal.h",
+        "drivers/gpu/drm/apple/dcp.c",
+        "drivers/gpu/drm/apple/dpin.c",
+        "drivers/gpu/drm/apple/dpin.h",
+        "drivers/gpu/drm/apple/dptxep.c",
+        "drivers/gpu/drm/apple/dptxep.h",
+        "drivers/gpu/drm/apple/iomfb.c",
+        "drivers/gpu/drm/apple/iomfb_template.c",
+        "drivers/mux/apple-display-crossbar.c",
+        "drivers/phy/apple/atc.c",
+        "drivers/reset/reset-apple-cio.c",
+        "drivers/thunderbolt/apple.c",
+        "drivers/thunderbolt/nhi.h",
+        "drivers/thunderbolt/switch.c",
+        "drivers/thunderbolt/tb.c",
+        "drivers/thunderbolt/tb.h",
+        "drivers/thunderbolt/tunnel.c",
+        "drivers/thunderbolt/tunnel.h",
+        "drivers/usb/typec/tipd/core.c",
+        "drivers/usb/typec/tipd/tps6598x.h",
+        "include/linux/mux/apple-display-crossbar.h",
+        "include/linux/phy/phy-apple-atc.h",
+        "include/linux/soc/apple/dcp-usb4.h",
+        "tools/testing/selftests/Makefile",
+        "tools/testing/selftests/drivers/apple-dp-usb4/Makefile",
+        "tools/testing/selftests/drivers/apple-dp-usb4/bridge.py",
+        "tools/testing/selftests/drivers/apple-dp-usb4/connection-attributes.py",
+        "tools/testing/selftests/drivers/apple-dp-usb4/crossbar.py",
+        "tools/testing/selftests/drivers/apple-dp-usb4/dprx-cancel.py",
+        "tools/testing/selftests/drivers/apple-dp-usb4/drive-settings.py",
+        "tools/testing/selftests/drivers/apple-dp-usb4/lifecycle.py",
+        "tools/testing/selftests/drivers/apple-dp-usb4/link-configuration.py",
+        "tools/testing/selftests/drivers/apple-dp-usb4/native-events.json",
+        "tools/testing/selftests/drivers/apple-dp-usb4/pll-command.py",
+        "tools/testing/selftests/drivers/apple-dp-usb4/power-lifecycle.py"
+      ],
+      "url": "https://github.com/omacom/linux-aurora/pull/9"
+    },
+    {
+      "number": 8,
+      "title": "RFC: opt-in J456 iMac speaker bring-up and amplifier checks",
+      "repository": "e-jung/linux",
+      "head": "60d9d20f3a26bf447582cf65a8af586539f7780f",
+      "branch": "j456-experimental-speaker-bringup",
+      "base": "asahi",
+      "draft": true,
+      "ahead_by": 4,
+      "behind_by": 2648,
+      "changed_files": [
+        "Documentation/sound/soc/apple-j456-bringup.rst",
+        "arch/arm64/boot/dts/apple/t8103-j456.dts",
+        "sound/soc/apple/macaudio.c",
+        "sound/soc/codecs/ssm3515.c",
+        "tools/testing/selftests/alsa/j456_control_lock.py",
+        "tools/testing/selftests/alsa/j456_ssm3515_power.py",
+        "tools/testing/selftests/alsa/j456_ssm3515_prepare.py",
+        "tools/testing/selftests/alsa/j456_ssm3515_status.py"
+      ],
+      "url": "https://github.com/omacom/linux-aurora/pull/8"
+    },
+    {
+      "number": 7,
+      "title": "soc: apple: add Apple SEP driver",
+      "repository": "aurora-silicon/linux",
+      "head": "120e030eac9fc34b1586b9a9a6bf365959828e7a",
+      "branch": "feat/sep",
+      "base": "asahi",
+      "draft": false,
+      "ahead_by": 33,
+      "behind_by": 2594,
+      "changed_files": [
+        "arch/arm64/boot/dts/apple/t6000-j314s.dts",
+        "arch/arm64/boot/dts/apple/t6001-j314c.dts",
+        "arch/arm64/boot/dts/apple/t6001-j316c.dts",
+        "arch/arm64/boot/dts/apple/t602x-die0.dtsi",
+        "arch/arm64/boot/dts/apple/t602x-j414-j416.dtsi",
+        "arch/arm64/boot/dts/apple/t8103-j293.dts",
+        "arch/arm64/boot/dts/apple/t8112-j413.dts",
+        "arch/arm64/boot/dts/apple/t8112-j415.dts",
+        "arch/arm64/boot/dts/apple/t8112.dtsi",
+        "drivers/soc/apple/Kconfig",
+        "drivers/soc/apple/Makefile",
+        "drivers/soc/apple/bio.rs",
+        "drivers/soc/apple/pm.rs",
+        "drivers/soc/apple/pm_shim.c",
+        "drivers/soc/apple/profile.rs",
+        "drivers/soc/apple/sbio.rs",
+        "drivers/soc/apple/sep.rs",
+        "drivers/soc/apple/shim.h",
+        "drivers/soc/apple/sks.rs",
+        "drivers/soc/apple/xarm.rs",
+        "drivers/soc/apple/xart_store.rs",
+        "drivers/usb/typec/Makefile"
+      ],
+      "url": "https://github.com/omacom/linux-aurora/pull/7"
+    }
+  ],
+  "checks": {
+    "source_archive_sha256": "493ed9fb4a9e245fd59a92a2396d3c968516be932749b8059757a29380652509",
+    "patch_applicability": [
+      {
+        "id": "candidate--g14x-compute-preemption",
+        "patch": "candidate--g14x-compute-preemption.patch",
+        "bytes": 5506,
+        "forward": {
+          "returncode": 1,
+          "output": "error: patch failed: drivers/gpu/drm/asahi/asahi.rs:175\nerror: drivers/gpu/drm/asahi/asahi.rs: patch does not apply\nerror: patch failed: drivers/gpu/drm/asahi/workqueue.rs:20\nerror: drivers/gpu/drm/asahi/workqueue.rs: patch does not apply\n"
+        },
+        "reverse": {
+          "returncode": 1,
+          "output": "error: patch failed: drivers/gpu/drm/asahi/workqueue.rs:681\nerror: drivers/gpu/drm/asahi/workqueue.rs: patch does not apply\nerror: patch failed: drivers/gpu/drm/asahi/asahi.rs:175\nerror: drivers/gpu/drm/asahi/asahi.rs: patch does not apply\n"
+        },
+        "head": "ab21a1ab046f23bf726645f23bcbca367cad489b",
+        "sha256": "8c401b6275748192da5e247124043b98554611f355f40b2357e42847b712605c",
+        "commits_in_patch": [
+          "ab21a1ab046f23bf726645f23bcbca367cad489b"
+        ],
+        "last_patch_commit_matches_head": true,
+        "url": "https://github.com/omacom/linux-aurora/commit/ab21a1ab046f23bf726645f23bcbca367cad489b.patch"
+      },
+      {
+        "id": "docs--aurora-roadmap",
+        "patch": "docs--aurora-roadmap.patch",
+        "bytes": 19910,
+        "forward": {
+          "returncode": 1,
+          "output": "error: .github/AURORA_ROADMAP.md: already exists in working directory\n"
+        },
+        "reverse": {
+          "returncode": 1,
+          "output": "error: patch failed: .github/AURORA_ROADMAP.md:1\nerror: .github/AURORA_ROADMAP.md: patch does not apply\n"
+        },
+        "head": "64df7a4a2809b236900c79b7e5fbcf2e5f7e5d0b",
+        "sha256": "804478e42dfcfe1c79032bf222763b431e0802e73a9a67b506de1d99b7a963c8",
+        "commits_in_patch": [
+          "64df7a4a2809b236900c79b7e5fbcf2e5f7e5d0b"
+        ],
+        "last_patch_commit_matches_head": true,
+        "url": "https://github.com/omacom/linux-aurora/commit/64df7a4a2809b236900c79b7e5fbcf2e5f7e5d0b.patch"
+      },
+      {
+        "id": "fix--j700-mtp-contact-position",
+        "patch": "fix--j700-mtp-contact-position.patch",
+        "bytes": 14369,
+        "forward": {
+          "returncode": 1,
+          "output": "error: patch failed: drivers/hid/hid-magicmouse.c:15\nerror: drivers/hid/hid-magicmouse.c: patch does not apply\n"
+        },
+        "reverse": {
+          "returncode": 1,
+          "output": "error: tools/testing/selftests/hid/tests/test_magicmouse_j700_parser.py: No such file or directory\nerror: patch failed: drivers/hid/hid-magicmouse.c:15\nerror: drivers/hid/hid-magicmouse.c: patch does not apply\n"
+        },
+        "head": "ddb87a170804f05ee56b15f314ef15cda3b2d812",
+        "sha256": "9e771a2fc047921dd91cc3102f8ef049bd712dfea513c072faab5e17f3b87eea",
+        "commits_in_patch": [
+          "ddb87a170804f05ee56b15f314ef15cda3b2d812"
+        ],
+        "last_patch_commit_matches_head": true,
+        "url": "https://github.com/omacom/linux-aurora/commit/ddb87a170804f05ee56b15f314ef15cda3b2d812.patch"
+      },
+      {
+        "id": "fix--macsmc-optional-battery-properties",
+        "patch": "fix--macsmc-optional-battery-properties.patch",
+        "bytes": 4522,
+        "forward": {
+          "returncode": 1,
+          "output": "error: patch failed: drivers/power/supply/macsmc-power.c:885\nerror: drivers/power/supply/macsmc-power.c: patch does not apply\n"
+        },
+        "reverse": {
+          "returncode": 1,
+          "output": "error: patch failed: drivers/power/supply/macsmc-power.c:807\nerror: drivers/power/supply/macsmc-power.c: patch does not apply\n"
+        },
+        "head": "4676c48ecf1b1acaba7c442d33fe9aae0f037e77",
+        "sha256": "a4eef866bea7fd7be347cfae3df991e82377e3e359f5410ab6488b24724e282d",
+        "commits_in_patch": [
+          "4676c48ecf1b1acaba7c442d33fe9aae0f037e77"
+        ],
+        "last_patch_commit_matches_head": true,
+        "url": "https://github.com/omacom/linux-aurora/commit/4676c48ecf1b1acaba7c442d33fe9aae0f037e77.patch"
+      },
+      {
+        "id": "pr-110",
+        "patch": "pr-110.patch",
+        "bytes": 14470,
+        "forward": {
+          "returncode": 0,
+          "output": ""
+        },
+        "reverse": {
+          "returncode": 1,
+          "output": "error: patch failed: tools/aurora-sep/tests/test_m3_flow.py:900\nerror: tools/aurora-sep/tests/test_m3_flow.py: patch does not apply\nerror: patch failed: tools/aurora-sep/install-aurora-sep.sh:4189\nerror: tools/aurora-sep/install-aurora-sep.sh: patch does not apply\nerror: patch failed: tools/aurora-sep/tests/test_m3_flow.py:125\nerror: tools/aurora-sep/tests/test_m3_flow.py: patch does not apply\nerror: patch failed: tools/aurora-sep/install-aurora-sep.sh:304\nerror: tools/aurora-sep/install-aurora-sep.sh: patch does not apply\n"
+        },
+        "head": "bb547a4ef6fc2b75bee79c254114dee98cb3d2aa",
+        "sha256": "05fae7573e7cda9a67e14db1a71b8773182082e2587cc1f9c553ca8c7b453ff5",
+        "commits_in_patch": [
+          "f880526b008e3815ccf93d8cf17ac732934f5d51",
+          "bb547a4ef6fc2b75bee79c254114dee98cb3d2aa"
+        ],
+        "last_patch_commit_matches_head": true,
+        "url": "https://github.com/omacom/linux-aurora/pull/110.patch"
+      },
+      {
+        "id": "pr-119",
+        "patch": "pr-119.patch",
+        "bytes": 6482,
+        "forward": {
+          "returncode": 0,
+          "output": ""
+        },
+        "reverse": {
+          "returncode": 1,
+          "output": "error: patch failed: drivers/media/platform/apple/isp/isp-cam.c:119\nerror: drivers/media/platform/apple/isp/isp-cam.c: patch does not apply\nerror: patch failed: drivers/media/platform/apple/isp/isp-drv.h:76\nerror: drivers/media/platform/apple/isp/isp-drv.h: patch does not apply\nerror: patch failed: drivers/media/platform/apple/isp/isp-drv.c:300\nerror: drivers/media/platform/apple/isp/isp-drv.c: patch does not apply\n"
+        },
+        "head": "4cf3221edd6befc79489ff4e2636e0b01e002ac7",
+        "sha256": "d8938f63279a913640d7af6abf00932298828f8968eba8c97e1ed311d9e7e310",
+        "commits_in_patch": [
+          "4300575e2b54eaafe430b271fd39d6de57427d1e",
+          "4cf3221edd6befc79489ff4e2636e0b01e002ac7"
+        ],
+        "last_patch_commit_matches_head": true,
+        "url": "https://github.com/omacom/linux-aurora/pull/119.patch"
+      },
+      {
+        "id": "pr-122",
+        "patch": "pr-122.patch",
+        "bytes": 37228,
+        "forward": {
+          "returncode": 1,
+          "output": "error: patch failed: drivers/gpu/drm/apple/dcp.c:1135\nerror: drivers/gpu/drm/apple/dcp.c: patch does not apply\n"
+        },
+        "reverse": {
+          "returncode": 1,
+          "output": "error: patch failed: drivers/gpu/drm/apple/parser-test.c:477\nerror: drivers/gpu/drm/apple/parser-test.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb_v14_7.h:44\nerror: drivers/gpu/drm/apple/iomfb_v14_7.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb_v14_7.c:646\nerror: drivers/gpu/drm/apple/iomfb_v14_7.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb.c:587\nerror: drivers/gpu/drm/apple/iomfb.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/external-hold-test.c:622\nerror: drivers/gpu/drm/apple/external-hold-test.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp.c:796\nerror: drivers/gpu/drm/apple/dcp.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp-fabric.h:54\nerror: drivers/gpu/drm/apple/dcp-fabric.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp-fabric.c:3585\nerror: drivers/gpu/drm/apple/dcp-fabric.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb_v14_7.c:569\nerror: drivers/gpu/drm/apple/iomfb_v14_7.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/external-hold-test.c:574\nerror: drivers/gpu/drm/apple/external-hold-test.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb_v14_7.c:631\nerror: drivers/gpu/drm/apple/iomfb_v14_7.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/external-hold-test.c:29\nerror: drivers/gpu/drm/apple/external-hold-test.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp.h:74\nerror: drivers/gpu/drm/apple/dcp.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp.c:778\nerror: drivers/gpu/drm/apple/dcp.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/external-hold-test.c:43\nerror: drivers/gpu/drm/apple/external-hold-test.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp-fabric.h:53\nerror: drivers/gpu/drm/apple/dcp-fabric.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp-fabric.c:106\nerror: drivers/gpu/drm/apple/dcp-fabric.c: patch does not apply\n"
+        },
+        "head": "11150ed2b47ac04d8b424a25ac52bfd63fe1a04f",
+        "sha256": "cafccc2f9c3ae27ac154835e38f9018dc131ad49a0667bdc3952ae8e3ec7fca3",
+        "commits_in_patch": [
+          "66e47c6397faed389af2d5bda6cbfbc483cc6a73",
+          "66a7e6689198a49c345a962e33d41481f52e52cb",
+          "cf56051d9f6cb15afb6d3aa2159e714a2f7184d1",
+          "11150ed2b47ac04d8b424a25ac52bfd63fe1a04f"
+        ],
+        "last_patch_commit_matches_head": true,
+        "url": "https://github.com/omacom/linux-aurora/pull/122.patch"
+      },
+      {
+        "id": "pr-127",
+        "patch": "pr-127.patch",
+        "bytes": 101214,
+        "forward": {
+          "returncode": 1,
+          "output": "error: patch failed: drivers/gpu/drm/apple/dcp.c:2809\nerror: drivers/gpu/drm/apple/dcp.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp.c:9\nerror: drivers/gpu/drm/apple/dcp.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp-internal.h:479\nerror: drivers/gpu/drm/apple/dcp-internal.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp.c:1336\nerror: drivers/gpu/drm/apple/dcp.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dptxep.h:30\nerror: drivers/gpu/drm/apple/dptxep.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp-fabric.c:1316\nerror: drivers/gpu/drm/apple/dcp-fabric.c: patch does not apply\n"
+        },
+        "reverse": {
+          "returncode": 1,
+          "output": "error: patch failed: drivers/gpu/drm/apple/dcp-fabric.c:528\nerror: drivers/gpu/drm/apple/dcp-fabric.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb_v14_7.h:62\nerror: drivers/gpu/drm/apple/iomfb_v14_7.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb_v14_7.c:202\nerror: drivers/gpu/drm/apple/iomfb_v14_7.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb.c:573\nerror: drivers/gpu/drm/apple/iomfb.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dptxep.h:30\nerror: drivers/gpu/drm/apple/dptxep.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dptxep.c:868\nerror: drivers/gpu/drm/apple/dptxep.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp.h:50\nerror: drivers/gpu/drm/apple/dcp.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp.c:1336\nerror: drivers/gpu/drm/apple/dcp.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp-internal.h:200\nerror: drivers/gpu/drm/apple/dcp-internal.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp-fabric.h:69\nerror: drivers/gpu/drm/apple/dcp-fabric.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp-fabric.c:130\nerror: drivers/gpu/drm/apple/dcp-fabric.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/apple_drv.c:100\nerror: drivers/gpu/drm/apple/apple_drv.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb_v14_7.h:55\nerror: drivers/gpu/drm/apple/iomfb_v14_7.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb_v14_7.c:172\nerror: drivers/gpu/drm/apple/iomfb_v14_7.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp.c:9\nerror: drivers/gpu/drm/apple/dcp.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp-internal.h:198\nerror: drivers/gpu/drm/apple/dcp-internal.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/Kconfig:15\nerror: drivers/gpu/drm/apple/Kconfig: patch does not apply\nerror: patch failed: drivers/soc/apple/t6030-display-gate.c:1505\nerror: drivers/soc/apple/t6030-display-gate.c: patch does not apply\nerror: patch failed: arch/arm64/boot/dts/apple/t8122-j613.dts:335\nerror: arch/arm64/boot/dts/apple/t8122-j613.dts: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp.c:2434\nerror: drivers/gpu/drm/apple/dcp.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp-internal.h:456\nerror: drivers/gpu/drm/apple/dcp-internal.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp-fabric.h:94\nerror: drivers/gpu/drm/apple/dcp-fabric.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp-fabric.c:3484\nerror: drivers/gpu/drm/apple/dcp-fabric.c: patch does not apply\n"
+        },
+        "head": "5bafd203b673723bd5950a0e23d08317509e10e2",
+        "sha256": "cb9b55781b39ad35ecb84a71b433a80f20d0b23fce2a020715a29fb8792555de",
+        "commits_in_patch": [
+          "59dd77a7bbe17f15009e61a67999d902542afe2f",
+          "563912ccf53b86f4cdd675ac2e02e5d9bd1b1e38",
+          "e881f47c0dcd20a5c123c697572738185ded24be",
+          "1396cdc726e9c00dcbc0e622b5211534aeea1614",
+          "38afa1010b9f0521349f978dca5574a50a5fd02f",
+          "5bafd203b673723bd5950a0e23d08317509e10e2"
+        ],
+        "last_patch_commit_matches_head": true,
+        "url": "https://github.com/omacom/linux-aurora/pull/127.patch"
+      },
+      {
+        "id": "pr-134",
+        "patch": "pr-134.patch",
+        "bytes": 3072,
+        "forward": {
+          "returncode": 0,
+          "output": ""
+        },
+        "reverse": {
+          "returncode": 1,
+          "output": "error: patch failed: drivers/media/platform/apple/isp/isp-drv.c:407\nerror: drivers/media/platform/apple/isp/isp-drv.c: patch does not apply\nerror: patch failed: drivers/media/platform/apple/isp/isp-drv.c:653\nerror: drivers/media/platform/apple/isp/isp-drv.c: patch does not apply\n"
+        },
+        "head": "06d77374e80cb1901fb2c283362abb242cd68c18",
+        "sha256": "5d868e19e9b0edbac4ce19d4954558f471800925937347bc902bd362a706ede0",
+        "commits_in_patch": [
+          "16e0943fa458a213362d498ff92a6893eb45b893",
+          "06d77374e80cb1901fb2c283362abb242cd68c18"
+        ],
+        "last_patch_commit_matches_head": true,
+        "url": "https://github.com/omacom/linux-aurora/pull/134.patch"
+      },
+      {
+        "id": "pr-135",
+        "patch": "pr-135.patch",
+        "bytes": 7671,
+        "forward": {
+          "returncode": 0,
+          "output": ""
+        },
+        "reverse": {
+          "returncode": 1,
+          "output": "error: patch failed: drivers/gpu/drm/asahi/m3_thermal_policy.rs:6\nerror: drivers/gpu/drm/asahi/m3_thermal_policy.rs: patch does not apply\nerror: patch failed: drivers/gpu/drm/asahi/m3_thermal.rs:12\nerror: drivers/gpu/drm/asahi/m3_thermal.rs: patch does not apply\nerror: patch failed: drivers/gpu/drm/asahi/m3_adt_config.rs:138\nerror: drivers/gpu/drm/asahi/m3_adt_config.rs: patch does not apply\n"
+        },
+        "head": "46b5a0981c4955cf33b7275c4001d820791b9f08",
+        "sha256": "510cff1505be35ed005079881d853f60fe86cc2f2a916d703aca293a3fe5f038",
+        "commits_in_patch": [
+          "46b5a0981c4955cf33b7275c4001d820791b9f08"
+        ],
+        "last_patch_commit_matches_head": true,
+        "url": "https://github.com/omacom/linux-aurora/pull/135.patch"
+      },
+      {
+        "id": "pr-67",
+        "patch": "pr-67.patch",
+        "bytes": 3702,
+        "forward": {
+          "returncode": 0,
+          "output": ""
+        },
+        "reverse": {
+          "returncode": 1,
+          "output": "error: patch failed: arch/arm64/configs/asahi.config:45\nerror: arch/arm64/configs/asahi.config: patch does not apply\nerror: patch failed: arch/arm64/configs/asahi.config:45\nerror: arch/arm64/configs/asahi.config: patch does not apply\n"
+        },
+        "head": "d10d360a96f406f3b953eceb6e44e7be3f4c7c24",
+        "sha256": "a5097e7aade90c92c78b94e9b43a6f8701a2518bf6c7c2b4716d2739d1af423d",
+        "commits_in_patch": [
+          "6984b8c07e84b0cf528243db1838dade971ff513",
+          "d10d360a96f406f3b953eceb6e44e7be3f4c7c24"
+        ],
+        "last_patch_commit_matches_head": true,
+        "url": "https://github.com/omacom/linux-aurora/pull/67.patch"
+      },
+      {
+        "id": "pr-7",
+        "patch": "pr-7.patch",
+        "bytes": 1398157,
+        "forward": {
+          "returncode": 1,
+          "output": "/apple/sep.rs:2255\nerror: drivers/soc/apple/sep.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sbio.rs:1221\nerror: drivers/soc/apple/sbio.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sbio.rs:1221\nerror: drivers/soc/apple/sbio.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/profile.rs:176\nerror: drivers/soc/apple/profile.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sbio.rs:1226\nerror: drivers/soc/apple/sbio.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/profile.rs:187\nerror: drivers/soc/apple/profile.rs: patch does not apply\nerror: patch failed: arch/arm64/boot/dts/apple/t6000-j314s.dts:15\nerror: arch/arm64/boot/dts/apple/t6000-j314s.dts: patch does not apply\nerror: patch failed: drivers/soc/apple/sbio.rs:1658\nerror: drivers/soc/apple/sbio.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sbio.rs:1068\nerror: drivers/soc/apple/sbio.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/profile.rs:143\nerror: drivers/soc/apple/profile.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sbio.rs:1230\nerror: drivers/soc/apple/sbio.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/profile.rs:248\nerror: drivers/soc/apple/profile.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sbio.rs:396\nerror: drivers/soc/apple/sbio.rs: patch does not apply\nerror: patch failed: arch/arm64/boot/dts/apple/t8103-j293.dts:110\nerror: arch/arm64/boot/dts/apple/t8103-j293.dts: patch does not apply\nerror: patch failed: drivers/soc/apple/sks.rs:654\nerror: drivers/soc/apple/sks.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sks.rs:609\nerror: drivers/soc/apple/sks.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sbio.rs:1554\nerror: drivers/soc/apple/sbio.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/Makefile:26\nerror: drivers/soc/apple/Makefile: patch does not apply\nerror: patch failed: drivers/soc/apple/bio.rs:881\nerror: drivers/soc/apple/bio.rs: patch does not apply\nerror: drivers/soc/apple/pm.rs: already exists in working directory\nerror: drivers/soc/apple/pm_shim.c: already exists in working directory\nerror: patch failed: drivers/soc/apple/sbio.rs:2577\nerror: drivers/soc/apple/sbio.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sep.rs:18\nerror: drivers/soc/apple/sep.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/shim.h:23\nerror: drivers/soc/apple/shim.h: patch does not apply\nerror: patch failed: drivers/soc/apple/Kconfig:128\nerror: drivers/soc/apple/Kconfig: patch does not apply\nerror: patch failed: drivers/soc/apple/sbio.rs:2697\nerror: drivers/soc/apple/sbio.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sep.rs:598\nerror: drivers/soc/apple/sep.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/xarm.rs:83\nerror: drivers/soc/apple/xarm.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/xart_store.rs:401\nerror: drivers/soc/apple/xart_store.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/profile.rs:8\nerror: drivers/soc/apple/profile.rs: patch does not apply\nerror: patch failed: arch/arm64/boot/dts/apple/t8112-j415.dts:21\nerror: arch/arm64/boot/dts/apple/t8112-j415.dts: patch does not apply\nerror: patch failed: arch/arm64/boot/dts/apple/t8112.dtsi:900\nerror: arch/arm64/boot/dts/apple/t8112.dtsi: patch does not apply\nerror: patch failed: drivers/soc/apple/sbio.rs:1282\nerror: drivers/soc/apple/sbio.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/profile.rs:8\nerror: drivers/soc/apple/profile.rs: patch does not apply\nerror: patch failed: arch/arm64/boot/dts/apple/t8112-j415.dts:21\nerror: arch/arm64/boot/dts/apple/t8112-j415.dts: patch does not apply\nerror: patch failed: arch/arm64/boot/dts/apple/t8112.dtsi:900\nerror: arch/arm64/boot/dts/apple/t8112.dtsi: patch does not apply\nerror: patch failed: arch/arm64/boot/dts/apple/t602x-j414-j416.dtsi:145\nerror: arch/arm64/boot/dts/apple/t602x-j414-j416.dtsi: patch does not apply\nerror: patch failed: drivers/soc/apple/profile.rs:380\nerror: drivers/soc/apple/profile.rs: patch does not apply\nerror: patch failed: arch/arm64/boot/dts/apple/t6001-j314c.dts:15\nerror: arch/arm64/boot/dts/apple/t6001-j314c.dts: patch does not apply\nerror: patch failed: arch/arm64/boot/dts/apple/t6001-j316c.dts:15\nerror: arch/arm64/boot/dts/apple/t6001-j316c.dts: patch does not apply\nerror: patch failed: arch/arm64/boot/dts/apple/t8112-j413.dts:21\nerror: arch/arm64/boot/dts/apple/t8112-j413.dts: patch does not apply\nerror: patch failed: drivers/soc/apple/pm.rs:21\nerror: drivers/soc/apple/pm.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sbio.rs:2646\nerror: drivers/soc/apple/sbio.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/shim.h:25\nerror: drivers/soc/apple/shim.h: patch does not apply\nerror: patch failed: drivers/usb/typec/Makefile:5\nerror: drivers/usb/typec/Makefile: patch does not apply\n"
+        },
+        "reverse": {
+          "returncode": 1,
+          "output": "patch failed: drivers/soc/apple/dt.rs:398\nerror: drivers/soc/apple/dt.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sensor_shim.c:70\nerror: drivers/soc/apple/sensor_shim.c: patch does not apply\nerror: patch failed: drivers/soc/apple/sks.rs:364\nerror: drivers/soc/apple/sks.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sep.rs:1688\nerror: drivers/soc/apple/sep.rs: patch does not apply\nerror: patch failed: tools/aurora-sep/load-driver:38\nerror: tools/aurora-sep/load-driver: patch does not apply\nerror: patch failed: drivers/soc/apple/sks.rs:631\nerror: drivers/soc/apple/sks.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sep.rs:600\nerror: drivers/soc/apple/sep.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sbio.rs:784\nerror: drivers/soc/apple/sbio.rs: patch does not apply\nerror: patch failed: tools/aurora-sep/load-driver:1\nerror: tools/aurora-sep/load-driver: patch does not apply\nerror: patch failed: tools/aurora-sep/aurora-sep.service:1\nerror: tools/aurora-sep/aurora-sep.service: patch does not apply\nerror: patch failed: tools/aurora-sep/README.md:1\nerror: tools/aurora-sep/README.md: patch does not apply\nerror: patch failed: drivers/spi/spi-apple.c:99\nerror: drivers/spi/spi-apple.c: patch does not apply\nerror: patch failed: drivers/soc/apple/transfer.rs:244\nerror: drivers/soc/apple/transfer.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/store.rs:72\nerror: drivers/soc/apple/store.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sks.rs:3\nerror: drivers/soc/apple/sks.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/shim.h:18\nerror: drivers/soc/apple/shim.h: patch does not apply\nerror: patch failed: drivers/soc/apple/sep.rs:582\nerror: drivers/soc/apple/sep.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sbio.rs:3\nerror: drivers/soc/apple/sbio.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/bio.rs:705\nerror: drivers/soc/apple/bio.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/Makefile:22\nerror: drivers/soc/apple/Makefile: patch does not apply\nerror: patch failed: drivers/soc/apple/Kconfig:97\nerror: drivers/soc/apple/Kconfig: patch does not apply\nerror: patch failed: drivers/nvme/host/apple.c:210\nerror: drivers/nvme/host/apple.c: patch does not apply\nerror: patch failed: drivers/soc/apple/store.rs:114\nerror: drivers/soc/apple/store.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/shim.rs:9\nerror: drivers/soc/apple/shim.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/shim.h:33\nerror: drivers/soc/apple/shim.h: patch does not apply\nerror: patch failed: drivers/soc/apple/sep.rs:31\nerror: drivers/soc/apple/sep.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sbio.rs:589\nerror: drivers/soc/apple/sbio.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/refkey.rs:55\nerror: drivers/soc/apple/refkey.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/Kconfig:115\nerror: drivers/soc/apple/Kconfig: patch does not apply\nerror: patch failed: drivers/soc/apple/trusted.rs:1\nerror: drivers/soc/apple/trusted.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/transfer.rs:1\nerror: drivers/soc/apple/transfer.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/store_shim.c:1\nerror: drivers/soc/apple/store_shim.c: patch does not apply\nerror: patch failed: drivers/soc/apple/store.rs:1\nerror: drivers/soc/apple/store.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sks.rs:1\nerror: drivers/soc/apple/sks.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/shim.rs:1\nerror: drivers/soc/apple/shim.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/shim.h:1\nerror: drivers/soc/apple/shim.h: patch does not apply\nerror: patch failed: drivers/soc/apple/sep.rs:1\nerror: drivers/soc/apple/sep.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sensor_shim.c:1\nerror: drivers/soc/apple/sensor_shim.c: patch does not apply\nerror: patch failed: drivers/soc/apple/sensor.rs:1\nerror: drivers/soc/apple/sensor.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/sbio.rs:1\nerror: drivers/soc/apple/sbio.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/refkey.rs:1\nerror: drivers/soc/apple/refkey.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/image.rs:1\nerror: drivers/soc/apple/image.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/dt.rs:1\nerror: drivers/soc/apple/dt.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/bio_shim.c:1\nerror: drivers/soc/apple/bio_shim.c: patch does not apply\nerror: patch failed: drivers/soc/apple/bio.rs:1\nerror: drivers/soc/apple/bio.rs: patch does not apply\nerror: patch failed: drivers/soc/apple/Makefile:22\nerror: drivers/soc/apple/Makefile: patch does not apply\nerror: patch failed: drivers/soc/apple/Kconfig:98\nerror: drivers/soc/apple/Kconfig: patch does not apply\n"
+        },
+        "head": "120e030eac9fc34b1586b9a9a6bf365959828e7a",
+        "sha256": "2fa0ada2ed26ef9cdf8c4f26421175c1923cbf9b96cc5ed49a3d6c43d25c9ac8",
+        "commits_in_patch": [
+          "c1240e70b3c95e2f8b0b654f1f2e5ba5cd9c73ba",
+          "169cca6275758fc3d2c04844f359c78f9f1a730c",
+          "4a356a39160b20929ab481adfdaf758f09d6380b",
+          "f5256a5c6624c4216913efdbe54bdbfcfe0134cf",
+          "48d03b2399626de47fc8c3cd6747c7101d6e2929",
+          "b6a27321d1748a034953c84e01c7f85f9710cc51",
+          "70a5d05e6fef7b88d84604c5302cda462b63f78b",
+          "a9dc3a164d6529c4aea9443b631372aefe8d4652",
+          "fbf8d57e3852802ba64c178f0c1d21a006828cf3",
+          "59795f250c756f0e5252c4b46d8a887d19dca6ef",
+          "0e7897897b94a8722faa054738367a1536ac5a69",
+          "fa73a64a67c7f891ba5011ea85a8e33dfb8ca0f4",
+          "c9666f728e4759406fcb77ca9d9b3cd20224e4d6",
+          "cd0853837da4f9ca5a26ad00e764d28c96069dda",
+          "6117e4d1a7998ac30804e697e2e1423a57eccca5",
+          "1262bac65e9907cc14f2ef6cfb6ce6385c3381f6",
+          "4152a11936e6ce33d3072ac7bca7a2f04e3a27b6",
+          "c08ee7a55e42448bbd5cb827f04f456d71809f1b",
+          "9f2ae2bd5cb24e693788f4022396198dc8a72453",
+          "4051820570e7deee996eef1bbec8cdb5abba9861",
+          "ea4b2d0b4ebac4ad96c2bce1fd9c2aba4c004758",
+          "8507e8c5d41a35d5164cb9e90bfa1d9ad9044eeb",
+          "a7b87bbf92e9af751fc630339b7bf4050d354756",
+          "2d4f6f11fd0bbef3373ffb3c4ff1136eaf65b539",
+          "f77a442d2a07b0fba7a07d0225dd4297ecbf59be",
+          "06f1c568c54ccd2c04933221e8485144afaf72f8",
+          "70f4f6d900ddeef6b2ca7990c8775de0585e9a33",
+          "a471eb38734e8a6c41393e89bedc6a2b38cc1042",
+          "996593d123fe2d83f760ceb447133475e6a7ffff",
+          "d1cf00e8126181ae48f28a77988a65732961387c",
+          "9dc394cb5516d656d0934d0f8efd51b683a852ad",
+          "7ec99a1f04c55d1e3acc161bbf3a06e38a3d5c10",
+          "cdacd961bf735944ce35b219b8e880c81f1a50e3",
+          "36bd668d45dec9633463cac292153e9a9fb561ab",
+          "d3f7a79ff29bf5e5585ca3c5a8d451c6e63d702d",
+          "0930367824ff52f4fdad736a08dcbbd206b98cdc",
+          "d23d912fbaac483eabe65710ac85e715644f2b25",
+          "53dd438a43df7b881d098577e29632472014bef9",
+          "c91dc90c0f970a6cab39b82491443bdd9e5f1fc8",
+          "ae1623d9964bb681396d187f236b996bcf1672fe",
+          "434c25f9bee88c774cb0f350313141480b2ca37f",
+          "1d0fbf391a2aa647b871162650bd4ad381760292",
+          "9b7d20da168939076ad6cf15c4e4adf49ff40ee4",
+          "09afcd70b5fe303ea027de3535f02ecaf95c8340",
+          "3594d18fbab8e17ed69c3e5c6b64f13d745168da",
+          "fa5614c13fc6ca6f1632040bb28ebbff96fb98b0",
+          "35918b89b8a98723606784da788f30bc7a6644e3",
+          "0101277c5c129a88ed605ade41a0c34e666f7848",
+          "4236dafcfd7f23df4eea8efc8d23e95afc2a6dad",
+          "1aa035d09180fe771210f034e7388a90e3050ae4",
+          "02e8f6bd9a1056b855ff86a931c07e002c339166",
+          "98b25c21ad468fe989f9904afecd9f8144d4c92c",
+          "ba8827e2a5eab53204d071ab348ca64496d4bfde",
+          "e69faf42d55b30210159d58468bcc10d694b6e21",
+          "8ea5bd61a3d56500d5e9ce0f7b036668a71d3e00",
+          "6180a47762e616eff150da4d83681837d263a0cf",
+          "3fc257f8151cc81a49d4af4555b99053d0d887cd",
+          "5a72542c984246a8bc5c49fcfcd9a05a40247807",
+          "a457072abb4af2362ba6ebd0ad39767d67f991aa",
+          "1bcc5f5ddad6a9f5df76f6d50fb601004fbee40e",
+          "c0bce60ec9ef160d087ea3ac48e1ed1fad955198",
+          "e00af121d1116961e2f49376113ada57d3ec2aef",
+          "53d1ab39247b2d378093fc54398093e57765007d",
+          "1475757290d97c2d44086dd12638f8e6d381db06",
+          "f01b2a83b78d90982ddc89cb362ba520695063c0",
+          "b926201a1c6aef2cd43f3059db1a283bdec17769",
+          "879b3b18cba7e65c6696c53638dc65c52b8bced8",
+          "8b64787280082388c26f7240eacfe9c4a6075623",
+          "bf06a255143274036df16ce5893a149a74cc352d",
+          "ffa13517adce6796291e2b1f20817fd36a389674",
+          "4b625164e8c21d33b5ba87eb3392e06abbae0aa1",
+          "2c0b8da2c02f2f1f40238c8f3bf5ef6c103a9489",
+          "34c471f51dd2111e50df7d7ea3de191cf983934c",
+          "7d805d1b913d7bf4fe595e84031ebffa80478661",
+          "2a4f488f7df607cc0ced59ad1fe6b146aebd524f",
+          "e41be3ffc34488e61b2d72799b013648949f4e42",
+          "d5d8515d01240a982fecac191ff8dc108e3c0195",
+          "8e8f20bb76694e036cb0c3a7c4b6094a504c3f23",
+          "2cf2b0a2222965347dc0fc975652e8ee269f292c",
+          "8eb00bb78f1e75853dc9c63fd1a36425fd837086",
+          "f549c0219f56afcc25b08253274c8a12dfd52ac9"
+        ],
+        "last_patch_commit_matches_head": false,
+        "head_verification_note": "PR7 head 120e030e is a two-parent merge commit. GitHub mbox omits merge commits and has 81 patch messages; the graph head is recorded separately. This is not a single-head importable patch.",
+        "url": "https://github.com/omacom/linux-aurora/pull/7.patch"
+      },
+      {
+        "id": "pr-8",
+        "patch": "pr-8.patch",
+        "bytes": 38325,
+        "forward": {
+          "returncode": 1,
+          "output": "error: patch failed: sound/soc/apple/macaudio.c:1123\nerror: sound/soc/apple/macaudio.c: patch does not apply\n"
+        },
+        "reverse": {
+          "returncode": 1,
+          "output": "error: tools/testing/selftests/alsa/j456_ssm3515_status.py: No such file or directory\nerror: tools/testing/selftests/alsa/j456_ssm3515_prepare.py: No such file or directory\nerror: tools/testing/selftests/alsa/j456_ssm3515_power.py: No such file or directory\nerror: tools/testing/selftests/alsa/j456_control_lock.py: No such file or directory\nerror: Documentation/sound/soc/apple-j456-bringup.rst: No such file or directory\nerror: patch failed: sound/soc/apple/macaudio.c:147\nerror: sound/soc/apple/macaudio.c: patch does not apply\nerror: patch failed: sound/soc/codecs/ssm3515.c:7\nerror: sound/soc/codecs/ssm3515.c: patch does not apply\nerror: patch failed: arch/arm64/boot/dts/apple/t8103-j456.dts:104\nerror: arch/arm64/boot/dts/apple/t8103-j456.dts: patch does not apply\n"
+        },
+        "head": "60d9d20f3a26bf447582cf65a8af586539f7780f",
+        "sha256": "6d6821d8c78b6316fe4bccf642df75c74f4f4ae7abcb5b94886507b4ef52191b",
+        "commits_in_patch": [
+          "5d9c6bfeb80921c5e168226aadeb1a525e8e2d85",
+          "56c3be73d90658b070228646baeaf79b22b46284",
+          "b60e06887edeffd212bad04b8a4e31026648536e",
+          "60d9d20f3a26bf447582cf65a8af586539f7780f"
+        ],
+        "last_patch_commit_matches_head": true,
+        "url": "https://github.com/omacom/linux-aurora/pull/8.patch"
+      },
+      {
+        "id": "pr-86",
+        "patch": "pr-86.patch",
+        "bytes": 8767,
+        "forward": {
+          "returncode": 0,
+          "output": ""
+        },
+        "reverse": {
+          "returncode": 1,
+          "output": "error: patch failed: tools/aurora-sep/tests/test_m3_flow.py:125\nerror: tools/aurora-sep/tests/test_m3_flow.py: patch does not apply\nerror: patch failed: tools/aurora-sep/install-aurora-sep.sh:299\nerror: tools/aurora-sep/install-aurora-sep.sh: patch does not apply\n"
+        },
+        "head": "e66893bfddfaf30a11e5d1f65a3dd3ca52da7c4c",
+        "sha256": "ce0b0bbde875aef6c75c4d0e49c560a70fd40ae6d06808d95655b040889f773d",
+        "commits_in_patch": [
+          "e66893bfddfaf30a11e5d1f65a3dd3ca52da7c4c"
+        ],
+        "last_patch_commit_matches_head": true,
+        "url": "https://github.com/omacom/linux-aurora/pull/86.patch"
+      },
+      {
+        "id": "pr-9",
+        "patch": "pr-9.patch",
+        "bytes": 209328,
+        "forward": {
+          "returncode": 1,
+          "output": "error: patch failed: Documentation/gpu/drivers.rst:6\nerror: Documentation/gpu/drivers.rst: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/Kconfig:12\nerror: drivers/gpu/drm/apple/Kconfig: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/Makefile:3\nerror: drivers/gpu/drm/apple/Makefile: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/afk.c:515\nerror: drivers/gpu/drm/apple/afk.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/apple_drv.c:39\nerror: drivers/gpu/drm/apple/apple_drv.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/connector.h:14\nerror: drivers/gpu/drm/apple/connector.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp-internal.h:27\nerror: drivers/gpu/drm/apple/dcp-internal.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp.c:5\nerror: drivers/gpu/drm/apple/dcp.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dptxep.c:3\nerror: drivers/gpu/drm/apple/dptxep.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dptxep.h:51\nerror: drivers/gpu/drm/apple/dptxep.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb.c:16\nerror: drivers/gpu/drm/apple/iomfb.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb_template.c:1026\nerror: drivers/gpu/drm/apple/iomfb_template.c: patch does not apply\nerror: patch failed: drivers/mux/apple-display-crossbar.c:90\nerror: drivers/mux/apple-display-crossbar.c: patch does not apply\nerror: patch failed: drivers/phy/apple/atc.c:33\nerror: drivers/phy/apple/atc.c: patch does not apply\nerror: patch failed: drivers/reset/reset-apple-cio.c:39\nerror: drivers/reset/reset-apple-cio.c: patch does not apply\nerror: patch failed: drivers/thunderbolt/apple.c:67\nerror: drivers/thunderbolt/apple.c: patch does not apply\nerror: patch failed: drivers/thunderbolt/nhi.h:80\nerror: drivers/thunderbolt/nhi.h: patch does not apply\nerror: patch failed: drivers/thunderbolt/switch.c:3662\nerror: drivers/thunderbolt/switch.c: patch does not apply\nerror: patch failed: drivers/thunderbolt/tb.c:3226\nerror: drivers/thunderbolt/tb.c: patch does not apply\nerror: patch failed: drivers/thunderbolt/tunnel.c:1141\nerror: drivers/thunderbolt/tunnel.c: patch does not apply\nerror: patch failed: drivers/thunderbolt/tunnel.h:62\nerror: drivers/thunderbolt/tunnel.h: patch does not apply\nerror: patch failed: drivers/usb/typec/tipd/core.c:703\nerror: drivers/usb/typec/tipd/core.c: patch does not apply\nerror: patch failed: drivers/usb/typec/tipd/tps6598x.h:376\nerror: drivers/usb/typec/tipd/tps6598x.h: patch does not apply\nerror: patch failed: tools/testing/selftests/Makefile:17\nerror: tools/testing/selftests/Makefile: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/connector.h:14\nerror: drivers/gpu/drm/apple/connector.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp-internal.h:292\nerror: drivers/gpu/drm/apple/dcp-internal.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dptxep.c:59\nerror: drivers/gpu/drm/apple/dptxep.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb.c:259\nerror: drivers/gpu/drm/apple/iomfb.c: patch does not apply\nerror: patch failed: drivers/mux/apple-display-crossbar.c:251\nerror: drivers/mux/apple-display-crossbar.c: patch does not apply\nerror: patch failed: drivers/phy/apple/atc.c:1752\nerror: drivers/phy/apple/atc.c: patch does not apply\nerror: patch failed: drivers/thunderbolt/apple.c:148\nerror: drivers/thunderbolt/apple.c: patch does not apply\nerror: patch failed: drivers/thunderbolt/tb.c:1972\nerror: drivers/thunderbolt/tb.c: patch does not apply\nerror: patch failed: drivers/usb/typec/tipd/core.c:724\nerror: drivers/usb/typec/tipd/core.c: patch does not apply\nerror: patch failed: drivers/usb/typec/tipd/tps6598x.h:378\nerror: drivers/usb/typec/tipd/tps6598x.h: patch does not apply\n"
+        },
+        "reverse": {
+          "returncode": 1,
+          "output": "tch does not apply\nerror: drivers/gpu/drm/apple/dpin.c: No such file or directory\nerror: patch failed: drivers/gpu/drm/apple/dcp-internal.h:292\nerror: drivers/gpu/drm/apple/dcp-internal.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/connector.h:14\nerror: drivers/gpu/drm/apple/connector.h: patch does not apply\nerror: patch failed: arch/arm64/boot/dts/apple/t6001-j316c.dts:42\nerror: arch/arm64/boot/dts/apple/t6001-j316c.dts: patch does not apply\nerror: Documentation/gpu/apple/usb4-dp.rst: No such file or directory\nerror: tools/testing/selftests/drivers/apple-dp-usb4/power-lifecycle.py: No such file or directory\nerror: tools/testing/selftests/drivers/apple-dp-usb4/pll-command.py: No such file or directory\nerror: tools/testing/selftests/drivers/apple-dp-usb4/native-events.json: No such file or directory\nerror: tools/testing/selftests/drivers/apple-dp-usb4/link-configuration.py: No such file or directory\nerror: tools/testing/selftests/drivers/apple-dp-usb4/lifecycle.py: No such file or directory\nerror: tools/testing/selftests/drivers/apple-dp-usb4/drive-settings.py: No such file or directory\nerror: tools/testing/selftests/drivers/apple-dp-usb4/dprx-cancel.py: No such file or directory\nerror: tools/testing/selftests/drivers/apple-dp-usb4/crossbar.py: No such file or directory\nerror: tools/testing/selftests/drivers/apple-dp-usb4/connection-attributes.py: No such file or directory\nerror: tools/testing/selftests/drivers/apple-dp-usb4/bridge.py: No such file or directory\nerror: tools/testing/selftests/drivers/apple-dp-usb4/Makefile: No such file or directory\nerror: patch failed: tools/testing/selftests/Makefile:17\nerror: tools/testing/selftests/Makefile: patch does not apply\nerror: include/linux/soc/apple/dcp-usb4.h: No such file or directory\nerror: include/linux/phy/phy-apple-atc.h: No such file or directory\nerror: include/linux/mux/apple-display-crossbar.h: No such file or directory\nerror: patch failed: drivers/usb/typec/tipd/tps6598x.h:351\nerror: drivers/usb/typec/tipd/tps6598x.h: patch does not apply\nerror: patch failed: drivers/usb/typec/tipd/core.c:20\nerror: drivers/usb/typec/tipd/core.c: patch does not apply\nerror: patch failed: drivers/thunderbolt/tunnel.h:62\nerror: drivers/thunderbolt/tunnel.h: patch does not apply\nerror: patch failed: drivers/thunderbolt/tunnel.c:14\nerror: drivers/thunderbolt/tunnel.c: patch does not apply\nerror: patch failed: drivers/thunderbolt/tb.h:142\nerror: drivers/thunderbolt/tb.h: patch does not apply\nerror: patch failed: drivers/thunderbolt/tb.c:1970\nerror: drivers/thunderbolt/tb.c: patch does not apply\nerror: patch failed: drivers/thunderbolt/switch.c:3662\nerror: drivers/thunderbolt/switch.c: patch does not apply\nerror: patch failed: drivers/thunderbolt/nhi.h:80\nerror: drivers/thunderbolt/nhi.h: patch does not apply\nerror: patch failed: drivers/thunderbolt/apple.c:67\nerror: drivers/thunderbolt/apple.c: patch does not apply\nerror: patch failed: drivers/reset/reset-apple-cio.c:39\nerror: drivers/reset/reset-apple-cio.c: patch does not apply\nerror: patch failed: drivers/phy/apple/atc.c:33\nerror: drivers/phy/apple/atc.c: patch does not apply\nerror: patch failed: drivers/mux/apple-display-crossbar.c:14\nerror: drivers/mux/apple-display-crossbar.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb_template.c:1026\nerror: drivers/gpu/drm/apple/iomfb_template.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb.c:16\nerror: drivers/gpu/drm/apple/iomfb.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dptxep.h:36\nerror: drivers/gpu/drm/apple/dptxep.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dptxep.c:3\nerror: drivers/gpu/drm/apple/dptxep.c: patch does not apply\nerror: drivers/gpu/drm/apple/dpin.h: No such file or directory\nerror: drivers/gpu/drm/apple/dpin.c: No such file or directory\nerror: patch failed: drivers/gpu/drm/apple/dcp.c:5\nerror: drivers/gpu/drm/apple/dcp.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp-internal.h:27\nerror: drivers/gpu/drm/apple/dcp-internal.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/connector.h:14\nerror: drivers/gpu/drm/apple/connector.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/apple_drv.c:39\nerror: drivers/gpu/drm/apple/apple_drv.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/afk.c:515\nerror: drivers/gpu/drm/apple/afk.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/Makefile:3\nerror: drivers/gpu/drm/apple/Makefile: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/Kconfig:12\nerror: drivers/gpu/drm/apple/Kconfig: patch does not apply\nerror: patch failed: arch/arm64/boot/dts/apple/t6001-j316c.dts:41\nerror: arch/arm64/boot/dts/apple/t6001-j316c.dts: patch does not apply\nerror: patch failed: Documentation/gpu/drivers.rst:6\nerror: Documentation/gpu/drivers.rst: patch does not apply\nerror: Documentation/gpu/apple/usb4-dp.rst: No such file or directory\n"
+        },
+        "head": "e707d60d5fdca4e0400a79795af5d26e1f5e2368",
+        "sha256": "18b13e191846ff9ba50caaa9224a358111ac0a2a6c7f6ca8c03f543fa2d424b5",
+        "commits_in_patch": [
+          "6a1bb729f7e757f033766addbfd2441ef0215c15",
+          "e707d60d5fdca4e0400a79795af5d26e1f5e2368"
+        ],
+        "last_patch_commit_matches_head": true,
+        "url": "https://github.com/omacom/linux-aurora/pull/9.patch"
+      },
+      {
+        "id": "vrr",
+        "patch": "vrr.patch",
+        "bytes": 14814,
+        "forward": {
+          "returncode": 1,
+          "output": "error: patch failed: drivers/gpu/drm/apple/dcp.c:656\nerror: drivers/gpu/drm/apple/dcp.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb.c:406\nerror: drivers/gpu/drm/apple/iomfb.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb_template.c:4\nerror: drivers/gpu/drm/apple/iomfb_template.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb_template.h:18\nerror: drivers/gpu/drm/apple/iomfb_template.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/parser.c:443\nerror: drivers/gpu/drm/apple/parser.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/parser.h:104\nerror: drivers/gpu/drm/apple/parser.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/trace.h:263\nerror: drivers/gpu/drm/apple/trace.h: patch does not apply\n"
+        },
+        "reverse": {
+          "returncode": 1,
+          "output": "error: patch failed: drivers/gpu/drm/apple/parser.h:104\nerror: drivers/gpu/drm/apple/parser.h: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/parser.c:443\nerror: drivers/gpu/drm/apple/parser.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb_template.c:4\nerror: drivers/gpu/drm/apple/iomfb_template.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/iomfb.c:406\nerror: drivers/gpu/drm/apple/iomfb.c: patch does not apply\nerror: patch failed: drivers/gpu/drm/apple/dcp.c:656\nerror: drivers/gpu/drm/apple/dcp.c: patch does not apply\n"
+        },
+        "head": "e853c9eef448eed71b18f27df689ee0acae6c5f0",
+        "sha256": "eb861f02c42bca65eb0f1d86a6300c3558a272f89d9642129be17a697e6fbf84",
+        "commits_in_patch": [
+          "e853c9eef448eed71b18f27df689ee0acae6c5f0"
+        ],
+        "last_patch_commit_matches_head": true,
+        "url": "https://github.com/omacom/linux-aurora/commit/e853c9eef448eed71b18f27df689ee0acae6c5f0.patch"
+      }
+    ],
+    "thermal_host_tests": {
+      "rustc": "rustc 1.98.1 (48a229cea 2026-09-01) (Homebrew)",
+      "scope": "Upstream tools/asahi/m3-runtime-tests.rs on macOS; no kernel build or hardware test",
+      "base": {
+        "build": 0,
+        "build_output": "",
+        "run": 0,
+        "output": "\nrunning 54 tests\ntest agx_resources::tests::relocated_uat_regions_keep_firmware_segments ... ok\ntest agx_resources::tests::rejects_missing_overlapping_unaligned_and_out_of_range_memory ... ok\ntest agx_resources::tests::observed_and_relocated_boot_addresses ... ok\ntest agx_resources::tests::rejects_unknown_handoff_and_segment_layouts ... ok\ntest m3_firmware::tests::digest_only_admission_preserves_exact_digest_requirement ... ok\ntest m3_firmware::tests::each_layout_rejects_the_other_chips_segments ... ok\ntest m3_firmware::tests::bad_entropy_bounds_tags_and_lengths_do_not_mutate_text ... ok\ntest m3_firmware::tests::t6031_layout_is_the_adt_segments_and_matches_neither_other_layout ... ok\ntest m3_firmware::tests::runtime_admission_requires_every_recorded_identity ... ok\ntest m3_firmware::tests::entropy_normalization_changes_only_the_eight_boot_bytes ... ok\ntest m3_firmware::tests::t8122_experiment_record_identifies_the_same_image_with_the_g15_version ... ok\ntest m3_firmware::tests::t8122_admission_requires_qualified_initdata_and_matching_image_identity ... ok\ntest m3_init_storage::iomap_tests::packing_keeps_subpage_offsets_and_leaves_a_page_between_maps ... ok\ntest m3_init_storage::iomap_tests::rejects_duplicate_slots_overlapping_vas_and_initdata_aliases ... ok\ntest m3_firmware::tests::uuid_admission_rejects_bad_header_words_and_truncation ... ok\ntest m3_firmware::tests::uuid_admission_requires_header_bounds_and_exact_text_size ... ok\ntest m3_init_storage::iomap_tests::rejects_invalid_ranges_and_preserves_subpage_offsets ... ok\ntest m3_init_storage::iomap_tests::t6030_maps_and_relocated_physical_blocks_are_valid ... ok\ntest m3_pass_layout::tests::four_cluster_client_pages_never_overlap ... ok\ntest m3_pass_layout::tests::four_clusters_only_grow_the_preemption_buffers ... ok\ntest m3_thermal_policy::zone_tests::every_t8122_board_requires_the_die_zone ... ok\ntest m3_pass_layout::tests::one_and_two_clusters_are_the_qualified_layout ... ok\ntest m3_thermal_policy::zone_tests::m3_max_boards_require_the_die_zone ... ok\ntest m3_thermal_policy::zone_tests::pro_and_malformed_lists_keep_both_zone_requirement ... ok\ntest t6031_knobs::tests::every_mapping_is_its_superset_slots_and_fits_it ... ok\ntest t6031_knobs::tests::grounded_addresses_are_inside_their_blocks ... ok\ntest t6031_knobs::tests::default_mappings_are_the_derivable_slots ... ok\ntest t6031_knobs::tests::default_iomaps_fit_the_runtime_window ... ok\ntest t6031_knobs::tests::defaults_are_the_first_start ... ok\ntest t6031_knobs::tests::revision_ids_follow_the_read_unless_given ... ok\ntest t6031_knobs::tests::every_alternative_resolves ... ok\ntest t6031_knobs::tests::identity_admits_g15c_with_up_to_forty_cores_only ... ok\ntest t6031_knobs::tests::mtr_and_csafr_choices ... ok\ntest t6031_knobs::tests::nothing_given_is_off ... ok\ntest t6031_knobs::tests::unaccepted_values_refuse_and_name_the_parameter ... ok\ntest t8122_admission::tests::j613_operating_points_give_eight_states_up_to_1338_mhz ... ok\ntest t6031_knobs::tests::uuids_parse_with_or_without_dashes_only ... ok\ntest t8122_admission::tests::accepts_eight_and_ten_active_cores_without_conflating_slots ... ok\ntest t8122_admission::tests::operating_point_shapes_reject_invalid_order_voltage_and_frequency ... ok\ntest t8122_admission::tests::operating_point_shapes_round_like_the_driver_and_bound_the_table ... ok\ntest t8122_admission::tests::operating_point_shapes_sort_voltages_and_preserve_voltage_extremes ... ok\ntest t8122_admission::tests::rejects_failed_probes_wrong_revision_and_out_of_range_masks ... ok\ntest t8122_hwdata::tests::the_parameter_accepts_0_and_1_only_and_defaults_to_1 ... ok\ntest t8122_hwdata::tests::the_words_are_the_expected_ones ... ok\ntest t8122_hwdata::tests::a_short_buffer_is_refused_and_left_alone ... ok\ntest t8122_knobs::tests::a_leading_sign_is_rejected ... ok\ntest t8122_knobs::tests::default_masks_are_within_the_limits ... ok\ntest t8122_knobs::tests::defaults_are_the_plan_baseline ... ok\ntest t8122_knobs::tests::every_alternative_resolves ... ok\ntest t8122_knobs::tests::nothing_given_is_off_and_gives_no_values ... ok\ntest t8122_knobs::tests::pstate_cap_accepts_one_to_five_only ... ok\ntest t8122_knobs::tests::reserved_numbers_and_garbage_parse_as_invalid ... ok\ntest t8122_knobs::tests::unaccepted_values_refuse_and_name_the_parameter ... ok\ntest t8122_hwdata::tests::the_block_lands_at_418c_to_41db_and_nothing_else_changes ... ok\n\ntest result: ok. 54 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n"
+      },
+      "with_pr135": {
+        "build": 0,
+        "build_output": "",
+        "run": 0,
+        "output": "\nrunning 58 tests\ntest m3_firmware::tests::t6031_layout_is_the_adt_segments_and_matches_neither_other_layout ... ok\ntest m3_firmware::tests::digest_only_admission_preserves_exact_digest_requirement ... ok\ntest agx_resources::tests::rejects_missing_overlapping_unaligned_and_out_of_range_memory ... ok\ntest m3_firmware::tests::each_layout_rejects_the_other_chips_segments ... ok\ntest m3_firmware::tests::runtime_admission_requires_every_recorded_identity ... ok\ntest agx_resources::tests::rejects_unknown_handoff_and_segment_layouts ... ok\ntest agx_resources::tests::observed_and_relocated_boot_addresses ... ok\ntest agx_resources::tests::relocated_uat_regions_keep_firmware_segments ... ok\ntest m3_firmware::tests::bad_entropy_bounds_tags_and_lengths_do_not_mutate_text ... ok\ntest m3_firmware::tests::t8122_admission_requires_qualified_initdata_and_matching_image_identity ... ok\ntest m3_firmware::tests::t8122_experiment_record_identifies_the_same_image_with_the_g15_version ... ok\ntest m3_init_storage::iomap_tests::packing_keeps_subpage_offsets_and_leaves_a_page_between_maps ... ok\ntest m3_init_storage::iomap_tests::rejects_duplicate_slots_overlapping_vas_and_initdata_aliases ... ok\ntest m3_firmware::tests::uuid_admission_rejects_bad_header_words_and_truncation ... ok\ntest m3_init_storage::iomap_tests::rejects_invalid_ranges_and_preserves_subpage_offsets ... ok\ntest m3_firmware::tests::entropy_normalization_changes_only_the_eight_boot_bytes ... ok\ntest m3_firmware::tests::uuid_admission_requires_header_bounds_and_exact_text_size ... ok\ntest m3_init_storage::iomap_tests::t6030_maps_and_relocated_physical_blocks_are_valid ... ok\ntest m3_pass_layout::tests::four_clusters_only_grow_the_preemption_buffers ... ok\ntest m3_thermal_policy::fallback_tests::hold_never_raises_t8122_above_two ... ok\ntest m3_thermal_policy::fallback_tests::next_state_returns_to_two_when_hot_or_reading_fails ... ok\ntest m3_pass_layout::tests::four_cluster_client_pages_never_overlap ... ok\ntest m3_pass_layout::tests::one_and_two_clusters_are_the_qualified_layout ... ok\ntest m3_thermal_policy::fallback_tests::stale_or_stuck_sensor_returns_to_two ... ok\ntest m3_thermal_policy::fallback_tests::t8122_higher_ceilings_keep_state_two_fallback ... ok\ntest m3_thermal_policy::zone_tests::every_t8122_board_requires_the_die_zone ... ok\ntest m3_thermal_policy::zone_tests::m3_max_boards_require_the_die_zone ... ok\ntest m3_thermal_policy::zone_tests::pro_and_malformed_lists_keep_both_zone_requirement ... ok\ntest t6031_knobs::tests::default_mappings_are_the_derivable_slots ... ok\ntest t6031_knobs::tests::defaults_are_the_first_start ... ok\ntest t6031_knobs::tests::default_iomaps_fit_the_runtime_window ... ok\ntest t6031_knobs::tests::every_mapping_is_its_superset_slots_and_fits_it ... ok\ntest t6031_knobs::tests::every_alternative_resolves ... ok\ntest t6031_knobs::tests::grounded_addresses_are_inside_their_blocks ... ok\ntest t6031_knobs::tests::identity_admits_g15c_with_up_to_forty_cores_only ... ok\ntest t6031_knobs::tests::mtr_and_csafr_choices ... ok\ntest t6031_knobs::tests::nothing_given_is_off ... ok\ntest t6031_knobs::tests::revision_ids_follow_the_read_unless_given ... ok\ntest t6031_knobs::tests::unaccepted_values_refuse_and_name_the_parameter ... ok\ntest t6031_knobs::tests::uuids_parse_with_or_without_dashes_only ... ok\ntest t8122_admission::tests::accepts_eight_and_ten_active_cores_without_conflating_slots ... ok\ntest t8122_admission::tests::j613_operating_points_give_eight_states_up_to_1338_mhz ... ok\ntest t8122_admission::tests::operating_point_shapes_reject_invalid_order_voltage_and_frequency ... ok\ntest t8122_admission::tests::operating_point_shapes_round_like_the_driver_and_bound_the_table ... ok\ntest t8122_admission::tests::operating_point_shapes_sort_voltages_and_preserve_voltage_extremes ... ok\ntest t8122_admission::tests::rejects_failed_probes_wrong_revision_and_out_of_range_masks ... ok\ntest t8122_hwdata::tests::the_parameter_accepts_0_and_1_only_and_defaults_to_1 ... ok\ntest t8122_hwdata::tests::the_words_are_the_expected_ones ... ok\ntest t8122_hwdata::tests::a_short_buffer_is_refused_and_left_alone ... ok\ntest t8122_knobs::tests::default_masks_are_within_the_limits ... ok\ntest t8122_knobs::tests::a_leading_sign_is_rejected ... ok\ntest t8122_knobs::tests::defaults_are_the_plan_baseline ... ok\ntest t8122_knobs::tests::every_alternative_resolves ... ok\ntest t8122_knobs::tests::nothing_given_is_off_and_gives_no_values ... ok\ntest t8122_knobs::tests::pstate_cap_accepts_one_to_five_only ... ok\ntest t8122_knobs::tests::reserved_numbers_and_garbage_parse_as_invalid ... ok\ntest t8122_knobs::tests::unaccepted_values_refuse_and_name_the_parameter ... ok\ntest t8122_hwdata::tests::the_block_lands_at_418c_to_41db_and_nothing_else_changes ... ok\n\ntest result: ok. 58 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n"
+      }
+    },
+    "camera_series_order": [
+      134,
+      119
+    ],
+    "camera_series_applies_together": true,
+    "hardware_tests_performed": false,
+    "kernel_build_performed": false
+  }
+}

@@ -1,0 +1,4 @@
+# keep summary.json and inventory/summary.json; raw plists and full process/log dumps stay local
+results/*/raw/
+results/*/inventory/*
+!results/*/inventory/summary.json

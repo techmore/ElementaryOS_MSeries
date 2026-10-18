@@ -19,7 +19,8 @@ Upstream bases (pinned at first commit — see `mseries/UPSTREAM-PINS.md`):
 The owner confirms elementary OS 9 boots on a 2021 14-inch M1 Pro using
 the transformed system. See [desktop setup](DESKTOP-SETUP.md) for reproducible
 Command shortcuts, Pantheon brightness keys, Signal ARM64, CodexBar Linux and
-its native Wingpanel quota dropdown.
+its native Wingpanel quota dropdown. The [full-height desktop profile](display-space/README.md)
+adds notch-aware Wingpanel layout and a compact dock with persistent placement.
 [Ambient keyboard lighting](keyboard-backlight/README.md) is available through
 `bash mseries/install-keyboard-backlight.sh`, using the AOP sensor and UPower.
 

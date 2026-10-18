@@ -1,0 +1,14 @@
+[Unit]
+Description=Streaming dictation on F5 (words typed while you talk)
+After=ydotool.service
+Wants=ydotool.service
+Conflicts=voxtype.service mseries-aop-mic.service
+
+[Service]
+Environment=TRANSCRIBE_LIBRARY=%h/.local/share/mseries/stream/native/transcribe-native-linux-aarch64-cpu-vulkan/libtranscribe.so
+ExecStart=%h/.local/share/mseries/stream/venv/bin/python -I %h/.local/share/mseries/stream/stream-dictate.py
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=graphical-session.target
