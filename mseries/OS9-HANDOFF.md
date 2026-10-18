@@ -1,5 +1,13 @@
 # OS 9 implementation / Claude Code handoff
 
+## Battery history logger + app — 2026-10-18 (Claude Code)
+
+New `mseries/battery/` (see [BATTERY-PROFILER.md](BATTERY-PROFILER.md)): a 15 s user-service logger (SMC system power,
+CPU, top processes, brightness) into SQLite, a `mseries-battery` CLI (status/sessions/profile/events/export) and a
+GTK4+Granite "Battery" app. Installed with `install-battery.sh`; logger running here. 8 unit tests pass; app rendered
+headless on synthetic data. **Unverified:** look in the live theme, real unplugged sessions (still on the charger).
+Next: unplug for a few hours, read `mseries-battery sessions`, then consider a Wingpanel link to the app.
+
 ## Native Discord (Vesktop arm64) — 2026-10-18 (Claude Code)
 
 Added `mseries/install-discord.sh`: pinned Vesktop v1.6.7 aarch64 AppImage (SHA-256 checked), extracted to
