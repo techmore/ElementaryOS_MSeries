@@ -501,10 +501,10 @@ namespace MSeries {
 
         private void add_claude_account () {
             ask_to_save ("Add a Claude account",
-                "Sign in to Claude Code with the account you want to add, then choose Save login. CodexBar keeps it so you can switch between accounts from here.",
-                "Save login", () => {
-                    run_saver.begin ({ "python3", helper_path ("codexbar-claude.py"), "add" },
-                        "Claude login saved", "Couldn't save the Claude login");
+                "CodexBar opens your browser to sign in to Claude, then saves the login so you can switch between accounts from here. Any account that is already signed in is saved first.",
+                "Sign in and save", () => {
+                    run_saver.begin ({ "python3", helper_path ("codexbar-claude.py"), "login" },
+                        "Claude account added", "Couldn't add the Claude account");
                 });
         }
 

@@ -63,6 +63,37 @@ class ClaudeTest(unittest.TestCase):
             self.assertEqual(MODULE.add("cswap"), (True, "Account 1 saved"))
         self.assertFalse(MODULE.add(None)[0])
 
+    def test_login_saves_the_current_account_first_then_signs_in_and_saves(self):
+        calls = []
+        def fake_add(cli):
+            calls.append("add")
+            return True, "Saved."
+        done = mock.Mock(stdout="", stderr="", returncode=0)
+        with mock.patch.object(MODULE, "add", side_effect=fake_add), \
+             mock.patch.object(MODULE, "logged_in", return_value=True), \
+             mock.patch.object(MODULE.subprocess, "run", return_value=done) as run:
+            self.assertEqual(MODULE.login("cswap", "claude"), (True, "Saved."))
+        self.assertEqual(calls, ["add", "add"])
+        self.assertEqual(run.call_args[0][0], ["claude", "auth", "login"])
+
+    def test_login_reports_missing_tools_and_failed_sign_in(self):
+        self.assertFalse(MODULE.login(None, "claude")[0])
+        self.assertIn("not found", MODULE.login("cswap", None)[1])
+        failed = mock.Mock(stdout="", stderr="login cancelled", returncode=1)
+        with mock.patch.object(MODULE, "logged_in", return_value=False), \
+             mock.patch.object(MODULE.subprocess, "run", return_value=failed):
+            self.assertEqual(MODULE.login("cswap", "claude"), (False, "login cancelled"))
+
+    def test_bundled_cli_is_found_newest_first(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as home, mock.patch.object(MODULE.shutil, "which", return_value=None), \
+             mock.patch.object(MODULE.pathlib.Path, "home", return_value=pathlib.Path(home)):
+            for version in ("2.1.9", "2.1.299"):
+                binary = pathlib.Path(home) / ".config/Claude/claude-code" / version / "hash" / "claude"
+                binary.parent.mkdir(parents=True)
+                binary.write_text("")
+            self.assertIn("2.1.299", MODULE.claude_cli())
+
     def test_reset_text_edges(self):
         self.assertEqual(MODULE.reset_text("2026-10-18T11:00:00Z", NOW), "Resetting now")
         self.assertEqual(MODULE.reset_text("2026-10-18T12:20:00Z", NOW), "Resets in 20m")

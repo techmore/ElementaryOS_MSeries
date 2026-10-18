@@ -5,6 +5,7 @@ Upstream CodexBar drives the same tool on macOS; here we call it ourselves so th
 show every saved Claude login with its quota and switch between them.
 
   codexbar-claude.py list             accounts as JSON (no tokens)
+  codexbar-claude.py login            browser sign-in with Claude Code's CLI, then save it
   codexbar-claude.py add              save the signed-in Claude Code login
   codexbar-claude.py switch <number>  make a saved account the active one
 
@@ -105,6 +106,44 @@ def switch(cli: str | None, number: str) -> tuple[bool, str]:
     return False, str(result.get("reason") or "Nothing was switched.")
 
 
+def claude_cli() -> str | None:
+    """Claude Code's own CLI: on PATH, else the copy the Claude desktop app bundles (newest version)."""
+    found = shutil.which("claude")
+    if found:
+        return found
+    bundled = sorted((pathlib.Path.home() / ".config/Claude/claude-code").glob("*/*/claude"),
+                     key=lambda p: [int(x) if x.isdigit() else 0 for x in p.parts[-3].split(".")])
+    return str(bundled[-1]) if bundled else None
+
+
+def logged_in(claude: str) -> bool:
+    try:
+        result = subprocess.run([claude, "auth", "status"], capture_output=True, text=True, timeout=30, check=False)
+        return bool(json.loads(result.stdout).get("loggedIn"))
+    except (OSError, subprocess.SubprocessError, json.JSONDecodeError, AttributeError):
+        return False
+
+
+def login(cli: str | None, claude: str | None) -> tuple[bool, str]:
+    """Browser sign-in with Claude Code's CLI, then save the login. A login already present is saved first."""
+    if not cli:
+        return False, "claude-swap is not installed."
+    if not claude:
+        return False, "Claude Code's command line was not found. Install Claude Code, then try again."
+    if logged_in(claude):
+        add(cli)  # keep the account we are about to sign out of
+    try:
+        result = subprocess.run([claude, "auth", "login"], capture_output=True, text=True, timeout=600, check=False)
+    except subprocess.TimeoutExpired:
+        return False, "The browser sign-in was not completed in time."
+    except (OSError, subprocess.SubprocessError):
+        return False, "Claude Code's sign-in could not start."
+    if result.returncode != 0:
+        text = (result.stdout + result.stderr).strip()
+        return False, text.splitlines()[-1] if text else "The Claude sign-in did not finish."
+    return add(cli)
+
+
 def add(cli: str | None) -> tuple[bool, str]:
     """Save the signed-in Claude Code login into claude-swap, with a message a person can act on."""
     if not cli:
@@ -129,6 +168,10 @@ def main(arguments: list[str]) -> int:
     if command == "list":
         print(json.dumps(listing(cli)))
         return 0
+    if command == "login":
+        ok, message = login(cli, claude_cli())
+        print(message, file=sys.stdout if ok else sys.stderr)
+        return 0 if ok else 1
     if command == "add":
         ok, message = add(cli)
         print(message, file=sys.stdout if ok else sys.stderr)
@@ -137,7 +180,7 @@ def main(arguments: list[str]) -> int:
         ok, message = switch(cli, arguments[1])
         print(json.dumps({"ok": ok, "message": message}))
         return 0 if ok else 1
-    print("usage: codexbar-claude.py list | add | switch <number>", file=sys.stderr)
+    print("usage: codexbar-claude.py list | login | add | switch <number>", file=sys.stderr)
     return 2
 
 
