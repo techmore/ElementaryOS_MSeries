@@ -244,8 +244,10 @@ migration remain ongoing; announcement targets are not hardware test results.
 
 The local `rust` branch starts from the available `origin/main` snapshot
 `b0a03548fd7003eceaf191d60dcb097bdd0c3c99`. Its path inventory currently has
-468 records (422 M-series-maintained paths and 46 elementary source-tree paths);
-the semantic project map and a complete local conversion schedule remain open.
+735 file records (653 M-series-maintained paths and 82 elementary-owned upstream
+inputs) grouped into 226 first-pass, path-derived components. Semantic project
+boundaries, source/license pins and a complete local conversion schedule remain
+open.
 Power and Wi-Fi resume have independent, not-installed Rust candidates with
 differential software suites. A network-usage daemon candidate now preserves the
 existing SQLite/panel contract, six focused tests, and five shared-fixture

@@ -2438,6 +2438,11 @@ build, inventory check (468 items: 422 local, 46 elementary) and
 coverage; full DNS event/flush/retry comparison, install/rollback rehearsal and
 desktop-session qualification remain open. The candidate uses the `sqlite3` CLI.
 
+The inventory now includes all scoped files rather than only selected source
+extensions: 735 paths are assigned to 226 first-pass path-derived component
+groups. This added extensionless hooks, workflow files, documents and inputs;
+semantic component boundaries and conversion status still need review.
+
 The Rust branch and this batch remain local. Public push was rejected by the
 automatic approval review because it would publish repository contents; no
 push or external publication has occurred. Next: build the netusage differential
