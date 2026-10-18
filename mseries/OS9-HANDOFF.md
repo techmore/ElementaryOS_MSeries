@@ -110,8 +110,16 @@ Each room with a recent reading gets a translucent unlit volume in its band colo
 clear; upper floors keep ≥55% of the hue under the Floors slider. An all-stale collector now shows one warning line.
 Bundles rebuilt with locked vite (clean main rebuilt byte-identical first); CI green. Verified by Xvfb/WebKit renders
 of whole home and each floor (first yellow, master blue, living room amber, attic blue). Installed to Wingpanel and
-restarted. **Not deployed:** the collector's web Home 3D page still serves the previous bundle until the collector is
-updated.
+restarted. Collector (owner approved, 2026-10-18 20:24 UTC): SER8 `energy-monitor` switched 2.3.62 → 2.3.64 from
+`973d314` with the existing backup-and-release-switch process. The script refused to run unless every server Python
+module, template and lock file matched 2.3.62 (only the Home 3D bundle and VERSION change server-side). Backup
+`/var/lib/energy-monitor/rollback-room-hues-20261018T202402Z`: manifest, dashboard/poller units, settings, house plan
+and an integrity-checked DB copy (367,909 readings). Dashboard and poller moved to `/opt/energy-monitor/releases/2.3.64`;
+integration collectors stay on 2.3.54 and were not restarted. Verified over the public origin: `/api/version` 2.3.64,
+served `home-3d.js` SHA-256 equals the merged bundle (`0924ea89…`), fresh reading after restart, house state/config
+200, anonymous state still 302, all six services active, no warnings. Rollback: restore the two units and
+`deployment.json` from that backup, `systemctl daemon-reload`, restart dashboard and poller. Scripts and receipt are kept
+with the earlier ones (`deploy_energy_2364.py`, `deployment-verification-2.3.64.json`) in the Codex work folder.
 
 ## Battery real data — 2026-10-18 (Claude Code)
 
