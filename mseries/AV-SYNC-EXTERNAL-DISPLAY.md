@@ -69,3 +69,16 @@ untested case, and the TV's idle blanking would move audio to the Mac speakers. 
 `appledrm.hdmi_audio=1` on the Aurora `.20` entry, the `apple_dcp` UCM profile, then retest playback,
 hotplug, DPMS and suspend on the dock monitor. A/V sync (above) should be re-measured on that sink, since the DCP
 audio path has its own latency. Not enabled today (no reboot, and upstream rates it unstable).
+
+## Sync-test page and the "add a slight audio delay" mitigation (2026-10-18)
+
+[`mseries/tools/av-sync-test.html`](tools/av-sync-test.html) is a self-contained page (no network): a
+full-screen flash once a second with a 1 kHz click, and a slider (also left/right arrow keys) that
+delays the click by 0-600 ms. Open it in a browser **on the external monitor**, press Start, play the
+click through the speakers normally used, and raise the slider until flash and click land together;
+the number is the delay the audio path needs relative to the dock monitor (it includes the browser's own
+output latency, shown on the page). Result is remembered in the page's local storage.
+
+Applying it for real (only after the number is known): a PipeWire filter-chain `delay` node placed in front
+of the speaker sink, enabled only while the external monitor is attached so the built-in panel stays in sync.
+That restarts the user audio graph, so it is not done blind. Owner measurement: _pending_.
