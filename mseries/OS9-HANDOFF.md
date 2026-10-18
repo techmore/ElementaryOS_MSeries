@@ -5612,3 +5612,20 @@ Not verified: the panel's own popover padding for the new menu items (preview
 fixture lacks Wingpanel's stylesheet, same as existing rows); real link clicks
 in the live session; factory image build.
 
+### Verse tab UX pass — 2026-10-18 (same branch/PR #211)
+
+Changes: Psalm headings come from the WEB USFM `\d` markers into a third TSV
+column (11 entries; the builder stops unless the heading exactly prefixes verse 1)
+and show as a dim small caption. Verse text is 1.12em with line-height 1.4
+(`data/DailyVerse.css`), vertically centered. The header row adds the calendar's
+linked ◀ Today ▶ control (Today is insensitive on today, reset on popup open).
+The date line reads "Today/Yesterday/Tomorrow · Weekday, Month day". Added
+Copy Verse with an in-place "Copied" confirmation and a bolder reference.
+Verified: 22/22 groups light and dark (two consecutive clean light runs). One
+earlier light run failed in the pre-existing late-account step ("No such source
+for UID agenda-late-account"), an EDS registration timing flake unrelated to
+the verse tab. The patch rebuilds byte-identically from the pin;
+test-image-wiring OK. Not installed yet: the desktop still runs the first verse
+build from 17:01. Not verified in the live panel: real clicks and Wingpanel
+menu-item padding.
+

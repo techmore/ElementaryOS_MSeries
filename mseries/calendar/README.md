@@ -19,28 +19,41 @@ Identical UIDs in separate calendars do not hide each other's events.
 
 ## Verse of the Day (+ tab)
 
-The **+** tab shows one Bible verse a day under a Granite header with today's
-date, followed by panel menu items:
+The **+** tab shows one Bible verse a day under a Granite header. The header's
+second line uses the Events wording (**Today · Sunday, October 18**), and the
+same ◀ **Today** ▶ control as the calendar browses other days. Today is greyed
+out while you're already on today. Reopening the popup always returns to today.
+
+The verse is set a little larger with more line spacing and centered in its
+area. Psalm headings (for example "A Psalm by David.") appear as a small
+dimmed caption above the verse instead of being run into it. The reference sits
+below on the right.
+
+Panel menu items follow:
 
 - **Listen to Sermons** opens a SermonAudio search for the passage.
 - **Watch Sermon Videos** opens a YouTube search for sermons on the passage.
 - **Read the Full Chapter** opens the passage in context at Bible Gateway (WEB).
+- **Copy Verse** copies `“text” — Reference (WEB)` and shows **Copied**
+  briefly; the popup stays open.
 
-Links are built from the reference, so they don't go stale; choosing one closes
+Links are built from the reference, so they don't go stale. Choosing one closes
 the popup and opens the default browser. Nothing is fetched until you click.
 
-The verse stays the same all day and changes at local midnight (the popup
-re-checks the date every time it opens). Each year gets its own seeded shuffle
-of the whole list, so a year never repeats a verse; no state is stored.
+The verse is the same all day and changes at local midnight. Each year gets
+its own seeded shuffle of the whole list, so a year never repeats a verse; no
+state is stored.
 
 Text is the **World English Bible**, public domain (eBible.org), copied
-unchanged; Psalm superscriptions that the WEB includes in verse 1 stay in the
-text. To change the list, edit `verse-references.txt` (at least 366 entries),
-download `engwebp_vpl.zip` from <https://ebible.org/Scriptures/>, run
-`python3 -I mseries/calendar/build-verses.py path/to/engwebp_vpl.txt`, copy
+unchanged. To change the list, edit `verse-references.txt` (at least 366
+entries) and download `engwebp_vpl.zip` and `engwebp_usfm.zip` from
+<https://ebible.org/Scriptures/>. Then run
+`python3 -I mseries/calendar/build-verses.py engwebp_vpl.txt 20-PSAengwebp.usfm`.
+The USFM marks Psalm headings, which the builder moves to a third column; it
+stops if a heading doesn't exactly match the start of verse 1. Copy
 `daily-verses.tsv` to `data/daily-verses.tsv` in the patched source tree and
-regenerate the patch with `git diff -U2 <pin>`. The plugin bundles the list as a
-GResource; `test-agenda.sh` reads it back from the built library.
+regenerate the patch with `git diff -U2 <pin>`. The plugin bundles the list and
+`DailyVerse.css` as GResources.
 
 <a id="month-navigation-and-today"></a>
 
@@ -128,9 +141,12 @@ qualify a factory image or a Google account connection.
 `bash mseries/calendar/test-agenda.sh /absolute/path/to/libdatetime.so` runs the
 actual plugin on Xvfb with a private D-Bus and private XDG config/data/cache.
 All 22 workflow groups use synthetic local EDS sources. The verse group checks
-the + tab, that the shown verse is today's pick from the bundled list, the three
-link items, and that 2026, 2027 and leap 2028 each show 365/366 different verses,
-stable across a day (including DST days) and reshuffled per year. Timetable groups additionally
+the + tab and today's pick from the bundled list, plus previous/next/Today
+navigation and its Today/Tomorrow/Yesterday wording. It also checks the Psalm
+heading caption, Copy Verse (clipboard contents and the Copied confirmation),
+the return to today on reopen, and that 2026, 2027 and leap 2028 each show
+365/366 different verses, stable across a day (including DST days) and
+reshuffled per year. Timetable groups additionally
 check actual block positions against hour rules, overlap geometry, adjacent and
 short events, instant/DURATION events, overnight clipping, recurring week columns,
 live reflow and scroll retention, and a stubbed native Calendar date action.

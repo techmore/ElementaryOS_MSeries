@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 """Build daily-verses.tsv from verse-references.txt and the WEB verse-per-line text.
 
-Usage: build-verses.py path/to/engwebp_vpl.txt
+Usage: build-verses.py path/to/engwebp_vpl.txt path/to/20-PSAengwebp.usfm
+
+Both files come from https://ebible.org/Scriptures/ (engwebp_vpl.zip and
+engwebp_usfm.zip). The verse-per-line text runs Psalm headings into verse 1;
+the USFM marks them (\\d), so they are split into their own column and shown
+as a caption. No words are added, removed or reordered.
 
 The World English Bible is public domain (https://ebible.org/web/). Its text is
 copied unchanged, as eBible.org asks of anything still called the WEB.
@@ -31,6 +36,18 @@ BOOKS = {
 }
 REFERENCE = re.compile(r"^(.+) (\d+):(\d+)(?:-(\d+))?$")
 MINIMUM = 366
+MARKUP = re.compile(r"\\f .*?\\f\*|\\x .*?\\x\*|\\\+?w ([^|\\]*)(?:\|[^\\]*)?\\\+?w\*|\\[a-z0-9+]+\*?")
+
+
+def psalm_headings(path: Path) -> dict:
+    headings, chapter = {}, None
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("\\c "):
+            chapter = line.split()[1]
+        elif line.startswith("\\d ") and chapter:
+            text = MARKUP.sub(lambda m: m.group(1) or "", line[3:])
+            headings[chapter] = " ".join(text.split())
+    return headings
 
 
 def main() -> int:
@@ -41,6 +58,7 @@ def main() -> int:
         key2, _, verse = verse.partition(" ")
         text[f"{key} {key2}"] = verse.strip()
 
+    headings = psalm_headings(Path(sys.argv[2]))
     rows, seen = [], set()
     for line in (here / "verse-references.txt").read_text(encoding="utf-8").splitlines():
         line = line.strip()
@@ -61,9 +79,15 @@ def main() -> int:
                 sys.exit(f"missing verse text: {line} ({number})")
             parts.append(verse)
         joined = " ".join(parts)
-        if "\t" in joined or "\n" in joined:
+        heading = ""
+        if match[1] == "Psalm" and first == 1 and match[2] in headings:
+            heading = headings[match[2]]
+            if not joined.startswith(heading + " "):
+                sys.exit(f"heading does not prefix verse text: {line}")
+            joined = joined[len(heading) + 1:]
+        if "\t" in joined + heading or "\n" in joined + heading:
             sys.exit(f"unexpected whitespace in {line}")
-        rows.append(f"{line}\t{joined}")
+        rows.append(f"{line}\t{joined}" + (f"\t{heading}" if heading else ""))
 
     if len(rows) < MINIMUM:
         sys.exit(f"{len(rows)} references; need at least {MINIMUM}")

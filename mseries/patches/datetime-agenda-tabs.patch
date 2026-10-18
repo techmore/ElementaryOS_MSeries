@@ -1,3 +1,19 @@
+diff --git a/data/DailyVerse.css b/data/DailyVerse.css
+new file mode 100644
+index 0000000..5f80b9c
+--- /dev/null
++++ b/data/DailyVerse.css
+@@ -0,0 +1,10 @@
++/* Verse of the Day: a little larger and airier than list text, for reading. */
++.daily-verse-text {
++    font-size: 1.12em;
++    line-height: 1.4;
++}
++
++.daily-verse-reference {
++    font-weight: 600;
++    opacity: 0.75;
++}
 diff --git a/data/EventRow.css b/data/EventRow.css
 index 96b8708..9f22f6e 100644
 --- a/data/EventRow.css
@@ -62,7 +78,7 @@ index 0000000..dcab65c
 +.mseries-half-hour-line { background-color: alpha(@theme_fg_color, 0.07); }
 diff --git a/data/daily-verses.tsv b/data/daily-verses.tsv
 new file mode 100644
-index 0000000..e95d6ae
+index 0000000..ec36445
 --- /dev/null
 +++ b/data/daily-verses.tsv
 @@ -0,0 +1,401 @@
@@ -121,19 +137,19 @@ index 0000000..e95d6ae
 +Psalm 1:3	He will be like a tree planted by the streams of water, that produces its fruit in its season, whose leaf also does not wither. Whatever he does shall prosper.
 +Psalm 4:8	In peace I will both lay myself down and sleep, for you alone, LORD, make me live in safety.
 +Psalm 5:3	LORD, in the morning you will hear my voice. In the morning I will lay my requests before you, and will watch expectantly.
-+Psalm 9:1	For the Chief Musician. Set to “The Death of the Son.” A Psalm by David. I will give thanks to the LORD with my whole heart. I will tell of all your marvelous works.
++Psalm 9:1	I will give thanks to the LORD with my whole heart. I will tell of all your marvelous works.	For the Chief Musician. Set to “The Death of the Son.” A Psalm by David.
 +Psalm 9:9	The LORD will also be a high tower for the oppressed; a high tower in times of trouble.
 +Psalm 16:8	I have set the LORD always before me. Because he is at my right hand, I shall not be moved.
 +Psalm 16:11	You will show me the path of life. In your presence is fullness of joy. In your right hand there are pleasures forever more.
 +Psalm 18:2	The LORD is my rock, my fortress, and my deliverer; my God, my rock, in whom I take refuge; my shield, and the horn of my salvation, my high tower.
-+Psalm 19:1	For the Chief Musician. A Psalm by David. The heavens declare the glory of God. The expanse shows his handiwork.
++Psalm 19:1	The heavens declare the glory of God. The expanse shows his handiwork.	For the Chief Musician. A Psalm by David.
 +Psalm 19:14	Let the words of my mouth and the meditation of my heart be acceptable in your sight, LORD, my rock, and my redeemer.
 +Psalm 20:7	Some trust in chariots, and some in horses, but we trust in the name of the LORD our God.
-+Psalm 23:1	A Psalm by David. The LORD is my shepherd; I shall lack nothing.
++Psalm 23:1	The LORD is my shepherd; I shall lack nothing.	A Psalm by David.
 +Psalm 23:4	Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me. Your rod and your staff, they comfort me.
 +Psalm 23:6	Surely goodness and loving kindness shall follow me all the days of my life, and I will dwell in the LORD’s house forever.
 +Psalm 25:4-5	Show me your ways, LORD. Teach me your paths. Guide me in your truth, and teach me, for you are the God of my salvation. I wait for you all day long.
-+Psalm 27:1	By David. The LORD is my light and my salvation. Whom shall I fear? The LORD is the strength of my life. Of whom shall I be afraid?
++Psalm 27:1	The LORD is my light and my salvation. Whom shall I fear? The LORD is the strength of my life. Of whom shall I be afraid?	By David.
 +Psalm 27:14	Wait for the LORD. Be strong, and let your heart take courage. Yes, wait for the LORD.
 +Psalm 28:7	The LORD is my strength and my shield. My heart has trusted in him, and I am helped. Therefore my heart greatly rejoices. With my song I will thank him.
 +Psalm 30:5	For his anger is but for a moment. His favor is for a lifetime. Weeping may stay for the night, but joy comes in the morning.
@@ -146,15 +162,15 @@ index 0000000..e95d6ae
 +Psalm 37:4	Also delight yourself in the LORD, and he will give you the desires of your heart.
 +Psalm 37:5	Commit your way to the LORD. Trust also in him, and he will do this:
 +Psalm 37:7	Rest in the LORD, and wait patiently for him. Don’t fret because of him who prospers in his way, because of the man who makes wicked plots happen.
-+Psalm 40:1	For the Chief Musician. A Psalm by David. I waited patiently for the LORD. He turned to me, and heard my cry.
++Psalm 40:1	I waited patiently for the LORD. He turned to me, and heard my cry.	For the Chief Musician. A Psalm by David.
 +Psalm 42:11	Why are you in despair, my soul? Why are you disturbed within me? Hope in God! For I shall still praise him, the saving help of my countenance, and my God.
-+Psalm 46:1	For the Chief Musician. By the sons of Korah. According to Alamoth. God is our refuge and strength, a very present help in trouble.
++Psalm 46:1	God is our refuge and strength, a very present help in trouble.	For the Chief Musician. By the sons of Korah. According to Alamoth.
 +Psalm 46:10	“Be still, and know that I am God. I will be exalted among the nations. I will be exalted on the earth.”
 +Psalm 51:10	Create in me a clean heart, O God. Renew a right spirit within me.
 +Psalm 55:22	Cast your burden on the LORD and he will sustain you. He will never allow the righteous to be moved.
 +Psalm 56:3	When I am afraid, I will put my trust in you.
-+Psalm 62:1-2	For the Chief Musician. To Jeduthun. A Psalm by David. My soul rests in God alone. My salvation is from him. He alone is my rock, my salvation, and my fortress. I will never be greatly shaken.
-+Psalm 63:1	A Psalm by David, when he was in the desert of Judah. God, you are my God. I will earnestly seek you. My soul thirsts for you. My flesh longs for you, in a dry and weary land, where there is no water.
++Psalm 62:1-2	My soul rests in God alone. My salvation is from him. He alone is my rock, my salvation, and my fortress. I will never be greatly shaken.	For the Chief Musician. To Jeduthun. A Psalm by David.
++Psalm 63:1	God, you are my God. I will earnestly seek you. My soul thirsts for you. My flesh longs for you, in a dry and weary land, where there is no water.	A Psalm by David, when he was in the desert of Judah.
 +Psalm 63:3	Because your loving kindness is better than life, my lips shall praise you.
 +Psalm 66:20	Blessed be God, who has not turned away my prayer, nor his loving kindness from me.
 +Psalm 71:5	For you are my hope, Lord GOD, my confidence from my youth.
@@ -179,11 +195,11 @@ index 0000000..e95d6ae
 +Psalm 119:11	I have hidden your word in my heart, that I might not sin against you.
 +Psalm 119:105	Your word is a lamp to my feet, and a light for my path.
 +Psalm 119:114	You are my hiding place and my shield. I hope in your word.
-+Psalm 121:1-2	A Song of Ascents. I will lift up my eyes to the hills. Where does my help come from? My help comes from the LORD, who made heaven and earth.
++Psalm 121:1-2	I will lift up my eyes to the hills. Where does my help come from? My help comes from the LORD, who made heaven and earth.	A Song of Ascents.
 +Psalm 121:7-8	The LORD will keep you from all evil. He will keep your soul. The LORD will keep your going out and your coming in, from this time forward, and forever more.
-+Psalm 127:1	A Song of Ascents. By Solomon. Unless the LORD builds the house, they who build it labor in vain. Unless the LORD watches over the city, the watchman guards it in vain.
++Psalm 127:1	Unless the LORD builds the house, they who build it labor in vain. Unless the LORD watches over the city, the watchman guards it in vain.	A Song of Ascents. By Solomon.
 +Psalm 130:5	I wait for the LORD. My soul waits. I hope in his word.
-+Psalm 133:1	A Song of Ascents. By David. See how good and how pleasant it is for brothers to live together in unity!
++Psalm 133:1	See how good and how pleasant it is for brothers to live together in unity!	A Song of Ascents. By David.
 +Psalm 136:1	Give thanks to the LORD, for he is good, for his loving kindness endures forever.
 +Psalm 138:8	The LORD will fulfill that which concerns me. Your loving kindness, LORD, endures forever. Don’t forsake the works of your own hands.
 +Psalm 139:13-14	For you formed my inmost being. You knit me together in my mother’s womb. I will give thanks to you, for I am fearfully and wonderfully made. Your works are wonderful. My soul knows that very well.
@@ -468,15 +484,16 @@ index 0000000..e95d6ae
 +Revelation 21:5	He who sits on the throne said, “Behold, I am making all things new.” He said, “Write, for these words of God are faithful and true.”
 +Revelation 22:13	I am the Alpha and the Omega, the First and the Last, the Beginning and the End.
 diff --git a/data/datetime.gresource.xml b/data/datetime.gresource.xml
-index 28a4dd2..512e5ae 100644
+index 28a4dd2..9d0bb78 100644
 --- a/data/datetime.gresource.xml
 +++ b/data/datetime.gresource.xml
-@@ -3,6 +3,8 @@
+@@ -3,6 +3,9 @@
    <gresource prefix="/io/elementary/desktop/wingpanel/datetime/">
      <file alias="ControlHeader.css" compressed="true">ControlHeader.css</file>
 +    <file alias="TimeGrid.css" compressed="true">TimeGrid.css</file>
      <file alias="EventRow.css" compressed="true">EventRow.css</file>
      <file alias="GridDay.css" compressed="true">GridDay.css</file>
++    <file alias="DailyVerse.css" compressed="true">DailyVerse.css</file>
 +    <file alias="daily-verses.tsv" compressed="true">daily-verses.tsv</file>
    </gresource>
  </gresources>
@@ -1057,10 +1074,10 @@ index 7a626ba..eed808f 100644
          Util.set_component_calendar_color (source_selectable, name_label);
 diff --git a/src/Widgets/DailyVerse.vala b/src/Widgets/DailyVerse.vala
 new file mode 100644
-index 0000000..2980202
+index 0000000..abebb7e
 --- /dev/null
 +++ b/src/Widgets/DailyVerse.vala
-@@ -0,0 +1,122 @@
+@@ -0,0 +1,204 @@
 +/* Copyright 2026 M-Series contributors. SPDX-License-Identifier: GPL-3.0-or-later */
 +// One verse a day from the bundled World English Bible list, with links to
 +// sermons on that passage. The order is shuffled per year, so a year never
@@ -1070,38 +1087,81 @@ index 0000000..2980202
 +
 +    private string[] references = {};
 +    private string[] texts = {};
-+    private string shown_day = "";
++    private string[] headings = {};
++    private int offset = 0;
 +    private string reference = "";
++    private string copy_text = "";
++    private uint copied_timeout = 0;
 +    private Granite.HeaderLabel header;
++    private Gtk.Label heading_label;
 +    private Gtk.Label text_label;
 +    private Gtk.Label reference_label;
++    private Gtk.Button today_button;
++    private Wingpanel.PopoverMenuItem copy_item;
 +
 +    public DailyVerse () {
 +        Object (orientation: Gtk.Orientation.VERTICAL, spacing: 0, name: "daily-verse");
 +        load ();
-+        // Laid out like the rest of the panel: a Granite header, plain body
-+        // text, then menu items for actions, as in the Wingpanel indicators.
++        var style = new Gtk.CssProvider ();
++        style.load_from_resource ("/io/elementary/desktop/wingpanel/datetime/DailyVerse.css");
++        Gtk.StyleContext.add_provider_for_display (Gdk.Display.get_default (), style,
++            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
++
++        // Laid out like the rest of the panel: a Granite header with the same
++        // previous/Today/next control as the calendar, plain body text, then
++        // menu items for actions, as in the Wingpanel indicators.
 +        header = new Granite.HeaderLabel (_("Verse of the Day")) {
-+            name = "verse-day", size = Granite.HeaderLabel.Size.H4,
++            name = "verse-day", size = Granite.HeaderLabel.Size.H4, hexpand = true
++        };
++        var previous = new Gtk.Button.from_icon_name ("pan-start-symbolic") {
++            name = "verse-previous", tooltip_text = _("Previous day")
++        };
++        today_button = new Gtk.Button.with_label (_("Today")) {
++            name = "verse-today", tooltip_text = _("Today’s verse")
++        };
++        var next = new Gtk.Button.from_icon_name ("pan-end-symbolic") {
++            name = "verse-next", tooltip_text = _("Next day")
++        };
++        previous.clicked.connect (() => show_offset (offset - 1));
++        today_button.clicked.connect (() => show_offset (0));
++        next.clicked.connect (() => show_offset (offset + 1));
++        var navigation = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { valign = Gtk.Align.CENTER };
++        navigation.add_css_class ("linked");
++        navigation.append (previous);
++        navigation.append (today_button);
++        navigation.append (next);
++        var header_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) {
 +            margin_start = 12, margin_end = 12
 +        };
++        header_row.append (header);
++        header_row.append (navigation);
++
++        heading_label = new Gtk.Label (null) {
++            name = "verse-heading", xalign = 0, wrap = true, max_width_chars = 34
++        };
++        heading_label.add_css_class (Granite.CssClass.DIM);
++        heading_label.add_css_class (Granite.CssClass.SMALL);
 +        text_label = new Gtk.Label (null) {
 +            name = "verse-text", xalign = 0, wrap = true, wrap_mode = Pango.WrapMode.WORD_CHAR,
 +            max_width_chars = 34, width_chars = 24
 +        };
++        text_label.add_css_class ("daily-verse-text");
 +        reference_label = new Gtk.Label (null) {
 +            name = "verse-reference", xalign = 1, wrap = true, max_width_chars = 34
 +        };
-+        reference_label.add_css_class (Granite.CssClass.DIM);
-+        var verse = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) {
-+            margin_start = 12, margin_end = 12, margin_top = 3, margin_bottom = 12
++        reference_label.add_css_class ("daily-verse-reference");
++        var verse = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) {
++            margin_start = 12, margin_end = 12, margin_top = 6, margin_bottom = 12,
++            valign = Gtk.Align.CENTER
 +        };
++        verse.append (heading_label);
 +        verse.append (text_label);
 +        verse.append (reference_label);
-+        append (header);
++
++        append (header_row);
 +        append (new Gtk.ScrolledWindow () {
 +            hscrollbar_policy = Gtk.PolicyType.NEVER, child = verse, vexpand = true,
-+            min_content_height = 96, max_content_height = 220, propagate_natural_height = true
++            min_content_height = 96, max_content_height = 260, propagate_natural_height = true
 +        });
 +        append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL) { margin_top = 3, margin_bottom = 3 });
 +        append (link_item ("verse-sermons", _("Listen to Sermons"),
@@ -1110,6 +1170,11 @@ index 0000000..2980202
 +            _("Sermon videos on this passage at YouTube"), "https://www.youtube.com/results?search_query=sermon+%s"));
 +        append (link_item ("verse-context", _("Read the Full Chapter"),
 +            _("This passage in context at Bible Gateway"), "https://www.biblegateway.com/passage/?search=%s&version=WEB"));
++        copy_item = new Wingpanel.PopoverMenuItem.with_text (_("Copy Verse")) {
++            name = "verse-copy", tooltip_text = _("Copy the verse and its reference")
++        };
++        copy_item.clicked.connect (copy_verse);
++        append (copy_item);
 +        var source = new Gtk.Label (_("World English Bible · Public Domain")) {
 +            xalign = 0, margin_start = 12, margin_end = 12, margin_top = 6
 +        };
@@ -1124,10 +1189,12 @@ index 0000000..2980202
 +            var data = GLib.resources_lookup_data ("/io/elementary/desktop/wingpanel/datetime/daily-verses.tsv",
 +                GLib.ResourceLookupFlags.NONE);
 +            foreach (var line in ((string) data.get_data ()).split ("\n")) {
-+                var fields = line.split ("\t", 2);
-+                if (line.has_prefix ("#") || fields.length != 2) continue;
++                // reference, text and an optional Psalm heading
++                var fields = line.split ("\t", 3);
++                if (line.has_prefix ("#") || fields.length < 2) continue;
 +                references += fields[0];
 +                texts += fields[1];
++                headings += fields.length == 3 ? fields[2] : "";
 +            }
 +        } catch (Error e) {
 +            warning ("Could not load daily verses: %s", e.message);
@@ -1149,6 +1216,19 @@ index 0000000..2980202
 +        return button;
 +    }
 +
++    private void copy_verse () {
++        if (copy_text == "") return;
++        get_clipboard ().set_text (copy_text);
++        // Confirm in place; the popover stays open so the reader keeps context.
++        copy_item.text = _("Copied");
++        if (copied_timeout != 0) Source.remove (copied_timeout);
++        copied_timeout = Timeout.add (1500, () => {
++            copy_item.text = _("Copy Verse");
++            copied_timeout = 0;
++            return Source.REMOVE;
++        });
++    }
++
 +    // Same verse all day; each year gets its own shuffle of the whole list.
 +    public static int index_for (GLib.DateTime day, int count) {
 +        if (count <= 0) return -1;
@@ -1164,23 +1244,42 @@ index 0000000..2980202
 +        return order[(day.get_day_of_year () - 1) % count];
 +    }
 +
-+    // Called when the popover opens so the verse turns over at midnight.
++    // Called when the popover opens: back to today, which also turns the
++    // verse over after midnight.
 +    public void refresh () {
-+        var today = new GLib.DateTime.now_local ();
-+        var day = today.format ("%F");
-+        if (day == shown_day) return;
-+        shown_day = day;
-+        header.secondary_text = today.format (_("%A, %B %e")).replace ("  ", " ");
-+        var index = index_for (today, references.length);
++        show_offset (0);
++    }
++
++    private void show_offset (int days) {
++        offset = days;
++        var day = new GLib.DateTime.now_local ().add_days (offset);
++        var date = day.format (_("%A, %B %e")).replace ("  ", " ");
++        header.secondary_text = offset == 0 ? _("Today") + " · " + date :
++            offset == -1 ? _("Yesterday") + " · " + date :
++            offset == 1 ? _("Tomorrow") + " · " + date : date;
++        today_button.sensitive = offset != 0;
++        var index = index_for (day, references.length);
 +        if (index < 0) {
-+            reference = "";
++            reference = copy_text = "";
++            heading_label.visible = false;
 +            text_label.label = _("Verses are unavailable.");
 +            reference_label.label = "";
 +            return;
 +        }
 +        reference = references[index];
++        heading_label.label = headings[index];
++        heading_label.visible = headings[index] != "";
 +        text_label.label = texts[index];
 +        reference_label.label = "— " + reference;
++        copy_text = "“%s” — %s (WEB)".printf (texts[index], reference);
++    }
++
++    public override void dispose () {
++        if (copied_timeout != 0) {
++            Source.remove (copied_timeout);
++            copied_timeout = 0;
++        }
++        base.dispose ();
 +    }
 +}
 diff --git a/src/Widgets/TaskComposer.vala b/src/Widgets/TaskComposer.vala

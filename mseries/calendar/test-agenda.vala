@@ -556,6 +556,12 @@ class AgendaTest : Object {
         for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) dump_labels (child);
     }
 
+    string verse_date () {
+        string text;
+        named (widget, "verse-day").get ("secondary-text", out text);
+        return text;
+    }
+
     async void verse_checks (Gtk.Window window) throws Error {
         var stack = find_stack (widget);
         var page = stack.get_page (stack.get_child_by_name ("verse"));
@@ -566,19 +572,61 @@ class AgendaTest : Object {
             GLib.ResourceLookupFlags.NONE);
         string[] references = {};
         string[] texts = {};
+        string[] headings = {};
         foreach (var line in ((string) data.get_data ()).split ("\n")) {
-            var fields = line.split ("\t", 2);
-            if (line.has_prefix ("#") || fields.length != 2) continue;
+            var fields = line.split ("\t", 3);
+            if (line.has_prefix ("#") || fields.length < 2) continue;
             references += fields[0];
             texts += fields[1];
+            headings += fields.length == 3 ? fields[2] : "";
         }
         assert (references.length >= 366);
         var today = verse_index (new GLib.DateTime.now_local (), references.length);
         yield expect ("— " + references[today]);
         yield expect (texts[today]);
-        foreach (var id in new string[] { "verse-sermons", "verse-videos", "verse-context" }) {
+        foreach (var id in new string[] { "verse-sermons", "verse-videos", "verse-context", "verse-copy" }) {
             assert (named (widget, id) is Gtk.Button && ((Gtk.Button) named (widget, id)).sensitive);
         }
+        var now = new GLib.DateTime.now_local ();
+        var today_button = (Gtk.Button) named (widget, "verse-today");
+        assert (!today_button.sensitive);
+        assert (verse_date ().has_prefix ("Today · "));
+        ((Gtk.Button) named (widget, "verse-next")).clicked ();
+        yield expect ("— " + references[verse_index (now.add_days (1), references.length)]);
+        assert (today_button.sensitive);
+        assert (verse_date ().has_prefix ("Tomorrow · "));
+        ((Gtk.Button) named (widget, "verse-previous")).clicked ();
+        ((Gtk.Button) named (widget, "verse-previous")).clicked ();
+        yield expect ("— " + references[verse_index (now.add_days (-1), references.length)]);
+        assert (verse_date ().has_prefix ("Yesterday · "));
+        today_button.clicked ();
+        yield expect ("— " + references[today]);
+        assert (!today_button.sensitive);
+
+        // A Psalm heading is a caption, not part of the verse text.
+        int ahead = 1;
+        while (headings[verse_index (now.add_days (ahead), references.length)] == "") ahead++;
+        for (int i = 0; i < ahead; i++) ((Gtk.Button) named (widget, "verse-next")).clicked ();
+        var psalm = verse_index (now.add_days (ahead), references.length);
+        yield expect (headings[psalm]);
+        yield expect (texts[psalm]);
+        assert (named (widget, "verse-heading").visible);
+        assert (!texts[psalm].has_prefix (headings[psalm]));
+        for (int i = 0; i < 5; i++) yield pause ();
+        preview (window, "calendar-verse-psalm");
+
+        // Copy puts the verse and reference on the clipboard and confirms in place.
+        ((Gtk.Button) named (widget, "verse-copy")).clicked ();
+        yield expect ("Copied");
+        var copied = yield widget.get_clipboard ().read_text_async (null);
+        assert (copied == "“%s” — %s (WEB)".printf (texts[psalm], references[psalm]));
+        yield expect ("Copy Verse");
+
+        // Reopening the panel returns to today's verse.
+        indicator.closed ();
+        indicator.opened ();
+        yield expect ("— " + references[today]);
+        assert (verse_date ().has_prefix ("Today · "));
         // No repeats inside a year (leap or not); stable within a day; reshuffled each year.
         foreach (var year in new int[] { 2026, 2027, 2028 }) {
             var used = new GenericSet<int> (direct_hash, direct_equal);
