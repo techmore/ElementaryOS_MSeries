@@ -69,3 +69,28 @@ untested case, and the TV's idle blanking would move audio to the Mac speakers. 
 `appledrm.hdmi_audio=1` on the Aurora `.20` entry, the `apple_dcp` UCM profile, then retest playback,
 hotplug, DPMS and suspend on the dock monitor. A/V sync (above) should be re-measured on that sink, since the DCP
 audio path has its own latency. Not enabled today (no reboot, and upstream rates it unstable).
+
+## Sync-test page and the "add a slight audio delay" mitigation (2026-10-18)
+
+[`mseries/tools/av-sync-test.html`](tools/av-sync-test.html) is a self-contained page (no network): a
+full-screen flash once a second with a 1 kHz click, and a slider (also left/right arrow keys) that
+delays the click by 0-600 ms. Open it in a browser **on the external monitor**, press Start, play the
+click through the speakers normally used, and raise the slider until flash and click land together;
+the number is the delay the audio path needs relative to the dock monitor (it includes the browser's own
+output latency, shown on the page). Result is remembered in the page's local storage.
+
+Applying it for real (only after the number is known): a PipeWire filter-chain `delay` node placed in front
+of the speaker sink, enabled only while the external monitor is attached so the built-in panel stays in sync.
+That restarts the user audio graph, so it is not done blind. Owner measurement: _pending_.
+
+## Picture quality on the dock TV (owner report 2026-10-18: "premium bitrate HD doesn't look great")
+
+Dock TV only (not the built-in panel). Likely, none measured: (1) the Insignia 65" runs 1080p60 only, because the
+TV's EDID tops out at 4K30 (HDMI 1.4 block, 300 MHz limit) and our 4K30 mode stays dark, so 1080p is upscaled by
+the TV; (2) TV picture-mode processing (sharpness, noise reduction, motion smoothing; a non-PC/Game mode on the
+input also turns 4:4:4 text into 4:2:2/4:2:0); (3) software decode of YouTube's VP9/AV1 "enhanced bitrate"
+stream in Brave (hardware decode here is H.264/HEVC through the VA-API bridge; upstream
+omacom/linux-aurora#44, "Browser AVD integration", is still open); (4) possible limited/full RGB range mismatch
+(DCP logs `range:0`, 10-bit). Upstream does show 4K60 over a USB4 dock on another Mac (#132, M2 Max + CalDigit TS5
++ HDMI 2.1 adapter), so a 4K path is possible in principle; ours needs the TV to advertise 4K60 ("HDMI UHD Color"
+on that input) and the 4K30 stall to be debugged.

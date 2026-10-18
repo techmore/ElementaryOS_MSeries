@@ -1,0 +1,48 @@
+#!/bin/bash
+# YouTube-only Brave with hardware video decode, contained by bubblewrap.
+#
+# Why: Chromium's own sandbox denies /dev/media* to the VA-API v4l2-request driver, so the stock browser
+# falls back to software decode (omacom/linux-aurora#44). Here Chromium's sandbox is turned off INSIDE a
+# bubblewrap container that exposes only the GPU/decoder devices, display/audio sockets and one profile
+# directory. No access to $HOME, ssh keys or the normal Brave profile. Use only for YouTube.
+#
+#   brave-youtube [URL]      default https://www.youtube.com
+#   brave-youtube --probe    check the container (devices, vainfo) without starting Brave
+set -euo pipefail
+profile="${BRAVE_YT_PROFILE:-$HOME/.config/brave-youtube}"
+runtime="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+brave=/opt/brave.com/brave/brave
+[[ -x $brave ]] || brave=$(readlink -f /usr/bin/brave-browser-stable)
+mkdir -p "$profile"
+
+args=(--die-with-parent --unshare-pid --unshare-ipc --unshare-uts --share-net
+  --ro-bind /usr /usr --symlink usr/lib /lib --symlink usr/bin /bin --symlink usr/sbin /sbin
+  --ro-bind /etc /etc --ro-bind /opt /opt --ro-bind /sys /sys
+  --proc /proc --dev /dev --tmpfs /tmp --tmpfs "$HOME" --tmpfs /run
+  --dev-bind /dev/dri /dev/dri --bind "$profile" "$profile"
+  --setenv HOME "$HOME" --setenv XDG_RUNTIME_DIR "$runtime"
+  --setenv LIBVA_DRIVER_NAME v4l2_request)
+for d in /dev/media* /dev/video*; do [[ -e $d ]] && args+=(--dev-bind "$d" "$d"); done
+args+=(--dir "$runtime")
+for s in "${WAYLAND_DISPLAY:-wayland-0}" pipewire-0 pulse/native; do
+  [[ -e $runtime/$s ]] && { [[ $s == pulse/native ]] && args+=(--dir "$runtime/pulse"); args+=(--bind "$runtime/$s" "$runtime/$s"); }
+done
+[[ -d /usr/share/fonts ]] || true
+
+if [[ ${1:-} == --probe ]]; then
+  exec bwrap "${args[@]}" /bin/bash -c 'echo "inside container: HOME contents:"; ls -A "$HOME" | head; echo "devices:"; ls /dev/dri /dev/media* /dev/video* 2>&1 | tr "\n" " "; echo; echo "ssh visible? $(ls -d $HOME/.ssh 2>&1 | head -1)"; vainfo 2>&1 | grep -E "Driver|VAProfile(H264High|HEVCMain10|VP9Profile0)"'
+fi
+
+if [[ ${1:-} == --test ]]; then   # headless capability + playback check against $profile/test/t.html (no window)
+  exec timeout 60 bwrap "${args[@]}" "$brave" --headless=new --no-sandbox --disable-gpu-sandbox \
+    --user-data-dir="$profile" --enable-features=AcceleratedVideoDecodeLinux,AcceleratedVideoDecodeLinuxGL,VaapiIgnoreDriverChecks \
+    --ignore-gpu-blocklist --use-gl=angle --use-angle=gl-egl --no-first-run --autoplay-policy=no-user-gesture-required \
+    --enable-logging=stderr --v=0 --vmodule='*vaapi*=2,*v4l2*=2,*video_decode_accelerator*=2' \
+    --virtual-time-budget=15000 --dump-dom "file://$profile/test/t.html"
+fi
+
+flags=(--user-data-dir="$profile" --no-sandbox --ozone-platform=wayland
+  --enable-features=AcceleratedVideoDecodeLinux,AcceleratedVideoDecodeLinuxGL,VaapiIgnoreDriverChecks
+  --ignore-gpu-blocklist --no-first-run --no-default-browser-check --disable-breakpad)
+url="${1:-https://www.youtube.com}"
+exec bwrap "${args[@]}" "$brave" "${flags[@]}" --app="$url"
