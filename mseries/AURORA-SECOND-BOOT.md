@@ -283,3 +283,28 @@ touched. Bigger savings need a decision: the three fairydust dptunnel test initr
 DeepSeek kernel work; the `.19` Aurora kernel+initramfs (~59 MB) can go once `.20` is
 judged. Kept deliberately: `boot.bin.pre-sep` (the fallback-safe payload),
 `pre-fingerprint` (the bisect fallback), `pre-e4`.
+
+## omacom/linux-aurora `aurora-wip` and the Thunderbolt branches — 2026-10-18
+
+- `aurora-wip` (tip `4ec597a7`, 2026-09-05, "Merge AsahiLinux fairydust into
+  aurora-wip") is DjDeveloperr's integration branch. It is **behind** the `.20`
+  release by 2244 commits (0 ahead): `.20` is built from the merge of aurora-wip
+  with the review fixes (PR #136, which superseded #131), so nothing in the branch is
+  missing from `.20`. Its last commits are dp-altmode DTS "hacks" for t8103/t8112/
+  t60xx (including j314/j316) plus `usb: typec: tipd: HACK: Use drm oob hotplug event`
+  and `Track data_status changes for CD321x` — DisplayPort alt-mode plumbing.
+- Other related branches: `tb` (ProMotion variable refresh, 2026-09-12),
+  `usb4-base` (thunderbolt/net interrupt throttling), `carry/pr92-tb-s2idle`
+  (2026-10-15, "thunderbolt: apple: ... contain resume recovery"),
+  `fix/m3pro-hdmi-thunderbolt`, `review/j613-external-dp`.
+- Both `.19` and `.20` already carry the j314/j316 USB4 device-tree work (ACIO and NHI
+  nodes, tunnel routing, m1n1 v1.6.1 USB4 aliases, `dcpext0` lent to the Type-C
+  ports). Our running boot device tree already has the `usb4-N-acio`/`usb4-N-nhi`
+  aliases and three `cio@` nodes, so the community plan's "missing alias" failure
+  (step 6a) is NOT our problem. Yet on our `.19` boot `/sys/bus/thunderbolt/devices`
+  was empty and a dock event removed the xHCI controllers with
+  `phy-apple-atc: Failed to lock pipehandler`. The thunderbolt/ATC path therefore
+  needs its own `.20` test (on the nosep entry, to keep the SEP hang out of it).
+- Community note: their m1n1 for this is `m1n1-aurora-1.6.1.aurora17-5` (in the
+  `.20` release; not installed here — our boot payload is the DeepSeek-managed
+  `boot.bin`; replacing it is a bootloader change that needs the owner's explicit OK).
