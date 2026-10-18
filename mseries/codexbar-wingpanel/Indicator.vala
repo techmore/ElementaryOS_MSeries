@@ -606,10 +606,33 @@ namespace MSeries {
                     run_action ("--refresh");
                     refresh_codex_accounts.begin ();
                     read_snapshot.begin ();
+                    if (arguments[0] == "switch" && process.get_successful ()) {
+                        offer_chatgpt_restart.begin ();
+                    }
                 });
             } catch (Error e) {
                 subtitle_label.set_text ("Could not switch account: " + e.message);
             }
+        }
+
+        /* The ChatGPT desktop app keeps the account it started with; only a relaunch picks up the new sign-in. */
+        private async void offer_chatgpt_restart () {
+            try {
+                var check = new GLib.Subprocess.newv ({ "python3", helper_path ("codexbar-accounts.py"), "app-running" },
+                    SubprocessFlags.STDOUT_SILENCE | SubprocessFlags.STDERR_SILENCE);
+                yield check.wait_async (null);
+                if (!check.get_successful ()) {
+                    return;
+                }
+            } catch (Error e) {
+                return;
+            }
+            ask_to_save ("Restart ChatGPT?",
+                "The account is switched, but the open ChatGPT app keeps the account it started with. Restart it to use the new account; unsaved drafts in it may be lost.",
+                "Restart ChatGPT", () => {
+                    run_saver.begin ({ "python3", helper_path ("codexbar-accounts.py"), "restart-app" },
+                        "ChatGPT restarted", "Couldn't restart ChatGPT", true);
+                });
         }
 
         private void add_codex_account () {
