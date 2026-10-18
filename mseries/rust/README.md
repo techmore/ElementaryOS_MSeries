@@ -196,8 +196,8 @@ individually.
 - The `mseries-power` candidate has an independent, dependency-free Rust crate,
   a lockfile, a side-by-side parity suite (13 differential scenarios), and a CI
   command. It is not wired into installation or the factory image.
-- The path-level source inventory currently contains 446 items (398 local and
-  48 elementary source-tree items). The local records still need semantic
+- The path-level source inventory currently contains 459 items (413 local and
+  46 elementary source-tree items). The local records still need semantic
   component ownership and Rust conversion decisions.
 - The source-by-source register is still incomplete. Daily upstream monitoring
   exists elsewhere, but a daily/weekly build-and-review candidate lane is not

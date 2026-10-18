@@ -71,6 +71,10 @@ def render() -> str:
             text.startswith(("bin/", "transform/", "repos/", "mkosi.conf.d/", ".github/workflows/", "mseries/"))
             or text in ROOT_FILES
             or text.startswith("mkosi.images/apple-silicon/")
+            or text in {
+                "mkosi.images/liveiso/mkosi.conf.d/arch.arm64.conf",
+                "mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf",
+            }
         )
         items.append({
             "id": text,

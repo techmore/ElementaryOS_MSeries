@@ -13,7 +13,7 @@
     "mkosi.conf",
     "packages.arm64"
   ],
-  "item_count": 446,
+  "item_count": 459,
   "items": [
     {
       "id": "Justfile",
@@ -322,10 +322,10 @@
     {
       "id": "mkosi.images/liveiso/mkosi.conf.d/arch.arm64.conf",
       "path": "mkosi.images/liveiso/mkosi.conf.d/arch.arm64.conf",
-      "ownership": "elementary-os-upstream",
+      "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "not-assessed"
     },
     {
       "id": "mkosi.images/liveiso/mkosi.extra/opt/repart-target/40-root.conf",
@@ -418,10 +418,10 @@
     {
       "id": "mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf",
       "path": "mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf",
-      "ownership": "elementary-os-upstream",
+      "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "retain-upstream"
+      "rust_status": "not-assessed"
     },
     {
       "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/tmpfiles.d/pm.conf",
@@ -586,6 +586,14 @@
     {
       "id": "mseries/aurora-sep/test_touchid_core.py",
       "path": "mseries/aurora-sep/test_touchid_core.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/aurora-sep/test_touchid_gui_probe.py",
+      "path": "mseries/aurora-sep/test_touchid_gui_probe.py",
       "ownership": "mseries-maintained",
       "language": "python",
       "role": "verification",
@@ -1672,6 +1680,46 @@
       "rust_status": "not-assessed"
     },
     {
+      "id": "mseries/hardware/mseries-bluetooth-resume-fix.service",
+      "path": "mseries/hardware/mseries-bluetooth-resume-fix.service",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/hardware/mseries-power-report.desktop",
+      "path": "mseries/hardware/mseries-power-report.desktop",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/hardware/test-bluetooth.sh",
+      "path": "mseries/hardware/test-bluetooth.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/hardware/test_esp_image.py",
+      "path": "mseries/hardware/test_esp_image.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/hardware/test_install.py",
+      "path": "mseries/hardware/test_install.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
       "id": "mseries/install-audio-stack.sh",
       "path": "mseries/install-audio-stack.sh",
       "ownership": "mseries-maintained",
@@ -1826,6 +1874,14 @@
     {
       "id": "mseries/install-greeter-obex-fix.sh",
       "path": "mseries/install-greeter-obex-fix.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-hardware-support.sh",
+      "path": "mseries/install-hardware-support.sh",
       "ownership": "mseries-maintained",
       "language": "shell",
       "role": "implementation",
@@ -3248,6 +3304,14 @@
       "rust_status": "not-assessed"
     },
     {
+      "id": "mseries/power/mseries-sleep-cost.service",
+      "path": "mseries/power/mseries-sleep-cost.service",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
       "id": "mseries/power/org.techmore.mseries.power.policy",
       "path": "mseries/power/org.techmore.mseries.power.policy",
       "ownership": "mseries-maintained",
@@ -3269,6 +3333,30 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/power/power_report.py",
+      "path": "mseries/power/power_report.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/power/sleep_cost.py",
+      "path": "mseries/power/sleep_cost.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/power/test_diagnostics.py",
+      "path": "mseries/power/test_diagnostics.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
       "rust_status": "not-assessed"
     },
     {
@@ -3549,6 +3637,22 @@
       "ownership": "mseries-maintained",
       "language": "vala",
       "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/upstream-audits/imported-sources.json",
+      "path": "mseries/upstream-audits/imported-sources.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/upstream-audits/omacom-2026-10-17.json",
+      "path": "mseries/upstream-audits/omacom-2026-10-17.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
       "rust_status": "not-assessed"
     },
     {
