@@ -50,6 +50,18 @@ in Wingpanel. The CLI exposes a raw commit-activity endpoint. Upstream changes
 are never merged automatically; preserve this project's Pantheon UI and Linux
 integration.
 
+## Look and feel
+
+The popover follows the CodexBar indicator's elementary OS styling: a segmented
+scope switcher (Dashboard, Pinned, Attention, All), cards led by a CI status dot
+with PR and issue pills, a star to pin, a chevron for details, a right-click menu
+for open / copy link / pin / hide, and the same bottom bar (status chip,
+freshness, icon dock). Render it headlessly with
+`repobar-wingpanel/probe/run-probe.sh BUILD_DIR OUT_DIR [light|dark]` after
+`meson setup BUILD_DIR mseries/repobar-wingpanel && ninja -C BUILD_DIR`.
+`bash mseries/deploy-repobar.sh` rebuilds and installs the module and helper
+without apt; add `--restart` to reload Wingpanel.
+
 ## Install on elementary OS
 
 Run `bash mseries/install-repobar-wingpanel.sh`. Then connect GitHub with
