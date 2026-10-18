@@ -246,6 +246,8 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(core.app_key(base + "app-org.chromium.Chromium-127328.scope", "brave"), "org.chromium.Chromium")
         self.assertEqual(core.app_key(base + "app-gnome-mseries\\x2dlauncher-1.scope", "brave"), "brave")
         self.assertEqual(core.app_key("0::/user.slice/user@1000.service/session.slice/pipewire.service", "pipewire"), "pipewire")
+        self.assertEqual(core.app_key("0::/user.slice/user@1000.service/session.slice/_io.elementary.gala@wayland.service", "io.elementary.wingpanel"), "io.elementary.wingpanel")
+        self.assertEqual(core.app_key("0::/system.slice/ssh.service", "sshd"), "ssh")
         self.assertEqual(core.app_key("", "bash"), "bash")
 
     def test_estimate_blends_recent_and_hourly_and_falls_back(self):
