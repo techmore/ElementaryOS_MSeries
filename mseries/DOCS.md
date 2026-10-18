@@ -56,6 +56,7 @@ Start with the [power documentation map](power/README.md) for current evidence, 
 | [OS9-HANDOFF.md](OS9-HANDOFF.md) | Latest state, audit notes, verification results, blockers, next task |
 | [ROADMAP.md](ROADMAP.md) | Open problems and stretch goals |
 | [OMARCHY-M-ROADMAP.md](OMARCHY-M-ROADMAP.md) | Owner sequence: follow Omarchy M sources, integrate and qualify code, then migrate to Rust with measurements |
+| [rust/README.md](rust/README.md) | Rust branch scope, per-project register, parity contract, and daily/weekly upstream update rhythm |
 | [ATOMIC-APP-DEPLOYMENT.md](ATOMIC-APP-DEPLOYMENT.md) | Requested atomic app updates, rollback, apt performance investigation and Flatpak/Nix evaluation |
 | [BUG-FIX-ROADMAP.md](BUG-FIX-ROADMAP.md) | Upstream comparison and prioritised bug backlog |
 | [OMARCHY-AUDIT-2026-10.md](OMARCHY-AUDIT-2026-10.md) | Audit of omarchy-mac |

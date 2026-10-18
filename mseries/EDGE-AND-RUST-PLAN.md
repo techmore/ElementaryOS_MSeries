@@ -2,6 +2,33 @@
 
 Requested 2026-10-14. Both are large; this is the proposed shape, not work done.
 
+## Rust branch direction — 2026-10-17
+
+The owner now wants a dedicated `rust` branch that treats every upstream project
+and every M-series-owned customization as a separately tracked migration item,
+with feature parity as the conversion gate and deliberate enhancements recorded
+separately. The branch starts from `origin/main`; its living inventory and
+acceptance rules are in [`rust/README.md`](rust/README.md).
+
+“Every project has an item” means every source project gets an independently
+reviewable record: upstream and revision, current implementation boundary,
+features to preserve, local patches, update cadence, and Rust/retain/replace
+decision. It does not mean copying all upstream projects into one Rust
+workspace. Keep upstream source and licenses at their pinned revisions, keep
+Linux kernel and desktop protocol boundaries intact, and migrate the M-series
+code around them one independently shippable component at a time. Where an
+upstream component is explicitly selected for replacement, it gets its own
+crate/package and an adapter boundary so upstream updates cannot silently
+change the port.
+
+The `rust` branch is a migration lane, not a claim that an entire Linux OS can
+be safely rewritten in Rust. The bootloader, Linux kernel, systemd, elementary
+OS/Pantheon and many drivers remain upstream projects with their own languages
+and release contracts. Their Rust-branch records explain their boundary and
+parity obligations; they are not vendored or rewritten by default. This keeps
+daily/weekly upstream tracking feasible while allowing intentional Rust
+enhancements to be proposed as distinct, measurable changes.
+
 ## 1. Within 24 hours of upstream, maximum bleeding edge
 
 Meaning: we learn about and build upstream changes within a day. We do **not** auto-deploy
