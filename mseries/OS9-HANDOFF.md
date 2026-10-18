@@ -1,5 +1,34 @@
 # OS 9 implementation / Claude Code handoff
 
+## Speech/app candidate published on main; physical F5 and rollout remain open — 2026-10-18
+
+PR86 merged at077bfe58013f110962d24f60a38b122bd6a05d90. Checked sourcecbc47ed passed
+all5 CI jobs in39130696811; local46 dictation,72 assistant and6 image checks pass.
+Initial Pages deployment39138713351 succeeded at that merge. Canonical /local-ai.html
+returned200 and matched reviewed docs bytes exactly (SHA7db1713ab2658c0ebdcc878c4ab4ab2af
+03c92b0c04b64d1fa25766c79ed0c46). Publication receipt records this commit-specific proof.
+This documentation follow-through updates stale pending-publication statements; it
+does not rerun completed native/model trials or change the qualified runtime.
+
+All lifecycle/model/app queues are terminal; never relaunch them for a better score.
+Original review5/6 and Newelle exact-format failure remain failed. Separate3-language,
+actual panel workflow, native idle/close/reload and private field checks retain their
+own source/runtime pins and limitations. Live eager speech758179/input787274/default4B
+795452 remain unchanged/active at last check. No new physical F5 event since recovery.
+Read-only static keymap inventory confirms both0x7003e/0x70069→F14; it does not prove
+physical event delivery. An initial wrong ioctl direction returned EINVAL and was
+corrected; not a driver finding. Full corrected266-entry inspection read no key events.
+
+Goal remains active, NOT complete on publication. Required next evidence: owner's
+exact microphone popup/app and coordinated human F5 retry. Do not invent/remap a
+different microphone key without event evidence. No ambient mic, owner windows,
+kernel/boot/audio/display changes. Optional panel and lazy model are still uninstalled
+on the owner session; prepare their quiet idle rollout only after the physical path
+is resolved. Translation is inspectable post-utterance review, not simultaneous
+multilingual capture. Repeated-inference/long-run memory and factory boot are not
+established by the reload-only soak. Existing six-hour developer watcher remains the
+permanent tracker; no new heartbeat, GPU worker or runtime pin update was created.
+
 ## On-demand speech lifecycle privately qualified; deployment/F5 pending — 2026-10-18
 
 Previous goal turn was progress: review/pipeline833b3c4 and main reconciliation77c51fd
