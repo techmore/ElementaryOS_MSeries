@@ -1,0 +1,94 @@
+#!/usr/bin/python3 -I
+"""mseries-battery: read the battery history the logger keeps.
+
+  mseries-battery status            health, current draw and runtime estimate
+  mseries-battery sessions [days]   each unplugged run: length, charge used, average watts, projected runtime
+  mseries-battery profile [days]    average draw and runtime by CPU load band, plus the biggest CPU users
+  mseries-battery events [days]     power steps and suspend gaps, with the likely cause
+  mseries-battery export [days]     samples as CSV on stdout
+"""
+import csv
+import json
+import os
+import sys
+import time
+
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+import battery_core as core  # noqa: E402
+
+
+def stamp(ts):
+    return time.strftime("%a %d %b %H:%M", time.localtime(ts))
+
+
+def days_arg(argv, default):
+    try:
+        return float(argv[0])
+    except (IndexError, ValueError):
+        return default
+
+
+def main(argv):
+    command = argv[0] if argv else "status"
+    rest = argv[1:]
+    try:
+        conn = core.connect(readonly=True)
+    except Exception:
+        print("No history yet. Is mseries-battery-logger.service running?", file=sys.stderr)
+        return 1
+    if command == "status":
+        health = core.battery_health()
+        rows = core.fetch(conn, int(time.time()) - 6 * 3600)
+        if rows:
+            last = rows[-1]
+            print("Charge      %.0f%%  (%s)" % (last["pct"] or 0, last["status"]))
+            if last["sys_w"] is not None:
+                print("System draw %.1f W   CPU %.0f%% @ %.0f MHz" % (last["sys_w"], last["cpu_pct"] or 0, last["cpu_mhz"] or 0))
+            est = core.estimate_runtime(rows)
+            if est:
+                print("Runtime     %s left, %s from full  (at %.1f W, last hour)" % (
+                    core.fmt_hours(est["hours_left"]), core.fmt_hours(est["hours_full"]), est["avg_w"]))
+        if health:
+            print("Health      %s%% of design (%.1f / %.1f Wh), %d cycles, limit %s%%" % (
+                health["health_pct"], health["full_wh"], health["design_wh"], health["cycles"] or 0,
+                int(health["limit_pct"]) if health["limit_pct"] is not None else "—"))
+    elif command == "sessions":
+        runs = core.sessions(core.fetch(conn, int(time.time() - days_arg(rest, 14) * 86400)))
+        print("%-18s %9s %11s %8s %7s %9s" % ("Unplugged", "Length", "Charge", "Used", "Avg W", "Full run"))
+        for run in reversed(runs):
+            print("%-18s %9s %5.0f→%3.0f%% %6.1fWh %7s %9s" % (
+                stamp(run["start"]), core.fmt_hours(run["seconds"] / 3600), run["pct_start"] or 0, run["pct_end"] or 0,
+                run["wh_used"], run["avg_w"] or "—", core.fmt_hours(run["projected_hours"])))
+    elif command == "profile":
+        rows = core.fetch(conn, int(time.time() - days_arg(rest, 14) * 86400))
+        print("%-9s %-8s %7s %8s %12s" % ("Usage", "CPU", "Hours", "Avg W", "Runtime"))
+        for band in core.usage_profile(rows):
+            print("%-9s %-8s %7.1f %8s %12s" % (band["band"], band["cpu_range"], band["hours"],
+                                                band["avg_w"] if band["avg_w"] is not None else "—",
+                                                core.fmt_hours(band["runtime_h"])))
+        print("\nTop CPU users on battery:")
+        for item in core.top_culprits(rows):
+            print("  %-24s %5.1f%% of CPU" % (item["name"], item["avg_cpu"]))
+    elif command == "events":
+        for ev in reversed(core.events(conn, int(time.time() - days_arg(rest, 2) * 86400))):
+            if ev["kind"] == "gap":
+                info = json.loads(ev["detail"])
+                print("%s  asleep/off %s, charge %.0f%% → %.0f%%" % (
+                    stamp(ev["ts"]), core.fmt_hours(info["seconds"] / 3600), info["pct_from"] or 0, info["pct_to"] or 0))
+            else:
+                print("%s  %-4s %+5.1f W (%.1f → %.1f W)  CPU %s%%  top: %s  — %s" % (
+                    stamp(ev["ts"]), ev["kind"], ev["delta_w"], ev["before_w"], ev["after_w"],
+                    "%.0f" % ev["cpu_pct"] if ev["cpu_pct"] is not None else "—", ev["culprit"] or "—", ev["detail"]))
+    elif command == "export":
+        writer = csv.writer(sys.stdout)
+        writer.writerow(core.COLUMNS)
+        for row in core.fetch(conn, int(time.time() - days_arg(rest, 30) * 86400)):
+            writer.writerow([row[c] for c in core.COLUMNS])
+    else:
+        print(__doc__)
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
