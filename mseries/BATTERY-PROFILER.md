@@ -47,8 +47,11 @@ top three CPU processes. Read-only: it never changes a setting.
 ## Image integration
 `enhance.sh` has a `battery` module (`--only battery`) that stages the logger, command, app, unit and desktop file and
 enables the user unit for every account (`battery/test_battery_enhance.py` checks it against a scratch root). The panel
-card is **not** in the factory first-boot path: that would need the ETA/watt/card patches added to the payload and the
-firstboot installer list, and the factory image is unqualified. Next step for that.
+patches (ETA, watts, Battery summary card) ship through the `battery-panel` first-boot module
+(`install-battery-eta.sh`, gated on the Power indicator being 8.0.2, built with network at first boot) and the
+`battery` / `battery-eta` rows of `post-install.sh`. Verified: `enhance.sh --only payload` stages the script, all
+three patches and `repair-panel.py`; `bash -n` passes. **Not verified:** a first-boot run, and the factory image
+is unbooted.
 
 ## Use
 ```
