@@ -381,3 +381,34 @@ a DP-altmode reference, not the M1 USB4 tunnel protocol.
 - [Pantheon fails to start on the dptunnel entries: gala aborts in mutter KMS modeset after a DRM hotplug](evidence/2026-10-16-pantheon-session-crash-on-dptunnel-entries.md)
 
 Keep raw Apple binaries, decompiler output and raw machine captures private.
+
+## 2026-10-18 04:37 — Aurora `.20` + upstream-matched `boot.bin`: highest gate reached G4 (DCP side); NO picture
+
+Payload: kernel `7.1.12-2-20261017.20-sep-ARCH`, `/boot/m1n1/boot.bin` = m1n1-aurora
+1.6.1.aurora17-5 + the release's J314S tree (sha256 `9c9c2d01c3bdb278…`), entry
+`elementary-aurora20`, SEP driver loaded, dock plugged in ~2 minutes after boot, then unplugged
+at 04:37:24 by the owner. The machine **did not hang** on the hot-plug or unplug.
+
+Log evidence (`journalctl -k`, boot 0 of that session):
+- **G0:** `thunderbolt 0-1: new device found ...` / `Dell WD22TB4 Thunderbolt Dock`, retimer found,
+  `usb 1-1: ... Fresco Logic USB2.0 Hub`, `pcie-apple b30000000.pcie: Link up`.
+- **G1/G2:** `apple-dcp 289c00000.dcp: display routed to Thunderbolt DP tunnel dpin0`,
+  `dcp_dptx_connect_session(port=0) ... tunnel=1 typec=1 route=borrowed`, `GET_SUPPORTS_HPD 1 usb4=1`.
+- **G3:** `DPTXPort: SET_LINK_RATE 0x1e`, `USB4/DPTX: SET_ACTIVE_LANE_COUNT 4` (also
+  `set_active_lane_count: unexpected lane count:4 phy: 0` warning).
+- **G4 (DCP side):** `display HPD asserted`, `DCP property key=TimingElements ... nr_modes=44`,
+  `dcp_hotplug() connected:1 valid_mode:0 nr_modes:44`, then
+  `set_digital_out_mode ... "4096x2160": 60` and later `"1920x1080": 60` (10-bit).
+  **Not captured:** the DRM connector's `status` while docked (only checked after the unplug).
+- **G5: not met.** The owner reports the external screen "pretends it's seen" but displays nothing.
+- Teardown on unplug: `INACTIVE_SINK_DETECTED (keep waiting for lanes)` then DEACTIVATE,
+  `phy-apple-atc: Pipehandler lock not acked / Failed to lock pipehandler`,
+  `pcie-apple ... tunnel reset acknowledgment timed out` (all on the unplug path).
+
+Interpretation (unproven): the DCP firmware trained a 4-lane link and parsed EDID modes through the
+Aurora path, which the fairydust experiments never reached, so G3 is cleared on this stack. The
+missing step is between "DCP thinks it is scanning out" and light on the panel (DP-IN stream
+enable / tunnel bandwidth, the monitor's own cable path, or the compositor not enabling the new
+output). Next dock session: capture `/sys/class/drm/card*-DP-*/status`, `modetest -c`, and
+Gala's monitor list while docked; try the HDMI monitor on the dock's other output; try the
+second USB-C port. Everything else (unplug teardown noise) is secondary.
