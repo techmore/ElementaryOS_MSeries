@@ -58,3 +58,8 @@ desktop file is installed. Applied third by `install-battery-eta.sh`. `--build-o
 without installing or restarting Wingpanel. Verified: all three patches apply in order to `e05723d` and the module
 builds (release, valac) with no unresolved libraries. **Not yet installed**: it needs a Wingpanel restart, which waits for
 the owner's go-ahead; the button's look and click are unverified.
+
+Update (2026-10-18): the Battery History build is **installed** on the M1 Pro (`strings` on the installed `libpower.so`
+shows the new label); Wingpanel restarted and stayed up. The original module is still at
+`/usr/local/lib/mseries/libpower.so.before-charge-eta` for `--uninstall`. The button's look and the click are for the
+owner to confirm.
