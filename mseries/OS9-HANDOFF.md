@@ -1,5 +1,33 @@
 # OS 9 implementation / Claude Code handoff
 
+## Dock startup/focus audit and merge preparation — 2026-10-18
+
+Reviewed PR #100 on current main in an isolated checkout, preserving the other
+desktop/CodexBar work and both handoff histories. Retained its delayed Gala
+workspace synchronization and stale-removal bounds check. Added two fixes:
+the application presents only its initial window (repeated activation stays
+quiet, including a panel with no active keyboard window); the wrapper forwards
+HUP/INT/TERM to its dock child and reaps it before exiting. Signal statuses no
+longer cause stock fallback; actual early faults and missing binaries/libraries
+still do. A shell cannot forward SIGKILL.
+
+Verification: composed ARM64 dock build/install into a temporary prefix; two
+native harnesses compiling the actual patched production methods with controlled
+services; seven generated-wrapper test groups; eight existing boot-profile tests;
+shell syntax/ShellCheck; eleven real-dock/GTK groups in a separate headless Gala
+with a private D-Bus/Wayland session and temporary keyfile settings. New Wayland
+case preserved keyboard focus and typed `aaa` across three remote activations.
+Native harnesses reject the original upstream activation/workspace behavior as
+negative controls. Dedicated ARM64 CI now runs the startup/wrapper regressions.
+
+The owner's graphical dock remains stopped behind the local incident guard;
+no source installer or new binary was deployed into the running desktop and no
+approval dialog was opened. Existing portal/keyring startup warnings occurred
+in the isolated compositor; all assertions passed. These results do not prove
+the complete root cause of the reported floating/attention-stealing incident.
+Next: after a deliberate decision to re-enable it, qualify physical typing,
+session restart and monitor transitions. See `display-space/README.md`.
+
 ## Factory Brave runtime closes YouTube browser provisioning gap — 2026-10-18
 
 `build-brave` stages official Brave 1.97.59 arm64 (Chromium 155.0.8059.85), pinned
@@ -352,6 +380,24 @@ success is still pending. The older cropped-mode baseline is not a matched
 energy comparison with this full-height trial; collect matching display controls
 on both kernels before comparing power.
 
+
+## Dock "crashes": a false fallback flag and a startup race, both fixed — 2026-10-18 (Claude Code)
+
+- **Symptom:** the dock vanished or reverted to the stock dock. `io.elementary.dock` itself produced no coredumps this boot.
+  The crashes were wingpanel (SIGSEGV x2 at 04:44) and gala in boot -2.
+- **Cause 1 (wrapper):** `~/.local/bin/io.elementary.dock` flagged any non-zero exit within 15 s as a failure. At 04:44 the
+  session stopped the dock with SIGTERM (rc=143), so it wrote `~/.cache/mseries-dock-failed` and ran the stock dock.
+  **Fix:** `install-dock-drawers.sh` now writes a wrapper that exits without flagging on rc 129/130/137/143.
+- **Cause 2 (dock 8.3.3 upstream, still on main):** `WorkspaceSystem.load ()` queried Gala before `WindowSystem`'s async
+  DesktopIntegration proxy existed. That logged `DesktopIntegration is null`, set up workspaces from 0, and
+  `remove_workspace` hit `g_list_store_remove` out of range. **Fix:** `mseries/patches/dock-workspace-startup.patch`
+  connects the signals first and skips the early sync, so WindowSystem's first `windows` notify drives it. It also
+  bounds-checks `remove_workspace`.
+- **Installed:** `bash mseries/install-dock-drawers.sh` (built on main's drawers + compact-dock patch). The running dock
+  was not restarted, so the patched binary takes effect at its next start.
+- **Verified:** `--build-only` passes, the installed wrapper matches the old one apart from the rc guard, and the dock came
+  back as the patched build after a restart at 06:35. **Not yet verified:** a clean `journalctl` after the next login
+  (expect no `DesktopIntegration is null`).
 
 ## Native full-height J314 desktop and persistent dock — 2026-10-18
 
