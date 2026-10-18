@@ -4,9 +4,9 @@
 state_file = "auto"
 
 [hotkey]
-# F5 (the microphone key) is remapped to KEY_F20 by 91-mseries-dictation.hwdb.
+# F5 (the microphone key) is remapped to KEY_F14 by 91-mseries-dictation.hwdb.
 enabled = true
-key = "F20"
+key = "F14"
 modifiers = []
 # Hold to talk, release to insert (like Siri/Dictation hold mode).
 mode = "push_to_talk"

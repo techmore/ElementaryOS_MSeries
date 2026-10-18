@@ -1,6 +1,6 @@
-# Dictation key: the built-in keyboard's F5 (Apple's microphone key) becomes KEY_F20
+# Dictation key: the built-in keyboard's F5 (Apple's microphone key) becomes KEY_F14
 # so hid-apple stops turning it into keyboard-backlight-down and Voxtype can
 # listen for it. Loaded after 90-mseries-keyboard.hwdb, so it wins for F5.
 evdev:name:Apple SPI [Kk]eyboard:*
 evdev:name:Apple MTP [Kk]eyboard:*
- KEYBOARD_KEY_7003e=f20
+ KEYBOARD_KEY_7003e=f14

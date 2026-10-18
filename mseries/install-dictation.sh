@@ -32,7 +32,7 @@ if [[ ! -x /usr/local/bin/voxtype ]] || ! echo "$sha256  /usr/local/bin/voxtype"
   sudo install -m 755 "$work/$asset" /usr/local/bin/voxtype
 fi
 
-# F5 -> KEY_F20 (the hid-apple backlight translation then no longer fires on F5).
+# F5 -> KEY_F14 (the hid-apple backlight translation then no longer fires on F5).
 sudo install -Dm644 "$here/91-mseries-dictation.hwdb" /etc/udev/hwdb.d/91-mseries-dictation.hwdb
 sudo systemd-hwdb update
 sudo udevadm trigger --subsystem-match=input --action=change
