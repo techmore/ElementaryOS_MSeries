@@ -45,5 +45,5 @@ install -m644 "$here/voxtype.service" ~/.config/systemd/user/voxtype.service
 /usr/local/bin/voxtype setup --download --no-post-install   # fetches the configured Whisper model if missing
 
 systemctl --user daemon-reload
-systemctl --user enable --now ydotool.service mseries-aop-mic.service voxtype.service
+systemctl --user enable --now ydotool.service voxtype.service
 echo 'Dictation ready: hold F5, speak, release.'

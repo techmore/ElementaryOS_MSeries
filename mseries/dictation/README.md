@@ -12,7 +12,7 @@ Pieces
 
 Known gaps (2026-10-18)
 - The live F5 round trip with a person speaking is **not yet verified**. Verified: key mapped to F14, service listening, bridge to Whisper end to end (a hiss recording transcribed as "Pshhh."), and offline speech through the same filter transcribed correctly.
-- The bridge captures continuously, which costs power (AOP is already a battery suspect); make it start only while recording.
+- The mic bridge (`mseries-aop-mic`) is only used by the Voxtype fallback and is started on demand; streaming mode opens the mic only while F5 is held.
 - Mic gain (`AOP_MIC_GAIN`, 0.2) is untuned and the mic is hissy; typing assumes a US layout (ydotool).
 - Grammar clean-up by a local LLM is a stub in `config.toml` (`[output.post_process]`), not tested.
 
@@ -21,3 +21,5 @@ Known gaps (2026-10-18)
 Hold F5: words are typed while you talk instead of after you release. transcribe.cpp 0.4.0 (MIT) + Parakeet Unified 0.6B Q4_K_M (CC-BY-4.0) via `stream-dictate.py`; start/stop chimes; Voxtype stays installed as the fallback (`systemctl --user stop mseries-stream-dictate; systemctl --user start voxtype`).
 Offline measurements on the 10.4 s LibriSpeech clip (3 warm runs, median, `stream-bench.py`, 6 threads): Parakeet Unified streaming RTF 0.29 on Vulkan (0.28-0.29 with private Mesa 26.2.4) and 0.37 on CPU, correct text with punctuation, first words about 3.3 s into speech, then roughly every second. Moonshine streaming small Q8_0 was too slow here (RTF 1.38 CPU, 1.56-1.68 Vulkan) and is not used.
 **Not verified:** a live F5 session with a person speaking and text landing in an app; the mic hiss and the untuned gain may cost accuracy; words already typed are never corrected if the model revises them. Streaming needs an 8 s lead-in at most on first use for model load; model uses ~600 MB RAM while the service runs.
+
+Streaming details: the mic (AOP `hw:1,0`) is opened by `stream-dictate.py` only while F5 is held (36 ms to first audio, measured); 3 raw channels are mixed, high-passed at 150 Hz, low-passed at 7 kHz and limited. In-band noise floor measured at about -30 dBFS rms in a quiet room, so accuracy in noise is untuned. 5 s of room silence typed nothing (2 runs); a "Listening…" notification and start/stop chimes mark recording. Rapid press/release cycles (0.4 to 2.5 s) reopened the mic cleanly. The grammar pass is not part of streaming: text is typed as it commits and is never retyped; Parakeet already outputs punctuation and capitals.

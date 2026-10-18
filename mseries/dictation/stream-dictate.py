@@ -12,7 +12,13 @@ import transcribe_cpp as t
 
 MODEL = os.environ.get("STREAM_MODEL", os.path.expanduser(
     "~/.local/share/mseries/stream/models/parakeet-unified-en-0.6b-Q4_K_M.gguf"))
-SOURCE = os.environ.get("STREAM_SOURCE", "mseries-builtin-mic")
+SOURCE = os.environ.get("STREAM_SOURCE", "direct")  # "direct" = ALSA hw capture, or a PipeWire node name
+CARD = os.environ.get("STREAM_CARD", "hw:1,0")
+GAIN = os.environ.get("STREAM_GAIN", "0.2")
+# 3 raw AOP channels -> mono, drop DC/rumble, band-limit before resampling, fixed gain, limiter
+CHAIN = ("pan=mono|c0=0.333*c0+0.333*c1+0.333*c2,highpass=f=150,lowpass=f=7000,lowpass=f=7000,"
+         f"volume={GAIN},alimiter=limit=0.9,aresample=async=1")
+DRY = bool(os.environ.get("STREAM_DRY"))  # print instead of typing
 KEY = int(os.environ.get("STREAM_KEY", "184"))  # KEY_F14
 THREADS = int(os.environ.get("STREAM_THREADS", "6"))
 CHUNK = 1600  # 100 ms of 16 kHz samples
@@ -33,6 +39,12 @@ def keyboard_device():
                 if tok.startswith("event"):
                     return "/dev/input/" + tok
     raise SystemExit("no Apple keyboard found")
+
+
+def notify(msg):
+    subprocess.Popen(["notify-send", "-t", "2500", "-i", "audio-input-microphone", "-a", "Dictation",
+                      "-h", "string:x-canonical-private-synchronous:mseries-dictation", msg],
+                     stderr=subprocess.DEVNULL)
 
 
 def tone(freq, ms, vol=0.25):
@@ -57,7 +69,7 @@ class Typer(threading.Thread):
     def run(self):
         while True:
             text = self.q.get()
-            if text and os.environ.get("STREAM_TEST_WAV"):
+            if text and (os.environ.get("STREAM_TEST_WAV") or DRY):
                 print(f"[{time.time() - T0:5.1f}s] type: {text!r}", flush=True)
             elif text:
                 subprocess.run(["ydotool", "type", "--key-delay", "2", "--", text],
@@ -80,6 +92,7 @@ class Dictation:
         self.stop_evt.clear()
         if not os.environ.get("STREAM_TEST_WAV"):
             tone(880, 90)
+            notify("Listening…")
         self.worker = threading.Thread(target=self.run, daemon=True)
         self.worker.start()
 
@@ -89,15 +102,31 @@ class Dictation:
 
     def run(self):
         test = os.environ.get("STREAM_TEST_WAV")  # offline test: play a file instead of the mic
-        cmd = (["ffmpeg", "-re", "-v", "error", "-i", test, "-f", "s16le", "-ac", "1", "-ar", "16000", "-"]
-               if test else ["pw-cat", "--record", "--target", SOURCE, "--rate", "16000",
-                             "--channels", "1", "--format", "s16", "--raw", "-"])
-        cap = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        if test:
+            cmd = ["ffmpeg", "-re", "-v", "error", "-i", test, "-f", "s16le", "-ac", "1", "-ar", "16000", "-"]
+        elif SOURCE == "direct":  # open the AOP mic only while the key is held (36 ms to first audio)
+            cmd = ["ffmpeg", "-nostdin", "-v", "error", "-f", "alsa", "-channels", "3", "-sample_rate", "48000",
+                   "-i", CARD, "-af", CHAIN, "-ar", "16000", "-f", "s16le", "-"]
+        else:
+            cmd = ["pw-cat", "--record", "--target", SOURCE, "--rate", "16000",
+                   "--channels", "1", "--format", "s16", "--raw", "-"]
+        for attempt in range(8):  # the previous capture may still hold the device for a moment
+            cap = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+            first = cap.stdout.read1(CHUNK * 2)
+            if first:
+                break
+            cap.wait()
+            time.sleep(0.1)
+        else:
+            log("could not open the microphone")
+            self.active = False
+            return
+        pending = first
         typed = ""
         t0 = time.time()
         try:
             with self.model.session(n_threads=THREADS) as s, s.stream() as st:
-                buf = b""
+                buf = pending
                 stopped_at = None
                 while True:
                     if self.stop_evt.is_set() and stopped_at is None:
@@ -130,6 +159,10 @@ class Dictation:
             log("stream error:", repr(e))
         finally:
             cap.terminate()
+            try:
+                cap.wait(2)
+            except Exception:
+                cap.kill()
             if not os.environ.get("STREAM_TEST_WAV"):
                 tone(440, 120)
             self.active = False
