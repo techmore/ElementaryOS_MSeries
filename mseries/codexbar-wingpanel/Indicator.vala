@@ -844,7 +844,9 @@ namespace MSeries {
                 var detail = account.has_member ("error") ? "unavailable" : "—";
                 var resets = account.has_member ("resetCredits") ? account.get_object_member ("resetCredits") : null;
                 box.append (build_account_line (email, detail,
-                    "Make %s the active Codex account. Restart running Codex sessions to use it.".printf (email),
+                    "Make %s the active Codex account. Restart running Codex sessions to use it.".printf (email)
+                        + (account.get_boolean_member_with_default ("stale", false)
+                            ? "\n\nShowing the previous quota: the latest refresh failed." : ""),
                     () => run_accounts_helper ({ "switch", account_id }), windows, hint_id ("codex", account), account.get_string_member_with_default ("plan", ""), true, resets));
             }
             return box;
