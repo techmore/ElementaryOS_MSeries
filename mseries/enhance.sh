@@ -218,7 +218,7 @@ EOF
 # A modestly roomier baseline for the 14-inch, high-density M1 Pro display.
 # These are defaults, not locks, so users can tune them in Settings.
 [org/gnome/desktop/interface]
-text-scaling-factor=1.5
+text-scaling-factor=1.15
 cursor-size=32
 EOF
   # Window snapping remains enabled even if an old user database disables it.
