@@ -412,3 +412,31 @@ enable / tunnel bandwidth, the monitor's own cable path, or the compositor not e
 output). Next dock session: capture `/sys/class/drm/card*-DP-*/status`, `modetest -c`, and
 Gala's monitor list while docked; try the HDMI monitor on the dock's other output; try the
 second USB-C port. Everything else (unplug teardown noise) is secondary.
+
+## 2026-10-18 04:43 — G5 MET: picture on the dock monitor (Aurora `.20` + matched `boot.bin`)
+
+**Result:** the owner reports the dock monitor is displaying the desktop (WD22TB4, J314S, dock
+plugged at ~04:42, kernel `7.1.12-2-20261017.20-sep-ARCH`, `elementary-aurora20`, SEP driver loaded).
+
+**What made the difference (one variable):** Gala picked the monitor's preferred mode,
+`3840x2160@30` (xrandr showed a 7680x4320 logical canvas at scale 0.5), and the screen stayed
+dark while DRM said `DP-2 connected / enabled`, EDID 256 bytes, 38 modes. At 04:43:05 the
+external output only (built-in untouched) was switched through Gala's
+`org.gnome.Mutter.DisplayConfig` (`ApplyMonitorsConfig`, temporary) to `1920x1080@60.000`:
+
+    apple-dcp 289c00000.dcp: set_digital_out_mode(color:108 timing:76) "1920x1080": 60 148500 ... 0x40
+    ... depth:10 format:0 colorimetry:10
+
+and the picture appeared. Earlier 1080p60 sets on 04:37/04:39 (before this) were not accompanied
+by a reported picture, so the trigger may be the specific modeset sequence (this one
+started from the 4K30 state) rather than the resolution alone — unproven.
+
+Gates: G0-G4 met as logged above (`DP-2 connected enabled`, `Dell WD22TB4`, link rate `0x1e`,
+4 lanes, EDID); **G5 met 2026-10-18 ~04:43, owner-confirmed by eye**. Not yet established: whether
+4K30/4K60 can be made to work, whether it survives replug, suspend, a reboot, or the HDMI
+port's other monitors; whether the dock's Ethernet works on this stack.
+
+Tool: `mseries/display-profiles/mseries-display-profiles` (apply/nudge helpers) and the
+Display Settings app already talk to the same D-Bus API; the nudge logic (`nudge_modes`, SAFE
+modes 1920x1080@60/59.94) is exactly what recovered this. Next: save a display profile for the
+docked layout, test replug/suspend/reboot, then try 4K60.
