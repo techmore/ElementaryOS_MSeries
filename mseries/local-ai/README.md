@@ -84,3 +84,7 @@ Disable/stop the `mseries-ai-*` and `mseries-crash-watch` user units, remove the
 ### Update the task adapter without resetting preferences
 
 For an existing installation, run `python3 mseries/local-ai/configure-assistants.py --refresh-tools`. This updates the MCP adapter, installs Assistant Browser/Mail Drafts launchers and enables the added task/calendar/browser/draft tools and invalidates only its schema cache. It preserves model profiles, memory settings, other MCP servers and other tool settings. Fresh installs include the same capability.
+
+## Agent-first Pantheon direction
+
+[Proposed Pantheon MCP redesign](PANTHEON-MCP-DESIGN.md): a headless agent broker, kernel/app alert workflows, typed desktop capabilities, and native/WebRTC speech interaction. This is a feature write-up and phased acceptance plan; these proposed services are not installed by the current adapters.

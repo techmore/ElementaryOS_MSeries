@@ -1,5 +1,7 @@
 # Speech, translation and grammar integration decision — October 18, 2026
 
+The broader [agent-first Pantheon MCP and WebRTC feature proposal](PANTHEON-MCP-DESIGN.md) includes alerts, workflow agents and desktop capabilities. This note records the narrower capture/review decision.
+
 The existing F5 implementation already supplies the native capture path. Extend that implementation rather than add a second microphone daemon or a second resident language model. See [dictation implementation and measured limits](../dictation/README.md) and [speech research](../dictation/STT-RESEARCH.md).
 
 Current source and service inspection found the streaming `mseries-stream-dictate` unit active. It uses transcribe.cpp 0.4.0 with pinned Parakeet Unified EN 0.6B Q4_K_M, opens the built-in AOP array only while F5 is held, filters/resamples the three channels, and types committed text through ydotool. Existing offline fixtures and timings belong to that work; this app-integration qualification did not record the microphone, inject global keystrokes, change audio routing or repeat ASR benchmarks. A real speaker-to-focused-app session, non-US layouts, noisy speech accuracy and translation remain unqualified.
