@@ -3004,7 +3004,7 @@ expired" and nothing is saved (real config unchanged); `set-api-key` into a temp
 upstream then reads it (error changes from "No OpenCode Go API key configured" to "invalid or expired").
 Not verified: a real key end to end (needs the owner's key).
 
-## NEXT (not built): Claude desktop-app switch, OpenCode from `opencode auth login`, OpenCode bar — 2026-10-18
+## Original plan (implemented below): Claude desktop-app switch, OpenCode OAuth, OpenCode bar — 2026-10-18
 
 Owner wants fast account switching for Claude, OpenAI and OpenCode, with Claude first. Usage ran out
 before any of this was built.
@@ -3032,3 +3032,44 @@ before any of this was built.
    token, read-only and only when it hasn't expired, when auth.json has no key.
 3. **OpenCode usage bar with tokens.** Once (2) feeds the snapshot, the OpenCode segment and card get
    real windows. Add the local token count (from `codexbar-opencode-local.py`) next to the bar.
+
+
+## CodexBar: finish native Claude switching and OpenCode OAuth — 2026-10-18
+
+Completed the interrupted `claude-app-switch` branch, keeping upstream pinned at **0.77.0** and preserving
+the existing native Settings, dense cards, helpers and port/deploy workflow.
+
+- `codexbar-claude.py` now snapshots the installed native app's encrypted `Cookies` SQLite database and
+  the three identity/token-cache config keys into atomic private bundles. Backup includes committed WAL
+  data and converts to DELETE journal mode so the snapshot is standalone. The panel offers **CLI only**
+  or **Switch both**; a native switch validates the saved target before touching the app or CLI, stops
+  the app gracefully, saves its final session, merges the target login, changes the CLI and restarts via
+  `gtk-launch com.anthropic.Claude`. Preferences are retained; old SQLite sidecars are removed. Failures
+  in restore/CLI switching attempt to restore the previous app session. No app tokens are decrypted or
+  returned in helper output. Launching this from within the app is refused to avoid killing its caller.
+- Accounts without a native snapshot say **app sign-in needed**. **Set up app** saves the current app
+  session, restarts with a locally cleared login (no server logout request), then the owner signs in
+  once in native Claude and uses **Save app login**. Setup can be cancelled by switching back to the
+  saved previous account; a private pending marker retains that recovery path. Sessions may expire or
+  be revoked; a valid local snapshot is not proof of server authentication.
+- The OpenCode wrapper now falls back from `auth.json` to an active OAuth row in `opencode.db`'s
+  `credential` table (`integration_id=opencode`). It only passes an access token with more than 60s
+  validity; reads are read-only, and refresh stays with OpenCode. Explicit environment/auth.json keys
+  take precedence. Live requests with both `--source api` and automatic source return real 5h, 7d and
+  monthly quota. The panel and card show seven-day local tokens beside the account quota, explicitly
+  labelled as local activity across local accounts.
+- Owner requested ordering: **Codex first, Claude second, OpenCode Go third**. This is now consistent
+  across the top-panel segments and quota/account cards, including Claude's injected helper card.
+
+Validation: 56 Python helper tests (29 Claude, 11 wrapper, 7 Codex accounts, 5 OpenCode local, 4 sessions),
+4 Meson suites, port compatibility check, syntax checks, light/dark headless connected-quota renders.
+Claude tests use temporary homes and fake process control; they cover two-account session round trips,
+private permissions, WAL backup, corrupted/missing targets, setup cancellation, rollback, restart failure
+reporting and inherited-token removal. Live `app-save` works, account 2 is app-ready, same-account
+`switch 2 --desktop` succeeds without restarting the app, and `switch 1 --desktop` refuses the missing
+snapshot before changing either login.
+
+**Remaining user action / validation:** account 1 still needs its one-time native sign-in via **Set up
+app**, then **Save app login**. Authenticated switching between both real native accounts is unverified
+until that is done. The working Claude app was not interrupted during implementation. No kernel,
+bootloader or audio changes. Deployment/repository results are recorded after final verification.

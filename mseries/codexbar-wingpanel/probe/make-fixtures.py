@@ -43,6 +43,8 @@ scenarios = {
     "exhausted": snap([entry("codex", [window("primary", "5 hour", 300, 0, 75, "Exhausted"),
                                        window("secondary", "7 day", 10080, 35, 6000, "On pace")]), claude_ok]),
     "provider-error": snap([codex_ok, go_err]),
+    "connected": snap([codex_ok, entry("opencodego", [window("primary", "5 hour", 300, 83, 240),
+        window("secondary", "7 day", 10080, 68, 8000), window("tertiary", "30 day", 43200, 91, 30000)], plan="go")]),
     "stale": snap([codex_ok, claude_ok], stale=True, error="Network unreachable"),
     "empty": snap([]),
 }

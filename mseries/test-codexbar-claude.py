@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Tests for the claude-swap bridge. cswap is faked; no real Claude login is touched."""
 
+from contextlib import closing
 import datetime as dt
 import importlib.util
 import pathlib
+import sqlite3
 import unittest
 from unittest import mock
 
@@ -34,11 +36,12 @@ class ClaudeTest(unittest.TestCase):
         self._home = tempfile.TemporaryDirectory()
         self.home = pathlib.Path(self._home.name)
         patches = [mock.patch.object(MODULE.pathlib.Path, "home", return_value=self.home),
+                   mock.patch.object(MODULE, "app_pids", return_value=[]),
                    mock.patch.dict(MODULE.os.environ, {}, clear=False)]
         for patch in patches:
             patch.start()
             self.addCleanup(patch.stop)
-        for name in ("CLAUDE_CONFIG_DIR", "XDG_DATA_HOME"):
+        for name in ("CLAUDE_CONFIG_DIR", "XDG_DATA_HOME", "XDG_CONFIG_HOME"):
             MODULE.os.environ.pop(name, None)
         self.addCleanup(self._home.cleanup)
 
@@ -198,6 +201,196 @@ class ClaudeTest(unittest.TestCase):
         self.assertEqual(MODULE.reset_text("2026-10-18T11:00:00Z", NOW), "Resetting now")
         self.assertEqual(MODULE.reset_text("2026-10-18T12:20:00Z", NOW), "Resets in 20m")
         self.assertEqual(MODULE.reset_text("garbage", NOW), "")
+
+    def app_session(self, account, cookie):
+        self.sign_in_desktop(account)
+        config_path = MODULE.app_root() / "config.json"
+        config = MODULE.read_json(config_path)
+        config.update({"oauth:tokenCacheV2": cookie, "windowBounds": {"width": 900}})
+        config_path.write_text(MODULE.json.dumps(config))
+        path = MODULE.cookie_path()
+        with closing(sqlite3.connect(path)) as db, db:
+            db.execute("CREATE TABLE IF NOT EXISTS cookies (name TEXT, host_key TEXT, value TEXT, encrypted_value BLOB)")
+            db.execute("DELETE FROM cookies")
+            db.execute("INSERT INTO cookies VALUES ('sessionKey', '.claude.ai', '', ?)", (cookie.encode(),))
+        with MODULE.app_lock():
+            self.assertEqual(MODULE.capture_app(), account["accountUuid"])
+
+    def test_app_snapshot_is_private_atomic_and_includes_committed_wal(self):
+        self.app_session(ME, SECRET)
+        path = MODULE.cookie_path()
+        with closing(sqlite3.connect(path)) as db, db:
+            db.execute("PRAGMA journal_mode=WAL")
+            db.execute("UPDATE cookies SET encrypted_value=?", (b"updated-encrypted",))
+            db.commit()
+            with MODULE.app_lock():
+                MODULE.capture_app()
+            saved = MODULE.load_session("uuid-me")
+            with closing(sqlite3.connect(":memory:")) as copy:
+                copy.deserialize(saved["cookies"])
+                self.assertEqual(copy.execute("SELECT encrypted_value FROM cookies").fetchone()[0], b"updated-encrypted")
+        self.assertEqual(MODULE.session_root().stat().st_mode & 0o777, 0o700)
+        self.assertEqual(MODULE.session_path("uuid-me").stat().st_mode & 0o777, 0o600)
+        self.assertEqual(set(saved["config"]), {"lastKnownAccountUuid", "oauth:tokenCacheV2"})
+
+    def test_app_roundtrip_preserves_preferences_removes_stale_keys_and_restarts(self):
+        self.app_session(WORK, "work-encrypted")
+        self.app_session(ME, "me-encrypted")
+        config_path = MODULE.app_root() / "config.json"
+        config = MODULE.read_json(config_path)
+        config.update({"oauth:tokenCache": "old-cache", "windowBounds": {"width": 1234}})
+        config_path.write_text(MODULE.json.dumps(config))
+        with mock.patch.object(MODULE, "stop_app", return_value=True) as stop, \
+             mock.patch.object(MODULE, "launch_app") as launch:
+            self.assertTrue(MODULE.app_switch("uuid-work")[0])
+            self.assertTrue(MODULE.app_switch("uuid-me")[0])
+        self.assertEqual(stop.call_count, 2)
+        self.assertEqual(launch.call_count, 2)
+        config = MODULE.read_json(config_path)
+        self.assertEqual(config["windowBounds"], {"width": 1234})
+        self.assertEqual(config["oauth:tokenCacheV2"], "me-encrypted")
+        with closing(sqlite3.connect(MODULE.cookie_path())) as db, db:
+            self.assertEqual(db.execute("SELECT encrypted_value FROM cookies").fetchone()[0], b"me-encrypted")
+        self.assertEqual(config_path.stat().st_mode & 0o777, 0o600)
+
+    def test_missing_or_corrupt_app_target_never_stops_app_or_switches_cli(self):
+        self.app_session(ME, SECRET)
+        for uuid in ("missing", "../escape", "uuid-me"):
+            if uuid == "uuid-me":
+                bundle = MODULE.read_json(MODULE.session_path(uuid))
+                bundle["cookies"] = "bad-data"
+                MODULE.session_path(uuid).write_text(MODULE.json.dumps(bundle))
+            with mock.patch.object(MODULE, "stop_app") as stop, mock.patch.object(MODULE, "switch") as switch:
+                ok, message = MODULE.app_switch(uuid, "cswap", "1")
+            self.assertFalse(ok)
+            self.assertNotIn(SECRET, message)
+            stop.assert_not_called()
+            switch.assert_not_called()
+
+    def test_failed_combined_switch_restores_app_session(self):
+        self.app_session(WORK, "work-encrypted")
+        self.app_session(ME, "me-encrypted")
+        with mock.patch.object(MODULE, "stop_app", return_value=True), \
+             mock.patch.object(MODULE, "launch_app") as launch, \
+             mock.patch.object(MODULE, "switch", return_value=(False, "cswap failed")):
+            self.assertEqual(MODULE.app_switch("uuid-work", "cswap", "1"), (False, "cswap failed"))
+        launch.assert_called_once()
+        self.assertEqual(MODULE.read_json(MODULE.app_root() / "config.json")["lastKnownAccountUuid"], "uuid-me")
+
+    def test_failed_restore_rolls_back_and_reopens_original_app(self):
+        self.app_session(WORK, "work-encrypted")
+        self.app_session(ME, "me-encrypted")
+        restore = MODULE.restore_app
+        calls = []
+        def fail_first(session):
+            calls.append(session)
+            if len(calls) == 1:
+                raise OSError("disk full")
+            restore(session)
+        with mock.patch.object(MODULE, "stop_app", return_value=True), \
+             mock.patch.object(MODULE, "launch_app") as launch, \
+             mock.patch.object(MODULE, "restore_app", side_effect=fail_first):
+            self.assertFalse(MODULE.app_switch("uuid-work")[0])
+        self.assertEqual(len(calls), 2)
+        launch.assert_called_once()
+        self.assertEqual(MODULE.read_json(MODULE.app_root() / "config.json")["lastKnownAccountUuid"], "uuid-me")
+
+    def test_no_restore_when_app_will_not_close(self):
+        self.app_session(WORK, "work-encrypted")
+        self.app_session(ME, "me-encrypted")
+        with mock.patch.object(MODULE, "stop_app", side_effect=ValueError("Claude did not quit")), \
+             mock.patch.object(MODULE, "restore_app") as restore:
+            self.assertEqual(MODULE.app_switch("uuid-work"), (False, "Claude did not quit"))
+        restore.assert_not_called()
+
+    def test_logging_out_does_not_overwrite_saved_app_session(self):
+        self.app_session(ME, SECRET)
+        saved = MODULE.session_path("uuid-me").read_bytes()
+        with closing(sqlite3.connect(MODULE.cookie_path())) as db, db:
+            db.execute("DELETE FROM cookies")
+        with MODULE.app_lock():
+            self.assertEqual(MODULE.capture_app(), "")
+        self.assertEqual(saved, MODULE.session_path("uuid-me").read_bytes())
+
+    def test_listing_marks_app_ready_and_active_without_leaking_sessions(self):
+        self.app_session(ME, SECRET)
+        self.save_in_cswap(1, WORK)
+        self.save_in_cswap(2, ME)
+        with mock.patch.object(MODULE, "run", return_value=LIST):
+            data = MODULE.listing("cswap", NOW)
+        self.assertEqual([(a["desktopReady"], a["desktopActive"]) for a in data["accounts"]],
+                         [(False, False), (True, True)])
+        self.assertNotIn(SECRET, MODULE.json.dumps(data))
+
+    def test_switch_from_app_descendant_is_refused(self):
+        with mock.patch.object(MODULE, "app_pids", return_value=[MODULE.os.getppid()]):
+            with self.assertRaisesRegex(ValueError, "outside the Claude app"):
+                MODULE.stop_app()
+
+    def test_native_setup_keeps_previous_session_and_cancel_can_restore_it(self):
+        self.save_in_cswap(1, WORK)
+        self.app_session(ME, "previous-encrypted")
+        saved = MODULE.session_path("uuid-me").read_bytes()
+        with mock.patch.object(MODULE, "stop_app", return_value=True), mock.patch.object(MODULE, "launch_app"):
+            self.assertTrue(MODULE.app_login("1")[0])
+            config = MODULE.read_json(MODULE.app_root() / "config.json")
+            self.assertNotIn("lastKnownAccountUuid", config)
+            self.assertNotIn("oauth:tokenCacheV2", config)
+            with closing(sqlite3.connect(MODULE.cookie_path())) as db:
+                self.assertEqual(db.execute("SELECT count(*) FROM cookies").fetchone()[0], 0)
+            self.assertEqual(saved, MODULE.session_path("uuid-me").read_bytes())
+            self.assertTrue(MODULE.app_switch("uuid-me")[0])
+        self.assertEqual(MODULE.read_json(MODULE.app_root() / "config.json")["lastKnownAccountUuid"], "uuid-me")
+        self.assertFalse((MODULE.session_root() / "pending-login.json").exists())
+
+    def test_combined_switch_changes_native_and_cli_before_launch(self):
+        self.app_session(WORK, "work-encrypted")
+        self.app_session(ME, "me-encrypted")
+        events = []
+        def cli_switch(cli, number):
+            self.assertEqual(MODULE.read_json(MODULE.app_root() / "config.json")["lastKnownAccountUuid"], "uuid-work")
+            events.append("switch-cli")
+            return True, "done"
+        with mock.patch.object(MODULE, "stop_app", side_effect=lambda: events.append("stop-app") or True), \
+             mock.patch.object(MODULE, "launch_app", side_effect=lambda: events.append("launch-app")), \
+             mock.patch.object(MODULE, "switch", side_effect=cli_switch):
+            self.assertTrue(MODULE.app_switch("uuid-work", "cswap", "1")[0])
+        self.assertEqual(events, ["stop-app", "switch-cli", "launch-app"])
+
+    def test_relaunch_drops_inherited_claude_oauth_environment(self):
+        with mock.patch.dict(MODULE.os.environ, {"CLAUDE_CODE_OAUTH_TOKEN": SECRET}), \
+             mock.patch.object(MODULE.subprocess, "run", return_value=mock.Mock(returncode=0)) as run, \
+             mock.patch.object(MODULE, "app_pids", return_value=[123]):
+            MODULE.launch_app()
+        self.assertNotIn("CLAUDE_CODE_OAUTH_TOKEN", run.call_args.kwargs["env"])
+
+    def test_app_reopening_during_switch_prevents_file_replacement(self):
+        self.app_session(ME, SECRET)
+        saved = MODULE.cookie_path().read_bytes()
+        with mock.patch.object(MODULE, "app_pids", return_value=[123]):
+            with self.assertRaisesRegex(ValueError, "opened again"):
+                MODULE.restore_app(MODULE.load_session("uuid-me"))
+        self.assertEqual(saved, MODULE.cookie_path().read_bytes())
+
+    def test_restart_failure_is_reported_as_partial_completion(self):
+        self.app_session(WORK, "work-encrypted")
+        self.app_session(ME, "me-encrypted")
+        with mock.patch.object(MODULE, "stop_app", return_value=True), \
+             mock.patch.object(MODULE, "launch_app", side_effect=OSError("no launcher")):
+            ok, message = MODULE.app_switch("uuid-work")
+        self.assertFalse(ok)
+        self.assertIn("could not restart", message)
+        self.assertEqual(MODULE.read_json(MODULE.app_root() / "config.json")["lastKnownAccountUuid"], "uuid-work")
+
+    def test_failure_during_final_snapshot_reopens_original_app(self):
+        self.app_session(WORK, "work-encrypted")
+        self.app_session(ME, "me-encrypted")
+        with mock.patch.object(MODULE, "capture_app", side_effect=["uuid-me", OSError("disk full")]), \
+             mock.patch.object(MODULE, "stop_app", return_value=True), \
+             mock.patch.object(MODULE, "launch_app") as launch:
+            self.assertFalse(MODULE.app_switch("uuid-work")[0])
+        launch.assert_called_once()
+        self.assertEqual(MODULE.read_json(MODULE.app_root() / "config.json")["lastKnownAccountUuid"], "uuid-me")
 
 
 if __name__ == "__main__":
