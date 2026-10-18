@@ -2431,11 +2431,11 @@ service remains the installed writer; do not run both services against the
 same database.
 
 Focused Rust validation passed: `cargo fmt --check`, six unit tests including
-SQLite flush/schema round trip, five shared-fixture comparisons against the
-Python socket parser, `cargo clippy --all-targets -- -D warnings`, release
-build, inventory check (468 items: 422 local, 46 elementary) and
-`git diff --check`. Only the socket parser has same-fixture differential
-coverage; full DNS event/flush/retry comparison, install/rollback rehearsal and
+SQLite flush/schema round trip, 16 shared-fixture comparisons against the
+Python socket and DNS event parsers, `cargo clippy --all-targets -- -D warnings`,
+release build, inventory check (735 items: 653 local, 82 elementary) and
+`git diff --check`. Socket and DNS event parsing have same-fixture differential
+coverage; full daemon restart/flush/retry comparison, install/rollback rehearsal and
 desktop-session qualification remain open. The candidate uses the `sqlite3` CLI.
 
 The inventory now includes all scoped files rather than only selected source

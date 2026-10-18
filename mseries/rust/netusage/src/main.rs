@@ -196,6 +196,56 @@ fn ignored_name(name: &str) -> bool {
     name == "localhost" || name.ends_with(".arpa") || name.ends_with(".localhost")
 }
 
+#[derive(Debug)]
+struct DnsEvent {
+    name: String,
+    answer_ips: Vec<String>,
+    count: bool,
+    failure_count: u64,
+}
+
+fn decode_dns_message(
+    message: &Value,
+    now: f64,
+    recent_a: &mut HashMap<String, f64>,
+) -> Option<DnsEvent> {
+    let question = message.get("question")?.as_array()?.first()?;
+    let name = normalize_dns_name(question.get("name")?.as_str()?);
+    if name.is_empty() || ignored_name(&name) {
+        return None;
+    }
+    let qtype = question.get("type").and_then(Value::as_u64).unwrap_or(0);
+    let ok = message.get("state").and_then(Value::as_str) == Some("success");
+    let mut answer_ips = Vec::new();
+    if ok {
+        if let Some(answers) = message.get("answer").and_then(Value::as_array) {
+            for entry in answers {
+                if let Some(ip) = entry
+                    .get("rr")
+                    .and_then(|rr| rr.get("address"))
+                    .and_then(addr_from_json)
+                {
+                    answer_ips.push(ip);
+                }
+            }
+        }
+    }
+    let count = match qtype {
+        1 => {
+            recent_a.insert(name.clone(), now);
+            true
+        }
+        28 => now - recent_a.get(&name).copied().unwrap_or(0.0) > 3.0,
+        _ => false,
+    };
+    Some(DnsEvent {
+        name,
+        answer_ips,
+        count,
+        failure_count: u64::from(count && !ok),
+    })
+}
+
 fn addr_from_json(value: &Value) -> Option<String> {
     let bytes = value.as_array()?;
     let raw: Vec<u8> = bytes
@@ -315,7 +365,7 @@ fn load_cache_dump(pending: &Arc<Mutex<Pending>>) {
 }
 
 fn dns_monitor(pending: Arc<Mutex<Pending>>) {
-    let mut recent_a: HashMap<String, u64> = HashMap::new();
+    let mut recent_a: HashMap<String, f64> = HashMap::new();
     while !STOP.load(Ordering::Relaxed) {
         let child = Command::new("resolvectl")
             .args(["--no-ask-password", "monitor", "--json=short"])
@@ -341,38 +391,20 @@ fn dns_monitor(pending: Arc<Mutex<Pending>>) {
                 let Ok(message) = serde_json::from_str::<Value>(&line) else {
                     continue;
                 };
-                let Some(question) = message
-                    .get("question")
-                    .and_then(Value::as_array)
-                    .and_then(|q| q.first())
-                else {
+                let now = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_secs_f64();
+                let Some(event) = decode_dns_message(&message, now, &mut recent_a) else {
                     continue;
                 };
-                let name = question
-                    .get("name")
-                    .and_then(Value::as_str)
-                    .map(normalize_dns_name)
-                    .unwrap_or_default();
-                if name.is_empty() || ignored_name(&name) {
-                    continue;
-                }
-                let qtype = question.get("type").and_then(Value::as_u64).unwrap_or(0);
-                let ok = message.get("state").and_then(Value::as_str) == Some("success");
-                let now = unix_seconds();
                 if let Ok(mut state) = pending.lock() {
-                    if ok {
-                        learn_answers(&name, message.get("answer"), &mut state.ip_names, true);
+                    for ip in event.answer_ips {
+                        state.ip_names.insert(ip, event.name.clone());
                     }
-                    let count = match qtype {
-                        1 => {
-                            recent_a.insert(name.clone(), now);
-                            true
-                        }
-                        28 => now.saturating_sub(*recent_a.get(&name).unwrap_or(&0)) > 3,
-                        _ => false,
-                    };
-                    if count {
-                        add_dns(&mut state, now / 3600 * 3600, name, !ok);
+                    if event.count {
+                        let hour = now.floor() as u64 / 3600 * 3600;
+                        add_dns(&mut state, hour, event.name, event.failure_count > 0);
                     }
                 }
                 if recent_a.len() > 2048 {
@@ -597,6 +629,34 @@ fn main() {
                 .then(a["peer"].as_str().cmp(&b["peer"].as_str()))
         });
         println!("{}", serde_json::Value::Array(rows));
+        return;
+    }
+    if env::args().nth(1).as_deref() == Some("--parse-resolved-json") {
+        let stdin = std::io::stdin();
+        let mut recent_a = HashMap::new();
+        let mut events = Vec::new();
+        for line in stdin.lock().lines() {
+            let Ok(line) = line else { continue };
+            let Ok(record) = serde_json::from_str::<Value>(&line) else {
+                events.push(Value::Null);
+                continue;
+            };
+            let now = record.get("now").and_then(Value::as_f64).unwrap_or(0.0);
+            let event = record
+                .get("message")
+                .and_then(|message| decode_dns_message(message, now, &mut recent_a))
+                .map(|event| {
+                    serde_json::json!({
+                        "name": event.name,
+                        "answer_ips": event.answer_ips,
+                        "count": event.count,
+                        "failure_count": event.failure_count,
+                    })
+                })
+                .unwrap_or(Value::Null);
+            events.push(event);
+        }
+        println!("{}", Value::Array(events));
         return;
     }
     install_signal_handlers();

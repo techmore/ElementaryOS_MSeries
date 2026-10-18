@@ -84,6 +84,7 @@ jobs:
           cargo test --manifest-path mseries/rust/wifi-resume/Cargo.toml --locked
           cargo fmt --check --manifest-path mseries/rust/netusage/Cargo.toml
           cargo test --manifest-path mseries/rust/netusage/Cargo.toml --locked
+          cargo clippy --manifest-path mseries/rust/netusage/Cargo.toml --locked --all-targets -- -D warnings
           cargo build --release --manifest-path mseries/rust/netusage/Cargo.toml --locked
           python3 mseries/rust/netusage/test-parity.py mseries/rust/netusage/target/release/mseries-netusage-rs
           python3 -m unittest discover -s mseries/power/macos-baseline -p 'test_*.py'

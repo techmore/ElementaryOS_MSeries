@@ -25,8 +25,14 @@ The candidate currently has focused unit tests for socket counter parsing,
 loopback filtering, process names, DNS address/name handling, query accounting,
 SQL quoting, and a SQLite schema/flush round trip. A same-fixture comparison
 against the Python socket parser covers counters, missing counters, loopback,
-unowned sockets and IPv6 peers. Full daemon event-stream, DNS and failure/retry
-differential cases are still required before calling this a parity conversion.
+unowned sockets and IPv6 peers. A second same-fixture comparison covers eleven
+timestamped resolved events, including A/AAAA suppression, failures, ignored
+names and answer addresses. Full daemon restart, SQLite failure/retry and
+desktop-session differential cases remain before calling the port complete.
+
+Intentional hardening: malformed resolved `question` containers are skipped
+instead of terminating the DNS reader thread; Python and Rust share this rule,
+and the malformed-container cases are included in the fixture suite.
 
 Runtime requirements are `ss`, `resolvectl`, `timeout`, and the `sqlite3` CLI.
 SQLite remains accessed through the CLI to avoid an unsafe FFI boundary. The
