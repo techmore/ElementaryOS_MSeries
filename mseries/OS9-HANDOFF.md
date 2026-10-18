@@ -68,11 +68,14 @@ controls. Installed and activated in the live Pantheon session on 2026-10-18;
 the module appeared in Wingpanel and its toggle opened the indicator. An
 authenticated refresh returned 85 repositories. The first refresh exposed an
 invalid GraphQL connection query; that was fixed by moving pagination/order
-arguments to the connections and using smaller 25-repository pages. Python
-syntax, the Vala/Meson build, and the live query passed. The build emits a GTK
-CSS provider deprecation warning and generated C warnings. Upstream
-traffic/cloner charts, heatmap UI, multi-account UI, and full per-repo submenus
-remain out of scope; see `mseries/REPOBAR-PORT.md`.
+arguments to the connections and using smaller 25-repository pages. The active
+follow-up branch adds topic search, a Local view, and nested per-repository
+disclosure sections for issues, pull requests, CI, releases, activity, commits,
+branches, and tags; each section fetches only on expansion. Python syntax and the
+Vala/Meson build pass, and the authenticated API returned all eight sections.
+The build emits a GTK CSS provider deprecation warning and generated C warnings.
+Traffic/cloner charts, a heatmap UI, multi-account UI, and launch-at-login
+controls remain outside this iteration; see `mseries/REPOBAR-PORT.md`.
 
 ## Consistent CodexBar panel typography — 2026-10-18
 

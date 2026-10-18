@@ -68,17 +68,19 @@ account switch performed; long-run behavior and owner visual confirmation remain
 ## RepoBar port in progress — 2026-10-18
 
 The optional elementary OS port now has a native GTK/Wingpanel dashboard with
-search, dashboard/all/pinned/issue/PR/attention views, pin/hide controls, CI,
-release and recent activity summaries, API quota status, a CLI, private caches,
-and bounded local checkout scanning. Local sync requires explicit `--yes`, a
-clean attached branch, and fast-forward-only. The installer remains optional
-and uses the existing GitHub CLI login. The dashboard was installed and
-activated in the live Pantheon session on 2026-10-18; the module loaded and the
-indicator toggle opened. An authenticated refresh returned 85 repositories.
-The live query bug was fixed by using valid connection arguments and smaller
-pages. UI parity follow-ups include
-traffic/cloner views, a heatmap visualization, multi-account controls, and
-per-repository submenus. See `mseries/REPOBAR-PORT.md`.
+search, dashboard/all/pinned/issue/PR/attention/local views, pin/hide controls,
+CI, release and recent activity summaries, API quota status, a CLI, private
+caches, and bounded local checkout scanning. Repository cards include nested,
+lazy-loaded detail sections for issues, pull requests, CI, releases, activity,
+commits, branches, and tags. Search includes repository topics. Local sync
+requires explicit `--yes`, a clean attached branch, and fast-forward-only. The
+installer remains optional and uses the existing GitHub CLI login. The dashboard
+was installed and activated in the live Pantheon session on 2026-10-18; the
+module loaded and the indicator toggle opened. An authenticated refresh returned
+85 repositories. The live query bug was fixed by using valid connection
+arguments and smaller pages. UI parity follow-ups include traffic/cloner views,
+a heatmap visualization, multi-account controls, and launch-at-login settings.
+See `mseries/REPOBAR-PORT.md`.
 
 ## Consistent CodexBar panel typography — 2026-10-18
 
