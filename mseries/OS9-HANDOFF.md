@@ -1,5 +1,27 @@
 # OS 9 implementation / Claude Code handoff
 
+
+## Orchard session memory retention — 2026-10-18
+
+The output churn probe reproduced retained GTK text: undo history kept trimmed
+read-only output, and caches retained deleted guests. The candidate disables
+output undo, prunes deleted-guest buffers after active commands finish, removes
+hidden dashboard cards on inventory refresh, preserves rename output across a
+stale listing, and releases the image picker read slot when selecting a result.
+The same synthetic 12-identity / 72 MiB UTF-8 probe now ends with no output
+buffers or undo history. Exact source hashes and RSS snapshots are recorded by
+`tools/probe-output-retention.py`; RSS is not a portable pass/fail threshold.
+
+Checks: 108 tests, 102 passed / six opt-in live tests skipped, fatal GTK criticals
+enabled. A new ARM64 GTK/Granite CI job runs these regressions without Incus.
+`tools/qualify-wayland.py` now supports repeated workflow cycles, before/after
+idle observations, five-second RSS/PSS/private/CPU/FD/thread/cache samples,
+source hashes and actual focus state. It rejects a non-Wayland backend early,
+stops when its window closes and returns failure for workflow/cleanup errors.
+Native long-session measurements and repeated live qualification are in progress;
+do not treat the preliminary XWayland/closed-window pilots as native results.
+Next: finish the native before/after sessions, publish scoped results and deploy.
+
 ## Orchard real Wayland qualification and cleanup protection — 2026-10-18
 
 - Verified the installed Python/GTK4 foreground app on real `GdkWaylandDisplay`/`GdkWaylandToplevel`, Vulkan and the elementary blueberry stylesheet at 120 Hz. This was not Xvfb or forced Cairo. Final run: 11 live workflow groups passed, including stale-inventory duplicate-name preservation, container/VM creation, agent-backed VM Run, lifecycle/pause/resume, snapshots/restore, clone/rename/delete, real Terminal login, native elementary backup Save portal/archive validation, file listing and CLI transfer round trip, mounted-folder reads, TCP proxy, bounded Unicode output, and cancellation cleanup. All audit fixtures were swept; original guests were preserved.

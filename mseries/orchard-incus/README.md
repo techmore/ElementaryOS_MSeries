@@ -55,7 +55,11 @@ as fallback. Window closure stops owned timers and the monitor. Per-instance met
 serialize, and settings apply all limits in one idempotent update.
 
 Guest command output retains a 65,536-character pending tail and a
-262,144-character GTK text tail per instance. Very fast discarded output is
+262,144-character GTK text tail per live instance. Read-only output disables GTK
+undo history so trimmed text is actually released. Deleted guests release their
+output buffers after active commands finish, and hidden dashboard cards are
+pruned on inventory refresh. Renaming a stopped guest preserves its output.
+Very fast discarded output is
 labelled. Incremental UTF-8 decoding handles split characters and long lines;
 scrolling back pauses automatic tail following. Creation progress uses its
 existing separate stream.
@@ -100,3 +104,38 @@ unexpected names/images/limits and host destinations. See
 [`audit/2026-10-18-wayland.json`](audit/2026-10-18-wayland.json) for the installed
 build's source hashes, all eleven results and measurement limits. The earlier
 synthetic receipt remains available as the baseline for that separate method.
+
+## Session resource and retention probes
+
+The native driver can repeat all workflows in one process with unique guest
+identities, and observe idle resources before and afterwards:
+
+```sh
+audit_dir=$(mktemp -d)
+GDK_BACKEND=wayland python3 tools/qualify-wayland.py \
+  --source "$PWD" --output "$audit_dir" --run \
+  --cycles 3 --idle-before 300 --idle-after 600
+```
+
+`resources.jsonl` samples process RSS, PSS, private memory, cumulative CPU,
+threads, file descriptors, actual focus/minimized state and cache sizes every
+five seconds. CPU percentage is CPU-seconds / elapsed-seconds × 100 (one core =
+100%). Reaped command-client CPU is recorded separately; the Incus daemon,
+running guests and compositor are outside the process totals. Idle driver
+checks run once a second; phase checkpoints collect Python garbage. Exclude
+startup and workflow settling when comparing idle intervals. Renderer/allocator
+high-water marks and shared graphics mappings can keep RSS above startup without
+being a live-object leak. This is a session observation, not a battery or thermal
+qualification.
+
+For a fast, independent reproduction of output retention without Incus access:
+
+```sh
+xvfb-run -a env -u DBUS_SESSION_BUS_ADDRESS GSK_RENDERER=cairo GDK_BACKEND=x11 \
+  python3 tools/probe-output-retention.py --output /tmp/orchard-retention.json
+```
+
+Use a new output file. `--source /path/to/package-parent` compares another
+installed/candidate build using the same probe. It sends about 48 Mi characters
+(72 MiB UTF-8) through 12 synthetic guest identities, then empties the inventory.
+Cache and undo counts identify retained text independently of process RSS.

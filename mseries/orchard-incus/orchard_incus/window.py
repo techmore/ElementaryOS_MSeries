@@ -69,6 +69,7 @@ class Window(Gtk.ApplicationWindow):
         self.data, self.rows, self.dash_rows = {}, {}, {}
         self._dashboard_rendering = False
         self.select_after_refresh = None
+        self.rename_output = None
         self.hist, self.cur, self.busy = {}, None, set()
         self.ok, self.fails, self.last_refresh, self.restored = True, 0, 0.0, False
         self.monitor_ok, self.mon_proc, self.mon_thread, self.closing = False, None, None, False
@@ -423,6 +424,9 @@ class Window(Gtk.ApplicationWindow):
         bar.append(pill_button("Clear", None, None, lambda: self.exec_out.get_buffer().set_text("")))
         d.append(bar)
         self.exec_out = Gtk.TextView(editable=False, monospace=True, left_margin=10, top_margin=8, bottom_margin=8, wrap_mode=Gtk.WrapMode.WORD_CHAR)
+        # Output is read-only: GTK's default undo log would retain trimmed text.
+        self.empty_exec_buf = Gtk.TextBuffer(enable_undo=False)
+        self.exec_out.set_buffer(self.empty_exec_buf)
         self.exec_out.add_css_class("oi-card")
         sc = Gtk.ScrolledWindow(vexpand=True)
         sc.set_child(self.exec_out)
@@ -915,6 +919,15 @@ class Window(Gtk.ApplicationWindow):
             i["config"] = i.get("config") or {}
             i["state"] = i.get("state") or {}
         self.data = {i["name"]: i for i in data}
+        if self.rename_output:
+            old, new = self.rename_output
+            if new in self.data:
+                if old in self.exec_bufs and old not in self.exec_proc:
+                    self.exec_bufs[new] = self.exec_bufs.pop(old)
+                self.rename_output = None
+            elif old not in self.data:
+                self.rename_output = None
+        self.prune_instance_views()
         tc, tm, tp = self.sample(data)
         # sidebar
         for n in list(self.rows):
@@ -990,6 +1003,17 @@ class Window(Gtk.ApplicationWindow):
             else:
                 self._dashboard_rendering = False
         self.later(0, batch)
+
+    def prune_instance_views(self):
+        """Release deleted guests even when their last page is hidden."""
+        for n in list(self.dash_rows):
+            if n not in self.data:
+                self.dash_list.remove(self.dash_rows.pop(n))
+        for n in list(self.exec_bufs):
+            if n not in self.data and n not in self.exec_proc:
+                buffer = self.exec_bufs.pop(n)
+                if self.exec_out.get_buffer() is buffer:
+                    self.exec_out.set_buffer(self.empty_exec_buf)
 
     def update_dashboard_row(self, n, force=False):
         r, i, h = self.dash_rows[n], self.data[n], self.hist[n]
@@ -1354,7 +1378,9 @@ class Window(Gtk.ApplicationWindow):
 
     # ------------------------------------------------------ run / files / devices
     def exec_buf(self, n):
-        return self.exec_bufs.setdefault(n, Gtk.TextBuffer())
+        if n not in self.exec_bufs:
+            self.exec_bufs[n] = Gtk.TextBuffer(enable_undo=False)
+        return self.exec_bufs[n]
 
     def show_exec_buf(self, n):
         self.exec_out.set_buffer(self.exec_buf(n))
@@ -1424,6 +1450,8 @@ class Window(Gtk.ApplicationWindow):
                 self.output.pop(n, None)
                 self.exec_proc.pop(n, None)
                 self.append_out(n, f"[exit {rc}]\n\n")
+                if not self.closing:
+                    self.prune_instance_views()
                 if not self.closing and n == self.cur:
                     self.cmd_stop.set_sensitive(False)
                 return False
@@ -1682,6 +1710,7 @@ class Window(Gtk.ApplicationWindow):
             return
         def go(v):
             def done(_):
+                self.rename_output = (n, v)
                 self.select_after_refresh = v
                 self.flash(f"Renamed to {v}")
                 self.refresh()
@@ -1724,7 +1753,7 @@ class Window(Gtk.ApplicationWindow):
                 rows = backend.parse_images_csv(out)
                 for alias, desc, vm in rows:
                     r = self.item(alias, desc, badges=("VM" if vm else "container",))
-                    r.append(pill_button("Select", None, "suggested-action", lambda a=alias, v=vm: (on_pick(f"images:{a}", v), d.destroy())))
+                    r.append(pill_button("Select", None, "suggested-action", lambda a=alias, v=vm: (on_pick(f"images:{a}", v), d.response(Gtk.ResponseType.CLOSE))))
                     lb.append(r)
                 if not rows:
                     lb.append(lbl("No matches.", "dim", margin_top=8))
