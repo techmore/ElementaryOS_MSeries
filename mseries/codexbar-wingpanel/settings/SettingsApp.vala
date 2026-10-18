@@ -110,15 +110,24 @@ namespace MSeries {
                 return;
             }
             try {
-                var process = new GLib.Subprocess (SubprocessFlags.STDERR_PIPE | SubprocessFlags.STDOUT_SILENCE,
+                var process = new GLib.Subprocess (SubprocessFlags.STDERR_PIPE | SubprocessFlags.STDOUT_PIPE,
                     app_path, "--configure", model.patch_for (keys));
+                string reply;
                 string error_text;
-                yield process.communicate_utf8_async (null, null, null, out error_text);
+                yield process.communicate_utf8_async (null, null, out reply, out error_text);
                 if (process.get_successful ()) {
                     notice.set_visible (false);
                 } else {
-                    notice.set_text ("CodexBar didn't accept that change" +
-                        (error_text.strip ().length > 0 ? ": " + error_text.strip () : ". Is CodexBar running?"));
+                    // The app answers {"ok":false,"error":"..."} on stdout.
+                    var reason = "";
+                    try {
+                        var parser = new Json.Parser ();
+                        parser.load_from_data (reply, -1);
+                        reason = parser.get_root ().get_object ().get_string_member_with_default ("error", "");
+                    } catch (Error e) {
+                        reason = error_text.strip ();
+                    }
+                    notice.set_text ("CodexBar didn't accept that change" + (reason.length > 0 ? ": " + reason : ". Is CodexBar running?"));
                     notice.set_visible (true);
                 }
             } catch (Error e) {
