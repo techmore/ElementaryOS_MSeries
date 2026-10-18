@@ -5645,3 +5645,21 @@ assertions for 2026-2028; patch rebuilds byte-identically; image wiring OK.
 Open question for owner: ~70 verses carry an unpaired quotation mark from their
 neighbouring verse (WEB text kept unchanged on purpose).
 
+### Titus study and quotation cleanup — 2026-10-18 (same branch/PR #211)
+
+Owner's church is preaching through Titus. The + tab (tooltip now "Bible")
+gains a Daily | Titus toggle. Titus has an overview plus 9 sections covering all
+46 verses, with WEB passage and raised verse numbers, an original Insight and a
+Reflect question. ◀ Overview ▶ navigation, section links and Copy Passage.
+Mode and section persist in ~/.config/mseries/verse-of-the-day.ini (written only
+on change). Data: mseries/calendar/titus-study.txt -> titus-study.tsv (GResource),
+built by build-verses.py, which checks full single coverage of Titus.
+Quotations: owner delegated the choice. An order-aware check widened 23
+references and trimmed 35 edge-only unmatched marks (no words changed). 11 kept
+as-is (intro + open quote, e.g. Jeremiah 29:11).
+Titus 3:4-5 and 3:8 were added to the daily list (405 verses, 395 unreserved).
+Verified: 23/23 light and dark (new group: overview, section navigation, ends
+disabled, verse numerals, clipboard, persistence across a freshly constructed
+panel, return to Daily). Patch rebuilds byte-identically; image wiring OK.
+Not yet installed: the desktop still runs the seasonal build from 19:39.
+
