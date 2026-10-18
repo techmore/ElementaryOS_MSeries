@@ -69,3 +69,9 @@ the owner signed in (iPhone approving the sign-in). Hardware decode inside the c
   other things running; not comparable to the idle numbers in `../POWER-ROADMAP.md`).
 - Still to do: a software-decode control (normal Brave, same video) for CPU/power and smoothness, and look at
   `brave://media-internals`/`chrome://gpu` in the contained window to confirm the exact decoder per stream.
+
+## DRM movies in `brave-youtube` — 2026-10-18
+YouTube Movies (for example *Edge of Tomorrow*) said "your browser can't play this video" because the contained
+profile had no Widevine. The launcher now copies the normal profile's Widevine CDM into its profile and opts in,
+before Brave starts (skipped while the window is open). See `../BRAVE-WIDEVINE.md`. Not yet verified with a
+movie playing in the container.
