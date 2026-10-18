@@ -1,5 +1,18 @@
 # F5 dictation (local speech to text)
 
+**Current catch-up, October18:** the owner's running service selects the ANE engine,
+press-once toggle mode and suppressed listening popups. Installed speech/ANE/client
+files exactly match branch `claude/dictation-fallback` at `d0ee4a6`, now reconciled
+in this candidate. Rolling English transcription and the measurements at the end
+supersede the earlier whole-utterance-only description; historical results remain
+scoped to their evaluated versions. The native review panel is installed and has
+an earlier human F5-to-field pass. **Translation remains post-utterance**, not a
+live translated preview. The current panel's hold-F5 hint predates toggle mode;
+with the owner's toggle setting, press F5 again to finish. This catch-up changed
+no running service or owner preferences. Concurrency/quiet qualification of the
+integrated ANE candidate remains open; 56 Python contracts alone do not prove it.
+
+
 Hold **F5** (the microphone key), speak, release: the compatibility service types recognized text into the focused field. Cross-app support and current limits are qualified below.
 Voxtype 1.1.1 (MIT) + whisper.cpp `base.en` on the CPU, ydotool for typing (same stack as Omarchy).
 Audio stays on the Mac and is not saved by default. The explicit `STREAM_KEEP` debug option saves the last capture in the runtime directory; those recordings are private and excluded from published receipts. Install: `bash mseries/install-dictation.sh` (`--uninstall` to remove).
@@ -148,3 +161,16 @@ Upstream `parakeet_dictation` is out of step with the installed mlx-omarchy 0.7.
 
 `STREAM_ENGINE=ane` makes `stream-dictate.py` (the lazy-model controller, with its resource guard, idle release, IBus/ydotool output and cancel handling) use `dictation_ane.AneModel` instead of transcribe.cpp: audio is collected while F5 is held and transcribed on release (`run_ane`), so there is no live partial text in this mode. The ANE worker starts on first F5 and is closed by the idle trim like the other model. Default stays `stream`; enable with `systemctl --user edit mseries-stream-dictate` and `Environment=STREAM_ENGINE=ane` (not done on the owner's service).
 Verified offline through the real controller (`STREAM_TEST_WAV` clip played at real time, dry output): the full 162-character sentence arrived as one commit about 1.8 s after the audio ended on the first (cold) call. `STREAM_ENGINE` unset: 12 lifecycle/contract tests unchanged and passing. Not verified: live microphone, IBus insertion in apps, idle release of the worker.
+
+### Press-once mode — 2026-10-18
+
+`STREAM_MODE=toggle` (default `hold`): press F5 once to start (chime, "Listening…"), press again to finish; Escape cancels; key repeat and release are ignored. Combine with `STREAM_ENGINE=ane` through a systemd drop-in (`Environment=STREAM_ENGINE=ane` and `Environment=STREAM_MODE=toggle`). Not done: a mic cursor. Pantheon/Gala has no API for changing the pointer over another app's text field; feedback is the start/stop chimes, the notification and the panel status.
+
+### Rolling ANE streaming — 2026-10-18
+
+With `STREAM_ENGINE=ane` the controller no longer waits for the second F5: every `STREAM_ANE_INTERVAL` (0.6 s) of new audio the whole segment is re-decoded on the ANE (about 0.05 x real time) and the words two consecutive passes agree on, minus the newest one, are typed (append-only; the tail is typed after the final pass on release, 0.6 s measured on 10 s and 41 s clips). Segments longer than 16 s are closed at the quietest 100 ms of the last 5 s and the overlap with the next segment is trimmed.
+Offline through the real controller (clip played at real time): a 10.4 s sentence appeared as 10 chunks of 1-6 words about every 0.6 s, the first about 4 s after start including the one-time worker warm-up. A 41.7 s clip with no pauses (the same sentence four times back to back) came out with 2 small errors at forced mid-word cuts; real speech with pauses is expected to do better, unmeasured. Not verified: live mic, how many words you perceive per second, CPU/thermal cost of repeated passes.
+
+### Latency tuning and typing-interrupt — 2026-10-18
+
+Typing any non-modifier key while dictating (ANE engine) ends dictation at once and drops words not yet typed, so nothing lands in the middle of your sentence (Escape still cancels). Latency was measured offline on the pinned 10.4 s clip with `STREAM_ANE_TRACE=1`: lag = audio time when a word was typed minus the earliest audio prefix whose decode contained it. Every pass costs about 0.5 s whatever the length (the encoder window is a fixed 30 s), so the submit interval does not matter below that (0.3, 0.4 and 0.6 s all gave a 2.0 s median lag with 1 held-back word). Typing from a single pass (`STREAM_ANE_AGREE=1`) gives median lag 0.6-1.3 s but typed hallucinated words from truncated audio ("Well, I'm World War"), so two agreeing passes stay. Holding back no extra word (`STREAM_ANE_HOLD=0`, now the default) gives a 1.5 s median (3 runs, p90 about 2.9 s, includes the cold start of the first words). Idle release of the ANE worker is 180 s instead of 60 s. A fourth back-to-back test run was refused by the resource guard, as designed.

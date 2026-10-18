@@ -231,6 +231,38 @@ The release build is installed; real task/event row comparisons are read-only
 and pass. Six image-wiring tests pass. No personal task was completed by tests.
 [Behavior and tests](calendar/README.md#completing-tasks-in-the-panel).
 
+## Speech catch-up: installed ANE branch reconciled, translation still pending — 2026-10-18
+
+Read-only inventory confirmed installed stream-dictate.py, dictation_ane.py and
+input client match claude/dictation-fallback d0ee4a655d0e7207942c1b6c87e3ee368d321a30
+exactly. Live speechPID1045220 selects ANE/toggle/no-popup; bridgePID918315 active.
+This supersedes the earlier CPU runtime checkpoint, without reassigning its human
+acceptance or benchmarks to ANE. Main already includes PR120/122. This integration
+preserves the newer rolling/toggle/fallback branch and all concurrent main changes;
+the only merge conflict was appended handoff entries, both retained. No live
+payload, settings, process, microphone, owner window or native runtime changed.
+
+52 main contracts and56 branch contracts pass without model/audio. Initial flat
+harness copy omitted relative imports; corrected directory layout passes56, original
+harness error retained privately. Installed-source hashes and scope are recorded
+in work/dictation-catchup-2026-10-18/receipt.json outside the public repo. The source
+README's offline ANE latency measurements are inherited evidence, not a new matched
+benchmark. Rolling ANE performs English transcription; native panel translation
+still waits until speech ends. The default4B is inactive after its fan-limit guard;
+no forced restart or duplicate worker. Permanent upstream-watch remains active.
+
+Integration is a candidate, not promotion on contract tests alone. Review must cover
+pending decode/warm threads on cancellation/pressure, bounded worker IPC/deadlines,
+typing-interrupt queue races and compatibility-fallback refusal paths. Existing
+contracts do not establish those ANE concurrency/runtime guarantees or sustained
+quiet behavior. Preserve the working installed version until a qualified update.
+Then build optional translated previews while speaking and final grammar, using
+one existing4B request at a time and preserving the six-GiB reserve/original text.
+
+PR118 merged73621aa, all5 checks39141068986 passed, Pages39141247806 succeeded.
+Canonical report200 matches current reviewed docs, SHAd11c654d144368af35986dbe251f1fb2d
+b497df147bc08530ace89e2c08f482d. Earlier failure/quality evidence remains retained.
+
 ## Native Dictation deployed; owner F5-to-field pass — 2026-10-18
 
 The qualified lazy CPU speech controller, Unicode bridge and optional Dictation
@@ -4668,3 +4700,6 @@ Follow-up (same day): `STREAM_ENGINE=ane` integrates the ANE engine into the laz
 ### brave-youtube DRM movie result — 2026-10-18
 
 Owner opened *Live Die Repeat: Edge of Tomorrow* in `brave-youtube` (default Linux user agent, Widevine provisioned by the launcher): it plays, and the quality menu tops out at **480p**. That matches Widevine L3; no user-agent spoofing was applied or is planned (it would not change the license server's L3 cap). Non-DRM 4K VP9 in the same window is still unmeasured.
+## Dictation: ANE rolling streaming, press-once toggle, typing fallback — 2026-10-18
+
+Live F5 service (not the repo default) now runs `STREAM_ENGINE=ane STREAM_MODE=toggle STREAM_POPUP=0` from `~/.config/systemd/user/mseries-stream-dictate.service.d/50-ane.conf`. F5 sends one clean KEY_F14 (captured raw); the earlier "pulse" was the refusal notification, not a volume key. Apps with no accessible field (Electron) now type through ydotool (`STREAM_UNVERIFIED_FALLBACK=0` restores strict refusal; sensitive/non-editable stay refused). The ANE worker warms while recording; every 0.6 s the segment is re-decoded and agreed words are typed (append-only), tail 0.6 s after the second F5. Owner's first live dictation worked (56 chars, about 2.8 s wait, cold). Not measured: warm live latency, words-per-second feel, thermals of repeated passes, mic accuracy (hiss/sensitivity blocker unchanged), a WER set. Omarchy Mac (omacom/omarchy-mac-pkgs) has no mic/F5 dictation key handling to borrow. Next: owner trial of rolling mode, then read the `ane dictated` log lines.

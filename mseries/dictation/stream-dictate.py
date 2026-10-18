@@ -18,9 +18,17 @@ from dictation_model import LazyModel, ModelHeadroom
 
 MODEL = os.environ.get("STREAM_MODEL", os.path.expanduser(
     "~/.local/share/mseries/stream/models/parakeet-unified-en-0.6b-Q4_K_M.gguf"))
+UNVERIFIED_FALLBACK = os.environ.get("STREAM_UNVERIFIED_FALLBACK", "1") == "1"  # ydotool when the focused app exposes no accessible field
+TOGGLE = os.environ.get("STREAM_MODE", "hold") == "toggle"  # toggle: press F5 once to start, again to finish
 ENGINE = os.environ.get("STREAM_ENGINE", "stream")  # "ane": Parakeet on the Neural Engine, typed after release
 SOURCE = os.environ.get("STREAM_SOURCE", "direct")  # "direct" = ALSA hw capture, or a PipeWire node name
 CARD = os.environ.get("STREAM_CARD", "hw:1,0")
+# shift, ctrl, alt, super, caps lock, fn: pressing these alone is not typing
+MODIFIER_KEYS = {29, 42, 54, 56, 58, 97, 100, 125, 126, 464}
+ANE_HOLD = int(os.environ.get("STREAM_ANE_HOLD", "0"))  # newest agreed words kept back from typing
+ANE_AGREE = int(os.environ.get("STREAM_ANE_AGREE", "2"))  # passes that must agree; 1 types the newest pass minus the held-back words
+ANE_TRACE = bool(os.environ.get("STREAM_ANE_TRACE"))  # log audio time at every typed chunk (latency analysis)
+ANE_INTERVAL = float(os.environ.get("STREAM_ANE_INTERVAL", "0.3"))  # seconds of new audio between partial passes
 MAX_ANE_SECONDS = 600  # RAM bound for one held key
 GAIN = os.environ.get("STREAM_GAIN", "60")
 
@@ -42,6 +50,7 @@ ALSA_IN = ["-f", "alsa", "-c:a", "pcm_f32le", "-channels", "3", "-sample_rate", 
 SPEECH_SPREAD_DB = float(os.environ.get("STREAM_SPEECH_DB", "8"))
 KEEP = bool(os.environ.get("STREAM_KEEP"))
 DRY = bool(os.environ.get("STREAM_DRY"))  # print instead of typing
+POPUP = os.environ.get("STREAM_POPUP", "1")  # "0": no Listening/finished popups
 QUIET = bool(os.environ.get("STREAM_QUIET"))  # tests: no chimes, no notifications
 KEY = int(os.environ.get("STREAM_KEY", "184"))  # KEY_F14
 THREADS = int(os.environ.get("STREAM_THREADS", "6"))
@@ -93,6 +102,8 @@ def keyboard_device():
 def notify(msg, persistent=False):
     if QUIET:
         return
+    if POPUP == "0" and (persistent or msg.startswith(("Preparing", "Dictation finished", "Dictation cancelled"))):
+        return  # chimes stay; only errors and refusals pop up
     subprocess.Popen(["notify-send", "-t", "0" if persistent else "2500", "-i", "audio-input-microphone", "-a", "Dictation",
                       "-h", "string:x-canonical-private-synchronous:mseries-dictation", msg],
                      stderr=subprocess.DEVNULL)
@@ -169,7 +180,7 @@ class Typer(threading.Thread):
                 print(f"[{time.time() - T0:5.1f}s] type: {text!r}", flush=True)
             elif text:
                 try:
-                    if OUTPUT == 'ibus':
+                    if OUTPUT == 'ibus' and token:
                         input_call('commit', token, text)
                     else:
                         subprocess.run(["ydotool", "type", "--key-delay", "2", "--", text],
@@ -190,7 +201,7 @@ class Typer(threading.Thread):
 
 class Dictation:
     def __init__(self):
-        self.models = LazyModel(self.load_model)
+        self.models = LazyModel(self.load_model, idle_seconds=180 if ENGINE == 'ane' else 60)  # a warm ANE worker saves ~2 s per F5
         self.typer = Typer(self.insertion_failed)
         self.active = False
         self.worker = None
@@ -198,6 +209,7 @@ class Dictation:
         self.input_token = None
         self.error = None
         self.cancelled = False
+        self.interrupted = False
         self.next_trim = 0
 
     @staticmethod
@@ -235,6 +247,7 @@ class Dictation:
         self.active = True
         self.error = None
         self.cancelled = False
+        self.interrupted = False
         self.typer.failed = False
         self.stop_evt.clear()
         self.input_token = None
@@ -251,15 +264,20 @@ class Dictation:
             if OUTPUT == 'ibus' and (TEST_INSERT or not (DRY or test)):
                 try:
                     self.input_token = input_call('begin')
-                except (subprocess.SubprocessError, OSError):
-                    self.error = 'InputUnavailable'
-                    log('dictation input refused before microphone capture')
-                    notify('Dictation needs a supported editable text field. Focus the editor and try F5 again.')
-                    return
+                except (subprocess.SubprocessError, OSError) as refusal:
+                    # An app that exposes no accessibility tree (Electron, some Qt) cannot be verified;
+                    # the owner allowed typing there. Sensitive, non-editable or cancelled refusals stay hard.
+                    if UNVERIFIED_FALLBACK and 'UNVERIFIED-FIELD' in (getattr(refusal, 'stderr', '') or ''):
+                        log('focused field not verifiable; typing through ydotool for this session')
+                    else:
+                        self.error = 'InputUnavailable'
+                        log('dictation input refused before microphone capture')
+                        notify('Dictation needs a supported editable text field. Focus the editor and try F5 again.')
+                        return
             if self.stop_evt.is_set(): return
             if not self.models.loaded:
                 status('loading')
-                if not test: notify('Preparing speech model… Microphone is off. Keep F5 held until Listening.')
+                if not test: notify('Preparing speech model… Microphone is off. Wait for Listening.')
             with self.models.use(lambda extra: not resource_reasons(self.policy, extra)) as model:
                 if self.stop_evt.is_set(): return
                 if self.input_token:
@@ -275,7 +293,7 @@ class Dictation:
                 status('listening')
                 if not test:
                     tone(880, 90)
-                    notify('Listening… Release F5 to finish; Escape cancels.', persistent=True)
+                    notify('Listening… Press F5 again to finish; Escape cancels.' if TOGGLE else 'Listening… Release F5 to finish; Escape cancels.', persistent=True)
                 self.run(model)
         except ModelHeadroom:
             self.error = 'ResourceGuard'
@@ -301,6 +319,23 @@ class Dictation:
         if self.active:
             self.stop_evt.set()
             status('finishing')
+
+    def interrupt(self):
+        """The user started typing: end dictation now and drop words not yet typed, so nothing lands in the middle of their sentence."""
+        if not self.active:
+            return
+        self.interrupted = True
+        self.stop_evt.set()
+        while True:
+            try:
+                item = self.typer.q.get_nowait()
+            except queue.Empty:
+                break
+            if item[0] is None:
+                self.typer.q.put(item)  # keep the session-release marker
+                self.typer.q.task_done()
+                break
+            self.typer.q.task_done()
 
     def cancel(self):
         self.cancelled = True
@@ -340,9 +375,51 @@ class Dictation:
         return None, None
 
     def run_ane(self, model, cap, pending):
-        """Whole-utterance engine: collect audio while F5 is held, transcribe on release."""
+        """Rolling engine: re-decode the audio so far every ANE_INTERVAL s on the ANE and type the words two
+        consecutive passes agree on (minus the newest, which may still change). Typed text is append-only."""
+        from dictation_ane import clean, stable_count, norm, drop_overlap
         kept = bytearray(pending)
         t0 = time.time()
+        threading.Thread(target=lambda: model.warm(), daemon=True).start()
+        seg = 0            # byte offset where the current segment starts
+        typed_n = 0        # words of the current segment already typed
+        prev = []          # previous pass's words
+        last_len = 0
+        flight = None      # (thread, result list, segment id)
+        seg_id = 0
+        total_typed = 0
+
+        def f32(buf):
+            b = buf[:len(buf) // 2 * 2]
+            return (np.frombuffer(bytes(b), np.int16).astype(np.float32) / 32768).astype('<f4').tobytes()
+
+        def decode(buf):
+            return clean(model.transcribe(f32(buf))).split()
+
+        tail = []          # normalized last words typed, to trim the overlap after a segment cut
+        after_cut = False
+
+        def say(words):
+            nonlocal total_typed, after_cut
+            if after_cut and words:
+                words = drop_overlap(tail, words)
+                after_cut = False
+            if ANE_TRACE and words:
+                log(f"trace say audio_t={len(kept) / 32000:.2f} n={len(words)} words={' '.join(words)}")
+            tail.extend(norm(w) for w in words)
+            del tail[:-8]
+            if words and not self.cancelled and not self.interrupted:
+                self.typer.submit(" ".join(words) + " ", self.input_token)
+                total_typed += len(words)
+
+        def absorb(words):
+            nonlocal typed_n, prev
+            commit = max(typed_n, (stable_count(prev, words) if ANE_AGREE > 1 else len(words)) - ANE_HOLD)
+            if commit > typed_n:
+                say(words[typed_n:commit])
+                typed_n = commit
+            prev = words
+
         try:
             stopped_at = None
             next_guard = 0
@@ -359,23 +436,44 @@ class Dictation:
                     stopped_at = time.time()
                 if stopped_at and time.time() - stopped_at > 0.15:
                     break
-                if not select.select([cap.stdout], [], [], .1)[0]:
+                if flight and not flight[0].is_alive():
+                    if flight[2] == seg_id and flight[1]:
+                        absorb(flight[1][0])
+                    flight = None
+                seg_len = len(kept) - seg
+                if flight is None and seg_len > 16 * 32000:
+                    # Long utterance: close this segment at its quietest 100 ms so the 30 s model window never splits a word.
+                    lo, hi = len(kept) - 5 * 32000, len(kept) - 1 * 32000
+                    x = np.frombuffer(bytes(kept[lo:hi // 2 * 2]), np.int16).astype(np.float32)
+                    w = len(x) // 1600
+                    cut = lo + int(np.argmin((x[:w * 1600].reshape(w, 1600) ** 2).sum(1))) * 3200
+                    say(decode(kept[seg:cut])[typed_n:])
+                    seg, typed_n, prev, last_len, seg_id, after_cut = cut, 0, [], 0, seg_id + 1, True
+                    continue
+                if flight is None and seg_len >= 32000 and seg_len - last_len >= ANE_INTERVAL * 32000:
+                    last_len = seg_len
+                    out = []
+                    snapshot = bytes(kept[seg:])
+                    th = threading.Thread(target=lambda b=snapshot, o=out: o.append(decode(b)), daemon=True)
+                    flight = (th, out, seg_id)
+                    th.start()
+                if not select.select([cap.stdout], [], [], .05)[0]:
                     continue
                 data = cap.stdout.read1(CHUNK * 2)
                 if not data:
                     break
                 kept += data
             self.close_capture(cap)
-            kept = kept[:len(kept) // 2 * 2]
-            if len(kept) < 16000:  # under half a second
-                return
-            pcm = np.frombuffer(bytes(kept), np.int16).astype(np.float32) / 32768
-            status('finishing')
-            text = model.transcribe_long(pcm.astype('<f4').tobytes())
-            log(f"ane dictated {len(text)} chars from {len(pcm) / 16000:.1f}s in {time.time() - t0:.1f}s")
-            if text and not self.cancelled:
-                self.typer.submit(text + " ", self.input_token)
-            elif not DRY and not self.cancelled:
+            if flight:
+                flight[0].join(10)
+            if len(kept) - seg >= 8000 and not self.interrupted:
+                status('finishing')
+                t_dec = time.time()
+                words = decode(kept[seg:])
+                say(words[typed_n:])
+                log(f"ane dictated {total_typed} words from {len(kept) / 32000:.1f}s; held {t_dec - t0:.1f}s, "
+                    f"final pass {time.time() - t_dec:.2f}s")
+            if not total_typed and not DRY and not self.cancelled and not self.interrupted:
                 notify("Didn't catch that")
         except Exception as e:
             self.error = type(e).__name__
@@ -519,7 +617,16 @@ def main():
             _, _, typ, code, val = struct.unpack(fmt, raw)
             if typ == 1 and code == 1 and val == 1:  # Escape cancels pending IBus insertion
                 d.cancel()
-            if typ == 1 and code == KEY:
+            elif typ == 1 and val == 1 and code != KEY and code not in MODIFIER_KEYS and d.active and ENGINE == 'ane':
+                d.interrupt()  # typing ends dictation, as on macOS
+            if typ == 1 and code == KEY and TOGGLE:
+                if val == 1:  # key repeat (val 2) and release are ignored
+                    if d.active:
+                        d.stop()
+                    else:
+                        log('F5 pressed; checking dictation admission and field metadata')
+                        d.start()
+            elif typ == 1 and code == KEY:
                 if val == 1:
                     log('F5 pressed; checking dictation admission and field metadata')
                     d.start()
