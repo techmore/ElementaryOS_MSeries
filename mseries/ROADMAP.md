@@ -1,5 +1,15 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## OpenCode browser accounts from CodexBar + — 2026-10-18
+
+The native Connect sheet now offers browser sign-in to save a second OpenCode account for
+existing dropdown switching. Official CLI device login stores/activates it; previous credentials
+are verified intact. API-key setup remains available. Duplicate accounts, cancellation and
+abandoned attempts have explicit handling; account/plan/usage refresh follows completion.
+Ten new login tests and native build/tests pass; live approval-link/cancel smoke preserved saved
+accounts. Remaining acceptance: owner browser approval for a distinct account and dropdown switch.
+See [the port notes](CODEXBAR-PORT.md#opencode-account-switching).
+
 ## Calendar Today navigation regression resolved — 2026-10-18
 
 Repeated Today clicks during a return from another month could reuse the relative

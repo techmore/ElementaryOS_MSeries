@@ -52,6 +52,7 @@ namespace MSeries {
         private int64 opencode_accounts_fetched_us = 0;
         private uint opencode_generation = 0;
         private bool opencode_switch_in_flight = false;
+        private bool opencode_login_in_flight = false;
         private Gtk.Label[] account_quota_labels = {};
         private Json.Array[] account_quota_windows = {};
         private Json.Array hint_candidates = new Json.Array ();
@@ -602,7 +603,7 @@ namespace MSeries {
                     tell (ok_heading, report_output && output.strip ().length > 0
                         ? output.strip () : "It now appears under Accounts.");
                     if (report_output) refresh_usage ();
-                } else {
+                } else if (!(process.get_if_exited () && process.get_exit_status () == 130)) {
                     tell (failure_heading, output.strip ().length > 0 ? output.strip () : "The helper reported an error.");
                 }
             } catch (Error e) {
@@ -615,10 +616,23 @@ namespace MSeries {
             refresh_claude.begin ();
         }
 
-        // Upstream only imports opencode.ai cookies on macOS; our helper takes an API key (or a built-in sign-in) instead.
+        // Browser accounts live in native OpenCode; API-key and cookie quota setup remain alternatives.
         private void add_opencode_account () {
+            if (opencode_login_in_flight) return;
+            opencode_login_in_flight = true;
             run_saver.begin ({ "python3", helper_path ("codexbar-opencode-login.py"), "login" },
-                "OpenCode Go signed in", "Couldn't sign in to OpenCode Go", true);
+                "OpenCode account connected", "Couldn't connect to OpenCode", true, (obj, result) => {
+                    run_saver.end (result);
+                    opencode_login_in_flight = false;
+                    opencode_generation++;
+                    opencode_accounts_fetched_us = 0;
+                    opencode_local_fetched_us = 0;
+                    last_digest = "";
+                    refresh_opencode_accounts.begin ();
+                    refresh_opencode_local.begin ();
+                    run_action ("--refresh");
+                    read_snapshot.begin ();
+                });
         }
 
         private void add_claude_account () {

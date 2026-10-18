@@ -164,7 +164,21 @@ helper responses. Identity and quota credentials follow the v2 active selection 
 explicit `OPENCODE_API_KEY` environment override retains precedence. While OpenCode refreshes a selected
 OAuth token, the wrapper keeps that identity rather than substituting a legacy account.
 
-Browser accounts are saved in OpenCode through `/connect` or `opencode auth login opencode`. The
-CodexBar API-key window remains quota-key setup. Account activation was checked with OpenCode v2.0.32,
+OpenCode **+** now offers **Sign in with browser** in the native Connect sheet, alongside API-key
+setup and the built-in quota-only sign-in. It runs the official
+`opencode auth login opencode --method device --answer server=https://opencode.ai/console`, opens
+only the validated official device approval URL, and displays the approval code. Choose the other
+browser account/workspace; an existing browser session may need signing out first. OpenCode owns
+credential storage and makes the new account active. CodexBar verifies the active identity and that
+all previous saved credential IDs remain, then refreshes dropdown accounts, plan and usage. Signing
+into an already saved identity gives a retry message instead of claiming another account was added.
+No credentials or raw CLI logs are shown. Cancel interrupts the pending native authorization; a
+ten-minute timeout handles abandoned attempts. Repeated panel clicks cannot start parallel helpers.
+
+`test-codexbar-opencode-login.py` covers new/duplicate identities, workspace choices, preservation,
+URL validation, cancellation, failure privacy and read-only metadata. Run
+`probe/render-opencode.py OUT.png browser` for the waiting sheet. OpenCode v2.0.32 produced the
+expected approval URL in a live begin/cancel smoke test with saved IDs preserved; a real distinct
+second-account authorization still requires owner browser approval. Account activation was checked with OpenCode v2.0.32,
 including a live same-account saved-session round trip with the original selection restored.
 [Official account commands](https://dev.opencode.ai/v2/docs/cli/commands/) document the activation API.
