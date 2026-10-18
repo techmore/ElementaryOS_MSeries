@@ -49,3 +49,9 @@ Update (2026-10-15): the label now shows the whole machine's power from the SMC 
 version showed UPower's battery flow, which is exactly 0 W when the charger is connected and the battery sits at the 80%
 limit, so the label hid and the owner reported the meter as lost. Falls back to UPower's rate if the sensor is missing.
 Compiled and installed on the M1 Pro; how it looks in the panel is for the owner to confirm.
+
+## Menu-bar watts toggle — 2026-10-18
+
+Open the battery menu and turn **Show Watts in Menu Bar** off to hide the watts label immediately. Turn it on to show the latest reading again. The choice persists in `~/.config/mseries/battery-meter.ini` (`[panel] show-watts`), shared by the menu and bar; missing configuration keeps the existing enabled default. Percentage and charging-time displays keep their existing controls.
+
+The installer applies `panel-power-watts-toggle.patch` after the ETA/watts patches. Verified with a full release build and an isolated GTK harness: menu binding hides/shows the label immediately, later sensor updates cannot unhide it, and a second process restores the saved off choice. Installed live with `bash mseries/install-battery-eta.sh`; Wingpanel restarted successfully. The live menu still needs an owner visual check.
