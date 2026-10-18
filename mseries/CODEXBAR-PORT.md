@@ -254,3 +254,10 @@ interactions and the malformed-refresh/recovery probe are registered with Meson 
 available. The ingestion probe treats GLib criticals as failures and reproduced a null-session assertion
 on the previous code. Tests use private fake profiles and never signal real apps or change real accounts.
 Claude Switch additionally requires helper exit success. No polling intervals changed.
+
+### Compact OpenCode panel rows
+
+OpenCode uses slightly smaller panel text (7.5 pt quota, 7 pt reset, 6.75 pt second row). With one
+saved account and account quota available, its local seven-day token count occupies the lower row.
+With alternate accounts, that row keeps their quotas instead; local usage remains in the tooltip and
+popover. `probe/run-probe.sh BUILD OUT light opencode-compact connected` previews both cases.
