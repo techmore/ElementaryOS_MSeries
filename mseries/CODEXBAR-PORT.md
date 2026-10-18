@@ -293,3 +293,19 @@ It retains a removed menu anchor until its popup is detached on switch/close. Th
 a reproduced use-after-finalization defect; see [crash evidence and tests](CODEXBAR-CRASH-2026-10-18.md).
 The installer stages the binary without restarting the live panel. Run
 `bash mseries/wingpanel-tests/run-popover-lifetime.sh` for the isolated four-case regression.
+
+### Performance boundaries and the quiet panel watch
+
+See [the 2026-10-18 audit](CODEXBAR-PERFORMANCE-AUDIT-2026-10-18.md) for measurements,
+remaining modularity work and activation limits. Shared `codexbar_history.py` streams
+OpenCode's displayed 30-day windows, with read-only queries and no new app DB indexes.
+`HelperProcess.vala` bounds disposable native read helpers; account actions retain their
+existing lifecycle. Helper completion repaints cached cards without extra snapshot IPC.
+Install/deploy/image payloads must include both `codexbar_history.py` and the token module.
+
+`python3 ~/.local/lib/codexbar-cli/codexbar-wingpanel-watch.py` reports panel/launcher
+health and new categorized journal/core events using a private bounded checkpoint.
+It never controls processes. The owner's five-minute chat heartbeat consumes that report
+and stays quiet while unchanged. Retain the distinction between an unexplained PID
+transition and a confirmed crash. The heartbeat requires the app/host to be available;
+it is not a continuous availability guarantee.

@@ -21,12 +21,9 @@ from typing import Any
 
 import codexbar_cache
 import codexbar_tokens
+import codexbar_history
 
-WINDOWS = (
-    ("5 hours", 5 * 3600 * 1000),
-    ("7 days", 7 * 24 * 3600 * 1000),
-    ("30 days", 30 * 24 * 3600 * 1000),
-)
+WINDOWS = codexbar_history.WINDOWS
 MAX_TRANSCRIPT_FILES = 4000
 
 
@@ -186,46 +183,26 @@ def opencode_session(home: pathlib.Path, now_ms: int) -> dict[str, Any]:
     binary = find_binary("opencode", home, (".opencode/bin/opencode",))
     database = data_home(home) / "opencode/opencode.db"
     entry["note"] = "Local activity from OpenCode history · all local accounts/providers · includes cache reads/writes · not account quota"
-    records: list[tuple[int, int, float]] = []
+    periods: list[dict[str, Any]] = []
     providers: dict[str, int] = {}
     problem = ""
     if database.is_file():
         try:
-            connection = sqlite3.connect(f"file:{database}?mode=ro", uri=True, timeout=0.5)
-            try:
-                columns = {row[1] for row in connection.execute("PRAGMA table_info(session_message)")}
-                if {"type", "time_created", "data"}.issubset(columns):
-                    for created, data in connection.execute(
-                        "SELECT time_created, data FROM session_message WHERE type = 'assistant' AND json_valid(data)"
-                    ):
-                        try:
-                            payload = json.loads(data)
-                            tokens = codexbar_tokens.opencode_tokens(payload.get("tokens"))
-                            cost = payload.get("cost")
-                            cost = float(cost) if isinstance(cost, (int, float)) and cost >= 0 else 0.0
-                            provider = str((payload.get("model") or {}).get("providerID") or "unknown")
-                            records.append((int(created), tokens, cost))
-                            providers[provider] = providers.get(provider, 0) + 1
-                        except (TypeError, ValueError, OverflowError, AttributeError):
-                            continue
-                else:
-                    problem = "OpenCode history uses an unsupported schema."
-            finally:
-                connection.close()
+            periods, providers = codexbar_history.opencode_summary(database, now_ms)
         except (sqlite3.Error, OSError) as error:
             problem = f"Could not read OpenCode history: {error}"
-    entry["periods"] = summarize(records, now_ms) if records else []
+    entry["periods"] = periods if providers else []
     if providers:
         entry["providers"] = sorted(providers, key=providers.get, reverse=True)
     auth = load_json_object(data_home(home) / "opencode/auth.json")
     has_keys = bool(auth)
     if problem:
         entry.update(state="warn", detail=problem)
-    elif binary and (records or has_keys):
+    elif binary and (providers or has_keys):
         entry.update(state="ok", detail="Ready" + (" · signed-in providers: " + ", ".join(sorted(auth)) if has_keys else
                                                    " · using built-in free models"))
     elif binary:
-        entry.update(state="ok", detail="Installed · no sessions yet.")
+        entry.update(state="ok", detail="Installed · no activity in the last 30 days.")
     else:
         entry.update(state="off", detail="OpenCode is not installed.")
     return entry

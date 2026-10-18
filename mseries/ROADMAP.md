@@ -1,5 +1,31 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## CodexBar performance/modularity audit and quiet stability watch — 2026-10-18
+
+[Audit, evidence and remaining work](CODEXBAR-PERFORMANCE-AUDIT-2026-10-18.md).
+Shared read-only OpenCode history now filters the 30-day window before JSON decoding
+and streams period aggregation; no lifetime `fetchall`/record list. Synthetic unindexed
+20,000-old/100-recent-row comparison: equal totals, 371.25 → 17.56 ms median under
+tracemalloc, 46.96 → 0.01 MiB peak Python allocation. This is not a whole-panel benchmark.
+Native `HelperProcess` centralizes bounded asynchronous read helpers (5s snapshot,
+30s local, 120s account deadline, 4 MiB stdout); login/switch actions are excluded.
+Helper completion repaints cached data without extra snapshot IPC; session rendering
+uses already validated data. Common native source lists prevent probe/module drift.
+Backoff exponent arithmetic is bounded; effective retry policy/cadence is unchanged.
+Fifteen native targets, eight performance/watch regressions, helper/deployment and
+six image-wiring tests pass; full v0.77.0 live port/schema check passes.
+
+Installed `codexbar-wingpanel-watch.py`; this chat's “Watch Wingpanel stability”
+heartbeat runs every five minutes, quiet while unchanged. It observes the panel and
+Gala launcher, process identities/metrics and bounded categorized journal/core metadata;
+no raw core, environment, journal text or credentials are persisted, and it cannot
+restart the desktop. PID changes alone remain unclassified. No new core since the
+prior popup fix. Panel PID 335310 / Gala PID 2678 stayed healthy through 80.2 seconds,
+RSS 192,928 KiB, FDs 50; its earlier 14:23:25 restart has no crash attribution.
+Routine deployment installs Python improvements for their next invocation and stages
+the native performance changes for next login; no reload issued for this audit.
+Next: normal-use monitoring, then scoped account caching and large-transcript benchmarks.
+
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18
 
 Removed “local” from the seven-day panel/card labels and moved counting scope into
