@@ -1,5 +1,77 @@
 # OS 9 implementation / Claude Code handoff
 
+## Review cohorts and actual panel workflow complete; physical F5 unresolved — 2026-10-18
+
+Both owned model-review units are terminal/missing; do not relaunch or duplicate.
+Original six-case cohort remains5/6, including French PWNED→PWNÉ fidelity failure.
+Separate English/German/Japanese cohort completed3/3 limited checks,0 interruptions,
+3.21–3.64s request paths, min11.51GiB, reported0RPM/max40.30C. All five visible
+text-output choices have basic probes; speech recognition remains English-only.
+Archived extra-language driver said six; actual checkpoint IDs/count3 are authoritative.
+Current source fixes the wording; archived source and failed outcomes are unchanged.
+
+work/dictation-panel-workflow-v1 is terminal complete/passed:true. Real public-file
+ASR→actual private GTK4 TextView→local French translation→grammar→private clipboard
+passes functional checks, preserving original/intermediate.0% normalized WER, first
+widget5.00s, complete ASR12.80s; model stages7.02/7.09s. Min11.04GiB, reported0RPM,
+max40.17C. Meaning drift retained: stew→soup and bruised→crushed potatoes; grammar
+returned that translation unchanged. This is not a fidelity pass or physical F5 test.
+Never repeat completed model stages to improve the score. work/publish-receipts.py
+--dictation-panel exports allowlisted receipt + evaluated source only; private ASR,
+portal logs/settings/journals/audio stay out. New explicit panel pipeline keeps an
+intermediate translation and warns/retains it if stage2 is unavailable.28 contracts
+and private native fake-transform wiring pass. Panel remains uninstalled; preserve
+the failed human F5 report and ask for exact prompt/app if still missing.
+
+Latest live services remained speechPID758179/inputPID787274, ready CPU/IBus and idle
+native engine. No F5 diagnostic event since recovery. The keymap query is not proof
+of physical delivery. No microphone/owner windows or IBus restart by this batch.
+Default4B remains enabled/available under admission. Idle ASR still retains~0.9GiB;
+pressure-release/on-demand loading remains open. No kernel/boot/audio/display edits.
+Current reviewed source/publication batch needs commit/push/CI.3159e7f CI39127981785
+passed all4 jobs; PR86 is still draft/unmerged, this phase's Pages unverified.
+
+## Review pilot complete,5/6; extra language queue started — 2026-10-18
+
+Original mseries-dictation-review-qualification.service is terminal/missing (previous
+PID699108), checkpoint work/dictation-review-v1.json complete:true with6cases and0
+interruptions. All quiet policy checks passed. Five limited checks pass; French
+literal translation changed PWNED to PWNÉ and remains failed. It translated the source
+as data, not an executed instruction; the checker label combines this with identifier
+fidelity. Separate qualitative annotation explains that distinction without changing
+checks_passed:false. Grammar literal remained unchanged/unpolished. Never rerun the
+completed six cases to improve scores. All outputs are synthetic.
+
+Warm API path1.99–3.43s, min9.48GiB available, maxfan2516RPM/temp42.75C. Queue span
+1392.39s is journal-unit-start wall time to complete-checkpoint mtime, including
+admission/startup/quiet confirmations, not separately timed. The transient unit was
+already garbage-collected; zero monotonic properties were unavailable, not zero time.
+work/publish-receipts.py --dictation-review exports only allowlisted synthetic fields,
+retains failures and frozen source; raw server logs/settings/journals are excluded.
+Default4B PID795452 was restored after admission and remains available at last check.
+
+A new, distinct mseries-dictation-language-qualification.service covers3NEW target
+choices (English/German/Japanese), preserving the6-case cohort. Inspect this unit,
+work/dictation-language-qualification.log and work/dictation-language-v1.json before
+any launch; never duplicate. Source frozen at work/dictation-language-cohort-v1.
+It reuses the guarded base driver with additional case IDs and source metadata.
+Its inherited completion log still says six; checkpoint case IDs/count3 are
+ authoritative. Fix this cosmetic base-driver wording in source, not archived runs.
+
+Next: inspect the3 language outputs and preserve failures; actual native panel-to-model
+and ASR-to-Gtk.TextView-to-review-to-private-copy workflow on a private Xvfb/bus. Do not
+record ambient mic/play audio or open owner windows. The optional panel remains source-only
+and uninstalled. A human F5 retry was requested after the bridge fix; no selected
+function key occurred during the60s observer. Keep the installed F5 services stable
+while that retry is pending. Idle ASR on-demand/pressure-release remains an efficiency
+gap for source implementation/test next; do not hide it or reduce6GiB reserve.
+
+Own recovery commit52d0163 is reconciled with main c3e6b14 in3159e7f; CI39127981785
+passed all4 jobs, including the new dock startup group. Local24 dictation,72 assistant
+and5 image wiring checks pass. No feature diff touches CodexBar; inherited owner code
+is retained and no owner app redeployment is needed. Review/language publication batch
+still needs commit/push/CI. PR86 remains draft/unmerged; Pages for this phase unverified.
+
 ## Native input reconnect recovery fixed and tested — 2026-10-18
 
 Authoritative live check found the bridge inactive after the owner IBus PID changed;

@@ -39,6 +39,25 @@ try:
     assert not app.text(app.proposed) and not app.copy.get_sensitive()
     app.start_review();pump_until(lambda: not app.busy)
     assert seen[-1][1:]==('translate','French')
+    app.mode.set_selected(2)
+    stages=[]
+    def pipeline_stage(source,mode,language):
+        stages.append((source,mode,language))
+        return 'translated source' if mode=='translate' else 'polished translation'
+    app.review=pipeline_stage;app.start_review();pump_until(lambda:not app.busy)
+    assert app.text(app.proposed)=='polished translation'
+    assert app.text(app.intermediate_text)=='translated source' and app.intermediate.get_visible()
+    assert stages[-1]==('translated source','grammar','French')
+    def interrupted_polish(source,mode,language):
+        if mode=='grammar':raise ReviewUnavailable('waiting')
+        return 'available translation'
+    app.review=interrupted_polish;app.start_review();pump_until(lambda:not app.busy)
+    assert app.text(app.proposed)=='available translation' and 'retained' in app.message.get_label()
+    def unavailable_translation(*_):raise ReviewUnavailable('waiting')
+    app.review=unavailable_translation;app.start_review();pump_until(lambda:not app.busy)
+    assert not app.text(app.proposed) and not app.copy.get_sensitive()
+    assert not app.intermediate.get_visible() and not app.text(app.intermediate_text)
+    app.mode.set_selected(1)
     gate=threading.Event()
     app.review=lambda *_: gate.wait(3) and 'stale'
     app.start_review();app.original.get_buffer().set_text('new original');gate.set()
@@ -52,7 +71,7 @@ try:
     assert not app.transform.get_sensitive() and len(seen)==before
     print(json.dumps({'passed':True,'native_gtk4_panel':True,'original_preserved':True,
         'mode_language_wiring':True,'stale_proposal_discarded':True,'unavailable_preserves_original':True,
-        'review_blocked_while_listening':True,'model_inference':False,'microphone_recorded':False,
+        'review_blocked_while_listening':True,'translate_then_grammar_wiring':True,'partial_pipeline_preserves_translation':True,'model_inference':False,'microphone_recorded':False,
         'owner_windows_opened':False,'scope':'UI wiring with synthetic transforms; no grammar or translation quality claim'}))
 finally:
     app.window.close();app.quit()

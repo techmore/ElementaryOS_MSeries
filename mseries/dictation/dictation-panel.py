@@ -6,6 +6,7 @@ gi.require_version('Gtk', '4.0')
 from gi.repository import Gio, GLib, Gtk
 from dictation_review import LANGUAGES, ReviewUnavailable, review
 from dictation_status import read_status
+from dictation_pipeline import transform
 
 
 class DictationPanel(Gtk.Application):
@@ -30,7 +31,7 @@ class DictationPanel(Gtk.Application):
         self.window.set_child(box)
         title = Gtk.Label(label='Speak, then review', xalign=0)
         title.add_css_class('title-2'); box.append(title)
-        hint = Gtk.Label(label='Hold F5 in a text field. To review an utterance, focus the original transcript below, then hold F5 and speak.',
+        hint = Gtk.Label(label='Dictation currently recognizes English. Focus the original transcript below, hold F5 and speak, then release. Review can translate or improve the text.',
                          wrap=True, xalign=0)
         box.append(hint)
         self.record = Gtk.Button(label='Focus transcript for F5')
@@ -41,13 +42,18 @@ class DictationPanel(Gtk.Application):
         self.original = self.editor(box, 'Original transcript', editable=True)
         self.original.get_buffer().connect('changed', self.changed)
         controls = Gtk.Box(spacing=8)
-        self.mode = Gtk.DropDown.new_from_strings(['Improve grammar', 'Translate'])
+        self.mode = Gtk.DropDown.new_from_strings(['Improve grammar', 'Translate', 'Translate + improve grammar'])
         self.language = Gtk.DropDown.new_from_strings(list(LANGUAGES))
         self.language.set_sensitive(False)
-        self.mode.connect('notify::selected', lambda *_: self.language.set_sensitive(self.mode.get_selected() == 1))
-        controls.append(self.mode); controls.append(self.language)
+        self.mode.connect('notify::selected', lambda *_: self.language.set_sensitive(self.mode.get_selected() != 0))
+        self.language.set_tooltip_text('Output language for translation; speech recognition is English')
+        controls.append(self.mode); controls.append(Gtk.Label(label='Output language')); controls.append(self.language)
         self.transform = Gtk.Button(label='Review text')
         self.transform.connect('clicked', self.start_review); controls.append(self.transform); box.append(controls)
+        self.intermediate = Gtk.Expander(label='Translation before grammar review', visible=False)
+        intermediate_box=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=4)
+        self.intermediate_text=self.editor(intermediate_box,'Intermediate translation',editable=False)
+        self.intermediate.set_child(intermediate_box);box.append(self.intermediate)
         self.proposed = self.editor(box, 'Proposed text — check meaning before copying', editable=False)
         self.copy = Gtk.Button(label='Copy proposed text')
         self.copy.set_sensitive(False)
@@ -79,6 +85,8 @@ class DictationPanel(Gtk.Application):
         self.generation += 1
         self.proposed.get_buffer().set_text('')
         self.copy.set_sensitive(False)
+        self.intermediate.set_visible(False)
+        self.intermediate_text.get_buffer().set_text('')
 
     def poll(self):
         if self.closed: return False
@@ -92,7 +100,7 @@ class DictationPanel(Gtk.Application):
         self.state.set_label(names.get(phase, 'Speech service is unavailable'))
         self.record.set_sensitive(phase == 'ready')
         self.mode.set_sensitive(not self.busy)
-        self.language.set_sensitive(not self.busy and self.mode.get_selected() == 1)
+        self.language.set_sensitive(not self.busy and self.mode.get_selected() != 0)
         self.transform.set_sensitive(not self.busy and phase not in ('listening', 'finishing'))
         return True
 
@@ -100,13 +108,15 @@ class DictationPanel(Gtk.Application):
         if self.busy or self.phase in ('listening', 'finishing'): return
         source = self.text(self.original)
         generation = self.generation
-        mode = 'translate' if self.mode.get_selected() else 'grammar'
+        mode = ('grammar','translate','translate-polish')[self.mode.get_selected()]
         language = LANGUAGES[self.language.get_selected()]
         self.busy = True; self.poll()
         self.proposed.get_buffer().set_text(''); self.copy.set_sensitive(False)
+        self.intermediate.set_visible(False)
+        self.intermediate_text.get_buffer().set_text('')
         self.message.set_label('Reviewing locally… Original text is preserved.')
         def worker():
-            try: result, error = self.review(source, mode, language), None
+            try: result, error = transform(source, mode, language, self.review), None
             except ReviewUnavailable as exc: result, error = None, str(exc)
             except Exception: result, error = None, 'Local review is unavailable; original text is unchanged'
             def finished():
@@ -116,8 +126,10 @@ class DictationPanel(Gtk.Application):
                     self.message.set_label('Original text changed. Review it again when ready.')
                 elif error: self.message.set_label(error)
                 else:
-                    self.proposed.get_buffer().set_text(result); self.copy.set_sensitive(True)
-                    self.message.set_label('Check names, numbers, meaning and translation before copying.')
+                    self.proposed.get_buffer().set_text(result.proposal); self.copy.set_sensitive(True)
+                    self.intermediate.set_visible(result.translation is not None)
+                    self.intermediate_text.get_buffer().set_text(result.translation or '')
+                    self.message.set_label(result.warning or 'Check identifiers, names, numbers and meaning before copying.')
                 return False
             GLib.idle_add(finished)
         threading.Thread(target=worker, daemon=True).start()

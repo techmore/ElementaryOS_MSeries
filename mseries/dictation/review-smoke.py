@@ -203,7 +203,7 @@ def main():
         if not completed or not row['quiet_policy_passed']:
             print('Interruption/policy evidence retained; inspect before resuming incomplete work',flush=True);return 2
     receipt['complete']=True;save(args.output,receipt)
-    print('All six completed responses retained, including failed checks; independent review/publication required',flush=True)
+    print('All configured responses retained, including failed checks; independent review/publication required',flush=True)
     return 0
 
 

@@ -1040,3 +1040,5 @@ with native OAuth refresh and pending-read invalidation. Workspace labels distin
 unusable sign-ins explain the need to sign in again. Twenty-five helper tests, 13 wrapper tests,
 four Meson suites, port check and light/dark previews pass. Live same-account saved-session round trip
 passed and the original selection was restored; distinct-account round trips use temporary fixtures.
+
+- Local review pilot:6 completed synthetic requests,5/6 limited checks; French identifier PWNED→PWNÉ remains failed, grammar literal remains unpolished. All within policy,1.99–3.43s warm path and≤2516RPM/min9.48GiB available. Separate English/German/Japanese probes complete3/3 limited checks. Actual public-file ASR→GTK4 panel→French translation→grammar→private copy passes functional checks, preserving semantic errors (stew→soup; bruised→crushed potatoes). Original/intermediate preserved; three explicit review modes,28 contracts. No physical F5 or broad translation-quality pass; panel rollout still waits for human F5 recovery. Main/Pages publication and idle ASR pressure release remain open.
