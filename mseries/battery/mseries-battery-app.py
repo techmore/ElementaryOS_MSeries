@@ -522,7 +522,7 @@ class BatteryWindow(Gtk.ApplicationWindow):
             name = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
             name.set_size_request(120, -1)
             name.append(label(band["band"], "row-title"))
-            name.append(label("CPU " + band["cpu_range"], "dim", "caption"))
+            name.append(label(band["cpu_range"], "dim", "caption"))
             line.append(name)
             line.append(level_bar((band["avg_w"] or 0) / peak, "usage-bar"))
             for text, width in (("%.1f W" % band["avg_w"] if band["avg_w"] is not None else "—", 64),

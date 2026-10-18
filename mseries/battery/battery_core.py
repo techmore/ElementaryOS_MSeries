@@ -394,24 +394,33 @@ def sessions(rows):
     return result
 
 
-USAGE_BANDS = [("Idle", 0, 10), ("Light", 10, 30), ("Moderate", 30, 60), ("Heavy", 60, 101)]
+USAGE_BANDS = [("Light", 0, 8), ("Moderate", 8, 15), ("Heavy", 15, 10000)]
 
 
 def usage_profile(rows):
-    """Average draw while unplugged by CPU load band, and what that means for runtime at full charge."""
+    """Average draw and full-charge runtime while unplugged, grouped by how hard the machine is working (watts).
+
+    Bands are by system power rather than CPU so they also cover history imported from UPower, which has watts only.
+    Each sample is weighted by the time it covers.
+    """
     out = []
     full_wh = next((r["full_uwh"] / 1e6 for r in reversed(rows) if r["full_uwh"]), None)
-    discharging = [r for r in rows if not r["ac"] and r["sys_w"] is not None and r["cpu_pct"] is not None]
+    on = [(i, r) for i, r in enumerate(rows) if not r["ac"] and r["sys_w"] is not None and r["sys_w"] > 0.5]
     for name, low, high in USAGE_BANDS:
-        sel = [r for r in discharging if low <= r["cpu_pct"] < high]
-        if not sel:
-            out.append({"band": name, "cpu_range": "%d–%d%%" % (low, min(high, 100)), "samples": 0,
-                        "hours": 0.0, "avg_w": None, "runtime_h": None})
+        seconds, weighted = 0.0, 0.0
+        for i, r in on:
+            if low <= r["sys_w"] < high:
+                nxt = rows[i + 1]["ts"] if i + 1 < len(rows) else r["ts"] + SAMPLE_SECONDS
+                dt = min(nxt - r["ts"], GAP_SECONDS)
+                seconds += dt
+                weighted += r["sys_w"] * dt
+        label = "%d–%d W" % (low, high) if high < 10000 else "%d W and up" % low
+        if seconds < 60:
+            out.append({"band": name, "cpu_range": label, "samples": 0, "hours": 0.0, "avg_w": None, "runtime_h": None})
             continue
-        avg = sum(r["sys_w"] for r in sel) / len(sel)
-        out.append({"band": name, "cpu_range": "%d–%d%%" % (low, min(high, 100)), "samples": len(sel),
-                    "hours": round(len(sel) * SAMPLE_SECONDS / 3600, 2), "avg_w": round(avg, 2),
-                    "runtime_h": round(full_wh / avg, 1) if full_wh and avg > 0 else None})
+        avg = weighted / seconds
+        out.append({"band": name, "cpu_range": label, "samples": int(seconds / SAMPLE_SECONDS), "hours": round(seconds / 3600, 2),
+                    "avg_w": round(avg, 2), "runtime_h": round(full_wh / avg, 1) if full_wh and avg > 0 else None})
     return out
 
 

@@ -35,10 +35,10 @@ class CoreTests(unittest.TestCase):
                 row(5030, 79.9, 8, ac=1), row(5045, 80, 8, ac=1)]
         self.assertEqual(len(core.sessions(rows)), 2)
 
-    def test_usage_profile_bands(self):
-        rows = [row(i * 15, 90, 4.0, cpu=5) for i in range(240)] + [row(10000 + i * 15, 70, 20.0, cpu=80) for i in range(240)]
+    def test_usage_profile_bands_by_draw(self):
+        rows = [row(i * 15, 90, 5.0, cpu=10.0) for i in range(240)] + [row(10000 + i * 15, 70, 20.0, cpu=10.0) for i in range(240)]
         bands = {b["band"]: b for b in core.usage_profile(rows)}
-        self.assertAlmostEqual(bands["Idle"]["avg_w"], 4.0)
+        self.assertAlmostEqual(bands["Light"]["avg_w"], 5.0)
         self.assertAlmostEqual(bands["Heavy"]["runtime_h"], 3.0)
         self.assertEqual(bands["Moderate"]["samples"], 0)
 
