@@ -1,5 +1,20 @@
 # OS 9 implementation / Claude Code handoff
 
+## CodexBar labels and confirmed popup lifetime defect — 2026-10-18
+
+Removed “local” from the seven-day panel/card labels and moved counting scope into
+Settings > About, using the native GTK About dialog. No polling or accounting changes.
+Saved-core analysis found GTK flushing a destroyed popup surface (zero references,
+NULL display). A pinned Wingpanel production-class fixture reproduces the matching
+finalization/accessibility failure when an open indicator is removed before a switch
+or close. The new lifetime patch keeps the previous anchor alive until detachment;
+all four switch/close × animations on/off regression cases pass. The original fails.
+The full patched Wingpanel build, 13 native CodexBar targets and v0.77.0 live port/schema
+check pass. Existing full-height/notch and clock-right patches remain applied.
+See [investigation and reproduction](CODEXBAR-CRASH-2026-10-18.md), including the
+fixture setup limitation and why the exact original indicator remains unidentified.
+Activation pending; routine deploys still preserve the panel and daemon.
+
 ## Orchard soak closed with existing evidence — 2026-10-18
 
 Final report: `docs/orchard-soak.html`; evidence and raw samples under

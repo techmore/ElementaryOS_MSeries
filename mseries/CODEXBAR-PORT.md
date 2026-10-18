@@ -264,7 +264,7 @@ popover. `probe/run-probe.sh BUILD OUT light opencode-compact connected` preview
 
 ### Seven-day local processed tokens
 
-Every provider has a `7d local` total sourced from `codexbar-sessions.py`. These are rolling local
+Every provider has a `7d` total sourced from `codexbar-sessions.py`. These are rolling local
 coding-activity estimates across accounts/providers on this machine, not remaining plan tokens or
 ordinary ChatGPT/claude.ai chat totals. Input, output and cache reads/writes are included. Codex
 cached-input and reasoning-output breakdowns are already included in its totals; OpenCode's fallback
@@ -280,7 +280,16 @@ cache replaces the old cache-excluding definition. Caches remain private JSON un
 remains 60 seconds while open (15-second freshness on opening) and 900 seconds while closed.
 Cached session updates repaint the panel directly, without an extra upstream snapshot/refresh.
 Totals share the second row with alternate accounts, respect percentage visibility, and remain
-explained in accessible provider tooltips. The local-token native probe checks all three and bar height.
+explained in Settings > About. Provider tooltips retain the concise totals. The local-token native probe checks all three and bar height.
 
 Routine deployment leaves identical provider marks and the global icon cache untouched. Rebuild the
 icon cache only when the SVG contents actually change, to avoid needless invalidation of the live panel.
+
+### Wingpanel popup anchor lifetime
+
+`install-wingpanel-codexbar-left.sh` applies `patches/wingpanel-popover-lifetime.patch`
+to the pinned Wingpanel core in addition to the full-height/notch and clock-right patches.
+It retains a removed menu anchor until its popup is detached on switch/close. This fixes
+a reproduced use-after-finalization defect; see [crash evidence and tests](CODEXBAR-CRASH-2026-10-18.md).
+The installer stages the binary without restarting the live panel. Run
+`bash mseries/wingpanel-tests/run-popover-lifetime.sh` for the isolated four-case regression.

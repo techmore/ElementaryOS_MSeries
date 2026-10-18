@@ -1345,7 +1345,7 @@ namespace MSeries {
                         if (local_tokens.length > 0) {
                             // Keep the primary row compact; local tokens use the lower row when
                             // there is no alternate account, and remain in this tooltip in either case.
-                            section.append ("\n  " + local_tokens + " local tokens in 7 days (all local accounts)");
+                            section.append ("\n  " + local_tokens + " tokens in 7 days");
                         }
                     }
                 } else if (provider == "opencodego" && opencode_local != null) {
@@ -1359,7 +1359,7 @@ namespace MSeries {
                             JsonBoundary.number (period, "costUSD", 0),
                             JsonBoundary.integer (period, "requests", 0), tokens)));
                         if (label.contains ("7")) {
-                            value_text = "Local use";
+                            value_text = "Usage";
                             reset_text = "";
                         }
                     }
@@ -1401,7 +1401,7 @@ namespace MSeries {
 
             foreach (var provider in new string[] { "codex", "claude", "opencodego" }) {
                 var count = local_week_tokens (provider);
-                if (count.length > 0) tooltip.append ("\n\n%s · 7d local: %s tokens (all local accounts, includes cache reads/writes; not account quota)".printf (provider_title (provider), count));
+                if (count.length > 0) tooltip.append ("\n\n%s · 7d: %s tokens".printf (provider_title (provider), count));
             }
             set_panel_summary (tooltip.len > 0
                 ? tooltip.str + (snapshot_stale ? "\n\nCached: CodexBar couldn't reach a provider." : "")
@@ -1476,13 +1476,13 @@ namespace MSeries {
             var label = new Gtk.Label (null) { xalign = 0, use_markup = true };
             label.add_css_class ("seg-secondary");
             if (!show_alternate) {
-                label.label = "7d local · %s tok".printf (local_tokens);
-                label.tooltip_text = "Processed tokens in seven days across all local accounts, including cache reads/writes; not account quota";
+                label.label = "7d · %s tok".printf (local_tokens);
+                label.tooltip_text = "Tokens processed in seven days";
                 stack.append (label);
                 return stack;
             }
             var markup = new StringBuilder ();
-            if (local_tokens.length > 0) markup.append (Markup.escape_text ("7d local · %s tok  ·  ".printf (local_tokens)));
+            if (local_tokens.length > 0) markup.append (Markup.escape_text ("7d · %s tok  ·  ".printf (local_tokens)));
             var accounts = provider_accounts (provider);
             for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
                 var account = accounts.get_object_element (i);
@@ -1632,7 +1632,7 @@ namespace MSeries {
             if (provider == "opencodego") {
                 var local_tokens = opencode_week_tokens ();
                 if (windows != null && windows.get_length () > 0 && local_tokens.length > 0) {
-                    card.append (subtle_label (local_tokens + " local tokens · 7 days · all local accounts"));
+                    card.append (subtle_label (local_tokens + " tokens · 7 days"));
                 }
                 for (uint i = 0; opencode_accounts != null && i < opencode_accounts.get_length (); i++) {
                     var account = opencode_accounts.get_object_element (i);
