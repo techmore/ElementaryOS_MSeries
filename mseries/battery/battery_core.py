@@ -731,3 +731,60 @@ def write_summary(conn, path=SUMMARY_PATH):
     with open(tmp, "w") as handle:
         handle.write("\n".join(summary_card(conn)))
     os.replace(tmp, path)
+
+
+# ---- real history UPower already kept ------------------------------------------------------
+UPOWER_DIR = "/var/lib/upower"
+UPOWER_STATES = {"discharging": ("Discharging", 0), "charging": ("Charging", 1),
+                 "fully-charged": ("Full", 1), "pending-charge": ("Not charging", 1), "empty": ("Discharging", 0)}
+
+
+def _upower_series(path):
+    series = []
+    try:
+        with open(path) as handle:
+            for line in handle:
+                parts = line.split()
+                if len(parts) == 3:
+                    series.append((int(parts[0]), float(parts[1]), parts[2]))
+    except OSError:
+        pass
+    return series
+
+
+def import_upower(conn, directory=UPOWER_DIR):
+    """Backfill samples from UPower's own battery history (charge % and watts, since it was installed).
+
+    These rows have no CPU, brightness or process data (so they feed sessions, runtime and health, not the
+    by-usage or by-app views) and never overwrite or overlap rows this logger recorded itself.
+    Re-running replaces the earlier import. Returns the number of rows stored.
+    """
+    bat = find_battery()
+    full = rd_num(bat + "/energy_full") if bat else None
+    serial = rd(bat + "/serial_number") if bat else None
+    if not full or not serial:
+        return 0
+    charge = rate = None
+    for node in glob.glob(os.path.join(directory, "history-charge-*.dat")):
+        if serial in node:
+            charge, rate = _upower_series(node), _upower_series(node.replace("history-charge-", "history-rate-"))
+    if not charge:
+        return 0
+    own = conn.execute("SELECT MIN(ts) FROM samples WHERE cpu_pct IS NOT NULL").fetchone()[0]
+    cutoff = own if own is not None else int(time.time()) + 1
+    conn.execute("DELETE FROM samples WHERE cpu_pct IS NULL AND ts < ?", (cutoff,))
+    watts, index, count = 0.0, 0, 0
+    for ts, pct, state in charge:
+        if ts >= cutoff or state not in UPOWER_STATES or pct <= 0:
+            continue
+        while index < len(rate) and rate[index][0] <= ts:
+            watts = rate[index][1]
+            index += 1
+        status, ac = UPOWER_STATES[state]
+        flow = -watts if status == "Discharging" else (watts if status == "Charging" else 0.0)
+        conn.execute("INSERT OR IGNORE INTO samples (ts, status, ac, pct, energy_uwh, full_uwh, batt_w, sys_w, top) VALUES (?,?,?,?,?,?,?,?,?)",
+                     (ts, status, ac, pct, int(full * pct / 100), int(full), flow,
+                      watts if status == "Discharging" and watts > 0 else None, "[]"))
+        count += 1
+    conn.commit()
+    return count

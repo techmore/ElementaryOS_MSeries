@@ -1,5 +1,11 @@
 # OS 9 implementation / Claude Code handoff
 
+## Battery real data — 2026-10-18 (Claude Code)
+
+Owner asked for real data only. Deleted my synthetic test database. Logger now backfills from UPower's real history
+(`mseries-battery import`): 24 real unplugged runs since 2026-10-14, typical runtime 4h 18m (8 runs of 30 min or more).
+The Wingpanel card and Overview use it. **Not seen on the owner's screen**; renders so far were headless.
+
 ## Battery UI polish — 2026-10-18 (Claude Code)
 
 App icon, remembered page/range/size, keyboard shortcuts, `mseries-battery open`. 19 core tests + staging test pass; state

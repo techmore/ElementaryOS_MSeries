@@ -44,6 +44,14 @@ top three CPU processes. Read-only: it never changes a setting.
 - **Logger cost, measured 2026-10-18 on the M1 Pro:** about 0.17 s of CPU per minute (~0.3 % of one core), 18 MB RSS,
   `Nice=15` and idle I/O class. The database grows by tens of KB per hour of use.
 
+## Real history from UPower
+The logger imports UPower's own battery history for this battery (`/var/lib/upower/history-charge/rate-*.dat`, since
+2026-10-14: charge % and watts) at start, and `mseries-battery import` redoes it. Imported rows have charge, watts and
+state only, so they feed Sessions, runtime, the card and the health views but not usage-band or by-app views (no CPU data).
+Never overlaps rows the logger recorded. First import on the M1 Pro: 1,685 samples, 24 real unplugged runs; the 8 of 30
+minutes or more give a typical full-charge runtime of **4h 18m** at that workload (longest: 1h 43m, 82% to 16%, 24 W
+average, about 2h 36m projected). Short runs are noisy; the typical figure only uses runs of 30 minutes or more.
+
 ## Discharge path test
 Sensor reads honour `MSERIES_BATTERY_SYSROOT`, so `test_battery_core.py` feeds the sampler a fake `/sys` and `/proc`
 (discharging, AC offline, SMC system power, CPU delta, accessory) and checks the resulting sample. This is the first
