@@ -36,25 +36,27 @@ index 96b8708..9f22f6e 100644
 +    background-color: alpha(@theme_fg_color, 0.12);
 +}
 diff --git a/meson.build b/meson.build
-index ec722ae..7d681c9 100644
+index ec722ae..762e89d 100644
 --- a/meson.build
 +++ b/meson.build
-@@ -55,4 +55,5 @@ shared_module(
+@@ -55,4 +55,6 @@ shared_module(
      'src/Indicator.vala',
      'src/Widgets/ComponentRow.vala',
 +    'src/Widgets/TaskRow.vala',
++    'src/Widgets/TaskComposer.vala',
      'src/Widgets/PanelLabel.vala',
      'src/Widgets/calendar/CalendarModel.vala',
 diff --git a/po/POTFILES b/po/POTFILES
-index 383cf96..060d771 100644
+index 383cf96..47b709c 100644
 --- a/po/POTFILES
 +++ b/po/POTFILES
-@@ -8,2 +8,3 @@ src/Widgets/calendar/GridDay.vala
+@@ -8,2 +8,4 @@ src/Widgets/calendar/GridDay.vala
  src/Widgets/calendar/Util.vala
  src/Services/TimeManager.vala
 +src/Widgets/TaskRow.vala
++src/Widgets/TaskComposer.vala
 diff --git a/src/Indicator.vala b/src/Indicator.vala
-index 7b6ec63..f10665e 100644
+index 7b6ec63..f41f634 100644
 --- a/src/Indicator.vala
 +++ b/src/Indicator.vala
 @@ -25,5 +25,14 @@ public class DateTime.Indicator : Wingpanel.Indicator {
@@ -83,7 +85,7 @@ index 7b6ec63..f10665e 100644
 +                name = "agenda-events",
                  selection_mode = Gtk.SelectionMode.NONE
              };
-@@ -82,8 +93,92 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -82,8 +93,95 @@ public class DateTime.Indicator : Wingpanel.Indicator {
              component_listbox.set_sort_func (sort_function);
 
 -            var scrolled_window = new Gtk.ScrolledWindow () {
@@ -156,9 +158,12 @@ index 7b6ec63..f10665e 100644
 +                propagate_natural_height = true, vexpand = true
 +            });
 +            agenda_stack.add_titled (event_page, "events", _("Events"));
-+            agenda_stack.add_titled (new Gtk.ScrolledWindow () {
-+                hscrollbar_policy = Gtk.PolicyType.NEVER, child = task_listbox
-+            }, "tasks", _("Tasks"));
++            var task_page = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
++            task_page.append (new TaskComposer ());
++            task_page.append (new Gtk.ScrolledWindow () {
++                hscrollbar_policy = Gtk.PolicyType.NEVER, child = task_listbox, vexpand = true
++            });
++            agenda_stack.add_titled (task_page, "tasks", _("Tasks"));
 +            var tabs = new Gtk.StackSwitcher () {
 +                stack = agenda_stack, halign = Gtk.Align.CENTER,
 +                margin_start = 6, margin_end = 6, margin_bottom = 3
@@ -179,7 +184,7 @@ index 7b6ec63..f10665e 100644
 +            });
 
              var settings_button = new Wingpanel.PopoverMenuItem.with_text (_("Date & Time Settings…"));
-@@ -95,8 +190,9 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -95,8 +193,9 @@ public class DateTime.Indicator : Wingpanel.Indicator {
 
              main_grid = new Gtk.Grid () {
 -                margin_top = 12
@@ -191,20 +196,20 @@ index 7b6ec63..f10665e 100644
 +            main_grid.attach (accounts_button, 0, 4, 2, 1);
              main_grid.attach (sep, 0, 2, 2, 1);
              main_grid.attach (settings_button, 0, 3, 2, 1);
-@@ -104,5 +200,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -104,5 +203,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
              var size_group = new Gtk.SizeGroup (Gtk.SizeGroupMode.HORIZONTAL);
              size_group.add_widget (calendar);
 -            size_group.add_widget (component_listbox);
 +            size_group.add_widget (agenda);
 
              calendar.day_double_click.connect (() => {
-@@ -111,4 +207,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -111,4 +210,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
 
              calendar.selection_changed.connect ((date) => {
 +                agenda_date = date ?? Widgets.CalendarModel.get_default (ECal.ClientSourceType.EVENTS).month_start;
                  idle_update_components ();
              });
-@@ -138,4 +235,15 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -138,4 +238,15 @@ public class DateTime.Indicator : Wingpanel.Indicator {
              });
 
 +            task_listbox.row_activated.connect ((row) => {
@@ -220,7 +225,7 @@ index 7b6ec63..f10665e 100644
 +
              settings_button.clicked.connect (() => {
                  try {
-@@ -150,48 +258,41 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -150,48 +261,41 @@ public class DateTime.Indicator : Wingpanel.Indicator {
      }
 
 +    private void move_period (int direction) {
@@ -298,7 +303,7 @@ index 7b6ec63..f10665e 100644
 +        return GLib.strcmp (a.component.get_summary (), b.component.get_summary ());
      }
 
-@@ -208,43 +309,80 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -208,43 +312,80 @@ public class DateTime.Indicator : Wingpanel.Indicator {
      }
 
 -    private bool update_components () {
@@ -408,7 +413,7 @@ index 7b6ec63..f10665e 100644
 +                    if (displayed.add (key)) component_listbox.append (new ComponentRow (date, ical, source));
                  }
              }
-@@ -268,8 +406,24 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -268,8 +409,24 @@ public class DateTime.Indicator : Wingpanel.Indicator {
          tasks_model.components_removed.connect (update_components_model);
 
 +        var upcoming = Widgets.CalendarModel.get_upcoming ();
@@ -565,6 +570,107 @@ index 7a626ba..b9a2a7d 100644
 +        Util.set_component_calendar_color (source_selectable, child);
          Util.set_component_calendar_color (source_selectable, component_image);
          Util.set_component_calendar_color (source_selectable, name_label);
+diff --git a/src/Widgets/TaskComposer.vala b/src/Widgets/TaskComposer.vala
+new file mode 100644
+index 0000000..4e6095f
+--- /dev/null
++++ b/src/Widgets/TaskComposer.vala
+@@ -0,0 +1,95 @@
++/* Copyright 2026 M-Series contributors. SPDX-License-Identifier: GPL-3.0-or-later */
++public class DateTime.TaskComposer : Gtk.Box {
++    private Widgets.CalendarModel model;
++    private Gtk.Entry title;
++    private Gtk.DropDown lists;
++    private Gtk.Button add;
++    private Gtk.Label error_label;
++    private Gee.ArrayList<E.Source> sources;
++    private string? preferred_uid;
++    private bool refreshing = false;
++    private bool pending = false;
++
++    public TaskComposer () {
++        Object (orientation: Gtk.Orientation.VERTICAL, spacing: 3,
++            margin_start: 6, margin_end: 6, margin_bottom: 6, name: "task-composer");
++        model = Widgets.CalendarModel.get_default (ECal.ClientSourceType.TASKS);
++        title = new Gtk.Entry () {
++            name = "task-title", placeholder_text = _("New task…"),
++            hexpand = true, width_chars = 12, max_width_chars = 30
++        };
++        title.update_property (Gtk.AccessibleProperty.LABEL, _("New task title"), -1);
++        add = new Gtk.Button.from_icon_name ("list-add-symbolic") {
++            name = "task-add", tooltip_text = _("Add task")
++        };
++        var entry_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3);
++        entry_row.append (title);
++        entry_row.append (add);
++        append (entry_row);
++        lists = new Gtk.DropDown (null, null) { name = "task-list", hexpand = true };
++        lists.update_property (Gtk.AccessibleProperty.LABEL, _("Task list"), -1);
++        var list_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
++        list_row.append (new Gtk.Label (_("List")) { css_classes = { "dim-label", "caption" } });
++        list_row.append (lists);
++        append (list_row);
++        error_label = new Gtk.Label (_("Couldn’t add task. Try again.")) {
++            name = "task-add-error", xalign = 0, wrap = true, max_width_chars = 30, visible = false
++        };
++        error_label.add_css_class ("error");
++        append (error_label);
++        title.changed.connect (refresh_controls);
++        title.activate.connect (() => submit.begin ());
++        add.clicked.connect (() => submit.begin ());
++        lists.notify["selected"].connect (() => {
++            if (!refreshing && lists.selected < sources.size) preferred_uid = sources[(int) lists.selected].dup_uid ();
++            refresh_controls ();
++        });
++        model.task_sources_changed.connect (refresh_sources);
++        refresh_sources ();
++    }
++
++    private void refresh_sources () {
++        refreshing = true;
++        sources = model.writable_task_sources ();
++        var names = new Gtk.StringList (null);
++        string? wanted = preferred_uid ?? model.default_task_source_uid ();
++        uint selected = sources.size > 0 ? 0 : Gtk.INVALID_LIST_POSITION;
++        for (int i = 0; i < sources.size; i++) {
++            names.append (sources[i].dup_display_name ());
++            if (sources[i].get_uid () == wanted) selected = (uint) i;
++        }
++        lists.model = names;
++        lists.selected = selected;
++        refreshing = false;
++        refresh_controls ();
++    }
++
++    private void refresh_controls () {
++        bool available = sources != null && lists.selected < sources.size;
++        title.sensitive = !pending && available;
++        lists.sensitive = !pending && available;
++        add.sensitive = !pending && available && title.text.strip () != "";
++        add.tooltip_text = pending ? _("Adding task…") : _("Add task");
++        title.placeholder_text = available ? _("New task…") : _("No writable task lists");
++    }
++
++    private async void submit () {
++        if (pending || lists.selected >= sources.size || title.text.strip () == "") return;
++        var source = sources[(int) lists.selected];
++        string submitted = title.text.strip ();
++        pending = true;
++        error_label.visible = false;
++        refresh_controls ();
++        try {
++            yield model.create_task (source, submitted);
++            preferred_uid = source.dup_uid ();
++            if (title.text.strip () == submitted) title.text = "";
++        } catch (Error e) {
++            error_label.tooltip_text = e.message;
++            error_label.visible = true;
++        }
++        pending = false;
++        refresh_controls ();
++        if (title.sensitive) title.grab_focus ();
++    }
++}
 diff --git a/src/Widgets/TaskRow.vala b/src/Widgets/TaskRow.vala
 new file mode 100644
 index 0000000..21e8ef2
@@ -662,10 +768,10 @@ index 0000000..21e8ef2
 +    }
 +}
 diff --git a/src/Widgets/calendar/CalendarModel.vala b/src/Widgets/calendar/CalendarModel.vala
-index 9301281..af56a1b 100644
+index 9301281..772b084 100644
 --- a/src/Widgets/calendar/CalendarModel.vala
 +++ b/src/Widgets/calendar/CalendarModel.vala
-@@ -43,8 +43,89 @@ namespace DateTime.Widgets {
+@@ -43,8 +43,137 @@ namespace DateTime.Widgets {
          public signal void components_removed (E.Source source, Gee.Collection<ECal.Component> components);
 
 +        private HashTable<string, uint> generations;
@@ -700,6 +806,54 @@ index 9301281..af56a1b 100644
 +        public bool task_writable (E.Source source) {
 +            var client = source_client[source.dup_uid ()];
 +            return client != null && !client.is_readonly ();
++        }
++
++        public signal void task_sources_changed ();
++
++        public Gee.ArrayList<E.Source> writable_task_sources () {
++            var sources = new Gee.ArrayList<E.Source> ();
++            if (source_type != ECal.ClientSourceType.TASKS || registry == null) return sources;
++            foreach (var uid in source_client.get_keys ()) {
++                var source = registry.ref_source (uid);
++                if (source != null && registry.check_enabled (source) && task_writable (source) &&
++                    ((E.SourceSelectable) source.get_extension (E.SOURCE_EXTENSION_TASK_LIST)).selected) sources.add (source);
++            }
++            sources.sort ((a, b) => {
++                int name = a.dup_display_name ().collate (b.dup_display_name ());
++                return name != 0 ? name : GLib.strcmp (a.get_uid (), b.get_uid ());
++            });
++            return sources;
++        }
++
++        public string? default_task_source_uid () {
++            if (registry == null) return null;
++            var source = registry.ref_default_task_list ();
++            return source != null ? source.dup_uid () : null;
++        }
++
++        public async string create_task (E.Source source, string title) throws Error {
++            string summary = title.strip ();
++            if (summary == "") throw new IOError.INVALID_ARGUMENT (_("Enter a task title"));
++            var client = source_client[source.dup_uid ()];
++            if (source_type != ECal.ClientSourceType.TASKS || client == null ||
++                !registry.check_enabled (source)) throw new IOError.NOT_CONNECTED (_("Task list is unavailable"));
++            if (client.is_readonly ()) throw new IOError.PERMISSION_DENIED (_("This task list is read-only"));
++            var task = new ICal.Component (ICal.ComponentKind.VTODO_COMPONENT);
++            task.set_uid (Uuid.string_random ());
++            task.set_summary (summary);
++            task.set_status (ICal.PropertyStatus.NEEDSACTION);
++            var record = new ECal.Component.from_icalcomponent (task);
++            var timestamp = new ICal.Time.from_timet_with_zone (
++                (time_t) new GLib.DateTime.now_utc ().to_unix (), 0, ICal.Timezone.get_utc_timezone ());
++            record.set_created (timestamp);
++            record.set_last_modified (timestamp);
++            record.set_dtstamp (timestamp);
++            record.set_percent_complete (0);
++            string uid;
++            if (!(yield client.create_object (record.get_icalcomponent (), ECal.OperationFlags.NONE, null, out uid)) || uid == "") {
++                throw new IOError.FAILED (_("Could not add task"));
++            }
++            return uid;
 +        }
 +
 +        public bool task_completing (string key) { return completing_tasks.contains (key); }
@@ -755,7 +909,7 @@ index 9301281..af56a1b 100644
 +        }
 
          private static HashTable<ECal.ClientSourceType, CalendarModel> calendar_model;
-@@ -64,10 +145,10 @@ namespace DateTime.Widgets {
+@@ -64,10 +193,10 @@ namespace DateTime.Widgets {
          }
 
 -        public CalendarModel (ECal.ClientSourceType source_type) {
@@ -769,13 +923,13 @@ index 9301281..af56a1b 100644
 +            generations = new HashTable<string, uint> (str_hash, str_equal);
 
              source_client = new HashTable<string, ECal.Client> (str_hash, str_equal);
-@@ -83,4 +164,5 @@ namespace DateTime.Widgets {
+@@ -83,4 +212,5 @@ namespace DateTime.Widgets {
              compute_ranges ();
              notify["month-start"].connect (on_parameter_changed);
 +            open.begin ();
          }
 
-@@ -90,4 +172,8 @@ namespace DateTime.Widgets {
+@@ -90,4 +220,8 @@ namespace DateTime.Widgets {
                  registry.source_removed.connect (remove_source);
                  registry.source_added.connect ((source) => add_source_async.begin (source));
 +                registry.source_changed.connect ((source) => {
@@ -784,7 +938,7 @@ index 9301281..af56a1b 100644
 +                });
 
                  // Add sources
-@@ -143,11 +229,10 @@ namespace DateTime.Widgets {
+@@ -143,11 +277,10 @@ namespace DateTime.Widgets {
              unowned string uid = source.get_uid ();
 
 -            if (!source_view.contains (uid)) {
@@ -799,12 +953,15 @@ index 9301281..af56a1b 100644
 +                if (current_view != null) current_view.stop ();
              } catch (Error e) {
                  warning (e.message);
-@@ -159,7 +244,11 @@ namespace DateTime.Widgets {
+@@ -158,8 +291,13 @@ namespace DateTime.Widgets {
+                 source_client.remove (uid);
              }
-
+-
 -            var components = source_components.get (source).get_values ().read_only_view;
 -            components_removed (source, components);
 -            source_components.remove (source);
++            if (source_type == ECal.ClientSourceType.TASKS) task_sources_changed ();
++
 +            var map = source_components.get (source);
 +            if (map != null) {
 +                var components = new Gee.ArrayList<ECal.Component> ();
@@ -814,7 +971,7 @@ index 9301281..af56a1b 100644
 +            }
          }
 
-@@ -175,4 +264,9 @@ namespace DateTime.Widgets {
+@@ -175,4 +313,9 @@ namespace DateTime.Widgets {
 
          private void compute_ranges () {
 +            if (upcoming_range) {
@@ -824,7 +981,7 @@ index 9301281..af56a1b 100644
 +            }
              var month_end = month_start.add_full (0, 1, -1);
 
-@@ -214,4 +308,16 @@ namespace DateTime.Widgets {
+@@ -214,4 +357,16 @@ namespace DateTime.Widgets {
 
          private void load_source (E.Source source) {
 +            load_source_async.begin (source);
@@ -841,7 +998,7 @@ index 9301281..af56a1b 100644
 +            }
              /* create empty source-component map */
              var components = new Gee.TreeMultiMap<string, ECal.Component> (
-@@ -219,5 +325,9 @@ namespace DateTime.Widgets {
+@@ -219,5 +374,9 @@ namespace DateTime.Widgets {
                  (GLib.CompareDataFunc<ECal.Component>?) Util.calcomponent_compare_func
              );
 +            var previous = source_components.get (source);
@@ -851,14 +1008,14 @@ index 9301281..af56a1b 100644
 +            if (removed.size > 0) components_removed (source, removed.read_only_view);
              /* query client view */
              var iso_first = ECal.isodate_from_time_t ((time_t)data_range.first_dt.to_unix ());
-@@ -226,5 +336,5 @@ namespace DateTime.Widgets {
+@@ -226,5 +385,5 @@ namespace DateTime.Widgets {
              var query = @"(occur-in-time-range? (make-time \"$iso_first\") (make-time \"$iso_last\"))";
              if (source_type == ECal.ClientSourceType.TASKS) {
 -                query = @"AND (NOT is-completed?) (due-in-time-range? (make-time \"$iso_first\") (make-time \"$iso_last\"))";
 +                query = "(not (is-completed?))";
              }
 
-@@ -238,18 +348,22 @@ namespace DateTime.Widgets {
+@@ -238,18 +397,22 @@ namespace DateTime.Widgets {
              }
 
 -            debug ("Getting client-view for source '%s'", source.dup_display_name ());
@@ -895,7 +1052,7 @@ index 9301281..af56a1b 100644
 +            }
          }
 
-@@ -260,10 +374,20 @@ namespace DateTime.Widgets {
+@@ -260,10 +423,24 @@ namespace DateTime.Widgets {
              }
 
 +            var extension = source_type == ECal.ClientSourceType.TASKS ? E.SOURCE_EXTENSION_TASK_LIST : E.SOURCE_EXTENSION_CALENDAR;
@@ -912,13 +1069,17 @@ index 9301281..af56a1b 100644
 +                var client = (ECal.Client) yield ECal.Client.connect (source, source_type, 10, null);
 +                if (generations[uid] != generation) return;
                  source_client.insert (source.dup_uid (), client);
++                if (source_type == ECal.ClientSourceType.TASKS) {
++                    client.notify["readonly"].connect (() => task_sources_changed ());
++                    task_sources_changed ();
++                }
              } catch (Error e) {
 -                critical (e.message);
 +                warning ("Could not connect calendar: %s", e.message);
 +                return;
              }
 
-@@ -283,18 +407,5 @@ namespace DateTime.Widgets {
+@@ -283,18 +460,5 @@ namespace DateTime.Widgets {
          private void on_parameter_changed () {
              compute_ranges ();
 -            load_all_sources ();
@@ -938,7 +1099,7 @@ index 9301281..af56a1b 100644
 +            if (source_type == ECal.ClientSourceType.EVENTS) load_all_sources ();
          }
 
-@@ -309,6 +420,12 @@ namespace DateTime.Widgets {
+@@ -309,6 +473,12 @@ namespace DateTime.Widgets {
              objects.foreach ((comp) => {
                  unowned string uid = comp.get_uid ();
 +                if (source_type == ECal.ClientSourceType.TASKS) {
@@ -952,7 +1113,7 @@ index 9301281..af56a1b 100644
 +                client.generate_instances_for_object_sync (comp, (time_t) data_range.first_dt.to_unix (), (time_t) data_range.last_dt.add_days (1).to_unix (), null, (comp, start, end) => {
                      var component = new ECal.Component.from_icalcomponent (comp);
  #else
-@@ -331,16 +448,17 @@ namespace DateTime.Widgets {
+@@ -331,16 +501,17 @@ namespace DateTime.Widgets {
  #endif
              debug (@"Received $(objects.length()) modified component(s) for source '%s'", source.dup_display_name ());
 -            var updated_components = new Gee.ArrayList<ECal.Component> ((Gee.EqualDataFunc<ECal.Component>?) Util.calcomponent_equal_func);
@@ -981,7 +1142,7 @@ index 9301281..af56a1b 100644
 -            components_updated (source, updated_components.read_only_view);
          }
 
-@@ -352,4 +470,8 @@ namespace DateTime.Widgets {
+@@ -352,4 +523,8 @@ namespace DateTime.Widgets {
              debug (@"Received $(cids.length()) removed component(s) for source '%s'", source.dup_display_name ());
              var components = source_components.get (source);
 +            if (source_type == ECal.ClientSourceType.EVENTS) {
@@ -990,7 +1151,7 @@ index 9301281..af56a1b 100644
 +            }
              var removed_components = new Gee.ArrayList<ECal.Component> ((Gee.EqualDataFunc<ECal.Component>?) Util.calcomponent_equal_func);
 
-@@ -366,4 +488,7 @@ namespace DateTime.Widgets {
+@@ -366,4 +541,7 @@ namespace DateTime.Widgets {
              });
 
 +            foreach (var component in removed_components) {

@@ -439,12 +439,112 @@ class AgendaTest : Object {
         stdout.printf ("PASS missing-record failure restores checkbox and exposes a retry error\n");
     }
 
+    string? selected_list (Gtk.DropDown lists) {
+        var item = lists.selected_item as Gtk.StringObject;
+        return item != null ? item.string : null;
+    }
+
+    async void choose_list (Gtk.DropDown lists, string name) throws Error {
+        for (int n = 0; n < 150; n++) {
+            for (uint i = 0; lists.model != null && i < lists.model.get_n_items (); i++) {
+                if (((Gtk.StringObject) lists.model.get_item (i)).string == name) { lists.selected = i; return; }
+            }
+            yield pause ();
+        }
+        throw new IOError.FAILED ("Expected writable task list missing");
+    }
+
+    int matching_tasks (ECal.Client client, string title) throws Error {
+        SList<ECal.Component> tasks;
+        client.get_object_list_as_comps_sync ("#t", out tasks, null);
+        int matches = 0;
+        foreach (var task in tasks) if (task.get_icalcomponent ().get_summary () == title) matches++;
+        return matches;
+    }
+
+    async void quick_add_checks () throws Error {
+        find_stack (widget).visible_child_name = "tasks";
+        var entry = (Gtk.Entry) named (widget, "task-title");
+        var button = (Gtk.Button) named (widget, "task-add");
+        var lists = (Gtk.DropDown) named (widget, "task-list");
+        for (int n = 0; n < 150 && selected_list (lists) != "agenda-test-tasks"; n++) yield pause ();
+        assert (selected_list (lists) == "agenda-test-tasks");
+        entry.text = "   ";
+        assert (!button.sensitive);
+        Signal.emit_by_name (entry, "activate");
+        yield pause ();
+        assert (!named (widget, "task-add-error").visible);
+        assert (entry.text == "   ");
+        stdout.printf ("PASS quick-add default task list and whitespace guard\n");
+
+        var target = yield create_source ("agenda-quick-target", ECal.ClientSourceType.TASKS);
+        yield choose_list (lists, "agenda-quick-target");
+        entry.text = "  Quick café <A> & B  ";
+        bool close_requested = false;
+        ulong close_handler = indicator.close.connect (() => { close_requested = true; });
+        Signal.emit_by_name (entry, "activate");
+        assert (!entry.sensitive && !button.sensitive && !lists.sensitive);
+        button.clicked (); // A second submission while pending must not duplicate the task.
+        assert (!close_requested);
+        SignalHandler.disconnect (indicator, close_handler);
+        yield expect ("Quick café <A> & B");
+        for (int n = 0; n < 150 && !entry.sensitive; n++) yield pause ();
+        assert (entry.sensitive && entry.text == "");
+        assert (matching_tasks (target, "Quick café <A> & B") == 1);
+        assert (matching_tasks (tasks, "Quick café <A> & B") == 0);
+        SList<ECal.Component> saved;
+        target.get_object_list_as_comps_sync ("#t", out saved, null);
+        foreach (var task in saved) {
+            if (task.get_icalcomponent ().get_summary () != "Quick café <A> & B") continue;
+            assert (task.get_icalcomponent ().get_uid () != "");
+            assert (task.get_status () != ICal.PropertyStatus.COMPLETED);
+            assert (task.get_percent_complete () == 0 && task.get_created () != null);
+            var due = task.get_icalcomponent ().get_due ();
+            assert (due == null || due.is_null_time ());
+        }
+        entry.text = "Button-created task";
+        button.clicked ();
+        yield expect ("Button-created task");
+        for (int n = 0; n < 150 && !entry.sensitive; n++) yield pause ();
+        assert (selected_list (lists) == "agenda-quick-target" && entry.text == "");
+        assert (matching_tasks (target, "Button-created task") == 1);
+        stdout.printf ("PASS Enter/Add create one real record in chosen list, preserve literal title/metadata and keep dropdown open\n");
+
+        entry.text = "Retained draft";
+        var selected = new List<E.Source> ();
+        foreach (var source in registry.list_sources (E.SOURCE_EXTENSION_TASK_LIST)) {
+            var settings = (E.SourceSelectable) source.get_extension (E.SOURCE_EXTENSION_TASK_LIST);
+            if (!settings.selected) continue;
+            selected.append (source);
+            settings.selected = false;
+            source.write_sync (null);
+        }
+        for (int n = 0; n < 150 && entry.sensitive; n++) yield pause ();
+        assert (!entry.sensitive && !button.sensitive && entry.text == "Retained draft");
+        button.clicked ();
+        assert (matching_tasks (target, "Retained draft") == 0);
+        foreach (var source in selected) {
+            ((E.SourceSelectable) source.get_extension (E.SOURCE_EXTENSION_TASK_LIST)).selected = true;
+            source.write_sync (null);
+        }
+        for (int n = 0; n < 150 && (!entry.sensitive || selected_list (lists) != "agenda-quick-target"); n++) yield pause ();
+        assert (entry.sensitive && selected_list (lists) == "agenda-quick-target" && entry.text == "Retained draft");
+        button.clicked ();
+        yield expect ("Retained draft");
+        for (int n = 0; n < 150 && !entry.sensitive; n++) yield pause ();
+        assert (entry.text == "" && matching_tasks (target, "Retained draft") == 1);
+        stdout.printf ("PASS unavailable-list guard retains draft/list selection and recovers when lists return\n");
+        registry.ref_source ("agenda-quick-target").remove_sync (null);
+        yield expect ("Retained draft", false);
+    }
+
     async void run () {
         try {
             registry = new E.SourceRegistry.sync (null);
             events = yield create_source ("agenda-test-events", ECal.ClientSourceType.EVENTS);
             events2 = yield create_source ("agenda-test-events-two", ECal.ClientSourceType.EVENTS);
             tasks = yield create_source ("agenda-test-tasks", ECal.ClientSourceType.TASKS);
+            registry.set_default_task_list (registry.ref_source ("agenda-test-tasks"));
             stderr.printf ("Creating fixtures\n");
             add (events, event ("First calendar"));
             add (events2, event ("Second calendar same UID"));
@@ -512,6 +612,7 @@ class AgendaTest : Object {
             indicator.opened ();
             yield expect ("Second calendar same UID");
             yield checkbox_checks ();
+            yield quick_add_checks ();
             result = 0;
         } catch (Error e) { stderr.printf ("FAIL: %s\n", e.message); }
         loop.quit ();
