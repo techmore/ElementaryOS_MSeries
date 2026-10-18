@@ -3003,3 +3003,32 @@ Verified headlessly (Xvfb): the window renders; a fake key shows upstream's "cre
 expired" and nothing is saved (real config unchanged); `set-api-key` into a temp config stores `apiKey` and
 upstream then reads it (error changes from "No OpenCode Go API key configured" to "invalid or expired").
 Not verified: a real key end to end (needs the owner's key).
+
+## NEXT (not built): Claude desktop-app switch, OpenCode from `opencode auth login`, OpenCode bar — 2026-10-18
+
+Owner wants fast account switching for Claude, OpenAI and OpenCode, with Claude first. Usage ran out
+before any of this was built.
+
+1. **Claude desktop app switch.** The app keeps its own login in `~/.config/Claude`: the `Cookies` sqlite file
+   and the `oauth:tokenCache` / `oauth:tokenCacheV2` / `lastKnownAccountUuid` keys in `config.json`
+   (safeStorage-encrypted, so copy them without decrypting). claude-swap only changes the CLI login.
+   Plan, in `codexbar-claude.py`:
+   - `list` snapshots the app's current account to `~/.local/share/codexbar-claude-app/<uuid>/`
+     (0700): Cookies via the sqlite backup API, plus only those three keys.
+   - `app-switch <uuid>` must be spawned by the panel, not by a process inside the app. It quits
+     `/usr/lib/claude-desktop/claude-desktop` (SIGTERM the main pid, then wait), snapshots the current
+     account, restores the target (replace Cookies and remove `-journal`; merge the keys into
+     config.json), then relaunches with `gtk-launch com.anthropic.Claude`.
+   - Account 1 has no app snapshot yet. The owner signs in once in the app; `list` then saves it.
+   - The panel's Claude switch should do cswap plus app-switch, after a dialog warning that the app
+     restarts.
+   At 06:40 both accounts were out on the 5-hour limit (account 1 0%, resets ~08:30; account 2,
+   the app's, 2%, resets ~11:00).
+2. **OpenCode from `opencode auth login opencode`.** opencode v2 keeps credentials in the `credential`
+   table of `~/.local/share/opencode/opencode.db` (`integration_id='opencode'`, `active=1`). The value is
+   JSON: `type=oauth`, `access`, `refresh`, `expires` (~30 days), `metadata.orgID/email`. Verified:
+   `OPENCODE_API_KEY=<access>` with `codexbar usage --provider opencodego --source api` returns real
+   quota (5h/weekly/monthly windows). Make `codexbar-opencode-wrapper.py` fall back to this access
+   token, read-only and only when it hasn't expired, when auth.json has no key.
+3. **OpenCode usage bar with tokens.** Once (2) feeds the snapshot, the OpenCode segment and card get
+   real windows. Add the local token count (from `codexbar-opencode-local.py`) next to the bar.
