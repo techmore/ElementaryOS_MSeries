@@ -118,7 +118,7 @@ namespace MSeries {
         }
 
         public string? viewer_link (string base_for_viewers) {
-            return link_token == null ? null : base_for_viewers + "/v#" + link_token;
+            return link_token == null ? null : base_for_viewers + "/v/" + link_token;
         }
 
         public async bool create_link () {
