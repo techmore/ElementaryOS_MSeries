@@ -1,5 +1,26 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## CodexBar labels and confirmed popup lifetime defect — 2026-10-18
+
+Removed “local” from the seven-day panel/card labels and moved counting scope into
+Settings > About, using the native GTK About dialog. No polling or accounting changes.
+Saved-core analysis found GTK flushing a destroyed popup surface (zero references,
+NULL display). A pinned Wingpanel production-class fixture reproduces the matching
+finalization/accessibility failure when an open indicator is removed before a switch
+or close. The new lifetime patch keeps the previous anchor alive until detachment;
+all four switch/close × animations on/off regression cases pass. The original fails.
+The full patched Wingpanel build, 13 native CodexBar targets and v0.77.0 live port/schema
+check pass. Existing full-height/notch and clock-right patches remain applied.
+See [investigation and reproduction](CODEXBAR-CRASH-2026-10-18.md), including the
+fixture setup limitation and why the exact original indicator remains unidentified.
+Activated with one recovery `deploy-codexbar.sh --restart`; the patched core and
+module inodes were verified loaded in Wingpanel PID 319737 throughout 63.4 seconds.
+Daemon PID 44641 was preserved. No new coredump or popup/accessibility warnings;
+one initial empty-FlowBox warning is recorded separately in the investigation.
+Sampled RSS 194.72–199.19 MiB, descriptors 52–68, average CPU 1.21% of one core.
+This bounded observation does not establish long-run stability. The panel and About
+changes are active. Next: normal-use observation; do not reload again for routine deploys.
+
 ## Orchard soak closed with existing evidence — 2026-10-18
 
 Final report: `docs/orchard-soak.html`; evidence and raw samples under

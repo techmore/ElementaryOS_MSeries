@@ -80,6 +80,7 @@ int main (string[] args) {
     Timeout.add (delay, () => {
         if (Environment.get_variable ("CB_ASSERT_LOCAL") != null) {
             var text = local_label_text (bar);
+            assert (!text.contains ("local"));
             assert (text.contains ("42.0M tok"));
             assert (text.contains ("31.2M tok"));
             assert (text.contains ("121M tok"));

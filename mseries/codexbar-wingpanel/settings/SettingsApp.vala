@@ -37,6 +37,23 @@ namespace MSeries {
             var switcher = new Gtk.StackSwitcher () { stack = stack };
             var header = new Gtk.HeaderBar ();
             header.title_widget = switcher;
+            var about = new Gtk.Button.from_icon_name ("help-about-symbolic") {
+                tooltip_text = "About CodexBar"
+            };
+            about.clicked.connect (() => {
+                var dialog = new Gtk.AboutDialog () {
+                    transient_for = this, modal = true, program_name = "CodexBar",
+                    logo_icon_name = "mseries-codexbar-openai-symbolic",
+                    comments = "Seven-day token counts cover coding activity recorded on this computer across accounts and providers. They include processed input, output and cached tokens. They do not represent remaining plan quota, activity on other devices, or ordinary ChatGPT and claude.ai chats.",
+                    website = "https://github.com/techmore/ElementaryOS_MSeries",
+                    website_label = "elementary OS port"
+                };
+                dialog.present ();
+            });
+            header.pack_end (about);
+            if (start_page == "about") {
+                Idle.add (() => { about.clicked (); return Source.REMOVE; });
+            }
             set_titlebar (header);
 
             notice = new Gtk.Label ("") { xalign = 0, wrap = true, visible = false, margin_start = 16, margin_end = 16 };
