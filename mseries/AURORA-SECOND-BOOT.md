@@ -99,3 +99,26 @@ stably (no apple_sep driver there, so the node sits inert). New GRUB entry
 If it stays up for 10+ minutes, the SEP driver (or its SEP firmware traffic) is
 the cause; if it still freezes, it is the Aurora kernel build or the dock/USB-C path
 (unplug everything). Nothing armed. Backup: `/boot/grub/custom.cfg.pre-aurora-nosep-*`.
+
+## More Aurora boots, read-only analysis — 2026-10-18 03:39–03:41
+
+Three further Aurora boots, all via the ORIGINAL `elementary-aurora-sep` entry
+(loglevel=3 quiet + thunderbolt dptunnel flags; the clean and nosep entries were
+not used):
+
+| boot | wall time | end |
+|---|---|---|
+| 03:39:47 | 7 s | clean systemd shutdown (owner rebooted) |
+| 03:40:22 | 15 s | journal stops at 21 s monotonic, no panic |
+| 03:41:31 | 20 s | journal stops at 27 s monotonic, no panic |
+
+Findings: no SEP/DCP/GPU/ATC error precedes any stop; the Asahi GPU driver loads
+identically (37 lines) on Aurora and stock; every stop is during desktop
+startup (gala/dock/pipewire). PMU reports 1 boot error / 0 panics on every boot
+including stock, so that line is not discriminating. pstore is empty. Because
+the owner reboots quickly, some stops may be manual power-offs rather than
+hangs — unknown until we know what the screen showed.
+
+Still the next test: `elementary-aurora-nosep` (SEP driver blocked), dock and
+all USB-C unplugged, left alone for 10 minutes. Questions for the owner: when
+it "freezes" is the screen frozen or black, and did you hold the power button?
