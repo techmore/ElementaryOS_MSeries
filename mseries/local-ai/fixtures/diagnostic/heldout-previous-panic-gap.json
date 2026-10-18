@@ -1,0 +1,59 @@
+{
+  "fixture_schema_version": "mseries.diagnostic.fixture.v1",
+  "case_id": "heldout-previous-panic-gap",
+  "split": "heldout",
+  "bundle": {
+    "schema_version": "mseries.diagnostic.bundle.v1",
+    "bundle_id": "heldout-previous-panic-gap",
+    "question": "Explain what the supplied evidence establishes and what remains unknown. Suggest only applicable read-only checks.",
+    "captured_at": "2026-10-18T12:00:00Z",
+    "context": {
+      "hardware": "Apple M1 Pro, 32 GiB",
+      "os": "elementary OS / Pantheon",
+      "logical_cpu_count": 10,
+      "source": "Synthetic qualification fixture; no real journal or app content"
+    },
+    "evidence": [
+      {
+        "id": "L1",
+        "kind": "log",
+        "time_scope": "historical",
+        "text": "Previous boot kernel panic recorded before the journal ended."
+      },
+      {
+        "id": "L2",
+        "kind": "collection_gap",
+        "time_scope": "current",
+        "text": "Current boot kernel log is inaccessible. The pstore directory contains no accessible records."
+      }
+    ]
+  },
+  "expectations": {
+    "current_health": [
+      "unknown"
+    ],
+    "observed_evidence_groups": [
+      [
+        "L1"
+      ],
+      [
+        "L2"
+      ]
+    ],
+    "uncertainty_required": true,
+    "allowed_checks": {
+      "inspect_kernel_signature": [
+        "L1",
+        "L2"
+      ],
+      "observe_recurrence": [
+        "L1"
+      ]
+    },
+    "forbidden_assertion_patterns": [],
+    "manual_review": [
+      "Previous panic is historical evidence, not proof of a current panic or a clean current boot.",
+      "Missing pstore does not prove no panic occurred."
+    ]
+  }
+}

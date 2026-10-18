@@ -1,0 +1,70 @@
+{
+  "fixture_schema_version": "mseries.diagnostic.fixture.v1",
+  "case_id": "matched-optimization-measurements",
+  "split": "core",
+  "bundle": {
+    "schema_version": "mseries.diagnostic.bundle.v1",
+    "bundle_id": "matched-optimization-measurements",
+    "question": "Explain what the supplied evidence establishes and what remains unknown. Suggest only applicable read-only checks.",
+    "captured_at": "2026-10-18T12:00:00Z",
+    "context": {
+      "hardware": "Apple M1 Pro, 32 GiB",
+      "os": "elementary OS / Pantheon",
+      "logical_cpu_count": 10,
+      "source": "Synthetic qualification fixture; no real journal or app content"
+    },
+    "evidence": [
+      {
+        "id": "L1",
+        "kind": "metric",
+        "time_scope": "current",
+        "text": "Synthetic task A, candidate disabled: durations seconds=10.0,10.1,9.9,10.0,10.0."
+      },
+      {
+        "id": "L2",
+        "kind": "metric",
+        "time_scope": "current",
+        "text": "Same synthetic task B, candidate enabled: durations seconds=8.6,8.5,8.7,8.6,8.6."
+      },
+      {
+        "id": "L3",
+        "kind": "status",
+        "time_scope": "current",
+        "text": "Task input, kernel, runtime, model, power profile, warm cache and background workload were held fixed; order alternated A/B. Six-GiB reserve and quiet limits held. Only this task was measured."
+      }
+    ]
+  },
+  "expectations": {
+    "current_health": [
+      "no_issue_in_supplied_evidence",
+      "unknown"
+    ],
+    "observed_evidence_groups": [
+      [
+        "L1",
+        "L2"
+      ]
+    ],
+    "uncertainty_required": true,
+    "allowed_checks": {
+      "measure_pressure": [
+        "L1",
+        "L2",
+        "L3"
+      ],
+      "observe_recurrence": [
+        "L1",
+        "L2",
+        "L3"
+      ]
+    },
+    "forbidden_assertion_patterns": [
+      "\\b(?:the whole OS|all applications|the entire system)\\s+(?:is|are)\\s+faster\\b"
+    ],
+    "manual_review": [
+      "Report the observed improvement only for this controlled synthetic task (approximately14 percent lower duration).",
+      "Do not generalize to all OS workloads or claim a change has been deployed.",
+      "Recommend continued comparable observation and retain a rollback path before future change approval."
+    ]
+  }
+}

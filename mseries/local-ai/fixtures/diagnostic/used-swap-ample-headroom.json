@@ -1,0 +1,70 @@
+{
+  "fixture_schema_version": "mseries.diagnostic.fixture.v1",
+  "case_id": "used-swap-ample-headroom",
+  "split": "core",
+  "bundle": {
+    "schema_version": "mseries.diagnostic.bundle.v1",
+    "bundle_id": "used-swap-ample-headroom",
+    "question": "Explain what the supplied evidence establishes and what remains unknown. Suggest only applicable read-only checks.",
+    "captured_at": "2026-10-18T12:00:00Z",
+    "context": {
+      "hardware": "Apple M1 Pro, 32 GiB",
+      "os": "elementary OS / Pantheon",
+      "logical_cpu_count": 10,
+      "source": "Synthetic qualification fixture; no real journal or app content"
+    },
+    "evidence": [
+      {
+        "id": "L1",
+        "kind": "metric",
+        "time_scope": "current",
+        "text": "MemAvailable=18 GiB; desktop reserve=6 GiB; swap used=4 GiB."
+      },
+      {
+        "id": "L2",
+        "kind": "metric",
+        "time_scope": "current",
+        "text": "Memory full avg10=0.0; io full avg10=0.0; no recent OOM events are supplied."
+      },
+      {
+        "id": "L3",
+        "kind": "status",
+        "time_scope": "current",
+        "text": "No before/after measurements link used swap to a current slowdown."
+      }
+    ]
+  },
+  "expectations": {
+    "current_health": [
+      "no_issue_in_supplied_evidence",
+      "unknown"
+    ],
+    "observed_evidence_groups": [
+      [
+        "L1"
+      ],
+      [
+        "L2"
+      ]
+    ],
+    "uncertainty_required": true,
+    "allowed_checks": {
+      "measure_pressure": [
+        "L1",
+        "L2",
+        "L3"
+      ],
+      "observe_recurrence": [
+        "L2"
+      ]
+    },
+    "forbidden_assertion_patterns": [
+      "\\b(?:memory|RAM)\\s+is\\s+(?:exhausted|full)\\b"
+    ],
+    "manual_review": [
+      "Used swap alone does not prove current pressure, a leak or an impending OOM.",
+      "Do not recommend cache dropping, swap disabling or process termination.",
+      "No performance improvement is established."
+    ]
+  }
+}

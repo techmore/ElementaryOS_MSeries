@@ -68,55 +68,49 @@ class CrashIdentityTests(unittest.TestCase):
 
 
 class ReportTests(unittest.TestCase):
-    def test_analysis_writes_private_report_with_exact_evidence(self):
+    def test_legacy_cli_delegates_to_qualified_diagnosis_without_everyday_bypass(self):
         import contextlib
         import io
-        import stat
+        import diagnostic_agent
         with tempfile.TemporaryDirectory() as directory:
-            home = Path(directory)
-            log = home / 'fixture.log'
+            log = Path(directory) / 'fixture.log'
             log.write_text('kernel: OOM killed example-editor')
-            responses = [{'data': [{'id': 'gemma-test'}]},
-                {'choices': [{'message': {'content': 'OOM observed [L1].'}, 'finish_reason': 'stop'}]}]
-            progress_output = io.StringIO()
-            with contextlib.redirect_stderr(progress_output), patch('sys.argv', ['triage', '--file', str(log)]), \
-                 patch.object(triage.Path, 'home', return_value=home), \
-                 patch.object(triage, 'api', side_effect=responses), \
+            job = {'state': 'complete', 'job_id': 'synthetic-job',
+                'result': {'response': {'summary': 'Historical OOM observed.',
+                'current_health': 'unknown', 'findings': [],
+                'unknowns': ['Current health is unknown.'], 'checks': []}}}
+            with patch('sys.argv', ['triage', '--file', str(log)]), \
+                 patch.object(triage, 'api', side_effect=AssertionError('Legacy arbitrary model endpoint must never infer')), \
                  patch.object(triage, 'command', return_value='test kernel'), \
-                 contextlib.redirect_stdout(io.StringIO()):
+                 patch.object(diagnostic_agent, 'run_job', return_value=job) as run, \
+                 contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                 triage.main()
-            reports = list((home / '.local/state/mseries-troubleshooter').glob('*.md'))
-            stages = [triage.json.loads(line.removeprefix('MSeries-Progress: '))['stage']
-                      for line in progress_output.getvalue().splitlines()]
-            self.assertEqual(stages, ['collecting', 'model-ready', 'analyzing', 'saving', 'complete'])
-            self.assertEqual(len(reports), 1)
-            self.assertEqual(stat.S_IMODE(reports[0].stat().st_mode), 0o600)
-            self.assertIn('[L1] kernel: OOM killed example-editor', reports[0].read_text())
+            self.assertEqual(run.call_args.args[0]['evidence'][0]['id'], 'L1')
+            self.assertEqual(run.call_args.args[0]['evidence'][0]['time_scope'], 'unknown')
+            self.assertFalse(run.call_args.kwargs['exclusive'])
+
 
 class WatchLoopTests(unittest.TestCase):
-    def test_deduplicates_crashes_and_runs_one_local_analysis(self):
-        from unittest.mock import MagicMock
-        watcher = CrashIdentityTests.watcher
-        records = [{'COREDUMP_UID': str(watcher.os.getuid()), 'COREDUMP_PID': '123',
-                    'COREDUMP_COMM': name} for name in ('editor', 'editor', 'terminal')]
-        journal = MagicMock()
-        journal.stdout = [json.dumps(record) for record in records]
-        context = MagicMock()
-        context.__enter__.return_value = journal
-        worker = MagicMock()
-        worker.poll.return_value = None
+    def test_durable_crash_counts_ignore_legacy_automatic_diagnosis_marker(self):
+        spec = importlib.util.spec_from_file_location('durable_watcher_test', Path(__file__).with_name('crash-watch.py'))
+        watcher = importlib.util.module_from_spec(spec); spec.loader.exec_module(watcher)
+        records = [{'__CURSOR': 'fixture-'+str(i), '_BOOT_ID': 'boot-fixture',
+                    '__REALTIME_TIMESTAMP': str(1000000+i),
+                    'COREDUMP_UID': str(watcher.os.getuid()), 'COREDUMP_PID': '123',
+                    'COREDUMP_COMM': name} for i,name in enumerate(('editor','editor','terminal'))]
         with tempfile.TemporaryDirectory() as directory:
-            state = Path(directory)
-            (state / 'auto-diagnose').touch()
-            with patch.object(watcher, 'STATE', state), \
-                 patch.object(watcher, 'previous_boot', return_value={'available': False, 'events': []}), \
-                 patch.object(watcher.subprocess, 'Popen', side_effect=[context, worker]) as launch:
-                with self.assertRaises(SystemExit):
-                    watcher.main()
-            snapshot = json.loads((state / 'crashes.json').read_text())
-            self.assertEqual(len(snapshot['events']), 2)
-            self.assertEqual(launch.call_count, 2)  # journal plus one analysis
-            self.assertIn('mseries-troubleshoot', launch.call_args_list[1].args[0][0])
+            state = Path(directory)/'state'; state.mkdir()
+            (state/'auto-diagnose').touch()  # Old preference never grants new inference.
+            fixture = Path(directory)/'synthetic.jsonl'
+            fixture.write_text('\n'.join(json.dumps(record) for record in records)+'\n')
+            with patch.object(watcher.subprocess, 'Popen', side_effect=AssertionError('No model or journal process for fixture import')):
+                self.assertEqual(watcher.main(['--state-dir',str(state),'--replay-file',str(fixture)]),0)
+                self.assertEqual(watcher.main(['--state-dir',str(state),'--replay-file',str(fixture)]),0)
+            snapshot = json.loads((state/'crashes.json').read_text())
+            self.assertEqual(len(snapshot['events']),2)
+            self.assertEqual(next(row for row in snapshot['events'] if row['program']=='editor')['occurrence_count'],2)
+            self.assertFalse(snapshot['collector']['automatic_diagnosis'])
+            self.assertEqual(snapshot['collector']['notifications'],'disabled')
 
 class PerformanceTests(unittest.TestCase):
     def test_snapshot_is_bounded_and_collects_no_process_arguments(self):

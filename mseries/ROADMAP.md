@@ -1,5 +1,36 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Quiet diagnostic agent foundation: disabled source draft — 2026-10-18
+
+[Implementation, evidence and promotion gates](local-ai/DIAGNOSTIC-AGENT-EXPERIMENT.md).
+Private durable kernel/app alert inbox, explicit evidence-bound analysis CLI/GTK
+inbox and a 12-core/four-held-out qualification harness are implemented. Final
+synthetic cross-suite: 152 tests passed in 3.423 s; initial 134/one-failure and
+136/one-failure attempts remain retained, followed by the intermediate 136-pass
+run. Current-source alert replay/acknowledgement checks passed 11/11. No actual
+9B model case, permitted live journal collector or owner GUI was qualified.
+Four worker-lock warnings remain; earlier SQLite warnings are not claimed fixed.
+
+Review fixed stale prompt/contract/model-byte acceptance identity and frozen
+source/fixture integrity gaps. It also exposed an unresolved fixed-name service
+start ownership race. `OWNED_START_READY=False` blocks the session before all
+service mutations. Unique per-session worker ownership, reversible installer,
+real quiet model/semantic/lifecycle and collector/UI/idle-overhead evidence are
+mandatory before enabling. The dedicated unit/profile/accepted receipt are absent;
+installed legacy collector and default 4B are unchanged. Small 4B repair failures
+remain excluded. Candidate is pinned Qwen3.5-9B 4bit, 4K context, nine-GiB admission
+plus six-GiB desktop reserve on the retained MLX runtime. Do not run a heavy loop,
+apply model repairs, stop other owner jobs or claim this agent is installed.
+
+This is isolated from English F5 STT-only v0.0.1. PR #184 prepares that source-only
+release; the checked candidate is installed, but two ChatGPT physical-F5 owner
+reports failed while the original app still lacked staged next-launch flags.
+Full owner-controlled ChatGPT Quit/relaunch from Applications and F5 acceptance
+remain its release gate. The existing six-hour upstream watcher continues; the
+latest observed run 39142505984 succeeded. Do not duplicate it or old benchmarks.
+Next diagnostic work: uniquely attributable runtime ownership, resource-lifetime
+cleanup and staging/rollback, then an explicitly admitted quiet qualification.
+
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18
 
 Removed “local” from the seven-day panel/card labels and moved counting scope into

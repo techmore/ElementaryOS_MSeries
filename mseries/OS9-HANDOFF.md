@@ -1,5 +1,36 @@
 # OS 9 implementation / Claude Code handoff
 
+## Quiet diagnostic agent foundation: disabled source draft — 2026-10-18
+
+[Implementation, evidence and promotion gates](local-ai/DIAGNOSTIC-AGENT-EXPERIMENT.md).
+Private durable kernel/app alert inbox, explicit evidence-bound analysis CLI/GTK
+inbox and a 12-core/four-held-out qualification harness are implemented. Final
+synthetic cross-suite: 152 tests passed in 3.423 s; initial 134/one-failure and
+136/one-failure attempts remain retained, followed by the intermediate 136-pass
+run. Current-source alert replay/acknowledgement checks passed 11/11. No actual
+9B model case, permitted live journal collector or owner GUI was qualified.
+Four worker-lock warnings remain; earlier SQLite warnings are not claimed fixed.
+
+Review fixed stale prompt/contract/model-byte acceptance identity and frozen
+source/fixture integrity gaps. It also exposed an unresolved fixed-name service
+start ownership race. `OWNED_START_READY=False` blocks the session before all
+service mutations. Unique per-session worker ownership, reversible installer,
+real quiet model/semantic/lifecycle and collector/UI/idle-overhead evidence are
+mandatory before enabling. The dedicated unit/profile/accepted receipt are absent;
+installed legacy collector and default 4B are unchanged. Small 4B repair failures
+remain excluded. Candidate is pinned Qwen3.5-9B 4bit, 4K context, nine-GiB admission
+plus six-GiB desktop reserve on the retained MLX runtime. Do not run a heavy loop,
+apply model repairs, stop other owner jobs or claim this agent is installed.
+
+This is isolated from English F5 STT-only v0.0.1. PR #184 prepares that source-only
+release; the checked candidate is installed, but two ChatGPT physical-F5 owner
+reports failed while the original app still lacked staged next-launch flags.
+Full owner-controlled ChatGPT Quit/relaunch from Applications and F5 acceptance
+remain its release gate. The existing six-hour upstream watcher continues; the
+latest observed run 39142505984 succeeded. Do not duplicate it or old benchmarks.
+Next diagnostic work: uniquely attributable runtime ownership, resource-lifetime
+cleanup and staging/rollback, then an explicitly admitted quiet qualification.
+
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18
 
 Removed “local” from the seven-day panel/card labels and moved counting scope into
@@ -534,7 +565,7 @@ harness error retained privately. Installed-source hashes and scope are recorded
 in work/dictation-catchup-2026-10-18/receipt.json outside the public repo. The source
 README's offline ANE latency measurements are inherited evidence, not a new matched
 benchmark. Rolling ANE performs English transcription; native panel translation
-still waits until speech ends. The default4B is inactive after its fan-limit guard;
+still waits until speech ends. The default 4B is inactive after its fan-limit guard;
 no forced restart or duplicate worker. Permanent upstream-watch remains active.
 
 Integration is a candidate, not promotion on contract tests alone. Review must cover
@@ -556,7 +587,7 @@ launcher are installed. Private preflight verified idle capture, unchanged manag
 preferences, source integrity and quiet admission; original ledger/backups remain
 private. Fresh listener RSS was32.67MiB with no native SDK mapped. This is a fresh
 startup observation, not after-use RSS: native close tests retained121–188MiB.
-SpeechPID918340 and bridgePID918315 are active at this checkpoint. The default4B
+SpeechPID918340 and bridgePID918315 are active at this checkpoint. The default 4B
 endpoint independently returned200 after guarded recovery (supervisorPID936091);
 no new inference was submitted. Its reserve guard may stop it again under load.
 
@@ -594,7 +625,7 @@ does not rerun completed native/model trials or change the qualified runtime.
 All lifecycle/model/app queues are terminal; never relaunch them for a better score.
 Original review5/6 and Newelle exact-format failure remain failed. Separate3-language,
 actual panel workflow, native idle/close/reload and private field checks retain their
-own source/runtime pins and limitations. Live eager speech758179/input787274/default4B
+own source/runtime pins and limitations. Live eager speech758179/input787274/default 4B
 795452 remain unchanged/active at last check. No new physical F5 event since recovery.
 Read-only static keymap inventory confirms both0x7003e/0x70069→F14; it does not prove
 physical event delivery. An initial wrong ioctl direction returned EINVAL and was
@@ -662,7 +693,7 @@ min11.35GiB available/reported0RPM/max38.95C. This does not establish repeated-i
 or indefinite stability. Its source is frozen at work/dictation-reload-soak-v1; preserve
 all completed observations.72 assistant and6 image contracts pass on this batch.
 All new receipts are allowlisted under dictation-lifecycle-2026-10-18; no logs/audio.
-Live speech/input/default4B PIDs758179/787274/795452 unchanged and active; no new F5 event.
+Live speech/input/default 4B PIDs758179/787274/795452 unchanged and active; no new F5 event.
 
 ## Review cohorts and actual panel workflow complete; physical F5 unresolved — 2026-10-18
 
@@ -850,7 +881,7 @@ language choices use only the existing supervised local worker, no tools/proxies
 Pure transport/payload contracts and a private Xvfb UI wiring test pass with synthetic
 transforms; these DO NOT prove model grammar/translation quality. Nothing from this panel
 batch has been installed or opened on the owner's desktop. F5 fix takes priority.
-Current default4B admission remains below6.5GiB+6GiB reserve; no review inference launched.
+Current default 4B admission remains below6.5GiB+6GiB reserve; no review inference launched.
 Do not use synthetic proposals as measured quality evidence. Native speech acceptance,
 actual model review qualification, latest-head CI, main merge and Pages remain open.
 
@@ -5230,7 +5261,7 @@ PR155 passed all six head-specific CI jobs in run39152857333, merged as
 installer with the qualified uppercase Q8_0 artifact and separate optional MLX
 assets. All installed runtime/voice/panel/manager and model/library hashes match;
 strict live CPU4/IBus, toggle preference, input fingerprint, enabled listener,
-bridge readiness and the unchanged default4B passed. Managed UnsetEnvironment
+bridge readiness and the unchanged default 4B passed. Managed UnsetEnvironment
 removes inherited last-capture/debug/test controls while retaining old drop-ins
 and private rollback. No owner microphone/window/menu bar/kernel/audio changes.
 
