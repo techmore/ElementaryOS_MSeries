@@ -226,12 +226,18 @@ int main (string[] args) {
         assert (MSeries.Presentation.local_usage_line ("5 hours", 0, 1, 0) == "5 hours · $0.00 · 1 request · 0 tokens");
     });
     GLib.Test.add_func ("/presentation/dense-dots", () => {
+        assert (MSeries.Presentation.visual_level (-1) == MSeries.QuotaLevel.UNKNOWN);
+        assert (MSeries.Presentation.visual_level (71) == MSeries.QuotaLevel.OK);
+        assert (MSeries.Presentation.visual_level (70) == MSeries.QuotaLevel.LOW);
+        assert (MSeries.Presentation.visual_level (25) == MSeries.QuotaLevel.LOW);
+        assert (MSeries.Presentation.visual_level (24) == MSeries.QuotaLevel.CRITICAL);
         assert (MSeries.Presentation.dot_color (71) == "success_color");
         assert (MSeries.Presentation.dot_color (70) == "warning_color");
         assert (MSeries.Presentation.dot_color (25) == "warning_color");
         assert (MSeries.Presentation.dot_color (24) == "error_color");
-        assert (MSeries.Presentation.dot_percent (15) == "");
+        assert (MSeries.Presentation.dot_percent (15) == " 15%");
         assert (MSeries.Presentation.dot_percent (14) == " 14%");
+        assert (MSeries.Presentation.dot_percent (15.1) == "");
         assert (MSeries.Presentation.dot_percent (10) == " 10%");
         assert (MSeries.Presentation.dot_percent (9) == " 9%");
         assert (MSeries.Presentation.dot_percent (0) == " 0%");

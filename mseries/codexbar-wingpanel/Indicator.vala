@@ -2038,7 +2038,7 @@ namespace MSeries {
             var known = remaining_node != null && remaining_node.get_node_type () != Json.NodeType.NULL;
             var remaining = known
                 ? GLib.Math.fmin (100.0, GLib.Math.fmax (0.0, remaining_node.get_double ())) : -1.0;
-            var level = Presentation.level_for (remaining);
+            var level = Presentation.visual_level (remaining);
             var eta = QuotaEta.from_window (window, stale, now_unix);
 
             var group = new Gtk.Box (Gtk.Orientation.VERTICAL, 1);

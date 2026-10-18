@@ -366,3 +366,11 @@ The native completion dialog offers a local GitHub review window. Only its expli
 Publish action sends edited text to the workspace origin in a separate branch/draft
 PR. Emergency excerpts never automatically become public. No extra polling/service.
 See CODEXBAR-CLAUDE-HISTORY.md for qualifications and limits.
+
+Dot-mode numeric visibility is inclusive: remaining<=15% displays the written
+percentage in bold red; values above15% stay dot-only. This supersedes earlier
+below-15 wording and applies consistently to all provider/account rows.
+
+Dropdown quota bars and percentage labels use the same visual thresholds as the
+menu dots: green >70%, yellow25–70%, red<25%. The shared visual formatter is
+separate from ETA/alert warning thresholds.

@@ -36,6 +36,17 @@ Gtk.Label? find_label (Gtk.Widget widget, string text) {
     return null;
 }
 
+void assert_quota_bar_colors (Gtk.Widget widget) {
+    var bar = widget as Gtk.ProgressBar;
+    if (bar != null && bar.sensitive) {
+        var level = MSeries.Presentation.visual_level (bar.fraction * 100);
+        assert (bar.has_css_class (level == MSeries.QuotaLevel.OK ? "level-ok" :
+            level == MSeries.QuotaLevel.LOW ? "level-low" : "level-critical"));
+    }
+    for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ())
+        assert_quota_bar_colors (child);
+}
+
 int main (string[] args) {
     if (args.length < 2) {
         stderr.printf ("usage: render-probe OUT.png [delay-ms]\n");
@@ -148,6 +159,7 @@ int main (string[] args) {
             bar.measure (Gtk.Orientation.VERTICAL, -1, out minimum, out natural, null, null);
             assert (natural <= 32);
         }
+        assert_quota_bar_colors (popover_body);
         var page = Environment.get_variable ("CB_PAGE");
         var pages = find_pages (root);
         if (page != null && pages != null) {
