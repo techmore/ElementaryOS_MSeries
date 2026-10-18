@@ -18,12 +18,22 @@ top three CPU processes. Read-only: it never changes a setting.
   charger) and the top process; plus suspend/off gaps with the charge lost (standby drain).
 - **Health**: full vs design Wh, cycles, charge limit.
 
+## Added in the second pass
+- **Energy by app**: idle floor (10th-percentile draw) charged to the system, draw above it shared among processes by CPU
+  share. An estimate that sees CPU time only (GPU/display work lands in the floor or the app driving it).
+- **Charging runs** (Wh added, average W) and **sleep drain** (% per hour from suspend gaps on battery).
+- **Health trend**: one capacity/cycles snapshot per day.
+- **High-drain alert**: a notification when unplugged draw averages ≥15 W for 5 min, naming the busiest process and the
+  runtime at that rate; 30 min cooldown. Edit `~/.config/mseries-battery/config.json` (`alerts`, `alert_watts`,
+  `alert_minutes`, `alert_cooldown_minutes`) to change it.
+- **Report**: `mseries-battery report [days] > battery.md`, or the save button in the app's title bar.
+
 ## Use
 ```
 bash mseries/install-battery.sh              # installs logger service, `mseries-battery`, and the Battery app
-mseries-battery status | sessions | profile | events | export [days]
+mseries-battery status | sessions | profile | apps | charging | health | events | report | export [days]
 ```
-App: "Battery" in the launcher (GTK4 + Granite 7: Overview, History chart, Sessions, Power events).
+App: "Battery" in the launcher (GTK4 + Granite 7: Overview, History chart, Sessions, Energy by app, Health, Power events).
 `bash mseries/install-battery.sh --uninstall` removes it and keeps the history.
 
 ## Prior art we could extend (not used yet)
@@ -32,7 +42,7 @@ weak on Apple Silicon), `upower` time-to-empty. Omarchy-mac's battery piece is o
 ported as `mseries-power` (see PORT-MAP.md); nothing else there profiles runtime.
 
 ## Status (2026-10-18)
-Logger installed and running on the M1 Pro; 8 unit tests pass (`battery/test_battery_core.py`); CLI verified against live
+Logger installed and running on the M1 Pro; 13 unit tests pass (`battery/test_battery_core.py`); CLI verified against live
 and synthetic history; the app (sidebar layout, battery gauge, usage bars, event icons, chart with hover readout) renders all four pages under
 Xvfb with the installed elementary blueberry stylesheet, light and dark (synthetic 8 h history). **Not verified:** the
 look on the owner's live session (no window was opened on their screen), real discharge sessions (the machine

@@ -276,6 +276,8 @@ class BatteryWindow(Gtk.ApplicationWindow):
     PAGES = (("overview", "Overview", "battery-symbolic"),
              ("history", "History", "view-statistics-symbolic"),
              ("sessions", "Sessions", "document-open-recent-symbolic"),
+             ("apps", "Energy by app", "applications-system-symbolic"),
+             ("health", "Health", "emblem-default-symbolic"),
              ("events", "Power events", "dialog-information-symbolic"))
 
     def __init__(self, app):
@@ -286,6 +288,9 @@ class BatteryWindow(Gtk.ApplicationWindow):
         header = Gtk.HeaderBar()
         header.add_css_class("titlebar")
         header.set_title_widget(Gtk.Label(label="Battery", css_classes=["title"]))
+        export = Gtk.Button(icon_name="document-save-as-symbolic", tooltip_text="Save a Markdown report")
+        export.connect("clicked", self.on_export)
+        header.pack_end(export)
         self.set_titlebar(header)
 
         self.stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE, hexpand=True, vexpand=True)
@@ -338,8 +343,27 @@ class BatteryWindow(Gtk.ApplicationWindow):
         self.build_overview(rows)
         self.build_history(conn, now)
         self.build_sessions(rows)
+        self.build_apps(rows)
+        self.build_health(conn, rows, now)
         self.build_events(conn, now)
         return True
+
+    def on_export(self, _button):
+        dialog = Gtk.FileDialog(title="Save battery report", initial_name="battery-report-%s.md" % time.strftime("%Y-%m-%d"))
+        docs = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS)
+        if docs:
+            dialog.set_initial_folder(Gio.File.new_for_path(docs))
+
+        def done(source, result):
+            try:
+                target = source.save_finish(result)
+            except GLib.Error:
+                return
+            conn = self.open()
+            if conn is not None:
+                target.replace_contents(core.report_markdown(conn, 14).encode(), None, False, Gio.FileCreateFlags.NONE, None)
+
+        dialog.save(self, None, done)
 
     # ---- pages ------------------------------------------------------------------------------
     def build_overview(self, rows):
@@ -381,6 +405,9 @@ class BatteryWindow(Gtk.ApplicationWindow):
         tiles.append(tile("Health", "%s%%" % health.get("health_pct", "—"),
                           "%.1f of %.1f Wh · %d cycles" % (health.get("full_wh") or 0, health.get("design_wh") or 0, health.get("cycles") or 0)))
         tiles.append(tile("On battery", core.fmt_hours(total_h), "%d runs in 14 days" % len(runs)))
+        drain = core.standby_drain(self.open(), int(time.time()) - 14 * 86400) if self.open() else {}
+        tiles.append(tile("Sleep drain", "%.2f%% / h" % drain["pct_per_hour"] if drain.get("pct_per_hour") is not None else "—",
+                          "asleep %.0f h on battery" % drain["hours"] if drain.get("hours") else "needs a night asleep on battery"))
         page.append(tiles)
         if health.get("limit_pct") is not None:
             page.append(label("Charging stops at %d%% to preserve battery health." % health["limit_pct"], "dim"))
@@ -494,7 +521,93 @@ class BatteryWindow(Gtk.ApplicationWindow):
                 col.append(label(sub, "dim", "caption", xalign=1.0))
                 line.append(col)
             listing.append(line)
-        page.append(listing)
+        page.append(section("On battery", listing))
+        self.build_charging(page, rows)
+
+    def build_charging(self, page, rows):
+        charges = list(reversed(core.charge_sessions(rows)))
+        if not charges:
+            return
+        listing = boxed_list()
+        for run in charges:
+            line = Gtk.Box(spacing=16)
+            line.set_margin_top(10)
+            line.set_margin_bottom(10)
+            line.set_margin_start(14)
+            line.set_margin_end(14)
+            text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2, hexpand=True)
+            text.append(label(time.strftime("%A, %d %B · %H:%M", time.localtime(run["start"])), "row-title"))
+            text.append(label("%s charging · %.0f%% → %.0f%%" % (core.fmt_hours(run["seconds"] / 3600), run["pct_start"] or 0, run["pct_end"] or 0), "dim"))
+            line.append(text)
+            line.append(RangeBar(run["pct_start"], run["pct_end"]))
+            for value, sub, width in (("+%.1f Wh" % run["wh_added"], "added", 64), ("%.1f W" % run["avg_w"], "average", 56)):
+                col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, halign=Gtk.Align.END)
+                col.set_size_request(width, -1)
+                col.append(label(value, "numeric", xalign=1.0))
+                col.append(label(sub, "dim", "caption", xalign=1.0))
+                line.append(col)
+            listing.append(line)
+        page.append(section("Charging", listing))
+
+    def build_apps(self, rows):
+        page = self.pages["apps"]
+        data = core.energy_by_app(rows)
+        if not data["apps"]:
+            page.append(empty("No data yet", "After a little time on battery, this shows which apps used the energy.", "applications-system-symbolic"))
+            return
+        page.append(label("Estimated from the last 14 days on battery. The idle floor (%.1f W: display, radios, memory) is shown "
+                          "separately; draw above it is shared between apps by how much CPU each used." % data["floor_w"], "dim", wrap=True))
+        total = max(data["total_wh"], 0.01)
+        entries = [(a["name"], a["wh"]) for a in data["apps"][:12]]
+        entries.append(("Other CPU and kernel", data["other_wh"]))
+        entries.append(("Idle floor", data["floor_wh"]))
+        peak = max(w for _n, w in entries) or 1
+        listing = boxed_list()
+        for name, wh in entries:
+            line = Gtk.Box(spacing=16)
+            line.set_margin_top(9)
+            line.set_margin_bottom(9)
+            line.set_margin_start(14)
+            line.set_margin_end(14)
+            title = label(name, "row-title")
+            title.set_size_request(170, -1)
+            line.append(title)
+            line.append(level_bar(wh / peak, "usage-bar"))
+            for text, width in (("%.1f Wh" % wh, 64), ("%.0f%%" % (100 * wh / total), 48)):
+                cell = label(text, "numeric", xalign=1.0)
+                cell.set_size_request(width, -1)
+                line.append(cell)
+            listing.append(line)
+        page.append(section("Where the energy went", listing))
+
+    def build_health(self, conn, rows, now):
+        page = self.pages["health"]
+        health = core.battery_health()
+        trend = core.health_trend(conn)
+        tiles = Gtk.Box(spacing=12, homogeneous=True)
+        tiles.append(tile("Capacity", "%s%%" % health.get("health_pct", "—"), "%.1f of %.1f Wh design" % (health.get("full_wh") or 0, health.get("design_wh") or 0)))
+        tiles.append(tile("Cycles", "%d" % (health.get("cycles") or 0), "full charge equivalents"))
+        tiles.append(tile("Temperature", "%.0f °C" % health["temp_c"] if health.get("temp_c") is not None else "—",
+                          "limit %d%%" % health["limit_pct"] if health.get("limit_pct") is not None else ""))
+        page.append(tiles)
+        if len(trend) < 2:
+            page.append(label("The health trend builds up one point per day; check back tomorrow.", "dim"))
+            return
+        listing = boxed_list()
+        for day in reversed(trend[-30:]):
+            line = Gtk.Box(spacing=16)
+            line.set_margin_top(9)
+            line.set_margin_bottom(9)
+            line.set_margin_start(14)
+            line.set_margin_end(14)
+            line.append(label(day["day"], "row-title", hexpand=True))
+            pct = 100.0 * day["full_uwh"] / day["design_uwh"] if day["design_uwh"] else 0
+            for text, width in (("%.1f%%" % pct, 56), ("%.1f Wh" % (day["full_uwh"] / 1e6), 70), ("%d cycles" % day["cycles"], 80)):
+                cell = label(text, "numeric", xalign=1.0)
+                cell.set_size_request(width, -1)
+                line.append(cell)
+            listing.append(line)
+        page.append(section("Capacity by day", listing))
 
     def build_events(self, conn, now):
         page = self.pages["events"]

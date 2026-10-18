@@ -80,6 +80,57 @@ class CoreTests(unittest.TestCase):
         snap = sampler.sample()
         self.assertEqual(set(snap), set(core.COLUMNS))
 
+    def test_energy_by_app_splits_dynamic_draw(self):
+        rows = [row(i * 15, 90, 5.0, cpu=2, top=[["idle-app", 2.0]]) for i in range(40)]
+        rows += [row(1000 + i * 15, 80, 15.0, cpu=50, top=[["ffmpeg", 40.0], ["brave", 10.0]]) for i in range(40)]
+        data = core.energy_by_app(rows)
+        names = {a["name"]: a for a in data["apps"]}
+        self.assertAlmostEqual(data["floor_w"], 5.0)
+        self.assertGreater(names["ffmpeg"]["wh"], 3 * names["brave"]["wh"])
+        self.assertAlmostEqual(sum(a["wh"] for a in data["apps"]) + data["floor_wh"] + data["other_wh"], data["total_wh"], delta=0.2)
+        self.assertEqual(core.energy_by_app(rows[:2])["apps"], [])
+
+    def test_charge_sessions(self):
+        rows = []
+        for i in range(60):
+            r = row(i * 15, 50 + i * 0.1, 30.0, ac=1)
+            r["status"], r["batt_w"] = "Charging", 30.0
+            rows.append(r)
+        found = core.charge_sessions(rows)
+        self.assertEqual(len(found), 1)
+        self.assertGreater(found[0]["wh_added"], 0.3)
+
+    def test_standby_drain(self):
+        conn = core.connect(os.path.join(tempfile.mkdtemp(), "h.db"))
+        det = core.EventDetector()
+        det.feed(conn, row(0, 90, 5.0))
+        det.feed(conn, row(8 * 3600, 88, 5.0))   # 2 % lost over 8 h unplugged
+        drain = core.standby_drain(conn, 0)
+        self.assertAlmostEqual(drain["pct_per_hour"], 0.25)
+
+    def test_drain_alert_needs_sustained_draw_and_respects_cooldown(self):
+        alert = core.DrainAlert(dict(core.DEFAULT_CONFIG))
+        fired = [alert.feed(row(i * 15, 70, 20.0, top=[["ffmpeg", 80.0]])) for i in range(40)]
+        hits = [f for f in fired if f]
+        self.assertEqual(len(hits), 1)
+        self.assertEqual(hits[0]["culprit"], "ffmpeg")
+        self.assertIsNone(core.DrainAlert(dict(core.DEFAULT_CONFIG)).feed(row(0, 70, 20.0)))
+        quiet = core.DrainAlert(dict(core.DEFAULT_CONFIG))
+        self.assertFalse(any(quiet.feed(row(i * 15, 70, 6.0)) for i in range(40)))
+        plugged = core.DrainAlert(dict(core.DEFAULT_CONFIG))
+        self.assertFalse(any(plugged.feed(row(i * 15, 70, 20.0, ac=1)) for i in range(40)))
+
+    def test_report_and_health_trend(self):
+        conn = core.connect(os.path.join(tempfile.mkdtemp(), "h.db"))
+        now = int(__import__("time").time())
+        for i in range(240):
+            core.store(conn, row(now - 3600 + i * 15, 100 - i * 0.0125, 10.0))
+        conn.execute("INSERT INTO daily VALUES ('2026-10-17', 62000000, 69000000, 95, 80)")
+        self.assertEqual(len(core.health_trend(conn)), 1)
+        text = core.report_markdown(conn, 1)
+        self.assertIn("# Battery report", text)
+        self.assertIn("Unplugged runs", text)
+
     def test_fmt_hours(self):
         self.assertEqual(core.fmt_hours(7.5), "7h 30m")
         self.assertEqual(core.fmt_hours(0.5), "30 min")
