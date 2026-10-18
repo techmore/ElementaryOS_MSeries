@@ -53,7 +53,7 @@ Gio.Settings.new("org.gnome.desktop.wm.preferences").set_string("button-layout",
 # make GTK text and the pointer feel undersized. Keep Pantheon's normal layout
 # and use a modest text increase plus a more visible pointer across GTK apps.
 interface = Gio.Settings.new("org.gnome.desktop.interface")
-interface.set_double("text-scaling-factor", 1.15)
+interface.set_double("text-scaling-factor", 0.8)
 interface.set_int("cursor-size", 32)
 Gio.Settings.sync()
 # gsd-datetime asks geoclue for a timezone and, when it disagrees with the current one, asks the system to
