@@ -2988,3 +2988,18 @@ healthy, depleting, provider-error and live fixtures, light and dark; helper con
 config; the sign-in window loads opencode.ai's login page headlessly (`/console/login`, no cookies before
 sign-in, so it cannot close early); `check-codexbar-port.sh` passes. Not verified: a real opencode.ai sign-in
 end to end (needs the owner's credentials) and the panel on the live desktop by eye.
+
+## CodexBar: OpenCode Go connects with an API key so passkeys work — 2026-10-18
+
+The owner reported that the built-in OpenCode sign-in window does not allow passkeys: WebKitGTK has no
+WebAuthn support on Linux. Reading Brave's cookie store and keyring instead was rejected as credential access.
+`codexbar-opencode-login.py login` now opens a small Connect window: Open opencode.ai (default browser, so
+passkeys work), create and copy an API key in the console, paste it (masked). The key is checked with
+`codexbar usage --provider opencodego --source api` (key passed only in the environment) and stored with
+upstream's `codexbar config set-api-key --provider opencodego --stdin`. "Sign in here instead" keeps the
+built-in window for email or GitHub sign-ins, saving the web session as before. `status` counts either.
+
+Verified headlessly (Xvfb): the window renders; a fake key shows upstream's "credentials are invalid or
+expired" and nothing is saved (real config unchanged); `set-api-key` into a temp config stores `apiKey` and
+upstream then reads it (error changes from "No OpenCode Go API key configured" to "invalid or expired").
+Not verified: a real key end to end (needs the owner's key).
