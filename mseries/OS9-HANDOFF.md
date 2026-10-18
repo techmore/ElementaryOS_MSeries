@@ -5004,3 +5004,27 @@ Owner requested 15% smaller Ethernet artwork. Connected 16/24px and VPN-lock ass
 Ethernet size follow-up (October 18): owner requested another 5% reduction from the current size. Artwork now uses `0.85 × 0.95 = 0.8075` of the original, centered at translations 2.31px (24px canvas) / 1.54px (16px canvas), including VPN badge. Full installer patch series and release build passed; extracted installed GResources confirm the transforms. Module installed and panel reloaded with existing session authorization.
 
 Ethernet size follow-up (October 18, second 5% step): owner requested another 5% reduction and explicit local deployment. Artwork is now `0.8075 × 0.95 = 0.767125` of the original, centered in both canvas sizes and the VPN variant. Full network installer rebuilt and installed the module and reloaded Wingpanel. Extracted installed GResources verify the new transforms; the running panel maps the installed module.
+
+### Sustained comparison and actual app outcomes
+
+Both resident62.61s CPU trials completed with tails0.048/0.062s, firstwords
+0.854/0.858s and1.19% WER. Both resident MLX trials completed:88.797/89.430s
+(total) with26.187/26.820s tails,1.084/1.059s firstwords and0.595% WER. MLX
+used19.15/19.77CPU-seconds versus76.52/78.98CPU-seconds, but fell behind input.
+Retaining it did not solve this port's realtime backlog. CPU remains the default;
+no universal hardware/power claim. CPU sensor-summary receipt save failed after
+completion (source digest enumeration included __pycache__); keep its completed
+results and missing telemetry flag, do not repeat it. Only unstarted MLX resumed.
+
+Actual Code/Newelle/Tasks ASR passed exact normalized English words, first
+committed1.671/1.839/1.885s; no Send/save action requested. Tasks required a
+genuinely focused entry through private headless Gala's virtual keyboard, not
+a relaxed input guard. Rich compose/textarea stable-only regression passes;
+no authenticated Gmail account test. Failures and frozen sources are retained.
+Canonical QUALIFICATION-INDEX.md plus JSON records every cohort and equivalence
+key so future work inspects evidence before launching any worker.
+
+Joined voicev1 completed real ASR and the actual UI completion gate, but its
+private-session service-health check refused the existing model before inference;
+that harness failure is retained. Resume should reuse the recorded ASR event
+trace and finish only the unstarted voice stage. No new microphone or playback.

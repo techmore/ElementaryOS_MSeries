@@ -125,7 +125,7 @@ def tone(freq, ms, vol=0.25):
     subprocess.Popen(["pw-play", path], stderr=subprocess.DEVNULL)
 
 
-def whisper_fallback(pcm16):
+def whisper_fallback(pcm16, cancelled=lambda: False):
     """One offline Voxtype/Whisper pass over the captured audio (kept in RAM only)."""
     try:
         # An anonymous, explicitly inherited descriptor avoids persistent audio
@@ -136,9 +136,24 @@ def whisper_fallback(pcm16):
                 w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(pcm16)
             audio.flush(); audio.seek(0)
             path = '/proc/self/fd/' + str(audio.fileno())
-            r = subprocess.run(["/usr/local/bin/voxtype", "transcribe", path], capture_output=True,
-                               text=True, timeout=30, check=True, pass_fds=(audio.fileno(),))
-            lines = [l.strip() for l in r.stdout.splitlines() if l.strip()]
+            if cancelled(): return ''
+            child = subprocess.Popen(["/usr/local/bin/voxtype", "transcribe", path], stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL, text=True, pass_fds=(audio.fileno(),))
+            try:
+                deadline = time.monotonic() + 30
+                while True:
+                    if cancelled() or time.monotonic() >= deadline: return ''
+                    try:
+                        output, _ = child.communicate(timeout=.25)
+                        if child.returncode: return ''
+                        break
+                    except subprocess.TimeoutExpired: pass
+            finally:
+                if child.poll() is None:
+                    child.terminate()
+                    try: child.wait(1)
+                    except subprocess.TimeoutExpired: child.kill(); child.wait()
+            lines = [l.strip() for l in output.splitlines() if l.strip()]
             return lines[-1] if lines else ""
     except Exception as e:
         log("fallback failed:", repr(e))
@@ -658,7 +673,12 @@ class Dictation:
                     final = ""  # test hook: pretend streaming recognized nothing
                 if not self.error and not self.cancelled and not self.interrupted and not final.strip() and len(kept) > 16000 * 2 and spread >= SPEECH_SPREAD_DB and active >= 3:
                     # streaming heard nothing but there was sound: let Whisper have one offline pass
-                    redo = whisper_fallback(bytes(kept))
+                    def cancelled_fallback():
+                        if self.error or self.cancelled or self.interrupted: return True
+                        if resource_reasons(self.policy):
+                            self.error = 'ResourceGuard'; self.stop_evt.set(); return True
+                        return False
+                    redo = whisper_fallback(bytes(kept), cancelled=cancelled_fallback)
                     if self.error or self.cancelled or self.interrupted: redo = ""
                     if redo and not DRY:
                         self.typer.submit(redo + " ", self.input_token, getattr(self, "output_epoch", None))

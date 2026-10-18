@@ -1,5 +1,10 @@
 # English words while speaking: M1 Pro 32 GB, October 18, 2026
 
+**Follow-through:** [English F5 app acceptance, sustained tests and deployment](F5-ENGLISH-ACCEPTANCE.md)
+and [the canonical no-repeat ledger](QUALIFICATION-INDEX.md) track later work.
+The Parakeet0.5.6 full-input API observation below does not apply to the subsequently
+tested Nemotron0.5.9 cache-aware MLX feed/step implementation.
+
 **Decision:** advance Nemotron's CPU streaming path for the next F5 integration;
 retain native ANE and MLX Vulkan as qualified file-input alternatives. Nemotron
 160 ms produced first draft words in **0.851 s median**, versus **1.452 s** for

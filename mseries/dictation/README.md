@@ -1,5 +1,10 @@
 # F5 dictation (local speech to text)
 
+**Start here:** [English F5 integration and engine controls](F5-ENGLISH-ACCEPTANCE.md),
+[canonical qualification index](QUALIFICATION-INDEX.md), and its machine-readable
+ledger. These supersede historical setup descriptions below. Reuse completed
+receipts and read the owned queue state before running another trial.
+
 **Current English-only decision, October18:** [measured native ANE / MLX Vulkan /
 CPU streaming results](REALTIME-ENGLISH.md) supersede older recommendations below.
 Nemotron160 CPU produced first draft words in0.851s median; MLX Vulkan

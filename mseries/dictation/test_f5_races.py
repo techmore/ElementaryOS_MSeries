@@ -87,7 +87,7 @@ class CancellationRaces(unittest.TestCase):
         self.decoder.finalize.assert_not_called(); stream.whisper_fallback.assert_not_called()
 
     def test_escape_during_fallback_discards_returned_transcript(self):
-        def fallback(_): self.d.cancel(); return 'obsolete fallback transcript'
+        def fallback(_, **kwargs): self.d.cancel(); return 'obsolete fallback transcript'
         stream.whisper_fallback.side_effect = fallback
         self.run_controller()
         stream.whisper_fallback.assert_called_once()
@@ -95,7 +95,7 @@ class CancellationRaces(unittest.TestCase):
         self.assertTrue(self.d.cancelled)
 
     def test_typing_during_fallback_discards_returned_transcript(self):
-        def fallback(_): self.d.interrupt(); return 'obsolete fallback transcript'
+        def fallback(_, **kwargs): self.d.interrupt(); return 'obsolete fallback transcript'
         stream.whisper_fallback.side_effect = fallback
         self.run_controller()
         stream.whisper_fallback.assert_called_once()
@@ -103,7 +103,7 @@ class CancellationRaces(unittest.TestCase):
         self.assertTrue(self.d.interrupted)
 
     def test_guard_during_fallback_discards_returned_transcript(self):
-        def fallback(_): self.d.error = 'ResourceGuard'; return 'obsolete fallback transcript'
+        def fallback(_, **kwargs): self.d.error = 'ResourceGuard'; return 'obsolete fallback transcript'
         stream.whisper_fallback.side_effect = fallback
         self.run_controller()
         stream.whisper_fallback.assert_called_once()
