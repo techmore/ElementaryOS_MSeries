@@ -1,5 +1,49 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Orchard soak closed with existing evidence — 2026-10-18
+
+Final report: `docs/orchard-soak.html`; evidence and raw samples under
+`mseries/orchard-incus/audit/2026-10-18-soak/`. The installed Python manager
+(runtime hashes match merged `9747eb0`) ran on Wayland/Vulkan/blueberry for
+99.36 minutes, seven cycles 15 minutes apart. All 70 developer operation groups
+passed and owned guests were removed; the window closed before cycle eight.
+This is **not** a completed two-hour qualification. The separate ordinary
+window observer ended after 26 minutes and is not a full-duration control.
+
+Using 87 minutes of settled inactive idle intervals (discard first 60 seconds
+of each idle and last ten seconds before closure), app CPU averaged 0.1704%
+of one core; reaped CLI children 0.0513% separately. Incus/VM/compositor costs
+are excluded. Per-cycle idle CPU stayed 0.162–0.184%. Settled RSS medians rose
+186.25 → 190.14 MiB (+3.89); private 69.22 → 74.77 (+5.55); PSS +0.33 MiB.
+Output buffers returned to zero every cycle; rows/cards/histories stayed two,
+read/timer slots two; GC-tracked objects fell 30,682 → 29,881. FD baseline moved
+47 → 49, then 49–51 for the last three cycles. Small memory/descriptor growth
+is observed, not attributed to a proven leak or dismissed as cache growth.
+
+Three complete observed navigation probes: 18 actions each, p95 28.34/30.67/
+30.77 ms; highest action delay 68.11 ms. A six-action partial probe retained
+a 2,774 ms frame latency / 2,766 ms feedback gap. Three probes had unavailable
+presentation feedback and failed in the old empty-median calculation. Causes
+of sparse feedback, the large outlier and window closure remain unestablished;
+these are programmatic GTK actions, not physical input-to-photon measurements.
+
+Merged runner fixes explicitly classify absent/partial feedback, save each
+probe before reporting failure, require action coverage/cycle count/duration
+for a pass, and bound retries for transient Incus update-lock cleanup failures
+with owned-name/creation-token checks on every retry. Scheduling and per-cycle
+resource/frame receipts from the original soak extension are included. Removed
+the proposed focus-raising option. The application runtime is unchanged.
+
+Before the stop request: 123 Python tests, 117 passed and six opt-in tests
+skipped, including six new frame-feedback cases. Final cleanup retry and
+qualification bookkeeping are reviewed only; no further tests/CI, app launches
+or desktop reloads are performed under the owner's explicit instruction.
+The 4.5-second follow-up was cancelled; its busy-lock cleanup initially failed,
+then the stop cleanup removed its sole owned fixture. All audit processes and
+scheduled checks remain stopped. Next work requires a new owner request; do
+not restart soak testing, raise windows or reload the panel automatically.
+
+
 ## Screenshot login repair — 2026-10-18
 
 Fixed invalid `%h` Exec paths preventing screenshot shelf and Markup startup; installed and validated

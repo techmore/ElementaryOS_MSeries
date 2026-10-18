@@ -4,14 +4,17 @@ Programmatic native GTK actions, not physical input automation. Native save port
 Interactive keyboard input, upload-picker selection and interactive Console
 are not automated. Requires cached Alpine container/VM images and Wayland.
 """
-import argparse, concurrent.futures, gc, json, os, pathlib, resource, shlex, socket, statistics, subprocess, sys, time, traceback, uuid
+import argparse, concurrent.futures, gc, json, os, pathlib, resource, shlex, socket, subprocess, sys, time, traceback, uuid
 from audit_scope import AuditScope
+from frame_metrics import summarize_frames
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('--source',required=True);p.add_argument('--output',required=True);p.add_argument('--run',action='store_true')
 p.add_argument('--cycles',type=int,default=1)
 p.add_argument('--idle-before',type=int,default=0,help='Seconds of idle observation before workflows')
 p.add_argument('--idle-after',type=int,default=0,help='Seconds of idle observation after workflows')
+p.add_argument('--cycle-interval',type=int,default=0,help='Minimum seconds between workflow-cycle starts; observe idle between cycles')
+p.add_argument('--session-seconds',type=int,default=0,help='Minimum total observation duration, including cycles and idle')
 a=p.parse_args()
-if not 1 <= a.cycles <= 20 or min(a.idle_before,a.idle_after)<0: p.error('Use 1–20 cycles and nonnegative idle durations')
+if not 1 <= a.cycles <= 20 or min(a.idle_before,a.idle_after,a.cycle_interval,a.session_seconds)<0: p.error('Use 1–20 cycles and nonnegative durations')
 if not a.run: p.error('--run is required: creates and deletes owned disposable Incus instances')
 sys.path.insert(0,a.source)
 from orchard_incus.app import App
@@ -295,9 +298,6 @@ def cancelled_creation():
  existing=yield from query('list');assert cancel_name not in {x['name'] for x in existing}
 
 
-def percentile(v,p):
- v=sorted(v);return round(v[int((len(v)-1)*p)],3) if v else None
-
 def frames():
  global tick_id,frame_handler
  yield from select();win.tabs.set_visible_child_name('ov');win.search.set_text(prefix);win.filter_instances()
@@ -322,16 +322,14 @@ def frames():
  until=time.monotonic()+.5;yield from wait(lambda:time.monotonic()>until,'Presentation feedback drain')
  clock.disconnect(frame_handler);frame_handler=0
  raw=[{'counter':t.get_frame_counter(),'start_us':t.get_frame_time(),'presentation_us':t.get_presentation_time(),'refresh_us':t.get_refresh_interval(),'complete':bool(t.get_complete())} for t in frame_refs if t]
- presented=[x for x in raw if x['complete'] and x['presentation_us']>0]
- l=[(x['presentation_us']-x['start_us'])/1000 for x in presented if x['presentation_us']>=x['start_us']]
- stamps=sorted(set(x['presentation_us'] for x in presented));gaps=[(b-a)/1000 for a,b in zip(stamps,stamps[1:])]
- act=[]
- for ts,counter in actions:
-  next_frame=next((x for x in presented if x['counter']>=counter and x['presentation_us']>=ts),None)
-  if next_frame:act.append((next_frame['presentation_us']-ts)/1000)
- report['frames']={'measured':len(raw),'presentation_feedback':len(presented),'refresh_interval_us':statistics.median([x['refresh_us'] for x in presented]),'frame_start_to_presentation_ms':{'p50':percentile(l,.5),'p95':percentile(l,.95),'max':max(l) if l else None},'presentation_gap_ms':{'p50':percentile(gaps,.5),'p95':percentile(gaps,.95),'max':max(gaps) if gaps else None},'programmatic_action_to_presentation_ms':{'samples':len(act),'p50':percentile(act,.5),'p95':percentile(act,.95),'max':max(act) if act else None},'limits':'Continuous status-text damage plus programmatic GTK navigation, not physical input-to-photon. Missing feedback is not classified as a dropped frame.'}
+ report['frames']=summarize_frames(raw,actions)
+ report['frames'].update(cycle=cycle_index,elapsed=round(time.monotonic()-session_start,3),active_at_end=win.is_active(),mapped_at_end=win.get_mapped())
  report.setdefault('frame_runs',[]).append(report['frames'])
+ (out/f'frames-cycle-{cycle_index}.json').write_text(json.dumps({'frames':raw,'actions':actions,'summary':report['frames']},indent=2))
  (out/'frames.json').write_text(json.dumps(raw,indent=2))
+ (out/'report.json').write_text(json.dumps(report,indent=2))
+ if report['frames']['status']!='complete':
+  raise RuntimeError('Frame probe '+report['frames']['status']+': insufficient presentation/action coverage; inspect saved raw evidence and window visibility')
  win.pages.set_visible_child_name('inst');win.tabs.set_visible_child_name('de');win.set_default_size(780,480)
  until=time.monotonic()+.6;yield from wait(lambda:time.monotonic()>until,'Narrow layout settle')
  paint=Gtk.WidgetPaintable.new(win);snap=Gtk.Snapshot();paint.snapshot(snap,win.get_width(),win.get_height());node=snap.to_node()
@@ -341,12 +339,15 @@ def frames():
 
 workflow_phases=[('create-dialog',creation),('duplicate-name-preserves-existing-guest',duplicate_name),('run-files-and-transfer',run_and_files),('settings',settings),('folder-and-port-devices',devices),('lifecycle-and-snapshot-restore',lifecycle_snapshot),('clone-rename-delete',clone_rename_delete),('native-vm-create-run-delete',virtual_machine),('native-terminal-and-backup-portal',native_shell_and_portals),('cancel-create-and-cleanup',cancelled_creation),('frame-presentation-and-layout',frames)]
 session_start=time.monotonic()
+cycle_index=0
+report['started_utc']=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())
+report['pid']=os.getpid()
 samples_file=(out/'resources.jsonl').open('w',buffering=1)
 def resources():
  usage=resource.getrusage(resource.RUSAGE_SELF);children=resource.getrusage(resource.RUSAGE_CHILDREN)
  status=dict(x.split(':',1) for x in pathlib.Path('/proc/self/status').read_text().splitlines())
  smaps=dict(x.split(':',1) for x in pathlib.Path('/proc/self/smaps_rollup').read_text().splitlines()[1:] if ':' in x)
- return {'elapsed':round(time.monotonic()-session_start,3),'phase':phase_name,'cpu_seconds':usage.ru_utime+usage.ru_stime,'child_cpu_seconds':children.ru_utime+children.ru_stime,
+ return {'elapsed':round(time.monotonic()-session_start,3),'cycle':cycle_index,'phase':phase_name,'cpu_seconds':usage.ru_utime+usage.ru_stime,'child_cpu_seconds':children.ru_utime+children.ru_stime,
          'rss_kib':int(status['VmRSS'].split()[0]),'pss_kib':int(smaps['Pss'].split()[0]),'private_kib':sum(int(smaps.get(k,'0').split()[0]) for k in ('Private_Clean','Private_Dirty')),
          'threads':int(status['Threads']),'fds':len(list(pathlib.Path('/proc/self/fd').iterdir())),
          'active':bool(win.is_active()),'mapped':bool(win.get_mapped()),'minimized':bool(win.get_surface() and win.get_surface().get_state() & Gdk.ToplevelState.MINIMIZED),
@@ -360,11 +361,14 @@ def checkpoint():
  gc.collect()
  result=resources();result['python_tracked_objects']=len(gc.get_objects())
  return result
-def idle(seconds):
+def idle_until(deadline):
  def run():
   win.pages.set_visible_child_name('dash')
-  deadline=time.monotonic()+seconds
-  yield from wait(lambda:time.monotonic()>=deadline,'Idle resource observation',seconds+5)
+  yield from wait(lambda:time.monotonic()>=deadline,'Idle resource observation',max(0,deadline-time.monotonic())+5)
+ return run
+def idle(seconds):
+ def run():
+  yield from idle_until(time.monotonic()+seconds)()
  return run
 def cleanup_cycle():
  yield from select();win.delete();yield from accept(dialog())
@@ -373,7 +377,8 @@ def cleanup_cycle():
  yield from wait(lambda:time.monotonic()>until and not win.cleaning and not win.exec_proc and not win.instance_writes,'Cycle quiescent')
 def prepare_cycle(cycle):
  def run():
-  global name,clone,renamed,vm_name,cancel_name,frame_refs,actions
+  global name,clone,renamed,vm_name,cancel_name,frame_refs,actions,cycle_index
+  cycle_index=cycle
   name=prefix+f'-c{cycle}-dev';clone=prefix+f'-c{cycle}-copy';renamed=prefix+f'-c{cycle}-renamed';vm_name=prefix+f'-c{cycle}-vm';cancel_name=prefix+f'-c{cycle}-cancel'
   owned.update((name,clone,renamed,vm_name,cancel_name));(out/'owned.json').write_text(json.dumps(sorted(owned)))
   frame_refs=[];actions=[]
@@ -382,12 +387,15 @@ def prepare_cycle(cycle):
 def session_phases():
  if a.idle_before:yield ('idle-before',idle(a.idle_before))
  for cycle in range(1,a.cycles+1):
+  if a.cycle_interval and cycle>1:
+   yield (f'idle-before-cycle-{cycle}',idle_until(session_start+a.idle_before+(cycle-1)*a.cycle_interval))
   yield (f'cycle-{cycle}-prepare',prepare_cycle(cycle))
   yield from workflow_phases
   yield (f'cycle-{cycle}-cleanup',cleanup_cycle)
  if a.idle_after:yield ('idle-after',idle(a.idle_after))
+ if a.session_seconds:yield ('idle-session-tail',idle_until(session_start+a.session_seconds))
 phases=iter(session_phases())
-report['session']={'cycles':a.cycles,'idle_before_seconds':a.idle_before,'idle_after_seconds':a.idle_after,'resource_sampling_seconds':5,'cpu_percent_definition':'100% = one CPU core; process and reaped CLI-child CPU reported separately; background daemon/VM/compositor costs excluded'}
+report['session']={'cycles':a.cycles,'idle_before_seconds':a.idle_before,'idle_after_seconds':a.idle_after,'cycle_interval_seconds':a.cycle_interval,'minimum_duration_seconds':a.session_seconds,'resource_sampling_seconds':5,'cpu_percent_definition':'100% = one CPU core; process and reaped CLI-child CPU reported separately; background daemon/VM/compositor costs excluded'}
 
 def next_phase():
  global phase_iter,phase_name,pending,phase_start
@@ -398,7 +406,7 @@ def next_phase():
 def advance():
  global pending
  if win.closing:
-  results.append({'workflow':phase_name,'passed':False,'error':'Audit window was closed; session interrupted'})
+  results.append({'workflow':phase_name,'cycle':cycle_index,'elapsed':round(time.monotonic()-session_start,3),'passed':False,'error':'Audit window was closed; session interrupted'})
   finish();return False
  try:
   if pending:
@@ -410,34 +418,53 @@ def advance():
    pending=None
   pred,label,seconds=next(phase_iter);print('WAIT',label,flush=True);pending=(pred,label,time.monotonic()+seconds,len(errors))
  except StopIteration:
-  results.append({'workflow':phase_name,'passed':True,'seconds':round(time.monotonic()-phase_start,2),'resources':checkpoint()});print('PASS',phase_name,flush=True)
+  results.append({'workflow':phase_name,'cycle':cycle_index,'elapsed':round(time.monotonic()-session_start,3),'passed':True,'seconds':round(time.monotonic()-phase_start,2),'resources':checkpoint()});print('PASS',phase_name,flush=True)
   return next_phase()
  except Exception as e:
-  results.append({'workflow':phase_name,'passed':False,'error':str(e)});traceback.print_exc()
+  results.append({'workflow':phase_name,'cycle':cycle_index,'elapsed':round(time.monotonic()-session_start,3),'passed':False,'error':str(e)});traceback.print_exc()
   if phase_name=='create-dialog':finish();return False
   return next_phase()
  return True
 
+def cleanup_owned_guests():
+ # Closing during a metadata write can briefly leave Incus's update lock held.
+ # Recheck both exact name and creation token on every bounded retry.
+ existing={x['name'] for x in backend.ijson('list')}
+ for n in sorted(owned & existing):
+  for attempt in range(10):
+   current=next((x for x in backend.ijson('list') if x['name']==n),None)
+   if current is None or (current.get('config') or {}).get(backend.CREATION_TOKEN_KEY) not in created_tokens:
+    break
+   try:
+    backend.incus('delete','--force',n,timeout=60)
+    break
+   except RuntimeError as error:
+    if 'busy running' not in str(error).lower() or attempt==9:raise
+    time.sleep(.5)
+
 def finish():
  global tick_id,frame_handler
  if tick_id:win.remove_tick_callback(tick_id)
- if frame_handler:win.get_frame_clock().disconnect(frame_handler)
+ clock=win.get_frame_clock()
+ if frame_handler and clock:clock.disconnect(frame_handler)
  sample_resources();GLib.source_remove(sample_id);samples_file.close()
  win.close()
  def clean():
-  # Only exact unique names owned by this run may be deleted.
-  existing={x['name']:x for x in backend.ijson('list')}
-  for n in owned & existing.keys():
-   if (existing[n].get('config') or {}).get(backend.CREATION_TOKEN_KEY) in created_tokens:
-    backend.incus('delete','--force',n,timeout=60)
+  cleanup_owned_guests()
   final={x['name']:x['status'] for x in backend.ijson('list')}
   report['cleanup']={'owned_remaining':sorted(owned & final.keys()),'existing_guests_preserved':all(final.get(n)==s for n,s in initial.items())}
+  report['session']['elapsed_seconds']=round(time.monotonic()-session_start,3)
+  report['qualification']={'passed':not errors and all(x['passed'] for x in results) and report['cleanup']['existing_guests_preserved'] and not report['cleanup']['owned_remaining'] and report['session']['elapsed_seconds']>=a.session_seconds and sum(x['workflow'].endswith('-cleanup') and x['passed'] for x in results)==a.cycles,'completed_cycles':sum(x['workflow'].endswith('-cleanup') and x['passed'] for x in results),'required_cycles':a.cycles,'duration_met':report['session']['elapsed_seconds']>=a.session_seconds}
+  report['ended_utc']=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())
   report['expected_errors']=expected_errors;report['errors']=errors;(out/'report.json').write_text(json.dumps(report,indent=2)+'\n')
  def cleanup_ended(future):
   try:
    error=future.exception()
    if error:
     report['cleanup']={'error':str(error)}
+    report['session']['elapsed_seconds']=round(time.monotonic()-session_start,3)
+    report['ended_utc']=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())
+    report['qualification']={'passed':False,'reason':'Cleanup failed'}
     (out/'report.json').write_text(json.dumps(report,indent=2)+'\n')
   finally:
    GLib.idle_add(loop.quit)
@@ -450,11 +477,8 @@ try:
 finally:
  win.close()
  if 'cleanup' not in report:
-  existing={x['name']:x for x in backend.ijson('list')}
-  for n in owned & existing.keys():
-   if (existing[n].get('config') or {}).get(backend.CREATION_TOKEN_KEY) in created_tokens:
-    backend.incus('delete','--force',n,timeout=60)
+  cleanup_owned_guests()
  pool.shutdown(wait=True)
 print(json.dumps(report,indent=2),flush=True)
-if errors or any(not r['passed'] for r in results) or report.get('cleanup',{}).get('error') or report.get('cleanup',{}).get('owned_remaining') or not report.get('cleanup',{}).get('existing_guests_preserved'):
+if not report.get('qualification',{}).get('passed') or errors or any(not r['passed'] for r in results) or report.get('cleanup',{}).get('error') or report.get('cleanup',{}).get('owned_remaining') or not report.get('cleanup',{}).get('existing_guests_preserved'):
  sys.exit(1)
