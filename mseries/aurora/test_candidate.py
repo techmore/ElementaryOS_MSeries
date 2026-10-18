@@ -62,6 +62,7 @@ class CandidateTests(unittest.TestCase):
             (root / "source/fixture").write_text("original")
             (root / "build/.config").write_text("original config")
             receipt = dict(series_sha256=candidate.sha256(candidate.MANIFEST), base_pins=PINS,
+                           source_tree_sha256=candidate.tree_digest(root / "source"),
                            modified_files={"fixture": candidate.sha256(root / "source/fixture")},
                            prepared_config_sha256=candidate.sha256(root / "build/.config"))
             (root / "candidate.json").write_text(json.dumps(receipt))
@@ -73,6 +74,14 @@ class CandidateTests(unittest.TestCase):
             (root / "source/fixture").write_text("changed source")
             with self.assertRaisesRegex(ValueError, "source changed"):
                 candidate.verify(root)
+
+    def test_full_tree_binding_detects_an_edit_outside_the_patch_series(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "untouched.c").write_text("original kernel file")
+            before = candidate.tree_digest(root)
+            (root / "untouched.c").write_text("unrecorded change")
+            self.assertNotEqual(candidate.tree_digest(root), before)
 
     def test_existing_output_and_boot_directories_are_refused(self):
         with tempfile.TemporaryDirectory() as temporary:

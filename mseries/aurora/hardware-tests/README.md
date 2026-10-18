@@ -1,0 +1,77 @@
+# Hardware test receipts and release freezes
+
+Hardware labels belong to an exact board + kernel image + selected module/DTB
+hashes + m1n1 boot-payload hash + runtime feature parameters. Tests on a J316S
+are not automatically J314S tests. A successful compile, a bound driver and a
+successful suspend are separate results.
+
+Current recorded release:
+
+| Kernel | Board | Result | Release status |
+| --- | --- | --- | --- |
+| Aurora `.20`, `7.1.12-2-20261017.20-sep-ARCH` | Local J314S/M1 Pro | Boot observed >5 min, PMP ready/started/owns fabric, idle counters advance, selected severe-log scan clear | [Frozen experimental exp1](../frozen/mseries-aurora20-j314s-2026.10.18-exp1.json); incomplete qualification |
+| Aurora `.19` with historical hand-patched boot payload | Local J314S/M1 Pro | Historical hangs/probe failures in `AURORA-SECOND-BOOT.md` | Rejected for promotion; historical evidence, no new test receipt |
+| `.20-enh1` / `-egpu` | ARM64 CI | Prior native builds passed; new integrated build checked by CI | Hardware untested |
+| `7.2.10-elementary-aurora72-wip1` | Pinned PR #139 snapshot | Prepared; 12 PMP production host tests passed; native build in CI | Hardware untested; upstream contributor reports remain separate |
+
+## Collect without changing the machine
+
+Save the current kernel journal as JSON into a private work directory. The
+collector checks its `_BOOT_ID` against the live boot before reading readiness
+messages. Pass the exact kernel/boot payload files explicitly:
+
+```sh
+sudo journalctl -b -k -o json --no-pager > /absolute/work/kernel.jsonl
+python3 mseries/aurora/qualification.py collect --duration 30 \
+  --kernel-image /boot/vmlinuz-aurora-sep-20261017.20 \
+  --boot-image /boot/m1n1/boot.bin --kernel-log /absolute/work/kernel.jsonl \
+  --output /absolute/work/j314s-test.json
+```
+
+It records SMC total-system power samples, median and p10/p90, per-CPU idle
+counter deltas, power source, brightness, connector enumeration, cpufreq,
+module parameters and selected artifact hashes. It performs no boot, suspend,
+sensor probe, disk workload, display-rate change or audio change. Kernel-log
+UUIDs/addresses and full command lines are not copied into the public receipt;
+the current-boot ID and whitelisted feature flags are retained. Module hashes
+describe installed files; they do not prove a module was not replaced on disk
+after it was loaded. Kernel image identity describes the explicit boot file.
+Archive the corresponding original package as well when freezing distribution.
+The [binary verification](2026-10-18-j314s-binary-verification.json) confirms
+that the observed boot image, appledrm/SEP module files and J314S DTB exactly
+match entries in the checksum-pinned published `.20` package. CI verifies that
+proof against the receipt and upstream pins with `--binary-proof`.
+
+The first capture occurred during agent/source activity. Its power reading is
+an uncontrolled observation. `controls_unchanged` verifies configuration,
+not a matched workload or an idle session. No efficiency claim follows.
+
+## Freeze and verify
+
+```sh
+python3 mseries/aurora/qualification.py freeze --id NEW-LOWERCASE-RELEASE-ID \
+  --evidence /absolute/work/j314s-test.json --output /absolute/work/frozen.json
+python3 mseries/aurora/qualification.py verify /absolute/work/frozen.json \
+  --evidence /absolute/work/j314s-test.json
+```
+
+Default channel is experimental. Existing outputs are refused. A published
+release ID is immutable: new bits, configuration or evidence produce a new
+release. Verification recomputes the complete manifest and rejects manually
+edited qualification labels, changed pins/evidence or mixed identities.
+
+Stable promotion requires pass evidence for boot, graphics, GPU, storage,
+network, input, suspend/resume, recovery, thermal and paired energy tests, no
+failed case, three distinct boots, at least three sleep cycles and three
+alternating AB/BA power pairs with matching control digests. Each pair requires
+positive finite measured medians and must stay within a 10% regression budget.
+The acceptance budget is not a claimed improvement. `energy_ab` records use
+`successful_cycles`, plus a `pairs` list with `order`, `baseline_controls_sha256`,
+`candidate_controls_sha256`, `baseline_median_w` and `candidate_median_w`.
+Retain raw benchmark evidence and human verification notes with those records.
+The read-only collector never manufactures these active-test results.
+
+The measured `.20` baseline is pinned by `release.json`. Source candidates
+need their own build-provenance/pin record with the matching `kernel_release`;
+using the baseline pins for a candidate fails admission. No freeze command
+installs a kernel, changes a boot entry or promotes an experimental default.

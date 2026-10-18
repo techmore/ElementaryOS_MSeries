@@ -10,7 +10,7 @@ on:
       profile:
         description: Kernel profile (eGPU remains an unqualified experiment)
         type: choice
-        options: [candidate, egpu]
+        options: [candidate, egpu, unified72]
         default: candidate
 
 permissions:
@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        profile: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.profile)) || fromJSON('["candidate","egpu"]') }}
+        profile: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', inputs.profile)) || fromJSON('["candidate","unified72"]') }}
     steps:
       - uses: actions/checkout@v7
       - name: Install native build tools
@@ -59,7 +59,7 @@ jobs:
         run: |
           cd "$RUNNER_TEMP/aurora-enhancements"
           sha256sum --check SHA256SUMS
-          deb=(linux-image-elementary-aurora-enhancements*.deb)
+          deb=(linux-image-elementary-aurora*.deb)
           test "${#deb[@]}" -eq 1
           dpkg-deb --info "${deb[0]}"
           dpkg-deb --control "${deb[0]}" "$RUNNER_TEMP/candidate-control"

@@ -1,5 +1,39 @@
 # OS 9 implementation / Claude Code handoff
 
+## Aurora energy ports, hardware receipts and frozen releases — 2026-10-18
+
+Owner requested all Aurora energy/WIP improvements plus tested kernel labels
+and frozen feature releases. Work is isolated in the aurora-energy-releases
+checkout; original power-usage checkout and its untracked rust work are intact.
+[Implemented plan](aurora/ENERGY-PORT-PLAN-2026-10-18.md): refreshed all 52 branch
+heads and 12 open PR heads; ten immutable energy-file comparisons. J314S DT,
+PMGR, CPU idle and PMP helpers/tests are identical between `.20` and the new
+draft PR #139 7.2.10 snapshot. Preserve already included behavior rather than
+reapplying historical patches. The draft's J316S results are not this J314S.
+
+Integrated PR #79's existing source-build lane and six authored, pinned patches
+with both documentation histories retained. Local adapter/promotion tests and
+production thermal/SMC checks pass. Added separately pinned `unified72` source
+preparation/check/build and another ARM64 CI profile; 12 production PMP tests
+pass locally. Release identities/package/module directories remain distinct.
+
+`qualification.py` now collects current-boot JSON-journal-bound read-only
+receipts and freezes/verifies exact source/recipe/kernel/boot/module/runtime
+parameter identities. Captured the running `.20` + matched 9c9c2d01… payload:
+boot >5 min, PMP ready/started/PMGR ownership, advancing idle counters and no
+selected severe-log messages. **Frozen experimental exp1**, not stable. The
+30-second SMC reading is during active work and is not an idle/A-B result.
+The released `.20` binary was repackaged into a native payload-only .deb with
+corresponding source/recipe retained; no installation occurred.
+
+Stable promotion refuses missing cases, failed results, mixed identities,
+fewer than three boots/sleep cycles or unmatched energy pairs; frozen IDs are
+write-once. Hardware wake/storage/GPU/ports/thermal/recovery and paired energy
+work remains. No kernel, bootloader, default/next-entry, refresh, brightness,
+sensor, audio or suspend action was changed by this batch. Next: use CI-built
+candidate artifacts for a reviewed non-default boot/rollback batch, then record
+the full J314S acceptance matrix before any stable promotion.
+
 ## Window snapping remains enabled; native quarters installed — 2026-10-18
 
 Owner requested permanent snapping and quarter layouts. Live edge-tiling was

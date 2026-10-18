@@ -2,14 +2,17 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Prepare, test or build the separate Aurora enhancement candidate; never install."""
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
 import platform
+import re
 import shutil
 import subprocess
 import tarfile
 import tempfile
+import urllib.request
 
 from release import HERE, PINS, asset, extract, sha256, validate_kernel
 
@@ -21,12 +24,32 @@ def run(*args, **kwargs):
     subprocess.run([str(arg) for arg in args], check=True, **kwargs)
 
 
-def series():
-    data = json.loads(MANIFEST.read_text())
+def tree_digest(root):
+    """Bind every source file, executable bit and symlink, not only patch hunks."""
+    root = Path(root)
+    result = hashlib.sha256()
+    for path in sorted(root.rglob("*")):
+        if path.is_symlink():
+            entry = [str(path.relative_to(root)), "symlink", os.readlink(path)]
+        elif path.is_file():
+            entry = [str(path.relative_to(root)), path.stat().st_mode & 0o111, sha256(path)]
+        else:
+            continue
+        result.update(json.dumps(entry, separators=(",", ":")).encode() + b"\n")
+    return result.hexdigest()
+
+
+def manifest(profile):
+    return HERE / "unified72/series.json" if profile == "unified72" else MANIFEST
+
+
+def series(profile="candidate"):
+    path = manifest(profile)
+    data = json.loads(path.read_text())
     if data["base_source"] != PINS["kernel_source"]:
         raise ValueError("candidate base and release pins differ: rebase before updating")
     for patch in data["patches"]:
-        if sha256(ENHANCEMENTS / "patches" / patch["file"]) != patch["sha256"]:
+        if sha256(path.parent / "patches" / patch["file"]) != patch["sha256"]:
             raise ValueError(f"candidate patch checksum mismatch: {patch['file']}")
     return data
 
@@ -85,11 +108,32 @@ def fresh(path, *, outside=None):
 
 
 def prepare(cache, output, profile, offline):
-    data = series()
+    data = series(profile)
     # Verify both original inputs before creating the output directory.
-    inputs = {kind: asset(cache, kind, offline=offline) for kind in ("source", "recipe")}
+    inputs = {"recipe": asset(cache, "recipe", offline=offline)}
+    source_pin = data.get("source")
+    if source_pin:
+        path = Path(cache) / source_pin["name"]
+        if not path.exists():
+            if offline:
+                raise ValueError(f"missing cached input: {path}")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            temporary = path.with_suffix(path.suffix + ".part")
+            try:
+                with urllib.request.urlopen(source_pin["url"], timeout=120) as src, temporary.open("wb") as dst:
+                    shutil.copyfileobj(src, dst)
+                if sha256(temporary) != source_pin["sha256"]:
+                    raise ValueError("unified source checksum mismatch")
+                temporary.replace(path)
+            finally:
+                temporary.unlink(missing_ok=True)
+        if sha256(path) != source_pin["sha256"]:
+            raise ValueError("unified source checksum mismatch")
+        inputs["source"] = path
+    else:
+        inputs["source"] = asset(cache, "source", offline=offline)
     root = fresh(output)
-    upstream = "aurora-linux-" + PINS["kernel_source"]
+    upstream = source_pin["archive_root"] if source_pin else "aurora-linux-" + PINS["kernel_source"]
     extract(inputs["source"], root, (upstream,))
     source = root / "source"
     (root / upstream).rename(source)
@@ -100,7 +144,7 @@ def prepare(cache, output, profile, offline):
     selected = [patch for patch in data["patches"] if patch["profile"] == "candidate" or profile == "egpu"]
     modified = set()
     for patch in selected:
-        path = ENHANCEMENTS / "patches" / patch["file"]
+        path = manifest(profile).parent / "patches" / patch["file"]
         # Each series member must apply without fuzz; do not silently skip conflicts.
         run("git", "apply", "--check", path, cwd=source)
         run("git", "apply", path, cwd=source)
@@ -109,7 +153,12 @@ def prepare(cache, output, profile, offline):
     # A distinct modules directory prevents overwriting the released .20 modules.
     if list(source.glob("localversion*")):
         raise ValueError("unexpected upstream localversion: review version composition")
-    suffix = data["kernel_release"][profile].removeprefix("7.1.12")
+    makefile = (source / "Makefile").read_text()
+    base_version = ".".join(re.search(rf"^{key}\s*=\s*(\d+)$", makefile, re.M)[1]
+                            for key in ("VERSION", "PATCHLEVEL", "SUBLEVEL"))
+    if not data["kernel_release"][profile].startswith(base_version + "-"):
+        raise ValueError("kernel release does not match source Makefile")
+    suffix = data["kernel_release"][profile].removeprefix(base_version)
     (source / "localversion.elementary").write_text(suffix + "\n")
     modified.add("localversion.elementary")
     config = configure((recipe / "config").read_text(), settings(data, profile))
@@ -119,7 +168,9 @@ def prepare(cache, output, profile, offline):
     shutil.copy2(recipe / "rust-toolchain.toml", source / "rust-toolchain.toml")
     modified.add("rust-toolchain.toml")
     receipt = {"profile": profile, "kernel_release": data["kernel_release"][profile],
-               "base_pins": PINS, "series_sha256": sha256(MANIFEST), "patches": selected,
+               "base_pins": PINS, "series_sha256": sha256(manifest(profile)), "patches": selected,
+               "source_pin": source_pin,
+               "source_tree_sha256": tree_digest(source),
                "modified_files": {name: sha256(source / name) for name in sorted(modified)},
                "prepared_config_sha256": sha256(root / "build/.config"),
                "status": "prepared only; no ARM64 kernel build or hardware boot"}
@@ -129,28 +180,32 @@ def prepare(cache, output, profile, offline):
 
 
 def verify(root):
-    data = series()
     receipt = json.loads((root / "candidate.json").read_text())
-    if receipt["series_sha256"] != sha256(MANIFEST) or receipt["base_pins"] != PINS:
+    profile = receipt.get("profile", "candidate")
+    data = series(profile)
+    if receipt["series_sha256"] != sha256(manifest(profile)) or receipt["base_pins"] != PINS or receipt.get("source_pin") != data.get("source"):
         raise ValueError("prepared candidate no longer matches the repository inputs")
     for name, digest in receipt["modified_files"].items():
         if sha256(root / "source" / name) != digest:
             raise ValueError(f"prepared source changed: {name}")
+    if not receipt.get("source_tree_sha256") or tree_digest(root / "source") != receipt["source_tree_sha256"]:
+        raise ValueError("prepared source tree changed or receipt missing: prepare afresh")
     if sha256(root / "build/.config") != receipt["prepared_config_sha256"]:
         raise ValueError("prepared configuration changed: start a fresh build")
     return data, receipt
 
 
 def check(root):
-    verify(root)
+    data, receipt = verify(root)
     source = root / "source"
     # These are the upstream tests of production Rust modules, not duplicated policy.
     with tempfile.TemporaryDirectory(prefix="aurora-host-tests-") as temporary:
-        binary = Path(temporary) / "m3-runtime-tests"
-        run("rustc", "--edition=2021", "--test", "-D", "warnings",
-            source / "tools/asahi/m3-runtime-tests.rs", "-o", binary, cwd=root)
-        run(binary)
-    run("python3", ENHANCEMENTS / "check-macsmc.py", source)
+        for index, test in enumerate(data.get("host_tests", ["tools/asahi/m3-runtime-tests.rs"])):
+            binary = Path(temporary) / f"production-tests-{index}"
+            run("rustc", "--edition=2021", "--test", "-D", "warnings", source / test, "-o", binary, cwd=root)
+            run(binary)
+    if receipt["profile"] != "unified72":
+        run("python3", ENHANCEMENTS / "check-macsmc.py", source)
 
 
 def build(root, output, jobs):
@@ -196,7 +251,7 @@ def build(root, output, jobs):
         validate_kernel(payload, actual)
         modprobe = payload / "usr/lib/modprobe.d"
         modprobe.mkdir(parents=True)
-        name = "linux-image-elementary-aurora-enhancements" + ("-egpu" if receipt["profile"] == "egpu" else "")
+        name = data.get("debian_package", "linux-image-elementary-aurora-enhancements" + ("-egpu" if receipt["profile"] == "egpu" else ""))
         # A shared filename would make dpkg reject co-installation with .20
         # (or the other candidate profile), even when its content is identical.
         shutil.copy2(root / "recipe/linux-aurora-phram.conf", modprobe / f"{name}-phram.conf")
@@ -204,14 +259,14 @@ def build(root, output, jobs):
         docs.mkdir(parents=True)
         shutil.copy2(source / "COPYING", docs)
         shutil.copytree(source / "LICENSES", docs / "LICENSES")
-        shutil.copytree(ENHANCEMENTS, docs / "enhancements")
+        shutil.copytree(manifest(receipt["profile"]).parent, docs / "enhancements")
         shutil.copytree(root / "recipe", docs / "upstream-recipe")
         shutil.copy2(out / ".config", docs / "build.config")
         shutil.copy2(root / "candidate.json", docs)
         (docs / "README").write_text("Experimental source-built kernel. No maintainer scripts or /boot files.\n"
                                     "Not supported by the fixed-release Aurora20 installer/stager.\n"
                                     "Hardware qualification and a matched boot-chain review are required.\n")
-        version = "7.1.12+elementary.aurora20.enh1-1"
+        version = data.get("debian_version", "7.1.12+elementary.aurora20.enh1-1")
         size = sum(path.stat().st_size for path in payload.rglob("*") if path.is_file()) // 1024
         (control / "control").write_text(f"Package: {name}\nVersion: {version}\nArchitecture: arm64\n"
             "Maintainer: ElementaryOS MSeries contributors <builder@localhost>\n"
@@ -233,7 +288,7 @@ def build(root, output, jobs):
     receipt["package_compression"] = {"format": "zstd", "level": 3, "max_threads": jobs}
     (output / "provenance.json").write_text(json.dumps(receipt, indent=2) + "\n")
     shutil.copy2(out / ".config", output / "build.config")
-    shutil.copytree(ENHANCEMENTS, output / "enhancements")
+    shutil.copytree(manifest(receipt["profile"]).parent, output / "enhancements")
     (output / "SHA256SUMS").write_text("".join(f"{sha256(path)}  {path.name}\n" for path in sorted(output.iterdir())
                                                   if path.is_file() and path.name != "SHA256SUMS"))
     print(f"Built {package}; no installation or boot changes", flush=True)
@@ -245,7 +300,7 @@ def main():
     prep = commands.add_parser("prepare")
     prep.add_argument("--cache", type=Path, required=True)
     prep.add_argument("--output", type=Path, required=True)
-    prep.add_argument("--profile", choices=("candidate", "egpu"), default="candidate")
+    prep.add_argument("--profile", choices=("candidate", "egpu", "unified72"), default="candidate")
     prep.add_argument("--offline", action="store_true")
     for command in ("check", "build"):
         sub = commands.add_parser(command)

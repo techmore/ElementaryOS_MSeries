@@ -24,6 +24,10 @@ jobs:
           bash -n mseries/aurora-sep/install-aurora-sep.sh
           shellcheck -S warning mseries/aurora-sep/install-aurora-sep.sh
           python3 -m unittest discover -s mseries/aurora -p 'test_*.py' -v
+          python3 mseries/aurora/qualification.py verify \
+            mseries/aurora/frozen/mseries-aurora20-j314s-2026.10.18-exp1.json \
+            --evidence mseries/aurora/hardware-tests/2026-10-18-j314s-aurora20.json \
+            --binary-proof mseries/aurora/hardware-tests/2026-10-18-j314s-binary-verification.json
       - name: Package the unchanged public kernel and corresponding source
         run: |
           python3 mseries/aurora/package-release.py --cache "$RUNNER_TEMP/aurora-cache" --output "$RUNNER_TEMP/aurora-port"
