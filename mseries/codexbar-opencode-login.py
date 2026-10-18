@@ -5,7 +5,8 @@ Upstream CodexBar reads OpenCode Go quota with an API key (usage API) or an open
 only imports browser cookies on macOS. The Connect window takes an API key copied after signing in in the
 real browser (passkeys work there) and stores it with `codexbar config set-api-key`. As a fallback it signs
 in inside a built-in window and saves only the session cookies upstream forwards as a manual Cookie header
-(providers[opencodego]: cookieSource "manual", cookieHeader).
+(providers[opencodego]: cookieSource "manual", cookieHeader). Browser account sign-in uses the official
+OpenCode device-login CLI; OpenCode stores/activates the account and CodexBar verifies it read-only.
 
   codexbar-opencode-login.py login     connect, then check that quota now loads
   codexbar-opencode-login.py status    JSON: {"signedIn": bool}
@@ -18,10 +19,16 @@ import fcntl
 import json
 import os
 import pathlib
+import re
+import shutil
+import signal
+import sqlite3
+import threading
+import urllib.parse
 import subprocess
 import sys
 import tempfile
-from typing import Any
+from typing import Any, Callable
 
 SIGN_IN_URL = "https://opencode.ai/auth"
 # The cookies upstream forwards (OpenCodeWebCookieSupport.requestCookieNames); nothing else is kept.
@@ -119,6 +126,136 @@ def save_api_key(key: str) -> str | None:
     return None if result.returncode == 0 else (result.stderr.strip() or result.stdout.strip() or "Saving failed.")
 
 
+def browser_accounts() -> list[dict[str, Any]]:
+    """Read only account identities from OpenCode's store; credentials never leave this function."""
+    xdg = os.environ.get("XDG_DATA_HOME", "")
+    base = pathlib.Path(xdg) if xdg and pathlib.Path(xdg).is_absolute() else pathlib.Path.home() / ".local/share"
+    database = base / "opencode/opencode.db"
+    try:
+        with contextlib.closing(sqlite3.connect(database.as_uri() + "?mode=ro", uri=True, timeout=1)) as db:
+            rows = db.execute("SELECT id, active, value FROM credential WHERE integration_id='opencode'").fetchall()
+        accounts = []
+        for ident, active, raw in rows:
+            try:
+                value = json.loads(raw)
+                metadata = value.get("metadata") if isinstance(value, dict) else None
+                if value.get("type") != "oauth" or not isinstance(metadata, dict):
+                    continue
+                email = metadata.get("email")
+                if not isinstance(email, str) or not email or not isinstance(ident, str) or not ident:
+                    continue
+                account_id, org_id = metadata.get("accountID"), metadata.get("orgID")
+                accounts.append({"id": ident, "active": bool(active), "email": email,
+                    "accountID": account_id if isinstance(account_id, str) and account_id else email.lower(),
+                    "orgID": org_id if isinstance(org_id, str) else ""})
+            except (ValueError, AttributeError):
+                continue
+        return accounts
+    except (OSError, sqlite3.Error):
+        return []
+
+
+def approval_url(line: str) -> str | None:
+    """Accept only OpenCode's official device approval page, never arbitrary CLI log URLs."""
+    text = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", line)
+    for raw in re.findall(r"https://[^\s\x1b│<>\"']+", text):
+        try:
+            url = urllib.parse.urlsplit(raw)
+            codes = urllib.parse.parse_qs(url.query).get("user_code", [])
+            if url.scheme == "https" and url.netloc == "opencode.ai" and url.path == "/console/device" \
+                    and not url.fragment and len(codes) == 1 and re.fullmatch(r"[A-Za-z0-9-]{4,64}", codes[0]):
+                return raw
+        except ValueError:
+            pass
+    return None
+
+
+class BrowserLogin:
+    """Let OpenCode own device authorization, credential storage, activation and cancellation."""
+
+    def __init__(self, on_authorize: Callable[[str], None]) -> None:
+        self.on_authorize = on_authorize
+        self.cancelled = threading.Event()
+        self.process: subprocess.Popen[str] | None = None
+        self.timed_out = False
+
+    def cancel(self) -> None:
+        self.cancelled.set()
+        process = self.process
+        if process is not None and process.poll() is None:
+            try:
+                process.send_signal(signal.SIGINT)  # OpenCode's normal interrupt cancels its OAuth attempt.
+            except OSError:
+                return
+            def stop() -> None:
+                if process.poll() is None:
+                    try:
+                        process.kill()
+                    except OSError:
+                        pass
+            timer = threading.Timer(3, stop)
+            timer.daemon = True
+            timer.start()
+
+    def run(self) -> tuple[bool, str]:
+        local = pathlib.Path.home() / ".opencode/bin/opencode"
+        executable = str(local) if local.is_file() and os.access(local, os.X_OK) else shutil.which("opencode")
+        if not executable:
+            return False, "OpenCode's command line was not found. Install OpenCode and try again."
+        before = browser_accounts()
+        if self.cancelled.is_set():
+            return False, "Sign-in cancelled."
+        def expire() -> None:
+            self.timed_out = True
+            self.cancel()
+        timeout = threading.Timer(600, expire)
+        timeout.daemon = True
+        timeout.start()
+        try:
+            self.process = subprocess.Popen([executable, "auth", "login", "opencode", "--method", "device",
+                "--answer", "server=https://opencode.ai/console"], stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1,
+                cwd=pathlib.Path.home(), env={**os.environ, "NO_COLOR": "1"})
+            if self.cancelled.is_set():
+                self.cancel()
+            opened = False
+            assert self.process.stdout is not None
+            for line in iter(lambda: self.process.stdout.readline(8192), ""):
+                url = approval_url(line)
+                if url and not opened and not self.cancelled.is_set():
+                    opened = True
+                    self.on_authorize(url)
+            code = self.process.wait(timeout=5)
+            if self.cancelled.is_set():
+                return False, "Browser sign-in timed out. Please try again." if self.timed_out else "Sign-in cancelled."
+            if code != 0 or not opened:
+                return False, "OpenCode couldn't complete browser sign-in. Please try again."
+            after = browser_accounts()
+            selected = [a for a in after if a["active"]]
+            if len(selected) != 1 or not {a["id"] for a in before}.issubset({a["id"] for a in after}):
+                return False, "OpenCode finished signing in, but the saved accounts could not be verified. Refresh and try again."
+            account = selected[0]
+            key = lambda a: (a["accountID"], a["orgID"])
+            if key(account) in {key(a) for a in before}:
+                return False, "That account is already saved. Sign out of the current browser session and choose your other account, or another workspace."
+            return True, f"Saved {account['email']} in OpenCode. It is now active; switch accounts from CodexBar."
+        except (OSError, ValueError, TypeError, subprocess.SubprocessError):
+            self.cancel()
+            return False, "OpenCode couldn't complete browser sign-in. Please try again."
+        finally:
+            timeout.cancel()
+            if self.process is not None:
+                if self.process.stdout is not None:
+                    self.process.stdout.close()
+                if self.process.poll() is None:
+                    self.cancel()
+                    try:
+                        self.process.wait(timeout=4)
+                    except subprocess.TimeoutExpired:
+                        self.process.kill()
+                        self.process.wait()
+
+
 def profile_session() -> Any:
     from gi.repository import WebKit
     # A private, persistent profile: a later re-sign-in after the session expires is usually one click.
@@ -200,29 +337,47 @@ def build_connect_window(application: Any) -> Any:
             label = Gtk.Label(label="Sign in with your browser", xalign=0)
             label.add_css_class("account-step-title")
             browser_copy.append(label)
-            caption = Gtk.Label(label="Create an API key in the console. Passkeys work in your browser.",
+            caption = Gtk.Label(label="Save another account for quick switching from the panel.",
                                 xalign=0, wrap=True, max_width_chars=30)
             caption.add_css_class("dim-label")
             caption.add_css_class("account-caption")
             browser_copy.append(caption)
-            self.open_site = Gtk.Button(label="Open opencode.ai", halign=Gtk.Align.START)
-            browser_copy.append(self.open_site)
+            self.browser = Gtk.Button(label="Sign in with browser", halign=Gtk.Align.START)
+            self.browser.add_css_class("suggested-action")
+            browser_copy.append(self.browser)
             browser_row.append(browser_copy)
             steps.append(browser_row)
             steps.append(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL))
             key_row = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            self.key_row = key_row
             key_row.add_css_class("account-step")
             self.entry = Gtk.PasswordEntry(show_peek_icon=True, placeholder_text="Paste your API key",
                                           hexpand=True)
-            label = Gtk.Label(label="_API key", use_underline=True, mnemonic_widget=self.entry, xalign=0)
+            label = Gtk.Label(label="_API key", use_underline=True, mnemonic_widget=self.entry, xalign=0, hexpand=True)
             label.add_css_class("account-step-title")
-            key_row.append(label)
+            key_heading = Gtk.Box(spacing=6)
+            key_heading.append(label)
+            self.open_site = Gtk.Button(label="Get a key")
+            self.open_site.add_css_class("flat")
+            key_heading.append(self.open_site)
+            key_row.append(key_heading)
             key_row.append(self.entry)
             caption = Gtk.Label(label="We'll check your key before saving it.", xalign=0, wrap=True)
             caption.add_css_class("dim-label")
             caption.add_css_class("account-caption")
             key_row.append(caption)
             steps.append(key_row)
+            self.browser_prompt = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, visible=False)
+            self.code_label = Gtk.Label(selectable=True, wrap=True)
+            self.code_label.add_css_class("monospace")
+            self.browser_prompt.append(self.code_label)
+            guidance = Gtk.Label(label="Choose your other account in the browser. If it signs in automatically, sign out there first.",
+                                 wrap=True, max_width_chars=40, justify=Gtk.Justification.CENTER)
+            guidance.add_css_class("dim-label")
+            self.browser_prompt.append(guidance)
+            self.reopen_browser = Gtk.Button(label="Open browser again", halign=Gtk.Align.CENTER)
+            self.browser_prompt.append(self.reopen_browser)
+            body.append(self.browser_prompt)
             self.status_row = Gtk.Box(spacing=8, visible=False)
             self.spinner = Gtk.Spinner(visible=False, valign=Gtk.Align.CENTER)
             self.status_row.append(self.spinner)
@@ -230,13 +385,13 @@ def build_connect_window(application: Any) -> Any:
                                     ellipsize=Pango.EllipsizeMode.END, selectable=True, hexpand=True)
             self.status_row.append(self.status)
             body.append(self.status_row)
-            note = Gtk.Label(label="Your API key is saved on this computer.",
+            note = Gtk.Label(label="Browser accounts are saved in OpenCode for switching.",
                              justify=Gtk.Justification.CENTER, wrap=True, max_width_chars=44)
             note.add_css_class("dim-label")
             note.add_css_class("account-note")
             body.append(note)
-            self.here = Gtk.Button(label="Use built-in sign-in instead", halign=Gtk.Align.CENTER,
-                                   tooltip_text="Email or GitHub sign-in in a built-in window (no passkeys)")
+            self.here = Gtk.Button(label="Use built-in quota sign-in", halign=Gtk.Align.CENTER,
+                                   tooltip_text="Email or GitHub web sign-in for quota only. Use browser sign-in above to save switchable accounts.")
             self.here.add_css_class("flat")
             body.append(self.here)
             self.add_button("Cancel", Gtk.ResponseType.CANCEL)
@@ -256,6 +411,7 @@ def build_connect_window(application: Any) -> Any:
 
         def set_busy(self, busy: bool) -> None:
             self.entry.set_sensitive(not busy)
+            self.browser.set_sensitive(not busy)
             self.here.set_sensitive(not busy)
             self.open_site.set_sensitive(not busy)
             self.save.set_sensitive(not busy and bool(self.entry.get_text().strip()))
@@ -266,13 +422,7 @@ def build_connect_window(application: Any) -> Any:
 
 
 def connect() -> str | None:
-    """The Connect window. Returns the success message, or None if it was closed without connecting.
-
-    Passkeys need the real browser (WebKitGTK has no WebAuthn on Linux), so the main path is: sign in to
-    opencode.ai in the default browser, copy an API key, paste it here. Email and GitHub sign-ins can
-    still finish in the built-in window, which saves the web session instead.
-    """
-    import threading
+    """Native browser-account onboarding, with API-key and embedded quota sign-in alternatives."""
 
     import gi
     gi.require_version("Gtk", "4.0")
@@ -280,9 +430,14 @@ def connect() -> str | None:
     from gi.repository import Gio, GLib, Gtk, WebKit
 
     outcome: dict[str, str | None] = {"message": None}
-    app = Gtk.Application(application_id="io.github.mseries.CodexBarOpenCodeLogin")
+    app = Gtk.Application(application_id="io.github.mseries.CodexBarOpenCodeLogin", flags=Gio.ApplicationFlags.NON_UNIQUE)
+    browser_attempt: BrowserLogin | None = None
+    browser_worker: threading.Thread | None = None
 
     def activate(application: Gtk.Application) -> None:
+        nonlocal browser_attempt, browser_worker
+        closed = False
+        current_url = ""
         window = build_connect_window(application)
         entry, save = window.entry, window.save
         window.open_site.connect("clicked", lambda *_: Gio.AppInfo.launch_default_for_uri(SIGN_IN_URL, None))
@@ -291,8 +446,70 @@ def connect() -> str | None:
             window.show_status(text, error)
 
         def finish(message: str) -> None:
-            outcome["message"] = message
-            application.quit()
+            if not closed:
+                outcome["message"] = message
+                application.quit()
+
+        def open_browser(*_args: Any) -> None:
+            if not current_url or closed:
+                return
+            try:
+                Gio.AppInfo.launch_default_for_uri(current_url, None)
+            except GLib.Error:
+                show("Couldn't open your browser. Try Open browser again.", True)
+
+        def start_browser(*_args: Any) -> None:
+            nonlocal browser_attempt, browser_worker
+            if not window.browser.get_sensitive():
+                return
+            window.set_busy(True)
+            window.key_row.set_visible(False)
+            window.browser_prompt.set_visible(False)
+            show("Starting browser sign-in…", False)
+
+            def authorized(url: str) -> None:
+                def ready() -> bool:
+                    nonlocal current_url
+                    if closed:
+                        return False
+                    current_url = url
+                    code = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)["user_code"][0]
+                    window.code_label.set_label("Approval code: " + code)
+                    window.browser_prompt.set_visible(True)
+                    show("Waiting for approval in your browser…", False)
+                    open_browser()
+                    return False
+                GLib.idle_add(ready)
+
+            attempt = BrowserLogin(authorized)
+            browser_attempt = attempt
+            def work() -> None:
+                ok, message = attempt.run()
+                def done() -> bool:
+                    if closed:
+                        return False
+                    if ok:
+                        finish(message)
+                    else:
+                        window.set_busy(False)
+                        window.key_row.set_visible(True)
+                        window.browser_prompt.set_visible(False)
+                        show(message, True)
+                        window.browser.grab_focus()
+                    return False
+                GLib.idle_add(done)
+            browser_worker = threading.Thread(target=work, daemon=True)
+            browser_worker.start()
+
+        def closing(*_args: Any) -> bool:
+            nonlocal closed
+            closed = True
+            if browser_attempt is not None:
+                browser_attempt.cancel()
+            return False
+        window.connect("close-request", closing)
+        window.browser.connect("clicked", start_browser)
+        window.reopen_browser.connect("clicked", open_browser)
 
         def check_key(*_args: Any) -> None:
             key = entry.get_text().strip().strip('"\'')
@@ -368,10 +585,14 @@ def connect() -> str | None:
 
         window.here.connect("clicked", sign_in_here)
         window.present()
-        entry.grab_focus()
+        window.browser.grab_focus()
 
     app.connect("activate", activate)
     app.run([])
+    if browser_attempt is not None:
+        browser_attempt.cancel()
+    if browser_worker is not None:
+        browser_worker.join(timeout=4)
     return outcome["message"]
 
 
@@ -383,8 +604,7 @@ def main(arguments: list[str]) -> int:
     if command == "login":
         message = connect()
         if not message:
-            print("Closed before OpenCode Go was connected.")
-            return 1
+            return 130
         print(message)
         return 0
     print("usage: codexbar-opencode-login.py login | status", file=sys.stderr)

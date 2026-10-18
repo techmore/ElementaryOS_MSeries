@@ -116,6 +116,7 @@ jobs:
           python3 mseries/test-codexbar-claude.py
           python3 mseries/test-codexbar-wrapper.py
           python3 mseries/test-codexbar-opencode-local.py
+          python3 mseries/test-codexbar-opencode-login.py
           python3 -m unittest discover -s mseries/display-space -p 'test_*.py'
           python3 -m py_compile mseries/display-space/*.py
           bash -n mseries/display-space/test-notch-layout.sh

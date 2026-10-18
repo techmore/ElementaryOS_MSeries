@@ -31,6 +31,150 @@ Native long-session measurements and repeated live qualification are in progress
 do not treat the preliminary XWayland/closed-window pilots as native results.
 Next: finish the native before/after sessions, publish scoped results and deploy.
 
+## Combined compact Upcoming and period views — 2026-10-18
+
+Integrated main's Month/Week/Day agendas and readable neutral event cards with
+the compact Upcoming default. Upcoming remains independent of calendar browsing
+and spans the next 30 local dates; explicit period views and their navigation
+remain available. Event title/time share one compact row. Expand a row for its
+calendar/location/description; full titles retain hover text. Tasks stays compact.
+
+All eleven actual-plugin/EDS groups pass, covering Upcoming boundaries, all
+period modes, recurring/multi-day events, descriptions, navigation, retained
+mode, task completion and live source changes. Both earlier implementation
+histories are retained below. Factory build/boot remains unverified.
+
+
+## Compact upcoming agenda — 2026-10-18
+
+Event title and time now share one line with tighter row padding and date
+headings. Task rows have less vertical spacing and compact subtitles.
+Ellipsized event/task titles and task details retain full hover text.
+The Upcoming 30-day label and date grouping remain. Integrated current main's
+standalone factory account frontend and preserved both documentation histories.
+
+Validation: native ARM64 build and existing real-plugin EDS/navigation
+regressions; rendered Events and Tasks previews. Authenticated read-only
+calendar/task comparisons pass, and the release build is installed locally.
+Five image-wiring regressions pass. Factory boot remains separate.
+
+
+## Upcoming calendar agenda — 2026-10-18
+
+Events now always displays a rolling 30-day agenda, explicitly labeled
+“Upcoming · next 30 days” and grouped by local date with Today/Tomorrow headings.
+The independent EDS view spans month boundaries and is unaffected by browsing
+the left calendar. Ongoing events stay visible; ended and out-of-range events
+are hidden. A minute timer while open updates expiry and daily range rollover.
+Tasks retains its shared EDS data. The prior Calendar Today-navigation fix is
+preserved. [Behavior and install](calendar/README.md).
+
+Validation: native ARM64 build, real-plugin EDS regressions for rolling range,
+ongoing/past/boundary events and calendar navigation, plus existing live
+edit/completion/source tests. The release build is installed and Wingpanel
+loaded its new module. Authenticated read-only comparisons with real Google
+events and Tasks pass without logging titles or modifying records. Four image
+wiring tests pass. Factory build/boot remains unverified.
+
+## CodexBar OpenCode browser account onboarding — 2026-10-18
+
+OpenCode + now offers Sign in with browser in the existing native Granite sheet. The official
+OpenCode device-login CLI owns authorization, storage and activation; the helper validates the
+official approval URL, shows its code and verifies the new identity plus retention of every old
+credential ID. Duplicate identities prompt retry with another browser account/workspace. The
+API-key path and embedded quota-only fallback remain. Cancellation interrupts the CLI quietly;
+abandoned attempts time out. The dropdown refreshes accounts, identity, plan and usage after add.
+
+Verification: 10 new offline login tests, existing OpenCode/wrapper regressions, native ARM64
+build and four Meson suites; elementary light/dark initial/waiting/error renders. Installed
+OpenCode v2.0.32 produced a valid approval link in a live begin/cancel smoke test, preserving all
+saved IDs. No real second-account authorization was performed: owner must approve the other
+account in the browser, then use its dropdown Switch button. Upstream stays pinned at v0.77.0.
+All six GTK routing scenarios (browser success/cancel and API-key success/invalid/rejected/cancel)
+pass with mocked authentication; the complete port checker passes including live snapshot schema.
+The new login suite runs in CI and the port checker. Deploy with mseries/deploy-codexbar.sh after
+branch push and again from merged main; see CODEXBAR-PORT.md for flow and source references.
+
+## Month/Week/Day calendar agendas tested and deployed — 2026-10-18
+
+Owner requested Month, Week and Day views, tests, deployment, commit and merge.
+Events now has native mode toggles and a dated heading with period-aware arrows.
+The month grid remains the date picker; wider agendas group events by day,
+including recurring instances and multi-day overlaps with exclusive all-day
+ends. Rows show times/all-day state, calendar, location and short description;
+neutral cards retain a calendar-color edge and readable light/dark text. Lists
+scroll within a bounded pane. Day is the initial default; mode persists across
+popup reopen in the same panel process. Tasks remains independent.
+
+Expanded timing checks exposed a stale carousel notification selecting September
+while today's October events were expected. Navigation now uses each grid's
+actual month, ignores obsolete page indices, and explicitly synchronizes day
+highlight even when keyboard focus remains on popup controls. Rows retain their
+component/source-selectable references while displayed. No calendar writes were
+added to the plugin.
+
+Verification: pinned native ARM64 release build succeeds. Ten real-plugin/EDS
+workflow groups pass in both forced light and dark modes, covering Today and
+highlight, literal details, day/week/month filtering and arrows, all-day and
+recurring/multi-day events, December/January, empty states, mode retention,
+Tasks independence, live changes and source lifecycle. Inspected synthetic
+rendered previews for modes and scrolled details in light/dark. Fixtures use
+C.UTF-8/Sunday weeks; Google sync and other locales are separate qualification.
+The final merged tree passes five image-wiring tests, focused shell checks,
+README file links and whitespace checks. Existing upstream build and isolated
+portal/EDS shutdown warnings remain; no clean-log claim.
+
+Ran the maintained installer from the updated patch, then all ten workflow
+groups against `/usr/lib/aarch64-linux-gnu/wingpanel-9/libdatetime.so` (exit 0).
+Reloaded only Wingpanel: 730835 → 738444; new process maps installed calendar
+inode 314458 without deleted mappings. Pre-view plugin retained privately in
+this chat's work directory; version-aware stock backup is preserved. Merged
+current main's standalone-account factory changes without replacing them.
+Next: owner opens clock → Events and chooses Month/Week/Day on real accounts.
+Personal events/accounts, boot/kernel and audio configuration were not edited.
+Factory hardware boot and Google remote-sync acceptance remain separate.
+
+## ISO build retry: use the permitted account frontend — 2026-10-18
+
+Fresh-ISO run [39126016747](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39126016747)
+stopped during Apple overlay package selection before Brave staging:
+`gnome-control-center` has no candidate because elementary pins it to -1 in
+`deprioritize-gnome`. All three ARM64 image configs now select the Ubuntu universe
+`gnome-online-accounts-gtk` frontend instead; the existing account launcher already
+supports it. The GNOME package exclusion policy is preserved. Native archive
+metadata confirms arm64 candidate 3.50.9-1 and its GOA/GTK4 dependencies.
+
+Five image-wiring regressions pass, including a new prohibited-package check.
+This is a build-blocker fix, not a new ISO or fresh-install/playback pass. Next:
+retry the ISO build and then install/test its actual artifact in a blank KVM guest.
+
+## Calendar Today navigation fixed and deployed — 2026-10-18
+
+Owner reported unexpected events after clicking the center month-navigation
+icon and requested a fix committed/merged to main. The icon is upstream's Today
+control, not a month/week/day selector. Added a real-plugin regression that
+selects another day, navigates three months in each direction, clicks Today
+repeatedly before animation completion, checks the month heading and today's
+events, verifies subsequent navigation, then retains the existing reopen test.
+The old installed plugin failed the current-month assertion and emitted invalid
+Adw.Carousel page/scroll criticals. Ordinary single-click checks had passed.
+
+The maintained patch now returns to the stored current-month grid immediately,
+resets relative position/model month/selected day together, suppresses callbacks
+during carousel rebuild, and bounds arrow navigation. The center control says
+Today; arrow tooltips name previous/next month. This fixes the reproduced state
+corruption; the owner's exact unexpected event contents were not inspected.
+
+Verification: fresh pinned ARM64 installer build and atomic install pass. All
+six real-plugin/EDS groups pass against the installed library, including the
+previously failing regression; final log has no carousel critical/assertion.
+Four image-wiring tests, focused shell checks and whitespace checks pass.
+Wingpanel reloaded and PID 671688 maps installed calendar inode 314053.
+Only the calendar library/launcher and panel process were deployed/reloaded;
+no personal event/account data was edited. Expected isolated portal/EDS teardown
+warnings and upstream build warnings remain. Next: owner checks Today on their
+real calendars; Google remote-sync and factory-boot acceptance remain separate.
+
 ## Dock startup/focus audit and merge preparation — 2026-10-18
 
 Reviewed PR #100 on current main in an isolated checkout, preserving the other
