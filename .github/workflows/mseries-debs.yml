@@ -47,6 +47,7 @@ jobs:
             libadwaita-1-dev libnm-dev libnma-gtk4-dev libpolkit-gobject-1-dev \
             libpulse-dev libcanberra-dev libgee-0.8-dev \
             libgnome-desktop-4-dev libibus-1.0-dev \
+            libpackagekit-glib2-dev libportal-dev libaccountsservice-dev libwayland-dev \
             io.elementary.panel.network io.elementary.quick-settings
 
       - name: Build pilot plugin packages
