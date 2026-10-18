@@ -3158,3 +3158,18 @@ Normal deployment installs the UI/helpers and restarts Wingpanel/CodexBar; Claud
 The owner completed the new browser flow and confirmed: “Yes, the second account appears.” Adding a second real Codex account is now verified.
 Owner explicitly requested **all work merged to GitHub main**; publish this batch through PR #101 after
 checks, merge it, and deploy the resulting main version.
+
+
+### Follow-up: colour cues and account-dialog visual polish — 2026-10-18
+
+Owner confirmed the new Codex browser flow worked, then requested colour-coded secondary usage and
+further dialog polish. Each saved-account window now gets the theme’s success/warning/error colour
+with exactly the usage bars’ thresholds (>25% healthy, >10% low, <=10% critical). A 0% 5h balance stays
+red alongside a healthy green weekly balance; reset ETAs remain quiet. This applies in both the top
+panel’s alternate-account line and the dropdown. Pure formatting tests assert independent colours.
+
+Replaced the basic message-dialog layout for Codex onboarding with a centered provider mark, stronger
+title, brief subtitle, a rounded instruction card and native footer actions. Progress/result/cancel
+behaviour is unchanged from the owner-verified sign-in flow. Rebuilt and passed four Meson suites;
+light/dark previews are checked. This follow-up is included in the owner-authorized merge of PR #101
+into main and subsequent desktop deployment.

@@ -20,6 +20,10 @@ int main (string[] args) {
         assert (MSeries.Presentation.account_quota (parser.get_root ().get_array (), now + 5400)
             .has_prefix ("5H 0% ↻now"));
         assert (MSeries.Presentation.account_quota (null, now) == "Quota unavailable");
+        var colored = MSeries.Presentation.account_quota_markup (parser.get_root ().get_array (), now,
+            "#00aa00", "#ffaa00", "#ff0000");
+        assert (colored.contains ("foreground=\"#ff0000\" weight=\"semibold\">5H 0%"));
+        assert (colored.contains ("foreground=\"#00aa00\" weight=\"semibold\">7D 72%"));
     });
     GLib.Test.add_func ("/presentation/worst-level", () => {
         assert (MSeries.Presentation.worse (MSeries.QuotaLevel.OK, MSeries.QuotaLevel.LOW) == MSeries.QuotaLevel.LOW);

@@ -610,3 +610,7 @@ in dense dropdown rows and a second panel line. OpenCode duplicate OAuth records
 distinct account/workspace identities. Codex + provides browser sign-in without replacing the current
 login, using a native Granite window with progress and cancellation. Formatting, login isolation and
 OpenCode read-only/deduplication tests pass; port compatibility and headless light/dark probes pass. The owner verified that a second real Codex account appears after the new browser sign-in flow.
+
+Secondary quota balances are colour coded per window, matching the usage bar thresholds, while reset
+countdowns stay muted. The Codex account dialog now uses a centered brand panel, stronger typography,
+a compact instruction card and native actions. Light/dark render checks cover the visual changes.

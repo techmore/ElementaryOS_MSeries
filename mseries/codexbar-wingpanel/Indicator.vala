@@ -201,6 +201,7 @@ namespace MSeries {
                 ".mseries-codexbar-bar label { font-size: 8.5pt; font-feature-settings: \"tnum\"; } " +
                 ".mseries-codexbar-bar .seg-value { font-weight: 700; } " +
                 ".mseries-codexbar-bar .seg-reset { font-size: 7.5pt; opacity: 0.7; } " +
+                ".mseries-codexbar-bar .seg-secondary { font-size: 7.5pt; } " +
                 ".mseries-codexbar-bar .level-low { color: @warning_color; } " +
                 ".mseries-codexbar-bar .level-critical { color: @error_color; } " +
                 ".mseries-codexbar-bar .mark-claude { color: #d97757; } " +
@@ -725,7 +726,7 @@ namespace MSeries {
                 return;
             }
             codex_login_dialog = new AccountDialog ("Add a Codex account",
-                "Sign in to another ChatGPT account in your browser. Your current Codex login stays active, and the added account appears here when sign-in finishes.",
+                "Connect another ChatGPT account to CodexBar.",
                 "mseries-codexbar-openai-symbolic", { "python3", helper_path ("codexbar-accounts.py"), "login" });
             codex_login_dialog.completed.connect (() => {
                 codex_accounts_fetched_us = 0;
@@ -891,7 +892,7 @@ namespace MSeries {
             panel_entries = entries;
             update_panel (entries, now_unix);
             for (int i = 0; i < account_quota_labels.length; i++) {
-                account_quota_labels[i].set_text (Presentation.account_quota (account_quota_windows[i], now_unix));
+                account_quota_labels[i].set_markup (colored_account_quota (account_quota_labels[i], account_quota_windows[i], now_unix));
             }
             var digest = snapshot_digest (snapshot, now_unix);
             if (digest == last_digest) {
@@ -1106,8 +1107,20 @@ namespace MSeries {
             if (alternate.length == 0) return segment;
             var stack = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { valign = Gtk.Align.CENTER };
             stack.append (segment);
-            var label = new Gtk.Label (alternate) { xalign = 0 };
-            label.add_css_class ("seg-reset");
+            var label = new Gtk.Label (null) { xalign = 0, use_markup = true };
+            label.add_css_class ("seg-secondary");
+            var markup = new StringBuilder ();
+            var accounts = provider_accounts (provider);
+            for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
+                var account = accounts.get_object_element (i);
+                if (account.get_boolean_member_with_default ("active", false)) continue;
+                if (markup.len > 0) markup.append ("  ");
+                var windows = account.has_member ("windows") ? account.get_array_member ("windows") : null;
+                markup.append ("%lld: %s".printf (account.get_int_member_with_default ("number", i + 1),
+                    windows == null || windows.get_length () == 0 ? "—"
+                        : colored_account_quota (label, windows, new DateTime.now_utc ().to_unix ())));
+            }
+            label.set_markup (markup.str);
             stack.append (label);
             stack.set_tooltip_text (alternate_account_tooltip (provider));
             return stack;
@@ -1355,7 +1368,8 @@ namespace MSeries {
             };
             meta.set_tooltip_text ("Quota remaining · ↻ time until reset. " + detail);
             meta.add_css_class ("caption");
-            meta.add_css_class ("dim-label");
+            if (!has_quota) meta.add_css_class ("dim-label");
+            else meta.set_markup (colored_account_quota (meta, windows, new DateTime.now_utc ().to_unix ()));
             meta.add_css_class ("numeric");
             content.append (meta);
             line.append (content);
@@ -1372,6 +1386,19 @@ namespace MSeries {
             });
             line.append (button);
             return line;
+        }
+
+        private static string quota_theme_color (Gtk.Widget widget, string name, string fallback) {
+            Gdk.RGBA color;
+            if (!widget.get_style_context ().lookup_color (name, out color)) return fallback;
+            return "#%02x%02x%02x".printf ((int) (color.red * 255), (int) (color.green * 255), (int) (color.blue * 255));
+        }
+
+        private static string colored_account_quota (Gtk.Widget widget, Json.Array? windows, int64 now_unix) {
+            return Presentation.account_quota_markup (windows, now_unix,
+                quota_theme_color (widget, "success_color", "#2e7d32"),
+                quota_theme_color (widget, "warning_color", "#a66300"),
+                quota_theme_color (widget, "error_color", "#c6262e"));
         }
 
         /* Which login a provider is tied to: quiet, under the title, never the focus of the card. */

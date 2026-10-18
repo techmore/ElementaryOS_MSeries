@@ -118,6 +118,25 @@ namespace MSeries {
             return parts.len > 0 ? parts.str : "Quota unavailable";
         }
 
+        public static string account_quota_markup (Json.Array? windows, int64 now_unix,
+                                                    string healthy, string low, string critical) {
+            var text = new StringBuilder ();
+            for (uint i = 0; windows != null && i < windows.get_length (); i++) {
+                var window = windows.get_object_element (i);
+                var remaining = window.get_member ("remaining");
+                if (remaining == null || remaining.get_node_type () != Json.NodeType.VALUE) continue;
+                var single = new Json.Array ();
+                single.add_object_element (window.ref ());
+                var parts = account_quota (single, now_unix).split (" ↻", 2);
+                var level = level_for (remaining.get_double ());
+                var color = level == QuotaLevel.CRITICAL ? critical : level == QuotaLevel.LOW ? low : healthy;
+                if (text.len > 0) text.append (" · ");
+                text.append ("<span foreground=\"%s\" weight=\"semibold\">%s</span>".printf (color, Markup.escape_text (parts[0])));
+                if (parts.length > 1) text.append ("<span alpha=\"65%\"> ↻%s</span>".printf (Markup.escape_text (parts[1])));
+            }
+            return text.len > 0 ? text.str : "Quota unavailable";
+        }
+
         /* One line of local OpenCode Go activity: an estimate from this machine's history, not account quota. */
         public static string local_usage_line (string label, double cost_usd, int64 requests, int64 tokens) {
             return "%s · $%.2f · %s %s · %s tokens".printf (label, cost_usd, count_text (requests),

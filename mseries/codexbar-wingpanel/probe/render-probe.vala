@@ -36,7 +36,7 @@ int main (string[] args) {
     var delay = args.length > 2 ? int.parse (args[2]) : 1500;
     if (Environment.get_variable ("CB_DIALOG") == "codex") {
         var dialog = new MSeries.AccountDialog ("Add a Codex account",
-            "Sign in to another ChatGPT account in your browser. Your current Codex login stays active, and the added account appears here when sign-in finishes.",
+            "Connect another ChatGPT account to CodexBar.",
             "mseries-codexbar-openai-symbolic", { "/bin/true" });
         dialog.present ();
         var loop = new MainLoop ();
