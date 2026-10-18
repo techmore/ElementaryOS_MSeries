@@ -55,6 +55,60 @@ class AccountsTest(unittest.TestCase):
         self.assertEqual(MODULE.list_accounts(), [])
         self.assertIsNone(MODULE.save_current())
 
+    def test_desktop_closes_before_switch_and_launches_selected_account(self):
+        first = auth_for("first@example.com", account_id="one")
+        second = auth_for("second@example.com", account_id="two")
+        self.sign_in(second)
+        MODULE.save_current()
+        self.sign_in(first)
+        events = []
+        def stop():
+            self.assertEqual(MODULE.identity(MODULE.read_auth(self.home / "auth.json"))["email"], "first@example.com")
+            events.append("stop")
+        def launch():
+            self.assertEqual(MODULE.identity(MODULE.read_auth(self.home / "auth.json"))["email"], "second@example.com")
+            events.append("launch")
+        with mock.patch.object(MODULE.pathlib.Path, "home", return_value=self.home.parent), \
+                mock.patch.object(MODULE, "stop_app", side_effect=stop), \
+                mock.patch.object(MODULE, "launch_app", side_effect=launch):
+            # The production guard expects the default ~/.codex.
+            with mock.patch.object(MODULE.pathlib.Path, "resolve", return_value=self.home):
+                ok, message = MODULE.switch_desktop("second@example.com")
+        self.assertTrue(ok, message)
+        self.assertEqual(events, ["stop", "launch"])
+        self.assertEqual(len(MODULE.list_accounts()), 2)
+
+    def test_app_scan_excludes_codexbar_and_other_users(self):
+        entries = [mock.MagicMock(), mock.MagicMock(), mock.MagicMock()]
+        for entry, pid, uid in zip(entries, (100, 200, 300), (1000, 1000, 2000)):
+            entry.name = str(pid)
+            entry.stat.return_value.st_uid = uid
+        with mock.patch.object(MODULE.pathlib.Path, "iterdir", return_value=iter(entries)), \
+                mock.patch.object(MODULE.os, "getuid", return_value=1000), \
+                mock.patch.object(MODULE.os, "readlink", side_effect=[MODULE.APP_BINARY, "/home/test/.local/bin/codexbar-linux"]):
+            self.assertEqual(MODULE.app_pids(), [100])
+
+    def test_desktop_refuses_unknown_account_without_closing_app(self):
+        with mock.patch.object(MODULE, "stop_app") as stop:
+            ok, _ = MODULE.switch_desktop("missing")
+        self.assertFalse(ok)
+        stop.assert_not_called()
+
+    def test_desktop_close_failure_preserves_login(self):
+        second = auth_for("second@example.com", account_id="two")
+        self.sign_in(second)
+        MODULE.save_current()
+        first = auth_for("first@example.com", account_id="one")
+        self.sign_in(first)
+        with mock.patch.object(MODULE.pathlib.Path, "resolve", return_value=self.home), \
+                mock.patch.object(MODULE, "stop_app", side_effect=ValueError("still running")), \
+                mock.patch.object(MODULE, "launch_app") as launch:
+            ok, message = MODULE.switch_desktop("second@example.com")
+        self.assertFalse(ok)
+        self.assertIn("still running", message)
+        self.assertEqual(MODULE.read_auth(self.home / "auth.json"), first)
+        launch.assert_not_called()
+
     def test_switch_preserves_the_account_we_leave(self):
         self.sign_in(auth_for("a@example.com", account_id="1", marker="tok-a"))
         MODULE.save_current()
