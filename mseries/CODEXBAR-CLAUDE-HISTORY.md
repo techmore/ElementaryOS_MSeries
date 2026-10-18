@@ -72,3 +72,14 @@ for a retry. Neither failure path deletes the original account's history.
 - **Unverified:** a real desktop account switch and opening a carried conversation in Claude. The owner should next
   switch once, select a previous local Code conversation and verify that its workspace and earlier context resume.
   Re-check this private on-disk format after a Claude Desktop update; the upstream CodexBar pin remains **v0.77.0**.
+
+## Live qualification — 2026-10-18
+
+Owner-authorized account1→account2 desktop/CLI switch closed and reopened the
+actual app.34 Code conversations carried over: nine active and25 archived.
+All transcript/workspace bindings verified on disk, and the running app logged
+loading the exact destination index (13 active including four preexisting,25
+deferred archived). Owner confirmed the correct account and working Code context.
+The app can initially keep its destination account's existing conversation open;
+select a carried-over conversation in Code to continue its own transcript.
+Automatic view selection is not part of the qualified behavior.
