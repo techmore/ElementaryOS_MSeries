@@ -5629,3 +5629,19 @@ test-image-wiring OK. Not installed yet: the desktop still runs the first verse
 build from 17:01. Not verified in the live panel: real clicks and Wingpanel
 menu-item padding.
 
+### Seasonal verses — 2026-10-18 (same branch/PR #211)
+
+Ten reserved feast-day verses, marked `@season` in verse-references.txt and
+stored in a fourth TSV column (empty trailing columns dropped, so the patch has
+no trailing whitespace). Fixed dates are Jan 1, Jan 6, Dec 24 and Dec 25.
+Western Easter (anonymous Gregorian algorithm) gives Ash Wednesday, Palm Sunday,
+Good Friday, Easter and Pentecost. US Thanksgiving is the 4th Thursday of
+November. `DailyVerse.choose (day, seasons)` replaces `index_for`: the reserved
+verse on its day, otherwise a per-year shuffle of the 394 unreserved verses
+(no repeats). The header shows "<Feast> · <date>". Christmas widened to Luke
+2:10-12 so the angel's quotation closes. Fixed a padded-date bug (GLib %e uses
+a figure space): the date is now %-d. 22/22 light and dark; 14 feast-date
+assertions for 2026-2028; patch rebuilds byte-identically; image wiring OK.
+Open question for owner: ~70 verses carry an unpaired quotation mark from their
+neighbouring verse (WEB text kept unchanged on purpose).
+

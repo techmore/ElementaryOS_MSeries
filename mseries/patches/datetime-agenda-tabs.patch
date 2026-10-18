@@ -78,11 +78,12 @@ index 0000000..dcab65c
 +.mseries-half-hour-line { background-color: alpha(@theme_fg_color, 0.07); }
 diff --git a/data/daily-verses.tsv b/data/daily-verses.tsv
 new file mode 100644
-index 0000000..ec36445
+index 0000000..df97377
 --- /dev/null
 +++ b/data/daily-verses.tsv
-@@ -0,0 +1,401 @@
+@@ -0,0 +1,406 @@
 +# Verse of the Day: World English Bible (public domain, https://ebible.org/web/)
++# reference, text, Psalm heading (may be empty), season (may be empty)
 +Genesis 1:1	In the beginning, God created the heavens and the earth.
 +Genesis 1:27	God created man in his own image. In God’s image he created him; male and female he created them.
 +Genesis 1:31	God saw everything that he had made, and, behold, it was very good. There was evening and there was morning, a sixth day.
@@ -184,7 +185,7 @@ index 0000000..ec36445
 +Psalm 91:11	For he will put his angels in charge of you, to guard you in all your ways.
 +Psalm 94:19	In the multitude of my thoughts within me, your comforts delight my soul.
 +Psalm 95:6	Oh come, let’s worship and bow down. Let’s kneel before the LORD, our Maker,
-+Psalm 100:4-5	Enter into his gates with thanksgiving, and into his courts with praise. Give thanks to him, and bless his name. For the LORD is good. His loving kindness endures forever, his faithfulness to all generations.
++Psalm 100:4-5	Enter into his gates with thanksgiving, and into his courts with praise. Give thanks to him, and bless his name. For the LORD is good. His loving kindness endures forever, his faithfulness to all generations.		thanksgiving
 +Psalm 103:2-3	Praise the LORD, my soul, and don’t forget all his benefits, who forgives all your sins, who heals all your diseases,
 +Psalm 103:12	As far as the east is from the west, so far has he removed our transgressions from us.
 +Psalm 107:1	Give thanks to the LORD, for he is good, for his loving kindness endures forever.
@@ -240,7 +241,7 @@ index 0000000..ec36445
 +Ecclesiastes 4:12	If a man prevails against one who is alone, two shall withstand him; and a threefold cord is not quickly broken.
 +Ecclesiastes 12:13	This is the end of the matter. All has been heard. Fear God and keep his commandments; for this is the whole duty of man.
 +Isaiah 6:8	I heard the Lord’s voice, saying, “Whom shall I send, and who will go for us?” Then I said, “Here I am. Send me!”
-+Isaiah 9:6	For a child is born to us. A son is given to us; and the government will be on his shoulders. His name will be called Wonderful Counselor, Mighty God, Everlasting Father, Prince of Peace.
++Isaiah 9:6	For a child is born to us. A son is given to us; and the government will be on his shoulders. His name will be called Wonderful Counselor, Mighty God, Everlasting Father, Prince of Peace.		christmas-eve
 +Isaiah 12:2	Behold, God is my salvation. I will trust, and will not be afraid; for the LORD, the LORD, is my strength and song; and he has become my salvation.”
 +Isaiah 26:3	You will keep whoever’s mind is steadfast in perfect peace, because he trusts in you.
 +Isaiah 26:4	Trust in the LORD forever; for in the LORD, the LORD, is an everlasting Rock.
@@ -255,7 +256,7 @@ index 0000000..ec36445
 +Isaiah 43:2	When you pass through the waters, I will be with you, and through the rivers, they will not overflow you. When you walk through the fire, you will not be burned, and flame will not scorch you.
 +Isaiah 43:18-19	“Don’t remember the former things, and don’t consider the things of old. Behold, I will do a new thing. It springs out now. Don’t you know it? I will even make a way in the wilderness, and rivers in the desert.
 +Isaiah 49:15-16	“Can a woman forget her nursing child, that she should not have compassion on the son of her womb? Yes, these may forget, yet I will not forget you! Behold, I have engraved you on the palms of my hands. Your walls are continually before me.
-+Isaiah 53:5	But he was pierced for our transgressions. He was crushed for our iniquities. The punishment that brought our peace was on him; and by his wounds we are healed.
++Isaiah 53:5	But he was pierced for our transgressions. He was crushed for our iniquities. The punishment that brought our peace was on him; and by his wounds we are healed.		good-friday
 +Isaiah 54:10	For the mountains may depart, and the hills be removed, but my loving kindness will not depart from you, and my covenant of peace will not be removed,” says the LORD who has mercy on you.
 +Isaiah 55:8-9	“For my thoughts are not your thoughts, and your ways are not my ways,” says the LORD. “For as the heavens are higher than the earth, so are my ways higher than your ways, and my thoughts than your thoughts.
 +Isaiah 55:11	so is my word that goes out of my mouth: it will not return to me void, but it will accomplish that which I please, and it will prosper in the thing I sent it to do.
@@ -268,13 +269,13 @@ index 0000000..ec36445
 +Jeremiah 31:3	The LORD appeared of old to me, saying, “Yes, I have loved you with an everlasting love. Therefore I have drawn you with loving kindness.
 +Jeremiah 32:17	“Ah Lord GOD! Behold, you have made the heavens and the earth by your great power and by your outstretched arm. There is nothing too hard for you.
 +Jeremiah 33:3	‘Call to me, and I will answer you, and will show you great and difficult things, which you don’t know.’
-+Lamentations 3:22-23	It is because of the LORD’s loving kindnesses that we are not consumed, because his mercies don’t fail. They are new every morning. Great is your faithfulness.
++Lamentations 3:22-23	It is because of the LORD’s loving kindnesses that we are not consumed, because his mercies don’t fail. They are new every morning. Great is your faithfulness.		new-year
 +Lamentations 3:25	The LORD is good to those who wait for him, to the soul who seeks him.
 +Ezekiel 36:26	I will also give you a new heart, and I will put a new spirit within you. I will take away the stony heart out of your flesh, and I will give you a heart of flesh.
 +Daniel 2:20-21	Daniel answered, “Blessed be the name of God forever and ever; for wisdom and might are his. He changes the times and the seasons. He removes kings and sets up kings. He gives wisdom to the wise, and knowledge to those who have understanding.
 +Daniel 3:17	If it happens, our God whom we serve is able to deliver us from the burning fiery furnace; and he will deliver us out of your hand, O king.
 +Hosea 6:3	Let’s acknowledge the LORD. Let’s press on to know the LORD. As surely as the sun rises, the LORD will appear. He will come to us like the rain, like the spring rain that waters the earth.”
-+Joel 2:13	Tear your heart and not your garments, and turn to the LORD, your God; for he is gracious and merciful, slow to anger, and abundant in loving kindness, and relents from sending calamity.
++Joel 2:13	Tear your heart and not your garments, and turn to the LORD, your God; for he is gracious and merciful, slow to anger, and abundant in loving kindness, and relents from sending calamity.		ash-wednesday
 +Joel 2:28	“It will happen afterward, that I will pour out my Spirit on all flesh; and your sons and your daughters will prophesy. Your old men will dream dreams. Your young men will see visions.
 +Amos 5:24	But let justice roll on like rivers, and righteousness like a mighty stream.
 +Micah 6:8	He has shown you, O man, what is good. What does the LORD require of you, but to act justly, to love mercy, and to walk humbly with your God?
@@ -285,6 +286,7 @@ index 0000000..ec36445
 +Zephaniah 3:17	The LORD, your God, is among you, a mighty one who will save. He will rejoice over you with joy. He will calm you in his love. He will rejoice over you with singing.
 +Zechariah 4:6	Then he answered and spoke to me, saying, “This is the LORD’s word to Zerubbabel, saying, ‘Not by might, nor by power, but by my Spirit,’ says the LORD of Armies.
 +Malachi 3:10	Bring the whole tithe into the storehouse, that there may be food in my house, and test me now in this,” says the LORD of Armies, “if I will not open you the windows of heaven, and pour you out a blessing, that there will not be enough room for.
++Matthew 2:10-11	When they saw the star, they rejoiced with exceedingly great joy. They came into the house and saw the young child with Mary, his mother, and they fell down and worshiped him. Opening their treasures, they offered to him gifts: gold, frankincense, and myrrh.		epiphany
 +Matthew 4:4	But he answered, “It is written, ‘Man shall not live by bread alone, but by every word that proceeds out of God’s mouth.’”
 +Matthew 4:19	He said to them, “Come after me, and I will make you fishers for men.”
 +Matthew 5:3-4	“Blessed are the poor in spirit, for theirs is the Kingdom of Heaven. Blessed are those who mourn, for they shall be comforted.
@@ -310,6 +312,7 @@ index 0000000..ec36445
 +Matthew 22:37-39	Jesus said to him, “‘You shall love the Lord your God with all your heart, with all your soul, and with all your mind.’ This is the first and great commandment. A second likewise is this, ‘You shall love your neighbor as yourself.’
 +Matthew 25:40	“The King will answer them, ‘Most certainly I tell you, because you did it to one of the least of these my brothers, you did it to me.’
 +Matthew 28:19-20	Go and make disciples of all nations, baptizing them in the name of the Father and of the Son and of the Holy Spirit, teaching them to observe all things that I commanded you. Behold, I am with you always, even to the end of the age.” Amen.
++Matthew 28:6	He is not here, for he has risen, just like he said. Come, see the place where the Lord was lying.		easter
 +Mark 1:35	Early in the morning, while it was still dark, he rose up and went out, and departed into a deserted place, and prayed there.
 +Mark 9:23	Jesus said to him, “If you can believe, all things are possible to him who believes.”
 +Mark 10:27	Jesus, looking at them, said, “With men it is impossible, but not with God, for all things are possible with God.”
@@ -319,7 +322,7 @@ index 0000000..ec36445
 +Mark 16:15	He said to them, “Go into all the world and preach the Good News to the whole creation.
 +Luke 1:37	For nothing spoken by God is impossible.”
 +Luke 1:45	Blessed is she who believed, for there will be a fulfillment of the things which have been spoken to her from the Lord!”
-+Luke 2:10-11	The angel said to them, “Don’t be afraid, for behold, I bring you good news of great joy which will be to all the people. For there is born to you today, in David’s city, a Savior, who is Christ the Lord.
++Luke 2:10-12	The angel said to them, “Don’t be afraid, for behold, I bring you good news of great joy which will be to all the people. For there is born to you today, in David’s city, a Savior, who is Christ the Lord. This is the sign to you: you will find a baby wrapped in strips of cloth, lying in a feeding trough.”		christmas
 +Luke 6:27-28	“But I tell you who hear: love your enemies, do good to those who hate you, bless those who curse you, and pray for those who mistreat you.
 +Luke 6:31	“As you would like people to do to you, do exactly so to them.
 +Luke 6:38	“Give, and it will be given to you: good measure, pressed down, shaken together, and running over, will be given to you. For with the same measure you measure it will be measured back to you.”
@@ -343,6 +346,7 @@ index 0000000..ec36445
 +John 10:11	“I am the good shepherd. The good shepherd lays down his life for the sheep.
 +John 10:27-28	My sheep hear my voice, and I know them, and they follow me. I give eternal life to them. They will never perish, and no one will snatch them out of my hand.
 +John 11:25	Jesus said to her, “I am the resurrection and the life. He who believes in me will still live, even if he dies.
++John 12:13	they took the branches of the palm trees and went out to meet him, and cried out, “Hosanna! Blessed is he who comes in the name of the Lord, the King of Israel!”		palm-sunday
 +John 13:34-35	A new commandment I give to you, that you love one another. Just as I have loved you, you also love one another. By this everyone will know that you are my disciples, if you have love for one another.”
 +John 14:1	“Don’t let your heart be troubled. Believe in God. Believe also in me.
 +John 14:6	Jesus said to him, “I am the way, the truth, and the life. No one comes to the Father, except through me.
@@ -353,6 +357,7 @@ index 0000000..ec36445
 +John 16:33	I have told you these things, that in me you may have peace. In the world you have trouble; but cheer up! I have overcome the world.”
 +John 20:29	Jesus said to him, “Because you have seen me, you have believed. Blessed are those who have not seen and have believed.”
 +Acts 1:8	But you will receive power when the Holy Spirit has come upon you. You will be witnesses to me in Jerusalem, in all Judea and Samaria, and to the uttermost parts of the earth.”
++Acts 2:4	They were all filled with the Holy Spirit and began to speak with other languages, as the Spirit gave them the ability to speak.		pentecost
 +Acts 2:42	They continued steadfastly in the apostles’ teaching and fellowship, in the breaking of bread, and prayer.
 +Acts 4:12	There is salvation in no one else, for there is no other name under heaven that is given among men, by which we must be saved!”
 +Acts 16:31	They said, “Believe in the Lord Jesus Christ, and you will be saved, you and your household.”
@@ -1074,20 +1079,22 @@ index 7a626ba..eed808f 100644
          Util.set_component_calendar_color (source_selectable, name_label);
 diff --git a/src/Widgets/DailyVerse.vala b/src/Widgets/DailyVerse.vala
 new file mode 100644
-index 0000000..abebb7e
+index 0000000..4ea071d
 --- /dev/null
 +++ b/src/Widgets/DailyVerse.vala
-@@ -0,0 +1,204 @@
+@@ -0,0 +1,262 @@
 +/* Copyright 2026 M-Series contributors. SPDX-License-Identifier: GPL-3.0-or-later */
 +// One verse a day from the bundled World English Bible list, with links to
-+// sermons on that passage. The order is shuffled per year, so a year never
-+// repeats a verse while the list has at least 366 entries.
++// sermons on that passage. Christmas, Easter and other feast days get their
++// own reserved verse; the rest are shuffled per year, so a year never repeats
++// a verse while at least 366 verses are unreserved.
 +public class DateTime.DailyVerse : Gtk.Box {
 +    public signal void link_opened ();
 +
 +    private string[] references = {};
 +    private string[] texts = {};
 +    private string[] headings = {};
++    private string[] seasons = {};
 +    private int offset = 0;
 +    private string reference = "";
 +    private string copy_text = "";
@@ -1189,12 +1196,13 @@ index 0000000..abebb7e
 +            var data = GLib.resources_lookup_data ("/io/elementary/desktop/wingpanel/datetime/daily-verses.tsv",
 +                GLib.ResourceLookupFlags.NONE);
 +            foreach (var line in ((string) data.get_data ()).split ("\n")) {
-+                // reference, text and an optional Psalm heading
-+                var fields = line.split ("\t", 3);
++                // reference, text, Psalm heading, season (the last two may be empty)
++                var fields = line.split ("\t", 4);
 +                if (line.has_prefix ("#") || fields.length < 2) continue;
 +                references += fields[0];
 +                texts += fields[1];
-+                headings += fields.length == 3 ? fields[2] : "";
++                headings += fields.length > 2 ? fields[2] : "";
++                seasons += fields.length > 3 ? fields[3] : "";
 +            }
 +        } catch (Error e) {
 +            warning ("Could not load daily verses: %s", e.message);
@@ -1229,19 +1237,72 @@ index 0000000..abebb7e
 +        });
 +    }
 +
-+    // Same verse all day; each year gets its own shuffle of the whole list.
-+    public static int index_for (GLib.DateTime day, int count) {
-+        if (count <= 0) return -1;
-+        var order = new int[count];
-+        for (int i = 0; i < count; i++) order[i] = i;
-+        var random = new GLib.Rand.with_seed ((uint32) (day.get_year () * 7919 + 104729));
-+        for (int i = count - 1; i > 0; i--) {
-+            int j = random.int_range (0, i + 1);
-+            int swap = order[i];
-+            order[i] = order[j];
-+            order[j] = swap;
++    // Western (Gregorian) Easter Sunday, anonymous Gregorian algorithm.
++    public static GLib.DateTime easter (int year) {
++        int a = year % 19, b = year / 100, c = year % 100;
++        int d = b / 4, e = b % 4, f = (b + 8) / 25, g = (b - f + 1) / 3;
++        int h = (19 * a + b - d - g + 15) % 30;
++        int i = c / 4, k = c % 4;
++        int l = (32 + 2 * e + 2 * i - h - k) % 7;
++        int m = (a + 11 * h + 22 * l) / 451;
++        int month = (h + l - 7 * m + 114) / 31;
++        int day = (h + l - 7 * m + 114) % 31 + 1;
++        return new GLib.DateTime.local (year, month, day, 0, 0, 0);
++    }
++
++    // The feast or holiday a date reserves a verse for, or "".
++    public static string season_for (GLib.DateTime day) {
++        int month = day.get_month (), date = day.get_day_of_month ();
++        if (month == 12 && date == 24) return "christmas-eve";
++        if (month == 12 && date == 25) return "christmas";
++        if (month == 1 && date == 1) return "new-year";
++        if (month == 1 && date == 6) return "epiphany";
++        // US Thanksgiving: fourth Thursday of November.
++        if (month == 11 && day.get_day_of_week () == 4 && date >= 22 && date <= 28) return "thanksgiving";
++        switch (day.get_day_of_year () - easter (day.get_year ()).get_day_of_year ()) {
++            case -46: return "ash-wednesday";
++            case -7: return "palm-sunday";
++            case -2: return "good-friday";
++            case 0: return "easter";
++            case 49: return "pentecost";
++            default: return "";
 +        }
-+        return order[(day.get_day_of_year () - 1) % count];
++    }
++
++    public static string season_name (string season) {
++        switch (season) {
++            case "christmas-eve": return _("Christmas Eve");
++            case "christmas": return _("Christmas Day");
++            case "new-year": return _("New Year’s Day");
++            case "epiphany": return _("Epiphany");
++            case "thanksgiving": return _("Thanksgiving");
++            case "ash-wednesday": return _("Ash Wednesday");
++            case "palm-sunday": return _("Palm Sunday");
++            case "good-friday": return _("Good Friday");
++            case "easter": return _("Easter Sunday");
++            case "pentecost": return _("Pentecost");
++            default: return "";
++        }
++    }
++
++    // A reserved verse on its feast day. Otherwise the same verse all day from
++    // a per-year shuffle of the unreserved verses.
++    public static int choose (GLib.DateTime day, string[] seasons) {
++        var season = season_for (day);
++        int[] pool = {};
++        for (int i = 0; i < seasons.length; i++) {
++            if (season != "" && seasons[i] == season) return i;
++            if (seasons[i] == "") pool += i;
++        }
++        if (pool.length == 0) return -1;
++        var random = new GLib.Rand.with_seed ((uint32) (day.get_year () * 7919 + 104729));
++        for (int i = pool.length - 1; i > 0; i--) {
++            int j = random.int_range (0, i + 1);
++            int swap = pool[i];
++            pool[i] = pool[j];
++            pool[j] = swap;
++        }
++        return pool[(day.get_day_of_year () - 1) % pool.length];
 +    }
 +
 +    // Called when the popover opens: back to today, which also turns the
@@ -1253,12 +1314,14 @@ index 0000000..abebb7e
 +    private void show_offset (int days) {
 +        offset = days;
 +        var day = new GLib.DateTime.now_local ().add_days (offset);
-+        var date = day.format (_("%A, %B %e")).replace ("  ", " ");
-+        header.secondary_text = offset == 0 ? _("Today") + " · " + date :
++        var date = day.format (_("%A, %B %-d"));
++        var feast = season_name (season_for (day));
++        header.secondary_text = feast != "" ? feast + " · " + date :
++            offset == 0 ? _("Today") + " · " + date :
 +            offset == -1 ? _("Yesterday") + " · " + date :
 +            offset == 1 ? _("Tomorrow") + " · " + date : date;
 +        today_button.sensitive = offset != 0;
-+        var index = index_for (day, references.length);
++        var index = choose (day, seasons);
 +        if (index < 0) {
 +            reference = copy_text = "";
 +            heading_label.visible = false;

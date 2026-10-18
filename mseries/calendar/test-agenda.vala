@@ -2,11 +2,11 @@
 [CCode (has_target = false)]
 public delegate Wingpanel.Indicator? IndicatorFactory (Module module, Wingpanel.ServerType server);
 [CCode (has_target = false)]
-public delegate int VerseIndex (GLib.DateTime day, int count);
+public delegate int VerseChoose (GLib.DateTime day, string[] seasons);
 
 class AgendaTest : Object {
     Wingpanel.Indicator indicator;
-    VerseIndex verse_index;
+    VerseChoose verse_choose;
     Gtk.Widget widget;
     E.SourceRegistry registry;
     ECal.Client events;
@@ -556,6 +556,11 @@ class AgendaTest : Object {
         for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) dump_labels (child);
     }
 
+    string[] verse_seasons;
+    int pick_verse (GLib.DateTime day, int count) {
+        return verse_choose (day, verse_seasons);
+    }
+
     string verse_date () {
         string text;
         named (widget, "verse-day").get ("secondary-text", out text);
@@ -573,15 +578,38 @@ class AgendaTest : Object {
         string[] references = {};
         string[] texts = {};
         string[] headings = {};
+        string[] seasons = {};
         foreach (var line in ((string) data.get_data ()).split ("\n")) {
-            var fields = line.split ("\t", 3);
+            var fields = line.split ("\t", 4);
             if (line.has_prefix ("#") || fields.length < 2) continue;
             references += fields[0];
             texts += fields[1];
-            headings += fields.length == 3 ? fields[2] : "";
+            headings += fields.length > 2 ? fields[2] : "";
+            seasons += fields.length > 3 ? fields[3] : "";
         }
-        assert (references.length >= 366);
-        var today = verse_index (new GLib.DateTime.now_local (), references.length);
+        verse_seasons = seasons;
+        int unreserved = 0;
+        foreach (var season in seasons) if (season == "") unreserved++;
+        assert (unreserved >= 366);
+        // Feast days, including Easter-based dates in two different years.
+        string[,] feasts = {
+            { "2026-12-24", "Isaiah 9:6" }, { "2026-12-25", "Luke 2:10-12" },
+            { "2027-01-01", "Lamentations 3:22-23" }, { "2027-01-06", "Matthew 2:10-11" },
+            { "2026-02-18", "Joel 2:13" }, { "2026-03-29", "John 12:13" },
+            { "2026-04-03", "Isaiah 53:5" }, { "2026-04-05", "Matthew 28:6" },
+            { "2026-05-24", "Acts 2:4" }, { "2026-11-26", "Psalm 100:4-5" },
+            { "2027-03-28", "Matthew 28:6" }, { "2027-11-25", "Psalm 100:4-5" },
+            { "2028-04-16", "Matthew 28:6" }, { "2028-06-04", "Acts 2:4" }
+        };
+        for (int f = 0; f < feasts.length[0]; f++) {
+            var parts = feasts[f, 0].split ("-");
+            var feast_day = new GLib.DateTime.local (int.parse (parts[0]), int.parse (parts[1]), int.parse (parts[2]), 12, 0, 0);
+            assert (references[pick_verse (feast_day, references.length)] == feasts[f, 1]);
+        }
+        // Thanksgiving's Thursday a week earlier and Easter Monday are ordinary days.
+        assert (seasons[pick_verse (new GLib.DateTime.local (2026, 11, 19, 12, 0, 0), references.length)] == "");
+        assert (seasons[pick_verse (new GLib.DateTime.local (2026, 4, 6, 12, 0, 0), references.length)] == "");
+        var today = pick_verse (new GLib.DateTime.now_local (), references.length);
         yield expect ("— " + references[today]);
         yield expect (texts[today]);
         foreach (var id in new string[] { "verse-sermons", "verse-videos", "verse-context", "verse-copy" }) {
@@ -592,12 +620,12 @@ class AgendaTest : Object {
         assert (!today_button.sensitive);
         assert (verse_date ().has_prefix ("Today · "));
         ((Gtk.Button) named (widget, "verse-next")).clicked ();
-        yield expect ("— " + references[verse_index (now.add_days (1), references.length)]);
+        yield expect ("— " + references[pick_verse (now.add_days (1), references.length)]);
         assert (today_button.sensitive);
         assert (verse_date ().has_prefix ("Tomorrow · "));
         ((Gtk.Button) named (widget, "verse-previous")).clicked ();
         ((Gtk.Button) named (widget, "verse-previous")).clicked ();
-        yield expect ("— " + references[verse_index (now.add_days (-1), references.length)]);
+        yield expect ("— " + references[pick_verse (now.add_days (-1), references.length)]);
         assert (verse_date ().has_prefix ("Yesterday · "));
         today_button.clicked ();
         yield expect ("— " + references[today]);
@@ -605,13 +633,15 @@ class AgendaTest : Object {
 
         // A Psalm heading is a caption, not part of the verse text.
         int ahead = 1;
-        while (headings[verse_index (now.add_days (ahead), references.length)] == "") ahead++;
+        while (headings[pick_verse (now.add_days (ahead), references.length)] == "") ahead++;
         for (int i = 0; i < ahead; i++) ((Gtk.Button) named (widget, "verse-next")).clicked ();
-        var psalm = verse_index (now.add_days (ahead), references.length);
+        var psalm = pick_verse (now.add_days (ahead), references.length);
         yield expect (headings[psalm]);
         yield expect (texts[psalm]);
         assert (named (widget, "verse-heading").visible);
         assert (!texts[psalm].has_prefix (headings[psalm]));
+        // Single-digit days are not padded (GLib pads %e with a figure space).
+        assert (!verse_date ().contains ("\u2007") && !verse_date ().contains ("  "));
         for (int i = 0; i < 5; i++) yield pause ();
         preview (window, "calendar-verse-psalm");
 
@@ -621,6 +651,18 @@ class AgendaTest : Object {
         var copied = yield widget.get_clipboard ().read_text_async (null);
         assert (copied == "“%s” — %s (WEB)".printf (texts[psalm], references[psalm]));
         yield expect ("Copy Verse");
+
+        // A feast day names itself in the header and shows its reserved verse.
+        var christmas = new GLib.DateTime.local (now.get_year (), 12, 25, 0, 0, 0);
+        var start = new GLib.DateTime.local (now.get_year (), now.get_month (), now.get_day_of_month (), 0, 0, 0);
+        if (christmas.compare (start) < 0) christmas = christmas.add_years (1);
+        int to_christmas = (int) (christmas.difference (start.add_days (ahead)) / GLib.TimeSpan.DAY);
+        if (christmas.difference (start.add_days (ahead)) % GLib.TimeSpan.DAY > GLib.TimeSpan.HOUR * 12) to_christmas++;
+        for (int i = 0; i < to_christmas; i++) ((Gtk.Button) named (widget, "verse-next")).clicked ();
+        yield expect ("— Luke 2:10-12");
+        assert (verse_date () == "Christmas Day · " + christmas.format ("%A, %B %-d"));
+        for (int i = 0; i < 5; i++) yield pause ();
+        preview (window, "calendar-verse-christmas");
 
         // Reopening the panel returns to today's verse.
         indicator.closed ();
@@ -632,22 +674,22 @@ class AgendaTest : Object {
             var used = new GenericSet<int> (direct_hash, direct_equal);
             var day = new GLib.DateTime.local (year, 1, 1, 0, 0, 0);
             for (; day.get_year () == year; day = day.add_days (1)) {
-                var index = verse_index (day, references.length);
+                var index = pick_verse (day, references.length);
                 assert (index >= 0 && index < references.length);
                 assert (!used.contains (index));
                 used.add (index);
                 var late = new GLib.DateTime.local (year, day.get_month (), day.get_day_of_month (), 23, 59, 0);
-                assert (verse_index (late, references.length) == index);
+                assert (pick_verse (late, references.length) == index);
             }
         }
         var day_2026 = new GLib.DateTime.local (2026, 3, 1, 9, 0, 0);
         var same = 0;
         for (int i = 0; i < 30; i++) {
-            if (verse_index (day_2026.add_days (i), references.length) ==
-                verse_index (day_2026.add_years (1).add_days (i), references.length)) same++;
+            if (pick_verse (day_2026.add_days (i), references.length) ==
+                pick_verse (day_2026.add_years (1).add_days (i), references.length)) same++;
         }
         assert (same < 5);
-        assert (verse_index (day_2026, 0) == -1);
+        assert (verse_choose (day_2026, new string[0]) == -1);
         for (int i = 0; i < 5; i++) yield pause ();
         preview (window, "calendar-verse");
         stdout.printf ("PASS verse tab: today's verse, sermon links, no repeats within a year\n");
@@ -968,8 +1010,8 @@ class AgendaTest : Object {
         void* symbol;
         assert (module.symbol ("get_indicator", out symbol));
         var factory = (IndicatorFactory) symbol;
-        assert (module.symbol ("date_time_daily_verse_index_for", out symbol));
-        verse_index = (VerseIndex) symbol;
+        assert (module.symbol ("date_time_daily_verse_choose", out symbol));
+        verse_choose = (VerseChoose) symbol;
         indicator = factory (module, Wingpanel.ServerType.SESSION);
         loop = new MainLoop ();
         run.begin ();

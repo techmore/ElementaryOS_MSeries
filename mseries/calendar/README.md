@@ -40,9 +40,27 @@ Panel menu items follow:
 Links are built from the reference, so they don't go stale. Choosing one closes
 the popup and opens the default browser. Nothing is fetched until you click.
 
-The verse is the same all day and changes at local midnight. Each year gets
-its own seeded shuffle of the whole list, so a year never repeats a verse; no
-state is stored.
+The verse is the same all day and changes at local midnight. Feast days have
+their own verse, and the header names the day (for example **Christmas Day ·
+Friday, December 25**):
+
+| Day | Verse |
+| --- | --- |
+| New Year’s Day (Jan 1) | Lamentations 3:22–23 |
+| Epiphany (Jan 6) | Matthew 2:10–11 |
+| Ash Wednesday (Easter − 46) | Joel 2:13 |
+| Palm Sunday (Easter − 7) | John 12:13 |
+| Good Friday (Easter − 2) | Isaiah 53:5 |
+| Easter Sunday | Matthew 28:6 |
+| Pentecost (Easter + 49) | Acts 2:4 |
+| Thanksgiving (US, 4th Thursday of November) | Psalm 100:4–5 |
+| Christmas Eve (Dec 24) | Isaiah 9:6 |
+| Christmas Day (Dec 25) | Luke 2:10–12 |
+
+Easter is the Western (Gregorian) date, computed for each year. Reserved verses
+are marked `@season` in `verse-references.txt` and left out of the random
+order. The other 394 verses get a seeded shuffle per year, so a year never
+repeats a verse; no state is stored.
 
 Text is the **World English Bible**, public domain (eBible.org), copied
 unchanged. To change the list, edit `verse-references.txt` (at least 366
@@ -141,7 +159,9 @@ qualify a factory image or a Google account connection.
 `bash mseries/calendar/test-agenda.sh /absolute/path/to/libdatetime.so` runs the
 actual plugin on Xvfb with a private D-Bus and private XDG config/data/cache.
 All 22 workflow groups use synthetic local EDS sources. The verse group checks
-the + tab and today's pick from the bundled list, plus previous/next/Today
+the + tab, today's pick from the bundled list, every feast date in 2026–2028
+(including Easter-based dates in three years), a Christmas header on screen,
+unpadded single-digit dates, plus previous/next/Today
 navigation and its Today/Tomorrow/Yesterday wording. It also checks the Psalm
 heading caption, Copy Verse (clipboard contents and the Copied confirmation),
 the return to today on reopen, and that 2026, 2027 and leap 2028 each show

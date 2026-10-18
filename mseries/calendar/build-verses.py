@@ -34,7 +34,11 @@ BOOKS = {
     "James": "JAM", "1 Peter": "1PE", "2 Peter": "2PE", "1 John": "1JO",
     "2 John": "2JO", "3 John": "3JO", "Jude": "JUD", "Revelation": "REV",
 }
-REFERENCE = re.compile(r"^(.+) (\d+):(\d+)(?:-(\d+))?$")
+REFERENCE = re.compile(r"^(.+) (\d+):(\d+)(?:-(\d+))?(?: @([a-z-]+))?$")
+SEASONS = {
+    "christmas-eve", "christmas", "new-year", "epiphany", "ash-wednesday",
+    "palm-sunday", "good-friday", "easter", "pentecost", "thanksgiving",
+}
 MINIMUM = 366
 MARKUP = re.compile(r"\\f .*?\\f\*|\\x .*?\\x\*|\\\+?w ([^|\\]*)(?:\|[^\\]*)?\\\+?w\*|\\[a-z0-9+]+\*?")
 
@@ -59,7 +63,7 @@ def main() -> int:
         text[f"{key} {key2}"] = verse.strip()
 
     headings = psalm_headings(Path(sys.argv[2]))
-    rows, seen = [], set()
+    rows, seen, seasons = [], set(), set()
     for line in (here / "verse-references.txt").read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if not line or line.startswith("#"):
@@ -67,9 +71,15 @@ def main() -> int:
         match = REFERENCE.match(line)
         if not match or match[1] not in BOOKS:
             sys.exit(f"bad reference: {line}")
+        season = match[5] or ""
+        line = line.split(" @")[0]
         if line in seen:
             sys.exit(f"duplicate reference: {line}")
         seen.add(line)
+        if season:
+            if season not in SEASONS or season in seasons:
+                sys.exit(f"unknown or repeated season: {season}")
+            seasons.add(season)
         first = int(match[3])
         last = int(match[4] or first)
         parts = []
@@ -87,11 +97,15 @@ def main() -> int:
             joined = joined[len(heading) + 1:]
         if "\t" in joined + heading or "\n" in joined + heading:
             sys.exit(f"unexpected whitespace in {line}")
-        rows.append(f"{line}\t{joined}" + (f"\t{heading}" if heading else ""))
+        # Empty trailing columns are dropped; readers treat them as empty.
+        rows.append(f"{line}\t{joined}\t{heading}\t{season}".rstrip("\t"))
 
-    if len(rows) < MINIMUM:
-        sys.exit(f"{len(rows)} references; need at least {MINIMUM}")
-    header = "# Verse of the Day: World English Bible (public domain, https://ebible.org/web/)\n"
+    if seasons != SEASONS:
+        sys.exit(f"missing seasons: {sorted(SEASONS - seasons)}")
+    if len(rows) - len(seasons) < MINIMUM:
+        sys.exit(f"{len(rows) - len(seasons)} unreserved references; need at least {MINIMUM}")
+    header = ("# Verse of the Day: World English Bible (public domain, https://ebible.org/web/)\n"
+              "# reference, text, Psalm heading (may be empty), season (may be empty)\n")
     (here / "daily-verses.tsv").write_text(header + "\n".join(rows) + "\n", encoding="utf-8")
     print(f"wrote {len(rows)} verses")
     return 0
