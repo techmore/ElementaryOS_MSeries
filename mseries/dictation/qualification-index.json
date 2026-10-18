@@ -2224,12 +2224,20 @@
   "release_readiness": {
     "version": "0.0.1",
     "scope": "existing M1 Pro 32 GB desktop, English F5 STT only",
-    "status": "candidate; physical ChatGPT F5 failed; launcher correction staged and awaiting full app relaunch/manual check",
+    "status": "candidate; two owner reports failed; original ChatGPT process lacks staged settings, activation pending",
     "model_cohorts_repeated": false,
     "receipts": [
       {
+        "path": "../releases/v0.0.1/receipts/build-rc1.json",
+        "sha256": "4118c9803f0ba43f9a43b457e2d06978aaf85170f8bf3a638f3a07c8ec5b999f"
+      },
+      {
         "path": "../releases/v0.0.1/receipts/chatgpt-human-v1.json",
         "sha256": "5c100124ac4b6f2c99f4f82a7ec3a2184bad70366e710c9e389de50577b39192"
+      },
+      {
+        "path": "../releases/v0.0.1/receipts/chatgpt-human-v2.json",
+        "sha256": "34206a1d561e3a125d1918153a551f9091116ee2d642d90258accc33c469f59c"
       },
       {
         "path": "../releases/v0.0.1/receipts/chatgpt-launcher-v1.json",

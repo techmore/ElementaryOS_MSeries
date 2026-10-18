@@ -19,7 +19,8 @@ focused editable field. This app-input failure is retained in the
 [release receipts](../releases/v0.0.1/receipts/). A per-user accessibility/IBus
 launcher correction is staged, with 17 passing contracts and verified desktop-entry
 resolution. It requires a full owner-controlled app quit/relaunch and a fresh
-physical F5 check. Staging is not a pass. The source-only English STT release
+physical F5 check. A later retry failed with the original process and no new flags still loaded;
+activation is unproven. Staging is not a pass. The source-only English STT release
 remains a candidate; no model benchmark was repeated and no v0.0.1 was published.
 
 ## Current decision and limits

@@ -266,7 +266,9 @@ class InspectionTests(unittest.TestCase):
             self.assertIn(label, report['failures'])
 
     def test_capture_status_pid_process_and_child_guards(self):
-        for status in ({'phase': 'listening'}, {'phase': 'finishing'}, {'pid': 999}, {'backend': 'ane'}):
+        for status in ({'phase': 'loading'}, {'phase': 'listening'}, {'phase': 'finishing'},
+                       {'phase': 'stopped'}, {'phase': 'unavailable'}, {'phase': 'unknown'},
+                       {'pid': 999}, {'backend': 'ane'}):
             with self.subTest(status=status):
                 original = dict(self.status)
                 self.status.update(status)
@@ -281,6 +283,29 @@ class InspectionTests(unittest.TestCase):
         self.assertTrue(self.inspect()['passed'])
         self.status_path.chmod(0o644)
         self.assertIn('F5 is idle in the existing CPU and IBus listener', self.inspect()['failures'])
+
+    def test_terminal_idle_phases_still_require_no_capture_and_matching_runtime(self):
+        self.assertEqual(preflight.IDLE_PHASES, {'ready', 'error', 'cancelled', 'waiting'})
+        label = 'F5 is idle in the existing CPU and IBus listener'
+        for phase in sorted(preflight.IDLE_PHASES):
+            with self.subTest(phase=phase):
+                self.status.update(phase=phase, pid=1234)
+                self.save_status()
+                self.assertTrue(self.inspect()['passed'])
+                # An asynchronous insertion failure may expose phase=error
+                # before cleanup; a live capture/output child must still deny.
+                self.write('proc/1234/task/1234/children', b'2345')
+                self.write('proc/2345/stat', b'2345 (synthetic capture) S 1 2\n')
+                self.assertIn(label, self.inspect()['failures'])
+                self.write('proc/1234/task/1234/children', b'')
+                self.status['pid'] = 999
+                self.save_status()
+                self.assertIn(label, self.inspect()['failures'])
+                self.status['pid'] = 1234
+                self.save_status()
+                self.write('proc/1234/environ', b'STREAM_BACKEND=ane\x00STREAM_OUTPUT=ibus\x00')
+                self.assertIn(label, self.inspect()['failures'])
+                self.write('proc/1234/environ', b'STREAM_BACKEND=cpu\x00STREAM_OUTPUT=ibus\x00')
 
     def test_commands_fail_closed_without_raw_output(self):
         self.overrides[('id', '-u')] = '0'

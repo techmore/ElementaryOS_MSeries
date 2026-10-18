@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-10-18T19:04:15+00:00",
+  "complete": true,
+  "passed": false,
+  "classification": "owner retry failed; staged configuration not activated, no corrected-runtime acceptance established",
+  "target_app": "ChatGPT Linux desktop",
+  "owner_report": "Still no words or an unexpected prompt",
+  "original_main_process_still_running": true,
+  "renderer_accessibility_flag_present": false,
+  "ibus_environment_present": false,
+  "staged_override_still_matches": true,
+  "new_model_trial": false,
+  "spoken_contents_collected": false,
+  "owner_app_restarted_by_agent": false,
+  "next_gate": "full owner-controlled app quit/relaunch from Applications, verify flags before accepting another microphone result"
+}

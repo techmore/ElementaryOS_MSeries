@@ -15,8 +15,10 @@ environment at next full app launch. Seventeen launcher contracts pass, includin
 independent GLib quoting/spacing, URL/action preservation, owner-edit refusal and
 private rollback. Desktop resolution selects that override. ChatGPT, listener,
 input bridge and everyday4B were not restarted. No microphone/model was used.
-Full owner-controlled Quit, reopen from Applications, then physical F5 in the chat
-composer is the remaining acceptance gate. Preserve password/active-field guards.
+A later owner retry also failed; read-only process metadata still shows the
+original ChatGPT process without the new flags/environment. The fix has not
+activated. Fully Quit, reopen from Applications, verify new process flags, then
+physical F5 in the chat composer is the remaining acceptance gate. Preserve password/active-field guards.
 The owner permits OS-level dictation integration; it is not a reason to type into
 an unknown field. Native compositor input/broker work remains future development.
 

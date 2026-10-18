@@ -74,7 +74,9 @@ This preserves the desktop entry's other fields and URLs, enables renderer
 accessibility and selects the IBus environment. It does not alter the running
 app. Fully quit ChatGPT and reopen it from Applications when convenient; closing
 one window or launching a second instance may leave the old process running.
-The current ChatGPT configuration remains an unresolved release gate above.
+A later retry also failed while the original process was still running without
+the new flags/environment. The fix has not activated. The current ChatGPT
+configuration remains an unresolved release gate above.
 
 ## Rollback
 

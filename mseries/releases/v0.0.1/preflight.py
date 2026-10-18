@@ -26,6 +26,11 @@ GIB = 1024 ** 3
 NATIVE_SHA256 = '9f1f839d89a6d3a874c939ecf3108007cc0964a338596a35adb47c7e6c5c921d'
 STREAM_UNIT = 'mseries-stream-dictate.service'
 INPUT_UNIT = 'mseries-dictation-input.service'
+# prepare() emits these after capture/output cleanup and active=False. An error
+# is not proof of healthy dictation; it can still be an idle listener. The PID,
+# CPU/IBus environment and no-live-child checks below remain mandatory because
+# insertion_failed() can also emit error before the capture has been reaped.
+IDLE_PHASES = frozenset(('ready', 'error', 'cancelled', 'waiting'))
 NATIVE = 'native/transcribe-native-linux-aarch64-cpu-vulkan/libtranscribe.so'
 PACKAGE_LABEL = 'Package files match the complete v0.0.1 manifest'
 PYTHON_QUERY = '''import json, sys, gi
@@ -263,7 +268,7 @@ def inspect(root=Path('/'), home=None, runner=run):
         if not stat.S_ISREG(info.st_mode) or info.st_uid != uid or stat.S_IMODE(info.st_mode) & 0o077:
             return False
         row = json.loads(bounded(status_path, 4096))
-        if (row.get('pid') != pid or row.get('phase') != 'ready'
+        if (row.get('pid') != pid or row.get('phase') not in IDLE_PHASES
                 or row.get('output') != 'ibus' or row.get('backend') != 'cpu'):
             return False
         process = root / 'proc' / str(pid)
