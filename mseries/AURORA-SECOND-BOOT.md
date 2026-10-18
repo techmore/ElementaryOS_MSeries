@@ -52,3 +52,25 @@ default are untouched; the pre-edit file is saved as
 `/boot/grub/custom.cfg.pre-aurora-clean-*`. Nothing was armed (`grub-reboot` not
 run). To boot it once: pick it in the GRUB menu, or `sudo grub-reboot elementary-aurora-sep-clean`
 (owner decision). Revert: restore the saved `custom.cfg`.
+
+## Result of the clean-entry boots — 2026-10-17 22:03–22:05
+
+Booted `elementary-aurora-sep-clean` (loglevel=7, no thunderbolt flags, journald
+sync 1 s). Owner reports the machine keeps crashing.
+
+- Boot A (22:03:21, journal ends 22:03:44, last entry 33.0 s): ended with no
+  panic/oops/shutdown in the log, again with the desktop up. Same ~33 s as the
+  first freeze (~34 s), which points to something deterministic at that point of
+  startup, not random. Last events: mseries-dark-mode.service (32.97 s), ibus
+  im-config, Claude Desktop GTK assertion.
+- Boot B (22:04:50): still alive at 46 s+ when checked; `/dev/sep-bio` exists
+  (root-only, char 10:261); `fprintd` inactive (on demand). SEP firmware accepted
+  as before. Journal errors only: `tas2764 3-003c: Failed to parse devicetree`
+  (speaker amp on this DTB), brcmf p2p -52, bluetooth flag warnings.
+- pstore empty; PMU reports "1 boot error(s) and 0 panic(s)" after the reset.
+- Nothing from SEP/DCP/SPI-fingerprint precedes either stop.
+
+Open: whether Boot B froze later, whether a hardware watchdog/SMC reset (not a
+kernel panic) is the cause, and the tas2764 devicetree warning (new on this
+kernel/DTB; stock kernel path unchecked). Stock `7.1.13-3-2-ARCH` is stable and
+remains the default. No further Aurora boots until the owner decides.
