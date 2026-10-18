@@ -44,6 +44,11 @@ top three CPU processes. Read-only: it never changes a setting.
 - **Logger cost, measured 2026-10-18 on the M1 Pro:** about 0.17 s of CPU per minute (~0.3 % of one core), 18 MB RSS,
   `Nice=15` and idle I/O class. The database grows by tens of KB per hour of use.
 
+## Discharge path test
+Sensor reads honour `MSERIES_BATTERY_SYSROOT`, so `test_battery_core.py` feeds the sampler a fake `/sys` and `/proc`
+(discharging, AC offline, SMC system power, CPU delta, accessory) and checks the resulting sample. This is the first
+exercise of the discharging branch; it is still not a real unplugged measurement.
+
 ## UI/UX polish (2026-10-18)
 App icon (`org.mseries.Battery.svg`, installed to hicolor by the installer and `enhance.sh`); the window remembers its
 page, chart range and size (`~/.config/mseries-battery/ui.json`, verified across two headless launches); shortcuts
@@ -73,7 +78,7 @@ weak on Apple Silicon), `upower` time-to-empty. Omarchy-mac's battery piece is o
 ported as `mseries-power` (see PORT-MAP.md); nothing else there profiles runtime.
 
 ## Status (2026-10-18)
-Logger installed and running on the M1 Pro; 18 unit tests pass (`battery/test_battery_core.py`); CLI verified against live
+Logger installed and running on the M1 Pro; 20 unit tests pass (`battery/test_battery_core.py`); CLI verified against live
 and synthetic history; the app (sidebar layout, battery gauge, usage bars, event icons, chart with hover readout) renders all four pages under
 Xvfb with the installed elementary blueberry stylesheet, light and dark (synthetic 8 h history). **Not verified:** the
 look on the owner's live session (no window was opened on their screen), real discharge sessions (the machine

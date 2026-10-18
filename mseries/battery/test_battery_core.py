@@ -183,6 +183,48 @@ class CoreTests(unittest.TestCase):
         core.write_summary(conn, path)
         self.assertEqual(len(open(path).read().split("\n")), 3)
 
+    def test_discharging_sample_from_fake_sysfs(self):
+        root = tempfile.mkdtemp()
+
+        def put(path, value):
+            full = os.path.join(root, path)
+            os.makedirs(os.path.dirname(full), exist_ok=True)
+            with open(full, "w") as handle:
+                handle.write(str(value))
+
+        bat = "sys/class/power_supply/BAT0/"
+        for name, value in (("type", "Battery"), ("status", "Discharging"), ("energy_now", 30000000), ("energy_full", 60000000),
+                            ("power_now", 8000000), ("capacity", 50), ("temp", 310)):
+            put(bat + name, value)
+        put("sys/class/power_supply/AC/type", "Mains")
+        put("sys/class/power_supply/AC/online", 0)
+        put("sys/class/hwmon/hwmon2/power1_label", "Total System Power")
+        put("sys/class/hwmon/hwmon2/power1_input", 9500000)
+        put("sys/class/power_supply/MOUSE/type", "Battery")
+        put("sys/class/power_supply/MOUSE/scope", "Device")
+        put("sys/class/power_supply/MOUSE/model_name", "Test Mouse")
+        put("sys/class/power_supply/MOUSE/capacity_level", "Low")
+        proc = os.path.join(root, "proc")
+        put("proc/stat", "cpu 100 0 100 800 0 0 0 0")
+        put("proc/loadavg", "1.50 1.0 1.0 1/100 1")
+        old = core.SYS
+        core.SYS = root
+        try:
+            sampler = core.Sampler(proc=proc)
+            sampler.sample()
+            put("proc/stat", "cpu 200 0 200 1000 0 0 0 0")   # 200 busy of 400 ticks
+            snap = sampler.sample()
+            self.assertEqual(snap["status"], "Discharging")
+            self.assertEqual(snap["ac"], 0)
+            self.assertAlmostEqual(snap["pct"], 50.0)
+            self.assertAlmostEqual(snap["batt_w"], -8.0)
+            self.assertAlmostEqual(snap["sys_w"], 9.5)
+            self.assertAlmostEqual(snap["cpu_pct"], 50.0)
+            self.assertAlmostEqual(snap["temp_c"], 31.0)
+            self.assertEqual([d["name"] for d in core.read_devices()], ["Test Mouse"])
+        finally:
+            core.SYS = old
+
     def test_fmt_hours(self):
         self.assertEqual(core.fmt_hours(7.5), "7h 30m")
         self.assertEqual(core.fmt_hours(0.5), "30 min")

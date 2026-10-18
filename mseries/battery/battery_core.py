@@ -56,15 +56,19 @@ def rd_num(path, scale=1.0):
         return None
 
 
+SYS = os.environ.get("MSERIES_BATTERY_SYSROOT", "")   # tests point this at a fake /sys
+
+
 def find_battery():
     """The laptop's own battery, not a mouse or keyboard (those report scope=Device)."""
-    for node in sorted(glob.glob("/sys/class/power_supply/*")):
+    for node in sorted(glob.glob(SYS + "/sys/class/power_supply/*")):
         if rd(node + "/type") == "Battery" and rd(node + "/scope", "System") != "Device":
             return node
     return None
 
 
-def read_devices(root="/sys/class/power_supply"):
+def read_devices(root=None):
+    root = root or SYS + "/sys/class/power_supply"
     """Accessory batteries (mouse, keyboard, ...): scope=Device. Many report only a level, not a percentage."""
     found = []
     for node in sorted(glob.glob(root + "/*")):
@@ -114,14 +118,14 @@ def device_summary(conn):
 
 
 def find_system_power():
-    for label in glob.glob("/sys/class/hwmon/hwmon*/power*_label"):
+    for label in glob.glob(SYS + "/sys/class/hwmon/hwmon*/power*_label"):
         if (rd(label) or "").lower() == "total system power":
             return label.replace("_label", "_input")
     return None
 
 
 def find_ac():
-    for node in sorted(glob.glob("/sys/class/power_supply/*")):
+    for node in sorted(glob.glob(SYS + "/sys/class/power_supply/*")):
         if rd(node + "/type") == "Mains":
             return node + "/online"
     return None
@@ -149,7 +153,7 @@ class Sampler:
         self.battery = find_battery()
         self.sys_power = find_system_power()
         self.ac = find_ac()
-        self.backlight = (glob.glob("/sys/class/backlight/*") or [None])[0]
+        self.backlight = (glob.glob(SYS + "/sys/class/backlight/*") or [None])[0]
         self.prev_cpu = None
         self.prev_procs = {}
         self.prev_time = None
@@ -179,7 +183,7 @@ class Sampler:
         return ticks
 
     def cpu_mhz(self):
-        freqs = [rd_num(p, 0.001) for p in glob.glob("/sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_cur_freq")]
+        freqs = [rd_num(p, 0.001) for p in glob.glob(SYS + "/sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_cur_freq")]
         freqs = [f for f in freqs if f]
         return sum(freqs) / len(freqs) if freqs else None
 
