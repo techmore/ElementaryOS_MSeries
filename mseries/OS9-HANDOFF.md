@@ -1,5 +1,14 @@
 # OS 9 implementation / Claude Code handoff
 
+## RepoBar 3× faster refresh and Traffic tab — 2026-10-18 (Claude Code)
+
+Refresh lists repository ids first (one cheap query), then loads details in parallel batches of 25 alongside the
+Pages, For You and contribution calls: 5.1–5.6 s vs 15.6–17.1 s for the old helper (three runs each, owner's 85
+repositories); output identical (same names, order and fields apart from time-based ones). New **Traffic** details
+tab (`mseries-repobar traffic OWNER/NAME`): 14-day views and clones as accent bars with totals and unique counts,
+opens GitHub's traffic graph; repositories without push access get a plain explanation. Rendered headless
+light/dark; reloaded and merged per the owner's standing instruction.
+
 ## RepoBar local checkouts and worktrees — 2026-10-18 (Claude Code)
 
 The helper now keeps every local checkout per repository (`localCheckouts`; the folder named after the repository
