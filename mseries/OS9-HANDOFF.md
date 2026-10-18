@@ -82,6 +82,23 @@ lookup found it as a symbolic icon, and the reloaded Wingpanel maps the latest
 module. The build emits a GTK CSS provider deprecation warning and generated C
 warnings. Traffic/cloner charts, a heatmap UI, multi-account UI, and launch-at-
 login controls remain outside this iteration; see `mseries/REPOBAR-PORT.md`.
+RepoBar now uses the installed CodexBar indicator's compact elementary OS
+tokens: matching 9 pt body and 8 pt caption typography, 6×10 px cards with the
+same subtle surface and radius, consistent popover insets, and a rounded
+refresh dock. The scope picker and repository details retain their needed
+width. Its native module builds and is installed in Wingpanel. The running
+panel was left alone; the new styling loads at next login or a later explicit
+panel reload. No CodexBar source or running panel process changed.
+The same repository snapshot now includes commit totals on each default branch
+for rolling 1-hour, 24-hour, and 30-day windows. The Wingpanel card presents
+the three counts together; GraphQL retrieves their aggregate totals alongside
+the existing paginated repository query, and the counts follow its five-minute
+cache. Built and installed the module without restarting Wingpanel, copied the
+helper to `~/.local/lib/mseries/repobar.py`, and confirmed it matches source.
+`$HOME/.local/bin/mseries-repobar --refresh snapshot` returned commit-count
+fields for all 85 repositories; aggregate totals were 60/550/3,471 across the
+three windows. The new indicator appearance is installed but awaits next login
+or an owner-requested panel reload.
 
 ## Consistent CodexBar panel typography — 2026-10-18
 

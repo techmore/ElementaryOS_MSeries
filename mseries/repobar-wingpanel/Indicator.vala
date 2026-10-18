@@ -46,7 +46,7 @@ namespace MSeries {
             this.visible = true;
 
             menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) {
-                margin_top = 10, margin_bottom = 10, margin_start = 12, margin_end = 12,
+                margin_top = 8, margin_bottom = 6, margin_start = 8, margin_end = 8,
                 width_request = 390
             };
             menu.add_css_class ("mseries-repobar");
@@ -54,7 +54,7 @@ namespace MSeries {
 
             var header = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
             account_label = new Gtk.Label ("GitHub repositories") { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
-            account_label.add_css_class ("title-4");
+            account_label.add_css_class ("repo-heading");
             summary_label = new Gtk.Label ("Waiting for GitHub…") { xalign = 0 };
             summary_label.add_css_class ("dim-label");
             summary_label.add_css_class ("caption");
@@ -68,6 +68,7 @@ namespace MSeries {
             scope_dropdown = new Gtk.DropDown.from_strings (new string[] {
                 "Dashboard", "All", "Pinned", "Issues", "Pull requests", "Needs attention", "Local"
             });
+            scope_dropdown.set_size_request (150, -1);
             scope_dropdown.notify["selected"].connect (() => render_cached ());
             filters.append (search_entry);
             filters.append (scope_dropdown);
@@ -85,7 +86,7 @@ namespace MSeries {
             menu.append (scroll);
             menu.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
 
-            var footer = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            var footer = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
             freshness_label = new Gtk.Label ("") { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.END };
             freshness_label.add_css_class ("dim-label");
             freshness_label.add_css_class ("caption");
@@ -93,9 +94,13 @@ namespace MSeries {
                 tooltip_text = "Refresh GitHub repositories"
             };
             refresh_button.add_css_class ("flat");
+            refresh_button.update_property (Gtk.AccessibleProperty.LABEL, "Refresh GitHub repositories", -1);
             refresh_button.clicked.connect (() => refresh ());
             footer.append (freshness_label);
-            footer.append (refresh_button);
+            var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+            actions.add_css_class ("repo-dock");
+            actions.append (refresh_button);
+            footer.append (actions);
             menu.append (footer);
 
             show_message ("Connect GitHub", "Run `gh auth login`, then refresh.");
@@ -107,9 +112,16 @@ namespace MSeries {
             var style = new Gtk.CssProvider ();
             style.load_from_string (
                 ".mseries-repobar { font-size: 9pt; } " +
-                ".mseries-repobar .repo-row { padding: 8px 9px; border-radius: 8px; background: alpha(currentColor, 0.045); } " +
+                ".mseries-repobar .caption { font-size: 8pt; } " +
+                ".mseries-repobar .repo-heading { font-weight: 700; font-size: 9.5pt; } " +
+                ".mseries-repobar .repo-row { padding: 6px 10px; border-radius: 8px; background: alpha(currentColor, 0.06); } " +
                 ".mseries-repobar .repo-name { font-weight: 700; } " +
                 ".mseries-repobar .repo-meta { font-size: 8pt; opacity: 0.72; } " +
+                ".mseries-repobar .numeric { font-feature-settings: \"tnum\"; } " +
+                ".mseries-repobar button { padding: 3px 6px; } " +
+                ".mseries-repobar .repo-dock { padding: 3px; border-radius: 12px; background: alpha(currentColor, 0.06); } " +
+                ".mseries-repobar .repo-dock button { padding: 6px 11px; border-radius: 9px; min-height: 0; min-width: 0; } " +
+                ".mseries-repobar .repo-dock button:hover { background: alpha(currentColor, 0.1); } " +
                 ".mseries-repobar .ci-ok { color: @success_color; font-weight: 700; } " +
                 ".mseries-repobar .ci-warn { color: @warning_color; font-weight: 700; } " +
                 ".mseries-repobar .ci-bad { color: @error_color; font-weight: 700; } " +
@@ -348,8 +360,28 @@ namespace MSeries {
                 xalign = 0, ellipsize = Pango.EllipsizeMode.END
             };
             details.add_css_class ("repo-meta");
+            string commits_1h = "—";
+            string commits_24h = "—";
+            string commits_30d = "—";
+            if (repo.has_member ("commitCounts") && repo.get_member ("commitCounts").get_node_type () == Json.NodeType.OBJECT) {
+                var commit_counts = repo.get_object_member ("commitCounts");
+                int64 count_1h = commit_counts.get_int_member_with_default ("1h", -1);
+                int64 count_24h = commit_counts.get_int_member_with_default ("24h", -1);
+                int64 count_30d = commit_counts.get_int_member_with_default ("30d", -1);
+                commits_1h = count_1h >= 0 ? count_1h.to_string () : "—";
+                commits_24h = count_24h >= 0 ? count_24h.to_string () : "—";
+                commits_30d = count_30d >= 0 ? count_30d.to_string () : "—";
+            }
+            var commit_summary = new Gtk.Label ("Commits · 1h %s · 24h %s · 30d %s".printf (
+                commits_1h, commits_24h, commits_30d)) {
+                xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.END
+            };
+            commit_summary.add_css_class ("repo-meta");
+            commit_summary.add_css_class ("numeric");
+            commit_summary.set_tooltip_text ("Default branch commits during each time window; refreshed with the repository snapshot.");
             card.append (top);
             card.append (details);
+            card.append (commit_summary);
             if (repo.has_member ("recentActivity") && repo.get_member ("recentActivity").get_node_type () != Json.NodeType.NULL) {
                 var activity = repo.get_object_member ("recentActivity");
                 string kind = activity.get_string_member_with_default ("kind", "activity");
