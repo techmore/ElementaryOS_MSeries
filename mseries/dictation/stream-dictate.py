@@ -18,8 +18,10 @@ from dictation_model import LazyModel, ModelHeadroom
 
 MODEL = os.environ.get("STREAM_MODEL", os.path.expanduser(
     "~/.local/share/mseries/stream/models/parakeet-unified-en-0.6b-Q4_K_M.gguf"))
+ENGINE = os.environ.get("STREAM_ENGINE", "stream")  # "ane": Parakeet on the Neural Engine, typed after release
 SOURCE = os.environ.get("STREAM_SOURCE", "direct")  # "direct" = ALSA hw capture, or a PipeWire node name
 CARD = os.environ.get("STREAM_CARD", "hw:1,0")
+MAX_ANE_SECONDS = 600  # RAM bound for one held key
 GAIN = os.environ.get("STREAM_GAIN", "60")
 
 
@@ -202,6 +204,9 @@ class Dictation:
     def load_model():
         # Importing the SDK loads its native backends too. Keep even that work
         # out of the listener's idle startup path.
+        if ENGINE == 'ane':
+            from dictation_ane import AneModel
+            return AneModel()
         import transcribe_cpp as t
         return t.Model(MODEL, backend=os.environ.get('STREAM_BACKEND', 'auto'))
 
@@ -334,6 +339,50 @@ class Dictation:
             self.stop_evt.wait(.1)
         return None, None
 
+    def run_ane(self, model, cap, pending):
+        """Whole-utterance engine: collect audio while F5 is held, transcribe on release."""
+        kept = bytearray(pending)
+        t0 = time.time()
+        try:
+            stopped_at = None
+            next_guard = 0
+            while len(kept) < MAX_ANE_SECONDS * 32000:
+                now = time.monotonic()
+                if now >= next_guard:
+                    next_guard = now + 1
+                    if resource_reasons(self.policy):
+                        self.error = 'ResourceGuard'
+                        self.stop_evt.set()
+                if self.error or self.cancelled:
+                    return
+                if self.stop_evt.is_set() and stopped_at is None:
+                    stopped_at = time.time()
+                if stopped_at and time.time() - stopped_at > 0.15:
+                    break
+                if not select.select([cap.stdout], [], [], .1)[0]:
+                    continue
+                data = cap.stdout.read1(CHUNK * 2)
+                if not data:
+                    break
+                kept += data
+            self.close_capture(cap)
+            kept = kept[:len(kept) // 2 * 2]
+            if len(kept) < 16000:  # under half a second
+                return
+            pcm = np.frombuffer(bytes(kept), np.int16).astype(np.float32) / 32768
+            status('finishing')
+            text = model.transcribe_long(pcm.astype('<f4').tobytes())
+            log(f"ane dictated {len(text)} chars from {len(pcm) / 16000:.1f}s in {time.time() - t0:.1f}s")
+            if text and not self.cancelled:
+                self.typer.submit(text + " ", self.input_token)
+            elif not DRY and not self.cancelled:
+                notify("Didn't catch that")
+        except Exception as e:
+            self.error = type(e).__name__
+            log("ane error:", repr(e))
+        finally:
+            self.close_capture(cap)
+
     def run(self, model):
         test = os.environ.get("STREAM_TEST_WAV")  # offline test: play a file instead of the mic
         raw = os.environ.get("STREAM_TEST_RAW")  # offline test: a raw AOP capture (3ch f32 48 kHz) through CHAIN
@@ -356,6 +405,8 @@ class Dictation:
             self.error = 'CaptureUnavailable'
             notify('Could not open the microphone')
             return
+        if ENGINE == 'ane':
+            return self.run_ane(model, cap, pending)
         typed = ""
         t0 = time.time()
         kept = bytearray()

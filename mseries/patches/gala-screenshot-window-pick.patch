@@ -1,0 +1,236 @@
+diff --git a/src/Misc/ScreenshotManager.vala b/src/Misc/ScreenshotManager.vala
+index 97e329f..b85bd6b 100644
+--- a/src/Misc/ScreenshotManager.vala
++++ b/src/Misc/ScreenshotManager.vala
+@@ -46,6 +46,9 @@ public class Gala.ScreenshotManager : Object {
+         }
+     }
+ 
++    // Window chosen by a click in the area selector; used instead of the focused window.
++    private Meta.Window? window_override = null;
++
+     private Settings desktop_settings;
+     private GLib.HashTable<uint32, string?> notifications_id_to_path;
+ 
+@@ -149,8 +152,19 @@ public class Gala.ScreenshotManager : Object {
+             string filename_used = "";
+ 
+             int x, y, w, h;
+-            yield select_area_internal (out x, out y, out w, out h);
+-            yield screenshot_area_internal (x, y, w, h, true, filename, out success, out filename_used);
++            Meta.Window? picked_window;
++            yield select_area_internal (true, out x, out y, out w, out h, out picked_window);
++            if (picked_window != null) {
++                // macOS-style: a click on a window captures that window.
++                window_override = picked_window;
++                try {
++                    yield screenshot_window_internal (true, false, true, filename, out success, out filename_used);
++                } finally {
++                    window_override = null;
++                }
++            } else {
++                yield screenshot_area_internal (x, y, w, h, true, filename, out success, out filename_used);
++            }
+ 
+             if (success) {
+                 send_screenshot_notification.begin (filename_used);
+@@ -370,7 +384,7 @@ public class Gala.ScreenshotManager : Object {
+     private async void screenshot_window_internal (bool include_frame, bool include_cursor, bool flash, string filename, out bool success, out string filename_used) throws DBusError, IOError {
+         debug ("Taking window screenshot");
+ 
+-        var window = wm.get_display ().get_focus_window ();
++        var window = window_override ?? wm.get_display ().get_focus_window ();
+         if (window == null) {
+             unconceal_text ();
+             throw new DBusError.FAILED ("Cannot find active window");
+@@ -476,11 +490,14 @@ public class Gala.ScreenshotManager : Object {
+ 
+     public async void select_area (GLib.BusName sender, out int x, out int y, out int width, out int height) throws DBusError, IOError {
+         yield check_sender (sender);
+-        yield select_area_internal (out x, out y, out width, out height);
++        Meta.Window? unused;
++        yield select_area_internal (false, out x, out y, out width, out height, out unused);
+     }
+ 
+-    private async void select_area_internal (out int x, out int y, out int width, out int height) throws DBusError, IOError {
++    private async void select_area_internal (bool allow_window_pick, out int x, out int y, out int width, out int height, out Meta.Window? picked_window) throws DBusError, IOError {
++        picked_window = null;
+         var selection_area = new SelectionArea (wm);
++        selection_area.allow_window_pick = allow_window_pick;
+         selection_area.closed.connect (() => Idle.add (select_area_internal.callback));
+         wm.ui_group.add_child (selection_area);
+         selection_area.start_selection ();
+@@ -493,6 +510,13 @@ public class Gala.ScreenshotManager : Object {
+         }
+ 
+         yield wait_stage_repaint ();
++
++        if (selection_area.picked_window != null) {
++            picked_window = selection_area.picked_window;
++            x = y = width = height = 0;
++            return;
++        }
++
+         var rect = selection_area.get_selection_rectangle ();
+         x = (int) GLib.Math.roundf (rect.origin.x);
+         y = (int) GLib.Math.roundf (rect.origin.y);
+diff --git a/src/Widgets/SelectionArea.vala b/src/Widgets/SelectionArea.vala
+index 87244b3..c2eccc3 100644
+--- a/src/Widgets/SelectionArea.vala
++++ b/src/Widgets/SelectionArea.vala
+@@ -12,6 +12,14 @@ public class Gala.SelectionArea : CanvasActor {
+ 
+     public bool cancelled { get; private set; }
+ 
++    // Window mode (macOS style): Space while selecting switches from dragging an area to
++    // highlighting the window under the pointer; a click captures that window.
++    public bool allow_window_pick { get; set; default = false; }
++    public Meta.Window? picked_window { get; private set; default = null; }
++    private bool window_mode = false;
++    private Meta.Window? hover_window = null;
++    private Mtk.Rectangle hover_rect;
++
+     private ModalProxy? modal_proxy;
+     private Graphene.Point start_point;
+     private Graphene.Point end_point;
+@@ -42,14 +50,79 @@ public class Gala.SelectionArea : CanvasActor {
+             return true;
+         }
+ 
++        if (allow_window_pick && e.get_key_symbol () == Clutter.Key.space && !dragging) {
++            window_mode = !window_mode;
++            clicked = false;
++            hover_window = null;
++            if (window_mode) {
++#if HAS_MUTTER48
++                unowned var cursor_tracker = wm.get_display ().get_compositor ().get_backend ().get_cursor_tracker ();
++#else
++                unowned var cursor_tracker = wm.get_display ().get_cursor_tracker ();
++#endif
++                Graphene.Point coords = {};
++                cursor_tracker.get_pointer (out coords, null);
++                update_hover (coords.x, coords.y);
++            }
++
++            content.invalidate ();
++            return true;
++        }
++
+         return false;
+     }
+ 
++    private void update_hover (float px, float py) {
++        var window = window_at (px, py);
++        if (window != hover_window) {
++            hover_window = window;
++            if (window != null) {
++                hover_rect = window.get_frame_rect ();
++            }
++
++            content.invalidate ();
++        }
++    }
++
++    private Meta.Window? window_at (float px, float py) {
++        unowned var display = wm.get_display ();
++        var workspace = display.get_workspace_manager ().get_active_workspace ();
++        var on_workspace = new SList<Meta.Window> ();
++        foreach (unowned var candidate in workspace.list_windows ()) {
++            on_workspace.prepend (candidate);
++        }
++
++        // sort_windows_by_stacking is bottom to top; keep the last (topmost) window under the point.
++        Meta.Window? found = null;
++        foreach (unowned var window in display.sort_windows_by_stacking (on_workspace)) {
++            if (window.minimized || window.is_override_redirect ()) {
++                continue;
++            }
++
++            var type = window.window_type;
++            if (type != Meta.WindowType.NORMAL && type != Meta.WindowType.DIALOG &&
++                type != Meta.WindowType.MODAL_DIALOG && type != Meta.WindowType.UTILITY) {
++                continue;
++            }
++
++            var rect = window.get_frame_rect ();
++            if (px >= rect.x && px < rect.x + rect.width && py >= rect.y && py < rect.y + rect.height) {
++                found = window;
++            }
++        }
++
++        return found;
++    }
++
+     public override bool button_press_event (Clutter.Event e) {
+         if (dragging || e.get_button () != Clutter.Button.PRIMARY) {
+             return true;
+         }
+ 
++        if (window_mode) {
++            return true;
++        }
++
+         clicked = true;
+ 
+         float x, y;
+@@ -64,6 +137,19 @@ public class Gala.SelectionArea : CanvasActor {
+             return true;
+         }
+ 
++        if (window_mode) {
++            close ();
++            if (hover_window != null) {
++                picked_window = hover_window;
++                this.hide ();
++            } else {
++                cancelled = true;
++            }
++
++            closed ();
++            return true;
++        }
++
+         if (!dragging) {
+             close ();
+             cancelled = true;
+@@ -83,12 +169,18 @@ public class Gala.SelectionArea : CanvasActor {
+     }
+ 
+     public override bool motion_event (Clutter.Event e) {
++        float x, y;
++        e.get_coords (out x, out y);
++
++        if (window_mode) {
++            update_hover (x, y);
++            return true;
++        }
++
+         if (!clicked) {
+             return true;
+         }
+ 
+-        float x, y;
+-        e.get_coords (out x, out y);
+         end_point.init (x, y);
+         content.invalidate ();
+ 
+@@ -137,6 +229,19 @@ public class Gala.SelectionArea : CanvasActor {
+ 
+         ctx.restore ();
+ 
++        if (window_mode) {
++            if (hover_window != null) {
++                ctx.rectangle (hover_rect.x, hover_rect.y, hover_rect.width, hover_rect.height);
++                ctx.set_source_rgba (0.2, 0.5, 1.0, 0.35);
++                ctx.fill_preserve ();
++                ctx.set_source_rgba (0.2, 0.5, 1.0, 0.9);
++                ctx.set_line_width (3.0);
++                ctx.stroke ();
++            }
++
++            return;
++        }
++
+         if (!dragging) {
+             return;
+         }

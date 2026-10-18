@@ -1,0 +1,35 @@
+[
+  {
+    "dataset": "openslr/librispeech_asr",
+    "config": "clean",
+    "split": "test",
+    "offset": 100,
+    "id": "1320-122617-0022",
+    "text": "THE DELAWARES ARE CHILDREN OF THE TORTOISE AND THEY OUTSTRIP THE DEER",
+    "sha256": "9c4d285c536c8562a3b9add558d159b84c5b3d8c27922669906ae8da831fc25c",
+    "filename": "1320-122617-0022.wav",
+    "derived_16k_mono_s16_sha256": "afd923d287641d5600e63a901e149091e0b1f648265186de560a5c063d7a9c8d"
+  },
+  {
+    "dataset": "openslr/librispeech_asr",
+    "config": "clean",
+    "split": "test",
+    "offset": 1000,
+    "id": "8455-210777-0028",
+    "text": "JACK WOULD BECOME EVA'S HAPPY HUSBAND AND WOULD REMAIN AMIDST THE HURRIED DUTIES OF THE EAGER WORLD",
+    "sha256": "61e1697bdc0de5142e0cd76c4a14ed38086b66b9a0ab7722bd1c02aa3cebd261",
+    "filename": "8455-210777-0028.wav",
+    "derived_16k_mono_s16_sha256": "dc2d1218a61f131c0a8fd0fd432dfa4a889f40e3b162ba35e30acc06f3561b48"
+  },
+  {
+    "dataset": "openslr/librispeech_asr",
+    "config": "clean",
+    "split": "test",
+    "offset": 2000,
+    "id": "1580-141083-0051",
+    "text": "ONLY FOR A MINUTE OR SO",
+    "sha256": "3f7d90044d1a1ec56c95e9f0ec7a5bd1f1914259b6441148ea2991a341950b77",
+    "filename": "1580-141083-0051.wav",
+    "derived_16k_mono_s16_sha256": "13d99685ef840d5679e10368e79dc39f2f87fbf49c919d9f1c1a03357a19acc8"
+  }
+]

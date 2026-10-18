@@ -144,6 +144,30 @@ class AgendaTest : Object {
         ((Gtk.Button) named (widget, next ? "agenda-next" : "agenda-previous")).clicked ();
     }
 
+    Gtk.Widget active_events () {
+        return named (widget, "agenda-time-grid").get_child_visible () &&
+            ((Gtk.Stack) named (widget, "agenda-surface")).visible_child_name == "time" ?
+            named (widget, "agenda-time-grid") : named (widget, "agenda-events");
+    }
+
+    Gtk.Widget? time_event (Gtk.Widget node, string title) {
+        if (node.get_type ().name () == "DateTimeWidgetsTimeEvent" && contains (node, title)) return node;
+        for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) {
+            var found = time_event (child, title);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    Gtk.MenuButton? menu_in (Gtk.Widget node) {
+        if (node is Gtk.MenuButton) return (Gtk.MenuButton) node;
+        for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) {
+            var menu = menu_in (child);
+            if (menu != null) return menu;
+        }
+        return null;
+    }
+
     int count_title (Gtk.Widget node, string title) {
         int count = node is Gtk.Label && ((Gtk.Label) node).label == title ? 1 : 0;
         for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) count += count_title (child, title);
@@ -154,15 +178,6 @@ class AgendaTest : Object {
         return "BEGIN:VEVENT\r\nUID:" + uid + "\r\nSUMMARY:" + title +
             "\r\nDTSTART;VALUE=DATE:" + start.format ("%Y%m%d") +
             "\r\nDTEND;VALUE=DATE:" + end.format ("%Y%m%d") + "\r\n" + extra + "END:VEVENT\r\n";
-    }
-
-    Gtk.Expander? details_for (Gtk.Widget node, string title) {
-        if (node is Gtk.Expander && contains (((Gtk.Expander) node).label_widget, title)) return (Gtk.Expander) node;
-        for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) {
-            var expander = details_for (child, title);
-            if (expander != null) return expander;
-        }
-        return null;
     }
 
     async void upcoming_checks () throws Error {
@@ -213,21 +228,22 @@ class AgendaTest : Object {
         find_stack (widget).visible_child_name = "events";
         choose_view ("day");
         yield expect ("Detailed meeting");
-        details_for (widget, "Detailed meeting").expanded = true;
+        var detail_menu = menu_in (time_event (active_events (), "Detailed meeting"));
+        detail_menu.popup ();
         yield expect ("Room <A> & B");
         yield expect ("Discuss <scope> & next steps");
         yield expect ("agenda-test-events");
         yield expect ("All day");
         yield expect ("Tomorrow event", false);
-        assert (count_title (named (widget, "agenda-events"), "Multi-day event") == 1);
-        assert (count_title (named (widget, "agenda-events"), "Recurring event") == 1);
+        assert (count_title (active_events (), "Multi-day event") == 1);
+        assert (count_title (active_events (), "Recurring event") == 1);
         for (int n = 0; n < 5; n++) yield pause ();
         preview (window, "agenda-day");
-        var scroll = (Gtk.ScrolledWindow) named (widget, "agenda-events").get_parent ().get_parent ();
-        scroll.vadjustment.value = scroll.vadjustment.upper - scroll.vadjustment.page_size;
+        detail_menu.popdown ();
+        var scroll = (Gtk.ScrolledWindow) named (widget, "calendar-time-scroll");
+        scroll.vadjustment.value = 480;
         for (int n = 0; n < 5; n++) yield pause ();
         preview (window, "agenda-day-details");
-        scroll.vadjustment.value = 0;
         period_move (true);
         yield expect ("Tomorrow event");
         yield expect ("Detailed meeting", false);
@@ -236,11 +252,12 @@ class AgendaTest : Object {
         stdout.printf ("PASS Day details, literal text, all-day/multi-day/recurring events and period navigation\n");
 
         choose_view ("week");
+        yield wait_grid (7, today.add_days (-(today.get_day_of_week () % 7)));
         yield expect ("Week first event");
         yield expect ("Week last event");
         yield expect ("Outside week event", false);
         var expected = int.min (3, 7 - (int) (today.get_day_of_week () % 7));
-        assert (count_title (named (widget, "agenda-events"), "Recurring event") == expected);
+        assert (count_title (active_events (), "Recurring event") == expected);
         for (int n = 0; n < 5; n++) yield pause ();
         preview (window, "agenda-week");
         period_move (true);
@@ -256,7 +273,7 @@ class AgendaTest : Object {
         yield expect ("Outside month event", false);
         var multi_first = today.add_days (-1).compare (month) < 0 ? month : today.add_days (-1);
         var multi_end = today.add_days (2).compare (next_month) > 0 ? next_month : today.add_days (2);
-        assert (count_title (named (widget, "agenda-events"), "Multi-day event") == (int) (multi_end.difference (multi_first) / TimeSpan.DAY));
+        assert (count_title (active_events (), "Multi-day event") == (int) (multi_end.difference (multi_first) / TimeSpan.DAY));
         for (int n = 0; n < 5; n++) yield pause ();
         preview (window, "agenda-month");
         period_move (true);
@@ -301,6 +318,229 @@ class AgendaTest : Object {
         choose_view ("day");
         yield expect ("Detailed meeting");
         stdout.printf ("PASS year boundary, view retention, independent Tasks and live wider-view updates\n");
+    }
+
+    string timed_event_text (string uid, string title, GLib.DateTime start, GLib.DateTime end, string extra = "") {
+        return "BEGIN:VEVENT\r\nUID:" + uid + "\r\nSUMMARY:" + title + "\r\nDTSTART:" +
+            start.to_utc ().format ("%Y%m%dT%H%M%SZ") + "\r\nDTEND:" + end.to_utc ().format ("%Y%m%dT%H%M%SZ") +
+            "\r\n" + extra + "END:VEVENT\r\n";
+    }
+
+    Gtk.Button? label_button (Gtk.Widget node, string label) {
+        if (node is Gtk.Button && ((Gtk.Button) node).label == label) return (Gtk.Button) node;
+        for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) {
+            var result = label_button (child, label);
+            if (result != null) return result;
+        }
+        return null;
+    }
+
+    void assert_minutes (Gtk.Widget block, double start, double end) {
+        assert (block != null);
+        double actual_start, actual_end;
+        block.get ("start-minute", out actual_start, "end-minute", out actual_end);
+        assert (Math.fabs (actual_start - start) < 0.01 && Math.fabs (actual_end - end) < 0.01);
+    }
+
+    async void wait_minutes (string title, double start, double end) throws Error {
+        for (int i = 0; i < 200; i++) {
+            var block = time_event (active_events (), title);
+            if (block != null) {
+                double a, b;
+                block.get ("start-minute", out a, "end-minute", out b);
+                if (Math.fabs (a - start) < 0.01 && Math.fabs (b - end) < 0.01) return;
+            }
+            yield pause ();
+        }
+        var canvas = named (widget, "calendar-time-canvas");
+        stderr.printf ("RANGE EXPECT %s %.1f–%.1f\n", title, start, end);
+        for (var child = canvas.get_first_child (); child != null; child = child.get_next_sibling ()) {
+            if (child.get_type ().name () == "DateTimeWidgetsTimeEvent") {
+                double a, b;
+                child.get ("start-minute", out a, "end-minute", out b);
+                stderr.printf ("BLOCK %s %.1f–%.1f\n", child.tooltip_text, a, b);
+            }
+        }
+        throw new IOError.FAILED ("Timed range did not settle for %s".printf (title));
+    }
+
+    async void wait_grid (int days, GLib.DateTime first) throws Error {
+        for (int i = 0; i < 200; i++) {
+            int actual_days; string actual_date;
+            named (widget, "agenda-time-grid").get ("day-count", out actual_days, "start-date", out actual_date);
+            if (actual_days == days && actual_date == first.format ("%F")) {
+                for (int n = 0; n < 5; n++) yield pause ();
+                return;
+            }
+            yield pause ();
+        }
+        throw new IOError.FAILED ("Time grid view did not settle");
+    }
+
+    async void time_grid_checks (Gtk.Window window) throws Error {
+        var now = new GLib.DateTime.now_local ();
+        var today = new GLib.DateTime.local (now.get_year (), now.get_month (), now.get_day_of_month (), 0, 0, 0);
+        choose_view ("day");
+        ((Gtk.Button) named (widget, "grid-today")).clicked ();
+        add (events, timed_event_text ("grid-a", "Overlap A", today.add_hours (9), today.add_hours (10)));
+        add (events, timed_event_text ("grid-b", "Overlap B", today.add_hours (9).add_minutes (30), today.add_hours (10).add_minutes (30)));
+        add (events, timed_event_text ("grid-c", "Overlap C", today.add_hours (9).add_minutes (45), today.add_hours (10).add_minutes (15)));
+        add (events, timed_event_text ("grid-touch", "Adjacent event", today.add_hours (11), today.add_hours (12)));
+        add (events, timed_event_text ("grid-short", "Short event", today.add_hours (12), today.add_hours (12).add_minutes (5)));
+        add (events, timed_event_text ("grid-short-two", "Nearby short event", today.add_hours (12).add_minutes (10), today.add_hours (12).add_minutes (20)));
+        add (events, timed_event_text ("grid-zero", "Instant event", today.add_hours (13), today.add_hours (13)));
+        add (events, timed_event_text ("grid-late", "Ends at midnight", today.add_hours (23).add_minutes (55), today.add_days (1)));
+        add (events, timed_event_text ("grid-night", "Overnight event", today.add_hours (23), today.add_days (1).add_hours (1)));
+        add (events, timed_event_text ("grid-repeat", "Timed recurring event", today.add_hours (14), today.add_hours (14).add_minutes (30), "RRULE:FREQ=DAILY;COUNT=3\r\n"));
+        var duration_start = today.add_hours (17).add_minutes (30);
+        var duration_end = today.add_hours (19);
+        add (events, timed_event_text ("grid-duration", "Duration event", duration_start, duration_end).replace (
+            "DTEND:" + duration_end.to_utc ().format ("%Y%m%dT%H%M%SZ"), "DURATION:PT90M"));
+        add (events, timed_event_text ("grid-untitled", "No title", today.add_hours (18), today.add_hours (18).add_minutes (30)).replace ("SUMMARY:No title\r\n", ""));
+        for (int i = 0; i < 5; i++) add (events, timed_event_text ("busy-" + i.to_string (), "Busy " + i.to_string (), today.add_hours (16), today.add_hours (17)));
+        yield expect ("Busy 4");
+        yield expect ("Instant event");
+        yield expect ("Untitled event");
+        yield wait_minutes ("Duration event", 1050, 1140);
+        for (int n = 0; n < 8; n++) yield pause ();
+        var canvas = (Gtk.Fixed) named (widget, "calendar-time-canvas");
+        var a = time_event (active_events (), "Overlap A");
+        var b = time_event (active_events (), "Overlap B");
+        var c = time_event (active_events (), "Overlap C");
+        assert_minutes (a, 540, 600);
+        assert_minutes (b, 570, 630);
+        int lanes;
+        a.get ("lane-count", out lanes); assert (lanes == 3);
+        double ax, ay, bx, by, cx, cy, tx, ty;
+        canvas.get_child_position (a, out ax, out ay);
+        canvas.get_child_position (b, out bx, out by);
+        canvas.get_child_position (c, out cx, out cy);
+        canvas.get_child_position (named (widget, "time-slot-9"), out tx, out ty);
+        assert (Math.fabs (ay - ty) < 0.01 && Math.fabs (by - ay - 30) < 0.01);
+        assert (a.get_height () == 60);
+        assert (ax + a.get_width () <= bx + 1 && bx + b.get_width () <= cx + 1);
+        time_event (active_events (), "Adjacent event").get ("lane-count", out lanes); assert (lanes == 1);
+        time_event (active_events (), "Short event").get ("lane-count", out lanes); assert (lanes == 2);
+        yield wait_minutes ("Overnight event", 1380, 1440);
+        // The final five-minute block is clipped without a label's minimum
+        // height extending past the midnight boundary; its tooltip remains.
+        var late_canvas = (Gtk.Fixed) named (widget, "calendar-time-canvas");
+        Gtk.Widget? late_block = null;
+        for (var child = late_canvas.get_first_child (); child != null; child = child.get_next_sibling ()) {
+            if (child.get_type ().name () == "DateTimeWidgetsTimeEvent" && child.tooltip_text != null &&
+                child.tooltip_text.has_prefix ("Ends at midnight\n")) late_block = child;
+        }
+        assert (late_block != null);
+        assert_minutes (late_block, 1435, 1440);
+        assert (late_block.get_height () == 5);
+        var scroll = (Gtk.ScrolledWindow) named (widget, "calendar-time-scroll");
+        scroll.vadjustment.value = 510;
+        for (int n = 0; n < 5; n++) yield pause ();
+        preview (window, "time-grid-day-overlap");
+        stdout.printf ("PASS actual timed-block geometry, overlap lanes, adjacent/short/instant events\n");
+
+        // Live edits recalculate lanes and keep the current reading position.
+        events.modify_object_sync (new ICal.Component.from_string (timed_event_text ("grid-b", "Moved overlap B", today.add_hours (15), today.add_hours (16))), ECal.ObjModType.ALL, ECal.OperationFlags.NONE, null);
+        yield expect ("Moved overlap B");
+        for (int n = 0; n < 5; n++) yield pause ();
+        a = time_event (active_events (), "Overlap A");
+        a.get ("lane-count", out lanes); assert (lanes == 2);
+        scroll = (Gtk.ScrolledWindow) named (widget, "calendar-time-scroll");
+        assert (Math.fabs (scroll.vadjustment.value - 510) < 1);
+        events.remove_object_sync ("grid-c", null, ECal.ObjModType.ALL, ECal.OperationFlags.NONE, null);
+        yield expect ("Overlap C", false);
+        for (int n = 0; n < 5; n++) yield pause ();
+        time_event (active_events (), "Overlap A").get ("lane-count", out lanes); assert (lanes == 1);
+        stdout.printf ("PASS live block moves/deletion, lane reflow and retained scroll position\n");
+
+        period_move (true);
+        yield expect ("Overnight event");
+        for (int n = 0; n < 5; n++) yield pause ();
+        yield wait_minutes ("Overnight event", 0, 60);
+        assert (contains (time_event (active_events (), "Overnight event"), "00:00"));
+        yield expect ("Overlap A", false);
+        period_move (false);
+        yield expect ("Overlap A");
+        choose_view ("week");
+        yield wait_grid (7, today.add_days (-(today.get_day_of_week () % 7)));
+        yield expect ("Week first event");
+        for (int n = 0; n < 8; n++) yield pause ();
+        assert (count_title (active_events (), "Timed recurring event") == int.min (3, 7 - (int) (today.get_day_of_week () % 7)));
+        var busy = time_event (active_events (), "Busy 0");
+        busy.get ("lane-count", out lanes); assert (lanes == 5);
+        canvas = (Gtk.Fixed) named (widget, "calendar-time-canvas");
+        Gtk.Widget previous = busy;
+        double px, py, nx, ny;
+        for (int i = 1; i < 5; i++) {
+            var next = time_event (active_events (), "Busy " + i.to_string ());
+            // Sorting equal intervals is stable in the production ArrayList.
+            canvas.get_child_position (previous, out px, out py);
+            canvas.get_child_position (next, out nx, out ny);
+            assert (Math.fabs (px - nx) >= int.min (previous.get_width (), next.get_width ()) - 1);
+            previous = next;
+        }
+        scroll = (Gtk.ScrolledWindow) named (widget, "calendar-time-scroll");
+        scroll.vadjustment.value = 510;
+        int minimum, natural;
+        widget.measure (Gtk.Orientation.HORIZONTAL, -1, out minimum, out natural, null, null);
+        assert (minimum <= 800 && natural <= 800);
+        window.set_default_size (natural, -1);
+        for (int n = 0; n < 5; n++) yield pause ();
+        var horizontal = (Gtk.ScrolledWindow) named (widget, "calendar-horizontal-scroll");
+        assert (horizontal.hadjustment.upper > horizontal.hadjustment.page_size);
+        horizontal.hadjustment.value = 100;
+        events.modify_object_sync (new ICal.Component.from_string (timed_event_text ("busy-4", "Updated busy 4", today.add_hours (16), today.add_hours (17))), ECal.ObjModType.ALL, ECal.OperationFlags.NONE, null);
+        yield expect ("Updated busy 4");
+        for (int n = 0; n < 5; n++) yield pause ();
+        horizontal = (Gtk.ScrolledWindow) named (widget, "calendar-horizontal-scroll");
+        assert (Math.fabs (horizontal.hadjustment.value - 100) < 1);
+        horizontal.hadjustment.value = 0;
+        for (int n = 0; n < 5; n++) yield pause ();
+        preview (window, "time-grid-week-overlap");
+        stdout.printf ("PASS overnight clipping, recurring week columns and crowded overlap blocks\n");
+
+        choose_view ("day");
+        yield wait_grid (1, today);
+        yield expect ("Detailed meeting");
+        ((Gtk.ScrolledWindow) named (widget, "calendar-time-scroll")).vadjustment.value = 510;
+        for (int n = 0; n < 5; n++) yield pause ();
+        var menu = menu_in (time_event (active_events (), "Detailed meeting"));
+        menu.popup ();
+        yield expect ("Room <A> & B");
+        yield expect ("Discuss <scope> & next steps");
+        for (int n = 0; n < 5; n++) yield pause ();
+        assert (menu.popover.get_mapped ());
+        preview (window, "time-grid-details");
+        var preview_dir = Environment.get_variable ("AGENDA_PREVIEW_DIR");
+        if (preview_dir != null) {
+            var paintable = new Gtk.WidgetPaintable (menu.popover);
+            var snapshot = new Gtk.Snapshot ();
+            paintable.snapshot (snapshot, menu.popover.get_width (), menu.popover.get_height ());
+            var node = snapshot.to_node ();
+            if (node != null) menu.popover.get_native ().get_renderer ().render_texture (node, null).save_to_png (
+                Path.build_filename (preview_dir, "time-grid-popup.png"));
+        }
+        label_button (menu.popover, "Open in Calendar").clicked ();
+        var log = Environment.get_variable ("AGENDA_OPEN_LOG");
+        for (int n = 0; n < 100 && !FileUtils.test (log, FileTest.EXISTS); n++) yield pause ();
+        string command;
+        FileUtils.get_contents (log, out command);
+        assert (command == "--show-day\n" + today.format ("%F") + "\n");
+        // A desktop without the native Calendar client still has full block
+        // details; it must not offer an action that cannot launch.
+        var old_path = Environment.get_variable ("PATH");
+        Environment.set_variable ("PATH", Path.get_dirname (log), true);
+        var without_client = menu_in (time_event (active_events (), "Overlap A"));
+        try {
+            without_client.popup ();
+            for (int n = 0; n < 5; n++) yield pause ();
+            assert (without_client.popover.get_mapped ());
+            assert (label_button (without_client.popover, "Open in Calendar") == null);
+            without_client.popdown ();
+        } finally {
+            Environment.set_variable ("PATH", old_path, true);
+        }
+        stdout.printf ("PASS literal block details, isolated Calendar action and missing-client fallback\n");
     }
 
     async void pause () {
@@ -566,6 +806,7 @@ class AgendaTest : Object {
             choose_view ("day");
             yield navigation_checks ();
             yield view_checks (window);
+            yield time_grid_checks (window);
             choose_view ("upcoming");
             yield expect ("Upcoming · next 30 days");
             preview (window, "calendar-events");

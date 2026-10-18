@@ -8,9 +8,13 @@ mkdir -p "$out"
 python3 "$here/make-fixtures.py" >/dev/null
 home=$(mktemp -d); trap 'rm -rf "$home" 2>/dev/null || true' EXIT
 mkdir -p "$home/.local/bin" "$home/.local/lib/codexbar-cli"
+if [[ -n ${CB_DISPLAY_PREFS:-} ]]; then
+  mkdir -p "$home/.config/codexbar"
+  cp -- "$CB_DISPLAY_PREFS" "$home/.config/codexbar/wingpanel.json"
+fi
 printf '#!/bin/sh\n[ "$1" = --snapshot ] && cat "$CB_FIXTURE"\nexit 0\n' > "$home/.local/bin/codexbar-linux"
 printf '#!/usr/bin/env python3\nimport os,sys\nsys.stdout.write(open(os.environ["CB_SESSIONS"]).read())\n' > "$home/.local/lib/codexbar-cli/codexbar-sessions.py"
-printf '#!/usr/bin/env python3\nimport os,pathlib,json,sys\nif sys.argv[1:]==["accounts"]: print((pathlib.Path(os.environ["CB_FIXTURE"]).parent / ("accounts-opencode" + ("-hints" if pathlib.Path(os.environ["CB_FIXTURE"]).stem=="hints" else "") + ".json")).read_text())\nelse: print(json.dumps({"status":"available","accountEmail":"me@opencode.example","periods":[{"label":"7 days","requests":565,"tokens":120813143,"costUSD":14.72}]}))\n' > "$home/.local/lib/codexbar-cli/codexbar-opencode-local.py"
+printf '#!/usr/bin/env python3\nimport os,pathlib,json,sys\nif sys.argv[1:]==["accounts"]: print((pathlib.Path(os.environ["CB_FIXTURE"]).parent / ("accounts-opencode" + ("-hints" if pathlib.Path(os.environ["CB_FIXTURE"]).stem=="hints" else "-single" if pathlib.Path(os.environ["CB_FIXTURE"]).stem=="opencode-compact" else "") + ".json")).read_text())\nelse: print(json.dumps({"status":"available","accountEmail":"me@opencode.example","periods":[{"label":"7 days","requests":565,"tokens":120813143,"costUSD":14.72}]}))\n' > "$home/.local/lib/codexbar-cli/codexbar-opencode-local.py"
 printf '#!/usr/bin/env python3\nimport os,pathlib\nprint((pathlib.Path(os.environ["CB_FIXTURE"]).parent / ("accounts-codex" + ("-hints" if pathlib.Path(os.environ["CB_FIXTURE"]).stem=="hints" else "") + ".json")).read_text())\n' > "$home/.local/lib/codexbar-cli/codexbar-accounts.py"
 printf '#!/usr/bin/env python3\nimport os,pathlib\nprint((pathlib.Path(os.environ["CB_FIXTURE"]).parent / ("accounts-claude" + ("-hints" if pathlib.Path(os.environ["CB_FIXTURE"]).stem=="hints" else "") + ".json")).read_text())\n' > "$home/.local/lib/codexbar-cli/codexbar-claude.py"
 chmod +x "$home/.local/lib/codexbar-cli/codexbar-claude.py" "$home/.local/lib/codexbar-cli/codexbar-accounts.py" "$home/.local/bin/codexbar-linux" "$home/.local/lib/codexbar-cli/codexbar-sessions.py" "$home/.local/lib/codexbar-cli/codexbar-opencode-local.py"

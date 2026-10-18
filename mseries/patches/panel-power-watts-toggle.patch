@@ -1,0 +1,67 @@
+--- a/src/Widgets/DisplayWidget.vala
++++ b/src/Widgets/DisplayWidget.vala
+@@ -78,6 +78,9 @@
+ 
+         append (charge_eta_revealer);
+         append (power_draw_revealer);
++        WattSettings.get_default ().bind_property (
++            "enabled", power_draw_revealer, "visible", GLib.BindingFlags.SYNC_CREATE
++        );
+ 
+         settings.bind ("show-percentage", percent_revealer, "reveal-child", GLib.SettingsBindFlags.GET);
+         bind_property ("allow-percent", percent_revealer, "visible", GLib.BindingFlags.SYNC_CREATE);
+@@ -149,3 +152,38 @@
+         }
+     }
+ }
++
++/** Per-user preference shared by the menu and the bar, without replacing system schemas. */
++public class Power.Widgets.WattSettings : Object {
++    private static WattSettings? instance = null;
++    public bool enabled { get; set; default = true; }
++
++    public static unowned WattSettings get_default () {
++        if (instance == null) instance = new WattSettings ();
++        return instance;
++    }
++
++    private static string path () {
++        return Path.build_filename (Environment.get_user_config_dir (), "mseries", "battery-meter.ini");
++    }
++
++    construct {
++        try {
++            var file = new KeyFile ();
++            file.load_from_file (path (), KeyFileFlags.NONE);
++            enabled = file.get_boolean ("panel", "show-watts");
++        } catch (Error e) {
++            // Preserve the existing display until the owner chooses otherwise.
++        }
++        notify["enabled"].connect (() => {
++            var file = new KeyFile ();
++            file.set_boolean ("panel", "show-watts", enabled);
++            DirUtils.create_with_parents (Path.get_dirname (path ()), 0755);
++            try {
++                FileUtils.set_contents (path (), file.to_data ());
++            } catch (Error e) {
++                warning ("Could not save watt display preference: %s", e.message);
++            }
++        });
++    }
++}
+--- a/src/Widgets/PopoverWidget.vala
++++ b/src/Widgets/PopoverWidget.vala
+@@ -72,6 +72,13 @@
+ 
+         var show_percent_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+         show_percent_box.append (show_percent_switch);
++        var show_watts_switch = new Granite.SwitchModelButton (_("Show Watts in Menu Bar"));
++        show_watts_switch.add_css_class (Granite.STYLE_CLASS_H4_LABEL);
++        WattSettings.get_default ().bind_property (
++            "enabled", show_watts_switch, "active",
++            GLib.BindingFlags.SYNC_CREATE | GLib.BindingFlags.BIDIRECTIONAL
++        );
++        show_percent_box.append (show_watts_switch);
+         show_percent_box.append (show_percent_sep);
+ 
+         var show_percent_revealer = new Gtk.Revealer () {

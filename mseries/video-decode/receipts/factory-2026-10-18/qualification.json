@@ -1,0 +1,217 @@
+{
+  "date": "2026-10-18",
+  "result": "pass",
+  "sourceCommit": "5c0c60e7ff51dd97e093c02167c3de0686e71052",
+  "build": {
+    "run": 39128555434,
+    "url": "https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39128555434",
+    "conclusion": "success",
+    "fairydust": false,
+    "fairydustTunnel": false
+  },
+  "iso": {
+    "name": "elementaryos-9.0-daily-arm64.20261018124553.iso",
+    "bytes": 7968174080,
+    "sha256": "189f82fcc1eb78136c00f33c02c48e29877fd29d93b4bbf617bb2137c1060ba2",
+    "independentSha256Check": "pass"
+  },
+  "installation": {
+    "blankDiskGiB": 64,
+    "installer": "/usr/sbin/elementary-install",
+    "installerExit": 0,
+    "liveKernel": "7.0.0-38-generic",
+    "installedDiskBootWithoutIso": true,
+    "userCreatedViaGraphicalInitialSetup": true,
+    "browserPackagesInstalledAfterBoot": false,
+    "sharedHostDirectories": false
+  },
+  "vm": {
+    "architecture": "aarch64",
+    "acceleration": "KVM",
+    "cpus": 2,
+    "memoryMiB": 4096,
+    "gpu": "virtio-gpu-gl-pci (virgl)",
+    "display": "egl-headless with private Unix VNC socket",
+    "sound": "virtio-sound; host output disabled",
+    "network": "QEMU user NAT",
+    "qemuArguments": [
+      "qemu-system-aarch64",
+      "-name",
+      "youtube-factory-fresh-install",
+      "-machine",
+      "virt,accel=kvm",
+      "-cpu",
+      "host",
+      "-smp",
+      "2",
+      "-m",
+      "4096",
+      "-drive",
+      "if=pflash,format=raw,readonly=on,file=/usr/share/AAVMF/AAVMF_CODE.no-secboot.fd",
+      "-drive",
+      "if=pflash,format=raw,file=<qa-workspace>/fresh-vm/vars.fd",
+      "-device",
+      "virtio-gpu-gl-pci",
+      "-device",
+      "qemu-xhci",
+      "-device",
+      "usb-kbd",
+      "-device",
+      "usb-tablet",
+      "-drive",
+      "file=<qa-workspace>/fresh-vm/disk.qcow2,if=virtio,format=qcow2",
+      "-device",
+      "virtio-scsi-pci",
+      "-audiodev",
+      "none,id=qa-audio",
+      "-device",
+      "virtio-sound-pci,audiodev=qa-audio",
+      "-nic",
+      "user,model=virtio-net-pci",
+      "-display",
+      "egl-headless,rendernode=/dev/dri/renderD128",
+      "-vnc",
+      "unix:<qa-workspace>/fresh-vm/vnc.sock",
+      "-serial",
+      "unix:<qa-workspace>/fresh-vm/serial.sock,server=on,wait=off",
+      "-qmp",
+      "unix:<qa-workspace>/fresh-vm/qmp.sock,server=on,wait=off"
+    ]
+  },
+  "freshProfilePlayback": {
+    "test": "fresh installed YouTube factory launcher",
+    "checks": {
+      "factoryRuntime": "Factory Brave 1.97.59: payload verified",
+      "nativeAptBrowserAbsent": true,
+      "profileInitiallyAbsent": true,
+      "desktopLaunch": true,
+      "dockApplicationIdentity": true,
+      "youtubePlayback": true
+    },
+    "errors": [],
+    "browserVersion": "Brave Browser 155.1.97.59 unknown",
+    "system": {
+      "kernel": "7.0.0-38-generic",
+      "sessionType": "wayland",
+      "wayland": "wayland-0",
+      "commandLine": "usrhash=e41111caf0d93d3bbb752ced781db9084d0514fb16a54ffbc5414f32835e3e91 splash quiet root=dissect mount.usr=dissect rw audit=0 systemd.image_policy=esp=unprotected:xbootldr=unprotected+unused+absent:usr=signed:root=unprotected+encrypted+absent:home=unprotected+absent:=ignore systemd.image_filter=usr=elementary_*:usr-verity=elementary_*:usr-verity-sig=elementary_*:root=elementary-*:home=elementary-* ipe.enforce=0"
+    },
+    "icon": {
+      "desktopId": "mseries-brave-youtube.desktop",
+      "name": "mseries-youtube",
+      "path": "/usr/share/icons/hicolor/scalable/apps/mseries-youtube.svg",
+      "sha256": "1f1eb5c2c8e49827d6320360b167b2570aba4997e9735b0f9e2b17c8578f2cb3",
+      "wmClass": "brave-www.youtube.com__-Default"
+    },
+    "instrumentation": "Temporary bwrap PATH shim appends remote-debugging flags only; installed launcher is unchanged.",
+    "windows": [
+      {
+        "id": 3864648448,
+        "appId": "mseries-brave-youtube.desktop",
+        "wmClass": "brave-www.youtube.com__-Default",
+        "title": "www.youtube.com_/"
+      }
+    ],
+    "page": {
+      "title": "Big Buck Bunny 60fps 4K - Official Blender Foundation Short Film - YouTube",
+      "url": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+      "ready": 4,
+      "text": "0:00 / 10:34"
+    },
+    "playback": {
+      "title": "Big Buck Bunny 60fps 4K - Official Blender Foundation Short Film - YouTube",
+      "start": {
+        "time": 0.248422,
+        "frames": 12,
+        "audioBytes": 8817
+      },
+      "end": {
+        "time": 10.195916,
+        "frames": 310,
+        "audioBytes": 166714
+      },
+      "width": 854,
+      "height": 480,
+      "duration": 634.601,
+      "readyState": 4,
+      "paused": false,
+      "dropped": 14,
+      "error": null
+    },
+    "result": "pass",
+    "receivedAtUnix": 1792336607.2724535
+  },
+  "hdPlayback": {
+    "start": {
+      "time": 79.944928,
+      "frames": 709,
+      "dropped": 4,
+      "audioBytes": 133797
+    },
+    "end": {
+      "time": 89.912625,
+      "frames": 1308,
+      "dropped": 22,
+      "audioBytes": 290714
+    },
+    "width": 1920,
+    "height": 1080,
+    "paused": false,
+    "error": null,
+    "quality": "hd1080",
+    "stage": "hd-playback",
+    "available": {
+      "levels": [
+        "hd2160",
+        "hd1440",
+        "hd1080",
+        "hd720",
+        "large",
+        "medium",
+        "small",
+        "tiny",
+        "auto"
+      ],
+      "quality": "large"
+    },
+    "result": "pass",
+    "receivedAtUnix": 1792336689.9011276
+  },
+  "postPlaybackIdentity": {
+    "stage": "post-playback-window-identity",
+    "windows": [
+      {
+        "id": 3864648448,
+        "appId": "mseries-brave-youtube.desktop",
+        "wmClass": "brave-www.youtube.com__-Default",
+        "title": "Big Buck Bunny 60fps 4K - Official Blender Foundation Short Film - YouTube"
+      }
+    ],
+    "usrMount": "{\n   \"filesystems\": [\n      {\n         \"target\": \"/usr\",\n         \"source\": \"/dev/mapper/usr\",\n         \"fstype\": \"erofs\",\n         \"options\": \"ro,nodev,relatime,user_xattr,acl,cache_strategy=readaround\"\n      }\n   ]\n}\n",
+    "result": "pass",
+    "receivedAtUnix": 1792336780.474493
+  },
+  "screenshot": {
+    "file": "youtube-dock-playback.png",
+    "sha256": "c08011d0b426dcc63a92c5cf50247d01e6601433d03c8011cb372383711fcdae",
+    "capture": "Installed elementary Screenshot app, Save action via guest AT-SPI; unedited PNG. Browser resized to leave the default dock unobscured.",
+    "visualInspection": "YouTube movie frame and YouTube logo in the running dock item visible."
+  },
+  "diagnosticNotes": [
+    "Initial non-3D virtio GPU fixture could load the page but Chromium failed DRM dumb-buffer creation before mapping a window. The same installed image and launcher mapped normally with virgl. No product flags were changed.",
+    "The diagnostic browser profile was archived, then the passing launcher run created an absent default profile. No host browser profile, account, or package was imported.",
+    "The harness uses installed GTK3 introspection; GTK4 introspection is not included. It waits for mapped windows and document readiness.",
+    "QMP screendump cannot capture the GL scanout in this setup; the installed Screenshot application supplied the final PNG."
+  ],
+  "limits": [
+    "ARM64 VM installation, application identity, logo and public YouTube software video/audio decoding only.",
+    "No Apple physical boot, V4L2 hardware decode, DRM/Widevine or listening assessment; host sound output was disabled.",
+    "Observed frame drops: 14 cumulative at the first sample end; 18 additional during the 1080p interval. No zero-drop performance claim.",
+    "Later unrelated main commits are not included in this ISO; sourceCommit identifies the tested image exactly."
+  ],
+  "cleanup": {
+    "testVmStopped": true,
+    "receiptServerStopped": true,
+    "hostKernelBootloaderAudioUnchanged": true
+  }
+}

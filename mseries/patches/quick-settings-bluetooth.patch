@@ -1,0 +1,20 @@
+--- a/src/PopoverWidget.vala
++++ b/src/PopoverWidget.vala
+@@ -80,6 +80,7 @@
+             main_box.append (new KeyboardBrightness ());
+             main_box.append (new ScreenBrightness ());
+             main_box.append (new ChargeLimit ());
++            main_box.append (new Bluetooth ());
+             main_box.append (new AudioOutput ());
+         }
+         main_box.append (scale_box);
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -32,6 +32,7 @@
+     'Widgets' / 'AudioOutputModel.vala',
+     'Widgets' / 'AudioOutput.vala',
+     'Widgets' / 'AirPlayOutputs.vala',
++    'Widgets' / 'Bluetooth.vala',
+     'Widgets' / 'UserList.vala',
+     'Widgets' / 'UserRow.vala',
+ ]

@@ -98,6 +98,31 @@ opens multitasking, three-finger swipe left/right switches workspaces, and
 four-finger gestures are unset (`io.elementary.desktop.wm.gestures`). Remove
 everything with `bash mseries/install-touchegg.sh --uninstall`.
 
+## Discord
+
+Run `bash mseries/install-discord.sh`. Discord Inc. publishes no Linux ARM64
+build, so this installs [Vesktop](https://github.com/Vencord/Vesktop) (GPL-3.0),
+an Electron Discord client with native aarch64 releases, pinned to v1.6.7 and
+checked against its SHA-256 before install. It lands in `~/.local/lib/vesktop`
+with a `discord` launcher (native Wayland hint) and an app-menu entry. It is a
+third-party client, not Discord's own app. Remove with
+`bash mseries/install-discord.sh --uninstall` (login and settings in
+`~/.config/vesktop` are kept). Voice, screen share and login are not yet
+verified on this machine.
+
+### Official Discord (x86-64, emulated)
+
+Discord's own Linux build is amd64 only, so it runs under FEX. FEX aborts on this
+16 KB-page kernel, so `bash mseries/install-muvm.sh` builds muvm, libkrun and
+libkrunfw (pinned tags; the guest kernel uses 4 KB pages), adds the FEX PPA
+(key fingerprint pinned) and fetches the Ubuntu 24.04 x86-64 rootfs. Then
+`bash mseries/install-discord-official.sh` runs Discord's own updater
+bootstrap, which fetches the official app, and runs its unmodified `app.asar`
+and modules on stock Electron 43.2.0 x86-64, because Discord's bundled Electron
+42 dies with SIGTRAP under FEX 2610 (stock Electron 42.11.12 does too). Launch
+with `discord-official`. Login, voice (native modules were built for Electron
+42), rendering and speed are not verified. Third-party Vesktop stays as `discord`.
+
 ## Signal
 
 Run `bash mseries/install-signal.sh`. Installs the official ARM64 beta,

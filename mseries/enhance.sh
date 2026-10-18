@@ -15,6 +15,7 @@
 #   audio     WirePlumber rules (speaker/headphone outputs stay open, no pop; headset
 #             mic is not the default) and an audio watchdog that restarts PipeWire
 #             when it stops answering
+#   battery   battery history logger (user service), `mseries-battery` command and the Battery app
 #   session   per-user helpers as system-wide user units: docked-lid mode, GNOME
 #             brightness compatibility, ambient keyboard lighting, deferred
 #             CodexBar/netusage/Widevine setup in the desktop user session
@@ -36,7 +37,7 @@ here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 ROOT=/
 only=""
 skip=""
-ALL=(tuning power diagnostics audio session theme payload firstboot)
+ALL=(tuning power diagnostics audio battery session theme payload firstboot)
 
 log() { printf '[enhance] %s\n' "$*"; }
 
@@ -173,6 +174,20 @@ WantedBy=default.target
 EOF
   enable --global mseries-audio-watchdog.service
   log "audio: WirePlumber no-suspend/headset-mic rules and the audio watchdog"
+}
+
+mod_battery() {
+  local lib=/usr/libexec/mseries/battery
+  copy 0644 "$here/battery/battery_core.py" $lib/battery_core.py
+  copy 0755 "$here/battery/mseries-battery-logger.py" $lib/mseries-battery-logger.py
+  copy 0755 "$here/battery/mseries-battery.py" $lib/mseries-battery.py
+  copy 0755 "$here/battery/mseries-battery-app.py" $lib/mseries-battery-app.py
+  copy 0644 "$here/battery/mseries-battery-logger.service" /usr/lib/systemd/user/mseries-battery-logger.service
+  copy 0644 "$here/battery/org.mseries.Battery.desktop" /usr/share/applications/org.mseries.Battery.desktop
+  mkdir -p "$R/usr/local/bin"
+  ln -sfn $lib/mseries-battery.py "$R/usr/local/bin/mseries-battery"
+  enable --global mseries-battery-logger.service
+  log "battery: history logger, mseries-battery command and Battery app"
 }
 
 mod_session() {
@@ -316,16 +331,16 @@ mod_payload() {
   for f in install-desktop-space.sh install-dock-drawers.sh install-wingpanel-codexbar-left.sh \
            display-space/full_height_boot.py display-space/dock_profile.py \
            calendar/accounts lib-backup.sh lib-apt.sh install-brave.sh install-video-decode.sh video-decode/90-mseries-avd.conf video-decode/brave-youtube install-native-firefox.sh install-touchegg.sh \
-           install-network-throughput.sh install-quick-settings-brightness.sh \
+           install-network-throughput.sh install-quick-settings-brightness.sh install-bluetooth-control-center.sh \
            install-sound-indicator-fix.sh install-keyboard-indicator-fix.sh install-calendar-agenda.sh \
-           install-files-portal-fix.sh install-gala-osk-fix.sh install-netusage-policy.sh \
-           install-codexbar.sh install-brave-widevine.sh codexbar-opencode-local.py codexbar-accounts.py codexbar-claude.py codexbar-opencode-login.py deploy-codexbar.sh \
+           install-files-portal-fix.sh install-gala-osk-fix.sh install-netusage-policy.sh install-battery-eta.sh \
+           install-codexbar.sh install-brave-widevine.sh codexbar-opencode-local.py codexbar-accounts.py codexbar-claude.py codexbar_claude_history.py codexbar_cache.py codexbar-sessions.py codexbar-opencode-login.py deploy-codexbar.sh \
            codexbar-opencode-wrapper.py user-enhance.sh install-dark-mode.sh \
            dark-mode/mseries-dark-mode dark-mode/mseries-dark-mode.service dark-mode/mseries-dark-mode.timer \
            netspeed/netusage/install.sh netspeed/netusage/netusage.py \
            netspeed/netusage/netusage.service netspeed/netusage/49-mseries-netusage.rules \
            quick-settings/ScreenBrightness.vala quick-settings/KeyboardBrightness.vala \
-           quick-settings/ChargeLimit.vala quick-settings/AudioOutputModel.vala quick-settings/AudioOutput.vala quick-settings/AirPlayOutputs.vala \
+           quick-settings/ChargeLimit.vala quick-settings/Bluetooth.vala quick-settings/AudioOutputModel.vala quick-settings/AudioOutput.vala quick-settings/AirPlayOutputs.vala \
            gala-daemon-fix/build.py \
            netspeed/panel-network.patch netspeed/wire-network-usage.py; do
     copy 0755 "$here/$f" "$prefix/mseries/$f"

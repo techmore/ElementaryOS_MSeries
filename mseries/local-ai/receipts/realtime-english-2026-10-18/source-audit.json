@@ -1,0 +1,150 @@
+{
+  "date": "2026-10-18",
+  "scope": "Point-in-time public branch/source audit, not speed measurements on other hardware",
+  "repositories": [
+    {
+      "repo": "joshuaswarren/omarchy-mlx",
+      "default_branch": "main",
+      "branches_enumerated": 492,
+      "default_sha": "f6d3cca3dd3eb5d0711e1cbf2c5f5053c94be569",
+      "release": {
+        "tag_name": "v0.7.33",
+        "published_at": "2026-10-16T06:09:47Z",
+        "target_commitish": "main",
+        "html_url": "https://github.com/joshuaswarren/omarchy-mlx/releases/tag/v0.7.33"
+      }
+    },
+    {
+      "repo": "joshuaswarren/omarchy-ane",
+      "default_branch": "main",
+      "branches_enumerated": 168,
+      "default_sha": "94ccecab88d541c86febbddabb0515a7ba5e9662",
+      "release": {
+        "tag_name": "v0.4.9",
+        "published_at": "2026-10-16T01:53:56Z",
+        "target_commitish": "f45847c26f74e981e1e250228d10b975d376d82e",
+        "html_url": "https://github.com/joshuaswarren/omarchy-ane/releases/tag/v0.4.9"
+      }
+    },
+    {
+      "repo": "omacom/omarchy-mac",
+      "default_branch": "quattro",
+      "branches_enumerated": 243,
+      "default_sha": "ba546a61f881c1fe9d79d75ec050eab048b8cb63",
+      "release": {
+        "tag_name": "v4.0.2-2",
+        "published_at": "2026-09-07T06:42:41Z",
+        "target_commitish": "quattro",
+        "html_url": "https://github.com/omacom/omarchy-mac/releases/tag/v4.0.2-2"
+      }
+    },
+    {
+      "repo": "omacom/omarchy-mac-pkgs",
+      "default_branch": "main",
+      "branches_enumerated": 28,
+      "default_sha": "ffe5246c98a858a315dc87ade808162f07f55d59",
+      "release": null
+    }
+  ],
+  "mlx_comparisons": [
+    {
+      "comparison_url": "https://github.com/joshuaswarren/omarchy-mlx/compare/f6d3cca3dd3eb5d0711e1cbf2c5f5053c94be569...3487eec80a949ba6648a863d4d56de620439c12f",
+      "base_sha": "f6d3cca3dd3eb5d0711e1cbf2c5f5053c94be569",
+      "head": {
+        "name": "agent/coreml-tdt-stream",
+        "sha": "3487eec80a949ba6648a863d4d56de620439c12f"
+      },
+      "ahead_by": 1,
+      "behind_by": 1906,
+      "changed_paths": [
+        "overlay/tools/coreml/parakeet_tdt.py"
+      ]
+    },
+    {
+      "comparison_url": "https://github.com/joshuaswarren/omarchy-mlx/compare/f6d3cca3dd3eb5d0711e1cbf2c5f5053c94be569...69d9a14a37b705a87f0d6a9e44849007793ca6fb",
+      "base_sha": "f6d3cca3dd3eb5d0711e1cbf2c5f5053c94be569",
+      "head": {
+        "name": "integration/tdt-decoder-stack",
+        "sha": "69d9a14a37b705a87f0d6a9e44849007793ca6fb"
+      },
+      "ahead_by": 1,
+      "behind_by": 1838,
+      "changed_paths": [
+        "overlay/mlx/backend/omarchy/custom_kernel.cpp",
+        "overlay/tools/coreml/vulkan_decoder.py",
+        "tests/coreml/test_vulkan_decoder.py",
+        "tests/coreml/test_vulkan_decoder_projector.py",
+        "tests/custom_kernel_smoke.py"
+      ]
+    },
+    {
+      "comparison_url": "https://github.com/joshuaswarren/omarchy-mlx/compare/f6d3cca3dd3eb5d0711e1cbf2c5f5053c94be569...633d926c41a90e794a1b7479f89bfc5376aaecbc",
+      "base_sha": "f6d3cca3dd3eb5d0711e1cbf2c5f5053c94be569",
+      "head": {
+        "name": "agent/ParakeetWarm-w6Z",
+        "sha": "633d926c41a90e794a1b7479f89bfc5376aaecbc"
+      },
+      "ahead_by": 3,
+      "behind_by": 1024,
+      "changed_paths": [
+        "overlay/mlx/backend/omarchy/ane/bundle.cpp",
+        "overlay/mlx/backend/omarchy/ane/bundle.h",
+        "overlay/tests/omarchy/ane/test_bundle.cpp",
+        "overlay/tools/mlx-omarchy-parakeet/mlx_omarchy_parakeet.py"
+      ]
+    },
+    {
+      "comparison_url": "https://github.com/joshuaswarren/omarchy-mlx/compare/f6d3cca3dd3eb5d0711e1cbf2c5f5053c94be569...afe1ae6490e3f8cb40d7568343d30ec1c5aa32c3",
+      "base_sha": "f6d3cca3dd3eb5d0711e1cbf2c5f5053c94be569",
+      "head": {
+        "name": "upstream/parakeet-worker-pcore",
+        "sha": "afe1ae6490e3f8cb40d7568343d30ec1c5aa32c3"
+      },
+      "ahead_by": 3,
+      "behind_by": 48,
+      "changed_paths": [
+        "docs/parakeet.md",
+        "overlay/tests/omarchy/coreml/test_ane_resident.py",
+        "overlay/tools/coreml/ane_resident.py"
+      ]
+    },
+    {
+      "comparison_url": "https://github.com/joshuaswarren/omarchy-mlx/compare/f6d3cca3dd3eb5d0711e1cbf2c5f5053c94be569...e10f53a6293b108d61ad5ae3c056cd469f275004",
+      "base_sha": "f6d3cca3dd3eb5d0711e1cbf2c5f5053c94be569",
+      "head": {
+        "name": "codex/parakeet-vulkan-decoder-evidence",
+        "sha": "e10f53a6293b108d61ad5ae3c056cd469f275004"
+      },
+      "ahead_by": 6,
+      "behind_by": 1924,
+      "changed_paths": [
+        "overlay/tools/coreml/pinned_component.py",
+        "overlay/tools/coreml/vulkan_decoder.py",
+        "tests/coreml/test_pinned_component.py",
+        "tests/coreml/test_vulkan_decoder.py"
+      ]
+    }
+  ],
+  "omarchy_mx": {
+    "repo": "maralcbr/omarchy-mx-mac",
+    "ref": "main",
+    "sha": "e5714f9d2fe27f6e4e54d47849b856c596d1a351",
+    "pushed_at": "2026-10-12T06:52:08Z",
+    "tree_truncated": false,
+    "speech_related_paths": [
+      "bin/omarchy-voxtype-config",
+      "bin/omarchy-voxtype-install",
+      "bin/omarchy-voxtype-model",
+      "bin/omarchy-voxtype-remove",
+      "bin/omarchy-voxtype-status",
+      "default/hypr/bindings/voxtype.lua",
+      "default/voxtype",
+      "default/voxtype/config.toml",
+      "install/user/first-run/install-voxtype.hook",
+      "manual/11-text-extraction-dictation.md",
+      "shell/plugins/bar/indicators/Dictation.qml",
+      "test/shell.d/voxtype-install-test.sh",
+      "test/shell.d/voxtype-invitation-test.sh"
+    ]
+  }
+}

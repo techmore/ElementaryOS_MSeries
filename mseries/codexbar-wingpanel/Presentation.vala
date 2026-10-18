@@ -103,25 +103,29 @@ namespace MSeries {
         }
 
         /* Saved accounts retain every window: a weekly balance must never hide an empty 5-hour limit. */
-        public static string account_quota (Json.Array? windows, int64 now_unix) {
+        public static string account_quota (Json.Array? windows, int64 now_unix, bool show_percent = true, bool show_reset = true) {
+            if (!show_percent && !show_reset) return "";
             var parts = new StringBuilder ();
             for (uint i = 0; windows != null && i < windows.get_length (); i++) {
                 var window = windows.get_object_element (i);
                 var node = window.get_member ("remaining");
                 if (node == null || node.get_node_type () != Json.NodeType.VALUE) continue;
-                var minutes = (int) window.get_int_member_with_default ("minutes", 0);
-                var label = short_window_label (window.get_string_member_with_default ("label", "Quota"), minutes);
-                var reset = new DateTime.from_iso8601 (window.get_string_member_with_default ("resetsAt", ""), null);
+                var minutes = (int) JsonBoundary.integer (window, "minutes", 0);
+                var label = short_window_label (JsonBoundary.text (window, "label", "Quota"), minutes);
+                var reset = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt", ""), null);
                 var eta = reset == null ? "?" : reset.to_unix () <= now_unix ? "now"
                     : countdown_text (reset.to_unix () - now_unix);
                 if (parts.len > 0) parts.append (" · ");
-                parts.append ("%s %.0f%% ↻%s".printf (label, node.get_double ().clamp (0, 100), eta));
+                parts.append (label);
+                if (show_percent) parts.append (" %.0f%%".printf (node.get_double ().clamp (0, 100)));
+                if (show_reset) parts.append (" ↻" + eta);
             }
             return parts.len > 0 ? parts.str : "Quota unavailable";
         }
 
         public static string account_quota_markup (Json.Array? windows, int64 now_unix,
-                                                    string healthy, string low, string critical) {
+                                                    string healthy, string low, string critical, bool show_percent = true, bool show_reset = true) {
+            if (!show_percent && !show_reset) return "";
             var text = new StringBuilder ();
             for (uint i = 0; windows != null && i < windows.get_length (); i++) {
                 var window = windows.get_object_element (i);
@@ -129,11 +133,13 @@ namespace MSeries {
                 if (remaining == null || remaining.get_node_type () != Json.NodeType.VALUE) continue;
                 var single = new Json.Array ();
                 single.add_object_element (window.ref ());
-                var parts = account_quota (single, now_unix).split (" ↻", 2);
+                var parts = account_quota (single, now_unix, show_percent, show_reset).split (" ↻", 2);
                 var level = level_for (remaining.get_double ());
                 var color = level == QuotaLevel.CRITICAL ? critical : level == QuotaLevel.LOW ? low : healthy;
                 if (text.len > 0) text.append (" · ");
-                text.append ("<span foreground=\"%s\" weight=\"semibold\">%s</span>".printf (color, Markup.escape_text (parts[0])));
+                text.append (color.length > 0
+                    ? "<span foreground=\"%s\" weight=\"semibold\">%s</span>".printf (color, Markup.escape_text (parts[0]))
+                    : "<span weight=\"semibold\">%s</span>".printf (Markup.escape_text (parts[0])));
                 if (parts.length > 1) text.append ("<span alpha=\"65%\"> ↻%s</span>".printf (Markup.escape_text (parts[1])));
             }
             return text.len > 0 ? text.str : "Quota unavailable";
@@ -150,7 +156,7 @@ namespace MSeries {
                 if (node == null || node.get_node_type () != Json.NodeType.VALUE) return -1;
                 var remaining = node.get_double ();
                 if (remaining < 0 || remaining > 100 || remaining.is_nan ()) return -1;
-                var reset = new DateTime.from_iso8601 (window.get_string_member_with_default ("resetsAt", ""), null);
+                var reset = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt", ""), null);
                 if (reset != null && reset.to_unix () <= now_unix) return -1;
                 lowest = double.min (lowest, remaining);
             }
@@ -161,11 +167,11 @@ namespace MSeries {
             int64 earliest = 0;
             for (uint i = 0; windows != null && i < windows.get_length (); i++) {
                 var window = windows.get_object_element (i);
-                var minutes = window.get_int_member_with_default ("minutes", 0);
-                var label = window.get_string_member_with_default ("label", "").down ();
+                var minutes = JsonBoundary.integer (window, "minutes", 0);
+                var label = JsonBoundary.text (window, "label", "").down ();
                 if (minutes != 10080 && !(minutes == 0 && (label.contains ("week")
                     || label == "7d" || label.has_prefix ("7 day")))) continue;
-                var reset = new DateTime.from_iso8601 (window.get_string_member_with_default ("resetsAt", ""), null);
+                var reset = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt", ""), null);
                 if (reset != null && reset.to_unix () > now_unix && (earliest == 0 || reset.to_unix () < earliest)) {
                     earliest = reset.to_unix ();
                 }
@@ -180,10 +186,10 @@ namespace MSeries {
             int64 soonest = 0;
             for (uint i = 0; i < accounts.get_length (); i++) {
                 var account = accounts.get_object_element (i);
-                if (account.get_boolean_member_with_default ("stale", false)) continue;
-                var id = account.get_string_member_with_default ("id", "");
+                if (JsonBoundary.flag (account, "stale", false)) continue;
+                var id = JsonBoundary.text (account, "id", "");
                 if (id.length == 0) continue;
-                var windows = account.has_member ("windows") ? account.get_array_member ("windows") : null;
+                var windows = account.has_member ("windows") ? JsonBoundary.array (account, "windows") : null;
                 var remaining = account_headroom (windows, now_unix);
                 if (remaining > 0 && remaining >= highest) {
                     if (remaining > highest) best = new Json.Array ();
@@ -214,6 +220,32 @@ namespace MSeries {
             if (state == EtaState.EXHAUSTED) return eta_detail;
             var base_text = reset.length > 0 ? reset : "Reset time unknown";
             return state == EtaState.DEPLETING ? base_text + " · " + eta_detail : base_text;
+        }
+
+        /* "2 resets" for an account line; empty when the count is unknown. */
+        public static string reset_count_text (int64 available) {
+            if (available < 0) return "";
+            return "%s %s".printf (available.to_string (), available == 1 ? "reset" : "resets");
+        }
+
+        /* "2 resets available · first expires in 3d4h"; the expiry is dropped when unknown or past. */
+        public static string reset_credits_line (int64 available, int64 seconds_to_expiry) {
+            if (available < 0) return "";
+            var text = "%s available".printf (reset_count_text (available));
+            var countdown = countdown_text (seconds_to_expiry);
+            return available > 0 && countdown.length > 0 ? text + " · first expires in " + countdown : text;
+        }
+
+        /* One-row form for a header or account line: "2 resets · exp 3d4h"; the full sentence goes in the tooltip. */
+        public static string reset_credits_chip (int64 available, int64 seconds_to_expiry) {
+            var count = reset_count_text (available);
+            var countdown = countdown_text (seconds_to_expiry);
+            return available > 0 && countdown.length > 0 ? count + " · exp " + countdown : count;
+        }
+
+        /* Within a day of the first reset expiring, use it or lose it. */
+        public static bool reset_expiry_urgent (int64 available, int64 seconds_to_expiry) {
+            return available > 0 && seconds_to_expiry > 0 && seconds_to_expiry < 86400;
         }
     }
 }

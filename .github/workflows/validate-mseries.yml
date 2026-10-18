@@ -24,6 +24,16 @@ on:
       - ".github/workflows/**"
 
 jobs:
+  bluetooth:
+    name: Quick Settings Bluetooth controls (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install native GTK and private D-Bus test dependencies
+        run: sudo apt-get update && sudo apt-get install -y valac libgtk-4-dev libgranite-7-dev python3-dbus python3-gi dbus-x11 xvfb xauth
+      - name: Exercise BlueZ controls without touching hardware
+        run: bash mseries/quick-settings/tests/test-bluetooth.sh
+
   orchard:
     name: Orchard GTK output and lifecycle regressions (arm64)
     runs-on: ubuntu-26.04-arm
@@ -110,10 +120,13 @@ jobs:
           bash -n mseries/install-signal.sh
           bash -n mseries/install-codexbar.sh
           bash -n mseries/deploy-codexbar.sh
+          python3 mseries/test-codexbar-deploy.py
           bash -n mseries/check-codexbar-port.sh
+          python3 mseries/test-codexbar-cache.py
           python3 mseries/test-codexbar-sessions.py
           python3 mseries/test-codexbar-accounts.py
           python3 mseries/test-codexbar-claude.py
+          python3 mseries/test-codexbar-claude-history.py
           python3 mseries/test-codexbar-wrapper.py
           python3 mseries/test-codexbar-opencode-local.py
           python3 mseries/test-codexbar-opencode-login.py
@@ -137,6 +150,8 @@ jobs:
           python3 mseries/local-ai/test_people_watch.py
           python3 mseries/test-image-wiring.py
           python3 mseries/video-decode/test-brave-factory.py
+          python3 mseries/video-decode/test-youtube-launch.py
+          shellcheck -S warning mseries/video-decode/brave-youtube mseries/install-brave-widevine.sh
           python3 mseries/boot/test-prepare-uki-kernels.py
           python3 mseries/test-kernel-config.py
           python3 mseries/test-local-build-preflight.py
@@ -180,5 +195,6 @@ jobs:
           bash -n mseries/enhance.sh mseries/stage-factory-enhancements.sh mseries/aurora-sep/install-touchid-gui.sh
           python3 mseries/test-image-wiring.py
           python3 mseries/video-decode/test-brave-factory.py
+          python3 mseries/video-decode/test-youtube-launch.py
           python3 mseries/boot/test-prepare-uki-kernels.py
           python3 mseries/test-power-install.py

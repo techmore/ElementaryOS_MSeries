@@ -98,7 +98,9 @@ class DictationPanel(Gtk.Application):
                  'finishing': 'Finishing dictation', 'error': 'Dictation stopped; check the focused field and try again',
                  'stopped': 'Speech service is stopped', 'unavailable': 'Speech service is unavailable'}
         self.state.set_label(names.get(phase, 'Speech service is unavailable'))
-        self.record.set_sensitive(phase == 'ready')
+        # This only focuses the original field. Keep retry available after a
+        # field refusal or resource wait; it never starts microphone capture.
+        self.record.set_sensitive(phase not in ('loading', 'listening', 'finishing'))
         self.mode.set_sensitive(not self.busy)
         self.language.set_sensitive(not self.busy and self.mode.get_selected() != 0)
         self.transform.set_sensitive(not self.busy and phase not in ('listening', 'finishing'))

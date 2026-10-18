@@ -1,0 +1,17 @@
+--- a/src/Indicator.vala
++++ b/src/Indicator.vala
+@@ -35,7 +35,13 @@
+         GLib.Intl.bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+ 
+         object_manager = new BluetoothIndicator.Services.ObjectManager ();
+-        object_manager.bind_property ("has-object", this, "visible", GLib.BindingFlags.SYNC_CREATE);
++        // Session controls live in Quick Settings. Keep OBEX and the manager alive;
++        // the greeter still needs its own Bluetooth icon and popover.
++        if (!is_in_session) {
++            object_manager.bind_property ("has-object", this, "visible", GLib.BindingFlags.SYNC_CREATE);
++        } else {
++            visible = false;
++        }
+         obex_manager = new BluetoothIndicator.Services.ObexManager ();
+         if (object_manager.has_object) {
+             object_manager.set_state_from_settings.begin ();

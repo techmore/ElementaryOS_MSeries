@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Screenshot shelf: after a screenshot, show its thumbnail bottom-right for a few seconds.
+"""Screenshot shelf: after a screenshot, show its thumbnail bottom-right, fixed size, for 4 seconds.
 
 Gala saves every screenshot to ~/Pictures/Screenshots (a link to ~/Downloads/Screenshots). This helper
 watches that folder and shows the newest shot as a draggable thumbnail, like macOS.
@@ -7,7 +7,7 @@ watches that folder and shows the newest shot as a draggable thumbnail, like mac
   Drag it into an app      the shot is used and not kept: the saved file is deleted after the drop.
   Hold Alt while dragging  the shot is used and a copy is kept (the thumbnail says so).
   Click it                 opens Markup on the saved file; the file is kept.
-  Ignore it                the thumbnail fades after a few seconds and the file is kept.
+  Ignore it                the thumbnail stays (same size, same corner) for 4 seconds, longer while the pointer is on it; the file is kept.
   Click the x              dismisses it; the file is kept.
 
 A screenshot is only ever deleted by a drag without Alt, and only after the drag was accepted.
@@ -57,16 +57,17 @@ WATCH = os.path.realpath(os.environ.get("MSERIES_SHELF_WATCH", os.path.expanduse
 STAGE = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "mseries-shelf")
 LOG = os.path.expanduser("~/.cache/mseries-screenshot-shelf.log")
 MARKUP = os.environ.get("MSERIES_MARKUP", os.path.expanduser("~/.local/bin/mseries-markup"))
-SHOW_SECONDS = 7        # how long the thumbnail stays when ignored
 DELETE_AFTER = 120      # seconds after an accepted drag before the unsaved file is removed
-THUMB_WIDTH = 280
+SHOW_SECONDS = 4        # how long the thumbnail stays when ignored (hover or drag keeps it)
+THUMB_WIDTH = 280       # the card is always THUMB_WIDTH x THUMB_HEIGHT, whatever the screenshot's shape
+THUMB_HEIGHT = 180
 MARGIN = 24
 
 CSS = b"""
 window.shelf { background: transparent; box-shadow: none; }
 .shelf-card { background: #1c1c20; color: #ffffff; border-radius: 14px; padding: 10px;
               border: 1px solid rgba(255,255,255,0.18); }
-.shelf-card picture { border-radius: 8px; }
+.shelf-thumb { border-radius: 8px; background: rgba(255,255,255,0.06); }
 .shelf-hint { color: rgba(255,255,255,0.80); font-size: 12px; }
 .shelf-hint.saving { color: #9ad1a4; font-weight: bold; }
 .shelf-card button.flat { color: #ffffff; min-height: 22px; min-width: 22px; padding: 0 6px; }
@@ -93,6 +94,29 @@ def clean_env():
     return env
 
 
+class Thumb(Gtk.Widget):
+    __gtype_name__ = "ShelfThumb"
+    """The screenshot, drawn centred and fitted inside a card that is always THUMB_WIDTH x THUMB_HEIGHT."""
+
+    def __init__(self, texture):
+        super().__init__()
+        self.texture = texture
+        self.set_overflow(Gtk.Overflow.HIDDEN)
+        self.add_css_class("shelf-thumb")
+
+    def do_measure(self, orientation, _for_size):
+        size = THUMB_WIDTH if orientation == Gtk.Orientation.HORIZONTAL else THUMB_HEIGHT
+        return size, size, -1, -1
+
+    def do_snapshot(self, snapshot):
+        if self.texture is None:
+            return
+        width, height = self.get_width(), self.get_height()
+        ratio = self.texture.get_width() / max(1, self.texture.get_height())
+        fit_w, fit_h = (width, width / ratio) if width / height < ratio else (height * ratio, height)
+        snapshot.append_texture(self.texture, Graphene.Rect().init((width - fit_w) / 2, (height - fit_h) / 2, fit_w, fit_h))
+
+
 class Shelf(Gtk.Window):
     """One thumbnail for one screenshot."""
 
@@ -114,25 +138,19 @@ class Shelf(Gtk.Window):
         card.add_css_class("shelf-card")
         texture = None
         try:
-            # Scale once, here: a Gtk.Picture would otherwise ask for the screenshot's full size.
-            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(staged, THUMB_WIDTH * 2, 440, True)
+            # Scale once, here, to twice the card so it stays sharp on the Retina panel.
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(staged, THUMB_WIDTH * 2, THUMB_HEIGHT * 2, True)
             texture = Gdk.Texture.new_for_pixbuf(pixbuf)
-            picture = Gtk.Picture.new_for_paintable(texture)
-            ratio = pixbuf.get_width() / max(1, pixbuf.get_height())
-            width = min(THUMB_WIDTH, int(220 * ratio))
-            picture.set_size_request(width, int(width / max(ratio, 0.01)))
         except GLib.Error:
-            picture = Gtk.Picture()
-            picture.set_size_request(THUMB_WIDTH, 160)
-        picture.set_can_shrink(True)
-        picture.set_content_fit(Gtk.ContentFit.CONTAIN)
-        picture.set_halign(Gtk.Align.CENTER)
+            pass
+        picture = Thumb(texture)
         self.texture = texture
         self.picture = picture
         card.append(picture)
 
         row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        self.hint = Gtk.Label(label="Drag to use  ·  hold Alt to also save", xalign=0, hexpand=True)
+        self.hint = Gtk.Label(label="Drag to use  ·  Alt keeps", xalign=0, hexpand=True)
+        self.hint.set_ellipsize(3)   # Pango.EllipsizeMode.END: never widen the card
         self.hint.add_css_class("shelf-hint")
         markup = Gtk.Button(label="Markup")
         markup.add_css_class("markup")
@@ -242,7 +260,7 @@ class Shelf(Gtk.Window):
             return False
         if self.alt_held():
             self.alt_seen = True
-        self.hint.set_label("Saving a copy (Alt)" if self.alt_seen else "Drag to use  ·  hold Alt to also save")
+        self.hint.set_label("Keeping a copy (Alt)" if self.alt_seen else "Drag to use  ·  Alt keeps")
         (self.hint.add_css_class if self.alt_seen else self.hint.remove_css_class)("saving")
         return True
 
@@ -254,9 +272,9 @@ class Shelf(Gtk.Window):
     def on_drag_end(self, _source, _drag, _delete):
         self.dragging = False
         if self.cancelled:
-            self.alt_seen = False
-            self.hint.set_label("Drag to use  ·  hold Alt to also save")
             self.restart_timer()
+            self.alt_seen = False
+            self.hint.set_label("Drag to use  ·  Alt keeps")
             return
         if self.alt_seen:
             log(f"used and kept (Alt): {os.path.basename(self.path)}")
@@ -273,7 +291,6 @@ class Shelf(Gtk.Window):
             subprocess.Popen([MARKUP, self.path], env=clean_env(), start_new_session=True)
         except OSError as error:
             log(f"could not start markup: {error}")
-        self.finish("markup")
 
     def finish(self, reason, delay=0, delete_saved=False):
         if self.finished:

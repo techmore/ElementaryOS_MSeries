@@ -96,6 +96,18 @@ int main (string[] args) {
             "#00aa00", "#ffaa00", "#ff0000");
         assert (colored.contains ("foreground=\"#ff0000\" weight=\"semibold\">5H 0%"));
         assert (colored.contains ("foreground=\"#00aa00\" weight=\"semibold\">7D 72%"));
+        var windows = parser.get_root ().get_array ();
+        var no_reset = MSeries.Presentation.account_quota (windows, now, true, false);
+        assert (no_reset == "5H 0% · 7D 72% · 30D 91%");
+        var no_percent = MSeries.Presentation.account_quota (windows, now, false, true);
+        assert (no_percent == "5H ↻1h30m · 7D ↻2d0h · 30D ↻?");
+        assert (MSeries.Presentation.account_quota (windows, now, false, false) == "");
+        var reset_only = MSeries.Presentation.account_quota_markup (windows, now,
+            "#00aa00", "#ffaa00", "#ff0000", false, true);
+        assert (!reset_only.contains ("72%"));
+        assert (reset_only.contains ("↻2d0h"));
+        assert (MSeries.Presentation.account_quota_markup (windows, now,
+            "", "", "", false, false) == "");
     });
     GLib.Test.add_func ("/presentation/worst-level", () => {
         assert (MSeries.Presentation.worse (MSeries.QuotaLevel.OK, MSeries.QuotaLevel.LOW) == MSeries.QuotaLevel.LOW);
@@ -110,6 +122,21 @@ int main (string[] args) {
         assert (MSeries.Presentation.short_window_label ("Weekly", 0) == "7D");
         assert (MSeries.Presentation.short_window_label ("Monthly", 0) == "30D");
         assert (MSeries.Presentation.short_window_label ("Session", 0) == "Session");
+    });
+    GLib.Test.add_func ("/presentation/reset-credits", () => {
+        assert (MSeries.Presentation.reset_count_text (-1) == "");
+        assert (MSeries.Presentation.reset_count_text (1) == "1 reset");
+        assert (MSeries.Presentation.reset_count_text (3) == "3 resets");
+        assert (MSeries.Presentation.reset_credits_line (0, 5000) == "0 resets available");
+        assert (MSeries.Presentation.reset_credits_line (2, 0) == "2 resets available");
+        assert (MSeries.Presentation.reset_credits_line (2, 3600) == "2 resets available · first expires in 1h00m");
+        assert (MSeries.Presentation.reset_credits_chip (-1, 0) == "");
+        assert (MSeries.Presentation.reset_credits_chip (0, 3600) == "0 resets");
+        assert (MSeries.Presentation.reset_credits_chip (2, 3600) == "2 resets · exp 1h00m");
+        assert (MSeries.Presentation.reset_credits_chip (1, 0) == "1 reset");
+        assert (MSeries.Presentation.reset_expiry_urgent (2, 3600));
+        assert (!MSeries.Presentation.reset_expiry_urgent (2, 90000));
+        assert (!MSeries.Presentation.reset_expiry_urgent (0, 3600));
     });
     GLib.Test.add_func ("/presentation/countdown", () => {
         assert (MSeries.Presentation.countdown_text (0) == "");

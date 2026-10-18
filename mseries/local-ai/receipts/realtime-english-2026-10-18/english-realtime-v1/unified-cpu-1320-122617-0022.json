@@ -1,0 +1,41 @@
+{
+  "complete": true,
+  "engine": "unified-cpu",
+  "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "harness_sha256": "341cf7ed75f86248b9862d6dce7603c0d97bf86521e836482ee42452d00ff7a4",
+  "wav_sha256": "afd923d287641d5600e63a901e149091e0b1f648265186de560a5c063d7a9c8d",
+  "duration_s": 3.855,
+  "microphone_recorded": false,
+  "owner_windows_opened": false,
+  "trials": [
+    {
+      "run": 1,
+      "events": [
+        {
+          "wall_s": 2.3140561669999897,
+          "text": "The Delawares",
+          "final": false
+        },
+        {
+          "wall_s": 3.540201471000046,
+          "text": "The Delawares are children of the tortoise",
+          "final": false
+        },
+        {
+          "wall_s": 4.242225395999867,
+          "text": "The Delawares are children of the tortoise and they outstrip the deer",
+          "final": true
+        }
+      ],
+      "first_text_s": 2.3140561669999897,
+      "final_after_audio_s": 0.3879404379999869,
+      "cpu_s": 3.5805131529999996,
+      "final_text": "The Delawares are children of the tortoise and they outstrip the deer",
+      "normalized_wer": 0.0,
+      "peak_rss_bytes": 971685888,
+      "display_updates_before_audio_end": 2
+    }
+  ],
+  "scope": "One public LibriSpeech clip, wall-paced 100ms input; no microphone/app insertion, not a general accuracy test. Model load separate; first trial retained, not discarded.",
+  "load_s": 0.2707325899998523
+}

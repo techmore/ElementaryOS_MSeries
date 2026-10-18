@@ -19,6 +19,8 @@ import sys
 import time
 from typing import Any
 
+import codexbar_cache
+
 WINDOWS = (
     ("5 hours", 5 * 3600 * 1000),
     ("7 days", 7 * 24 * 3600 * 1000),
@@ -92,45 +94,67 @@ def parse_timestamp(value: Any) -> int | None:
     return int(parsed.timestamp() * 1000)
 
 
+def parse_transcript(path: pathlib.Path) -> dict[str, list[int]]:
+    """Assistant responses in one transcript as {request id: [created ms, tokens]}."""
+    responses: dict[str, list[int]] = {}
+    try:
+        with path.open(encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                if '"usage"' not in line:
+                    continue
+                try:
+                    record = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                message = record.get("message") if isinstance(record, dict) else None
+                if record.get("type") != "assistant" or not isinstance(message, dict):
+                    continue
+                usage = message.get("usage")
+                created = parse_timestamp(record.get("timestamp"))
+                if not isinstance(usage, dict) or created is None:
+                    continue
+                try:
+                    tokens = sum(int(usage.get(key) or 0) for key in
+                                 ("input_tokens", "output_tokens", "cache_creation_input_tokens"))
+                except (TypeError, ValueError):
+                    continue
+                key = str(record.get("requestId") or message.get("id") or record.get("uuid") or f"{path}:{len(responses)}")
+                responses[key] = [created, tokens]  # streaming repeats a response; the last copy wins
+    except OSError:
+        pass
+    return responses
+
+
 def read_claude_records(projects: pathlib.Path, now_ms: int) -> list[tuple[int, int, float]]:
+    """Token records from recent transcripts. Only files whose size or mtime changed are parsed again; the
+    per-file results live in the cache so a repeat scan costs one stat per file."""
     oldest = (now_ms - WINDOWS[-1][1]) / 1000
-    files = []
+    index = codexbar_cache.load("claude-transcripts").get("files")
+    index = index if isinstance(index, dict) else {}
+    kept: dict[str, Any] = {}
+    count = 0
     for path in projects.glob("**/*.jsonl"):
         try:
-            if path.stat().st_mtime >= oldest:
-                files.append(path)
+            info = path.stat()
         except OSError:
             continue
-        if len(files) >= MAX_TRANSCRIPT_FILES:
+        if info.st_mtime < oldest:
+            continue
+        count += 1
+        if count > MAX_TRANSCRIPT_FILES:
             break
-    # Streaming writes the same API response several times; keep the last copy of each.
+        known = index.get(str(path))
+        if isinstance(known, dict) and isinstance(known.get("responses"), dict) and known.get("size") == info.st_size and known.get("mtime") == info.st_mtime_ns:
+            kept[str(path)] = known
+        else:
+            kept[str(path)] = {"size": info.st_size, "mtime": info.st_mtime_ns, "responses": parse_transcript(path)}
+    if kept.keys() != index.keys() or any(kept[k] is not index.get(k) for k in kept):
+        codexbar_cache.store("claude-transcripts", {"files": kept})
+    # A response can appear in several transcripts (resumed sessions); count it once.
     responses: dict[str, tuple[int, int]] = {}
-    for path in files:
-        try:
-            with path.open(encoding="utf-8", errors="replace") as handle:
-                for line in handle:
-                    if '"usage"' not in line:
-                        continue
-                    try:
-                        record = json.loads(line)
-                    except json.JSONDecodeError:
-                        continue
-                    message = record.get("message") if isinstance(record, dict) else None
-                    if record.get("type") != "assistant" or not isinstance(message, dict):
-                        continue
-                    usage = message.get("usage")
-                    created = parse_timestamp(record.get("timestamp"))
-                    if not isinstance(usage, dict) or created is None:
-                        continue
-                    try:
-                        tokens = sum(int(usage.get(key) or 0) for key in
-                                     ("input_tokens", "output_tokens", "cache_creation_input_tokens"))
-                    except (TypeError, ValueError):
-                        continue
-                    key = str(record.get("requestId") or message.get("id") or record.get("uuid") or id(record))
-                    responses[key] = (created, tokens)
-        except OSError:
-            continue
+    for entry in kept.values():
+        for key, (created, tokens) in entry["responses"].items():
+            responses[key] = (created, tokens)
     return [(created, tokens, 0.0) for created, tokens in responses.values()]
 
 

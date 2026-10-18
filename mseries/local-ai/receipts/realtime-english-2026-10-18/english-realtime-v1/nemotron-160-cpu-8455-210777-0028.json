@@ -1,0 +1,141 @@
+{
+  "complete": true,
+  "engine": "nemotron-160-cpu",
+  "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "harness_sha256": "341cf7ed75f86248b9862d6dce7603c0d97bf86521e836482ee42452d00ff7a4",
+  "wav_sha256": "dc2d1218a61f131c0a8fd0fd432dfa4a889f40e3b162ba35e30acc06f3561b48",
+  "duration_s": 7.735,
+  "microphone_recorded": false,
+  "owner_windows_opened": false,
+  "trials": [
+    {
+      "run": 1,
+      "events": [
+        {
+          "wall_s": 1.15955906399995,
+          "text": "Jack",
+          "final": false
+        },
+        {
+          "wall_s": 1.4581419169999208,
+          "text": "Jack would",
+          "final": false
+        },
+        {
+          "wall_s": 1.6597553069998412,
+          "text": "Jack would become",
+          "final": false
+        },
+        {
+          "wall_s": 1.9565611599998647,
+          "text": "Jack would become Ev",
+          "final": false
+        },
+        {
+          "wall_s": 2.2593932649999715,
+          "text": "Jack would become Eva",
+          "final": false
+        },
+        {
+          "wall_s": 2.4582502789999126,
+          "text": "Jack would become Eva's happ",
+          "final": false
+        },
+        {
+          "wall_s": 2.5587786609999057,
+          "text": "Jack would become Eva's happy",
+          "final": false
+        },
+        {
+          "wall_s": 2.762286842999856,
+          "text": "Jack would become Eva's happy husband",
+          "final": false
+        },
+        {
+          "wall_s": 4.058986640999819,
+          "text": "Jack would become Eva's happy husband, and",
+          "final": false
+        },
+        {
+          "wall_s": 4.157635938999874,
+          "text": "Jack would become Eva's happy husband, and would",
+          "final": false
+        },
+        {
+          "wall_s": 4.356535368999857,
+          "text": "Jack would become Eva's happy husband, and would remain",
+          "final": false
+        },
+        {
+          "wall_s": 4.958640827999943,
+          "text": "Jack would become Eva's happy husband, and would remain am",
+          "final": false
+        },
+        {
+          "wall_s": 5.158153258999846,
+          "text": "Jack would become Eva's happy husband, and would remain amidst",
+          "final": false
+        },
+        {
+          "wall_s": 5.760198800999888,
+          "text": "Jack would become Eva's happy husband, and would remain amidst the",
+          "final": false
+        },
+        {
+          "wall_s": 5.958716522999794,
+          "text": "Jack would become Eva's happy husband, and would remain amidst the hur",
+          "final": false
+        },
+        {
+          "wall_s": 6.158753494999928,
+          "text": "Jack would become Eva's happy husband, and would remain amidst the hurried",
+          "final": false
+        },
+        {
+          "wall_s": 6.457132889999912,
+          "text": "Jack would become Eva's happy husband, and would remain amidst the hurried dut",
+          "final": false
+        },
+        {
+          "wall_s": 6.547903642999927,
+          "text": "Jack would become Eva's happy husband, and would remain amidst the hurried duties of",
+          "final": false
+        },
+        {
+          "wall_s": 6.767522999999983,
+          "text": "Jack would become Eva's happy husband, and would remain amidst the hurried duties of the",
+          "final": false
+        },
+        {
+          "wall_s": 7.120379587999878,
+          "text": "Jack would become Eva's happy husband, and would remain amidst the hurried duties of the eag",
+          "final": false
+        },
+        {
+          "wall_s": 7.377070420999871,
+          "text": "Jack would become Eva's happy husband, and would remain amidst the hurried duties of the eager",
+          "final": false
+        },
+        {
+          "wall_s": 7.456476042999839,
+          "text": "Jack would become Eva's happy husband, and would remain amidst the hurried duties of the eager world",
+          "final": false
+        },
+        {
+          "wall_s": 7.811376840999856,
+          "text": "Jack would become Eva's happy husband, and would remain amidst the hurried duties of the eager world",
+          "final": true
+        }
+      ],
+      "first_text_s": 1.15955906399995,
+      "final_after_audio_s": 0.07703071600008116,
+      "cpu_s": 9.824598318,
+      "final_text": "Jack would become Eva's happy husband, and would remain amidst the hurried duties of the eager world",
+      "normalized_wer": 0.0,
+      "peak_rss_bytes": 1232011264,
+      "display_updates_before_audio_end": 22
+    }
+  ],
+  "scope": "One public LibriSpeech clip, wall-paced 100ms input; no microphone/app insertion, not a general accuracy test. Model load separate; first trial retained, not discarded.",
+  "load_s": 0.4809591509999791
+}

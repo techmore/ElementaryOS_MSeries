@@ -1,5 +1,14 @@
 # Build notes — road to a testable arm64 ISO
 
+## New installer and YouTube guest pass — 2026-10-18
+
+Run [39128555434](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39128555434)
+built the factory Brave image from `5c0c60e`. Independent checksum, blank-disk
+installation and default installed generic UKI boot passed. The installed launcher,
+YouTube dock logo and 480p/1080p video with decoded audio passed in an ARM64 KVM
+guest with virgl. [Receipt and limits](video-decode/receipts/factory-2026-10-18/README.md).
+Fairydust was disabled for this build; physical Apple qualification remains pending.
+
 ## Where upstream stands
 
 elementary/os `main` already builds **both** arches in CI
