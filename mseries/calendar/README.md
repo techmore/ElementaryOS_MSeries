@@ -1,7 +1,7 @@
 # Pantheon calendar agenda
 
-The datetime indicator has **Events** and **Tasks** tabs above the calendar's
-right pane. Events defaults to **Upcoming · next 30 days**, grouped by local
+The datetime indicator has **Events**, **Tasks** and **+** (Verse of the Day)
+tabs above the calendar's right pane. Events defaults to **Upcoming · next 30 days**, grouped by local
 date independently of the left calendar selection. Ended events are omitted;
 ongoing events remain visible. **Month**, **Week** and **Day** are available as
 explicit alternate views. Tasks shows
@@ -16,6 +16,62 @@ it and shows a retry error. Repeating tasks advance using EDS recurrence handlin
 Both tabs use Evolution Data Server (EDS), the native Calendar/Tasks store.
 Updates, deletions, source selection and account additions are observed live.
 Identical UIDs in separate calendars do not hide each other's events.
+
+## Verse of the Day (+ tab)
+
+The **+** tab shows one Bible verse a day under a Granite header. The header's
+second line uses the Events wording (**Today · Sunday, October 18**), and the
+same ◀ **Today** ▶ control as the calendar browses other days. Today is greyed
+out while you're already on today. Reopening the popup always returns to today.
+
+The verse is set a little larger with more line spacing and centered in its
+area. Psalm headings (for example "A Psalm by David.") appear as a small
+dimmed caption above the verse instead of being run into it. The reference sits
+below on the right.
+
+Panel menu items follow:
+
+- **Listen to Sermons** opens a SermonAudio search for the passage.
+- **Watch Sermon Videos** opens a YouTube search for sermons on the passage.
+- **Read the Full Chapter** opens the passage in context at Bible Gateway (WEB).
+- **Copy Verse** copies `“text” — Reference (WEB)` and shows **Copied**
+  briefly; the popup stays open.
+
+Links are built from the reference, so they don't go stale. Choosing one closes
+the popup and opens the default browser. Nothing is fetched until you click.
+
+The verse is the same all day and changes at local midnight. Feast days have
+their own verse, and the header names the day (for example **Christmas Day ·
+Friday, December 25**):
+
+| Day | Verse |
+| --- | --- |
+| New Year’s Day (Jan 1) | Lamentations 3:22–23 |
+| Epiphany (Jan 6) | Matthew 2:10–11 |
+| Ash Wednesday (Easter − 46) | Joel 2:13 |
+| Palm Sunday (Easter − 7) | John 12:13 |
+| Good Friday (Easter − 2) | Isaiah 53:5 |
+| Easter Sunday | Matthew 28:6 |
+| Pentecost (Easter + 49) | Acts 2:4 |
+| Thanksgiving (US, 4th Thursday of November) | Psalm 100:4–5 |
+| Christmas Eve (Dec 24) | Isaiah 9:6 |
+| Christmas Day (Dec 25) | Luke 2:10–12 |
+
+Easter is the Western (Gregorian) date, computed for each year. Reserved verses
+are marked `@season` in `verse-references.txt` and left out of the random
+order. The other 394 verses get a seeded shuffle per year, so a year never
+repeats a verse; no state is stored.
+
+Text is the **World English Bible**, public domain (eBible.org), copied
+unchanged. To change the list, edit `verse-references.txt` (at least 366
+entries) and download `engwebp_vpl.zip` and `engwebp_usfm.zip` from
+<https://ebible.org/Scriptures/>. Then run
+`python3 -I mseries/calendar/build-verses.py engwebp_vpl.txt 20-PSAengwebp.usfm`.
+The USFM marks Psalm headings, which the builder moves to a third column; it
+stops if a heading doesn't exactly match the start of verse 1. Copy
+`daily-verses.tsv` to `data/daily-verses.tsv` in the patched source tree and
+regenerate the patch with `git diff -U2 <pin>`. The plugin bundles the list and
+`DailyVerse.css` as GResources.
 
 <a id="month-navigation-and-today"></a>
 
@@ -102,7 +158,15 @@ qualify a factory image or a Google account connection.
 
 `bash mseries/calendar/test-agenda.sh /absolute/path/to/libdatetime.so` runs the
 actual plugin on Xvfb with a private D-Bus and private XDG config/data/cache.
-All 21 workflow groups use synthetic local EDS sources. Timetable groups additionally
+All 22 workflow groups use synthetic local EDS sources. The verse group checks
+the + tab, today's pick from the bundled list, every feast date in 2026–2028
+(including Easter-based dates in three years), a Christmas header on screen,
+unpadded single-digit dates, plus previous/next/Today
+navigation and its Today/Tomorrow/Yesterday wording. It also checks the Psalm
+heading caption, Copy Verse (clipboard contents and the Copied confirmation),
+the return to today on reopen, and that 2026, 2027 and leap 2028 each show
+365/366 different verses, stable across a day (including DST days) and
+reshuffled per year. Timetable groups additionally
 check actual block positions against hour rules, overlap geometry, adjacent and
 short events, instant/DURATION events, overnight clipping, recurring week columns,
 live reflow and scroll retention, and a stubbed native Calendar date action.
