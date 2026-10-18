@@ -7,7 +7,7 @@ PartOf=graphical-session.target
 Type=dbus
 BusName=org.techmore.DictationInput
 ExecStart=/usr/bin/python3 %h/.local/share/mseries/stream/dictation-input.py
-ExecStartPost=/usr/bin/python3 %h/.local/share/mseries/stream/dictation-input-client.py select
+ExecStartPost=/usr/bin/python3 %h/.local/share/mseries/stream/dictation-input-client.py ready
 Restart=on-failure
 RestartSec=3
 

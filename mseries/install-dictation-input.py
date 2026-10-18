@@ -198,14 +198,19 @@ def rollback(payload):
     payload.validate_restore()
     baseline = payload.data['metadata']
     current = command(['ibus', 'engine'], check=False).stdout.strip()
-    if current in (ENGINE, '', 'dummy'):
-        command(['/usr/bin/python3', str(BASE / 'dictation-input-client.py'), 'select', baseline['engine']])
+    restore_engine = baseline['engine'] if current in (ENGINE, '', 'dummy') else current
+    systemctl('stop', INPUT_SERVICE, check=False)
+    time.sleep(.1)  # Let IBus remove the dynamic provider before restoring selection.
+    after_stop = command(['ibus', 'engine'], check=False).stdout.strip()
+    if after_stop in (ENGINE, '', 'dummy'):
+        selector = BASE / 'dictation-input-client.py'
+        if not selector.exists(): selector = SOURCE / 'dictation-input-client.py'
+        command(['/usr/bin/python3', str(selector), 'select', restore_engine])
     if baseline['activation_started']:
         for preference in baseline.get('preferences', []):
             schema, key = preference['schema'], preference['key']
             if command(['gsettings', 'get', schema, key]).stdout.strip() == preference['desired']:
                 command(['gsettings', 'set', schema, key, preference['original']])
-    systemctl('stop', INPUT_SERVICE, check=False)
     if not baseline['input_enabled']: systemctl('disable', INPUT_SERVICE, check=False)
     payload.restore()
     systemctl('daemon-reload')
@@ -233,7 +238,8 @@ def main():
         lifecycle = status_module.read_status()
         pid = int(systemctl('show', SERVICE, '-p', 'MainPID', '--value').stdout.strip() or '0')
         if lifecycle and lifecycle['pid'] != pid: lifecycle = None
-        print(json.dumps({'staged': any(r.get('installed_sha256') for r in payload.data['files'].values()),
+        bridge_ready = active(INPUT_SERVICE) and command(['/usr/bin/python3', str(BASE / 'dictation-input-client.py'), 'ready'], check=False).returncode == 0
+        print(json.dumps({'bridge_ready': bridge_ready, 'staged': any(r.get('installed_sha256') for r in payload.data['files'].values()),
             'backup_retained': payload.path.exists(), 'activated': payload.data['metadata'].get('activated', False), 'input_active': active(INPUT_SERVICE),
             'stream_active': active(SERVICE), 'engine': command(['ibus', 'engine'], check=False).stdout.strip(), 'lifecycle': lifecycle}, indent=2))
         return
@@ -263,8 +269,12 @@ def main():
             else: payload.install(BRAVE_DESKTOP, browser_text.encode(), 0o644)
         systemctl('daemon-reload')
         systemctl('enable', INPUT_SERVICE)
+        previous_engine = command(['ibus', 'engine'], check=False).stdout.strip()
+        if previous_engine in (ENGINE, '', 'dummy'): previous_engine = payload.data['metadata']['engine']
         systemctl('restart', INPUT_SERVICE)
-        command(['/usr/bin/python3', str(BASE / 'dictation-input-client.py'), 'select'])
+        if command(['ibus', 'engine'], check=False).stdout.strip() in (ENGINE, '', 'dummy'):
+            command(['/usr/bin/python3', str(BASE / 'dictation-input-client.py'), 'select', previous_engine])
+        command(['/usr/bin/python3', str(BASE / 'dictation-input-client.py'), 'ready'])
         systemctl('restart', SERVICE)
         import importlib.util
         spec = importlib.util.spec_from_file_location('installed_dictation_status', BASE / 'dictation_status.py')
@@ -278,6 +288,7 @@ def main():
         else: raise ValueError('Speech model did not report ready with Unicode output')
         time.sleep(1)
         stable_pid = int(systemctl('show', SERVICE, '-p', 'MainPID', '--value').stdout.strip() or '0')
+        command(['/usr/bin/python3', str(BASE / 'dictation-input-client.py'), 'ready'])
         if stable_pid != pid or not active(SERVICE) or not active(INPUT_SERVICE):
             raise ValueError('Speech service did not remain healthy after opening its keyboard')
     except Exception:

@@ -88,6 +88,26 @@ class DeploymentTests(unittest.TestCase):
                 self.assertEqual(bool(selections), restore)
                 if restore: self.assertEqual(selections[0][-1], 'xkb:us::eng')
 
+    def test_provider_stop_clears_engine_before_final_restore(self):
+        state = {'engine': deploy.ENGINE}
+        events = []
+        payload = Mock()
+        payload.data = {'metadata': {'engine': 'xkb:us::eng', 'activation_started': False,
+            'input_enabled': False, 'stream_active': True, 'input_active': False}}
+        def command(args, check=True):
+            if args == ['ibus', 'engine']:
+                return subprocess.CompletedProcess(args, 0, state['engine'], '')
+            if 'select' in args:
+                events.append('select'); state['engine'] = args[-1]
+            return subprocess.CompletedProcess(args, 0, '', '')
+        def systemctl(*args, **kwargs):
+            if args == ('stop', deploy.INPUT_SERVICE):
+                events.append('stop'); state['engine'] = ''
+        with patch.object(deploy, 'check_idle_capture'), patch.object(deploy, 'command', side_effect=command), patch.object(deploy, 'systemctl', side_effect=systemctl), patch.object(deploy.time, 'sleep'):
+            deploy.rollback(payload)
+        self.assertEqual(state['engine'], 'xkb:us::eng')
+        self.assertLess(events.index('stop'), events.index('select'))
+
 
 class StatusTests(unittest.TestCase):
     def test_private_bounded_status_and_no_transcript_fields(self):

@@ -42,8 +42,18 @@ with tempfile.TemporaryDirectory(prefix='mseries-browser-input-') as directory:
             time.sleep(.01)
     try:
         time.sleep(1);IBus.init();bus=IBus.Bus.new();assert bus.is_connected()
+        gi.require_version('Atspi','2.0')
+        from gi.repository import Atspi
+        # DOM focus can precede the native accessibility event. Synchronize
+        # test startup on field metadata; do not retry a rejected Begin.
+        focused_entry=[False]
+        def accessible_focus(event,*_):
+            if event.detail1 and int(event.source.get_role())==79:
+                focused_entry[0]=True
+        listener=Atspi.EventListener.new(accessible_focus,None)
+        listener.register('object:state-changed:focused')
         engine=subprocess.Popen(['/usr/bin/python3',str(Path(__file__).with_name('dictation-input.py'))])
-        pump(1);assert bus.set_global_engine('mseries-dictation')
+        pump(1);assert bus.set_global_engine('xkb:us::eng')
         if args.enable_accessibility_status:
             connection=Gio.bus_get_sync(Gio.BusType.SESSION,None)
             connection.call_sync('org.a11y.Bus','/org/a11y/bus','org.freedesktop.DBus.Properties','Set',
@@ -83,6 +93,9 @@ with tempfile.TemporaryDirectory(prefix='mseries-browser-input-') as directory:
             html='<meta charset="utf-8"><input id="first"><input id="second"><input id="password" type="password">'
             cdp('Page.navigate',{'url':'data:text/html,'+urllib.parse.quote(html)});pump(1)
             cdp('Page.bringToFront');js('document.querySelector("#first").focus()');pump(1)
+            deadline=time.monotonic()+5
+            while not focused_entry[0] and time.monotonic()<deadline:pump(.05)
+            assert focused_entry[0],'Browser did not expose focused native field metadata'
             conn=Gio.bus_get_sync(Gio.BusType.SESSION,None)
             def call(method,args=None):return conn.call_sync('org.techmore.DictationInput','/org/techmore/DictationInput',
                 'org.techmore.DictationInput',method,args,None,Gio.DBusCallFlags.NONE,2000,None)
@@ -94,12 +107,14 @@ with tempfile.TemporaryDirectory(prefix='mseries-browser-input-') as directory:
             except GLib.Error:pass
             else:raise AssertionError('Browser field change accepted stale insertion')
             assert js('document.querySelector("#second").value')==''
+            call('Finish',GLib.Variant('(s)',(token,)))
+            assert bus.get_global_engine().get_name()=='xkb:us::eng'
             js('document.querySelector("#password").focus()');pump()
             try:call('Begin')
             except GLib.Error:pass
             else:raise AssertionError('Browser password accepted dictation')
             print(json.dumps({'browser':'Electron synthetic X11' if args.electron else 'Brave X11','accessibility':'automatic with OS support enabled' if args.enable_accessibility_status else ('automatic' if args.automatic_accessibility else 'forced'),'unicode_field':True,'changed_field_untouched':True,
-                'password_refused':True,'method':'Synthetic form in isolated real browser; no ASR, microphone or owner profile'}))
+                'password_refused':True,'session_engine_restore':True,'method':'Synthetic form in isolated real browser; no ASR, microphone or owner profile'}))
     finally:
         if browser:
             try:os.killpg(browser.pid,signal.SIGTERM)

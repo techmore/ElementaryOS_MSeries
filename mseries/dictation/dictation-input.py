@@ -227,20 +227,85 @@ def main():
       <method name="Begin"><arg type="s" direction="out"/></method>
       <method name="Commit"><arg type="s" direction="in"/><arg type="s" direction="in"/></method>
       <method name="Cancel"/>
+      <method name="Finish"><arg type="s" direction="in"/></method>
+      <method name="Ready"><arg type="b" direction="out"/></method>
     </interface></node>'''
     info = Gio.DBusNodeInfo.new_for_xml(xml).interfaces[0]
+
+    # Own the input method only for one explicit dictation session. Pantheon's
+    # layout indicator remains authoritative outside that interval. Never add
+    # a keyboard layout, restart IBus or repeatedly fight a user's selection.
+    lease = {'busy': False, 'previous': None, 'token': None, 'epoch': 0}
+
+    def release(invocation=None):
+        state.invalidate()
+        previous = lease['previous']
+        lease.update(previous=None, token=None)
+        desc = bus.get_global_engine()
+        if previous and previous != ENGINE and desc and desc.get_name() == ENGINE:
+            lease['busy'] = True
+            def restored(obj, result, *_):
+                try:
+                    if not obj.set_global_engine_async_finish(result):
+                        raise ValueError('Previous input method could not be restored')
+                except (GLib.Error, ValueError):
+                    if invocation:
+                        invocation.return_dbus_error(NAME + '.Unavailable', 'Previous input method could not be restored')
+                else:
+                    if invocation: invocation.return_value(None)
+                finally: lease['busy'] = False
+            bus.set_global_engine_async(previous, 1500, None, restored, None)
+        elif invocation:
+            invocation.return_value(None)
+
+    def begin(invocation):
+        if lease['busy'] or lease['token']:
+            raise ValueError('A dictation session is already active or finishing')
+        if metadata is None: raise ValueError('Accessible field metadata is required')
+        identity = metadata.validate()  # Refuse sensitive fields BEFORE switching.
+        desc = bus.get_global_engine()
+        if desc is None: raise ValueError('No current input method')
+        lease.update(busy=True, previous=desc.get_name(), epoch=lease['epoch'] + 1)
+        epoch = lease['epoch']
+        def selected(obj, result, *_):
+            try:
+                if not obj.set_global_engine_async_finish(result):
+                    raise ValueError('Could not select the dictation input method')
+            except (GLib.Error, ValueError):
+                lease['busy'] = False
+                release()
+                invocation.return_dbus_error(NAME + '.Unavailable', 'Could not select the dictation input method')
+                return
+            attempts = [0]
+            def settle():
+                try:
+                    if epoch != lease['epoch']: raise ValueError('Dictation was cancelled')
+                    if metadata.validate() != identity: raise ValueError('Text-field focus changed while starting dictation')
+                    if current['engine'] is None and attempts[0] < 8:
+                        attempts[0] += 1
+                        return True
+                    current['metadata'] = identity
+                    state.target = current['engine']
+                    if state.target is not None: state.content(*state.target.get_content_type())
+                    token = state.begin()
+                    lease.update(busy=False, token=token)
+                    invocation.return_value(GLib.Variant('(s)', (token,)))
+                    def expire():
+                        if epoch == lease['epoch'] and lease['token'] == token: release()
+                        return False
+                    GLib.timeout_add_seconds(120, expire)
+                except ValueError as error:
+                    lease['busy'] = False
+                    release()
+                    invocation.return_dbus_error(NAME + '.Unavailable', str(error))
+                return False
+            GLib.timeout_add(25, settle)
+        bus.set_global_engine_async(ENGINE, 1500, None, selected, None)
 
     def call(connection, sender, path, interface, method, parameters, invocation):
         try:
             if method == 'Begin':
-                if metadata is None: raise ValueError('Accessible field metadata is required')
-                current['metadata'] = metadata.validate()
-                state.target = current['engine']
-                # IBus suppresses SetContentType when a normal field keeps the
-                # default (0, 0); read the engine's cached type as well.
-                if state.target is not None:
-                    state.content(*state.target.get_content_type())
-                invocation.return_value(GLib.Variant('(s)', (state.begin(),)))
+                begin(invocation)
             elif method == 'Commit':
                 token, text = parameters.unpack()
                 if metadata is None or metadata.validate() != current['metadata']:
@@ -250,8 +315,18 @@ def main():
                 state.target.commit_text(IBus.Text.new_from_string(text))
                 invocation.return_value(None)
             elif method == 'Cancel':
-                state.invalidate()
-                invocation.return_value(None)
+                lease['epoch'] += 1
+                if lease['busy']:
+                    state.invalidate()  # Pending Begin will observe cancellation.
+                    invocation.return_value(None)
+                else: release(invocation)
+            elif method == 'Finish':
+                token, = parameters.unpack()
+                if not lease['token'] or not secrets.compare_digest(token, lease['token']):
+                    raise ValueError('Unknown dictation session')
+                release(invocation)
+            elif method == 'Ready':
+                invocation.return_value(GLib.Variant('(b)', (factory is not None and metadata is not None,)))
         except ValueError as error:
             invocation.return_dbus_error(NAME + '.Unavailable', str(error))
 

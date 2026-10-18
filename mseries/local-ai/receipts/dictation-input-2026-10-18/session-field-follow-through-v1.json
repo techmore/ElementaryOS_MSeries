@@ -1,0 +1,102 @@
+{
+  "results": {
+    "gtk3_keys_and_session": {
+      "passed": true,
+      "source_sha256": {
+        "stream-dictate.py": "1729f2d9e320e4335b9580c207dd626413b48b8237efae5c83c4fc965bc3181c",
+        "dictation-input.py": "c4b926ae459c90ba9e5ccd2f4f355670dc2ab7fea9fd3a8d17ca39e85089589e",
+        "dictation-input-client.py": "f25e53319d500d350c09a6e23ab254d728073ebf657b8b3b7dd83a99ca287c37",
+        "dictation_status.py": "50dadbf4f6a7f5edf8e4cb8b91d8931adf75cd899455285547d653c5af591903",
+        "dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+        "gtk-input-smoke.py": "82c188c890eacb14d8154c274a143fac3cd78e6aaf26ca91ce25fe849e4ae8dc",
+        "machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+      },
+      "gtk_version": 3,
+      "display_backend": "x11",
+      "unicode_field": true,
+      "changed_field_untouched": true,
+      "password_untouched": true,
+      "session_engine_restore": true,
+      "overlapping_begin_refused": true,
+      "owner_selection_preserved": true,
+      "speech": null,
+      "keyboard": {
+        "ordinary_keys": true,
+        "shift": true,
+        "backspace": true,
+        "dead_key_compose": true,
+        "layout": "private Xvfb us(intl)"
+      },
+      "method": "Actual Gtk.Entry fields, private Xvfb/IBus/session bus; no ASR or microphone"
+    },
+    "gtk4_wayland_session": {
+      "passed": true,
+      "source_sha256": {
+        "stream-dictate.py": "1729f2d9e320e4335b9580c207dd626413b48b8237efae5c83c4fc965bc3181c",
+        "dictation-input.py": "c4b926ae459c90ba9e5ccd2f4f355670dc2ab7fea9fd3a8d17ca39e85089589e",
+        "dictation-input-client.py": "f25e53319d500d350c09a6e23ab254d728073ebf657b8b3b7dd83a99ca287c37",
+        "dictation_status.py": "50dadbf4f6a7f5edf8e4cb8b91d8931adf75cd899455285547d653c5af591903",
+        "dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+        "gtk-input-smoke.py": "82c188c890eacb14d8154c274a143fac3cd78e6aaf26ca91ce25fe849e4ae8dc",
+        "machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+      },
+      "gtk_version": 4,
+      "display_backend": "wayland",
+      "unicode_field": true,
+      "changed_field_untouched": true,
+      "password_untouched": true,
+      "session_engine_restore": true,
+      "overlapping_begin_refused": true,
+      "owner_selection_preserved": true,
+      "speech": null,
+      "keyboard": null,
+      "method": "Actual Gtk.Entry fields, private headless Gala Wayland/IBus/session bus; no ASR or microphone"
+    },
+    "qt6_session": {
+      "qt6_unicode_field": true,
+      "qt6_multiline": true,
+      "session_engine_restore": true,
+      "changed_field_untouched": true,
+      "password_untouched": true,
+      "method": "Real Qt6 X11 widgets in private Xvfb/IBus/session bus; no microphone or ASR"
+    },
+    "brave_session": {
+      "browser": "Brave X11",
+      "accessibility": "forced",
+      "unicode_field": true,
+      "changed_field_untouched": true,
+      "password_refused": true,
+      "session_engine_restore": true,
+      "method": "Synthetic form in isolated real browser; no ASR, microphone or owner profile"
+    },
+    "electron44_synthetic_session": {
+      "browser": "Electron synthetic X11",
+      "accessibility": "forced",
+      "unicode_field": true,
+      "changed_field_untouched": true,
+      "password_refused": true,
+      "session_engine_restore": true,
+      "method": "Synthetic form in isolated real browser; no ASR, microphone or owner profile"
+    }
+  },
+  "retained_attempts": [
+    {
+      "name": "browser-session-v1",
+      "passed": false,
+      "reason": "Begin refused because native field metadata was unavailable at startup. No text inserted; later harness synchronizes initial accessibility event instead of retrying Begin."
+    },
+    {
+      "name": "browser-diagnostic",
+      "passed": true,
+      "scope": "Synthetic diagnostic copy; no performance score; production safety gate unchanged."
+    }
+  ],
+  "source_sha256": {
+    "ibus-context-smoke.py": "e1813c245c0312ac1d6af30e75ce28ae9a76d97322fc3cf046aa448cc8ff2a00",
+    "gtk-input-smoke.py": "82c188c890eacb14d8154c274a143fac3cd78e6aaf26ca91ce25fe849e4ae8dc",
+    "browser-input-smoke.py": "4a7654436b114d5ec10b91cc228ce09ecf08937e3819a5d95824793b54889bd4",
+    "qt-input-smoke.py": "e94b1d3dc2c83825870903b4a4965aa949b68085c3f0d5c68104d9942e12b369"
+  },
+  "microphone_recorded": false,
+  "owner_windows_closed": false
+}

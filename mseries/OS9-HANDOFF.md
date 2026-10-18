@@ -1,5 +1,42 @@
 # OS 9 implementation / Claude Code handoff
 
+## Session-scoped F5 input activated — 2026-10-18
+
+Replaced permanent global-engine selection with asynchronous per-utterance acquisition.
+The upstream panel-keyboard PopoverWidget reapplies native sources; default IBus registry
+source also disables per-user component directories. No registry or owner IBus restart
+is needed: Begin validates the focused field before switching, Finish runs after queued
+text and restores the prior method, Escape cancels, expiry releases the lease, and an
+owner's intervening layout choice is preserved. Existing native sources are untouched.
+Ready checks bridge availability rather than incorrectly requiring its engine at idle.
+Rollback now stops the dynamic provider before repairing an emptied engine (17 contracts).
+
+Actual GTK3 keys/compose/session checks, native GTK4 Wayland, Qt6 multiline, Brave and
+Electron 44.4.5 synthetic forms pass Unicode, focus/password refusal and restore. The
+first browser session attempt lacked initial accessibility metadata and failed closed;
+retained failure, diagnostic pass and harness event barrier are in bounded receipts.
+No rejected Begin was retried for a better score. Shared portal startup warnings remain
+in private logs. Synthetic Electron does not establish actual Codex/OpenCode app support.
+
+Changed-source CPU speech-to-field ran once on the public clip: WER0, first5.09s,
+total12.61s, min available9.00GiB, maxfan2523RPM/temp49.29C. Frozen runtime matches
+installed candidate. No mic capture or playback. Prior v4 and failed rollout/rollback
+attempts remain separate. Five-second samples showed0 tick CPU for both owned processes,
+RSS39,698,432 bytes bridge/927,088,640 speech; excludes shared IBus/accessibility overhead.
+
+Actual --activate passed; input and F5 services are ready CPU/IBus while the normal engine
+stays selected idle. A human F5 trial was requested asynchronously; do not restart these
+services while the owner may be trying it. Current everyday 4B is enabled but inactive:
+its own reserve guard stopped it at08:02:47, not a manual stop. Admission requires6.5GiB
+plus6GiB reserve; resume only if that and quiet gates pass. This mixed-workload period
+does not prove simultaneous model residency. Other owner jobs/windows unchanged.
+
+Public synthetic receipts published through work/publish-receipts.py --dictation-session;
+raw logs, app settings and private baseline excluded. PR86 remains draft/unmerged and
+origin/main advanced to c201244; reconcile preserving owner changes before final checks.
+Next: human F5 result, optional grammar/translation review/control surface, CI/review,
+merge and Pages verification. Broader agent roles remain the separate proposal below.
+
 ## AI delivery priority and live dictation blocker — 2026-10-18
 
 Owner requests universal speech-to-text first, strong troubleshooting/optimization next,

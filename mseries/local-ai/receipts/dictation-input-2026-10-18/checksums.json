@@ -1,5 +1,7 @@
 {
   "activation-attempt-v1.json": "0643f960939b2dc82f2faf60f54d7f0c3bd45d652fb109a0ee965614eaeb1ab7",
+  "activation-cycle-v2-failed.json": "7be7c1facde9b619b695dad894ee01aa32bd3ccfa84f8cd9592708d24da8541f",
+  "activation-cycle-v3.json": "4fc29f3de2caced39bfe2431959b07899dd4cf1fd27636904edf9cb6c2e5c786",
   "anonymous-fallback.json": "77efd7a56ee62a44cb172c3647d5a6319aa3ac8152400feeebd97f823bed643d",
   "bounded-focus-follow-through.json": "f8234a175f55b7910e62b5a31ceb0b21ffdaf6b81accee61c4223be11a682f82",
   "electron-runtime-pin.json": "34ab246168b44f252265f2dd4099da5b9defded2e7ef8315819cff77cfcf023b",
@@ -10,6 +12,13 @@
   "evaluated-selector-v1/gtk-input-smoke.py": "fc581d61f91f292b3d2e27a76502f8470c54edadb52ab4e2a015cc5ee82a2be8",
   "evaluated-selector-v1/machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27",
   "evaluated-selector-v1/stream-dictate.py": "a1ef161bb8c908f6212e92478585d5e0e0192c3002ce088547fe6f0d524a8f89",
+  "evaluated-session-speech-v1/dictation-input-client.py": "f25e53319d500d350c09a6e23ab254d728073ebf657b8b3b7dd83a99ca287c37",
+  "evaluated-session-speech-v1/dictation-input.py": "c4b926ae459c90ba9e5ccd2f4f355670dc2ab7fea9fd3a8d17ca39e85089589e",
+  "evaluated-session-speech-v1/dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+  "evaluated-session-speech-v1/dictation_status.py": "50dadbf4f6a7f5edf8e4cb8b91d8931adf75cd899455285547d653c5af591903",
+  "evaluated-session-speech-v1/gtk-input-smoke.py": "82c188c890eacb14d8154c274a143fac3cd78e6aaf26ca91ce25fe849e4ae8dc",
+  "evaluated-session-speech-v1/machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27",
+  "evaluated-session-speech-v1/stream-dictate.py": "e2f0f746ab5668890ad97b3ade04b7798f9a111f20131836e369b9f932c164b3",
   "evaluated-speech-guarded-v4/dictation-input-client.py": "33b3c5f08745202ab23a6adee4b8f477d0b0c00f8766892e3ace0505cb8ab36c",
   "evaluated-speech-guarded-v4/dictation-input.py": "d8122c8b93fc84042bee6c1d25279c4f8118c570856e5bbbd5fa6d7903be69d8",
   "evaluated-speech-guarded-v4/dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
@@ -24,6 +33,7 @@
   "evaluated-speech-v3/stream-dictate.py": "a4a143a121563d9ea70c9f24ffb4f2f1d69783f6d9f749bb1d358389f78e1b07",
   "framework-follow-through.json": "9e73f2558b449888138c1c4adbb543f40af9ac451e7a59ed68a4aeac2bd142f1",
   "keyboard-regression-v1.json": "d299b25cd9329989c2ea0e25db2ca0f78f7becf142a1bb57bd3ce60474ca05dd",
+  "qualification-session-speech-v1.json": "938a8de973173cab522cea9e911af2f4515ce4b0af7fd50fc93a5b23155fa662",
   "qualification-speech-guarded-v4.json": "727da4fc7976b5f9ae7b924f1a12929f53d9b4545e2f83587cdb284191964ccd",
   "qualification-speech-v1.json": "6b0c373f3afa29344b998c278c09e2974449321e1d4b98d124cb853a68ab4554",
   "qualification-speech-v3.json": "a8463001bacb18a8241d4b7adad6263d645793fd84500fd01cb429e4c3bdcacb",
@@ -31,5 +41,8 @@
   "qualification.json": "61efaf2d9adfef51a96397b888627fb4102ff01eed5604afb56576a5b7cf5b20",
   "runtime-pins.json": "241e18fd01dc6060127398b3e7f8f236ef189b97091679edabcd14751732bf7c",
   "selector-regression-v1.json": "67cf6e504ddf15ae3e13069f8dc80a0031a05dee6f299786c6a1b1a2bd63a9a0",
+  "session-activation-v1.json": "a88350021cd5f3c759af1b35a39923e4c2d2bb9245a95a1d5050895f6f793441",
+  "session-field-follow-through-v1.json": "1c795a7800a1176205c55f11589d7873cab9004b5ff67a49531b9b7294ae5798",
+  "session-idle-v1.json": "73bfc1db28dbddb32b41a2180de5c3ace9ddcc02251eae6dfec56d668b2e9b73",
   "stage-only-rollback.json": "09ae8a0ace52875b21418ea3a2c8e8e2645f2dcd76d536f0a2b1a6b48260bcc3"
 }

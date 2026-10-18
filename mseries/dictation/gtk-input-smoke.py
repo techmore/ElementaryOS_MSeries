@@ -61,7 +61,7 @@ with tempfile.TemporaryDirectory(prefix='mseries-gtk-input-') as directory:
         time.sleep(1);IBus.init();bus=IBus.Bus.new();assert bus.is_connected()
         engine=subprocess.Popen(['/usr/bin/python3',str(evaluated/'dictation-input.py')])
         pump(1)
-        subprocess.run(['/usr/bin/python3',str(evaluated/'dictation-input-client.py'),'select'],check=True)
+        subprocess.run(['/usr/bin/python3',str(evaluated/'dictation-input-client.py'),'select','xkb:us::eng'],check=True)
         window=Gtk.Window(title='Synthetic dictation fields');box=Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         window.set_child(box) if args.gtk4 else window.add(box)
         first,second,password=Gtk.Entry(),Gtk.Entry(),Gtk.Entry()
@@ -76,6 +76,7 @@ with tempfile.TemporaryDirectory(prefix='mseries-gtk-input-') as directory:
         keyboard_receipt=None
         if args.keyboard_check:
             assert not args.wayland,'XTest keyboard fixture requires private Xvfb'
+            subprocess.run(['/usr/bin/python3',str(evaluated/'dictation-input-client.py'),'select'],check=True)
             subprocess.run(['setxkbmap','-layout','us','-variant','intl'],check=True)
             x11=ctypes.CDLL('libX11.so.6');xtst=ctypes.CDLL('libXtst.so.6')
             x11.XOpenDisplay.argtypes=[ctypes.c_char_p];x11.XOpenDisplay.restype=ctypes.c_void_p
@@ -97,6 +98,7 @@ with tempfile.TemporaryDirectory(prefix='mseries-gtk-input-') as directory:
                 keyboard_receipt={'ordinary_keys':True,'shift':True,'backspace':True,'dead_key_compose':True,'layout':'private Xvfb us(intl)'}
                 first.set_text('');pump()
             finally:x11.XCloseDisplay(display)
+            subprocess.run(['/usr/bin/python3',str(evaluated/'dictation-input-client.py'),'select','xkb:us::eng'],check=True)
         conn=Gio.bus_get_sync(Gio.BusType.SESSION,None)
         def call(method,args=None):
             return conn.call_sync('org.techmore.DictationInput','/org/techmore/DictationInput',
@@ -120,6 +122,17 @@ with tempfile.TemporaryDirectory(prefix='mseries-gtk-input-') as directory:
             result=run_client('commit',token,chunk);assert result.returncode==0,result.stderr
             pump()
         assert first.get_text()==text,first.get_text()
+        assert run_client('begin').returncode!=0,'Overlapping Begin replaced the session'
+        assert run_client('finish',token).returncode==0
+        pump()
+        assert bus.get_global_engine().get_name()=='xkb:us::eng','Finish did not restore original engine'
+        result=run_client('begin');assert result.returncode==0,result.stderr
+        token=result.stdout.strip()
+        assert bus.get_global_engine().get_name()=='mseries-dictation'
+        assert run_client('cancel').returncode==0
+        pump()
+        assert bus.get_global_engine().get_name()=='xkb:us::eng','Cancel did not restore original engine'
+        assert run_client('commit',token,'cancelled').returncode!=0
         speech_receipt=None
         if args.speech_file:
             sys.path.insert(0,str(Path(__file__).resolve().parent.parent/'local-ai'))
@@ -171,15 +184,23 @@ with tempfile.TemporaryDirectory(prefix='mseries-gtk-input-') as directory:
                 'max_fan_rpm':max(max(s['fans_rpm'].values()) for s in samples),
                 'max_temp_c':max(max(s['temperatures_c'].values()) for s in samples),
                 'samples':len(samples),'quiet_policy_passed':True,'microphone_recorded':False}
+        result=run_client('begin');assert result.returncode==0,result.stderr
+        token=result.stdout.strip()
         second.grab_focus();pump()
         assert run_client('commit',token,'wrong field').returncode!=0,'Focus change accepted stale insertion'
         assert not second.get_text()
+        # A deliberate owner layout change during a lease must win over the
+        # automatic restore, even when the token has already lost focus.
+        assert bus.set_global_engine('xkb:fr::fra');pump()
+        assert run_client('finish',token).returncode==0
+        assert bus.get_global_engine().get_name()=='xkb:fr::fra','Finish overwrote owner selection'
         password.grab_focus();pump()
         assert run_client('begin').returncode!=0,'Password accepted dictation'
         assert not password.get_text()
+        assert bus.get_global_engine().get_name()=='xkb:fr::fra','Sensitive Begin changed input method'
         window.destroy();pump()
         receipt={'passed':True,'source_sha256':source_hashes,'gtk_version':4 if args.gtk4 else 3,'display_backend':'wayland' if args.wayland else 'x11','unicode_field':True,'changed_field_untouched':True,
-            'password_untouched':True,'speech':speech_receipt,'keyboard':keyboard_receipt,'method':'Actual Gtk.Entry fields, private '+('headless Gala Wayland' if args.wayland else 'Xvfb')+'/IBus/session bus; '+('CPU file ASR; no microphone' if speech_receipt else 'no ASR or microphone')}
+            'password_untouched':True,'session_engine_restore':True,'overlapping_begin_refused':True,'owner_selection_preserved':True,'speech':speech_receipt,'keyboard':keyboard_receipt,'method':'Actual Gtk.Entry fields, private '+('headless Gala Wayland' if args.wayland else 'Xvfb')+'/IBus/session bus; '+('CPU file ASR; no microphone' if speech_receipt else 'no ASR or microphone')}
         if args.receipt_dir:(args.receipt_dir/'receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
         print(json.dumps(receipt))
     finally:

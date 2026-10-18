@@ -33,7 +33,7 @@ with tempfile.TemporaryDirectory(prefix='mseries-qt-input-') as directory:
     try:
         time.sleep(1);IBus.init();bus=IBus.Bus.new();assert bus.is_connected()
         engine=subprocess.Popen(['/usr/bin/python3',str(Path(__file__).with_name('dictation-input.py'))])
-        pump(1);assert bus.set_global_engine('mseries-dictation')
+        pump(1);assert bus.set_global_engine('xkb:us::eng')
         app=QApplication([]);window=QWidget();window.setWindowTitle('Synthetic Qt dictation fields')
         layout=QVBoxLayout(window);first,second,password=QLineEdit(),QLineEdit(),QLineEdit()
         password.setEchoMode(QLineEdit.EchoMode.Password);multiline=QTextEdit()
@@ -65,12 +65,15 @@ with tempfile.TemporaryDirectory(prefix='mseries-qt-input-') as directory:
         assert first.text()==text,repr(first.text())
         second.setFocus();pump();assert call('commit',token,'wrong field').returncode!=0
         assert not second.text()
+        assert call('finish',token).returncode==0;assert bus.get_global_engine().get_name()=='xkb:us::eng'
         password.setFocus();pump();assert call('begin').returncode!=0;assert not password.text()
         multiline.setFocus();pump();result=call('begin');assert result.returncode==0,result.stderr
-        result=call('commit',result.stdout.strip(),'Line one\n日本語 & café');assert result.returncode==0,result.stderr;pump()
+        token=result.stdout.strip()
+        result=call('commit',token,'Line one\n日本語 & café');assert result.returncode==0,result.stderr;pump()
         assert multiline.toPlainText()=='Line one\n日本語 & café'
+        assert call('finish',token).returncode==0;assert bus.get_global_engine().get_name()=='xkb:us::eng'
         window.close();pump()
-        print(json.dumps({'qt6_unicode_field':True,'qt6_multiline':True,'changed_field_untouched':True,
+        print(json.dumps({'qt6_unicode_field':True,'qt6_multiline':True,'session_engine_restore':True,'changed_field_untouched':True,
             'password_untouched':True,'method':'Real Qt6 X11 widgets in private Xvfb/IBus/session bus; no microphone or ASR'}))
     finally:
         if engine:engine.terminate();engine.wait(timeout=5)

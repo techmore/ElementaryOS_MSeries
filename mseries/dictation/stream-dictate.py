@@ -142,7 +142,7 @@ def speech_stats(pcm):
 
 
 class Typer(threading.Thread):
-    """Types text through ydotool in order, off the audio thread."""
+    """Commit text and release its input session in order, off the audio thread."""
     def __init__(self, failure=None):
         super().__init__(daemon=True)
         self.q = queue.Queue()
@@ -153,6 +153,15 @@ class Typer(threading.Thread):
     def run(self):
         while True:
             text, token = self.q.get()
+            if text is None:
+                try:
+                    input_call('finish', token)
+                except (subprocess.SubprocessError, OSError):
+                    self.failed = True
+                    log('dictation input session could not finish')
+                    if self.failure: self.failure()
+                self.q.task_done()
+                continue
             if text and (DRY or (not TEST_INSERT and (os.environ.get("STREAM_TEST_WAV") or os.environ.get("STREAM_TEST_RAW")))):
                 print(f"[{time.time() - T0:5.1f}s] type: {text!r}", flush=True)
             elif text:
@@ -168,6 +177,9 @@ class Typer(threading.Thread):
                     log('dictation insertion refused; no keyboard fallback')
                     if first_failure and self.failure: self.failure()
             self.q.task_done()
+
+    def finish(self, token):
+        if token: self.q.put((None, token))
 
     def submit(self, text, token):
         self.q.put((text, token))
@@ -192,7 +204,7 @@ class Dictation:
             notify('Dictation stopped: text-field focus changed or input method unavailable')
 
     def start(self):
-        if self.active:
+        if self.active or self.typer.q.unfinished_tasks:
             return
         self.policy = load_policy() if OUTPUT == 'ibus' else None
         if OUTPUT == 'ibus' and resource_reasons(self.policy, 256 * 1024 ** 2):
@@ -203,7 +215,7 @@ class Dictation:
             try:
                 self.input_token = input_call('begin')
             except (subprocess.SubprocessError, OSError):
-                notify('Select a normal text field with the Dictation input method')
+                notify('Select a normal text field for dictation')
                 return
         self.active = True
         self.error = None
@@ -253,6 +265,7 @@ class Dictation:
             time.sleep(0.1)
         else:
             log("could not open the microphone")
+            if OUTPUT == 'ibus': self.typer.finish(self.input_token)
             self.active = False
             status('error')
             notify('Could not open the microphone')
@@ -338,6 +351,7 @@ class Dictation:
                 cap.kill()
             if not (test or raw):
                 tone(440, 120)
+            if OUTPUT == 'ibus' and not self.cancelled: self.typer.finish(self.input_token)
             self.active = False
             status('error' if self.error else 'ready')
             if not (test or raw):
