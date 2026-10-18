@@ -24,6 +24,7 @@ sudo install -m 0644 "$here/org.mseries.Battery.desktop" /usr/share/applications
 sudo ln -sfn "$dest/mseries-battery.py" /usr/local/bin/mseries-battery
 sudo systemctl --global enable mseries-battery-logger.service
 systemctl --user daemon-reload
-systemctl --user enable --now mseries-battery-logger.service
+systemctl --user enable mseries-battery-logger.service
+systemctl --user restart mseries-battery-logger.service
 sudo update-desktop-database /usr/share/applications 2>/dev/null || true
 echo 'Installed. Logging every 15 s; open "Battery" from the launcher or run: mseries-battery status'

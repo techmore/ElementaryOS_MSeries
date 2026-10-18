@@ -5,12 +5,26 @@ Runs as a user service (mseries-battery-logger.service). `--once` takes two samp
 prints the second, for checks. Never changes any setting; it only reads sysfs and procfs.
 """
 import os
+import shutil
 import signal
+import subprocess
 import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 import battery_core as core  # noqa: E402
+
+
+def notify(alert):
+    """Tell the owner about sustained high draw. Uses notify-send; silently skipped if it is missing."""
+    tool = shutil.which("notify-send")
+    if not tool:
+        return
+    who = " %s is using the most CPU." % alert["culprit"] if alert["culprit"] else ""
+    body = "Drawing %.0f W for the last few minutes.%s At this rate the battery lasts %s." % (
+        alert["watts"], who, core.fmt_hours(alert["hours_left"]))
+    subprocess.run([tool, "--app-name=Battery", "--icon=battery-caution-symbolic", "--category=device",
+                    "High power use", body], check=False, timeout=10)
 
 
 def main(argv):
@@ -27,6 +41,8 @@ def main(argv):
 
     conn = core.connect()
     detector = core.EventDetector()
+    alert = core.DrainAlert(core.load_config())
+    last_day = None
     stop = []
     for sig in (signal.SIGTERM, signal.SIGINT):
         signal.signal(sig, lambda *_: stop.append(1))
@@ -40,7 +56,14 @@ def main(argv):
             row = sampler.sample()
             core.store(conn, row)
             detector.feed(conn, row)
+            day = time.strftime("%Y-%m-%d")
+            if day != last_day:
+                core.snapshot_daily(conn, day)
+                last_day = day
             conn.commit()
+            fired = alert.feed(row)
+            if fired:
+                notify(fired)
             if row["ts"] - last_prune > 86400:
                 core.prune(conn)
                 last_prune = row["ts"]
