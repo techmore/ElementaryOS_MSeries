@@ -1,0 +1,49 @@
+From d10d360a96f406f3b953eceb6e44e7be3f4c7c24 Mon Sep 17 00:00:00 2001
+From: Joshua Warren <816217+joshuaswarren@users.noreply.github.com>
+Date: Thu, 15 Oct 2026 09:27:42 -0500
+Subject: [PATCH 2/2] config: build the AMD and Nouveau GPU drivers as modules
+
+Set CONFIG_DRM_AMDGPU=m and CONFIG_DRM_NOUVEAU=m in the Aurora config
+fragment, next to the udmabuf lines of this branch.
+
+Why: PCIe over Thunderbolt already enumerates devices on these laptops, but
+the running kernel has no driver for a discrete GPU. DRM_AMDGPU and
+DRM_NOUVEAU are off, and the DRM helpers amdgpu needs (TTM, buddy, suballoc)
+are off too, so an out-of-tree amdgpu module cannot be built against the
+shipped kernel either.
+
+What the resolved configuration does (Kconfig only, nothing built): the
+fragment is merged into the running 7.1.12 configuration with and without
+the two new lines, then olddefconfig is run on the same tree. Only these
+symbols change: DRM_AMDGPU=m, DRM_NOUVEAU=m, and what they pull in or
+default: DRM_TTM=m, DRM_TTM_HELPER=m, DRM_BUDDY=m, GPU_BUDDY=y,
+DRM_SUBALLOC_HELPER=m, DRM_PANEL_BACKLIGHT_QUIRKS=m, DRM_AMD_DC=y,
+DRM_DISPLAY_DP_HELPER=y, DRM_DISPLAY_DSC_HELPER=y,
+DRM_DISPLAY_HDCP_HELPER=y, DRM_DISPLAY_HDMI_CEC_NOTIFIER_HELPER=y,
+CEC_NOTIFIER=y, the Nouveau sub-options (backlight, CH7006, SIL164, debug
+levels), and the "is not set" entries of the new sub-options. The 16K page
+size, the Apple GPU, display, PCIe, USB4 and DART symbols are identical.
+DRM_AMD_DC_FP does not appear in the resolved configuration, so this is a
+compute setup, not display output. DRM_XE stays off (it needs 4K pages),
+and HSA_AMD, AMDGPU_SI and AMDGPU_CIK stay off.
+
+Not done: no build, no boot, no card. Module size and the effect on the
+package size are not measured. This only prepares the kernel side; whether a
+Thunderbolt-attached card works on these laptops is untested.
+---
+ arch/arm64/configs/asahi.config | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm64/configs/asahi.config b/arch/arm64/configs/asahi.config
+index f0030c98cfac40..4d31d675f5553f 100644
+--- a/arch/arm64/configs/asahi.config
++++ b/arch/arm64/configs/asahi.config
+@@ -45,6 +45,8 @@ CONFIG_DRM_APPLE_AUDIO=y
+ CONFIG_DRM_ACCEL=y
+ CONFIG_DRM_ACCEL_ANE=m
+ CONFIG_DRM_SIMPLEDRM=y
++CONFIG_DRM_AMDGPU=m
++CONFIG_DRM_NOUVEAU=m
+ CONFIG_UDMABUF=y
+ CONFIG_DMABUF_HEAPS=y
+ CONFIG_DMABUF_HEAPS_SYSTEM=y

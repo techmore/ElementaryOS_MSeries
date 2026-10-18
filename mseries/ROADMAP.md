@@ -21,6 +21,16 @@ Linux CI also reads a real FAT ESP without root. Target-machine suspend,
 notification, SEP, radio recovery and keymap qualification remain open. No
 battery-life gain or factory hardware boot is claimed.
 
+## Aurora enhancements source candidate — 2026-10-17
+
+[Integration guide](aurora/enhancements/README.md): udmabuf/system heap, scoped
+M3 Air thermal and camera fixes, rebased optional SMC battery properties, and
+an explicit eGPU config profile. Complete source-build/CI lane uses distinct
+kernel/package identities and retains the released .20 recovery candidate.
+Local tests pass; ARM64 build verification is tracked in the enhancement CI.
+No live deployment or measured power gain. #122/#127 display rebases and
+selective Neo work remain outstanding; older duplicate branches are not imported.
+
 
 
 ## Aurora branch enhancement inventory — 2026-10-17
