@@ -1,0 +1,37 @@
+diff --git a/src/WorkspaceSystem/WorkspaceSystem.vala b/src/WorkspaceSystem/WorkspaceSystem.vala
+index 36a8e64..adccaa2 100644
+--- a/src/WorkspaceSystem/WorkspaceSystem.vala
++++ b/src/WorkspaceSystem/WorkspaceSystem.vala
+@@ -18,11 +18,16 @@ public class Dock.WorkspaceSystem : Object {
+     }
+ 
+     public async void load () {
+-        yield sync_windows ();
+-
+-        WindowSystem.get_default ().notify["windows"].connect (sync_windows);
+-        WindowSystem.get_default ().notify["active-workspace"].connect (sync_active_workspace);
+-        WindowSystem.get_default ().workspace_removed.connect (remove_workspace);
++        unowned var window_system = WindowSystem.get_default ();
++        window_system.notify["windows"].connect (sync_windows);
++        window_system.notify["active-workspace"].connect (sync_active_workspace);
++        window_system.workspace_removed.connect (remove_workspace);
++
++        // WindowSystem connects to Gala asynchronously; its first window sync
++        // notifies "windows" and runs sync_windows then, so don't query Gala early.
++        if (window_system.desktop_integration != null) {
++            yield sync_windows ();
++        }
+     }
+ 
+     private Workspace add_workspace () {
+@@ -84,6 +89,10 @@ public class Dock.WorkspaceSystem : Object {
+             index--;
+         }
+ 
++        if (index < 0 || index >= workspaces.get_n_items ()) {
++            return;
++        }
++
+         workspaces.remove (index);
+     }
+ 

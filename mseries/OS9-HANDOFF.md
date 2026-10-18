@@ -1,5 +1,23 @@
 # OS 9 implementation / Claude Code handoff
 
+## Dock "crashes": a false fallback flag and a startup race, both fixed — 2026-10-18 (Claude Code)
+
+- **Symptom:** the dock vanished or reverted to the stock dock. `io.elementary.dock` itself produced no coredumps this boot.
+  The crashes were wingpanel (SIGSEGV x2 at 04:44) and gala in boot -2.
+- **Cause 1 (wrapper):** `~/.local/bin/io.elementary.dock` flagged any non-zero exit within 15 s as a failure. At 04:44 the
+  session stopped the dock with SIGTERM (rc=143), so it wrote `~/.cache/mseries-dock-failed` and ran the stock dock.
+  **Fix:** `install-dock-drawers.sh` now writes a wrapper that exits without flagging on rc 129/130/137/143.
+- **Cause 2 (dock 8.3.3 upstream, still on main):** `WorkspaceSystem.load ()` queried Gala before `WindowSystem`'s async
+  DesktopIntegration proxy existed. That logged `DesktopIntegration is null`, set up workspaces from 0, and
+  `remove_workspace` hit `g_list_store_remove` out of range. **Fix:** `mseries/patches/dock-workspace-startup.patch`
+  connects the signals first and skips the early sync, so WindowSystem's first `windows` notify drives it. It also
+  bounds-checks `remove_workspace`.
+- **Installed:** `bash mseries/install-dock-drawers.sh` (built on main's drawers + compact-dock patch). The running dock
+  was not restarted, so the patched binary takes effect at its next start.
+- **Verified:** `--build-only` passes, the installed wrapper matches the old one apart from the rc guard, and the dock came
+  back as the patched build after a restart at 06:35. **Not yet verified:** a clean `journalctl` after the next login
+  (expect no `DesktopIntegration is null`).
+
 ## Native full-height J314 desktop and persistent dock — 2026-10-18
 
 Post-push deployment follow-up: required `bash mseries/deploy-codexbar.sh` passed
