@@ -4835,3 +4835,23 @@ Explicit speech refs augment the existing six-hour watcher, not another schedule
 Publication PR must pass checks and Pages bytes must be verified before claiming
 main/site completion. Preserve current main owner changes; no CodexBar files changed.
 
+
+## Bluetooth in the far-right Quick Settings menu — 2026-10-18
+
+`quick-settings/Bluetooth.vala` adds a Bluetooth switch, saved-device Connect/Disconnect buttons, and Bluetooth Settings… for pairing. It talks asynchronously to BlueZ on the system bus using ObjectManager and Properties/Device calls, follows external radio/device changes, handles missing adapters/service and failed connections, and does not scan or pair automatically. Devices are sorted connected-first and only paired/bonded/connected devices appear. Radio changes apply to available adapters. A refresh guard avoids nested GTK mapping refreshes; the Granite switch description remains constant because assigning it again can try to reparent its label on this installed version.
+
+Both `install-quick-settings-brightness.sh` and the factory `build-quick-settings` apply the new patch and copy the widget; `enhance.sh` includes it in first-boot payload. No new runtime library is needed beyond GLib/GIO and existing GTK/Granite.
+
+Verified: full pinned Quick Settings release build/link; production-widget integration test on a private fake BlueZ bus covers saved-device filtering, Connect, Disconnect, connection-failure recovery, and radio off/on with fatal GTK criticals enabled. CI runs this test. A read-only GTK preview against the real BlueZ service rendered. Installed/staged via the normal installer without a Wingpanel restart; activation awaits explicit owner reload approval or next login. No actual Bluetooth radio or device state was changed by tests.
+
+Bluetooth activation follow-up: owner explicitly requested “Reload menu bar now.” Ran `python3 mseries/local-ai/repair-panel.py`; Wingpanel restarted and passed the survival check, and `/proc` maps confirm the installed Quick Settings module is loaded. Owner visual/device interaction check remains.
+
+### Remove duplicate Bluetooth icon — 2026-10-18
+
+Owner clarified that Bluetooth should appear only inside Quick Settings, not as a separate bar icon. New pinned `install-bluetooth-control-center.sh` builds elementary/panel-bluetooth at `f67e65d09a8ab046f54895a326273dce5c491430` (8.0.0, LGPL-2.1-or-later) with `bluetooth-control-center.patch`: session visibility is false rather than bound to adapter presence; the greeter keeps the original binding. ObjectManager and ObexManager continue to run, so hiding the icon does not remove those background services. The installer refuses to hide the icon unless the replacement Quick Settings widget is installed, uses the version-aware backup helper and an atomic module replacement, supports `--build-only` / `--uninstall`, and leaves reloading to the caller. The quick-settings installer invokes it after installing the replacement controls; first-boot payload carries the installer and patch.
+
+Verified full release compile/link and dependency check; isolated production-Indicator harness with stubbed services verifies session stays hidden through adapter changes, greeter visibility still follows adapters, and both retain ObexManager. Installed and reloaded Wingpanel to correct the confirmed duplicate-icon defect using the already-approved menu-bar reload; panel restart survival check passed. No Bluetooth radio/device settings were changed by the visibility patch.
+
+### Ethernet icon scale — 2026-10-18
+
+Owner requested 15% smaller Ethernet artwork. Connected 16/24px and VPN-lock assets now use an 85% transform centered in their existing canvases; panel allocation and text remain unchanged. Verified SVG transforms and rendered alpha bounds (within 1% of 0.85 for each dimension), then rebuilt/installed the pinned network module and reloaded the panel using the session-approved reload.
