@@ -1,5 +1,16 @@
 # OS 9 implementation / Claude Code handoff
 
+## CodexBar: token totals lead ChatGPT/Codex and Claude — 2026-10-18
+
+Moved those providers' seven-day token counts to the top row beside their marks.
+Active quota/reset details and any alternate-account summaries share the lower row;
+OpenCode retains its quota-first layout. Missing totals retain the existing fallback,
+and display preferences/stale coloring remain respected. No helper or polling changes.
+All 15 native targets pass; the token probe now asserts actual vertical label positions
+for all three providers and the <=32 px two-row height. Light/dark and hidden-account
+renders checked. Routine deployment stages this native layout for next login without
+restarting Wingpanel; the quiet crash/launcher watch remains active.
+
 ## CodexBar performance/modularity audit and quiet stability watch — 2026-10-18
 
 [Audit, evidence and remaining work](CODEXBAR-PERFORMANCE-AUDIT-2026-10-18.md).

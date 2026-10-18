@@ -309,3 +309,12 @@ It never controls processes. The owner's five-minute chat heartbeat consumes tha
 and stays quiet while unchanged. Retain the distinction between an unexplained PID
 transition and a confirmed crash. The heartbeat requires the app/host to be available;
 it is not a continuous availability guarantee.
+
+### Token-first ChatGPT/Codex and Claude rows
+
+When seven-day totals are available, ChatGPT/Codex and Claude show them beside the
+provider mark on the top row. Active quota/reset details and alternate accounts share
+the second row. OpenCode retains its quota-first order. The native token probe checks
+vertical ordering and the two-row height; display preferences and missing-data fallbacks
+remain supported. As with other native changes, routine deployment stages this layout
+for next login without reloading a healthy panel.
