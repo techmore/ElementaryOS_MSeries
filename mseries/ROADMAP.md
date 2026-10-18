@@ -3,7 +3,12 @@
 ## Orchard two-hour soak in progress — 2026-10-18
 
 Started the installed, merged Orchard runtime (`9747eb0`, package hashes
-verified) on native Wayland at 15:09 UTC. The live driver now supports scheduled
+verified) on native Wayland at 15:09 UTC. That attempt ended at 15:13:12 UTC
+when the audit window received a close request; both Orchard windows exited,
+with no unexpected UI errors. It is excluded from multi-hour qualification.
+A fresh detached two-hour run and installed-window observer began at 15:19 UTC;
+the original 252-second evidence is retained separately. The closure cause is
+not established; follow-up monitoring now checks every five minutes. The live driver now supports scheduled
 cycle starts and a minimum total session duration, retaining each cycle's raw
 frame feedback. Eight complete developer workflow cycles are scheduled 900
 seconds apart, with idle sampling between them and a minimum 7,200-second run.
