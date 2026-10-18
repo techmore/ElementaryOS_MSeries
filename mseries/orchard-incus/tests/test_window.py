@@ -1,12 +1,14 @@
 """GTK integration with synthetic inventories; never runs Incus."""
 import os
+import gc
+import weakref
 from pathlib import Path
 import sys
 import tempfile
 import subprocess
 import time
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 try:
     import gi
@@ -69,6 +71,86 @@ class WindowTests(unittest.TestCase):
         self.win.append_out('dev-0000', 'λ' * 400000)
         b = self.win.exec_buf('dev-0000')
         self.assertEqual(b.get_char_count(), 262144)
+
+    def test_trimmed_output_does_not_live_in_an_undo_log(self):
+        for _ in range(12):
+            self.win.append_out('dev-0000', 'λ' * 65536)
+        buffer = self.win.exec_buf('dev-0000')
+        self.assertFalse(buffer.get_enable_undo())
+        self.assertFalse(buffer.get_can_undo())
+        self.assertEqual(buffer.get_char_count(), 262144)
+
+    def test_deleted_guest_releases_hidden_charts_and_output(self):
+        self.win.open_instance('dev-0000')
+        self.win.append_out('dev-0000', 'old output')
+        self.win.pages.set_visible_child_name('inst')
+        self.win.show([fixture(1)])
+        self.assertNotIn('dev-0000', self.win.dash_rows)
+        self.assertNotIn('dev-0000', self.win.exec_bufs)
+        self.assertEqual(self.win.exec_out.get_buffer().get_char_count(), 0)
+
+    def test_missing_guest_output_survives_until_command_finishes(self):
+        self.win.append_out('dev-0000', 'running output')
+        self.win.exec_proc['dev-0000'] = object()
+        self.win.show([fixture(1)])
+        self.assertIn('dev-0000', self.win.exec_bufs)
+        del self.win.exec_proc['dev-0000']
+        self.win.prune_instance_views()
+        self.assertNotIn('dev-0000', self.win.exec_bufs)
+
+    def test_image_selection_releases_the_dialog_read_slot(self):
+        task = Mock()
+        def read(slot, work, done):
+            self.win.reads[slot] = task
+            done('alpine/edge,Alpine development,CONTAINER\n')
+        def walk(widget):
+            yield widget
+            child = widget.get_first_child()
+            while child:
+                yield from walk(child)
+                child = child.get_next_sibling()
+        picked = Mock()
+        with patch.object(self.win, 'read', side_effect=read):
+            self.win.browse_images(picked)
+            dialog = next(d for d in Gtk.Window.get_toplevels() if d.get_title() == 'Browse images')
+            try:
+                select = next(w for w in walk(dialog) if isinstance(w, Gtk.Button) and w.get_tooltip_text() == 'Select')
+                select.emit('clicked')
+                picked.assert_called_once_with('images:alpine/edge', False)
+                task.invalidate.assert_called_once()
+                self.assertFalse(any(isinstance(k, tuple) and k[0] == 'image-search' for k in self.win.reads))
+            finally:
+                dialog.destroy()
+
+    def test_cancelled_creation_form_releases_its_signal_closures(self):
+        self.win.on_new()
+        dialog = next(d for d in Gtk.Window.get_toplevels() if d.get_title() == 'New Instance')
+        grid = next(w for w in self._walk(dialog) if isinstance(w, Gtk.Grid))
+        refs = [weakref.ref(dialog)] + [weakref.ref(grid.get_child_at(1, row)) for row in range(7)]
+        del grid
+        dialog.response(Gtk.ResponseType.CANCEL)
+        del dialog
+        gc.collect()
+        self.assertTrue(all(ref() is None for ref in refs), 'closed form callbacks must not retain the dialog or its inputs')
+
+    def test_destroyed_name_form_releases_its_validation_closure(self):
+        self.win.ask_name('Lifetime probe', 'name', 'dev', 'Accept', lambda value: None)
+        dialog = next(d for d in Gtk.Window.get_toplevels() if d.get_title() == 'Lifetime probe')
+        entry = next(w for w in self._walk(dialog) if isinstance(w, Gtk.Entry))
+        refs = [weakref.ref(dialog), weakref.ref(entry)]
+        del entry
+        dialog.destroy()
+        del dialog
+        gc.collect()
+        self.assertTrue(all(ref() is None for ref in refs))
+
+    @staticmethod
+    def _walk(widget):
+        yield widget
+        child = widget.get_first_child()
+        while child:
+            yield from WindowTests._walk(child)
+            child = child.get_next_sibling()
 
     def test_busy_other_instance_does_not_change_detail(self):
         self.win.open_instance('dev-0000')
@@ -217,6 +299,26 @@ class WindowTests(unittest.TestCase):
         self.assertIsNone(self.win.select_after_refresh)
         self.assertEqual(self.win.cur, 'renamed-dev')
         self.assertEqual(self.win.list.get_selected_row().name, 'renamed-dev')
+
+    def test_rename_preserves_output_without_retaining_the_old_name(self):
+        item = fixture()
+        item['status'] = 'Stopped'
+        self.win.show([item])
+        self.win.open_instance(item['name'])
+        self.win.append_out(item['name'], 'keep this output')
+        buffer = self.win.exec_buf(item['name'])
+        with patch.object(self.win, 'ask_name', side_effect=lambda *args: args[-1]('renamed-dev')), \
+             patch.object(self.win, 'bgl') as work:
+            self.win.rename()
+            work.call_args.kwargs['done'](None)
+        # A list request started before rename may complete after its callback.
+        self.win.show([item.copy()])
+        self.assertIs(self.win.exec_buf(item['name']), buffer)
+        item['name'] = 'renamed-dev'
+        self.win.show([item])
+        self.assertNotIn('dev-0000', self.win.exec_bufs)
+        self.assertIs(self.win.exec_buf('renamed-dev'), buffer)
+        self.assertEqual(buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter(), False), 'keep this output')
 
     def test_device_edits_serialize_and_duplicate_clicks_are_ignored(self):
         self.win.open_instance('dev-0000')

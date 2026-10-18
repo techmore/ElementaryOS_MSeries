@@ -24,6 +24,20 @@ on:
       - ".github/workflows/**"
 
 jobs:
+  orchard:
+    name: Orchard GTK output and lifecycle regressions (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install GTK and Granite test dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-granite-7.0 xvfb xauth
+      - name: Test without a daemon or real guests
+        run: |
+          python3 -m py_compile mseries/orchard-incus/orchard_incus/*.py mseries/orchard-incus/tools/*.py
+          xvfb-run -a env -u DBUS_SESSION_BUS_ADDRESS GSK_RENDERER=cairo GDK_BACKEND=x11 \
+            PYTHONWARNINGS=ignore::DeprecationWarning G_DEBUG=fatal-criticals \
+            python3 -m unittest discover -s mseries/orchard-incus/tests
+
   dock-startup:
     name: Dock startup and launcher regressions (arm64)
     runs-on: ubuntu-26.04-arm
