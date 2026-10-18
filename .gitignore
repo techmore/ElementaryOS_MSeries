@@ -25,6 +25,3 @@ __pycache__/
 mseries/gala-drawers/build/
 mkosi.packages/
 /mkosi.images/sysupdate/mkosi.extra/efi/m1n1/boot.bin
-
-# Cargo build output
-rust/target/
