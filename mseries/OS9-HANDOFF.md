@@ -12,7 +12,8 @@ GPU clock or compute-preemption broadening is enabled.
 
 `candidate.py prepare/check/build` verifies the existing .20 source/recipe,
 applies patches without fuzz, modifies the actual full config, resolves/checks
-Kconfig and creates a separate payload-only Debian package plus complete
+Kconfig and creates a separate payload-only Debian package (zstd level 3,
+bounded parallel compression) plus complete
 patched corresponding source. Kernel identity: `7.1.12-elementary-aurora20-enh1`
 (or `-egpu`). The fixed .20 installer/stager intentionally does not install it.
 17 local adapter regressions, 58 upstream Rust tests and the production SMC

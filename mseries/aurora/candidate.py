@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Prepare, test or build the separate Aurora enhancement candidate; never install."""
 import argparse
-import importlib.util
 import json
 import os
 from pathlib import Path
@@ -217,16 +216,19 @@ def build(root, output, jobs):
             f"Installed-Size: {size}\nSection: kernel\nPriority: optional\nDepends: kmod\n"
             "Description: Experimental Aurora enhancement kernel payload\n"
             " Distinct modules directory, no boot hooks; requires explicit boot-chain staging.\n")
-        spec = importlib.util.spec_from_file_location("aurora_package", HERE / "package-release.py")
-        package_module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(package_module)
         package = output / f"{name}_{version}_arm64.deb"
-        package_module.write_deb(package, control, payload)
+        shutil.copytree(control, payload / "DEBIAN")
+        # Native Debian packaging supports fast zstd and parallel compression;
+        # this does not run package installation or concurrent dpkg transactions.
+        run("dpkg-deb", "-Zzstd", "-z3", f"--threads-max={jobs}", "--root-owner-group",
+            "--build", payload, package,
+            env=dict(env, SOURCE_DATE_EPOCH="1792195200"))
     receipt.update(status="ARM64 Image/modules/DTBs built; no hardware boot", package=package.name,
                    package_sha256=sha256(package), source_sha256=sha256(source_archive),
                    resolved_config_sha256=sha256(out / ".config"))
     receipt["rustc"] = subprocess.check_output(["rustc", "--version"], text=True, env=env).strip()
     receipt["clang"] = subprocess.check_output(["clang", "--version"], text=True, env=env).splitlines()[0]
+    receipt["package_compression"] = {"format": "zstd", "level": 3, "max_threads": jobs}
     (output / "provenance.json").write_text(json.dumps(receipt, indent=2) + "\n")
     shutil.copy2(out / ".config", output / "build.config")
     shutil.copytree(ENHANCEMENTS, output / "enhancements")

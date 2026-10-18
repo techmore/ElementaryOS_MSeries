@@ -70,7 +70,8 @@ The full config is resolved with `olddefconfig`, then checked for Rust, Apple
 display/SEP/USB4, 16K pages and requested memory/eGPU settings before compilation.
 The candidate release is `7.1.12-elementary-aurora20-enh1` (or `-egpu`). Its
 module directory and Debian package name are separate from `.20`. Artifacts
-include a payload-only `.deb`, complete patched corresponding source, resolved
+include a payload-only `.deb` using zstd level 3 with bounded parallel compression,
+complete patched corresponding source, resolved
 config, patch series, licenses, tool versions and checksum/provenance receipts.
 There are no maintainer scripts or `/boot` files. The build does not install.
 
@@ -91,7 +92,13 @@ Translate dependencies, initramfs and boot lifecycle according to
 
 On the installed machine, measure download, unpack, maintainer-script and
 initramfs time separately before changing installation behavior. Parallel
-builds and prebuilt CI packages can help; concurrent dpkg writers are not a
+builds, native zstd-compressed `.deb` files and prebuilt CI packages can help;
+concurrent dpkg writers are not a
 safe installation strategy. The factory project's existing mkosi/sysupdate
 path is the candidate for future image-based updates with rollback; the
 currently installed machine has not been migrated to it.
+
+The [dpkg-deb options](https://manpages.debian.org/unstable/dpkg/dpkg-deb.1.en.html)
+document zstd support and `--threads-max` for supported compressors. These speed
+the build/compression stage; they do not parallelize package-install transactions
+or establish an installation-speed improvement on this machine.
