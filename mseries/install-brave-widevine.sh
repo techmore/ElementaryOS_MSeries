@@ -14,7 +14,9 @@ profile=${BRAVE_PROFILE_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/BraveSoftware/Bra
 cdm=$profile/WidevineCdm
 
 [[ $(uname -m) == aarch64 ]] || { echo 'This is for arm64 Linux only.' >&2; exit 1; }
-if pgrep -u "$USER" -x brave >/dev/null; then echo 'Quit Brave completely first (it rewrites its preferences on exit).' >&2; exit 1; fi
+if [[ -n ${BRAVE_PROFILE_DIR:-} ]]; then running() { pgrep -u "$USER" -f -- "--user-data-dir=$profile( |$)" >/dev/null; }  # a separate profile, e.g. brave-youtube
+else running() { pgrep -u "$USER" -x brave >/dev/null; }; fi
+if running; then echo 'Quit Brave completely first (it rewrites its preferences on exit).' >&2; exit 1; fi
 [[ -f $profile/Local\ State ]] || { echo "No Brave profile at $profile. Start Brave once, quit it, and re-run." >&2; exit 1; }
 
 set_optin() {  # $1 = true|false

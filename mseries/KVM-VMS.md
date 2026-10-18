@@ -67,3 +67,10 @@ drop the `cdrom` drive and the `scsi-cd` device and boot from the disk.
 - Size the guest to leave the host headroom: on 32 GB, 4 GiB and 4 CPUs is comfortable.
 - Stop a guest with its window's close button, or `kill` the `qemu-system-aarch64` process; its disk is
   crash-safe but unsaved work inside the guest is lost.
+
+## The mseries-vm toolkit
+
+The commands above are the raw form. [`vms/mseries-vm`](vms/README.md) wraps them with per-VM directories,
+fetch/import automation for the elementary OS, Windows 11 ARM64 and Omarchy 4 guests, serial/screenshot/wait
+helpers for headless testing, snapshots, and a hermetic test suite
+(`vms/test-mseries-vm.sh`, 71 checks, no KVM or network needed).

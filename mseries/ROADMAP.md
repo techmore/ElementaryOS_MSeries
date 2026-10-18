@@ -1,5 +1,23 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## .20-enh1 one-shot hardware trial staged — 2026-10-18
+
+[Trial and rollback guide](aurora/trial/README.md): next boot selects
+`elementary-aurora20-enh1`; later boots default to the retained .20 kernel.
+Matched J314S DTB/shared m1n1 payload and existing fallback files are unchanged.
+The first 120-second active-desktop baseline and GPU/filesystem smoke tests
+completed. Identity-pinned user capture runs automatically on the next trial
+boot after login/settling. Candidate boot, complete hardware/suspend/recovery
+and controlled AB/BA energy qualification remain open; no savings claimed.
+
+## Power audit and dock status on `.20` — 2026-10-18
+
+[Power audit](power/AUDIT-2026-10-18.md): 19-22 W observed docked with two displays under an active desktop; no idle
+figure, no savings applied or claimed. Next: a quiet-machine A/B (all apps closed, fixed brightness, three
+alternating arms) and a docked-vs-undocked comparison. [Aurora status](aurora/STATUS-2026-10-18-AFTER-20.md): no
+release after `.20`; draft 7.2.10 PR #139 not J314S-tested. On `.20` the dock links, trains 4 lanes and exposes a 4K
+`DP-2` with EDID (G3/G4 by logs); owner to confirm picture/port (G5) and stability.
+
 ## Aurora energy and frozen feature releases — 2026-10-18
 
 [Implemented plan](aurora/ENERGY-PORT-PLAN-2026-10-18.md) refreshes 52 branches /
@@ -350,7 +368,7 @@ Performance work stays measured: use `mseries/benchmarks/` before and after each
 1. **Dock video via m1n1 hypervisor trace.** Needs a second computer (below). Result would also help every Asahi user.
 2. ~~**Panel toggle for the battery charge limit**~~ Done 2026-10-13: a switch in the gear menu (`quick-settings/ChargeLimit.vala`, polkit action in `power/`). Pending your click-through: check `charge-limit-toggle`.
 3. ~~**Docked lid mode**~~ Done 2026-10-13: `install-docked-lid.sh` (user service). Real lid close pending: check `docked-lid-works`.
-4. ~~**Linux VMs with KVM**~~ Guide written 2026-10-13: [`KVM-VMS.md`](KVM-VMS.md) (boot verified headless; graphics, networking address and benchmark overhead not yet measured).
+4. ~~**Linux VMs with KVM**~~ Guide written 2026-10-13: [`KVM-VMS.md`](KVM-VMS.md) (boot verified headless; graphics, networking address and benchmark overhead not yet measured). Scripted end to end 2026-10-16: [`vms/mseries-vm`](vms/README.md) creates, fetches media for and runs the guests (elementary OS, Windows 11 ARM64, Omarchy 4), with a 71-check hermetic suite in CI.
 5. **Publish benchmark history** for every kernel/Mesa update, plot trends.
 6. **Install media / transform script** for other M1/M2 Macs (see `TRANSFORM-DESIGN.md`).
 7. **Tether continuity add-on**: pinned, removable ARM64 package installer and optional Brave integration are implemented (merged to main 2026-10-14); iPhone/Brave qualification remains. Current BlueZ 5.85 is below Tether's 5.86 minimum for Messages. See [`TETHER-CONTINUITY.md`](TETHER-CONTINUITY.md).

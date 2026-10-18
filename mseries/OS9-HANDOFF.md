@@ -1,5 +1,74 @@
 # OS 9 implementation / Claude Code handoff
 
+## YouTube Movies fail in `brave-youtube`: Widevine missing from its profile — fixed — 2026-10-18 (Claude Code)
+
+- **Symptom (owner):** films such as *Edge of Tomorrow* say "your browser can't play this video" in the contained
+  YouTube window. **Cause:** `brave-youtube` uses its own profile (`~/.config/brave-youtube`); its `WidevineCdm/`
+  was empty and `brave.widevine_opted_in` unset. The normal Brave profile has Widevine 4.10.3112.0 and is opted in.
+- **Fix:** `mseries/video-decode/brave-youtube` now provisions Widevine before it starts Brave, only while that
+  profile is not running: it copies the normal profile's CDM if the library loads, writes the component path
+  inside the contained profile (the only part of `$HOME` the container shows), and sets the opt-in. If that fails it
+  falls back to `install-brave-widevine.sh` with `BRAVE_PROFILE_DIR`. That installer now checks only the target
+  profile is closed when `BRAVE_PROFILE_DIR` is set, so the normal Brave can stay open.
+- **Verified:** provisioning on a scratch copy of the profile copied the CDM, the library loads, and the opt-in is set.
+  A second run does nothing; with the live profile running it skips. **Not verified:** a DRM movie actually playing
+  in the container (the owner's window was open; needs a relaunch). L3 limits still apply: SD/720p for movies.
+- **Next:** owner closes and reopens the YouTube window, plays a movie; check `brave://components` there.
+
+## .20-enh1 staged for one boot; .20 fallback and capture active — 2026-10-18 10:02 UTC
+
+Owner explicitly requested the next-boot trial, current .20 fallback and starting
+hardware/power tests. Installed frozen build1 package (SHA256 `185f1fa6…`),
+separate `/boot/vmlinuz-aurora20-enh1` and candidate initramfs. `grub-reboot elementary-aurora20-enh1` is armed. The managed custom.cfg block keeps that
+one-shot choice and defaults later boots to `elementary-aurora20`; it preserves
+all earlier entries and the five-second menu. No reboot was performed.
+
+[Staging proof](aurora/hardware-tests/2026-10-18-j314s-enh1-staging.json): candidate
+J314S DTB is byte-identical to .20 (`a29ff688…`). Existing .20 image/initramfs,
+shared `boot.bin` (`9c9c2d01…`) and generated grub.cfg hashes are unchanged.
+Exact root-private rollback directory: `/var/lib/mseries-kernel-tests/staging/20261018T095901Z/`.
+`prepare-trial-initrd.py` preserves the known-working Arch unlock userspace and
+10,240-byte early CPIO; replaces only modules/modlist with 93 candidate modules,
+resolved dependency closure and regenerated depmod indexes. Vermagic, CPIO
+preservation, both GRUB syntax checks and 58 offline regressions pass.
+
+Root-owned capture snapshot/config installed under `/usr/local/lib/mseries-kernel-trial/`
+and `/etc/mseries-kernel-trial.json`; user `mseries-kernel-trial.timer` enabled.
+The first baseline run completed: same .20 boot, 120 s SMC, median 24.46 W,
+p10 19.61 / p90 30.36, n=121; CPU busy 31.0%, controls before/after equal.
+Boot/PMP/idle + real GPU/fsync smoke checks pass. New baseline receipts are in
+`aurora/hardware-tests/*pre-enh1*.json`; raw local outputs/CPU/device inventory
+remain private under this chat's `outputs/aurora-kernel-trial/`. This is active
+uncontrolled desktop observation, not idle, A/B or a saving.
+
+[Trial guide](aurora/trial/README.md): next login/boot auto capture requires the
+exact pinned image/DTB/modules/boot payload and matching live GNU build ID,
+waits for >=5 min uptime/display context, then records 120 s + smoke checks.
+A failed kernel-health check retains evidence and skips active smoke tests.
+One run per boot; no reboot/suspend/sensor probe/display/audio/power-policy or
+sleep-parameter changes. Candidate hardware boot remains pending. Next: reboot
+normally when ready, verify unlock/desktop and automatic receipts; then manual
+ports/radio/suspend/recovery and controlled three-pair AB/BA qualification.
+Pending session changes must settle on both kernels before formal comparisons.
+Cancel just the pending trial with `sudo grub-editenv /boot/grub/grubenv unset next_entry`.
+
+## Power audit and Aurora status after `.20`; dock monitor seems live — 2026-10-18 (Claude Code)
+
+Read-only pass; nothing on the machine was changed. [Power audit](power/AUDIT-2026-10-18.md): docked on AC with a
+4K external panel, in-use desktop, SMC total-system power medians 19.7 / 21.4 W (and 25 W when my own probes
+ran), CPU 26-45 % busy. The watts-versus-CPU fit was inconsistent between runs, so no model or idle figure is
+claimed. Big userspace costs: gala 28 %, Claude desktop, a Brave renderer at 20 %, ChatGPT; system services
+total <40 s CPU each since boot. **Applied: none; proposals only** (find the Brave tab; hygiene trims need a quiet
+A/B). Scripts: `power/audit/`. Not measured: idle, battery drain, sleep drain on `.20`.
+
+[Aurora status](aurora/STATUS-2026-10-18-AFTER-20.md): no release since `.20`; only draft PR #139 (7.2.10 unified
+kernel, M2/Neo/J316S-on-7.2.10 results) moved. Its Touch ID attach/retry fix may address our probe crash but is
+untested on J314S. **Important and unrecorded before: on `.20` + matched `boot.bin` the dock now trains**
+(`SET_LINK_RATE 0x1e`, 4 lanes), reads the EDID and `DP-2` is a 3840x2160 logical monitor in Gala. That is G3 and G4
+by logs; G5 and the physical port need the owner's confirmation, and the sink re-trained every 10-15 s around
+04:51. SEP has run 75+ min without a hang (no Touch ID probe). Next: owner confirms the TV picture and port;
+long docked/idle/s2idle stability record; keep the Touch ID probe deferred.
+
 ## Aurora energy ports, hardware receipts and frozen releases — 2026-10-18
 
 Owner requested all Aurora energy/WIP improvements plus tested kernel labels
@@ -318,6 +387,40 @@ J314S/WD22TB4 hardware boot, dock picture, Touch ID enrollment or recovery boot.
 Upstream `.20` explicitly does not qualify M1 Pro/Max/Touch ID on this release.
 Next task: review the matched payload/fallback contract, then a separately
 controlled hardware batch. Existing dock G2–G5 results have not advanced.
+
+## VM toolkit, window corners, mouse and chime fixes — 2026-10-16 (DeepSeek/OpenCode)
+
+`mseries/vms/mseries-vm` now creates, fetches media for and runs the ARM64 test guests.
+Verified headless: the newest elementary OS 9 daily ISO (checksum-verified, booted to the
+installer, driven past GRUB with the new `key`/`wait`/`screenshot` commands) and Omarchy 4
+(the archive.org UTM image imported to a plain qcow2, booted to the Hyprland desktop).
+Windows 11 ARM64: the UUP set (67 files, 8.8 GB) verified against `files.json` SHA-256s and
+the pinned converter (`dbc65de`) is in place; ISO conversion was still running when this was
+written. `fetch windows` was hardened after a live failure mode: aria2 with `--continue`
+re-hashes complete files and re-probes their signed URLs, which expire fast (stale-URL `403`
+storm, ~20 minutes of no progress). The script now verifies every local file against
+`files.json` itself and hands aria2 only the missing/corrupt subset with a fresh URL,
+skipping it entirely when nothing is owed. `vms/test-mseries-vm.sh` now covers the
+verify-first and repair paths (79 hermetic checks, PATH-stubbed tools, no KVM/network/root)
+and runs in CI; `KVM-VMS.md` points at the toolkit. macOS guests remain impossible
+(`mseries-vm macos`).
+
+Desktop fixes (repo defaults plus applied live on the M1):
+- Every standard window gets rounded corners through a second Gala patch,
+  `patches/gala-window-corners.patch` (a Clutter ShaderEffect that masks each
+  `Meta.WindowActor`'s frame rectangle inside its texture, so shadows survive;
+  `GALA_WINDOW_CORNER_RADIUS`, default 12). `install-gala-screen-corners.sh` now applies
+  both patches, builds, and installs 20 px screen + 12 px window corners for the owner's
+  session (effective next login; the visual pass after relogin is still pending).
+- Mouse natural (inverted) scrolling: `enhance.sh` dconf default and
+  `apply-desktop-settings.py`; set live (was `false`, now `true`).
+- Quieter volume chime: `install-quieter-sound-theme.sh` builds a user "mseries" sound
+  theme that inherits elementary and scales the stock chime by -10 dB (peak -11 dBFS ->
+  ~-21 dBFS); installed and active now, with `test-quieter-sound-theme.sh` in CI.
+
+Not verified: the window corners at next login (build compiles, both patches stack
+cleanly, compositor installed — needs the visual pass), Windows ISO conversion completion,
+logins inside the Omarchy guest.
 
 ## Dock video E1 boot result — set_hpd cleared, sink/AUX is the frontier — 2026-10-16 (OpenCode)
 
@@ -2692,6 +2795,16 @@ The Claude mark in the panel is tinted terracotta (#d97757) via the `mark-claude
 ### Streaming dictation + ANE bring-up — 2026-10-18
 
 F5 now streams: `install-dictation-stream.sh` (transcribe.cpp 0.4.0 + Parakeet Unified Q4_K_M, SHA-256 pinned) runs `mseries-stream-dictate.service`, which replaces the Voxtype service (kept as fallback). Voxtype tuned to 6 threads (auto 10 was 4x slower: 4.4 s vs 1.07 s median on 7 s of audio). ANE: smoke 20/20 bit-exact on t6000; Parakeet-on-ANE golden "match" only with a private Mesa 26.2.4 Honeykrisp (built under `~/.local/share/mseries/ane/mesa-hk`, system Mesa untouched), and not faster (1.98 s for 10.4 s) so it is not used for dictation. Details: `mseries/dictation/STT-RESEARCH.md`. Not verified: live speech through the streaming service; its first words come ~3.3 s in. Next: owner trial, mic gain/noise, grammar pass, recording indicator in the panel.
+
+#### Dictation blocker found — 2026-10-18 (built-in mic sensitivity)
+
+Owner's two live F5 attempts (05:56) recognized 0 characters. Reproduced without the owner: a human-read LibriSpeech clip played through the MacBook speakers (sink volume 0.66, player volume 1.0) leaves the live mic path at the same level as room silence (peak 0.147-0.158, rms 0.0352 vs 0.0353), and raw `arecord` band energy (300-3400 Hz) stays flat while it plays. The AOP array (`hw:1,0`, 3 channels, raw S32, no ALSA mixer controls) has a very large noise floor (in-band noise about -30 dBFS at our gain; channels uncorrelated) and no beamforming/noise suppression. Earlier louder TTS through the same mic was recognized, so the signal exists but sits at or below the noise. Software processing (mixing, filtering, afftdn) did not help measurably. Likely needs the kernel/DSP side (decimation, gain, beamforming of the AOP PDM channels), which DeepSeek owns: raise on GitHub rather than patch here. Meanwhile dictation works with a headset mic (`alsa_input.platform-sound.HiFi__Headset__source`): not tried by us.
+
+## CodexBar: native Settings window — 2026-10-18
+
+Upstream's Settings window (Qt Quick, `QQuickStyle::setStyle("Fusion")` hard-coded in `main.cpp`; confirmed that `QT_QUICK_CONTROLS_STYLE`, the GTK3 platform theme and the elementary stylesheet do not change it) looked dated. We now ship a native GTK4/Granite replacement, `codexbar-settings` (Vala, `mseries/codexbar-wingpanel/settings/`), with General, Display and Providers pages in elementary's settings style: cards with switches, spin buttons and drop-downs, company marks in the provider list, reorder/remove/add providers, start at login. No Save button: changes apply after a short pause through `codexbar-linux --configure` and an error from the app is shown inline. The panel's Settings button opens it (upstream's Qt window stays as the fallback, and the tray menu's Settings… still opens the Qt one). OpenCode Go's Sign in… now opens opencode.ai.
+
+Verified: model unit tests (3) and Meson (4 suites); headless renders of all pages in light and dark; an isolated headless app accepted a `--configure` patch (linux.json updated) and rejected `refreshSeconds: 5` with an error. Not verified: the window on the live desktop by eye, and start at login toggling for real. `deploy-codexbar.sh` installs the binary to `~/.local/bin/codexbar-settings`; `CODEXBAR-PORT.md` lists the files and the upgrade diff to check.
 
 ## Calendar/browser/Mail integration qualification — October 18, 2026
 

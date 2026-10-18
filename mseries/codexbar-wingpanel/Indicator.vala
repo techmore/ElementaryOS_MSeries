@@ -257,7 +257,11 @@ namespace MSeries {
         private bool run_action (string action) {
             try {
                 Pid child_pid;
-                Process.spawn_async (null, { executable, action }, null,
+                // Settings open our native window when it is installed; upstream's Qt window is the fallback.
+                var native_settings = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "codexbar-settings");
+                var program = action == "--settings" && FileUtils.test (native_settings, FileTest.IS_EXECUTABLE) ? native_settings : executable;
+                string[] command = program == executable ? new string[] { executable, action } : new string[] { native_settings };
+                Process.spawn_async (null, command, null,
                     SpawnFlags.SEARCH_PATH | SpawnFlags.STDOUT_TO_DEV_NULL | SpawnFlags.STDERR_TO_DEV_NULL,
                     null, out child_pid);
                 return true;
@@ -953,7 +957,11 @@ namespace MSeries {
                 };
                 settings.clicked.connect (() => {
                     popdown_from (settings);
-                    run_action ("--settings");
+                    if (provider == "opencodego") {
+                        try { AppInfo.launch_default_for_uri ("https://opencode.ai", null); } catch (Error e) { }
+                    } else {
+                        run_action ("--settings");
+                    }
                 });
                 card.append (settings);
             }
