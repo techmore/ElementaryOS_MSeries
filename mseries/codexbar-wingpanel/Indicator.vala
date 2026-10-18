@@ -436,22 +436,37 @@ namespace MSeries {
             }
         }
 
-        private void run_claude_helper (string[] arguments) {
+        /* The helper answers {"ok", "message"}; show it, because a switch only moves Claude Code's command line and
+           the message says when the Claude app is still on another sign-in (it ignores claude-swap). */
+        private async void switch_claude_account (string number) {
+            var ok = false;
+            var message = "";
             try {
-                string[] command = { "python3", helper_path ("codexbar-claude.py") };
-                foreach (var argument in arguments) {
-                    command += argument;
+                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
+                    "python3", helper_path ("codexbar-claude.py"), "switch", number);
+                string stdout_text;
+                string stderr_text;
+                yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
+                try {
+                    var parser = new Json.Parser ();
+                    parser.load_from_data (stdout_text ?? "", -1);
+                    var root = parser.get_root ();
+                    if (root != null && root.get_node_type () == Json.NodeType.OBJECT) {
+                        ok = root.get_object ().get_boolean_member_with_default ("ok", false);
+                        message = root.get_object ().get_string_member_with_default ("message", "");
+                    }
+                } catch (Error e) {
+                    message = (stderr_text ?? "").strip ();
                 }
-                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_SILENCE | SubprocessFlags.STDERR_SILENCE);
-                process.wait_async.begin (null, () => {
-                    claude_fetched_us = 0;
-                    last_digest = "";
-                    refresh_claude.begin ();
-                    read_snapshot.begin ();
-                });
             } catch (Error e) {
-                subtitle_label.set_text ("Could not switch Claude account: " + e.message);
+                message = e.message;
             }
+            tell (ok ? "Switched Claude account" : "Couldn't switch Claude account",
+                message.length > 0 ? message : "The helper reported an error.");
+            claude_fetched_us = 0;
+            last_digest = "";
+            refresh_claude.begin ();
+            read_snapshot.begin ();
         }
 
         /* Adding an account needs a browser sign-in we can't drive, so ask in a small native dialog instead of a terminal. */
@@ -537,6 +552,15 @@ namespace MSeries {
             var accounts = claude_data.get_array_member ("accounts");
             head.append (build_identity (email));
             card.append (head);
+            // Code sessions in the Claude app use the app's own sign-in, which a switch here cannot change.
+            var desktop = claude_data.has_member ("desktop") ? claude_data.get_object_member ("desktop") : null;
+            if (desktop != null && desktop.get_boolean_member_with_default ("differs", false)) {
+                var there = desktop.get_string_member_with_default ("email", "");
+                var note = subtle_label ("Claude app: %s · switch it in the app".printf (
+                    there.length > 0 ? there : "another account"));
+                note.set_tooltip_text (claude_data.get_string_member_with_default ("desktopNote", ""));
+                card.append (note);
+            }
 
             var shown_quota = false;
             if (accounts != null) {
@@ -575,8 +599,9 @@ namespace MSeries {
                     detail = "%.0f%%".printf (windows.get_object_element (windows.get_length () - 1)
                         .get_double_member_with_default ("remaining", 0));
                 }
-                card.append (build_account_line (name, detail, "Make %s the active Claude account".printf (name),
-                    () => run_claude_helper ({ "switch", number })));
+                card.append (build_account_line (name, detail,
+                    "Sign Claude Code's command line in as %s (the Claude app keeps its own sign-in)".printf (name),
+                    () => switch_claude_account.begin (number)));
             }
             return card;
         }

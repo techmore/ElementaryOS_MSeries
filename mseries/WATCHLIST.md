@@ -25,7 +25,7 @@ once their repositories are confirmed. Do not guess handles.
 | subedijaidip/dp-altmode-t8112 | Jaidip Subedi | USB-C external displays on M2 Air; our dock video gap |
 | joshuaswarren/mlx-omarchy | Joshua Warren | MLX over Vulkan; local AI |
 | RyanTheTide (user) | Ryan Murray | Kernel foundations, macOS tracing |
-| zackb/tether | zackb | iPhone continuity (we pin v0.2.37; v0.2.38 exists as of 2026-10-14) |
+| zackb/tether | zackb | iPhone continuity (we pin v0.2.38, the latest release as of 2026-10-18) |
 | erikwb/BlueFerry | erikwb | iPhone texts and codes |
 | OpenBubbles/openbubbles-app | OpenBubbles | iMessage candidate (SSPL core, never bundle) |
 | cameroncooper/keychain, Sank6/iCloud-Keychain-for-Linux | | iCloud Keychain clients |

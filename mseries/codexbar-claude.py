@@ -10,6 +10,13 @@ show every saved Claude login with its quota and switch between them.
   codexbar-claude.py switch <number>  make a saved account the active one
 
 claude-swap (MIT, realiti4/claude-swap) lives in ~/.local/share/claude-swap-venv; cswap is linked into ~/.local/bin.
+
+What a switch changes: claude-swap rewrites Claude Code's own login (~/.claude/.credentials.json and the
+oauthAccount block of ~/.claude.json), so the `claude` command line uses the new account. The Claude desktop app
+does NOT read those files: it keeps its own sign-in in encrypted Electron storage and hands every Code session it
+starts that login through CLAUDE_CODE_OAUTH_TOKEN, which wins over the file. So we also report which account the
+desktop app is on (its config.json `lastKnownAccountUuid`, matched against the identity in claude-swap's saved
+configs) and say plainly when the two differ. We never read or decrypt the app's tokens.
 """
 
 from __future__ import annotations
@@ -77,6 +84,63 @@ def account_row(row: dict[str, Any], now: dt.datetime) -> dict[str, Any] | None:
             "status": row.get("usageStatus") if isinstance(row.get("usageStatus"), str) else ""}
 
 
+def read_json(path: pathlib.Path) -> dict[str, Any]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def identity(config: dict[str, Any]) -> tuple[str, str]:
+    """(email, accountUuid) from a ~/.claude.json-shaped dict; identity fields only, never tokens."""
+    account = config.get("oauthAccount")
+    if not isinstance(account, dict):
+        return "", ""
+    email = account.get("emailAddress")
+    uuid = account.get("accountUuid")
+    return (email if isinstance(email, str) else "", uuid if isinstance(uuid, str) else "")
+
+
+def cli_identity() -> tuple[str, str]:
+    """The account Claude Code's command line is signed in as right now (~/.claude.json)."""
+    base = os.environ.get("CLAUDE_CONFIG_DIR") or str(pathlib.Path.home())
+    return identity(read_json(pathlib.Path(base) / ".claude.json"))
+
+
+def saved_identities() -> dict[str, str]:
+    """accountUuid -> email for every login saved in claude-swap (its per-account ~/.claude.json copies)."""
+    xdg = os.environ.get("XDG_DATA_HOME", "")
+    root = pathlib.Path(xdg) if xdg and os.path.isabs(xdg) else pathlib.Path.home() / ".local/share"
+    found: dict[str, str] = {}
+    for path in sorted((root / "claude-swap" / "configs").glob(".claude-config-*.json")):
+        email, uuid = identity(read_json(path))
+        if email and uuid:
+            found[uuid] = email
+    return found
+
+
+def desktop_account(known: dict[str, str]) -> dict[str, Any]:
+    """Which account the Claude desktop app is signed in to, as far as its plain config says."""
+    config = pathlib.Path.home() / ".config/Claude/config.json"
+    if not config.exists():
+        return {"installed": False, "email": "", "accountUuid": ""}
+    uuid = read_json(config).get("lastKnownAccountUuid")
+    uuid = uuid if isinstance(uuid, str) else ""
+    return {"installed": True, "email": known.get(uuid, ""), "accountUuid": uuid}
+
+
+def desktop_note(desktop: dict[str, Any], email: str, uuid: str) -> str:
+    """One sentence about the desktop app, or "" when it is absent or already on the same account."""
+    if not desktop.get("installed") or not desktop.get("accountUuid"):
+        return ""
+    if uuid and desktop["accountUuid"] == uuid:
+        return ""
+    there = desktop.get("email") or "a different account"
+    return (f"The Claude app is still signed in as {there}: its Code sessions use the app's own sign-in, not this "
+            f"one. To use {email or 'this account'} there, sign out of the Claude app and sign in as that account.")
+
+
 def listing(cli: str | None, now: dt.datetime | None = None) -> dict[str, Any]:
     if not cli:
         return {"available": False, "accounts": [], "activeEmail": ""}
@@ -88,7 +152,16 @@ def listing(cli: str | None, now: dt.datetime | None = None) -> dict[str, Any]:
         status = run(cli, ["status"])
         active = (status or {}).get("active")
         active_email = active.get("email", "") if isinstance(active, dict) and isinstance(active.get("email"), str) else ""
-    return {"available": True, "accounts": accounts, "activeEmail": active_email}
+    cli_email, cli_uuid = cli_identity()
+    if cli_email:  # the live login is what `claude` uses; claude-swap's record can lag behind it
+        active_email = cli_email
+        for account in accounts:
+            account["active"] = account["email"].lower() == cli_email.lower()
+    desktop = desktop_account(saved_identities())
+    note = desktop_note(desktop, active_email, cli_uuid)
+    return {"available": True, "accounts": accounts, "activeEmail": active_email,
+            "desktop": {"installed": desktop["installed"], "email": desktop["email"], "differs": bool(note)},
+            "desktopNote": note}
 
 
 def switch(cli: str | None, number: str) -> tuple[bool, str]:
@@ -99,11 +172,22 @@ def switch(cli: str | None, number: str) -> tuple[bool, str]:
     result = run(cli, ["switch", number])
     if not result:
         return False, "claude-swap could not switch accounts."
-    if result.get("error"):
-        return False, str(result["error"].get("message", "claude-swap reported an error."))
-    if result.get("switched"):
-        return True, "Switched Claude. A running Claude Code session picks it up on its next message."
-    return False, str(result.get("reason") or "Nothing was switched.")
+    error = result.get("error")
+    if error:
+        return False, str(error.get("message", "claude-swap reported an error.") if isinstance(error, dict) else error)
+    target = result.get("to") if isinstance(result.get("to"), dict) else {}
+    wanted = target.get("email") if isinstance(target.get("email"), str) else ""
+    if not result.get("switched") and result.get("reason") != "already-active":
+        return False, str(result.get("message") or result.get("reason") or "Nothing was switched.")
+    email, uuid = cli_identity()  # check the login Claude Code will actually read, not just claude-swap's word
+    if wanted and email.lower() != wanted.lower():
+        return False, (f"claude-swap reported a switch to {wanted}, but Claude Code is still signed in as "
+                       f"{email or 'no account'}.")
+    who = email or wanted or "the selected account"
+    head = (f"Claude Code's command line now uses {who}; a running session picks it up on its next message."
+            if result.get("switched") else f"Claude Code's command line already uses {who}.")
+    note = desktop_note(desktop_account(saved_identities()), who, uuid)
+    return True, f"{head} {note}".strip()
 
 
 def claude_cli() -> str | None:

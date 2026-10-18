@@ -47,9 +47,21 @@
       "branches": [
         "aurora-rc",
         "aurora-edge",
-        "fix/m1m2-regressions",
-        "fix/m1m2-typec-usb4-router"
+        "aurora-wip"
       ],
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "omacom/linux-aurora",
+      "base": "integration/aurora",
+      "open_prs": true,
+      "discover_branches": true
+    },
+    {
+      "repo": "aurora-silicon/m1n1",
+      "base_repo": "omacom/m1n1",
+      "base": "integration/aurora",
       "open_prs": true,
       "discover_branches": true
     },
