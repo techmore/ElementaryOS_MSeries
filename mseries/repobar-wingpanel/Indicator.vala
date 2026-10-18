@@ -11,11 +11,17 @@ namespace MSeries {
         private Gtk.Label panel_counts_label;
         private Gtk.Box menu;
         private Gtk.Box repo_list;
+        private Gtk.SearchEntry search_entry;
+        private Gtk.DropDown scope_dropdown;
         private Gtk.Label account_label;
         private Gtk.Label summary_label;
         private Gtk.Label freshness_label;
         private Gtk.Button refresh_button;
         private bool in_flight = false;
+        private bool show_forks = false;
+        private bool show_archived = false;
+        private uint refresh_source = 0;
+        private uint refresh_interval = 0;
         private string executable;
         private string last_error = "";
 
@@ -38,8 +44,8 @@ namespace MSeries {
             this.visible = true;
 
             menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) {
-                margin_top = 8, margin_bottom = 8, margin_start = 10, margin_end = 10,
-                width_request = 360
+                margin_top = 10, margin_bottom = 10, margin_start = 12, margin_end = 12,
+                width_request = 390
             };
             menu.add_css_class ("mseries-repobar");
             install_style (menu.get_display ());
@@ -53,6 +59,17 @@ namespace MSeries {
             header.append (account_label);
             header.append (summary_label);
             menu.append (header);
+
+            var filters = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            search_entry = new Gtk.SearchEntry () { placeholder_text = "Search repositories", hexpand = true };
+            search_entry.search_changed.connect (() => render_cached ());
+            scope_dropdown = new Gtk.DropDown.from_strings (new string[] {
+                "Dashboard", "All", "Pinned", "Issues", "Pull requests", "Needs attention"
+            });
+            scope_dropdown.notify["selected"].connect (() => render_cached ());
+            filters.append (search_entry);
+            filters.append (scope_dropdown);
+            menu.append (filters);
 
             var scroll = new Gtk.ScrolledWindow () {
                 hscrollbar_policy = Gtk.PolicyType.NEVER,
@@ -80,7 +97,7 @@ namespace MSeries {
             menu.append (footer);
 
             show_message ("Connect GitHub", "Run `gh auth login`, then refresh.");
-            Timeout.add_seconds (300, () => { load_snapshot (); return Source.CONTINUE; });
+            schedule_refresh (300);
             load_snapshot ();
         }
 
@@ -88,9 +105,9 @@ namespace MSeries {
             var style = new Gtk.CssProvider ();
             style.load_from_string (
                 ".mseries-repobar { font-size: 9pt; } " +
-                ".mseries-repobar .repo-row { padding: 6px 8px; border-radius: 8px; background: alpha(currentColor, 0.055); } " +
+                ".mseries-repobar .repo-row { padding: 8px 9px; border-radius: 8px; background: alpha(currentColor, 0.045); } " +
                 ".mseries-repobar .repo-name { font-weight: 700; } " +
-                ".mseries-repobar .repo-meta { font-size: 8pt; opacity: 0.75; } " +
+                ".mseries-repobar .repo-meta { font-size: 8pt; opacity: 0.72; } " +
                 ".mseries-repobar .ci-ok { color: @success_color; font-weight: 700; } " +
                 ".mseries-repobar .ci-warn { color: @warning_color; font-weight: 700; } " +
                 ".mseries-repobar .ci-bad { color: @error_color; font-weight: 700; } " +
@@ -124,6 +141,17 @@ namespace MSeries {
 
         private void load_snapshot () {
             read_snapshot.begin (false);
+        }
+
+        private void schedule_refresh (uint seconds) {
+            seconds = seconds < 60 ? 60 : (seconds > 900 ? 900 : seconds);
+            if (refresh_source != 0 && refresh_interval == seconds) return;
+            if (refresh_source != 0) Source.remove (refresh_source);
+            refresh_interval = seconds;
+            refresh_source = Timeout.add_seconds (seconds, () => {
+                load_snapshot ();
+                return Source.CONTINUE;
+            });
         }
 
         private void refresh () {
@@ -163,6 +191,12 @@ namespace MSeries {
             string error = snapshot.get_string_member_with_default ("error", "");
             int64 fetched_at = snapshot.get_int_member_with_default ("fetchedAt", 0);
             var repos = snapshot.get_array_member ("repos");
+            if (snapshot.has_member ("settings")) {
+                var settings = snapshot.get_object_member ("settings");
+                show_forks = settings.get_boolean_member_with_default ("showForks", false);
+                show_archived = settings.get_boolean_member_with_default ("showArchived", false);
+                schedule_refresh ((uint) settings.get_int_member_with_default ("refreshInterval", 300));
+            }
             int issues = 0;
             int prs = 0;
             int failing = 0;
@@ -191,6 +225,20 @@ namespace MSeries {
                 freshness_label.set_text ("Updated just now");
                 freshness_label.set_tooltip_text (null);
             }
+            if (snapshot.has_member ("rateLimits")) {
+                var limits = snapshot.get_object_member ("rateLimits");
+                if (limits.has_member ("resources")) {
+                    var resources = limits.get_object_member ("resources");
+                    if (resources.has_member ("core")) {
+                        var core = resources.get_object_member ("core");
+                        int remaining = (int) core.get_int_member_with_default ("remaining", -1);
+                        int limit = (int) core.get_int_member_with_default ("limit", -1);
+                        if (remaining >= 0 && limit > 0) {
+                            freshness_label.set_text (freshness_label.get_text () + " · API " + remaining.to_string () + "/" + limit.to_string ());
+                        }
+                    }
+                }
+            }
             panel_counts_label.set_text ("%d/%d".printf (prs, issues));
             panel.set_tooltip_text ("GitHub · %u repositories · %d open PRs · %d open issues%s".printf (
                 repos.get_length (), prs, issues, failing > 0 ? " · CI failing" : ""));
@@ -200,8 +248,56 @@ namespace MSeries {
                 show_message ("No repositories found", error.length > 0 ? error : "This account has no accessible repositories.");
                 return;
             }
-            for (uint i = 0; i < repos.get_length (); i++) {
-                append_repo (repos.get_object_element (i));
+            int shown = 0;
+            int dashboard_limit = 5;
+            if (snapshot.has_member ("settings")) {
+                dashboard_limit = (int) snapshot.get_object_member ("settings").get_int_member_with_default ("repoLimit", 5);
+            }
+            for (int pass = 0; pass < (scope_dropdown.get_selected () == 0 ? 2 : 1); pass++) {
+                for (uint i = 0; i < repos.get_length (); i++) {
+                    var repo = repos.get_object_element (i);
+                    string state = repo.get_string_member_with_default ("repoState", "visible");
+                    if (scope_dropdown.get_selected () == 0 && ((pass == 0) != (state == "pinned"))) continue;
+                    if (scope_dropdown.get_selected () == 0 && pass == 1 && shown >= dashboard_limit) continue;
+                    if (matches_filter (repo)) {
+                        append_repo (repo);
+                        shown++;
+                    }
+                }
+            }
+            if (shown == 0) show_message ("No matching repositories", "Try another search or dashboard view.");
+        }
+
+        private bool matches_filter (Json.Object repo) {
+            string state = repo.get_string_member_with_default ("repoState", "visible");
+            string name = repo.get_string_member_with_default ("name", "");
+            string description = repo.get_string_member_with_default ("description", "");
+            string language = repo.get_string_member_with_default ("language", "");
+            if (scope_dropdown.get_selected () != 1 && !show_archived && repo.get_boolean_member_with_default ("archived", false)) return false;
+            if (scope_dropdown.get_selected () != 1 && !show_forks && repo.get_boolean_member_with_default ("fork", false)) return false;
+            string query = search_entry.get_text ().strip ().casefold ();
+            string haystack = (name + " " + description + " " + language).casefold ();
+            if (query.length > 0 && !haystack.contains (query)) return false;
+            if (scope_dropdown.get_selected () == 2 && state != "pinned") return false;
+            if (scope_dropdown.get_selected () == 3 && repo.get_int_member_with_default ("openIssues", 0) == 0) return false;
+            if (scope_dropdown.get_selected () == 4 && repo.get_int_member_with_default ("openPullRequests", 0) == 0) return false;
+            if (scope_dropdown.get_selected () == 5 && repo.get_string_member_with_default ("ci", "") != "FAILURE" &&
+                repo.get_string_member_with_default ("ci", "") != "ERROR" &&
+                repo.get_int_member_with_default ("openIssues", 0) == 0 &&
+                repo.get_int_member_with_default ("openPullRequests", 0) == 0) return false;
+            if (scope_dropdown.get_selected () != 1 && state == "hidden") return false;
+            return true;
+        }
+
+        private void render_cached () {
+            try {
+                string contents;
+                if (!FileUtils.get_contents (Environment.get_home_dir () + "/.cache/mseries/repobar/snapshot.json", out contents)) return;
+                var parser = new Json.Parser ();
+                parser.load_from_data (contents);
+                render_snapshot (parser.get_root ().get_object ());
+            } catch (Error e) {
+                // Keep the last rendered list while the first snapshot is loading.
             }
         }
 
@@ -211,6 +307,7 @@ namespace MSeries {
             string branch = repo.get_string_member_with_default ("branch", "");
             string ci = repo.get_string_member_with_default ("ci", "UNKNOWN");
             string release = repo.get_string_member_with_default ("release", "");
+            string state = repo.get_string_member_with_default ("repoState", "visible");
             int prs = (int) repo.get_int_member_with_default ("openPullRequests", 0);
             int issues = (int) repo.get_int_member_with_default ("openIssues", 0);
             int stars = (int) repo.get_int_member_with_default ("stars", 0);
@@ -226,6 +323,16 @@ namespace MSeries {
             ci_label.set_tooltip_text ("Default branch CI: " + ci);
             top.append (link);
             top.append (ci_label);
+            var state_button = new Gtk.Button.with_label (state == "pinned" ? "Unpin" : "Pin") {
+                tooltip_text = state == "pinned" ? "Remove from dashboard pins" : "Pin to dashboard"
+            };
+            state_button.add_css_class ("flat");
+            state_button.clicked.connect (() => change_repo_state.begin (name, state == "pinned" ? "unpin" : "pin"));
+            var hide_button = new Gtk.Button.from_icon_name ("view-conceal-symbolic") { tooltip_text = "Hide repository" };
+            hide_button.add_css_class ("flat");
+            hide_button.clicked.connect (() => change_repo_state.begin (name, "hide"));
+            top.append (state_button);
+            top.append (hide_button);
             var details = new Gtk.Label ("%d PRs · %d issues · ★ %d%s%s%s".printf (
                 prs, issues, stars, branch.length > 0 ? " · " + branch : "",
                 release.length > 0 ? " · " + release : "", archived ? " · archived" : "")) {
@@ -234,7 +341,49 @@ namespace MSeries {
             details.add_css_class ("repo-meta");
             card.append (top);
             card.append (details);
+            if (repo.has_member ("recentActivity") && repo.get_member ("recentActivity").get_node_type () != Json.NodeType.NULL) {
+                var activity = repo.get_object_member ("recentActivity");
+                string kind = activity.get_string_member_with_default ("kind", "activity");
+                string title = activity.get_string_member_with_default ("title", "");
+                string activity_url = activity.get_string_member_with_default ("url", "");
+                if (title.length > 0) {
+                    var activity_link = new Gtk.LinkButton.with_label (activity_url, kind + " · " + title) {
+                        halign = Gtk.Align.START
+                    };
+                    activity_link.add_css_class ("repo-meta");
+                    card.append (activity_link);
+                }
+            }
+            if (repo.has_member ("local") && repo.get_member ("local").get_node_type () == Json.NodeType.OBJECT) {
+                var local = repo.get_object_member ("local");
+                string local_branch = local.get_string_member_with_default ("branch", "");
+                int behind = (int) local.get_int_member_with_default ("behind", 0);
+                int ahead = (int) local.get_int_member_with_default ("ahead", 0);
+                int dirty = (int) local.get_int_member_with_default ("dirtyFileCount", 0);
+                var local_label = new Gtk.Label ("Local · %s%s%s%s".printf (
+                    local_branch, dirty > 0 ? " · %d modified".printf (dirty) : "",
+                    behind > 0 ? " · ↓ %d".printf (behind) : "",
+                    ahead > 0 ? " · ↑ %d".printf (ahead) : "")) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
+                local_label.add_css_class ("repo-meta");
+                local_label.set_tooltip_text (local.get_string_member_with_default ("path", ""));
+                card.append (local_label);
+            }
             repo_list.append (card);
+        }
+
+        private async void change_repo_state (string name, string action) {
+            try {
+                var process = new Subprocess.newv (new string[] { executable, action, name },
+                    SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE);
+                string output;
+                string error_text;
+                yield process.communicate_utf8_async (null, null, out output, out error_text);
+                if (!process.get_successful ()) throw new IOError.FAILED (error_text.strip ());
+                read_snapshot.begin (true);
+            } catch (Error e) {
+                last_error = e.message;
+                summary_label.set_text ("Could not update repository preference");
+            }
         }
 
         private static string ci_label_text (string state) {

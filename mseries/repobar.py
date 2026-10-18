@@ -4,13 +4,17 @@
 from __future__ import annotations
 
 import argparse
+import fnmatch
+import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
 import time
+from urllib.parse import urlparse
 
 
 QUERY = """query($cursor: String) {
@@ -20,11 +24,25 @@ QUERY = """query($cursor: String) {
       affiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER],
       orderBy: {field: UPDATED_AT, direction: DESC}) {
       nodes {
-        nameWithOwner url isPrivate isArchived stargazerCount forkCount updatedAt
-        openIssues: issues(states: OPEN) { totalCount }
-        openPullRequests: pullRequests(states: OPEN) { totalCount }
-        defaultBranchRef { name target { ... on Commit { statusCheckRollup { state } } } }
-        latestRelease { tagName }
+        nameWithOwner url description isPrivate isArchived isFork stargazerCount forkCount updatedAt
+        primaryLanguage { name }
+        repositoryTopics(first: 8) { nodes { topic { name } } }
+        openIssues: issues(states: OPEN) {
+          totalCount
+          nodes(first: 1, orderBy: {field: UPDATED_AT, direction: DESC}) { title number updatedAt url }
+        }
+        openPullRequests: pullRequests(states: OPEN) {
+          totalCount
+          nodes(first: 1, orderBy: {field: UPDATED_AT, direction: DESC}) { title number updatedAt url }
+        }
+        defaultBranchRef {
+          name
+          target { ... on Commit {
+            statusCheckRollup { state }
+            history(first: 1) { nodes { committedDate messageHeadline url } }
+          } }
+        }
+        latestRelease { name tagName publishedAt url }
       }
       pageInfo { hasNextPage endCursor }
     }
@@ -32,32 +50,129 @@ QUERY = """query($cursor: String) {
 }"""
 
 CACHE = Path.home() / ".cache/mseries/repobar/snapshot.json"
+CACHE_DIR = CACHE.parent
+SETTINGS = Path.home() / ".config/mseries/repobar/settings.json"
 CACHE_TTL_SECONDS = 300
+API_TTL_SECONDS = 90
+DEFAULT_SETTINGS = {
+    "version": 1,
+    "host": "github.com",
+    "refreshInterval": 300,
+    "repoLimit": 5,
+    "menuSort": "activity",
+    "showForks": False,
+    "showArchived": False,
+    "activityScope": "all",
+    "localRoot": "",
+    "localDepth": 4,
+    "repoStates": {},
+}
+REPO_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 
 
-def _query_page(cursor: str | None) -> dict:
-    command = ["gh", "api", "graphql", "-f", f"query={QUERY}"]
-    if cursor:
-        command.extend(["-F", f"cursor={cursor}"])
+def load_settings() -> dict:
     try:
-        result = subprocess.run(command, capture_output=True, text=True, timeout=45, check=False)
+        with SETTINGS.open(encoding="utf-8") as stream:
+            payload = json.load(stream)
+        if payload.get("version") != 1:
+            raise ValueError("Unsupported RepoBar settings version")
+        result = {**DEFAULT_SETTINGS, **payload}
+        if not isinstance(result.get("repoStates"), dict):
+            result["repoStates"] = {}
+        return result
+    except FileNotFoundError:
+        return {**DEFAULT_SETTINGS, "repoStates": {}}
+    except (OSError, json.JSONDecodeError, ValueError, TypeError, AttributeError):
+        return {**DEFAULT_SETTINGS, "repoStates": {}}
+
+
+def write_private_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    os.chmod(path.parent, 0o700)
+    fd, temp_path = tempfile.mkstemp(prefix="repobar-", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            json.dump(payload, stream, separators=(",", ":"))
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.chmod(temp_path, 0o600)
+        os.replace(temp_path, path)
+    finally:
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
+
+
+def save_settings(payload: dict) -> None:
+    write_private_json(SETTINGS, payload)
+
+
+def _hostname(settings: dict | None = None) -> str:
+    host = (settings or load_settings()).get("host", "github.com")
+    host = str(host).strip().lower()
+    if not re.fullmatch(r"[a-z0-9.-]+(?::[0-9]{1,5})?", host):
+        raise RuntimeError("GitHub host must be a hostname, without a URL path")
+    return host
+
+
+def _run_gh(arguments: list[str], *, timeout: int = 45) -> subprocess.CompletedProcess:
+    host = _hostname()
+    command = ["gh", "api", "--hostname", host, *arguments]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, timeout=timeout, check=False)
     except FileNotFoundError as exc:
         raise RuntimeError("GitHub CLI (gh) is not installed") from exc
     except subprocess.TimeoutExpired as exc:
-        raise RuntimeError("GitHub did not respond before the 45 second timeout") from exc
+        raise RuntimeError("GitHub did not respond before the timeout") from exc
     if result.returncode:
-        message = result.stderr.strip() or "GitHub query failed"
+        message = result.stderr.strip() or "GitHub API request failed"
         if "not logged" in message.lower() or "authentication" in message.lower():
-            message += " — run `gh auth login` to connect your GitHub account"
+            message += " — run `gh auth login` to connect this GitHub host"
         raise RuntimeError(message)
+    return result
+
+
+def _api_json(endpoint: str, *fields: str, force: bool = False) -> tuple[object, int]:
+    key = hashlib.sha256(("\0".join([_hostname(), endpoint, *fields])).encode()).hexdigest()
+    cache_file = CACHE_DIR / "api" / f"{key}.json"
+    if not force:
+        try:
+            payload = json.loads(cache_file.read_text(encoding="utf-8"))
+            age = max(0, int(time.time()) - int(payload.get("fetchedAt", 0)))
+            if age <= API_TTL_SECONDS:
+                return payload["data"], int(payload["fetchedAt"])
+        except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError):
+            pass
+    args = [endpoint]
+    for field in fields:
+        args.extend(["-F", field])
+    response = _run_gh(args)
     try:
-        payload = json.loads(result.stdout)
+        data = json.loads(response.stdout)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("GitHub CLI returned invalid JSON") from exc
+    fetched_at = int(time.time())
+    write_private_json(cache_file, {"fetchedAt": fetched_at, "data": data})
+    return data, fetched_at
+
+
+def _graphql(query: str, cursor: str | None = None) -> dict:
+    args = ["graphql", "-f", f"query={query}"]
+    if cursor:
+        args.extend(["-F", f"cursor={cursor}"])
+    response = _run_gh(args)
+    try:
+        payload = json.loads(response.stdout)
     except json.JSONDecodeError as exc:
         raise RuntimeError("GitHub CLI returned invalid JSON") from exc
     if payload.get("errors"):
         message = "; ".join(str(error.get("message", "GraphQL error")) for error in payload["errors"])
         raise RuntimeError(message)
     return payload
+
+
+def _query_page(cursor: str | None) -> dict:
+    return _graphql(QUERY, cursor)
 
 
 def fetch_snapshot() -> dict:
@@ -82,44 +197,79 @@ def fetch_snapshot() -> dict:
         raise RuntimeError("Repository list exceeded the 1,000 repository safety limit")
 
     normalized = []
+    settings = load_settings()
+    local_by_name = {}
+    if settings.get("localRoot"):
+        for local_repo in scan_local_projects(settings["localRoot"], int(settings.get("localDepth", 4))):
+            remote_name = local_repo.get("name", "")
+            if REPO_RE.fullmatch(remote_name):
+                local_by_name.setdefault(remote_name, local_repo)
     for repo in repos:
         branch = repo.get("defaultBranchRef") or {}
         target = branch.get("target") or {}
         rollup = target.get("statusCheckRollup") or {}
+        issue_conn = repo.get("openIssues") or {}
+        pull_conn = repo.get("openPullRequests") or {}
+        latest_issue = (issue_conn.get("nodes") or [{}])[0]
+        latest_pull = (pull_conn.get("nodes") or [{}])[0]
+        latest_commit = ((target.get("history") or {}).get("nodes") or [{}])[0]
+        release = repo.get("latestRelease") or {}
+        recent = [
+            {"kind": "issue", **latest_issue} if latest_issue.get("updatedAt") else None,
+            {"kind": "pull", **latest_pull} if latest_pull.get("updatedAt") else None,
+            {"kind": "commit", "title": latest_commit.get("messageHeadline"),
+             "updatedAt": latest_commit.get("committedDate"), "url": latest_commit.get("url")}
+            if latest_commit.get("committedDate") else None,
+        ]
+        recent = [item for item in recent if item]
+        recent.sort(key=lambda item: item.get("updatedAt", ""), reverse=True)
+        state = settings.get("repoStates", {}).get(repo.get("nameWithOwner", ""), "visible")
         normalized.append({
             "name": repo.get("nameWithOwner", ""),
             "url": repo.get("url", ""),
+            "description": repo.get("description") or "",
             "private": bool(repo.get("isPrivate")),
             "archived": bool(repo.get("isArchived")),
+            "fork": bool(repo.get("isFork")),
             "stars": int(repo.get("stargazerCount") or 0),
             "forks": int(repo.get("forkCount") or 0),
             "updatedAt": repo.get("updatedAt", ""),
-            "openIssues": int((repo.get("openIssues") or {}).get("totalCount") or 0),
-            "openPullRequests": int((repo.get("openPullRequests") or {}).get("totalCount") or 0),
+            "openIssues": int(issue_conn.get("totalCount") or 0),
+            "openPullRequests": int(pull_conn.get("totalCount") or 0),
             "branch": branch.get("name", ""),
             "ci": rollup.get("state", "UNKNOWN").upper(),
-            "release": (repo.get("latestRelease") or {}).get("tagName", ""),
+            "release": release.get("tagName", ""),
+            "releaseName": release.get("name") or release.get("tagName", ""),
+            "releaseUrl": release.get("url", ""),
+            "releaseDate": release.get("publishedAt", ""),
+            "language": (repo.get("primaryLanguage") or {}).get("name", ""),
+            "topics": [item.get("topic", {}).get("name", "") for item in (repo.get("repositoryTopics") or {}).get("nodes", [])],
+            "recentActivity": recent[0] if recent else None,
+            "local": local_by_name.get(repo.get("nameWithOwner", "")),
+            "repoState": state if state in {"visible", "pinned", "hidden"} else "visible",
         })
     normalized.sort(key=lambda item: item["updatedAt"], reverse=True)
     now = int(time.time())
-    return {"schemaVersion": 1, "account": login, "fetchedAt": now, "stale": False, "repos": normalized}
+    try:
+        rate_limit, rate_fetched_at = _api_json("rate_limit")
+        rate_error = ""
+    except RuntimeError as exc:
+        rate_limit, rate_fetched_at, rate_error = {}, 0, str(exc)
+    return {"schemaVersion": 1, "account": login, "host": _hostname(), "fetchedAt": now,
+            "rateFetchedAt": rate_fetched_at, "rateLimits": rate_limit, "rateError": rate_error,
+            "settings": settings, "stale": False, "repos": normalized}
 
 
 def write_cache(payload: dict) -> None:
-    CACHE.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    os.chmod(CACHE.parent, 0o700)
-    fd, temp_path = tempfile.mkstemp(prefix="repobar-", dir=CACHE.parent)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as stream:
-            json.dump(payload, stream, separators=(",", ":"))
-            stream.write("\n")
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.chmod(temp_path, 0o600)
-        os.replace(temp_path, CACHE)
-    finally:
-        if os.path.exists(temp_path):
-            os.unlink(temp_path)
+    write_private_json(CACHE, payload)
+
+
+def apply_settings(snapshot: dict) -> dict:
+    settings = load_settings()
+    for repo in snapshot.get("repos", []):
+        repo["repoState"] = settings.get("repoStates", {}).get(repo.get("name", ""), "visible")
+    snapshot["settings"] = settings
+    return snapshot
 
 
 def read_cache() -> dict | None:
@@ -129,39 +279,457 @@ def read_cache() -> dict | None:
         if payload.get("schemaVersion") != 1 or not isinstance(payload.get("repos"), list):
             return None
         payload["stale"] = True
-        return payload
+        return apply_settings(payload)
     except (OSError, json.JSONDecodeError, TypeError):
         return None
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--refresh", action="store_true", help="fetch a fresh read-only GitHub snapshot")
-    parser.add_argument("--max-age", type=int, default=CACHE_TTL_SECONDS, help="cache lifetime in seconds")
-    args = parser.parse_args()
-
+def get_snapshot(force: bool = False, max_age: int = CACHE_TTL_SECONDS) -> dict:
     cached = read_cache()
-    is_fresh = False
     if cached:
         age = max(0, int(time.time()) - int(cached.get("fetchedAt", 0)))
-        is_fresh = age <= max(0, args.max_age)
-    if cached and is_fresh and not args.refresh:
-        cached["stale"] = False
-        print(json.dumps(cached, separators=(",", ":")))
-        return 0
-
+        if age <= max(0, max_age) and not force:
+            cached["stale"] = False
+            return cached
     try:
-        payload = fetch_snapshot()
-        write_cache(payload)
-        print(json.dumps(payload, separators=(",", ":")))
-        return 0
+        return apply_settings(fetch_and_cache())
     except (RuntimeError, OSError) as exc:
         if cached:
             cached["error"] = str(exc)
-            print(json.dumps(cached, separators=(",", ":")))
-            return 0
-        print(json.dumps({"schemaVersion": 1, "account": "", "fetchedAt": 0,
-                          "stale": True, "repos": [], "error": str(exc)}), file=sys.stdout)
+            cached["stale"] = True
+            return cached
+        raise
+
+
+def fetch_and_cache() -> dict:
+    payload = fetch_snapshot()
+    write_cache(payload)
+    return payload
+
+
+def _safe_repo_name(value: str) -> str:
+    value = value.strip().removeprefix("https://github.com/").removesuffix(".git").strip("/")
+    if not REPO_RE.fullmatch(value):
+        raise RuntimeError("Repository must be written as owner/name")
+    return value
+
+
+def set_repo_state(name: str, state: str) -> dict:
+    name = _safe_repo_name(name)
+    if state not in {"visible", "pinned", "hidden"}:
+        raise RuntimeError("Repository state must be visible, pinned, or hidden")
+    settings = load_settings()
+    states = dict(settings.get("repoStates", {}))
+    if state == "visible":
+        states.pop(name, None)
+    else:
+        states[name] = state
+    settings["repoStates"] = states
+    save_settings(settings)
+    return {"repository": name, "state": state}
+
+
+def _git(path: Path, *arguments: str, timeout: int = 5) -> str:
+    try:
+        result = subprocess.run(["git", "-C", str(path), *arguments], capture_output=True,
+                                text=True, timeout=timeout, check=False)
+    except (FileNotFoundError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError(f"Git command failed for {path}") from exc
+    if result.returncode:
+        raise RuntimeError(result.stderr.strip() or f"Git command failed for {path}")
+    return result.stdout.strip()
+
+
+def _remote_name(remote: str) -> str:
+    remote = remote.strip()
+    if remote.startswith("git@") and ":" in remote:
+        host, path = remote.split(":", 1)
+        host = host.split("@", 1)[-1]
+    else:
+        parsed = urlparse(remote if "://" in remote else "https://" + remote)
+        host, path = parsed.hostname or "", parsed.path.lstrip("/")
+    if host in {"github.com", _hostname()}:
+        path = path.removesuffix(".git").strip("/")
+        if REPO_RE.fullmatch(path):
+            return path
+    return ""
+
+
+def _git_repo_status(path: Path) -> dict:
+    root = Path(_git(path, "rev-parse", "--show-toplevel"))
+    branch = _git(root, "rev-parse", "--abbrev-ref", "HEAD")
+    try:
+        upstream = _git(root, "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}")
+    except RuntimeError:
+        upstream = ""
+    dirty_lines = _git(root, "status", "--porcelain=v1", "--untracked-files=normal").splitlines()
+    ahead = behind = 0
+    if upstream:
+        counts = _git(root, "rev-list", "--left-right", "--count", f"HEAD...{upstream}")
+        try:
+            ahead, behind = [int(value) for value in counts.split()]
+        except (ValueError, TypeError):
+            ahead = behind = 0
+    remote = ""
+    try:
+        remote = _git(root, "remote", "get-url", "origin")
+    except RuntimeError:
+        pass
+    worktrees = []
+    try:
+        records = _git(root, "worktree", "list", "--porcelain").split("\n\n")
+        for record in records:
+            values = dict(line.split(" ", 1) for line in record.splitlines() if " " in line)
+            worktrees.append({"path": values.get("worktree", ""), "branch": values.get("branch", "").removeprefix("refs/heads/")})
+    except RuntimeError:
+        pass
+    return {
+        "path": str(root), "name": _remote_name(remote) or root.name,
+        "remote": remote, "branch": branch, "upstream": upstream,
+        "dirty": bool(dirty_lines), "dirtyFiles": [line[3:] for line in dirty_lines[:3]],
+        "dirtyFileCount": len(dirty_lines), "ahead": ahead, "behind": behind,
+        "detached": branch == "HEAD", "worktrees": worktrees,
+    }
+
+
+def scan_local_projects(root: str, depth: int = 4) -> list[dict]:
+    base = Path(root).expanduser().resolve()
+    if not base.is_dir():
+        raise RuntimeError(f"Local projects folder does not exist: {base}")
+    found: list[dict] = []
+    visited = 0
+
+    def walk(folder: Path, level: int) -> None:
+        nonlocal visited
+        if level > max(0, min(10, depth)) or visited >= 500:
+            return
+        visited += 1
+        if (folder / ".git").exists():
+            try:
+                found.append(_git_repo_status(folder))
+            except RuntimeError:
+                pass
+            return
+        try:
+            entries = sorted(os.scandir(folder), key=lambda item: item.name.casefold())
+        except OSError:
+            return
+        for entry in entries:
+            if entry.name.startswith(".") or entry.is_symlink() or not entry.is_dir(follow_symlinks=False):
+                continue
+            walk(Path(entry.path), level + 1)
+
+    walk(base, 0)
+    return found
+
+
+def sync_local_repo(path: str, confirmed: bool = False) -> dict:
+    repo = _git_repo_status(Path(path).expanduser())
+    if repo["dirty"]:
+        raise RuntimeError("Sync stopped: the working tree has local changes")
+    if repo["detached"]:
+        raise RuntimeError("Sync stopped: checkout is detached")
+    if not repo["upstream"]:
+        raise RuntimeError("Sync stopped: the current branch has no upstream")
+    if not confirmed:
+        return {**repo, "wouldSync": repo["behind"] > 0 and repo["ahead"] == 0,
+                "message": "Pass --yes to fetch and fast-forward this clean checkout."}
+    upstream_remote = repo["upstream"].split("/", 1)[0]
+    _git(Path(repo["path"]), "fetch", "--prune", upstream_remote, timeout=60)
+    counts = _git(Path(repo["path"]), "rev-list", "--left-right", "--count", f"HEAD...{repo['upstream']}")
+    ahead, behind = [int(value) for value in counts.split()]
+    if ahead != 0 or behind == 0:
+        raise RuntimeError("Sync stopped: branch is not a clean fast-forward candidate")
+    _git(Path(repo["path"]), "pull", "--ff-only", timeout=60)
+    return {**_git_repo_status(Path(repo["path"])), "synced": True}
+
+
+def filter_repositories(snapshot: dict, scope: str = "dashboard", query: str = "", sort: str = "", limit: int = -1) -> list[dict]:
+    settings = snapshot.get("settings") or load_settings()
+    repos = list(snapshot.get("repos", []))
+    query = query.strip().casefold()
+    selected = []
+    for repo in repos:
+        state = repo.get("repoState", "visible")
+        if not settings.get("showArchived", False) and repo.get("archived"):
+            continue
+        if not settings.get("showForks", False) and repo.get("fork"):
+            continue
+        if scope == "pinned" and state != "pinned":
+            continue
+        if scope == "hidden" and state != "hidden":
+            continue
+        if scope == "visible" and state == "hidden":
+            continue
+        if scope == "work" and not (repo.get("openIssues") or repo.get("openPullRequests") or repo.get("ci") in {"FAILURE", "ERROR", "PENDING"}):
+            continue
+        if scope == "issues" and not repo.get("openIssues"):
+            continue
+        if scope == "prs" and not repo.get("openPullRequests"):
+            continue
+        haystack = " ".join([repo.get("name", ""), repo.get("description", ""), repo.get("language", ""), *repo.get("topics", [])]).casefold()
+        if query and query not in haystack:
+            continue
+        selected.append(repo)
+    sort = sort or settings.get("menuSort", "activity")
+    if sort == "issues":
+        selected.sort(key=lambda item: (item.get("openIssues", 0), item.get("updatedAt", "")), reverse=True)
+    elif sort == "prs":
+        selected.sort(key=lambda item: (item.get("openPullRequests", 0), item.get("updatedAt", "")), reverse=True)
+    elif sort == "stars":
+        selected.sort(key=lambda item: (item.get("stars", 0), item.get("updatedAt", "")), reverse=True)
+    elif sort == "repo":
+        selected.sort(key=lambda item: item.get("name", "").casefold())
+    elif sort == "pinned":
+        selected.sort(key=lambda item: (item.get("repoState") != "pinned", item.get("updatedAt", "")), reverse=False)
+    else:
+        selected.sort(key=lambda item: item.get("updatedAt", ""), reverse=True)
+    if scope == "dashboard":
+        pinned = [item for item in selected if item.get("repoState") == "pinned"]
+        recent = [item for item in selected if item.get("repoState") != "hidden" and item not in pinned]
+        count = max(1, min(100, int(settings.get("repoLimit", 5))))
+        selected = pinned + recent[:max(0, count - len(pinned))]
+    if limit >= 0:
+        selected = selected[:limit]
+    return selected
+
+
+def _repo_details(name: str, endpoint: str, limit: int = 20, force: bool = False) -> object:
+    name = _safe_repo_name(name)
+    if endpoint == "issues":
+        route = f"repos/{name}/issues?state=open&per_page={max(1, min(100, limit))}"
+        items, _ = _api_json(route, force=force)
+        return [item for item in items if "pull_request" not in item]
+    if endpoint == "pulls":
+        return _api_json(f"repos/{name}/pulls?state=open&per_page={max(1, min(100, limit))}", force=force)[0]
+    if endpoint == "ci":
+        return _api_json(f"repos/{name}/actions/runs?per_page={max(1, min(100, limit))}", force=force)[0]
+    if endpoint == "releases":
+        return _api_json(f"repos/{name}/releases?per_page={max(1, min(100, limit))}", force=force)[0]
+    if endpoint == "branches":
+        return _api_json(f"repos/{name}/branches?per_page={max(1, min(100, limit))}", force=force)[0]
+    if endpoint == "tags":
+        return _api_json(f"repos/{name}/tags?per_page={max(1, min(100, limit))}", force=force)[0]
+    if endpoint == "commits":
+        return _api_json(f"repos/{name}/commits?per_page={max(1, min(100, limit))}", force=force)[0]
+    if endpoint == "activity":
+        return _api_json(f"repos/{name}/events?per_page={max(1, min(100, limit))}", force=force)[0]
+    if endpoint == "heatmap":
+        return _api_json(f"repos/{name}/stats/commit_activity", force=force)[0]
+    raise RuntimeError("Unsupported repository detail")
+
+
+def _human_table(items: list[dict]) -> str:
+    rows = []
+    for item in items:
+        rows.append("{:<34} {:>4} PR {:>5} issues {:<9} {}".format(
+            item.get("name", item.get("full_name", ""))[:34], item.get("openPullRequests", 0),
+            item.get("openIssues", 0), item.get("ci", ""), item.get("release", "")))
+    return "\n".join(rows)
+
+
+def _emit(payload: object, plain: bool = False) -> None:
+    if plain and isinstance(payload, list) and all(isinstance(item, dict) for item in payload):
+        print(_human_table(payload))
+    else:
+        print(json.dumps(payload, separators=(",", ":"), ensure_ascii=False))
+
+
+def _find_local_repo(identifier: str, settings: dict) -> str:
+    candidate = Path(identifier).expanduser()
+    if candidate.is_dir():
+        return str(candidate)
+    root = settings.get("localRoot", "")
+    if root:
+        for repo in scan_local_projects(root, int(settings.get("localDepth", 4))):
+            if repo["name"] == identifier or Path(repo["path"]).name == identifier:
+                return repo["path"]
+    raise RuntimeError("Local checkout not found; set local-root and scan or pass its path")
+
+
+def _settings_set(key: str, value: str) -> dict:
+    settings = load_settings()
+    normalized = key.replace("_", "-").lower()
+    if normalized == "host":
+        settings["host"] = value.strip().removeprefix("https://").removeprefix("http://").strip("/")
+        _hostname(settings)
+    elif normalized == "refresh-interval":
+        value = value.lower().removesuffix("m")
+        seconds = int(value) * (60 if value.isdigit() and len(value) <= 2 else 1)
+        if seconds not in {60, 120, 300, 900}:
+            raise RuntimeError("refresh-interval must be 1m, 2m, 5m, or 15m")
+        settings["refreshInterval"] = seconds
+    elif normalized == "repo-limit":
+        count = int(value)
+        if not 1 <= count <= 100:
+            raise RuntimeError("repo-limit must be between 1 and 100")
+        settings["repoLimit"] = count
+    elif normalized == "menu-sort":
+        if value not in {"activity", "issues", "prs", "stars", "repo", "pinned"}:
+            raise RuntimeError("menu-sort must be activity, issues, prs, stars, repo, or pinned")
+        settings["menuSort"] = value
+    elif normalized in {"show-forks", "show-archived"}:
+        if value.lower() not in {"true", "false"}:
+            raise RuntimeError(f"{normalized} must be true or false")
+        settings["showForks" if normalized == "show-forks" else "showArchived"] = value.lower() == "true"
+    elif normalized == "activity-scope":
+        if value not in {"all", "my"}:
+            raise RuntimeError("activity-scope must be all or my")
+        settings["activityScope"] = value
+    elif normalized == "local-root":
+        root = str(Path(value).expanduser().resolve()) if value.strip() else ""
+        if root and not Path(root).is_dir():
+            raise RuntimeError(f"Local projects folder does not exist: {root}")
+        settings["localRoot"] = root
+    elif normalized == "local-depth":
+        depth = int(value)
+        if not 1 <= depth <= 10:
+            raise RuntimeError("local-depth must be between 1 and 10")
+        settings["localDepth"] = depth
+    else:
+        raise RuntimeError("Unknown setting key")
+    save_settings(settings)
+    return {"key": normalized, "value": settings.get({"refresh-interval": "refreshInterval", "repo-limit": "repoLimit",
+                                                        "menu-sort": "menuSort", "show-forks": "showForks",
+                                                        "show-archived": "showArchived", "activity-scope": "activityScope",
+                                                        "local-root": "localRoot", "local-depth": "localDepth"}.get(normalized, normalized))}
+
+
+def _auth_status() -> dict:
+    host = _hostname()
+    result = subprocess.run(["gh", "auth", "status", "--hostname", host],
+                            capture_output=True, text=True, timeout=10, check=False)
+    output = result.stdout + result.stderr
+    match = re.search(r"Logged in to [^\s]+ account ([^\s(]+)", output)
+    return {"host": host, "authenticated": result.returncode == 0,
+            "account": match.group(1) if match else "", "message": "" if result.returncode == 0 else "Run `gh auth login --hostname " + host + "`."}
+
+
+def _cache_status() -> dict:
+    snapshot = {}
+    try:
+        snapshot = json.loads(CACHE.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        pass
+    files = list((CACHE_DIR / "api").glob("*.json")) if (CACHE_DIR / "api").is_dir() else []
+    total_bytes = sum(path.stat().st_size for path in files if path.is_file())
+    return {"snapshotPath": str(CACHE), "snapshotAgeSeconds": max(0, int(time.time()) - int(snapshot.get("fetchedAt", 0))) if snapshot else None,
+            "snapshotRepositories": len(snapshot.get("repos", [])), "endpointResponses": len(files),
+            "endpointBytes": total_bytes}
+
+
+def _clear_cache() -> dict:
+    removed = 0
+    for path in [CACHE, *((CACHE_DIR / "api").glob("*.json") if (CACHE_DIR / "api").is_dir() else [])]:
+        try:
+            path.unlink()
+            removed += 1
+        except OSError:
+            pass
+    return {"removedFiles": removed}
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="GitHub repository dashboard and CLI for elementary OS")
+    parser.add_argument("--refresh", action="store_true", help="force a fresh GitHub snapshot")
+    parser.add_argument("--max-age", type=int, default=None, help="snapshot cache lifetime in seconds")
+    parser.add_argument("--json", action="store_true", help="emit structured JSON")
+    parser.add_argument("--plain", action="store_true", help="emit compact plain text when supported")
+    commands = parser.add_subparsers(dest="command")
+
+    commands.add_parser("snapshot", help="read the complete cached repository snapshot")
+    repos_cmd = commands.add_parser("repos", help="list repositories by activity, work, or saved view")
+    repos_cmd.add_argument("--scope", choices=["dashboard", "all", "visible", "pinned", "hidden", "work", "issues", "prs"], default="dashboard")
+    repos_cmd.add_argument("--sort", choices=["activity", "issues", "prs", "stars", "repo", "pinned"], default="")
+    repos_cmd.add_argument("--search", default="")
+    repos_cmd.add_argument("--limit", type=int, default=-1)
+    repo_cmd = commands.add_parser("repo", help="show one repository summary")
+    repo_cmd.add_argument("name")
+    for name in ("issues", "pulls", "ci", "releases", "activity", "commits", "branches", "tags", "heatmap"):
+        item = commands.add_parser(name, help=f"show repository {name}")
+        item.add_argument("name")
+        item.add_argument("--limit", type=int, default=20)
+    for name, state in (("pin", "pinned"), ("unpin", "visible"), ("hide", "hidden"), ("show", "visible")):
+        item = commands.add_parser(name, help=f"mark a repository {state}")
+        item.add_argument("name")
+    rate_cmd = commands.add_parser("rate-limits", help="show GitHub REST and GraphQL quotas")
+    rate_cmd.add_argument("--refresh", action="store_true")
+    cache_cmd = commands.add_parser("cache", help="inspect or clear local RepoBar cache")
+    cache_cmd.add_argument("action", choices=["status", "clear"])
+    settings_cmd = commands.add_parser("settings", help="show or update RepoBar preferences")
+    settings_cmd.add_argument("action", choices=["show", "set"], default="show", nargs="?")
+    settings_cmd.add_argument("key", nargs="?")
+    settings_cmd.add_argument("value", nargs="?")
+    auth_cmd = commands.add_parser("auth", help="inspect or set up GitHub CLI authentication")
+    auth_cmd.add_argument("action", choices=["status", "login"], default="status", nargs="?")
+    local_cmd = commands.add_parser("local", help="scan local checkouts or explicitly fast-forward one")
+    local_cmd.add_argument("action", choices=["scan", "sync"], default="scan", nargs="?")
+    local_cmd.add_argument("path", nargs="?")
+    local_cmd.add_argument("--root", default="")
+    local_cmd.add_argument("--depth", type=int, default=0)
+    local_cmd.add_argument("--yes", action="store_true", help="confirm an explicit clean fast-forward sync")
+    open_cmd = commands.add_parser("open", help="open a repository or URL in the default browser")
+    open_cmd.add_argument("target")
+    args = parser.parse_args()
+    max_age = args.max_age if args.max_age is not None else int(load_settings().get("refreshInterval", CACHE_TTL_SECONDS))
+
+    try:
+        if args.command in {None, "snapshot", "refresh"}:
+            _emit(get_snapshot(force=args.refresh or args.command == "refresh", max_age=max_age), args.plain)
+        elif args.command == "repos":
+            snapshot = get_snapshot(force=args.refresh, max_age=max_age)
+            items = filter_repositories(snapshot, args.scope, args.search, args.sort, args.limit)
+            _emit(items, args.plain)
+        elif args.command == "repo":
+            full_name = _safe_repo_name(args.name)
+            snapshot = get_snapshot(force=args.refresh, max_age=max_age)
+            match = next((item for item in snapshot.get("repos", []) if item.get("name") == full_name), None)
+            if not match:
+                raise RuntimeError("Repository is not visible to the active GitHub account")
+            _emit(match, args.plain)
+        elif args.command in {"issues", "pulls", "ci", "releases", "activity", "commits", "branches", "tags", "heatmap"}:
+            _emit(_repo_details(args.name, args.command, args.limit, args.refresh), args.plain)
+        elif args.command in {"pin", "unpin", "hide", "show"}:
+            _emit(set_repo_state(args.name, {"pin": "pinned", "unpin": "visible", "hide": "hidden", "show": "visible"}[args.command]))
+        elif args.command == "rate-limits":
+            _emit(_api_json("rate_limit", force=args.refresh)[0])
+        elif args.command == "cache":
+            _emit(_cache_status() if args.action == "status" else _clear_cache())
+        elif args.command == "settings":
+            if args.action == "set":
+                if not args.key or args.value is None:
+                    raise RuntimeError("Use `settings set KEY VALUE`")
+                _emit(_settings_set(args.key, args.value))
+            else:
+                _emit(load_settings())
+        elif args.command == "auth":
+            if args.action == "login":
+                subprocess.run(["gh", "auth", "login", "--hostname", _hostname()], check=True)
+            _emit(_auth_status())
+        elif args.command == "local":
+            settings = load_settings()
+            if args.action == "sync":
+                if not args.path:
+                    raise RuntimeError("Use `local sync PATH_OR_REPO [--yes]`")
+                _emit(sync_local_repo(_find_local_repo(args.path, settings), args.yes))
+            else:
+                root = args.root or settings.get("localRoot", "")
+                if not root:
+                    raise RuntimeError("Choose a project folder with `settings set local-root PATH`")
+                depth = args.depth or int(settings.get("localDepth", 4))
+                _emit({"root": str(Path(root).expanduser().resolve()), "repos": scan_local_projects(root, depth)})
+        elif args.command == "open":
+            target = args.target
+            if REPO_RE.fullmatch(target):
+                target = f"https://{_hostname()}/{target}"
+            subprocess.Popen(["xdg-open", target], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            _emit({"opened": target})
+        return 0
+    except (RuntimeError, OSError, ValueError, subprocess.CalledProcessError) as exc:
+        if args.json:
+            _emit({"error": str(exc)})
+        else:
+            print(str(exc), file=sys.stderr)
         return 1
 
 

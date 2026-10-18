@@ -26,8 +26,10 @@ done
 
 install -d -m 0755 "$HOME/.local/lib/mseries" "$HOME/.local/bin"
 install -m 0644 "$repo/mseries/repobar.py" "$HOME/.local/lib/mseries/repobar.py"
-printf '#!/bin/sh\nexec /usr/bin/python3 "%s" "$@"\n' \
-  "$HOME/.local/lib/mseries/repobar.py" > "$HOME/.local/bin/mseries-repobar.new"
+cat > "$HOME/.local/bin/mseries-repobar.new" <<'WRAPPER'
+#!/bin/sh
+exec /usr/bin/python3 "$HOME/.local/lib/mseries/repobar.py" "$@"
+WRAPPER
 chmod 0755 "$HOME/.local/bin/mseries-repobar.new"
 mv -f "$HOME/.local/bin/mseries-repobar.new" "$HOME/.local/bin/mseries-repobar"
 

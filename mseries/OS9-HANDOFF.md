@@ -2,12 +2,16 @@
 
 ## RepoBar port in progress — 2026-10-18
 
-`codex/repobar-elementary-port` adds the first native Wingpanel and `gh`-backed
-snapshot, but that is only a foundation. The full upstream reference also includes
-repository selection/pinning, activity and detail views, API quota diagnostics,
-CLI commands, and optional local-checkout status/sync. Continue the port on this
-branch; preserve the user's existing GitHub CLI authentication and make local
-sync opt-in with clean-tree and fast-forward-only guards. See `mseries/REPOBAR-PORT.md`.
+`codex/repobar-elementary-port` now includes a searchable GTK/Wingpanel
+dashboard, pin/hide filters, issue/PR/CI/release/activity summaries, API quota
+visibility, a scriptable CLI, private persistent caches/settings, and bounded
+local checkout scanning. Local sync requires explicit `--yes`, a clean attached
+branch, and a fast-forward-only update. The dashboard uses elementary OS GTK
+controls and the optional installer; it has not been installed or observed in a
+live Wingpanel session. Python syntax and the Vala/Meson build passed on
+2026-10-18; the build emits a GTK CSS provider deprecation warning and generated
+C warnings. Upstream traffic/cloner charts, heatmap UI, multi-account UI, and
+full per-repo submenus remain out of scope; see `mseries/REPOBAR-PORT.md`.
 
 ## Compact two-row OpenCode panel — 2026-10-18
 
