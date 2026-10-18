@@ -4798,3 +4798,11 @@ Explicit speech refs augment the existing six-hour watcher, not another schedule
 Publication PR must pass checks and Pages bytes must be verified before claiming
 main/site completion. Preserve current main owner changes; no CodexBar files changed.
 
+
+## Bluetooth in the far-right Quick Settings menu — 2026-10-18
+
+`quick-settings/Bluetooth.vala` adds a Bluetooth switch, saved-device Connect/Disconnect buttons, and Bluetooth Settings… for pairing. It talks asynchronously to BlueZ on the system bus using ObjectManager and Properties/Device calls, follows external radio/device changes, handles missing adapters/service and failed connections, and does not scan or pair automatically. Devices are sorted connected-first and only paired/bonded/connected devices appear. Radio changes apply to available adapters. A refresh guard avoids nested GTK mapping refreshes; the Granite switch description remains constant because assigning it again can try to reparent its label on this installed version.
+
+Both `install-quick-settings-brightness.sh` and the factory `build-quick-settings` apply the new patch and copy the widget; `enhance.sh` includes it in first-boot payload. No new runtime library is needed beyond GLib/GIO and existing GTK/Granite.
+
+Verified: full pinned Quick Settings release build/link; production-widget integration test on a private fake BlueZ bus covers saved-device filtering, Connect, Disconnect, connection-failure recovery, and radio off/on with fatal GTK criticals enabled. CI runs this test. A read-only GTK preview against the real BlueZ service rendered. Installed/staged via the normal installer without a Wingpanel restart; activation awaits explicit owner reload approval or next login. No actual Bluetooth radio or device state was changed by tests.
