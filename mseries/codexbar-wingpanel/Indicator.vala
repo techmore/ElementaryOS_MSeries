@@ -69,12 +69,12 @@ namespace MSeries {
             executable = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "codexbar-linux");
 
             // One dense segment per provider: company mark, % left of the binding limit, time to its reset.
-            panel_segments = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 9);
+            panel_segments = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
             panel_segments.add_css_class ("mseries-codexbar-bar");
             panel_display = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
             panel_display.append (panel_segments);
             show_panel_placeholder ();
-            panel_display.set_tooltip_text ("CodexBar · loading usage… · Middle-click to refresh");
+            set_panel_summary ("CodexBar · loading usage… · Middle-click to refresh");
             var refresh_gesture = new Gtk.GestureClick () { button = 2 };
             refresh_gesture.released.connect (() => refresh_usage (true));
             panel_display.add_controller (refresh_gesture);
@@ -222,7 +222,8 @@ namespace MSeries {
                 ".mseries-codexbar-bar .seg-secondary { font-size: 7.5pt; } " +
                 ".mseries-codexbar-bar .level-low { color: @warning_color; } " +
                 ".mseries-codexbar-bar .level-critical { color: @error_color; } " +
-                ".mseries-codexbar-bar .mark-claude { color: #d97757; } " +
+                ".mseries-codexbar-bar .provider-mark { opacity: 0.92; } " +
+                ".mseries-codexbar-bar .seg-divider { min-width: 1px; margin: 4px 0; background: alpha(currentColor, 0.22); } " +
                 ".mseries-codexbar-bar .stale { opacity: 0.55; }");
             Gtk.StyleContext.add_provider_for_display (display, style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         }
@@ -1148,10 +1149,18 @@ namespace MSeries {
                     quota_theme_color (widget, "error_color", "#c6262e")) : "");
         }
 
+        /* The tooltip is for the pointer; assistive tech needs the same summary as the widget's name. */
+        private void set_panel_summary (string text) {
+            panel_display.set_tooltip_text (text);
+            panel_display.update_property (Gtk.AccessibleProperty.LABEL, text.replace ("\n\n", ". ").replace ("\n", ", "), -1);
+        }
+
         private void show_panel_placeholder () {
             panel_digest = "";
             clear (panel_segments);
-            panel_segments.append (new Gtk.Label ("—"));
+            var dash = new Gtk.Label ("—");
+            dash.add_css_class ("dim-label");
+            panel_segments.append (dash);
         }
 
         /* Fills one segment's texts from a quota window list; returns the level of the binding window. */
@@ -1274,7 +1283,7 @@ namespace MSeries {
                 }
             }
 
-            panel_display.set_tooltip_text (tooltip.len > 0
+            set_panel_summary (tooltip.len > 0
                 ? tooltip.str + (snapshot_stale ? "\n\nCached: CodexBar couldn't reach a provider." : "")
                     + "\n\nMiddle-click to refresh"
                 : "Usage unavailable");
@@ -1295,6 +1304,11 @@ namespace MSeries {
             for (int rank = 0; rank <= 3; rank++) {
                 for (int i = 0; i < providers.length; i++) {
                     if (provider_rank (providers[i]) != rank) continue;
+                    if (panel_segments.get_first_child () != null) {
+                        var divider = new Gtk.Separator (Gtk.Orientation.VERTICAL);
+                        divider.add_css_class ("seg-divider");
+                        panel_segments.append (divider);
+                    }
                     panel_segments.append (build_panel_segment (providers[i], values[i], resets[i], levels[i], stales[i]));
                 }
             }
@@ -1308,7 +1322,7 @@ namespace MSeries {
             var mark = build_provider_mark (provider, provider_title (provider));
             var icon = mark as Gtk.Image;
             if (icon != null) {
-                icon.pixel_size = 12;
+                icon.pixel_size = 14;
                 icon.valign = Gtk.Align.CENTER;
             }
             segment.append (mark);
@@ -1338,7 +1352,7 @@ namespace MSeries {
                 var windows = account.has_member ("windows") ? account.get_array_member ("windows") : null;
                 markup.append ("%s%lld: %s".printf (hint_markup (hint_id (provider, account), label), account.get_int_member_with_default ("number", i + 1),
                     windows == null || windows.get_length () == 0 ? "—"
-                        : colored_account_quota (label, windows, new DateTime.now_utc ().to_unix ())));
+                        : colored_account_quota (label, windows, new DateTime.now_utc ().to_unix (), true)));
             }
             label.set_markup (markup.str);
             stack.append (label);
@@ -1665,9 +1679,10 @@ namespace MSeries {
             return "#%02x%02x%02x".printf ((int) (color.red * 255), (int) (color.green * 255), (int) (color.blue * 255));
         }
 
-        private static string colored_account_quota (Gtk.Widget widget, Json.Array? windows, int64 now_unix) {
+        /* quiet: healthy values keep the text color, so only low and critical quota draws the eye (panel bar). */
+        private static string colored_account_quota (Gtk.Widget widget, Json.Array? windows, int64 now_unix, bool quiet = false) {
             return Presentation.account_quota_markup (windows, now_unix,
-                quota_theme_color (widget, "success_color", "#2e7d32"),
+                quiet ? "" : quota_theme_color (widget, "success_color", "#2e7d32"),
                 quota_theme_color (widget, "warning_color", "#a66300"),
                 quota_theme_color (widget, "error_color", "#c6262e"));
         }
@@ -1905,7 +1920,7 @@ namespace MSeries {
             last_digest = "";
             panel_entries = null;
             show_panel_placeholder ();
-            panel_display.set_tooltip_text (headline + " · " + message);
+            set_panel_summary (headline + " · " + message);
             subtitle_label.set_text ("Usage unavailable");
             chip_label.set_visible (false);
             set_refreshing (false);

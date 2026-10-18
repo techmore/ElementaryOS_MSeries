@@ -133,7 +133,9 @@ namespace MSeries {
                 var level = level_for (remaining.get_double ());
                 var color = level == QuotaLevel.CRITICAL ? critical : level == QuotaLevel.LOW ? low : healthy;
                 if (text.len > 0) text.append (" · ");
-                text.append ("<span foreground=\"%s\" weight=\"semibold\">%s</span>".printf (color, Markup.escape_text (parts[0])));
+                text.append (color.length > 0
+                    ? "<span foreground=\"%s\" weight=\"semibold\">%s</span>".printf (color, Markup.escape_text (parts[0]))
+                    : "<span weight=\"semibold\">%s</span>".printf (Markup.escape_text (parts[0])));
                 if (parts.length > 1) text.append ("<span alpha=\"65%\"> ↻%s</span>".printf (Markup.escape_text (parts[1])));
             }
             return text.len > 0 ? text.str : "Quota unavailable";
