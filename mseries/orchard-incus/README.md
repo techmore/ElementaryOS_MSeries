@@ -125,6 +125,21 @@ GDK_BACKEND=wayland python3 tools/qualify-wayland.py \
   --cycles 3 --idle-before 300 --idle-after 600
 ```
 
+For a two-hour soak with eight workflow cycles distributed across the session:
+
+```sh
+audit_dir=$(mktemp -d)
+GDK_BACKEND=wayland python3 tools/qualify-wayland.py \
+  --source "$PWD" --output "$audit_dir" --run \
+  --cycles 8 --cycle-interval 900 --session-seconds 7200
+```
+
+`--cycle-interval` schedules starts relative to the beginning of the session;
+slow workflows run to completion before the next cycle. `--session-seconds`
+sets a minimum duration and adds a final idle interval as needed. Each cycle
+records its elapsed time and retains its raw `frames-cycle-N.json` presentation
+feedback, so early and late latency can be compared without overwriting evidence.
+
 `resources.jsonl` samples process RSS, PSS, private memory, cumulative CPU,
 threads, file descriptors, actual focus/minimized state and cache sizes every
 five seconds. CPU percentage is CPU-seconds / elapsed-seconds × 100 (one core =

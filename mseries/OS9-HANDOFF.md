@@ -1,5 +1,21 @@
 # OS 9 implementation / Claude Code handoff
 
+## Orchard two-hour soak in progress — 2026-10-18
+
+Started the installed, merged Orchard runtime (`9747eb0`, package hashes
+verified) on native Wayland at 15:09 UTC. The live driver now supports scheduled
+cycle starts and a minimum total session duration, retaining each cycle's raw
+frame feedback. Eight complete developer workflow cycles are scheduled 900
+seconds apart, with idle sampling between them and a minimum 7,200-second run.
+A separate observer samples the owner's normal installed Wayland window.
+The first cycle's eleven workflow groups passed; this is **not yet a two-hour
+qualification result**. The 117-test GTK suite passes (six opt-in tests skipped).
+The full run and CPU/RSS/PSS/private/FD/thread/cache/latency trend analysis remain
+pending; replace this progress note with the completed evidence after cleanup.
+Reproduce using the two-hour command in `mseries/orchard-incus/README.md`.
+No running desktop services or existing guests were changed by the runner update.
+
+
 
 ## Orchard session memory and native qualification — 2026-10-18
 
