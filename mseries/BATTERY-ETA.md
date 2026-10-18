@@ -97,3 +97,8 @@ Update (2026-10-18, verified on the live bar): a screenshot of the real desktop 
 screen, so it was rendered from the same HistoryCard code against the real summary file under the installed elementary
 stylesheet; that showed wrapping rows and a collision between the sparkline label and the line, now fixed (ellipsized
 rows, shortened causes, peak label at the top right, "6 h ago" at the bottom left).
+
+Correction (2026-10-18): the watts label looked "missing" on the live bar because the owner's saved choice is off
+(`~/.config/mseries/battery-meter.ini`, `show-watts=false`, the switch from `panel-power-watts-toggle.patch`). It is not a bug.
+The earlier screenshot that showed "15.2 W" came from a hand-built module without that toggle patch; the installer build
+(all four patches) was restored afterwards. Always install via `install-battery-eta.sh`, never a partial build.
