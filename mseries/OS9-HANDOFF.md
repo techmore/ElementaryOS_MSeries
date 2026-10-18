@@ -2575,3 +2575,13 @@ No full kernel/module build or hardware boot was performed. E4 still disables bu
 accepted by the older fallback-preserving installer. Prior-art claims are scoped to the actual Aurora reports
 (zero tunnel churn on j314s display resume, different M2 Max dock chain). The next hardware task is a separately
 reviewed controlled boot using the actual current payload/state, with route/module/link/EDID/picture evidence.
+
+## Dependency audit and CodexBar 0.77.0 pin — 2026-10-18
+
+Audit of pinned programs: touchegg 2.0.18, crush v0.98.1, elementary/dock 8.3.3 and tether 0.2.38 are already latest upstream; apt had nothing upgradable (lists refreshed 04:28). CodexBar was pinned at v0.74.1 while upstream is v0.77.0, so `install-codexbar.sh` now pins v0.77.0.
+
+Verification: CLI and Desktop tarballs downloaded to a scratch dir and sha256-checked; the unpacked CLI reports 0.77.0 and `usage --provider codex` returns the signed-in account (sdolbec1@gmail.com, prolite); `opencodego` still needs a browser sign-in, as before. Not verified: the installer was not re-run, the Desktop app was not installed, and the running panel was not restarted, so the live panel is still on 0.74.1 until `install-codexbar.sh --skip-system-deps` is run and the panel restarted.
+
+Flatpak: Signal 8.30.0 → 8.31.0 and the GNOME 50 runtime updated on this machine (not repo state).
+
+Left alone on purpose: Brave Widevine 4.10.3057.0 is pinned by SHA-512 from a Mozilla bug and a newer component cannot be verified the same way; `local-ai/install.sh` pins coreglass, omarchy-mlx and mesa-mlx-compute to reviewed commits that are behind upstream heads (omarchy-mlx moved today) and MLX_OMARCHY_VERSION v0.7.33 has no upstream release to compare. Bumping those needs a review of the new commits and redistribution terms first.

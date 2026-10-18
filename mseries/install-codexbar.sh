@@ -4,7 +4,7 @@ set -euo pipefail
 [[ $(uname -m) == aarch64 ]] || { echo 'This installer requires ARM64' >&2; exit 1; }
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 source "$repo/mseries/lib-apt.sh"
-version=v0.74.1
+version=v0.77.0
 if [[ ${1:-} != --skip-system-deps ]]; then
   mseries_apt_refresh
   sudo apt-get install -y \
