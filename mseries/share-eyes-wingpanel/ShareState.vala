@@ -12,6 +12,7 @@ namespace MSeries {
         public string email { get; private set; default = ""; }
         public string password { get; private set; default = ""; }
         public string public_url { get; private set; default = ""; }
+        public string lan_url { get; private set; default = ""; }
 
         public static string default_path () {
             return GLib.Path.build_filename (GLib.Environment.get_user_runtime_dir (), "rupert-share", "state.json");
@@ -21,11 +22,24 @@ namespace MSeries {
         public string share_page { owned get { return local_url + "/share"; } }
         public string viewer_base { owned get { return public_url != "" ? public_url : local_url; } }
 
+        /* The addresses a viewer can use: (label, base). Internet first when one is configured (https), then the local network. */
+        public string[,] link_bases () {
+            bool internet = public_url.has_prefix ("https://");
+            string local = internet ? (lan_url != "" ? lan_url : "") : (public_url != "" ? public_url : local_url);
+            if (internet && local != "") {
+                return { { "Internet", public_url }, { "Local network", local } };
+            }
+            if (internet) {
+                return { { "Internet", public_url } };
+            }
+            return { { "Local network", local } };
+        }
+
         /* Returns true when anything the indicator shows changed. */
         public bool parse (string? text, int64 now) {
             bool n_running = false, n_live = false;
             int n_viewers = 0, n_port = 0;
-            string n_email = "", n_password = "", n_public = "";
+            string n_email = "", n_password = "", n_public = "", n_lan = "";
             if (text != null) {
                 try {
                     var parser = new Json.Parser ();
@@ -44,6 +58,7 @@ namespace MSeries {
                             if (o.has_member ("email")) n_email = o.get_string_member ("email");
                             if (o.has_member ("password")) n_password = o.get_string_member ("password");
                             if (o.has_member ("public_url")) n_public = o.get_string_member ("public_url");
+                            if (o.has_member ("lan_url")) n_lan = o.get_string_member ("lan_url");
                         }
                     }
                 } catch (GLib.Error e) {
@@ -51,9 +66,9 @@ namespace MSeries {
                 }
             }
             bool changed = n_running != running || n_live != live || n_viewers != viewers || n_port != port
-                || n_email != email || n_password != password || n_public != public_url;
+                || n_email != email || n_password != password || n_public != public_url || n_lan != lan_url;
             running = n_running; live = n_live; viewers = n_viewers; port = n_port;
-            email = n_email; password = n_password; public_url = n_public;
+            email = n_email; password = n_password; public_url = n_public; lan_url = n_lan;
             return changed;
         }
 

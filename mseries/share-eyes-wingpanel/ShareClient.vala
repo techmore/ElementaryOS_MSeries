@@ -15,6 +15,7 @@ namespace MSeries {
         public ViewerInfo[] viewers = {};
         public bool live = false;
         public bool reachable = false;
+        public int link_count = 0;
         public string? link_id = null;
         public string? link_token = null;
         public int64 link_expires = 0;
@@ -97,6 +98,7 @@ namespace MSeries {
             }
             viewers = vs;
             bool link_alive = false;
+            link_count = s.has_member ("links") ? (int) s.get_array_member ("links").get_length () : 0;
             if (s.has_member ("links")) {
                 s.get_array_member ("links").foreach_element ((a, i, n) => {
                     var o = n.get_object ();
@@ -112,13 +114,13 @@ namespace MSeries {
 
         public string digest () {
             var sb = new StringBuilder ();
-            sb.append ("%s|%s|%s|".printf (reachable.to_string (), live.to_string (), link_id ?? ""));
+            sb.append ("%s|%s|%s|%d|".printf (reachable.to_string (), live.to_string (), link_id ?? "", link_count));
             foreach (var v in viewers) sb.append ("%s:%s;".printf (v.vid, v.state));
             return sb.str;
         }
 
         public string? viewer_link (string base_for_viewers) {
-            return link_token == null ? null : base_for_viewers + "/v#" + link_token;
+            return link_token == null ? null : base_for_viewers + "/v/" + link_token;
         }
 
         public async bool create_link () {

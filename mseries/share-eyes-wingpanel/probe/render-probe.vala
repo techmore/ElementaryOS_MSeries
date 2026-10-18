@@ -1,17 +1,16 @@
 /* Headless: shows the indicator (panel widget + popover content) and snapshots both to PNGs. args: out-prefix [create-link] */
 int main (string[] args) {
     Gtk.init ();
-    var ind = new MSeries.ShareEyesIndicator ();
+    var ind = new MSeries.SharePanel () { notify_waiting = GLib.Environment.get_variable ("SHARE_NOTIFY") == "1" };
     var w = new Gtk.Window ();
     var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 12) { margin_start = 20, margin_end = 20, margin_top = 10, margin_bottom = 10 };
-    box.append (ind.get_display_widget ());
-    box.append (ind.get_widget ());
+    
+    box.append (ind);
     w.child = box;
     w.present ();
-    ind.opened ();
     var loop = new MainLoop ();
-    GLib.Timeout.add (4500, () => {
-        print ("visible=%s tooltip=%s\n", ind.visible.to_string (), ind.get_display_widget ().get_tooltip_text ());
+    GLib.Timeout.add (int.parse (GLib.Environment.get_variable ("PROBE_MS") ?? "4500"), () => {
+        print ("visible=%s\n", ind.visible.to_string ());
         var paintable = new Gtk.WidgetPaintable (box);
         var snap = new Gtk.Snapshot ();
         paintable.snapshot (snap, w.get_width (), w.get_height ());
