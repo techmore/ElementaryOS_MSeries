@@ -1,5 +1,23 @@
 # OS 9 implementation / Claude Code handoff
 
+## README fixes, verification and remaining work — 2026-10-18
+
+The root [README](../README.md#fixes-tests-and-remaining-work) now separates
+desktop dock/layout, OS bar, kernel, external USB4 dock, power parity, overall
+performance, CPU, GPU and local-LLM/file access. Each section lists implemented
+changes, recorded tests and remaining acceptance work, with links to evidence.
+The status table now distinguishes the owner-confirmed Aurora .20 dock display
+from historical Fairydust limitations and labels stock-kernel decode results
+with their original scope. macOS power/performance parity remains unproven.
+
+Verification: all nine sections have the three status labels; all relative
+documentation links in the project portion resolve; Git whitespace checks pass.
+This is a documentation update; hardware/model benchmarks were not rerun.
+Integrated the documentation commit onto main without its calendar implementation
+parent; calendar claims and its evidence link explicitly identify that branch.
+Preserved newer main handoff/roadmap entries while resolving insertion conflicts.
+Next: update the relevant section when its linked hardware or workload gates pass.
+
 ## YouTube launcher/logo included in fresh-install payload — 2026-10-18
 
 `enhance.sh` now stages the contained launcher, system desktop entry and YouTube

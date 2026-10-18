@@ -1,5 +1,14 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## README status overview — 2026-10-18
+
+The [README fixes/tests/remaining-work overview](../README.md#fixes-tests-and-remaining-work)
+summarizes desktop and external docks, panel, kernel, power/performance parity,
+CPU/GPU and local-LLM file access. Keep its pending gates aligned with the
+evidence linked there as results land. Full-height hardware acceptance, dock
+stability/sleep, Touch ID, factory hardware boot and matched macOS comparisons
+remain open; this documentation pass does not complete those gates.
+
 ## YouTube assets on fresh installs — 2026-10-18
 
 The default enhancement payload now installs the YouTube launcher and scalable
