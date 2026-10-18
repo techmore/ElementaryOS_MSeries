@@ -74,3 +74,18 @@ Open: whether Boot B froze later, whether a hardware watchdog/SMC reset (not a
 kernel panic) is the cause, and the tas2764 devicetree warning (new on this
 kernel/DTB; stock kernel path unchecked). Stock `7.1.13-3-2-ARCH` is stable and
 remains the default. No further Aurora boots until the owner decides.
+
+## Boot B outcome — 2026-10-17 22:04:50–22:06:23, and the dock
+
+Boot B survived past 33 s and ran 93 s. At 22:05:52 (owner touched the dock/USB-C)
+the kernel removed both xHCI controllers and the Apple ATC PHY logged
+`Pipehandler lock not acked` / `Failed to lock pipehandler`; the journal ends
+about 31 s later with no panic. So the Aurora kernel mishandles a USB-C/dock
+event, and that is a strong candidate for at least this crash. Boot A and the
+first boot (~33–34 s) had no dock event in the log, so they remain unexplained.
+The Aurora kernel has none of the fairydust USB4 work, so the dock (hub, mouse,
+Ethernet) does not work there. Dock and Touch ID cannot share a kernel yet.
+
+Touch ID app: installed as "Touch ID" (`~/.local/bin/mseries-touchid-settings`,
+desktop entry in `~/.local/share/applications`); source in `mseries/aurora-touchid/`.
+Enrollment only works on the Aurora kernel, dock unplugged.
