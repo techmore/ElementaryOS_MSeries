@@ -196,8 +196,10 @@ def build(root, output, jobs):
         validate_kernel(payload, actual)
         modprobe = payload / "usr/lib/modprobe.d"
         modprobe.mkdir(parents=True)
-        shutil.copy2(root / "recipe/linux-aurora-phram.conf", modprobe)
         name = "linux-image-elementary-aurora-enhancements" + ("-egpu" if receipt["profile"] == "egpu" else "")
+        # A shared filename would make dpkg reject co-installation with .20
+        # (or the other candidate profile), even when its content is identical.
+        shutil.copy2(root / "recipe/linux-aurora-phram.conf", modprobe / f"{name}-phram.conf")
         docs = payload / "usr/share/doc" / name
         docs.mkdir(parents=True)
         shutil.copy2(source / "COPYING", docs)

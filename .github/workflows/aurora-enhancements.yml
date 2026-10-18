@@ -67,6 +67,9 @@ jobs:
           dpkg-deb --extract "${deb[0]}" "$RUNNER_TEMP/candidate-inspect"
           test ! -e "$RUNNER_TEMP/candidate-inspect/boot"
           test ! -e "$RUNNER_TEMP/candidate-inspect/etc"
+          test ! -e "$RUNNER_TEMP/candidate-inspect/usr/lib/modprobe.d/linux-aurora-phram.conf"
+          pkg=$(dpkg-deb --field "${deb[0]}" Package)
+          test -f "$RUNNER_TEMP/candidate-inspect/usr/lib/modprobe.d/$pkg-phram.conf"
       - name: Preserve resolved configuration on failure
         if: failure()
         uses: actions/upload-artifact@v4

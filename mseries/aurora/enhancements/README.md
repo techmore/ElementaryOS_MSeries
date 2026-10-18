@@ -69,7 +69,8 @@ python3 mseries/aurora/candidate.py build --prepared /absolute/work/aurora-enh1 
 The full config is resolved with `olddefconfig`, then checked for Rust, Apple
 display/SEP/USB4, 16K pages and requested memory/eGPU settings before compilation.
 The candidate release is `7.1.12-elementary-aurora20-enh1` (or `-egpu`). Its
-module directory and Debian package name are separate from `.20`. Artifacts
+module directory, Debian package name and modprobe filename are separate from
+`.20` and the other candidate profile, so their file ownership does not collide. Artifacts
 include a payload-only `.deb` using zstd level 3 with bounded parallel compression,
 complete patched corresponding source, resolved
 config, patch series, licenses, tool versions and checksum/provenance receipts.
