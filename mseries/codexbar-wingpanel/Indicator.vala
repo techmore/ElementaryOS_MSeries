@@ -589,12 +589,8 @@ namespace MSeries {
 
         // Upstream only imports opencode.ai cookies on macOS; our helper takes an API key (or a built-in sign-in) instead.
         private void add_opencode_account () {
-            ask_to_save ("Sign in to OpenCode Go",
-                "Connect your OpenCode Go usage to CodexBar.",
-                "Continue", "opencode", () => {
-                    run_saver.begin ({ "python3", helper_path ("codexbar-opencode-login.py"), "login" },
-                        "OpenCode Go signed in", "Couldn't sign in to OpenCode Go", true);
-                });
+            run_saver.begin ({ "python3", helper_path ("codexbar-opencode-login.py"), "login" },
+                "OpenCode Go signed in", "Couldn't sign in to OpenCode Go", true);
         }
 
         private void add_claude_account () {

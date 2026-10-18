@@ -3320,3 +3320,13 @@ storage. Mocked end-to-end window response checks passed cancellation, invalid s
 with retry enabled, and successful validation/storage. These checks used an isolated non-unique GTK
 application, dummy keys and mocked network/storage; no real account was changed. Live sign-in was
 not repeated for this visual refinement. Publish, merge to main and deploy as authorized by the owner.
+
+
+## CodexBar: OpenCode + opens the key sheet directly — 2026-10-18
+
+Owner requested removal of the extra Continue popup. `add_opencode_account()` now starts the existing
+`codexbar-opencode-login.py login` helper immediately, opening the native API-key sheet in one click.
+Validation, storage, cancellation, result reporting and quota refresh retain the existing helper path.
+Claude and Codex onboarding are unchanged. Reviewed the OpenCode + callback and direct helper dispatch;
+built the module and passed all four Meson suites. No live credentials or account changes were needed.
+Upstream pin remains 0.77.0. Publish to main and deploy the merged revision as requested.
