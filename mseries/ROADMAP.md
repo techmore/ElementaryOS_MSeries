@@ -10,6 +10,30 @@ Ten new login tests and native build/tests pass; live approval-link/cancel smoke
 accounts. Remaining acceptance: owner browser approval for a distinct account and dropdown switch.
 See [the port notes](CODEXBAR-PORT.md#opencode-account-switching).
 
+## Month/Week/Day agenda views — 2026-10-18
+
+Implemented and deployed period selectors and arrows, grouped dates, readable
+source-colored cards with time/calendar/location/description, bounded scrolling
+and synchronized date selection. Tasks stays independent; Today retains the
+chosen mode. Replaced relative carousel bookkeeping with actual grid months to
+reject stale page notifications during opening/navigation.
+
+Ten isolated real-plugin/EDS workflow groups pass in light and dark modes and
+against the installed production library. Five merged-tree image-wiring tests
+and focused shell/whitespace checks pass; synthetic previews inspected. Wingpanel
+reloaded and mapped-library inode verified. Next: owner acceptance on real
+accounts; Google remote sync, other locales and factory boot remain separate.
+[Views and validation](calendar/README.md#month-week-and-day-views).
+
+## Fresh YouTube ISO qualification in progress — 2026-10-18
+
+Initial run 39126016747 failed before Brave staging because the calendar's GNOME
+Settings dependency is excluded by elementary's package policy. Both ARM64
+consumers and the Apple overlay now use the existing launcher's supported
+`gnome-online-accounts-gtk` frontend. Five image-wiring tests pass, including the
+package-policy regression. ISO rebuild, blank-disk installation, dock matching and
+in-guest YouTube playback remain pending.
+
 ## Calendar Today navigation regression resolved — 2026-10-18
 
 Repeated Today clicks during a return from another month could reuse the relative

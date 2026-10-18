@@ -19,6 +19,59 @@ pass with mocked authentication; the complete port checker passes including live
 The new login suite runs in CI and the port checker. Deploy with mseries/deploy-codexbar.sh after
 branch push and again from merged main; see CODEXBAR-PORT.md for flow and source references.
 
+## Month/Week/Day calendar agendas tested and deployed — 2026-10-18
+
+Owner requested Month, Week and Day views, tests, deployment, commit and merge.
+Events now has native mode toggles and a dated heading with period-aware arrows.
+The month grid remains the date picker; wider agendas group events by day,
+including recurring instances and multi-day overlaps with exclusive all-day
+ends. Rows show times/all-day state, calendar, location and short description;
+neutral cards retain a calendar-color edge and readable light/dark text. Lists
+scroll within a bounded pane. Day is the initial default; mode persists across
+popup reopen in the same panel process. Tasks remains independent.
+
+Expanded timing checks exposed a stale carousel notification selecting September
+while today's October events were expected. Navigation now uses each grid's
+actual month, ignores obsolete page indices, and explicitly synchronizes day
+highlight even when keyboard focus remains on popup controls. Rows retain their
+component/source-selectable references while displayed. No calendar writes were
+added to the plugin.
+
+Verification: pinned native ARM64 release build succeeds. Ten real-plugin/EDS
+workflow groups pass in both forced light and dark modes, covering Today and
+highlight, literal details, day/week/month filtering and arrows, all-day and
+recurring/multi-day events, December/January, empty states, mode retention,
+Tasks independence, live changes and source lifecycle. Inspected synthetic
+rendered previews for modes and scrolled details in light/dark. Fixtures use
+C.UTF-8/Sunday weeks; Google sync and other locales are separate qualification.
+The final merged tree passes five image-wiring tests, focused shell checks,
+README file links and whitespace checks. Existing upstream build and isolated
+portal/EDS shutdown warnings remain; no clean-log claim.
+
+Ran the maintained installer from the updated patch, then all ten workflow
+groups against `/usr/lib/aarch64-linux-gnu/wingpanel-9/libdatetime.so` (exit 0).
+Reloaded only Wingpanel: 730835 → 738444; new process maps installed calendar
+inode 314458 without deleted mappings. Pre-view plugin retained privately in
+this chat's work directory; version-aware stock backup is preserved. Merged
+current main's standalone-account factory changes without replacing them.
+Next: owner opens clock → Events and chooses Month/Week/Day on real accounts.
+Personal events/accounts, boot/kernel and audio configuration were not edited.
+Factory hardware boot and Google remote-sync acceptance remain separate.
+
+## ISO build retry: use the permitted account frontend — 2026-10-18
+
+Fresh-ISO run [39126016747](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39126016747)
+stopped during Apple overlay package selection before Brave staging:
+`gnome-control-center` has no candidate because elementary pins it to -1 in
+`deprioritize-gnome`. All three ARM64 image configs now select the Ubuntu universe
+`gnome-online-accounts-gtk` frontend instead; the existing account launcher already
+supports it. The GNOME package exclusion policy is preserved. Native archive
+metadata confirms arm64 candidate 3.50.9-1 and its GOA/GTK4 dependencies.
+
+Five image-wiring regressions pass, including a new prohibited-package check.
+This is a build-blocker fix, not a new ISO or fresh-install/playback pass. Next:
+retry the ISO build and then install/test its actual artifact in a blank KVM guest.
+
 ## Calendar Today navigation fixed and deployed — 2026-10-18
 
 Owner reported unexpected events after clicking the center month-navigation
