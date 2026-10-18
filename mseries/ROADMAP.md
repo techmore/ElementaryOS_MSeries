@@ -1,5 +1,23 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Complete Tasks from the panel — 2026-10-18
+
+Task rows now have accessible checkboxes that update the same EDS records as
+elementary Tasks. Pending saves disable repeat activation; read-only or
+unavailable lists disable completion. Failed saves restore the checkbox and
+show a retry error. Clicking a completion checkbox keeps the panel open.
+
+The model refetches the latest source/UID/recurrence record before changing it,
+preserving newer edits. EDS’s completion helper handles repeating tasks on a
+worker thread; saves record UTC modification time and sequence. Tests use only
+owned synthetic data on a private bus. Fourteen plugin/EDS groups pass, including
+checkbox completion metadata, stale edits, source identity, recurring
+advancement, failure recovery and all existing agenda modes/navigation.
+The release build is installed; real task/event row comparisons are read-only
+and pass. Six image-wiring tests pass. No personal task was completed by tests.
+[Behavior and tests](calendar/README.md#completing-tasks-in-the-panel).
+
+
 ## Factory pinned-component development dependencies — 2026-10-18
 
 The chroot retry staged Brave and compiled the network plugin, then identified
