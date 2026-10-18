@@ -244,8 +244,8 @@ migration remain ongoing; announcement targets are not hardware test results.
 
 The local `rust` branch starts from the available `origin/main` snapshot
 `b0a03548fd7003eceaf191d60dcb097bdd0c3c99`. Its path inventory currently has
-735 file records (653 M-series-maintained paths and 82 elementary-owned upstream
-inputs) grouped into 226 first-pass, path-derived components. Semantic project
+741 file records (659 M-series-maintained paths and 82 elementary-owned upstream
+inputs) grouped into 227 first-pass, path-derived components. Semantic project
 boundaries, source/license pins and a complete local conversion schedule remain
 open.
 Power and Wi-Fi resume have independent, not-installed Rust candidates with
@@ -255,6 +255,9 @@ socket/DNS cases against Python; daemon-level restart coverage and
 desktop-session qualification remain open. It is not installed beside the
 current Python service. The daily upstream watcher exists,
 but this branch still needs the daily/weekly build-and-review candidate lane.
+A Rust panel-provenance candidate also matches both Python factory tools on
+version, artifact, digest, ABI-path and filtering fixtures; the image build
+continues to use Python until an arm64 image candidate passes.
 
 ## Implemented; runtime validation pending
 

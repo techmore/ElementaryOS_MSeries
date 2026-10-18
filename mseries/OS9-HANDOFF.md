@@ -2433,19 +2433,25 @@ same database.
 Focused Rust validation passed: `cargo fmt --check`, eight unit tests including
 SQLite flush/schema round trip and failure/retry restoration, 16 shared-fixture comparisons against the
 Python socket and DNS event parsers, `cargo clippy --all-targets -- -D warnings`,
-release build, inventory check (735 items: 653 local, 82 elementary) and
+release build, inventory check (741 items: 659 local, 82 elementary) and
 `git diff --check`. Socket and DNS event parsing have same-fixture differential
 coverage; full daemon restart/flush/retry comparison, install/rollback rehearsal and
 desktop-session qualification remain open. The candidate uses the `sqlite3` CLI.
 
 The inventory now includes all scoped files rather than only selected source
-extensions: 735 paths are assigned to 226 first-pass path-derived component
+extensions: 741 paths are assigned to 227 first-pass path-derived component
 groups. This added extensionless hooks, workflow files, documents and inputs;
 semantic component boundaries and conversion status still need review.
 
+The panel provenance candidate adds Rust `verify` and `record` commands for the
+existing factory pin gate. Its unit checks and Python/Rust fixtures cover package
+version acceptance/rejection, `--only`, `--skip-plugins`, artifact output,
+missing plugins and digest mismatch. The image still invokes the Python tools;
+full arm64 image admission remains open.
+
 The Rust branch and this batch remain local. Public push was rejected by the
 automatic approval review because it would publish repository contents; no
-push or external publication has occurred. Next: build the netusage differential
-harness, then continue with the separately inventoried brightness and keyboard
-backlight services. Full semantic inventory and daily/weekly candidate build
+push or external publication has occurred. Next: qualify the Rust panel tools
+through a full arm64 image build, then continue with the brightness and keyboard
+backlight components. Full semantic inventory and daily/weekly candidate build
 automation remain open.

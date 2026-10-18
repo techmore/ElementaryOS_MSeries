@@ -1,0 +1,15 @@
+[package]
+name = "mseries-panel-provenance"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Rust candidates for the M-series factory panel pin and artifact tools"
+license = "GPL-3.0-or-later"
+
+[[bin]]
+name = "mseries-panel-provenance-rs"
+path = "src/main.rs"
+
+[dependencies]
+serde_json = "1.0"
+sha2 = "0.10"

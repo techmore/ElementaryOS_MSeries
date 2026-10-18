@@ -24,6 +24,7 @@ RUST_CANDIDATE_PREFIXES = (
     "mseries/rust/mseries-power/",
     "mseries/rust/wifi-resume/",
     "mseries/rust/netusage/",
+    "mseries/rust/panel-provenance/",
 )
 EXCLUDED_PARTS = {".git", "__pycache__", "target", "build", ".pytest_cache"}
 LANGUAGES = {

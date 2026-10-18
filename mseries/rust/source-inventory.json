@@ -13,8 +13,8 @@
     "mkosi.conf",
     "packages.arm64"
   ],
-  "item_count": 735,
-  "component_count": 226,
+  "item_count": 741,
+  "component_count": 227,
   "components": [
     {
       "id": "apt-repository/common-files",
@@ -2502,6 +2502,22 @@
         "mseries/rust/netusage/netusage-rs.service",
         "mseries/rust/netusage/src/main.rs",
         "mseries/rust/netusage/test-parity.py"
+      ]
+    },
+    {
+      "id": "mseries/rust/panel-provenance",
+      "ownership": "mseries-maintained",
+      "item_count": 6,
+      "rust_status_counts": {
+        "candidate-parity-verified-not-installed": 6
+      },
+      "items": [
+        "mseries/rust/panel-provenance/.gitignore",
+        "mseries/rust/panel-provenance/Cargo.lock",
+        "mseries/rust/panel-provenance/Cargo.toml",
+        "mseries/rust/panel-provenance/README.md",
+        "mseries/rust/panel-provenance/src/main.rs",
+        "mseries/rust/panel-provenance/test-parity.py"
       ]
     },
     {
@@ -9085,6 +9101,60 @@
       "language": "python",
       "role": "verification",
       "rust_status": "candidate-functional-tests-passing-not-installed"
+    },
+    {
+      "id": "mseries/rust/panel-provenance/.gitignore",
+      "path": "mseries/rust/panel-provenance/.gitignore",
+      "component_id": "mseries/rust/panel-provenance",
+      "ownership": "mseries-maintained",
+      "language": "binary-or-data",
+      "role": "implementation",
+      "rust_status": "candidate-parity-verified-not-installed"
+    },
+    {
+      "id": "mseries/rust/panel-provenance/Cargo.lock",
+      "path": "mseries/rust/panel-provenance/Cargo.lock",
+      "component_id": "mseries/rust/panel-provenance",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "candidate-parity-verified-not-installed"
+    },
+    {
+      "id": "mseries/rust/panel-provenance/Cargo.toml",
+      "path": "mseries/rust/panel-provenance/Cargo.toml",
+      "component_id": "mseries/rust/panel-provenance",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "candidate-parity-verified-not-installed"
+    },
+    {
+      "id": "mseries/rust/panel-provenance/README.md",
+      "path": "mseries/rust/panel-provenance/README.md",
+      "component_id": "mseries/rust/panel-provenance",
+      "ownership": "mseries-maintained",
+      "language": "markdown",
+      "role": "documentation-or-record",
+      "rust_status": "candidate-parity-verified-not-installed"
+    },
+    {
+      "id": "mseries/rust/panel-provenance/src/main.rs",
+      "path": "mseries/rust/panel-provenance/src/main.rs",
+      "component_id": "mseries/rust/panel-provenance",
+      "ownership": "mseries-maintained",
+      "language": "rust",
+      "role": "implementation",
+      "rust_status": "candidate-parity-verified-not-installed"
+    },
+    {
+      "id": "mseries/rust/panel-provenance/test-parity.py",
+      "path": "mseries/rust/panel-provenance/test-parity.py",
+      "component_id": "mseries/rust/panel-provenance",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "candidate-parity-verified-not-installed"
     },
     {
       "id": "mseries/rust/wifi-resume/.gitignore",

@@ -59,10 +59,10 @@ has been inventoried.
 its declared build/customization scope a path record and a first-pass
 `component_id`. It now includes documentation, extensionless hooks, presets,
 and packaged data as well as source files. Current grouping is path-derived:
-226 component groups cover 735 file records (653 local and 82 elementary-owned
+227 component groups cover 741 file records (659 local and 82 elementary-owned
 upstream inputs). Those IDs still need review against semantic project
 boundaries, source licenses, interfaces, and conversion contracts. Power and
-Wi-Fi candidate files are marked `candidate-parity-verified-not-installed`;
+Wi-Fi and panel-provenance candidate files are marked `candidate-parity-verified-not-installed`;
 network-usage candidate files are `candidate-functional-tests-passing-not-installed`.
 Documentation and binary inputs are recorded as non-code inputs; other local
 items remain `not-assessed`. CI checks that the generated inventory matches
@@ -98,6 +98,7 @@ or complete the semantic ownership audit.
 | `mseries-power` | Privileged charge/power command and profile policy | Rust candidate implemented in its own crate; not installed by default | Thirteen differential cases currently pass; full contracts and target-device qualification remain open; see `mseries-power/README.md` |
 | M-series Wi-Fi resume recovery | Root service and helper | Rust candidate implemented in its own crate; not installed in suspend hooks | Twelve differential cases currently pass; firmware and target-device qualification remain open; see `wifi-resume/README.md` |
 | Network-usage logger | User service, SQLite state and DNS/network events | Rust daemon candidate added; Python remains the only installed service | Eight focused tests, five same-fixture socket-parser cases and eleven resolved-event cases pass; daemon restart and device-session qualification remain open; see `netusage/README.md` |
+| Factory panel provenance tools | Package-version, ABI-path and plugin-digest gate used during image assembly | Two-command Rust candidate added; Python remains wired into the image build | Rust unit checks and Python/Rust command parity fixtures pass; image integration and complete arm64 build admission remain open; see `panel-provenance/README.md` |
 | Brightness bridge | D-Bus integration/service | Candidate for an independent Rust implementation | Compare D-Bus names, methods, errors and display behavior before cutover |
 | Keyboard-backlight service | M-series sensor and backlight policy | Candidate for an independent Rust implementation | Compare sensor bounds, manual override, lock/lid and suspend behavior before cutover |
 | Image/install orchestration | `bin/`, `transform/`, mkosi hooks and installer scripts | Rust migration target for each M-series-owned executable; keep upstream mkosi/system tools as dependencies | Preserve resume, status, abort, rollback and failure semantics before each cutover |
@@ -206,8 +207,12 @@ individually.
   systemd unit. Eight focused parser, DNS, counter-delta, retry and SQLite-schema tests plus 16
   same-fixture Python/Rust socket/DNS cases pass. It is not installed;
   daemon restart and desktop-session checks remain open.
-- The full file inventory currently contains 735 items (653 M-series-maintained
-  and 82 elementary-owned upstream inputs) grouped into 226 first-pass
+- The factory panel provenance gate has Rust `verify` and `record` commands.
+  Its package/version checks, ABI-path checks, SHA-256 artifact records,
+  `--only` filter and `--skip-plugins` behavior match the Python tools across
+  fixture scenarios. The image build still calls Python pending integration review.
+- The full file inventory currently contains 741 items (659 M-series-maintained
+  and 82 elementary-owned upstream inputs) grouped into 227 first-pass
   components. Most local code/configuration/patch items still need semantic
   ownership review, a conversion contract, and a parity plan.
 - The source-by-source register is still incomplete. Daily upstream monitoring
