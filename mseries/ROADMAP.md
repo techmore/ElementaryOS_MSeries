@@ -45,6 +45,16 @@ loaded its new module. Authenticated read-only comparisons with real Google
 events and Tasks pass without logging titles or modifying records. Four image
 wiring tests pass. Factory build/boot remains unverified.
 
+## OpenCode browser accounts from CodexBar + — 2026-10-18
+
+The native Connect sheet now offers browser sign-in to save a second OpenCode account for
+existing dropdown switching. Official CLI device login stores/activates it; previous credentials
+are verified intact. API-key setup remains available. Duplicate accounts, cancellation and
+abandoned attempts have explicit handling; account/plan/usage refresh follows completion.
+Ten new login tests and native build/tests pass; live approval-link/cancel smoke preserved saved
+accounts. Remaining acceptance: owner browser approval for a distinct account and dropdown switch.
+See [the port notes](CODEXBAR-PORT.md#opencode-account-switching).
+
 ## Month/Week/Day agenda views — 2026-10-18
 
 Implemented and deployed period selectors and arrows, grouped dates, readable

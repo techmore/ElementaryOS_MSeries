@@ -26,7 +26,7 @@ else
 fi
 rm -rf "$empty"
 
-for f in codexbar-accounts codexbar-claude codexbar-opencode-local codexbar-sessions; do
+for f in codexbar-accounts codexbar-claude codexbar-opencode-local codexbar-opencode-login codexbar-sessions; do
   python3 "$repo/mseries/test-$f.py" >/dev/null 2>&1 && ok "tests: $f" || bad "tests: $f"
 done
 python3 "$repo/mseries/test-codexbar-wrapper.py" >/dev/null 2>&1 && ok "tests: wrapper" || bad "tests: wrapper"

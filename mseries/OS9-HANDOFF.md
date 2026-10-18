@@ -45,6 +45,25 @@ loaded its new module. Authenticated read-only comparisons with real Google
 events and Tasks pass without logging titles or modifying records. Four image
 wiring tests pass. Factory build/boot remains unverified.
 
+## CodexBar OpenCode browser account onboarding — 2026-10-18
+
+OpenCode + now offers Sign in with browser in the existing native Granite sheet. The official
+OpenCode device-login CLI owns authorization, storage and activation; the helper validates the
+official approval URL, shows its code and verifies the new identity plus retention of every old
+credential ID. Duplicate identities prompt retry with another browser account/workspace. The
+API-key path and embedded quota-only fallback remain. Cancellation interrupts the CLI quietly;
+abandoned attempts time out. The dropdown refreshes accounts, identity, plan and usage after add.
+
+Verification: 10 new offline login tests, existing OpenCode/wrapper regressions, native ARM64
+build and four Meson suites; elementary light/dark initial/waiting/error renders. Installed
+OpenCode v2.0.32 produced a valid approval link in a live begin/cancel smoke test, preserving all
+saved IDs. No real second-account authorization was performed: owner must approve the other
+account in the browser, then use its dropdown Switch button. Upstream stays pinned at v0.77.0.
+All six GTK routing scenarios (browser success/cancel and API-key success/invalid/rejected/cancel)
+pass with mocked authentication; the complete port checker passes including live snapshot schema.
+The new login suite runs in CI and the port checker. Deploy with mseries/deploy-codexbar.sh after
+branch push and again from merged main; see CODEXBAR-PORT.md for flow and source references.
+
 ## Month/Week/Day calendar agendas tested and deployed — 2026-10-18
 
 Owner requested Month, Week and Day views, tests, deployment, commit and merge.
