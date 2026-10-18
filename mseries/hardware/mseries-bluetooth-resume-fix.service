@@ -1,0 +1,13 @@
+[Unit]
+Description=Recover a timed-out Apple Bluetooth controller after suspend
+After=suspend.target bluetooth.service
+
+[Service]
+Type=oneshot
+Environment=PATH=/usr/sbin:/usr/bin:/sbin:/bin
+ExecCondition=/usr/libexec/mseries/bluetooth-supported
+ExecStart=/usr/libexec/mseries/bluetooth-resume-fix
+TimeoutStartSec=120
+
+[Install]
+WantedBy=suspend.target

@@ -1,23 +1,93 @@
 # WD22TB4 dock video — state of play (read first)
 
-Updated 2026-10-16. This is the cumulative frontier ledger. Preserve measured
+> **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
+> Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
+> Aurora has j314s Thunderbolt-display prior art; check it before more RE. This dock HDMI path remains unqualified.
+> Gates, prior art and rules: [PRIMARY-GOAL.md](PRIMARY-GOAL.md).
+
+Reviewed 2026-10-17; historical hardware records follow. No new boot was performed by the code audit. This is the cumulative frontier ledger. Preserve measured
 advances and do not re-run discovery without a new reason.
 
-## Resume pointer — 2026-10-16 (evening)
+## Aurora upstream port — offline candidate, 2026-10-17
 
-Latest measured result: the second controlled boot **cleared the DP-IN
-activation gate** (`-67` did not recur) and now fails one layer up at
-`DP source preparation failed: -110` — the DCP firmware never completes
-`linkcfg_completion` within the 2 s `DPTX_CONNECT_TIMEOUT` (`dcp.c:436`). See
-[evidence/2026-10-16-controlled-test-second-boot-dpin-gate-cleared.md](evidence/2026-10-16-controlled-test-second-boot-dpin-gate-cleared.md).
+The owner requested the upstream port. `mseries/aurora/` now packages the
+unchanged Aurora `.20` kernel and stages its matching m1n1 + full J314S DTB
+from an explicit boot.bin copy. The new `elementary-aurora20` entry preserves
+.19/Fairydust entries; neither installer nor staging tool deploys boot.bin or
+arms a boot. Guide: [Aurora port](../../aurora/README.md). Package/DT checks and
+regressions pass locally; **no new hardware result**, so G2–G5 are unchanged.
+The last E4 installation record below remains the last retained hardware state.
+Fallback compatibility of the global DT/m1n1 change is still unqualified.
 
-In progress: patch `0012` (`0012-experimental-appledrm-dpin-diagnostics.patch`)
-adds `DPINDBG` logging to the DCP link-config path. Built against rev `46bb8b6`,
-installed into the `elementary-usb4-dpin-controlled` initramfs
-(`486be1d9…` → `a6db46fa…`; original saved as `initramfs-controlled-original.img`),
-and that one-shot boot is armed (`next_entry=elementary-usb4-dpin-controlled`).
-After the boot: `sudo dmesg | grep DPINDBG`. Full state, rollback and artifacts:
-[evidence/2026-10-16-dpin-dbgboot-instrumentation.md](evidence/2026-10-16-dpin-dbgboot-instrumentation.md).
+## Latest recorded hardware state — 2026-10-17 (E4 armed; boot outcome not recorded)
+
+The following is the last retained installation record, not a fresh read of the machine.
+Read [the code-audit validation and limits](DOCK-CODE-REVIEW.md) before collecting another run.
+E4 disables built-in HDMI and is not covered by the older fallback-preserving installer contract.
+
+**The E4 record reports it installed and armed at capture time.** `boot.bin` now carries the
+patch-0015 j314s tree (dcpext0 drives the tunnel) plus today's Touch ID DT
+edits; `next_entry=elementary-usb4-dpin-controlled` (bypass=1, E3 image). E2
+was already disarmed. Built-in HDMI has no controller while E4 is installed.
+Record, checks and rollback:
+[evidence/2026-10-17-e4-armed.md](evidence/2026-10-17-e4-armed.md).
+
+## Earlier planning snapshot — 2026-10-17 (superseded by E4 armed record)
+
+**Read first:** [evidence/2026-10-17-macos-baseline-dcpext0.md](evidence/2026-10-17-macos-baseline-dcpext0.md).
+On macOS 27.0.1 the same Mac → WD22TB4 → dock HDMI → monitor chain trains a
+4-lane HBR3 link ~90 ms after HPD, so the sink path works. macOS routed
+`atc1-dpin0` to **`dispext0,0` (dcpext0, DPTX port 0)**; every Linux run used
+`dcpext1` (`dispext1,0`). The live ADT matches the shipped DP-IN metadata
+(no DT address/IRQ change). Timing (2 s connect timeout) is ruled out.
+
+**Plan at that earlier checkpoint (superseded): E4** — patch `0015` (`ENABLE_DCPEXT0_TB_TUNNEL`) moves the tunnel to
+dcpext0; staged in the repo only, not built or booted. E2 is still armed for
+the next Linux boot and still targets dcpext1; the owner decides whether to
+clear it and run E4 first. Gates are in the evidence note.
+
+## Resume pointer — 2026-10-16 (after the E1 boot)
+
+**E1 has RUN. Read its result first.** The one-shot boot
+(`next_entry=elementary-usb4-dpin-controlled`) was consumed; the E1 image
+(`46116374…`) is still installed on that entry. Outcome:
+[evidence/2026-10-16-e1-boot-outcome-firmware-device-not-responding.md](evidence/2026-10-16-e1-boot-outcome-firmware-device-not-responding.md).
+
+E1 did what it promised — a tunnel-mode `set_hpd` failure is no longer fatal and
+the tunnel waited ~5 s, not 1 s — but the firmware still never configured the
+link. The `-67` in the `connect_source` line is **our** reply to the firmware's
+call 22 (`dptxport_call` maps `DEVICE_NOT_RESPONDING`/`DEVICE_NOT_STARTED`/
+`INACTIVE_SINK_DETECTED` to `dptxport_tunnel_reply(..., -ENOLINK)`), **not** a
+firmware-returned error and **not** a timeout. So:
+
+- `set_hpd` (H3) is **cleared** as the wall.
+- The firmware's own last substantive word before teardown was
+  `DEVICE_NOT_RESPONDING` (call 22), with the tunnel DCP's RTKit syslog still
+  **13** for the whole boot and no `idx=7,13,15,5,12,9,6` link-config sequence.
+- H1 (firmware blocked on the sink-facing path) is the leading hypothesis; H2
+  (`set_hpd` is the wrong/unsupported tunnel command) is not excluded — the
+  firmware still never answers `set_hpd(1)` (it does answer `set_hpd(0)`).
+
+Monitor ownership during that boot: **on the dock HDMI, no reaction** (no wake /
+no source search) — the visible-wake gate stays unmet. External connectors all
+`disconnected` (`card2-DP-1`, `card2-HDMI-A-1`); eDP only.
+
+**Next (owner-gated, one reboot each):** E3 (instrument the DP-IN HPD notifier
+and the host DP-IN AUX/DPCD status at failure — cheapest, distinguishes "no sink"
+from "no AUX"); then E2 (**unbypassed DPRX**, `dprx_bypass=0` — decisive on the
+sink question, the documented §9 hazard, arm the bypass before touching a cable);
+then the macOS m1n1-hypervisor trace (`MACOS-TRACE-RUNBOOK.md`) if E2/E3 do not
+resolve it.
+
+**E3 is now staged (2026-10-16).** Patch `0014` adds DP-IN HPD producer logging
+(`DPINDBG irq:` / `hpd_notifier event=`, plus `init/exit/power_on/power_off`
+state dumps). `phy-apple-dpin.ko` `9d43d6e7…`, build-id `7beaacf6…`. The E3
+image `2c036651…` is installed on `elementary-usb4-dpin-controlled` (bypass=1);
+a paired, **un-armed** E2 entry `elementary-usb4-dpin-nobypass`
+(`dprx_bypass=0`, same image) was added to `custom.cfg` so one reboot can run
+both. **E2 is now ARMED for the next reboot** (`next_entry=elementary-usb4-dpin-nobypass`,
+bypass=0, E3 image; owner decision 2026-10-16). Record:
+[evidence/2026-10-16-e3-dpin-hpd-instrumentation.md](evidence/2026-10-16-e3-dpin-hpd-instrumentation.md).
 
 ## First live boot of the bridge — outcome (2026-10-16)
 
@@ -119,7 +189,13 @@ DP-IN activation gate (`-ENOLINK`) plus a `dpin_init` Oops on the retry — see
 the first section above. **Update (second controlled boot):** the `dpin_init`
 Oops did not recur (0011 stale-PHY guard holds) and the DP-IN activation gate
 cleared; the failure is now the DCP firmware link-config timeout (`-110`, 2 s) —
-see the second-boot section above.
+see the second-boot section above. **Update (E1 boot):** with the tunnel-mode
+`set_hpd` failure made non-fatal and an 8 s linkcfg window (patch `0013`), the
+`-110` wall is cleared (the tunnel waited ~5 s), but the firmware still never
+configured the link and reported `DEVICE_NOT_RESPONDING` (call 22). The `-67` is
+our reply to that call, not a firmware error and not a timeout; H1 (sink-facing)
+leads, H2 (`set_hpd`) is not excluded. Frontier = sink/AUX. Outcome:
+[evidence/2026-10-16-e1-boot-outcome-firmware-device-not-responding.md](evidence/2026-10-16-e1-boot-outcome-firmware-device-not-responding.md).
 
 Current authorization: the owner now permits installation, reboot and cable
 changes when needed, but wants them batched. This supersedes earlier bans.
@@ -149,8 +225,8 @@ retain module layout even when BTF data generation is skipped.
 | M0: downstream sink presence | dock DP OUT reports HPD | **MET**: `1:14` HPD=1, `1:13` HPD=0 in the recorded live test |
 | Correct tunnel target | host DP IN paired with HPD adapter | **MET** after independent 0003: `0:5 <-> 1:14` |
 | Host DP-IN activation | DP-IN INACTIVE-ACK handshake succeeds with HPD high (no `phy poweron failed`, no activation-failure log) | **MET** on the second controlled boot (2026-10-16 20:50) |
-| DCP DP link configured | DCP firmware sends `set_active_lane_count` (linkcfg completion) | **NOT MET**: `-110` (`DPTX_CONNECT_TIMEOUT`, 2 s) |
-| Visible monitor wake | monitor visibly leaves standby/searches for source in response to a recorded action | **NOT DEMONSTRATED** |
+| DCP DP link configured | DCP firmware sends `set_active_lane_count` (linkcfg completion) | **NOT MET**: E1 boot showed no link-config sequence; firmware reported `DEVICE_NOT_RESPONDING` (call 22) ~5 s after ACTIVATE |
+| Visible monitor wake | monitor visibly leaves standby/searches for source in response to a recorded action | **NOT DEMONSTRATED** (owner: monitor on dock HDMI, no reaction during the E1 boot) |
 | M1: host feeds the tunnel | real DPRX completion with bypass OFF, no timeout | **NOT MET**: timeouts remain on `0:5 <-> 1:14` |
 | M2: display detected | DRM connected, EDID/valid mode, no firmware link failure | **NOT MET** |
 | M3: picture through dock | visible output from dock HDMI with matching mode | **NOT MET** |
@@ -282,6 +358,8 @@ a DP-altmode reference, not the M1 USB4 tunnel protocol.
 
 ## Evidence index
 
+- [E3: DP-IN HPD producer instrumentation — prepared and staged](evidence/2026-10-16-e3-dpin-hpd-instrumentation.md)
+- [E1 boot result: `set_hpd` cleared as the wall, firmware reports the sink "device not responding"](evidence/2026-10-16-e1-boot-outcome-firmware-device-not-responding.md)
 - [Second controlled-test boot: DP-IN gate cleared, DCP link-config timeout](evidence/2026-10-16-controlled-test-second-boot-dpin-gate-cleared.md)
 - [DP-IN debug boot: instrumenting the DCP link-config path](evidence/2026-10-16-dpin-dbgboot-instrumentation.md) (patch `0012`, armed 2026-10-16)
 - [First controlled-test boot outcome](evidence/2026-10-16-controlled-test-first-boot-outcome.md)
@@ -303,3 +381,75 @@ a DP-altmode reference, not the M1 USB4 tunnel protocol.
 - [Pantheon fails to start on the dptunnel entries: gala aborts in mutter KMS modeset after a DRM hotplug](evidence/2026-10-16-pantheon-session-crash-on-dptunnel-entries.md)
 
 Keep raw Apple binaries, decompiler output and raw machine captures private.
+
+## 2026-10-18 04:37 — Aurora `.20` + upstream-matched `boot.bin`: highest gate reached G4 (DCP side); NO picture
+
+Payload: kernel `7.1.12-2-20261017.20-sep-ARCH`, `/boot/m1n1/boot.bin` = m1n1-aurora
+1.6.1.aurora17-5 + the release's J314S tree (sha256 `9c9c2d01c3bdb278…`), entry
+`elementary-aurora20`, SEP driver loaded, dock plugged in ~2 minutes after boot, then unplugged
+at 04:37:24 by the owner. The machine **did not hang** on the hot-plug or unplug.
+
+Log evidence (`journalctl -k`, boot 0 of that session):
+- **G0:** `thunderbolt 0-1: new device found ...` / `Dell WD22TB4 Thunderbolt Dock`, retimer found,
+  `usb 1-1: ... Fresco Logic USB2.0 Hub`, `pcie-apple b30000000.pcie: Link up`.
+- **G1/G2:** `apple-dcp 289c00000.dcp: display routed to Thunderbolt DP tunnel dpin0`,
+  `dcp_dptx_connect_session(port=0) ... tunnel=1 typec=1 route=borrowed`, `GET_SUPPORTS_HPD 1 usb4=1`.
+- **G3:** `DPTXPort: SET_LINK_RATE 0x1e`, `USB4/DPTX: SET_ACTIVE_LANE_COUNT 4` (also
+  `set_active_lane_count: unexpected lane count:4 phy: 0` warning).
+- **G4 (DCP side):** `display HPD asserted`, `DCP property key=TimingElements ... nr_modes=44`,
+  `dcp_hotplug() connected:1 valid_mode:0 nr_modes:44`, then
+  `set_digital_out_mode ... "4096x2160": 60` and later `"1920x1080": 60` (10-bit).
+  **Not captured:** the DRM connector's `status` while docked (only checked after the unplug).
+- **G5: not met.** The owner reports the external screen "pretends it's seen" but displays nothing.
+- Teardown on unplug: `INACTIVE_SINK_DETECTED (keep waiting for lanes)` then DEACTIVATE,
+  `phy-apple-atc: Pipehandler lock not acked / Failed to lock pipehandler`,
+  `pcie-apple ... tunnel reset acknowledgment timed out` (all on the unplug path).
+
+Interpretation (unproven): the DCP firmware trained a 4-lane link and parsed EDID modes through the
+Aurora path, which the fairydust experiments never reached, so G3 is cleared on this stack. The
+missing step is between "DCP thinks it is scanning out" and light on the panel (DP-IN stream
+enable / tunnel bandwidth, the monitor's own cable path, or the compositor not enabling the new
+output). Next dock session: capture `/sys/class/drm/card*-DP-*/status`, `modetest -c`, and
+Gala's monitor list while docked; try the HDMI monitor on the dock's other output; try the
+second USB-C port. Everything else (unplug teardown noise) is secondary.
+
+## 2026-10-18 04:43 — G5 MET: picture on the dock monitor (Aurora `.20` + matched `boot.bin`)
+
+**Result:** the owner reports the dock monitor is displaying the desktop (WD22TB4, J314S, dock
+plugged at ~04:42, kernel `7.1.12-2-20261017.20-sep-ARCH`, `elementary-aurora20`, SEP driver loaded).
+
+**What made the difference (one variable):** Gala picked the monitor's preferred mode,
+`3840x2160@30` (xrandr showed a 7680x4320 logical canvas at scale 0.5), and the screen stayed
+dark while DRM said `DP-2 connected / enabled`, EDID 256 bytes, 38 modes. At 04:43:05 the
+external output only (built-in untouched) was switched through Gala's
+`org.gnome.Mutter.DisplayConfig` (`ApplyMonitorsConfig`, temporary) to `1920x1080@60.000`:
+
+    apple-dcp 289c00000.dcp: set_digital_out_mode(color:108 timing:76) "1920x1080": 60 148500 ... 0x40
+    ... depth:10 format:0 colorimetry:10
+
+and the picture appeared. Earlier 1080p60 sets on 04:37/04:39 (before this) were not accompanied
+by a reported picture, so the trigger may be the specific modeset sequence (this one
+started from the 4K30 state) rather than the resolution alone — unproven.
+
+Gates: G0-G4 met as logged above (`DP-2 connected enabled`, `Dell WD22TB4`, link rate `0x1e`,
+4 lanes, EDID); **G5 met 2026-10-18 ~04:43, owner-confirmed by eye**. Not yet established: whether
+4K30/4K60 can be made to work, whether it survives replug, suspend, a reboot, or the HDMI
+port's other monitors; whether the dock's Ethernet works on this stack.
+
+Tool: `mseries/display-profiles/mseries-display-profiles` (apply/nudge helpers) and the
+Display Settings app already talk to the same D-Bus API; the nudge logic (`nudge_modes`, SAFE
+modes 1920x1080@60/59.94) is exactly what recovered this. Next: save a display profile for the
+docked layout, test replug/suspend/reboot, then try 4K60.
+
+### Correction/addendum 04:44 — why the picture stopped and flickered
+
+The picture seen at 04:43:05 lasted ~4 s because the user's own autostart daemon
+`mseries-display-profiles watch` re-applied the saved profile `desk-4k` (3840x2160@30) on the
+resulting `MonitorsChanged` (04:43:09 `set_digital_out_mode ... "3840x2160": 30`). So:
+**1080p60 gives a picture; the saved 4K30 profile gives a dark screen (and the flip between
+them looked like flicker).** The profile `desk-4k` (monitor id `INS:NS65…`) now stores
+`1920x1080@60.000` for the external (backup `~/.config/mseries/display-profiles.json.pre-1080p-*`);
+after one extra re-apply (60.000 / 59.94 timings alternating 04:43:36-41) no further modesets
+were logged through 04:43:54. G5 is therefore met at 1080p60 only; whether it holds across
+minutes, replug, suspend and reboot, and whether 4K works at all, are open. The name `desk-4k`
+is now misleading; rename when stable.

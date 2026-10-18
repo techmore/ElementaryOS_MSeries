@@ -186,7 +186,15 @@ when the current selection allows it. Other explicit single-provider
 selections are preserved; switch to **custom** and add `opencodego` in
 Settings → Providers to request CodexBar's account-level OpenCode Go provider.
 
-The Wingpanel menu also reads OpenCode v2's `~/.local/share/opencode/opencode.db`
+The Wingpanel menu has a **Sessions** section (`codexbar-sessions.py`,
+read-only, ~0.1 s) with a status dot for ChatGPT/Codex, Claude Code and
+OpenCode: signed-in state is judged from each tool's own files (never
+printed), and Claude Code and OpenCode show requests and tokens over 5 hours
+and 7 days from their local history. This is local activity, not account
+quota. Claude account quota in CodexBar needs a claude.ai session or Claude
+CLI credentials, which a desktop-app-only sign-in does not provide.
+
+The OpenCode v2 reader (`codexbar-opencode-local.py`) also reads `~/.local/share/opencode/opencode.db`
 directly in SQLite read-only mode. It shows local cost-bearing OpenCode Go
 assistant records over 5 hours, 7 days, and 30 days, labeled **local estimate ·
 not account quota**. This works with the v2 OAuth credential stored in
@@ -659,6 +667,15 @@ minute. Raise the volume slowly. Revert: `bash mseries/install-audio-stack.sh --
 edge to snap it to that half. `Super+Left` and `Super+Right` tile the focused
 window to a half (`org.gnome.mutter.keybindings toggle-tiled-left/right`); with
 the Command/Ctrl swap that is physical left Ctrl plus the arrow key.
+
+`bash mseries/install-window-snapping.sh` installs OS-level dconf defaults and
+locks so snapping stays enabled after settings resets. It also builds native
+quarter snapping for Gala 8.6.2 / Mutter 50: drag into any screen corner, or use
+Super+Alt+U/I/J/K for top-left/top-right/bottom-left/bottom-right. Super+keypad
+7/9/1/3 also works. Quarters activate at the next sign-in; the installer leaves
+open apps running. See [window-snapping/README.md](window-snapping/README.md)
+for verification and removal. Factory staging carries the half-snap policy;
+the quarter plugin requires the native installer build.
 
 The built-in 3024x1890 panel defaults to a 2.0 scale, which looks large. Gala
 offers 1.0, 1.5, 1.75 and 2.0; 1.5 is the practical smaller setting. Apply it

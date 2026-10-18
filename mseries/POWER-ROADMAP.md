@@ -1,5 +1,44 @@
 # Power and battery-life roadmap
 
+## Kernel trial and measurements started — 2026-10-18
+
+`.20-enh1` is staged and one-shot armed with .20 as the later-boot fallback.
+[Protocol and rollback](aurora/trial/README.md). A new 120-second .20 capture
+passed boot/PMP/idle and GPU/filesystem smoke checks: 24.46 W median, 19.61/30.36
+p10/p90, n=121, CPU 31.0% busy under normal owner activity. This is observational;
+no idle or kernel power saving follows. Next-boot automatic capture retains
+active refresh/topology, exact artifact/live-build identity and CPU activity.
+Formal comparisons require settled, matched app/session/control state on both
+kernels; other pending login changes make these first captures unsuitable as
+paired energy evidence. Suspend/recovery and three alternating AB/BA pairs
+remain future gates.
+
+## Current Aurora implementation and qualification — 2026-10-18
+
+The owner's new kernel/release request authorizes the source port and frozen
+feature-release work in [the implemented plan](aurora/ENERGY-PORT-PLAN-2026-10-18.md).
+It supersedes the older "kernel: data only" task ownership below. The .20
+baseline already carries the J314S PMP/DCS fix, idle fabric governor, external
+scanout votes and optional Thunderbolt sleep controls. A fresh source comparison
+with the draft unified 7.2.10 rebase found no new M1 Pro energy implementation
+in those helpers to duplicate. VRR is already implemented in `.20` (the older
+"not confirmed" note below is superseded).
+
+The exact current kernel/boot/module/configuration identity now has scoped
+hardware evidence and an experimental freeze. Native source enhancement
+builds and a separately pinned PR #139 candidate are integrated. Suspend/
+recovery/steady workloads/paired energy results remain acceptance gates.
+The 64-fix review parity inventory keeps 7.2 build-only until shared GPU/SEP
+gaps are resolved. The `.20-enh1` lane retains all reviewed baseline fixes.
+Future energy captures record active refresh/VRR/layout/DPMS; exp1 did not
+capture active refresh and remains observational. Existing freeze/pin history
+is enforced in CI. No refresh, brightness, audio or sleep setting was changed; no watt saving is
+claimed. [Hardware status and policy](aurora/hardware-tests/README.md).
+Both native profiles passed CI run 39114197052. The exact `.20-enh1` build is
+published as a frozen build candidate with all eight asset digests verified;
+it has no hardware qualification. Baseline exp1 remains the only running-kernel
+freeze, with scoped hardware evidence.
+
 Owner request 2026-10-16: investigate every opportunity to lower light-load power and extend battery runs; document goals
 and a comprehensive plan. This is the single plan; evidence is in `POWER-OPPORTUNITIES-2026-10-16.md` and the optimization
 repo (`techmore/ElementaryOS_MSeries_Optimization`, `docs/RESULTS.md`). `EFFICIENCY-GOALS.md` keeps the original targets.
@@ -7,6 +46,14 @@ repo (`techmore/ElementaryOS_MSeries_Optimization`, `docs/RESULTS.md`). `EFFICIE
 Honesty rules (from earlier incidents): report medians and p10/p90, alternate A/B at least three times, never claim a win
 from one run, label every number *measured* or *estimate*, never change brightness, refresh rate or display power without
 the owner's explicit yes, and leave the kernel to DeepSeek and the audio stack and `speakersafetyd` to the owner.
+
+## Measurement workflow update (2026-10-17)
+
+See the [power documentation map](power/README.md), [baseline instructions](power/macos-baseline/README.md)
+and [generated parity checklist](power/macos-baseline/PARITY.md) (11 categories, 52 items).
+The retained macOS capture contains inventory and historical sleep only; active scenarios and matched Linux
+trials remain open. The fixed watt targets below are planning targets, pending measured macOS workload baselines.
+Dock HDMI has a separate branch frontier linked from the power map; older dock notes are historical evidence.
 
 ## 1. Goals
 
@@ -131,3 +178,69 @@ Exit criteria per phase: before/after medians in `RESULTS.md`, an uninstall path
 - Apps that render continuously can hide any system win; fix the app mix first.
 - Wayland mode may break an Electron app; the env var file is removable (`install-electron-wayland.sh --uninstall`).
 - Parity may not be reachable on Linux today (video decode codecs, deep sleep); the plan makes the gap measurable instead of assumed.
+
+## Observation log — 2026-10-18 (kernel `7.1.12-2-20261017.20-sep-ARCH`, Aurora `.20`) — NOT an A/B result
+
+SMC `Total System Power` (`hwmon2/power1_input`), 1 s samples, on battery, built-in panel
+at 120 Hz, backlight 307/500:
+
+| Conditions | n | median | p10-p90 | min-max |
+|---|---|---|---|---|
+| Built-in display only, ~5 min after boot, desktop idle-ish, Claude Code session running | 45 | 16.08 W | 14.38-18.45 W | 12.93-21.51 W |
+| Dock monitor lit (1080p60, Insignia 65" TV), `claude-desktop` ~55% of a core, ChatGPT app and a 1 Hz logging script running | 60 | 21.12 W | 20.35-22.11 W | 20.06-26.20 W |
+
+The owner's panel watt meter showed ~16 W for the first condition, matching the sample.
+**No improvement is claimed.** 16 W sits inside the earlier "light use 14 to 17.6 W" range, and
+the second row (20-22 W) is within the earlier 17.6-20.5 W "agent apps open" readings, i.e.
+the reading follows what is running and whether an external display is lit, not the kernel.
+The conditions differ between rows and between days, so these two rows cannot be compared as
+a before/after. A real comparison needs: same workload script, same brightness and refresh,
+no external display, >=3 alternating runs per kernel (stock `7.1.13-3-2-ARCH` vs Aurora `.20`),
+medians with p10/p90, as the honesty rules above require.
+
+## Upstream power review: omacom/linux-aurora `aurora-wip`, published `.19`/`.20`, open issues — 2026-10-18
+
+`aurora-wip` (tip 2026-09-05) is fully contained in `.20` (0 commits ahead), so the published
+release is the thing to look at. Findings, with live checks on this Mac (read-only):
+
+1. **The PMP is running now.** `apple-pmgr-misc: PMP manages fabric and DCS p-states` and
+   `apple_pmp 28e700000.pmp: PMP firmware and endpoint ready` appear in this boot's log.
+   Upstream `.19` (PR #123, carrying @maralcbr's #91) describes the J314s PMP in its device
+   tree and fixes s2idle resume with it; "the PMP runs only when the boot loader switches it
+   on, otherwise the J314s keeps the previous power path". Our previous `boot.bin` did not run
+   it; the upstream-matched `m1n1-aurora` payload deployed today does. `pmp_report` also reports
+   AVD, ISP and the three DCP power states to the PMP. This is the most plausible source of any
+   idle-power change seen today, **but no before/after was measured**.
+2. **Idle fabric governor** (`apple_pmgr_misc.idle_fabric_pstate`, currently `0`, root-writable
+   at runtime): lowers the fabric p-state at idle; external CRTCs hold it up while scanning out.
+   Release notes: *not used while a PMP runs*, so with the PMP active toggling it is expected to
+   do nothing; not tested here.
+3. **CPU idle residency (cpu0, since boot, ~14 min):** WFI 394 s, deep `CPU PD` 154 s, i.e.
+   ~28% of idle time in the deep state. The earlier record in this file (2026-10-16, other kernel
+   and boot payload, different window) was WFI 19.8 s vs `CPU PD` 1.4 s (~7%). Direction is
+   encouraging; the windows and workloads differ, so this is an observation, not a result.
+4. **Thunderbolt/s2idle options, all off by default** (PR #124 carrying #92): `s2idle_teardown`
+   powers off connected ports with no PCIe tunnel during s2idle (drops USB/display/network behind
+   a dock until resume; run on one M1 Pro only), plus `resume_recovery` and `router_sleep`.
+   Candidate for sleep-drain work *without* a dock only; untested here.
+5. **`vrr` / `tb` branches:** ProMotion variable refresh (`drm: apple: support ProMotion variable
+   refresh rate`, 2026-09-12). Not confirmed to be in `.20`; our staged out-of-tree VRR module
+   (DeepSeek) is the other route. Variable refresh is the main display-power lever.
+6. **Open upstream issues that touch power:** #24 (M1 Max GPU firmware crash after loaded
+   s2idle resume), #59 (J516S s2idle keyboard wake / dark panel), #121 (external-display sleep
+   veto), #130 (J316S direct USB-C display: DCP crash after idle lock / s2idle). **None is about
+   idle watts or battery life** — an open niche where measured data from this Mac would be useful.
+
+Next, without rebooting: record `/sys/devices/system/cpu/cpu*/cpuidle/state*/{usage,time}`
+deltas over fixed 5-minute windows while idle and under the standard workload, plus the SMC power
+reading, so the same script can later be run on stock `7.1.13-3-2-ARCH` for an honest A/B. With a
+reboot: stock vs Aurora `.20`, >=3 alternations (see the honesty rules above).
+
+### Display audio on the dock monitor (owner report 2026-10-18)
+The monitor's speakers show as selectable but nothing plays. Live state: `appledrm.hdmi_audio=N`
+(the parameter is described as "Enable unstable HDMI audio support" and the `.20` notes say the audio
+changes take effect only with `appledrm.hdmi_audio=1`, off by default on M1-M3); only the
+internal ALSA card (`AppleJ314`) exists, and PipeWire's sink list shows the internal headphones
+plus network (AirPlay/RAOP) outputs, one of them named like a TV (`zTV-Living Room`), which is
+likely what appears. Upstream issue #48 ("qualify HDMI/DP audio before changing its default")
+is open. Needs a reboot with `appledrm.hdmi_audio=1` on the cmdline to test.

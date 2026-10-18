@@ -95,12 +95,35 @@ def read_usage(database: pathlib.Path, now_ms: int | None = None) -> dict[str, A
     }
 
 
+def read_account(database: pathlib.Path) -> str:
+    """The signed-in OpenCode account's email, read-only; never the tokens stored beside it."""
+    if not database.is_file():
+        return ""
+    try:
+        connection = sqlite3.connect(f"file:{database}?mode=ro", uri=True, timeout=0.5)
+        try:
+            row = connection.execute(
+                """SELECT account.email FROM account
+                   LEFT JOIN account_state ON account_state.active_account_id = account.id
+                   ORDER BY (account_state.id IS NOT NULL) DESC, account.time_updated DESC LIMIT 1"""
+            ).fetchone()
+        finally:
+            connection.close()
+    except (sqlite3.Error, OSError):
+        return ""
+    return row[0] if row and isinstance(row[0], str) else ""
+
+
 def iso_time(timestamp_ms: int) -> str:
     return dt.datetime.fromtimestamp(timestamp_ms / 1000, dt.timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def main() -> int:
-    usage = read_usage(data_directory() / "opencode.db")
+    database = data_directory() / "opencode.db"
+    usage = read_usage(database)
+    email = read_account(database)
+    if email:
+        usage["accountEmail"] = email
     print(json.dumps(usage, separators=(",", ":")))
     return 0
 

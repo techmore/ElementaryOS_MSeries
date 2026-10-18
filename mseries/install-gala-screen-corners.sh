@@ -18,6 +18,10 @@
 # Radii are in logical pixels. Screen corners default to 20 (0 hides the masks); window
 # corners default to 12 (0 leaves windows square). Change them later by editing
 # GALA_SCREEN_CORNER_RADIUS / GALA_WINDOW_CORNER_RADIUS in the drop-in below and logging out/in.
+#
+# It also applies gala-panel-offset.patch, which lets a panel (the dock) ask the compositor to
+# slide along its edge (io_elementary_pantheon_panel_v1.set_offset, protocol v2). The Dock's
+# Command-drag uses it; without this Gala the dock simply stays centred.
 set -euo pipefail
 
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
@@ -70,6 +74,7 @@ git -C "$source_dir" fetch -q --depth=1 origin "$commit"
 git -C "$source_dir" checkout -q --detach FETCH_HEAD
 git -C "$source_dir" apply "$repo/mseries/patches/gala-screen-corners.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/gala-window-corners.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/gala-panel-offset.patch"
 
 meson setup "$build_dir" "$source_dir" --prefix="$prefix" --libdir=lib --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null

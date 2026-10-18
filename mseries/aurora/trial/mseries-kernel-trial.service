@@ -1,0 +1,13 @@
+[Unit]
+Description=Scoped baseline/candidate kernel hardware and power capture
+ConditionPathExists=/etc/mseries-kernel-trial.json
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/lib/mseries-kernel-trial/aurora/trial/capture-session.py
+TimeoutStartSec=12min
+RemainAfterExit=yes
+UMask=0077
+Nice=10
+IOSchedulingClass=idle
+NoNewPrivileges=yes

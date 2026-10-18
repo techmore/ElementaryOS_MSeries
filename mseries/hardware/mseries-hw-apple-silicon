@@ -1,0 +1,13 @@
+#!/usr/bin/python3
+"""Exit 0 on Apple Silicon, 1 elsewhere, 2 if detection is unavailable."""
+import platform
+from pathlib import Path
+import sys
+
+if platform.machine() != 'aarch64':
+    sys.exit(1)
+try:
+    compatible = Path('/proc/device-tree/compatible').read_bytes().lower()
+except OSError:
+    sys.exit(2)
+sys.exit(0 if b'apple,' in compatible else 1)

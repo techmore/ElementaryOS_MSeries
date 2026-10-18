@@ -1,5 +1,23 @@
 # Port map: Omarchy Mac hardware behavior → elementary OS 9
 
+## October 17 userspace refresh
+
+[Candidate audit](OMACOM-IMPROVEMENTS.md) supersedes missing-feature assumptions
+for the new sleep/power diagnostics, gated opt-in Bluetooth recovery and Touch ID
+readiness refinements. The maintained default-branch refresh `222f7a8` to
+`ffe5246` changes tests/acceptance only. Historical rows below describe their
+original audit date; use the new audit for current implementation and gates.
+
+## Aurora source enhancements and package boundary — 2026-10-17
+
+[Enhancement candidate](aurora/enhancements/README.md) tracks public kernel
+patches and recipe hashes while producing native Debian payload packages.
+Arch's PKGBUILD/AUR packaging is not adopted by the Ubuntu/elementary base.
+The full recipe config is explicitly updated for udmabuf and optional eGPU
+profiles; copying the Asahi fragment alone would not configure this build.
+Existing Omarchy pacman/boot hooks remain outside the elementary port boundary.
+
+
 This map separates the historical scaffold from the maintained package
 reference and from hardware verification. Presence in the repository does not
 mean the mkosi image has been built or tested.

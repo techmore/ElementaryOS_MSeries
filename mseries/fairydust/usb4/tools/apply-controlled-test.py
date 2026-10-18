@@ -13,6 +13,7 @@ import tempfile
 
 ENTRY = 'elementary-usb4-dpin-controlled'
 IMAGE = 'initramfs-linux-asahi-fairydust-usb4-dpin-controlled.img'
+GRUBENV = Path('/boot/grub/grubenv')
 
 def sha(path):
  return hashlib.sha256(Path(path).read_bytes()).hexdigest()
@@ -97,7 +98,7 @@ def plan(a):
    {'target': str(custom), 'original_sha256': sha(custom), 'candidate': str(new_custom.resolve()), 'candidate_sha256': sha(new_custom), 'mode': stat.S_IMODE(custom.stat().st_mode)},
    {'target': str(boot), 'original_sha256': sha(boot), 'candidate': str(a.boot_candidate.resolve()), 'candidate_sha256': sha(a.boot_candidate), 'mode': stat.S_IMODE(boot.stat().st_mode)},
   ],
-  'grubenv_sha256': sha('/boot/grub/grubenv'),
+  'grubenv_sha256': sha(GRUBENV),
   'default_entry_unchanged': True, 'root_modules_unchanged': True,
   'next_step_after_apply': 'Separately review and arm one-shot GRUB entry; this installer does not run grub-reboot or reboot.',
  }
@@ -123,7 +124,7 @@ def apply(a):
  for path, digest in {**stage['inputs'], **stage['outputs']}.items(): check(path, digest)
  check(m['compatibility_record'], m['compatibility_sha256'])
  check(m['boot_report'], m['boot_report_sha256'])
- check('/boot/grub/grubenv', m['grubenv_sha256'])
+ check(GRUBENV, m['grubenv_sha256'])
  rollback = Path(m['rollback_dir'])
  if rollback.exists():
   raise ValueError('rollback directory already exists; inspect partial apply before proceeding')
@@ -141,13 +142,13 @@ def apply(a):
    backup = rollback / ('original-' + str(index))
    atomic_copy(op['target'], backup, 0o600)
    check(backup, op['original_sha256'])
- atomic_copy('/boot/grub/grubenv', rollback / 'grubenv-before', 0o600)
+ atomic_copy(GRUBENV, rollback / 'grubenv-before', 0o600)
  # Exact order: unique image, append-only config, global boot payload last.
  for index, op in enumerate(m['operations']):
   atomic_copy(op['candidate'], op['target'], op['mode'])
   check(op['target'], op['candidate_sha256'])
   jsonwrite(rollback / ('applied-' + str(index) + '.json'), op)
- check('/boot/grub/grubenv', m['grubenv_sha256'])
+ check(GRUBENV, m['grubenv_sha256'])
  print(json.dumps({'status': 'installed only; no reboot armed', 'rollback_dir': str(rollback), 'next_step': m['next_step_after_apply']}, indent=2))
 
 def rollback(a):

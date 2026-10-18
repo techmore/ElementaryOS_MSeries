@@ -97,6 +97,17 @@ class ImageWiringTests(unittest.TestCase):
                 with self.subTest(path=str(path)):
                     self.assertTrue((image / path).is_file())
             self.assertFalse(payload.exists())
+            for name in ('mseries-power.service', 'mseries-power-follow.service'):
+                unit = image / 'etc/systemd/system' / name
+                self.assertIn('ExecStart=/usr/libexec/mseries/power ', unit.read_text())
+                self.assertNotIn('/usr/local/', unit.read_text())
+            self.assertTrue((image / 'usr/libexec/mseries/power').is_file())
+            for path in ('usr/libexec/mseries/sleep-cost', 'usr/bin/mseries-power-report',
+                         'usr/lib/systemd/system-sleep/mseries-sleep-cost',
+                         'usr/lib/systemd/user/graphical-session.target.wants/mseries-sleep-cost.service',
+                         'usr/libexec/mseries/bluetooth-resume-fix'):
+                self.assertTrue((image / path).is_file(), path)
+            self.assertFalse((image / 'etc/systemd/system/suspend.target.wants/mseries-bluetooth-resume-fix.service').is_symlink())
 
     def test_consumers_install_overlay_runtime_dependencies(self):
         overlay = packages('mkosi.images/apple-silicon/mkosi.conf')

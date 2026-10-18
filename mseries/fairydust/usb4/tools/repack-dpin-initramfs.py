@@ -6,8 +6,8 @@ import argparse, collections, gzip, hashlib, json, pathlib, stat, struct
 def canonical(name):
     while name.startswith('./'):name=name[2:]
     p=pathlib.PurePosixPath(name)
-    if p.is_absolute() or '..' in p.parts:raise ValueError('unsafe archive path')
-    return name.rstrip('/')
+    if '\0' in name or p.is_absolute() or '..' in p.parts:raise ValueError('unsafe archive path')
+    return str(p)
 
 def parse(raw):
     pos=0;rows=[];names=set()
@@ -15,7 +15,7 @@ def parse(raw):
         if raw[pos:pos+6]!=b'070701':raise ValueError('expected a single newc archive')
         vals=[int(raw[pos+6+i*8:pos+14+i*8],16) for i in range(13)]
         start=pos+110;stop=start+vals[11]
-        if stop>len(raw) or raw[stop-1]!=0:raise ValueError('invalid archive name')
+        if vals[11]<1 or stop>len(raw) or raw[stop-1]!=0:raise ValueError('invalid archive name')
         name=raw[start:stop-1].decode();pos=(stop+3)&~3
         end=pos+vals[6]
         if end>len(raw):raise ValueError('truncated archive payload')
@@ -52,7 +52,11 @@ def repack(image,replacements):
         while str(parent) not in ('.','/'):
             parents.append(str(parent));parent=parent.parent
         for directory in reversed(parents):
-            if directory not in existing:
+            if directory in existing:
+                existing_values = next(v for n,v,d in updated if canonical(n)==directory)
+                if not stat.S_ISDIR(existing_values[1]):
+                    raise ValueError('new file parent is not a directory: '+directory)
+            else:
                 v=[ino,stat.S_IFDIR|0o755,0,0,2,0,0,0,0,0,0,0,0];ino+=1
                 updated.append((directory,v,b''));existing.add(directory)
         v=[ino,stat.S_IFREG|0o644,0,0,1,0,0,0,0,0,0,0,0];ino+=1
