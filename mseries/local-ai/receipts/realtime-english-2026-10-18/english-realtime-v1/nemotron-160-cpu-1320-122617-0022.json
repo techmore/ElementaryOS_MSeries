@@ -1,0 +1,106 @@
+{
+  "complete": true,
+  "engine": "nemotron-160-cpu",
+  "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "harness_sha256": "341cf7ed75f86248b9862d6dce7603c0d97bf86521e836482ee42452d00ff7a4",
+  "wav_sha256": "afd923d287641d5600e63a901e149091e0b1f648265186de560a5c063d7a9c8d",
+  "duration_s": 3.855,
+  "microphone_recorded": false,
+  "owner_windows_opened": false,
+  "trials": [
+    {
+      "run": 1,
+      "events": [
+        {
+          "wall_s": 0.8540753039999345,
+          "text": "The",
+          "final": false
+        },
+        {
+          "wall_s": 0.9741241799999898,
+          "text": "The Del",
+          "final": false
+        },
+        {
+          "wall_s": 1.1724476839999625,
+          "text": "The Delaw",
+          "final": false
+        },
+        {
+          "wall_s": 1.3717096469999888,
+          "text": "The Delawares",
+          "final": false
+        },
+        {
+          "wall_s": 1.65591052700006,
+          "text": "The Delawares are children",
+          "final": false
+        },
+        {
+          "wall_s": 1.7439523390000886,
+          "text": "The Delawares are children of the",
+          "final": false
+        },
+        {
+          "wall_s": 2.179474924000033,
+          "text": "The Delawares are children of the tor",
+          "final": false
+        },
+        {
+          "wall_s": 2.2730025109999588,
+          "text": "The Delawares are children of the tortoise",
+          "final": false
+        },
+        {
+          "wall_s": 2.566106902999991,
+          "text": "The Delawares are children of the tortoise, and they",
+          "final": false
+        },
+        {
+          "wall_s": 2.774406087999978,
+          "text": "The Delawares are children of the tortoise, and they out",
+          "final": false
+        },
+        {
+          "wall_s": 2.952610007999965,
+          "text": "The Delawares are children of the tortoise, and they outst",
+          "final": false
+        },
+        {
+          "wall_s": 3.0623227280000265,
+          "text": "The Delawares are children of the tortoise, and they outstrip",
+          "final": false
+        },
+        {
+          "wall_s": 3.2517707780000364,
+          "text": "The Delawares are children of the tortoise, and they outstrip the",
+          "final": false
+        },
+        {
+          "wall_s": 3.353540910999982,
+          "text": "The Delawares are children of the tortoise, and they outstrip the de",
+          "final": false
+        },
+        {
+          "wall_s": 3.5595275529999526,
+          "text": "The Delawares are children of the tortoise, and they outstrip the deer",
+          "final": false
+        },
+        {
+          "wall_s": 3.9100709320000533,
+          "text": "The Delawares are children of the tortoise, and they outstrip the deer",
+          "final": true
+        }
+      ],
+      "first_text_s": 0.8540753039999345,
+      "final_after_audio_s": 0.05578951600000437,
+      "cpu_s": 5.2380551870000005,
+      "final_text": "The Delawares are children of the tortoise, and they outstrip the deer",
+      "normalized_wer": 0.0,
+      "peak_rss_bytes": 1230389248,
+      "display_updates_before_audio_end": 15
+    }
+  ],
+  "scope": "One public LibriSpeech clip, wall-paced 100ms input; no microphone/app insertion, not a general accuracy test. Model load separate; first trial retained, not discarded.",
+  "load_s": 0.45094207399984043
+}

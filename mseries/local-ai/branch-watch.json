@@ -8,7 +8,11 @@
         "agent/fambonsai",
         "agent/bonsai2-serving",
         "agent/OmlxCache-rows",
-        "w71/muse-gate-up-fusion"
+        "w71/muse-gate-up-fusion",
+        "agent/coreml-tdt-stream",
+        "agent/ParakeetWarm-w6Z",
+        "upstream/parakeet-worker-pcore",
+        "integration/tdt-decoder-stack"
       ],
       "open_prs": true,
       "discover_branches": true

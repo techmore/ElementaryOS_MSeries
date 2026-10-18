@@ -1,5 +1,17 @@
 # F5 dictation (local speech to text)
 
+**Current English-only decision, October18:** [measured native ANE / MLX Vulkan /
+CPU streaming results](REALTIME-ENGLISH.md) supersede older recommendations below.
+Nemotron160 CPU produced first draft words in0.851s median; MLX Vulkan
+Parakeet1.452s; the existing ANE controller2.97s warm committed output. All
+retained the six-GiB reserve and stayed below2532RPM in these limited public-file
+trials. Output policies differ; these are not universal accuracy or live F5
+claims. A private native English panel showed raw words and optional English
+grammar suggestions during speech. The English-only source is on draft PR155;
+no runtime or owner preferences changed in this benchmark. Earlier
+foreign-language probes are historical, outside the owner's clarified scope.
+Candidate deployment, lifecycle gates and human F5 acceptance remain open.
+
 Hold **F5** (the microphone key), speak, release: the compatibility service types recognized text into the focused field. Cross-app support and current limits are qualified below.
 Voxtype 1.1.1 (MIT) + whisper.cpp `base.en` on the CPU, ydotool for typing (same stack as Omarchy).
 Audio stays on the Mac and is not saved by default. The explicit `STREAM_KEEP` debug option saves the last capture in the runtime directory; those recordings are private and excluded from published receipts. Install: `bash mseries/install-dictation.sh` (`--uninstall` to remove).

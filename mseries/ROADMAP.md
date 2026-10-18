@@ -1,5 +1,17 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## English streaming: measured CPU, MLX GPU and native ANE — 2026-10-18
+
+[Completed benchmark and upstream audit](dictation/REALTIME-ENGLISH.md): Nemotron160
+CPU first draft0.851s median, MLX Vulkan1.452s, native ANE2.97s warm committed
+words (different policies). All final words match on the principal clean clip;
+Moonshine errors and the original unsupported Nemotron GGUF remain retained.
+Three extra speakers passed the small Nemotron/Unified comparison. Real private
+GTK4 English-only words/grammar workflow passed. No new mic or owner windows.
+Next: focus-bound F5 Nemotron integration, provisional/final presentation, native
+IPC/interrupt/close gates, quiet app insertion and English human acceptance.
+Source remains draft PR155; published evidence is not deployment approval.
+
 ## CodexBar Switch crash and disruptive deployment — 2026-10-18
 
 Confirmed real Wingpanel SIGSEGV at 12:59:20 in `switch_codex_account_co` from `libcodexbar.so`.

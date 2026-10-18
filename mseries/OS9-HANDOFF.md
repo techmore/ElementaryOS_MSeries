@@ -4771,6 +4771,30 @@ Follow-up (same day): `STREAM_ENGINE=ane` integrates the ANE engine into the laz
 Owner opened *Live Die Repeat: Edge of Tomorrow* in `brave-youtube` (default Linux user agent, Widevine provisioned by the launcher): it plays, and the quality menu tops out at **480p**. That matches Widevine L3; no user-agent spoofing was applied or is planned (it would not change the license server's L3 cap). Non-DRM 4K VP9 in the same window is still unmeasured.
 
 
+
 ### Network/battery main integration — 2026-10-18
 
 Merged current main into the feature branch, retaining Battery History summary-card changes and its installer patch alongside the watts toggle. The combined power installer passes `--build-only` (full release compile/link, no unresolved libraries; no panel restart). Both installer scripts pass bash syntax checks. Documentation preserves both feature histories.
+
+## Native realtime English results publication — 2026-10-18
+
+Completed owned CPU/Moonshine/Nemotron, native ANE controller, MLX Vulkan and
+English GTK4 panel queues; all terminal, no duplicate workers or repeated completed
+quality cases. [Report](dictation/REALTIME-ENGLISH.md) and sanitized receipts record
+first drafts, committed-policy differences, all final errors, thermal/memory
+limits, model/source pins and the unsupported original Nemotron format. English
+speech → English text only supersedes prior foreign-language feature assumptions.
+Nemotron160 first draft0.851s median; MLX1.452s; ANE2.97s warm committed/4.26s cold.
+The English panel showed raw words1.290s and English suggestions2.598s from launch;
+original preserved. The later GTK edit coalescing regression is distinct from its
+frozen real-model cohort. See report for exact scopes and gates.
+
+Implementation checkpoint b62f720 is pushed on draft PR155:66 dictation contracts,
+72 assistant contracts and private native English wiring pass. No installed
+runtime/model default change. Native IPC deadlines/close races and focus-bound
+F5 integration still require work. Receipt export allowlists JSON/public source,
+excludes logs/audio/settings/signed URLs; checksums and snapshot mapping accompany it.
+Explicit speech refs augment the existing six-hour watcher, not another schedule.
+Publication PR must pass checks and Pages bytes must be verified before claiming
+main/site completion. Preserve current main owner changes; no CodexBar files changed.
+
