@@ -1,0 +1,56 @@
+{
+  "complete": true,
+  "engine": "nemotron-160-cpu",
+  "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "harness_sha256": "341cf7ed75f86248b9862d6dce7603c0d97bf86521e836482ee42452d00ff7a4",
+  "wav_sha256": "13d99685ef840d5679e10368e79dc39f2f87fbf49c919d9f1c1a03357a19acc8",
+  "duration_s": 1.98,
+  "microphone_recorded": false,
+  "owner_windows_opened": false,
+  "trials": [
+    {
+      "run": 1,
+      "events": [
+        {
+          "wall_s": 1.158272313999987,
+          "text": "only",
+          "final": false
+        },
+        {
+          "wall_s": 1.3573565770000187,
+          "text": "only for a",
+          "final": false
+        },
+        {
+          "wall_s": 1.455013332999897,
+          "text": "only for a minute",
+          "final": false
+        },
+        {
+          "wall_s": 1.66139839199991,
+          "text": "only for a minute or",
+          "final": false
+        },
+        {
+          "wall_s": 1.751455809999925,
+          "text": "only for a minute or so",
+          "final": false
+        },
+        {
+          "wall_s": 2.0344542399998318,
+          "text": "only for a minute or so",
+          "final": true
+        }
+      ],
+      "first_text_s": 1.158272313999987,
+      "final_after_audio_s": 0.05528182299985929,
+      "cpu_s": 2.6064187750000003,
+      "final_text": "only for a minute or so",
+      "normalized_wer": 0.0,
+      "peak_rss_bytes": 1230946304,
+      "display_updates_before_audio_end": 5
+    }
+  ],
+  "scope": "One public LibriSpeech clip, wall-paced 100ms input; no microphone/app insertion, not a general accuracy test. Model load separate; first trial retained, not discarded.",
+  "load_s": 0.45353605400009656
+}

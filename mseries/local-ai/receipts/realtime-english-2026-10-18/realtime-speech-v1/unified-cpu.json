@@ -1,0 +1,185 @@
+{
+  "complete": true,
+  "engine": "unified-cpu",
+  "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "harness_sha256": "28ef14bdf53bdf8c1c3f2c0d8040fd6f3481a5d44ae3f65ba55ff323ef379d69",
+  "wav_sha256": "33c6c68d943a22d5272bf8d5e1f86af9d89d901fb7da35961a692de7591a534c",
+  "duration_s": 10.435,
+  "microphone_recorded": false,
+  "owner_windows_opened": false,
+  "trials": [
+    {
+      "run": 1,
+      "events": [
+        {
+          "wall_s": 3.562508912999988,
+          "text": "He hoped there would be stew",
+          "final": false
+        },
+        {
+          "wall_s": 4.592074136000065,
+          "text": "He hoped there would be stew for dinner, turnip",
+          "final": false
+        },
+        {
+          "wall_s": 5.688870821000023,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and",
+          "final": false
+        },
+        {
+          "wall_s": 6.87289707900004,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes",
+          "final": false
+        },
+        {
+          "wall_s": 8.012598153999988,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton",
+          "final": false
+        },
+        {
+          "wall_s": 9.119260269000051,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled",
+          "final": false
+        },
+        {
+          "wall_s": 10.104053355000019,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick",
+          "final": false
+        },
+        {
+          "wall_s": 11.09390992100009,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered, flour-",
+          "final": false
+        },
+        {
+          "wall_s": 11.889404743,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered, flour-fattened sauce",
+          "final": true
+        }
+      ],
+      "first_text_s": 3.562508912999988,
+      "final_after_audio_s": 1.4551348270000517,
+      "cpu_s": 19.270410817000002,
+      "final_text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered, flour-fattened sauce",
+      "normalized_wer": 0.0,
+      "peak_rss_bytes": 989970432,
+      "display_updates_before_audio_end": 7
+    },
+    {
+      "run": 2,
+      "events": [
+        {
+          "wall_s": 3.4892265839999936,
+          "text": "He hoped there would be stew",
+          "final": false
+        },
+        {
+          "wall_s": 4.530854567999995,
+          "text": "He hoped there would be stew for dinner, turnip",
+          "final": false
+        },
+        {
+          "wall_s": 6.080456303999995,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and",
+          "final": false
+        },
+        {
+          "wall_s": 6.867134868999983,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes",
+          "final": false
+        },
+        {
+          "wall_s": 7.9044029330000285,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton",
+          "final": false
+        },
+        {
+          "wall_s": 9.013455931000067,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled",
+          "final": false
+        },
+        {
+          "wall_s": 10.342136192999988,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick",
+          "final": false
+        },
+        {
+          "wall_s": 11.603510108000023,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered, flour-",
+          "final": false
+        },
+        {
+          "wall_s": 12.805801057000053,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered, flour-fattened sauce",
+          "final": true
+        }
+      ],
+      "first_text_s": 3.4892265839999936,
+      "final_after_audio_s": 2.3722719330000928,
+      "cpu_s": 24.596236063,
+      "final_text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered, flour-fattened sauce",
+      "normalized_wer": 0.0,
+      "peak_rss_bytes": 1045774336,
+      "display_updates_before_audio_end": 7
+    },
+    {
+      "run": 3,
+      "events": [
+        {
+          "wall_s": 3.497302923999996,
+          "text": "He hoped there would be stew",
+          "final": false
+        },
+        {
+          "wall_s": 4.539353742000003,
+          "text": "He hoped there would be stew for dinner, turnip",
+          "final": false
+        },
+        {
+          "wall_s": 5.65211453400002,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and",
+          "final": false
+        },
+        {
+          "wall_s": 6.830066629999919,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes",
+          "final": false
+        },
+        {
+          "wall_s": 7.896672259999946,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton",
+          "final": false
+        },
+        {
+          "wall_s": 8.999287836000008,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled",
+          "final": false
+        },
+        {
+          "wall_s": 10.00083761999997,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick",
+          "final": false
+        },
+        {
+          "wall_s": 11.027401048999991,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered, flour-",
+          "final": false
+        },
+        {
+          "wall_s": 11.713630656999953,
+          "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered, flour-fattened sauce",
+          "final": true
+        }
+      ],
+      "first_text_s": 3.497302923999996,
+      "final_after_audio_s": 1.280287283000007,
+      "cpu_s": 19.268427425,
+      "final_text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered, flour-fattened sauce",
+      "normalized_wer": 0.0,
+      "peak_rss_bytes": 1045774336,
+      "display_updates_before_audio_end": 7
+    }
+  ],
+  "scope": "One public LibriSpeech clip, wall-paced 100ms input; no microphone/app insertion, not a general accuracy test. Model load separate; first trial retained, not discarded.",
+  "load_s": 0.34673049599996375
+}

@@ -1,0 +1,31 @@
+{
+  "complete": true,
+  "engine": "unified-cpu",
+  "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "harness_sha256": "341cf7ed75f86248b9862d6dce7603c0d97bf86521e836482ee42452d00ff7a4",
+  "wav_sha256": "13d99685ef840d5679e10368e79dc39f2f87fbf49c919d9f1c1a03357a19acc8",
+  "duration_s": 1.98,
+  "microphone_recorded": false,
+  "owner_windows_opened": false,
+  "trials": [
+    {
+      "run": 1,
+      "events": [
+        {
+          "wall_s": 2.2511347370000294,
+          "text": "only for a minute or so",
+          "final": true
+        }
+      ],
+      "first_text_s": 2.2511347370000294,
+      "final_after_audio_s": 0.27142456999990827,
+      "cpu_s": 1.015322593,
+      "final_text": "only for a minute or so",
+      "normalized_wer": 0.0,
+      "peak_rss_bytes": 957595648,
+      "display_updates_before_audio_end": 0
+    }
+  ],
+  "scope": "One public LibriSpeech clip, wall-paced 100ms input; no microphone/app insertion, not a general accuracy test. Model load separate; first trial retained, not discarded.",
+  "load_s": 0.2686418409998623
+}
