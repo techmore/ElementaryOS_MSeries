@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import tempfile
+import struct
 import unittest
 
 import qualification as q
@@ -15,12 +16,13 @@ from release import PINS
 def receipt():
     identity = {"kernel_release": PINS["kernel_release"], "board": "apple,j314s", "soc": "apple,t6000",
                 "runtime_parameters": {}, "feature_cmdline": [],
+                "live_kernel_build_id": "e" * 40, "kernel_image_matches_live_build_id": True,
                 "kernel_image_sha256": "a" * 64, "boot_payload_sha256": "b" * 64,
                 "modules": {"kernel/drivers/gpu/drm/apple/appledrm.ko": "c" * 64, "dtbs/t6000-j314s.dtb": "d" * 64}}
     return {"schema": 1, "kind": "hardware-test", "identity": identity,
             "identity_sha256": hashlib.sha256(q.canonical(identity)).hexdigest(),
             "boot_id": "boot-a", "controls_unchanged": True,
-            "context_before": {"parameters": {}},
+            "context_before": {"parameters": {}, "active_displays": {"available": True}},
             "checks": {"boot": {"result": "pass"}, "pmp_ready": {"result": "pass"}}}
 
 
@@ -154,6 +156,39 @@ class QualificationTests(unittest.TestCase):
         paths[0].write_text(json.dumps(data))
         with self.assertRaisesRegex(ValueError, "energy regression"):
             self.freeze(paths, "stable")
+
+    def test_unmeasured_refresh_controls_cannot_qualify_a_stable_energy_result(self):
+        paths = self.qualified_records()
+        data = json.loads(paths[0].read_text()); data["context_before"].pop("active_displays")
+        paths[0].write_text(json.dumps(data))
+        with self.assertRaisesRegex(ValueError, "active display/refresh"):
+            self.freeze(paths, "stable")
+
+    def test_unbound_running_kernel_blocks_stable(self):
+        paths = self.qualified_records()
+        for path in paths:
+            data = json.loads(path.read_text())
+            data["identity"]["kernel_image_matches_live_build_id"] = False
+            data["identity_sha256"] = hashlib.sha256(q.canonical(data["identity"])).hexdigest()
+            path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(ValueError, "running build ID"):
+            self.freeze(paths, "stable")
+
+    def test_live_gnu_note_must_exist_in_the_measured_image(self):
+        note = struct.pack("<III", 4, 20, 3) + b"GNU\0" + bytes(range(20))
+        notes, image = self.root / "notes", self.root / "Image"
+        notes.write_bytes(note); image.write_bytes(b"ARM64-image" + note)
+        result = q.live_kernel_identity(notes, image)
+        self.assertEqual(result["live_kernel_build_id"], bytes(range(20)).hex())
+        self.assertTrue(result["kernel_image_matches_live_build_id"])
+        image.write_bytes(b"different-image")
+        self.assertFalse(q.live_kernel_identity(notes, image)["kernel_image_matches_live_build_id"])
+
+    def test_truncated_live_note_fails_closed(self):
+        notes, image = self.root / "notes", self.root / "Image"
+        notes.write_bytes(struct.pack("<III", 4, 256, 3) + b"GNU\0")
+        image.write_bytes(b"irrelevant")
+        self.assertFalse(q.live_kernel_identity(notes, image)["kernel_image_matches_live_build_id"])
 
     def test_counter_reset_is_not_negative_idle_time(self):
         before = {"state": {"name": "CPU PD", "time_us": 100, "usage": 5}}

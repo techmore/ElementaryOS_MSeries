@@ -12,7 +12,7 @@ already present in `.20` but missing from this WIP snapshot. It applies cleanly,
 restores the upstream stock-generator default and retains opt-in
 `BINDGEN_LAYOUT_TESTS=1` with the corrected private generator. Original author,
 license/trailers, documentation and hash are preserved. This is a build-policy
-port, not a new energy claim. The fixed native build must pass before promotion.
+port, not a new energy claim. The fixed native build and package inspection passed in [run 39114197052](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39114197052); review parity still blocks hardware promotion.
 
 ```sh
 python3 mseries/aurora/candidate.py prepare --profile unified72 \
@@ -39,6 +39,11 @@ The M3 camera/thermal/SMC patch series belongs to the separate `.20` enhancement
 candidate; it is not silently layered onto the unified upstream snapshot.
 
 Before hardware use, review matching DT/m1n1 and root-unlock/recovery together.
+The [64-fix parity inventory](../branch-audits/2026-10-18-review-parity.json)
+also identifies shared GPU command-admission and SEP loader/suspend differences
+from the reviewed `.20` tree. These require semantic rebases/tests. This lane
+remains **build-only** while those gates are open; `.20-enh1` is the first
+hardware candidate. Passing compilation is not approval to promote 7.2.
 PR #139 is draft, has incomplete gate/soak work, and its contributor M1 Pro
 results refer to a J316S and specific earlier tree/config combinations. Shared
 display, storage, memory and SEP changes require J314S acceptance. See the

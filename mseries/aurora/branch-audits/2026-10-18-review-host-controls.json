@@ -1,0 +1,426 @@
+{
+  "schema": 1,
+  "kind": "source-host-controls",
+  "captured_at": "2026-10-18T09:48:29.526900+00:00",
+  "source_tree_sha256": "989115032a6efa9881f3f4f26ca96b7aa696aec64c46366af706abe6fbe59c13",
+  "tools": {
+    "rustc": "rustc 1.93.1 (01f6ddf75 2026-02-11)",
+    "cc": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0"
+  },
+  "results": {
+    "tunnel-route": {
+      "harness_sha256": "0d8807b2520f2fdac5bed1601f413e46324380a821e339b4c7458e2cdc355c49",
+      "receipt": {
+        "bodies": {
+          "apple_dp_tunnel_t6030_pclk": "aca108d3b1acb6e3970deb80dc23b5e6258f53b0b2abd4c851d9bca86d362957",
+          "dcp_fabric_tunnel_clock_blocked": "ce5dde1dca955732bac7be1ac87840abdfcde1b7e462c0163bbd5af8284ee60a",
+          "dcp_fabric_snapshot_port": "7702693ee8c98e0629ccdd8ebfadb8767961e9e8fa22b640664a45f191667869",
+          "dcp_typec_tunnel_ctl": "4fbb216f3ff9daeb62a527fa58bdf73a46d14d8ed4905a12deb41d9baaa9343b"
+        },
+        "translation_sha256": "600ad134f4b6dee0d347807f5ccd165eb61883fa44124bd19e27eb5799e26de6",
+        "exit": 0,
+        "stdout": "PASS: DCP snapshot, named/legacy controls, invalid DP IN, stale snapshot\n",
+        "stderr": ""
+      }
+    },
+    "tunnel-clock": {
+      "harness_sha256": "78b6375fb63dfd2a619682f438a297f9da2d29b67ac02336a8b8063bf0c70c96",
+      "receipt": {
+        "ref": null,
+        "bodies": {
+          "apple_atc_t602x_gate": "f90f7da41aa27649f3faebdaa03c34b96786b4edba0c8892545b915aa1d5d702",
+          "apple_atc_tunnel_is_t600x": "aca108d3b1acb6e3970deb80dc23b5e6258f53b0b2abd4c851d9bca86d362957",
+          "apple_atc_tunnel_is_t8103_style": "d329afa63b1413a00fd8e143ea97895046878ec749dac16fb5d4e517c3ba1d46",
+          "atc_tunnel_stop_t8103": "556c2bb57e7415ae98b35c6ecf0b7e09f6a942bc020cc12e2dafac4c9527ef5f",
+          "atc_tunnel_pclk_t8103": "b35ef78f89ffd0052db8d883a9586e56d5c33680b75dc512ab43b07b5f3adfb7",
+          "atc_tunnel_wake_t8103": "2af12f2f89c92662fd3b03ec6378e4d56c9533c85f0311f4950e8ed1d9646c45",
+          "atc_tunnel_start_t8103": "b983f9a6a84acff8db11726a732b9b393e7970978cf71ca39df1bc1e1891679d",
+          "apple_atc_dp_tunnel_rate_source": "e5e04eb9e7d42711d612e9ec409db2fb22dfe4f27b77ea1453a28099930ea0b9",
+          "apple_atc_dp_tunnel_rate": "d7a99c4a323f73d0cecfa69e5e4dd8e7bd568cd1310aad114018c4e1641369ff",
+          "apple_dpin_policy_select": "9b4b419e7bd22ef640cde7bb3faf25f94fc3e2dba98194691d28abc0fb486221"
+        },
+        "policy_table_sha256": "15140399dc942841d0b8741f53d8d0e317f74cceed31849965bdade1b6c6f09c",
+        "translation_sha256": "512e32a669a3a70976ca627588d3837e112c15776f98240b54b9c9a90cfe9620",
+        "results": [
+          {
+            "case": "m1-admission",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "case": "m1max-admission",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "case": "m2-admission",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "case": "single-stop",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "case": "stop-first",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "case": "stop-second",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "case": "rate-change",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "case": "force-stop",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "case": "first-poll-failure",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "case": "lock-failure",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "case": "first-command-failure",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "case": "second-command-failure",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "case": "busy-pll",
+            "exit": 0,
+            "stderr": ""
+          },
+          {
+            "case": "busy-mode",
+            "exit": 0,
+            "stderr": ""
+          }
+        ]
+      }
+    },
+    "bcm4377-resume": {
+      "harness_sha256": "b55675266a93d818ff9b86455c67019ea26d62b8e74fca563e29f9572d63c89f",
+      "receipt": {
+        "source_sha256": "040c25319a8ce4856fa80f160273e2ee53047be899b06cc49b4f9c066b26420f",
+        "core_sha256": "d4940f806228ed2cc8a1db27166389f935fe93d350980541623815df0fbd0b32",
+        "core_hci_sha256": "a9b4be35f6d2f9d44e5afed392a4a76bc3dab2b6b811538d5003e02a56db9196",
+        "core_bodies": {
+          "hci_cmd_timeout": "5ac5c716c026ce73c70adc1519134015f22feed725a325b5e26eb4acb62bf7e9",
+          "hci_cancel_cmd_sync": "bf9b9b75842ecff61d309eea4d78de64ca09a29c5395e3d83dd745c14d1e1815",
+          "hci_suspend_dev": "e944edfa6061f0634095b3a56512d39dee5d3d4dda9f45bf0462177616e06ed7",
+          "hci_resume_dev": "bf45873b16e595a37bd7a9ff6cc458cf09d325edadb499714cba1059c0463f1f"
+        },
+        "actual_hw_struct_sha256": "6785ba0d05624c16144b0ca04d90df37ae16146cd69f6f3a1c2f904869b1de18",
+        "actual_hw_table_sha256": "d39a6bfae0dc77ab22a0432d6aa96f5e57ae3f704f4945a3f67c08e824909942",
+        "table_callback_fixture": "Production variant table compiled unchanged; only calibration/PTB callback names map to controlled send boundaries.",
+        "extracted_bodies": {
+          "bcm4377_setup_retry_allowed": "52911aa634b10402a7f030ac7e86a6d20407986bc98ad257e3e6361b2c9f9b6b",
+          "bcm4377_queue_setup_retry": "981a5dd7ecb97a0ee6d44cc38e38ec29a9f1376444e9dfdcec3b69c7f6bb288e",
+          "bcm4377_setup_retry_work": "3de7fa80bc2944ff545bfd39c8e83f0beb6527d512e4163a6c1484bb67d85b73",
+          "bcm4377_resume_recovery_supported": "f05e71234ce8bfc2c5f5ff47f4fd4f1e3012ab2e3da2d3b30d88a11c66d04a16",
+          "bcm4377_resume_recovery_allowed": "9710f0c72f70d0849c380a7d5998f78635bd7f9e5360bf43d20035c22e799e84",
+          "bcm4377_resume_recovery_invalidate": "883901cc5948fc80ed56d81e2fe5803b26cb7e7a3283448bb9bbd99404899c4d",
+          "bcm4377_resume_recovery_sync": "e778f818d460c0f5331c5693ac5387bc8ddc50f2939e394ab5dad2c5b1a01858",
+          "bcm4377_resume_recovery_destroy": "234ae0404401437c0806bed5fb380e71d2c047b6ab7d7da32496fa478da0cd7a",
+          "bcm4377_resume_recovery_work": "74118d1147d8620d8898328e8c0fc20365c3c0b19475c457975efaedf162d392",
+          "bcm4377_hci_timeout": "a90f4da2fe66769fb3d3b524c548ead562d5e50a810f7f9d70142ceb8532d833",
+          "bcm4377_resume_recovery_stop": "fd5872b0f52060365a3ed57492fd1bb961175932d9884437d77936dab7193e73",
+          "bcm4377_hci_open": "4ebedd25c6673e603d99e0c405c6d2fcfd3c3b2cd3650d41bb856e40dbd85a52",
+          "bcm4377_hci_close": "c72542c5027f09869cf94657cbd81078b55b82d36e7800f1485f88792cbbac15",
+          "bcm4377_hci_setup_once": "9e704bd0261a41c53f35cb805d66e147c69e106f3eeb7ae84f110adea9733dcc",
+          "bcm4377_hci_setup": "6e236c086167ccb9fed54b935ced09be47dfb12460f361552f8da6f8552bd3ee",
+          "bcm4377_hci_post_init": "6199c1a61f9644522664fb7f935896ddd0f3267543432492687e8cd4d4dbc78a",
+          "bcm4377_hci_unregister_dev": "785079bf4ebda91d5f18503bdc747642e79acbc2746dc52d01e04cbf0556051f",
+          "bcm4377_suspend": "66c7b4cf40cb06e418a773d48dc581cd85692a8928ff763ee29e12e5176a1066",
+          "bcm4377_resume": "551d08b7b4c0ce2ab9c039ef1d743d06d62c992603a8f0831a260dc1ae0542c0"
+        },
+        "shared_new_prerequisites_for_old": [],
+        "old_ref": null,
+        "mutation": null,
+        "core_fixture_adapter": "Only HCI_UP test_bit index is translated from fixture mask32 to index5; production conditions/order unchanged.",
+        "source_semantics": "Actual driver callbacks and synchronous close/open helper; core request serialization, PCI/firmware and HCI services are controlled fixtures, not whole-kernel or radio execution.",
+        "translation_sha256": "4e008b458c93bda299e140d2bc099598914cedd9cda32d0cdaed74bb25c65465",
+        "controls": [
+          {
+            "case": 0,
+            "exit": 0,
+            "stdout": "case 0 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 1,
+            "exit": 0,
+            "stdout": "case 1 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 2,
+            "exit": 0,
+            "stdout": "case 2 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 3,
+            "exit": 0,
+            "stdout": "case 3 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 4,
+            "exit": 0,
+            "stdout": "case 4 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 5,
+            "exit": 0,
+            "stdout": "case 5 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 6,
+            "exit": 0,
+            "stdout": "case 6 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 7,
+            "exit": 0,
+            "stdout": "case 7 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 8,
+            "exit": 0,
+            "stdout": "case 8 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 9,
+            "exit": 0,
+            "stdout": "case 9 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 10,
+            "exit": 0,
+            "stdout": "case 10 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 11,
+            "exit": 0,
+            "stdout": "case 11 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 12,
+            "exit": 0,
+            "stdout": "case 12 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 13,
+            "exit": 0,
+            "stdout": "case 13 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 14,
+            "exit": 0,
+            "stdout": "case 14 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 15,
+            "exit": 0,
+            "stdout": "case 15 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 16,
+            "exit": 0,
+            "stdout": "case 16 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 17,
+            "exit": 0,
+            "stdout": "case 17 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 18,
+            "exit": 0,
+            "stdout": "case 18 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 19,
+            "exit": 0,
+            "stdout": "case 19 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 20,
+            "exit": 0,
+            "stdout": "case 20 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 21,
+            "exit": 0,
+            "stdout": "case 21 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 22,
+            "exit": 0,
+            "stdout": "case 22 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 23,
+            "exit": 0,
+            "stdout": "case 23 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 24,
+            "exit": 0,
+            "stdout": "case 24 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 25,
+            "exit": 0,
+            "stdout": "case 25 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 26,
+            "exit": 0,
+            "stdout": "case 26 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 27,
+            "exit": 0,
+            "stdout": "case 27 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 28,
+            "exit": 0,
+            "stdout": "case 28 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 29,
+            "exit": 0,
+            "stdout": "case 29 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 30,
+            "exit": 0,
+            "stdout": "case 30 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 31,
+            "exit": 0,
+            "stdout": "case 31 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 32,
+            "exit": 0,
+            "stdout": "case 32 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 33,
+            "exit": 0,
+            "stdout": "case 33 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 34,
+            "exit": 0,
+            "stdout": "case 34 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 35,
+            "exit": 0,
+            "stdout": "case 35 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 36,
+            "exit": 0,
+            "stdout": "case 36 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 37,
+            "exit": 0,
+            "stdout": "case 37 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 38,
+            "exit": 0,
+            "stdout": "case 38 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 39,
+            "exit": 0,
+            "stdout": "case 39 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 40,
+            "exit": 0,
+            "stdout": "case 40 passed\n",
+            "stderr": ""
+          },
+          {
+            "case": 41,
+            "exit": 0,
+            "stdout": "case 41 passed\n",
+            "stderr": ""
+          }
+        ],
+        "expected_exit": 0
+      }
+    },
+    "gpu-reader": {
+      "production_sha256": "acb3fbb4d2c03014587e5cbbf78d72dc519acb6c9b3189dd9cd7f5d5161158e6",
+      "tests_passed": 7,
+      "stdout": "\nrunning 7 tests\ntest production::tests::read_supported_rejects_a_truncated_record ... ok\ntest production::tests::read_up_to_copies_known_bytes_and_consumes_the_declared_stride ... ok\ntest production::tests::read_up_to_zero_extends_a_short_declared_record ... ok\ntest production::tests::read_supported_rejects_an_unsupported_field ... ok\ntest production::tests::read_supported_accepts_zero_unsupported_fields_and_tail ... ok\ntest production::tests::read_supported_rejects_a_nonzero_tail_beyond_the_type ... ok\ntest production::tests::read_supported_accepts_a_record_shorter_than_the_supported_part ... ok\n\ntest result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n",
+      "fixture_boundary": "Kernel Result/EINVAL types only; unmodified production util.rs and its original tests"
+    }
+  },
+  "hardware_qualification": false,
+  "limits": "Production source with controlled core/PCI/firmware services; no kernel boot, real radio/dock/suspend execution, or energy claim."
+}
