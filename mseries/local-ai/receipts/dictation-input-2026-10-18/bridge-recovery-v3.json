@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "restart_policy": "always",
+  "clean_term_recovered": true,
+  "new_bridge_process": true,
+  "recovery_seconds": 3.459761575999437,
+  "stream_process_preserved": true,
+  "input_source_list_preserved": true,
+  "idle_input_method_preserved": true,
+  "owner_ibus_restarted": false,
+  "microphone_recorded": false,
+  "owner_windows_changed": false,
+  "dependency": "Wants+After; no Requires cascade",
+  "unit_sha256": "1938bce4326c0af15610b46348d99318bf9049f678060ad43202510af2c56d42",
+  "bridge_sha256": "fcafaa03ba33d4c3293adc41b5e1066d5e584e476293de32fb13ad6d28fbd50e",
+  "scope": "Actual installed owned bridge, clean SIGTERM matches the observed exit class; no owner IBus termination"
+}

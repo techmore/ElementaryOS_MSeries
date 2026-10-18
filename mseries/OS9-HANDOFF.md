@@ -1,5 +1,54 @@
 # OS 9 implementation / Claude Code handoff
 
+## Native input reconnect recovery fixed and tested — 2026-10-18
+
+Authoritative live check found the bridge inactive after the owner IBus PID changed;
+systemd reported clean TERM with Restart=on-failure, so no recovery occurred. No F5
+press reached the new diagnostic logs. This is a concrete runtime fault, not proof
+of the owner's earlier microphone-popup cause. Replaced Restart with always; manual
+stop still stays stopped. No owner IBus daemon or other app was restarted by these fixes.
+
+Actual recovery testing exposed two additional failures, both retained: Requires
+coupling reloaded the speech worker; then a Wants-only test preserved speech but lost
+the idle global engine. Upstream IBus's dynamic-component removal checks registered
+engines and can clear even the static global engine. Corrected drop-in uses Wants+After
+and PartOf=graphical-session.target, with no Requires cascade. ExecStartPost repairs
+ONLY an empty engine from the selected native source. Any nonempty owner selection
+wins; XKB uses Pantheon's existing US pass-through engine without changing its map.
+Begin also recovers a missing engine from native sources if it was cleared later.
+
+Private GTK keyfile/session-bus reconnect v3 passes: terminate ONLY private IBus,
+restart its owned bridge, restore native source, remove/recreate that dynamic bridge,
+recover an unset engine on Begin, insert into actual Gtk.Entry and restore source.
+Changed-field/password refusal and preservation of a deliberate French engine also
+pass. v2 success retained separately; fixture v1 failed on a stale OWNED Unix socket
+pathname (setup error, no model quality score). The resulting ibus-daemon fixture core
+is a synthetic test failure, not evidence of a new owner kernel/desktop fault.
+
+Live exact-unit clean-TERM recovery v3 passed in3.46s, preserving the speech process,
+native source list and idle input method. Explicit stop stayed inactive past RestartSec,
+and explicit start became ready; rollback's stop behavior remains supported. Actual
+logout was NOT tested, only PartOf wiring. SpeechPID758179 was preserved through both
+corrected tests; final inputPID787274. CPU/IBus and nativeUS now ready; no mic recorded.
+Twenty-four contracts pass. New public receipts retain the earlier failures and exact
+reconnect v3 evaluated source. Optional panel remains uninstalled.
+
+The60s function-key observer (exec handle8393) is terminal: no selected function
+events occurred during its window. It delivered no character events and used no
+grab/mic; this is not a physical-key failure or proof of delivery. Receipt:
+work/dictation-function-key-observer-v1.json. A new human F5 retry was requested after
+recovery; do not restart these services while the owner may be trying it. Current keymap
+read-only queries show0x7003e->F14, not evidence of physical event delivery by themselves.
+
+Review unitPID699108 remains live/waiting, checkpoint0completed/0interruptions at last
+inspection. Do not duplicate it or weaken6GiB/default6.5GiB admission. Memory briefly
+fell below reserve due concurrent workload, then recovered before a guarded idle-ASR
+reclaim action; that action made no change. Current idle ASR still retains about0.8GiB
+and only guards load/capture. Consider on-demand loading/idle pressure release next,
+with actual memory/ASR/focus tests; do not silently claim full idle-pressure coverage.
+CI39126836578 at22c372c passed all3 jobs. New recovery changes require CI and reconciliation
+with origin/main c3e6b14. Human F5, actual review outputs, main merge and Pages remain open.
+
 ## Bounded F5 diagnostics deployed; review queue waiting — 2026-10-18
 
 Found and fixed a concrete timeout mismatch: stream input_call allowed3s but its

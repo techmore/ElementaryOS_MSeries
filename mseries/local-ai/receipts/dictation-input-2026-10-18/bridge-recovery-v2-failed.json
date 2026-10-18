@@ -1,0 +1,9 @@
+{
+  "passed": false,
+  "bridge_restart_policy_recovered": true,
+  "speech_process_preserved": true,
+  "idle_input_method_preserved": false,
+  "observation": "Removing the dynamic component cleared IBus's static global engine. The selected native source must be restored after registration only if the selection is empty.",
+  "microphone_recorded": false,
+  "owner_ibus_restarted_by_test": false
+}

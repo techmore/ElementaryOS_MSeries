@@ -20,6 +20,21 @@ def bounded_children(node, count, deadline, clock=time.monotonic):
     return children
 
 
+def native_engine(sources, index):
+    """Recover the selected native source when IBus lost its global engine.
+
+    Pantheon's XKB sources use IBus's US pass-through engine; Gala keeps the
+    actual physical keymap. Choosing it through IBus never changes that map.
+    """
+    if type(index) is not int or index<0 or index>=len(sources):return None
+    try:kind,name=sources[index]
+    except (TypeError,ValueError):return None
+    if not isinstance(name,str) or not name or len(name)>256:return None
+    if kind=='xkb':return 'xkb:us::eng'
+    if kind=='ibus':return name
+    return None
+
+
 class MetadataBudget:
     """Bound a series of accessibility RPCs, including cached-field ancestors."""
     def __init__(self, seconds=.6, clock=time.monotonic):
@@ -279,8 +294,12 @@ def main():
         deadline=time.monotonic()+2.75
         identity = metadata.validate()  # Refuse sensitive fields BEFORE switching.
         desc = bus.get_global_engine()
-        if desc is None: raise ValueError('No current input method')
-        lease.update(busy=True, previous=desc.get_name(), epoch=lease['epoch'] + 1)
+        previous=desc.get_name() if desc else None
+        if previous is None:
+            settings=Gio.Settings.new('org.gnome.desktop.input-sources')
+            previous=native_engine(settings.get_value('sources').unpack(),settings.get_uint('current'))
+        if previous is None:raise ValueError('No current or configured native input method')
+        lease.update(busy=True, previous=previous, epoch=lease['epoch'] + 1)
         epoch = lease['epoch']
         def selected(obj, result, *_):
             try:

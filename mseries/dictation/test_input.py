@@ -33,6 +33,13 @@ class FocusTests(unittest.TestCase):
                      (79, True, False, True), (79, True, True, False), (0, True, True, True), (67, True, True, True)]:
             self.assertFalse(module.safe_accessible(*args))
 
+    def test_native_source_fallback_preserves_layout_owner(self):
+        sources=[('xkb','fr+oss'),('ibus','mozc-jp')]
+        self.assertEqual(module.native_engine(sources,0),'xkb:us::eng')
+        self.assertEqual(module.native_engine(sources,1),'mozc-jp')
+        for rows,index in [([],0),(sources,-1),(sources,2),(sources,True),([('unknown','us')],0),([('ibus','')],0)]:
+            self.assertIsNone(module.native_engine(rows,index))
+
     def test_metadata_budget_stops_slow_ancestor_queries(self):
         elapsed=[0]
         budget=module.MetadataBudget(.6,lambda:elapsed[0])

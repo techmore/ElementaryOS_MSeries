@@ -1,0 +1,9 @@
+{
+  "passed": false,
+  "bridge_restart_policy_recovered": true,
+  "speech_process_preserved": false,
+  "idle_engine_unset_after_attempt": true,
+  "interpretation": "Clean bridge TERM exposed Requires coupling: the speech dependency also reloaded. Replace it with Wants and validate native selected-source recovery before promoting.",
+  "microphone_recorded": false,
+  "owner_ibus_restarted_by_test": false
+}

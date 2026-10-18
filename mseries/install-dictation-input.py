@@ -280,7 +280,7 @@ def main():
         install_panel(payload)
         payload.data['metadata']['activation_started'] = True
         payload.save()
-        payload.install(DROPIN, b'[Unit]\nRequires=mseries-dictation-input.service\nAfter=mseries-dictation-input.service\n\n[Service]\nEnvironment=STREAM_OUTPUT=ibus\nEnvironment=STREAM_BACKEND=cpu\n', 0o644)
+        payload.install(DROPIN, b'[Unit]\nPartOf=graphical-session.target\nWants=mseries-dictation-input.service\nAfter=mseries-dictation-input.service\n\n[Service]\nEnvironment=STREAM_OUTPUT=ibus\nEnvironment=STREAM_BACKEND=cpu\n', 0o644)
         payload.install(ENVIRONMENT, b'GTK_IM_MODULE=ibus\nQT_IM_MODULE=ibus\nXMODIFIERS=@im=ibus\n', 0o644)
         for preference in payload.data['metadata']['preferences']:
             command(['gsettings', 'set', preference['schema'], preference['key'], preference['desired']])

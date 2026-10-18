@@ -18,10 +18,12 @@ import signal
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--gtk4',action='store_true')
 parser.add_argument('--receipt-dir',type=Path,help='New private output folder for exact evaluated sources and bounded receipt')
+parser.add_argument('--reconnect-check',action='store_true',help='Private IBus reconnect and selected-source recovery; synthetic fields only')
 parser.add_argument('--keyboard-check',action='store_true',help='Synthetic ordinary-key and US-international compose regression in private Xvfb')
 parser.add_argument('--speech-file',type=Path,help='Public synthetic test WAV; CPU ASR, no microphone')
 parser.add_argument('--wayland',action='store_true',help='Use only inside an isolated nested Wayland desktop')
 args=parser.parse_args()
+if args.reconnect_check:assert not args.wayland and not args.speech_file,'Reconnect fixture uses private X11/keyfile settings; no ASR'
 if args.wayland:
     assert os.environ.get('MSERIES_DICTATION_TEST_BUS') == '1' and os.environ.get('GSETTINGS_BACKEND') == 'memory', 'Use test-wayland-input.sh'
 elif os.environ.get('MSERIES_INPUT_TEST_SESSION') != '1':
@@ -31,6 +33,7 @@ with tempfile.TemporaryDirectory(prefix='mseries-gtk-input-') as directory:
     os.environ.update(IBUS_ADDRESS='unix:path='+directory+'/bus', GTK_IM_MODULE='ibus',
         GDK_BACKEND='wayland' if args.wayland else 'x11', XDG_CACHE_HOME=directory+'/cache', XDG_CONFIG_HOME=directory+'/config',
         GTK_A11Y='atspi', GIO_USE_VFS='local',GSK_RENDERER='cairo',LIBGL_ALWAYS_SOFTWARE='1')
+    if args.reconnect_check:os.environ['GSETTINGS_BACKEND']='keyfile'
     evaluated=Path(directory)/'evaluated-source'
     if args.receipt_dir:
         args.receipt_dir=args.receipt_dir.resolve()
@@ -49,6 +52,10 @@ with tempfile.TemporaryDirectory(prefix='mseries-gtk-input-') as directory:
     gi.require_version('Gtk','4.0' if args.gtk4 else '3.0')
     gi.require_version('Gdk','4.0' if args.gtk4 else '3.0')
     from gi.repository import IBus,Gio,GLib,Gtk,Gdk
+    if args.reconnect_check:
+        native=Gio.Settings.new('org.gnome.desktop.input-sources')
+        assert native.set_value('sources',GLib.Variant('a(ss)',[('xkb','us')]))
+        native.set_uint('current',0);Gio.Settings.sync()
     daemon=subprocess.Popen(['ibus-daemon','--single','--emoji-extension','disable',
         '--address',os.environ['IBUS_ADDRESS'],'--cache','none'])
     engine=None
@@ -184,6 +191,38 @@ with tempfile.TemporaryDirectory(prefix='mseries-gtk-input-') as directory:
                 'max_fan_rpm':max(max(s['fans_rpm'].values()) for s in samples),
                 'max_temp_c':max(max(s['temperatures_c'].values()) for s in samples),
                 'samples':len(samples),'quiet_policy_passed':True,'microphone_recorded':False}
+        reconnect_receipt=None
+        if args.reconnect_check:
+            daemon.terminate();daemon.wait(timeout=5);pump()
+            engine.wait(timeout=5)
+            clean_disconnect=engine.returncode==0
+            # The private daemon leaves its Unix socket pathname on TERM.
+            # Remove only our socket after its owning process has exited.
+            socket=Path(directory)/'bus'
+            if socket.exists():socket.unlink()
+            daemon=subprocess.Popen(['ibus-daemon','--single','--emoji-extension','disable',
+                '--address',os.environ['IBUS_ADDRESS'],'--cache','none'])
+            pump(1)
+            engine=subprocess.Popen(['/usr/bin/python3',str(evaluated/'dictation-input.py')])
+            pump(1)
+            assert bus.is_connected(),'GTK/IBus bus did not reconnect'
+            assert bus.get_global_engine() is None,'Fixture must exercise an unset global engine'
+            assert run_client('repair-native').returncode==0
+            assert bus.get_global_engine().get_name()=='xkb:us::eng'
+            # Removing our dynamic component clears even the static engine.
+            # Recreate only that private bridge to exercise Begin's fallback.
+            engine.terminate();engine.wait(timeout=5);pump()
+            assert bus.get_global_engine() is None
+            engine=subprocess.Popen(['/usr/bin/python3',str(evaluated/'dictation-input.py')]);pump(1)
+            result=run_client('begin');assert result.returncode==0,result.stderr
+            recovered=result.stdout.strip()
+            previous_text=first.get_text()
+            assert run_client('commit',recovered,' recovered').returncode==0
+            pump();assert first.get_text()==previous_text+' recovered'
+            assert run_client('finish',recovered).returncode==0
+            assert bus.get_global_engine().get_name()=='xkb:us::eng'
+            reconnect_receipt={'private_ibus_restarted':True,'bridge_clean_disconnect':clean_disconnect,
+                'unset_engine_recovered_from_native_source':True,'startup_native_repair':True,'gtk_client_reconnected':True}
         result=run_client('begin');assert result.returncode==0,result.stderr
         token=result.stdout.strip()
         second.grab_focus();pump()
@@ -194,13 +233,15 @@ with tempfile.TemporaryDirectory(prefix='mseries-gtk-input-') as directory:
         assert bus.set_global_engine('xkb:fr::fra');pump()
         assert run_client('finish',token).returncode==0
         assert bus.get_global_engine().get_name()=='xkb:fr::fra','Finish overwrote owner selection'
+        assert run_client('repair-native').returncode==0
+        assert bus.get_global_engine().get_name()=='xkb:fr::fra','Startup repair overwrote a nonempty owner selection'
         password.grab_focus();pump()
         assert run_client('begin').returncode!=0,'Password accepted dictation'
         assert not password.get_text()
         assert bus.get_global_engine().get_name()=='xkb:fr::fra','Sensitive Begin changed input method'
         window.destroy();pump()
         receipt={'passed':True,'source_sha256':source_hashes,'gtk_version':4 if args.gtk4 else 3,'display_backend':'wayland' if args.wayland else 'x11','unicode_field':True,'changed_field_untouched':True,
-            'password_untouched':True,'session_engine_restore':True,'overlapping_begin_refused':True,'owner_selection_preserved':True,'speech':speech_receipt,'keyboard':keyboard_receipt,'method':'Actual Gtk.Entry fields, private '+('headless Gala Wayland' if args.wayland else 'Xvfb')+'/IBus/session bus; '+('CPU file ASR; no microphone' if speech_receipt else 'no ASR or microphone')}
+            'password_untouched':True,'session_engine_restore':True,'overlapping_begin_refused':True,'owner_selection_preserved':True,'reconnect':reconnect_receipt,'speech':speech_receipt,'keyboard':keyboard_receipt,'method':'Actual Gtk.Entry fields, private '+('headless Gala Wayland' if args.wayland else 'Xvfb')+'/IBus/session bus; '+('CPU file ASR; no microphone' if speech_receipt else 'no ASR or microphone')}
         if args.receipt_dir:(args.receipt_dir/'receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
         print(json.dumps(receipt))
     finally:

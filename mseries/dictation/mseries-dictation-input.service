@@ -8,7 +8,8 @@ Type=dbus
 BusName=org.techmore.DictationInput
 ExecStart=/usr/bin/python3 %h/.local/share/mseries/stream/dictation-input.py
 ExecStartPost=/usr/bin/python3 %h/.local/share/mseries/stream/dictation-input-client.py ready
-Restart=on-failure
+ExecStartPost=/usr/bin/python3 %h/.local/share/mseries/stream/dictation-input-client.py repair-native
+Restart=always
 RestartSec=3
 
 [Install]
