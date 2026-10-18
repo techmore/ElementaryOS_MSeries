@@ -34,6 +34,8 @@ install -m 0644 "$SRCDIR/mseries/quick-settings/AirPlayOutputs.vala" "$source_di
 # Factory sysupdate ships immutable /usr; /usr/local is a separate mutable tree.
 sed -i "s|/usr/local/sbin/mseries-power|/usr/libexec/mseries/power|g" "$source_dir/src/Widgets/ChargeLimit.vala"
 
+git -C "$source_dir" apply "$SRCDIR/mseries/patches/quick-settings-bluetooth.patch"
+install -m 0644 "$SRCDIR/mseries/quick-settings/Bluetooth.vala" "$source_dir/src/Widgets/Bluetooth.vala"
 meson setup "$build_dir" "$source_dir" \
     --prefix=/usr \
     --libdir=lib/aarch64-linux-gnu \

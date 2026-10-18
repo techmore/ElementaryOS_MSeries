@@ -110,9 +110,9 @@ namespace MSeries {
                 var window = windows.get_object_element (i);
                 var node = window.get_member ("remaining");
                 if (node == null || node.get_node_type () != Json.NodeType.VALUE) continue;
-                var minutes = (int) window.get_int_member_with_default ("minutes", 0);
-                var label = short_window_label (window.get_string_member_with_default ("label", "Quota"), minutes);
-                var reset = new DateTime.from_iso8601 (window.get_string_member_with_default ("resetsAt", ""), null);
+                var minutes = (int) JsonBoundary.integer (window, "minutes", 0);
+                var label = short_window_label (JsonBoundary.text (window, "label", "Quota"), minutes);
+                var reset = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt", ""), null);
                 var eta = reset == null ? "?" : reset.to_unix () <= now_unix ? "now"
                     : countdown_text (reset.to_unix () - now_unix);
                 if (parts.len > 0) parts.append (" · ");
@@ -156,7 +156,7 @@ namespace MSeries {
                 if (node == null || node.get_node_type () != Json.NodeType.VALUE) return -1;
                 var remaining = node.get_double ();
                 if (remaining < 0 || remaining > 100 || remaining.is_nan ()) return -1;
-                var reset = new DateTime.from_iso8601 (window.get_string_member_with_default ("resetsAt", ""), null);
+                var reset = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt", ""), null);
                 if (reset != null && reset.to_unix () <= now_unix) return -1;
                 lowest = double.min (lowest, remaining);
             }
@@ -167,11 +167,11 @@ namespace MSeries {
             int64 earliest = 0;
             for (uint i = 0; windows != null && i < windows.get_length (); i++) {
                 var window = windows.get_object_element (i);
-                var minutes = window.get_int_member_with_default ("minutes", 0);
-                var label = window.get_string_member_with_default ("label", "").down ();
+                var minutes = JsonBoundary.integer (window, "minutes", 0);
+                var label = JsonBoundary.text (window, "label", "").down ();
                 if (minutes != 10080 && !(minutes == 0 && (label.contains ("week")
                     || label == "7d" || label.has_prefix ("7 day")))) continue;
-                var reset = new DateTime.from_iso8601 (window.get_string_member_with_default ("resetsAt", ""), null);
+                var reset = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt", ""), null);
                 if (reset != null && reset.to_unix () > now_unix && (earliest == 0 || reset.to_unix () < earliest)) {
                     earliest = reset.to_unix ();
                 }
@@ -186,10 +186,10 @@ namespace MSeries {
             int64 soonest = 0;
             for (uint i = 0; i < accounts.get_length (); i++) {
                 var account = accounts.get_object_element (i);
-                if (account.get_boolean_member_with_default ("stale", false)) continue;
-                var id = account.get_string_member_with_default ("id", "");
+                if (JsonBoundary.flag (account, "stale", false)) continue;
+                var id = JsonBoundary.text (account, "id", "");
                 if (id.length == 0) continue;
-                var windows = account.has_member ("windows") ? account.get_array_member ("windows") : null;
+                var windows = account.has_member ("windows") ? JsonBoundary.array (account, "windows") : null;
                 var remaining = account_headroom (windows, now_unix);
                 if (remaining > 0 && remaining >= highest) {
                     if (remaining > highest) best = new Json.Array ();

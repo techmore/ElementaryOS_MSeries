@@ -17,6 +17,7 @@ bool contains_label (Gtk.Widget widget, string text) {
 int main (string[] args) {
     Gtk.init ();
     Granite.init ();
+    bool claude = Environment.get_variable ("CB_SWITCH_MODE") == "claude-failed-exit";
     var indicator = new MSeries.CodexBarIndicator ();
     var menu = indicator.get_widget ();
     var window = new Gtk.Window () { child = menu };
@@ -37,13 +38,13 @@ int main (string[] args) {
             var windows = Gtk.Window.get_toplevels ();
             Gtk.Button? confirm = null;
             for (uint n = 0; n < windows.get_n_items (); n++) {
-                confirm = find_button ((Gtk.Widget) windows.get_item (n), "Switch account");
+                confirm = find_button ((Gtk.Widget) windows.get_item (n), claude ? "Switch Claude account" : "Switch account");
                 if (confirm != null) break;
             }
             assert (confirm != null);
             confirm.clicked ();
             Timeout.add (1000, () => {
-                var expected = Environment.get_variable ("CB_SWITCH_EXPECT_ERROR") != null
+                var expected = claude ? "Couldn't switch Claude account" : Environment.get_variable ("CB_SWITCH_EXPECT_ERROR") != null
                     ? "Couldn't switch Codex account" : "Switched ChatGPT account";
                 var result_windows = Gtk.Window.get_toplevels ();
                 for (uint n = 0; n < result_windows.get_n_items (); n++) {

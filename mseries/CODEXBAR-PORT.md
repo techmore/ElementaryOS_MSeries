@@ -8,7 +8,7 @@ ones.** Upgrade by re-pinning, re-installing upstream, and re-verifying each ite
 
 | Piece | File(s) | Depends on upstream |
 |---|---|---|
-| Wingpanel indicator (native popover: dense cards, company marks, account line, bottom bar with freshness, dock and refresh) | `codexbar-wingpanel/` (`Indicator.vala`, `Presentation.vala`, `QuotaEta.vala`, `icons/`) | `codexbar-linux --snapshot` JSON (schemaVersion 1: `entries[].windows[]`, `spending`, `stale`, `busy`) and the `--refresh/--usage/--spending/--settings/--quick-view` actions |
+| Wingpanel indicator (native popover: dense cards, company marks, account line, bottom bar with freshness, dock and refresh) | `codexbar-wingpanel/` (`Indicator.vala`, `JsonBoundary.vala`, `Presentation.vala`, `QuotaEta.vala`, `icons/`) | `codexbar-linux --snapshot` JSON (schemaVersion 1: `entries[].windows[]`, `spending`, `stale`, `busy`) and the `--refresh/--usage/--spending/--settings/--quick-view` actions |
 | Native Settings window (replaces upstream's Qt one; Fusion is hard-coded there so it can't be themed). Same `linux.json` keys, applied live through `codexbar-linux --configure`; opened by the panel's Settings button (`~/.local/bin/codexbar-settings`) | `codexbar-wingpanel/settings/` (`SettingsModel.vala` with tests, `SettingsApp.vala`), `probe/run-settings-probe.sh` | `linux.json` keys and validation in `DesktopController.cpp` (`validate`/`loadSettings`), `--configure`, `--autostart`, `codexbar config providers/enable` |
 | Wrapper that follows the active OpenCode v2 OAuth account, with a legacy Go key fallback (read-only `credential` table; never copies/refreshes it) | `codexbar-opencode-wrapper.py` → `~/.local/bin/codexbar` | `codexbar-upstream` CLI path under `~/.local/lib/codexbar-cli/` |
 | Shared helper cache and locks (polling limits: per-answer TTL, exponential backoff on failure, last-good data kept, private `0600` files under `~/.cache/codexbar-mseries`; one `flock` around Codex sign-in writes) | `codexbar_cache.py` | none |
@@ -26,8 +26,8 @@ ones.** Upgrade by re-pinning, re-installing upstream, and re-verifying each ite
 2. Bump `version=` in `install-codexbar.sh`. Download both tarballs to a scratch dir and verify `sha256`.
 3. Run `bash mseries/check-codexbar-port.sh` against the new CLI (set `CODEXBAR_CLI=<scratch>/codexbar`). It checks the
    pieces we depend on and prints what still needs a human look.
-4. Install: `bash mseries/install-codexbar.sh --skip-system-deps`, then `bash mseries/deploy-codexbar.sh` (restarts
-   Wingpanel and the app).
+4. Install: `bash mseries/install-codexbar.sh --skip-system-deps`, then `bash mseries/deploy-codexbar.sh` (stages
+   the native module for next login and preserves the running panel/daemon).
 4b. On an upstream bump diff `Integrations/Linux/DesktopController.cpp` (settings defaults and `validate`) and `qml/SettingsWindow.qml` between the old and new tags; add any new setting to `SettingsModel.vala` and the window, and drop removed ones.
 5. Re-run `bash mseries/check-codexbar-port.sh` (no env) against the live app: it now also compares the running
    app's `--snapshot` against the panel's fixture schema.
@@ -209,7 +209,8 @@ ChatGPT's panel Switch uses `codexbar-accounts.py switch <exact-id> --desktop`: 
 closes only the current user's ChatGPT executable, saves the departing login, swaps auth under the state lock,
 and reopens ChatGPT. Avoid signing out/revoking saved credentials, which would break fast switching.
 Claude's installed-app Switch uses `switch <number> --desktop` after confirmation. CodexBar stays running during
-both; deploy-codexbar.sh independently restarts the panel and daemon when loading a new build.
+both. Routine deployment stages the native module for next login; an explicit `--restart` reloads
+Wingpanel while preserving the running CodexBar daemon.
 
 ### Wingpanel display preferences
 
@@ -243,3 +244,20 @@ and async result with a fake backend in an isolated desktop. It reproduces the f
 owned account-ID fix. Meson registers all four cases when Xvfb/DBus are installed, so ordinary deploy checks and
 `check-codexbar-port.sh` run them before installing a build. `test-codexbar-deploy.py` checks that
 routine deployment cannot signal the live panel or quit the daemon.
+
+### Defensive JSON boundary
+
+`JsonBoundary.vala` checks every external snapshot/helper JSON root and nested rendered collection before
+native code reads it. Checked optional getters preserve defaults for absent/null fields. Validation rejects
+wrong types/elements and caps traversal depth/work; unknown keys remain compatible. Five isolated Switch
+interactions and the malformed-refresh/recovery probe are registered with Meson when Xvfb and D-Bus are
+available. The ingestion probe treats GLib criticals as failures and reproduced a null-session assertion
+on the previous code. Tests use private fake profiles and never signal real apps or change real accounts.
+Claude Switch additionally requires helper exit success. No polling intervals changed.
+
+### Compact OpenCode panel rows
+
+All three providers share compact panel text (7.5 pt quota, 7 pt reset, 6.75 pt second row). With one
+saved account and account quota available, its local seven-day token count occupies the lower row.
+With alternate accounts, that row keeps their quotas instead; local usage remains in the tooltip and
+popover. `probe/run-probe.sh BUILD OUT light opencode-compact connected` previews both cases.

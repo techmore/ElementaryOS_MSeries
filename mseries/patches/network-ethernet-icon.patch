@@ -1,0 +1,135 @@
+--- a/data/24/network-wired-connected-symbolic.svg
++++ b/data/24/network-wired-connected-symbolic.svg
+@@ -1,23 +1,7 @@
+-<svg
+-        xmlns='http://www.w3.org/2000/svg'
+-        xmlns:svg='http://www.w3.org/2000/svg'
+-        id='svg8'
+-        width='24'
+-        height='24'>
+-  <path
+-          id='path4'
+-          opacity='1'
+-          fill='url(#gpa:foreground) rgb(0,0,0)'
+-          fill-opacity='1'
+-          fill-rule='nonzero'
+-          stroke-opacity='1'
+-          stroke-width='1'
+-          stroke-linecap='butt'
+-          stroke-linejoin='miter'
+-          stroke-miterlimit='4'
+-          stroke-dasharray='none'
+-          stroke-dashoffset='0'
+-          d='M 6.00195 7 A 1 1 0 0 0 5.14844 7.47461 L 2.25391 11.3359 A 1 1 0 0 0 2 11.998 A 1 1 0 0 0 2.20508 12.6055 A 1 1 0 0 0 2.23438 12.6426 L 5.17188 16.5605 A 1 1 0 0 0 5.99805 17 A 1 1 0 0 0 7 16.002 A 1 1 0 0 0 6.80273 15.4062 L 6.80469 15.4043 L 4.25391 12.002 L 6.80469 8.59961 L 6.80078 8.59766 A 1 1 0 0 0 7 8.00195 A 1 1 0 0 0 6.00195 7 Z M 17.998 7 A 1 1 0 0 0 17 8.00195 A 1 1 0 0 0 17.1992 8.59766 L 17.1953 8.59961 L 19.7461 12.002 L 17.1953 15.4043 L 17.1973 15.4062 A 1 1 0 0 0 17 16.002 A 1 1 0 0 0 18.002 17 A 1 1 0 0 0 18.8281 16.5605 L 21.7656 12.6426 A 1 1 0 0 0 21.7949 12.6055 A 1 1 0 0 0 22 11.998 A 1 1 0 0 0 21.7461 11.3359 L 18.8516 7.47461 A 1 1 0 0 0 17.998 7 Z M 9 11 A 1 1 0 0 0 9 13 A 1 1 0 0 0 9 11 Z M 12 11 A 1 1 0 0 0 12 13 A 1 1 0 0 0 12 11 Z M 15 11 A 1 1 0 0 0 15 13 A 1 1 0 0 0 15 11 Z'
+-          class='foreground foreground-fill'>
+-  </path>
++<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
++  <!-- SPDX-License-Identifier: CC0-1.0; SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries -->
++  <g transform="translate(2.7945 2.7945) scale(0.767125)">
++  <path fill-rule="evenodd" d="M3 3h18v13h-5v5H8v-5H3z M5 5v9h5v5h4v-5h5V5z"/>
++  <path d="M7 6h1v5H7z M10 6h1v5h-1z M13 6h1v5h-1z M16 6h1v5h-1z"/>
++  </g>
+ </svg>
+--- a/data/16/network-wired-connected-symbolic.svg
++++ b/data/16/network-wired-connected-symbolic.svg
+@@ -1,58 +1,7 @@
+-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+-<svg
+-   xmlns:dc="http://purl.org/dc/elements/1.1/"
+-   xmlns:cc="http://creativecommons.org/ns#"
+-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+-   xmlns:svg="http://www.w3.org/2000/svg"
+-   xmlns="http://www.w3.org/2000/svg"
+-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+-   height="16"
+-   width="16"
+-   version="1.1"
+-   id="svg6"
+-   sodipodi:docname="network-wired-symbolic.svg"
+-   inkscape:version="0.92.3 (2405546, 2018-03-11)">
+-  <metadata
+-     id="metadata12">
+-    <rdf:RDF>
+-      <cc:Work
+-         rdf:about="">
+-        <dc:format>image/svg+xml</dc:format>
+-        <dc:type
+-           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+-      </cc:Work>
+-    </rdf:RDF>
+-  </metadata>
+-  <defs
+-     id="defs10" />
+-  <sodipodi:namedview
+-     pagecolor="#ffffff"
+-     bordercolor="#666666"
+-     borderopacity="1"
+-     objecttolerance="10"
+-     gridtolerance="10"
+-     guidetolerance="10"
+-     inkscape:pageopacity="0"
+-     inkscape:pageshadow="2"
+-     inkscape:window-width="3200"
+-     inkscape:window-height="1674"
+-     id="namedview8"
+-     showgrid="false"
+-     inkscape:zoom="2"
+-     inkscape:cx="8"
+-     inkscape:cy="8"
+-     inkscape:window-x="0"
+-     inkscape:window-y="60"
+-     inkscape:window-maximized="1"
+-     inkscape:current-layer="svg6">
+-    <inkscape:grid
+-       type="xygrid"
+-       id="grid828" />
+-  </sodipodi:namedview>
+-  <path
+-     inkscape:connector-curvature="0"
+-     id="path4-1-2"
+-     d="M 3.2015386,3.9999998 A 0.79999977,0.79999977 0 0 0 2.5187253,4.3796866 L 0.20310101,7.4687471 A 0.79999977,0.79999977 0 0 0 -2.4700018e-5,7.9984348 0.79999977,0.79999977 0 0 0 0.1640396,8.4843717 a 0.79999977,0.79999977 0 0 0 0.02344,0.029693 L 2.5374773,11.648438 A 0.79999977,0.79999977 0 0 0 3.1984159,12 0.79999977,0.79999977 0 0 0 3.9999787,11.201563 0.79999977,0.79999977 0 0 0 3.8421651,10.724999 l 0.0016,-0.0016 L 1.80314,8.0015268 3.8437651,5.2796525 3.8406984,5.2781859 A 0.79999977,0.79999977 0 0 0 4.0000307,4.8016183 0.79999977,0.79999977 0 0 0 3.2015932,4.0000568 Z m 9.5968714,0 a 0.79999977,0.79999977 0 0 0 -0.798436,0.8015612 0.79999977,0.79999977 0 0 0 0.159375,0.4765635 l -0.0031,0.0016 2.040625,2.7218729 -2.040625,2.7218726 0.0016,0.0016 a 0.79999977,0.79999977 0 0 0 -0.157855,0.476488 0.79999977,0.79999977 0 0 0 0.801563,0.798437 0.79999977,0.79999977 0 0 0 0.660936,-0.351562 l 2.349999,-3.1343733 a 0.79999977,0.79999977 0 0 0 0.02344,-0.029693 0.79999977,0.79999977 0 0 0 0.164059,-0.4859355 0.79999977,0.79999977 0 0 0 -0.203125,-0.5296877 L 13.481319,4.3797839 A 0.79999977,0.79999977 0 0 0 12.798506,4.0000983 Z M 5.5999754,7.1999973 a 0.79999977,0.79999977 0 0 0 0,1.5999989 0.79999977,0.79999977 0 0 0 0,-1.5999989 z m 2.4000004,0 a 0.79999977,0.79999977 0 0 0 0,1.5999989 0.79999977,0.79999977 0 0 0 0,-1.5999989 z m 2.3999982,0 a 0.79999977,0.79999977 0 0 0 0,1.5999989 0.79999977,0.79999977 0 0 0 0,-1.5999989 z"
+-     style="opacity:1;vector-effect:none;fill:#555761;fill-opacity:1;stroke-width:0.99999988;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
++<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
++  <!-- SPDX-License-Identifier: CC0-1.0; SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries -->
++  <g transform="translate(1.863 1.863) scale(0.767125)">
++  <path fill-rule="evenodd" d="M1 1h14v10h-4v4H5v-4H1z M3 3v6h4v4h2V9h4V3z"/>
++  <path d="M4 4h1v3H4z M6 4h1v3H6z M8 4h1v3H8z M10 4h1v3h-1z"/>
++  </g>
+ </svg>
+--- a/data/24/network-wired-secure-symbolic.svg
++++ b/data/24/network-wired-secure-symbolic.svg
+@@ -1,23 +1,11 @@
+-<svg
+-        xmlns='http://www.w3.org/2000/svg'
+-        xmlns:svg='http://www.w3.org/2000/svg'
+-        id='svg8'
+-        width='24'
+-        height='24'>
+-  <path
+-          id='path4'
+-          opacity='1'
+-          fill='url(#gpa:foreground) rgb(0,0,0)'
+-          fill-opacity='1'
+-          fill-rule='nonzero'
+-          stroke-opacity='1'
+-          stroke-width='1'
+-          stroke-linecap='butt'
+-          stroke-linejoin='miter'
+-          stroke-miterlimit='4'
+-          stroke-dasharray='none'
+-          stroke-dashoffset='0'
+-          d='M 6.00195 7 A 1 1 0 0 0 5.14844 7.47461 L 2.25391 11.3359 A 1 1 0 0 0 2 11.998 A 1 1 0 0 0 2.20508 12.6055 A 1 1 0 0 0 2.23438 12.6426 L 5.17188 16.5605 A 1 1 0 0 0 5.99805 17 A 1 1 0 0 0 7 16.002 A 1 1 0 0 0 6.80273 15.4062 L 6.80469 15.4043 L 4.25391 12.002 L 6.80469 8.59961 L 6.80078 8.59766 A 1 1 0 0 0 7 8.00195 A 1 1 0 0 0 6.00195 7 Z M 17.998 7 A 1 1 0 0 0 17 8.00195 A 1 1 0 0 0 17.1992 8.59766 L 17.1953 8.59961 L 19.7461 12.002 L 19.0938 12.873 C 19.645 13.4199, 19.9879 14.1754, 19.9961 15.002 L 21.7656 12.6426 A 1 1 0 0 0 21.7949 12.6055 A 1 1 0 0 0 22 11.998 A 1 1 0 0 0 21.7461 11.3359 L 18.8516 7.47461 A 1 1 0 0 0 17.998 7 Z M 9 11 A 1 1 0 0 0 9 13 A 1 1 0 0 0 9 11 Z M 12 11 A 1 1 0 0 0 12 13 A 1 1 0 0 0 12 11 Z M 15 11 A 1 1 0 0 0 14.8105 12.9805 C 15.1311 12.6312, 15.5299 12.3628, 15.9805 12.1953 A 1 1 0 0 0 15 11 Z M 17 13 C 15.892 13, 15 13.9102, 15 15.0312 L 15 16 L 14.5 16 C 14.5 16, 14 16, 14 16.5 L 14 19.5 C 14 19.5, 14 20, 14.5 20 L 19.5 20 C 19.5 20, 20 20, 20 19.5 L 20 16.5 C 20 16, 19.5 16, 19.5 16 L 19 16 L 19 15.0312 C 19 13.9113, 18.108 13, 17 13 Z M 17 14 C 17.554 14, 18 14.442, 18 15 L 18 16 L 16 16 L 16 15 C 16 14.442, 16.446 14, 17 14 Z'
+-          class='foreground foreground-fill'>
+-  </path>
++<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
++  <!-- SPDX-License-Identifier: CC0-1.0; SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries -->
++  <g transform="translate(2.7945 2.7945) scale(0.767125)">
++  <defs><mask id="port"><rect width="24" height="24" fill="white"/><rect x="13" y="12" width="11" height="12" fill="black"/></mask></defs>
++  <g mask="url(#port)">
++  <path fill-rule="evenodd" d="M3 3h18v13h-5v5H8v-5H3z M5 5v9h5v5h4v-5h5V5z"/>
++  <path d="M7 6h1v5H7z M10 6h1v5h-1z M13 6h1v5h-1z M16 6h1v5h-1z"/>
++  </g>
++  <path fill-rule="evenodd" d="M16 16v-2a3 3 0 0 1 6 0v2h1v7h-8v-7z M18 16h2v-2a1 1 0 0 0-2 0z"/>
++  </g>
+ </svg>
