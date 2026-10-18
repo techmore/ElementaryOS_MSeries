@@ -22,8 +22,27 @@ Implementation: a GTK4 helper that watches `~/Pictures/Screenshots` (Gala's save
 
 ## Checked on the M1 Pro (2026-10-14)
 
-Watcher picks up a new screenshot and shows the thumbnail; an ignored thumbnail expires after 7 seconds and the file is kept; the card renders correctly offscreen; Swappy starts through the wrapper.
+Watcher picks up a new screenshot and shows the thumbnail; an ignored thumbnail expired after 7 seconds in the original version and the file is kept; the card renders correctly offscreen; Swappy starts through the wrapper.
 
 ## Not yet checked
 
 Dragging into real apps, Alt detection during a drag, and the thumbnail's exact position on screen. If Alt is not detected, use Markup to keep a copy, or just ignore the thumbnail.
+
+## Recovery and deployment check (2026-10-18)
+
+Reinstall with `bash mseries/install-screenshot-shelf.sh`. The installer writes quoted absolute
+Exec paths into the installed desktop entries: `%h` is not a valid desktop field code and prevented
+login startup. This also fixes the Markup launcher. Validate with
+`desktop-file-validate ~/.config/autostart/mseries-screenshot-shelf.desktop ~/.local/share/applications/mseries-markup.desktop`.
+The shelf log is `~/.cache/mseries-screenshot-shelf.log`; after login it should say `watching`.
+
+Build the window picker from this checkout with `bash mseries/install-gala-screen-corners.sh`,
+then log out and back in. Confirm the installed binary contains `gala_selection_area_update_hover`
+with `strings /usr/local/lib/mseries/gala/bin/gala | rg gala_selection_area_update_hover`.
+This checks the installed code, not what the running compositor has loaded.
+
+On 2026-10-18 the installed binary still contained the old click-only picker even after login;
+it was rebuilt from main with the Space/highlight patch. Shelf startup is now fixed and a synthetic
+Screenshot PNG produced `showing` then `shelf done: expired` four seconds later. Both installed desktop
+entries validate. The shutter sound asset exists and event sounds are enabled; audible capture,
+Space highlight and drag-out still need a live check after the new Gala loads.

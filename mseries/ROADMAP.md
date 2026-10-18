@@ -1,5 +1,12 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Screenshot login repair — 2026-10-18
+
+Fixed invalid `%h` Exec paths preventing screenshot shelf and Markup startup; installed and validated
+absolute paths. Synthetic screenshot triggers thumbnail and four-second expiry. Rebuilt private Gala
+from main to actually install Space/highlight code. Next login loads it; highlight, shutter playback
+and real drag-out still await live verification. Recovery: [shelf README](screenshot-shelf/README.md).
+
 ## English F5 completion and optional voice — 2026-10-18
 
 [Acceptance/deployment record](dictation/F5-ENGLISH-ACCEPTANCE.md) and
