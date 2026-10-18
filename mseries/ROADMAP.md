@@ -1,5 +1,16 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## YouTube assets on fresh installs — 2026-10-18
+
+The default enhancement payload now installs the YouTube launcher and scalable
+logo system-wide, with a checkout-independent Exec and the dock's existing window
+identity. Factory prune and `/usr` artifact checks pass. Both ARM64 consumers
+refresh the icon/application caches and install the container dependencies; the
+transform's Brave first-boot module also carries them. Empty-user GTK4 lookup and
+offline staging checks pass. Factory Brave package provisioning, a new ISO build
+and fresh hardware playback remain open.
+[Details](video-decode/README.md#youtube-launcher-icon--2026-10-18).
+
 ## Orchard real Wayland qualification and cleanup protection — 2026-10-18
 
 - Verified the installed Python/GTK4 foreground app on real `GdkWaylandDisplay`/`GdkWaylandToplevel`, Vulkan and the elementary blueberry stylesheet at 120 Hz. This was not Xvfb or forced Cairo. Final run: 11 live workflow groups passed, including stale-inventory duplicate-name preservation, container/VM creation, agent-backed VM Run, lifecycle/pause/resume, snapshots/restore, clone/rename/delete, real Terminal login, native elementary backup Save portal/archive validation, file listing and CLI transfer round trip, mounted-folder reads, TCP proxy, bounded Unicode output, and cancellation cleanup. All audit fixtures were swept; original guests were preserved.

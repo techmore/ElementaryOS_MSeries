@@ -50,7 +50,7 @@ declare -A SCRIPT=(
 # Build requirements per module (apt names). A module whose packages cannot be
 # installed is skipped, not guessed at.
 declare -A DEPS=(
-  [brave]="curl gpg"
+  [brave]="curl gpg bubblewrap xdg-dbus-proxy"
   [video]="meson ninja-build gcc pkg-config curl libva-dev libdrm-dev linux-libc-dev vainfo"
   [gestures]="cmake g++ git libinput-dev libudev-dev libpugixml-dev libcairo2-dev libgtk-3-dev libx11-dev libxtst-dev libxrandr-dev libxi-dev libsystemd-dev systemd-dev"
   [network]="git meson ninja-build valac gettext pkg-config libwingpanel-9-dev libgranite-7-dev libgtk-4-dev libnm-dev libnma-gtk4-dev libpolkit-gobject-1-dev"

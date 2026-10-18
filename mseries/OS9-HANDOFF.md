@@ -1,5 +1,24 @@
 # OS 9 implementation / Claude Code handoff
 
+## YouTube launcher/logo included in fresh-install payload — 2026-10-18
+
+`enhance.sh` now stages the contained launcher, system desktop entry and YouTube
+SVG automatically. Exec points at `/usr/share/elementary-mac/mseries/video-decode/brave-youtube`,
+with the existing dock WMClass and Widevine sibling helper. Factory finalize keeps
+the files after pruning, including the sysupdate `/usr` artifact. Both ARM64
+consumers carry bubblewrap, xdg-dbus-proxy and cache tools; final hooks validate
+and refresh the desktop/icon caches. The existing transform Brave first-boot module
+also installs the container dependencies.
+
+Verified: enhancement staging suite, four image wiring tests (including finalize,
+missing-icon rejection and dependency parity), desktop validation, shell syntax
+and changed-shell checks. GTK4 with empty XDG user data resolves the staged system
+launcher/icon; Exec was rebased only in that temporary lookup fixture. No browser
+was launched and the owner's active session was not changed. No ISO build or fresh
+hardware boot was performed. Factory browser package provisioning remains separate;
+the transform's existing network first-boot module installs Brave. Next: qualify
+factory browser packaging and fresh hardware playback; this validates asset wiring.
+
 ## Orchard real Wayland qualification and cleanup protection — 2026-10-18
 
 - Verified the installed Python/GTK4 foreground app on real `GdkWaylandDisplay`/`GdkWaylandToplevel`, Vulkan and the elementary blueberry stylesheet at 120 Hz. This was not Xvfb or forced Cairo. Final run: 11 live workflow groups passed, including stale-inventory duplicate-name preservation, container/VM creation, agent-backed VM Run, lifecycle/pause/resume, snapshots/restore, clone/rename/delete, real Terminal login, native elementary backup Save portal/archive validation, file listing and CLI transfer round trip, mounted-folder reads, TCP proxy, bounded Unicode output, and cancellation cleanup. All audit fixtures were swept; original guests were preserved.
