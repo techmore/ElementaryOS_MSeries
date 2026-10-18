@@ -720,6 +720,8 @@ namespace MSeries {
             var email = claude_data.get_string_member_with_default ("activeEmail", "");
             var accounts = claude_data.get_array_member ("accounts");
             head.append (build_identity (email, claude_data.get_string_member_with_default ("activePlan", "")));
+            head.append (build_add_account_button ("Sign in to Claude Code, then save that login with claude-swap",
+                () => add_claude_account ()));
             card.append (head);
             // CLI and desktop can be switched separately; always name both when they differ.
             var desktop = claude_data.has_member ("desktop") ? claude_data.get_object_member ("desktop") : null;
@@ -755,8 +757,6 @@ namespace MSeries {
             }
 
             var listed = accounts != null ? accounts.get_length () : 0;
-            card.append (build_accounts_header ("Sign in to Claude Code, then save that login with claude-swap",
-                () => add_claude_account ()));
             // The helper saves the Claude app's login by itself whenever it lists accounts, so a standing
             // button is noise. Offer it only when the app's current login is not one of the saved accounts.
             var app_installed = desktop != null && desktop.get_boolean_member_with_default ("installed", false);
@@ -901,7 +901,6 @@ namespace MSeries {
 
         private Gtk.Widget build_codex_accounts () {
             var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
-            box.append (build_accounts_header ("Sign in to another ChatGPT account", () => add_codex_account ()));
             if (codex_accounts == null) {
                 return box;
             }
@@ -1539,6 +1538,12 @@ namespace MSeries {
             if (active_resets != null && active_resets.get_node_type () == Json.NodeType.OBJECT) {
                 head.append (build_reset_credits (active_resets.get_object (), now_unix));
             }
+            if (provider == "codex") {
+                head.append (build_add_account_button ("Sign in to another ChatGPT account", () => add_codex_account ()));
+            } else if (provider == "opencodego") {
+                head.append (build_add_account_button ("Connect another OpenCode Go key or browser sign-in",
+                    () => add_opencode_account ()));
+            }
             card.append (head);
 
             var windows = entry.get_array_member ("windows");
@@ -1560,8 +1565,6 @@ namespace MSeries {
                 if (windows != null && windows.get_length () > 0 && local_tokens.length > 0) {
                     card.append (subtle_label (local_tokens + " local tokens · 7 days · all local accounts"));
                 }
-                card.append (build_accounts_header ("Connect another OpenCode Go key or browser sign-in",
-                    () => add_opencode_account ()));
                 for (uint i = 0; opencode_accounts != null && i < opencode_accounts.get_length (); i++) {
                     var account = opencode_accounts.get_object_element (i);
                     if (account.get_boolean_member_with_default ("active", false)) continue;
@@ -1680,13 +1683,12 @@ namespace MSeries {
             return identity;
         }
 
-        private Gtk.Widget build_accounts_header (string tooltip, owned ActionFunc on_add) {
-            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
-            var title = new Gtk.Label ("Accounts") { xalign = 0, hexpand = true };
-            title.add_css_class ("caption");
-            title.add_css_class ("dim-label");
-            row.append (title);
-            var add = new Gtk.Button () { child = new Gtk.Image.from_icon_name ("list-add-symbolic") { pixel_size = 12 }, tooltip_text = tooltip, valign = Gtk.Align.CENTER };
+        /* The "+" sits at the card's top right: no "Accounts" label row, the saved accounts speak for themselves. */
+        private Gtk.Widget build_add_account_button (string tooltip, owned ActionFunc on_add) {
+            var add = new Gtk.Button () {
+                child = new Gtk.Image.from_icon_name ("list-add-symbolic") { pixel_size = 12 },
+                tooltip_text = tooltip, valign = Gtk.Align.CENTER, halign = Gtk.Align.END
+            };
             add.add_css_class ("flat");
             add.add_css_class ("compact");
             add.update_property (Gtk.AccessibleProperty.LABEL, tooltip, -1);
@@ -1694,8 +1696,7 @@ namespace MSeries {
                 popdown_from (add);
                 on_add ();
             });
-            row.append (add);
-            return row;
+            return add;
         }
 
         private Gtk.Widget build_account_line (string email, string detail, string switch_tooltip,
