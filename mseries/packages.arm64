@@ -21,7 +21,9 @@ The default YouTube menu/dock launcher and SVG are staged by `enhance.sh` into
 rather than an owner's checkout. Both consumers install `bubblewrap`,
 `xdg-dbus-proxy`, `desktop-file-utils` and `libgtk-3-bin`; final hooks refresh the
 application/icon caches. The transformed install's first-boot job installs Brave;
-factory browser package provisioning is still separate.
+factory images include the pinned private Brave runtime under `/usr/lib/mseries-brave`.
+Its complete Ubuntu dependency list is in `video-decode/brave-factory.json`; all
+three image configs carry it, and final hooks verify hashes and shared libraries.
 
 ## From the Ubuntu archive (names confirmed by archive membership, not tested)
 

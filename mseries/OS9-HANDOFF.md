@@ -1,5 +1,29 @@
 # OS 9 implementation / Claude Code handoff
 
+## Factory Brave runtime closes YouTube browser provisioning gap — 2026-10-18
+
+`build-brave` stages official Brave 1.97.59 arm64 (Chromium 155.0.8059.85), pinned
+to release SHA256 `5efdd235…4ba1d2`. It validates .deb identity before extraction,
+runs no maintainer scripts, and relocates the full runtime/resources to
+`/usr/lib/mseries-brave`. The YouTube launcher prefers this immutable runtime;
+transformed desktops retain the native package fallback. Both factory consumers
+carry the full runtime library list; post-install hooks fail on absent/changed
+payloads, wrong ELF architecture and missing libraries. License, release/source
+links, pin and per-file hashes survive pruning in `/usr/share/doc/mseries-brave`.
+No first-login browser download or `/opt` artifact is needed; browser security
+updates follow reviewed version/hash bumps and rebuilt images.
+
+Verified: six synthetic .deb regressions, four image wiring tests, real pinned
+.deb staging and finalization with hashes/ELF/library checks, desktop validation,
+Python/shell checks. Real browser rendered a local page in a fresh Xvfb profile.
+Clean Resolute ARM64 container installed the declared packages and ran the version
+and ldd checks. Minimal-container headless DOM dump timed out and is not a pass.
+Finalize fixture stubs only dconf compilation, as in the wiring suite. The owner’s
+browser, profile and running session were untouched. No full ISO build/fresh
+hardware boot or YouTube/AVD/DRM playback test: those qualifications remain next.
+Factory browser assets/provisioning are now implemented; kernel/firmware readiness
+remains governed by the existing hardware gates.
+
 ## Merged calendar deployed and Wingpanel reloaded — 2026-10-18
 
 Owner requested desktop deployment of merged `6d62dfd`. Ran

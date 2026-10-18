@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Verify runtime dependencies survive the pruned Apple Silicon overlay."""
 import configparser
+import json
 import os
 from pathlib import Path
 import shutil
@@ -102,7 +103,13 @@ class ImageWiringTests(unittest.TestCase):
                          'usr/share/omarchy-mlx/serve-catalog.json',
                          'usr/share/doc/mseries-local-ai/SOURCE',
                          'usr/lib/aarch64-linux-gnu/wingpanel-9/libdatetime.so',
-                         'usr/share/doc/mseries-panel-datetime/COPYING']:
+                         'usr/share/doc/mseries-panel-datetime/COPYING',
+                         'usr/lib/mseries-brave/brave',
+                         'usr/lib/mseries-brave/locales/en-US.pak',
+                         'usr/libexec/mseries/verify-factory-brave',
+                         'usr/share/doc/mseries-brave/LICENSE',
+                         'usr/share/doc/mseries-brave/files.json',
+                         'usr/share/doc/mseries-brave/pin.json']:
                 target = image / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text('synthetic local AI payload')
@@ -147,6 +154,12 @@ class ImageWiringTests(unittest.TestCase):
         self.assertTrue({'bubblewrap', 'xdg-dbus-proxy', 'desktop-file-utils', 'libgtk-3-bin'} <= overlay)
         runtime = overlay - {'initramfs-tools'}
         self.assertTrue(runtime)
+        brave = json.loads((ROOT / 'mseries/video-decode/brave-factory.json').read_text())
+        self.assertFalse(set(brave['runtime_packages']) - runtime)
+        self.assertIn('BuildScripts=build-brave,', (ROOT / 'mkosi.images/apple-silicon/mkosi.conf').read_text())
+        for name in ('liveiso', 'sysupdate'):
+            self.assertIn('verify-factory-brave --root / --ldd',
+                          (ROOT / f'mkosi.images/{name}/mkosi.postinst.chroot').read_text())
         for consumer in (
             'mkosi.images/liveiso/mkosi.conf.d/arch.arm64.conf',
             'mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf',

@@ -1,5 +1,17 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Factory YouTube browser included — 2026-10-18
+
+Brave 1.97.59 arm64 is now checksum-pinned and bundled under `/usr/lib/mseries-brave`
+in both factory consumers. The YouTube launcher prefers it, without a first-login
+browser download. Vendor resources/licenses, provenance and hash manifest survive
+factory pruning; final hooks verify payload integrity and library resolution.
+Six packaging regressions, four image wiring tests, real staging/finalization,
+empty-profile Xvfb rendering and clean Resolute dependency checks pass. Headless
+DOM timeout is retained as a limitation. New ISO/hardware boot and YouTube/AVD/DRM
+playback still need qualification.
+[Packaging and update instructions](video-decode/README.md#factory-brave-runtime--2026-10-18).
+
 ## Merged calendar desktop deployment — 2026-10-18
 
 Merged Events/Tasks plugin built and installed with the maintained installer;

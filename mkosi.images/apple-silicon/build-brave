@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Download and stage the pinned browser during image assembly, never at first boot.
+set -euo pipefail
+python3 "$SRCDIR/mseries/video-decode/stage-brave.py" --dest "$DESTDIR"
+install -Dm755 "$SRCDIR/mseries/video-decode/verify-factory-brave.py" \
+    "$DESTDIR/usr/libexec/mseries/verify-factory-brave"
+python3 "$SRCDIR/mseries/video-decode/verify-factory-brave.py" --root "$DESTDIR"
