@@ -98,8 +98,9 @@ install bubblewrap, xdg-dbus-proxy and the desktop/icon cache tools. Their final
 post-install hooks validate the desktop entry and refresh application and icon
 caches after merging the overlay. The transform's existing first-boot Brave module
 also installs the container dependencies. Factory images now include the pinned
-Brave runtime described below. A fresh factory hardware boot and playback remain
-unverified.
+Brave runtime described below. Fresh installed ARM64 VM playback and dock identity now pass; see the
+[qualification receipt](receipts/factory-2026-10-18/README.md). Physical Apple
+hardware qualification remains separate.
 
 For an existing shortcut, keep its working `Exec` path and change only its `Icon`
 line to `Icon=mseries-youtube`. Install the icon from the repository root:
@@ -155,5 +156,7 @@ Verified with the real pinned package: staging and post-finalize hashes, ELF,
 licenses and host shared-library resolution; a local page rendered in an empty
 profile under Xvfb. Ubuntu Resolute ARM64 container dependency installation and
 binary version/library checks also passed. A headless DOM dump timed out in the
-minimal container, so it is not counted as a rendering pass. No new ISO build,
-fresh hardware boot, YouTube stream or decoder/DRM qualification was performed.
+minimal container, so it is not counted as a rendering pass. The subsequent
+[new ISO and fresh-install VM qualification](receipts/factory-2026-10-18/README.md)
+passed factory packaging, dock identity and anonymous YouTube playback at 480p
+and selected 1080p. It does not qualify physical Apple boot, hardware decode or DRM.
