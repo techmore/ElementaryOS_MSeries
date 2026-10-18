@@ -1,5 +1,31 @@
 # OS 9 implementation / Claude Code handoff
 
+## Window snapping remains enabled; native quarters installed — 2026-10-18
+
+Owner requested permanent snapping and quarter layouts. Live edge-tiling was
+false and both half-snap shortcuts were empty despite the login helper.
+Enabled them immediately, then installed a local dconf profile/database with
+locks for those three keys. New clients report edge-tiling=true and
+`gsettings writable` false; old user overrides cannot disable the policy.
+`enhance.sh` stages the policy offline and the normal post-install menu now
+selects the quarter plugin installer by default.
+
+`mseries/window-snapping` is a native Gala 8.6.2 / Mutter 50 plugin. It adds
+40-logical-pixel corner targets, quarter previews, Super+Alt+U/I/J/K and
+Super+keypad 7/9/1/3. It respects monitor work areas and resizability; Escape
+cancels a drag. Installed schema and `.so` into the active private Gala prefix;
+the current compositor has not been restarted. **Quarters load at next sign-in.**
+Claude was focused and sent Super+Shift+Left to bring it toward the built-in
+display where Codex is open. No app/session restart was performed.
+
+Validation: native build; all four keyboard quarters, all four corner drags and
+Escape cancellation passed in an isolated headless Gala with a real GTK Wayland
+client (`bash mseries/window-snapping/test-nested.sh`). Shell syntax and scoped
+ShellCheck pass. No physical-monitor quarter verification or factory image
+boot is claimed; the factory currently stages only the half-snap policy.
+Next: sign in again, try the corner preview on both physical displays, then
+integrate the native plugin build into factory assembly if desired.
+
 ## UPDATE 2026-10-18 04:25 — the crash is the Touch ID PROBE, not the boot (Claude Code)
 
 `.20` Aurora kernel (`7.1.12-2-20261017.20-sep-ARCH`, entry `elementary-aurora20`, SEP driver

@@ -1,5 +1,15 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Persistent window snapping — 2026-10-18
+
+Half snapping is now enforced by the OS dconf policy. A native Gala plugin adds
+corner drag quarters and Super+Alt+U/I/J/K (also Super+keypad 7/9/1/3).
+Installed on the working desktop, activation pending next sign-in. All four
+keyboard layouts, four corner drags and Escape cancellation pass in an isolated
+Wayland desktop. Physical multi-display checks remain. Factory staging includes
+the half-snap policy; native quarter plugin packaging is still separate.
+Details: [window-snapping/README.md](window-snapping/README.md).
+
 ## Omacom userspace support — 2026-10-17
 
 [Audit and implementation](OMACOM-IMPROVEMENTS.md): sleep-energy records and

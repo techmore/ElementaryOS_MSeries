@@ -193,6 +193,9 @@ mod_session() {
 ambient-enabled=false
 idle-dim=false
 EOF
+  # Window snapping remains enabled even if an old user database disables it.
+  copy 0644 "$here/window-snapping/10-mseries-snapping" /etc/dconf/db/local.d/10-mseries-snapping
+  copy 0644 "$here/window-snapping/locks" /etc/dconf/db/local.d/locks/mseries-snapping
   if [[ -x $R/usr/bin/dconf ]]; then
     if [[ $ROOT == / ]]; then
       "$R/usr/bin/dconf" update || log "could not compile the system dconf defaults"

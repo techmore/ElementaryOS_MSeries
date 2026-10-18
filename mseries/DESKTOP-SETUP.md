@@ -668,6 +668,15 @@ edge to snap it to that half. `Super+Left` and `Super+Right` tile the focused
 window to a half (`org.gnome.mutter.keybindings toggle-tiled-left/right`); with
 the Command/Ctrl swap that is physical left Ctrl plus the arrow key.
 
+`bash mseries/install-window-snapping.sh` installs OS-level dconf defaults and
+locks so snapping stays enabled after settings resets. It also builds native
+quarter snapping for Gala 8.6.2 / Mutter 50: drag into any screen corner, or use
+Super+Alt+U/I/J/K for top-left/top-right/bottom-left/bottom-right. Super+keypad
+7/9/1/3 also works. Quarters activate at the next sign-in; the installer leaves
+open apps running. See [window-snapping/README.md](window-snapping/README.md)
+for verification and removal. Factory staging carries the half-snap policy;
+the quarter plugin requires the native installer build.
+
 The built-in 3024x1890 panel defaults to a 2.0 scale, which looks large. Gala
 offers 1.0, 1.5, 1.75 and 2.0; 1.5 is the practical smaller setting. Apply it
 through `org.gnome.Mutter.DisplayConfig.ApplyMonitorsConfig` (method 2,
