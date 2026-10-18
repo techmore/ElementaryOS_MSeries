@@ -29,7 +29,7 @@ install -m644 "$repo/mseries/quick-settings/Bluetooth.vala" "$work/source/src/Wi
 # Screen-share section (the pair of eyes): status, watchers, links and login inside the top-right menu.
 for f in ShareState ShareClient SharePanel; do install -m644 "$repo/mseries/share-eyes-wingpanel/$f.vala" "$work/source/src/Widgets/$f.vala"; done
 sed -i "s|    'Widgets' / 'ChargeLimit.vala',|    'Widgets' / 'ChargeLimit.vala',\n    'Widgets' / 'ShareState.vala',\n    'Widgets' / 'ShareClient.vala',\n    'Widgets' / 'SharePanel.vala',|; s|        wl_client_dep,|        wl_client_dep,\n        dependency('json-glib-1.0'),\n        dependency('libsoup-3.0'),|" "$work/source/src/meson.build"
-sed -i 's|            main_box.append (new ChargeLimit ());|            main_box.append (new ChargeLimit ());\n            main_box.append (new MSeries.SharePanel () { spawn_dock_app = true, notify_waiting = true });|' "$work/source/src/PopoverWidget.vala"
+sed -i 's|            main_box.append (new ChargeLimit ());|            main_box.append (new ChargeLimit ());\n            main_box.append (new MSeries.SharePanel () { spawn_dock_app = true, notify_waiting = true, always_visible = true });|' "$work/source/src/PopoverWidget.vala"
 grep -q SharePanel "$work/source/src/PopoverWidget.vala" && grep -q libsoup "$work/source/src/meson.build" && grep -q "'SharePanel.vala'" "$work/source/src/meson.build" \
   || { echo 'could not wire the share section into Quick Settings' >&2; exit 1; }
 install -m644 "$repo/mseries/share-eyes-wingpanel/icons/eyes.svg" "$work/mseries-share-eyes-symbolic.svg"
@@ -46,6 +46,7 @@ bash "$repo/mseries/install-bluetooth-control-center.sh"
 meson setup "$work/share-app" "$repo/mseries/share-eyes-wingpanel" --prefix="$HOME/.local" --buildtype=release >/dev/null
 ninja -C "$work/share-app" >/dev/null
 install -Dm755 "$work/share-app/mseries-share-eyes" "$HOME/.local/bin/mseries-share-eyes"
+install -Dm755 "$repo/mseries/share-eyes-wingpanel/mseries-share-start" "$HOME/.local/bin/mseries-share-start"
 install -Dm644 "$repo/mseries/share-eyes-wingpanel/io.github.techmore.ShareEyes.desktop" "$HOME/.local/share/applications/io.github.techmore.ShareEyes.desktop"
 install -Dm644 "$repo/mseries/share-eyes-wingpanel/icons/eyes.svg" "$HOME/.local/share/icons/hicolor/scalable/apps/mseries-share-eyes-symbolic.svg"
 sudo install -m644 "$work/mseries-share-eyes-symbolic.svg" /usr/share/icons/hicolor/scalable/apps/mseries-share-eyes-symbolic.svg
