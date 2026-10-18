@@ -2,6 +2,11 @@
 
 ## Native full-height J314 desktop and persistent dock — 2026-10-18
 
+Post-push deployment follow-up: required `bash mseries/deploy-codexbar.sh` passed
+all four Meson suites and restarted Wingpanel/CodexBar successfully. Wingpanel
+PID 301437 and native dock PID 295165 are running. The new panel binary is now
+loaded in the existing cropped desktop; full-height hardware boot remains pending.
+
 Owner requested reclaiming the notch strip, native dock optimization and a push
 to main. [Profile](display-space/README.md): `bash mseries/install-desktop-space.sh`.
 Pinned Wingpanel patch moves the existing clock/calendar beside the camera only
