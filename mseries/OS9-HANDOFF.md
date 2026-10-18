@@ -2519,6 +2519,12 @@ Owner declined closing the ChatGPT/Codex app, so no A/B was run. New finding: th
 - Built-in HDMI works (38 modes, desktop extended). Working DCP (`289c`) sequence: DP2HDMI HPD irq -> `powering nub` -> `acking unhandled call 21` -> `set_drive_settings` x2 (link training) -> `plug_gated` -> `set_digital_out_mode`. The dock tunnel DCP (`28cc`) stops after `powering nub`. Saved as `mseries/fairydust/usb4/DCP-REFERENCE-BUILTIN-HDMI-20261016.txt`.
 - No driver, kernel, bootloader or display change made. Next task: DeepSeek drives the DCP to run the call 21 / drive-settings stage for the tunnelled port.
 
+## Restore scheduled developer branch discovery — October 18, 2026
+
+Two explicitly watched Aurora refs were deleted. GitHub returns 422 (No commit found for SHA), so the previous watcher aborted Aurora PR comparisons even though its public branch-head artifact was retained. branch-watch.py now records these exact missing-ref responses as absent-ref observations and continues discovery. Historical pending changes remain; other 422/network/comparison failures still fail the run. Response handles are closed after bounded reads.
+
+Two regression contracts cover preserved PR/head discovery and genuine-error reporting. The same fix passed full candidate workflow 39117953694: 1,114 public heads, 111 observed sources, zero fetch errors and 24 pending changes retained. This small recovery is separated from draft app-integration PR #86 so the permanent six-hour schedule need not wait for quiet GPU qualification. Main dispatch/CI and merge must be verified before reporting recovery complete. No runtime, driver, kernel, boot or audio change.
+
 ## October 16 local AI rollout and qualification
 
 Work is isolated on `feat/m1pro-local-assistants`, starting from main `247d5c0`. The actual host is M1 Pro T6000/j314s with 32 GB, elementary OS 9/resolute, kernel `7.1.13-3-2-ARCH`. Owner authorized a brief on-screen Newelle check, then explicitly chose to preserve other Rust/HTTP load tests and wait for idle windows. Other app windows, display settings, bootloader, kernel and audio were preserved.
@@ -2879,9 +2885,3 @@ healthy, depleting, provider-error and live fixtures, light and dark; helper con
 config; the sign-in window loads opencode.ai's login page headlessly (`/console/login`, no cookies before
 sign-in, so it cannot close early); `check-codexbar-port.sh` passes. Not verified: a real opencode.ai sign-in
 end to end (needs the owner's credentials) and the panel on the live desktop by eye.
-
-## Restore scheduled developer branch discovery — October 18, 2026
-
-Two explicitly watched Aurora refs were deleted. GitHub returns 422 (No commit found for SHA), so the previous watcher aborted Aurora PR comparisons even though its public branch-head artifact was retained. branch-watch.py now records these exact missing-ref responses as absent-ref observations and continues discovery. Historical pending changes remain; other 422/network/comparison failures still fail the run. Response handles are closed after bounded reads.
-
-Two regression contracts cover preserved PR/head discovery and genuine-error reporting. The same fix passed full candidate workflow 39117953694: 1,114 public heads, 111 observed sources, zero fetch errors and 24 pending changes retained. This small recovery is separated from draft app-integration PR #86 so the permanent six-hour schedule need not wait for quiet GPU qualification. Main dispatch/CI and merge must be verified before reporting recovery complete. No runtime, driver, kernel, boot or audio change.
