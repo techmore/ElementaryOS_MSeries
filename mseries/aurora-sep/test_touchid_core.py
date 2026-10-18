@@ -88,7 +88,7 @@ class TestFindings(unittest.TestCase):
         severity, title, detail, fix = findings[0]
         self.assertEqual(severity, core.BAD)
         self.assertEqual(title, "Wrong kernel")
-        self.assertIn("grub-reboot", fix)
+        self.assertIn("REBOOT-QUEUE", fix)
 
     def test_aurora_kernel_without_device(self):
         facts = {"kernel": "7.1.12-2-20261015.19-sep-ARCH", "sep_bio": False,
@@ -103,6 +103,26 @@ class TestFindings(unittest.TestCase):
         findings = core.sep_findings(facts)
         self.assertEqual(len(findings), 1)
         self.assertEqual(findings[0][0], core.OK)
+
+    def test_node_without_sensor_readiness_is_not_ready(self):
+        for state in ('inactive', 'busy', 'failed'):
+            with self.subTest(state=state):
+                f = core.sep_findings({'sep_bio': True, 'device': True, 'readiness': state})
+                self.assertEqual(f[0][0], core.WARN)
+                self.assertNotIn('restart fprintd', f[0][3])
+
+    def test_ready_sensor_still_requires_fprintd_device(self):
+        f = core.sep_findings({'sep_bio': True, 'readiness': 'ready', 'device': False,
+                               'device_error': 'service not available'})
+        self.assertEqual(f[0][0], core.WARN)
+        self.assertIn('service not available', f[0][2])
+
+    def test_older_kernel_without_diagnostics_can_use_fprintd(self):
+        self.assertEqual(core.sep_findings({'sep_bio': True, 'device': True})[0][0], core.OK)
+
+    def test_current_kernel_identity_is_case_insensitive(self):
+        self.assertTrue(core.on_aurora_kernel('7.1.12-elementary-aurora20'))
+        self.assertTrue(core.on_aurora_kernel('7.1.12-2-20261015.19-sep-ARCH'))
 
 
 if __name__ == "__main__":

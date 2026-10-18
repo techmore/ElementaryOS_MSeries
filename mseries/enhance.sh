@@ -11,6 +11,7 @@
 #             background daemon not autostarted for new users
 #   power     battery charge limit (80%) + lower CPU ceiling on battery, with the
 #             polkit action the Quick Settings switch uses
+#   diagnostics sleep-energy records and power report (Bluetooth recovery remains opt-in)
 #   audio     WirePlumber rules (speaker/headphone outputs stay open, no pop; headset
 #             mic is not the default) and an audio watchdog that restarts PipeWire
 #             when it stops answering
@@ -35,7 +36,7 @@ here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 ROOT=/
 only=""
 skip=""
-ALL=(tuning power audio session theme payload firstboot)
+ALL=(tuning power diagnostics audio session theme payload firstboot)
 
 log() { printf '[enhance] %s\n' "$*"; }
 
@@ -146,6 +147,10 @@ EOF
   enable mseries-power-follow.service
   enable mseries-power.service
   log "power: 80% charge limit and battery CPU policy (change with: sudo mseries-power limit 100)"
+}
+
+mod_diagnostics() {
+  bash "$here/install-hardware-support.sh" --root "$ROOT"
 }
 
 mod_audio() {

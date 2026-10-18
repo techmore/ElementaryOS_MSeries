@@ -116,3 +116,14 @@ plus m1n1 `omacom/m1n1@d05ba17dfb771871d608225be42968bbb1e75a18` and its source.
 Checksums are verified before extraction; the Debian payload retains kernel
 COPYING/LICENSES and upstream recipe, and travels with corresponding source.
 This opt-in port does not replace the factory kernel profile or qualify a boot.
+
+## Omacom userspace diagnostics and recovery (2026-10-17)
+
+Sleep/power: `omacom/omarchy-mac-pkgs@b5e10d3d5727b51fdf20c2965c9d6eaaff6842d1`.
+Bluetooth recovery and race fixtures: `aa747a8c4cbde582d06577ffab2fe3835d0eacf4`.
+Optional hwdb: `99fac5c56e228fc664e7d9d70116dcc78c801f33`. MIT notices retained
+in `power/LICENSE.omacom`, staged under `/usr/share/doc/mseries-hardware-support`.
+[File hashes](upstream-audits/imported-sources.json), [adaptations](power/UPSTREAM.md)
+and [candidate dispositions](OMACOM-IMPROVEMENTS.md) are retained. Full branch
+names and heads are in `upstream-audits/omacom-2026-10-17.json`. No package-manager
+hooks, signing keys or sponsor-only material imported.

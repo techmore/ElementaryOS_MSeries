@@ -1,5 +1,39 @@
 # OS 9 implementation / Claude Code handoff
 
+## Omacom userspace improvements — 2026-10-17
+
+[Systematic audit](OMACOM-IMPROVEMENTS.md) records all candidate dispositions,
+immutable source pins and the 69-repository / 1,482-branch receipt. Ported sleep
+energy recording, a one-shot power report and Applications launcher through a
+new diagnostics enhancement module (manual, transform and factory staging).
+Root sleep hooks have a 3-second bound; logind notifications wait for an active
+unlocked session. Invalid clocks, charging/unknown readings, changed boot IDs
+and failed suspend attempts are excluded; CPU sampling handles PID reuse.
+
+Bluetooth recovery is shipped **disabled**, with hardware, rfkill and current
+suspend-cycle timeout gates. Explicit installer opt-in enables future events;
+it never rebinds on install. Built-in F4/F5/F6 remaps are separately opt-in.
+Touch ID settings now constructs its fprintd manager before probing, reads the
+sensor readiness diagnostic, avoids duplicate signal handlers, and fixes the
+installer's duplicated directory. No new SEP activation owner or PAM edit.
+
+The repo has no Omarchy Bolt poller to replace; audio/backlight references do
+not map directly to this desktop. Existing m1n1/video pins need no payload
+refresh. Kernel source work remains separate in PR #79. ESP mtools validation
+already existed; added a mandatory CI GPT/FAT fixture for its real readback.
+
+Local fixtures: 14 power diagnostics tests, 15 Touch ID tests, four installer/
+CI-dependency checks and 12 Bluetooth recovery groups pass. The real FAT fixture
+requires fdisk/mtools (skipped on this macOS host, required in the dedicated
+Linux CI job). Image pruning tests and broader wiring validation run there too.
+No target hardware, bootloader/kernel, audio, display, Bluetooth or key setting
+changed. No measured battery gain or factory boot claim. Initial Linux CI on `2ae80a5`
+passed both jobs ([run 39085829799](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39085829799)), including real FAT readback, ShellCheck, image pruning and power-install
+regressions. Follow-up hardens removal and error handling; check the final PR
+head results before merging. Next: install diagnostics on Linux and qualify suspend/unlock logs; opt in to
+Bluetooth recovery only after retaining its matching failure evidence.
+
+
 > **PRIMARY GOAL:** a picture on the WD22TB4 dock's HDMI from elementary OS on this j314s.
 > Current blocker is **G3**: the DCP firmware must set link rate + lane count, then read EDID.
 > Aurora has j314s Thunderbolt-display prior art; check it before more RE. This dock HDMI path remains unqualified.

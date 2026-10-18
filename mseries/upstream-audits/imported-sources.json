@@ -1,0 +1,38 @@
+[
+  {
+    "repository": "omacom/omarchy-mac-pkgs",
+    "commit": "b5e10d3d5727b51fdf20c2965c9d6eaaff6842d1",
+    "path": "omarchy-mac/lib/sleep-cost",
+    "sha256": "9c8f8eead257fedd189eb04035d8ac3f0476445fdba65de2cb27935735d635f4"
+  },
+  {
+    "repository": "omacom/omarchy-mac-pkgs",
+    "commit": "b5e10d3d5727b51fdf20c2965c9d6eaaff6842d1",
+    "path": "omarchy-mac/bin/omarchy-power-report",
+    "sha256": "8ca5dfa41a5bee3b99d5b21c118c4c61625f0ae69890883e1f8d88255984eb3c"
+  },
+  {
+    "repository": "omacom/omarchy-mac-pkgs",
+    "commit": "aa747a8c4cbde582d06577ffab2fe3835d0eacf4",
+    "path": "omarchy-mac/bin/omarchy-bluetooth-resume-fix",
+    "sha256": "35e3c6739f51d180b40c6c0385f385d1683ec1444a2bc41c59b66e066ef4f16b"
+  },
+  {
+    "repository": "omacom/omarchy-mac-pkgs",
+    "commit": "b5e10d3d5727b51fdf20c2965c9d6eaaff6842d1",
+    "path": "omarchy-mac/LICENSE",
+    "sha256": "717ba1949502290f8e47688ae2e323acd06c8ca47aec9f7596b15f678c1af4a2"
+  },
+  {
+    "repository": "omacom/omarchy-mac-pkgs",
+    "commit": "aa747a8c4cbde582d06577ffab2fe3835d0eacf4",
+    "path": "omarchy-mac/test/bluetooth-test.sh",
+    "sha256": "ab9b6952176b0002cb09ca52e6ee872c51886cf99d0c38a4e282df200bf132bb"
+  },
+  {
+    "repository": "omacom/omarchy-mac-pkgs",
+    "commit": "99fac5c56e228fc664e7d9d70116dcc78c801f33",
+    "path": "omarchy-mac/vendor/udev/hwdb.d/90-omarchy-mac-keyboard.hwdb",
+    "sha256": "59fed4565498a16a6c66a75e2c28eddf774b457a8d6dfa9859447ec681537cb9"
+  }
+]

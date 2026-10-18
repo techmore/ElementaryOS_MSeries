@@ -27,11 +27,11 @@ OK, INFO, WARN, BAD = "ok", "info", "warn", "bad"
 # "7.1.12-2-20261015.19-sep-ARCH" (no "aurora" in the string), earlier ones
 # "7.1.12.aurora2-12.6". /dev/sep-bio is the authoritative signal; the kernel
 # string only turns "no needle" into a specific "wrong kernel" hint.
-AURORA_MARKS = ("aurora", "sep-ARCH")
+AURORA_MARKS = ("aurora", "sep-arch")
 
 
 def on_aurora_kernel(kernel):
-    return any(mark in kernel for mark in AURORA_MARKS)
+    return any(mark in kernel.lower() for mark in AURORA_MARKS)
 
 
 def finger_label(name):
@@ -114,18 +114,27 @@ def sep_findings(facts):
             findings.append((BAD, "Wrong kernel",
                              "Touch ID needs the Aurora SEP kernel; this boot is running "
                              f"{facts.get('kernel')}.",
-                             "grub-reboot elementary-aurora-sep, then reboot"))
+                             "See mseries/REBOOT-QUEUE.md before selecting an Aurora boot entry"))
         else:
             findings.append((BAD, "No /dev/sep-bio",
                              "The Aurora kernel is running but the enclave device is missing "
                              f"(apple-sep.service: {facts.get('apple_sep', 'unknown')}).",
                              "systemctl status apple-sep.service"))
         return findings
+    readiness = facts.get("readiness")
+    if readiness and readiness != "ready":
+        busy = "busy" in readiness.lower()
+        advice = ("Finish any active fingerprint operation and refresh." if busy else
+                  "Check the SEP service journal before retrying enrollment.")
+        findings.append((WARN, "Touch ID is busy" if busy else "Touch ID is not ready",
+                         f"The enclave exists, but its sensor reports: {readiness}. {advice}",
+                         "journalctl -b -u apple-sep.service --no-pager"))
+        return findings
     if not facts.get("device"):
         findings.append((WARN, "No fingerprint device",
-                         "The enclave is up but fprintd does not list a device.",
-                         "systemctl restart fprintd; fprintd-list $USER"))
+                         "The enclave exists but fprintd does not list a device. " + facts.get("device_error", ""),
+                         "systemctl status fprintd; fprintd-list $USER"))
         return findings
     findings.append((OK, "Touch ID is available",
-                    "The sensor is enrolled-able: enroll a finger below.", None))
+                    "fprintd offers a sensor. Enroll or verify a finger below.", None))
     return findings

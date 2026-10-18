@@ -353,7 +353,7 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-cache show elementary-desktop >/dev/null \
   || { echo "elementary-desktop not in PPAs for $UBUNTU_SUITE — aborting chroot build"; exit 1; }
-apt-get install -y --install-recommends elementary-desktop elementary-minimal elementary-standard pantheon io.elementary.greeter io.elementary.wingpanel pipewire-pulse pipewire-alsa rtkit network-manager
+apt-get install -y --install-recommends elementary-desktop elementary-minimal elementary-standard pantheon io.elementary.greeter io.elementary.wingpanel pipewire-pulse pipewire-alsa rtkit network-manager dbus-bin libnotify-bin pciutils rfkill
 # Signal Desktop: official arm64 apt repo. The suite name really is
 # 'xenial' (Signal never bumped it) — do not "correct" it. Non-fatal: a
 # messaging app must not abort the whole root build. Flatpak

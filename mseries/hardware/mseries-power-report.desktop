@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=M-series Power Report
+Comment=Inspect battery draw, CPU activity and the last suspend
+Exec=mseries-power-report --sample 10
+Icon=battery
+Terminal=true
+Categories=System;Monitor;
