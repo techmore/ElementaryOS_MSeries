@@ -89,3 +89,13 @@ Ethernet) does not work there. Dock and Touch ID cannot share a kernel yet.
 Touch ID app: installed as "Touch ID" (`~/.local/bin/mseries-touchid-settings`,
 desktop entry in `~/.local/share/applications`); source in `mseries/aurora-touchid/`.
 Enrollment only works on the Aurora kernel, dock unplugged.
+
+## Bisect step 1 — is it the SEP driver or the Aurora kernel? (2026-10-18)
+
+Owner: the Aurora kernel froze on every boot. Fact: the same patched m1n1 DTB
+(SEP enabled + alias + sensor node) boots the stock `7.1.13-3-2-ARCH` kernel
+stably (no apple_sep driver there, so the node sits inert). New GRUB entry
+`elementary-aurora-nosep` = Aurora kernel with `module_blacklist=apple_sep,apple-sep`.
+If it stays up for 10+ minutes, the SEP driver (or its SEP firmware traffic) is
+the cause; if it still freezes, it is the Aurora kernel build or the dock/USB-C path
+(unplug everything). Nothing armed. Backup: `/boot/grub/custom.cfg.pre-aurora-nosep-*`.
