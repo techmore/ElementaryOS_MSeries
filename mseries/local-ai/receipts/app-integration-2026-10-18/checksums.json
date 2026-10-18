@@ -1,0 +1,16 @@
+{
+  "README.md": "58597b90257335b29f68bf855cd35b0678f59bcd7b89500a838d1d48f3cc6007",
+  "app-workflow-v1.json": "61716abb18da7411fca075a960fb6c672b5e2d16fa540e3eb48eca0d3864bc9e",
+  "developer-watch.json": "0df54eeb91f3aebdba4827505383b5c33b10cdda380793d4e8aef9488e54c933",
+  "evaluated-source/app-workflow-smoke.py": "93ee800ab5f1b8fe5270c6f9aaf306b4f318a94f80d5d305322fb5fcf37d361c",
+  "evaluated-source/app_adapters.py": "751b59a903b95084854b149dda76baa1ee56a754d349eabd396677b9382821a8",
+  "evaluated-source/benchmark.py": "e95b489bbb9f873997501eb15118b3f2655ec9e9583ce4ee304a26034ec83868",
+  "evaluated-source/machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27",
+  "evaluated-source/os-mcp.py": "7a7c6930f95f0792037fa1b3410e903398f526a5f20dfbad66d29a53e222125e",
+  "evaluated-source/task-write-smoke.py": "e4f17f6c333c07c6449eb84f5dc542f0b74bcdeccc4495813f7614acc16589a1",
+  "mail-ui.json": "60560103a73dad7bf0c4cffde9fc57c147fb83995137e8c5ded954d49a47b2a0",
+  "newelle-discovery.json": "62332260c2f2a12864a102253ca17218bcd45baf5ff8034b59ff3c02c7f78750",
+  "publication.json": "285c35ec2b8a7a88168212c39b1647716c69b6a8b8bfc1e2d0e29cde1359325e",
+  "quiet-guard.json": "01bfc6eeebc792db79e9332035edbdea91878ba70cb54a9fd8c240ecc3c0af92",
+  "source-pins.json": "48ad4b26dcedc4027873388e052582b560bc6bfd971027495905b51c493b4886"
+}

@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-18",
+  "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "prior_model_cohort": "2026-10-16; different kernel/app state, not a same-state performance comparison",
+  "retained_runtime_pins": [
+    {
+      "name": "omarchy-mlx",
+      "repo": "joshuaswarren/omarchy-mlx",
+      "revision": "33630f9c1eeefe5fc985a28bed0585432c2c014e",
+      "release": "v0.7.33",
+      "license": "MIT",
+      "vendor_sha256": "bc9f8c7527e1324d25212922ca0afd2acc2411ec7cdd4b26e2773bffdef32f0e"
+    },
+    {
+      "name": "private compute Mesa",
+      "repo": "joshuaswarren/mesa-1",
+      "revision": "7faf04c065c5376d2d58a1e5b33a60118109c99e",
+      "license": "MIT and component licenses"
+    },
+    {
+      "name": "Newelle",
+      "flatpak": "io.github.qwersyk.Newelle/aarch64/stable",
+      "revision": "7f106d29dc4fd3ee032005fe4160da8996b889a6b8e62db0ee7e9ab185561fa1",
+      "version": "1.6.0",
+      "license": "GPL-3.0-or-later"
+    }
+  ],
+  "model": {
+    "repo": "mlx-community/Qwen3.5-4B-MLX-4bit",
+    "revision": "32f3e8ecf65426fc3306969496342d504bfa13f3",
+    "license": "Apache-2.0",
+    "status": "default compact preset: short 9/15, corrected MCP 9/9, actual Newelle chat/tools, separate-process memory, Crush edit and native trials passed; kernel/log repair advice failed"
+  },
+  "packages": [
+    "brave-browser 1.97.59",
+    "io.elementary.mail 8.0.1+r1761+pkg40~daily~ubuntu9.1",
+    "libecal-2.0-3 3.56.2-8",
+    "python3-websockets 15.0.1-1build2",
+    "libedataserver-1.2-27t64 3.56.2-8"
+  ],
+  "binary_sha256": {
+    "Mail": "275c21abeeb217f225d345ac6d319eb880ba62d4a174d12c1509a4f5406b90bf",
+    "Brave": "3434c18dba045756b03a4f3473725fcb180eecdf2f76d2c86fc37804220e42fa"
+  },
+  "api_reference": {
+    "mail_source": "elementary/mail@ff75d47eb3f410c834a6be27c9c1507d12a66835 (reference only, not claimed installed source revision)",
+    "browser": "Chromium CDP Page/Runtime fixed read expression; python-websockets 15 sync client",
+    "calendar": "EDS ECal 2.0; local source only"
+  },
+  "licenses": {
+    "Mail": "GPL-3.0-or-later; existing distribution package, no source copied",
+    "Brave": "MPL-2.0 and third-party licenses; existing distribution package",
+    "websockets": "BSD-3-Clause; distribution package",
+    "EDS": "LGPL-2.1-or-later; distribution package"
+  }
+}

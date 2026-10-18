@@ -1,0 +1,123 @@
+{
+  "method": "Only owned worker quiet-policy lines, with event timestamps. Approximate paused overlap integrated across each model case sample window. Does not measure sound pressure or waiting between cases.",
+  "events": [
+    {
+      "time": 1792317804.034982,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792317834.24759,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792317837.266648,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792317867.601623,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792317870.648302,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792317931.385711,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792317934.42467,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792317964.763098,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792317967.801302,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792317998.141789,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792318001.18642,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792318031.562975,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792318034.611455,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792318048.803701,
+      "message": "QUIET COOLING: resuming owned model"
+    },
+    {
+      "time": 1792318166.788962,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792318197.044236,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792318200.06417,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792318230.299168,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792318233.317028,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792318263.542774,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792318266.573876,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792318296.788268,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792318299.81139,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792318330.058979,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792318333.100259,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792318444.931056,
+      "message": "QUIET POLICY STOP: fan RPM exceeds the quiet profile limit"
+    }
+  ],
+  "model_cases": [
+    {
+      "case": "browser-calendar-mail",
+      "repeat": 1,
+      "approx_cooling_paused_s": 226.53,
+      "elapsed_s": 347.3693357299999
+    },
+    {
+      "case": "web-injection",
+      "repeat": 1,
+      "approx_cooling_paused_s": 0,
+      "elapsed_s": 12.8529614400004
+    }
+  ]
+}

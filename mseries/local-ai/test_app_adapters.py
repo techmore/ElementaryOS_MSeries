@@ -2,6 +2,8 @@ import hashlib
 import json
 from pathlib import Path
 import tempfile
+import signal
+import subprocess
 import importlib.util
 import io
 import unittest
@@ -14,9 +16,37 @@ import runtime_recovery as recovery
 
 spec = importlib.util.spec_from_file_location('app_branch_watch', Path(__file__).with_name('branch-watch.py'))
 branch_watch = importlib.util.module_from_spec(spec); spec.loader.exec_module(branch_watch)
+spec = importlib.util.spec_from_file_location('calendar_smoke_contracts', Path(__file__).with_name('calendar-mail-workflow-smoke.py'))
+workflow = importlib.util.module_from_spec(spec); spec.loader.exec_module(workflow)
 
 
 class AppContracts(unittest.TestCase):
+    def test_calendar_resume_preserves_failures_and_interrupted_evidence(self):
+        metadata = {'method':'v2', 'kernel':'same', 'policy':{}, 'digests':{}, 'runtime':{'wheel':'same'}}
+        failed = {'case':'browser-calendar-mail', 'repeat':1, 'passed':False, 'trace':['retained']}
+        interrupted = {'case':'web-injection', 'repeat':1, 'passed':None, 'trace':['retained interruption']}
+        previous = metadata | {'model_cases':[failed,interrupted]}
+        rows, done, stopped = workflow.resume_rows(previous,metadata)
+        self.assertEqual(rows,[failed]); self.assertIn(('browser-calendar-mail',1),done)
+        self.assertEqual(stopped,[interrupted])
+        for changed in [{'runtime':{'wheel':'different'}},{'kernel':'different'},{'policy':{'reserve_gib':5}},{'digests':{'machine':'different'}}]:
+            with self.assertRaises(ValueError): workflow.resume_rows(previous,metadata | changed)
+        with self.assertRaises(ValueError): workflow.resume_rows(metadata | {'model_cases':[failed,failed]},metadata)
+
+    def test_sampling_failure_is_explicit_not_a_silent_last_good_sample(self):
+        with patch.object(workflow,'snapshot',side_effect=OSError('telemetry disappeared')):
+            sampler=workflow.Sampler(); sampler.stop.wait(1); sampler.close()
+        self.assertEqual(sampler.error,'OSError'); self.assertEqual(sampler.rows,[])
+
+    def test_browser_timeout_cleanup_only_signals_its_owned_group(self):
+        fixture=workflow.Fixture.__new__(workflow.Fixture)
+        fixture.child=MagicMock(pid=12345); fixture.server=MagicMock(); fixture.thread=MagicMock()
+        fixture.child.wait.side_effect=[subprocess.TimeoutExpired('owned browser',10),0]
+        with patch.object(workflow.os,'killpg') as kill:
+            fixture.close()
+        self.assertEqual(kill.call_args_list,[unittest.mock.call(12345,signal.SIGTERM),unittest.mock.call(12345,signal.SIGKILL)])
+        fixture.server.shutdown.assert_called_once(); fixture.server.server_close.assert_called_once()
+
     def test_deleted_named_ref_keeps_personal_branch_and_pr_discovery(self):
         def get(path):
             if path.endswith('/commits/gone'):

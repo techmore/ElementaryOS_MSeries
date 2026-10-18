@@ -1,16 +1,18 @@
 # MCP app integration on M1 Pro 32 GB
 
-The local MCP adapter now has eleven typed tools. Version 0.2 adds task creation in an owned local **Assistant Tasks** list. It creates that list on first use; it does not select a user's existing list or a synced account. Existing tasks are never edited or completed by this tool. Personal chat and coding still use the measured Qwen3.5 4B presets with the existing memory/fan guards.
+The local MCP adapter now has sixteen typed tools. Version 0.3 adds local Calendar event creation, managed-browser page reads and unsent Mail drafts alongside the version 0.2 local **Assistant Tasks** writes. Each write adapter creates its owned local source on first use; it does not select a user's existing list/calendar or a synced account. Existing tasks are never edited or completed by this tool. Personal chat and coding still use the measured Qwen3.5 4B presets with the existing memory/fan guards.
 
 | Surface | Implemented capability | Evidence and remaining limits |
 |---|---|---|
-| Newelle | Local chat, user-summary memory and MCP tools | Earlier chat, clock dispatch and separate-process memory passed. Updated eleven-tool controller discovery passed without requesting inference; new task workflow qualification is pending. |
+| Newelle | Local chat, user-summary memory and MCP tools | Earlier chat, clock dispatch and separate-process memory passed. Updated sixteen-tool controller discovery passed without requesting inference. Task and app workflow results are distinguished below. |
 | Files / notes | Scoped UTF-8 reads and create-only Markdown notes | Earlier create/read, traversal, symlink and overwrite checks passed. No arbitrary file access. |
 | Tasks / Homeboard | Read open EDS tasks; create in local Assistant Tasks | Live concurrent/retry/conflict checks passed. Model note-to-task and scoped read-back passed in all three repeats. |
-| Calendar | Read upcoming local EDS calendar components | Synthetic VEVENT round trip passed. Recurrences are labeled, not expanded; no calendar writes yet. |
+| Calendar | Read components; create in local Assistant Calendar | Concurrent/retry/conflict checks and independent EDS readback pass. Explicit UTC offsets; no attendees or invitations. Recurrences are labeled, not expanded. |
 | Energy Monitor | Cache reads and freshness | Adapter checked; signed-in live collector qualification remains separate. |
 | System and fault watcher | Measurements and bounded fault signatures | Read-only; automatic model diagnosis remains off after failed repair-advice checks. |
-| Browser, mail and messaging | App inventory | Dedicated adapters are not implemented. Inventory does not establish control. No messages are sent. |
+| Assistant Browser | Read bounded tab/page data through native Brave/CDP | Separate user-launched profile; normal browser profile untouched. Actual headless page-read adapter passes. No model navigation, clicks, scripts or cookie access. |
+| Assistant Mail Drafts → Mail | Create/read local unsent RFC822 drafts; explicit review button opens native Mail | Actual hidden native composer matches recipient, Unicode subject and multiline body. No inbox/account reads, sending or attachments. |
+| Messaging and arbitrary windows | App inventory | Dedicated adapters are not implemented. Inventory does not establish control. |
 
 [Synthetic receipts and source digests](receipts/task-integration-2026-10-16/) record adapter/discovery checks, all six completed model trials and the interrupted checkpoint.
 
@@ -24,11 +26,11 @@ The first live write check used two concurrent MCP processes plus a third retry 
 
 ## Qualification and reproduction
 
-Current contract count: **53 passing tests**. These include input/date validation, synced-source refusal, private ownership markers, settings-preserving tool refresh, and distinguishing malformed model tool calls from interrupted inference. The model suite separately checks note → task → scoped read-back and rejection of a file instruction to create an unwanted task, three repeats each. Checkpoint resumption keeps completed successes and failures, retrying only incomplete cases with matching metadata. All six completed trials passed: note-to-task 3/3 and file-instruction rejection 3/3. Each positive trace read the note, created exactly one task with the requested title/date/retry ID, and read it back through the scoped task tool. Independent EDS queries matched; all owned sources were removed. Injection trials created no task. One URLError interruption was preserved and only unfinished work resumed. This is a checkpointed quality result, not a single uninterrupted latency run. The tests explicitly name the intended workflow tools and do not establish unrestricted autonomous app discovery.
+Current contract count: **70 passing tests**, plus **four image-wiring checks**. These include input/date validation, synced-source refusal, private ownership markers, settings-preserving tool refresh, and distinguishing malformed model tool calls from interrupted inference. The model suite separately checks note → task → scoped read-back and rejection of a file instruction to create an unwanted task, three repeats each. Checkpoint resumption keeps completed successes and failures, retrying only incomplete cases with matching metadata. All six completed trials passed: note-to-task 3/3 and file-instruction rejection 3/3. Each positive trace read the note, created exactly one task with the requested title/date/retry ID, and read it back through the scoped task tool. Independent EDS queries matched; all owned sources were removed. Injection trials created no task. One URLError interruption was preserved and only unfinished work resumed. This is a checkpointed quality result, not a single uninterrupted latency run. The tests explicitly name the intended workflow tools and do not establish unrestricted autonomous app discovery.
 
 Completed note-to-task workflows took a median 22.32 seconds; injection checks 4.16 seconds. At eighteen request-boundary samples, minimum available RAM was 8.87 GiB and maximum fan reading 2648 RPM. These sparse readings are not continuous peaks or acoustic measurements. The worker continuously enforced its existing reserve/fan/temperature policy. Tasks GUI rendering, reminder delivery and a Newelle GUI task-write conversation were not exercised by these API/stdio workflows.
 
-The current machine runs `7.1.13-elementary-fairydust-usb4-dptunnel`, changed by separate project work. This integration task does not change the kernel, display or audio. New workflow timings must not be treated as an identical-hardware-state continuation of the earlier `7.1.13-3-2-ARCH` model benchmark cohort.
+The Tasks cohort ran on `7.1.13-elementary-fairydust-usb4-dptunnel`; the October 18 Calendar/browser/Mail cohort runs on `7.1.12-2-20261017.20-sep-ARCH`, changed by separate project work. This integration task does not change the kernel, display or audio. New workflow timings must not be treated as an identical-hardware-state continuation of the earlier `7.1.13-3-2-ARCH` model benchmark cohort.
 
 ```sh
 python3 -m unittest discover -s mseries/local-ai -p 'test_*.py'
@@ -39,6 +41,35 @@ python3 mseries/local-ai/task-write-smoke.py --endpoint http://127.0.0.1:8766/v1
 
 Use an existing quiet model worker; do not launch a second GPU worker. The harness preserves owner workloads, creates only synthetic local sources/workspaces, independently queries EDS, and removes its owned sources. Full logs and settings clones remain private; only bounded synthetic receipts are published.
 
-Next app coverage: local calendar writes with the same create-only/idempotent boundary, browser tab/page reads through an explicit browser adapter, then scoped draft workflows for apps with suitable local APIs. Each adapter needs its own read/write contract and end-to-end evidence before it is described as supported.
+Next app coverage includes actual Calendar GUI/reminders, broader browser actions and opt-in account-specific inbox access. Each needs its own contract and end-to-end evidence before it is described as supported. Sending remains a separate explicit user action.
 
 API reference: [GNOME ECal.Client](https://gnome.pages.gitlab.gnome.org/evolution-data-server/libecal/class.Client.html), [libical component API](https://libical.github.io/libical/v4/apidocs/icalcomponent_8h.html). The initial [model qualification report](receipts/2026-10-16.md) and its failures remain unchanged.
+
+## Calendar, browser and Mail — October 18
+
+`create_assistant_event` creates only in a private-marker-bound local **Assistant Calendar** EDS source. It accepts a title, stable retry ID, start/end RFC3339 timestamps with seconds and an explicit offset, and optional literal details. Times normalize to UTC; ambiguous local times without an offset are rejected. No synced calendar selection, overwrite, recurrence creation or invitations. `list_calendar_events(scope="assistant")` reads only that source. Two concurrent MCP clients plus a fresh-process retry produced exactly one VEVENT; a changed title was refused; iCalendar-looking text remained literal. Independent ECal readback matched and the owned source was removed.
+
+Open **Assistant Browser** from Applications and open pages you want to share there. It uses its own Brave profile and random loopback debugging port; the reader verifies the owned PID/start time/profile/port. `browser_list_tabs` reads at most twenty page targets; `browser_read_page` returns at most 12,000 visible characters using one fixed isolated-world expression. It accepts only an owned tab ID, never model-provided JavaScript/CDP commands. Page text remains untrusted input. This is a deliberate shared profile, not access to already signed-in regular-browser tabs.
+
+`create_mail_draft` writes a bounded local `.eml` plus private integrity metadata under **Assistant Workspace/Mail Drafts**. One plain recipient, subject, body and stable retry ID are supported. Retrying matches the original draft; a conflicting payload is refused. `read_mail_draft` verifies the message and metadata before returning it. Open **Assistant Mail Drafts**, inspect the plain-text preview, then choose **Open in Mail**. Mail 8 decodes mailto fields twice; the dedicated handoff preserves reserved punctuation across that decoding. The actual installed Mail composer was verified via accessibility in isolated Xvfb/D-Bus/XDG homes with `review+tag@example.invalid`, `R&D + café` and a multiline `A=B & C` body. Send was never activated. Account synchronization and transport were not tested.
+
+The installed Newelle profile discovers exactly sixteen tools. The refresh command installs only owned helpers/launchers, preserves model/memory/policy and other servers, and invalidates only the owned schema cache. GTK3 and WebSocket dependencies are present in the Apple Silicon overlay and both consumers that prune the overlay package list.
+
+The default worker also recovers abandoned upstream CLI reservations when **both** the recorded process and process group are absent, using the pinned upstream owner-checked API. Live, paired or unknown leases remain. Six stale pre-reboot leases were recovered on this host without lowering the reserve.
+
+The [current sanitized checkpoint](receipts/app-integration-2026-10-18/) has two completed model passes: browser→Calendar→Mail in 347.37 s (approximately 226.53 s cooling-paused) and hostile-page rejection in 12.85 s. Four cases remain pending quiet admission; pending/interrupted attempts are not scored as quality failures. The first positive trace used the six tools in order and independent EDS/draft matches passed. Its 345 samples had min available 11.44 GiB, max sampled fan 3236 RPM and max temperature 58.40 C. These are sampled readings, not sound-pressure measurements. They explicitly supply the six workflow tools and do not establish unrestricted app discovery or a Newelle GUI conversation for this chain. The original Tasks and model-comparison cohorts are retained.
+
+Reproduce backend and hidden Mail handoff checks:
+
+```sh
+python3 mseries/local-ai/calendar-mail-workflow-smoke.py --output app-adapters.json
+python3 mseries/local-ai/mail-ui-smoke.py --output mail-ui.json
+# With the already-running pinned 4B endpoint, preserving other workers/jobs:
+python3 mseries/local-ai/calendar-mail-workflow-smoke.py --endpoint http://127.0.0.1:8766/v1 --output app-model.json
+```
+
+[Speech/control-panel integration decision](SPEECH-INTEGRATION.md) records how an optional grammar/translation review can extend the existing native F5 service. Translation and grammar review are not shipped by this phase.
+
+Primary API sources: [Chromium Page isolated worlds](https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-createIsolatedWorld), [ECal.Client](https://gnome.pages.gitlab.gnome.org/evolution-data-server/libecal/class.Client.html), and [Mail Application source at ff75d47](https://github.com/elementary/mail/blob/ff75d47eb3f410c834a6be27c9c1507d12a66835/src/Application.vala). No upstream Mail source was copied into the adapter.
+
+The exact v1 evaluated source is retained with its receipts. The maintained v2 harness additionally pins installed runtime/app/profile metadata, rejects incompatible resumption, treats lost telemetry as an interruption, and handles owned-browser timeout cleanup. It is not a rerun or relabeling of completed v1 trials.
