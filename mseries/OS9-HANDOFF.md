@@ -1,5 +1,12 @@
 # OS 9 implementation / Claude Code handoff
 
+## CodexBar: Codex reset credits per account — 2026-10-18
+
+- Panel shows available rate-limit resets for the active Codex account (from the snapshot's `resetCredits`) and for each saved account (`codexbar-accounts.py usage` now returns `resetCredits`), with when the first one expires; red inside the last 24h. Merged in PR 117 and deployed with `deploy-codexbar.sh`.
+- Verified: unit tests pass (`presentation/reset-credits`), helper returns the field for both accounts. Unverified: a non-zero count on the live panel (both accounts report 0 today), and the `codexResetCredits.credits[].expiresAt` fallback (credit list was empty).
+- Claude: not done. claude-swap exposes only the 5-hour and 7-day windows and extra-usage spend; no reset count or expiry exists in its data.
+- Next: find where Claude exposes reset credits, if anywhere; re-check the Codex display when an account gains a credit.
+
 ## Week/Day time slots and event blocks published and deployed — 2026-10-18
 
 Owner requested time-slot Week/Day views, tests, desktop deployment and merge.
