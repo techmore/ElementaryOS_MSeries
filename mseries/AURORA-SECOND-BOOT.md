@@ -146,3 +146,18 @@ Test 1 needs no bootloader-payload change; test 2 does (owner OK required).
 Owner confirmed 2026-10-18: the hang happens with the dock NOT attached, so the
 dock/USB-C event is not the cause (it was at most a coincidence in one boot).
 Armed one-shot `elementary-aurora-nosep` (SEP driver blocked) for the next boot.
+
+## RESULT: `elementary-aurora-nosep` is stable — 2026-10-18 04:03
+
+Aurora kernel with `module_blacklist=apple_sep,apple-sep`, dock out: no hang, up
+5+ minutes (previous Aurora boots died within 15–60 s), desktop normal. So the
+hang needs the **SEP driver (`apple_sep`) loading**; the Aurora kernel itself and
+the patched DTB (including the sensor node) are fine with the driver blocked.
+`apple-sep.path`/`apple-sep.service` load it automatically at boot (modprobe
+~14 s after start), so no "probe" by us is needed to trigger it. In every
+hanging boot the SEP had finished boot-up and registered its hwrng 5–26 s before
+the journal ended; the kernel's hw_random fill thread reading from the SEP RNG is a
+prime suspect (untested). Next: report to omacom/linux-aurora with these logs;
+possible cheap tests — load `apple_sep` by hand on this entry after a stable
+period (expect a hang; save work first), or find a parameter that disables its
+hwrng registration. Until fixed: do not enable `apple-sep.path` on any default entry.
