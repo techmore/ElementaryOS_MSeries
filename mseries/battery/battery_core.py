@@ -179,7 +179,9 @@ def app_key(cgroup_text, comm):
     if match:
         key = match.group(1)
         return comm if "launcher" in key else key      # apps started from a launcher keep their own name
-    if last.endswith(".service") and not last.startswith(("user@", "session-")):
+    # Only system services name an app. User-session services (gala@wayland.service holds Wingpanel, the dock and
+    # other shell parts) would lump unrelated processes under one name, so those keep their own process name.
+    if last.endswith(".service") and "/system.slice/" in (cgroup_text or "") and not last.startswith(("user@", "session-")):
         return last[:-8].split("@")[0].lstrip("_")
     return comm
 

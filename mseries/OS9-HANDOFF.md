@@ -1,5 +1,14 @@
 # OS 9 implementation / Claude Code handoff
 
+## Gala CPU investigation — 2026-10-18 (Claude Code)
+
+Measured: Gala's main thread uses 25–35% of one core and presents about 100+ frames/s (505 `ADDFB2` in 5 s under strace)
+with the panel at 3024x1964 120 Hz VRR. The busiest Wayland client at that moment was `claude-desktop` (the app hosting this
+Claude Code session) at about 108 `sendmsg`/s while output streamed, which fits Gala redrawing for it; confirmation needs a
+measurement with Claude idle (`/tmp/gala-idle-result.txt`, written by a timed script). Earlier "Gala 16–20%" in the battery
+app was a bug in my cgroup grouping (Wingpanel/dock live in gala's service cgroup); fixed, user-session services keep their
+process name. Nothing in Gala or display settings was changed.
+
 ## Battery app grouping and ETA — 2026-10-18 (Claude Code)
 
 Per-app CPU grouped by cgroup with desktop names; blended runtime estimate with range and basis; 24 core tests pass.
