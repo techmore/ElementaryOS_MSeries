@@ -1,5 +1,17 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+
+## Aurora 20 upstream kernel candidate — 2026-10-17
+
+The upstream `.20` kernel now has an optional Debian payload build, versioned
+`elementary-aurora20` entry and matched m1n1/J314S DT staging tool. Original
+source, build recipe, licenses and hashes are retained; 9 new offline regressions
+and the local package admission checks pass. [Port guide](aurora/README.md).
+Next: review shared boot.bin/fallback compatibility, then a controlled hardware
+batch on the J314S + WD22TB4. No deployment, dock-picture, Touch ID enrollment,
+recovery-boot or factory-ISO qualification is claimed by this port.
+
+
 ## Dock code review and validation — 2026-10-17
 
 The [dock code review](fairydust/usb4/DOCK-CODE-REVIEW.md) records collector/staging fixes,

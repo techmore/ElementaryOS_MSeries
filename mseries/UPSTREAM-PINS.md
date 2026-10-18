@@ -105,3 +105,14 @@ These checks do not establish that the plugins load or render on hardware.
 ## Optimization repository (2026-10-15)
 
 `techmore/ElementaryOS_MSeries_Optimization` at `7d65b03` (powerlab sampler, tuning drop-in, docs). Not consumed by the image yet; see `OPTIMIZATION.md`.
+
+## Aurora kernel port (2026-10-17)
+
+`mseries/aurora/release.json` is the machine-readable pin ledger for
+`omacom/linux-aurora` release `aurora-2026.10.17.20`, kernel source
+`c46d7dcdb8712ea9aeb0ce47b439ffae76371e55`. It pins the unchanged public
+kernel package, original recipe/config and corresponding source archive,
+plus m1n1 `omacom/m1n1@d05ba17dfb771871d608225be42968bbb1e75a18` and its source.
+Checksums are verified before extraction; the Debian payload retains kernel
+COPYING/LICENSES and upstream recipe, and travels with corresponding source.
+This opt-in port does not replace the factory kernel profile or qualify a boot.

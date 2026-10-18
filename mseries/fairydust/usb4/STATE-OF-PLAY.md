@@ -8,6 +8,17 @@
 Reviewed 2026-10-17; historical hardware records follow. No new boot was performed by the code audit. This is the cumulative frontier ledger. Preserve measured
 advances and do not re-run discovery without a new reason.
 
+## Aurora upstream port — offline candidate, 2026-10-17
+
+The owner requested the upstream port. `mseries/aurora/` now packages the
+unchanged Aurora `.20` kernel and stages its matching m1n1 + full J314S DTB
+from an explicit boot.bin copy. The new `elementary-aurora20` entry preserves
+.19/Fairydust entries; neither installer nor staging tool deploys boot.bin or
+arms a boot. Guide: [Aurora port](../../aurora/README.md). Package/DT checks and
+regressions pass locally; **no new hardware result**, so G2–G5 are unchanged.
+The last E4 installation record below remains the last retained hardware state.
+Fallback compatibility of the global DT/m1n1 change is still unqualified.
+
 ## Latest recorded hardware state — 2026-10-17 (E4 armed; boot outcome not recorded)
 
 The following is the last retained installation record, not a fresh read of the machine.

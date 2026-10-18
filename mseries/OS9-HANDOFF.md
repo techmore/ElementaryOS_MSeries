@@ -5,6 +5,37 @@
 > Aurora has j314s Thunderbolt-display prior art; check it before more RE. This dock HDMI path remains unqualified.
 > Gates, prior art and rules: [fairydust/usb4/PRIMARY-GOAL.md](fairydust/usb4/PRIMARY-GOAL.md).
 
+## Aurora 20 upstream kernel port — 2026-10-17 (source/package work only)
+
+The owner requested porting the new `omacom/linux-aurora` support. The new
+`mseries/aurora/` lane pins release `aurora-2026.10.17.20`, source
+`c46d7dcdb8712ea9aeb0ce47b439ffae76371e55`, and repackages the unchanged
+published kernel/modules/DTBs as a Debian payload with corresponding source,
+original recipe, licenses and checksum/provenance receipts. It does not run
+upstream's Arch installer or import its desktop/Mesa configuration.
+
+The installer now creates `elementary-aurora20`, preserving legacy .19 and
+Fairydust entries. Fixed download-status text contaminating captured filenames;
+repeat installs update only the versioned managed block. Both mkinitcpio and
+initramfs-tools explicitly include/check the new modular display dependencies. Userspace is reused unless `--with-touchid`
+is selected; no SDDM or automatic PAM edits. No reboot/default/next_entry writes.
+
+`stage-boot.py` builds a private candidate from an explicit copy of boot.bin,
+using pinned Aurora m1n1 and the complete J314S DTB; other board DTBs and the
+U-Boot/config tail are byte-identical. It writes a rollback copy/report and never
+deploys. The installed boot.bin is shared: compatibility of the newer J314S DTB
+with the fallback kernels must be reviewed before deployment, including E4 state.
+
+Local validation: 9 new offline regressions and 9 existing Touch ID tests pass;
+the real release package passed hash, module dependency and J314S DT admission,
+and the Debian payload was produced without installing it. Dedicated Linux CI
+also inspects the .deb using dpkg-deb. See [port guide](aurora/README.md).
+**Not done:** live deployment, kernel source rebuild, factory ISO integration,
+J314S/WD22TB4 hardware boot, dock picture, Touch ID enrollment or recovery boot.
+Upstream `.20` explicitly does not qualify M1 Pro/Max/Touch ID on this release.
+Next task: review the matched payload/fallback contract, then a separately
+controlled hardware batch. Existing dock G2–G5 results have not advanced.
+
 ## Dock video E1 boot result — set_hpd cleared, sink/AUX is the frontier — 2026-10-16 (OpenCode)
 
 The armed E1 one-shot boot (`elementary-usb4-dpin-controlled`, image
