@@ -5,6 +5,17 @@
 > Aurora has j314s Thunderbolt-display prior art; check it before more RE. This dock HDMI path remains unqualified.
 > Gates, prior art and rules: [fairydust/usb4/PRIMARY-GOAL.md](fairydust/usb4/PRIMARY-GOAL.md).
 
+## Aurora 20 merged; resume on installed Linux — 2026-10-17
+
+Owner authorized merging PR #78; it is merged as
+`9ddade6d430492888df92bf47132b07e4e3233b7`. PR package inspection and M-series
+wiring checks passed. Owner then deferred target-machine checks and asked to
+save the note before booting back into Linux. No live kernel/bootloader change,
+boot arming or reboot was performed. The exact read-only preflight and upgrade
+resume sequence are saved at the top of [REBOOT-QUEUE.md](REBOOT-QUEUE.md).
+Read the actual root/ESP/initramfs/GRUB state before deployment; retained E4
+records are historical and the shared boot.bin fallback contract is unqualified.
+
 ## Aurora 20 upstream kernel port — 2026-10-17 (source/package work only)
 
 The owner requested porting the new `omacom/linux-aurora` support. The new
