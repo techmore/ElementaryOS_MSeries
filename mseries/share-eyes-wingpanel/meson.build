@@ -21,3 +21,12 @@ install_data(
   install_dir: join_paths(get_option('datadir'), 'icons', 'hicolor', 'scalable', 'apps'),
   rename: 'mseries-share-eyes-symbolic.svg',
 )
+
+executable(
+  'mseries-share-eyes',
+  'app/ShareApp.vala', 'SharePanel.vala', 'ShareState.vala', 'ShareClient.vala',
+  dependencies: [gtk_dep, json_dep, soup_dep],
+  install: true,
+  install_dir: join_paths(get_option('prefix'), 'bin'),
+)
+install_data('io.github.techmore.ShareEyes.desktop', install_dir: join_paths(get_option('datadir'), 'applications'))

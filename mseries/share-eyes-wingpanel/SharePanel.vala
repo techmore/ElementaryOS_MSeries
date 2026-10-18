@@ -14,6 +14,13 @@ namespace MSeries {
         private uint poll_source = 0;
         private bool busy = false;
         private bool details_open = false;
+        private int tick_count = 0;
+        private bool dock_check_busy = false;
+
+        /* Fired after every poll: what a dock badge or a notification needs to know. offering = a link exists or a share is live. */
+        public signal void status_changed (bool running, bool offering, int waiting, int watching);
+        /* In Quick Settings this is true: while a share is offered it starts the dock app (eyes in the dock). The app itself sets it false. */
+        public bool spawn_dock_app { get; set; default = false; }
 
         construct {
             eyes = new Gtk.Image.from_icon_name ("mseries-share-eyes-symbolic") { pixel_size = 18 };
@@ -68,6 +75,9 @@ namespace MSeries {
                     : watching == 0 ? "Sharing your screen · nobody watching yet"
                     : "Sharing your screen · %d people watching".printf (watching))
                 : "Screen share ready · not sharing yet";
+            bool offering = state.running && client.reachable && (client.live || client.link_count > 0);
+            status_changed (state.running, offering, waiting, watching);
+            if (spawn_dock_app && offering && tick_count++ % 3 == 0) ensure_dock_app.begin ();
             eyes.set_tooltip_text (tip);
             eyes.remove_css_class ("live");
             eyes.remove_css_class ("ask");
@@ -78,6 +88,25 @@ namespace MSeries {
                 rebuild (tip);
             }
             busy = false;
+        }
+
+        /* Starts the dock app when nothing owns its bus name. It is not started twice: a second launch would raise its window. */
+        private async void ensure_dock_app () {
+            if (dock_check_busy) return;
+            dock_check_busy = true;
+            try {
+                var bus = yield GLib.Bus.get (GLib.BusType.SESSION);
+                var r = yield bus.call ("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameHasOwner",
+                    new GLib.Variant ("(s)", "io.github.techmore.ShareEyes"), new GLib.VariantType ("(b)"), GLib.DBusCallFlags.NONE, 2000);
+                bool owned;
+                r.get ("(b)", out owned);
+                if (!owned) {
+                    new GLib.Subprocess.newv ({ "mseries-share-eyes" }, GLib.SubprocessFlags.STDOUT_SILENCE | GLib.SubprocessFlags.STDERR_SILENCE);
+                }
+            } catch (GLib.Error e) {
+                warning ("share dock app: %s", e.message);
+            }
+            dock_check_busy = false;
         }
 
         private void copy (string text, string what) {
