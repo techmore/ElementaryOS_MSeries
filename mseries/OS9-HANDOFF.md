@@ -131,6 +131,13 @@ served `home-3d.js` SHA-256 equals the merged bundle (`0924ea89…`), fresh read
 `deployment.json` from that backup, `systemctl daemon-reload`, restart dashboard and poller. Scripts and receipt are kept
 with the earlier ones (`deploy_energy_2364.py`, `deployment-verification-2.3.64.json`) in the Codex work folder.
 
+2.3.65 (Emporia PR #161, `389d4a3`): a floor chosen on its own in the 3D views now keeps opaque floors and full room
+hues; Whole home still uses the Floors slider. Deployed to Wingpanel, then (owner approved) the collector switched
+2.3.64 → 2.3.65 with the same script and checks. Backup `rollback-floor-hue-20261018T203422Z` (368,118 readings).
+Verified: version 2.3.65, served bundle SHA-256 `b39b0246…` equals the merged bundle, fresh reading, state/config/home-3d
+200, anonymous state 302, six services active, no warnings. Also: roadmap PR #209 was merged before its checks
+finished (they then all passed); later merges wait for an explicit pass.
+
 ## Battery real data — 2026-10-18 (Claude Code)
 
 Owner asked for real data only. Deleted my synthetic test database. Logger now backfills from UPower's real history
