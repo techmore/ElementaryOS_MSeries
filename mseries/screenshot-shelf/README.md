@@ -1,13 +1,16 @@
 # Screenshot shelf and Markup
 
-After a screenshot (Ctrl+Shift+3 or 4), a thumbnail appears bottom-right for about 7 seconds, like macOS.
+**Command+Shift+4** (Command is Ctrl on this keyboard) opens the selector: drag to capture an area, or just **click a window** to capture that window (needs the patched Gala from `install-gala-screen-corners.sh`, active after next login; stock Gala treats a click as cancel). Command+Shift+3 captures the screen.
+
+After a screenshot, a thumbnail appears bottom-right at a fixed size (280x180 card, any screenshot shape) and **stays** until you dismiss it, drag it away or take the next shot.
 
 | You do | What happens |
 | --- | --- |
 | Drag it into an app | The screenshot is **used, not kept**: its saved file is deleted 2 minutes after an accepted drop. |
 | Hold **Alt** while dragging | The screenshot is used **and a copy is kept**; the thumbnail text changes to "Saving a copy (Alt)". |
-| Click it, or press **Markup** | Opens Swappy (arrows, shapes, text, highlight, blur, crop). The result is saved next to the original as `<name> (markup).png`. |
-| Ignore it, or click the x | The thumbnail goes away and the screenshot stays in `~/Downloads/Screenshots`. |
+| Click it, or press **Markup** | Opens Swappy (the card stays) (arrows, shapes, text, highlight, blur, crop). The result is saved next to the original as `<name> (markup).png`. |
+| Click the x | The thumbnail goes away and the screenshot stays in `~/Downloads/Screenshots`. |
+| Ignore it | It stays where it is; the next screenshot replaces it. |
 
 A screenshot is only ever deleted by a drag without Alt, and only after the drop was accepted. A cancelled drag keeps it.
 
