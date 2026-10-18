@@ -37,7 +37,7 @@ origin/main advanced to c201244; reconcile preserving owner changes before final
 Next: human F5 result, optional grammar/translation review/control surface, CI/review,
 merge and Pages verification. Broader agent roles remain the separate proposal below.
 
-## AI delivery priority and live dictation blocker — 2026-10-18
+## Earlier AI priority and input blocker (superseded above) — 2026-10-18
 
 Owner requests universal speech-to-text first, strong troubleshooting/optimization next,
 then a lightweight everyday agent as the machine interface. The Pantheon proposal now
@@ -52,6 +52,173 @@ source. Current services being active therefore does not establish usability. Of
 IBus registry source disables the default per-user component directory; investigate a
 reversible native registry/source integration before asking for a human F5 trial. Preserve
 US/Japanese sources and do not restart owner desktop services without authorization.
+
+## README fixes, verification and remaining work — 2026-10-18
+
+The root [README](../README.md#fixes-tests-and-remaining-work) now separates
+desktop dock/layout, OS bar, kernel, external USB4 dock, power parity, overall
+performance, CPU, GPU and local-LLM/file access. Each section lists implemented
+changes, recorded tests and remaining acceptance work, with links to evidence.
+The status table now distinguishes the owner-confirmed Aurora .20 dock display
+from historical Fairydust limitations and labels stock-kernel decode results
+with their original scope. macOS power/performance parity remains unproven.
+
+Verification: all nine sections have the three status labels; all relative
+documentation links in the project portion resolve; Git whitespace checks pass.
+This is a documentation update; hardware/model benchmarks were not rerun.
+Integrated the documentation commit onto main without its calendar implementation
+parent; calendar claims and its evidence link explicitly identify that branch.
+Preserved newer main handoff/roadmap entries while resolving insertion conflicts.
+Next: update the relevant section when its linked hardware or workload gates pass.
+
+## YouTube launcher/logo included in fresh-install payload — 2026-10-18
+
+`enhance.sh` now stages the contained launcher, system desktop entry and YouTube
+SVG automatically. Exec points at `/usr/share/elementary-mac/mseries/video-decode/brave-youtube`,
+with the existing dock WMClass and Widevine sibling helper. Factory finalize keeps
+the files after pruning, including the sysupdate `/usr` artifact. Both ARM64
+consumers carry bubblewrap, xdg-dbus-proxy and cache tools; final hooks validate
+and refresh the desktop/icon caches. The existing transform Brave first-boot module
+also installs the container dependencies.
+
+Verified: enhancement staging suite, four image wiring tests (including finalize,
+missing-icon rejection and dependency parity), desktop validation, shell syntax
+and changed-shell checks. GTK4 with empty XDG user data resolves the staged system
+launcher/icon; Exec was rebased only in that temporary lookup fixture. No browser
+was launched and the owner's active session was not changed. No ISO build or fresh
+hardware boot was performed. Factory browser package provisioning remains separate;
+the transform's existing network first-boot module installs Brave. Next: qualify
+factory browser packaging and fresh hardware playback; this validates asset wiring.
+
+## Orchard real Wayland qualification and cleanup protection — 2026-10-18
+
+- Verified the installed Python/GTK4 foreground app on real `GdkWaylandDisplay`/`GdkWaylandToplevel`, Vulkan and the elementary blueberry stylesheet at 120 Hz. This was not Xvfb or forced Cairo. Final run: 11 live workflow groups passed, including stale-inventory duplicate-name preservation, container/VM creation, agent-backed VM Run, lifecycle/pause/resume, snapshots/restore, clone/rename/delete, real Terminal login, native elementary backup Save portal/archive validation, file listing and CLI transfer round trip, mounted-folder reads, TCP proxy, bounded Unicode output, and cancellation cleanup. All audit fixtures were swept; original guests were preserved.
+- Fixed a serious creation cleanup issue: names alone no longer authorize cleanup. Each launch carries `user.orchard.creation-token`; failed/cancelled cleanup verifies it before touching operations/instances, starts after client exit and uses bounded CLI requests. Missing/malformed ownership data fails closed. Duplicate names are rejected before launch and in the form. The live negative case confirmed an existing disposable guest survives a failed same-name request.
+- Also fixed idempotent bulk settings and per-instance metadata serialization (self-induced ETag races), duplicate clicks, stale rename/filtered selection, explicit VM Secure Boot choice, agent guidance/Console launcher, a scrolling creation form, full-name tooltip and the Devices page's nested-scroll collapse.
+- Final metrics (810 completed presentation records / 811 frames, eight seconds; 18 actions): frame-start→presentation median 21.923 ms / p95 29.630 / max 38.619; action→presentation median 26.257 / p95 33.620 / max 38.442; presented spacing p95 17.124 ms. Simple GTK control median 20.606 / p95 24.472 ms in a separate run. These are compositor feedback, not physical input-to-photon or a zero-jank guarantee; early action measurements used a different attribution rule and are not an improvement baseline.
+- Checks: 103 tests, 97 pass / six opt-in live tests skipped, with fatal GTK criticals enabled for the GUI checks; final live run had one expected duplicate-name error and no unexpected errors/GTK warnings. Source/install parity passed. Installed with `sh mseries/orchard-incus/install.sh`; reopen Orchard to load it.
+- Reproduction/evidence: `tools/qualify-wayland.py`, `tools/wayland-save-portal.py`, `tools/wayland-frame-control.py`, `audit/2026-10-18-wayland.json`, `docs/orchard-incus.html`. Driver waits for mapped/painted dialogs, guards fixture names/resources and records source hashes. An early pre-map driver response crashed GTK Wayland; invalid early attempts, foreground text interference and too-short agent waits are documented separately from the final passing run.
+- Remaining qualification: physical input/focus traversal, interactive upload/download chooser selection and Console input, long-duration RSS/thermal soak, very large real fleets, other themes/scales, and the separate Vala manager/panel. No kernel, bootloader, display or audio configuration was changed.
+
+
+## Orchard native developer UX and performance audit — 2026-10-18
+
+- Enhanced the installed Python/GTK4 app in `mseries/orchard-incus/`: sidebar name/image/status/IP search and no-match state; native keyboard-accessible dashboard buttons; shortcut help/menu and view shortcuts; 780px header and scrolling Devices form; refresh indicator and safer loading/settings ownership.
+- Bounded/coalesced work: latest-result-only tab/resource/catalog reads, 20s JSON reads, timer/theme/monitor cleanup, event follow-up debounce, chunked UTF-8 command output (64K-character pending mailbox/256K-character text tail), dashboard construction in 16-card batches, viewport-only chart updates, unchanged-presentation caching, linear history pruning. Busy operations no longer start twice or change another selected instance's detail.
+- Verified: 86 Python tests (80 pass, six live tests skipped), including real local noisy subprocess and fatal GTK critical checks; Vala manager + Wingpanel compiled and all five Meson suites passed under Xvfb. Live read-only preflight/list passed, two existing instances preserved.
+- Synthetic full-history 500-instance median UI-thread updates: Instances 55.57→4.72 ms, Dashboard 26.18→5.91 ms in one sequential run. Initial list update 93.93 ms excludes deferred dashboard construction. These are not real Wayland frame-latency or long-duration memory results.
+- Evidence/method: `mseries/orchard-incus/audit/2026-10-18.json`, `tools/audit-ui.py`, and `docs/orchard-incus.html`. Remaining: virtualized rows for very large fleets, real Wayland/manual workflow qualification, and choosing/removing duplicate manager launchers. Vala UI/performance was not modified.
+- Install: `sh mseries/orchard-incus/install.sh` preserves one previous package. Source/install parity checked after deployment. Reopen Orchard to load new Python code; no owner's running window, container, kernel, display or audio configuration was restarted.
+
+
+## Orchard for Incus narrow-window fixes — 2026-10-17
+
+Found at 760 px: the window was forced to ~850 px, and the instance action row
+(with the More menu holding Clone/Rename/Delete) was clipped off-screen.
+Fixes in `mseries/orchard-incus/`: action row is a wrapping FlowBox (hidden
+buttons leave no gap, FlowBox children are not extra tab stops); stat tiles use
+`ui.TileRow` and wrap 2+2 when narrow; filter box shortened; instance sidebar
+240 px (was 290); detail margins 20 px; declared minimum window is now 780x480
+(was 760x480, which the content could not honour). Screenshots checked at
+780x480 and 1180x740, no clipping; wide layout unchanged.
+- Tests: 71 run, 6 live skipped, all pass; `tests/test_layout.py` (2, need a
+  display; run under xvfb-run) guards tile wrapping and action-row shrink.
+- Installed with `./install.sh`. Not verified: elementary stylesheet/Wayland,
+  the other tabs (Snapshots/Run/Files/Devices/Settings) and dialogs at narrow
+  width, More-menu popover contents, keyboard focus order. Sidebar IPs truncate
+  at 240 px.
+## Orchard for Incus charts — 2026-10-17
+
+`mseries/orchard-incus/`: charts now say what they show. Large charts (Dashboard
+totals, instance Overview) draw the scale top-left and the covered time span
+("last 4.5 min") top-right, and show "Collecting data…" until 3 samples exist.
+CPU charts auto-scale with a 10% floor instead of a fixed 100% (idle looks idle,
+busy multi-core is no longer clipped); the scale label keeps that honest.
+Small sidebar/dashboard sparklines stay unlabelled. Logic in
+`backend.chart_top/chart_ready/span_text`.
+- Tests: 69 run, 6 live skipped, all pass (7 new). Checked headlessly: live
+  shoot.py pages (collecting state) and a synthetic full-history render, dark.
+- Installed with `./install.sh`. Not verified: light theme with full history,
+  real Wayland/elementary stylesheet, narrow 760 px.
+## Orchard for Incus UI/UX pass — 2026-10-17
+
+Reviewed every page from headless screenshots (`mseries/orchard-incus/tools/shoot.py`
+under Xvfb with the cairo renderer, a throwaway XDG_STATE_HOME and no D-Bus
+session; read-only against the live Incus; nothing shown on the real display).
+Changes, all in `mseries/orchard-incus/`:
+- Instance actions are contextual (`backend.visible_actions`): running shows
+  Stop/Restart/Pause/Shell/Snapshot, stopped shows Start/Snapshot. Delete moved
+  out of the primary row into the More menu ("Delete…", red, still confirms).
+- Images: Container/VM badge per row (identical-title rows are now
+  distinguishable), alias shown, Delete is a quiet icon button with tooltip and
+  accessible name.
+- Storage: usage gauge (LevelBar, warns at 85%/95%) with percentage, from
+  `backend.parse_space`.
+- Filter box only shows on the Instances page; Ctrl+F jumps there first.
+- Tests: 62 run, 6 live skipped, all pass (11 new). Screenshots checked in light
+  1180x740 and dark 900x600. Installed with `./install.sh` (backup in `.prev`).
+- Not verified: real-display rendering with the elementary stylesheet and
+  Wayland (screenshots use the default GTK theme under X11); clicking through
+  actions (nothing was started, stopped or deleted); narrow 760 px layout; the
+  More-menu popover; keyboard focus order. Dashboard/chart axis labels and the
+  empty-history look of the charts are still open.
+## Orchard for Incus (Python) audit and fixes — 2026-10-17
+
+Audit of `mseries/orchard-incus/` (installed copy was identical to source):
+- Fixed: every `incus` call defaulted to a 600 s timeout, so a hung daemon
+  stacked a new `incus list` thread every 3 s and never tripped the
+  two-failure check. Now `backend.IncusTimeout` (a RuntimeError), a 20 s
+  `POLL_TIMEOUT` for the list refresh, and an in-flight guard in `refresh()`.
+- Fixed: any unrecognised Incus error was shown as "Incus isn't running" and
+  the real message dropped. Socket/connect errors keep that wording; others now
+  show "Incus reported an error" with the message.
+- Fixed: `install.sh` deleted the old code before copying. It now stages,
+  keeps one backup as `~/.local/share/orchard-incus/orchard_incus.prev`, then
+  swaps; a stale `.new` dir from a crashed run is cleaned.
+- Tests: `cd mseries/orchard-incus && python3 -m unittest discover -s tests`
+  = 51 run, 6 live skipped, all pass (9 new: timeouts, preflight wording,
+  install idempotence/backup/uninstall in a temp HOME).
+- Live read-only check: `preflight()` None in 0.01 s, `list` 2 instances 0.01 s.
+- Installed with `./install.sh` (backup in `orchard_incus.prev`).
+- Not verified: the GTK window itself (refresh guard and problem page were
+  compile-checked only, not exercised; app was not running, nothing relaunched);
+  the 6 live tests; the Vala app build. Not changed: the monitor thread
+  flaps `monitor_ok` every ~5 s when the daemon is down.
+- Noted, not touched: stale `com.github.techmore.orchard-incus` launcher,
+  desktop file and `liborchard-incus.so` (Vala app) coexist with the Python
+  app's `io.github.techmore.OrchardIncus.desktop`: two menu entries.
+- Next: pick the canonical implementation; build/test the Vala app.
+
+## Orchard for Incus upstreamed into this repo — 2026-10-17
+
+Both Orchard for Incus implementations now live in `ElementaryOS_MSeries`
+(previously only on the `claude/airplay-destinations` branch and in the
+separate `techmore/orchard-incus` repo):
+
+- `mseries/orchard-incus/` — Python/GTK 4 app (installed to
+  `~/.local/share/orchard-incus`, launcher `~/.local/bin/orchard-incus`),
+  imported from `claude/airplay-destinations` @ 0eeefa7. Tests:
+  `cd mseries/orchard-incus && python3 -m unittest discover -s tests`
+  (42 run, 6 live tests skipped).
+- `mseries/orchard-incus-native/` — Vala/Granite app + Wingpanel indicator,
+  imported from `techmore/orchard-incus` `codex/wingpanel-indicator` @ 3913611
+  (no build output; MIT LICENSE and NOTICE.md with Orchard attribution kept).
+  Not rebuilt or re-tested during the import.
+- Installed copy of the Python app was byte-identical to the source (diff clean).
+- Not done: audit/fix pass (error states, install idempotence), Vala build
+  and tests, deciding which implementation is canonical.
+- Next: choose canonical implementation, then audit failure states
+  (incus missing/permission denied/daemon down) with tests first.
+
+## YouTube launcher logo — 2026-10-18
+
+The contained hardware-decode Brave launcher now uses `Icon=mseries-youtube`
+and a bundled scalable red YouTube play-button SVG. Icon installation and existing
+shortcut update instructions are in `video-decode/README.md`. The owner's installed
+shortcut and per-user hicolor icon were updated without changing Exec or playback.
+Verification: desktop-file validation, SVG XML/geometry checks and GTK icon lookup
+pass. A running window may need reopening to pick up the icon; visual confirmation
+in the live dock remains open. Next: confirm the launcher/dock icon after reopening.
 
 ## Dock-aware window space installed — 2026-10-18
 
@@ -3414,3 +3581,113 @@ long-window bottlenecks, stale and unknown data, ties, reset boundaries, and mon
 without duration metadata. The `hints` render fixture deliberately makes a saved Claude account best
 and a saved Codex account next to reset; checked in light/dark. Upstream pin remains 0.77.0. Publish,
 merge to main and deploy as the owner requested for this ongoing CodexBar work.
+
+
+## CodexBar: native account-sheet visual refinement — 2026-10-18
+
+Owner requested a more beautiful add-account popup that belongs on elementary OS, merged to main.
+`AccountDialog.vala` now uses a raised provider emblem, theme-colored instruction icons, a bordered
+two-row instruction group, clearer typography and spacing, and the standard Granite response area.
+Colors follow the elementary accent/light/dark theme; Claude retains its recognizable terracotta mark.
+Codex, Claude and OpenCode add prompts share the sheet with provider-specific copy and actions.
+Claude/OpenCode keep their existing confirmation-to-helper flow; the separate OpenCode key-entry
+window and its authentication logic are unchanged. Codex still uses the owner-verified isolated browser
+sign-in helper; the active account and native Claude session handling are unchanged.
+
+Codex waiting, success and retry states use the same visual hierarchy, native default actions and
+keyboard focus. Helper detail is selectable, bounded to four lines and available in full on hover;
+long errors cannot stretch the dialog. Cancel still terminates the running login helper.
+
+Validation: built the module and render probe, passed four Meson suites, and inspected 12 headless
+previews (three provider prompts plus waiting/success/failure in light/dark). `CB_DIALOG` probe modes
+use only mock commands, never the owner's sign-in or credentials. No live reauthentication was needed
+for this presentation change. Upstream pin remains 0.77.0. Publish through a PR, merge to main and run
+`bash mseries/deploy-codexbar.sh` after publishing and after deploying the merged revision.
+
+
+## CodexBar: native OpenCode API-key sheet — 2026-10-18
+
+Owner requested that the separate API-key window match the refined add-account dialog and land on
+main. `codexbar-opencode-login.py` now builds a Granite dialog with the same raised OpenCode emblem,
+heading/spacing, elementary accent icon, framed browser and key sections, and native Cancel/Connect
+response buttons. The masked/peekable key field has a mnemonic label; Enter submits, Cancel closes,
+and inline validation shows a spinner while editing and alternative sign-ins are disabled. Rejected
+keys restore focus and editing. Error detail wraps within the sheet and remains available on hover.
+
+Browser/passkey access, the built-in email/GitHub fallback, validation-before-storage, config paths
+and storage commands are preserved. The sheet factory imports GTK/Granite lazily so CLI status and
+non-GUI functions remain usable without GUI initialization. Installer explicitly includes the Python
+GI/Granite/WebKit runtime packages used by this helper. Upstream remains pinned to 0.77.0.
+
+Validation: Python compilation, installer shell syntax, all four Meson suites and the port check pass.
+Six headless previews cover initial/checking/error in light and dark; the committed
+`mseries/codexbar-wingpanel/probe/render-opencode.py` uses dummy masked keys and never calls auth or
+storage. Mocked end-to-end window response checks passed cancellation, invalid syntax, rejected key
+with retry enabled, and successful validation/storage. These checks used an isolated non-unique GTK
+application, dummy keys and mocked network/storage; no real account was changed. Live sign-in was
+not repeated for this visual refinement. Publish, merge to main and deploy as authorized by the owner.
+
+
+## CodexBar: OpenCode + opens the key sheet directly — 2026-10-18
+
+Owner requested removal of the extra Continue popup. `add_opencode_account()` now starts the existing
+`codexbar-opencode-login.py login` helper immediately, opening the native API-key sheet in one click.
+Validation, storage, cancellation, result reporting and quota refresh retain the existing helper path.
+Claude and Codex onboarding are unchanged. Reviewed the OpenCode + callback and direct helper dispatch;
+built the module and passed all four Meson suites. No live credentials or account changes were needed.
+Upstream pin remains 0.77.0. Publish to main and deploy the merged revision as requested.
+
+
+## CodexBar: direct Claude sign-in and account plan badges — 2026-10-18
+
+Owner requested Claude + skip confirmation like OpenCode +, and account levels in the dropdown.
+The Claude handler now dispatches the existing browser-login helper immediately; the unused
+confirmation wrapper was removed. Existing Claude/native-app account switching and login capture
+remain intact; no real login or account switch was performed for this UI change.
+
+Active identities and each saved-account row now show a compact reported-plan pill. Codex already
+exposes per-account plan claims; Claude now projects known subscriptionType labels (free/pro/max/team/
+enterprise) from its saved claude-swap Linux credential records and verified active CLI login. Only
+plan labels enter helper JSON, never credential fields. Native Electron app sessions are untouched.
+OpenCode projects per-account plan metadata when present, while the active upstream snapshot supplies
+its normal plan. Current saved OpenCode metadata may omit a plan, so these rows say “Plan unavailable.”
+An active account's plan is never assigned to a different saved account, and quota size is not used
+to infer a subscription. Tooltips describe plans as reported since login metadata may be cached.
+
+Validation: 35 Claude and 9 OpenCode helper tests pass, including account-specific saved plans,
+verified-active-only fallback, corrupt/missing metadata, and credential exclusion. Four Meson suites
+pass with plan formatting coverage; module/probe builds and port compatibility check pass. Light/dark
+fixtures show Pro/Plus/Max/Go and missing plans, with normal-width bottom-of-dropdown checks using new
+CB_HIDE_PANEL/CB_SCROLL probe controls. Upstream pin remains 0.77.0. Publish, merge to main and deploy
+the merged version as explicitly requested.
+
+
+## CodexBar: OpenCode's actual account level — 2026-10-18
+
+Owner requested replacing unavailable OpenCode plan labels where possible. Confirmed the official
+Console's read-only `GET https://opencode.ai/console/api/go/status` accepts the saved OAuth bearer
+credential plus its `x-org-id` workspace header. The live account returns current `product: go`.
+The raw usage API strips product data from the upstream quota model, and saved credential metadata
+has no plan field, which explains the earlier unavailable label.
+
+The account helper now reads this endpoint for distinct unexpired saved OAuth accounts, including
+the active one, and projects only Go/Go Plus plus a console-source marker. A valid access period and
+current product determine the label; renewal product, cancellation scheduled after the period, quota
+size and other accounts never determine it. Current Console data supersedes upstream's generic Go
+provider label. Missing/expired/unrecognized subscriptions remain unknown, while failed lookups can
+retain an existing reported metadata label. Billing identifiers and credentials are not exported.
+
+Requests are fixed to the official HTTPS host, workspace-scoped, redirect-blocked, bounded to 128 KiB
+and an eight-second timeout. OpenCode owns token refresh; its database is still opened read-only.
+Normal existing account polling drives refresh. API-key-only/custom-server records without this
+Console authorization retain the existing fallback rather than being assigned a guessed tier.
+
+References: OpenCode provider auth/header source at `214fb7fdbab9ad13773629839f1178382400cf97`
+(`packages/core/src/plugin/provider/opencode.ts`); CodexBar v0.77.0
+`OpenCodeGoUsageFetcher.swift` uses the same Console status endpoint for cookie-authenticated meters;
+https://dev.opencode.ai/v2/docs/console/go/ documents Go and Go Plus. No upstream code was imported.
+Upstream pin stays 0.77.0. Validation: 17 OpenCode tests, four Meson suites, module/probe builds, port
+check and light/dark normal-width fixtures with active Go Plus and secondary Go. Tests cover scoped
+headers, current versus renewal product, expired/malformed/missing data, network/oversize failure,
+foreign-host rejection, account isolation and credential exclusion. Live product resolution checked
+read-only. Merge to main and deploy as explicitly requested.

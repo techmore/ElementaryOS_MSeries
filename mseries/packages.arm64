@@ -16,6 +16,13 @@ The safe Asahi DSP chain still needs image packaging (see below).
   HID early-load modules to `/etc/initramfs-tools/modules`; pruned from
   the final overlay by `mkosi.finalize`.
 
+The default YouTube menu/dock launcher and SVG are staged by `enhance.sh` into
+`/usr/share`, retained by the factory overlay, and use an installed executable
+rather than an owner's checkout. Both consumers install `bubblewrap`,
+`xdg-dbus-proxy`, `desktop-file-utils` and `libgtk-3-bin`; final hooks refresh the
+application/icon caches. The transformed install's first-boot job installs Brave;
+factory browser package provisioning is still separate.
+
 ## From the Ubuntu archive (names confirmed by archive membership, not tested)
 
 - `pipewire-pulse` — PulseAudio-compat server (omarchy `audio.sh`: x86 gets

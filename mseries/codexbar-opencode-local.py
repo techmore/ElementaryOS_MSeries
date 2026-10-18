@@ -9,6 +9,8 @@ import os
 import pathlib
 import sqlite3
 import subprocess
+import urllib.request
+import urllib.error
 from contextlib import closing
 import sys
 import time
@@ -120,6 +122,62 @@ def iso_time(timestamp_ms: int) -> str:
     return dt.datetime.fromtimestamp(timestamp_ms / 1000, dt.timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+class NoPlanRedirect(urllib.request.HTTPRedirectHandler):
+    """Never forward an account credential through an HTTP redirect."""
+
+    def redirect_request(self, req: Any, fp: Any, code: int, msg: str, headers: Any, newurl: str) -> None:
+        return None
+
+
+def plan_from_status(data: Any, now_ms: int) -> str:
+    """Current Go product, not the renewal product or a tier inferred from usage limits."""
+    if not isinstance(data, dict) or not isinstance(data.get("access"), dict):
+        return ""
+    try:
+        ends_at = dt.datetime.fromisoformat(data["access"]["endsAt"].replace("Z", "+00:00"))
+        if ends_at.tzinfo is None or ends_at.timestamp() * 1000 <= now_ms:
+            return ""
+    except (KeyError, TypeError, AttributeError, ValueError, OverflowError):
+        return ""
+    product = data.get("product")
+    if not isinstance(product, str):
+        return ""
+    product = product.strip().lower().replace("_", "-").replace(" ", "-")
+    return {"go": "Go", "go-plus": "Go Plus", "goplus": "Go Plus"}.get(product, "")
+
+
+def fetch_account_plan(credential: dict[str, Any], now_ms: int) -> str | None:
+    """Read the official Console's workspace-scoped subscription; None means unavailable."""
+    metadata = credential.get("metadata")
+    if not isinstance(metadata, dict):
+        return None
+    server = metadata.get("server", "https://opencode.ai/console")
+    org = metadata.get("orgID")
+    access = credential.get("access")
+    if not isinstance(server, str) or server.rstrip("/") != "https://opencode.ai/console" \
+            or not isinstance(org, str) or not org or len(org) > 512 or "\n" in org or "\r" in org \
+            or not isinstance(access, str) or not access:
+        return None
+    request = urllib.request.Request("https://opencode.ai/console/api/go/status", headers={
+        "Authorization": "Bearer " + access, "x-org-id": org,
+        "Accept": "application/json", "User-Agent": "CodexBar",
+    })
+    try:
+        with urllib.request.build_opener(NoPlanRedirect()).open(request, timeout=8) as response:
+            payload = response.read(131073)
+        if len(payload) > 131072:
+            return None
+        data = json.loads(payload)
+        if data is not None and not isinstance(data, dict):
+            return None
+        return plan_from_status(data, now_ms)
+    except urllib.error.HTTPError as error:
+        error.close()
+        return None
+    except (OSError, ValueError, urllib.error.URLError):
+        return None
+
+
 def saved_accounts(database: pathlib.Path, cli: str, now_ms: int | None = None) -> list[dict[str, Any]]:
     """Quota for saved distinct OAuth accounts, without activating one or exporting its credentials."""
     now_ms = int(time.time() * 1000) if now_ms is None else now_ms
@@ -145,15 +203,22 @@ def saved_accounts(database: pathlib.Path, cli: str, now_ms: int | None = None) 
             if key in seen:
                 continue
             seen.add(key)
-            account = {"id": ident, "email": email, "active": bool(active), "windows": []}
+            plan = metadata.get("plan")
+            account = {"id": ident, "email": email, "active": bool(active), "windows": [],
+                       "plan": plan if isinstance(plan, str) else ""}
             report.append(account)
-            if active:
-                continue  # upstream's normal snapshot already supplies this account's quota
             access, expires = credential.get("access"), credential.get("expires")
             if not isinstance(access, str) or not access or isinstance(expires, bool) \
                     or not isinstance(expires, (int, float)) or expires <= now_ms + 60000:
-                account["error"] = "Sign in to this OpenCode account again to read quota."
+                if not active:
+                    account["error"] = "Sign in to this OpenCode account again to read quota."
                 continue
+            current_plan = fetch_account_plan(credential, now_ms)
+            if current_plan is not None:
+                account["plan"] = current_plan
+                account["planSource"] = "console"
+            if active:
+                continue  # upstream's normal snapshot already supplies this account's quota
             result = subprocess.run([cli, "usage", "--provider", "opencodego", "--source", "api", "--format", "json"],
                                     env={**os.environ, "OPENCODE_API_KEY": access}, capture_output=True,
                                     text=True, timeout=20, check=False)

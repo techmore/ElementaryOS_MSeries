@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Orchard for Incus
+Comment=Manage Incus containers and virtual machines
+Exec=com.github.techmore.orchard-incus %U
+Icon=com.github.techmore.orchard-incus
+Terminal=false
+Type=Application
+Categories=System;Utility;
+Keywords=Incus;Containers;Virtual Machines;Orchard;
+MimeType=x-scheme-handler/orchard;

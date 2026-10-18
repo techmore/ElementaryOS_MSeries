@@ -34,15 +34,32 @@ int main (string[] args) {
     Gtk.init ();
     Granite.init ();
     var delay = args.length > 2 ? int.parse (args[2]) : 1500;
-    if (Environment.get_variable ("CB_DIALOG") == "codex") {
-        var dialog = new MSeries.AccountDialog ("Add a Codex account",
-            "Connect another ChatGPT account to CodexBar.",
-            "mseries-codexbar-openai-symbolic", { "/bin/true" });
+    var dialog_scenario = Environment.get_variable ("CB_DIALOG");
+    if (dialog_scenario != null) {
+        MSeries.AccountDialog dialog;
+        if (dialog_scenario == "claude" || dialog_scenario == "opencode") {
+            bool claude = dialog_scenario == "claude";
+            dialog = new MSeries.AccountDialog.prompt (
+                claude ? "Add a Claude account" : "Sign in to OpenCode Go",
+                claude ? "Add another Claude Code account to CodexBar." : "Connect your OpenCode Go usage to CodexBar.",
+                "mseries-codexbar-%s-symbolic".printf (dialog_scenario), dialog_scenario,
+                claude ? "Sign in with browser" : "Continue");
+        } else {
+            string[] command = dialog_scenario == "codex-wait" ? new string[] { "/bin/sleep", "30" }
+                : dialog_scenario == "codex-error" ? new string[] { "/bin/sh", "-c", "echo 'Browser sign-in timed out. Please try again.'; exit 1" }
+                : new string[] { "/bin/true" };
+            dialog = new MSeries.AccountDialog ("Add a Codex account",
+                "Connect another ChatGPT account to CodexBar.",
+                "mseries-codexbar-openai-symbolic", command);
+        }
         dialog.present ();
+        if (dialog_scenario.has_prefix ("codex-")) {
+            Timeout.add (100, () => { dialog.response (Gtk.ResponseType.ACCEPT); return Source.REMOVE; });
+        }
         var loop = new MainLoop ();
         Timeout.add (delay, () => { capture (dialog, dialog, args[1], loop); return Source.REMOVE; });
         loop.run ();
-        dialog.destroy ();
+        dialog.close ();
         return render_failed ? 1 : 0;
     }
 
@@ -54,7 +71,7 @@ int main (string[] args) {
     popover_body.append (indicator.get_widget ());
     var root = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) { margin_top = 6, margin_bottom = 6, margin_start = 6, margin_end = 6 };
     root.add_css_class ("background");
-    root.append (bar);
+    if (Environment.get_variable ("CB_HIDE_PANEL") == null) root.append (bar);
     root.append (popover_body);
     var window = new Gtk.Window () { child = root, decorated = false };
     window.present ();
@@ -71,7 +88,14 @@ int main (string[] args) {
         root.measure (Gtk.Orientation.VERTICAL, 360, out min, out nat, null, null);
         window.set_default_size (360, nat);
         Timeout.add (800, () => {
-            capture (root, window, args[1], loop);
+            if (Environment.get_variable ("CB_SCROLL") == "end") {
+                var scroll = find_scroll (root);
+                if (scroll != null) {
+                    var adjustment = scroll.get_vadjustment ();
+                    adjustment.value = adjustment.upper - adjustment.page_size;
+                }
+            }
+            Timeout.add (200, () => { capture (root, window, args[1], loop); return Source.REMOVE; });
             return Source.REMOVE;
         });
         if (Environment.get_variable ("CB_STABILITY") != null) {
@@ -128,4 +152,13 @@ void capture (Gtk.Widget root, Gtk.Window window, string path, MainLoop loop) {
             Timeout.add (11500, () => { loop.quit (); return Source.REMOVE; });
         }
     }
+}
+
+Gtk.ScrolledWindow? find_scroll (Gtk.Widget root) {
+    if (root is Gtk.ScrolledWindow) return (Gtk.ScrolledWindow) root;
+    for (var child = root.get_first_child (); child != null; child = child.get_next_sibling ()) {
+        var found = find_scroll (child);
+        if (found != null) return found;
+    }
+    return null;
 }

@@ -23,7 +23,8 @@
 YouTube, inside `bwrap`. Chromium's own sandbox is off (`--no-sandbox`), so the container is the wall:
 only `/dev/dri`, `/dev/media*`, `/dev/video*`, the Wayland/PipeWire/Pulse sockets, read-only `/usr` `/etc`
 `/opt` `/sys`, an empty tmpfs `$HOME` and that one profile directory are visible. Your normal Brave and
-profile are untouched. Not installed as a menu entry by default (`brave-youtube.desktop` is a template).
+profile are untouched. The enhancement payload installs a system-wide menu entry with a YouTube logo;
+its application ID and `StartupWMClass` also identify the running window in the dock.
 
 Verified (`brave-youtube --probe`, 2026-10-18): the container starts under this system's AppArmor rules;
 `$HOME` inside holds only `.config`; `~/.ssh` and other profiles are not visible; `vainfo` inside lists
@@ -75,3 +76,40 @@ YouTube Movies (for example *Edge of Tomorrow*) said "your browser can't play th
 profile had no Widevine. The launcher now copies the normal profile's Widevine CDM into its profile and opts in,
 before Brave starts (skipped while the window is open). See `../BRAVE-WIDEVINE.md`. Not yet verified with a
 movie playing in the container.
+
+## YouTube launcher icon — 2026-10-18
+
+The default enhancement payload installs these files for every user:
+
+- `/usr/share/applications/mseries-brave-youtube.desktop`
+- `/usr/share/icons/hicolor/scalable/apps/mseries-youtube.svg`
+- `/usr/share/elementary-mac/mseries/video-decode/brave-youtube`
+
+The SVG is a red YouTube play-button logo drawn here, with no external artwork
+dependency. The launcher uses the installed executable rather than an owner's
+checkout. `Icon=mseries-youtube` and
+`StartupWMClass=brave-www.youtube.com__-Default` let the menu, pinned dock item and
+running YouTube window share the same icon. Each user still gets a separate profile.
+The Widevine helper is included alongside the launcher in the immutable payload.
+
+`enhance.sh --only payload` stages the files during transformed installs and the
+Apple Silicon factory overlay build. Both ARM64 liveiso and sysupdate consumers
+install bubblewrap, xdg-dbus-proxy and the desktop/icon cache tools. Their final
+post-install hooks validate the desktop entry and refresh application and icon
+caches after merging the overlay. The transform's existing first-boot Brave module
+also installs the container dependencies. Factory Brave browser provisioning is
+still a separate gap: this change bundles the shortcut/logo, not a browser package.
+A fresh factory hardware boot and playback remain unverified.
+
+For an existing shortcut, keep its working `Exec` path and change only its `Icon`
+line to `Icon=mseries-youtube`. Install the icon from the repository root:
+
+```sh
+install -Dm644 mseries/video-decode/mseries-youtube.svg \
+  "$HOME/.local/share/icons/hicolor/scalable/apps/mseries-youtube.svg"
+gtk-update-icon-cache --force --ignore-theme-index "$HOME/.local/share/icons/hicolor"
+update-desktop-database "$HOME/.local/share/applications"
+```
+
+The dock caches application icons; restart it or sign in again after changing an
+existing shortcut. Playback and decode settings are unchanged.

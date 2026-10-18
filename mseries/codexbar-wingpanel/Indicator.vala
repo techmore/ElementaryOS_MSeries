@@ -549,19 +549,6 @@ namespace MSeries {
             read_snapshot.begin ();
         }
 
-        /* Adding an account needs a browser sign-in we can't drive, so ask in a small native dialog instead of a terminal. */
-        private void ask_to_save (string heading, string detail, string save_label, owned ActionFunc on_save) {
-            var dialog = new Granite.MessageDialog.with_image_from_icon_name (heading, detail,
-                "system-users", Gtk.ButtonsType.NONE);
-            dialog.add_button ("Cancel", Gtk.ResponseType.CANCEL);
-            dialog.add_button (save_label, Gtk.ResponseType.ACCEPT).add_css_class ("suggested-action");
-            dialog.response.connect ((response) => {
-                dialog.close ();
-                if (response == Gtk.ResponseType.ACCEPT) on_save ();
-            });
-            dialog.present ();
-        }
-
         private void tell (string heading, string detail) {
             var dialog = new Granite.MessageDialog.with_image_from_icon_name (heading, detail,
                 "dialog-information", Gtk.ButtonsType.CLOSE);
@@ -594,21 +581,13 @@ namespace MSeries {
 
         // Upstream only imports opencode.ai cookies on macOS; our helper takes an API key (or a built-in sign-in) instead.
         private void add_opencode_account () {
-            ask_to_save ("Sign in to OpenCode Go",
-                "A small window opens. Sign in to opencode.ai in your browser (passkeys work there), copy an API key from the console and paste it in. CodexBar checks the key before saving it.",
-                "Continue", () => {
-                    run_saver.begin ({ "python3", helper_path ("codexbar-opencode-login.py"), "login" },
-                        "OpenCode Go signed in", "Couldn't sign in to OpenCode Go", true);
-                });
+            run_saver.begin ({ "python3", helper_path ("codexbar-opencode-login.py"), "login" },
+                "OpenCode Go signed in", "Couldn't sign in to OpenCode Go", true);
         }
 
         private void add_claude_account () {
-            ask_to_save ("Add a Claude account",
-                "CodexBar opens your browser to sign in to Claude, then saves the login so you can switch between accounts from here. Any account that is already signed in is saved first.",
-                "Sign in and save", () => {
-                    run_saver.begin ({ "python3", helper_path ("codexbar-claude.py"), "login" },
-                        "Claude account added", "Couldn't add the Claude account");
-                });
+            run_saver.begin ({ "python3", helper_path ("codexbar-claude.py"), "login" },
+                "Claude account added", "Couldn't add the Claude account");
         }
 
         private Gtk.Widget build_claude_card (int64 now_unix) {
@@ -622,7 +601,7 @@ namespace MSeries {
             head.append (build_hint_badges ("claude", true));
             var email = claude_data.get_string_member_with_default ("activeEmail", "");
             var accounts = claude_data.get_array_member ("accounts");
-            head.append (build_identity (email));
+            head.append (build_identity (email, claude_data.get_string_member_with_default ("activePlan", "")));
             card.append (head);
             // CLI and desktop can be switched separately; always name both when they differ.
             var desktop = claude_data.has_member ("desktop") ? claude_data.get_object_member ("desktop") : null;
@@ -688,7 +667,7 @@ namespace MSeries {
                 if (installed && !ready) detail += " · app sign-in needed";
                 card.append (build_account_line (name, detail,
                     "Choose whether to switch Claude Code or the Claude app and CLI to %s".printf (name),
-                    () => choose_claude_switch (number, name, installed, ready), windows, hint_id ("claude", account)));
+                    () => choose_claude_switch (number, name, installed, ready), windows, hint_id ("claude", account), account.get_string_member_with_default ("plan", "")));
             }
             return card;
         }
@@ -759,7 +738,7 @@ namespace MSeries {
                 var detail = account.has_member ("error") ? "unavailable" : "—";
                 box.append (build_account_line (email, detail,
                     "Make %s the active Codex account. Restart running Codex sessions to use it.".printf (email),
-                    () => run_accounts_helper ({ "switch", account_id }), windows, hint_id ("codex", account)));
+                    () => run_accounts_helper ({ "switch", account_id }), windows, hint_id ("codex", account), account.get_string_member_with_default ("plan", "")));
             }
             return box;
         }
@@ -1326,13 +1305,22 @@ namespace MSeries {
             head.append (dot);
             head.append (build_provider_mark (provider, title_text));
             head.append (build_hint_badges (provider, true));
-            var plan = Presentation.plan_label (entry.get_string_member ("plan") ?? "");
-            if (plan.length > 0) {
-                var plan_label = new Gtk.Label (plan) { valign = Gtk.Align.CENTER };
-                plan_label.add_css_class ("plan");
-                head.append (plan_label);
+            var email = account_email_for (provider, entry);
+            var plan = entry.get_string_member_with_default ("plan", "");
+            var accounts = provider_accounts (provider);
+            for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
+                var account = accounts.get_object_element (i);
+                if (account.get_boolean_member_with_default ("active", false) && email.length > 0 &&
+                    account.get_string_member_with_default ("email", "").down () == email.down ()) {
+                    // Upstream's generic "Go" describes this provider, not the workspace's tier.
+                    if (plan.strip ().length == 0 || (provider == "opencodego" &&
+                        (plan.down () == "go" || account.get_string_member_with_default ("planSource", "") == "console"))) {
+                        plan = account.get_string_member_with_default ("plan", "");
+                    }
+                    break;
+                }
             }
-            head.append (build_identity (account_email_for (provider, entry)));
+            head.append (build_identity (email, plan));
             card.append (head);
 
             var windows = entry.get_array_member ("windows");
@@ -1361,7 +1349,7 @@ namespace MSeries {
                     if (account.get_boolean_member_with_default ("active", false)) continue;
                     card.append (build_account_line (account.get_string_member_with_default ("email", "Saved account"),
                         account.get_string_member_with_default ("error", "Quota unavailable"), "", null,
-                        account.has_member ("windows") ? account.get_array_member ("windows") : null, hint_id ("opencodego", account)));
+                        account.has_member ("windows") ? account.get_array_member ("windows") : null, hint_id ("opencodego", account), account.get_string_member_with_default ("plan", "")));
                 }
             }
             if (error.length > 0 || windows == null || windows.get_length () == 0) {
@@ -1436,7 +1424,19 @@ namespace MSeries {
             return icon;
         }
 
-        private Gtk.Widget build_identity (string email) {
+        private Gtk.Widget build_plan_badge (string email, string plan) {
+            var text = Presentation.plan_label (plan);
+            var badge = new Gtk.Label (text.length > 0 ? text : "Plan unavailable") {
+                valign = Gtk.Align.CENTER, ellipsize = Pango.EllipsizeMode.END, max_width_chars = 18
+            };
+            badge.add_css_class ("plan");
+            if (text.length == 0) badge.add_css_class ("dim-label");
+            badge.tooltip_text = text.length > 0 ? "Reported plan for %s: %s".printf (email, text)
+                : "This service hasn't reported a plan for this account.";
+            return badge;
+        }
+
+        private Gtk.Widget build_identity (string email, string plan = "") {
             var identity = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4) { halign = Gtk.Align.END, hexpand = true };
             identity.add_css_class ("account-row");
             var icon = new Gtk.Image.from_icon_name ("avatar-default-symbolic") { pixel_size = 12 };
@@ -1450,6 +1450,7 @@ namespace MSeries {
             identity.set_tooltip_text (email.length > 0 ? "Signed in as " + email
                 : "CodexBar can't tell which account this is signed in with");
             identity.append (label);
+            identity.append (build_plan_badge (email, plan));
             return identity;
         }
 
@@ -1472,7 +1473,7 @@ namespace MSeries {
         }
 
         private Gtk.Widget build_account_line (string email, string detail, string switch_tooltip,
-                                               owned ActionFunc? on_switch, Json.Array? windows = null, string candidate_id = "") {
+                                               owned ActionFunc? on_switch, Json.Array? windows = null, string candidate_id = "", string plan = "") {
             var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             line.add_css_class ("account-line");
             var name = new Gtk.Label (email) { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.MIDDLE };
@@ -1481,6 +1482,7 @@ namespace MSeries {
             var identity = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
             identity.append (build_hint_badges (candidate_id));
             identity.append (name);
+            identity.append (build_plan_badge (email, plan));
             content.append (identity);
             var has_quota = windows != null && windows.get_length () > 0;
             var meta = new Gtk.Label (has_quota ? Presentation.account_quota (windows, new DateTime.now_utc ().to_unix ()) : detail) {
