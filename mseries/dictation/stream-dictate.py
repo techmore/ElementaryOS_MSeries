@@ -182,6 +182,8 @@ class Dictation:
                     self.typer.q.put(rest)
                 rms = (sq / max(n, 1)) ** 0.5
                 log(f"dictated {len(final)} chars in {time.time() - t0:.1f}s; audio peak {peak:.3f} rms {rms:.4f}")
+                if os.environ.get("STREAM_FORCE_FALLBACK"):
+                    final = ""  # test hook: pretend streaming recognized nothing
                 if not final.strip() and peak > 0.03 and len(kept) > 16000 * 2:
                     # streaming heard nothing but there was sound: let Whisper have one offline pass
                     redo = whisper_fallback(bytes(kept))
