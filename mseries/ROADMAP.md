@@ -1,5 +1,38 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## v0.0.1 English F5 candidate; ChatGPT input correction staged — 2026-10-18
+
+The owner narrowed v0.0.1 to English F5 speech to text on the existing M1 Pro
+32 GB desktop; factory ISO, voice replies and diagnosis remain separate.
+The fresh physical F5 check in ChatGPT FAILED: the key reached the listener,
+but focused-field metadata was unavailable and it refused before microphone
+capture. This is retained app-input failure evidence, not model WER. The earlier
+seven installed routes and completed CPU/MLX comparisons are unchanged.
+
+A reviewed per-user lowercase `chatgpt.desktop` override is now staged through
+`dictation-launch.py --chromium`, enabling renderer accessibility and the IBus
+environment at next full app launch. Seventeen launcher contracts pass, including
+independent GLib quoting/spacing, URL/action preservation, owner-edit refusal and
+private rollback. Desktop resolution selects that override. ChatGPT, listener,
+input bridge and everyday4B were not restarted. No microphone/model was used.
+Full owner-controlled Quit, reopen from Applications, then physical F5 in the chat
+composer is the remaining acceptance gate. Preserve password/active-field guards.
+The owner permits OS-level dictation integration; it is not a reason to type into
+an unknown field. Native compositor input/broker work remains future development.
+
+Release worktree: `ElementaryOS_MSeries-f5-v001`, branch `release/f5-v0.0.1`.
+Source-only deterministic Git-blob packaging, strict read-only preflight,
+versioned rollback and a transcript-only UI are prepared. Native/ANE/MLX assets
+stay available on the host but are not bundled or requalified. See
+[release candidate instructions](releases/v0.0.1/README.md) and its sanitized
+[receipts](releases/v0.0.1/receipts/). No v0.0.1 tag/release has been published.
+Advanced diagnostic work is isolated on `feat/quiet-diagnostic-agent`, disabled
+and not qualified; never add it to the STT artifact or use everyday4B for repairs.
+The existing six-hour developer watcher continues; do not duplicate it or rerun
+finished ASR benchmarks. Next: commit/push candidate, verify exact-commit archive
+and host preflight, record the owner's post-relaunch F5 result, then release only
+when that result passes. Preserve all owner main changes; one Git writer.
+
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18
 
 Removed “local” from the seven-day panel/card labels and moved counting scope into

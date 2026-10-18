@@ -2220,5 +2220,21 @@
     "installed_app_acceptance": "complete: seven distinct installed routes passed; one GTK4 public-file ASR plus six no-inference app fixtures. Original argv setup failures retained, only three unstarted fixtures continued.",
     "post_fixture_verification_ref": "../local-ai/receipts/f5-english-2026-10-18/f5-postdeploy-v1/receipt.json"
   },
-  "completion_scope": "Qualification, installation and installed routes complete; fresh human microphone, authenticated Gmail, natural/full-duplex speech, factory boot, indefinite soak and power/battery are separate future acceptance gaps. Never repeat completed comparable cohorts."
+  "completion_scope": "Qualification, installation and installed routes complete; fresh human microphone, authenticated Gmail, natural/full-duplex speech, factory boot, indefinite soak and power/battery are separate future acceptance gaps. Never repeat completed comparable cohorts.",
+  "release_readiness": {
+    "version": "0.0.1",
+    "scope": "existing M1 Pro 32 GB desktop, English F5 STT only",
+    "status": "candidate; physical ChatGPT F5 failed; launcher correction staged and awaiting full app relaunch/manual check",
+    "model_cohorts_repeated": false,
+    "receipts": [
+      {
+        "path": "../releases/v0.0.1/receipts/chatgpt-human-v1.json",
+        "sha256": "5c100124ac4b6f2c99f4f82a7ec3a2184bad70366e710c9e389de50577b39192"
+      },
+      {
+        "path": "../releases/v0.0.1/receipts/chatgpt-launcher-v1.json",
+        "sha256": "62729514f7e2769a060b8c534861a428d9dd523dd4d7737fde0f388bb7e988e5"
+      }
+    ]
+  }
 }

@@ -12,6 +12,16 @@ queue remains active. PR #155 merged as `5c26ff6`; its CI and Pages byte check
 passed. This update publishes the final deployment/installed evidence. Inspect
 live units/receipts before future work; the snapshot is not a live process monitor.
 
+**v0.0.1 release gate:** the owner subsequently tried physical F5 in the ChatGPT
+desktop app and got no words or an unexpected prompt. Generic controller events
+show two input refusals before microphone capture; the running app exposed no
+focused editable field. This app-input failure is retained in the
+[release receipts](../releases/v0.0.1/receipts/). A per-user accessibility/IBus
+launcher correction is staged, with 17 passing contracts and verified desktop-entry
+resolution. It requires a full owner-controlled app quit/relaunch and a fresh
+physical F5 check. Staging is not a pass. The source-only English STT release
+remains a candidate; no model benchmark was repeated and no v0.0.1 was published.
+
 ## Current decision and limits
 
 - **Default candidate: Nemotron English Q8 on CPU, four threads, 160 ms trained
@@ -199,8 +209,8 @@ remain; only their unstarted fixtures continued. Supervisor samples retained
 10.48 GiB available at ≤2530 RPM / 49.01°C with no guard interruption. Post-fixture
 readiness/preservation passed. No completed model benchmark was repeated.
 
-No qualification or activation gate remains for this scoped delivery. Fresh
-physical-F5/microphone acceptance, authenticated Gmail, native Calendar GUI,
+The earlier scoped deployment is complete; the later v0.0.1 physical ChatGPT
+acceptance gate above remains open. Authenticated Gmail, native Calendar GUI,
 natural voice/full-duplex WebRTC, indefinite soak, battery/power and factory boot
 remain distinct future work. They do not justify rerunning the completed cohorts.
 A future backend/model change needs a new scoped question and explicit identity.

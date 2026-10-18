@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "observed_at_utc": "2026-10-18T19:01:19+00:00",
+  "complete": true,
+  "passed": false,
+  "classification": "physical-F5 app-input failure, before microphone capture; not ASR quality",
+  "target_app": "ChatGPT Linux desktop",
+  "owner_report": "No words or an unexpected prompt; target was this ChatGPT app",
+  "generic_controller_events": {
+    "f5_received": 2,
+    "input_refused_before_capture": 2
+  },
+  "metadata_only_observation": {
+    "app_accessible_nodes_seen": 4,
+    "focused_editable_found": false,
+    "renderer_accessibility_flag_present": false,
+    "ibus_environment_present": false
+  },
+  "model_inference": false,
+  "microphone_opened_by_these_attempts": false,
+  "private_words_collected": false,
+  "raw_log_published": false,
+  "private_generic_log_sha256": "d27318649d6be3a3f77723c47a02b23d3049f5421a0bc8d312b77662bbc7b730",
+  "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "installed_source_sha256": {
+    "stream-dictate.py": "9b5a4ae68d739829004495813805135eaf62e5d26589e5cf8ef9ef2b8ebea113",
+    "dictation-input.py": "1a04d5a15cc8f4f121ef37d5efe35c1f6b108b416943af7f6fb6ff446b93a6c5",
+    "dictation-launch.py": "62cb332684b24140385d8e11f45d21538534649309933456af79c9e9e790167c"
+  }
+}

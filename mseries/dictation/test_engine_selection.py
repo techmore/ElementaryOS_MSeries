@@ -1,5 +1,6 @@
 """Engine deployment/rollback contracts with fake services; no native inference."""
 import importlib.util
+import json
 from pathlib import Path
 import subprocess
 import tempfile
@@ -189,6 +190,8 @@ class InstallerContracts(unittest.TestCase):
             calls = []
             fake_engine.SERVICE = "owned-asr"
             fake_engine.INPUT_SERVICE = "owned-input"
+            fake_engine.DROPIN = Path(directory) / "90-english-engine.conf"
+            fake_engine.latest_change.return_value = (None, None)
             fake_engine.active.side_effect = lambda: state["active"]
             fake_engine.transaction_lock.return_value = contextlib.nullcontext()
             def service(*args, **kwargs):
@@ -204,6 +207,48 @@ class InstallerContracts(unittest.TestCase):
                 installer.main()
             self.assertTrue(payload.data["metadata"]["stream_active"])
             self.assertTrue(fake_engine.select.call_args.kwargs["was_active"])
+
+    def test_speech_only_uses_separate_immediate_preupdate_baseline(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(installer, 'HOME', Path(directory)):
+            root = Path(directory)
+            target = root / 'existing-payload.py'
+            target.write_bytes(b'original before earlier full installer')
+            old = manager.Payload(root / 'legacy-state')
+            old.install(target, b'working full installation immediately before v0.0.1', 0o600)
+            old_bytes = old.path.read_bytes()
+            state = installer.state_directory(True)
+            self.assertEqual(state, root / '.local/state/mseries-dictation-stt-v0.0.1')
+            update = manager.Payload(state)
+            update.install(target, b'v0.0.1 STT update', 0o600)
+            installer.restore_files(update)
+            self.assertEqual(target.read_bytes(), b'working full installation immediately before v0.0.1')
+            self.assertEqual(old.path.read_bytes(), old_bytes)
+
+    def test_speech_only_stage_excludes_voice_and_optional_copy(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(installer, 'HOME', Path(directory)), patch.object(installer, 'BASE', Path(directory) / 'runtime'):
+            base = installer.BASE
+            (base / 'venv/bin').mkdir(parents=True)
+            (base / 'venv/bin/python').touch()
+            fake = Mock()
+            fake.active.return_value = False
+            fake.NEMOTRON = engine.NEMOTRON
+            fake.INPUT_SERVICE = engine.INPUT_SERVICE
+            fake.systemctl.return_value = subprocess.CompletedProcess([], 0)
+            panel = Mock()
+            payload = manager.Payload(Path(directory) / 'checkpoint')
+            with patch.object(installer, 'fetch_model', return_value=base / 'models' / engine.NEMOTRON), patch.object(installer, 'input_engine', return_value='xkb:us::eng'), patch.object(installer, 'optional_mlx') as optional:
+                installer.stage(payload, panel, fake, speech_only=True)
+            optional.assert_not_called()
+            panel.install_panel.assert_called_once_with(payload, speech_only=True)
+            names = set(Path(name).name for name in payload.data['files'])
+            self.assertFalse({'voice-assistant.py', 'dictation_voice.py', 'org.techmore.VoiceAssistant.desktop'} & names)
+            self.assertTrue({'stream-dictate.py', 'dictation-panel.py', 'dictation-input.py'} <= names)
+
+    def test_speech_only_rejects_non_cpu_and_optional_asset_arguments(self):
+        for args in (['--activate', 'mlx'], ['--mlx-model-dir', '/synthetic/assets'], ['--mlx-modules', '/synthetic/modules']):
+            with self.subTest(args=args), patch.object(installer.os, 'geteuid', return_value=1000), patch.object(installer, 'helper') as helper, patch.object(sys, 'argv', ['installer', '--speech-only', *args]), contextlib.redirect_stderr(__import__('io').StringIO()), self.assertRaises(SystemExit):
+                installer.main()
+            helper.assert_not_called()
 
     def test_bridge_restart_keeps_valid_owner_input_selection(self):
         fake = Mock()
@@ -229,6 +274,81 @@ class ActivationHealth(unittest.TestCase):
         with patch.object(engine, "active", return_value=True), patch.object(engine, "systemctl", side_effect=[subprocess.CompletedProcess([], 0, "123\n"), subprocess.CompletedProcess([], 0, "124\n")]), patch.object(engine, "lifecycle", return_value={"pid": 123, "phase": "ready", "output": "ibus"}), patch.object(engine, "environment", return_value={"STREAM_ENGINE": "nemotron", "STREAM_UNVERIFIED_FALLBACK": "0"}), patch.object(engine, "bridge_ready"), patch.object(engine.time, "sleep"):
             with self.assertRaisesRegex(ValueError, "opening its keyboard"):
                 engine.wait_ready("nemotron")
+
+
+class InstallerSelectorOwnership(unittest.TestCase):
+    def setUp(self):
+        EngineSelection.setUp(self)
+        self.payload = manager.Payload(Path(self.temporary.name) / 'stt-checkpoint')
+        self.payload.data['metadata'] = {'stream_active': True, 'input_active': False, 'activation_started': False}
+        self.input = patch.object(installer, 'input_engine', return_value='xkb:us::eng')
+        self.input.start(); self.addCleanup(self.input.stop)
+        engine.DROPIN.write_bytes(b'Original owner engine configuration\n')
+        with engine.transaction_lock():
+            engine.select('nemotron', stage_only=True)
+        self.previous_path, _ = engine.latest_change()
+        self.previous_bytes = self.previous_path.read_bytes()
+        self.previous_dropin = engine.DROPIN.read_bytes()
+        installer.remember_selector(self.payload, engine)
+        self.payload.data['metadata']['activation_started'] = True
+        self.payload.save()
+
+    def new_selection(self):
+        with engine.transaction_lock():
+            engine.select('nemotron', stage_only=True)
+
+    def test_failure_before_select_preserves_previous_successful_selection(self):
+        installer.capture_selector(self.payload, engine)
+        with patch.object(engine, 'restore_change', wraps=engine.restore_change) as restore:
+            installer.restore_payload(self.payload, engine)
+        restore.assert_not_called()
+        self.assertEqual(engine.DROPIN.read_bytes(), self.previous_dropin)
+        self.assertEqual(self.previous_path.read_bytes(), self.previous_bytes)
+
+    def test_failure_after_select_rolls_back_only_this_updates_selection(self):
+        self.new_selection()
+        owned_path, _ = engine.latest_change()
+        installer.capture_selector(self.payload, engine)
+        installer.restore_payload(self.payload, engine)
+        self.assertTrue(json.loads(owned_path.read_text())['rolled_back'])
+        self.assertEqual(self.previous_path.read_bytes(), self.previous_bytes)
+        self.assertEqual(engine.DROPIN.read_bytes(), self.previous_dropin)
+
+    def test_selectors_own_failure_rollback_is_not_repeated(self):
+        engine.wait_ready.side_effect = ValueError('synthetic failed health')
+        with engine.transaction_lock(), self.assertRaisesRegex(ValueError, 'synthetic failed health'):
+            engine.select('nemotron')
+        installer.capture_selector(self.payload, engine)
+        self.calls.clear()
+        with patch.object(engine, 'restore_change', wraps=engine.restore_change) as restore:
+            installer.restore_payload(self.payload, engine)
+        restore.assert_not_called()
+        self.assertEqual(engine.DROPIN.read_bytes(), self.previous_dropin)
+
+    def test_later_owner_selection_refuses_rollback_before_any_service_stop(self):
+        self.new_selection()
+        installer.capture_selector(self.payload, engine)
+        self.new_selection()  # A later independently selected engine, even if bytes happen to match.
+        self.calls.clear()
+        with self.assertRaisesRegex(ValueError, 'Owner selected'):
+            installer.restore_payload(self.payload, engine)
+        self.assertEqual(self.calls, [])
+
+    def test_edited_owned_dropin_refuses_rollback_before_any_service_stop(self):
+        self.new_selection()
+        installer.capture_selector(self.payload, engine)
+        engine.DROPIN.write_text('later owner configuration\n')
+        self.calls.clear()
+        with self.assertRaisesRegex(ValueError, 'Owner changed'):
+            installer.restore_payload(self.payload, engine)
+        self.assertEqual(self.calls, [])
+
+    def test_legacy_ambiguous_checkpoint_refuses_before_any_service_stop(self):
+        self.payload.data['metadata'].pop('selector_schema')
+        self.calls.clear()
+        with self.assertRaisesRegex(ValueError, 'Legacy ambiguous'):
+            installer.restore_payload(self.payload, engine)
+        self.assertEqual(self.calls, [])
 
 
 if __name__ == "__main__":
