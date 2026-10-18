@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Install deps
-        run: sudo apt-get update && sudo apt-get install just podman zstd bison flex device-tree-compiler mtools fdisk shellcheck -y
+        run: sudo apt-get update && sudo apt-get install just podman zstd bison flex device-tree-compiler mtools fdisk shellcheck rustc cargo rustfmt -y
 
       - name: Shell syntax check (M-series scripts)
         run: |
@@ -77,6 +77,9 @@ jobs:
           bash -n mseries/power/mseries-power mseries/power/vrr-check.sh mseries/power/macos-baseline/make_test_videos.sh
           python3 -m py_compile mseries/power/macos-baseline/*.py
           python3 mseries/test-power-cap.py
+          python3 mseries/rust/inventory.py --check
+          cargo fmt --check --manifest-path mseries/rust/mseries-power/Cargo.toml
+          cargo test --manifest-path mseries/rust/mseries-power/Cargo.toml --locked
           python3 -m unittest discover -s mseries/power/macos-baseline -p 'test_*.py'
           python3 mseries/test-power-install.py
           bash -n mseries/fairydust/usb4/test-dp-tunnel.sh

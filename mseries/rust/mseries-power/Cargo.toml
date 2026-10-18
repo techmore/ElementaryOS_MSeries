@@ -1,0 +1,13 @@
+[package]
+name = "mseries-power"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Rust candidate for the M-series battery and CPU policy command"
+license = "GPL-3.0-or-later"
+
+[[bin]]
+name = "mseries-power-rs"
+path = "src/main.rs"
+
+[dependencies]

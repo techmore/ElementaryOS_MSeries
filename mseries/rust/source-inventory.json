@@ -1,0 +1,3587 @@
+{
+  "schema": 1,
+  "generated_by": "mseries/rust/inventory.py",
+  "scope": [
+    "bin",
+    "transform",
+    "repos",
+    "mkosi.images",
+    "mkosi.conf.d",
+    ".github/workflows",
+    "mseries",
+    "Justfile",
+    "mkosi.conf",
+    "packages.arm64"
+  ],
+  "item_count": 446,
+  "items": [
+    {
+      "id": "Justfile",
+      "path": "Justfile",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mkosi.conf",
+      "path": "mkosi.conf",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mkosi.conf.d/arch.arm64.conf",
+      "path": "mkosi.conf.d/arch.arm64.conf",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mkosi.conf.d/arch.x86-64.conf",
+      "path": "mkosi.conf.d/arch.x86-64.conf",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mkosi.conf.d/ppa.daily.conf",
+      "path": "mkosi.conf.d/ppa.daily.conf",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mkosi.conf.d/ppa.stable.conf",
+      "path": "mkosi.conf.d/ppa.stable.conf",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mkosi.images/apple-silicon/mkosi.conf",
+      "path": "mkosi.images/apple-silicon/mkosi.conf",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mkosi.images/apple-silicon/mkosi.extra/etc/initramfs-tools/modules.d/apple-silicon.conf",
+      "path": "mkosi.images/apple-silicon/mkosi.extra/etc/initramfs-tools/modules.d/apple-silicon.conf",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mkosi.images/apple-silicon/mkosi.extra/etc/modprobe.d/asahi-notch.conf",
+      "path": "mkosi.images/apple-silicon/mkosi.extra/etc/modprobe.d/asahi-notch.conf",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mkosi.images/apple-silicon/mkosi.extra/etc/xdg/autostart/mseries-brightness.desktop",
+      "path": "mkosi.images/apple-silicon/mkosi.extra/etc/xdg/autostart/mseries-brightness.desktop",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mkosi.images/apple-silicon/mkosi.extra/usr/lib/systemd/system/mseries-wifi-firmware.service",
+      "path": "mkosi.images/apple-silicon/mkosi.extra/usr/lib/systemd/system/mseries-wifi-firmware.service",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mkosi.images/apple-silicon/mkosi.extra/usr/lib/systemd/system/omarchy-wifi-resume-fix.service",
+      "path": "mkosi.images/apple-silicon/mkosi.extra/usr/lib/systemd/system/omarchy-wifi-resume-fix.service",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mkosi.images/base/mkosi.conf",
+      "path": "mkosi.images/base/mkosi.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/base/mkosi.conf.d/core.conf",
+      "path": "mkosi.images/base/mkosi.conf.d/core.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/base/mkosi.conf.d/elementary.conf",
+      "path": "mkosi.images/base/mkosi.conf.d/elementary.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/base/mkosi.extra/boot/loader/loader.conf",
+      "path": "mkosi.images/base/mkosi.extra/boot/loader/loader.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/base/mkosi.extra/usr/lib/systemd/system/apparmor-firstboot.service",
+      "path": "mkosi.images/base/mkosi.extra/usr/lib/systemd/system/apparmor-firstboot.service",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/base/mkosi.extra/usr/lib/systemd/system/preset-global.service",
+      "path": "mkosi.images/base/mkosi.extra/usr/lib/systemd/system/preset-global.service",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/base/mkosi.extra/usr/lib/systemd/zram-generator.conf",
+      "path": "mkosi.images/base/mkosi.extra/usr/lib/systemd/zram-generator.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/base/mkosi.extra/usr/lib/sysusers.d/00-session.conf",
+      "path": "mkosi.images/base/mkosi.extra/usr/lib/sysusers.d/00-session.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/base/mkosi.extra/usr/lib/sysusers.d/05-net.conf",
+      "path": "mkosi.images/base/mkosi.extra/usr/lib/sysusers.d/05-net.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/base/mkosi.extra/usr/lib/sysusers.d/05-system.conf",
+      "path": "mkosi.images/base/mkosi.extra/usr/lib/sysusers.d/05-system.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/base/mkosi.extra/usr/lib/tmpfiles.d/99-factory.conf",
+      "path": "mkosi.images/base/mkosi.extra/usr/lib/tmpfiles.d/99-factory.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/base/mkosi.extra/usr/lib/tmpfiles.d/etc.conf",
+      "path": "mkosi.images/base/mkosi.extra/usr/lib/tmpfiles.d/etc.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/base/mkosi.extra/usr/lib/tmpfiles.d/login.conf",
+      "path": "mkosi.images/base/mkosi.extra/usr/lib/tmpfiles.d/login.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/base/mkosi.extra/usr/lib/tmpfiles.d/resolved-default.conf",
+      "path": "mkosi.images/base/mkosi.extra/usr/lib/tmpfiles.d/resolved-default.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/base/mkosi.extra/usr/lib/tmpfiles.d/var.conf",
+      "path": "mkosi.images/base/mkosi.extra/usr/lib/tmpfiles.d/var.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/base/mkosi.profiles/daily/mkosi.conf",
+      "path": "mkosi.images/base/mkosi.profiles/daily/mkosi.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/base/mkosi.profiles/fairydust/mkosi.conf",
+      "path": "mkosi.images/base/mkosi.profiles/fairydust/mkosi.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/base/mkosi.profiles/proposed/mkosi.conf",
+      "path": "mkosi.images/base/mkosi.profiles/proposed/mkosi.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/base/mkosi.profiles/stable/mkosi.conf",
+      "path": "mkosi.images/base/mkosi.profiles/stable/mkosi.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/driver-broadcom-addon/mkosi.conf",
+      "path": "mkosi.images/driver-broadcom-addon/mkosi.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/driver-broadcom/mkosi.conf",
+      "path": "mkosi.images/driver-broadcom/mkosi.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/driver-nvidia-addon/mkosi.conf",
+      "path": "mkosi.images/driver-nvidia-addon/mkosi.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/driver-nvidia/mkosi.conf",
+      "path": "mkosi.images/driver-nvidia/mkosi.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/ext-sdk/mkosi.conf",
+      "path": "mkosi.images/ext-sdk/mkosi.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/ext-virt/mkosi.conf",
+      "path": "mkosi.images/ext-virt/mkosi.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/liveiso/mkosi.conf",
+      "path": "mkosi.images/liveiso/mkosi.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/liveiso/mkosi.conf.d/arch.arm64.conf",
+      "path": "mkosi.images/liveiso/mkosi.conf.d/arch.arm64.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/liveiso/mkosi.extra/opt/repart-target/40-root.conf",
+      "path": "mkosi.images/liveiso/mkosi.extra/opt/repart-target/40-root.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/liveiso/mkosi.extra/usr/lib/systemd/system/apparmor.service.d/99_enable_in_live_mode.conf",
+      "path": "mkosi.images/liveiso/mkosi.extra/usr/lib/systemd/system/apparmor.service.d/99_enable_in_live_mode.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/liveiso/mkosi.profiles/aarch64/mkosi.conf",
+      "path": "mkosi.images/liveiso/mkosi.profiles/aarch64/mkosi.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/liveiso/mkosi.profiles/fairydust/mkosi.conf",
+      "path": "mkosi.images/liveiso/mkosi.profiles/fairydust/mkosi.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/liveiso/mkosi.profiles/x86-64/mkosi.conf",
+      "path": "mkosi.images/liveiso/mkosi.profiles/x86-64/mkosi.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/liveiso/mkosi.repart/00-esp.conf",
+      "path": "mkosi.images/liveiso/mkosi.repart/00-esp.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/liveiso/mkosi.repart/40-root.conf",
+      "path": "mkosi.images/liveiso/mkosi.repart/40-root.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/liveiso/mkosi.repart/50-home.conf",
+      "path": "mkosi.images/liveiso/mkosi.repart/50-home.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/modules-db/mkosi.conf.d/arch.arm64.conf",
+      "path": "mkosi.images/modules-db/mkosi.conf.d/arch.arm64.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/modules-db/mkosi.conf.d/arch.x86-64.conf",
+      "path": "mkosi.images/modules-db/mkosi.conf.d/arch.x86-64.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/sysupdate/mkosi.conf",
+      "path": "mkosi.images/sysupdate/mkosi.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf",
+      "path": "mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/tmpfiles.d/pm.conf",
+      "path": "mkosi.images/sysupdate/mkosi.extra/usr/lib/tmpfiles.d/pm.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/sysupdate/mkosi.extra/usr/lib/udev/rules.d/99-udisks-system.rules",
+      "path": "mkosi.images/sysupdate/mkosi.extra/usr/lib/udev/rules.d/99-udisks-system.rules",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/sysupdate/mkosi.repart/00-esp.conf",
+      "path": "mkosi.images/sysupdate/mkosi.repart/00-esp.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/sysupdate/mkosi.repart/10-usr-verity-sig.conf",
+      "path": "mkosi.images/sysupdate/mkosi.repart/10-usr-verity-sig.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/sysupdate/mkosi.repart/11-usr-verity.conf",
+      "path": "mkosi.images/sysupdate/mkosi.repart/11-usr-verity.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/sysupdate/mkosi.repart/12-usr.conf",
+      "path": "mkosi.images/sysupdate/mkosi.repart/12-usr.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/sysupdate/mkosi.repart/20-usr-verify-sig-bside.conf",
+      "path": "mkosi.images/sysupdate/mkosi.repart/20-usr-verify-sig-bside.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/sysupdate/mkosi.repart/21-usr-verity-bside.conf",
+      "path": "mkosi.images/sysupdate/mkosi.repart/21-usr-verity-bside.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mkosi.images/sysupdate/mkosi.repart/22-usr-bside.conf",
+      "path": "mkosi.images/sysupdate/mkosi.repart/22-usr-bside.conf",
+      "ownership": "elementary-os-upstream",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "retain-upstream"
+    },
+    {
+      "id": "mseries/JOSHUA-REPOSITORY-INVENTORY.json",
+      "path": "mseries/JOSHUA-REPOSITORY-INVENTORY.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/apply-desktop-settings.py",
+      "path": "mseries/apply-desktop-settings.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/apply-pending.sh",
+      "path": "mseries/apply-pending.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/atomic-app.py",
+      "path": "mseries/atomic-app.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/audio/asahi-audio-no-suspend.conf",
+      "path": "mseries/audio/asahi-audio-no-suspend.conf",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/audio/asahi-headset-mic.conf",
+      "path": "mseries/audio/asahi-headset-mic.conf",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/audio/audio-watchdog.py",
+      "path": "mseries/audio/audio-watchdog.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/audio/test_audio_watchdog.py",
+      "path": "mseries/audio/test_audio_watchdog.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/aurora-sep/install-aurora-sep.sh",
+      "path": "mseries/aurora-sep/install-aurora-sep.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/aurora-sep/install-touchid-gui.sh",
+      "path": "mseries/aurora-sep/install-touchid-gui.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/aurora-sep/mseries-touchid-settings.desktop",
+      "path": "mseries/aurora-sep/mseries-touchid-settings.desktop",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/aurora-sep/test_touchid_core.py",
+      "path": "mseries/aurora-sep/test_touchid_core.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/aurora-sep/touchid_core.py",
+      "path": "mseries/aurora-sep/touchid_core.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/aurora-touchid/mseries-touchid-settings.desktop",
+      "path": "mseries/aurora-touchid/mseries-touchid-settings.desktop",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/aurora/branch-audits/2026-10-17.json",
+      "path": "mseries/aurora/branch-audits/2026-10-17.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/aurora/grub-entry.py",
+      "path": "mseries/aurora/grub-entry.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/aurora/package-release.py",
+      "path": "mseries/aurora/package-release.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/aurora/release.json",
+      "path": "mseries/aurora/release.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/aurora/release.py",
+      "path": "mseries/aurora/release.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/aurora/stage-boot.py",
+      "path": "mseries/aurora/stage-boot.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/aurora/test_port.py",
+      "path": "mseries/aurora/test_port.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/backup/mseries-backup.sh",
+      "path": "mseries/backup/mseries-backup.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/benchmarks/render.py",
+      "path": "mseries/benchmarks/render.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/benchmarks/results/2026-10-13-apple-macbook-pro-14-inch-m1-pro-2021.json",
+      "path": "mseries/benchmarks/results/2026-10-13-apple-macbook-pro-14-inch-m1-pro-2021.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/benchmarks/run.py",
+      "path": "mseries/benchmarks/run.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/boot/zz_mseries_boot.conf",
+      "path": "mseries/boot/zz_mseries_boot.conf",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/brightness/shell-bridge.py",
+      "path": "mseries/brightness/shell-bridge.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/brightness/test_bridge.py",
+      "path": "mseries/brightness/test_bridge.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/check-display-paths.sh",
+      "path": "mseries/check-display-paths.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/check-drawers.sh",
+      "path": "mseries/check-drawers.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/check-kernel-config.py",
+      "path": "mseries/check-kernel-config.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/check-video-decode.sh",
+      "path": "mseries/check-video-decode.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/clockright/Indicator.vala",
+      "path": "mseries/clockright/Indicator.vala",
+      "ownership": "mseries-maintained",
+      "language": "vala",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/codexbar-opencode-local.py",
+      "path": "mseries/codexbar-opencode-local.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/codexbar-opencode-wrapper.py",
+      "path": "mseries/codexbar-opencode-wrapper.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/codexbar-sessions.py",
+      "path": "mseries/codexbar-sessions.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/codexbar-wingpanel/Indicator.vala",
+      "path": "mseries/codexbar-wingpanel/Indicator.vala",
+      "ownership": "mseries-maintained",
+      "language": "vala",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/codexbar-wingpanel/Presentation.vala",
+      "path": "mseries/codexbar-wingpanel/Presentation.vala",
+      "ownership": "mseries-maintained",
+      "language": "vala",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/codexbar-wingpanel/QuotaEta.vala",
+      "path": "mseries/codexbar-wingpanel/QuotaEta.vala",
+      "ownership": "mseries-maintained",
+      "language": "vala",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/codexbar-wingpanel/RefreshPolicy.vala",
+      "path": "mseries/codexbar-wingpanel/RefreshPolicy.vala",
+      "ownership": "mseries-maintained",
+      "language": "vala",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/codexbar-wingpanel/probe/fixtures/live.json",
+      "path": "mseries/codexbar-wingpanel/probe/fixtures/live.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/codexbar-wingpanel/probe/make-fixtures.py",
+      "path": "mseries/codexbar-wingpanel/probe/make-fixtures.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/codexbar-wingpanel/probe/render-probe.vala",
+      "path": "mseries/codexbar-wingpanel/probe/render-probe.vala",
+      "ownership": "mseries-maintained",
+      "language": "vala",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/codexbar-wingpanel/probe/run-probe.sh",
+      "path": "mseries/codexbar-wingpanel/probe/run-probe.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/codexbar-wingpanel/test-presentation.vala",
+      "path": "mseries/codexbar-wingpanel/test-presentation.vala",
+      "ownership": "mseries-maintained",
+      "language": "vala",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/codexbar-wingpanel/test-quota-eta.vala",
+      "path": "mseries/codexbar-wingpanel/test-quota-eta.vala",
+      "ownership": "mseries-maintained",
+      "language": "vala",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/codexbar-wingpanel/test-refresh-policy.vala",
+      "path": "mseries/codexbar-wingpanel/test-refresh-policy.vala",
+      "ownership": "mseries-maintained",
+      "language": "vala",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/customizations/coreglass-local-ssh.diff",
+      "path": "mseries/customizations/coreglass-local-ssh.diff",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/customizations/gala-working-tree-vs-f079143.diff",
+      "path": "mseries/customizations/gala-working-tree-vs-f079143.diff",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/customizations/panel-power-battery-eta.diff",
+      "path": "mseries/customizations/panel-power-battery-eta.diff",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/dark-mode/mseries-dark-mode.service",
+      "path": "mseries/dark-mode/mseries-dark-mode.service",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/dark-mode/mseries-dark-mode.timer",
+      "path": "mseries/dark-mode/mseries-dark-mode.timer",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/disable-notch-for-pantheon.sh",
+      "path": "mseries/disable-notch-for-pantheon.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/display-profiles/mseries-display-profiles.desktop",
+      "path": "mseries/display-profiles/mseries-display-profiles.desktop",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/display-profiles/test_display_profiles.py",
+      "path": "mseries/display-profiles/test_display_profiles.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/display-settings/display_diag.py",
+      "path": "mseries/display-settings/display_diag.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/display-settings/mseries-display-settings.desktop",
+      "path": "mseries/display-settings/mseries-display-settings.desktop",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/display-settings/test_display_diag.py",
+      "path": "mseries/display-settings/test_display_diag.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/enhance-firstboot.sh",
+      "path": "mseries/enhance-firstboot.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/enhance.sh",
+      "path": "mseries/enhance.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/export-factory-defaults.py",
+      "path": "mseries/export-factory-defaults.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/build-and-install.sh",
+      "path": "mseries/fairydust/build-and-install.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/debian/0001-runtime-dependencies.patch",
+      "path": "mseries/fairydust/debian/0001-runtime-dependencies.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/debian/0002-precreate-apple-dtb-directory.patch",
+      "path": "mseries/fairydust/debian/0002-precreate-apple-dtb-directory.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/debian/0003-avd-job-segments-use-kvmalloc.patch",
+      "path": "mseries/fairydust/debian/0003-avd-job-segments-use-kvmalloc.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/debian/assemble-m1n1-bootbin.py",
+      "path": "mseries/fairydust/debian/assemble-m1n1-bootbin.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/debian/build.sh",
+      "path": "mseries/fairydust/debian/build.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/debian/compile-check.sh",
+      "path": "mseries/fairydust/debian/compile-check.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/debian/fetch-asahi-boot-packages.sh",
+      "path": "mseries/fairydust/debian/fetch-asahi-boot-packages.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/debian/monitor.py",
+      "path": "mseries/fairydust/debian/monitor.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/debian/test-assemble-m1n1-bootbin.py",
+      "path": "mseries/fairydust/debian/test-assemble-m1n1-bootbin.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/debian/test-verify-m1n1-esp.py",
+      "path": "mseries/fairydust/debian/test-verify-m1n1-esp.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/debian/verify-m1n1-esp.py",
+      "path": "mseries/fairydust/debian/verify-m1n1-esp.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/debian/vm-kernel-smoke-test.sh",
+      "path": "mseries/fairydust/debian/vm-kernel-smoke-test.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/enable-elementary-fairydust.sh",
+      "path": "mseries/fairydust/enable-elementary-fairydust.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/host/fairydust-build.sh",
+      "path": "mseries/fairydust/host/fairydust-build.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/host/fairydust-driver.sh",
+      "path": "mseries/fairydust/host/fairydust-driver.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch",
+      "path": "mseries/fairydust/usb4/0001-usb4-thunderbolt-apple-m1pro-on-fairydust.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/0002-experimental-dp-tunnel.patch",
+      "path": "mseries/fairydust/usb4/0002-experimental-dp-tunnel.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/0003-dp-out-prefer-adapter-with-hpd.patch",
+      "path": "mseries/fairydust/usb4/0003-dp-out-prefer-adapter-with-hpd.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/0004-experimental-dpin-bindings.patch",
+      "path": "mseries/fairydust/usb4/0004-experimental-dpin-bindings.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/0005-experimental-dpin-handshake-tunnel-clocks.patch",
+      "path": "mseries/fairydust/usb4/0005-experimental-dpin-handshake-tunnel-clocks.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/0006-experimental-j314s-dpin-wiring.patch",
+      "path": "mseries/fairydust/usb4/0006-experimental-j314s-dpin-wiring.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/0007-experimental-dcp-source-binding.patch",
+      "path": "mseries/fairydust/usb4/0007-experimental-dcp-source-binding.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/0008-experimental-dcp-source-before-dprx.patch",
+      "path": "mseries/fairydust/usb4/0008-experimental-dcp-source-before-dprx.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/0009-experimental-j314s-dcp-source-map.patch",
+      "path": "mseries/fairydust/usb4/0009-experimental-j314s-dcp-source-map.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/0010-experimental-fallback-safe-dpin-lookup.patch",
+      "path": "mseries/fairydust/usb4/0010-experimental-fallback-safe-dpin-lookup.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/0011-experimental-dpin-enolink-retry-stale-phy-guard.patch",
+      "path": "mseries/fairydust/usb4/0011-experimental-dpin-enolink-retry-stale-phy-guard.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/0012-experimental-appledrm-dpin-diagnostics.patch",
+      "path": "mseries/fairydust/usb4/0012-experimental-appledrm-dpin-diagnostics.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/0013-experimental-appledrm-e1-nonfatal-tunnel-hpd.patch",
+      "path": "mseries/fairydust/usb4/0013-experimental-appledrm-e1-nonfatal-tunnel-hpd.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/0014-experimental-dpin-hpd-instrumentation.patch",
+      "path": "mseries/fairydust/usb4/0014-experimental-dpin-hpd-instrumentation.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/0015-experimental-j314s-dcpext0-tunnel.patch",
+      "path": "mseries/fairydust/usb4/0015-experimental-j314s-dcpext0-tunnel.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/boot-dt.py",
+      "path": "mseries/fairydust/usb4/boot-dt.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/build-m1n1-local.sh",
+      "path": "mseries/fairydust/usb4/build-m1n1-local.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/build-m1n1.sh",
+      "path": "mseries/fairydust/usb4/build-m1n1.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/build-pkg.sh",
+      "path": "mseries/fairydust/usb4/build-pkg.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/collect-macos-dock.sh",
+      "path": "mseries/fairydust/usb4/collect-macos-dock.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/deploy-dtbs.sh",
+      "path": "mseries/fairydust/usb4/deploy-dtbs.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/evidence/2026-10-16-controlled-test-preflight.json",
+      "path": "mseries/fairydust/usb4/evidence/2026-10-16-controlled-test-preflight.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/evidence/2026-10-16-dcp-source-bridge-validation.json",
+      "path": "mseries/fairydust/usb4/evidence/2026-10-16-dcp-source-bridge-validation.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/evidence/2026-10-16-dpin-offline-validation.json",
+      "path": "mseries/fairydust/usb4/evidence/2026-10-16-dpin-offline-validation.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/evidence/2026-10-16-j314sap-dpin-derived.json",
+      "path": "mseries/fairydust/usb4/evidence/2026-10-16-j314sap-dpin-derived.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/evidence/2026-10-16-linux-baseline.json",
+      "path": "mseries/fairydust/usb4/evidence/2026-10-16-linux-baseline.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/evidence/2026-10-16-tool-provenance.json",
+      "path": "mseries/fairydust/usb4/evidence/2026-10-16-tool-provenance.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/evidence/2026-10-17-offline-code-audit.json",
+      "path": "mseries/fairydust/usb4/evidence/2026-10-17-offline-code-audit.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/inspect-cd321x-io.py",
+      "path": "mseries/fairydust/usb4/inspect-cd321x-io.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/inspect-dock.py",
+      "path": "mseries/fairydust/usb4/inspect-dock.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/inspect-dpin-adt.py",
+      "path": "mseries/fairydust/usb4/inspect-dpin-adt.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/install-bootbin.sh",
+      "path": "mseries/fairydust/usb4/install-bootbin.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/install-ci-kernel.sh",
+      "path": "mseries/fairydust/usb4/install-ci-kernel.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/install-dpin-batch.sh",
+      "path": "mseries/fairydust/usb4/install-dpin-batch.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/install-m1n1-bootbin.sh",
+      "path": "mseries/fairydust/usb4/install-m1n1-bootbin.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/install-m1n1.sh",
+      "path": "mseries/fairydust/usb4/install-m1n1.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/install-modules.sh",
+      "path": "mseries/fairydust/usb4/install-modules.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/install-stage1.sh",
+      "path": "mseries/fairydust/usb4/install-stage1.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/install-stage2.sh",
+      "path": "mseries/fairydust/usb4/install-stage2.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/lightdm-wait-for-drm.conf",
+      "path": "mseries/fairydust/usb4/lightdm-wait-for-drm.conf",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/m1n1-trace-deps.sh",
+      "path": "mseries/fairydust/usb4/m1n1-trace-deps.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/progress.sh",
+      "path": "mseries/fairydust/usb4/progress.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/run-macos-baseline.sh",
+      "path": "mseries/fairydust/usb4/run-macos-baseline.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/set-default-kernel.sh",
+      "path": "mseries/fairydust/usb4/set-default-kernel.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/swap-dtb.py",
+      "path": "mseries/fairydust/usb4/swap-dtb.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/swap-m1n1.py",
+      "path": "mseries/fairydust/usb4/swap-m1n1.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/test-dock-evidence.py",
+      "path": "mseries/fairydust/usb4/test-dock-evidence.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/test-dp-tunnel.sh",
+      "path": "mseries/fairydust/usb4/test-dp-tunnel.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/test-dpin-refcount-model.py",
+      "path": "mseries/fairydust/usb4/test-dpin-refcount-model.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/test-inspect-cd321x-io.py",
+      "path": "mseries/fairydust/usb4/test-inspect-cd321x-io.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/test-inspect-dpin-adt.py",
+      "path": "mseries/fairydust/usb4/test-inspect-dpin-adt.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/test-trace-dcp-raw.py",
+      "path": "mseries/fairydust/usb4/test-trace-dcp-raw.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/test-trace-dpin.py",
+      "path": "mseries/fairydust/usb4/test-trace-dpin.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/tools/apply-controlled-test.py",
+      "path": "mseries/fairydust/usb4/tools/apply-controlled-test.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/tools/collect-controlled-test.py",
+      "path": "mseries/fairydust/usb4/tools/collect-controlled-test.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/tools/kc-slice.py",
+      "path": "mseries/fairydust/usb4/tools/kc-slice.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/tools/prepare-dpin-boot.py",
+      "path": "mseries/fairydust/usb4/tools/prepare-dpin-boot.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/tools/repack-dpin-initramfs.py",
+      "path": "mseries/fairydust/usb4/tools/repack-dpin-initramfs.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/tools/stage-controlled-test.py",
+      "path": "mseries/fairydust/usb4/tools/stage-controlled-test.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/tools/test-hpd-policy.py",
+      "path": "mseries/fairydust/usb4/tools/test-hpd-policy.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/tools/test-staging-tools.py",
+      "path": "mseries/fairydust/usb4/tools/test-staging-tools.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/tools/validate-dock-patches.py",
+      "path": "mseries/fairydust/usb4/tools/validate-dock-patches.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/tools/verify-final-stage.py",
+      "path": "mseries/fairydust/usb4/tools/verify-final-stage.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/trace-dcp-raw.py",
+      "path": "mseries/fairydust/usb4/trace-dcp-raw.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/usb4/trace-dpin.py",
+      "path": "mseries/fairydust/usb4/trace-dpin.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/fairydust/verify.sh",
+      "path": "mseries/fairydust/verify.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/gala-daemon-fix/build.py",
+      "path": "mseries/gala-daemon-fix/build.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/gala-drawers/Main.vala",
+      "path": "mseries/gala-drawers/Main.vala",
+      "ownership": "mseries-maintained",
+      "language": "vala",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/gala-drawers/mseries-drawers-settings.desktop",
+      "path": "mseries/gala-drawers/mseries-drawers-settings.desktop",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/gala-drawers/org.pantheon.gala.plugins.drawers.gschema.xml",
+      "path": "mseries/gala-drawers/org.pantheon.gala.plugins.drawers.gschema.xml",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-audio-stack.sh",
+      "path": "mseries/install-audio-stack.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-battery-eta.sh",
+      "path": "mseries/install-battery-eta.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-boot-isolation.sh",
+      "path": "mseries/install-boot-isolation.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-brave-widevine.sh",
+      "path": "mseries/install-brave-widevine.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-brave.sh",
+      "path": "mseries/install-brave.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-brightness-bridge.sh",
+      "path": "mseries/install-brightness-bridge.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-clockright-wingpanel.sh",
+      "path": "mseries/install-clockright-wingpanel.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-codexbar-wingpanel.sh",
+      "path": "mseries/install-codexbar-wingpanel.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-codexbar.sh",
+      "path": "mseries/install-codexbar.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-dark-mode.sh",
+      "path": "mseries/install-dark-mode.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-display-profiles.sh",
+      "path": "mseries/install-display-profiles.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-dock-drawers.sh",
+      "path": "mseries/install-dock-drawers.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-docked-lid.sh",
+      "path": "mseries/install-docked-lid.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-electron-wayland.sh",
+      "path": "mseries/install-electron-wayland.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-elementary-boot-splash.sh",
+      "path": "mseries/install-elementary-boot-splash.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-files-portal-fix.sh",
+      "path": "mseries/install-files-portal-fix.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-gala-drawers.sh",
+      "path": "mseries/install-gala-drawers.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-gala-osk-fix.sh",
+      "path": "mseries/install-gala-osk-fix.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-gala-screen-corners.sh",
+      "path": "mseries/install-gala-screen-corners.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-greeter-obex-fix.sh",
+      "path": "mseries/install-greeter-obex-fix.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-homeboard-launcher.sh",
+      "path": "mseries/install-homeboard-launcher.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-initramfs-crossbar.sh",
+      "path": "mseries/install-initramfs-crossbar.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-keyboard-backlight.sh",
+      "path": "mseries/install-keyboard-backlight.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-keyboard-indicator-fix.sh",
+      "path": "mseries/install-keyboard-indicator-fix.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-log-fixes.sh",
+      "path": "mseries/install-log-fixes.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-native-firefox.sh",
+      "path": "mseries/install-native-firefox.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-netusage-policy.sh",
+      "path": "mseries/install-netusage-policy.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-network-throughput.sh",
+      "path": "mseries/install-network-throughput.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-opencode-desktop.sh",
+      "path": "mseries/install-opencode-desktop.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-pipewire-lv2.sh",
+      "path": "mseries/install-pipewire-lv2.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-power.sh",
+      "path": "mseries/install-power.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-quick-settings-brightness.sh",
+      "path": "mseries/install-quick-settings-brightness.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-screenshot-shelf.sh",
+      "path": "mseries/install-screenshot-shelf.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-signal-integration.sh",
+      "path": "mseries/install-signal-integration.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-signal-wingpanel.sh",
+      "path": "mseries/install-signal-wingpanel.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-signal.sh",
+      "path": "mseries/install-signal.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-sound-indicator-fix.sh",
+      "path": "mseries/install-sound-indicator-fix.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-system-tuning.sh",
+      "path": "mseries/install-system-tuning.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-tether.sh",
+      "path": "mseries/install-tether.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-theme-tweaks.sh",
+      "path": "mseries/install-theme-tweaks.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-touchegg.sh",
+      "path": "mseries/install-touchegg.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-touchid-settings.sh",
+      "path": "mseries/install-touchid-settings.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-troubleshooter-wingpanel.sh",
+      "path": "mseries/install-troubleshooter-wingpanel.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-unlock-screen.sh",
+      "path": "mseries/install-unlock-screen.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-video-decode.sh",
+      "path": "mseries/install-video-decode.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-wingpanel-clock-position.sh",
+      "path": "mseries/install-wingpanel-clock-position.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/install-wingpanel-codexbar-left.sh",
+      "path": "mseries/install-wingpanel-codexbar-left.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/iso-label.sh",
+      "path": "mseries/iso-label.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/keyboard-backlight/backlight.py",
+      "path": "mseries/keyboard-backlight/backlight.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/keyboard-backlight/test_backlight.py",
+      "path": "mseries/keyboard-backlight/test_backlight.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/lib-apt.sh",
+      "path": "mseries/lib-apt.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/lib-backup.sh",
+      "path": "mseries/lib-backup.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/lid-trace/mseries-lid-trace.service",
+      "path": "mseries/lid-trace/mseries-lid-trace.service",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/app-benchmark.py",
+      "path": "mseries/local-ai/app-benchmark.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/app-workflow-smoke.py",
+      "path": "mseries/local-ai/app-workflow-smoke.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/ask.py",
+      "path": "mseries/local-ai/ask.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/benchmark.py",
+      "path": "mseries/local-ai/benchmark.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/branch-watch.json",
+      "path": "mseries/local-ai/branch-watch.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/branch-watch.py",
+      "path": "mseries/local-ai/branch-watch.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/brief.py",
+      "path": "mseries/local-ai/brief.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/configure-assistants.py",
+      "path": "mseries/local-ai/configure-assistants.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/configure-prefill.py",
+      "path": "mseries/local-ai/configure-prefill.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/coreglass-local.patch",
+      "path": "mseries/local-ai/coreglass-local.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/crash-watch.py",
+      "path": "mseries/local-ai/crash-watch.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/eds-smoke.py",
+      "path": "mseries/local-ai/eds-smoke.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/fixtures/coding/check_unique.py",
+      "path": "mseries/local-ai/fixtures/coding/check_unique.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/fixtures/coding/unique.py",
+      "path": "mseries/local-ai/fixtures/coding/unique.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/github-watch.py",
+      "path": "mseries/local-ai/github-watch.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/hermes-requirements.lock",
+      "path": "mseries/local-ai/hermes-requirements.lock",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/install-agent.sh",
+      "path": "mseries/local-ai/install-agent.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/install-assistants.sh",
+      "path": "mseries/local-ai/install-assistants.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/install-crush.py",
+      "path": "mseries/local-ai/install-crush.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/install-troubleshooter.sh",
+      "path": "mseries/local-ai/install-troubleshooter.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/install-verify.sh",
+      "path": "mseries/local-ai/install-verify.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/install.sh",
+      "path": "mseries/local-ai/install.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/machine.py",
+      "path": "mseries/local-ai/machine.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/microbenchmark.py",
+      "path": "mseries/local-ai/microbenchmark.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/model-worker.py",
+      "path": "mseries/local-ai/model-worker.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/newelle-memory-smoke.py",
+      "path": "mseries/local-ai/newelle-memory-smoke.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/newelle-ui-smoke.py",
+      "path": "mseries/local-ai/newelle-ui-smoke.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/os-mcp.py",
+      "path": "mseries/local-ai/os-mcp.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/people-watch.json",
+      "path": "mseries/local-ai/people-watch.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/people-watch.py",
+      "path": "mseries/local-ai/people-watch.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/prepare-coder.py",
+      "path": "mseries/local-ai/prepare-coder.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/prepare-compact35.py",
+      "path": "mseries/local-ai/prepare-compact35.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/qwen35-4b-catalog-entry.json",
+      "path": "mseries/local-ai/qwen35-4b-catalog-entry.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/app-workflow-smoke.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/app-workflow-smoke.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/apps-baseline.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/apps-baseline.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/bonsai-tools-v3.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/bonsai-tools-v3.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/bonsai9-v2.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/bonsai9-v2.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/bonsai9-weight.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/bonsai9-weight.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/checksums.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/checksums.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/coder7-tools-v3.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/coder7-tools-v3.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/coder7-v2.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/coder7-v2.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/compact-tools-v3.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/compact-tools-v3.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/compact35-crush.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/compact35-crush.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/compact35-tools-v3.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/compact35-tools-v3.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/developer-branches.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/developer-branches.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/developer-watch-main.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/developer-watch-main.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/developer-watch-verification.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/developer-watch-verification.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/eds-adapter-receipt.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/eds-adapter-receipt.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/eds-smoke-final.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/eds-smoke-final.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/exploratory/bonsai-tools-v3-attempt0.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/exploratory/bonsai-tools-v3-attempt0.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/exploratory/bonsai9-final-attempt0.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/exploratory/bonsai9-final-attempt0.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/exploratory/bonsai9-interrupted.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/exploratory/bonsai9-interrupted.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/exploratory/compact35-tools-v3-attempt0.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/exploratory/compact35-tools-v3-attempt0.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/exploratory/everyday-tools-v3-attempt1.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/exploratory/everyday-tools-v3-attempt1.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/exploratory/liquid-tools-v3-attempt0.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/exploratory/liquid-tools-v3-attempt0.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/exploratory/liquid-tools.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/exploratory/liquid-tools.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/exploratory/qwen35-4-tools.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/exploratory/qwen35-4-tools.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/exploratory/qwen4-tools.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/exploratory/qwen4-tools.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/exploratory/qwen4-v1.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/exploratory/qwen4-v1.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/exploratory/qwen4.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/exploratory/qwen4.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/exploratory/qwen9-tools-v2.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/exploratory/qwen9-tools-v2.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/exploratory/qwen9-tools.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/exploratory/qwen9-tools.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/integration-status.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/integration-status.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/liquid-tools-v3.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/liquid-tools-v3.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/liquid-v2.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/liquid-v2.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/m1pro-local-ai-source-audit.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/m1pro-local-ai-source-audit.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/micro-bonsai-512.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/micro-bonsai-512.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/micro-coder7-512.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/micro-coder7-512.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/micro-compact-512.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/micro-compact-512.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/micro-compact35-512.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/micro-compact35-512.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/micro-liquid-512.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/micro-liquid-512.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/mlx-smoke.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/mlx-smoke.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/newelle-final-ui-receipt.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/newelle-final-ui-receipt.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/newelle-memory-receipt.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/newelle-memory-receipt.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/newelle-persistent-memory.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/newelle-persistent-memory.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/qwen35-4-v2.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/qwen35-4-v2.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/qwen4-v2.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/qwen4-v2.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/qwen9-v2.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/qwen9-v2.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/reservation-cleanup-receipt.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/reservation-cleanup-receipt.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/source-pins.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/source-pins.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/triage-4b-quality-failure.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/triage-4b-quality-failure.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/triage-4b-revised-prompt-quality-failure.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/triage-4b-revised-prompt-quality-failure.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/2026-10-16/triage-smoke-receipt.json",
+      "path": "mseries/local-ai/receipts/2026-10-16/triage-smoke-receipt.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/task-integration-2026-10-16/adapter.json",
+      "path": "mseries/local-ai/receipts/task-integration-2026-10-16/adapter.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/task-integration-2026-10-16/checksums.json",
+      "path": "mseries/local-ai/receipts/task-integration-2026-10-16/checksums.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/task-integration-2026-10-16/exploratory/attempt-e6cb3afc-fd65-4c05-bc81-b05ab4d887f1.json",
+      "path": "mseries/local-ai/receipts/task-integration-2026-10-16/exploratory/attempt-e6cb3afc-fd65-4c05-bc81-b05ab4d887f1.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/task-integration-2026-10-16/manifest.json",
+      "path": "mseries/local-ai/receipts/task-integration-2026-10-16/manifest.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/task-integration-2026-10-16/newelle-tool-discovery.json",
+      "path": "mseries/local-ai/receipts/task-integration-2026-10-16/newelle-tool-discovery.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/receipts/task-integration-2026-10-16/workflows.json",
+      "path": "mseries/local-ai/receipts/task-integration-2026-10-16/workflows.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/repair-panel.py",
+      "path": "mseries/local-ai/repair-panel.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/smoke.py",
+      "path": "mseries/local-ai/smoke.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/stage-ane.sh",
+      "path": "mseries/local-ai/stage-ane.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/task-write-smoke.py",
+      "path": "mseries/local-ai/task-write-smoke.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/test_assistants.py",
+      "path": "mseries/local-ai/test_assistants.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/test_people_watch.py",
+      "path": "mseries/local-ai/test_people_watch.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/test_troubleshoot.py",
+      "path": "mseries/local-ai/test_troubleshoot.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/test_verify.py",
+      "path": "mseries/local-ai/test_verify.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/tool-benchmark.py",
+      "path": "mseries/local-ai/tool-benchmark.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/touchid-watch.py",
+      "path": "mseries/local-ai/touchid-watch.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/triage-smoke.py",
+      "path": "mseries/local-ai/triage-smoke.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/troubleshoot.py",
+      "path": "mseries/local-ai/troubleshoot.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/troubleshooter-ui.py",
+      "path": "mseries/local-ai/troubleshooter-ui.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/upstream-watch.py",
+      "path": "mseries/local-ai/upstream-watch.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/verify-checks.json",
+      "path": "mseries/local-ai/verify-checks.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-ai/verify.py",
+      "path": "mseries/local-ai/verify.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-build-preflight.py",
+      "path": "mseries/local-build-preflight.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/local-build-worker.sh",
+      "path": "mseries/local-build-worker.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/mseries-launcher-keys.py",
+      "path": "mseries/mseries-launcher-keys.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/mseries-launcher.py",
+      "path": "mseries/mseries-launcher.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/netspeed/netusage/49-mseries-netusage.rules",
+      "path": "mseries/netspeed/netusage/49-mseries-netusage.rules",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/netspeed/netusage/install.sh",
+      "path": "mseries/netspeed/netusage/install.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/netspeed/netusage/netusage.py",
+      "path": "mseries/netspeed/netusage/netusage.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/netspeed/netusage/netusage.service",
+      "path": "mseries/netspeed/netusage/netusage.service",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/netspeed/panel-network.patch",
+      "path": "mseries/netspeed/panel-network.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/netspeed/troubleshooter/org.techmore.MSeries.Troubleshooter.desktop",
+      "path": "mseries/netspeed/troubleshooter/org.techmore.MSeries.Troubleshooter.desktop",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/netspeed/wire-network-usage.py",
+      "path": "mseries/netspeed/wire-network-usage.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/opencode-desktop/build-opencode-desktop.sh",
+      "path": "mseries/opencode-desktop/build-opencode-desktop.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/packages.arm64",
+      "path": "mseries/packages.arm64",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/panel-factory-pins.json",
+      "path": "mseries/panel-factory-pins.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/patches/dock-drawers.patch",
+      "path": "mseries/patches/dock-drawers.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/patches/files-portal-startup-deadlock.patch",
+      "path": "mseries/patches/files-portal-startup-deadlock.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/patches/gala-disabled-osk-input-purpose.patch",
+      "path": "mseries/patches/gala-disabled-osk-input-purpose.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/patches/gala-panel-offset.patch",
+      "path": "mseries/patches/gala-panel-offset.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/patches/gala-screen-corners.patch",
+      "path": "mseries/patches/gala-screen-corners.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/patches/keyboard-popover-active.patch",
+      "path": "mseries/patches/keyboard-popover-active.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/patches/network-null-devices.patch",
+      "path": "mseries/patches/network-null-devices.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/patches/network-panel-speed.patch",
+      "path": "mseries/patches/network-panel-speed.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/patches/network-saturation.patch",
+      "path": "mseries/patches/network-saturation.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/patches/network-throughput.patch",
+      "path": "mseries/patches/network-throughput.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/patches/panel-power-charge-eta.patch",
+      "path": "mseries/patches/panel-power-charge-eta.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/patches/panel-power-watts.patch",
+      "path": "mseries/patches/panel-power-watts.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/patches/quick-settings-brightness.patch",
+      "path": "mseries/patches/quick-settings-brightness.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/patches/sound-icon-initialization.patch",
+      "path": "mseries/patches/sound-icon-initialization.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/patches/wingpanel-clockright-order.patch",
+      "path": "mseries/patches/wingpanel-clockright-order.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/patches/wingpanel-codexbar-left.patch",
+      "path": "mseries/patches/wingpanel-codexbar-left.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/post-install.sh",
+      "path": "mseries/post-install.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/power/macos-baseline/linux_profile.py",
+      "path": "mseries/power/macos-baseline/linux_profile.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/power/macos-baseline/macos_profile.py",
+      "path": "mseries/power/macos-baseline/macos_profile.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/power/macos-baseline/make_test_videos.sh",
+      "path": "mseries/power/macos-baseline/make_test_videos.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/power/macos-baseline/parity.json",
+      "path": "mseries/power/macos-baseline/parity.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/power/macos-baseline/parity.py",
+      "path": "mseries/power/macos-baseline/parity.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/power/macos-baseline/results/macos-2026-10-17-1220/inventory/summary.json",
+      "path": "mseries/power/macos-baseline/results/macos-2026-10-17-1220/inventory/summary.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/power/macos-baseline/results/macos-2026-10-17-1220/summary.json",
+      "path": "mseries/power/macos-baseline/results/macos-2026-10-17-1220/summary.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/power/macos-baseline/test_baseline.py",
+      "path": "mseries/power/macos-baseline/test_baseline.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/power/org.techmore.mseries.power.policy",
+      "path": "mseries/power/org.techmore.mseries.power.policy",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/power/patches/0001-appledrm-adaptive-sync.patch",
+      "path": "mseries/power/patches/0001-appledrm-adaptive-sync.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/power/patches/0002-apple-dpin-tunnel-clock-and-hpd-wait.patch",
+      "path": "mseries/power/patches/0002-apple-dpin-tunnel-clock-and-hpd-wait.patch",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "upstream-patch",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/power/vrr-check.sh",
+      "path": "mseries/power/vrr-check.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/quick-settings/ChargeLimit.vala",
+      "path": "mseries/quick-settings/ChargeLimit.vala",
+      "ownership": "mseries-maintained",
+      "language": "vala",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/quick-settings/KeyboardBrightness.vala",
+      "path": "mseries/quick-settings/KeyboardBrightness.vala",
+      "ownership": "mseries-maintained",
+      "language": "vala",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/quick-settings/ScreenBrightness.vala",
+      "path": "mseries/quick-settings/ScreenBrightness.vala",
+      "ownership": "mseries-maintained",
+      "language": "vala",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/rust/inventory.py",
+      "path": "mseries/rust/inventory.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/rust/mseries-power/Cargo.lock",
+      "path": "mseries/rust/mseries-power/Cargo.lock",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/rust/mseries-power/Cargo.toml",
+      "path": "mseries/rust/mseries-power/Cargo.toml",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/rust/mseries-power/src/main.rs",
+      "path": "mseries/rust/mseries-power/src/main.rs",
+      "ownership": "mseries-maintained",
+      "language": "rust",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/rust/mseries-power/tests/parity.rs",
+      "path": "mseries/rust/mseries-power/tests/parity.rs",
+      "ownership": "mseries-maintained",
+      "language": "rust",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/screenshot-shelf/mseries-markup.desktop",
+      "path": "mseries/screenshot-shelf/mseries-markup.desktop",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/screenshot-shelf/mseries-screenshot-shelf.desktop",
+      "path": "mseries/screenshot-shelf/mseries-screenshot-shelf.desktop",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/signal-wingpanel/Indicator.vala",
+      "path": "mseries/signal-wingpanel/Indicator.vala",
+      "ownership": "mseries-maintained",
+      "language": "vala",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/stage-factory-enhancements.sh",
+      "path": "mseries/stage-factory-enhancements.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/test-apt-batch.sh",
+      "path": "mseries/test-apt-batch.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/test-atomic-app.py",
+      "path": "mseries/test-atomic-app.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/test-build-status.mjs",
+      "path": "mseries/test-build-status.mjs",
+      "ownership": "mseries-maintained",
+      "language": "javascript",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/test-codexbar-opencode-local.py",
+      "path": "mseries/test-codexbar-opencode-local.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/test-codexbar-sessions.py",
+      "path": "mseries/test-codexbar-sessions.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/test-codexbar-wrapper.py",
+      "path": "mseries/test-codexbar-wrapper.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/test-elementary-mac-setup.sh",
+      "path": "mseries/test-elementary-mac-setup.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/test-greeter-obex-fix.sh",
+      "path": "mseries/test-greeter-obex-fix.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/test-image-wiring.py",
+      "path": "mseries/test-image-wiring.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/test-installer-flow.sh",
+      "path": "mseries/test-installer-flow.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/test-iso-label.sh",
+      "path": "mseries/test-iso-label.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/test-kernel-config.py",
+      "path": "mseries/test-kernel-config.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/test-local-build-preflight.py",
+      "path": "mseries/test-local-build-preflight.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/test-local-build-status.mjs",
+      "path": "mseries/test-local-build-status.mjs",
+      "ownership": "mseries-maintained",
+      "language": "javascript",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/test-power-cap.py",
+      "path": "mseries/test-power-cap.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/test-power-install.py",
+      "path": "mseries/test-power-install.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/test-wifi-resume.py",
+      "path": "mseries/test-wifi-resume.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/tether/brave-extension.py",
+      "path": "mseries/tether/brave-extension.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/torrential-native/build-deb.sh",
+      "path": "mseries/torrential-native/build-deb.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/torrential-native/com.github.davidmhewitt.torrential.desktop",
+      "path": "mseries/torrential-native/com.github.davidmhewitt.torrential.desktop",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/torrential-native/com.github.davidmhewitt.torrential.metainfo.xml",
+      "path": "mseries/torrential-native/com.github.davidmhewitt.torrential.metainfo.xml",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/troubleshooter-wingpanel/Indicator.vala",
+      "path": "mseries/troubleshooter-wingpanel/Indicator.vala",
+      "ownership": "mseries-maintained",
+      "language": "vala",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/upstreams/omarchy-m.json",
+      "path": "mseries/upstreams/omarchy-m.json",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/user-enhance.sh",
+      "path": "mseries/user-enhance.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "mseries/video-decode/90-mseries-avd.conf",
+      "path": "mseries/video-decode/90-mseries-avd.conf",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "not-assessed"
+    },
+    {
+      "id": "transform/elementary-grow.sh",
+      "path": "transform/elementary-grow.sh",
+      "ownership": "mseries-maintained",
+      "language": "shell",
+      "role": "implementation",
+      "rust_status": "not-assessed"
+    }
+  ]
+}
