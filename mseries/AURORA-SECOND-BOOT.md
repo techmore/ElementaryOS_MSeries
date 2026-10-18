@@ -122,3 +122,23 @@ hangs — unknown until we know what the screen showed.
 Still the next test: `elementary-aurora-nosep` (SEP driver blocked), dock and
 all USB-C unplugged, left alone for 10 minutes. Questions for the owner: when
 it "freezes" is the screen frozen or black, and did you hold the power button?
+
+## Owner's description of the failure — 2026-10-18
+
+"The mouse just stopped; waited about a minute and it shut off by itself, every
+time, within about a minute of boot." So this is a **whole-system hang** (input
+dead, journal silent, no panic) followed by a **hardware power-off/reset about
+a minute later** — consistent with the SMC/PMU watchdog firing because the kernel
+stopped responding, not with a userspace crash. This is why no log line precedes
+the stop. The earlier Aurora boot at 10:50 on 2026-10-17 also ends abruptly ~2 min
+in (no shutdown messages), so the first Aurora-with-SEP boot of the day likely had
+the same fault. The patched DTB (incl. `spi@39b108000`/`fingerprint@0`) is present
+in the running device tree. The stock kernel, which never touches those nodes,
+is stable on the same DTB.
+
+Candidates, in order of how cheaply they separate: (1) `elementary-aurora-nosep`
+(SEP driver blocked) — tests the SEP driver; (2) boot with
+`boot.bin.pre-fingerprint-20261017-103254` — tests the ported sensor node, whose
+clock/pinctrl phandles were flagged as unresolved when it was ported (a wrong
+reference on a live block can hang the machine, as the 2026-10-17 note warned).
+Test 1 needs no bootloader-payload change; test 2 does (owner OK required).
