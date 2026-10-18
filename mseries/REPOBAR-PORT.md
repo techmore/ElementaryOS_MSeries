@@ -15,6 +15,11 @@ implementation; no macOS source or binary is copied into this project.
   latest release, recent issue/PR/commit activity, and local branch health when
   a projects folder is configured. Repository and activity links open in the
   browser.
+- Each repository card has a compact GTK disclosure menu for issues, pull
+  requests, workflow runs, releases, activity, commits, branches, and tags.
+  Categories fetch their data only when expanded; links open the matching GitHub
+  item. Search also matches repository topics, and the Local view filters to
+  checkouts found by the configured local scan.
 - Pin, unpin, hide, and show preferences are available from Wingpanel and CLI.
 - CLI details cover issues, pulls, CI runs, releases, activity, commits,
   branches, tags, and commit activity. Additional commands report API quotas,
@@ -31,10 +36,10 @@ implementation; no macOS source or binary is copied into this project.
 
 This port implements the repository dashboard and CLI surfaces, not every
 macOS-only interaction. Visitor/cloner traffic, the contribution heatmap UI,
-multi-account UI, a launch-at-login preference pane, and full repository
-submenus are not yet represented in Wingpanel. The CLI exposes a raw
-commit-activity endpoint. Upstream changes are never merged automatically;
-preserve this project's Pantheon UI and Linux integration.
+multi-account UI, and a launch-at-login preference pane are not yet represented
+in Wingpanel. The CLI exposes a raw commit-activity endpoint. Upstream changes
+are never merged automatically; preserve this project's Pantheon UI and Linux
+integration.
 
 ## Install on elementary OS
 

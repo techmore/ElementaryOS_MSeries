@@ -64,7 +64,7 @@ namespace MSeries {
             search_entry = new Gtk.SearchEntry () { placeholder_text = "Search repositories", hexpand = true };
             search_entry.search_changed.connect (() => render_cached ());
             scope_dropdown = new Gtk.DropDown.from_strings (new string[] {
-                "Dashboard", "All", "Pinned", "Issues", "Pull requests", "Needs attention"
+                "Dashboard", "All", "Pinned", "Issues", "Pull requests", "Needs attention", "Local"
             });
             scope_dropdown.notify["selected"].connect (() => render_cached ());
             filters.append (search_entry);
@@ -276,11 +276,18 @@ namespace MSeries {
             if (scope_dropdown.get_selected () != 1 && !show_archived && repo.get_boolean_member_with_default ("archived", false)) return false;
             if (scope_dropdown.get_selected () != 1 && !show_forks && repo.get_boolean_member_with_default ("fork", false)) return false;
             string query = search_entry.get_text ().strip ().casefold ();
-            string haystack = (name + " " + description + " " + language).casefold ();
+            string topics = "";
+            if (repo.has_member ("topics")) {
+                var topic_array = repo.get_array_member ("topics");
+                for (uint i = 0; i < topic_array.get_length (); i++) topics += " " + topic_array.get_string_element (i);
+            }
+            string haystack = (name + " " + description + " " + language + " " + topics).casefold ();
             if (query.length > 0 && !haystack.contains (query)) return false;
             if (scope_dropdown.get_selected () == 2 && state != "pinned") return false;
             if (scope_dropdown.get_selected () == 3 && repo.get_int_member_with_default ("openIssues", 0) == 0) return false;
             if (scope_dropdown.get_selected () == 4 && repo.get_int_member_with_default ("openPullRequests", 0) == 0) return false;
+            if (scope_dropdown.get_selected () == 6 && (!repo.has_member ("local") ||
+                repo.get_member ("local").get_node_type () != Json.NodeType.OBJECT)) return false;
             if (scope_dropdown.get_selected () == 5 && repo.get_string_member_with_default ("ci", "") != "FAILURE" &&
                 repo.get_string_member_with_default ("ci", "") != "ERROR" &&
                 repo.get_int_member_with_default ("openIssues", 0) == 0 &&
@@ -368,7 +375,148 @@ namespace MSeries {
                 local_label.set_tooltip_text (local.get_string_member_with_default ("path", ""));
                 card.append (local_label);
             }
+            var detail_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 5) {
+                margin_top = 5, margin_bottom = 2, margin_start = 4, margin_end = 4
+            };
+            detail_box.append (new Gtk.Label ("Expand to load recent GitHub details.") {
+                xalign = 0, wrap = true
+            });
+            var details_expander = new Gtk.Expander ("Recent details") { hexpand = true };
+            details_expander.set_child (detail_box);
+            bool details_sections_added = false;
+            details_expander.notify["expanded"].connect (() => {
+                if (details_expander.get_expanded () && !details_sections_added) {
+                    details_sections_added = true;
+                    clear_box (detail_box);
+                    append_repo_detail_expander (detail_box, name, url, "issues", "Issues");
+                    append_repo_detail_expander (detail_box, name, url, "pulls", "Pull requests");
+                    append_repo_detail_expander (detail_box, name, url, "ci", "CI runs");
+                    append_repo_detail_expander (detail_box, name, url, "releases", "Releases");
+                    append_repo_detail_expander (detail_box, name, url, "activity", "Activity");
+                    append_repo_detail_expander (detail_box, name, url, "commits", "Commits");
+                    append_repo_detail_expander (detail_box, name, url, "branches", "Branches");
+                    append_repo_detail_expander (detail_box, name, url, "tags", "Tags");
+                }
+            });
+            card.append (details_expander);
             repo_list.append (card);
+        }
+
+        private void append_repo_detail_expander (Gtk.Box parent, string name, string repo_url, string key, string title) {
+            var content = new Gtk.Box (Gtk.Orientation.VERTICAL, 3) {
+                margin_top = 3, margin_bottom = 3, margin_start = 8, margin_end = 4
+            };
+            var expander = new Gtk.Expander (title) { hexpand = true };
+            expander.set_child (content);
+            bool requested = false;
+            expander.notify["expanded"].connect (() => {
+                if (expander.get_expanded () && !requested) {
+                    requested = true;
+                    load_repo_detail.begin (name, repo_url, key, content);
+                }
+            });
+            parent.append (expander);
+        }
+
+        private async void load_repo_detail (string name, string repo_url, string key, Gtk.Box content) {
+            clear_box (content);
+            var loading = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 7);
+            var spinner = new Gtk.Spinner ();
+            spinner.start ();
+            loading.append (spinner);
+            loading.append (new Gtk.Label ("Loading…") { xalign = 0 });
+            content.append (loading);
+            try {
+                var process = new Subprocess.newv (new string[] { executable, key, name, "--limit", "5" },
+                    SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE);
+                string output;
+                string error_text;
+                yield process.communicate_utf8_async (null, null, out output, out error_text);
+                if (!process.get_successful () && output.strip ().length == 0) {
+                    throw new IOError.FAILED (error_text.strip ().length > 0 ? error_text.strip () : "GitHub data is unavailable");
+                }
+                var parser = new Json.Parser ();
+                parser.load_from_data (output);
+                render_repo_detail (key, parser.get_root (), repo_url, content);
+            } catch (Error e) {
+                clear_box (content);
+                append_detail_message (content, "Could not load " + key, e.message);
+            }
+        }
+
+        private void render_repo_detail (string key, Json.Node node, string repo_url, Gtk.Box content) {
+            clear_box (content);
+            Json.Array? items = null;
+            if (node.get_node_type () == Json.NodeType.ARRAY) {
+                items = node.get_array ();
+            } else if (key == "ci" && node.get_node_type () == Json.NodeType.OBJECT) {
+                var object = node.get_object ();
+                if (object.has_member ("workflow_runs")) items = object.get_array_member ("workflow_runs");
+            }
+            if (items == null) {
+                append_detail_message (content, "No details available", "The GitHub response did not include this section.");
+                return;
+            }
+            if (items.get_length () == 0) {
+                string empty_text = key == "issues" ? "No open issues" :
+                    key == "pulls" ? "No open pull requests" :
+                    key == "ci" ? "No recent runs" :
+                    key == "releases" ? "No releases" :
+                    key == "activity" ? "No recent activity" :
+                    key == "commits" ? "No recent commits" :
+                    key == "branches" ? "No branches found" : "No tags found";
+                content.append (new Gtk.Label (empty_text) { xalign = 0 });
+                return;
+            }
+            for (uint i = 0; i < items.get_length (); i++) {
+                var item = items.get_object_element (i);
+                string label = item.get_string_member_with_default ("title", "");
+                if (label.length == 0) label = item.get_string_member_with_default ("name", "");
+                if (label.length == 0) label = item.get_string_member_with_default ("tag_name", "");
+                if (key == "commits" && item.has_member ("commit")) {
+                    var commit = item.get_object_member ("commit");
+                    label = commit.get_string_member_with_default ("message", label).split ("\n")[0];
+                }
+                if (key == "activity") {
+                    label = item.get_string_member_with_default ("type", "Repository activity");
+                    if (item.has_member ("actor")) {
+                        label += " · " + item.get_object_member ("actor").get_string_member_with_default ("login", "");
+                    }
+                }
+                if (label.length == 0) label = item.get_string_member_with_default ("html_url", "Repository item");
+                string detail = item.get_string_member_with_default ("conclusion", "");
+                if (detail.length == 0) detail = item.get_string_member_with_default ("status", "");
+                string url = item.get_string_member_with_default ("html_url", "");
+                if (key == "branches" || key == "tags") {
+                    string ref_name = key == "branches" ? item.get_string_member_with_default ("name", "") : item.get_string_member_with_default ("name", "");
+                    if (ref_name.length > 0) url = repo_url + "/tree/" + Uri.escape_string (ref_name, null, true);
+                    detail = key == "branches" ? "branch" : "tag";
+                }
+                if (key == "activity") detail = item.get_string_member_with_default ("created_at", "");
+                if (detail.length > 0) label += " · " + detail;
+                if (url.length > 0 && key != "activity") {
+                    var link = new Gtk.LinkButton.with_label (url, label) { halign = Gtk.Align.START };
+                    link.add_css_class ("repo-meta");
+                    content.append (link);
+                } else {
+                    content.append (new Gtk.Label (label) { xalign = 0, wrap = true });
+                }
+            }
+        }
+
+        private void append_detail_message (Gtk.Box parent, string title, string message) {
+            var heading = new Gtk.Label (title) { xalign = 0 };
+            heading.add_css_class ("repo-name");
+            parent.append (heading);
+            parent.append (new Gtk.Label (message) { xalign = 0, wrap = true });
+        }
+
+        private void clear_box (Gtk.Box box) {
+            Gtk.Widget? child = box.get_first_child ();
+            while (child != null) {
+                box.remove (child);
+                child = box.get_first_child ();
+            }
         }
 
         private async void change_repo_state (string name, string action) {
