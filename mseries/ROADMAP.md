@@ -12,7 +12,13 @@ Deploy now byte-compares provider icons and refreshes the global icon cache only
 This removes unnecessary live icon-theme invalidation during code/docs-only deploys. Stubbed deployment
 tests verify no icon/cache writes for identical marks, a single cache refresh for changed marks, and
 unchanged explicit-only panel reload behavior. Native token code is unchanged; no second intentional
-reload is needed. Follow-up validation of the quiet path is recorded below.
+reload is needed. Quiet-path verification: all 13 native targets passed; no icon-cache command was invoked for
+unchanged SVGs. Recovered Wingpanel PID 248867 and daemon PID 44641 remained unchanged during
+61.1 seconds of observation, with no new panel journal messages. Sampled median CPU
+0.39%, RSS 193.55–248.36 MiB, descriptors 52–106;
+this is a short survival check, not proof of leak freedom or a resolved GTK root cause. The installed
+sessions helper confirms non-negative seven-day totals for all three applications. Counts remain active.
+No additional intentional menu-bar reload was issued.
 
 ## Seven-day local tokens for all three providers — 2026-10-18
 
