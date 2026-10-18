@@ -5,14 +5,14 @@ granite_dep = dependency('granite-7', version: '>= 7.7.0')
 json_dep = dependency('json-glib-1.0')
 indicators_dir = libwingpanel_dep.get_variable(pkgconfig: 'indicatorsdir')
 
+indicator_sources = files(
+  'Indicator.vala', 'JsonBoundary.vala', 'HelperProcess.vala', 'AccountDialog.vala',
+  'PanelPreferences.vala', 'RefreshPolicy.vala', 'QuotaEta.vala', 'Presentation.vala',
+)
+
 shared_module(
   'codexbar',
-  'Indicator.vala', 'JsonBoundary.vala',
-  'AccountDialog.vala',
-  'PanelPreferences.vala',
-  'RefreshPolicy.vala',
-  'QuotaEta.vala',
-  'Presentation.vala',
+  indicator_sources,
   dependencies: [libwingpanel_dep, granite_dep, json_dep],
   install: true,
   install_dir: indicators_dir,
@@ -37,7 +37,7 @@ test('quota-eta', quota_eta_test)
 # Headless render probe (not installed): see probe/run-probe.sh.
 render_probe = executable(
   'render-probe',
-  'Indicator.vala', 'JsonBoundary.vala', 'AccountDialog.vala', 'PanelPreferences.vala', 'RefreshPolicy.vala', 'QuotaEta.vala', 'Presentation.vala', 'probe/render-probe.vala',
+  indicator_sources, 'probe/render-probe.vala',
   dependencies: [libwingpanel_dep, granite_dep, json_dep, meson.get_compiler('c').find_library('m')],
   build_by_default: false,
 )
@@ -90,18 +90,16 @@ panel_preferences_test = executable(
 test('panel-preferences', panel_preferences_test)
 
 # Run under Xvfb with probe/run-live-preferences.sh; all backends and configuration are isolated.
-executable(
+live_preferences_probe = executable(
   'test-live-preferences',
-  'Indicator.vala', 'JsonBoundary.vala', 'AccountDialog.vala', 'PanelPreferences.vala', 'RefreshPolicy.vala',
-  'QuotaEta.vala', 'Presentation.vala', 'probe/test-live-preferences.vala',
+  indicator_sources, 'probe/test-live-preferences.vala',
   dependencies: [libwingpanel_dep, granite_dep, json_dep, meson.get_compiler('c').find_library('m')],
   build_by_default: false,
 )
 
 switch_probe = executable(
   'test-switch',
-  'Indicator.vala', 'JsonBoundary.vala', 'AccountDialog.vala', 'PanelPreferences.vala', 'RefreshPolicy.vala',
-  'QuotaEta.vala', 'Presentation.vala', 'probe/test-switch.vala',
+  indicator_sources, 'probe/test-switch.vala',
   dependencies: [libwingpanel_dep, granite_dep, json_dep, meson.get_compiler('c').find_library('m')],
   build_by_default: false,
 )
@@ -121,8 +119,7 @@ json_boundary_test = executable('test-json-boundary', 'JsonBoundary.vala', 'test
 test('json-boundary', json_boundary_test)
 
 ingestion_probe = executable('test-ingestion',
-  'Indicator.vala', 'JsonBoundary.vala', 'AccountDialog.vala', 'PanelPreferences.vala',
-  'RefreshPolicy.vala', 'QuotaEta.vala', 'Presentation.vala', 'probe/test-ingestion.vala',
+  indicator_sources, 'probe/test-ingestion.vala',
   dependencies: [libwingpanel_dep, granite_dep, json_dep, meson.get_compiler('c').find_library('m')],
   build_by_default: false,
 )
@@ -136,4 +133,13 @@ if find_program('xvfb-run', required: false).found() and find_program('dbus-run-
   test('local-token-panel', find_program('bash'),
     args: [join_paths(meson.current_source_dir(), 'probe/run-token-probe.sh'), meson.current_build_dir()],
     depends: render_probe, timeout: 30)
+endif
+
+helper_process_test = executable('test-helper-process', 'HelperProcess.vala', 'test-helper-process.vala', dependencies: dependency('gio-2.0'))
+test('helper-process', helper_process_test, timeout: 10)
+
+if find_program('xvfb-run', required: false).found() and find_program('dbus-run-session', required: false).found()
+  test('cached-repaint-preferences', find_program('bash'),
+    args: [join_paths(meson.current_source_dir(), 'probe/run-live-preferences.sh'), meson.current_build_dir()],
+    depends: live_preferences_probe, timeout: 15)
 endif
