@@ -1,12 +1,10 @@
-/* Screen share in Wingpanel: a pair of eyes whose popover is the whole interaction
- * (login to copy, viewer link, approve or remove watchers, stop). See ShareState for the launcher contract. */
+/* Screen share section for the Quick Settings popover (top-right menu): status, approve/remove watchers, stop,
+ * links and login. Hidden unless the share launcher is running. See ShareState for the launcher contract. */
 using Gtk;
-using Wingpanel;
 
 namespace MSeries {
-    public class ShareEyesIndicator : Wingpanel.Indicator {
+    public class SharePanel : Gtk.Box {
         private Gtk.Image eyes;
-        private Gtk.Box menu;
         private Gtk.Box content;
         private ShareState state = new ShareState ();
         private ShareClient client = new ShareClient ();
@@ -17,29 +15,26 @@ namespace MSeries {
         private bool busy = false;
         private bool details_open = false;
 
-        public ShareEyesIndicator () {
-            GLib.Object (code_name: "mseries-share-eyes");
-        }
-
         construct {
             eyes = new Gtk.Image.from_icon_name ("mseries-share-eyes-symbolic") { pixel_size = 18 };
             eyes.add_css_class ("mseries-eyes");
             eyes.set_tooltip_text (state.tooltip ());
-            this.visible = false;
+            orientation = Gtk.Orientation.VERTICAL;
+            visible = false;
+            add_css_class ("mseries-share");
+            margin_top = 6; margin_bottom = 6; margin_start = 6; margin_end = 6;
 
             content = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
             install_style (content.get_display ());
-            menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) {
-                margin_top = 8, margin_bottom = 8, margin_start = 8, margin_end = 8, width_request = 320
-            };
-            menu.add_css_class ("mseries-share");
-            menu.append (content);
+            append (content);
+            // The list is rebuilt as soon as the menu is shown, and polled while it stays open.
+            map.connect (() => { last_digest = ""; tick.begin (); });
 
             tick.begin ();
             poll_source = GLib.Timeout.add_seconds (2, () => { tick.begin (); return GLib.Source.CONTINUE; });
         }
 
-        ~ShareEyesIndicator () {
+        ~SharePanel () {
             if (poll_source != 0) {
                 GLib.Source.remove (poll_source);
             }
@@ -57,7 +52,7 @@ namespace MSeries {
                 text = null;
             }
             state.parse (text, GLib.get_real_time () / 1000000);
-            this.visible = state.running;
+            visible = state.running;
             if (state.running) {
                 client.configure (state.local_url, state.email, state.password);
                 yield client.refresh ();
@@ -298,28 +293,5 @@ namespace MSeries {
             more.notify["expanded"].connect (() => { details_open = more.expanded; });
             content.append (more);
         }
-
-        public override Gtk.Widget get_display_widget () {
-            return eyes;
-        }
-
-        public override Gtk.Widget? get_widget () {
-            return menu;
-        }
-
-        public override void opened () {
-            last_digest = "";
-            tick.begin ();
-        }
-
-        public override void closed () {
-        }
     }
-}
-
-public Wingpanel.Indicator? get_indicator (Module module, Wingpanel.ServerType server_type) {
-    if (server_type != Wingpanel.ServerType.SESSION) {
-        return null;
-    }
-    return new MSeries.ShareEyesIndicator ();
 }
