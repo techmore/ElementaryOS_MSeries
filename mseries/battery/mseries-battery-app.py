@@ -272,6 +272,52 @@ class RangeBar(Gtk.Box):
         cr.fill()
 
 
+class PreferencesWindow(Gtk.Window):
+    """High-drain notification settings; the logger re-reads the file every sample, so changes apply at once."""
+
+    def __init__(self, parent):
+        super().__init__(transient_for=parent, modal=True, title="Preferences", default_width=420, resizable=False)
+        self.config = core.load_config()
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
+        box.add_css_class("page")
+        box.append(label("HIGH POWER USE ALERT", "section-title"))
+        listing = boxed_list()
+        self.switch = Gtk.Switch(active=self.config["alerts"], valign=Gtk.Align.CENTER)
+        self.watts = Gtk.SpinButton.new_with_range(5, 60, 1)
+        self.watts.set_value(self.config["alert_watts"])
+        self.minutes = Gtk.SpinButton.new_with_range(1, 60, 1)
+        self.minutes.set_value(self.config["alert_minutes"])
+        self.cooldown = Gtk.SpinButton.new_with_range(5, 240, 5)
+        self.cooldown.set_value(self.config["alert_cooldown_minutes"])
+        for title, sub, widget in (("Notify me", "Only while unplugged", self.switch),
+                                   ("Average draw (W)", "At or above this", self.watts),
+                                   ("For at least (min)", "Sustained, not a spike", self.minutes),
+                                   ("Not again for (min)", "Quiet period after an alert", self.cooldown)):
+            line = Gtk.Box(spacing=12)
+            line.set_margin_top(10)
+            line.set_margin_bottom(10)
+            line.set_margin_start(14)
+            line.set_margin_end(14)
+            text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1, hexpand=True)
+            text.append(label(title, "row-title"))
+            text.append(label(sub, "dim", "caption"))
+            line.append(text)
+            line.append(widget)
+            listing.append(line)
+        box.append(listing)
+        done = Gtk.Button(label="Done", halign=Gtk.Align.END)
+        done.add_css_class("suggested-action")
+        done.connect("clicked", self.on_done)
+        box.append(done)
+        self.set_child(box)
+
+    def on_done(self, _button):
+        self.config.update(alerts=self.switch.get_active(), alert_watts=self.watts.get_value(),
+                           alert_minutes=int(self.minutes.get_value()), alert_cooldown_minutes=int(self.cooldown.get_value()))
+        core.save_config(self.config)
+        self.close()
+
+
 class BatteryWindow(Gtk.ApplicationWindow):
     PAGES = (("overview", "Overview", "battery-symbolic"),
              ("history", "History", "view-statistics-symbolic"),
@@ -291,6 +337,9 @@ class BatteryWindow(Gtk.ApplicationWindow):
         export = Gtk.Button(icon_name="document-save-as-symbolic", tooltip_text="Save a Markdown report")
         export.connect("clicked", self.on_export)
         header.pack_end(export)
+        prefs = Gtk.Button(icon_name="preferences-system-symbolic", tooltip_text="Preferences")
+        prefs.connect("clicked", lambda _b: PreferencesWindow(self).present())
+        header.pack_end(prefs)
         self.set_titlebar(header)
 
         self.stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE, hexpand=True, vexpand=True)
@@ -446,6 +495,49 @@ class BatteryWindow(Gtk.ApplicationWindow):
         block.append(header)
         block.append(listing)
         page.append(section("Runtime by usage", block))
+
+        profiles = core.profile_breakdown(rows)
+        if profiles:
+            listing = boxed_list()
+            for item in profiles:
+                line = Gtk.Box(spacing=16)
+                line.set_margin_top(10)
+                line.set_margin_bottom(10)
+                line.set_margin_start(14)
+                line.set_margin_end(14)
+                text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1, hexpand=True)
+                text.append(label(item["label"], "row-title"))
+                text.append(label("%s on battery" % core.fmt_hours(item["hours"]), "dim", "caption"))
+                line.append(text)
+                for value, sub in (("%.1f W" % item["avg_w"], "average"),
+                                   ("%.1f W" % item["idle_w"] if item["idle_w"] else "—", "at idle"),
+                                   ("%.1f W" % item["light_w"] if item["light_w"] else "—", "at light use")):
+                    col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, halign=Gtk.Align.END)
+                    col.set_size_request(84, -1)
+                    col.append(label(value, "numeric", xalign=1.0))
+                    col.append(label(sub, "dim", "caption", xalign=1.0))
+                    line.append(col)
+                listing.append(line)
+            page.append(section("Power profiles", listing))
+
+        tips = core.suggestions(self.open(), rows) if self.open() else []
+        if tips:
+            listing = boxed_list()
+            icons = {"display": "display-brightness-symbolic", "app": "applications-system-symbolic",
+                     "profile": "battery-level-50-symbolic", "standby": "weather-clear-night-symbolic", "health": "emblem-important-symbolic"}
+            for tip in tips:
+                line = Gtk.Box(spacing=14)
+                line.set_margin_top(12)
+                line.set_margin_bottom(12)
+                line.set_margin_start(14)
+                line.set_margin_end(14)
+                line.append(Gtk.Image(icon_name=icons.get(tip["kind"], "dialog-information-symbolic"), pixel_size=24, valign=Gtk.Align.START))
+                text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3, hexpand=True)
+                text.append(label(tip["title"], "row-title"))
+                text.append(label(tip["body"], "dim", wrap=True))
+                line.append(text)
+                listing.append(line)
+            page.append(section("Suggestions from your own data", listing))
 
         culprits = core.top_culprits(rows)
         if culprits:

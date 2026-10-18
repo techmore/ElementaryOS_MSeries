@@ -61,6 +61,7 @@ def main(argv):
                 core.snapshot_daily(conn, day)
                 last_day = day
             conn.commit()
+            alert.config = core.load_config()     # picks up Preferences changes without a restart
             fired = alert.feed(row)
             if fired:
                 notify(fired)

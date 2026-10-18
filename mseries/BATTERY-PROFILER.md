@@ -28,10 +28,19 @@ top three CPU processes. Read-only: it never changes a setting.
   `alert_minutes`, `alert_cooldown_minutes`) to change it.
 - **Report**: `mseries-battery report [days] > battery.md`, or the save button in the app's title bar.
 
+## Added in the third pass
+- **Power profile** (power-profiles-daemon, read once a minute) is logged per sample; the Overview compares draw per
+  profile at the same CPU load (idle and light bands), so Power Saver vs Balanced is a fair comparison.
+- **Suggestions from your own data**: brightness (draw above 70% vs 50% or below at light load), a busy app, trying
+  Power Saver, high sleep drain, capacity under 80%. Each appears only when this machine's samples back it
+  (an hour or more on battery). CLI: `mseries-battery tips`; also in the report.
+- **Preferences** (gear in the title bar): alert on/off, watts, minutes, cooldown. The logger re-reads the file each
+  sample.
+
 ## Use
 ```
 bash mseries/install-battery.sh              # installs logger service, `mseries-battery`, and the Battery app
-mseries-battery status | sessions | profile | apps | charging | health | events | report | export [days]
+mseries-battery status | sessions | profile | apps | charging | tips | health | events | report | export [days]
 ```
 App: "Battery" in the launcher (GTK4 + Granite 7: Overview, History chart, Sessions, Energy by app, Health, Power events).
 `bash mseries/install-battery.sh --uninstall` removes it and keeps the history.
@@ -42,7 +51,7 @@ weak on Apple Silicon), `upower` time-to-empty. Omarchy-mac's battery piece is o
 ported as `mseries-power` (see PORT-MAP.md); nothing else there profiles runtime.
 
 ## Status (2026-10-18)
-Logger installed and running on the M1 Pro; 13 unit tests pass (`battery/test_battery_core.py`); CLI verified against live
+Logger installed and running on the M1 Pro; 16 unit tests pass (`battery/test_battery_core.py`); CLI verified against live
 and synthetic history; the app (sidebar layout, battery gauge, usage bars, event icons, chart with hover readout) renders all four pages under
 Xvfb with the installed elementary blueberry stylesheet, light and dark (synthetic 8 h history). **Not verified:** the
 look on the owner's live session (no window was opened on their screen), real discharge sessions (the machine

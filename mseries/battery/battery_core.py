@@ -7,7 +7,9 @@ is used when it exists and the battery's own flow is the fallback.
 import glob
 import json
 import os
+import shutil
 import sqlite3
+import subprocess
 import time
 
 DB_PATH = os.path.join(os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share")),
@@ -25,7 +27,8 @@ EVENT_MIN_GAP_SECONDS = 60            # at most one event per minute
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS samples (
     ts INTEGER PRIMARY KEY, status TEXT, ac INTEGER, pct REAL, energy_uwh INTEGER, full_uwh INTEGER,
-    batt_w REAL, sys_w REAL, cpu_pct REAL, cpu_mhz REAL, load1 REAL, temp_c REAL, bright_pct REAL, top TEXT);
+    batt_w REAL, sys_w REAL, cpu_pct REAL, cpu_mhz REAL, load1 REAL, temp_c REAL, bright_pct REAL, top TEXT,
+    profile TEXT);
 CREATE TABLE IF NOT EXISTS events (
     ts INTEGER, kind TEXT, delta_w REAL, before_w REAL, after_w REAL, cpu_pct REAL, culprit TEXT, detail TEXT);
 CREATE INDEX IF NOT EXISTS events_ts ON events(ts);
@@ -80,6 +83,8 @@ def connect(path=DB_PATH, readonly=False):
         conn = sqlite3.connect(path, timeout=10)
         conn.execute("PRAGMA journal_mode=WAL")
         conn.executescript(SCHEMA)
+        if "profile" not in [r[1] for r in conn.execute("PRAGMA table_info(samples)")]:
+            conn.execute("ALTER TABLE samples ADD COLUMN profile TEXT")  # database from before profiles were logged
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -96,6 +101,7 @@ class Sampler:
         self.prev_cpu = None
         self.prev_procs = {}
         self.prev_time = None
+        self.profile, self.profile_read = None, 0
 
     def cpu_times(self):
         fields = (rd(self.proc + "/stat") or "cpu 0 0 0 0").splitlines()[0].split()[1:]
@@ -124,6 +130,18 @@ class Sampler:
         freqs = [rd_num(p, 0.001) for p in glob.glob("/sys/devices/system/cpu/cpu[0-9]*/cpufreq/scaling_cur_freq")]
         freqs = [f for f in freqs if f]
         return sum(freqs) / len(freqs) if freqs else None
+
+    def power_profile(self, now):
+        """power-profiles-daemon's active profile, re-read at most once a minute."""
+        if now - self.profile_read >= 60:
+            self.profile_read = now
+            tool = shutil.which("powerprofilesctl")
+            if tool:
+                try:
+                    self.profile = subprocess.run([tool, "get"], capture_output=True, text=True, timeout=5).stdout.strip() or None
+                except (OSError, subprocess.SubprocessError):
+                    pass
+        return self.profile
 
     def sample(self):
         now = int(time.time())
@@ -175,16 +193,16 @@ class Sampler:
                 "full_uwh": int(full) if full is not None else None,
                 "batt_w": batt_w, "sys_w": sys_w, "cpu_pct": cpu_pct, "cpu_mhz": self.cpu_mhz(),
                 "load1": float(load.split()[0]) if load else None, "temp_c": temp, "bright_pct": bright,
-                "top": json.dumps(top)}
+                "top": json.dumps(top), "profile": self.power_profile(now)}
 
 
 COLUMNS = ["ts", "status", "ac", "pct", "energy_uwh", "full_uwh", "batt_w", "sys_w", "cpu_pct", "cpu_mhz",
-           "load1", "temp_c", "bright_pct", "top"]
+           "load1", "temp_c", "bright_pct", "top", "profile"]
 
 
 def store(conn, row):
     conn.execute("INSERT OR REPLACE INTO samples (%s) VALUES (%s)" % (",".join(COLUMNS), ",".join("?" * len(COLUMNS))),
-                 [row[c] for c in COLUMNS])
+                 [row.get(c) for c in COLUMNS])
 
 
 def add_event(conn, ts, kind, delta_w=None, before_w=None, after_w=None, cpu_pct=None, culprit=None, detail=None):
@@ -364,6 +382,12 @@ def load_config():
     return config
 
 
+def save_config(config):
+    os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
+    with open(CONFIG_PATH, "w") as handle:
+        json.dump({k: config[k] for k in DEFAULT_CONFIG}, handle, indent=2)
+
+
 # ---- daily health snapshots ----------------------------------------------------------------
 def snapshot_daily(conn, day=None):
     """One row per day with full-charge capacity and cycle count, for the health trend."""
@@ -529,8 +553,78 @@ def report_markdown(conn, days=14):
             lines.append("| %s | %s | %.0f%% → %.0f%% | %.1f Wh | %s | %s |" % (
                 time.strftime("%Y-%m-%d %H:%M", time.localtime(r["start"])), fmt_hours(r["seconds"] / 3600),
                 r["pct_start"] or 0, r["pct_end"] or 0, r["wh_used"], r["avg_w"] or "—", fmt_hours(r["projected_hours"])))
+    tips = suggestions(conn, rows)
+    if tips:
+        lines += ["", "## Suggestions", ""] + ["- **%s.** %s" % (t["title"], t["body"]) for t in tips]
     drain = standby_drain(conn, now - int(days * 86400))
     if drain["pct_per_hour"] is not None:
         lines += ["", "## Standby", "", "- Asleep on battery %.1f h, losing %.2f%% per hour" % (drain["hours"], drain["pct_per_hour"])]
     lines += ["", "_Figures are estimates from 15-second samples of the SMC system-power sensor; see mseries/BATTERY-PROFILER.md._", ""]
     return "\n".join(lines)
+
+
+# ---- power profiles ------------------------------------------------------------------------
+PROFILE_NAMES = {"power-saver": "Power Saver", "balanced": "Balanced", "performance": "Performance"}
+
+
+def profile_breakdown(rows):
+    """Time and draw on battery per power profile, also at matching CPU load so the comparison is fair."""
+    result = []
+    on_battery = [r for r in rows if not r["ac"] and r.get("profile") and r["sys_w"] is not None and r["cpu_pct"] is not None]
+    for name in sorted({r["profile"] for r in on_battery}):
+        sel = [r for r in on_battery if r["profile"] == name]
+        entry = {"profile": name, "label": PROFILE_NAMES.get(name, name), "hours": round(len(sel) * SAMPLE_SECONDS / 3600, 2),
+                 "avg_w": round(sum(r["sys_w"] for r in sel) / len(sel), 2)}
+        for band, low, high in (("idle_w", 0, 10), ("light_w", 10, 30)):
+            part = [r["sys_w"] for r in sel if low <= r["cpu_pct"] < high]
+            entry[band] = round(sum(part) / len(part), 2) if len(part) >= 20 else None
+        result.append(entry)
+    return result
+
+
+# ---- suggestions ---------------------------------------------------------------------------
+def _band_mean(rows, low, high, extra):
+    vals = [r["sys_w"] for r in rows if low <= r["cpu_pct"] < high and extra(r)]
+    return (sum(vals) / len(vals), len(vals)) if len(vals) >= 20 else (None, len(vals))
+
+
+def suggestions(conn, rows):
+    """Plain-language tips, each backed by this machine's own samples. Empty until there is data to back them."""
+    tips = []
+    on_battery = [r for r in rows if not r["ac"] and r["sys_w"] is not None and r["cpu_pct"] is not None]
+    if len(on_battery) < 240:  # an hour
+        return tips
+    lit = [r for r in on_battery if r["bright_pct"] is not None]
+    if lit:
+        avg_bright = sum(r["bright_pct"] for r in lit) / len(lit)
+        bright, _ = _band_mean(lit, 0, 30, lambda r: r["bright_pct"] > 70)
+        dim, _ = _band_mean(lit, 0, 30, lambda r: r["bright_pct"] <= 50)
+        if bright and dim and bright - dim >= 0.8:
+            tips.append({"kind": "display", "title": "Dim the screen on battery",
+                         "body": "At light CPU load the system drew %.1f W with the screen above 70%% and %.1f W at 50%% or below. "
+                                 "Brightness averaged %.0f%% on battery." % (bright, dim, avg_bright)})
+    for item in top_culprits(on_battery, 3):
+        if item["avg_cpu"] >= 8:
+            tips.append({"kind": "app", "title": "%s is busy on battery" % item["name"],
+                         "body": "%s averaged %.0f%% of the CPU while unplugged. Closing it or its tabs when away from power "
+                                 "extends runtime; see Energy by app." % (item["name"], item["avg_cpu"])})
+            break
+    profiles = {p["profile"]: p for p in profile_breakdown(rows)}
+    if "balanced" in profiles and "power-saver" in profiles:
+        a, b = profiles["balanced"]["idle_w"], profiles["power-saver"]["idle_w"]
+        if a and b and a - b >= 0.5:
+            tips.append({"kind": "profile", "title": "Power Saver idles lower",
+                         "body": "At idle, Power Saver drew %.1f W against %.1f W on Balanced." % (b, a)})
+    elif "power-saver" not in profiles and "balanced" in profiles:
+        tips.append({"kind": "profile", "title": "Try Power Saver on battery",
+                     "body": "Every unplugged hour so far was on Balanced. Switch the profile for a while and this page compares "
+                             "the two at the same CPU load."})
+    drain = standby_drain(conn, rows[0]["ts"])
+    if drain["pct_per_hour"] is not None and drain["pct_per_hour"] > 1.0:
+        tips.append({"kind": "standby", "title": "Sleep drain is high",
+                     "body": "The battery lost %.1f%% per hour while asleep. Something is keeping the machine awake or waking it." % drain["pct_per_hour"]})
+    health = battery_health()
+    if health.get("health_pct") and health["health_pct"] < 80:
+        tips.append({"kind": "health", "title": "Battery capacity is below 80%",
+                     "body": "Full-charge capacity is %.0f%% of design after %d cycles." % (health["health_pct"], health["cycles"] or 0)})
+    return tips
