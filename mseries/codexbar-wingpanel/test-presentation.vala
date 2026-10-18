@@ -111,6 +111,17 @@ int main (string[] args) {
         assert (MSeries.Presentation.short_window_label ("Monthly", 0) == "30D");
         assert (MSeries.Presentation.short_window_label ("Session", 0) == "Session");
     });
+    GLib.Test.add_func ("/presentation/reset-credits", () => {
+        assert (MSeries.Presentation.reset_count_text (-1) == "");
+        assert (MSeries.Presentation.reset_count_text (1) == "1 reset");
+        assert (MSeries.Presentation.reset_count_text (3) == "3 resets");
+        assert (MSeries.Presentation.reset_credits_line (0, 5000) == "0 resets available");
+        assert (MSeries.Presentation.reset_credits_line (2, 0) == "2 resets available");
+        assert (MSeries.Presentation.reset_credits_line (2, 3600) == "2 resets available · first expires in 1h00m");
+        assert (MSeries.Presentation.reset_expiry_urgent (2, 3600));
+        assert (!MSeries.Presentation.reset_expiry_urgent (2, 90000));
+        assert (!MSeries.Presentation.reset_expiry_urgent (0, 3600));
+    });
     GLib.Test.add_func ("/presentation/countdown", () => {
         assert (MSeries.Presentation.countdown_text (0) == "");
         assert (MSeries.Presentation.countdown_text (-5) == "");

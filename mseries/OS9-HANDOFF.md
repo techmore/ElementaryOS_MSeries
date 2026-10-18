@@ -1,5 +1,86 @@
 # OS 9 implementation / Claude Code handoff
 
+## Week/Day time slots and event blocks published and deployed — 2026-10-18
+
+Owner requested time-slot Week/Day views, tests, desktop deployment and merge.
+Published tested code at `4cf426c`, retaining main's task checkboxes, quick-add,
+Upcoming default, compact Month list and account setup. Week uses seven date
+columns with a bounded horizontal viewport; Day retains the date picker.
+Native blocks align with hourly/half-hour rules, separate all-day events,
+allocate overlap lanes and clip overnight intervals at local midnight. Short
+appointments reserve a minimum click target; a block at the end of the day
+stays clipped. Busy columns widen within the scrollable surface. Popovers show
+literal full details; native Calendar launch is offered only when its executable
+is installed (not present on this desktop). Its date argument and missing-client
+fallback were checked with an isolated launcher, without opening a real app.
+
+Corrected the existing day filter's UTC/local double conversion, explicit
+DURATION end times and an untitled-event logging critical. Replaced asynchronous
+month-carousel paging with a deterministic grid, preserving arrows, Today and
+touch-swipe handlers; hide/show/reopen and selected-day highlights now stay in
+sync. Source refreshes reflow blocks and preserve horizontal/vertical reading
+positions through temporarily empty data. GTK criticals are fatal in the test
+fixture; all generated records and launcher calls remain isolated from user data.
+
+Verification: fresh pinned ARM64 release build; all 21 combined real-plugin/EDS
+workflow groups pass in both forced light and dark themes, including task writes,
+recurring completion and quick-add. New checks compare actual block allocations
+to hour rules, overlap geometry, short/instant/untitled/DURATION entries, UTC
+midnight boundaries, live movement/deletion, scroll retention, recurring columns,
+mapped popovers and native-action fallback. Inspected synthetic rendered grid
+and popover previews. Six image-wiring tests and focused shell/whitespace checks
+pass. Existing compiler, isolated EGL/portal and EDS teardown warnings remain;
+no clean-runtime-log or independent Google-sync/factory-boot claim.
+
+Ran `bash mseries/install-calendar-agenda.sh` from the merged tree, then all 21
+groups against the installed library (exit 0). Reloaded only Wingpanel:
+941825 → 944021; its mapped calendar library matches installed
+inode 316340 without deleted mappings. Previous plugin retained privately in
+this chat's work directory; version-aware stock backup remains. No personal
+events/accounts, boot/kernel, audio settings or standalone Calendar installation
+were changed. Next: owner opens clock → Events → Week/Day; physical touch/scale
+acceptance and real-account synchronization remain separate from these fixtures.
+
+## Factory ISO and installed YouTube qualification — 2026-10-18
+
+Build [39128555434](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39128555434)
+succeeded from `5c0c60e` after the package-policy, native chroot builder,
+pinned development dependency and ARM64 UKI input fixes. The new installer ISO
+passed independent SHA256 verification and installed to a blank 64 GiB KVM disk.
+Disk-only boot reached graphical initial setup using the unmodified generic
+7.0.0-38 UKI; `/usr` is read-only erofs. No post-boot browser installation occurred.
+
+Factory Brave integrity/library checks passed. A newly created default profile
+launched through the installed desktop entry. GTK resolved the bundled YouTube
+SVG; Gala matched the movie window to `mseries-brave-youtube.desktop` before and
+after navigation. The saved guest screenshot shows the YouTube dock logo and
+movie. Anonymous playback advanced 9.95 s / 298 frames at automatic 480p and
+9.97 s / 599 frames at selected 1080p over ten-second intervals; decoded audio
+advanced in both. There were frame drops; this is not a zero-drop benchmark.
+
+[Receipt, method, screenshot and limitations](video-decode/receipts/factory-2026-10-18/README.md).
+The basic non-3D GPU fixture failed; virgl worked with the same image and launcher.
+The passing run used an empty profile after archiving the diagnostic profile.
+Remote debugging was observation-only; installed containment/decode flags were
+unchanged. The test VM and receipt server are stopped. This Fairydust-disabled
+ARM64 VM result does not qualify Apple physical boot, hardware decode or DRM.
+The receipt pins the exact image source rather than later unrelated main commits.
+
+## Add Tasks from the panel — 2026-10-18
+
+The Tasks tab now has a compact title entry, Add button and writable-list selector.
+Enter or Add creates an undated task in the same EDS list as elementary Tasks.
+The default list is selected initially; explicit list choices persist while the
+panel runs. Pending saves block duplicate submissions and keep the popup open.
+Errors retain the draft, and unavailable/read-only lists cannot receive tasks.
+
+Debug and installed release builds pass all seventeen private plugin/EDS workflow
+groups. New coverage checks Enter/Add, correct-list persistence, literal titles,
+metadata, duplicate suppression and unavailable-list draft recovery. Real task
+and event comparisons are read-only; no personal task was created by tests.
+Six image-wiring checks pass. The release build is installed and Wingpanel reloaded.
+[Usage and tests](calendar/README.md#adding-tasks-in-the-panel).
+
 ## Complete Tasks from the panel — 2026-10-18
 
 Task rows now have accessible checkboxes that update the same EDS records as
