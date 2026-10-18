@@ -201,9 +201,14 @@ def judge(record):
 
 
 def record_pre(system, action):
+    # A timed-out previous hook must never lend its start reading to this cycle.
+    # Clear it before any sysfs read, then publish a complete new record atomically.
+    PENDING.unlink(missing_ok=True)
     fields = dict(start_boot_id=system.boot_id(), action=action, **snapshot(system, 'start'))
     PENDING.parent.mkdir(parents=True, exist_ok=True)
-    PENDING.write_text(' '.join('%s=%s' % item for item in fields.items()) + '\n')
+    temporary = PENDING.with_suffix('.new')
+    temporary.write_text(' '.join('%s=%s' % item for item in fields.items()) + '\n')
+    temporary.replace(PENDING)
 
 
 def record_post(system, action):

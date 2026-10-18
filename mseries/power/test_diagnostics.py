@@ -106,6 +106,15 @@ class SleepTests(unittest.TestCase):
         self.assertEqual(len(sleep.records()), sleep.KEEP)
         self.assertEqual(sleep.last_record()['verdict'], 'missing-reading')
 
+    def test_failed_pre_hook_cannot_reuse_previous_cycle(self):
+        sleep.PENDING.write_text(' '.join(f'{k}={v}' for k, v in valid().items()))
+        with patch.object(sleep, 'snapshot', side_effect=TimeoutError):
+            with self.assertRaises(TimeoutError):
+                sleep.record_pre(FakeSystem(), 'suspend')
+        self.assertFalse(sleep.PENDING.exists())
+        sleep.record_post(FakeSystem(), 'suspend')
+        self.assertEqual(sleep.last_record()['verdict'], 'missing-reading')
+
     def test_aggregate_sleeps_and_retry_undelivered_notification(self):
         self.record([valid(), valid(start_real='13600', end_real='14200', start_boot='3700',
                                   end_boot='4300', start_awake='102', end_awake='104')])
