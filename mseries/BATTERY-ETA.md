@@ -102,3 +102,9 @@ Correction (2026-10-18): the watts label looked "missing" on the live bar becaus
 (`~/.config/mseries/battery-meter.ini`, `show-watts=false`, the switch from `panel-power-watts-toggle.patch`). It is not a bug.
 The earlier screenshot that showed "15.2 W" came from a hand-built module without that toggle patch; the installer build
 (all four patches) was restored afterwards. Always install via `install-battery-eta.sh`, never a partial build.
+
+Verified live (2026-10-18): the dropdown was opened on the owner's real desktop (one pointer click on the battery icon,
+approved by the owner, then Escape) and captured with the screenshot portal. It shows the card (headline, charge and watts,
+six-hour sparkline, Typical runtime, Health, recent runs, power changes, accessories) above the stock brightness slider and
+power profiles, under the "Show Percentage" and "Show Watts in Menu Bar" switches. Stat values were indented against their
+labels; fixed (heading style instead of h4). Rows are one line each at the popover's width.

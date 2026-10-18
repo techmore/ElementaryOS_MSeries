@@ -1,5 +1,5 @@
 diff --git a/src/Widgets/PopoverWidget.vala b/src/Widgets/PopoverWidget.vala
-index 587c11b..4852f9e 100644
+index 9b38b42..015d9e0 100644
 --- a/src/Widgets/PopoverWidget.vala
 +++ b/src/Widgets/PopoverWidget.vala
 @@ -17,6 +17,287 @@
@@ -162,7 +162,7 @@ index 587c11b..4852f9e 100644
 +                };
 +                cell.append (small_label (f[1], true));
 +                var value = small_label (f[2], false);
-+                value.add_css_class ("h4");
++                value.add_css_class ("heading");
 +                cell.append (value);
 +                cell.append (small_label (f[3], true));
 +                stats.append (cell);
@@ -290,7 +290,7 @@ index 587c11b..4852f9e 100644
  public class Power.Widgets.PopoverWidget : Gtk.Box {
      public bool is_in_session { get; construct; default = false; }
  
-@@ -90,8 +371,11 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
+@@ -97,8 +378,11 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
              text = _("Power Settings…")
          };
  
@@ -302,7 +302,7 @@ index 587c11b..4852f9e 100644
          append (device_list_revealer);
          append (device_separator_revealer);
  
-@@ -118,6 +402,12 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
+@@ -125,6 +409,12 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
  
          settings.bind ("show-percentage", show_percent_switch, "active", SettingsBindFlags.DEFAULT);
  
