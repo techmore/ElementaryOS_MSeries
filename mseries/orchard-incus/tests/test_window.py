@@ -1,5 +1,7 @@
 """GTK integration with synthetic inventories; never runs Incus."""
 import os
+import gc
+import weakref
 from pathlib import Path
 import sys
 import tempfile
@@ -119,6 +121,36 @@ class WindowTests(unittest.TestCase):
                 self.assertFalse(any(isinstance(k, tuple) and k[0] == 'image-search' for k in self.win.reads))
             finally:
                 dialog.destroy()
+
+    def test_cancelled_creation_form_releases_its_signal_closures(self):
+        self.win.on_new()
+        dialog = next(d for d in Gtk.Window.get_toplevels() if d.get_title() == 'New Instance')
+        grid = next(w for w in self._walk(dialog) if isinstance(w, Gtk.Grid))
+        refs = [weakref.ref(dialog)] + [weakref.ref(grid.get_child_at(1, row)) for row in range(7)]
+        del grid
+        dialog.response(Gtk.ResponseType.CANCEL)
+        del dialog
+        gc.collect()
+        self.assertTrue(all(ref() is None for ref in refs), 'closed form callbacks must not retain the dialog or its inputs')
+
+    def test_destroyed_name_form_releases_its_validation_closure(self):
+        self.win.ask_name('Lifetime probe', 'name', 'dev', 'Accept', lambda value: None)
+        dialog = next(d for d in Gtk.Window.get_toplevels() if d.get_title() == 'Lifetime probe')
+        entry = next(w for w in self._walk(dialog) if isinstance(w, Gtk.Entry))
+        refs = [weakref.ref(dialog), weakref.ref(entry)]
+        del entry
+        dialog.destroy()
+        del dialog
+        gc.collect()
+        self.assertTrue(all(ref() is None for ref in refs))
+
+    @staticmethod
+    def _walk(widget):
+        yield widget
+        child = widget.get_first_child()
+        while child:
+            yield from WindowTests._walk(child)
+            child = child.get_next_sibling()
 
     def test_busy_other_instance_does_not_change_detail(self):
         self.win.open_instance('dev-0000')

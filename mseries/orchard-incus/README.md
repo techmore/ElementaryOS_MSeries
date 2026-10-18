@@ -58,7 +58,8 @@ Guest command output retains a 65,536-character pending tail and a
 262,144-character GTK text tail per live instance. Read-only output disables GTK
 undo history so trimmed text is actually released. Deleted guests release their
 output buffers after active commands finish, and hidden dashboard cards are
-pruned on inventory refresh. Renaming a stopped guest preserves its output.
+pruned on inventory refresh. Renaming a stopped guest preserves its output. Form signal connections are released
+on response or destruction, so validation callbacks cannot retain closed dialogs.
 Very fast discarded output is
 labelled. Incremental UTF-8 decoding handles split characters and long lines;
 scrolling back pauses automatic tail following. Creation progress uses its
@@ -138,4 +139,6 @@ xvfb-run -a env -u DBUS_SESSION_BUS_ADDRESS GSK_RENDERER=cairo GDK_BACKEND=x11 \
 Use a new output file. `--source /path/to/package-parent` compares another
 installed/candidate build using the same probe. It sends about 48 Mi characters
 (72 MiB UTF-8) through 12 synthetic guest identities, then empties the inventory.
-Cache and undo counts identify retained text independently of process RSS.
+Cache and undo counts identify retained text independently of process RSS. The
+same probe closes 60 creation forms and checks weak references to their widgets,
+separating GTK signal-reference leaks from allocator high-water marks.

@@ -637,6 +637,22 @@ class Window(Gtk.ApplicationWindow):
     def dialog(self, title, parent=None, width=440, height=-1):
         # an explicit height avoids GTK's "measure ... needs at least" warning from the default-size guess
         d = Granite.Dialog(modal=True, transient_for=parent or self, title=title, default_width=width, default_height=height)
+        connections = []
+        def connect_owned(widget, signal_name, callback):
+            handler = widget.connect(signal_name, callback)
+            connections.append((widget, handler))
+            return handler
+        def release(*_):
+            # Native signal closures are not ordinary Python GC edges. A form
+            # callback capturing its own Entry otherwise keeps the form alive.
+            owned = connections[:]
+            connections.clear()
+            for widget, handler in owned:
+                if widget.handler_is_connected(handler):
+                    widget.disconnect(handler)
+        d.connect_owned = connect_owned
+        d.connect_after("response", release)
+        d.connect("unrealize", release)
         return d, d.get_content_area()
 
     def notify(self, title, body=""):
@@ -1684,13 +1700,13 @@ class Window(Gtk.ApplicationWindow):
             (e.add_css_class if bad else e.remove_css_class)("error")
             err.set_text("Letters, digits and hyphens only; max 63." if bad else "")
             ok.set_sensitive(bool(v) and not bad)
-        e.connect("changed", check)
+        d.connect_owned(e, "changed", check)
         def resp(dlg, r):
             v = e.get_text().strip()
             dlg.destroy()
             if r == Gtk.ResponseType.ACCEPT and v and valid_name(v):
                 fn(v)
-        d.connect("response", resp)
+        d.connect_owned(d, "response", resp)
         check()
         d.present()
         e.grab_focus()
@@ -1743,7 +1759,7 @@ class Window(Gtk.ApplicationWindow):
             if task:
                 task.invalidate()
             dlg.destroy()
-        d.connect("response", close)
+        d.connect_owned(d, "response", close)
         def search(*_):
             term = se.get_text().strip()
             lb.remove_all()
@@ -1758,7 +1774,7 @@ class Window(Gtk.ApplicationWindow):
                 if not rows:
                     lb.append(lbl("No matches.", "dim", margin_top=8))
             self.read(slot, lambda: backend.incus("image", "list", "images:", term, ARCH, "-c", "ldt", "--format", "csv", timeout=backend.POLL_TIMEOUT), done)
-        se.connect("activate", search)
+        d.connect_owned(se, "activate", search)
         d.present()
         search()
 
@@ -1852,7 +1868,7 @@ class Window(Gtk.ApplicationWindow):
         vm = Gtk.Switch(halign=Gtk.Align.START)
         secure_boot = Gtk.Switch(halign=Gtk.Align.START, active=True, sensitive=False,
                                  tooltip_text="Disable only for VM images that do not support Secure Boot.")
-        vm.connect("notify::active", lambda *_: secure_boot.set_sensitive(vm.get_active()))
+        d.connect_owned(vm, "notify::active", lambda *_: secure_boot.set_sensitive(vm.get_active()))
         cpu = Gtk.Entry(placeholder_text="optional, e.g. 2")
         mem = Gtk.Entry(placeholder_text="optional, e.g. 1GiB")
         for wdg, nm in ((name, "Instance name"), (preset, "Distribution"), (image, "Image"), (vm, "Virtual machine"), (secure_boot, "Secure Boot"), (cpu, "CPU limit"), (mem, "Memory limit")):
@@ -1861,14 +1877,14 @@ class Window(Gtk.ApplicationWindow):
             p = PRESETS[preset.get_selected()][1]
             image.set_sensitive(not p)
             image.set_text(p)
-        preset.connect("notify::selected", pick)
+        d.connect_owned(preset, "notify::selected", pick)
         pick()
         fields = [("Name", name), ("Distribution", preset), ("Image", image), ("Virtual machine", vm), ("Secure Boot", secure_boot), ("CPU limit", cpu), ("Memory limit", mem)]
         for r, (t, wd) in enumerate(fields):
             g.attach(Granite.HeaderLabel(label=t, mnemonic_widget=wd, valign=Gtk.Align.CENTER), 0, r, 1, 1)
             g.attach(wd, 1, r, 1, 1)
         bb = Gtk.Button(label="Browse…", tooltip_text="Search the image server")
-        bb.connect("clicked", lambda *_: self.browse_images(
+        d.connect_owned(bb, "clicked", lambda *_: self.browse_images(
             lambda img, is_vm: (preset.set_selected(len(PRESETS) - 1), image.set_text(img), vm.set_active(is_vm)), parent=d))
         g.attach(bb, 2, 2, 1, 1)
         err = lbl("", "error-text", max_width_chars=48, ellipsize=Pango.EllipsizeMode.END)
@@ -1895,7 +1911,7 @@ class Window(Gtk.ApplicationWindow):
             err.set_tooltip_text(" ".join(msgs) or None)
             ok.set_sensitive(not msgs)
         for e_ in (name, image, cpu, mem):
-            e_.connect("changed", validate)
+            d.connect_owned(e_, "changed", validate)
         validate()
 
         def resp(dlg, r):
@@ -1907,6 +1923,6 @@ class Window(Gtk.ApplicationWindow):
             extra = backend.create_args(vm.get_active(), cpu.get_text(), mem.get_text(), secure_boot.get_active())
             dlg.destroy()
             self.start_create(given or backend.auto_name(img), img, extra)
-        d.connect("response", resp)
+        d.connect_owned(d, "response", resp)
         d.present()
         name.grab_focus()

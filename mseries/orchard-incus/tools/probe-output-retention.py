@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
-"""Synthetic GTK output/guest churn probe. Never calls Incus or changes guests.
+"""Synthetic GTK output/guest and dialog churn. Never calls Incus or changes guests.
 
 Use Xvfb/Cairo to isolate retained text from native renderer allocations.
 The source option allows the same probe to compare installed and candidate code.
 RSS is an observation, not a portable pass/fail memory threshold.
 """
 import argparse
+from collections import Counter
 import gc
 import hashlib
 import json
 from pathlib import Path
 import sys
 import tempfile
+import weakref
 from unittest.mock import patch
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -30,7 +32,7 @@ context = GLib.MainContext.default()
 report = {'method': 'Synthetic stopped-guest churn; 12 identities, 64 output chunks per guest; no Incus; GTK undo/cache retention, not native frame timing',
           'source_sha256': {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                             for p in (args.source / 'orchard_incus').glob('*.py')},
-          'snapshots': [], 'output_characters': 0, 'output_utf8_bytes': 0}
+          'snapshots': [], 'dialog_snapshots': [], 'output_characters': 0, 'output_utf8_bytes': 0}
 
 def settle():
     for _ in range(100):
@@ -45,6 +47,19 @@ def snapshot(stage):
                                'buffers': len(win.exec_bufs),
                                'characters': sum(b.get_char_count() for b in win.exec_bufs.values()),
                                'undoable_buffers': sum(b.get_can_undo() for b in win.exec_bufs.values())})
+
+def walk(widget):
+    yield widget
+    child = widget.get_first_child()
+    while child:
+        yield from walk(child)
+        child = child.get_next_sibling()
+
+def dialog_snapshot(count, refs):
+    gc.collect()
+    status = dict(x.split(':', 1) for x in Path('/proc/self/status').read_text().splitlines())
+    report['dialog_snapshots'].append({'closed_dialogs': count, 'rss_kib': int(status['VmRSS'].split()[0]),
+                                       'retained_widget_wrappers': dict(Counter(kind for kind, ref in refs if ref() is not None))})
 
 with tempfile.TemporaryDirectory() as directory, \
      patch('orchard_incus.window.STATE_FILE', directory + '/state.json'), \
@@ -65,6 +80,17 @@ with tempfile.TemporaryDirectory() as directory, \
         win.show([])
         settle()
         snapshot('empty-inventory')
+        refs = []
+        dialog_snapshot(0, refs)
+        for count in range(60):
+            win.on_new()
+            dialog = next(d for d in Gtk.Window.get_toplevels() if d is not win and d.get_title() == 'New Instance')
+            refs.extend((type(w).__name__, weakref.ref(w)) for w in walk(dialog))
+            dialog.response(Gtk.ResponseType.CANCEL)
+            del dialog
+            settle()
+            if count in (9, 29, 59):
+                dialog_snapshot(count + 1, refs)
     finally:
         win.close()
         settle()
