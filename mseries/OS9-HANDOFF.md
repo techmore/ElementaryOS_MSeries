@@ -4806,3 +4806,5 @@ main/site completion. Preserve current main owner changes; no CodexBar files cha
 Both `install-quick-settings-brightness.sh` and the factory `build-quick-settings` apply the new patch and copy the widget; `enhance.sh` includes it in first-boot payload. No new runtime library is needed beyond GLib/GIO and existing GTK/Granite.
 
 Verified: full pinned Quick Settings release build/link; production-widget integration test on a private fake BlueZ bus covers saved-device filtering, Connect, Disconnect, connection-failure recovery, and radio off/on with fatal GTK criticals enabled. CI runs this test. A read-only GTK preview against the real BlueZ service rendered. Installed/staged via the normal installer without a Wingpanel restart; activation awaits explicit owner reload approval or next login. No actual Bluetooth radio or device state was changed by tests.
+
+Bluetooth activation follow-up: owner explicitly requested “Reload menu bar now.” Ran `python3 mseries/local-ai/repair-panel.py`; Wingpanel restarted and passed the survival check, and `/proc` maps confirm the installed Quick Settings module is loaded. Owner visual/device interaction check remains.
