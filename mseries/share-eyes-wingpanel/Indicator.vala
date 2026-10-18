@@ -15,6 +15,7 @@ namespace MSeries {
         private string toast = "";
         private uint poll_source = 0;
         private bool busy = false;
+        private bool details_open = false;
 
         public ShareEyesIndicator () {
             GLib.Object (code_name: "mseries-share-eyes");
@@ -22,6 +23,7 @@ namespace MSeries {
 
         construct {
             eyes = new Gtk.Image.from_icon_name ("mseries-share-eyes-symbolic") { pixel_size = 18 };
+            eyes.add_css_class ("mseries-eyes");
             eyes.set_tooltip_text (state.tooltip ());
             this.visible = false;
 
@@ -72,7 +74,9 @@ namespace MSeries {
                     : "Sharing your screen · %d people watching".printf (watching))
                 : "Screen share ready · not sharing yet";
             eyes.set_tooltip_text (tip);
-            if (waiting > 0) eyes.add_css_class ("accent"); else eyes.remove_css_class ("accent");
+            eyes.remove_css_class ("live");
+            eyes.remove_css_class ("ask");
+            if (waiting > 0) eyes.add_css_class ("ask"); else if (state.running && client.live) eyes.add_css_class ("live");
             var digest = state.running.to_string () + client.digest () + state.password + toast;
             if (digest != last_digest) {
                 last_digest = digest;
@@ -93,6 +97,8 @@ namespace MSeries {
         private static void install_style (Gdk.Display display) {
             var style = new Gtk.CssProvider ();
             style.load_from_string (
+                ".mseries-eyes.live { color: @success_color; } " +
+                ".mseries-eyes.ask { color: @warning_color; } " +
                 ".mseries-share { font-size: 9pt; } " +
                 ".mseries-share .caption { font-size: 8pt; } " +
                 ".mseries-share .card { padding: 4px 10px; border-radius: 8px; background: alpha(currentColor, 0.06); } " +
@@ -161,62 +167,27 @@ namespace MSeries {
             tick.begin ();
         }
 
-        private void rebuild (string tip) {
-            Gtk.Widget? child;
-            while ((child = content.get_first_child ()) != null) content.remove (child);
-
-            int waiting = 0;
-            foreach (var v in client.viewers) if (v.state == "pending") waiting++;
-
-            // Header: icon, state, a pill chip, and one line about what to do.
-            var head = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 10);
-            head.append (new Gtk.Image.from_icon_name ("mseries-share-eyes-symbolic") { pixel_size = 28, valign = Gtk.Align.CENTER });
-            var texts = new Gtk.Box (Gtk.Orientation.VERTICAL, 1) { hexpand = true, valign = Gtk.Align.CENTER };
-            var title = new Gtk.Label (!state.running ? "Screen share is off" : waiting > 0 ? "Someone wants to watch" : client.live ? "Sharing your screen" : "Ready to share") { halign = Gtk.Align.START, xalign = 0 };
-            title.add_css_class ("state-title");
-            texts.append (title);
-            int watching = 0;
-            foreach (var v in client.viewers) if (v.state == "admitted") watching++;
-            texts.append (dim (!state.running ? "Start the demo with core/scripts/share-demo.sh."
-                : client.live ? (watching == 0 ? "Nobody is watching yet" : watching == 1 ? "1 person watching" : "%d people watching".printf (watching))
-                : "Not sharing anything yet"));
-            head.append (texts);
-            if (state.running && client.reachable) {
-                var chip = new Gtk.Label (waiting > 0 ? "WAITING" : client.live ? "LIVE" : "READY") { valign = Gtk.Align.CENTER };
-                chip.add_css_class ("chip");
-                if (waiting > 0) chip.add_css_class ("ask"); else if (client.live) chip.add_css_class ("live");
-                head.append (chip);
+        /* An icon + label row that is one flat button, like a menu item, with a dim detail on the right. */
+        private Gtk.Button item (string icon, string label, string? detail, string tip) {
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 9);
+            row.append (new Gtk.Image.from_icon_name (icon));
+            row.append (new Gtk.Label (label) { halign = Gtk.Align.START, hexpand = true, xalign = 0, ellipsize = Pango.EllipsizeMode.END });
+            if (detail != null) {
+                var d = new Gtk.Label (detail);
+                d.add_css_class ("dim-label");
+                d.add_css_class ("caption");
+                row.append (d);
             }
-            content.append (head);
-            if (!state.running) return;
-            if (!client.reachable) {
-                content.append (dim ("The share server is not answering."));
-                return;
-            }
+            var b = new Gtk.Button () { child = row, tooltip_text = tip };
+            b.add_css_class ("flat");
+            return b;
+        }
 
-            if (!client.live) {
-                var open = new Gtk.Button.with_label ("Open share page and sign in");
-                open.add_css_class ("suggested-action");
-                open.add_css_class ("primary-wide");
-                open.clicked.connect (() => {
-                    try { GLib.AppInfo.launch_default_for_uri (state.login_url (), null); } catch (GLib.Error e) { warning ("%s", e.message); }
-                });
-                content.append (open);
-                content.append (dim ("Click Start sharing there, then pick one window."));
-            } else {
-                var stop = new Gtk.Button.with_label ("Stop sharing");
-                stop.add_css_class ("destructive-action");
-                stop.add_css_class ("primary-wide");
-                stop.clicked.connect (() => client.stop.begin ((o, r) => { client.stop.end (r); act (); }));
-                content.append (stop);
-            }
-
-            var watchers = card ("Watchers");
-            if (client.viewers.length == 0) {
-                watchers.append (dim ("Nobody yet."));
-            }
+        private Gtk.Widget watchers_card () {
+            var w = card ("Watchers");
             foreach (var v in client.viewers) {
                 var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+                row.append (new Gtk.Image.from_icon_name (v.state == "pending" ? "avatar-default-symbolic" : "view-reveal-symbolic"));
                 var names = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { hexpand = true, valign = Gtk.Align.CENTER };
                 names.append (new Gtk.Label (v.state == "pending" ? "Wants to watch" : "Watching") { halign = Gtk.Align.START, xalign = 0 });
                 var where = new Gtk.Label (v.ip) { halign = Gtk.Align.START, xalign = 0 };
@@ -239,27 +210,93 @@ namespace MSeries {
                     rm.clicked.connect (() => client.viewer_action.begin (vid, "kick", (o, r) => { client.viewer_action.end (r); act (); }));
                     row.append (rm);
                 }
-                watchers.append (row);
+                w.append (row);
             }
-            content.append (watchers);
+            return w;
+        }
 
-            var links = card ("Links");
+        private void rebuild (string tip) {
+            Gtk.Widget? child;
+            while ((child = content.get_first_child ()) != null) content.remove (child);
+
+            int waiting = 0, watching = 0;
+            foreach (var v in client.viewers) {
+                if (v.state == "pending") waiting++; else if (v.state == "admitted") watching++;
+            }
+
+            // Header: what is happening now, in one glance. A copy confirmation replaces the subtitle for a moment.
+            var head = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 10);
+            head.append (new Gtk.Image.from_icon_name ("mseries-share-eyes-symbolic") { pixel_size = 28, valign = Gtk.Align.CENTER });
+            var texts = new Gtk.Box (Gtk.Orientation.VERTICAL, 1) { hexpand = true, valign = Gtk.Align.CENTER };
+            var title = new Gtk.Label (!state.running ? "Screen share is off" : waiting > 0 ? "Someone wants to watch" : client.live ? "Sharing your screen" : "Ready to share") {
+                halign = Gtk.Align.START, xalign = 0 };
+            title.add_css_class ("state-title");
+            texts.append (title);
+            texts.append (dim (toast != "" ? toast + " ✓"
+                : !state.running ? "Start the demo with core/scripts/share-demo.sh."
+                : !client.reachable ? "The share server is not answering."
+                : waiting > 0 ? "Allow or deny below. Nothing is sent until you allow."
+                : client.live ? (watching == 0 ? "Nobody is watching yet" : watching == 1 ? "1 person watching" : "%d people watching".printf (watching))
+                : "Click Start sharing on the page, then pick one window"));
+            head.append (texts);
+            if (state.running && client.reachable) {
+                var chip = new Gtk.Label (waiting > 0 ? "WAITING" : client.live ? "LIVE" : "READY") { valign = Gtk.Align.CENTER };
+                chip.add_css_class ("chip");
+                if (waiting > 0) chip.add_css_class ("ask"); else if (client.live) chip.add_css_class ("live");
+                head.append (chip);
+            }
+            content.append (head);
+            if (!state.running || !client.reachable) return;
+
+            // Anyone waiting is the one thing that needs you: it goes straight under the header.
+            if (waiting > 0) content.append (watchers_card ());
+
+            if (client.live) {
+                var stop = new Gtk.Button.with_label ("Stop sharing");
+                stop.add_css_class ("destructive-action");
+                stop.add_css_class ("primary-wide");
+                stop.clicked.connect (() => client.stop.begin ((o, r) => { client.stop.end (r); act (); }));
+                content.append (stop);
+            } else {
+                var open = new Gtk.Button.with_label ("Open share page and sign in");
+                open.add_css_class ("suggested-action");
+                open.add_css_class ("primary-wide");
+                open.clicked.connect (() => {
+                    try { GLib.AppInfo.launch_default_for_uri (state.login_url (), null); } catch (GLib.Error e) { warning ("%s", e.message); }
+                });
+                content.append (open);
+            }
+
+            if (waiting == 0 && watching > 0) content.append (watchers_card ());
+
+            // Links: one flat menu-style item each, so the card reads as a short list.
+            var links = card (null);
             var link = client.viewer_link (state.viewer_base);
             if (link != null) {
-                links.append (field_row ("Viewer", link, "Copy the link for your viewer", false, "Link for your buddy"));
+                var cv = item ("insert-link-symbolic", "Copy viewer link",
+                    "until " + new GLib.DateTime.from_unix_local (client.link_expires).format ("%H:%M"), "Copy the link for your viewer");
+                cv.clicked.connect (() => copy (link, "Viewer link"));
+                links.append (cv);
             } else {
-                links.append (action_row ("Viewer link", "list-add-symbolic", "Create a link for your viewer", () => {
-                    client.create_link.begin ((o, r) => { client.create_link.end (r); act (); });
-                }));
+                var mk = item ("list-add-symbolic", "Create viewer link", null, "Make a link to send to your viewer");
+                mk.clicked.connect (() => { client.create_link.begin ((o, r) => { client.create_link.end (r); act (); }); });
+                links.append (mk);
             }
-            links.append (field_row ("Sign-in", state.login_url (), "Copy a link that signs in on this computer. Never send it to your viewer.", false, "This computer only"));
+            var cs = item ("dialog-password-symbolic", "Copy sign-in link", "this computer only",
+                "Opens the share page already signed in. Never send it to your viewer.");
+            cs.clicked.connect (() => copy (state.login_url (), "Sign-in link"));
+            links.append (cs);
             content.append (links);
 
-            var login = card ("Login");
-            login.append (field_row ("Username", state.email, "Copy username"));
-            login.append (field_row ("Password", state.password, "Copy password"));
-            content.append (login);
-            if (toast != "") content.append (dim (toast));
+            // Raw login is a fallback for another browser, so it is tucked away.
+            var more = new Gtk.Expander ("Login details") { margin_top = 2 };
+            var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) { margin_top = 4 };
+            box.append (field_row ("Username", state.email, "Copy username"));
+            box.append (field_row ("Password", state.password, "Copy password"));
+            more.child = box;
+            more.expanded = details_open;
+            more.notify["expanded"].connect (() => { details_open = more.expanded; });
+            content.append (more);
         }
 
         public override Gtk.Widget get_display_widget () {
