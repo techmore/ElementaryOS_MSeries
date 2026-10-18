@@ -174,36 +174,96 @@ APP_BINARY = "/usr/lib/chatgpt/ChatGPT"
 
 
 def app_pids() -> list[int]:
-    """Main process of the ChatGPT desktop app (children carry --type=)."""
+    """Only this user's ChatGPT executables. Never match CodexBar by a command-line substring."""
     pids = []
     for entry in pathlib.Path("/proc").iterdir():
         if not entry.name.isdigit():
             continue
         try:
-            argv = (entry / "cmdline").read_bytes().split(b"\0")
+            if entry.stat().st_uid == os.getuid() and os.readlink(entry / "exe") == APP_BINARY:
+                pids.append(int(entry.name))
         except OSError:
             continue
-        if argv and argv[0].decode(errors="replace") == APP_BINARY and not any(a.startswith(b"--type=") for a in argv):
-            pids.append(int(entry.name))
     return pids
 
 
-def restart_app() -> tuple[bool, str]:
-    """The desktop app keeps the account it started with, so a switch needs a relaunch."""
+def stop_app() -> None:
     pids = app_pids()
+    parent = os.getppid()
+    while parent > 1:
+        if parent in pids:
+            raise ValueError("Switch from the CodexBar panel, outside ChatGPT.")
+        try:
+            parent = int(pathlib.Path(f"/proc/{parent}/stat").read_text().rsplit(")", 1)[1].split()[1])
+        except (OSError, ValueError, IndexError):
+            break
     for pid in pids:
         try:
-            os.kill(pid, signal.SIGTERM)
-        except OSError:
+            parent = int(pathlib.Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[1])
+            if parent not in pids:
+                os.kill(pid, signal.SIGTERM)
+        except (FileNotFoundError, ProcessLookupError):
             pass
-    deadline = time.monotonic() + 10
-    while app_pids() and time.monotonic() < deadline:
+    deadline = time.monotonic() + 15
+    while app_pids():
+        if time.monotonic() >= deadline:
+            raise ValueError("ChatGPT did not close. Quit it and try again; the login was not changed.")
         time.sleep(0.2)
-    if app_pids():
-        return False, "ChatGPT did not close; quit it and open it again."
+
+
+def launch_app() -> None:
+    environment = {k: v for k, v in os.environ.items()
+                   if k not in {"OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN", "CODEX_HOME", "ELECTRON_RUN_AS_NODE"}}
     subprocess.Popen(["chatgpt"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                     stderr=subprocess.DEVNULL, start_new_session=True)
-    return True, "ChatGPT restarted." if pids else "ChatGPT opened."
+                     stderr=subprocess.DEVNULL, start_new_session=True, env=environment)
+
+
+def switch_desktop(target: str) -> tuple[bool, str]:
+    """Close the old app before replacing its sign-in, so its final writes cannot undo the switch."""
+    changed = False
+    stopped = False
+    try:
+        with state_lock():
+            matches = [a for a in list_accounts() if target in (a["email"], a["id"])]
+            if len(matches) != 1:
+                return False, "Choose one saved Codex account by its exact id."
+            wanted = matches[0]
+            saved_home = saved_homes().get(wanted["id"])
+            saved = read_auth(saved_home / "auth.json") if saved_home else None
+            if not saved or identity(saved) is None or identity(saved)["id"] != wanted["id"]:
+                return False, "The selected account's saved login could not be read. Add it again."
+            # The desktop app always uses the default home, independent of a CLI override.
+            if codex_home().resolve() != (pathlib.Path.home() / ".codex").resolve():
+                return False, "Desktop switching needs the default Codex home. Remove CODEX_HOME from the panel environment."
+            stop_app()
+            stopped = True
+            _save_current()
+            # Re-read after the departing app has flushed its login; it may have refreshed this account's tokens.
+            saved = read_auth(saved_home / "auth.json")
+            if not saved or not identity(saved) or identity(saved)["id"] != wanted["id"]:
+                raise ValueError("The selected account's saved login changed. Try again.")
+            write_private(codex_home() / "auth.json", saved)
+            changed = True
+        launch_app()
+        return True, f"ChatGPT reopened with {wanted['email']}. CodexBar stays running."
+    except (OSError, ValueError, TimeoutError) as e:
+        if changed:
+            return False, f"Login changed to {wanted['email']}, but ChatGPT could not reopen: {e}. Open ChatGPT manually."
+        if stopped:
+            try:
+                launch_app()
+            except OSError:
+                pass
+        return False, str(e)
+
+
+def restart_app() -> tuple[bool, str]:
+    try:
+        stop_app()
+        launch_app()
+        return True, "ChatGPT reopened."
+    except (OSError, ValueError) as e:
+        return False, str(e)
 
 
 def usage_for(home: pathlib.Path, cli: str) -> dict[str, Any]:
@@ -373,7 +433,7 @@ def main(arguments: list[str]) -> int:
         if len(arguments) < 2:
             print("usage: codexbar-accounts.py switch <email|id>", file=sys.stderr)
             return 2
-        ok, message = switch(arguments[1])
+        ok, message = switch_desktop(arguments[1]) if "--desktop" in arguments else switch(arguments[1])
         print(json.dumps({"ok": ok, "message": message}))
         return 0 if ok else 1
     if command == "app-running":

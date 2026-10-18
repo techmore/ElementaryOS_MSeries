@@ -201,3 +201,11 @@ expected approval URL in a live begin/cancel smoke test with saved IDs preserved
 second-account authorization still requires owner browser approval. Account activation was checked with OpenCode v2.0.32,
 including a live same-account saved-session round trip with the original selection restored.
 [Official account commands](https://dev.opencode.ai/v2/docs/cli/commands/) document the activation API.
+
+### Switch lifecycle
+
+ChatGPT's panel Switch uses `codexbar-accounts.py switch <exact-id> --desktop`: confirms before editing,
+closes only the current user's ChatGPT executable, saves the departing login, swaps auth under the state lock,
+and reopens ChatGPT. Avoid signing out/revoking saved credentials, which would break fast switching.
+Claude's installed-app Switch uses `switch <number> --desktop` after confirmation. CodexBar stays running during
+both; deploy-codexbar.sh independently restarts the panel and daemon when loading a new build.

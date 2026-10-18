@@ -561,20 +561,21 @@ namespace MSeries {
             }
             var dialog = new Gtk.AlertDialog ("Switch to %s?", email);
             dialog.detail = ready
-                ? "Switch both restarts the Claude app and changes its sign-in and Claude Code's command-line login. Finish any running work in Claude first."
-                : "This account needs one sign-in in the Claude app before fast switching works. Set up app saves the current app login and restarts Claude at its sign-in screen. Finish any running work first, sign in to this account, then choose Save app login here. CLI only changes Claude Code's command-line login.";
-            dialog.buttons = { "Cancel", "CLI only", ready ? "Switch both" : "Set up app" };
+                ? "Claude will close and reopen with this account, and Claude Code's command-line login will change too. Finish running work first. CodexBar stays running."
+                : "This account needs one sign-in in the Claude app before fast switching works. Claude will reopen at its sign-in screen. Sign in to the account shown above, then reopen CodexBar to save it. Finish running work first.";
+            dialog.buttons = { "Cancel", ready ? "Switch Claude account" : "Set up app sign-in" };
             dialog.cancel_button = 0;
             dialog.default_button = 0;
             dialog.modal = false;
             dialog.choose.begin (null, null, (obj, res) => {
                 try {
-                    var choice = dialog.choose.end (res);
-                    if (choice == 1 || choice == 2 && ready) {
-                        switch_claude_account.begin (number, choice == 2);
-                    } else if (choice == 2) {
-                        run_saver.begin ({ "python3", helper_path ("codexbar-claude.py"), "app-login", number },
-                            "Sign in to the Claude app", "Couldn't set up the app login", true);
+                    if (dialog.choose.end (res) == 1) {
+                        if (ready) {
+                            switch_claude_account.begin (number, true);
+                        } else {
+                            run_saver.begin ({ "python3", helper_path ("codexbar-claude.py"), "app-login", number },
+                                "Sign in to the Claude app", "Couldn't set up the app login", true);
+                        }
                     }
                 } catch (Error e) { }
             });
@@ -813,10 +814,27 @@ namespace MSeries {
 
         /* Switch always answers on screen: success names the account, failure says why. Silence looked like "nothing happened". */
         private void run_accounts_helper (string[] arguments) {
-            switch_codex_account.begin (arguments);
+            if (arguments.length < 2 || codex_switch_in_flight) return;
+            var email = arguments[1].split ("|")[0];
+            var dialog = new Gtk.AlertDialog ("Switch ChatGPT to %s?", email);
+            dialog.detail = "ChatGPT will close and reopen with this account. Finish running work first; unsaved drafts may be lost. CodexBar stays running.";
+            dialog.buttons = { "Cancel", "Switch account" };
+            dialog.cancel_button = 0;
+            dialog.default_button = 0;
+            dialog.choose.begin (null, null, (obj, res) => {
+                try {
+                    if (dialog.choose.end (res) == 1 && !codex_switch_in_flight) {
+                        switch_codex_account.begin (arguments);
+                    }
+                } catch (Error e) { }
+            });
         }
 
+        private bool codex_switch_in_flight = false;
+
         private async void switch_codex_account (string[] arguments) {
+            if (codex_switch_in_flight) return;
+            codex_switch_in_flight = true;
             var ok = false;
             var message = "";
             try {
@@ -824,6 +842,7 @@ namespace MSeries {
                 foreach (var argument in arguments) {
                     command += argument;
                 }
+                command += "--desktop";
                 var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_MERGE);
                 string output;
                 yield process.communicate_utf8_async (null, null, out output, null);
@@ -838,6 +857,7 @@ namespace MSeries {
             } catch (Error e) {
                 message = e.message;
             }
+            codex_switch_in_flight = false;
             // The active account changed (or didn't): re-read quota and the account list from scratch.
             codex_accounts_fetched_us = 0;
             last_digest = "";
@@ -848,40 +868,10 @@ namespace MSeries {
                 tell ("Couldn't switch Codex account", message.length > 0 ? message : "The helper reported an error.");
                 return;
             }
-            if (arguments.length > 1) {
-                offer_chatgpt_restart.begin (arguments[1].split ("|")[0]);
-            }
+            tell ("Switched ChatGPT account", message);
         }
 
         private AccountDialog? codex_login_dialog = null;
-        /* The ChatGPT desktop app keeps the account it started with; only a relaunch picks up the new sign-in. */
-        private async void offer_chatgpt_restart (string email) {
-            try {
-                var check = new GLib.Subprocess.newv ({ "python3", helper_path ("codexbar-accounts.py"), "app-running" },
-                    SubprocessFlags.STDOUT_SILENCE | SubprocessFlags.STDERR_SILENCE);
-                yield check.wait_async (null);
-                if (!check.get_successful ()) {
-                    tell ("Switched Codex to " + email, "New Codex sessions and the ChatGPT app will use this account.");
-                    return;
-                }
-            } catch (Error e) {
-                return;
-            }
-            var dialog = new Gtk.AlertDialog ("%s", "Switched Codex to " + email);
-            dialog.detail = "The open ChatGPT window is still signed in as the previous account until it restarts. Restart it now to use " + email + "; unsaved drafts in it may be lost.";
-            dialog.buttons = { "Later", "Restart ChatGPT" };
-            dialog.cancel_button = 0;
-            dialog.default_button = 1;
-            dialog.modal = false;
-            dialog.choose.begin (null, null, (obj, res) => {
-                try {
-                    if (dialog.choose.end (res) == 1) {
-                        run_saver.begin ({ "python3", helper_path ("codexbar-accounts.py"), "restart-app" },
-                            "ChatGPT restarted", "Couldn't restart ChatGPT", true);
-                    }
-                } catch (Error e) { }
-            });
-        }
 
         private void add_codex_account () {
             if (codex_login_dialog != null) {
@@ -915,7 +905,7 @@ namespace MSeries {
                 var detail = account.has_member ("error") ? "unavailable" : "—";
                 var resets = account.has_member ("resetCredits") ? account.get_object_member ("resetCredits") : null;
                 box.append (build_account_line (email, detail,
-                    "Make %s the active Codex account. Restart running Codex sessions to use it.".printf (email)
+                    "Close and reopen ChatGPT with %s. CodexBar stays running.".printf (email)
                         + (account.get_boolean_member_with_default ("stale", false)
                             ? "\n\nShowing the previous quota: the latest refresh failed." : ""),
                     () => run_accounts_helper ({ "switch", account_id }), windows, hint_id ("codex", account), account.get_string_member_with_default ("plan", ""), true, resets));
