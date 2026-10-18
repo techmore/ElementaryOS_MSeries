@@ -1,5 +1,18 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## RepoBar port in progress — 2026-10-18
+
+The optional elementary OS port now has a native GTK/Wingpanel dashboard with
+search, dashboard/all/pinned/issue/PR/attention views, pin/hide controls, CI,
+release and recent activity summaries, API quota status, a CLI, private caches,
+and bounded local checkout scanning. Local sync requires explicit `--yes`, a
+clean attached branch, and fast-forward-only. The installer remains optional
+and uses the existing GitHub CLI login. The dashboard build and Python syntax
+check passed on 2026-10-18; the live Wingpanel appearance and authenticated
+GitHub data have not been observed on this host. UI parity follow-ups include
+traffic/cloner views, a heatmap visualization, multi-account controls, and
+per-repository submenus. See `mseries/REPOBAR-PORT.md`.
+
 ## Consistent CodexBar panel typography — 2026-10-18
 
 Owner approved the compact OpenCode appearance and requested the same text sizes for Codex/Claude.

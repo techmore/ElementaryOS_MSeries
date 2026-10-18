@@ -204,8 +204,8 @@
     },
     {
       "id": "upstream-people-watch",
-      "title": "Watched Omarchy M team and Apple-ecosystem projects have new pushes or releases",
-      "note": "2026-10-14: watches the people named in Omarchy's 'Introducing Omarchy M' post (installer, Omarchy Mac, packages, USB-C external displays, MLX, kernel tracing) plus Tether, BlueFerry, OpenBubbles and the iCloud Keychain clients. List and reasons: mseries/WATCHLIST.md and local-ai/people-watch.json. Passes when something changed since the last acknowledgement; read the list, then run `python3 ~/.local/share/mseries-verify/people-watch.py --ack`.",
+      "title": "Watched Apple-ecosystem projects and RepoBar have new pushes or releases",
+      "note": "2026-10-14: watches the people named in Omarchy's 'Introducing Omarchy M' post (installer, Omarchy Mac, packages, USB-C external displays, MLX, kernel tracing) plus Tether, BlueFerry, OpenBubbles, iCloud Keychain clients, and RepoBar as an elementary Wingpanel reference. List and reasons: mseries/WATCHLIST.md and local-ai/people-watch.json. Passes when something changed since the last acknowledgement; read the list, then run `python3 ~/.local/share/mseries-verify/people-watch.py --ack`.",
       "precondition": "python3 ~/.local/share/mseries-verify/people-watch.py",
       "command": "python3 ~/.local/share/mseries-verify/people-watch.py --list",
       "tags": [

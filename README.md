@@ -114,6 +114,7 @@ guard). Each is built from a pinned commit, version-gated and best-effort.
 Optional, not automatic: `elementary-mac-enhance --run --with firefox`, rounded screen corners
 (`mseries/install-gala-screen-corners.sh`), the Asahi speaker DSP (`mseries/install-pipewire-lv2.sh` then
 `install-audio-stack.sh --with-dsp`), and the Command/Ctrl key layout (`mseries/apply-desktop-settings.py`).
+For a native GitHub repository dashboard, see the optional [RepoBar-style elementary OS port](mseries/REPOBAR-PORT.md).
 
 ---
 
