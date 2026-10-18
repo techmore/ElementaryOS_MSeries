@@ -136,7 +136,9 @@ def collect(root, output, kernel_image, boot_image, kernel_log, duration=30, int
     if not entries or {entry.get("_BOOT_ID") for entry in entries} != {boot_id.replace("-", "")}:
         raise ValueError("kernel log must be journal JSON from exactly the observed boot")
     log = "\n".join(entry.get("MESSAGE", "") for entry in entries if isinstance(entry.get("MESSAGE", ""), str))
-    readiness = [line for line in log.splitlines() if re.search(r"PMP firmware and endpoint ready|PMP started|PMP manages fabric", line)]
+    readiness_patterns = ("PMP firmware and endpoint ready", "PMP started", "PMP manages fabric")
+    readiness = [line for line in log.splitlines() if any(term in line for term in readiness_patterns)]
+    pmp_ready = all(any(term in line for line in readiness) for term in readiness_patterns)
     severe = [line for line in log.splitlines() if re.search(r"Oops:|BUG:|Kernel panic|watchdog:.*lockup", line)]
     sensor, samples = power_sensor(root), []
     started = time.monotonic()
@@ -164,7 +166,7 @@ def collect(root, output, kernel_image, boot_image, kernel_log, duration=30, int
     idle = idle_delta(before_idle, idle_snapshot(root))
     checks = {
         "boot": {"result": "pass" if uptime >= 300 else "not-run", "scope": "running boot observed >=300 seconds; no recovery/soak claim", "uptime_s": uptime},
-        "pmp_ready": {"result": "pass" if len(readiness) >= 3 else "not-run", "scope": "firmware ready and PMGR ownership messages", "lines": readiness},
+        "pmp_ready": {"result": "pass" if pmp_ready else "not-run", "scope": "firmware ready and PMGR ownership messages", "lines": readiness},
         "cpu_idle_accounting": {"result": "pass" if idle and any(v["time_us"] > 0 for v in idle.values()) else "not-run", "scope": "nonnegative per-CPU idle-counter deltas; no efficiency improvement claim"},
         "kernel_severe_log": {"result": "fail" if severe else "pass", "scope": "selected severe messages in supplied current-boot log only", "lines": severe},
     }

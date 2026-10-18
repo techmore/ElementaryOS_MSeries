@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "base_source": "c46d7dcdb8712ea9aeb0ce47b439ffae76371e55",
-  "revision": 1,
+  "revision": 2,
   "source": {
     "repository": "aurora-silicon/linux",
     "commit": "582e9ef3d44c93082e8abc740ad3e0a8dde29752",
@@ -11,11 +11,31 @@
     "archive_root": "linux-aurora-582e9ef3d44c93082e8abc740ad3e0a8dde29752",
     "sha256": "47597a08b0d13cbace050ac16e0b5ad4b91fe3f0d307041bf7b6cec803b057fd"
   },
-  "kernel_release": {"unified72": "7.2.10-elementary-aurora72-wip1"},
+  "kernel_release": {
+    "unified72": "7.2.10-elementary-aurora72-wip1"
+  },
   "debian_package": "linux-image-elementary-aurora72-wip1",
   "debian_version": "7.2.10+elementary.aurora72.wip1-1",
-  "patches": [],
-  "config": {"candidate": {"UDMABUF": "y", "DMABUF_HEAPS": "y", "DMABUF_HEAPS_SYSTEM": "y"}},
-  "host_tests": ["tools/asahi/pmp-bootargs-tests.rs", "tools/asahi/pmp-power-tests.rs"],
+  "patches": [
+    {
+      "file": "0001-stock-bindgen-layout-policy.patch",
+      "sha256": "bba23efd3298c7f4fba31bde6a7a798b73fcbce7d07cb87683422d429615dedd",
+      "upstream": "https://github.com/omacom/linux-aurora/commit/4c56f9cd3033e5f65ef9c61bc7b396d50bce23f7",
+      "head": "4c56f9cd3033e5f65ef9c61bc7b396d50bce23f7",
+      "profile": "candidate",
+      "note": "Unmodified authored review fix from .20; applies cleanly to 7.2.10; stock bindgen default, opt-in layout checker retained"
+    }
+  ],
+  "config": {
+    "candidate": {
+      "UDMABUF": "y",
+      "DMABUF_HEAPS": "y",
+      "DMABUF_HEAPS_SYSTEM": "y"
+    }
+  },
+  "host_tests": [
+    "tools/asahi/pmp-bootargs-tests.rs",
+    "tools/asahi/pmp-power-tests.rs"
+  ],
   "qualification": "Pinned draft PR snapshot. Build candidate only; no local boot or battery improvement. Seed config is the fixed .20 recipe, resolved against 7.2.10; it is not upstream's Fedora-config hardware result."
 }

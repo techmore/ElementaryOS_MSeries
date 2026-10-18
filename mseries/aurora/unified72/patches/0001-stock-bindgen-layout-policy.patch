@@ -1,0 +1,249 @@
+From 4c56f9cd3033e5f65ef9c61bc7b396d50bce23f7 Mon Sep 17 00:00:00 2001
+From: Chris Kearney <303316+iconidentify@users.noreply.github.com>
+Date: Fri, 16 Oct 2026 23:33:57 -0700
+Subject: [PATCH] rust: restore --no-layout-tests, make layout checks opt-in
+
+Commit 97655bb70bc8 ("rust: check generated layouts and provide
+corrected private bindgen") dropped the upstream --no-layout-tests flag
+from cmd_bindgen. The generated bindings then carry bindgen's size,
+alignment and offset assertions, and stock bindgen cannot build the
+kernel any more: with the release configuration, `make prepare` fails
+on the size of ns_common, pid_namespace, user_namespace and
+cgroup_namespace with bindgen 0.73.2, and additionally task_struct,
+zone and pglist_data with 0.73.1. Our release recipe builds with the
+distribution's stock rust-bindgen, so the package build breaks.
+
+These are size-only mismatches at the end of the types: every offset
+and alignment assertion passes. The .19 release builds the same
+mismatches, with the assertions not generated.
+
+Pass --no-layout-tests again by default, as upstream does, so the
+bindgen command line matches .19 again. Building with
+`make BINDGEN_LAYOUT_TESTS=1` drops the flag and keeps the assertions,
+so the private generator in tools/aurora-bindgen can still be used to
+check a configuration. Update the documentation and the recipe's hint
+to describe that.
+
+Verified with the release configuration (olddefconfig), ARCH=arm64
+LLVM=1 W=1: `make prepare` and `make rust/` succeed with no warnings
+using /usr/bin/bindgen 0.73.1 and using unpatched upstream bindgen
+0.73.2. With BINDGEN_LAYOUT_TESTS=1 both stop with E0080 size errors on
+the types above; with the patched generator from tools/aurora-bindgen,
+all 36943 assertions build. Switching the variable regenerates the
+bindings.
+
+Signed-off-by: Chris Kearney <303316+iconidentify@users.noreply.github.com>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ Documentation/rust/bindgen-layout-checks.rst | 107 +++++++++++--------
+ rust/Makefile                                |  15 ++-
+ tools/aurora-bindgen/README.rst              |  28 +++--
+ tools/aurora-bindgen/build.py                |   2 +-
+ 4 files changed, 93 insertions(+), 59 deletions(-)
+
+diff --git a/Documentation/rust/bindgen-layout-checks.rst b/Documentation/rust/bindgen-layout-checks.rst
+index 8ad8c24526b672..aaac5b24fb742e 100644
+--- a/Documentation/rust/bindgen-layout-checks.rst
++++ b/Documentation/rust/bindgen-layout-checks.rst
+@@ -3,47 +3,66 @@
+ Checking generated binding layouts
+ ==================================
+ 
+-Kernel bindings retain bindgen's layout checks. With the configured Rust target,
+-these are unconditional constant assertions, checked while the bindings crate
+-is compiled. They compare Rust sizes, alignments and field offsets against the
+-values obtained from Clang, without executing kernel code.
+-
+-Do not disable these checks to make an incompatible binding generator compile.
+-A type can have the right size and still have incorrect member offsets. For
+-example, an empty GNU C struct may have size zero and alignment 64; losing that
+-alignment moves later fields in an enclosing struct without necessarily
+-changing the enclosing size.
+-
+-Known generator requirements
+-----------------------------
+-
+-Unmodified bindgen 0.73.2 loses explicit alignment on defined zero-sized C
+-structs. It also omits the named anonymous record member accepted by Clang's
+-``-fms-extensions`` in a declaration such as::
+-
+-    struct payload { unsigned long words[20]; };
+-    union container {
+-        struct payload;
+-        unsigned long other;
+-    };
+-
+-The generator used for this tree must preserve these layouts. Use a corrected
+-bindgen build through the normal ``BINDGEN=/path/to/bindgen`` make variable.
+-``tools/aurora-bindgen/`` contains pinned patches, a private build recipe and
+-compile-only valid-input tests. It never installs a system-wide tool. The
+-associated build provenance must retain the generator source revision,
+-patches, binary digest, and valid-input C/Rust layout checks. A version string
+-alone does not identify a locally corrected tool. Do not add dummy kernel
+-storage, hardcode task offsets, or change scheduler configuration to conceal a
+-binding generator error.
+-
+-After a binding layout correction, rebuild the kernel Image and all matching
+-modules. The generated bindings are consumed by the Rust kernel crate and by
+-multiple drivers; rebuilding just one module can leave incompatible layouts in
+-the same kernel. Keep the old Image and its own modules together as a fallback.
+-
+-The minimum accepted bindgen version is 0.71.1. Its Rust 1.77 ``offset_of``
+-feature enables unconditional const layout assertions; the configured Rust
+-target 1.85 selects that path rather than ``#[test]``-only functions. The pinned
+-0.73.2 tool has the same behavior. See the source links and explicit target
+-accounting in ``tools/aurora-bindgen/README.rst``.
++bindgen can emit compile-time assertions that compare the size, alignment and
++field offsets of every generated Rust type with the values Clang computes for
++the C type. As upstream, the kernel build passes ``--no-layout-tests`` to
++bindgen, so the generated bindings do not contain these assertions and any
++supported bindgen version can build the kernel.
++
++To check the layouts of a configuration, build with ``BINDGEN_LAYOUT_TESTS=1``::
++
++    make LLVM=1 BINDGEN_LAYOUT_TESTS=1 prepare
++
++The bindings are then generated with the assertions, which are checked while
++the ``bindings`` and ``uapi`` crates are compiled; nothing is executed. A
++mismatch stops the build with an ``E0080`` error naming the type and the
++property (``Size of``, ``Alignment of`` or ``Offset of``). Changing the
++variable regenerates the bindings. The check covers only the configuration
++being built.
++
++Known generator limitations
++---------------------------
++
++Unmodified bindgen 0.73 does not reproduce every C layout used by the kernel:
++
++* It omits a named anonymous record member, which Clang accepts with
++  ``-fms-extensions``, in a declaration such as::
++
++      struct payload { unsigned long words[20]; };
++      union container {
++          struct payload;
++          unsigned long other;
++      };
++
++* It can drop the explicit alignment of a defined zero-sized C struct, such
++  as ``struct empty {} __attribute__((aligned(64)));``.
++
++With the assertions enabled and stock bindgen 0.73.2, an arm64 Apple
++silicon configuration of this tree fails on the size of ``ns_common`` and of
++the namespace structures that embed it; bindgen 0.73.1 also fails on
++``task_struct``, ``zone`` and ``pglist_data``. In those builds every offset
++and alignment assertion passes: bindgen pads each field to the offset Clang
++reports, so only the end of the Rust type is short. Rust code that reaches
++such a type through a pointer and reads its fields gets the right data, but
++must not rely on ``size_of`` for it, copy it by value or index an array of
++it. The affected types depend on the bindgen version and the configuration,
++which is what the check is for.
++
++Corrected generator
++-------------------
++
++``tools/aurora-bindgen/`` contains pinned patches for bindgen 0.73.2 that
++repair both cases, a private build recipe and compile-only tests; see
++``tools/aurora-bindgen/README.rst``. It installs nothing system-wide. To check
++the layouts with it::
++
++    make LLVM=1 BINDGEN=/path/to/bindgen BINDGEN_LAYOUT_TESTS=1 ...
++
++The generated bindings are consumed by the Rust kernel crate and by several
++drivers. After changing the bindings generator, rebuild the kernel Image and
++all modules together.
++
++The assertions need bindgen 0.71.1 or later (the kernel minimum) together with
++the configured ``--rust-target 1.85``: that selects unconditional constant
++assertions rather than ``#[test]`` functions, so a build with
++``BINDGEN_LAYOUT_TESTS=1`` checks them without a Rust test configuration.
+diff --git a/rust/Makefile b/rust/Makefile
+index 2fee22bdb0e146..915d3a6f9e0b25 100644
+--- a/rust/Makefile
++++ b/rust/Makefile
+@@ -443,14 +443,23 @@ endif
+ # architecture instead of generating `usize`.
+ bindgen_c_flags_final = $(bindgen_c_flags_lto) -fno-builtin -D__BINDGEN__
+ 
++# Layout assertions are off by default, as upstream: stock bindgen 0.73
++# computes a different total size for a few kernel types, so the bindings
++# would not build with it. `make BINDGEN_LAYOUT_TESTS=1` keeps them, for
++# checking a bindings generator; see
++# Documentation/rust/bindgen-layout-checks.rst.
++ifeq ($(BINDGEN_LAYOUT_TESTS),1)
++bindgen_layout_flags :=
++else
++bindgen_layout_flags := --no-layout-tests
++endif
++
+ # `--rust-target` points to our minimum supported Rust version.
+-# Keep bindgen layout assertions enabled: a lost alignment can change field
+-# offsets without changing the containing type size. See Documentation/rust/
+-# bindgen-layout-checks.rst for generator requirements.
+ quiet_cmd_bindgen = BINDGEN $@
+       cmd_bindgen = \
+ 	$(BINDGEN) $< $(bindgen_target_flags) --rust-target 1.85 \
+ 		--use-core --with-derive-default --ctypes-prefix ffi \
++		$(bindgen_layout_flags) \
+ 		--no-debug '.*' --enable-function-attribute-detection \
+ 		-o $@ -- $(bindgen_c_flags_final) -DMODULE \
+ 		$(bindgen_target_cflags) $(bindgen_target_extra)
+diff --git a/tools/aurora-bindgen/README.rst b/tools/aurora-bindgen/README.rst
+index 2c560aa13f96e4..75d4c3a2480e74 100644
+--- a/tools/aurora-bindgen/README.rst
++++ b/tools/aurora-bindgen/README.rst
+@@ -25,7 +25,10 @@ locked dependency graph is used, with at most two build jobs. ``--archive`` can
+ supply an already downloaded source archive; its digest is still checked. The
+ script builds and runs compile-only valid-input checks, then prints the exact
+ ``BINDGEN=/absolute/path/to/bindgen`` make argument. It installs nothing globally.
+-Use that argument for the complete kernel Image and matching modules build.
++The kernel build passes ``--no-layout-tests`` to bindgen unless
++``BINDGEN_LAYOUT_TESTS=1`` is given, so add that variable to check layouts
++with the private tool, and build the complete kernel Image and matching
++modules with the same tool.
+ Both scripts reject optimized Python (``-O``, ``-OO`` or ``PYTHONOPTIMIZE``)
+ before creating output, since their validation assertions must remain enabled.
+ 
+@@ -67,14 +70,16 @@ generator, and its changes and both tool digests belong in the build record.
+ Repository guard and supported tool versions
+ --------------------------------------------
+ 
+-The kernel keeps bindgen layout checks enabled. Its minimum bindgen is 0.71.1,
+-and its fixed ``--rust-target 1.85`` enables the ``offset_of`` feature (available
+-from Rust 1.77). In both official 0.71.1 and the pinned 0.73.2 generator, that
+-feature selects unconditional const size/alignment/offset assertions rather
+-than ``#[test]`` functions. A normal bindings crate compile therefore checks
+-layouts without requiring a Rust unit-test configuration. This is source-backed
+-for the accepted minimum and pinned tool; future generator changes must retain
+-that capability. Never remove the assertions to accept an incompatible tool.
++By default the kernel passes ``--no-layout-tests``, as upstream, so stock
++bindgen builds it; ``make BINDGEN_LAYOUT_TESTS=1`` keeps the layout checks
++(see ``Documentation/rust/bindgen-layout-checks.rst``). Its minimum bindgen is
++0.71.1, and its fixed ``--rust-target 1.85`` enables the ``offset_of`` feature
++(available from Rust 1.77). In both official 0.71.1 and the pinned 0.73.2
++generator, that feature selects unconditional const size/alignment/offset
++assertions rather than ``#[test]`` functions. A bindings crate compile with
++``BINDGEN_LAYOUT_TESTS=1`` therefore checks layouts without requiring a Rust
++unit-test configuration. This is source-backed for the accepted minimum and
++pinned tool; future generator changes must retain that capability.
+ 
+ Primary sources:
+ 
+@@ -82,5 +87,6 @@ Primary sources:
+ * https://github.com/rust-lang/rust-bindgen/blob/v0.71.1/bindgen/codegen/mod.rs
+ * https://github.com/rust-lang/rust-bindgen/tree/v0.73.2
+ 
+-The complete kernel build remains the configuration-specific layout gate; these
+-small generator fixtures do not replace it or establish runtime GPU stability.
++A complete kernel build with ``BINDGEN_LAYOUT_TESTS=1`` remains the
++configuration-specific layout check; these small generator fixtures do not
++replace it or establish runtime GPU stability.
+diff --git a/tools/aurora-bindgen/build.py b/tools/aurora-bindgen/build.py
+index 5895a84a7b5c44..7aa222cc028bbe 100644
+--- a/tools/aurora-bindgen/build.py
++++ b/tools/aurora-bindgen/build.py
+@@ -22,4 +22,4 @@
+ cmd=['cargo','build','--locked','--release','-p','bindgen-cli','-j'+str(a.jobs)]
+ with (O/'build.log').open('w') as log:subprocess.run(cmd,cwd=S,stdout=log,stderr=subprocess.STDOUT,check=True)
+ binary=S/'target/release/bindgen';subprocess.run([sys.executable,str(P/'test.py'),'--bindgen',str(binary),'--output-dir',str(O/'tests')],check=True)
+-r={'status':'BUILT_AND_COMPILE_TESTED','binary':str(binary),'binary_sha256':sha(binary),'source_manifest_sha256':sha(P/'sources.json'),'build_command':cmd,'rustc_version':subprocess.check_output(['rustc','-vV'],text=True),'cargo_version':subprocess.check_output(['cargo','-vV'],text=True),'tests_manifest_sha256':sha(O/'tests/result.json'),'installed_globally':False};(O/'result.json').write_text(json.dumps(r,indent=2)+'\n');print(json.dumps(r,indent=2));print('Use make BINDGEN='+str(binary)+' ...; keep full kernel layout assertions enabled.')
++r={'status':'BUILT_AND_COMPILE_TESTED','binary':str(binary),'binary_sha256':sha(binary),'source_manifest_sha256':sha(P/'sources.json'),'build_command':cmd,'rustc_version':subprocess.check_output(['rustc','-vV'],text=True),'cargo_version':subprocess.check_output(['cargo','-vV'],text=True),'tests_manifest_sha256':sha(O/'tests/result.json'),'installed_globally':False};(O/'result.json').write_text(json.dumps(r,indent=2)+'\n');print(json.dumps(r,indent=2));print('Use make BINDGEN='+str(binary)+' BINDGEN_LAYOUT_TESTS=1 ... to build the kernel with layout assertions.')

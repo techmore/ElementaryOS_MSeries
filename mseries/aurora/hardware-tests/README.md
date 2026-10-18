@@ -14,6 +14,26 @@ Current recorded release:
 | `.20-enh1` / `-egpu` | ARM64 CI | Prior native builds passed; new integrated build checked by CI | Hardware untested |
 | `7.2.10-elementary-aurora72-wip1` | Pinned PR #139 snapshot | Prepared; 12 PMP production host tests passed; native build in CI | Hardware untested; upstream contributor reports remain separate |
 
+Additional local [smoke receipt](2026-10-18-j314s-aurora20-smoke.json), recorded
+after the exp1 freeze: the real Apple M1 Pro G13S C0 rendered a GLES shader and
+all 16 RGBA pixels read back correctly (Mesa 26.0.8); a 1 MiB temporary-file
+fsync/SHA256 readback also passed. These are scoped smoke tests, not GPU soak,
+full storage/suspend/recovery qualification, or power comparisons. Exp1's frozen
+assets and original tested-scope list remain unchanged; future evidence belongs
+to a new freeze ID.
+
+Reproduce without a display-mode change or destructive disk testing:
+
+```sh
+python3 mseries/hardware/kernel-smoke.py --receipt /absolute/work/j314s-test.json \
+  --work /absolute/work --output /absolute/work/j314s-smoke.json \
+  --kernel-image /boot/vmlinuz-aurora-sep-20261017.20 --boot-image /boot/m1n1/boot.bin
+```
+
+It requires a C compiler and EGL/GLES development files. It verifies the live
+boot, module/DTB and kernel/boot-file hashes and feature parameters before testing,
+and refuses a software renderer. Output receipts are never overwritten.
+
 ## Collect without changing the machine
 
 Save the current kernel journal as JSON into a private work directory. The

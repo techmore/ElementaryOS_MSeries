@@ -3,7 +3,12 @@ name: Aurora enhancement candidate
 on:
   pull_request:
     paths:
-      - "mseries/aurora/**"
+      - "mseries/aurora/candidate.py"
+      - "mseries/aurora/release.py"
+      - "mseries/aurora/release.json"
+      - "mseries/aurora/enhancements/**"
+      - "mseries/aurora/unified72/series.json"
+      - "mseries/aurora/unified72/patches/**"
       - ".github/workflows/aurora-enhancements.yml"
   workflow_dispatch:
     inputs:
@@ -36,7 +41,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y bc bison build-essential cpio flex libelf-dev libssl-dev \
             pahole clang-22 llvm-22 lld-22 libclang-22-dev bindgen zstd device-tree-compiler kmod rsync
-          rustup toolchain install 1.93.1 --profile minimal --component rust-src
+          rustup toolchain install 1.93.1 --profile minimal --component rust-src --component rustfmt
           echo /usr/lib/llvm-22/bin >> "$GITHUB_PATH"
       - name: Prepare pinned sources and patches
         env:
@@ -45,7 +50,7 @@ jobs:
           python3 -m unittest discover -s mseries/aurora -p 'test_*.py' -v
           python3 mseries/aurora/candidate.py prepare --cache "$RUNNER_TEMP/aurora-cache" \
             --output "$RUNNER_TEMP/aurora-prepared" --profile "$PROFILE"
-      - name: Exercise production thermal and battery-discovery logic
+      - name: Exercise selected production kernel logic
         env:
           RUSTUP_TOOLCHAIN: 1.93.1
         run: python3 mseries/aurora/candidate.py check --prepared "$RUNNER_TEMP/aurora-prepared"
@@ -79,6 +84,7 @@ jobs:
             ${{ runner.temp }}/aurora-prepared/candidate.json
             ${{ runner.temp }}/aurora-prepared/build/.config
           retention-days: 7
+          include-hidden-files: true
       - name: Preserve package, complete corresponding source and provenance
         uses: actions/upload-artifact@v4
         with:

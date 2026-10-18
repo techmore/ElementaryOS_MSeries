@@ -26,6 +26,13 @@ selected severe-log messages. **Frozen experimental exp1**, not stable. The
 The released `.20` binary was repackaged into a native payload-only .deb with
 corresponding source/recipe retained; no installation occurred.
 
+The experimental exp1 freeze is now published with ten remotely checksum-verified
+assets at `releases/tag/mseries-aurora20-j314s-2026.10.18-exp1`. Afterwards, the
+same live J314S kernel passed a surfaceless GLES shader / 16-pixel readback on
+Apple M1 Pro G13S C0 and a 1 MiB temporary-file fsync/hash smoke test. Separate
+supplemental receipt and reusable runner are retained; frozen exp1 is unchanged.
+Neither smoke test is labelled a full GPU/storage/suspend acceptance result.
+
 Stable promotion refuses missing cases, failed results, mixed identities,
 fewer than three boots/sleep cycles or unmatched energy pairs; frozen IDs are
 write-once. Hardware wake/storage/GPU/ports/thermal/recovery and paired energy
