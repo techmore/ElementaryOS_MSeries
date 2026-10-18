@@ -1,5 +1,39 @@
 # OS 9 implementation / Claude Code handoff
 
+## RESUME HERE — Aurora/Touch ID hang investigation — 2026-10-18 (Claude Code)
+
+**Problem:** every boot of the Aurora SEP kernel (`7.1.12-2-20261015.19-sep-ARCH`,
+GRUB entries `elementary-aurora-sep`, `-sep-clean`) hangs the whole machine within
+~15-60 s: mouse dies, then the Mac powers itself off about a minute later (looks
+like the SMC/PMU watchdog). Journal stops with no panic/oops (pstore empty).
+Dock is NOT required (happens undocked). Stock `7.1.13-3-2-ARCH` is stable on the
+same patched m1n1 DTB. The SEP does come up before the hang (firmware accepted,
+hwrng registered, `/dev/sep-bio` exists). No fingerprint enrolled yet. The dock
+(hub/mouse/Ethernet) does not work on Aurora (no fairydust USB4 code).
+
+**State of the machine right now:** default boot is stock. One-shot
+`grub-reboot elementary-aurora-nosep` was armed (Aurora with
+`module_blacklist=apple_sep`). A temporary journald drop-in
+`/etc/systemd/journald.conf.d/zz-aurora-freeze-hunt.conf` (1 s sync) is installed;
+remove it after the hunt. Touch ID app is installed ("Touch ID",
+`~/.local/bin/mseries-touchid-settings`); useless until Aurora runs stably.
+
+**Next steps, in order:**
+1. Result of the `nosep` boot: stable 10 min => the SEP driver causes the hang;
+   hangs => Aurora build itself or the ported fingerprint node.
+2. If still hanging: with owner approval, restore
+   `/boot/m1n1/boot.bin.pre-fingerprint-20261017-103254` (removes the ported
+   `spi@39b108000`/`fingerprint@0`; its clock/pinctrl phandles were flagged
+   unresolved at port time) and boot Aurora once.
+3. If SEP driver is guilty: report upstream (omacom/linux-aurora) with the logs in
+   AURORA-SECOND-BOOT.md; dock+Touch ID on one kernel is DeepSeek's area (kernel
+   work is DeepSeek's; coordinate via GitHub).
+4. Remove the journald drop-in when done.
+
+Full evidence and boot-by-boot table: [AURORA-SECOND-BOOT.md](AURORA-SECOND-BOOT.md);
+device-tree history: [aurora-touchid-state.md](aurora-touchid-state.md). Rollbacks:
+`/boot/grub/custom.cfg.pre-aurora-*`, `boot.bin.pre-*` in `/boot/m1n1/`.
+
 ## Aurora SEP kernel: first boot froze — 2026-10-17 (Claude Code)
 
 Booted `7.1.12-2-20261015.19-sep-ARCH` with the patched m1n1 DTB (SEP enabled +
