@@ -23,6 +23,34 @@ int main (string[] args) {
         assert (MSeries.Presentation.short_window_label ("Monthly", 0) == "30D");
         assert (MSeries.Presentation.short_window_label ("Session", 0) == "Session");
     });
+    GLib.Test.add_func ("/presentation/countdown", () => {
+        assert (MSeries.Presentation.countdown_text (0) == "");
+        assert (MSeries.Presentation.countdown_text (-5) == "");
+        assert (MSeries.Presentation.countdown_text (61) == "2m");
+        assert (MSeries.Presentation.countdown_text (3600) == "1h00m");
+        assert (MSeries.Presentation.countdown_text (4 * 3600 + 44 * 60 + 10) == "4h44m");
+        assert (MSeries.Presentation.countdown_text (6 * 86400 + 22 * 3600 + 59 * 60) == "6d22h");
+    });
+    GLib.Test.add_func ("/presentation/panel-count", () => {
+        assert (MSeries.Presentation.panel_count_text (120813143) == "121M");
+        assert (MSeries.Presentation.panel_count_text (9400000) == "9.4M");
+        assert (MSeries.Presentation.panel_count_text (1813153516) == "1.8B");
+    });
+    GLib.Test.add_func ("/presentation/binding-window", () => {
+        var parser = new Json.Parser ();
+        try {
+            parser.load_from_data ("[{\"remaining\":79},{\"remaining\":null},{\"remaining\":12},{\"remaining\":12}]");
+        } catch (Error e) {
+            assert_not_reached ();
+        }
+        assert (MSeries.Presentation.binding_window (parser.get_root ().get_array ()) == 2);
+        try {
+            parser.load_from_data ("[{\"remaining\":null},{}]");
+        } catch (Error e) {
+            assert_not_reached ();
+        }
+        assert (MSeries.Presentation.binding_window (parser.get_root ().get_array ()) == -1);
+    });
     GLib.Test.add_func ("/presentation/plan-label", () => {
         assert (MSeries.Presentation.plan_label ("prolite") == "Pro Lite");
         assert (MSeries.Presentation.plan_label ("pro") == "Pro");
