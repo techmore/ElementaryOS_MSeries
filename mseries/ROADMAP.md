@@ -1,5 +1,21 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Add Tasks from the panel — 2026-10-18
+
+The Tasks tab now has a compact title entry, Add button and writable-list selector.
+Enter or Add creates an undated task in the same EDS list as elementary Tasks.
+The default list is selected initially; explicit list choices persist while the
+panel runs. Pending saves block duplicate submissions and keep the popup open.
+Errors retain the draft, and unavailable/read-only lists cannot receive tasks.
+
+Debug and installed release builds pass all seventeen private plugin/EDS workflow
+groups. New coverage checks Enter/Add, correct-list persistence, literal titles,
+metadata, duplicate suppression and unavailable-list draft recovery. Real task
+and event comparisons are read-only; no personal task was created by tests.
+Six image-wiring checks pass. The release build is installed and Wingpanel reloaded.
+[Usage and tests](calendar/README.md#adding-tasks-in-the-panel).
+
+
 ## Complete Tasks from the panel — 2026-10-18
 
 Task rows now have accessible checkboxes that update the same EDS records as
