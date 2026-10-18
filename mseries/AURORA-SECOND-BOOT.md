@@ -234,3 +234,52 @@ What we checked (2026-10-18):
   Touch ID, and resume. Report to omacom/linux-aurora (issue #42 is the related
   M1 Pro SEP ticket) with the logs in this file, including the hard hang with the
   `apple_sep` driver loaded on `.19`.
+
+## The community installer's test plan, read (not run) — 2026-10-18
+
+Fetched `install-aurora-sep.sh` from the post's URL into a scratch directory and
+read it (sha256 `7956337789360242d06e0190e131e968b3cbbc9c10b23656a7e00da5698347ec`,
+old 11.2 build). It is an Omarchy/pacman installer (replaces `linux-asahi`, runs
+mkinitcpio/update-m1n1, adds a fallback GRUB entry); ours is elementary with a
+manual layout, so we mirror it by hand. Its `--agent-prompt` is a good test plan:
+
+1. **Identify the machine:** `/proc/device-tree/compatible`,
+   `chosen/asahi,os-fw-version` and `asahi,system-fw-version` (the sepOS version is
+   "the single most useful line"), `uname -r`, package versions.
+2. **m1n1 guard (M2+ only):** expect "SEP: sepOS already booted by iBoot"; on M1
+   (our j314s) the enclave is cold and m1n1 talks to it normally, no guard line.
+3. **Driver attach:** `modprobe apple_sep xart_writes=0 provision_keybag=0`;
+   pass = "attach: N endpoints advertised" with N >= 7 and `/dev/sep-bio`.
+4. If attach fails: A2I/I2A mailbox control registers (`devmem 0x396408110/114`
+   on t600x).
+5. Touch ID: `aurora-touchid-setup`, `fprintd-verify`, then sudo, polkit and lock
+   screen separately.
+6. Thunderbolt/DP: devices in `/sys/bus/thunderbolt/devices`, boot/hot-unplug/
+   replug on **both** ports, PCIe behind the dock, across suspend.
+7. Video decode; 8. final suspend/resume.
+Safety rules: confirm the owner can **DFU-restore** the Mac first (it touches the
+Secure Enclave); **do not pass `xart_writes=1` or `provision_keybag=1`** or run
+enrol/delete loops without written owner approval; never paste key material,
+serials or `mesa_calibration.bin`. Report format: one comment on the SEP PR
+(omacom/linux-aurora PR #7) with Machine / Firmware / Build / m1n1 guard /
+Thunderbolt headers, What worked / What did not / Logs; quote logs exactly, say what
+was not tested, name the dock and display mode.
+
+**Relevance to our hang:** the plan loads the driver by hand with
+`xart_writes=0 provision_keybag=0`, whereas our boots auto-load it through
+`apple-sep.service` with defaults (the driver logged an xART "writes ENABLE" line
+on every Aurora boot). The default path may do more (xART/anti-replay writes,
+keybag work) than the plan's cautious path. Cheap next test: on the `.20` nosep
+entry, `sudo modprobe apple_sep xart_writes=0 provision_keybag=0` by hand and see
+whether the hang disappears. Save work first.
+
+## /boot cleanup — 2026-10-18
+
+`/boot` was 96% full (22 MB free). Removed only `boot.bin.pre-sep-alias-20261017-102233`
+(an intermediate m1n1 state, superseded) and the 4 KB `._boot.bin` AppleDouble
+file. Every kernel/initramfs left is referenced by a GRUB entry, so nothing else was
+touched. Bigger savings need a decision: the three fairydust dptunnel test initramfs
+(`-dpin-clock`, `-dpin-controlled`, `-dptunnel-vrr`, ~29 MB each) belong to the
+DeepSeek kernel work; the `.19` Aurora kernel+initramfs (~59 MB) can go once `.20` is
+judged. Kept deliberately: `boot.bin.pre-sep` (the fallback-safe payload),
+`pre-fingerprint` (the bisect fallback), `pre-e4`.
