@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Rounded screen-corner masks on the built-in display (like macOS), via a patched Gala.
+# Rounded corners on the built-in display (like macOS), via a patched Gala:
+#  * rounded masks over the four screen corners (GALA_SCREEN_CORNER_RADIUS), and
+#  * rounded corners on every standard window (GALA_WINDOW_CORNER_RADIUS).
 #
-#   bash mseries/install-gala-screen-corners.sh [--radius N]   # build, install privately, enable for your session
+#   bash mseries/install-gala-screen-corners.sh [--radius N] [--window-radius N]
 #   bash mseries/install-gala-screen-corners.sh --disable      # go back to the stock Gala for your session
 #
 # SAFETY DESIGN
@@ -13,8 +15,9 @@
 #    starting, and stays on stock until you delete ~/.cache/mseries-gala-failed.
 #  * Takes effect at the next login (the compositor cannot be swapped inside a running session).
 #
-# Radius is in logical pixels (default 20; 0 hides the masks). Change it later by editing
-# GALA_SCREEN_CORNER_RADIUS in the drop-in below and logging out/in.
+# Radii are in logical pixels. Screen corners default to 20 (0 hides the masks); window
+# corners default to 12 (0 leaves windows square). Change them later by editing
+# GALA_SCREEN_CORNER_RADIUS / GALA_WINDOW_CORNER_RADIUS in the drop-in below and logging out/in.
 #
 # It also applies gala-panel-offset.patch, which lets a panel (the dock) ask the compositor to
 # slide along its edge (io_elementary_pantheon_panel_v1.set_offset, protocol v2). The Dock's
@@ -27,6 +30,7 @@ commit=f0791434ac40a50f2aec64700a47b3bb04145752   # elementary/gala matching gal
 dropin_dir=$HOME/.config/systemd/user/io.elementary.gala@wayland.service.d
 dropin=$dropin_dir/mseries-screen-corners.conf
 radius=20
+window_radius=12
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -36,6 +40,7 @@ while [[ $# -gt 0 ]]; do
       echo 'Disabled for your session (stock Gala at next login). The private build stays in '"$prefix"'.'
       exit 0 ;;
     --radius) radius=$2; shift 2 ;;
+    --window-radius) window_radius=$2; shift 2 ;;
     *) echo "Unknown option $1" >&2; exit 1 ;;
   esac
 done
@@ -68,6 +73,7 @@ git -C "$source_dir" remote add origin https://github.com/elementary/gala.git
 git -C "$source_dir" fetch -q --depth=1 origin "$commit"
 git -C "$source_dir" checkout -q --detach FETCH_HEAD
 git -C "$source_dir" apply "$repo/mseries/patches/gala-screen-corners.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/gala-window-corners.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/gala-panel-offset.patch"
 
 meson setup "$build_dir" "$source_dir" --prefix="$prefix" --libdir=lib --buildtype=release >/dev/null
@@ -106,16 +112,17 @@ sudo chmod 0755 "$launcher"
 
 mkdir -p "$dropin_dir"
 cat > "$dropin" <<EOF
-# ElementaryOS_MSeries: run the patched Gala (rounded screen corners) for this user's session only.
+# ElementaryOS_MSeries: run the patched Gala (rounded screen corners and windows) for this user's session only.
 # Delete this file (or run install-gala-screen-corners.sh --disable) and log out/in to revert.
 [Service]
 NotifyAccess=all
 Environment=GALA_SCREEN_CORNER_RADIUS=$radius
+Environment=GALA_WINDOW_CORNER_RADIUS=$window_radius
 ExecStart=
 ExecStart=$launcher
 EOF
 systemctl --user daemon-reload
 systemd-analyze --user verify io.elementary.gala@wayland.service 2>&1 | grep -v '^$' | head -3 || true
 
-echo "Installed. Log out and back in to see the rounded corners (radius ${radius}px)."
+echo "Installed. Log out and back in to see the rounded corners (screen ${radius}px, windows ${window_radius}px)."
 echo "Revert: bash mseries/install-gala-screen-corners.sh --disable   (or delete $dropin)"
