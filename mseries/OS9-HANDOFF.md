@@ -75,10 +75,13 @@ each category fetches only when expanded. Python syntax, the Vala/Meson build,
 and all eight authenticated endpoints passed. The merged module was installed
 with `sudo ninja -C /tmp/repobar-verify-codex install`; the user helper was
 copied and compared with the source, then Wingpanel was reloaded once and the
-indicator toggled open. The build emits a GTK CSS provider deprecation warning
-and generated C warnings. Traffic/cloner charts, a heatmap UI, multi-account UI,
-and launch-at-login controls remain outside this iteration; see
-`mseries/REPOBAR-PORT.md`.
+indicator toggled open. The follow-up replaces the text badge with a bundled
+theme-tintable GitHub mark in the hicolor symbolic icon theme; the installer
+refreshes that theme's cache and uninstall removes the icon. GTK's icon-theme
+lookup found it as a symbolic icon, and the reloaded Wingpanel maps the latest
+module. The build emits a GTK CSS provider deprecation warning and generated C
+warnings. Traffic/cloner charts, a heatmap UI, multi-account UI, and launch-at-
+login controls remain outside this iteration; see `mseries/REPOBAR-PORT.md`.
 
 ## Consistent CodexBar panel typography — 2026-10-18
 

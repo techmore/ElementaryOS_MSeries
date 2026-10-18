@@ -7,7 +7,7 @@ using Wingpanel;
 namespace MSeries {
     public class RepoBarIndicator : Wingpanel.Indicator {
         private Gtk.Box panel;
-        private Gtk.Label panel_label;
+        private Gtk.Image panel_icon;
         private Gtk.Label panel_counts_label;
         private Gtk.Box menu;
         private Gtk.Box repo_list;
@@ -32,9 +32,11 @@ namespace MSeries {
         construct {
             executable = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "mseries-repobar");
             panel = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 5);
-            panel_label = new Gtk.Label ("GH") { valign = Gtk.Align.CENTER };
-            panel_label.add_css_class ("mseries-repobar-icon");
-            panel.append (panel_label);
+            panel_icon = new Gtk.Image.from_icon_name ("github-symbolic") {
+                pixel_size = 16, valign = Gtk.Align.CENTER
+            };
+            panel_icon.add_css_class ("mseries-repobar-icon");
+            panel.append (panel_icon);
             panel_counts_label = new Gtk.Label ("…") { valign = Gtk.Align.CENTER };
             panel.append (panel_counts_label);
             panel.set_tooltip_text ("GitHub repositories · loading");
@@ -111,7 +113,7 @@ namespace MSeries {
                 ".mseries-repobar .ci-ok { color: @success_color; font-weight: 700; } " +
                 ".mseries-repobar .ci-warn { color: @warning_color; font-weight: 700; } " +
                 ".mseries-repobar .ci-bad { color: @error_color; font-weight: 700; } " +
-                ".mseries-repobar-icon { font-size: 14pt; }");
+                ".mseries-repobar-icon { color: @theme_fg_color; }");
             Gtk.StyleContext.add_provider_for_display (display, style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         }
 

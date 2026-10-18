@@ -15,6 +15,8 @@ implementation; no macOS source or binary is copied into this project.
   latest release, recent issue/PR/commit activity, and local branch health when
   a projects folder is configured. Repository and activity links open in the
   browser.
+- The panel badge is the GitHub mark rendered as a GTK symbolic icon, so it
+  follows the current theme's foreground color.
 - Each repository card has a compact GTK disclosure menu for issues, pull
   requests, workflow runs, releases, activity, commits, branches, and tags.
   Categories fetch their data only when expanded; links open the matching GitHub
@@ -70,4 +72,5 @@ snapshot in `~/.cache/mseries/repobar/` so the user can remove it separately.
 
 - Reference project: [steipete/RepoBar](https://github.com/steipete/RepoBar)
 - Linux implementation: `repobar.py` and `repobar-wingpanel/`
+- Wingpanel icon: GitHub mark path from [Simple Icons](https://github.com/simple-icons/simple-icons), whose GitHub entry points to [GitHub's logo assets](https://github.com/logos). The SVG is tintable for GTK's current theme; the mark remains GitHub's trademark.
 - Installer: `install-repobar-wingpanel.sh`
