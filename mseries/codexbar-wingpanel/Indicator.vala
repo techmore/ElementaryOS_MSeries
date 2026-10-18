@@ -789,8 +789,25 @@ namespace MSeries {
                 box.append (build_account_line (email, detail,
                     "Make %s the active Codex account. Restart running Codex sessions to use it.".printf (email),
                     () => run_accounts_helper ({ "switch", account_id }), windows, hint_id ("codex", account), account.get_string_member_with_default ("plan", "")));
+                var resets = account.has_member ("resetCredits") ? account.get_object_member ("resetCredits") : null;
+                if (resets != null) {
+                    box.append (build_reset_credits (resets, new DateTime.now_utc ().to_unix ()));
+                }
             }
             return box;
+        }
+
+        /* Available resets for a Codex account, with when the first one expires; red inside the last day. */
+        private Gtk.Widget build_reset_credits (Json.Object credits, int64 now_unix) {
+            var available = credits.get_int_member_with_default ("available", -1);
+            var expires = credits.get_string_member_with_default ("nextExpiresAt", "");
+            var when = expires.length > 0 ? new GLib.DateTime.from_iso8601 (expires, null) : null;
+            var seconds = when != null ? when.to_unix () - now_unix : 0;
+            var label = subtle_label (Presentation.reset_credits_line (available, seconds));
+            if (Presentation.reset_expiry_urgent (available, seconds)) {
+                label.add_css_class ("dot-bad");
+            }
+            return label;
         }
 
         private static string local_digest (Json.Object? usage) {
@@ -1390,6 +1407,10 @@ namespace MSeries {
                 card.append (subtle_label ("Provider status · " + status));
             }
             if (provider == "codex") {
+                var active_resets = entry.get_member ("resetCredits");
+                if (active_resets != null && active_resets.get_node_type () == Json.NodeType.OBJECT) {
+                    card.append (build_reset_credits (active_resets.get_object (), now_unix));
+                }
                 card.append (build_codex_accounts ());
             }
             if (provider == "opencodego") {

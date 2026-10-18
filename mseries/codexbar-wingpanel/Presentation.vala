@@ -215,5 +215,24 @@ namespace MSeries {
             var base_text = reset.length > 0 ? reset : "Reset time unknown";
             return state == EtaState.DEPLETING ? base_text + " · " + eta_detail : base_text;
         }
+
+        /* "2 resets" for an account line; empty when the count is unknown. */
+        public static string reset_count_text (int64 available) {
+            if (available < 0) return "";
+            return "%s %s".printf (available.to_string (), available == 1 ? "reset" : "resets");
+        }
+
+        /* "2 resets available · first expires in 3d4h"; the expiry is dropped when unknown or past. */
+        public static string reset_credits_line (int64 available, int64 seconds_to_expiry) {
+            if (available < 0) return "";
+            var text = "%s available".printf (reset_count_text (available));
+            var countdown = countdown_text (seconds_to_expiry);
+            return available > 0 && countdown.length > 0 ? text + " · first expires in " + countdown : text;
+        }
+
+        /* Within a day of the first reset expiring, use it or lose it. */
+        public static bool reset_expiry_urgent (int64 available, int64 seconds_to_expiry) {
+            return available > 0 && seconds_to_expiry > 0 && seconds_to_expiry < 86400;
+        }
     }
 }
