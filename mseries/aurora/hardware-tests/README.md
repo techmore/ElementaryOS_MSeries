@@ -43,6 +43,19 @@ hardware-qualified labels. The same Git history guard protects their IDs.
 [Native build evidence](../branch-audits/2026-10-18-native-builds.json) records
 both profiles and the exact `.20-enh1` source-tree match to host controls.
 
+## Next-boot trial now staged
+
+`.20-enh1` is one-shot armed; later boots default to the unchanged .20 fallback.
+The [staging proof](2026-10-18-j314s-enh1-staging.json) and
+[trial guide](../trial/README.md) describe the unchanged shared DTB/m1n1 chain,
+working unlock-userspace preservation, 93-module candidate initramfs and exact
+rollback. A new [baseline capture](2026-10-18-j314s-aurora20-pre-enh1.json) and
+[smoke receipt](2026-10-18-j314s-aurora20-pre-enh1-smoke.json) completed on .20.
+Median 24.46 W (p10 19.61/p90 30.36, n=121) is an active-session observation,
+not a controlled power baseline or improvement. Automatic post-login capture
+is enabled for the exact candidate/baseline identities. Candidate boot remains
+pending; no frozen assets or qualification labels were altered.
+
 ## Collect without changing the machine
 
 Save the current kernel journal as JSON into a private work directory. The

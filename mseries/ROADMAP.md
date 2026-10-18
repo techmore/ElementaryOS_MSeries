@@ -1,5 +1,15 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## .20-enh1 one-shot hardware trial staged — 2026-10-18
+
+[Trial and rollback guide](aurora/trial/README.md): next boot selects
+`elementary-aurora20-enh1`; later boots default to the retained .20 kernel.
+Matched J314S DTB/shared m1n1 payload and existing fallback files are unchanged.
+The first 120-second active-desktop baseline and GPU/filesystem smoke tests
+completed. Identity-pinned user capture runs automatically on the next trial
+boot after login/settling. Candidate boot, complete hardware/suspend/recovery
+and controlled AB/BA energy qualification remain open; no savings claimed.
+
 ## Power audit and dock status on `.20` — 2026-10-18
 
 [Power audit](power/AUDIT-2026-10-18.md): 19-22 W observed docked with two displays under an active desktop; no idle

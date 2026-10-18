@@ -1,5 +1,18 @@
 # Power and battery-life roadmap
 
+## Kernel trial and measurements started — 2026-10-18
+
+`.20-enh1` is staged and one-shot armed with .20 as the later-boot fallback.
+[Protocol and rollback](aurora/trial/README.md). A new 120-second .20 capture
+passed boot/PMP/idle and GPU/filesystem smoke checks: 24.46 W median, 19.61/30.36
+p10/p90, n=121, CPU 31.0% busy under normal owner activity. This is observational;
+no idle or kernel power saving follows. Next-boot automatic capture retains
+active refresh/topology, exact artifact/live-build identity and CPU activity.
+Formal comparisons require settled, matched app/session/control state on both
+kernels; other pending login changes make these first captures unsuitable as
+paired energy evidence. Suspend/recovery and three alternating AB/BA pairs
+remain future gates.
+
 ## Current Aurora implementation and qualification — 2026-10-18
 
 The owner's new kernel/release request authorizes the source port and frozen
