@@ -20,6 +20,10 @@ DIRECTORIES = (
     "mseries",
 )
 ROOT_FILES = ("Justfile", "mkosi.conf", "packages.arm64")
+RUST_CANDIDATE_PREFIXES = (
+    "mseries/rust/mseries-power/",
+    "mseries/rust/wifi-resume/",
+)
 EXTENSIONS = {
     ".c", ".cc", ".conf", ".cpp", ".desktop", ".diff", ".h", ".js",
     ".json", ".lock", ".meson", ".mjs", ".patch", ".policy", ".py",
@@ -82,7 +86,11 @@ def render() -> str:
             "ownership": "mseries-maintained" if local else "elementary-os-upstream",
             "language": LANGUAGES.get(path.suffix.lower(), "data"),
             "role": role(path),
-            "rust_status": "not-assessed" if local else "retain-upstream",
+            "rust_status": (
+                "candidate-parity-verified-not-installed"
+                if text.startswith(RUST_CANDIDATE_PREFIXES)
+                else "not-assessed" if local else "retain-upstream"
+            ),
         })
     document = {
         "schema": 1,

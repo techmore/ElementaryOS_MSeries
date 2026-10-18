@@ -13,7 +13,7 @@
     "mkosi.conf",
     "packages.arm64"
   ],
-  "item_count": 459,
+  "item_count": 463,
   "items": [
     {
       "id": "Justfile",
@@ -3405,7 +3405,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "candidate-parity-verified-not-installed"
     },
     {
       "id": "mseries/rust/mseries-power/Cargo.toml",
@@ -3413,7 +3413,7 @@
       "ownership": "mseries-maintained",
       "language": "data",
       "role": "configuration-or-data",
-      "rust_status": "not-assessed"
+      "rust_status": "candidate-parity-verified-not-installed"
     },
     {
       "id": "mseries/rust/mseries-power/src/main.rs",
@@ -3421,7 +3421,7 @@
       "ownership": "mseries-maintained",
       "language": "rust",
       "role": "implementation",
-      "rust_status": "not-assessed"
+      "rust_status": "candidate-parity-verified-not-installed"
     },
     {
       "id": "mseries/rust/mseries-power/tests/parity.rs",
@@ -3429,7 +3429,39 @@
       "ownership": "mseries-maintained",
       "language": "rust",
       "role": "verification",
-      "rust_status": "not-assessed"
+      "rust_status": "candidate-parity-verified-not-installed"
+    },
+    {
+      "id": "mseries/rust/wifi-resume/Cargo.lock",
+      "path": "mseries/rust/wifi-resume/Cargo.lock",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "candidate-parity-verified-not-installed"
+    },
+    {
+      "id": "mseries/rust/wifi-resume/Cargo.toml",
+      "path": "mseries/rust/wifi-resume/Cargo.toml",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "candidate-parity-verified-not-installed"
+    },
+    {
+      "id": "mseries/rust/wifi-resume/src/main.rs",
+      "path": "mseries/rust/wifi-resume/src/main.rs",
+      "ownership": "mseries-maintained",
+      "language": "rust",
+      "role": "implementation",
+      "rust_status": "candidate-parity-verified-not-installed"
+    },
+    {
+      "id": "mseries/rust/wifi-resume/tests/parity.rs",
+      "path": "mseries/rust/wifi-resume/tests/parity.rs",
+      "ownership": "mseries-maintained",
+      "language": "rust",
+      "role": "verification",
+      "rust_status": "candidate-parity-verified-not-installed"
     },
     {
       "id": "mseries/screenshot-shelf/mseries-markup.desktop",

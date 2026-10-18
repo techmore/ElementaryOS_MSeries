@@ -1,0 +1,13 @@
+[package]
+name = "mseries-wifi-resume"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Rust candidate for Apple Silicon Broadcom Wi-Fi resume recovery"
+license = "GPL-3.0-or-later"
+
+[[bin]]
+name = "mseries-wifi-resume-rs"
+path = "src/main.rs"
+
+[dependencies]
