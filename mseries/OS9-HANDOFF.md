@@ -13,6 +13,25 @@ filled-shape pull request / issue / commit symbolic icons in pills, activity row
 activity rows that show only the age. Rendered headless light/dark + Attention + Settings; deployed without restart.
 **Unverified:** live panel until Wingpanel reloads; a real notification on the owner's desktop.
 
+## Native Signal + system accent — 2026-10-18 (Claude Code)
+
+Owner asked for a native Signal (suggested a source port) with system colours instead of Signal's blue.
+No source port: Signal ships an official signed ARM64 Linux beta, already wired up by `install-signal.sh`.
+Updated it on this machine 8.31.0-beta.1 → **8.32.0-beta.1** (signature VALIDSIG 4B16…D94C); the owner's
+account still lives in the Flatpak 8.31.0. New `migrate-signal-flatpak.sh` moves the profile (refuses while
+either Signal runs, skips caches/locks, hides the Flatpak launcher, keeps Flatpak data, `--rollback` sets the
+native profile aside). Tested migrate/re-run guard/rollback in a fake home; dry run on the real profile (79M)
+correctly refuses while the Flatpak runs. `signal-accent.py` recolours Signal's ultramarine family, the 2024
+brand blue `#3b45fd` and SVGs in place in `app.asar` (same-length replacements, integrity hashes recomputed,
+original kept as `app.asar.orig`); run from `install-signal-integration.sh` on every update. Applied here
+(265 uses, 26 files, accent `#3689e6`); Xvfb screenshot with a throwaway profile shows the link and logo in
+the accent. **Migrated 21:09** (owner approved): Flatpak was already closed; 79M copied, native 8.32.0-beta.1 opened,
+schema 1830 unchanged, existing sessions decrypt, key moved to `gnome_libsecret`. Only error: the built-in
+updater cannot watch `.signal-postinst` (expected; updates come from `install-signal.sh`). The Flatpak profile
+(plaintext key) stays as a stale backup. **Unverified:** the logged-in
+UI in the accent, and whether drops from the screenshot shelf reach native Signal (it is Wayland-native, the
+shelf is XWayland).
+
 ## CodexBar inclusive15% quota display — 2026-10-18
 
 Owner clarified that Claude must reveal the bold red written percentage at15%

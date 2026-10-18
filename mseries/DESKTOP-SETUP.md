@@ -134,9 +134,20 @@ Signal's unread badge and activates the app when clicked. Install the optional
 Wingpanel StatusNotifier host with `bash mseries/install-signal-wingpanel.sh`;
 log out and back in to load the indicator. New message notifications continue
 to use elementary's Notification Center. The AppImage requires FUSE and
-supports automatic updates. Phone linking remains a user step: open Signal,
+supports automatic updates. `mseries/signal-accent.py` recolours Signal's blue to the
+elementary accent (system accent by default; `--accent`, `--check`, `--restore`); the integration
+step runs it, so a Signal update plus `install-signal-integration.sh` re-applies it. Restart
+Signal to see a change. Not applied to `--atomic` releases. Phone linking remains a user step: open Signal,
 then scan its QR code from Signal on your phone.
 Source: https://community.signalusers.org/t/beta-test-signal-desktop-for-linux-arm64/76184
+
+**Moving from the Flatpak.** `bash mseries/migrate-signal-flatpak.sh` copies the Flatpak account
+(`~/.var/app/org.signal.Signal/config/Signal`) to the native beta (`~/.config/Signal Beta`) so history and
+the device link carry over, then hides the Flatpak launcher. Quit both Signals first (the script refuses
+otherwise); `--check` previews; `--rollback` shows the Flatpak again and sets the native profile aside. The
+copy is the same linked device, so never run both. The native beta must be at least the Flatpak's version
+(Signal's database only migrates forward). Why native: the Flatpak has no filesystem access, so files dragged
+in from host apps are unreadable inside its sandbox.
 
 ## Tether: iPhone messages and OTP handoff
 
