@@ -17,6 +17,8 @@ def tracked_tip(get, repo, branch):
             detail = json.loads(error.read(8193))
         except (ValueError, OSError):
             raise error
+        finally:
+            error.close()
         if detail.get('message') != 'No commit found for SHA: ' + branch:
             raise error
         return None
