@@ -5,6 +5,7 @@ Upstream CodexBar drives the same tool on macOS; here we call it ourselves so th
 show every saved Claude login with its quota and switch between them.
 
   codexbar-claude.py list             accounts as JSON (no tokens)
+  codexbar-claude.py add              save the signed-in Claude Code login
   codexbar-claude.py switch <number>  make a saved account the active one
 
 claude-swap (MIT, realiti4/claude-swap) lives in ~/.local/share/claude-swap-venv; cswap is linked into ~/.local/bin.
@@ -104,17 +105,39 @@ def switch(cli: str | None, number: str) -> tuple[bool, str]:
     return False, str(result.get("reason") or "Nothing was switched.")
 
 
+def add(cli: str | None) -> tuple[bool, str]:
+    """Save the signed-in Claude Code login into claude-swap, with a message a person can act on."""
+    if not cli:
+        return False, "claude-swap is not installed."
+    try:
+        result = subprocess.run([cli, "add"], capture_output=True, text=True, timeout=60,
+                                env={**os.environ, "NO_COLOR": "1"}, check=False)
+    except (OSError, subprocess.SubprocessError):
+        return False, "claude-swap could not run."
+    text = (result.stdout + result.stderr).strip()
+    if "No credentials found" in text:
+        return False, ("Claude Code has no saved sign-in on this computer yet. Sign in with the Claude Code "
+                       "command line (run `claude` and log in), then try again.")
+    if result.returncode != 0:
+        return False, text.splitlines()[-1] if text else "claude-swap could not save the login."
+    return True, text.splitlines()[-1] if text else "Saved."
+
+
 def main(arguments: list[str]) -> int:
     command = arguments[0] if arguments else "list"
     cli = cswap_path()
     if command == "list":
         print(json.dumps(listing(cli)))
         return 0
+    if command == "add":
+        ok, message = add(cli)
+        print(message, file=sys.stdout if ok else sys.stderr)
+        return 0 if ok else 1
     if command == "switch" and len(arguments) > 1:
         ok, message = switch(cli, arguments[1])
         print(json.dumps({"ok": ok, "message": message}))
         return 0 if ok else 1
-    print("usage: codexbar-claude.py list | switch <number>", file=sys.stderr)
+    print("usage: codexbar-claude.py list | add | switch <number>", file=sys.stderr)
     return 2
 
 

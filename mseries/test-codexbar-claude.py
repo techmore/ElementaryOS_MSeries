@@ -52,6 +52,17 @@ class ClaudeTest(unittest.TestCase):
         with mock.patch.object(MODULE, "run", return_value=None):
             self.assertFalse(MODULE.switch("cswap", "1")[0])
 
+    def test_add_explains_a_missing_login_and_reports_success(self):
+        missing = mock.Mock(stdout="", stderr="Error: No credentials found for current account", returncode=0)
+        with mock.patch.object(MODULE.subprocess, "run", return_value=missing):
+            ok, message = MODULE.add("cswap")
+        self.assertFalse(ok)
+        self.assertIn("Sign in with the Claude Code command line", message)
+        saved = mock.Mock(stdout="Account 1 saved", stderr="", returncode=0)
+        with mock.patch.object(MODULE.subprocess, "run", return_value=saved):
+            self.assertEqual(MODULE.add("cswap"), (True, "Account 1 saved"))
+        self.assertFalse(MODULE.add(None)[0])
+
     def test_reset_text_edges(self):
         self.assertEqual(MODULE.reset_text("2026-10-18T11:00:00Z", NOW), "Resetting now")
         self.assertEqual(MODULE.reset_text("2026-10-18T12:20:00Z", NOW), "Resets in 20m")

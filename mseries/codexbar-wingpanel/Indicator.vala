@@ -450,15 +450,62 @@ namespace MSeries {
             }
         }
 
-        private void add_claude_account () {
-            // Sign in to Claude Code first; this saves whichever login is active into claude-swap.
+        /* Adding an account needs a browser sign-in we can't drive, so ask in a small native dialog instead of a terminal. */
+        private void ask_to_save (string heading, string detail, string save_label, owned ActionFunc on_save) {
+            var dialog = new Gtk.AlertDialog ("%s", heading);
+            dialog.detail = detail;
+            dialog.buttons = { "Cancel", save_label };
+            dialog.cancel_button = 0;
+            dialog.default_button = 1;
+            dialog.modal = false;
+            dialog.choose.begin (null, null, (obj, res) => {
+                try {
+                    if (dialog.choose.end (res) == 1) {
+                        on_save ();
+                    }
+                } catch (Error e) {
+                    // dismissed
+                }
+            });
+        }
+
+        private void tell (string heading, string detail) {
+            var dialog = new Gtk.AlertDialog ("%s", heading);
+            dialog.detail = detail;
+            dialog.buttons = { "OK" };
+            dialog.modal = false;
+            dialog.choose.begin (null, null, (obj, res) => {
+                try { dialog.choose.end (res); } catch (Error e) { }
+            });
+        }
+
+        private async void run_saver (string[] command, string ok_heading, string failure_heading) {
             try {
-                new GLib.Subprocess (SubprocessFlags.NONE, "xdg-terminal-exec", "sh", "-c",
-                    "cswap add; printf '\\nPress Enter to close. '; read -r _");
+                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_MERGE);
+                string output;
+                yield process.communicate_utf8_async (null, null, out output, null);
+                if (process.get_successful ()) {
+                    tell (ok_heading, "It now appears under Accounts.");
+                } else {
+                    tell (failure_heading, output.strip ().length > 0 ? output.strip () : "The helper reported an error.");
+                }
             } catch (Error e) {
-                subtitle_label.set_text ("Could not open a terminal: " + e.message);
+                tell (failure_heading, e.message);
             }
+            codex_accounts_fetched_us = 0;
             claude_fetched_us = 0;
+            last_digest = "";
+            refresh_codex_accounts.begin ();
+            refresh_claude.begin ();
+        }
+
+        private void add_claude_account () {
+            ask_to_save ("Add a Claude account",
+                "Sign in to Claude Code with the account you want to add, then choose Save login. CodexBar keeps it so you can switch between accounts from here.",
+                "Save login", () => {
+                    run_saver.begin ({ "python3", helper_path ("codexbar-claude.py"), "add" },
+                        "Claude login saved", "Couldn't save the Claude login");
+                });
         }
 
         private Gtk.Widget build_claude_card (int64 now_unix) {
@@ -549,21 +596,12 @@ namespace MSeries {
         }
 
         private void add_codex_account () {
-            // Remember the signed-in account first, then let `codex login` sign in the next one.
-            try {
-                var save = new GLib.Subprocess (SubprocessFlags.STDOUT_SILENCE | SubprocessFlags.STDERR_SILENCE,
-                    "python3", helper_path ("codexbar-accounts.py"), "save");
-                save.wait_async.begin (null, () => {
-                    try {
-                        new GLib.Subprocess (SubprocessFlags.NONE, "xdg-terminal-exec", "codex", "login");
-                    } catch (Error e) {
-                        subtitle_label.set_text ("Could not open a terminal: " + e.message);
-                    }
-                    codex_accounts_fetched_us = 0;
+            ask_to_save ("Add a ChatGPT account",
+                "Your current account is already remembered. Sign in to the other account in Codex, then choose Save account. You can switch back from the panel at any time.",
+                "Save account", () => {
+                    run_saver.begin ({ "python3", helper_path ("codexbar-accounts.py"), "save" },
+                        "Codex account saved", "Couldn't save the Codex account");
                 });
-            } catch (Error e) {
-                subtitle_label.set_text ("Could not save the current account: " + e.message);
-            }
         }
 
         private Gtk.Widget build_codex_accounts () {
