@@ -38,8 +38,18 @@ for_you = {"reviews": {"count": 2, "items": [
     {"title": "Fix dock focus on resume", "number": 14, "url": "https://github.com/example/dock/pull/14", "repo": "example/dock"}]},
     "assigned": {"count": 7, "items": [
     {"title": "Display link training times out on the dock", "number": 3, "url": "https://github.com/example/kernel-notes/issues/3", "repo": "example/kernel-notes"}]}}
+import random
+random.seed(7)
+weeks = []
+for w in range(53):
+    week = []
+    for d in range(7 if w else 3):
+        level = random.choice([0, 0, 1, 1, 2, 3, 4]) if w > 8 else random.choice([0, 0, 0, 1])
+        week.append(["2025-10-%02d" % (1 + d), level * 9, level])
+    weeks.append(week)
+contributions = {"total": 5279, "weeks": weeks}
 scenarios = {
-    "healthy": {**base, "repos": repos, "forYou": for_you},
+    "healthy": {**base, "repos": repos, "forYou": for_you, "contributions": contributions},
     "quiet": {**base, "repos": repos},
     "empty": {**base, "repos": []},
     "error": {**base, "repos": repos[:3], "stale": True, "error": "gh: HTTP 502 from api.github.com"},

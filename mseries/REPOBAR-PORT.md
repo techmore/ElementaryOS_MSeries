@@ -26,6 +26,8 @@ implementation; no macOS source or binary is copied into this project.
   keep their own useful width and hierarchy.
 - A globe beside the repository name opens its GitHub Pages site (custom
   domains included), or the repository's website when it has no Pages site.
+- A contribution graph (GitHub's calendar, accent-shaded, hover for each day)
+  sits at the top of the dashboard; turn it off in RepoBar Settings.
 - A For You card leads the dashboard with pull requests waiting on your review
   and issues assigned to you. Optional desktop notifications announce a default
   branch that starts failing CI or passes again (RepoBar Settings → Notifications).
@@ -49,7 +51,7 @@ implementation; no macOS source or binary is copied into this project.
   and local scan root/depth are configurable with the CLI.
 
 This port implements the repository dashboard and CLI surfaces, not every
-macOS-only interaction. Visitor/cloner traffic, the contribution heatmap UI,
+macOS-only interaction. Visitor/cloner traffic,
 multi-account UI, and a launch-at-login preference pane are not yet represented
 in Wingpanel. The CLI exposes a raw commit-activity endpoint. Upstream changes
 are never merged automatically; preserve this project's Pantheon UI and Linux

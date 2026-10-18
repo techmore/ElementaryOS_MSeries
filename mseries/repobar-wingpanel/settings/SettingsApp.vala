@@ -146,6 +146,13 @@ namespace MSeries {
             return sw;
         }
 
+        /* Like toggle, for preferences that default to on. */
+        private Gtk.Switch toggle_on (string member, string key) {
+            var sw = toggle (member, key);
+            if (!settings.has_member (member)) { loading = true; sw.active = true; loading = false; }
+            return sw;
+        }
+
         private Gtk.DropDown choice (string member, string key, string[] values, string[] labels) {
             var dropdown = new Gtk.DropDown (new Gtk.StringList (labels), null);
             string current = settings.has_member (member) ? settings.get_member (member).get_value ().strdup_contents ().replace ("\"", "") : "";
@@ -225,6 +232,7 @@ namespace MSeries {
             add_row (dashboard, row ("Sort other lists by", "Pinned, Attention and All",
                 choice ("menuSort", "menu-sort", { "activity", "prs", "issues", "stars", "repo" },
                     { "Recent activity", "Pull requests", "Issues", "Stars", "Name" })));
+            add_row (dashboard, row ("Contribution graph", "Your activity over recent weeks", toggle_on ("showContributions", "show-contributions")));
             add_row (dashboard, row ("Show forks", null, toggle ("showForks", "show-forks")));
             add_row (dashboard, row ("Show archived repositories", null, toggle ("showArchived", "show-archived")));
             return dashboard;

@@ -49,6 +49,7 @@ namespace MSeries {
         private string last_render_key = "";
         private int64 last_notified_fetch = 0;
         private bool notify_ci = true;
+        private bool show_contributions = true;
 
         public RepoBarIndicator () {
             GLib.Object (code_name: "repobar");
@@ -63,12 +64,12 @@ namespace MSeries {
             var mark = new Gtk.Image.from_icon_name ("github-symbolic") { pixel_size = 16, valign = Gtk.Align.CENTER };
             mark.add_css_class ("repo-mark");
             panel.append (mark);
+            // GitHub's own pull request and issue marks label the two counts.
+            panel.append (new Gtk.Image.from_icon_name (kind_icon ("pull")) { pixel_size = 12, valign = Gtk.Align.CENTER, margin_start = 2 });
             panel_prs = new Gtk.Label ("…") { valign = Gtk.Align.CENTER };
             panel_prs.add_css_class ("seg-value");
             panel.append (panel_prs);
-            var divider = new Gtk.Separator (Gtk.Orientation.VERTICAL);
-            divider.add_css_class ("seg-divider");
-            panel.append (divider);
+            panel.append (new Gtk.Image.from_icon_name (kind_icon ("issue")) { pixel_size = 12, valign = Gtk.Align.CENTER, margin_start = 4 });
             panel_issues = new Gtk.Label ("") { valign = Gtk.Align.CENTER };
             panel_issues.add_css_class ("seg-value");
             panel.append (panel_issues);
@@ -214,6 +215,8 @@ namespace MSeries {
             restore_ui_state ();
             watch_settings ();
             show_state ("content-loading-symbolic", "Loading repositories…", "", false);
+            // Draw the last cached snapshot at once; the helper's answer replaces it when it arrives.
+            render_cached ();
             schedule_refresh (300);
             load_snapshot ();
         }
@@ -256,6 +259,7 @@ namespace MSeries {
                 ".mseries-repobar .pinned-star { color: #d4a300; } " +
                 ".mseries-repobar .section-title { font-weight: 700; font-size: 8pt; opacity: 0.75; } " +
                 ".mseries-repobar .for-you { background: alpha(@accent_color, 0.08); } " +
+                ".mseries-repobar .contribution-graph { color: @accent_color; } " +
                 ".mseries-repobar button.site-link { opacity: 0.6; padding: 0 2px; } " +
                 ".mseries-repobar button.site-link:hover, .mseries-repobar button.site-link:focus { opacity: 1; color: @accent_color; } " +
                 ".mseries-repobar button.pin-off { opacity: 0; } " +
@@ -451,6 +455,7 @@ namespace MSeries {
                 sort_order = settings.get_string_member_with_default ("menuSort", "activity");
                 schedule_refresh ((uint) settings.get_int_member_with_default ("refreshInterval", 300));
                 notify_ci = settings.get_boolean_member_with_default ("notifyCi", true);
+                show_contributions = settings.get_boolean_member_with_default ("showContributions", true);
             }
             if (error.length == 0 && fetched_at > last_notified_fetch) {
                 last_notified_fetch = fetched_at;
@@ -513,6 +518,11 @@ namespace MSeries {
                     error.length > 0 ? error : "This GitHub account has no repositories RepoBar can read.", false);
                 return;
             }
+            if (scope == 0 && filter == 0 && search_entry.get_text ().strip ().length == 0 && show_contributions &&
+                has_object (snapshot, "contributions")) {
+                var graph = build_contributions (snapshot.get_object_member ("contributions"));
+                if (graph != null) repo_list.append (new Gtk.ListBoxRow () { child = graph, activatable = false });
+            }
             // For You leads the dashboard: pull requests waiting on your review and issues assigned to you.
             if (scope == 0 && filter == 0 && search_entry.get_text ().strip ().length == 0 && snapshot.has_member ("forYou")) {
                 var for_you = build_for_you (snapshot.get_object_member ("forYou"));
@@ -563,8 +573,8 @@ namespace MSeries {
         }
 
         private void update_panel (int prs, int issues, int failing, int repo_count, bool stale) {
-            panel_prs.set_text ("%d PR".printf (prs));
-            panel_issues.set_text ("%d".printf (issues) + (issues == 1 ? " issue" : " issues"));
+            panel_prs.set_text (prs.to_string ());
+            panel_issues.set_text (issues.to_string ());
             panel_alert.set_visible (failing > 0);
             if (stale) panel.add_css_class ("stale"); else panel.remove_css_class ("stale");
             panel.set_tooltip_text ("GitHub%s · %d repositories · %d open pull requests · %d open issues%s%s\nMiddle-click to refresh".printf (
@@ -667,6 +677,46 @@ namespace MSeries {
             list_overlay.add_overlay (next);
             toast = next;
             next.send_notification ();
+        }
+
+        private Gtk.Widget? build_contributions (Json.Object contributions) {
+            if (!contributions.has_member ("weeks")) return null;
+            var weeks = contributions.get_array_member ("weeks");
+            if (weeks.get_length () == 0) return null;
+            var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
+            card.add_css_class ("repo-card");
+            var head = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            var title = new Gtk.Label ("Contributions") { xalign = 0, hexpand = true };
+            title.add_css_class ("section-title");
+            head.append (title);
+            int64 total = contributions.get_int_member_with_default ("total", 0);
+            int64 week_total = 0;
+            var last = weeks.get_array_element (weeks.get_length () - 1);
+            for (uint i = 0; i < last.get_length (); i++) week_total += last.get_array_element (i).get_int_element (1);
+            var summary = new Gtk.Label ("%s this week · %s this year".printf (group_digits (week_total), group_digits (total)));
+            summary.add_css_class ("caption");
+            summary.add_css_class ("dim-label");
+            summary.add_css_class ("numeric");
+            head.append (summary);
+            card.append (head);
+            var graph = new ContributionGraph (weeks);
+            card.append (graph);
+            card.set_cursor_from_name ("pointer");
+            card.set_tooltip_text (null);
+            var click = new Gtk.GestureClick () { button = 1 };
+            click.released.connect (() => open_url ("https://" + host + "/" + account, card));
+            card.add_controller (click);
+            return card;
+        }
+
+        private static string group_digits (int64 value) {
+            string digits = value.to_string ();
+            var grouped = new StringBuilder ();
+            for (int i = 0; i < digits.length; i++) {
+                if (i > 0 && (digits.length - i) % 3 == 0) grouped.append_c (',');
+                grouped.append_c (digits[i]);
+            }
+            return grouped.str;
         }
 
         private Gtk.Widget? build_for_you (Json.Object for_you) {
@@ -1341,6 +1391,77 @@ namespace MSeries {
         }
 
         public override void closed () {
+        }
+    }
+}
+
+namespace MSeries {
+    /* GitHub's contribution calendar: one column per week (newest at the right), as many weeks as fit,
+     * shaded from the accent colour; hovering a day names its date and count. */
+    internal class ContributionGraph : Gtk.DrawingArea {
+        private const int CELL = 9;
+        private const int GAP = 2;
+        private Json.Array weeks;
+
+        public ContributionGraph (Json.Array weeks) {
+            this.weeks = weeks;
+            add_css_class ("contribution-graph");
+            content_height = 7 * (CELL + GAP) - GAP;
+            hexpand = true;
+            has_tooltip = true;
+            set_draw_func (draw);
+            query_tooltip.connect (on_tooltip);
+        }
+
+        private int visible_weeks (int width) {
+            return int.min ((int) weeks.get_length (), (width + GAP) / (CELL + GAP));
+        }
+
+        private void draw (Gtk.DrawingArea area, Cairo.Context cr, int width, int height) {
+            var color = get_color ();
+            int shown = visible_weeks (width);
+            int offset = width - (shown * (CELL + GAP) - GAP);
+            uint first = weeks.get_length () - shown;
+            double[] alphas = { 0.1, 0.35, 0.55, 0.78, 1.0 };
+            for (int w = 0; w < shown; w++) {
+                var week = weeks.get_array_element (first + w);
+                for (uint d = 0; d < week.get_length (); d++) {
+                    // GitHub's first week can start mid-week; place days by weekday so rows line up.
+                    var day = week.get_array_element (d);
+                    int row = week.get_length () < 7 && w == 0 ? (int) (7 - week.get_length () + d) : (int) d;
+                    int level = (int) day.get_int_element (2).clamp (0, 4);
+                    cr.set_source_rgba (color.red, color.green, color.blue, alphas[level]);
+                    rounded (cr, offset + w * (CELL + GAP), row * (CELL + GAP), CELL, CELL, 2);
+                    cr.fill ();
+                }
+            }
+        }
+
+        private static void rounded (Cairo.Context cr, double x, double y, double w, double h, double r) {
+            cr.new_sub_path ();
+            cr.arc (x + w - r, y + r, r, -Math.PI / 2, 0);
+            cr.arc (x + w - r, y + h - r, r, 0, Math.PI / 2);
+            cr.arc (x + r, y + h - r, r, Math.PI / 2, Math.PI);
+            cr.arc (x + r, y + r, r, Math.PI, 3 * Math.PI / 2);
+            cr.close_path ();
+        }
+
+        private bool on_tooltip (int x, int y, bool keyboard, Gtk.Tooltip tooltip) {
+            int width = get_width ();
+            int shown = visible_weeks (width);
+            int offset = width - (shown * (CELL + GAP) - GAP);
+            int w = (x - offset) / (CELL + GAP);
+            int row = y / (CELL + GAP);
+            if (x < offset || w < 0 || w >= shown || row < 0 || row > 6) return false;
+            var week = weeks.get_array_element (weeks.get_length () - shown + w);
+            int d = week.get_length () < 7 && w == 0 ? row - (int) (7 - week.get_length ()) : row;
+            if (d < 0 || d >= week.get_length ()) return false;
+            var day = week.get_array_element (d);
+            int64 count = day.get_int_element (1);
+            var date = new DateTime.from_iso8601 (day.get_string_element (0) + "T12:00:00Z", null);
+            string when = date != null ? date.format ("%a %-d %b %Y") : day.get_string_element (0);
+            tooltip.set_text ("%s contribution%s · %s".printf (count == 0 ? "No" : count.to_string (), count == 1 ? "" : "s", when));
+            return true;
         }
     }
 }
