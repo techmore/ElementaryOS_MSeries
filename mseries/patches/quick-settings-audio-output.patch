@@ -1,0 +1,48 @@
+diff --git a/meson.build b/meson.build
+index 1520965..23c4268 100644
+--- a/meson.build
++++ b/meson.build
+@@ -25,6 +25,7 @@ wingpanel_indicatorsdir = wingpanel_dep.get_pkgconfig_variable('indicatorsdir',
+ wl_client_dep = dependency('wayland-client')
+ portal_dep = dependency('libportal')
+ accountsservice_dep = dependency('accountsservice')
++json_dep = dependency('json-glib-1.0')
+ 
+ subdir('protocol')
+ subdir('data')
+diff --git a/src/PopoverWidget.vala b/src/PopoverWidget.vala
+index b7acbd7..1d31a7b 100644
+--- a/src/PopoverWidget.vala
++++ b/src/PopoverWidget.vala
+@@ -80,6 +80,7 @@ public class QuickSettings.PopoverWidget : Gtk.Box {
+             main_box.append (new KeyboardBrightness ());
+             main_box.append (new ScreenBrightness ());
+             main_box.append (new ChargeLimit ());
++            main_box.append (new AudioOutput ());
+         }
+         main_box.append (scale_box);
+         main_box.append (new Gtk.Separator (HORIZONTAL));
+diff --git a/src/meson.build b/src/meson.build
+index 913b296..2b1905e 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -29,6 +29,9 @@ sources = [
+     'Widgets' / 'ScreenBrightness.vala',
+     'Widgets' / 'KeyboardBrightness.vala',
+     'Widgets' / 'ChargeLimit.vala',
++    'Widgets' / 'AudioOutputModel.vala',
++    'Widgets' / 'AudioOutput.vala',
++    'Widgets' / 'AirPlayOutputs.vala',
+     'Widgets' / 'UserList.vala',
+     'Widgets' / 'UserRow.vala',
+ ]
+@@ -50,7 +52,8 @@ shared_module(
+         pantheon_desktop_shell_dep,
+         portal_dep,
+         wl_client_dep,
+-        accountsservice_dep
++        accountsservice_dep,
++        json_dep
+     ],
+     install: true,
+     install_dir : wingpanel_indicatorsdir
