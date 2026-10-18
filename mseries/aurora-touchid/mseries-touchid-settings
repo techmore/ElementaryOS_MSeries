@@ -89,12 +89,9 @@ def probe():
 
     code, out = run(["fprintd-list", os.environ.get("USER", "")])
     reader = code == 0 and "No devices available" not in out
-    # fprintd-list prints one line per stored print; anything that names a finger
-    # and is not explicitly unenrolled counts as enrolled.
-    enrolled = reader and any(
-        "finger" in line.lower() and "not enrolled" not in line.lower()
-        for line in out.splitlines()
-    )
+    # fprintd-list states the negative explicitly: "User X has no fingers
+    # enrolled". Anything else, with a reader present, means at least one print.
+    enrolled = reader and "no fingers enrolled" not in out.lower()
 
     return [
         ("Kernel", on_sep_kernel, f"running {kernel}"),
