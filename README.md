@@ -144,7 +144,7 @@ qualification; a successful build does not establish a successful hardware boot.
 ### Desktop dock and window layout
 
 - **Fixed / implemented:** Native dock positioning persists across restarts and
-  clamps to the available screen space. The compact profile uses 40-pixel icons,
+  clamps to the available screen space. The roomier profile uses 48-pixel icons,
   preserves pinned apps and drawers, and hides when any window overlaps. Gala
   reserves space while the dock is visible and returns it when hidden. Maximized,
   half-snapped and managed quarter windows follow the work area; manually sized

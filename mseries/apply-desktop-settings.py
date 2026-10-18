@@ -49,6 +49,13 @@ if not link.exists() and not link.is_symlink():
 elif link.resolve() != target.resolve():
     print(f"Existing screenshot folder preserved: {link}. Move it manually to redirect saves.")
 Gio.Settings.new("org.gnome.desktop.wm.preferences").set_string("button-layout", "close,minimize,maximize:")
+# The 14-inch M1 Pro's 3024x1964 panel is sharp at native resolution but can
+# make GTK text and the pointer feel undersized. Keep Pantheon's normal layout
+# and use a modest text increase plus a more visible pointer across GTK apps.
+interface = Gio.Settings.new("org.gnome.desktop.interface")
+interface.set_double("text-scaling-factor", 1.15)
+interface.set_int("cursor-size", 32)
+Gio.Settings.sync()
 # gsd-datetime asks geoclue for a timezone and, when it disagrees with the current one, asks the system to
 # change it, which pops a password dialog about every ten minutes. Set the timezone once instead.
 Gio.Settings.new("org.gnome.desktop.datetime").set_boolean("automatic-timezone", False)

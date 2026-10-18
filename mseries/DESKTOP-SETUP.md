@@ -48,6 +48,11 @@ The script also uses title-bar layout `close:minimize,maximize`, adding a
 Minimize button beside Maximize. Restore `close:maximize` to undo this.
 Apps drawing their own decorations may need to be reopened or may ignore it.
 
+For the high-density 14-inch M1 Pro display, the same script sets GTK text
+scaling to 1.15 and the pointer size to 32 pixels. The factory image provides
+these as overridable dconf defaults. The native dock profile uses 48-pixel
+icons, hides when windows overlap, and preserves pinned apps.
+
 Physical Command+Shift+3 captures the full screen; Command+Shift+4 selects an
 area. Existing Print shortcuts remain. Since Command is remapped to Ctrl,
 the actual Gala bindings use `<Control><Shift>3` and `<Control><Shift>4`.
@@ -275,7 +280,7 @@ The [full-height desktop profile](display-space/README.md) restores the 74-pixel
 camera strip on the 14-inch M1 Pro. Run `bash mseries/install-desktop-space.sh`
 as the desktop user and reboot when ready. Wingpanel moves its native clock
 and calendar beside the camera and keeps controls in two protected halves.
-The native dock uses 40-pixel icons, hides when any window overlaps, and saves
+The native dock uses 48-pixel icons, hides when any window overlaps, and saves
 Command-drag placement across restarts. Existing pinned apps and drawers stay.
 
 `--build-only` checks both builds without installing; `--revert` restores the

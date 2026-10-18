@@ -214,6 +214,13 @@ EOF
 [org/gnome/desktop/peripherals/mouse]
 natural-scroll=true
 EOF
+  put 0644 /etc/dconf/db/local.d/00-mseries-roomy <<'EOF'
+# A modestly roomier baseline for the 14-inch, high-density M1 Pro display.
+# These are defaults, not locks, so users can tune them in Settings.
+[org/gnome/desktop/interface]
+text-scaling-factor=1.15
+cursor-size=32
+EOF
   # Window snapping remains enabled even if an old user database disables it.
   copy 0644 "$here/window-snapping/10-mseries-snapping" /etc/dconf/db/local.d/10-mseries-snapping
   copy 0644 "$here/window-snapping/locks" /etc/dconf/db/local.d/locks/mseries-snapping

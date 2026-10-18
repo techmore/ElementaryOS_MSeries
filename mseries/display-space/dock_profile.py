@@ -27,7 +27,7 @@ else:
         saved = {key: value.print_(True) if (value := settings.get_user_value(key)) is not None else None
                  for key in ('icon-size', 'autohide-mode')}
         backup.write_text(json.dumps(saved, indent=2) + '\n')
-    settings.set_int('icon-size', 40)
+    settings.set_int('icon-size', 48)
     settings.set_string('autohide-mode', 'overlapping-window')
     Gio.Settings.sync()
-print('Restored dock settings.' if args.revert else 'Dock: 40 px icons; hide when any window overlaps; pinned apps preserved.')
+print('Restored dock settings.' if args.revert else 'Dock: 48 px icons; hide when any window overlaps; pinned apps preserved.')
