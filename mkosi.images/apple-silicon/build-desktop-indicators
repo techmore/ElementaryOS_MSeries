@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Bake the pinned sound/keyboard fixes without modifying the running desktop.
+# Bake the pinned sound/keyboard fixes and calendar agenda without modifying the running desktop.
 set -euo pipefail
 pins="$SRCDIR/mseries/panel-factory-pins.json"
 python3 "$SRCDIR/mseries/panel/verify-package-versions" \
-    --root "$BUILDROOT" --pins "$pins" --only sound keyboard --skip-plugins
+    --root "$BUILDROOT" --pins "$pins" --only sound keyboard datetime --skip-plugins
 
 work_dir=$(mktemp -d "${TMPDIR:-/tmp}/mseries-desktop-indicators.XXXXXX")
 trap 'rm -rf "$work_dir"' EXIT
@@ -13,7 +13,7 @@ import json
 from pathlib import Path
 import sys
 for entry in json.loads(Path(sys.argv[1]).read_text())["indicators"]:
-    if entry["name"] in ("sound", "keyboard"):
+    if entry["name"] in ("sound", "keyboard", "datetime"):
         print("\t".join(entry[key] for key in ("name", "repository", "commit", "plugin", "patch")))
 PY
 

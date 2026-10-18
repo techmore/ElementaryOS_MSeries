@@ -167,6 +167,272 @@ IBus registry source disables the default per-user component directory; investig
 reversible native registry/source integration before asking for a human F5 trial. Preserve
 US/Japanese sources and do not restart owner desktop services without authorization.
 
+## Combined compact Upcoming and period views — 2026-10-18
+
+Integrated main's Month/Week/Day agendas and readable neutral event cards with
+the compact Upcoming default. Upcoming remains independent of calendar browsing
+and spans the next 30 local dates; explicit period views and their navigation
+remain available. Event title/time share one compact row. Expand a row for its
+calendar/location/description; full titles retain hover text. Tasks stays compact.
+
+All eleven actual-plugin/EDS groups pass, covering Upcoming boundaries, all
+period modes, recurring/multi-day events, descriptions, navigation, retained
+mode, task completion and live source changes. Both earlier implementation
+histories are retained below. Factory build/boot remains unverified.
+
+
+## Compact upcoming agenda — 2026-10-18
+
+Event title and time now share one line with tighter row padding and date
+headings. Task rows have less vertical spacing and compact subtitles.
+Ellipsized event/task titles and task details retain full hover text.
+The Upcoming 30-day label and date grouping remain. Integrated current main's
+standalone factory account frontend and preserved both documentation histories.
+
+Validation: native ARM64 build and existing real-plugin EDS/navigation
+regressions; rendered Events and Tasks previews. Authenticated read-only
+calendar/task comparisons pass, and the release build is installed locally.
+Five image-wiring regressions pass. Factory boot remains separate.
+
+
+## Upcoming calendar agenda — 2026-10-18
+
+Events now always displays a rolling 30-day agenda, explicitly labeled
+“Upcoming · next 30 days” and grouped by local date with Today/Tomorrow headings.
+The independent EDS view spans month boundaries and is unaffected by browsing
+the left calendar. Ongoing events stay visible; ended and out-of-range events
+are hidden. A minute timer while open updates expiry and daily range rollover.
+Tasks retains its shared EDS data. The prior Calendar Today-navigation fix is
+preserved. [Behavior and install](calendar/README.md).
+
+Validation: native ARM64 build, real-plugin EDS regressions for rolling range,
+ongoing/past/boundary events and calendar navigation, plus existing live
+edit/completion/source tests. The release build is installed and Wingpanel
+loaded its new module. Authenticated read-only comparisons with real Google
+events and Tasks pass without logging titles or modifying records. Four image
+wiring tests pass. Factory build/boot remains unverified.
+
+## CodexBar OpenCode browser account onboarding — 2026-10-18
+
+OpenCode + now offers Sign in with browser in the existing native Granite sheet. The official
+OpenCode device-login CLI owns authorization, storage and activation; the helper validates the
+official approval URL, shows its code and verifies the new identity plus retention of every old
+credential ID. Duplicate identities prompt retry with another browser account/workspace. The
+API-key path and embedded quota-only fallback remain. Cancellation interrupts the CLI quietly;
+abandoned attempts time out. The dropdown refreshes accounts, identity, plan and usage after add.
+
+Verification: 10 new offline login tests, existing OpenCode/wrapper regressions, native ARM64
+build and four Meson suites; elementary light/dark initial/waiting/error renders. Installed
+OpenCode v2.0.32 produced a valid approval link in a live begin/cancel smoke test, preserving all
+saved IDs. No real second-account authorization was performed: owner must approve the other
+account in the browser, then use its dropdown Switch button. Upstream stays pinned at v0.77.0.
+All six GTK routing scenarios (browser success/cancel and API-key success/invalid/rejected/cancel)
+pass with mocked authentication; the complete port checker passes including live snapshot schema.
+The new login suite runs in CI and the port checker. Deploy with mseries/deploy-codexbar.sh after
+branch push and again from merged main; see CODEXBAR-PORT.md for flow and source references.
+
+## Month/Week/Day calendar agendas tested and deployed — 2026-10-18
+
+Owner requested Month, Week and Day views, tests, deployment, commit and merge.
+Events now has native mode toggles and a dated heading with period-aware arrows.
+The month grid remains the date picker; wider agendas group events by day,
+including recurring instances and multi-day overlaps with exclusive all-day
+ends. Rows show times/all-day state, calendar, location and short description;
+neutral cards retain a calendar-color edge and readable light/dark text. Lists
+scroll within a bounded pane. Day is the initial default; mode persists across
+popup reopen in the same panel process. Tasks remains independent.
+
+Expanded timing checks exposed a stale carousel notification selecting September
+while today's October events were expected. Navigation now uses each grid's
+actual month, ignores obsolete page indices, and explicitly synchronizes day
+highlight even when keyboard focus remains on popup controls. Rows retain their
+component/source-selectable references while displayed. No calendar writes were
+added to the plugin.
+
+Verification: pinned native ARM64 release build succeeds. Ten real-plugin/EDS
+workflow groups pass in both forced light and dark modes, covering Today and
+highlight, literal details, day/week/month filtering and arrows, all-day and
+recurring/multi-day events, December/January, empty states, mode retention,
+Tasks independence, live changes and source lifecycle. Inspected synthetic
+rendered previews for modes and scrolled details in light/dark. Fixtures use
+C.UTF-8/Sunday weeks; Google sync and other locales are separate qualification.
+The final merged tree passes five image-wiring tests, focused shell checks,
+README file links and whitespace checks. Existing upstream build and isolated
+portal/EDS shutdown warnings remain; no clean-log claim.
+
+Ran the maintained installer from the updated patch, then all ten workflow
+groups against `/usr/lib/aarch64-linux-gnu/wingpanel-9/libdatetime.so` (exit 0).
+Reloaded only Wingpanel: 730835 → 738444; new process maps installed calendar
+inode 314458 without deleted mappings. Pre-view plugin retained privately in
+this chat's work directory; version-aware stock backup is preserved. Merged
+current main's standalone-account factory changes without replacing them.
+Next: owner opens clock → Events and chooses Month/Week/Day on real accounts.
+Personal events/accounts, boot/kernel and audio configuration were not edited.
+Factory hardware boot and Google remote-sync acceptance remain separate.
+
+## ISO build retry: use the permitted account frontend — 2026-10-18
+
+Fresh-ISO run [39126016747](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39126016747)
+stopped during Apple overlay package selection before Brave staging:
+`gnome-control-center` has no candidate because elementary pins it to -1 in
+`deprioritize-gnome`. All three ARM64 image configs now select the Ubuntu universe
+`gnome-online-accounts-gtk` frontend instead; the existing account launcher already
+supports it. The GNOME package exclusion policy is preserved. Native archive
+metadata confirms arm64 candidate 3.50.9-1 and its GOA/GTK4 dependencies.
+
+Five image-wiring regressions pass, including a new prohibited-package check.
+This is a build-blocker fix, not a new ISO or fresh-install/playback pass. Next:
+retry the ISO build and then install/test its actual artifact in a blank KVM guest.
+
+## Calendar Today navigation fixed and deployed — 2026-10-18
+
+Owner reported unexpected events after clicking the center month-navigation
+icon and requested a fix committed/merged to main. The icon is upstream's Today
+control, not a month/week/day selector. Added a real-plugin regression that
+selects another day, navigates three months in each direction, clicks Today
+repeatedly before animation completion, checks the month heading and today's
+events, verifies subsequent navigation, then retains the existing reopen test.
+The old installed plugin failed the current-month assertion and emitted invalid
+Adw.Carousel page/scroll criticals. Ordinary single-click checks had passed.
+
+The maintained patch now returns to the stored current-month grid immediately,
+resets relative position/model month/selected day together, suppresses callbacks
+during carousel rebuild, and bounds arrow navigation. The center control says
+Today; arrow tooltips name previous/next month. This fixes the reproduced state
+corruption; the owner's exact unexpected event contents were not inspected.
+
+Verification: fresh pinned ARM64 installer build and atomic install pass. All
+six real-plugin/EDS groups pass against the installed library, including the
+previously failing regression; final log has no carousel critical/assertion.
+Four image-wiring tests, focused shell checks and whitespace checks pass.
+Wingpanel reloaded and PID 671688 maps installed calendar inode 314053.
+Only the calendar library/launcher and panel process were deployed/reloaded;
+no personal event/account data was edited. Expected isolated portal/EDS teardown
+warnings and upstream build warnings remain. Next: owner checks Today on their
+real calendars; Google remote-sync and factory-boot acceptance remain separate.
+
+## Dock startup/focus audit and merge preparation — 2026-10-18
+
+Reviewed PR #100 on current main in an isolated checkout, preserving the other
+desktop/CodexBar work and both handoff histories. Retained its delayed Gala
+workspace synchronization and stale-removal bounds check. Added two fixes:
+the application presents only its initial window (repeated activation stays
+quiet, including a panel with no active keyboard window); the wrapper forwards
+HUP/INT/TERM to its dock child and reaps it before exiting. Signal statuses no
+longer cause stock fallback; actual early faults and missing binaries/libraries
+still do. A shell cannot forward SIGKILL.
+
+Verification: composed ARM64 dock build/install into a temporary prefix; two
+native harnesses compiling the actual patched production methods with controlled
+services; seven generated-wrapper test groups; eight existing boot-profile tests;
+shell syntax/ShellCheck; eleven real-dock/GTK groups in a separate headless Gala
+with a private D-Bus/Wayland session and temporary keyfile settings. New Wayland
+case preserved keyboard focus and typed `aaa` across three remote activations.
+Native harnesses reject the original upstream activation/workspace behavior as
+negative controls. Dedicated ARM64 CI now runs the startup/wrapper regressions.
+
+The owner's graphical dock remains stopped behind the local incident guard;
+no source installer or new binary was deployed into the running desktop and no
+approval dialog was opened. Existing portal/keyring startup warnings occurred
+in the isolated compositor; all assertions passed. These results do not prove
+the complete root cause of the reported floating/attention-stealing incident.
+Next: after a deliberate decision to re-enable it, qualify physical typing,
+session restart and monitor transitions. See `display-space/README.md`.
+
+## Factory Brave runtime closes YouTube browser provisioning gap — 2026-10-18
+
+`build-brave` stages official Brave 1.97.59 arm64 (Chromium 155.0.8059.85), pinned
+to release SHA256 `5efdd235…4ba1d2`. It validates .deb identity before extraction,
+runs no maintainer scripts, and relocates the full runtime/resources to
+`/usr/lib/mseries-brave`. The YouTube launcher prefers this immutable runtime;
+transformed desktops retain the native package fallback. Both factory consumers
+carry the full runtime library list; post-install hooks fail on absent/changed
+payloads, wrong ELF architecture and missing libraries. License, release/source
+links, pin and per-file hashes survive pruning in `/usr/share/doc/mseries-brave`.
+No first-login browser download or `/opt` artifact is needed; browser security
+updates follow reviewed version/hash bumps and rebuilt images.
+
+Verified: six synthetic .deb regressions, four image wiring tests, real pinned
+.deb staging and finalization with hashes/ELF/library checks, desktop validation,
+Python/shell checks. Real browser rendered a local page in a fresh Xvfb profile.
+Clean Resolute ARM64 container installed the declared packages and ran the version
+and ldd checks. Minimal-container headless DOM dump timed out and is not a pass.
+Finalize fixture stubs only dconf compilation, as in the wiring suite. The owner’s
+browser, profile and running session were untouched. No full ISO build/fresh
+hardware boot or YouTube/AVD/DRM playback test: those qualifications remain next.
+Factory browser assets/provisioning are now implemented; kernel/firmware readiness
+remains governed by the existing hardware gates.
+
+## Merged calendar deployed and Wingpanel reloaded — 2026-10-18
+
+Owner requested desktop deployment of merged `6d62dfd`. Ran
+`bash mseries/install-calendar-agenda.sh`: pinned datetime ARM64 release build
+and atomic library/account-launcher installation completed, preserving the
+version-aware original backup. Ran `bash mseries/calendar/test-agenda.sh
+/usr/lib/aarch64-linux-gnu/wingpanel-9/libdatetime.so`: all five isolated EDS
+workflow groups pass against the installed production library; runner exits 0.
+Build warnings and expected isolated-session portal/EDS shutdown warnings remain.
+
+Sent SIGTERM only to Wingpanel; the session respawned it (595296 → 637927).
+Verified `/proc/637927/maps` uses the installed calendar library inode 313607,
+without a deleted mapping, and the Calendar Accounts launcher matches merged
+source. No Gala restart, account sign-in, kernel, boot or audio change.
+Next: owner opens the clock dropdown and completes Google account authorization
+if desired; remote Calendar sync and factory hardware boot remain unverified.
+
+## Calendar Events/Tasks merged into main — 2026-10-18
+
+Integrated `calendar-events-tasks` including the pinned native agenda plugin,
+installer/account launcher, runtime/build dependencies and factory staging.
+Resolved documentation insertion conflicts by retaining both status histories;
+merged enhancement payload lists to preserve main's YouTube launcher/icon and
+add calendar assets/pins. README now describes calendar as integrated and links
+to its local documentation. Google OAuth/sync and factory hardware boot remain
+unverified; this merge does not restart or redeploy the owner's desktop.
+
+Verification on the merged tree: pinned datetime ARM64 release build passes;
+all five isolated real-plugin/EDS integration groups pass; all four image-wiring
+tests pass; changed calendar shell scripts pass ShellCheck at warning severity;
+shell syntax, whitespace and all 34 README relative links pass. Initial agenda
+runs passed workflow assertions but failed temporary cleanup when auto-started
+GVFS/document portals left FUSE mounts. The test harness now uses local GIO and
+a private portal activation override; the final full run exits successfully.
+The override applies only to the synthetic test session; its expected portal
+unavailable warnings do not establish a clean runtime log.
+Next: owner Google sign-in and remote Calendar round trip, then factory image
+assembly/hardware qualification. No credentials, personal calendars or live
+panel state were changed by these checks.
+
+## Calendar Events/Tasks tabs and Google account setup — 2026-10-18
+
+The clock dropdown's right pane now has Events and Tasks tabs. Events follows
+its selected day; Tasks reads all incomplete items from elementary Tasks' EDS
+lists, including due-only and undated items. Activating a task opens Tasks.
+Calendar Accounts opens the desktop Google/online-account sign-in. No desktop
+Google account was configured at verification time: owner OAuth consent and a
+real Google Calendar round trip remain required; local tests do not claim them.
+
+Pinned datetime source `d0b3a703a7efbb5b3040d7be1ccb616eeb919c54` plus
+`datetime-agenda-tabs.patch` retains upstream notices. Native ARM64 compilation
+and five isolated real-plugin/EDS test groups pass: tabs/shared event UIDs,
+live edits, completion/deletion, enable/disable and sources added/removed after
+opening. Async source connections and generation checks reject stale views;
+changed/deleted events requery their source, preserving recurring siblings.
+All-day events use date semantics; undated tasks do not create calendar dots.
+The release installer completed locally; the installed production plugin passes
+the same five test groups. Wingpanel was reloaded and its mapped plugin inode
+matched the newly installed library.
+Four image-wiring tests and shell/diff checks pass. Runtime account/Tasks/EDS
+packages are in both arm64 consumers; plugin and license survive pruning.
+Factory image assembly/boot and Google network sync are still unverified.
+
+[Build, install, restore, account setup and tests](calendar/README.md).
+Installer: `bash mseries/install-calendar-agenda.sh`; rollback:
+`bash mseries/install-calendar-agenda.sh --uninstall`. Reload Wingpanel after
+installation. Next: owner selects Calendar Accounts → Google, completes sign-in,
+enables Calendar and confirms a known remote event appears on its date.
+
+
 ## README fixes, verification and remaining work — 2026-10-18
 
 The root [README](../README.md#fixes-tests-and-remaining-work) now separates
@@ -425,6 +691,24 @@ success is still pending. The older cropped-mode baseline is not a matched
 energy comparison with this full-height trial; collect matching display controls
 on both kernels before comparing power.
 
+
+## Dock "crashes": a false fallback flag and a startup race, both fixed — 2026-10-18 (Claude Code)
+
+- **Symptom:** the dock vanished or reverted to the stock dock. `io.elementary.dock` itself produced no coredumps this boot.
+  The crashes were wingpanel (SIGSEGV x2 at 04:44) and gala in boot -2.
+- **Cause 1 (wrapper):** `~/.local/bin/io.elementary.dock` flagged any non-zero exit within 15 s as a failure. At 04:44 the
+  session stopped the dock with SIGTERM (rc=143), so it wrote `~/.cache/mseries-dock-failed` and ran the stock dock.
+  **Fix:** `install-dock-drawers.sh` now writes a wrapper that exits without flagging on rc 129/130/137/143.
+- **Cause 2 (dock 8.3.3 upstream, still on main):** `WorkspaceSystem.load ()` queried Gala before `WindowSystem`'s async
+  DesktopIntegration proxy existed. That logged `DesktopIntegration is null`, set up workspaces from 0, and
+  `remove_workspace` hit `g_list_store_remove` out of range. **Fix:** `mseries/patches/dock-workspace-startup.patch`
+  connects the signals first and skips the early sync, so WindowSystem's first `windows` notify drives it. It also
+  bounds-checks `remove_workspace`.
+- **Installed:** `bash mseries/install-dock-drawers.sh` (built on main's drawers + compact-dock patch). The running dock
+  was not restarted, so the patched binary takes effect at its next start.
+- **Verified:** `--build-only` passes, the installed wrapper matches the old one apart from the rc guard, and the dock came
+  back as the patched build after a restart at 06:35. **Not yet verified:** a clean `journalctl` after the next login
+  (expect no `DesktopIntegration is null`).
 
 ## Native full-height J314 desktop and persistent dock — 2026-10-18
 
@@ -3805,3 +4089,37 @@ check and light/dark normal-width fixtures with active Go Plus and secondary Go.
 headers, current versus renewal product, expired/malformed/missing data, network/oversize failure,
 foreign-host rejection, account isolation and credential exclusion. Live product resolution checked
 read-only. Merge to main and deploy as explicitly requested.
+
+
+## CodexBar: native OpenCode account switching — 2026-10-18
+
+Owner requested Switch beside OpenCode accounts, like Codex/Claude, and merge to main. Secondary
+browser-account rows now activate via `codexbar-opencode-local.py switch ID`. The helper validates
+local integration/type/identity, invokes `opencode auth switch opencode ID` without a shell or stdin,
+and verifies the requested ID is the only active OpenCode credential before reporting success.
+OpenCode's normal service publishes the activation event; the helper never writes SQLite directly.
+Raw CLI output is withheld from result JSON. Refreshable OAuth logins remain switchable even when
+access has expired; OpenCode owns refresh. Unusable logins have disabled Switch and a sign-in hint.
+Workspace names are shown on secondary rows to distinguish same-email workspace choices.
+
+Fixed two selection-following issues: identity reads now prefer active v2 credential metadata over
+legacy account_state, and the quota wrapper prefers the selected v2 OAuth token over a legacy Go key.
+During native refresh it keeps the selected identity rather than substituting a legacy account.
+Explicit OPENCODE_API_KEY environment overrides remain honored. Switching invalidates accounts/local
+identity caches and requests backend quota refresh. A generation check discards pending pre-switch
+helper reads and retries them so an old response cannot undo the new selection.
+
+Validation: 25 helper and 13 wrapper tests pass, with verified A→B→A selection/identity/usage-token
+changes, invalid/wrong-provider/expired-unrefreshable rejection, refreshable-expiry activation,
+missing CLI, timeout, failed command, no-op and false-success verification. Credential/error output
+exclusion is covered. Module/probe builds, four Meson suites and port check pass; normal-width light/
+dark previews show the new Switch beside the secondary OpenCode plan/quota. Installed OpenCode v2.0.32
+accepted a same-account activation. A live round trip through the two saved sessions for the same
+account/workspace then succeeded, with the original credential selection restored and verified.
+Distinct account switching is covered with temporary test accounts; the owner's current records are
+one distinct account/workspace, so a second row requires another distinct login saved in OpenCode.
+
+References: OpenCode `214fb7fdbab9ad13773629839f1178382400cf97`, auth/switch.ts, core credential.activate,
+provider/opencode.ts and integration.connection.resolve (native activation event and refresh behavior);
+https://dev.opencode.ai/v2/docs/cli/commands/ and /providers/. No upstream code was copied. CodexBar
+remains pinned to 0.77.0. Publish, merge to main and deploy as explicitly requested.

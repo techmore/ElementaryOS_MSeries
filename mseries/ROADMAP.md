@@ -1,5 +1,155 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Combined compact Upcoming and period views — 2026-10-18
+
+Integrated main's Month/Week/Day agendas and readable neutral event cards with
+the compact Upcoming default. Upcoming remains independent of calendar browsing
+and spans the next 30 local dates; explicit period views and their navigation
+remain available. Event title/time share one compact row. Expand a row for its
+calendar/location/description; full titles retain hover text. Tasks stays compact.
+
+All eleven actual-plugin/EDS groups pass, covering Upcoming boundaries, all
+period modes, recurring/multi-day events, descriptions, navigation, retained
+mode, task completion and live source changes. Both earlier implementation
+histories are retained below. Factory build/boot remains unverified.
+
+
+## Compact upcoming agenda — 2026-10-18
+
+Event title and time now share one line with tighter row padding and date
+headings. Task rows have less vertical spacing and compact subtitles.
+Ellipsized event/task titles and task details retain full hover text.
+The Upcoming 30-day label and date grouping remain. Integrated current main's
+standalone factory account frontend and preserved both documentation histories.
+
+Validation: native ARM64 build and existing real-plugin EDS/navigation
+regressions; rendered Events and Tasks previews. Authenticated read-only
+calendar/task comparisons pass, and the release build is installed locally.
+Five image-wiring regressions pass. Factory boot remains separate.
+
+
+## Upcoming calendar agenda — 2026-10-18
+
+Events now always displays a rolling 30-day agenda, explicitly labeled
+“Upcoming · next 30 days” and grouped by local date with Today/Tomorrow headings.
+The independent EDS view spans month boundaries and is unaffected by browsing
+the left calendar. Ongoing events stay visible; ended and out-of-range events
+are hidden. A minute timer while open updates expiry and daily range rollover.
+Tasks retains its shared EDS data. The prior Calendar Today-navigation fix is
+preserved. [Behavior and install](calendar/README.md).
+
+Validation: native ARM64 build, real-plugin EDS regressions for rolling range,
+ongoing/past/boundary events and calendar navigation, plus existing live
+edit/completion/source tests. The release build is installed and Wingpanel
+loaded its new module. Authenticated read-only comparisons with real Google
+events and Tasks pass without logging titles or modifying records. Four image
+wiring tests pass. Factory build/boot remains unverified.
+
+## OpenCode browser accounts from CodexBar + — 2026-10-18
+
+The native Connect sheet now offers browser sign-in to save a second OpenCode account for
+existing dropdown switching. Official CLI device login stores/activates it; previous credentials
+are verified intact. API-key setup remains available. Duplicate accounts, cancellation and
+abandoned attempts have explicit handling; account/plan/usage refresh follows completion.
+Ten new login tests and native build/tests pass; live approval-link/cancel smoke preserved saved
+accounts. Remaining acceptance: owner browser approval for a distinct account and dropdown switch.
+See [the port notes](CODEXBAR-PORT.md#opencode-account-switching).
+
+## Month/Week/Day agenda views — 2026-10-18
+
+Implemented and deployed period selectors and arrows, grouped dates, readable
+source-colored cards with time/calendar/location/description, bounded scrolling
+and synchronized date selection. Tasks stays independent; Today retains the
+chosen mode. Replaced relative carousel bookkeeping with actual grid months to
+reject stale page notifications during opening/navigation.
+
+Ten isolated real-plugin/EDS workflow groups pass in light and dark modes and
+against the installed production library. Five merged-tree image-wiring tests
+and focused shell/whitespace checks pass; synthetic previews inspected. Wingpanel
+reloaded and mapped-library inode verified. Next: owner acceptance on real
+accounts; Google remote sync, other locales and factory boot remain separate.
+[Views and validation](calendar/README.md#month-week-and-day-views).
+
+## Fresh YouTube ISO qualification in progress — 2026-10-18
+
+Initial run 39126016747 failed before Brave staging because the calendar's GNOME
+Settings dependency is excluded by elementary's package policy. Both ARM64
+consumers and the Apple overlay now use the existing launcher's supported
+`gnome-online-accounts-gtk` frontend. Five image-wiring tests pass, including the
+package-policy regression. ISO rebuild, blank-disk installation, dock matching and
+in-guest YouTube playback remain pending.
+
+## Calendar Today navigation regression resolved — 2026-10-18
+
+Repeated Today clicks during a return from another month could reuse the relative
+month offset, request invalid carousel pages and desynchronize the heading and
+agenda. Fixed the return/reset path and arrow bounds, and labeled the control
+Today. Fresh ARM64 build and six installed-plugin EDS groups pass, including a
+regression that fails on the previous library; four image-wiring tests also pass.
+Deployed and reloaded Wingpanel, verifying the installed library mapping.
+Remaining: owner confirmation with real accounts; no personal events were changed.
+See [calendar navigation](calendar/README.md#month-navigation-and-today).
+
+## Factory YouTube browser included — 2026-10-18
+
+Brave 1.97.59 arm64 is now checksum-pinned and bundled under `/usr/lib/mseries-brave`
+in both factory consumers. The YouTube launcher prefers it, without a first-login
+browser download. Vendor resources/licenses, provenance and hash manifest survive
+factory pruning; final hooks verify payload integrity and library resolution.
+Six packaging regressions, four image wiring tests, real staging/finalization,
+empty-profile Xvfb rendering and clean Resolute dependency checks pass. Headless
+DOM timeout is retained as a limitation. New ISO/hardware boot and YouTube/AVD/DRM
+playback still need qualification.
+[Packaging and update instructions](video-decode/README.md#factory-brave-runtime--2026-10-18).
+
+## Merged calendar desktop deployment — 2026-10-18
+
+Merged Events/Tasks plugin built and installed with the maintained installer;
+five isolated workflow groups pass against the deployed library. Wingpanel
+reloaded and its new process mapping matches the installed calendar inode.
+Next acceptance is the owner's clock-dropdown check and optional Google sign-in/
+remote event round trip; factory hardware qualification remains separate.
+
+## Calendar integration on main — 2026-10-18
+
+Events/Tasks agenda, account setup, installer and factory payload are integrated.
+Merged-source ARM64 build, five isolated EDS workflow groups, four image-wiring
+tests, focused shell checks and README links pass. README no longer labels the
+calendar work as awaiting integration. Remaining acceptance: owner Google OAuth
+and remote event sync, factory assembly/boot, and account-backed desktop use.
+See [calendar setup and checks](calendar/README.md). The test harness isolates
+portal activation so its temporary session cleans up without document mounts.
+
+## Calendar Events/Tasks tabs and Google account setup — 2026-10-18
+
+The clock dropdown's right pane now has Events and Tasks tabs. Events follows
+its selected day; Tasks reads all incomplete items from elementary Tasks' EDS
+lists, including due-only and undated items. Activating a task opens Tasks.
+Calendar Accounts opens the desktop Google/online-account sign-in. No desktop
+Google account was configured at verification time: owner OAuth consent and a
+real Google Calendar round trip remain required; local tests do not claim them.
+
+Pinned datetime source `d0b3a703a7efbb5b3040d7be1ccb616eeb919c54` plus
+`datetime-agenda-tabs.patch` retains upstream notices. Native ARM64 compilation
+and five isolated real-plugin/EDS test groups pass: tabs/shared event UIDs,
+live edits, completion/deletion, enable/disable and sources added/removed after
+opening. Async source connections and generation checks reject stale views;
+changed/deleted events requery their source, preserving recurring siblings.
+All-day events use date semantics; undated tasks do not create calendar dots.
+The release installer completed locally; the installed production plugin passes
+the same five test groups. Wingpanel was reloaded and its mapped plugin inode
+matched the newly installed library.
+Four image-wiring tests and shell/diff checks pass. Runtime account/Tasks/EDS
+packages are in both arm64 consumers; plugin and license survive pruning.
+Factory image assembly/boot and Google network sync are still unverified.
+
+[Build, install, restore, account setup and tests](calendar/README.md).
+Installer: `bash mseries/install-calendar-agenda.sh`; rollback:
+`bash mseries/install-calendar-agenda.sh --uninstall`. Reload Wingpanel after
+installation. Next: owner selects Calendar Accounts → Google, completes sign-in,
+enables Calendar and confirms a known remote event appears on its date.
+
+
 ## README status overview — 2026-10-18
 
 The [README fixes/tests/remaining-work overview](../README.md#fixes-tests-and-remaining-work)
@@ -146,6 +296,18 @@ The contained Brave YouTube shortcut uses a bundled scalable YouTube play-button
 icon, also installed for the current user. Desktop entry, SVG and GTK icon lookup
 checks pass; live dock appearance after reopening remains to confirm.
 [Installation instructions](video-decode/README.md#youtube-launcher-icon--2026-10-18).
+
+## Dock startup and focus audit — 2026-10-18
+
+Reviewed the pending startup fix against current main and added quiet repeated
+activation plus wrapper stop forwarding/child reaping. Delayed Gala readiness,
+stale workspace removals and false stock fallback now have regression coverage.
+Two native production-method harnesses, seven generated-wrapper groups, eight
+boot-profile tests, the ARM64 composed dock build and eleven isolated Wayland
+groups pass. The latter retain focus and typed input during repeated activation.
+Current dock remains stopped; no live redeployment. The reported floating dock
+still needs physical-session/restart/monitor-transition qualification.
+[Implementation and test scope](display-space/README.md#dock-activation-and-session-stops).
 
 ## Dock-aware window space — 2026-10-18
 
@@ -868,3 +1030,13 @@ token mutation. Seventeen helper tests, four Meson suites, port check and light/
 - F5 diagnostics (October 18): fixed3s parent/4s client timeout mismatch, bounded field ancestor checks and async startup, deployed anonymous key/refusal tracing;23 contracts and isolated native/framework checks pass. Owner F5 failure remains unresolved pending popup/app detail. A single frozen six-case grammar/translation queue waits for quiet/default-model admission; preserve its service/checkpoint and completed failures.
 
 - IBus reconnect recovery (October 18): Always restart the owned bridge on clean disconnect; Wants+After avoids speech-model reloads; restore native input only when global engine is empty. Private GTK reconnect and exact installed-unit clean TERM/manual stop tests pass,24 contracts. Earlier recovery and fixture failures retained. Graphical-session lifetime wiring checked, actual logout untested. Human F5 retry/model review/merge remain pending. Idle ASR pressure-release coverage is still open.
+
+
+### OpenCode dropdown account switching — 2026-10-18
+
+Secondary saved browser accounts now have Switch, using OpenCode's official service-backed auth
+command and verifying the resulting selection. Identity/usage follow the active v2 credential,
+with native OAuth refresh and pending-read invalidation. Workspace labels distinguish choices;
+unusable sign-ins explain the need to sign in again. Twenty-five helper tests, 13 wrapper tests,
+four Meson suites, port check and light/dark previews pass. Live same-account saved-session round trip
+passed and the original selection was restored; distinct-account round trips use temporary fixtures.

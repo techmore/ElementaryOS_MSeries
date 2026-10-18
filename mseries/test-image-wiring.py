@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Verify runtime dependencies survive the pruned Apple Silicon overlay."""
 import configparser
+import json
 import os
 from pathlib import Path
 import shutil
@@ -100,7 +101,15 @@ class ImageWiringTests(unittest.TestCase):
                          'usr/lib/mseries-ai/llama/bin/llama-server',
                          'usr/bin/mlx-omarchy-serve',
                          'usr/share/omarchy-mlx/serve-catalog.json',
-                         'usr/share/doc/mseries-local-ai/SOURCE']:
+                         'usr/share/doc/mseries-local-ai/SOURCE',
+                         'usr/lib/aarch64-linux-gnu/wingpanel-9/libdatetime.so',
+                         'usr/share/doc/mseries-panel-datetime/COPYING',
+                         'usr/lib/mseries-brave/brave',
+                         'usr/lib/mseries-brave/locales/en-US.pak',
+                         'usr/libexec/mseries/verify-factory-brave',
+                         'usr/share/doc/mseries-brave/LICENSE',
+                         'usr/share/doc/mseries-brave/files.json',
+                         'usr/share/doc/mseries-brave/pin.json']:
                 target = image / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text('synthetic local AI payload')
@@ -125,6 +134,9 @@ class ImageWiringTests(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 verify_youtube_payload(image)
             self.assertFalse(payload.exists())
+            self.assertTrue((image / 'usr/bin/mseries-calendar-accounts').is_file())
+            self.assertTrue((image / 'usr/share/elementary-mac/mseries/calendar/accounts').is_file())
+            self.assertTrue((image / 'usr/share/elementary-mac/mseries/patches/datetime-agenda-tabs.patch').is_file())
             for name in ('mseries-power.service', 'mseries-power-follow.service'):
                 unit = image / 'etc/systemd/system' / name
                 self.assertIn('ExecStart=/usr/libexec/mseries/power ', unit.read_text())
@@ -137,11 +149,26 @@ class ImageWiringTests(unittest.TestCase):
                 self.assertTrue((image / path).is_file(), path)
             self.assertFalse((image / 'etc/systemd/system/suspend.target.wants/mseries-bluetooth-resume-fix.service').is_symlink())
 
+    def test_factory_accounts_frontend_respects_elementary_package_policy(self):
+        policy = (ROOT / 'repos/common-files/etc/apt/preferences.d/deprioritize-gnome').read_text()
+        blocked = set(next(line for line in policy.splitlines() if line.startswith('Package:')).split()[1:])
+        for name in ('apple-silicon/mkosi.conf', 'liveiso/mkosi.conf.d/arch.arm64.conf',
+                     'sysupdate/mkosi.conf.d/arch.arm64.conf'):
+            selected = packages('mkosi.images/' + name)
+            self.assertFalse(selected & blocked, name + ' selects a prohibited package')
+            self.assertIn('gnome-online-accounts-gtk', selected)
+
     def test_consumers_install_overlay_runtime_dependencies(self):
         overlay = packages('mkosi.images/apple-silicon/mkosi.conf')
         self.assertTrue({'bubblewrap', 'xdg-dbus-proxy', 'desktop-file-utils', 'libgtk-3-bin'} <= overlay)
         runtime = overlay - {'initramfs-tools'}
         self.assertTrue(runtime)
+        brave = json.loads((ROOT / 'mseries/video-decode/brave-factory.json').read_text())
+        self.assertFalse(set(brave['runtime_packages']) - runtime)
+        self.assertIn('BuildScripts=build-brave,', (ROOT / 'mkosi.images/apple-silicon/mkosi.conf').read_text())
+        for name in ('liveiso', 'sysupdate'):
+            self.assertIn('verify-factory-brave --root / --ldd',
+                          (ROOT / f'mkosi.images/{name}/mkosi.postinst.chroot').read_text())
         for consumer in (
             'mkosi.images/liveiso/mkosi.conf.d/arch.arm64.conf',
             'mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf',

@@ -24,6 +24,18 @@ on:
       - ".github/workflows/**"
 
 jobs:
+  dock-startup:
+    name: Dock startup and launcher regressions (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install native test dependencies
+        run: sudo apt-get update && sudo apt-get install -y git valac libglib2.0-dev
+      - name: Verify activation, delayed Gala readiness and session stops
+        run: |
+          bash mseries/dock-tests/test-startup.sh
+          python3 mseries/dock-tests/test-launcher.py
+
   desktop-space:
     name: Native notch GTK allocation (arm64)
     runs-on: ubuntu-26.04-arm
@@ -90,6 +102,7 @@ jobs:
           python3 mseries/test-codexbar-claude.py
           python3 mseries/test-codexbar-wrapper.py
           python3 mseries/test-codexbar-opencode-local.py
+          python3 mseries/test-codexbar-opencode-login.py
           python3 -m unittest discover -s mseries/display-space -p 'test_*.py'
           python3 -m py_compile mseries/display-space/*.py
           bash -n mseries/display-space/test-notch-layout.sh
@@ -109,6 +122,7 @@ jobs:
           python3 -m unittest discover -s mseries/aurora -p 'test_*.py'
           python3 mseries/local-ai/test_people_watch.py
           python3 mseries/test-image-wiring.py
+          python3 mseries/video-decode/test-brave-factory.py
           python3 mseries/test-kernel-config.py
           python3 mseries/test-local-build-preflight.py
           node mseries/test-build-status.mjs
@@ -150,4 +164,5 @@ jobs:
           shellcheck -S warning mseries/install-hardware-support.sh mseries/hardware/bluetooth-resume-fix mseries/hardware/bluetooth-supported mseries/power/mseries-sleep-cost-hook
           bash -n mseries/enhance.sh mseries/stage-factory-enhancements.sh mseries/aurora-sep/install-touchid-gui.sh
           python3 mseries/test-image-wiring.py
+          python3 mseries/video-decode/test-brave-factory.py
           python3 mseries/test-power-install.py

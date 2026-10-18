@@ -31,7 +31,8 @@ def pump(seconds=0.25):
 app = Gtk.Application(application_id="org.techmore.DockWorkareaTest")
 app.register(None)
 window = Gtk.ApplicationWindow(application=app, title="Dock Workarea Test", default_width=600, default_height=400)
-window.set_child(Gtk.Label(label="Dock visibility and native window sizing"))
+entry = Gtk.Entry(placeholder_text="Focus must stay here during dock reactivation")
+window.set_child(entry)
 window.present()
 pump(0.6)
 remote = "org.gnome.Mutter.RemoteDesktop"
@@ -68,6 +69,17 @@ def motion(dx, dy):
 
 notify("Start")
 try:
+    entry.grab_focus()
+    pump()
+    assert window.is_active(), "The private typing client must start focused"
+    dock_prefix = os.environ.get("MSERIES_TEST_DOCK_PREFIX", os.path.expanduser("~/.local/lib/mseries/dock"))
+    for _ in range(3):
+        subprocess.run([os.path.join(dock_prefix, "bin/io.elementary.dock")], check=True, timeout=5)
+        pump()
+        assert window.is_active(), "Dock reactivation took focus from the typing client"
+        chord([ord("a")])
+    assert entry.get_text() == "aaa", entry.get_text()
+    print("PASS: repeated dock activation preserves keyboard focus and typed input", flush=True)
     def mode(value):
         subprocess.run(["gsettings", "set", "io.elementary.dock", "autohide-mode", value], check=True)
         pump(1.2)

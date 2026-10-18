@@ -168,22 +168,23 @@ Details: [desktop space](mseries/display-space/README.md),
   and scrolls crowded controls. Cropped and external layouts keep the centered
   clock. Panel work also includes network-speed/usage views, brightness and
   charging controls, battery estimates, sound/keyboard fixes, and the custom
-  CodexBar account/usage integration. The separate `calendar-events-tasks` branch adds Events and Tasks tabs backed
-  by Evolution Data Server (EDS), plus an account-setup action; that implementation
-  is not yet integrated into `main`.
+  CodexBar account/usage integration. The calendar dropdown now has Events and
+  Tasks tabs backed by Evolution Data Server (EDS), plus an account-setup action.
+  Events defaults to a compact upcoming 30-day list with optional Month, Week
+  and Day agendas. Expand rows for calendar, location and description details.
 - **Tested:** ARM64 builds and isolated notch-layout checks cover cropped,
-  full-height, external, fractional-scale and crowded layouts. The calendar branch records five real-plugin
-  EDS test groups passing against its installed plugin, including live
-  edits, completion/deletion and source changes. CodexBar has recorded build/
+  full-height, external, fractional-scale and crowded layouts. Eleven real-plugin
+  EDS workflow groups pass in light and dark modes, covering agenda ranges,
+  navigation, live edits, completion/deletion and source changes. CodexBar has recorded build/
   deploy checks and an owner-confirmed native Claude account-switch round trip.
 - **Left to do:** Accept the full-height layout after a hardware boot, including
-  clock/popovers and crowded indicators. Integrate the calendar branch, then
-  complete Google sign-in and a real Calendar sync round trip. Network-rate recovery across Ethernet suspend/reboot
+  clock/popovers and crowded indicators. Complete Google sign-in and a real
+  Calendar sync round trip. Network-rate recovery across Ethernet suspend/reboot
   and the reported signal dropdown issues remain on the bug backlog. Tests of
   individual indicators do not qualify every panel interaction or factory boot.
 
 Details: [desktop space](mseries/display-space/README.md),
-[calendar branch documentation](https://github.com/techmore/ElementaryOS_MSeries/blob/4e8bbd9/mseries/calendar/README.md), [CodexBar port](mseries/CODEXBAR-PORT.md),
+[calendar](mseries/calendar/README.md), [CodexBar port](mseries/CODEXBAR-PORT.md),
 [bug backlog](mseries/BUG-FIX-ROADMAP.md).
 
 ### Kernel and Apple hardware support
