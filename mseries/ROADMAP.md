@@ -1,5 +1,19 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## CodexBar weekly quota beside top-row tokens — 2026-10-18
+
+Owner clarified the top row must contain tokens AND the active seven-day percentage
+and reset countdown for both ChatGPT/Codex and Claude. Added those weekly values
+beside the token total; five-hour quota and alternate accounts stay below. Existing
+percentage/reset preferences and missing-data behavior apply. The bar digest includes
+weekly changes; the native probe verifies token/weekly percentage/reset share a row.
+All 15 native targets pass; two-row height remains <=32 px. No polling changes.
+
+The prior owner-requested single reload activated the previous build as PID 408824,
+with daemon PID 44641 preserved. Both survived 120 seconds without a new coredump
+or popup/accessibility errors. The known empty-FlowBox startup warning remains.
+This correction is staged by routine deployment; no additional reload is issued.
+
 ## CodexBar: token totals lead ChatGPT/Codex and Claude — 2026-10-18
 
 Moved those providers' seven-day token counts to the top row beside their marks.

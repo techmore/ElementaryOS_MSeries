@@ -318,3 +318,7 @@ the second row. OpenCode retains its quota-first order. The native token probe c
 vertical ordering and the two-row height; display preferences and missing-data fallbacks
 remain supported. As with other native changes, routine deployment stages this layout
 for next login without reloading a healthy panel.
+
+ChatGPT/Codex and Claude's token-first heading also includes the active seven-day
+percentage and its reset countdown. Five-hour and alternate-account details remain
+on the lower row. The token probe asserts the weekly values share the token heading.
