@@ -1,0 +1,17 @@
+{
+  "complete": true,
+  "passed": true,
+  "verified_at_utc": "2026-10-18T18:11:25.923261+00:00",
+  "pull_request": "https://github.com/techmore/ElementaryOS_MSeries/pull/155",
+  "checked_head": "1a8dc54e2e5526b2926b2527e5412f5e5354719a",
+  "ci_run": 39152857333,
+  "ci_conclusion": "success",
+  "merge_commit": "5c26ff6c2ff38c89c401c0d109a61244146868d8",
+  "pages_run": 39152966394,
+  "pages_conclusion": "success",
+  "canonical_url": "https://techmore.github.io/ElementaryOS_MSeries/local-ai.html",
+  "canonical_http_status": 200,
+  "canonical_matches_reviewed_bytes": true,
+  "canonical_sha256": "dc5434eec3c707f70942f2468b941287af673328a9527b6775fbfee50dfa9b9a",
+  "scope": "Implementation/qualification report publication; owner-session deployment is verified by a separate receipt"
+}

@@ -1,0 +1,8 @@
+{
+  "complete": true,
+  "passed": true,
+  "debug_keys_absent": true,
+  "microphone_capture": false,
+  "inference": false,
+  "selector_sha256": "b29363f5b03b30cf062375e590adac1e1f330e46255f190d6aa57f3a1d9e9f7e"
+}

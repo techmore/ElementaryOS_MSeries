@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "observed_at_utc": "2026-10-18T18:03:45+00:00",
+  "observed_at_utc": "2026-10-18T18:16:49+00:00",
   "machine": "M1 Pro j314s, 32 GB; same local qualification host",
   "kernel": "7.1.12-2-20261017.20-sep-ARCH",
   "scope": "Canonical completed/pending ledger; a receipt assertion failure is retained even where a later diagnostic changes its classification. No microphone or human-F5 acceptance is implied.",
   "public_receipt_root": "../local-ai/receipts/f5-english-2026-10-18/",
-  "public_root_status": "sanitized export exists; matching byte hashes are checked separately; final commit/Pages publication still pending",
+  "public_root_status": "PR155 implementation/qualification publication verified against canonical Pages bytes; this update adds sanitized installed/deployment evidence. Final documentation CI/Pages proof is recorded in its publication PR and task output.",
   "equivalence_fields": [
     "machine",
     "kernel",
@@ -1750,6 +1750,414 @@
         }
       ],
       "state": "terminal-preserved"
+    },
+    {
+      "id": "f5-debug-env-v1",
+      "work_path": "f5-debug-env-v1/",
+      "public_path": "../local-ai/receipts/f5-english-2026-10-18/f5-debug-env-v1/",
+      "scope": "No-inference real systemd precedence check: inherited last-capture/debug/test variables absent; prior drop-ins preserved",
+      "receipts": [
+        {
+          "path": "receipt.json",
+          "status": "terminal-pass",
+          "original_receipt_sha256": "2182c155e5107ead92ee9232600b1deffdef9571b2d7b6f25bf0f2e7579e351c",
+          "classification": "completed evidence; quality is retained metric, not an aggregate pass",
+          "public_receipt_sha256": "2182c155e5107ead92ee9232600b1deffdef9571b2d7b6f25bf0f2e7579e351c",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        }
+      ],
+      "state": "terminal-preserved"
+    },
+    {
+      "id": "f5-deployment-v1",
+      "work_path": "f5-deployment-v1/",
+      "public_path": "../local-ai/receipts/f5-english-2026-10-18/f5-deployment-v1/",
+      "scope": "Read-only merged-source/installed-byte, model/runtime, strict live environment, mode/input preservation and ANE/MLX static availability; no inference or microphone",
+      "receipts": [
+        {
+          "path": "receipt.json",
+          "status": "terminal-pass",
+          "original_receipt_sha256": "3c4fc650df36b2ed7263e8911a2a5195dca267f0d06121b21049427770a8731e",
+          "classification": "completed evidence; quality is retained metric, not an aggregate pass",
+          "public_receipt_sha256": "3c4fc650df36b2ed7263e8911a2a5195dca267f0d06121b21049427770a8731e",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        }
+      ],
+      "state": "terminal-preserved"
+    },
+    {
+      "id": "f5-publication-v1",
+      "work_path": "f5-publication-v1/",
+      "public_path": "../local-ai/receipts/f5-english-2026-10-18/f5-publication-v1/",
+      "scope": "PR155 checked head/merge, actual Pages successful deployment and canonical byte equality; not owner-session acoustic acceptance",
+      "receipts": [
+        {
+          "path": "receipt.json",
+          "status": "terminal-pass",
+          "original_receipt_sha256": "9e9654186dfaa7c9c626cc4522a139c5bb1e68fe8d127e3a4a4792357dc79c45",
+          "classification": "completed evidence; quality is retained metric, not an aggregate pass",
+          "public_receipt_sha256": "9e9654186dfaa7c9c626cc4522a139c5bb1e68fe8d127e3a4a4792357dc79c45",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        }
+      ],
+      "state": "terminal-preserved"
+    },
+    {
+      "id": "f5-installed-v1",
+      "work_path": "f5-installed-v1/",
+      "public_path": "../local-ai/receipts/f5-english-2026-10-18/f5-installed-v1/",
+      "scope": "Installed exact payload: GTK4 actual public-file ASR and GTK3/Qt6/Brave no-inference field fixtures passed. Code/Newelle/Tasks exited2 at argparse before app launch because queue omitted required --model; all attempts retained as setup failures, no model score. Only their unstarted fixture stages continued in v2.",
+      "receipts": [
+        {
+          "path": "gtk4-attempt.json",
+          "status": "terminal-attempt-completed",
+          "original_receipt_sha256": "88c14763e804671afc578b426210c5edfe948e870ae17991968f5a93d44e31fd",
+          "classification": "supervisor-or-tool-receipt; inspect paired case for quality",
+          "child_exit_code": 0,
+          "policy_sha256": "98fb18fd99093409b07aba51e877203d850723650b363c6e42e3614d2a0e04a1",
+          "policy_ref": "gtk4-attempt.json#policy",
+          "resources": {
+            "min_available_bytes": 11251187712,
+            "max_fan_rpm": 2516.0,
+            "max_temp_c": 48.413
+          },
+          "public_receipt_sha256": "88c14763e804671afc578b426210c5edfe948e870ae17991968f5a93d44e31fd",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        },
+        {
+          "path": "gtk3-attempt.json",
+          "status": "terminal-attempt-completed",
+          "original_receipt_sha256": "5a40403577cc8697bed14f4ee6f1d17529375ffc860770ab06eed672ff591934",
+          "classification": "supervisor-or-tool-receipt; inspect paired case for quality",
+          "child_exit_code": 0,
+          "policy_sha256": "98fb18fd99093409b07aba51e877203d850723650b363c6e42e3614d2a0e04a1",
+          "policy_ref": "gtk3-attempt.json#policy",
+          "resources": {
+            "min_available_bytes": 11964940288,
+            "max_fan_rpm": 2530.0,
+            "max_temp_c": 48.853
+          },
+          "public_receipt_sha256": "5a40403577cc8697bed14f4ee6f1d17529375ffc860770ab06eed672ff591934",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        },
+        {
+          "path": "qt6-attempt.json",
+          "status": "terminal-attempt-completed",
+          "original_receipt_sha256": "b3dfee1267908c126eb774ba6445997940ef6f0292b0bef8853d26d395ad24a2",
+          "classification": "supervisor-or-tool-receipt; inspect paired case for quality",
+          "child_exit_code": 0,
+          "policy_sha256": "98fb18fd99093409b07aba51e877203d850723650b363c6e42e3614d2a0e04a1",
+          "policy_ref": "qt6-attempt.json#policy",
+          "resources": {
+            "min_available_bytes": 12205817856,
+            "max_fan_rpm": 2512.0,
+            "max_temp_c": 49.006
+          },
+          "public_receipt_sha256": "b3dfee1267908c126eb774ba6445997940ef6f0292b0bef8853d26d395ad24a2",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        },
+        {
+          "path": "brave-attempt.json",
+          "status": "terminal-attempt-completed",
+          "original_receipt_sha256": "71a27181109d62bc566a400bf2c4b363e14713f895d5a1f25ea65e23393e745e",
+          "classification": "supervisor-or-tool-receipt; inspect paired case for quality",
+          "child_exit_code": 0,
+          "policy_sha256": "98fb18fd99093409b07aba51e877203d850723650b363c6e42e3614d2a0e04a1",
+          "policy_ref": "brave-attempt.json#policy",
+          "resources": {
+            "min_available_bytes": 11619942400,
+            "max_fan_rpm": 2511.0,
+            "max_temp_c": 48.68
+          },
+          "public_receipt_sha256": "71a27181109d62bc566a400bf2c4b363e14713f895d5a1f25ea65e23393e745e",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        },
+        {
+          "path": "code-attempt.json",
+          "status": "terminal-attempt-child-failed",
+          "original_receipt_sha256": "59c349709661ae47165ecc2419d46f71a44e9345174e4706bf0338f70477f3c7",
+          "classification": "Terminal argv preflight failure before app launch/inference: missing --model. No quality score; only unstarted fixture stage continued in v2.",
+          "child_exit_code": 2,
+          "policy_sha256": "98fb18fd99093409b07aba51e877203d850723650b363c6e42e3614d2a0e04a1",
+          "policy_ref": "code-attempt.json#policy",
+          "resources": {
+            "min_available_bytes": 12669157376,
+            "max_fan_rpm": 2504.0,
+            "max_temp_c": 47.866
+          },
+          "public_receipt_sha256": "59c349709661ae47165ecc2419d46f71a44e9345174e4706bf0338f70477f3c7",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        },
+        {
+          "path": "newelle-attempt.json",
+          "status": "terminal-attempt-child-failed",
+          "original_receipt_sha256": "a2617bede649fc165f6fbfecfa51314b6800d7e24a55d0f443277b0f374feac7",
+          "classification": "Terminal argv preflight failure before app launch/inference: missing --model. No quality score; only unstarted fixture stage continued in v2.",
+          "child_exit_code": 2,
+          "policy_sha256": "98fb18fd99093409b07aba51e877203d850723650b363c6e42e3614d2a0e04a1",
+          "policy_ref": "newelle-attempt.json#policy",
+          "resources": {
+            "min_available_bytes": 12522635264,
+            "max_fan_rpm": 2503.0,
+            "max_temp_c": 48.733
+          },
+          "public_receipt_sha256": "a2617bede649fc165f6fbfecfa51314b6800d7e24a55d0f443277b0f374feac7",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        },
+        {
+          "path": "tasks-attempt.json",
+          "status": "terminal-attempt-child-failed",
+          "original_receipt_sha256": "1aa67bf080eda230ae611682836abcf191a5f5645e8e09d9133ff761ccf1024f",
+          "classification": "Terminal argv preflight failure before app launch/inference: missing --model. No quality score; only unstarted fixture stage continued in v2.",
+          "child_exit_code": 2,
+          "policy_sha256": "98fb18fd99093409b07aba51e877203d850723650b363c6e42e3614d2a0e04a1",
+          "policy_ref": "tasks-attempt.json#policy",
+          "resources": {
+            "min_available_bytes": 12853428224,
+            "max_fan_rpm": 2490.0,
+            "max_temp_c": 47.846
+          },
+          "public_receipt_sha256": "1aa67bf080eda230ae611682836abcf191a5f5645e8e09d9133ff761ccf1024f",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        },
+        {
+          "path": "classification.json",
+          "status": "terminal-completed-with-metrics",
+          "original_receipt_sha256": "0cebdbc9a6e702a1676b11ab66156517253859dc99cc88c2f73c234affb48d5b",
+          "classification": "completed evidence; quality is retained metric, not an aggregate pass",
+          "public_receipt_sha256": "0cebdbc9a6e702a1676b11ab66156517253859dc99cc88c2f73c234affb48d5b",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        },
+        {
+          "path": "gtk4/receipt.json",
+          "status": "terminal-pass",
+          "original_receipt_sha256": "b06b90dea6c2561d30d0153fd4553c6b2130239b9c5728ab788aad66a5789346",
+          "classification": "completed evidence; quality is retained metric, not an aggregate pass",
+          "runtime": {
+            "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+            "engine": "nemotron",
+            "backend": "cpu",
+            "threads": 4,
+            "library_sha256": "9f1f839d89a6d3a874c939ecf3108007cc0964a338596a35adb47c7e6c5c921d",
+            "model_sha256": "90d8c89714cd31efc88be62a40c6b2bea57e0cc2063af1ffe2c28f1a228ca110",
+            "wav_sha256": "33c6c68d943a22d5272bf8d5e1f86af9d89d901fb7da35961a692de7591a534c"
+          },
+          "source_manifest_sha256": "67a1adffc1afa6313d83c2dd0635e1e1973779c5cff6ab6d7fac054af5264cd4",
+          "source_manifest_ref": "gtk4/receipt.json#source_sha256",
+          "speech": {
+            "audio_duration_s": 10.435,
+            "elapsed_s": 13.074620525000228,
+            "exact_normalized_words": true,
+            "native_engine_restored": true
+          },
+          "resources": {
+            "samples": 13,
+            "min_available_bytes": 11235852288,
+            "max_fan_rpm": 2516.0,
+            "max_temp_c": 48.413
+          },
+          "public_receipt_sha256": "b06b90dea6c2561d30d0153fd4553c6b2130239b9c5728ab788aad66a5789346",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        },
+        {
+          "path": "gtk3/receipt.json",
+          "status": "terminal-pass",
+          "original_receipt_sha256": "10ccc518fd57f27ea6c7ada0e2c6aca6d14d1efa467ff337f97fec7443009bcf",
+          "classification": "completed evidence; quality is retained metric, not an aggregate pass",
+          "runtime": {
+            "kernel": "7.1.12-2-20261017.20-sep-ARCH"
+          },
+          "source_manifest_sha256": "67a1adffc1afa6313d83c2dd0635e1e1973779c5cff6ab6d7fac054af5264cd4",
+          "source_manifest_ref": "gtk3/receipt.json#source_sha256",
+          "public_receipt_sha256": "10ccc518fd57f27ea6c7ada0e2c6aca6d14d1efa467ff337f97fec7443009bcf",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        },
+        {
+          "path": "qt6/receipt.json",
+          "status": "terminal-pass",
+          "original_receipt_sha256": "738a784538f70158ff923df4e413a77ef386d029ad609d077864b148f4f11c28",
+          "classification": "completed evidence; quality is retained metric, not an aggregate pass",
+          "runtime": {
+            "kernel": "7.1.12-2-20261017.20-sep-ARCH"
+          },
+          "source_manifest_sha256": "67a1adffc1afa6313d83c2dd0635e1e1973779c5cff6ab6d7fac054af5264cd4",
+          "source_manifest_ref": "qt6/receipt.json#source_sha256",
+          "public_receipt_sha256": "738a784538f70158ff923df4e413a77ef386d029ad609d077864b148f4f11c28",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        },
+        {
+          "path": "brave/receipt.json",
+          "status": "terminal-pass",
+          "original_receipt_sha256": "7c9f600936d89c8228bbd283de0997bfe6608680a38d7e9e9a32ae29bdb25e86",
+          "classification": "completed evidence; quality is retained metric, not an aggregate pass",
+          "runtime": {
+            "kernel": "7.1.12-2-20261017.20-sep-ARCH"
+          },
+          "source_manifest_sha256": "67a1adffc1afa6313d83c2dd0635e1e1973779c5cff6ab6d7fac054af5264cd4",
+          "source_manifest_ref": "brave/receipt.json#source_sha256",
+          "public_receipt_sha256": "7c9f600936d89c8228bbd283de0997bfe6608680a38d7e9e9a32ae29bdb25e86",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        }
+      ],
+      "state": "terminal-preserved"
+    },
+    {
+      "id": "f5-installed-v2",
+      "work_path": "f5-installed-v2/",
+      "public_path": "../local-ai/receipts/f5-english-2026-10-18/f5-installed-v2/",
+      "scope": "Corrected required --model argv for only unstarted Code/Newelle/Tasks --fixtures-only stages. No ASR, no completed toolkit repeat; parent v1 setup-failure attempts preserved.",
+      "receipts": [
+        {
+          "path": "classification.json",
+          "status": "terminal-completed-with-metrics",
+          "original_receipt_sha256": "8f995f82eca12a9dcbd30a60dbbb395e0b2c0d568d44ae8cca82cc64dc84134a",
+          "classification": "Incomplete-stage-only corrected argv continuation; no inference; installed real-app lease/cancel/stale-token/restoration fixture, not fresh positive insertion.",
+          "public_receipt_sha256": "8f995f82eca12a9dcbd30a60dbbb395e0b2c0d568d44ae8cca82cc64dc84134a",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        },
+        {
+          "path": "code-attempt.json",
+          "status": "terminal-attempt-completed",
+          "original_receipt_sha256": "ae0f24e643512f75a7ec187a8780098223d0d01c4b4654befdd31d487e5bceba",
+          "classification": "Incomplete-stage-only corrected argv continuation; no inference; installed real-app lease/cancel/stale-token/restoration fixture, not fresh positive insertion.",
+          "child_exit_code": 0,
+          "policy_sha256": "98fb18fd99093409b07aba51e877203d850723650b363c6e42e3614d2a0e04a1",
+          "policy_ref": "code-attempt.json#policy",
+          "resources": {
+            "min_available_bytes": 12703875072,
+            "max_fan_rpm": 2517.0,
+            "max_temp_c": 47.78
+          },
+          "public_receipt_sha256": "ae0f24e643512f75a7ec187a8780098223d0d01c4b4654befdd31d487e5bceba",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        },
+        {
+          "path": "newelle-attempt.json",
+          "status": "terminal-attempt-completed",
+          "original_receipt_sha256": "337a382927d740a504546f7972541e773a49527e8f644561029d361df914e2b2",
+          "classification": "Incomplete-stage-only corrected argv continuation; no inference; installed real-app lease/cancel/stale-token/restoration fixture, not fresh positive insertion.",
+          "child_exit_code": 0,
+          "policy_sha256": "98fb18fd99093409b07aba51e877203d850723650b363c6e42e3614d2a0e04a1",
+          "policy_ref": "newelle-attempt.json#policy",
+          "resources": {
+            "min_available_bytes": 12127567872,
+            "max_fan_rpm": 2525.0,
+            "max_temp_c": 47.78
+          },
+          "public_receipt_sha256": "337a382927d740a504546f7972541e773a49527e8f644561029d361df914e2b2",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        },
+        {
+          "path": "tasks-attempt.json",
+          "status": "terminal-attempt-completed",
+          "original_receipt_sha256": "21d8e012917270fef91219122324af5a775fba63ca4cf365bc2e61d162253c15",
+          "classification": "Incomplete-stage-only corrected argv continuation; no inference; installed real-app lease/cancel/stale-token/restoration fixture, not fresh positive insertion.",
+          "child_exit_code": 0,
+          "policy_sha256": "98fb18fd99093409b07aba51e877203d850723650b363c6e42e3614d2a0e04a1",
+          "policy_ref": "tasks-attempt.json#policy",
+          "resources": {
+            "min_available_bytes": 12570034176,
+            "max_fan_rpm": 2508.0,
+            "max_temp_c": 47.38
+          },
+          "public_receipt_sha256": "21d8e012917270fef91219122324af5a775fba63ca4cf365bc2e61d162253c15",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        },
+        {
+          "path": "code/receipt.json",
+          "status": "terminal-pass",
+          "original_receipt_sha256": "7dccfa93f7778fe73c5dd4046b169a9f3c10410faa97b6d0a68ba104f7d718c4",
+          "classification": "Incomplete-stage-only corrected argv continuation; no inference; installed real-app lease/cancel/stale-token/restoration fixture, not fresh positive insertion.",
+          "runtime": {
+            "kernel": "7.1.12-2-20261017.20-sep-ARCH"
+          },
+          "source_manifest_sha256": "ce912512bc86d7479830d21427d282524c558a4f3e6060968fc82e941823f7b8",
+          "source_manifest_ref": "code/receipt.json#source_sha256",
+          "public_receipt_sha256": "7dccfa93f7778fe73c5dd4046b169a9f3c10410faa97b6d0a68ba104f7d718c4",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        },
+        {
+          "path": "newelle/receipt.json",
+          "status": "terminal-pass",
+          "original_receipt_sha256": "294cadabb114577759aa169f0d1715febb87f4d3ea4b0813c800d2aea9ce38a6",
+          "classification": "Incomplete-stage-only corrected argv continuation; no inference; installed real-app lease/cancel/stale-token/restoration fixture, not fresh positive insertion.",
+          "runtime": {
+            "kernel": "7.1.12-2-20261017.20-sep-ARCH"
+          },
+          "source_manifest_sha256": "ce912512bc86d7479830d21427d282524c558a4f3e6060968fc82e941823f7b8",
+          "source_manifest_ref": "newelle/receipt.json#source_sha256",
+          "public_receipt_sha256": "294cadabb114577759aa169f0d1715febb87f4d3ea4b0813c800d2aea9ce38a6",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        },
+        {
+          "path": "tasks/receipt.json",
+          "status": "terminal-pass",
+          "original_receipt_sha256": "399e98a20357c253e2e3c49661bc7ba709b69edb3b52be17d36ca743a4a29e44",
+          "classification": "Incomplete-stage-only corrected argv continuation; no inference; installed real-app lease/cancel/stale-token/restoration fixture, not fresh positive insertion.",
+          "runtime": {
+            "kernel": "7.1.12-2-20261017.20-sep-ARCH"
+          },
+          "source_manifest_sha256": "ce912512bc86d7479830d21427d282524c558a4f3e6060968fc82e941823f7b8",
+          "source_manifest_ref": "tasks/receipt.json#source_sha256",
+          "public_receipt_sha256": "399e98a20357c253e2e3c49661bc7ba709b69edb3b52be17d36ca743a4a29e44",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        }
+      ],
+      "state": "terminal-preserved"
+    },
+    {
+      "id": "f5-postdeploy-v1",
+      "work_path": "f5-postdeploy-v1/",
+      "public_path": "../local-ai/receipts/f5-english-2026-10-18/f5-postdeploy-v1/",
+      "scope": "Read-only post-fixture check: same ready listener, unchanged input preferences/kernel/4B process, seven distinct installed case passes, no quiet guard interruption. Aggregate resources from both installed queues, including setup attempts.",
+      "receipts": [
+        {
+          "path": "receipt.json",
+          "status": "terminal-pass",
+          "original_receipt_sha256": "96d1cb54899a658719875927c289f3b680036d82bd53d0a2f145614ae7015cab",
+          "classification": "completed evidence; quality is retained metric, not an aggregate pass",
+          "resources": {
+            "min_available_bytes": 11251187712,
+            "max_fan_rpm": 2530.0,
+            "max_temp_c": 49.006
+          },
+          "public_receipt_sha256": "96d1cb54899a658719875927c289f3b680036d82bd53d0a2f145614ae7015cab",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        },
+        {
+          "path": "classification.json",
+          "status": "terminal-completed-with-metrics",
+          "original_receipt_sha256": "7dea2691de7ea92fc959253685714927b1844aaad036122bd6de726bc9776520",
+          "classification": "Read-only compatibility audit with exact source pins and selected unchanged Commit ASTs; scoped evidence reuse, not a model trial.",
+          "public_receipt_sha256": "7dea2691de7ea92fc959253685714927b1844aaad036122bd6de726bc9776520",
+          "public_checksum_manifest_match": true,
+          "public_copy_status": "exported-bytes-verified"
+        }
+      ],
+      "state": "terminal-preserved"
     }
   ],
   "receipt_hash_semantics": {
@@ -1760,7 +2168,7 @@
   "owned_unit_observation": [],
   "public_copy_audit": {
     "terminal_receipts_missing_matching_public_bytes": [],
-    "checked_receipts": 70
+    "checked_receipts": 94
   },
   "completed_owned_units": [
     {
@@ -1772,16 +2180,45 @@
       "unit": "mseries-f5-tasks-qualification.service",
       "cohort": "f5-real-tasks-qualified-v1",
       "status": "terminal; actual Tasks ASR passed; do not restart"
-    }
-  ],
-  "pending_gates": [
-    {
-      "id": "merge-and-publication",
-      "status": "pending coordinator checks/merge/Pages byte verification"
     },
     {
-      "id": "deployment-installed-checks",
-      "status": "pending reviewed installer activation and installed-path no-inference checks"
+      "unit": "mseries-f5-installed-qualification.service",
+      "cohort": "f5-installed-v1",
+      "status": "terminal: four toolkit cases passed; three prelaunch argv failures retained; do not restart"
+    },
+    {
+      "unit": "mseries-f5-installed-fixtures-v2.service",
+      "cohort": "f5-installed-v2",
+      "status": "terminal: only three unstarted real-app fixtures passed; do not restart"
     }
-  ]
+  ],
+  "pending_gates": [],
+  "implementation_publication": {
+    "complete": true,
+    "passed": true,
+    "verified_at_utc": "2026-10-18T18:11:25.923261+00:00",
+    "pull_request": "https://github.com/techmore/ElementaryOS_MSeries/pull/155",
+    "checked_head": "1a8dc54e2e5526b2926b2527e5412f5e5354719a",
+    "ci_run": 39152857333,
+    "ci_conclusion": "success",
+    "merge_commit": "5c26ff6c2ff38c89c401c0d109a61244146868d8",
+    "pages_run": 39152966394,
+    "pages_conclusion": "success",
+    "canonical_url": "https://techmore.github.io/ElementaryOS_MSeries/local-ai.html",
+    "canonical_http_status": 200,
+    "canonical_matches_reviewed_bytes": true,
+    "canonical_sha256": "dc5434eec3c707f70942f2468b941287af673328a9527b6775fbfee50dfa9b9a",
+    "scope": "Implementation/qualification report publication; owner-session deployment is verified by a separate receipt"
+  },
+  "deployment": {
+    "state": "installed-and-read-only-verified",
+    "source_commit": "5c26ff6c2ff38c89c401c0d109a61244146868d8",
+    "receipt_ref": "../local-ai/receipts/f5-english-2026-10-18/f5-deployment-v1/receipt.json",
+    "default_engine": "nemotron-cpu-4threads-right1",
+    "owner_f5_mode_preserved": "toggle",
+    "optional_ane_mlx_retained": true,
+    "installed_app_acceptance": "complete: seven distinct installed routes passed; one GTK4 public-file ASR plus six no-inference app fixtures. Original argv setup failures retained, only three unstarted fixtures continued.",
+    "post_fixture_verification_ref": "../local-ai/receipts/f5-english-2026-10-18/f5-postdeploy-v1/receipt.json"
+  },
+  "completion_scope": "Qualification, installation and installed routes complete; fresh human microphone, authenticated Gmail, natural/full-duplex speech, factory boot, indefinite soak and power/battery are separate future acceptance gaps. Never repeat completed comparable cohorts."
 }

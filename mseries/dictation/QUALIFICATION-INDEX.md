@@ -6,11 +6,11 @@ hashes, source-manifest identities, model/runtime pins, status and quality scope
 Use the existing evidence before proposing another benchmark. A finished failure
 is evidence to preserve, not permission to repeat it until it passes.
 
-Snapshot refreshed: **2026-10-18, 14:03 EDT / 18:03 UTC**. Tasks ASR, both sustained
-engine cohorts and the joined voice continuation are complete. Do not repeat
-them. Remaining work is final merge/publication, deployment and installed-path
-checks. A later reader must inspect the live units and receipts instead of
-treating an older snapshot as current process status.
+Snapshot: **October 18, 2026**. All model/app cohorts, joined voice continuation,
+merged deployment and seven installed app routes are complete. No owned speech
+queue remains active. PR #155 merged as `5c26ff6`; its CI and Pages byte check
+passed. This update publishes the final deployment/installed evidence. Inspect
+live units/receipts before future work; the snapshot is not a live process monitor.
 
 ## Current decision and limits
 
@@ -50,7 +50,8 @@ treating an older snapshot as current process status.
   first text1.733 s, first WAV2.200 s. No microphone or playback occurred. This is
   not a measured spoken-question-to-audible-answer delay; eSpeak is robotic.
 
-All trials preserve a six-GiB desktop reserve and quiet admission/stop guards.
+All trials used a six-GiB reserve and quiet admission/stop guard policy; the
+completed sustained CPU cohort’s exact sensor peaks are unavailable as recorded above.
 Fan RPM is a noise proxy, not a dBA measurement. File tests do not establish a
 new live microphone/physical-F5 acceptance, factory boot, battery or power result.
 
@@ -59,8 +60,9 @@ new live microphone/physical-F5 acceptance, factory boot, battery or power resul
 Private work paths below are relative to the existing task's `work/` directory.
 Sanitized copies are exported under
 [f5-english-2026-10-18](../local-ai/receipts/f5-english-2026-10-18/); that folder is
-checked separately against public byte digests. Final commit/Pages publication
-is still a coordinator gate at this snapshot. Never publish private logs,
+checked separately against public byte digests. The initial implementation Pages
+publication has verified CI/run/byte proof; final documentation publication is
+verified after its merge and recorded in that PR’s body and task output. Never publish private logs,
 profiles, real app contents, credentials, settings clones or microphone audio.
 
 | Cohort | State and evidence to reuse |
@@ -85,6 +87,11 @@ profiles, real app contents, credentials, settings clones or microphone audio.
 | `f5-joined-voice-v1` | Completed real ASR trace preserved; voice stage stopped before inference because the private bus could not check the owner service. Keep the harness failure. |
 | `f5-joined-voice-v2` | Actual voice UI completion gate/LLM/WAV passed by replaying v1's37 ASR events. No fresh ASR or microphone/playback. No duplicate request; original preserved. |
 | `f5-payload-fixtures-v1` | No-inference app checks using the frozen installer payload; distinct from installed owner-session acceptance. |
+| `f5-debug-env-v1` | Real no-inference systemd child proves inherited capture-retention/dry/file-test/forced-fallback variables are absent; no old settings file edited. |
+| `f5-deployment-v1` | Read-only pass: installed source/model/native-library hashes, strict live settings, enabled listener/bridge readiness, toggle/input preservation, unchanged 4B and static ANE/MLX assets. |
+| `f5-installed-v1` | Installed GTK4 actual public-file ASR plus GTK3/Qt6/Brave fixtures passed. Code/Newelle/Tasks commands failed argparse before launch because a required model argument was absent; retain those setup failures, no quality score. |
+| `f5-installed-v2` | Only the three unstarted installed real-app fixtures, with corrected argv and no inference. Inspect these results rather than rerunning v1. |
+| `f5-publication-v1` | PR #155 checked head, merge, successful Pages deployment and exact canonical byte equality. Separate from microphone acceptance. |
 
 The earlier publication is [PR162](https://github.com/techmore/ElementaryOS_MSeries/pull/162),
 merge`87f4a7b88c947d6c0d8e59cf3dd54aaf636ff3d2`; its CI and Pages verification
@@ -102,7 +109,10 @@ production source manifest, guard policy, audio/reference/workload, resident
 cold/warm state, app/runtime, checkpoint stage and metric definition**. Keep the
 outcome separate: changing a failed result's label must never make it eligible
 for another comparable trial. Missing pins mean an identical-state comparison
-has not been established, not that unknown values match.
+has not been established, not that unknown values match. Documentation-only
+changes, another checkout or missing telemetry do not justify repeating a
+finished benchmark. A materially changed model/backend needs a scoped new
+question and identity, with the previous result retained as its baseline.
 
 `complete:false` alone is insufficient to decide whether to resume. A terminated
 assertion or unsupported-runtime result is terminal evidence; an interrupted
@@ -138,31 +148,21 @@ second queue. The now-completed owned units were
 `mseries-f5-sustained-qualification-resume.service` and
 `mseries-f5-tasks-qualification.service`.
 
-**All listed model/app cohorts are now terminal; these are recovery entry points,
-not the next task. Do not run them for completed work.** Only after both
-inspection and identity checks show a queue is no longer alive,
-with genuinely incomplete work and no equivalent terminal attempt, its exact
-guarded driver entry points are:
-
-```bash
-systemd-run --user --collect --unit=mseries-f5-sustained-qualification-resume /usr/bin/python3 "$WORK/run-sustained-f5-resume.py"
-systemd-run --user --collect --unit=mseries-f5-tasks-qualification /usr/bin/python3 "$WORK/run-f5-tasks.py"
-```
-
-**Do not run these while their units exist and are active.** The drivers preserve
-completed CPU work and existing attempts. An interrupted receipt/attempt may
-need an explicit incomplete-only resume change by the coordinator; never delete
-the file, bypass its existence check, overwrite a frozen source, reset a score
-or launch the raw benchmark to force a retry. Compare the existing source hashes
-before re-entry, because the current scratch drivers prepare their source tree.
+**All listed model/app cohorts are terminal. Do not restart their units or
+drivers.** The unit names above are for read-only inspection. Old drivers can
+prepare source trees before checking existing attempts; accidentally restarting
+one can damage frozen evidence even if inference is skipped. New work must
+identify a distinct acceptance gap and cohort identity, reusing completed evidence.
+Resume a future interrupted queue only from its recorded incomplete checkpoint,
+without deleting attempts, resetting scores or rewriting frozen sources.
 Permanent upstream tracking is already the repository's six-hour watcher; do not
 create another watcher or completion heartbeat.
 
-The private maintenance helper refreshes receipt metadata without inference or
+The repository maintenance helper refreshes receipt metadata without inference or
 service changes, and preserves curated failure classifications:
 
 ```bash
-python3 "$WORK/refresh-f5-index.py" --repo "$(git rev-parse --show-toplevel)" --require-public
+python3 mseries/dictation/refresh-qualification-index.py --work-dir "$WORK" --require-public
 ```
 
 Run it after the sanitized exporter/checksum refresh and after installed checks.
@@ -173,23 +173,37 @@ They can differ legitimately. The helper verifies public bytes against
 explicitly allowlisted receipt paths and writes this JSON index; it never launches
 an app, model or service. New cohorts still need a curated scope/classification.
 
-## Remaining merge/deployment gates at this snapshot
+## Completion record and separate future work
 
-1. Model/app and joined replay results are complete. Preserve them and the
-   original failures; no model-quality benchmark is pending. The next tests are
-   installed-path checks after deployment, not repeated model qualification.
-2. Final contract/review checks must cover the current stable-only app policy,
-   lifecycle/late-enqueue cancellation, six-GiB guards and installer rollback.
-   Current Code/Newelle results identify their exact earlier source snapshots;
-   no universal app or live microphone claim follows from them.
-3. Sanitize receipts and reconcile this index, the report and public page. Merge
-   only the checked final head, preserving other main changes; verify the actual
-   Pages deployment and canonical bytes before saying it is published.
-4. Wait for all owned inference workers to finish before installing/activating
-   English F5. Use the reviewed private-backup installer, preserve the owner's
-   toggle/hold choice and other drop-ins, reload only owned speech/input units,
-   verify healthy readiness, and retain rollback. No owner audio/kernel/display
-   or unrelated job changes. Native ANE/MLX remain explicit options.
+PR #155 passed all six checked-head CI jobs in run `39152857333`, merged as
+`5c26ff6c2ff38c89c401c0d109a61244146868d8`, and published through successful
+Pages run `39152966394`. Canonical HTTP 200 bytes matched the reviewed page
+SHA256 `dc5434eec3c707f70942f2468b941287af673328a9527b6775fbfee50dfa9b9a`.
+See `f5-publication-v1/receipt.json`; this proof identifies that earlier page,
+not a retroactive byte claim about the subsequent deployment report update.
 
-The coordinator updates the pending outcomes and deployment receipt here once
-those gates finish. Future work starts from this ledger, not from a new baseline.
+The reviewed English installer activated the merged source. Static/live checks
+passed: exact runtime/model/library bytes, strict CPU/IBus environment with
+capture-retention/test overrides absent, enabled ready listener/bridge, preserved
+toggle/input settings, unchanged everyday 4B, retained ANE/MLX assets and private
+rollback. Seven installed app routes passed: one GTK4 public-file ASR smoke and
+six no-inference app fixtures. Code/Newelle/Tasks installed fixtures cover
+field discovery, lease/cancel and restoration, not another positive text-commit
+or ASR run; earlier real-app ASR receipts remain their positive evidence.
+The post-deployment `classification.json` pins an independent source/AST audit:
+Tasks' core files exactly match deployment; Code/Newelle retain identical Commit
+validation/body and committed-word handler subtrees despite preview/cancel fixes.
+Their earlier ASR is not relabeled as a later-source trial.
+The original three argument-parsing failures
+remain; only their unstarted fixtures continued. Supervisor samples retained
+10.48 GiB available at ≤2530 RPM / 49.01°C with no guard interruption. Post-fixture
+readiness/preservation passed. No completed model benchmark was repeated.
+
+No qualification or activation gate remains for this scoped delivery. Fresh
+physical-F5/microphone acceptance, authenticated Gmail, native Calendar GUI,
+natural voice/full-duplex WebRTC, indefinite soak, battery/power and factory boot
+remain distinct future work. They do not justify rerunning the completed cohorts.
+A future backend/model change needs a new scoped question and explicit identity.
+Final documentation CI/Pages verification is recorded after its actual success in
+the publication PR body and task output; never infer it from a successful HTTP
+request alone. This ledger is the starting point for all continuation work.
