@@ -1,0 +1,44 @@
+{
+  "complete": false,
+  "deployed": false,
+  "result": {
+    "gtk_version": 3,
+    "display_backend": "x11",
+    "unicode_field": true,
+    "changed_field_untouched": true,
+    "password_untouched": true,
+    "speech": {
+      "backend": "cpu",
+      "wav_sha256": "33c6c68d943a22d5272bf8d5e1f86af9d89d901fb7da35961a692de7591a534c",
+      "normalized_word_error_rate": 0.0,
+      "widget_text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered, flour-fattened sauce",
+      "first_widget_text_s": 4.469517204999647,
+      "elapsed_s": 12.285051656999713,
+      "min_available_bytes": 13692436480,
+      "max_fan_rpm": 2519.0,
+      "max_temp_c": 47.58,
+      "samples": 56,
+      "quiet_policy_passed": true,
+      "microphone_recorded": false
+    },
+    "method": "Actual Gtk.Entry fields, private Xvfb/IBus/session bus; no ASR or microphone"
+  },
+  "method_note": "The legacy field-test method label says no ASR; this run explicitly used --speech-file and the speech result above. No microphone or playback occurred. First-text latency includes cold process/model startup and paced input, not a decode-throughput benchmark.",
+  "source_sha256": {
+    "stream-dictate.py": "62b799e65c055e940fe9ad20390df8d419365bd5c19e261e92d19f310eb5e726",
+    "dictation-input.py": "d696195c4636103db7038dc1de464b2b8532c76e0aced337e3cf8327ad9617b8",
+    "dictation-input-client.py": "33b3c5f08745202ab23a6adee4b8f477d0b0c00f8766892e3ace0505cb8ab36c",
+    "gtk-input-smoke.py": "45ab390791073b6dac8cb20c585af60b901e4c5c73fc30dc45c0331aaed182f3"
+  },
+  "model_sha256": "a8bf3de2b393bd14ead5a858c3748d5e3b07a20fdeabdd3b498fba4f463fa929",
+  "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "backend": "cpu",
+  "threads": 6,
+  "remaining": [
+    "ordinary keyboard/compose regression",
+    "installer/activation/rollback",
+    "remaining app coverage",
+    "human F5",
+    "optional grammar/translation review"
+  ]
+}

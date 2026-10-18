@@ -1,0 +1,28 @@
+{
+  "passed": true,
+  "source_sha256": {
+    "stream-dictate.py": "a1ef161bb8c908f6212e92478585d5e0e0192c3002ce088547fe6f0d524a8f89",
+    "dictation-input.py": "a4922cb6d890aefbcbbb6b9dba5721b6498e656af51c21abc77a8357b7090493",
+    "dictation-input-client.py": "7539c071308a23eb023d6bea5d3b5f99e6092010ccc6689d6223b57d1c58b637",
+    "dictation_status.py": "50dadbf4f6a7f5edf8e4cb8b91d8931adf75cd899455285547d653c5af591903",
+    "dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+    "gtk-input-smoke.py": "fc581d61f91f292b3d2e27a76502f8470c54edadb52ab4e2a015cc5ee82a2be8",
+    "machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+  },
+  "gtk_version": 3,
+  "display_backend": "x11",
+  "unicode_field": true,
+  "changed_field_untouched": true,
+  "password_untouched": true,
+  "speech": null,
+  "keyboard": {
+    "ordinary_keys": true,
+    "shift": true,
+    "backspace": true,
+    "dead_key_compose": true,
+    "layout": "private Xvfb us(intl)"
+  },
+  "method": "Actual Gtk.Entry fields, private Xvfb/IBus/session bus; no ASR or microphone",
+  "scope": "Actual private IBus API selector plus Unicode, keyboard/compose, focus and password checks; no ASR or microphone.",
+  "deployed": false
+}

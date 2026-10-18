@@ -1,0 +1,9 @@
+{
+  "method": "Hidden Xvfb and isolated D-Bus/XDG homes. Actual Assistant Mail Drafts review button to installed native Mail composer. Synthetic recipient/subject/body only; Send never activated.",
+  "passed": true,
+  "review_preview_match": true,
+  "recipient_match": true,
+  "subject_match": true,
+  "body_match": true,
+  "send_activated": false
+}

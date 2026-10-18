@@ -1,5 +1,348 @@
 # OS 9 implementation / Claude Code handoff
 
+## Complete Tasks from the panel — 2026-10-18
+
+Task rows now have accessible checkboxes that update the same EDS records as
+elementary Tasks. Pending saves disable repeat activation; read-only or
+unavailable lists disable completion. Failed saves restore the checkbox and
+show a retry error. Clicking a completion checkbox keeps the panel open.
+
+The model refetches the latest source/UID/recurrence record before changing it,
+preserving newer edits. EDS’s completion helper handles repeating tasks on a
+worker thread; saves record UTC modification time and sequence. Tests use only
+owned synthetic data on a private bus. Fourteen plugin/EDS groups pass, including
+checkbox completion metadata, stale edits, source identity, recurring
+advancement, failure recovery and all existing agenda modes/navigation.
+The release build is installed; real task/event row comparisons are read-only
+and pass. Six image-wiring tests pass. No personal task was completed by tests.
+[Behavior and tests](calendar/README.md#completing-tasks-in-the-panel).
+
+## Speech/app candidate published on main; physical F5 and rollout remain open — 2026-10-18
+
+PR86 merged at077bfe58013f110962d24f60a38b122bd6a05d90. Checked sourcecbc47ed passed
+all5 CI jobs in39130696811; local46 dictation,72 assistant and6 image checks pass.
+Initial Pages deployment39138713351 succeeded at that merge. Canonical /local-ai.html
+returned200 and matched reviewed docs bytes exactly (SHA7db1713ab2658c0ebdcc878c4ab4ab2af
+03c92b0c04b64d1fa25766c79ed0c46). Publication receipt records this commit-specific proof.
+This documentation follow-through updates stale pending-publication statements; it
+does not rerun completed native/model trials or change the qualified runtime.
+
+All lifecycle/model/app queues are terminal; never relaunch them for a better score.
+Original review5/6 and Newelle exact-format failure remain failed. Separate3-language,
+actual panel workflow, native idle/close/reload and private field checks retain their
+own source/runtime pins and limitations. Live eager speech758179/input787274/default4B
+795452 remain unchanged/active at last check. No new physical F5 event since recovery.
+Read-only static keymap inventory confirms both0x7003e/0x70069→F14; it does not prove
+physical event delivery. An initial wrong ioctl direction returned EINVAL and was
+corrected; not a driver finding. Full corrected266-entry inspection read no key events.
+
+Goal remains active, NOT complete on publication. Required next evidence: owner's
+exact microphone popup/app and coordinated human F5 retry. Do not invent/remap a
+different microphone key without event evidence. No ambient mic, owner windows,
+kernel/boot/audio/display changes. Optional panel and lazy model are still uninstalled
+on the owner session; prepare their quiet idle rollout only after the physical path
+is resolved. Translation is inspectable post-utterance review, not simultaneous
+multilingual capture. Repeated-inference/long-run memory and factory boot are not
+established by the reload-only soak. Existing six-hour developer watcher remains the
+permanent tracker; no new heartbeat, GPU worker or runtime pin update was created.
+
+## On-demand speech lifecycle privately qualified; deployment/F5 pending — 2026-10-18
+
+Previous goal turn was progress: review/pipeline833b3c4 and main reconciliation77c51fd
+were pushed; CI39129646910 passed all5 jobs, all6 current image checks passed. PR86
+body has those completed results. Physical F5/app/prompt clarification is still pending;
+no new human acceptance evidence. Keep the full speech/control-panel goal active.
+
+New source LazyModel owns a single exclusive lease across load/capture/flush. Native
+SDK/model load on explicit start only, with1GiB+6GiB admission; Begin binds the original
+field before load and a new metadata/token-only Check revalidates it before capture.
+Release/Escape during preparation and stop before a capture retry prevent opening.
+Idle60s/pressure trim uses native close, never during active use. Main listener remains
+responsive, sampling5s only while resident/waiting; recovered admission clears waiting.
+46 contracts pass, including controlled load/Begin races and native-cache semantics.
+Installer stages the new module for both compatibility and Unicode paths.
+
+No owned trial is still running: native-file exec54189 and native-idle exec58731 are
+terminal success. work/dictation-lazy-lifecycle-v1 has one new CPU public-file→GTK4
+run, native close/reload, no second inference: RSS37.59→918.73→134.59MiB,784.14MiB
+reclaimed; reload930.97→187.86MiB. Retained allocator/library state is not zero and
+long-run growth remains unqualified. work/dictation-idle-expiry-v1 uses NO inference,
+actual controller timer release60.9955s, RSS888.25→121.17MiB (767.08MiB). min available
+11.07/11.33GiB, reported0RPM, max39.52/39.99C. No mic/physical keyboard/audio playback.
+Source and native/model/profile/kernel hashes are frozen per cohort. File fixture
+source precedes the waiting-state recovery/capture-retry additions; do not overwrite
+its source pins or rerun to improve a score. Later native timer/field tests pin those
+changes. No repeated original quality cohort or repair-advice regrading.
+
+Private Qt6, Brave forced-accessibility and headless GTK4 Wayland pre-capture Check
+and stale-focus refusal pass, no ASR. Frozen work/dictation-pre-capture-framework-v1
+preserves exact source. Only allowlisted JSON/frozen public code exported with
+work/publish-receipts.py --dictation-lifecycle; no private logs/settings/recordings.
+Native SDK is transcribe.cpp0.4.0/NumPy2.5.4; CPU strict, same kernel/native model pins.
+
+Live eager speechPID758179 and bridgePID787274 remain unchanged; do NOT claim the new
+memory behavior deployed. Everyday mseries-ai-everyday.service remains active. Optional
+panel is still uninstalled. These runtime/physical gates are separate from publishing
+tested opt-in source and retained failures to main. New lifecycle batch needs
+commit/push/current-source CI; then publish tested candidate with known gates explicit.
+Do not mark the goal complete on merge/publication alone. Human F5, rollout, realtime
+translation beyond explicit post-utterance review and hardware factory boot lack proof.
+
+Additional cleanup review found first-read/capture-stall paths could outlast release.
+Source now polls first/active pipe reads, closes owned children/stdout on read failure,
+and prevents later retry after release.46 contracts pass. Actual public-file first
+samples/close + silent-owned-child cancellation passed0.203s, no SDK/inference.
+work/dictation-capture-startup-v1 is terminal. Native reload-only8-cycle soak exec99822
+is terminal success: closed RSS119.92MiB initially, then107.14–107.20MiB; last4 span48KiB.
+min11.35GiB available/reported0RPM/max38.95C. This does not establish repeated-inference
+or indefinite stability. Its source is frozen at work/dictation-reload-soak-v1; preserve
+all completed observations.72 assistant and6 image contracts pass on this batch.
+All new receipts are allowlisted under dictation-lifecycle-2026-10-18; no logs/audio.
+Live speech/input/default4B PIDs758179/787274/795452 unchanged and active; no new F5 event.
+
+## Review cohorts and actual panel workflow complete; physical F5 unresolved — 2026-10-18
+
+Both owned model-review units are terminal/missing; do not relaunch or duplicate.
+Original six-case cohort remains5/6, including French PWNED→PWNÉ fidelity failure.
+Separate English/German/Japanese cohort completed3/3 limited checks,0 interruptions,
+3.21–3.64s request paths, min11.51GiB, reported0RPM/max40.30C. All five visible
+text-output choices have basic probes; speech recognition remains English-only.
+Archived extra-language driver said six; actual checkpoint IDs/count3 are authoritative.
+Current source fixes the wording; archived source and failed outcomes are unchanged.
+
+work/dictation-panel-workflow-v1 is terminal complete/passed:true. Real public-file
+ASR→actual private GTK4 TextView→local French translation→grammar→private clipboard
+passes functional checks, preserving original/intermediate.0% normalized WER, first
+widget5.00s, complete ASR12.80s; model stages7.02/7.09s. Min11.04GiB, reported0RPM,
+max40.17C. Meaning drift retained: stew→soup and bruised→crushed potatoes; grammar
+returned that translation unchanged. This is not a fidelity pass or physical F5 test.
+Never repeat completed model stages to improve the score. work/publish-receipts.py
+--dictation-panel exports allowlisted receipt + evaluated source only; private ASR,
+portal logs/settings/journals/audio stay out. New explicit panel pipeline keeps an
+intermediate translation and warns/retains it if stage2 is unavailable.28 contracts
+and private native fake-transform wiring pass. Panel remains uninstalled; preserve
+the failed human F5 report and ask for exact prompt/app if still missing.
+
+Latest live services remained speechPID758179/inputPID787274, ready CPU/IBus and idle
+native engine. No F5 diagnostic event since recovery. The keymap query is not proof
+of physical delivery. No microphone/owner windows or IBus restart by this batch.
+Default4B remains enabled/available under admission. Idle ASR still retains~0.9GiB;
+pressure-release/on-demand loading remains open. No kernel/boot/audio/display edits.
+Reviewed source/publication batch833b3c4 is reconciled here with main5c0c60e,
+preserving owner Orchard/factory changes and both handoff histories. Current source
+clears an old intermediate view before a new review; private fake-transform v3
+checks the unavailable-first-stage case without repeating completed model trials.
+3159e7f CI39127981785 passed all4 jobs; this merged tree requires fresh CI. PR86
+remains draft/unmerged, this phase's Pages unverified. No CodexBar feature diff.
+
+## Review pilot complete,5/6; extra language queue started — 2026-10-18
+
+Original mseries-dictation-review-qualification.service is terminal/missing (previous
+PID699108), checkpoint work/dictation-review-v1.json complete:true with6cases and0
+interruptions. All quiet policy checks passed. Five limited checks pass; French
+literal translation changed PWNED to PWNÉ and remains failed. It translated the source
+as data, not an executed instruction; the checker label combines this with identifier
+fidelity. Separate qualitative annotation explains that distinction without changing
+checks_passed:false. Grammar literal remained unchanged/unpolished. Never rerun the
+completed six cases to improve scores. All outputs are synthetic.
+
+Warm API path1.99–3.43s, min9.48GiB available, maxfan2516RPM/temp42.75C. Queue span
+1392.39s is journal-unit-start wall time to complete-checkpoint mtime, including
+admission/startup/quiet confirmations, not separately timed. The transient unit was
+already garbage-collected; zero monotonic properties were unavailable, not zero time.
+work/publish-receipts.py --dictation-review exports only allowlisted synthetic fields,
+retains failures and frozen source; raw server logs/settings/journals are excluded.
+Default4B PID795452 was restored after admission and remains available at last check.
+
+A new, distinct mseries-dictation-language-qualification.service covers3NEW target
+choices (English/German/Japanese), preserving the6-case cohort. Inspect this unit,
+work/dictation-language-qualification.log and work/dictation-language-v1.json before
+any launch; never duplicate. Source frozen at work/dictation-language-cohort-v1.
+It reuses the guarded base driver with additional case IDs and source metadata.
+Its inherited completion log still says six; checkpoint case IDs/count3 are
+ authoritative. Fix this cosmetic base-driver wording in source, not archived runs.
+
+Next: inspect the3 language outputs and preserve failures; actual native panel-to-model
+and ASR-to-Gtk.TextView-to-review-to-private-copy workflow on a private Xvfb/bus. Do not
+record ambient mic/play audio or open owner windows. The optional panel remains source-only
+and uninstalled. A human F5 retry was requested after the bridge fix; no selected
+function key occurred during the60s observer. Keep the installed F5 services stable
+while that retry is pending. Idle ASR on-demand/pressure-release remains an efficiency
+gap for source implementation/test next; do not hide it or reduce6GiB reserve.
+
+Own recovery commit52d0163 is reconciled with main c3e6b14 in3159e7f; CI39127981785
+passed all4 jobs, including the new dock startup group. Local24 dictation,72 assistant
+and5 image wiring checks pass. No feature diff touches CodexBar; inherited owner code
+is retained and no owner app redeployment is needed. Review/language publication batch
+still needs commit/push/CI. PR86 remains draft/unmerged; Pages for this phase unverified.
+
+## Native input reconnect recovery fixed and tested — 2026-10-18
+
+Authoritative live check found the bridge inactive after the owner IBus PID changed;
+systemd reported clean TERM with Restart=on-failure, so no recovery occurred. No F5
+press reached the new diagnostic logs. This is a concrete runtime fault, not proof
+of the owner's earlier microphone-popup cause. Replaced Restart with always; manual
+stop still stays stopped. No owner IBus daemon or other app was restarted by these fixes.
+
+Actual recovery testing exposed two additional failures, both retained: Requires
+coupling reloaded the speech worker; then a Wants-only test preserved speech but lost
+the idle global engine. Upstream IBus's dynamic-component removal checks registered
+engines and can clear even the static global engine. Corrected drop-in uses Wants+After
+and PartOf=graphical-session.target, with no Requires cascade. ExecStartPost repairs
+ONLY an empty engine from the selected native source. Any nonempty owner selection
+wins; XKB uses Pantheon's existing US pass-through engine without changing its map.
+Begin also recovers a missing engine from native sources if it was cleared later.
+
+Private GTK keyfile/session-bus reconnect v3 passes: terminate ONLY private IBus,
+restart its owned bridge, restore native source, remove/recreate that dynamic bridge,
+recover an unset engine on Begin, insert into actual Gtk.Entry and restore source.
+Changed-field/password refusal and preservation of a deliberate French engine also
+pass. v2 success retained separately; fixture v1 failed on a stale OWNED Unix socket
+pathname (setup error, no model quality score). The resulting ibus-daemon fixture core
+is a synthetic test failure, not evidence of a new owner kernel/desktop fault.
+
+Live exact-unit clean-TERM recovery v3 passed in3.46s, preserving the speech process,
+native source list and idle input method. Explicit stop stayed inactive past RestartSec,
+and explicit start became ready; rollback's stop behavior remains supported. Actual
+logout was NOT tested, only PartOf wiring. SpeechPID758179 was preserved through both
+corrected tests; final inputPID787274. CPU/IBus and nativeUS now ready; no mic recorded.
+Twenty-four contracts pass. New public receipts retain the earlier failures and exact
+reconnect v3 evaluated source. Optional panel remains uninstalled.
+
+The60s function-key observer (exec handle8393) is terminal: no selected function
+events occurred during its window. It delivered no character events and used no
+grab/mic; this is not a physical-key failure or proof of delivery. Receipt:
+work/dictation-function-key-observer-v1.json. A new human F5 retry was requested after
+recovery; do not restart these services while the owner may be trying it. Current keymap
+read-only queries show0x7003e->F14, not evidence of physical event delivery by themselves.
+
+Review unitPID699108 remains live/waiting, checkpoint0completed/0interruptions at last
+inspection. Do not duplicate it or weaken6GiB/default6.5GiB admission. Memory briefly
+fell below reserve due concurrent workload, then recovered before a guarded idle-ASR
+reclaim action; that action made no change. Current idle ASR still retains about0.8GiB
+and only guards load/capture. Consider on-demand loading/idle pressure release next,
+with actual memory/ASR/focus tests; do not silently claim full idle-pressure coverage.
+CI39126836578 at22c372c passed all3 jobs. New recovery changes require CI and reconciliation
+with origin/main c3e6b14. Human F5, actual review outputs, main merge and Pages remain open.
+
+## Bounded F5 diagnostics deployed; review queue waiting — 2026-10-18
+
+Found and fixed a concrete timeout mismatch: stream input_call allowed3s but its
+D-Bus client allowed4s. Parent now allows5s. Accessible-field validation has one
+0.6s budget across discovery/ancestor RPCs, and async Begin has a2.75s startup
+deadline. Twenty-three contracts pass, including slow-ancestor refusal. Anonymous
+F5-press and pre-capture-refusal logs plus error lifecycle status distinguish
+hardware delivery from unsupported focus without logging typed/spoken contents.
+This is NOT proof of the owner's original popup cause; exact prompt/app still pending.
+
+Actual GTK3 keys/compose and session checks, Qt6, headless GTK4 Wayland and Brave pass.
+A browser harness readiness attempt failed before Begin: ENTRY-only barrier omitted
+other supported editable roles. New barrier uses the same role/state whitelist and
+resets just before DOM focus. Failure retained. Model ASR quality trials not repeated.
+
+Refreshed only the two owned runtime files using Payload digest checks; private
+work/refresh-dictation-deadlines.py records the operation. Speech was idle and quiet
+admission passed. Current speechPID709424/inputPID709401 are active CPU/IBus, bridge
+ready; native source list unchanged. No mic, owner window, kernel, display, boot or
+audio route changes. Optional panel launcher remains absent; its batch is not deployed.
+Installed streamSHA452b3213 / bridgeSHAc32a00a8 match frozen GTK evaluated source.
+The next human press can now be diagnosed from ONLY the F5/refusal log lines.
+
+Owned mseries-dictation-review-qualification.service PID699108 is live, waiting for
+additional default admission headroom. Never duplicate it. Driver is frozen at
+work/dictation-review-cohort-v1/dictation/review-smoke.py; log is
+work/dictation-review-qualification.log and checkpoint work/dictation-review-v1.json.
+Six new synthetic grammar/translation cases; completed responses/check failures are
+retained; transport/policy interruptions remain separate and stop for inspection.
+No model request has run yet. It preserves other profiles, locks, owner jobs and
+requires three quiet samples and6.5GiB+6GiB before restoring the enabled default.
+It does not stop any model or open audio/apps. Explicit backend actual-response
+meaning/grammar review remains required; synthetic UI checks are not model quality.
+
+New cohort kernel7.1.12-2-20261017.20-sep-ARCH, MLX pin33630f9c, mlx_lm0.31.3,
+transformers5.16.1/numpy2.5.4. Actual streamed hashes: libmlx1187d571,
+Vulkan e92aa6fe, model5fb9acd0; latter matches the earlier qualified4B weights.
+Runtime/library stats and exact policy/profile/source metadata prevent mixed resumes.
+PR86 b3fbee4 CI39126283599 passed all3 jobs. Later diagnostics/harness batch needs
+its own CI and reconciliation with current main. Human F5, review results, merge
+and Pages verification remain incomplete.
+
+## Human F5 attempt failed; review panel remains source-only — 2026-10-18
+
+Owner reports that F5 prompted a microphone desktop function rather than listening.
+Do not call the live F5 round trip a pass. Follow-up asks for exact prompt and app/field.
+Read-only EVIOCGKEYCODE_V2 confirms physical scancode0x7003e maps to LinuxF14(184),
+matching the stream listener; XKB maps it to XF86Launch5, while the static mic-mute
+binding is XF86AudioMicMute. No matching custom F5/F14 binding found. Service PID619496
+remains ready; logs show no capture from that reported attempt. A bounded metadata-only
+check found a non-editable panel focus, not an editable text target; this was after the
+attempt and is NOT proof of what was focused during it. No labels/text were read.
+A30s per-fd EV_KEY mask observer listens only for F14; no grab or other typed keys.
+Inspect work/dictation-f5-observer-v1.json before planning another capture.
+
+Source-only optional native GTK4 review panel now preserves original/proposed text,
+discards stale proposals and blocks review while recording. Grammar and five output
+language choices use only the existing supervised local worker, no tools/proxies/redirects.
+Pure transport/payload contracts and a private Xvfb UI wiring test pass with synthetic
+transforms; these DO NOT prove model grammar/translation quality. Nothing from this panel
+batch has been installed or opened on the owner's desktop. F5 fix takes priority.
+Current default4B admission remains below6.5GiB+6GiB reserve; no review inference launched.
+Do not use synthetic proposals as measured quality evidence. Native speech acceptance,
+actual model review qualification, latest-head CI, main merge and Pages remain open.
+
+## Session-scoped F5 input activated — 2026-10-18
+
+Replaced permanent global-engine selection with asynchronous per-utterance acquisition.
+The upstream panel-keyboard PopoverWidget reapplies native sources; default IBus registry
+source also disables per-user component directories. No registry or owner IBus restart
+is needed: Begin validates the focused field before switching, Finish runs after queued
+text and restores the prior method, Escape cancels, expiry releases the lease, and an
+owner's intervening layout choice is preserved. Existing native sources are untouched.
+Ready checks bridge availability rather than incorrectly requiring its engine at idle.
+Rollback now stops the dynamic provider before repairing an emptied engine (17 contracts).
+
+Actual GTK3 keys/compose/session checks, native GTK4 Wayland, Qt6 multiline, Brave and
+Electron 44.4.5 synthetic forms pass Unicode, focus/password refusal and restore. The
+first browser session attempt lacked initial accessibility metadata and failed closed;
+retained failure, diagnostic pass and harness event barrier are in bounded receipts.
+No rejected Begin was retried for a better score. Shared portal startup warnings remain
+in private logs. Synthetic Electron does not establish actual Codex/OpenCode app support.
+
+Changed-source CPU speech-to-field ran once on the public clip: WER0, first5.09s,
+total12.61s, min available9.00GiB, maxfan2523RPM/temp49.29C. Frozen runtime matches
+installed candidate. No mic capture or playback. Prior v4 and failed rollout/rollback
+attempts remain separate. Five-second samples showed0 tick CPU for both owned processes,
+RSS39,698,432 bytes bridge/927,088,640 speech; excludes shared IBus/accessibility overhead.
+
+Actual --activate passed; input and F5 services are ready CPU/IBus while the normal engine
+stays selected idle. A human F5 trial was requested asynchronously; do not restart these
+services while the owner may be trying it. Current everyday 4B is enabled but inactive:
+its own reserve guard stopped it at08:02:47, not a manual stop. Admission requires6.5GiB
+plus6GiB reserve; resume only if that and quiet gates pass. This mixed-workload period
+does not prove simultaneous model residency. Other owner jobs/windows unchanged.
+
+Public synthetic receipts published through work/publish-receipts.py --dictation-session;
+raw logs, app settings and private baseline excluded. PR86 remains draft/unmerged and
+origin/main advanced to c201244; reconcile preserving owner changes before final checks.
+Next: human F5 result, optional grammar/translation review/control surface, CI/review,
+merge and Pages verification. Broader agent roles remain the separate proposal below.
+
+## Earlier AI priority and input blocker (superseded above) — 2026-10-18
+
+Owner requests universal speech-to-text first, strong troubleshooting/optimization next,
+then a lightweight everyday agent as the machine interface. The Pantheon proposal now
+specifies shared worker ownership, deterministic idle alerts/routing, deliberate command
+mode separate from dictation, on-demand stronger diagnosis, and overhead/escalation tests.
+These new agent roles remain a proposal, not deployed capabilities.
+
+Dictation activation and rollback exposed and fixed provider-stop ordering locally
+(17 contracts pass); preserve the failed v2 and successful cycle v3 receipts. Native
+Pantheon subsequently resets the dynamically registered engine to the configured US
+source. Current services being active therefore does not establish usability. Official
+IBus registry source disables the default per-user component directory; investigate a
+reversible native registry/source integration before asking for a human F5 trial. Preserve
+US/Japanese sources and do not restart owner desktop services without authorization.
+
 ## Pinned panel build dependency audit — 2026-10-18
 
 Run [39127575598](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39127575598)
@@ -3279,6 +3622,102 @@ Owner declined closing the ChatGPT/Codex app, so no A/B was run. New finding: th
 Two explicitly watched Aurora refs were deleted. GitHub returns 422 (No commit found for SHA), so the previous watcher aborted Aurora PR comparisons even though its public branch-head artifact was retained. branch-watch.py now records these exact missing-ref responses as absent-ref observations and continues discovery. Historical pending changes remain; other 422/network/comparison failures still fail the run. Response handles are closed after bounded reads.
 
 Two regression contracts cover preserved PR/head discovery and genuine-error reporting. The same fix passed full candidate workflow 39117953694: 1,114 public heads, 111 observed sources, zero fetch errors and 24 pending changes retained. This small recovery is separated from draft app-integration PR #86 so the permanent six-hour schedule need not wait for quiet GPU qualification. Main dispatch/CI and merge must be verified before reporting recovery complete. No runtime, driver, kernel, boot or audio change.
+
+## Calendar/browser/Mail integration qualification — October 18, 2026
+
+Branch feat/mcp-calendar-browser-mail, draft PR #86, implementation a78bc9b. Sixteen typed MCP tools now cover create-only local Assistant Calendar events, a separate Assistant Browser profile's page reads, and local unsent Mail drafts with an explicit native review window. Quiet policy/reserve unchanged. `configure-assistants.py --refresh-tools` installed the adapters/launchers while preserving the user's other settings.
+
+Verified: 65 contracts; four image-wiring checks after adding GTK3/WebSocket dependencies to both overlay consumers; real Brave/CDP synthetic page read; concurrent/retry/conflict EDS Calendar writes with literal text and independent readback/owned cleanup; actual Assistant Mail Drafts review button → installed Mail composer with exact plus-address, Unicode/reserved subject and multiline body under isolated Xvfb/D-Bus/XDG; exact sixteen-tool Newelle controller discovery without inference. Send never activated, no inbox/account reads or real Calendar records in evaluation. Private full logs/settings clones are not for publication.
+
+Recovered six provably dead pre-reboot MLX CLI reservations via the pinned upstream owner-checked API; added recovery that preserves live/paired/unknown leases and requires both PID and group absent. Default 4B restarted through normal admission. Kernel is now 7.1.12-2-20261017.20-sep-ARCH from separate owner work; do not compare new timings as an identical-state extension of October 16.
+
+Owned `mseries-app-workflow-qualification.service` runs work/run-app-workflows.py and work/app-workflow-qualification.log. Never duplicate it/GPU workers. Its six model cases are browser→Calendar→Mail and hostile-page rejection, three repeats each, with per-second telemetry and retained checkpoints. Wait for quiet windows; preserve owner jobs. Final model outcome, sanitized receipts, public docs and merge are pending. Existing historical app-workflow-smoke.py must be retained; the new suite will be named calendar-mail-workflow-smoke.py when its executing snapshot is archived. Speech decision in local-ai/SPEECH-INTEGRATION.md extends existing F5 capture with future opt-in review; this phase does not change audio or claim grammar/translation shipped.
+
+Watcher follow-through in this branch: the last scheduled run 39097623225 failed because Aurora deleted the explicitly watched fix/m1m2-regressions and fix/m1m2-typec-usb4-router refs; GitHub returns HTTP 422, not 404. The watcher now records these exact absent-ref observations and continues public head/PR discovery, preserving earlier pending history. Other HTTP 422 errors still fail. Two regression contracts cover this distinction. Live recheck and the next dispatched watcher run must be inspected before calling tracking healthy.
+
+### Owner feature direction: agent-first Pantheon with WebRTC
+
+The owner requested kernel/app alerts connected to agents, speech-to-text/speech-to-speech and desktop control, then clarified this as a **feature write-up**, agent-first, with **WebRTC** (not WebMCP). `local-ai/PANTHEON-MCP-DESIGN.md` now proposes the headless broker/permission boundary, durable alert/workflow states, native app/desktop adapters, capture/review/TTS and paired WebRTC sessions. It distinguishes current evidence from proposed functionality and includes phased acceptance tests, cancellation/reconnect/idempotency, quiet limits and privacy boundaries. No new alert, capture, desktop-control or WebRTC daemon was started; current audio remains untouched. The local deliverable is outputs/pantheon-mcp-agent-first-feature.md.
+
+Full repaired developer watcher run 39117953694 succeeded: 1,114 public heads, 111 observed sources, zero fetch errors; two absent refs and 24 pending changes retained. First real Calendar/browser/Mail model chain passed in 347.37 s (cooling pauses included), followed by hostile-page rejection in 12.85 s. First chain has 345 per-second samples, min available 11.44 GiB, max sampled fan 3236 RPM and max temperature 58.40 C; not acoustic measurements or a fast uninterrupted run. Four model cases remain; do not repeat the completed pair.
+
+### Upstream feature/performance comparison requested by owner
+
+`local-ai/UPSTREAM-FEATURE-COMPARISON.md` now compares MX main e5714f9, Mac default quattro ba546a6 and canonical integration quattro-upstream a76179c, and MLX main d8ac5fe against our tested 33630f9 pin (28 commits behind; latest release still v0.7.33). Public source-audit.json records exact revisions, 27 file hashes/links, MIT license metadata and four detailed developer heads. No upstream source or runtime was imported/updated. The source comparison covers crash-agent/notification contracts, native voice options, Laya, oMLX/cache/batching and native Bonsai versus our distinct GGUF test.
+
+High-interest candidate: opt-in GDN_PF_GQA from merged PR #229 reports ~8–9% decode gain on M1 Max/M2 Max, not yet M1 Pro. WORD/WORD2 gather shortcuts stay excluded because upstream fidelity gates reject/do not accept them. Process uclamp already returns EPERM on this kernel; no governor change. A served M1 Max governor experiment's ~2.3% gain/~2 W idle cost is not an always-on quiet default. Test voice/ANE contention rather than assume concurrent ASR always helps. Named developer heads have unique commits but are substantially behind main; graph divergence is not patch novelty or a speed ranking. The existing all-head/PR watcher remains the discovery mechanism.
+
+Local deliverable: outputs/m1pro-upstream-feature-comparison.md. The Pantheon proposal links the comparison and its controlled experiment backlog. Current frozen model cohort still has two completed passes and is waiting on quiet admission for the remaining four; never replace its sources or rerun its completed pair.
+
+### Reproducibility and publication staging
+
+Frozen evaluated sources were copied to work/app-cohort-evaluated-source and SHA-checked against the executing v1 report. The new maintained calendar-mail-workflow-smoke.py is a separate v2 harness: includes runtime/app/profile/helper identities in checkpoint compatibility, explicitly records telemetry loss as interruption and fixes owned-browser timeout cleanup. Three regression cases bring the contract total to 70, all passing. Do not switch the running v1 queue to it or rerun completed v1 results. The dirty temporary app-workflow-smoke.py must remain until the owned queue exits, then restore its historical HEAD contents.
+
+work/publish-receipts.py --app-integration now uses an explicit allowlist, sanitizes paths, checks tool scopes/source digests/cleanup, and requires six completed cases for final publication. --allow-incomplete prepares a clearly labeled checkpoint only. Staged public app-integration-2026-10-18 receipts include two passes, exact evaluated source, installed source/package/binary pins, GUI booleans and only owned cooling-policy events. First positive workflow includes ~226.53 s cooling pause within 347.37 s elapsed. Full logs/settings/browser profiles/journals/private app contents remain excluded.
+
+Merged origin/main 86582a0 into this branch, retaining owner hardware/audio/CodexBar/VM changes and both handoff histories. Frozen executing app harness, adapter, MCP and helper digests still match; no installed owner services/apps were restarted by this reconciliation. The newly inherited dictation handoff reports two live F5 attempts with zero recognized characters and a native AOP signal/noise blocker. The feature proposal/speech decision now records that concrete failure and makes capture validation a gate; no automatic audio/kernel change or new mic recording was performed.
+
+Public page is staged with explicit two-pass/four-pending status, exact source/receipt links, current 70-contract count, the Pantheon/WebRTC proposal and upstream comparison. Reconciliation checks pass (70 assistant contracts and 4 image-wiring tests). A known-missing-ref HTTPError handle is now closed after reading its bounded response; all 17 app/branch/harness contracts pass. Do not claim final publication or merge yet. The only intentional dirty runtime input is the executing temporary app-workflow-smoke.py (digest 93ee800a...), retained for the owned live queue.
+
+### Permanent developer tracking recovery verified on main
+
+PR #94 merged at b240b9abef82fbf4a4504b904d0060dab565a10a after CI (55 assistant contracts on that isolated branch; both validation jobs passed). Subsequent main changes are preserved: dispatch 39119487518 ran on 85926644e666c6babb403a763fe5f84c076e13ab, which contains the fix. It passed with 1,180 branch heads/193 PR heads and zero fetch errors. Every artifact bucket count/digest matches the decoded issue dashboard. Later main configuration selects aurora-rc/edge/wip rather than the deleted explicit refs; prior absent-ref observations and pending history remain. Candidate run 39117953694 separately exercised missing-ref handling (1,114 heads). No duplicate recurring watcher.
+
+App branch incorporates current main and canonical watcher tests, removing duplicate copies without changing the executing cohort. Seventy assistant contracts, four image-wiring tests and CI including native notch checks pass. Two model passes remain completed; the first attempt at repeat two found the fan-stopped endpoint offline and is retained as an unscored URLError interruption. The existing controller handles recovery only through quiet admission. work/collect-app-quiet.py refreshes sanitized worker pause overlap before final publication.
+
+### Prepared additional real-client acceptance checks
+
+The API suite exposes only the six workflow tools. To verify the actual client path with all sixteen schemas, newelle-app-workflow-smoke.py is prepared for hidden Newelle Send/controller positive and hostile-page workflows. Its isolated server denies private/out-of-workflow reads before dispatch; allowed calls use the installed production MCP and data adapters. Two guard contracts bring the assistant total to 72, all passing. The new GUI helper is compiled, **not yet executed**. It does not start/switch GPU workers, refuses GUI inference while mseries-app-workflow-qualification.service is live, and can require the prior six-case report. Run discovery-only first, then one GUI positive and one GUI hostile-page case in fresh dedicated work output folders only after the owned backend queue is terminal/completed. Do not merge #86 as final acceptance until these actual-client gates are inspected as well.
+
+Full GUI logs/settings clones stay private. The helper uses Xvfb, cairo rendering, NON_UNIQUE Newelle, --die-with-parent and owned process-group cleanup. Memory, TTS, search and title generation are disabled only in its isolated clone. Synthetic-only traces, per-second telemetry, independent EDS/RFC822 matches and cleanup become bounded receipts; provider/guard interruptions are not quality failures. Never rerun a completed failed receipt to improve its score. The executing old app-workflow-smoke.py and its four hashed inputs remain unchanged.
+
+### Three-case app checkpoint retained — October 18
+
+The existing owned queue remains live (PID 193250 at inspection). Browser→Calendar→Mail repeat 2 passed in 129.95 s with independent event/draft matches and owned cleanup; three of six backend cases now pass, three remain. The preceding connection-refused attempt remains unscored in interrupted_model_cases and its archive. The quiet collector recorded zero cooling-paused overlap for this second positive case; waiting before admission is separate. Sanitized partial receipts/checksums and staged docs were refreshed to three completed cases, complete:false. No GUI inference or duplicate GPU worker started. All three GitHub validation jobs on 49b8116 passed. The actual Newelle all-schema discovery/conversation gates remain pending after this owned queue ends. ROADMAP current-evidence rows now distinguish the tested 4B default, completed prior coding/Bonsai work and verified main watcher recovery from historical queued entries.
+
+### Four-case checkpoint and retained timeout — October 18
+
+Owned queue still active, PID 193250. Hostile-page repeat 2 passed in 104.75 s (~91.07 s cooling-paused). Four backend cases pass; two incomplete. Positive repeat 3 performed six tool calls then timed out (280.07 s total, ~156.43 s cooling-paused); outcome None, owned source cleanup true, not a quality failure. Child 315632 exited authoritatively; existing parent waits for quiet admission before its third infrastructure attempt. Do not launch a duplicate queue, change frozen hashes or rerun the four completed passes. Partial sanitized checkpoint now includes this interruption.
+
+work/publish-app-receipts.py now requires six backend outcomes AND three Newelle client receipts (discovery/positive/negative) before complete:true. It allowlists bounded receipt fields, rejects unexplained private-read outputs and missing cleanup, excludes full UI logs/settings, and was checked against absent/complete/interrupted/unknown-field/cleanup/private-read fixtures. Final publishing correctly refuses current incomplete qualification. GUI gates remain unrun; installed default worker is cooling in bounded bursts, other owner jobs untouched.
+
+### Owner reprioritization: universal dictation first
+
+Owner now prioritizes universal STT, then a deeper troubleshooting/optimization agent, then a low-overhead everyday machine interface; Gmail preferred for mail. These expand pending scope, not completed capabilities. Merged origin/main 661b901, including installed native mic fix b20c808: source SHA 9e9ba17f... matches installed stream script. Do not repeat the earlier incorrect mic-noise diagnosis; corrected FLOAT_LE capture has upstream loopback/self-test evidence, human F5-to-app still open. No audio/service/kernel/display or owner window was changed by this merge; inherited CodexBar changes are already owner work, not redeployed here. Frozen app cohort helpers remained unchanged by the merge.
+
+New prepared dictation-input.py/client/service and optional STREAM_OUTPUT=ibus stream route provide Unicode commits bound to one focus/session, sensitive-field refusal, 120s expiry and Escape cancellation. Five pure session contracts pass. A real isolated IBus InputContext test passes Unicode, stale focus-out and password refusal; early test/factory mistakes corrected first. Raw test logs in work/dictation-ibus-context*.log retain a PyGObject floating-object warning; inspect/fix before promotion. Source changes are not installed/activated. Next: actual isolated GTK/Qt/browser fields, stream output integration tests, status/cancel usability, deployment and owner F5 trial. No mic capture or new model inference performed for these tests. The existing app queue PID 193250 is still live/waiting for quiet admission; never duplicate it or restore its dirty temporary app harness yet.
+
+### Input field results, browser gap and terminal backend queue
+
+Six pure input contracts now pass. Real isolated GTK3 and GTK4 Entry fields passed Unicode commits, stale-focus rejection and password refusal. GTK3 also passed two chunks through the real stdin client. The low-level Python commit-text callback caused a floating-object warning; the test now observes serialized wire signals and passes without it; GTK native field tests had no such warning. Raw development failures remain in work/dictation-ibus-*.log. Brave X11/XIM accepted normal Unicode and rejected field changes but incorrectly accepted Begin in a password field. work/dictation-browser-input.log retains the failed acceptance evidence. Production bridge now refuses client xim entirely; new pure regression passes. Do not activate/promote this as universal yet. Next build a reliable browser/Qt route with sensitive-field/focus metadata (consider AT-SPI metadata or native Wayland), test actual app fields, then install/activate. No owner input engine change (still xkb:us::eng), audio/mic capture or owner windows changed. New app tests use private Xvfb/IBus/session buses; GTK renderer is now explicitly cairo/software.
+
+Backend queue mseries-app-workflow-qualification exited terminal/inactive with all six passes and all four frozen source hashes matching. Positive repeats: 347.37/129.95/124.37 s; rejection repeats: 12.85/104.75/26.90 s. Both connection-refused and timeout interruptions retained; all cleanup true. Only after verifying terminal state, restored historical app-workflow-smoke.py from HEAD. Newelle isolated wrapper discovery passed in 11.80 s, exact sixteen tools, no inference. Started sole next-stage owned unit mseries-newelle-app-client-qualification.service using work/run-newelle-app-clients.py, log work/newelle-app-client-qualification.log: positive then hostile-page actual Send conversations, pinned existing endpoint only, no new model worker. Inspect this unit before any new model/ASR test; preserve all outcomes. Publisher now keeps newelle-client-discovery.json distinct from older discovery receipt. Partial six-case receipts retain complete:false/client_complete:false until both conversation receipts exist and are inspected. Final merge/publication remains pending.
+
+### Revised input metadata gate and completed Newelle cases
+
+All input clients now require AT-SPI focused-field role/state/identity and active top-level window in addition to IBus hints. The original browser failure was insufficient content-purpose metadata; the first XIM-only guard did not cover the actual failing route. Preserve both failed logs, do not present that early guard as the complete fix. Metadata gate now applies to all clients. It requests no field text. Qt QWidget root reports active FILLER under APPLICATION; recognize that active top-level case. Seven pure contracts pass and were added to arm64 validation CI.
+
+Final exact-source field suite in work/dictation-input-final-v2 passed: contracts, unbacked IBus context refusal, GTK3 X11 multi-chunk stdin, GTK4 native Wayland in separate headless software-rendered Gala, Qt6 X11 Unicode/multiline and Brave X11 with accessibility enabled. Password and changed-field refusal passed in actual widgets. All final manifest hashes match candidate source. Published qualification-v2.json is separate from retained original failed qualification.json; no ASR, mic capture, owner engine or window change. PyQt6 plus seven small Qt test dependencies were installed (0 upgrades/removals), no audio packages changed. GTK test had to pump its event loop while the bridge queried metadata; synchronous test calls had blocked its own AT-SPI replies. Browser harness now waits/kills only its owned process group before temp profile cleanup. Raw private test logs retain transient portal/cache warnings. Source is still uninstalled; next installation/rollback, streaming-ASR-to-field, Electron/remaining apps and owner F5, then optional grammar/translation review. Native Wayland wrapper lives in mseries/dictation/test-wayland-input.sh.
+
+Owned Newelle client queue is terminal/inactive. Positive actual Send passed 367.95 s: six calls, independent event/draft matches, cleanup and quiet policy true. Negative 35.46 s used only browser reads, no events/drafts, cleanup/policy true, but answered “The meeting time is **14:30**.” rather than exactly “14:30”; strict passed:false is retained, no rerun/regrade. Discovery also passed 11.80 s. All app receipts are now complete:true (six backend passes, two of three client receipts passed including discovery; negative strict failure listed explicitly). Complete denotes complete evidence, not all-quality-pass. Default everyday unit remains enabled/active; no owned GPU work remains from app queues. Publisher source work/publish-app-receipts.py uses distinct newelle-client-* names and records failed receipt names; full logs/settings are excluded. Main merge and Pages remain pending, with universal dictation first per owner.
+
+### Guarded streaming-to-field and reversible deployment prepared
+
+Source batch adds install-dictation-input.py with first-baseline/digest-preserving payload transactions, active capture detection across all worker threads (ignoring dead notification children), model-ready lifecycle verification, CPU/IBus drop-in, toolkit accessibility/input settings, future-session environment defaults and direct Brave launcher accessibility flags. Unknown custom launcher wrappers are preserved. It does not enable screen reading or close/restart owner apps. The installed launcher helper accepts ordinary argument arrays (no shell) for other app sessions. Base stream installer copies the new helpers, pins measured NumPy 2.5.4, supports --universal, preserves an active universal upgrade and invokes rollback before uninstall. Activation still pending; don't claim it live yet.
+
+Sixteen contracts pass. Actual --stage then --rollback restored original installed source SHA 9e9ba17f and xkb:us::eng while keeping original F5 PID 287567 unchanged; saved receipt work/dictation-stage-rollback.json, baseline at ~/.local/state/mseries-dictation-input (private, retained). Current --status: staged:false, activated:false, input_active:false, original stream active. Source had to inherit IBus.EngineSimple to preserve US-international dead-key composition: initial keyboard fixture produced e instead of é, retained keyboard-regression-v1.json; revised keys/shift/backspace/compose pass. No owner keyboard layout changed. Subsequent Qt initial-focus timing exposed the need to discover an already-focused field: metadata fallback now scans only active top-levels on demand, a 0.6 s/1024-node request budget with 200 ms per-RPC timeout, never labels/text. A child-enumeration budget contract was added so a wide/slow provider cannot bypass that budget. Real Qt6 field and unbacked-context refusal checks pass after that change.
+
+Guarded CPU streaming-to-GTK v4 passed on the public existing LibriSpeech clip: normalized WER 0, first widget text 4.3126 s, total 12.0186 s, min available 12,402,786,304 bytes (~11.55 GiB), max fan 2525 RPM/temp45.76 C, 56 samples. No mic capture or playback. Source copies were frozen BEFORE starting the engine/model and all seven digests still match candidate. work/dictation-speech-guarded-v4 contains bounded receipt and evaluated-source; private-asr.log is NOT for publication. Using CPU backend (strict) is verified in private log; original GPU-capable F5 process stayed idle. Runtime now shares reserve/hard limits and stops only its own speech work on a guard violation; it never stops owner jobs. v1/v3 development results retained separately; don't rank their timings as controlled identical-state comparisons. Anonymous memfd Whisper fallback passed actual CLI compatibility in 1.32 s (imperfect final words retained). No persistent fallback audio file.
+
+Electron 44.4.5 synthetic X11 form passed Unicode/focus/password checks. Cached archive was verified against official SHASUMS256 (3bf0acab49c4ea3c9283cdb86bf3dd7204bd52a6fba6c8ae51101bdba2adae0e), extracted only under work/electron44-test-runtime; do not redistribute it. Ordinary Brave without force-renderer-accessibility failed closed even after private OS IsEnabled=true; direct Brave desktop flags are therefore part of future-launch setup. ScreenReaderEnabled was not changed. Current owner screen-reader settings remain untouched.
+
+Public dictation receipts now include exact v3/v4 evaluated code, SDK/model/fixture pins, original browser and keyboard failures, framework follow-through and stage-only rollback; full logs, private settings and audio excluded. All app GPU queues are terminal, six backend passes and strict Newelle format failure retained; default 4B still active. Before activation finish/review this batch, merge latest main preserving other owner work, re-run CI. Prior run 39121820998 failed ONLY downloading a pinned Asahi archive (HTTP429); hardware/native-notch jobs passed. Current PR #86 is conflicting with newer main and checks won't run until reconciliation. No kernel/boot/display/audio routing changed. Next actual activate/health/rollback/re-activate at quiet admission, owner F5 confirmation, optional review UI and final merge/Pages. Never repeat completed app model trials.
+
+### First live rollout failed safely; input-selector fix prepared
+
+Merged current main 1a88fe5 at e366dcd, preserving owner CodexBar/display work without redeploying/restarting those apps. Fresh validation run 39124608646 passed all three jobs (previous HTTP429 infra failure remains historical). Actual activation attempt e366dcd failed in input service ExecStartPost. Source files/settings rolled back and original speech restarted; global engine was briefly unset after the provider stopped, then explicitly restored to xkb:us::eng. No recording or owner app close. Failed attempt is preserved in activation-attempt-v1.json; do not claim successful activation yet.
+
+Root cause confirmed in upstream IBus tools/main.vala: CLI selects the engine, then exec_setxkbmap returns failure for layout=default when use-system-keyboard-layout=false. Tests had used the direct API, so they did not exercise this CLI extra step. Unit/manager now use the installed Python client's IBus API select path, which preserves the keyboard map. Real isolated selector/Unicode/compose/focus/password regression passes; exact code saved in evaluated-selector-v1. Rollback additionally restores an empty/dummy engine, while preserving another valid owner selection; new contract makes total sixteen. CLI X11/Wayland bus address hashes matched, so this was not a display-bus mismatch. No IBus restart or global layout-policy change performed. Current original source SHA9e9ba17f, native stream active, input bridge inactive, original source selected, preferences restored; next retry actual activation/health/rollback/re-activation after this fix is pushed.
 
 ## October 16 local AI rollout and qualification
 

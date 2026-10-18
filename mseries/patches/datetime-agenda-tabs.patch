@@ -91,7 +91,7 @@ index 383cf96..cbeae14 100644
 +src/Widgets/TaskRow.vala
 +src/Widgets/TimeGrid.vala
 diff --git a/src/Indicator.vala b/src/Indicator.vala
-index 7b6ec63..75c6455 100644
+index 7b6ec63..fb4f2c7 100644
 --- a/src/Indicator.vala
 +++ b/src/Indicator.vala
 @@ -25,5 +25,18 @@ public class DateTime.Indicator : Wingpanel.Indicator {
@@ -255,10 +255,11 @@ index 7b6ec63..75c6455 100644
 +                agenda_date = date ?? Widgets.CalendarModel.get_default (ECal.ClientSourceType.EVENTS).month_start;
                  idle_update_components ();
              });
-@@ -138,4 +247,14 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -138,4 +247,15 @@ public class DateTime.Indicator : Wingpanel.Indicator {
              });
 
-+            task_listbox.row_activated.connect (() => {
++            task_listbox.row_activated.connect ((row) => {
++                if (((TaskRow) row).completing) return;
 +                var app = new DesktopAppInfo ("io.elementary.tasks.desktop");
 +                if (app != null) {
 +                    try { app.launch (null, null); } catch (Error e) {
@@ -270,7 +271,7 @@ index 7b6ec63..75c6455 100644
 +
              settings_button.clicked.connect (() => {
                  try {
-@@ -150,48 +269,41 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -150,48 +270,41 @@ public class DateTime.Indicator : Wingpanel.Indicator {
      }
 
 +    private void move_period (int direction) {
@@ -348,7 +349,7 @@ index 7b6ec63..75c6455 100644
 +        return GLib.strcmp (a.component.get_summary (), b.component.get_summary ());
      }
 
-@@ -208,42 +320,89 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -208,42 +321,89 @@ public class DateTime.Indicator : Wingpanel.Indicator {
      }
 
 -    private bool update_components () {
@@ -466,14 +467,14 @@ index 7b6ec63..75c6455 100644
 +                        else component_listbox.append (row);
                      }
                  }
-@@ -251,4 +410,6 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -251,4 +411,6 @@ public class DateTime.Indicator : Wingpanel.Indicator {
          });
 
 +        if (timetable) time_grid.render (first, agenda_mode == "week" ? 7 : 1, timed_rows);
 +        else time_grid.clear ();
          update_components_idle_source = 0;
          return GLib.Source.REMOVE;
-@@ -268,8 +429,24 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -268,8 +430,24 @@ public class DateTime.Indicator : Wingpanel.Indicator {
          tasks_model.components_removed.connect (update_components_model);
 
 +        var upcoming = Widgets.CalendarModel.get_upcoming ();
@@ -634,17 +635,37 @@ index 7a626ba..eed808f 100644
          Util.set_component_calendar_color (source_selectable, name_label);
 diff --git a/src/Widgets/TaskRow.vala b/src/Widgets/TaskRow.vala
 new file mode 100644
-index 0000000..9d8e65b
+index 0000000..21e8ef2
 --- /dev/null
 +++ b/src/Widgets/TaskRow.vala
-@@ -0,0 +1,39 @@
+@@ -0,0 +1,90 @@
 +/* Copyright 2026 M-Series contributors. SPDX-License-Identifier: GPL-3.0-or-later */
 +public class DateTime.TaskRow : Gtk.ListBoxRow {
 +    public int64 due_sort { get; private set; default = int64.MAX; }
 +    private string title;
++    private E.Source source;
++    private string uid;
++    private string? rid;
++    private string key;
++    private Widgets.CalendarModel model;
++    private Gtk.CheckButton completion;
++    private Gtk.Label error_label;
++    private bool updating = false;
++    public bool completing { get { return model.task_completing (key); } }
 +
 +    public TaskRow (ICal.Component component, E.Source source) {
 +        title = component.get_summary () ?? _("Untitled task");
++        this.source = source;
++        uid = component.get_uid ();
++        var recurrence = component.get_recurrenceid ();
++        rid = recurrence != null && !recurrence.is_null_time () ? recurrence.as_ical_string () : null;
++        key = Widgets.CalendarModel.completion_key (source, uid, rid);
++        model = Widgets.CalendarModel.get_default (ECal.ClientSourceType.TASKS);
++        completion = new Gtk.CheckButton () { valign = Gtk.Align.START, margin_top = 4 };
++        completion.update_property (Gtk.AccessibleProperty.LABEL, _("Complete task: %s").printf (title), -1);
++        completion.toggled.connect (() => {
++            if (!updating && completion.active) model.complete_task.begin (source, uid, rid);
++        });
 +        var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 1) {
 +            margin_start = 6, margin_end = 6, margin_top = 2, margin_bottom = 2
 +        };
@@ -669,7 +690,38 @@ index 0000000..9d8e65b
 +        small.insert (Pango.attr_scale_new (0.85));
 +        subtitle.attributes = small;
 +        box.append (subtitle);
-+        child = box;
++        error_label = new Gtk.Label (_("Couldn’t complete task. Try again.")) {
++            xalign = 0, wrap = true, max_width_chars = 28, visible = false
++        };
++        error_label.add_css_class ("error");
++        box.append (error_label);
++        var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3) {
++            margin_start = 6, margin_end = 3
++        };
++        row.append (completion);
++        box.hexpand = true;
++        row.append (box);
++        child = row;
++        model.completion_changed.connect (on_completion_changed);
++        update_completion ();
++    }
++
++    private void on_completion_changed (string changed_key) {
++        if (changed_key == key) update_completion ();
++    }
++
++    private void update_completion () {
++        updating = true;
++        bool pending = model.task_completing (key);
++        bool writable = model.task_writable (source);
++        completion.active = pending;
++        completion.sensitive = !pending && writable;
++        completion.tooltip_text = pending ? _("Saving completion…") :
++            writable ? _("Complete task") : _("This task list is read-only or unavailable");
++        var error = model.task_completion_error (key);
++        error_label.visible = error != null;
++        error_label.tooltip_text = error;
++        updating = false;
 +    }
 +
 +    public int compare (TaskRow other) {
@@ -973,10 +1025,10 @@ index 0000000..80ab468
 +    }
 +}
 diff --git a/src/Widgets/calendar/CalendarModel.vala b/src/Widgets/calendar/CalendarModel.vala
-index 9301281..0dee8ab 100644
+index 9301281..a2edcf1 100644
 --- a/src/Widgets/calendar/CalendarModel.vala
 +++ b/src/Widgets/calendar/CalendarModel.vala
-@@ -43,8 +43,23 @@ namespace DateTime.Widgets {
+@@ -43,8 +43,89 @@ namespace DateTime.Widgets {
          public signal void components_removed (E.Source source, Gee.Collection<ECal.Component> components);
 
 +        private HashTable<string, uint> generations;
@@ -998,9 +1050,75 @@ index 9301281..0dee8ab 100644
 +            compute_ranges ();
 +            load_all_sources ();
 +        }
++
++        private Gee.HashSet<string> completing_tasks = new Gee.HashSet<string> ();
++        private Gee.HashMap<string, string> completion_errors = new Gee.HashMap<string, string> ();
++        public signal void completion_changed (string key);
++
++        public static string completion_key (E.Source source, string uid, string? rid) {
++            var source_uid = source.dup_uid ();
++            return "%d:%s%d:%s%s".printf (source_uid.length, source_uid, uid.length, uid, rid ?? "");
++        }
++
++        public bool task_writable (E.Source source) {
++            var client = source_client[source.dup_uid ()];
++            return client != null && !client.is_readonly ();
++        }
++
++        public bool task_completing (string key) { return completing_tasks.contains (key); }
++        public string? task_completion_error (string key) { return completion_errors[key]; }
++
++        private async void prepare_completion (ICal.Component task, ECal.Client client) throws Error {
++            Error? failure = null;
++            // The EDS recurrence helper can resolve remote time zones synchronously.
++            // Run it off the panel thread, on the freshly fetched private component.
++            new Thread<void*> ("agenda-complete", () => {
++                try {
++                    if (!ECal.util_mark_task_complete_sync (task, (time_t) (-1), client, null)) {
++                        failure = new IOError.FAILED (_("Could not prepare task completion"));
++                    }
++                } catch (Error e) { failure = e; }
++                Idle.add (() => { prepare_completion.callback (); return GLib.Source.REMOVE; });
++                return null;
++            });
++            yield;
++            if (failure != null) throw failure;
++        }
++
++        public async void complete_task (E.Source source, string uid, string? rid) {
++            var key = completion_key (source, uid, rid);
++            if (completing_tasks.contains (key)) return;
++            completing_tasks.add (key);
++            completion_errors.unset (key);
++            completion_changed (key);
++            try {
++                var client = source_client[source.dup_uid ()];
++                if (client == null) throw new IOError.NOT_CONNECTED (_("Task list is unavailable"));
++                if (client.is_readonly ()) throw new IOError.PERMISSION_DENIED (_("This task list is read-only"));
++                ICal.Component latest;
++                // Preserve edits made in Tasks since the row was rendered.
++                yield client.get_object (uid, rid, null, out latest);
++                if (latest.get_status () != ICal.PropertyStatus.COMPLETED) {
++                    yield prepare_completion (latest, client);
++                    var timestamp = new ICal.Time.from_timet_with_zone (
++                        (time_t) new GLib.DateTime.now_utc ().to_unix (), 0, ICal.Timezone.get_utc_timezone ());
++                    var edited = new ECal.Component.from_icalcomponent (latest.clone ());
++                    edited.set_last_modified (timestamp);
++                    edited.set_sequence (latest.get_sequence () + 1);
++                    var scope = rid != null && rid != "" ? ECal.ObjModType.THIS : ECal.ObjModType.ALL;
++                    if (!(yield client.modify_object (edited.get_icalcomponent (), scope, ECal.OperationFlags.NONE, null))) {
++                        throw new IOError.FAILED (_("Could not save task completion"));
++                    }
++                }
++            } catch (Error e) {
++                completion_errors[key] = e.message;
++            }
++            completing_tasks.remove (key);
++            completion_changed (key);
++        }
 
          private static HashTable<ECal.ClientSourceType, CalendarModel> calendar_model;
-@@ -64,10 +79,10 @@ namespace DateTime.Widgets {
+@@ -64,10 +145,10 @@ namespace DateTime.Widgets {
          }
 
 -        public CalendarModel (ECal.ClientSourceType source_type) {
@@ -1014,13 +1132,13 @@ index 9301281..0dee8ab 100644
 +            generations = new HashTable<string, uint> (str_hash, str_equal);
 
              source_client = new HashTable<string, ECal.Client> (str_hash, str_equal);
-@@ -83,4 +98,5 @@ namespace DateTime.Widgets {
+@@ -83,4 +164,5 @@ namespace DateTime.Widgets {
              compute_ranges ();
              notify["month-start"].connect (on_parameter_changed);
 +            open.begin ();
          }
 
-@@ -90,4 +106,8 @@ namespace DateTime.Widgets {
+@@ -90,4 +172,8 @@ namespace DateTime.Widgets {
                  registry.source_removed.connect (remove_source);
                  registry.source_added.connect ((source) => add_source_async.begin (source));
 +                registry.source_changed.connect ((source) => {
@@ -1029,7 +1147,7 @@ index 9301281..0dee8ab 100644
 +                });
 
                  // Add sources
-@@ -143,11 +163,10 @@ namespace DateTime.Widgets {
+@@ -143,11 +229,10 @@ namespace DateTime.Widgets {
              unowned string uid = source.get_uid ();
 
 -            if (!source_view.contains (uid)) {
@@ -1044,7 +1162,7 @@ index 9301281..0dee8ab 100644
 +                if (current_view != null) current_view.stop ();
              } catch (Error e) {
                  warning (e.message);
-@@ -159,7 +178,11 @@ namespace DateTime.Widgets {
+@@ -159,7 +244,11 @@ namespace DateTime.Widgets {
              }
 
 -            var components = source_components.get (source).get_values ().read_only_view;
@@ -1059,7 +1177,7 @@ index 9301281..0dee8ab 100644
 +            }
          }
 
-@@ -175,4 +198,9 @@ namespace DateTime.Widgets {
+@@ -175,4 +264,9 @@ namespace DateTime.Widgets {
 
          private void compute_ranges () {
 +            if (upcoming_range) {
@@ -1069,7 +1187,7 @@ index 9301281..0dee8ab 100644
 +            }
              var month_end = month_start.add_full (0, 1, -1);
 
-@@ -214,4 +242,16 @@ namespace DateTime.Widgets {
+@@ -214,4 +308,16 @@ namespace DateTime.Widgets {
 
          private void load_source (E.Source source) {
 +            load_source_async.begin (source);
@@ -1086,7 +1204,7 @@ index 9301281..0dee8ab 100644
 +            }
              /* create empty source-component map */
              var components = new Gee.TreeMultiMap<string, ECal.Component> (
-@@ -219,5 +259,9 @@ namespace DateTime.Widgets {
+@@ -219,5 +325,9 @@ namespace DateTime.Widgets {
                  (GLib.CompareDataFunc<ECal.Component>?) Util.calcomponent_compare_func
              );
 +            var previous = source_components.get (source);
@@ -1096,14 +1214,14 @@ index 9301281..0dee8ab 100644
 +            if (removed.size > 0) components_removed (source, removed.read_only_view);
              /* query client view */
              var iso_first = ECal.isodate_from_time_t ((time_t)data_range.first_dt.to_unix ());
-@@ -226,5 +270,5 @@ namespace DateTime.Widgets {
+@@ -226,5 +336,5 @@ namespace DateTime.Widgets {
              var query = @"(occur-in-time-range? (make-time \"$iso_first\") (make-time \"$iso_last\"))";
              if (source_type == ECal.ClientSourceType.TASKS) {
 -                query = @"AND (NOT is-completed?) (due-in-time-range? (make-time \"$iso_first\") (make-time \"$iso_last\"))";
 +                query = "(not (is-completed?))";
              }
 
-@@ -238,18 +282,22 @@ namespace DateTime.Widgets {
+@@ -238,18 +348,22 @@ namespace DateTime.Widgets {
              }
 
 -            debug ("Getting client-view for source '%s'", source.dup_display_name ());
@@ -1140,7 +1258,7 @@ index 9301281..0dee8ab 100644
 +            }
          }
 
-@@ -260,10 +308,20 @@ namespace DateTime.Widgets {
+@@ -260,10 +374,20 @@ namespace DateTime.Widgets {
              }
 
 +            var extension = source_type == ECal.ClientSourceType.TASKS ? E.SOURCE_EXTENSION_TASK_LIST : E.SOURCE_EXTENSION_CALENDAR;
@@ -1163,14 +1281,14 @@ index 9301281..0dee8ab 100644
 +                return;
              }
 
-@@ -277,5 +335,5 @@ namespace DateTime.Widgets {
+@@ -277,5 +401,5 @@ namespace DateTime.Widgets {
          private void debug_component (E.Source source, ECal.Component component) {
              unowned ICal.Component comp = component.get_icalcomponent ();
 -            debug (@"Component ['$(comp.get_summary())', $(source.dup_display_name()), $(comp.get_uid()))]");
 +            debug ("Component [%s, %s, %s]", comp.get_summary () ?? _("Untitled event"), source.dup_display_name (), comp.get_uid ());
          }
 
-@@ -283,18 +341,5 @@ namespace DateTime.Widgets {
+@@ -283,18 +407,5 @@ namespace DateTime.Widgets {
          private void on_parameter_changed () {
              compute_ranges ();
 -            load_all_sources ();
@@ -1190,7 +1308,7 @@ index 9301281..0dee8ab 100644
 +            if (source_type == ECal.ClientSourceType.EVENTS) load_all_sources ();
          }
 
-@@ -309,6 +354,12 @@ namespace DateTime.Widgets {
+@@ -309,6 +420,12 @@ namespace DateTime.Widgets {
              objects.foreach ((comp) => {
                  unowned string uid = comp.get_uid ();
 +                if (source_type == ECal.ClientSourceType.TASKS) {
@@ -1204,7 +1322,7 @@ index 9301281..0dee8ab 100644
 +                client.generate_instances_for_object_sync (comp, (time_t) data_range.first_dt.to_unix (), (time_t) data_range.last_dt.add_days (1).to_unix (), null, (comp, start, end) => {
                      var component = new ECal.Component.from_icalcomponent (comp);
  #else
-@@ -331,16 +382,17 @@ namespace DateTime.Widgets {
+@@ -331,16 +448,17 @@ namespace DateTime.Widgets {
  #endif
              debug (@"Received $(objects.length()) modified component(s) for source '%s'", source.dup_display_name ());
 -            var updated_components = new Gee.ArrayList<ECal.Component> ((Gee.EqualDataFunc<ECal.Component>?) Util.calcomponent_equal_func);
@@ -1233,7 +1351,7 @@ index 9301281..0dee8ab 100644
 -            components_updated (source, updated_components.read_only_view);
          }
 
-@@ -352,4 +404,8 @@ namespace DateTime.Widgets {
+@@ -352,4 +470,8 @@ namespace DateTime.Widgets {
              debug (@"Received $(cids.length()) removed component(s) for source '%s'", source.dup_display_name ());
              var components = source_components.get (source);
 +            if (source_type == ECal.ClientSourceType.EVENTS) {
@@ -1242,7 +1360,7 @@ index 9301281..0dee8ab 100644
 +            }
              var removed_components = new Gee.ArrayList<ECal.Component> ((Gee.EqualDataFunc<ECal.Component>?) Util.calcomponent_equal_func);
 
-@@ -366,4 +422,7 @@ namespace DateTime.Widgets {
+@@ -366,4 +488,7 @@ namespace DateTime.Widgets {
              });
 
 +            foreach (var component in removed_components) {

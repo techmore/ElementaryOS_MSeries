@@ -1,0 +1,12 @@
+{
+  "run_id": 39117953694,
+  "conclusion": "success",
+  "errors": [],
+  "observed_sources": 111,
+  "public_heads": 1114,
+  "absent_refs": [
+    "branch:aurora-silicon/linux:fix/m1m2-regressions",
+    "branch:aurora-silicon/linux:fix/m1m2-typec-usb4-router"
+  ],
+  "pending_changes_retained": 24
+}

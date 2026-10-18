@@ -14,7 +14,7 @@ if [[ -x /usr/lib/omarchy-mlx/venv/bin/python ]]; then
 else
   test -x "$HOME/.local/bin/mlx-omarchy-serve" || bash "$here/install.sh"
   runtime="$HOME/.local/share/mlx-omarchy/venv/bin/python"
-  sudo apt-get install -y flatpak gir1.2-ecal-2.0 gir1.2-edataserver-1.2
+  sudo apt-get install -y flatpak gir1.2-ecal-2.0 gir1.2-edataserver-1.2 gir1.2-gtk-3.0 python3-websockets
 fi
 flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 flatpak install --user --assumeyes --noninteractive flathub io.github.qwersyk.Newelle

@@ -551,6 +551,110 @@ class AgendaTest : Object {
         }
     }
 
+    Gtk.Widget? task_row (Gtk.Widget node, string title) {
+        if (node.get_type ().name () == "DateTimeTaskRow" && contains (node, title)) return node;
+        for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) {
+            var row = task_row (child, title);
+            if (row != null) return row;
+        }
+        return null;
+    }
+
+    Gtk.CheckButton? task_check (Gtk.Widget node) {
+        if (node is Gtk.CheckButton) return (Gtk.CheckButton) node;
+        for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) {
+            var check = task_check (child);
+            if (check != null) return check;
+        }
+        return null;
+    }
+
+    bool visible_label (Gtk.Widget node, string text) {
+        if (node is Gtk.Label && ((Gtk.Label) node).label == text) return node.visible;
+        for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) {
+            if (visible_label (child, text)) return true;
+        }
+        return false;
+    }
+
+    async void checkbox_checks () throws Error {
+        find_stack (widget).visible_child_name = "tasks";
+        var other = yield create_source ("agenda-other-tasks", ECal.ClientSourceType.TASKS);
+        var original = todo ("Checkbox task").replace ("UID:test-task", "UID:panel-check");
+        add (tasks, original);
+        add (other, original.replace ("Checkbox task", "Other list same UID"));
+        yield expect ("Checkbox task");
+        yield expect ("Other list same UID");
+        var completion_row = task_row (widget, "Checkbox task");
+        var completion_list = completion_row.get_parent ();
+        var check = task_check (completion_row);
+        assert (check != null && check.sensitive);
+        // Complete a row after another client has edited its record.
+        var edited = original.replace ("Checkbox task", "Latest task edit").replace ("END:VTODO", "DESCRIPTION:Keep this edit\r\nEND:VTODO");
+        tasks.modify_object_sync (new ICal.Component.from_string (edited), ECal.ObjModType.ALL, ECal.OperationFlags.NONE, null);
+        bool close_requested = false;
+        ulong close_handler = indicator.close.connect (() => { close_requested = true; });
+        check.active = true;
+        assert (!check.sensitive);
+        Signal.emit_by_name (completion_list, "row-activated", (Gtk.ListBoxRow) completion_row);
+        assert (!close_requested);
+        SignalHandler.disconnect (indicator, close_handler);
+        yield expect ("Latest task edit", false);
+        yield expect ("Checkbox task", false);
+        ICal.Component saved;
+        tasks.get_object_sync ("panel-check", null, out saved, null);
+        // View removal and the save acknowledgement can arrive in either order.
+        for (int n = 0; n < 100 && saved.get_status () != ICal.PropertyStatus.COMPLETED; n++) {
+            yield pause (); tasks.get_object_sync ("panel-check", null, out saved, null);
+        }
+        var record = new ECal.Component.from_icalcomponent (saved.clone ());
+        assert (saved.get_status () == ICal.PropertyStatus.COMPLETED);
+        assert (saved.get_summary () == "Latest task edit" && saved.get_description () == "Keep this edit");
+        assert (record.get_percent_complete () == 100 && record.get_completed () != null);
+        ICal.Component untouched;
+        other.get_object_sync ("panel-check", null, out untouched, null);
+        assert (untouched.get_status () != ICal.PropertyStatus.COMPLETED);
+        yield expect ("Other list same UID");
+        stdout.printf ("PASS checkbox persists completion metadata, preserves newer edits and isolates source UID\n");
+        registry.ref_source ("agenda-other-tasks").remove_sync (null);
+        yield expect ("Other list same UID", false);
+
+        var now = new GLib.DateTime.now_local ();
+        var day = now.format ("%Y%m%d");
+        add (tasks, todo ("Repeating checkbox task", false,
+            "DTSTART;VALUE=DATE:" + day + "\r\nDUE;VALUE=DATE:" + day + "\r\nRRULE:FREQ=DAILY;COUNT=3\r\n").replace ("UID:test-task", "UID:repeat-check"));
+        yield expect ("Repeating checkbox task");
+        task_check (task_row (widget, "Repeating checkbox task")).active = true;
+        ICal.Component? repeated = null;
+        bool advanced = false;
+        for (int n = 0; n < 150; n++) {
+            yield pause ();
+            tasks.get_object_sync ("repeat-check", null, out repeated, null);
+            if (repeated.get_due ().as_ical_string () != day) { advanced = true; break; }
+        }
+        assert (advanced && repeated != null && repeated.get_status () != ICal.PropertyStatus.COMPLETED);
+        yield expect ("Repeating checkbox task");
+        stdout.printf ("PASS recurring checkbox advances the next occurrence without completing the series\n");
+        tasks.remove_object_sync ("repeat-check", null, ECal.ObjModType.ALL, ECal.OperationFlags.NONE, null);
+        yield expect ("Repeating checkbox task", false);
+
+        add (tasks, todo ("Stale checkbox task").replace ("UID:test-task", "UID:stale-check"));
+        yield expect ("Stale checkbox task");
+        var stale_row = task_row (widget, "Stale checkbox task");
+        var stale_check = task_check (stale_row);
+        tasks.remove_object_sync ("stale-check", null, ECal.ObjModType.ALL, ECal.OperationFlags.NONE, null);
+        stale_check.active = true;
+        bool failed_safely = false;
+        for (int n = 0; n < 150; n++) {
+            yield pause ();
+            if (!stale_check.active && visible_label (stale_row, "Couldn’t complete task. Try again.")) {
+                failed_safely = true; break;
+            }
+        }
+        assert (failed_safely);
+        stdout.printf ("PASS missing-record failure restores checkbox and exposes a retry error\n");
+    }
+
     async void run () {
         try {
             registry = new E.SourceRegistry.sync (null);
@@ -624,6 +728,7 @@ class AgendaTest : Object {
             indicator.closed ();
             indicator.opened ();
             yield expect ("Second calendar same UID");
+            yield checkbox_checks ();
             result = 0;
         } catch (Error e) { stderr.printf ("FAIL: %s\n", e.message); }
         loop.quit ();

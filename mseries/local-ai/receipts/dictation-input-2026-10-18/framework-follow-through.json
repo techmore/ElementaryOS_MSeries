@@ -1,0 +1,36 @@
+{
+  "electron44": {
+    "browser": "Electron synthetic X11",
+    "accessibility": "forced",
+    "unicode_field": true,
+    "changed_field_untouched": true,
+    "password_refused": true,
+    "method": "Synthetic form in isolated real browser; no ASR, microphone or owner profile"
+  },
+  "qt6-focus-discovery": {
+    "qt6_unicode_field": true,
+    "qt6_multiline": true,
+    "changed_field_untouched": true,
+    "password_untouched": true,
+    "method": "Real Qt6 X11 widgets in private Xvfb/IBus/session bus; no microphone or ASR"
+  },
+  "unbacked-focus-discovery": {
+    "unbacked_context_refused": true,
+    "unfocused_context_refused": true,
+    "method": "Isolated real IBus InputContext without accessible application; no text or microphone"
+  },
+  "automatic_brave_without_flags": {
+    "passed": false,
+    "effect": "Focused-field metadata unavailable; insertion refused. No owner browser/profile changed."
+  },
+  "automatic_brave_with_private_os_a11y_enabled": {
+    "passed": false,
+    "effect": "IsEnabled alone did not provide browser metadata; screen reader was not enabled."
+  },
+  "remaining": [
+    "actual activation/rollback",
+    "human F5",
+    "actual app-specific Electron sessions",
+    "optional grammar/translation review"
+  ]
+}

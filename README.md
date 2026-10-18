@@ -170,13 +170,14 @@ Details: [desktop space](mseries/display-space/README.md),
   charging controls, battery estimates, sound/keyboard fixes, and the custom
   CodexBar account/usage integration. The calendar dropdown now has Events and
   Tasks tabs backed by Evolution Data Server (EDS), plus an account-setup action.
+  Tasks can be checked off directly in the panel, including repeating tasks.
   Events defaults to a compact upcoming 30-day list with optional Month, Week
   and Day views. Week/Day use time slots and event blocks with overlap lanes;
   Month/Upcoming retain compact lists. Open blocks for full event details.
 - **Tested:** ARM64 builds and isolated notch-layout checks cover cropped,
-  full-height, external, fractional-scale and crowded layouts. Fifteen real-plugin
-  EDS workflow groups pass in light and dark modes, covering agenda ranges,
-  navigation, live edits, completion/deletion and source changes. CodexBar has recorded build/
+  full-height, external, fractional-scale and crowded layouts. Eighteen real-plugin
+  EDS workflow groups cover time-grid geometry, agenda ranges, navigation,
+  checkbox saves, live edits, completion/deletion and source changes. CodexBar has recorded build/
   deploy checks and an owner-confirmed native Claude account-switch round trip.
 - **Left to do:** Accept the full-height layout after a hardware boot, including
   clock/popovers and crowded indicators. Complete Google sign-in and a real

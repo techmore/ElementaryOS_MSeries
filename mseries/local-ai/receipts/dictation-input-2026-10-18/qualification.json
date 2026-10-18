@@ -1,0 +1,26 @@
+{
+  "complete": false,
+  "deployed": false,
+  "microphone_recorded": false,
+  "model_inference_performed": false,
+  "owner_input_engine_changed": false,
+  "contracts_passed": 6,
+  "results": {
+    "ibus_wire": "passed",
+    "gtk3_fields": "passed",
+    "gtk3_stdin_client_chunks": "passed",
+    "gtk4_fields": "passed",
+    "brave_x11_xim": "failed_password_metadata; production XIM path now refused"
+  },
+  "retained_failure": "Original browser test reached password Begin and incorrectly accepted it. No password text was inserted by the test.",
+  "scope": "Private Xvfb/IBus/session buses, synthetic fields only. Not a human F5 or universal app pass.",
+  "source_sha256": {
+    "dictation-input.py": "49b3dabef46b7ed1c48916bef5d8bb08fc213bf05e6e00e98fdf88b10f118371",
+    "dictation-input-client.py": "33b3c5f08745202ab23a6adee4b8f477d0b0c00f8766892e3ace0505cb8ab36c",
+    "stream-dictate.py": "b04d199035be27e23981c59ad449a1bcfba4415a4ce46a842bfa407462256219",
+    "test_input.py": "c65b9f9d108feb53b8758286d9f94fde944feba7989c1e528d9e49eb57764454",
+    "ibus-context-smoke.py": "12a43591cc32b160432fbd1075417706a567eca19e70db75ca823645fabe1f41",
+    "gtk-input-smoke.py": "0977d29333ccd7d17105e02a1b310a56230e124f462e6c00438b01625b451198",
+    "browser-input-smoke.py": "9d637762abe3bcca616a063207ed8486dde2e957e6c82d320352e6156f327aeb"
+  }
+}

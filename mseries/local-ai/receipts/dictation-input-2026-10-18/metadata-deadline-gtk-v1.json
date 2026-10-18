@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "source_sha256": {
+    "stream-dictate.py": "452b3213c6d48a8b554275997728d34e6142f5ce37e65c62a23d54e451141c44",
+    "dictation-input.py": "c32a00a80cde33db6ab6861299b9059130584497e10d0037018eb42b0c4725c3",
+    "dictation-input-client.py": "f25e53319d500d350c09a6e23ab254d728073ebf657b8b3b7dd83a99ca287c37",
+    "dictation_status.py": "50dadbf4f6a7f5edf8e4cb8b91d8931adf75cd899455285547d653c5af591903",
+    "dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+    "gtk-input-smoke.py": "82c188c890eacb14d8154c274a143fac3cd78e6aaf26ca91ce25fe849e4ae8dc",
+    "machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+  },
+  "gtk_version": 3,
+  "display_backend": "x11",
+  "unicode_field": true,
+  "changed_field_untouched": true,
+  "password_untouched": true,
+  "session_engine_restore": true,
+  "overlapping_begin_refused": true,
+  "owner_selection_preserved": true,
+  "speech": null,
+  "keyboard": {
+    "ordinary_keys": true,
+    "shift": true,
+    "backspace": true,
+    "dead_key_compose": true,
+    "layout": "private Xvfb us(intl)"
+  },
+  "method": "Actual Gtk.Entry fields, private Xvfb/IBus/session bus; no ASR or microphone"
+}

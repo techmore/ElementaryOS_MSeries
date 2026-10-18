@@ -44,6 +44,9 @@ def main():
     env['OMARCHY_MLX_SYSTEM_PREFIX'] = str(prefix)
     env['VK_DRIVER_FILES'] = str(prefix / 'vulkan/honeykrisp_icd.aarch64.json')
     if profile['engine'] == 'mlx':
+        from runtime_recovery import recover
+        recovered = recover(prefix)
+        if recovered: print(f'RECOVERY: removed {recovered} dead CLI reservations; reserve unchanged', flush=True)
         launcher = home / '.local/bin/mlx-omarchy-serve' if prefix == home / '.local/share/mlx-omarchy' else Path('/usr/bin/mlx-omarchy-serve')
         command = [str(launcher), 'serve', profile['model'],
                    '--context', str(profile['context']), '--prompt-cache-size', str(profile.get('prompt_cache_size', 1)),
