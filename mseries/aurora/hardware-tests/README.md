@@ -59,7 +59,7 @@ describe installed files; they do not prove a module was not replaced on disk
 after it was loaded. Kernel image identity describes the explicit boot file.
 Archive the corresponding original package as well when freezing distribution.
 The [binary verification](2026-10-18-j314s-binary-verification.json) confirms
-that the observed boot image, appledrm/SEP module files and J314S DTB exactly
+that the observed kernel image, appledrm/SEP module files and J314S DTB exactly
 match entries in the checksum-pinned published `.20` package. CI verifies that
 proof against the receipt and upstream pins with `--binary-proof`.
 
