@@ -1,7 +1,12 @@
 # Pantheon calendar agenda
 
 The datetime indicator has **Events** and **Tasks** tabs above the calendar's
-right pane. Events follow the selected day. Tasks shows all incomplete tasks
+right pane. Events always shows **Upcoming · next 30 days**, grouped by local
+date, independently of the calendar selection. Ongoing events remain visible;
+events that have ended and events outside the rolling 30-day range are omitted.
+The list updates as data changes and checks expiry/day rollover each minute
+while open. Browsing the left calendar does not replace the upcoming agenda.
+Tasks shows all incomplete tasks
 from selected, enabled elementary Tasks lists, including tasks with no due
 date. Dated tasks sort first, then undated tasks alphabetically. Activate a
 task to open elementary Tasks; completion and editing stay in that app.
@@ -70,7 +75,8 @@ actual plugin on Xvfb with a private D-Bus and private XDG config/data/cache.
 It creates only synthetic local EDS sources. It checks Today after selecting another day, repeated Today clicks during
 month navigation in both directions, subsequent next-month navigation and
 reopening, plus the tabs, undated tasks,
-shared event UIDs across calendars, live edits/deletions/completion, and source
+shared event UIDs across calendars, upcoming events across month boundaries,
+past/outside-range exclusion, ongoing events, live edits/deletions/completion, and source
 enable/disable. It requires `xvfb xauth dbus-daemon` plus the development/runtime
 dependencies above. The fixture uses local GIO and disables file-portal activation only in its
 private D-Bus session, avoiding temporary document mounts during cleanup.

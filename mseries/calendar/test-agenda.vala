@@ -31,8 +31,8 @@ class AgendaTest : Object {
             (complete ? "STATUS:COMPLETED\r\nPERCENT-COMPLETE:100\r\nCOMPLETED:20261018T120000Z\r\n" : "") + "END:VTODO\r\n";
     }
 
-    string event (string title) {
-        var now = new GLib.DateTime.now_local ();
+    string event (string title, int offset = 0) {
+        var now = new GLib.DateTime.now_local ().add_days (offset);
         var day = now.format ("%Y%m%d");
         return "BEGIN:VEVENT\r\nUID:shared-event\r\nSUMMARY:" + title +
             "\r\nDTSTART;VALUE=DATE:" + day + "\r\nDTEND;VALUE=DATE:" + now.add_days (1).format ("%Y%m%d") + "\r\nEND:VEVENT\r\n";
@@ -83,6 +83,15 @@ class AgendaTest : Object {
         return null;
     }
 
+    Gtk.Widget? find_calendar (Gtk.Widget node) {
+        if (node.get_type ().name () == "DateTimeWidgetsCalendarView") return node;
+        for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) {
+            var view = find_calendar (child);
+            if (view != null) return view;
+        }
+        return null;
+    }
+
     async void navigation_checks () throws Error {
         var today = new GLib.DateTime.now_local ();
         var other = today.get_day_of_month () == 1 ? today.add_days (1) : today.add_days (-1);
@@ -93,7 +102,7 @@ class AgendaTest : Object {
             var controller = controllers.get_item (i);
             if (controller is Gtk.EventControllerFocus) Signal.emit_by_name (controller, "enter");
         }
-        yield expect ("Second calendar same UID", false);
+        yield expect ("Second calendar same UID");
         var today_button = find_button (widget, "office-calendar-symbolic");
         assert (today_button != null);
         today_button.clicked ();
@@ -123,7 +132,10 @@ class AgendaTest : Object {
         for (int n = 0; n < 12; n++) yield pause ();
         yield expect (today.format ("%OB, %Y"));
         yield expect ("Second calendar same UID");
-        stdout.printf ("PASS Today restores selected day and events after repeated clicks and month navigation\n");
+        GLib.DateTime selected;
+        find_calendar (widget).get ("selected-date", out selected);
+        assert (selected.format ("%F") == today.format ("%F"));
+        stdout.printf ("PASS Today navigation works and upcoming agenda remains visible while browsing\n");
     }
 
     async void pause () {
@@ -148,9 +160,9 @@ class AgendaTest : Object {
     void preview (Gtk.Window window, string name) {
         var directory = Environment.get_variable ("AGENDA_PREVIEW_DIR");
         if (directory == null) return;
-        var paintable = new Gtk.WidgetPaintable (widget);
+        var paintable = new Gtk.WidgetPaintable (window);
         var snapshot = new Gtk.Snapshot ();
-        paintable.snapshot (snapshot, widget.get_width (), widget.get_height ());
+        paintable.snapshot (snapshot, window.get_width (), window.get_height ());
         var node = snapshot.to_node ();
         if (node != null) {
             var texture = window.get_renderer ().render_texture (node, null);
@@ -167,6 +179,13 @@ class AgendaTest : Object {
             stderr.printf ("Creating fixtures\n");
             add (events, event ("First calendar"));
             add (events2, event ("Second calendar same UID"));
+            add (events, event ("Tomorrow event", 1).replace ("UID:shared-event", "UID:tomorrow"));
+            add (events, event ("Last upcoming day", 29).replace ("UID:shared-event", "UID:last-day"));
+            add (events, event ("Outside upcoming range", 30).replace ("UID:shared-event", "UID:outside"));
+            add (events, event ("Ended yesterday", -1).replace ("UID:shared-event", "UID:past"));
+            add (events, event ("Still ongoing", -1).replace ("UID:shared-event", "UID:ongoing").replace (
+                "DTEND;VALUE=DATE:" + new GLib.DateTime.now_local ().format ("%Y%m%d"),
+                "DTEND;VALUE=DATE:" + new GLib.DateTime.now_local ().add_days (2).format ("%Y%m%d")));
             add (tasks, todo ("Undated task"));
             var due = new GLib.DateTime.now_utc ().add_days (2).format ("%Y%m%dT%H%M%SZ");
             add (tasks, todo ("Due-only task", false, "DUE:" + due + "\r\n").replace ("UID:test-task", "UID:dated-task"));
@@ -181,7 +200,16 @@ class AgendaTest : Object {
             yield expect ("Calendar Accounts…");
             yield expect ("First calendar");
             yield expect ("Second calendar same UID");
+            yield expect ("Upcoming · next 30 days");
+            yield expect ("Tomorrow event");
+            yield expect ("Last upcoming day");
+            yield expect ("Still ongoing");
+            yield expect ("Outside upcoming range", false);
+            yield expect ("Ended yesterday", false);
+            stdout.printf ("PASS upcoming range crosses month, keeps ongoing events and excludes past/outside events\n");
             yield navigation_checks ();
+            yield expect ("Tomorrow event");
+            yield expect ("Last upcoming day");
             preview (window, "calendar-events");
             find_stack (widget).visible_child_name = "tasks";
             yield expect ("Undated task");

@@ -1,5 +1,23 @@
 # OS 9 implementation / Claude Code handoff
 
+## Upcoming calendar agenda — 2026-10-18
+
+Events now always displays a rolling 30-day agenda, explicitly labeled
+“Upcoming · next 30 days” and grouped by local date with Today/Tomorrow headings.
+The independent EDS view spans month boundaries and is unaffected by browsing
+the left calendar. Ongoing events stay visible; ended and out-of-range events
+are hidden. A minute timer while open updates expiry and daily range rollover.
+Tasks retains its shared EDS data. The prior Calendar Today-navigation fix is
+preserved. [Behavior and install](calendar/README.md).
+
+Validation: native ARM64 build, real-plugin EDS regressions for rolling range,
+ongoing/past/boundary events and calendar navigation, plus existing live
+edit/completion/source tests. The release build is installed and Wingpanel
+loaded its new module. Authenticated read-only comparisons with real Google
+events and Tasks pass without logging titles or modifying records. Four image
+wiring tests pass. Factory build/boot remains unverified.
+
+
 ## Calendar Today navigation fixed and deployed — 2026-10-18
 
 Owner reported unexpected events after clicking the center month-navigation
