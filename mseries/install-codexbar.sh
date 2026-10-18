@@ -86,4 +86,6 @@ if config.get("provider") == "custom":
         pathlib.Path(temporary_name).unlink(missing_ok=True)
         raise
 PY
+# Start CodexBar at login (idempotent; the Wingpanel indicator also launches it when the session loads it).
+"$HOME/.local/bin/codexbar-linux" --autostart enable >/dev/null 2>&1 || echo 'Could not enable start at login; use Settings > Start at login.' >&2
 echo 'Open ~/.local/bin/codexbar-linux --settings. Runtime dependencies: see mseries/DESKTOP-SETUP.md.'
