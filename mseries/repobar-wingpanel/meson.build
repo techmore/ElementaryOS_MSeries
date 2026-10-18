@@ -4,6 +4,7 @@ libwingpanel_dep = dependency('wingpanel-9')
 granite_dep = dependency('granite-7', version: '>= 7.7.0')
 json_dep = dependency('json-glib-1.0')
 indicators_dir = libwingpanel_dep.get_variable(pkgconfig: 'indicatorsdir')
+icon_theme_dir = join_paths(get_option('datadir'), 'icons', 'hicolor', 'symbolic', 'apps')
 
 shared_module(
   'repobar',
@@ -11,4 +12,9 @@ shared_module(
   dependencies: [libwingpanel_dep, granite_dep, json_dep],
   install: true,
   install_dir: indicators_dir,
+)
+
+install_data(
+  'icons/github-symbolic.svg',
+  install_dir: icon_theme_dir,
 )

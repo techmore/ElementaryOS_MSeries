@@ -133,14 +133,20 @@ controls. Installed and activated in the live Pantheon session on 2026-10-18;
 the module appeared in Wingpanel and its toggle opened the indicator. An
 authenticated refresh returned 85 repositories. The first refresh exposed an
 invalid GraphQL connection query; that was fixed by moving pagination/order
-arguments to the connections and using smaller 25-repository pages. The active
-follow-up branch adds topic search, a Local view, and nested per-repository
-disclosure sections for issues, pull requests, CI, releases, activity, commits,
-branches, and tags; each section fetches only on expansion. Python syntax and the
-Vala/Meson build pass, and the authenticated API returned all eight sections.
-The build emits a GTK CSS provider deprecation warning and generated C warnings.
-Traffic/cloner charts, a heatmap UI, multi-account UI, and launch-at-login
-controls remain outside this iteration; see `mseries/REPOBAR-PORT.md`.
+arguments to the connections and using smaller 25-repository pages. PR #175
+merged topic search, a Local view, and nested per-repository disclosure sections
+for issues, pull requests, CI, releases, activity, commits, branches, and tags;
+each category fetches only when expanded. Python syntax, the Vala/Meson build,
+and all eight authenticated endpoints passed. The merged module was installed
+with `sudo ninja -C /tmp/repobar-verify-codex install`; the user helper was
+copied and compared with the source, then Wingpanel was reloaded once and the
+indicator toggled open. The follow-up replaces the text badge with a bundled
+theme-tintable GitHub mark in the hicolor symbolic icon theme; the installer
+refreshes that theme's cache and uninstall removes the icon. GTK's icon-theme
+lookup found it as a symbolic icon, and the reloaded Wingpanel maps the latest
+module. The build emits a GTK CSS provider deprecation warning and generated C
+warnings. Traffic/cloner charts, a heatmap UI, multi-account UI, and launch-at-
+login controls remain outside this iteration; see `mseries/REPOBAR-PORT.md`.
 
 ## Consistent CodexBar panel typography — 2026-10-18
 
