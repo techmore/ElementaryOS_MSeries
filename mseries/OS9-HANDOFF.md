@@ -2606,3 +2606,34 @@ No full kernel/module build or hardware boot was performed. E4 still disables bu
 accepted by the older fallback-preserving installer. Prior-art claims are scoped to the actual Aurora reports
 (zero tunnel churn on j314s display resume, different M2 Max dock chain). The next hardware task is a separately
 reviewed controlled boot using the actual current payload/state, with route/module/link/EDID/picture evidence.
+
+## Dependency audit and CodexBar 0.77.0 pin — 2026-10-18
+
+Audit of pinned programs: touchegg 2.0.18, crush v0.98.1, elementary/dock 8.3.3 and tether 0.2.38 are already latest upstream; apt had nothing upgradable (lists refreshed 04:28). CodexBar was pinned at v0.74.1 while upstream is v0.77.0, so `install-codexbar.sh` now pins v0.77.0.
+
+Verification: CLI and Desktop tarballs downloaded to a scratch dir and sha256-checked; the unpacked CLI reports 0.77.0 and `usage --provider codex` returns the signed-in account (sdolbec1@gmail.com, prolite); `opencodego` still needs a browser sign-in, as before. Not verified: the installer was not re-run, the Desktop app was not installed, and the running panel was not restarted, so the live panel is still on 0.74.1 until `install-codexbar.sh --skip-system-deps` is run and the panel restarted.
+
+Flatpak: Signal 8.30.0 → 8.31.0 and the GNOME 50 runtime updated on this machine (not repo state).
+
+Left alone on purpose: Brave Widevine 4.10.3057.0 is pinned by SHA-512 from a Mozilla bug and a newer component cannot be verified the same way; `local-ai/install.sh` pins coreglass, omarchy-mlx and mesa-mlx-compute to reviewed commits that are behind upstream heads (omarchy-mlx moved today) and MLX_OMARCHY_VERSION v0.7.33 has no upstream release to compare. Bumping those needs a review of the new commits and redistribution terms first.
+
+## CodexBar custom port: multi-account Codex switcher — 2026-10-18
+
+`AGENTS.md` now carries a banner: CodexBar is our custom port (upstream pin + our Wingpanel/wrapper/helpers), merged with upstream on each bump, never replaced by stock files. Upstream 0.77.0's managed Codex accounts (`codexbar codex-accounts`) are macOS-only ("only available on macOS"); its Claude switching needs the external `claude-swap` tool, which is not installed here.
+
+Added `mseries/codexbar-accounts.py` (list/save/switch/usage; one private saved Codex home per account under `~/.local/share/codexbar-mseries/codex-accounts`, atomic `auth.json` swap, the account being left is saved first, emails shared by two workspaces need the exact id) with 6 tests in `test-codexbar-accounts.py` (throwaway homes only; the real `~/.codex` was not touched by tests). The Wingpanel Codex card now lists other accounts with plan and 7-day remaining, a Switch button, and an Add account… button (saves the current sign-in, then `codex login` in a terminal). Installers and `enhance.sh` ship the helper; CI runs the tests.
+
+Verified: Python tests, Meson build and 3 suites, headless render with fake accounts. Not verified: a real second account switch on this desktop (only one Codex account is signed in), the 0.77.0 desktop app itself (not restarted), live Add account flow. Not built: Claude switching (needs `claude-swap`; panel hook not written).
+
+Next: sign in a second account via Add account…, confirm the Switch and the restart-Codex note; decide on installing `claude-swap` for Claude switching.
+
+## CodexBar panel footer redesign — 2026-10-18
+
+The bottom of the dropdown was four full-width flat buttons with 12px icons ("Quick View…", "Usage Details…", "Spending Details…", "Settings & Sign In…"), which read as tacked on. Now: three even icon-over-label tiles (Quick View, Usage, Spending, 16px icons, rounded hover) and Settings & sign in as a gear beside Refresh in the header. Headless renders checked in light and dark; Meson tests pass. Not verified: the live Wingpanel popover (module installed, loads on the next Wingpanel restart or login).
+
+### F5 dictation (speech to text) — 2026-10-18
+
+Added `mseries/install-dictation.sh` + `mseries/dictation/` (see its README). Voxtype v1.1.1 aarch64 `cpu` (SHA-256 `f29bdbf6...5687`, matches the release's SHA256SUMS; the `.asc` signature was not checked) with Whisper `base.en`; ydotool/wl-clipboard from apt. F5 is remapped to KEY_F14 by hwdb; Voxtype listens on evdev (user is in group `input`). Prior art: Omarchy's `omarchy-install-dictation-voxtype`.
+Built-in mic: PipeWire exposes only the silent headset jack; the AOP array (`hw:1,0`, 3ch S32 48 kHz, big DC offset) is bridged by `aop-mic.sh` into source `mseries-builtin-mic`. Speech played at the laptop and recorded from `hw:1,0`, filtered offline, transcribed correctly.
+Installed live on this Mac (services `ydotool`, `mseries-aop-mic`, `voxtype`). **Not verified:** a real person holding F5 and text landing in an app; accuracy; power cost of the always-on bridge. Mistakes during testing: an early bridge version was auto-linked to the speakers (fixed with `node.autoconnect=false`), and test speech was played aloud; a silent dry run typed "Pshhh." into the focused window.
+Next: owner tries F5; tune gain; start the bridge only while recording; grammar pass via `[output.post_process]` with the local LLM; evaluate Parakeet via the Voxtype ONNX build per `STT-RESEARCH.md`.

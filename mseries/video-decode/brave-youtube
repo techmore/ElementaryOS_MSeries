@@ -24,13 +24,15 @@ args=(--die-with-parent --unshare-pid --unshare-ipc --unshare-uts --share-net
   --setenv LIBVA_DRIVER_NAME v4l2_request)
 for d in /dev/media* /dev/video*; do [[ -e $d ]] && args+=(--dev-bind "$d" "$d"); done
 args+=(--dir "$runtime")
+# DNS: /etc/resolv.conf points into /run/systemd/resolve (stub resolver); the tmpfs /run would hide it
+[[ -d /run/systemd/resolve ]] && args+=(--ro-bind /run/systemd/resolve /run/systemd/resolve)
 for s in "${WAYLAND_DISPLAY:-wayland-0}" pipewire-0 pulse/native; do
   [[ -e $runtime/$s ]] && { [[ $s == pulse/native ]] && args+=(--dir "$runtime/pulse"); args+=(--bind "$runtime/$s" "$runtime/$s"); }
 done
 [[ -d /usr/share/fonts ]] || true
 
 if [[ ${1:-} == --probe ]]; then
-  exec bwrap "${args[@]}" /bin/bash -c 'echo "inside container: HOME contents:"; ls -A "$HOME" | head; echo "devices:"; ls /dev/dri /dev/media* /dev/video* 2>&1 | tr "\n" " "; echo; echo "ssh visible? $(ls -d $HOME/.ssh 2>&1 | head -1)"; vainfo 2>&1 | grep -E "Driver|VAProfile(H264High|HEVCMain10|VP9Profile0)"'
+  exec bwrap "${args[@]}" /bin/bash -c 'echo "inside container: HOME contents:"; ls -A "$HOME" | head; echo "devices:"; ls /dev/dri /dev/media* /dev/video* 2>&1 | tr "\n" " "; echo; echo "ssh visible? $(ls -d $HOME/.ssh 2>&1 | head -1)"; vainfo 2>&1 | grep -E "Driver|VAProfile(H264High|HEVCMain10|VP9Profile0)"; echo "dns: $(getent hosts www.youtube.com | head -1)"'
 fi
 
 if [[ ${1:-} == --test ]]; then   # headless capability + playback check against $profile/test/t.html (no window)
@@ -43,6 +45,6 @@ fi
 
 flags=(--user-data-dir="$profile" --no-sandbox --ozone-platform=wayland
   --enable-features=AcceleratedVideoDecodeLinux,AcceleratedVideoDecodeLinuxGL,VaapiIgnoreDriverChecks
-  --ignore-gpu-blocklist --no-first-run --no-default-browser-check --disable-breakpad)
+  --ignore-gpu-blocklist --no-first-run --no-default-browser-check --disable-breakpad --test-type)   # --test-type hides the "unsupported flag: --no-sandbox" bar; the bwrap container is the sandbox
 url="${1:-https://www.youtube.com}"
 exec bwrap "${args[@]}" "$brave" "${flags[@]}" --app="$url"

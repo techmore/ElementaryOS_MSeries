@@ -35,6 +35,9 @@ namespace MSeries {
         private string sessions_text = "";
         private string sessions_error = "";
         private int64 sessions_fetched_us = 0;
+        private Json.Array? codex_accounts = null;
+        private bool codex_accounts_in_flight = false;
+        private int64 codex_accounts_fetched_us = 0;
         private Json.Object? opencode_local = null;
         private bool opencode_local_in_flight = false;
         private int64 opencode_local_fetched_us = 0;
@@ -110,6 +113,17 @@ namespace MSeries {
             refresh_button.update_property (Gtk.AccessibleProperty.LABEL, "Refresh usage", -1);
             refresh_button.clicked.connect (() => refresh_usage ());
             title_row.append (refresh_button);
+            var settings_button = new Gtk.Button.from_icon_name ("preferences-system-symbolic") {
+                tooltip_text = "Settings & sign in",
+                valign = Gtk.Align.CENTER
+            };
+            settings_button.add_css_class ("flat");
+            settings_button.update_property (Gtk.AccessibleProperty.LABEL, "Settings and sign in", -1);
+            settings_button.clicked.connect (() => {
+                popdown_from (settings_button);
+                run_action ("--settings");
+            });
+            title_row.append (settings_button);
             menu.append (title_row);
 
             // Three pages keep every section above the fold; Quota is the default.
@@ -140,12 +154,12 @@ namespace MSeries {
             menu.append (scroll);
             menu.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
 
-            // Labeled, borderless action rows live inside Wingpanel's popover.
-            var actions = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
-            actions.append (make_action_button ("Quick View…", "view-reveal-symbolic", "--quick-view"));
-            actions.append (make_action_button ("Usage Details…", "view-list-symbolic", "--usage"));
-            actions.append (make_action_button ("Spending Details…", "accessories-calculator-symbolic", "--spending"));
-            actions.append (make_action_button ("Settings & Sign In…", "preferences-system-symbolic", "--settings"));
+            // Three even tiles (icon over label) instead of a list of full-width buttons; Settings is the header gear.
+            var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) { homogeneous = true };
+            actions.add_css_class ("mseries-tiles");
+            actions.append (make_action_button ("Quick View", "view-reveal-symbolic", "--quick-view"));
+            actions.append (make_action_button ("Usage", "view-list-symbolic", "--usage"));
+            actions.append (make_action_button ("Spending", "accessories-calculator-symbolic", "--spending"));
             menu.append (actions);
 
             show_state (quota_box, "content-loading-symbolic", "Loading usage…", "", false);
@@ -191,6 +205,8 @@ namespace MSeries {
                 ".mseries-codexbar .dot-off { opacity: 0.45; } " +
                 ".mseries-codexbar .state-title { font-weight: 700; } " +
                 ".mseries-codexbar button { padding: 3px 6px; } " +
+                ".mseries-codexbar .mseries-tiles button { padding: 8px 4px; border-radius: 8px; } " +
+                ".mseries-codexbar .mseries-tiles button:hover { background: alpha(currentColor, 0.08); } " +
                 ".mseries-codexbar .mseries-switcher button { padding: 2px 6px; } " +
                 "label.mseries-codexbar-bar.level-low { color: @warning_color; } " +
                 "label.mseries-codexbar-bar.level-critical { color: @error_color; } " +
@@ -199,9 +215,11 @@ namespace MSeries {
         }
 
         private Gtk.Button make_action_button (string label, string icon_name, string action) {
-            var content = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
-            content.append (new Gtk.Image.from_icon_name (icon_name) { pixel_size = 12 });
-            content.append (new Gtk.Label (label) { xalign = 0, hexpand = true });
+            var content = new Gtk.Box (Gtk.Orientation.VERTICAL, 4) { halign = Gtk.Align.CENTER };
+            content.append (new Gtk.Image.from_icon_name (icon_name) { pixel_size = 16 });
+            var text = new Gtk.Label (label);
+            text.add_css_class ("caption");
+            content.append (text);
             var button = new Gtk.Button () { child = content };
             button.add_css_class ("flat");
             button.clicked.connect (() => {
@@ -336,10 +354,144 @@ namespace MSeries {
                 GLib.get_monotonic_time () - sessions_fetched_us > max_age_seconds * GLib.TimeSpan.SECOND) {
                 refresh_sessions.begin ();
             }
+            if (codex_accounts_fetched_us == 0 ||
+                GLib.get_monotonic_time () - codex_accounts_fetched_us > 300 * GLib.TimeSpan.SECOND) {
+                refresh_codex_accounts.begin ();
+            }
             if (opencode_local_fetched_us == 0 ||
                 GLib.get_monotonic_time () - opencode_local_fetched_us > max_age_seconds * GLib.TimeSpan.SECOND) {
                 refresh_opencode_local.begin ();
             }
+        }
+
+        private static string helper_path (string name) {
+            return GLib.Path.build_filename (Environment.get_home_dir (), ".local", "lib", "codexbar-cli", name);
+        }
+
+        // Upstream's Codex account switching is macOS-only; our helper keeps one saved sign-in per account.
+        private async void refresh_codex_accounts () {
+            if (codex_accounts_in_flight) {
+                return;
+            }
+            codex_accounts_in_flight = true;
+            var before = codex_accounts_digest (codex_accounts);
+            try {
+                var process = new GLib.Subprocess (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE,
+                    "python3", helper_path ("codexbar-accounts.py"), "usage");
+                string stdout_text;
+                string stderr_text;
+                yield process.communicate_utf8_async (null, null, out stdout_text, out stderr_text);
+                Json.Array? parsed = null;
+                if (process.get_successful () && stdout_text.strip ().length > 0) {
+                    var parser = new Json.Parser ();
+                    parser.load_from_data (stdout_text, -1);
+                    var root = parser.get_root ();
+                    if (root != null && root.get_node_type () == Json.NodeType.OBJECT) {
+                        var list = root.get_object ().get_array_member ("accounts");
+                        parsed = list != null ? list.ref () : null;
+                    }
+                }
+                codex_accounts = parsed;
+            } catch (Error e) {
+                codex_accounts = null;
+            } finally {
+                codex_accounts_in_flight = false;
+                codex_accounts_fetched_us = GLib.get_monotonic_time ();
+            }
+            if (codex_accounts_digest (codex_accounts) != before) {
+                last_digest = "";
+                read_snapshot.begin ();
+            }
+        }
+
+        private static string codex_accounts_digest (Json.Array? accounts) {
+            if (accounts == null) {
+                return "";
+            }
+            var generator = new Json.Generator ();
+            var node = new Json.Node (Json.NodeType.ARRAY);
+            node.set_array (accounts);
+            generator.root = node;
+            return generator.to_data (null);
+        }
+
+        private void run_accounts_helper (string[] arguments) {
+            try {
+                string[] command = { "python3", helper_path ("codexbar-accounts.py") };
+                foreach (var argument in arguments) {
+                    command += argument;
+                }
+                var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_SILENCE | SubprocessFlags.STDERR_SILENCE);
+                process.wait_async.begin (null, () => {
+                    // The active account changed: re-read quota and the account list from scratch.
+                    codex_accounts_fetched_us = 0;
+                    last_digest = "";
+                    run_action ("--refresh");
+                    refresh_codex_accounts.begin ();
+                    read_snapshot.begin ();
+                });
+            } catch (Error e) {
+                subtitle_label.set_text ("Could not switch account: " + e.message);
+            }
+        }
+
+        private void add_codex_account () {
+            // Remember the signed-in account first, then let `codex login` sign in the next one.
+            try {
+                var save = new GLib.Subprocess (SubprocessFlags.STDOUT_SILENCE | SubprocessFlags.STDERR_SILENCE,
+                    "python3", helper_path ("codexbar-accounts.py"), "save");
+                save.wait_async.begin (null, () => {
+                    try {
+                        new GLib.Subprocess (SubprocessFlags.NONE, "xdg-terminal-exec", "codex", "login");
+                    } catch (Error e) {
+                        subtitle_label.set_text ("Could not open a terminal: " + e.message);
+                    }
+                    codex_accounts_fetched_us = 0;
+                });
+            } catch (Error e) {
+                subtitle_label.set_text ("Could not save the current account: " + e.message);
+            }
+        }
+
+        private Gtk.Widget? build_codex_accounts (Gtk.Widget parent_for_popdown) {
+            if (codex_accounts == null || codex_accounts.get_length () < 2) {
+                return null;
+            }
+            var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
+            box.append (subtle_label ("Other accounts"));
+            for (uint i = 0; i < codex_accounts.get_length (); i++) {
+                var account = codex_accounts.get_object_element (i);
+                if (account.get_boolean_member_with_default ("active", false)) {
+                    continue;
+                }
+                var email = account.get_string_member_with_default ("email", "");
+                var account_id = account.get_string_member_with_default ("id", email);
+                var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+                var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { hexpand = true };
+                var name = new Gtk.Label (email) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
+                text.append (name);
+                var detail = Presentation.plan_label (account.get_string_member_with_default ("plan", ""));
+                var windows = account.get_array_member ("windows");
+                if (windows != null && windows.get_length () > 0) {
+                    var window = windows.get_object_element (windows.get_length () - 1);
+                    detail = (detail.length > 0 ? detail + " · " : "") + "%s %.0f%% left".printf (
+                        window.get_string_member_with_default ("label", "Quota"),
+                        window.get_double_member_with_default ("remaining", 0));
+                } else if (account.has_member ("error")) {
+                    detail = (detail.length > 0 ? detail + " · " : "") + "usage unavailable";
+                }
+                text.append (subtle_label (detail));
+                row.append (text);
+                var switch_button = new Gtk.Button.with_label ("Switch") { valign = Gtk.Align.CENTER };
+                switch_button.set_tooltip_text ("Make %s the active Codex account. Restart running Codex sessions to use it.".printf (email));
+                switch_button.clicked.connect (() => {
+                    popdown_from (parent_for_popdown);
+                    run_accounts_helper ({ "switch", account_id });
+                });
+                row.append (switch_button);
+                box.append (row);
+            }
+            return box;
         }
 
         private static string local_digest (Json.Object? usage) {
@@ -626,6 +778,19 @@ namespace MSeries {
             // Say so only when something is wrong; "All Systems Operational" is noise.
             if (error.length == 0 && status.length > 0 && status_level != "none" && status_level != "unknown") {
                 card.append (subtle_label ("Provider status · " + status));
+            }
+            if (provider == "codex") {
+                var others = build_codex_accounts (card);
+                if (others != null) {
+                    card.append (others);
+                }
+                var add = new Gtk.Button.with_label ("Add account…") { halign = Gtk.Align.START };
+                add.set_tooltip_text ("Sign in to another ChatGPT account with codex login");
+                add.clicked.connect (() => {
+                    popdown_from (add);
+                    add_codex_account ();
+                });
+                card.append (add);
             }
             if (error.length > 0 || windows == null || windows.get_length () == 0) {
                 var estimate = provider == "opencodego" ? opencode_local : null;
