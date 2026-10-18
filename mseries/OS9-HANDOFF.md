@@ -1,5 +1,19 @@
 # OS 9 implementation / Claude Code handoff
 
+## ISO build retry: use the permitted account frontend — 2026-10-18
+
+Fresh-ISO run [39126016747](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39126016747)
+stopped during Apple overlay package selection before Brave staging:
+`gnome-control-center` has no candidate because elementary pins it to -1 in
+`deprioritize-gnome`. All three ARM64 image configs now select the Ubuntu universe
+`gnome-online-accounts-gtk` frontend instead; the existing account launcher already
+supports it. The GNOME package exclusion policy is preserved. Native archive
+metadata confirms arm64 candidate 3.50.9-1 and its GOA/GTK4 dependencies.
+
+Five image-wiring regressions pass, including a new prohibited-package check.
+This is a build-blocker fix, not a new ISO or fresh-install/playback pass. Next:
+retry the ISO build and then install/test its actual artifact in a blank KVM guest.
+
 ## Calendar Today navigation fixed and deployed — 2026-10-18
 
 Owner reported unexpected events after clicking the center month-navigation

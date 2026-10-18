@@ -28,7 +28,9 @@ consent, and enable **Calendar**. The launcher opens GNOME Online Accounts via
 GNOME Settings (with a process-local desktop override), or the standalone GTK
 account frontend if Settings is unavailable. EDS discovers Google calendars
 from that account and supplies them to Events. The account frontend, EDS and
-Tasks are included in the Apple Silicon image dependency list.
+Tasks are included in the Apple Silicon image dependency list. Factory images use
+`gnome-online-accounts-gtk`: elementary deliberately excludes `gnome-control-center`
+through its APT policy. Existing desktops with GNOME Settings can keep using it.
 
 Google authorization must be completed by the account owner. The repository
 contains no Google credentials or tokens. OAuth and refresh credentials stay
