@@ -21,6 +21,10 @@ namespace MSeries {
         public signal void status_changed (bool running, bool offering, int waiting, int watching);
         /* In Quick Settings this is true: while a share is offered it starts the dock app (eyes in the dock). The app itself sets it false. */
         public bool spawn_dock_app { get; set; default = false; }
+        /* In Quick Settings: a desktop notification when a viewer starts waiting, so it is noticed without opening the menu. */
+        public bool notify_waiting { get; set; default = false; }
+        private int last_waiting = 0;
+        private uint32 notification_id = 0;
 
         construct {
             eyes = new Gtk.Image.from_icon_name ("mseries-share-eyes-symbolic") { pixel_size = 18 };
@@ -77,6 +81,8 @@ namespace MSeries {
                 : "Screen share ready · not sharing yet";
             bool offering = state.running && client.reachable && (client.live || client.link_count > 0);
             status_changed (state.running, offering, waiting, watching);
+            if (notify_waiting && waiting > last_waiting) notify_viewer.begin ();
+            last_waiting = waiting;
             if (spawn_dock_app && offering && tick_count++ % 3 == 0) ensure_dock_app.begin ();
             eyes.set_tooltip_text (tip);
             eyes.remove_css_class ("live");
@@ -88,6 +94,26 @@ namespace MSeries {
                 rebuild (tip);
             }
             busy = false;
+        }
+
+        private async void notify_viewer () {
+            try {
+                var bus = yield GLib.Bus.get (GLib.BusType.SESSION);
+                var args = new GLib.VariantBuilder (new GLib.VariantType ("(susssasa{sv}i)"));
+                args.add ("s", "Screen Share");
+                args.add ("u", notification_id);
+                args.add ("s", "mseries-share-eyes-symbolic");
+                args.add ("s", "Someone wants to watch your screen");
+                args.add ("s", "Open the eyes menu to allow or deny.");
+                args.add_value (new GLib.Variant.array (new GLib.VariantType ("s"), {}));
+                args.add_value (new GLib.Variant.array (new GLib.VariantType ("{sv}"), {}));
+                args.add ("i", 15000);
+                var r = yield bus.call ("org.freedesktop.Notifications", "/org/freedesktop/Notifications", "org.freedesktop.Notifications", "Notify",
+                    args.end (), new GLib.VariantType ("(u)"), GLib.DBusCallFlags.NONE, 2000);
+                r.get ("(u)", out notification_id);
+            } catch (GLib.Error e) {
+                warning ("notification: %s", e.message);
+            }
         }
 
         /* Starts the dock app when nothing owns its bus name. It is not started twice: a second launch would raise its window. */
