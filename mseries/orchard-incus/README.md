@@ -101,7 +101,9 @@ This opens native windows and creates/deletes uniquely owned temporary guests.
 It uses programmatic GTK actions; the backup Save portal uses AT-SPI, and a
 one-shot guest profile verifies native Terminal login without keyboard injection.
 Use a new empty output directory for each run. The fixture driver rejects
-unexpected names/images/limits and host destinations. See
+unexpected names/images/limits and host destinations. Mutating CLI calls, direct
+Run/Terminal launchers, file transfers and host mounts also enforce the fixture
+set/output directory, so changing a GUI selection cannot target an owner guest. See
 [`audit/2026-10-18-wayland.json`](audit/2026-10-18-wayland.json) for the installed
 build's source hashes, all eleven results and measurement limits. The earlier
 synthetic receipt remains available as the baseline for that separate method.

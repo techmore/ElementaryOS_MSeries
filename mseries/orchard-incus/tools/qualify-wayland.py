@@ -4,7 +4,8 @@ Programmatic native GTK actions, not physical input automation. Native save port
 Interactive keyboard input, upload-picker selection and interactive Console
 are not automated. Requires cached Alpine container/VM images and Wayland.
 """
-import argparse, concurrent.futures, gc, json, os, pathlib, resource, socket, statistics, subprocess, sys, time, traceback, uuid
+import argparse, concurrent.futures, gc, json, os, pathlib, resource, shlex, socket, statistics, subprocess, sys, time, traceback, uuid
+from audit_scope import AuditScope
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('--source',required=True);p.add_argument('--output',required=True);p.add_argument('--run',action='store_true')
 p.add_argument('--cycles',type=int,default=1)
 p.add_argument('--idle-before',type=int,default=0,help='Seconds of idle observation before workflows')
@@ -45,12 +46,26 @@ def guarded_create(n,image,extra):
  return result
 win.start_create=guarded_create
 original_incus=backend.incus
+scope=AuditScope(owned,out)
 def guarded_incus(*args, **kwargs):
- if args and (args[0]=='export' or args[:2]==('file','pull')):
-  if not pathlib.Path(args[-1]).resolve().is_relative_to(out):
-   raise RuntimeError('Audit rejected a host destination outside its output directory')
+ scope.check(args)
  return original_incus(*args, **kwargs)
 backend.incus=guarded_incus
+original_popen=subprocess.Popen
+def guarded_popen(command,*args,**kwargs):
+ if isinstance(command,(list,tuple)) and command:
+  command=list(command)
+  if command[:2]==['incus','exec']:
+   scope.guest(command[2])
+  elif command[:2]==['incus','launch']:
+   scope.guest(command[3])
+  elif pathlib.Path(command[0]).name==module.TERMINAL and '-e' in command:
+   terminal=shlex.split(command[command.index('-e')+1])
+   if len(terminal)<3 or terminal[:2] not in (['incus','exec'],['incus','console']):
+    raise RuntimeError('Audit rejected an unrecognized Terminal command')
+   scope.guest(terminal[2])
+ return original_popen(command,*args,**kwargs)
+subprocess.Popen=guarded_popen
 original_error=win.error_dialog
 
 def error(what,err):

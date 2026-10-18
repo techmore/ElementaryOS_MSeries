@@ -17,12 +17,16 @@ response/destruction. A 60-dialog negative control retained all 60 dialogs and
 540 input/support widgets before this fix; the candidate retains none after
 Python GC. Raw RSS is sensitive to allocator and system memory reclamation.
 
-Checks: 110 tests, 104 passed / six opt-in live tests skipped, fatal GTK criticals
+Checks: 117 tests, 111 passed / six opt-in live tests skipped, fatal GTK criticals
 enabled. A new ARM64 GTK/Granite CI job runs these regressions without Incus.
 `tools/qualify-wayland.py` now supports repeated workflow cycles, before/after
 idle observations, five-second RSS/PSS/private/CPU/FD/thread/cache samples,
 source hashes and actual focus state. It rejects a non-Wayland backend early,
 stops when its window closes and returns failure for workflow/cleanup errors.
+The live runner also rejects backend writes/exec outside its exact fixture set,
+checks both transfer directions and host mounts, and guards direct Run/Terminal
+launches against a changed GUI selection. Seven scope tests cover original-guest
+rejection, both host-path directions and symlink escapes.
 Native long-session measurements and repeated live qualification are in progress;
 do not treat the preliminary XWayland/closed-window pilots as native results.
 Next: finish the native before/after sessions, publish scoped results and deploy.
