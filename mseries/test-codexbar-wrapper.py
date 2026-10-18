@@ -92,7 +92,7 @@ class WrapperTests(unittest.TestCase):
             db.execute("CREATE TABLE credential (integration_id TEXT, active INTEGER, value TEXT, time_updated INTEGER)")
             db.executemany("INSERT INTO credential VALUES (?, ?, ?, ?)", credentials)
 
-    def test_active_unexpired_oauth_fallback_and_auth_json_precedence(self):
+    def test_active_v2_oauth_selection_takes_precedence_over_legacy_key(self):
         token = json.dumps({"type": "oauth", "access": "oauth-token", "expires": 2000000000000})
         self.oauth_database([("opencode", 1, token, 1)])
         with mock.patch.object(MODULE.time, "time", return_value=1900000000):
@@ -100,7 +100,26 @@ class WrapperTests(unittest.TestCase):
             self.assertEqual(result["env"]["OPENCODE_API_KEY"], "oauth-token")
             self.auth.write_text(json.dumps({"opencode-go": {"key": "explicit-key"}}))
             result = self.run_main(["usage", "--provider", "opencodego"], self.environment())
-            self.assertEqual(result["env"]["OPENCODE_API_KEY"], "explicit-key")
+            self.assertEqual(result["env"]["OPENCODE_API_KEY"], "oauth-token")
+
+    def test_active_account_change_updates_quota_token_without_rewriting_legacy_key(self):
+        value = lambda token: json.dumps({"type": "oauth", "access": token, "expires": 2000000000000})
+        self.oauth_database([("opencode", 1, value("account-a"), 1), ("opencode", 0, value("account-b"), 2)])
+        self.auth.write_text(json.dumps({"opencode-go": {"key": "legacy"}}))
+        before = self.auth.read_bytes()
+        with mock.patch.object(MODULE.time, "time", return_value=1900000000):
+            self.assertEqual(self.run_main(["usage", "--provider", "opencodego"], self.environment())["env"]["OPENCODE_API_KEY"], "account-a")
+            with closing(sqlite3.connect(self.auth.with_name("opencode.db"))) as db, db:
+                db.execute("UPDATE credential SET active=(time_updated=2) WHERE integration_id='opencode'")
+            self.assertEqual(self.run_main(["usage", "--provider", "opencodego"], self.environment())["env"]["OPENCODE_API_KEY"], "account-b")
+        self.assertEqual(self.auth.read_bytes(), before)
+
+    def test_refreshable_selected_account_does_not_fall_back_to_legacy_identity(self):
+        value = json.dumps({"type": "oauth", "access": "selected-access", "refresh": "NEVER-USE-REFRESH", "expires": 1})
+        self.oauth_database([("opencode", 1, value, 1)])
+        self.auth.write_text(json.dumps({"opencode-go": {"key": "different-legacy-account"}}))
+        result = self.run_main(["usage", "--provider", "opencodego"], self.environment())
+        self.assertEqual(result["env"]["OPENCODE_API_KEY"], "selected-access")
 
     def test_expired_wrong_provider_inactive_and_malformed_oauth_are_ignored(self):
         def value(expires, **extra):

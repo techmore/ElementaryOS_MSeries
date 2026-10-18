@@ -16,6 +16,8 @@ install -Dm644 "$here/panel-factory-pins.json" "$stage/usr/share/mseries/panel-f
 install -Dm755 "$here/video-decode/verify-package-ownership" "$stage/usr/libexec/mseries/verify-video-driver-packaging"
 install -Dm644 "$here/video-decode/90-mseries-avd.conf" "$stage/etc/sysctl.d/90-mseries-avd.conf"
 
+install -Dm755 "$here/calendar/accounts" "$stage/usr/bin/mseries-calendar-accounts"
+
 # /usr/local is mutable /var/usrlocal on sysupdate and is not in its artifact.
 # The factory panel and policy use the same immutable executable instead.
 install -Dm755 "$stage/usr/local/sbin/mseries-power" "$stage/usr/libexec/mseries/power"

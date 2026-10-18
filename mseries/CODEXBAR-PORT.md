@@ -10,9 +10,9 @@ ones.** Upgrade by re-pinning, re-installing upstream, and re-verifying each ite
 |---|---|---|
 | Wingpanel indicator (native popover: dense cards, company marks, account line, bottom bar with freshness, dock and refresh) | `codexbar-wingpanel/` (`Indicator.vala`, `Presentation.vala`, `QuotaEta.vala`, `icons/`) | `codexbar-linux --snapshot` JSON (schemaVersion 1: `entries[].windows[]`, `spending`, `stale`, `busy`) and the `--refresh/--usage/--spending/--settings/--quick-view` actions |
 | Native Settings window (replaces upstream's Qt one; Fusion is hard-coded there so it can't be themed). Same `linux.json` keys, applied live through `codexbar-linux --configure`; opened by the panel's Settings button (`~/.local/bin/codexbar-settings`) | `codexbar-wingpanel/settings/` (`SettingsModel.vala` with tests, `SettingsApp.vala`), `probe/run-settings-probe.sh` | `linux.json` keys and validation in `DesktopController.cpp` (`validate`/`loadSettings`), `--configure`, `--autostart`, `codexbar config providers/enable` |
-| Wrapper that passes an explicit OpenCode Go key, or the active unexpired OpenCode v2 OAuth access token (read-only `credential` table; never copies/refreshes it) | `codexbar-opencode-wrapper.py` → `~/.local/bin/codexbar` | `codexbar-upstream` CLI path under `~/.local/lib/codexbar-cli/` |
+| Wrapper that follows the active OpenCode v2 OAuth account, with a legacy Go key fallback (read-only `credential` table; never copies/refreshes it) | `codexbar-opencode-wrapper.py` → `~/.local/bin/codexbar` | `codexbar-upstream` CLI path under `~/.local/lib/codexbar-cli/` |
 | Sessions helper | `codexbar-sessions.py` | none (reads local data) |
-| OpenCode local usage + account email | `codexbar-opencode-local.py` | none (reads `opencode.db` read-only) |
+| OpenCode local usage, account plans and switching | `codexbar-opencode-local.py` | reads `opencode.db` read-only; activates via `opencode auth switch opencode <credential-id>` |
 | Codex multi-account switcher (upstream's is macOS-only) | `codexbar-accounts.py` | upstream `codexbar usage --provider codex` honoring `CODEX_HOME` |
 | OpenCode Go sign-in (upstream imports opencode.ai cookies only on macOS): native WebKit window, saves the `auth`/`__Host-console_session` session as `providers[opencodego].cookieSource=manual` + `cookieHeader`; the panel's OpenCode **+** runs it | `codexbar-opencode-login.py` | config path resolution (`CodexBarConfigStore.defaultURL`), `OpenCodeWebCookieSupport` cookie names, `usage --source web` |
 | Claude CLI accounts via claude-swap, plus native Claude desktop sessions. CLI only keeps the app login separate; Switch both validates the target session, quits the native app, saves its final encrypted session, merges the target login without changing preferences, switches the CLI, and relaunches the app. Set up app preserves the previous session and locally clears the login for one-time sign-in without sending a logout request. Save app login and automatic list capture remember it. | `codexbar-claude.py`, venv `~/.local/share/claude-swap-venv`, `cswap` | claude-swap `list/status/switch --json`, `schemaVersion` 1, `to.email`, `reason: already-active`, `configs/.claude-config-*.json`; installed Claude `config.json` keys `lastKnownAccountUuid`, `oauth:tokenCache`, `oauth:tokenCacheV2`, SQLite `Cookies` (or `Network/Cookies`), `gtk-launch com.anthropic.Claude` |
@@ -135,5 +135,36 @@ or per-account plan metadata when supplied. Missing or unreadable plans say **Pl
 quota size and the active account's plan are never used to guess another account's subscription.
 Known-plan tooltips say “Reported plan” because saved login metadata may be cached.
 
+OpenCode OAuth accounts now obtain the current workspace product from the official Console's
+`GET /console/api/go/status`, using that account's bearer token and `x-org-id`. Current Go/Go Plus
+access is labeled from `product` and an unexpired `access.endsAt`; scheduled `renewalProduct` and
+quota limits do not determine the badge. The verified helper product overrides upstream's generic
+“Go” provider label. Missing/unreadable data remains unavailable (or uses existing reported metadata).
+Requests allow only the official Console host, block redirects, limit response size and use an
+eight-second timeout. No token refresh, login switch or credential/database write is performed.
+[OpenCode Go plans](https://dev.opencode.ai/v2/docs/console/go/) describe the public level names.
+
 `CB_HIDE_PANEL=1 CB_SCROLL=end probe/run-probe.sh ...` renders the dropdown at its normal width,
 scrolled to the last provider, for checking secondary-account badges in light/dark themes.
+
+
+### OpenCode account switching
+
+Saved secondary OpenCode browser accounts have a **Switch** button. The helper validates the selected
+credential belongs to the `opencode` integration, runs the official `opencode auth switch opencode ID`
+through its normal service, and confirms the requested credential is the sole active selection. The
+helper never edits SQLite directly or exposes CLI credential output. The native OpenCode service owns
+activation notifications and OAuth refresh. Expired access with saved refresh credentials remains
+switchable; unusable sign-ins have a disabled button and a sign-in hint. Workspace names distinguish
+choices where available, and duplicate sessions for one account/workspace remain deduplicated.
+
+CodexBar refreshes the account list, identity, plan and usage after switching, discarding older pending
+helper responses. Identity and quota credentials follow the v2 active selection rather than legacy
+`account_state`/`auth.json`. Legacy keys remain a fallback when no usable v2 selection exists; an
+explicit `OPENCODE_API_KEY` environment override retains precedence. While OpenCode refreshes a selected
+OAuth token, the wrapper keeps that identity rather than substituting a legacy account.
+
+Browser accounts are saved in OpenCode through `/connect` or `opencode auth login opencode`. The
+CodexBar API-key window remains quota-key setup. Account activation was checked with OpenCode v2.0.32,
+including a live same-account saved-session round trip with the original selection restored.
+[Official account commands](https://dev.opencode.ai/v2/docs/cli/commands/) document the activation API.

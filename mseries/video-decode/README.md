@@ -23,7 +23,8 @@
 YouTube, inside `bwrap`. Chromium's own sandbox is off (`--no-sandbox`), so the container is the wall:
 only `/dev/dri`, `/dev/media*`, `/dev/video*`, the Wayland/PipeWire/Pulse sockets, read-only `/usr` `/etc`
 `/opt` `/sys`, an empty tmpfs `$HOME` and that one profile directory are visible. Your normal Brave and
-profile are untouched. Not installed as a menu entry by default (`brave-youtube.desktop` is a template).
+profile are untouched. The enhancement payload installs a system-wide menu entry with a YouTube logo;
+its application ID and `StartupWMClass` also identify the running window in the dock.
 
 Verified (`brave-youtube --probe`, 2026-10-18): the container starts under this system's AppArmor rules;
 `$HOME` inside holds only `.config`; `~/.ssh` and other profiles are not visible; `vainfo` inside lists
@@ -78,20 +79,81 @@ movie playing in the container.
 
 ## YouTube launcher icon — 2026-10-18
 
-`brave-youtube.desktop` uses `mseries-youtube`, the bundled scalable red play-button
-logo in `mseries-youtube.svg` (drawn here as SVG; no external artwork dependency).
-Install the icon for the current user from the repository root:
+The default enhancement payload installs these files for every user:
+
+- `/usr/share/applications/mseries-brave-youtube.desktop`
+- `/usr/share/icons/hicolor/scalable/apps/mseries-youtube.svg`
+- `/usr/share/elementary-mac/mseries/video-decode/brave-youtube`
+
+The SVG is a red YouTube play-button logo drawn here, with no external artwork
+dependency. The launcher uses the installed executable rather than an owner's
+checkout. `Icon=mseries-youtube` and
+`StartupWMClass=brave-www.youtube.com__-Default` let the menu, pinned dock item and
+running YouTube window share the same icon. Each user still gets a separate profile.
+The Widevine helper is included alongside the launcher in the immutable payload.
+
+`enhance.sh --only payload` stages the files during transformed installs and the
+Apple Silicon factory overlay build. Both ARM64 liveiso and sysupdate consumers
+install bubblewrap, xdg-dbus-proxy and the desktop/icon cache tools. Their final
+post-install hooks validate the desktop entry and refresh application and icon
+caches after merging the overlay. The transform's existing first-boot Brave module
+also installs the container dependencies. Factory images now include the pinned
+Brave runtime described below. A fresh factory hardware boot and playback remain
+unverified.
+
+For an existing shortcut, keep its working `Exec` path and change only its `Icon`
+line to `Icon=mseries-youtube`. Install the icon from the repository root:
 
 ```sh
 install -Dm644 mseries/video-decode/mseries-youtube.svg \
   "$HOME/.local/share/icons/hicolor/scalable/apps/mseries-youtube.svg"
 gtk-update-icon-cache --force --ignore-theme-index "$HOME/.local/share/icons/hicolor"
+update-desktop-database "$HOME/.local/share/applications"
 ```
 
-For a new menu shortcut, copy `brave-youtube.desktop` to
-`~/.local/share/applications/mseries-brave-youtube.desktop` and adjust its `Exec`
-path if the checkout is elsewhere. For an existing shortcut, change only its
-`Icon` line to `Icon=mseries-youtube`, preserving its launch command and profile.
-Refresh the application database with `update-desktop-database
-~/.local/share/applications`. The running Brave window may retain its old icon
-until it is reopened; playback and decode settings are unchanged.
+The dock caches application icons; restart it or sign in again after changing an
+existing shortcut. Playback and decode settings are unchanged.
+
+## Factory Brave runtime — 2026-10-18
+
+Both ARM64 factory images include Brave 1.97.59 (Chromium 155.0.8059.85) before
+first boot. `mkosi.images/apple-silicon/build-brave` stages the official ARM64
+[release package](https://github.com/brave/brave-browser/releases/tag/v1.97.59),
+checking SHA256 `5efdd2356671eade31d3d0a59b2338931147f65f0db44863b6c23adea74ba1d2`
+and its package/version/architecture metadata. The runtime is relocated to
+`/usr/lib/mseries-brave` so sysupdate's `/usr` artifact includes it. No apt repo,
+first-login browser download, vendor maintainer script, or `/opt` payload is
+needed for the factory YouTube launcher. This is the contained launcher's private
+runtime, not an apt-managed general browser installation.
+
+The launcher prefers that runtime and retains the native `/opt`/apt fallback on
+transformed desktops. Its separate per-user profile, container flags and dock
+identity stay the same. Widevine provisioning remains the separate existing
+per-profile helper; this browser package does not remove DRM limits or qualify
+hardware decode on an untested factory kernel.
+
+`brave-factory.json` records the exact version, official URL, SHA256 and Ubuntu
+runtime dependencies. All three overlay/consumer configs declare those libraries.
+The build retains the full vendor resources and LICENSE, writes provenance and
+per-file hashes to `/usr/share/doc/mseries-brave`, and keeps them through factory
+pruning. Both final consumer hooks require the runtime verifier and reject missing
+or changed resources, a non-ARM64 binary, or unresolved shared libraries.
+
+Updates ship through rebuilt images: review the official release, update the pin
+and SHA256, audit its dependency metadata against Ubuntu package names, and rerun:
+
+```sh
+python3 mseries/video-decode/test-brave-factory.py
+python3 mseries/test-image-wiring.py
+# Optional local package cache; still checked against the committed SHA256:
+MSERIES_BRAVE_DEB=/path/to/brave-browser_1.97.59_arm64.deb \
+  SRCDIR="$PWD" DESTDIR=/path/to/empty-stage \
+  bash mkosi.images/apple-silicon/build-brave
+```
+
+Verified with the real pinned package: staging and post-finalize hashes, ELF,
+licenses and host shared-library resolution; a local page rendered in an empty
+profile under Xvfb. Ubuntu Resolute ARM64 container dependency installation and
+binary version/library checks also passed. A headless DOM dump timed out in the
+minimal container, so it is not counted as a rendering pass. No new ISO build,
+fresh hardware boot, YouTube stream or decoder/DRM qualification was performed.

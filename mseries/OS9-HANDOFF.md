@@ -22,6 +22,165 @@ Native long-session measurements and repeated live qualification are in progress
 do not treat the preliminary XWayland/closed-window pilots as native results.
 Next: finish the native before/after sessions, publish scoped results and deploy.
 
+## Dock startup/focus audit and merge preparation — 2026-10-18
+
+Reviewed PR #100 on current main in an isolated checkout, preserving the other
+desktop/CodexBar work and both handoff histories. Retained its delayed Gala
+workspace synchronization and stale-removal bounds check. Added two fixes:
+the application presents only its initial window (repeated activation stays
+quiet, including a panel with no active keyboard window); the wrapper forwards
+HUP/INT/TERM to its dock child and reaps it before exiting. Signal statuses no
+longer cause stock fallback; actual early faults and missing binaries/libraries
+still do. A shell cannot forward SIGKILL.
+
+Verification: composed ARM64 dock build/install into a temporary prefix; two
+native harnesses compiling the actual patched production methods with controlled
+services; seven generated-wrapper test groups; eight existing boot-profile tests;
+shell syntax/ShellCheck; eleven real-dock/GTK groups in a separate headless Gala
+with a private D-Bus/Wayland session and temporary keyfile settings. New Wayland
+case preserved keyboard focus and typed `aaa` across three remote activations.
+Native harnesses reject the original upstream activation/workspace behavior as
+negative controls. Dedicated ARM64 CI now runs the startup/wrapper regressions.
+
+The owner's graphical dock remains stopped behind the local incident guard;
+no source installer or new binary was deployed into the running desktop and no
+approval dialog was opened. Existing portal/keyring startup warnings occurred
+in the isolated compositor; all assertions passed. These results do not prove
+the complete root cause of the reported floating/attention-stealing incident.
+Next: after a deliberate decision to re-enable it, qualify physical typing,
+session restart and monitor transitions. See `display-space/README.md`.
+
+## Factory Brave runtime closes YouTube browser provisioning gap — 2026-10-18
+
+`build-brave` stages official Brave 1.97.59 arm64 (Chromium 155.0.8059.85), pinned
+to release SHA256 `5efdd235…4ba1d2`. It validates .deb identity before extraction,
+runs no maintainer scripts, and relocates the full runtime/resources to
+`/usr/lib/mseries-brave`. The YouTube launcher prefers this immutable runtime;
+transformed desktops retain the native package fallback. Both factory consumers
+carry the full runtime library list; post-install hooks fail on absent/changed
+payloads, wrong ELF architecture and missing libraries. License, release/source
+links, pin and per-file hashes survive pruning in `/usr/share/doc/mseries-brave`.
+No first-login browser download or `/opt` artifact is needed; browser security
+updates follow reviewed version/hash bumps and rebuilt images.
+
+Verified: six synthetic .deb regressions, four image wiring tests, real pinned
+.deb staging and finalization with hashes/ELF/library checks, desktop validation,
+Python/shell checks. Real browser rendered a local page in a fresh Xvfb profile.
+Clean Resolute ARM64 container installed the declared packages and ran the version
+and ldd checks. Minimal-container headless DOM dump timed out and is not a pass.
+Finalize fixture stubs only dconf compilation, as in the wiring suite. The owner’s
+browser, profile and running session were untouched. No full ISO build/fresh
+hardware boot or YouTube/AVD/DRM playback test: those qualifications remain next.
+Factory browser assets/provisioning are now implemented; kernel/firmware readiness
+remains governed by the existing hardware gates.
+
+## Merged calendar deployed and Wingpanel reloaded — 2026-10-18
+
+Owner requested desktop deployment of merged `6d62dfd`. Ran
+`bash mseries/install-calendar-agenda.sh`: pinned datetime ARM64 release build
+and atomic library/account-launcher installation completed, preserving the
+version-aware original backup. Ran `bash mseries/calendar/test-agenda.sh
+/usr/lib/aarch64-linux-gnu/wingpanel-9/libdatetime.so`: all five isolated EDS
+workflow groups pass against the installed production library; runner exits 0.
+Build warnings and expected isolated-session portal/EDS shutdown warnings remain.
+
+Sent SIGTERM only to Wingpanel; the session respawned it (595296 → 637927).
+Verified `/proc/637927/maps` uses the installed calendar library inode 313607,
+without a deleted mapping, and the Calendar Accounts launcher matches merged
+source. No Gala restart, account sign-in, kernel, boot or audio change.
+Next: owner opens the clock dropdown and completes Google account authorization
+if desired; remote Calendar sync and factory hardware boot remain unverified.
+
+## Calendar Events/Tasks merged into main — 2026-10-18
+
+Integrated `calendar-events-tasks` including the pinned native agenda plugin,
+installer/account launcher, runtime/build dependencies and factory staging.
+Resolved documentation insertion conflicts by retaining both status histories;
+merged enhancement payload lists to preserve main's YouTube launcher/icon and
+add calendar assets/pins. README now describes calendar as integrated and links
+to its local documentation. Google OAuth/sync and factory hardware boot remain
+unverified; this merge does not restart or redeploy the owner's desktop.
+
+Verification on the merged tree: pinned datetime ARM64 release build passes;
+all five isolated real-plugin/EDS integration groups pass; all four image-wiring
+tests pass; changed calendar shell scripts pass ShellCheck at warning severity;
+shell syntax, whitespace and all 34 README relative links pass. Initial agenda
+runs passed workflow assertions but failed temporary cleanup when auto-started
+GVFS/document portals left FUSE mounts. The test harness now uses local GIO and
+a private portal activation override; the final full run exits successfully.
+The override applies only to the synthetic test session; its expected portal
+unavailable warnings do not establish a clean runtime log.
+Next: owner Google sign-in and remote Calendar round trip, then factory image
+assembly/hardware qualification. No credentials, personal calendars or live
+panel state were changed by these checks.
+
+## Calendar Events/Tasks tabs and Google account setup — 2026-10-18
+
+The clock dropdown's right pane now has Events and Tasks tabs. Events follows
+its selected day; Tasks reads all incomplete items from elementary Tasks' EDS
+lists, including due-only and undated items. Activating a task opens Tasks.
+Calendar Accounts opens the desktop Google/online-account sign-in. No desktop
+Google account was configured at verification time: owner OAuth consent and a
+real Google Calendar round trip remain required; local tests do not claim them.
+
+Pinned datetime source `d0b3a703a7efbb5b3040d7be1ccb616eeb919c54` plus
+`datetime-agenda-tabs.patch` retains upstream notices. Native ARM64 compilation
+and five isolated real-plugin/EDS test groups pass: tabs/shared event UIDs,
+live edits, completion/deletion, enable/disable and sources added/removed after
+opening. Async source connections and generation checks reject stale views;
+changed/deleted events requery their source, preserving recurring siblings.
+All-day events use date semantics; undated tasks do not create calendar dots.
+The release installer completed locally; the installed production plugin passes
+the same five test groups. Wingpanel was reloaded and its mapped plugin inode
+matched the newly installed library.
+Four image-wiring tests and shell/diff checks pass. Runtime account/Tasks/EDS
+packages are in both arm64 consumers; plugin and license survive pruning.
+Factory image assembly/boot and Google network sync are still unverified.
+
+[Build, install, restore, account setup and tests](calendar/README.md).
+Installer: `bash mseries/install-calendar-agenda.sh`; rollback:
+`bash mseries/install-calendar-agenda.sh --uninstall`. Reload Wingpanel after
+installation. Next: owner selects Calendar Accounts → Google, completes sign-in,
+enables Calendar and confirms a known remote event appears on its date.
+
+
+## README fixes, verification and remaining work — 2026-10-18
+
+The root [README](../README.md#fixes-tests-and-remaining-work) now separates
+desktop dock/layout, OS bar, kernel, external USB4 dock, power parity, overall
+performance, CPU, GPU and local-LLM/file access. Each section lists implemented
+changes, recorded tests and remaining acceptance work, with links to evidence.
+The status table now distinguishes the owner-confirmed Aurora .20 dock display
+from historical Fairydust limitations and labels stock-kernel decode results
+with their original scope. macOS power/performance parity remains unproven.
+
+Verification: all nine sections have the three status labels; all relative
+documentation links in the project portion resolve; Git whitespace checks pass.
+This is a documentation update; hardware/model benchmarks were not rerun.
+Integrated the documentation commit onto main without its calendar implementation
+parent; calendar claims and its evidence link explicitly identify that branch.
+Preserved newer main handoff/roadmap entries while resolving insertion conflicts.
+Next: update the relevant section when its linked hardware or workload gates pass.
+
+## YouTube launcher/logo included in fresh-install payload — 2026-10-18
+
+`enhance.sh` now stages the contained launcher, system desktop entry and YouTube
+SVG automatically. Exec points at `/usr/share/elementary-mac/mseries/video-decode/brave-youtube`,
+with the existing dock WMClass and Widevine sibling helper. Factory finalize keeps
+the files after pruning, including the sysupdate `/usr` artifact. Both ARM64
+consumers carry bubblewrap, xdg-dbus-proxy and cache tools; final hooks validate
+and refresh the desktop/icon caches. The existing transform Brave first-boot module
+also installs the container dependencies.
+
+Verified: enhancement staging suite, four image wiring tests (including finalize,
+missing-icon rejection and dependency parity), desktop validation, shell syntax
+and changed-shell checks. GTK4 with empty XDG user data resolves the staged system
+launcher/icon; Exec was rebased only in that temporary lookup fixture. No browser
+was launched and the owner's active session was not changed. No ISO build or fresh
+hardware boot was performed. Factory browser package provisioning remains separate;
+the transform's existing network first-boot module installs Brave. Next: qualify
+factory browser packaging and fresh hardware playback; this validates asset wiring.
+
 ## Orchard real Wayland qualification and cleanup protection — 2026-10-18
 
 - Verified the installed Python/GTK4 foreground app on real `GdkWaylandDisplay`/`GdkWaylandToplevel`, Vulkan and the elementary blueberry stylesheet at 120 Hz. This was not Xvfb or forced Cairo. Final run: 11 live workflow groups passed, including stale-inventory duplicate-name preservation, container/VM creation, agent-backed VM Run, lifecycle/pause/resume, snapshots/restore, clone/rename/delete, real Terminal login, native elementary backup Save portal/archive validation, file listing and CLI transfer round trip, mounted-folder reads, TCP proxy, bounded Unicode output, and cancellation cleanup. All audit fixtures were swept; original guests were preserved.
@@ -243,6 +402,24 @@ success is still pending. The older cropped-mode baseline is not a matched
 energy comparison with this full-height trial; collect matching display controls
 on both kernels before comparing power.
 
+
+## Dock "crashes": a false fallback flag and a startup race, both fixed — 2026-10-18 (Claude Code)
+
+- **Symptom:** the dock vanished or reverted to the stock dock. `io.elementary.dock` itself produced no coredumps this boot.
+  The crashes were wingpanel (SIGSEGV x2 at 04:44) and gala in boot -2.
+- **Cause 1 (wrapper):** `~/.local/bin/io.elementary.dock` flagged any non-zero exit within 15 s as a failure. At 04:44 the
+  session stopped the dock with SIGTERM (rc=143), so it wrote `~/.cache/mseries-dock-failed` and ran the stock dock.
+  **Fix:** `install-dock-drawers.sh` now writes a wrapper that exits without flagging on rc 129/130/137/143.
+- **Cause 2 (dock 8.3.3 upstream, still on main):** `WorkspaceSystem.load ()` queried Gala before `WindowSystem`'s async
+  DesktopIntegration proxy existed. That logged `DesktopIntegration is null`, set up workspaces from 0, and
+  `remove_workspace` hit `g_list_store_remove` out of range. **Fix:** `mseries/patches/dock-workspace-startup.patch`
+  connects the signals first and skips the early sync, so WindowSystem's first `windows` notify drives it. It also
+  bounds-checks `remove_workspace`.
+- **Installed:** `bash mseries/install-dock-drawers.sh` (built on main's drawers + compact-dock patch). The running dock
+  was not restarted, so the patched binary takes effect at its next start.
+- **Verified:** `--build-only` passes, the installed wrapper matches the old one apart from the rc guard, and the dock came
+  back as the patched build after a restart at 06:35. **Not yet verified:** a clean `journalctl` after the next login
+  (expect no `DesktopIntegration is null`).
 
 ## Native full-height J314 desktop and persistent dock — 2026-10-18
 
@@ -3496,3 +3673,68 @@ pass with plan formatting coverage; module/probe builds and port compatibility c
 fixtures show Pro/Plus/Max/Go and missing plans, with normal-width bottom-of-dropdown checks using new
 CB_HIDE_PANEL/CB_SCROLL probe controls. Upstream pin remains 0.77.0. Publish, merge to main and deploy
 the merged version as explicitly requested.
+
+
+## CodexBar: OpenCode's actual account level — 2026-10-18
+
+Owner requested replacing unavailable OpenCode plan labels where possible. Confirmed the official
+Console's read-only `GET https://opencode.ai/console/api/go/status` accepts the saved OAuth bearer
+credential plus its `x-org-id` workspace header. The live account returns current `product: go`.
+The raw usage API strips product data from the upstream quota model, and saved credential metadata
+has no plan field, which explains the earlier unavailable label.
+
+The account helper now reads this endpoint for distinct unexpired saved OAuth accounts, including
+the active one, and projects only Go/Go Plus plus a console-source marker. A valid access period and
+current product determine the label; renewal product, cancellation scheduled after the period, quota
+size and other accounts never determine it. Current Console data supersedes upstream's generic Go
+provider label. Missing/expired/unrecognized subscriptions remain unknown, while failed lookups can
+retain an existing reported metadata label. Billing identifiers and credentials are not exported.
+
+Requests are fixed to the official HTTPS host, workspace-scoped, redirect-blocked, bounded to 128 KiB
+and an eight-second timeout. OpenCode owns token refresh; its database is still opened read-only.
+Normal existing account polling drives refresh. API-key-only/custom-server records without this
+Console authorization retain the existing fallback rather than being assigned a guessed tier.
+
+References: OpenCode provider auth/header source at `214fb7fdbab9ad13773629839f1178382400cf97`
+(`packages/core/src/plugin/provider/opencode.ts`); CodexBar v0.77.0
+`OpenCodeGoUsageFetcher.swift` uses the same Console status endpoint for cookie-authenticated meters;
+https://dev.opencode.ai/v2/docs/console/go/ documents Go and Go Plus. No upstream code was imported.
+Upstream pin stays 0.77.0. Validation: 17 OpenCode tests, four Meson suites, module/probe builds, port
+check and light/dark normal-width fixtures with active Go Plus and secondary Go. Tests cover scoped
+headers, current versus renewal product, expired/malformed/missing data, network/oversize failure,
+foreign-host rejection, account isolation and credential exclusion. Live product resolution checked
+read-only. Merge to main and deploy as explicitly requested.
+
+
+## CodexBar: native OpenCode account switching — 2026-10-18
+
+Owner requested Switch beside OpenCode accounts, like Codex/Claude, and merge to main. Secondary
+browser-account rows now activate via `codexbar-opencode-local.py switch ID`. The helper validates
+local integration/type/identity, invokes `opencode auth switch opencode ID` without a shell or stdin,
+and verifies the requested ID is the only active OpenCode credential before reporting success.
+OpenCode's normal service publishes the activation event; the helper never writes SQLite directly.
+Raw CLI output is withheld from result JSON. Refreshable OAuth logins remain switchable even when
+access has expired; OpenCode owns refresh. Unusable logins have disabled Switch and a sign-in hint.
+Workspace names are shown on secondary rows to distinguish same-email workspace choices.
+
+Fixed two selection-following issues: identity reads now prefer active v2 credential metadata over
+legacy account_state, and the quota wrapper prefers the selected v2 OAuth token over a legacy Go key.
+During native refresh it keeps the selected identity rather than substituting a legacy account.
+Explicit OPENCODE_API_KEY environment overrides remain honored. Switching invalidates accounts/local
+identity caches and requests backend quota refresh. A generation check discards pending pre-switch
+helper reads and retries them so an old response cannot undo the new selection.
+
+Validation: 25 helper and 13 wrapper tests pass, with verified A→B→A selection/identity/usage-token
+changes, invalid/wrong-provider/expired-unrefreshable rejection, refreshable-expiry activation,
+missing CLI, timeout, failed command, no-op and false-success verification. Credential/error output
+exclusion is covered. Module/probe builds, four Meson suites and port check pass; normal-width light/
+dark previews show the new Switch beside the secondary OpenCode plan/quota. Installed OpenCode v2.0.32
+accepted a same-account activation. A live round trip through the two saved sessions for the same
+account/workspace then succeeded, with the original credential selection restored and verified.
+Distinct account switching is covered with temporary test accounts; the owner's current records are
+one distinct account/workspace, so a second row requires another distinct login saved in OpenCode.
+
+References: OpenCode `214fb7fdbab9ad13773629839f1178382400cf97`, auth/switch.ts, core credential.activate,
+provider/opencode.ts and integration.connection.resolve (native activation event and refresh behavior);
+https://dev.opencode.ai/v2/docs/cli/commands/ and /providers/. No upstream code was copied. CodexBar
+remains pinned to 0.77.0. Publish, merge to main and deploy as explicitly requested.

@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Use the desktop's OAuth/keyring integration; never store Google tokens here.
+set -euo pipefail
+if command -v gnome-control-center >/dev/null; then
+    # GNOME Settings restricts panel visibility outside GNOME.
+    exec env XDG_CURRENT_DESKTOP=GNOME gnome-control-center online-accounts
+fi
+if command -v gnome-online-accounts-gtk >/dev/null; then
+    exec gnome-online-accounts-gtk
+fi
+if command -v zenity >/dev/null; then
+    zenity --error --text='Install gnome-online-accounts-gtk and evolution-data-server, then add your Google account and enable Calendar.'
+fi
+printf '%s\n' 'Calendar account settings require gnome-online-accounts-gtk and evolution-data-server.' >&2
+exit 1

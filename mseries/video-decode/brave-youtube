@@ -11,8 +11,11 @@
 set -euo pipefail
 profile="${BRAVE_YT_PROFILE:-$HOME/.config/brave-youtube}"
 runtime="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-brave=/opt/brave.com/brave/brave
+# The factory runtime is immutable; transformed desktops keep the native package.
+brave=/usr/lib/mseries-brave/brave
+[[ -x $brave ]] || brave=/opt/brave.com/brave/brave
 [[ -x $brave ]] || brave=$(readlink -f /usr/bin/brave-browser-stable)
+[[ -x $brave ]] || { echo 'brave-youtube: Brave runtime is missing' >&2; exit 1; }
 mkdir -p "$profile"
 
 # Widevine (DRM) for YouTube Movies: this profile is separate, so it never got the CDM the normal Brave has.

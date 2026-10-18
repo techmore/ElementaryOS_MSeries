@@ -29,6 +29,7 @@ wrapper=${HOME}/.local/bin/io.elementary.dock
 patched=$prefix/bin/io.elementary.dock
 stock=/usr/bin/io.elementary.dock
 patch=$repo/mseries/patches/dock-drawers.patch
+startup_patch=$repo/mseries/patches/dock-workspace-startup.patch
 
 mode=${1:-install}
 case $mode in install|--build-only|--revert) ;; *) echo "Usage: $0 [--build-only|--revert]" >&2; exit 2;; esac
@@ -67,6 +68,7 @@ git -C "$source_dir" remote add origin https://github.com/elementary/dock.git
 git -C "$source_dir" fetch -q --depth=1 origin "$commit"
 git -C "$source_dir" checkout -q --detach FETCH_HEAD
 git -C "$source_dir" apply "$patch"
+git -C "$source_dir" apply "$startup_patch"
 
 meson setup "$build_dir" "$source_dir" --prefix="$prefix" --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null
@@ -98,9 +100,31 @@ use_stock() {
 [ -x "\$patched" ] || use_stock "patched dock missing"
 ldd "\$patched" 2>/dev/null | grep -q 'not found' && use_stock "patched dock has unresolved libraries"
 
+# Forward session stops to the real dock and reap it before the wrapper exits.
+# Otherwise Gala may restart a wrapper while the old dock still owns its D-Bus name.
+child=
+stop_dock() {
+  trap '' HUP INT TERM
+  child=\${child:-\$!}
+  if [ -n "\$child" ]; then
+    kill -TERM "\$child" 2>/dev/null || :
+    wait "\$child" 2>/dev/null || :
+  fi
+  exit "\$1"
+}
+trap 'stop_dock 129' HUP
+trap 'stop_dock 130' INT
+trap 'stop_dock 143' TERM
+
 start=\$(date +%s)
-GSETTINGS_SCHEMA_DIR="$prefix/share/glib-2.0/schemas" "\$patched"
+GSETTINGS_SCHEMA_DIR="$prefix/share/glib-2.0/schemas" "\$patched" &
+child=\$!
+wait "\$child"
 rc=\$?
+child=
+trap - HUP INT TERM
+# 129/130/137/143 = HUP/INT/KILL/TERM: the session or gala stopped the dock, not a dock fault.
+case "\$rc" in 129|130|137|143) exit "\$rc" ;; esac
 if [ "\$rc" -ne 0 ] && [ \$(( \$(date +%s) - start )) -lt 15 ]; then
   mkdir -p "\$(dirname "\$flag")" && : > "\$flag"
   logger -t mseries-dock "patched dock failed after under 15 s (rc=\$rc); disabled until \$flag is removed"
