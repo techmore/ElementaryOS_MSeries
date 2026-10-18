@@ -2676,6 +2676,10 @@ The API suite exposes only the six workflow tools. To verify the actual client p
 
 Full GUI logs/settings clones stay private. The helper uses Xvfb, cairo rendering, NON_UNIQUE Newelle, --die-with-parent and owned process-group cleanup. Memory, TTS, search and title generation are disabled only in its isolated clone. Synthetic-only traces, per-second telemetry, independent EDS/RFC822 matches and cleanup become bounded receipts; provider/guard interruptions are not quality failures. Never rerun a completed failed receipt to improve its score. The executing old app-workflow-smoke.py and its four hashed inputs remain unchanged.
 
+### Three-case app checkpoint retained — October 18
+
+The existing owned queue remains live (PID 193250 at inspection). Browser→Calendar→Mail repeat 2 passed in 129.95 s with independent event/draft matches and owned cleanup; three of six backend cases now pass, three remain. The preceding connection-refused attempt remains unscored in interrupted_model_cases and its archive. The quiet collector recorded zero cooling-paused overlap for this second positive case; waiting before admission is separate. Sanitized partial receipts/checksums and staged docs were refreshed to three completed cases, complete:false. No GUI inference or duplicate GPU worker started. All three GitHub validation jobs on 49b8116 passed. The actual Newelle all-schema discovery/conversation gates remain pending after this owned queue ends. ROADMAP current-evidence rows now distinguish the tested 4B default, completed prior coding/Bonsai work and verified main watcher recovery from historical queued entries.
+
 ## October 16 local AI rollout and qualification
 
 Work is isolated on `feat/m1pro-local-assistants`, starting from main `247d5c0`. The actual host is M1 Pro T6000/j314s with 32 GB, elementary OS 9/resolute, kernel `7.1.13-3-2-ARCH`. Owner authorized a brief on-screen Newelle check, then explicitly chose to preserve other Rust/HTTP load tests and wait for idle windows. Other app windows, display settings, bootloader, kernel and audio were preserved.

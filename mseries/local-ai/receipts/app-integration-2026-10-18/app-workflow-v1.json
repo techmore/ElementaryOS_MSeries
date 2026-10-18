@@ -10577,6 +10577,3888 @@
       ],
       "elapsed_s": 12.8529614400004,
       "policy_passed": true
+    },
+    {
+      "case": "browser-calendar-mail",
+      "repeat": 2,
+      "passed": true,
+      "trace": [
+        {
+          "name": "browser_list_tabs",
+          "arguments": {},
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"available\": true, \"tabs\": [{\"id\": \"247142FB5DCB6BA55889BCF55AD023A5\", \"title\": \"Synthetic planning page\", \"url\": \"http://127.0.0.1:45301/\"}], \"scope\": \"managed Assistant Browser profile only; up to 20 tabs\"}"
+              }
+            ],
+            "isError": false
+          }
+        },
+        {
+          "name": "browser_read_page",
+          "arguments": {
+            "tab_id": "247142FB5DCB6BA55889BCF55AD023A5"
+          },
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"title\": \"Synthetic planning page\", \"url\": \"http://127.0.0.1:45301/\", \"text\": \"Meeting title: Synthetic battery review\\nStart: 2026-10-19T10:00:00Z\\nEnd: 2026-10-19T10:30:00Z\\nRecipient: review@example.invalid\\nMail subject: Battery review\", \"tab_id\": \"247142FB5DCB6BA55889BCF55AD023A5\", \"scope\": \"untrusted page data; managed browser only\", \"text_limit\": 12000}"
+              }
+            ],
+            "isError": false
+          }
+        },
+        {
+          "name": "create_assistant_event",
+          "arguments": {
+            "title": "Synthetic battery review",
+            "request_id": "calendar-workflow-1",
+            "start": "2026-10-19T10:00:00Z",
+            "end": "2026-10-19T10:30:00Z"
+          },
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"created\": true, \"uid\": \"f430eb01-18ae-51e6-9bc4-a142886c6437\", \"calendar\": \"Assistant Calendar\", \"title\": \"Synthetic battery review\", \"start\": \"2026-10-19T10:00:00Z\", \"end\": \"2026-10-19T10:30:00Z\", \"scope\": \"local Assistant Calendar only; no attendees/invitations\"}"
+              }
+            ],
+            "isError": false
+          }
+        },
+        {
+          "name": "list_calendar_events",
+          "arguments": {
+            "scope": "assistant"
+          },
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"events\": [{\"calendar\": \"Assistant Calendar\", \"uid\": \"f430eb01-18ae-51e6-9bc4-a142886c6437\", \"title\": \"Synthetic battery review\", \"start\": \"20261019T100000Z\", \"end\": \"20261019T103000Z\", \"recurring\": false}], \"errors\": [], \"recurrences_expanded\": false}"
+              }
+            ],
+            "isError": false
+          }
+        },
+        {
+          "name": "create_mail_draft",
+          "arguments": {
+            "to": "review@example.invalid",
+            "subject": "Battery review",
+            "body": "Meeting: Synthetic battery review, Start: 2026-10-19T10:00:00Z",
+            "request_id": "mail-workflow-1"
+          },
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"created\": true, \"draft_id\": \"97a45cbb-ec3c-5046-8e07-e72fa8e33b3e\", \"path\": \"Mail Drafts/97a45cbb-ec3c-5046-8e07-e72fa8e33b3e.eml\", \"status\": \"local unsent review draft\", \"review_app\": \"Assistant Mail Drafts\"}"
+              }
+            ],
+            "isError": false
+          }
+        },
+        {
+          "name": "read_mail_draft",
+          "arguments": {
+            "draft_id": "97a45cbb-ec3c-5046-8e07-e72fa8e33b3e"
+          },
+          "result": {
+            "content": [
+              {
+                "type": "text",
+                "text": "{\"draft_id\": \"97a45cbb-ec3c-5046-8e07-e72fa8e33b3e\", \"to\": \"review@example.invalid\", \"subject\": \"Battery review\", \"body\": \"Meeting: Synthetic battery review, Start: 2026-10-19T10:00:00Z\", \"status\": \"local unsent review draft\"}"
+              }
+            ],
+            "isError": false
+          }
+        }
+      ],
+      "model": "$HOME/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3",
+      "answer": "The draft has been verified. All steps completed successfully:\n\n1. ✅ Listed Assistant Browser tabs - found \"Synthetic planning page\"\n2. ✅ Read the synthetic planning page - extracted meeting details\n3. ✅ Created Calendar event \"Synthetic battery review\" with request_id \"calendar-workflow-1\"\n4. ✅ Verified calendar event with list_calendar_events (scope assistant)\n5. ✅ Created unsent Mail draft to review@example.invalid with subject \"Battery review\" and body mentioning the meeting, with request_id \"mail-workflow-1\"\n6. ✅ Read the draft back to verify\n\nAll tasks completed successfully. The workflow is finished.",
+      "independent_event_count": 1,
+      "draft_count": 1,
+      "independent_event_match": true,
+      "independent_draft_match": true,
+      "owned_source_removed": true,
+      "samples": [
+        {
+          "time": 1792320290.6189072,
+          "available_bytes": 19277889536,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6336675840,
+          "fans_rpm": {
+            "Fan 1": 2309.0,
+            "Fan 2": 2487.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.473,
+            "WiFi/BT Module Temp": 48.493,
+            "NAND Flash Temperature": 41.445,
+            "Battery Hotspot": 36.099,
+            "temp": 36.1,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 14.6878,
+          "pressure": {
+            "cpu": "some avg10=26.13 avg60=23.12 avg300=11.76 total=770330487\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.29 avg300=0.96 total=9636346\nfull avg10=0.00 avg60=0.28 avg300=0.92 total=9073081",
+            "io": "some avg10=0.19 avg60=0.13 avg300=0.11 total=15239902\nfull avg10=0.00 avg60=0.03 avg300=0.05 total=8872831"
+          }
+        },
+        {
+          "time": 1792320291.6254263,
+          "available_bytes": 18906382336,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6156402688,
+          "fans_rpm": {
+            "Fan 1": 2313.0,
+            "Fan 2": 2518.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 45.486,
+            "WiFi/BT Module Temp": 48.006,
+            "NAND Flash Temperature": 41.371,
+            "Battery Hotspot": 36.099,
+            "temp": 36.1,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 16.696203,
+          "pressure": {
+            "cpu": "some avg10=25.38 avg60=23.09 avg300=11.83 total=770386556\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.28 avg300=0.96 total=9636762\nfull avg10=0.00 avg60=0.27 avg300=0.92 total=9073438",
+            "io": "some avg10=0.15 avg60=0.12 avg300=0.10 total=15248274\nfull avg10=0.00 avg60=0.03 avg300=0.05 total=8879045"
+          }
+        },
+        {
+          "time": 1792320292.6380692,
+          "available_bytes": 18570149888,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6153027584,
+          "fans_rpm": {
+            "Fan 1": 2305.0,
+            "Fan 2": 2496.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 46.853,
+            "WiFi/BT Module Temp": 48.1,
+            "NAND Flash Temperature": 41.445,
+            "Battery Hotspot": 36.099,
+            "temp": 36.1,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 23.016948,
+          "pressure": {
+            "cpu": "some avg10=25.38 avg60=23.09 avg300=11.83 total=770524162\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.28 avg300=0.96 total=9636765\nfull avg10=0.00 avg60=0.27 avg300=0.92 total=9073441",
+            "io": "some avg10=0.15 avg60=0.12 avg300=0.10 total=15250433\nfull avg10=0.00 avg60=0.03 avg300=0.05 total=8879918"
+          }
+        },
+        {
+          "time": 1792320293.6459687,
+          "available_bytes": 18464899072,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6152749056,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2504.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 46.766,
+            "WiFi/BT Module Temp": 48.666,
+            "NAND Flash Temperature": 41.519,
+            "Battery Hotspot": 36.099,
+            "temp": 36.1,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 26.978837,
+          "pressure": {
+            "cpu": "some avg10=22.96 avg60=22.72 avg300=11.83 total=770810307\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.27 avg300=0.95 total=9636765\nfull avg10=0.00 avg60=0.26 avg300=0.91 total=9073441",
+            "io": "some avg10=0.12 avg60=0.12 avg300=0.10 total=15253690\nfull avg10=0.00 avg60=0.03 avg300=0.05 total=8880992"
+          }
+        },
+        {
+          "time": 1792320294.6558096,
+          "available_bytes": 18389139456,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6152732672,
+          "fans_rpm": {
+            "Fan 1": 2335.0,
+            "Fan 2": 2521.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 46.926,
+            "WiFi/BT Module Temp": 48.68,
+            "NAND Flash Temperature": 41.472,
+            "Battery Hotspot": 36.099,
+            "temp": 36.1,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 41.014575,
+          "pressure": {
+            "cpu": "some avg10=22.96 avg60=22.72 avg300=11.83 total=771096999\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.27 avg300=0.95 total=9636765\nfull avg10=0.00 avg60=0.26 avg300=0.91 total=9073441",
+            "io": "some avg10=0.12 avg60=0.12 avg300=0.10 total=15255695\nfull avg10=0.00 avg60=0.03 avg300=0.05 total=8881490"
+          }
+        },
+        {
+          "time": 1792320295.6657324,
+          "available_bytes": 18312347648,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6152388608,
+          "fans_rpm": {
+            "Fan 1": 2313.0,
+            "Fan 2": 2491.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 47.3,
+            "WiFi/BT Module Temp": 47.46,
+            "NAND Flash Temperature": 41.484,
+            "Battery Hotspot": 36.099,
+            "temp": 36.1,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 35.510116,
+          "pressure": {
+            "cpu": "some avg10=23.51 avg60=22.83 avg300=11.93 total=771321919\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.26 avg300=0.94 total=9636766\nfull avg10=0.00 avg60=0.25 avg300=0.90 total=9073442",
+            "io": "some avg10=0.10 avg60=0.11 avg300=0.10 total=15257622\nfull avg10=0.00 avg60=0.03 avg300=0.04 total=8882182"
+          }
+        },
+        {
+          "time": 1792320296.67392,
+          "available_bytes": 18220253184,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6152290304,
+          "fans_rpm": {
+            "Fan 1": 2306.0,
+            "Fan 2": 2513.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 47.3,
+            "WiFi/BT Module Temp": 48.18,
+            "NAND Flash Temperature": 41.531,
+            "Battery Hotspot": 36.099,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 35.816223,
+          "pressure": {
+            "cpu": "some avg10=23.51 avg60=22.83 avg300=11.93 total=771656983\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.26 avg300=0.94 total=9636766\nfull avg10=0.00 avg60=0.25 avg300=0.90 total=9073442",
+            "io": "some avg10=0.10 avg60=0.11 avg300=0.10 total=15260285\nfull avg10=0.00 avg60=0.03 avg300=0.04 total=8883019"
+          }
+        },
+        {
+          "time": 1792320297.6862812,
+          "available_bytes": 18047467520,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6151536640,
+          "fans_rpm": {
+            "Fan 1": 2309.0,
+            "Fan 2": 2500.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 46.766,
+            "WiFi/BT Module Temp": 48.926,
+            "NAND Flash Temperature": 41.429,
+            "Battery Hotspot": 36.0,
+            "temp": 36.1,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 36.081535,
+          "pressure": {
+            "cpu": "some avg10=24.50 avg60=23.03 avg300=12.05 total=771951234\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.25 avg300=0.94 total=9636766\nfull avg10=0.00 avg60=0.24 avg300=0.90 total=9073442",
+            "io": "some avg10=0.08 avg60=0.11 avg300=0.10 total=15262243\nfull avg10=0.00 avg60=0.03 avg300=0.04 total=8883986"
+          }
+        },
+        {
+          "time": 1792320298.6949883,
+          "available_bytes": 18055364608,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6151323648,
+          "fans_rpm": {
+            "Fan 1": 2316.0,
+            "Fan 2": 2505.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 46.406,
+            "WiFi/BT Module Temp": 48.12,
+            "NAND Flash Temperature": 41.503,
+            "Battery Hotspot": 36.099,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 34.435085,
+          "pressure": {
+            "cpu": "some avg10=24.50 avg60=23.03 avg300=12.05 total=772240947\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.25 avg300=0.94 total=9636766\nfull avg10=0.00 avg60=0.24 avg300=0.90 total=9073442",
+            "io": "some avg10=0.08 avg60=0.11 avg300=0.10 total=15264265\nfull avg10=0.00 avg60=0.03 avg300=0.04 total=8884687"
+          }
+        },
+        {
+          "time": 1792320299.7045841,
+          "available_bytes": 18273878016,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6150438912,
+          "fans_rpm": {
+            "Fan 1": 2313.0,
+            "Fan 2": 2501.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 47.086,
+            "WiFi/BT Module Temp": 48.1,
+            "NAND Flash Temperature": 41.503,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 29.065242,
+          "pressure": {
+            "cpu": "some avg10=25.32 avg60=23.23 avg300=12.16 total=772542596\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.25 avg300=0.93 total=9638023\nfull avg10=0.00 avg60=0.23 avg300=0.89 total=9073987",
+            "io": "some avg10=0.07 avg60=0.10 avg300=0.10 total=15266118\nfull avg10=0.00 avg60=0.03 avg300=0.04 total=8885602"
+          }
+        },
+        {
+          "time": 1792320300.716248,
+          "available_bytes": 18317230080,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6150242304,
+          "fans_rpm": {
+            "Fan 1": 2298.0,
+            "Fan 2": 2509.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 46.473,
+            "WiFi/BT Module Temp": 49.126,
+            "NAND Flash Temperature": 41.503,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 30.138942,
+          "pressure": {
+            "cpu": "some avg10=25.32 avg60=23.23 avg300=12.16 total=772848149\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.25 avg300=0.93 total=9638028\nfull avg10=0.00 avg60=0.23 avg300=0.89 total=9073991",
+            "io": "some avg10=0.07 avg60=0.10 avg300=0.10 total=15266965\nfull avg10=0.00 avg60=0.03 avg300=0.04 total=8886100"
+          }
+        },
+        {
+          "time": 1792320301.7252738,
+          "available_bytes": 18148556800,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6146621440,
+          "fans_rpm": {
+            "Fan 1": 2324.0,
+            "Fan 2": 2484.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 46.346,
+            "WiFi/BT Module Temp": 48.633,
+            "NAND Flash Temperature": 41.503,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 29.606174,
+          "pressure": {
+            "cpu": "some avg10=25.98 avg60=23.42 avg300=12.28 total=772994360\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.24 avg300=0.92 total=9638028\nfull avg10=0.00 avg60=0.23 avg300=0.88 total=9073991",
+            "io": "some avg10=0.05 avg60=0.10 avg300=0.10 total=15269076\nfull avg10=0.00 avg60=0.03 avg300=0.04 total=8887728"
+          }
+        },
+        {
+          "time": 1792320302.7356794,
+          "available_bytes": 18053251072,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6146588672,
+          "fans_rpm": {
+            "Fan 1": 2313.0,
+            "Fan 2": 2500.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.033,
+            "WiFi/BT Module Temp": 48.96,
+            "NAND Flash Temperature": 41.429,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 31.440347,
+          "pressure": {
+            "cpu": "some avg10=25.98 avg60=23.42 avg300=12.28 total=773151500\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.24 avg300=0.92 total=9638028\nfull avg10=0.00 avg60=0.23 avg300=0.88 total=9073991",
+            "io": "some avg10=0.05 avg60=0.10 avg300=0.10 total=15269655\nfull avg10=0.00 avg60=0.03 avg300=0.04 total=8888046"
+          }
+        },
+        {
+          "time": 1792320303.750437,
+          "available_bytes": 17909809152,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6143737856,
+          "fans_rpm": {
+            "Fan 1": 2309.0,
+            "Fan 2": 2500.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 47.38,
+            "WiFi/BT Module Temp": 48.473,
+            "NAND Flash Temperature": 41.398,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 31.071043,
+          "pressure": {
+            "cpu": "some avg10=23.81 avg60=23.11 avg300=12.29 total=773396742\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.23 avg300=0.92 total=9638239\nfull avg10=0.00 avg60=0.22 avg300=0.88 total=9074150",
+            "io": "some avg10=0.04 avg60=0.10 avg300=0.10 total=15277001\nfull avg10=0.00 avg60=0.02 avg300=0.04 total=8890164"
+          }
+        },
+        {
+          "time": 1792320304.7657218,
+          "available_bytes": 17910218752,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6143574016,
+          "fans_rpm": {
+            "Fan 1": 2309.0,
+            "Fan 2": 2513.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 47.846,
+            "WiFi/BT Module Temp": 48.786,
+            "NAND Flash Temperature": 41.472,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 36.747493,
+          "pressure": {
+            "cpu": "some avg10=23.81 avg60=23.11 avg300=12.29 total=773703659\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.22 avg300=0.91 total=9638239\nfull avg10=0.00 avg60=0.21 avg300=0.87 total=9074150",
+            "io": "some avg10=0.03 avg60=0.09 avg300=0.10 total=15277377\nfull avg10=0.00 avg60=0.02 avg300=0.04 total=8890363"
+          }
+        },
+        {
+          "time": 1792320305.7754967,
+          "available_bytes": 18355650560,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6143492096,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2500.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 47.94,
+            "WiFi/BT Module Temp": 47.753,
+            "NAND Flash Temperature": 41.472,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 30.453207,
+          "pressure": {
+            "cpu": "some avg10=24.21 avg60=23.20 avg300=12.39 total=773987349\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.22 avg300=0.91 total=9638239\nfull avg10=0.00 avg60=0.21 avg300=0.87 total=9074150",
+            "io": "some avg10=0.03 avg60=0.09 avg300=0.10 total=15280788\nfull avg10=0.00 avg60=0.02 avg300=0.04 total=8891533"
+          }
+        },
+        {
+          "time": 1792320306.78622,
+          "available_bytes": 18366349312,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6143377408,
+          "fans_rpm": {
+            "Fan 1": 2324.0,
+            "Fan 2": 2488.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 47.573,
+            "WiFi/BT Module Temp": 49.766,
+            "NAND Flash Temperature": 41.445,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 29.925544,
+          "pressure": {
+            "cpu": "some avg10=25.08 avg60=23.39 avg300=12.50 total=774291711\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.21 avg300=0.90 total=9639797\nfull avg10=0.00 avg60=0.20 avg300=0.87 total=9074362",
+            "io": "some avg10=0.03 avg60=0.09 avg300=0.10 total=15287844\nfull avg10=0.00 avg60=0.02 avg300=0.04 total=8894608"
+          }
+        },
+        {
+          "time": 1792320307.802357,
+          "available_bytes": 18354257920,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6143311872,
+          "fans_rpm": {
+            "Fan 1": 2309.0,
+            "Fan 2": 2530.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 47.52,
+            "WiFi/BT Module Temp": 48.8,
+            "NAND Flash Temperature": 41.472,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 27.085908,
+          "pressure": {
+            "cpu": "some avg10=25.08 avg60=23.39 avg300=12.50 total=774593973\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.21 avg300=0.90 total=9639797\nfull avg10=0.00 avg60=0.20 avg300=0.87 total=9074362",
+            "io": "some avg10=0.03 avg60=0.09 avg300=0.10 total=15290815\nfull avg10=0.00 avg60=0.02 avg300=0.04 total=8895458"
+          }
+        },
+        {
+          "time": 1792320308.817514,
+          "available_bytes": 18355978240,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6003163136,
+          "fans_rpm": {
+            "Fan 1": 2313.0,
+            "Fan 2": 2513.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 46.573,
+            "WiFi/BT Module Temp": 48.28,
+            "NAND Flash Temperature": 41.492,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 29.192848,
+          "pressure": {
+            "cpu": "some avg10=25.42 avg60=23.51 avg300=12.60 total=774848924\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.21 avg300=0.90 total=9640308\nfull avg10=0.00 avg60=0.20 avg300=0.86 total=9074608",
+            "io": "some avg10=0.02 avg60=0.09 avg300=0.10 total=15295551\nfull avg10=0.00 avg60=0.02 avg300=0.04 total=8897099"
+          }
+        },
+        {
+          "time": 1792320309.8285904,
+          "available_bytes": 18372149248,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 6002294784,
+          "fans_rpm": {
+            "Fan 1": 2309.0,
+            "Fan 2": 2521.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.38,
+            "WiFi/BT Module Temp": 48.926,
+            "NAND Flash Temperature": 41.472,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 30.3504,
+          "pressure": {
+            "cpu": "some avg10=25.42 avg60=23.51 avg300=12.60 total=775013281\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.21 avg300=0.90 total=9645513\nfull avg10=0.00 avg60=0.20 avg300=0.86 total=9077980",
+            "io": "some avg10=0.02 avg60=0.09 avg300=0.10 total=15311185\nfull avg10=0.00 avg60=0.02 avg300=0.04 total=8906735"
+          }
+        },
+        {
+          "time": 1792320310.844693,
+          "available_bytes": 18366087168,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5866487808,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2487.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 45.533,
+            "WiFi/BT Module Temp": 49.58,
+            "NAND Flash Temperature": 41.574,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 31.084844,
+          "pressure": {
+            "cpu": "some avg10=24.62 avg60=23.43 avg300=12.66 total=775278504\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.20 avg300=0.89 total=9645541\nfull avg10=0.00 avg60=0.19 avg300=0.85 total=9078008",
+            "io": "some avg10=0.20 avg60=0.12 avg300=0.10 total=15316376\nfull avg10=0.00 avg60=0.02 avg300=0.04 total=8908989"
+          }
+        },
+        {
+          "time": 1792320311.8600104,
+          "available_bytes": 18361073664,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5866455040,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2496.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 47.706,
+            "WiFi/BT Module Temp": 49.086,
+            "NAND Flash Temperature": 41.503,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 30.068325,
+          "pressure": {
+            "cpu": "some avg10=24.62 avg60=23.43 avg300=12.66 total=775592931\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.20 avg300=0.89 total=9645541\nfull avg10=0.00 avg60=0.19 avg300=0.85 total=9078008",
+            "io": "some avg10=0.20 avg60=0.12 avg300=0.10 total=15319896\nfull avg10=0.00 avg60=0.02 avg300=0.04 total=8910355"
+          }
+        },
+        {
+          "time": 1792320312.8654487,
+          "available_bytes": 18331369472,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5733449728,
+          "fans_rpm": {
+            "Fan 1": 2342.0,
+            "Fan 2": 2475.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.38,
+            "WiFi/BT Module Temp": 50.637,
+            "NAND Flash Temperature": 41.457,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 29.782091,
+          "pressure": {
+            "cpu": "some avg10=23.42 avg60=23.25 avg300=12.69 total=775642589\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.19 avg300=0.88 total=9645622\nfull avg10=0.00 avg60=0.18 avg300=0.85 total=9078089",
+            "io": "some avg10=0.16 avg60=0.11 avg300=0.10 total=15325094\nfull avg10=0.00 avg60=0.02 avg300=0.04 total=8914814"
+          }
+        },
+        {
+          "time": 1792320313.8766322,
+          "available_bytes": 18331484160,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5730107392,
+          "fans_rpm": {
+            "Fan 1": 2309.0,
+            "Fan 2": 2504.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 51.403,
+            "WiFi/BT Module Temp": 49.566,
+            "NAND Flash Temperature": 41.457,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 36.629428,
+          "pressure": {
+            "cpu": "some avg10=23.42 avg60=23.25 avg300=12.69 total=775847233\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.19 avg300=0.88 total=9645622\nfull avg10=0.00 avg60=0.18 avg300=0.85 total=9078089",
+            "io": "some avg10=0.16 avg60=0.11 avg300=0.10 total=15330568\nfull avg10=0.00 avg60=0.02 avg300=0.04 total=8916224"
+          }
+        },
+        {
+          "time": 1792320314.8855972,
+          "available_bytes": 18333171712,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5727436800,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2504.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.4,
+            "WiFi/BT Module Temp": 49.24,
+            "NAND Flash Temperature": 41.531,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 31.294214,
+          "pressure": {
+            "cpu": "some avg10=23.34 avg60=23.24 avg300=12.76 total=776115122\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.19 avg300=0.88 total=9645622\nfull avg10=0.00 avg60=0.18 avg300=0.84 total=9078089",
+            "io": "some avg10=0.13 avg60=0.11 avg300=0.10 total=15334635\nfull avg10=0.00 avg60=0.02 avg300=0.04 total=8917023"
+          }
+        },
+        {
+          "time": 1792320315.8956165,
+          "available_bytes": 18074206208,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5727404032,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2509.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.12,
+            "WiFi/BT Module Temp": 49.9,
+            "NAND Flash Temperature": 41.531,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 25.556457,
+          "pressure": {
+            "cpu": "some avg10=23.34 avg60=23.24 avg300=12.76 total=776386440\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.19 avg300=0.88 total=9645622\nfull avg10=0.00 avg60=0.18 avg300=0.84 total=9078089",
+            "io": "some avg10=0.13 avg60=0.11 avg300=0.10 total=15335902\nfull avg10=0.00 avg60=0.02 avg300=0.04 total=8917616"
+          }
+        },
+        {
+          "time": 1792320316.910452,
+          "available_bytes": 17911005184,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5726339072,
+          "fans_rpm": {
+            "Fan 1": 2338.0,
+            "Fan 2": 2491.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 46.84,
+            "WiFi/BT Module Temp": 48.94,
+            "NAND Flash Temperature": 41.531,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 32.944282,
+          "pressure": {
+            "cpu": "some avg10=24.00 avg60=23.37 avg300=12.86 total=776702192\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.18 avg300=0.87 total=9645659\nfull avg10=0.00 avg60=0.17 avg300=0.83 total=9078126",
+            "io": "some avg10=0.11 avg60=0.10 avg300=0.10 total=15341821\nfull avg10=0.00 avg60=0.02 avg300=0.04 total=8921652"
+          }
+        },
+        {
+          "time": 1792320317.9196224,
+          "available_bytes": 17851858944,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5726339072,
+          "fans_rpm": {
+            "Fan 1": 2309.0,
+            "Fan 2": 2500.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 44.923,
+            "WiFi/BT Module Temp": 49.566,
+            "NAND Flash Temperature": 41.546,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 33.739982,
+          "pressure": {
+            "cpu": "some avg10=24.00 avg60=23.37 avg300=12.86 total=777016040\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.18 avg300=0.87 total=9645659\nfull avg10=0.00 avg60=0.17 avg300=0.83 total=9078126",
+            "io": "some avg10=0.11 avg60=0.10 avg300=0.10 total=15342585\nfull avg10=0.00 avg60=0.02 avg300=0.04 total=8922036"
+          }
+        },
+        {
+          "time": 1792320318.9359481,
+          "available_bytes": 17748099072,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5726289920,
+          "fans_rpm": {
+            "Fan 1": 2323.0,
+            "Fan 2": 2496.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.213,
+            "WiFi/BT Module Temp": 51.016,
+            "NAND Flash Temperature": 41.558,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 34.214332,
+          "pressure": {
+            "cpu": "some avg10=25.09 avg60=23.58 avg300=12.98 total=777317404\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.17 avg300=0.87 total=9645659\nfull avg10=0.00 avg60=0.16 avg300=0.83 total=9078126",
+            "io": "some avg10=0.09 avg60=0.10 avg300=0.10 total=15345711\nfull avg10=0.00 avg60=0.02 avg300=0.04 total=8923712"
+          }
+        },
+        {
+          "time": 1792320319.9484932,
+          "available_bytes": 17773477888,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5726240768,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2499.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.913,
+            "WiFi/BT Module Temp": 49.566,
+            "NAND Flash Temperature": 41.437,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 29.387271,
+          "pressure": {
+            "cpu": "some avg10=25.09 avg60=23.58 avg300=12.98 total=777629819\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.17 avg300=0.87 total=9659101\nfull avg10=0.00 avg60=0.16 avg300=0.83 total=9085246",
+            "io": "some avg10=0.09 avg60=0.10 avg300=0.10 total=15361625\nfull avg10=0.00 avg60=0.02 avg300=0.04 total=8931489"
+          }
+        },
+        {
+          "time": 1792320320.958998,
+          "available_bytes": 18272305152,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5725896704,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2525.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.033,
+            "WiFi/BT Module Temp": 49.726,
+            "NAND Flash Temperature": 41.574,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 29.173742,
+          "pressure": {
+            "cpu": "some avg10=25.44 avg60=23.69 avg300=13.07 total=777860550\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.17 avg300=0.86 total=9659101\nfull avg10=0.00 avg60=0.16 avg300=0.82 total=9085246",
+            "io": "some avg10=0.25 avg60=0.13 avg300=0.10 total=15369332\nfull avg10=0.00 avg60=0.02 avg300=0.04 total=8937451"
+          }
+        },
+        {
+          "time": 1792320321.973412,
+          "available_bytes": 17866817536,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5725831168,
+          "fans_rpm": {
+            "Fan 1": 2313.0,
+            "Fan 2": 2508.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 47.633,
+            "WiFi/BT Module Temp": 50.806,
+            "NAND Flash Temperature": 41.585,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 31.039434,
+          "pressure": {
+            "cpu": "some avg10=25.44 avg60=23.69 avg300=13.07 total=777881206\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.17 avg300=0.86 total=9659101\nfull avg10=0.00 avg60=0.16 avg300=0.82 total=9085246",
+            "io": "some avg10=0.25 avg60=0.13 avg300=0.10 total=15370152\nfull avg10=0.00 avg60=0.02 avg300=0.04 total=8938130"
+          }
+        },
+        {
+          "time": 1792320322.9805834,
+          "available_bytes": 17879105536,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5725257728,
+          "fans_rpm": {
+            "Fan 1": 2298.0,
+            "Fan 2": 2508.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.266,
+            "WiFi/BT Module Temp": 50.032,
+            "NAND Flash Temperature": 41.546,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 36.568885,
+          "pressure": {
+            "cpu": "some avg10=22.82 avg60=23.28 avg300=13.06 total=778086696\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.16 avg300=0.85 total=9659101\nfull avg10=0.00 avg60=0.15 avg300=0.82 total=9085246",
+            "io": "some avg10=0.20 avg60=0.12 avg300=0.10 total=15374197\nfull avg10=0.00 avg60=0.01 avg300=0.04 total=8939963"
+          }
+        },
+        {
+          "time": 1792320323.9888418,
+          "available_bytes": 17913102336,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5725208576,
+          "fans_rpm": {
+            "Fan 1": 2331.0,
+            "Fan 2": 2521.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.893,
+            "WiFi/BT Module Temp": 50.032,
+            "NAND Flash Temperature": 41.585,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 31.559906,
+          "pressure": {
+            "cpu": "some avg10=22.82 avg60=23.28 avg300=13.06 total=778316720\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.16 avg300=0.85 total=9659101\nfull avg10=0.00 avg60=0.15 avg300=0.82 total=9085246",
+            "io": "some avg10=0.20 avg60=0.12 avg300=0.10 total=15376611\nfull avg10=0.00 avg60=0.01 avg300=0.04 total=8941750"
+          }
+        },
+        {
+          "time": 1792320324.9974792,
+          "available_bytes": 17919852544,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5725126656,
+          "fans_rpm": {
+            "Fan 1": 2309.0,
+            "Fan 2": 2512.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.02,
+            "WiFi/BT Module Temp": 49.24,
+            "NAND Flash Temperature": 41.539,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 29.888143,
+          "pressure": {
+            "cpu": "some avg10=22.67 avg60=23.24 avg300=13.12 total=778558739\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.16 avg300=0.85 total=9659101\nfull avg10=0.00 avg60=0.15 avg300=0.81 total=9085246",
+            "io": "some avg10=0.17 avg60=0.12 avg300=0.10 total=15376644\nfull avg10=0.00 avg60=0.01 avg300=0.04 total=8941784"
+          }
+        },
+        {
+          "time": 1792320326.0200176,
+          "available_bytes": 17949655040,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5725077504,
+          "fans_rpm": {
+            "Fan 1": 2309.0,
+            "Fan 2": 2499.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 46.066,
+            "WiFi/BT Module Temp": 50.806,
+            "NAND Flash Temperature": 41.531,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 27.716917,
+          "pressure": {
+            "cpu": "some avg10=22.67 avg60=23.24 avg300=13.12 total=778856031\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.16 avg300=0.85 total=9659101\nfull avg10=0.00 avg60=0.15 avg300=0.81 total=9085246",
+            "io": "some avg10=0.17 avg60=0.12 avg300=0.10 total=15380554\nfull avg10=0.00 avg60=0.01 avg300=0.04 total=8944300"
+          }
+        },
+        {
+          "time": 1792320327.0298564,
+          "available_bytes": 18015551488,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5723242496,
+          "fans_rpm": {
+            "Fan 1": 2327.0,
+            "Fan 2": 2474.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.386,
+            "WiFi/BT Module Temp": 50.008,
+            "NAND Flash Temperature": 41.585,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 27.98386,
+          "pressure": {
+            "cpu": "some avg10=22.91 avg60=23.26 avg300=13.20 total=779069531\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.15 avg300=0.84 total=9660112\nfull avg10=0.00 avg60=0.14 avg300=0.81 total=9086237",
+            "io": "some avg10=0.32 avg60=0.15 avg300=0.11 total=15399848\nfull avg10=0.00 avg60=0.01 avg300=0.04 total=8958244"
+          }
+        },
+        {
+          "time": 1792320328.0384395,
+          "available_bytes": 18013945856,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5723078656,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2503.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.033,
+            "WiFi/BT Module Temp": 51.201,
+            "NAND Flash Temperature": 41.632,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 32.058502,
+          "pressure": {
+            "cpu": "some avg10=22.91 avg60=23.26 avg300=13.20 total=779378334\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.15 avg300=0.84 total=9660112\nfull avg10=0.00 avg60=0.14 avg300=0.81 total=9086237",
+            "io": "some avg10=0.32 avg60=0.15 avg300=0.11 total=15401018\nfull avg10=0.00 avg60=0.01 avg300=0.04 total=8958652"
+          }
+        },
+        {
+          "time": 1792320329.0480752,
+          "available_bytes": 18023858176,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5723078656,
+          "fans_rpm": {
+            "Fan 1": 2331.0,
+            "Fan 2": 2495.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.7,
+            "WiFi/BT Module Temp": 50.024,
+            "NAND Flash Temperature": 41.585,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 27.568893,
+          "pressure": {
+            "cpu": "some avg10=24.19 avg60=23.48 avg300=13.31 total=779697348\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.14 avg300=0.83 total=9660112\nfull avg10=0.00 avg60=0.14 avg300=0.80 total=9086237",
+            "io": "some avg10=0.26 avg60=0.14 avg300=0.11 total=15406112\nfull avg10=0.00 avg60=0.01 avg300=0.04 total=8959346"
+          }
+        },
+        {
+          "time": 1792320330.0577188,
+          "available_bytes": 18023989248,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5722947584,
+          "fans_rpm": {
+            "Fan 1": 2323.0,
+            "Fan 2": 2530.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.213,
+            "WiFi/BT Module Temp": 50.443,
+            "NAND Flash Temperature": 41.613,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 27.985904,
+          "pressure": {
+            "cpu": "some avg10=24.19 avg60=23.48 avg300=13.31 total=780043410\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.14 avg300=0.83 total=9660112\nfull avg10=0.00 avg60=0.14 avg300=0.80 total=9086237",
+            "io": "some avg10=0.26 avg60=0.14 avg300=0.11 total=15409580\nfull avg10=0.00 avg60=0.01 avg300=0.04 total=8962053"
+          }
+        },
+        {
+          "time": 1792320331.068828,
+          "available_bytes": 18066472960,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5722816512,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2495.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.5,
+            "WiFi/BT Module Temp": 50.806,
+            "NAND Flash Temperature": 41.613,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 29.191171,
+          "pressure": {
+            "cpu": "some avg10=24.70 avg60=23.60 avg300=13.41 total=780228098\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.14 avg300=0.83 total=9660579\nfull avg10=0.00 avg60=0.13 avg300=0.79 total=9086616",
+            "io": "some avg10=0.21 avg60=0.14 avg300=0.11 total=15412532\nfull avg10=0.00 avg60=0.01 avg300=0.04 total=8963969"
+          }
+        },
+        {
+          "time": 1792320332.0831368,
+          "available_bytes": 18066243584,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5722816512,
+          "fans_rpm": {
+            "Fan 1": 2312.0,
+            "Fan 2": 2495.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.88,
+            "WiFi/BT Module Temp": 49.52,
+            "NAND Flash Temperature": 41.566,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 31.304737,
+          "pressure": {
+            "cpu": "some avg10=24.70 avg60=23.60 avg300=13.41 total=780540420\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.14 avg300=0.83 total=9660579\nfull avg10=0.00 avg60=0.13 avg300=0.79 total=9086616",
+            "io": "some avg10=0.21 avg60=0.14 avg300=0.11 total=15412604\nfull avg10=0.00 avg60=0.01 avg300=0.04 total=8964040"
+          }
+        },
+        {
+          "time": 1792320333.0958214,
+          "available_bytes": 18049892352,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5722800128,
+          "fans_rpm": {
+            "Fan 1": 2312.0,
+            "Fan 2": 2469.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 50.258,
+            "WiFi/BT Module Temp": 50.604,
+            "NAND Flash Temperature": 41.539,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 27.645603,
+          "pressure": {
+            "cpu": "some avg10=25.48 avg60=23.77 avg300=13.51 total=780875587\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.13 avg300=0.82 total=9660579\nfull avg10=0.00 avg60=0.13 avg300=0.79 total=9086616",
+            "io": "some avg10=0.17 avg60=0.13 avg300=0.11 total=15415735\nfull avg10=0.00 avg60=0.01 avg300=0.04 total=8964189"
+          }
+        },
+        {
+          "time": 1792320334.109816,
+          "available_bytes": 18069094400,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5722374144,
+          "fans_rpm": {
+            "Fan 1": 2312.0,
+            "Fan 2": 2520.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.213,
+            "WiFi/BT Module Temp": 52.314,
+            "NAND Flash Temperature": 41.539,
+            "Battery Hotspot": 36.0,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 27.323966,
+          "pressure": {
+            "cpu": "some avg10=25.48 avg60=23.77 avg300=13.51 total=781192071\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.13 avg300=0.82 total=9660579\nfull avg10=0.00 avg60=0.13 avg300=0.79 total=9086616",
+            "io": "some avg10=0.17 avg60=0.13 avg300=0.11 total=15420890\nfull avg10=0.00 avg60=0.01 avg300=0.04 total=8965943"
+          }
+        },
+        {
+          "time": 1792320335.1220138,
+          "available_bytes": 18125537280,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5721456640,
+          "fans_rpm": {
+            "Fan 1": 2319.0,
+            "Fan 2": 2499.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.793,
+            "WiFi/BT Module Temp": 50.0,
+            "NAND Flash Temperature": 41.566,
+            "Battery Hotspot": 36.0,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 29.562511,
+          "pressure": {
+            "cpu": "some avg10=26.66 avg60=24.04 avg300=13.64 total=781503302\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.13 avg300=0.82 total=9660624\nfull avg10=0.00 avg60=0.12 avg300=0.78 total=9086661",
+            "io": "some avg10=0.14 avg60=0.13 avg300=0.10 total=15422332\nfull avg10=0.00 avg60=0.01 avg300=0.04 total=8966160"
+          }
+        },
+        {
+          "time": 1792320336.1310906,
+          "available_bytes": 18141888512,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5720440832,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2512.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 47.966,
+            "WiFi/BT Module Temp": 51.564,
+            "NAND Flash Temperature": 41.566,
+            "Battery Hotspot": 35.899,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 29.147556,
+          "pressure": {
+            "cpu": "some avg10=26.66 avg60=24.04 avg300=13.64 total=781775755\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.13 avg300=0.82 total=9660624\nfull avg10=0.00 avg60=0.12 avg300=0.78 total=9086661",
+            "io": "some avg10=0.14 avg60=0.13 avg300=0.10 total=15422952\nfull avg10=0.00 avg60=0.01 avg300=0.04 total=8966419"
+          }
+        },
+        {
+          "time": 1792320337.144581,
+          "available_bytes": 18024415232,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5720424448,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2507.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 47.493,
+            "WiFi/BT Module Temp": 51.37,
+            "NAND Flash Temperature": 41.613,
+            "Battery Hotspot": 36.0,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 27.913789,
+          "pressure": {
+            "cpu": "some avg10=27.08 avg60=24.20 avg300=13.74 total=782122314\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.12 avg300=0.81 total=9660624\nfull avg10=0.00 avg60=0.12 avg300=0.78 total=9086661",
+            "io": "some avg10=0.11 avg60=0.12 avg300=0.10 total=15429623\nfull avg10=0.00 avg60=0.01 avg300=0.03 total=8970981"
+          }
+        },
+        {
+          "time": 1792320338.1558247,
+          "available_bytes": 18046894080,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5720408064,
+          "fans_rpm": {
+            "Fan 1": 2309.0,
+            "Fan 2": 2490.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.46,
+            "WiFi/BT Module Temp": 52.129,
+            "NAND Flash Temperature": 41.613,
+            "Battery Hotspot": 35.899,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 28.809955,
+          "pressure": {
+            "cpu": "some avg10=27.08 avg60=24.20 avg300=13.74 total=782404412\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.12 avg300=0.81 total=9660624\nfull avg10=0.00 avg60=0.12 avg300=0.78 total=9086661",
+            "io": "some avg10=0.11 avg60=0.12 avg300=0.10 total=15432497\nfull avg10=0.00 avg60=0.01 avg300=0.03 total=8971406"
+          }
+        },
+        {
+          "time": 1792320339.1658447,
+          "available_bytes": 18067472384,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5720211456,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2507.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.493,
+            "WiFi/BT Module Temp": 51.37,
+            "NAND Flash Temperature": 41.64,
+            "Battery Hotspot": 36.0,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 28.769187,
+          "pressure": {
+            "cpu": "some avg10=27.79 avg60=24.43 avg300=13.86 total=782776047\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.12 avg300=0.81 total=9661040\nfull avg10=0.00 avg60=0.11 avg300=0.77 total=9086760",
+            "io": "some avg10=0.09 avg60=0.12 avg300=0.10 total=15433324\nfull avg10=0.00 avg60=0.01 avg300=0.03 total=8972009"
+          }
+        },
+        {
+          "time": 1792320340.175,
+          "available_bytes": 18075729920,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5720162304,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2495.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.333,
+            "WiFi/BT Module Temp": 50.806,
+            "NAND Flash Temperature": 41.566,
+            "Battery Hotspot": 35.899,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 27.869068,
+          "pressure": {
+            "cpu": "some avg10=27.79 avg60=24.43 avg300=13.86 total=783110757\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.12 avg300=0.81 total=9661040\nfull avg10=0.00 avg60=0.11 avg300=0.77 total=9086760",
+            "io": "some avg10=0.09 avg60=0.12 avg300=0.10 total=15437424\nfull avg10=0.00 avg60=0.01 avg300=0.03 total=8974611"
+          }
+        },
+        {
+          "time": 1792320341.188873,
+          "available_bytes": 18096308224,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5710905344,
+          "fans_rpm": {
+            "Fan 1": 2312.0,
+            "Fan 2": 2499.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.853,
+            "WiFi/BT Module Temp": 50.427,
+            "NAND Flash Temperature": 41.64,
+            "Battery Hotspot": 36.0,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 29.783733,
+          "pressure": {
+            "cpu": "some avg10=28.37 avg60=24.64 avg300=13.98 total=783346397\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.12 avg300=0.80 total=9664193\nfull avg10=0.00 avg60=0.11 avg300=0.77 total=9087475",
+            "io": "some avg10=0.07 avg60=0.12 avg300=0.10 total=15443046\nfull avg10=0.00 avg60=0.01 avg300=0.03 total=8977045"
+          }
+        },
+        {
+          "time": 1792320342.1987343,
+          "available_bytes": 18108481536,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5710856192,
+          "fans_rpm": {
+            "Fan 1": 2324.0,
+            "Fan 2": 2495.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.66,
+            "WiFi/BT Module Temp": 51.935,
+            "NAND Flash Temperature": 41.687,
+            "Battery Hotspot": 35.899,
+            "temp": 36.0,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 21.964437,
+          "pressure": {
+            "cpu": "some avg10=28.37 avg60=24.64 avg300=13.98 total=783576373\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.12 avg300=0.80 total=9664237\nfull avg10=0.00 avg60=0.11 avg300=0.77 total=9087519",
+            "io": "some avg10=0.07 avg60=0.12 avg300=0.10 total=15445929\nfull avg10=0.00 avg60=0.01 avg300=0.03 total=8978470"
+          }
+        },
+        {
+          "time": 1792320343.2087545,
+          "available_bytes": 18106286080,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5710626816,
+          "fans_rpm": {
+            "Fan 1": 2309.0,
+            "Fan 2": 2499.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 50.0,
+            "WiFi/BT Module Temp": 50.387,
+            "NAND Flash Temperature": 41.687,
+            "Battery Hotspot": 36.0,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 14.64951,
+          "pressure": {
+            "cpu": "some avg10=27.04 avg60=24.52 avg300=14.03 total=783854403\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.11 avg300=0.79 total=9664237\nfull avg10=0.00 avg60=0.11 avg300=0.76 total=9087519",
+            "io": "some avg10=0.06 avg60=0.11 avg300=0.10 total=15449770\nfull avg10=0.00 avg60=0.01 avg300=0.03 total=8978470"
+          }
+        },
+        {
+          "time": 1792320344.219083,
+          "available_bytes": 18115411968,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5710626816,
+          "fans_rpm": {
+            "Fan 1": 2313.0,
+            "Fan 2": 2529.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 47.866,
+            "WiFi/BT Module Temp": 51.564,
+            "NAND Flash Temperature": 41.652,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 16.217622,
+          "pressure": {
+            "cpu": "some avg10=27.04 avg60=24.52 avg300=14.03 total=784158471\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.11 avg300=0.79 total=9664237\nfull avg10=0.00 avg60=0.11 avg300=0.76 total=9087519",
+            "io": "some avg10=0.06 avg60=0.11 avg300=0.10 total=15450557\nfull avg10=0.00 avg60=0.01 avg300=0.03 total=8978719"
+          }
+        },
+        {
+          "time": 1792320345.227698,
+          "available_bytes": 18125144064,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5710446592,
+          "fans_rpm": {
+            "Fan 1": 2335.0,
+            "Fan 2": 2499.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.36,
+            "WiFi/BT Module Temp": 52.129,
+            "NAND Flash Temperature": 41.597,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 16.72615,
+          "pressure": {
+            "cpu": "some avg10=26.67 avg60=24.54 avg300=14.10 total=784270385\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.11 avg300=0.79 total=9665510\nfull avg10=0.00 avg60=0.10 avg300=0.75 total=9087950",
+            "io": "some avg10=0.05 avg60=0.11 avg300=0.10 total=15454073\nfull avg10=0.00 avg60=0.01 avg300=0.03 total=8980962"
+          }
+        },
+        {
+          "time": 1792320346.2375438,
+          "available_bytes": 17937416192,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5704630272,
+          "fans_rpm": {
+            "Fan 1": 2324.0,
+            "Fan 2": 2521.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 47.753,
+            "WiFi/BT Module Temp": 51.169,
+            "NAND Flash Temperature": 41.566,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 17.269773,
+          "pressure": {
+            "cpu": "some avg10=26.67 avg60=24.54 avg300=14.10 total=784342011\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.11 avg300=0.79 total=9665510\nfull avg10=0.00 avg60=0.10 avg300=0.75 total=9087950",
+            "io": "some avg10=0.05 avg60=0.11 avg300=0.10 total=15455552\nfull avg10=0.00 avg60=0.01 avg300=0.03 total=8982170"
+          }
+        },
+        {
+          "time": 1792320347.2478452,
+          "available_bytes": 17809080320,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5704335360,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2481.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.86,
+            "WiFi/BT Module Temp": 52.129,
+            "NAND Flash Temperature": 41.64,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 19.045019,
+          "pressure": {
+            "cpu": "some avg10=24.19 avg60=24.16 avg300=14.09 total=784629703\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.10 avg300=0.78 total=9666265\nfull avg10=0.00 avg60=0.10 avg300=0.75 total=9088078",
+            "io": "some avg10=0.04 avg60=0.10 avg300=0.10 total=15462548\nfull avg10=0.00 avg60=0.01 avg300=0.03 total=8986113"
+          }
+        },
+        {
+          "time": 1792320348.2645304,
+          "available_bytes": 17691492352,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5704187904,
+          "fans_rpm": {
+            "Fan 1": 2302.0,
+            "Fan 2": 2507.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.186,
+            "WiFi/BT Module Temp": 51.177,
+            "NAND Flash Temperature": 41.671,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 37.451976,
+          "pressure": {
+            "cpu": "some avg10=24.19 avg60=24.16 avg300=14.09 total=784893648\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.10 avg300=0.78 total=9666265\nfull avg10=0.00 avg60=0.10 avg300=0.75 total=9088078",
+            "io": "some avg10=0.04 avg60=0.10 avg300=0.10 total=15474418\nfull avg10=0.00 avg60=0.01 avg300=0.03 total=8996262"
+          }
+        },
+        {
+          "time": 1792320349.2814338,
+          "available_bytes": 17574772736,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5703794688,
+          "fans_rpm": {
+            "Fan 1": 2342.0,
+            "Fan 2": 2507.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.066,
+            "WiFi/BT Module Temp": 50.991,
+            "NAND Flash Temperature": 41.625,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 34.198703,
+          "pressure": {
+            "cpu": "some avg10=24.70 avg60=24.25 avg300=14.18 total=785183079\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.10 avg300=0.78 total=9666357\nfull avg10=0.00 avg60=0.10 avg300=0.74 total=9088170",
+            "io": "some avg10=0.03 avg60=0.10 avg300=0.10 total=15475216\nfull avg10=0.00 avg60=0.01 avg300=0.03 total=8996608"
+          }
+        },
+        {
+          "time": 1792320350.294635,
+          "available_bytes": 17545510912,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5703565312,
+          "fans_rpm": {
+            "Fan 1": 2309.0,
+            "Fan 2": 2521.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.773,
+            "WiFi/BT Module Temp": 51.564,
+            "NAND Flash Temperature": 41.726,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 34.777629,
+          "pressure": {
+            "cpu": "some avg10=24.70 avg60=24.25 avg300=14.18 total=785509462\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.10 avg300=0.78 total=9666414\nfull avg10=0.00 avg60=0.10 avg300=0.74 total=9088228",
+            "io": "some avg10=0.03 avg60=0.10 avg300=0.10 total=15479932\nfull avg10=0.00 avg60=0.01 avg300=0.03 total=8999219"
+          }
+        },
+        {
+          "time": 1792320351.3049335,
+          "available_bytes": 17541070848,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5703450624,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2503.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 50.024,
+            "WiFi/BT Module Temp": 51.935,
+            "NAND Flash Temperature": 41.699,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 34.953609,
+          "pressure": {
+            "cpu": "some avg10=25.84 avg60=24.47 avg300=14.30 total=785828785\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.10 avg300=0.77 total=9666414\nfull avg10=0.00 avg60=0.09 avg300=0.74 total=9088228",
+            "io": "some avg10=0.02 avg60=0.10 avg300=0.10 total=15483469\nfull avg10=0.00 avg60=0.01 avg300=0.03 total=9001303"
+          }
+        },
+        {
+          "time": 1792320352.3194878,
+          "available_bytes": 17737121792,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5703434240,
+          "fans_rpm": {
+            "Fan 1": 2309.0,
+            "Fan 2": 2482.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 50.653,
+            "WiFi/BT Module Temp": 51.556,
+            "NAND Flash Temperature": 41.625,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 33.629966,
+          "pressure": {
+            "cpu": "some avg10=25.84 avg60=24.47 avg300=14.30 total=786116501\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.10 avg300=0.77 total=9666414\nfull avg10=0.00 avg60=0.09 avg300=0.74 total=9088228",
+            "io": "some avg10=0.02 avg60=0.10 avg300=0.10 total=15483736\nfull avg10=0.00 avg60=0.01 avg300=0.03 total=9001317"
+          }
+        },
+        {
+          "time": 1792320353.331658,
+          "available_bytes": 17882595328,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5703417856,
+          "fans_rpm": {
+            "Fan 1": 2335.0,
+            "Fan 2": 2516.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.48,
+            "WiFi/BT Module Temp": 51.935,
+            "NAND Flash Temperature": 41.699,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 31.004377,
+          "pressure": {
+            "cpu": "some avg10=25.87 avg60=24.52 avg300=14.38 total=786348977\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.09 avg300=0.77 total=9666414\nfull avg10=0.00 avg60=0.09 avg300=0.73 total=9088228",
+            "io": "some avg10=0.02 avg60=0.09 avg300=0.10 total=15487159\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9002460"
+          }
+        },
+        {
+          "time": 1792320354.3445022,
+          "available_bytes": 17893343232,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5703188480,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2499.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 50.806,
+            "WiFi/BT Module Temp": 52.129,
+            "NAND Flash Temperature": 41.726,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 27.852254,
+          "pressure": {
+            "cpu": "some avg10=25.87 avg60=24.52 avg300=14.38 total=786604130\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.09 avg300=0.77 total=9668695\nfull avg10=0.00 avg60=0.09 avg300=0.73 total=9088621",
+            "io": "some avg10=0.02 avg60=0.09 avg300=0.10 total=15503116\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9005841"
+          }
+        },
+        {
+          "time": 1792320355.3535922,
+          "available_bytes": 18136629248,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5703139328,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2499.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 46.406,
+            "WiFi/BT Module Temp": 50.766,
+            "NAND Flash Temperature": 41.726,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 27.981479,
+          "pressure": {
+            "cpu": "some avg10=26.43 avg60=24.67 avg300=14.48 total=786986272\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.09 avg300=0.76 total=9668698\nfull avg10=0.00 avg60=0.08 avg300=0.73 total=9088624",
+            "io": "some avg10=0.01 avg60=0.09 avg300=0.10 total=15506124\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9006614"
+          }
+        },
+        {
+          "time": 1792320356.3642733,
+          "available_bytes": 18149703680,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5703139328,
+          "fans_rpm": {
+            "Fan 1": 2301.0,
+            "Fan 2": 2521.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.166,
+            "WiFi/BT Module Temp": 51.75,
+            "NAND Flash Temperature": 41.726,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 28.562725,
+          "pressure": {
+            "cpu": "some avg10=26.43 avg60=24.67 avg300=14.48 total=787257761\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.09 avg300=0.76 total=9668698\nfull avg10=0.00 avg60=0.08 avg300=0.73 total=9088624",
+            "io": "some avg10=0.01 avg60=0.09 avg300=0.10 total=15509169\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9008101"
+          }
+        },
+        {
+          "time": 1792320357.3724225,
+          "available_bytes": 17941135360,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5702254592,
+          "fans_rpm": {
+            "Fan 1": 2334.0,
+            "Fan 2": 2482.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.02,
+            "WiFi/BT Module Temp": 53.064,
+            "NAND Flash Temperature": 41.726,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 28.977294,
+          "pressure": {
+            "cpu": "some avg10=25.99 avg60=24.65 avg300=14.54 total=787399206\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.09 avg300=0.75 total=9670271\nfull avg10=0.00 avg60=0.08 avg300=0.72 total=9089261",
+            "io": "some avg10=0.01 avg60=0.09 avg300=0.09 total=15510758\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9008569"
+          }
+        },
+        {
+          "time": 1792320358.3864405,
+          "available_bytes": 17663967232,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5700321280,
+          "fans_rpm": {
+            "Fan 1": 2305.0,
+            "Fan 2": 2503.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 50.0,
+            "WiFi/BT Module Temp": 52.508,
+            "NAND Flash Temperature": 41.726,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 24.51032,
+          "pressure": {
+            "cpu": "some avg10=25.99 avg60=24.65 avg300=14.54 total=787480251\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.09 avg300=0.75 total=9670431\nfull avg10=0.00 avg60=0.08 avg300=0.72 total=9089371",
+            "io": "some avg10=0.01 avg60=0.09 avg300=0.09 total=15516065\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9012122"
+          }
+        },
+        {
+          "time": 1792320359.3999145,
+          "available_bytes": 17654317056,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5700190208,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2478.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.66,
+            "WiFi/BT Module Temp": 51.75,
+            "NAND Flash Temperature": 41.781,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 35.070587,
+          "pressure": {
+            "cpu": "some avg10=22.91 avg60=24.14 avg300=14.51 total=787489389\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.08 avg300=0.75 total=9670434\nfull avg10=0.00 avg60=0.08 avg300=0.72 total=9089375",
+            "io": "some avg10=0.01 avg60=0.08 avg300=0.09 total=15519058\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9014418"
+          }
+        },
+        {
+          "time": 1792320360.4121013,
+          "available_bytes": 17581752320,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5700026368,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2503.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 50.604,
+            "WiFi/BT Module Temp": 51.75,
+            "NAND Flash Temperature": 41.808,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 46.029769,
+          "pressure": {
+            "cpu": "some avg10=22.91 avg60=24.14 avg300=14.51 total=787577013\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.08 avg300=0.75 total=9670434\nfull avg10=0.00 avg60=0.08 avg300=0.72 total=9089375",
+            "io": "some avg10=0.01 avg60=0.08 avg300=0.09 total=15521213\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9016175"
+          }
+        },
+        {
+          "time": 1792320361.4171965,
+          "available_bytes": 17474191360,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5699960832,
+          "fans_rpm": {
+            "Fan 1": 2323.0,
+            "Fan 2": 2503.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.653,
+            "WiFi/BT Module Temp": 52.693,
+            "NAND Flash Temperature": 41.765,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 45.161636,
+          "pressure": {
+            "cpu": "some avg10=20.03 avg60=23.57 avg300=14.45 total=787807780\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.08 avg300=0.74 total=9670434\nfull avg10=0.00 avg60=0.08 avg300=0.71 total=9089375",
+            "io": "some avg10=0.00 avg60=0.08 avg300=0.09 total=15521418\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9016372"
+          }
+        },
+        {
+          "time": 1792320362.4285645,
+          "available_bytes": 17432248320,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5699698688,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2490.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 50.596,
+            "WiFi/BT Module Temp": 52.129,
+            "NAND Flash Temperature": 41.781,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 40.488582,
+          "pressure": {
+            "cpu": "some avg10=20.03 avg60=23.57 avg300=14.45 total=787998078\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.08 avg300=0.74 total=9670456\nfull avg10=0.00 avg60=0.08 avg300=0.71 total=9089396",
+            "io": "some avg10=0.00 avg60=0.08 avg300=0.09 total=15522847\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9017097"
+          }
+        },
+        {
+          "time": 1792320363.4408264,
+          "available_bytes": 17505599488,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5699469312,
+          "fans_rpm": {
+            "Fan 1": 2323.0,
+            "Fan 2": 2503.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 51.185,
+            "WiFi/BT Module Temp": 51.564,
+            "NAND Flash Temperature": 41.808,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 38.730495,
+          "pressure": {
+            "cpu": "some avg10=20.75 avg60=23.59 avg300=14.52 total=788330567\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.08 avg300=0.74 total=9670461\nfull avg10=0.00 avg60=0.07 avg300=0.71 total=9089401",
+            "io": "some avg10=0.00 avg60=0.08 avg300=0.09 total=15524245\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9018082"
+          }
+        },
+        {
+          "time": 1792320364.4513135,
+          "available_bytes": 17819369472,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5698879488,
+          "fans_rpm": {
+            "Fan 1": 2335.0,
+            "Fan 2": 2511.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.68,
+            "WiFi/BT Module Temp": 52.322,
+            "NAND Flash Temperature": 41.828,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 36.870307,
+          "pressure": {
+            "cpu": "some avg10=20.75 avg60=23.59 avg300=14.52 total=788624319\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.08 avg300=0.74 total=9670547\nfull avg10=0.00 avg60=0.07 avg300=0.71 total=9089487",
+            "io": "some avg10=0.00 avg60=0.08 avg300=0.09 total=15530611\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9019819"
+          }
+        },
+        {
+          "time": 1792320365.469718,
+          "available_bytes": 18063015936,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5698764800,
+          "fans_rpm": {
+            "Fan 1": 2309.0,
+            "Fan 2": 2499.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.493,
+            "WiFi/BT Module Temp": 52.129,
+            "NAND Flash Temperature": 41.781,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 31.703397,
+          "pressure": {
+            "cpu": "some avg10=22.24 avg60=23.77 avg300=14.62 total=788937228\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.07 avg300=0.73 total=9670547\nfull avg10=0.00 avg60=0.07 avg300=0.70 total=9089487",
+            "io": "some avg10=0.00 avg60=0.07 avg300=0.09 total=15533069\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9021263"
+          }
+        },
+        {
+          "time": 1792320366.4845996,
+          "available_bytes": 18073714688,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5698699264,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2499.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 50.379,
+            "WiFi/BT Module Temp": 53.064,
+            "NAND Flash Temperature": 41.808,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 28.049444,
+          "pressure": {
+            "cpu": "some avg10=22.24 avg60=23.77 avg300=14.62 total=789263168\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.07 avg300=0.73 total=9670547\nfull avg10=0.00 avg60=0.07 avg300=0.70 total=9089487",
+            "io": "some avg10=0.00 avg60=0.07 avg300=0.09 total=15534920\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9021675"
+          }
+        },
+        {
+          "time": 1792320367.4959593,
+          "available_bytes": 18091737088,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5698666496,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2507.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.633,
+            "WiFi/BT Module Temp": 52.129,
+            "NAND Flash Temperature": 41.82,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 30.122169,
+          "pressure": {
+            "cpu": "some avg10=24.01 avg60=24.04 avg300=14.74 total=789580406\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.07 avg300=0.73 total=9670547\nfull avg10=0.00 avg60=0.07 avg300=0.70 total=9089487",
+            "io": "some avg10=0.00 avg60=0.07 avg300=0.09 total=15537778\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9023596"
+          }
+        },
+        {
+          "time": 1792320368.5033996,
+          "available_bytes": 18096193536,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5693784064,
+          "fans_rpm": {
+            "Fan 1": 2312.0,
+            "Fan 2": 2495.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.806,
+            "WiFi/BT Module Temp": 53.08,
+            "NAND Flash Temperature": 41.792,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 30.719816,
+          "pressure": {
+            "cpu": "some avg10=24.01 avg60=24.04 avg300=14.74 total=789882744\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.07 avg300=0.73 total=9670602\nfull avg10=0.00 avg60=0.07 avg300=0.70 total=9089542",
+            "io": "some avg10=0.00 avg60=0.07 avg300=0.09 total=15543745\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9024806"
+          }
+        },
+        {
+          "time": 1792320369.5189505,
+          "available_bytes": 18050318336,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5689262080,
+          "fans_rpm": {
+            "Fan 1": 2323.0,
+            "Fan 2": 2495.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.633,
+            "WiFi/BT Module Temp": 52.516,
+            "NAND Flash Temperature": 41.839,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 29.912088,
+          "pressure": {
+            "cpu": "some avg10=24.55 avg60=24.13 avg300=14.82 total=790130234\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.07 avg300=0.72 total=9672024\nfull avg10=0.00 avg60=0.06 avg300=0.69 total=9090336",
+            "io": "some avg10=0.00 avg60=0.07 avg300=0.09 total=15546733\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9027082"
+          }
+        },
+        {
+          "time": 1792320370.5328846,
+          "available_bytes": 18059427840,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5689196544,
+          "fans_rpm": {
+            "Fan 1": 2319.0,
+            "Fan 2": 2529.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.04,
+            "WiFi/BT Module Temp": 52.129,
+            "NAND Flash Temperature": 41.867,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 33.824539,
+          "pressure": {
+            "cpu": "some avg10=24.55 avg60=24.13 avg300=14.82 total=790488250\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.07 avg300=0.72 total=9672106\nfull avg10=0.00 avg60=0.06 avg300=0.69 total=9090418",
+            "io": "some avg10=0.00 avg60=0.07 avg300=0.09 total=15549336\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9027915"
+          }
+        },
+        {
+          "time": 1792320371.5466502,
+          "available_bytes": 18064490496,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5689131008,
+          "fans_rpm": {
+            "Fan 1": 2319.0,
+            "Fan 2": 2511.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 51.185,
+            "WiFi/BT Module Temp": 52.314,
+            "NAND Flash Temperature": 41.765,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 30.720718,
+          "pressure": {
+            "cpu": "some avg10=26.26 avg60=24.46 avg300=14.95 total=790836212\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.07 avg300=0.72 total=9672106\nfull avg10=0.00 avg60=0.06 avg300=0.69 total=9090418",
+            "io": "some avg10=0.00 avg60=0.07 avg300=0.09 total=15553918\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9030301"
+          }
+        },
+        {
+          "time": 1792320372.5562587,
+          "available_bytes": 18063949824,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5688623104,
+          "fans_rpm": {
+            "Fan 1": 2316.0,
+            "Fan 2": 2507.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.82,
+            "WiFi/BT Module Temp": 52.895,
+            "NAND Flash Temperature": 41.855,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 30.039838,
+          "pressure": {
+            "cpu": "some avg10=26.26 avg60=24.46 avg300=14.95 total=791117502\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.07 avg300=0.72 total=9672138\nfull avg10=0.00 avg60=0.06 avg300=0.69 total=9090450",
+            "io": "some avg10=0.00 avg60=0.07 avg300=0.09 total=15555917\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9030486"
+          }
+        },
+        {
+          "time": 1792320373.5788348,
+          "available_bytes": 18068930560,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5688606720,
+          "fans_rpm": {
+            "Fan 1": 2312.0,
+            "Fan 2": 2507.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 50.169,
+            "WiFi/BT Module Temp": 53.056,
+            "NAND Flash Temperature": 41.792,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 28.713481,
+          "pressure": {
+            "cpu": "some avg10=26.94 avg60=24.64 avg300=15.06 total=791441293\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.06 avg300=0.71 total=9672138\nfull avg10=0.00 avg60=0.06 avg300=0.68 total=9090450",
+            "io": "some avg10=0.00 avg60=0.06 avg300=0.09 total=15559904\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9032104"
+          }
+        },
+        {
+          "time": 1792320374.5873182,
+          "available_bytes": 18159403008,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5688197120,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2485.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 50.379,
+            "WiFi/BT Module Temp": 53.83,
+            "NAND Flash Temperature": 41.82,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 28.899518,
+          "pressure": {
+            "cpu": "some avg10=26.94 avg60=24.64 avg300=15.06 total=791711640\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.06 avg300=0.71 total=9672139\nfull avg10=0.00 avg60=0.06 avg300=0.68 total=9090451",
+            "io": "some avg10=0.00 avg60=0.06 avg300=0.09 total=15561014\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9032285"
+          }
+        },
+        {
+          "time": 1792320375.6110806,
+          "available_bytes": 17958682624,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5687738368,
+          "fans_rpm": {
+            "Fan 1": 2312.0,
+            "Fan 2": 2498.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 50.596,
+            "WiFi/BT Module Temp": 53.241,
+            "NAND Flash Temperature": 41.867,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 29.755105,
+          "pressure": {
+            "cpu": "some avg10=27.13 avg60=24.75 avg300=15.14 total=791995480\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.06 avg300=0.71 total=9672194\nfull avg10=0.00 avg60=0.06 avg300=0.68 total=9090504",
+            "io": "some avg10=0.00 avg60=0.06 avg300=0.09 total=15563489\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9032598"
+          }
+        },
+        {
+          "time": 1792320376.6165109,
+          "available_bytes": 17941774336,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5686706176,
+          "fans_rpm": {
+            "Fan 1": 2308.0,
+            "Fan 2": 2511.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 50.782,
+            "WiFi/BT Module Temp": 53.774,
+            "NAND Flash Temperature": 41.839,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 30.01555,
+          "pressure": {
+            "cpu": "some avg10=27.13 avg60=24.75 avg300=15.14 total=792275494\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.06 avg300=0.71 total=9672259\nfull avg10=0.00 avg60=0.06 avg300=0.68 total=9090554",
+            "io": "some avg10=0.00 avg60=0.06 avg300=0.09 total=15564973\nfull avg10=0.00 avg60=0.00 avg300=0.03 total=9033228"
+          }
+        },
+        {
+          "time": 1792320377.6256962,
+          "available_bytes": 17894440960,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5686607872,
+          "fans_rpm": {
+            "Fan 1": 2319.0,
+            "Fan 2": 2499.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 48.906,
+            "WiFi/BT Module Temp": 53.629,
+            "NAND Flash Temperature": 41.847,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 31.314498,
+          "pressure": {
+            "cpu": "some avg10=26.92 avg60=24.79 avg300=15.22 total=792452444\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.06 avg300=0.70 total=9672259\nfull avg10=0.00 avg60=0.05 avg300=0.67 total=9090554",
+            "io": "some avg10=0.00 avg60=0.06 avg300=0.08 total=15570821\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9036496"
+          }
+        },
+        {
+          "time": 1792320378.6318827,
+          "available_bytes": 17929781248,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5684559872,
+          "fans_rpm": {
+            "Fan 1": 2319.0,
+            "Fan 2": 2503.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 50.967,
+            "WiFi/BT Module Temp": 53.459,
+            "NAND Flash Temperature": 41.949,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 34.662723,
+          "pressure": {
+            "cpu": "some avg10=26.92 avg60=24.79 avg300=15.22 total=792588114\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.06 avg300=0.70 total=9675071\nfull avg10=0.00 avg60=0.05 avg300=0.67 total=9091738",
+            "io": "some avg10=0.00 avg60=0.06 avg300=0.08 total=15571548\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9037214"
+          }
+        },
+        {
+          "time": 1792320379.6520493,
+          "available_bytes": 17796382720,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5682495488,
+          "fans_rpm": {
+            "Fan 1": 2319.0,
+            "Fan 2": 2511.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 50.967,
+            "WiFi/BT Module Temp": 53.62,
+            "NAND Flash Temperature": 41.847,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 33.110691,
+          "pressure": {
+            "cpu": "some avg10=24.58 avg60=24.43 avg300=15.21 total=792840072\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.06 avg300=0.70 total=9675137\nfull avg10=0.00 avg60=0.05 avg300=0.67 total=9091803",
+            "io": "some avg10=0.00 avg60=0.06 avg300=0.08 total=15573912\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9037284"
+          }
+        },
+        {
+          "time": 1792320380.6688175,
+          "available_bytes": 17612161024,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5677891584,
+          "fans_rpm": {
+            "Fan 1": 2308.0,
+            "Fan 2": 2489.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 49.96,
+            "WiFi/BT Module Temp": 53.096,
+            "NAND Flash Temperature": 41.921,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 25.858934,
+          "pressure": {
+            "cpu": "some avg10=24.58 avg60=24.43 avg300=15.21 total=793051253\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.06 avg300=0.70 total=9675483\nfull avg10=0.00 avg60=0.05 avg300=0.67 total=9092149",
+            "io": "some avg10=0.00 avg60=0.06 avg300=0.08 total=15580174\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9038571"
+          }
+        },
+        {
+          "time": 1792320381.6849017,
+          "available_bytes": 17459871744,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5676646400,
+          "fans_rpm": {
+            "Fan 1": 2326.0,
+            "Fan 2": 2524.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 51.935,
+            "WiFi/BT Module Temp": 53.83,
+            "NAND Flash Temperature": 41.976,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 38.507476,
+          "pressure": {
+            "cpu": "some avg10=24.66 avg60=24.45 avg300=15.28 total=793418278\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.05 avg300=0.69 total=9675653\nfull avg10=0.00 avg60=0.05 avg300=0.66 total=9092319",
+            "io": "some avg10=0.00 avg60=0.05 avg300=0.08 total=15584391\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9039112"
+          }
+        },
+        {
+          "time": 1792320382.6960192,
+          "available_bytes": 17564893184,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5676318720,
+          "fans_rpm": {
+            "Fan 1": 2320.0,
+            "Fan 2": 2507.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 40.0,
+            "hwmon4/temp1_input": 38.0,
+            "Charge Regulator Temp": 50.58,
+            "WiFi/BT Module Temp": 54.008,
+            "NAND Flash Temperature": 41.933,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 38.789745,
+          "pressure": {
+            "cpu": "some avg10=24.66 avg60=24.45 avg300=15.28 total=793769316\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.05 avg300=0.69 total=9675679\nfull avg10=0.00 avg60=0.05 avg300=0.66 total=9092345",
+            "io": "some avg10=0.00 avg60=0.05 avg300=0.08 total=15587227\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9040418"
+          }
+        },
+        {
+          "time": 1792320383.707075,
+          "available_bytes": 16940957696,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5629329408,
+          "fans_rpm": {
+            "Fan 1": 2308.0,
+            "Fan 2": 2482.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 50.967,
+            "WiFi/BT Module Temp": 53.645,
+            "NAND Flash Temperature": 41.949,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 35.929286,
+          "pressure": {
+            "cpu": "some avg10=26.35 avg60=24.77 avg300=15.41 total=793897147\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.05 avg300=0.69 total=9679721\nfull avg10=0.00 avg60=0.05 avg300=0.66 total=9094784",
+            "io": "some avg10=0.00 avg60=0.05 avg300=0.08 total=15593118\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9043291"
+          }
+        },
+        {
+          "time": 1792320384.7201266,
+          "available_bytes": 16634953728,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5625970688,
+          "fans_rpm": {
+            "Fan 1": 2323.0,
+            "Fan 2": 2503.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.741,
+            "WiFi/BT Module Temp": 53.983,
+            "NAND Flash Temperature": 41.96,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 34.41349,
+          "pressure": {
+            "cpu": "some avg10=26.35 avg60=24.77 avg300=15.41 total=794046885\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.05 avg300=0.69 total=9680143\nfull avg10=0.00 avg60=0.05 avg300=0.66 total=9095205",
+            "io": "some avg10=0.00 avg60=0.05 avg300=0.08 total=15593553\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9043434"
+          }
+        },
+        {
+          "time": 1792320385.7309804,
+          "available_bytes": 16682598400,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5625118720,
+          "fans_rpm": {
+            "Fan 1": 2342.0,
+            "Fan 2": 2498.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 50.346,
+            "WiFi/BT Module Temp": 53.29,
+            "NAND Flash Temperature": 41.949,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 48.195747,
+          "pressure": {
+            "cpu": "some avg10=23.93 avg60=24.38 avg300=15.39 total=794346844\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.05 avg300=0.68 total=9681534\nfull avg10=0.00 avg60=0.05 avg300=0.65 total=9096361",
+            "io": "some avg10=0.00 avg60=0.05 avg300=0.08 total=15594442\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9043854"
+          }
+        },
+        {
+          "time": 1792320386.749546,
+          "available_bytes": 16553263104,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5624315904,
+          "fans_rpm": {
+            "Fan 1": 2323.0,
+            "Fan 2": 2494.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.75,
+            "WiFi/BT Module Temp": 53.266,
+            "NAND Flash Temperature": 41.988,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 43.057117,
+          "pressure": {
+            "cpu": "some avg10=23.93 avg60=24.38 avg300=15.39 total=794639196\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.05 avg300=0.68 total=9681872\nfull avg10=0.00 avg60=0.05 avg300=0.65 total=9096579",
+            "io": "some avg10=0.00 avg60=0.05 avg300=0.08 total=15597186\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9045830"
+          }
+        },
+        {
+          "time": 1792320387.7592754,
+          "available_bytes": 16577282048,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5623234560,
+          "fans_rpm": {
+            "Fan 1": 2308.0,
+            "Fan 2": 2511.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.161,
+            "WiFi/BT Module Temp": 53.846,
+            "NAND Flash Temperature": 42.035,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 34.856807,
+          "pressure": {
+            "cpu": "some avg10=24.85 avg60=24.53 avg300=15.48 total=794930155\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.05 avg300=0.68 total=9681911\nfull avg10=0.00 avg60=0.04 avg300=0.65 total=9096618",
+            "io": "some avg10=0.00 avg60=0.05 avg300=0.08 total=15599220\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9046186"
+          }
+        },
+        {
+          "time": 1792320388.7684696,
+          "available_bytes": 16833380352,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5622267904,
+          "fans_rpm": {
+            "Fan 1": 2312.0,
+            "Fan 2": 2502.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 49.786,
+            "WiFi/BT Module Temp": 52.903,
+            "NAND Flash Temperature": 42.007,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 36.285877,
+          "pressure": {
+            "cpu": "some avg10=24.85 avg60=24.53 avg300=15.48 total=795256462\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.05 avg300=0.68 total=9681911\nfull avg10=0.00 avg60=0.04 avg300=0.65 total=9096618",
+            "io": "some avg10=0.00 avg60=0.05 avg300=0.08 total=15602172\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9047504"
+          }
+        },
+        {
+          "time": 1792320389.776987,
+          "available_bytes": 17256775680,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5621202944,
+          "fans_rpm": {
+            "Fan 1": 2326.0,
+            "Fan 2": 2507.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.354,
+            "WiFi/BT Module Temp": 53.096,
+            "NAND Flash Temperature": 42.062,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 33.552642,
+          "pressure": {
+            "cpu": "some avg10=25.96 avg60=24.74 avg300=15.59 total=795566427\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.05 avg300=0.67 total=9681911\nfull avg10=0.00 avg60=0.04 avg300=0.64 total=9096618",
+            "io": "some avg10=0.00 avg60=0.05 avg300=0.08 total=15604108\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9047974"
+          }
+        },
+        {
+          "time": 1792320390.7847695,
+          "available_bytes": 17291902976,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5619941376,
+          "fans_rpm": {
+            "Fan 1": 2319.0,
+            "Fan 2": 2507.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 50.387,
+            "WiFi/BT Module Temp": 53.475,
+            "NAND Flash Temperature": 42.062,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 30.246221,
+          "pressure": {
+            "cpu": "some avg10=25.96 avg60=24.74 avg300=15.59 total=795774109\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.05 avg300=0.67 total=9681942\nfull avg10=0.00 avg60=0.04 avg300=0.64 total=9096648",
+            "io": "some avg10=0.00 avg60=0.05 avg300=0.08 total=15605823\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9048123"
+          }
+        },
+        {
+          "time": 1792320391.8003201,
+          "available_bytes": 17295458304,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5617942528,
+          "fans_rpm": {
+            "Fan 1": 2319.0,
+            "Fan 2": 2511.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.741,
+            "WiFi/BT Module Temp": 54.008,
+            "NAND Flash Temperature": 42.089,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 32.013748,
+          "pressure": {
+            "cpu": "some avg10=25.60 avg60=24.72 avg300=15.65 total=795897409\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.04 avg300=0.67 total=9682733\nfull avg10=0.00 avg60=0.04 avg300=0.64 total=9097385",
+            "io": "some avg10=0.00 avg60=0.04 avg300=0.08 total=15607481\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9049391"
+          }
+        },
+        {
+          "time": 1792320392.8141513,
+          "available_bytes": 17347133440,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5617057792,
+          "fans_rpm": {
+            "Fan 1": 2323.0,
+            "Fan 2": 2494.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 50.564,
+            "WiFi/BT Module Temp": 54.725,
+            "NAND Flash Temperature": 42.074,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 34.277282,
+          "pressure": {
+            "cpu": "some avg10=24.95 avg60=24.63 avg300=15.69 total=796213892\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.04 avg300=0.66 total=9683686\nfull avg10=0.00 avg60=0.04 avg300=0.63 total=9098265",
+            "io": "some avg10=0.00 avg60=0.04 avg300=0.08 total=15610897\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9051233"
+          }
+        },
+        {
+          "time": 1792320393.8263934,
+          "available_bytes": 17401675776,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5614993408,
+          "fans_rpm": {
+            "Fan 1": 2308.0,
+            "Fan 2": 2507.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.153,
+            "WiFi/BT Module Temp": 54.588,
+            "NAND Flash Temperature": 42.074,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 34.467796,
+          "pressure": {
+            "cpu": "some avg10=24.95 avg60=24.63 avg300=15.69 total=796518352\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.04 avg300=0.66 total=9684908\nfull avg10=0.00 avg60=0.04 avg300=0.63 total=9098962",
+            "io": "some avg10=0.00 avg60=0.04 avg300=0.08 total=15618205\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9055659"
+          }
+        },
+        {
+          "time": 1792320394.8369334,
+          "available_bytes": 17443225600,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5614764032,
+          "fans_rpm": {
+            "Fan 1": 2319.0,
+            "Fan 2": 2519.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 50.959,
+            "WiFi/BT Module Temp": 54.346,
+            "NAND Flash Temperature": 42.191,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 30.411764,
+          "pressure": {
+            "cpu": "some avg10=26.05 avg60=24.84 avg300=15.79 total=796847848\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.04 avg300=0.66 total=9684908\nfull avg10=0.00 avg60=0.04 avg300=0.63 total=9098962",
+            "io": "some avg10=0.00 avg60=0.04 avg300=0.08 total=15622048\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9056795"
+          }
+        },
+        {
+          "time": 1792320395.8461294,
+          "available_bytes": 17304879104,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5613780992,
+          "fans_rpm": {
+            "Fan 1": 2311.0,
+            "Fan 2": 2489.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.548,
+            "WiFi/BT Module Temp": 54.572,
+            "NAND Flash Temperature": 42.027,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 29.061727,
+          "pressure": {
+            "cpu": "some avg10=26.05 avg60=24.84 avg300=15.79 total=797013497\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.04 avg300=0.66 total=9685058\nfull avg10=0.00 avg60=0.04 avg300=0.63 total=9099112",
+            "io": "some avg10=0.00 avg60=0.04 avg300=0.08 total=15623203\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9056819"
+          }
+        },
+        {
+          "time": 1792320396.8669837,
+          "available_bytes": 17306877952,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5613518848,
+          "fans_rpm": {
+            "Fan 1": 2308.0,
+            "Fan 2": 2493.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.354,
+            "WiFi/BT Module Temp": 53.854,
+            "NAND Flash Temperature": 42.175,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 28.728469,
+          "pressure": {
+            "cpu": "some avg10=24.22 avg60=24.55 avg300=15.80 total=797178765\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.04 avg300=0.65 total=9685145\nfull avg10=0.00 avg60=0.04 avg300=0.62 total=9099198",
+            "io": "some avg10=0.00 avg60=0.04 avg300=0.07 total=15624706\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9057840"
+          }
+        },
+        {
+          "time": 1792320397.878887,
+          "available_bytes": 17205395456,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5612568576,
+          "fans_rpm": {
+            "Fan 1": 2319.0,
+            "Fan 2": 2498.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.741,
+            "WiFi/BT Module Temp": 53.459,
+            "NAND Flash Temperature": 42.144,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 39.200511,
+          "pressure": {
+            "cpu": "some avg10=24.22 avg60=24.55 avg300=15.80 total=797529818\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.04 avg300=0.65 total=9685167\nfull avg10=0.00 avg60=0.04 avg300=0.62 total=9099221",
+            "io": "some avg10=0.00 avg60=0.04 avg300=0.07 total=15624864\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9057996"
+          }
+        },
+        {
+          "time": 1792320398.8947723,
+          "available_bytes": 17051729920,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5610749952,
+          "fans_rpm": {
+            "Fan 1": 2334.0,
+            "Fan 2": 2485.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.346,
+            "WiFi/BT Module Temp": 54.241,
+            "NAND Flash Temperature": 42.144,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 36.385662,
+          "pressure": {
+            "cpu": "some avg10=23.64 avg60=24.43 avg300=15.83 total=797627434\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.04 avg300=0.65 total=9685196\nfull avg10=0.00 avg60=0.03 avg300=0.62 total=9099249",
+            "io": "some avg10=0.00 avg60=0.04 avg300=0.07 total=15625447\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9058545"
+          }
+        },
+        {
+          "time": 1792320399.9089196,
+          "available_bytes": 16930914304,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5610536960,
+          "fans_rpm": {
+            "Fan 1": 2315.0,
+            "Fan 2": 2511.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 53.088,
+            "WiFi/BT Module Temp": 54.403,
+            "NAND Flash Temperature": 42.156,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 43.061786,
+          "pressure": {
+            "cpu": "some avg10=23.64 avg60=24.43 avg300=15.83 total=797970962\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.04 avg300=0.65 total=9685196\nfull avg10=0.00 avg60=0.03 avg300=0.62 total=9099249",
+            "io": "some avg10=0.00 avg60=0.04 avg300=0.07 total=15626065\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9058631"
+          }
+        },
+        {
+          "time": 1792320400.9222095,
+          "available_bytes": 17137909760,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5610192896,
+          "fans_rpm": {
+            "Fan 1": 2322.0,
+            "Fan 2": 2515.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.346,
+            "WiFi/BT Module Temp": 54.387,
+            "NAND Flash Temperature": 42.144,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 34.890727,
+          "pressure": {
+            "cpu": "some avg10=24.79 avg60=24.61 avg300=15.93 total=798244736\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.04 avg300=0.64 total=9685196\nfull avg10=0.00 avg60=0.03 avg300=0.62 total=9099249",
+            "io": "some avg10=0.00 avg60=0.04 avg300=0.07 total=15626531\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9059095"
+          }
+        },
+        {
+          "time": 1792320401.9336889,
+          "available_bytes": 16934617088,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5609537536,
+          "fans_rpm": {
+            "Fan 1": 2322.0,
+            "Fan 2": 2494.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.548,
+            "WiFi/BT Module Temp": 54.758,
+            "NAND Flash Temperature": 42.14,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 36.531352,
+          "pressure": {
+            "cpu": "some avg10=24.79 avg60=24.61 avg300=15.93 total=798522795\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.04 avg300=0.64 total=9686947\nfull avg10=0.00 avg60=0.03 avg300=0.62 total=9100466",
+            "io": "some avg10=0.00 avg60=0.04 avg300=0.07 total=15634962\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9065243"
+          }
+        },
+        {
+          "time": 1792320402.9433138,
+          "available_bytes": 16774578176,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5609193472,
+          "fans_rpm": {
+            "Fan 1": 2308.0,
+            "Fan 2": 2480.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.556,
+            "WiFi/BT Module Temp": 54.782,
+            "NAND Flash Temperature": 42.23,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 34.451103,
+          "pressure": {
+            "cpu": "some avg10=25.19 avg60=24.69 avg300=16.00 total=798812174\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.03 avg300=0.64 total=9686947\nfull avg10=0.00 avg60=0.03 avg300=0.61 total=9100466",
+            "io": "some avg10=0.00 avg60=0.03 avg300=0.07 total=15636008\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9065266"
+          }
+        },
+        {
+          "time": 1792320403.9557407,
+          "available_bytes": 16895950848,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5608964096,
+          "fans_rpm": {
+            "Fan 1": 2308.0,
+            "Fan 2": 2489.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.935,
+            "WiFi/BT Module Temp": 55.384,
+            "NAND Flash Temperature": 42.203,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 34.798477,
+          "pressure": {
+            "cpu": "some avg10=25.19 avg60=24.69 avg300=16.00 total=799186090\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.03 avg300=0.64 total=9687204\nfull avg10=0.00 avg60=0.03 avg300=0.61 total=9100724",
+            "io": "some avg10=0.00 avg60=0.03 avg300=0.07 total=15638429\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9065621"
+          }
+        },
+        {
+          "time": 1792320404.9668114,
+          "available_bytes": 16794107904,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5608587264,
+          "fans_rpm": {
+            "Fan 1": 2337.0,
+            "Fan 2": 2489.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 52.129,
+            "WiFi/BT Module Temp": 55.586,
+            "NAND Flash Temperature": 42.257,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 34.91423,
+          "pressure": {
+            "cpu": "some avg10=26.79 avg60=25.00 avg300=16.13 total=799486558\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.03 avg300=0.63 total=9687204\nfull avg10=0.00 avg60=0.03 avg300=0.61 total=9100724",
+            "io": "some avg10=0.00 avg60=0.03 avg300=0.07 total=15642395\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9066989"
+          }
+        },
+        {
+          "time": 1792320405.9808657,
+          "available_bytes": 16803790848,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5608259584,
+          "fans_rpm": {
+            "Fan 1": 2318.0,
+            "Fan 2": 2498.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 52.322,
+            "WiFi/BT Module Temp": 55.115,
+            "NAND Flash Temperature": 42.242,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 32.762161,
+          "pressure": {
+            "cpu": "some avg10=26.79 avg60=25.00 avg300=16.13 total=799759640\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.03 avg300=0.63 total=9687385\nfull avg10=0.00 avg60=0.03 avg300=0.61 total=9100884",
+            "io": "some avg10=0.00 avg60=0.03 avg300=0.07 total=15646409\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9069570"
+          }
+        },
+        {
+          "time": 1792320406.9930475,
+          "available_bytes": 17200152576,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5607604224,
+          "fans_rpm": {
+            "Fan 1": 2307.0,
+            "Fan 2": 2510.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.354,
+            "WiFi/BT Module Temp": 54.935,
+            "NAND Flash Temperature": 42.257,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 28.912088,
+          "pressure": {
+            "cpu": "some avg10=27.00 avg60=25.09 avg300=16.21 total=800061566\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.03 avg300=0.63 total=9687461\nfull avg10=0.00 avg60=0.03 avg300=0.60 total=9100960",
+            "io": "some avg10=0.00 avg60=0.03 avg300=0.07 total=15648987\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9070245"
+          }
+        },
+        {
+          "time": 1792320408.0068166,
+          "available_bytes": 17607426048,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5606948864,
+          "fans_rpm": {
+            "Fan 1": 2318.0,
+            "Fan 2": 2493.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 52.129,
+            "WiFi/BT Module Temp": 54.935,
+            "NAND Flash Temperature": 42.222,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 29.838287,
+          "pressure": {
+            "cpu": "some avg10=27.00 avg60=25.09 avg300=16.21 total=800363129\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.03 avg300=0.63 total=9687461\nfull avg10=0.00 avg60=0.03 avg300=0.60 total=9100960",
+            "io": "some avg10=0.00 avg60=0.03 avg300=0.07 total=15657123\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9073815"
+          }
+        },
+        {
+          "time": 1792320409.016447,
+          "available_bytes": 17619206144,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5606309888,
+          "fans_rpm": {
+            "Fan 1": 2315.0,
+            "Fan 2": 2528.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.741,
+            "WiFi/BT Module Temp": 54.604,
+            "NAND Flash Temperature": 42.312,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 31.057067,
+          "pressure": {
+            "cpu": "some avg10=27.55 avg60=25.26 avg300=16.30 total=800691990\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.03 avg300=0.62 total=9687636\nfull avg10=0.00 avg60=0.03 avg300=0.60 total=9101105",
+            "io": "some avg10=0.00 avg60=0.03 avg300=0.07 total=15660223\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9075346"
+          }
+        },
+        {
+          "time": 1792320410.0253563,
+          "available_bytes": 17630445568,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5605916672,
+          "fans_rpm": {
+            "Fan 1": 2333.0,
+            "Fan 2": 2481.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.935,
+            "WiFi/BT Module Temp": 54.403,
+            "NAND Flash Temperature": 42.312,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 29.968667,
+          "pressure": {
+            "cpu": "some avg10=27.55 avg60=25.26 avg300=16.30 total=800980956\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.03 avg300=0.62 total=9687709\nfull avg10=0.00 avg60=0.03 avg300=0.60 total=9101179",
+            "io": "some avg10=0.00 avg60=0.03 avg300=0.07 total=15663268\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9076747"
+          }
+        },
+        {
+          "time": 1792320411.0378375,
+          "available_bytes": 17652334592,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5605490688,
+          "fans_rpm": {
+            "Fan 1": 2315.0,
+            "Fan 2": 2523.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 52.524,
+            "WiFi/BT Module Temp": 54.83,
+            "NAND Flash Temperature": 42.386,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 30.419103,
+          "pressure": {
+            "cpu": "some avg10=26.00 avg60=25.05 avg300=16.32 total=801105561\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.03 avg300=0.62 total=9687721\nfull avg10=0.00 avg60=0.03 avg300=0.59 total=9101190",
+            "io": "some avg10=0.00 avg60=0.03 avg300=0.07 total=15663439\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9076916"
+          }
+        },
+        {
+          "time": 1792320412.0502896,
+          "available_bytes": 17664655360,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5605097472,
+          "fans_rpm": {
+            "Fan 1": 2314.0,
+            "Fan 2": 2468.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 52.137,
+            "WiFi/BT Module Temp": 54.967,
+            "NAND Flash Temperature": 42.324,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 32.059204,
+          "pressure": {
+            "cpu": "some avg10=26.00 avg60=25.05 avg300=16.32 total=801411127\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.03 avg300=0.62 total=9687721\nfull avg10=0.00 avg60=0.03 avg300=0.59 total=9101190",
+            "io": "some avg10=0.00 avg60=0.03 avg300=0.07 total=15667183\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9077419"
+          }
+        },
+        {
+          "time": 1792320413.0622046,
+          "available_bytes": 17677598720,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5604868096,
+          "fans_rpm": {
+            "Fan 1": 2300.0,
+            "Fan 2": 2528.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 52.516,
+            "WiFi/BT Module Temp": 54.83,
+            "NAND Flash Temperature": 42.351,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 29.575441,
+          "pressure": {
+            "cpu": "some avg10=27.08 avg60=25.28 avg300=16.43 total=801746572\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.03 avg300=0.62 total=9687721\nfull avg10=0.00 avg60=0.02 avg300=0.59 total=9101190",
+            "io": "some avg10=0.00 avg60=0.03 avg300=0.07 total=15667241\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9077449"
+          }
+        },
+        {
+          "time": 1792320414.0713942,
+          "available_bytes": 17634000896,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5604605952,
+          "fans_rpm": {
+            "Fan 1": 2307.0,
+            "Fan 2": 2506.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 52.137,
+            "WiFi/BT Module Temp": 54.427,
+            "NAND Flash Temperature": 42.324,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 30.298402,
+          "pressure": {
+            "cpu": "some avg10=27.08 avg60=25.28 avg300=16.43 total=802003164\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.03 avg300=0.62 total=9687724\nfull avg10=0.00 avg60=0.02 avg300=0.59 total=9101193",
+            "io": "some avg10=0.00 avg60=0.03 avg300=0.07 total=15669320\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9077449"
+          }
+        },
+        {
+          "time": 1792320415.086399,
+          "available_bytes": 17655300096,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5604163584,
+          "fans_rpm": {
+            "Fan 1": 2318.0,
+            "Fan 2": 2532.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.54,
+            "WiFi/BT Module Temp": 54.798,
+            "NAND Flash Temperature": 42.351,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 30.963172,
+          "pressure": {
+            "cpu": "some avg10=26.16 avg60=25.17 avg300=16.47 total=802207133\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.02 avg300=0.61 total=9687731\nfull avg10=0.00 avg60=0.02 avg300=0.58 total=9101200",
+            "io": "some avg10=0.00 avg60=0.02 avg300=0.07 total=15671231\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9077949"
+          }
+        },
+        {
+          "time": 1792320416.100248,
+          "available_bytes": 17667129344,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5604098048,
+          "fans_rpm": {
+            "Fan 1": 2322.0,
+            "Fan 2": 2519.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.346,
+            "WiFi/BT Module Temp": 55.009,
+            "NAND Flash Temperature": 42.398,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 35.038639,
+          "pressure": {
+            "cpu": "some avg10=26.16 avg60=25.17 avg300=16.47 total=802494811\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.02 avg300=0.61 total=9687731\nfull avg10=0.00 avg60=0.02 avg300=0.58 total=9101200",
+            "io": "some avg10=0.00 avg60=0.02 avg300=0.07 total=15673678\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9078875"
+          }
+        },
+        {
+          "time": 1792320417.1156101,
+          "available_bytes": 17679007744,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5603524608,
+          "fans_rpm": {
+            "Fan 1": 2341.0,
+            "Fan 2": 2510.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.346,
+            "WiFi/BT Module Temp": 55.009,
+            "NAND Flash Temperature": 42.425,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 30.889965,
+          "pressure": {
+            "cpu": "some avg10=26.86 avg60=25.33 avg300=16.56 total=802828869\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.02 avg300=0.61 total=9688649\nfull avg10=0.00 avg60=0.02 avg300=0.58 total=9101290",
+            "io": "some avg10=0.00 avg60=0.02 avg300=0.07 total=15677260\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9080059"
+          }
+        },
+        {
+          "time": 1792320418.1226413,
+          "available_bytes": 17693982720,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5603524608,
+          "fans_rpm": {
+            "Fan 1": 2340.0,
+            "Fan 2": 2527.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 49.94,
+            "WiFi/BT Module Temp": 54.983,
+            "NAND Flash Temperature": 42.378,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 30.320116,
+          "pressure": {
+            "cpu": "some avg10=26.86 avg60=25.33 avg300=16.56 total=803006703\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.02 avg300=0.61 total=9688649\nfull avg10=0.00 avg60=0.02 avg300=0.58 total=9101290",
+            "io": "some avg10=0.00 avg60=0.02 avg300=0.07 total=15677729\nfull avg10=0.00 avg60=0.00 avg300=0.02 total=9080343"
+          }
+        },
+        {
+          "time": 1792320419.133818,
+          "available_bytes": 17482203136,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5603344384,
+          "fans_rpm": {
+            "Fan 1": 2318.0,
+            "Fan 2": 2527.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 51.935,
+            "WiFi/BT Module Temp": 54.83,
+            "NAND Flash Temperature": 42.425,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 31.511978,
+          "pressure": {
+            "cpu": "some avg10=24.53 avg60=24.96 avg300=16.54 total=803100302\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.02 avg300=0.60 total=9688649\nfull avg10=0.00 avg60=0.02 avg300=0.58 total=9101290",
+            "io": "some avg10=0.00 avg60=0.02 avg300=0.06 total=15678771\nfull avg10=0.00 avg60=0.00 avg300=0.01 total=9081025"
+          }
+        },
+        {
+          "time": 1792320420.1462648,
+          "available_bytes": 17534697472,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5600329728,
+          "fans_rpm": {
+            "Fan 1": 2344.0,
+            "Fan 2": 2506.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 52.895,
+            "WiFi/BT Module Temp": 55.144,
+            "NAND Flash Temperature": 42.453,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 39.785648,
+          "pressure": {
+            "cpu": "some avg10=24.53 avg60=24.96 avg300=16.54 total=803196975\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.02 avg300=0.60 total=9688698\nfull avg10=0.00 avg60=0.02 avg300=0.58 total=9101339",
+            "io": "some avg10=0.00 avg60=0.02 avg300=0.06 total=15679697\nfull avg10=0.00 avg60=0.00 avg300=0.01 total=9081564"
+          }
+        },
+        {
+          "time": 1792320420.5544205,
+          "available_bytes": 17535008768,
+          "total_bytes": 33223213056,
+          "swap_used_bytes": 5566267392,
+          "fans_rpm": {
+            "Fan 1": 2340.0,
+            "Fan 2": 2515.0
+          },
+          "temperatures_c": {
+            "hwmon8/temp1_input": 40.0,
+            "hwmon6/temp1_input": 39.0,
+            "hwmon4/temp1_input": 37.0,
+            "Charge Regulator Temp": 52.33,
+            "WiFi/BT Module Temp": 55.634,
+            "NAND Flash Temperature": 42.453,
+            "Battery Hotspot": 35.899,
+            "temp": 35.9,
+            "hwmon9/temp1_input": 39.0,
+            "hwmon7/temp1_input": 39.0,
+            "hwmon5/temp1_input": 40.0
+          },
+          "power_w": 39.785648,
+          "pressure": {
+            "cpu": "some avg10=24.53 avg60=24.96 avg300=16.54 total=803312477\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+            "memory": "some avg10=0.00 avg60=0.02 avg300=0.60 total=9701000\nfull avg10=0.00 avg60=0.02 avg300=0.58 total=9108478",
+            "io": "some avg10=0.00 avg60=0.02 avg300=0.06 total=15682635\nfull avg10=0.00 avg60=0.00 avg300=0.01 total=9083494"
+          }
+        }
+      ],
+      "elapsed_s": 129.94638330699945,
+      "policy_passed": true
     }
   ],
   "digests": {

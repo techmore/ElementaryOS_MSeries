@@ -108,6 +108,126 @@
     {
       "time": 1792318444.931056,
       "message": "QUIET POLICY STOP: fan RPM exceeds the quiet profile limit"
+    },
+    {
+      "time": 1792319656.170753,
+      "message": "QUIET POLICY: baseline 2643 RPM; pause 2700; resume 2600; hard stop 3500"
+    },
+    {
+      "time": 1792319669.309957,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792319699.528239,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792319702.546421,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792319732.721246,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792319735.740564,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792319765.932721,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792319768.953828,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792319799.152514,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792319802.169585,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792319832.350781,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792319835.365088,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792319865.594129,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792319868.611252,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792319898.830076,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792319901.84669,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792319934.065452,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792319937.082654,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792320184.125165,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792320187.15659,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792320217.522626,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792320220.553973,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792320250.966788,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792320254.005192,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792320269.195597,
+      "message": "QUIET COOLING: resuming owned model"
+    },
+    {
+      "time": 1792320457.483358,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792320487.835206,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792320490.868216,
+      "message": "QUIET COOLING: pausing owned model submissions"
+    },
+    {
+      "time": 1792320521.200578,
+      "message": "QUIET COOLING: resuming owned model for a bounded burst"
+    },
+    {
+      "time": 1792320524.246711,
+      "message": "QUIET COOLING: pausing owned model submissions"
     }
   ],
   "model_cases": [
@@ -124,6 +244,20 @@
       "quality_outcome": true,
       "approx_cooling_paused_s": 0,
       "elapsed_s": 12.8529614400004
+    },
+    {
+      "case": "browser-calendar-mail",
+      "repeat": 2,
+      "quality_outcome": true,
+      "approx_cooling_paused_s": 0,
+      "elapsed_s": 129.94638330699945
+    },
+    {
+      "case": "browser-calendar-mail",
+      "repeat": 2,
+      "quality_outcome": null,
+      "approx_cooling_paused_s": 0,
+      "elapsed_s": 0.8568802609997874
     }
   ]
 }
