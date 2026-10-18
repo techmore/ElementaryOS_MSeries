@@ -1,5 +1,14 @@
 # OS 9 implementation / Claude Code handoff
 
+## RepoBar contribution graph, panel marks, instant open — 2026-10-18 (Claude Code)
+
+Dashboard gains a **Contributions** card (GitHub's contribution calendar: as many weeks as fit, newest right, shaded
+from the system accent; hover names the day and count; click opens the profile; "N this week · N this year").
+Setting `showContributions` (default on; RepoBar Settings → Dashboard). Helper adds `contributions` (one GraphQL
+call, ~8 KB). Panel item shows the pull request and issue marks instead of "PR"/"issues" text. The menu now draws the
+cached snapshot immediately at startup instead of "Loading repositories…" while a refresh (~15 s) runs. Rendered
+headless light/dark and with the owner's real data; deployed without restart. **Unverified:** live panel until reload.
+
 ## RepoBar For You, CI notifications and GitHub marks — 2026-10-18 (Claude Code)
 
 Dashboard leads with a **For You** card (pull requests waiting on your review, issues assigned to you; hidden when

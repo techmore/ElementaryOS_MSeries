@@ -73,6 +73,7 @@ DEFAULT_SETTINGS = {
     "localRoot": "",
     "localDepth": 4,
     "notifyCi": True,
+    "showContributions": True,
     "repoStates": {},
 }
 REPO_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
@@ -275,6 +276,7 @@ def fetch_snapshot() -> dict:
         })
     normalized.sort(key=lambda item: item["updatedAt"], reverse=True)
     for_you = _for_you()
+    contributions = _contributions()
     try:
         rate_limit, rate_fetched_at = _api_json("rate_limit")
         rate_error = ""
@@ -282,7 +284,8 @@ def fetch_snapshot() -> dict:
         rate_limit, rate_fetched_at, rate_error = {}, 0, str(exc)
     return {"schemaVersion": 1, "account": login, "host": _hostname(), "fetchedAt": now,
             "rateFetchedAt": rate_fetched_at, "rateLimits": rate_limit, "rateError": rate_error,
-            "settings": settings, "stale": False, "forYou": for_you, "repos": normalized}
+            "settings": settings, "stale": False, "forYou": for_you,
+            "contributions": contributions, "repos": normalized}
 
 
 FOR_YOU_QUERY = """{
@@ -295,6 +298,27 @@ FOR_YOU_QUERY = """{
     nodes { ... on Issue { title number url updatedAt repository { nameWithOwner } } }
   }
 }"""
+
+
+CONTRIBUTIONS_QUERY = """{
+  viewer { contributionsCollection { contributionCalendar {
+    totalContributions
+    weeks { contributionDays { date contributionCount contributionLevel } }
+  } } }
+}"""
+LEVELS = {"NONE": 0, "FIRST_QUARTILE": 1, "SECOND_QUARTILE": 2, "THIRD_QUARTILE": 3, "FOURTH_QUARTILE": 4}
+
+
+def _contributions() -> dict:
+    """The viewer's contribution calendar for the past year, as weeks of [date, count, level 0-4] days."""
+    try:
+        calendar = ((((_graphql(CONTRIBUTIONS_QUERY).get("data") or {}).get("viewer") or {})
+                     .get("contributionsCollection") or {}).get("contributionCalendar") or {})
+    except RuntimeError:
+        return {}
+    weeks = [[[day.get("date", ""), int(day.get("contributionCount") or 0), LEVELS.get(day.get("contributionLevel"), 0)]
+              for day in week.get("contributionDays") or []] for week in calendar.get("weeks") or []]
+    return {"total": int(calendar.get("totalContributions") or 0), "weeks": weeks} if weeks else {}
 
 
 def _for_you() -> dict:
@@ -651,10 +675,11 @@ def _settings_set(key: str, value: str) -> dict:
         if value not in {"activity", "issues", "prs", "stars", "repo", "pinned"}:
             raise RuntimeError("menu-sort must be activity, issues, prs, stars, repo, or pinned")
         settings["menuSort"] = value
-    elif normalized in {"show-forks", "show-archived", "notify-ci"}:
+    elif normalized in {"show-forks", "show-archived", "notify-ci", "show-contributions"}:
         if value.lower() not in {"true", "false"}:
             raise RuntimeError(f"{normalized} must be true or false")
-        member = {"show-forks": "showForks", "show-archived": "showArchived", "notify-ci": "notifyCi"}[normalized]
+        member = {"show-forks": "showForks", "show-archived": "showArchived", "notify-ci": "notifyCi",
+                  "show-contributions": "showContributions"}[normalized]
         settings[member] = value.lower() == "true"
     elif normalized == "activity-scope":
         if value not in {"all", "my"}:
@@ -677,7 +702,7 @@ def _settings_set(key: str, value: str) -> dict:
                                                         "menu-sort": "menuSort", "show-forks": "showForks",
                                                         "show-archived": "showArchived", "activity-scope": "activityScope",
                                                         "local-root": "localRoot", "local-depth": "localDepth",
-                                                        "notify-ci": "notifyCi"}.get(normalized, normalized))}
+                                                        "notify-ci": "notifyCi", "show-contributions": "showContributions"}.get(normalized, normalized))}
 
 
 def _auth_status() -> dict:
