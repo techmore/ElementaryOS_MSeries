@@ -98,7 +98,7 @@ namespace MSeries {
         public static QuotaEta for_entry (Json.Object entry, bool stale, int64 now_unix) {
             var selected = new QuotaEta ();
             bool unknown = false;
-            var windows = entry.get_array_member ("windows");
+            var windows = JsonBoundary.array (entry, "windows");
             if (windows == null) return selected;
             for (uint i = 0; i < windows.get_length (); i++) {
                 var eta = from_window (windows.get_object_element (i), stale, now_unix);

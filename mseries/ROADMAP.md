@@ -1,5 +1,25 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## CodexBar defensive data audit — 2026-10-18
+
+Audited the native indicator's delayed callbacks, async parameter ownership, JSON ingress/rendering,
+widget/JSON references, helper process targeting and polling guards. Generated C confirms the remaining
+string captures and post-yield dialog titles are copied; no additional dangling-array use was found.
+The concrete unsafe boundary was nested helper/snapshot data: null session/account/window elements and
+wrong scalar types reached native renderers. Added shared `JsonBoundary` validation at every external
+JSON ingress and checked optional getters in the indicator, presentation and quota code. Rejects wrong
+collection elements/types, excessive depth (>24) and traversal (>20,000 nodes), while preserving nullable
+optional fields and unknown keys. No extra polling. Claude Switch now also requires a successful helper
+exit, rather than trusting an `ok:true` reply from a failed process.
+
+Verified: old indicator aborts under fatal-critical ingestion probe (`build_session: session != NULL`);
+new code rejects seven malformed snapshot replies, tolerates malformed helper collections, and recovers
+on valid data with no GLib criticals. Five Switch interactions include Claude `ok:true` plus exit 1.
+Twelve native Meson targets and `bash mseries/check-codexbar-port.sh` pass. Upstream pin stays v0.77.0.
+Routine deploy stages the native module without reloading Wingpanel; changes load at next login.
+No real sign-in or account switch exercised. Follow-up: owner smoke-test after next login; native code
+still shares Wingpanel's process, so regression tests reduce risk rather than providing crash isolation.
+
 ## English streaming: measured CPU, MLX GPU and native ANE — 2026-10-18
 
 [Completed benchmark and upstream audit](dictation/REALTIME-ENGLISH.md): Nemotron160
