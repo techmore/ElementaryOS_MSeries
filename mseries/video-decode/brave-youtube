@@ -29,22 +29,35 @@ args+=(--dir "$runtime")
 for s in "${WAYLAND_DISPLAY:-wayland-0}" pipewire-0 pulse/native; do
   [[ -e $runtime/$s ]] && { [[ $s == pulse/native ]] && args+=(--dir "$runtime/pulse"); args+=(--bind "$runtime/$s" "$runtime/$s"); }
 done
-[[ -d /usr/share/fonts ]] || true
+# Passkey QR code (hybrid/caBLE) needs Bluetooth through BlueZ on the system bus. Expose ONLY org.bluez via a
+# filtering proxy, never the raw system bus.
+sysbus="$runtime/brave-youtube-sysbus"
+if command -v xdg-dbus-proxy >/dev/null && [[ -S /run/dbus/system_bus_socket ]]; then
+  rm -f "$sysbus"
+  xdg-dbus-proxy unix:path=/run/dbus/system_bus_socket "$sysbus" --filter --talk=org.bluez &
+  proxy_pid=$!
+  trap 'kill $proxy_pid 2>/dev/null; rm -f "$sysbus"' EXIT
+  for _ in $(seq 1 50); do [[ -S $sysbus ]] && break; sleep 0.1; done
+  args+=(--dir /run/dbus --bind "$sysbus" /run/dbus/system_bus_socket
+         --setenv DBUS_SYSTEM_BUS_ADDRESS unix:path=/run/dbus/system_bus_socket)
+fi
 
 if [[ ${1:-} == --probe ]]; then
-  exec bwrap "${args[@]}" /bin/bash -c 'echo "inside container: HOME contents:"; ls -A "$HOME" | head; echo "devices:"; ls /dev/dri /dev/media* /dev/video* 2>&1 | tr "\n" " "; echo; echo "ssh visible? $(ls -d $HOME/.ssh 2>&1 | head -1)"; vainfo 2>&1 | grep -E "Driver|VAProfile(H264High|HEVCMain10|VP9Profile0)"; echo "dns: $(getent hosts www.youtube.com | head -1)"'
+  bwrap "${args[@]}" /bin/bash -c 'echo "inside container: HOME contents:"; ls -A "$HOME" | head; echo "devices:"; ls /dev/dri /dev/media* /dev/video* 2>&1 | tr "\n" " "; echo; echo "ssh visible? $(ls -d $HOME/.ssh 2>&1 | head -1)"; vainfo 2>&1 | grep -E "Driver|VAProfile(H264High|HEVCMain10|VP9Profile0)"; echo "dns: $(getent hosts www.youtube.com | head -1)"; echo "bluez via proxy: $(busctl --system tree org.bluez 2>&1 | head -2 | tr "\n" " ")"; echo "other bus names blocked: $(busctl --system list 2>&1 | head -3 | tr "\n" " ")"'
+  exit 0
 fi
 
 if [[ ${1:-} == --test ]]; then   # headless capability + playback check against $profile/test/t.html (no window)
-  exec timeout 60 bwrap "${args[@]}" "$brave" --headless=new --no-sandbox --disable-gpu-sandbox \
+  timeout 60 bwrap "${args[@]}" "$brave" --headless=new --no-sandbox --disable-gpu-sandbox \
     --user-data-dir="$profile" --enable-features=AcceleratedVideoDecodeLinux,AcceleratedVideoDecodeLinuxGL,VaapiIgnoreDriverChecks \
     --ignore-gpu-blocklist --use-gl=angle --use-angle=gl-egl --no-first-run --autoplay-policy=no-user-gesture-required \
     --enable-logging=stderr --v=0 --vmodule='*vaapi*=2,*v4l2*=2,*video_decode_accelerator*=2' \
     --virtual-time-budget=15000 --dump-dom "file://$profile/test/t.html"
+  exit 0
 fi
 
 flags=(--user-data-dir="$profile" --no-sandbox --ozone-platform=wayland
   --enable-features=AcceleratedVideoDecodeLinux,AcceleratedVideoDecodeLinuxGL,VaapiIgnoreDriverChecks
   --ignore-gpu-blocklist --no-first-run --no-default-browser-check --disable-breakpad --test-type)   # --test-type hides the "unsupported flag: --no-sandbox" bar; the bwrap container is the sandbox
 url="${1:-https://www.youtube.com}"
-exec bwrap "${args[@]}" "$brave" "${flags[@]}" --app="$url"
+bwrap "${args[@]}" "$brave" "${flags[@]}" --app="$url"
