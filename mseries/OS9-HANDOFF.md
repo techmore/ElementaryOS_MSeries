@@ -2766,3 +2766,9 @@ Owner reported Command-hover did not work. This desktop uses `ctrl:swap_lwin_lct
 Battery menu now includes **Show Watts in Menu Bar**, alongside Show Percentage. `panel-power-watts-toggle.patch` adds a shared per-user preference in `~/.config/mseries/battery-meter.ini`, enabled by default; binding it to the watts revealer visibility keeps it hidden across sensor updates and restores the latest reading when re-enabled. `install-battery-eta.sh` applies the third patch; no system GSettings schemas are changed.
 
 Verified: both full release Meson/Ninja builds; installer bash syntax; GTK harness for whole-display hover, leave and unmap transitions; battery switch binding, immediate hide/show, hidden state across fresh readings, saved-off reload in a second process. Both installers ran on the desktop; power restart passed the repair script's survival check. Final network build/reinstall and panel survival verified. Live hover and switch by eye remain for the owner. Changes committed/pushed on the dedicated network-panel-compact branch because the shared checkout branch has divergent remote history; unrelated working files are preserved.
+
+## Ethernet panel icon: recognizable socket — 2026-10-18
+
+Owner found elementary's connected Ethernet glyph (`<…>`) unrecognizable. `network-ethernet-icon.patch` replaces the bundled 16/24px connected wired assets with a monochrome Ethernet socket/contact glyph and preserves a padlock on the secure/VPN variant. Icon names, network-state selection and Wi-Fi/cellular assets are unchanged. The installer applies the new patch after the compact panel patch; image payload already includes all patches. New vector artwork is CC0-1.0, attributed in the SVG headers.
+
+Verified: full network module rebuild; connected and VPN assets rendered through GdkPixbuf and visually inspected; installer applied the full pinned patch series and installed/reloaded Wingpanel. Live panel appearance by eye remains for the owner.

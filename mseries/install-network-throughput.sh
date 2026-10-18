@@ -59,6 +59,7 @@ git -C "$source_dir" apply "$repo/mseries/patches/network-null-devices.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/network-panel-speed.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/network-saturation.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/network-panel-compact.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/network-ethernet-icon.patch"
 git -C "$source_dir" apply \
   --include=data/Indicator.css \
   --include=src/Widgets/UsageWidget.vala \
