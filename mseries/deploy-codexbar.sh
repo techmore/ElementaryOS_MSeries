@@ -41,6 +41,7 @@ if pgrep -f 'codexbar-linux --background' >/dev/null; then
   sleep 2
 fi
 setsid -f "$HOME/.local/bin/codexbar-linux" --background >/dev/null 2>&1
+"$HOME/.local/bin/codexbar-linux" --autostart enable >/dev/null 2>&1 || true  # keep start at login on
 sleep 2
 pgrep -x io.elementary.w >/dev/null && pgrep -f 'codexbar-linux --background' >/dev/null \
   && echo 'Wingpanel and CodexBar are running the new build.' || { echo 'Restart check failed.' >&2; exit 1; }
