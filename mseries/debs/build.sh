@@ -59,9 +59,11 @@ build_plugin() {
   for p in "${patches[@]}"; do git -C "$src" apply "$ROOT/$p"; done
   if [[ -n $extra ]]; then ( cd "$src" && "$extra" "$ROOT" "$src" ); fi
 
+  # meson and ninja report errors on stdout: keep it in a log, show it on failure.
+  local log=$WORK/$deb-build.log
   meson setup "$bld" "$src" --prefix=/usr --libdir=lib/aarch64-linux-gnu \
-    --buildtype=release >/dev/null
-  ninja -C "$bld" >/dev/null
+    --buildtype=release >"$log" 2>&1 || { cat "$log" >&2; echo "error: $deb meson setup failed" >&2; exit 1; }
+  ninja -C "$bld" >>"$log" 2>&1 || { tail -n 200 "$log" >&2; echo "error: $deb build failed" >&2; exit 1; }
 
   local lib=$bld/$plugin_path
   [[ -s $lib ]] || { echo "error: $deb produced no plugin" >&2; exit 1; }
