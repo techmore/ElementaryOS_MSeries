@@ -230,6 +230,13 @@ namespace MSeries {
             return available > 0 && countdown.length > 0 ? text + " · first expires in " + countdown : text;
         }
 
+        /* One-row form for a header or account line: "2 resets · exp 3d4h"; the full sentence goes in the tooltip. */
+        public static string reset_credits_chip (int64 available, int64 seconds_to_expiry) {
+            var count = reset_count_text (available);
+            var countdown = countdown_text (seconds_to_expiry);
+            return available > 0 && countdown.length > 0 ? count + " · exp " + countdown : count;
+        }
+
         /* Within a day of the first reset expiring, use it or lose it. */
         public static bool reset_expiry_urgent (int64 available, int64 seconds_to_expiry) {
             return available > 0 && seconds_to_expiry > 0 && seconds_to_expiry < 86400;
