@@ -866,6 +866,13 @@ Installer: `bash mseries/install-calendar-agenda.sh`; rollback:
 installation. Next: owner selects Calendar Accounts → Google, completes sign-in,
 enables Calendar and confirms a known remote event appears on its date.
 
+**Verse of the Day + tab (2026-10-18).** A third **+** tab beside Events/Tasks
+shows a daily World English Bible verse (400-verse public-domain list, seeded
+per-year shuffle, no repeats within a year) with SermonAudio, YouTube sermon and
+Bible Gateway links, laid out with Granite/Wingpanel widgets. 22/22 private
+fixture groups pass in light and dark; the patch applies to the pin and rebuilds
+byte-identically. See [calendar/README.md](calendar/README.md#verse-of-the-day--tab).
+
 
 ## README status overview — 2026-10-18
 

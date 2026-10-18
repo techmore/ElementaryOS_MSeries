@@ -1,9 +1,12 @@
 /* Isolated EDS integration test; only synthetic sources on a private D-Bus. */
 [CCode (has_target = false)]
 public delegate Wingpanel.Indicator? IndicatorFactory (Module module, Wingpanel.ServerType server);
+[CCode (has_target = false)]
+public delegate int VerseIndex (GLib.DateTime day, int count);
 
 class AgendaTest : Object {
     Wingpanel.Indicator indicator;
+    VerseIndex verse_index;
     Gtk.Widget widget;
     E.SourceRegistry registry;
     ECal.Client events;
@@ -553,6 +556,55 @@ class AgendaTest : Object {
         for (var child = node.get_first_child (); child != null; child = child.get_next_sibling ()) dump_labels (child);
     }
 
+    async void verse_checks (Gtk.Window window) throws Error {
+        var stack = find_stack (widget);
+        var page = stack.get_page (stack.get_child_by_name ("verse"));
+        assert (page.icon_name == "list-add-symbolic");
+        assert (page.title == "Verse of the Day");
+        stack.visible_child_name = "verse";
+        var data = GLib.resources_lookup_data ("/io/elementary/desktop/wingpanel/datetime/daily-verses.tsv",
+            GLib.ResourceLookupFlags.NONE);
+        string[] references = {};
+        string[] texts = {};
+        foreach (var line in ((string) data.get_data ()).split ("\n")) {
+            var fields = line.split ("\t", 2);
+            if (line.has_prefix ("#") || fields.length != 2) continue;
+            references += fields[0];
+            texts += fields[1];
+        }
+        assert (references.length >= 366);
+        var today = verse_index (new GLib.DateTime.now_local (), references.length);
+        yield expect ("— " + references[today]);
+        yield expect (texts[today]);
+        foreach (var id in new string[] { "verse-sermons", "verse-videos", "verse-context" }) {
+            assert (named (widget, id) is Gtk.Button && ((Gtk.Button) named (widget, id)).sensitive);
+        }
+        // No repeats inside a year (leap or not); stable within a day; reshuffled each year.
+        foreach (var year in new int[] { 2026, 2027, 2028 }) {
+            var used = new GenericSet<int> (direct_hash, direct_equal);
+            var day = new GLib.DateTime.local (year, 1, 1, 0, 0, 0);
+            for (; day.get_year () == year; day = day.add_days (1)) {
+                var index = verse_index (day, references.length);
+                assert (index >= 0 && index < references.length);
+                assert (!used.contains (index));
+                used.add (index);
+                var late = new GLib.DateTime.local (year, day.get_month (), day.get_day_of_month (), 23, 59, 0);
+                assert (verse_index (late, references.length) == index);
+            }
+        }
+        var day_2026 = new GLib.DateTime.local (2026, 3, 1, 9, 0, 0);
+        var same = 0;
+        for (int i = 0; i < 30; i++) {
+            if (verse_index (day_2026.add_days (i), references.length) ==
+                verse_index (day_2026.add_years (1).add_days (i), references.length)) same++;
+        }
+        assert (same < 5);
+        assert (verse_index (day_2026, 0) == -1);
+        for (int i = 0; i < 5; i++) yield pause ();
+        preview (window, "calendar-verse");
+        stdout.printf ("PASS verse tab: today's verse, sermon links, no repeats within a year\n");
+    }
+
     async void expect (string title, bool present = true) throws Error {
         for (int n = 0; n < 200; n++) {
             if (contains (widget, title) == present) return;
@@ -816,6 +868,8 @@ class AgendaTest : Object {
             for (int i = 0; i < 5; i++) yield pause ();
             preview (window, "calendar-tasks");
             stdout.printf ("PASS tabs, separate calendars with shared UID, undated task\n");
+            yield verse_checks (window);
+            find_stack (widget).visible_child_name = "tasks";
 
             events.modify_object_sync (new ICal.Component.from_string (event ("Updated event")), ECal.ObjModType.ALL, ECal.OperationFlags.NONE, null);
             yield expect ("Updated event");
@@ -866,6 +920,8 @@ class AgendaTest : Object {
         void* symbol;
         assert (module.symbol ("get_indicator", out symbol));
         var factory = (IndicatorFactory) symbol;
+        assert (module.symbol ("date_time_daily_verse_index_for", out symbol));
+        verse_index = (VerseIndex) symbol;
         indicator = factory (module, Wingpanel.ServerType.SESSION);
         loop = new MainLoop ();
         run.begin ();

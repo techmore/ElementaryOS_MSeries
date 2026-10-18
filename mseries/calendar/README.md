@@ -1,7 +1,7 @@
 # Pantheon calendar agenda
 
-The datetime indicator has **Events** and **Tasks** tabs above the calendar's
-right pane. Events defaults to **Upcoming · next 30 days**, grouped by local
+The datetime indicator has **Events**, **Tasks** and **+** (Verse of the Day)
+tabs above the calendar's right pane. Events defaults to **Upcoming · next 30 days**, grouped by local
 date independently of the left calendar selection. Ended events are omitted;
 ongoing events remain visible. **Month**, **Week** and **Day** are available as
 explicit alternate views. Tasks shows
@@ -16,6 +16,31 @@ it and shows a retry error. Repeating tasks advance using EDS recurrence handlin
 Both tabs use Evolution Data Server (EDS), the native Calendar/Tasks store.
 Updates, deletions, source selection and account additions are observed live.
 Identical UIDs in separate calendars do not hide each other's events.
+
+## Verse of the Day (+ tab)
+
+The **+** tab shows one Bible verse a day under a Granite header with today's
+date, followed by panel menu items:
+
+- **Listen to Sermons** opens a SermonAudio search for the passage.
+- **Watch Sermon Videos** opens a YouTube search for sermons on the passage.
+- **Read the Full Chapter** opens the passage in context at Bible Gateway (WEB).
+
+Links are built from the reference, so they don't go stale; choosing one closes
+the popup and opens the default browser. Nothing is fetched until you click.
+
+The verse stays the same all day and changes at local midnight (the popup
+re-checks the date every time it opens). Each year gets its own seeded shuffle
+of the whole list, so a year never repeats a verse; no state is stored.
+
+Text is the **World English Bible**, public domain (eBible.org), copied
+unchanged; Psalm superscriptions that the WEB includes in verse 1 stay in the
+text. To change the list, edit `verse-references.txt` (at least 366 entries),
+download `engwebp_vpl.zip` from <https://ebible.org/Scriptures/>, run
+`python3 -I mseries/calendar/build-verses.py path/to/engwebp_vpl.txt`, copy
+`daily-verses.tsv` to `data/daily-verses.tsv` in the patched source tree and
+regenerate the patch with `git diff -U2 <pin>`. The plugin bundles the list as a
+GResource; `test-agenda.sh` reads it back from the built library.
 
 <a id="month-navigation-and-today"></a>
 
@@ -102,7 +127,10 @@ qualify a factory image or a Google account connection.
 
 `bash mseries/calendar/test-agenda.sh /absolute/path/to/libdatetime.so` runs the
 actual plugin on Xvfb with a private D-Bus and private XDG config/data/cache.
-All 21 workflow groups use synthetic local EDS sources. Timetable groups additionally
+All 22 workflow groups use synthetic local EDS sources. The verse group checks
+the + tab, that the shown verse is today's pick from the bundled list, the three
+link items, and that 2026, 2027 and leap 2028 each show 365/366 different verses,
+stable across a day (including DST days) and reshuffled per year. Timetable groups additionally
 check actual block positions against hour rules, overlap geometry, adjacent and
 short events, instant/DURATION events, overnight clipping, recurring week columns,
 live reflow and scroll retention, and a stubbed native Calendar date action.
