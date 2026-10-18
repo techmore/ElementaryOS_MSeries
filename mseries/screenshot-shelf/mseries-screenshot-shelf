@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Screenshot shelf: after a screenshot, show its thumbnail bottom-right, fixed size, until you dismiss it.
+"""Screenshot shelf: after a screenshot, show its thumbnail bottom-right, fixed size, for 4 seconds.
 
 Gala saves every screenshot to ~/Pictures/Screenshots (a link to ~/Downloads/Screenshots). This helper
 watches that folder and shows the newest shot as a draggable thumbnail, like macOS.
@@ -7,7 +7,7 @@ watches that folder and shows the newest shot as a draggable thumbnail, like mac
   Drag it into an app      the shot is used and not kept: the saved file is deleted after the drop.
   Hold Alt while dragging  the shot is used and a copy is kept (the thumbnail says so).
   Click it                 opens Markup on the saved file; the file is kept.
-  Ignore it                the thumbnail stays (same size, same corner) until the next shot or the x; the file is kept.
+  Ignore it                the thumbnail stays (same size, same corner) for 4 seconds, longer while the pointer is on it; the file is kept.
   Click the x              dismisses it; the file is kept.
 
 A screenshot is only ever deleted by a drag without Alt, and only after the drag was accepted.
@@ -58,6 +58,7 @@ STAGE = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "mseries-shelf")
 LOG = os.path.expanduser("~/.cache/mseries-screenshot-shelf.log")
 MARKUP = os.environ.get("MSERIES_MARKUP", os.path.expanduser("~/.local/bin/mseries-markup"))
 DELETE_AFTER = 120      # seconds after an accepted drag before the unsaved file is removed
+SHOW_SECONDS = 4        # how long the thumbnail stays when ignored (hover or drag keeps it)
 THUMB_WIDTH = 280       # the card is always THUMB_WIDTH x THUMB_HEIGHT, whatever the screenshot's shape
 THUMB_HEIGHT = 180
 MARGIN = 24
@@ -127,6 +128,7 @@ class Shelf(Gtk.Window):
         self.alt_seen = False
         self.cancelled = False
         self.hover = False
+        self.timer = None
         self.add_css_class("shelf")
         self.set_decorated(False)
         self.set_resizable(False)
@@ -185,6 +187,7 @@ class Shelf(Gtk.Window):
                                                   Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         self.present()
         GLib.timeout_add(60, self.place)
+        self.restart_timer()
 
     # ------------------------------------------------------------------ placement
 
@@ -215,7 +218,18 @@ class Shelf(Gtk.Window):
 
     # ------------------------------------------------------------------ timing
 
-    # The card does not expire: it stays until the x, a drag-and-drop, or the next screenshot.
+    def restart_timer(self):
+        if self.timer:
+            GLib.source_remove(self.timer)
+        self.timer = GLib.timeout_add_seconds(SHOW_SECONDS, self.on_timeout)
+
+    def on_timeout(self):
+        self.timer = None
+        if self.hover or self.dragging:
+            self.restart_timer()
+            return False
+        self.finish("expired")
+        return False
 
     def set_hover(self, value):
         self.hover = value
@@ -258,6 +272,7 @@ class Shelf(Gtk.Window):
     def on_drag_end(self, _source, _drag, _delete):
         self.dragging = False
         if self.cancelled:
+            self.restart_timer()
             self.alt_seen = False
             self.hint.set_label("Drag to use  ·  Alt keeps")
             return
@@ -281,6 +296,9 @@ class Shelf(Gtk.Window):
         if self.finished:
             return
         self.finished = True
+        if self.timer:
+            GLib.source_remove(self.timer)
+            self.timer = None
         log(f"shelf done: {reason}")
         # The staged copy is what an app may still be reading after a drop, so it outlives the window.
         GLib.timeout_add_seconds(max(delay, 1), self.cleanup, delete_saved)

@@ -1,5 +1,14 @@
 # OS 9 implementation / Claude Code handoff
 
+## Screenshots v2: Space for window mode, 4 s thumbnail — 2026-10-18 (Claude Code)
+
+Corrects the earlier click-to-capture: Command+Shift+4 drags an area, **Space** switches to window mode (the window
+under the pointer gets a blue highlight, click captures it, Space again returns to dragging), Esc cancels.
+`gala-screenshot-window-pick.patch` rewritten (SelectionArea does the picking/highlight). The shelf thumbnail is
+the fixed 280x180 card again but expires after 4 s (hover or drag keeps it). **Verified:** patched Gala builds;
+card renders at fixed size. **Not verified:** the highlight and capture on the live session (private Gala applies
+at next login), real drag-out. Next: re-login, try Command+Shift+4, Space, click.
+
 ## Battery history logger + app — 2026-10-18 (Claude Code)
 
 New `mseries/battery/` (see [BATTERY-PROFILER.md](BATTERY-PROFILER.md)): a 15 s user-service logger (SMC system power,
