@@ -13,6 +13,15 @@ live Wingpanel session. Python syntax and the Vala/Meson build passed on
 C warnings. Upstream traffic/cloner charts, heatmap UI, multi-account UI, and
 full per-repo submenus remain out of scope; see `mseries/REPOBAR-PORT.md`.
 
+## Consistent CodexBar panel typography — 2026-10-18
+
+Owner approved the compact OpenCode appearance and requested the same text sizes for Codex/Claude.
+Promoted the OpenCode sizes into shared panel styles: primary values 7.5 pt, reset countdowns 7 pt,
+secondary rows 6.75 pt. Removed provider-specific font overrides; popover text is unchanged.
+Verified native light/dark render probes with all three providers, including alternate accounts;
+the routine deploy also builds and runs all 12 native targets. Upstream stays v0.77.0.
+Installed/staged without restarting Wingpanel; native appearance loads at next login or an explicit reload.
+
 ## Compact two-row OpenCode panel — 2026-10-18
 
 Owner requested denser OpenCode information in the desktop bar. The active OpenCode quota/reset
@@ -4880,3 +4889,13 @@ Verified full release compile/link and dependency check; isolated production-Ind
 ### Ethernet icon scale — 2026-10-18
 
 Owner requested 15% smaller Ethernet artwork. Connected 16/24px and VPN-lock assets now use an 85% transform centered in their existing canvases; panel allocation and text remain unchanged. Verified SVG transforms and rendered alpha bounds (within 1% of 0.85 for each dimension), then rebuilt/installed the pinned network module and reloaded the panel using the session-approved reload.
+
+Ethernet size follow-up (October 18): owner requested another 5% reduction from the current size. Artwork now uses `0.85 × 0.95 = 0.8075` of the original, centered at translations 2.31px (24px canvas) / 1.54px (16px canvas), including VPN badge. Full installer patch series and release build passed; extracted installed GResources confirm the transforms. Module installed and panel reloaded with existing session authorization.
+
+Ethernet size follow-up (October 18, second 5% step): owner requested another 5% reduction and explicit local deployment. Artwork is now `0.8075 × 0.95 = 0.767125` of the original, centered in both canvas sizes and the VPN variant. Full network installer rebuilt and installed the module and reloaded Wingpanel. Extracted installed GResources verify the new transforms; the running panel maps the installed module.
+
+Ethernet size follow-up (October 18, third 5% step): owner requested another 5% reduction and local deployment. Artwork now uses `0.767125 × 0.95 = 0.72876875` of the original, centered in 16/24px canvases including the VPN variant. Full network installer/build passed and reloaded the bar; installed GResource transforms and the running panel’s loaded module were verified.
+
+Ethernet size follow-up (October 18, fourth 5% step): owner requested another 5% reduction and local deployment. Artwork now uses `0.72876875 × 0.95 = 0.6923303125` of the original, centered in 16/24px canvases including the VPN variant. Full network installer/build passed and reloaded the bar; installed GResource transforms and the running panel’s loaded module were verified.
+
+Ethernet size follow-up (October 18, fifth 5% step): owner requested another 5% reduction and local deployment. Artwork now uses `0.6923303125 × 0.95 = 0.657713796875` of the original, centered in 16/24px canvases including the VPN variant. Full network installer/build passed and reloaded the bar; installed GResource transforms and the running panel’s loaded module were verified.

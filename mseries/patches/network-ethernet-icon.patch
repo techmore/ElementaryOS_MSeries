@@ -25,7 +25,7 @@
 -  </path>
 +<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
 +  <!-- SPDX-License-Identifier: CC0-1.0; SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries -->
-+  <g transform="translate(1.8 1.8) scale(0.85)">
++  <g transform="translate(4.107434437500 4.107434437500) scale(0.657713796875)">
 +  <path fill-rule="evenodd" d="M3 3h18v13h-5v5H8v-5H3z M5 5v9h5v5h4v-5h5V5z"/>
 +  <path d="M7 6h1v5H7z M10 6h1v5h-1z M13 6h1v5h-1z M16 6h1v5h-1z"/>
 +  </g>
@@ -92,7 +92,7 @@
 -     style="opacity:1;vector-effect:none;fill:#555761;fill-opacity:1;stroke-width:0.99999988;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
 +<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
 +  <!-- SPDX-License-Identifier: CC0-1.0; SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries -->
-+  <g transform="translate(1.2 1.2) scale(0.85)">
++  <g transform="translate(2.738289625000 2.738289625000) scale(0.657713796875)">
 +  <path fill-rule="evenodd" d="M1 1h14v10h-4v4H5v-4H1z M3 3v6h4v4h2V9h4V3z"/>
 +  <path d="M4 4h1v3H4z M6 4h1v3H6z M8 4h1v3H8z M10 4h1v3h-1z"/>
 +  </g>
@@ -124,7 +124,7 @@
 -  </path>
 +<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
 +  <!-- SPDX-License-Identifier: CC0-1.0; SPDX-FileCopyrightText: 2026 ElementaryOS_MSeries -->
-+  <g transform="translate(1.8 1.8) scale(0.85)">
++  <g transform="translate(4.107434437500 4.107434437500) scale(0.657713796875)">
 +  <defs><mask id="port"><rect width="24" height="24" fill="white"/><rect x="13" y="12" width="11" height="12" fill="black"/></mask></defs>
 +  <g mask="url(#port)">
 +  <path fill-rule="evenodd" d="M3 3h18v13h-5v5H8v-5H3z M5 5v9h5v5h4v-5h5V5z"/>
