@@ -272,3 +272,10 @@ Setup, all under `~/.local/share/mseries/ane/` (nothing system-wide, no kernel/b
 - The shipped CLI only transcribes the pinned fixture; arbitrary audio is in `mlx/coreml/parakeet_dictation.py`, which upstream says is not qualified until a hardware acceptance receipt exists.
 
 Not wired into F5. Next: update Mesa (kernel-adjacent graphics stack, ask owner), re-run verify, then try `parakeet_dictation` on owner clips against the CPU path with 10+ warm runs.
+
+## Addendum 2026-10-18 (e): Mesa 26.2.4 private Honeykrisp fixes the Parakeet mismatch
+
+- Ubuntu has no Mesa newer than 26.0.8, so the system Mesa was left alone. Built stock Mesa 26.2.4 (tarball SHA-256 `bce5f7fbebb934373b86c999a064d52fb5065878dc57f287f95346648ec832e9`, computed by us; Mesa publishes none) with only the Apple Vulkan driver (`-Dvulkan-drivers=asahi`, no GL/gallium) into `~/.local/share/mseries/ane/mesa-hk`, 636 steps, a few minutes with `-j6`. Used per process with `VK_DRIVER_FILES=~/.local/share/mseries/ane/mesa-hk/share/vulkan/icd.d/asahi_icd.aarch64.json`.
+- `mlx-omarchy-parakeet verify` with that ICD: **status "match" on 3 of 3 runs** (mel and encoder hashes now equal the golden), where the system Mesa gave "diverged". So the old Mesa was the cause. (The trailing dots and stray characters in the transcript are in the pinned golden itself.)
+- Speed unchanged: 1.99 s and 1.98 s warm for the 10.4 s clip (first run 35 s, one-time work). Whisper base.en at 6 threads was 1.07 s for 7 s of audio, so the ANE path is not faster yet; its benefit would be CPU and power, not measured.
+- Still not wired into F5: the CLI only runs the pinned fixture; arbitrary audio needs `mlx/coreml/parakeet_dictation.py`, unqualified until a hardware acceptance run.
