@@ -26,7 +26,9 @@ for mark in openai claude opencode; do
     "/usr/share/icons/hicolor/scalable/apps/mseries-codexbar-$mark-symbolic.svg"
 done
 command -v gtk-update-icon-cache >/dev/null && sudo gtk-update-icon-cache -f /usr/share/icons/hicolor >/dev/null
-echo "Installed helpers, provider marks and $indicators_dir/libcodexbar.so"
+install -m 0755 "$build/codexbar-settings" "$HOME/.local/bin/codexbar-settings.new"
+mv -f "$HOME/.local/bin/codexbar-settings.new" "$HOME/.local/bin/codexbar-settings"
+echo "Installed helpers, native settings, provider marks and $indicators_dir/libcodexbar.so"
 
 [[ ${1:-} == --no-restart ]] && { echo 'Not restarting; Wingpanel loads the new module at next login.'; exit 0; }
 if pgrep -x io.elementary.w >/dev/null; then

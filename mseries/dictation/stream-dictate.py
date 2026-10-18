@@ -60,6 +60,26 @@ def tone(freq, ms, vol=0.25):
     subprocess.Popen(["pw-play", path], stderr=subprocess.DEVNULL)
 
 
+def whisper_fallback(pcm16):
+    """One offline Voxtype/Whisper pass over the captured audio (kept in RAM only)."""
+    path = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "dictation-fallback.wav")
+    try:
+        with wave.open(path, "wb") as w:
+            w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(pcm16)
+        r = subprocess.run(["/usr/local/bin/voxtype", "transcribe", path], capture_output=True,
+                           text=True, timeout=30)
+        lines = [l.strip() for l in r.stdout.splitlines() if l.strip()]
+        return lines[-1] if lines else ""
+    except Exception as e:
+        log("fallback failed:", repr(e))
+        return ""
+    finally:
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+
+
 class Typer(threading.Thread):
     """Types text through ydotool in order, off the audio thread."""
     def __init__(self):
@@ -141,8 +161,7 @@ class Dictation:
                         break
                     buf += data
                     while len(buf) >= CHUNK * 2:
-                        if KEEP:
-                            kept += buf[:CHUNK * 2]
+                        kept += buf[:CHUNK * 2]
                         pcm = np.frombuffer(buf[:CHUNK * 2], np.int16).astype(np.float32) / 32768
                         peak = max(peak, float(np.abs(pcm).max()))
                         sq += float((pcm ** 2).sum()); n += len(pcm)
@@ -163,6 +182,17 @@ class Dictation:
                     self.typer.q.put(rest)
                 rms = (sq / max(n, 1)) ** 0.5
                 log(f"dictated {len(final)} chars in {time.time() - t0:.1f}s; audio peak {peak:.3f} rms {rms:.4f}")
+                if os.environ.get("STREAM_FORCE_FALLBACK"):
+                    final = ""  # test hook: pretend streaming recognized nothing
+                if not final.strip() and peak > 0.2 and rms > 0.07 and len(kept) > 16000 * 2:
+                    # streaming heard nothing but there was sound: let Whisper have one offline pass
+                    redo = whisper_fallback(bytes(kept))
+                    if redo and not DRY:
+                        self.typer.q.put(redo + " ")
+                    elif redo:
+                        print("fallback:", redo, flush=True)
+                    final = redo or ""
+                    log(f"whisper fallback: {len(final)} chars")
                 if not final.strip() and not DRY:
                     notify(f"Didn't catch that (mic level {rms * 100:.1f}%, peak {peak * 100:.0f}%)")
                 if KEEP:  # debug only: last capture, in RAM (XDG_RUNTIME_DIR), overwritten each time
@@ -186,6 +216,8 @@ def main():
     dev = keyboard_device()
     log("ready, keyboard", dev, "model", os.path.basename(MODEL))
     signal.signal(signal.SIGTERM, lambda *a: os._exit(0))
+    # `systemctl --user kill -s USR1 mseries-stream-dictate` toggles recording (self-test without the key)
+    signal.signal(signal.SIGUSR1, lambda *a: d.stop() if d.active else d.start())
     fmt = "llHHi"
     size = struct.calcsize(fmt)
     with open(dev, "rb", buffering=0) as f:
