@@ -26,3 +26,11 @@ executable(
   dependencies: [libwingpanel_dep, granite_dep, json_dep],
   install: false,
 )
+
+# Native settings window, launched from the menu's dock; installed per user by mseries/deploy-repobar.sh.
+executable(
+  'mseries-repobar-settings',
+  'settings/SettingsApp.vala',
+  dependencies: [granite_dep, json_dep],
+  install: false,
+)

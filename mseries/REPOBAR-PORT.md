@@ -8,7 +8,7 @@ implementation; no macOS source or binary is copied into this project.
 ## Ported features
 
 - Searchable dashboard with dashboard, all, pinned, issues, pull requests, and
-  needs-attention views. The dashboard defaults to five recently updated
+  needs-attention views. The dashboard defaults to 20 recently updated
   repositories; pins stay visible. Forks and archived repositories are hidden
   by default outside the all-repositories view.
 - Repository cards show open issue/PR counts, default-branch CI, stars, branch,
@@ -59,6 +59,9 @@ for open / copy link / pin / hide, and the same bottom bar (status chip,
 freshness, icon dock). Render it headlessly with
 `repobar-wingpanel/probe/run-probe.sh BUILD_DIR OUT_DIR [light|dark]` after
 `meson setup BUILD_DIR mseries/repobar-wingpanel && ninja -C BUILD_DIR`.
+The dock's gear opens **RepoBar Settings** (`mseries-repobar-settings`), a
+native window whose switches apply immediately. Keyboard: type to search,
+arrow keys and Enter on cards, Ctrl+F, Ctrl+R, Alt+1…4 for the tabs.
 `bash mseries/deploy-repobar.sh` rebuilds and installs the module and helper
 without apt; add `--restart` to reload Wingpanel.
 

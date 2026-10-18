@@ -62,7 +62,7 @@ DEFAULT_SETTINGS = {
     "version": 1,
     "host": "github.com",
     "refreshInterval": 300,
-    "repoLimit": 5,
+    "repoLimit": 20,
     "menuSort": "activity",
     "showForks": False,
     "showArchived": False,
@@ -504,7 +504,7 @@ def filter_repositories(snapshot: dict, scope: str = "dashboard", query: str = "
     if scope == "dashboard":
         pinned = [item for item in selected if item.get("repoState") == "pinned"]
         recent = [item for item in selected if item.get("repoState") != "hidden" and item not in pinned]
-        count = max(1, min(100, int(settings.get("repoLimit", 5))))
+        count = max(1, min(100, int(settings.get("repoLimit", 20))))
         selected = pinned + recent[:max(0, count - len(pinned))]
     if limit >= 0:
         selected = selected[:limit]

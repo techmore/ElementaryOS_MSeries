@@ -370,6 +370,11 @@ coredumps since activation, sampled CPU median 0.30%, RSS 165.33–169.2 MiB,
 file descriptors fixed at 49. Both native typography and local token changes are active. No real
 account switch performed; long-run behavior and owner visual confirmation remain outside this smoke check.
 
+## RepoBar UX pass 2 — 2026-10-18
+
+20-repo scrolling dashboard with Show all, native RepoBar Settings window, keyboard navigation and shortcuts, undo
+toasts, remembered tab. Next: confirm on the live panel after a reload.
+
 ## RepoBar native UI pass — 2026-10-18
 
 RepoBar's popover now matches CodexBar (switcher, status-dot cards, pills, details chips, icon dock, state pages);

@@ -1,5 +1,18 @@
 # OS 9 implementation / Claude Code handoff
 
+## RepoBar UX pass 2 — 2026-10-18 (Claude Code)
+
+Owner asked for more repositories with scrolling: the dashboard now shows pins plus 20 recent repositories (was 5),
+the list scrolls to 560 px, and a "Show all N repositories" row jumps to All (85 on the owner's account). New native
+**RepoBar Settings** window (`mseries-repobar-settings`, dock gear): account/sign-in, dashboard size and sort, forks,
+archived, refresh interval, projects folder + depth, and a Hidden Repositories list with Show; every change applies
+through `mseries-repobar settings set`, and the indicator re-reads on `settings.json` changes. Popover: cards are list
+rows (arrow keys + Enter open), type-to-search, Ctrl+F / Ctrl+R / Alt+1…4, remembered tab and filter
+(`~/.config/mseries/repobar/panel.ini`), unpinned stars appear on hover/focus, activity shows age, Pinned/Attention/All
+follow the sort setting, and pin/hide raise a Granite toast with Undo. Rendered headless (light/dark, toast, details,
+real snapshot, Settings). Deployed with `deploy-repobar.sh` (no restart). **Unverified:** live panel until Wingpanel
+reloads; real keyboard and pointer input.
+
 ## Gala CPU investigation — 2026-10-18 (Claude Code)
 
 Measured: Gala's main thread uses 25–35% of one core and presents about 100+ frames/s (505 `ADDFB2` in 5 s under strace)

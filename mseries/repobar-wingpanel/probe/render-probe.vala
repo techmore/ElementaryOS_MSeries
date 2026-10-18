@@ -28,6 +28,7 @@ int main (string[] args) {
         var scope = Environment.get_variable ("RB_SCOPE");
         if (scope != null) indicator.probe_select_scope (scope);
         if (Environment.get_variable ("RB_EXPAND") != null) indicator.probe_expand_first ();
+        if (Environment.get_variable ("RB_TOAST") != null) indicator.probe_toast ();
         int min, nat;
         root.measure (Gtk.Orientation.VERTICAL, 400, out min, out nat, null, null);
         window.set_default_size (400, nat);
