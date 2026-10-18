@@ -11,8 +11,8 @@ Current recorded release:
 | --- | --- | --- | --- |
 | Aurora `.20`, `7.1.12-2-20261017.20-sep-ARCH` | Local J314S/M1 Pro | Boot observed >5 min, PMP ready/started/owns fabric, idle counters advance, selected severe-log scan clear | [Frozen experimental exp1](../frozen/mseries-aurora20-j314s-2026.10.18-exp1.json); incomplete qualification |
 | Aurora `.19` with historical hand-patched boot payload | Local J314S/M1 Pro | Historical hangs/probe failures in `AURORA-SECOND-BOOT.md` | Rejected for promotion; historical evidence, no new test receipt |
-| `.20-enh1` / `-egpu` | ARM64 CI | Prior native builds passed; new integrated build checked by CI | Hardware untested |
-| `7.2.10-elementary-aurora72-wip1` | Pinned PR #139 snapshot | Prepared; 12 PMP production host tests passed; native build in CI | Hardware untested; upstream contributor reports remain separate |
+| `.20-enh1` / `-egpu` | ARM64 CI | Integrated `.20-enh1` native build/inspection passed run 39114197052; prior eGPU build passed run 39085271170 | Hardware untested |
+| `7.2.10-elementary-aurora72-wip1` | Pinned PR #139 snapshot | 12 PMP production host tests and native build/inspection passed run 39114197052 | Build-only: review parity gaps open; hardware untested |
 
 Additional local [smoke receipt](2026-10-18-j314s-aurora20-smoke.json), recorded
 after the exp1 freeze: the real Apple M1 Pro G13S C0 rendered a GLES shader and
@@ -34,6 +34,15 @@ It requires a C compiler and EGL/GLES development files. It verifies the live
 boot, module/DTB and kernel/boot-file hashes and feature parameters before testing,
 and refuses a software renderer. Output receipts are never overwritten.
 
+The successful `.20-enh1` artifacts are also retained as a
+[frozen build prerelease](https://github.com/techmore/ElementaryOS_MSeries/releases/tag/mseries-aurora20-enh1-2026.10.18-build1)
+with complete source/config/provenance and authored patches. Eight publication
+asset digests were verified remotely. It remains **hardware untested**.
+`frozen/builds/` manifests identify compiled feature bytes and cannot use
+hardware-qualified labels. The same Git history guard protects their IDs.
+[Native build evidence](../branch-audits/2026-10-18-native-builds.json) records
+both profiles and the exact `.20-enh1` source-tree match to host controls.
+
 ## Collect without changing the machine
 
 Save the current kernel journal as JSON into a private work directory. The
@@ -49,21 +58,34 @@ python3 mseries/aurora/qualification.py collect --duration 30 \
 ```
 
 It records SMC total-system power samples, median and p10/p90, per-CPU idle
-counter deltas, power source, brightness, connector enumeration, cpufreq,
+counter deltas, power source, brightness, connector enumeration, active
+Mutter/Gala modes (refresh/VRR selection), display power mode, cpufreq,
 module parameters and selected artifact hashes. It performs no boot, suspend,
 sensor probe, disk workload, display-rate change or audio change. Kernel-log
 UUIDs/addresses and full command lines are not copied into the public receipt;
 the current-boot ID and whitelisted feature flags are retained. Module hashes
 describe installed files; they do not prove a module was not replaced on disk
-after it was loaded. Kernel image identity describes the explicit boot file.
+after it was loaded. Exp1's kernel image identity describes the explicit boot
+file. A separate [live build-ID proof](2026-10-18-j314s-live-kernel-binding.json)
+subsequently found the running GNU build-ID note in that same exact ARM64 Image
+on the same boot. Exp1 is unchanged. Future captures bind the live build ID and
+image hash from one image-byte snapshot; missing/mismatched notes block stable
+promotion. This supports uncompressed ARM64 Image files, as used on this J314S;
+it is not a signature or proof of module memory contents.
 Archive the corresponding original package as well when freezing distribution.
 The [binary verification](2026-10-18-j314s-binary-verification.json) confirms
-that the observed boot image, appledrm/SEP module files and J314S DTB exactly
+that the observed kernel image, appledrm/SEP module files and J314S DTB exactly
 match entries in the checksum-pinned published `.20` package. CI verifies that
 proof against the receipt and upstream pins with `--binary-proof`.
 
 The first capture occurred during agent/source activity. Its power reading is
-an uncontrolled observation. `controls_unchanged` verifies configuration,
+an uncontrolled observation. Exp1 predates active refresh capture; its connector
+mode list describes available modes, not selected refresh. Its original evidence
+remains immutable. New captures read active modes with a bounded read-only
+D-Bus call, omitting monitor serials. Missing session-bus/mode data blocks stable
+promotion. A later read-only diagnostic found built-in fixed 120 Hz and external
+1080p fixed 60 Hz; it does not establish exp1's original refresh configuration.
+`controls_unchanged` verifies configuration,
 not a matched workload or an idle session. No efficiency claim follows.
 
 ## Freeze and verify
@@ -74,6 +96,12 @@ python3 mseries/aurora/qualification.py freeze --id NEW-LOWERCASE-RELEASE-ID \
 python3 mseries/aurora/qualification.py verify /absolute/work/frozen.json \
   --evidence /absolute/work/j314s-test.json
 ```
+
+`python3 mseries/aurora/check_freezes.py --base BASE_COMMIT` also rejects
+changes or deletion of existing frozen manifests/pin snapshots relative to the
+reviewed Git base. CI runs this history guard. Archived pin bytes in
+`frozen/pins/aurora20.json` keep exp1 verifiable when the active `release.json`
+advances; use `--pins` with that snapshot for historical verification.
 
 Default channel is experimental. Existing outputs are refused. A published
 release ID is immutable: new bits, configuration or evidence produce a new

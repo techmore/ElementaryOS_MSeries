@@ -34,6 +34,43 @@ primarily the 7.2 platform/MMIO adaptation and SoC matching; cpufreq/NVMe also
 have API, diagnostic and non-M1 thermal-policy changes. No new measured J314S
 idle-watt fix was established by those differences.
 
+## Deeper 7.2 review parity gate
+
+An additional [64-fix review inventory](branch-audits/2026-10-18-review-parity.json)
+checks each original PR #136 review commit independently against the raw pinned
+7.2 snapshot: 30 reverse-apply cleanly, 10 forward-apply cleanly, and 24 need
+semantic/context review. These mechanical checks do not prove absence when a
+patch conflicts or has been adapted. All 64 are already in our `.20` baseline
+and its enhancement candidate. The stock-bindgen fix has now been ported to
+the local 7.2 series after CI reproduced its failure.
+
+Targeted source inspection confirms remaining shared 7.2 differences: the
+M1/M2 GPU queue lacks the reviewed unsupported-command-tail check; SEP still
+exports its module alias; and its capture drain can veto suspend after six
+seconds. The latter needs reconciliation with 7.2's newer entropy holds rather
+than blindly replacing the notifier. These are real correctness/energy gates,
+not measured idle-watt improvements. **The reviewed `.20-enh1` lane is the first
+hardware candidate. Keep 7.2 build-only until review parity is resolved and
+tested; a successful compile does not clear this gate.** Other forward-applying
+Wi-Fi and Neo corrections remain explicitly inventoried for that parity batch.
+
+The reviewed `.20` enhancement source also passes the original seven GPU
+reader tests (including unsupported fields/tails), 14 selected M1/M2 shared
+Thunderbolt clock controls, the DCP route fixture and 42 Bluetooth recovery
+controls under ASan/UBSan. [Source-host receipt](branch-audits/2026-10-18-review-host-controls.json)
+records the complete observed source-tree hash, production-body hashes, compiler
+versions and fixture results. These run simulated core/PCI/firmware services;
+they do not qualify actual sleep, radio or dock behavior. Reproduce with:
+
+```sh
+python3 mseries/aurora/review-host-check.py --source /absolute/prepared/source \
+  --output /absolute/work/review-host.json
+```
+
+The runner uses unmodified upstream harnesses plus a Result/EINVAL-only shim
+for the original GPU-reader tests. It refuses a source lacking the reviewed
+M1/M2 admission path and never manufactures hardware-test receipts.
+
 ## Energy and hardware disposition
 
 | Area / source | M1 Pro applicability | Implementation / next gate |
@@ -69,19 +106,30 @@ power source, topology and workload differ from ours. These are **not local gain
    boot observation, PMP readiness, idle accounting and selected severe-log
    screening pass. Full graphics/GPU/storage/network/input/thermal/suspend/
    recovery/energy acceptance is explicitly not run. Freeze channel is
-   **experimental**, never stable.
+   **experimental**, never stable. A later same-boot GNU build-ID proof binds
+   the live kernel to that exact Image hash without editing exp1; future stable
+   captures require this match as well as complete feature evidence.
 2. **Now: integrate the previously CI-built source ports.**
    PR #79's six-patch source lane is integrated, with authors/hashes retained.
    Its unchanged source series previously built both native ARM64 profiles in
    [run 39085271170](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39085271170).
    Retested local adapters and production logic. New repository CI rebuilds
-   the combined integration. No existing `.20` files/defaults are replaced.
+   the combined integration. Both `.20-enh1` and `unified72` passed native
+   Image/modules/DTBs/package/inspection in [run 39114197052](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39114197052).
+   The additional `.20` host-control input tree exactly matches CI provenance
+   hash `98911503…`; downloaded candidate artifact checksums verify. No existing
+   `.20` files/defaults are replaced. Exact `.20-enh1` artifacts are now retained
+   in [frozen build1](https://github.com/techmore/ElementaryOS_MSeries/releases/tag/mseries-aurora20-enh1-2026.10.18-build1), with
+   eight remotely digest-verified publication assets. This is a **hardware-untested
+   build freeze**; it is separate from baseline exp1 and cannot carry a hardware
+   qualification label. [Build evidence](branch-audits/2026-10-18-native-builds.json)
+   binds both profiles and their complete source/config/package hashes.
 3. **Now: pin and build WIP independently.**
    `candidate.py prepare --profile unified72` consumes a checksum-pinned PR #139
    archive, resolves the fixed `.20` config against 7.2.10 and uses separate
    identity `7.2.10-elementary-aurora72-wip1`. Source prepared and PMP tests
    passed locally. Native ARM64 Image/modules/DTB/package inspection is a CI
-   gate. This lane deliberately does not claim upstream's Fedora-config tests,
+   gate, now passed in run 39114197052. This lane does not claim upstream's Fedora-config tests,
    complete M3 feature parity, local boot success or a measured power win.
 4. **Next hardware batch: exact boot-chain acceptance.**
    After build success, review candidate DT/m1n1/initramfs and recovery together.
@@ -109,5 +157,10 @@ power source, topology and workload differ from ours. These are **not local gain
 
 The current 30-second SMC window ran during active source/agent work. Its
 25.16 W median (p10 22.51, p90 28.06; n=31) is an uncontrolled observation,
-not an idle baseline or regression verdict. Controls were unchanged; workload
-was not controlled. No battery-life improvement is claimed.
+not an idle baseline or regression verdict. The original connector
+list captured available modes, not active refresh. Future receipts record active
+refresh, VRR selection, layout and display-power state; missing active mode data
+blocks stable promotion. A later read-only diagnostic observed fixed 120 Hz on
+the internal display and fixed 60 Hz on the external 1080p mode. It is not a
+retroactive measurement of exp1. Workload was not controlled. No battery-life
+improvement is claimed.

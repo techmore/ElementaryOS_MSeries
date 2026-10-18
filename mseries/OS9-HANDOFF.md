@@ -41,6 +41,53 @@ sensor, audio or suspend action was changed by this batch. Next: use CI-built
 candidate artifacts for a reviewed non-default boot/rollback batch, then record
 the full J314S acceptance matrix before any stable promotion.
 
+### Follow-up release guard and WIP audit
+
+[64 original review fixes](aurora/branch-audits/2026-10-18-review-parity.json)
+were triaged against PR #139: 30 reverse-apply, 10 forward-apply, 24 need
+semantic/context review. All 64 are in `.20`/`.20-enh1`. Confirmed 7.2 gaps
+include GPU command-tail admission and SEP autoload/suspend behavior. Keep 7.2
+build-only; `.20-enh1` remains first hardware candidate. PR #83 merged the
+source/release groundwork. Merged PR #84 fixes stock-bindgen E0080 using the
+unmodified authored review commit 4c56f9cd and adds the real GPU/storage smoke
+receipt. Native ARM64 CI run 39114197052 passed both `.20-enh1` and `unified72`
+Image/modules/DTBs/package/inspection lanes at exact source head `20befbb3…`.
+PR #84 merged as `6ea6a062…`; passing compilation does not clear the 7.2 parity
+gate or qualify either new kernel on hardware.
+
+A Git history guard rejects edits/deletion of existing freeze/pin bytes; archived
+pins keep exp1 verifiable after future release changes. The next collector adds
+read-only active refresh/VRR/layout/display-power capture (no monitor serials).
+Exp1 had available-mode lists only, so stays an uncontrolled observation. A
+later diagnostic observed internal fixed 120 Hz and external 1080p fixed 60 Hz;
+no settings were applied. Local 47 regression checks and public dashboard
+checks pass. Additional reviewed-source controls pass: original 7 GPU-reader
+tests, 14 selected M1/M2 clock controls, DCP route fixture and 42 Bluetooth
+recovery controls under sanitizers. `review-host-check.py` and the retained
+source-host receipt bind the input tree and production bodies; these are
+simulated-service host checks, not new hardware acceptance. Disabled Python
+bytecode writes in the source-host runner, removed its private generated cache
+and re-ran all controls: the tested input tree now exactly matches CI's prepared
+source hash `98911503…`. Downloaded `.20-enh1` payload/source checksums verify.
+
+A separate same-boot proof binds live kernel GNU build ID `0d293a31…` to the
+exact `.20` ARM64 Image hash recorded in exp1. New captures hash and match a
+single image-byte snapshot; stable promotion requires the live build-ID match.
+Original exp1 assets/identity are unchanged; new-identity captures need their
+own freeze. Truncated/missing/mismatched notes fail closed in regression tests.
+
+### Frozen enhancement build published
+
+`mseries-aurora20-enh1-2026.10.18-build1` now permanently retains the successful
+`.20-enh1` payload, complete corresponding source, resolved config/provenance,
+authored patch series and checksums. Eight GitHub asset SHA256 digests match
+local publication files. It is **hardware-untested / frozen build candidate**,
+separate from the running `.20` experimental hardware freeze. Metadata lives in
+`aurora/frozen/builds/`; the history guard protects its bytes and rejects a
+hardware-qualified label. [Native build receipt](aurora/branch-audits/2026-10-18-native-builds.json)
+records both passing profiles and exact artifact/provenance identities. The
+7.2 binary remains build-only and is not a frozen hardware feature release.
+
 ## Window snapping remains enabled; native quarters installed — 2026-10-18
 
 Owner requested permanent snapping and quarter layouts. Live edge-tiling was

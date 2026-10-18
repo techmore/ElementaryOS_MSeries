@@ -14,9 +14,13 @@ from pathlib import Path
 import platform
 import re
 import statistics
+import struct
+import sys
 import time
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "power"))
+from display_status import read_active
 STABLE_SCOPES = {"boot", "graphics", "gpu", "storage", "network", "input",
                  "suspend_resume", "recovery_boot", "thermal", "energy_ab"}
 
@@ -85,6 +89,7 @@ def idle_delta(before, after):
 
 def context(root):
     return {
+        "active_displays": read_active() if root.resolve() == Path("/") else {"available": False, "reason": "fixture"},
         "backlights": {p.name: {k: read(p / k) for k in ("brightness", "actual_brightness", "max_brightness")}
                        for p in (root / "sys/class/backlight").glob("*")},
         "power_supplies": {p.name: {k: read(p / k) for k in ("type", "status", "online", "capacity", "energy_now")}
@@ -110,6 +115,32 @@ def power_sensor(root):
     return None
 
 
+def live_kernel_identity(notes_path, image_path):
+    """Tie an uncompressed ARM64 Image to the live GNU build-ID note."""
+    image = Path(image_path).read_bytes()
+    image_hash = hashlib.sha256(image).hexdigest()
+    try:
+        notes = Path(notes_path).read_bytes()
+    except OSError:
+        notes = b""
+    offset = 0
+    while offset + 12 <= len(notes):
+        start = offset
+        namesz, descsz, kind = struct.unpack_from("<III", notes, offset)
+        offset += 12
+        name_end = offset + namesz
+        descriptor = offset + ((namesz + 3) & ~3)
+        end = descriptor + ((descsz + 3) & ~3)
+        if end > len(notes):
+            break
+        name, build_id = notes[offset:name_end], notes[descriptor:descriptor + descsz]
+        offset = end
+        if name == b"GNU\0" and kind == 3 and 16 <= len(build_id) <= 64:
+            return {"kernel_image_sha256": image_hash, "live_kernel_build_id": build_id.hex(),
+                    "kernel_image_matches_live_build_id": notes[start:end] in image}
+    return {"kernel_image_sha256": image_hash, "live_kernel_build_id": None, "kernel_image_matches_live_build_id": False}
+
+
 def collect(root, output, kernel_image, boot_image, kernel_log, duration=30, interval=1):
     if duration <= 0 or interval <= 0 or interval > duration:
         raise ValueError("require 0 < interval <= duration")
@@ -122,7 +153,8 @@ def collect(root, output, kernel_image, boot_image, kernel_log, duration=30, int
     if not compatible or "apple,j314s" not in compatible.split():
         raise ValueError("this collector currently qualifies only the owner's J314S")
     identity = {"kernel_release": release, "board": "apple,j314s", "soc": "apple,t6000",
-                "kernel_image_sha256": digest(kernel_image), "boot_payload_sha256": digest(boot_image)}
+                "boot_payload_sha256": digest(boot_image)}
+    identity.update(live_kernel_identity(root / "sys/kernel/notes", kernel_image))
     modules = root / "usr/lib/modules" / release
     identity["modules"] = {str(p.relative_to(modules)): digest(p)
                            for pattern in ("kernel/drivers/gpu/drm/apple/appledrm.ko*", "kernel/drivers/soc/apple/apple-sep.ko*",
@@ -161,7 +193,7 @@ def collect(root, output, kernel_image, boot_image, kernel_log, duration=30, int
             supply.pop("energy_now", None)
             supply.pop("capacity", None)
         return result
-    fixed_controls = controls(before_context) == controls(after_context)
+    fixed_controls = controls(before_context) == controls(after_context) and before_context["active_displays"]["available"]
     uptime = float((read(root / "proc/uptime") or "0").split()[0])
     idle = idle_delta(before_idle, idle_snapshot(root))
     checks = {
@@ -227,6 +259,8 @@ def freeze(release_id, pins_path, evidence_paths, output, channel="experimental"
     if channel not in {"experimental", "stable"}:
         raise ValueError("unknown release channel")
     if channel == "stable":
+        if identities[0].get("kernel_image_matches_live_build_id") is not True or not re.fullmatch(r"[a-f0-9]{32,128}", identities[0].get("live_kernel_build_id") or ""):
+            raise ValueError("stable blocked: kernel image is not bound to the running build ID")
         if failed or missing or len(boots) < 3:
             raise ValueError(f"stable blocked: failures={failed}, missing={missing}, distinct boots={len(boots)} (need 3)")
         for scope in ("suspend_resume", "energy_ab"):
@@ -249,6 +283,8 @@ def freeze(release_id, pins_path, evidence_paths, output, channel="experimental"
                 raise ValueError("stable blocked: energy regression above 10% acceptance budget")
         if any(not r.get("controls_unchanged") for r in records):
             raise ValueError("stable blocked: experimental controls changed during capture")
+        if any(not r.get("context_before", {}).get("active_displays", {}).get("available") for r in records):
+            raise ValueError("stable blocked: active display/refresh controls were not captured")
     result = {"schema": 1, "id": release_id, "channel": channel, "frozen": True,
               "status": "stable-qualified" if channel == "stable" else "frozen-experimental",
               "identity": identities[0], "upstream_pins": pins, "pins_sha256": digest(pins_path),
