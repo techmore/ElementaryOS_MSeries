@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Horizon RDP
+Comment=Native arm64 RDP client (FreeRDP) for remote desktops
+Exec=sh -c 'host=$(zenity --entry --title="Horizon RDP" --text="Desktop host or address:") && [ -n "$host" ] && exec horizon-rdp "$host"'
+Icon=preferences-desktop-remote-desktop
+Terminal=false
+Categories=Network;RemoteAccess;
