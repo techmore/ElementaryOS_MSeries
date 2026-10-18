@@ -188,3 +188,26 @@ Release `aurora-2026.10.17.20` (2026-10-17) exists; we run `.19`. Findings:
   and if it still hangs file a new issue citing #42 with the logs in this file.
   Caution: `.20` is a large rebase (new memory-management paths for every
   process), so test it on its own GRUB entry, not as the default.
+
+## Aurora `.20` installed side by side — 2026-10-18 (not yet booted)
+
+Downloaded `linux-aurora-7.1.12.aurora2-20261017.20-aarch64.pkg.tar.zst` from the
+omacom/linux-aurora release (SHA256 verified against the release `SHA256SUMS`;
+extracted into a scratch dir and inspected first). Installed by hand, mirroring
+the `.19` layout (the upstream `install-aurora-sep.sh` was NOT run):
+
+- modules: `/usr/lib/modules/7.1.12-2-20261017.20-sep-ARCH/`
+- kernel: `/boot/vmlinuz-aurora-sep-20261017.20`
+- initramfs: `/boot/initrd.img-7.1.12-2-20261017.20-sep-ARCH` — rebuilt from the
+  `.19` initramfs layout (same early part, gzip main, same module list, `.20`
+  modules + `drm_dma_helper.ko`; `apple-tunable` and `typec` are built in now).
+  A first attempt with Debian `update-initramfs` was discarded: it does not
+  understand the Arch `cryptdevice=` boot option.
+- GRUB (`/boot/grub/custom.cfg`, backup `custom.cfg.pre-aurora20-*`):
+  `elementary-aurora20` (SEP enabled, the real test) and
+  `elementary-aurora20-nosep` (driver blocked). Nothing armed; default unchanged.
+- `/boot` is 96% full (22 MB free). Old fairydust initramfs files are the
+  obvious candidates to prune; not touched.
+- Test: dock out, `sudo grub-reboot elementary-aurora20`, leave it 10 minutes. If
+  it boots but hangs, boot `-nosep` to confirm and file an upstream issue citing
+  #42. If it does not boot at all, pick any other GRUB entry; nothing else changed.
