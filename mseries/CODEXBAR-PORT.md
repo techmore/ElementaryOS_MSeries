@@ -240,5 +240,6 @@ it reloads Wingpanel and leaves a running CodexBar daemon alone. Do not call a s
 
 `probe/run-switch-probe.sh BUILD_DIR [success|null|array|invalid]` exercises the actual Switch row, delayed confirmation
 and async result with a fake backend in an isolated desktop. It reproduces the freed-argument-array crash before the
-owned account-ID fix. `check-codexbar-port.sh` runs it when Xvfb/DBus are installed. `test-codexbar-deploy.py` checks that
+owned account-ID fix. Meson registers all four cases when Xvfb/DBus are installed, so ordinary deploy checks and
+`check-codexbar-port.sh` run them before installing a build. `test-codexbar-deploy.py` checks that
 routine deployment cannot signal the live panel or quit the daemon.

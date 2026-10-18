@@ -98,10 +98,21 @@ executable(
   build_by_default: false,
 )
 
-executable(
+switch_probe = executable(
   'test-switch',
   'Indicator.vala', 'AccountDialog.vala', 'PanelPreferences.vala', 'RefreshPolicy.vala',
   'QuotaEta.vala', 'Presentation.vala', 'probe/test-switch.vala',
   dependencies: [libwingpanel_dep, granite_dep, json_dep, meson.get_compiler('c').find_library('m')],
   build_by_default: false,
 )
+
+# These are isolated interactions, not screenshots: the pre-fix code SIGSEGVs after confirmation.
+if find_program('xvfb-run', required: false).found() and find_program('dbus-run-session', required: false).found()
+  foreach scenario : ['success', 'null', 'array', 'invalid']
+    test('switch-' + scenario, find_program('bash'),
+      args: [join_paths(meson.current_source_dir(), 'probe/run-switch-probe.sh'), meson.current_build_dir(), scenario],
+      depends: switch_probe,
+      timeout: 30,
+    )
+  endforeach
+endif

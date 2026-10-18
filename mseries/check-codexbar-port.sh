@@ -35,19 +35,6 @@ build=$(mktemp -d); trap 'rm -rf "$build"' EXIT
 if meson setup "$build" "$repo/mseries/codexbar-wingpanel" >/dev/null 2>&1 && ninja -C "$build" >/dev/null 2>&1 \
    && meson test -C "$build" >/dev/null 2>&1; then ok "Wingpanel module builds, tests pass"; else bad "Wingpanel module build/tests"; fi
 
-if command -v xvfb-run >/dev/null && command -v dbus-run-session >/dev/null; then
-  if ninja -C "$build" test-switch >/dev/null 2>&1; then
-    for scenario in success null array invalid; do
-      bash "$repo/mseries/codexbar-wingpanel/probe/run-switch-probe.sh" "$build" "$scenario" >/dev/null 2>&1 \
-        && ok "switch interaction: $scenario" || bad "switch interaction: $scenario"
-    done
-  else
-    bad "switch interaction probe build"
-  fi
-else
-  note "Install xvfb and dbus-run-session to run the isolated Switch regression"
-fi
-
 app="$HOME/.local/bin/codexbar-linux"
 if pgrep -f 'codexbar-linux --background' >/dev/null && snap=$("$app" --snapshot 2>/dev/null); then
   echo "$snap" | python3 -c '

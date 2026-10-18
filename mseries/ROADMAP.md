@@ -13,8 +13,9 @@ other indicator installs. Routine `deploy-codexbar.sh` now installs without rest
 `--restart` explicitly reloads Wingpanel and never quits a running CodexBar daemon. Helper updates take effect on
 next invocation; native module changes wait for login or that explicit reload. Working agreement updated accordingly.
 Verified: reproducer SIGSEGV before fix; four successful headless interaction cases after fix; stubbed deployment
-checks default/--no-restart/--restart and invalid options without signaling real processes. The crash fix needs one
-controlled panel reload to replace the already-loaded faulty code. No Claude/ChatGPT account was changed in testing.
+checks default/--no-restart/--restart and invalid options without signaling real processes. All nine Meson targets
+pass, including four registered Switch interaction cases. Applied one controlled reload to activate the crash fix;
+the existing CodexBar daemon PID 44641 was preserved. No Claude/ChatGPT account was changed in testing.
 
 
 ## Claude Code history across desktop account switches — 2026-10-18
