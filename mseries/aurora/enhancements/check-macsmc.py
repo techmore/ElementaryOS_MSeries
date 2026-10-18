@@ -61,6 +61,7 @@ static int apple_smc_read(void *smc, smc_key key, u8 *value, unsigned size)
 }
 '''
     harness += function
+    harness += "\nstatic const smc_key expected_keys[] = {" + ",".join(key for _, key, _ in names) + "};\n"
     harness += r'''
 int main(void)
 {
@@ -81,6 +82,12 @@ int main(void)
             assert(n == 32 - omitted);
             assert((int)props[n] == -1);
             assert(reads == (mode <= 3 ? 16 - omitted : 16));
+            int cursor = 16;
+            for (int i = 0; i < 16; i++) {
+                if ((int)expected_keys[i] == selected) continue;
+                assert(props[cursor++] == i);
+            }
+            assert(cursor == n);
         }
     }
     puts("macsmc: all-readable and 65 per-key failure cases passed (ASan/UBSan)");

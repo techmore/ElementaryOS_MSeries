@@ -73,8 +73,10 @@ def config_gate(text, data, profile):
             raise ValueError(f"resolved CONFIG_{key}: expected {value}, got {values.get(key)}")
 
 
-def fresh(path):
+def fresh(path, *, outside=None):
     path = Path(path).resolve()
+    if outside and (path == outside or outside in path.parents):
+        raise ValueError("artifact output must be outside the prepared source/build tree")
     if path.exists():
         raise ValueError(f"output must not exist: {path}")
     if path == Path("/boot") or Path("/boot") in path.parents or Path("/Volumes") in path.parents:
@@ -156,7 +158,7 @@ def build(root, output, jobs):
     if platform.system() != "Linux" or platform.machine() not in ("aarch64", "arm64"):
         raise ValueError("full build requires native ARM64 Linux; use the GitHub workflow")
     data, receipt = verify(root)
-    output = fresh(output)
+    output = fresh(output, outside=root)
     source, out = root / "source", root / "build"
     env = dict(os.environ, ARCH="arm64", LLVM="1", RUSTUP_TOOLCHAIN="1.93.1",
                KBUILD_BUILD_USER="elementary-mseries", KBUILD_BUILD_HOST="ci",

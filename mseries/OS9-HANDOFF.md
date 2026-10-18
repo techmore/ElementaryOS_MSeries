@@ -15,7 +15,7 @@ applies patches without fuzz, modifies the actual full config, resolves/checks
 Kconfig and creates a separate payload-only Debian package plus complete
 patched corresponding source. Kernel identity: `7.1.12-elementary-aurora20-enh1`
 (or `-egpu`). The fixed .20 installer/stager intentionally does not install it.
-16 local adapter regressions, 58 upstream Rust tests and the production SMC
+17 local adapter regressions, 58 upstream Rust tests and the production SMC
 helper's all-readable + 65 failure cases pass (ASan/UBSan). Native ARM64 full
 build and package inspection are in `aurora-enhancements.yml`; CI result will
 be recorded with the merge. Hardware boot and battery improvements unmeasured.

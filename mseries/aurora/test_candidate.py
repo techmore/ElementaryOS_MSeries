@@ -82,6 +82,13 @@ class CandidateTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "private build directory"):
                 candidate.fresh(path)
 
+    def test_artifacts_cannot_be_archived_into_their_own_source(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            with self.assertRaisesRegex(ValueError, "outside the prepared"):
+                candidate.fresh(root / "source/artifacts", outside=root)
+            self.assertFalse((root / "source/artifacts").exists())
+
 
 if __name__ == "__main__":
     unittest.main()
