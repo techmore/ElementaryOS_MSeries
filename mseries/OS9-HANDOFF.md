@@ -1,5 +1,15 @@
 # OS 9 implementation / Claude Code handoff
 
+## Screenshot deployment repair — 2026-10-18 (Codex)
+
+Found why the first post-login test could still fail: installed Gala had the earlier click-only
+picker (`picked_point` symbols); rebuilt from main with Space/highlight (`update_hover` now present).
+New binary takes effect at next login. Shelf was absent: autostart generator rejected literal `%h`
+in Exec. Installer now renders quoted absolute paths for shelf and Markup. Installed both; desktop
+validation passes. A synthetic Screenshot PNG triggered `showing`, then `expired` four seconds later.
+Sound asset exists and event sounds enabled; audible capture and highlight/drag-out remain unverified.
+Next: owner re-login, Cmd+Shift+4 → Space → hover → click. Recovery commands in screenshot-shelf/README.md.
+
 ## CodexBar deployment follow-up: avoid unchanged icon invalidation — 2026-10-18
 
 The local-token change was activated with one requested reload and passed its first 61-second
