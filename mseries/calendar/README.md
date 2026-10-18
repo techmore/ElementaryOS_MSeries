@@ -134,3 +134,17 @@ remain available in the Tasks app. No personal task is changed by the tests.
 The private-D-Bus fixture also checks persisted status/percent/timestamp, stale
 row edits, identical UIDs in different lists, recurring advancement, and a
 missing-record failure with checkbox/error recovery.
+
+
+## Adding tasks in the panel
+
+Type a title in **New task…**, choose a writable **List**, then press Enter or
+click **Add**. The selector initially uses the default Tasks list when available
+and retains your chosen list while the panel runs. New tasks have no due date and
+appear in the same EDS list in elementary Tasks; use Tasks to add dates or details.
+
+Saving disables repeat submission and keeps the dropdown open. Blank titles are
+ignored. Failed saves retain the draft and show a retry error; unavailable or
+read-only lists cannot receive new tasks. The private fixture checks Enter and
+Add, exact list identity, literal Unicode/markup titles, persisted metadata,
+duplicate suppression and draft/list recovery when sources become unavailable.
