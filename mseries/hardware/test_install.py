@@ -30,6 +30,17 @@ class InstallTests(unittest.TestCase):
             subprocess.run(command + ['--uninstall'], check=True, capture_output=True)
             self.assertFalse((d / 'usr/bin/mseries-power-report').is_symlink())
             self.assertFalse(bt.is_symlink())
+            self.assertEqual(unit.readlink(), Path('/dev/null'))
+
+    def test_uninstall_preserves_a_preexisting_command(self):
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t); command = d / 'usr/bin/mseries-power-report'
+            command.parent.mkdir(parents=True)
+            command.write_text('administrator command')
+            install = ['bash', str(ROOT / 'install-hardware-support.sh'), '--root', str(d)]
+            subprocess.run(install, check=True, capture_output=True)
+            subprocess.run(install + ['--uninstall'], check=True, capture_output=True)
+            self.assertEqual(command.read_text(), 'administrator command')
 
     def test_keyboard_option_compiles_only_requested_root(self):
         with tempfile.TemporaryDirectory() as t:

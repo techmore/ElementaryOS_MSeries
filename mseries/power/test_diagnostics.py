@@ -69,6 +69,7 @@ class SleepTests(unittest.TestCase):
                  dict(start_boot_id='unknown'), dict(boot_id='boot-b'), dict(start_energy='-1'),
                  dict(start_charger='1'), dict(end_status='Charging'), dict(start_charger=''),
                  dict(end_status='Unknown'), dict(end_energy='51000000'), dict(end_real='15000'),
+                 dict(end_real='9999', end_boot='110', end_awake='101'),
                  dict(end_awake='3700'), dict(end_awake='nan'), dict(end_awake='99')]
         for changes in cases:
             with self.subTest(changes=changes):
@@ -149,6 +150,11 @@ class SleepTests(unittest.TestCase):
 
 
 class PowerTests(unittest.TestCase):
+    def test_unavailable_sleep_helper_does_not_break_power_report(self):
+        with patch.object(power.Path, 'exists', return_value=True), \
+             patch.object(power.subprocess, 'run', side_effect=subprocess.TimeoutExpired('sleep-cost', 5)):
+            self.assertIn('Last suspend: unavailable', power.sleep_section())
+
     def test_nonfinite_and_excessive_samples_are_rejected(self):
         for arg in ['nan', 'inf', '-1', '0', '301']:
             p = subprocess.run([sys.executable, str(Path(power.__file__)), '--sample', arg], capture_output=True)

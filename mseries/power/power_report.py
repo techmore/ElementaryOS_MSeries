@@ -167,8 +167,11 @@ def pmp_section():
 def sleep_section():
     lines = ['Sleep states: %s' % (read(SYS / 'power/mem_sleep') or 'unknown')]
     if SLEEP_COST.exists():
-        result = subprocess.run([sys.executable, '-I', str(SLEEP_COST), 'last'], capture_output=True, text=True, timeout=5)
-        lines.append('Last suspend: ' + (result.stdout.strip() or 'unknown'))
+        try:
+            result = subprocess.run([sys.executable, '-I', str(SLEEP_COST), 'last'], capture_output=True, text=True, timeout=5)
+            lines.append('Last suspend: ' + (result.stdout.strip() if result.returncode == 0 else 'unavailable'))
+        except (OSError, subprocess.SubprocessError):
+            lines.append('Last suspend: unavailable')
     return lines
 
 

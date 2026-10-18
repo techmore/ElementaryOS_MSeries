@@ -22,12 +22,15 @@ not map directly to this desktop. Existing m1n1/video pins need no payload
 refresh. Kernel source work remains separate in PR #79. ESP mtools validation
 already existed; added a mandatory CI GPT/FAT fixture for its real readback.
 
-Local fixtures: 12 power diagnostics tests, 15 Touch ID tests, three installer/
+Local fixtures: 13 power diagnostics tests, 15 Touch ID tests, four installer/
 CI-dependency checks and 12 Bluetooth recovery groups pass. The real FAT fixture
 requires fdisk/mtools (skipped on this macOS host, required in the dedicated
 Linux CI job). Image pruning tests and broader wiring validation run there too.
 No target hardware, bootloader/kernel, audio, display, Bluetooth or key setting
-changed. No measured battery gain or factory boot claim. Next: inspect CI,
+changed. No measured battery gain or factory boot claim. Initial Linux CI on `2ae80a5`
+passed both jobs ([run 39085829799](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39085829799)), including real FAT readback, ShellCheck, image pruning and power-install
+regressions. Follow-up hardens removal and error handling; check the final PR
+head results before merging. Next:
 then install diagnostics on Linux and qualify suspend/unlock logs; opt in to
 Bluetooth recovery only after retaining its matching failure evidence.
 

@@ -3,6 +3,7 @@
 # Adapted from omacom/omarchy-mac-pkgs aa747a8c; see ../power/UPSTREAM.md.
 
 set -euo pipefail
+export LC_ALL=C
 
 support_status=0
 /usr/libexec/mseries/bluetooth-supported || support_status=$?

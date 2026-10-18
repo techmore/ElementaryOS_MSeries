@@ -189,7 +189,7 @@ def judge(record):
     if record.get('action') not in ('suspend', 'hybrid-sleep', 'suspend-then-hibernate', 'hibernate'):
         return 'missing-reading'
     asleep, wall = end_boot - start_boot, end_real - start_real
-    if asleep <= 0 or abs(asleep - wall) > max(CLOCK_TOLERANCE[0], CLOCK_TOLERANCE[1] * wall):
+    if asleep <= 0 or wall <= 0 or abs(asleep - wall) > max(CLOCK_TOLERANCE[0], CLOCK_TOLERANCE[1] * wall):
         return 'clocks-disagree'
     try:
         awake = float(record['end_awake']) - float(record['start_awake'])

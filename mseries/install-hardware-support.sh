@@ -48,17 +48,24 @@ link() {
   fi
 }
 if (( remove )); then
-  for file in usr/bin/mseries-power-report usr/bin/mseries-hw-apple-silicon \
+  for file in usr/bin/mseries-hw-apple-silicon \
     usr/share/applications/mseries-power-report.desktop \
     usr/libexec/mseries/power-report usr/libexec/mseries/sleep-cost \
     usr/libexec/mseries/bluetooth-supported usr/libexec/mseries/bluetooth-resume-fix \
     usr/lib/systemd/system-sleep/mseries-sleep-cost \
     usr/lib/systemd/user/mseries-sleep-cost.service \
-    usr/lib/systemd/user/graphical-session.target.wants/mseries-sleep-cost.service \
     usr/lib/systemd/system/mseries-bluetooth-resume-fix.service \
-    etc/systemd/system/suspend.target.wants/mseries-bluetooth-resume-fix.service \
     etc/udev/hwdb.d/90-mseries-keyboard.hwdb; do
     rm -f "${root%/}/$file"
+  done
+  # Only remove enable/command links this installer owns. Keep admin masks,
+  # regular launchers and replacement links that staging deliberately preserved.
+  for pair in \
+    'usr/bin/mseries-power-report|../libexec/mseries/power-report' \
+    'usr/lib/systemd/user/graphical-session.target.wants/mseries-sleep-cost.service|../mseries-sleep-cost.service' \
+    'etc/systemd/system/suspend.target.wants/mseries-bluetooth-resume-fix.service|/usr/lib/systemd/system/mseries-bluetooth-resume-fix.service'; do
+    file=${root%/}/${pair%%|*}
+    if [[ -L $file && $(readlink "$file") == "${pair#*|}" ]]; then rm "$file"; fi
   done
   echo 'Removed support files. Historical energy records are retained. Log out/reboot before checking removal.'
   exit 0
