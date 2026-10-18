@@ -12,6 +12,7 @@ rows (arrow keys + Enter open), type-to-search, Ctrl+F / Ctrl+R / Alt+1…4, rem
 follow the sort setting, and pin/hide raise a Granite toast with Undo. Rendered headless (light/dark, toast, details,
 real snapshot, Settings). Deployed with `deploy-repobar.sh` (no restart). **Unverified:** live panel until Wingpanel
 reloads; real keyboard and pointer input.
+
 ## Gala CPU investigation — 2026-10-18 (Claude Code)
 
 Measured: Gala's main thread uses 25–35% of one core and presents about 100+ frames/s (505 `ADDFB2` in 5 s under strace)
