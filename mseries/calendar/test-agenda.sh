@@ -20,5 +20,5 @@ valac --pkg wingpanel-9 --pkg gtk4 --pkg libadwaita-1 --pkg libecal-2.0 \
     -X -DLIBICAL_GLIB_UNSTABLE_API=1 -o "$state/test-agenda" "$here/test-agenda.vala"
 env XDG_CONFIG_HOME="$state/config" XDG_DATA_HOME="$state/data" \
     XDG_CACHE_HOME="$state/cache" XDG_RUNTIME_DIR="$state/runtime" \
-    GSETTINGS_BACKEND=memory GSK_RENDERER=cairo GDK_BACKEND=x11 GTK_A11Y=none GIO_USE_VFS=local \
+    LC_ALL=C.UTF-8 GSETTINGS_BACKEND=memory GSK_RENDERER=cairo GDK_BACKEND=x11 GTK_A11Y=none GIO_USE_VFS=local \
     dbus-run-session -- xvfb-run -a timeout 90 "$state/test-agenda" "$plugin"
