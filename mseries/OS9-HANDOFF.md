@@ -418,6 +418,38 @@ Upstream `.20` explicitly does not qualify M1 Pro/Max/Touch ID on this release.
 Next task: review the matched payload/fallback contract, then a separately
 controlled hardware batch. Existing dock G2–G5 results have not advanced.
 
+## Sound Output switcher and AirPlay destinations — 2026-10-16 (ported to main 2026-10-18)
+
+Ported from `claude/airplay-destinations` (commits `636b239`, `3b8f31c`, `0eeefa7`) onto
+current main as `claude/airplay-destinations-2`. That branch's CodexBar, fairydust/USB4,
+Orchard, brightness and window-snapping WIP were not ported: main already has or supersedes
+them, or they live elsewhere (brightness in PR #57, Orchard in its own repo, fairydust is
+kernel work owned by another agent).
+
+- **Sound Output list:** `quick-settings/AudioOutputModel.vala` parses `pw-dump` into
+  outputs (Built-in / Bluetooth / AirPlay / USB / HDMI-DisplayPort, skips virtual sinks and
+  unplugged jacks, marks the default from `default.audio.sink`); `AudioOutput.vala` shows it
+  in the gear menu, and a click runs `wpctl set-default`. `patches/quick-settings-audio-output.patch`
+  wires it in. It needs `libjson-glib-dev`, now in the image BuildPackages and the firstboot
+  `quick` deps. `install-airplay-discovery.sh` adds PipeWire's RAOP discovery drop-in. It does
+  not restart PipeWire.
+- **AirPlay destinations:** `airplay/` (`airplay_core.py`, the `mseries-airplay-outputs`
+  CLI/GTK window, tests) and `install-airplay-outputs.sh`. Each receiver gets a dot. Active
+  receivers join one combine-stream sink, **AirPlay Group**, which runs as its own PipeWire
+  client under the transient user unit `mseries-airplay-group`. The main PipeWire and
+  WirePlumber are never restarted. The choice is saved in `~/.config/mseries/airplay.json`.
+  `quick-settings/AirPlayOutputs.vala` puts the dots under the Sound Output list.
+- **Verified on the port (2026-10-18, headless):** 6 AirPlay core tests;
+  `audio/test_audio_output_model.sh` (all checks ok); `audio/test_airplay_outputs_render.sh`
+  under xvfb with fake receivers (the row expands and a dot toggles the saved state). The
+  brightness and audio-output patches apply in order to quick-settings `fb721d4`.
+- **Earlier (2026-10-16, branch):** the full plugin built and linked; on the live graph the
+  CLI created and removed the group sink for the chosen RAOP receivers, and a silent stream
+  opened their connections.
+- **Not verified:** audible AirPlay playback, sync between receivers, the popover on the real
+  panel after this port, real Bluetooth/AirPlay switching, and the login autostart. The CI
+  `.deb` build (`mseries/debs/build.sh`) does not yet include these widgets.
+
 ## VM toolkit, window corners, mouse and chime fixes — 2026-10-16 (DeepSeek/OpenCode)
 
 `mseries/vms/mseries-vm` now creates, fetches media for and runs the ARM64 test guests.

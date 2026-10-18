@@ -101,6 +101,7 @@ jobs:
           python3 -m unittest discover -s mseries/brightness -p 'test_*.py'
           python3 -m unittest discover -s mseries/keyboard-backlight -p 'test_*.py'
           python3 -m unittest discover -s mseries/audio -p 'test_*.py'
+          python3 -m unittest discover -s mseries/airplay -p 'test_*.py'
           python3 -m unittest discover -s mseries/local-ai -p 'test_*.py'
 
       - name: Validate experimental dock patches offline
