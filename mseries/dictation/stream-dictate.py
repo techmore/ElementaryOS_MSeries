@@ -18,6 +18,7 @@ GAIN = os.environ.get("STREAM_GAIN", "0.2")
 # 3 raw AOP channels -> mono, drop DC/rumble, band-limit before resampling, fixed gain, limiter
 CHAIN = ("pan=mono|c0=0.333*c0+0.333*c1+0.333*c2,highpass=f=150,lowpass=f=7000,lowpass=f=7000,"
          f"volume={GAIN},alimiter=limit=0.9,aresample=async=1")
+KEEP = bool(os.environ.get("STREAM_KEEP"))
 DRY = bool(os.environ.get("STREAM_DRY"))  # print instead of typing
 KEY = int(os.environ.get("STREAM_KEY", "184"))  # KEY_F14
 THREADS = int(os.environ.get("STREAM_THREADS", "6"))
@@ -124,9 +125,11 @@ class Dictation:
         pending = first
         typed = ""
         t0 = time.time()
+        kept = bytearray()
         try:
             with self.model.session(n_threads=THREADS) as s, s.stream() as st:
                 buf = pending
+                peak = sq = 0.0; n = 0
                 stopped_at = None
                 while True:
                     if self.stop_evt.is_set() and stopped_at is None:
@@ -138,7 +141,11 @@ class Dictation:
                         break
                     buf += data
                     while len(buf) >= CHUNK * 2:
+                        if KEEP:
+                            kept += buf[:CHUNK * 2]
                         pcm = np.frombuffer(buf[:CHUNK * 2], np.int16).astype(np.float32) / 32768
+                        peak = max(peak, float(np.abs(pcm).max()))
+                        sq += float((pcm ** 2).sum()); n += len(pcm)
                         buf = buf[CHUNK * 2:]
                         up = st.feed(pcm)
                         if up.committed_changed:
@@ -154,7 +161,13 @@ class Dictation:
                     rest = ""  # revised an already typed prefix: never retype or delete
                 if rest.strip():
                     self.typer.q.put(rest)
-                log(f"dictated {len(final)} chars in {time.time() - t0:.1f}s")
+                rms = (sq / max(n, 1)) ** 0.5
+                log(f"dictated {len(final)} chars in {time.time() - t0:.1f}s; audio peak {peak:.3f} rms {rms:.4f}")
+                if not final.strip() and not DRY:
+                    notify(f"Didn't catch that (mic level {rms * 100:.1f}%, peak {peak * 100:.0f}%)")
+                if KEEP:  # debug only: last capture, in RAM (XDG_RUNTIME_DIR), overwritten each time
+                    with wave.open(os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "dictation-last.wav"), "wb") as w:
+                        w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(bytes(kept))
         except Exception as e:  # keep the daemon alive
             log("stream error:", repr(e))
         finally:
