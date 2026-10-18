@@ -7,7 +7,7 @@ under the pointer gets a blue highlight, click captures it, Space again returns 
 `gala-screenshot-window-pick.patch` rewritten (SelectionArea does the picking/highlight). The shelf thumbnail is
 the fixed 280x180 card again but expires after 4 s (hover or drag keeps it). **Verified:** patched Gala builds;
 card renders at fixed size. **Not verified:** the highlight and capture on the live session (private Gala applies
-at next login), real drag-out. Next: re-login, try Command+Shift+4, Space, click.
+at next login), real drag-out. Next: re-login (running Gala PID predates the build; owner's first try hit the old Gala and cancelled), try Command+Shift+4, Space, click; expect blue highlight, shutter sound, then the thumbnail for 4 s. If not, read `journalctl --user -b | grep gala`.
 
 ## Battery pass 2 — 2026-10-18 (Claude Code)
 
@@ -24,17 +24,9 @@ GTK4+Granite "Battery" app. Installed with `install-battery.sh`; logger running 
 headless on synthetic data. **Unverified:** look in the live theme, real unplugged sessions (still on the charger).
 Next: unplug for a few hours, read `mseries-battery sessions`, then consider a Wingpanel link to the app.
 
-## Screenshots: click a window with Command+Shift+4; fixed persistent thumbnail — 2026-10-18 (Claude Code)
+## Screenshots v1 (superseded) — 2026-10-18 (Claude Code)
 
-Command is Ctrl here, so Command+Shift+4 is Gala's `area-screenshot`. New `mseries/patches/gala-screenshot-window-pick.patch`
-(on top of screen-corners + panel-offset, applied by `install-gala-screen-corners.sh`): in that selector a plain click
-(no drag) captures the topmost window under the pointer via Gala's own window capture; dragging still selects an
-area. The shelf (`screenshot-shelf/mseries-screenshot-shelf`) now draws every shot in a fixed 280x180 card, bottom-right,
-that stays until the x, a drag-and-drop or the next shot (no 7 s expiry; Markup no longer dismisses it).
-**Verified:** patched Gala compiles and links; installed to the private prefix (takes effect at next login);
-shelf installed and running; card renders at identical size for wide and tall images (headless snapshot).
-**Not verified:** the click-to-capture on the real session (needs re-login), card position and drag-out on the
-real screen (no test window was put on the owner's display). Next: re-login, press Command+Shift+4, click a window.
+First attempt used a plain click to pick a window; replaced by Space window mode (see v2 above). The fixed 280x180 shelf card from this entry stands.
 
 ## Native Discord (Vesktop arm64) — 2026-10-18 (Claude Code)
 

@@ -1,5 +1,12 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Screenshots: Space window mode and 4 s shelf — 2026-10-18
+
+Command+Shift+4 drags an area; Space switches to window mode (blue highlight, click captures, shutter sound);
+the fixed 280x180 thumbnail floats bottom-right for 4 s. Code is on main (`patches/gala-screenshot-window-pick.patch`,
+`screenshot-shelf/`, details in [screenshot-shelf/README.md](screenshot-shelf/README.md)). **Next:** owner re-logs in
+so the patched Gala loads, then confirms highlight, sound and thumbnail; not yet seen working live.
+
 ## Week/Day time-grid views — 2026-10-18
 
 Published and deployed native hourly/half-hour slots, all-day bands, overlap

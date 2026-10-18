@@ -27,8 +27,8 @@
 # gala-dock-workarea.patch reserves visible dock space and releases it after hiding.
 
 #
-# And gala-screenshot-window-pick.patch: in the Command+Shift+4 selector a plain click on a window
-# screenshots that window (macOS style); dragging still selects an area.
+# And gala-screenshot-window-pick.patch: in the Command+Shift+4 selector, Space switches to
+# window mode (blue highlight on the window under the pointer, click captures it); dragging still selects an area.
 set -euo pipefail
 
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
