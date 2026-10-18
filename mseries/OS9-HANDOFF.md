@@ -1,5 +1,33 @@
 # OS 9 implementation / Claude Code handoff
 
+## Dock startup/focus audit and merge preparation — 2026-10-18
+
+Reviewed PR #100 on current main in an isolated checkout, preserving the other
+desktop/CodexBar work and both handoff histories. Retained its delayed Gala
+workspace synchronization and stale-removal bounds check. Added two fixes:
+the application presents only its initial window (repeated activation stays
+quiet, including a panel with no active keyboard window); the wrapper forwards
+HUP/INT/TERM to its dock child and reaps it before exiting. Signal statuses no
+longer cause stock fallback; actual early faults and missing binaries/libraries
+still do. A shell cannot forward SIGKILL.
+
+Verification: composed ARM64 dock build/install into a temporary prefix; two
+native harnesses compiling the actual patched production methods with controlled
+services; seven generated-wrapper test groups; eight existing boot-profile tests;
+shell syntax/ShellCheck; eleven real-dock/GTK groups in a separate headless Gala
+with a private D-Bus/Wayland session and temporary keyfile settings. New Wayland
+case preserved keyboard focus and typed `aaa` across three remote activations.
+Native harnesses reject the original upstream activation/workspace behavior as
+negative controls. Dedicated ARM64 CI now runs the startup/wrapper regressions.
+
+The owner's graphical dock remains stopped behind the local incident guard;
+no source installer or new binary was deployed into the running desktop and no
+approval dialog was opened. Existing portal/keyring startup warnings occurred
+in the isolated compositor; all assertions passed. These results do not prove
+the complete root cause of the reported floating/attention-stealing incident.
+Next: after a deliberate decision to re-enable it, qualify physical typing,
+session restart and monitor transitions. See `display-space/README.md`.
+
 ## YouTube launcher/logo included in fresh-install payload — 2026-10-18
 
 `enhance.sh` now stages the contained launcher, system desktop entry and YouTube

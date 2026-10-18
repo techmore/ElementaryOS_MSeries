@@ -1,10 +1,42 @@
+diff --git a/src/Application.vala b/src/Application.vala
+index eea910c..5a3d1d2 100644
+--- a/src/Application.vala
++++ b/src/Application.vala
+@@ -17,16 +17,19 @@ public class Dock.Application : Gtk.Application {
+     }
+
+     protected override void activate () {
+-        if (active_window == null) {
+-            var main_window = new MainWindow ();
++        // A supervisor or a second launcher can activate the existing instance.
++        // The compositor owns panel visibility; never request focus again here.
++        if (get_windows () != null) {
++            return;
++        }
+
+-            add_window (main_window);
++        var main_window = new MainWindow ();
++        add_window (main_window);
+
+-            unowned var unity_client = Unity.get_default ();
+-            unity_client.add_client (AppSystem.get_default ());
+-        }
++        unowned var unity_client = Unity.get_default ();
++        unity_client.add_client (AppSystem.get_default ());
+
+-        active_window.present ();
++        main_window.present ();
+     }
+
+     public override bool dbus_register (DBusConnection connection, string object_path) throws Error {
+
 diff --git a/src/WorkspaceSystem/WorkspaceSystem.vala b/src/WorkspaceSystem/WorkspaceSystem.vala
 index 36a8e64..adccaa2 100644
 --- a/src/WorkspaceSystem/WorkspaceSystem.vala
 +++ b/src/WorkspaceSystem/WorkspaceSystem.vala
 @@ -18,11 +18,16 @@ public class Dock.WorkspaceSystem : Object {
      }
- 
+
      public async void load () {
 -        yield sync_windows ();
 -
@@ -22,16 +54,16 @@ index 36a8e64..adccaa2 100644
 +            yield sync_windows ();
 +        }
      }
- 
+
      private Workspace add_workspace () {
 @@ -84,6 +89,10 @@ public class Dock.WorkspaceSystem : Object {
              index--;
          }
- 
+
 +        if (index < 0 || index >= workspaces.get_n_items ()) {
 +            return;
 +        }
 +
          workspaces.remove (index);
      }
- 
+

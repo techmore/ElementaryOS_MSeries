@@ -138,6 +138,18 @@ icon, also installed for the current user. Desktop entry, SVG and GTK icon looku
 checks pass; live dock appearance after reopening remains to confirm.
 [Installation instructions](video-decode/README.md#youtube-launcher-icon--2026-10-18).
 
+## Dock startup and focus audit — 2026-10-18
+
+Reviewed the pending startup fix against current main and added quiet repeated
+activation plus wrapper stop forwarding/child reaping. Delayed Gala readiness,
+stale workspace removals and false stock fallback now have regression coverage.
+Two native production-method harnesses, seven generated-wrapper groups, eight
+boot-profile tests, the ARM64 composed dock build and eleven isolated Wayland
+groups pass. The latter retain focus and typed input during repeated activation.
+Current dock remains stopped; no live redeployment. The reported floating dock
+still needs physical-session/restart/monitor-transition qualification.
+[Implementation and test scope](display-space/README.md#dock-activation-and-session-stops).
+
 ## Dock-aware window space — 2026-10-18
 
 Visible dock space is reserved by the native compositor; hiding returns it to

@@ -53,6 +53,39 @@ plugin must be present in that prefix's `lib/gala/plugins`. Dock builds can be
 selected with `MSERIES_TEST_DOCK_PREFIX`. The existing quarter regression test
 also accepts `MSERIES_TEST_GALA_PREFIX`.
 
+## Dock activation and session stops
+
+The startup patch waits for Gala's desktop integration before synchronizing
+workspaces and ignores stale workspace-removal indexes. Repeated activation of
+an existing dock no longer calls `present()` or creates another window when
+the panel is not the active keyboard window. Panel visibility stays with Gala.
+
+The wrapper forwards HUP, INT and TERM to its dock child and waits for it to
+exit, preventing a normal session stop from leaving an orphaned dock behind.
+Signal exit statuses do not mark the private build as broken or start the stock
+dock. Actual early failures, missing binaries and missing libraries retain the
+stock fallback. SIGKILL cannot be trapped or forwarded by a shell wrapper.
+
+Regression checks:
+
+- `bash mseries/dock-tests/test-startup.sh` compiles the production activation
+  and workspace methods against controlled native services. It requires
+  `git`, `valac`, a C compiler and GLib/GIO development files, and fetches the
+  pinned upstream dock. `MSERIES_DOCK_SOURCE` can select a local Git checkout
+  at the same source revision; only its committed files are read.
+- `python3 mseries/dock-tests/test-launcher.py` executes the generated wrapper
+  with private fake binaries, including signal forwarding, child reaping,
+  signal exits, real errors, persistent fallback and missing dependencies.
+- The isolated Wayland test above also verifies that three repeated dock
+  activations preserve a GTK client's keyboard focus and typed text. It checks
+  the real compiled dock, while the native method tests use controlled stubs.
+
+These checks passed on ARM64, including the composed dock build and all eleven
+private Wayland test groups. They do not establish the cause or complete repair
+of every reported floating-dock incident. The owner's running dock remains
+stopped; this audit does not install a new launcher or re-enable it. Physical
+session, restart and monitor-transition qualification remains to be done.
+
 ## Full-height boot choice
 
 The boot helper duplicates the **exact running kernel's existing stanza** from
@@ -98,7 +131,8 @@ this profile's block so later unrelated boot entries survive.
   optional clockright ordering remain in the composed build.
 - Dock: `elementary/dock` at
   `8b45a68a122947ad3a6427bf6e159ec2acf04ad0` (8.3.3), GPL-3.0; modified by
-  `mseries/patches/dock-drawers.patch`. The cached DisplayConfig implementation
+  `mseries/patches/dock-drawers.patch` and `dock-workspace-startup.patch`.
+  The cached DisplayConfig implementation
   is adapted from the same pinned Wingpanel source, retaining its SPDX header.
 - Gala: `elementary/gala` at `f0791434ac40a50f2aec64700a47b3bb04145752`
   (8.6.2), GPL-3.0-or-later; `gala-dock-workarea.patch` composes after the
