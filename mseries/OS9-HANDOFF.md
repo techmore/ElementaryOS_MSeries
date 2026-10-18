@@ -57,13 +57,19 @@ pins keep exp1 verifiable after future release changes. The next collector adds
 read-only active refresh/VRR/layout/display-power capture (no monitor serials).
 Exp1 had available-mode lists only, so stays an uncontrolled observation. A
 later diagnostic observed internal fixed 120 Hz and external 1080p fixed 60 Hz;
-no settings were applied. Local 43 regression checks and public dashboard
+no settings were applied. Local 46 regression checks and public dashboard
 checks pass. Additional reviewed-source controls pass: original 7 GPU-reader
 tests, 14 selected M1/M2 clock controls, DCP route fixture and 42 Bluetooth
 recovery controls under sanitizers. `review-host-check.py` and the retained
 source-host receipt bind the input tree and production bodies; these are
 simulated-service host checks, not new hardware acceptance. Update this entry
 with native CI results before merging follow-up.
+
+A separate same-boot proof binds live kernel GNU build ID `0d293a31…` to the
+exact `.20` ARM64 Image hash recorded in exp1. New captures hash and match a
+single image-byte snapshot; stable promotion requires the live build-ID match.
+Original exp1 assets/identity are unchanged; new-identity captures need their
+own freeze. Truncated/missing/mismatched notes fail closed in regression tests.
 
 ## Window snapping remains enabled; native quarters installed — 2026-10-18
 

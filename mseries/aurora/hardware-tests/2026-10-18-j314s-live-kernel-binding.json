@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "kind": "supplemental-live-kernel-image-binding",
+  "captured_at": "2026-10-18T09:44:14.715657+00:00",
+  "boot_id": "932d0e9b-b36b-4cfc-8f69-fb31335f4d6c",
+  "kernel_release": "7.1.12-2-20261017.20-sep-ARCH",
+  "kernel_image_sha256": "543d1efd2dffaf621d1d7d1ba092cec71ee955903ec63c112bbcd32d921edbbd",
+  "live_kernel_build_id": "0d293a3165f0077245a905b3f77c4061396ee2c9",
+  "kernel_image_matches_live_build_id": true,
+  "original_receipt_sha256": "55ca90fc778b02df50ce0cfd8acd914b0723c89d1e1bc54e87f7622ae6e79996",
+  "scope": "The live GNU build-ID note is present in the exact ARM64 Image recorded by exp1, observed on the same boot. Separate post-freeze proof; no new runtime feature or energy qualification."
+}

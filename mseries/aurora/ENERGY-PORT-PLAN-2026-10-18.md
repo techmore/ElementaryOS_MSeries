@@ -106,7 +106,9 @@ power source, topology and workload differ from ours. These are **not local gain
    boot observation, PMP readiness, idle accounting and selected severe-log
    screening pass. Full graphics/GPU/storage/network/input/thermal/suspend/
    recovery/energy acceptance is explicitly not run. Freeze channel is
-   **experimental**, never stable.
+   **experimental**, never stable. A later same-boot GNU build-ID proof binds
+   the live kernel to that exact Image hash without editing exp1; future stable
+   captures require this match as well as complete feature evidence.
 2. **Now: integrate the previously CI-built source ports.**
    PR #79's six-patch source lane is integrated, with authors/hashes retained.
    Its unchanged source series previously built both native ARM64 profiles in

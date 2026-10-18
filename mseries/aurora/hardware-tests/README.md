@@ -56,7 +56,13 @@ sensor probe, disk workload, display-rate change or audio change. Kernel-log
 UUIDs/addresses and full command lines are not copied into the public receipt;
 the current-boot ID and whitelisted feature flags are retained. Module hashes
 describe installed files; they do not prove a module was not replaced on disk
-after it was loaded. Kernel image identity describes the explicit boot file.
+after it was loaded. Exp1's kernel image identity describes the explicit boot
+file. A separate [live build-ID proof](2026-10-18-j314s-live-kernel-binding.json)
+subsequently found the running GNU build-ID note in that same exact ARM64 Image
+on the same boot. Exp1 is unchanged. Future captures bind the live build ID and
+image hash from one image-byte snapshot; missing/mismatched notes block stable
+promotion. This supports uncompressed ARM64 Image files, as used on this J314S;
+it is not a signature or proof of module memory contents.
 Archive the corresponding original package as well when freezing distribution.
 The [binary verification](2026-10-18-j314s-binary-verification.json) confirms
 that the observed kernel image, appledrm/SEP module files and J314S DTB exactly
