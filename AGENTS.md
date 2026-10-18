@@ -30,6 +30,14 @@
   instead of committing unless explicitly assigned ownership of Git writes.
 - Codex/Claude handle implementation and review; OpenCode can handle build
   checks and log analysis. Read the latest handoff before starting work.
+- Before speech, dictation or voice work, read the [canonical qualification ledger](mseries/dictation/QUALIFICATION-INDEX.md)
+  and its [JSON index](mseries/dictation/qualification-index.json). Reuse completed
+  passes and failures; never repeat a comparable finished trial or duplicate an
+  owned queue. Inspect the units/lock and resume only incomplete cases with the
+  same recorded identity. Preserve prior receipts and update the ledger after a
+  concrete fix or deployment. For MCP/app workflows, first read
+  [the app integration record](mseries/local-ai/APP-INTEGRATION.md) and its retained
+  receipts; completed adapter/model cases are evidence to reuse too.
 - The owner explicitly approved OpenCode's configured provider receiving
   repository build configuration/handoffs and public GitHub Actions build
   logs (including environment/package details) for scoped build analysis.

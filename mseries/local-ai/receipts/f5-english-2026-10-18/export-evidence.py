@@ -11,7 +11,7 @@ def sanitize(v):
  return v
 def write(rel,value):
  p=out/rel;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(sanitize(value),indent=2,ensure_ascii=False)+'\n')
-folders=sorted(p for p in work.glob('f5-*') if p.is_dir() and not p.name.startswith('f5-installed'))
+folders=sorted(p for p in work.glob('f5-*') if p.is_dir())
 manifest={};snapshots={}
 for folder in folders:
  files=[]

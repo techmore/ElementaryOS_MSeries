@@ -1,15 +1,26 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
-## English F5 completion and optional voice — 2026-10-18
+## English F5 deployed; reuse canonical evidence — 2026-10-18
 
 [Acceptance/deployment record](dictation/F5-ENGLISH-ACCEPTANCE.md) and
-[canonical qualification index](dictation/QUALIFICATION-INDEX.md) supersede earlier
-next-step lists. CPU Nemotron is the fastest quiet realtime candidate; native ANE
-and MLX remain selectable with bounded residency. Actual Code/Newelle and toolkit
-entry tests pass exact words; Chromium draft-autocommit failures are retained and
-speculative app composition is suppressed. Only stable words are inserted.
-Final sustained MLX, Tasks, joined voice and deployed checks are tracked in the
-index; do not repeat completed cases to improve scores or repair missing telemetry.
+[canonical qualification ledger](dictation/QUALIFICATION-INDEX.md) supersede older
+next-step lists. PR155 merged at5c26ff6 and the reviewed English payload is active:
+CPU Nemotron4threads, stable words during speech, strict IBus, preserved toggle
+and input settings. Native ANE/Parakeet MLX remain selectable; residency is bounded
+and pressure-sensitive. Resident sustained MLX did not catch up to live audio.
+
+All retained model/app/voice cohorts are terminal. Seven installed routes passed:
+one GTK4 public-file ASR, GTK3/Qt6/Brave fixtures, and Code/Newelle/Tasks lease/cancel
+fixtures (positive ASR remains in earlier pinned cohorts). Three missing-argument
+setup failures remain; only unstarted fixtures resumed. Samples retained10.48GiB
+at≤2530RPM/49.01C; post-fixture readiness/preservation passed. Never repeat completed
+trials for scores, a new checkout or missing telemetry. Receipts/source identities
+are indexed; future work begins there. Final docs publication is verified after
+its merge in its PR body/task output.
+
+Separate gaps: fresh human microphone/F5 acceptance, native Calendar GUI/reminders,
+authenticated Gmail, natural/full-duplex voice, indefinite soak, power/battery and
+factory boot. Permanent developer tracking stays on the existing six-hour workflow.
 
 ## CodexBar deployment follow-up: avoid unchanged icon invalidation — 2026-10-18
 
@@ -129,7 +140,7 @@ Routine deploy stages the native module without reloading Wingpanel; changes loa
 No real sign-in or account switch exercised. Follow-up: owner smoke-test after next login; native code
 still shares Wingpanel's process, so regression tests reduce risk rather than providing crash isolation.
 
-## English streaming: measured CPU, MLX GPU and native ANE — 2026-10-18
+## Historical English streaming benchmark checkpoint — 2026-10-18
 
 [Completed benchmark and upstream audit](dictation/REALTIME-ENGLISH.md): Nemotron160
 CPU first draft0.851s median, MLX Vulkan1.452s, native ANE2.97s warm committed
@@ -137,9 +148,10 @@ words (different policies). All final words match on the principal clean clip;
 Moonshine errors and the original unsupported Nemotron GGUF remain retained.
 Three extra speakers passed the small Nemotron/Unified comparison. Real private
 GTK4 English-only words/grammar workflow passed. No new mic or owner windows.
-Next: focus-bound F5 Nemotron integration, provisional/final presentation, native
-IPC/interrupt/close gates, quiet app insertion and English human acceptance.
-Source remains draft PR155; published evidence is not deployment approval.
+At this checkpoint F5 integration/lifecycle were still pending. They are now
+merged/deployed and qualified as recorded at the top of this roadmap and in the
+canonical ledger. Fresh human microphone acceptance remains separate; do not
+repeat the completed benchmark or treat this historical list as next work.
 
 ## CodexBar Switch crash and disruptive deployment — 2026-10-18
 

@@ -13,8 +13,8 @@ from pathlib import Path
 import re
 import subprocess
 
-FAMILY = re.compile(r"^f5-(?:app-fixtures|app-qualified|browser-editors|joined-voice|nemotron-mlx|optional-engines|payload-fixtures|real-app-fixtures|real-app-qualified|real-tasks-qualified|sustained|voice|installed|postdeploy|installed-postdeploy)-v\d+$")
-RELATIVE = re.compile(r"^(?:(?:gtk3|gtk4|qt6|brave|code|newelle|tasks)/receipt\.json|receipt\.json|attempt\.json|(?:gtk3|gtk4|qt6|brave|code|newelle|tasks|ane|mlx|cpu)-attempt\.json|(?:ane|mlx|cpu)\.json|audio-verification\.json|cpu-supervisor-receipt-failure\.json)$")
+FAMILY = re.compile(r"^f5-(?:app-fixtures|app-qualified|browser-editors|debug-env|deployment|publication|joined-voice|nemotron-mlx|optional-engines|payload-fixtures|real-app-fixtures|real-app-qualified|real-tasks-qualified|sustained|voice|installed|postdeploy|installed-postdeploy)-v\d+$")
+RELATIVE = re.compile(r"^(?:(?:gtk3|gtk4|qt6|brave|code|newelle|tasks)/receipt\.json|receipt\.json|attempt\.json|classification\.json|(?:gtk3|gtk4|qt6|brave|code|newelle|tasks|ane|mlx|cpu)-attempt\.json|(?:ane|mlx|cpu)\.json|audio-verification\.json|cpu-supervisor-receipt-failure\.json)$")
 DYNAMIC_CLASSIFICATIONS = {
     "evidence", "incomplete-no-score", "completed evidence; quality is retained metric, not an aggregate pass",
     "supervisor-or-tool-receipt; inspect paired case for quality",

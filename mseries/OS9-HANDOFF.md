@@ -5127,3 +5127,42 @@ actual no-inference transient user unit confirmed these variables are absent in
 the child even when inherited assignments are present. Its sanitized receipt is
 work/f5-debug-env-v1/receipt.json. Deployed verification must inspect the live
 process environment because systemctl Environment still lists unset assignments.
+
+## English F5 shipped: canonical evidence, installed checks — 2026-10-18
+
+Read dictation/QUALIFICATION-INDEX.md and qualification-index.json first. All
+model/app/sustained/voice cohorts are terminal; do not restart old drivers. Agent
+instructions and README entry points now require reuse of completed evidence,
+including failures, and remove executable recovery commands for finished queues.
+Public source snapshots and separately sanitized byte hashes are checked by the
+permanent refresh-qualification-index.py; no new baseline is needed.
+
+PR155 passed all six head-specific CI jobs in run39152857333, merged as
+5c26ff6c2ff38c89c401c0d109a61244146868d8, then deployed via the reviewed English
+installer with the qualified uppercase Q8_0 artifact and separate optional MLX
+assets. All installed runtime/voice/panel/manager and model/library hashes match;
+strict live CPU4/IBus, toggle preference, input fingerprint, enabled listener,
+bridge readiness and the unchanged default4B passed. Managed UnsetEnvironment
+removes inherited last-capture/debug/test controls while retaining old drop-ins
+and private rollback. No owner microphone/window/menu bar/kernel/audio changes.
+
+Installed GTK4 public-file ASR passed exact normalized English, first committed
+field text2.608s from controller launch. GTK3/Qt6/Brave installed fixtures passed.
+Code/Newelle/Tasks initially stopped in argparse before app launch because the
+private queue omitted required --model; three exit2 attempts remain preserved.
+Only their unstarted --fixtures-only stages continued in f5-installed-v2, all
+passed. Those three verify field discovery/lease/cancel/stale refusal/restoration,
+not new positive insertion or ASR; reuse earlier pinned actual-app ASR for that.
+Aggregate supervisor samples: min10.48GiB available, max2530RPM/49.006C, no guard
+interruption. Post-fixture read-only preservation/readiness passed; all queues
+terminal, everyday4B and CPU F5 listener active/enabled, optional ANE/MLX retained.
+
+Implementation Pages run39152966394 succeeded; canonical HTTP200 matched reviewed
+SHA dc5434eec3c707f70942f2468b941287af673328a9527b6775fbfee50dfa9b9a.
+That proof identifies the pre-deployment-evidence page. This follow-up publishes
+sanitized installed/deployment/source receipts; final documentation CI/Pages
+verification is recorded in its publication PR body and task output after success.
+Fresh physical-F5/microphone, authenticated Gmail, natural/full-duplex voice,
+Calendar GUI/reminders, indefinite soak, power/battery and factory boot remain
+separate work. Six-hour developer tracking remains the existing workflow; the
+old completion heartbeat is already PAUSED. No duplicate automation was created.
