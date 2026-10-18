@@ -1,5 +1,58 @@
 # OS 9 implementation / Claude Code handoff
 
+## Calendar Events/Tasks merged into main — 2026-10-18
+
+Integrated `calendar-events-tasks` including the pinned native agenda plugin,
+installer/account launcher, runtime/build dependencies and factory staging.
+Resolved documentation insertion conflicts by retaining both status histories;
+merged enhancement payload lists to preserve main's YouTube launcher/icon and
+add calendar assets/pins. README now describes calendar as integrated and links
+to its local documentation. Google OAuth/sync and factory hardware boot remain
+unverified; this merge does not restart or redeploy the owner's desktop.
+
+Verification on the merged tree: pinned datetime ARM64 release build passes;
+all five isolated real-plugin/EDS integration groups pass; all four image-wiring
+tests pass; changed calendar shell scripts pass ShellCheck at warning severity;
+shell syntax, whitespace and all 34 README relative links pass. Initial agenda
+runs passed workflow assertions but failed temporary cleanup when auto-started
+GVFS/document portals left FUSE mounts. The test harness now uses local GIO and
+a private portal activation override; the final full run exits successfully.
+The override applies only to the synthetic test session; its expected portal
+unavailable warnings do not establish a clean runtime log.
+Next: owner Google sign-in and remote Calendar round trip, then factory image
+assembly/hardware qualification. No credentials, personal calendars or live
+panel state were changed by these checks.
+
+## Calendar Events/Tasks tabs and Google account setup — 2026-10-18
+
+The clock dropdown's right pane now has Events and Tasks tabs. Events follows
+its selected day; Tasks reads all incomplete items from elementary Tasks' EDS
+lists, including due-only and undated items. Activating a task opens Tasks.
+Calendar Accounts opens the desktop Google/online-account sign-in. No desktop
+Google account was configured at verification time: owner OAuth consent and a
+real Google Calendar round trip remain required; local tests do not claim them.
+
+Pinned datetime source `d0b3a703a7efbb5b3040d7be1ccb616eeb919c54` plus
+`datetime-agenda-tabs.patch` retains upstream notices. Native ARM64 compilation
+and five isolated real-plugin/EDS test groups pass: tabs/shared event UIDs,
+live edits, completion/deletion, enable/disable and sources added/removed after
+opening. Async source connections and generation checks reject stale views;
+changed/deleted events requery their source, preserving recurring siblings.
+All-day events use date semantics; undated tasks do not create calendar dots.
+The release installer completed locally; the installed production plugin passes
+the same five test groups. Wingpanel was reloaded and its mapped plugin inode
+matched the newly installed library.
+Four image-wiring tests and shell/diff checks pass. Runtime account/Tasks/EDS
+packages are in both arm64 consumers; plugin and license survive pruning.
+Factory image assembly/boot and Google network sync are still unverified.
+
+[Build, install, restore, account setup and tests](calendar/README.md).
+Installer: `bash mseries/install-calendar-agenda.sh`; rollback:
+`bash mseries/install-calendar-agenda.sh --uninstall`. Reload Wingpanel after
+installation. Next: owner selects Calendar Accounts → Google, completes sign-in,
+enables Calendar and confirms a known remote event appears on its date.
+
+
 ## README fixes, verification and remaining work — 2026-10-18
 
 The root [README](../README.md#fixes-tests-and-remaining-work) now separates

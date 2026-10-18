@@ -100,7 +100,9 @@ class ImageWiringTests(unittest.TestCase):
                          'usr/lib/mseries-ai/llama/bin/llama-server',
                          'usr/bin/mlx-omarchy-serve',
                          'usr/share/omarchy-mlx/serve-catalog.json',
-                         'usr/share/doc/mseries-local-ai/SOURCE']:
+                         'usr/share/doc/mseries-local-ai/SOURCE',
+                         'usr/lib/aarch64-linux-gnu/wingpanel-9/libdatetime.so',
+                         'usr/share/doc/mseries-panel-datetime/COPYING']:
                 target = image / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text('synthetic local AI payload')
@@ -125,6 +127,9 @@ class ImageWiringTests(unittest.TestCase):
             with self.assertRaises(FileNotFoundError):
                 verify_youtube_payload(image)
             self.assertFalse(payload.exists())
+            self.assertTrue((image / 'usr/bin/mseries-calendar-accounts').is_file())
+            self.assertTrue((image / 'usr/share/elementary-mac/mseries/calendar/accounts').is_file())
+            self.assertTrue((image / 'usr/share/elementary-mac/mseries/patches/datetime-agenda-tabs.patch').is_file())
             for name in ('mseries-power.service', 'mseries-power-follow.service'):
                 unit = image / 'etc/systemd/system' / name
                 self.assertIn('ExecStart=/usr/libexec/mseries/power ', unit.read_text())
