@@ -78,14 +78,13 @@ class Tune(unittest.TestCase):
         return (self.units / u).read_text().split()
 
     def test_apply_and_revert_restore_prior_state(self):
-        self.tune('apply', 'cups-ondemand', 'cups-browsed', 'rpcbind')
-        self.assertEqual(self.unit('cups.service'), ['disabled', 'inactive'])
-        self.assertEqual(self.unit('cups.socket'), ['enabled', 'active'])
+        self.tune('apply', 'cups-browsed', 'rpcbind')
+        self.assertEqual(self.unit('cups.service'), ['enabled', 'active'])
         self.assertEqual(self.unit('cups-browsed.service'), ['disabled', 'inactive'])
         self.assertEqual(self.unit('rpcbind.socket'), ['disabled', 'inactive'])
         self.assertIn('applied', self.tune('list').stdout)
         self.tune('revert-all')
-        for u in ('cups.service', 'cups-browsed.service', 'rpcbind.service', 'rpcbind.socket'):
+        for u in ('cups-browsed.service', 'rpcbind.service', 'rpcbind.socket'):
             self.assertEqual(self.unit(u), ['enabled', 'active'], u)
         self.assertEqual(list(self.state.glob('*.prev')), [])
 
@@ -95,10 +94,13 @@ class Tune(unittest.TestCase):
         self.tune('revert', 'cups-browsed')
         self.assertEqual(self.unit('cups-browsed.service'), ['disabled', 'active'])
 
-    def test_double_apply_and_unapplied_revert_are_refused(self):
+    def test_reapply_keeps_first_prior_state_and_unapplied_revert_is_refused(self):
         self.tune('apply', 'cups-browsed')
-        self.tune('apply', 'cups-browsed', ok=False)
+        self.assertIn('already applied', self.tune('apply', 'cups-browsed').stdout)
+        self.tune('revert', 'cups-browsed')
+        self.assertEqual(self.unit('cups-browsed.service'), ['enabled', 'active'])
         self.tune('revert', 'rpcbind', ok=False)
+        self.tune('apply', 'nonsense', ok=False)
 
     def test_dry_run_changes_nothing(self):
         out = self.tune('--dry-run', 'apply', 'cups-browsed', 'dock-lan-wake').stdout
@@ -111,11 +113,6 @@ class Tune(unittest.TestCase):
         (self.proc / 'mounts').write_text('srv:/x /mnt nfs4 rw 0 0\n')
         self.tune('apply', 'rpcbind', ok=False)
         self.assertEqual(self.unit('rpcbind.service'), ['enabled', 'active'])
-
-    def test_cups_ondemand_needs_socket(self):
-        (self.units / 'cups.socket').write_text('disabled inactive\n')
-        self.tune('apply', 'cups-ondemand', ok=False)
-        self.assertEqual(self.unit('cups.service'), ['enabled', 'active'])
 
     def test_dock_lan_wake_touches_only_ethernet_and_reverts(self):
         wake = self.sys / 'bus/usb/devices/2-1.4.4/power/wakeup'
@@ -235,6 +232,21 @@ class Verdict(unittest.TestCase):
             self.assertEqual(self.ab.main(['summarize', f.name]), 0)
         finally:
             os.unlink(f.name)
+
+
+class Hygiene(unittest.TestCase):
+    def test_chromium_processes_are_grouped_by_app_profile_and_type(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / '4242'
+            p.mkdir()
+            (p / 'cmdline').write_bytes(b'/opt/brave.com/brave/brave\0--type=renderer\0'
+                                        b'--user-data-dir=' + os.path.expanduser('~').encode() + b'/.config/brave-youtube\0')
+            os.environ['MSERIES_PROC'] = d
+            spec = importlib.util.spec_from_file_location('app_hygiene', HERE / 'app_hygiene.py')
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            self.assertEqual(mod.describe('4242', 'brave'), ('brave', 'renderer', '~/.config/brave-youtube'))
+            self.assertEqual(mod.describe('9999', 'gala'), ('gala', 'main', None))
 
 
 if __name__ == '__main__':

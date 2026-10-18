@@ -262,7 +262,13 @@ def main(argv=None):
         got = {}
         for name in order:
             cmd = args.a_cmd if name == 'A' else args.b_cmd
-            got[name] = run_arm(name, cmd, args.seconds, args.settle, args.interval)
+            try:
+                got[name] = run_arm(name, cmd, args.seconds, args.settle, args.interval)
+            except subprocess.CalledProcessError as e:
+                print('arm %s command failed (%s); returning to arm A and stopping' % (name, e), flush=True)
+                if args.a_cmd and name == 'B':
+                    subprocess.run(args.a_cmd, shell=True)
+                return 2
             print('pair %d %s' % (i + 1, fmt_arm(got[name])), flush=True)
         pairs.append({'order': order, 'A': got['A'], 'B': got['B']})
     result = {'label': args.label, 'allow_ac': args.allow_ac, 'when': time.strftime('%Y-%m-%dT%H:%M:%S%z'),
