@@ -26,6 +26,9 @@ implementation; no macOS source or binary is copied into this project.
   keep their own useful width and hierarchy.
 - A globe beside the repository name opens its GitHub Pages site (custom
   domains included), or the repository's website when it has no Pages site.
+- A For You card leads the dashboard with pull requests waiting on your review
+  and issues assigned to you. Optional desktop notifications announce a default
+  branch that starts failing CI or passes again (RepoBar Settings → Notifications).
 - Each repository card has a compact GTK disclosure menu for issues, pull
   requests, workflow runs, releases, activity, commits, branches, and tags.
   Categories fetch their data only when expanded; links open the matching GitHub

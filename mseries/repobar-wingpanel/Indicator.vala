@@ -8,7 +8,7 @@ namespace MSeries {
     public class RepoBarIndicator : Wingpanel.Indicator {
         // Scopes are the segmented switcher; filters narrow any scope from the search row's menu.
         private const string[] SCOPES = { "Dashboard", "Pinned", "Attention", "All" };
-        private const string[] FILTERS = { "Any repository", "Has open issues", "Has open pull requests", "Local checkout" };
+        private const string[] FILTERS = { "Any repository", "Has open issues", "Has open pull requests", "Local checkout", "Failing CI" };
         private const string[] DETAIL_KEYS = { "pulls", "issues", "ci", "releases", "commits", "branches", "tags", "activity" };
         private const string[] DETAIL_TITLES = { "PRs", "Issues", "CI", "Releases", "Commits", "Branches", "Tags", "Activity" };
 
@@ -30,6 +30,8 @@ namespace MSeries {
         private Gtk.CheckButton[] filter_checks = {};
         private Gtk.Label subtitle_label;
         private Gtk.Label chip_label;
+        private Gtk.Button chip_button;
+        private string chip_action = "";
         private Gtk.Button refresh_button;
         private Gtk.Stack refresh_display;
         private Gtk.Spinner refresh_spinner;
@@ -45,6 +47,8 @@ namespace MSeries {
         private string host = "github.com";
         private string last_snapshot_text = "";
         private string last_render_key = "";
+        private int64 last_notified_fetch = 0;
+        private bool notify_ci = true;
 
         public RepoBarIndicator () {
             GLib.Object (code_name: "repobar");
@@ -139,8 +143,19 @@ namespace MSeries {
             subtitle_label.add_css_class ("dim-label");
             subtitle_label.add_css_class ("caption");
             subtitle_label.add_css_class ("numeric");
-            chip_label = new Gtk.Label ("") { valign = Gtk.Align.CENTER, visible = false };
-            chip_label.add_css_class ("chip");
+            // The status chip acts on what it says: "N failing" shows them, "Cached"/"Offline" retries.
+            chip_label = new Gtk.Label ("");
+            chip_button = new Gtk.Button () { child = chip_label, valign = Gtk.Align.CENTER, visible = false };
+            chip_button.add_css_class ("flat");
+            chip_button.add_css_class ("chip");
+            chip_button.clicked.connect (() => {
+                if (chip_action == "failing") {
+                    filter_checks[4].set_active (true);
+                    scope_buttons[3].set_active (true);
+                } else {
+                    refresh ();
+                }
+            });
             refresh_display = new Gtk.Stack ();
             refresh_display.add_named (new Gtk.Image.from_icon_name ("view-refresh-symbolic") { pixel_size = 18 }, "idle");
             refresh_spinner = new Gtk.Spinner ();
@@ -152,12 +167,12 @@ namespace MSeries {
 
             var bar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
             bar.add_css_class ("mseries-bar");
-            bar.append (chip_label);
+            bar.append (chip_button);
             bar.append (subtitle_label);
             var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { homogeneous = true };
             actions.add_css_class ("mseries-dock");
-            actions.append (make_dock_button ("Your pull requests", "mail-send-receive-symbolic", "/pulls"));
-            actions.append (make_dock_button ("Your issues", "mail-mark-important-symbolic", "/issues"));
+            actions.append (make_dock_button ("Your pull requests", kind_icon ("pull"), "/pulls"));
+            actions.append (make_dock_button ("Your issues", kind_icon ("issue"), "/issues"));
             settings_executable = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "mseries-repobar-settings");
             var settings_button = new Gtk.Button () {
                 child = new Gtk.Image.from_icon_name ("preferences-system-symbolic") { pixel_size = 18 },
@@ -220,6 +235,9 @@ namespace MSeries {
                 ".mseries-repobar .chip { padding: 1px 8px; border-radius: 99px; font-size: 7.5pt; font-weight: 700; " +
                 "  background: alpha(@warning_color, 0.22); color: @warning_color; } " +
                 ".mseries-repobar .chip.bad { background: alpha(@error_color, 0.2); color: @error_color; } " +
+                ".mseries-repobar button.chip { min-height: 0; min-width: 0; } " +
+                ".mseries-repobar button.chip:hover { background: alpha(@warning_color, 0.32); } " +
+                ".mseries-repobar button.chip.bad:hover { background: alpha(@error_color, 0.3); } " +
                 ".mseries-repobar .text-low { color: @warning_color; } " +
                 ".mseries-repobar .text-critical { color: @error_color; } " +
                 ".mseries-repobar .dot-ok { color: @success_color; } " +
@@ -236,6 +254,8 @@ namespace MSeries {
                 ".mseries-repobar .detail-chips button:checked { background: alpha(@accent_color, 0.2); color: @accent_color; } " +
                 ".mseries-repobar .detail-list { margin-top: 2px; padding-top: 4px; border-top: 1px solid alpha(currentColor, 0.1); } " +
                 ".mseries-repobar .pinned-star { color: #d4a300; } " +
+                ".mseries-repobar .section-title { font-weight: 700; font-size: 8pt; opacity: 0.75; } " +
+                ".mseries-repobar .for-you { background: alpha(@accent_color, 0.08); } " +
                 ".mseries-repobar button.site-link { opacity: 0.6; padding: 0 2px; } " +
                 ".mseries-repobar button.site-link:hover, .mseries-repobar button.site-link:focus { opacity: 1; color: @accent_color; } " +
                 ".mseries-repobar button.pin-off { opacity: 0; } " +
@@ -392,7 +412,7 @@ namespace MSeries {
                 last_snapshot_text = output;
                 render_snapshot (parser.get_root ().get_object ());
             } catch (Error e) {
-                set_chip ("Offline", true);
+                set_chip ("Offline", true, "retry", e.message + "\nClick to try again");
                 subtitle_label.set_text ("GitHub status unavailable");
                 subtitle_label.set_tooltip_text (e.message);
                 if (last_snapshot_text.length == 0) {
@@ -407,10 +427,12 @@ namespace MSeries {
             set_refreshing (false);
         }
 
-        private void set_chip (string text, bool bad) {
+        private void set_chip (string text, bool bad, string action = "retry", string tooltip = "") {
             chip_label.set_text (text);
-            chip_label.set_visible (text.length > 0);
-            if (bad) chip_label.add_css_class ("bad"); else chip_label.remove_css_class ("bad");
+            chip_button.set_visible (text.length > 0);
+            chip_action = action;
+            chip_button.set_tooltip_text (tooltip.length > 0 ? tooltip : action == "failing" ? "Show repositories with failing CI" : "Try refreshing again");
+            if (bad) chip_button.add_css_class ("bad"); else chip_button.remove_css_class ("bad");
         }
 
         private void render_snapshot (Json.Object snapshot) {
@@ -428,6 +450,11 @@ namespace MSeries {
                 dashboard_limit = (int) settings.get_int_member_with_default ("repoLimit", 20);
                 sort_order = settings.get_string_member_with_default ("menuSort", "activity");
                 schedule_refresh ((uint) settings.get_int_member_with_default ("refreshInterval", 300));
+                notify_ci = settings.get_boolean_member_with_default ("notifyCi", true);
+            }
+            if (error.length == 0 && fetched_at > last_notified_fetch) {
+                last_notified_fetch = fetched_at;
+                notify_ci_changes (repos);
             }
             int issues = 0;
             int prs = 0;
@@ -468,9 +495,9 @@ namespace MSeries {
                 repos.get_length (), prs, issues,
                 remaining >= 0 ? "\nGitHub API: %d of %d requests left this hour".printf (remaining, limit) : "",
                 error.length > 0 ? "\nLast refresh failed: " + error : ""));
-            if (error.length > 0) set_chip (fetched_at > 0 ? "Cached" : "Offline", fetched_at == 0);
+            if (error.length > 0) set_chip (fetched_at > 0 ? "Cached" : "Offline", fetched_at == 0, "retry", error + "\nClick to try again");
             else if (stale) set_chip ("Cached", false);
-            else if (failing > 0) set_chip ("%d failing".printf (failing), true);
+            else if (failing > 0) set_chip ("%d failing".printf (failing), true, "failing");
             else set_chip ("", false);
 
             scope_buttons[2].set_label (attention > 0 ? "Attention %d".printf (attention) : "Attention");
@@ -485,6 +512,11 @@ namespace MSeries {
                 show_state ("folder-open-symbolic", "No repositories yet",
                     error.length > 0 ? error : "This GitHub account has no repositories RepoBar can read.", false);
                 return;
+            }
+            // For You leads the dashboard: pull requests waiting on your review and issues assigned to you.
+            if (scope == 0 && filter == 0 && search_entry.get_text ().strip ().length == 0 && snapshot.has_member ("forYou")) {
+                var for_you = build_for_you (snapshot.get_object_member ("forYou"));
+                if (for_you != null) repo_list.append (new Gtk.ListBoxRow () { child = for_you, activatable = false });
             }
             var visible = new GenericArray<Json.Object> ();
             int recent = 0;
@@ -501,7 +533,8 @@ namespace MSeries {
                     }
                 }
             }
-            if (scope != 0 && sort_order != "activity") visible.sort_with_data (compare_repos);
+            if (scope == 2) visible.sort_with_data (compare_severity);
+            else if (scope != 0 && sort_order != "activity") visible.sort_with_data (compare_repos);
             int shown = (int) visible.length;
             for (int i = 0; i < shown; i++) {
                 var repo = visible[i];
@@ -537,6 +570,16 @@ namespace MSeries {
             panel.set_tooltip_text ("GitHub%s · %d repositories · %d open pull requests · %d open issues%s%s\nMiddle-click to refresh".printf (
                 account.length > 0 ? " · " + account : "", repo_count, prs, issues,
                 failing > 0 ? " · CI failing on %d".printf (failing) : "", stale ? " · cached" : ""));
+        }
+
+        /* Attention: failing CI first, then the most open work (a pull request weighs twice an issue). */
+        private static int compare_severity (Json.Object a, Json.Object b) {
+            bool fa = ci_failing (a);
+            bool fb = ci_failing (b);
+            if (fa != fb) return fa ? -1 : 1;
+            int64 wa = 2 * a.get_int_member_with_default ("openPullRequests", 0) + a.get_int_member_with_default ("openIssues", 0);
+            int64 wb = 2 * b.get_int_member_with_default ("openPullRequests", 0) + b.get_int_member_with_default ("openIssues", 0);
+            return wa == wb ? 0 : (wb > wa ? 1 : -1);
         }
 
         private int compare_repos (Json.Object a, Json.Object b) {
@@ -626,6 +669,135 @@ namespace MSeries {
             next.send_notification ();
         }
 
+        private Gtk.Widget? build_for_you (Json.Object for_you) {
+            string[] keys = { "reviews", "assigned" };
+            string[] titles = { "Review requested", "Assigned to you" };
+            string[] icons = { kind_icon ("pull"), kind_icon ("issue") };
+            string[] more_urls = { "/pulls/review-requested", "/issues/assigned" };
+            Gtk.Box? card = null;
+            for (int k = 0; k < keys.length; k++) {
+                if (!for_you.has_member (keys[k])) continue;
+                var group = for_you.get_object_member (keys[k]);
+                int64 count = group.get_int_member_with_default ("count", 0);
+                if (count <= 0) continue;
+                if (card == null) {
+                    card = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
+                    card.add_css_class ("repo-card");
+                    card.add_css_class ("for-you");
+                }
+                var head = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) { margin_top = card.get_first_child () != null ? 4 : 0 };
+                var title = new Gtk.Label (titles[k]) { xalign = 0, hexpand = true };
+                title.add_css_class ("section-title");
+                head.append (title);
+                head.append (count_pill ((int) count, "", count.to_string () + " waiting"));
+                card.append (head);
+                var items = group.get_array_member ("items");
+                for (uint i = 0; i < items.get_length (); i++) {
+                    var item = items.get_object_element (i);
+                    string repo = item.get_string_member_with_default ("repo", "");
+                    string repo_short = repo.contains ("/") ? repo.substring (repo.index_of ("/") + 1) : repo;
+                    card.append (link_row (icons[k], item.get_string_member_with_default ("title", ""),
+                        repo_short + " #" + item.get_int_member_with_default ("number", 0).to_string (),
+                        item.get_string_member_with_default ("url", "")));
+                }
+                if (count > items.get_length ()) {
+                    card.append (link_row ("view-more-symbolic", "See all " + count.to_string () + " on GitHub", "",
+                        "https://" + host + more_urls[k]));
+                }
+            }
+            return card;
+        }
+
+        /* Desktop notification when default-branch CI starts failing or recovers. The first snapshot after login
+         * only records states (persisted in the cache) so nothing old is announced again. */
+        private void notify_ci_changes (Json.Array repos) {
+            string path = GLib.Path.build_filename (Environment.get_user_cache_dir (), "mseries", "repobar", "ci-states.json");
+            var previous = new HashTable<string, string> (str_hash, str_equal);
+            bool have_previous = false;
+            try {
+                string text;
+                FileUtils.get_contents (path, out text);
+                var parser = new Json.Parser ();
+                parser.load_from_data (text);
+                var saved = parser.get_root ().get_object ();
+                foreach (var name in saved.get_members ()) previous.insert (name, saved.get_string_member (name));
+                have_previous = true;
+            } catch (Error e) {
+                // First run: record only.
+            }
+            var current = new Json.Object ();
+            string[] failed = {};
+            string[] fixed = {};
+            string first_url = "";
+            for (uint i = 0; i < repos.get_length (); i++) {
+                var repo = repos.get_object_element (i);
+                string name = repo.get_string_member_with_default ("name", "");
+                string ci = repo.get_string_member_with_default ("ci", "UNKNOWN");
+                current.set_string_member (name, ci);
+                if (!have_previous || !previous.contains (name) || repo.get_boolean_member_with_default ("archived", false) ||
+                    repo.get_string_member_with_default ("repoState", "visible") == "hidden") continue;
+                string before = previous.get (name);
+                bool was_bad = before == "FAILURE" || before == "ERROR";
+                bool is_bad = ci == "FAILURE" || ci == "ERROR";
+                string short_name = name.contains ("/") ? name.substring (name.index_of ("/") + 1) : name;
+                if (is_bad && !was_bad) {
+                    failed += short_name;
+                    if (first_url.length == 0) first_url = repo.get_string_member_with_default ("url", "") + "/actions";
+                } else if (was_bad && ci == "SUCCESS") {
+                    fixed += short_name;
+                }
+            }
+            try {
+                DirUtils.create_with_parents (GLib.Path.get_dirname (path), 0700);
+                var generator = new Json.Generator ();
+                var root = new Json.Node (Json.NodeType.OBJECT);
+                root.set_object (current);
+                generator.set_root (root);
+                FileUtils.set_contents_full (path, generator.to_data (null), -1, FileSetContentsFlags.CONSISTENT, 0600);
+                FileUtils.chmod (path, 0600);
+            } catch (Error e) {
+                // Without saved states the next refresh records again instead of notifying.
+            }
+            if (!notify_ci) return;
+            if (failed.length > 0) {
+                send_notification (failed.length == 1 ? "CI failing on %s".printf (failed[0]) : "CI failing on %d repositories".printf (failed.length),
+                    failed.length == 1 ? "The default branch's latest checks failed." : string.joinv (", ", failed),
+                    failed.length == 1 ? first_url : "https://" + host + "/" + account, "dialog-error");
+            }
+            if (fixed.length > 0) {
+                send_notification (fixed.length == 1 ? "CI passing again on %s".printf (fixed[0]) : "CI passing again on %d repositories".printf (fixed.length),
+                    fixed.length == 1 ? "The default branch's latest checks passed." : string.joinv (", ", fixed), "", "emblem-ok");
+            }
+        }
+
+        private void send_notification (string title, string body, string url, string urgency_icon) {
+            string[] argv = { "notify-send", "--app-name=RepoBar", "--icon=github-symbolic", title, body };
+            if (url.length > 0) argv = { "notify-send", "--app-name=RepoBar", "--icon=github-symbolic", "--action=open=Open on GitHub", title, body };
+            try {
+                var process = new Subprocess.newv (argv, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_SILENCE);
+                process.communicate_utf8_async.begin (null, null, (obj, res) => {
+                    try {
+                        string output;
+                        process.communicate_utf8_async.end (res, out output, null);
+                        if (output != null && output.strip () == "open") new Gtk.UriLauncher (url).launch.begin (null, null);
+                    } catch (Error e) {
+                        // Dismissed or the notification server went away.
+                    }
+                });
+            } catch (Error e) {
+                // No notification server: the panel dot and chip still show the failure.
+            }
+        }
+
+        /* RepoBar's own GitHub-style marks (elementary has no issue/pull request/commit icons), with stock fallbacks. */
+        private static string kind_icon (string kind) {
+            string own = kind == "pull" ? "mseries-repobar-pull-symbolic" : kind == "issue" ? "mseries-repobar-issue-symbolic" :
+                kind == "commit" ? "mseries-repobar-commit-symbolic" : "";
+            if (own.length > 0 && Gtk.IconTheme.get_for_display (Gdk.Display.get_default ()).has_icon (own)) return own;
+            return kind == "pull" ? "mail-send-receive-symbolic" : kind == "issue" ? "dialog-information-symbolic" :
+                kind == "release" ? "starred-symbolic" : "document-open-recent-symbolic";
+        }
+
         private static bool ci_failing (Json.Object repo) {
             string ci = repo.get_string_member_with_default ("ci", "");
             return ci == "FAILURE" || ci == "ERROR";
@@ -651,6 +823,7 @@ namespace MSeries {
             if (filter == 1 && repo.get_int_member_with_default ("openIssues", 0) == 0) return false;
             if (filter == 2 && repo.get_int_member_with_default ("openPullRequests", 0) == 0) return false;
             if (filter == 3 && !has_object (repo, "local")) return false;
+            if (filter == 4 && !ci_failing (repo)) return false;
             string query = search_entry.get_text ().strip ().casefold ();
             if (query.length == 0) return true;
             string haystack = repo.get_string_member_with_default ("name", "") + " " +
@@ -758,8 +931,8 @@ namespace MSeries {
                 head.append (hidden);
             }
             head.append (new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { hexpand = true });
-            head.append (count_pill (prs, "PR", "%d open pull request%s".printf (prs, prs == 1 ? "" : "s")));
-            head.append (count_pill (issues, "⊙", "%d open issue%s".printf (issues, issues == 1 ? "" : "s"), true));
+            head.append (count_pill (prs, kind_icon ("pull"), "%d open pull request%s".printf (prs, prs == 1 ? "" : "s")));
+            head.append (count_pill (issues, kind_icon ("issue"), "%d open issue%s".printf (issues, issues == 1 ? "" : "s")));
             head.append (build_pin_button (full_name, state));
             var details_toggle = new Gtk.ToggleButton () {
                 icon_name = "pan-end-symbolic", valign = Gtk.Align.CENTER,
@@ -786,12 +959,14 @@ namespace MSeries {
             return card;
         }
 
-        private static Gtk.Widget count_pill (int count, string mark, string description, bool mark_first = false) {
+        /* A counter led by its kind's icon, like GitHub's own; no icon gives a plain number. */
+        private static Gtk.Widget count_pill (int count, string icon, string description) {
             var pill = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3) { valign = Gtk.Align.CENTER, tooltip_text = description };
             pill.add_css_class ("count");
             pill.add_css_class ("numeric");
             if (count == 0) pill.add_css_class ("zero");
-            pill.append (new Gtk.Label (mark_first ? "%s %d".printf (mark, count) : "%d %s".printf (count, mark)));
+            if (icon.length > 0) pill.append (new Gtk.Image.from_icon_name (icon) { pixel_size = 10 });
+            pill.append (new Gtk.Label (count.to_string ()));
             pill.update_property (Gtk.AccessibleProperty.LABEL, description, -1);
             return pill;
         }
@@ -851,13 +1026,11 @@ namespace MSeries {
             string title = activity.get_string_member_with_default ("title", "");
             if (title.length == 0) return null;
             string kind = activity.get_string_member_with_default ("kind", "activity");
-            string icon = kind == "commit" ? "document-open-recent-symbolic" :
-                kind.contains ("pull") ? "mail-send-receive-symbolic" :
-                kind.contains ("issue") ? "mail-mark-important-symbolic" :
-                kind.contains ("release") ? "starred-symbolic" : "document-open-recent-symbolic";
+            string icon = kind_icon (kind.contains ("pull") ? "pull" : kind.contains ("issue") ? "issue" :
+                kind.contains ("release") ? "release" : "commit");
             string when = relative_time (activity.get_string_member_with_default ("updatedAt", ""));
             return link_row (icon, title, when.length > 0 && when != activity.get_string_member_with_default ("updatedAt", "")
-                ? "%s · %s".printf (kind == "pull request" ? "PR" : kind, when) : kind,
+                ? when : kind,
                 activity.get_string_member_with_default ("url", ""));
         }
 
@@ -1039,8 +1212,8 @@ namespace MSeries {
                 content.append (empty);
                 return;
             }
-            string icon = key == "pulls" ? "mail-send-receive-symbolic" :
-                key == "issues" ? "mail-mark-important-symbolic" :
+            string icon = key == "pulls" ? kind_icon ("pull") :
+                key == "issues" ? kind_icon ("issue") : key == "commits" ? kind_icon ("commit") :
                 key == "ci" ? "emblem-ok-symbolic" :
                 key == "releases" || key == "tags" ? "starred-symbolic" : "document-open-recent-symbolic";
             for (uint i = 0; i < items.get_length (); i++) {

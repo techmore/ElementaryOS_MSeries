@@ -34,6 +34,7 @@ namespace MSeries {
             root.append (build_account ());
             root.append (build_dashboard ());
             root.append (build_updates ());
+            root.append (build_notifications ());
             root.append (build_local ());
             root.append (build_hidden ());
             var page = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { margin_top = 6, margin_bottom = 18, margin_start = 18, margin_end = 18 };
@@ -234,6 +235,20 @@ namespace MSeries {
             add_row (updates, row ("Refresh every", null, choice ("refreshInterval", "refresh-interval",
                 { "60", "120", "300", "900" }, { "Minute", "2 minutes", "5 minutes", "15 minutes" })));
             return updates;
+        }
+
+        private Gtk.Widget build_notifications () {
+            var notifications = section ("Notifications", "Announced once per change, after a refresh; hidden and archived repositories stay quiet.");
+            var sw = new Gtk.Switch () { active = settings.get_boolean_member_with_default ("notifyCi", true) };
+            bool reverting = false;
+            sw.notify["active"].connect (() => {
+                if (reverting) return;
+                apply.begin ("notify-ci", sw.active ? "true" : "false", (obj, res) => {
+                    if (!apply.end (res)) { reverting = true; sw.active = !sw.active; reverting = false; }
+                });
+            });
+            add_row (notifications, row ("CI status changes", "When a default branch starts failing or passes again", sw));
+            return notifications;
         }
 
         private Gtk.Widget build_local () {
