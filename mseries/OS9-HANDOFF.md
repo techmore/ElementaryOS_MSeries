@@ -2585,3 +2585,13 @@ Verification: CLI and Desktop tarballs downloaded to a scratch dir and sha256-ch
 Flatpak: Signal 8.30.0 → 8.31.0 and the GNOME 50 runtime updated on this machine (not repo state).
 
 Left alone on purpose: Brave Widevine 4.10.3057.0 is pinned by SHA-512 from a Mozilla bug and a newer component cannot be verified the same way; `local-ai/install.sh` pins coreglass, omarchy-mlx and mesa-mlx-compute to reviewed commits that are behind upstream heads (omarchy-mlx moved today) and MLX_OMARCHY_VERSION v0.7.33 has no upstream release to compare. Bumping those needs a review of the new commits and redistribution terms first.
+
+## CodexBar custom port: multi-account Codex switcher — 2026-10-18
+
+`AGENTS.md` now carries a banner: CodexBar is our custom port (upstream pin + our Wingpanel/wrapper/helpers), merged with upstream on each bump, never replaced by stock files. Upstream 0.77.0's managed Codex accounts (`codexbar codex-accounts`) are macOS-only ("only available on macOS"); its Claude switching needs the external `claude-swap` tool, which is not installed here.
+
+Added `mseries/codexbar-accounts.py` (list/save/switch/usage; one private saved Codex home per account under `~/.local/share/codexbar-mseries/codex-accounts`, atomic `auth.json` swap, the account being left is saved first, emails shared by two workspaces need the exact id) with 6 tests in `test-codexbar-accounts.py` (throwaway homes only; the real `~/.codex` was not touched by tests). The Wingpanel Codex card now lists other accounts with plan and 7-day remaining, a Switch button, and an Add account… button (saves the current sign-in, then `codex login` in a terminal). Installers and `enhance.sh` ship the helper; CI runs the tests.
+
+Verified: Python tests, Meson build and 3 suites, headless render with fake accounts. Not verified: a real second account switch on this desktop (only one Codex account is signed in), the 0.77.0 desktop app itself (not restarted), live Add account flow. Not built: Claude switching (needs `claude-swap`; panel hook not written).
+
+Next: sign in a second account via Add account…, confirm the Switch and the restart-Codex note; decide on installing `claude-swap` for Claude switching.

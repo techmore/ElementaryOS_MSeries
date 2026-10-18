@@ -26,6 +26,7 @@ done
 mkdir -p "$HOME/.local/lib/codexbar-cli" "$HOME/.local/bin"
 install -m 0755 "$repo/mseries/codexbar-opencode-local.py" "$HOME/.local/lib/codexbar-cli/codexbar-opencode-local.py"
 install -m 0755 "$repo/mseries/codexbar-sessions.py" "$HOME/.local/lib/codexbar-cli/codexbar-sessions.py"
+install -m 0755 "$repo/mseries/codexbar-accounts.py" "$HOME/.local/lib/codexbar-cli/codexbar-accounts.py"
 tar -xzf "CodexBarCLI-${version}-linux-aarch64.tar.gz" -C "$HOME/.local/lib/codexbar-cli"
 mv -f "$HOME/.local/lib/codexbar-cli/codexbar" "$HOME/.local/lib/codexbar-cli/codexbar-upstream"
 # Replace atomically so the panel never finds ~/.local/bin/codexbar missing mid-install.

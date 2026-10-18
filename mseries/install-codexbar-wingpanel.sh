@@ -26,6 +26,7 @@ install -m 0755 "$repo/mseries/codexbar-opencode-local.py" \
   "$HOME/.local/lib/codexbar-cli/codexbar-opencode-local.py"
 install -m 0755 "$repo/mseries/codexbar-sessions.py" \
   "$HOME/.local/lib/codexbar-cli/codexbar-sessions.py"
+install -m 0755 "$repo/mseries/codexbar-accounts.py" "$HOME/.local/lib/codexbar-cli/codexbar-accounts.py"
 
 for tool in meson ninja valac pkg-config; do
   command -v "$tool" >/dev/null || {
