@@ -2419,3 +2419,27 @@ No full kernel/module build or hardware boot was performed. E4 still disables bu
 accepted by the older fallback-preserving installer. Prior-art claims are scoped to the actual Aurora reports
 (zero tunnel churn on j314s display resume, different M2 Max dock chain). The next hardware task is a separately
 reviewed controlled boot using the actual current payload/state, with route/module/link/EDID/picture evidence.
+
+## 2026-10-17 — Rust migration continuation
+
+Continued the isolated local `rust` branch from the available `origin/main`
+snapshot `b0a03548fd7003eceaf191d60dcb097bdd0c3c99`. Added a standalone
+`mseries-netusage-rs` candidate and candidate systemd unit. The Rust daemon
+retains the current `ss`/resolved inputs, per-process and per-host counters,
+DNS aggregation, SQLite tables and retention policy. The existing Python
+service remains the installed writer; do not run both services against the
+same database.
+
+Focused Rust validation passed: `cargo fmt --check`, six unit tests including
+SQLite flush/schema round trip, `cargo clippy --all-targets -- -D warnings`,
+release build, inventory check (467 items: 421 local, 46 elementary) and
+`git diff --check`. This is not a differential parity or desktop hardware test.
+The candidate uses `sqlite3` CLI and currently lacks same-fixture event-stream
+comparison, install/rollback rehearsal and desktop-session qualification.
+
+The Rust branch and this batch remain local. Public push was rejected by the
+automatic approval review because it would publish repository contents; no
+push or external publication has occurred. Next: build the netusage differential
+harness, then continue with the separately inventoried brightness and keyboard
+backlight services. Full semantic inventory and daily/weekly candidate build
+automation remain open.

@@ -23,6 +23,7 @@ ROOT_FILES = ("Justfile", "mkosi.conf", "packages.arm64")
 RUST_CANDIDATE_PREFIXES = (
     "mseries/rust/mseries-power/",
     "mseries/rust/wifi-resume/",
+    "mseries/rust/netusage/",
 )
 EXTENSIONS = {
     ".c", ".cc", ".conf", ".cpp", ".desktop", ".diff", ".h", ".js",
@@ -87,7 +88,9 @@ def render() -> str:
             "language": LANGUAGES.get(path.suffix.lower(), "data"),
             "role": role(path),
             "rust_status": (
-                "candidate-parity-verified-not-installed"
+                "candidate-functional-tests-passing-not-installed"
+                if text.startswith("mseries/rust/netusage/")
+                else "candidate-parity-verified-not-installed"
                 if text.startswith(RUST_CANDIDATE_PREFIXES)
                 else "not-assessed" if local else "retain-upstream"
             ),

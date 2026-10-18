@@ -13,7 +13,7 @@
     "mkosi.conf",
     "packages.arm64"
   ],
-  "item_count": 463,
+  "item_count": 467,
   "items": [
     {
       "id": "Justfile",
@@ -3430,6 +3430,38 @@
       "language": "rust",
       "role": "verification",
       "rust_status": "candidate-parity-verified-not-installed"
+    },
+    {
+      "id": "mseries/rust/netusage/Cargo.lock",
+      "path": "mseries/rust/netusage/Cargo.lock",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "candidate-functional-tests-passing-not-installed"
+    },
+    {
+      "id": "mseries/rust/netusage/Cargo.toml",
+      "path": "mseries/rust/netusage/Cargo.toml",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "candidate-functional-tests-passing-not-installed"
+    },
+    {
+      "id": "mseries/rust/netusage/netusage-rs.service",
+      "path": "mseries/rust/netusage/netusage-rs.service",
+      "ownership": "mseries-maintained",
+      "language": "data",
+      "role": "configuration-or-data",
+      "rust_status": "candidate-functional-tests-passing-not-installed"
+    },
+    {
+      "id": "mseries/rust/netusage/src/main.rs",
+      "path": "mseries/rust/netusage/src/main.rs",
+      "ownership": "mseries-maintained",
+      "language": "rust",
+      "role": "implementation",
+      "rust_status": "candidate-functional-tests-passing-not-installed"
     },
     {
       "id": "mseries/rust/wifi-resume/Cargo.lock",
