@@ -7,7 +7,10 @@
 WIP build. The running J314S `.20` baseline has measured artifact identities
 and scoped hardware receipts, frozen as experimental exp1. Stable promotion
 requires a complete feature matrix, three boot IDs, sleep cycles and matched
-energy pairs. Full hardware/energy qualification remains; no savings claimed.
+energy pairs. A 64-fix review inventory keeps 7.2 build-only pending shared
+GPU/SEP parity; `.20-enh1` is the first hardware candidate. Freeze history is
+checked in CI; future captures include active refresh/VRR/display-power state.
+Full hardware/energy qualification remains; no savings claimed.
 
 ## Persistent window snapping — 2026-10-18
 

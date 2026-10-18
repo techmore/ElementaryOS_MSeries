@@ -34,6 +34,26 @@ primarily the 7.2 platform/MMIO adaptation and SoC matching; cpufreq/NVMe also
 have API, diagnostic and non-M1 thermal-policy changes. No new measured J314S
 idle-watt fix was established by those differences.
 
+## Deeper 7.2 review parity gate
+
+An additional [64-fix review inventory](branch-audits/2026-10-18-review-parity.json)
+checks each original PR #136 review commit independently against the raw pinned
+7.2 snapshot: 30 reverse-apply cleanly, 10 forward-apply cleanly, and 24 need
+semantic/context review. These mechanical checks do not prove absence when a
+patch conflicts or has been adapted. All 64 are already in our `.20` baseline
+and its enhancement candidate. The stock-bindgen fix has now been ported to
+the local 7.2 series after CI reproduced its failure.
+
+Targeted source inspection confirms remaining shared 7.2 differences: the
+M1/M2 GPU queue lacks the reviewed unsupported-command-tail check; SEP still
+exports its module alias; and its capture drain can veto suspend after six
+seconds. The latter needs reconciliation with 7.2's newer entropy holds rather
+than blindly replacing the notifier. These are real correctness/energy gates,
+not measured idle-watt improvements. **The reviewed `.20-enh1` lane is the first
+hardware candidate. Keep 7.2 build-only until review parity is resolved and
+tested; a successful compile does not clear this gate.** Other forward-applying
+Wi-Fi and Neo corrections remain explicitly inventoried for that parity batch.
+
 ## Energy and hardware disposition
 
 | Area / source | M1 Pro applicability | Implementation / next gate |
@@ -109,5 +129,10 @@ power source, topology and workload differ from ours. These are **not local gain
 
 The current 30-second SMC window ran during active source/agent work. Its
 25.16 W median (p10 22.51, p90 28.06; n=31) is an uncontrolled observation,
-not an idle baseline or regression verdict. Controls were unchanged; workload
-was not controlled. No battery-life improvement is claimed.
+not an idle baseline or regression verdict. The original connector
+list captured available modes, not active refresh. Future receipts record active
+refresh, VRR selection, layout and display-power state; missing active mode data
+blocks stable promotion. A later read-only diagnostic observed fixed 120 Hz on
+the internal display and fixed 60 Hz on the external 1080p mode. It is not a
+retroactive measurement of exp1. Workload was not controlled. No battery-life
+improvement is claimed.

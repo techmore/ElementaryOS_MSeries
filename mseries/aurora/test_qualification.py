@@ -20,7 +20,7 @@ def receipt():
     return {"schema": 1, "kind": "hardware-test", "identity": identity,
             "identity_sha256": hashlib.sha256(q.canonical(identity)).hexdigest(),
             "boot_id": "boot-a", "controls_unchanged": True,
-            "context_before": {"parameters": {}},
+            "context_before": {"parameters": {}, "active_displays": {"available": True}},
             "checks": {"boot": {"result": "pass"}, "pmp_ready": {"result": "pass"}}}
 
 
@@ -153,6 +153,13 @@ class QualificationTests(unittest.TestCase):
         data["checks"]["energy_ab"]["pairs"][0]["candidate_median_w"] = 12
         paths[0].write_text(json.dumps(data))
         with self.assertRaisesRegex(ValueError, "energy regression"):
+            self.freeze(paths, "stable")
+
+    def test_unmeasured_refresh_controls_cannot_qualify_a_stable_energy_result(self):
+        paths = self.qualified_records()
+        data = json.loads(paths[0].read_text()); data["context_before"].pop("active_displays")
+        paths[0].write_text(json.dumps(data))
+        with self.assertRaisesRegex(ValueError, "active display/refresh"):
             self.freeze(paths, "stable")
 
     def test_counter_reset_is_not_negative_idle_time(self):

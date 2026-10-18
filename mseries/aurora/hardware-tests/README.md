@@ -49,7 +49,8 @@ python3 mseries/aurora/qualification.py collect --duration 30 \
 ```
 
 It records SMC total-system power samples, median and p10/p90, per-CPU idle
-counter deltas, power source, brightness, connector enumeration, cpufreq,
+counter deltas, power source, brightness, connector enumeration, active
+Mutter/Gala modes (refresh/VRR selection), display power mode, cpufreq,
 module parameters and selected artifact hashes. It performs no boot, suspend,
 sensor probe, disk workload, display-rate change or audio change. Kernel-log
 UUIDs/addresses and full command lines are not copied into the public receipt;
@@ -63,7 +64,13 @@ match entries in the checksum-pinned published `.20` package. CI verifies that
 proof against the receipt and upstream pins with `--binary-proof`.
 
 The first capture occurred during agent/source activity. Its power reading is
-an uncontrolled observation. `controls_unchanged` verifies configuration,
+an uncontrolled observation. Exp1 predates active refresh capture; its connector
+mode list describes available modes, not selected refresh. Its original evidence
+remains immutable. New captures read active modes with a bounded read-only
+D-Bus call, omitting monitor serials. Missing session-bus/mode data blocks stable
+promotion. A later read-only diagnostic found built-in fixed 120 Hz and external
+1080p fixed 60 Hz; it does not establish exp1's original refresh configuration.
+`controls_unchanged` verifies configuration,
 not a matched workload or an idle session. No efficiency claim follows.
 
 ## Freeze and verify
@@ -74,6 +81,12 @@ python3 mseries/aurora/qualification.py freeze --id NEW-LOWERCASE-RELEASE-ID \
 python3 mseries/aurora/qualification.py verify /absolute/work/frozen.json \
   --evidence /absolute/work/j314s-test.json
 ```
+
+`python3 mseries/aurora/check_freezes.py --base BASE_COMMIT` also rejects
+changes or deletion of existing frozen manifests/pin snapshots relative to the
+reviewed Git base. CI runs this history guard. Archived pin bytes in
+`frozen/pins/aurora20.json` keep exp1 verifiable when the active `release.json`
+advances; use `--pins` with that snapshot for historical verification.
 
 Default channel is experimental. Existing outputs are refused. A published
 release ID is immutable: new bits, configuration or evidence produce a new

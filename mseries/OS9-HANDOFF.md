@@ -41,6 +41,25 @@ sensor, audio or suspend action was changed by this batch. Next: use CI-built
 candidate artifacts for a reviewed non-default boot/rollback batch, then record
 the full J314S acceptance matrix before any stable promotion.
 
+### Follow-up release guard and WIP audit
+
+[64 original review fixes](aurora/branch-audits/2026-10-18-review-parity.json)
+were triaged against PR #139: 30 reverse-apply, 10 forward-apply, 24 need
+semantic/context review. All 64 are in `.20`/`.20-enh1`. Confirmed 7.2 gaps
+include GPU command-tail admission and SEP autoload/suspend behavior. Keep 7.2
+build-only; `.20-enh1` remains first hardware candidate. PR #83 merged the
+source/release groundwork. Draft PR #84 fixes stock-bindgen E0080 using the
+unmodified authored review commit 4c56f9cd and adds the real GPU/storage smoke
+receipt. Native ARM64 CI run 39114197052 is pending; do not call it passed yet.
+
+A Git history guard rejects edits/deletion of existing freeze/pin bytes; archived
+pins keep exp1 verifiable after future release changes. The next collector adds
+read-only active refresh/VRR/layout/display-power capture (no monitor serials).
+Exp1 had available-mode lists only, so stays an uncontrolled observation. A
+later diagnostic observed internal fixed 120 Hz and external 1080p fixed 60 Hz;
+no settings were applied. Local 43 regression checks and public dashboard
+checks pass. Update this entry with native CI results before merging follow-up.
+
 ## Window snapping remains enabled; native quarters installed — 2026-10-18
 
 Owner requested permanent snapping and quarter layouts. Live edge-tiling was

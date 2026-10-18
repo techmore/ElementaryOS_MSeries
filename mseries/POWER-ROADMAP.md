@@ -15,7 +15,11 @@ The exact current kernel/boot/module/configuration identity now has scoped
 hardware evidence and an experimental freeze. Native source enhancement
 builds and a separately pinned PR #139 candidate are integrated. Suspend/
 recovery/steady workloads/paired energy results remain acceptance gates.
-No refresh, brightness, audio or sleep setting was changed; no watt saving is
+The 64-fix review parity inventory keeps 7.2 build-only until shared GPU/SEP
+gaps are resolved. The `.20-enh1` lane retains all reviewed baseline fixes.
+Future energy captures record active refresh/VRR/layout/DPMS; exp1 did not
+capture active refresh and remains observational. Existing freeze/pin history
+is enforced in CI. No refresh, brightness, audio or sleep setting was changed; no watt saving is
 claimed. [Hardware status and policy](aurora/hardware-tests/README.md).
 
 Owner request 2026-10-16: investigate every opportunity to lower light-load power and extend battery runs; document goals

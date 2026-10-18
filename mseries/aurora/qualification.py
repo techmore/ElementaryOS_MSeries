@@ -14,9 +14,12 @@ from pathlib import Path
 import platform
 import re
 import statistics
+import sys
 import time
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE.parent / "power"))
+from display_status import read_active
 STABLE_SCOPES = {"boot", "graphics", "gpu", "storage", "network", "input",
                  "suspend_resume", "recovery_boot", "thermal", "energy_ab"}
 
@@ -85,6 +88,7 @@ def idle_delta(before, after):
 
 def context(root):
     return {
+        "active_displays": read_active() if root.resolve() == Path("/") else {"available": False, "reason": "fixture"},
         "backlights": {p.name: {k: read(p / k) for k in ("brightness", "actual_brightness", "max_brightness")}
                        for p in (root / "sys/class/backlight").glob("*")},
         "power_supplies": {p.name: {k: read(p / k) for k in ("type", "status", "online", "capacity", "energy_now")}
@@ -161,7 +165,7 @@ def collect(root, output, kernel_image, boot_image, kernel_log, duration=30, int
             supply.pop("energy_now", None)
             supply.pop("capacity", None)
         return result
-    fixed_controls = controls(before_context) == controls(after_context)
+    fixed_controls = controls(before_context) == controls(after_context) and before_context["active_displays"]["available"]
     uptime = float((read(root / "proc/uptime") or "0").split()[0])
     idle = idle_delta(before_idle, idle_snapshot(root))
     checks = {
@@ -249,6 +253,8 @@ def freeze(release_id, pins_path, evidence_paths, output, channel="experimental"
                 raise ValueError("stable blocked: energy regression above 10% acceptance budget")
         if any(not r.get("controls_unchanged") for r in records):
             raise ValueError("stable blocked: experimental controls changed during capture")
+        if any(not r.get("context_before", {}).get("active_displays", {}).get("available") for r in records):
+            raise ValueError("stable blocked: active display/refresh controls were not captured")
     result = {"schema": 1, "id": release_id, "channel": channel, "frozen": True,
               "status": "stable-qualified" if channel == "stable" else "frozen-experimental",
               "identity": identities[0], "upstream_pins": pins, "pins_sha256": digest(pins_path),
