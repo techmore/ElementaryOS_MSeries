@@ -32,6 +32,11 @@ NEMOTRON = "nemotron-speech-streaming-en-0.6b-Q8_0.gguf"
 NEMOTRON_SHA256 = "90d8c89714cd31efc88be62a40c6b2bea57e0cc2063af1ffe2c28f1a228ca110"
 STREAM_MODEL = "parakeet-unified-en-0.6b-Q4_K_M.gguf"
 STREAM_SHA256 = "a8bf3de2b393bd14ead5a858c3748d5e3b07a20fdeabdd3b498fba4f463fa929"
+# Managed desktop activation must not inherit a prior qualification/debug mode.
+# UnsetEnvironment applies after all Environment/EnvironmentFile assignments;
+# older owner drop-ins remain intact and engine rollback restores their behavior.
+DEBUG_ENVIRONMENT = ("STREAM_KEEP", "STREAM_DRY", "STREAM_TEST_WAV", "STREAM_TEST_RAW",
+                     "STREAM_TEST_INSERT", "STREAM_FORCE_FALLBACK", "MSERIES_INPUT_TEST_SESSION")
 
 
 def atomic(path, data, mode=0o600):
@@ -173,6 +178,7 @@ def render(engine, mode, additions, warm_seconds=60):
         # systemd syntax, not shell syntax; percent is a systemd specifier.
         return '"' + str(value).replace("%", "%%").replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n") + '"'
     return ("# Managed by mseries dictation-engine; rollback keeps other drop-ins.\n[Service]\n" +
+            "UnsetEnvironment=" + " ".join(DEBUG_ENVIRONMENT) + "\n" +
             "".join("Environment=" + quote(key + "=" + value) + "\n" for key, value in values.items())).encode()
 
 

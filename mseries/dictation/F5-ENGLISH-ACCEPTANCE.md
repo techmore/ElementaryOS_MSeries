@@ -143,7 +143,9 @@ python3 mseries/install-dictation-english.py --activate nemotron \
 
 The installer preserves private SHA-checked backups, streams large model copies
 and rollback, stops its ASR before replacing runtime files, and reloads only the
-owned input bridge/speech service. It never restarts IBus, Wingpanel or another
+owned input bridge/speech service. Managed activation unsets inherited capture-retention
+and test/debug environment overrides; a real no-inference systemd child verifies
+that precedence. Older drop-ins remain intact for rollback. It never restarts IBus, Wingpanel or another
 owner job. `--stage-only` refuses an active ASR. The installed
 `dictation-english-manage.py --rollback` restores the prior payload and engine;
 `dictation-engine.py --rollback` restores only the latest managed engine change.

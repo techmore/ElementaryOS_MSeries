@@ -72,6 +72,19 @@ class EngineSelection(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "warm lifetime"):
             self.select(warm_seconds=901, stage_only=True)
 
+    def test_desktop_activation_clears_inherited_capture_and_test_modes(self):
+        engine.environment.return_value.update(STREAM_KEEP="1", STREAM_DRY="1", STREAM_TEST_WAV="/old/test.wav")
+        self.select(stage_only=True)
+        data = engine.DROPIN.read_text()
+        cleared = next(line.split("=", 1)[1].split() for line in data.splitlines() if line.startswith("UnsetEnvironment="))
+        self.assertEqual(set(cleared), {"STREAM_KEEP", "STREAM_DRY", "STREAM_TEST_WAV", "STREAM_TEST_RAW",
+                                        "STREAM_TEST_INSERT", "STREAM_FORCE_FALLBACK", "MSERIES_INPUT_TEST_SESSION"})
+        self.assertEqual(self.other.read_text(), "Owner ANE preferences\n")
+        path, change = engine.latest_change()
+        engine.restore_change(path, change)
+        self.assertFalse(engine.DROPIN.exists())
+        self.assertEqual(self.calls, [])
+
     def test_stage_rollback_does_not_stop_or_reload_running_services(self):
         original = b"[Service]\nEnvironment=OLD=value\n"
         engine.DROPIN.write_bytes(original)

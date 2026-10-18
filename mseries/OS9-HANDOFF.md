@@ -5116,3 +5116,14 @@ Ethernet size follow-up (October 18, fourth 5% step): owner requested another 5%
 Ethernet size follow-up (October 18, fifth 5% step): owner requested another 5% reduction and local deployment. Artwork now uses `0.6923303125 × 0.95 = 0.657713796875` of the original, centered in 16/24px canvases including the VPN variant. Full network installer/build passed and reloaded the bar; installed GResource transforms and the running panel’s loaded module were verified.
 
 Ethernet size follow-up (October 18, additional 10% step): owner requested another 10% reduction and local deployment. Artwork now uses `0.657713796875 × 0.90 = 0.59194241718750` of the original, centered in 16/24px canvases including the VPN variant. Full network installer/build passed and reloaded the bar; installed GResource transforms and the running panel’s loaded module were verified.
+
+### English F5 deployment audit: inherited debug capture
+
+Read-only predeployment audit found inherited STREAM_KEEP=1 in an older speech
+drop-in. No new microphone capture was made. The managed engine drop-in now uses
+systemd UnsetEnvironment for capture retention, dry/file-test insertion and forced
+fallback controls; older drop-ins remain byte-for-byte intact for rollback. An
+actual no-inference transient user unit confirmed these variables are absent in
+the child even when inherited assignments are present. Its sanitized receipt is
+work/f5-debug-env-v1/receipt.json. Deployed verification must inspect the live
+process environment because systemctl Environment still lists unset assignments.
