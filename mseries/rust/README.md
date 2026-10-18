@@ -95,7 +95,7 @@ semantic ownership audit.
 | `omacom/omarchy` | Desktop and package behavior reference | Do not copy its desktop wholesale; translate applicable local behavior into separate Rust components | Track observed revision; translate Arch/Hyprland contracts explicitly |
 | `mseries-power` | Privileged charge/power command and profile policy | Rust candidate implemented in its own crate; not installed by default | Thirteen differential cases currently pass; full contracts and target-device qualification remain open; see `mseries-power/README.md` |
 | M-series Wi-Fi resume recovery | Root service and helper | Rust candidate implemented in its own crate; not installed in suspend hooks | Twelve differential cases currently pass; firmware and target-device qualification remain open; see `wifi-resume/README.md` |
-| Network-usage logger | User service, SQLite state and DNS/network events | Rust daemon candidate added; Python remains the only installed service | Focused parser/schema tests pass; full same-fixture differential tests and device-session qualification remain open; see `netusage/README.md` |
+| Network-usage logger | User service, SQLite state and DNS/network events | Rust daemon candidate added; Python remains the only installed service | Six focused tests and five same-fixture socket-parser cases pass; full daemon DNS/flush/failure comparison and device-session qualification remain open; see `netusage/README.md` |
 | Brightness bridge | D-Bus integration/service | Candidate for an independent Rust implementation | Compare D-Bus names, methods, errors and display behavior before cutover |
 | Keyboard-backlight service | M-series sensor and backlight policy | Candidate for an independent Rust implementation | Compare sensor bounds, manual override, lock/lid and suspend behavior before cutover |
 | Image/install orchestration | `bin/`, `transform/`, mkosi hooks and installer scripts | Rust migration target for each M-series-owned executable; keep upstream mkosi/system tools as dependencies | Preserve resume, status, abort, rollback and failure semantics before each cutover |
@@ -201,9 +201,10 @@ individually.
 - The Wi-Fi resume candidate has a separate dependency-free Rust crate and 12
   differential scenarios in CI; it is not wired into suspend hooks.
 - The network-usage logger has a separate Rust daemon candidate and candidate
-  systemd unit. Its six focused parser, DNS, SQL and SQLite-schema tests pass;
-  it is not installed. Same-fixture daemon differential coverage remains open.
-- The path-level source inventory currently contains 467 items (421 local and
+  systemd unit. Six focused parser, DNS, SQL and SQLite-schema tests plus five
+  same-fixture Python/Rust socket-parser cases pass. It is not installed;
+  daemon-level DNS, flush/retry and desktop-session checks remain open.
+- The path-level source inventory currently contains 468 items (422 local and
   46 elementary source-tree items). The local records still need semantic
   component ownership and Rust conversion decisions.
 - The source-by-source register is still incomplete. Daily upstream monitoring

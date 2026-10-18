@@ -13,7 +13,7 @@
     "mkosi.conf",
     "packages.arm64"
   ],
-  "item_count": 467,
+  "item_count": 468,
   "items": [
     {
       "id": "Justfile",
@@ -3461,6 +3461,14 @@
       "ownership": "mseries-maintained",
       "language": "rust",
       "role": "implementation",
+      "rust_status": "candidate-functional-tests-passing-not-installed"
+    },
+    {
+      "id": "mseries/rust/netusage/test-parity.py",
+      "path": "mseries/rust/netusage/test-parity.py",
+      "ownership": "mseries-maintained",
+      "language": "python",
+      "role": "verification",
       "rust_status": "candidate-functional-tests-passing-not-installed"
     },
     {

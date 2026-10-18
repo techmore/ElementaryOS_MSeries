@@ -244,13 +244,14 @@ migration remain ongoing; announcement targets are not hardware test results.
 
 The local `rust` branch starts from the available `origin/main` snapshot
 `b0a03548fd7003eceaf191d60dcb097bdd0c3c99`. Its path inventory currently has
-467 records (421 M-series-maintained paths and 46 elementary source-tree paths);
+468 records (422 M-series-maintained paths and 46 elementary source-tree paths);
 the semantic project map and a complete local conversion schedule remain open.
 Power and Wi-Fi resume have independent, not-installed Rust candidates with
 differential software suites. A network-usage daemon candidate now preserves the
-existing SQLite/panel contract and has focused parser/schema tests; same-fixture
-differential coverage and desktop-session qualification remain open. It is not
-installed beside the current Python service. The daily upstream watcher exists,
+existing SQLite/panel contract, six focused tests, and five shared-fixture
+socket-parser cases against Python; daemon-level DNS/flush/retry coverage and
+desktop-session qualification remain open. It is not installed beside the
+current Python service. The daily upstream watcher exists,
 but this branch still needs the daily/weekly build-and-review candidate lane.
 
 ## Implemented; runtime validation pending

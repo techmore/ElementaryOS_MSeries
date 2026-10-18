@@ -23,10 +23,10 @@ cargo build --release --locked
 
 The candidate currently has focused unit tests for socket counter parsing,
 loopback filtering, process names, DNS address/name handling, query accounting,
-SQL quoting, and a SQLite schema/flush round trip. These checks are not yet
-equivalent to running both daemon implementations over the same mocked event
-fixtures. That differential harness is still required before calling this a
-parity conversion.
+SQL quoting, and a SQLite schema/flush round trip. A same-fixture comparison
+against the Python socket parser covers counters, missing counters, loopback,
+unowned sockets and IPv6 peers. Full daemon event-stream, DNS and failure/retry
+differential cases are still required before calling this a parity conversion.
 
 Runtime requirements are `ss`, `resolvectl`, `timeout`, and the `sqlite3` CLI.
 SQLite remains accessed through the CLI to avoid an unsafe FFI boundary. The

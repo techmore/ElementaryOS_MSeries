@@ -576,6 +576,29 @@ fn prune(db: &Path) {
 }
 
 fn main() {
+    if env::args().nth(1).as_deref() == Some("--parse-ss-json") {
+        let mut input = String::new();
+        if let Err(error) = std::io::stdin().read_to_string(&mut input) {
+            log(format!("cannot read ss fixture: {error}"));
+            std::process::exit(2);
+        }
+        let parsed = parse_sockets(&input, &mut HashMap::new());
+        let mut rows: Vec<_> = parsed
+            .into_iter()
+            .map(|((local, peer), socket)| {
+                serde_json::json!({"local": local, "peer": peer, "proc": socket.proc_name,
+                "host": socket.remote_ip, "rx": socket.rx, "tx": socket.tx})
+            })
+            .collect();
+        rows.sort_by(|a, b| {
+            a["local"]
+                .as_str()
+                .cmp(&b["local"].as_str())
+                .then(a["peer"].as_str().cmp(&b["peer"].as_str()))
+        });
+        println!("{}", serde_json::Value::Array(rows));
+        return;
+    }
     install_signal_handlers();
     let db = db_path();
     if let Err(error) = open_db(&db) {

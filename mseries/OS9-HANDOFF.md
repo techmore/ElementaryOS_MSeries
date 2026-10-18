@@ -2431,11 +2431,12 @@ service remains the installed writer; do not run both services against the
 same database.
 
 Focused Rust validation passed: `cargo fmt --check`, six unit tests including
-SQLite flush/schema round trip, `cargo clippy --all-targets -- -D warnings`,
-release build, inventory check (467 items: 421 local, 46 elementary) and
-`git diff --check`. This is not a differential parity or desktop hardware test.
-The candidate uses `sqlite3` CLI and currently lacks same-fixture event-stream
-comparison, install/rollback rehearsal and desktop-session qualification.
+SQLite flush/schema round trip, five shared-fixture comparisons against the
+Python socket parser, `cargo clippy --all-targets -- -D warnings`, release
+build, inventory check (468 items: 422 local, 46 elementary) and
+`git diff --check`. Only the socket parser has same-fixture differential
+coverage; full DNS event/flush/retry comparison, install/rollback rehearsal and
+desktop-session qualification remain open. The candidate uses the `sqlite3` CLI.
 
 The Rust branch and this batch remain local. Public push was rejected by the
 automatic approval review because it would publish repository contents; no
