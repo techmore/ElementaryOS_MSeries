@@ -78,9 +78,11 @@ installer remains optional and uses the existing GitHub CLI login. The dashboard
 was installed and activated in the live Pantheon session on 2026-10-18; the
 module loaded and the indicator toggle opened. An authenticated refresh returned
 85 repositories. The live query bug was fixed by using valid connection
-arguments and smaller pages. UI parity follow-ups include traffic/cloner views,
-a heatmap visualization, multi-account controls, and launch-at-login settings.
-See `mseries/REPOBAR-PORT.md`.
+arguments and smaller pages. PR #175 is merged and active in the current desktop
+session; the new module was loaded after one Wingpanel restart, and the installed
+helper returned data from all eight detail categories. UI parity follow-ups
+include traffic/cloner views, a heatmap visualization, multi-account controls,
+and launch-at-login settings. See `mseries/REPOBAR-PORT.md`.
 
 ## Consistent CodexBar panel typography — 2026-10-18
 
