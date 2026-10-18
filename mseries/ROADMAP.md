@@ -682,3 +682,13 @@ No real authentication was repeated. Runtime GI dependencies are explicit in the
 OpenCode **+** now opens the native API-key sheet directly; the redundant Continue popup is removed.
 The existing sign-in helper, validation/storage and result/refresh flow remain intact. Module build
 and four Meson suites pass; no live sign-in was required for this routing change.
+
+
+### Direct Claude sign-in and account levels — 2026-10-18
+
+Claude **+** now starts browser sign-in immediately. Dropdown active and saved-account identities
+show their reported plan, with a quiet “Plan unavailable” when metadata is missing. Codex uses its
+existing claims, Claude projects subscription labels from saved/live login metadata, and OpenCode
+uses reported plan metadata where available. Four Meson suites, 35 Claude/9 OpenCode tests, port
+compatibility, and light/dark normal-width render checks pass. Native Claude sessions and provider
+authentication methods are preserved; live reauthentication was not repeated for this UI change.

@@ -99,7 +99,7 @@ inline progress/result, retry and cancellation. `codexbar-accounts.py login` fin
 bundled with the desktop app, starts official `codex login` in a private temporary `CODEX_HOME` with
 file credential storage, and saves the result into the account store. It never replaces the live
 Codex auth file. Cancellation terminates the login child and removes temporary credentials. Initial
-Claude uses the same account sheet with provider-specific copy. OpenCode **+** launches the native API-key window directly, without an intermediate Continue confirmation; the helper/result flow remains intact. Codex waiting/success/retry states share the visual hierarchy, keyboard defaults and bounded selectable detail. The OpenCode API-key window also uses a Granite sheet with the same emblem, theme accents, framed sections and native Cancel/Connect buttons. Its masked entry, browser/passkey path, key validation/storage and built-in sign-in fallback remain available. A spinner accompanies validation and failed checks restore the editable field. Run `probe/render-opencode.py OUT.png [initial|busy|error]` under Xvfb with the elementary light/dark theme to preview it without authentication. Render with `CB_DIALOG=codex|claude|opencode|codex-wait|codex-success|codex-error` through `probe/run-probe.sh`; these modes never run real sign-in helpers.
+Claude **+** starts the existing browser sign-in helper directly, without a confirmation popup. OpenCode **+** launches the native API-key window directly, without an intermediate Continue confirmation; the helper/result flow remains intact. Codex waiting/success/retry states share the visual hierarchy, keyboard defaults and bounded selectable detail. The OpenCode API-key window also uses a Granite sheet with the same emblem, theme accents, framed sections and native Cancel/Connect buttons. Its masked entry, browser/passkey path, key validation/storage and built-in sign-in fallback remain available. A spinner accompanies validation and failed checks restore the editable field. Run `probe/render-opencode.py OUT.png [initial|busy|error]` under Xvfb with the elementary light/dark theme to preview it without authentication. Render with `CB_DIALOG=codex|claude|opencode|codex-wait|codex-success|codex-error` through `probe/run-probe.sh`; these modes never run real sign-in helpers.
 Official login/storage reference: https://learn.chatgpt.com/docs/auth .
 
 Secondary quota values use the same theme success/warning/error colours and thresholds as the usage
@@ -124,3 +124,16 @@ can refer to a secondary account; the matching row carries the same marker and t
 Selection is recomputed from existing data during normal polls, with no additional API calls or
 account switching. Changing winners or passing a reset time updates the markers without waiting for
 new quota data.
+
+
+### Account plan badges
+
+Dropdown identities show compact reported-plan pills for active and saved accounts. Codex uses its
+existing per-account plan claim; Claude reads only known subscription labels from its live/saved
+Claude Code login metadata, returning no credential fields. OpenCode uses the upstream active plan
+or per-account plan metadata when supplied. Missing or unreadable plans say **Plan unavailable**;
+quota size and the active account's plan are never used to guess another account's subscription.
+Known-plan tooltips say “Reported plan” because saved login metadata may be cached.
+
+`CB_HIDE_PANEL=1 CB_SCROLL=end probe/run-probe.sh ...` renders the dropdown at its normal width,
+scrolled to the last provider, for checking secondary-account badges in light/dark themes.

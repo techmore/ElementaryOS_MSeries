@@ -66,14 +66,14 @@ print("fixtures:", ", ".join(sorted(scenarios)))
 # Complete saved-account fixtures exercise short-window exhaustion beside healthy totals.
 accounts = {
     "codex": {"accounts": [
-        {"email": "me@codex.example", "id": "a", "active": True, "windows": []},
-        {"email": "work@codex.example", "id": "b", "active": False, "windows": [
+        {"email": "me@codex.example", "id": "a", "active": True, "plan": "pro", "windows": []},
+        {"email": "work@codex.example", "id": "b", "active": False, "plan": "plus", "windows": [
             window("primary", "5 hour", 300, 5, 65), window("secondary", "7 day", 10080, 62, 5000)]}]},
-    "claude": {"available": True, "activeEmail": "me@claude.example", "desktop": {
+    "claude": {"available": True, "activeEmail": "me@claude.example", "activePlan": "pro", "desktop": {
         "installed": True, "email": "me@claude.example", "differs": False}, "desktopNote": "", "accounts": [
-        {"number": 1, "email": "me@claude.example", "active": True, "desktopReady": True, "desktopActive": True,
+        {"number": 1, "email": "me@claude.example", "plan": "pro", "active": True, "desktopReady": True, "desktopActive": True,
          "windows": [window("primary", "5 hour", 300, 80, 130), window("secondary", "7 day", 10080, 55, 5000)]},
-        {"number": 2, "email": "work@claude.example", "active": False, "desktopReady": True, "desktopActive": False,
+        {"number": 2, "email": "work@claude.example", "plan": "max", "active": False, "desktopReady": True, "desktopActive": False,
          "windows": [window("primary", "5 hour", 300, 0, 190), window("secondary", "7 day", 10080, 72, 8000)]}]},
     "opencode": {"accounts": [
         {"email": "me@opencode.example", "id": "a", "active": True, "windows": []},

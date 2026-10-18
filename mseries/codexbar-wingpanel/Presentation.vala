@@ -33,9 +33,11 @@ namespace MSeries {
         }
 
         public static string plan_label (string plan) {
-            if (plan.length == 0) return "";
-            if (plan == "prolite") return "Pro Lite";
-            return plan.substring (0, 1).up () + plan.substring (1);
+            var value = plan.strip ();
+            if (value.length == 0 || value.down () == "unknown") return "";
+            if (value.down () == "prolite") return "Pro Lite";
+            if (value.down () == "go") return "Go";
+            return value.substring (0, 1).up () + value.substring (1);
         }
 
         public static string age_text (int64 seconds) {

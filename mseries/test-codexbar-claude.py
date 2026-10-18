@@ -74,6 +74,38 @@ class ClaudeTest(unittest.TestCase):
         self.assertEqual(data["accounts"][1]["windows"], [])
         self.assertNotIn("token", str(data))
 
+    def test_saved_plan_metadata_is_account_specific_and_contains_no_tokens(self):
+        for number, email, plan in ((1, "work@example.com", "max"), (2, "me@example.com", "pro")):
+            path = self.home / f".local/share/claude-swap/credentials/.creds-{number}-{email}.enc"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(MODULE.base64.b64encode(MODULE.json.dumps({"claudeAiOauth": {
+                "subscriptionType": plan, "accessToken": SECRET}}).encode()))
+        with mock.patch.object(MODULE, "run", return_value=LIST):
+            data = MODULE.listing("cswap", NOW)
+        self.assertEqual([a["plan"] for a in data["accounts"]], ["max", "pro"])
+        self.assertEqual(data["activePlan"], "pro")
+        self.assertNotIn(SECRET, MODULE.json.dumps(data))
+
+    def test_live_plan_is_used_only_for_verified_active_identity(self):
+        self.write(".claude/.credentials.json", {"claudeAiOauth": {
+            "subscriptionType": "pro", "accessToken": SECRET}})
+        self.assertEqual(MODULE.account_plan(1, "work@example.com"), "")
+        self.sign_in_cli(ME)
+        with mock.patch.object(MODULE, "run", return_value=LIST):
+            data = MODULE.listing("cswap", NOW)
+        self.assertEqual([a["plan"] for a in data["accounts"]], ["", "pro"])
+        self.assertEqual(data["activePlan"], "pro")
+        self.assertNotIn(SECRET, MODULE.json.dumps(data))
+
+    def test_missing_or_corrupt_plan_stays_unknown(self):
+        path = self.home / ".local/share/claude-swap/credentials/.creds-1-work@example.com.enc"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("not a base64 credential")
+        self.assertEqual(MODULE.account_plan(1, "work@example.com"), "")
+        path.write_bytes(MODULE.base64.b64encode(MODULE.json.dumps({"claudeAiOauth": {
+            "subscriptionType": SECRET}}).encode()))
+        self.assertEqual(MODULE.account_plan(1, "work@example.com"), "")
+
     def test_unsaved_login_still_names_the_active_account(self):
         def fake(cli, arguments):
             return {"schemaVersion": 1, "accounts": []} if arguments == ["list"] else \

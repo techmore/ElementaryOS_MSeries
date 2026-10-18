@@ -71,7 +71,7 @@ int main (string[] args) {
     popover_body.append (indicator.get_widget ());
     var root = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) { margin_top = 6, margin_bottom = 6, margin_start = 6, margin_end = 6 };
     root.add_css_class ("background");
-    root.append (bar);
+    if (Environment.get_variable ("CB_HIDE_PANEL") == null) root.append (bar);
     root.append (popover_body);
     var window = new Gtk.Window () { child = root, decorated = false };
     window.present ();
@@ -88,7 +88,14 @@ int main (string[] args) {
         root.measure (Gtk.Orientation.VERTICAL, 360, out min, out nat, null, null);
         window.set_default_size (360, nat);
         Timeout.add (800, () => {
-            capture (root, window, args[1], loop);
+            if (Environment.get_variable ("CB_SCROLL") == "end") {
+                var scroll = find_scroll (root);
+                if (scroll != null) {
+                    var adjustment = scroll.get_vadjustment ();
+                    adjustment.value = adjustment.upper - adjustment.page_size;
+                }
+            }
+            Timeout.add (200, () => { capture (root, window, args[1], loop); return Source.REMOVE; });
             return Source.REMOVE;
         });
         if (Environment.get_variable ("CB_STABILITY") != null) {
@@ -145,4 +152,13 @@ void capture (Gtk.Widget root, Gtk.Window window, string path, MainLoop loop) {
             Timeout.add (11500, () => { loop.quit (); return Source.REMOVE; });
         }
     }
+}
+
+Gtk.ScrolledWindow? find_scroll (Gtk.Widget root) {
+    if (root is Gtk.ScrolledWindow) return (Gtk.ScrolledWindow) root;
+    for (var child = root.get_first_child (); child != null; child = child.get_next_sibling ()) {
+        var found = find_scroll (child);
+        if (found != null) return found;
+    }
+    return null;
 }
