@@ -1,5 +1,35 @@
 # OS 9 implementation / Claude Code handoff
 
+## CodexBar: why the Claude account switch "did nothing", and the fix — 2026-10-18 (Claude Code)
+
+Pin unchanged: upstream CodexBar v0.77.0, claude-swap 0.27.2. Branch `claude/codexbar-claude-switch` (from
+`power-usage` 0b72150). Owner report: CodexBar could not switch Claude accounts.
+
+Root cause: the switch itself works. `cswap switch` rewrites Claude Code's file login (`~/.claude/.credentials.json`
+and `oauthAccount` in `~/.claude.json`); a real switch to account 1 and back to 2 changed `claude auth status` both
+ways. But the owner runs Claude Code inside the Claude desktop app (no `claude` on PATH), and the app gives every
+Code session its own sign-in through `CLAUDE_CODE_OAUTH_TOKEN`. That variable overrides the file, so the switch never
+reached anything the owner uses. The panel also ran the switch with its output thrown away, so there was no message.
+
+Fix: `codexbar-claude.py switch` now checks `~/.claude.json` names the target after cswap reports success, treats
+`already-active` as success, and reports the desktop app's account. It reads `lastKnownAccountUuid` from
+`~/.config/Claude/config.json` and matches it to claude-swap's saved configs (identity fields only; the app's
+encrypted tokens are never read). The list follows the live login when claude-swap's record lags behind it. The
+panel shows the switch result in a small dialog, plus a line "Claude app: <account> · switch it in the app" on the
+Claude card when the app is on another account. Claude helper tests: 14 (was 9), all on a fake HOME.
+
+Verified: all 5 CodexBar Python test files, Meson 4/4, `check-codexbar-port.sh` passed (before and after deploy,
+live `--snapshot` keys match the fixture, schema 1). A headless Xvfb render of the `live` fixture shows the new line.
+`deploy-codexbar.sh` reported success: the deployed helper matches the repo and Wingpanel and CodexBar are running.
+A real switch 1 then 2 through the new helper gave the right messages, and the machine ended on the original
+account (CLI, `~/.claude.json`, cswap and the desktop app all on account 2). Temporary credential backups were
+deleted after that check.
+Not verified: the dialog and card line on the live panel (I opened no windows on the owner's screen); a running CLI
+session picking up a switch on its next message (claude-swap's claim, not tested). Switching the desktop app itself
+is not possible from here: its login is encrypted Electron storage and we do not touch it.
+Owner: to use another account in Claude Code inside the Claude app, sign out and in again in the app. The panel
+Switch changes the `claude` command line only.
+
 ## Power audit and Aurora status after `.20`; dock monitor seems live — 2026-10-18 (Claude Code)
 
 Read-only pass; nothing on the machine was changed. [Power audit](power/AUDIT-2026-10-18.md): docked on AC with a
