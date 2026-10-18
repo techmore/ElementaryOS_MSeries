@@ -4902,8 +4902,11 @@ Ethernet size follow-up (October 18, fifth 5% step): owner requested another 5% 
 ## Roomier Pantheon and app defaults — 2026-10-18
 
 For the 14-inch M1 Pro's high-density 3024×1964 display, the desktop setup now
-uses a modest 1.15 GTK text scale and 32-pixel pointer as user-level settings.
+started with a 1.15 GTK text scale; owner feedback raised it to 1.5. The 32-pixel pointer remains.
 Factory dconf defaults match and remain user-overridable. The dock profile is
 48-pixel icons (up from 40), retaining overlap auto-hide and pinned apps. These
 values aim for more comfortable reading and pointer targeting while preserving
 usable screen area. Not yet visually checked on hardware.
+
+
+Text scale follow-up: 1.15 felt too tight. The user-level and factory dconf defaults are now 1.5 for the roomier reading size. This is a 50% GTK text increase and has not yet been visually checked on hardware.

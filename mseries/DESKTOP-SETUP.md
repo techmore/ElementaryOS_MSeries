@@ -49,7 +49,7 @@ Minimize button beside Maximize. Restore `close:maximize` to undo this.
 Apps drawing their own decorations may need to be reopened or may ignore it.
 
 For the high-density 14-inch M1 Pro display, the same script sets GTK text
-scaling to 1.15 and the pointer size to 32 pixels. The factory image provides
+scaling to 1.5 and the pointer size to 32 pixels. The factory image provides
 these as overridable dconf defaults. The native dock profile uses 48-pixel
 icons, hides when windows overlap, and preserves pinned apps.
 
