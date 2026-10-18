@@ -78,6 +78,15 @@ int main (string[] args) {
 
     var loop = new MainLoop ();
     Timeout.add (delay, () => {
+        if (Environment.get_variable ("CB_ASSERT_LOCAL") != null) {
+            var text = local_label_text (bar);
+            assert (text.contains ("42.0M tok"));
+            assert (text.contains ("31.2M tok"));
+            assert (text.contains ("121M tok"));
+            int min, nat;
+            bar.measure (Gtk.Orientation.VERTICAL, -1, out min, out nat, null, null);
+            assert (nat <= 32); // Provider totals and alternate accounts still fit two rows.
+        }
         var page = Environment.get_variable ("CB_PAGE");
         var pages = find_pages (root);
         if (page != null && pages != null) {
@@ -161,4 +170,11 @@ Gtk.ScrolledWindow? find_scroll (Gtk.Widget root) {
         if (found != null) return found;
     }
     return null;
+}
+
+string local_label_text (Gtk.Widget widget) {
+    var text = (widget is Gtk.Label) ? ((Gtk.Label) widget).label : "";
+    for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ())
+        text += " " + local_label_text (child);
+    return text;
 }

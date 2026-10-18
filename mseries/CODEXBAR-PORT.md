@@ -12,7 +12,7 @@ ones.** Upgrade by re-pinning, re-installing upstream, and re-verifying each ite
 | Native Settings window (replaces upstream's Qt one; Fusion is hard-coded there so it can't be themed). Same `linux.json` keys, applied live through `codexbar-linux --configure`; opened by the panel's Settings button (`~/.local/bin/codexbar-settings`) | `codexbar-wingpanel/settings/` (`SettingsModel.vala` with tests, `SettingsApp.vala`), `probe/run-settings-probe.sh` | `linux.json` keys and validation in `DesktopController.cpp` (`validate`/`loadSettings`), `--configure`, `--autostart`, `codexbar config providers/enable` |
 | Wrapper that follows the active OpenCode v2 OAuth account, with a legacy Go key fallback (read-only `credential` table; never copies/refreshes it) | `codexbar-opencode-wrapper.py` → `~/.local/bin/codexbar` | `codexbar-upstream` CLI path under `~/.local/lib/codexbar-cli/` |
 | Shared helper cache and locks (polling limits: per-answer TTL, exponential backoff on failure, last-good data kept, private `0600` files under `~/.cache/codexbar-mseries`; one `flock` around Codex sign-in writes) | `codexbar_cache.py` | none |
-| Sessions helper (incremental transcript index: only changed files are parsed) | `codexbar-sessions.py` | none (reads local data) |
+| Sessions helper (incremental transcript index: only changed files are parsed) | `codexbar-sessions.py`, `codexbar_tokens.py` | none (reads local data) |
 | OpenCode local usage, account plans and switching | `codexbar-opencode-local.py` | reads `opencode.db` read-only; activates via `opencode auth switch opencode <credential-id>` |
 | Codex multi-account switcher (upstream's is macOS-only) | `codexbar-accounts.py` | upstream `codexbar usage --provider codex` honoring `CODEX_HOME` |
 | OpenCode Go sign-in (upstream imports opencode.ai cookies only on macOS): native WebKit window, saves the `auth`/`__Host-console_session` session as `providers[opencodego].cookieSource=manual` + `cookieHeader`; the panel's OpenCode **+** runs it | `codexbar-opencode-login.py` | config path resolution (`CodexBarConfigStore.defaultURL`), `OpenCodeWebCookieSupport` cookie names, `usage --source web` |
@@ -261,3 +261,23 @@ All three providers share compact panel text (7.5 pt quota, 7 pt reset, 6.75 pt 
 saved account and account quota available, its local seven-day token count occupies the lower row.
 With alternate accounts, that row keeps their quotas instead; local usage remains in the tooltip and
 popover. `probe/run-probe.sh BUILD OUT light opencode-compact connected` previews both cases.
+
+### Seven-day local processed tokens
+
+Every provider has a `7d local` total sourced from `codexbar-sessions.py`. These are rolling local
+coding-activity estimates across accounts/providers on this machine, not remaining plan tokens or
+ordinary ChatGPT/claude.ai chat totals. Input, output and cache reads/writes are included. Codex
+cached-input and reasoning-output breakdowns are already included in its totals; OpenCode's fallback
+components are disjoint; Claude exposes cache categories separately. Shared `codexbar_tokens.py`
+implements those rules and is required by both local helpers.
+
+The Codex reader caches changed-file usage observations from `.codex/sessions` and `archived_sessions`,
+with the existing 4,000-file/30-day scan bounds. Repeated cumulative observations and copied history
+are deduplicated. A resumed counter without last-call usage establishes a baseline rather than
+counting a whole lifetime as new use; missing history can undercount. Claude's `claude-transcripts-v2`
+cache replaces the old cache-excluding definition. Caches remain private JSON under
+`~/.cache/codexbar-mseries`; no credentials or message content are copied. Existing helper polling
+remains 60 seconds while open (15-second freshness on opening) and 900 seconds while closed.
+Cached session updates repaint the panel directly, without an extra upstream snapshot/refresh.
+Totals share the second row with alternate accounts, respect percentage visibility, and remain
+explained in accessible provider tooltips. The local-token native probe checks all three and bar height.
