@@ -54,12 +54,12 @@ for name, value in scenarios.items():
     (here / f"{name}.json").write_text(json.dumps(value, indent=1))
 
 sessions = {"updatedAt": iso(NOW), "sessions": [
-    {"id": "codex", "name": "ChatGPT · Codex", "state": "ok", "detail": "Signed in · account quota comes from CodexBar."},
+    {"id": "codex", "name": "ChatGPT · Codex", "state": "ok", "detail": "Signed in · account quota comes from CodexBar.", "periods": [{"label":"7 days","tokens":42000000,"requests":40,"costUSD":0}]},
     {"id": "claude", "name": "Claude Code", "state": "ok", "detail": "Signed in",
      "periods": [{"label": "5 hours", "requests": 42, "tokens": 1850000, "costUSD": 0},
                  {"label": "7 days", "requests": 610, "tokens": 31200000, "costUSD": 0}],
-     "note": "Local activity from Claude Code transcripts · not account quota (tokens exclude cache reads)"},
-    {"id": "opencode", "name": "OpenCode", "state": "warn", "detail": "OpenCode history uses an unsupported schema."}]}
+     "note": "Local activity from Claude Code transcripts · not account quota (tokens include cache reads/writes)"},
+    {"id": "opencode", "name": "OpenCode", "state": "ok", "detail": "Local activity", "periods": [{"label":"7 days","tokens":120813143,"requests":565,"costUSD":0}]}]}
 (here / "sessions.json").write_text(json.dumps(sessions))
 print("fixtures:", ", ".join(sorted(scenarios)))
 

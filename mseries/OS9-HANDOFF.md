@@ -1,5 +1,45 @@
 # OS 9 implementation / Claude Code handoff
 
+## Seven-day local tokens for all three providers — 2026-10-18
+
+Added `7d local` processed-token totals for Codex, Claude Code and OpenCode in the two-row panel.
+Counts sit beside alternate-account summaries when present; the tooltip explains machine-local scope,
+all local accounts/providers, cache inclusion and separation from account quota. All three now use the
+sessions helper rather than mixing OpenCode Go-only cost data with whole-application activity.
+Codex indexes active/archived JSONL token events, ignores repeated cumulative counters, deduplicates
+copied history by usage-event fingerprint, and uses last-call usage (or differences after a baseline),
+never a recent thread's lifetime sum. Claude now includes cache reads; its v2 cache invalidates old
+excluded-cache answers. Shared `codexbar_tokens.py` accounts for provider-specific disjoint fields:
+Codex authoritative total/input+output without adding cached/reasoning subsets again; Claude's four
+input/output/cache categories; OpenCode authoritative total or disjoint components. Both OpenCode
+readers share that function. Installers, deploy, image payload and deployment fixture ship the module.
+
+No new network requests or polling cadence changes. Only changed transcript files are reparsed;
+private caches store usage metadata, not transcript messages. A real-data first read took 1.608s,
+then 0.188s with existing caches (one active transcript changed during the run). Thirteen native Meson
+targets pass, including a real three-provider panel assertion and <=32 px height check; helper tests
+cover identical processed totals, duplicate/archive events, resets, malformed data, cache reuse and
+append invalidation. Full port check validates upstream v0.77.0 and live snapshot schema.
+Owner-authorized activation completed with exactly one `deploy-codexbar.sh --restart`.
+Confirmed installed module inode 320944 was loaded; Wingpanel PID 233125 stayed unchanged
+for 61.0 seconds, CodexBar daemon PID 44641 preserved. No new panel journal messages or
+coredumps since activation, sampled CPU median 0.30%, RSS 165.33–169.2 MiB,
+file descriptors fixed at 49. Both native typography and local token changes are active. No real
+account switch performed; long-run behavior and owner visual confirmation remain outside this smoke check.
+
+## RepoBar port in progress — 2026-10-18
+
+`codex/repobar-elementary-port` now includes a searchable GTK/Wingpanel
+dashboard, pin/hide filters, issue/PR/CI/release/activity summaries, API quota
+visibility, a scriptable CLI, private persistent caches/settings, and bounded
+local checkout scanning. Local sync requires explicit `--yes`, a clean attached
+branch, and a fast-forward-only update. The dashboard uses elementary OS GTK
+controls and the optional installer; it has not been installed or observed in a
+live Wingpanel session. Python syntax and the Vala/Meson build passed on
+2026-10-18; the build emits a GTK CSS provider deprecation warning and generated
+C warnings. Upstream traffic/cloner charts, heatmap UI, multi-account UI, and
+full per-repo submenus remain out of scope; see `mseries/REPOBAR-PORT.md`.
+
 ## Consistent CodexBar panel typography — 2026-10-18
 
 Owner approved the compact OpenCode appearance and requested the same text sizes for Codex/Claude.
@@ -5048,3 +5088,11 @@ Next: head-specific CI, merge PR155, run English installer on merged source,
 verify installed exact bytes/service mode/reserve/input-selection preservation
 and private installed app input, then publish deployment receipts/Pages proof.
 No owner test window, microphone, menu-bar restart, kernel or audio-stack change.
+
+Ethernet size follow-up (October 18, third 5% step): owner requested another 5% reduction and local deployment. Artwork now uses `0.767125 × 0.95 = 0.72876875` of the original, centered in 16/24px canvases including the VPN variant. Full network installer/build passed and reloaded the bar; installed GResource transforms and the running panel’s loaded module were verified.
+
+Ethernet size follow-up (October 18, fourth 5% step): owner requested another 5% reduction and local deployment. Artwork now uses `0.72876875 × 0.95 = 0.6923303125` of the original, centered in 16/24px canvases including the VPN variant. Full network installer/build passed and reloaded the bar; installed GResource transforms and the running panel’s loaded module were verified.
+
+Ethernet size follow-up (October 18, fifth 5% step): owner requested another 5% reduction and local deployment. Artwork now uses `0.6923303125 × 0.95 = 0.657713796875` of the original, centered in 16/24px canvases including the VPN variant. Full network installer/build passed and reloaded the bar; installed GResource transforms and the running panel’s loaded module were verified.
+
+Ethernet size follow-up (October 18, additional 10% step): owner requested another 10% reduction and local deployment. Artwork now uses `0.657713796875 × 0.90 = 0.59194241718750` of the original, centered in 16/24px canvases including the VPN variant. Full network installer/build passed and reloaded the bar; installed GResource transforms and the running panel’s loaded module were verified.

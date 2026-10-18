@@ -11,6 +11,46 @@ speculative app composition is suppressed. Only stable words are inserted.
 Final sustained MLX, Tasks, joined voice and deployed checks are tracked in the
 index; do not repeat completed cases to improve scores or repair missing telemetry.
 
+## Seven-day local tokens for all three providers — 2026-10-18
+
+Added `7d local` processed-token totals for Codex, Claude Code and OpenCode in the two-row panel.
+Counts sit beside alternate-account summaries when present; the tooltip explains machine-local scope,
+all local accounts/providers, cache inclusion and separation from account quota. All three now use the
+sessions helper rather than mixing OpenCode Go-only cost data with whole-application activity.
+Codex indexes active/archived JSONL token events, ignores repeated cumulative counters, deduplicates
+copied history by usage-event fingerprint, and uses last-call usage (or differences after a baseline),
+never a recent thread's lifetime sum. Claude now includes cache reads; its v2 cache invalidates old
+excluded-cache answers. Shared `codexbar_tokens.py` accounts for provider-specific disjoint fields:
+Codex authoritative total/input+output without adding cached/reasoning subsets again; Claude's four
+input/output/cache categories; OpenCode authoritative total or disjoint components. Both OpenCode
+readers share that function. Installers, deploy, image payload and deployment fixture ship the module.
+
+No new network requests or polling cadence changes. Only changed transcript files are reparsed;
+private caches store usage metadata, not transcript messages. A real-data first read took 1.608s,
+then 0.188s with existing caches (one active transcript changed during the run). Thirteen native Meson
+targets pass, including a real three-provider panel assertion and <=32 px height check; helper tests
+cover identical processed totals, duplicate/archive events, resets, malformed data, cache reuse and
+append invalidation. Full port check validates upstream v0.77.0 and live snapshot schema.
+Owner-authorized activation completed with exactly one `deploy-codexbar.sh --restart`.
+Confirmed installed module inode 320944 was loaded; Wingpanel PID 233125 stayed unchanged
+for 61.0 seconds, CodexBar daemon PID 44641 preserved. No new panel journal messages or
+coredumps since activation, sampled CPU median 0.30%, RSS 165.33–169.2 MiB,
+file descriptors fixed at 49. Both native typography and local token changes are active. No real
+account switch performed; long-run behavior and owner visual confirmation remain outside this smoke check.
+
+## RepoBar port in progress — 2026-10-18
+
+The optional elementary OS port now has a native GTK/Wingpanel dashboard with
+search, dashboard/all/pinned/issue/PR/attention views, pin/hide controls, CI,
+release and recent activity summaries, API quota status, a CLI, private caches,
+and bounded local checkout scanning. Local sync requires explicit `--yes`, a
+clean attached branch, and fast-forward-only. The installer remains optional
+and uses the existing GitHub CLI login. The dashboard build and Python syntax
+check passed on 2026-10-18; the live Wingpanel appearance and authenticated
+GitHub data have not been observed on this host. UI parity follow-ups include
+traffic/cloner views, a heatmap visualization, multi-account controls, and
+per-repository submenus. See `mseries/REPOBAR-PORT.md`.
+
 ## Consistent CodexBar panel typography — 2026-10-18
 
 Owner approved the compact OpenCode appearance and requested the same text sizes for Codex/Claude.
@@ -956,7 +996,7 @@ with the corrected live-session hardware overlay before progressing.
 | Login-screen stall fixed | `lightdm` drop-in waits for the eDP connector; display crossbar in the fairydust initramfs (`install-initramfs-crossbar.sh`) | greeter 119.7 s -> 0.82 s; dp-xbar deferrals 14 -> 0; first-dcp -> DRM 2.57 s -> 0.01 s |
 | USB4 dock data (hub, mouse, headset, 1 Gb/s Ethernet) | Custom kernel `fairydust-usb4`, m1n1 + DTBs, thunderbolt quirks (`mseries/fairydust/usb4/`) | checks `dock-usb4-ethernet`, `dock-dp-retry-silent` passed |
 | Boots Linux by default | Fairydust default helper is implemented, preserving stock Asahi as recovery; applying the persistent override is still pending. The last recorded stock-kernel boot lost dock mouse and Ethernet. | Apply the helper, then confirm kernel, m1n1/DTB chain, dock USB and Ethernet on-device. |
-| Network indicator speed, connected-only Wi-Fi list, and usage views | Connected Ethernet now uses a socket glyph at 76.7125% size, including the VPN lock variant (October 18). Panel rates below 1 MB/s now display `<1 MB/s`; Hover over the icon/readout to reveal measured values (Command optional; built and installed October 18; GTK interaction check passed, live visual check pending). Installed on the M1 Pro; user `netusage` service is active. Manual post-install includes the panel module and user logger. Overlay now includes the matching panel package for version-gated plugin compilation, then preserves the plugin. | Rebuild the image and verify the plugin loads against the final panel; check joined-network collapse, chevron expansion, and menu rendering. |
+| Network indicator speed, connected-only Wi-Fi list, and usage views | Connected Ethernet now uses a socket glyph at 59.19424171875000% size, including the VPN lock variant (October 18). Panel rates below 1 MB/s now display `<1 MB/s`; Hover over the icon/readout to reveal measured values (Command optional; built and installed October 18; GTK interaction check passed, live visual check pending). Installed on the M1 Pro; user `netusage` service is active. Manual post-install includes the panel module and user logger. Overlay now includes the matching panel package for version-gated plugin compilation, then preserves the plugin. | Rebuild the image and verify the plugin loads against the final panel; check joined-network collapse, chevron expansion, and menu rendering. |
 | Rounded screen corners | patched Gala, radius 14 (`install-gala-screen-corners.sh`) | **needs your look**: `gala-corners-look` |
 | Pastel blue/rose theme | `install-theme-tweaks.sh` | **needs your look**: `colors-look` |
 | Memory/swap/service tuning | `install-system-tuning.sh` (zram, no ModemManager/AppCenter daemon) | `zram-swap`, `services-trimmed` |

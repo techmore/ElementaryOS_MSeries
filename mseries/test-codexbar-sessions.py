@@ -64,9 +64,63 @@ class SessionTests(unittest.TestCase):
         os.utime(project / "s.jsonl", (NOW / 1000, NOW / 1000))
         claude = MODULE.collect(self.home, NOW)["sessions"][1]
         self.assertEqual(claude["state"], "ok")
-        self.assertEqual(claude["periods"][0], {"label": "5 hours", "requests": 1, "tokens": 20, "costUSD": 0.0})
+        self.assertEqual(claude["periods"][0], {"label": "5 hours", "requests": 1, "tokens": 1019, "costUSD": 0.0})
         self.assertEqual(claude["periods"][1]["requests"], 2)
-        self.assertEqual(claude["periods"][1]["tokens"], 20 + 30)
+        self.assertEqual(claude["periods"][1]["tokens"], 1019 + 1029)
+
+    def test_same_processed_total_across_provider_schemas(self):
+        tokens = MODULE.codexbar_tokens
+        self.assertEqual(tokens.claude_tokens({"input_tokens": 10, "output_tokens": 20,
+            "cache_read_input_tokens": 60, "cache_creation_input_tokens": 10,
+            "cache_creation": {"one_hour": 10}, "output_tokens_details": {"reasoning": 5}}), 100)
+        self.assertEqual(tokens.codex_tokens({"input_tokens": 80, "output_tokens": 20,
+            "cached_input_tokens": 60, "reasoning_output_tokens": 5, "total_tokens": 100}), 100)
+        self.assertEqual(tokens.opencode_tokens({"input": 10, "output": 15, "reasoning": 5,
+            "cache": {"read": 60, "write": 10}}), 100)
+        self.assertEqual(tokens.opencode_tokens({"total":100,"input":100,"output":100}), 100)
+        for bad in [-1, True, 1.5, float("inf"), "bad"]:
+            with self.assertRaises((ValueError, OverflowError)):
+                tokens.claude_tokens({"input_tokens": bad})
+
+    def test_codex_recent_calls_not_lifetime_repeated_or_copied_history(self):
+        directory = self.home / ".codex/sessions/a"
+        directory.mkdir(parents=True)
+        def event(offset, total, last=None):
+            info = {"total_token_usage": {"total_tokens": total}}
+            if last is not None: info["last_token_usage"] = {"total_tokens": last}
+            return json.dumps({"type":"event_msg", "timestamp":stamp(offset),
+                "payload":{"type":"token_count", "info":info}})
+        lines = [event(8*86400*1000, 1000, 1000), event(1000,1100,100),
+                 event(900,1100,100), event(800,1150,50), "[]", "bad json"]
+        file = directory / "a.jsonl"
+        file.write_text("\n".join(lines)+"\n")
+        archive = self.home / ".codex/archived_sessions"
+        archive.mkdir(parents=True)
+        (archive / "copied.jsonl").write_text(file.read_text())
+        for path in [file, archive / "copied.jsonl"]: os.utime(path, (NOW/1000,NOW/1000))
+        result = MODULE.collect(self.home, NOW)["sessions"][0]
+        self.assertEqual(result["periods"][1]["tokens"],150)
+        self.assertEqual(result["periods"][1]["requests"],2)
+        with mock.patch.object(MODULE.codexbar_tokens,"parse_codex",side_effect=AssertionError("reparsed")):
+            self.assertEqual(MODULE.collect(self.home, NOW)["sessions"][0]["periods"],result["periods"])
+        with file.open("a") as f: f.write(event(700,1180,30)+"\n")
+        os.utime(file,(NOW/1000,NOW/1000))
+        self.assertEqual(MODULE.collect(self.home,NOW)["sessions"][0]["periods"][1]["tokens"],180)
+
+    def test_codex_resume_baseline_reset_and_malformed_records(self):
+        directory = self.home / ".codex/sessions"
+        directory.mkdir(parents=True)
+        def event(total,last=None):
+            info={"total_token_usage":{"total_tokens":total}}
+            if last is not None: info["last_token_usage"]={"total_tokens":last}
+            return json.dumps({"type":"event_msg","timestamp":stamp(1000-total),
+                "payload":{"type":"token_count","info":info}})
+        file=directory/"b.jsonl"
+        file.write_text("\n".join([event(500),event(550),event(20,20),event(-1,5),
+            '{"type":"event_msg","payload":[]}', '[]'])+"\n")
+        os.utime(file,(NOW/1000,NOW/1000))
+        result=MODULE.collect(self.home,NOW)["sessions"][0]
+        self.assertEqual(result["periods"][1]["tokens"],70)
 
     def test_opencode_counts_all_providers_read_only(self):
         data = self.home / ".local/share/opencode"
