@@ -316,3 +316,16 @@ booted on it). Found that the repo already has the `.20` port (`mseries/aurora/`
 its `stage-boot.py` to stage the matched m1n1-aurora + J314S DTB `boot.bin` candidate in
 `~/aurora20-boot-candidate/` (not deployed). `/boot` is now 83% (89 MB free). Details and the
 recommended test order are in [aurora/README.md](aurora/README.md#status-on-the-owners-m1-pro--2026-10-18-claude-code).
+
+## RESULT: `.20` with the SEP driver loaded is stable until the Touch ID probe — 2026-10-18 04:22–04:25
+
+`elementary-aurora20` (SEP enabled): SEP attached (7 endpoints advertised in 21 messages),
+`/dev/sep-bio` present, hwrng registered, desktop and Settings services normal; journal
+(1 s sync) runs to 141.5 s monotonic then stops with no panic, right when the owner opened a
+Settings/Touch ID screen. Owner: probing the Secure Enclave / Touch ID always crashes.
+`fprintd` never started and no PAM file uses `pam_fprintd` (only the stock `gdm-fingerprint`),
+so the trigger is the app's first open of `/dev/sep-bio` / sensor bring-up. This reframes the
+`.19` results: the SEP driver itself does not hang the machine; the earlier "hangs within
+15-60 s" boots likely coincided with Touch ID probing. Suspect: the hand-ported SPI sensor node;
+test by deploying the staged upstream-matched `boot.bin.candidate` (owner OK + DeepSeek).
+Until then: do not probe Touch ID.

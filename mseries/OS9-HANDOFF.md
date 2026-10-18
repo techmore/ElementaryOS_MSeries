@@ -1,5 +1,23 @@
 # OS 9 implementation / Claude Code handoff
 
+## UPDATE 2026-10-18 04:25 — the crash is the Touch ID PROBE, not the boot (Claude Code)
+
+`.20` Aurora kernel (`7.1.12-2-20261017.20-sep-ARCH`, entry `elementary-aurora20`, SEP driver
+**enabled**) booted and ran **~141 s** with the SEP attached (7 endpoints, `/dev/sep-bio`,
+hwrng) and a normal desktop — far past the 15-60 s window where `.19` boots died. The
+journal ends at the moment the owner opened a Settings/Touch ID screen; owner report: **"when
+you probe the secure enclave / Touch ID it always crashes."** PAM is not wired (no
+`pam_fprintd` in sudo/polkit) and `fprintd` never ran, so the trigger is the first
+`/dev/sep-bio` open / sensor bring-up from the app. Leading suspect: the hand-ported
+`spi@39b108000` + `fingerprint@0` node in the current `boot.bin` (its clock and pinctrl phandles
+were flagged unresolved at port time). The upstream-matched J314S DTB is staged in
+`~/aurora20-boot-candidate/` (see `aurora/README.md`). **Do not open the Touch ID app or run
+`fprintd`/`aurora-touchid-setup` on the current `boot.bin`.** Next: with owner OK and DeepSeek
+coordination, deploy the matched `boot.bin.candidate` (rollback copy beside it), boot
+`elementary-aurora20`, wait 5 min idle, then one deliberate probe.
+
+(Older section below kept for history; its "SEP driver hangs the boot" conclusion is superseded.)
+
 ## RESUME HERE — Aurora/Touch ID hang investigation — 2026-10-18 (Claude Code)
 
 **Problem:** every boot of the Aurora SEP kernel (`7.1.12-2-20261015.19-sep-ARCH`,
@@ -2465,9 +2483,3 @@ No full kernel/module build or hardware boot was performed. E4 still disables bu
 accepted by the older fallback-preserving installer. Prior-art claims are scoped to the actual Aurora reports
 (zero tunnel churn on j314s display resume, different M2 Max dock chain). The next hardware task is a separately
 reviewed controlled boot using the actual current payload/state, with route/module/link/EDID/picture evidence.
-
-## CodexBar panel: OpenCode Go local usage estimate — 2026-10-18
-
-Owner reported the panel not showing OpenCode Go data. Codex was correct (sdolbec1@gmail.com, prolite); OpenCode Go has no key (OpenCode keeps its OAuth login in `opencode.db`, no `auth.json`) so upstream returns no quota. The Wingpanel card now runs `codexbar-opencode-local.py` (every 60 s, off-thread) and, when the provider has no quota windows, shows its 5h/7d/30d cost, requests and tokens labelled "Local usage estimate · not account quota", plus a sign-in hint. New `Presentation.local_usage_line` with a unit test; `probe/run-probe.sh` installs a fake helper.
-
-Verification: Meson build and 3 suites pass; headless render of the `live` scenario shows the card. Not verified: the panel was not reinstalled into the running Wingpanel (needs `install-codexbar-wingpanel.sh` and a panel restart, which the owner should choose when to do). Next: real OpenCode Go quota still needs a browser sign-in at opencode.ai.
