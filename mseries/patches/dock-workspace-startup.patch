@@ -2,8 +2,7 @@ diff --git a/src/Application.vala b/src/Application.vala
 index eea910c..5a3d1d2 100644
 --- a/src/Application.vala
 +++ b/src/Application.vala
-@@ -17,16 +17,19 @@ public class Dock.Application : Gtk.Application {
-     }
+@@ -18,14 +18,17 @@ public class Dock.Application : Gtk.Application {
 
      protected override void activate () {
 -        if (active_window == null) {
@@ -28,14 +27,11 @@ index eea910c..5a3d1d2 100644
 +        main_window.present ();
      }
 
-     public override bool dbus_register (DBusConnection connection, string object_path) throws Error {
-
 diff --git a/src/WorkspaceSystem/WorkspaceSystem.vala b/src/WorkspaceSystem/WorkspaceSystem.vala
 index 36a8e64..adccaa2 100644
 --- a/src/WorkspaceSystem/WorkspaceSystem.vala
 +++ b/src/WorkspaceSystem/WorkspaceSystem.vala
-@@ -18,11 +18,16 @@ public class Dock.WorkspaceSystem : Object {
-     }
+@@ -19,9 +19,14 @@ public class Dock.WorkspaceSystem : Object {
 
      public async void load () {
 -        yield sync_windows ();
@@ -55,9 +51,7 @@ index 36a8e64..adccaa2 100644
 +        }
      }
 
-     private Workspace add_workspace () {
-@@ -84,6 +89,10 @@ public class Dock.WorkspaceSystem : Object {
-             index--;
+@@ -85,4 +90,8 @@ public class Dock.WorkspaceSystem : Object {
          }
 
 +        if (index < 0 || index >= workspaces.get_n_items ()) {
@@ -66,4 +60,3 @@ index 36a8e64..adccaa2 100644
 +
          workspaces.remove (index);
      }
-
