@@ -4,14 +4,23 @@ Programmatic native GTK actions, not physical input automation. Native save port
 Interactive keyboard input, upload-picker selection and interactive Console
 are not automated. Requires cached Alpine container/VM images and Wayland.
 """
-import argparse, concurrent.futures, json, os, pathlib, socket, statistics, subprocess, sys, time, traceback, uuid
-p=argparse.ArgumentParser(description=__doc__);p.add_argument('--source',required=True);p.add_argument('--output',required=True);p.add_argument('--run',action='store_true');a=p.parse_args()
+import argparse, concurrent.futures, gc, json, os, pathlib, resource, shlex, socket, statistics, subprocess, sys, time, traceback, uuid
+from audit_scope import AuditScope
+p=argparse.ArgumentParser(description=__doc__);p.add_argument('--source',required=True);p.add_argument('--output',required=True);p.add_argument('--run',action='store_true')
+p.add_argument('--cycles',type=int,default=1)
+p.add_argument('--idle-before',type=int,default=0,help='Seconds of idle observation before workflows')
+p.add_argument('--idle-after',type=int,default=0,help='Seconds of idle observation after workflows')
+a=p.parse_args()
+if not 1 <= a.cycles <= 20 or min(a.idle_before,a.idle_after)<0: p.error('Use 1–20 cycles and nonnegative idle durations')
 if not a.run: p.error('--run is required: creates and deletes owned disposable Incus instances')
 sys.path.insert(0,a.source)
 from orchard_incus.app import App
 from orchard_incus import backend
 import orchard_incus.window as module
 from gi.repository import Gtk,Gdk,GLib,Graphene
+Gtk.init()
+if type(Gdk.Display.get_default()).__name__!='GdkWaylandDisplay':
+ p.error('A native Wayland display is required; run with GDK_BACKEND=wayland. No guests were changed.')
 out=pathlib.Path(a.output).resolve()
 if out.exists() and (not out.is_dir() or any(out.iterdir())):
  p.error('Use a new, empty output directory for each audit run')
@@ -24,7 +33,7 @@ if owned & initial.keys():raise RuntimeError('Audit fixture name collision; no i
 created_tokens=set()
 images=backend.ijson('image','list');image=next(x['fingerprint'] for x in images if x.get('type')=='container' and 'Alpine' in x.get('properties',{}).get('description',''))
 app=App();app.set_application_id('io.github.techmore.OrchardWaylandAudit.T'+uuid.uuid4().hex);app.register(None)
-win=module.Window(app);win.set_title('Orchard — Wayland qualification');win.present()
+win=module.Window(app);win.set_title('Orchard — session audit: '+out.name);win.present()
 loop=GLib.MainLoop();errors=[];expected_errors=[];results=[];pending=None;phase_iter=None;phase_name='';frame_refs=[];actions=[];frame_handler=0;tick_id=0;heartbeat=[];last_beat=time.monotonic();phase_start=0
 report={'source_sha256':{x.name:__import__('hashlib').sha256(x.read_bytes()).hexdigest() for x in pathlib.Path(module.__file__).parent.glob('*.py')},'prefix':prefix,'source':a.source,'workflow_driver':'programmatic native GTK widget actions + independent Incus CLI assertions','results':results}
 original_create=win.start_create
@@ -37,12 +46,26 @@ def guarded_create(n,image,extra):
  return result
 win.start_create=guarded_create
 original_incus=backend.incus
+scope=AuditScope(owned,out)
 def guarded_incus(*args, **kwargs):
- if args and (args[0]=='export' or args[:2]==('file','pull')):
-  if not pathlib.Path(args[-1]).resolve().is_relative_to(out):
-   raise RuntimeError('Audit rejected a host destination outside its output directory')
+ scope.check(args)
  return original_incus(*args, **kwargs)
 backend.incus=guarded_incus
+original_popen=subprocess.Popen
+def guarded_popen(command,*args,**kwargs):
+ if isinstance(command,(list,tuple)) and command:
+  command=list(command)
+  if command[:2]==['incus','exec']:
+   scope.guest(command[2])
+  elif command[:2]==['incus','launch']:
+   scope.guest(command[3])
+  elif pathlib.Path(command[0]).name==module.TERMINAL and '-e' in command:
+   terminal=shlex.split(command[command.index('-e')+1])
+   if len(terminal)<3 or terminal[:2] not in (['incus','exec'],['incus','console']):
+    raise RuntimeError('Audit rejected an unrecognized Terminal command')
+   scope.guest(terminal[2])
+ return original_popen(command,*args,**kwargs)
+subprocess.Popen=guarded_popen
 original_error=win.error_dialog
 
 def error(what,err):
@@ -89,10 +112,12 @@ def query(*args):
  text=yield from cli(*args,'--format','json')
  return json.loads(text)
 def textbuffer(b):return b.get_text(b.get_start_iter(),b.get_end_iter(),False)
-def select(n=name):
+def select(n=None):
+ if n is None:n=name
  win.refresh();yield from wait(lambda:n in win.data,'inventory contains owned guest')
  win.open_instance(n);yield from wait(lambda:win.cur==n,'select guest')
-def state(verb,target=name,expected=None):
+def state(verb,target=None,expected=None):
+ if target is None:target=name
  yield from select(target);win.act(verb)
  yield from wait(lambda:target not in win.busy,'lifecycle '+verb,75)
  win.refresh()
@@ -249,7 +274,7 @@ def native_shell_and_portals():
    time.sleep(.15)
   raise AssertionError('Native Terminal did not reach the guest login shell')
  f=pool.submit(terminal_ready);yield from wait(f.done,'Native Terminal login');assert f.result()
- dest=out/'native-backup.tar.gz'
+ dest=out/(name+'-backup.tar.gz')
  win.export_backup()
  helper=str(pathlib.Path(__file__).with_name('wayland-save-portal.py'))
  f=pool.submit(subprocess.run,[sys.executable,helper,'Export backup',name+'.tar.gz',str(dest)],capture_output=True,text=True,timeout=16)
@@ -305,6 +330,7 @@ def frames():
   next_frame=next((x for x in presented if x['counter']>=counter and x['presentation_us']>=ts),None)
   if next_frame:act.append((next_frame['presentation_us']-ts)/1000)
  report['frames']={'measured':len(raw),'presentation_feedback':len(presented),'refresh_interval_us':statistics.median([x['refresh_us'] for x in presented]),'frame_start_to_presentation_ms':{'p50':percentile(l,.5),'p95':percentile(l,.95),'max':max(l) if l else None},'presentation_gap_ms':{'p50':percentile(gaps,.5),'p95':percentile(gaps,.95),'max':max(gaps) if gaps else None},'programmatic_action_to_presentation_ms':{'samples':len(act),'p50':percentile(act,.5),'p95':percentile(act,.95),'max':max(act) if act else None},'limits':'Continuous status-text damage plus programmatic GTK navigation, not physical input-to-photon. Missing feedback is not classified as a dropped frame.'}
+ report.setdefault('frame_runs',[]).append(report['frames'])
  (out/'frames.json').write_text(json.dumps(raw,indent=2))
  win.pages.set_visible_child_name('inst');win.tabs.set_visible_child_name('de');win.set_default_size(780,480)
  until=time.monotonic()+.6;yield from wait(lambda:time.monotonic()>until,'Narrow layout settle')
@@ -313,7 +339,55 @@ def frames():
  report['narrow_size']=[win.get_width(),win.get_height()]
 
 
-phases=iter([('create-dialog',creation),('duplicate-name-preserves-existing-guest',duplicate_name),('run-files-and-transfer',run_and_files),('settings',settings),('folder-and-port-devices',devices),('lifecycle-and-snapshot-restore',lifecycle_snapshot),('clone-rename-delete',clone_rename_delete),('native-vm-create-run-delete',virtual_machine),('native-terminal-and-backup-portal',native_shell_and_portals),('cancel-create-and-cleanup',cancelled_creation),('frame-presentation-and-layout',frames)])
+workflow_phases=[('create-dialog',creation),('duplicate-name-preserves-existing-guest',duplicate_name),('run-files-and-transfer',run_and_files),('settings',settings),('folder-and-port-devices',devices),('lifecycle-and-snapshot-restore',lifecycle_snapshot),('clone-rename-delete',clone_rename_delete),('native-vm-create-run-delete',virtual_machine),('native-terminal-and-backup-portal',native_shell_and_portals),('cancel-create-and-cleanup',cancelled_creation),('frame-presentation-and-layout',frames)]
+session_start=time.monotonic()
+samples_file=(out/'resources.jsonl').open('w',buffering=1)
+def resources():
+ usage=resource.getrusage(resource.RUSAGE_SELF);children=resource.getrusage(resource.RUSAGE_CHILDREN)
+ status=dict(x.split(':',1) for x in pathlib.Path('/proc/self/status').read_text().splitlines())
+ smaps=dict(x.split(':',1) for x in pathlib.Path('/proc/self/smaps_rollup').read_text().splitlines()[1:] if ':' in x)
+ return {'elapsed':round(time.monotonic()-session_start,3),'phase':phase_name,'cpu_seconds':usage.ru_utime+usage.ru_stime,'child_cpu_seconds':children.ru_utime+children.ru_stime,
+         'rss_kib':int(status['VmRSS'].split()[0]),'pss_kib':int(smaps['Pss'].split()[0]),'private_kib':sum(int(smaps.get(k,'0').split()[0]) for k in ('Private_Clean','Private_Dirty')),
+         'threads':int(status['Threads']),'fds':len(list(pathlib.Path('/proc/self/fd').iterdir())),
+         'active':bool(win.is_active()),'mapped':bool(win.get_mapped()),'minimized':bool(win.get_surface() and win.get_surface().get_state() & Gdk.ToplevelState.MINIMIZED),
+         'buffers':len(win.exec_bufs),'buffer_chars':sum(x.get_char_count() for x in win.exec_bufs.values()),'undoable_buffers':sum(x.get_can_undo() for x in win.exec_bufs.values()),
+         'histories':len(win.hist),'dashboard_rows':len(win.dash_rows),'rows':len(win.rows),'reads':len(win.reads),'sources':len(win.sources),'jobs':len(win.jobs),'commands':len(win.exec_proc),'writes':len(win.instance_writes),
+         'toplevels':len(list(Gtk.Window.get_toplevels()))}
+def sample_resources():
+ samples_file.write(json.dumps(resources())+'\n');return True
+sample_id=GLib.timeout_add_seconds(5,sample_resources)
+def checkpoint():
+ gc.collect()
+ result=resources();result['python_tracked_objects']=len(gc.get_objects())
+ return result
+def idle(seconds):
+ def run():
+  win.pages.set_visible_child_name('dash')
+  deadline=time.monotonic()+seconds
+  yield from wait(lambda:time.monotonic()>=deadline,'Idle resource observation',seconds+5)
+ return run
+def cleanup_cycle():
+ yield from select();win.delete();yield from accept(dialog())
+ yield from wait(lambda:name not in win.data,'Cycle guest deleted',60)
+ until=time.monotonic()+2
+ yield from wait(lambda:time.monotonic()>until and not win.cleaning and not win.exec_proc and not win.instance_writes,'Cycle quiescent')
+def prepare_cycle(cycle):
+ def run():
+  global name,clone,renamed,vm_name,cancel_name,frame_refs,actions
+  name=prefix+f'-c{cycle}-dev';clone=prefix+f'-c{cycle}-copy';renamed=prefix+f'-c{cycle}-renamed';vm_name=prefix+f'-c{cycle}-vm';cancel_name=prefix+f'-c{cycle}-cancel'
+  owned.update((name,clone,renamed,vm_name,cancel_name));(out/'owned.json').write_text(json.dumps(sorted(owned)))
+  frame_refs=[];actions=[]
+  yield from wait(lambda:win.ok and not win._checking,'Cycle ready')
+ return run
+def session_phases():
+ if a.idle_before:yield ('idle-before',idle(a.idle_before))
+ for cycle in range(1,a.cycles+1):
+  yield (f'cycle-{cycle}-prepare',prepare_cycle(cycle))
+  yield from workflow_phases
+  yield (f'cycle-{cycle}-cleanup',cleanup_cycle)
+ if a.idle_after:yield ('idle-after',idle(a.idle_after))
+phases=iter(session_phases())
+report['session']={'cycles':a.cycles,'idle_before_seconds':a.idle_before,'idle_after_seconds':a.idle_after,'resource_sampling_seconds':5,'cpu_percent_definition':'100% = one CPU core; process and reaped CLI-child CPU reported separately; background daemon/VM/compositor costs excluded'}
 
 def next_phase():
  global phase_iter,phase_name,pending,phase_start
@@ -323,6 +397,9 @@ def next_phase():
 
 def advance():
  global pending
+ if win.closing:
+  results.append({'workflow':phase_name,'passed':False,'error':'Audit window was closed; session interrupted'})
+  finish();return False
  try:
   if pending:
    pred,label,deadline,errcount=pending
@@ -333,7 +410,7 @@ def advance():
    pending=None
   pred,label,seconds=next(phase_iter);print('WAIT',label,flush=True);pending=(pred,label,time.monotonic()+seconds,len(errors))
  except StopIteration:
-  results.append({'workflow':phase_name,'passed':True,'seconds':round(time.monotonic()-phase_start,2)});print('PASS',phase_name,flush=True)
+  results.append({'workflow':phase_name,'passed':True,'seconds':round(time.monotonic()-phase_start,2),'resources':checkpoint()});print('PASS',phase_name,flush=True)
   return next_phase()
  except Exception as e:
   results.append({'workflow':phase_name,'passed':False,'error':str(e)});traceback.print_exc()
@@ -345,6 +422,7 @@ def finish():
  global tick_id,frame_handler
  if tick_id:win.remove_tick_callback(tick_id)
  if frame_handler:win.get_frame_clock().disconnect(frame_handler)
+ sample_resources();GLib.source_remove(sample_id);samples_file.close()
  win.close()
  def clean():
   # Only exact unique names owned by this run may be deleted.
@@ -365,7 +443,10 @@ def finish():
    GLib.idle_add(loop.quit)
  pool.submit(clean).add_done_callback(cleanup_ended)
 try:
- next_phase();GLib.timeout_add(25,advance);loop.run()
+ def step():
+  if advance():GLib.timeout_add(1000 if phase_name.startswith('idle-') else 25,step)
+  return False
+ next_phase();GLib.timeout_add(25,step);loop.run()
 finally:
  win.close()
  if 'cleanup' not in report:
@@ -375,3 +456,5 @@ finally:
     backend.incus('delete','--force',n,timeout=60)
  pool.shutdown(wait=True)
 print(json.dumps(report,indent=2),flush=True)
+if errors or any(not r['passed'] for r in results) or report.get('cleanup',{}).get('error') or report.get('cleanup',{}).get('owned_remaining') or not report.get('cleanup',{}).get('existing_guests_preserved'):
+ sys.exit(1)

@@ -69,6 +69,7 @@ class Window(Gtk.ApplicationWindow):
         self.data, self.rows, self.dash_rows = {}, {}, {}
         self._dashboard_rendering = False
         self.select_after_refresh = None
+        self.rename_output = None
         self.hist, self.cur, self.busy = {}, None, set()
         self.ok, self.fails, self.last_refresh, self.restored = True, 0, 0.0, False
         self.monitor_ok, self.mon_proc, self.mon_thread, self.closing = False, None, None, False
@@ -423,6 +424,9 @@ class Window(Gtk.ApplicationWindow):
         bar.append(pill_button("Clear", None, None, lambda: self.exec_out.get_buffer().set_text("")))
         d.append(bar)
         self.exec_out = Gtk.TextView(editable=False, monospace=True, left_margin=10, top_margin=8, bottom_margin=8, wrap_mode=Gtk.WrapMode.WORD_CHAR)
+        # Output is read-only: GTK's default undo log would retain trimmed text.
+        self.empty_exec_buf = Gtk.TextBuffer(enable_undo=False)
+        self.exec_out.set_buffer(self.empty_exec_buf)
         self.exec_out.add_css_class("oi-card")
         sc = Gtk.ScrolledWindow(vexpand=True)
         sc.set_child(self.exec_out)
@@ -633,6 +637,22 @@ class Window(Gtk.ApplicationWindow):
     def dialog(self, title, parent=None, width=440, height=-1):
         # an explicit height avoids GTK's "measure ... needs at least" warning from the default-size guess
         d = Granite.Dialog(modal=True, transient_for=parent or self, title=title, default_width=width, default_height=height)
+        connections = []
+        def connect_owned(widget, signal_name, callback):
+            handler = widget.connect(signal_name, callback)
+            connections.append((widget, handler))
+            return handler
+        def release(*_):
+            # Native signal closures are not ordinary Python GC edges. A form
+            # callback capturing its own Entry otherwise keeps the form alive.
+            owned = connections[:]
+            connections.clear()
+            for widget, handler in owned:
+                if widget.handler_is_connected(handler):
+                    widget.disconnect(handler)
+        d.connect_owned = connect_owned
+        d.connect_after("response", release)
+        d.connect("unrealize", release)
         return d, d.get_content_area()
 
     def notify(self, title, body=""):
@@ -915,6 +935,15 @@ class Window(Gtk.ApplicationWindow):
             i["config"] = i.get("config") or {}
             i["state"] = i.get("state") or {}
         self.data = {i["name"]: i for i in data}
+        if self.rename_output:
+            old, new = self.rename_output
+            if new in self.data:
+                if old in self.exec_bufs and old not in self.exec_proc:
+                    self.exec_bufs[new] = self.exec_bufs.pop(old)
+                self.rename_output = None
+            elif old not in self.data:
+                self.rename_output = None
+        self.prune_instance_views()
         tc, tm, tp = self.sample(data)
         # sidebar
         for n in list(self.rows):
@@ -990,6 +1019,17 @@ class Window(Gtk.ApplicationWindow):
             else:
                 self._dashboard_rendering = False
         self.later(0, batch)
+
+    def prune_instance_views(self):
+        """Release deleted guests even when their last page is hidden."""
+        for n in list(self.dash_rows):
+            if n not in self.data:
+                self.dash_list.remove(self.dash_rows.pop(n))
+        for n in list(self.exec_bufs):
+            if n not in self.data and n not in self.exec_proc:
+                buffer = self.exec_bufs.pop(n)
+                if self.exec_out.get_buffer() is buffer:
+                    self.exec_out.set_buffer(self.empty_exec_buf)
 
     def update_dashboard_row(self, n, force=False):
         r, i, h = self.dash_rows[n], self.data[n], self.hist[n]
@@ -1354,7 +1394,9 @@ class Window(Gtk.ApplicationWindow):
 
     # ------------------------------------------------------ run / files / devices
     def exec_buf(self, n):
-        return self.exec_bufs.setdefault(n, Gtk.TextBuffer())
+        if n not in self.exec_bufs:
+            self.exec_bufs[n] = Gtk.TextBuffer(enable_undo=False)
+        return self.exec_bufs[n]
 
     def show_exec_buf(self, n):
         self.exec_out.set_buffer(self.exec_buf(n))
@@ -1424,6 +1466,8 @@ class Window(Gtk.ApplicationWindow):
                 self.output.pop(n, None)
                 self.exec_proc.pop(n, None)
                 self.append_out(n, f"[exit {rc}]\n\n")
+                if not self.closing:
+                    self.prune_instance_views()
                 if not self.closing and n == self.cur:
                     self.cmd_stop.set_sensitive(False)
                 return False
@@ -1656,13 +1700,13 @@ class Window(Gtk.ApplicationWindow):
             (e.add_css_class if bad else e.remove_css_class)("error")
             err.set_text("Letters, digits and hyphens only; max 63." if bad else "")
             ok.set_sensitive(bool(v) and not bad)
-        e.connect("changed", check)
+        d.connect_owned(e, "changed", check)
         def resp(dlg, r):
             v = e.get_text().strip()
             dlg.destroy()
             if r == Gtk.ResponseType.ACCEPT and v and valid_name(v):
                 fn(v)
-        d.connect("response", resp)
+        d.connect_owned(d, "response", resp)
         check()
         d.present()
         e.grab_focus()
@@ -1682,6 +1726,7 @@ class Window(Gtk.ApplicationWindow):
             return
         def go(v):
             def done(_):
+                self.rename_output = (n, v)
                 self.select_after_refresh = v
                 self.flash(f"Renamed to {v}")
                 self.refresh()
@@ -1714,7 +1759,7 @@ class Window(Gtk.ApplicationWindow):
             if task:
                 task.invalidate()
             dlg.destroy()
-        d.connect("response", close)
+        d.connect_owned(d, "response", close)
         def search(*_):
             term = se.get_text().strip()
             lb.remove_all()
@@ -1724,12 +1769,12 @@ class Window(Gtk.ApplicationWindow):
                 rows = backend.parse_images_csv(out)
                 for alias, desc, vm in rows:
                     r = self.item(alias, desc, badges=("VM" if vm else "container",))
-                    r.append(pill_button("Select", None, "suggested-action", lambda a=alias, v=vm: (on_pick(f"images:{a}", v), d.destroy())))
+                    r.append(pill_button("Select", None, "suggested-action", lambda a=alias, v=vm: (on_pick(f"images:{a}", v), d.response(Gtk.ResponseType.CLOSE))))
                     lb.append(r)
                 if not rows:
                     lb.append(lbl("No matches.", "dim", margin_top=8))
             self.read(slot, lambda: backend.incus("image", "list", "images:", term, ARCH, "-c", "ldt", "--format", "csv", timeout=backend.POLL_TIMEOUT), done)
-        se.connect("activate", search)
+        d.connect_owned(se, "activate", search)
         d.present()
         search()
 
@@ -1823,7 +1868,7 @@ class Window(Gtk.ApplicationWindow):
         vm = Gtk.Switch(halign=Gtk.Align.START)
         secure_boot = Gtk.Switch(halign=Gtk.Align.START, active=True, sensitive=False,
                                  tooltip_text="Disable only for VM images that do not support Secure Boot.")
-        vm.connect("notify::active", lambda *_: secure_boot.set_sensitive(vm.get_active()))
+        d.connect_owned(vm, "notify::active", lambda *_: secure_boot.set_sensitive(vm.get_active()))
         cpu = Gtk.Entry(placeholder_text="optional, e.g. 2")
         mem = Gtk.Entry(placeholder_text="optional, e.g. 1GiB")
         for wdg, nm in ((name, "Instance name"), (preset, "Distribution"), (image, "Image"), (vm, "Virtual machine"), (secure_boot, "Secure Boot"), (cpu, "CPU limit"), (mem, "Memory limit")):
@@ -1832,14 +1877,14 @@ class Window(Gtk.ApplicationWindow):
             p = PRESETS[preset.get_selected()][1]
             image.set_sensitive(not p)
             image.set_text(p)
-        preset.connect("notify::selected", pick)
+        d.connect_owned(preset, "notify::selected", pick)
         pick()
         fields = [("Name", name), ("Distribution", preset), ("Image", image), ("Virtual machine", vm), ("Secure Boot", secure_boot), ("CPU limit", cpu), ("Memory limit", mem)]
         for r, (t, wd) in enumerate(fields):
             g.attach(Granite.HeaderLabel(label=t, mnemonic_widget=wd, valign=Gtk.Align.CENTER), 0, r, 1, 1)
             g.attach(wd, 1, r, 1, 1)
         bb = Gtk.Button(label="Browse…", tooltip_text="Search the image server")
-        bb.connect("clicked", lambda *_: self.browse_images(
+        d.connect_owned(bb, "clicked", lambda *_: self.browse_images(
             lambda img, is_vm: (preset.set_selected(len(PRESETS) - 1), image.set_text(img), vm.set_active(is_vm)), parent=d))
         g.attach(bb, 2, 2, 1, 1)
         err = lbl("", "error-text", max_width_chars=48, ellipsize=Pango.EllipsizeMode.END)
@@ -1866,7 +1911,7 @@ class Window(Gtk.ApplicationWindow):
             err.set_tooltip_text(" ".join(msgs) or None)
             ok.set_sensitive(not msgs)
         for e_ in (name, image, cpu, mem):
-            e_.connect("changed", validate)
+            d.connect_owned(e_, "changed", validate)
         validate()
 
         def resp(dlg, r):
@@ -1878,6 +1923,6 @@ class Window(Gtk.ApplicationWindow):
             extra = backend.create_args(vm.get_active(), cpu.get_text(), mem.get_text(), secure_boot.get_active())
             dlg.destroy()
             self.start_create(given or backend.auto_name(img), img, extra)
-        d.connect("response", resp)
+        d.connect_owned(d, "response", resp)
         d.present()
         name.grab_focus()

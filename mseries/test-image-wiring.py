@@ -142,7 +142,7 @@ class ImageWiringTests(unittest.TestCase):
                 self.assertIn('ExecStart=/usr/libexec/mseries/power ', unit.read_text())
                 self.assertNotIn('/usr/local/', unit.read_text())
             self.assertTrue((image / 'usr/libexec/mseries/power').is_file())
-            for path in ('usr/libexec/mseries/sleep-cost', 'usr/bin/mseries-power-report',
+            for path in ('usr/libexec/mseries/sleep-cost', 'usr/libexec/mseries/prepare-uki-kernels', 'usr/bin/mseries-power-report',
                          'usr/lib/systemd/system-sleep/mseries-sleep-cost',
                          'usr/lib/systemd/user/graphical-session.target.wants/mseries-sleep-cost.service',
                          'usr/libexec/mseries/bluetooth-resume-fix'):
@@ -158,6 +158,14 @@ class ImageWiringTests(unittest.TestCase):
             self.assertFalse(selected & blocked, name + ' selects a prohibited package')
             self.assertIn('gnome-online-accounts-gtk', selected)
 
+    def test_pinned_panel_build_dependencies_are_declared(self):
+        config = configparser.ConfigParser(interpolation=None, strict=False)
+        config.read(ROOT / 'mkosi.images/apple-silicon/mkosi.conf')
+        build = set(config.get('Content', 'BuildPackages').split())
+        required = {'libpackagekit-glib2-dev', 'libaccountsservice-dev', 'libportal-dev',
+                    'libwayland-dev', 'libxml2-dev', 'xkb-data', 'zlib1g-dev'}
+        self.assertFalse(required - build, 'Pinned plugin build dependency missing')
+
     def test_consumers_install_overlay_runtime_dependencies(self):
         overlay = packages('mkosi.images/apple-silicon/mkosi.conf')
         self.assertTrue({'bubblewrap', 'xdg-dbus-proxy', 'desktop-file-utils', 'libgtk-3-bin'} <= overlay)
@@ -165,7 +173,10 @@ class ImageWiringTests(unittest.TestCase):
         self.assertTrue(runtime)
         brave = json.loads((ROOT / 'mseries/video-decode/brave-factory.json').read_text())
         self.assertFalse(set(brave['runtime_packages']) - runtime)
-        self.assertIn('BuildScripts=build-brave,', (ROOT / 'mkosi.images/apple-silicon/mkosi.conf').read_text())
+        self.assertIn('BuildScripts=build-in-image.chroot', (ROOT / 'mkosi.images/apple-silicon/mkosi.conf').read_text())
+        builder = (ROOT / 'mkosi.images/apple-silicon/build-in-image.chroot').read_text()
+        self.assertIn('build-brave', builder)
+        self.assertIn('export BUILDROOT=/', builder)
         for name in ('liveiso', 'sysupdate'):
             self.assertIn('verify-factory-brave --root / --ldd',
                           (ROOT / f'mkosi.images/{name}/mkosi.postinst.chroot').read_text())

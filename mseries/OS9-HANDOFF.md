@@ -28,8 +28,12 @@ native engine. No F5 diagnostic event since recovery. The keymap query is not pr
 of physical delivery. No microphone/owner windows or IBus restart by this batch.
 Default4B remains enabled/available under admission. Idle ASR still retains~0.9GiB;
 pressure-release/on-demand loading remains open. No kernel/boot/audio/display edits.
-Current reviewed source/publication batch needs commit/push/CI.3159e7f CI39127981785
-passed all4 jobs; PR86 is still draft/unmerged, this phase's Pages unverified.
+Reviewed source/publication batch833b3c4 is reconciled here with main5c0c60e,
+preserving owner Orchard/factory changes and both handoff histories. Current source
+clears an old intermediate view before a new review; private fake-transform v3
+checks the unavailable-first-stage case without repeating completed model trials.
+3159e7f CI39127981785 passed all4 jobs; this merged tree requires fresh CI. PR86
+remains draft/unmerged, this phase's Pages unverified. No CodexBar feature diff.
 
 ## Review pilot complete,5/6; extra language queue started — 2026-10-18
 
@@ -238,6 +242,115 @@ source. Current services being active therefore does not establish usability. Of
 IBus registry source disables the default per-user component directory; investigate a
 reversible native registry/source integration before asking for a human F5 trial. Preserve
 US/Japanese sources and do not restart owner desktop services without authorization.
+
+## Pinned panel build dependency audit — 2026-10-18
+
+Run [39127575598](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39127575598)
+confirmed the corrected chroot build context: Brave staged and the patched network
+indicator compiled. Quick Settings then failed Meson configuration because
+`packagekit-glib2` development metadata was absent. Audited the exact pinned
+Meson files for network, Quick Settings, sound, keyboard and datetime plus the
+Touchegg/VA driver and selected Mesa build paths. Declared PackageKit, AccountsService,
+portal and Wayland development packages, keyboard XML/XKB metadata and Mesa's
+zlib headers explicitly. Existing transform first-boot Quick Settings/keyboard
+requirements now match. Package names were checked against installed Ubuntu
+pkg-config ownership; no broad package-policy exception was introduced.
+
+Six image-wiring checks now pass, including the build dependency regression;
+ShellCheck/syntax and the six browser/kernel-input tests pass. These are build
+prerequisite fixes, not a successful ISO/fresh-install claim. Next: rebuild and
+run the new artifact's installed-guest dock and playback tests.
+
+
+## Orchard session memory and native qualification — 2026-10-18
+
+Fixed three retained-object paths in the installed Python/GTK4 manager:
+read-only Run output now disables GTK undo; deleted guests release output
+buffers after active commands finish (rename preserves output across stale
+listings); creation/name/image-search forms disconnect owned signal callbacks
+on response/destruction. Hidden dashboard cards are pruned even off-page, and
+image selection releases its read slot. The synthetic 12-identity / 72 MiB UTF-8
+probe grew RSS 153.05 MiB before / 6.75 MiB after and ended with 12 / zero cached
+buffers. The 60-form probe retained 60 dialogs plus 540 input/support wrappers
+before / none after. RSS is not a portable pass/fail threshold.
+
+Real Wayland/Vulkan + elementary blueberry qualification: baseline 12.7 minutes,
+candidate 14.7 minutes; three cycles each (33 main workflow groups per build),
+then another 11 groups against the installed candidate with stricter runner
+scope guards. Candidate runtime hashes match all probes and the installed
+package. All groups passed; owned guests were removed and original guest states
+preserved. Native logs contain no unexpected UI errors or GTK warnings/criticals.
+The separate Vala manager/panel was not requalified.
+
+Candidate post-workflow idle lasted ten minutes; after the first minute settled,
+app CPU averaged 0.451% of one core, with 0.305% reaped CLI-client CPU separately.
+Focused intervals measured 0.526% app CPU (390 seconds), inactive 0.250% (143 seconds).
+Focus was sampled, not inferred; baseline idle was inactive, so these are not
+matched-focus speedup figures. Median RSS 149.88 MiB, PSS 91.69 MiB, private
+74.55 MiB; settled RSS fell 1.52 MiB and private fell 0.75 MiB. FDs varied 49–51
+and threads 13–14 with short-lived polls, ending at 49/13. Rows/cards/histories
+stayed at two; reads/timers at two, output buffers at zero. After-cycle buffers
+were 4→8→12 before / 0→0→0 after; GC-tracked process object counts (including
+the harness) were roughly flat after the fix. A bare GTK FileDialog control
+held 39 FDs through 20 API cancellations and a 60-second settle, with no retained
+FileDialog wrappers. Warm graphics/GVFS caches are distinct from object leaks.
+
+Repeated action-to-presentation p95 was 22.32–35.73 ms across the three candidate
+probes (18 programmatic actions each, 120 Hz feedback), without a material
+regression relative to these baseline runs. This is not physical input-to-photon
+or a zero-jank claim. Desktop applications/builds continued during the audit.
+
+Verification: 117 Python tests, 111 passed / six opt-in live tests skipped;
+all five ARM64 CI jobs passed, including the new GTK/Granite regression job.
+The live runner rejects non-Wayland sessions before waiting, records five-second
+RSS/PSS/private/CPU/FD/thread/cache samples, supports repeated unique fixtures,
+stops on window closure and fails on workflow/cleanup errors. Scope guards cover
+backend writes, direct Run/Terminal launches, both file-transfer directions,
+host mounts and symlink escapes. An additional installed-build live cycle
+verified these stricter guards. Earlier XWayland/interrupted pilots are excluded
+from the native comparison; the separate 30-minute installed-window observation
+is labeled XWayland in the receipt.
+
+From `mseries/orchard-incus`, reproduce with `GDK_BACKEND=wayland python3 tools/qualify-wayland.py --source "$PWD" --output /new/empty/dir --run --cycles 3 --idle-before 120 --idle-after 600`.
+Independent no-Incus probe: `xvfb-run -a env -u DBUS_SESSION_BUS_ADDRESS GSK_RENDERER=cairo GDK_BACKEND=x11 python3 tools/probe-output-retention.py --output /new/retention.json`.
+Evidence: `mseries/orchard-incus/audit/2026-10-18-session.json`, corresponding
+before/after JSONL samples, and `docs/orchard-incus.html`. The long-session driver
+revision is recorded separately from the later scope hardening; runtime hashes
+are identical. Installed with `sh mseries/orchard-incus/install.sh` and standard
+Orchard reopened as a native Wayland client, with a clean startup log.
+
+Remaining: multi-hour/day stability, controlled thermal/battery measurements,
+huge fleets, other themes/scales, physical keyboard/focus traversal and interactive
+upload/download/Console input. No kernel, bootloader, audio or global display
+settings were changed. Next: qualify these remaining environments as needed.
+
+## Factory build environment and ARM64 nested-kernel fixes — 2026-10-18
+
+Retry [39126677360](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39126677360)
+passed account package selection and real Brave staging, then failed with
+`meson: command not found`. BuildPackages were installed in the image while
+plain BuildScripts ran in the separate tools tree. `build-in-image.chroot` now
+runs the existing builders in the native image, with BUILDROOT=/; their sources,
+version pins and staged DESTDIR contract are preserved.
+
+A disposable installation rehearsal of the older October 13 ISO also found a
+real installed-boot blocker: the generated generic UKI embedded Ubuntu's EFI
+wrapper (with relocations) instead of its `.linux` EFI payload. systemd-stub
+rejected it. `prepare-uki-kernels` now unwraps only that ARM64 build input before
+sysupdate UKI generation, retaining the original wrapper and SHA256 provenance.
+It leaves plain kernels/full UKIs alone and refuses to discard a distribution
+initrd/command line or accept a relocatable/truncated inner image. The original
+wrapper retains its bundled DTBs in the archive; firmware/Apple DTB qualification
+remains separate. No host kernel, bootloader or audio settings were changed.
+
+Diagnostic evidence: the old installed VM first rejected the nested image; after
+substituting the exact original `.linux` payload it booted kernel 7.0.0-38-generic,
+mounted /dev/mapper/usr as read-only erofs and reached the graphical first-boot
+language screen. Only that disposable diagnostic UKI had a serial/debug command
+line; the build fix adds no debug shell or boot parameters. This is not a pass
+for the forthcoming new ISO. Six kernel-input regressions, five image-wiring
+checks, six browser-packaging checks and focused syntax/ShellCheck pass. Next:
+new complete image build, installation to a blank VM disk, dock and YouTube tests.
 
 ## Combined compact Upcoming and period views — 2026-10-18
 
