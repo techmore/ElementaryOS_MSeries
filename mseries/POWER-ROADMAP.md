@@ -139,3 +139,22 @@ Exit criteria per phase: before/after medians in `RESULTS.md`, an uninstall path
 - Apps that render continuously can hide any system win; fix the app mix first.
 - Wayland mode may break an Electron app; the env var file is removable (`install-electron-wayland.sh --uninstall`).
 - Parity may not be reachable on Linux today (video decode codecs, deep sleep); the plan makes the gap measurable instead of assumed.
+
+## Observation log — 2026-10-18 (kernel `7.1.12-2-20261017.20-sep-ARCH`, Aurora `.20`) — NOT an A/B result
+
+SMC `Total System Power` (`hwmon2/power1_input`), 1 s samples, on battery, built-in panel
+at 120 Hz, backlight 307/500:
+
+| Conditions | n | median | p10-p90 | min-max |
+|---|---|---|---|---|
+| Built-in display only, ~5 min after boot, desktop idle-ish, Claude Code session running | 45 | 16.08 W | 14.38-18.45 W | 12.93-21.51 W |
+| Dock monitor lit (1080p60, Insignia 65" TV), `claude-desktop` ~55% of a core, ChatGPT app and a 1 Hz logging script running | 60 | 21.12 W | 20.35-22.11 W | 20.06-26.20 W |
+
+The owner's panel watt meter showed ~16 W for the first condition, matching the sample.
+**No improvement is claimed.** 16 W sits inside the earlier "light use 14 to 17.6 W" range, and
+the second row (20-22 W) is within the earlier 17.6-20.5 W "agent apps open" readings, i.e.
+the reading follows what is running and whether an external display is lit, not the kernel.
+The conditions differ between rows and between days, so these two rows cannot be compared as
+a before/after. A real comparison needs: same workload script, same brightness and refresh,
+no external display, >=3 alternating runs per kernel (stock `7.1.13-3-2-ARCH` vs Aurora `.20`),
+medians with p10/p90, as the honesty rules above require.
