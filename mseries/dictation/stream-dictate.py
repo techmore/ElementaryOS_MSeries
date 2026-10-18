@@ -44,6 +44,7 @@ ALSA_IN = ["-f", "alsa", "-c:a", "pcm_f32le", "-channels", "3", "-sample_rate", 
 SPEECH_SPREAD_DB = float(os.environ.get("STREAM_SPEECH_DB", "8"))
 KEEP = bool(os.environ.get("STREAM_KEEP"))
 DRY = bool(os.environ.get("STREAM_DRY"))  # print instead of typing
+POPUP = os.environ.get("STREAM_POPUP", "1")  # "0": no Listening/finished popups
 QUIET = bool(os.environ.get("STREAM_QUIET"))  # tests: no chimes, no notifications
 KEY = int(os.environ.get("STREAM_KEY", "184"))  # KEY_F14
 THREADS = int(os.environ.get("STREAM_THREADS", "6"))
@@ -95,6 +96,8 @@ def keyboard_device():
 def notify(msg, persistent=False):
     if QUIET:
         return
+    if POPUP == "0" and (persistent or msg.startswith(("Preparing", "Dictation finished", "Dictation cancelled"))):
+        return  # chimes stay; only errors and refusals pop up
     subprocess.Popen(["notify-send", "-t", "0" if persistent else "2500", "-i", "audio-input-microphone", "-a", "Dictation",
                       "-h", "string:x-canonical-private-synchronous:mseries-dictation", msg],
                      stderr=subprocess.DEVNULL)
@@ -350,6 +353,9 @@ class Dictation:
         """Whole-utterance engine: collect audio while F5 is held, transcribe on release."""
         kept = bytearray(pending)
         t0 = time.time()
+        # The first call after the worker starts builds the encoder (about 2 s). Do it while the user
+        # is still talking so the wait after the second F5 is only the decode.
+        threading.Thread(target=lambda: model.warm(), daemon=True).start()
         try:
             stopped_at = None
             next_guard = 0
@@ -378,8 +384,10 @@ class Dictation:
                 return
             pcm = np.frombuffer(bytes(kept), np.int16).astype(np.float32) / 32768
             status('finishing')
+            t_dec = time.time()
             text = model.transcribe_long(pcm.astype('<f4').tobytes())
-            log(f"ane dictated {len(text)} chars from {len(pcm) / 16000:.1f}s in {time.time() - t0:.1f}s")
+            log(f"ane dictated {len(text)} chars from {len(pcm) / 16000:.1f}s; held {t_dec - t0:.1f}s, "
+                f"decode {time.time() - t_dec:.2f}s")
             if text and not self.cancelled:
                 self.typer.submit(text + " ", self.input_token)
             elif not DRY and not self.cancelled:
