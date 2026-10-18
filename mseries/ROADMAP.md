@@ -862,3 +862,5 @@ Console status API. The live account resolves to Go. A future renewal tier or qu
 used as the current level; unreadable/expired subscriptions keep an unavailable label where no
 reported metadata is usable. Read-only workspace-scoped lookup, bounded timeout/body, no login or
 token mutation. Seventeen helper tests, four Meson suites, port check and light/dark renders pass.
+
+- Human F5 acceptance remains failed: owner saw a microphone desktop function rather than listening. Physical F5 remap matches listenerF14; exact prompt/app context pending. Optional GTK4 review UI/local transformation path is source-only, with22 contracts and synthetic wiring pass; no model-quality or live deployment claim. Fix F5 before panel rollout; preserve reserve/quiet admission.

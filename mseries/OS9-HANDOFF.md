@@ -1,5 +1,28 @@
 # OS 9 implementation / Claude Code handoff
 
+## Human F5 attempt failed; review panel remains source-only — 2026-10-18
+
+Owner reports that F5 prompted a microphone desktop function rather than listening.
+Do not call the live F5 round trip a pass. Follow-up asks for exact prompt and app/field.
+Read-only EVIOCGKEYCODE_V2 confirms physical scancode0x7003e maps to LinuxF14(184),
+matching the stream listener; XKB maps it to XF86Launch5, while the static mic-mute
+binding is XF86AudioMicMute. No matching custom F5/F14 binding found. Service PID619496
+remains ready; logs show no capture from that reported attempt. A bounded metadata-only
+check found a non-editable panel focus, not an editable text target; this was after the
+attempt and is NOT proof of what was focused during it. No labels/text were read.
+A30s per-fd EV_KEY mask observer listens only for F14; no grab or other typed keys.
+Inspect work/dictation-f5-observer-v1.json before planning another capture.
+
+Source-only optional native GTK4 review panel now preserves original/proposed text,
+discards stale proposals and blocks review while recording. Grammar and five output
+language choices use only the existing supervised local worker, no tools/proxies/redirects.
+Pure transport/payload contracts and a private Xvfb UI wiring test pass with synthetic
+transforms; these DO NOT prove model grammar/translation quality. Nothing from this panel
+batch has been installed or opened on the owner's desktop. F5 fix takes priority.
+Current default4B admission remains below6.5GiB+6GiB reserve; no review inference launched.
+Do not use synthetic proposals as measured quality evidence. Native speech acceptance,
+actual model review qualification, latest-head CI, main merge and Pages remain open.
+
 ## Session-scoped F5 input activated — 2026-10-18
 
 Replaced permanent global-engine selection with asynchronous per-utterance acquisition.

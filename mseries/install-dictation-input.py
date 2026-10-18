@@ -22,6 +22,7 @@ INPUT_SERVICE = 'mseries-dictation-input.service'
 DROPIN = UNITS / (SERVICE + '.d') / '40-universal-input.conf'
 ENVIRONMENT = HOME / '.config/environment.d/60-mseries-dictation.conf'
 BRAVE_DESKTOP = HOME / '.local/share/applications/brave-browser.desktop'
+PANEL_DESKTOP = HOME / '.local/share/applications/org.techmore.Dictation.desktop'
 
 
 def digest(data):
@@ -182,7 +183,7 @@ def stage(payload):
             'activation_started': False, 'activated': False}
         payload.save()
     remember_preferences(payload)
-    for name in ['stream-dictate.py', 'dictation-input.py', 'dictation-input-client.py', 'dictation_status.py', 'dictation_resources.py', 'dictation-launch.py']:
+    for name in ['stream-dictate.py', 'dictation-input.py', 'dictation-input-client.py', 'dictation_status.py', 'dictation_resources.py', 'dictation-launch.py', 'dictation_review.py', 'dictation-panel.py']:
         payload.install(BASE / name, (SOURCE / name).read_bytes(), 0o755)
     payload.install(BASE / 'dictation-manage.py', Path(__file__).read_bytes(), 0o755)
     machine = HERE / 'local-ai/machine.py' if (HERE / 'local-ai/machine.py').exists() else BASE / 'machine.py'
@@ -191,6 +192,20 @@ def stage(payload):
     payload.install(BASE / INPUT_SERVICE, (SOURCE / INPUT_SERVICE).read_bytes(), 0o644)
     payload.remember(DROPIN)
     payload.remember(ENVIRONMENT)
+    payload.remember(PANEL_DESKTOP)
+
+
+def install_panel(payload):
+    # Desktop Exec quoting, not shell quoting. Absolute arguments are passed
+    # directly to Python; no shell or environment expansion is involved.
+    def argument(value):
+        return '"' + ''.join(('\\' + c) if c in '\\"`$' else c for c in str(value)) + '"'
+    arguments = ['/usr/bin/python3', BASE / 'dictation-launch.py', '/usr/bin/python3', BASE / 'dictation-panel.py']
+    desktop = ('[Desktop Entry]\nType=Application\nName=Dictation\n'
+        'Comment=Local F5 speech and optional transcript review\n'
+        'Icon=audio-input-microphone\nExec=' + ' '.join(argument(value) for value in arguments) +
+        '\nTerminal=false\nCategories=Utility;Accessibility;\nStartupNotify=true\n')
+    payload.install(PANEL_DESKTOP, desktop.encode(), 0o644)
 
 
 def rollback(payload):
@@ -227,7 +242,7 @@ def rollback(payload):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     actions = parser.add_mutually_exclusive_group()
-    for name in ['stage', 'activate', 'rollback', 'status']: actions.add_argument('--' + name, action='store_true')
+    for name in ['stage', 'activate', 'rollback', 'status', 'panel']: actions.add_argument('--' + name, action='store_true')
     args = parser.parse_args()
     if os.geteuid() == 0: raise SystemExit('Run as the desktop user')
     payload = Payload(STATE)
@@ -249,13 +264,20 @@ def main():
         rollback(payload)
         print('Previous speech payload and input method restored; backup retained.')
         return
+    if args.panel and not payload.data['metadata'].get('activated'):
+        raise ValueError('Activate the qualified Unicode speech path before installing its review panel')
     check_idle_capture()
     if args.activate: quiet_admission()
     stage(payload)
+    if args.panel:
+        install_panel(payload)
+        print('Dictation review panel installed; speech services unchanged.')
+        return
     if not args.activate:
         print('Payload staged; running service unchanged. Use --activate after acceptance checks.')
         return
     try:
+        install_panel(payload)
         payload.data['metadata']['activation_started'] = True
         payload.save()
         payload.install(DROPIN, b'[Unit]\nRequires=mseries-dictation-input.service\nAfter=mseries-dictation-input.service\n\n[Service]\nEnvironment=STREAM_OUTPUT=ibus\nEnvironment=STREAM_BACKEND=cpu\n', 0o644)

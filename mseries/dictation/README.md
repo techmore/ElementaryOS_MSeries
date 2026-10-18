@@ -96,4 +96,10 @@ A fresh runtime can use `bash mseries/install-dictation-stream.sh --universal`. 
 
 Backups and preference baselines remain private. Rollback restores prior settings when they still match this feature's values, preserves subsequent owner edits and waits for quiet admission before reloading speech. Remaining: owner F5 confirmation, app-specific coverage beyond the tested frameworks and optional grammar/translation review. The low-overhead everyday assistant and stronger troubleshooting tier follow dictation.
 
+### Optional transcript review panel — source candidate
+
+`dictation-panel.py` provides a native GTK4 original/proposed-text view, grammar review and English/French/Spanish/German/Japanese output choices. Focus its original field and hold F5 as usual. Review sends only the explicit text to the existing local everyday worker, with no tools, proxy or redirects. It preserves the original on unavailable/cooling/model errors and discards a proposal if its source changes. Copy is deliberate; no text is replaced in another app. English ASR followed by optional translation is post-utterance review, not simultaneous multilingual ASR.
+
+Twenty-two contracts and a private native UI wiring check pass. UI tests use synthetic transformations and **do not establish grammar or translation quality**. The panel batch is not installed; the human F5 attempt currently failed (a microphone desktop function appeared rather than listening), and exact prompt/app details are pending. Fix that path before promoting the panel. After qualification, `--activate` installs the launcher; `--panel` can refresh it without restarting already activated speech services. The panel neither starts another model nor opens the microphone itself. Real model review trials await memory/quiet admission.
+
 Primary API references: [IBus text commit](https://ibus.github.io/docs/ibus-1.5/IBusEngine.html), [AT-SPI accessible role/state APIs](https://docs.gtk.org/atspi2/class.Accessible.html). Metadata availability is tested locally; API documentation alone does not establish app support.
