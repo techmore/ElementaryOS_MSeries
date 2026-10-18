@@ -4867,3 +4867,5 @@ Verified full release compile/link and dependency check; isolated production-Ind
 ### Ethernet icon scale — 2026-10-18
 
 Owner requested 15% smaller Ethernet artwork. Connected 16/24px and VPN-lock assets now use an 85% transform centered in their existing canvases; panel allocation and text remain unchanged. Verified SVG transforms and rendered alpha bounds (within 1% of 0.85 for each dimension), then rebuilt/installed the pinned network module and reloaded the panel using the session-approved reload.
+
+Ethernet size follow-up (October 18): owner requested another 5% reduction from the current size. Artwork now uses `0.85 × 0.95 = 0.8075` of the original, centered at translations 2.31px (24px canvas) / 1.54px (16px canvas), including VPN badge. Full installer patch series and release build passed; extracted installed GResources confirm the transforms. Module installed and panel reloaded with existing session authorization.
