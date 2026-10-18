@@ -70,3 +70,23 @@ container: ordinary YouTube videos still play up to 4K. For HD films use a suppo
 
 Correction: `../BRAVE-WIDEVINE.md` and the earlier handoff said "SD/720p" for YouTube Movies. For YouTube in
 a browser the ceiling is 480p.
+
+## Boot entry added (owner-approved, 2026-10-18 06:28)
+
+`/boot/grub/custom.cfg` now has a block `# BEGIN mseries display-audio test` with entry id
+`elementary-aurora20-hdmiaudio`: an exact copy of `elementary-aurora20` plus ` appledrm.hdmi_audio=1`. It is not the
+default and does not touch `next_entry` (still `elementary-aurora20-enh1`). `grub-script-check` passes. Backup:
+`/boot/grub/custom.cfg.before-hdmiaudio-20261018`. Pick it from the boot menu. Remove it by deleting that block.
+Not booted yet; nothing is verified on hardware.
+
+Noted at the same time: another agent rewrote `custom.cfg` concurrently. It removed the old fairydust test entries
+and appended `mseries-full-height` (`appledrm.show_notch=1`), which sets the normal-boot default to that entry. That
+change is not part of this work.
+
+## Safari comparison
+
+There is no Safari for Linux and no port effort. Apple ships Safari only on its own OSes. WebKitGTK (GNOME Web) shares
+the engine but has neither FairPlay (the DRM that gives Safari HD films) nor Widevine, so it would not play YouTube Movies
+at all. macOS cannot run in a VM on Linux on Apple Silicon, and Darling does not run Safari. **macOS is still on this disk**
+(717 GB APFS container, `nvme0n1p2`), so the real A/B is: hold the power button at boot, choose macOS, and play the same
+film in Safari on the same hardware and TV.
