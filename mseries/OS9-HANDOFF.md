@@ -2835,3 +2835,31 @@ Owner's two live F5 attempts (05:56) recognized 0 characters. Reproduced without
 Upstream's Settings window (Qt Quick, `QQuickStyle::setStyle("Fusion")` hard-coded in `main.cpp`; confirmed that `QT_QUICK_CONTROLS_STYLE`, the GTK3 platform theme and the elementary stylesheet do not change it) looked dated. We now ship a native GTK4/Granite replacement, `codexbar-settings` (Vala, `mseries/codexbar-wingpanel/settings/`), with General, Display and Providers pages in elementary's settings style: cards with switches, spin buttons and drop-downs, company marks in the provider list, reorder/remove/add providers, start at login. No Save button: changes apply after a short pause through `codexbar-linux --configure` and an error from the app is shown inline. The panel's Settings button opens it (upstream's Qt window stays as the fallback, and the tray menu's Settings… still opens the Qt one). OpenCode Go's Sign in… now opens opencode.ai.
 
 Verified: model unit tests (3) and Meson (4 suites); headless renders of all pages in light and dark; an isolated headless app accepted a `--configure` patch (linux.json updated) and rejected `refreshSeconds: 5` with an error. Not verified: the window on the live desktop by eye, and start at login toggling for real. `deploy-codexbar.sh` installs the binary to `~/.local/bin/codexbar-settings`; `CODEXBAR-PORT.md` lists the files and the upgrade diff to check.
+
+## CodexBar: dense left-side panel readout and OpenCode Go sign-in — 2026-10-18
+
+The owner asked for CodexBar on the left of the top panel, showing all three providers densely with company
+marks, percentages and time to reset. The Wingpanel display widget now shows one segment per provider in the
+order Codex, Claude, OpenCode Go: the mark, % left of the window that will stop you first (lowest remaining;
+labelled `7D` when it isn't the 5-hour window), and a compact countdown to that window's reset (`4h44m`,
+`6d22h`) that ticks every poll while the popover is rebuilt only on data changes. Claude comes from the
+claude-swap helper's active account when upstream's snapshot has no Claude entry; OpenCode Go without account
+quota shows this machine's 7-day token count (`121M 7d tok`). Warnings colour the % and stale data dims the
+segment; the tooltip lists every window. The left placement uses the existing
+`install-wingpanel-codexbar-left.sh` patch, which was not installed (stock binary was running); it is now
+installed with the stock binary backed up at `/usr/local/lib/mseries/io.elementary.wingpanel.pre-codexbar-left`.
+
+OpenCode Go quota did not load because upstream v0.77.0 imports opencode.ai cookies only on macOS. New helper
+`codexbar-opencode-login.py login` opens a native WebKitGTK 6 sign-in window (private persistent profile in
+`~/.local/share/codexbar-opencode-login`), keeps only the `auth` / `__Host-auth` / `__Host-console_session`
+cookies upstream forwards, saves them as `providers[opencodego]` `cookieSource: manual` + `cookieHeader` in
+`~/.config/codexbar/config.json` (0600, locked, atomic), then checks `codexbar usage --provider opencodego
+--source web`. The OpenCode card now has an Accounts **+** like Claude's, and its Sign in… button runs the same
+flow. Side effect while probing: `codexbar config enable --provider opencodego` created
+`~/.config/codexbar/config.json` (previously absent; defaults plus OpenCode Go enabled).
+
+Verified: Meson 4/4 (new countdown, binding-window and panel-count tests); headless renders of the bar in
+healthy, depleting, provider-error and live fixtures, light and dark; helper config writes against a temp
+config; the sign-in window loads opencode.ai's login page headlessly (`/console/login`, no cookies before
+sign-in, so it cannot close early); `check-codexbar-port.sh` passes. Not verified: a real opencode.ai sign-in
+end to end (needs the owner's credentials) and the panel on the live desktop by eye.
