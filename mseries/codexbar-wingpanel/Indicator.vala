@@ -1432,6 +1432,8 @@ namespace MSeries {
 
         private Gtk.Widget build_panel_segment (string provider, string value_text, string reset_text,
                                                        QuotaLevel level, bool stale) {
+            var local_tokens = display_preferences.get_bool ("showPercent") ? local_week_tokens (provider) : "";
+            var tokens_on_top = (provider == "codex" || provider == "claude") && local_tokens.length > 0;
             var segment = new Gtk.Box (Gtk.Orientation.HORIZONTAL, provider == "opencodego" ? 2 : 3);
             if (provider == "opencodego") segment.add_css_class ("seg-opencode");
             if (stale) segment.add_css_class ("stale");
@@ -1441,8 +1443,16 @@ namespace MSeries {
                 icon.pixel_size = 14;
                 icon.valign = Gtk.Align.CENTER;
             }
-            segment.append (mark);
-            if (display_preferences.get_bool ("showHints")) segment.append (build_hint_badges (provider, true));
+            var heading = tokens_on_top ? new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3) : segment;
+            if (tokens_on_top && stale) heading.add_css_class ("stale");
+            heading.append (mark);
+            if (display_preferences.get_bool ("showHints")) heading.append (build_hint_badges (provider, true));
+            if (tokens_on_top) {
+                var tokens = new Gtk.Label ("7d · %s tok".printf (local_tokens)) { xalign = 0 };
+                tokens.add_css_class ("seg-value");
+                tokens.tooltip_text = "Tokens processed in seven days";
+                heading.append (tokens);
+            }
             var value = new Gtk.Label (value_text) { valign = Gtk.Align.BASELINE_CENTER };
             value.add_css_class ("seg-value");
             if (level == QuotaLevel.LOW) value.add_css_class ("level-low");
@@ -1460,12 +1470,15 @@ namespace MSeries {
             }
             var alternate = alternate_account_text (provider, new DateTime.now_utc ().to_unix ());
             var show_alternate = display_preferences.get_bool ("showAccounts") && alternate.length > 0;
-            var local_tokens = display_preferences.get_bool ("showPercent") ? local_week_tokens (provider) : "";
             if ((!show_alternate && local_tokens.length == 0) ||
                 (!display_preferences.get_bool ("showPercent") && !display_preferences.get_bool ("showReset"))) return segment;
             var stack = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { valign = Gtk.Align.CENTER };
             if (provider == "opencodego") stack.add_css_class ("seg-opencode");
-            stack.append (segment);
+            stack.append (heading);
+            if (tokens_on_top && !show_alternate) {
+                stack.append (segment);
+                return stack;
+            }
             var label = new Gtk.Label (null) { xalign = 0, use_markup = true };
             label.add_css_class ("seg-secondary");
             if (!show_alternate) {
@@ -1475,7 +1488,8 @@ namespace MSeries {
                 return stack;
             }
             var markup = new StringBuilder ();
-            if (local_tokens.length > 0) markup.append (Markup.escape_text ("7d · %s tok  ·  ".printf (local_tokens)));
+            if (tokens_on_top) markup.append ("· ");
+            if (!tokens_on_top && local_tokens.length > 0) markup.append (Markup.escape_text ("7d · %s tok  ·  ".printf (local_tokens)));
             var accounts = provider_accounts (provider);
             for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
                 var account = accounts.get_object_element (i);
@@ -1487,7 +1501,12 @@ namespace MSeries {
                         : colored_account_quota (label, windows, new DateTime.now_utc ().to_unix (), true)));
             }
             label.set_markup (markup.str);
-            stack.append (label);
+            if (tokens_on_top) {
+                segment.append (label);
+                stack.append (segment);
+            } else {
+                stack.append (label);
+            }
             stack.set_tooltip_text (alternate_account_tooltip (provider));
             return stack;
         }
