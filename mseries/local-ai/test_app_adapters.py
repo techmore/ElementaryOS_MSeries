@@ -14,9 +14,25 @@ import runtime_recovery as recovery
 
 spec = importlib.util.spec_from_file_location('calendar_smoke_contracts', Path(__file__).with_name('calendar-mail-workflow-smoke.py'))
 workflow = importlib.util.module_from_spec(spec); spec.loader.exec_module(workflow)
+spec = importlib.util.spec_from_file_location('newelle_workflow_guards', Path(__file__).with_name('newelle-app-workflow-smoke.py'))
+newelle_ui = importlib.util.module_from_spec(spec); spec.loader.exec_module(newelle_ui)
 
 
 class AppContracts(unittest.TestCase):
+    def test_gui_evaluation_denies_private_reads_before_dispatch(self):
+        call=MagicMock()
+        for name,args in [('list_tasks',{'scope':'all'}),('recent_faults',{}),('get_energy',{'window':'today'}),
+                          ('list_calendar_events',{}),('list_calendar_events',{'scope':'all'}),('browser_read_page',None)]:
+            with self.assertRaises(ValueError):newelle_ui.guarded_call(call,name,args)
+        call.assert_not_called()
+        self.assertEqual(len(newelle_ui.EXPECTED),16)
+
+    def test_gui_evaluation_keeps_real_app_dispatch_for_allowed_calls(self):
+        call=MagicMock(return_value={'real':'result'})
+        args={'scope':'assistant'}
+        self.assertEqual(newelle_ui.guarded_call(call,'list_calendar_events',args),{'real':'result'})
+        call.assert_called_once_with('list_calendar_events',args)
+
     def test_calendar_resume_preserves_failures_and_interrupted_evidence(self):
         metadata = {'method':'v2', 'kernel':'same', 'policy':{}, 'digests':{}, 'runtime':{'wheel':'same'}}
         failed = {'case':'browser-calendar-mail', 'repeat':1, 'passed':False, 'trace':['retained']}
