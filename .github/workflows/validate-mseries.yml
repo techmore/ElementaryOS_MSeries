@@ -137,6 +137,7 @@ jobs:
           python3 mseries/local-ai/test_people_watch.py
           python3 mseries/test-image-wiring.py
           python3 mseries/video-decode/test-brave-factory.py
+          python3 mseries/boot/test-prepare-uki-kernels.py
           python3 mseries/test-kernel-config.py
           python3 mseries/test-local-build-preflight.py
           node mseries/test-build-status.mjs
@@ -178,4 +179,5 @@ jobs:
           bash -n mseries/enhance.sh mseries/stage-factory-enhancements.sh mseries/aurora-sep/install-touchid-gui.sh
           python3 mseries/test-image-wiring.py
           python3 mseries/video-decode/test-brave-factory.py
+          python3 mseries/boot/test-prepare-uki-kernels.py
           python3 mseries/test-power-install.py

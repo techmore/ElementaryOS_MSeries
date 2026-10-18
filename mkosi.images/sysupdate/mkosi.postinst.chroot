@@ -1,6 +1,11 @@
 #!/bin/bash
 set -xeuo pipefail
 
+# Avoid nesting Ubuntu's relocatable EFI wrapper inside the generated factory UKI.
+if [[ -x /usr/libexec/mseries/prepare-uki-kernels ]]; then
+    /usr/libexec/mseries/prepare-uki-kernels --root /
+fi
+
 fc-cache --force --really-force --system-only --verbose
 
 glib-compile-schemas /usr/share/glib-2.0/schemas/
