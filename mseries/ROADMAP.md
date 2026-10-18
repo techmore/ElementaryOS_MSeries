@@ -1,5 +1,14 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Aurora energy and frozen feature releases — 2026-10-18
+
+[Implemented plan](aurora/ENERGY-PORT-PLAN-2026-10-18.md) refreshes 52 branches /
+12 PR heads, integrates existing source ports and pins a separate 7.2.10 unified
+WIP build. The running J314S `.20` baseline has measured artifact identities
+and scoped hardware receipts, frozen as experimental exp1. Stable promotion
+requires a complete feature matrix, three boot IDs, sleep cycles and matched
+energy pairs. Full hardware/energy qualification remains; no savings claimed.
+
 ## Persistent window snapping — 2026-10-18
 
 Half snapping is now enforced by the OS dconf policy. A native Gala plugin adds
@@ -20,6 +29,16 @@ cover charging/clock/failure cases, controller-specific recovery and staging;
 Linux CI also reads a real FAT ESP without root. Target-machine suspend,
 notification, SEP, radio recovery and keymap qualification remain open. No
 battery-life gain or factory hardware boot is claimed.
+
+## Aurora enhancements source candidate — 2026-10-17
+
+[Integration guide](aurora/enhancements/README.md): udmabuf/system heap, scoped
+M3 Air thermal and camera fixes, rebased optional SMC battery properties, and
+an explicit eGPU config profile. Complete source-build/CI lane uses distinct
+kernel/package identities and retains the released .20 recovery candidate.
+Local tests pass; ARM64 build verification is tracked in the enhancement CI.
+No live deployment or measured power gain. #122/#127 display rebases and
+selective Neo work remain outstanding; older duplicate branches are not imported.
 
 
 

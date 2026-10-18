@@ -1,5 +1,18 @@
 # Aurora 20 kernel port for elementary
 
+**Current status, 2026-10-18:** `.20` is running on the owner's J314S with
+the matched boot payload. [Scoped hardware tests and frozen releases](hardware-tests/README.md)
+replace the historical "not booted" descriptions below for current status.
+The first freeze is **experimental**, with boot/PMP/idle-accounting evidence;
+full hardware and energy acceptance remains incomplete.
+The [energy port plan](ENERGY-PORT-PLAN-2026-10-18.md) audits 52 branches and
+12 open PR heads and introduces a separate [7.2.10 WIP build](unified72/README.md).
+
+For the newer source-build enhancement candidate (udmabuf, scoped M3 thermal/
+camera fixes and SMC battery-reporting hardening), see
+[enhancements](enhancements/README.md). It has a separate kernel/package identity;
+the fixed `.20` installer and staging instructions below do not deploy it.
+
 This opt-in lane follows **omacom/linux-aurora release
 `aurora-2026.10.17.20`**, kernel source
 `c46d7dcdb8712ea9aeb0ce47b439ffae76371e55`. It brings the upstream display
