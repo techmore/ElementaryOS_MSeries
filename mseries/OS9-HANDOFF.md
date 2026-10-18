@@ -1,5 +1,10 @@
 # OS 9 implementation / Claude Code handoff
 
+## Battery app grouping and ETA — 2026-10-18 (Claude Code)
+
+Per-app CPU grouped by cgroup with desktop names; blended runtime estimate with range and basis; 24 core tests pass.
+Unverified on real unplugged data (the machine has been on the charger since the logger gained these).
+
 ## RepoBar native UI pass — 2026-10-18 (Claude Code)
 
 Rebuilt the RepoBar Wingpanel popover in CodexBar's visual language: segmented Dashboard / Pinned / Attention N / All

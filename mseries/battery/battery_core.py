@@ -6,6 +6,7 @@ is used when it exists and the battery's own flow is the fallback.
 """
 import glob
 import json
+import re
 import os
 import shutil
 import sqlite3
@@ -145,6 +146,44 @@ def connect(path=DB_PATH, readonly=False):
     return conn
 
 
+_APP_NAMES = {}
+
+
+def pretty_app(key):
+    """Display name for a cgroup/app id: the .desktop Name= if one exists, else a tidied version of the id."""
+    if key in _APP_NAMES:
+        return _APP_NAMES[key]
+    name = None
+    for base in ("/usr/share/applications", os.path.expanduser("~/.local/share/applications")):
+        for candidate in (key, key.lower()):
+            text = rd("%s/%s.desktop" % (base, candidate))
+            if text:
+                match = re.search(r"^Name=(.+)$", text, re.M)
+                if match:
+                    name = match.group(1).strip()
+                    break
+        if name:
+            break
+    if not name:
+        tail = key.split(".")[-1] if key.count(".") >= 2 else key
+        name = tail[:1].upper() + tail[1:] if tail.islower() else tail
+    _APP_NAMES[key] = name
+    return name
+
+
+def app_key(cgroup_text, comm):
+    """Stable per-application key from a process's cgroup: app-<launcher>-<name>-<pid>.scope, *.service, else comm."""
+    last = (cgroup_text or "").strip().splitlines()[-1].rsplit("/", 1)[-1] if cgroup_text and cgroup_text.strip() else ""
+    last = last.replace("\\x2d", "-")
+    match = re.match(r"app(?:-[a-z]+)?-(.+?)(?:-\d+)?\.scope$", last)
+    if match:
+        key = match.group(1)
+        return comm if "launcher" in key else key      # apps started from a launcher keep their own name
+    if last.endswith(".service") and not last.startswith(("user@", "session-")):
+        return last[:-8].split("@")[0].lstrip("_")
+    return comm
+
+
 class Sampler:
     """Reads one snapshot of power, CPU and process state; keeps the previous counters for deltas."""
 
@@ -211,8 +250,9 @@ class Sampler:
                 grouped = {}
                 for pid, (name, used) in procs.items():
                     before = self.prev_procs.get(pid)
-                    if before and before[0] == name and used >= before[1]:
-                        grouped[name] = grouped.get(name, 0) + used - before[1]
+                    if before and before[0] == name and used > before[1]:
+                        key = pretty_app(app_key(rd("%s/%s/cgroup" % (self.proc, pid)), name))
+                        grouped[key] = grouped.get(key, 0) + used - before[1]
                 # process ticks are in the same units as /proc/stat, summed over all CPUs
                 ranked = sorted(grouped.items(), key=lambda kv: -kv[1])[:TOP_N]
                 top = [[name, round(100.0 * ticks / dt, 1)] for name, ticks in ranked if ticks > 0]
@@ -388,20 +428,42 @@ def top_culprits(rows, limit=5):
     return [{"name": n, "avg_cpu": round(v / samples, 1)} for n, v in ranked]
 
 
+def typical_draw(rows):
+    """Median average draw of past unplugged runs of 30 min or more, for when there is no recent data to go on."""
+    draws = sorted(r["avg_w"] for r in sessions(rows) if r["seconds"] >= 1800 and r["avg_w"])
+    return draws[len(draws) // 2] if draws else None
+
+
 def estimate_runtime(rows, window_seconds=3600):
-    """Hours left at the recent draw, and hours from full at the same draw. None while plugged in."""
-    if not rows:
+    """Remaining and from-full runtime on battery.
+
+    Blends the last 10 minutes of draw (what you are doing now) with the last hour (what you have been doing); with
+    under five minutes on battery it falls back to your typical unplugged draw. Returns a range from the lighter and
+    heavier of the two, and what the estimate is based on. Empty while plugged in.
+    """
+    if not rows or rows[-1]["ac"]:
         return {}
     last = rows[-1]
-    recent = [r for r in rows if r["ts"] >= last["ts"] - window_seconds and r["sys_w"] is not None and not r["ac"]]
-    if not recent or last["ac"]:
-        return {}
-    avg = sum(r["sys_w"] for r in recent) / len(recent)
+    on = [r for r in rows if r["ts"] >= last["ts"] - window_seconds and r["sys_w"] is not None and not r["ac"]]
+    short = [r["sys_w"] for r in on if r["ts"] >= last["ts"] - 600]
+    long_ = [r["sys_w"] for r in on]
+    if len(long_) * SAMPLE_SECONDS >= 300:
+        short_avg = sum(short) / len(short) if short else sum(long_) / len(long_)
+        long_avg = sum(long_) / len(long_)
+        avg = 0.6 * short_avg + 0.4 * long_avg
+        low_w, high_w = min(short_avg, long_avg), max(short_avg, long_avg)
+        basis = "recent use"
+    else:
+        history = typical_draw(rows)
+        if not history:
+            return {}
+        avg = low_w = high_w = history
+        basis = "your typical use"
     if avg <= 0:
         return {}
-    left = (last["energy_uwh"] or 0) / 1e6 / avg
-    full = (last["full_uwh"] or 0) / 1e6 / avg
-    return {"avg_w": round(avg, 2), "hours_left": round(left, 2), "hours_full": round(full, 2)}
+    energy, full = (last["energy_uwh"] or 0) / 1e6, (last["full_uwh"] or 0) / 1e6
+    return {"avg_w": round(avg, 2), "hours_left": round(energy / avg, 2), "hours_full": round(full / avg, 2),
+            "left_low": round(energy / max(high_w, 0.1), 2), "left_high": round(energy / max(low_w, 0.1), 2), "basis": basis}
 
 
 def battery_health():
@@ -705,6 +767,7 @@ def summary_card(conn):
     est = estimate_runtime(rows)
     if est:
         headline = "%s left" % fmt_hours(est["hours_left"])
+        basis = est["basis"]
     elif last["status"] == "Charging" and last["batt_w"] and last["batt_w"] > 0.5 and last["energy_uwh"] and last["full_uwh"]:
         to_full = (last["full_uwh"] - last["energy_uwh"]) / 1e6 / last["batt_w"]
         headline = "Charging · %s to full" % fmt_hours(to_full)
@@ -713,6 +776,9 @@ def summary_card(conn):
         headline = ("%s typical runtime" % fmt_hours(sum(r["projected_hours"] for r in long_runs) / len(long_runs))
                     if long_runs else "Plugged in")
     detail = ["%.0f%%" % last["pct"]] if last["pct"] is not None else []
+    if est:
+        spread = "%s–%s, " % (fmt_hours(est["left_low"]), fmt_hours(est["left_high"])) if est["left_low"] != est["left_high"] else ""
+        detail.append(spread + est["basis"])
     if last["sys_w"] is not None:
         detail.append("%.1f W" % last["sys_w"])
     recent = [r for r in rows if r["ts"] >= now - 6 * 3600 and r["sys_w"] is not None]
