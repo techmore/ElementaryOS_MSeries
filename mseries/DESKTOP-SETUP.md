@@ -110,6 +110,19 @@ third-party client, not Discord's own app. Remove with
 `~/.config/vesktop` are kept). Voice, screen share and login are not yet
 verified on this machine.
 
+### Official Discord (x86-64, emulated)
+
+Discord's own Linux build is amd64 only, so it runs under FEX. FEX aborts on this
+16 KB-page kernel, so `bash mseries/install-muvm.sh` builds muvm, libkrun and
+libkrunfw (pinned tags; the guest kernel uses 4 KB pages), adds the FEX PPA
+(key fingerprint pinned) and fetches the Ubuntu 24.04 x86-64 rootfs. Then
+`bash mseries/install-discord-official.sh` runs Discord's own updater
+bootstrap, which fetches the official app, and runs its unmodified `app.asar`
+and modules on stock Electron 43.2.0 x86-64, because Discord's bundled Electron
+42 dies with SIGTRAP under FEX 2610 (stock Electron 42.11.12 does too). Launch
+with `discord-official`. Login, voice (native modules were built for Electron
+42), rendering and speed are not verified. Third-party Vesktop stays as `discord`.
+
 ## Signal
 
 Run `bash mseries/install-signal.sh`. Installs the official ARM64 beta,
