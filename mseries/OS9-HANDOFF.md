@@ -3330,3 +3330,27 @@ Validation, storage, cancellation, result reporting and quota refresh retain the
 Claude and Codex onboarding are unchanged. Reviewed the OpenCode + callback and direct helper dispatch;
 built the module and passed all four Meson suites. No live credentials or account changes were needed.
 Upstream pin remains 0.77.0. Publish to main and deploy the merged revision as requested.
+
+
+## CodexBar: direct Claude sign-in and account plan badges — 2026-10-18
+
+Owner requested Claude + skip confirmation like OpenCode +, and account levels in the dropdown.
+The Claude handler now dispatches the existing browser-login helper immediately; the unused
+confirmation wrapper was removed. Existing Claude/native-app account switching and login capture
+remain intact; no real login or account switch was performed for this UI change.
+
+Active identities and each saved-account row now show a compact reported-plan pill. Codex already
+exposes per-account plan claims; Claude now projects known subscriptionType labels (free/pro/max/team/
+enterprise) from its saved claude-swap Linux credential records and verified active CLI login. Only
+plan labels enter helper JSON, never credential fields. Native Electron app sessions are untouched.
+OpenCode projects per-account plan metadata when present, while the active upstream snapshot supplies
+its normal plan. Current saved OpenCode metadata may omit a plan, so these rows say “Plan unavailable.”
+An active account's plan is never assigned to a different saved account, and quota size is not used
+to infer a subscription. Tooltips describe plans as reported since login metadata may be cached.
+
+Validation: 35 Claude and 9 OpenCode helper tests pass, including account-specific saved plans,
+verified-active-only fallback, corrupt/missing metadata, and credential exclusion. Four Meson suites
+pass with plan formatting coverage; module/probe builds and port compatibility check pass. Light/dark
+fixtures show Pro/Plus/Max/Go and missing plans, with normal-width bottom-of-dropdown checks using new
+CB_HIDE_PANEL/CB_SCROLL probe controls. Upstream pin remains 0.77.0. Publish, merge to main and deploy
+the merged version as explicitly requested.

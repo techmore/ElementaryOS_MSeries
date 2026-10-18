@@ -95,6 +95,31 @@ def account_row(row: dict[str, Any], now: dt.datetime) -> dict[str, Any] | None:
             "status": row.get("usageStatus") if isinstance(row.get("usageStatus"), str) else ""}
 
 
+def account_plan(number: int, email: str, active: bool = False) -> str:
+    """Read subscription metadata only; never return credentials or change a saved login."""
+    xdg = os.environ.get("XDG_DATA_HOME", "")
+    root = pathlib.Path(xdg) if xdg and os.path.isabs(xdg) else pathlib.Path.home() / ".local/share"
+    paths = (root / "claude-swap" / "credentials").glob(f".creds-{number}-*.enc")
+    saved = next((p for p in paths if p.name == f".creds-{number}-{email}.enc"), None)
+    credentials: list[dict[str, Any]] = []
+    if active:
+        home = pathlib.Path(os.environ.get("CLAUDE_CONFIG_DIR") or pathlib.Path.home() / ".claude")
+        credentials.append(read_json(home / ".credentials.json"))
+    if saved is not None:
+        try:
+            data = json.loads(base64.b64decode(saved.read_bytes(), validate=True))
+            if isinstance(data, dict):
+                credentials.append(data)
+        except (OSError, ValueError):
+            pass
+    for data in credentials:
+        oauth = data.get("claudeAiOauth")
+        plan = oauth.get("subscriptionType") if isinstance(oauth, dict) else None
+        if isinstance(plan, str) and plan.lower() in {"free", "pro", "max", "team", "enterprise"}:
+            return plan.lower()
+    return ""
+
+
 def read_json(path: pathlib.Path) -> dict[str, Any]:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -442,6 +467,12 @@ def listing(cli: str | None, now: dt.datetime | None = None) -> dict[str, Any]:
         active_email = cli_email
         for account in accounts:
             account["active"] = account["email"].lower() == cli_email.lower()
+    for account in accounts:
+        account["plan"] = account_plan(account["number"], account["email"],
+            active=bool(cli_email and account["active"]))
+    active_plan = next((a["plan"] for a in accounts if a["active"]), "")
+    if not active_plan and cli_email and cli_email.lower() == active_email.lower():
+        active_plan = account_plan(0, cli_email, active=True)
     snapshot_error = ""
     try:
         with app_lock(blocking=False):
@@ -460,7 +491,7 @@ def listing(cli: str | None, now: dt.datetime | None = None) -> dict[str, Any]:
         except (OSError, ValueError):
             account["desktopReady"] = False
     note = desktop_note(desktop, active_email, cli_uuid)
-    return {"available": True, "accounts": accounts, "activeEmail": active_email,
+    return {"available": True, "accounts": accounts, "activeEmail": active_email, "activePlan": active_plan,
             "desktop": {"installed": desktop["installed"], "email": desktop["email"], "differs": bool(note)},
             "desktopNote": note, "desktopSnapshotError": snapshot_error}
 

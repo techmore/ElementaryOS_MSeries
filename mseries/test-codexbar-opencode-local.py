@@ -118,6 +118,16 @@ class AccountTest(unittest.TestCase):
         self.assertEqual(run.call_args.kwargs["env"]["OPENCODE_API_KEY"], "NEVER-PRINT-ACCESS")
         self.assertNotIn("NEVER-PRINT", json.dumps(accounts))
 
+    def test_plan_is_account_metadata_and_missing_is_unknown(self):
+        credential = json.loads(self.credential("me@example.com"))
+        credential["metadata"]["plan"] = "go"
+        path = self.credential_database([("active", 1, json.dumps(credential), 1)])
+        accounts = MODULE.saved_accounts(path, "codexbar", now_ms=1900000000000)
+        self.assertEqual(accounts[0]["plan"], "go")
+        self.assertNotIn("NEVER-PRINT", json.dumps(accounts))
+        path = self.credential_database([("active", 1, self.credential("me@example.com"), 1)])
+        self.assertEqual(MODULE.saved_accounts(path, "codexbar")[0]["plan"], "")
+
     def test_expired_alternate_login_is_labelled_without_querying_quota(self):
         path = self.credential_database([("old", 0, self.credential("other@example.com", expires=1800000000000), 1)])
         with mock.patch.object(MODULE.subprocess, "run") as run:

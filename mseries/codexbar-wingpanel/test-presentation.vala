@@ -145,6 +145,9 @@ int main (string[] args) {
         assert (MSeries.Presentation.plan_label ("max") == "Max");
         assert (MSeries.Presentation.plan_label ("") == "");
         assert (MSeries.Presentation.plan_label ("enterprise") == "Enterprise");
+        assert (MSeries.Presentation.plan_label (" plus ") == "Plus");
+        assert (MSeries.Presentation.plan_label ("go") == "Go");
+        assert (MSeries.Presentation.plan_label ("unknown") == "");
     });
     GLib.Test.add_func ("/presentation/age", () => {
         assert (MSeries.Presentation.age_text (-5) == "just now");

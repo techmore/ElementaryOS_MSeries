@@ -145,7 +145,9 @@ def saved_accounts(database: pathlib.Path, cli: str, now_ms: int | None = None) 
             if key in seen:
                 continue
             seen.add(key)
-            account = {"id": ident, "email": email, "active": bool(active), "windows": []}
+            plan = metadata.get("plan")
+            account = {"id": ident, "email": email, "active": bool(active), "windows": [],
+                       "plan": plan if isinstance(plan, str) else ""}
             report.append(account)
             if active:
                 continue  # upstream's normal snapshot already supplies this account's quota
