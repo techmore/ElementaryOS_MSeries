@@ -1,5 +1,14 @@
 # Port map: Omarchy Mac hardware behavior → elementary OS 9
 
+## October 17 userspace refresh
+
+[Candidate audit](OMACOM-IMPROVEMENTS.md) supersedes missing-feature assumptions
+for the new sleep/power diagnostics, gated opt-in Bluetooth recovery and Touch ID
+readiness refinements. The maintained default-branch refresh `222f7a8` to
+`ffe5246` changes tests/acceptance only. Historical rows below describe their
+original audit date; use the new audit for current implementation and gates.
+
+
 This map separates the historical scaffold from the maintained package
 reference and from hardware verification. Presence in the repository does not
 mean the mkosi image has been built or tested.

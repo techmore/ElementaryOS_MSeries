@@ -33,6 +33,7 @@ STAGES=(
   "docked-lid|user|on|install-docked-lid.sh|lock and blank panel instead of suspending when docked"
   "battery-eta|user|on|install-battery-eta.sh|time-to-full beside the battery icon"
   "power|system|on|install-power.sh|80% charge limit, battery CPU ceiling"
+  "diagnostics|system|on|install-hardware-support.sh|suspend-energy logging and power diagnostics (next login)"
   "tuning|system|on|install-system-tuning.sh|system tuning from the 2026-10-12 audit"
   "audio|system|on|install-audio-stack.sh|speaker protection daemon"
   "brave|system|on|install-brave.sh|Brave from its apt repository"

@@ -59,3 +59,13 @@ Docked lid locking is also separate from suspend: the recorded USB4 suspend veto
 can leave the machine awake. Measure docked and undocked sleep independently.
 
 No kernel, bootloader, display settings or running audio changes are part of this documentation organization.
+
+## Suspend energy and one-shot power report
+
+The [Omacom port](../OMACOM-IMPROVEMENTS.md) adds `mseries-power-report --sample 10`
+and a bounded sleep hook through `install-hardware-support.sh` / the diagnostics
+enhancement module. It records energy deltas across real suspended-clock
+intervals and notifies after a known unlock. Logs do not prove low-power
+residency; transition overhead is included, charging/invalid intervals are
+excluded, and the Linux hardware comparison still needs an actual run. Do not
+update the parity checklist from synthetic fixture results.

@@ -9,7 +9,7 @@
 set -euo pipefail
 
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-here=$root/aurora-sep
+here=$root
 app=$here/mseries-touchid-settings
 helper=$here/mseries-aurora-touchid-apply-pam
 desktop_src=$here/mseries-touchid-settings.desktop

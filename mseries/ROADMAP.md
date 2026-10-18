@@ -1,5 +1,17 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Omacom userspace support — 2026-10-17
+
+[Audit and implementation](OMACOM-IMPROVEMENTS.md): sleep-energy records and
+power report are staged by manual/transform/factory diagnostics. Touch ID
+readiness and first-refresh/installer fixes are implemented. Bluetooth recovery
+and built-in-key remaps are available as separate opt-ins. Offline fixtures
+cover charging/clock/failure cases, controller-specific recovery and staging;
+Linux CI also reads a real FAT ESP without root. Target-machine suspend,
+notification, SEP, radio recovery and keymap qualification remain open. No
+battery-life gain or factory hardware boot is claimed.
+
+
 
 ## Aurora branch enhancement inventory — 2026-10-17
 
