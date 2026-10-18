@@ -8,6 +8,8 @@ one saved Codex home per account and swap ~/.codex/auth.json atomically.
   codexbar-accounts.py save               remember the signed-in account
   codexbar-accounts.py switch <email|id>  make a saved account the active one
   codexbar-accounts.py usage              list plus each account's weekly quota
+  codexbar-accounts.py app-running        exit 0 when the ChatGPT desktop app is open
+  codexbar-accounts.py restart-app        close and reopen the ChatGPT desktop app
 
 Running Codex sessions keep the account they started with; restart them.
 """
@@ -23,6 +25,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import time
 from typing import Any
 
 
@@ -148,6 +151,42 @@ def switch(target: str) -> tuple[bool, str]:
     return True, f"Switched Codex to {wanted['email']}. Restart running Codex sessions to use it."
 
 
+APP_BINARY = "/usr/lib/chatgpt/ChatGPT"
+
+
+def app_pids() -> list[int]:
+    """Main process of the ChatGPT desktop app (children carry --type=)."""
+    pids = []
+    for entry in pathlib.Path("/proc").iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            argv = (entry / "cmdline").read_bytes().split(b"\0")
+        except OSError:
+            continue
+        if argv and argv[0].decode(errors="replace") == APP_BINARY and not any(a.startswith(b"--type=") for a in argv):
+            pids.append(int(entry.name))
+    return pids
+
+
+def restart_app() -> tuple[bool, str]:
+    """The desktop app keeps the account it started with, so a switch needs a relaunch."""
+    pids = app_pids()
+    for pid in pids:
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except OSError:
+            pass
+    deadline = time.monotonic() + 10
+    while app_pids() and time.monotonic() < deadline:
+        time.sleep(0.2)
+    if app_pids():
+        return False, "ChatGPT did not close; quit it and open it again."
+    subprocess.Popen(["chatgpt"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                     stderr=subprocess.DEVNULL, start_new_session=True)
+    return True, "ChatGPT restarted." if pids else "ChatGPT opened."
+
+
 def usage_for(home: pathlib.Path, cli: str) -> dict[str, Any]:
     environment = {**os.environ, "CODEX_HOME": str(home)}
     try:
@@ -263,6 +302,12 @@ def main(arguments: list[str]) -> int:
             return 2
         ok, message = switch(arguments[1])
         print(json.dumps({"ok": ok, "message": message}))
+        return 0 if ok else 1
+    if command == "app-running":
+        return 0 if app_pids() else 1
+    if command == "restart-app":
+        ok, message = restart_app()
+        print(message)
         return 0 if ok else 1
     if command == "usage":
         cli = str(pathlib.Path.home() / ".local/bin/codexbar")

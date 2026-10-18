@@ -747,6 +747,9 @@ namespace MSeries {
                     run_action ("--refresh");
                     refresh_codex_accounts.begin ();
                     read_snapshot.begin ();
+                    if (arguments[0] == "switch" && process.get_successful ()) {
+                        offer_chatgpt_restart.begin (arguments[1].split ("|")[0]);
+                    }
                 });
             } catch (Error e) {
                 subtitle_label.set_text ("Could not switch account: " + e.message);
@@ -754,6 +757,33 @@ namespace MSeries {
         }
 
         private AccountDialog? codex_login_dialog = null;
+        /* The ChatGPT desktop app keeps the account it started with; only a relaunch picks up the new sign-in. */
+        private async void offer_chatgpt_restart (string email) {
+            try {
+                var check = new GLib.Subprocess.newv ({ "python3", helper_path ("codexbar-accounts.py"), "app-running" },
+                    SubprocessFlags.STDOUT_SILENCE | SubprocessFlags.STDERR_SILENCE);
+                yield check.wait_async (null);
+                if (!check.get_successful ()) {
+                    return;
+                }
+            } catch (Error e) {
+                return;
+            }
+            var dialog = new Gtk.AlertDialog ("%s", "Switched Codex to " + email);
+            dialog.detail = "The open ChatGPT window is still signed in as the previous account until it restarts. Restart it now to use " + email + "; unsaved drafts in it may be lost.";
+            dialog.buttons = { "Later", "Restart ChatGPT" };
+            dialog.cancel_button = 0;
+            dialog.default_button = 1;
+            dialog.modal = false;
+            dialog.choose.begin (null, null, (obj, res) => {
+                try {
+                    if (dialog.choose.end (res) == 1) {
+                        run_saver.begin ({ "python3", helper_path ("codexbar-accounts.py"), "restart-app" },
+                            "ChatGPT restarted", "Couldn't restart ChatGPT", true);
+                    }
+                } catch (Error e) { }
+            });
+        }
 
         private void add_codex_account () {
             if (codex_login_dialog != null) {
