@@ -189,6 +189,12 @@ def has_session(db: sqlite3.Connection) -> bool:
                            "AND (length(encrypted_value)>0 OR length(value)>0)").fetchone())
 
 
+def has_app_auth(config: dict[str, Any], db: sqlite3.Connection) -> bool:
+    # OAuth caches alone do not sign the native chat surface in. Chromium may take
+    # 30 seconds to flush newly created cookies; don't label such an account ready.
+    return has_session(db)
+
+
 def capture_app() -> str:
     """Copy encrypted session material, never decrypt it. Caller holds app_lock.
 
@@ -209,7 +215,7 @@ def capture_app() -> str:
                 raise TimeoutError("Claude session database is busy.")
         with contextlib.closing(sqlite3.connect(cookie_path().as_uri() + "?mode=ro", uri=True, timeout=1)) as source, \
                 contextlib.closing(sqlite3.connect(name)) as target:
-            if not has_session(source):
+            if not has_app_auth(config, source):
                 return ""  # lastKnownAccountUuid survives signing out; don't overwrite a good snapshot.
             source.backup(target, pages=64, progress=progress)
             target.execute("PRAGMA journal_mode=DELETE")  # a portable, self-contained database, no WAL dependency
@@ -235,7 +241,7 @@ def load_session(uuid: str) -> dict[str, Any]:
         cookies = base64.b64decode(bundle["cookies"], validate=True)
         with contextlib.closing(sqlite3.connect(":memory:")) as db:
             db.deserialize(cookies)
-            if db.execute("PRAGMA quick_check").fetchone() != ("ok",) or not has_session(db):
+            if db.execute("PRAGMA quick_check").fetchone() != ("ok",) or not has_app_auth(config, db):
                 raise ValueError()
     except (KeyError, TypeError, ValueError, sqlite3.Error):
         raise ValueError("The saved Claude app session is damaged. Sign in to that account in the app again.") from None
@@ -286,10 +292,12 @@ def stop_app() -> bool:
             break
     for pid in pids:
         try:
-            args = pathlib.Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0")
-            if not any(arg.startswith(b"--type=") for arg in args):
+            # Chromium rewrites argv[0] to contain its entire command line on Linux;
+            # looking for a separate --type= argument misidentifies utility children.
+            parent_pid = int(pathlib.Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[1])
+            if parent_pid not in pids:
                 os.kill(pid, signal.SIGTERM)
-        except ProcessLookupError:
+        except (FileNotFoundError, ProcessLookupError):
             pass
     deadline = time.monotonic() + 20
     while app_pids():
@@ -302,14 +310,19 @@ def stop_app() -> bool:
 def launch_app() -> None:
     # Don't let a calling Claude session inject the old account's token into the relaunched app.
     env = {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE_CODE_")}
-    result = subprocess.run(["gtk-launch", "com.anthropic.Claude"], env=env, capture_output=True, timeout=15)
-    if result.returncode:
-        raise ValueError("The Claude app could not restart. Open Claude from the dock.")
-    deadline = time.monotonic() + 5
+    # Electron can retain inherited output pipes after gtk-launch has exited. Detach it
+    # and observe the app process instead of waiting on communicate() until the GUI quits.
+    launcher = subprocess.Popen(["gtk-launch", "com.anthropic.Claude"], env=env,
+                                stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL, start_new_session=True)
+    deadline = time.monotonic() + 10
     while not app_pids():
+        if launcher.poll() not in (None, 0):
+            raise ValueError("The Claude app could not restart. Open Claude from the dock.")
         if time.monotonic() >= deadline:
             raise ValueError("The Claude app did not start. Open Claude from the dock.")
         time.sleep(0.1)
+    launcher.poll()
 
 
 def app_switch(uuid: str, cli: str | None = None, number: str | None = None) -> tuple[bool, str]:
@@ -544,7 +557,11 @@ def main(arguments: list[str]) -> int:
     if command == "app-save":
         try:
             with app_lock():
+                deadline = time.monotonic() + 35
                 uuid = capture_app()
+                while not uuid and time.monotonic() < deadline:
+                    time.sleep(1)
+                    uuid = capture_app()
             if not uuid:
                 raise ValueError("Sign in to the Claude app first, then save its login here.")
             print("The Claude app's current login is saved for fast switching on this computer.")

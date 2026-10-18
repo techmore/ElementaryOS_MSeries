@@ -63,3 +63,16 @@ and its Linux executable path under review on Claude desktop updates.
 OpenCode's quota remains account-wide; the token count beside it is the seven-day history from this
 machine across its local OpenCode Go accounts, labelled separately. OAuth credentials stay in OpenCode's
 database; expired credentials are ignored (with a 60-second margin), and OpenCode handles refresh.
+
+### Native sign-in persistence and process lifecycle
+
+A safeStorage OAuth cache alone is insufficient for the native chat surface. Snapshots require its
+`sessionKey` cookie; **Save app login** waits up to 35 seconds for Electron to persist new cookies
+([Electron Cookies API](https://www.electronjs.org/docs/latest/api/cookies)). A login is not labelled
+app-ready until the complete cookie snapshot is on disk. Keep Claude open while that initial save runs.
+
+On Linux Chromium may rewrite its command line into argv[0]. Stop detection uses the process parent
+tree to signal only the main app, then waits for all app processes to exit. Restart uses detached
+`gtk-launch` with closed standard streams and verifies the app process, avoiding inherited-output-pipe
+hangs. The owner confirmed a real account-2 → account-1 native round trip retains the Gmail account's
+chats without another sign-in after these fixes.

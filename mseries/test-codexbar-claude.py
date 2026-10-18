@@ -308,6 +308,7 @@ class ClaudeTest(unittest.TestCase):
         saved = MODULE.session_path("uuid-me").read_bytes()
         with closing(sqlite3.connect(MODULE.cookie_path())) as db, db:
             db.execute("DELETE FROM cookies")
+        self.write(".config/Claude/config.json", {"lastKnownAccountUuid": "uuid-me"})
         with MODULE.app_lock():
             self.assertEqual(MODULE.capture_app(), "")
         self.assertEqual(saved, MODULE.session_path("uuid-me").read_bytes())
@@ -359,10 +360,41 @@ class ClaudeTest(unittest.TestCase):
 
     def test_relaunch_drops_inherited_claude_oauth_environment(self):
         with mock.patch.dict(MODULE.os.environ, {"CLAUDE_CODE_OAUTH_TOKEN": SECRET}), \
-             mock.patch.object(MODULE.subprocess, "run", return_value=mock.Mock(returncode=0)) as run, \
+             mock.patch.object(MODULE.subprocess, "Popen", return_value=mock.Mock()) as run, \
              mock.patch.object(MODULE, "app_pids", return_value=[123]):
             MODULE.launch_app()
         self.assertNotIn("CLAUDE_CODE_OAUTH_TOKEN", run.call_args.kwargs["env"])
+        self.assertTrue(run.call_args.kwargs["start_new_session"])
+        self.assertEqual(run.call_args.kwargs["stdout"], MODULE.subprocess.DEVNULL)
+
+    def test_oauth_cache_without_chat_cookie_is_not_a_ready_native_session(self):
+        self.app_session(ME, SECRET)
+        with closing(sqlite3.connect(MODULE.cookie_path())) as db, db:
+            db.execute("DELETE FROM cookies")
+        with MODULE.app_lock():
+            self.assertEqual(MODULE.capture_app(), "")
+        # The previous complete snapshot survives an incomplete in-memory sign-in.
+        with closing(sqlite3.connect(":memory:")) as db:
+            db.deserialize(MODULE.load_session("uuid-me")["cookies"])
+            self.assertTrue(MODULE.has_session(db))
+
+    def test_stop_signals_only_main_process_using_parent_relationships(self):
+        def stat(path, *args, **kwargs):
+            parents = {"100": 1, "101": 100, "102": 101}
+            return f"{path.parent.name} (claude-desktop) S {parents[path.parent.name]} 0 0"
+        with mock.patch.object(MODULE, "app_pids", side_effect=[[100, 101, 102], []]), \
+             mock.patch.object(MODULE.os, "getppid", return_value=1), \
+             mock.patch.object(MODULE.pathlib.Path, "read_text", stat), \
+             mock.patch.object(MODULE.os, "kill") as kill:
+            self.assertTrue(MODULE.stop_app())
+        kill.assert_called_once_with(100, MODULE.signal.SIGTERM)
+
+    def test_app_save_waits_for_browser_cookie_persistence(self):
+        with mock.patch.object(MODULE, "capture_app", side_effect=["", "uuid-me"]) as capture, \
+             mock.patch.object(MODULE.time, "sleep") as sleep, mock.patch("sys.stdout"):
+            self.assertEqual(MODULE.main(["app-save"]), 0)
+        self.assertEqual(capture.call_count, 2)
+        sleep.assert_called_once_with(1)
 
     def test_app_reopening_during_switch_prevents_file_replacement(self):
         self.app_session(ME, SECRET)

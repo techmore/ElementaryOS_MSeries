@@ -597,7 +597,7 @@ browser integration and remaining Files/Gala patches remain open.
 
 Implemented app session capture, one-time native sign-in setup, and **CLI only / Switch both** choices.
 The app restarts for a native switch; its encrypted login is restored without changing preferences.
-Missing sessions are labelled **app sign-in needed**. The current app account is saved on this desktop;
-the other saved CLI account still needs its one-time native sign-in. Automated snapshot round trips,
-rollback and setup recovery pass; authenticated cross-account switching awaits that sign-in. See
+Missing sessions are labelled **app sign-in needed**. Both native accounts are now saved on this desktop. Automated snapshot round trips, rollback and
+setup recovery pass. A real native account-2 → account-1 round trip completed, and the owner confirmed
+the Gmail account’s chats remained visible without signing in again. See
 [CODEXBAR-PORT.md](CODEXBAR-PORT.md) for the repeatable workflow and limitations.

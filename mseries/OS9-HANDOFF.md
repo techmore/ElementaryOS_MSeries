@@ -3098,3 +3098,30 @@ snapshot before changing either login.
 app**, then **Save app login**. Authenticated switching between both real native accounts is unverified
 until that is done. The working Claude app was not interrupted during implementation. No kernel,
 bootloader or audio changes. Deployed with `bash mseries/deploy-codexbar.sh`; Wingpanel and CodexBar restarted successfully. The running snapshot reports one Codex window and three OpenCode Go windows with no provider errors. Merged current `origin/main` without conflicts before publishing.
+
+
+## CodexBar: native Claude switching verified with owner — 2026-10-18
+
+The owner completed native sign-in for account 1. Live verification exposed two lifecycle bugs and a
+cookie-persistence gap that mocked process tests could not catch:
+
+- `gtk-launch` can leave its output pipes inherited by the GUI. Restart now detaches with DEVNULL
+  streams and checks native process presence rather than waiting for those pipes to close.
+- Chromium can rewrite the entire command line into argv[0], so looking for a separate `--type=` flag
+  misidentified utility processes. Stop now uses parent PID relationships and signals only the main
+  native app, then waits for the process tree to exit.
+- Native OAuth caches alone did not restore chat sign-in. The first test asked for login again.
+  Snapshots now require the actual `sessionKey` cookie, and Save app login waits up to 35 seconds for
+  Electron’s deferred cookie writes. Incomplete sign-ins cannot overwrite a good snapshot or be marked
+  app-ready. The owner signed in again, the complete cookie persisted, and the snapshot was saved.
+
+Real `switch 2 --desktop` and `switch 1 --desktop` both succeeded with app restarts after that save.
+The owner explicitly confirmed **“Yes, chats are visible”** on the returned Gmail account without
+signing in again. Both accounts now have complete native app snapshots. The app and CLI are left on
+account 1 (`sdolbec1@gmail.com`); Codex/Claude/OpenCode ordering is unchanged.
+
+Validation: 32 Claude helper tests now cover delayed cookie persistence, rejection of OAuth-only
+snapshots, detached launch and parent-based main-process selection (59 Python helper tests total).
+The existing PR validation run passed all three jobs before this follow-up; this push reruns CI.
+The fixed helper was installed atomically for the live test; the normal deployment runs after push.
+Upstream pin remains 0.77.0. PR #101 carries the completion and fixes.
