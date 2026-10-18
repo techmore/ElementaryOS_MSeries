@@ -83,3 +83,38 @@ deferred archived). Owner confirmed the correct account and working Code context
 The app can initially keep its destination account's existing conversation open;
 select a carried-over conversation in Code to continue its own transcript.
 Automatic view selection is not part of the qualified behavior.
+
+## Pre-switch handoffs and GitHub backup
+
+An account switch prepares a private brief for the most recently focused active
+Code conversation before changing authentication. It summarizes bounded recent
+visible transcript text; hidden thinking and signatures are excluded. Generation
+uses the departing account's Claude Code CLI in safe mode with tools, MCP, hooks,
+skills and persistence disabled. If that login is unavailable/mismatched, quota is
+exhausted or generation times out, the handoff is labeled emergency excerpts.
+Original transcripts are not edited. A new Handoff conversation in the destination
+contains only the brief, the same workspace binding, and a pointer to the original.
+Select it in Code to continue without initially resending the full old transcript.
+Summaries are lossy and must be checked against files/history as needed.
+
+Private handoffs and integrity receipts are saved in
+~/.local/share/codexbar-claude-app/handoffs with private permissions. GitHub backup
+uses the workspace's existing github.com origin, but only after reviewing/editing
+the public draft and explicitly publishing it. The publisher creates a separate
+branch and draft PR; it does not stage local changes or modify main. Emergency
+transcript excerpts stay private instead of prepopulating the public draft.
+Offline generation/publication does not remove the local brief.
+
+Open the review from the Switch success dialog or run:
+
+```sh
+python3 ~/.local/lib/codexbar-cli/codexbar-claude.py handoff-review
+```
+
+Implementation: codexbar_claude_handoff.py. Qualified CLI2.1.299; flags verified
+against its local help and [official CLI reference](https://code.claude.com/docs/en/cli-reference).
+Tool-free live synthetic summarization and handoff-only resume passed; native
+review-click behavior and GitHub request contracts are covered by isolated tests.
+Owner account switching with the handoff extension and an actual reviewed GitHub
+publication remain separate live checks. Preserved thinking stays organization-bound;
+this feature transfers ordinary text, not reusable thinking state.

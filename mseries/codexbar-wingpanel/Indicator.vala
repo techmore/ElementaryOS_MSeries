@@ -594,7 +594,7 @@ namespace MSeries {
             }
             var dialog = new Gtk.AlertDialog ("Switch to %s?", email);
             dialog.detail = ready
-                ? "Claude will close and reopen with this account, and Claude Code's command-line login will change too. Missing local Code conversations will carry over with their workspace context. Finish running work first. CodexBar stays running."
+                ? "Claude will save a work handoff, close and reopen with this account, and Claude Code's command-line login will change too. Missing local Code conversations will carry over with their workspace context. Finish running work first. CodexBar stays running."
                 : "This account needs one sign-in in the Claude app before fast switching works. Claude will reopen at its sign-in screen. Sign in to the account shown above, then reopen CodexBar to save it. Missing local Code conversations will carry over. Finish running work first.";
             dialog.buttons = { "Cancel", ready ? "Switch Claude account" : "Set up app sign-in" };
             dialog.cancel_button = 0;
@@ -620,6 +620,7 @@ namespace MSeries {
             claude_switch_in_flight = true;
             var ok = false;
             var message = "";
+            var handoff_ready = false;
             try {
                 string[] command = { "python3", helper_path ("codexbar-claude.py"), "switch", number };
                 if (desktop) command += "--desktop";
@@ -635,6 +636,7 @@ namespace MSeries {
                     if (root != null && root.get_node_type () == Json.NodeType.OBJECT) {
                         ok = process.get_successful () && JsonBoundary.flag (root.get_object (), "ok", false);
                         message = JsonBoundary.text (root.get_object (), "message", "");
+                        handoff_ready = JsonBoundary.flag (root.get_object (), "handoffReady", false);
                     }
                 } catch (Error e) {
                     message = (stderr_text ?? "").strip ();
@@ -644,17 +646,26 @@ namespace MSeries {
             }
             claude_switch_in_flight = false;
             tell (ok ? "Switched Claude account" : "Couldn't switch Claude account",
-                message.length > 0 ? message : "The helper reported an error.");
+                message.length > 0 ? message : "The helper reported an error.", ok && handoff_ready);
             claude_fetched_us = 0;
             last_digest = "";
             refresh_claude.begin ();
             read_snapshot.begin ();
         }
 
-        private void tell (string heading, string detail) {
+        private void tell (string heading, string detail, bool handoff_review = false) {
             var dialog = new Granite.MessageDialog.with_image_from_icon_name (heading, detail,
                 "dialog-information", Gtk.ButtonsType.CLOSE);
-            dialog.response.connect (() => dialog.close ());
+            if (handoff_review) dialog.add_button ("Review GitHub handoff…", Gtk.ResponseType.APPLY);
+            dialog.response.connect ((response) => {
+                dialog.close ();
+                if (handoff_review && response == Gtk.ResponseType.APPLY) {
+                    try {
+                        Process.spawn_async (null, { "python3", helper_path ("codexbar-claude.py"), "handoff-review" },
+                            null, SpawnFlags.SEARCH_PATH, null, null);
+                    } catch (Error e) { tell ("Could not open handoff review", "Run codexbar-claude.py handoff-review to retry."); }
+                }
+            });
             dialog.present ();
         }
 
