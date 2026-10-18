@@ -10,6 +10,7 @@ STREAM_DRY (print, do not type), STREAM_QUIET (no chime/notification), STREAM_TE
 import math, os, queue, signal, struct, subprocess, sys, threading, time, wave, tempfile
 import numpy as np
 import transcribe_cpp as t
+from pathlib import Path
 
 MODEL = os.environ.get("STREAM_MODEL", os.path.expanduser(
     "~/.local/share/mseries/stream/models/parakeet-unified-en-0.6b-Q4_K_M.gguf"))
@@ -39,6 +40,15 @@ QUIET = bool(os.environ.get("STREAM_QUIET"))  # tests: no chimes, no notificatio
 KEY = int(os.environ.get("STREAM_KEY", "184"))  # KEY_F14
 THREADS = int(os.environ.get("STREAM_THREADS", "6"))
 CHUNK = 1600  # 100 ms of 16 kHz samples
+OUTPUT = os.environ.get('STREAM_OUTPUT', 'ydotool')  # IBus is opt-in until app acceptance passes
+INPUT_CLIENT = str(Path(__file__).with_name('dictation-input-client.py'))
+
+
+def input_call(method, token=None, text=None):
+    command = ['/usr/bin/python3', INPUT_CLIENT, method]
+    if token is not None:
+        command.append(token)
+    return subprocess.run(command, input=text, text=True, capture_output=True, timeout=3, check=True).stdout.strip()
 
 
 T0 = time.time()
@@ -121,13 +131,23 @@ class Typer(threading.Thread):
 
     def run(self):
         while True:
-            text = self.q.get()
+            text, token = self.q.get()
             if text and (os.environ.get("STREAM_TEST_WAV") or os.environ.get("STREAM_TEST_RAW") or DRY):
                 print(f"[{time.time() - T0:5.1f}s] type: {text!r}", flush=True)
             elif text:
-                subprocess.run(["ydotool", "type", "--key-delay", "2", "--", text],
-                               stderr=subprocess.DEVNULL)
+                try:
+                    if OUTPUT == 'ibus':
+                        input_call('commit', token, text)
+                    else:
+                        subprocess.run(["ydotool", "type", "--key-delay", "2", "--", text],
+                                       stderr=subprocess.DEVNULL)
+                except (subprocess.SubprocessError, OSError):
+                    log('dictation insertion refused; no keyboard fallback')
+                    notify('Dictation stopped: text-field focus changed or input method unavailable')
             self.q.task_done()
+
+    def submit(self, text, token):
+        self.q.put((text, token))
 
 
 class Dictation:
@@ -137,10 +157,17 @@ class Dictation:
         self.active = False
         self.worker = None
         self.stop_evt = threading.Event()
+        self.input_token = None
 
     def start(self):
         if self.active:
             return
+        if OUTPUT == 'ibus' and not (DRY or os.environ.get('STREAM_TEST_WAV') or os.environ.get('STREAM_TEST_RAW')):
+            try:
+                self.input_token = input_call('begin')
+            except (subprocess.SubprocessError, OSError):
+                notify('Select a normal text field with the Dictation input method')
+                return
         self.active = True
         self.stop_evt.clear()
         if not (os.environ.get("STREAM_TEST_WAV") or os.environ.get("STREAM_TEST_RAW")):
@@ -152,6 +179,14 @@ class Dictation:
     def stop(self):
         if self.active:
             self.stop_evt.set()
+
+    def cancel(self):
+        self.stop()
+        if OUTPUT == 'ibus':
+            try:
+                input_call('cancel')
+            except (subprocess.SubprocessError, OSError):
+                pass
 
     def run(self):
         test = os.environ.get("STREAM_TEST_WAV")  # offline test: play a file instead of the mic
@@ -205,7 +240,7 @@ class Dictation:
                         if up.committed_changed:
                             c = st.text().committed
                             if c.startswith(typed) and len(c) > len(typed):
-                                self.typer.q.put(c[len(typed):])
+                                self.typer.submit(c[len(typed):], self.input_token)
                                 typed = c
                 st.finalize()
                 final = st.text().display
@@ -214,7 +249,7 @@ class Dictation:
                 else:
                     rest = ""  # revised an already typed prefix: never retype or delete
                 if rest.strip():
-                    self.typer.q.put(rest)
+                    self.typer.submit(rest, self.input_token)
                 rms = (sq / max(n, 1)) ** 0.5
                 spread, active, floor = speech_stats(np.frombuffer(bytes(kept), np.int16).astype(np.float32) / 32768)
                 log(f"dictated {len(final)} chars in {time.time() - t0:.1f}s; audio peak {peak:.3f} rms {rms:.4f} "
@@ -225,7 +260,7 @@ class Dictation:
                     # streaming heard nothing but there was sound: let Whisper have one offline pass
                     redo = whisper_fallback(bytes(kept))
                     if redo and not DRY:
-                        self.typer.q.put(redo + " ")
+                        self.typer.submit(redo + " ", self.input_token)
                     elif redo:
                         print("fallback:", redo, flush=True)
                     final = redo or ""
@@ -262,6 +297,8 @@ def main():
         while True:
             raw = f.read(size)
             _, _, typ, code, val = struct.unpack(fmt, raw)
+            if typ == 1 and code == 1 and val == 1:  # Escape cancels pending IBus insertion
+                d.cancel()
             if typ == 1 and code == KEY:
                 if val == 1:
                     d.start()

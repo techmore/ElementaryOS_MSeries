@@ -15,6 +15,17 @@ instructions below are superseded for the owner's current host, not removed
 from factory/source tooling.
 
 
+## Universal speech-to-text priority — 2026-10-18
+
+Owner priority: universal F5 dictation, then deeper troubleshooting/optimization,
+then a low-overhead everyday machine assistant. Gmail is the preferred mail path;
+local Mail drafts remain optional and do not establish Gmail support. Native
+float32 capture fix b20c808 is installed with its upstream loopback evidence.
+New IBus Unicode/focus-bound insertion is prepared: five session contracts and
+an isolated real InputContext check pass. App-field checks, warning review,
+deployment and owner speech-to-app confirmation remain. Grammar/translation
+review is proposed. [Current scope and evidence](local-ai/SPEECH-INTEGRATION.md).
+
 ## Native full-height desktop and compact dock — 2026-10-18
 
 The [J314 native desktop profile](display-space/README.md) restores the 74-pixel
