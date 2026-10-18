@@ -34,4 +34,5 @@ if ldd "$work/build/src/libquick-settings.so" | grep -q 'not found'; then
 fi
 mseries_backup "$plugin" io.elementary.quick-settings
 sudo install -m644 "$work/build/src/libquick-settings.so" "$plugin"
+bash "$repo/mseries/install-bluetooth-control-center.sh"
 echo 'Installed keyboard brightness, screen brightness and the charge-limit switch and Bluetooth power/device controls plus the Sound Output list (built-in, Bluetooth, AirPlay) below the gear-menu toggles (the switch needs install-power.sh for its polkit action; AirPlay needs install-airplay-discovery.sh). Reload Wingpanel to activate.'

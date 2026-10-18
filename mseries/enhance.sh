@@ -331,7 +331,7 @@ mod_payload() {
   for f in install-desktop-space.sh install-dock-drawers.sh install-wingpanel-codexbar-left.sh \
            display-space/full_height_boot.py display-space/dock_profile.py \
            calendar/accounts lib-backup.sh lib-apt.sh install-brave.sh install-video-decode.sh video-decode/90-mseries-avd.conf video-decode/brave-youtube install-native-firefox.sh install-touchegg.sh \
-           install-network-throughput.sh install-quick-settings-brightness.sh \
+           install-network-throughput.sh install-quick-settings-brightness.sh install-bluetooth-control-center.sh \
            install-sound-indicator-fix.sh install-keyboard-indicator-fix.sh install-calendar-agenda.sh \
            install-files-portal-fix.sh install-gala-osk-fix.sh install-netusage-policy.sh install-battery-eta.sh \
            install-codexbar.sh install-brave-widevine.sh codexbar-opencode-local.py codexbar-accounts.py codexbar-claude.py codexbar_claude_history.py codexbar_cache.py codexbar-sessions.py codexbar-opencode-login.py deploy-codexbar.sh \
