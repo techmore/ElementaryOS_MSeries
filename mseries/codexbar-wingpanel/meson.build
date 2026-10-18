@@ -97,3 +97,11 @@ executable(
   dependencies: [libwingpanel_dep, granite_dep, json_dep, meson.get_compiler('c').find_library('m')],
   build_by_default: false,
 )
+
+executable(
+  'test-switch',
+  'Indicator.vala', 'AccountDialog.vala', 'PanelPreferences.vala', 'RefreshPolicy.vala',
+  'QuotaEta.vala', 'Presentation.vala', 'probe/test-switch.vala',
+  dependencies: [libwingpanel_dep, granite_dep, json_dep, meson.get_compiler('c').find_library('m')],
+  build_by_default: false,
+)

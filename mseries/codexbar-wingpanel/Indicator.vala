@@ -846,9 +846,9 @@ namespace MSeries {
         }
 
         /* Switch always answers on screen: success names the account, failure says why. Silence looked like "nothing happened". */
-        private void run_accounts_helper (string[] arguments) {
-            if (arguments.length < 2 || codex_switch_in_flight) return;
-            var email = arguments[1].split ("|")[0];
+        private void choose_codex_switch (owned string account_id) {
+            if (codex_switch_in_flight) return;
+            var email = account_id.split ("|")[0];
             var dialog = new Gtk.AlertDialog ("Switch ChatGPT to %s?", email);
             dialog.detail = "ChatGPT will close and reopen with this account. Finish running work first; unsaved drafts may be lost. CodexBar stays running.";
             dialog.buttons = { "Cancel", "Switch account" };
@@ -857,7 +857,7 @@ namespace MSeries {
             dialog.choose.begin (null, null, (obj, res) => {
                 try {
                     if (dialog.choose.end (res) == 1 && !codex_switch_in_flight) {
-                        switch_codex_account.begin (arguments);
+                        switch_codex_account.begin (account_id);
                     }
                 } catch (Error e) { }
             });
@@ -865,17 +865,13 @@ namespace MSeries {
 
         private bool codex_switch_in_flight = false;
 
-        private async void switch_codex_account (string[] arguments) {
+        private async void switch_codex_account (owned string account_id) {
             if (codex_switch_in_flight) return;
             codex_switch_in_flight = true;
             var ok = false;
             var message = "";
             try {
-                string[] command = { "python3", helper_path ("codexbar-accounts.py") };
-                foreach (var argument in arguments) {
-                    command += argument;
-                }
-                command += "--desktop";
+                string[] command = { "python3", helper_path ("codexbar-accounts.py"), "switch", account_id, "--desktop" };
                 var process = new GLib.Subprocess.newv (command, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_MERGE);
                 string output;
                 yield process.communicate_utf8_async (null, null, out output, null);
@@ -883,9 +879,18 @@ namespace MSeries {
                 try {
                     var parser = new Json.Parser ();
                     parser.load_from_data (output.strip (), -1);
-                    message = parser.get_root ().get_object ().get_string_member_with_default ("message", "");
+                    var root = parser.get_root ();
+                    if (root == null || root.get_node_type () != Json.NodeType.OBJECT) {
+                        ok = false;
+                        message = "The account helper returned an invalid response.";
+                    } else {
+                        var response = root.get_object ();
+                        ok = ok && response.get_boolean_member_with_default ("ok", false);
+                        message = response.get_string_member_with_default ("message", "");
+                    }
                 } catch (Error e) {
-                    message = output.strip ();
+                    ok = false;
+                    message = "The account helper returned an invalid response.";
                 }
             } catch (Error e) {
                 message = e.message;
@@ -941,7 +946,7 @@ namespace MSeries {
                     "Close and reopen ChatGPT with %s. CodexBar stays running.".printf (email)
                         + (account.get_boolean_member_with_default ("stale", false)
                             ? "\n\nShowing the previous quota: the latest refresh failed." : ""),
-                    () => run_accounts_helper ({ "switch", account_id }), windows, hint_id ("codex", account), account.get_string_member_with_default ("plan", ""), true, resets));
+                    () => choose_codex_switch (account_id), windows, hint_id ("codex", account), account.get_string_member_with_default ("plan", ""), true, resets));
             }
             return box;
         }
