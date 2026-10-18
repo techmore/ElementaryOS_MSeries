@@ -745,6 +745,13 @@ def summary_extra(conn):
             run["pct_start"] or 0, run["pct_end"] or 0, "%.1f W" % run["avg_w"] if run["avg_w"] else "—"))
     for item in top_culprits(rows, 3):
         out.append("app\t%s\t%.1f%% of CPU" % (item["name"], item["avg_cpu"]))
+    for dev in device_summary(conn):
+        shown = "%.0f%%" % dev["pct"] if dev["pct"] is not None else (dev["level"] or dev["status"] or "—")
+        extra = "about %.0f days left" % dev["days_left"] if dev["days_left"] else "since " + time.strftime("%a %d %b", time.localtime(dev["since"]))
+        out.append("device\t%s\t%s\t%s" % (dev["name"], shown, extra))
+    drain = standby_drain(conn, now - 14 * 86400)
+    if drain["pct_per_hour"] is not None:
+        out.append("stat\tSleep drain\t%.2f%% / h\tasleep %.0f h on battery" % (drain["pct_per_hour"], drain["hours"]))
     try:
         tips = suggestions(conn, rows)
     except Exception:

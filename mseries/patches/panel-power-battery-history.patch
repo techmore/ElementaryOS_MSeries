@@ -1,8 +1,8 @@
 diff --git a/src/Widgets/PopoverWidget.vala b/src/Widgets/PopoverWidget.vala
-index 587c11b..6d3d0c7 100644
+index 587c11b..0985891 100644
 --- a/src/Widgets/PopoverWidget.vala
 +++ b/src/Widgets/PopoverWidget.vala
-@@ -17,6 +17,236 @@
+@@ -17,6 +17,248 @@
   * Boston, MA 02110-1301, USA.
   */
  
@@ -148,6 +148,7 @@ index 587c11b..6d3d0c7 100644
 +        };
 +        var runs = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
 +        var apps = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
++        var devices = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
 +        string? tip_title = null;
 +        string? tip_body = null;
 +        for (var i = 3; i < lines.length; i++) {
@@ -176,6 +177,13 @@ index 587c11b..6d3d0c7 100644
 +                row.append (name);
 +                row.append (small_label (f[2], true, Gtk.Align.END));
 +                apps.append (row);
++            } else if (f[0] == "device" && f.length >= 4) {
++                var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
++                var name = small_label (f[1], false);
++                name.hexpand = true;
++                row.append (name);
++                row.append (small_label ("%s  %s".printf (f[2], f[3]), true, Gtk.Align.END));
++                devices.append (row);
 +            } else if (f[0] == "tip" && f.length >= 3) {
 +                tip_title = f[1];
 +                tip_body = f[2];
@@ -192,6 +200,10 @@ index 587c11b..6d3d0c7 100644
 +        if (apps.get_first_child () != null) {
 +            sections.append (title_label (_("Biggest CPU users on battery")));
 +            sections.append (apps);
++        }
++        if (devices.get_first_child () != null) {
++            sections.append (title_label (_("Accessories")));
++            sections.append (devices);
 +        }
 +        if (tip_title != null) {
 +            sections.append (title_label (_("Suggestion")));
@@ -239,7 +251,7 @@ index 587c11b..6d3d0c7 100644
  public class Power.Widgets.PopoverWidget : Gtk.Box {
      public bool is_in_session { get; construct; default = false; }
  
-@@ -90,8 +320,11 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
+@@ -90,8 +332,11 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
              text = _("Power Settings…")
          };
  
@@ -251,7 +263,7 @@ index 587c11b..6d3d0c7 100644
          append (device_list_revealer);
          append (device_separator_revealer);
  
-@@ -118,6 +351,12 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
+@@ -118,6 +363,12 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
  
          settings.bind ("show-percentage", show_percent_switch, "active", SettingsBindFlags.DEFAULT);
  
