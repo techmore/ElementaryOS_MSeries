@@ -716,11 +716,21 @@ namespace MSeries {
             var listed = accounts != null ? accounts.get_length () : 0;
             card.append (build_accounts_header ("Sign in to Claude Code, then save that login with claude-swap",
                 () => add_claude_account ()));
-            if (desktop != null && desktop.get_boolean_member_with_default ("installed", false)) {
-                var save_app = new Gtk.Button.with_label ("Save app login") {
-                    halign = Gtk.Align.START, tooltip_text = "Remember the Claude app's current sign-in for fast switching"
+            // The helper saves the Claude app's login by itself whenever it lists accounts, so a standing
+            // button is noise. Offer it only when the app's current login is not one of the saved accounts.
+            var app_installed = desktop != null && desktop.get_boolean_member_with_default ("installed", false);
+            var app_login_saved = false;
+            for (uint i = 0; i < listed; i++) {
+                if (accounts.get_object_element (i).get_boolean_member_with_default ("desktopActive", false)) {
+                    app_login_saved = true;
+                }
+            }
+            if (app_installed && (!app_login_saved || snapshot_error.length > 0)) {
+                var save_app = new Gtk.Button.with_label ("Save Claude app login") {
+                    halign = Gtk.Align.START, tooltip_text = "The Claude app's current sign-in isn't saved yet. Save it for fast switching."
                 };
-                save_app.add_css_class ("compact");
+                save_app.add_css_class ("flat");
+                save_app.add_css_class ("caption");
                 save_app.clicked.connect (() => {
                     popdown_from (save_app);
                     run_saver.begin ({ "python3", helper_path ("codexbar-claude.py"), "app-save" },
