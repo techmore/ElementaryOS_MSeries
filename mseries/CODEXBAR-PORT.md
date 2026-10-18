@@ -293,3 +293,32 @@ It retains a removed menu anchor until its popup is detached on switch/close. Th
 a reproduced use-after-finalization defect; see [crash evidence and tests](CODEXBAR-CRASH-2026-10-18.md).
 The installer stages the binary without restarting the live panel. Run
 `bash mseries/wingpanel-tests/run-popover-lifetime.sh` for the isolated four-case regression.
+
+### Performance boundaries and the quiet panel watch
+
+See [the 2026-10-18 audit](CODEXBAR-PERFORMANCE-AUDIT-2026-10-18.md) for measurements,
+remaining modularity work and activation limits. Shared `codexbar_history.py` streams
+OpenCode's displayed 30-day windows, with read-only queries and no new app DB indexes.
+`HelperProcess.vala` bounds disposable native read helpers; account actions retain their
+existing lifecycle. Helper completion repaints cached cards without extra snapshot IPC.
+Install/deploy/image payloads must include both `codexbar_history.py` and the token module.
+
+`python3 ~/.local/lib/codexbar-cli/codexbar-wingpanel-watch.py` reports panel/launcher
+health and new categorized journal/core events using a private bounded checkpoint.
+It never controls processes. The owner's five-minute chat heartbeat consumes that report
+and stays quiet while unchanged. Retain the distinction between an unexplained PID
+transition and a confirmed crash. The heartbeat requires the app/host to be available;
+it is not a continuous availability guarantee.
+
+### Token-first ChatGPT/Codex and Claude rows
+
+When seven-day totals are available, ChatGPT/Codex and Claude show them beside the
+provider mark on the top row. Active quota/reset details and alternate accounts share
+the second row. OpenCode retains its quota-first order. The native token probe checks
+vertical ordering and the two-row height; display preferences and missing-data fallbacks
+remain supported. As with other native changes, routine deployment stages this layout
+for next login without reloading a healthy panel.
+
+ChatGPT/Codex and Claude's token-first heading also includes the active seven-day
+percentage and its reset countdown. Five-hour and alternate-account details remain
+on the lower row. The token probe asserts the weekly values share the token heading.

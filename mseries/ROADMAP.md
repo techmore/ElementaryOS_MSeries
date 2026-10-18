@@ -33,6 +33,57 @@ finished ASR benchmarks. Next: commit/push candidate, verify exact-commit archiv
 and host preflight, record the owner's post-relaunch F5 result, then release only
 when that result passes. Preserve all owner main changes; one Git writer.
 
+## CodexBar weekly quota beside top-row tokens — 2026-10-18
+
+Owner clarified the top row must contain tokens AND the active seven-day percentage
+and reset countdown for both ChatGPT/Codex and Claude. Added those weekly values
+beside the token total; five-hour quota and alternate accounts stay below. Existing
+percentage/reset preferences and missing-data behavior apply. The bar digest includes
+weekly changes; the native probe verifies token/weekly percentage/reset share a row.
+All 15 native targets pass; two-row height remains <=32 px. No polling changes.
+
+The prior owner-requested single reload activated the previous build as PID 408824,
+with daemon PID 44641 preserved. Both survived 120 seconds without a new coredump
+or popup/accessibility errors. The known empty-FlowBox startup warning remains.
+This correction is staged by routine deployment; no additional reload is issued.
+
+## CodexBar: token totals lead ChatGPT/Codex and Claude — 2026-10-18
+
+Moved those providers' seven-day token counts to the top row beside their marks.
+Active quota/reset details and any alternate-account summaries share the lower row;
+OpenCode retains its quota-first layout. Missing totals retain the existing fallback,
+and display preferences/stale coloring remain respected. No helper or polling changes.
+All 15 native targets pass; the token probe now asserts actual vertical label positions
+for all three providers and the <=32 px two-row height. Light/dark and hidden-account
+renders checked. Routine deployment stages this native layout for next login without
+restarting Wingpanel; the quiet crash/launcher watch remains active.
+
+## CodexBar performance/modularity audit and quiet stability watch — 2026-10-18
+
+[Audit, evidence and remaining work](CODEXBAR-PERFORMANCE-AUDIT-2026-10-18.md).
+Shared read-only OpenCode history now filters the 30-day window before JSON decoding
+and streams period aggregation; no lifetime `fetchall`/record list. Synthetic unindexed
+20,000-old/100-recent-row comparison: equal totals, 371.25 → 17.56 ms median under
+tracemalloc, 46.96 → 0.01 MiB peak Python allocation. This is not a whole-panel benchmark.
+Native `HelperProcess` centralizes bounded asynchronous read helpers (5s snapshot,
+30s local, 120s account deadline, 4 MiB stdout); login/switch actions are excluded.
+Helper completion repaints cached data without extra snapshot IPC; session rendering
+uses already validated data. Common native source lists prevent probe/module drift.
+Backoff exponent arithmetic is bounded; effective retry policy/cadence is unchanged.
+Fifteen native targets, eight performance/watch regressions, helper/deployment and
+six image-wiring tests pass; full v0.77.0 live port/schema check passes.
+
+Installed `codexbar-wingpanel-watch.py`; this chat's “Watch Wingpanel stability”
+heartbeat runs every five minutes, quiet while unchanged. It observes the panel and
+Gala launcher, process identities/metrics and bounded categorized journal/core metadata;
+no raw core, environment, journal text or credentials are persisted, and it cannot
+restart the desktop. PID changes alone remain unclassified. No new core since the
+prior popup fix. Panel PID 335310 / Gala PID 2678 stayed healthy through 80.2 seconds,
+RSS 192,928 KiB, FDs 50; its earlier 14:23:25 restart has no crash attribution.
+Routine deployment installs Python improvements for their next invocation and stages
+the native performance changes for next login; no reload issued for this audit.
+Next: normal-use monitoring, then scoped account caching and large-transcript benchmarks.
+
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18
 
 Removed “local” from the seven-day panel/card labels and moved counting scope into
@@ -189,11 +240,18 @@ module loaded and the indicator toggle opened. An authenticated refresh returned
 85 repositories. The live query bug was fixed by using valid connection
 arguments and smaller pages. PR #175 is merged and active in the current desktop
 session; the new module was loaded after one Wingpanel restart, and the installed
-helper returned data from all eight detail categories. The panel's GH text badge
-has since been replaced by a bundled GitHub symbolic mark; GTK resolves it from
-the hicolor theme with current-theme tinting. UI parity follow-ups include
+helper returned data from all eight detail categories. The panel uses a bundled
+GitHub symbolic mark; GTK resolves it from the hicolor theme with current-theme
+tinting. UI parity follow-ups include
 traffic/cloner views, a heatmap visualization, multi-account controls, and
-launch-at-login settings. See `mseries/REPOBAR-PORT.md`.
+launch-at-login settings. The Wingpanel styling now matches CodexBar's compact
+elementary OS typography, card surfaces, and rounded action dock. Repository
+cards also show default-branch commit counts over rolling 1-hour, 24-hour, and
+30-day windows from the cached snapshot. The helper and module build/install
+completed, and a live refresh returned counts for all 85 repositories. The
+updated module is installed but no panel reload was performed, so its revised
+appearance and counts will load at the next login or later reload. See
+`mseries/REPOBAR-PORT.md`.
 
 ## Consistent CodexBar panel typography — 2026-10-18
 

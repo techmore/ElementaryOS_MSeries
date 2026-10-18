@@ -17,7 +17,7 @@ import sys
 import time
 from typing import Any
 
-import codexbar_tokens
+import codexbar_history
 
 
 def data_directory() -> pathlib.Path:
@@ -32,54 +32,18 @@ def read_usage(database: pathlib.Path, now_ms: int | None = None) -> dict[str, A
         return {"status": "unavailable", "message": "OpenCode v2 usage database was not found."}
 
     try:
-        connection = sqlite3.connect(f"file:{database}?mode=ro", uri=True, timeout=0.5)
-        connection.row_factory = sqlite3.Row
-        try:
-            columns = {row[1] for row in connection.execute("PRAGMA table_info(session_message)")}
-            if not {"type", "time_created", "data"}.issubset(columns):
-                return {"status": "unavailable", "message": "OpenCode usage database has an unsupported schema."}
-            rows = connection.execute(
-                """SELECT time_created, data
-                   FROM session_message
-                   WHERE type = 'assistant'
-                     AND json_valid(data)
-                     AND json_extract(data, '$.model.providerID') = 'opencode-go'
-                     AND json_type(data, '$.cost') IN ('integer', 'real')"""
-            ).fetchall()
-        finally:
-            connection.close()
+        periods, providers = codexbar_history.opencode_summary(
+            database, now_ms, provider="opencode-go", cost_only=True)
     except (sqlite3.Error, OSError) as error:
         return {"status": "unavailable", "message": f"Could not read OpenCode local history: {error}"}
 
-    records: list[tuple[int, float, int]] = []
-    for row in rows:
-        try:
-            data = json.loads(row["data"])
-            cost = float(data["cost"])
-            created_ms = int(row["time_created"])
-            total_tokens = codexbar_tokens.opencode_tokens(data.get("tokens"))
-            if created_ms > 0 and cost >= 0 and cost < float("inf") and total_tokens >= 0:
-                records.append((created_ms, cost, total_tokens))
-        except (TypeError, ValueError, OverflowError, KeyError, json.JSONDecodeError):
-            continue
-
-    if not records:
+    if not providers:
         return {
             "status": "empty",
-            "message": "No cost-bearing OpenCode Go assistant records yet.",
+            "message": "No cost-bearing OpenCode Go records in the last 30 days.",
             "updatedAt": iso_time(now_ms),
             "periods": [],
         }
-
-    periods = []
-    for label, duration_ms in (("5 hours", 5 * 60 * 60 * 1000), ("7 days", 7 * 24 * 60 * 60 * 1000), ("30 days", 30 * 24 * 60 * 60 * 1000)):
-        matching = [(cost, tokens) for created, cost, tokens in records if now_ms - duration_ms <= created <= now_ms]
-        periods.append({
-            "label": label,
-            "costUSD": round(sum(cost for cost, _ in matching), 6),
-            "requests": len(matching),
-            "tokens": sum(tokens for _, tokens in matching),
-        })
 
     return {
         "status": "available",

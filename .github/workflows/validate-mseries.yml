@@ -141,6 +141,7 @@ jobs:
           bash -n mseries/check-codexbar-port.sh
           python3 mseries/test-codexbar-cache.py
           python3 mseries/test-codexbar-sessions.py
+          python3 mseries/test-codexbar-performance.py
           python3 mseries/test-codexbar-accounts.py
           python3 mseries/test-codexbar-claude.py
           python3 mseries/test-codexbar-claude-history.py
