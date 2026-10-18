@@ -1,0 +1,143 @@
+diff --git a/src/Misc/ScreenshotManager.vala b/src/Misc/ScreenshotManager.vala
+index 8d7eb19..15566ad 100644
+--- a/src/Misc/ScreenshotManager.vala
++++ b/src/Misc/ScreenshotManager.vala
+@@ -46,6 +46,9 @@ public class Gala.ScreenshotManager : Object {
+         }
+     }
+ 
++    // Window chosen by a click in the area selector; used instead of the focused window.
++    private Meta.Window? window_override = null;
++
+     private Settings desktop_settings;
+     private GLib.HashTable<uint32, string?> notifications_id_to_path;
+ 
+@@ -149,8 +152,19 @@ public class Gala.ScreenshotManager : Object {
+             string filename_used = "";
+ 
+             int x, y, w, h;
+-            yield select_area_internal (out x, out y, out w, out h);
+-            yield screenshot_area_internal (x, y, w, h, true, filename, out success, out filename_used);
++            Meta.Window? picked_window;
++            yield select_area_internal (true, out x, out y, out w, out h, out picked_window);
++            if (picked_window != null) {
++                // macOS-style: a click on a window captures that window.
++                window_override = picked_window;
++                try {
++                    yield screenshot_window_internal (true, false, true, filename, out success, out filename_used);
++                } finally {
++                    window_override = null;
++                }
++            } else {
++                yield screenshot_area_internal (x, y, w, h, true, filename, out success, out filename_used);
++            }
+ 
+             if (success) {
+                 send_screenshot_notification.begin (filename_used);
+@@ -370,7 +384,7 @@ public class Gala.ScreenshotManager : Object {
+     private async void screenshot_window_internal (bool include_frame, bool include_cursor, bool flash, string filename, out bool success, out string filename_used) throws DBusError, IOError {
+         debug ("Taking window screenshot");
+ 
+-        var window = wm.get_display ().get_focus_window ();
++        var window = window_override ?? wm.get_display ().get_focus_window ();
+         if (window == null) {
+             unconceal_text ();
+             throw new DBusError.FAILED ("Cannot find active window");
+@@ -476,11 +490,44 @@ public class Gala.ScreenshotManager : Object {
+ 
+     public async void select_area (GLib.BusName sender, out int x, out int y, out int width, out int height) throws DBusError, IOError {
+         yield check_sender (sender);
+-        yield select_area_internal (out x, out y, out width, out height);
++        Meta.Window? unused;
++        yield select_area_internal (false, out x, out y, out width, out height, out unused);
++    }
++
++    private Meta.Window? window_at (float px, float py) {
++        unowned var display = wm.get_display ();
++        var workspace = display.get_workspace_manager ().get_active_workspace ();
++        var on_workspace = new SList<Meta.Window> ();
++        foreach (unowned var candidate in workspace.list_windows ()) {
++            on_workspace.prepend (candidate);
++        }
++
++        // sort_windows_by_stacking is bottom to top; keep the last (topmost) window under the point.
++        Meta.Window? found = null;
++        foreach (unowned var window in display.sort_windows_by_stacking (on_workspace)) {
++            if (window.minimized || window.is_override_redirect ()) {
++                continue;
++            }
++
++            var type = window.window_type;
++            if (type != Meta.WindowType.NORMAL && type != Meta.WindowType.DIALOG &&
++                type != Meta.WindowType.MODAL_DIALOG && type != Meta.WindowType.UTILITY) {
++                continue;
++            }
++
++            var rect = window.get_frame_rect ();
++            if (px >= rect.x && px < rect.x + rect.width && py >= rect.y && py < rect.y + rect.height) {
++                found = window;
++            }
++        }
++
++        return found;
+     }
+ 
+-    private async void select_area_internal (out int x, out int y, out int width, out int height) throws DBusError, IOError {
++    private async void select_area_internal (bool allow_window_pick, out int x, out int y, out int width, out int height, out Meta.Window? picked_window) throws DBusError, IOError {
++        picked_window = null;
+         var selection_area = new SelectionArea (wm);
++        selection_area.allow_click_pick = allow_window_pick;
+         selection_area.closed.connect (() => Idle.add (select_area_internal.callback));
+         wm.ui_group.add_child (selection_area);
+         selection_area.start_selection ();
+@@ -493,6 +540,17 @@ public class Gala.ScreenshotManager : Object {
+         }
+ 
+         yield wait_stage_repaint ();
++
++        if (selection_area.picked) {
++            picked_window = window_at (selection_area.picked_point.x, selection_area.picked_point.y);
++            if (picked_window == null) {
++                throw new GLib.IOError.CANCELLED ("No window at the clicked point");
++            }
++
++            x = y = width = height = 0;
++            return;
++        }
++
+         var rect = selection_area.get_selection_rectangle ();
+         x = (int) GLib.Math.roundf (rect.origin.x);
+         y = (int) GLib.Math.roundf (rect.origin.y);
+diff --git a/src/Widgets/SelectionArea.vala b/src/Widgets/SelectionArea.vala
+index 87244b3..6723065 100644
+--- a/src/Widgets/SelectionArea.vala
++++ b/src/Widgets/SelectionArea.vala
+@@ -12,6 +12,11 @@ public class Gala.SelectionArea : CanvasActor {
+ 
+     public bool cancelled { get; private set; }
+ 
++    // When set, a plain click (no drag) picks the point instead of cancelling.
++    public bool allow_click_pick { get; set; default = false; }
++    public bool picked { get; private set; default = false; }
++    public Graphene.Point picked_point { get; private set; }
++
+     private ModalProxy? modal_proxy;
+     private Graphene.Point start_point;
+     private Graphene.Point end_point;
+@@ -66,7 +71,15 @@ public class Gala.SelectionArea : CanvasActor {
+ 
+         if (!dragging) {
+             close ();
+-            cancelled = true;
++            if (allow_click_pick && clicked) {
++                float px, py;
++                e.get_coords (out px, out py);
++                picked_point = { px, py };
++                picked = true;
++                this.hide ();
++            } else {
++                cancelled = true;
++            }
+             closed ();
+             return true;
+         }
