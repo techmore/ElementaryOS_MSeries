@@ -1,5 +1,11 @@
 # OS 9 implementation / Claude Code handoff
 
+## Battery panel in first boot — 2026-10-18 (Claude Code)
+
+`install-battery-eta.sh` added to the payload and to `enhance-firstboot.sh` as `battery-panel` (default on, with build
+deps; skipped, not forced, if the Power indicator is not 8.0.2). `post-install.sh` gained a `battery` row. Staging verified
+with `enhance.sh --only payload`; no first-boot run happened and the factory image is still unbooted.
+
 ## Battery image integration — 2026-10-18 (Claude Code)
 
 `enhance.sh` gains a `battery` module (default on); `battery/test_battery_enhance.py` stages it into a scratch root and
