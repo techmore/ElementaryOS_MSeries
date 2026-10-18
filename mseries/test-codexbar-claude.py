@@ -480,6 +480,41 @@ class ClaudeTest(unittest.TestCase):
             self.assertTrue(MODULE.app_switch("uuid-work", "cswap", "1")[0])
         self.assertEqual(events, ["stop-app", "switch-cli", "launch-app"])
 
+    def test_matching_desktop_hint_still_restores_saved_target_and_restarts(self):
+        # The config hint can name the requested account while the running UI
+        # still uses another session. Preserve the target loaded before capture.
+        for number in (None, "2"):
+            with self.subTest(number=number):
+                self.app_session(ME, "saved-target-encrypted")
+                with closing(sqlite3.connect(MODULE.cookie_path())) as db, db:
+                    db.execute("UPDATE cookies SET encrypted_value=?", (b"live-other-encrypted",))
+                events = []
+                restore = MODULE.restore_app
+
+                def do_restore(session):
+                    self.assertEqual(events, ["stop"])
+                    restore(session)
+                    with closing(sqlite3.connect(MODULE.cookie_path())) as db:
+                        self.assertEqual(db.execute("SELECT encrypted_value FROM cookies").fetchone()[0],
+                                         b"saved-target-encrypted")
+                    events.append("restore")
+
+                def do_cli(cli, account):
+                    self.assertEqual(events, ["stop", "restore"])
+                    self.assertEqual(account, "2")
+                    events.append("cli")
+                    return True, "done"
+
+                with mock.patch.object(MODULE, "stop_app", side_effect=lambda: events.append("stop") or True), \
+                     mock.patch.object(MODULE, "restore_app", side_effect=do_restore), \
+                     mock.patch.object(MODULE, "switch", side_effect=do_cli) as cli, \
+                     mock.patch.object(MODULE, "launch_app", side_effect=lambda: events.append("launch")):
+                    ok, message = MODULE.app_switch("uuid-me", "cswap", number)
+                self.assertTrue(ok, message)
+                self.assertEqual(events, ["stop", "restore"] + (["cli"] if number else []) + ["launch"])
+                if number is None:
+                    cli.assert_not_called()
+
     def test_relaunch_drops_inherited_claude_oauth_environment(self):
         with mock.patch.dict(MODULE.os.environ, {"CLAUDE_CODE_OAUTH_TOKEN": SECRET}), \
              mock.patch.object(MODULE.subprocess, "Popen", return_value=mock.Mock()) as run, \

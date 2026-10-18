@@ -1,5 +1,32 @@
 # OS 9 implementation / Claude Code handoff
 
+## Claude desktop Switch no-op investigation and fix — 2026-10-18
+
+Owner clarified that confirming Switch never closes/reopens the main Claude app.
+A delegated investigation found the Indicator passes --desktop correctly and
+installed process matching points at the running main app. Saved desktop bundles
+have distinct non-expired session cookies; only sanitized identity/presence metadata
+was inspected, with no credential values printed or live account changes.
+
+Reproduced a concrete pre-stop no-op: app_switch returned early when config and
+capture UUIDs matched the target, calling only the CLI switch. Those UUIDs derive
+from lastKnownAccountUuid, a persisted hint rather than authenticated UI identity.
+Removed that shortcut. An explicit desktop switch now validates the target, stops
+the app, restores the pre-capture saved target, switches CLI if requested, and
+relaunches even when local hints match. Existing rollback and history checks stay.
+Regression verifies both app-only and combined flows restore the actual saved
+cookie fixture and invoke stop/restore/(CLI)/launch. All 40 Claude helper tests and
+15 history tests pass. No live Claude shutdown, switch, or session write was used
+for investigation/testing. This faulty path is reproduced in isolation; attribution
+to the owner's exact click and authenticated main-UI success remain unverified.
+Next: owner retries Switch and confirms the main UI identity; do not infer that
+identity from lastKnownAccountUuid or process existence alone.
+
+Helper takes effect on the next Switch after routine deployment, without any
+panel reload. Dot-mode hover-only reset code is installed but loads next login.
+Quiet Wingpanel/Gala watch remains healthy (panel491179, Gala2678, daemon44641).
+
+
 ## CodexBar dot mode: reset details on hover — 2026-10-18
 
 Dot mode now omits bar reset countdowns for active five-hour/weekly quotas and

@@ -387,8 +387,9 @@ def app_switch(uuid: str, cli: str | None = None, number: str | None = None) -> 
             target = load_session(uuid)  # validate before stopping the app or changing the CLI
             current = read_json(app_root() / "config.json").get("lastKnownAccountUuid", "")
             captured = capture_app()
-            if current == uuid and captured == uuid:
-                return switch(cli, number) if number else (True, "The Claude app already uses this account.")
+            # lastKnownAccountUuid is only a persisted hint, not proof of the
+            # running UI's identity. An explicit desktop switch must still stop,
+            # restore the validated target and relaunch, even when hints match.
             if not captured:
                 current = read_json(session_root() / "pending-login.json").get("previous", "")
             if not current:

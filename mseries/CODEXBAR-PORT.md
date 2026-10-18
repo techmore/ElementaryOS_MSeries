@@ -344,3 +344,7 @@ In visual dot mode, reset countdowns are hover-only on both bar rows, regardless
 of the literal-mode reset visibility preference. Active dot hover reports the
 measured percentage and reset state; alternate-account hover retains every window.
 The dropdown and literal mode still honor the existing reset preference.
+
+Explicit Claude desktop switches always stop/restore/relaunch after target
+validation, even when local account UUID hints match. Persisted identity hints
+and process existence do not verify the account authenticated by the main UI.
