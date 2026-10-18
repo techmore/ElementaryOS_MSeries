@@ -38,6 +38,10 @@ class ClaudeTest(unittest.TestCase):
     """Every test runs against a fake HOME: the helper reads ~/.claude.json and the desktop app's config."""
 
     def setUp(self):
+        summary = mock.patch.object(MODULE.handoff, "summarize", return_value=("Fixture handoff: goal, progress, next steps.", "model-summary"))
+        summary.start()
+        self.addCleanup(summary.stop)
+
         import tempfile
         self._home = tempfile.TemporaryDirectory()
         self.home = pathlib.Path(self._home.name)
@@ -299,6 +303,31 @@ class ClaudeTest(unittest.TestCase):
         self.assertTrue(ok, message)
         self.assertEqual(events, ["stop", "export", "import", "cli", "launch"])
         self.assertIn("1 local Code conversation added", message)
+
+    def test_handoff_is_saved_before_account_change_and_seeded_before_relaunch(self):
+        self.app_session(WORK, "work-encrypted")
+        self.app_session(ME, "me-encrypted")
+        self.code_history()
+        events = []
+        prepare, install = MODULE.handoff.prepare, MODULE.handoff.install
+        def build(*args):
+            self.assertEqual(MODULE.read_json(MODULE.app_root() / "config.json")["lastKnownAccountUuid"], "uuid-me")
+            brief = prepare(*args)
+            self.assertTrue((brief["folder"] / "handoff.md").is_file())
+            events.append("summary-before-auth-change")
+            return brief
+        def seed(plan, brief):
+            self.assertEqual(MODULE.read_json(MODULE.app_root() / "config.json")["lastKnownAccountUuid"], "uuid-work")
+            install(plan, brief)
+            events.append("fresh-seed")
+        with mock.patch.object(MODULE, "stop_app", return_value=True), \
+             mock.patch.object(MODULE.handoff, "prepare", side_effect=build), \
+             mock.patch.object(MODULE.handoff, "install", side_effect=seed), \
+             mock.patch.object(MODULE, "launch_app", side_effect=lambda: events.append("launch")):
+            ok, message = MODULE.app_switch("uuid-work")
+        self.assertTrue(ok, message)
+        self.assertEqual(events, ["summary-before-auth-change", "fresh-seed", "launch"])
+        self.assertIn("fresh Code conversation", message)
 
     def test_history_export_failure_restores_original_sign_in(self):
         self.app_session(WORK, "work-encrypted")

@@ -354,3 +354,15 @@ account windows share the lower row. Token location remains independently set.
 
 Numeric dot-mode percentages now appear below 15% in bold red (superseding the
 earlier below-10 rule). The green/yellow/red dot thresholds are unchanged.
+
+## Claude switch handoff extension
+
+Ship codexbar_claude_handoff.py alongside the history helper in installers, deploy
+and image payloads. Cross-account app Switch saves a private brief before auth
+changes and registers a fresh handoff-only Code conversation. A45-second tool-free
+Claude Code safe-mode call summarizes recent visible text; unavailable/mismatched
+login or exhausted quota produces labeled emergency excerpts. Originals stay intact.
+The native completion dialog offers a local GitHub review window. Only its explicit
+Publish action sends edited text to the workspace origin in a separate branch/draft
+PR. Emergency excerpts never automatically become public. No extra polling/service.
+See CODEXBAR-CLAUDE-HISTORY.md for qualifications and limits.
