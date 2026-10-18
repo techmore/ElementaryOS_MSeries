@@ -91,3 +91,6 @@ hint_accounts["claude"]["accounts"][1]["windows"] = [
 hint_accounts["codex"]["accounts"][1]["windows"][1] = window("secondary", "7 day", 10080, 62, 45)
 for provider, value in hint_accounts.items():
     (here / f"accounts-{provider}-hints.json").write_text(json.dumps(value))
+
+(here / "opencode-compact.json").write_text(json.dumps(scenarios["connected"], indent=1))
+(here / "accounts-opencode-single.json").write_text(json.dumps({"accounts": [accounts["opencode"]["accounts"][0]]}))

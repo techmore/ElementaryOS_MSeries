@@ -255,6 +255,9 @@ namespace MSeries {
                 ".mseries-codexbar-bar .seg-value { font-weight: 700; } " +
                 ".mseries-codexbar-bar .seg-reset { font-size: 7.5pt; opacity: 0.7; } " +
                 ".mseries-codexbar-bar .seg-secondary { font-size: 7.5pt; } " +
+                ".mseries-codexbar-bar .seg-opencode .seg-value { font-size: 7.5pt; } " +
+                ".mseries-codexbar-bar .seg-opencode .seg-reset { font-size: 7pt; } " +
+                ".mseries-codexbar-bar .seg-opencode .seg-secondary { font-size: 6.75pt; } " +
                 ".mseries-codexbar-bar .level-low { color: @warning_color; } " +
                 ".mseries-codexbar-bar .level-critical { color: @error_color; } " +
                 ".mseries-codexbar-bar .provider-mark { opacity: 0.92; } " +
@@ -1334,7 +1337,8 @@ namespace MSeries {
                     if (provider == "opencodego") {
                         var local_tokens = opencode_week_tokens ();
                         if (local_tokens.length > 0) {
-                            value_text += " · " + local_tokens + " tok";
+                            // Keep the primary row compact; local tokens use the lower row when
+                            // there is no alternate account, and remain in this tooltip in either case.
                             section.append ("\n  " + local_tokens + " local tokens in 7 days (all local accounts)");
                         }
                     }
@@ -1396,6 +1400,7 @@ namespace MSeries {
 
             var digest = new StringBuilder ();
             digest.append (hints_digest);
+            digest.append (opencode_week_tokens ());
             foreach (var provider in new string[] { "codex", "claude", "opencodego" }) {
                 digest.append (alternate_account_text (provider, now_unix));
             }
@@ -1423,7 +1428,8 @@ namespace MSeries {
 
         private Gtk.Widget build_panel_segment (string provider, string value_text, string reset_text,
                                                        QuotaLevel level, bool stale) {
-            var segment = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3);
+            var segment = new Gtk.Box (Gtk.Orientation.HORIZONTAL, provider == "opencodego" ? 2 : 3);
+            if (provider == "opencodego") segment.add_css_class ("seg-opencode");
             if (stale) segment.add_css_class ("stale");
             var mark = build_provider_mark (provider, provider_title (provider));
             var icon = mark as Gtk.Image;
@@ -1449,12 +1455,22 @@ namespace MSeries {
                 segment.append (reset);
             }
             var alternate = alternate_account_text (provider, new DateTime.now_utc ().to_unix ());
-            if (!display_preferences.get_bool ("showAccounts") || alternate.length == 0 ||
+            var show_alternate = display_preferences.get_bool ("showAccounts") && alternate.length > 0;
+            var local_tokens = provider == "opencodego" && level != QuotaLevel.UNKNOWN
+                && display_preferences.get_bool ("showPercent") ? opencode_week_tokens () : "";
+            if ((!show_alternate && local_tokens.length == 0) ||
                 (!display_preferences.get_bool ("showPercent") && !display_preferences.get_bool ("showReset"))) return segment;
             var stack = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { valign = Gtk.Align.CENTER };
+            if (provider == "opencodego") stack.add_css_class ("seg-opencode");
             stack.append (segment);
             var label = new Gtk.Label (null) { xalign = 0, use_markup = true };
             label.add_css_class ("seg-secondary");
+            if (!show_alternate) {
+                label.label = "7d · %s tok".printf (local_tokens);
+                label.tooltip_text = "Local tokens in seven days across all local accounts; not account quota";
+                stack.append (label);
+                return stack;
+            }
             var markup = new StringBuilder ();
             var accounts = provider_accounts (provider);
             for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
