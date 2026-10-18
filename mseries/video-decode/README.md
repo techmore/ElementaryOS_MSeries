@@ -46,3 +46,6 @@ nothing else (verified: `busctl --system tree org.bluez` works inside, other bus
 Passkeys created on an iPhone live in iCloud Keychain and are used through that QR flow, so signing in
 this way needs the phone nearby with Bluetooth on. Browser-stored passwords/passkeys are not synced from iCloud;
 see `../BUG-FIX-ROADMAP.md` (iCloud passwords evaluation) for the unofficial options.
+
+**Owner-verified 2026-10-18:** after the BlueZ proxy fix, the passkey QR-code flow worked in `brave-youtube` and
+the owner signed in (iPhone approving the sign-in). Hardware decode inside the container is still unconfirmed.
