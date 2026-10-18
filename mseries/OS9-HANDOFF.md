@@ -98,6 +98,38 @@ The release build is installed; real task/event row comparisons are read-only
 and pass. Six image-wiring tests pass. No personal task was completed by tests.
 [Behavior and tests](calendar/README.md#completing-tasks-in-the-panel).
 
+## Native Dictation deployed; owner F5-to-field pass — 2026-10-18
+
+The qualified lazy CPU speech controller, Unicode bridge and optional Dictation
+launcher are installed. Private preflight verified idle capture, unchanged managed
+preferences, source integrity and quiet admission; original ledger/backups remain
+private. Fresh listener RSS was32.67MiB with no native SDK mapped. This is a fresh
+startup observation, not after-use RSS: native close tests retained121–188MiB.
+SpeechPID918340 and bridgePID918315 are active at this checkpoint. The default4B
+endpoint independently returned200 after guarded recovery (supervisorPID936091);
+no new inference was submitted. Its reserve guard may stop it again under load.
+
+The owner opened Dictation and reports words appearing in Original transcript after
+physical F5 speech. This is a human acceptance pass for that app path. It does not
+prove every app, multilingual capture, latency or general accuracy. The earlier
+microphone-popup failure remains retained with unknown original cause. No agent
+microphone recording, owner window opening or real spoken content was collected.
+
+A new installed-panel regression exposed a disabled focus-retry action after field
+errors/waiting. The original failure is retained. The fixed panel keeps this focus-only
+action available except during loading/listening/finishing; private native GTK4 tests
+verify actual focus movement against fixed and installed files.46 contracts pass.
+Sanitized deployment, failed/fixed/installed receipts and human report are in
+`local-ai/receipts/dictation-deployment-2026-10-18/`; private settings/backups/logs
+are excluded. Earlier model quality failures remain unchanged. No owner jobs,
+kernel/boot/audio/display or other windows were changed.
+
+Remaining goal: optional translated previews while speaking, then final grammar
+after release. Current translation is post-utterance only; do not claim a live
+interpreter or completion. Use the existing supervised4B, one bounded request at
+a time, original visible, six-GiB reserve and cooling guards. Existing six-hour
+upstream tracking stays active; no duplicate watcher or GPU queue.
+
 ## Speech/app candidate published on main; physical F5 and rollout remain open — 2026-10-18
 
 PR86 merged at077bfe58013f110962d24f60a38b122bd6a05d90. Checked sourcecbc47ed passed
