@@ -18,6 +18,7 @@ from dictation_model import LazyModel, ModelHeadroom
 
 MODEL = os.environ.get("STREAM_MODEL", os.path.expanduser(
     "~/.local/share/mseries/stream/models/parakeet-unified-en-0.6b-Q4_K_M.gguf"))
+UNVERIFIED_FALLBACK = os.environ.get("STREAM_UNVERIFIED_FALLBACK", "1") == "1"  # ydotool when the focused app exposes no accessible field
 ENGINE = os.environ.get("STREAM_ENGINE", "stream")  # "ane": Parakeet on the Neural Engine, typed after release
 SOURCE = os.environ.get("STREAM_SOURCE", "direct")  # "direct" = ALSA hw capture, or a PipeWire node name
 CARD = os.environ.get("STREAM_CARD", "hw:1,0")
@@ -169,7 +170,7 @@ class Typer(threading.Thread):
                 print(f"[{time.time() - T0:5.1f}s] type: {text!r}", flush=True)
             elif text:
                 try:
-                    if OUTPUT == 'ibus':
+                    if OUTPUT == 'ibus' and token:
                         input_call('commit', token, text)
                     else:
                         subprocess.run(["ydotool", "type", "--key-delay", "2", "--", text],
@@ -251,11 +252,16 @@ class Dictation:
             if OUTPUT == 'ibus' and (TEST_INSERT or not (DRY or test)):
                 try:
                     self.input_token = input_call('begin')
-                except (subprocess.SubprocessError, OSError):
-                    self.error = 'InputUnavailable'
-                    log('dictation input refused before microphone capture')
-                    notify('Dictation needs a supported editable text field. Focus the editor and try F5 again.')
-                    return
+                except (subprocess.SubprocessError, OSError) as refusal:
+                    # An app that exposes no accessibility tree (Electron, some Qt) cannot be verified;
+                    # the owner allowed typing there. Sensitive, non-editable or cancelled refusals stay hard.
+                    if UNVERIFIED_FALLBACK and 'UNVERIFIED-FIELD' in (getattr(refusal, 'stderr', '') or ''):
+                        log('focused field not verifiable; typing through ydotool for this session')
+                    else:
+                        self.error = 'InputUnavailable'
+                        log('dictation input refused before microphone capture')
+                        notify('Dictation needs a supported editable text field. Focus the editor and try F5 again.')
+                        return
             if self.stop_evt.is_set(): return
             if not self.models.loaded:
                 status('loading')

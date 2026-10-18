@@ -42,7 +42,11 @@ def main():
     try:
         result = connection.call_sync('org.techmore.DictationInput', '/org/techmore/DictationInput',
             'org.techmore.DictationInput', method, args, None, Gio.DBusCallFlags.NO_AUTO_START, 4000, None)
-    except GLib.Error:
+    except GLib.Error as error:
+        # The only refusal an unfocused/inaccessible app can cause is "no accessible field": say so
+        # distinctly so the controller may fall back to typing. Anything else stays a hard refusal.
+        if method == 'Begin' and ('No accessible focused field' in str(error) or 'metadata unavailable' in str(error)):
+            raise SystemExit('UNVERIFIED-FIELD: no accessible focused field')
         raise SystemExit('Dictation input unavailable, sensitive, cancelled or focus changed')
     if method == 'Ready' and not result.unpack()[0]: raise SystemExit('Dictation input is not ready')
     if method == 'Begin':
