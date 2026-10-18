@@ -12,11 +12,11 @@ import battery_core as core  # noqa: E402
 FULL = 60_000_000  # 60 Wh in µWh
 
 
-def row(ts, pct, watts, cpu=10.0, ac=0, bright=50.0, top=None):
+def row(ts, pct, watts, cpu=10.0, ac=0, bright=50.0, top=None, profile="balanced"):
     return {"ts": ts, "status": "Charging" if ac else "Discharging", "ac": ac, "pct": pct,
             "energy_uwh": int(FULL * pct / 100), "full_uwh": FULL, "batt_w": -watts, "sys_w": watts,
             "cpu_pct": cpu, "cpu_mhz": 1500.0, "load1": 1.0, "temp_c": 30.0, "bright_pct": bright,
-            "top": json.dumps(top or [["firefox", cpu / 2]])}
+            "top": json.dumps(top or [["firefox", cpu / 2]]), "profile": profile}
 
 
 class CoreTests(unittest.TestCase):
@@ -130,6 +130,29 @@ class CoreTests(unittest.TestCase):
         text = core.report_markdown(conn, 1)
         self.assertIn("# Battery report", text)
         self.assertIn("Unplugged runs", text)
+
+    def test_profile_breakdown_compares_at_same_load(self):
+        rows = [row(i * 15, 90, 6.0, cpu=3, profile="balanced") for i in range(60)]
+        rows += [row(2000 + i * 15, 80, 4.5, cpu=3, profile="power-saver") for i in range(60)]
+        found = {p["profile"]: p for p in core.profile_breakdown(rows)}
+        self.assertAlmostEqual(found["balanced"]["idle_w"], 6.0)
+        self.assertAlmostEqual(found["power-saver"]["idle_w"], 4.5)
+
+    def test_suggestions_are_backed_by_data(self):
+        conn = core.connect(os.path.join(tempfile.mkdtemp(), "h.db"))
+        self.assertEqual(core.suggestions(conn, [row(i, 90, 5.0) for i in range(10)]), [])  # too little data
+        rows = [row(i * 15, 90, 7.5, cpu=10, bright=90, top=[["brave", 12.0]]) for i in range(150)]
+        rows += [row(5000 + i * 15, 85, 5.5, cpu=10, bright=40, top=[["brave", 12.0]]) for i in range(150)]
+        kinds = {t["kind"] for t in core.suggestions(conn, rows)}
+        self.assertIn("display", kinds)
+        self.assertIn("app", kinds)
+        self.assertIn("profile", kinds)
+
+    def test_config_roundtrip(self):
+        core.CONFIG_PATH = os.path.join(tempfile.mkdtemp(), "c.json")
+        config = dict(core.DEFAULT_CONFIG, alert_watts=22.0)
+        core.save_config(config)
+        self.assertEqual(core.load_config()["alert_watts"], 22.0)
 
     def test_fmt_hours(self):
         self.assertEqual(core.fmt_hours(7.5), "7h 30m")

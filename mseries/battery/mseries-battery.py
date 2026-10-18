@@ -8,6 +8,7 @@
   mseries-battery apps [days]       estimated energy by app while on battery
   mseries-battery charging [days]   charging runs and standby drain
   mseries-battery health            capacity and cycle trend by day
+  mseries-battery tips [days]       suggestions backed by your own samples, and power-profile comparison
   mseries-battery report [days]     Markdown report on stdout (e.g. > battery.md)
   mseries-battery export [days]     samples as CSV on stdout
 """
@@ -107,6 +108,16 @@ def main(argv):
         for day in core.health_trend(conn):
             print("%s  %.1f Wh  %4.1f%% of design  %d cycles" % (day["day"], day["full_uwh"] / 1e6,
                   100.0 * day["full_uwh"] / day["design_uwh"] if day["design_uwh"] else 0, day["cycles"]))
+    elif command == "tips":
+        rows = core.fetch(conn, int(time.time() - days_arg(rest, 14) * 86400))
+        for item in core.profile_breakdown(rows):
+            print("%-12s %7s on battery  avg %.1f W  idle %s  light %s" % (
+                item["label"], core.fmt_hours(item["hours"]), item["avg_w"],
+                "%.1f W" % item["idle_w"] if item["idle_w"] else "—", "%.1f W" % item["light_w"] if item["light_w"] else "—"))
+        tips = core.suggestions(conn, rows)
+        print("" if tips else "\nNo suggestions yet (needs an hour or more on battery).")
+        for tip in tips:
+            print("* %s\n  %s" % (tip["title"], tip["body"]))
     elif command == "report":
         print(core.report_markdown(conn, days_arg(rest, 14)))
     elif command == "export":

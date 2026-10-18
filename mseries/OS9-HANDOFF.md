@@ -1,5 +1,13 @@
 # OS 9 implementation / Claude Code handoff
 
+## Battery pass 3 — 2026-10-18 (Claude Code)
+
+Battery: per-sample power profile (schema migrates in place), profile comparison at matching CPU load, data-backed
+suggestions (`mseries-battery tips`, Overview, report), Preferences window for the drain alert. 16 unit tests pass;
+rendered headless on synthetic data (profiles and brightness seeded by hand). **Unverified:** suggestion wording on
+real data, Preferences on the live desktop. Possible next: open the app from the panel battery icon (needs a
+panel-power patch, not started).
+
 ## Screenshots v2: Space for window mode, 4 s thumbnail — 2026-10-18 (Claude Code)
 
 Corrects the earlier click-to-capture: Command+Shift+4 drags an area, **Space** switches to window mode (the window
