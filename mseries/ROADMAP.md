@@ -1,5 +1,12 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## YouTube launcher logo — 2026-10-18
+
+The contained Brave YouTube shortcut uses a bundled scalable YouTube play-button
+icon, also installed for the current user. Desktop entry, SVG and GTK icon lookup
+checks pass; live dock appearance after reopening remains to confirm.
+[Installation instructions](video-decode/README.md#youtube-launcher-icon--2026-10-18).
+
 ## Dock-aware window space — 2026-10-18
 
 Visible dock space is reserved by the native compositor; hiding returns it to

@@ -75,3 +75,23 @@ YouTube Movies (for example *Edge of Tomorrow*) said "your browser can't play th
 profile had no Widevine. The launcher now copies the normal profile's Widevine CDM into its profile and opts in,
 before Brave starts (skipped while the window is open). See `../BRAVE-WIDEVINE.md`. Not yet verified with a
 movie playing in the container.
+
+## YouTube launcher icon — 2026-10-18
+
+`brave-youtube.desktop` uses `mseries-youtube`, the bundled scalable red play-button
+logo in `mseries-youtube.svg` (drawn here as SVG; no external artwork dependency).
+Install the icon for the current user from the repository root:
+
+```sh
+install -Dm644 mseries/video-decode/mseries-youtube.svg \
+  "$HOME/.local/share/icons/hicolor/scalable/apps/mseries-youtube.svg"
+gtk-update-icon-cache --force --ignore-theme-index "$HOME/.local/share/icons/hicolor"
+```
+
+For a new menu shortcut, copy `brave-youtube.desktop` to
+`~/.local/share/applications/mseries-brave-youtube.desktop` and adjust its `Exec`
+path if the checkout is elsewhere. For an existing shortcut, change only its
+`Icon` line to `Icon=mseries-youtube`, preserving its launch command and profile.
+Refresh the application database with `update-desktop-database
+~/.local/share/applications`. The running Brave window may retain its old icon
+until it is reopened; playback and decode settings are unchanged.

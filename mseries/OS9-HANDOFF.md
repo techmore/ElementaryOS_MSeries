@@ -1,5 +1,15 @@
 # OS 9 implementation / Claude Code handoff
 
+## YouTube launcher logo — 2026-10-18
+
+The contained hardware-decode Brave launcher now uses `Icon=mseries-youtube`
+and a bundled scalable red YouTube play-button SVG. Icon installation and existing
+shortcut update instructions are in `video-decode/README.md`. The owner's installed
+shortcut and per-user hicolor icon were updated without changing Exec or playback.
+Verification: desktop-file validation, SVG XML/geometry checks and GTK icon lookup
+pass. A running window may need reopening to pick up the icon; visual confirmation
+in the live dock remains open. Next: confirm the launcher/dock icon after reopening.
+
 ## Dock-aware window space installed — 2026-10-18
 
 Owner requested that visible dock space be unavailable to windows and reclaimed
