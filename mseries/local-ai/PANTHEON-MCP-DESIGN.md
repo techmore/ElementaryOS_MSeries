@@ -27,6 +27,16 @@ Current Calendar/browser/Mail results remain in [app integration](APP-INTEGRATIO
 
 The [Omarchy Mac/MX and MLX feature comparison](UPSTREAM-FEATURE-COMPARISON.md) pins current source revisions, compares notification/agent/voice contracts and serving options, and separates locally tested behavior from developer candidates. It identifies new native-GQA work, oMLX/batching opportunities, unsupported placement on this kernel, and rejected numerical shortcuts. These findings govern the next performance experiments; none changes the frozen app-integration cohort.
 
+## Owner priority: three tiers
+
+Delivery order is universal speech-to-text, then a strong troubleshooting and optimization agent, then a low-overhead everyday assistant that serves as the interface to the machine. Gmail is the preferred future mail adapter. WebRTC and the broader Pantheon redesign remain later feature work; they do not delay native dictation.
+
+The **everyday assistant** exposes app actions, attention items, system status and personal workflows through the same typed capability broker. Plain dictation inserts text without an LLM request; interpreting a command is a separate deliberate action. Deterministic routing handles known commands, alert collection and job status. Use the already supervised small model only when language interpretation is needed, with bounded context and cancellable jobs. Do not start another resident model for the interface or keep microphone capture running while idle.
+
+The **troubleshooting and optimization agent** receives bounded evidence bundles and escalated questions. A stronger model is admitted on demand when the six-GiB reserve and quiet limits permit; serialize model ownership or unload the everyday model when required. Persistent improvement means collecting evidence, proposing a reviewable change, measuring it against a baseline, and retaining a rollback and regression result. It does not mean continuously running expensive inference or treating unverified repair advice as an applied fix. The small model's failed diagnosis trials remain excluded from this role.
+
+Qualification must measure idle CPU/RSS and wakeups, first-action latency, model load/unload cost, cancellation, time waiting for quiet admission, fan/temperature and available memory. Test an app-to-app task, an alert explanation and escalation to stronger diagnosis independently. These are acceptance requirements, not measured budgets or a claim that either new agent is deployed.
+
 ## Architecture
 
 ```mermaid
@@ -120,4 +130,4 @@ Publish end-to-end latency distributions, cold/warm behavior, time spent cooling
 
 Proposed first acceptance stories: a synthetic GPU fault reaches an alert subscriber without waking the LLM; an agent acknowledges it without marking it repaired; a voice request creates one local task and reads it back; a planning-page request produces one meeting and one unsent draft; a WebRTC reconnect returns the existing receipts; a hostile page/log cannot grant itself mail sending, shell access or desktop control.
 
-Start implementation with phase 1 after the current adapter publication. The feature remains agent-first: a repeatable headless workflow and its evidence must exist before polishing its Pantheon or voice interface.
+The phase numbers describe dependencies, not the owner’s delivery priority. Finish universal native dictation first, qualify stronger troubleshooting next, then deliver the lightweight everyday machine interface; introduce the broker and alert foundations as those capabilities need them. The feature remains agent-first: a repeatable headless workflow and its evidence must exist before polishing its Pantheon or voice interface.

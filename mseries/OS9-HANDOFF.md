@@ -1,5 +1,21 @@
 # OS 9 implementation / Claude Code handoff
 
+## AI delivery priority and live dictation blocker — 2026-10-18
+
+Owner requests universal speech-to-text first, strong troubleshooting/optimization next,
+then a lightweight everyday agent as the machine interface. The Pantheon proposal now
+specifies shared worker ownership, deterministic idle alerts/routing, deliberate command
+mode separate from dictation, on-demand stronger diagnosis, and overhead/escalation tests.
+These new agent roles remain a proposal, not deployed capabilities.
+
+Dictation activation and rollback exposed and fixed provider-stop ordering locally
+(17 contracts pass); preserve the failed v2 and successful cycle v3 receipts. Native
+Pantheon subsequently resets the dynamically registered engine to the configured US
+source. Current services being active therefore does not establish usability. Official
+IBus registry source disables the default per-user component directory; investigate a
+reversible native registry/source integration before asking for a human F5 trial. Preserve
+US/Japanese sources and do not restart owner desktop services without authorization.
+
 ## Dock-aware window space installed — 2026-10-18
 
 Owner requested that visible dock space be unavailable to windows and reclaimed

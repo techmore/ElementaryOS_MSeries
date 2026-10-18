@@ -665,3 +665,5 @@ its tightest reported limit so an exhausted five-hour session does not win on we
 exclamation marks independently identify the next weekly reset, including secondary accounts. Markers
 include explanatory tooltips; ties are marked, stale/unknown data is excluded, and monthly resets do
 not qualify. Selection tests and light/dark fixtures cover the behavior.
+
+- Owner priority refinement (October 18): universal native dictation first, stronger on-demand troubleshooting/optimization second, lightweight everyday machine interface third. Share the existing worker and typed broker; deterministic idle alerts and command routing must not require continuous inference. Gmail is the preferred later mail adapter. See [three-tier acceptance requirements](local-ai/PANTHEON-MCP-DESIGN.md#owner-priority-three-tiers). Live dictation services have passed an activation/rollback cycle, but native input-source selection resets remain a blocker; isolated text insertion is not a stable desktop rollout.
