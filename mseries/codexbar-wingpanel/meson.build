@@ -35,7 +35,7 @@ quota_eta_test = executable(
 test('quota-eta', quota_eta_test)
 
 # Headless render probe (not installed): see probe/run-probe.sh.
-executable(
+render_probe = executable(
   'render-probe',
   'Indicator.vala', 'JsonBoundary.vala', 'AccountDialog.vala', 'PanelPreferences.vala', 'RefreshPolicy.vala', 'QuotaEta.vala', 'Presentation.vala', 'probe/render-probe.vala',
   dependencies: [libwingpanel_dep, granite_dep, json_dep, meson.get_compiler('c').find_library('m')],
@@ -130,4 +130,10 @@ if find_program('xvfb-run', required: false).found() and find_program('dbus-run-
   test('malformed-ingestion', find_program('bash'),
     args: [join_paths(meson.current_source_dir(), 'probe/run-ingestion.sh'), meson.current_build_dir()],
     depends: ingestion_probe, timeout: 30)
+endif
+
+if find_program('xvfb-run', required: false).found() and find_program('dbus-run-session', required: false).found()
+  test('local-token-panel', find_program('bash'),
+    args: [join_paths(meson.current_source_dir(), 'probe/run-token-probe.sh'), meson.current_build_dir()],
+    depends: render_probe, timeout: 30)
 endif

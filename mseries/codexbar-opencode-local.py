@@ -17,6 +17,8 @@ import sys
 import time
 from typing import Any
 
+import codexbar_tokens
+
 
 def data_directory() -> pathlib.Path:
     configured = os.environ.get("XDG_DATA_HOME")
@@ -55,23 +57,10 @@ def read_usage(database: pathlib.Path, now_ms: int | None = None) -> dict[str, A
             data = json.loads(row["data"])
             cost = float(data["cost"])
             created_ms = int(row["time_created"])
-            tokens = data.get("tokens")
-            total_tokens = 0
-            if isinstance(tokens, dict):
-                if tokens.get("total") is not None:
-                    total_tokens = int(tokens["total"])
-                else:
-                    cache = tokens.get("cache")
-                    components = [tokens.get("input"), tokens.get("output"), tokens.get("reasoning")]
-                    components.extend([
-                        cache.get("read") if isinstance(cache, dict) else None,
-                        cache.get("write") if isinstance(cache, dict) else None,
-                    ])
-                    if all(value is not None for value in components):
-                        total_tokens = sum(int(value) for value in components)
+            total_tokens = codexbar_tokens.opencode_tokens(data.get("tokens"))
             if created_ms > 0 and cost >= 0 and cost < float("inf") and total_tokens >= 0:
                 records.append((created_ms, cost, total_tokens))
-        except (TypeError, ValueError, KeyError, json.JSONDecodeError):
+        except (TypeError, ValueError, OverflowError, KeyError, json.JSONDecodeError):
             continue
 
     if not records:

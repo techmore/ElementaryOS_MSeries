@@ -41,6 +41,7 @@ namespace MSeries {
         private string last_digest = "";
         private int64 newest_update_unix = 0;
         private string sessions_text = "";
+        private Json.Array? local_sessions = null;
         private string sessions_error = "";
         private int64 sessions_fetched_us = 0;
         private Json.Object? claude_data = null;
@@ -408,7 +409,7 @@ namespace MSeries {
         }
 
         // Helper refreshes (sessions, Claude, Codex accounts, OpenCode) run when the popover is open. With it closed
-        // nothing in the panel bar depends on them, so they only refresh on a slow background tick.
+        // they refresh on a slow background tick; local token totals use the same cached cadence.
         private const int BACKGROUND_SECONDS = 900;
 
         private bool due (int64 fetched_us, int open_seconds) {
@@ -1046,6 +1047,12 @@ namespace MSeries {
                 if (!process.get_successful () || stdout_text.strip ().length == 0) {
                     sessions_error = "The session check couldn't run. Reinstall the CodexBar panel.";
                 } else {
+                    var parser = new Json.Parser ();
+                    parser.load_from_data (stdout_text);
+                    JsonBoundary.validate (parser.get_root ());
+                    var parsed = JsonBoundary.array (parser.get_root ().get_object (), "sessions");
+                    if (parsed == null) throw new IOError.INVALID_DATA ("Missing local session data");
+                    local_sessions = parsed.ref ();
                     sessions_text = stdout_text;
                     sessions_error = "";
                 }
@@ -1055,6 +1062,8 @@ namespace MSeries {
                 sessions_in_flight = false;
                 sessions_fetched_us = GLib.get_monotonic_time ();
                 render_sessions ();
+                // Repaint cached panel data immediately; never request another provider poll.
+                if (panel_entries != null) update_panel (panel_entries, new DateTime.now_utc ().to_unix ());
             }
         }
 
@@ -1350,8 +1359,8 @@ namespace MSeries {
                             JsonBoundary.number (period, "costUSD", 0),
                             JsonBoundary.integer (period, "requests", 0), tokens)));
                         if (label.contains ("7")) {
-                            value_text = Presentation.panel_count_text (tokens);
-                            reset_text = "7d tok";
+                            value_text = "Local use";
+                            reset_text = "";
                         }
                     }
                     section.append ("\n  Local estimate, not account quota");
@@ -1390,6 +1399,10 @@ namespace MSeries {
                 }
             }
 
+            foreach (var provider in new string[] { "codex", "claude", "opencodego" }) {
+                var count = local_week_tokens (provider);
+                if (count.length > 0) tooltip.append ("\n\n%s · 7d local: %s tokens (all local accounts, includes cache reads/writes; not account quota)".printf (provider_title (provider), count));
+            }
             set_panel_summary (tooltip.len > 0
                 ? tooltip.str + (snapshot_stale ? "\n\nCached: CodexBar couldn't reach a provider." : "")
                     + "\n\nMiddle-click to refresh"
@@ -1397,7 +1410,8 @@ namespace MSeries {
 
             var digest = new StringBuilder ();
             digest.append (hints_digest);
-            digest.append (opencode_week_tokens ());
+            foreach (var provider in new string[] { "codex", "claude", "opencodego" })
+                digest.append (local_week_tokens (provider) + "|");
             foreach (var provider in new string[] { "codex", "claude", "opencodego" }) {
                 digest.append (alternate_account_text (provider, now_unix));
             }
@@ -1453,8 +1467,7 @@ namespace MSeries {
             }
             var alternate = alternate_account_text (provider, new DateTime.now_utc ().to_unix ());
             var show_alternate = display_preferences.get_bool ("showAccounts") && alternate.length > 0;
-            var local_tokens = provider == "opencodego" && level != QuotaLevel.UNKNOWN
-                && display_preferences.get_bool ("showPercent") ? opencode_week_tokens () : "";
+            var local_tokens = display_preferences.get_bool ("showPercent") ? local_week_tokens (provider) : "";
             if ((!show_alternate && local_tokens.length == 0) ||
                 (!display_preferences.get_bool ("showPercent") && !display_preferences.get_bool ("showReset"))) return segment;
             var stack = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { valign = Gtk.Align.CENTER };
@@ -1463,12 +1476,13 @@ namespace MSeries {
             var label = new Gtk.Label (null) { xalign = 0, use_markup = true };
             label.add_css_class ("seg-secondary");
             if (!show_alternate) {
-                label.label = "7d · %s tok".printf (local_tokens);
-                label.tooltip_text = "Local tokens in seven days across all local accounts; not account quota";
+                label.label = "7d local · %s tok".printf (local_tokens);
+                label.tooltip_text = "Processed tokens in seven days across all local accounts, including cache reads/writes; not account quota";
                 stack.append (label);
                 return stack;
             }
             var markup = new StringBuilder ();
+            if (local_tokens.length > 0) markup.append (Markup.escape_text ("7d local · %s tok  ·  ".printf (local_tokens)));
             var accounts = provider_accounts (provider);
             for (uint i = 0; accounts != null && i < accounts.get_length (); i++) {
                 var account = accounts.get_object_element (i);
@@ -1675,11 +1689,21 @@ namespace MSeries {
         }
 
         private string opencode_week_tokens () {
-            var periods = opencode_local != null ? JsonBoundary.array (opencode_local, "periods") : null;
-            for (uint i = 0; periods != null && i < periods.get_length (); i++) {
-                var period = periods.get_object_element (i);
-                if (JsonBoundary.text (period, "label", "") == "7 days") {
-                    return Presentation.panel_count_text (JsonBoundary.integer (period, "tokens", 0));
+            return local_week_tokens ("opencodego");
+        }
+
+        private string local_week_tokens (string provider) {
+            var session_id = provider == "opencodego" ? "opencode" : provider;
+            for (uint i = 0; local_sessions != null && i < local_sessions.get_length (); i++) {
+                var session = local_sessions.get_object_element (i);
+                if (JsonBoundary.text (session, "id") != session_id) continue;
+                var periods = JsonBoundary.array (session, "periods");
+                for (uint p = 0; periods != null && p < periods.get_length (); p++) {
+                    var period = periods.get_object_element (p);
+                    if (JsonBoundary.text (period, "label") == "7 days") {
+                        var tokens = JsonBoundary.integer (period, "tokens", -1);
+                        return tokens >= 0 ? Presentation.panel_count_text (tokens) : "";
+                    }
                 }
             }
             return "";
