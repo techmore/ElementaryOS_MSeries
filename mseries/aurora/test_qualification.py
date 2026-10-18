@@ -160,12 +160,35 @@ class QualificationTests(unittest.TestCase):
         after = {"state": {"name": "CPU PD", "time_us": 20, "usage": 1}}
         self.assertEqual(q.idle_delta(before, after), {})
 
+    def collect_fixture(self, messages, log_boot="abc"):
+        for name, content in {"proc/sys/kernel/osrelease": PINS["kernel_release"],
+                              "proc/sys/kernel/random/boot_id": "abc", "proc/device-tree/model": "M1 Pro",
+                              "proc/device-tree/compatible": "apple,j314s\x00apple,t6000\x00",
+                              "proc/uptime": "600 1000", "kernel-image": "kernel", "boot-image": "boot"}.items():
+            path = self.root / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_text(content)
+        log = self.root / "journal.jsonl"
+        log.write_text("\n".join(json.dumps({"_BOOT_ID": log_boot, "MESSAGE": text}) for text in messages))
+        return q.collect(self.root, self.root / "capture.json", self.root / "kernel-image", self.root / "boot-image", log, .001, .001)
+
+    def test_repeated_pmp_started_messages_do_not_prove_readiness_and_ownership(self):
+        data = self.collect_fixture(["PMP started"] * 3)
+        self.assertEqual(data["checks"]["pmp_ready"]["result"], "not-run")
+
+    def test_complete_pmp_handshake_and_ownership_is_a_scoped_pass(self):
+        data = self.collect_fixture(["PMP started", "PMP firmware and endpoint ready", "PMP manages fabric and DCS p-states"])
+        self.assertEqual(data["checks"]["pmp_ready"]["result"], "pass")
+        self.assertEqual(data["checks"]["suspend_resume"]["result"], "not-run")
+
+    def test_journal_from_a_different_boot_is_refused(self):
+        with self.assertRaisesRegex(ValueError, "exactly the observed boot"):
+            self.collect_fixture(["PMP started"], "other-boot")
+
     def test_unified72_snapshot_has_separate_identity_and_no_moving_branch_url(self):
         data = candidate.series("unified72")
         self.assertIn(data["source"]["commit"], data["source"]["url"])
         self.assertRegex(data["source"]["sha256"], r"^[a-f0-9]{64}$")
         self.assertTrue(data["kernel_release"]["unified72"].startswith("7.2.10-"))
-        self.assertEqual(data["patches"], [])
+        self.assertEqual(data["patches"][0]["head"], "4c56f9cd3033e5f65ef9c61bc7b396d50bce23f7")
         self.assertEqual(candidate.settings(data, "unified72")["DRM_AMDGPU"], "n")
 
 
