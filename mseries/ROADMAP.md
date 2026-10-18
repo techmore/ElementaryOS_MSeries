@@ -639,3 +639,12 @@ OpenCode read-only/deduplication tests pass; port compatibility and headless lig
 Secondary quota balances are colour coded per window, matching the usage bar thresholds, while reset
 countdowns stay muted. The Codex account dialog now uses a centered brand panel, stronger typography,
 a compact instruction card and native actions. Light/dark render checks cover the visual changes.
+
+
+### CodexBar account-choice hints — 2026-10-18
+
+Yellow stars identify the service/account with the highest usable remaining quota percentage, using
+its tightest reported limit so an exhausted five-hour session does not win on weekly balance. Red
+exclamation marks independently identify the next weekly reset, including secondary accounts. Markers
+include explanatory tooltips; ties are marked, stale/unknown data is excluded, and monthly resets do
+not qualify. Selection tests and light/dark fixtures cover the behavior.

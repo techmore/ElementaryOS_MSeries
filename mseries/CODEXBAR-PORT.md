@@ -106,3 +106,21 @@ Secondary quota values use the same theme success/warning/error colours and thre
 bars: over 25% green, 10–25% amber, at most 10% red. Each window is coloured independently; a red
 5-hour value and a green weekly/monthly value can appear together. Reset times remain muted and are
 not the sole indicator of quota state; labels and percentages remain explicit.
+
+## Account recommendation and weekly-reset badges
+
+A yellow **★** marks the service and account with the most usable reported quota. Services report
+percentages rather than comparable absolute token budgets, so the score is the account’s lowest
+remaining percentage across its reported windows. An empty five-hour window cannot win based on a
+large weekly balance. All exact positive ties are marked; there is no star when every account is
+exhausted or unknown. Stale accounts, unknown balances and windows awaiting a past reset are excluded.
+
+A red **!** independently marks the service and account with the earliest upcoming **7-day** reset.
+Monthly and five-hour resets are excluded. All exact reset-time ties are marked. It identifies the
+next weekly reset even if that reset is still days away; its tooltip gives the account and local date.
+
+Badges appear in provider headers, saved-account rows and the compact panel. A provider-level badge
+can refer to a secondary account; the matching row carries the same marker and the tooltip names it.
+Selection is recomputed from existing data during normal polls, with no additional API calls or
+account switching. Changing winners or passing a reset time updates the markers without waiting for
+new quota data.

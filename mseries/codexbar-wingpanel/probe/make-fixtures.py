@@ -83,3 +83,11 @@ accounts = {
 }
 for provider, value in accounts.items():
     (here / f"accounts-{provider}.json").write_text(json.dumps(value))
+
+(here / "hints.json").write_text(json.dumps(scenarios["connected"], indent=1))
+hint_accounts = copy.deepcopy(accounts)
+hint_accounts["claude"]["accounts"][1]["windows"] = [
+    window("primary", "5 hour", 300, 95, 190), window("secondary", "7 day", 10080, 90, 8000)]
+hint_accounts["codex"]["accounts"][1]["windows"][1] = window("secondary", "7 day", 10080, 62, 45)
+for provider, value in hint_accounts.items():
+    (here / f"accounts-{provider}-hints.json").write_text(json.dumps(value))

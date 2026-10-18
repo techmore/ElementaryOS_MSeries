@@ -137,6 +137,70 @@ namespace MSeries {
             return text.len > 0 ? text.str : "Quota unavailable";
         }
 
+        /* Percent of quota is the only comparable unit supplied by these providers.
+         * The lowest window is usable headroom: 0% session + 90% weekly cannot win.
+         * Unknown/expired windows and stale accounts never earn a recommendation. */
+        public static double account_headroom (Json.Array? windows, int64 now_unix) {
+            double lowest = 101;
+            for (uint i = 0; windows != null && i < windows.get_length (); i++) {
+                var window = windows.get_object_element (i);
+                var node = window.get_member ("remaining");
+                if (node == null || node.get_node_type () != Json.NodeType.VALUE) return -1;
+                var remaining = node.get_double ();
+                if (remaining < 0 || remaining > 100 || remaining.is_nan ()) return -1;
+                var reset = new DateTime.from_iso8601 (window.get_string_member_with_default ("resetsAt", ""), null);
+                if (reset != null && reset.to_unix () <= now_unix) return -1;
+                lowest = double.min (lowest, remaining);
+            }
+            return lowest <= 100 ? lowest : -1;
+        }
+
+        public static int64 account_weekly_reset (Json.Array? windows, int64 now_unix) {
+            int64 earliest = 0;
+            for (uint i = 0; windows != null && i < windows.get_length (); i++) {
+                var window = windows.get_object_element (i);
+                var minutes = window.get_int_member_with_default ("minutes", 0);
+                var label = window.get_string_member_with_default ("label", "").down ();
+                if (minutes != 10080 && !(minutes == 0 && (label.contains ("week")
+                    || label == "7d" || label.has_prefix ("7 day")))) continue;
+                var reset = new DateTime.from_iso8601 (window.get_string_member_with_default ("resetsAt", ""), null);
+                if (reset != null && reset.to_unix () > now_unix && (earliest == 0 || reset.to_unix () < earliest)) {
+                    earliest = reset.to_unix ();
+                }
+            }
+            return earliest;
+        }
+
+        public static Json.Object account_hints (Json.Array accounts, int64 now_unix) {
+            var best = new Json.Array ();
+            var weekly = new Json.Array ();
+            double highest = 0;
+            int64 soonest = 0;
+            for (uint i = 0; i < accounts.get_length (); i++) {
+                var account = accounts.get_object_element (i);
+                if (account.get_boolean_member_with_default ("stale", false)) continue;
+                var id = account.get_string_member_with_default ("id", "");
+                if (id.length == 0) continue;
+                var windows = account.has_member ("windows") ? account.get_array_member ("windows") : null;
+                var remaining = account_headroom (windows, now_unix);
+                if (remaining > 0 && remaining >= highest) {
+                    if (remaining > highest) best = new Json.Array ();
+                    highest = remaining;
+                    best.add_string_element (id);
+                }
+                var reset = account_weekly_reset (windows, now_unix);
+                if (reset > 0 && (soonest == 0 || reset <= soonest)) {
+                    if (soonest == 0 || reset < soonest) weekly = new Json.Array ();
+                    soonest = reset;
+                    weekly.add_string_element (id);
+                }
+            }
+            var hints = new Json.Object ();
+            hints.set_array_member ("best", best);
+            hints.set_array_member ("weekly", weekly);
+            return hints;
+        }
+
         /* One line of local OpenCode Go activity: an estimate from this machine's history, not account quota. */
         public static string local_usage_line (string label, double cost_usd, int64 requests, int64 tokens) {
             return "%s · $%.2f · %s %s · %s tokens".printf (label, cost_usd, count_text (requests),
