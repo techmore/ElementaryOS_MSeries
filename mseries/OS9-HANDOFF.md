@@ -1,5 +1,23 @@
 # OS 9 implementation / Claude Code handoff
 
+## Pinned panel build dependency audit — 2026-10-18
+
+Run [39127575598](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39127575598)
+confirmed the corrected chroot build context: Brave staged and the patched network
+indicator compiled. Quick Settings then failed Meson configuration because
+`packagekit-glib2` development metadata was absent. Audited the exact pinned
+Meson files for network, Quick Settings, sound, keyboard and datetime plus the
+Touchegg/VA driver and selected Mesa build paths. Declared PackageKit, AccountsService,
+portal and Wayland development packages, keyboard XML/XKB metadata and Mesa's
+zlib headers explicitly. Existing transform first-boot Quick Settings/keyboard
+requirements now match. Package names were checked against installed Ubuntu
+pkg-config ownership; no broad package-policy exception was introduced.
+
+Six image-wiring checks now pass, including the build dependency regression;
+ShellCheck/syntax and the six browser/kernel-input tests pass. These are build
+prerequisite fixes, not a successful ISO/fresh-install claim. Next: rebuild and
+run the new artifact's installed-guest dock and playback tests.
+
 
 ## Orchard session memory and native qualification — 2026-10-18
 

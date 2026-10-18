@@ -1,5 +1,13 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Factory pinned-component development dependencies — 2026-10-18
+
+The chroot retry staged Brave and compiled the network plugin, then identified
+missing Quick Settings PackageKit headers. An audit of the pinned component
+build definitions added PackageKit/AccountsService/portal/Wayland, keyboard XML/XKB
+and zlib development requirements explicitly. Six image-wiring tests pass.
+The ISO rebuild and fresh installed YouTube qualification remain in progress.
+
 
 ## Orchard session memory and native qualification — 2026-10-18
 

@@ -158,6 +158,14 @@ class ImageWiringTests(unittest.TestCase):
             self.assertFalse(selected & blocked, name + ' selects a prohibited package')
             self.assertIn('gnome-online-accounts-gtk', selected)
 
+    def test_pinned_panel_build_dependencies_are_declared(self):
+        config = configparser.ConfigParser(interpolation=None, strict=False)
+        config.read(ROOT / 'mkosi.images/apple-silicon/mkosi.conf')
+        build = set(config.get('Content', 'BuildPackages').split())
+        required = {'libpackagekit-glib2-dev', 'libaccountsservice-dev', 'libportal-dev',
+                    'libwayland-dev', 'libxml2-dev', 'xkb-data', 'zlib1g-dev'}
+        self.assertFalse(required - build, 'Pinned plugin build dependency missing')
+
     def test_consumers_install_overlay_runtime_dependencies(self):
         overlay = packages('mkosi.images/apple-silicon/mkosi.conf')
         self.assertTrue({'bubblewrap', 'xdg-dbus-proxy', 'desktop-file-utils', 'libgtk-3-bin'} <= overlay)
