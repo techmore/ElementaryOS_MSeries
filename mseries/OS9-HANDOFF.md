@@ -1,5 +1,22 @@
 # OS 9 implementation / Claude Code handoff
 
+## Optional GitHub repository status indicator — 2026-10-18
+
+Added an independent elementary OS Wingpanel port based on the feature set of
+steipete/RepoBar. `mseries/repobar.py` reads repository counts, default-branch
+CI state, stars, latest release tag, and archive state through the user's
+existing `gh` authentication; it writes only a mode-0600 cache in a mode-0700
+directory. The Wingpanel module and optional installer are in
+`mseries/repobar-wingpanel/` and `mseries/install-repobar-wingpanel.sh`. Added
+the macOS project to the six-hour upstream watchlist and documented the
+unsupported macOS boundary and remaining feature gaps in `mseries/REPOBAR-PORT.md`.
+
+The Vala module compiles with Meson/Ninja on the ARM64 build host; Python, JSON,
+and installer syntax checks pass. No tests were run, the feature was not
+installed, and no live GitHub account was read. It remains optional and is not
+wired into the factory image. Next step is a UI review on elementary OS, then an
+opt-in install after `gh auth login`.
+
 ## Add Tasks from the panel — 2026-10-18
 
 The Tasks tab now has a compact title entry, Add button and writable-list selector.

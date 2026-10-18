@@ -1,5 +1,17 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## GitHub repository status on elementary OS — 2026-10-18
+
+Added an optional read-only RepoBar-style Wingpanel indicator for elementary OS.
+It uses the authenticated GitHub CLI and reports accessible repositories, open
+issues and pull requests, default-branch CI, stars, releases, and archive state.
+The helper uses a private five-minute cache and does not save GitHub credentials.
+It is not included in the base image. Local checkout health, activity feeds, and
+repository filters remain follow-up work. See [the port notes](REPOBAR-PORT.md).
+The macOS upstream is now in the six-hour GitHub watchlist. The Vala module
+compiles with Meson/Ninja on the ARM64 build host; Python, JSON, and installer
+syntax checks pass. No tests, installation, or live-account access were run.
+
 ## Add Tasks from the panel — 2026-10-18
 
 The Tasks tab now has a compact title entry, Add button and writable-list selector.
