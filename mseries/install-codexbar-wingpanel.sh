@@ -26,6 +26,7 @@ mkdir -p "$HOME/.local/lib/codexbar-cli"
 install -m 0755 "$repo/mseries/codexbar-opencode-local.py" \
   "$HOME/.local/lib/codexbar-cli/codexbar-opencode-local.py"
 install -m 0644 "$repo/mseries/codexbar_cache.py" "$HOME/.local/lib/codexbar-cli/codexbar_cache.py"
+install -m 0644 "$repo/mseries/codexbar_claude_history.py" "$HOME/.local/lib/codexbar-cli/codexbar_claude_history.py"
 install -m 0755 "$repo/mseries/codexbar-sessions.py" \
   "$HOME/.local/lib/codexbar-cli/codexbar-sessions.py"
 install -m 0755 "$repo/mseries/codexbar-accounts.py" "$HOME/.local/lib/codexbar-cli/codexbar-accounts.py"

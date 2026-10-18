@@ -594,8 +594,8 @@ namespace MSeries {
             }
             var dialog = new Gtk.AlertDialog ("Switch to %s?", email);
             dialog.detail = ready
-                ? "Claude will close and reopen with this account, and Claude Code's command-line login will change too. Finish running work first. CodexBar stays running."
-                : "This account needs one sign-in in the Claude app before fast switching works. Claude will reopen at its sign-in screen. Sign in to the account shown above, then reopen CodexBar to save it. Finish running work first.";
+                ? "Claude will close and reopen with this account, and Claude Code's command-line login will change too. Missing local Code conversations will carry over with their workspace context. Finish running work first. CodexBar stays running."
+                : "This account needs one sign-in in the Claude app before fast switching works. Claude will reopen at its sign-in screen. Sign in to the account shown above, then reopen CodexBar to save it. Missing local Code conversations will carry over. Finish running work first.";
             dialog.buttons = { "Cancel", ready ? "Switch Claude account" : "Set up app sign-in" };
             dialog.cancel_button = 0;
             dialog.default_button = 0;

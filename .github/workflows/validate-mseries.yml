@@ -115,6 +115,7 @@ jobs:
           python3 mseries/test-codexbar-sessions.py
           python3 mseries/test-codexbar-accounts.py
           python3 mseries/test-codexbar-claude.py
+          python3 mseries/test-codexbar-claude-history.py
           python3 mseries/test-codexbar-wrapper.py
           python3 mseries/test-codexbar-opencode-local.py
           python3 mseries/test-codexbar-opencode-login.py

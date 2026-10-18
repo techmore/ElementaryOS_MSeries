@@ -17,6 +17,7 @@ ones.** Upgrade by re-pinning, re-installing upstream, and re-verifying each ite
 | Codex multi-account switcher (upstream's is macOS-only) | `codexbar-accounts.py` | upstream `codexbar usage --provider codex` honoring `CODEX_HOME` |
 | OpenCode Go sign-in (upstream imports opencode.ai cookies only on macOS): native WebKit window, saves the `auth`/`__Host-console_session` session as `providers[opencodego].cookieSource=manual` + `cookieHeader`; the panel's OpenCode **+** runs it | `codexbar-opencode-login.py` | config path resolution (`CodexBarConfigStore.defaultURL`), `OpenCodeWebCookieSupport` cookie names, `usage --source web` |
 | Claude CLI accounts via claude-swap, plus native Claude desktop sessions. CLI only keeps the app login separate; Switch both validates the target session, quits the native app, saves its final encrypted session, merges the target login without changing preferences, switches the CLI, and relaunches the app. Set up app preserves the previous session and locally clears the login for one-time sign-in without sending a logout request. Save app login and automatic list capture remember it. | `codexbar-claude.py`, venv `~/.local/share/claude-swap-venv`, `cswap` | claude-swap `list/status/switch --json`, `schemaVersion` 1, `to.email`, `reason: already-active`, `configs/.claude-config-*.json`; installed Claude `config.json` keys `lastKnownAccountUuid`, `oauth:tokenCache`, `oauth:tokenCacheV2`, SQLite `Cookies` (or `Network/Cookies`), `gtk-launch com.anthropic.Claude` |
+| Claude local Code context carry-over | `codexbar_claude_history.py`, [design/evidence](CODEXBAR-CLAUDE-HISTORY.md) | installed Claude desktop account/org Code index and local `.claude/projects` transcripts; private exports and create-only imports after app exit |
 | Installers / deploy / CI | `install-codexbar.sh`, `install-codexbar-wingpanel.sh`, `deploy-codexbar.sh`, `check-codexbar-port.sh`, `.github/workflows/validate-mseries.yml`, `enhance.sh` payload list | version pin `version=vX.Y.Z` |
 
 ## Upgrade checklist
@@ -221,3 +222,11 @@ malformed files retain the last valid values and the Settings window reports sav
 
 Build/run `test-live-preferences` via `probe/run-live-preferences.sh BUILD_DIR` to check live changes against
 isolated backends. For render variants, pass `CB_DISPLAY_PREFS=/absolute/path/to/wingpanel.json` to `probe/run-probe.sh`.
+
+### Claude conversation continuity
+
+Claude desktop keeps its Code sidebar per account and organization, even though Code transcripts remain locally
+available across logins. `codexbar-claude.py` now exports local Code context after exit, restores the selected app
+login, imports only missing sidebar records into its selected organization, and then switches the CLI/reopens Claude.
+Existing destination history is untouched. See [Claude Code history](CODEXBAR-CLAUDE-HISTORY.md) for backup locations,
+the read-only `history-preview` command, the inspected Claude app revision, and the remaining real-switch check.

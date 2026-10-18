@@ -42,6 +42,7 @@ import time
 from typing import Any
 
 import codexbar_cache
+import codexbar_claude_history as history
 
 def cswap_path() -> str | None:
     local = pathlib.Path.home() / ".local/bin/cswap"
@@ -351,6 +352,34 @@ def launch_app() -> None:
     launcher.poll()
 
 
+def account_organization(uuid: str, number: str | None = None) -> str:
+    """The target account's saved organization, without making a usage request."""
+    pattern = f".claude-config-{number}-*.json" if number and number.isdigit() else ".claude-config-*.json"
+    organizations = set()
+    for path in (data_root() / "claude-swap/configs").glob(pattern):
+        config = read_json(path)
+        if identity(config)[1] == uuid:
+            org = config.get("oauthAccount", {}).get("organizationUuid")
+            if isinstance(org, str) and org:
+                organizations.add(org)
+    return next(iter(organizations)) if len(organizations) == 1 else ""
+
+
+def history_plan(source: str, target: str, number: str | None = None) -> history.TransferPlan:
+    return history.plan_transfer(app_root(), pathlib.Path.home() / ".claude/projects", source, target,
+                                 account_organization(target, number))
+
+
+def history_message(report: dict[str, int]) -> str:
+    if not any(report.values()):
+        return ""
+    noun = "conversation" if report["imported"] == 1 else "conversations"
+    text = f" {report['imported']} local Code {noun} added; {report['existing']} already present."
+    if report["unavailable"]:
+        text += f" {report['unavailable']} could not carry over (missing local transcript/workspace or unsupported session type)."
+    return text
+
+
 def app_switch(uuid: str, cli: str | None = None, number: str | None = None) -> tuple[bool, str]:
     """Switch the app, optionally together with the CLI. No app credentials are ever printed."""
     try:
@@ -365,12 +394,22 @@ def app_switch(uuid: str, cli: str | None = None, number: str | None = None) -> 
             if not current:
                 raise ValueError("The current Claude app sign-in could not be saved. Sign in in the app before switching.")
             original = load_session(current)
+            history_plan(current, uuid, number)  # destination must be unambiguous before closing the app
             was_running = stop_app()
             try:
                 # Electron may flush new credentials as it exits. Preserve them before replacing anything.
                 if capture_app():
                     original = load_session(current)
+                plan = history_plan(current, uuid, number)
+                try:
+                    exported = history.export_history(plan, session_root() / "code-history")
+                except OSError:
+                    raise history.HistoryError("Local Code history could not be exported. Check disk space and file permissions, then retry the switch.") from None
                 restore_app(target)
+                try:
+                    report = history.import_missing(plan, exported)
+                except OSError:
+                    raise history.HistoryError("Local Code history could not be added to the selected account. The export is kept; check disk space and file permissions before retrying.") from None
                 if number:
                     ok, message = switch(cli, number)
                     if not ok:
@@ -385,7 +424,8 @@ def app_switch(uuid: str, cli: str | None = None, number: str | None = None) -> 
             except (ValueError, OSError, subprocess.SubprocessError):
                 return False, "The account was saved for the Claude app, but it could not restart. Open Claude from the dock."
             (session_root() / "pending-login.json").unlink(missing_ok=True)
-            return True, "Claude's app session was switched and the app restarted." + (" Claude Code's command line uses the same account." if number else "")
+            return True, ("Claude's app session was switched and the app restarted." +
+                          (" Claude Code's command line uses the same account." if number else "") + history_message(report))
     except (OSError, ValueError, sqlite3.Error, TimeoutError, subprocess.SubprocessError) as error:
         # Never echo raw config, cookie data, or subprocess output on failure.
         return False, str(error) if isinstance(error, ValueError) else "Claude's app session could not be switched; try again after closing Claude."
@@ -393,7 +433,8 @@ def app_switch(uuid: str, cli: str | None = None, number: str | None = None) -> 
 
 def app_login(number: str) -> tuple[bool, str]:
     """Open a locally signed-out app without revoking the session we just saved on the server."""
-    if not account_uuid(number):
+    target_uuid = account_uuid(number)
+    if not target_uuid:
         return False, "Save this Claude Code account first, then set up its app login."
     try:
         with app_lock():
@@ -401,10 +442,16 @@ def app_login(number: str) -> tuple[bool, str]:
             if not current:
                 raise ValueError("Sign in to the Claude app first so its current session can be saved.")
             original = load_session(current)
+            history_plan(current, target_uuid, number)
             was_running = stop_app()
             try:
                 if capture_app():
                     original = load_session(current)
+                plan = history_plan(current, target_uuid, number)
+                try:
+                    exported = history.export_history(plan, session_root() / "code-history")
+                except OSError:
+                    raise history.HistoryError("Local Code history could not be exported. Check disk space and file permissions, then retry the switch.") from None
                 with contextlib.closing(sqlite3.connect(":memory:")) as db:
                     db.deserialize(original["cookies"])
                     db.execute("DELETE FROM cookies")
@@ -412,6 +459,10 @@ def app_login(number: str) -> tuple[bool, str]:
                     empty_cookies = db.serialize()
                 atomic_private(session_root() / "pending-login.json", json.dumps({"previous": current}).encode())
                 restore_app({"config": {}, "cookies": empty_cookies})
+                try:
+                    report = history.import_missing(plan, exported)
+                except OSError:
+                    raise history.HistoryError("Local Code history could not be added to the selected account. The export is kept; check disk space and file permissions before retrying.") from None
             except (OSError, ValueError, sqlite3.Error, TimeoutError):
                 restore_app(original)
                 if was_running:
@@ -419,7 +470,7 @@ def app_login(number: str) -> tuple[bool, str]:
                 raise
             launch_app()
             return True, ("Sign in to the selected account in the Claude app, then choose Save app login in CodexBar. "
-                          "Your previous app login is saved; choose Switch both on that account to return to it.")
+                          "Your previous app login is saved; choose Switch on that account to return to it." + history_message(report))
     except (OSError, ValueError, sqlite3.Error, TimeoutError, subprocess.SubprocessError) as error:
         return False, str(error) if isinstance(error, ValueError) else "The Claude app login could not start. Reopen Claude and try again."
 
@@ -608,8 +659,19 @@ def add(cli: str | None) -> tuple[bool, str]:
 def main(arguments: list[str]) -> int:
     command = arguments[0] if arguments else "list"
     cli = cswap_path()
-    if command != "list":
+    if command not in {"list", "history-preview"}:
         codexbar_cache.store("claude-list", {})  # every other command can change the accounts; never serve the old list
+    if command == "history-preview" and len(arguments) == 2:
+        target = account_uuid(arguments[1])
+        source = read_json(app_root() / "config.json").get("lastKnownAccountUuid", "")
+        try:
+            if not target or not isinstance(source, str) or not source:
+                raise ValueError("Save both app identities before previewing Code history.")
+            print(json.dumps(history_plan(source, target, arguments[1]).summary()))
+            return 0
+        except (OSError, ValueError):
+            print("Code history could not be previewed; check the saved accounts and organizations.", file=sys.stderr)
+            return 1
     if command == "app-login" and len(arguments) == 2:
         ok, message = app_login(arguments[1])
         print(message, file=sys.stdout if ok else sys.stderr)
@@ -652,7 +714,7 @@ def main(arguments: list[str]) -> int:
             ok, message = switch(cli, arguments[1])
         print(json.dumps({"ok": ok, "message": message}))
         return 0 if ok else 1
-    print("usage: codexbar-claude.py list | login | add | app-save | switch <number> [--desktop] | app-switch <uuid>", file=sys.stderr)
+    print("usage: codexbar-claude.py list | login | add | app-save | switch <number> [--desktop] | app-switch <uuid> | history-preview <number>", file=sys.stderr)
     return 2
 
 
