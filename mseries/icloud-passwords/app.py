@@ -55,7 +55,7 @@ class Passwords(Gtk.Application):
         for edge in ('top', 'bottom', 'start', 'end'):
             getattr(root, 'set_margin_' + edge)(20)
         self.window.set_child(root)
-        self.status = Gtk.Label(label='Read your iCloud passwords on this Mac.', xalign=0, wrap=True)
+        self.status = Gtk.Label(label='Read your iCloud passwords on this Mac.', xalign=0, wrap=True, selectable=True)
         root.append(self.status)
         self.stack = Gtk.Stack(vexpand=True)
         root.append(self.stack)
@@ -73,7 +73,7 @@ class Passwords(Gtk.Application):
         self.unlock = Gtk.Button(label='Sign In Again', visible=False)
         self.unlock.connect('clicked', lambda *_: self.stack.set_visible_child_name('login'))
         footer.append(self.unlock)
-        self.browser = Gtk.Button(label='Brave Setup')
+        self.browser = Gtk.Button(label='Browser Autofill')
         self.browser.connect('clicked', self.brave_help)
         footer.append(self.browser)
         root.append(footer)
@@ -83,11 +83,11 @@ class Passwords(Gtk.Application):
     def build_login(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16,
                       halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER)
-        box.set_size_request(460, -1)
+        box.set_size_request(420, -1)
         icon = Gtk.Image.new_from_icon_name('dialog-password')
         icon.set_pixel_size(64)
         box.append(icon)
-        title = Gtk.Label(label='Your Apple passwords, on elementary OS')
+        title = Gtk.Label(label='Sign in to Apple Passwords', wrap=True)
         title.add_css_class('title-2')
         box.append(title)
         note = Gtk.Label(label='Sign in to download an encrypted, read-only snapshot.\n'
@@ -97,12 +97,22 @@ class Passwords(Gtk.Application):
         self.email.set_max_length(320)
         self.password = Gtk.PasswordEntry(placeholder_text='Apple Account password', show_peek_icon=True)
         self.password.connect('activate', self.login)
-        box.append(self.email)
-        box.append(self.password)
-        self.remember = Gtk.CheckButton(label='Remember password in encrypted storage for background refresh')
+        for label, entry in (('_Apple Account email', self.email), ('_Password', self.password)):
+            field = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+            heading = Gtk.Label(label=label, use_underline=True, xalign=0)
+            heading.set_mnemonic_widget(entry)
+            field.append(heading)
+            field.append(entry)
+            box.append(field)
+        self.email.connect('activate', lambda *_: self.password.grab_focus())
+        self.remember = Gtk.CheckButton(label='Remember Apple Account password')
         self.remember.set_tooltip_text('Uses your login keyring. Without this, some token renewals and Hide My Email need sign-in again.')
         box.append(self.remember)
-        self.signin = Gtk.Button(label='Sign In with Apple')
+        remember_note = Gtk.Label(label='Encrypted with your login keyring. Enables automatic renewal.',
+                                  xalign=0, wrap=True, max_width_chars=48)
+        remember_note.add_css_class('dim-label')
+        box.append(remember_note)
+        self.signin = Gtk.Button(label='Sign In')
         self.signin.add_css_class('suggested-action')
         self.signin.connect('clicked', self.login)
         box.append(self.signin)
@@ -110,6 +120,9 @@ class Passwords(Gtk.Application):
                             'Recovery requires its known passcode; never guess.', wrap=True)
         warning.add_css_class('dim-label')
         box.append(warning)
+        steps = Gtk.Label(label='Sign in  →  Verify device  →  Unlock keychain', wrap=True)
+        steps.add_css_class('dim-label')
+        box.append(steps)
         self.stack.add_named(box, 'login')
 
     def build_vault(self):
@@ -122,7 +135,13 @@ class Passwords(Gtk.Application):
         self.list.connect('row-selected', self.select)
         scroll = Gtk.ScrolledWindow(vexpand=True, min_content_width=280)
         scroll.set_child(self.list)
-        left.append(scroll)
+        self.results = Gtk.Stack(vexpand=True)
+        self.results.add_named(scroll, 'list')
+        self.empty_results = Gtk.Label(wrap=True, justify=Gtk.Justification.CENTER,
+                                       margin_start=12, margin_end=12)
+        self.empty_results.add_css_class('dim-label')
+        self.results.add_named(self.empty_results, 'empty')
+        left.append(self.results)
         pane.set_start_child(left)
         pane.set_resize_start_child(True)
         pane.set_position(330)
@@ -134,8 +153,13 @@ class Passwords(Gtk.Application):
         self.saved_password = Gtk.PasswordEntry(show_peek_icon=True, editable=False)
         self.saved_password.set_visible(False)
         detail.append(self.site)
-        detail.append(self.username)
-        detail.append(self.saved_password)
+        self.detail_fields = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, visible=False)
+        for label, widget in (('Username', self.username), ('Password', self.saved_password)):
+            heading = Gtk.Label(label=label, xalign=0)
+            heading.add_css_class('dim-label')
+            self.detail_fields.append(heading)
+            self.detail_fields.append(widget)
+        detail.append(self.detail_fields)
         self.snapshot_label = Gtk.Label(xalign=0, wrap=True)
         self.snapshot_label.add_css_class('dim-label')
         detail.append(self.snapshot_label)
@@ -144,12 +168,20 @@ class Passwords(Gtk.Application):
         pane.set_end_child(detail)
         self.stack.add_named(pane, 'vault')
 
+    def set_status(self, text, error=False):
+        self.status.set_text(text)
+        if error:
+            self.status.add_css_class('error')
+        else:
+            self.status.remove_css_class('error')
+
     def login(self, *_):
         if self.proc:
             return
         email, password = self.email.get_text().strip(), self.password.get_text()
         if not email or not password:
-            self.status.set_text('Enter your Apple Account email and password.')
+            self.set_status('Enter your Apple Account email and password.', error=True)
+            (self.email if not email else self.password).grab_focus()
             return
         self.credentials = {'email': email, 'password': password}
         self.password.set_text('')
@@ -161,13 +193,6 @@ class Passwords(Gtk.Application):
         self.action = action
         self.error_seen = False
         self.recovering = False
-        if action in ('login', 'sync'):
-            result = subprocess.run(['systemctl', '--user', 'start', 'mseries-icloud-anisette.service'],
-                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            if result.returncode:
-                self.status.set_text('The local authentication helper could not start.')
-                self.credentials.clear()
-                return
         args = [str(SOURCE / '.venv/bin/python'), str(HERE / 'worker.py'), action]
         if action == 'login' and self.remember.get_active():
             args.append('--remember-password')
@@ -177,12 +202,12 @@ class Passwords(Gtk.Application):
             self.proc = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                          stderr=subprocess.DEVNULL, text=True, bufsize=1, env=env)
         except OSError:
-            self.status.set_text('The client is unavailable. Run the experimental installer first.')
+            self.set_status('The client is unavailable. Run the experimental installer first.')
             self.credentials.clear()
             return
         proc = self.proc
         self.busy(True)
-        self.status.set_text('Opening your encrypted snapshot…' if action == 'load' else 'Connecting to Apple…')
+        self.set_status('Opening your encrypted snapshot…' if action == 'load' else 'Connecting to Apple…')
         def reader():
             try:
                 for line in proc.stdout:
@@ -198,6 +223,9 @@ class Passwords(Gtk.Application):
 
     def busy(self, value):
         self.signin.set_sensitive(not value)
+        for field in (self.email, self.password, self.remember):
+            field.set_sensitive(not value)
+        self.sync.set_visible(getattr(self, 'joined', False))
         self.sync.set_sensitive(not value and getattr(self, 'joined', False))
         self.logout.set_sensitive(not value)
         self.unlock.set_sensitive(not value)
@@ -224,26 +252,28 @@ class Passwords(Gtk.Application):
             else:
                 self.show_prompt(event)
         elif kind in ('error', 'warning'):
-            self.error_seen = True
-            self.status.set_text(event['text'])
-        elif kind == 'progress' and not self.error_seen:
-            self.status.set_text(event['text'])
+            self.error_seen = self.error_seen or kind == 'error'
+            self.set_status(event['text'], error=kind == 'error')
+        elif kind == 'progress' and not self.error_seen and not self.dialog:
+            self.set_status(event['text'])
         elif kind == 'recovery':
             self.recovering = True
             self.cancel.set_sensitive(False)
-            self.status.set_text('Recovering keychain access. Keep this window open; this attempt cannot be undone.')
+            self.set_status('Recovering keychain access. Keep this window open; this attempt cannot be undone.')
         elif kind == 'vault':
             self.items = event['credentials']
             self.joined = event['joined']
             self.signed_in = event['signed_in']
             self.logout.set_visible(self.signed_in)
             self.unlock.set_visible(self.signed_in)
+            self.unlock.set_label('Sign In Again' if self.joined else 'Complete Setup')
+            self.logout.set_tooltip_text('Sign out and remove this app’s cached passwords. Your Apple account devices are kept.')
             self.stack.set_visible_child_name('vault' if self.joined else 'login')
             stamp = event.get('updated')
             self.snapshot_label.set_text('Last synced ' + datetime.fromtimestamp(stamp).strftime('%b %d, %H:%M') if stamp else 'No password snapshot yet')
             self.populate()
             if not self.error_seen:
-                self.status.set_text(f'{len(self.items)} saved passwords' if self.joined else
+                self.set_status(f'{len(self.items)} saved passwords' if self.joined else
                                      'Signed in. Complete keychain setup to download passwords.' if self.signed_in else
                                      'Sign in to read your iCloud passwords.')
         return False
@@ -252,13 +282,18 @@ class Passwords(Gtk.Application):
         dialog = Gtk.Dialog(title=event['label'], transient_for=self.window, modal=True)
         self.dialog = dialog
         dialog.set_default_size(460, -1)
-        dialog.add_button('Cancel', Gtk.ResponseType.CANCEL)
-        accept = dialog.add_button('Continue', Gtk.ResponseType.OK)
+        dialog.add_button('Cancel Sign-In', Gtk.ResponseType.CANCEL)
+        labels = {'code':'Verify Code', 'device':'Use This Device', 'confirm':'Continue to Passcode', 'passcode':'Unlock Keychain'}
+        kind = event['kind']
+        accept = dialog.add_button(labels.get(kind, 'Continue'), Gtk.ResponseType.OK)
+        accept.add_css_class('suggested-action')
         body = dialog.get_content_area()
         body.set_spacing(16)
         for edge in ('top', 'bottom', 'start', 'end'):
             getattr(body, 'set_margin_' + edge)(20)
-        kind = event['kind']
+        self.spinner.set_spinning(False)
+        if kind == 'code':
+            self.set_status('Waiting for you: approve on your Apple device, then enter its code.')
         if kind == 'confirm':
             body.append(Gtk.Label(label='A wrong device passcode uses one of a limited number of recovery attempts. '
                                   'Too many wrong attempts can permanently destroy the recovery record. '
@@ -272,18 +307,36 @@ class Passwords(Gtk.Application):
         else:
             body.append(Gtk.Label(label=event.get('description', 'Tap Allow on your Apple device, then enter the six-digit code. This window will wait.') if kind == 'code' else
                                   'Enter the unlock passcode for the device you selected.', wrap=True))
-            control = Gtk.PasswordEntry(show_peek_icon=kind != 'code')
-            control.connect('activate', lambda *_: dialog.response(Gtk.ResponseType.OK))
+            if kind == 'code':
+                control = Gtk.Entry(placeholder_text='123456', input_purpose=Gtk.InputPurpose.DIGITS,
+                                    max_length=16, xalign=0.5)
+                control.update_property([Gtk.AccessibleProperty.LABEL], ['Six-digit verification code'])
+                accept.set_sensitive(False)
+                def valid(entry):
+                    code = entry.get_text().replace(' ', '').replace('-', '')
+                    accept.set_sensitive(len(code) == 6 and code.isascii() and code.isdigit())
+                control.connect('changed', valid)
+            else:
+                control = Gtk.PasswordEntry(show_peek_icon=True)
+            control.connect('activate', lambda *_: dialog.response(Gtk.ResponseType.OK) if accept.get_sensitive() else None)
         body.append(control)
+        self.prompt_input = control
         def respond(_, response):
             if response == Gtk.ResponseType.OK:
                 value = 'yes' if kind == 'confirm' else str(control.get_selected()) if kind == 'device' else control.get_text()
+                if kind == 'code':
+                    value = value.replace(' ', '').replace('-', '')
+                    if len(value) != 6 or not value.isascii() or not value.isdigit():
+                        return
                 if kind not in ('confirm', 'device') and not value:
                     return
                 if kind == 'passcode':
                     self.recovering = True
                     self.cancel.set_sensitive(False)
-                    self.status.set_text('Recovering keychain access. Keep this window open until the attempt finishes.')
+                    self.set_status('Recovering keychain access. Keep this window open until the attempt finishes.')
+                self.spinner.set_spinning(True)
+                if kind == 'code':
+                    self.set_status('Verifying your code with Apple…')
                 self.reply(value)
             else:
                 self.reply(cancel=True)
@@ -306,7 +359,7 @@ class Passwords(Gtk.Application):
             self.dialog = None
         self.busy(False)
         if proc.returncode and not self.error_seen:
-            self.status.set_text('Operation cancelled.' if proc.returncode in (-15, 130) else 'The client stopped before completing this operation.')
+            self.set_status('Operation cancelled.' if proc.returncode in (-15, 130) else 'The client stopped before completing this operation.')
         return False
 
     def cancel_work(self, *_):
@@ -321,12 +374,15 @@ class Passwords(Gtk.Application):
         self.saved_password.set_visible(False)
         self.site.set_text('Choose a saved login')
         self.username.set_text('')
+        self.detail_fields.set_visible(False)
         while child := self.list.get_first_child():
             self.list.remove(child)
         query = self.search.get_text().casefold()
-        for item in self.items:
+        shown = 0
+        for item in sorted(self.items, key=lambda item: (item['title'] or item['domain']).casefold()):
             if query and query not in ' '.join((item['domain'], item['username'], item['title'])).casefold():
                 continue
+            shown += 1
             row = Gtk.ListBoxRow()
             row.item = item
             box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
@@ -338,11 +394,15 @@ class Passwords(Gtk.Application):
             box.append(name)
             row.set_child(box)
             self.list.append(row)
+        self.empty_results.set_text('No matching passwords.\nTry another website or username.' if query else
+                                    'No saved passwords yet.\nChoose Sync Now to refresh your snapshot.')
+        self.results.set_visible_child_name('list' if shown else 'empty')
 
     def select(self, _, row):
         self.saved_password.get_delegate().set_visibility(False)
         self.saved_password.set_text('')
         self.saved_password.set_visible(False)
+        self.detail_fields.set_visible(bool(row))
         if row:
             self.site.set_text(row.item['domain'] or row.item['title'])
             self.username.set_text(row.item['username'])
@@ -360,7 +420,7 @@ class Passwords(Gtk.Application):
 
     def close(self, *_):
         if self.recovering:
-            self.status.set_text('Please keep this window open until the recovery attempt finishes.')
+            self.set_status('Please keep this window open until the recovery attempt finishes.')
             return True
         self.cancel_work()
         self.items.clear()

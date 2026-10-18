@@ -4,6 +4,7 @@ import json
 import logging
 import re
 import sys
+import subprocess
 
 
 def emit(event_type, **fields):
@@ -34,6 +35,8 @@ def friendly_error(message):
         return 'The secure connection to Apple could not be verified. No insecure fallback is allowed.'
     if 'passcode' in text.lower() or 'escrow' in text.lower() or 'join failed' in text.lower():
         return 'Keychain recovery failed. Do not guess or automatically retry the device passcode. Your account may already be signed in.'
+    if 'authentication helper' in text.lower():
+        return 'The local authentication helper could not start. Check its installation before signing in again.'
     if 'keyring' in text.lower() or 'Secret Service' in text:
         return 'Unlock your login keyring, then try again.'
     codes = re.findall(r'(?:ec=|HTTP |status )(-?\d+)', text)
@@ -139,6 +142,12 @@ def main():
     if action == 'load':
         snapshot()
         return 0
+    if action in ('login', 'sync'):
+        emit('progress', text='Starting the local authentication helper…')
+        result = subprocess.run(['systemctl', '--user', 'start', 'mseries-icloud-anisette.service'],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20)
+        if result.returncode:
+            raise RuntimeError('Local authentication helper could not start')
     if action == 'login':
         import secretstorage
         collection = secretstorage.get_default_collection(secretstorage.dbus_init())

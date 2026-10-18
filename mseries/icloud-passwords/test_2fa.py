@@ -22,8 +22,8 @@ class ApprovalTests(unittest.TestCase):
             def headers(self): return {}
         def send(*args, **kwargs):
             # The code box must be offered BEFORE Apple's request returns.
-            self.assertEqual(events[0]['type'],'prompt')
-            self.assertEqual(events[0]['kind'],'code')
+            self.assertEqual(next(e for e in events if e['type']=='prompt')['type'],'prompt')
+            self.assertEqual(next(e for e in events if e['type']=='prompt')['kind'],'code')
             self.assertTrue(kwargs['verify'])
             if network_error:
                 raise network_error
@@ -43,6 +43,7 @@ class ApprovalTests(unittest.TestCase):
                  patch('secretstorage.dbus_init'), \
                  patch('secretstorage.get_default_collection',return_value=collection), \
                  patch.object(app,'main',side_effect=login), \
+                 patch.object(worker.subprocess,'run',return_value=MagicMock(returncode=0)), \
                  patch.multiple(ui,ask=ui.ask,secret=ui.secret,step=ui.step,out=ui.out,warn=ui.warn,err=ui.err,confirm_yn=ui.confirm_yn), \
                  patch.object(app,'_select_bottle',app._select_bottle):
                 worker.main()

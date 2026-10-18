@@ -68,6 +68,30 @@ class GuiTests(unittest.TestCase):
         self.assertIsNone(self.app.list.get_row_at_index(0))
         self.assertEqual(self.app.saved_password.get_text(),'')
 
+    def test_code_waits_validates_and_normalizes(self):
+        self.app.show_prompt({'kind':'code','label':'Verify your device'})
+        button=self.app.dialog.get_widget_for_response(self.gui.Gtk.ResponseType.OK)
+        self.assertFalse(button.get_sensitive())
+        self.assertIn('Waiting for you',self.app.status.get_text())
+        self.assertFalse(self.app.spinner.get_spinning())
+        self.app.prompt_input.set_text('12345')
+        self.assertFalse(button.get_sensitive())
+        self.app.prompt_input.set_text('１２３４５６')
+        self.assertFalse(button.get_sensitive())
+        self.app.prompt_input.set_text('123 456')
+        self.assertTrue(button.get_sensitive())
+        sent=[]
+        self.app.reply=lambda value=None,**kwargs:sent.append(value)
+        self.app.dialog.response(self.gui.Gtk.ResponseType.OK)
+        self.assertEqual(sent,['123456'])
+        self.assertIsNone(self.app.dialog)
+
+    def test_empty_search_has_recovery_hint(self):
+        self.app.search.set_text('missing')
+        self.app.populate()
+        self.assertEqual(self.app.results.get_visible_child_name(),'empty')
+        self.assertIn('Try another',self.app.empty_results.get_text())
+
     def test_recovery_requires_explicit_consent(self):
         self.app.show_prompt({'kind':'confirm','label':'Allow one recovery attempt?'})
         button=self.app.dialog.get_widget_for_response(self.gui.Gtk.ResponseType.OK)
