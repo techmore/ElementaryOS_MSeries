@@ -42,3 +42,13 @@ node; DCP/display ("DCP took too long to respond to LAS stats"); an unrelated
 fault in this kernel build. To separate them, an optional bisect is booting with
 the pre-fingerprint DTB (`/boot/m1n1/boot.bin.pre-fingerprint-20261017-103254`);
 that changes the bootloader payload, so it needs explicit owner approval.
+
+## Update 2026-10-17: clean GRUB entry added
+
+Added `elementary-aurora-sep-clean` ("CLEAN freeze test, no dock flags") to
+`/boot/grub/custom.cfg`: same kernel and initramfs, no `thunderbolt.*` flags, no
+`quiet`/`splash`, `loglevel=7`. The original `elementary-aurora-sep` entry and the
+default are untouched; the pre-edit file is saved as
+`/boot/grub/custom.cfg.pre-aurora-clean-*`. Nothing was armed (`grub-reboot` not
+run). To boot it once: pick it in the GRUB menu, or `sudo grub-reboot elementary-aurora-sep-clean`
+(owner decision). Revert: restore the saved `custom.cfg`.
