@@ -3,8 +3,9 @@
 
 transcribe.cpp + Parakeet Unified (cache-aware streaming). Committed text is append-only, so it is
 typed as soon as it commits; whatever is still tentative is typed when you release the key.
-Audio comes from the PipeWire source made by aop-mic.sh. Nothing is stored.
-Env: STREAM_MODEL, STREAM_SOURCE, STREAM_KEY (evdev code, default 184), STREAM_THREADS.
+Audio comes straight from the AOP mic (ALSA, float32) only while the key is held. Nothing is stored.
+Env: STREAM_MODEL, STREAM_SOURCE, STREAM_KEY (evdev code, default 184), STREAM_THREADS, STREAM_GAIN,
+STREAM_DRY (print, do not type), STREAM_QUIET (no chime/notification), STREAM_TEST_WAV / STREAM_TEST_RAW.
 """
 import math, os, queue, signal, struct, subprocess, sys, threading, time, wave, tempfile
 import numpy as np
@@ -14,12 +15,27 @@ MODEL = os.environ.get("STREAM_MODEL", os.path.expanduser(
     "~/.local/share/mseries/stream/models/parakeet-unified-en-0.6b-Q4_K_M.gguf"))
 SOURCE = os.environ.get("STREAM_SOURCE", "direct")  # "direct" = ALSA hw capture, or a PipeWire node name
 CARD = os.environ.get("STREAM_CARD", "hw:1,0")
-GAIN = os.environ.get("STREAM_GAIN", "0.2")
-# 3 raw AOP channels -> mono, drop DC/rumble, band-limit before resampling, fixed gain, limiter
-CHAIN = ("pan=mono|c0=0.333*c0+0.333*c1+0.333*c2,highpass=f=150,lowpass=f=7000,lowpass=f=7000,"
-         f"volume={GAIN},alimiter=limit=0.9,aresample=async=1")
+GAIN = os.environ.get("STREAM_GAIN", "60")
+
+
+def make_chain(gain):
+    """3 raw AOP channels -> mono, drop DC/rumble, band-limit before resampling, fixed gain, limiter.
+    The AOP samples are float32 at about -80 dBFS room noise and -45 dBFS speech, hence the large gain."""
+    return ("pan=mono|c0=0.333*c0+0.333*c1+0.333*c2,highpass=f=120,lowpass=f=7000,lowpass=f=7000,"
+            f"volume={gain},alimiter=limit=0.9,aresample=async=1")
+
+
+CHAIN = make_chain(GAIN)
+# The AOP driver advertises every sample format but always delivers FLOAT_LE; ffmpeg's ALSA input
+# defaults to s16le, which reads float halves as noise (the 2026-10-18 "mic sensitivity" blocker).
+ALSA_IN = ["-f", "alsa", "-c:a", "pcm_f32le", "-channels", "3", "-sample_rate", "48000"]
+# Whisper fallback gate: chunk-level spread (dB) between loud and quiet parts of the capture.
+# Measured 2026-10-18 at gain 60 (mic-eval.py, test-dictation.py): room silence 1.4-4.4 dB, 0-1 active chunks; speech
+# played at -20/-10/0 dB 10.5/17.1/22.3 dB with 14/43/59 active chunks (see README).
+SPEECH_SPREAD_DB = float(os.environ.get("STREAM_SPEECH_DB", "8"))
 KEEP = bool(os.environ.get("STREAM_KEEP"))
 DRY = bool(os.environ.get("STREAM_DRY"))  # print instead of typing
+QUIET = bool(os.environ.get("STREAM_QUIET"))  # tests: no chimes, no notifications
 KEY = int(os.environ.get("STREAM_KEY", "184"))  # KEY_F14
 THREADS = int(os.environ.get("STREAM_THREADS", "6"))
 CHUNK = 1600  # 100 ms of 16 kHz samples
@@ -43,12 +59,16 @@ def keyboard_device():
 
 
 def notify(msg):
+    if QUIET:
+        return
     subprocess.Popen(["notify-send", "-t", "2500", "-i", "audio-input-microphone", "-a", "Dictation",
                       "-h", "string:x-canonical-private-synchronous:mseries-dictation", msg],
                      stderr=subprocess.DEVNULL)
 
 
 def tone(freq, ms, vol=0.25):
+    if QUIET:
+        return
     path = os.path.join(tempfile.gettempdir(), f"mseries-chime-{freq}.wav")
     if not os.path.exists(path):
         n = int(16000 * ms / 1000)
@@ -80,6 +100,18 @@ def whisper_fallback(pcm16):
             pass
 
 
+def speech_stats(pcm):
+    """Speech-like energy in a capture: 100 ms chunk rms, quiet floor (20th percentile), loud level
+    (95th percentile). Speech has pauses, so it shows a wide spread; steady room noise does not.
+    Returns (spread_db, active_chunks, floor_rms)."""
+    n = len(pcm) // CHUNK
+    if n < 5:
+        return 0.0, 0, 0.0
+    rms = np.sqrt((pcm[:n * CHUNK].reshape(n, CHUNK).astype(np.float64) ** 2).mean(1)) + 1e-9
+    floor, loud = np.percentile(rms, 20), np.percentile(rms, 95)
+    return float(20 * np.log10(loud / floor)), int((rms > floor * 2.5).sum()), float(floor)
+
+
 class Typer(threading.Thread):
     """Types text through ydotool in order, off the audio thread."""
     def __init__(self):
@@ -90,7 +122,7 @@ class Typer(threading.Thread):
     def run(self):
         while True:
             text = self.q.get()
-            if text and (os.environ.get("STREAM_TEST_WAV") or DRY):
+            if text and (os.environ.get("STREAM_TEST_WAV") or os.environ.get("STREAM_TEST_RAW") or DRY):
                 print(f"[{time.time() - T0:5.1f}s] type: {text!r}", flush=True)
             elif text:
                 subprocess.run(["ydotool", "type", "--key-delay", "2", "--", text],
@@ -111,7 +143,7 @@ class Dictation:
             return
         self.active = True
         self.stop_evt.clear()
-        if not os.environ.get("STREAM_TEST_WAV"):
+        if not (os.environ.get("STREAM_TEST_WAV") or os.environ.get("STREAM_TEST_RAW")):
             tone(880, 90)
             notify("Listening…")
         self.worker = threading.Thread(target=self.run, daemon=True)
@@ -123,11 +155,14 @@ class Dictation:
 
     def run(self):
         test = os.environ.get("STREAM_TEST_WAV")  # offline test: play a file instead of the mic
+        raw = os.environ.get("STREAM_TEST_RAW")  # offline test: a raw AOP capture (3ch f32 48 kHz) through CHAIN
         if test:
             cmd = ["ffmpeg", "-re", "-v", "error", "-i", test, "-f", "s16le", "-ac", "1", "-ar", "16000", "-"]
+        elif raw:
+            cmd = ["ffmpeg", "-nostdin", "-re", "-v", "error", "-f", "f32le", "-ac", "3", "-ar", "48000", "-i", raw,
+                   "-af", CHAIN, "-ar", "16000", "-f", "s16le", "-"]
         elif SOURCE == "direct":  # open the AOP mic only while the key is held (36 ms to first audio)
-            cmd = ["ffmpeg", "-nostdin", "-v", "error", "-f", "alsa", "-channels", "3", "-sample_rate", "48000",
-                   "-i", CARD, "-af", CHAIN, "-ar", "16000", "-f", "s16le", "-"]
+            cmd = ["ffmpeg", "-nostdin", "-v", "error", *ALSA_IN, "-i", CARD, "-af", CHAIN, "-ar", "16000", "-f", "s16le", "-"]
         else:
             cmd = ["pw-cat", "--record", "--target", SOURCE, "--rate", "16000",
                    "--channels", "1", "--format", "s16", "--raw", "-"]
@@ -181,10 +216,12 @@ class Dictation:
                 if rest.strip():
                     self.typer.q.put(rest)
                 rms = (sq / max(n, 1)) ** 0.5
-                log(f"dictated {len(final)} chars in {time.time() - t0:.1f}s; audio peak {peak:.3f} rms {rms:.4f}")
+                spread, active, floor = speech_stats(np.frombuffer(bytes(kept), np.int16).astype(np.float32) / 32768)
+                log(f"dictated {len(final)} chars in {time.time() - t0:.1f}s; audio peak {peak:.3f} rms {rms:.4f} "
+                    f"floor {floor:.4f} spread {spread:.1f} dB active {active}")
                 if os.environ.get("STREAM_FORCE_FALLBACK"):
                     final = ""  # test hook: pretend streaming recognized nothing
-                if not final.strip() and peak > 0.2 and rms > 0.07 and len(kept) > 16000 * 2:
+                if not final.strip() and len(kept) > 16000 * 2 and spread >= SPEECH_SPREAD_DB and active >= 3:
                     # streaming heard nothing but there was sound: let Whisper have one offline pass
                     redo = whisper_fallback(bytes(kept))
                     if redo and not DRY:
@@ -193,7 +230,7 @@ class Dictation:
                         print("fallback:", redo, flush=True)
                     final = redo or ""
                     log(f"whisper fallback: {len(final)} chars")
-                if not final.strip() and not DRY:
+                if not final.strip() and not DRY and not (test or raw):
                     notify(f"Didn't catch that (mic level {rms * 100:.1f}%, peak {peak * 100:.0f}%)")
                 if KEEP:  # debug only: last capture, in RAM (XDG_RUNTIME_DIR), overwritten each time
                     with wave.open(os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "dictation-last.wav"), "wb") as w:
@@ -206,7 +243,7 @@ class Dictation:
                 cap.wait(2)
             except Exception:
                 cap.kill()
-            if not os.environ.get("STREAM_TEST_WAV"):
+            if not (test or raw):
                 tone(440, 120)
             self.active = False
 
@@ -216,7 +253,8 @@ def main():
     dev = keyboard_device()
     log("ready, keyboard", dev, "model", os.path.basename(MODEL))
     signal.signal(signal.SIGTERM, lambda *a: os._exit(0))
-    # `systemctl --user kill -s USR1 mseries-stream-dictate` toggles recording (self-test without the key)
+    # `systemctl --user kill --kill-whom=main -s USR1 mseries-stream-dictate` toggles recording (self-test
+    # without the key). Without --kill-whom=main systemd also signals the ffmpeg capture child, which dies.
     signal.signal(signal.SIGUSR1, lambda *a: d.stop() if d.active else d.start())
     fmt = "llHHi"
     size = struct.calcsize(fmt)
