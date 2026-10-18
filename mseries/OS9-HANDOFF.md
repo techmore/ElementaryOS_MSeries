@@ -1,5 +1,17 @@
 # OS 9 implementation / Claude Code handoff
 
+## Screenshots: click a window with Command+Shift+4; fixed persistent thumbnail — 2026-10-18 (Claude Code)
+
+Command is Ctrl here, so Command+Shift+4 is Gala's `area-screenshot`. New `mseries/patches/gala-screenshot-window-pick.patch`
+(on top of screen-corners + panel-offset, applied by `install-gala-screen-corners.sh`): in that selector a plain click
+(no drag) captures the topmost window under the pointer via Gala's own window capture; dragging still selects an
+area. The shelf (`screenshot-shelf/mseries-screenshot-shelf`) now draws every shot in a fixed 280x180 card, bottom-right,
+that stays until the x, a drag-and-drop or the next shot (no 7 s expiry; Markup no longer dismisses it).
+**Verified:** patched Gala compiles and links; installed to the private prefix (takes effect at next login);
+shelf installed and running; card renders at identical size for wide and tall images (headless snapshot).
+**Not verified:** the click-to-capture on the real session (needs re-login), card position and drag-out on the
+real screen (no test window was put on the owner's display). Next: re-login, press Command+Shift+4, click a window.
+
 ## Native Discord (Vesktop arm64) — 2026-10-18 (Claude Code)
 
 Added `mseries/install-discord.sh`: pinned Vesktop v1.6.7 aarch64 AppImage (SHA-256 checked), extracted to
