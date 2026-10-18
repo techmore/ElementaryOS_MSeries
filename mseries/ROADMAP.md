@@ -648,3 +648,13 @@ its tightest reported limit so an exhausted five-hour session does not win on we
 exclamation marks independently identify the next weekly reset, including secondary accounts. Markers
 include explanatory tooltips; ties are marked, stale/unknown data is excluded, and monthly resets do
 not qualify. Selection tests and light/dark fixtures cover the behavior.
+
+
+### CodexBar native account-sheet refinement — 2026-10-18
+
+All provider add prompts share a refined Granite sheet: raised brand emblem, elementary accent icons,
+framed instruction rows, concise copy and native footer buttons. Codex waiting, success and retry
+states follow the same design with explicit keyboard defaults and bounded helper detail. Browser
+sign-in, account storage and Claude native-app sessions retain their existing behavior. Four Meson
+suites and 12 light/dark render previews pass; real authentication was previously owner-verified and
+was not repeated for this visual change. The separate OpenCode API-key entry window is unchanged.
