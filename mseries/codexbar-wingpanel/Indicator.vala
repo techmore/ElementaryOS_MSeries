@@ -113,17 +113,6 @@ namespace MSeries {
             refresh_button.update_property (Gtk.AccessibleProperty.LABEL, "Refresh usage", -1);
             refresh_button.clicked.connect (() => refresh_usage ());
             title_row.append (refresh_button);
-            var settings_button = new Gtk.Button.from_icon_name ("preferences-system-symbolic") {
-                tooltip_text = "Settings & sign in",
-                valign = Gtk.Align.CENTER
-            };
-            settings_button.add_css_class ("flat");
-            settings_button.update_property (Gtk.AccessibleProperty.LABEL, "Settings and sign in", -1);
-            settings_button.clicked.connect (() => {
-                popdown_from (settings_button);
-                run_action ("--settings");
-            });
-            title_row.append (settings_button);
             menu.append (title_row);
 
             // Three pages keep every section above the fold; Quota is the default.
@@ -154,12 +143,13 @@ namespace MSeries {
             menu.append (scroll);
             menu.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
 
-            // Three even tiles (icon over label) instead of a list of full-width buttons; Settings is the header gear.
-            var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) { homogeneous = true };
-            actions.add_css_class ("mseries-tiles");
-            actions.append (make_action_button ("Quick View", "view-reveal-symbolic", "--quick-view"));
-            actions.append (make_action_button ("Usage", "view-list-symbolic", "--usage"));
-            actions.append (make_action_button ("Spending", "accessories-calculator-symbolic", "--spending"));
+            // An icon-only dock: one rounded bar, four evenly spaced actions, names in tooltips.
+            var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 2) { homogeneous = true, halign = Gtk.Align.CENTER };
+            actions.add_css_class ("mseries-dock");
+            actions.append (make_dock_button ("Quick View", "window-new-symbolic", "--quick-view"));
+            actions.append (make_dock_button ("Usage details", "view-list-symbolic", "--usage"));
+            actions.append (make_dock_button ("Spending details", "accessories-calculator-symbolic", "--spending"));
+            actions.append (make_dock_button ("Settings & sign in", "avatar-default-symbolic", "--settings"));
             menu.append (actions);
 
             show_state (quota_box, "content-loading-symbolic", "Loading usage…", "", false);
@@ -205,8 +195,10 @@ namespace MSeries {
                 ".mseries-codexbar .dot-off { opacity: 0.45; } " +
                 ".mseries-codexbar .state-title { font-weight: 700; } " +
                 ".mseries-codexbar button { padding: 3px 6px; } " +
-                ".mseries-codexbar .mseries-tiles button { padding: 8px 4px; border-radius: 8px; } " +
-                ".mseries-codexbar .mseries-tiles button:hover { background: alpha(currentColor, 0.08); } " +
+                ".mseries-codexbar .mseries-dock { padding: 3px; border-radius: 12px; background: alpha(currentColor, 0.06); } " +
+                ".mseries-codexbar .mseries-dock button { padding: 7px 18px; border-radius: 9px; min-height: 0; } " +
+                ".mseries-codexbar .mseries-dock button:hover { background: alpha(currentColor, 0.1); } " +
+                ".mseries-codexbar .account-row { margin-top: -2px; } " +
                 ".mseries-codexbar .mseries-switcher button { padding: 2px 6px; } " +
                 "label.mseries-codexbar-bar.level-low { color: @warning_color; } " +
                 "label.mseries-codexbar-bar.level-critical { color: @error_color; } " +
@@ -214,14 +206,13 @@ namespace MSeries {
             Gtk.StyleContext.add_provider_for_display (display, style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
         }
 
-        private Gtk.Button make_action_button (string label, string icon_name, string action) {
-            var content = new Gtk.Box (Gtk.Orientation.VERTICAL, 4) { halign = Gtk.Align.CENTER };
-            content.append (new Gtk.Image.from_icon_name (icon_name) { pixel_size = 16 });
-            var text = new Gtk.Label (label);
-            text.add_css_class ("caption");
-            content.append (text);
-            var button = new Gtk.Button () { child = content };
+        private Gtk.Button make_dock_button (string label, string icon_name, string action) {
+            var button = new Gtk.Button () {
+                child = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 18 },
+                tooltip_text = label
+            };
             button.add_css_class ("flat");
+            button.update_property (Gtk.AccessibleProperty.LABEL, label, -1);
             button.clicked.connect (() => {
                 popdown_from (button);
                 run_action (action);
@@ -526,7 +517,8 @@ namespace MSeries {
                     parser.load_from_data (stdout_text, -1);
                     var root = parser.get_root ();
                     if (root != null && root.get_node_type () == Json.NodeType.OBJECT
-                        && root.get_object ().get_string_member_with_default ("status", "") == "available") {
+                        && (root.get_object ().get_string_member_with_default ("status", "") == "available"
+                            || root.get_object ().get_string_member_with_default ("accountEmail", "").length > 0)) {
                         parsed = root.get_object ().ref ();
                     }
                 }
@@ -767,6 +759,7 @@ namespace MSeries {
                 head.append (plan_label);
             }
             card.append (head);
+            card.append (build_account_row (provider, entry));
 
             var windows = entry.get_array_member ("windows");
             if (windows != null && windows.get_length () > 0) {
@@ -821,6 +814,40 @@ namespace MSeries {
                 card.append (settings);
             }
             return card;
+        }
+
+        /* Which login a provider is tied to: quiet, under the title, never the focus of the card. */
+        private string account_email_for (string provider, Json.Object entry) {
+            var email = entry.get_string_member_with_default ("accountEmail", "");
+            if (email.length == 0 && provider == "codex" && codex_accounts != null) {
+                for (uint i = 0; i < codex_accounts.get_length (); i++) {
+                    var account = codex_accounts.get_object_element (i);
+                    if (account.get_boolean_member_with_default ("active", false)) {
+                        email = account.get_string_member_with_default ("email", "");
+                    }
+                }
+            }
+            if (email.length == 0 && provider == "opencodego" && opencode_local != null) {
+                email = opencode_local.get_string_member_with_default ("accountEmail", "");
+            }
+            return email;
+        }
+
+        private Gtk.Widget build_account_row (string provider, Json.Object entry) {
+            var email = account_email_for (provider, entry);
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 5);
+            row.add_css_class ("account-row");
+            var icon = new Gtk.Image.from_icon_name ("avatar-default-symbolic") { pixel_size = 12 };
+            icon.add_css_class ("dim-label");
+            row.append (icon);
+            var label = new Gtk.Label (email.length > 0 ? email : "Account not detected") {
+                xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.MIDDLE, selectable = false
+            };
+            label.add_css_class ("caption");
+            label.add_css_class ("dim-label");
+            label.set_tooltip_text (email.length > 0 ? "Signed in as " + email : "CodexBar can't tell which account this is signed in with");
+            row.append (label);
+            return row;
         }
 
         private Gtk.Widget build_window (string provider_title_text, Json.Object window, bool stale, int64 now_unix) {
