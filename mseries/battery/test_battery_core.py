@@ -154,6 +154,21 @@ class CoreTests(unittest.TestCase):
         core.save_config(config)
         self.assertEqual(core.load_config()["alert_watts"], 22.0)
 
+    def test_devices_logged_on_change_and_summarised(self):
+        conn = core.connect(os.path.join(tempfile.mkdtemp(), "h.db"))
+        for ts, level, pct in ((0, "Normal", None), (600, "Normal", None), (900, "Low", None)):
+            conn.execute("INSERT INTO devices VALUES (?,?,?,?,?)", (ts, "Mouse", level, pct, "Discharging"))
+        for i in range(5):  # a percentage device falling 10 % a day
+            conn.execute("INSERT INTO devices VALUES (?,?,?,?,?)", (i * 86400, "Keyboard", "Normal", 90 - i * 10.0, "Discharging"))
+        found = {d["name"]: d for d in core.device_summary(conn)}
+        self.assertEqual(found["Mouse"]["level"], "Low")
+        self.assertEqual(found["Mouse"]["since"], 900)
+        self.assertAlmostEqual(found["Keyboard"]["days_left"], 5.0)
+
+    def test_read_devices_ignores_laptop_battery(self):
+        names = [d["name"] for d in core.read_devices()]
+        self.assertNotIn("bq40z651", names)
+
     def test_fmt_hours(self):
         self.assertEqual(core.fmt_hours(7.5), "7h 30m")
         self.assertEqual(core.fmt_hours(0.5), "30 min")

@@ -7,6 +7,7 @@
   mseries-battery events [days]     power steps and suspend gaps, with the likely cause
   mseries-battery apps [days]       estimated energy by app while on battery
   mseries-battery charging [days]   charging runs and standby drain
+  mseries-battery devices           accessory batteries (mouse, keyboard)
   mseries-battery health            capacity and cycle trend by day
   mseries-battery tips [days]       suggestions backed by your own samples, and power-profile comparison
   mseries-battery report [days]     Markdown report on stdout (e.g. > battery.md)
@@ -108,6 +109,11 @@ def main(argv):
         for day in core.health_trend(conn):
             print("%s  %.1f Wh  %4.1f%% of design  %d cycles" % (day["day"], day["full_uwh"] / 1e6,
                   100.0 * day["full_uwh"] / day["design_uwh"] if day["design_uwh"] else 0, day["cycles"]))
+    elif command == "devices":
+        for dev in core.device_summary(conn):
+            print("%-40s %s%s  since %s%s" % (dev["name"], dev["level"] or dev["status"],
+                  " %.0f%%" % dev["pct"] if dev["pct"] is not None else "", stamp(dev["since"]),
+                  "  (~%.0f days left)" % dev["days_left"] if dev["days_left"] else ""))
     elif command == "tips":
         rows = core.fetch(conn, int(time.time() - days_arg(rest, 14) * 86400))
         for item in core.profile_breakdown(rows):
