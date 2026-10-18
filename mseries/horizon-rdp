@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Launch a native FreeRDP session to a desktop. Usage: horizon-rdp [--x11] HOST [USER] [DOMAIN] [extra xfreerdp args]
+# The password is prompted by FreeRDP (never put it on the command line).
+set -euo pipefail
+if [[ ${1:-} == --help || ${1:-} == -h || $# -eq 0 ]]; then
+  sed -n '2,3p' "$0"; exit 0
+fi
+client=sdl-freerdp3
+if [[ ${1:-} == --x11 || -z ${WAYLAND_DISPLAY:-} ]]; then
+  [[ ${1:-} == --x11 ]] && shift
+  client=xfreerdp3
+fi
+command -v "$client" >/dev/null || client=$(command -v sdl-freerdp3 xfreerdp3 xfreerdp | head -1)
+host=$1; shift
+args=(/v:"$host" /dynamic-resolution +clipboard /sound /microphone /gfx:AVC444 /cert:tofu)
+[[ -n ${1:-} && $1 != /* && $1 != +* && $1 != -* ]] && { args+=(/u:"$1"); shift; }
+[[ -n ${1:-} && $1 != /* && $1 != +* && $1 != -* ]] && { args+=(/d:"$1"); shift; }
+exec "$client" "${args[@]}" "$@"
