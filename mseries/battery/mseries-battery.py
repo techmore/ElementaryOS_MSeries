@@ -77,7 +77,7 @@ def main(argv):
                 run["wh_used"], run["avg_w"] or "—", core.fmt_hours(run["projected_hours"])))
     elif command == "profile":
         rows = core.fetch(conn, int(time.time() - days_arg(rest, 14) * 86400))
-        print("%-9s %-8s %7s %8s %12s" % ("Usage", "CPU", "Hours", "Avg W", "Runtime"))
+        print("%-9s %-8s %7s %8s %12s" % ("Usage", "Draw", "Hours", "Avg W", "Runtime"))
         for band in core.usage_profile(rows):
             print("%-9s %-8s %7.1f %8s %12s" % (band["band"], band["cpu_range"], band["hours"],
                                                 band["avg_w"] if band["avg_w"] is not None else "—",

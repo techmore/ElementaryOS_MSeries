@@ -44,6 +44,11 @@ top three CPU processes. Read-only: it never changes a setting.
 - **Logger cost, measured 2026-10-18 on the M1 Pro:** about 0.17 s of CPU per minute (~0.3 % of one core), 18 MB RSS,
   `Nice=15` and idle I/O class. The database grows by tens of KB per hour of use.
 
+## Runtime by usage is banded by draw (2026-10-18)
+Seen on the live app: the CPU-banded table was empty because imported UPower history has watts but no CPU. It now bands by
+system power (Light under 8 W, Moderate 8–15 W, Heavy 15 W and up), weighted by time, so it works on real history. On the
+M1 Pro (14 days): Light 6.3 W (10h runtime), Moderate 12.2 W (5h 06m), Heavy 21.6 W for 5.6 h (2h 54m).
+
 ## App grouping and runtime estimate (2026-10-18)
 - Process CPU is grouped per application using the process's cgroup (`app-…-NAME-pid.scope`, `*.service`), so Brave's
   helper processes count as one app, named from its `.desktop` file when there is one; apps started through the
