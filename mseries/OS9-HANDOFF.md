@@ -1,5 +1,22 @@
 # OS 9 implementation / Claude Code handoff
 
+## Merged calendar deployed and Wingpanel reloaded — 2026-10-18
+
+Owner requested desktop deployment of merged `6d62dfd`. Ran
+`bash mseries/install-calendar-agenda.sh`: pinned datetime ARM64 release build
+and atomic library/account-launcher installation completed, preserving the
+version-aware original backup. Ran `bash mseries/calendar/test-agenda.sh
+/usr/lib/aarch64-linux-gnu/wingpanel-9/libdatetime.so`: all five isolated EDS
+workflow groups pass against the installed production library; runner exits 0.
+Build warnings and expected isolated-session portal/EDS shutdown warnings remain.
+
+Sent SIGTERM only to Wingpanel; the session respawned it (595296 → 637927).
+Verified `/proc/637927/maps` uses the installed calendar library inode 313607,
+without a deleted mapping, and the Calendar Accounts launcher matches merged
+source. No Gala restart, account sign-in, kernel, boot or audio change.
+Next: owner opens the clock dropdown and completes Google account authorization
+if desired; remote Calendar sync and factory hardware boot remain unverified.
+
 ## Calendar Events/Tasks merged into main — 2026-10-18
 
 Integrated `calendar-events-tasks` including the pinned native agenda plugin,

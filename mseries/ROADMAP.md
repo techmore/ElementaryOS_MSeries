@@ -1,5 +1,13 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Merged calendar desktop deployment — 2026-10-18
+
+Merged Events/Tasks plugin built and installed with the maintained installer;
+five isolated workflow groups pass against the deployed library. Wingpanel
+reloaded and its new process mapping matches the installed calendar inode.
+Next acceptance is the owner's clock-dropdown check and optional Google sign-in/
+remote event round trip; factory hardware qualification remains separate.
+
 ## Calendar integration on main — 2026-10-18
 
 Events/Tasks agenda, account setup, installer and factory payload are integrated.
