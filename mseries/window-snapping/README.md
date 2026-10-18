@@ -9,7 +9,9 @@ values. `enhance.sh --only session` also stages this policy for the factory.
 Xwayland windows. Drag a resizable window into any monitor's 40-logical-pixel
 corner and release. A quarter preview appears; Escape cancels. Quarter sizes
 use that monitor's work area, leaving panel space available. Apps retain their
-own minimum size constraints.
+own minimum size constraints. Managed quarters follow work-area changes as the
+patched dock appears and hides. Starting a manual move/resize or changing the
+window size ends that managed layout. See the [dock work-area tests](../display-space/README.md#dock-space-follows-visibility).
 
 Keyboard shortcuts:
 

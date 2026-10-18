@@ -1,5 +1,16 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Dock-aware window space — 2026-10-18
+
+Visible dock space is reserved by the native compositor; hiding returns it to
+maximized and half/quarter-snapped windows. Quarter layouts reflow, manual sizes
+remain, fullscreen retains the monitor, and overlap hiding stays stable after
+reveal. Installed into the private Gala and both quarter-plugin directories;
+loads next sign-in. Ten isolated real-dock/GTK checks, nine existing snapping
+checks, ARM64 builds and shell checks pass. Physical-monitor confirmation remains.
+[Behavior, tests and install commands](display-space/README.md#dock-space-follows-visibility).
+
+
 ## Built-in VRR and boot space — 2026-10-18
 
 [Scoped result and next-kernel checklist](aurora/hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md):

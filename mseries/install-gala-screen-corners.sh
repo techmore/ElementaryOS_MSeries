@@ -24,6 +24,7 @@
 # It also applies gala-panel-offset.patch, which lets a panel (the dock) ask the compositor to
 # slide along its edge (io_elementary_pantheon_panel_v1.set_offset, protocol v2). The Dock's
 # Command-drag uses it; without this Gala the dock simply stays centred.
+# gala-dock-workarea.patch reserves visible dock space and releases it after hiding.
 set -euo pipefail
 
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
@@ -78,6 +79,7 @@ git -C "$source_dir" apply "$repo/mseries/patches/gala-screen-corners.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/gala-screen-dim.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/gala-window-corners.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/gala-panel-offset.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/gala-dock-workarea.patch"
 
 meson setup "$build_dir" "$source_dir" --prefix="$prefix" --libdir=lib --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null
@@ -127,5 +129,5 @@ EOF
 systemctl --user daemon-reload
 systemd-analyze --user verify io.elementary.gala@wayland.service 2>&1 | grep -v '^$' | head -3 || true
 
-echo "Installed. Log out and back in to see the rounded corners (screen ${radius}px, windows ${window_radius}px) and get the brightness keys' sub-2-nit steps."
+echo "Installed. Log out and back in to see the rounded corners (screen ${radius}px, windows ${window_radius}px) and enable dynamic dock space plus the brightness keys' sub-2-nit steps."
 echo "Revert: bash mseries/install-gala-screen-corners.sh --disable   (or delete $dropin)"

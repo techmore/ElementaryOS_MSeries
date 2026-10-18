@@ -1,5 +1,42 @@
 # OS 9 implementation / Claude Code handoff
 
+## Dock-aware window space installed — 2026-10-18
+
+Owner requested that visible dock space be unavailable to windows and reclaimed
+when it hides, committed to main. `gala-dock-workarea.patch`, composed after the
+existing panel-offset patch at pinned Gala `f0791434`, makes panel struts follow
+actual visibility in every hide mode. It reserves once on reveal and releases
+once fully hidden, deduplicating unchanged geometry. Boundary contact counts as
+overlap so intelligent hiding does not oscillate after a maximized window shrinks.
+Hide-mode changes recalculate overlap immediately. Even "never hide" releases its
+reservation while hidden by fullscreen, fixing a stale maximized size when that
+setting changes during fullscreen. Workspace creation inherits existing struts.
+The quarter plugin reflows managed quarters on work-area changes; native Mutter
+handles maximized/half-snapped windows. Manual/app resizes end the quarter layout.
+Normal floating windows retain their manually selected size.
+
+Verification: ARM64 composed Gala and quarter-plugin builds pass; ten real-dock /
+GTK Wayland checks pass under a separate headless two-monitor Gala (three repeated
+reveals, overlap mode, native half snap, all four quarters, manual size, fullscreen
+including hide-mode change, secondary monitor unaffected). The nine existing
+shortcut/corner-drag/Escape checks also pass against the installed build. Eight
+existing desktop-space unit tests, shell syntax, ShellCheck and whitespace checks
+pass. Fixture uses temporary keyfile settings and its own D-Bus/Wayland session;
+stock workspace-right binding is cleared in the fixture to test native half tiling
+with Super+Right. Upstream background/portal/AppCenter startup warnings remain in
+the isolated logs; no clean runtime-log claim. Commands and source attribution:
+[display-space/README.md](display-space/README.md#dock-space-follows-visibility).
+
+Installed rebuilt Gala into `/usr/local/lib/mseries/gala` via Meson and atomically
+installed the new quarter library into both private and stock plugin directories.
+Installed Gala `.text` matches the build (Meson rewrites the install RUNPATH), and
+both quarter libraries match the built file. Existing launcher/drop-in and live
+Gala PID 2645 were preserved; no session restart, boot, kernel or audio change.
+Pre-install private Gala and stock quarter library are backed up locally under
+this chat's `work/deployment-backup`. Next: sign out/in to activate, then confirm
+physical-monitor reveal/resize behavior. Factory hardware boot remains unqualified.
+
+
 ## Boot archive and built-in VRR kept enabled — 2026-10-18
 
 Owner-approved cleanup archived four m1n1 backups and seven Fairydust test boot

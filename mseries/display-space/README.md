@@ -26,6 +26,35 @@ and recalculated when the dock size/layout changes. This requires the existing
 Gala panel protocol v2 patch for movement; stock protocol v1 still works without
 movement. No polling service is added and no power saving is claimed.
 
+## Dock space follows visibility
+
+The private Gala build applies `gala-dock-workarea.patch`: a visible dock reserves
+its actual frame height, including the bottom margin. Once the dock is fully
+hidden, that space returns to the work area. Maximized windows and native half
+snaps follow Mutter's work area; the quarter plugin now reflows its managed
+quarters on work-area changes. Windows you resize manually keep their chosen
+size. Fullscreen applications retain the complete monitor. The reservation only
+affects the monitor containing the dock, and changing hide modes takes effect
+without restarting it. Boundary contact still counts as overlap, avoiding an
+intelligent-hide resize loop. No polling process or per-frame client resize is
+added.
+
+Install with `bash mseries/install-gala-screen-corners.sh` followed by
+`bash mseries/install-window-snapping.sh`. Both load on the next sign-in; the
+installers leave the current desktop running. This compositor behavior is
+separate from the full-height boot profile and requires no boot changes.
+
+`bash mseries/display-space/test-dock-workarea.sh` tests the real private dock,
+a GTK Wayland client, native half snaps, all four quarters, repeated reveal/hide,
+fullscreen and a second monitor in a separate headless Gala. It uses a temporary
+keyfile settings database and its own D-Bus/Wayland session. To test a staged
+Gala build, set `MSERIES_TEST_GALA_PREFIX` to its installed prefix. The quarter
+plugin must be present in that prefix's `lib/gala/plugins`. Dock builds can be
+selected with `MSERIES_TEST_DOCK_PREFIX`. The existing quarter regression test
+also accepts `MSERIES_TEST_GALA_PREFIX`.
+
+## Full-height boot choice
+
 The boot helper duplicates the **exact running kernel's existing stanza** from
 `/boot/grub/custom.cfg`, changing only `appledrm.show_notch`. It retains the kernel,
 initrd, root/encryption arguments, all original entries and `next_entry`. It makes
@@ -71,6 +100,9 @@ this profile's block so later unrelated boot entries survive.
   `8b45a68a122947ad3a6427bf6e159ec2acf04ad0` (8.3.3), GPL-3.0; modified by
   `mseries/patches/dock-drawers.patch`. The cached DisplayConfig implementation
   is adapted from the same pinned Wingpanel source, retaining its SPDX header.
+- Gala: `elementary/gala` at `f0791434ac40a50f2aec64700a47b3bb04145752`
+  (8.6.2), GPL-3.0-or-later; `gala-dock-workarea.patch` composes after the
+  existing screen/window corners, dimming and panel-offset patches.
 - Physical notch height comes from the J314 device-tree `apple,notch-height` (74).
 
 ARM64 compilation and simulated GTK allocation do not establish a successful
