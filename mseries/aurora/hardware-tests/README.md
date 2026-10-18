@@ -11,8 +11,8 @@ Current recorded release:
 | --- | --- | --- | --- |
 | Aurora `.20`, `7.1.12-2-20261017.20-sep-ARCH` | Local J314S/M1 Pro | Boot observed >5 min, PMP ready/started/owns fabric, idle counters advance, selected severe-log scan clear | [Frozen experimental exp1](../frozen/mseries-aurora20-j314s-2026.10.18-exp1.json); incomplete qualification |
 | Aurora `.19` with historical hand-patched boot payload | Local J314S/M1 Pro | Historical hangs/probe failures in `AURORA-SECOND-BOOT.md` | Rejected for promotion; historical evidence, no new test receipt |
-| `.20-enh1` / `-egpu` | ARM64 CI | Prior native builds passed; new integrated build checked by CI | Hardware untested |
-| `7.2.10-elementary-aurora72-wip1` | Pinned PR #139 snapshot | Prepared; 12 PMP production host tests passed; native build in CI | Hardware untested; upstream contributor reports remain separate |
+| `.20-enh1` / `-egpu` | ARM64 CI | Integrated `.20-enh1` native build/inspection passed run 39114197052; prior eGPU build passed run 39085271170 | Hardware untested |
+| `7.2.10-elementary-aurora72-wip1` | Pinned PR #139 snapshot | 12 PMP production host tests and native build/inspection passed run 39114197052 | Build-only: review parity gaps open; hardware untested |
 
 Additional local [smoke receipt](2026-10-18-j314s-aurora20-smoke.json), recorded
 after the exp1 freeze: the real Apple M1 Pro G13S C0 rendered a GLES shader and
@@ -33,6 +33,15 @@ python3 mseries/hardware/kernel-smoke.py --receipt /absolute/work/j314s-test.jso
 It requires a C compiler and EGL/GLES development files. It verifies the live
 boot, module/DTB and kernel/boot-file hashes and feature parameters before testing,
 and refuses a software renderer. Output receipts are never overwritten.
+
+The successful `.20-enh1` artifacts are also retained as a
+[frozen build prerelease](https://github.com/techmore/ElementaryOS_MSeries/releases/tag/mseries-aurora20-enh1-2026.10.18-build1)
+with complete source/config/provenance and authored patches. Eight publication
+asset digests were verified remotely. It remains **hardware untested**.
+`frozen/builds/` manifests identify compiled feature bytes and cannot use
+hardware-qualified labels. The same Git history guard protects their IDs.
+[Native build evidence](../branch-audits/2026-10-18-native-builds.json) records
+both profiles and the exact `.20-enh1` source-tree match to host controls.
 
 ## Collect without changing the machine
 

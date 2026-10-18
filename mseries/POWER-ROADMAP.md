@@ -21,6 +21,10 @@ Future energy captures record active refresh/VRR/layout/DPMS; exp1 did not
 capture active refresh and remains observational. Existing freeze/pin history
 is enforced in CI. No refresh, brightness, audio or sleep setting was changed; no watt saving is
 claimed. [Hardware status and policy](aurora/hardware-tests/README.md).
+Both native profiles passed CI run 39114197052. The exact `.20-enh1` build is
+published as a frozen build candidate with all eight asset digests verified;
+it has no hardware qualification. Baseline exp1 remains the only running-kernel
+freeze, with scoped hardware evidence.
 
 Owner request 2026-10-16: investigate every opportunity to lower light-load power and extend battery runs; document goals
 and a comprehensive plan. This is the single plan; evidence is in `POWER-OPPORTUNITIES-2026-10-16.md` and the optimization

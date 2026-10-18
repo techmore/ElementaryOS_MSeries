@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "kind": "source-host-controls",
-  "captured_at": "2026-10-18T09:31:11.155583+00:00",
-  "source_tree_sha256": "1375c13314b017b8152bf567d75b9589008f6989878d6fcd7f6a533f729d1c55",
+  "captured_at": "2026-10-18T09:48:29.526900+00:00",
+  "source_tree_sha256": "989115032a6efa9881f3f4f26ca96b7aa696aec64c46366af706abe6fbe59c13",
   "tools": {
     "rustc": "rustc 1.93.1 (01f6ddf75 2026-02-11)",
     "cc": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0"
@@ -417,7 +417,7 @@
     "gpu-reader": {
       "production_sha256": "acb3fbb4d2c03014587e5cbbf78d72dc519acb6c9b3189dd9cd7f5d5161158e6",
       "tests_passed": 7,
-      "stdout": "\nrunning 7 tests\ntest production::tests::read_supported_accepts_a_record_shorter_than_the_supported_part ... ok\ntest production::tests::read_supported_rejects_a_truncated_record ... ok\ntest production::tests::read_supported_accepts_zero_unsupported_fields_and_tail ... ok\ntest production::tests::read_supported_rejects_a_nonzero_tail_beyond_the_type ... ok\ntest production::tests::read_supported_rejects_an_unsupported_field ... ok\ntest production::tests::read_up_to_copies_known_bytes_and_consumes_the_declared_stride ... ok\ntest production::tests::read_up_to_zero_extends_a_short_declared_record ... ok\n\ntest result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n",
+      "stdout": "\nrunning 7 tests\ntest production::tests::read_supported_rejects_a_truncated_record ... ok\ntest production::tests::read_up_to_copies_known_bytes_and_consumes_the_declared_stride ... ok\ntest production::tests::read_up_to_zero_extends_a_short_declared_record ... ok\ntest production::tests::read_supported_rejects_an_unsupported_field ... ok\ntest production::tests::read_supported_accepts_zero_unsupported_fields_and_tail ... ok\ntest production::tests::read_supported_rejects_a_nonzero_tail_beyond_the_type ... ok\ntest production::tests::read_supported_accepts_a_record_shorter_than_the_supported_part ... ok\n\ntest result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n",
       "fixture_boundary": "Kernel Result/EINVAL types only; unmodified production util.rs and its original tests"
     }
   },

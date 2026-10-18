@@ -52,9 +52,17 @@ class FrozenHistoryTests(unittest.TestCase):
         self.assertTrue(check_freezes.check(self.root, self.base))
 
     def test_new_release_id_can_be_added_without_changing_old_release(self):
+        before = len(check_freezes.check(self.root, self.base))
         evidence = self.root / "hardware-tests/2026-10-18-j314s-aurora20.json"
         q.freeze("mseries-fixture-exp2", self.root / "frozen/pins/aurora20.json", [evidence], self.root / "frozen/mseries-fixture-exp2.json")
-        self.assertEqual(len(check_freezes.check(self.root, self.base)), 2)
+        self.assertEqual(len(check_freezes.check(self.root, self.base)), before + 1)
+
+    def test_build_freeze_cannot_be_relabelled_as_hardware_tested(self):
+        path = next((self.root / "frozen/builds").glob("*.json"))
+        data = json.loads(path.read_text()); data["hardware_qualification"] = True
+        path.write_text(json.dumps(data))
+        with self.assertRaisesRegex(ValueError, "cannot claim hardware"):
+            check_freezes.check(self.root)
 
 
 if __name__ == "__main__":

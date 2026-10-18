@@ -10,7 +10,10 @@ requires a complete feature matrix, three boot IDs, sleep cycles and matched
 energy pairs. A 64-fix review inventory keeps 7.2 build-only pending shared
 GPU/SEP parity; `.20-enh1` is the first hardware candidate. Freeze history is
 checked in CI; future captures include active refresh/VRR/display-power state.
-Full hardware/energy qualification remains; no savings claimed.
+Native builds/inspection passed for both profiles. `.20-enh1` also has a
+[frozen, hardware-untested build prerelease](https://github.com/techmore/ElementaryOS_MSeries/releases/tag/mseries-aurora20-enh1-2026.10.18-build1)
+with complete source/config/provenance retained. Full hardware/energy
+qualification remains; no savings claimed.
 
 ## Persistent window snapping — 2026-10-18
 

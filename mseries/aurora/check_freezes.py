@@ -4,6 +4,7 @@
 import argparse
 import json
 from pathlib import Path
+import re
 import subprocess
 
 import qualification as q
@@ -38,6 +39,20 @@ def check(directory=HERE, base=None):
         if any(p.parent != directory / "hardware-tests" for p in evidence):
             raise ValueError("evidence path escapes hardware-tests")
         q.verify(path, pins, evidence)
+        verified.append(manifest["id"])
+    for path in sorted((frozen / "builds").glob("*.json")):
+        manifest = json.loads(path.read_text())
+        if manifest.get("kind") != "kernel-build-freeze" or manifest.get("status") != "frozen-build-candidate" or manifest.get("hardware_qualification") is not False or manifest.get("tested_hardware_scopes") != []:
+            raise ValueError("build freeze cannot claim hardware qualification")
+        if manifest.get("schema") != 1 or manifest.get("frozen") is not True or path.stem != manifest.get("id"):
+            raise ValueError("invalid build freeze identity")
+        provenance = manifest["provenance"]
+        if manifest["kernel_release"] != provenance["kernel_release"] or manifest["profile"] != provenance["profile"] or manifest["source_tree_sha256"] != provenance["source_tree_sha256"]:
+            raise ValueError("build freeze and CI provenance differ")
+        if manifest["assets"].get(provenance["package"]) != provenance["package_sha256"] or manifest["assets"].get("build.config") != provenance["resolved_config_sha256"] or manifest["assets"].get(f"linux-{manifest['kernel_release']}-source.tar.gz") != provenance["source_sha256"]:
+            raise ValueError("build freeze package/config/source digest differs")
+        if any(not re.fullmatch(r"[a-f0-9]{64}", value) for value in manifest["assets"].values()):
+            raise ValueError("invalid build freeze asset digest")
         verified.append(manifest["id"])
     return verified
 

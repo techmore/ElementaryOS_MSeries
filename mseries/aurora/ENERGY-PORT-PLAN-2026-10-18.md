@@ -114,13 +114,22 @@ power source, topology and workload differ from ours. These are **not local gain
    Its unchanged source series previously built both native ARM64 profiles in
    [run 39085271170](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39085271170).
    Retested local adapters and production logic. New repository CI rebuilds
-   the combined integration. No existing `.20` files/defaults are replaced.
+   the combined integration. Both `.20-enh1` and `unified72` passed native
+   Image/modules/DTBs/package/inspection in [run 39114197052](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39114197052).
+   The additional `.20` host-control input tree exactly matches CI provenance
+   hash `98911503…`; downloaded candidate artifact checksums verify. No existing
+   `.20` files/defaults are replaced. Exact `.20-enh1` artifacts are now retained
+   in [frozen build1](https://github.com/techmore/ElementaryOS_MSeries/releases/tag/mseries-aurora20-enh1-2026.10.18-build1), with
+   eight remotely digest-verified publication assets. This is a **hardware-untested
+   build freeze**; it is separate from baseline exp1 and cannot carry a hardware
+   qualification label. [Build evidence](branch-audits/2026-10-18-native-builds.json)
+   binds both profiles and their complete source/config/package hashes.
 3. **Now: pin and build WIP independently.**
    `candidate.py prepare --profile unified72` consumes a checksum-pinned PR #139
    archive, resolves the fixed `.20` config against 7.2.10 and uses separate
    identity `7.2.10-elementary-aurora72-wip1`. Source prepared and PMP tests
    passed locally. Native ARM64 Image/modules/DTB/package inspection is a CI
-   gate. This lane deliberately does not claim upstream's Fedora-config tests,
+   gate, now passed in run 39114197052. This lane does not claim upstream's Fedora-config tests,
    complete M3 feature parity, local boot success or a measured power win.
 4. **Next hardware batch: exact boot-chain acceptance.**
    After build success, review candidate DT/m1n1/initramfs and recovery together.

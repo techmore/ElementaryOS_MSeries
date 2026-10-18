@@ -4,6 +4,7 @@
 import argparse
 from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -35,7 +36,8 @@ def check(source, output):
         for name, arguments in (("tunnel-route", []), ("tunnel-clock", CLOCK_CASES), ("bcm4377-resume", [])):
             script = source / "tools/asahi" / f"{name}-tests.py"
             directory = root / name
-            subprocess.run(["python3", str(script), "--out", str(directory), *arguments], check=True)
+            subprocess.run(["python3", str(script), "--out", str(directory), *arguments], check=True,
+                           env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"))
             results[name] = {"harness_sha256": digest(script), "receipt": json.loads((directory / "receipt.json").read_text())}
         shim = root / "gpu-reader.rs"
         shim.write_text('''// SPDX-License-Identifier: GPL-2.0-only OR MIT

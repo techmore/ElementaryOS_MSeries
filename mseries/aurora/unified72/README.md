@@ -12,7 +12,7 @@ already present in `.20` but missing from this WIP snapshot. It applies cleanly,
 restores the upstream stock-generator default and retains opt-in
 `BINDGEN_LAYOUT_TESTS=1` with the corrected private generator. Original author,
 license/trailers, documentation and hash are preserved. This is a build-policy
-port, not a new energy claim. The fixed native build must pass before promotion.
+port, not a new energy claim. The fixed native build and package inspection passed in [run 39114197052](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39114197052); review parity still blocks hardware promotion.
 
 ```sh
 python3 mseries/aurora/candidate.py prepare --profile unified72 \
