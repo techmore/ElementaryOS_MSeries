@@ -25,7 +25,13 @@ misses, isolation/removal and cache sanitation. Light Settings and dark compact
 renders inspected. Upstream remains v0.77.0. Owner requested main push and local
 activation; deploy with one explicit reload after pushing. Prior panel PID432982,
 Gala launcher PID2678 and daemon PID44641 were healthy in the read-only watch.
-Record activation results after deployment; the existing quiet watch continues.
+Commit 390f63f was pushed directly to main at the owner's request. Deployment
+passed all 15 native targets and reloaded Wingpanel once: PID432982 → PID477816.
+The short missing/recovered watch transition corresponds to that authorized reload,
+not a crash. Gala PID2678 and CodexBar daemon PID44641 stayed running. Enabled
+compactQuota=true and showTokens=false locally, preserving all other preferences.
+Initial post-reload watch is healthy; the known empty-FlowBox startup warning
+persists. The existing quiet watch continues; extended soak remains ongoing.
 
 
 ## CodexBar weekly quota beside top-row tokens — 2026-10-18
