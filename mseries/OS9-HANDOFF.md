@@ -1,5 +1,14 @@
 # OS 9 implementation / Claude Code handoff
 
+## Native Discord (Vesktop arm64) — 2026-10-18 (Claude Code)
+
+Added `mseries/install-discord.sh`: pinned Vesktop v1.6.7 aarch64 AppImage (SHA-256 checked), extracted to
+`~/.local/lib/vesktop`, `~/.local/bin/discord` launcher, `discord.desktop`. Official Discord has no Linux arm64
+build, so this third-party client is the native option. **Installed on this machine** and verified: checksum OK,
+`vesktop.bin` is ELF aarch64, desktop file validates, headless Xvfb start ran 15 s without crashing. **Not
+verified:** login, voice/video, screen share, tray, Wayland rendering on the real session (no window was opened
+on the owner's screen). Next: owner logs in; test a call.
+
 ## Power audit and Aurora status after `.20`; dock monitor seems live — 2026-10-18 (Claude Code)
 
 Read-only pass; nothing on the machine was changed. [Power audit](power/AUDIT-2026-10-18.md): docked on AC with a
