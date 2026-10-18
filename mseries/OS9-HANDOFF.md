@@ -1,5 +1,19 @@
 # OS 9 implementation / Claude Code handoff
 
+## Compact upcoming agenda — 2026-10-18
+
+Event title and time now share one line with tighter row padding and date
+headings. Task rows have less vertical spacing and compact subtitles.
+Ellipsized event/task titles and task details retain full hover text.
+The Upcoming 30-day label and date grouping remain. Integrated current main's
+standalone factory account frontend and preserved both documentation histories.
+
+Validation: native ARM64 build and existing real-plugin EDS/navigation
+regressions; rendered Events and Tasks previews. Authenticated read-only
+calendar/task comparisons pass, and the release build is installed locally.
+Five image-wiring regressions pass. Factory boot remains separate.
+
+
 ## Upcoming calendar agenda — 2026-10-18
 
 Events now always displays a rolling 30-day agenda, explicitly labeled

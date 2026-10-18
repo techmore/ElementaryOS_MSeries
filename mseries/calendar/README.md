@@ -6,6 +6,9 @@ date, independently of the calendar selection. Ongoing events remain visible;
 events that have ended and events outside the rolling 30-day range are omitted.
 The list updates as data changes and checks expiry/day rollover each minute
 while open. Browsing the left calendar does not replace the upcoming agenda.
+Event titles and times share one compact row, with tight date headers and
+full event titles on hover. Task rows use compact spacing and single-line
+labels, with full titles and list/due details on hover.
 Tasks shows all incomplete tasks
 from selected, enabled elementary Tasks lists, including tasks with no due
 date. Dated tasks sort first, then undated tasks alphabetically. Activate a

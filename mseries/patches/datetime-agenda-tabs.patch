@@ -1,3 +1,14 @@
+diff --git a/data/EventRow.css b/data/EventRow.css
+index 96b8708..a19965c 100644
+--- a/data/EventRow.css
++++ b/data/EventRow.css
+@@ -2,5 +2,5 @@
+     background: @selected_bg_color;
+     border-radius: 3px;
+-    padding: 6px;
++    padding: 3px 4px;
+ }
+
 diff --git a/meson.build b/meson.build
 index ec722ae..7d681c9 100644
 --- a/meson.build
@@ -17,7 +28,7 @@ index 383cf96..060d771 100644
  src/Services/TimeManager.vala
 +src/Widgets/TaskRow.vala
 diff --git a/src/Indicator.vala b/src/Indicator.vala
-index 7b6ec63..8c2db97 100644
+index 7b6ec63..48702c8 100644
 --- a/src/Indicator.vala
 +++ b/src/Indicator.vala
 @@ -25,4 +25,7 @@ public class DateTime.Indicator : Wingpanel.Indicator {
@@ -52,7 +63,7 @@ index 7b6ec63..8c2db97 100644
 +            });
 +
 +            agenda_stack = new Gtk.Stack () { vexpand = true };
-+            var events_page = new Gtk.Box (Gtk.Orientation.VERTICAL, 6);
++            var events_page = new Gtk.Box (Gtk.Orientation.VERTICAL, 3);
 +            var upcoming_label = new Gtk.Label (_("Upcoming · next 30 days")) {
 +                xalign = 0, margin_start = 6, margin_end = 6
 +            };
@@ -67,7 +78,7 @@ index 7b6ec63..8c2db97 100644
 +            }, "tasks", _("Tasks"));
 +            var tabs = new Gtk.StackSwitcher () {
 +                stack = agenda_stack, halign = Gtk.Align.CENTER,
-+                margin_start = 6, margin_end = 6, margin_bottom = 6
++                margin_start = 6, margin_end = 6, margin_bottom = 3
              };
 +            var agenda = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
 +            agenda.append (tabs);
@@ -85,7 +96,11 @@ index 7b6ec63..8c2db97 100644
 +            });
 
              var settings_button = new Wingpanel.PopoverMenuItem.with_text (_("Date & Time Settings…"));
-@@ -98,5 +139,6 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -95,8 +136,9 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+
+             main_grid = new Gtk.Grid () {
+-                margin_top = 12
++                margin_top = 6
              };
              main_grid.attach (calendar, 0, 0);
 -            main_grid.attach (scrolled_window, 1, 0);
@@ -115,7 +130,7 @@ index 7b6ec63..8c2db97 100644
 +
              settings_button.clicked.connect (() => {
                  try {
-@@ -152,27 +204,15 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -152,27 +204,19 @@ public class DateTime.Indicator : Wingpanel.Indicator {
      private void header_update_func (Gtk.ListBoxRow lbrow, Gtk.ListBoxRow? lbbefore) {
          var row = (DateTime.ComponentRow) lbrow;
 -        if (lbbefore != null) {
@@ -149,10 +164,14 @@ index 7b6ec63..8c2db97 100644
 +        string heading = row.date.format (row.date.get_year () == today.get_year () ? "%a, %b %e" : "%a, %b %e, %Y");
 +        if (day == today.format ("%F")) heading = _("Today") + " · " + heading;
 +        else if (day == today.add_days (1).format ("%F")) heading = _("Tomorrow") + " · " + heading;
-+        row.set_header (new Granite.HeaderLabel (heading) { margin_start = 6, margin_end = 6 });
++        var header = new Gtk.Label (heading) {
++            xalign = 0, margin_start = 6, margin_end = 6, margin_top = 5, margin_bottom = 2
++        };
++        header.add_css_class ("heading");
++        row.set_header (header);
      }
 
-@@ -187,5 +227,7 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -187,5 +231,7 @@ public class DateTime.Indicator : Wingpanel.Indicator {
 
          // If they have the same date, sort them wholeday first
 -        if (e1.is_allday) {
@@ -161,7 +180,7 @@ index 7b6ec63..8c2db97 100644
 +        } else if (e1.is_allday) {
              return -1;
          } else if (e2.is_allday) {
-@@ -208,40 +250,40 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -208,40 +254,40 @@ public class DateTime.Indicator : Wingpanel.Indicator {
      }
 
 -    private bool update_components () {
@@ -229,14 +248,14 @@ index 7b6ec63..8c2db97 100644
 +                        components_on_day[component_uid] = candidate;
 
                          component_listbox.append (components_on_day[component_uid]);
-@@ -256,5 +298,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -256,5 +302,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
 
      public override void opened () {
 -        var events_model = Widgets.CalendarModel.get_default (ECal.ClientSourceType.EVENTS);
 +        var events_model = Widgets.CalendarModel.get_upcoming ();
          var tasks_model = Widgets.CalendarModel.get_default (ECal.ClientSourceType.TASKS);
 
-@@ -269,8 +311,19 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -269,8 +315,19 @@ public class DateTime.Indicator : Wingpanel.Indicator {
 
          calendar.refresh ();
 +        events_model.refresh_upcoming ();
@@ -258,7 +277,7 @@ index 7b6ec63..8c2db97 100644
          var tasks_model = Widgets.CalendarModel.get_default (ECal.ClientSourceType.TASKS);
 
 diff --git a/src/Widgets/ComponentRow.vala b/src/Widgets/ComponentRow.vala
-index 7a626ba..24e9fb5 100644
+index 7a626ba..53b0e0e 100644
 --- a/src/Widgets/ComponentRow.vala
 +++ b/src/Widgets/ComponentRow.vala
 @@ -69,14 +69,13 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
@@ -280,16 +299,58 @@ index 7a626ba..24e9fb5 100644
 -            }
          }
 
-@@ -120,7 +119,5 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+@@ -89,5 +88,5 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+
+         component_image = new Gtk.Image.from_icon_name (icon_name) {
+-            valign = Gtk.Align.START
++            valign = Gtk.Align.CENTER
+         };
+         component_image.get_style_context ().add_provider (css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+@@ -96,7 +95,9 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+             hexpand = true,
+             ellipsize = Pango.EllipsizeMode.END,
+-            lines = 3,
+-            max_width_chars = 30,
+-            wrap = true,
++            lines = 1,
++            width_chars = 12,
++            max_width_chars = 20,
++            wrap = false,
++            tooltip_text = component.get_summary (),
+             wrap_mode = Pango.WrapMode.WORD_CHAR,
+             xalign = 0
+@@ -107,5 +108,9 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+         time_label = new Gtk.Label (null) {
+             use_markup = true,
+-            xalign = 0,
++            xalign = 1,
++            halign = Gtk.Align.END,
++            valign = Gtk.Align.CENTER,
++            max_width_chars = 18,
++            ellipsize = Pango.EllipsizeMode.END
+         };
+         time_label.add_css_class (Granite.CssClass.DIM);
+@@ -113,14 +118,12 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+         grid = new Gtk.Grid () {
+             column_spacing = 6,
+-            margin_top = 3,
+-            margin_bottom = 3,
+-            margin_start = 6,
+-            margin_end = 6
++            margin_top = 1,
++            margin_bottom = 1,
++            margin_start = 4,
++            margin_end = 4
+         };
          grid.attach (component_image, 0, 0);
          grid.attach (name_label, 1, 0);
 -        if (!is_allday) {
 -            grid.attach (time_label, 1, 1);
 -        }
-+        grid.attach (time_label, 1, 1);
++        grid.attach (time_label, 2, 0);
 
          grid.add_css_class ("event");
-@@ -138,5 +135,7 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
+@@ -138,5 +141,7 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
      private void update_timelabel () {
          var time_format = Granite.DateTime.get_default_time_format (time_manager.is_12h);
 -        if (source_selectable is E.SourceTaskList) {
@@ -300,10 +361,10 @@ index 7a626ba..24e9fb5 100644
          } else {
 diff --git a/src/Widgets/TaskRow.vala b/src/Widgets/TaskRow.vala
 new file mode 100644
-index 0000000..8e1a96e
+index 0000000..9d8e65b
 --- /dev/null
 +++ b/src/Widgets/TaskRow.vala
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,39 @@
 +/* Copyright 2026 M-Series contributors. SPDX-License-Identifier: GPL-3.0-or-later */
 +public class DateTime.TaskRow : Gtk.ListBoxRow {
 +    public int64 due_sort { get; private set; default = int64.MAX; }
@@ -311,11 +372,11 @@ index 0000000..8e1a96e
 +
 +    public TaskRow (ICal.Component component, E.Source source) {
 +        title = component.get_summary () ?? _("Untitled task");
-+        var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 3) {
-+            margin_start = 12, margin_end = 12, margin_top = 6, margin_bottom = 6
++        var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 1) {
++            margin_start = 6, margin_end = 6, margin_top = 2, margin_bottom = 2
 +        };
 +        box.append (new Gtk.Label (title) {
-+            xalign = 0, wrap = true, max_width_chars = 28,
++            xalign = 0, wrap = false, max_width_chars = 28, tooltip_text = title,
 +            ellipsize = Pango.EllipsizeMode.END
 +        });
 +        var due = component.get_due ();
@@ -328,8 +389,12 @@ index 0000000..8e1a96e
 +        } else {
 +            detail += " · " + _("No due date");
 +        }
-+        var subtitle = new Gtk.Label (detail) { xalign = 0, wrap = true, max_width_chars = 28 };
++        var subtitle = new Gtk.Label (detail) { xalign = 0, wrap = false, max_width_chars = 28,
++            ellipsize = Pango.EllipsizeMode.END, tooltip_text = detail };
 +        subtitle.add_css_class ("dim-label");
++        var small = new Pango.AttrList ();
++        small.insert (Pango.attr_scale_new (0.85));
++        subtitle.attributes = small;
 +        box.append (subtitle);
 +        child = box;
 +    }
