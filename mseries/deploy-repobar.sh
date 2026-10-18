@@ -17,7 +17,9 @@ install -m 0644 "$repo/mseries/repobar.py" "$HOME/.local/lib/mseries/repobar.py"
 build=$(mktemp -d "${TMPDIR:-/tmp}/mseries-repobar.XXXXXX")
 trap 'rm -rf "$build"' EXIT
 meson setup "$build" "$repo/mseries/repobar-wingpanel" --prefix=/usr >/dev/null
-ninja -C "$build" librepobar.so >/dev/null
+ninja -C "$build" librepobar.so mseries-repobar-settings >/dev/null
+install -d -m 0755 "$HOME/.local/bin"
+install -m 0755 "$build/mseries-repobar-settings" "$HOME/.local/bin/mseries-repobar-settings"
 indicators_dir=$(pkg-config --variable=indicatorsdir wingpanel-9)
 sudo install -m 0755 "$build/librepobar.so" "$indicators_dir/librepobar.so"
 sudo install -m 0644 "$repo/mseries/repobar-wingpanel/icons/github-symbolic.svg" \

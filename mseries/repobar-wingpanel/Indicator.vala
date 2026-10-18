@@ -17,10 +17,17 @@ namespace MSeries {
         private Gtk.Label panel_issues;
         private Gtk.Label panel_alert;
         private Gtk.Box menu;
-        private Gtk.Box repo_list;
+        private Gtk.ListBox repo_list;
+        private Gtk.Overlay list_overlay;
+        private Granite.Toast? toast = null;
+        private string sort_order = "activity";
+        private string settings_executable;
+        private string ui_state_path;
+        private FileMonitor? settings_monitor = null;
         private Gtk.SearchEntry search_entry;
         private Gtk.ToggleButton[] scope_buttons = {};
         private Gtk.MenuButton filter_button;
+        private Gtk.CheckButton[] filter_checks = {};
         private Gtk.Label subtitle_label;
         private Gtk.Label chip_label;
         private Gtk.Button refresh_button;
@@ -88,6 +95,7 @@ namespace MSeries {
                 button.toggled.connect (() => {
                     if (!button.get_active () || scope == index) return;
                     scope = index;
+                    save_ui_state ();
                     render_cached ();
                 });
                 scope_buttons += button;
@@ -111,12 +119,19 @@ namespace MSeries {
                 hscrollbar_policy = Gtk.PolicyType.NEVER,
                 vscrollbar_policy = Gtk.PolicyType.AUTOMATIC,
                 min_content_height = 150,
-                max_content_height = 420,
+                max_content_height = 560,
                 propagate_natural_height = true
             };
-            repo_list = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
+            // A list box gives cards keyboard focus: arrows move between repositories, Enter opens one.
+            repo_list = new Gtk.ListBox () { selection_mode = Gtk.SelectionMode.NONE, activate_on_single_click = false };
+            repo_list.add_css_class ("repo-list");
+            repo_list.row_activated.connect ((row) => {
+                string? url = row.get_data<string> ("url");
+                if (url != null) open_url (url, row);
+            });
             scroll.set_child (repo_list);
-            menu.append (scroll);
+            list_overlay = new Gtk.Overlay () { child = scroll };
+            menu.append (list_overlay);
             menu.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
 
             // Bottom bar: freshness on the left, an icon-only dock on the right (names in tooltips).
@@ -143,11 +158,46 @@ namespace MSeries {
             actions.add_css_class ("mseries-dock");
             actions.append (make_dock_button ("Your pull requests", "mail-send-receive-symbolic", "/pulls"));
             actions.append (make_dock_button ("Your issues", "mail-mark-important-symbolic", "/issues"));
-            actions.append (make_dock_button ("Open GitHub", "web-browser-symbolic", ""));
+            settings_executable = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "mseries-repobar-settings");
+            var settings_button = new Gtk.Button () {
+                child = new Gtk.Image.from_icon_name ("preferences-system-symbolic") { pixel_size = 18 },
+                tooltip_text = "RepoBar Settings…"
+            };
+            settings_button.add_css_class ("flat");
+            settings_button.update_property (Gtk.AccessibleProperty.LABEL, "RepoBar Settings", -1);
+            settings_button.clicked.connect (() => {
+                popdown_from (settings_button);
+                try {
+                    Process.spawn_async (null, { settings_executable }, null,
+                        SpawnFlags.STDOUT_TO_DEV_NULL | SpawnFlags.STDERR_TO_DEV_NULL, null, null);
+                } catch (Error e) {
+                    subtitle_label.set_text ("Settings are not installed");
+                }
+            });
+            actions.append (settings_button);
             actions.append (refresh_button);
             bar.append (actions);
             menu.append (bar);
 
+            // Typing anywhere in the menu searches; Ctrl+F, Ctrl+R and Alt+1…4 mirror elementary apps.
+            search_entry.set_key_capture_widget (menu);
+            var shortcuts = new Gtk.ShortcutController () { scope = Gtk.ShortcutScope.LOCAL };
+            shortcuts.add_shortcut (new Gtk.Shortcut (Gtk.ShortcutTrigger.parse_string ("<Control>f"),
+                new Gtk.CallbackAction (() => { search_entry.grab_focus (); return true; })));
+            shortcuts.add_shortcut (new Gtk.Shortcut (Gtk.ShortcutTrigger.parse_string ("<Control>r"),
+                new Gtk.CallbackAction (() => { refresh (); return true; })));
+            for (int i = 0; i < SCOPES.length; i++) {
+                int index = i;
+                shortcuts.add_shortcut (new Gtk.Shortcut (Gtk.ShortcutTrigger.parse_string ("<Alt>%d".printf (i + 1)),
+                    new Gtk.CallbackAction (() => { scope_buttons[index].set_active (true); return true; })));
+                scope_buttons[i].set_tooltip_text ("Alt+%d".printf (i + 1));
+            }
+            menu.add_controller (shortcuts);
+            search_entry.stop_search.connect (() => search_entry.set_text (""));
+
+            ui_state_path = GLib.Path.build_filename (Environment.get_user_config_dir (), "mseries", "repobar", "panel.ini");
+            restore_ui_state ();
+            watch_settings ();
             show_state ("content-loading-symbolic", "Loading repositories…", "", false);
             schedule_refresh (300);
             load_snapshot ();
@@ -160,7 +210,7 @@ namespace MSeries {
                 ".mseries-repobar .caption { font-size: 8pt; } " +
                 ".mseries-repobar .numeric { font-feature-settings: \"tnum\"; } " +
                 ".mseries-repobar .repo-card { padding: 6px 10px; border-radius: 8px; background: alpha(currentColor, 0.06); } " +
-                ".mseries-repobar .repo-card:hover { background: alpha(currentColor, 0.09); } " +
+                ".mseries-repobar row:hover .repo-card { background: alpha(currentColor, 0.09); } " +
                 ".mseries-repobar .repo-name { font-weight: 700; font-size: 9.5pt; } " +
                 ".mseries-repobar .repo-owner { font-size: 8pt; opacity: 0.6; } " +
                 ".mseries-repobar .count { padding: 0 7px; border-radius: 99px; font-size: 7.5pt; font-weight: 700; " +
@@ -186,6 +236,14 @@ namespace MSeries {
                 ".mseries-repobar .detail-chips button:checked { background: alpha(@accent_color, 0.2); color: @accent_color; } " +
                 ".mseries-repobar .detail-list { margin-top: 2px; padding-top: 4px; border-top: 1px solid alpha(currentColor, 0.1); } " +
                 ".mseries-repobar .pinned-star { color: #d4a300; } " +
+                ".mseries-repobar button.pin-off { opacity: 0; } " +
+                ".mseries-repobar row:hover button.pin-off, .mseries-repobar row:focus-within button.pin-off { opacity: 0.55; } " +
+                ".mseries-repobar row:hover button.pin-off:hover, .mseries-repobar button.pin-off:focus { opacity: 1; } " +
+                ".mseries-repobar list.repo-list { background: transparent; } " +
+                ".mseries-repobar button.show-all { font-size: 8.5pt; padding: 2px 10px; } " +
+                ".mseries-repobar list.repo-list > row { padding: 0; margin-bottom: 8px; border-radius: 8px; background: transparent; } " +
+                ".mseries-repobar list.repo-list > row:last-child { margin-bottom: 0; } " +
+                ".mseries-repobar list.repo-list > row:focus-visible { outline: 2px solid alpha(@accent_color, 0.6); outline-offset: -2px; } " +
                 ".mseries-repobar button.disclosure, .mseries-repobar button.compact.dim-label { opacity: 0.55; } " +
                 ".mseries-repobar button.disclosure:hover, .mseries-repobar button.compact.dim-label:hover { opacity: 1; } " +
                 ".mseries-repobar .mseries-switcher button { padding: 2px 6px; } " +
@@ -211,9 +269,11 @@ namespace MSeries {
                 int index = i;
                 var option = new Gtk.CheckButton.with_label (FILTERS[i]) { active = i == 0 };
                 if (first != null) option.set_group (first); else first = option;
+                filter_checks += option;
                 option.toggled.connect (() => {
                     if (!option.get_active ()) return;
                     filter = index;
+                    save_ui_state ();
                     if (index == 0) filter_button.remove_css_class ("suggested-action");
                     else filter_button.add_css_class ("suggested-action");
                     filter_button.set_tooltip_text (index == 0 ? "Filter repositories" : "Filter: " + FILTERS[index]);
@@ -250,7 +310,7 @@ namespace MSeries {
         }
 
         private void show_state (string icon, string headline, string message, bool with_sign_in) {
-            clear_box (repo_list);
+            repo_list.remove_all ();
             last_render_key = "";
             var state = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) {
                 halign = Gtk.Align.CENTER, margin_top = 14, margin_bottom = 14
@@ -281,7 +341,8 @@ namespace MSeries {
                 });
                 state.append (sign_in);
             }
-            repo_list.append (state);
+            var state_row = new Gtk.ListBoxRow () { child = state, activatable = false, focusable = false };
+            repo_list.append (state_row);
         }
 
         private void load_snapshot () {
@@ -357,12 +418,13 @@ namespace MSeries {
             string error = snapshot.get_string_member_with_default ("error", "");
             int64 fetched_at = snapshot.get_int_member_with_default ("fetchedAt", 0);
             var repos = snapshot.has_member ("repos") ? snapshot.get_array_member ("repos") : new Json.Array ();
-            int dashboard_limit = 5;
+            int dashboard_limit = 20;
             if (snapshot.has_member ("settings")) {
                 var settings = snapshot.get_object_member ("settings");
                 show_forks = settings.get_boolean_member_with_default ("showForks", false);
                 show_archived = settings.get_boolean_member_with_default ("showArchived", false);
-                dashboard_limit = (int) settings.get_int_member_with_default ("repoLimit", 5);
+                dashboard_limit = (int) settings.get_int_member_with_default ("repoLimit", 20);
+                sort_order = settings.get_string_member_with_default ("menuSort", "activity");
                 schedule_refresh ((uint) settings.get_int_member_with_default ("refreshInterval", 300));
             }
             int issues = 0;
@@ -415,26 +477,45 @@ namespace MSeries {
             // Unchanged data and filters: keep the existing cards so open detail panes survive polling.
             string key = "%s|%d|%d|%s".printf (last_snapshot_text.hash ().to_string (), scope, filter, search_entry.get_text ());
             if (key == last_render_key) return;
-            clear_box (repo_list);
+            repo_list.remove_all ();
             last_render_key = key;
             if (repos.get_length () == 0) {
                 show_state ("folder-open-symbolic", "No repositories yet",
                     error.length > 0 ? error : "This GitHub account has no repositories RepoBar can read.", false);
                 return;
             }
-            int shown = 0;
+            var visible = new GenericArray<Json.Object> ();
+            int recent = 0;
             for (int pass = 0; pass < (scope == 0 ? 2 : 1); pass++) {
                 for (uint i = 0; i < repos.get_length (); i++) {
                     var repo = repos.get_object_element (i);
                     bool pinned = repo.get_string_member_with_default ("repoState", "visible") == "pinned";
                     // Dashboard: pins first, then the most recently updated repositories up to the limit.
                     if (scope == 0 && ((pass == 0) != pinned)) continue;
-                    if (scope == 0 && pass == 1 && shown >= dashboard_limit) continue;
+                    if (scope == 0 && pass == 1 && recent >= dashboard_limit) continue;
                     if (matches_filter (repo)) {
-                        repo_list.append (build_card (repo));
-                        shown++;
+                        visible.add (repo);
+                        if (scope == 0 && pass == 1) recent++;
                     }
                 }
+            }
+            if (scope != 0 && sort_order != "activity") visible.sort_with_data (compare_repos);
+            int shown = (int) visible.length;
+            for (int i = 0; i < shown; i++) {
+                var repo = visible[i];
+                var row = new Gtk.ListBoxRow () { child = build_card (repo) };
+                row.set_data<string> ("url", repo.get_string_member_with_default ("url", ""));
+                row.update_property (Gtk.AccessibleProperty.LABEL, repo.get_string_member_with_default ("name", ""), -1);
+                repo_list.append (row);
+            }
+            int listed = 0;
+            for (uint i = 0; i < repos.get_length (); i++) if (matches_filter_in (repos.get_object_element (i), 3)) listed++;
+            if (scope == 0 && shown > 0 && listed > shown) {
+                var more = new Gtk.Button.with_label ("Show all %d repositories".printf (listed)) { halign = Gtk.Align.CENTER };
+                more.add_css_class ("flat");
+                more.add_css_class ("show-all");
+                more.clicked.connect (() => scope_buttons[3].set_active (true));
+                repo_list.append (new Gtk.ListBoxRow () { child = more, activatable = false });
             }
             if (shown == 0) {
                 bool searching = search_entry.get_text ().strip ().length > 0 || filter != 0;
@@ -456,6 +537,93 @@ namespace MSeries {
                 failing > 0 ? " · CI failing on %d".printf (failing) : "", stale ? " · cached" : ""));
         }
 
+        private int compare_repos (Json.Object a, Json.Object b) {
+            string member = sort_order == "prs" ? "openPullRequests" : sort_order == "issues" ? "openIssues" :
+                sort_order == "stars" ? "stars" : "";
+            if (member.length > 0) {
+                int64 difference = b.get_int_member_with_default (member, 0) - a.get_int_member_with_default (member, 0);
+                if (difference != 0) return difference > 0 ? 1 : -1;
+            }
+            if (sort_order == "pinned") {
+                bool pa = a.get_string_member_with_default ("repoState", "") == "pinned";
+                bool pb = b.get_string_member_with_default ("repoState", "") == "pinned";
+                if (pa != pb) return pa ? -1 : 1;
+                return 0;
+            }
+            return member.length > 0 ? 0 : strcmp (a.get_string_member_with_default ("name", "").casefold (),
+                b.get_string_member_with_default ("name", "").casefold ());
+        }
+
+        private void restore_ui_state () {
+            var file = new KeyFile ();
+            try {
+                file.load_from_file (ui_state_path, KeyFileFlags.NONE);
+                int saved_scope = file.get_integer ("panel", "scope");
+                int saved_filter = file.get_integer ("panel", "filter");
+                if (saved_scope >= 0 && saved_scope < SCOPES.length) scope_buttons[saved_scope].set_active (true);
+                if (saved_filter > 0 && saved_filter < FILTERS.length) filter_checks[saved_filter].set_active (true);
+            } catch (Error e) {
+                // First run: Dashboard, no filter.
+            }
+        }
+
+        private void save_ui_state () {
+            var file = new KeyFile ();
+            file.set_integer ("panel", "scope", scope);
+            file.set_integer ("panel", "filter", filter);
+            try {
+                DirUtils.create_with_parents (GLib.Path.get_dirname (ui_state_path), 0700);
+                file.save_to_file (ui_state_path);
+            } catch (Error e) {
+                // Remembering the tab is a convenience only.
+            }
+        }
+
+        /* Settings changes from the Settings window or CLI re-read the cached snapshot without a GitHub request. */
+        private void watch_settings () {
+            try {
+                var directory = File.new_for_path (GLib.Path.build_filename (Environment.get_user_config_dir (), "mseries", "repobar"));
+                DirUtils.create_with_parents (directory.get_path (), 0700);
+                settings_monitor = directory.monitor_directory (FileMonitorFlags.WATCH_MOVES);
+                uint pending = 0;
+                settings_monitor.changed.connect ((file, other, event) => {
+                    string name = (other ?? file).get_basename ();
+                    if (file.get_basename () != "settings.json" && name != "settings.json") return;
+                    if (pending != 0) Source.remove (pending);
+                    pending = Timeout.add (200, () => {
+                        pending = 0;
+                        load_snapshot ();
+                        return Source.REMOVE;
+                    });
+                });
+            } catch (Error e) {
+                // Changes still apply at the next scheduled read.
+            }
+        }
+
+        private delegate void UndoAction ();
+
+        private void show_toast (string title, owned UndoAction? undo) {
+            if (toast != null) {
+                toast.withdraw ();
+                list_overlay.remove_overlay (toast);
+            }
+            var next = new Granite.Toast (title) { valign = Gtk.Align.END, halign = Gtk.Align.CENTER };
+            if (undo != null) {
+                next.set_default_action ("Undo");
+                next.default_action.connect (() => undo ());
+            }
+            next.dismissed.connect (() => {
+                if (toast == next) {
+                    list_overlay.remove_overlay (next);
+                    toast = null;
+                }
+            });
+            list_overlay.add_overlay (next);
+            toast = next;
+            next.send_notification ();
+        }
+
         private static bool ci_failing (Json.Object repo) {
             string ci = repo.get_string_member_with_default ("ci", "");
             return ci == "FAILURE" || ci == "ERROR";
@@ -467,6 +635,10 @@ namespace MSeries {
         }
 
         private bool matches_filter (Json.Object repo) {
+            return matches_filter_in (repo, scope);
+        }
+
+        private bool matches_filter_in (Json.Object repo, int scope) {
             string state = repo.get_string_member_with_default ("repoState", "visible");
             bool all = scope == 3;
             if (!all && state == "hidden") return false;
@@ -610,7 +782,7 @@ namespace MSeries {
             };
             star.add_css_class ("flat");
             star.add_css_class ("compact");
-            if (pinned) star.add_css_class ("pinned-star"); else star.add_css_class ("dim-label");
+            star.add_css_class (pinned ? "pinned-star" : "pin-off");
             star.update_property (Gtk.AccessibleProperty.LABEL, star.tooltip_text, -1);
             star.clicked.connect (() => change_repo_state.begin (name, pinned ? "unpin" : "pin"));
             return star;
@@ -662,7 +834,10 @@ namespace MSeries {
                 kind.contains ("pull") ? "mail-send-receive-symbolic" :
                 kind.contains ("issue") ? "mail-mark-important-symbolic" :
                 kind.contains ("release") ? "starred-symbolic" : "document-open-recent-symbolic";
-            return link_row (icon, title, kind, activity.get_string_member_with_default ("url", ""));
+            string when = relative_time (activity.get_string_member_with_default ("updatedAt", ""));
+            return link_row (icon, title, when.length > 0 && when != activity.get_string_member_with_default ("updatedAt", "")
+                ? "%s · %s".printf (kind == "pull request" ? "PR" : kind, when) : kind,
+                activity.get_string_member_with_default ("url", ""));
         }
 
         private Gtk.Widget? build_local_row (Json.Object repo) {
@@ -900,7 +1075,7 @@ namespace MSeries {
             while (box.get_first_child () != null) box.remove (box.get_first_child ());
         }
 
-        private async void change_repo_state (string name, string action) {
+        private async void change_repo_state (string name, string action, bool undoing = false) {
             try {
                 var process = new Subprocess.newv (new string[] { executable, action, name },
                     SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE);
@@ -909,6 +1084,12 @@ namespace MSeries {
                 yield process.communicate_utf8_async (null, null, out output, out error_text);
                 if (!process.get_successful ()) throw new IOError.FAILED (error_text.strip ());
                 read_snapshot.begin (false);
+                if (!undoing) {
+                    string short_name = name.contains ("/") ? name.substring (name.index_of ("/") + 1) : name;
+                    string opposite = action == "pin" ? "unpin" : action == "unpin" ? "pin" : action == "hide" ? "show" : "hide";
+                    string verb = action == "pin" ? "Pinned" : action == "unpin" ? "Unpinned" : action == "hide" ? "Hid" : "Showing";
+                    show_toast ("%s %s".printf (verb, short_name), () => change_repo_state.begin (name, opposite, true));
+                }
             } catch (Error e) {
                 subtitle_label.set_text ("Could not update repository preference");
                 subtitle_label.set_tooltip_text (e.message);
@@ -940,8 +1121,13 @@ namespace MSeries {
             }
         }
 
+        public void probe_toast () {
+            show_toast ("Hid dock", () => {});
+        }
+
         public void probe_expand_first () {
-            var card = repo_list.get_first_child ();
+            var row = repo_list.get_row_at_index (0);
+            var card = row != null ? row.get_child () : null;
             var head = card != null && card.get_first_child () != null ? card.get_first_child ().get_first_child () : null;
             var toggle = head != null ? head.get_last_child () as Gtk.ToggleButton : null;
             if (toggle != null) toggle.set_active (true);
