@@ -34,15 +34,32 @@ int main (string[] args) {
     Gtk.init ();
     Granite.init ();
     var delay = args.length > 2 ? int.parse (args[2]) : 1500;
-    if (Environment.get_variable ("CB_DIALOG") == "codex") {
-        var dialog = new MSeries.AccountDialog ("Add a Codex account",
-            "Connect another ChatGPT account to CodexBar.",
-            "mseries-codexbar-openai-symbolic", { "/bin/true" });
+    var dialog_scenario = Environment.get_variable ("CB_DIALOG");
+    if (dialog_scenario != null) {
+        MSeries.AccountDialog dialog;
+        if (dialog_scenario == "claude" || dialog_scenario == "opencode") {
+            bool claude = dialog_scenario == "claude";
+            dialog = new MSeries.AccountDialog.prompt (
+                claude ? "Add a Claude account" : "Sign in to OpenCode Go",
+                claude ? "Add another Claude Code account to CodexBar." : "Connect your OpenCode Go usage to CodexBar.",
+                "mseries-codexbar-%s-symbolic".printf (dialog_scenario), dialog_scenario,
+                claude ? "Sign in with browser" : "Continue");
+        } else {
+            string[] command = dialog_scenario == "codex-wait" ? new string[] { "/bin/sleep", "30" }
+                : dialog_scenario == "codex-error" ? new string[] { "/bin/sh", "-c", "echo 'Browser sign-in timed out. Please try again.'; exit 1" }
+                : new string[] { "/bin/true" };
+            dialog = new MSeries.AccountDialog ("Add a Codex account",
+                "Connect another ChatGPT account to CodexBar.",
+                "mseries-codexbar-openai-symbolic", command);
+        }
         dialog.present ();
+        if (dialog_scenario.has_prefix ("codex-")) {
+            Timeout.add (100, () => { dialog.response (Gtk.ResponseType.ACCEPT); return Source.REMOVE; });
+        }
         var loop = new MainLoop ();
         Timeout.add (delay, () => { capture (dialog, dialog, args[1], loop); return Source.REMOVE; });
         loop.run ();
-        dialog.destroy ();
+        dialog.close ();
         return render_failed ? 1 : 0;
     }
 

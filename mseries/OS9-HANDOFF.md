@@ -3265,3 +3265,25 @@ long-window bottlenecks, stale and unknown data, ties, reset boundaries, and mon
 without duration metadata. The `hints` render fixture deliberately makes a saved Claude account best
 and a saved Codex account next to reset; checked in light/dark. Upstream pin remains 0.77.0. Publish,
 merge to main and deploy as the owner requested for this ongoing CodexBar work.
+
+
+## CodexBar: native account-sheet visual refinement — 2026-10-18
+
+Owner requested a more beautiful add-account popup that belongs on elementary OS, merged to main.
+`AccountDialog.vala` now uses a raised provider emblem, theme-colored instruction icons, a bordered
+two-row instruction group, clearer typography and spacing, and the standard Granite response area.
+Colors follow the elementary accent/light/dark theme; Claude retains its recognizable terracotta mark.
+Codex, Claude and OpenCode add prompts share the sheet with provider-specific copy and actions.
+Claude/OpenCode keep their existing confirmation-to-helper flow; the separate OpenCode key-entry
+window and its authentication logic are unchanged. Codex still uses the owner-verified isolated browser
+sign-in helper; the active account and native Claude session handling are unchanged.
+
+Codex waiting, success and retry states use the same visual hierarchy, native default actions and
+keyboard focus. Helper detail is selectable, bounded to four lines and available in full on hover;
+long errors cannot stretch the dialog. Cancel still terminates the running login helper.
+
+Validation: built the module and render probe, passed four Meson suites, and inspected 12 headless
+previews (three provider prompts plus waiting/success/failure in light/dark). `CB_DIALOG` probe modes
+use only mock commands, never the owner's sign-in or credentials. No live reauthentication was needed
+for this presentation change. Upstream pin remains 0.77.0. Publish through a PR, merge to main and run
+`bash mseries/deploy-codexbar.sh` after publishing and after deploying the merged revision.

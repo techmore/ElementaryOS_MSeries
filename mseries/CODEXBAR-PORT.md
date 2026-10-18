@@ -94,12 +94,12 @@ output only contains account identities, quota windows, and actionable errors. T
 quota remains supplied by upstream's snapshot. Currently the two saved OpenCode login records on this
 machine belong to the same account/workspace and appear once.
 
-Codex **+** now opens `AccountDialog.vala`, a Granite dialog with a centered provider mark, clear title and instruction card, a browser sign-in action,
+Codex **+** opens `AccountDialog.vala`, a Granite account sheet with a raised provider mark, clear title, theme-accented instruction rows and native response buttons, a browser sign-in action,
 inline progress/result, retry and cancellation. `codexbar-accounts.py login` finds the CLI on PATH or
 bundled with the desktop app, starts official `codex login` in a private temporary `CODEX_HOME` with
 file credential storage, and saves the result into the account store. It never replaces the live
 Codex auth file. Cancellation terminates the login child and removes temporary credentials. Initial
-Add account and result messages for the other providers use Granite as well.
+Claude and OpenCode add confirmations use the same account sheet with provider-specific copy; their existing helper/result flow remains intact. Codex waiting/success/retry states share the visual hierarchy, keyboard defaults and bounded selectable detail. The separate OpenCode API-key entry window is unchanged. Render with `CB_DIALOG=codex|claude|opencode|codex-wait|codex-success|codex-error` through `probe/run-probe.sh`; these modes never run real sign-in helpers.
 Official login/storage reference: https://learn.chatgpt.com/docs/auth .
 
 Secondary quota values use the same theme success/warning/error colours and thresholds as the usage

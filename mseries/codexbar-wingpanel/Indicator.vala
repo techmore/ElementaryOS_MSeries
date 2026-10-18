@@ -550,15 +550,10 @@ namespace MSeries {
         }
 
         /* Adding an account needs a browser sign-in we can't drive, so ask in a small native dialog instead of a terminal. */
-        private void ask_to_save (string heading, string detail, string save_label, owned ActionFunc on_save) {
-            var dialog = new Granite.MessageDialog.with_image_from_icon_name (heading, detail,
-                "system-users", Gtk.ButtonsType.NONE);
-            dialog.add_button ("Cancel", Gtk.ResponseType.CANCEL);
-            dialog.add_button (save_label, Gtk.ResponseType.ACCEPT).add_css_class ("suggested-action");
-            dialog.response.connect ((response) => {
-                dialog.close ();
-                if (response == Gtk.ResponseType.ACCEPT) on_save ();
-            });
+        private void ask_to_save (string heading, string detail, string save_label, string provider, owned ActionFunc on_save) {
+            var dialog = new AccountDialog.prompt (heading, detail,
+                "mseries-codexbar-%s-symbolic".printf (provider), provider, save_label);
+            dialog.confirmed.connect (() => on_save ());
             dialog.present ();
         }
 
@@ -595,8 +590,8 @@ namespace MSeries {
         // Upstream only imports opencode.ai cookies on macOS; our helper takes an API key (or a built-in sign-in) instead.
         private void add_opencode_account () {
             ask_to_save ("Sign in to OpenCode Go",
-                "A small window opens. Sign in to opencode.ai in your browser (passkeys work there), copy an API key from the console and paste it in. CodexBar checks the key before saving it.",
-                "Continue", () => {
+                "Connect your OpenCode Go usage to CodexBar.",
+                "Continue", "opencode", () => {
                     run_saver.begin ({ "python3", helper_path ("codexbar-opencode-login.py"), "login" },
                         "OpenCode Go signed in", "Couldn't sign in to OpenCode Go", true);
                 });
@@ -604,8 +599,8 @@ namespace MSeries {
 
         private void add_claude_account () {
             ask_to_save ("Add a Claude account",
-                "CodexBar opens your browser to sign in to Claude, then saves the login so you can switch between accounts from here. Any account that is already signed in is saved first.",
-                "Sign in and save", () => {
+                "Add another Claude Code account to CodexBar.",
+                "Sign in with browser", "claude", () => {
                     run_saver.begin ({ "python3", helper_path ("codexbar-claude.py"), "login" },
                         "Claude account added", "Couldn't add the Claude account");
                 });
