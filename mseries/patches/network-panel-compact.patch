@@ -1,6 +1,6 @@
 --- a/src/Widgets/PanelSpeed.vala
 +++ b/src/Widgets/PanelSpeed.vala
-@@ -59,6 +59,12 @@
+@@ -59,6 +59,11 @@
      private int64 last_time = 0;
      private bool have_baseline = false;
  
@@ -8,27 +8,32 @@
 +    private double up = 0;
 +    private bool have_rate = false;
 +    private bool show_exact = false;
-+    private uint hover_timeout_id = 0;
 +
      construct {
          speed_label = new Gtk.Label (null) {
              use_markup = true
-@@ -68,15 +74,79 @@
+@@ -68,15 +73,69 @@
          margin_start = 4;
          visible = false;
  
-+        tooltip_text = _("Hold Command while hovering to show measured speeds");
-+        var motion = new Gtk.EventControllerMotion ();
++        tooltip_text = _("Hover to show measured speeds");
++        var motion = new Gtk.EventControllerMotion () {
++            propagation_phase = Gtk.PropagationPhase.CAPTURE
++        };
 +        motion.enter.connect (() => {
-+            update_hover ();
-+            if (hover_timeout_id == 0) {
-+                // Modifier events go to the focused application, so sample the keyboard
-+                // only while hovered, including when Command is pressed after entering.
-+                hover_timeout_id = Timeout.add (50, update_hover);
-+            }
++            show_exact = true;
++            render_rates ();
 +        });
 +        motion.leave.connect (stop_hover);
-+        add_controller (motion);
++        // Attach to the icon's whole display, including the text and icon hit areas.
++        notify["parent"].connect (() => {
++            if (motion.get_widget () != null) {
++                motion.get_widget ().remove_controller (motion);
++            }
++            if (parent != null) {
++                parent.add_controller (motion);
++            }
++        });
 +        unmap.connect (stop_hover);
 +
          var settings = PanelSpeedSettings.get_default ();
@@ -45,23 +50,7 @@
 +        base.dispose ();
 +    }
 +
-+    private bool update_hover () {
-+        var seat = get_display ().get_default_seat ();
-+        var keyboard = seat != null ? seat.get_keyboard () : null;
-+        var state = keyboard != null ? keyboard.get_modifier_state () : (Gdk.ModifierType) 0;
-+        bool exact = (state & (Gdk.ModifierType.SUPER_MASK | Gdk.ModifierType.META_MASK)) != 0;
-+        if (show_exact != exact) {
-+            show_exact = exact;
-+            render_rates ();
-+        }
-+        return Source.CONTINUE;
-+    }
-+
 +    private void stop_hover () {
-+        if (hover_timeout_id != 0) {
-+            Source.remove (hover_timeout_id);
-+            hover_timeout_id = 0;
-+        }
 +        show_exact = false;
 +        render_rates ();
 +    }
@@ -93,7 +82,7 @@
                  speed_label.label = "↓ … ↑ …";
                  visible = true;
                  tick ();
-@@ -100,15 +170,10 @@
+@@ -100,15 +159,10 @@
          var now = get_monotonic_time ();
          if (have_baseline && now > last_time && rx >= last_rx && tx >= last_tx) {
              double seconds = (now - last_time) / 1000000.0;
