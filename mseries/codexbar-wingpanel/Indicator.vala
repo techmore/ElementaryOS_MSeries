@@ -7,6 +7,7 @@ using Wingpanel;
 namespace MSeries {
     public class CodexBarIndicator : Wingpanel.Indicator {
         private Gtk.Label panel_label;
+        private delegate void ActionFunc ();
         private Gtk.Box panel_display;
         private Gtk.Box menu;
         private Gtk.Label subtitle_label;
@@ -81,42 +82,25 @@ namespace MSeries {
             menu.add_css_class ("mseries-codexbar");
             install_style (menu.get_display ());
 
-            // Header: name and freshness on the left, state chip and refresh on the right.
-            var title_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
-            var menu_icon = new Gtk.Image.from_icon_name ("mseries-codexbar-openai-symbolic") {
-                pixel_size = 16
-            };
-            menu_icon.add_css_class ("symbolic");
-            title_row.append (menu_icon);
-
-            var title_stack = new Gtk.Box (Gtk.Orientation.VERTICAL, 1) { hexpand = true };
-            var title = new Gtk.Label ("CodexBar") { xalign = 0 };
-            title.add_css_class ("provider-title");
-            title_stack.append (title);
-            subtitle_label = new Gtk.Label ("Loading usage…") { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
+            // No header: the quota cards lead. Freshness and refresh live in the bottom bar with the dock.
+            subtitle_label = new Gtk.Label ("Loading usage…") { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.END };
             subtitle_label.add_css_class ("dim-label");
             subtitle_label.add_css_class ("caption");
-            title_stack.append (subtitle_label);
-            title_row.append (title_stack);
-
+            subtitle_label.add_css_class ("numeric");
             chip_label = new Gtk.Label ("") { valign = Gtk.Align.CENTER, visible = false };
             chip_label.add_css_class ("chip");
-            title_row.append (chip_label);
 
             refresh_display = new Gtk.Stack ();
-            refresh_display.add_named (new Gtk.Image.from_icon_name ("view-refresh-symbolic"), "idle");
+            refresh_display.add_named (new Gtk.Image.from_icon_name ("view-refresh-symbolic") { pixel_size = 18 }, "idle");
             refresh_spinner = new Gtk.Spinner ();
             refresh_display.add_named (refresh_spinner, "busy");
             refresh_button = new Gtk.Button () {
                 child = refresh_display,
-                tooltip_text = "Refresh usage",
-                valign = Gtk.Align.CENTER
+                tooltip_text = "Refresh usage"
             };
             refresh_button.add_css_class ("flat");
             refresh_button.update_property (Gtk.AccessibleProperty.LABEL, "Refresh usage", -1);
             refresh_button.clicked.connect (() => refresh_usage ());
-            title_row.append (refresh_button);
-            menu.append (title_row);
 
             // Three pages keep every section above the fold; Quota is the default.
             quota_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
@@ -146,14 +130,20 @@ namespace MSeries {
             menu.append (scroll);
             menu.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
 
-            // An icon-only dock: one rounded bar, four evenly spaced actions, names in tooltips.
-            var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 2) { homogeneous = true, halign = Gtk.Align.CENTER };
+            // Bottom bar: freshness on the left, an icon-only dock on the right (names in tooltips).
+            var bar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+            bar.add_css_class ("mseries-bar");
+            bar.append (chip_label);
+            bar.append (subtitle_label);
+            var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { homogeneous = true };
             actions.add_css_class ("mseries-dock");
             actions.append (make_dock_button ("Quick View", "window-new-symbolic", "--quick-view"));
             actions.append (make_dock_button ("Usage details", "view-list-symbolic", "--usage"));
             actions.append (make_dock_button ("Spending details", "accessories-calculator-symbolic", "--spending"));
             actions.append (make_dock_button ("Settings & sign in", "avatar-default-symbolic", "--settings"));
-            menu.append (actions);
+            actions.append (refresh_button);
+            bar.append (actions);
+            menu.append (bar);
 
             show_state (quota_box, "content-loading-symbolic", "Loading usage…", "", false);
             show_state (sessions_box, "content-loading-symbolic", "Checking sessions…", "", false);
@@ -181,7 +171,7 @@ namespace MSeries {
                 ".mseries-codexbar .provider-title { font-weight: 700; font-size: 9.5pt; } " +
                 ".mseries-codexbar .window-name { font-weight: 700; } " +
                 ".mseries-codexbar .numeric { font-feature-settings: \"tnum\"; } " +
-                ".mseries-codexbar .card { padding: 8px 10px; border-radius: 8px; background: alpha(currentColor, 0.06); } " +
+                ".mseries-codexbar .card { padding: 6px 10px; border-radius: 8px; background: alpha(currentColor, 0.06); } " +
                 ".mseries-codexbar .chip { padding: 1px 8px; border-radius: 99px; font-size: 7.5pt; font-weight: 700; " +
                 "  background: alpha(@warning_color, 0.22); color: @warning_color; } " +
                 ".mseries-codexbar .chip.busy { background: alpha(currentColor, 0.1); color: inherit; } " +
@@ -199,9 +189,13 @@ namespace MSeries {
                 ".mseries-codexbar .state-title { font-weight: 700; } " +
                 ".mseries-codexbar button { padding: 3px 6px; } " +
                 ".mseries-codexbar .mseries-dock { padding: 3px; border-radius: 12px; background: alpha(currentColor, 0.06); } " +
-                ".mseries-codexbar .mseries-dock button { padding: 7px 18px; border-radius: 9px; min-height: 0; } " +
+                ".mseries-codexbar .mseries-bar { margin-top: 2px; } " +
+                ".mseries-codexbar .mseries-dock button { padding: 6px 11px; border-radius: 9px; min-height: 0; } " +
                 ".mseries-codexbar .mseries-dock button:hover { background: alpha(currentColor, 0.1); } " +
-                ".mseries-codexbar .account-row { margin-top: -2px; } " +
+                ".mseries-codexbar .account-line { min-height: 0; } " +
+                ".mseries-codexbar .provider-mark { opacity: 0.9; } " +
+                ".mseries-codexbar button.compact { padding: 1px 8px; min-height: 0; min-width: 0; } " +
+                ".mseries-codexbar button.flat.compact { padding: 0 4px; } " +
                 ".mseries-codexbar .mseries-switcher button { padding: 2px 6px; } " +
                 "label.mseries-codexbar-bar.level-low { color: @warning_color; } " +
                 "label.mseries-codexbar-bar.level-critical { color: @error_color; } " +
@@ -474,25 +468,11 @@ namespace MSeries {
             var dot = new Gtk.Label ("●");
             dot.add_css_class ("dot-off");
             head.append (dot);
-            var title = new Gtk.Label ("Claude") { xalign = 0, hexpand = true };
-            title.add_css_class ("provider-title");
-            head.append (title);
-            card.append (head);
-
+            head.append (build_provider_mark ("claude", "Claude"));
             var email = claude_data.get_string_member_with_default ("activeEmail", "");
             var accounts = claude_data.get_array_member ("accounts");
-            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 5);
-            row.add_css_class ("account-row");
-            var icon = new Gtk.Image.from_icon_name ("avatar-default-symbolic") { pixel_size = 12 };
-            icon.add_css_class ("dim-label");
-            row.append (icon);
-            var who = new Gtk.Label (email.length > 0 ? email : "Account not detected") {
-                xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.MIDDLE
-            };
-            who.add_css_class ("caption");
-            who.add_css_class ("dim-label");
-            row.append (who);
-            card.append (row);
+            head.append (build_identity (email));
+            card.append (head);
 
             var shown_quota = false;
             if (accounts != null) {
@@ -515,48 +495,25 @@ namespace MSeries {
                     : "Add this login to see quota and switch between Claude accounts."));
             }
 
-            var others = false;
-            if (accounts != null) {
-                for (uint i = 0; i < accounts.get_length (); i++) {
-                    var account = accounts.get_object_element (i);
-                    if (account.get_boolean_member_with_default ("active", false)) {
-                        continue;
-                    }
-                    if (!others) {
-                        card.append (subtle_label ("Other accounts"));
-                        others = true;
-                    }
-                    var number = account.get_int_member_with_default ("number", 0).to_string ();
-                    var name = account.get_string_member_with_default ("email", "");
-                    var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
-                    var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { hexpand = true };
-                    text.append (new Gtk.Label (name) { xalign = 0, ellipsize = Pango.EllipsizeMode.END });
-                    var windows = account.get_array_member ("windows");
-                    var detail = "usage unavailable";
-                    if (windows != null && windows.get_length () > 0) {
-                        var last = windows.get_object_element (windows.get_length () - 1);
-                        detail = "%s %.0f%% left".printf (last.get_string_member_with_default ("label", "Quota"),
-                            last.get_double_member_with_default ("remaining", 0));
-                    }
-                    text.append (subtle_label (detail));
-                    line.append (text);
-                    var switch_button = new Gtk.Button.with_label ("Switch") { valign = Gtk.Align.CENTER };
-                    switch_button.set_tooltip_text ("Make %s the active Claude account".printf (name));
-                    switch_button.clicked.connect (() => {
-                        popdown_from (switch_button);
-                        run_claude_helper ({ "switch", number });
-                    });
-                    line.append (switch_button);
-                    card.append (line);
+            var listed = accounts != null ? accounts.get_length () : 0;
+            card.append (build_accounts_header ("Sign in to Claude Code, then save that login with claude-swap",
+                () => add_claude_account ()));
+            for (uint i = 0; i < listed; i++) {
+                var account = accounts.get_object_element (i);
+                if (account.get_boolean_member_with_default ("active", false)) {
+                    continue;
                 }
+                var number = account.get_int_member_with_default ("number", 0).to_string ();
+                var name = account.get_string_member_with_default ("email", "");
+                var windows = account.get_array_member ("windows");
+                var detail = "—";
+                if (windows != null && windows.get_length () > 0) {
+                    detail = "%.0f%%".printf (windows.get_object_element (windows.get_length () - 1)
+                        .get_double_member_with_default ("remaining", 0));
+                }
+                card.append (build_account_line (name, detail, "Make %s the active Claude account".printf (name),
+                    () => run_claude_helper ({ "switch", number })));
             }
-            var add = new Gtk.Button.with_label ("Add account…") { halign = Gtk.Align.START };
-            add.set_tooltip_text ("Sign in to Claude Code, then save that login with claude-swap");
-            add.clicked.connect (() => {
-                popdown_from (add);
-                add_claude_account ();
-            });
-            card.append (add);
             return card;
         }
 
@@ -609,12 +566,12 @@ namespace MSeries {
             }
         }
 
-        private Gtk.Widget? build_codex_accounts (Gtk.Widget parent_for_popdown) {
-            if (codex_accounts == null || codex_accounts.get_length () < 2) {
-                return null;
+        private Gtk.Widget build_codex_accounts () {
+            var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
+            box.append (build_accounts_header ("Sign in to another ChatGPT account", () => add_codex_account ()));
+            if (codex_accounts == null) {
+                return box;
             }
-            var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
-            box.append (subtle_label ("Other accounts"));
             for (uint i = 0; i < codex_accounts.get_length (); i++) {
                 var account = codex_accounts.get_object_element (i);
                 if (account.get_boolean_member_with_default ("active", false)) {
@@ -622,30 +579,15 @@ namespace MSeries {
                 }
                 var email = account.get_string_member_with_default ("email", "");
                 var account_id = account.get_string_member_with_default ("id", email);
-                var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
-                var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { hexpand = true };
-                var name = new Gtk.Label (email) { xalign = 0, ellipsize = Pango.EllipsizeMode.END };
-                text.append (name);
-                var detail = Presentation.plan_label (account.get_string_member_with_default ("plan", ""));
                 var windows = account.get_array_member ("windows");
+                var detail = account.has_member ("error") ? "unavailable" : "—";
                 if (windows != null && windows.get_length () > 0) {
-                    var window = windows.get_object_element (windows.get_length () - 1);
-                    detail = (detail.length > 0 ? detail + " · " : "") + "%s %.0f%% left".printf (
-                        window.get_string_member_with_default ("label", "Quota"),
-                        window.get_double_member_with_default ("remaining", 0));
-                } else if (account.has_member ("error")) {
-                    detail = (detail.length > 0 ? detail + " · " : "") + "usage unavailable";
+                    detail = "%.0f%%".printf (windows.get_object_element (windows.get_length () - 1)
+                        .get_double_member_with_default ("remaining", 0));
                 }
-                text.append (subtle_label (detail));
-                row.append (text);
-                var switch_button = new Gtk.Button.with_label ("Switch") { valign = Gtk.Align.CENTER };
-                switch_button.set_tooltip_text ("Make %s the active Codex account. Restart running Codex sessions to use it.".printf (email));
-                switch_button.clicked.connect (() => {
-                    popdown_from (parent_for_popdown);
-                    run_accounts_helper ({ "switch", account_id });
-                });
-                row.append (switch_button);
-                box.append (row);
+                box.append (build_account_line (email, detail,
+                    "Make %s the active Codex account. Restart running Codex sessions to use it.".printf (email),
+                    () => run_accounts_helper ({ "switch", account_id })));
             }
             return box;
         }
@@ -921,17 +863,15 @@ namespace MSeries {
             dot.set_tooltip_text (error.length > 0 ? "Problem fetching this provider" :
                 status.length > 0 ? status : "Provider status unknown");
             head.append (dot);
-            var title = new Gtk.Label (title_text) { xalign = 0, hexpand = true };
-            title.add_css_class ("provider-title");
-            head.append (title);
+            head.append (build_provider_mark (provider, title_text));
             var plan = Presentation.plan_label (entry.get_string_member ("plan") ?? "");
             if (plan.length > 0) {
                 var plan_label = new Gtk.Label (plan) { valign = Gtk.Align.CENTER };
                 plan_label.add_css_class ("plan");
                 head.append (plan_label);
             }
+            head.append (build_identity (account_email_for (provider, entry)));
             card.append (head);
-            card.append (build_account_row (provider, entry));
 
             var windows = entry.get_array_member ("windows");
             if (windows != null && windows.get_length () > 0) {
@@ -945,17 +885,7 @@ namespace MSeries {
                 card.append (subtle_label ("Provider status · " + status));
             }
             if (provider == "codex") {
-                var others = build_codex_accounts (card);
-                if (others != null) {
-                    card.append (others);
-                }
-                var add = new Gtk.Button.with_label ("Add account…") { halign = Gtk.Align.START };
-                add.set_tooltip_text ("Sign in to another ChatGPT account with codex login");
-                add.clicked.connect (() => {
-                    popdown_from (add);
-                    add_codex_account ();
-                });
-                card.append (add);
+                card.append (build_codex_accounts ());
             }
             if (error.length > 0 || windows == null || windows.get_length () == 0) {
                 var estimate = provider == "opencodego" ? opencode_local : null;
@@ -964,6 +894,9 @@ namespace MSeries {
                     card.append (subtle_label (estimate.get_string_member_with_default ("message", "Local usage estimate · not account quota")));
                     for (uint i = 0; i < periods.get_length (); i++) {
                         var period = periods.get_object_element (i);
+                        if (period.get_int_member_with_default ("requests", 0) == 0 && i + 1 < periods.get_length ()) {
+                            continue;
+                        }
                         card.append (subtle_label (Presentation.local_usage_line (
                             period.get_string_member_with_default ("label", ""),
                             period.get_double_member_with_default ("costUSD", 0),
@@ -988,6 +921,84 @@ namespace MSeries {
             return card;
         }
 
+        /* Dense building blocks shared by every provider card. */
+        private static string compact_reset (string reset) {
+            return reset.has_prefix ("Resets in ") ? reset.substring (10) : reset;
+        }
+
+        /* The company mark replaces the written provider name; the name stays in the tooltip and for screen readers. */
+        private static Gtk.Widget build_provider_mark (string provider, string title_text) {
+            var icon_name = provider == "codex" ? "mseries-codexbar-openai-symbolic" :
+                provider == "claude" ? "mseries-codexbar-claude-symbolic" :
+                provider == "opencodego" ? "mseries-codexbar-opencode-symbolic" : "";
+            if (icon_name.length == 0 || !Gtk.IconTheme.get_for_display (Gdk.Display.get_default ()).has_icon (icon_name)) {
+                var text = new Gtk.Label (title_text) { xalign = 0 };
+                text.add_css_class ("provider-title");
+                return text;
+            }
+            var icon = new Gtk.Image.from_icon_name (icon_name) { pixel_size = 18 };
+            icon.add_css_class ("provider-mark");
+            icon.set_tooltip_text (title_text);
+            icon.update_property (Gtk.AccessibleProperty.LABEL, title_text, -1);
+            return icon;
+        }
+
+        private Gtk.Widget build_identity (string email) {
+            var identity = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4) { halign = Gtk.Align.END, hexpand = true };
+            identity.add_css_class ("account-row");
+            var icon = new Gtk.Image.from_icon_name ("avatar-default-symbolic") { pixel_size = 12 };
+            icon.add_css_class ("dim-label");
+            identity.append (icon);
+            var label = new Gtk.Label (email.length > 0 ? email : "Account not detected") {
+                xalign = 1, ellipsize = Pango.EllipsizeMode.MIDDLE, max_width_chars = 30
+            };
+            label.add_css_class ("caption");
+            label.add_css_class ("dim-label");
+            identity.set_tooltip_text (email.length > 0 ? "Signed in as " + email
+                : "CodexBar can't tell which account this is signed in with");
+            identity.append (label);
+            return identity;
+        }
+
+        private Gtk.Widget build_accounts_header (string tooltip, owned ActionFunc on_add) {
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
+            var title = new Gtk.Label ("Accounts") { xalign = 0, hexpand = true };
+            title.add_css_class ("caption");
+            title.add_css_class ("dim-label");
+            row.append (title);
+            var add = new Gtk.Button () { child = new Gtk.Image.from_icon_name ("list-add-symbolic") { pixel_size = 12 }, tooltip_text = tooltip, valign = Gtk.Align.CENTER };
+            add.add_css_class ("flat");
+            add.add_css_class ("compact");
+            add.update_property (Gtk.AccessibleProperty.LABEL, tooltip, -1);
+            add.clicked.connect (() => {
+                popdown_from (add);
+                on_add ();
+            });
+            row.append (add);
+            return row;
+        }
+
+        private Gtk.Widget build_account_line (string email, string detail, string switch_tooltip, owned ActionFunc on_switch) {
+            var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            line.add_css_class ("account-line");
+            var name = new Gtk.Label (email) { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.MIDDLE };
+            name.set_tooltip_text (email);
+            line.append (name);
+            var meta = new Gtk.Label (detail) { xalign = 1 };
+            meta.add_css_class ("caption");
+            meta.add_css_class ("dim-label");
+            meta.add_css_class ("numeric");
+            line.append (meta);
+            var button = new Gtk.Button.with_label ("Switch") { valign = Gtk.Align.CENTER, tooltip_text = switch_tooltip };
+            button.add_css_class ("compact");
+            button.clicked.connect (() => {
+                popdown_from (button);
+                on_switch ();
+            });
+            line.append (button);
+            return line;
+        }
+
         /* Which login a provider is tied to: quiet, under the title, never the focus of the card. */
         private string account_email_for (string provider, Json.Object entry) {
             var email = entry.get_string_member_with_default ("accountEmail", "");
@@ -1005,23 +1016,6 @@ namespace MSeries {
             return email;
         }
 
-        private Gtk.Widget build_account_row (string provider, Json.Object entry) {
-            var email = account_email_for (provider, entry);
-            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 5);
-            row.add_css_class ("account-row");
-            var icon = new Gtk.Image.from_icon_name ("avatar-default-symbolic") { pixel_size = 12 };
-            icon.add_css_class ("dim-label");
-            row.append (icon);
-            var label = new Gtk.Label (email.length > 0 ? email : "Account not detected") {
-                xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.MIDDLE, selectable = false
-            };
-            label.add_css_class ("caption");
-            label.add_css_class ("dim-label");
-            label.set_tooltip_text (email.length > 0 ? "Signed in as " + email : "CodexBar can't tell which account this is signed in with");
-            row.append (label);
-            return row;
-        }
-
         private Gtk.Widget build_window (string provider_title_text, Json.Object window, bool stale, int64 now_unix) {
             var label = window.get_string_member ("label") ?? "Quota";
             var reset = window.get_string_member ("resetText") ?? "";
@@ -1033,8 +1027,8 @@ namespace MSeries {
             var level = Presentation.level_for (remaining);
             var eta = QuotaEta.from_window (window, stale, now_unix);
 
-            var group = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
-            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+            var group = new Gtk.Box (Gtk.Orientation.VERTICAL, 1);
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             var name = new Gtk.Label (Presentation.short_window_label (label, (int) window.get_int_member ("minutes"))) {
                 xalign = 0, width_request = 34
             };
@@ -1051,21 +1045,30 @@ namespace MSeries {
             progress.update_property (Gtk.AccessibleProperty.LABEL, "%s %s limit, %s".printf (provider_title_text, label, spoken), -1);
             row.append (progress);
             var percent = new Gtk.Label (known ? "%0.0f%% left".printf (remaining) : "—") {
-                xalign = 1, width_request = 62
+                xalign = 1, width_request = 58
             };
             percent.add_css_class ("numeric");
             if (level == QuotaLevel.LOW) percent.add_css_class ("text-low");
             if (level == QuotaLevel.CRITICAL) percent.add_css_class ("text-critical");
             row.append (percent);
+            var reset_label = new Gtk.Label (compact_reset (reset)) { xalign = 1, width_request = 46 };
+            reset_label.add_css_class ("caption");
+            reset_label.add_css_class ("dim-label");
+            reset_label.add_css_class ("numeric");
+            reset_label.set_tooltip_text (reset);
+            row.append (reset_label);
             group.append (row);
 
-            var caption_text = known ? Presentation.window_caption (reset, eta.state, eta.detail)
-                : "Usage not reported yet";
-            var caption = new Gtk.Label (caption_text) { xalign = 0, wrap = true, margin_start = 42 };
-            caption.add_css_class ("caption");
-            caption.add_css_class (eta.state == EtaState.EXHAUSTED ? "text-critical" :
-                eta.state == EtaState.DEPLETING ? "text-low" : "dim-label");
-            group.append (caption);
+            // The forecast only gets its own line when it is a warning; otherwise the reset sits inline.
+            if (!known || eta.state == EtaState.EXHAUSTED || eta.state == EtaState.DEPLETING) {
+                var caption_text = known ? Presentation.window_caption (reset, eta.state, eta.detail)
+                    : "Usage not reported yet";
+                var caption = new Gtk.Label (caption_text) { xalign = 0, wrap = true, margin_start = 40 };
+                caption.add_css_class ("caption");
+                caption.add_css_class (eta.state == EtaState.EXHAUSTED ? "text-critical" :
+                    eta.state == EtaState.DEPLETING ? "text-low" : "dim-label");
+                group.append (caption);
+            }
 
             var detail = known ? "%0.0f%% remaining".printf (remaining) : "Usage not reported yet";
             if (reset.length > 0) detail += " · " + reset;

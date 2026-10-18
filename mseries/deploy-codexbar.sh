@@ -21,7 +21,12 @@ meson test -C "$build" --print-errorlogs
 indicators_dir=$(pkg-config --variable=indicatorsdir wingpanel-9)
 # install(1) replaces the file instead of overwriting it, so the loaded module is never truncated in place.
 sudo install -m 0755 "$build/libcodexbar.so" "$indicators_dir/libcodexbar.so"
-echo "Installed helpers and $indicators_dir/libcodexbar.so"
+for mark in openai claude opencode; do
+  sudo install -m 0644 "$repo/mseries/codexbar-wingpanel/icons/$mark.svg" \
+    "/usr/share/icons/hicolor/scalable/apps/mseries-codexbar-$mark-symbolic.svg"
+done
+command -v gtk-update-icon-cache >/dev/null && sudo gtk-update-icon-cache -f /usr/share/icons/hicolor >/dev/null
+echo "Installed helpers, provider marks and $indicators_dir/libcodexbar.so"
 
 [[ ${1:-} == --no-restart ]] && { echo 'Not restarting; Wingpanel loads the new module at next login.'; exit 0; }
 if pgrep -x io.elementary.w >/dev/null; then

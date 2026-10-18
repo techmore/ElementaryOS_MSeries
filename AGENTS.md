@@ -9,7 +9,9 @@
 > [steipete/CodexBar](https://github.com/steipete/CodexBar) (Linux ARM64 CLI + Qt desktop, pinned in
 > `mseries/install-codexbar.sh`) and add our own elementary OS layer on top: the Wingpanel indicator
 > (`mseries/codexbar-wingpanel/`), the wrapper, the sessions and OpenCode-local helpers, and Codex/Claude
-> account switching (upstream's managed Codex accounts are macOS-only). When you bump upstream, **merge it
+> account switching (upstream's managed Codex accounts are macOS-only). The full list of our mods and the
+> repeatable upgrade checklist is `mseries/CODEXBAR-PORT.md`; verify with `bash mseries/check-codexbar-port.sh`.
+> When you bump upstream, **merge it
 > with our customizations**: never replace our files with the stock ones, re-check that the panel still reads
 > `codexbar-linux --snapshot` (schema), and keep the port current with each upstream release. After every push
 > that touches CodexBar, run `bash mseries/deploy-codexbar.sh` so the owner's running Wingpanel and CodexBar are

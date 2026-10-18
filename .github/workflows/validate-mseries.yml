@@ -68,6 +68,8 @@ jobs:
           bash mseries/test-greeter-obex-fix.sh
           bash -n mseries/install-signal.sh
           bash -n mseries/install-codexbar.sh
+          bash -n mseries/deploy-codexbar.sh
+          bash -n mseries/check-codexbar-port.sh
           python3 mseries/test-codexbar-sessions.py
           python3 mseries/test-codexbar-accounts.py
           python3 mseries/test-codexbar-claude.py
