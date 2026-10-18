@@ -177,7 +177,7 @@ class CoreTests(unittest.TestCase):
             core.store(conn, row(now - 300 + i * 15, 50, 10.0))
         headline, detail, points = core.summary_card(conn)
         self.assertEqual(headline, "3h 00m left")
-        self.assertEqual(detail, "50% · 10.0 W")
+        self.assertEqual(detail, "50% · recent use · 10.0 W")
         self.assertTrue(points.startswith("10.0"))
         path = os.path.join(tempfile.mkdtemp(), "x", "summary.txt")
         core.write_summary(conn, path)
@@ -240,6 +240,28 @@ class CoreTests(unittest.TestCase):
         found = {c["name"]: c for c in core.diagnose(conn)}
         self.assertEqual(found["Logger"]["status"], "fail")
         self.assertIn("# Battery diagnostics", core.diagnostics_markdown(conn))
+
+    def test_app_key_groups_by_cgroup(self):
+        base = "0::/user.slice/user@1000.service/app.slice/"
+        self.assertEqual(core.app_key(base + "app-org.chromium.Chromium-127328.scope", "brave"), "org.chromium.Chromium")
+        self.assertEqual(core.app_key(base + "app-gnome-mseries\\x2dlauncher-1.scope", "brave"), "brave")
+        self.assertEqual(core.app_key("0::/user.slice/user@1000.service/session.slice/pipewire.service", "pipewire"), "pipewire")
+        self.assertEqual(core.app_key("0::/user.slice/user@1000.service/session.slice/_io.elementary.gala@wayland.service", "io.elementary.wingpanel"), "io.elementary.wingpanel")
+        self.assertEqual(core.app_key("0::/system.slice/ssh.service", "sshd"), "ssh")
+        self.assertEqual(core.app_key("", "bash"), "bash")
+
+    def test_estimate_blends_recent_and_hourly_and_falls_back(self):
+        rows = [row(i * 15, 60, 8.0) for i in range(200)]                 # steady 8 W, then a heavy last 10 minutes
+        rows += [row(3000 + i * 15, 50, 20.0) for i in range(40)]
+        est = core.estimate_runtime(rows)
+        self.assertEqual(est["basis"], "recent use")
+        self.assertLess(est["left_low"], est["hours_left"])
+        self.assertGreater(est["left_high"], est["hours_left"])
+        fresh = [row(i * 15, 60, 8.0, ac=1) for i in range(100)] + [row(2000 + i * 15, 59, 9.0) for i in range(3)]
+        self.assertEqual(core.estimate_runtime(fresh), {})                # no history of runs, no recent data: say nothing
+        history = [row(i * 15, 90 - i * 0.01, 10.0) for i in range(240)] + [row(4000, 80, 5.0, ac=1)] + [row(20000 + i * 15, 70, 9.0) for i in range(3)]
+        est = core.estimate_runtime(history)
+        self.assertEqual(est["basis"], "your typical use")
 
     def test_fmt_hours(self):
         self.assertEqual(core.fmt_hours(7.5), "7h 30m")

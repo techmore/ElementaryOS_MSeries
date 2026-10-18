@@ -12,6 +12,19 @@ rows (arrow keys + Enter open), type-to-search, Ctrl+F / Ctrl+R / Alt+1…4, rem
 follow the sort setting, and pin/hide raise a Granite toast with Undo. Rendered headless (light/dark, toast, details,
 real snapshot, Settings). Deployed with `deploy-repobar.sh` (no restart). **Unverified:** live panel until Wingpanel
 reloads; real keyboard and pointer input.
+## Gala CPU investigation — 2026-10-18 (Claude Code)
+
+Measured: Gala's main thread uses 25–35% of one core and presents about 100+ frames/s (505 `ADDFB2` in 5 s under strace)
+with the panel at 3024x1964 120 Hz VRR. The busiest Wayland client at that moment was `claude-desktop` (the app hosting this
+Claude Code session) at about 108 `sendmsg`/s while output streamed, which fits Gala redrawing for it; confirmation needs a
+measurement with Claude idle (`/tmp/gala-idle-result.txt`, written by a timed script). Earlier "Gala 16–20%" in the battery
+app was a bug in my cgroup grouping (Wingpanel/dock live in gala's service cgroup); fixed, user-session services keep their
+process name. Nothing in Gala or display settings was changed.
+
+## Battery app grouping and ETA — 2026-10-18 (Claude Code)
+
+Per-app CPU grouped by cgroup with desktop names; blended runtime estimate with range and basis; 24 core tests pass.
+Unverified on real unplugged data (the machine has been on the charger since the logger gained these).
 
 ## RepoBar native UI pass — 2026-10-18 (Claude Code)
 
@@ -90,6 +103,14 @@ headless Xvfb renders against the live summary in dark and light themes. CI on m
 runs with the sandbox disabled and all four CI jobs pass. With owner approval, `libenergy-monitor.so` was installed to
 the wingpanel-9 indicators directory and Wingpanel restarted; the module is loaded. **Unverified:** hover and click in
 the real popover (they reuse the existing `--temperature` launch path). Next: owner look at the live dropdown.
+
+Follow-up (owner request): rooms are now hued by temperature in the 3D views — Emporia PR #160 (`973d314`, 2.3.64).
+Each room with a recent reading gets a translucent unlit volume in its band colour; stale or sensorless rooms stay
+clear; upper floors keep ≥55% of the hue under the Floors slider. An all-stale collector now shows one warning line.
+Bundles rebuilt with locked vite (clean main rebuilt byte-identical first); CI green. Verified by Xvfb/WebKit renders
+of whole home and each floor (first yellow, master blue, living room amber, attic blue). Installed to Wingpanel and
+restarted. **Not deployed:** the collector's web Home 3D page still serves the previous bundle until the collector is
+updated.
 
 ## Battery real data — 2026-10-18 (Claude Code)
 
