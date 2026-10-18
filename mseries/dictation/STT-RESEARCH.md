@@ -260,3 +260,15 @@ Extend Stage 1 of section 4: in a scratch directory (not `/usr/local/bin`, not t
 - omarchy-mlx v0.7.33 (MIT, https://github.com/joshuaswarren/omarchy-mlx) ships `mlx-omarchy-parakeet` (Core ML Parakeet on the ANE; install with `install.sh --ane`) but marks the M1 Pro **Untested** for both GPU and ANE. No M1 Pro speed or WER figures exist publicly.
 - Risk: upstream says a hung ANE submission needs a reboot. Next step is `omarchy-ane-check` (read-only), then `--smoke` (20 add calls), then Parakeet on a fixed WAV against the CPU path, medians of 10+ warm runs. Kernel-side findings go to DeepSeek via GitHub.
 - Correction: ANE-PREFLIGHT.md (2026-10-12) says nothing is installed; the driver is now in the running kernel.
+
+## Addendum 2026-10-18 (d): ANE run on this M1 Pro (measured once, not yet usable for dictation)
+
+Setup, all under `~/.local/share/mseries/ane/` (nothing system-wide, no kernel/boot change): omarchy-ane v0.4.9 built from source; omarchy-mlx v0.7.33 aarch64 wheel (SHA-256 checked) in a venv with numpy and protobuf added; pinned Parakeet TDT 0.6B v3 Core ML reference (481 MB, 12 files hash-verified).
+
+- `omarchy-ane-check`: all checks pass except a permission note (`/dev/accel/accel0` is root:render 0660; our user is in `render`).
+- `omarchy-ane-smoke`: **20/20 calls bit-exact on t6000, median 0.049 ms.** The ANE executes on this Mac.
+- `mlx-omarchy-parakeet verify` (pinned LibriSpeech clip, 10.4 s): runs end to end, transcript starts correct ("He hoped there would be stew for dinner, turnips and carrots...") but ends in garbage tokens, and status is **diverged** (`mel_sha256`, `encoder_hidden_sha256` do not match the golden). Likely related to the Mesa 26.0.8 warning (upstream wants 26.2.4+ for the MLX Vulkan kernels), unproven.
+- Time: 63 s first run (one-time encoder emission), then 1.98 s and 1.96 s warm for 10.4 s of audio (2 runs, not a benchmark). Whisper base.en with 6 threads took 1.07 s median for 7 s. So no speed win yet.
+- The shipped CLI only transcribes the pinned fixture; arbitrary audio is in `mlx/coreml/parakeet_dictation.py`, which upstream says is not qualified until a hardware acceptance receipt exists.
+
+Not wired into F5. Next: update Mesa (kernel-adjacent graphics stack, ask owner), re-run verify, then try `parakeet_dictation` on owner clips against the CPU path with 10+ warm runs.
