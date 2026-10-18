@@ -1,6 +1,7 @@
 """Orchard main window: pages, instance tabs, dialogs, jobs and the Incus event stream."""
 import atexit
 import csv
+import codecs
 import json
 import os
 import posixpath
@@ -20,6 +21,7 @@ gi.require_version("Granite", "7.0")
 from gi.repository import Gdk, Gio, GLib, Granite, Graphene, Gtk, Pango  # noqa: E402,F401
 
 from . import backend  # noqa: E402
+from .runtime import LatestRead, OutputMailbox
 from .backend import (  # noqa: E402
     ARCH,
     BLUE,
@@ -65,17 +67,25 @@ class Window(Gtk.ApplicationWindow):
         if self.state.get("max"):
             self.maximize()
         self.data, self.rows, self.dash_rows = {}, {}, {}
+        self._dashboard_rendering = False
         self.hist, self.cur, self.busy = {}, None, set()
         self.ok, self.fails, self.last_refresh, self.restored = True, 0, 0.0, False
         self.monitor_ok, self.mon_proc, self.mon_thread, self.closing = False, None, None, False
         self.last_sample, self.jobs, self._rf_pending, self.cleaning = 0.0, {}, False, set()
+        self.sources = set()
+        self.reads = {}
+        self.output = {}
+        self.monitor_lock = threading.Lock()
+        self._listing = self._refresh_again = self._checking = False
+        self._address_followups = set()
         atexit.register(self.stop_monitor)
         css, gtk_settings = Gtk.CssProvider(), Gtk.Settings.get_default()
         def load_css(*_):
             dark = gtk_settings.props.gtk_application_prefer_dark_theme
             css.load_from_string(CSS + ("" if dark else LIGHT_EXTRA))
         load_css()
-        gtk_settings.connect("notify::gtk-application-prefer-dark-theme", load_css)
+        self._theme_handler = gtk_settings.connect("notify::gtk-application-prefer-dark-theme", load_css)
+        self._css = css
         Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
         # header
@@ -94,10 +104,18 @@ class Window(Gtk.ApplicationWindow):
         a11y(refresh, "Refresh")
         refresh.connect("clicked", lambda *_: self.refresh_all())
         hb.pack_end(refresh)
-        self.search = Gtk.SearchEntry(placeholder_text="Filter (Ctrl+F)", tooltip_text="Filter instances (Ctrl+F)", width_chars=11)
+        self.refresh_spinner = Gtk.Spinner(tooltip_text="Refreshing Incus", visible=False)
+        hb.pack_end(self.refresh_spinner)
+        menu = Gtk.MenuButton(icon_name="open-menu-symbolic", tooltip_text="Application menu")
+        a11y(menu, "Application menu")
+        menu_model = Gio.Menu()
+        menu_model.append("Keyboard shortcuts", "win.shortcuts")
+        menu.set_menu_model(menu_model)
+        hb.pack_end(menu)
+        self.search = Gtk.SearchEntry(placeholder_text="Find instance…", tooltip_text="Search names, images, status and IPv4 (Ctrl+F)", width_chars=11)
         a11y(self.search, "Filter instances")
-        self.search.connect("search-changed", lambda *_: self.list.invalidate_filter())
-        hb.pack_end(self.search)
+        self.search.connect("search-changed", lambda *_: self.filter_instances())
+        self.search.connect("stop-search", lambda *_: (self.search.set_text(""), self.list.grab_focus()))
 
         self.pages.add_titled(self.build_dashboard(), "dash", "Dashboard")
         self.pages.add_titled(self.build_instances(), "inst", "Instances")
@@ -113,7 +131,7 @@ class Window(Gtk.ApplicationWindow):
             sc.set_child(inner)
             self.lists[key] = (lb, fn)
             self.pages.add_titled(sc, key, title)
-        self.pages.connect("notify::visible-child-name", lambda *_: (self.load_page(), self.sync_search()))
+        self.pages.connect("notify::visible-child-name", lambda *_: (self.load_page(), self.sync_search(), self.render_dashboard()))
 
         self.status = lbl("", "dim status-bar", wrap=True, selectable=True)
         self.status.set_accessible_role(Gtk.AccessibleRole.STATUS)
@@ -138,7 +156,10 @@ class Window(Gtk.ApplicationWindow):
         self.pages.connect("notify::visible-child-name", lambda *_: self.save_state())
 
         for name, fn, accel in [("new", self.on_new, "<primary>n"), ("refresh", lambda *_: self.refresh_all(), "F5"),
-                                ("search", lambda *_: self.focus_search(), "<primary>f")]:
+                                ("search", lambda *_: self.focus_search(), "<primary>f"),
+                                ("instances", lambda *_: self.pages.set_visible_child_name("inst"), "<primary>2"),
+                                ("dashboard", lambda *_: self.pages.set_visible_child_name("dash"), "<primary>1"),
+                                ("shortcuts", self.show_shortcuts, "<primary>question")]:
             a = Gio.SimpleAction.new(name, None)
             a.connect("activate", lambda _a, _p, f=fn: f())
             self.add_action(a)
@@ -147,8 +168,39 @@ class Window(Gtk.ApplicationWindow):
         self.name_controls()
         self.sync_search()
         self.check_incus()
-        GLib.timeout_add_seconds(PERIOD, self.tick)
-        GLib.timeout_add_seconds(10, lambda: (self.ok and self.is_active() and self.load_page(auto=True), True)[1])
+        self.later(PERIOD, self.tick, repeat=True, seconds=True)
+        self.later(10, lambda: self.ok and self.is_active() and self.load_page(auto=True), repeat=True, seconds=True)
+
+    def later(self, delay, fn, repeat=False, seconds=False):
+        """Own every window timer so closing the window stops all polling."""
+        if self.closing:
+            return 0
+        source = 0
+        def fire():
+            if not repeat:
+                self.sources.discard(source)
+            if self.closing:
+                return False
+            fn()
+            return repeat
+        add = GLib.timeout_add_seconds if seconds else GLib.timeout_add
+        source = add(delay, fire)
+        self.sources.add(source)
+        return source
+
+    def show_shortcuts(self, *_):
+        dialog, box = self.dialog("Keyboard shortcuts")
+        for title, key in (("New instance", "Ctrl+N"), ("Find instance", "Ctrl+F"),
+                           ("Dashboard", "Ctrl+1"), ("Instances", "Ctrl+2"),
+                           ("Refresh", "F5"), ("Clear search", "Esc"),
+                           ("Instance actions", "Menu / Shift+F10"), ("Keyboard shortcuts", "Ctrl+?")):
+            row = Gtk.Box(spacing=24)
+            row.append(lbl(title, hexpand=True))
+            row.append(lbl(key, "dim"))
+            box.append(row)
+        dialog.add_button("Close", Gtk.ResponseType.CLOSE)
+        dialog.connect("response", lambda d, _r: d.destroy())
+        dialog.present()
 
     # ------------------------------------------------------ dashboard
     def sync_search(self):
@@ -168,7 +220,8 @@ class Window(Gtk.ApplicationWindow):
             a11y(widget, name)
 
     def build_dashboard(self):
-        sc = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER)
+        sc = self.dash_scroller = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER)
+        sc.get_vadjustment().connect("value-changed", lambda *_: self.render_dashboard())
         d = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16, margin_top=22, margin_bottom=22, margin_start=28, margin_end=28)
         d.append(lbl("Dashboard", "title-big"))
         tiles = TileRow()
@@ -197,7 +250,7 @@ class Window(Gtk.ApplicationWindow):
     def build_instances(self):
         self.list = Gtk.ListBox(selection_mode=Gtk.SelectionMode.SINGLE)
         self.list.add_css_class("sidebar-list")
-        self.list.set_filter_func(lambda r: self.search.get_text().lower() in r.name.lower())
+        self.list.set_filter_func(lambda r: self.search.get_text().casefold().strip() in r.search_text)
         self.list.set_sort_func(lambda a, b: (a.name > b.name) - (a.name < b.name))
         self.list.connect("row-selected", self.on_select)
         a11y(self.list, "Instances")
@@ -209,11 +262,18 @@ class Window(Gtk.ApplicationWindow):
         self.list.add_controller(kc)
         self.summary = lbl("", "dim", margin_start=16, margin_top=10, margin_bottom=6)
         side = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, width_request=240)
+        self.search.set_margin_start(12)
+        self.search.set_margin_end(12)
+        self.search.set_margin_top(10)
+        side.append(self.search)
         side.append(self.summary)
         self.job_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         side.append(self.job_box)
         sc = Gtk.ScrolledWindow(vexpand=True, hscrollbar_policy=Gtk.PolicyType.NEVER)
         sc.set_child(self.list)
+        self.no_matches = lbl("No matching instances", "dim", wrap=True, margin_start=16, margin_end=16, margin_top=12)
+        self.no_matches.set_visible(False)
+        side.append(self.no_matches)
         side.append(sc)
 
         self.stack = Gtk.Stack(hexpand=True, transition_type=Gtk.StackTransitionType.CROSSFADE)
@@ -222,6 +282,16 @@ class Window(Gtk.ApplicationWindow):
         self.stack.add_named(empty, "empty")
         self.stack.add_named(self.build_detail(), "detail")
         return Gtk.Paned(start_child=side, end_child=self.stack, shrink_start_child=False, resize_start_child=False)
+
+    def filter_instances(self):
+        self.list.invalidate_filter()
+        q = self.search.get_text().casefold().strip()
+        visible = [r for r in self.rows.values() if q in r.search_text]
+        self.no_matches.set_visible(bool(self.data) and not visible)
+        # Keep the detail aligned with what keyboard and screen-reader users see.
+        selected = self.list.get_selected_row()
+        if q and (selected is None or selected not in visible):
+            self.list.select_row(visible[0] if visible else None)
 
     def build_detail(self):
         outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14, margin_top=22, margin_bottom=14, margin_start=20, margin_end=20)
@@ -388,23 +458,27 @@ class Window(Gtk.ApplicationWindow):
         sc.set_child(self.dev_list)
         d.append(sc)
         fw = Gtk.Box(spacing=8)
-        self.fw_listen = Gtk.Entry(placeholder_text="host port", width_chars=9)
-        self.fw_connect = Gtk.Entry(placeholder_text="instance port", width_chars=11)
+        self.fw_listen = Gtk.Entry(placeholder_text="Host port", width_chars=7, hexpand=True)
+        self.fw_connect = Gtk.Entry(placeholder_text="Instance port", width_chars=7, hexpand=True)
         self.fw_proto = Gtk.DropDown.new_from_strings(["tcp", "udp"])
-        for w in (lbl("Forward", "dim"), self.fw_listen, lbl("→", "dim"), self.fw_connect, self.fw_proto):
+        for w in (self.fw_listen, lbl("→", "dim"), self.fw_connect, self.fw_proto):
             fw.append(w)
-        fw.append(pill_button("Add forward", "network-transmit-symbolic", "suggested-action", self.add_forward))
+        forward = pill_button("Add forward", "network-transmit-symbolic", "suggested-action", self.add_forward)
+        forward.set_halign(Gtk.Align.END)
         sh = Gtk.Box(spacing=8)
-        self.sh_host = Gtk.Entry(placeholder_text="host folder", hexpand=True)
+        self.sh_host = Gtk.Entry(placeholder_text="Host folder", hexpand=True, width_chars=10)
         pick = Gtk.Button(icon_name="folder-open-symbolic", tooltip_text="Choose folder")
         a11y(pick, "Choose folder")
         pick.connect("clicked", lambda *_: self.pick_folder())
-        self.sh_path = Gtk.Entry(placeholder_text="mount path in instance, e.g. /mnt/data", hexpand=True)
-        for w in (lbl("Share", "dim"), self.sh_host, pick, lbl("→", "dim"), self.sh_path):
-            sh.append(w)
-        sh.append(pill_button("Add share", "folder-symbolic", "suggested-action", self.add_share))
-        d.append(card(fw, sh, spacing=10))
-        return d
+        self.sh_path = Gtk.Entry(placeholder_text="Mount path, e.g. /mnt/data", hexpand=True, width_chars=10)
+        sh.append(self.sh_host)
+        sh.append(pick)
+        share = pill_button("Add share", "folder-symbolic", "suggested-action", self.add_share)
+        share.set_halign(Gtk.Align.END)
+        d.append(card(lbl("Port forwarding", "section-title"), fw, forward,
+                      Gtk.Separator(margin_top=6, margin_bottom=6),
+                      lbl("Folder sharing", "section-title"), sh, self.sh_path, share, spacing=8))
+        return Gtk.ScrolledWindow(child=d, hscrollbar_policy=Gtk.PolicyType.NEVER)
 
     def build_settings(self):
         d = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
@@ -418,7 +492,10 @@ class Window(Gtk.ApplicationWindow):
             g.attach(w, 1, r, 1, 1)
         d.append(g)
         row = Gtk.Box(halign=Gtk.Align.START, spacing=8)
-        row.append(pill_button("Apply", None, "suggested-action", self.apply_settings))
+        self.settings_owner = None
+        self.settings_apply = pill_button("Apply", None, "suggested-action", self.apply_settings)
+        self.settings_apply.set_sensitive(False)
+        row.append(self.settings_apply)
         row.append(pill_button("Reload", None, None, self.load_tab))
         d.append(row)
         self.cfg_view = Gtk.TextView(editable=False, monospace=True, left_margin=10, top_margin=8, bottom_margin=8, wrap_mode=Gtk.WrapMode.WORD_CHAR)
@@ -440,6 +517,8 @@ class Window(Gtk.ApplicationWindow):
         threading.Thread(target=run, daemon=True).start()
 
     def finish(self, r, e, done, fail, what=None):
+        if self.closing:
+            return False
         if e:
             if what:
                 self.error_dialog(what, e)
@@ -449,6 +528,23 @@ class Window(Gtk.ApplicationWindow):
                 fail()
         elif done:
             done(r)
+
+    def read(self, slot, fn, done):
+        """Coalesce repeated reads and ignore superseded responses."""
+        def launch(work, complete):
+            def run():
+                try:
+                    result, error = work(), None
+                except Exception as ex:
+                    result, error = None, ex
+                GLib.idle_add(deliver, result, error)
+            def deliver(result, error):
+                if not self.closing:
+                    complete(result, error)
+                return False
+            threading.Thread(target=run, daemon=True).start()
+        task = self.reads.setdefault(slot, LatestRead(launch))
+        task.submit(fn, done, lambda e: self.status.set_text(f"Could not refresh: {str(e)[:240]}"))
 
     def bgl(self, fn, done=None, fail=None, what="Action"):
         """Like bg(), but a failure opens a dialog (used for anything the user asked for)."""
@@ -527,8 +623,23 @@ class Window(Gtk.ApplicationWindow):
             pass
 
     def on_close(self, *_):
+        if self.closing:
+            return False
         self.save_state()
         self.stop_monitor()
+        for source in self.sources:
+            GLib.source_remove(source)
+        self.sources.clear()
+        for task in self.reads.values():
+            task.invalidate()
+        for job in self.jobs.values():
+            job["row"].stop_pulse()
+        for proc in self.exec_proc.values():
+            if proc.poll() is None:
+                proc.terminate()
+        Gtk.Settings.get_default().disconnect(self._theme_handler)
+        Gtk.StyleContext.remove_provider_for_display(self.get_display(), self._css)
+        atexit.unregister(self.stop_monitor)
         return False
 
     # -- first run / failure page
@@ -548,7 +659,11 @@ class Window(Gtk.ApplicationWindow):
         return b
 
     def check_incus(self):
+        if self.closing or self._checking:
+            return
+        self._checking = True
         def done(problem):
+            self._checking = False
             if problem:
                 title, detail, cmd = problem
                 self.pb.set_title(title)
@@ -565,7 +680,7 @@ class Window(Gtk.ApplicationWindow):
                 self.root.set_visible_child_name("app")
                 self.refresh()
                 self.start_monitor()
-        self.bg(backend.preflight, done)
+        self.bg(backend.preflight, done, lambda: setattr(self, "_checking", False))
 
     def sampling_wanted(self):
         """Charts are only on screen for the Dashboard and an instance's Overview tab."""
@@ -604,12 +719,19 @@ class Window(Gtk.ApplicationWindow):
                                             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
                 except OSError:
                     return
-                self.mon_proc = proc
-                GLib.idle_add(self.set_monitor, True)
+                with self.monitor_lock:
+                    self.mon_proc = proc
+                    if self.closing:
+                        proc.terminate()
+                # Starting the client is not evidence the event stream connected.
+                # Polling remains available until the first real lifecycle event.
                 for line in proc.stdout:
-                    if line.strip():
+                    if line.strip() and not self.closing:
                         GLib.idle_add(self.on_event, line)
                 proc.wait()
+                proc.stdout.close()
+                if self.closing:
+                    return
                 GLib.idle_add(self.set_monitor, False)
                 for _ in range(10):
                     if self.closing:
@@ -620,11 +742,14 @@ class Window(Gtk.ApplicationWindow):
 
     def stop_monitor(self):
         self.closing = True
-        p = self.mon_proc
-        if p and p.poll() is None:
-            p.terminate()
+        with self.monitor_lock:
+            p = self.mon_proc
+            if p and p.poll() is None:
+                p.terminate()
 
     def set_monitor(self, ok):
+        if self.closing:
+            return False
         self.monitor_ok = ok
         if ok:
             self.refresh()  # resync anything missed while disconnected
@@ -638,18 +763,28 @@ class Window(Gtk.ApplicationWindow):
             self._rf_pending = False
             self.refresh()
             return False
-        GLib.timeout_add(delay, fire)
+        self.later(delay, fire)
 
     def on_event(self, line):
+        if self.closing:
+            return False
         ev = backend.parse_event(line)
         if not ev:
             return False
+        if not self.monitor_ok:
+            self.set_monitor(True)
         action, source = ev
         if action.startswith("instance-"):
             self.schedule_refresh()
             if action in backend.STARTED_ACTIONS:
-                for secs in (3, 8):  # the address shows up a moment after start and has no event of its own
-                    GLib.timeout_add_seconds(secs, lambda: (self.refresh(), False)[1])
+                for secs in (3, 8):  # Address discovery has no lifecycle event.
+                    if secs in self._address_followups:
+                        continue
+                    self._address_followups.add(secs)
+                    def followup(delay=secs):
+                        self._address_followups.discard(delay)
+                        self.schedule_refresh()
+                    self.later(secs, followup, seconds=True)
             if "snapshot" in action and self.cur and f"/instances/{self.cur}/" in source and self.tabs.get_visible_child_name() == "sn":
                 self.load_tab()
         return False
@@ -660,24 +795,40 @@ class Window(Gtk.ApplicationWindow):
         self.toast.send_notification()
 
     def refresh_all(self):
+        if not self.ok:
+            self.check_incus()
+            return
         self.refresh()
         self.load_page()
         self.load_tab()
 
     def refresh(self):
-        if getattr(self, "_listing", False):
-            return  # a list call is still running (hung daemon): don't stack threads
+        if self.closing:
+            return
+        if self._listing:
+            self._refresh_again = True
+            return
         self._listing = True
+        self.refresh_spinner.set_visible(True)
+        self.refresh_spinner.start()
         self.last_refresh = time.monotonic()
         def fail():
             self._listing = False
+            self.refresh_spinner.stop()
+            self.refresh_spinner.set_visible(False)
+            self._refresh_again = False
             self.fails += 1
             if self.fails >= 2:
                 self.check_incus()
         def done(d):
             self._listing = False
+            self.refresh_spinner.stop()
+            self.refresh_spinner.set_visible(False)
             self.fails = 0
             self.show(d)
+            if self._refresh_again:
+                self._refresh_again = False
+                self.schedule_refresh()
         self.bg(lambda: backend.ijson("list", timeout=backend.POLL_TIMEOUT), done, fail)
 
     def sample(self, data):
@@ -705,8 +856,9 @@ class Window(Gtk.ApplicationWindow):
             tc += last(h['cpu']) if h["cpu"] else 0.0
             tm += mem
             tp += st.get("processes", 0)
+        live_names = {i["name"] for i in data}
         for n in list(self.hist):
-            if n not in {i["name"] for i in data}:
+            if n not in live_names:
                 del self.hist[n]
         if record:
             self.tot["cpu"].append(tc)
@@ -730,6 +882,7 @@ class Window(Gtk.ApplicationWindow):
             else:
                 self.rows[n] = Row(i)
                 self.list.append(self.rows[n])
+        self.filter_instances()
         run = sum(1 for i in data if i["status"] == "Running")
         self.summary.set_text(f"{len(data)} INSTANCES · {run} RUNNING" if data else "NO INSTANCES YET")
         self.dash_empty.set_visible(not data)
@@ -747,23 +900,7 @@ class Window(Gtk.ApplicationWindow):
         self.tile["proc"].set_text(f"{tp:.0f}")
         self.tot_cpu.set(self.tot["cpu"])
         self.tot_mem.set(self.tot["mem"])
-        for n in list(self.dash_rows):
-            if n not in self.data:
-                self.dash_list.remove(self.dash_rows.pop(n))
-        for n in sorted(self.data):
-            r = self.dash_rows.get(n)
-            if not r:
-                r = self.dash_rows[n] = DashRow(n, self.open_instance)
-                self.dash_list.append(r)
-            i, h = self.data[n], self.hist[n]
-            for c in ("running", "frozen"):
-                r.dot.remove_css_class(c)
-            if state_key(i["status"]) != "stopped":
-                r.dot.add_css_class(state_key(i["status"]))
-            r.cpu.set(h["cpu"]); r.mem.set(h["mem"])
-            on = i["status"] == "Running"
-            r.cpu_l.set_text(f"{last(h['cpu']):.0f}%" if on else "—")
-            r.mem_l.set_text(human(last(h['mem'])) if on else "—")
+        self.render_dashboard()
         # detail
         if self.cur not in self.data:
             self.cur = None
@@ -772,6 +909,55 @@ class Window(Gtk.ApplicationWindow):
         else:
             self.stack.set_visible_child_name("empty")
 
+    def render_dashboard(self):
+        if self.pages.get_visible_child_name() != "dash" or self._dashboard_rendering:
+            return
+        for n in list(self.dash_rows):
+            if n not in self.data:
+                self.dash_list.remove(self.dash_rows.pop(n))
+        missing = deque()
+        for n in sorted(self.data):
+            if n in self.dash_rows:
+                self.update_dashboard_row(n)
+            else:
+                missing.append(n)
+        if not missing:
+            return
+        self._dashboard_rendering = True
+        def batch():
+            if self.pages.get_visible_child_name() != "dash":
+                self._dashboard_rendering = False
+                return
+            # Populate over successive main-loop turns so input stays responsive.
+            for _ in range(min(16, len(missing))):
+                n = missing.popleft()
+                if n not in self.data:
+                    continue
+                row = self.dash_rows[n] = DashRow(n, self.open_instance)
+                self.dash_list.append(row)
+                self.update_dashboard_row(n, force=True)
+            if missing:
+                self.later(1, batch)
+            else:
+                self._dashboard_rendering = False
+        self.later(0, batch)
+
+    def update_dashboard_row(self, n, force=False):
+        r, i, h = self.dash_rows[n], self.data[n], self.hist[n]
+        if not force:
+            valid, bounds = r.compute_bounds(self.dash_scroller)
+            if valid and (bounds.get_y() + bounds.get_height() < 0 or bounds.get_y() > self.dash_scroller.get_height()):
+                return  # Refresh offscreen charts when scrolling brings them into view.
+        for c in ("running", "frozen"):
+            r.dot.remove_css_class(c)
+        if state_key(i["status"]) != "stopped":
+            r.dot.add_css_class(state_key(i["status"]))
+        r.cpu.set(h["cpu"])
+        r.mem.set(h["mem"])
+        on = i["status"] == "Running"
+        r.cpu_l.set_text(f"{last(h['cpu']):.0f}%" if on else "—")
+        r.mem_l.set_text(human(last(h['mem'])) if on else "—")
+
     def open_instance(self, name):
         self.pages.set_visible_child_name("inst")
         if name in self.rows:
@@ -779,6 +965,10 @@ class Window(Gtk.ApplicationWindow):
 
     def on_select(self, _l, row):
         self.cur = row.name if row else None
+        self.settings_owner = None
+        self.settings_apply.set_sensitive(False)
+        if "tab" in self.reads:
+            self.reads["tab"].invalidate()
         if self.cur:
             self.fpath = "/"
             self.show_exec_buf(self.cur)
@@ -836,25 +1026,31 @@ class Window(Gtk.ApplicationWindow):
         self.btn["delete"].set_sensitive(not busy)
         if reload:
             self.log.get_buffer().set_text("loading…")
-            self.bg(lambda: backend.incus("info", n, "--show-log"),
+            self.read("log", lambda: backend.incus("info", n, "--show-log", timeout=backend.POLL_TIMEOUT),
                     lambda t: n == self.cur and self.log.get_buffer().set_text(t.split("Log:")[-1].strip() or t))
 
     # ------------------------------------------------------ tab content
     def load_tab(self):
+        if "tab" in self.reads:
+            self.reads["tab"].invalidate()
         n = self.cur
         if not n or n not in self.data:
             return
         t = self.tabs.get_visible_child_name()
         if t == "sn":
-            self.bg(lambda: backend.ijson("snapshot", "list", n), lambda d: n == self.cur and self.fill_snaps(n, d))
+            self.put(self.snap_list, [lbl("Loading snapshots…", "dim")])
+            self.read("tab", lambda: backend.ijson("snapshot", "list", n), lambda d: n == self.cur and self.fill_snaps(n, d))
         elif t == "fi":
             self.list_files()
         elif t == "de":
-            self.bg(lambda: json.loads(backend.incus("query", f"/1.0/instances/{n}")), lambda d: n == self.cur and self.fill_devices(n, d))
+            self.put(self.dev_list, [lbl("Loading devices…", "dim")])
+            self.read("tab", lambda: json.loads(backend.incus("query", f"/1.0/instances/{n}", timeout=backend.POLL_TIMEOUT)), lambda d: n == self.cur and self.fill_devices(n, d))
         elif t == "ex":
             self.show_exec_buf(n)
         elif t == "se":
-            self.bg(lambda: (backend.incus("config", "show", n)),
+            self.settings_owner = None
+            self.settings_apply.set_sensitive(False)
+            self.read("tab", lambda: (backend.incus("config", "show", n, timeout=backend.POLL_TIMEOUT)),
                     lambda txt: n == self.cur and self.fill_settings(n, txt))
 
     def fill_snaps(self, n, snaps):
@@ -892,10 +1088,12 @@ class Window(Gtk.ApplicationWindow):
         self.set_cpu.set_text(cfg.get("limits.cpu", ""))
         self.set_mem.set_text(cfg.get("limits.memory", ""))
         self.set_auto.set_active(cfg.get("boot.autostart") == "true")
+        self.settings_owner = n
+        self.settings_apply.set_sensitive(True)
 
     def apply_settings(self):
         n = self.cur
-        if not n:
+        if not n or self.settings_owner != n:
             return
         vals = {"limits.cpu": self.set_cpu.get_text().strip(), "limits.memory": self.set_mem.get_text().strip(),
                 "boot.autostart": "true" if self.set_auto.get_active() else ""}
@@ -907,6 +1105,10 @@ class Window(Gtk.ApplicationWindow):
     # ------------------------------------------------------ other pages
     def load_page(self, auto=False):
         key = self.pages.get_visible_child_name()
+        if key not in self.lists:
+            if "page" in self.reads:
+                self.reads["page"].invalidate()
+            return
         if key in self.lists:
             lb, fn = self.lists[key]
             fn(lb)
@@ -947,7 +1149,7 @@ class Window(Gtk.ApplicationWindow):
                 rm.connect("clicked", lambda _b, f=fp, t=title: self.del_image(f, t))
                 rows.append(self.item(title, sub, launch, rm, badges=(lab["kind"],)))
             self.put(lb, rows)
-        self.bg(lambda: backend.ijson("image", "list"), show)
+        self.read("page", lambda: backend.ijson("image", "list"), show)
 
     def launch_from(self, fp):
         self.flash(f"Launching from {fp[:12]}…")
@@ -969,13 +1171,13 @@ class Window(Gtk.ApplicationWindow):
                                              f"{len(n.get('used_by') or [])} users") if x) or "—"
                 rows.append(self.item(n["name"], sub, badges=(n["type"], "managed" if n.get("managed") else "external")))
             self.put(lb, rows)
-        self.bg(lambda: backend.ijson("network", "list"), show)
+        self.read("page", lambda: backend.ijson("network", "list"), show)
 
     def fill_pools(self, lb):
         def get():
             out = []
             for p in backend.ijson("storage", "list"):
-                out.append((p, backend.incus("storage", "info", p["name"])))
+                out.append((p, backend.incus("storage", "info", p["name"], timeout=backend.POLL_TIMEOUT)))
             return out
         def show(pools):
             rows = []
@@ -994,7 +1196,7 @@ class Window(Gtk.ApplicationWindow):
                     sub = f"{p['config'].get('source', '')} · usage unknown · {len(p.get('used_by') or [])} users"
                 rows.append(self.item(p["name"], sub, *([gauge] if gauge else []), badges=(p["driver"],)))
             self.put(lb, rows)
-        self.bg(get, show)
+        self.read("page", get, show)
 
     def fill_profiles(self, lb):
         def show(profs):
@@ -1005,14 +1207,17 @@ class Window(Gtk.ApplicationWindow):
                     sub += " · config: " + ", ".join(f"{k}={v}" for k, v in p["config"].items())[:120]
                 rows.append(self.item(p["name"], sub, badges=()))
             self.put(lb, rows)
-        self.bg(lambda: backend.ijson("profile", "list"), show)
+        self.read("page", lambda: backend.ijson("profile", "list"), show)
 
     # ------------------------------------------------------ actions
     def run_op(self, name, text, fn, after=None):
+        if name in self.busy:
+            self.flash(f"{name} already has an operation in progress")
+            return
         t0 = time.monotonic()
         self.busy.add(name)
         self.status.set_text(text)
-        if name in self.data:
+        if name == self.cur and name in self.data:
             self.fill(self.data[name])
         def done(_):
             self.busy.discard(name)
@@ -1051,7 +1256,10 @@ class Window(Gtk.ApplicationWindow):
     def shell(self):
         n = self.cur
         if n:
-            subprocess.Popen([TERMINAL, "-e", f"incus exec {n} -- sh -c 'exec $(command -v bash || echo sh) -l'"])
+            try:
+                subprocess.Popen([TERMINAL, "-e", f"incus exec {n} -- sh -c 'exec $(command -v bash || echo sh) -l'"])
+            except OSError as e:
+                self.error_dialog("Open shell", e)
 
     def copy_ip(self):
         n = self.cur
@@ -1071,11 +1279,27 @@ class Window(Gtk.ApplicationWindow):
         self.cmd_stop.set_sensitive(n in self.exec_proc)
 
     def append_out(self, n, text):
+        if self.closing:
+            return False
         b = self.exec_buf(n)
+        adj = self.exec_sc.get_vadjustment()
+        following = adj.get_value() >= adj.get_upper() - adj.get_page_size() - 24
         b.insert(b.get_end_iter(), text)
-        if n == self.cur:
-            adj = self.exec_sc.get_vadjustment()
-            GLib.idle_add(lambda: adj.set_value(adj.get_upper()))
+        # A noisy command must never grow GTK's text buffer without bound.
+        extra = b.get_char_count() - 262144
+        if extra > 0:
+            b.delete(b.get_start_iter(), b.get_iter_at_offset(extra))
+        if n == self.cur and following:
+            self.later(0, lambda: adj.set_value(adj.get_upper()))
+        return False
+
+    def drain_output(self, n):
+        mailbox = self.output.get(n)
+        if mailbox:
+            text = mailbox.take()
+            if text:
+                self.append_out(n, text)
+        return False
 
     def run_cmd(self):
         n, cmd = self.cur, self.cmd.get_text().strip()
@@ -1087,21 +1311,40 @@ class Window(Gtk.ApplicationWindow):
         if n in self.exec_proc:
             self.flash("A command is already running here")
             return
+        try:
+            proc = subprocess.Popen(["incus", "exec", n, "--", "sh", "-c", cmd], stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT)
+        except OSError as e:
+            self.error_dialog("Run command", e)
+            return
         self.cmd.set_text("")
         self.append_out(n, f"$ {cmd}\n")
-        proc = subprocess.Popen(["incus", "exec", n, "--", "sh", "-c", cmd], stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT, text=True, bufsize=1)
         self.exec_proc[n] = proc
+        # A producer schedules one delivery per burst, never one idle per line.
+        mailbox = OutputMailbox(lambda: GLib.timeout_add(50, self.drain_output, n))
+        self.output[n] = mailbox
         self.cmd_stop.set_sensitive(True)
         def pump():
-            for line in proc.stdout:
-                GLib.idle_add(self.append_out, n, line)
+            decoder = codecs.getincrementaldecoder("utf-8")("replace")
+            try:
+                while True:
+                    chunk = os.read(proc.stdout.fileno(), 16384)
+                    if not chunk:
+                        break
+                    if not self.closing:
+                        mailbox.put(decoder.decode(chunk))
+                mailbox.put(decoder.decode(b"", final=True))
+            finally:
+                proc.stdout.close()
             rc = proc.wait()
             def end():
+                self.drain_output(n)
+                self.output.pop(n, None)
                 self.exec_proc.pop(n, None)
                 self.append_out(n, f"[exit {rc}]\n\n")
-                if n == self.cur:
+                if not self.closing and n == self.cur:
                     self.cmd_stop.set_sensitive(False)
+                return False
             GLib.idle_add(end)
         threading.Thread(target=pump, daemon=True).start()
 
@@ -1123,6 +1366,8 @@ class Window(Gtk.ApplicationWindow):
             self.flist.remove_all()
             self.flist.append(lbl("Start the instance to browse its files.", "dim", margin_top=12))
             return
+        self.put(self.flist, [lbl("Loading files…", "dim")])
+        self.fnames = {}
         def done(out):
             if n != self.cur or path != self.fpath:
                 return
@@ -1141,7 +1386,7 @@ class Window(Gtk.ApplicationWindow):
                 row.set_child(b)
                 row.fname, row.isdir = name, isdir
                 self.flist.append(row)
-        self.bg(lambda: backend.incus("exec", n, "--", "ls", "-1Ap", path), done)
+        self.read("tab", lambda: backend.incus("exec", n, "--", "ls", "-1Ap", path, timeout=backend.POLL_TIMEOUT), done)
 
     def on_files_dropped(self, _target, value, _x, _y):
         """Files or folders dragged from the file manager onto the Files tab are uploaded to the current folder."""
@@ -1286,6 +1531,12 @@ class Window(Gtk.ApplicationWindow):
         pop.popup()
 
     def on_list_key(self, _c, keyval, _code, _state):
+        if keyval == Gdk.KEY_Menu or (keyval == Gdk.KEY_F10 and _state & Gdk.ModifierType.SHIFT_MASK):
+            row = self.list.get_selected_row()
+            if row:
+                area = row.get_allocation()
+                self.on_row_menu(None, 1, area.x + 16, area.y + 16)
+                return True
         if keyval == Gdk.KEY_Delete and self.cur:
             self.delete()
             return True
@@ -1362,7 +1613,13 @@ class Window(Gtk.ApplicationWindow):
         box.append(sc)
         area.append(box)
         d.add_button("Close", Gtk.ResponseType.CLOSE)
-        d.connect("response", lambda dlg, _r: dlg.destroy())
+        slot = ("image-search", id(d))
+        def close(dlg, _r):
+            task = self.reads.pop(slot, None)
+            if task:
+                task.invalidate()
+            dlg.destroy()
+        d.connect("response", close)
         def search(*_):
             term = se.get_text().strip()
             lb.remove_all()
@@ -1376,7 +1633,7 @@ class Window(Gtk.ApplicationWindow):
                     lb.append(r)
                 if not rows:
                     lb.append(lbl("No matches.", "dim", margin_top=8))
-            self.bg(lambda: backend.incus("image", "list", "images:", term, ARCH, "-c", "ldt", "--format", "csv", timeout=120), done)
+            self.read(slot, lambda: backend.incus("image", "list", "images:", term, ARCH, "-c", "ldt", "--format", "csv", timeout=backend.POLL_TIMEOUT), done)
         se.connect("activate", search)
         d.present()
         search()
@@ -1434,6 +1691,8 @@ class Window(Gtk.ApplicationWindow):
         self.job_box.remove(job["row"])
         if rc != 0 and not job["cancelled"]:
             self.cleanup_instance(name, patience=10)
+        if self.closing:
+            return False
         if job["cancelled"]:
             self.flash("Creation cancelled")
         elif rc != 0:

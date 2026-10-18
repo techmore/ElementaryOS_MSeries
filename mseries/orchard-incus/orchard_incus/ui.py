@@ -143,7 +143,10 @@ class Spark(Gtk.Widget):
         return (self.h, self.h, -1, -1) if orientation == Gtk.Orientation.VERTICAL else (60, 60, -1, -1)
 
     def set(self, values):
-        self.values = list(values)
+        values = list(values)
+        if self.values == values:
+            return
+        self.values = values
         if self.values:
             text = f"{self.name}: now {self.fmt(self.values[-1])}, peak {self.fmt(max(self.values))}, {span_text(HIST, PERIOD)}"
             self.set_tooltip_text(text)
@@ -226,10 +229,16 @@ class JobRow(Gtk.Box):
         for w in (top, self.bar, self.sub):
             self.append(w)
         self.indeterminate = True
-        GLib.timeout_add(220, self._pulse)
+        self._pulse_source = GLib.timeout_add(220, self._pulse)
+
+    def stop_pulse(self):
+        if self._pulse_source:
+            GLib.source_remove(self._pulse_source)
+            self._pulse_source = 0
 
     def _pulse(self):
         if self.get_parent() is None:
+            self._pulse_source = 0
             return False
         if self.indeterminate:
             self.bar.pulse()
@@ -272,6 +281,14 @@ class Row(Gtk.ListBoxRow):
         self.update(inst)
 
     def update(self, inst):
+        self.search_text = " ".join((self.name, inst["status"], inst["type"],
+                                     inst["config"].get("image.description", ""),
+                                     inst["config"].get("image.os", ""),
+                                     " ".join(addrs(inst.get("state"), "inet")))).casefold()
+        presentation = (self.search_text, inst["config"].get("image.os", ""))
+        if presentation == getattr(self, "_presentation", None):
+            return
+        self._presentation = presentation
         k = state_key(inst["status"])
         for c in ("running", "frozen"):
             self.dot.remove_css_class(c)
@@ -283,22 +300,23 @@ class Row(Gtk.ListBoxRow):
         self.kind.set_text("VM" if inst["type"] == "virtual-machine" else "")
 
 
-class DashRow(Gtk.Box):
+class DashRow(Gtk.Button):
     def __init__(self, name, on_open):
-        super().__init__(spacing=14)
+        super().__init__(has_frame=False)
+        box = Gtk.Box(spacing=14)
+        self.set_child(box)
         self.add_css_class("list-card")
+        a11y(self, f"Open instance {name}")
         self.name = name
         self.dot = Gtk.Box(valign=Gtk.Align.CENTER)
         self.dot.add_css_class("dot")
         t = lbl(name, "inst-name", width_chars=16, max_width_chars=16, ellipsize=Pango.EllipsizeMode.END)
         self.cpu_l, self.mem_l = lbl("", "dim", xalign=1.0, width_chars=9), lbl("", "dim", xalign=1.0, width_chars=11)
         self.cpu, self.mem = Spark(GREEN, 34, floor=10, name=f"{name} CPU", fmt=lambda v: f"{v:.0f}%"), Spark(BLUE, 34, name=f"{name} memory", fmt=human)
-        self.cpu.set_size_request(160, -1); self.mem.set_size_request(160, -1)
+        self.cpu.set_size_request(80, -1); self.mem.set_size_request(80, -1)
         for w in (self.dot, t, self.cpu, self.cpu_l, self.mem, self.mem_l):
-            self.append(w)
-        g = Gtk.GestureClick()
-        g.connect("released", lambda *_: on_open(name))
-        self.add_controller(g)
+            box.append(w)
+        self.connect("clicked", lambda *_: on_open(name))
 
 
 # ---------------------------------------------------------------- main window

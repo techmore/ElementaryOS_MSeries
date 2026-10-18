@@ -58,7 +58,7 @@ def incus(*args, timeout=600, stdin=None):
     return p.stdout
 
 
-def ijson(*args, timeout=600):
+def ijson(*args, timeout=POLL_TIMEOUT):
     return json.loads(incus(*args, "--format", "json", timeout=timeout))
 
 

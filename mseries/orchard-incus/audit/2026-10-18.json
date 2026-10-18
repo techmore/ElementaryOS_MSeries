@@ -1,0 +1,86 @@
+{
+  "date": "2026-10-18",
+  "baseline_revision": "b49e125248bd35fed34ace2ef744080cf16ff322",
+  "before": {
+    "method": "GTK UI-thread show() milliseconds; nine sampled updates with full 90-point histories; Instances/Overview and Dashboard visible in separate passes; synthetic fixtures; cairo/X11; no Incus calls; deferred dashboard creation excluded",
+    "inventories": [
+      {
+        "count": 10,
+        "initial_ms": 23.76,
+        "update_median_ms": 4.81,
+        "update_max_ms": 6.36,
+        "dashboard_median_ms": 1.3,
+        "dashboard_max_ms": 7.76
+      },
+      {
+        "count": 100,
+        "initial_ms": 196.32,
+        "update_median_ms": 35.59,
+        "update_max_ms": 52.31,
+        "dashboard_median_ms": 3.87,
+        "dashboard_max_ms": 21.06
+      },
+      {
+        "count": 500,
+        "initial_ms": 1123.72,
+        "update_median_ms": 55.57,
+        "update_max_ms": 153.72,
+        "dashboard_median_ms": 26.18,
+        "dashboard_max_ms": 233.9
+      }
+    ]
+  },
+  "after": {
+    "method": "GTK UI-thread show() milliseconds; nine sampled updates with full 90-point histories; Instances/Overview and Dashboard visible in separate passes; synthetic fixtures; cairo/X11; no Incus calls; deferred dashboard creation excluded",
+    "inventories": [
+      {
+        "count": 10,
+        "initial_ms": 12.13,
+        "update_median_ms": 1.8,
+        "update_max_ms": 4.89,
+        "dashboard_median_ms": 0.86,
+        "dashboard_max_ms": 5.12
+      },
+      {
+        "count": 100,
+        "initial_ms": 41.58,
+        "update_median_ms": 2.77,
+        "update_max_ms": 8.46,
+        "dashboard_median_ms": 2.07,
+        "dashboard_max_ms": 5.58
+      },
+      {
+        "count": 500,
+        "initial_ms": 93.93,
+        "update_median_ms": 4.72,
+        "update_max_ms": 5.51,
+        "dashboard_median_ms": 5.91,
+        "dashboard_max_ms": 14.29
+      }
+    ]
+  },
+  "checks": {
+    "python": {
+      "run": 86,
+      "passed": 80,
+      "skipped_live": 6
+    },
+    "vala": {
+      "passed": 5,
+      "failed": 0
+    },
+    "read_only_host": {
+      "preflight_ok": true,
+      "preflight_ms": 59.53,
+      "instances": 2,
+      "list_ms": 16.75
+    }
+  },
+  "limits": [
+    "Single sequential before/after run on the owner desktop; timings vary with other workloads.",
+    "UI-thread show() timing, not end-to-end frame latency; initial_ms excludes deferred dashboard construction.",
+    "No live container mutation, real Wayland frame pacing, long-duration RSS or full dialog/action qualification.",
+    "Sidebar and dashboard still use retained GTK rows; very large inventories need virtualization.",
+    "The Vala manager is build-tested only; its UI/performance problems are not repaired in this pass."
+  ]
+}
