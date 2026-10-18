@@ -725,11 +725,40 @@ def summary_card(conn):
     return headline, " · ".join(detail), ",".join(points)
 
 
+def summary_extra(conn):
+    """Tab-separated rows for the panel dropdown, after the three card lines: stat, run, app and tip rows."""
+    now = int(time.time())
+    rows = fetch(conn, now - 14 * 86400)
+    out = []
+    health = battery_health()
+    runs = sessions(rows)
+    long_runs = [r for r in runs if r["seconds"] >= 1800 and r["projected_hours"]]
+    if long_runs:
+        out.append("stat\tTypical runtime\t%s\tfull charge, %d runs" % (
+            fmt_hours(sum(r["projected_hours"] for r in long_runs) / len(long_runs)), len(long_runs)))
+    if health.get("health_pct"):
+        out.append("stat\tHealth\t%s%%\t%.1f of %.1f Wh · %d cycles" % (
+            health["health_pct"], health["full_wh"] or 0, health["design_wh"] or 0, health["cycles"] or 0))
+    for run in list(reversed([r for r in runs if r["seconds"] >= 600]))[:3]:
+        out.append("run\t%s\t%s\t%.0f%% → %.0f%%\t%s" % (
+            time.strftime("%a %H:%M", time.localtime(run["start"])), fmt_hours(run["seconds"] / 3600),
+            run["pct_start"] or 0, run["pct_end"] or 0, "%.1f W" % run["avg_w"] if run["avg_w"] else "—"))
+    for item in top_culprits(rows, 3):
+        out.append("app\t%s\t%.1f%% of CPU" % (item["name"], item["avg_cpu"]))
+    try:
+        tips = suggestions(conn, rows)
+    except Exception:
+        tips = []
+    if tips:
+        out.append("tip\t%s\t%s" % (tips[0]["title"], tips[0]["body"]))
+    return out
+
+
 def write_summary(conn, path=SUMMARY_PATH):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     tmp = path + ".tmp"
     with open(tmp, "w") as handle:
-        handle.write("\n".join(summary_card(conn)))
+        handle.write("\n".join(list(summary_card(conn)) + summary_extra(conn)))
     os.replace(tmp, path)
 
 
