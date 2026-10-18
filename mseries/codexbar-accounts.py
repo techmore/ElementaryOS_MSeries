@@ -181,8 +181,12 @@ def main(arguments: list[str]) -> int:
     command = arguments[0] if arguments else "list"
     if command == "save":
         ident = save_current()
-        print(json.dumps({"saved": ident["email"] if ident else None}))
-        return 0 if ident else 1
+        if ident:
+            print(f"Saved {ident['email']}.")
+            return 0
+        print("No ChatGPT sign-in found in Codex. Sign in to Codex with the account you want to add, then try again.",
+              file=sys.stderr)
+        return 1
     if command == "switch":
         if len(arguments) < 2:
             print("usage: codexbar-accounts.py switch <email|id>", file=sys.stderr)

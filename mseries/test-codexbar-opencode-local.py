@@ -77,5 +77,27 @@ class OpenCodeLocalUsageTests(unittest.TestCase):
         self.assertIn("unsupported schema", usage["message"])
 
 
+class AccountTest(unittest.TestCase):
+    def test_reads_active_account_email_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            database = pathlib.Path(directory) / "opencode.db"
+            connection = sqlite3.connect(database)
+            connection.execute("CREATE TABLE account (id TEXT PRIMARY KEY, email TEXT, access_token TEXT, time_updated INTEGER)")
+            connection.execute("CREATE TABLE account_state (id INTEGER PRIMARY KEY, active_account_id TEXT)")
+            connection.executemany("INSERT INTO account VALUES (?,?,?,?)",
+                                   [("a", "old@example.com", "secret-a", 9), ("b", "me@example.com", "secret-b", 1)])
+            connection.execute("INSERT INTO account_state VALUES (1, 'b')")
+            connection.commit()
+            connection.close()
+            self.assertEqual(MODULE.read_account(database), "me@example.com")
+
+    def test_missing_or_unsupported_database_gives_no_account(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.assertEqual(MODULE.read_account(pathlib.Path(directory) / "none.db"), "")
+            database = pathlib.Path(directory) / "x.db"
+            sqlite3.connect(database).close()
+            self.assertEqual(MODULE.read_account(database), "")
+
+
 if __name__ == "__main__":
     unittest.main()

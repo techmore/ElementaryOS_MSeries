@@ -2660,3 +2660,31 @@ Added `mseries/install-dictation.sh` + `mseries/dictation/` (see its README). Vo
 Built-in mic: PipeWire exposes only the silent headset jack; the AOP array (`hw:1,0`, 3ch S32 48 kHz, big DC offset) is bridged by `aop-mic.sh` into source `mseries-builtin-mic`. Speech played at the laptop and recorded from `hw:1,0`, filtered offline, transcribed correctly.
 Installed live on this Mac (services `ydotool`, `mseries-aop-mic`, `voxtype`). **Not verified:** a real person holding F5 and text landing in an app; accuracy; power cost of the always-on bridge. Mistakes during testing: an early bridge version was auto-linked to the speakers (fixed with `node.autoconnect=false`), and test speech was played aloud; a silent dry run typed "Pshhh." into the focused window.
 Next: owner tries F5; tune gain; start the bridge only while recording; grammar pass via `[output.post_process]` with the local LLM; evaluate Parakeet via the Voxtype ONNX build per `STT-RESEARCH.md`.
+
+## CodexBar panel: account per provider and icon dock — 2026-10-18
+
+Each provider card shows which login it is tied to, as a quiet caption with the person icon under the title (Codex: active email from `codexbar-accounts.py`; OpenCode Go: `accountEmail` from `codexbar-opencode-local.py`, which reads only the email of the active row in `opencode.db`; otherwise "Account not detected"). On this desktop `opencode.db` has no account rows, so the OpenCode Go card shows "Account not detected" until an account exists there. The footer is now an icon-only dock (Quick View, Usage details, Spending details, Settings & sign in = person silhouette) with names in tooltips; the header gear was removed. Helper tests (5 OpenCode, 6 accounts) and Meson (3 suites) pass; light and dark renders checked. Not verified: live Wingpanel popover (loads on next restart/login).
+
+## CodexBar custom port: Claude account switching and deploy script — 2026-10-18
+
+Claude switching uses claude-swap 0.27.2 (MIT, realiti4/claude-swap; PyPI wheel + `textual`, `rich`, `truststore`), installed into a private venv `~/.local/share/claude-swap-venv` with `~/.local/bin/cswap` linked (the same tool upstream CodexBar drives on macOS). `mseries/codexbar-claude.py` wraps `cswap list/status/switch --json` (5 tests with a faked cswap) and the Wingpanel gets a Claude card (active login, 5-hour and 7-day quota, other accounts with Switch, Add account… which opens a terminal running `cswap add`). If upstream CodexBar ever reports a `claude` entry itself, our card steps aside.
+
+Blocker found: this desktop has no Claude Code credentials file (`~/.claude/.credentials.json` is absent; `claude` is not on PATH), so `cswap add` answers "No credentials found for current account". `cswap status` does name the signed-in email, so the card shows it, but there is no quota and nothing to switch to until a login is saved: sign in with the Claude Code CLI, then use Add account….
+
+New `mseries/deploy-codexbar.sh` (helpers, wrapper, module build/tests/install, then restarts Wingpanel and the CodexBar app). AGENTS.md now says to run it after every push that touches CodexBar. Verified: 5 Claude tests, Meson, light and dark renders with a faked helper. Not verified: a real Claude switch (no saved account exists).
+
+## CodexBar panel: dense cards, company marks, bottom bar, repeatable port — 2026-10-18
+
+Panel redesign: no header. Each card leads with the company mark (OpenAI, Claude, OpenCode icons, installed as `mseries-codexbar-*-symbolic`; names in tooltips/accessible labels; the Claude and OpenCode marks are our own simple drawings, not official artwork), the plan chip and the signed-in login on one line. Quota rows are one line (name, bar, % left, reset time inline); the forecast only gets its own line when it is a warning. Accounts are one line each (login, remaining %, Switch) under a small "Accounts" header with a + button. The bottom bar carries a live "Updated … ago" timer (and the Cached chip) on the left and the icon dock plus Refresh on the right. Same formatting is used for Codex, Claude and OpenCode Go.
+
+Repeatable upgrades: `mseries/CODEXBAR-PORT.md` lists every mod and the upgrade checklist; `mseries/check-codexbar-port.sh` verifies the upstream CLI flags, `CODEX_HOME`, helper tests, the Wingpanel build and the live `--snapshot` keys (all pass on 0.77.0). `deploy-codexbar.sh` also installs the provider marks. Verified: headless light and dark renders, Meson tests, port check. Not verified: the live popover by eye after restart.
+
+## CodexBar: Add account no longer opens a terminal — 2026-10-18
+
+The + under Accounts opened a full-size terminal running `codex login` / `cswap add`; neither `codex` nor `claude` is on PATH here, so it was both ugly and broken. It now opens a small native dialog (GTK AlertDialog): sign in to the other account in Codex or Claude Code, then press Save. Save runs `codexbar-accounts.py save` / `codexbar-claude.py add` silently and reports the result in a second small dialog, with plain-language errors (for example, Claude Code has no saved sign-in yet: sign in with the CLI first). Helper tests: Claude 6, accounts 7. Not verified: the dialogs on the live desktop by eye, and a real second-account save (only one login exists here).
+
+## CodexBar: Claude sign-in through the desktop app's bundled CLI — 2026-10-18
+
+The Claude desktop app's login lives in its own encrypted Electron storage (keyring item "Claude Safe Storage"), not in a file claude-swap can read; we deliberately do not decrypt it. The app does bundle Claude Code's CLI under `~/.config/Claude/claude-code/<version>/<hash>/claude`; `claude auth status` on this machine reports `loggedIn: false`, which is why the old Save login failed. `codexbar-claude.py login` now finds that CLI (or `claude` on PATH), saves any account already signed in, runs `claude auth login` (browser), then `cswap add`; the panel's + for Claude is "Sign in and save". 9 helper tests pass. Not verified: the real browser sign-in and the second dialog on the live desktop (no login was started from here).
+
+The Claude mark in the panel is tinted terracotta (#d97757) via the `mark-claude` CSS class; Codex and OpenCode marks stay neutral. Light render checked; dark not re-checked.

@@ -36,3 +36,16 @@ or that method failed to find a suitable render node`. With the sandbox off the 
 initialised, so this approach may need a different flag set (or the render node selection patched upstream)
 before it helps. Headless mode also does not exercise the real GPU path. A visible-window test on YouTube
 (with `chrome://media-internals` / `chrome://gpu`) is the next step and needs the owner's screen.
+
+### Passkeys in `brave-youtube` (2026-10-18)
+Chromium shows the "use your phone via QR code" option only when it can talk to Bluetooth through BlueZ
+(the phone proves it is nearby by BLE). Inside the container there was no system bus, so only the
+"physical security key" prompt appeared. Fix: the launcher now runs `xdg-dbus-proxy --filter --talk=org.bluez`
+and bind-mounts that filtered socket as the container's system bus, so the browser can reach BlueZ and
+nothing else (verified: `busctl --system tree org.bluez` works inside, other bus names are not listed).
+Passkeys created on an iPhone live in iCloud Keychain and are used through that QR flow, so signing in
+this way needs the phone nearby with Bluetooth on. Browser-stored passwords/passkeys are not synced from iCloud;
+see `../BUG-FIX-ROADMAP.md` (iCloud passwords evaluation) for the unofficial options.
+
+**Owner-verified 2026-10-18:** after the BlueZ proxy fix, the passkey QR-code flow worked in `brave-youtube` and
+the owner signed in (iPhone approving the sign-in). Hardware decode inside the container is still unconfirmed.

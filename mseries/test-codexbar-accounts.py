@@ -71,6 +71,17 @@ class AccountsTest(unittest.TestCase):
         self.assertTrue(MODULE.switch("a@example.com")[0])
         self.assertEqual((self.home / "auth.json").read_text(), before)
 
+    def test_save_command_is_human_readable(self):
+        import io, contextlib
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            self.assertEqual(MODULE.main(["save"]), 1)
+        self.assertIn("Sign in to Codex", err.getvalue())
+        self.sign_in(auth_for("a@example.com"))
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(MODULE.main(["save"]), 0)
+        self.assertIn("Saved a@example.com", out.getvalue())
+
     def test_files_are_private(self):
         self.sign_in(auth_for("a@example.com"))
         MODULE.save_current()
