@@ -198,7 +198,8 @@ def rollback(payload):
     payload.validate_restore()
     baseline = payload.data['metadata']
     current = command(['ibus', 'engine'], check=False).stdout.strip()
-    if current == ENGINE: command(['ibus', 'engine', baseline['engine']])
+    if current in (ENGINE, '', 'dummy'):
+        command(['/usr/bin/python3', str(BASE / 'dictation-input-client.py'), 'select', baseline['engine']])
     if baseline['activation_started']:
         for preference in baseline.get('preferences', []):
             schema, key = preference['schema'], preference['key']
@@ -263,7 +264,7 @@ def main():
         systemctl('daemon-reload')
         systemctl('enable', INPUT_SERVICE)
         systemctl('restart', INPUT_SERVICE)
-        command(['ibus', 'engine', ENGINE])
+        command(['/usr/bin/python3', str(BASE / 'dictation-input-client.py'), 'select'])
         systemctl('restart', SERVICE)
         import importlib.util
         spec = importlib.util.spec_from_file_location('installed_dictation_status', BASE / 'dictation_status.py')

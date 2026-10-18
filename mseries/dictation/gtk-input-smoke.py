@@ -60,7 +60,8 @@ with tempfile.TemporaryDirectory(prefix='mseries-gtk-input-') as directory:
     try:
         time.sleep(1);IBus.init();bus=IBus.Bus.new();assert bus.is_connected()
         engine=subprocess.Popen(['/usr/bin/python3',str(evaluated/'dictation-input.py')])
-        pump(1);assert bus.set_global_engine('mseries-dictation')
+        pump(1)
+        subprocess.run(['/usr/bin/python3',str(evaluated/'dictation-input-client.py'),'select'],check=True)
         window=Gtk.Window(title='Synthetic dictation fields');box=Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         window.set_child(box) if args.gtk4 else window.add(box)
         first,second,password=Gtk.Entry(),Gtk.Entry(),Gtk.Entry()

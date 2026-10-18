@@ -1,7 +1,15 @@
 {
+  "activation-attempt-v1.json": "0643f960939b2dc82f2faf60f54d7f0c3bd45d652fb109a0ee965614eaeb1ab7",
   "anonymous-fallback.json": "77efd7a56ee62a44cb172c3647d5a6319aa3ac8152400feeebd97f823bed643d",
   "bounded-focus-follow-through.json": "f8234a175f55b7910e62b5a31ceb0b21ffdaf6b81accee61c4223be11a682f82",
   "electron-runtime-pin.json": "34ab246168b44f252265f2dd4099da5b9defded2e7ef8315819cff77cfcf023b",
+  "evaluated-selector-v1/dictation-input-client.py": "7539c071308a23eb023d6bea5d3b5f99e6092010ccc6689d6223b57d1c58b637",
+  "evaluated-selector-v1/dictation-input.py": "a4922cb6d890aefbcbbb6b9dba5721b6498e656af51c21abc77a8357b7090493",
+  "evaluated-selector-v1/dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+  "evaluated-selector-v1/dictation_status.py": "50dadbf4f6a7f5edf8e4cb8b91d8931adf75cd899455285547d653c5af591903",
+  "evaluated-selector-v1/gtk-input-smoke.py": "fc581d61f91f292b3d2e27a76502f8470c54edadb52ab4e2a015cc5ee82a2be8",
+  "evaluated-selector-v1/machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27",
+  "evaluated-selector-v1/stream-dictate.py": "a1ef161bb8c908f6212e92478585d5e0e0192c3002ce088547fe6f0d524a8f89",
   "evaluated-speech-guarded-v4/dictation-input-client.py": "33b3c5f08745202ab23a6adee4b8f477d0b0c00f8766892e3ace0505cb8ab36c",
   "evaluated-speech-guarded-v4/dictation-input.py": "d8122c8b93fc84042bee6c1d25279c4f8118c570856e5bbbd5fa6d7903be69d8",
   "evaluated-speech-guarded-v4/dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
@@ -22,5 +30,6 @@
   "qualification-v2.json": "034d94293d0d2bd573aca7ed90434cf969a46cc03c1796d3d5bf9217c49bb9c9",
   "qualification.json": "61efaf2d9adfef51a96397b888627fb4102ff01eed5604afb56576a5b7cf5b20",
   "runtime-pins.json": "241e18fd01dc6060127398b3e7f8f236ef189b97091679edabcd14751732bf7c",
+  "selector-regression-v1.json": "67cf6e504ddf15ae3e13069f8dc80a0031a05dee6f299786c6a1b1a2bd63a9a0",
   "stage-only-rollback.json": "09ae8a0ace52875b21418ea3a2c8e8e2645f2dcd76d536f0a2b1a6b48260bcc3"
 }

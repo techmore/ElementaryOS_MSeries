@@ -6,7 +6,7 @@ import stat
 import subprocess
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 
 def load(name, path):
@@ -75,6 +75,18 @@ class DeploymentTests(unittest.TestCase):
                 with self.assertRaises(ValueError): deploy.check_idle_capture(root)
                 (root / '99/stat').write_text('99 (notify-send) Z 12')
                 deploy.check_idle_capture(root)
+
+    def test_rollback_repairs_empty_engine_but_preserves_owner_selection(self):
+        for current, restore in [('', True), ('dummy', True), (deploy.ENGINE, True), ('xkb:fr::fra', False)]:
+            payload = Mock()
+            payload.data = {'metadata': {'engine': 'xkb:us::eng', 'activation_started': False,
+                'input_enabled': False, 'stream_active': True, 'input_active': False}}
+            result = subprocess.CompletedProcess([], 0, current, '')
+            with patch.object(deploy, 'check_idle_capture'), patch.object(deploy, 'systemctl'), patch.object(deploy, 'command', return_value=result) as command:
+                deploy.rollback(payload)
+                selections = [args[0] for args, _ in command.call_args_list if 'select' in args[0]]
+                self.assertEqual(bool(selections), restore)
+                if restore: self.assertEqual(selections[0][-1], 'xkb:us::eng')
 
 
 class StatusTests(unittest.TestCase):

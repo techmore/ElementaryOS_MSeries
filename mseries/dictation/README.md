@@ -58,7 +58,7 @@ The first browser trial incorrectly accepted a password-field session using inpu
 
 | Current revised-source checks | Result |
 |---|---|
-| Fifteen session/deployment/status/resource contracts | Pass |
+| Sixteen session/deployment/status/resource contracts | Pass |
 | Real IBus context without an accessible field | Refused as required |
 | GTK3 X11 Entry, multi-chunk stdin client, changed field, password | Pass |
 | GTK4 native Wayland Entry in separate headless Gala | Pass |
