@@ -142,3 +142,7 @@ Candidates, in order of how cheaply they separate: (1) `elementary-aurora-nosep`
 clock/pinctrl phandles were flagged as unresolved when it was ported (a wrong
 reference on a live block can hang the machine, as the 2026-10-17 note warned).
 Test 1 needs no bootloader-payload change; test 2 does (owner OK required).
+
+Owner confirmed 2026-10-18: the hang happens with the dock NOT attached, so the
+dock/USB-C event is not the cause (it was at most a coincidence in one boot).
+Armed one-shot `elementary-aurora-nosep` (SEP driver blocked) for the next boot.
