@@ -49,6 +49,7 @@ git -C "$source_dir" apply --ignore-space-change "$repo/mseries/patches/wingpane
 # Keep the optional right-side clock ordering when that companion is installed.
 git -C "$source_dir" apply --check "$repo/mseries/patches/wingpanel-clockright-order.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/wingpanel-clockright-order.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/wingpanel-startup-layout.patch"
 
 meson setup "$build_dir" "$source_dir" --prefix=/usr --buildtype=release
 ninja -C "$build_dir"
