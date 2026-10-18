@@ -1,5 +1,16 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Dock-aware window space — 2026-10-18
+
+Visible dock space is reserved by the native compositor; hiding returns it to
+maximized and half/quarter-snapped windows. Quarter layouts reflow, manual sizes
+remain, fullscreen retains the monitor, and overlap hiding stays stable after
+reveal. Installed into the private Gala and both quarter-plugin directories;
+loads next sign-in. Ten isolated real-dock/GTK checks, nine existing snapping
+checks, ARM64 builds and shell checks pass. Physical-monitor confirmation remains.
+[Behavior, tests and install commands](display-space/README.md#dock-space-follows-visibility).
+
+
 ## Built-in VRR and boot space — 2026-10-18
 
 [Scoped result and next-kernel checklist](aurora/hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md):
@@ -359,7 +370,7 @@ sudo available to enable DNS collection without dialogs.
 |---|---|---|
 | Deferred per-user setup | Firstboot prepares CodexBar and Widevine tools and DNS policy; the user timer installs apps/services and stops after completion. Staged-root tests cover payload delivery, timer enablement and completion handling. | Verify a fresh desktop user's setup, including starting then quitting Brave to create its profile. |
 | Keyboard brightness slider | Added to Pantheon's Quick Settings gear menu by `install-quick-settings-brightness.sh`; included in manual post-install, transform firstboot, and now the Apple Silicon overlay build. | Rebuild the image, then confirm it appears and changes the keyboard backlight on the live desktop. |
-| OpenCode Go in M-series CodexBar | The installer enables the provider; the wrapper passes an OpenCode Go API key from `~/.local/share/opencode/auth.json` when one exists. Current OpenCode keeps its login (an OAuth account, not a Go API key) in `opencode.db`, so on this desktop no key is found and quota needs a browser sign-in at opencode.ai (upstream reads session cookies). The panel's OpenCode Go card shows a local usage estimate (5h/7d/30d cost, requests, tokens from `opencode.db`, labelled not account quota) until a quota exists; local activity is also under Sessions. | Sign in to OpenCode Go in a browser on the desktop and confirm the quota row appears. |
+| OpenCode Go in M-series CodexBar | The wrapper passes an explicit API key from `auth.json`, falling back to the active unexpired OAuth access token in OpenCode v2’s `credential` table. Live account quota works; seven-day local token counts accompany it in the panel and card. | Live OAuth quota verified on 0.77.0; wrapper/helper tests and port checks pass. OAuth refresh remains OpenCode’s responsibility. |
 
 ## Open problems
 
@@ -624,3 +635,33 @@ browser integration and remaining Files/Gala patches remain open.
 - Agent-first Pantheon feature proposal (October 18): shared broker/permissions and durable alerts before UI, native app adapters, speech-to-text/speech-to-speech, and explicitly paired WebRTC interaction. See [design and acceptance plan](local-ai/PANTHEON-MCP-DESIGN.md). Proposal only; no new alert broker, voice conversation or WebRTC service installed.
 
 - Upstream performance review (October 18): MLX main d8ac5fe is 28 commits ahead of tested 33630f9. Native-GQA is a candidate; numerically rejected gather routes remain excluded. Mac/MX notification-agent/voice patterns and oMLX options inform the agent-first design. [Pinned comparison and experiment plan](local-ai/UPSTREAM-FEATURE-COMPARISON.md); no runtime/governor changes or M1 Pro speedup claimed.
+## CodexBar native Claude account switching — 2026-10-18
+
+Implemented app session capture, one-time native sign-in setup, and **CLI only / Switch both** choices.
+The app restarts for a native switch; its encrypted login is restored without changing preferences.
+Missing sessions are labelled **app sign-in needed**. Both native accounts are now saved on this desktop. Automated snapshot round trips, rollback and
+setup recovery pass. A real native account-2 → account-1 round trip completed, and the owner confirmed
+the Gmail account’s chats remained visible without signing in again. See
+[CODEXBAR-PORT.md](CODEXBAR-PORT.md) for the repeatable workflow and limitations.
+
+
+### CodexBar account quota UX and sign-in — 2026-10-18
+
+Alternate accounts now expose 5-hour and weekly/monthly quota separately, each with a reset countdown,
+in dense dropdown rows and a second panel line. OpenCode duplicate OAuth records are collapsed into
+distinct account/workspace identities. Codex + provides browser sign-in without replacing the current
+login, using a native Granite window with progress and cancellation. Formatting, login isolation and
+OpenCode read-only/deduplication tests pass; port compatibility and headless light/dark probes pass. The owner verified that a second real Codex account appears after the new browser sign-in flow.
+
+Secondary quota balances are colour coded per window, matching the usage bar thresholds, while reset
+countdowns stay muted. The Codex account dialog now uses a centered brand panel, stronger typography,
+a compact instruction card and native actions. Light/dark render checks cover the visual changes.
+
+
+### CodexBar account-choice hints — 2026-10-18
+
+Yellow stars identify the service/account with the highest usable remaining quota percentage, using
+its tightest reported limit so an exhausted five-hour session does not win on weekly balance. Red
+exclamation marks independently identify the next weekly reset, including secondary accounts. Markers
+include explanatory tooltips; ties are marked, stale/unknown data is excluded, and monthly resets do
+not qualify. Selection tests and light/dark fixtures cover the behavior.

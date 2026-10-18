@@ -10,12 +10,12 @@ ones.** Upgrade by re-pinning, re-installing upstream, and re-verifying each ite
 |---|---|---|
 | Wingpanel indicator (native popover: dense cards, company marks, account line, bottom bar with freshness, dock and refresh) | `codexbar-wingpanel/` (`Indicator.vala`, `Presentation.vala`, `QuotaEta.vala`, `icons/`) | `codexbar-linux --snapshot` JSON (schemaVersion 1: `entries[].windows[]`, `spending`, `stale`, `busy`) and the `--refresh/--usage/--spending/--settings/--quick-view` actions |
 | Native Settings window (replaces upstream's Qt one; Fusion is hard-coded there so it can't be themed). Same `linux.json` keys, applied live through `codexbar-linux --configure`; opened by the panel's Settings button (`~/.local/bin/codexbar-settings`) | `codexbar-wingpanel/settings/` (`SettingsModel.vala` with tests, `SettingsApp.vala`), `probe/run-settings-probe.sh` | `linux.json` keys and validation in `DesktopController.cpp` (`validate`/`loadSettings`), `--configure`, `--autostart`, `codexbar config providers/enable` |
-| Wrapper that passes the OpenCode Go key | `codexbar-opencode-wrapper.py` → `~/.local/bin/codexbar` | `codexbar-upstream` CLI path under `~/.local/lib/codexbar-cli/` |
+| Wrapper that passes an explicit OpenCode Go key, or the active unexpired OpenCode v2 OAuth access token (read-only `credential` table; never copies/refreshes it) | `codexbar-opencode-wrapper.py` → `~/.local/bin/codexbar` | `codexbar-upstream` CLI path under `~/.local/lib/codexbar-cli/` |
 | Sessions helper | `codexbar-sessions.py` | none (reads local data) |
 | OpenCode local usage + account email | `codexbar-opencode-local.py` | none (reads `opencode.db` read-only) |
 | Codex multi-account switcher (upstream's is macOS-only) | `codexbar-accounts.py` | upstream `codexbar usage --provider codex` honoring `CODEX_HOME` |
 | OpenCode Go sign-in (upstream imports opencode.ai cookies only on macOS): native WebKit window, saves the `auth`/`__Host-console_session` session as `providers[opencodego].cookieSource=manual` + `cookieHeader`; the panel's OpenCode **+** runs it | `codexbar-opencode-login.py` | config path resolution (`CodexBarConfigStore.defaultURL`), `OpenCodeWebCookieSupport` cookie names, `usage --source web` |
-| Claude accounts via claude-swap. A switch moves Claude Code's command-line login only (`~/.claude/.credentials.json` + `~/.claude.json` `oauthAccount`) and is checked against `~/.claude.json` afterwards; the Claude desktop app keeps its own sign-in (passed to its Code sessions as `CLAUDE_CODE_OAUTH_TOKEN`), so the card and the switch result name the app's account (`~/.config/Claude/config.json` `lastKnownAccountUuid`, matched to claude-swap's saved configs) when it differs | `codexbar-claude.py`, venv `~/.local/share/claude-swap-venv`, `cswap` | claude-swap `list/status/switch --json`, `schemaVersion` 1, `to.email`, `reason: already-active`, store `configs/.claude-config-*.json` |
+| Claude CLI accounts via claude-swap, plus native Claude desktop sessions. CLI only keeps the app login separate; Switch both validates the target session, quits the native app, saves its final encrypted session, merges the target login without changing preferences, switches the CLI, and relaunches the app. Set up app preserves the previous session and locally clears the login for one-time sign-in without sending a logout request. Save app login and automatic list capture remember it. | `codexbar-claude.py`, venv `~/.local/share/claude-swap-venv`, `cswap` | claude-swap `list/status/switch --json`, `schemaVersion` 1, `to.email`, `reason: already-active`, `configs/.claude-config-*.json`; installed Claude `config.json` keys `lastKnownAccountUuid`, `oauth:tokenCache`, `oauth:tokenCacheV2`, SQLite `Cookies` (or `Network/Cookies`), `gtk-launch com.anthropic.Claude` |
 | Installers / deploy / CI | `install-codexbar.sh`, `install-codexbar-wingpanel.sh`, `deploy-codexbar.sh`, `check-codexbar-port.sh`, `.github/workflows/validate-mseries.yml`, `enhance.sh` payload list | version pin `version=vX.Y.Z` |
 
 ## Upgrade checklist
@@ -39,3 +39,88 @@ ones.** Upgrade by re-pinning, re-installing upstream, and re-verifying each ite
 - Our helpers are installed from this repo by the installers and the deploy script; the installer does not delete user config.
 - `~/.local/bin/codexbar` is the wrapper, not upstream's binary (upstream's CLI is `codexbar-upstream`).
 - Account stores: `~/.local/share/codexbar-mseries/codex-accounts` (private, 0600) and claude-swap's own store. Never commit these.
+
+Quota and account cards, like the top-panel readout, always order Codex first, Claude second, OpenCode Go third.
+
+## Native Claude app accounts
+
+Use **Switch → Set up app** once for a saved CLI account that says **app sign-in needed**. This restarts
+Claude at its sign-in screen after saving the current app session locally. Sign in to the selected account
+in the native app and choose **Save app login** in CodexBar. Use **Switch → Switch both** afterwards to
+switch the native app and CLI together. Finish running Claude work before accepting the restart dialog.
+If setup is cancelled, Switch both to the previous saved account restores it.
+
+The same-machine store is `~/.local/share/codexbar-claude-app` (0700); each `<accountUuid>.json` (0600)
+atomically bundles encrypted cookies (SQLite backup including WAL, normalized to a standalone database)
+and only the three app identity/token-cache keys. Nothing is decrypted or returned in listing output.
+The app is stopped before restoration; stale SQLite sidecars are removed, preferences are merged, and
+failed restoration attempts roll back to the original session. A missing/corrupt target leaves the app
+and CLI untouched. Setup recovery uses `pending-login.json`. Do not commit or sync this private store.
+Sessions can expire or be revoked by the service; sign in again in that case. `desktopReady` means a
+structurally valid snapshot exists, not a server-side authentication check. Keep the app storage format
+and its Linux executable path under review on Claude desktop updates.
+
+OpenCode's quota remains account-wide; the token count beside it is the seven-day history from this
+machine across its local OpenCode Go accounts, labelled separately. OAuth credentials stay in OpenCode's
+database; expired credentials are ignored (with a 60-second margin), and OpenCode handles refresh.
+
+### Native sign-in persistence and process lifecycle
+
+A safeStorage OAuth cache alone is insufficient for the native chat surface. Snapshots require its
+`sessionKey` cookie; **Save app login** waits up to 35 seconds for Electron to persist new cookies
+([Electron Cookies API](https://www.electronjs.org/docs/latest/api/cookies)). A login is not labelled
+app-ready until the complete cookie snapshot is on disk. Keep Claude open while that initial save runs.
+
+On Linux Chromium may rewrite its command line into argv[0]. Stop detection uses the process parent
+tree to signal only the main app, then waits for all app processes to exit. Restart uses detached
+`gtk-launch` with closed standard streams and verifies the app process, avoiding inherited-output-pipe
+hangs. The owner confirmed a real account-2 → account-1 native round trip retains the Gmail account's
+chats without another sign-in after these fixes.
+
+## Dense alternate-account quotas and adding Codex accounts
+
+Alternate Claude and Codex accounts show separate **5H** and **7D** percentages with `↻` reset
+countdowns. Saved distinct OpenCode OAuth accounts also show **30D** when supplied. Short-window
+exhaustion is never hidden behind a healthy weekly/monthly balance. The main panel prioritizes the
+five-hour window; a compact second line shows alternate accounts, numbered with identities in the
+tooltip. Dropdown account rows keep the email and Switch action above their compact quota summary.
+Countdowns update during normal polling without rebuilding the open dropdown. Refresh updates the
+account helpers too. Providers expose quota percentages, not an absolute remaining-token balance.
+
+`codexbar-opencode-local.py accounts` reads saved OpenCode credentials read-only and obtains quota
+for distinct inactive accounts without activating them. Duplicate sessions for the same account and
+workspace are collapsed, with the active record preferred. Tokens stay in process memory/environment;
+output only contains account identities, quota windows, and actionable errors. The active account's
+quota remains supplied by upstream's snapshot. Currently the two saved OpenCode login records on this
+machine belong to the same account/workspace and appear once.
+
+Codex **+** now opens `AccountDialog.vala`, a Granite dialog with a centered provider mark, clear title and instruction card, a browser sign-in action,
+inline progress/result, retry and cancellation. `codexbar-accounts.py login` finds the CLI on PATH or
+bundled with the desktop app, starts official `codex login` in a private temporary `CODEX_HOME` with
+file credential storage, and saves the result into the account store. It never replaces the live
+Codex auth file. Cancellation terminates the login child and removes temporary credentials. Initial
+Add account and result messages for the other providers use Granite as well.
+Official login/storage reference: https://learn.chatgpt.com/docs/auth .
+
+Secondary quota values use the same theme success/warning/error colours and thresholds as the usage
+bars: over 25% green, 10–25% amber, at most 10% red. Each window is coloured independently; a red
+5-hour value and a green weekly/monthly value can appear together. Reset times remain muted and are
+not the sole indicator of quota state; labels and percentages remain explicit.
+
+## Account recommendation and weekly-reset badges
+
+A yellow **★** marks the service and account with the most usable reported quota. Services report
+percentages rather than comparable absolute token budgets, so the score is the account’s lowest
+remaining percentage across its reported windows. An empty five-hour window cannot win based on a
+large weekly balance. All exact positive ties are marked; there is no star when every account is
+exhausted or unknown. Stale accounts, unknown balances and windows awaiting a past reset are excluded.
+
+A red **!** independently marks the service and account with the earliest upcoming **7-day** reset.
+Monthly and five-hour resets are excluded. All exact reset-time ties are marked. It identifies the
+next weekly reset even if that reset is still days away; its tooltip gives the account and local date.
+
+Badges appear in provider headers, saved-account rows and the compact panel. A provider-level badge
+can refer to a secondary account; the matching row carries the same marker and the tooltip names it.
+Selection is recomputed from existing data during normal polls, with no additional API calls or
+account switching. Changing winners or passing a reset time updates the markers without waiting for
+new quota data.

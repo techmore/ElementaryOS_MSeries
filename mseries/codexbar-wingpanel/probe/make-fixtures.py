@@ -43,6 +43,8 @@ scenarios = {
     "exhausted": snap([entry("codex", [window("primary", "5 hour", 300, 0, 75, "Exhausted"),
                                        window("secondary", "7 day", 10080, 35, 6000, "On pace")]), claude_ok]),
     "provider-error": snap([codex_ok, go_err]),
+    "connected": snap([codex_ok, entry("opencodego", [window("primary", "5 hour", 300, 83, 240),
+        window("secondary", "7 day", 10080, 68, 8000), window("tertiary", "30 day", 43200, 91, 30000)], plan="go")]),
     "stale": snap([codex_ok, claude_ok], stale=True, error="Network unreachable"),
     "empty": snap([]),
 }
@@ -60,3 +62,32 @@ sessions = {"updatedAt": iso(NOW), "sessions": [
     {"id": "opencode", "name": "OpenCode", "state": "warn", "detail": "OpenCode history uses an unsupported schema."}]}
 (here / "sessions.json").write_text(json.dumps(sessions))
 print("fixtures:", ", ".join(sorted(scenarios)))
+
+# Complete saved-account fixtures exercise short-window exhaustion beside healthy totals.
+accounts = {
+    "codex": {"accounts": [
+        {"email": "me@codex.example", "id": "a", "active": True, "windows": []},
+        {"email": "work@codex.example", "id": "b", "active": False, "windows": [
+            window("primary", "5 hour", 300, 5, 65), window("secondary", "7 day", 10080, 62, 5000)]}]},
+    "claude": {"available": True, "activeEmail": "me@claude.example", "desktop": {
+        "installed": True, "email": "me@claude.example", "differs": False}, "desktopNote": "", "accounts": [
+        {"number": 1, "email": "me@claude.example", "active": True, "desktopReady": True, "desktopActive": True,
+         "windows": [window("primary", "5 hour", 300, 80, 130), window("secondary", "7 day", 10080, 55, 5000)]},
+        {"number": 2, "email": "work@claude.example", "active": False, "desktopReady": True, "desktopActive": False,
+         "windows": [window("primary", "5 hour", 300, 0, 190), window("secondary", "7 day", 10080, 72, 8000)]}]},
+    "opencode": {"accounts": [
+        {"email": "me@opencode.example", "id": "a", "active": True, "windows": []},
+        {"email": "work@opencode.example", "id": "b", "active": False, "windows": [
+            window("primary", "5 hour", 300, 0, 220), window("secondary", "7 day", 10080, 51, 6000),
+            window("tertiary", "30 day", 43200, 63, 30000)]}]},
+}
+for provider, value in accounts.items():
+    (here / f"accounts-{provider}.json").write_text(json.dumps(value))
+
+(here / "hints.json").write_text(json.dumps(scenarios["connected"], indent=1))
+hint_accounts = copy.deepcopy(accounts)
+hint_accounts["claude"]["accounts"][1]["windows"] = [
+    window("primary", "5 hour", 300, 95, 190), window("secondary", "7 day", 10080, 90, 8000)]
+hint_accounts["codex"]["accounts"][1]["windows"][1] = window("secondary", "7 day", 10080, 62, 45)
+for provider, value in hint_accounts.items():
+    (here / f"accounts-{provider}-hints.json").write_text(json.dumps(value))
