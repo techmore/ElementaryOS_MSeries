@@ -28,5 +28,35 @@
     "Review imported gateway dependencies/upstream; activate mdm TLS with administrator privileges",
     "Provision desktop tunnel and TURN; test LAN and cellular",
     "Real portal, audio, Safari, recovery and resource acceptance"
-  ]
+  ],
+  "prepared_followup": {
+    "target": "elementary-m1 is offline; owner chose preparation before a later Linux boot",
+    "python_tests": {
+      "input": 3,
+      "gateway": 8,
+      "desktop_setup": 3
+    },
+    "gateway_import_review": "Both root-owned Caddy imports reviewed; captured by hash/metadata; production imports preserved, validation uses expanded capture",
+    "gateway_activation": {
+      "stage": "/home/sdolbec/mseries-webrtc-review-20261017/activation/gateway-lwxiq5sj",
+      "request_sha256": "9e39a0c9346b9415305d8193c09b64b4565a3bd0a1e69e09772757302b3a73c9",
+      "candidate_sha256": "454b11f40f9654b8a5ddabe75bc1fdeaa87f7da8baf67cdf440a45cbda17b9b6",
+      "applied": false,
+      "helper_sha256": "bde045a371ac52b8c65fd92ee8e1d1d25f65dd1765a75e9730a30066708d23a4",
+      "loader_sha256": "be21b3da35e90d4135c7d9185782081fd902f628e387318c7a38e0f9c2ece623",
+      "activation_command_sha256": "a2da25f83146e039aa15d713efbd58abca18495fd8365f214ab85ffd0a04c9de"
+    },
+    "upstream_https": "Trusted TLS to existing TM-Remote upstream returned HTTP 200",
+    "reverse_ssh": "Temporary authenticated loopback reverse tunnel health passed; listener stopped",
+    "caddy_prefix_probe": {
+      "random_prefix_routing": "pass",
+      "relative_assets": "pass",
+      "prefixed_authenticated_websocket": "pass",
+      "existing_control_plane_fallback": "preserved",
+      "revocation": "pass",
+      "production_changed": false
+    },
+    "linux_packaging": "Updated factory pruning, runtime assembly and installer regression passed; generated Python caches excluded",
+    "public_tls": "Still fails before gateway activation; sudo authentication and real target acceptance deferred"
+  }
 }

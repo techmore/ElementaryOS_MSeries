@@ -5,9 +5,11 @@ source_dir="$SRCDIR/mseries/webrtc"
 runtime="$DESTDIR/usr/lib/mseries-webrtc"
 node -e 'if (Number(process.versions.node.split(".")[0]) < 22) process.exit(1)'
 install -d "$runtime/public"
-install -m644 "$source_dir/"{server.mjs,input_bridge.py,package.json,package-lock.json} "$runtime/"
+install -m644 "$source_dir/"{server.mjs,input_bridge.py,preflight.py,setup_desktop.py,package.json,package-lock.json} "$runtime/"
 install -m644 "$source_dir"/public/* "$runtime/public/"
 npm --prefix "$runtime" ci --omit=dev --ignore-scripts --no-audit --no-fund
+install -Dm755 "$source_dir/setup_desktop.py" "$DESTDIR/usr/bin/mseries-webrtc-configure"
+install -Dm755 "$source_dir/preflight.py" "$DESTDIR/usr/bin/mseries-webrtc-check"
 install -Dm755 "$source_dir/open.py" "$DESTDIR/usr/bin/mseries-webrtc-open"
 install -Dm644 "$source_dir/deploy/mseries-webrtc.service" "$DESTDIR/usr/lib/systemd/user/mseries-webrtc.service"
 install -Dm644 "$source_dir/deploy/mseries-webrtc.desktop" "$DESTDIR/usr/share/applications/mseries-webrtc.desktop"

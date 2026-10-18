@@ -315,10 +315,11 @@ mod_payload() {
   done
   # Ship screen-sharing setup through the installed-system transform too.
   copy 0755 "$here/install-webrtc.sh" "$prefix/mseries/install-webrtc.sh"
-  for f in server.mjs input_bridge.py open.py install.sh package.json package-lock.json README.md; do
+  for f in server.mjs input_bridge.py preflight.py setup_desktop.py open.py install.sh package.json package-lock.json README.md; do
     copy 0644 "$here/webrtc/$f" "$prefix/mseries/webrtc/$f"
   done
   for f in "$here"/webrtc/public/* "$here"/webrtc/deploy/*; do
+    [[ -f $f ]] || continue
     copy 0644 "$f" "$prefix/mseries/webrtc/${f#"$here/webrtc/"}"
   done
   put 0644 /usr/share/applications/mseries-webrtc-setup.desktop <<'EOF'

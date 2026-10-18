@@ -81,6 +81,8 @@ class ImageWiringTests(unittest.TestCase):
                          'usr/lib/mseries-webrtc/server.mjs',
                          'usr/lib/mseries-webrtc/node_modules/ws/LICENSE',
                          'usr/bin/mseries-webrtc-open',
+                         'usr/bin/mseries-webrtc-check',
+                         'usr/bin/mseries-webrtc-configure',
                          'usr/lib/systemd/user/mseries-webrtc.service',
                          'usr/share/applications/mseries-webrtc.desktop',
                          'usr/share/doc/mseries-webrtc/WS-LICENSE']:
@@ -104,7 +106,8 @@ class ImageWiringTests(unittest.TestCase):
                     self.assertTrue((image / path).is_file())
             self.assertFalse(payload.exists())
             self.assertFalse((image / 'usr/share/applications/mseries-webrtc-setup.desktop').exists())
-            self.assertTrue(os.access(image / 'usr/bin/mseries-webrtc-open', os.X_OK))
+            for name in ('mseries-webrtc-open', 'mseries-webrtc-check', 'mseries-webrtc-configure'):
+                self.assertTrue(os.access(image / 'usr/bin' / name, os.X_OK))
             for name in ('mseries-power.service', 'mseries-power-follow.service'):
                 unit = image / 'etc/systemd/system' / name
                 self.assertIn('ExecStart=/usr/libexec/mseries/power ', unit.read_text())

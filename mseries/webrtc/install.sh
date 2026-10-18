@@ -5,7 +5,7 @@ case "${1:-}" in
   --dry-run) printf '%s\n' 'Install a user-owned copy, npm locked dependencies, user service and desktop launcher. No root, audio, boot or firewall changes.'; exit 0 ;;
   --uninstall)
     systemctl --user disable --now mseries-webrtc.service 2>/dev/null || true
-    rm -f -- "$HOME/.config/systemd/user/mseries-webrtc.service" "$HOME/.local/share/applications/mseries-webrtc.desktop" "$HOME/.local/bin/mseries-webrtc-open"
+    rm -f -- "$HOME/.config/systemd/user/mseries-webrtc.service" "$HOME/.local/share/applications/mseries-webrtc.desktop" "$HOME/.local/bin/mseries-webrtc-open" "$HOME/.local/bin/mseries-webrtc-check" "$HOME/.local/bin/mseries-webrtc-configure"
     rm -rf -- "$HOME/.local/share/mseries-webrtc"
     systemctl --user daemon-reload
     printf '%s\n' 'Removed. Owner key and deployment settings retained in ~/.config/mseries-webrtc; remove that directory to revoke the key.'
@@ -20,10 +20,12 @@ node -e 'if (Number(process.versions.node.split(".")[0]) < 22) process.exit(1)' 
 install_root="$HOME/.local/share/mseries-webrtc"
 mkdir -p -- "$install_root/public" "$HOME/.config/systemd/user" "$HOME/.config/mseries-webrtc" "$HOME/.local/bin" "$HOME/.local/share/applications"
 chmod 700 -- "$HOME/.config/mseries-webrtc"
-install -m 644 server.mjs package.json package-lock.json input_bridge.py "$install_root/"
+install -m 644 server.mjs package.json package-lock.json input_bridge.py preflight.py setup_desktop.py "$install_root/"
 install -m 644 public/* "$install_root/public/"
 (cd -- "$install_root" && npm ci --omit=dev --ignore-scripts --no-audit --no-fund)
 install -m 755 open.py "$HOME/.local/bin/mseries-webrtc-open"
+install -m 755 preflight.py "$HOME/.local/bin/mseries-webrtc-check"
+install -m 755 setup_desktop.py "$HOME/.local/bin/mseries-webrtc-configure"
 # Quote an executable path for systemd (paths with spaces are supported).
 node_path=$(command -v node)
 python3 - "$install_root" "$node_path" <<'PY'

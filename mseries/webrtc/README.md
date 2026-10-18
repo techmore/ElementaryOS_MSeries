@@ -6,6 +6,59 @@ installed-system setup, and the ARM64 factory overlay. It uses the browser's
 WebRTC engine, the desktop screen-capture portal, and a small Mutter 50 input
 adapter. It does not launch a replacement desktop or modify audio/boot drivers.
 
+## Prepared deployment continuation — 2026-10-17
+
+The owner chose to prepare now and boot ElementaryOS later. The updated source
+includes `mseries-webrtc-check` (read-only desktop/portal/lock/HTTPS checks) and
+`mseries-webrtc-configure` (configure the user service and strict-host outbound
+SSH tunnel from the private prepared environment). Neither starts capture or
+input. They ship in the factory image and the installed-user setup.
+
+A reviewed gateway helper is in `deploy/gateway.py`. Unprivileged `prepare`
+captures the live Caddyfile and both explicitly reviewed root-owned imports,
+retains their live import behavior, and expands an immutable copy for Caddy
+adaptation/validation. `apply` requires isolated Python, sudo, the exact reviewed
+request digest and a helper executed from pinned captured bytes. It verifies
+live file identities, writes a root-private recovery copy, validates as Caddy's
+own user, and restarts the existing Caddy service once with `admin off` retained.
+Failed activation attempts restore the old configuration only when no concurrent
+administrator edit intervened. Tests cover rollback, drift and edit preservation;
+actual privileged activation remains unperformed.
+
+The current private candidate is on SER8 at
+`/home/sdolbec/mseries-webrtc-review-20261017/activation/gateway-lwxiq5sj`.
+The handoff retains helper/request/candidate hashes. Do not run a mutable loader
+file under sudo: the prepared activation command embeds the reviewed
+`activate-reviewed.py` source with `python3 -I -c` and pins the helper bytes.
+If any reviewed input has changed, preparation/inspection must be repeated.
+A Caddy restart interrupts its existing sites briefly; successful service
+activation still needs independent public HTTPS checks.
+
+After booting Linux and installing this branch's feature:
+
+```sh
+# Copy only the prepared settings, not a private SSH key, from trusted SER8.
+mkdir -p ~/.config/mseries-webrtc
+scp -o StrictHostKeyChecking=yes \
+  sdolbec@100.127.99.74:/home/sdolbec/mseries-webrtc-review-20261017/activation/gateway-lwxiq5sj/desktop.environment \
+  ~/.config/mseries-webrtc/prepared.environment
+chmod 600 ~/.config/mseries-webrtc/prepared.environment
+mseries-webrtc-configure --environment ~/.config/mseries-webrtc/prepared.environment
+mseries-webrtc-check
+mseries-webrtc-open
+```
+
+The configure command defaults to the existing operator's saved SSH profile/key;
+it verifies strict-host, noninteractive authentication before changing files.
+Override `--ssh-target` and `--identity` to use a dedicated restricted forwarding
+account/key if provisioned. No key is created or copied automatically. SER8's
+existing operator route passed a temporary loopback reverse-forward health
+check. A temporary Caddy process also verified the actual random-path asset,
+API and authenticated WebSocket routes, unchanged fallback and revocation.
+Both test listeners were stopped; no production configuration was changed.
+TURN, public TLS, physical phone/input, lock behavior and real portal capture
+remain live acceptance requirements.
+
 ## Install and use
 
 On an existing ElementaryOS installation, as the desktop user:

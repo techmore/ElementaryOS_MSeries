@@ -1,5 +1,32 @@
 # OS 9 implementation / Claude Code handoff
 
+## WebRTC deployment prepared for later Linux boot — 2026-10-17
+
+Owner chose preparation now and live testing after booting ElementaryOS.
+`elementary-m1` is currently offline. New built-in `mseries-webrtc-check` checks
+Linux, Node, the Pantheon ScreenCast declaration, compositor ownership, unlocked
+Wayland session and health without opening capture/input. New
+`mseries-webrtc-configure` consumes the private prepared environment and verifies
+existing strict-host SSH authentication before configuring the user service/tunnel.
+
+The existing TM-Remote upstream passes trusted HTTPS health. Both live Caddy
+file imports were reviewed. `webrtc/deploy/gateway.py` now prepares an exact
+file/metadata-pinned request and preserves imports in the production candidate;
+a separately expanded snapshot is adapted/validated. Privileged activation uses
+isolated Python plus pinned helper bytes, private backup, service-target checks,
+a controlled restart with admin still off, and guarded rollback. No sudo or
+production activation occurred. Current private candidate:
+`/home/sdolbec/mseries-webrtc-review-20261017/activation/gateway-lwxiq5sj`.
+
+12 protocol tests, 14 Python tests (3 input, 8 gateway, 3 setup), 4 Linux image
+wiring tests and installer regression pass. A temporary real Caddy process
+verified random-path assets/API/authenticated WebSocket, existing fallback and
+revocation; a temporary operator SSH reverse tunnel passed health. All test
+listeners stopped. Packaging now skips generated Python cache directories.
+Actual public TLS, tunnel activation from Linux, TURN, phone input/lock and real
+screen/recording acceptance remain; consult [setup](webrtc/README.md) and the
+updated qualification receipt. No boot, kernel or running audio changes.
+
 ## WebRTC screen sharing — 2026-10-17 (source implementation)
 
 `feat/webrtc` adds [Screen Share](webrtc/README.md): current-desktop browser
