@@ -440,3 +440,16 @@ Tool: `mseries/display-profiles/mseries-display-profiles` (apply/nudge helpers) 
 Display Settings app already talk to the same D-Bus API; the nudge logic (`nudge_modes`, SAFE
 modes 1920x1080@60/59.94) is exactly what recovered this. Next: save a display profile for the
 docked layout, test replug/suspend/reboot, then try 4K60.
+
+### Correction/addendum 04:44 — why the picture stopped and flickered
+
+The picture seen at 04:43:05 lasted ~4 s because the user's own autostart daemon
+`mseries-display-profiles watch` re-applied the saved profile `desk-4k` (3840x2160@30) on the
+resulting `MonitorsChanged` (04:43:09 `set_digital_out_mode ... "3840x2160": 30`). So:
+**1080p60 gives a picture; the saved 4K30 profile gives a dark screen (and the flip between
+them looked like flicker).** The profile `desk-4k` (monitor id `INS:NS65…`) now stores
+`1920x1080@60.000` for the external (backup `~/.config/mseries/display-profiles.json.pre-1080p-*`);
+after one extra re-apply (60.000 / 59.94 timings alternating 04:43:36-41) no further modesets
+were logged through 04:43:54. G5 is therefore met at 1080p60 only; whether it holds across
+minutes, replug, suspend and reboot, and whether 4K works at all, are open. The name `desk-4k`
+is now misleading; rename when stable.
