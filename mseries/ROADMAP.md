@@ -11,6 +11,26 @@ speculative app composition is suppressed. Only stable words are inserted.
 Final sustained MLX, Tasks, joined voice and deployed checks are tracked in the
 index; do not repeat completed cases to improve scores or repair missing telemetry.
 
+## CodexBar deployment follow-up: avoid unchanged icon invalidation — 2026-10-18
+
+The local-token change was activated with one requested reload and passed its first 61-second
+observation. Later routine post-push deployments produced GTK popover/accessibility warnings at
+14:02:56 and 14:03:08, exactly when identical provider marks were reinstalled and the global icon cache
+refreshed. Wingpanel PID 233125 then SIGSEGVed in libgtk-4 at 14:03:09 and auto-recovered as 248867.
+This is a confirmed crash, not an intentional second reload. The stack does not prove which widget
+owned the bad popover, so the relationship to icon invalidation remains an inference.
+Deploy now byte-compares provider icons and refreshes the global icon cache only when a mark changes.
+This removes unnecessary live icon-theme invalidation during code/docs-only deploys. Stubbed deployment
+tests verify no icon/cache writes for identical marks, a single cache refresh for changed marks, and
+unchanged explicit-only panel reload behavior. Native token code is unchanged; no second intentional
+reload is needed. Quiet-path verification: all 13 native targets passed; no icon-cache command was invoked for
+unchanged SVGs. Recovered Wingpanel PID 248867 and daemon PID 44641 remained unchanged during
+61.1 seconds of observation, with no new panel journal messages. Sampled median CPU
+0.39%, RSS 193.55–248.36 MiB, descriptors 52–106;
+this is a short survival check, not proof of leak freedom or a resolved GTK root cause. The installed
+sessions helper confirms non-negative seven-day totals for all three applications. Counts remain active.
+No additional intentional menu-bar reload was issued.
+
 ## Seven-day local tokens for all three providers — 2026-10-18
 
 Added `7d local` processed-token totals for Codex, Claude Code and OpenCode in the two-row panel.
