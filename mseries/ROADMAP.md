@@ -156,11 +156,18 @@ module loaded and the indicator toggle opened. An authenticated refresh returned
 85 repositories. The live query bug was fixed by using valid connection
 arguments and smaller pages. PR #175 is merged and active in the current desktop
 session; the new module was loaded after one Wingpanel restart, and the installed
-helper returned data from all eight detail categories. The panel's GH text badge
-has since been replaced by a bundled GitHub symbolic mark; GTK resolves it from
-the hicolor theme with current-theme tinting. UI parity follow-ups include
+helper returned data from all eight detail categories. The panel uses a bundled
+GitHub symbolic mark; GTK resolves it from the hicolor theme with current-theme
+tinting. UI parity follow-ups include
 traffic/cloner views, a heatmap visualization, multi-account controls, and
-launch-at-login settings. See `mseries/REPOBAR-PORT.md`.
+launch-at-login settings. The Wingpanel styling now matches CodexBar's compact
+elementary OS typography, card surfaces, and rounded action dock. Repository
+cards also show default-branch commit counts over rolling 1-hour, 24-hour, and
+30-day windows from the cached snapshot. The helper and module build/install
+completed, and a live refresh returned counts for all 85 repositories. The
+updated module is installed but no panel reload was performed, so its revised
+appearance and counts will load at the next login or later reload. See
+`mseries/REPOBAR-PORT.md`.
 
 ## Consistent CodexBar panel typography — 2026-10-18
 
