@@ -607,7 +607,7 @@ namespace MSeries {
                     refresh_codex_accounts.begin ();
                     read_snapshot.begin ();
                     if (arguments[0] == "switch" && process.get_successful ()) {
-                        offer_chatgpt_restart.begin ();
+                        offer_chatgpt_restart.begin (arguments[1].split ("|")[0]);
                     }
                 });
             } catch (Error e) {
@@ -616,7 +616,7 @@ namespace MSeries {
         }
 
         /* The ChatGPT desktop app keeps the account it started with; only a relaunch picks up the new sign-in. */
-        private async void offer_chatgpt_restart () {
+        private async void offer_chatgpt_restart (string email) {
             try {
                 var check = new GLib.Subprocess.newv ({ "python3", helper_path ("codexbar-accounts.py"), "app-running" },
                     SubprocessFlags.STDOUT_SILENCE | SubprocessFlags.STDERR_SILENCE);
@@ -627,8 +627,8 @@ namespace MSeries {
             } catch (Error e) {
                 return;
             }
-            ask_to_save ("Restart ChatGPT?",
-                "The account is switched, but the open ChatGPT app keeps the account it started with. Restart it to use the new account; unsaved drafts in it may be lost.",
+            ask_to_save ("Switched Codex to " + email,
+                "The open ChatGPT window is still signed in as the previous account until it restarts. Restart it now to use " + email + "; unsaved drafts in it may be lost.",
                 "Restart ChatGPT", () => {
                     run_saver.begin ({ "python3", helper_path ("codexbar-accounts.py"), "restart-app" },
                         "ChatGPT restarted", "Couldn't restart ChatGPT", true);
