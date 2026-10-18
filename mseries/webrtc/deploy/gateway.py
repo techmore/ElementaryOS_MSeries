@@ -14,6 +14,7 @@ from pathlib import Path
 import re
 import secrets
 import shlex
+import signal
 import stat
 import subprocess
 import sys
@@ -120,9 +121,29 @@ def private_write(path, data):
 def run(command, directory, phase):
     with open(directory / (phase + '.log'), 'xb') as log:
         os.chmod(log.name, 0o600)
-        result = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT,
-                                env={'PATH': '/usr/sbin:/usr/bin:/sbin:/bin'}, timeout=45)
-    if result.returncode:
+        process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT,
+                                   env={'PATH': '/usr/sbin:/usr/bin:/sbin:/bin'}, start_new_session=True)
+        try:
+            code = process.wait(timeout=45)
+        except subprocess.TimeoutExpired:
+            # runuser may have a Caddy child: stop the entire private validation
+            # group, never the separately supervised production Caddy service.
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            try:
+                process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                pass
+            finally:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                process.wait()
+            raise RuntimeError(phase + ' timed out; private command group stopped')
+    if code:
         raise RuntimeError(phase + ' failed; see private log')
 
 
