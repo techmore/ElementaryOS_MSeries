@@ -5,6 +5,18 @@ installs the community **Aurora** kernel (`omacom/linux-aurora`) beside the
 stock kernel. It is not the default: one extra GRUB entry, marked for clean
 removal.
 
+## Current kernel lane — Aurora 20
+
+The maintained kernel candidate is now release `aurora-2026.10.17.20`,
+source `c46d7dcdb8712ea9aeb0ce47b439ffae76371e55`, entry **`elementary-aurora20`**.
+Use [the Aurora port guide](../aurora/README.md) for the pinned Debian payload,
+matched m1n1/J314S device-tree staging, installer options and qualification gaps.
+The existing `.19` entry is retained. Shared Touch ID userspace is installed
+only with `--with-touchid`; its upstream versions have not changed.
+
+This is source/package integration, not a new hardware qualification. The
+shared `boot.bin` must be reviewed separately before a new kernel test.
+
 ## Why this exists
 
 Asahi Linux does not support Touch ID (listed TBA on every M-series page). The
@@ -34,7 +46,7 @@ M1") merged 2026-10-08, and releases ship from `omacom/linux-aurora`.
 ```sh
 mseries/aurora-sep/install-aurora-sep.sh            # dry run, changes nothing
 sudo mseries/aurora-sep/install-aurora-sep.sh --apply
-sudo grub-reboot elementary-aurora-sep && systemctl reboot
+# Boot-chain staging/review is separate; see ../aurora/README.md before booting.
 ```
 
 Detach the Thunderbolt dock for the first boot: the community j314s reports
@@ -43,7 +55,7 @@ recorded boot retries with a display attached (two of four boots recovered).
 ## Verify after boot
 
 ```sh
-uname -r                                        # 7.1.12-2-20261015.19-sep-ARCH
+uname -r                                        # 7.1.12-2-20261017.20-sep-ARCH
 systemctl status apple-sep.path apple-sep.service
 ls -la /dev/sep-bio                             # enclave device
 fprintd-list "$USER"                            # fprintd sees the SEP
@@ -54,22 +66,23 @@ fprintd-verify "$USER"                          # a good finger unlocks
 ## Remove
 
 ```sh
-sudo mseries/aurora-sep/install-aurora-sep.sh --uninstall
+sudo mseries/aurora-sep/install-aurora-sep.sh --uninstall --apply
 ```
 
-Removes the GRUB entry, image, initramfs, modules, the Aurora `libfprint`
-(restored from its timestamped backup) and the userspace units. Enrolled
+Removes the .20 GRUB entry, image, initramfs and manually installed modules.
+Debian-managed modules and existing shared Touch ID userspace are retained.
+Add `--with-touchid` only to explicitly remove/restore the shared userspace. Enrolled
 fingerprints stay in `/var/lib/fprintd`; clear with `fprintd-delete "$USER"`.
 
 ## Pins (record per AGENTS.md)
 
 | What | Pin |
 |---|---|
-| Release | `omacom/linux-aurora` `aurora-2026.10.15.19` |
-| Kernel | `7.1.12-aurora2-20261015.19-sep`, commit `5ec1028c81526e1ed31db2b97e47edf8663e83cb` |
+| Release | `omacom/linux-aurora` `aurora-2026.10.17.20` |
+| Kernel | `7.1.12-2-20261017.20-sep-ARCH`, commit `c46d7dcdb8712ea9aeb0ce47b439ffae76371e55` |
 | Driver series | `aurora-silicon/linux#69` (merged 2026-10-08), on `aurora-wip` |
 | Userspace | `aurora-touchid-20261003-2`, `libfprint-1.94.100-1.1` |
-| sha256 | kernel `38546cb5…`, touchid `84243a96…`, libfprint `bc7d9762…` (full values in the installer) |
+| sha256 | kernel `49efa0ec…`, touchid `84243a96…`, libfprint `bc7d9762…` (full values in the installer) |
 
 Licences: kernel GPL-2.0, m1n1/aurora components as upstream. No sponsor-only
 content is imported.

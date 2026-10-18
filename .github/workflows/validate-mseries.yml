@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Install deps
-        run: sudo apt-get update && sudo apt-get install just podman zstd bison flex -y
+        run: sudo apt-get update && sudo apt-get install just podman zstd bison flex device-tree-compiler -y
 
       - name: Shell syntax check (M-series scripts)
         run: |
@@ -84,6 +84,7 @@ jobs:
           for f in mseries/fairydust/usb4/test-*.py; do python3 "$f"; done
           python3 mseries/fairydust/usb4/tools/test-staging-tools.py
           python3 mseries/aurora-sep/test_touchid_core.py
+          python3 -m unittest discover -s mseries/aurora -p 'test_*.py'
           python3 mseries/local-ai/test_people_watch.py
           python3 mseries/test-image-wiring.py
           python3 mseries/test-kernel-config.py
