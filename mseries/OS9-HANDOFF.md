@@ -3524,3 +3524,37 @@ check and light/dark normal-width fixtures with active Go Plus and secondary Go.
 headers, current versus renewal product, expired/malformed/missing data, network/oversize failure,
 foreign-host rejection, account isolation and credential exclusion. Live product resolution checked
 read-only. Merge to main and deploy as explicitly requested.
+
+
+## CodexBar: native OpenCode account switching — 2026-10-18
+
+Owner requested Switch beside OpenCode accounts, like Codex/Claude, and merge to main. Secondary
+browser-account rows now activate via `codexbar-opencode-local.py switch ID`. The helper validates
+local integration/type/identity, invokes `opencode auth switch opencode ID` without a shell or stdin,
+and verifies the requested ID is the only active OpenCode credential before reporting success.
+OpenCode's normal service publishes the activation event; the helper never writes SQLite directly.
+Raw CLI output is withheld from result JSON. Refreshable OAuth logins remain switchable even when
+access has expired; OpenCode owns refresh. Unusable logins have disabled Switch and a sign-in hint.
+Workspace names are shown on secondary rows to distinguish same-email workspace choices.
+
+Fixed two selection-following issues: identity reads now prefer active v2 credential metadata over
+legacy account_state, and the quota wrapper prefers the selected v2 OAuth token over a legacy Go key.
+During native refresh it keeps the selected identity rather than substituting a legacy account.
+Explicit OPENCODE_API_KEY environment overrides remain honored. Switching invalidates accounts/local
+identity caches and requests backend quota refresh. A generation check discards pending pre-switch
+helper reads and retries them so an old response cannot undo the new selection.
+
+Validation: 25 helper and 13 wrapper tests pass, with verified A→B→A selection/identity/usage-token
+changes, invalid/wrong-provider/expired-unrefreshable rejection, refreshable-expiry activation,
+missing CLI, timeout, failed command, no-op and false-success verification. Credential/error output
+exclusion is covered. Module/probe builds, four Meson suites and port check pass; normal-width light/
+dark previews show the new Switch beside the secondary OpenCode plan/quota. Installed OpenCode v2.0.32
+accepted a same-account activation. A live round trip through the two saved sessions for the same
+account/workspace then succeeded, with the original credential selection restored and verified.
+Distinct account switching is covered with temporary test accounts; the owner's current records are
+one distinct account/workspace, so a second row requires another distinct login saved in OpenCode.
+
+References: OpenCode `214fb7fdbab9ad13773629839f1178382400cf97`, auth/switch.ts, core credential.activate,
+provider/opencode.ts and integration.connection.resolve (native activation event and refresh behavior);
+https://dev.opencode.ai/v2/docs/cli/commands/ and /providers/. No upstream code was copied. CodexBar
+remains pinned to 0.77.0. Publish, merge to main and deploy as explicitly requested.

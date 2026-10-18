@@ -77,7 +77,7 @@ accounts = {
          "windows": [window("primary", "5 hour", 300, 0, 190), window("secondary", "7 day", 10080, 72, 8000)]}]},
     "opencode": {"accounts": [
         {"email": "me@opencode.example", "id": "a", "active": True, "plan": "Go Plus", "planSource": "console", "windows": []},
-        {"email": "work@opencode.example", "id": "b", "active": False, "plan": "Go", "planSource": "console", "windows": [
+        {"email": "work@opencode.example", "workspace": "Work", "id": "b", "active": False, "plan": "Go", "planSource": "console", "windows": [
             window("primary", "5 hour", 300, 0, 220), window("secondary", "7 day", 10080, 51, 6000),
             window("tertiary", "30 day", 43200, 63, 30000)]}]},
 }

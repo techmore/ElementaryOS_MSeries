@@ -832,3 +832,13 @@ Console status API. The live account resolves to Go. A future renewal tier or qu
 used as the current level; unreadable/expired subscriptions keep an unavailable label where no
 reported metadata is usable. Read-only workspace-scoped lookup, bounded timeout/body, no login or
 token mutation. Seventeen helper tests, four Meson suites, port check and light/dark renders pass.
+
+
+### OpenCode dropdown account switching — 2026-10-18
+
+Secondary saved browser accounts now have Switch, using OpenCode's official service-backed auth
+command and verifying the resulting selection. Identity/usage follow the active v2 credential,
+with native OAuth refresh and pending-read invalidation. Workspace labels distinguish choices;
+unusable sign-ins explain the need to sign in again. Twenty-five helper tests, 13 wrapper tests,
+four Meson suites, port check and light/dark previews pass. Live same-account saved-session round trip
+passed and the original selection was restored; distinct-account round trips use temporary fixtures.

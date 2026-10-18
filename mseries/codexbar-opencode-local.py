@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read OpenCode Go local usage from the v2 SQLite database, without modifying it."""
+"""Read OpenCode v2 usage/accounts; activate saved accounts through its official CLI."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ import json
 import os
 import pathlib
 import sqlite3
+import shutil
 import subprocess
 import urllib.request
 import urllib.error
@@ -100,22 +101,77 @@ def read_usage(database: pathlib.Path, now_ms: int | None = None) -> dict[str, A
 
 
 def read_account(database: pathlib.Path) -> str:
-    """The signed-in OpenCode account's email, read-only; never the tokens stored beside it."""
+    """Prefer the v2 credential selection; legacy account_state does not follow auth switch."""
     if not database.is_file():
         return ""
     try:
-        connection = sqlite3.connect(f"file:{database}?mode=ro", uri=True, timeout=0.5)
-        try:
-            row = connection.execute(
-                """SELECT account.email FROM account
-                   LEFT JOIN account_state ON account_state.active_account_id = account.id
-                   ORDER BY (account_state.id IS NOT NULL) DESC, account.time_updated DESC LIMIT 1"""
-            ).fetchone()
-        finally:
-            connection.close()
+        with closing(sqlite3.connect(database.as_uri() + "?mode=ro", uri=True, timeout=0.5)) as db:
+            try:
+                rows = db.execute("SELECT value FROM credential WHERE integration_id='opencode' AND active=1 "
+                                  "ORDER BY time_updated DESC").fetchall()
+            except sqlite3.Error:
+                rows = []
+            for (value,) in rows:
+                try:
+                    credential = json.loads(value)
+                    metadata = credential.get("metadata") if isinstance(credential, dict) else None
+                    email = metadata.get("email") if isinstance(metadata, dict) else None
+                    if isinstance(email, str) and email:
+                        return email
+                except ValueError:
+                    continue
+            row = db.execute("""SELECT account.email FROM account
+                LEFT JOIN account_state ON account_state.active_account_id = account.id
+                ORDER BY (account_state.id IS NOT NULL) DESC, account.time_updated DESC LIMIT 1""").fetchone()
+            return row[0] if row and isinstance(row[0], str) else ""
     except (sqlite3.Error, OSError):
         return ""
-    return row[0] if row and isinstance(row[0], str) else ""
+
+
+def opencode_cli() -> str | None:
+    local = pathlib.Path.home() / ".opencode/bin/opencode"
+    return str(local) if local.is_file() and os.access(local, os.X_OK) else shutil.which("opencode")
+
+
+def switch_account(database: pathlib.Path, target: str, cli: str | None = None) -> dict[str, Any]:
+    """Activate with OpenCode's own service/CLI, then verify its selection read-only."""
+    if not target or target.startswith("-"):
+        return {"ok": False, "message": "Choose a saved OpenCode account."}
+    try:
+        with closing(sqlite3.connect(database.as_uri() + "?mode=ro", uri=True, timeout=1)) as db:
+            row = db.execute("SELECT integration_id, active, value FROM credential WHERE id=?", (target,)).fetchone()
+            selected = db.execute("SELECT id FROM credential WHERE integration_id='opencode' AND active=1").fetchall()
+        if not row or row[0] != "opencode":
+            return {"ok": False, "message": "That OpenCode account is no longer saved. Refresh the account list."}
+        credential = json.loads(row[2])
+        metadata = credential.get("metadata") if isinstance(credential, dict) else None
+        email = metadata.get("email") if isinstance(metadata, dict) else None
+        if not isinstance(credential, dict) or credential.get("type") != "oauth" or not isinstance(email, str) or not email:
+            return {"ok": False, "message": "Choose a saved OpenCode browser account."}
+        if row[1] and selected == [(target,)]:
+            return {"ok": True, "message": "This OpenCode account is already active."}
+        expires = credential.get("expires")
+        fresh = not isinstance(expires, bool) and isinstance(expires, (int, float)) and expires > (time.time() + 60) * 1000
+        refreshable = isinstance(credential.get("refresh"), str) and bool(credential["refresh"])
+        if not isinstance(credential.get("access"), str) or not credential["access"] or not (fresh or refreshable):
+            return {"ok": False, "message": "Sign in to this account again in OpenCode, then try switching."}
+        cli = cli or opencode_cli()
+        if not cli:
+            return {"ok": False, "message": "OpenCode's command line was not found. Install OpenCode, then try again."}
+        result = subprocess.run([cli, "auth", "switch", "opencode", target], stdin=subprocess.DEVNULL,
+                                capture_output=True, text=True, timeout=45, check=False,
+                                cwd=pathlib.Path.home(), env={**os.environ, "NO_COLOR": "1"})
+        if result.returncode:
+            return {"ok": False, "message": "OpenCode couldn't switch accounts. Open OpenCode and try again."}
+        with closing(sqlite3.connect(database.as_uri() + "?mode=ro", uri=True, timeout=1)) as db:
+            active = db.execute("SELECT id FROM credential WHERE integration_id='opencode' AND active=1").fetchall()
+        if active != [(target,)]:
+            return {"ok": False, "message": "OpenCode did not select the requested account. Refresh and try again."}
+        return {"ok": True, "message": f"OpenCode now uses {email}. CodexBar is refreshing its usage."}
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "message": "The OpenCode switch did not finish in time. Check OpenCode and try again."}
+    except (OSError, ValueError, TypeError, sqlite3.Error, subprocess.SubprocessError):
+        return {"ok": False, "message": "The OpenCode account could not be switched. Refresh and try again."}
 
 
 def iso_time(timestamp_ms: int) -> str:
@@ -204,14 +260,19 @@ def saved_accounts(database: pathlib.Path, cli: str, now_ms: int | None = None) 
                 continue
             seen.add(key)
             plan = metadata.get("plan")
+            workspace = metadata.get("orgName")
             account = {"id": ident, "email": email, "active": bool(active), "windows": [],
-                       "plan": plan if isinstance(plan, str) else ""}
+                       "plan": plan if isinstance(plan, str) else "", "switchable": True,
+                       "workspace": workspace if isinstance(workspace, str) else ""}
             report.append(account)
             access, expires = credential.get("access"), credential.get("expires")
             if not isinstance(access, str) or not access or isinstance(expires, bool) \
                     or not isinstance(expires, (int, float)) or expires <= now_ms + 60000:
+                account["switchable"] = bool(isinstance(access, str) and access and
+                    isinstance(credential.get("refresh"), str) and credential["refresh"])
                 if not active:
-                    account["error"] = "Sign in to this OpenCode account again to read quota."
+                    account["error"] = "Select this account to refresh its sign-in in OpenCode." if account["switchable"] else \
+                        "Sign in to this OpenCode account again to read quota."
                 continue
             current_plan = fetch_account_plan(credential, now_ms)
             if current_plan is not None:
@@ -242,6 +303,11 @@ def saved_accounts(database: pathlib.Path, cli: str, now_ms: int | None = None) 
 
 def main() -> int:
     database = data_directory() / "opencode.db"
+    if len(sys.argv) > 1 and sys.argv[1] == "switch":
+        result = switch_account(database, sys.argv[2]) if len(sys.argv) == 3 else {
+            "ok": False, "message": "Choose a saved OpenCode account."}
+        print(json.dumps(result))
+        return 0 if result["ok"] else 1
     if sys.argv[1:] == ["accounts"]:
         cli = str(pathlib.Path.home() / ".local/lib/codexbar-cli/codexbar-upstream")
         print(json.dumps({"accounts": saved_accounts(database, cli)}))
