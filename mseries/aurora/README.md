@@ -10,6 +10,9 @@ boot-integration port, not a rebuild of the kernel or a merge of kernel files
 into the OS image repository.
 
 `release.json` records the public source revisions, exact artifacts and hashes.
+The [October 17 branch audit](UPSTREAM-BRANCH-AUDIT-2026-10-17.md) inventories
+all 51 upstream branches and 11 open PR heads, distinguishes existing features
+from new candidates, and records source applicability and host-test evidence.
 The release's Arch installer is **not** run: it assumes pacman, Omarchy and its
 boot lifecycle. No Omarchy/Hyprland desktop or M3-specific Mesa package is
 installed by this port. The current Fairydust and older Aurora lanes remain.

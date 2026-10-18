@@ -1,6 +1,16 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
 
+## Aurora branch enhancement inventory — 2026-10-17
+
+[All-branch audit](aurora/UPSTREAM-BRANCH-AUDIT-2026-10-17.md): 51 upstream
+branches and 11 open PR heads reviewed against `.20`. Most are already in its
+history; VRR support is already in the current kernel too. First qualify the
+released J314S kernel and compositor. Further candidates are split udmabuf
+support for local AI, scoped M3 Air thermal/camera fixes and rebased M3 display
+work. Clean patch application/host tests are not hardware qualification. No
+additional source or runtime enhancement was enabled by this investigation.
+
 ## Aurora 20 upstream kernel candidate — 2026-10-17
 
 The upstream `.20` kernel now has an optional Debian payload build, versioned

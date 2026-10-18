@@ -5,6 +5,34 @@
 > Aurora has j314s Thunderbolt-display prior art; check it before more RE. This dock HDMI path remains unqualified.
 > Gates, prior art and rules: [fairydust/usb4/PRIMARY-GOAL.md](fairydust/usb4/PRIMARY-GOAL.md).
 
+## All Aurora branches audited — 2026-10-17 (read-only investigation)
+
+Owner requested all `omacom/linux-aurora` branches be investigated for useful
+imports. [Full report](aurora/UPSTREAM-BRANCH-AUDIT-2026-10-17.md) and the
+[immutable-head receipt](aurora/branch-audits/2026-10-17.json) cover all 51
+repository branches plus 11 open PR heads against our `.20` source `c46d7dcd`.
+41 branch tips are ancestors; two add only release tooling; eight diverge.
+Targeted code review distinguishes semantic duplicates from missing work.
+
+Important correction: `.20` already implements ProMotion/VRR KMS capability,
+atomic state, panel range and real swap timestamps. The earlier dynamic-refresh
+audit describes Fairydust; it now has a prominent Aurora correction. Test Gala/
+Mutter and actual panel behavior after boot, rather than reapply the old patch.
+
+16 public patch sets were checked without changing the baseline source. Six
+apply: PRs #67, #86, #110, #119, #134, #135. #86/#110 are Omarchy-only installer
+policy. #135's upstream host suite passes 54/54 on base and 58/58 on an isolated
+patched copy (macOS Rust 1.98.1, edition 2021, warnings denied). #134 then #119
+apply together to copied ISP files. No ARM64 kernel build or hardware test.
+
+Best further M1 Pro/local-AI research candidate is the udmabuf portion of draft
+#67, split from its unqualified AMD/Nouveau eGPU commit. M3 Air thermal/camera
+changes are scoped candidates for those boards. #122/#127 need a rebase; Neo
+SMC hardening needs a separate port. The 131-commit old Neo trial was reviewed
+selectively, not exhaustively. No branch was merged, no binary pin changed and
+no target kernel/boot/service/display/audio action occurred. Keep the saved
+installed-Linux preflight as the next hardware step.
+
 ## Aurora 20 merged; resume on installed Linux — 2026-10-17
 
 Owner authorized merging PR #78; it is merged as
