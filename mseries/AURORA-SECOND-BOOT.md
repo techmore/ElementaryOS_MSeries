@@ -161,3 +161,30 @@ prime suspect (untested). Next: report to omacom/linux-aurora with these logs;
 possible cheap tests — load `apple_sep` by hand on this entry after a stable
 period (expect a hang; save work first), or find a parameter that disables its
 hwrng registration. Until fixed: do not enable `apple-sep.path` on any default entry.
+
+## Upstream check: omacom/linux-aurora `.20` vs our `.19` — 2026-10-18
+
+Release `aurora-2026.10.17.20` (2026-10-17) exists; we run `.19`. Findings:
+
+- **Dock claim, scoped:** `.20` notes report a CalDigit TS4 Thunderbolt dock
+  (PCIe devices, Ethernet, external DisplayPort) working — on an **M1 Air** lab
+  package. M3 Pro tested with an external DisplayPort display. **"Not tested on
+  hardware: ... the M1 Pro and Max, ... Touch ID."** Our j314s (M1 Pro) + Dell
+  WD22TB4 is untested upstream; `.20` also has an HPD-relink and USB-C retrain
+  change for M1-M3 display/USB-C. Worth trying, not yet evidence for us.
+- **Touch ID in `.20`:** sensor CRC/re-read/stale-frame drain, serialized sensor
+  exchanges, 6 s wait for capture stop, "an empty host-state file is set up
+  again". `hwrng.rs` and `hwrng_shim.c` are byte-identical to `.19` (quality 1024,
+  so the hw_random core uses it). `sep.rs`, `sbio.rs`, `sensor.rs`, `mailbox.c`,
+  `rtkit.c` changed. Nothing in the notes mentions a whole-system hang after
+  attach. SEP bindings doc now says on T8140 the SEP stops servicing its mailbox
+  for good if a dependent power state is switched off (T8140 only).
+- **Known issue to cite:** omacom/linux-aurora issue #42, "M1 Pro SEP: retain
+  unresolved attach and post-resume session failures" — J314S "transient attach
+  failures", priority P2, investigation. Our hang is a harder failure than that.
+  No open issue matches a freeze/power-off after attach on j314s.
+- **Next:** install `.20` (their installer `install-aurora-sep.sh`; it replaces
+  our manual Aurora install, so do it deliberately), boot it with the dock out,
+  and if it still hangs file a new issue citing #42 with the logs in this file.
+  Caution: `.20` is a large rebase (new memory-management paths for every
+  process), so test it on its own GRUB entry, not as the default.
