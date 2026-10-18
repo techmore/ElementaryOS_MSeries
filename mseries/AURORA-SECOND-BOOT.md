@@ -211,3 +211,26 @@ the `.19` layout (the upstream `install-aurora-sep.sh` was NOT run):
 - Test: dock out, `sudo grub-reboot elementary-aurora20`, leave it 10 minutes. If
   it boots but hangs, boot `-nosep` to confirm and file an upstream issue citing
   #42. If it does not boot at all, pick any other GRUB entry; nothing else changed.
+
+## Community call for Aurora testers (owner pasted 2026-10-18) — NOT run
+
+A post by Chris Kearney (@SiliconForested) asks Omarchy Mac users to test a custom
+kernel with Thunderbolt support, SEP (Touch ID) and AVD improvements, and to have
+an AI agent run the installer and report findings, with fixes to flow upstream
+to the Aurora Linux project by pull request (agent commit hashes preserved).
+It asks testers to try a Thunderbolt dock, sleep/resume USB and display, and to
+report anything that fails. Back up first; there is a chance of breaking the install.
+
+What we checked (2026-10-18):
+- The post's installer URL is
+  `iconidentify/aurora-linux` release `sep-7.1.12.aurora2-11.2`
+  (2026-09-29, "M2 Max (t6021) test build"). That repository is **archived**
+  ("Frozen at Aurora 2026.10.10.12"; development moved to `omacom/linux-aurora`).
+  So the link is an old test build, older than our `.19` and the current `.20`.
+- We did **not** run the `curl | bash` installer (it replaces the kernel and
+  boot setup); use the current `omacom/linux-aurora` release (`.20`) instead,
+  installed side by side as described above.
+- Our test is exactly what the post asks for: M1 Pro (j314s) + Dell WD22TB4 dock,
+  Touch ID, and resume. Report to omacom/linux-aurora (issue #42 is the related
+  M1 Pro SEP ticket) with the logs in this file, including the hard hang with the
+  `apple_sep` driver loaded on `.19`.
