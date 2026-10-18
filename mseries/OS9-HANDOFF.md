@@ -1,5 +1,15 @@
 # OS 9 implementation / Claude Code handoff
 
+## Screenshot deployment repair — 2026-10-18 (Codex)
+
+Found why the first post-login test could still fail: installed Gala had the earlier click-only
+picker (`picked_point` symbols); rebuilt from main with Space/highlight (`update_hover` now present).
+New binary takes effect at next login. Shelf was absent: autostart generator rejected literal `%h`
+in Exec. Installer now renders quoted absolute paths for shelf and Markup. Installed both; desktop
+validation passes. A synthetic Screenshot PNG triggered `showing`, then `expired` four seconds later.
+Sound asset exists and event sounds enabled; audible capture and highlight/drag-out remain unverified.
+Next: owner re-login, Cmd+Shift+4 → Space → hover → click. Recovery commands in screenshot-shelf/README.md.
+
 ## CodexBar deployment follow-up: avoid unchanged icon invalidation — 2026-10-18
 
 The local-token change was activated with one requested reload and passed its first 61-second
@@ -54,11 +64,15 @@ dashboard, pin/hide filters, issue/PR/CI/release/activity summaries, API quota
 visibility, a scriptable CLI, private persistent caches/settings, and bounded
 local checkout scanning. Local sync requires explicit `--yes`, a clean attached
 branch, and a fast-forward-only update. The dashboard uses elementary OS GTK
-controls and the optional installer; it has not been installed or observed in a
-live Wingpanel session. Python syntax and the Vala/Meson build passed on
-2026-10-18; the build emits a GTK CSS provider deprecation warning and generated
-C warnings. Upstream traffic/cloner charts, heatmap UI, multi-account UI, and
-full per-repo submenus remain out of scope; see `mseries/REPOBAR-PORT.md`.
+controls. Installed and activated in the live Pantheon session on 2026-10-18;
+the module appeared in Wingpanel and its toggle opened the indicator. An
+authenticated refresh returned 85 repositories. The first refresh exposed an
+invalid GraphQL connection query; that was fixed by moving pagination/order
+arguments to the connections and using smaller 25-repository pages. Python
+syntax, the Vala/Meson build, and the live query passed. The build emits a GTK
+CSS provider deprecation warning and generated C warnings. Upstream
+traffic/cloner charts, heatmap UI, multi-account UI, and full per-repo submenus
+remain out of scope; see `mseries/REPOBAR-PORT.md`.
 
 ## Consistent CodexBar panel typography — 2026-10-18
 
