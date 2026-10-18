@@ -122,8 +122,13 @@ of natural voice quality or full-duplex conversation.
 A synthetic text→4B→English WAV trial completed: first token1.733s, first sentence
 2.182s, first WAV2.200s. The independently opened WAV contains1.794s of nonzero
 22.05kHz PCM. Nothing was played. This is not a measured acoustic question-to-reply
-latency. A joined file-ASR→actual voice panel→model→WAV test is pending at this
-checkpoint. Piper/Kokoro natural voices remain separate unqualified work.
+latency. The joined test initially completed real ASR and the actual UI gate, but a
+private test-bus health check refused the model before inference. That failure
+remains. A corrected continuation reused the37 recorded real ASR events, avoiding
+a duplicate ASR run: the actual UI gate started one real model reply and produced
+nonzero English WAVs2.294s after the replayed audio end, with no duplicate request.
+This is explicitly a replay continuation, not fresh microphone/acoustic latency.
+It retained11.22GiB available at≤2511RPM/49.1°C. Piper/Kokoro natural voices remain separate unqualified work.
 
 ## Installation, rollback and evidence
 

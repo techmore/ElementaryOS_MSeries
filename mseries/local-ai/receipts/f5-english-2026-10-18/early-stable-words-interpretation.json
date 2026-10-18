@@ -1,0 +1,46 @@
+[
+  {
+    "case": "gtk3",
+    "original_receipt_sha256": "89e5e1f90ecbd2a39be3ebf6d6a96abea8802ac76e5f1c0a25efbc97272596cb",
+    "original_assertion_passed": false,
+    "failure_retained": "No real app provisional text observed",
+    "corrected_criterion": "Exact final normalized words and any real visible text before nominal audio end; speculative preedit is not required",
+    "exact_final_words": true,
+    "first_visible_s": 2.5485461990001568,
+    "visible_during_speech": true,
+    "scope": "Read-only interpretation of original recorded traces; no model rerun. Current production suppresses speculative preedit."
+  },
+  {
+    "case": "gtk4",
+    "original_receipt_sha256": "a22461cfe90720e3b87377b6d48a4b33c30abf00f340e01f05a7031e855ad197",
+    "original_assertion_passed": false,
+    "failure_retained": "No real app provisional text observed",
+    "corrected_criterion": "Exact final normalized words and any real visible text before nominal audio end; speculative preedit is not required",
+    "exact_final_words": true,
+    "first_visible_s": 2.367666045000078,
+    "visible_during_speech": true,
+    "scope": "Read-only interpretation of original recorded traces; no model rerun. Current production suppresses speculative preedit."
+  },
+  {
+    "case": "qt6",
+    "original_receipt_sha256": "91767599a446e09904ea62809c550d2faf3d79204dfe97cff15e73e5227de413",
+    "original_assertion_passed": false,
+    "failure_retained": "No real app provisional text observed",
+    "corrected_criterion": "Exact final normalized words and any real visible text before nominal audio end; speculative preedit is not required",
+    "exact_final_words": true,
+    "first_visible_s": 2.112288871000146,
+    "visible_during_speech": true,
+    "scope": "Read-only interpretation of original recorded traces; no model rerun. Current production suppresses speculative preedit."
+  },
+  {
+    "case": "brave",
+    "original_receipt_sha256": "924e37b8da6c882ead793c2259b19c98e3b78cb75347980dd2fed325cebb1f41",
+    "original_assertion_passed": false,
+    "failure_retained": "No real app provisional text observed",
+    "corrected_criterion": "Exact final normalized words and any real visible text before nominal audio end; speculative preedit is not required",
+    "exact_final_words": true,
+    "first_visible_s": 1.5720921440001803,
+    "visible_during_speech": true,
+    "scope": "Read-only interpretation of original recorded traces; no model rerun. Current production suppresses speculative preedit."
+  }
+]

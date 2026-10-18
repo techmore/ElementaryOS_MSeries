@@ -1,0 +1,8 @@
+{
+  "version": "0.5.9",
+  "git_revision": "0fe0b9cd21d3a528892a4e2e2e98d8cd2b9b2d08",
+  "wheel": "mlx_audio-0.5.9-py3-none-any.whl",
+  "sha256": "fa662cf24cbca69cdd912612cdb677e65f77c6329a95906cc80b50e5b4689d6b",
+  "url": "https://files.pythonhosted.org/packages/57/3c/5864cf8c30661049db2ed22d6c2ab1137691f3f49df3c1fd4c7b885953da/mlx_audio-0.5.9-py3-none-any.whl",
+  "scope": "Scratch overlay only; no installed owner Python changes"
+}

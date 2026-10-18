@@ -1,0 +1,15 @@
+{
+  "exit_code": 0,
+  "audio_played": false,
+  "microphone_recorded": false,
+  "artifacts": [
+    {
+      "file": "sentence-01.wav",
+      "frames": 39566,
+      "sample_rate": 22050,
+      "duration_s": 1.7943764172335601,
+      "nonzero_pcm": true,
+      "sha256": "aeb3a2310e6a1d70ddb622ca634a03656a4bab5463aff4a6d127de446a0fdce2"
+    }
+  ]
+}

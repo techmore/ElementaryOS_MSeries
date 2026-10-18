@@ -5028,3 +5028,23 @@ Joined voicev1 completed real ASR and the actual UI completion gate, but its
 private-session service-health check refused the existing model before inference;
 that harness failure is retained. Resume should reuse the recorded ASR event
 trace and finish only the unstarted voice stage. No new microphone or playback.
+
+### Qualification complete; merge/deploy gates
+
+Actual Tasks ASR passed at1.885s firstcommitted words, exact normalized final
+English; source/receipt and genuine focus are retained. Joined voicev2 passed
+using37recorded real-ASR events fromv1 to finish only the unstarted voice stage,
+not duplicate ASR. Actual focused VoiceAssistant gate produced one model reply
+and nonzero English WAVs2.294s after replayed audio end. No fresh live/acoustic
+latency claim. Max2511RPM49.1C /min11.22GiB, no playback/microphone/tools.
+
+133 dictation contracts,72 assistant contracts and6 image-wiring checks pass.
+Private native English panel/voice wiring and actual app fixtures are recorded.
+The canonical qualification index/JSON and sanitized receipts retain original
+failures/source identities; two watcher sources add mlx-audio/transcribe.cpp to
+the existing six-hour workflow. Default deployment remains CPU Nemotron; native
+ANE and MLX Parakeet are retained options, residency0–900s yields to guards.
+Next: head-specific CI, merge PR155, run English installer on merged source,
+verify installed exact bytes/service mode/reserve/input-selection preservation
+and private installed app input, then publish deployment receipts/Pages proof.
+No owner test window, microphone, menu-bar restart, kernel or audio-stack change.
