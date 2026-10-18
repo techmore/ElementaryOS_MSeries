@@ -27,6 +27,19 @@ coredumps since activation, sampled CPU median 0.30%, RSS 165.33–169.2 MiB,
 file descriptors fixed at 49. Both native typography and local token changes are active. No real
 account switch performed; long-run behavior and owner visual confirmation remain outside this smoke check.
 
+## RepoBar port in progress — 2026-10-18
+
+`codex/repobar-elementary-port` now includes a searchable GTK/Wingpanel
+dashboard, pin/hide filters, issue/PR/CI/release/activity summaries, API quota
+visibility, a scriptable CLI, private persistent caches/settings, and bounded
+local checkout scanning. Local sync requires explicit `--yes`, a clean attached
+branch, and a fast-forward-only update. The dashboard uses elementary OS GTK
+controls and the optional installer; it has not been installed or observed in a
+live Wingpanel session. Python syntax and the Vala/Meson build passed on
+2026-10-18; the build emits a GTK CSS provider deprecation warning and generated
+C warnings. Upstream traffic/cloner charts, heatmap UI, multi-account UI, and
+full per-repo submenus remain out of scope; see `mseries/REPOBAR-PORT.md`.
+
 ## Consistent CodexBar panel typography — 2026-10-18
 
 Owner approved the compact OpenCode appearance and requested the same text sizes for Codex/Claude.

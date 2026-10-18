@@ -21,6 +21,8 @@ the transformed system. See [desktop setup](DESKTOP-SETUP.md) for reproducible
 Command shortcuts, Pantheon brightness keys, Signal ARM64, CodexBar Linux and
 its native Wingpanel quota dropdown. The [full-height desktop profile](display-space/README.md)
 adds notch-aware Wingpanel layout and a compact dock with persistent placement.
+[RepoBar for elementary OS](REPOBAR-PORT.md) is an optional native Wingpanel
+dashboard for GitHub repository counts, default-branch CI and releases.
 [Ambient keyboard lighting](keyboard-backlight/README.md) is available through
 `bash mseries/install-keyboard-backlight.sh`, using the AOP sensor and UPower.
 
