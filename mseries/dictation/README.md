@@ -152,3 +152,8 @@ Verified offline through the real controller (`STREAM_TEST_WAV` clip played at r
 ### Press-once mode — 2026-10-18
 
 `STREAM_MODE=toggle` (default `hold`): press F5 once to start (chime, "Listening…"), press again to finish; Escape cancels; key repeat and release are ignored. Combine with `STREAM_ENGINE=ane` through a systemd drop-in (`Environment=STREAM_ENGINE=ane` and `Environment=STREAM_MODE=toggle`). Not done: a mic cursor. Pantheon/Gala has no API for changing the pointer over another app's text field; feedback is the start/stop chimes, the notification and the panel status.
+
+### Rolling ANE streaming — 2026-10-18
+
+With `STREAM_ENGINE=ane` the controller no longer waits for the second F5: every `STREAM_ANE_INTERVAL` (0.6 s) of new audio the whole segment is re-decoded on the ANE (about 0.05 x real time) and the words two consecutive passes agree on, minus the newest one, are typed (append-only; the tail is typed after the final pass on release, 0.6 s measured on 10 s and 41 s clips). Segments longer than 16 s are closed at the quietest 100 ms of the last 5 s and the overlap with the next segment is trimmed.
+Offline through the real controller (clip played at real time): a 10.4 s sentence appeared as 10 chunks of 1-6 words about every 0.6 s, the first about 4 s after start including the one-time worker warm-up. A 41.7 s clip with no pauses (the same sentence four times back to back) came out with 2 small errors at forced mid-word cuts; real speech with pauses is expected to do better, unmeasured. Not verified: live mic, how many words you perceive per second, CPU/thermal cost of repeated passes.

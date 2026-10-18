@@ -97,3 +97,26 @@ class AneModel:
     def warm(self):
         """Build/load the encoder now (cached on disk after the first ever run)."""
         self.transcribe(bytes(16000 * 4))
+
+
+def norm(word):
+    return re.sub(r"[^\w']", "", word.lower())
+
+
+def stable_count(prev, new):
+    """Words at the start that two consecutive partial transcripts agree on (punctuation ignored)."""
+    n = 0
+    for x, y in zip(prev, new):
+        if norm(x) != norm(y):
+            break
+        n += 1
+    return n
+
+
+def drop_overlap(tail, words, longest=8):
+    """A new segment starts a little before the old one's end: drop the leading words that repeat the
+    last words already typed (needs at least two matching words so a genuine repeat survives)."""
+    for k in range(min(longest, len(tail), len(words)), 1, -1):
+        if tail[-k:] == [norm(w) for w in words[:k]]:
+            return words[k:]
+    return words

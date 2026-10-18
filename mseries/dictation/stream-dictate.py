@@ -23,6 +23,7 @@ TOGGLE = os.environ.get("STREAM_MODE", "hold") == "toggle"  # toggle: press F5 o
 ENGINE = os.environ.get("STREAM_ENGINE", "stream")  # "ane": Parakeet on the Neural Engine, typed after release
 SOURCE = os.environ.get("STREAM_SOURCE", "direct")  # "direct" = ALSA hw capture, or a PipeWire node name
 CARD = os.environ.get("STREAM_CARD", "hw:1,0")
+ANE_INTERVAL = float(os.environ.get("STREAM_ANE_INTERVAL", "0.6"))  # seconds of new audio between partial passes
 MAX_ANE_SECONDS = 600  # RAM bound for one held key
 GAIN = os.environ.get("STREAM_GAIN", "60")
 
@@ -350,12 +351,49 @@ class Dictation:
         return None, None
 
     def run_ane(self, model, cap, pending):
-        """Whole-utterance engine: collect audio while F5 is held, transcribe on release."""
+        """Rolling engine: re-decode the audio so far every ANE_INTERVAL s on the ANE and type the words two
+        consecutive passes agree on (minus the newest, which may still change). Typed text is append-only."""
+        from dictation_ane import clean, stable_count, norm, drop_overlap
         kept = bytearray(pending)
         t0 = time.time()
-        # The first call after the worker starts builds the encoder (about 2 s). Do it while the user
-        # is still talking so the wait after the second F5 is only the decode.
         threading.Thread(target=lambda: model.warm(), daemon=True).start()
+        seg = 0            # byte offset where the current segment starts
+        typed_n = 0        # words of the current segment already typed
+        prev = []          # previous pass's words
+        last_len = 0
+        flight = None      # (thread, result list, segment id)
+        seg_id = 0
+        total_typed = 0
+
+        def f32(buf):
+            b = buf[:len(buf) // 2 * 2]
+            return (np.frombuffer(bytes(b), np.int16).astype(np.float32) / 32768).astype('<f4').tobytes()
+
+        def decode(buf):
+            return clean(model.transcribe(f32(buf))).split()
+
+        tail = []          # normalized last words typed, to trim the overlap after a segment cut
+        after_cut = False
+
+        def say(words):
+            nonlocal total_typed, after_cut
+            if after_cut and words:
+                words = drop_overlap(tail, words)
+                after_cut = False
+            tail.extend(norm(w) for w in words)
+            del tail[:-8]
+            if words and not self.cancelled:
+                self.typer.submit(" ".join(words) + " ", self.input_token)
+                total_typed += len(words)
+
+        def absorb(words):
+            nonlocal typed_n, prev
+            commit = max(typed_n, stable_count(prev, words) - 1)
+            if commit > typed_n:
+                say(words[typed_n:commit])
+                typed_n = commit
+            prev = words
+
         try:
             stopped_at = None
             next_guard = 0
@@ -372,25 +410,44 @@ class Dictation:
                     stopped_at = time.time()
                 if stopped_at and time.time() - stopped_at > 0.15:
                     break
-                if not select.select([cap.stdout], [], [], .1)[0]:
+                if flight and not flight[0].is_alive():
+                    if flight[2] == seg_id and flight[1]:
+                        absorb(flight[1][0])
+                    flight = None
+                seg_len = len(kept) - seg
+                if flight is None and seg_len > 16 * 32000:
+                    # Long utterance: close this segment at its quietest 100 ms so the 30 s model window never splits a word.
+                    lo, hi = len(kept) - 5 * 32000, len(kept) - 1 * 32000
+                    x = np.frombuffer(bytes(kept[lo:hi // 2 * 2]), np.int16).astype(np.float32)
+                    w = len(x) // 1600
+                    cut = lo + int(np.argmin((x[:w * 1600].reshape(w, 1600) ** 2).sum(1))) * 3200
+                    say(decode(kept[seg:cut])[typed_n:])
+                    seg, typed_n, prev, last_len, seg_id, after_cut = cut, 0, [], 0, seg_id + 1, True
+                    continue
+                if flight is None and seg_len >= 32000 and seg_len - last_len >= ANE_INTERVAL * 32000:
+                    last_len = seg_len
+                    out = []
+                    snapshot = bytes(kept[seg:])
+                    th = threading.Thread(target=lambda b=snapshot, o=out: o.append(decode(b)), daemon=True)
+                    flight = (th, out, seg_id)
+                    th.start()
+                if not select.select([cap.stdout], [], [], .05)[0]:
                     continue
                 data = cap.stdout.read1(CHUNK * 2)
                 if not data:
                     break
                 kept += data
             self.close_capture(cap)
-            kept = kept[:len(kept) // 2 * 2]
-            if len(kept) < 16000:  # under half a second
-                return
-            pcm = np.frombuffer(bytes(kept), np.int16).astype(np.float32) / 32768
-            status('finishing')
-            t_dec = time.time()
-            text = model.transcribe_long(pcm.astype('<f4').tobytes())
-            log(f"ane dictated {len(text)} chars from {len(pcm) / 16000:.1f}s; held {t_dec - t0:.1f}s, "
-                f"decode {time.time() - t_dec:.2f}s")
-            if text and not self.cancelled:
-                self.typer.submit(text + " ", self.input_token)
-            elif not DRY and not self.cancelled:
+            if flight:
+                flight[0].join(10)
+            if len(kept) - seg >= 8000:
+                status('finishing')
+                t_dec = time.time()
+                words = decode(kept[seg:])
+                say(words[typed_n:])
+                log(f"ane dictated {total_typed} words from {len(kept) / 32000:.1f}s; held {t_dec - t0:.1f}s, "
+                    f"final pass {time.time() - t_dec:.2f}s")
+            if not total_typed and not DRY and not self.cancelled:
                 notify("Didn't catch that")
         except Exception as e:
             self.error = type(e).__name__
