@@ -22,10 +22,10 @@ use smithay::{
     },
 };
 
-use crate::PantheonCompositor;
 use crate::grabs::{
     MoveSurfaceGrab, ResizeSurfaceGrab, resize_grab::ResizeEdge as PantheonResizeEdge,
 };
+use crate::{PantheonCompositor, state::ManagedWindow};
 
 pub fn start(
     event_loop: &mut EventLoop<'static, PantheonCompositor>,
@@ -194,7 +194,61 @@ impl XwmHandler for PantheonCompositor {
         }
     }
 
-    fn destroyed_window(&mut self, _xwm: XwmId, _window: X11Surface) {}
+    fn destroyed_window(&mut self, _xwm: XwmId, surface: X11Surface) {
+        self.x11_managed_windows.remove(&surface.window_id());
+        self.x11_minimized_windows.remove(&surface.window_id());
+    }
+
+    fn maximize_request(&mut self, _xwm: XwmId, surface: X11Surface) {
+        self.configure_x11_window_mode(&surface, true, false);
+    }
+
+    fn unmaximize_request(&mut self, _xwm: XwmId, surface: X11Surface) {
+        self.configure_x11_window_mode(&surface, false, false);
+    }
+
+    fn fullscreen_request(&mut self, _xwm: XwmId, surface: X11Surface) {
+        self.configure_x11_window_mode(&surface, false, true);
+    }
+
+    fn unfullscreen_request(&mut self, _xwm: XwmId, surface: X11Surface) {
+        self.configure_x11_window_mode(&surface, false, false);
+    }
+
+    fn minimize_request(&mut self, _xwm: XwmId, surface: X11Surface) {
+        let Some(window) = self.find_x11_window(&surface) else {
+            return;
+        };
+        let Some(location) = self.space.element_location(&window) else {
+            return;
+        };
+        self.x11_minimized_windows
+            .insert(surface.window_id(), (window.clone(), location));
+        self.space.unmap_elem(&window);
+        if let Err(error) = surface.set_mapped(false) {
+            tracing::warn!(?error, "could not minimize X11 window");
+        }
+        if self.x11_keyboard_focus.as_ref() == Some(&surface) {
+            self.set_x11_keyboard_focus(None, smithay::utils::SERIAL_COUNTER.next_serial());
+            self.focus_next_window();
+        }
+    }
+
+    fn unminimize_request(&mut self, _xwm: XwmId, surface: X11Surface) {
+        let Some((window, location)) = self.x11_minimized_windows.remove(&surface.window_id())
+        else {
+            return;
+        };
+        if let Err(error) = surface.set_mapped(true) {
+            tracing::warn!(?error, "could not restore minimized X11 window");
+            self.x11_minimized_windows
+                .insert(surface.window_id(), (window, location));
+            return;
+        }
+        self.space.map_element(window.clone(), location, true);
+        window.set_activated(true);
+        self.focus_window_keyboard(&window, smithay::utils::SERIAL_COUNTER.next_serial());
+    }
 
     fn configure_request(
         &mut self,
@@ -325,6 +379,64 @@ impl PantheonCompositor {
                     .is_some_and(|candidate| candidate == surface)
             })
             .cloned()
+    }
+
+    fn configure_x11_window_mode(
+        &mut self,
+        surface: &X11Surface,
+        maximized: bool,
+        fullscreen: bool,
+    ) {
+        let Some(window) = self.find_x11_window(surface) else {
+            return;
+        };
+        let id = surface.window_id();
+        let restore = *self
+            .x11_managed_windows
+            .entry(id)
+            .or_insert_with(|| ManagedWindow {
+                restore_location: self.space.element_location(&window).unwrap_or_default(),
+                restore_size: window.geometry().size,
+                maximized: false,
+                fullscreen: false,
+            });
+        if let Some(managed) = self.x11_managed_windows.get_mut(&id) {
+            managed.maximized = maximized;
+            managed.fullscreen = fullscreen;
+        }
+        let output = self
+            .space
+            .outputs_for_element(&window)
+            .first()
+            .cloned()
+            .or_else(|| self.primary_output());
+        let Some(output_geometry) = output.and_then(|output| self.space.output_geometry(&output))
+        else {
+            return;
+        };
+        let target = if fullscreen {
+            output_geometry
+        } else if maximized {
+            self.work_area_for_output(output_geometry)
+        } else {
+            smithay::utils::Rectangle::new(restore.restore_location, restore.restore_size)
+        };
+        if let Err(error) = surface.set_maximized(maximized) {
+            tracing::warn!(?error, "could not update X11 maximized state");
+        }
+        if let Err(error) = surface.set_fullscreen(fullscreen) {
+            tracing::warn!(?error, "could not update X11 fullscreen state");
+        }
+        if let Err(error) = surface.configure(Some(target)) {
+            tracing::warn!(?error, "could not configure X11 window state");
+        }
+        self.space.map_element(window, target.loc, false);
+        if !maximized && !fullscreen {
+            self.x11_managed_windows.remove(&id);
+        }
+        self.refresh_panel_visibility();
+        #[cfg(feature = "native-drm")]
+        self.request_native_redraw();
     }
 
     fn begin_x11_move(&mut self, surface: &X11Surface) {

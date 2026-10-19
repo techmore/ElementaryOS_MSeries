@@ -91,6 +91,8 @@ pub struct PantheonCompositor {
     pub last_work_areas: HashMap<String, smithay::utils::Rectangle<i32, smithay::utils::Logical>>,
     pub managed_windows:
         HashMap<smithay::reexports::wayland_server::backend::ObjectId, ManagedWindow>,
+    pub x11_managed_windows: HashMap<u32, ManagedWindow>,
+    pub x11_minimized_windows: HashMap<u32, (Window, Point<i32, Logical>)>,
     pub tiled_windows: HashMap<smithay::reexports::wayland_server::backend::ObjectId, TiledWindow>,
     pub tiling_bindings: TilingBindings,
     pub corner_snap_preview: Option<CornerSnapPreview>,
@@ -304,6 +306,8 @@ impl PantheonCompositor {
             panels: HashMap::new(),
             last_work_areas: HashMap::new(),
             managed_windows: HashMap::new(),
+            x11_managed_windows: HashMap::new(),
+            x11_minimized_windows: HashMap::new(),
             tiled_windows: HashMap::new(),
             tiling_bindings: TilingBindings::load(),
             corner_snap_preview: None,
