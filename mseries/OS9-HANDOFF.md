@@ -6212,3 +6212,18 @@ wizard (language, keyboard, account), the greeter and the elementary desktop (We
 **boots and works on QEMU/KVM when it runs the generic kernel**; the Fairydust kernel still cannot boot on QEMU virt
 (see above). Test account in the VM: `~/vms/elementary/credentials.txt` (owner-only, VM only). Not verified: the Fairydust
 kernel on QEMU, audio, networking inside the guest, suspend, or any Apple hardware path.
+
+## 2026-10-19: Windows 11 ARM64 installer on this Mac (QEMU/KVM)
+
+Booted the locally built `26100.1_PROFESSIONAL_ARM64_EN-US.ISO` in the `mseries-vm` Windows guest (TPM on, Secure Boot
+firmware, NVMe disk). Findings:
+
+- **Display:** with the default `virtio-gpu-pci` the screen froze on the firmware logo for minutes (looked like a hang; it
+  is a stale framebuffer). New `GPU=ramfb` key (`mseries-vm set windows GPU ramfb`) fixes it: the boot manager prompt
+  ("Press any key to boot from CD or DVD") and Windows Setup now render. The prompt needs a key within a few seconds,
+  about 30 s after start; spamming Return once a second works.
+- **Storage:** Windows Setup then stops at "Install driver to display hardware / A media driver your computer needs is
+  missing": WinPE has no virtio-scsi driver, so it cannot read the installer ISO attached as `scsi-cd`. Tried `usb-storage`
+  (boot manager hangs after reading 3 MiB) and AHCI `ide-cd` (the firmware does not list it as a boot device). Needs the
+  virtio-win drivers: attach `virtio-win.iso` (`create ... --virtio-media`, or `EXTRA_MEDIA`) and load `vioscsi` from
+  Setup's "Browse" dialog. Not done: that ISO is not downloaded yet.

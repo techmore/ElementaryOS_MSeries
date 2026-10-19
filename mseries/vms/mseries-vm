@@ -386,7 +386,11 @@ cmd_start() {
               -tpmdev emulator,id=tpm0,chardev=chrtpm
               -device tpm-tis-device,tpmdev=tpm0)
     fi
-    if [[ $GL == on ]]; then
+    if [[ ${GPU:-virtio} == ramfb ]]; then
+        # Windows setup draws through the firmware framebuffer; with virtio-gpu
+        # the screen stays stale or black until a guest driver is installed.
+        cmd+=(-device ramfb)
+    elif [[ $GL == on ]]; then
         cmd+=(-device virtio-gpu-gl-pci)
     else
         cmd+=(-device virtio-gpu-pci)
@@ -616,6 +620,7 @@ cmd_set() {
         HOSTFWD) [[ $value != *[[:space:]]* ]] || die "HOSTFWD must be a hostfwd rule, e.g. tcp::2222-:22" ;;
         TPM) [[ $value == on || $value == off ]] || die "$key must be on or off" ;;
         AUDIO|GL) [[ $value == on || $value == off ]] || die "$key must be on or off" ;;
+        GPU) [[ $value == virtio || $value == ramfb ]] || die "GPU must be virtio or ramfb" ;;
         CPUS|MEMORY_MB) [[ $value =~ ^[1-9][0-9]*$ ]] || die "$key must be a positive integer" ;;
         DISK_BUS) [[ $value == virtio || $value == nvme ]] || die "DISK_BUS must be virtio or nvme" ;;
         FIRMWARE) [[ -f $AAVMF_DIR/$value ]] || die "firmware not found: $AAVMF_DIR/$value" ;;
