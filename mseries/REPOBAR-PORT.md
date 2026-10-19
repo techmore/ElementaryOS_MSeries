@@ -31,6 +31,9 @@ implementation; no macOS source or binary is copied into this project.
 - With a projects folder set, cards show every local checkout and worktree
   (Details → Checkouts) with branch and sync state, open them in Files or
   Terminal, and offer Clone for repositories you have not cloned yet.
+- With pins, the dashboard shows them under a "Pinned" heading above
+  "Recently updated". Checkout lists show worktree names without the
+  repository prefix.
 - A contribution graph sits at the top of the dashboard. It starts collapsed to
   one line (a toned mark per week plus this week's count); click its heading for
   GitHub's day-by-day calendar (remembered). RepoBar Settings picks the style:
