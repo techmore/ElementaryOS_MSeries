@@ -21,8 +21,9 @@ when configuring maximized windows. A changed panel work area now reconfigures
 already maximized windows, while unchanged panel repaints do not send redundant
 configures. Work-area caches now cover every active output; maximized/fullscreen
 windows and popup constraints use the output containing their window, and panel
-removal triggers work-area reflow. New committed toplevels are centered and cascaded on the first
-output, activated, and focused; absolute pointer events map to all logical
+removal triggers work-area reflow. New committed toplevels are centered and
+cascaded in the focused window's work area, falling back to the pointer output
+and then the primary output; they are activated and focused. Absolute pointer events map to all logical
 outputs. These new behaviors are compile-checked but not runtime-qualified. The
 v2 protocol probe completed a nested Xvfb run and sent panel requests over the
 Wayland socket. Installed Wingpanel 8.0.4 also connected in an

@@ -35,6 +35,11 @@ connector. Maximized/fullscreen windows and popup constraints use the window's
 current output, and removing a panel releases its work area. Multi-output
 placement and panel behavior remain runtime-unqualified.
 
+New toplevels center and cascade in the focused window's work area; when there
+is no focused toplevel, placement follows the pointer's output, then falls back
+to the primary output. This launch placement compiles in both renderer builds
+but has not been runtime-qualified.
+
 The pinned Gala 8.6.2 audit found 79 Vala files directly using `Meta.*` across
 24,534 lines of Gala core source, with Clutter/Cogl/Mtk dependencies. That
 explains why swapping out Mutter underneath Gala is not a drop-in operation.

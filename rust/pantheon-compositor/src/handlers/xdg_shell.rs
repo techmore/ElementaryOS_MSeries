@@ -356,27 +356,51 @@ pub fn handle_commit(state: &mut PantheonCompositor, surface: &WlSurface) {
             window.toplevel().unwrap().send_configure();
         }
 
-        // The first committed buffer makes the requested window size known.
-        // Center new app windows on the first available output and offset later
-        // launches so they remain visible and easy to find.
+        // Place new app windows on the focused window's output, falling back
+        // to the pointer output and then the primary output. Use its work area
+        // so the panel/dock keeps its reserved space.
         let surface_id = surface.id();
         let size = window.geometry().size;
         if size.w > 0 && size.h > 0 && !state.initially_positioned.contains(&surface_id) {
             let cascade = (state.space.elements().count().saturating_sub(1) % 10) as i32 * 24;
-            let placement = state
-                .space
-                .outputs()
-                .next()
-                .and_then(|output| state.space.output_geometry(output))
-                .map(|output_geometry| {
-                    let max_x = output_geometry.loc.x + (output_geometry.size.w - size.w).max(0);
-                    let max_y = output_geometry.loc.y + (output_geometry.size.h - size.h).max(0);
-                    let x =
-                        (output_geometry.loc.x + (output_geometry.size.w - size.w) / 2 + cascade)
-                            .clamp(output_geometry.loc.x, max_x);
-                    let y =
-                        (output_geometry.loc.y + (output_geometry.size.h - size.h) / 2 + cascade)
-                            .clamp(output_geometry.loc.y, max_y);
+            let focused_output = state
+                .seat
+                .get_keyboard()
+                .and_then(|keyboard| keyboard.current_focus())
+                .map(|mut focused| {
+                    while let Some(parent) = smithay::wayland::compositor::get_parent(&focused) {
+                        focused = parent;
+                    }
+                    focused
+                })
+                .and_then(|focused| state.find_window_for_surface(&focused))
+                .and_then(|focused| state.space.outputs_for_element(&focused).first().cloned());
+            let pointer_location = state
+                .seat
+                .get_pointer()
+                .map(|pointer| pointer.current_location());
+            let pointer_output = pointer_location.and_then(|pointer| {
+                state.space.outputs().find_map(|output| {
+                    state
+                        .space
+                        .output_geometry(output)
+                        .filter(|geometry| geometry.to_f64().contains(pointer))
+                        .map(|_| output.clone())
+                })
+            });
+            let output = focused_output
+                .or(pointer_output)
+                .or_else(|| state.space.outputs().next().cloned());
+            let placement = output
+                .and_then(|output| state.space.output_geometry(&output))
+                .map(|output_geometry| state.work_area_for_output(output_geometry))
+                .map(|work_area| {
+                    let max_x = work_area.loc.x + (work_area.size.w - size.w).max(0);
+                    let max_y = work_area.loc.y + (work_area.size.h - size.h).max(0);
+                    let x = (work_area.loc.x + (work_area.size.w - size.w) / 2 + cascade)
+                        .clamp(work_area.loc.x, max_x);
+                    let y = (work_area.loc.y + (work_area.size.h - size.h) / 2 + cascade)
+                        .clamp(work_area.loc.y, max_y);
                     (x, y)
                 });
 
