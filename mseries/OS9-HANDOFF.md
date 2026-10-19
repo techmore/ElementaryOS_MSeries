@@ -32,9 +32,11 @@ Targets use each focused window's output work area and reflow with panel/output
 changes; compositor move/resize and maximize requests clear the managed tile.
 `Super+Shift+Left/Right` now moves a window to an adjacent output, preserving
 its relative work-area offset or tile position. The snapping and monitor-move
-code compile but have not been runtime-qualified. Drag-to-corner preview,
-configurable shortcut bindings, multi-output behavior, and client minimum-size
-handling remain to be implemented or verified. Applying
+code compile but have not been runtime-qualified. Shortcuts load from the
+existing Mutter, Pantheon and GNOME GSettings schemas at session startup, with
+built-in defaults if a schema is unavailable. Drag-to-corner preview, live
+binding reload, multi-output behavior, and client minimum-size handling remain
+to be implemented or verified. Applying
 monitor modes, Dock behavior and
 M-series DRM/KMS remain unqualified. Read-only host enumeration sees `/dev/dri/card1`
 on the `asahi` driver and `/dev/dri/card2` on `apple-drm`; `eDP-1` and `DP-2`

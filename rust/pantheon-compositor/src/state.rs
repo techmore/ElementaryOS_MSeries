@@ -45,6 +45,7 @@ use crate::display_config::{
 use crate::native::NativeBackend;
 use crate::pantheon_shell::{PanelState, PantheonShellState};
 use crate::shell_compat::ShellCompatHandle;
+use crate::tiling::TilingBindings;
 #[cfg(feature = "native-drm")]
 use smithay::reexports::calloop::channel::Sender;
 
@@ -81,6 +82,7 @@ pub struct PantheonCompositor {
     pub managed_windows:
         HashMap<smithay::reexports::wayland_server::backend::ObjectId, ManagedWindow>,
     pub tiled_windows: HashMap<smithay::reexports::wayland_server::backend::ObjectId, TiledWindow>,
+    pub tiling_bindings: TilingBindings,
     pub minimized_windows: HashMap<
         smithay::reexports::wayland_server::backend::ObjectId,
         (Window, Point<i32, Logical>),
@@ -230,6 +232,7 @@ impl PantheonCompositor {
             last_work_area: None,
             managed_windows: HashMap::new(),
             tiled_windows: HashMap::new(),
+            tiling_bindings: TilingBindings::load(),
             minimized_windows: HashMap::new(),
             initially_positioned: HashSet::new(),
             popups,

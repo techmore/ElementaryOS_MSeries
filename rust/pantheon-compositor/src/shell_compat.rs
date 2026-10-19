@@ -36,7 +36,7 @@ struct AcceleratorModifiers {
 }
 
 #[derive(Clone, Copy, Debug)]
-struct ParsedAccelerator {
+pub(crate) struct ParsedAccelerator {
     keysym: Keysym,
     modifiers: AcceleratorModifiers,
 }
@@ -332,7 +332,7 @@ fn serve_shell_compat(
     }
 }
 
-fn parse_accelerator(value: &str, _grab_flags: u32) -> Option<ParsedAccelerator> {
+pub(crate) fn parse_accelerator(value: &str, _grab_flags: u32) -> Option<ParsedAccelerator> {
     let mut remaining = value.trim();
     let mut modifiers = AcceleratorModifiers::default();
     while remaining.starts_with('<') {
@@ -359,7 +359,7 @@ fn parse_accelerator(value: &str, _grab_flags: u32) -> Option<ParsedAccelerator>
     Some(ParsedAccelerator { keysym, modifiers })
 }
 
-fn matches_accelerator(
+pub(crate) fn matches_accelerator(
     accelerator: ParsedAccelerator,
     keysym: Keysym,
     modifiers: &ModifiersState,

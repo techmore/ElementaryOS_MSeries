@@ -21,9 +21,11 @@ window's output work area, sends an xdg configure, and reflows managed tiles
 when panel/output work areas change. Starting a compositor move/resize or
 maximizing the window ends its managed tile. `Super+Shift+Left/Right` moves a
 window to the adjacent output while preserving its work-area offset (or tile
-position). These keyboard paths are compile checked only: runtime shortcut and
-multi-output behavior, drag-to-corner preview, and configurable Rust-side
-bindings remain open requirements.
+position). Shortcuts load at session startup from the existing Mutter half-tile,
+Pantheon quarter-tile, and GNOME monitor-move GSettings keys; built-in defaults
+apply if those schemas or keys are unavailable. Restart the session after
+changing bindings. These keyboard paths are compile checked only: runtime
+shortcut and multi-output behavior plus drag-to-corner preview remain open.
 
 The pinned Gala 8.6.2 audit found 79 Vala files directly using `Meta.*` across
 24,534 lines of Gala core source, with Clutter/Cogl/Mtk dependencies. That

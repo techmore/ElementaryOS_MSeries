@@ -1,82 +1,141 @@
+use gio::{Settings, SettingsBackend, SettingsSchemaSource, prelude::SettingsExtManual};
 use smithay::{
     desktop::Window,
-    input::keyboard::{Keysym, ModifiersState, xkb},
+    input::keyboard::{Keysym, ModifiersState},
     reexports::wayland_server::Resource,
     utils::{Logical, Rectangle, Size},
     wayland::shell::xdg::ToplevelSurface,
 };
 
+use crate::shell_compat::{ParsedAccelerator, matches_accelerator, parse_accelerator};
 use crate::state::{PantheonCompositor, TilePosition, TiledWindow};
+
+#[derive(Clone, Copy)]
+enum TilingAction {
+    Tile(TilePosition),
+    MoveOutput(i32),
+}
+
+#[derive(Clone, Copy)]
+struct TilingBinding {
+    accelerator: ParsedAccelerator,
+    action: TilingAction,
+}
+
+pub struct TilingBindings {
+    bindings: Vec<TilingBinding>,
+}
+
+impl TilingBindings {
+    pub fn load() -> Self {
+        let mut bindings = Vec::new();
+        for (key, action, fallback) in [
+            (
+                "top-left",
+                TilingAction::Tile(TilePosition::TopLeft),
+                vec!["<Super>KP_Home", "<Super>KP_7", "<Super><Alt>u"],
+            ),
+            (
+                "top-right",
+                TilingAction::Tile(TilePosition::TopRight),
+                vec!["<Super>KP_Prior", "<Super>KP_9", "<Super><Alt>i"],
+            ),
+            (
+                "bottom-left",
+                TilingAction::Tile(TilePosition::BottomLeft),
+                vec!["<Super>KP_End", "<Super>KP_1", "<Super><Alt>j"],
+            ),
+            (
+                "bottom-right",
+                TilingAction::Tile(TilePosition::BottomRight),
+                vec!["<Super>KP_Next", "<Super>KP_3", "<Super><Alt>k"],
+            ),
+        ] {
+            for accelerator in settings_shortcuts("org.techmore.mseries.snapping", key, &fallback) {
+                push_binding(&mut bindings, &accelerator, action);
+            }
+        }
+
+        for (schema_id, key, action, fallback) in [
+            (
+                "org.gnome.mutter.keybindings",
+                "toggle-tiled-left",
+                TilingAction::Tile(TilePosition::Left),
+                vec!["<Super>Left"],
+            ),
+            (
+                "org.gnome.mutter.keybindings",
+                "toggle-tiled-right",
+                TilingAction::Tile(TilePosition::Right),
+                vec!["<Super>Right"],
+            ),
+            (
+                "org.gnome.desktop.wm.keybindings",
+                "move-to-monitor-left",
+                TilingAction::MoveOutput(-1),
+                vec!["<Super><Shift>Left"],
+            ),
+            (
+                "org.gnome.desktop.wm.keybindings",
+                "move-to-monitor-right",
+                TilingAction::MoveOutput(1),
+                vec!["<Super><Shift>Right"],
+            ),
+        ] {
+            for accelerator in settings_shortcuts(schema_id, key, &fallback) {
+                push_binding(&mut bindings, &accelerator, action);
+            }
+        }
+
+        Self { bindings }
+    }
+}
+
+fn settings_shortcuts(schema_id: &str, key: &str, fallback: &[&str]) -> Vec<String> {
+    let Some(source) = SettingsSchemaSource::default() else {
+        return fallback.iter().map(|value| (*value).to_owned()).collect();
+    };
+    let Some(schema) = source.lookup(schema_id, true) else {
+        return fallback.iter().map(|value| (*value).to_owned()).collect();
+    };
+    if !schema.has_key(key) {
+        return fallback.iter().map(|value| (*value).to_owned()).collect();
+    }
+    let settings = Settings::new_full(&schema, None::<&SettingsBackend>, None);
+    settings
+        .strv(key)
+        .iter()
+        .map(|value| value.to_string())
+        .collect()
+}
+
+fn push_binding(bindings: &mut Vec<TilingBinding>, accelerator: &str, action: TilingAction) {
+    if let Some(accelerator) = parse_accelerator(accelerator, 0) {
+        bindings.push(TilingBinding {
+            accelerator,
+            action,
+        });
+    }
+}
 
 impl PantheonCompositor {
     pub fn handle_tiling_shortcut(&mut self, keysym: Keysym, modifiers: &ModifiersState) -> bool {
-        if self.session_locked || !modifiers.logo || modifiers.ctrl {
+        if self.session_locked {
             return false;
         }
-
-        if modifiers.shift && !modifiers.alt {
-            let direction = if keysym == xkb::keysyms::KEY_Left.into() {
-                Some(-1)
-            } else if keysym == xkb::keysyms::KEY_Right.into() {
-                Some(1)
-            } else {
-                None
-            };
-            if let Some(direction) = direction {
-                self.move_focused_window_to_output(direction);
-                return true;
-            }
+        let Some(binding) = self
+            .tiling_bindings
+            .bindings
+            .iter()
+            .find(|binding| matches_accelerator(binding.accelerator, keysym, modifiers))
+            .copied()
+        else {
             return false;
+        };
+        match binding.action {
+            TilingAction::Tile(position) => self.tile_focused_window(position),
+            TilingAction::MoveOutput(direction) => self.move_focused_window_to_output(direction),
         }
-
-        let position = if !modifiers.alt && !modifiers.shift {
-            if keysym == xkb::keysyms::KEY_Left.into() {
-                Some(TilePosition::Left)
-            } else if keysym == xkb::keysyms::KEY_Right.into() {
-                Some(TilePosition::Right)
-            } else {
-                None
-            }
-        } else if !modifiers.shift {
-            match keysym.raw() {
-                k if (modifiers.alt && k == u32::from(xkb::keysyms::KEY_u))
-                    || (!modifiers.alt
-                        && (k == u32::from(xkb::keysyms::KEY_KP_Home)
-                            || k == u32::from(xkb::keysyms::KEY_KP_7))) =>
-                {
-                    Some(TilePosition::TopLeft)
-                }
-                k if (modifiers.alt && k == u32::from(xkb::keysyms::KEY_i))
-                    || (!modifiers.alt
-                        && (k == u32::from(xkb::keysyms::KEY_KP_Prior)
-                            || k == u32::from(xkb::keysyms::KEY_KP_9))) =>
-                {
-                    Some(TilePosition::TopRight)
-                }
-                k if (modifiers.alt && k == u32::from(xkb::keysyms::KEY_j))
-                    || (!modifiers.alt
-                        && (k == u32::from(xkb::keysyms::KEY_KP_End)
-                            || k == u32::from(xkb::keysyms::KEY_KP_1))) =>
-                {
-                    Some(TilePosition::BottomLeft)
-                }
-                k if (modifiers.alt && k == u32::from(xkb::keysyms::KEY_k))
-                    || (!modifiers.alt
-                        && (k == u32::from(xkb::keysyms::KEY_KP_Next)
-                            || k == u32::from(xkb::keysyms::KEY_KP_3))) =>
-                {
-                    Some(TilePosition::BottomRight)
-                }
-                _ => None,
-            }
-        } else {
-            None
-        };
-
-        let Some(position) = position else {
-            return false;
-        };
-        self.tile_focused_window(position);
         true
     }
 

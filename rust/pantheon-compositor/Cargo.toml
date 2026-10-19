@@ -40,6 +40,7 @@ wayland-backend = "0.3.17"
 wayland-client = "0.31.11"
 wayland-server = "0.31.14"
 zbus = "=5.19.0"
+gio = "0.20"
 
 [dependencies.smithay]
 git = "https://github.com/Smithay/smithay.git"
