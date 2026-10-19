@@ -21,6 +21,20 @@ a client. `WAYLAND_DISPLAY` is changed only inside the compositor process after
 the host Winit backend has initialized; the requested child uses the nested
 socket. The active session's services and configuration are not touched.
 
+To exercise the Pantheon protocol against the nested socket, build both binaries
+and start the compositor with its probe client:
+
+```sh
+cargo build -p pantheon-compositor --bins
+cargo run -p pantheon-compositor -- --run target/debug/pantheon-shell-probe
+```
+
+The probe binds the shell and panel v2 interfaces, creates a Wayland surface,
+and sends `get_panel`, anchor, size, hide-mode, and offset requests. It has
+passed under Xvfb with Mesa llvmpipe. It does not attach a buffer or xdg role, so
+it validates protocol dispatch rather than panel rendering or Wingpanel/Dock
+integration.
+
 ## Current limits
 
 This is a nested proof of rendering and basic interactive Wayland surfaces, not
@@ -50,6 +64,14 @@ The code is based on Smithay's `smallvil` learning compositor at pinned commit
 upstream revision pinned until an explicit upgrade is reviewed. The Pantheon
 protocol XML is based on elementary/Gala commit `f0791434` (LGPL-2.1-or-later)
 with the repository's v2 `set_offset` extension; see `THIRD-PARTY.md`.
-`cargo check -p pantheon-compositor` passes on the local build host. The nested
-event loop stayed up in an 8-second Xvfb smoke run; no Wayland client connected.
-Wingpanel/Dock behavior and M-series hardware remain unqualified.
+Local `cargo check -p pantheon-compositor --bin pantheon-shell-probe` and
+`cargo build -p pantheon-compositor --bins` pass. The compositor stayed alive
+for the 12-second Xvfb integration smoke and the probe completed its protocol
+requests. Installed Wingpanel 8.0.4 also connected in an isolated D-Bus/Xvfb
+run forced to Wayland. Its client trace confirms it bound the shell global,
+sent `get_panel`, `set_anchor(top)`, and `set_hide_mode(never)`, then allocated
+and attached shared-memory buffers. It logged that
+`org.gnome.Mutter.DisplayConfig` is unavailable; its GNOME Shell keybinding and
+sound hooks also had no service on the isolated bus. This is evidence of panel
+client compatibility at the protocol/rendering path, not full session
+qualification. Dock behavior and M-series DRM/KMS remain unqualified.

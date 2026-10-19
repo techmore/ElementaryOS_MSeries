@@ -12,13 +12,19 @@ The list is grounded in this repo's notch-aware panel, dock work area, display
 profiles/hotplug, window snapping, input and session work. Features such as
 Xwayland, IBus, accessibility, screencasting and multi-GPU are conditional on
 an actual supported workflow. The opt-in Smithay nested prototype in
-`rust/pantheon-compositor/` passes `cargo check`; nested runtime and M-series
-hardware remain unqualified. It now advertises Pantheon's protocol v2, places
+`rust/pantheon-compositor/` passes local `cargo check` and `cargo build`. It
+advertises Pantheon's protocol v2, places
 panel surfaces using anchor/size/offset, and applies exclusive panel geometry
 when configuring maximized windows. A changed panel work area now reconfigures
 already maximized windows, while unchanged panel repaints do not send redundant
-configures. Autohide, blur, multi-output reflow and session integration remain
-incomplete. A public search found elementary's
+configures. Its v2 protocol probe completed a nested Xvfb run and sent panel
+requests over the Wayland socket. Installed Wingpanel 8.0.4 also connected in an
+isolated nested Wayland run, sent `get_panel`, anchor and hide-mode requests,
+and attached SHM buffers. It reports the absent `org.gnome.Mutter.DisplayConfig`
+service (plus GNOME Shell keybinding/sound hooks), so the next slice is to
+identify and provide only the display-config query Wingpanel requires.
+Autohide, blur, multi-output reflow, Dock behavior, full session integration
+and M-series hardware remain unqualified. A public search found elementary's
 [Gala](https://github.com/elementary/gala) still based on libmutter, with no
 first-party Rust compositor to reuse. The WD22TB4 HDMI G3 DCP/kernel blocker
 remains a separate workstream.

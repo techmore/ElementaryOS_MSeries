@@ -2,15 +2,22 @@
 
 ## Mutter-minimal viable Rust compositor progress — 2026-10-18
 
-On branch `codex/rust-mutter-pantheon`, the nested Smithay compositor now
-reconfigures existing maximized windows when a committed Pantheon panel change
-alters its exclusive work area. It caches the last work-area rectangle so normal
-panel repaints do not trigger redundant xdg configure events. `cargo check
--p pantheon-compositor` passes on the local build host. This remains unqualified
-with a Wayland panel client or on M-series DRM/KMS hardware. Next: connect an
-isolated Wayland client probe, then qualify Wingpanel/Dock protocol behavior
-before implementing overlap-based autohide. The WD22TB4 HDMI G3 DCP/kernel issue
-remains separate. Scope and limitations: `mseries/pantheon-rust-compositor/`.
+On branch `codex/rust-mutter-pantheon`, commit `bc6097a` reconfigures already
+maximized windows when a committed Pantheon panel change alters its exclusive
+work area; unchanged panel repaints do not trigger redundant xdg configure
+events. Added `pantheon-shell-probe`, which binds shell/panel v2 and sends
+`get_panel`, anchor, size, hide-mode, and offset requests. Local `cargo check`
+and `cargo build --bins` pass. The 12-second Xvfb nested run completed the probe
+over Wayland using Mesa llvmpipe. Then installed Wingpanel 8.0.4 ran against the
+nested socket under isolated D-Bus/Xvfb and forced Wayland. Its client trace
+shows `get_panel`, `set_anchor(top)`, `set_hide_mode(never)`, and attached SHM
+buffers. It also reports missing `org.gnome.Mutter.DisplayConfig` and GNOME
+Shell keybinding/sound services; implement only the compatibility surface
+Wingpanel needs, based on the client API, rather than Mutter itself. Dock
+behavior and M-series DRM/KMS remain unqualified. Next: identify and implement
+the minimal display-config query used by Wingpanel, then run Dock and panel
+geometry checks against the nested output. The WD22TB4 HDMI G3 DCP/kernel issue
+remains separate. Scope and limits: `mseries/pantheon-rust-compositor/`.
 
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18
 

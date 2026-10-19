@@ -80,5 +80,9 @@ planning against a release.
 The nested prototype serves the Pantheon shell protocol v2, places a panel from
 its anchor/size/offset, reserves exclusive panel geometry, and updates already
 maximized windows when that work area changes. The last local `cargo check`
-passes. It has not yet run with a Wayland client or on M-series hardware. A
-build check is not session or hardware qualification.
+and `cargo build` pass. Its protocol probe completed under Xvfb over a nested
+Wayland socket. Installed Wingpanel 8.0.4 also connected in an isolated nested
+Wayland session and rendered SHM buffers, but reports that
+`org.gnome.Mutter.DisplayConfig` is unavailable. Dock integration and M-series
+hardware remain unqualified; this is not full session or hardware
+qualification.

@@ -9,11 +9,16 @@ description = "Nested Rust Wayland compositor prototype for elementary OS"
 name = "pantheon-compositor"
 path = "src/main.rs"
 
+[[bin]]
+name = "pantheon-shell-probe"
+path = "src/bin/pantheon-shell-probe.rs"
+
 [dependencies]
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 bitflags = "2.2.1"
 wayland-scanner = "0.31.11"
 wayland-backend = "0.3.17"
+wayland-client = "0.31.11"
 wayland-server = "0.31.14"
 
 [dependencies.smithay]
