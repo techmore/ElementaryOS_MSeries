@@ -111,11 +111,16 @@ The nested stock Dock 8.3.3 smoke bound the panel protocol and attached buffers,
 but also logged its known asynchronous workspace-initialization critical, so
 Dock interaction is still not qualified end to end.
 
-The current ARM64 release candidate from commit `619ca5c` is saved at
+The current ARM64 package candidate from commit `83a663c` is saved at
+`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-workspace-release/pantheon-rust-compositor_0.1.0+git83a663c_arm64.deb`
+(SHA-256 `f34220be364417e92c4dab2aa8b9c3c29b5b1cfc9427c710318b42634684634a`).
+Its package contents, dependencies and shared-library links were inspected;
+it was not installed. The preflight and native DRM release build match this
+candidate's source. The nested runtime evidence below used the earlier package
+from commit `619ca5c`, saved at
 `/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-workspace-release/pantheon-rust-compositor_0.1.0+git619ca5c_arm64.deb`
 (SHA-256 `aee4c9af0d12c1a2bddbfd45dcd5a79e71afe8c8adc28d9ff46e7cf204d0ea13`).
-The package contents, control dependencies and shared-library links were
-inspected; it was not installed. Its release binary started in private Xvfb,
+The earlier package was not installed. Its release binary started in private Xvfb,
 reported XWayland ready, and served a Zenity window through `GetWindows` with
 `app-id=zenity`, focus true and the initial two-workspace count. This qualifies
 the nested release path for continued development testing only. It does not

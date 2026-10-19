@@ -18,8 +18,12 @@ an interactive native session. The next display gate requires an isolated
 session to attempt its first real modeset, with a tested return path.
 
 The release probe rebuilt successfully in 0.85 seconds locally, and the
-native compositor release binary built successfully. Branch:
-`codex/rust-mutter-pantheon`.
+native compositor release binary built successfully. The ARM64 package built
+from this source is
+`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-workspace-release/pantheon-rust-compositor_0.1.0+git83a663c_arm64.deb`
+(SHA-256 `f34220be364417e92c4dab2aa8b9c3c29b5b1cfc9427c710318b42634684634a`).
+Its package metadata, payload paths and dependencies were inspected; it was
+not installed. Branch: `codex/rust-mutter-pantheon`.
 
 ## Mutter-minimal viable Rust compositor progress — 2026-10-18
 
