@@ -1,5 +1,26 @@
 # OS 9 implementation / Claude Code handoff
 
+## omarchy-mlx main candidate and planned model A/B — 2026-10-19
+
+Candidate `61495cb` built in `~/.cache/omarchy-mlx-candidate-61495cb`, isolated
+beside installed v0.7.33. No runtime was installed or replaced. Four selected
+C++ test binaries passed; `omarchy_matmul_family_tests` passed 41/43, with two
+MoE gather_qmm tile tests throwing on empty CPU reference data in the CPU-off
+build (cause suspected, unconfirmed). Receipt:
+`mseries/local-ai/receipts/2026-10-19-omarchy-mlx-candidate-build.md`.
+
+Model A/B has not run. Readiness check at 08:00 EDT found
+`mseries-ai-everyday.service` failed because its configured 4B target was
+incomplete and offline mode refused a download; no MLX worker was running.
+The current candidate is C++-only, with no Python bindings/wheel. A detailed
+plan now records candidate preparation, 4B row-reduce and optional 9B native
+GQA gates, required service handling, and a proposed after-10 PM Eastern quiet
+window: `mseries/local-ai/OMARCHY-MLX-MODEL-AB-PLAN-2026-10-19.md`.
+Next: build a Python-capable candidate in a separate venv/prefix and confirm
+the same pinned model is complete and the installed baseline is healthy before
+any model launch. Owner's desktop is not to be interrupted outside an agreed
+quiet window.
+
 ## apt upgrade of 25 elementary daily packages — 2026-10-19 (Claude Code)
 
 `sudo apt upgrade` (gala r3203->r3204, panel power/sound/bluetooth, granite, settings-daemon, pantheon-files,
