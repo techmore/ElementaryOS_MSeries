@@ -6361,3 +6361,16 @@ country or region?"): [`windows11-arm64-qemu-first-boot-oobe.png`](../docs/image
 At each reboot the "Press any key to boot from CD" prompt must be left alone so it boots the disk. Not done: OOBE
 (network or local account), the desktop, virtio-win guest drivers (network, display), activation, suspend, anything on
 real hardware. VM left powered off.
+
+## 2026-10-19: Machine Lab 0.3.0 production pass, and QEMU vmapple on Linux
+
+Machine Lab: `meson test` now covers persistence, mseries-vm discovery, install detection, credentials and the QMP transport
+(control socket per call, display socket persistent: the regression that stalled `mseries-vm`); status polling is off the main
+thread; credentials are masked until revealed; `--version`; AppStream metadata; `mseries/machine-lab/build-deb.sh` builds
+`machine-lab_0.3.0-1~mseries1_arm64.deb` (runs the tests first); a CI job builds, tests, validates metadata and builds the
+package; user guide in `mseries/machine-lab/docs/USER-GUIDE.md`. Not verified: installing the `.deb` system-wide, the display on
+a real Wayland session.
+
+macOS: see `mseries/machine-lab/ROADMAP.md`, "QEMU vmapple on this Linux Mac". The `vmapple` machine can be built on Linux
+with small patches and then stops at the macOS-only `apple-gfx-mmio` device; a real boot needs Apple's firmware and a macOS 12 VM
+image, which were not downloaded.

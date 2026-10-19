@@ -138,8 +138,12 @@ public class Machine : Object {
     private bool qmp_handshake (SocketConnection conn, DataInputStream din) throws Error {
         din.read_line ();   // greeting
         conn.output_stream.write ("{\"execute\":\"qmp_capabilities\"}\n".data);
-        din.read_line ();
-        return true;
+        // Skip any event that arrives before the reply, so no stale line is left behind.
+        string? reply = din.read_line ();
+        while (reply != null && !reply.contains ("\"return\"") && !reply.contains ("\"error\"")) {
+            reply = din.read_line ();
+        }
+        return reply != null;
     }
 
     /* Send one QMP command (a full JSON object) and return its reply line.
@@ -269,16 +273,28 @@ public class Machine : Object {
         }
     }
 
+    private bool status_busy = false;
+
+    /* Ask QEMU whether the guest is paused, off the main thread: a hung QEMU
+     * must never freeze the window while the 3 s socket timeout runs out. */
     private void sync_paused () {
-        var reply = qmp ("query-status");
-        bool now = reply != null && reply.contains ("\"status\": \"paused\"");
-        if (reply != null && !now) {
-            now = reply.contains ("\"status\":\"paused\"");
+        if (status_busy) {
+            return;
         }
-        if (now != paused) {
-            paused = now;
-            state_changed ();
-        }
+        status_busy = true;
+        new Thread<void> ("ml-status", () => {
+            var reply = qmp ("query-status");
+            bool known = reply != null;
+            bool now = known && (reply.contains ("\"status\": \"paused\"") || reply.contains ("\"status\":\"paused\""));
+            Idle.add (() => {
+                status_busy = false;
+                if (known && now != paused) {
+                    paused = now;
+                    state_changed ();
+                }
+                return Source.REMOVE;
+            });
+        });
     }
 
     // ---- Unattended Omarchy: latest-version check ----

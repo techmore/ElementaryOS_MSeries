@@ -34,3 +34,25 @@ The macOS (experimental) page in the app runs real commands and records the outp
 3. `qemu-system-aarch64 -machine virt,accel=kvm -cpu Haswell`: `unable to find CPU model 'Haswell'`.
 4. `qemu-system-x86_64`: not installed (and it could only emulate, never use KVM, on an ARM host).
 5. Emulating an Intel Mac in software: not attempted (Apple recovery image, OpenCore, tens of times slower).
+
+## macOS: QEMU `vmapple` on this Linux Mac (2026-10-19)
+
+Built QEMU master (11.1.50) in `~/src/qemu-vmapple` with two local patches and ran its `vmapple` machine under KVM:
+
+1. `hw/vmapple/Kconfig` required HVF and selected the macOS-only graphics device, and `configs/devices/aarch64-softmmu/default.mak`
+   set `CONFIG_VMAPPLE=n`. Removing those three lines makes `vmapple` appear in `-machine help` on Linux.
+2. `hw/vmapple/aes.c` does not compile with gcc (`char hex[MAX_LEN * 2 + 1] = ""` with `static const size_t MAX_LEN`); an
+   `enum` constant fixes it (worth sending upstream).
+
+Then, with `-accel kvm`:
+
+- `-M vmapple,uuid=1` alone: `Parameter 'uuid' expects integer` (the docs derive it from the VM's UUID with `contrib/vmapple/uuid.sh`).
+- With `uuid=1`: `No AUX device. Please specify one as pflash drive.` (needs the aux storage of a real macOS VM).
+- With blank aux and root pflash plus a dummy `-bios`: `unknown type 'apple-gfx-mmio'`. `vmapple.c` creates Apple's
+  paravirtual GPU unconditionally; that device is built from `ParavirtualizedGraphics.framework`, which exists only on macOS.
+  This is the first hard Linux blocker. Stubbing it out (skip the device when the type is missing) is the obvious next patch,
+  but it was not applied or built: the sandbox declined further edits to this externally sourced code, so the attempt stops here.
+
+What a real boot still needs: Apple's `AVPBooter.vmapple2.bin` copied from a macOS install, aux and root images from a macOS 12 VM
+made with Virtualization.framework (`macosvm`), and an answer for graphics (none exists on Linux; the guest would be headless over
+serial, ssh or screen sharing). Unknowns: whether the guest tolerates running on KVM with Apple's cores instead of HVF.
