@@ -6201,3 +6201,14 @@ swap is `/dev/mapper/cryptswap` in fstab. Result: it is the Apple-only Fairydust
 Options (kernel work belongs to DeepSeek): add `PCI_HOST_GENERIC=y` and `SYSFB_SIMPLEFB=y` (or `FB_EFI`) to the Fairydust
 config so it also boots on QEMU virt, or make the VM install default to the generic kernel (GRUB_DEFAULT set to the
 7.0.0-38 entry). Not tried: either fix, because changing the guest's boot config was outside this task's scope.
+
+### Result of the VM-only fix (2026-10-19)
+
+In the test VM only, from the live ISO: backed up `/etc/default/grub` to `/etc/default/grub.before-machinelab`, set
+`GRUB_DEFAULT` to the generic `7.0.0-38-generic` entry, `GRUB_CMDLINE_LINUX_DEFAULT="console=tty0 console=ttyAMA0,115200"`,
+and ran `update-grub` in a chroot. Booting the installed disk then reached the serial login prompt, the Initial Setup
+wizard (language, keyboard, account), the greeter and the elementary desktop (Welcome app, panel, dock): see
+[`os9-ci-installed-qemu-desktop.png`](../docs/images/os9-ci-installed-qemu-desktop.png). So the CI ISO's installed system
+**boots and works on QEMU/KVM when it runs the generic kernel**; the Fairydust kernel still cannot boot on QEMU virt
+(see above). Test account in the VM: `~/vms/elementary/credentials.txt` (owner-only, VM only). Not verified: the Fairydust
+kernel on QEMU, audio, networking inside the guest, suspend, or any Apple hardware path.
