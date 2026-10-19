@@ -70,11 +70,14 @@ libinput, udev, libseat, EGL, and multi-GPU dependencies. The current executable
 still starts through Winit. Behind this feature, `native.rs` can initialize a
 hardware EGL/GBM renderer on a libseat GPU and register it with Smithay's
 multi-GPU manager. It is not yet called by the executable and does not open a
-KMS output or framebuffer exporter, though it exposes the GBM allocator needed
-to allocate render buffers for KMS import. It does not drive native input.
-Default and feature-enabled `cargo check` and `cargo build` pass locally after installing
-the host `libseat-dev` package; none of those commands initializes a native
-session.
+multi-GPU manager. `NativeKmsOutput` can open a separate KMS device, choose a
+connected connector/CRTC, build the GBM framebuffer exporter/output manager,
+publish its Wayland output, render the current space, queue a damaged frame,
+and acknowledge its KMS submission. The executable does not call these native
+methods yet; the DRM vblank/session event loop, frame scheduling, hotplug,
+pause/resume and native input are unfinished. Default and feature-enabled `cargo check` and
+`cargo build` pass locally after installing the host `libseat-dev` package;
+none of those commands initializes a native session.
 
 With `native-drm` enabled, `pantheon-drm-probe` safely enumerates EGL devices
 without acquiring DRM master or changing display modes. On the current M-series

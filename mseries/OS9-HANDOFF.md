@@ -5421,6 +5421,24 @@ Default and `native-drm` cargo checks pass, and the feature-enabled binaries
 build locally; next pair this allocator with the Apple KMS device and output
 manager.
 
+### Native KMS output initialization — 2026-10-18
+
+Added a feature-gated `NativeKmsOutput` builder. It scans libseat DRM nodes
+other than the renderer device, finds a connected connector with a compatible
+CRTC, prefers the built-in eDP connector, chooses its preferred mode, and
+constructs Smithay's GBM output manager using Asahi render buffers and an Apple
+KMS framebuffer exporter. It publishes the output and updates the multi-output
+DisplayConfig state. The executable does not call this code yet; no libseat
+session was opened and no output was initialized at runtime. `DrmDevice::new`
+is configured to disable connectors while preparing for compositor takeover,
+so this must only be called in the future native session after libseat has
+paused the existing display server. The output object now renders the current
+Space into its DRM swapchain, queues damaged frames, and exposes the matching
+vblank submission completion. These methods are not yet connected to calloop;
+frame scheduling, vblank event wiring, hotplug, pause/resume and native input
+remain. No libseat session was opened at runtime. Default and `native-drm`
+checks/builds pass locally.
+
 ### Absolute pointer mapping — 2026-10-18
 
 Absolute pointer events previously mapped normalized coordinates against only
