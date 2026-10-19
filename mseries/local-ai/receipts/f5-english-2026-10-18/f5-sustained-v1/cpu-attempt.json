@@ -1,0 +1,24 @@
+{
+  "complete": true,
+  "exit_code": 1,
+  "interruption": null,
+  "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "policy": {
+    "reserve_gib": 6,
+    "max_fan_rpm": 2700,
+    "max_temp_c": 63,
+    "cool_fan_rpm": 2700,
+    "resume_fan_rpm": 2600,
+    "burst_s": 3,
+    "sample_s": 1
+  },
+  "source_sha256": {
+    "sustained-speech-bench.py": "0cea0bdac4214c4a41c3012e1dbba456d0d007c12ecba555318402c5e54d01e7",
+    "realtime-bench.py": "341cf7ed75f86248b9862d6dce7603c0d97bf86521e836482ee42452d00ff7a4"
+  },
+  "resources": {
+    "min_available_bytes": 15661842432,
+    "max_fan_rpm": 2492.0,
+    "max_temp_c": 45.5
+  }
+}

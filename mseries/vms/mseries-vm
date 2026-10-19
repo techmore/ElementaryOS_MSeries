@@ -372,7 +372,7 @@ cmd_start() {
     rotate_file() { [[ -f $1 ]] && mv -f "$1" "$1.prev"; return 0; }
     rotate_file "$dir/serial.log"
     rotate_file "$dir/qemu.log"
-    rm -f "$dir/qmp.sock"
+    rm -f "$dir/qmp.sock" "$dir/qmp-view.sock"
 
     local machine="virt,accel=kvm"
 
@@ -386,7 +386,11 @@ cmd_start() {
               -tpmdev emulator,id=tpm0,chardev=chrtpm
               -device tpm-tis-device,tpmdev=tpm0)
     fi
-    if [[ $GL == on ]]; then
+    if [[ ${GPU:-virtio} == ramfb ]]; then
+        # Windows setup draws through the firmware framebuffer; with virtio-gpu
+        # the screen stays stale or black until a guest driver is installed.
+        cmd+=(-device ramfb)
+    elif [[ $GL == on ]]; then
         cmd+=(-device virtio-gpu-gl-pci)
     else
         cmd+=(-device virtio-gpu-pci)
@@ -417,8 +421,14 @@ cmd_start() {
         if (( index == 0 )) && [[ $BOOT == iso ]] && [[ -n $ISO ]]; then
             boot_arg=",bootindex=1"
         fi
+        # Extra media can ride on USB: Windows PE reads USB storage with its
+        # in-box driver but has no virtio-scsi driver until you load one from it.
+        local cd_device=scsi-cd
+        if (( index > 0 )) && [[ ${EXTRA_BUS:-scsi} == usb ]]; then
+            cd_device=usb-storage
+        fi
         cmd+=(-drive "if=none,id=cdrom$index,format=raw,media=cdrom,readonly=on,file=$medium"
-              -device "scsi-cd,drive=cdrom$index$boot_arg")
+              -device "$cd_device,drive=cdrom$index$boot_arg")
         index=$((index + 1))
     done
     if [[ $NET == none ]]; then
@@ -430,6 +440,7 @@ cmd_start() {
     fi
     cmd+=(-serial "file:$dir/serial.log" -monitor none
           -qmp "unix:$dir/qmp.sock,server=on,wait=off"
+          -qmp "unix:$dir/qmp-view.sock,server=on,wait=off"
           -msg timestamp=on)
     if (( headless )); then
         cmd+=(-display none)
@@ -495,7 +506,7 @@ cmd_stop() {
         kill -KILL "$pid" 2>/dev/null || true
         sleep 1
     fi
-    rm -f "$dir/qemu.pid" "$dir/qmp.sock"
+    rm -f "$dir/qemu.pid" "$dir/qmp.sock" "$dir/qmp-view.sock"
     stop_swtpm "$name"
     echo "VM '$name' stopped."
 }
@@ -615,6 +626,8 @@ cmd_set() {
         HOSTFWD) [[ $value != *[[:space:]]* ]] || die "HOSTFWD must be a hostfwd rule, e.g. tcp::2222-:22" ;;
         TPM) [[ $value == on || $value == off ]] || die "$key must be on or off" ;;
         AUDIO|GL) [[ $value == on || $value == off ]] || die "$key must be on or off" ;;
+        GPU) [[ $value == virtio || $value == ramfb ]] || die "GPU must be virtio or ramfb" ;;
+        EXTRA_BUS) [[ $value == scsi || $value == usb ]] || die "EXTRA_BUS must be scsi or usb" ;;
         CPUS|MEMORY_MB) [[ $value =~ ^[1-9][0-9]*$ ]] || die "$key must be a positive integer" ;;
         DISK_BUS) [[ $value == virtio || $value == nvme ]] || die "DISK_BUS must be virtio or nvme" ;;
         FIRMWARE) [[ -f $AAVMF_DIR/$value ]] || die "firmware not found: $AAVMF_DIR/$value" ;;

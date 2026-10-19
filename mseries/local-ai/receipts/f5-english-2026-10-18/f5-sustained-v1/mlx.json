@@ -1,0 +1,18 @@
+{
+  "complete": false,
+  "engine": "mlx",
+  "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+  "python": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+  "harness_sha256": "0cea0bdac4214c4a41c3012e1dbba456d0d007c12ecba555318402c5e54d01e7",
+  "microphone_recorded": false,
+  "owner_windows_opened": false,
+  "requested_duration_s": null,
+  "feed_chunk_s": 0.1,
+  "attention_context_right": 1,
+  "requested_chunk_mode_ms": 160,
+  "scope": "Repeated clean public file; cache-aware API; no prefix re-decoding, microphone, app insertion or general accuracy claim. First resident trial is retained; model is reused unchanged.",
+  "trials": [],
+  "failure_kind": "UnboundLocalError",
+  "failure_detail": "cannot access local variable 'importlib' where it is not associated with a value",
+  "quality_score": null
+}

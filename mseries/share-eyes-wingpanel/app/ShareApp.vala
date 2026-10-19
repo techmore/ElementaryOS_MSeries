@@ -8,6 +8,7 @@ public class ShareApp : Gtk.Application {
     private int idle_ticks = 0;
     private DBusConnection? bus = null;
     private int last_count = -1;
+    private uint initial_minimize_source = 0;
 
     public ShareApp () {
         Object (application_id: APP_ID, flags: ApplicationFlags.DEFAULT_FLAGS);
@@ -15,10 +16,15 @@ public class ShareApp : Gtk.Application {
 
     protected override void activate () {
         if (win != null) {
+            if (initial_minimize_source != 0) {
+                Source.remove (initial_minimize_source);
+                initial_minimize_source = 0;
+            }
             win.unminimize ();
             win.present ();
             return;
         }
+        Granite.init ();
         panel = new MSeries.SharePanel ();
         panel.margin_start = 6; panel.margin_end = 6; panel.margin_top = 6; panel.margin_bottom = 8;
         var header = new Gtk.HeaderBar ();
@@ -34,7 +40,12 @@ public class ShareApp : Gtk.Application {
         try { bus = Bus.get_sync (BusType.SESSION); } catch (Error e) { bus = null; }
         panel.status_changed.connect (on_status);
         win.present ();
-        win.minimize ();     // start in the dock, not on the screen
+        // The compositor must have processed the initial map before minimizing.
+        initial_minimize_source = Timeout.add (250, () => {
+            initial_minimize_source = 0;
+            if (win != null) win.minimize ();
+            return Source.REMOVE;
+        });
         hold ();
     }
 

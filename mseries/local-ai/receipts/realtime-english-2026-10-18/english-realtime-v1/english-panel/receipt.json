@@ -1,0 +1,371 @@
+{
+  "complete": true,
+  "passed": true,
+  "language": "English",
+  "asr_engine": "nemotron-160-cpu",
+  "runtime": {
+    "runtime": {
+      "artifact_sha256": {
+        "libmlx": "1187d5715b66edd47518ba59950813bb78a7bd3383327ced369699bc9521c176",
+        "vulkan": "e92aa6fed95f1add1f712c28294937983583b52984bfc739f5840f30f86a2f8c",
+        "model_weights": "5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db"
+      },
+      "versions": {
+        "mlx_omarchy": "0.32.4.dev202610160529+33630f9c",
+        "mlx_lm": "0.31.3",
+        "transformers": "5.16.1",
+        "numpy": "2.5.4"
+      }
+    },
+    "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+    "policy": {
+      "reserve_gib": 6,
+      "max_fan_rpm": 3500,
+      "max_temp_c": 80,
+      "cool_fan_rpm": 2700,
+      "resume_fan_rpm": 2600,
+      "burst_s": 3,
+      "sample_s": 1
+    },
+    "profile_sha256": "65ec7a668cf2859d07c2756d05ef455f33bee75e523b197446016b313a90a3a4",
+    "source_sha256": {
+      "dictation_review.py": "8489eafbeb3eb88cefde732f65247bf0e30db2250fa8b78933e0d3bfdcb3f943",
+      "dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+      "review-smoke.py": "6743da49000db364d0b74bfda9da1292746d58bfc872a04190c378eb76d007a9",
+      "machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+    },
+    "model_revision": "32f3e8ecf65426fc3306969496342d504bfa13f3",
+    "model_weights_sha256": "5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db"
+  },
+  "source_sha256": {
+    "dictation/dictation-panel.py": "1ea7652dad1023a36bf18c85e7d981b7406bf52bc0075efc9a94a87fc10f4aac",
+    "dictation/dictation_live.py": "a09251796e5d394b973c85184878878f43d88f93c78c8f49e2678b653f628c64",
+    "dictation/dictation_review.py": "8489eafbeb3eb88cefde732f65247bf0e30db2250fa8b78933e0d3bfdcb3f943",
+    "dictation/dictation_pipeline.py": "d03858f233622d7b8c9f6d8ae4215504b966b7586725234409e2d9d28e508376",
+    "dictation/dictation_status.py": "2e7411beb6b59af53f97d90a9f37ef21c746984b068fe303a629f579b8e7ac9b",
+    "dictation/dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+    "dictation/dictation_model.py": "ce7b805e735c704ff7a22ce7ea272fb88e22f91d64e6c965185b8e5c4db41578",
+    "dictation/review-smoke.py": "6743da49000db364d0b74bfda9da1292746d58bfc872a04190c378eb76d007a9",
+    "dictation/english-workflow-smoke.py": "159af1fdd51037cb170c604abe1f9961bb4080de5e09c72d0188430f3cdccc6a",
+    "local-ai/machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+  },
+  "microphone_recorded": false,
+  "owner_windows_opened": false,
+  "wav_sha256": "33c6c68d943a22d5272bf8d5e1f86af9d89d901fb7da35961a692de7591a534c",
+  "source_events": [
+    {
+      "text": "He",
+      "final": false,
+      "wall_s": 0.8684400540000752,
+      "widget_wall_s": 1.28953992799984
+    },
+    {
+      "text": "He hoped",
+      "final": false,
+      "wall_s": 1.149903193,
+      "widget_wall_s": 1.5785891129999072
+    },
+    {
+      "text": "He hoped there",
+      "final": false,
+      "wall_s": 1.4475858400001016,
+      "widget_wall_s": 1.8729080079999676
+    },
+    {
+      "text": "He hoped there would be",
+      "final": false,
+      "wall_s": 1.6481711890000952,
+      "widget_wall_s": 2.0720036479999635
+    },
+    {
+      "text": "He hoped there would be stew",
+      "final": false,
+      "wall_s": 2.2476871940000365,
+      "widget_wall_s": 2.669418525999845
+    },
+    {
+      "text": "He hoped there would be stew for din",
+      "final": false,
+      "wall_s": 2.4482294590000038,
+      "widget_wall_s": 2.8739585020000504
+    },
+    {
+      "text": "He hoped there would be stew for dinner",
+      "final": false,
+      "wall_s": 2.5447008400001323,
+      "widget_wall_s": 2.971439425999961
+    },
+    {
+      "text": "He hoped there would be stew for dinner,",
+      "final": false,
+      "wall_s": 3.046256296000138,
+      "widget_wall_s": 3.47218821499996
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turn",
+      "final": false,
+      "wall_s": 3.247922688000017,
+      "widget_wall_s": 3.6856884029998582
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnip",
+      "final": false,
+      "wall_s": 3.347089320000123,
+      "widget_wall_s": 3.7677611939998314
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips",
+      "final": false,
+      "wall_s": 3.542962624999973,
+      "widget_wall_s": 3.9688525849999223
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and",
+      "final": false,
+      "wall_s": 3.7464213089999703,
+      "widget_wall_s": 4.174039477999941
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and car",
+      "final": false,
+      "wall_s": 3.8436635240000214,
+      "widget_wall_s": 4.2702040249998845
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots",
+      "final": false,
+      "wall_s": 4.048458540999945,
+      "widget_wall_s": 4.472417708999956
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and",
+      "final": false,
+      "wall_s": 4.14619763099995,
+      "widget_wall_s": 4.574472259000004
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bru",
+      "final": false,
+      "wall_s": 4.545844494999983,
+      "widget_wall_s": 4.973512539000012
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised",
+      "final": false,
+      "wall_s": 4.644263461000037,
+      "widget_wall_s": 5.067252044000043
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised pot",
+      "final": false,
+      "wall_s": 4.848245894999991,
+      "widget_wall_s": 5.271998977999829
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potato",
+      "final": false,
+      "wall_s": 4.9452106930000355,
+      "widget_wall_s": 5.373305277999862
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes",
+      "final": false,
+      "wall_s": 5.1499965850000535,
+      "widget_wall_s": 5.575905919999968
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat",
+      "final": false,
+      "wall_s": 5.750050090000059,
+      "widget_wall_s": 6.1715867979999075
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat m",
+      "final": false,
+      "wall_s": 6.1722267570000895,
+      "widget_wall_s": 6.6011672180000005
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton",
+      "final": false,
+      "wall_s": 6.249601212000016,
+      "widget_wall_s": 6.675216671000044
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces",
+      "final": false,
+      "wall_s": 6.552476403000128,
+      "widget_wall_s": 6.9800279889998365
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to",
+      "final": false,
+      "wall_s": 6.968518358999972,
+      "widget_wall_s": 7.393318317999956
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be",
+      "final": false,
+      "wall_s": 7.246440954000036,
+      "widget_wall_s": 7.67442462300005
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be lad",
+      "final": false,
+      "wall_s": 7.36209567800006,
+      "widget_wall_s": 7.788181179000048
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled",
+      "final": false,
+      "wall_s": 7.545750601999998,
+      "widget_wall_s": 7.9717606869999145
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out",
+      "final": false,
+      "wall_s": 7.744148949999953,
+      "widget_wall_s": 8.165501073999849
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick",
+      "final": false,
+      "wall_s": 8.15039640100008,
+      "widget_wall_s": 8.57314006699994
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, pe",
+      "final": false,
+      "wall_s": 8.651423480999938,
+      "widget_wall_s": 9.081735692999928
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered",
+      "final": false,
+      "wall_s": 8.853304123000044,
+      "widget_wall_s": 9.276465705999954
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered flour",
+      "final": false,
+      "wall_s": 9.453609251999978,
+      "widget_wall_s": 9.885109173000046
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered flour fatten",
+      "final": false,
+      "wall_s": 9.951705039999979,
+      "widget_wall_s": 10.384774752999874
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered flour fattened",
+      "final": false,
+      "wall_s": 10.149065346000043,
+      "widget_wall_s": 10.570683219999864
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered flour fattened sauce",
+      "final": false,
+      "wall_s": 10.25434852300009,
+      "widget_wall_s": 10.675511479999841
+    },
+    {
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered flour fattened sauce,",
+      "final": true,
+      "wall_s": 10.514372110000068,
+      "widget_wall_s": 10.941481444999908
+    }
+  ],
+  "proposal_events": [
+    {
+      "wall_s": 2.597844407999901,
+      "text": "He",
+      "speech_phase": "listening"
+    },
+    {
+      "wall_s": 7.015935631000048,
+      "text": "",
+      "speech_phase": "listening"
+    },
+    {
+      "wall_s": 7.015980880999905,
+      "text": "He hoped there would be stew for dinner, turnips, and carrots.",
+      "speech_phase": "listening"
+    },
+    {
+      "wall_s": 10.954749659999834,
+      "text": "",
+      "speech_phase": "ready"
+    },
+    {
+      "wall_s": 10.954769242999873,
+      "text": "He hoped there would be stew for dinner, turnips, carrots, bruised potatoes, and fat mutton pieces to...",
+      "speech_phase": "ready"
+    },
+    {
+      "wall_s": 16.413936522999848,
+      "text": "",
+      "speech_phase": "ready"
+    },
+    {
+      "wall_s": 16.414018730999942,
+      "text": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered flour-fattened sauce.",
+      "speech_phase": "ready"
+    }
+  ],
+  "model_stages": [
+    {
+      "source": "He",
+      "mode": "grammar",
+      "language": "English",
+      "proposal": "He",
+      "error": null,
+      "started_s": 1.2931874719999996,
+      "elapsed_s": 1.3041238939999857,
+      "speech_phase_at_start": "listening"
+    },
+    {
+      "source": "He hoped there would be stew for dinner, turnips and carrots",
+      "mode": "grammar",
+      "language": "English",
+      "proposal": "He hoped there would be stew for dinner, turnips, and carrots.",
+      "error": null,
+      "started_s": 4.474101208999855,
+      "elapsed_s": 2.5369003370001337,
+      "speech_phase_at_start": "listening"
+    },
+    {
+      "source": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to",
+      "mode": "grammar",
+      "language": "English",
+      "proposal": "He hoped there would be stew for dinner, turnips, carrots, bruised potatoes, and fat mutton pieces to...",
+      "error": null,
+      "started_s": 7.552603270999953,
+      "elapsed_s": 3.401307430000088,
+      "speech_phase_at_start": "listening"
+    },
+    {
+      "source": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered flour fattened sauce,",
+      "mode": "grammar",
+      "language": "English",
+      "proposal": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered flour-fattened sauce.",
+      "error": null,
+      "started_s": 12.094835555999907,
+      "elapsed_s": 4.3112572550001005,
+      "speech_phase_at_start": "ready"
+    }
+  ],
+  "method": "Real CPU ASR from wall-paced public WAV, actual private GTK4 widgets; one existing supervised4B endpoint; English grammar review only. No physical keyboard, ambient recording or global input.",
+  "original_preserved": true,
+  "first_original_s": 1.28953992799984,
+  "first_suggestion_s": 2.597844407999901,
+  "english_suggestion_visible_during_speech": true,
+  "final_proposal": "He hoped there would be stew for dinner, turnips and carrots and bruised potatoes and fat mutton pieces to be ladled out in thick, peppered flour-fattened sauce.",
+  "copy_enabled": true,
+  "resources": {
+    "samples": 33,
+    "min_available_bytes": 16351887360,
+    "max_fan_rpm": 2527.0,
+    "max_temp_c": 45.846
+  }
+}

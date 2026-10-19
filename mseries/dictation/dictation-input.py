@@ -48,6 +48,27 @@ class MetadataBudget:
         return result
 
 
+def active_window_ancestor(source, api, budget):
+    """Recognize deep real app composers without relaxing active-window checks.
+
+    Newelle's composer has 25 wrapper ancestors. Keep both the node cap and the
+    shared RPC deadline: a deep accessibility hierarchy must not stall F5.
+    """
+    node = source
+    for _ in range(64):
+        if node is None:
+            break
+        budget.call(node.clear_cache)
+        parent = budget.call(node.get_parent)
+        # Qt's top-level QWidget reports FILLER rather than FRAME.
+        top_level = parent is not None and budget.call(parent.get_role) == api.Role.APPLICATION
+        window_role = budget.call(node.get_role) in (api.Role.FRAME, api.Role.DIALOG, api.Role.WINDOW)
+        if (window_role or top_level) and budget.call(node.get_state_set).contains(api.StateType.ACTIVE):
+            return True
+        node = parent
+    return False
+
+
 class FocusSession:
     """A transcript belongs to one uninterrupted, non-sensitive input focus."""
     def __init__(self, clock=time.monotonic):
@@ -57,8 +78,10 @@ class FocusSession:
         self.hints = 0
         self.token = None
         self.characters = 0
+        self.on_invalidate = lambda: None
 
     def invalidate(self):
+        self.on_invalidate()
         self.token = None
 
     def focus(self, target, client):
@@ -105,6 +128,10 @@ def main():
         raise SystemExit('IBus is unavailable')
     state = FocusSession()
     current = {'engine': None, 'client': None, 'metadata': None}
+    def clear_preview():
+        if state.target is not None:
+            state.target.update_preedit_text_with_mode(IBus.Text.new_from_string(''), 0, False, IBus.PreeditFocusMode.CLEAR)
+    state.on_invalidate = clear_preview
 
     class FocusMetadata:
         """Only field role/state/identity and active ancestors; never requests text."""
@@ -149,19 +176,7 @@ def main():
                 role = int(budget.call(source.get_role))
                 focused = states.contains(self.api.StateType.FOCUSED)
                 editable = states.contains(self.api.StateType.EDITABLE)
-                active = False
-                node = source
-                for _ in range(24):
-                    if node is None: break
-                    budget.call(node.clear_cache)
-                    parent = budget.call(node.get_parent)
-                    # Qt's top-level QWidget reports FILLER rather than FRAME.
-                    top_level = parent is not None and budget.call(parent.get_role) == self.api.Role.APPLICATION
-                    window_role = budget.call(node.get_role) in (self.api.Role.FRAME, self.api.Role.DIALOG, self.api.Role.WINDOW)
-                    if (window_role or top_level) and budget.call(node.get_state_set).contains(self.api.StateType.ACTIVE):
-                        active = True
-                        break
-                    node = parent
+                active = active_window_ancestor(source, self.api, budget)
                 if not safe_accessible(role, focused, editable, active):
                     raise ValueError('Focused field is sensitive, inactive or not editable')
                 return budget.call(self.identity,source)
@@ -258,6 +273,7 @@ def main():
     xml = '''<node><interface name="org.techmore.DictationInput">
       <method name="Begin"><arg type="s" direction="out"/></method>
       <method name="Commit"><arg type="s" direction="in"/><arg type="s" direction="in"/></method>
+      <method name="Preview"><arg type="s" direction="in"/><arg type="s" direction="in"/></method>
       <method name="Check"><arg type="s" direction="in"/></method>
       <method name="Cancel"/>
       <method name="Finish"><arg type="s" direction="in"/></method>
@@ -346,7 +362,7 @@ def main():
         try:
             if method == 'Begin':
                 begin(invocation)
-            elif method in ('Commit', 'Check'):
+            elif method in ('Commit', 'Check', 'Preview'):
                 values = parameters.unpack()
                 token = values[0]
                 if metadata is None or metadata.validate() != current['metadata']:
@@ -356,7 +372,16 @@ def main():
                 if method == 'Commit':
                     text = values[1]
                     state.accept(token, text)
+                    clear_preview()
                     state.target.commit_text(IBus.Text.new_from_string(text))
+                elif method == 'Preview':
+                    text = values[1]
+                    if len(text) > 4000 or any(ord(c) < 32 and c not in '\n\t' for c in text) or '\x7f' in text:
+                        raise ValueError('Invalid preview')
+                    # Chromium can confirm composition itself before focus-out,
+                    # even with IBus CLEAR mode. Never inject speculative words
+                    # into app fields. Stable committed words still stream live.
+                    clear_preview()
                 invocation.return_value(None)
             elif method == 'Cancel':
                 lease['epoch'] += 1

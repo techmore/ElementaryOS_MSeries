@@ -1,0 +1,26 @@
+--- a/icp/auth/gsa.py
++++ b/icp/auth/gsa.py
+@@ -120,11 +120,18 @@
+         return complete, spd
+
+     def trigger_trusted_factor(self, dsid: str, idms_token: str) -> None:
+-        requests.get(
+-            "https://gsa.apple.com/auth/verify/trusteddevice",
+-            headers=self._twofa_headers(dsid, idms_token),
+-            verify=True, timeout=10,
+-        )
++        try:
++            response = requests.get(
++                "https://gsa.apple.com/auth/verify/trusteddevice",
++                headers=self._twofa_headers(dsid, idms_token),
++                verify=True, timeout=10,
++            )
++        except requests.ReadTimeout:
++            # Apple may already have delivered the notification. Do not resend it;
++            # allow the caller to wait for the code and validate it normally.
++            return
++        if not response.ok:
++            raise GSAError(f"trusted-device notification HTTP {response.status_code}")
+
+     def submit_trusted_factor(self, code: str, dsid: str, idms_token: str) -> None:
+         h = self._twofa_headers(dsid, idms_token)

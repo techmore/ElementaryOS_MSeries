@@ -183,7 +183,7 @@ def stage(payload):
             'activation_started': False, 'activated': False}
         payload.save()
     remember_preferences(payload)
-    for name in ['stream-dictate.py', 'dictation-input.py', 'dictation-input-client.py', 'dictation_status.py', 'dictation_resources.py', 'dictation_model.py', 'dictation-launch.py', 'dictation_review.py', 'dictation_pipeline.py', 'dictation-panel.py']:
+    for name in ['stream-dictate.py', 'dictation-input.py', 'dictation-input-client.py', 'dictation_status.py', 'dictation_resources.py', 'dictation_model.py', 'dictation_ane.py', 'ane-worker-shim.py', 'dictation_mlx.py', 'mlx-speech-worker.py', 'dictation_voice.py', 'voice-assistant.py', 'dictation-launch.py', 'dictation_review.py', 'dictation_pipeline.py', 'dictation_live.py', 'dictation-panel.py']:
         payload.install(BASE / name, (SOURCE / name).read_bytes(), 0o755)
     payload.install(BASE / 'dictation-manage.py', Path(__file__).read_bytes(), 0o755)
     machine = HERE / 'local-ai/machine.py' if (HERE / 'local-ai/machine.py').exists() else BASE / 'machine.py'
@@ -195,14 +195,16 @@ def stage(payload):
     payload.remember(PANEL_DESKTOP)
 
 
-def install_panel(payload):
+def install_panel(payload, speech_only=False):
     # Desktop Exec quoting, not shell quoting. Absolute arguments are passed
     # directly to Python; no shell or environment expansion is involved.
     def argument(value):
         return '"' + ''.join(('\\' + c) if c in '\\"`$' else c for c in str(value)) + '"'
     arguments = ['/usr/bin/python3', BASE / 'dictation-launch.py', '/usr/bin/python3', BASE / 'dictation-panel.py']
-    desktop = ('[Desktop Entry]\nType=Application\nName=Dictation\n'
-        'Comment=Local F5 speech and optional transcript review\n'
+    if speech_only:
+        arguments = ['/usr/bin/env', 'MSERIES_DICTATION_SPEECH_ONLY=1', *arguments]
+    desktop = ('[Desktop Entry]\nType=Application\nName=Dictation\n' +
+        ('Comment=Local English F5 speech\n' if speech_only else 'Comment=Local F5 speech and optional transcript review\n') +
         'Icon=audio-input-microphone\nExec=' + ' '.join(argument(value) for value in arguments) +
         '\nTerminal=false\nCategories=Utility;Accessibility;\nStartupNotify=true\n')
     payload.install(PANEL_DESKTOP, desktop.encode(), 0o644)

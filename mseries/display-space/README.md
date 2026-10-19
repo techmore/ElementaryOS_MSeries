@@ -1,5 +1,12 @@
 # Full-height native desktop on the 14-inch M1 Pro
 
+## Startup repair on the full-height Aurora .20 host
+
+[October 18 repair](STARTUP-FIX-2026-10-18.md) fixes initial unbounded panel sizing,
+empty/transitioning indicator bars, stale cropped saved modes and the disabled
+dock readiness timeout. The patched Wingpanel is deployed; full-login validation
+remains pending. The historical setup description below predates that boot.
+
 `bash mseries/install-desktop-space.sh` builds the native Wingpanel and elementary
 dock, installs them, applies a compact dock profile, and prepares a full-height
 boot choice. Run as the desktop user; system changes use sudo. Reboot when ready.

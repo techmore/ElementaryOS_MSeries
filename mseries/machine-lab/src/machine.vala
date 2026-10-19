@@ -106,31 +106,159 @@ public class Machine : Object {
 
     // ---- QMP: pause and resume ----
 
-    private string? qmp (string command) {
-        var sock = Path.build_filename (dir, "qmp.sock");
-        if (!FileUtils.test (sock, FileTest.EXISTS)) {
-            return null;
-        }
+    // QEMU serves one QMP client per socket, so a connection held open would
+    // block `mseries-vm stop`, key, screenshot and friends. Control calls
+    // (status, pause) therefore connect, ask and hang up. The display uses its
+    // own socket (qmp-view.sock) and may stay connected; guests started before
+    // that socket existed fall back to short connections on qmp.sock.
+    private Mutex qmp_lock = Mutex ();
+    private SocketConnection? view_conn = null;
+    private DataInputStream? view_in = null;
+
+    private void view_close () {
         try {
-            var client = new SocketClient ();
-            client.timeout = 2;
-            var conn = client.connect (new UnixSocketAddress (sock));
-            var input = new DataInputStream (conn.input_stream);
-            var output = conn.output_stream;
-            input.read_line ();   // greeting
-            output.write ("{\"execute\":\"qmp_capabilities\"}\n".data);
-            input.read_line ();
-            output.write ("{\"execute\":\"%s\"}\n".printf (command).data);
-            string? reply = input.read_line ();
-            // Events can arrive before the return value.
-            while (reply != null && !reply.contains ("\"return\"") && !reply.contains ("\"error\"")) {
-                reply = input.read_line ();
+            if (view_conn != null) {
+                view_conn.close ();
             }
-            conn.close ();
-            return reply;
-        } catch (Error e) {
-            return null;
+        } catch (Error e) {}
+        view_conn = null;
+        view_in = null;
+    }
+
+    private string? qmp_exchange (SocketConnection conn, DataInputStream din, string json) throws Error {
+        conn.output_stream.write ((json + "\n").data);
+        string? reply = din.read_line ();
+        // Events can arrive before the return value.
+        while (reply != null && !reply.contains ("\"return\"") && !reply.contains ("\"error\"")) {
+            reply = din.read_line ();
         }
+        return reply;
+    }
+
+    private bool qmp_handshake (SocketConnection conn, DataInputStream din) throws Error {
+        din.read_line ();   // greeting
+        conn.output_stream.write ("{\"execute\":\"qmp_capabilities\"}\n".data);
+        // Skip any event that arrives before the reply, so no stale line is left behind.
+        string? reply = din.read_line ();
+        while (reply != null && !reply.contains ("\"return\"") && !reply.contains ("\"error\"")) {
+            reply = din.read_line ();
+        }
+        return reply != null;
+    }
+
+    /* Send one QMP command (a full JSON object) and return its reply line.
+     * With view = true, use the display's dedicated socket when there is one. */
+    public string? qmp_raw (string json, bool view = false) {
+        qmp_lock.lock ();
+        string? reply = null;
+        string view_sock = Path.build_filename (dir, "qmp-view.sock");
+        bool dedicated = view && FileUtils.test (view_sock, FileTest.EXISTS);
+        string sock = dedicated ? view_sock : Path.build_filename (dir, "qmp.sock");
+        if (FileUtils.test (sock, FileTest.EXISTS)) {
+            for (int attempt = 0; attempt < 2 && reply == null; attempt++) {
+                SocketConnection? conn = null;
+                DataInputStream? din = null;
+                try {
+                    if (dedicated && view_conn != null) {
+                        conn = view_conn;
+                        din = view_in;
+                    } else {
+                        var client = new SocketClient ();
+                        client.timeout = 3;
+                        conn = client.connect (new UnixSocketAddress (sock));
+                        din = new DataInputStream (conn.input_stream);
+                        qmp_handshake (conn, din);
+                        if (dedicated) {
+                            view_conn = conn;
+                            view_in = din;
+                        }
+                    }
+                    reply = qmp_exchange (conn, din, json);
+                } catch (Error e) {
+                    reply = null;
+                }
+                if (reply == null && dedicated) {
+                    view_close ();   // stale socket (machine restarted): reconnect once
+                }
+                if (!dedicated && conn != null) {
+                    try { conn.close (); } catch (Error e) {}
+                }
+            }
+        }
+        qmp_lock.unlock ();
+        return reply;
+    }
+
+    private string? qmp (string command) {
+        return qmp_raw ("{\"execute\":\"%s\"}".printf (command));
+    }
+
+    // ---- Display: frames and input over QMP ----
+
+    public signal void frame_ready (string path);
+
+    private AsyncQueue<string>? input_queue = null;
+    private bool frame_busy = false;
+
+    public string frame_path () {
+        var d = Path.build_filename (Environment.get_user_runtime_dir (), "machine-lab");
+        DirUtils.create_with_parents (d, 0700);
+        return Path.build_filename (d, id + ".ppm");
+    }
+
+    /* Ask QEMU for the current screen. At most one request is in flight. */
+    public void request_frame () {
+        if (!running || frame_busy) {
+            return;
+        }
+        frame_busy = true;
+        string path = frame_path ();
+        new Thread<void> ("ml-frame", () => {
+            var reply = qmp_raw ("{\"execute\":\"screendump\",\"arguments\":{\"filename\":\"%s\",\"format\":\"ppm\"}}".printf (path), true);
+            bool ok = reply != null && reply.contains ("\"return\"");
+            Idle.add (() => {
+                frame_busy = false;
+                if (ok) {
+                    frame_ready (path);
+                }
+                return Source.REMOVE;
+            });
+        });
+    }
+
+    /* Queue an input event; a worker thread sends them in order. */
+    public void send_input (string events_json) {
+        if (!running) {
+            return;
+        }
+        if (input_queue == null) {
+            input_queue = new AsyncQueue<string> ();
+            var q = input_queue;
+            new Thread<void> ("ml-input", () => {
+                while (true) {
+                    string cmd = q.pop ();
+                    if (cmd == "") {
+                        break;
+                    }
+                    qmp_raw ("{\"execute\":\"input-send-event\",\"arguments\":{\"events\":%s}}".printf (cmd), true);
+                }
+            });
+        }
+        input_queue.push (events_json);
+    }
+
+    public void send_pointer (double fx, double fy) {
+        int x = (int) (fx.clamp (0.0, 1.0) * 32767);
+        int y = (int) (fy.clamp (0.0, 1.0) * 32767);
+        send_input ("[{\"type\":\"abs\",\"data\":{\"axis\":\"x\",\"value\":%d}},{\"type\":\"abs\",\"data\":{\"axis\":\"y\",\"value\":%d}}]".printf (x, y));
+    }
+
+    public void send_button (string button, bool down) {
+        send_input ("[{\"type\":\"btn\",\"data\":{\"button\":\"%s\",\"down\":%s}}]".printf (button, down ? "true" : "false"));
+    }
+
+    public void send_key (string qcode, bool down) {
+        send_input ("[{\"type\":\"key\",\"data\":{\"down\":%s,\"key\":{\"type\":\"qcode\",\"data\":\"%s\"}}}]".printf (down ? "true" : "false", qcode));
     }
 
     public void pause () {
@@ -145,16 +273,28 @@ public class Machine : Object {
         }
     }
 
+    private bool status_busy = false;
+
+    /* Ask QEMU whether the guest is paused, off the main thread: a hung QEMU
+     * must never freeze the window while the 3 s socket timeout runs out. */
     private void sync_paused () {
-        var reply = qmp ("query-status");
-        bool now = reply != null && reply.contains ("\"status\": \"paused\"");
-        if (reply != null && !now) {
-            now = reply.contains ("\"status\":\"paused\"");
+        if (status_busy) {
+            return;
         }
-        if (now != paused) {
-            paused = now;
-            state_changed ();
-        }
+        status_busy = true;
+        new Thread<void> ("ml-status", () => {
+            var reply = qmp ("query-status");
+            bool known = reply != null;
+            bool now = known && (reply.contains ("\"status\": \"paused\"") || reply.contains ("\"status\":\"paused\""));
+            Idle.add (() => {
+                status_busy = false;
+                if (known && now != paused) {
+                    paused = now;
+                    state_changed ();
+                }
+                return Source.REMOVE;
+            });
+        });
     }
 
     // ---- Unattended Omarchy: latest-version check ----
@@ -214,13 +354,14 @@ public class Machine : Object {
         var l = new SubprocessLauncher (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_MERGE);
         string[] argv;
         if (managed) {
-            argv = { launcher, "start", vm_name, "--daemon" };
+            argv = { launcher, "start", vm_name, "--headless" };
         } else {
             l.setenv ("MACHINE_CPUS", cpus.to_string (), true);
             l.setenv ("MACHINE_MEM_GIB", mem_gib.to_string (), true);
             l.setenv ("MACHINE_DISK_GIB", disk_gib.to_string (), true);
             l.setenv ("MACHINE_SSH_PORT", ssh_port.to_string (), true);
             l.setenv ("MACHINE_NAME", name, true);
+            l.setenv ("MACHINE_DISPLAY", "none", true);   // the app shows the screen itself
             if (recipe == "omarchy" && installer == null) {
                 string? updater = find_runtime ("machine-lab-prepare-omarchy", "prepare-latest-omarchy.py");
                 if (updater == null) {

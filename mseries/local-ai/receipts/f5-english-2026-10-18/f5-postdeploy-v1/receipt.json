@@ -1,0 +1,82 @@
+{
+  "complete": true,
+  "passed": true,
+  "checked_at_utc": "2026-10-18T18:14:41.070764+00:00",
+  "checks": {
+    "input_preferences_preserved": true,
+    "kernel_preserved": true,
+    "mseries-stream-dictate.service-active-enabled": true,
+    "mseries-dictation-input.service-active-enabled": true,
+    "mseries-ai-everyday.service-active-enabled": true,
+    "default_4b_pid_preserved": true,
+    "same_listener_ready": true,
+    "bridge_ready": true,
+    "quiet_reserve_at_final_observation": true,
+    "seven_distinct_installed_cases_passed": true,
+    "no_guard_interruption": true
+  },
+  "source_commit": "5c26ff6c2ff38c89c401c0d109a61244146868d8",
+  "installed_cases": [
+    {
+      "cohort": "f5-installed-v1",
+      "app": "brave",
+      "passed": true,
+      "complete": true,
+      "sha256": "7c9f600936d89c8228bbd283de0997bfe6608680a38d7e9e9a32ae29bdb25e86"
+    },
+    {
+      "cohort": "f5-installed-v1",
+      "app": "gtk3",
+      "passed": true,
+      "complete": true,
+      "sha256": "10ccc518fd57f27ea6c7ada0e2c6aca6d14d1efa467ff337f97fec7443009bcf"
+    },
+    {
+      "cohort": "f5-installed-v1",
+      "app": "gtk4",
+      "passed": true,
+      "complete": true,
+      "sha256": "b06b90dea6c2561d30d0153fd4553c6b2130239b9c5728ab788aad66a5789346"
+    },
+    {
+      "cohort": "f5-installed-v1",
+      "app": "qt6",
+      "passed": true,
+      "complete": true,
+      "sha256": "738a784538f70158ff923df4e413a77ef386d029ad609d077864b148f4f11c28"
+    },
+    {
+      "cohort": "f5-installed-v2",
+      "app": "code",
+      "passed": true,
+      "complete": true,
+      "sha256": "7dccfa93f7778fe73c5dd4046b169a9f3c10410faa97b6d0a68ba104f7d718c4"
+    },
+    {
+      "cohort": "f5-installed-v2",
+      "app": "newelle",
+      "passed": true,
+      "complete": true,
+      "sha256": "294cadabb114577759aa169f0d1715febb87f4d3ea4b0813c800d2aea9ce38a6"
+    },
+    {
+      "cohort": "f5-installed-v2",
+      "app": "tasks",
+      "passed": true,
+      "complete": true,
+      "sha256": "399e98a20357c253e2e3c49661bc7ba709b69edb3b52be17d36ca743a4a29e44"
+    }
+  ],
+  "scope": "One installed GTK4 public-file ASR smoke plus six no-inference app fixtures; initial three argparse failures remain unscored. Post-fixture read-only service/settings check; no microphone/playback/owner window.",
+  "resources": {
+    "min_available_bytes": 11251187712,
+    "max_fan_rpm": 2530.0,
+    "max_temp_c": 49.006
+  },
+  "resource_scope": "Half-second supervisor samples with active guard; includes preserved setup attempts. No acoustic/power claim.",
+  "unstarted_argv_failures_preserved": 3,
+  "microphone_recorded": false,
+  "audio_played": false,
+  "services_changed_by_verification": false,
+  "raw_settings_exported": false
+}

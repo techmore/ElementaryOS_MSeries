@@ -114,6 +114,7 @@ guard). Each is built from a pinned commit, version-gated and best-effort.
 Optional, not automatic: `elementary-mac-enhance --run --with firefox`, rounded screen corners
 (`mseries/install-gala-screen-corners.sh`), the Asahi speaker DSP (`mseries/install-pipewire-lv2.sh` then
 `install-audio-stack.sh --with-dsp`), and the Command/Ctrl key layout (`mseries/apply-desktop-settings.py`).
+For a native GitHub repository dashboard, see the optional [RepoBar-style elementary OS port](mseries/REPOBAR-PORT.md).
 
 ---
 
@@ -172,11 +173,12 @@ Details: [desktop space](mseries/display-space/README.md),
   Tasks tabs backed by Evolution Data Server (EDS), plus an account-setup action.
   Tasks can be added to a chosen writable list and checked off directly in the panel, including repeating tasks.
   Events defaults to a compact upcoming 30-day list with optional Month, Week
-  and Day agendas. Expand rows for calendar, location and description details.
+  and Day views. Week/Day use time slots and event blocks with overlap lanes;
+  Month/Upcoming retain compact lists. Open blocks for full event details.
 - **Tested:** ARM64 builds and isolated notch-layout checks cover cropped,
-  full-height, external, fractional-scale and crowded layouts. Seventeen real-plugin
-  EDS workflow groups cover agenda ranges, navigation, task creation, checkbox saves, live edits,
-  completion/deletion and source changes. CodexBar has recorded build/
+  full-height, external, fractional-scale and crowded layouts. Twenty-one real-plugin
+  EDS workflow groups cover time-grid geometry, navigation, task creation,
+  checkbox saves, live edits, completion/deletion and source changes. CodexBar has recorded build/
   deploy checks and an owner-confirmed native Claude account-switch round trip.
 - **Left to do:** Accept the full-height layout after a hardware boot, including
   clock/popovers and crowded indicators. Complete Google sign-in and a real
@@ -317,23 +319,40 @@ Details: [local AI runtime and results](mseries/local-ai/README.md),
   presets and memory/thermal guards. The desktop MCP adapter reads scoped UTF-8
   files and creates new notes under `~/Documents/Assistant Workspace`; traversal,
   symlink escapes and note overwrites are refused. It also provides explicit
-  task, calendar-read, energy and diagnostic tools. Broad shell and arbitrary-file
+  task/event writes, managed-browser reads, local unsent Mail drafts, energy and
+  diagnostic tools. Broad shell and arbitrary-file
   tools are hidden in the preconfigured desktop profile; coding has a separate
   workspace/tool policy. Later user configuration can expand these capabilities.
 - **Tested:** File create/read and boundary checks pass in retained tests.
-  The task adapter records 53 passing contract tests, three successful
+  The adapter records 72 passing contracts, three successful
   note-to-task/read-back trials and three file-instruction rejection trials.
+  Calendar/browser/local-draft workflows are documented with retained outcomes
+  in the app integration report.
   The coding fixture has its own edit/result verification. These are scoped
   workflow results, not unrestricted autonomous access to the whole computer.
 - **Left to do:** Qualify GUI task workflows, reminders and additional adapters.
-  Calendar writes, browser interaction, mail and messaging need dedicated
-  implementations and tests. Larger-model diagnosis and ANE/voice integration
-  retain separate qualification gaps. Measure local-AI speed and energy against
+  Gmail account access, broader browser actions, messaging and Calendar GUI
+  reminders need dedicated implementations and tests. Larger-model diagnosis
+  and fresh human microphone acceptance retain separate qualification gaps.
+  Measure local-AI speed and energy against
   comparable macOS workloads before claiming parity.
 
 Details: [local assistants](mseries/local-ai/README.md),
 [file/app access and qualification](mseries/local-ai/APP-INTEGRATION.md),
 [measured model results](mseries/local-ai/receipts/2026-10-16.md).
+
+English F5 dictation is merged and activated with quiet Nemotron CPU streaming;
+native ANE/MLX options and English voice replies have
+[scoped acceptance results](mseries/dictation/F5-ENGLISH-ACCEPTANCE.md).
+All seven installed app routes passed within the quiet and memory guards. Read the
+[qualification ledger](mseries/dictation/QUALIFICATION-INDEX.md) before speech
+benchmarks or continuation work; reuse completed evidence and inspect the
+existing queue first.
+
+The [v0.0.1 English F5 desktop update](mseries/releases/v0.0.1/README.md) is a
+release candidate. A fresh ChatGPT physical-F5 attempt failed before recording;
+its input compatibility launcher is staged and awaits a full app relaunch and
+owner check. No v0.0.1 release is published yet.
 
 ---
 

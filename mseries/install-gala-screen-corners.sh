@@ -24,12 +24,14 @@
 # It also applies gala-panel-offset.patch, which lets a panel (the dock) ask the compositor to
 # slide along its edge (io_elementary_pantheon_panel_v1.set_offset, protocol v2). The Dock's
 # Command-drag uses it; without this Gala the dock simply stays centred.
-#
-# And gala-screenshot-window-pick.patch: in the Command+Shift+4 selector a plain click on a window
-# screenshots that window (macOS style); dragging still selects an area.
 # gala-dock-workarea.patch reserves visible dock space and releases it after hiding.
-# gala-panel-barrier.patch stops panels that never auto-hide (Wingpanel) from putting a pointer
-# barrier on the screen edge, which could pin the pointer at the top until slid sideways.
+
+#
+# gala-screenshot-shelf-placement.patch puts the screenshot shelf (a plain Wayland window, so drops into
+# Wayland apps like Signal work) in the bottom-right corner; the shelf switches to it at the next login.
+#
+# And gala-screenshot-window-pick.patch: in the Command+Shift+4 selector, Space switches to
+# window mode (blue highlight on the window under the pointer, click captures it); dragging still selects an area.
 set -euo pipefail
 
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
@@ -84,14 +86,18 @@ git -C "$source_dir" apply "$repo/mseries/patches/gala-screen-corners.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/gala-screen-dim.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/gala-window-corners.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/gala-panel-offset.patch"
-git -C "$source_dir" apply "$repo/mseries/patches/gala-screenshot-window-pick.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/gala-dock-workarea.patch"
-git -C "$source_dir" apply "$repo/mseries/patches/gala-panel-barrier.patch"
+
+git -C "$source_dir" apply "$repo/mseries/patches/gala-screenshot-window-pick.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/gala-screenshot-shelf-placement.patch"
 
 meson setup "$build_dir" "$source_dir" --prefix="$prefix" --libdir=lib --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null
 test -x "$build_dir/src/gala"
 sudo meson install -C "$build_dir" --no-rebuild >/dev/null
+# Tells the screenshot shelf that a Gala started after this point places its Wayland window itself.
+sudo install -d "$prefix/share"
+sudo touch "$prefix/share/mseries-shelf-wayland"
 
 # Launcher with automatic fallback to the stock compositor.
 launcher=$prefix/bin/mseries-gala

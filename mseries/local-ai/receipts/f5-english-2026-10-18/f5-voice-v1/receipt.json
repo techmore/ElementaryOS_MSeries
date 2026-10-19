@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "case": "synthetic-English-voice-reply",
+  "microphone": false,
+  "playback": false,
+  "tools": false,
+  "completed": true,
+  "first_token_s": 1.7331824699999743,
+  "first_sentence_s": 2.181955671000196,
+  "first_wav_s": 2.1998038510000697,
+  "elapsed_s": 2.200059643000259,
+  "reply": "Local voice replies are ready.",
+  "input_chars": 65,
+  "reply_chars": 30,
+  "finish_reason": "stop",
+  "model": "<HOME>/.cache/huggingface/hub/models--mlx-community--Qwen3.5-4B-MLX-4bit/snapshots/32f3e8ecf65426fc3306969496342d504bfa13f3",
+  "endpoint": "http://127.0.0.1:8766/v1",
+  "max_tokens": 128,
+  "synthesizer": "eSpeak English (robotic)",
+  "audio_files": [
+    "<HOME>/Documents/Codex/2026-10-16/we/work/f5-voice-v1/private-audio/sentence-01.wav"
+  ]
+}

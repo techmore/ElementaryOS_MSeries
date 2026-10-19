@@ -1,5 +1,35 @@
 # F5 dictation (local speech to text)
 
+**Start here:** [English F5 integration and engine controls](F5-ENGLISH-ACCEPTANCE.md),
+[canonical qualification index](QUALIFICATION-INDEX.md), and its
+[machine-readable ledger](qualification-index.json). Read these before tests,
+benchmarks or deployment. Reuse completed passes and failures; inspect the owned
+units/lock and resume only genuinely incomplete cases with matching identity.
+
+**Current English-only deployment, October18:**
+[PR155](https://github.com/techmore/ElementaryOS_MSeries/pull/155) is merged at
+`5c26ff6`. English Nemotron CPU streaming is activated with four threads,
+focus-bound IBus output and the owner's existing F5 hold/toggle preference.
+Native ANE and Parakeet MLX remain explicit engine options. Stable recognized
+English words stream into apps; speculative composition is suppressed because
+Chromium could commit a draft on focus loss. The separate Dictation panel keeps
+optional English grammar suggestions apart from the original words.
+
+Activation and **seven installed app-route checks passed** within the quiet
+and memory guards.
+The current [acceptance report](F5-ENGLISH-ACCEPTANCE.md) records exact scope and
+completion proofs. No fresh physical-F5/microphone or universal-app acceptance
+is claimed. [Earlier latency/source research](REALTIME-ENGLISH.md) and all
+completed model/app trials remain evidence to reuse, not a benchmark checklist.
+
+## Historical implementation notes
+
+The sections below retain earlier configurations, commands, measurements and
+failures. They are **not current setup or continuation instructions**. Use the
+acceptance report and ledger above; do not run archived model/microphone tests
+or restart completed queues. Earlier foreign-language probes are historical and
+outside the owner's English-only scope.
+
 Hold **F5** (the microphone key), speak, release: the compatibility service types recognized text into the focused field. Cross-app support and current limits are qualified below.
 Voxtype 1.1.1 (MIT) + whisper.cpp `base.en` on the CPU, ydotool for typing (same stack as Omarchy).
 Audio stays on the Mac and is not saved by default. The explicit `STREAM_KEEP` debug option saves the last capture in the runtime directory; those recordings are private and excluded from published receipts. Install: `bash mseries/install-dictation.sh` (`--uninstall` to remove).
@@ -46,11 +76,11 @@ Streaming details: the mic (AOP `hw:1,0`) is opened by `stream-dictate.py` only 
 - Deployed: `~/.local/share/mseries/stream/stream-dictate.py` and `/usr/local/libexec/mseries/aop-mic.sh` updated, and `mseries-stream-dictate` restarted (active, model ready). The bridge command gives 2 s of room silence at rms 0.0049, peak 0.018 (the old path gave rms 0.035 of noise).
 - Removed a leftover `pw-cat` test source ("test", node `mseries-test-mic`, started 05:20 by the earlier session) that was showing as a microphone in Sound settings.
 
-**Not verified.** A person speaking into F5 with text landing in an app. A voice at normal distance is probably near the -10 to -20 dB rows, but that is not measured. The owner's next F5 attempt will tell: the service logs `peak/rms/floor/spread` per capture, and the existing `debug.conf` drop-in (`STREAM_KEEP=1`) keeps the last capture in RAM at `$XDG_RUNTIME_DIR/dictation-last.wav` (remove the drop-in to stop that). Also not verified: noisy rooms, and the Voxtype path end to end with the new bridge (the bridge conflicts with the streaming unit, so it was not started).
+**Not verified at this historical checkpoint.** A person speaking into F5 with text landing in an app. A voice at normal distance is probably near the -10 to -20 dB rows, but that is not measured. The owner's next F5 attempt will tell: the service logs `peak/rms/floor/spread` per capture, and the former `debug.conf` setting (`STREAM_KEEP=1`) retained the last capture in RAM. Current managed activation unsets it without editing the old drop-in; this paragraph is not an instruction to enable retention or record another microphone test. Also not verified: noisy rooms, and the Voxtype path end to end with the new bridge (the bridge conflicts with the streaming unit, so it was not started).
 
 **Proposal (global audio, not done).** asahi-audio's default source `effect_output.j314-mic` (triforce beamformer, x80) is the system default microphone, but its input target `alsa_input.platform-sound.RawMics` does not exist on this boot: WirePlumber has card 1 (`AppleJ314HPAI`) on the HiFi profile with "availability unknown" and creates no capture node. So browsers and calls using the default mic most likely record silence. The mic was free when WirePlumber started (04:35; bridge first started 05:19), so a busy device is not the cause. Next step, which needs an owner-approved audio-stack change: after a WirePlumber restart or a re-login, check `pw-cli ls Node | grep RawMics`; if it is still missing, try `wpctl set-profile <card-1 device id> pro-audio` and back, and compare against upstream asahi-audio and WirePlumber 1.6.
 
-## Universal insertion — installed, human trial pending
+## Historical universal-insertion checkpoint
 
 The installed IBus bridge commits Unicode text without the clipboard or keyboard-layout-dependent key synthesis. It binds a 120-second session to one focused field, rejects control characters/oversized text and supports Escape cancellation. It now requires both input-method hints and AT-SPI focused-field role/state/identity plus an active top-level window. It does not request surrounding text. Password, unknown/inaccessible and non-editable fields are refused. Qt top-level QWidget containers are recognized through their application parent.
 
@@ -96,15 +126,15 @@ A fresh runtime can use `bash mseries/install-dictation-stream.sh --universal`. 
 
 Backups and preference baselines remain private. Rollback restores prior settings when they still match this feature's values, preserves subsequent owner edits and waits for quiet admission before reloading speech. Remaining: owner F5 confirmation, app-specific coverage beyond the tested frameworks and optional grammar/translation review. The low-overhead everyday assistant and stronger troubleshooting tier follow dictation.
 
-### Optional transcript review panel — qualified private workflow, rollout pending
+### Historical transcript review panel — qualification before the English-only revision
 
-`dictation-panel.py` provides a native GTK4 original/proposed-text view with Grammar, Translate and Translate + improve grammar modes, plus English/French/Spanish/German/Japanese output choices. The two-stage mode shows its intermediate translation and retains it with a warning if grammar review is unavailable. Focus the original field and hold F5 as usual. Review sends only the explicit text to the existing local everyday worker, with no tools, proxy or redirects. It preserves the original on unavailable/cooling/model errors and discards a proposal if its source changes. Copy is deliberate; no text is replaced in another app. Speech recognition remains English-only; translation is post-utterance text review.
+The earlier `dictation-panel.py` provided a native GTK4 original/proposed-text view with Grammar, Translate and Translate + improve grammar modes, plus English/French/Spanish/German/Japanese output choices. Those foreign-language controls have since been removed. The historical two-stage mode showed its intermediate translation and retained it with a warning if grammar review was unavailable. Review sent only the explicit text to the existing local everyday worker, with no tools, proxy or redirects. Original text was preserved on errors; changed sources invalidated proposals. Copy was deliberate; no text was replaced in another app. These records do not describe the current English-only panel.
 
-Twenty-eight contracts and private native UI wiring checks pass. The actual public-file ASR → GTK4 field → French translation → grammar → private clipboard workflow also passed its functional checks, with semantic translation errors retained below. The panel batch is not installed; the human F5 attempt failed (a microphone desktop function appeared rather than listening), and exact prompt/app details remain pending. Fix that path before promoting the panel. After qualification, `--activate` installs the launcher; `--panel` can refresh it without restarting already activated speech services. The panel neither starts another model nor opens the microphone itself.
+Twenty-eight contracts and private native UI wiring checks passed. The actual public-file ASR → GTK4 field → French translation → grammar → private clipboard workflow passed its functional checks, with semantic translation errors retained below. At that checkpoint the panel batch was not installed and a human F5 attempt failed (a microphone desktop function appeared rather than listening). The later owner retry reported words in Original transcript; that limited earlier pass is separate from the newly deployed engine. Keep both records; do not resume the old foreign-language qualification.
 
 Primary API references: [IBus text commit](https://ibus.github.io/docs/ibus-1.5/IBusEngine.html), [AT-SPI accessible role/state APIs](https://docs.gtk.org/atspi2/class.Accessible.html). Metadata availability is tested locally; API documentation alone does not establish app support.
 
-### Live F5 diagnosis and pending review qualification
+### Historical F5 diagnosis and review qualification
 
 The worker now logs only recognition of F5 and a generic pre-capture field refusal, with no typed/spoken content. A five-second parent allowance covers the helper’s four-second reply limit; accessibility RPCs and Begin have their own bounded deadlines. Twenty-three contracts pass. Native GTK/Qt/Wayland and browser checks cover this revision. The owner’s reported microphone-function popup remains a failed live attempt pending exact app/prompt detail; service readiness alone is not an acceptance pass.
 
@@ -126,12 +156,38 @@ Forty-six contracts cover release during load/Begin, focus loss, admission/recov
 
 A separate no-inference native controller test automatically released the model at61.00s:888.25→121.17MiB RSS (767.08MiB reclaimed). Both tests preserved at least11.07GiB available, reported0RPM and stayed below40.0C. No microphone, physical keyboard, owner window or audio route was used. [Receipts and exact evaluated sources](../local-ai/receipts/dictation-lifecycle-2026-10-18/). RSS comparisons are within each process, not a cross-kernel speed ranking or acoustic measurement. The ASR fixture predates the final waiting-state/retry-guard additions; those are covered by unit checks, while native timeout and framework tests pin the later source. Completed model trials were not rerun.
 
-**Deployment remains pending:** the installed owner speech service still uses its earlier eager model. The candidate was tested privately without replacing it during the pending human F5 retry. The reported microphone-function prompt is unresolved; these tests do not prove physical-key delivery or human speech. The optional panel remains uninstalled. Source publication is not promotion to universal hardware acceptance.
+**Historical checkpoint:** deployment was pending while this on-demand candidate was tested privately against an earlier eager installation. The reported microphone-function prompt remained a failed attempt; a later owner retry reported words in Original transcript. Current English-only deployment is recorded at the top of this document. These older tests do not establish a fresh human pass for the newly deployed engine or universal hardware acceptance.
 
 ### Review pilot result
 
 The pinned everyday4B finished6 synthetic text-review cases: **5/6 limited checks**, all within reserve/thermal guards (1.99–3.43s warm request path, min9.48GiB available, max2516RPM/42.75C). The failed French literal translation changed `PWNED` to `PWNÉ`; it did not execute that instruction. A grammar case also left capitalization/punctuation unpolished. [Exact outputs and frozen source](../local-ai/receipts/dictation-review-2026-10-18/qualification-v1.json) preserve the failure. The separate [English/German/Japanese probes](../local-ai/receipts/dictation-review-2026-10-18/additional-languages-v1.json) passed3/3 limited checks (3.21–3.64s, min11.51GiB available, sensors reported0RPM, max40.30C). These are small functional probes, not general translation accuracy, acoustic measurements or kernel-diagnosis evidence.
 
-The [actual private panel workflow](../local-ai/receipts/dictation-review-2026-10-18/panel-workflow-v1.json) used the existing public10.4s LibriSpeech clip:0% normalized WER, first widget text5.00s and complete ASR path12.80s including startup/streaming/flush. Translation and grammar requests took7.02s and7.09s. Original, intermediate and private clipboard checks passed; min11.04GiB available, reported0RPM and max40.17C. Meaning drift remains: “stew” became “soup” and “bruised potatoes” became “crushed potatoes”; the grammar stage returned that translation unchanged. Functional integration is qualified for this fixture, translation fidelity is not. No ambient microphone, physical key or owner app was used. Source/receipts are published through [PR86](https://github.com/techmore/ElementaryOS_MSeries/pull/86); human F5 acceptance and on-device rollout remain open.
+The [actual private panel workflow](../local-ai/receipts/dictation-review-2026-10-18/panel-workflow-v1.json) used the existing public10.4s LibriSpeech clip:0% normalized WER, first widget text5.00s and complete ASR path12.80s including startup/streaming/flush. Translation and grammar requests took7.02s and7.09s. Original, intermediate and private clipboard checks passed; min11.04GiB available, reported0RPM and max40.17C. Meaning drift remains: “stew” became “soup” and “bruised potatoes” became “crushed potatoes”; the grammar stage returned that translation unchanged. Functional integration was qualified for this fixture, translation fidelity was not. No ambient microphone, physical key or owner app was used. Source/receipts are preserved through [PR86](https://github.com/techmore/ElementaryOS_MSeries/pull/86); its then-pending rollout is historical, not the current deployment state.
 
 The follow-up eight-cycle native **reload-only** soak held closed RSS around107.14–107.20MiB after the first cycle; the last four samples spanned48KiB. This is a bounded no-inference observation, not a repeated-recognition or indefinite always-on soak. A separate public-file pipe-start/close and silent-child cancellation test passed (cancel0.203s, no native SDK/inference). Current source also polls a stalled active pipe so release/resource guards stay live, covered by the46-contract suite. These changes and frozen-source differences are retained separately rather than repeating completed ASR quality trials.
+
+## Historical standalone Apple Neural Engine candidate — 2026-10-18
+
+`ane-dictate.py` runs Parakeet TDT 0.6B v3 (Core ML reference, encoder on the ANE via omarchy-ane, mel/decoder on Honeykrisp) over the whole utterance after F5 is released. It is a standalone service (`mseries-ane-dictate.service`, conflicts with the other F5 services; **not installed or enabled**) and is not wired into the lazy-controller panel. Offline: `python3 ane-dictate.py --wav FILE --repeat 5`.
+
+Measured on this M1 Pro (pinned LibriSpeech clip, warm runs, private Mesa 26.2.4 ICD): 10.4 s of audio in 0.55-0.58 s (RTF 0.055, 5 runs after warm-up), versus 3.0 s median (RTF 0.29) for the current transcribe.cpp streaming path; a 41.7 s clip in 1.16 s. The text is word for word the same as the CPU Parakeet output on that clip. Cold first call 2.2 s (encoder emission is cached on disk; the very first ever run took 35-63 s).
+Upstream `parakeet_dictation` is out of step with the installed mlx-omarchy 0.7.33 CLI (calls a removed `_verify_assets`, builds `AneIsland` without `seal_assets`); `ane-worker-shim.py` restores the CLI's asset sealing without editing the wheel. Fixes in the client: runs of dots and a stray non-Latin token on trailing silence are removed, and audio over ~29 s is cut at the quietest 100 ms so the model's fixed 30 s chunking never splits a word (without it, one of four repeats of a 41.7 s clip garbled a word at the boundary; with it, all four were intact). `test_ane_dictate.py`: 6 tests.
+**Not verified:** one clip only (not a WER set); any live F5 session; the built-in microphone blocker (see the handoff) is unchanged, so spoken input through this path is untested; panel integration; a hung ANE submission needs a reboot per upstream.
+
+### ANE engine inside the F5 controller — 2026-10-18
+
+`STREAM_ENGINE=ane` makes `stream-dictate.py` (the lazy-model controller, with its resource guard, idle release, IBus/ydotool output and cancel handling) use `dictation_ane.AneModel` instead of transcribe.cpp: audio is collected while F5 is held and transcribed on release (`run_ane`), so there is no live partial text in this mode. The ANE worker starts on first F5 and is closed by the idle trim like the other model. Default stays `stream`; enable with `systemctl --user edit mseries-stream-dictate` and `Environment=STREAM_ENGINE=ane` (not done on the owner's service).
+Verified offline through the real controller (`STREAM_TEST_WAV` clip played at real time, dry output): the full 162-character sentence arrived as one commit about 1.8 s after the audio ended on the first (cold) call. `STREAM_ENGINE` unset: 12 lifecycle/contract tests unchanged and passing. Not verified: live microphone, IBus insertion in apps, idle release of the worker.
+
+### Press-once mode — 2026-10-18
+
+`STREAM_MODE=toggle` (default `hold`): press F5 once to start (chime, "Listening…"), press again to finish; Escape cancels; key repeat and release are ignored. Combine with `STREAM_ENGINE=ane` through a systemd drop-in (`Environment=STREAM_ENGINE=ane` and `Environment=STREAM_MODE=toggle`). Not done: a mic cursor. Pantheon/Gala has no API for changing the pointer over another app's text field; feedback is the start/stop chimes, the notification and the panel status.
+
+### Rolling ANE streaming — 2026-10-18
+
+With `STREAM_ENGINE=ane` the controller no longer waits for the second F5: every `STREAM_ANE_INTERVAL` (0.6 s) of new audio the whole segment is re-decoded on the ANE (about 0.05 x real time) and the words two consecutive passes agree on, minus the newest one, are typed (append-only; the tail is typed after the final pass on release, 0.6 s measured on 10 s and 41 s clips). Segments longer than 16 s are closed at the quietest 100 ms of the last 5 s and the overlap with the next segment is trimmed.
+Offline through the real controller (clip played at real time): a 10.4 s sentence appeared as 10 chunks of 1-6 words about every 0.6 s, the first about 4 s after start including the one-time worker warm-up. A 41.7 s clip with no pauses (the same sentence four times back to back) came out with 2 small errors at forced mid-word cuts; real speech with pauses is expected to do better, unmeasured. Not verified: live mic, how many words you perceive per second, CPU/thermal cost of repeated passes.
+
+### Latency tuning and typing-interrupt — 2026-10-18
+
+Typing any non-modifier key while dictating (ANE engine) ends dictation at once and drops words not yet typed, so nothing lands in the middle of your sentence (Escape still cancels). Latency was measured offline on the pinned 10.4 s clip with `STREAM_ANE_TRACE=1`: lag = audio time when a word was typed minus the earliest audio prefix whose decode contained it. Every pass costs about 0.5 s whatever the length (the encoder window is a fixed 30 s), so the submit interval does not matter below that (0.3, 0.4 and 0.6 s all gave a 2.0 s median lag with 1 held-back word). Typing from a single pass (`STREAM_ANE_AGREE=1`) gives median lag 0.6-1.3 s but typed hallucinated words from truncated audio ("Well, I'm World War"), so two agreeing passes stay. Holding back no extra word (`STREAM_ANE_HOLD=0`, now the default) gives a 1.5 s median (3 runs, p90 about 2.9 s, includes the cold start of the first words). Idle release of the ANE worker is 180 s instead of 60 s. A fourth back-to-back test run was refused by the resource guard, as designed.

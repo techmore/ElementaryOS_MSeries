@@ -1,0 +1,8 @@
+{
+  "classification": "post-completion-supervisor-receipt-error",
+  "failure_kind": "IsADirectoryError",
+  "scope": "Source digest enumeration included Python __pycache__. CPU model receipt complete with both trials retained. Resource guard ran but summary samples were not saved; exact maximum sensor values unavailable. MLX had not started. Resume skips completed CPU trials.",
+  "quality_failure": false,
+  "completed_cpu_trials": 2,
+  "model_trials_repeated": false
+}

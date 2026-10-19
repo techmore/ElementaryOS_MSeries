@@ -16,7 +16,7 @@ brave=/usr/lib/mseries-brave/brave
 [[ -x $brave ]] || brave=/opt/brave.com/brave/brave
 [[ -x $brave ]] || brave=$(readlink -f /usr/bin/brave-browser-stable)
 [[ -x $brave ]] || { echo 'brave-youtube: Brave runtime is missing' >&2; exit 1; }
-mkdir -p "$profile"
+(umask 077; mkdir -p "$profile")
 
 # Widevine (DRM) for YouTube Movies: this profile is separate, so it never got the CDM the normal Brave has.
 # Only while this profile is not running (Brave rewrites Local State on exit). Copy the normal profile's CDM if it
@@ -25,7 +25,13 @@ mkdir -p "$profile"
 ensure_widevine() {
   local cdm=$profile/WidevineCdm main=$HOME/.config/BraveSoftware/Brave-Browser/WidevineCdm src ver
   pgrep -u "$USER" -f -- "--user-data-dir=$profile( |$)" >/dev/null && return 0
-  [[ -f $profile/Local\ State ]] || return 0   # first run: Brave creates the profile; provisioned next launch
+  # Provision before the first browser process too. Otherwise the first DRM
+  # movie cannot work until the user discovers that a relaunch is required.
+  # noclobber preserves a profile another launcher may have just initialized.
+  if [[ ! -e $profile/Local\ State ]]; then
+    (umask 077; set -o noclobber; printf '{}\n' > "$profile/Local State") 2>/dev/null ||
+      [[ -f $profile/Local\ State ]] || return 1
+  fi
   if [[ -s $cdm/latest-component-updated-widevine-cdm ]] &&
      python3 -I -c 'import json,sys;sys.exit(0 if json.load(open(sys.argv[1])).get("brave",{}).get("widevine_opted_in") else 1)' "$profile/Local State" 2>/dev/null; then
     return 0
@@ -67,12 +73,13 @@ for s in "${WAYLAND_DISPLAY:-wayland-0}" pipewire-0 pulse/native; do
 done
 # Passkey QR code (hybrid/caBLE) needs Bluetooth through BlueZ on the system bus. Expose ONLY org.bluez via a
 # filtering proxy, never the raw system bus.
-sysbus="$runtime/brave-youtube-sysbus"
 if command -v xdg-dbus-proxy >/dev/null && [[ -S /run/dbus/system_bus_socket ]]; then
-  rm -f "$sysbus"
+  # Separate profiles can run together. Never unlink another launcher's socket.
+  proxy_dir=$(mktemp -d "$runtime/brave-youtube-sysbus.XXXXXX")
+  sysbus="$proxy_dir/bus"
   xdg-dbus-proxy unix:path=/run/dbus/system_bus_socket "$sysbus" --filter --talk=org.bluez &
   proxy_pid=$!
-  trap 'kill $proxy_pid 2>/dev/null; rm -f "$sysbus"' EXIT
+  trap 'kill "$proxy_pid" 2>/dev/null || true; rm -f "$sysbus"; rmdir "$proxy_dir"' EXIT
   for _ in $(seq 1 50); do [[ -S $sysbus ]] && break; sleep 0.1; done
   args+=(--dir /run/dbus --bind "$sysbus" /run/dbus/system_bus_socket
          --setenv DBUS_SYSTEM_BUS_ADDRESS unix:path=/run/dbus/system_bus_socket)
@@ -93,7 +100,7 @@ if [[ ${1:-} == --test ]]; then   # headless capability + playback check against
 fi
 
 flags=(--user-data-dir="$profile" --no-sandbox --ozone-platform=wayland
-  --enable-features=AcceleratedVideoDecodeLinux,AcceleratedVideoDecodeLinuxGL,VaapiIgnoreDriverChecks
+  "--enable-features=AcceleratedVideoDecodeLinux,AcceleratedVideoDecodeLinuxGL,VaapiIgnoreDriverChecks"
   --ignore-gpu-blocklist --no-first-run --no-default-browser-check --disable-breakpad --test-type)   # --test-type hides the "unsupported flag: --no-sandbox" bar; the bwrap container is the sandbox
 url="${1:-https://www.youtube.com}"
 bwrap "${args[@]}" "$brave" "${flags[@]}" --app="$url"

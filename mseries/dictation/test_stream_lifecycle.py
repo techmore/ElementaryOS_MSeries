@@ -20,7 +20,7 @@ class StreamTests(unittest.TestCase):
         for name, value in [('Typer', Mock()), ('load_policy', Mock(return_value={})),
                             ('resource_reasons', Mock(return_value=[])), ('status', Mock()),
                             ('notify', Mock()), ('tone', Mock()), ('input_call', Mock(return_value='token')),
-                            ('OUTPUT', 'ibus'), ('TEST_INSERT', False), ('DRY', False)]:
+                            ('ENGINE', 'stream'), ('OUTPUT', 'ibus'), ('TEST_INSERT', False), ('DRY', False)]:
             p = patch.object(stream, name, value)
             self.stack.append(p); p.start()
         stream.Typer.return_value.q.unfinished_tasks = 0
@@ -47,6 +47,30 @@ class StreamTests(unittest.TestCase):
         self.assertEqual([x.args[0] for x in stream.input_call.call_args_list], ['begin', 'check'])
         self.d.run.assert_called_once_with(self.model)
         self.d.typer.finish.assert_called_once_with('token')
+
+    def test_ready_waits_for_final_field_output(self):
+        entered, release = threading.Event(), threading.Event()
+        def drain():
+            entered.set();self.assertTrue(release.wait(3));return True
+        self.d.typer.drain.side_effect=drain
+        self.d.start();self.assertTrue(entered.wait(2))
+        self.assertTrue(self.d.active)
+        self.assertEqual(stream.status.call_args.args,('finishing',))
+        release.set();self.finish()
+        self.assertEqual(stream.status.call_args.args,('ready',))
+
+    def test_drain_timeout_refuses_ready_and_revokes_field_lease(self):
+        self.d.typer.drain.return_value=False
+        self.d.start();self.finish()
+        self.assertEqual(self.d.error,'InputDrainTimeout')
+        self.assertEqual(stream.status.call_args.args,('error',))
+        self.assertEqual(stream.input_call.call_args.args,('cancel',))
+
+    def test_cancel_is_distinct_from_success_for_live_review(self):
+        self.d.run.side_effect=lambda _:self.d.cancel()
+        self.d.start();self.finish()
+        self.d.typer.finish.assert_not_called()
+        self.assertEqual(stream.status.call_args.args,('cancelled',))
 
     def test_release_during_load_does_not_open_capture(self):
         entered, release = threading.Event(), threading.Event()
@@ -75,7 +99,7 @@ class StreamTests(unittest.TestCase):
 
     def test_focus_loss_after_load_prevents_capture_and_releases_unused_model(self):
         import subprocess
-        stream.input_call.side_effect = ['token', subprocess.TimeoutExpired('check', 4)]
+        stream.input_call.side_effect = ['token', subprocess.TimeoutExpired('check', 4), None]
         self.d.start(); self.finish()
         self.d.run.assert_not_called()
         self.model.close.assert_called_once()

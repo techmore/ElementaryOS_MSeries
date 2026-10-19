@@ -3,6 +3,8 @@
 namespace MSeries {
     internal class SettingsWindow : Gtk.ApplicationWindow {
         private SettingsModel model = new SettingsModel ();
+        private PanelPreferences panel_preferences = new PanelPreferences ();
+        private Gtk.Label panel_notice;
         private string app_path;
         private string cli_path;
         private string config_path;
@@ -35,6 +37,23 @@ namespace MSeries {
             var switcher = new Gtk.StackSwitcher () { stack = stack };
             var header = new Gtk.HeaderBar ();
             header.title_widget = switcher;
+            var about = new Gtk.Button.from_icon_name ("help-about-symbolic") {
+                tooltip_text = "About CodexBar"
+            };
+            about.clicked.connect (() => {
+                var dialog = new Gtk.AboutDialog () {
+                    transient_for = this, modal = true, program_name = "CodexBar",
+                    logo_icon_name = "mseries-codexbar-openai-symbolic",
+                    comments = "Seven-day token counts cover coding activity recorded on this computer across accounts and providers. They include processed input, output and cached tokens. They do not represent remaining plan quota, activity on other devices, or ordinary ChatGPT, claude.ai and grok.com chats.",
+                    website = "https://github.com/techmore/ElementaryOS_MSeries",
+                    website_label = "elementary OS port"
+                };
+                dialog.present ();
+            });
+            header.pack_end (about);
+            if (start_page == "about") {
+                Idle.add (() => { about.clicked (); return Source.REMOVE; });
+            }
             set_titlebar (header);
 
             notice = new Gtk.Label ("") { xalign = 0, wrap = true, visible = false, margin_start = 16, margin_end = 16 };
@@ -73,13 +92,19 @@ namespace MSeries {
                 Process.spawn_command_line_sync ("%s config providers --format json".printf (Shell.quote (cli_path)), out out_text);
                 var parser = new Json.Parser ();
                 parser.load_from_data (out_text, -1);
-                var array = parser.get_root ().get_array ();
-                for (uint i = 0; i < array.get_length (); i++) {
-                    var item = array.get_object_element (i);
-                    var id = item.get_string_member ("provider");
-                    names.insert (id, item.get_string_member ("displayName"));
+                var root = parser.get_root ();
+                var array = root != null && root.get_node_type () == Json.NodeType.ARRAY ? root.get_array () : null;
+                for (uint i = 0; array != null && i < array.get_length (); i++) {
+                    // External CLI output: skip malformed entries instead of tripping GLib criticals.
+                    var node = array.get_element (i);
+                    if (node.get_node_type () != Json.NodeType.OBJECT) continue;
+                    var item = node.get_object ();
+                    var id = item.get_string_member_with_default ("provider", "");
+                    if (!SettingsModel.valid_provider_id (id) || id in picker_ids) continue;
+                    var display_name = item.get_string_member_with_default ("displayName", id);
+                    names.insert (id, display_name);
                     picker_ids += id;
-                    picker_model.append (item.get_string_member ("displayName"));
+                    picker_model.append (display_name);
                 }
             } catch (Error e) {
                 // the picker stays empty; the provider list still works
@@ -166,6 +191,7 @@ namespace MSeries {
         private Gtk.Widget row (string title, string? subtitle, Gtk.Widget control) {
             var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
             line.add_css_class ("cb-row");
+            control.update_property (Gtk.AccessibleProperty.LABEL, title, -1);
             var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 1) { hexpand = true, valign = Gtk.Align.CENTER };
             text.append (new Gtk.Label (title) { xalign = 0, wrap = true });
             if (subtitle != null) {
@@ -184,6 +210,22 @@ namespace MSeries {
             sw.notify["active"].connect (() => {
                 model.values.set_boolean_member (key, sw.active);
                 changed (key);
+            });
+            return sw;
+        }
+
+        private Gtk.Switch panel_toggle (string key) {
+            var sw = new Gtk.Switch () { active = panel_preferences.get_bool (key) };
+            bool reverting = false;
+            sw.notify["active"].connect (() => {
+                if (loading || reverting) { return; }
+                if (!panel_preferences.save_bool (key, sw.active)) {
+                    reverting = true;
+                    sw.active = panel_preferences.get_bool (key);
+                    reverting = false;
+                }
+                panel_notice.label = panel_preferences.last_error;
+                panel_notice.visible = panel_preferences.last_error.length > 0;
             });
             return sw;
         }
@@ -275,16 +317,67 @@ namespace MSeries {
             return sw;
         }
 
+        private Gtk.DropDown token_location () {
+            var picker = new Gtk.DropDown (new Gtk.StringList ({ "Menu bar and dropdown", "Dropdown only" }), null) {
+                selected = panel_preferences.get_bool ("showTokens") ? 0 : 1
+            };
+            bool reverting = false;
+            picker.notify["selected"].connect (() => {
+                if (loading || reverting) return;
+                if (!panel_preferences.save_bool ("showTokens", picker.selected == 0)) {
+                    reverting = true;
+                    picker.selected = panel_preferences.get_bool ("showTokens") ? 0 : 1;
+                    reverting = false;
+                }
+                panel_notice.label = panel_preferences.last_error;
+                panel_notice.visible = panel_preferences.last_error.length > 0;
+            });
+            return picker;
+        }
+
+        private Gtk.DropDown quota_style () {
+            var picker = new Gtk.DropDown (new Gtk.StringList ({ "Literal percentages", "Visual status dots" }), null) {
+                selected = panel_preferences.get_bool ("compactQuota") ? 1 : 0
+            };
+            bool reverting = false;
+            picker.notify["selected"].connect (() => {
+                if (loading || reverting) return;
+                if (!panel_preferences.save_bool ("compactQuota", picker.selected == 1)) {
+                    reverting = true;
+                    picker.selected = panel_preferences.get_bool ("compactQuota") ? 1 : 0;
+                    reverting = false;
+                }
+                panel_notice.label = panel_preferences.last_error;
+                panel_notice.visible = panel_preferences.last_error.length > 0;
+            });
+            return picker;
+        }
+
         private Gtk.Widget build_display () {
             var root = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
-            var quota = section ("Quota");
+            var panel = section ("Wingpanel");
+            add_row (panel, row ("Quota style", "Dots hide reset times; hover for percentages and resets", quota_style ()));
+            add_row (panel, row ("Token counts", "Keep seven-day totals in the dropdown to save bar space", token_location ()));
+
+            add_row (panel, row ("Quota percentages", "Show percentages in the bar and quota text", panel_toggle ("showPercent")));
+            add_row (panel, row ("Time until reset", "Show reset countdowns in the bar and quota text", panel_toggle ("showReset")));
+            add_row (panel, row ("Other accounts in panel", "Show other accounts in the bar only", panel_toggle ("showAccounts")));
+            add_row (panel, row ("Account hints", "Mark the most available account and next weekly reset", panel_toggle ("showHints")));
+            root.append (panel);
+            panel_notice = new Gtk.Label (panel_preferences.last_error) {
+                xalign = 0, wrap = true, visible = panel_preferences.last_error.length > 0
+            };
+            panel_notice.add_css_class ("cb-notice");
+            root.append (panel_notice);
+
+            var quota = section ("CodexBar app", "Quota display in the separate CodexBar window");
             add_row (quota, row ("Show", null, choice ("quotaDisplay", { "remaining", "used" }, { "Remaining", "Used" })));
             add_row (quota, row ("Reset time", null, choice ("resetDisplay", { "countdown", "absolute", "both" }, { "Countdown", "Clock time", "Both" })));
             add_row (quota, row ("Highlight low quota", null, toggle ("warningColors")));
             add_row (quota, row ("Show pace", "Whether you're ahead of or behind an even pace", toggle ("showPace")));
             root.append (quota);
 
-            var bar = section ("Menu bar");
+            var bar = section ("Tray icon", "Detail in CodexBar’s tray icon");
             add_row (bar, row ("Providers in the bar", "How many to show side by side", spin ("barProviders", 0, 80, 1)));
             add_row (bar, row ("Session, weekly and pace", "More detail next to each provider", toggle ("showBarDetail")));
             add_row (bar, row ("Per-model caps", null, toggle ("showScopedCaps")));
@@ -294,7 +387,7 @@ namespace MSeries {
 
         private Gtk.Widget build_providers () {
             var root = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
-            var shown = section ("Providers", "The order here is the order in the panel. Sign in and switch accounts from the panel's Accounts section.");
+            var shown = section ("Providers", "The order here is the order in the panel. Use + on each card to add accounts, and Switch beside a saved account.");
             provider_list = new Gtk.ListBox () { selection_mode = Gtk.SelectionMode.NONE };
             provider_list.add_css_class ("cb-listbox");
             card_of (shown).append (provider_list);
@@ -353,7 +446,10 @@ namespace MSeries {
         private Gtk.Widget provider_row (string id, int index, int count) {
             var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
             line.add_css_class ("cb-row");
-            var mark = "mseries-codexbar-%s-symbolic".printf (id == "codex" ? "openai" : id == "opencodego" ? "opencode" : id);
+            string mark_name = id;
+            if (id == "codex") mark_name = "openai";
+            else if (id == "opencodego") mark_name = "opencode";
+            var mark = "mseries-codexbar-%s-symbolic".printf (mark_name);
             var icon = new Gtk.Image.from_icon_name (Gtk.IconTheme.get_for_display (Gdk.Display.get_default ()).has_icon (mark)
                 ? mark : "application-x-executable-symbolic") { pixel_size = 16 };
             line.append (icon);

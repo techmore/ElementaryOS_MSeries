@@ -1,5 +1,19 @@
 # Reboot queue — what is staged and what each reboot unlocks
 
+## Current state — 2026-10-18 23:20 EDT
+
+- **Running:** `7.1.12-elementary-aurora20-enh1` from the one-shot
+  `elementary-aurora20-enh1-diagnostic` entry. It reached the desktop
+  ([receipt](aurora/hardware-tests/2026-10-18-j314s-enh1-diagnostic-boot.json)).
+  That is one boot; the candidate is still unqualified and the earlier hang is unexplained.
+- **Next normal reboot:** `mseries-full-height` on `.20` (GRUB `next_entry` is empty).
+- **Nothing is armed.** Booting enh1 again needs a new owner OK; promoting it to
+  default is DeepSeek's/owner's decision.
+- **Relogin not needed:** the running Gala already loads the #244 libmutter fix.
+  No Gala crash in the first 31 minutes of this session.
+
+The section below predates the enh1 trials and is kept as history.
+
 ## Separate Aurora enhancement build — do not deploy with the .20 installer
 
 The [enhancement candidate](aurora/enhancements/README.md) is source/build work

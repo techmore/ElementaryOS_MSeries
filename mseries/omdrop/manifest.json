@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "netmojo.omdrop",
+  "name": "Omdrop - AirDrop for Omarchy",
+  "version": "0.18.1",
+  "author": "Brent Kearney",
+  "license": "MIT",
+  "description": "Send and receive files with nearby Apple devices over AirDrop, on Macs and PCs running Omarchy. Marketplace review lags releases; to install the latest version straight from GitHub, run: omarchy plugin add https://github.com/netmojo-systems/omdrop-plugin.git",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "omdrop",
+    "description": "Become visible to nearby Apple devices for a bounded window, receive what they send, and send them files from a radar of who is nearby.",
+    "category": "Network",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "windowMinutes": 10
+    },
+    "schema": [
+      {
+        "key": "windowMinutes",
+        "type": "integer",
+        "label": "Receive window (minutes)",
+        "min": 1,
+        "max": 120,
+        "step": 1,
+        "defaultValue": 10
+      }
+    ]
+  }
+}

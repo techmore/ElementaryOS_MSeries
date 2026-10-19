@@ -38,7 +38,7 @@ MAX_ATTEMPTS=3
 PATH=$PAYLOAD/shim:$PATH   # `sudo` as a no-op: the install scripts were written for a user account
 export PATH DEBIAN_FRONTEND=noninteractive
 
-DEFAULT=(brave video gestures network desktop-user-deps netusage-policy quick sound keyboard files osk)
+DEFAULT=(brave video gestures network desktop-user-deps netusage-policy quick sound keyboard files osk battery-panel)
 declare -A SCRIPT=(
   [brave]=install-brave.sh [video]=install-video-decode.sh [gestures]=install-touchegg.sh
   [network]=install-network-throughput.sh [quick]=install-quick-settings-brightness.sh
@@ -46,6 +46,7 @@ declare -A SCRIPT=(
   [files]=install-files-portal-fix.sh [osk]=install-gala-osk-fix.sh
   [firefox]=install-native-firefox.sh
   [netusage-policy]=install-netusage-policy.sh
+  [battery-panel]=install-battery-eta.sh
 )
 # Build requirements per module (apt names). A module whose packages cannot be
 # installed is skipped, not guessed at.
@@ -59,6 +60,7 @@ declare -A DEPS=(
   [keyboard]="libxml2-dev xkb-data git meson ninja-build valac gettext pkg-config libwingpanel-9-dev libgranite-7-dev libgtk-4-dev libgnome-desktop-4-dev libibus-1.0-dev libgee-0.8-dev"
   [files]="git meson ninja-build valac pkg-config libgtk-3-dev libgranite-dev libhandy-1-dev libportal-dev libportal-gtk3-dev libpoppler-glib-dev libcanberra-dev libsqlite3-dev libgee-0.8-dev libgit2-glib-1.0-dev libcloudproviders-dev libnotify-dev libwingpanel-9-dev"
   [osk]="git meson ninja-build valac pkg-config python3 libmutter-18-dev libgala-dev libgranite-7-dev libgtk-4-dev libibus-1.0-dev libgee-0.8-dev"
+  [battery-panel]="git meson ninja-build valac gettext pkg-config libgtop2-dev libudev-dev libwingpanel-9-dev libgranite-7-dev libgtk-4-dev libnotify-dev"
   [firefox]="curl gpg"
   [desktop-user-deps]="curl ca-certificates python3 unzip procps qml6-module-qtquick qml6-module-qtquick-controls qml6-module-qtquick-layouts qml6-module-qtquick-templates qml6-module-qtquick-window qml6-module-qtqml-workerscript libqt6widgets6 libqt6svg6 qt6-wayland xdg-terminal-exec"
 )

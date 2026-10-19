@@ -1,0 +1,1055 @@
+{
+  "status": "Interrupted; not a completed two-hour qualification",
+  "runtime_commit": "9747eb0648b9d18217c8f4d928ee5a510c4014e9",
+  "source_sha256": {
+    "__init__.py": "9c5824ea99503be3b0f538df8daefbf912ecb6850b5835d05dbe33d46fd9d373",
+    "app.py": "dddfd74f3e79b5b200414680e069848f486751b6c49eb8d7d641abedfedd10b5",
+    "backend.py": "a03713d92e38e954980117935988d4bce0c4d1b9c85eea715d4d4211ed881e6f",
+    "ui.py": "5aa7c69449cecf04a3b28611806aebbc34642af7dab660f303b44e73a79545c0",
+    "window.py": "9f5e7bd244bed8134ce6a6ef20cd2bfccf28d4d8ba290a5d146a90759380104c",
+    "runtime.py": "4748899d3786599a6fbc149b69ee505df9b38a7d111330c2163f5cbcca57e140"
+  },
+  "started_utc": "2026-10-18T15:19:00Z",
+  "ended_utc": "2026-10-18T16:58:22Z",
+  "duration_seconds": 5961.804,
+  "planned_seconds": 7200,
+  "completed_cycles": 7,
+  "planned_cycles": 8,
+  "developer_workflow_groups_passed": 70,
+  "frame_groups_reported_passed_by_old_runner": 4,
+  "complete_frame_probes": 3,
+  "partial_frame_probes": 1,
+  "unavailable_frame_probes": 3,
+  "cleanup": {
+    "owned_remaining": [],
+    "existing_guests_preserved": true
+  },
+  "desktop": {
+    "display": "GdkWaylandDisplay",
+    "renderer": "VulkanRenderer",
+    "theme": "io.elementary.stylesheet.blueberry",
+    "surface": "GdkWaylandToplevel"
+  },
+  "quiet_method": "Per-cycle mapped, non-minimized idle samples with no jobs/commands/writes, one toplevel; exclude initial 60 seconds of each idle interval and final 10 seconds before closure. Focus sampled; all selected idle samples inactive. CPU from consecutive samples within the same cycle, gaps <10 seconds. One core = 100%; CLI children separate, daemon/VM/compositor excluded.",
+  "quiet_duration_seconds": 5219.990999999999,
+  "quiet_app_cpu_percent": 0.17041462332023175,
+  "quiet_cli_cpu_percent": 0.051272425565484635,
+  "cycles": [
+    {
+      "cycle": 1,
+      "start_seconds": 105.189,
+      "end_seconds": 900.204,
+      "duration_seconds": 795.015,
+      "app_cpu_percent": 0.17384464444067083,
+      "cli_cpu_percent": 0.09192291969333913,
+      "active_sample_percent": 0.0,
+      "rss_kib": {
+        "median": 190720.0,
+        "min": 190464,
+        "max": 190736,
+        "first": 190720,
+        "last": 190464
+      },
+      "pss_kib": {
+        "median": 84609.0,
+        "min": 81220,
+        "max": 97094,
+        "first": 96894,
+        "last": 87802
+      },
+      "private_kib": {
+        "median": 70880.0,
+        "min": 70800,
+        "max": 75088,
+        "first": 75088,
+        "last": 70880
+      },
+      "fds": {
+        "median": 47.0,
+        "min": 47,
+        "max": 49,
+        "first": 47,
+        "last": 47
+      },
+      "threads": {
+        "median": 13.0,
+        "min": 13,
+        "max": 14,
+        "first": 13,
+        "last": 13
+      },
+      "buffers": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "buffer_chars": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "histories": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "rows": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "dashboard_rows": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "reads": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "sources": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      }
+    },
+    {
+      "cycle": 2,
+      "start_seconds": 1010.199,
+      "end_seconds": 1800.192,
+      "duration_seconds": 789.993,
+      "app_cpu_percent": 0.18398719988658124,
+      "cli_cpu_percent": 0.08151198808090698,
+      "active_sample_percent": 0.0,
+      "rss_kib": {
+        "median": 192944,
+        "min": 192928,
+        "max": 193008,
+        "first": 192976,
+        "last": 192928
+      },
+      "pss_kib": {
+        "median": 85834,
+        "min": 84601,
+        "max": 88174,
+        "first": 86908,
+        "last": 87110
+      },
+      "private_kib": {
+        "median": 73392,
+        "min": 73248,
+        "max": 73776,
+        "first": 73392,
+        "last": 73392
+      },
+      "fds": {
+        "median": 48,
+        "min": 48,
+        "max": 54,
+        "first": 48,
+        "last": 48
+      },
+      "threads": {
+        "median": 13,
+        "min": 13,
+        "max": 14,
+        "first": 13,
+        "last": 13
+      },
+      "buffers": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "buffer_chars": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "histories": {
+        "median": 2,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "rows": {
+        "median": 2,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "dashboard_rows": {
+        "median": 2,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "reads": {
+        "median": 2,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "sources": {
+        "median": 2,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      }
+    },
+    {
+      "cycle": 3,
+      "start_seconds": 1905.201,
+      "end_seconds": 2700.196,
+      "duration_seconds": 794.9949999999999,
+      "app_cpu_percent": 0.1703596877967783,
+      "cli_cpu_percent": 0.09495078585399909,
+      "active_sample_percent": 0.0,
+      "rss_kib": {
+        "median": 193712.0,
+        "min": 193680,
+        "max": 193744,
+        "first": 193728,
+        "last": 193680
+      },
+      "pss_kib": {
+        "median": 88418.5,
+        "min": 85770,
+        "max": 88832,
+        "first": 86797,
+        "last": 88696
+      },
+      "private_kib": {
+        "median": 74192.0,
+        "min": 74112,
+        "max": 74720,
+        "first": 74192,
+        "last": 74560
+      },
+      "fds": {
+        "median": 48.0,
+        "min": 48,
+        "max": 50,
+        "first": 48,
+        "last": 48
+      },
+      "threads": {
+        "median": 13.0,
+        "min": 13,
+        "max": 14,
+        "first": 13,
+        "last": 13
+      },
+      "buffers": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "buffer_chars": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "histories": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "rows": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "dashboard_rows": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "reads": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "sources": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      }
+    },
+    {
+      "cycle": 4,
+      "start_seconds": 2800.197,
+      "end_seconds": 3600.191,
+      "duration_seconds": 799.9939999999997,
+      "app_cpu_percent": 0.16440185801393503,
+      "cli_cpu_percent": 0.01857063927979443,
+      "active_sample_percent": 0.0,
+      "rss_kib": {
+        "median": 194032,
+        "min": 193536,
+        "max": 194112,
+        "first": 194112,
+        "last": 193536
+      },
+      "pss_kib": {
+        "median": 87648,
+        "min": 85532,
+        "max": 89746,
+        "first": 87871,
+        "last": 86030
+      },
+      "private_kib": {
+        "median": 74576,
+        "min": 74400,
+        "max": 75184,
+        "first": 74640,
+        "last": 74400
+      },
+      "fds": {
+        "median": 48,
+        "min": 48,
+        "max": 50,
+        "first": 48,
+        "last": 48
+      },
+      "threads": {
+        "median": 13,
+        "min": 13,
+        "max": 14,
+        "first": 13,
+        "last": 13
+      },
+      "buffers": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "buffer_chars": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "histories": {
+        "median": 2,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "rows": {
+        "median": 2,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "dashboard_rows": {
+        "median": 2,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "reads": {
+        "median": 2,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "sources": {
+        "median": 2,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      }
+    },
+    {
+      "cycle": 5,
+      "start_seconds": 3705.192,
+      "end_seconds": 4500.197,
+      "duration_seconds": 795.0050000000001,
+      "app_cpu_percent": 0.16585052924195437,
+      "cli_cpu_percent": 0.02107760328551383,
+      "active_sample_percent": 0.0,
+      "rss_kib": {
+        "median": 192064.0,
+        "min": 192064,
+        "max": 192352,
+        "first": 192352,
+        "last": 192064
+      },
+      "pss_kib": {
+        "median": 84382.0,
+        "min": 82739,
+        "max": 87313,
+        "first": 85921,
+        "last": 84383
+      },
+      "private_kib": {
+        "median": 74896.0,
+        "min": 74880,
+        "max": 75152,
+        "first": 75088,
+        "last": 74896
+      },
+      "fds": {
+        "median": 49.0,
+        "min": 49,
+        "max": 51,
+        "first": 51,
+        "last": 49
+      },
+      "threads": {
+        "median": 13.0,
+        "min": 13,
+        "max": 14,
+        "first": 14,
+        "last": 13
+      },
+      "buffers": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "buffer_chars": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "histories": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "rows": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "dashboard_rows": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "reads": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "sources": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      }
+    },
+    {
+      "cycle": 6,
+      "start_seconds": 4605.188,
+      "end_seconds": 5400.199,
+      "duration_seconds": 795.0109999999995,
+      "app_cpu_percent": 0.1689409328927528,
+      "cli_cpu_percent": 0.019208665037339125,
+      "active_sample_percent": 0.0,
+      "rss_kib": {
+        "median": 194576.0,
+        "min": 194576,
+        "max": 194608,
+        "first": 194576,
+        "last": 194592
+      },
+      "pss_kib": {
+        "median": 85523.0,
+        "min": 84269,
+        "max": 86264,
+        "first": 85525,
+        "last": 84853
+      },
+      "private_kib": {
+        "median": 76528.0,
+        "min": 76432,
+        "max": 76704,
+        "first": 76528,
+        "last": 76448
+      },
+      "fds": {
+        "median": 49.0,
+        "min": 49,
+        "max": 51,
+        "first": 49,
+        "last": 51
+      },
+      "threads": {
+        "median": 13.0,
+        "min": 13,
+        "max": 14,
+        "first": 13,
+        "last": 14
+      },
+      "buffers": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "buffer_chars": {
+        "median": 0.0,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "histories": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "rows": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "dashboard_rows": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "reads": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "sources": {
+        "median": 2.0,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      }
+    },
+    {
+      "cycle": 7,
+      "start_seconds": 5500.219,
+      "end_seconds": 5950.197,
+      "duration_seconds": 449.97800000000007,
+      "app_cpu_percent": 0.16198036348443692,
+      "cli_cpu_percent": 0.017329513887345407,
+      "active_sample_percent": 0.0,
+      "rss_kib": {
+        "median": 194704,
+        "min": 194704,
+        "max": 194736,
+        "first": 194704,
+        "last": 194704
+      },
+      "pss_kib": {
+        "median": 84948,
+        "min": 84373,
+        "max": 85052,
+        "first": 84871,
+        "last": 85045
+      },
+      "private_kib": {
+        "median": 76560,
+        "min": 76560,
+        "max": 76656,
+        "first": 76560,
+        "last": 76656
+      },
+      "fds": {
+        "median": 49,
+        "min": 49,
+        "max": 51,
+        "first": 49,
+        "last": 49
+      },
+      "threads": {
+        "median": 13,
+        "min": 13,
+        "max": 14,
+        "first": 13,
+        "last": 13
+      },
+      "buffers": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "buffer_chars": {
+        "median": 0,
+        "min": 0,
+        "max": 0,
+        "first": 0,
+        "last": 0
+      },
+      "histories": {
+        "median": 2,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "rows": {
+        "median": 2,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "dashboard_rows": {
+        "median": 2,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "reads": {
+        "median": 2,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      },
+      "sources": {
+        "median": 2,
+        "min": 2,
+        "max": 2,
+        "first": 2,
+        "last": 2
+      }
+    }
+  ],
+  "frames": [
+    {
+      "cycle": 1,
+      "coverage": "complete observed navigation",
+      "metrics": {
+        "measured": 955,
+        "presentation_feedback": 954,
+        "refresh_interval_us": 8333.0,
+        "frame_start_to_presentation_ms": {
+          "p50": 20.261,
+          "p95": 23.089,
+          "max": 35.892
+        },
+        "presentation_gap_ms": {
+          "p50": 8.329,
+          "p95": 15.705,
+          "max": 29.148
+        },
+        "programmatic_action_to_presentation_ms": {
+          "samples": 18,
+          "p50": 16.691,
+          "p95": 28.34,
+          "max": 28.586
+        },
+        "limits": "Continuous status-text damage plus programmatic GTK navigation, not physical input-to-photon. Missing feedback is not classified as a dropped frame.",
+        "cycle": 1,
+        "elapsed": 36.41
+      }
+    },
+    {
+      "cycle": 2,
+      "coverage": "complete observed navigation",
+      "metrics": {
+        "measured": 862,
+        "presentation_feedback": 860,
+        "refresh_interval_us": 8333.0,
+        "frame_start_to_presentation_ms": {
+          "p50": 21.684,
+          "p95": 27.265,
+          "max": 42.767
+        },
+        "presentation_gap_ms": {
+          "p50": 8.337,
+          "p95": 16.675,
+          "max": 29.154
+        },
+        "programmatic_action_to_presentation_ms": {
+          "samples": 18,
+          "p50": 26.782,
+          "p95": 30.67,
+          "max": 42.513
+        },
+        "limits": "Continuous status-text damage plus programmatic GTK navigation, not physical input-to-photon. Missing feedback is not classified as a dropped frame.",
+        "cycle": 2,
+        "elapsed": 938.281
+      }
+    },
+    {
+      "cycle": 3,
+      "coverage": "partial navigation",
+      "metrics": {
+        "measured": 246,
+        "presentation_feedback": 245,
+        "refresh_interval_us": 8333,
+        "frame_start_to_presentation_ms": {
+          "p50": 17.753,
+          "p95": 25.756,
+          "max": 2774.094
+        },
+        "presentation_gap_ms": {
+          "p50": 8.339,
+          "p95": 16.672,
+          "max": 2765.772
+        },
+        "programmatic_action_to_presentation_ms": {
+          "samples": 6,
+          "p50": 24.466,
+          "p95": 25.798,
+          "max": 27.182
+        },
+        "limits": "Continuous status-text damage plus programmatic GTK navigation, not physical input-to-photon. Missing feedback is not classified as a dropped frame.",
+        "cycle": 3,
+        "elapsed": 1834.638
+      }
+    },
+    {
+      "cycle": 4,
+      "coverage": "presentation feedback unavailable; old runner failed before saving raw frames",
+      "metrics": null
+    },
+    {
+      "cycle": 5,
+      "coverage": "complete observed navigation",
+      "metrics": {
+        "measured": 771,
+        "presentation_feedback": 770,
+        "refresh_interval_us": 8333.0,
+        "frame_start_to_presentation_ms": {
+          "p50": 22.787,
+          "p95": 31.804,
+          "max": 89.847
+        },
+        "presentation_gap_ms": {
+          "p50": 8.344,
+          "p95": 16.688,
+          "max": 58.353
+        },
+        "programmatic_action_to_presentation_ms": {
+          "samples": 18,
+          "p50": 23.119,
+          "p95": 30.768,
+          "max": 68.108
+        },
+        "limits": "Continuous status-text damage plus programmatic GTK navigation, not physical input-to-photon. Missing feedback is not classified as a dropped frame.",
+        "cycle": 5,
+        "elapsed": 3634.118
+      }
+    },
+    {
+      "cycle": 6,
+      "coverage": "presentation feedback unavailable; old runner failed before saving raw frames",
+      "metrics": null
+    },
+    {
+      "cycle": 7,
+      "coverage": "presentation feedback unavailable; old runner failed before saving raw frames",
+      "metrics": null
+    }
+  ],
+  "after_cycle_checkpoints": [
+    {
+      "elapsed": 40.408,
+      "cycle": 1,
+      "phase": "cycle-1-cleanup",
+      "cpu_seconds": 6.164866,
+      "child_cpu_seconds": 2.849805,
+      "rss_kib": 190896,
+      "pss_kib": 87046,
+      "private_kib": 71872,
+      "threads": 24,
+      "fds": 48,
+      "active": false,
+      "mapped": true,
+      "minimized": false,
+      "buffers": 0,
+      "buffer_chars": 0,
+      "undoable_buffers": 0,
+      "histories": 2,
+      "dashboard_rows": 2,
+      "rows": 2,
+      "reads": 2,
+      "sources": 2,
+      "jobs": 0,
+      "commands": 0,
+      "writes": 0,
+      "toplevels": 1,
+      "python_tracked_objects": 30682
+    },
+    {
+      "elapsed": 942.375,
+      "cycle": 2,
+      "phase": "cycle-2-cleanup",
+      "cpu_seconds": 14.101143,
+      "child_cpu_seconds": 6.214091,
+      "rss_kib": 193040,
+      "pss_kib": 88710,
+      "private_kib": 73456,
+      "threads": 20,
+      "fds": 48,
+      "active": true,
+      "mapped": true,
+      "minimized": false,
+      "buffers": 0,
+      "buffer_chars": 0,
+      "undoable_buffers": 0,
+      "histories": 2,
+      "dashboard_rows": 2,
+      "rows": 2,
+      "reads": 2,
+      "sources": 2,
+      "jobs": 0,
+      "commands": 0,
+      "writes": 0,
+      "toplevels": 1,
+      "python_tracked_objects": 30624
+    },
+    {
+      "elapsed": 1838.521,
+      "cycle": 3,
+      "phase": "cycle-3-cleanup",
+      "cpu_seconds": 19.603618,
+      "child_cpu_seconds": 9.442009,
+      "rss_kib": 193808,
+      "pss_kib": 86842,
+      "private_kib": 74272,
+      "threads": 16,
+      "fds": 48,
+      "active": false,
+      "mapped": true,
+      "minimized": false,
+      "buffers": 0,
+      "buffer_chars": 0,
+      "undoable_buffers": 0,
+      "histories": 2,
+      "dashboard_rows": 2,
+      "rows": 2,
+      "reads": 2,
+      "sources": 2,
+      "jobs": 0,
+      "commands": 0,
+      "writes": 0,
+      "toplevels": 1,
+      "python_tracked_objects": 29977
+    },
+    {
+      "elapsed": 2739.268,
+      "cycle": 4,
+      "phase": "cycle-4-cleanup",
+      "cpu_seconds": 23.869254,
+      "child_cpu_seconds": 12.615886,
+      "rss_kib": 194208,
+      "pss_kib": 87722,
+      "private_kib": 74704,
+      "threads": 15,
+      "fds": 48,
+      "active": false,
+      "mapped": true,
+      "minimized": false,
+      "buffers": 0,
+      "buffer_chars": 0,
+      "undoable_buffers": 0,
+      "histories": 2,
+      "dashboard_rows": 2,
+      "rows": 2,
+      "reads": 2,
+      "sources": 2,
+      "jobs": 0,
+      "commands": 0,
+      "writes": 0,
+      "toplevels": 1,
+      "python_tracked_objects": 29793
+    },
+    {
+      "elapsed": 3638.0,
+      "cycle": 5,
+      "phase": "cycle-5-cleanup",
+      "cpu_seconds": 29.896796,
+      "child_cpu_seconds": 15.757147,
+      "rss_kib": 192576,
+      "pss_kib": 85538,
+      "private_kib": 75264,
+      "threads": 21,
+      "fds": 50,
+      "active": false,
+      "mapped": true,
+      "minimized": false,
+      "buffers": 0,
+      "buffer_chars": 0,
+      "undoable_buffers": 0,
+      "histories": 2,
+      "dashboard_rows": 2,
+      "rows": 2,
+      "reads": 2,
+      "sources": 2,
+      "jobs": 0,
+      "commands": 0,
+      "writes": 0,
+      "toplevels": 1,
+      "python_tracked_objects": 30651
+    },
+    {
+      "elapsed": 4543.491,
+      "cycle": 6,
+      "phase": "cycle-6-cleanup",
+      "cpu_seconds": 33.342673,
+      "child_cpu_seconds": 19.005221,
+      "rss_kib": 194576,
+      "pss_kib": 85520,
+      "private_kib": 76528,
+      "threads": 15,
+      "fds": 49,
+      "active": false,
+      "mapped": true,
+      "minimized": false,
+      "buffers": 0,
+      "buffer_chars": 0,
+      "undoable_buffers": 0,
+      "histories": 2,
+      "dashboard_rows": 2,
+      "rows": 2,
+      "reads": 2,
+      "sources": 2,
+      "jobs": 0,
+      "commands": 0,
+      "writes": 0,
+      "toplevels": 1,
+      "python_tracked_objects": 29810
+    },
+    {
+      "elapsed": 5440.144,
+      "cycle": 7,
+      "phase": "cycle-7-cleanup",
+      "cpu_seconds": 36.350009,
+      "child_cpu_seconds": 21.544639,
+      "rss_kib": 194720,
+      "pss_kib": 84904,
+      "private_kib": 76576,
+      "threads": 13,
+      "fds": 49,
+      "active": false,
+      "mapped": true,
+      "minimized": false,
+      "buffers": 0,
+      "buffer_chars": 0,
+      "undoable_buffers": 0,
+      "histories": 2,
+      "dashboard_rows": 2,
+      "rows": 2,
+      "reads": 2,
+      "sources": 2,
+      "jobs": 0,
+      "commands": 0,
+      "writes": 0,
+      "toplevels": 1,
+      "python_tracked_objects": 29881
+    }
+  ],
+  "interpretation": "Small memory growth is observed, not explained away: compare per-cycle settled medians. No recurring retained output, growing inventory caches or tracked-object growth was confirmed. This interrupted session cannot prove leak freedom or long-run latency stability. Window closure cause and missing feedback cause were not established.",
+  "validation": "Before the user stopped testing: 123 Python tests, 117 passed and six opt-in tests skipped, including six frame-feedback unit cases. Final cleanup retry/summary bookkeeping reviewed only, no rerun by explicit request. No new tests, CI runs, app launches or panel reloads performed to finish this report.",
+  "followup": "User stopped all live testing and popups; heartbeat paused. No full-duration requalification will be run without a new request.",
+  "settled_median_growth_mib": {
+    "rss_kib": 3.890625,
+    "pss_kib": 0.3310546875,
+    "private_kib": 5.546875
+  },
+  "separate_standard_window": {
+    "seconds": 1561.398,
+    "settled_seconds": 1501.378,
+    "app_cpu_percent": 0.07259997149285523,
+    "rss_first_last_mib": [
+      146.734375,
+      146.609375
+    ],
+    "private_first_last_mib": [
+      44.0625,
+      44.109375
+    ],
+    "fds_first_last": [
+      35,
+      35
+    ],
+    "limits": "Separate 26-minute window observation; no frame/focus samples and not a two-hour control. Process exited before requested duration."
+  },
+  "stopped_retry": {
+    "seconds": 4.486,
+    "stopped_at_workflow": "folder-and-port-devices",
+    "cleanup_initial_error": "Incus instance busy running update operation",
+    "cleanup_after_user_stop": {
+      "removed": [
+        "oi-wayland-fb2bf60a-c1-dev"
+      ],
+      "owned_remaining": []
+    },
+    "limits": "Explicitly cancelled; excluded from performance analysis."
+  }
+}

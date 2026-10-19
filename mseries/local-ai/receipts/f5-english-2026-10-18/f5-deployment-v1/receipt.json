@@ -1,0 +1,257 @@
+{
+  "schema": 1,
+  "complete": true,
+  "passed": true,
+  "checked_at_utc": "2026-10-18T18:11:20.068254+00:00",
+  "checks": {
+    "source_is_merged_in_origin_main": true,
+    "source_origin_is_expected_repository": true,
+    "kernel_matches_private_baseline": true,
+    "all_runtime_voice_panel_engine_manager_files_exact": true,
+    "installed_input_unit_exact": true,
+    "dictation_and_voice_launchers_exact": true,
+    "merged_source_uses_qualified_nemotron_pin": true,
+    "installed_nemotron_model_exact": true,
+    "installed_unified_compatibility_model_exact": true,
+    "qualified_native_cpu_library_exact": true,
+    "mseries-stream-dictate.service-active": true,
+    "mseries-stream-dictate.service-enabled": true,
+    "mseries-dictation-input.service-active": true,
+    "mseries-dictation-input.service-enabled": true,
+    "mseries-ai-everyday.service-active": true,
+    "mseries-ai-everyday.service-enabled": true,
+    "default_4b_pid_unchanged": true,
+    "default_4b_process_predates_baseline": true,
+    "lifecycle_file_owned_private_regular": true,
+    "idle_listener_reports_ready": true,
+    "idle_listener_has_no_capture_worker": true,
+    "input_bridge_ready_read_only_rpc": true,
+    "strict_configured_effective_settings": true,
+    "strict_running_process_settings": true,
+    "toggle_mode_preserved": true,
+    "debug_recording_test_injection_controls_unset": true,
+    "runtime_environment_keys_allowlisted": true,
+    "finite_idle_residency": true,
+    "input_preferences_fingerprint_preserved": true,
+    "selected_native_input_engine_preserved": true,
+    "native_ane_option_retained_static": true,
+    "native_mlx_option_retained_static": true
+  },
+  "method": "Read-only installed-file and live listener metadata verification against merged Git blobs",
+  "microphone_recorded": false,
+  "inference_requested": false,
+  "windows_opened": false,
+  "services_changed": false,
+  "settings_changed": false,
+  "git_changed": false,
+  "private_settings_or_contents_exported": false,
+  "limits": [
+    "No microphone, physical F5, app-window, grammar-model, audio playback or inference test in this receipt.",
+    "Ready state proves the idle listener/bridge is available; functional app acceptance uses separate synthetic/public-file receipts.",
+    "Optional ANE/MLX availability is static asset/runtime inspection, not a repeated hardware inference qualification.",
+    "Settings fingerprints prove equality to the private baseline at inspection time; raw preferences/environment are excluded."
+  ],
+  "source": {
+    "repository": "https://github.com/techmore/ElementaryOS_MSeries",
+    "commit": "5c26ff6c2ff38c89c401c0d109a61244146868d8",
+    "commit_time": "2026-10-18T14:10:45-04:00"
+  },
+  "machine": {
+    "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+    "architecture": "aarch64",
+    "kernel_build": "#1 SMP PREEMPT_DYNAMIC Sat, 17 Oct 2026 18:40:22 +0000",
+    "boot_id_sha256": "387732c30952e767a6604d9b8aa789555b7b6b9a42462e853270f58d067ddab3"
+  },
+  "runtime_files": {
+    "stream-dictate.py": {
+      "source": "mseries/dictation/stream-dictate.py",
+      "source_sha256": "9b5a4ae68d739829004495813805135eaf62e5d26589e5cf8ef9ef2b8ebea113",
+      "installed_sha256": "9b5a4ae68d739829004495813805135eaf62e5d26589e5cf8ef9ef2b8ebea113",
+      "exact": true
+    },
+    "dictation-input.py": {
+      "source": "mseries/dictation/dictation-input.py",
+      "source_sha256": "1a04d5a15cc8f4f121ef37d5efe35c1f6b108b416943af7f6fb6ff446b93a6c5",
+      "installed_sha256": "1a04d5a15cc8f4f121ef37d5efe35c1f6b108b416943af7f6fb6ff446b93a6c5",
+      "exact": true
+    },
+    "dictation-input-client.py": {
+      "source": "mseries/dictation/dictation-input-client.py",
+      "source_sha256": "7eb7a0d903663f3db075925e5a1bb3fbb31880fd335e852fefe0e1c3607d436d",
+      "installed_sha256": "7eb7a0d903663f3db075925e5a1bb3fbb31880fd335e852fefe0e1c3607d436d",
+      "exact": true
+    },
+    "dictation_status.py": {
+      "source": "mseries/dictation/dictation_status.py",
+      "source_sha256": "2e7411beb6b59af53f97d90a9f37ef21c746984b068fe303a629f579b8e7ac9b",
+      "installed_sha256": "2e7411beb6b59af53f97d90a9f37ef21c746984b068fe303a629f579b8e7ac9b",
+      "exact": true
+    },
+    "dictation_resources.py": {
+      "source": "mseries/dictation/dictation_resources.py",
+      "source_sha256": "f69b494f523e163e2e7a08021a3f8eee402fe190bd485e0439967fb3c1ac99fe",
+      "installed_sha256": "f69b494f523e163e2e7a08021a3f8eee402fe190bd485e0439967fb3c1ac99fe",
+      "exact": true
+    },
+    "dictation_model.py": {
+      "source": "mseries/dictation/dictation_model.py",
+      "source_sha256": "ce7b805e735c704ff7a22ce7ea272fb88e22f91d64e6c965185b8e5c4db41578",
+      "installed_sha256": "ce7b805e735c704ff7a22ce7ea272fb88e22f91d64e6c965185b8e5c4db41578",
+      "exact": true
+    },
+    "dictation_ane.py": {
+      "source": "mseries/dictation/dictation_ane.py",
+      "source_sha256": "fb7f752e8b64ea35e59611ad434d1e2aa86dc868ea817c78527aa3f51e1c617a",
+      "installed_sha256": "fb7f752e8b64ea35e59611ad434d1e2aa86dc868ea817c78527aa3f51e1c617a",
+      "exact": true
+    },
+    "ane-worker-shim.py": {
+      "source": "mseries/dictation/ane-worker-shim.py",
+      "source_sha256": "f5f3285aa9bb731bc49259e731b107e7b729b29c23e2fce0c46575be64c93935",
+      "installed_sha256": "f5f3285aa9bb731bc49259e731b107e7b729b29c23e2fce0c46575be64c93935",
+      "exact": true
+    },
+    "dictation_mlx.py": {
+      "source": "mseries/dictation/dictation_mlx.py",
+      "source_sha256": "216125b79063ea2de46478a90aa8a64161ecf501aabdf5a0fe758f09636dcf10",
+      "installed_sha256": "216125b79063ea2de46478a90aa8a64161ecf501aabdf5a0fe758f09636dcf10",
+      "exact": true
+    },
+    "mlx-speech-worker.py": {
+      "source": "mseries/dictation/mlx-speech-worker.py",
+      "source_sha256": "ad7c96191556c602d442574489debbd05c8bcfddc24826ba266419cb494649cf",
+      "installed_sha256": "ad7c96191556c602d442574489debbd05c8bcfddc24826ba266419cb494649cf",
+      "exact": true
+    },
+    "dictation-engine.py": {
+      "source": "mseries/dictation/dictation-engine.py",
+      "source_sha256": "b29363f5b03b30cf062375e590adac1e1f330e46255f190d6aa57f3a1d9e9f7e",
+      "installed_sha256": "b29363f5b03b30cf062375e590adac1e1f330e46255f190d6aa57f3a1d9e9f7e",
+      "exact": true
+    },
+    "dictation-launch.py": {
+      "source": "mseries/dictation/dictation-launch.py",
+      "source_sha256": "62cb332684b24140385d8e11f45d21538534649309933456af79c9e9e790167c",
+      "installed_sha256": "62cb332684b24140385d8e11f45d21538534649309933456af79c9e9e790167c",
+      "exact": true
+    },
+    "dictation_review.py": {
+      "source": "mseries/dictation/dictation_review.py",
+      "source_sha256": "8489eafbeb3eb88cefde732f65247bf0e30db2250fa8b78933e0d3bfdcb3f943",
+      "installed_sha256": "8489eafbeb3eb88cefde732f65247bf0e30db2250fa8b78933e0d3bfdcb3f943",
+      "exact": true
+    },
+    "dictation_pipeline.py": {
+      "source": "mseries/dictation/dictation_pipeline.py",
+      "source_sha256": "d03858f233622d7b8c9f6d8ae4215504b966b7586725234409e2d9d28e508376",
+      "installed_sha256": "d03858f233622d7b8c9f6d8ae4215504b966b7586725234409e2d9d28e508376",
+      "exact": true
+    },
+    "dictation_live.py": {
+      "source": "mseries/dictation/dictation_live.py",
+      "source_sha256": "a09251796e5d394b973c85184878878f43d88f93c78c8f49e2678b653f628c64",
+      "installed_sha256": "a09251796e5d394b973c85184878878f43d88f93c78c8f49e2678b653f628c64",
+      "exact": true
+    },
+    "dictation-panel.py": {
+      "source": "mseries/dictation/dictation-panel.py",
+      "source_sha256": "1ea7652dad1023a36bf18c85e7d981b7406bf52bc0075efc9a94a87fc10f4aac",
+      "installed_sha256": "1ea7652dad1023a36bf18c85e7d981b7406bf52bc0075efc9a94a87fc10f4aac",
+      "exact": true
+    },
+    "dictation_voice.py": {
+      "source": "mseries/dictation/dictation_voice.py",
+      "source_sha256": "837132a14283941d541b2ee10e22b31b4b8cf9679faf9584a0ef668feb9b3c32",
+      "installed_sha256": "837132a14283941d541b2ee10e22b31b4b8cf9679faf9584a0ef668feb9b3c32",
+      "exact": true
+    },
+    "voice-assistant.py": {
+      "source": "mseries/dictation/voice-assistant.py",
+      "source_sha256": "384b715a264fdc848ec352de80a75101b02e70c450cb7ba9f60112975fd035ba",
+      "installed_sha256": "384b715a264fdc848ec352de80a75101b02e70c450cb7ba9f60112975fd035ba",
+      "exact": true
+    },
+    "machine.py": {
+      "source": "mseries/local-ai/machine.py",
+      "source_sha256": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27",
+      "installed_sha256": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27",
+      "exact": true
+    },
+    "dictation-manage.py": {
+      "source": "mseries/install-dictation-input.py",
+      "source_sha256": "355e0e6e912c354ef006b310cf38ebae38c167c2ed258cc0d3c1e97a448edebc",
+      "installed_sha256": "355e0e6e912c354ef006b310cf38ebae38c167c2ed258cc0d3c1e97a448edebc",
+      "exact": true
+    },
+    "dictation-english-manage.py": {
+      "source": "mseries/install-dictation-english.py",
+      "source_sha256": "05a7b233e440623e59f99b0f71ded0a4576a78beaef066b5d462e1392a2c9529",
+      "installed_sha256": "05a7b233e440623e59f99b0f71ded0a4576a78beaef066b5d462e1392a2c9529",
+      "exact": true
+    }
+  },
+  "input_unit_sha256": "1938bce4326c0af15610b46348d99318bf9049f678060ad43202510af2c56d42",
+  "launchers": {
+    "org.techmore.Dictation.desktop": {
+      "exact": true,
+      "expected_sha256": "d7f6af75d456a9163c5f6a43763b06551e185acd9fd67b1b348af6f1ec6297b9",
+      "installed_sha256": "d7f6af75d456a9163c5f6a43763b06551e185acd9fd67b1b348af6f1ec6297b9"
+    },
+    "org.techmore.VoiceAssistant.desktop": {
+      "exact": true,
+      "expected_sha256": "3525c4cf053b9141b0d698c380c7de6361eadf73814dcc2ef7442bdab6696ba4",
+      "installed_sha256": "3525c4cf053b9141b0d698c380c7de6361eadf73814dcc2ef7442bdab6696ba4"
+    }
+  },
+  "nemotron_model": {
+    "filename": "nemotron-speech-streaming-en-0.6b-Q8_0.gguf",
+    "sha256": "90d8c89714cd31efc88be62a40c6b2bea57e0cc2063af1ffe2c28f1a228ca110",
+    "expected_sha256": "90d8c89714cd31efc88be62a40c6b2bea57e0cc2063af1ffe2c28f1a228ca110"
+  },
+  "unified_compatibility_model": {
+    "filename": "parakeet-unified-en-0.6b-Q4_K_M.gguf",
+    "sha256": "a8bf3de2b393bd14ead5a858c3748d5e3b07a20fdeabdd3b498fba4f463fa929",
+    "expected_sha256": "a8bf3de2b393bd14ead5a858c3748d5e3b07a20fdeabdd3b498fba4f463fa929"
+  },
+  "native_cpu_library_sha256": "9f1f839d89a6d3a874c939ecf3108007cc0964a338596a35adb47c7e6c5c921d",
+  "services": {
+    "mseries-stream-dictate.service": {
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled"
+    },
+    "mseries-dictation-input.service": {
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled"
+    },
+    "mseries-ai-everyday.service": {
+      "ActiveState": "active",
+      "SubState": "running",
+      "UnitFileState": "enabled"
+    }
+  },
+  "listener": {
+    "phase": "ready",
+    "pid_matches_service": true
+  },
+  "strict_runtime": {
+    "engine": "nemotron",
+    "backend": "cpu",
+    "threads": 4,
+    "output": "ibus",
+    "mode_matches_baseline": true,
+    "raw_environment_exported": false,
+    "unrecognized_setting_count": 0
+  },
+  "input_preferences": {
+    "fingerprint_sha256": "8255a55aca0c71e4eff3476e22e6b93fb3370a95330016575d0e46f2bc54f53e",
+    "matches_baseline": true,
+    "selected_engine_matches_baseline": true
+  },
+  "retained_options": {
+    "ane_static_assets_present": true,
+    "mlx_static_assets_present": true,
+    "inference_repeated": false
+  }
+}

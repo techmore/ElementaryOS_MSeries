@@ -57,4 +57,9 @@ fi
 mv -f "$mode_file.tmp" "$mode_file"
 command -v update-desktop-database >/dev/null && update-desktop-database "$HOME/.local/share/applications"
 command -v gtk-update-icon-cache >/dev/null && gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" >/dev/null 2>&1 || true
+# Recolour Signal's blue to the elementary accent (re-applied after every Signal update).
+# Skipped for atomic releases: patching app.asar there would break the release hash.
+if [[ $atomic != 1 ]]; then
+  python3 "$(dirname "${BASH_SOURCE[0]}")/signal-accent.py" --appdir "$appdir" || echo 'Signal accent recolour skipped' >&2
+fi
 echo 'Repaired Signal Beta icon and desktop identity; no app restart or sign-in required.'

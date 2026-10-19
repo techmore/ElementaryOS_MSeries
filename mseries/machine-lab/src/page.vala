@@ -10,6 +10,8 @@ public class MachinePage : Gtk.Box {
     public signal void changed ();          // a persisted setting changed
     public signal void remove_requested ();
     public signal void start_requested ();
+    public signal void fullscreen_toggled (bool on);
+    private Gtk.Widget header_handle;
 
     private Gtk.Label title;
     private Gtk.Label status_pill;
@@ -38,6 +40,8 @@ public class MachinePage : Gtk.Box {
     private Gtk.Label strip;
     private Gtk.Box creds_card;
     private Gtk.Label creds_label;
+    private string creds_real = "";
+    private bool creds_shown = false;
     private Gtk.Box ready_card;
     private Gtk.Image ready_icon;
     private Gtk.Label ready_title;
@@ -49,6 +53,8 @@ public class MachinePage : Gtk.Box {
     private Gtk.Button start_button;
     private Gtk.Button stop_button;
     private Gtk.Stack stack;
+    private Viewer viewer;
+    private bool was_running = false;
     private Gtk.Box settings_form;
     private Gtk.Label settings_note;
     private Gtk.Entry name_entry;
@@ -72,6 +78,13 @@ public class MachinePage : Gtk.Box {
         stack.transition_type = Gtk.StackTransitionType.CROSSFADE;
         stack.vexpand = true;
         stack.add_titled (build_overview (), "overview", "Overview");
+        viewer = new Viewer (machine);
+        viewer.toast.connect ((m) => toast (m));
+        viewer.fullscreen_toggled.connect ((on) => {
+            header_handle.visible = !on;
+            fullscreen_toggled (on);
+        });
+        stack.add_titled (viewer, "display", "Display");
         stack.add_titled (build_console (), "console", "Console");
         stack.add_titled (build_settings (), "settings", "Settings");
 
@@ -94,10 +107,21 @@ public class MachinePage : Gtk.Box {
         header.pack_end (more);
         var handle = new Gtk.WindowHandle ();
         handle.child = header;
+        header_handle = handle;
         append (handle);
         append (stack);
 
+        stack.notify["visible-child-name"].connect (() => {
+            viewer.set_active (stack.visible_child_name == "display");
+        });
         machine.state_changed.connect (refresh);
+        machine.state_changed.connect (() => {
+            // Take the user to the screen as soon as a machine starts.
+            if (machine.running && !was_running) {
+                show_tab ("display");
+            }
+            was_running = machine.running;
+        });
         machine.finished.connect ((code) => {
             if (code > 0) {
                 show_tab ("console");
@@ -134,6 +158,27 @@ public class MachinePage : Gtk.Box {
         refresh ();
         int64 free = Readiness.free_gib ();
         toast (free >= 0 ? "Checked again: %d GiB free".printf ((int) free) : "Checked again");
+    }
+
+    /* Passwords stay hidden until asked for: "Password: abc" becomes "Password: ••••••". */
+    public static string mask_credentials (string text) {
+        try {
+            var re = new Regex ("(?i)((?:sudo )?password:\\s*)(\\S+)");
+            return re.replace_eval (text, -1, 0, 0, (m, sb) => {
+                sb.append (m.fetch (1));
+                sb.append ("••••••••");
+                return false;
+            });
+        } catch (RegexError e) {
+            return "••••••••";
+        }
+    }
+
+    public void toggle_fullscreen () {
+        if (stack.visible_child_name != "display") {
+            show_tab ("display");
+        }
+        viewer.go_fullscreen (!viewer.fullscreen);
     }
 
     public void show_tab (string name) {
@@ -248,10 +293,20 @@ public class MachinePage : Gtk.Box {
         ccopy.valign = Gtk.Align.CENTER;
         ccopy.tooltip_text = "Copy sign-in";
         ccopy.clicked.connect (() => {
-            Gdk.Display.get_default ().get_clipboard ().set_text (creds_label.label);
+            Gdk.Display.get_default ().get_clipboard ().set_text (creds_real);
             toast ("Copied sign-in");
         });
         creds_card.append (ccopy);
+        var creveal = new Gtk.ToggleButton ();
+        creveal.icon_name = "view-reveal-symbolic";
+        creveal.add_css_class ("flat");
+        creveal.valign = Gtk.Align.CENTER;
+        creveal.tooltip_text = "Show or hide the password";
+        creveal.toggled.connect (() => {
+            creds_shown = creveal.active;
+            creds_label.label = creds_shown ? creds_real : mask_credentials (creds_real);
+        });
+        creds_card.append (creveal);
         clamp.append (creds_card);
 
         var specs = new Gtk.Grid ();
@@ -736,7 +791,10 @@ public class MachinePage : Gtk.Box {
         strip.label = machine.status_text;
         var creds = machine.credentials ();
         creds_card.visible = creds != null;
-        if (creds != null) creds_label.label = creds;
+        if (creds != null) {
+            creds_real = creds;
+            creds_label.label = creds_shown ? creds : mask_credentials (creds);
+        }
         hero_sub.label = "ARM64 · " + (managed ? (fresh ? (machine.installer != null ? "Imported from mseries-vm · installer ready: %s".printf (Path.get_basename (machine.installer)) : "Imported from mseries-vm · installer not finished") : "Installed · imported from mseries-vm")
             : fresh ? "New machine · not installed yet"
             : "Linux ARM64 · installed");

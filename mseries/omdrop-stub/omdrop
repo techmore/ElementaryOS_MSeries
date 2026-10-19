@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Stub of the `omdrop` command for testing the Quick Settings AirDrop section without a radio. State is a directory ($OMDROP_STUB_DIR).
+d=${OMDROP_STUB_DIR:?}
+mkdir -p "$d"
+get() { cat "$d/$1" 2>/dev/null || echo "$2"; }
+case "${1:-}" in
+  status)
+    on=$(get on false); vis=$(get visibility everyone); mode=$(get mode off)
+    left=null; [ "$mode" = 10m ] && left=540
+    printf '{"receiving": %s, "visible": %s, "remaining": %s, "name": "eos", "dir": "%s/Downloads", "mode": "%s", "reason": null, "rx_proven": false, "sound": true, "visibility": "%s", "senders": 0}\n' "$on" "$on" "$left" "$HOME" "$mode" "$vis" ;;
+  doctor)
+    if [ -e "$d/no-driver" ]; then echo '{"ready": false, "missing": [{"id": "driver", "say": "The Wi-Fi driver that makes this computer visible to Apple devices is not installed."}], "offers": []}'; else echo '{"ready": true, "missing": [], "offers": []}'; fi ;;
+  on)  [ -e "$d/no-driver" ] && { echo "The Wi-Fi driver is not installed." >&2; exit 1; }; echo true > "$d/on"; echo "${2:-10m}" > "$d/mode"; echo "$*" >> "$d/calls" ;;
+  off) echo false > "$d/on"; echo off > "$d/mode"; echo off >> "$d/calls" ;;
+  visibility) echo "$2" > "$d/visibility"; echo "visibility $2" >> "$d/calls" ;;
+  *) exit 2 ;;
+esac

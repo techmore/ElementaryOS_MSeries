@@ -101,6 +101,9 @@ public class MachineLab : Gtk.Application {
     private Granite.Toast toast;
     private Gtk.ListBox list;
     private Gtk.Stack content;
+    private bool special_page = false;
+    private Gtk.Widget sidebar_box;
+    private Gtk.Widget sidebar_sep;
     private HashTable<string, MachinePage> pages = new HashTable<string, MachinePage> (str_hash, str_equal);
 
     public MachineLab () {
@@ -108,6 +111,15 @@ public class MachineLab : Gtk.Application {
             application_id: "io.github.mseries.MachineLab",
             flags: ApplicationFlags.DEFAULT_FLAGS
         );
+        add_main_option ("version", 'v', OptionFlags.NONE, OptionArg.NONE, "Print the version and exit", null);
+    }
+
+    protected override int handle_local_options (VariantDict options) {
+        if (options.contains ("version")) {
+            print ("machine-lab %s\n", Config.VERSION);
+            return 0;
+        }
+        return -1;
     }
 
     protected override void startup () {
@@ -142,6 +154,15 @@ public class MachineLab : Gtk.Application {
         });
         add_action (refresh_action);
         set_accels_for_action ("app.refresh", { "F5", "<Control>r" });
+        var fs_action = new SimpleAction ("fullscreen", null);
+        fs_action.activate.connect (() => {
+            var row = list.get_selected_row ();
+            if (row != null) {
+                pages[((MachineRow) row).machine.id].toggle_fullscreen ();
+            }
+        });
+        add_action (fs_action);
+        set_accels_for_action ("app.fullscreen", { "F11" });
         set_accels_for_action ("app.quit", { "<Control>q" });
         var quit = new SimpleAction ("quit", null);
         quit.activate.connect (() => window.close ());
@@ -163,13 +184,16 @@ public class MachineLab : Gtk.Application {
         window.titlebar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { visible = false };
 
         var layout = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-        layout.append (build_sidebar ());
-        layout.append (new Gtk.Separator (Gtk.Orientation.VERTICAL));
+        sidebar_box = build_sidebar ();
+        layout.append (sidebar_box);
+        sidebar_sep = new Gtk.Separator (Gtk.Orientation.VERTICAL);
+        layout.append (sidebar_sep);
 
         content = new Gtk.Stack ();
         content.hexpand = true;
         content.transition_type = Gtk.StackTransitionType.CROSSFADE;
         content.add_named (build_empty_state (), "empty");
+        content.add_named (new MacExperiment (), "mac");
         layout.append (content);
 
         var overlay = new Gtk.Overlay ();
@@ -239,9 +263,12 @@ public class MachineLab : Gtk.Application {
         });
         list.row_selected.connect ((row) => {
             if (row == null) {
-                content.visible_child_name = "empty";
+                if (!special_page) {
+                    content.visible_child_name = "empty";
+                }
                 return;
             }
+            special_page = false;
             content.visible_child_name = ((MachineRow) row).machine.id;
         });
         var scroll = new Gtk.ScrolledWindow ();
@@ -295,7 +322,7 @@ public class MachineLab : Gtk.Application {
         }
         var mac_item = new Gtk.Button ();
         mac_item.add_css_class ("flat");
-        var mac_lbl = new Gtk.Label ("macOS… (not available on Linux)");
+        var mac_lbl = new Gtk.Label ("macOS (experimental)…");
         mac_lbl.xalign = 0;
         mac_lbl.add_css_class ("ml-machine-sub");
         mac_item.child = mac_lbl;
@@ -384,10 +411,10 @@ public class MachineLab : Gtk.Application {
         var mn = new Gtk.Label ("macOS");
         mn.xalign = 0;
         mn.add_css_class ("ml-spec-value");
-        var mbl = new Gtk.Label ("Not possible on this Mac under Linux");
+        var mbl = new Gtk.Label ("Experimental: see how it fails");
         mbl.xalign = 0;
         mbl.add_css_class ("ml-spec-label");
-        var mlearn = new Gtk.Label ("Tap to see what works instead");
+        var mlearn = new Gtk.Label ("Tap to run the attempt");
         mlearn.xalign = 0;
         mlearn.add_css_class ("ml-fineprint");
         mt.append (mn);
@@ -414,6 +441,11 @@ public class MachineLab : Gtk.Application {
         m.installer_detached.connect (() => {
             MachineStore.save (machines);
             send_toast ("%s is installed. It will boot from its disk now.".printf (m.name));
+        });
+        page.fullscreen_toggled.connect ((on) => {
+            window.fullscreened = on;
+            sidebar_box.visible = !on;
+            sidebar_sep.visible = !on;
         });
         page.start_requested.connect (() => start_machine (m));
         page.remove_requested.connect (() => confirm_remove.begin (m));
@@ -444,6 +476,12 @@ public class MachineLab : Gtk.Application {
     }
 
     private void show_macos_info () {
+        special_page = true;
+        list.unselect_all ();
+        content.visible_child_name = "mac";
+    }
+
+    private void show_macos_info_dialog () {
         var dialog = new Gtk.AlertDialog ("macOS can't run as a guest here");
         dialog.detail = "A macOS guest on Apple Silicon needs Apple's Virtualization framework and virtual hardware, which only exist on macOS hosts. Linux KVM on this Mac can't provide them, and no open implementation boots macOS.\n\nWhat works:\n• Your internal macOS is still installed. Hold the power button at startup and pick it at the boot picker.\n• Run a macOS VM on a Mac that runs macOS (UTM or Tart) and reach it over the network.\n• Use the elementary OS, Omarchy and other Linux machines here for everything else.";
         dialog.buttons = { "OK" };

@@ -16,6 +16,7 @@ free-space check, toasts, light/dark and accent following the system.
   QEMU. Sign-in details are shown in the app and saved with owner-only permissions.
 - Own ISO path: drop or choose any ARM64 `.iso`; once the disk holds real data the installer detaches itself.
 - **Pause / Resume** over QEMU's QMP socket (`qmp.sock` in the machine folder), plus Shut Down / Force Stop.
+- **Display tab**: the machine's desktop inside the app (QEMU `screendump` frames as uncompressed PPM over QMP, about 30 fps while the screen changes; mouse and keyboard sent back over a dedicated `qmp-view.sock` so the viewer never blocks `mseries-vm` control commands; click the screen to capture, Ctrl+Alt+G to release; Ctrl+Alt+Del and screenshot buttons). Machines start headless so the screen lives in the app, not a separate QEMU window.
 - Live console from the launcher output, or the guest serial log for imported machines.
 
 ```sh
@@ -23,9 +24,11 @@ meson setup build && meson compile -C build
 ./build/machine-lab        # finds ../launcher/run-vm.sh; MACHINE_LAB_LAUNCHER overrides
 ```
 
+Guides: `docs/USER-GUIDE.md`, `ROADMAP.md`, `CHANGELOG.md`. Tests: `meson test -C build`. Package: `bash mseries/machine-lab/build-deb.sh`.
+
 Layout: `src/machine.vala` (model, QMP, process control, discovery), `src/page.vala` (machine pane),
 `src/main.vala` (window, sidebar, presets), `launcher/` (QEMU launcher and Omarchy updater).
 
 **Not verified:** a full guest install and boot end to end (the Omarchy nightly is ~6 GiB and the host had
-~19 GiB free). Pause/resume was verified against a headless QEMU through the app. Visual checks used GTK Broadway.
+~19 GiB free). Pause/resume was verified against a headless QEMU through the app. The Display tab was verified in GTK Broadway against the installed elementary guest (frames, mouse, keyboard); the Wayland keyboard path uses evdev codes and is unverified. Visual checks used GTK Broadway.
 Provenance: started as the Codex `native-vm-poc` spike; its launcher and Omarchy updater are merged here.
