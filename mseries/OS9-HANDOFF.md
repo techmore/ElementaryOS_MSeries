@@ -5468,6 +5468,19 @@ removal lifecycle are still needed for the scoped M-series experience. Next:
 qualify native output initialization in a separate session or other safe
 hardware setup, then add dynamic connector lifecycle handling.
 
+### Software pointer rendering — 2026-10-18
+
+The compositor now retains Smithay's pointer image status and requests native
+redraws when clients change the cursor. It renders client cursor surfaces above
+the window space in both Winit and native DRM output paths. Named cursor
+requests use a small built-in arrow bitmap; cursor theme loading, named shape
+mapping, animation and hardware cursor planes are not implemented. Winit's
+host pointer is hidden to avoid drawing a second cursor. Default and
+`native-drm` configurations compile; this feature has not been visually
+qualified with a Wayland client or on DRM hardware. Next: build both modes and
+qualify cursor position/hotspot behavior in nested mode, then native mode when
+an isolated session is available.
+
 ### Absolute pointer mapping — 2026-10-18
 
 Absolute pointer events previously mapped normalized coordinates against only

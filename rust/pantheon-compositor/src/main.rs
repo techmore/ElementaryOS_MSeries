@@ -1,5 +1,6 @@
 #![allow(irrefutable_let_patterns)]
 
+mod cursor;
 mod display_config;
 mod grabs;
 mod handlers;

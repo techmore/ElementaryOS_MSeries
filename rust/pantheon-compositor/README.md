@@ -53,7 +53,10 @@ M-series/Pantheon behavior documented in
 [`../../mseries/pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md`](../../mseries/pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md).
 It currently has one nested output,
 basic keyboard/pointer handling, xdg-shell windows and popup grabs, move/resize
-grabs, clipboard and drag-and-drop. On the first non-empty toplevel commit,
+grabs, clipboard, drag-and-drop and a compositor-rendered pointer. Client-set
+cursor surfaces are rendered over windows on nested and native outputs; named
+cursor requests currently use a built-in arrow fallback, not the installed
+elementary cursor theme. On the first non-empty toplevel commit,
 windows are centered and cascaded on the first output, activated, and given
 keyboard focus; when the focused toplevel is destroyed, focus moves to the
 topmost remaining app window. Toplevel destruction removes placement tracking.

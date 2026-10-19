@@ -2,8 +2,9 @@ use std::collections::{HashMap, HashSet};
 use std::{ffi::OsString, sync::Arc};
 
 use smithay::{
+    backend::renderer::element::memory::MemoryRenderBuffer,
     desktop::{PopupManager, Space, Window, WindowSurfaceType},
-    input::{Seat, SeatState},
+    input::{Seat, SeatState, pointer::CursorImageStatus},
     reexports::{
         calloop::{EventLoop, Interest, LoopSignal, Mode, PostAction, generic::Generic},
         wayland_server::{
@@ -23,6 +24,7 @@ use smithay::{
     },
 };
 
+use crate::cursor::default_cursor_buffer;
 use crate::display_config::DisplayConfigHandle;
 #[cfg(feature = "native-drm")]
 use crate::native::NativeBackend;
@@ -55,6 +57,8 @@ pub struct PantheonCompositor {
         HashMap<smithay::reexports::wayland_server::backend::ObjectId, ManagedWindow>,
     pub initially_positioned: HashSet<smithay::reexports::wayland_server::backend::ObjectId>,
     pub popups: PopupManager,
+    pub cursor_status: CursorImageStatus,
+    pub default_cursor: MemoryRenderBuffer,
 
     pub seat: Seat<Self>,
     #[cfg(feature = "native-drm")]
@@ -142,6 +146,8 @@ impl PantheonCompositor {
             managed_windows: HashMap::new(),
             initially_positioned: HashSet::new(),
             popups,
+            cursor_status: CursorImageStatus::default_named(),
+            default_cursor: default_cursor_buffer(),
             seat,
             #[cfg(feature = "native-drm")]
             native_backend: None,

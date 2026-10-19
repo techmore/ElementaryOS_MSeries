@@ -23,7 +23,6 @@ use smithay::{
         egl::{EGLContext, EGLDevice, EGLDisplay, context::ContextPriority},
         libinput::{LibinputInputBackend, LibinputSessionInterface},
         renderer::{
-            element::surface::WaylandSurfaceRenderElement,
             gles::GlesRenderer,
             multigpu::{GpuManager, MultiRenderer, gbm::GbmGlesBackend},
         },
@@ -43,7 +42,11 @@ use smithay::{
     utils::DeviceFd,
 };
 
-use crate::{PantheonCompositor, display_config::OutputSnapshot};
+use crate::{
+    PantheonCompositor,
+    cursor::{CursorRenderElement, render_cursor_elements},
+    display_config::OutputSnapshot,
+};
 
 pub type GbmRendererBackend = GbmGlesBackend<GlesRenderer, DrmDeviceFd>;
 pub type NativeGpuManager = GpuManager<GbmRendererBackend>;
@@ -135,12 +138,28 @@ impl NativeKmsDevice {
                 continue;
             }
             let mut gpu_renderer = renderer.gpus.single_renderer(&renderer.render_node)?;
-            let elements = smithay::desktop::space::space_render_elements(
+            let space_elements = smithay::desktop::space::space_render_elements(
                 &mut gpu_renderer,
                 [&state.space],
                 &output.output,
                 1.0,
             )?;
+            let cursor_elements = render_cursor_elements(&mut gpu_renderer, state, &output.output);
+            let mut elements = space_elements
+                .into_iter()
+                .map(|element| match element {
+                    smithay::desktop::space::SpaceRenderElements::Surface(surface) => {
+                        CursorRenderElement::from(surface)
+                    }
+                    smithay::desktop::space::SpaceRenderElements::Element(element) => {
+                        CursorRenderElement::from(element)
+                    }
+                    smithay::desktop::space::SpaceRenderElements::_GenericCatcher(_) => {
+                        unreachable!("SpaceRenderElements generic catcher is never constructed")
+                    }
+                })
+                .collect::<Vec<_>>();
+            elements.extend(cursor_elements);
             let frame = output.drm_output.render_frame(
                 &mut gpu_renderer,
                 &elements,
@@ -264,7 +283,7 @@ impl NativeKmsDevice {
 
         let render_elements = DrmOutputRenderElements::<
             NativeMultiRenderer<'_>,
-            WaylandSurfaceRenderElement<NativeMultiRenderer<'_>>,
+            CursorRenderElement<NativeMultiRenderer<'_>>,
         >::default();
         let mut outputs = Vec::with_capacity(connected.len());
         let mut x = 0;
