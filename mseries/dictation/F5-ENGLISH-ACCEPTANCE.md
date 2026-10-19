@@ -5,6 +5,14 @@ It is the continuation record; completed trials and failures must be reused.
 [Earlier latency research](REALTIME-ENGLISH.md) remains the benchmark baseline.
 This report covers the subsequent controller/app implementation, not factory boot.
 
+**Later v0.0.1 gate:** physical F5 in the owner's ChatGPT app failed before
+microphone capture because no focused editable field was exposed. The key was
+received. A reviewed per-user launcher enables accessibility and IBus at the next
+full owner-controlled app launch; 17 launcher contracts pass. Human acceptance
+after that relaunch is pending. See the [candidate instructions](../releases/v0.0.1/README.md)
+and [retained failure/staging receipts](../releases/v0.0.1/receipts/). Earlier
+toolkit/real-app successes below do not erase this app-specific failure.
+
 ## Delivered design
 
 F5 selects English Nemotron streaming on CPU, four threads, trained 160 ms operating

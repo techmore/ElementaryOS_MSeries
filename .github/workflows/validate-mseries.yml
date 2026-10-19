@@ -24,6 +24,23 @@ on:
       - ".github/workflows/**"
 
 jobs:
+  speech-release:
+    name: English F5 release contracts (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install private GTK test dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-ibus-1.0 gir1.2-atspi-2.0 dbus-x11 xvfb xauth
+      - name: Verify source-only release, rollback and host checks
+        run: |
+          bash -n mseries/releases/v0.0.1/install.sh
+          python3 -B -m unittest discover -s mseries/releases -p 'test_*.py'
+          python3 -B mseries/releases/v0.0.1/test_preflight.py
+      - name: Verify transcript-only UI without microphone or models
+        run: |
+          python3 -B mseries/dictation/speech-only-panel-smoke.py
+          python3 -B mseries/dictation/speech-only-panel-smoke.py --default-review
+
   bluetooth:
     name: Quick Settings Bluetooth controls (arm64)
     runs-on: ubuntu-26.04-arm

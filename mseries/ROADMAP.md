@@ -1,5 +1,50 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## v0.0.1 English F5 candidate; ChatGPT input correction staged — 2026-10-18
+
+The owner narrowed v0.0.1 to English F5 speech to text on the existing M1 Pro
+32 GB desktop; factory ISO, voice replies and diagnosis remain separate.
+The fresh physical F5 check in ChatGPT FAILED: the key reached the listener,
+but focused-field metadata was unavailable and it refused before microphone
+capture. This is retained app-input failure evidence, not model WER. The earlier
+seven installed routes and completed CPU/MLX comparisons are unchanged.
+
+A reviewed per-user lowercase `chatgpt.desktop` override is now staged through
+`dictation-launch.py --chromium`, enabling renderer accessibility and the IBus
+environment at next full app launch. Seventeen launcher contracts pass, including
+independent GLib quoting/spacing, URL/action preservation, owner-edit refusal and
+private rollback. Desktop resolution selects that override. ChatGPT, listener,
+input bridge and everyday4B were not restarted. No microphone/model was used.
+A later owner retry also failed; read-only process metadata still shows the
+original ChatGPT process without the new flags/environment. The fix has not
+activated. Fully Quit, reopen from Applications, verify new process flags, then
+physical F5 in the chat composer is the remaining acceptance gate. Preserve password/active-field guards.
+The owner permits OS-level dictation integration; it is not a reason to type into
+an unknown field. Native compositor input/broker work remains future development.
+
+RC2 archive `d5c0e9b2…` is built from exact source `13a8b847ef3c754cbe37fe68686463bb2ec9f269`.
+All 25 extracted-package/host checks passed. That exact head passed all seven CI
+jobs in run `39157224321`. The source-only STT payload is now installed: all 16
+runtime hashes and managers match, the transcript-only launcher is active for
+its next invocation, strict CPU/IBus is ready, all seven debug overrides are
+absent, native input preferences and everyday4B PID are preserved. One post-install
+sample had 13,683,703,808 bytes available, maximum 2,489 RPM / 42.331 C. This was
+static/readiness verification without microphone/model inference. It is not
+physical F5 acceptance in ChatGPT. RC1's terminal-error idle refusal was fixed
+without changing its retained receipt or any live status to obtain a pass.
+
+Release worktree: `ElementaryOS_MSeries-f5-v001`, branch `release/f5-v0.0.1`.
+Source-only deterministic Git-blob packaging, strict read-only preflight,
+versioned rollback and a transcript-only UI are prepared. Native/ANE/MLX assets
+stay available on the host but are not bundled or requalified. See
+[release candidate instructions](releases/v0.0.1/README.md) and its sanitized
+[receipts](releases/v0.0.1/receipts/). No v0.0.1 tag/release has been published.
+Advanced diagnostic work is isolated on `feat/quiet-diagnostic-agent`, disabled
+and not qualified; never add it to the STT artifact or use everyday4B for repairs.
+The existing six-hour developer watcher continues; do not duplicate it or rerun
+finished ASR benchmarks. Next: verify ChatGPT actually restarts with the staged flags, record the owner's
+post-relaunch F5 result, then publish v0.0.1 only when that result passes. Preserve all owner main changes; one Git writer.
+
 ## Signal Granite palette completeness — 2026-10-18
 
 PR #222's Granite path now maps Signal brand/logo blue `#3b45fd` as well as the

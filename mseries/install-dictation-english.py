@@ -7,6 +7,7 @@ Does not change input-method preferences, audio routing, other profiles or windo
 local sources, never installed into the owner's Python environment.
 """
 import argparse
+import base64
 import hashlib
 import importlib.util
 import json
@@ -209,7 +210,7 @@ def restart_bridge(engine, previous):
     engine.bridge_ready()
 
 
-def stage(payload, manager, engine, *, model_source=None, download=False, mlx_model=None, mlx_modules=None):
+def stage(payload, manager, engine, *, model_source=None, download=False, mlx_model=None, mlx_modules=None, speech_only=False):
     engine.idle_capture()
     if engine.active():
         raise ValueError("Stop the owned idle F5 service or use --activate before staging its live payload")
@@ -224,7 +225,7 @@ def stage(payload, manager, engine, *, model_source=None, download=False, mlx_mo
         payload.save()
     for name in RUNTIME_FILES:
         payload.install(BASE / name, (SOURCE / name).read_bytes(), 0o755 if name.endswith(".py") else 0o644)
-    for name in ("dictation_voice.py", "voice-assistant.py"):
+    for name in (() if speech_only else ("dictation_voice.py", "voice-assistant.py")):
         if (SOURCE / name).is_file():
             payload.install(BASE / name, (SOURCE / name).read_bytes(), 0o755)
     machine = HERE / "local-ai/machine.py"
@@ -240,11 +241,12 @@ def stage(payload, manager, engine, *, model_source=None, download=False, mlx_mo
     target = BASE / "models" / engine.NEMOTRON
     if artifact != target:
         install_file(payload, target, artifact)
-    optional_mlx(payload, mlx_model, mlx_modules)
-    manager.install_panel(payload)
+    if not speech_only:
+        optional_mlx(payload, mlx_model, mlx_modules)
+    manager.install_panel(payload, speech_only=speech_only)
     payload.install(HOME / ".config/systemd/user" / engine.INPUT_SERVICE,
                     (SOURCE / engine.INPUT_SERVICE).read_bytes(), 0o644)
-    if (SOURCE / "voice-assistant.py").is_file():
+    if not speech_only and (SOURCE / "voice-assistant.py").is_file():
         def quote(value):
             return '"' + str(value).replace("\\", "\\\\").replace('"', '\\"').replace("`", "\\`").replace("$", "\\$") + '"'
         desktop = ("[Desktop Entry]\nType=Application\nName=Voice Assistant\n"
@@ -255,19 +257,83 @@ def stage(payload, manager, engine, *, model_source=None, download=False, mlx_mo
         payload.install(HOME / ".local/share/applications/org.techmore.VoiceAssistant.desktop", desktop.encode(), 0o644)
 
 
+def state_directory(speech_only=False):
+    return HOME / ".local/state/mseries-dictation-stt-v0.0.1" if speech_only else STATE
+
+
+def selector_marker(engine):
+    path, change = engine.latest_change()
+    if path is None:
+        if change is not None:
+            raise ValueError("Ambiguous selector checkpoint; configuration preserved")
+        return None
+    return {"name": path.name, "sha256": file_sha(path)}
+
+
+def dropin_digest(engine):
+    if engine.DROPIN.is_symlink():
+        raise ValueError("Owner changed the managed engine file; configuration preserved")
+    return file_sha(engine.DROPIN) if engine.DROPIN.exists() else None
+
+
+def remember_selector(payload, engine):
+    metadata = payload.data["metadata"]
+    metadata.update(selector_schema=1, selector_before=selector_marker(engine),
+                    selector_owned=None, selector_before_dropin=dropin_digest(engine))
+    # A pre-existing managed selection must itself still match its receipt.
+    path, change = engine.latest_change()
+    if change and not change.get("rolled_back"):
+        engine.assert_managed(change)
+    payload.save()
+
+
+def capture_selector(payload, engine):
+    """Called only under the shared selector lock, after our select attempt."""
+    metadata = payload.data["metadata"]
+    marker = selector_marker(engine)
+    if marker != metadata["selector_before"]:
+        if marker is None or (metadata["selector_before"] and marker["name"] == metadata["selector_before"]["name"]):
+            raise ValueError("Owner changed the previous selector receipt; rollback preserved it")
+        metadata["selector_owned"] = marker
+        payload.save()
+
+
+def validate_selector_restore(payload, engine):
+    metadata = payload.data["metadata"]
+    if metadata.get("selector_schema") != 1 or "selector_before_dropin" not in metadata:
+        raise ValueError("Legacy ambiguous engine checkpoint: no service was stopped; reconcile the previous deployment first")
+    expected = metadata.get("selector_owned") or metadata.get("selector_before")
+    if selector_marker(engine) != expected:
+        raise ValueError("Owner selected or changed another engine; rollback preserved it")
+    path, change = engine.latest_change()
+    if metadata.get("selector_owned") and change and not change.get("rolled_back"):
+        engine.assert_managed(change)
+        # Verify the rollback bytes before any service is touched.
+        original = base64.b64decode(change["before"], validate=True) if change["before"] is not None else None
+        original_sha = hashlib.sha256(original).hexdigest() if original is not None else None
+        if original is not None and original_sha != change["before_sha256"]:
+            raise ValueError("Private engine backup digest mismatch; configuration preserved")
+        if original_sha != metadata["selector_before_dropin"]:
+            raise ValueError("Engine rollback does not match this update's baseline")
+        return path, change
+    if dropin_digest(engine) != metadata["selector_before_dropin"]:
+        raise ValueError("Owner changed the previous engine configuration; rollback preserved it")
+    return None, None
+
+
 def restore_payload(payload, engine):
     validate_restore(payload)  # Check all owner edits/backups before stopping anything.
     if not payload.data["metadata"].get("activation_started"):
         restore_files(payload)
         return  # A stage-only rollback never changes running services.
+    path, change = validate_selector_restore(payload, engine)
     engine.idle_capture()
     engine.quiet_admission()
     engine.idle_capture()
     engine.systemctl("stop", engine.SERVICE)
     previous_input = input_engine()
     engine.systemctl("stop", engine.INPUT_SERVICE)
-    path, change = engine.latest_change()
-    if change and not change.get("rolled_back"):
+    if change:
         engine.restore_change(path, change, restart=False)
     restore_files(payload)
     engine.systemctl("daemon-reload")
@@ -294,13 +360,16 @@ def main():
     parser.add_argument("--download-model", action="store_true")
     parser.add_argument("--mlx-model-dir", type=Path)
     parser.add_argument("--mlx-modules", type=Path)
+    parser.add_argument("--speech-only", action="store_true", help="v0.0.1 CPU English STT update; exclude voice/LLM additions and retain a separate rollback")
     args = parser.parse_args()
     if os.geteuid() == 0:
         raise SystemExit("Run as the desktop user")
     if (args.mode or args.warm_seconds is not None) and not args.activate:
         parser.error("--mode/--warm-seconds require --activate")
+    if args.speech_only and (args.mlx_model_dir or args.mlx_modules or args.activate not in (None, "nemotron")):
+        parser.error("--speech-only accepts only Nemotron CPU and no optional MLX asset copy")
     manager, engine = helper(), selector()
-    payload = manager.Payload(STATE)
+    payload = manager.Payload(state_directory(args.speech_only))
     with engine.transaction_lock():
         if args.rollback:
             if not payload.data["metadata"]:
@@ -308,6 +377,8 @@ def main():
             restore_payload(payload, engine)
             print("Previous English payload and engine restored; private backups retained.")
             return
+        if payload.data["metadata"].get("activation_started"):
+            raise ValueError("This version's deployment checkpoint is active; roll it back before applying again")
         if args.activate:
             engine.idle_capture()
             engine.quiet_admission(args.activate)
@@ -315,6 +386,7 @@ def main():
                 payload.data["metadata"] = {"stream_active": engine.active(), "activation_started": False,
                     "input_active": engine.systemctl("is-active", "--quiet", engine.INPUT_SERVICE, check=False).returncode == 0,
                     "input_engine": input_engine()}
+            remember_selector(payload, engine)
             payload.data["metadata"]["activation_started"] = True
             payload.save()
             try:
@@ -323,17 +395,19 @@ def main():
                 previous_input = input_engine()
                 engine.systemctl("stop", engine.SERVICE)
                 stage(payload, manager, engine, model_source=args.model_source, download=args.download_model,
-                      mlx_model=args.mlx_model_dir, mlx_modules=args.mlx_modules)
+                      mlx_model=args.mlx_model_dir, mlx_modules=args.mlx_modules, speech_only=args.speech_only)
                 engine.systemctl("daemon-reload")
                 restart_bridge(engine, previous_input)
                 engine.select(args.activate, args.mode, was_active=payload.data["metadata"]["stream_active"], warm_seconds=args.warm_seconds)
+                capture_selector(payload, engine)
             except Exception:
+                capture_selector(payload, engine)
                 restore_payload(payload, engine)
                 raise
             print("English-only F5 payload and selected engine deployed; live microphone accuracy remains an owner acceptance check.")
         else:
             stage(payload, manager, engine, model_source=args.model_source, download=args.download_model,
-                  mlx_model=args.mlx_model_dir, mlx_modules=args.mlx_modules)
+                  mlx_model=args.mlx_model_dir, mlx_modules=args.mlx_modules, speech_only=args.speech_only)
             print("English F5 payload/model staged with private backup; services and preferences unchanged.")
 
 
