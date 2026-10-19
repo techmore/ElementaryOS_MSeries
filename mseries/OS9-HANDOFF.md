@@ -1,5 +1,13 @@
 # OS 9 implementation / Claude Code handoff
 
+## Dock icons halved — 2026-10-18 (Claude Code)
+
+Owner asked for the applications tray icons at half size. Ran
+`gsettings set io.elementary.dock icon-size 24` (was 48, the dock's setting; dconf only, no repo
+files). Verified by reading the key back (24). Not visually checked on screen. To revert:
+`gsettings reset io.elementary.dock icon-size`. If "applications tray" meant the Applications
+menu or drawers instead, that is still at its default size.
+
 ## Official Discord via FEX in a 4 KB-page microVM — 2026-10-18 (Claude Code)
 
 Owner required official Discord (amd64 only). FEX alone aborts here (16 KB pages, `<jemalloc>: Unsupported system
