@@ -176,7 +176,9 @@ configuration changes. Cross-output moves and fractional rendering quality
 still need an isolated client/runtime check. The compositor implements
 `xdg-activation-v1`: it accepts recent tokens tied to the compositor seat,
 consumes tokens on use, and raises/focuses mapped target windows unless the
-session is locked. Activation launch flows still need an isolated client check.
+session is locked. `xdg_toplevel.set_minimized` unmaps and retains windows; a later
+valid activation request restores them at their previous location. Activation
+and minimize/restore flows still need an isolated client check.
 The isolated
 Wingpanel run no longer reports missing DisplayConfig or Shell keybinding
 services. Pressing `Super+N` in the nested window produced the registered

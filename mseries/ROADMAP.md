@@ -42,7 +42,9 @@ outputs still needs runtime verification. The compositor also serves Wingpanel's
 accelerator API and matched `Super+N` to an `AcceleratorActivated` signal during
 an isolated nested run. `xdg-activation-v1` now validates recent seat-backed
 tokens, consumes them after use and raises/focuses mapped target windows when
-the session is unlocked; app launch flows remain unverified.
+the session is unlocked; app launch flows remain unverified. The
+`xdg_toplevel.set_minimized` request now unmaps and retains windows, which valid activation requests
+can restore at their previous position; this is not runtime-qualified.
 `ShowOSD`, lock-screen action modes and physical media
 key activation remain unimplemented or unqualified. Relative pointer motion now
 updates pointer focus and drives the compositor's existing move/resize grabs;

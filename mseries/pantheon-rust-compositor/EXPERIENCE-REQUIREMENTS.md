@@ -100,7 +100,9 @@ preferred scale from its first mapped output. Runtime checks for moving a
 surface between differently scaled outputs remain open. The compositor now
 serves `xdg-activation-v1`, requiring a recent token associated with this seat
 and using it to raise/focus mapped windows outside a locked session. App-launch
-activation remains runtime-unverified. It also
+activation remains runtime-unverified. `xdg_toplevel.set_minimized` now hides and
+retains a window, and a later valid activation request restores it. Minimize /
+restore behavior remains runtime-unverified. It also
 implements the `org.gnome.Shell`
 accelerator registration and activation path: pressing the registered
 `Super+N` chord emits `AcceleratorActivated` in the nested run. Dock integration,

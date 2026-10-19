@@ -145,6 +145,44 @@ impl XdgShellHandler for PantheonCompositor {
         self.configure_window_mode(surface, false, false);
     }
 
+    fn minimize_request(&mut self, surface: ToplevelSurface) {
+        if self.session_locked {
+            return;
+        }
+        let wl_surface = surface.wl_surface();
+        if self.is_panel_surface(wl_surface) {
+            return;
+        }
+        let Some(window) = self
+            .space
+            .elements()
+            .find(|window| {
+                window
+                    .toplevel()
+                    .is_some_and(|top| top.wl_surface() == wl_surface)
+            })
+            .cloned()
+        else {
+            return;
+        };
+        let Some(location) = self.space.element_location(&window) else {
+            return;
+        };
+        let id = wl_surface.id();
+        let was_focused = self
+            .seat
+            .get_keyboard()
+            .and_then(|keyboard| keyboard.current_focus())
+            .is_some_and(|focused| surface_has_root(&focused, wl_surface));
+        self.space.unmap_elem(&window);
+        self.minimized_windows.insert(id, (window, location));
+        if was_focused {
+            self.focus_next_window();
+        }
+        #[cfg(feature = "native-drm")]
+        self.request_native_redraw();
+    }
+
     fn toplevel_destroyed(&mut self, surface: ToplevelSurface) {
         let wl_surface = surface.wl_surface();
         let id = wl_surface.id();
@@ -152,9 +190,10 @@ impl XdgShellHandler for PantheonCompositor {
             .seat
             .get_keyboard()
             .and_then(|keyboard| keyboard.current_focus())
-            .is_some_and(|focused| focused == *wl_surface);
+            .is_some_and(|focused| surface_has_root(&focused, wl_surface));
         self.initially_positioned.remove(&id);
         self.managed_windows.remove(&id);
+        self.minimized_windows.remove(&id);
 
         let window = self
             .space
@@ -170,38 +209,7 @@ impl XdgShellHandler for PantheonCompositor {
         }
 
         if was_focused {
-            let next_window = self
-                .space
-                .elements()
-                .rev()
-                .find(|window| {
-                    window
-                        .toplevel()
-                        .is_some_and(|top| !self.is_panel_surface(top.wl_surface()))
-                })
-                .cloned();
-            if let Some(window) = next_window {
-                self.space.raise_element(&window, true);
-                if let Some(surface) = window.toplevel().map(|top| top.wl_surface().clone()) {
-                    let serial = smithay::utils::SERIAL_COUNTER.next_serial();
-                    self.seat
-                        .get_keyboard()
-                        .unwrap()
-                        .set_focus(self, Some(surface), serial);
-                    self.space.elements().for_each(|window| {
-                        if let Some(toplevel) = window.toplevel() {
-                            toplevel.send_pending_configure();
-                        }
-                    });
-                }
-            } else {
-                let serial = smithay::utils::SERIAL_COUNTER.next_serial();
-                self.seat.get_keyboard().unwrap().set_focus(
-                    self,
-                    Option::<WlSurface>::None,
-                    serial,
-                );
-            }
+            self.focus_next_window();
         }
     }
 
@@ -249,6 +257,45 @@ impl XdgShellHandler for PantheonCompositor {
     }
 }
 
+impl PantheonCompositor {
+    pub(crate) fn focus_next_window(&mut self) {
+        if self.session_locked {
+            return;
+        }
+        let next_window = self
+            .space
+            .elements()
+            .rev()
+            .find(|window| {
+                window
+                    .toplevel()
+                    .is_some_and(|top| !self.is_panel_surface(top.wl_surface()))
+            })
+            .cloned();
+        if let Some(window) = next_window {
+            self.space.raise_element(&window, true);
+            if let Some(surface) = window.toplevel().map(|top| top.wl_surface().clone()) {
+                let serial = smithay::utils::SERIAL_COUNTER.next_serial();
+                self.seat
+                    .get_keyboard()
+                    .unwrap()
+                    .set_focus(self, Some(surface), serial);
+                self.space.elements().for_each(|window| {
+                    if let Some(toplevel) = window.toplevel() {
+                        toplevel.send_pending_configure();
+                    }
+                });
+            }
+        } else {
+            let serial = smithay::utils::SERIAL_COUNTER.next_serial();
+            self.seat
+                .get_keyboard()
+                .unwrap()
+                .set_focus(self, Option::<WlSurface>::None, serial);
+        }
+    }
+}
+
 fn check_grab(
     seat: &Seat<PantheonCompositor>,
     surface: &WlSurface,
@@ -270,6 +317,14 @@ fn check_grab(
     }
 
     Some(start_data)
+}
+
+fn surface_has_root(surface: &WlSurface, expected_root: &WlSurface) -> bool {
+    let mut root = surface.clone();
+    while let Some(parent) = smithay::wayland::compositor::get_parent(&root) {
+        root = parent;
+    }
+    root == *expected_root
 }
 
 /// Should be called on `WlSurface::commit` after `Window::on_commit`.

@@ -5639,3 +5639,15 @@ so DRM behavior and settings-client round trips remain runtime-unqualified.
 Next: validate the D-Bus request against Pantheon Settings in an isolated
 nested session, then qualify mode rollback and persistent startup on hardware
 without replacing the active compositor until a recovery path is ready.
+
+### Retain and restore minimized windows — 2026-10-19
+
+Implemented Smithay's `XdgShellHandler::minimize_request`: requests outside a
+locked session remove non-panel windows from the visible `Space` while retaining
+their `Window` and previous position. If the minimized window held keyboard
+focus, focus moves to the next visible application window. A later valid
+`xdg-activation-v1` request restores a retained window to its former location,
+raises it and focuses it; destroying a minimized toplevel drops the retained
+entry. Default and `native-drm` compositor builds pass. This code has not been
+exercised with an app client; task-switcher discovery and runtime restoration
+remain unverified.

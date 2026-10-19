@@ -12,7 +12,7 @@ use smithay::{
             timer::{TimeoutAction, Timer},
         },
         wayland_server::{
-            Display, DisplayHandle,
+            Display, DisplayHandle, Resource,
             backend::{ClientData, ClientId, DisconnectReason},
             protocol::wl_surface::WlSurface,
         },
@@ -80,6 +80,10 @@ pub struct PantheonCompositor {
     pub last_work_area: Option<smithay::utils::Rectangle<i32, smithay::utils::Logical>>,
     pub managed_windows:
         HashMap<smithay::reexports::wayland_server::backend::ObjectId, ManagedWindow>,
+    pub minimized_windows: HashMap<
+        smithay::reexports::wayland_server::backend::ObjectId,
+        (Window, Point<i32, Logical>),
+    >,
     pub initially_positioned: HashSet<smithay::reexports::wayland_server::backend::ObjectId>,
     pub popups: PopupManager,
     pub cursor_status: CursorImageStatus,
@@ -206,6 +210,7 @@ impl PantheonCompositor {
             panels: HashMap::new(),
             last_work_area: None,
             managed_windows: HashMap::new(),
+            minimized_windows: HashMap::new(),
             initially_positioned: HashSet::new(),
             popups,
             cursor_status: CursorImageStatus::default_named(),
@@ -584,7 +589,13 @@ impl XdgActivationHandler for PantheonCompositor {
         while let Some(parent) = smithay::wayland::compositor::get_parent(&root) {
             root = parent;
         }
-        let Some(window) = self.find_window_for_surface(&root) else {
+        let root_id = root.id();
+        let window = self.find_window_for_surface(&root).or_else(|| {
+            let (window, location) = self.minimized_windows.remove(&root_id)?;
+            self.space.map_element(window.clone(), location, false);
+            Some(window)
+        });
+        let Some(window) = window else {
             return;
         };
         self.space.raise_element(&window, true);
