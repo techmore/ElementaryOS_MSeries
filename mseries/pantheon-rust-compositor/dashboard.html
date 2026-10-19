@@ -218,6 +218,7 @@
         <li><code>metrics/gala-idle-20261019.csv</code> and <code>metrics/rust-idle-qualification-20261019.csv</code>: short internal-panel idle samples; different session ages and incomplete process parity.</li>
         <li><code>metrics/rust-interactive-20261019.csv</code>: 30-second interactive Rust sample; machine on mains, so its battery-flow reading is not device power use.</li>
         <li><code>collect-session-startup.sh</code>: boot chain and service/journal milestones. In build <code>0.1.0+git7a0ac92</code>, wallpaper loaded at +0.11 s and the first Wingpanel buffer committed at +2.22 s relative to the Rust session manager start. The owner noticed this ~2.1 s wallpaper-to-panel gap as slow, despite reporting good overall opening time. Journal milestones are not direct measures of visual perception or first interaction.</li>
+        <li><code>collect-session-thread-profile.sh</code>: prepared to capture per-thread CPU and resident memory with <code>pidstat</code> during matched follow-up runs; no thread profile has been collected yet.</li>
         <li>The owner reported inconsistent window corners; exact affected apps and states are not yet recorded.</li>
       </ul>
     </details>

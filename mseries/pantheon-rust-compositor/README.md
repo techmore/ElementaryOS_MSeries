@@ -19,6 +19,10 @@ the proposed Pantheon MVP—along with a tested-versus-open status table—see
 For a visual comparison of Gala/Mutter and the Rust/Smithay migration stages,
 startup timing, CPU, memory, and power evidence, open the standalone
 [`migration dashboard`](dashboard.html).
+For matched CPU/RSS sampling, use
+[`collect-session-metrics.sh`](collect-session-metrics.sh) and the
+[`pidstat` thread sampler](collect-session-thread-profile.sh); capture the
+same workload in both sessions before drawing performance conclusions.
 
 On 2026-10-19 the installed experimental session completed its first native
 M1 Pro login and scanned out an AR30 3024x1964 framebuffer. The owner reported
