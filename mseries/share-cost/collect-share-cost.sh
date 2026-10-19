@@ -10,7 +10,9 @@
 # Read-only. It never starts, stops or touches a share, the share server, the
 # portal or PipeWire; it only reads /proc, hwmon and the share launcher's
 # state.json. It cannot tell whether a viewer consented to anything, and it does
-# not try to: viewer counts are read from the launcher's own state file.
+# not try to: viewer counts are read from the launcher's own state file, which
+# counts pending and admitted viewers together. Confirm admission separately
+# before treating a 3-viewer arm as valid.
 #
 # The point of the run is a MATCHED PAIR: the same machine, display, content and
 # interval with 1 viewer and again with 3. One capture proves nothing; see

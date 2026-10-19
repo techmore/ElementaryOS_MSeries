@@ -40,6 +40,12 @@ hwmon and the launcher's `state.json`, and never starts, stops or touches a
 share, the portal or PipeWire. It records viewer counts as the launcher reports
 them, so a run that expected 3 viewers but had 2 says so.
 
+The launcher's count includes **pending** viewers as well as admitted ones.
+Before starting an arm, confirm that every viewer for that arm is admitted (the
+eyes panel or `GET /api/v1/share/status`); a pending viewer can make a
+3-viewer arm look populated while receiving no media. Record the admitted count
+with the conditions.
+
 `compare-share-cost.py` refuses a set whose recorded workload, display mode,
 duration, interval or browser differ, and refuses a capture whose observed
 viewer count or AC state does not match its header. It reports the condition
