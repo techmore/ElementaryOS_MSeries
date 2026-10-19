@@ -87,17 +87,24 @@ pointer motion at the panel's output edge reveals it. Hiding releases the
 panel's work area; revealing it restores that area and reconfigures managed
 windows. The active host Dock setting is `overlapping-window`. The transition
 is immediate; animated hiding and runtime Dock interaction remain unqualified.
-Blur, overview behavior and multi-output Dock behavior also remain open. The compositor now implements
-Smithay's `ext-session-lock-v1`: it blanks each output until its lock surface is
-ready, confines input to the locker, and restores the prior keyboard focus on
-unlock. The compositor exports the observed `org.gnome.ScreenSaver` API and
-launches `gtklock` on `Lock`/`SetActive(true)`; set `PANTHEON_LOCK_COMMAND` to
-select another executable. The locker is not installed by this source tree, and
-the D-Bus/session path has not yet been runtime-qualified. Widget,
-extended-behavior and greeter protocol requests are accepted but currently have
-no behavior. Touch input, multi-monitor configuration, accessibility, IBus,
-Xwayland, screen-sharing portals and production crash recovery also remain
-unimplemented.
+Blur, overview behavior and multi-output Dock behavior also remain open. The
+compositor implements Smithay's `ext-session-lock-v1`: it blanks each output
+until its lock surface is ready, confines input to the locker, and restores the
+prior keyboard focus on unlock. It exports the observed
+`org.gnome.ScreenSaver` API and launches `gtklock` on `Lock`/`SetActive(true)`;
+set `PANTHEON_LOCK_COMMAND` to select another executable. The locker and
+D-Bus/session path still need runtime qualification. Widget, extended-behavior
+and greeter protocol requests are accepted but currently have no behavior.
+
+Rootless XWayland startup, X11 window management, keyboard routing, session
+`DISPLAY` propagation, clipboard and PRIMARY selection bridging are implemented
+and compile-checked, but still need runtime qualification. Native multi-output
+enumeration and hotplug reconciliation exist; configuration rejects output
+disabling, mirroring, unsupported monitor properties and nested mode changes.
+Monitor modeset/rollback and hotplug remain unqualified on hardware. IBus text
+input, accessibility protocol support, screen-sharing portals, touch input and
+production crash recovery remain unimplemented or unqualified; add them only
+when an observed Pantheon workflow requires them.
 
 `native-drm` enables Smithay's DRM, GBM, libinput, udev, libseat, EGL, and
 multi-GPU dependencies. The executable defaults to nested Winit; only
