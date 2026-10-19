@@ -8,6 +8,7 @@
 use std::path::Path;
 
 use smithay::{
+    backend::allocator::gbm::{GbmAllocator, GbmBufferFlags, GbmDevice},
     backend::{
         drm::{DrmDeviceFd, DrmNode, NodeType},
         egl::{EGLContext, EGLDevice, EGLDisplay, context::ContextPriority},
@@ -24,13 +25,25 @@ use smithay::{
 
 pub type GbmRendererBackend = GbmGlesBackend<GlesRenderer, DrmDeviceFd>;
 pub type NativeGpuManager = GpuManager<GbmRendererBackend>;
+pub type NativeAllocator = GbmAllocator<DrmDeviceFd>;
 
 pub struct NativeRenderer {
     pub render_node: DrmNode,
+    pub render_gbm: GbmDevice<DrmDeviceFd>,
     pub gpus: NativeGpuManager,
 }
 
 impl NativeRenderer {
+    /// Allocate render buffers on the hardware GPU with scanout usage enabled.
+    /// The Apple KMS framebuffer exporter can import these buffers for the
+    /// display controller, which has no EGL renderer on the measured M1 Pro.
+    pub fn output_allocator(&self) -> NativeAllocator {
+        GbmAllocator::new(
+            self.render_gbm.clone(),
+            GbmBufferFlags::RENDERING | GbmBufferFlags::SCANOUT,
+        )
+    }
+
     /// Open the first hardware renderer on the active libseat and register it
     /// with Smithay's multi-GPU manager. A scanout-only GPU is intentionally
     /// not required to expose EGL.
@@ -60,7 +73,13 @@ impl NativeRenderer {
         let mut last_error = None;
         for path in paths {
             match Self::add_hardware_node(session, &mut gpus, &path) {
-                Ok(Some(render_node)) => return Ok(Self { render_node, gpus }),
+                Ok(Some((render_node, render_gbm))) => {
+                    return Ok(Self {
+                        render_node,
+                        render_gbm,
+                        gpus,
+                    });
+                }
                 Ok(None) => {}
                 Err(error) => last_error = Some(error),
             }
@@ -76,7 +95,7 @@ impl NativeRenderer {
         session: &LibSeatSession,
         gpus: &mut NativeGpuManager,
         path: &Path,
-    ) -> Result<Option<DrmNode>, Box<dyn std::error::Error>> {
+    ) -> Result<Option<(DrmNode, GbmDevice<DrmDeviceFd>)>, Box<dyn std::error::Error>> {
         let node = DrmNode::from_path(path)?;
         let mut session = session.clone();
         let fd = session.open(
@@ -96,7 +115,7 @@ impl NativeRenderer {
             .try_get_render_node()?
             .or_else(|| node.node_with_type(NodeType::Render).and_then(Result::ok))
             .unwrap_or(node);
-        gpus.as_mut().add_node(render_node, gbm)?;
-        Ok(Some(render_node))
+        gpus.as_mut().add_node(render_node, gbm.clone())?;
+        Ok(Some((render_node, gbm)))
     }
 }

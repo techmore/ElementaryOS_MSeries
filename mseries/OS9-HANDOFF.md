@@ -5412,11 +5412,14 @@ Added feature-gated `native.rs` with a libseat-scoped hardware renderer
 initializer: it tries the session's primary GPU first, opens each candidate via
 libseat, rejects software EGL, discovers its render node, and registers the GBM
 device with Smithay `GpuManager`. This establishes the rendering side needed
-for the measured Asahi-render/Apple-KMS split. It is not yet called by the
-executable and does not initialize a KMS output, cross-device framebuffer
-exporter, input backend, or native event loop. No libseat session was opened at
-runtime. Default and `native-drm` cargo builds/checks pass locally; next wire
-this renderer into the native backend and pair it with the Apple KMS allocator.
+for the measured Asahi-render/Apple-KMS split. It retains the renderer's GBM
+device and can create a rendering/scanout GBM allocator for the Apple KMS
+framebuffer exporter to import. It is not yet called by the executable and
+does not initialize a KMS output, cross-device framebuffer exporter, input
+backend, or native event loop. No libseat session was opened at runtime.
+Default and `native-drm` cargo checks pass, and the feature-enabled binaries
+build locally; next pair this allocator with the Apple KMS device and output
+manager.
 
 ### Absolute pointer mapping — 2026-10-18
 

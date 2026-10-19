@@ -70,8 +70,9 @@ libinput, udev, libseat, EGL, and multi-GPU dependencies. The current executable
 still starts through Winit. Behind this feature, `native.rs` can initialize a
 hardware EGL/GBM renderer on a libseat GPU and register it with Smithay's
 multi-GPU manager. It is not yet called by the executable and does not open a
-KMS output, allocate scanout buffers, or drive native input. Default and
-feature-enabled `cargo check` and `cargo build` pass locally after installing
+KMS output or framebuffer exporter, though it exposes the GBM allocator needed
+to allocate render buffers for KMS import. It does not drive native input.
+Default and feature-enabled `cargo check` and `cargo build` pass locally after installing
 the host `libseat-dev` package; none of those commands initializes a native
 session.
 
