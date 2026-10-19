@@ -69,3 +69,33 @@ UI add/pause/resume/remove qualification, close/reopen state restoration, file a
 folder policy handling, and measured idle CPU/RSS/wakeup comparisons before
 further optimization. Upstream's rewrite also documents incomplete features
 in its README.
+
+## UI polish and close fix — 2026-10-18
+
+Fork `techmore/torrential`, `mseries-native`, merged PRs
+[#2](https://github.com/techmore/torrential/pull/2) (UI polish) and
+[#3](https://github.com/techmore/torrential/pull/3) (quit on window close);
+head `6ab0de5`. Package `elementary-torrential_0.1.0-1~mseries3_arm64.deb`
+built with `build-deb.sh` from that head and installed; `/usr/bin/torrential-relm4`
+is byte-identical to the merged build.
+
+- UI: scrollable list, segmented All/Downloading/Seeding/Paused filter, Ctrl+F
+  search, richer rows (size, rates, ETA, ratio, checking, error, paused),
+  status bar with totals, drag and drop of `.torrent`/magnet, Granite dark-style
+  sync, completion toast or notification, Ctrl+O/L/F/comma/Q and Delete,
+  symbolic magnet icon, validating magnet dialog, real download folder in
+  Preferences. The Quit menu item previously did nothing (action unregistered).
+- Bug found on the desktop: closing the window stopped the daemon but left the
+  app spinning (CPU 60-90%), because hidden hide-on-close dialogs kept
+  GtkApplication alive. Reproduced headless with the real daemon in a private
+  netns, fixed by routing close-request through `quit()`, re-verified the same way.
+- Verification method: private Broadway display, private netns/D-Bus/GSettings,
+  mock Transmission RPC for populated states, real daemon for close/quit.
+- Operational note: the packaged `transmission-daemon` system service must be
+  disabled (`systemctl disable --now transmission-daemon.service`); with it
+  running the app attaches to it, gets HTTP 401 and shows nothing. It was
+  disabled by the owner on 2026-10-18.
+- Still unverified: drag and drop, completion notification, Ctrl+comma
+  preferences, system dark-mode switch, and a real-torrent transfer with the new
+  UI. Magnet/.torrent file association (single-instance open handling) is not
+  implemented.
