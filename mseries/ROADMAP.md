@@ -24,7 +24,9 @@ windows and popup constraints use the output containing their window, and panel
 removal triggers work-area reflow. New committed toplevels are centered and
 cascaded in the focused window's work area, falling back to the pointer output
 and then the primary output; they are activated and focused. Absolute pointer events map to all logical
-outputs. These new behaviors are compile-checked but not runtime-qualified. The
+outputs. The configured primary connector is retained through monitor profile
+application and hotplug while it remains connected, falling back to eDP or the
+first available output. These new behaviors are compile-checked but not runtime-qualified. The
 v2 protocol probe completed a nested Xvfb run and sent panel requests over the
 Wayland socket. Installed Wingpanel 8.0.4 also connected in an
 isolated nested Wayland run, sent `get_panel`, anchor and hide-mode requests,

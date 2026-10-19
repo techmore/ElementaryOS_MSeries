@@ -61,6 +61,7 @@ pub fn init_winit(
     output.set_preferred(mode);
 
     state.space.map_output(&output, (x, y));
+    state.primary_output_name = Some(output.name());
     state.display_config.update(OutputSnapshot {
         connector: "winit".into(),
         vendor: "Smithay".into(),

@@ -77,6 +77,7 @@ pub struct PantheonCompositor {
     pub pantheon_shell_state: PantheonShellState,
     pub display_config: DisplayConfigHandle,
     pub shell_compat: ShellCompatHandle,
+    pub primary_output_name: Option<String>,
     pub panels: HashMap<smithay::reexports::wayland_server::backend::ObjectId, PanelState>,
     pub last_work_areas: HashMap<String, smithay::utils::Rectangle<i32, smithay::utils::Logical>>,
     pub managed_windows:
@@ -231,6 +232,7 @@ impl PantheonCompositor {
             pantheon_shell_state,
             display_config,
             shell_compat,
+            primary_output_name: None,
             panels: HashMap::new(),
             last_work_areas: HashMap::new(),
             managed_windows: HashMap::new(),
@@ -257,6 +259,14 @@ impl PantheonCompositor {
         if let Some(sender) = &self.native_redraw_sender {
             let _ = sender.send(());
         }
+    }
+
+    pub fn primary_output(&self) -> Option<smithay::output::Output> {
+        self.primary_output_name
+            .as_deref()
+            .and_then(|name| self.space.outputs().find(|output| output.name() == name))
+            .cloned()
+            .or_else(|| self.space.outputs().next().cloned())
     }
 
     fn apply_display_configuration(&mut self, request: &ApplyRequest) -> Result<(), String> {
@@ -347,6 +357,11 @@ impl PantheonCompositor {
             return Ok(());
         }
 
+        let primary_output_name = outputs
+            .iter()
+            .find(|output| configurations[&output.name()].4)
+            .map(|output| output.name());
+
         let requested_modes = configurations
             .iter()
             .map(|(name, (_, _, _, _, _, mode))| (name.clone(), *mode))
@@ -406,6 +421,7 @@ impl PantheonCompositor {
                 primary,
             });
         }
+        self.primary_output_name = primary_output_name;
         self.display_config.update_many(snapshots);
 
         self.last_work_areas.clear();
@@ -572,7 +588,7 @@ impl FractionalScaleHandler for PantheonCompositor {
         let output = self
             .find_window_for_surface(&root)
             .and_then(|window| self.space.outputs_for_element(&window).first().cloned())
-            .or_else(|| self.space.outputs().next().cloned());
+            .or_else(|| self.primary_output());
         if let Some(output) = output {
             smithay::wayland::compositor::with_states(&surface, |states| {
                 with_fractional_scale(states, |fractional_scale| {

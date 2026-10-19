@@ -390,7 +390,7 @@ pub fn handle_commit(state: &mut PantheonCompositor, surface: &WlSurface) {
             });
             let output = focused_output
                 .or(pointer_output)
-                .or_else(|| state.space.outputs().next().cloned());
+                .or_else(|| state.primary_output());
             let placement = output
                 .and_then(|output| state.space.output_geometry(&output))
                 .map(|output_geometry| state.work_area_for_output(output_geometry))
@@ -457,7 +457,7 @@ impl PantheonCompositor {
             .outputs_for_element(window)
             .first()
             .cloned()
-            .or_else(|| self.space.outputs().next().cloned())
+            .or_else(|| self.primary_output())
         else {
             return;
         };

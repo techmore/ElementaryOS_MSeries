@@ -519,8 +519,25 @@ impl NativeKmsDevice {
                     output.output.name(),
                 )
             });
+            let primary_output_name = state
+                .primary_output_name
+                .as_ref()
+                .filter(|name| {
+                    self.outputs
+                        .iter()
+                        .any(|output| &output.output.name() == *name)
+                })
+                .cloned()
+                .or_else(|| {
+                    self.outputs
+                        .iter()
+                        .find(|output| output.output.name().starts_with("eDP-"))
+                        .map(|output| output.output.name())
+                })
+                .or_else(|| self.outputs.first().map(|output| output.output.name()));
+            state.primary_output_name = primary_output_name.clone();
             let mut x = 0;
-            for (index, output) in self.outputs.iter().enumerate() {
+            for output in &self.outputs {
                 state.space.map_output(&output.output, (x, 0));
                 state.track_output_for_lock(&output.output);
                 if let Some(mode) = output.output.current_mode() {
@@ -540,7 +557,8 @@ impl NativeKmsDevice {
                         transform: 0,
                         x,
                         y: 0,
-                        primary: index == 0,
+                        primary: primary_output_name.as_deref()
+                            == Some(output.output.name().as_str()),
                     });
                     x += mode.size.w;
                 }
@@ -551,7 +569,10 @@ impl NativeKmsDevice {
                 .outputs()
                 .filter_map(|output| state.space.output_geometry(output))
                 .collect::<Vec<_>>();
-            let fallback = output_geometries.first().copied();
+            let fallback = state
+                .primary_output()
+                .and_then(|output| state.space.output_geometry(&output))
+                .or_else(|| output_geometries.first().copied());
             if let Some(fallback) = fallback {
                 let windows = state.space.elements().cloned().collect::<Vec<_>>();
                 for window in windows {
@@ -806,6 +827,9 @@ impl NativeKmsDevice {
 
             let global_id = output.create_global::<PantheonCompositor>(&state.display_handle);
             state.space.map_output(&output, (x, y));
+            if primary {
+                state.primary_output_name = Some(name.clone());
+            }
             state.display_config.update(OutputSnapshot {
                 connector: name.clone(),
                 vendor: "Apple".into(),
@@ -834,6 +858,9 @@ impl NativeKmsDevice {
         }
         if outputs.is_empty() {
             return Err("could not initialize any connected KMS output".into());
+        }
+        if state.primary_output_name.is_none() {
+            state.primary_output_name = outputs.first().map(|output| output.output.name());
         }
 
         Ok(Self {

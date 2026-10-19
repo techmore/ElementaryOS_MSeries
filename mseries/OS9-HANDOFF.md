@@ -10,7 +10,9 @@ windows and popup constraints use their current output, and removing a panel
 reflows managed windows. Multi-output panel placement remains unqualified.
 New toplevels center and cascade in the focused window's work area, falling
 back to the pointer output and then the primary output. This placement path
-builds but remains runtime-unqualified.
+builds but remains runtime-unqualified. The primary connector now follows
+saved monitor profiles and `ApplyMonitorsConfig`; hotplug preserves it while
+connected, otherwise preferring eDP and then the first available output.
 Added `pantheon-shell-probe`, which binds shell/panel v2 and sends
 `get_panel`, anchor, size, hide-mode, and offset requests. Local `cargo check`
 and `cargo build --bins` pass. The 12-second Xvfb nested run completed the probe

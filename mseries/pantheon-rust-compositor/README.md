@@ -40,6 +40,11 @@ is no focused toplevel, placement follows the pointer's output, then falls back
 to the primary output. This launch placement compiles in both renderer builds
 but has not been runtime-qualified.
 
+The configured primary connector is retained from monitor profiles and
+`ApplyMonitorsConfig`; native hotplug preserves it while connected, then falls
+back to the internal panel or first available output. Fallback placement and
+hotplug primary selection remain runtime-unqualified.
+
 The pinned Gala 8.6.2 audit found 79 Vala files directly using `Meta.*` across
 24,534 lines of Gala core source, with Clutter/Cogl/Mtk dependencies. That
 explains why swapping out Mutter underneath Gala is not a drop-in operation.

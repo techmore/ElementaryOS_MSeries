@@ -341,7 +341,7 @@ impl PantheonCompositor {
             .and_then(|name| self.space.outputs().find(|output| output.name() == name))
             .cloned()
             .or_else(|| self.space.outputs_for_element(&window).first().cloned())
-            .or_else(|| self.space.outputs().next().cloned())
+            .or_else(|| self.primary_output())
         else {
             return;
         };
@@ -436,7 +436,7 @@ impl PantheonCompositor {
             .outputs_for_element(window)
             .first()
             .cloned()
-            .or_else(|| self.space.outputs().next().cloned())
+            .or_else(|| self.primary_output())
         else {
             return;
         };
