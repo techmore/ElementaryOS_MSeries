@@ -121,10 +121,12 @@ host it finds EGL rendering on `/dev/dri/card1` (`/dev/dri/renderD128`, Asahi)
 but KMS resource queries there return `Operation not supported`. The Apple
 display-controller `/dev/dri/card2` owns KMS: `eDP-1` is connected at
 3024×1964@120 Hz and `DP-2` is connected with 3840×2160@30 Hz and 1920×1080@60
-Hz modes; `HDMI-A-1` is disconnected. Card2 has no EGL device. The native backend
-therefore needs Smithay's multi-GPU render/import path from Asahi to Apple KMS;
-single-node setup is not enough. This probe reads connector state and modes but
-does not force a connector reprobe or test modesetting.
+Hz modes; `HDMI-A-1` is disconnected. Card2 has no EGL device. The probe now
+allocates 64×64 render/scanout GBM buffers on Asahi and attempts GBM DMA-BUF
+imports on Apple KMS. On this host, implicit-modifier imports succeeded for
+AB30, AR30, AB24 and AR24. This supports the chosen cross-device path, but does
+not prove DRM framebuffer creation, atomic modesetting, or display scanout. The
+probe does not acquire DRM master, force a connector reprobe, or change modes.
 
 Relative pointer motion now updates Wayland pointer focus and dispatches motion
 through active compositor grabs; coordinates are clamped to the mapped output

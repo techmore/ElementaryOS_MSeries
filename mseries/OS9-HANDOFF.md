@@ -5750,3 +5750,15 @@ This is an immediate transition without Gala's animation. Default and
 tests or Dock runtime session were run; overlap timing, edge reveal and work
 area behavior still need an isolated Wingpanel/Dock session before hardware
 qualification. The active Gala session remains untouched.
+
+### Preflight Asahi-to-Apple DMA-BUF import without modesetting — 2026-10-19
+
+Extended `pantheon-drm-probe` to allocate 64×64 GBM buffers with render and
+scanout usage on `/dev/dri/renderD128`, export each as a DMA-BUF, and import
+into the connected Apple KMS device's GBM implementation with scanout usage.
+The current M1 Pro succeeded for implicit-modifier formats AB30, AR30, AB24
+and AR24. This confirms DMA-BUF allocation/export/import for these formats; it
+does not prove DRM framebuffer creation or physical scanout. The probe opens
+the devices but does not acquire DRM master, create framebuffers, or modeset.
+The next hardware gate remains a controlled native compositor start in an
+isolated session.
