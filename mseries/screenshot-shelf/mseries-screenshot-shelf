@@ -237,6 +237,10 @@ class Shelf(Gtk.Window):
         copy.set_tooltip_text("Copy the image to the clipboard")
         copy.connect("clicked", lambda *_: self.copy_to_clipboard())
         self.copy_button = copy
+        show = Gtk.Button(label="Show")
+        show.add_css_class("markup")
+        show.set_tooltip_text("Show the saved file in Files, to attach or drag from there")
+        show.connect("clicked", lambda *_: self.show_in_files())
         markup = Gtk.Button(label="Markup")
         markup.add_css_class("markup")
         markup.connect("clicked", lambda *_: self.open_markup())
@@ -245,6 +249,7 @@ class Shelf(Gtk.Window):
         close.connect("clicked", lambda *_: self.finish("dismissed"))
         row.append(self.hint)
         row.append(copy)
+        row.append(show)
         row.append(markup)
         row.append(close)
         card.append(row)
@@ -402,6 +407,22 @@ class Shelf(Gtk.Window):
         self.copy_button.set_label("Copied")
         GLib.timeout_add_seconds(2, lambda: self.copy_button.set_label("Copy") and False)
         log(f"copied {os.path.basename(self.path)} to the clipboard")
+
+    def show_in_files(self):
+        """Fallback when a drop is refused: reveal the saved file so it can be attached by hand."""
+        log(f"show {os.path.basename(self.path)}")
+        uri = Gio.File.new_for_path(self.path).get_uri()
+        try:
+            Gio.DBusProxy.new_for_bus_sync(
+                Gio.BusType.SESSION, Gio.DBusProxyFlags.NONE, None, "org.freedesktop.FileManager1",
+                "/org/freedesktop/FileManager1", "org.freedesktop.FileManager1", None
+            ).call_sync("ShowItems", GLib.Variant("(ass)", ([uri], "mseries-shelf")), Gio.DBusCallFlags.NONE, 3000, None)
+        except GLib.Error as error:
+            log(f"file manager unavailable ({error.message}); opening the folder")
+            try:
+                subprocess.Popen(["xdg-open", os.path.dirname(self.path)], env=clean_env(), start_new_session=True)
+            except OSError as failure:
+                log(f"could not open the folder: {failure}")
 
     def open_markup(self):
         log(f"markup {os.path.basename(self.path)}")
