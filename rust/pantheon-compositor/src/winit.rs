@@ -11,7 +11,7 @@ use smithay::{
 };
 
 use crate::PantheonCompositor;
-use crate::cursor::{CursorRenderElement, render_cursor_elements};
+use crate::cursor::{CursorRenderElement, render_cursor_elements, render_lock_surface_elements};
 use crate::display_config::OutputSnapshot;
 
 pub fn init_winit(
@@ -71,6 +71,13 @@ pub fn init_winit(
                         refresh: 60_000,
                     };
                     output.change_current_state(Some(mode), None, None, None);
+                    let output_name = output.name();
+                    if let Some(lock_surface) = state.lock_surfaces.get(&output_name) {
+                        lock_surface.with_pending_state(|pending| {
+                            pending.size = Some((size.w.max(0) as u32, size.h.max(0) as u32).into())
+                        });
+                        lock_surface.send_configure();
+                    }
                     state.display_config.update(OutputSnapshot {
                         connector: "winit".into(),
                         vendor: "Smithay".into(),
@@ -93,26 +100,43 @@ pub fn init_winit(
                     {
                         backend.window().set_cursor_visible(false);
                         let (renderer, mut framebuffer) = backend.bind().unwrap();
-                        let cursor_elements = render_cursor_elements(renderer, state, &output);
-                        smithay::desktop::space::render_output::<
-                            _,
-                            CursorRenderElement<GlesRenderer>,
-                            _,
-                            _,
-                        >(
-                            &output,
-                            renderer,
-                            &mut framebuffer,
-                            1.0,
-                            0,
-                            [&state.space],
-                            &cursor_elements,
-                            &mut damage_tracker,
-                            [0.1, 0.1, 0.1, 1.0],
-                        )
-                        .unwrap();
+                        if state.session_locked {
+                            let elements = render_lock_surface_elements(renderer, state, &output);
+                            damage_tracker
+                                .render_output(
+                                    renderer,
+                                    &mut framebuffer,
+                                    0,
+                                    &elements,
+                                    [0.0, 0.0, 0.0, 1.0],
+                                )
+                                .unwrap();
+                        } else {
+                            let cursor_elements = render_cursor_elements(renderer, state, &output);
+                            smithay::desktop::space::render_output::<
+                                _,
+                                CursorRenderElement<GlesRenderer>,
+                                _,
+                                _,
+                            >(
+                                &output,
+                                renderer,
+                                &mut framebuffer,
+                                1.0,
+                                0,
+                                [&state.space],
+                                &cursor_elements,
+                                &mut damage_tracker,
+                                [0.1, 0.1, 0.1, 1.0],
+                            )
+                            .unwrap();
+                        }
                     }
                     backend.submit(Some(&[damage])).unwrap();
+
+                    if state.session_locked {
+                        state.confirm_lock_output_frame(&output.name());
+                    }
 
                     state.space.elements().for_each(|window| {
                         window.send_frame(

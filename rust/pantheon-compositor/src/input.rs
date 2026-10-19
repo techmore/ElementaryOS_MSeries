@@ -29,6 +29,7 @@ impl PantheonCompositor {
                     time,
                     |state, modifiers, keysym| {
                         if key_state == smithay::backend::input::KeyState::Pressed
+                            && !state.session_locked
                             && state
                                 .shell_compat
                                 .activate_key(keysym.modified_sym(), modifiers)
@@ -125,7 +126,10 @@ impl PantheonCompositor {
 
                 let button_state = event.state();
 
-                if ButtonState::Pressed == button_state && !pointer.is_grabbed() {
+                if !self.session_locked
+                    && ButtonState::Pressed == button_state
+                    && !pointer.is_grabbed()
+                {
                     if let Some((window, _loc)) = self
                         .space
                         .element_under(pointer.current_location())

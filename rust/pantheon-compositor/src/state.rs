@@ -18,6 +18,7 @@ use smithay::{
         compositor::{CompositorClientState, CompositorState},
         output::OutputManagerState,
         selection::data_device::DataDeviceState,
+        session_lock::{LockSurface, SessionLockManagerState, SessionLocker},
         shell::xdg::XdgShellState,
         shm::ShmState,
         socket::ListeningSocketSource,
@@ -46,6 +47,13 @@ pub struct PantheonCompositor {
     pub xdg_shell_state: XdgShellState,
     pub shm_state: ShmState,
     pub output_manager_state: OutputManagerState,
+    pub session_lock_state: SessionLockManagerState,
+    pub session_locked: bool,
+    pub lock_surfaces: HashMap<String, LockSurface>,
+    pub lock_owner: Option<smithay::reexports::wayland_server::backend::ObjectId>,
+    pub lock_confirmation: Option<SessionLocker>,
+    pub lock_confirmation_outputs: HashSet<String>,
+    pub keyboard_focus_before_lock: Option<WlSurface>,
     pub seat_state: SeatState<PantheonCompositor>,
     pub data_device_state: DataDeviceState,
     pub pantheon_shell_state: PantheonShellState,
@@ -96,6 +104,7 @@ impl PantheonCompositor {
         let popups = PopupManager::default();
 
         let output_manager_state = OutputManagerState::new_with_xdg_output::<Self>(&dh);
+        let session_lock_state = SessionLockManagerState::new::<Self, _>(&dh, |_| true);
 
         // Data device is responsible for clipboard and drag-and-drop
         let data_device_state = DataDeviceState::new::<Self>(&dh);
@@ -140,6 +149,13 @@ impl PantheonCompositor {
             xdg_shell_state,
             shm_state,
             output_manager_state,
+            session_lock_state,
+            session_locked: false,
+            lock_surfaces: HashMap::new(),
+            lock_owner: None,
+            lock_confirmation: None,
+            lock_confirmation_outputs: HashSet::new(),
+            keyboard_focus_before_lock: None,
             seat_state,
             data_device_state,
             pantheon_shell_state,
@@ -218,6 +234,29 @@ impl PantheonCompositor {
         &self,
         pos: Point<f64, Logical>,
     ) -> Option<(WlSurface, Point<f64, Logical>)> {
+        if self.session_locked {
+            for output in self.space.outputs() {
+                let Some(geometry) = self.space.output_geometry(output) else {
+                    continue;
+                };
+                if !geometry.to_f64().contains(pos) {
+                    continue;
+                }
+                let output_name = output.name();
+                let Some(lock_surface) = self.lock_surfaces.get(&output_name) else {
+                    return None;
+                };
+                let local = pos - geometry.loc.to_f64();
+                return smithay::desktop::utils::under_from_surface_tree(
+                    lock_surface.wl_surface(),
+                    local,
+                    (0, 0),
+                    WindowSurfaceType::ALL,
+                )
+                .map(|(surface, location)| (surface, location.to_f64()));
+            }
+            return None;
+        }
         self.space
             .element_under(pos)
             .and_then(|(window, location)| {
@@ -225,6 +264,37 @@ impl PantheonCompositor {
                     .surface_under(pos - location.to_f64(), WindowSurfaceType::ALL)
                     .map(|(s, p)| (s, (p + location).to_f64()))
             })
+    }
+
+    pub fn track_output_for_lock(&mut self, output: &smithay::output::Output) {
+        if self.session_locked && self.lock_confirmation.is_some() {
+            self.lock_confirmation_outputs
+                .insert(output.name().to_string());
+        }
+    }
+
+    pub fn confirm_lock_output_frame(&mut self, output_name: &str) {
+        if !self.session_locked || self.lock_confirmation.is_none() {
+            return;
+        }
+        self.lock_confirmation_outputs.remove(output_name);
+        self.finish_lock_confirmation_if_ready();
+    }
+
+    pub fn forget_output_during_lock(&mut self, output_name: &str) {
+        self.lock_confirmation_outputs.remove(output_name);
+        self.finish_lock_confirmation_if_ready();
+    }
+
+    fn finish_lock_confirmation_if_ready(&mut self) {
+        if !self.session_locked || self.lock_confirmation.is_none() {
+            return;
+        }
+        if self.lock_confirmation_outputs.is_empty() {
+            if let Some(confirmation) = self.lock_confirmation.take() {
+                confirmation.lock();
+            }
+        }
     }
 }
 

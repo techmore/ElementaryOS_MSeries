@@ -121,3 +121,27 @@ where
         }
     }
 }
+
+pub fn render_lock_surface_elements<R>(
+    renderer: &mut R,
+    state: &PantheonCompositor,
+    output: &smithay::output::Output,
+) -> Vec<CursorRenderElement<R>>
+where
+    R: Renderer + ImportAll + ImportMem,
+    R::TextureId: Texture + Clone + Send + 'static,
+{
+    let output_name = output.name();
+    let Some(surface) = state.lock_surfaces.get(&output_name) else {
+        return Vec::new();
+    };
+    let scale = Scale::from(output.current_scale().fractional_scale());
+    render_elements_from_surface_tree::<R, CursorRenderElement<R>>(
+        renderer,
+        surface.wl_surface(),
+        (0, 0),
+        scale,
+        1.0,
+        Kind::Unspecified,
+    )
+}

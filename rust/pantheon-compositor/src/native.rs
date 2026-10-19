@@ -48,7 +48,7 @@ use smithay::{
 
 use crate::{
     PantheonCompositor,
-    cursor::{CursorRenderElement, render_cursor_elements},
+    cursor::{CursorRenderElement, render_cursor_elements, render_lock_surface_elements},
     display_config::OutputSnapshot,
 };
 
@@ -148,32 +148,42 @@ impl NativeKmsDevice {
                 continue;
             }
             let mut gpu_renderer = renderer.gpus.single_renderer(&renderer.render_node)?;
-            let space_elements = smithay::desktop::space::space_render_elements(
-                &mut gpu_renderer,
-                [&state.space],
-                &output.output,
-                1.0,
-            )?;
-            let cursor_elements = render_cursor_elements(&mut gpu_renderer, state, &output.output);
-            let mut elements = space_elements
-                .into_iter()
-                .map(|element| match element {
-                    smithay::desktop::space::SpaceRenderElements::Surface(surface) => {
-                        CursorRenderElement::from(surface)
-                    }
-                    smithay::desktop::space::SpaceRenderElements::Element(element) => {
-                        CursorRenderElement::from(element)
-                    }
-                    smithay::desktop::space::SpaceRenderElements::_GenericCatcher(_) => {
-                        unreachable!("SpaceRenderElements generic catcher is never constructed")
-                    }
-                })
-                .collect::<Vec<_>>();
-            elements.extend(cursor_elements);
+            let elements = if state.session_locked {
+                render_lock_surface_elements(&mut gpu_renderer, state, &output.output)
+            } else {
+                let space_elements = smithay::desktop::space::space_render_elements(
+                    &mut gpu_renderer,
+                    [&state.space],
+                    &output.output,
+                    1.0,
+                )?;
+                let cursor_elements =
+                    render_cursor_elements(&mut gpu_renderer, state, &output.output);
+                let mut elements = space_elements
+                    .into_iter()
+                    .map(|element| match element {
+                        smithay::desktop::space::SpaceRenderElements::Surface(surface) => {
+                            CursorRenderElement::from(surface)
+                        }
+                        smithay::desktop::space::SpaceRenderElements::Element(element) => {
+                            CursorRenderElement::from(element)
+                        }
+                        smithay::desktop::space::SpaceRenderElements::_GenericCatcher(_) => {
+                            unreachable!("SpaceRenderElements generic catcher is never constructed")
+                        }
+                    })
+                    .collect::<Vec<_>>();
+                elements.extend(cursor_elements);
+                elements
+            };
             let frame = output.drm_output.render_frame(
                 &mut gpu_renderer,
                 &elements,
-                [0.1, 0.1, 0.1, 1.0],
+                if state.session_locked {
+                    [0.0, 0.0, 0.0, 1.0]
+                } else {
+                    [0.1, 0.1, 0.1, 1.0]
+                },
                 FrameFlags::DEFAULT,
             )?;
             if frame.is_empty {
@@ -244,6 +254,7 @@ impl NativeKmsDevice {
                 self.pending_global_removals
                     .push((output.global_id.clone(), Instant::now()));
                 state.space.unmap_output(&output.output);
+                state.forget_output_during_lock(&output.output.name());
                 state.display_config.remove(output.output.name());
                 tracing::info!(output = %output.output.name(), "unmapped disconnected DRM output");
             }
@@ -353,6 +364,7 @@ impl NativeKmsDevice {
             let mut x = 0;
             for (index, output) in self.outputs.iter().enumerate() {
                 state.space.map_output(&output.output, (x, 0));
+                state.track_output_for_lock(&output.output);
                 if let Some(mode) = output.output.current_mode() {
                     output
                         .output
@@ -693,6 +705,7 @@ impl NativeBackend {
                             return;
                         }
                     };
+                    state.confirm_lock_output_frame(&output.name());
                     state.space.elements().for_each(|window| {
                         window.send_frame(
                             &output,

@@ -5553,3 +5553,22 @@ and recovery on the M1 Pro remain unqualified. User-selected layouts and mode
 changes are still not implemented. Next: validate this lifecycle in a separate
 native session, then add mode/layout application and rollback based on the
 actual display workflow.
+
+### Wayland session lock protocol — 2026-10-18
+
+Implemented Smithay's pinned `ext-session-lock-v1` protocol for both nested
+Winit and native DRM. A lock request immediately suppresses application
+surfaces, clears keyboard focus and active pointer/keyboard grabs, and disables
+shell accelerators while locked. Each mapped output renders its lock surface on
+black, or black alone until the locker provides a surface; lock success is sent
+only after every active output presents a cleared frame. Pointer and keyboard
+input are confined to the lock client, and unlock restores the previous live
+keyboard focus. Output removal/addition updates pending lock confirmation.
+`cargo check` and `cargo build` pass with and without `native-drm`. No session
+locker was run against the nested backend and native mode was not launched, so
+protocol behavior, input confinement, visual blanking, unlock, locker/PAM
+integration and hardware presentation remain unqualified. The compositor does
+not supply an authentication UI or policy; a Pantheon locker must implement
+the session-lock protocol and authenticate the user. Next: validate a real
+locker in a nested session, then qualify login/lock/unlock in an isolated
+native session before considering this a swap-in capability.
