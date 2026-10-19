@@ -1208,10 +1208,10 @@ index 7a626ba..eed808f 100644
          Util.set_component_calendar_color (source_selectable, name_label);
 diff --git a/src/Widgets/DailyVerse.vala b/src/Widgets/DailyVerse.vala
 new file mode 100644
-index 0000000..a3b0f84
+index 0000000..3c7cbdb
 --- /dev/null
 +++ b/src/Widgets/DailyVerse.vala
-@@ -0,0 +1,476 @@
+@@ -0,0 +1,479 @@
 +/* Copyright 2026 M-Series contributors. SPDX-License-Identifier: GPL-3.0-or-later */
 +// The + tab: a daily Bible verse, and a section-by-section study of Titus, each
 +// with links to sermons on the passage.
@@ -1490,6 +1490,9 @@ index 0000000..a3b0f84
 +        middle_button.tooltip_text = studying ? _("About the letter") : _("Today’s verse");
 +        previous_button.tooltip_text = studying ? _("Previous section") : _("Previous day");
 +        next_button.tooltip_text = studying ? _("Next section") : _("Next day");
++        // Icon-only buttons: tooltips are descriptions, so give screen readers a name.
++        previous_button.update_property (Gtk.AccessibleProperty.LABEL, previous_button.tooltip_text, -1);
++        next_button.update_property (Gtk.AccessibleProperty.LABEL, next_button.tooltip_text, -1);
 +        if (studying) show_part (part); else show_offset (offset);
 +    }
 +
