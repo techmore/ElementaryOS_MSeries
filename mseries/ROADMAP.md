@@ -104,14 +104,18 @@ host found the Asahi GPU at `/dev/dri/card1`, Apple display controller at
 not evidence of compositor modesetting. The opt-in native DRM path is
 implemented while keeping nested Winit as the default. The `native-drm`
 Smithay dependency feature now compiles locally after installing
-`libseat-dev`. The new non-invasive `pantheon-drm-probe` reports the Asahi
-renderer on card1/renderD128, with KMS resource queries unsupported there. Card2
-owns `eDP-1` and `DP-2`, while `HDMI-A-1` is disconnected; card2 has no EGL
-device. Therefore cross-device buffer import, display-controller scanout
-allocation and failure handling are first-session requirements for this M1 Pro,
-not optional general multi-GPU support. The read-only probe did not change
-modes. The executable now keeps nested Winit as its default and provides an
-explicit `--backend native` path behind `native-drm`; this wires libseat,
+`libseat-dev`. The non-invasive `pantheon-drm-probe` reports the Asahi renderer
+on card1/renderD128, with KMS resource queries unsupported there. Card2 owns
+`eDP-1` and currently reports external connectors disconnected; card2 has no
+EGL device. A 2026-10-19 release-mode preflight allocated 64×64 scanout-capable
+DMA-BUFs on Asahi and successfully imported AB30, AR30, AB24 and AR24 into
+Apple GBM using the implicit modifier. The probe did not acquire DRM master,
+create DRM framebuffers, modeset, or change output state. This establishes GBM
+import compatibility only; KMS framebuffer creation, actual scanout and
+failure handling remain first-session requirements for this M1 Pro, not
+optional general multi-GPU support. The executable now keeps nested Winit as
+its default and provides an explicit `--backend native` path behind
+`native-drm`; this wires libseat,
 libinput, connected outputs on the first usable KMS device, calloop rendering
 and vblank completion. It prioritizes eDP and places additional outputs to its
 right. DisplayConfig no longer advertises a fabricated Winit output in native

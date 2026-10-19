@@ -1,5 +1,24 @@
 # OS 9 implementation / Claude Code handoff
 
+## Mutter-minimal viable Rust compositor: cross-GPU import preflight — 2026-10-19
+
+Ran the existing release-mode `pantheon-drm-probe` on the M1 Pro with
+`native-drm`. It found EGL rendering on Asahi `/dev/dri/card1` and
+`/dev/dri/renderD128`; Apple `/dev/dri/card2` owns the connected internal
+`eDP-1` at 3024×1964@120 Hz and currently reports the external connectors as
+disconnected. The probe allocated 64×64 scanout-capable DMA-BUFs on Asahi and
+successfully imported AB30, AR30, AB24 and AR24 into Apple GBM using the
+implicit modifier. It did not acquire DRM master, create DRM framebuffers,
+modeset, or change output state. This removes the basic GBM-import concern,
+but does not prove Apple `ADDFB2` acceptance, scanout, or an interactive native
+session. Gala stayed active. Next display gate: establish whether the Apple KMS
+device accepts an imported buffer as a framebuffer without committing a mode;
+only then plan the separately isolated native-session takeover.
+
+The release probe rebuilt successfully in 0.82 seconds locally. Working tree
+was clean before this handoff update; branch remains
+`codex/rust-mutter-pantheon`.
+
 ## Mutter-minimal viable Rust compositor progress — 2026-10-18
 
 On branch `codex/rust-mutter-pantheon`, recent changes reconfigure already
