@@ -29,9 +29,37 @@ import sys
 import time
 import warnings
 
-# Wayland clients cannot choose their position, so run through XWayland and place the window.
+GALA_PREFIX = "/usr/local/lib/mseries/gala"
+GALA_MARKER = os.path.join(GALA_PREFIX, "share", "mseries-shelf-wayland")
+
+
+def gala_places_shelf():
+    """True when the running compositor is our patched Gala built with the shelf placement.
+
+    A Wayland window cannot choose its position, so the patched Gala puts it bottom-right (patches/
+    gala-screenshot-shelf-placement.patch). Wayland is the only backend where drag and drop into native
+    Wayland apps such as Signal works; without that Gala the shelf falls back to XWayland and places itself.
+    """
+    if os.environ.get("MSERIES_SHELF_BACKEND"):
+        return os.environ["MSERIES_SHELF_BACKEND"] == "wayland"
+    try:
+        marker = os.stat(GALA_MARKER).st_mtime
+        for pid in filter(str.isdigit, os.listdir("/proc")):
+            try:
+                if os.path.realpath(f"/proc/{pid}/exe").startswith(GALA_PREFIX) and \
+                        os.stat(f"/proc/{pid}").st_ctime > marker:
+                    return True
+            except OSError:
+                continue
+    except OSError:
+        pass
+    return False
+
+
 ORIGINAL_ENV = {name: os.environ.get(name) for name in ("GDK_BACKEND", "GDK_SCALE")}
-os.environ["GDK_BACKEND"] = "x11"
+WAYLAND = gala_places_shelf()
+if not WAYLAND:
+    os.environ["GDK_BACKEND"] = "x11"
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
@@ -50,7 +78,8 @@ def display_scale():
         return 1
 
 
-os.environ.setdefault("GDK_SCALE", str(display_scale()))
+if not WAYLAND:
+    os.environ.setdefault("GDK_SCALE", str(display_scale()))
 
 import gi
 gi.require_version("Gdk", "4.0")
@@ -65,7 +94,7 @@ STAGE = os.path.join(os.environ.get("XDG_RUNTIME_DIR", "/tmp"), "mseries-shelf")
 LOG = os.path.expanduser("~/.cache/mseries-screenshot-shelf.log")
 MARKUP = os.environ.get("MSERIES_MARKUP", os.path.expanduser("~/.local/bin/mseries-markup"))
 DELETE_AFTER = 120      # seconds after an accepted drag before the unsaved file is moved to the Trash
-SHOW_SECONDS = 4        # how long the thumbnail stays when ignored (hover or drag keeps it)
+SHOW_SECONDS = int(os.environ.get("MSERIES_SHELF_SECONDS", "4"))       # how long the thumbnail stays when ignored (hover or drag keeps it)
 THUMB_WIDTH = 280       # the card is always THUMB_WIDTH x THUMB_HEIGHT, whatever the screenshot's shape
 THUMB_HEIGHT = 180
 MARGIN = 24
@@ -206,6 +235,7 @@ class Shelf(Gtk.Window):
         self.dragging = False
         self.alt_seen = False
         self.cancelled = False
+        self.refused = False
         self.hover = False
         self.timer = None
         self.export = None
@@ -237,6 +267,10 @@ class Shelf(Gtk.Window):
         copy.set_tooltip_text("Copy the image to the clipboard")
         copy.connect("clicked", lambda *_: self.copy_to_clipboard())
         self.copy_button = copy
+        show = Gtk.Button(label="Show")
+        show.add_css_class("markup")
+        show.set_tooltip_text("Show the saved file in Files, to attach or drag from there")
+        show.connect("clicked", lambda *_: self.show_in_files())
         markup = Gtk.Button(label="Markup")
         markup.add_css_class("markup")
         markup.connect("clicked", lambda *_: self.open_markup())
@@ -245,6 +279,7 @@ class Shelf(Gtk.Window):
         close.connect("clicked", lambda *_: self.finish("dismissed"))
         row.append(self.hint)
         row.append(copy)
+        row.append(show)
         row.append(markup)
         row.append(close)
         card.append(row)
@@ -272,7 +307,8 @@ class Shelf(Gtk.Window):
         Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), provider,
                                                   Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
         self.present()
-        GLib.timeout_add(60, self.place)
+        if not WAYLAND:
+            GLib.timeout_add(60, self.place)
         self.restart_timer()
 
     # ------------------------------------------------------------------ placement
@@ -327,15 +363,24 @@ class Shelf(Gtk.Window):
         return bool(keyboard and keyboard.get_modifier_state() & Gdk.ModifierType.ALT_MASK)
 
     def drop_path(self):
-        """The path a drop target gets: a portal export when possible, so Flatpak apps can read it."""
+        """The path a drop target gets: a portal export only when a Flatpak app is running to read it.
+
+        Native apps (Signal Beta is one) read the staged file directly. A portal path that does not exist
+        on the host (the FUSE mount can lag or lose exports) is a dead file URI and the drop is refused,
+        so it is never offered.
+        """
+        if not running_flatpak_apps():
+            return self.staged
         try:
             if self.export is None:
                 self.export = PortalExport(self.staged)
             self.export.grant_running()
-            return self.export.path
+            if os.path.exists(self.export.path):
+                return self.export.path
+            log("portal export not visible on the host; offering the staged path")
         except (GLib.Error, OSError) as error:
             log(f"document portal unavailable ({error}); offering the staged path")
-            return self.staged
+        return self.staged
 
     def on_prepare(self, source, _x, _y):
         if self.alt_held():
@@ -363,6 +408,9 @@ class Shelf(Gtk.Window):
     def on_drag_cancel(self, _source, _drag, reason):
         self.cancelled = True
         log(f"drag cancelled ({reason.value_nick})")
+        # The target refused the drop: put the image on the clipboard so one paste finishes the job.
+        self.copy_to_clipboard()
+        self.refused = True
         return False
 
     def on_drag_end(self, _source, _drag, _delete):
@@ -370,8 +418,12 @@ class Shelf(Gtk.Window):
         if self.cancelled:
             self.restart_timer()
             self.alt_seen = False
-            self.hint.set_label("Drag to use  ·  Alt keeps")
+            self.hint.set_label("Not accepted. Use Show")
+            self.hint.add_css_class("saving")
+            log("RESULT refused: no app took the drop (clipboard copy attempted; Show reveals the file)")
             return
+        self.hint.set_label("Dropped ✓")
+        log("RESULT accepted: an app took the drop")
         if self.alt_seen:
             log(f"used and kept (Alt): {os.path.basename(self.path)}")
             self.finish("used-kept", delay=DELETE_AFTER, delete_saved=False)
@@ -393,6 +445,22 @@ class Shelf(Gtk.Window):
         self.copy_button.set_label("Copied")
         GLib.timeout_add_seconds(2, lambda: self.copy_button.set_label("Copy") and False)
         log(f"copied {os.path.basename(self.path)} to the clipboard")
+
+    def show_in_files(self):
+        """Fallback when a drop is refused: reveal the saved file so it can be attached by hand."""
+        log(f"show {os.path.basename(self.path)}")
+        uri = Gio.File.new_for_path(self.path).get_uri()
+        try:
+            Gio.DBusProxy.new_for_bus_sync(
+                Gio.BusType.SESSION, Gio.DBusProxyFlags.NONE, None, "org.freedesktop.FileManager1",
+                "/org/freedesktop/FileManager1", "org.freedesktop.FileManager1", None
+            ).call_sync("ShowItems", GLib.Variant("(ass)", ([uri], "mseries-shelf")), Gio.DBusCallFlags.NONE, 3000, None)
+        except GLib.Error as error:
+            log(f"file manager unavailable ({error.message}); opening the folder")
+            try:
+                subprocess.Popen(["xdg-open", os.path.dirname(self.path)], env=clean_env(), start_new_session=True)
+            except OSError as failure:
+                log(f"could not open the folder: {failure}")
 
     def open_markup(self):
         log(f"markup {os.path.basename(self.path)}")
