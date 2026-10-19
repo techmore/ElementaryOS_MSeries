@@ -1,0 +1,39 @@
+diff --git a/src/Widgets/AppButton.vala b/src/Widgets/AppButton.vala
+index 154d9b2..74af87e 100644
+--- a/src/Widgets/AppButton.vala
++++ b/src/Widgets/AppButton.vala
+@@ -9,7 +9,7 @@ public class Slingshot.Widgets.AppButton : Gtk.Button {
+ 
+     public Backend.App app { get; construct; }
+ 
+-    private const int ICON_SIZE = 64;
++    private const int ICON_SIZE = 32;
+     private Gtk.Label badge;
+ 
+     public AppButton (Backend.App app) {
+diff --git a/src/Widgets/AppListRow.vala b/src/Widgets/AppListRow.vala
+index f857c21..7c37da5 100644
+--- a/src/Widgets/AppListRow.vala
++++ b/src/Widgets/AppListRow.vala
+@@ -32,7 +32,7 @@ public class Slingshot.AppListRow : Gtk.ListBoxRow {
+ 
+         var image = new Gtk.Image () {
+             gicon = icon,
+-            pixel_size = 32
++            pixel_size = 16
+         };
+ 
+         var name_label = new Gtk.Label (app_info.get_display_name ()) {
+diff --git a/src/Widgets/SearchItem.vala b/src/Widgets/SearchItem.vala
+index 033706f..680fc0f 100644
+--- a/src/Widgets/SearchItem.vala
++++ b/src/Widgets/SearchItem.vala
+@@ -5,7 +5,7 @@
+  */
+ 
+ public class Slingshot.Widgets.SearchItem : Gtk.ListBoxRow {
+-    private const int ICON_SIZE = 32;
++    private const int ICON_SIZE = 16;
+ 
+     public signal bool launch_app ();
+ 

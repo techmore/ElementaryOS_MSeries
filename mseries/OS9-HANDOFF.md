@@ -8,6 +8,15 @@ files). Verified by reading the key back (24). Not visually checked on screen. T
 `gsettings reset io.elementary.dock icon-size`. If "applications tray" meant the Applications
 menu or drawers instead, that is still at its default size.
 
+Owner then clarified they meant the Applications menu. Upstream has no icon-size setting, so
+`mseries/install-applications-menu-half-icons.sh` builds elementary/applications-menu at
+`06d7170` (8.0.4, matches the installed package) with `patches/applications-menu-half-icons.patch`
+(grid 64->32, list rows 32->16, search results 32->16) and installs `libslingshot.so`
+(package build backed up by `lib-backup.sh`; `--uninstall` restores it). Needed
+`libswitchboard-3-dev` and `libzeitgeist-2.0-dev` to build. Installed and `ldd` clean; **not yet
+loaded**: Wingpanel was not restarted, so it shows after the next reload/login, and the result is
+not visually checked. The dock stays at 24; revert it if only the menu was wanted.
+
 ## Official Discord via FEX in a 4 KB-page microVM — 2026-10-18 (Claude Code)
 
 Owner required official Discord (amd64 only). FEX alone aborts here (16 KB pages, `<jemalloc>: Unsupported system
