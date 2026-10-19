@@ -11,7 +11,7 @@ demo=$!
 cleanup() { kill -TERM "$demo" 2>/dev/null; wait "$demo" 2>/dev/null || true; rm -rf "$home" 2>/dev/null || true; }
 trap cleanup EXIT
 for _ in $(seq 1 120); do [ -s "$run/rupert-share/state.json" ] && break; sleep 0.5; done
-probe() { env -i PATH="$PATH" HOME="$home" XDG_RUNTIME_DIR="$run" XDG_DATA_DIRS="$home/share:/usr/share" LANG=C.UTF-8 \
+probe() { env -i PATH="$PATH" PROBE_W="${PROBE_W:-0}" HOME="$home" XDG_RUNTIME_DIR="$run" XDG_DATA_DIRS="$home/share:/usr/share" LANG=C.UTF-8 \
     GTK_THEME=io.elementary.stylesheet.blueberry GSK_RENDERER=cairo GDK_BACKEND=x11 \
     xvfb-run -a -s "-screen 0 500x700x24" "$build/render-probe" "$out/$1.png"; }
 probe idle

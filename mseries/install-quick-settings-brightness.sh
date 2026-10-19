@@ -28,11 +28,13 @@ git -C "$work/source" apply "$repo/mseries/patches/quick-settings-bluetooth.patc
 install -m644 "$repo/mseries/quick-settings/Bluetooth.vala" "$work/source/src/Widgets/Bluetooth.vala"
 # Screen-share section (the pair of eyes): status, watchers, links and login inside the top-right menu.
 for f in ShareState ShareClient SharePanel; do install -m644 "$repo/mseries/share-eyes-wingpanel/$f.vala" "$work/source/src/Widgets/$f.vala"; done
-sed -i "s|    'Widgets' / 'ChargeLimit.vala',|    'Widgets' / 'ChargeLimit.vala',\n    'Widgets' / 'ShareState.vala',\n    'Widgets' / 'ShareClient.vala',\n    'Widgets' / 'SharePanel.vala',|; s|        wl_client_dep,|        wl_client_dep,\n        dependency('json-glib-1.0'),\n        dependency('libsoup-3.0'),|" "$work/source/src/meson.build"
-sed -i 's|            main_box.append (new ChargeLimit ());|            main_box.append (new ChargeLimit ());\n            main_box.append (new MSeries.SharePanel () { spawn_dock_app = true, notify_waiting = true, always_visible = true });|' "$work/source/src/PopoverWidget.vala"
-grep -q SharePanel "$work/source/src/PopoverWidget.vala" && grep -q libsoup "$work/source/src/meson.build" && grep -q "'SharePanel.vala'" "$work/source/src/meson.build" \
+install -m644 "$repo/mseries/quick-settings/AirDropPanel.vala" "$work/source/src/Widgets/AirDropPanel.vala"
+sed -i "s|    'Widgets' / 'ChargeLimit.vala',|    'Widgets' / 'ChargeLimit.vala',\n    'Widgets' / 'AirDropPanel.vala',\n    'Widgets' / 'ShareState.vala',\n    'Widgets' / 'ShareClient.vala',\n    'Widgets' / 'SharePanel.vala',|; s|        wl_client_dep,|        wl_client_dep,\n        dependency('json-glib-1.0'),\n        dependency('libsoup-3.0'),|" "$work/source/src/meson.build"
+sed -i 's|            main_box.append (new ChargeLimit ());|            main_box.append (new ChargeLimit ());\n            main_box.append (new MSeries.SharePanel () { spawn_dock_app = true, notify_waiting = true, always_visible = true });\n            main_box.append (new MSeries.AirDropPanel ());|' "$work/source/src/PopoverWidget.vala"
+grep -q AirDropPanel "$work/source/src/PopoverWidget.vala" && grep -q SharePanel "$work/source/src/PopoverWidget.vala" && grep -q libsoup "$work/source/src/meson.build" && grep -q "'SharePanel.vala'" "$work/source/src/meson.build" \
   || { echo 'could not wire the share section into Quick Settings' >&2; exit 1; }
 install -m644 "$repo/mseries/share-eyes-wingpanel/icons/eyes.svg" "$work/mseries-share-eyes-symbolic.svg"
+install -m644 "$repo/mseries/quick-settings/airdrop.svg" "$work/mseries-airdrop-symbolic.svg"
 meson setup "$work/build" "$work/source" --prefix=/usr --libdir=lib/aarch64-linux-gnu --buildtype=release
 ninja -C "$work/build"
 if ldd "$work/build/src/libquick-settings.so" | grep -q 'not found'; then
@@ -50,4 +52,6 @@ install -Dm755 "$repo/mseries/share-eyes-wingpanel/mseries-share-start" "$HOME/.
 install -Dm644 "$repo/mseries/share-eyes-wingpanel/io.github.techmore.ShareEyes.desktop" "$HOME/.local/share/applications/io.github.techmore.ShareEyes.desktop"
 install -Dm644 "$repo/mseries/share-eyes-wingpanel/icons/eyes.svg" "$HOME/.local/share/icons/hicolor/scalable/apps/mseries-share-eyes-symbolic.svg"
 sudo install -m644 "$work/mseries-share-eyes-symbolic.svg" /usr/share/icons/hicolor/scalable/apps/mseries-share-eyes-symbolic.svg
+sudo install -m644 "$work/mseries-airdrop-symbolic.svg" /usr/share/icons/hicolor/scalable/apps/mseries-airdrop-symbolic.svg
+bash "$repo/mseries/install-omdrop.sh"
 echo 'Installed the screen-share section (shown only while the share demo runs), keyboard brightness, screen brightness and the charge-limit switch and Bluetooth power/device controls plus the Sound Output list (built-in, Bluetooth, AirPlay) below the gear-menu toggles (the switch needs install-power.sh for its polkit action; AirPlay needs install-airplay-discovery.sh). Reload Wingpanel to activate.'

@@ -8,6 +8,14 @@ Details → Checkouts drops the repository-name prefix from worktree folders
 the dashboard labels its two groups "Pinned" and "Recently updated". Verified by
 headless renders (real snapshot, light; fixture with a pin, dark) only.
 
+## Branch model: `main` stable, `dev` integration — 2026-10-18
+
+`main` is now the stable (v0.0.1) line and `dev` (cut from `main` after this lands)
+is where feature PRs merge. Release PRs `dev` → `main` promote batches and get a
+`v0.0.N` tag. `dev` is the GitHub default branch and is what the owner runs;
+`main` is effectively frozen between releases. `proposed-9.0.yml` now also runs on PRs to `dev`. Rules in
+`mseries/BRANCHING.md`; AGENTS.md points to it.
+
 ## RepoBar compact contribution graph — 2026-10-18
 
 The contribution card now starts collapsed to a single line: one accent-toned
@@ -5904,6 +5912,22 @@ assertions for 2026-2028; patch rebuilds byte-identically; image wiring OK.
 Open question for owner: ~70 verses carry an unpaired quotation mark from their
 neighbouring verse (WEB text kept unchanged on purpose).
 
+
+## 2026-10-18: AirDrop in Quick Settings (omdrop, branch claude/airdrop-omdrop, stacked on #225)
+
+- **What:** vendored the userspace of `netmojo-systems/omdrop-plugin` (MIT, pinned c6529be, see `mseries/omdrop/PROVENANCE.md`) and added a native Quick Settings AirDrop section (`mseries/quick-settings/AirDropPanel.vala`, icon `airdrop.svg`). It is one collapsed row (AirDrop + one-line status); the switch, Stay Visible For (one file / 10 min / 1 h / until off), Receive From (Everyone / Contacts Only) and Open Received Files are hidden until the row is clicked, and it re-collapses each time the popover opens. Nothing is polled while the popover is closed. `mseries/install-omdrop.sh` (called by the Quick Settings installer) puts `~/.local/bin/omdrop`; no sudo, no units enabled.
+- **Verified:** headless test against a stub backend (`mseries/quick-settings/airdrop-probe/run-probe.sh OUT_DIR`, Xvfb, nothing on the real screen): 8/8 (starts collapsed, opens on click, switch runs `omdrop on 10m` / `omdrop off`, row shows who can see it, no-driver state explains itself). Real installer built the plugin and installed it to disk; Wingpanel was not reloaded by this work. `omdrop status --json` / `doctor --json` run clean on this machine.
+- **Not verified:** the section on the real panel; any real AirDrop transfer; sending (the panel is receive-only for now, `omdrop send` exists on the CLI). Vendored suite: 245 of 274 pass; 24 fail/error only because `core/` (Rust omdrop-core, not vendored) and the receiver prerequisites `python3-libarchive-c` + `keyutils` (apt, not installed) are absent.
+- **Radio:** NOT installed. Finding: the running kernel's brcmfmac (7.1.12-...-ARCH and the aurora20-enh1 one) already carries part of the AWDL series (`awdl`, `awdl_bssid`, `awdl_trace` params) but `awdl0` does not exist, so omdrop-awdl's DKMS replacement is likely unnecessary; what is missing is omdrop-awdl's userspace (`omdrop-discoverable`, `awdl-up`, polkit action, `awdl0.service`). Installing those root helpers and creating `awdl0` on the live Wi-Fi is the owner's / kernel owner's call. omdrop-awdl's license is "Other" (kernel-derived patches): read before vendoring.
+- **Next:** owner decision on the radio userspace; apt-install the two receiver prerequisites; then a real iPhone receive test.
+
+### 2026-10-18 (later): AirDrop radio validated from source for the j314s, staged for testing (same branch, PR #234)
+
+- **Finding:** the running Aurora kernel already has the AWDL driver code; no DKMS module is needed. Evidence and limits: `mseries/omdrop-awdl/RADIO-VALIDATION.md`. Key facts: BCM4387 `14e4:4433` equals the upstream-verified 16" M1 Pro chip; vendor-command protocol in `brcm_iovar.py` equals Aurora's `vendor.h` (id 0x001018, subcmd AWDL=2, ops 0/1); Aurora `integration/aurora` = upstream series minus the p2p action-frame instrumentation (patches 0011-0013) and the FWDUMP op; upstream helper tests 168/168 on the pristine clone.
+- **Added:** vendored omdrop-awdl userspace (GPL-2.0, pinned 9e9a7ac, `mseries/omdrop-awdl/`, kernel sources/patches deliberately not vendored); `mseries/install-omdrop-radio.sh preflight|install|uninstall` (preflight is read-only; install only copies files and does not enable `awdl0.service`, create `awdl0` or start AWDL); `mseries/omdrop-awdl/TEST-PLAN.md` (7 staged steps with undo for each).
+- **Verified on this machine:** preflight run: everything passes except `python3-libarchive-c` (apt, not installed). The vendored helper tests were not re-run in-tree (the run was blocked by the tool permission classifier); they passed on the upstream clone.
+- **Not verified:** that `awdl-up` creates `awdl0` on firmware 20.96.31.0.8.7.148; any actual transfer; sending by device name without the p2p instrumentation. Documented firmware risks (hang with a template loaded, parked data path) mean a reboot may be needed; dock Ethernet is the fallback.
+- **Needs the owner:** `sudo apt install python3-libarchive-c`, the `install` step, then TEST-PLAN steps 2-6 with a phone in hand.
 ### Titus study and quotation cleanup — 2026-10-18 (same branch/PR #211)
 
 Owner's church is preaching through Titus. The + tab (tooltip now "Bible")
@@ -5922,3 +5946,50 @@ disabled, verse numerals, clipboard, persistence across a freshly constructed
 panel, return to Daily). Patch rebuilds byte-identically; image wiring OK.
 Not yet installed: the desktop still runs the seasonal build from 19:39.
 
+
+### 2026-10-18 (night): AirDrop radio test plan, steps 0-4 run on the j314s (owner present)
+
+- **Step 0-1:** `python3-libarchive-c` installed (apt); preflight OK; `install-omdrop-radio.sh install` put 30 files in place (awdl0.service not enabled). `omdrop doctor` dropped the driver item.
+- **Step 2:** `nmcli general reload conf`; wld0 and dock Ethernet stayed connected; baseline ping 0% loss, ~7 ms.
+- **Step 3 PASS:** `awdl-up` exit 0: `awdl-if create -> OK`, awdl0 registered, MAC be:d0:74:8f:d9:31, chan_seq/sync_params set; kernel log "AWDL interface awdl0 created (bsscfgidx 2)"; Wi-Fi 0% loss; NetworkManager shows awdl0 unmanaged. Firmware 20.96.31.0.8.7.148, kernel 7.1.12-2-20261017.20-sep-ARCH, no driver change.
+- **Step 4 PASS with a caveat:** a 120 s window opened (`discoverable until ...`, awdl0 UP with fe80:: link-local, status visible=true reason=unproven). The data-path gate needed 3 enable attempts (~2 min): attempts 1-2 sent 20 frames and got 0 completions, attempt 3 got 20/20 (the documented "parked data path"). During the window Wi-Fi stayed up, 0% loss, but RTT rose from ~6 ms to ~240-420 ms; after `stop` it was recovering (~79 ms avg, still settling). `rx_proven` stays false until a peer's frames arrive.
+- **Not run yet:** step 5 (receive from an iPhone), step 6 (send), step 7 (boot enable). No Wi-Fi hang or kernel error seen.
+
+### 2026-10-18 (night): AirDrop receive from an iPhone WORKS on the j314s (test plan step 5 PASS)
+
+- **Result:** `omdrop on once` opened a window (visible within ~10 s this time), `omdrop peers -n` heard the iPhone (MAC 9e:d9:41:de:56:e6, RSSI -18, answered /Discover with its name "Techmore": TX and RX over firmware-native AWDL both work, without Aurora's missing p2p instrumentation), then the owner shared a screenshot to "eos" and it was stored as `~/Downloads/IMG_0128.PNG`: valid PNG 1179x2556, 281694 bytes, `rx_proven: true`; the receiver stopped itself ("once"), port 8771 closed. Everyone mode, self-signed identity, no Apple identity needed. Firmware 20.96.31.0.8.7.148, kernel 7.1.12-2-20261017.20-sep-ARCH, no driver change.
+- **Fix found by the test:** `install-omdrop.sh` did not copy `manifest.json`, so `omdrop on` said it could not tell where it was installed. Fixed (copies `manifest.json`).
+- **Finding (needs a decision):** `omdrop-discoverable stop` does NOT turn AWDL off in the firmware (upstream avoids `awdl=0` with a template loaded: documented firmware hang). Read back after stop: firmware `awdl` = 1, `awdl0` UP. Wi-Fi RTT stayed elevated well after the window closed (baseline ~6 ms; 275 ms avg right after, then ~67/85/40 ms avg over the next minutes, max 220-285 ms). So AirDrop use leaves a Wi-Fi latency tax until the driver is reloaded or the machine reboots. Not yet characterised: whether it decays to baseline on its own.
+- **Not run:** step 6 (send to the iPhone), step 7 (boot enable), the Quick Settings switch on the real panel (Wingpanel not reloaded). The 24 vendored-suite failures are unchanged (core/ not vendored).
+
+## PR #234 cleanup qualification — 2026-10-18
+
+Merged current main and retained the parallel radio-test report. Radio install now
+aborts on failed copies and refuses existing helper/policy paths instead of
+overwriting their ownership manifest; uninstall without our manifest leaves
+services alone. Three sandboxed installer tests pass. The userspace radio suite
+passes 168 tests (8 explicit skips for absent DKMS/Arch packaging or prerequisites);
+the plugin suite passes 318 tests (30 explicit optional-core/platform skips), and
+the native widget passes all eight stub checks, with portal access disabled so
+temporary test homes clean up reliably. The libarchive-c 5.1 archive-name fixture
+was corrected using in-memory archive entries; receiver code is unchanged. CI now
+checks both vendored userspace suites. These are source/UI qualifications, not
+a completed phone transfer. The other session's steps 0–4 remain scoped evidence;
+the subsequent parallel report records one iPhone receive pass. Send and real-panel
+acceptance remain pending; AWDL stop leaves elevated Wi-Fi latency. Retargeted the
+obsolete stacked base to main and retained the merged Calendar/Homeboard changes.
+No radio activation, panel reload or reboot was
+performed during this cleanup review. The diagnostic boot selection is untouched.
+
+
+## Pantheon session crash and slow GNOME Shell relogin — 2026-10-18 (Claude)
+
+Patched Gala SIGSEGV at 21:43:11 (and 19:52:43, which ended the previous boot): same stack, a NULL read in
+stock mutter 50.1 under `clutter_sprite_invalidate_cursor` during pointer event filtering. Gala's unit takes
+the session down on failure; the greeter then logged the owner into the remembered **Ubuntu** session
+(GNOME Shell). GNOME Shell itself started in 0.7 s; the slowness was a stuck `xdg-desktop-portal` start left
+over from the crash, which blocked gnome-session's D-Bus restart, so apps waited on 25 s portal timeouts for
+about two minutes. Changed: greeter default session set back to `pantheon-wayland` (AccountsService and
+`~/.dmrc`); new `mseries/install-portal-relogin-fix.sh` installed for the owner (portal needs
+`WAYLAND_DISPLAY`; unverified until the next crash). Mutter frames not yet symbolized (debuginfod timed
+out); stock-Gala A/B is the owner's call. Details: `mseries/PANTHEON-CRASH-2026-10-18.md`.
