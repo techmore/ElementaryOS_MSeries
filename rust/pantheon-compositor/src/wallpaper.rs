@@ -58,10 +58,10 @@ pub(crate) fn load_wallpaper(selection: &WallpaperSelection) -> Option<Wallpaper
     }
 }
 
-fn try_load_wallpaper(
-    selection: &WallpaperSelection,
-) -> Result<(MemoryRenderBuffer, u32, u32, std::path::PathBuf, String), Box<dyn std::error::Error>>
-{
+type WallpaperLoadResult =
+    Result<(MemoryRenderBuffer, u32, u32, std::path::PathBuf, String), Box<dyn std::error::Error>>;
+
+fn try_load_wallpaper(selection: &WallpaperSelection) -> WallpaperLoadResult {
     let file = gio::File::for_uri(&selection.uri);
     let path = file
         .path()
@@ -82,7 +82,7 @@ fn try_load_wallpaper(
 
     // Fourcc::Argb8888 uses BGRA byte order on little-endian machines.
     let mut pixels = decoded.into_raw();
-    for pixel in pixels.chunks_exact_mut(4) {
+    for pixel in pixels.as_chunks_mut::<4>().0 {
         pixel.swap(0, 2);
     }
     let buffer = MemoryRenderBuffer::from_slice(

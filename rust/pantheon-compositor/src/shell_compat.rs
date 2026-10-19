@@ -93,16 +93,16 @@ impl ShellCompatHandle {
         thread::Builder::new()
             .name("pantheon-shell-dbus".into())
             .spawn(move || {
-                serve_shell_compat(
-                    service_bindings,
-                    service_active,
-                    service_active_since,
-                    service_osd,
+                serve_shell_compat(ShellCompatContext {
+                    bindings: service_bindings,
+                    active: service_active,
+                    active_since: service_active_since,
+                    osd: service_osd,
                     redraw_sender,
                     osd_expiry,
                     wayland_display,
                     receiver,
-                )
+                })
             })
             .expect("failed to start shell compatibility D-Bus thread");
         Self {
@@ -305,7 +305,7 @@ impl ScreenSaverCompat {
     async fn active_changed(emitter: &SignalEmitter<'_>, new_value: bool) -> zbus::Result<()>;
 }
 
-fn serve_shell_compat(
+struct ShellCompatContext {
     bindings: Arc<Mutex<Vec<KeyBinding>>>,
     active: Arc<AtomicBool>,
     active_since: Arc<Mutex<Option<Instant>>>,
@@ -314,7 +314,19 @@ fn serve_shell_compat(
     osd_expiry: mpsc::Sender<Instant>,
     wayland_display: OsString,
     receiver: mpsc::Receiver<ShellEvent>,
-) {
+}
+
+fn serve_shell_compat(context: ShellCompatContext) {
+    let ShellCompatContext {
+        bindings,
+        active,
+        active_since,
+        osd,
+        redraw_sender,
+        osd_expiry,
+        wayland_display,
+        receiver,
+    } = context;
     let connection = match Connection::session() {
         Ok(connection) => connection,
         Err(error) => {

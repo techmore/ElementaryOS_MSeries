@@ -43,9 +43,9 @@ pub(crate) struct GalaActionRequest {
 }
 
 enum GalaSignal {
-    RunningApplicationsChanged,
-    WindowsChanged,
-    ActiveWorkspaceChanged,
+    RunningApplications,
+    Windows,
+    ActiveWorkspace,
 }
 
 #[derive(Clone)]
@@ -98,18 +98,18 @@ impl GalaCompatHandle {
         };
 
         if apps_changed {
-            let _ = self.signals.send(GalaSignal::RunningApplicationsChanged);
+            let _ = self.signals.send(GalaSignal::RunningApplications);
         }
         if windows_changed || count_changed {
-            let _ = self.signals.send(GalaSignal::WindowsChanged);
+            let _ = self.signals.send(GalaSignal::Windows);
         }
         if active_changed {
-            let _ = self.signals.send(GalaSignal::ActiveWorkspaceChanged);
+            let _ = self.signals.send(GalaSignal::ActiveWorkspace);
         }
     }
 
     pub fn request_windows_changed(&self) {
-        let _ = self.signals.send(GalaSignal::WindowsChanged);
+        let _ = self.signals.send(GalaSignal::Windows);
     }
 }
 
@@ -289,21 +289,21 @@ fn serve_gala_compat(
             Err(mpsc::RecvTimeoutError::Disconnected) => return,
         };
         let result = match signal {
-            GalaSignal::RunningApplicationsChanged => connection.emit_signal(
+            GalaSignal::RunningApplications => connection.emit_signal(
                 None::<&str>,
                 DESKTOP_PATH,
                 "org.pantheon.gala.DesktopIntegration",
                 "RunningApplicationsChanged",
                 &(),
             ),
-            GalaSignal::WindowsChanged => connection.emit_signal(
+            GalaSignal::Windows => connection.emit_signal(
                 None::<&str>,
                 DESKTOP_PATH,
                 "org.pantheon.gala.DesktopIntegration",
                 "WindowsChanged",
                 &(),
             ),
-            GalaSignal::ActiveWorkspaceChanged => connection.emit_signal(
+            GalaSignal::ActiveWorkspace => connection.emit_signal(
                 None::<&str>,
                 DESKTOP_PATH,
                 "org.pantheon.gala.DesktopIntegration",

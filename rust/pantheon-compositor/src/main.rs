@@ -116,8 +116,10 @@ enum BackendChoice {
     Native,
 }
 
-fn parse_arguments()
--> Result<(BackendChoice, bool, Option<(String, Vec<String>)>), Box<dyn std::error::Error>> {
+type RunCommand = (String, Vec<String>);
+type ParsedArguments = (BackendChoice, bool, Option<RunCommand>);
+
+fn parse_arguments() -> Result<ParsedArguments, Box<dyn std::error::Error>> {
     let mut args = std::env::args().skip(1);
     let mut backend = BackendChoice::Nested;
     let mut notify_systemd = false;

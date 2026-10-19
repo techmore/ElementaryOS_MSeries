@@ -203,12 +203,7 @@ fn inspect_kms_planes(device: &DrmDeviceFile) {
             (Fourcc::Abgr2101010, "AB30"),
         ]
         .into_iter()
-        .filter_map(|(format, name)| {
-            plane
-                .formats()
-                .contains(&(format as u32))
-                .then_some(name)
-        })
+        .filter_map(|(format, name)| plane.formats().contains(&(format as u32)).then_some(name))
         .collect::<Vec<_>>();
         println!(
             "    {handle:?}: crtc={:?} framebuffer={:?}, tested formats advertised={:?} ({} total formats)",
@@ -228,7 +223,10 @@ fn probe_cross_gpu_import(render_path: &PathBuf, kms_target: &KmsTarget) {
     println!("Cross-GPU GBM import preflight:");
     println!("  render node: {}", render_path.display());
     println!("  KMS device: {}", kms_target.path.display());
-    println!("  preferred mode size: {}x{}", kms_target.width, kms_target.height);
+    println!(
+        "  preferred mode size: {}x{}",
+        kms_target.width, kms_target.height
+    );
 
     let render_file = match OpenOptions::new().read(true).write(true).open(render_path) {
         Ok(file) => file,

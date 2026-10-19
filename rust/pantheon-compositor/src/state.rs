@@ -1576,9 +1576,7 @@ impl PantheonCompositor {
                     continue;
                 }
                 let output_name = output.name();
-                let Some(lock_surface) = self.lock_surfaces.get(&output_name) else {
-                    return None;
-                };
+                let lock_surface = self.lock_surfaces.get(&output_name)?;
                 let local = pos - geometry.loc.to_f64();
                 return smithay::desktop::utils::under_from_surface_tree(
                     lock_surface.wl_surface(),
@@ -1623,11 +1621,11 @@ impl PantheonCompositor {
         if !self.session_locked || self.lock_confirmation.is_none() {
             return;
         }
-        if self.lock_confirmation_outputs.is_empty() {
-            if let Some(confirmation) = self.lock_confirmation.take() {
-                confirmation.lock();
-                self.shell_compat.set_locked(true);
-            }
+        if self.lock_confirmation_outputs.is_empty()
+            && let Some(confirmation) = self.lock_confirmation.take()
+        {
+            confirmation.lock();
+            self.shell_compat.set_locked(true);
         }
     }
 }
