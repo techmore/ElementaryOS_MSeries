@@ -1,5 +1,19 @@
 # OS 9 implementation / Claude Code handoff
 
+## Proton VPN on ARM64 — 2026-10-18
+
+Installed Proton VPN 4.18.7 from the Flathub source recipe as a native ARM64
+Flatpak (`com.protonvpn.www`, ref `app/com.protonvpn.www/aarch64/master`). The
+published Flathub ref and Proton's Debian repository currently lack ARM64
+packages, but the Flathub build recipe compiles Proton's Rust VPN backend and
+NetworkManager integration on ARM64. Its pinned NetworkManager GitLab source
+returned HTTP 502/504, so the successful local build used the matching GNOME
+1.40.18 release archive pinned with SHA-256. The reproducible recipe is
+[`mseries/install-protonvpn-arm64.sh`](install-protonvpn-arm64.sh), based on
+[Flathub recipe commit `7387931`](https://github.com/flathub/com.protonvpn.www/tree/7387931c14c4d57763618d83644be19b3475c77c).
+The launcher is installed for the user. Installation is confirmed; Proton
+sign-in and VPN connection are not.
+
 ## enh1 diagnostic boot reached the desktop; crash triage after reboot — 2026-10-18 (Claude Code)
 
 **Kernel now:** `7.1.12-elementary-aurora20-enh1` via the one-shot

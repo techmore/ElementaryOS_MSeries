@@ -1,5 +1,13 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Proton VPN ARM64 source build — 2026-10-18
+
+Proton VPN 4.18.7 now builds and installs from Flathub's pinned source recipe
+as an ARM64 Flatpak. The build compiles its Rust backend and NetworkManager
+integration locally; details and the repeatable installer are in
+`mseries/OS9-HANDOFF.md` and `mseries/install-protonvpn-arm64.sh`. Next: the
+owner signs in and confirms a VPN connection in the live elementary session.
+
 ## Release stages: F5 parity first, support assistants after — 2026-10-18
 
 Owner's order:
