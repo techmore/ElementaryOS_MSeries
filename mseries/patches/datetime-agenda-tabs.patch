@@ -1,3 +1,42 @@
+diff --git a/data/DailyVerse.css b/data/DailyVerse.css
+new file mode 100644
+index 0000000..b7040ff
+--- /dev/null
++++ b/data/DailyVerse.css
+@@ -0,0 +1,33 @@
++/* Verse of the Day: a little larger and airier than list text, for reading. */
++.daily-verse-text {
++    font-size: 1.12em;
++    line-height: 1.4;
++}
++
++.daily-verse-reference {
++    font-weight: 600;
++    opacity: 0.75;
++}
++
++/* Titus study: the passage reads like the daily verse; section labels are small caps. */
++.study-passage {
++    font-size: 1.05em;
++    line-height: 1.45;
++}
++
++.study-section {
++    font-size: 0.8em;
++    font-weight: 700;
++    letter-spacing: 0.06em;
++    text-transform: uppercase;
++    opacity: 0.6;
++}
++
++.study-insight,
++.study-reflect {
++    line-height: 1.35;
++}
++
++.study-reflect {
++    font-style: italic;
++}
 diff --git a/data/EventRow.css b/data/EventRow.css
 index 96b8708..9f22f6e 100644
 --- a/data/EventRow.css
@@ -13,13 +52,13 @@ index 96b8708..9f22f6e 100644
 +    border-radius: 4px;
 +    padding: 3px 4px;
  }
-
+ 
  .event label,
  .event image {
 -    color: @selected_fg_color;
 +    color: inherit;
  }
-
+ 
 @@ -13,2 +15,14 @@
      font-weight: 600;
  }
@@ -60,43 +99,481 @@ index 0000000..dcab65c
 +.mseries-time-block label { font-size: 0.9em; }
 +.mseries-hour-line { background-color: alpha(@theme_fg_color, 0.18); }
 +.mseries-half-hour-line { background-color: alpha(@theme_fg_color, 0.07); }
+diff --git a/data/daily-verses.tsv b/data/daily-verses.tsv
+new file mode 100644
+index 0000000..32c2f8d
+--- /dev/null
++++ b/data/daily-verses.tsv
+@@ -0,0 +1,407 @@
++# Verse of the Day: World English Bible (public domain, https://ebible.org/web/)
++# reference, text, Psalm heading (may be empty), season (may be empty)
++Genesis 1:1	In the beginning, God created the heavens and the earth.
++Genesis 1:27	God created man in his own image. In God’s image he created him; male and female he created them.
++Genesis 1:31	God saw everything that he had made, and, behold, it was very good. There was evening and there was morning, a sixth day.
++Genesis 2:7	The LORD God formed man from the dust of the ground, and breathed into his nostrils the breath of life; and man became a living soul.
++Genesis 12:2	I will make of you a great nation. I will bless you and make your name great. You will be a blessing.
++Genesis 15:6	He believed in the LORD, who credited it to him for righteousness.
++Genesis 18:13-14	The LORD said to Abraham, “Why did Sarah laugh, saying, ‘Will I really bear a child when I am old?’ Is anything too hard for the LORD? At the set time I will return to you, when the season comes around, and Sarah will have a son.”
++Genesis 28:15	Behold, I am with you, and will keep you, wherever you go, and will bring you again into this land. For I will not leave you until I have done that which I have spoken of to you.
++Genesis 50:20	As for you, you meant evil against me, but God meant it for good, to save many people alive, as is happening today.
++Exodus 3:14	God said to Moses, “I AM WHO I AM,” and he said, “You shall tell the children of Israel this: ‘I AM has sent me to you.’”
++Exodus 14:13-14	Moses said to the people, “Don’t be afraid. Stand still, and see the salvation of the LORD, which he will work for you today; for you will never again see the Egyptians whom you have seen today. The LORD will fight for you, and you shall be still.”
++Exodus 15:2	The LORD is my strength and song. He has become my salvation. This is my God, and I will praise him; my father’s God, and I will exalt him.
++Exodus 20:12	Honor your father and your mother, that your days may be long in the land which the LORD your God gives you.
++Exodus 33:14	He said, “My presence will go with you, and I will give you rest.”
++Exodus 34:6-7	The LORD passed by before him, and proclaimed, “The LORD! The LORD, a merciful and gracious God, slow to anger, and abundant in loving kindness and truth, keeping loving kindness for thousands, forgiving iniquity and disobedience and sin; and who will by no means clear the guilty, visiting the iniquity of the fathers on the children, and on the children’s children, on the third and on the fourth generation.”
++Leviticus 19:18	You shall not take vengeance, nor bear any grudge against the children of your people; but you shall love your neighbor as yourself. I am the LORD.
++Numbers 6:24-26	‘The LORD bless you, and keep you. The LORD make his face to shine on you, and be gracious to you. The LORD lift up his face toward you, and give you peace.’
++Numbers 23:19	God is not a man, that he should lie, nor a son of man, that he should repent. Has he said, and he won’t do it? Or has he spoken, and he won’t make it good?
++Deuteronomy 6:4-5	Hear, Israel: The LORD is our God. The LORD is one. You shall love the LORD your God with all your heart, with all your soul, and with all your might.
++Deuteronomy 7:9	Know therefore that the LORD your God himself is God, the faithful God, who keeps covenant and loving kindness to a thousand generations with those who love him and keep his commandments,
++Deuteronomy 8:3	He humbled you, allowed you to be hungry, and fed you with manna, which you didn’t know, neither did your fathers know, that he might teach you that man does not live by bread only, but man lives by every word that proceeds out of the LORD’s mouth.
++Deuteronomy 10:12	Now, Israel, what does the LORD your God require of you, but to fear the LORD your God, to walk in all his ways, to love him, and to serve the LORD your God with all your heart and with all your soul,
++Deuteronomy 30:19	I call heaven and earth to witness against you today that I have set before you life and death, the blessing and the curse. Therefore choose life, that you may live, you and your descendants,
++Deuteronomy 31:6	Be strong and courageous. Don’t be afraid or scared of them, for the LORD your God himself is who goes with you. He will not fail you nor forsake you.
++Deuteronomy 31:7-8	Moses called to Joshua, and said to him in the sight of all Israel, “Be strong and courageous, for you shall go with this people into the land which the LORD has sworn to their fathers to give them; and you shall cause them to inherit it. The LORD himself is who goes before you. He will be with you. He will not fail you nor forsake you. Don’t be afraid. Don’t be discouraged.”
++Deuteronomy 33:27	The eternal God is your dwelling place. Underneath are the everlasting arms. He thrust out the enemy from before you, and said, ‘Destroy!’
++Joshua 1:8	This book of the law shall not depart from your mouth, but you shall meditate on it day and night, that you may observe to do according to all that is written in it; for then you shall make your way prosperous, and then you shall have good success.
++Joshua 1:9	Haven’t I commanded you? Be strong and courageous. Don’t be afraid. Don’t be dismayed, for the LORD your God is with you wherever you go.
++Joshua 24:14-15	“Now therefore fear the LORD, and serve him in sincerity and in truth. Put away the gods which your fathers served beyond the River, in Egypt; and serve the LORD. If it seems evil to you to serve the LORD, choose today whom you will serve; whether the gods which your fathers served that were beyond the River, or the gods of the Amorites, in whose land you dwell; but as for me and my house, we will serve the LORD.”
++Ruth 1:16-17	Ruth said, “Don’t urge me to leave you, and to return from following you, for where you go, I will go; and where you stay, I will stay. Your people will be my people, and your God my God. Where you die, I will die, and there I will be buried. May the LORD do so to me, and more also, if anything but death parts you and me.”
++1 Samuel 2:2	There is no one as holy as the LORD, for there is no one besides you, nor is there any rock like our God.
++1 Samuel 12:24	Only fear the LORD, and serve him in truth with all your heart; for consider what great things he has done for you.
++1 Samuel 16:7	But the LORD said to Samuel, “Don’t look on his face, or on the height of his stature, because I have rejected him; for I don’t see as man sees. For man looks at the outward appearance, but the LORD looks at the heart.”
++2 Samuel 22:31	As for God, his way is perfect. The LORD’s word is tested. He is a shield to all those who take refuge in him.
++2 Samuel 22:33	God is my strong fortress. He makes my way perfect.
++1 Kings 8:23	and he said, “LORD, the God of Israel, there is no God like you, in heaven above, or on earth beneath; who keeps covenant and loving kindness with your servants who walk before you with all their heart;
++1 Chronicles 16:11	Seek the LORD and his strength. Seek his face forever more.
++1 Chronicles 16:34	Oh give thanks to the LORD, for he is good, for his loving kindness endures forever.
++1 Chronicles 29:11	Yours, LORD, is the greatness, the power, the glory, the victory, and the majesty! For all that is in the heavens and on the earth is yours. Yours is the kingdom, LORD, and you are exalted as head above all.
++2 Chronicles 7:14	if my people who are called by my name will humble themselves, pray, seek my face, and turn from their wicked ways, then I will hear from heaven, will forgive their sin, and will heal their land.
++2 Chronicles 15:7	But you be strong! Don’t let your hands be slack, for your work will be rewarded.
++2 Chronicles 16:9	For the LORD’s eyes run back and forth throughout the whole earth, to show himself strong in the behalf of them whose heart is perfect toward him. You have done foolishly in this; for from now on you will have wars.
++Nehemiah 8:10	Then he said to them, “Go your way. Eat the fat, drink the sweet, and send portions to him for whom nothing is prepared, for today is holy to our Lord. Don’t be grieved, for the joy of the LORD is your strength.”
++Nehemiah 9:6	You are the LORD, even you alone. You have made heaven, the heaven of heavens, with all their army, the earth and all things that are on it, the seas and all that is in them, and you preserve them all. The army of heaven worships you.
++Esther 4:13-14	Then Mordecai asked them to return this answer to Esther: “Don’t think to yourself that you will escape in the king’s house any more than all the Jews. For if you remain silent now, then relief and deliverance will come to the Jews from another place, but you and your father’s house will perish. Who knows if you haven’t come to the kingdom for such a time as this?”
++Job 1:21	He said, “Naked I came out of my mother’s womb, and naked will I return there. The LORD gave, and the LORD has taken away. Blessed be the LORD’s name.”
++Job 12:10	in whose hand is the life of every living thing, and the breath of all mankind?
++Job 19:25	But as for me, I know that my Redeemer lives. In the end, he will stand upon the earth.
++Job 23:10	But he knows the way that I take. When he has tried me, I will come out like gold.
++Job 42:2	I know that you can do all things, and that no purpose of yours can be restrained.
++Psalm 1:1-2	Blessed is the man who doesn’t walk in the counsel of the wicked, nor stand on the path of sinners, nor sit in the seat of scoffers; but his delight is in the LORD’s law. On his law he meditates day and night.
++Psalm 1:3	He will be like a tree planted by the streams of water, that produces its fruit in its season, whose leaf also does not wither. Whatever he does shall prosper.
++Psalm 4:8	In peace I will both lay myself down and sleep, for you alone, LORD, make me live in safety.
++Psalm 5:3	LORD, in the morning you will hear my voice. In the morning I will lay my requests before you, and will watch expectantly.
++Psalm 9:1	I will give thanks to the LORD with my whole heart. I will tell of all your marvelous works.	For the Chief Musician. Set to “The Death of the Son.” A Psalm by David.
++Psalm 9:9	The LORD will also be a high tower for the oppressed; a high tower in times of trouble.
++Psalm 16:8	I have set the LORD always before me. Because he is at my right hand, I shall not be moved.
++Psalm 16:11	You will show me the path of life. In your presence is fullness of joy. In your right hand there are pleasures forever more.
++Psalm 18:2	The LORD is my rock, my fortress, and my deliverer; my God, my rock, in whom I take refuge; my shield, and the horn of my salvation, my high tower.
++Psalm 19:1	The heavens declare the glory of God. The expanse shows his handiwork.	For the Chief Musician. A Psalm by David.
++Psalm 19:14	Let the words of my mouth and the meditation of my heart be acceptable in your sight, LORD, my rock, and my redeemer.
++Psalm 20:7	Some trust in chariots, and some in horses, but we trust in the name of the LORD our God.
++Psalm 23:1	The LORD is my shepherd; I shall lack nothing.	A Psalm by David.
++Psalm 23:4	Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me. Your rod and your staff, they comfort me.
++Psalm 23:6	Surely goodness and loving kindness shall follow me all the days of my life, and I will dwell in the LORD’s house forever.
++Psalm 25:4-5	Show me your ways, LORD. Teach me your paths. Guide me in your truth, and teach me, for you are the God of my salvation. I wait for you all day long.
++Psalm 27:1	The LORD is my light and my salvation. Whom shall I fear? The LORD is the strength of my life. Of whom shall I be afraid?	By David.
++Psalm 27:14	Wait for the LORD. Be strong, and let your heart take courage. Yes, wait for the LORD.
++Psalm 28:7	The LORD is my strength and my shield. My heart has trusted in him, and I am helped. Therefore my heart greatly rejoices. With my song I will thank him.
++Psalm 30:5	For his anger is but for a moment. His favor is for a lifetime. Weeping may stay for the night, but joy comes in the morning.
++Psalm 31:24	Be strong, and let your heart take courage, all you who hope in the LORD.
++Psalm 32:8	I will instruct you and teach you in the way which you shall go. I will counsel you with my eye on you.
++Psalm 33:4	For the LORD’s word is right. All his work is done in faithfulness.
++Psalm 34:4	I sought the LORD, and he answered me, and delivered me from all my fears.
++Psalm 34:8	Oh taste and see that the LORD is good. Blessed is the man who takes refuge in him.
++Psalm 34:18	The LORD is near to those who have a broken heart, and saves those who have a crushed spirit.
++Psalm 37:4	Also delight yourself in the LORD, and he will give you the desires of your heart.
++Psalm 37:5	Commit your way to the LORD. Trust also in him, and he will do this:
++Psalm 37:7	Rest in the LORD, and wait patiently for him. Don’t fret because of him who prospers in his way, because of the man who makes wicked plots happen.
++Psalm 40:1	I waited patiently for the LORD. He turned to me, and heard my cry.	For the Chief Musician. A Psalm by David.
++Psalm 42:11	Why are you in despair, my soul? Why are you disturbed within me? Hope in God! For I shall still praise him, the saving help of my countenance, and my God.
++Psalm 46:1	God is our refuge and strength, a very present help in trouble.	For the Chief Musician. By the sons of Korah. According to Alamoth.
++Psalm 46:10	“Be still, and know that I am God. I will be exalted among the nations. I will be exalted on the earth.”
++Psalm 51:10	Create in me a clean heart, O God. Renew a right spirit within me.
++Psalm 55:22	Cast your burden on the LORD and he will sustain you. He will never allow the righteous to be moved.
++Psalm 56:3	When I am afraid, I will put my trust in you.
++Psalm 62:1-2	My soul rests in God alone. My salvation is from him. He alone is my rock, my salvation, and my fortress. I will never be greatly shaken.	For the Chief Musician. To Jeduthun. A Psalm by David.
++Psalm 63:1	God, you are my God. I will earnestly seek you. My soul thirsts for you. My flesh longs for you, in a dry and weary land, where there is no water.	A Psalm by David, when he was in the desert of Judah.
++Psalm 63:3	Because your loving kindness is better than life, my lips shall praise you.
++Psalm 66:20	Blessed be God, who has not turned away my prayer, nor his loving kindness from me.
++Psalm 71:5	For you are my hope, Lord GOD, my confidence from my youth.
++Psalm 73:26	My flesh and my heart fails, but God is the strength of my heart and my portion forever.
++Psalm 84:11	For the LORD God is a sun and a shield. The LORD will give grace and glory. He withholds no good thing from those who walk blamelessly.
++Psalm 86:5	For you, Lord, are good, and ready to forgive, abundant in loving kindness to all those who call on you.
++Psalm 86:15	But you, Lord, are a merciful and gracious God, slow to anger, and abundant in loving kindness and truth.
++Psalm 90:2	Before the mountains were born, before you had formed the earth and the world, even from everlasting to everlasting, you are God.
++Psalm 90:12	So teach us to count our days, that we may gain a heart of wisdom.
++Psalm 91:1-2	He who dwells in the secret place of the Most High will rest in the shadow of the Almighty. I will say of the LORD, “He is my refuge and my fortress; my God, in whom I trust.”
++Psalm 91:11	For he will put his angels in charge of you, to guard you in all your ways.
++Psalm 94:19	In the multitude of my thoughts within me, your comforts delight my soul.
++Psalm 95:6	Oh come, let’s worship and bow down. Let’s kneel before the LORD, our Maker,
++Psalm 100:4-5	Enter into his gates with thanksgiving, and into his courts with praise. Give thanks to him, and bless his name. For the LORD is good. His loving kindness endures forever, his faithfulness to all generations.		thanksgiving
++Psalm 103:2-3	Praise the LORD, my soul, and don’t forget all his benefits, who forgives all your sins, who heals all your diseases,
++Psalm 103:12	As far as the east is from the west, so far has he removed our transgressions from us.
++Psalm 107:1	Give thanks to the LORD, for he is good, for his loving kindness endures forever.
++Psalm 112:7	He will not be afraid of evil news. His heart is steadfast, trusting in the LORD.
++Psalm 113:3	From the rising of the sun to its going down, the LORD’s name is to be praised.
++Psalm 115:1	Not to us, LORD, not to us, but to your name give glory, for your loving kindness, and for your truth’s sake.
++Psalm 118:24	This is the day that the LORD has made. We will rejoice and be glad in it!
++Psalm 119:11	I have hidden your word in my heart, that I might not sin against you.
++Psalm 119:105	Your word is a lamp to my feet, and a light for my path.
++Psalm 119:114	You are my hiding place and my shield. I hope in your word.
++Psalm 121:1-2	I will lift up my eyes to the hills. Where does my help come from? My help comes from the LORD, who made heaven and earth.	A Song of Ascents.
++Psalm 121:7-8	The LORD will keep you from all evil. He will keep your soul. The LORD will keep your going out and your coming in, from this time forward, and forever more.
++Psalm 127:1	Unless the LORD builds the house, they who build it labor in vain. Unless the LORD watches over the city, the watchman guards it in vain.	A Song of Ascents. By Solomon.
++Psalm 130:5	I wait for the LORD. My soul waits. I hope in his word.
++Psalm 133:1	See how good and how pleasant it is for brothers to live together in unity!	A Song of Ascents. By David.
++Psalm 136:1	Give thanks to the LORD, for he is good, for his loving kindness endures forever.
++Psalm 138:8	The LORD will fulfill that which concerns me. Your loving kindness, LORD, endures forever. Don’t forsake the works of your own hands.
++Psalm 139:13-14	For you formed my inmost being. You knit me together in my mother’s womb. I will give thanks to you, for I am fearfully and wonderfully made. Your works are wonderful. My soul knows that very well.
++Psalm 139:23-24	Search me, God, and know my heart. Try me, and know my thoughts. See if there is any wicked way in me, and lead me in the everlasting way.
++Psalm 143:8	Cause me to hear your loving kindness in the morning, for I trust in you. Cause me to know the way in which I should walk, for I lift up my soul to you.
++Psalm 145:8	The LORD is gracious, merciful, slow to anger, and of great loving kindness.
++Psalm 145:18	The LORD is near to all those who call on him, to all who call on him in truth.
++Psalm 147:3	He heals the broken in heart, and binds up their wounds.
++Psalm 150:6	Let everything that has breath praise the LORD! Praise the LORD!
++Proverbs 1:7	The fear of the LORD is the beginning of knowledge, but the foolish despise wisdom and instruction.
++Proverbs 3:5-6	Trust in the LORD with all your heart, and don’t lean on your own understanding. In all your ways acknowledge him, and he will make your paths straight.
++Proverbs 3:9-10	Honor the LORD with your substance, with the first fruits of all your increase; so your barns will be filled with plenty, and your vats will overflow with new wine.
++Proverbs 4:23	Keep your heart with all diligence, for out of it is the wellspring of life.
++Proverbs 9:10	The fear of the LORD is the beginning of wisdom. The knowledge of the Holy One is understanding.
++Proverbs 10:12	Hatred stirs up strife, but love covers all wrongs.
++Proverbs 11:25	The liberal soul shall be made fat. He who waters shall be watered also himself.
++Proverbs 12:25	Anxiety in a man’s heart weighs it down, but a kind word makes it glad.
++Proverbs 13:20	One who walks with wise men grows wise, but a companion of fools suffers harm.
++Proverbs 14:29	He who is slow to anger has great understanding, but he who has a quick temper displays folly.
++Proverbs 15:1	A gentle answer turns away wrath, but a harsh word stirs up anger.
++Proverbs 16:3	Commit your deeds to the LORD, and your plans shall succeed.
++Proverbs 16:9	A man’s heart plans his course, but the LORD directs his steps.
++Proverbs 16:24	Pleasant words are a honeycomb, sweet to the soul, and health to the bones.
++Proverbs 17:17	A friend loves at all times; and a brother is born for adversity.
++Proverbs 17:22	A cheerful heart makes good medicine, but a crushed spirit dries up the bones.
++Proverbs 18:10	The LORD’s name is a strong tower: the righteous run to him, and are safe.
++Proverbs 18:24	A man of many companions may be ruined, but there is a friend who sticks closer than a brother.
++Proverbs 19:21	There are many plans in a man’s heart, but the LORD’s counsel will prevail.
++Proverbs 22:6	Train up a child in the way he should go, and when he is old he will not depart from it.
++Proverbs 27:17	Iron sharpens iron; so a man sharpens his friend’s countenance.
++Proverbs 28:13	He who conceals his sins doesn’t prosper, but whoever confesses and renounces them finds mercy.
++Proverbs 30:5	Every word of God is flawless. He is a shield to those who take refuge in him.
++Proverbs 31:25	Strength and dignity are her clothing. She laughs at the time to come.
++Proverbs 31:30	Charm is deceitful, and beauty is vain; but a woman who fears the LORD, she shall be praised.
++Ecclesiastes 3:1	For everything there is a season, and a time for every purpose under heaven:
++Ecclesiastes 3:11	He has made everything beautiful in its time. He has also set eternity in their hearts, yet so that man can’t find out the work that God has done from the beginning even to the end.
++Ecclesiastes 4:9-10	Two are better than one, because they have a good reward for their labor. For if they fall, the one will lift up his fellow; but woe to him who is alone when he falls, and doesn’t have another to lift him up.
++Ecclesiastes 4:12	If a man prevails against one who is alone, two shall withstand him; and a threefold cord is not quickly broken.
++Ecclesiastes 12:13	This is the end of the matter. All has been heard. Fear God and keep his commandments; for this is the whole duty of man.
++Isaiah 6:8	I heard the Lord’s voice, saying, “Whom shall I send, and who will go for us?” Then I said, “Here I am. Send me!”
++Isaiah 9:6	For a child is born to us. A son is given to us; and the government will be on his shoulders. His name will be called Wonderful Counselor, Mighty God, Everlasting Father, Prince of Peace.		christmas-eve
++Isaiah 12:1-2	In that day you will say, “I will give thanks to you, the LORD; for though you were angry with me, your anger has turned away and you comfort me. Behold, God is my salvation. I will trust, and will not be afraid; for the LORD, the LORD, is my strength and song; and he has become my salvation.”
++Isaiah 26:3	You will keep whoever’s mind is steadfast in perfect peace, because he trusts in you.
++Isaiah 26:4	Trust in the LORD forever; for in the LORD, the LORD, is an everlasting Rock.
++Isaiah 30:15	For thus said the Lord GOD, the Holy One of Israel, “You will be saved in returning and rest. Your strength will be in quietness and in confidence.” You refused,
++Isaiah 30:18	Therefore the LORD will wait, that he may be gracious to you; and therefore he will be exalted, that he may have mercy on you, for the LORD is a God of justice. Blessed are all those who wait for him.
++Isaiah 40:6-8	The voice of one saying, “Cry out!” One said, “What shall I cry?” “All flesh is like grass, and all its glory is like the flower of the field. The grass withers, the flower fades, because the LORD’s breath blows on it. Surely the people are like grass. The grass withers, the flower fades; but the word of our God stands forever.”
++Isaiah 40:29	He gives power to the weak. He increases the strength of him who has no might.
++Isaiah 40:31	but those who wait for the LORD will renew their strength. They will mount up with wings like eagles. They will run, and not be weary. They will walk, and not faint.
++Isaiah 41:10	Don’t you be afraid, for I am with you. Don’t be dismayed, for I am your God. I will strengthen you. Yes, I will help you. Yes, I will uphold you with the right hand of my righteousness.
++Isaiah 41:13	For I, the LORD your God, will hold your right hand, saying to you, ‘Don’t be afraid. I will help you.’
++Isaiah 43:1	But now the LORD who created you, Jacob, and he who formed you, Israel, says: “Don’t be afraid, for I have redeemed you. I have called you by your name. You are mine.
++Isaiah 43:2	When you pass through the waters, I will be with you, and through the rivers, they will not overflow you. When you walk through the fire, you will not be burned, and flame will not scorch you.
++Isaiah 43:18-19	Don’t remember the former things, and don’t consider the things of old. Behold, I will do a new thing. It springs out now. Don’t you know it? I will even make a way in the wilderness, and rivers in the desert.
++Isaiah 49:15-16	Can a woman forget her nursing child, that she should not have compassion on the son of her womb? Yes, these may forget, yet I will not forget you! Behold, I have engraved you on the palms of my hands. Your walls are continually before me.
++Isaiah 53:5	But he was pierced for our transgressions. He was crushed for our iniquities. The punishment that brought our peace was on him; and by his wounds we are healed.		good-friday
++Isaiah 54:9-10	“For this is like the waters of Noah to me; for as I have sworn that the waters of Noah will no more go over the earth, so I have sworn that I will not be angry with you, nor rebuke you. For the mountains may depart, and the hills be removed, but my loving kindness will not depart from you, and my covenant of peace will not be removed,” says the LORD who has mercy on you.
++Isaiah 55:8-9	“For my thoughts are not your thoughts, and your ways are not my ways,” says the LORD. “For as the heavens are higher than the earth, so are my ways higher than your ways, and my thoughts than your thoughts.
++Isaiah 55:11	so is my word that goes out of my mouth: it will not return to me void, but it will accomplish that which I please, and it will prosper in the thing I sent it to do.
++Isaiah 58:11	and the LORD will guide you continually, satisfy your soul in dry places, and make your bones strong. You will be like a watered garden, and like a spring of water whose waters don’t fail.
++Isaiah 61:1	The Lord GOD’s Spirit is on me, because the LORD has anointed me to preach good news to the humble. He has sent me to bind up the broken hearted, to proclaim liberty to the captives and release to those who are bound,
++Isaiah 64:8	But now, LORD, you are our Father. We are the clay and you our potter. We all are the work of your hand.
++Jeremiah 17:7-8	Blessed is the man who trusts in the LORD, and whose confidence is in the LORD. For he will be as a tree planted by the waters, who spreads out its roots by the river, and will not fear when heat comes, but its leaf will be green, and will not be concerned in the year of drought. It won’t cease from yielding fruit.
++Jeremiah 29:11	For I know the thoughts that I think toward you,” says the LORD, “thoughts of peace, and not of evil, to give you hope and a future.
++Jeremiah 29:13	You shall seek me and find me, when you search for me with all your heart.
++Jeremiah 31:3	The LORD appeared of old to me, saying, “Yes, I have loved you with an everlasting love. Therefore I have drawn you with loving kindness.
++Jeremiah 32:17	Ah Lord GOD! Behold, you have made the heavens and the earth by your great power and by your outstretched arm. There is nothing too hard for you.
++Jeremiah 33:3	‘Call to me, and I will answer you, and will show you great and difficult things, which you don’t know.’
++Lamentations 3:22-23	It is because of the LORD’s loving kindnesses that we are not consumed, because his mercies don’t fail. They are new every morning. Great is your faithfulness.		new-year
++Lamentations 3:25	The LORD is good to those who wait for him, to the soul who seeks him.
++Ezekiel 36:26	I will also give you a new heart, and I will put a new spirit within you. I will take away the stony heart out of your flesh, and I will give you a heart of flesh.
++Daniel 2:20-21	Daniel answered, “Blessed be the name of God forever and ever; for wisdom and might are his. He changes the times and the seasons. He removes kings and sets up kings. He gives wisdom to the wise, and knowledge to those who have understanding.
++Daniel 3:17	If it happens, our God whom we serve is able to deliver us from the burning fiery furnace; and he will deliver us out of your hand, O king.
++Hosea 6:3	Let’s acknowledge the LORD. Let’s press on to know the LORD. As surely as the sun rises, the LORD will appear. He will come to us like the rain, like the spring rain that waters the earth.
++Joel 2:13	Tear your heart and not your garments, and turn to the LORD, your God; for he is gracious and merciful, slow to anger, and abundant in loving kindness, and relents from sending calamity.		ash-wednesday
++Joel 2:28	It will happen afterward, that I will pour out my Spirit on all flesh; and your sons and your daughters will prophesy. Your old men will dream dreams. Your young men will see visions.
++Amos 5:24	But let justice roll on like rivers, and righteousness like a mighty stream.
++Micah 6:8	He has shown you, O man, what is good. What does the LORD require of you, but to act justly, to love mercy, and to walk humbly with your God?
++Micah 7:7	But as for me, I will look to the LORD. I will wait for the God of my salvation. My God will hear me.
++Nahum 1:7	The LORD is good, a stronghold in the day of trouble; and he knows those who take refuge in him.
++Habakkuk 3:17-18	For even though the fig tree doesn’t flourish, nor fruit be in the vines, the labor of the olive fails, the fields yield no food, the flocks are cut off from the fold, and there is no herd in the stalls, yet I will rejoice in the LORD. I will be joyful in the God of my salvation!
++Habakkuk 3:19	GOD, the Lord, is my strength. He makes my feet like deer’s feet, and enables me to go in high places. For the music director, on my stringed instruments.
++Zephaniah 3:17	The LORD, your God, is among you, a mighty one who will save. He will rejoice over you with joy. He will calm you in his love. He will rejoice over you with singing.
++Zechariah 4:6-7	Then he answered and spoke to me, saying, “This is the LORD’s word to Zerubbabel, saying, ‘Not by might, nor by power, but by my Spirit,’ says the LORD of Armies. Who are you, great mountain? Before Zerubbabel you are a plain; and he will bring out the capstone with shouts of ‘Grace, grace, to it!’”
++Malachi 3:10	Bring the whole tithe into the storehouse, that there may be food in my house, and test me now in this,” says the LORD of Armies, “if I will not open you the windows of heaven, and pour you out a blessing, that there will not be enough room for.
++Matthew 2:10-11	When they saw the star, they rejoiced with exceedingly great joy. They came into the house and saw the young child with Mary, his mother, and they fell down and worshiped him. Opening their treasures, they offered to him gifts: gold, frankincense, and myrrh.		epiphany
++Matthew 4:4	But he answered, “It is written, ‘Man shall not live by bread alone, but by every word that proceeds out of God’s mouth.’”
++Matthew 4:19	He said to them, “Come after me, and I will make you fishers for men.”
++Matthew 5:3-4	Blessed are the poor in spirit, for theirs is the Kingdom of Heaven. Blessed are those who mourn, for they shall be comforted.
++Matthew 5:6	Blessed are those who hunger and thirst for righteousness, for they shall be filled.
++Matthew 5:8-9	Blessed are the pure in heart, for they shall see God. Blessed are the peacemakers, for they shall be called children of God.
++Matthew 5:14	You are the light of the world. A city located on a hill can’t be hidden.
++Matthew 5:16	Even so, let your light shine before men, that they may see your good works and glorify your Father who is in heaven.
++Matthew 5:44	But I tell you, love your enemies, bless those who curse you, do good to those who hate you, and pray for those who mistreat you and persecute you,
++Matthew 6:6	But you, when you pray, enter into your inner room, and having shut your door, pray to your Father who is in secret; and your Father who sees in secret will reward you openly.
++Matthew 6:19-21	Don’t lay up treasures for yourselves on the earth, where moth and rust consume, and where thieves break through and steal; but lay up for yourselves treasures in heaven, where neither moth nor rust consume, and where thieves don’t break through and steal; for where your treasure is, there your heart will be also.
++Matthew 6:26	See the birds of the sky, that they don’t sow, neither do they reap, nor gather into barns. Your heavenly Father feeds them. Aren’t you of much more value than they?
++Matthew 6:33	But seek first God’s Kingdom and his righteousness; and all these things will be given to you as well.
++Matthew 6:34	Therefore don’t be anxious for tomorrow, for tomorrow will be anxious for itself. Each day’s own evil is sufficient.
++Matthew 7:7	Ask, and it will be given you. Seek, and you will find. Knock, and it will be opened for you.
++Matthew 7:12	Therefore, whatever you desire for men to do to you, you shall also do to them; for this is the law and the prophets.
++Matthew 7:24	Everyone therefore who hears these words of mine and does them, I will liken him to a wise man who built his house on the rock.
++Matthew 9:37-38	Then he said to his disciples, “The harvest indeed is plentiful, but the laborers are few. Pray therefore that the Lord of the harvest will send out laborers into his harvest.”
++Matthew 11:28-30	“Come to me, all you who labor and are heavily burdened, and I will give you rest. Take my yoke upon you and learn from me, for I am gentle and humble in heart; and you will find rest for your souls. For my yoke is easy, and my burden is light.”
++Matthew 16:24	Then Jesus said to his disciples, “If anyone desires to come after me, let him deny himself, take up his cross, and follow me.
++Matthew 17:20-21	He said to them, “Because of your unbelief. For most certainly I tell you, if you have faith as a grain of mustard seed, you will tell this mountain, ‘Move from here to there,’ and it will move; and nothing will be impossible for you. But this kind doesn’t go out except by prayer and fasting.”
++Matthew 18:20	For where two or three are gathered together in my name, there I am in the middle of them.
++Matthew 19:26	Looking at them, Jesus said, “With men this is impossible, but with God all things are possible.”
++Matthew 22:37-40	Jesus said to him, “‘You shall love the Lord your God with all your heart, with all your soul, and with all your mind.’ This is the first and great commandment. A second likewise is this, ‘You shall love your neighbor as yourself.’ The whole law and the prophets depend on these two commandments.”
++Matthew 25:40	The King will answer them, ‘Most certainly I tell you, because you did it to one of the least of these my brothers, you did it to me.’
++Matthew 28:18-20	Jesus came to them and spoke to them, saying, “All authority has been given to me in heaven and on earth. Go and make disciples of all nations, baptizing them in the name of the Father and of the Son and of the Holy Spirit, teaching them to observe all things that I commanded you. Behold, I am with you always, even to the end of the age.” Amen.
++Matthew 28:6	He is not here, for he has risen, just like he said. Come, see the place where the Lord was lying.		easter
++Mark 1:35	Early in the morning, while it was still dark, he rose up and went out, and departed into a deserted place, and prayed there.
++Mark 9:23	Jesus said to him, “If you can believe, all things are possible to him who believes.”
++Mark 10:27	Jesus, looking at them, said, “With men it is impossible, but not with God, for all things are possible with God.”
++Mark 10:45	For the Son of Man also came not to be served but to serve, and to give his life as a ransom for many.
++Mark 11:24	Therefore I tell you, all things whatever you pray and ask for, believe that you have received them, and you shall have them.
++Mark 12:29-31	Jesus answered, “The greatest is: ‘Hear, Israel, the Lord our God, the Lord is one. You shall love the Lord your God with all your heart, with all your soul, with all your mind, and with all your strength.’ This is the first commandment. The second is like this: ‘You shall love your neighbor as yourself.’ There is no other commandment greater than these.”
++Mark 16:15	He said to them, “Go into all the world and preach the Good News to the whole creation.
++Luke 1:35-37	The angel answered her, “The Holy Spirit will come on you, and the power of the Most High will overshadow you. Therefore also the holy one who is born from you will be called the Son of God. Behold, Elizabeth your relative also has conceived a son in her old age; and this is the sixth month with her who was called barren. For nothing spoken by God is impossible.”
++Luke 1:45	Blessed is she who believed, for there will be a fulfillment of the things which have been spoken to her from the Lord!
++Luke 2:10-12	The angel said to them, “Don’t be afraid, for behold, I bring you good news of great joy which will be to all the people. For there is born to you today, in David’s city, a Savior, who is Christ the Lord. This is the sign to you: you will find a baby wrapped in strips of cloth, lying in a feeding trough.”		christmas
++Luke 6:27-28	But I tell you who hear: love your enemies, do good to those who hate you, bless those who curse you, and pray for those who mistreat you.
++Luke 6:31	As you would like people to do to you, do exactly so to them.
++Luke 6:38	“Give, and it will be given to you: good measure, pressed down, shaken together, and running over, will be given to you. For with the same measure you measure it will be measured back to you.”
++Luke 9:23	He said to all, “If anyone desires to come after me, let him deny himself, take up his cross, and follow me.
++Luke 11:9	I tell you, keep asking, and it will be given you. Keep seeking, and you will find. Keep knocking, and it will be opened to you.
++Luke 12:32	Don’t be afraid, little flock, for it is your Father’s good pleasure to give you the Kingdom.
++Luke 15:7	I tell you that even so there will be more joy in heaven over one sinner who repents, than over ninety-nine righteous people who need no repentance.
++Luke 18:27	But he said, “The things which are impossible with men are possible with God.”
++Luke 19:9-10	Jesus said to him, “Today, salvation has come to this house, because he also is a son of Abraham. For the Son of Man came to seek and to save that which was lost.”
++John 1:1	In the beginning was the Word, and the Word was with God, and the Word was God.
++John 1:5	The light shines in the darkness, and the darkness hasn’t overcome it.
++John 1:12	But as many as received him, to them he gave the right to become God’s children, to those who believe in his name:
++John 1:14	The Word became flesh and lived among us. We saw his glory, such glory as of the only born Son of the Father, full of grace and truth.
++John 3:16	For God so loved the world, that he gave his only born Son, that whoever believes in him should not perish, but have eternal life.
++John 3:17	For God didn’t send his Son into the world to judge the world, but that the world should be saved through him.
++John 4:24	God is spirit, and those who worship him must worship in spirit and truth.
++John 6:35	Jesus said to them, “I am the bread of life. Whoever comes to me will not be hungry, and whoever believes in me will never be thirsty.
++John 8:12	Again, therefore, Jesus spoke to them, saying, “I am the light of the world. He who follows me will not walk in the darkness, but will have the light of life.”
++John 8:31-32	Jesus therefore said to those Jews who had believed him, “If you remain in my word, then you are truly my disciples. You will know the truth, and the truth will make you free.”
++John 10:10	The thief only comes to steal, kill, and destroy. I came that they may have life, and may have it abundantly.
++John 10:11	I am the good shepherd. The good shepherd lays down his life for the sheep.
++John 10:27-28	My sheep hear my voice, and I know them, and they follow me. I give eternal life to them. They will never perish, and no one will snatch them out of my hand.
++John 11:25-26	Jesus said to her, “I am the resurrection and the life. He who believes in me will still live, even if he dies. Whoever lives and believes in me will never die. Do you believe this?”
++John 12:12-13	On the next day a great multitude had come to the feast. When they heard that Jesus was coming to Jerusalem, they took the branches of the palm trees and went out to meet him, and cried out, “Hosanna! Blessed is he who comes in the name of the Lord, the King of Israel!”		palm-sunday
++John 13:34-35	A new commandment I give to you, that you love one another. Just as I have loved you, you also love one another. By this everyone will know that you are my disciples, if you have love for one another.
++John 14:1	Don’t let your heart be troubled. Believe in God. Believe also in me.
++John 14:6-7	Jesus said to him, “I am the way, the truth, and the life. No one comes to the Father, except through me. If you had known me, you would have known my Father also. From now on, you know him and have seen him.”
++John 14:15	If you love me, keep my commandments.
++John 14:27	Peace I leave with you. My peace I give to you; not as the world gives, I give to you. Don’t let your heart be troubled, neither let it be fearful.
++John 15:5	I am the vine. You are the branches. He who remains in me and I in him bears much fruit, for apart from me you can do nothing.
++John 15:12-13	This is my commandment, that you love one another, even as I have loved you. Greater love has no one than this, that someone lay down his life for his friends.
++John 16:31-33	Jesus answered them, “Do you now believe? Behold, the time is coming, yes, and has now come, that you will be scattered, everyone to his own place, and you will leave me alone. Yet I am not alone, because the Father is with me. I have told you these things, that in me you may have peace. In the world you have trouble; but cheer up! I have overcome the world.”
++John 20:29	Jesus said to him, “Because you have seen me, you have believed. Blessed are those who have not seen and have believed.”
++Acts 1:7-8	He said to them, “It isn’t for you to know times or seasons which the Father has set within his own authority. But you will receive power when the Holy Spirit has come upon you. You will be witnesses to me in Jerusalem, in all Judea and Samaria, and to the uttermost parts of the earth.”
++Acts 2:4	They were all filled with the Holy Spirit and began to speak with other languages, as the Spirit gave them the ability to speak.		pentecost
++Acts 2:42	They continued steadfastly in the apostles’ teaching and fellowship, in the breaking of bread, and prayer.
++Acts 4:12	There is salvation in no one else, for there is no other name under heaven that is given among men, by which we must be saved!
++Acts 16:31	They said, “Believe in the Lord Jesus Christ, and you will be saved, you and your household.”
++Acts 17:28	‘For in him we live, move, and have our being.’ As some of your own poets have said, ‘For we are also his offspring.’
++Acts 20:35	In all things I gave you an example, that so laboring you ought to help the weak, and to remember the words of the Lord Jesus, that he himself said, ‘It is more blessed to give than to receive.’ 
++Romans 1:16	For I am not ashamed of the Good News of Christ, because it is the power of God for salvation for everyone who believes, for the Jew first, and also for the Greek.
++Romans 3:23-24	for all have sinned, and fall short of the glory of God; being justified freely by his grace through the redemption that is in Christ Jesus,
++Romans 5:1	Being therefore justified by faith, we have peace with God through our Lord Jesus Christ;
++Romans 5:3-4	Not only this, but we also rejoice in our sufferings, knowing that suffering produces perseverance; and perseverance, proven character; and proven character, hope;
++Romans 5:8	But God commends his own love toward us, in that while we were yet sinners, Christ died for us.
++Romans 6:23	For the wages of sin is death, but the free gift of God is eternal life in Christ Jesus our Lord.
++Romans 8:1	There is therefore now no condemnation to those who are in Christ Jesus, who don’t walk according to the flesh, but according to the Spirit.
++Romans 8:18	For I consider that the sufferings of this present time are not worthy to be compared with the glory which will be revealed toward us.
++Romans 8:28	We know that all things work together for good for those who love God, for those who are called according to his purpose.
++Romans 8:31	What then shall we say about these things? If God is for us, who can be against us?
++Romans 8:38-39	For I am persuaded that neither death, nor life, nor angels, nor principalities, nor things present, nor things to come, nor powers, nor height, nor depth, nor any other created thing will be able to separate us from God’s love which is in Christ Jesus our Lord.
++Romans 10:9	that if you will confess with your mouth that Jesus is Lord and believe in your heart that God raised him from the dead, you will be saved.
++Romans 10:17	So faith comes by hearing, and hearing by the word of God.
++Romans 12:1	Therefore I urge you, brothers, by the mercies of God, to present your bodies a living sacrifice, holy, acceptable to God, which is your spiritual service.
++Romans 12:2	Don’t be conformed to this world, but be transformed by the renewing of your mind, so that you may prove what is the good, well-pleasing, and perfect will of God.
++Romans 12:10	In love of the brothers be tenderly affectionate to one another; in honor prefer one another,
++Romans 12:12	rejoicing in hope, enduring in troubles, continuing steadfastly in prayer,
++Romans 12:18	If it is possible, as much as it is up to you, be at peace with all men.
++Romans 12:21	Don’t be overcome by evil, but overcome evil with good.
++Romans 15:4	For whatever things were written before were written for our learning, that through perseverance and through encouragement of the Scriptures we might have hope.
++Romans 15:13	Now may the God of hope fill you with all joy and peace in believing, that you may abound in hope in the power of the Holy Spirit.
++1 Corinthians 2:9	But as it is written, “Things which an eye didn’t see, and an ear didn’t hear, which didn’t enter into the heart of man, these God has prepared for those who love him.”
++1 Corinthians 10:13	No temptation has taken you except what is common to man. God is faithful, who will not allow you to be tempted above what you are able, but will with the temptation also make the way of escape, that you may be able to endure it.
++1 Corinthians 10:31	Whether therefore you eat or drink, or whatever you do, do all to the glory of God.
++1 Corinthians 13:4-5	Love is patient and is kind. Love doesn’t envy. Love doesn’t brag, is not proud, doesn’t behave itself inappropriately, doesn’t seek its own way, is not provoked, takes no account of evil;
++1 Corinthians 13:6-7	doesn’t rejoice in unrighteousness, but rejoices with the truth; bears all things, believes all things, hopes all things, and endures all things.
++1 Corinthians 13:13	But now faith, hope, and love remain—these three. The greatest of these is love.
++1 Corinthians 15:57	But thanks be to God, who gives us the victory through our Lord Jesus Christ.
++1 Corinthians 15:58	Therefore, my beloved brothers, be steadfast, immovable, always abounding in the Lord’s work, because you know that your labor is not in vain in the Lord.
++1 Corinthians 16:13-14	Watch! Stand firm in the faith! Be courageous! Be strong! Let all that you do be done in love.
++2 Corinthians 1:3-4	Blessed be the God and Father of our Lord Jesus Christ, the Father of mercies and God of all comfort, who comforts us in all our affliction, that we may be able to comfort those who are in any affliction, through the comfort with which we ourselves are comforted by God.
++2 Corinthians 4:16-17	Therefore we don’t faint, but though our outward person is decaying, yet our inward person is renewed day by day. For our light affliction, which is for the moment, works for us more and more exceedingly an eternal weight of glory,
++2 Corinthians 4:18	while we don’t look at the things which are seen, but at the things which are not seen. For the things which are seen are temporal, but the things which are not seen are eternal.
++2 Corinthians 5:7	for we walk by faith, not by sight.
++2 Corinthians 5:17	Therefore if anyone is in Christ, he is a new creation. The old things have passed away. Behold, all things have become new.
++2 Corinthians 9:7	Let each man give according as he has determined in his heart, not grudgingly or under compulsion, for God loves a cheerful giver.
++2 Corinthians 12:9	He has said to me, “My grace is sufficient for you, for my power is made perfect in weakness.” Most gladly therefore I will rather glory in my weaknesses, that the power of Christ may rest on me.
++Galatians 2:20	I have been crucified with Christ, and it is no longer I who live, but Christ lives in me. That life which I now live in the flesh, I live by faith in the Son of God, who loved me and gave himself up for me.
++Galatians 5:1	Stand firm therefore in the liberty by which Christ has made us free, and don’t be entangled again with a yoke of bondage.
++Galatians 5:13	For you, brothers, were called for freedom. Only don’t use your freedom as an opportunity for the flesh, but through love be servants to one another.
++Galatians 5:22-23	But the fruit of the Spirit is love, joy, peace, patience, kindness, goodness, faith, gentleness, and self-control. Against such things there is no law.
++Galatians 6:2	Bear one another’s burdens, and so fulfill the law of Christ.
++Galatians 6:9	Let’s not be weary in doing good, for we will reap in due season if we don’t give up.
++Ephesians 2:8-9	for by grace you have been saved through faith, and that not of yourselves; it is the gift of God, not of works, that no one would boast.
++Ephesians 2:10	For we are his workmanship, created in Christ Jesus for good works, which God prepared before that we would walk in them.
++Ephesians 3:20-21	Now to him who is able to do exceedingly abundantly above all that we ask or think, according to the power that works in us, to him be the glory in the assembly and in Christ Jesus to all generations, forever and ever. Amen.
++Ephesians 4:2-3	with all lowliness and humility, with patience, bearing with one another in love, being eager to keep the unity of the Spirit in the bond of peace.
++Ephesians 4:29	Let no corrupt speech proceed out of your mouth, but only what is good for building others up as the need may be, that it may give grace to those who hear.
++Ephesians 4:32	And be kind to one another, tender hearted, forgiving each other, just as God also in Christ forgave you.
++Ephesians 5:1-2	Be therefore imitators of God, as beloved children. Walk in love, even as Christ also loved us and gave himself up for us, an offering and a sacrifice to God for a sweet-smelling fragrance.
++Ephesians 6:10-11	Finally, be strong in the Lord and in the strength of his might. Put on the whole armor of God, that you may be able to stand against the wiles of the devil.
++Philippians 1:6	being confident of this very thing, that he who began a good work in you will complete it until the day of Jesus Christ.
++Philippians 1:21	For to me to live is Christ, and to die is gain.
++Philippians 2:3-4	doing nothing through rivalry or through conceit, but in humility, each counting others better than himself; each of you not just looking to his own things, but each of you also to the things of others.
++Philippians 3:13-14	Brothers, I don’t regard myself as yet having taken hold, but one thing I do: forgetting the things which are behind and stretching forward to the things which are before, I press on toward the goal for the prize of the high calling of God in Christ Jesus.
++Philippians 4:4	Rejoice in the Lord always! Again I will say, “Rejoice!”
++Philippians 4:6-7	In nothing be anxious, but in everything, by prayer and petition with thanksgiving, let your requests be made known to God. And the peace of God, which surpasses all understanding, will guard your hearts and your thoughts in Christ Jesus.
++Philippians 4:8	Finally, brothers, whatever things are true, whatever things are honorable, whatever things are just, whatever things are pure, whatever things are lovely, whatever things are of good report: if there is any virtue and if there is anything worthy of praise, think about these things.
++Philippians 4:11	Not that I speak because of lack, for I have learned in whatever state I am, to be content in it.
++Philippians 4:13	I can do all things through Christ who strengthens me.
++Philippians 4:19	My God will supply every need of yours according to his riches in glory in Christ Jesus.
++Colossians 1:17	He is before all things, and in him all things are held together.
++Colossians 2:6-7	As therefore you received Christ Jesus the Lord, walk in him, rooted and built up in him and established in the faith, even as you were taught, abounding in it in thanksgiving.
++Colossians 3:2	Set your mind on the things that are above, not on the things that are on the earth.
++Colossians 3:12	Put on therefore, as God’s chosen ones, holy and beloved, a heart of compassion, kindness, lowliness, humility, and perseverance;
++Colossians 3:13	bearing with one another, and forgiving each other, if any man has a complaint against any; even as Christ forgave you, so you also do.
++Colossians 3:15	And let the peace of God rule in your hearts, to which also you were called in one body, and be thankful.
++Colossians 3:23	And whatever you do, work heartily, as for the Lord and not for men,
++1 Thessalonians 5:11	Therefore exhort one another, and build each other up, even as you also do.
++1 Thessalonians 5:16-18	Always rejoice. Pray without ceasing. In everything give thanks, for this is the will of God in Christ Jesus toward you.
++2 Thessalonians 3:3	But the Lord is faithful, who will establish you and guard you from the evil one.
++2 Thessalonians 3:16	Now may the Lord of peace himself give you peace at all times in all ways. The Lord be with you all.
++1 Timothy 4:12	Let no man despise your youth; but be an example to those who believe, in word, in your way of life, in love, in spirit, in faith, and in purity.
++1 Timothy 6:6	But godliness with contentment is great gain.
++1 Timothy 6:12	Fight the good fight of faith. Take hold of the eternal life to which you were called, and you confessed the good confession in the sight of many witnesses.
++2 Timothy 1:7	For God didn’t give us a spirit of fear, but of power, love, and self-control.
++2 Timothy 2:15	Give diligence to present yourself approved by God, a workman who doesn’t need to be ashamed, properly handling the Word of Truth.
++2 Timothy 3:16-17	Every Scripture is God-breathed and profitable for teaching, for reproof, for correction, and for instruction in righteousness, that each person who belongs to God may be complete, thoroughly equipped for every good work.
++2 Timothy 4:7	I have fought the good fight. I have finished the course. I have kept the faith.
++Titus 2:11-12	For the grace of God has appeared, bringing salvation to all men, instructing us to the intent that, denying ungodliness and worldly lusts, we would live soberly, righteously, and godly in this present age;
++Titus 3:4-5	But when the kindness of God our Savior and his love toward mankind appeared, not by works of righteousness which we did ourselves, but according to his mercy, he saved us through the washing of regeneration and renewing by the Holy Spirit,
++Titus 3:8	This saying is faithful, and concerning these things I desire that you insist confidently, so that those who have believed God may be careful to maintain good works. These things are good and profitable to men;
++Hebrews 4:12	For the word of God is living and active, and sharper than any two-edged sword, piercing even to the dividing of soul and spirit, of both joints and marrow, and is able to discern the thoughts and intentions of the heart.
++Hebrews 4:16	Let’s therefore draw near with boldness to the throne of grace, that we may receive mercy and may find grace for help in time of need.
++Hebrews 10:23	let’s hold fast the confession of our hope without wavering; for he who promised is faithful.
++Hebrews 10:24-25	Let’s consider how to provoke one another to love and good works, not forsaking our own assembling together, as the custom of some is, but exhorting one another, and so much the more as you see the Day approaching.
++Hebrews 11:1	Now faith is assurance of things hoped for, proof of things not seen.
++Hebrews 11:6	Without faith it is impossible to be well pleasing to him, for he who comes to God must believe that he exists, and that he is a rewarder of those who seek him.
++Hebrews 12:1-2	Therefore let’s also, seeing we are surrounded by so great a cloud of witnesses, lay aside every weight and the sin which so easily entangles us, and let’s run with perseverance the race that is set before us, looking to Jesus, the author and perfecter of faith, who for the joy that was set before him endured the cross, despising its shame, and has sat down at the right hand of the throne of God.
++Hebrews 12:11	All chastening seems for the present to be not joyous but grievous; yet afterward it yields the peaceful fruit of righteousness to those who have been trained by it.
++Hebrews 13:5	Be free from the love of money, content with such things as you have, for he has said, “I will in no way leave you, neither will I in any way forsake you.”
++Hebrews 13:8	Jesus Christ is the same yesterday, today, and forever.
++Hebrews 13:16	But don’t forget to be doing good and sharing, for with such sacrifices God is well pleased.
++James 1:2-3	Count it all joy, my brothers, when you fall into various temptations, knowing that the testing of your faith produces endurance.
++James 1:5	But if any of you lacks wisdom, let him ask of God, who gives to all liberally and without reproach, and it will be given to him.
++James 1:12	Blessed is a person who endures temptation, for when he has been approved, he will receive the crown of life which the Lord promised to those who love him.
++James 1:17	Every good gift and every perfect gift is from above, coming down from the Father of lights, with whom can be no variation nor turning shadow.
++James 1:19	So, then, my beloved brothers, let every man be swift to hear, slow to speak, and slow to anger;
++James 1:22	But be doers of the word, and not only hearers, deluding your own selves.
++James 4:7-8	Be subject therefore to God. Resist the devil, and he will flee from you. Draw near to God, and he will draw near to you. Cleanse your hands, you sinners. Purify your hearts, you double-minded.
++James 4:10	Humble yourselves in the sight of the Lord, and he will exalt you.
++James 5:16	Confess your sins to one another and pray for one another, that you may be healed. The insistent prayer of a righteous person is powerfully effective.
++1 Peter 1:3	Blessed be the God and Father of our Lord Jesus Christ, who according to his great mercy caused us to be born again to a living hope through the resurrection of Jesus Christ from the dead,
++1 Peter 2:9	But you are a chosen race, a royal priesthood, a holy nation, a people for God’s own possession, that you may proclaim the excellence of him who called you out of darkness into his marvelous light.
++1 Peter 3:15	But sanctify the Lord God in your hearts. Always be ready to give an answer to everyone who asks you a reason concerning the hope that is in you, with humility and fear,
++1 Peter 4:8	And above all things be earnest in your love among yourselves, for love covers a multitude of sins.
++1 Peter 4:10	As each has received a gift, employ it in serving one another, as good managers of the grace of God in its various forms.
++1 Peter 5:6-7	Humble yourselves therefore under the mighty hand of God, that he may exalt you in due time, casting all your worries on him, because he cares for you.
++1 Peter 5:10	But may the God of all grace, who called you to his eternal glory by Christ Jesus, after you have suffered a little while, perfect, establish, strengthen, and settle you.
++2 Peter 1:3	seeing that his divine power has granted to us all things that pertain to life and godliness, through the knowledge of him who called us by his own glory and virtue,
++2 Peter 3:9	The Lord is not slow concerning his promise, as some count slowness; but he is patient with us, not wishing that anyone should perish, but that all should come to repentance.
++1 John 1:9	If we confess our sins, he is faithful and righteous to forgive us the sins and to cleanse us from all unrighteousness.
++1 John 3:1	See how great a love the Father has given to us, that we should be called children of God! For this cause the world doesn’t know us, because it didn’t know him.
++1 John 3:18	My little children, let’s not love in word only, or with the tongue only, but in deed and truth.
++1 John 4:7	Beloved, let’s love one another, for love is of God; and everyone who loves has been born of God and knows God.
++1 John 4:10	In this is love, not that we loved God, but that he loved us, and sent his Son as the atoning sacrifice for our sins.
++1 John 4:16	We know and have believed the love which God has for us. God is love, and he who remains in love remains in God, and God remains in him.
++1 John 4:18	There is no fear in love; but perfect love casts out fear, because fear has punishment. He who fears is not made perfect in love.
++1 John 4:19	We love him, because he first loved us.
++1 John 5:14	This is the boldness which we have toward him, that if we ask anything according to his will, he listens to us.
++3 John 1:2	Beloved, I pray that you may prosper in all things and be healthy, even as your soul prospers.
++Jude 1:24-25	Now to him who is able to keep them from stumbling, and to present you faultless before the presence of his glory in great joy, to God our Savior, who alone is wise, be glory and majesty, dominion and power, both now and forever. Amen.
++Revelation 3:20	Behold, I stand at the door and knock. If anyone hears my voice and opens the door, then I will come in to him and will dine with him, and he with me.
++Revelation 21:3-4	I heard a loud voice out of heaven saying, “Behold, God’s dwelling is with people; and he will dwell with them, and they will be his people, and God himself will be with them as their God. He will wipe away every tear from their eyes. Death will be no more; neither will there be mourning, nor crying, nor pain any more. The first things have passed away.”
++Revelation 21:5	He who sits on the throne said, “Behold, I am making all things new.” He said, “Write, for these words of God are faithful and true.”
++Revelation 22:13	I am the Alpha and the Omega, the First and the Last, the Beginning and the End.
 diff --git a/data/datetime.gresource.xml b/data/datetime.gresource.xml
-index 28a4dd2..f1a1db3 100644
+index 28a4dd2..6db1327 100644
 --- a/data/datetime.gresource.xml
 +++ b/data/datetime.gresource.xml
-@@ -3,4 +3,5 @@
+@@ -3,6 +3,10 @@
    <gresource prefix="/io/elementary/desktop/wingpanel/datetime/">
      <file alias="ControlHeader.css" compressed="true">ControlHeader.css</file>
 +    <file alias="TimeGrid.css" compressed="true">TimeGrid.css</file>
      <file alias="EventRow.css" compressed="true">EventRow.css</file>
      <file alias="GridDay.css" compressed="true">GridDay.css</file>
++    <file alias="DailyVerse.css" compressed="true">DailyVerse.css</file>
++    <file alias="daily-verses.tsv" compressed="true">daily-verses.tsv</file>
++    <file alias="titus-study.tsv" compressed="true">titus-study.tsv</file>
+   </gresource>
+ </gresources>
+diff --git a/data/titus-study.tsv b/data/titus-study.tsv
+new file mode 100644
+index 0000000..00c23c3
+--- /dev/null
++++ b/data/titus-study.tsv
+@@ -0,0 +1,12 @@
++# Titus study: World English Bible text (public domain); notes from titus-study.txt
++# reference, title, insight, reflect, passage ({n} marks verse numbers)
++Titus	About the Letter	Paul wrote this short letter to Titus, a Greek coworker he trusted with hard assignments. Titus was not circumcised (Galatians 2:3), went with Paul to Jerusalem (Galatians 2:1), and carried the delicate work of reconciliation in Corinth (2 Corinthians 7:6–7; 8:16–23). ¶ Paul had left Titus on the island of Crete to “set in order the things that were lacking” and appoint elders in every city (1:5). Acts does not record this mission, so many date the letter to the mid-60s AD, after Paul’s first imprisonment in Rome. With 1 and 2 Timothy it is one of the Pastoral Letters. ¶ The thread through all three chapters is that true teaching and a good life belong together. “Good works” appears six times (1:16; 2:7, 14; 3:1, 8, 14), and “Savior” is used of God (1:3; 2:10; 3:4) and of Jesus (1:4; 2:13; 3:6). The grace that saves is also the grace that trains (2:11–12). ¶ Outline • 1:1–4 A greeting full of the gospel • 1:5–9 Leaders who hold to the word • 1:10–16 Truth against empty talk • 2:1–10 Sound teaching lived out at home • 2:11–15 Grace that trains us • 3:1–7 Kindness that saved us • 3:8–11 Devoted to good works • 3:12–15 Partners in the mission	Where do what you believe and how you live most need to meet this week?
++Titus 1:1-4	A Greeting Full of the Gospel	Paul’s greeting is a compressed sermon. He serves the faith of God’s people and a “knowledge of the truth which is according to godliness”: truth that changes how people live, not just what they know. That hope rests on a God “who can’t lie” and who promised eternal life before time began (1:2). Paul calls Titus “my true child according to a common faith”, a family bond formed by shared faith rather than shared background.	How does knowing that God cannot lie steady the hopes you are holding right now?	{1} Paul, a servant of God and an apostle of Jesus Christ, according to the faith of God’s chosen ones and the knowledge of the truth which is according to godliness, {2} in hope of eternal life, which God, who can’t lie, promised before time began; {3} but in his own time revealed his word in the message with which I was entrusted according to the commandment of God our Savior, {4} to Titus, my true child according to a common faith: Grace, mercy, and peace from God the Father and the Lord Jesus Christ our Savior.
++Titus 1:5-9	Leaders Who Hold to the Word	Titus’s first task is to appoint elders in every city. The list is mostly about character, not talent: blameless, faithful at home, not quick-tempered, not greedy, hospitable, self-controlled. An overseer is “God’s steward” (1:7), managing what belongs to someone else. The one skill named is holding firmly to the faithful word, so that he can encourage with sound teaching and answer those who contradict it (1:9).	Which quality in this list would you most like God to grow in you, whether or not you lead?	{5} I left you in Crete for this reason, that you would set in order the things that were lacking and appoint elders in every city, as I directed you— {6} if anyone is blameless, the husband of one wife, having children who believe, who are not accused of loose or unruly behavior. {7} For the overseer must be blameless, as God’s steward, not self-pleasing, not easily angered, not given to wine, not violent, not greedy for dishonest gain; {8} but given to hospitality, a lover of good, sober minded, fair, holy, self-controlled, {9} holding to the faithful word which is according to the teaching, that he may be able to exhort in the sound doctrine, and to convict those who contradict him.
++Titus 1:10-16	Truth Against Empty Talk	Some teachers in Crete were upsetting whole households for money (1:11). Paul quotes a Cretan prophet, traditionally identified as the poet Epimenides, to show that even Cretans knew the danger of empty words. Titus is to correct them sharply, with the goal that they be “sound in the faith” (1:13): restoration, not just winning an argument. The final test is practical: people can profess to know God “but by their deeds they deny him” (1:16).	Where might your words about God and your actions be telling different stories?	{10} For there are also many unruly men, vain talkers and deceivers, especially those of the circumcision, {11} whose mouths must be stopped: men who overthrow whole houses, teaching things which they ought not, for dishonest gain’s sake. {12} One of them, a prophet of their own, said, “Cretans are always liars, evil beasts, and idle gluttons.” {13} This testimony is true. For this cause, reprove them sharply, that they may be sound in the faith, {14} not paying attention to Jewish fables and commandments of men who turn away from the truth. {15} To the pure, all things are pure, but to those who are defiled and unbelieving, nothing is pure; but both their mind and their conscience are defiled. {16} They profess that they know God, but by their deeds they deny him, being abominable, disobedient, and unfit for any good work.
++Titus 2:1-5	Sound Teaching at Home	“Sound doctrine” (2:1) is healthy teaching, and Paul shows what it looks like in ordinary households in Crete. Older men and older women are called to steady, self-controlled lives, and older women are to be “teachers of that which is good”, passing faith on to the next generation. The reason given is outward-facing: “that God’s word may not be blasphemed” (2:5). Everyday faithfulness at home either commends the gospel to neighbors or discredits it.	Who has modeled faith for you, and who could you encourage the way they encouraged you?	{1} But say the things which fit sound doctrine, {2} that older men should be temperate, sensible, sober minded, sound in faith, in love, and in perseverance, {3} and that older women likewise be reverent in behavior, not slanderers nor enslaved to much wine, teachers of that which is good, {4} that they may train the young wives to love their husbands, to love their children, {5} to be sober minded, chaste, workers at home, kind, being in subjection to their own husbands, that God’s word may not be blasphemed.
++Titus 2:6-10	Lives That Adorn the Teaching	Paul turns to younger men and to Titus himself: “show yourself an example of good works” (2:7). Teaching needs integrity and speech that can’t be fairly condemned. Paul then speaks to believers who were household servants within the social structures of the first-century world. The aim is that they “adorn the doctrine of God, our Savior, in all things” (2:10). To adorn is to make beautiful: faithful lives make the gospel attractive.	In your work or daily routine, what would it look like to make the gospel beautiful to the people around you?	{6} Likewise, exhort the younger men to be sober minded. {7} In all things show yourself an example of good works. In your teaching, show integrity, seriousness, incorruptibility, {8} and soundness of speech that can’t be condemned, that he who opposes you may be ashamed, having no evil thing to say about us. {9} Exhort servants to be in subjection to their own masters and to be well-pleasing in all things, not contradicting, {10} not stealing, but showing all good fidelity, that they may adorn the doctrine of God, our Savior, in all things.
++Titus 2:11-15	Grace That Trains Us	This is the heart of the letter. God’s grace “has appeared, bringing salvation” (2:11), and the same grace is a teacher, training us to say no to ungodliness and to live “soberly, righteously, and godly in this present age” (2:12). We live between two appearings: grace has appeared, and we wait for “the blessed hope and appearing of the glory of our great God and Savior, Jesus Christ” (2:13), a phrase many readers see as calling Jesus God. He gave himself to redeem us and to form a people “zealous for good works” (2:14).	Grace saves and grace trains. Where is God’s grace training you right now?	{11} For the grace of God has appeared, bringing salvation to all men, {12} instructing us to the intent that, denying ungodliness and worldly lusts, we would live soberly, righteously, and godly in this present age; {13} looking for the blessed hope and appearing of the glory of our great God and Savior, Jesus Christ, {14} who gave himself for us, that he might redeem us from all iniquity and purify for himself a people for his own possession, zealous for good works. {15} Say these things and exhort and reprove with all authority. Let no one despise you.
++Titus 3:1-7	Kindness That Saved Us	Christians in Crete were to be good citizens: ready for every good work, gentle, and showing humility toward everyone (3:1–2). Paul grounds that gentleness in memory: “we were also once foolish” (3:3). Then comes one of the New Testament’s richest summaries of salvation. When God’s kindness and love appeared, he saved us, not by our own righteous works but by his mercy, through the washing of regeneration and renewal by the Holy Spirit, poured out through Jesus Christ. Justified by grace, we become heirs with the hope of eternal life (3:4–7). Father, Son and Spirit are all at work in these few verses.	How does remembering who you were before God’s kindness change how you treat difficult people?	{1} Remind them to be in subjection to rulers and to authorities, to be obedient, to be ready for every good work, {2} to speak evil of no one, not to be contentious, to be gentle, showing all humility toward all men. {3} For we were also once foolish, disobedient, deceived, serving various lusts and pleasures, living in malice and envy, hateful, and hating one another. {4} But when the kindness of God our Savior and his love toward mankind appeared, {5} not by works of righteousness which we did ourselves, but according to his mercy, he saved us through the washing of regeneration and renewing by the Holy Spirit, {6} whom he poured out on us richly through Jesus Christ our Savior; {7} that being justified by his grace, we might be made heirs according to the hope of eternal life.
++Titus 3:8-11	Devoted to Good Works	“This saying is faithful” (3:8) points back to the summary of salvation in 3:4–7, and Paul wants Titus to stress it so that believers “may be careful to maintain good works”. Good works flow from grace; they don’t earn it. By contrast, foolish arguments about genealogies and the law are “unprofitable and vain” (3:9). A person who keeps stirring up division is to be warned twice, then avoided (3:10), which protects the church’s unity without endless quarrels.	Which conversations in your life build people up, and which only stir up division?	{8} This saying is faithful, and concerning these things I desire that you insist confidently, so that those who have believed God may be careful to maintain good works. These things are good and profitable to men; {9} but shun foolish questionings, genealogies, strife, and disputes about the law; for they are unprofitable and vain. {10} Avoid a factious man after a first and second warning, {11} knowing that such a one is perverted and sinful, being self-condemned.
++Titus 3:12-15	Partners in the Mission	The letter closes with travel plans and names. Artemas or Tychicus will relieve Titus so he can meet Paul at Nicopolis, probably the city in western Greece, for the winter. Tychicus also appears in Ephesians 6:21 and Colossians 4:7, and Apollos is the gifted teacher of Acts 18. Zenas the lawyer is known only from this verse. Even practical hospitality, helping traveling workers “that nothing may be lacking for them” (3:13), is part of learning “to maintain good works” (3:14). The letter ends as it began: “Grace be with you all.”	Who is serving God near you that you could help on their way this week?	{12} When I send Artemas to you, or Tychicus, be diligent to come to me to Nicopolis, for I have determined to winter there. {13} Send Zenas the lawyer and Apollos on their journey speedily, that nothing may be lacking for them. {14} Let our people also learn to maintain good works to meet necessary needs, that they may not be unfruitful. {15} All who are with me greet you. Greet those who love us in faith. Grace be with you all. Amen.
 diff --git a/meson.build b/meson.build
-index ec722ae..637e94d 100644
+index ec722ae..dd727e0 100644
 --- a/meson.build
 +++ b/meson.build
-@@ -55,4 +55,7 @@ shared_module(
+@@ -55,4 +55,8 @@ shared_module(
      'src/Indicator.vala',
      'src/Widgets/ComponentRow.vala',
 +    'src/Widgets/TaskRow.vala',
 +    'src/Widgets/TaskComposer.vala',
 +    'src/Widgets/TimeGrid.vala',
++    'src/Widgets/DailyVerse.vala',
      'src/Widgets/PanelLabel.vala',
      'src/Widgets/calendar/CalendarModel.vala',
 diff --git a/po/POTFILES b/po/POTFILES
-index 383cf96..196dea0 100644
+index 383cf96..f39b77f 100644
 --- a/po/POTFILES
 +++ b/po/POTFILES
-@@ -8,2 +8,5 @@ src/Widgets/calendar/GridDay.vala
+@@ -8,2 +8,6 @@ src/Widgets/calendar/GridDay.vala
  src/Widgets/calendar/Util.vala
  src/Services/TimeManager.vala
 +src/Widgets/TaskRow.vala
 +src/Widgets/TaskComposer.vala
 +src/Widgets/TimeGrid.vala
++src/Widgets/DailyVerse.vala
 diff --git a/src/Indicator.vala b/src/Indicator.vala
-index 7b6ec63..5af6e02 100644
+index 7b6ec63..aaa49e9 100644
 --- a/src/Indicator.vala
 +++ b/src/Indicator.vala
-@@ -25,5 +25,18 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -25,5 +25,19 @@ public class DateTime.Indicator : Wingpanel.Indicator {
      private Widgets.CalendarView calendar;
      private Gtk.ListBox component_listbox;
 +    private Gtk.Stack agenda_stack;
@@ -113,22 +590,23 @@ index 7b6ec63..5af6e02 100644
 +    private Widgets.TimeGrid time_grid;
 +    private Gtk.SizeGroup calendar_size_group;
 +    private Gtk.Button grid_today;
-
++    private DailyVerse daily_verse;
+ 
      public Indicator () {
-@@ -72,8 +85,10 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -72,8 +86,10 @@ public class DateTime.Indicator : Wingpanel.Indicator {
                  justify = Gtk.Justification.CENTER
              };
 +            empty_events = placeholder_label;
              placeholder_label.add_css_class (Granite.CssClass.DIM);
              placeholder_label.add_css_class (Granite.STYLE_CLASS_H3_LABEL);
-
+ 
              component_listbox = new Gtk.ListBox () {
 +                name = "agenda-events",
                  selection_mode = Gtk.SelectionMode.NONE
              };
-@@ -82,8 +97,103 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -82,8 +98,106 @@ public class DateTime.Indicator : Wingpanel.Indicator {
              component_listbox.set_sort_func (sort_function);
-
+ 
 -            var scrolled_window = new Gtk.ScrolledWindow () {
 -                hscrollbar_policy = Gtk.PolicyType.NEVER,
 -                child = component_listbox
@@ -213,6 +691,9 @@ index 7b6ec63..5af6e02 100644
 +                hscrollbar_policy = Gtk.PolicyType.NEVER, child = task_listbox, vexpand = true
 +            });
 +            agenda_stack.add_titled (task_page, "tasks", _("Tasks"));
++            daily_verse = new DailyVerse ();
++            daily_verse.link_opened.connect (() => close ());
++            agenda_stack.add_titled (daily_verse, "verse", _("Bible")).icon_name = "list-add-symbolic";
 +            var tabs = new Gtk.StackSwitcher () {
 +                stack = agenda_stack, halign = Gtk.Align.CENTER,
 +                margin_start = 6, margin_end = 6, margin_bottom = 3
@@ -231,10 +712,10 @@ index 7b6ec63..5af6e02 100644
 +                    warning ("Could not open calendar accounts: %s", e.message);
 +                }
 +            });
-
+ 
              var settings_button = new Wingpanel.PopoverMenuItem.with_text (_("Date & Time Settings…"));
-@@ -95,14 +205,15 @@ public class DateTime.Indicator : Wingpanel.Indicator {
-
+@@ -95,14 +209,15 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+ 
              main_grid = new Gtk.Grid () {
 -                margin_top = 12
 +                margin_top = 6
@@ -245,24 +726,24 @@ index 7b6ec63..5af6e02 100644
 +            main_grid.attach (accounts_button, 0, 4, 2, 1);
              main_grid.attach (sep, 0, 2, 2, 1);
              main_grid.attach (settings_button, 0, 3, 2, 1);
-
+ 
 -            var size_group = new Gtk.SizeGroup (Gtk.SizeGroupMode.HORIZONTAL);
 -            size_group.add_widget (calendar);
 -            size_group.add_widget (component_listbox);
 +            calendar_size_group = new Gtk.SizeGroup (Gtk.SizeGroupMode.HORIZONTAL);
 +            calendar_size_group.add_widget (calendar);
 +            calendar_size_group.add_widget (agenda);
-
+ 
              calendar.day_double_click.connect (() => {
-@@ -111,4 +222,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
-
+@@ -111,4 +226,5 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+ 
              calendar.selection_changed.connect ((date) => {
 +                agenda_date = date ?? Widgets.CalendarModel.get_default (ECal.ClientSourceType.EVENTS).month_start;
                  idle_update_components ();
              });
-@@ -138,4 +250,15 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -138,4 +254,15 @@ public class DateTime.Indicator : Wingpanel.Indicator {
              });
-
+ 
 +            task_listbox.row_activated.connect ((row) => {
 +                if (((TaskRow) row).completing) return;
 +                var app = new DesktopAppInfo ("io.elementary.tasks.desktop");
@@ -276,9 +757,9 @@ index 7b6ec63..5af6e02 100644
 +
              settings_button.clicked.connect (() => {
                  try {
-@@ -150,48 +273,41 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -150,48 +277,41 @@ public class DateTime.Indicator : Wingpanel.Indicator {
      }
-
+ 
 +    private void move_period (int direction) {
 +        if (agenda_mode == "upcoming") return;
 +        var date = agenda_mode == "month" ? agenda_date.add_months (direction) :
@@ -326,7 +807,7 @@ index 7b6ec63..5af6e02 100644
 +        header.add_css_class ("heading");
 +        row.set_header (header);
      }
-
+ 
      [CCode (instance_pos = -1)]
      private int sort_function (Gtk.ListBoxRow child1, Gtk.ListBoxRow child2) {
 -        var e1 = (ComponentRow) child1;
@@ -353,10 +834,10 @@ index 7b6ec63..5af6e02 100644
 +        if (time != 0) return time;
 +        return GLib.strcmp (a.component.get_summary (), b.component.get_summary ());
      }
-
-@@ -208,42 +324,89 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+ 
+@@ -208,42 +328,89 @@ public class DateTime.Indicator : Wingpanel.Indicator {
      }
-
+ 
 -    private bool update_components () {
 -        component_listbox.remove_all ();
 -
@@ -371,20 +852,20 @@ index 7b6ec63..5af6e02 100644
 +        Gtk.ListBoxRow? row;
 +        while ((row = list.get_row_at_index (0)) != null) list.remove (row);
 +    }
-
+ 
 -        var events_model = Widgets.CalendarModel.get_default (ECal.ClientSourceType.EVENTS);
 +    private bool update_components () {
 +        clear_rows (component_listbox);
 +        clear_rows (task_listbox);
          var tasks_model = Widgets.CalendarModel.get_default (ECal.ClientSourceType.TASKS);
-
+ 
 -        var components_on_day = new Gee.TreeMap<string, DateTime.ComponentRow> ();
 +        tasks_model.source_components.@foreach ((source, component_map) => {
 +            foreach (var comp in component_map.get_values ()) {
 +                task_listbox.append (new TaskRow (comp.get_icalcomponent (), source));
 +            }
 +        });
-
+ 
 +        var events_model = agenda_mode == "upcoming" ? Widgets.CalendarModel.get_upcoming () :
 +            Widgets.CalendarModel.get_default (ECal.ClientSourceType.EVENTS);
 +        period_previous.visible = period_next.visible = agenda_mode != "upcoming";
@@ -472,16 +953,16 @@ index 7b6ec63..5af6e02 100644
 +                        else component_listbox.append (row);
                      }
                  }
-@@ -251,4 +414,6 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -251,4 +418,6 @@ public class DateTime.Indicator : Wingpanel.Indicator {
          });
-
+ 
 +        if (timetable) time_grid.render (first, agenda_mode == "week" ? 7 : 1, timed_rows);
 +        else time_grid.clear ();
          update_components_idle_source = 0;
          return GLib.Source.REMOVE;
-@@ -268,8 +433,24 @@ public class DateTime.Indicator : Wingpanel.Indicator {
+@@ -268,8 +437,25 @@ public class DateTime.Indicator : Wingpanel.Indicator {
          tasks_model.components_removed.connect (update_components_model);
-
+ 
 +        var upcoming = Widgets.CalendarModel.get_upcoming ();
 +        upcoming.components_added.connect (update_components_model);
 +        upcoming.components_updated.connect (update_components_model);
@@ -493,9 +974,10 @@ index 7b6ec63..5af6e02 100644
 +            return GLib.Source.CONTINUE;
 +        });
          calendar.refresh ();
++        daily_verse.refresh ();
 +        idle_update_components ();
      }
-
+ 
      public override void closed () {
 +        if (upcoming_timer != 0) { GLib.Source.remove (upcoming_timer); upcoming_timer = 0; }
 +        var upcoming = Widgets.CalendarModel.get_upcoming ();
@@ -517,7 +999,7 @@ index 7a626ba..eed808f 100644
 +    public E.SourceSelectable source_selectable { get; construct; }
 +
 +    public string calendar_name { get; construct; }
-
+ 
      public GLib.DateTime start_time { get; private set; }
 @@ -46,4 +48,5 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
          Object (
@@ -526,7 +1008,7 @@ index 7a626ba..eed808f 100644
              date: date,
              source_selectable: source_selectable
 @@ -68,15 +71,14 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
-
+ 
          if (!(source_selectable is E.SourceTaskList)) {
 -            var dt_end = component.get_dtend ();
 -            if (dt_end.is_date ()) {
@@ -540,14 +1022,14 @@ index 7a626ba..eed808f 100644
                  end_time = Util.ical_to_date_time (dt_end).to_local ();
              }
 +            is_allday = dt_start.is_date () || Util.is_the_all_day (start_time, end_time);
-
+ 
 -            if (end_time != null && Util.is_the_all_day (start_time, end_time)) {
 -                is_allday = true;
 -            }
          }
-
+ 
 @@ -89,5 +91,5 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
-
+ 
          component_image = new Gtk.Image.from_icon_name (icon_name) {
 -            valign = Gtk.Align.START
 +            valign = Gtk.Align.CENTER
@@ -621,10 +1103,10 @@ index 7a626ba..eed808f 100644
 +        expander.add_css_class ("event");
 +        expander.get_style_context ().add_provider (css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 +        child = expander;
-
+ 
          set_color ();
 @@ -137,4 +160,8 @@ public class DateTime.ComponentRow : Gtk.ListBoxRow {
-
+ 
      private void update_timelabel () {
 +        if (is_allday) {
 +            time_label.label = _("All day");
@@ -638,6 +1120,488 @@ index 7a626ba..eed808f 100644
 +        Util.set_component_calendar_color (source_selectable, child);
          Util.set_component_calendar_color (source_selectable, component_image);
          Util.set_component_calendar_color (source_selectable, name_label);
+diff --git a/src/Widgets/DailyVerse.vala b/src/Widgets/DailyVerse.vala
+new file mode 100644
+index 0000000..a3b0f84
+--- /dev/null
++++ b/src/Widgets/DailyVerse.vala
+@@ -0,0 +1,476 @@
++/* Copyright 2026 M-Series contributors. SPDX-License-Identifier: GPL-3.0-or-later */
++// The + tab: a daily Bible verse, and a section-by-section study of Titus, each
++// with links to sermons on the passage.
++//
++// Daily: Christmas, Easter and other feast days get their own reserved verse;
++// the rest are shuffled per year, so a year never repeats a verse while at
++// least 366 verses are unreserved.
++//
++// Study: an overview and one page per section, with the passage, an insight and
++// a question. The mode and section are remembered across logins.
++public class DateTime.DailyVerse : Gtk.Box {
++    public signal void link_opened ();
++
++    private const string RESOURCES = "/io/elementary/desktop/wingpanel/datetime/";
++
++    private string[] references = {};
++    private string[] texts = {};
++    private string[] headings = {};
++    private string[] seasons = {};
++    private string[] study_references = {};
++    private string[] study_titles = {};
++    private string[] study_insights = {};
++    private string[] study_reflections = {};
++    private string[] study_passages = {};
++    private string study_book = "";
++
++    private bool studying = false;
++    private int offset = 0;
++    private int part = 0;
++    private string reference = "";
++    private string copy_text = "";
++    private uint copied_timeout = 0;
++
++    private Gtk.ToggleButton daily_toggle;
++    private Gtk.ToggleButton study_toggle;
++    private Granite.HeaderLabel header;
++    private Gtk.Button middle_button;
++    private Gtk.Button previous_button;
++    private Gtk.Button next_button;
++    private Gtk.Stack pages;
++    private Gtk.ScrolledWindow scroller;
++    private Gtk.Label heading_label;
++    private Gtk.Label text_label;
++    private Gtk.Label reference_label;
++    private Gtk.Label passage_label;
++    private Gtk.Label insight_title;
++    private Gtk.Label insight_label;
++    private Gtk.Label reflect_label;
++    private Wingpanel.PopoverMenuItem copy_item;
++
++    public DailyVerse () {
++        Object (orientation: Gtk.Orientation.VERTICAL, spacing: 0, name: "daily-verse");
++        load ();
++        load_study ();
++        var style = new Gtk.CssProvider ();
++        style.load_from_resource (RESOURCES + "DailyVerse.css");
++        Gtk.StyleContext.add_provider_for_display (Gdk.Display.get_default (), style,
++            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
++
++        // Daily | Titus, styled like the Events tab's view buttons.
++        var view_style = new Gtk.CssProvider ();
++        view_style.load_from_resource (RESOURCES + "EventRow.css");
++        daily_toggle = new Gtk.ToggleButton.with_label (_("Daily")) {
++            name = "verse-mode-daily", tooltip_text = _("A verse for each day")
++        };
++        study_toggle = new Gtk.ToggleButton.with_label (study_book != "" ? study_book : _("Study")) {
++            name = "verse-mode-study", group = daily_toggle,
++            tooltip_text = _("Study %s section by section").printf (study_book), sensitive = study_book != ""
++        };
++        var modes = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) {
++            halign = Gtk.Align.CENTER, margin_bottom = 6
++        };
++        modes.add_css_class ("linked");
++        foreach (var toggle in new Gtk.ToggleButton[] { daily_toggle, study_toggle }) {
++            toggle.add_css_class ("agenda-view");
++            toggle.get_style_context ().add_provider (view_style, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
++            modes.append (toggle);
++        }
++
++        // Header with the same previous/Today/next control as the calendar.
++        header = new Granite.HeaderLabel ("") {
++            name = "verse-day", size = Granite.HeaderLabel.Size.H4, hexpand = true
++        };
++        previous_button = new Gtk.Button.from_icon_name ("pan-start-symbolic") { name = "verse-previous" };
++        middle_button = new Gtk.Button.with_label (_("Today")) { name = "verse-today" };
++        next_button = new Gtk.Button.from_icon_name ("pan-end-symbolic") { name = "verse-next" };
++        previous_button.clicked.connect (() => step (-1));
++        middle_button.clicked.connect (() => {
++            if (studying) show_part (0); else show_offset (0);
++        });
++        next_button.clicked.connect (() => step (1));
++        var navigation = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { valign = Gtk.Align.CENTER };
++        navigation.add_css_class ("linked");
++        navigation.append (previous_button);
++        navigation.append (middle_button);
++        navigation.append (next_button);
++        var header_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) {
++            margin_start = 12, margin_end = 12
++        };
++        header_row.append (header);
++        header_row.append (navigation);
++
++        pages = new Gtk.Stack () { vhomogeneous = false, hhomogeneous = true };
++        pages.add_named (build_daily (), "daily");
++        pages.add_named (build_study (), "study");
++        scroller = new Gtk.ScrolledWindow () {
++            hscrollbar_policy = Gtk.PolicyType.NEVER, child = pages, vexpand = true,
++            min_content_height = 96, max_content_height = 300, propagate_natural_height = true
++        };
++
++        append (modes);
++        append (header_row);
++        append (scroller);
++        append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL) { margin_top = 3, margin_bottom = 3 });
++        append (link_item ("verse-sermons", _("Listen to Sermons"),
++            _("Sermons on this passage at SermonAudio"), "https://www.sermonaudio.com/search?q=%s"));
++        append (link_item ("verse-videos", _("Watch Sermon Videos"),
++            _("Sermon videos on this passage at YouTube"), "https://www.youtube.com/results?search_query=sermon+%s"));
++        append (link_item ("verse-context", _("Read the Full Chapter"),
++            _("This passage in context at Bible Gateway"), "https://www.biblegateway.com/passage/?search=%s&version=WEB"));
++        copy_item = new Wingpanel.PopoverMenuItem.with_text (_("Copy Verse")) {
++            name = "verse-copy", tooltip_text = _("Copy the text and its reference")
++        };
++        copy_item.clicked.connect (copy_passage);
++        append (copy_item);
++        var source = new Gtk.Label (_("World English Bible · Public Domain")) {
++            xalign = 0, margin_start = 12, margin_end = 12, margin_top = 6
++        };
++        source.add_css_class (Granite.CssClass.DIM);
++        source.add_css_class (Granite.CssClass.SMALL);
++        append (source);
++
++        restore_state ();
++        daily_toggle.toggled.connect (() => {
++            if (daily_toggle.active) set_studying (false);
++        });
++        study_toggle.toggled.connect (() => {
++            if (study_toggle.active) set_studying (true);
++        });
++        (studying ? study_toggle : daily_toggle).active = true;
++        apply_mode ();
++    }
++
++    private Gtk.Widget build_daily () {
++        heading_label = new Gtk.Label (null) {
++            name = "verse-heading", xalign = 0, wrap = true, max_width_chars = 34
++        };
++        heading_label.add_css_class (Granite.CssClass.DIM);
++        heading_label.add_css_class (Granite.CssClass.SMALL);
++        text_label = new Gtk.Label (null) {
++            name = "verse-text", xalign = 0, wrap = true, wrap_mode = Pango.WrapMode.WORD_CHAR,
++            max_width_chars = 34, width_chars = 24
++        };
++        text_label.add_css_class ("daily-verse-text");
++        reference_label = new Gtk.Label (null) {
++            name = "verse-reference", xalign = 1, wrap = true, max_width_chars = 34
++        };
++        reference_label.add_css_class ("daily-verse-reference");
++        var verse = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) {
++            margin_start = 12, margin_end = 12, margin_top = 6, margin_bottom = 12,
++            valign = Gtk.Align.CENTER, vexpand = true
++        };
++        verse.append (heading_label);
++        verse.append (text_label);
++        verse.append (reference_label);
++        return verse;
++    }
++
++    private Gtk.Label section_title (string text) {
++        var label = new Gtk.Label (text) { xalign = 0, margin_top = 6 };
++        label.add_css_class ("study-section");
++        return label;
++    }
++
++    private Gtk.Widget build_study () {
++        passage_label = new Gtk.Label (null) {
++            name = "study-passage", xalign = 0, wrap = true, wrap_mode = Pango.WrapMode.WORD_CHAR,
++            max_width_chars = 34, width_chars = 24, use_markup = true
++        };
++        passage_label.add_css_class ("study-passage");
++        insight_title = section_title (_("Insight"));
++        insight_label = new Gtk.Label (null) {
++            name = "study-insight", xalign = 0, wrap = true, max_width_chars = 34, width_chars = 24
++        };
++        insight_label.add_css_class ("study-insight");
++        reflect_label = new Gtk.Label (null) {
++            name = "study-reflect", xalign = 0, wrap = true, max_width_chars = 34, width_chars = 24
++        };
++        reflect_label.add_css_class ("study-reflect");
++        var study = new Gtk.Box (Gtk.Orientation.VERTICAL, 6) {
++            margin_start = 12, margin_end = 12, margin_top = 6, margin_bottom = 12
++        };
++        study.append (passage_label);
++        study.append (insight_title);
++        study.append (insight_label);
++        study.append (section_title (_("Reflect")));
++        study.append (reflect_label);
++        return study;
++    }
++
++    private void load () {
++        try {
++            var data = GLib.resources_lookup_data (RESOURCES + "daily-verses.tsv", GLib.ResourceLookupFlags.NONE);
++            foreach (var line in ((string) data.get_data ()).split ("\n")) {
++                // reference, text, Psalm heading, season (the last two may be empty)
++                var fields = line.split ("\t", 4);
++                if (line.has_prefix ("#") || fields.length < 2) continue;
++                references += fields[0];
++                texts += fields[1];
++                headings += fields.length > 2 ? fields[2] : "";
++                seasons += fields.length > 3 ? fields[3] : "";
++            }
++        } catch (Error e) {
++            warning ("Could not load daily verses: %s", e.message);
++        }
++    }
++
++    private void load_study () {
++        try {
++            var data = GLib.resources_lookup_data (RESOURCES + "titus-study.tsv", GLib.ResourceLookupFlags.NONE);
++            foreach (var line in ((string) data.get_data ()).split ("\n")) {
++                // reference, title, insight, reflect, passage (empty for the overview)
++                var fields = line.split ("\t", 5);
++                if (line.has_prefix ("#") || fields.length < 4) continue;
++                study_references += fields[0];
++                study_titles += fields[1];
++                study_insights += fields[2];
++                study_reflections += fields[3];
++                study_passages += fields.length > 4 ? fields[4] : "";
++            }
++            if (study_references.length > 0) study_book = study_references[0];
++        } catch (Error e) {
++            warning ("Could not load the study: %s", e.message);
++        }
++    }
++
++    // Mode and study section persist in a small key file of our own, so the
++    // upstream GSettings schema stays untouched.
++    private string state_path () {
++        return GLib.Path.build_filename (GLib.Environment.get_user_config_dir (), "mseries", "verse-of-the-day.ini");
++    }
++
++    private void restore_state () {
++        var file = new GLib.KeyFile ();
++        try {
++            file.load_from_file (state_path (), GLib.KeyFileFlags.NONE);
++            studying = study_book != "" && file.get_string ("study", "mode") == "study";
++            part = file.get_integer ("study", "part").clamp (0, int.max (study_references.length - 1, 0));
++        } catch (Error e) {
++            // First run or unreadable: start on the daily verse and the overview.
++        }
++    }
++
++    private void save_state () {
++        var file = new GLib.KeyFile ();
++        file.set_string ("study", "mode", studying ? "study" : "daily");
++        file.set_integer ("study", "part", part);
++        try {
++            GLib.DirUtils.create_with_parents (GLib.Path.get_dirname (state_path ()), 0700);
++            file.save_to_file (state_path ());
++        } catch (Error e) {
++            warning ("Could not save verse settings: %s", e.message);
++        }
++    }
++
++    private void set_studying (bool value) {
++        if (studying == value) return;
++        studying = value;
++        save_state ();
++        apply_mode ();
++    }
++
++    private void apply_mode () {
++        pages.visible_child_name = studying ? "study" : "daily";
++        middle_button.label = studying ? _("Overview") : _("Today");
++        middle_button.tooltip_text = studying ? _("About the letter") : _("Today’s verse");
++        previous_button.tooltip_text = studying ? _("Previous section") : _("Previous day");
++        next_button.tooltip_text = studying ? _("Next section") : _("Next day");
++        if (studying) show_part (part); else show_offset (offset);
++    }
++
++    private void step (int direction) {
++        if (studying) show_part (part + direction); else show_offset (offset + direction);
++    }
++
++    private Gtk.Button link_item (string id, string label, string tooltip, string template) {
++        var button = new Wingpanel.PopoverMenuItem.with_text (label) { name = id, tooltip_text = tooltip };
++        button.clicked.connect (() => {
++            if (reference == "") return;
++            var uri = template.printf (GLib.Uri.escape_string (reference, null, false));
++            try {
++                AppInfo.launch_default_for_uri (uri, null);
++                link_opened ();
++            } catch (Error e) {
++                warning ("Could not open %s: %s", uri, e.message);
++            }
++        });
++        return button;
++    }
++
++    private string copy_label () {
++        return studying ? _("Copy Passage") : _("Copy Verse");
++    }
++
++    private void copy_passage () {
++        if (copy_text == "") return;
++        get_clipboard ().set_text (copy_text);
++        // Confirm in place; the popover stays open so the reader keeps context.
++        copy_item.text = _("Copied");
++        if (copied_timeout != 0) Source.remove (copied_timeout);
++        copied_timeout = Timeout.add (1500, () => {
++            copy_item.text = copy_label ();
++            copied_timeout = 0;
++            return Source.REMOVE;
++        });
++    }
++
++    // Western (Gregorian) Easter Sunday, anonymous Gregorian algorithm.
++    public static GLib.DateTime easter (int year) {
++        int a = year % 19, b = year / 100, c = year % 100;
++        int d = b / 4, e = b % 4, f = (b + 8) / 25, g = (b - f + 1) / 3;
++        int h = (19 * a + b - d - g + 15) % 30;
++        int i = c / 4, k = c % 4;
++        int l = (32 + 2 * e + 2 * i - h - k) % 7;
++        int m = (a + 11 * h + 22 * l) / 451;
++        int month = (h + l - 7 * m + 114) / 31;
++        int day = (h + l - 7 * m + 114) % 31 + 1;
++        return new GLib.DateTime.local (year, month, day, 0, 0, 0);
++    }
++
++    // The feast or holiday a date reserves a verse for, or "".
++    public static string season_for (GLib.DateTime day) {
++        int month = day.get_month (), date = day.get_day_of_month ();
++        if (month == 12 && date == 24) return "christmas-eve";
++        if (month == 12 && date == 25) return "christmas";
++        if (month == 1 && date == 1) return "new-year";
++        if (month == 1 && date == 6) return "epiphany";
++        // US Thanksgiving: fourth Thursday of November.
++        if (month == 11 && day.get_day_of_week () == 4 && date >= 22 && date <= 28) return "thanksgiving";
++        switch (day.get_day_of_year () - easter (day.get_year ()).get_day_of_year ()) {
++            case -46: return "ash-wednesday";
++            case -7: return "palm-sunday";
++            case -2: return "good-friday";
++            case 0: return "easter";
++            case 49: return "pentecost";
++            default: return "";
++        }
++    }
++
++    public static string season_name (string season) {
++        switch (season) {
++            case "christmas-eve": return _("Christmas Eve");
++            case "christmas": return _("Christmas Day");
++            case "new-year": return _("New Year’s Day");
++            case "epiphany": return _("Epiphany");
++            case "thanksgiving": return _("Thanksgiving");
++            case "ash-wednesday": return _("Ash Wednesday");
++            case "palm-sunday": return _("Palm Sunday");
++            case "good-friday": return _("Good Friday");
++            case "easter": return _("Easter Sunday");
++            case "pentecost": return _("Pentecost");
++            default: return "";
++        }
++    }
++
++    // A reserved verse on its feast day. Otherwise the same verse all day from
++    // a per-year shuffle of the unreserved verses.
++    public static int choose (GLib.DateTime day, string[] seasons) {
++        var season = season_for (day);
++        int[] pool = {};
++        for (int i = 0; i < seasons.length; i++) {
++            if (season != "" && seasons[i] == season) return i;
++            if (seasons[i] == "") pool += i;
++        }
++        if (pool.length == 0) return -1;
++        var random = new GLib.Rand.with_seed ((uint32) (day.get_year () * 7919 + 104729));
++        for (int i = pool.length - 1; i > 0; i--) {
++            int j = random.int_range (0, i + 1);
++            int swap = pool[i];
++            pool[i] = pool[j];
++            pool[j] = swap;
++        }
++        return pool[(day.get_day_of_year () - 1) % pool.length];
++    }
++
++    // Called when the popover opens. The daily verse returns to today (which
++    // also turns it over after midnight); the study stays on its section.
++    public void refresh () {
++        if (studying) show_part (part); else show_offset (0);
++    }
++
++    private void show_offset (int days) {
++        offset = days;
++        var day = new GLib.DateTime.now_local ().add_days (offset);
++        var date = day.format (_("%A, %B %-d"));
++        var feast = season_name (season_for (day));
++        header.label = _("Verse of the Day");
++        header.secondary_text = feast != "" ? feast + " · " + date :
++            offset == 0 ? _("Today") + " · " + date :
++            offset == -1 ? _("Yesterday") + " · " + date :
++            offset == 1 ? _("Tomorrow") + " · " + date : date;
++        previous_button.sensitive = next_button.sensitive = true;
++        middle_button.sensitive = offset != 0;
++        copy_item.text = copy_label ();
++        copy_item.sensitive = true;
++        var index = choose (day, seasons);
++        if (index < 0) {
++            reference = copy_text = "";
++            heading_label.visible = false;
++            text_label.label = _("Verses are unavailable.");
++            reference_label.label = "";
++            return;
++        }
++        reference = references[index];
++        heading_label.label = headings[index];
++        heading_label.visible = headings[index] != "";
++        text_label.label = texts[index];
++        reference_label.label = "— " + reference;
++        copy_text = "“%s” — %s (WEB)".printf (texts[index], reference);
++    }
++
++    // Verse numbers ({n} in the data) become small raised numerals.
++    private static string passage_markup (string passage) {
++        try {
++            var numbers = new GLib.Regex ("\\{(\\d+)\\} ");
++            return numbers.replace (GLib.Markup.escape_text (passage), -1, 0,
++                "<span size=\"70%\" rise=\"3pt\" alpha=\"60%\" font_features=\"tnum\">\\1</span> ");
++        } catch (RegexError e) {
++            return GLib.Markup.escape_text (passage);
++        }
++    }
++
++    private static string passage_plain (string passage) {
++        try {
++            return new GLib.Regex ("\\{\\d+\\} ").replace (passage, -1, 0, "");
++        } catch (RegexError e) {
++            return passage;
++        }
++    }
++
++    private void show_part (int index) {
++        int count = study_references.length;
++        if (count == 0) return;
++        var chosen = index.clamp (0, count - 1);
++        if (chosen != part) {
++            part = chosen;
++            save_state ();
++        }
++        reference = study_references[part];
++        bool overview = study_passages[part] == "";
++        header.label = overview ? study_book : reference.replace ("-", "–");
++        header.secondary_text = overview ? study_titles[part] :
++            _("%s · %d of %d").printf (study_titles[part], part, count - 1);
++        previous_button.sensitive = part > 0;
++        next_button.sensitive = part < count - 1;
++        middle_button.sensitive = part != 0;
++        passage_label.visible = !overview;
++        passage_label.label = overview ? "" : passage_markup (study_passages[part]);
++        insight_title.visible = !overview;
++        insight_label.label = study_insights[part].replace (" ¶ ", "\n\n").replace (" • ", "\n•  ");
++        reflect_label.label = study_reflections[part];
++        copy_text = overview ? "" : "%s (WEB)\n%s".printf (reference.replace ("-", "–"),
++            passage_plain (study_passages[part]));
++        copy_item.text = copy_label ();
++        copy_item.sensitive = !overview;
++        scroller.vadjustment.value = 0;
++    }
++
++    public override void dispose () {
++        if (copied_timeout != 0) {
++            Source.remove (copied_timeout);
++            copied_timeout = 0;
++        }
++        base.dispose ();
++    }
++}
 diff --git a/src/Widgets/TaskComposer.vala b/src/Widgets/TaskComposer.vala
 new file mode 100644
 index 0000000..4e6095f
@@ -1136,7 +2100,7 @@ index 9301281..626fd9a 100644
 +++ b/src/Widgets/calendar/CalendarModel.vala
 @@ -43,8 +43,137 @@ namespace DateTime.Widgets {
          public signal void components_removed (E.Source source, Gee.Collection<ECal.Component> components);
-
+ 
 +        private HashTable<string, uint> generations;
          private E.SourceRegistry registry { get; private set; }
          private HashTable<string, ECal.Client> source_client;
@@ -1270,28 +2234,28 @@ index 9301281..626fd9a 100644
 +            completing_tasks.remove (key);
 +            completion_changed (key);
 +        }
-
+ 
          private static HashTable<ECal.ClientSourceType, CalendarModel> calendar_model;
 @@ -64,10 +193,10 @@ namespace DateTime.Widgets {
          }
-
+ 
 -        public CalendarModel (ECal.ClientSourceType source_type) {
 -            Object (source_type: source_type);
 +        public CalendarModel (ECal.ClientSourceType source_type, bool upcoming = false) {
 +            Object (source_type: source_type, upcoming_range: upcoming);
          }
-
+ 
          construct {
 -            open.begin ();
 +            generations = new HashTable<string, uint> (str_hash, str_equal);
-
+ 
              source_client = new HashTable<string, ECal.Client> (str_hash, str_equal);
 @@ -83,4 +212,5 @@ namespace DateTime.Widgets {
              compute_ranges ();
              notify["month-start"].connect (on_parameter_changed);
 +            open.begin ();
          }
-
+ 
 @@ -90,4 +220,8 @@ namespace DateTime.Widgets {
                  registry.source_removed.connect (remove_source);
                  registry.source_added.connect ((source) => add_source_async.begin (source));
@@ -1299,17 +2263,17 @@ index 9301281..626fd9a 100644
 +                    remove_source (source);
 +                    add_source_async.begin (source);
 +                });
-
+ 
                  // Add sources
 @@ -143,11 +277,10 @@ namespace DateTime.Widgets {
              unowned string uid = source.get_uid ();
-
+ 
 -            if (!source_view.contains (uid)) {
 -                return;
 -            }
 +            generations[uid] = generations[uid] + 1;
 +            if (!source_client.contains (uid) && !source_components.contains (source)) return;
-
+ 
              var current_view = source_view.get (uid);
              try {
 -                current_view.stop ();
@@ -1333,9 +2297,9 @@ index 9301281..626fd9a 100644
 +                components_removed (source, components.read_only_view);
 +            }
          }
-
+ 
 @@ -175,4 +313,9 @@ namespace DateTime.Widgets {
-
+ 
          private void compute_ranges () {
 +            if (upcoming_range) {
 +                var today = Util.strip_time (new GLib.DateTime.now_local ());
@@ -1343,9 +2307,9 @@ index 9301281..626fd9a 100644
 +                return;
 +            }
              var month_end = month_start.add_full (0, 1, -1);
-
+ 
 @@ -214,4 +357,16 @@ namespace DateTime.Widgets {
-
+ 
          private void load_source (E.Source source) {
 +            load_source_async.begin (source);
 +        }
@@ -1377,10 +2341,10 @@ index 9301281..626fd9a 100644
 -                query = @"AND (NOT is-completed?) (due-in-time-range? (make-time \"$iso_first\") (make-time \"$iso_last\"))";
 +                query = "(not (is-completed?))";
              }
-
+ 
 @@ -238,18 +397,22 @@ namespace DateTime.Widgets {
              }
-
+ 
 -            debug ("Getting client-view for source '%s'", source.dup_display_name ());
 -            client.get_view.begin (query, null, (obj, results) => {
 -                var view = on_client_view_received (results, source, client);
@@ -1414,10 +2378,10 @@ index 9301281..626fd9a 100644
 +                warning ("Could not load calendar view: %s", e.message);
 +            }
          }
-
+ 
 @@ -260,10 +423,24 @@ namespace DateTime.Widgets {
              }
-
+ 
 +            var extension = source_type == ECal.ClientSourceType.TASKS ? E.SOURCE_EXTENSION_TASK_LIST : E.SOURCE_EXTENSION_CALENDAR;
 +            var selectable = (E.SourceSelectable) source.get_extension (extension);
 +            if (!registry.check_enabled (source) || !selectable.selected) return;
@@ -1441,14 +2405,14 @@ index 9301281..626fd9a 100644
 +                warning ("Could not connect calendar: %s", e.message);
 +                return;
              }
-
+ 
 @@ -277,5 +454,5 @@ namespace DateTime.Widgets {
          private void debug_component (E.Source source, ECal.Component component) {
              unowned ICal.Component comp = component.get_icalcomponent ();
 -            debug (@"Component ['$(comp.get_summary())', $(source.dup_display_name()), $(comp.get_uid()))]");
 +            debug ("Component [%s, %s, %s]", comp.get_summary () ?? _("Untitled event"), source.dup_display_name (), comp.get_uid ());
          }
-
+ 
 @@ -283,18 +460,5 @@ namespace DateTime.Widgets {
          private void on_parameter_changed () {
              compute_ranges ();
@@ -1468,7 +2432,7 @@ index 9301281..626fd9a 100644
 -            return view;
 +            if (source_type == ECal.ClientSourceType.EVENTS) load_all_sources ();
          }
-
+ 
 @@ -309,6 +473,12 @@ namespace DateTime.Widgets {
              objects.foreach ((comp) => {
                  unowned string uid = comp.get_uid ();
@@ -1508,10 +2472,10 @@ index 9301281..626fd9a 100644
 +                foreach (var old in previous) map.remove (comp.get_uid (), old);
 +            }
 +            on_objects_added (source, client, objects);
-
+ 
 -            components_updated (source, updated_components.read_only_view);
          }
-
+ 
 @@ -352,4 +523,8 @@ namespace DateTime.Widgets {
              debug (@"Received $(cids.length()) removed component(s) for source '%s'", source.dup_display_name ());
              var components = source_components.get (source);
@@ -1520,10 +2484,10 @@ index 9301281..626fd9a 100644
 +                return;
 +            }
              var removed_components = new Gee.ArrayList<ECal.Component> ((Gee.EqualDataFunc<ECal.Component>?) Util.calcomponent_equal_func);
-
+ 
 @@ -366,4 +541,7 @@ namespace DateTime.Widgets {
              });
-
+ 
 +            foreach (var component in removed_components) {
 +                components.remove (component.get_uid (), component);
 +            }
@@ -1538,7 +2502,7 @@ index 1e0436c..16cc7fb 100644
      public signal void selection_changed (GLib.DateTime? new_date);
 -
      public GLib.DateTime? selected_date { get; private set; }
-
+ 
 -    private Adw.Carousel carousel;
 -    private uint position;
 -    private int rel_postion;
@@ -1551,7 +2515,7 @@ index 1e0436c..16cc7fb 100644
 +    private Gtk.Box holder;
      private Gtk.Label label;
 -    private bool showtoday;
-
+ 
      construct {
 -        label = new Gtk.Label (new GLib.DateTime.now_local ().format (_("%OB, %Y"))) {
 -            hexpand = true,
@@ -1713,7 +2677,7 @@ index 1e0436c..16cc7fb 100644
 +        holder.add_controller (swipe);
 +        show_date (new GLib.DateTime.now_local (), true);
      }
-
+ 
 -    private DateTime.Widgets.Grid create_grid () {
 -        var grid = new DateTime.Widgets.Grid ();
 -
@@ -1741,7 +2705,7 @@ index 1e0436c..16cc7fb 100644
 +        holder.append (month_grid);
 +        label.label = month.format (_("%OB, %Y"));
      }
-
+ 
 -    private void show_today (bool refresh = false) {
 -        showtoday = true;
 -        var today = Util.strip_time (new GLib.DateTime.now_local ());
@@ -1787,7 +2751,7 @@ index 1e0436c..16cc7fb 100644
 +        selected_date = null;
 +        selection_changed (null);
 +    }
-
+ 
 -            position = 1;
 -            rel_postion = 0;
 -        }
@@ -1799,9 +2763,9 @@ index 1e0436c..16cc7fb 100644
 +        selected_date = selected;
 +        selection_changed (selected);
      }
-
+ 
 @@ -257,5 +111,5 @@ public class DateTime.Widgets.CalendarView : Gtk.Grid {
-
+ 
      public void refresh () {
 -        show_today (true);
 +        show_date (new GLib.DateTime.now_local (), true);
@@ -1815,11 +2779,11 @@ index 6907315..81f14f2 100644
      public class Grid : Gtk.Grid {
          public Util.DateRange grid_range { get; private set; }
 +        public GLib.DateTime month_start { get; private set; }
-
+ 
          /*
 @@ -85,5 +86,7 @@ namespace DateTime.Widgets {
                  unowned ICal.Component ical = component.get_icalcomponent ();
-
+ 
 -                var start_time = ical.get_dtstart ().as_timet ();
 +                var start = source.has_extension (E.SOURCE_EXTENSION_TASK_LIST) ? ical.get_due () : ical.get_dtstart ();
 +                if (start == null || start.is_null_time ()) continue;
@@ -1828,7 +2792,7 @@ index 6907315..81f14f2 100644
                  var date_hash = day_hash (date_time);
 @@ -99,5 +102,7 @@ namespace DateTime.Widgets {
                  unowned ICal.Component ical = component.get_icalcomponent ();
-
+ 
 -                var start_time = ical.get_dtstart ().as_timet ();
 +                var start = source.has_extension (E.SOURCE_EXTENSION_TASK_LIST) ? ical.get_due () : ical.get_dtstart ();
 +                if (start == null || start.is_null_time ()) continue;
@@ -1836,7 +2800,7 @@ index 6907315..81f14f2 100644
                  var date_time = new GLib.DateTime.from_unix_utc (start_time);
                  var date_hash = day_hash (date_time);
 @@ -125,4 +130,8 @@ namespace DateTime.Widgets {
-
+ 
          public void set_focus_to_today () {
 +            set_focus_to_date (new GLib.DateTime.now_local ());
 +        }
@@ -1860,22 +2824,22 @@ index 6907315..81f14f2 100644
          public void set_range (Util.DateRange new_range, GLib.DateTime month_start) {
 +            this.month_start = month_start;
              var today = new GLib.DateTime.now_local ();
-
+ 
 diff --git a/src/Widgets/calendar/Util.vala b/src/Widgets/calendar/Util.vala
 index f337717..6c5dd82 100644
 --- a/src/Widgets/calendar/Util.vala
 +++ b/src/Widgets/calendar/Util.vala
 @@ -31,5 +31,6 @@ namespace Util {
-
+ 
      public GLib.DateTime strip_time (GLib.DateTime datetime) {
 -        return datetime.add_full (0, 0, 0, -datetime.get_hour (), -datetime.get_minute (), -datetime.get_second ());
 +        return new GLib.DateTime (datetime.get_timezone (), datetime.get_year (),
 +            datetime.get_month (), datetime.get_day_of_month (), 0, 0, 0);
      }
-
+ 
 @@ -157,11 +158,15 @@ namespace Util {
      }
-
+ 
 -    public bool calcomp_is_on_day (ECal.Component comp, GLib.DateTime day) {
 -#if E_CAL_2_0
 -        unowned ICal.Timezone system_timezone = ECal.util_get_system_timezone ();
@@ -1891,20 +2855,20 @@ index f337717..6c5dd82 100644
 +            !duration.is_null_duration () && !duration.is_bad_duration () && !duration.is_neg ()) return start.add (duration);
 +        return null;
 +    }
-
+ 
 +    public bool calcomp_is_on_day (ECal.Component comp, GLib.DateTime day) {
          var stripped_time = new GLib.DateTime.local (day.get_year (), day.get_month (), day.get_day_of_month (), 0, 0, 0);
-
+ 
 @@ -173,5 +178,5 @@ namespace Util {
          ICal.Time? start_time = icomp.get_dtstart ();
          ICal.Time? due_time = icomp.get_due ();
 -        ICal.Time? end_time = icomp.get_dtend ();
 +        ICal.Time? end_time = event_end (icomp);
-
+ 
          if (due_time != null && !due_time.is_null_time ()) {
 @@ -187,6 +192,13 @@ namespace Util {
          }
-
+ 
 -        time_t start_unix = start_time.as_timet_with_zone (system_timezone);
 -        time_t end_unix = end_time.as_timet_with_zone (system_timezone);
 +        if (start_time == null || start_time.is_null_time ()) return false;
@@ -1916,5 +2880,5 @@ index f337717..6c5dd82 100644
 +        int64 start_unix = ical_to_date_time (start_time).to_unix ();
 +        int64 end_unix = ical_to_date_time (end_time).to_unix ();
 +        if (end_unix == start_unix) return selected_date_unix <= start_unix && start_unix < selected_date_unix_next;
-
+ 
          /* If the selected date is inside the event */

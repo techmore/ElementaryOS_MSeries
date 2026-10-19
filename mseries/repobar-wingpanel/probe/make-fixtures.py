@@ -14,7 +14,10 @@ def repo(name, issues=0, prs=0, ci="SUCCESS", stars=0, release="", lang="Vala", 
             "openIssues": issues, "openPullRequests": prs, "branch": "main",
             "commitCounts": {"1h": counts[0], "24h": counts[1], "30d": counts[2]}, "ci": ci,
             "release": release, "language": lang, "topics": [], "recentActivity": activity,
-            "local": local, "repoState": state, "pagesUrl": pages, "homepage": homepage}
+            "local": local, "repoState": state, "pagesUrl": pages, "homepage": homepage,
+            "localCheckouts": ([dict(local, detached=False)] + [
+                {"path": "/home/me/Projects/panel-suite-wt/battery", "branch": "claude/battery", "dirtyFileCount": 0, "ahead": 2, "behind": 0, "detached": False},
+                {"path": "/home/me/Projects/panel-suite-wt/review", "branch": "HEAD", "dirtyFileCount": 0, "ahead": 0, "behind": 0, "detached": True}]) if local else []}
 
 
 repos = [
@@ -32,9 +35,25 @@ repos = [
 
 base = {"schemaVersion": 1, "account": "example", "host": "github.com", "fetchedAt": NOW - 120,
         "rateLimits": {"resources": {"core": {"remaining": 4876, "limit": 5000}}}, "stale": False,
-        "settings": {"refreshInterval": 300, "repoLimit": 5, "showForks": False, "showArchived": False}}
+        "settings": {"refreshInterval": 300, "repoLimit": 5, "localRoot": "/home/me/Projects", "showForks": False, "showArchived": False}}
+for_you = {"reviews": {"count": 2, "items": [
+    {"title": "Add RepoBar Settings window", "number": 197, "url": "https://github.com/example/panel-suite/pull/197", "repo": "example/panel-suite"},
+    {"title": "Fix dock focus on resume", "number": 14, "url": "https://github.com/example/dock/pull/14", "repo": "example/dock"}]},
+    "assigned": {"count": 7, "items": [
+    {"title": "Display link training times out on the dock", "number": 3, "url": "https://github.com/example/kernel-notes/issues/3", "repo": "example/kernel-notes"}]}}
+import random
+random.seed(7)
+weeks = []
+for w in range(53):
+    week = []
+    for d in range(7 if w else 3):
+        level = random.choice([0, 0, 1, 1, 2, 3, 4]) if w > 8 else random.choice([0, 0, 0, 1])
+        week.append(["2025-10-%02d" % (1 + d), level * 9, level])
+    weeks.append(week)
+contributions = {"total": 5279, "weeks": weeks}
 scenarios = {
-    "healthy": {**base, "repos": repos},
+    "healthy": {**base, "repos": repos, "forYou": for_you, "contributions": contributions},
+    "quiet": {**base, "repos": repos},
     "empty": {**base, "repos": []},
     "error": {**base, "repos": repos[:3], "stale": True, "error": "gh: HTTP 502 from api.github.com"},
 }

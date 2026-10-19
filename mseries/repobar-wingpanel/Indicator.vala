@@ -8,9 +8,9 @@ namespace MSeries {
     public class RepoBarIndicator : Wingpanel.Indicator {
         // Scopes are the segmented switcher; filters narrow any scope from the search row's menu.
         private const string[] SCOPES = { "Dashboard", "Pinned", "Attention", "All" };
-        private const string[] FILTERS = { "Any repository", "Has open issues", "Has open pull requests", "Local checkout" };
-        private const string[] DETAIL_KEYS = { "pulls", "issues", "ci", "releases", "commits", "branches", "tags", "activity" };
-        private const string[] DETAIL_TITLES = { "PRs", "Issues", "CI", "Releases", "Commits", "Branches", "Tags", "Activity" };
+        private const string[] FILTERS = { "Any repository", "Has open issues", "Has open pull requests", "Local checkout", "Failing CI" };
+        private const string[] DETAIL_KEYS = { "pulls", "issues", "ci", "traffic", "releases", "commits", "branches", "tags", "activity" };
+        private const string[] DETAIL_TITLES = { "PRs", "Issues", "CI", "Traffic", "Releases", "Commits", "Branches", "Tags", "Activity" };
 
         private Gtk.Box panel;
         private Gtk.Label panel_prs;
@@ -30,6 +30,8 @@ namespace MSeries {
         private Gtk.CheckButton[] filter_checks = {};
         private Gtk.Label subtitle_label;
         private Gtk.Label chip_label;
+        private Gtk.Button chip_button;
+        private string chip_action = "";
         private Gtk.Button refresh_button;
         private Gtk.Stack refresh_display;
         private Gtk.Spinner refresh_spinner;
@@ -45,6 +47,10 @@ namespace MSeries {
         private string host = "github.com";
         private string last_snapshot_text = "";
         private string last_render_key = "";
+        private int64 last_notified_fetch = 0;
+        private bool notify_ci = true;
+        private bool show_contributions = true;
+        private string local_root = "";
 
         public RepoBarIndicator () {
             GLib.Object (code_name: "repobar");
@@ -59,12 +65,12 @@ namespace MSeries {
             var mark = new Gtk.Image.from_icon_name ("github-symbolic") { pixel_size = 16, valign = Gtk.Align.CENTER };
             mark.add_css_class ("repo-mark");
             panel.append (mark);
+            // GitHub's own pull request and issue marks label the two counts.
+            panel.append (new Gtk.Image.from_icon_name (kind_icon ("pull")) { pixel_size = 12, valign = Gtk.Align.CENTER, margin_start = 2 });
             panel_prs = new Gtk.Label ("…") { valign = Gtk.Align.CENTER };
             panel_prs.add_css_class ("seg-value");
             panel.append (panel_prs);
-            var divider = new Gtk.Separator (Gtk.Orientation.VERTICAL);
-            divider.add_css_class ("seg-divider");
-            panel.append (divider);
+            panel.append (new Gtk.Image.from_icon_name (kind_icon ("issue")) { pixel_size = 12, valign = Gtk.Align.CENTER, margin_start = 4 });
             panel_issues = new Gtk.Label ("") { valign = Gtk.Align.CENTER };
             panel_issues.add_css_class ("seg-value");
             panel.append (panel_issues);
@@ -139,8 +145,19 @@ namespace MSeries {
             subtitle_label.add_css_class ("dim-label");
             subtitle_label.add_css_class ("caption");
             subtitle_label.add_css_class ("numeric");
-            chip_label = new Gtk.Label ("") { valign = Gtk.Align.CENTER, visible = false };
-            chip_label.add_css_class ("chip");
+            // The status chip acts on what it says: "N failing" shows them, "Cached"/"Offline" retries.
+            chip_label = new Gtk.Label ("");
+            chip_button = new Gtk.Button () { child = chip_label, valign = Gtk.Align.CENTER, visible = false };
+            chip_button.add_css_class ("flat");
+            chip_button.add_css_class ("chip");
+            chip_button.clicked.connect (() => {
+                if (chip_action == "failing") {
+                    filter_checks[4].set_active (true);
+                    scope_buttons[3].set_active (true);
+                } else {
+                    refresh ();
+                }
+            });
             refresh_display = new Gtk.Stack ();
             refresh_display.add_named (new Gtk.Image.from_icon_name ("view-refresh-symbolic") { pixel_size = 18 }, "idle");
             refresh_spinner = new Gtk.Spinner ();
@@ -152,12 +169,12 @@ namespace MSeries {
 
             var bar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
             bar.add_css_class ("mseries-bar");
-            bar.append (chip_label);
+            bar.append (chip_button);
             bar.append (subtitle_label);
             var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { homogeneous = true };
             actions.add_css_class ("mseries-dock");
-            actions.append (make_dock_button ("Your pull requests", "mail-send-receive-symbolic", "/pulls"));
-            actions.append (make_dock_button ("Your issues", "mail-mark-important-symbolic", "/issues"));
+            actions.append (make_dock_button ("Your pull requests", kind_icon ("pull"), "/pulls"));
+            actions.append (make_dock_button ("Your issues", kind_icon ("issue"), "/issues"));
             settings_executable = GLib.Path.build_filename (Environment.get_home_dir (), ".local", "bin", "mseries-repobar-settings");
             var settings_button = new Gtk.Button () {
                 child = new Gtk.Image.from_icon_name ("preferences-system-symbolic") { pixel_size = 18 },
@@ -199,6 +216,8 @@ namespace MSeries {
             restore_ui_state ();
             watch_settings ();
             show_state ("content-loading-symbolic", "Loading repositories…", "", false);
+            // Draw the last cached snapshot at once; the helper's answer replaces it when it arrives.
+            render_cached ();
             schedule_refresh (300);
             load_snapshot ();
         }
@@ -220,6 +239,9 @@ namespace MSeries {
                 ".mseries-repobar .chip { padding: 1px 8px; border-radius: 99px; font-size: 7.5pt; font-weight: 700; " +
                 "  background: alpha(@warning_color, 0.22); color: @warning_color; } " +
                 ".mseries-repobar .chip.bad { background: alpha(@error_color, 0.2); color: @error_color; } " +
+                ".mseries-repobar button.chip { min-height: 0; min-width: 0; } " +
+                ".mseries-repobar button.chip:hover { background: alpha(@warning_color, 0.32); } " +
+                ".mseries-repobar button.chip.bad:hover { background: alpha(@error_color, 0.3); } " +
                 ".mseries-repobar .text-low { color: @warning_color; } " +
                 ".mseries-repobar .text-critical { color: @error_color; } " +
                 ".mseries-repobar .dot-ok { color: @success_color; } " +
@@ -236,6 +258,9 @@ namespace MSeries {
                 ".mseries-repobar .detail-chips button:checked { background: alpha(@accent_color, 0.2); color: @accent_color; } " +
                 ".mseries-repobar .detail-list { margin-top: 2px; padding-top: 4px; border-top: 1px solid alpha(currentColor, 0.1); } " +
                 ".mseries-repobar .pinned-star { color: #d4a300; } " +
+                ".mseries-repobar .section-title { font-weight: 700; font-size: 8pt; opacity: 0.75; } " +
+                ".mseries-repobar .for-you { background: alpha(@accent_color, 0.08); } " +
+                ".mseries-repobar .contribution-graph { color: @accent_color; } " +
                 ".mseries-repobar button.site-link { opacity: 0.6; padding: 0 2px; } " +
                 ".mseries-repobar button.site-link:hover, .mseries-repobar button.site-link:focus { opacity: 1; color: @accent_color; } " +
                 ".mseries-repobar button.pin-off { opacity: 0; } " +
@@ -392,7 +417,7 @@ namespace MSeries {
                 last_snapshot_text = output;
                 render_snapshot (parser.get_root ().get_object ());
             } catch (Error e) {
-                set_chip ("Offline", true);
+                set_chip ("Offline", true, "retry", e.message + "\nClick to try again");
                 subtitle_label.set_text ("GitHub status unavailable");
                 subtitle_label.set_tooltip_text (e.message);
                 if (last_snapshot_text.length == 0) {
@@ -407,10 +432,12 @@ namespace MSeries {
             set_refreshing (false);
         }
 
-        private void set_chip (string text, bool bad) {
+        private void set_chip (string text, bool bad, string action = "retry", string tooltip = "") {
             chip_label.set_text (text);
-            chip_label.set_visible (text.length > 0);
-            if (bad) chip_label.add_css_class ("bad"); else chip_label.remove_css_class ("bad");
+            chip_button.set_visible (text.length > 0);
+            chip_action = action;
+            chip_button.set_tooltip_text (tooltip.length > 0 ? tooltip : action == "failing" ? "Show repositories with failing CI" : "Try refreshing again");
+            if (bad) chip_button.add_css_class ("bad"); else chip_button.remove_css_class ("bad");
         }
 
         private void render_snapshot (Json.Object snapshot) {
@@ -428,6 +455,13 @@ namespace MSeries {
                 dashboard_limit = (int) settings.get_int_member_with_default ("repoLimit", 20);
                 sort_order = settings.get_string_member_with_default ("menuSort", "activity");
                 schedule_refresh ((uint) settings.get_int_member_with_default ("refreshInterval", 300));
+                notify_ci = settings.get_boolean_member_with_default ("notifyCi", true);
+                show_contributions = settings.get_boolean_member_with_default ("showContributions", true);
+                local_root = settings.get_string_member_with_default ("localRoot", "");
+            }
+            if (error.length == 0 && fetched_at > last_notified_fetch) {
+                last_notified_fetch = fetched_at;
+                notify_ci_changes (repos);
             }
             int issues = 0;
             int prs = 0;
@@ -468,9 +502,9 @@ namespace MSeries {
                 repos.get_length (), prs, issues,
                 remaining >= 0 ? "\nGitHub API: %d of %d requests left this hour".printf (remaining, limit) : "",
                 error.length > 0 ? "\nLast refresh failed: " + error : ""));
-            if (error.length > 0) set_chip (fetched_at > 0 ? "Cached" : "Offline", fetched_at == 0);
+            if (error.length > 0) set_chip (fetched_at > 0 ? "Cached" : "Offline", fetched_at == 0, "retry", error + "\nClick to try again");
             else if (stale) set_chip ("Cached", false);
-            else if (failing > 0) set_chip ("%d failing".printf (failing), true);
+            else if (failing > 0) set_chip ("%d failing".printf (failing), true, "failing");
             else set_chip ("", false);
 
             scope_buttons[2].set_label (attention > 0 ? "Attention %d".printf (attention) : "Attention");
@@ -485,6 +519,16 @@ namespace MSeries {
                 show_state ("folder-open-symbolic", "No repositories yet",
                     error.length > 0 ? error : "This GitHub account has no repositories RepoBar can read.", false);
                 return;
+            }
+            if (scope == 0 && filter == 0 && search_entry.get_text ().strip ().length == 0 && show_contributions &&
+                has_object (snapshot, "contributions")) {
+                var graph = build_contributions (snapshot.get_object_member ("contributions"));
+                if (graph != null) repo_list.append (new Gtk.ListBoxRow () { child = graph, activatable = false });
+            }
+            // For You leads the dashboard: pull requests waiting on your review and issues assigned to you.
+            if (scope == 0 && filter == 0 && search_entry.get_text ().strip ().length == 0 && snapshot.has_member ("forYou")) {
+                var for_you = build_for_you (snapshot.get_object_member ("forYou"));
+                if (for_you != null) repo_list.append (new Gtk.ListBoxRow () { child = for_you, activatable = false });
             }
             var visible = new GenericArray<Json.Object> ();
             int recent = 0;
@@ -501,7 +545,8 @@ namespace MSeries {
                     }
                 }
             }
-            if (scope != 0 && sort_order != "activity") visible.sort_with_data (compare_repos);
+            if (scope == 2) visible.sort_with_data (compare_severity);
+            else if (scope != 0 && sort_order != "activity") visible.sort_with_data (compare_repos);
             int shown = (int) visible.length;
             for (int i = 0; i < shown; i++) {
                 var repo = visible[i];
@@ -520,6 +565,12 @@ namespace MSeries {
                 repo_list.append (new Gtk.ListBoxRow () { child = more, activatable = false });
             }
             if (shown == 0) {
+                if (filter == 3 && local_root.length == 0) {
+                    show_state ("folder-symbolic", "No projects folder",
+                        "Choose the folder that holds your clones in RepoBar Settings → Local Checkouts.", false);
+                    last_render_key = key;
+                    return;
+                }
                 bool searching = search_entry.get_text ().strip ().length > 0 || filter != 0;
                 show_state (searching ? "edit-find-symbolic" : scope == 2 ? "emblem-ok-symbolic" : "starred-symbolic",
                     searching ? "No matching repositories" : scope == 2 ? "Nothing needs attention" : "No pinned repositories",
@@ -530,13 +581,23 @@ namespace MSeries {
         }
 
         private void update_panel (int prs, int issues, int failing, int repo_count, bool stale) {
-            panel_prs.set_text ("%d PR".printf (prs));
-            panel_issues.set_text ("%d".printf (issues) + (issues == 1 ? " issue" : " issues"));
+            panel_prs.set_text (prs.to_string ());
+            panel_issues.set_text (issues.to_string ());
             panel_alert.set_visible (failing > 0);
             if (stale) panel.add_css_class ("stale"); else panel.remove_css_class ("stale");
             panel.set_tooltip_text ("GitHub%s · %d repositories · %d open pull requests · %d open issues%s%s\nMiddle-click to refresh".printf (
                 account.length > 0 ? " · " + account : "", repo_count, prs, issues,
                 failing > 0 ? " · CI failing on %d".printf (failing) : "", stale ? " · cached" : ""));
+        }
+
+        /* Attention: failing CI first, then the most open work (a pull request weighs twice an issue). */
+        private static int compare_severity (Json.Object a, Json.Object b) {
+            bool fa = ci_failing (a);
+            bool fb = ci_failing (b);
+            if (fa != fb) return fa ? -1 : 1;
+            int64 wa = 2 * a.get_int_member_with_default ("openPullRequests", 0) + a.get_int_member_with_default ("openIssues", 0);
+            int64 wb = 2 * b.get_int_member_with_default ("openPullRequests", 0) + b.get_int_member_with_default ("openIssues", 0);
+            return wa == wb ? 0 : (wb > wa ? 1 : -1);
         }
 
         private int compare_repos (Json.Object a, Json.Object b) {
@@ -626,6 +687,175 @@ namespace MSeries {
             next.send_notification ();
         }
 
+        private Gtk.Widget? build_contributions (Json.Object contributions) {
+            if (!contributions.has_member ("weeks")) return null;
+            var weeks = contributions.get_array_member ("weeks");
+            if (weeks.get_length () == 0) return null;
+            var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
+            card.add_css_class ("repo-card");
+            var head = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            var title = new Gtk.Label ("Contributions") { xalign = 0, hexpand = true };
+            title.add_css_class ("section-title");
+            head.append (title);
+            int64 total = contributions.get_int_member_with_default ("total", 0);
+            int64 week_total = 0;
+            var last = weeks.get_array_element (weeks.get_length () - 1);
+            for (uint i = 0; i < last.get_length (); i++) week_total += last.get_array_element (i).get_int_element (1);
+            var summary = new Gtk.Label ("%s this week · %s this year".printf (group_digits (week_total), group_digits (total)));
+            summary.add_css_class ("caption");
+            summary.add_css_class ("dim-label");
+            summary.add_css_class ("numeric");
+            head.append (summary);
+            card.append (head);
+            var graph = new ContributionGraph (weeks);
+            card.append (graph);
+            card.set_cursor_from_name ("pointer");
+            card.set_tooltip_text (null);
+            var click = new Gtk.GestureClick () { button = 1 };
+            click.released.connect (() => open_url ("https://" + host + "/" + account, card));
+            card.add_controller (click);
+            return card;
+        }
+
+        private static string group_digits (int64 value) {
+            string digits = value.to_string ();
+            var grouped = new StringBuilder ();
+            for (int i = 0; i < digits.length; i++) {
+                if (i > 0 && (digits.length - i) % 3 == 0) grouped.append_c (',');
+                grouped.append_c (digits[i]);
+            }
+            return grouped.str;
+        }
+
+        private Gtk.Widget? build_for_you (Json.Object for_you) {
+            string[] keys = { "reviews", "assigned" };
+            string[] titles = { "Review requested", "Assigned to you" };
+            string[] icons = { kind_icon ("pull"), kind_icon ("issue") };
+            string[] more_urls = { "/pulls/review-requested", "/issues/assigned" };
+            Gtk.Box? card = null;
+            for (int k = 0; k < keys.length; k++) {
+                if (!for_you.has_member (keys[k])) continue;
+                var group = for_you.get_object_member (keys[k]);
+                int64 count = group.get_int_member_with_default ("count", 0);
+                if (count <= 0) continue;
+                if (card == null) {
+                    card = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
+                    card.add_css_class ("repo-card");
+                    card.add_css_class ("for-you");
+                }
+                var head = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) { margin_top = card.get_first_child () != null ? 4 : 0 };
+                var title = new Gtk.Label (titles[k]) { xalign = 0, hexpand = true };
+                title.add_css_class ("section-title");
+                head.append (title);
+                head.append (count_pill ((int) count, "", count.to_string () + " waiting"));
+                card.append (head);
+                var items = group.get_array_member ("items");
+                for (uint i = 0; i < items.get_length (); i++) {
+                    var item = items.get_object_element (i);
+                    string repo = item.get_string_member_with_default ("repo", "");
+                    string repo_short = repo.contains ("/") ? repo.substring (repo.index_of ("/") + 1) : repo;
+                    card.append (link_row (icons[k], item.get_string_member_with_default ("title", ""),
+                        repo_short + " #" + item.get_int_member_with_default ("number", 0).to_string (),
+                        item.get_string_member_with_default ("url", "")));
+                }
+                if (count > items.get_length ()) {
+                    card.append (link_row ("view-more-symbolic", "See all " + count.to_string () + " on GitHub", "",
+                        "https://" + host + more_urls[k]));
+                }
+            }
+            return card;
+        }
+
+        /* Desktop notification when default-branch CI starts failing or recovers. The first snapshot after login
+         * only records states (persisted in the cache) so nothing old is announced again. */
+        private void notify_ci_changes (Json.Array repos) {
+            string path = GLib.Path.build_filename (Environment.get_user_cache_dir (), "mseries", "repobar", "ci-states.json");
+            var previous = new HashTable<string, string> (str_hash, str_equal);
+            bool have_previous = false;
+            try {
+                string text;
+                FileUtils.get_contents (path, out text);
+                var parser = new Json.Parser ();
+                parser.load_from_data (text);
+                var saved = parser.get_root ().get_object ();
+                foreach (var name in saved.get_members ()) previous.insert (name, saved.get_string_member (name));
+                have_previous = true;
+            } catch (Error e) {
+                // First run: record only.
+            }
+            var current = new Json.Object ();
+            string[] failed = {};
+            string[] fixed = {};
+            string first_url = "";
+            for (uint i = 0; i < repos.get_length (); i++) {
+                var repo = repos.get_object_element (i);
+                string name = repo.get_string_member_with_default ("name", "");
+                string ci = repo.get_string_member_with_default ("ci", "UNKNOWN");
+                current.set_string_member (name, ci);
+                if (!have_previous || !previous.contains (name) || repo.get_boolean_member_with_default ("archived", false) ||
+                    repo.get_string_member_with_default ("repoState", "visible") == "hidden") continue;
+                string before = previous.get (name);
+                bool was_bad = before == "FAILURE" || before == "ERROR";
+                bool is_bad = ci == "FAILURE" || ci == "ERROR";
+                string short_name = name.contains ("/") ? name.substring (name.index_of ("/") + 1) : name;
+                if (is_bad && !was_bad) {
+                    failed += short_name;
+                    if (first_url.length == 0) first_url = repo.get_string_member_with_default ("url", "") + "/actions";
+                } else if (was_bad && ci == "SUCCESS") {
+                    fixed += short_name;
+                }
+            }
+            try {
+                DirUtils.create_with_parents (GLib.Path.get_dirname (path), 0700);
+                var generator = new Json.Generator ();
+                var root = new Json.Node (Json.NodeType.OBJECT);
+                root.set_object (current);
+                generator.set_root (root);
+                FileUtils.set_contents_full (path, generator.to_data (null), -1, FileSetContentsFlags.CONSISTENT, 0600);
+                FileUtils.chmod (path, 0600);
+            } catch (Error e) {
+                // Without saved states the next refresh records again instead of notifying.
+            }
+            if (!notify_ci) return;
+            if (failed.length > 0) {
+                send_notification (failed.length == 1 ? "CI failing on %s".printf (failed[0]) : "CI failing on %d repositories".printf (failed.length),
+                    failed.length == 1 ? "The default branch's latest checks failed." : string.joinv (", ", failed),
+                    failed.length == 1 ? first_url : "https://" + host + "/" + account, "dialog-error");
+            }
+            if (fixed.length > 0) {
+                send_notification (fixed.length == 1 ? "CI passing again on %s".printf (fixed[0]) : "CI passing again on %d repositories".printf (fixed.length),
+                    fixed.length == 1 ? "The default branch's latest checks passed." : string.joinv (", ", fixed), "", "emblem-ok");
+            }
+        }
+
+        private void send_notification (string title, string body, string url, string urgency_icon) {
+            string[] argv = { "notify-send", "--app-name=RepoBar", "--icon=github-symbolic", title, body };
+            if (url.length > 0) argv = { "notify-send", "--app-name=RepoBar", "--icon=github-symbolic", "--action=open=Open on GitHub", title, body };
+            try {
+                var process = new Subprocess.newv (argv, SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_SILENCE);
+                process.communicate_utf8_async.begin (null, null, (obj, res) => {
+                    try {
+                        string output;
+                        process.communicate_utf8_async.end (res, out output, null);
+                        if (output != null && output.strip () == "open") new Gtk.UriLauncher (url).launch.begin (null, null);
+                    } catch (Error e) {
+                        // Dismissed or the notification server went away.
+                    }
+                });
+            } catch (Error e) {
+                // No notification server: the panel dot and chip still show the failure.
+            }
+        }
+
+        /* RepoBar's own GitHub-style marks (elementary has no issue/pull request/commit icons), with stock fallbacks. */
+        private static string kind_icon (string kind) {
+            string own = kind == "pull" ? "mseries-repobar-pull-symbolic" : kind == "issue" ? "mseries-repobar-issue-symbolic" :
+                kind == "commit" ? "mseries-repobar-commit-symbolic" : "";
+            if (own.length > 0 && Gtk.IconTheme.get_for_display (Gdk.Display.get_default ()).has_icon (own)) return own;
+            return kind == "pull" ? "mail-send-receive-symbolic" : kind == "issue" ? "dialog-information-symbolic" :
+                kind == "release" ? "starred-symbolic" : "document-open-recent-symbolic";
+        }
+
         private static bool ci_failing (Json.Object repo) {
             string ci = repo.get_string_member_with_default ("ci", "");
             return ci == "FAILURE" || ci == "ERROR";
@@ -651,6 +881,7 @@ namespace MSeries {
             if (filter == 1 && repo.get_int_member_with_default ("openIssues", 0) == 0) return false;
             if (filter == 2 && repo.get_int_member_with_default ("openPullRequests", 0) == 0) return false;
             if (filter == 3 && !has_object (repo, "local")) return false;
+            if (filter == 4 && !ci_failing (repo)) return false;
             string query = search_entry.get_text ().strip ().casefold ();
             if (query.length == 0) return true;
             string haystack = repo.get_string_member_with_default ("name", "") + " " +
@@ -758,8 +989,8 @@ namespace MSeries {
                 head.append (hidden);
             }
             head.append (new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { hexpand = true });
-            head.append (count_pill (prs, "PR", "%d open pull request%s".printf (prs, prs == 1 ? "" : "s")));
-            head.append (count_pill (issues, "⊙", "%d open issue%s".printf (issues, issues == 1 ? "" : "s"), true));
+            head.append (count_pill (prs, kind_icon ("pull"), "%d open pull request%s".printf (prs, prs == 1 ? "" : "s")));
+            head.append (count_pill (issues, kind_icon ("issue"), "%d open issue%s".printf (issues, issues == 1 ? "" : "s")));
             head.append (build_pin_button (full_name, state));
             var details_toggle = new Gtk.ToggleButton () {
                 icon_name = "pan-end-symbolic", valign = Gtk.Align.CENTER,
@@ -778,20 +1009,24 @@ namespace MSeries {
             var local = build_local_row (repo);
             if (local != null) summary.append (local);
 
-            card.append (build_details (full_name, url, details_toggle));
+            string local_path = has_object (repo, "local") ? repo.get_object_member ("local").get_string_member_with_default ("path", "") : "";
+            card.append (build_details (full_name, url, details_toggle,
+                repo.has_member ("localCheckouts") ? repo.get_array_member ("localCheckouts") : null));
 
             var context = new Gtk.GestureClick () { button = 3 };
-            context.pressed.connect ((n, x, y) => show_card_menu (card, full_name, url, site, state, x, y));
+            context.pressed.connect ((n, x, y) => show_card_menu (card, full_name, url, site, state, local_path, x, y));
             card.add_controller (context);
             return card;
         }
 
-        private static Gtk.Widget count_pill (int count, string mark, string description, bool mark_first = false) {
+        /* A counter led by its kind's icon, like GitHub's own; no icon gives a plain number. */
+        private static Gtk.Widget count_pill (int count, string icon, string description) {
             var pill = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3) { valign = Gtk.Align.CENTER, tooltip_text = description };
             pill.add_css_class ("count");
             pill.add_css_class ("numeric");
             if (count == 0) pill.add_css_class ("zero");
-            pill.append (new Gtk.Label (mark_first ? "%s %d".printf (mark, count) : "%d %s".printf (count, mark)));
+            if (icon.length > 0) pill.append (new Gtk.Image.from_icon_name (icon) { pixel_size = 10 });
+            pill.append (new Gtk.Label (count.to_string ()));
             pill.update_property (Gtk.AccessibleProperty.LABEL, description, -1);
             return pill;
         }
@@ -851,13 +1086,11 @@ namespace MSeries {
             string title = activity.get_string_member_with_default ("title", "");
             if (title.length == 0) return null;
             string kind = activity.get_string_member_with_default ("kind", "activity");
-            string icon = kind == "commit" ? "document-open-recent-symbolic" :
-                kind.contains ("pull") ? "mail-send-receive-symbolic" :
-                kind.contains ("issue") ? "mail-mark-important-symbolic" :
-                kind.contains ("release") ? "starred-symbolic" : "document-open-recent-symbolic";
+            string icon = kind_icon (kind.contains ("pull") ? "pull" : kind.contains ("issue") ? "issue" :
+                kind.contains ("release") ? "release" : "commit");
             string when = relative_time (activity.get_string_member_with_default ("updatedAt", ""));
             return link_row (icon, title, when.length > 0 && when != activity.get_string_member_with_default ("updatedAt", "")
-                ? "%s · %s".printf (kind == "pull request" ? "PR" : kind, when) : kind,
+                ? when : kind,
                 activity.get_string_member_with_default ("url", ""));
         }
 
@@ -867,8 +1100,7 @@ namespace MSeries {
             int behind = (int) local.get_int_member_with_default ("behind", 0);
             int ahead = (int) local.get_int_member_with_default ("ahead", 0);
             int dirty = (int) local.get_int_member_with_default ("dirtyFileCount", 0);
-            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6) { margin_start = 4 };
-            row.set_tooltip_text (local.get_string_member_with_default ("path", ""));
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
             row.append (new Gtk.Image.from_icon_name ("folder-symbolic") { pixel_size = 12, opacity = 0.7 });
             var branch = new Gtk.Label ("Local · " + local.get_string_member_with_default ("branch", "detached")) {
                 xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.END
@@ -880,7 +1112,56 @@ namespace MSeries {
             if (behind > 0) row.append (status_text ("↓%d".printf (behind), "text-low"));
             if (ahead > 0) row.append (status_text ("↑%d".printf (ahead), "dim-label"));
             if (dirty == 0 && behind == 0 && ahead == 0) row.append (status_text ("up to date", "dim-label"));
-            return row;
+            int others = repo.has_member ("localCheckouts") ? (int) repo.get_array_member ("localCheckouts").get_length () - 1 : 0;
+            if (others > 0) {
+                var more = status_text ("+%d".printf (others), "dim-label");
+                more.add_css_class ("count");
+                more.set_tooltip_text ("%d more checkout%s (worktrees or clones) · see Details → Checkouts".printf (others, others == 1 ? "" : "s"));
+                row.append (more);
+            }
+            string path = local.get_string_member_with_default ("path", "");
+            var button = new Gtk.Button () { child = row, tooltip_text = "Open %s in Files".printf (path) };
+            button.add_css_class ("flat");
+            button.add_css_class ("link-row");
+            button.clicked.connect (() => open_folder (path, button));
+            return button;
+        }
+
+        /* One local checkout: folder name and branch, its state, and a terminal button; the row opens the folder. */
+        private static Gtk.Widget checkout_row (Json.Object checkout) {
+            string path = checkout.get_string_member_with_default ("path", "");
+            int dirty = (int) checkout.get_int_member_with_default ("dirtyFileCount", 0);
+            int behind = (int) checkout.get_int_member_with_default ("behind", 0);
+            int ahead = (int) checkout.get_int_member_with_default ("ahead", 0);
+            var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
+            var content = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            content.append (new Gtk.Image.from_icon_name ("folder-symbolic") { pixel_size = 12, opacity = 0.7 });
+            var folder = new Gtk.Label (GLib.Path.get_basename (path)) { xalign = 0, ellipsize = Pango.EllipsizeMode.MIDDLE, max_width_chars = 22 };
+            folder.add_css_class ("caption");
+            content.append (folder);
+            string branch_name = checkout.get_boolean_member_with_default ("detached", false) ? "detached" :
+                checkout.get_string_member_with_default ("branch", "");
+            var branch = new Gtk.Label (branch_name) { xalign = 0, hexpand = true, ellipsize = Pango.EllipsizeMode.END };
+            branch.add_css_class ("caption");
+            branch.add_css_class ("dim-label");
+            content.append (branch);
+            if (dirty > 0) content.append (status_text ("%d modified".printf (dirty), "text-low"));
+            if (behind > 0) content.append (status_text ("↓%d".printf (behind), "text-low"));
+            if (ahead > 0) content.append (status_text ("↑%d".printf (ahead), "dim-label"));
+            if (dirty == 0 && behind == 0 && ahead == 0) content.append (status_text ("clean", "dim-label"));
+            var open = new Gtk.Button () { child = content, hexpand = true, tooltip_text = "Open %s in Files".printf (path) };
+            open.add_css_class ("flat");
+            open.add_css_class ("link-row");
+            open.clicked.connect (() => open_folder (path, open));
+            line.append (open);
+            var terminal = new Gtk.Button.from_icon_name ("utilities-terminal-symbolic") { tooltip_text = "Open in Terminal", valign = Gtk.Align.CENTER };
+            terminal.add_css_class ("flat");
+            terminal.add_css_class ("compact");
+            terminal.add_css_class ("dim-label");
+            terminal.update_property (Gtk.AccessibleProperty.LABEL, "Open %s in Terminal".printf (GLib.Path.get_basename (path)), -1);
+            terminal.clicked.connect (() => open_terminal (path, terminal));
+            line.append (terminal);
+            return line;
         }
 
         private static Gtk.Label status_text (string text, string css) {
@@ -915,7 +1196,8 @@ namespace MSeries {
             return button;
         }
 
-        private void show_card_menu (Gtk.Widget card, string name, string url, string site, string state, double x, double y) {
+        private void show_card_menu (Gtk.Widget card, string name, string url, string site, string state, string local_path,
+                                     double x, double y) {
             var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { margin_top = 4, margin_bottom = 4 };
             var popover = new Gtk.Popover () { child = box, has_arrow = false };
             popover.set_parent (card);
@@ -925,11 +1207,61 @@ namespace MSeries {
             if (site.length > 0) box.append (menu_item ("Open Website", () => open_url (site, card)));
             box.append (menu_item ("Copy Link", () => card.get_clipboard ().set_text (url)));
             box.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL) { margin_top = 3, margin_bottom = 3 });
+            if (local_path.length > 0) {
+                box.append (menu_item ("Open Folder", () => open_folder (local_path, card)));
+                box.append (menu_item ("Open in Terminal", () => open_terminal (local_path, card)));
+                box.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL) { margin_top = 3, margin_bottom = 3 });
+            } else if (local_root.length > 0) {
+                box.append (menu_item ("Clone to %s".printf (GLib.Path.get_basename (local_root)), () => clone_repository.begin (name)));
+                box.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL) { margin_top = 3, margin_bottom = 3 });
+            }
             box.append (menu_item (state == "pinned" ? "Unpin from Dashboard" : "Pin to Dashboard",
                 () => change_repo_state.begin (name, state == "pinned" ? "unpin" : "pin")));
             box.append (menu_item (state == "hidden" ? "Show Repository" : "Hide Repository",
                 () => change_repo_state.begin (name, state == "hidden" ? "show" : "hide")));
             popover.popup ();
+        }
+
+        private static void open_folder (string path, Gtk.Widget source) {
+            if (path.length == 0) return;
+            popdown_from (source);
+            new Gtk.FileLauncher (File.new_for_path (path)).launch.begin (null, null);
+        }
+
+        private static void open_terminal (string path, Gtk.Widget source) {
+            if (path.length == 0) return;
+            popdown_from (source);
+            try {
+                Process.spawn_async (path, { "io.elementary.terminal", "--working-directory=" + path }, null,
+                    SpawnFlags.SEARCH_PATH | SpawnFlags.STDOUT_TO_DEV_NULL | SpawnFlags.STDERR_TO_DEV_NULL, null, null);
+            } catch (Error e) {
+                open_folder (path, source);
+            }
+        }
+
+        private async void clone_repository (string name) {
+            string short_name = name.contains ("/") ? name.substring (name.index_of ("/") + 1) : name;
+            show_toast ("Cloning %s…".printf (short_name), null);
+            try {
+                var process = new Subprocess.newv (new string[] { executable, "--json", "local", "clone", name },
+                    SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_PIPE);
+                string output;
+                string error_text;
+                yield process.communicate_utf8_async (null, null, out output, out error_text);
+                var parser = new Json.Parser ();
+                parser.load_from_data (output);
+                var result = parser.get_root ().get_object ();
+                if (!process.get_successful () || result.has_member ("error")) {
+                    throw new IOError.FAILED (result.get_string_member_with_default ("error", error_text.strip ()));
+                }
+                string path = result.get_string_member_with_default ("path", "");
+                show_toast ("Cloned %s".printf (short_name), null);
+                if (path.length > 0) new Gtk.FileLauncher (File.new_for_path (path)).launch.begin (null, null);
+                refresh ();
+            } catch (Error e) {
+                show_toast ("Couldn't clone %s".printf (short_name), null);
+                subtitle_label.set_tooltip_text (e.message);
+            }
         }
 
         private delegate void MenuAction ();
@@ -948,7 +1280,7 @@ namespace MSeries {
 
         // ---- Details pane: category chips, each fetched once on first selection ------------
 
-        private Gtk.Widget build_details (string name, string url, Gtk.ToggleButton toggle) {
+        private Gtk.Widget build_details (string name, string url, Gtk.ToggleButton toggle, Json.Array? checkouts) {
             var revealer = new Gtk.Revealer () {
                 transition_type = Gtk.RevealerTransitionType.SLIDE_DOWN, transition_duration = 120
             };
@@ -962,6 +1294,19 @@ namespace MSeries {
             list.add_css_class ("detail-list");
             list.set_visible (false);
             Gtk.ToggleButton? first = null;
+            if (checkouts != null && checkouts.get_length () > 0) {
+                // Local checkouts come from the last scan, so this tab needs no GitHub request.
+                var chip = new Gtk.ToggleButton.with_label ("Checkouts %u".printf (checkouts.get_length ()));
+                chip.add_css_class ("flat");
+                first = chip;
+                chip.toggled.connect (() => {
+                    if (!chip.get_active ()) return;
+                    list.set_visible (true);
+                    clear_box (list);
+                    for (uint i = 0; i < checkouts.get_length (); i++) list.append (checkout_row (checkouts.get_object_element (i)));
+                });
+                chips.append (chip);
+            }
             for (int i = 0; i < DETAIL_KEYS.length; i++) {
                 string key = DETAIL_KEYS[i];
                 var chip = new Gtk.ToggleButton.with_label (DETAIL_TITLES[i]);
@@ -1017,6 +1362,12 @@ namespace MSeries {
 
         private void render_repo_detail (string key, Json.Node node, string repo_url, Gtk.Box content) {
             clear_box (content);
+            if (key == "traffic" && node.get_node_type () == Json.NodeType.OBJECT) {
+                var traffic = node.get_object ();
+                content.append (traffic_row (traffic, "views", "Views", "visitors", repo_url + "/graphs/traffic"));
+                content.append (traffic_row (traffic, "clones", "Clones", "cloners", repo_url + "/graphs/traffic"));
+                return;
+            }
             Json.Array? items = null;
             if (node.get_node_type () == Json.NodeType.ARRAY) {
                 items = node.get_array ();
@@ -1039,8 +1390,8 @@ namespace MSeries {
                 content.append (empty);
                 return;
             }
-            string icon = key == "pulls" ? "mail-send-receive-symbolic" :
-                key == "issues" ? "mail-mark-important-symbolic" :
+            string icon = key == "pulls" ? kind_icon ("pull") :
+                key == "issues" ? kind_icon ("issue") : key == "commits" ? kind_icon ("commit") :
                 key == "ci" ? "emblem-ok-symbolic" :
                 key == "releases" || key == "tags" ? "starred-symbolic" : "document-open-recent-symbolic";
             for (uint i = 0; i < items.get_length (); i++) {
@@ -1077,6 +1428,33 @@ namespace MSeries {
                 var row = link_row (key == "ci" ? ci_run_icon (detail) : icon, label, detail.down (), url);
                 content.append (row);
             }
+        }
+
+        /* One traffic series: label, 14-day bars, total and unique count; opens GitHub's traffic graph. */
+        private static Gtk.Widget traffic_row (Json.Object traffic, string key, string title, string unique_word, string url) {
+            var series = traffic.has_member (key) ? traffic.get_object_member (key) : new Json.Object ();
+            int64 total = series.get_int_member_with_default ("count", 0);
+            int64 uniques = series.get_int_member_with_default ("uniques", 0);
+            var days = series.has_member (key) ? series.get_array_member (key) : new Json.Array ();
+            var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            var name = new Gtk.Label (title) { xalign = 0, width_chars = 6 };
+            name.add_css_class ("window-name");
+            line.append (name);
+            line.append (new TrafficBars (days));
+            var totals = new Gtk.Label ("%s · %s %s".printf (group_digits (total), group_digits (uniques), unique_word)) {
+                xalign = 1, width_chars = 18
+            };
+            totals.add_css_class ("caption");
+            totals.add_css_class ("numeric");
+            line.append (totals);
+            var button = new Gtk.Button () {
+                child = line,
+                tooltip_text = "%s in the last 14 days: %s from %s unique %s".printf (title, group_digits (total), group_digits (uniques), unique_word)
+            };
+            button.add_css_class ("flat");
+            button.add_css_class ("link-row");
+            button.clicked.connect (() => open_url (url, button));
+            return button;
         }
 
         private static string ci_run_icon (string conclusion) {
@@ -1143,16 +1521,30 @@ namespace MSeries {
             }
         }
 
+        private static void select_chip (Gtk.Widget widget, string label) {
+            var chip = widget as Gtk.ToggleButton;
+            if (chip != null && chip.label != null && chip.label.has_prefix (label)) { chip.set_active (true); return; }
+            for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ()) select_chip (child, label);
+        }
+
         public void probe_toast () {
             show_toast ("Hid dock", () => {});
         }
 
         public void probe_expand_first () {
-            var row = repo_list.get_row_at_index (0);
-            var card = row != null ? row.get_child () : null;
-            var head = card != null && card.get_first_child () != null ? card.get_first_child ().get_first_child () : null;
-            var toggle = head != null ? head.get_last_child () as Gtk.ToggleButton : null;
-            if (toggle != null) toggle.set_active (true);
+            for (int i = 0; ; i++) {
+                var row = repo_list.get_row_at_index (i);
+                if (row == null) return;
+                var card = row.get_child ();
+                var head = card != null && card.get_first_child () != null ? card.get_first_child ().get_first_child () : null;
+                var toggle = head != null ? head.get_last_child () as Gtk.ToggleButton : null;
+                if (toggle != null) {
+                    toggle.set_active (true);
+                    var chip_name = Environment.get_variable ("RB_DETAIL");
+                    if (chip_name != null) select_chip (card, chip_name);
+                    return;
+                }
+            }
         }
 
         public override Gtk.Widget get_display_widget () {
@@ -1168,6 +1560,111 @@ namespace MSeries {
         }
 
         public override void closed () {
+        }
+    }
+}
+
+namespace MSeries {
+    /* Fourteen daily bars scaled to the busiest day, in the accent colour; empty days show a faint stub. */
+    internal class TrafficBars : Gtk.DrawingArea {
+        private int64[] counts = new int64[14];
+
+        public TrafficBars (Json.Array days) {
+            // GitHub lists only days with data; place each by its date, newest at the right.
+            var today = new DateTime.now_utc ();
+            for (uint i = 0; i < days.get_length (); i++) {
+                var day = days.get_object_element (i);
+                var stamp = new DateTime.from_iso8601 (day.get_string_member_with_default ("timestamp", ""), null);
+                if (stamp == null) continue;
+                int ago = (int) ((today.to_unix () - stamp.to_unix ()) / 86400);
+                if (ago >= 0 && ago < 14) counts[13 - ago] += day.get_int_member_with_default ("count", 0);
+            }
+            add_css_class ("contribution-graph");
+            content_height = 16;
+            hexpand = true;
+            set_draw_func (draw);
+        }
+
+        private void draw (Gtk.DrawingArea area, Cairo.Context cr, int width, int height) {
+            var color = get_color ();
+            int64 peak = 1;
+            foreach (var count in counts) peak = int64.max (peak, count);
+            double slot = width / 14.0;
+            for (int i = 0; i < 14; i++) {
+                double bar = counts[i] == 0 ? 1.5 : double.max (2, height * (double) counts[i] / peak);
+                cr.set_source_rgba (color.red, color.green, color.blue, counts[i] == 0 ? 0.2 : 0.85);
+                cr.rectangle (i * slot + 1, height - bar, slot - 2, bar);
+                cr.fill ();
+            }
+        }
+    }
+
+    /* GitHub's contribution calendar: one column per week (newest at the right), as many weeks as fit,
+     * shaded from the accent colour; hovering a day names its date and count. */
+    internal class ContributionGraph : Gtk.DrawingArea {
+        private const int CELL = 9;
+        private const int GAP = 2;
+        private Json.Array weeks;
+
+        public ContributionGraph (Json.Array weeks) {
+            this.weeks = weeks;
+            add_css_class ("contribution-graph");
+            content_height = 7 * (CELL + GAP) - GAP;
+            hexpand = true;
+            has_tooltip = true;
+            set_draw_func (draw);
+            query_tooltip.connect (on_tooltip);
+        }
+
+        private int visible_weeks (int width) {
+            return int.min ((int) weeks.get_length (), (width + GAP) / (CELL + GAP));
+        }
+
+        private void draw (Gtk.DrawingArea area, Cairo.Context cr, int width, int height) {
+            var color = get_color ();
+            int shown = visible_weeks (width);
+            int offset = width - (shown * (CELL + GAP) - GAP);
+            uint first = weeks.get_length () - shown;
+            double[] alphas = { 0.1, 0.35, 0.55, 0.78, 1.0 };
+            for (int w = 0; w < shown; w++) {
+                var week = weeks.get_array_element (first + w);
+                for (uint d = 0; d < week.get_length (); d++) {
+                    // GitHub's first week can start mid-week; place days by weekday so rows line up.
+                    var day = week.get_array_element (d);
+                    int row = week.get_length () < 7 && w == 0 ? (int) (7 - week.get_length () + d) : (int) d;
+                    int level = (int) day.get_int_element (2).clamp (0, 4);
+                    cr.set_source_rgba (color.red, color.green, color.blue, alphas[level]);
+                    rounded (cr, offset + w * (CELL + GAP), row * (CELL + GAP), CELL, CELL, 2);
+                    cr.fill ();
+                }
+            }
+        }
+
+        private static void rounded (Cairo.Context cr, double x, double y, double w, double h, double r) {
+            cr.new_sub_path ();
+            cr.arc (x + w - r, y + r, r, -Math.PI / 2, 0);
+            cr.arc (x + w - r, y + h - r, r, 0, Math.PI / 2);
+            cr.arc (x + r, y + h - r, r, Math.PI / 2, Math.PI);
+            cr.arc (x + r, y + r, r, Math.PI, 3 * Math.PI / 2);
+            cr.close_path ();
+        }
+
+        private bool on_tooltip (int x, int y, bool keyboard, Gtk.Tooltip tooltip) {
+            int width = get_width ();
+            int shown = visible_weeks (width);
+            int offset = width - (shown * (CELL + GAP) - GAP);
+            int w = (x - offset) / (CELL + GAP);
+            int row = y / (CELL + GAP);
+            if (x < offset || w < 0 || w >= shown || row < 0 || row > 6) return false;
+            var week = weeks.get_array_element (weeks.get_length () - shown + w);
+            int d = week.get_length () < 7 && w == 0 ? row - (int) (7 - week.get_length ()) : row;
+            if (d < 0 || d >= week.get_length ()) return false;
+            var day = week.get_array_element (d);
+            int64 count = day.get_int_element (1);
+            var date = new DateTime.from_iso8601 (day.get_string_element (0) + "T12:00:00Z", null);
+            string when = date != null ? date.format ("%a %-d %b %Y") : day.get_string_element (0);
+            tooltip.set_text ("%s contribution%s · %s".printf (count == 0 ? "No" : count.to_string (), count == 1 ? "" : "s", when));
+            return true;
         }
     }
 }

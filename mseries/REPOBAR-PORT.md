@@ -26,6 +26,16 @@ implementation; no macOS source or binary is copied into this project.
   keep their own useful width and hierarchy.
 - A globe beside the repository name opens its GitHub Pages site (custom
   domains included), or the repository's website when it has no Pages site.
+- Details → Traffic shows 14 days of views and clones for repositories you can
+  push to.
+- With a projects folder set, cards show every local checkout and worktree
+  (Details → Checkouts) with branch and sync state, open them in Files or
+  Terminal, and offer Clone for repositories you have not cloned yet.
+- A contribution graph (GitHub's calendar, accent-shaded, hover for each day)
+  sits at the top of the dashboard; turn it off in RepoBar Settings.
+- A For You card leads the dashboard with pull requests waiting on your review
+  and issues assigned to you. Optional desktop notifications announce a default
+  branch that starts failing CI or passes again (RepoBar Settings → Notifications).
 - Each repository card has a compact GTK disclosure menu for issues, pull
   requests, workflow runs, releases, activity, commits, branches, and tags.
   Categories fetch their data only when expanded; links open the matching GitHub
@@ -46,8 +56,8 @@ implementation; no macOS source or binary is copied into this project.
   and local scan root/depth are configurable with the CLI.
 
 This port implements the repository dashboard and CLI surfaces, not every
-macOS-only interaction. Visitor/cloner traffic, the contribution heatmap UI,
-multi-account UI, and a launch-at-login preference pane are not yet represented
+macOS-only interaction.
+Multi-account UI and a launch-at-login preference pane are not yet represented
 in Wingpanel. The CLI exposes a raw commit-activity endpoint. Upstream changes
 are never merged automatically; preserve this project's Pantheon UI and Linux
 integration.

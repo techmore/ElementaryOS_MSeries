@@ -11,7 +11,9 @@ icon_theme_dir="$prefix/share/icons/hicolor"
 if [[ ${1:-} == --uninstall ]]; then
   [[ -n $indicators_dir ]] && sudo rm -f "$indicators_dir/librepobar.so"
   sudo rm -f "$icon_theme_dir/symbolic/apps/github-symbolic.svg"
-  sudo rm -f "$icon_theme_dir/symbolic/apps/mseries-repobar-globe-symbolic.svg"
+  for icon in globe commit issue pull; do
+    sudo rm -f "$icon_theme_dir/symbolic/apps/mseries-repobar-$icon-symbolic.svg"
+  done
   if command -v gtk-update-icon-cache >/dev/null; then
     sudo gtk-update-icon-cache -f "$icon_theme_dir" >/dev/null
   fi
