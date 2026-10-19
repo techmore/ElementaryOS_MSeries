@@ -10,7 +10,7 @@ released after a later hit more than 150ms past the trigger. Added `mseries/patc
 (applied last by `install-gala-screen-corners.sh`): no barrier when the panel's hide mode is NEVER (and it
 is rebuilt when the mode changes), non-retriggering barriers release right after triggering, and a null
 guard in `~Barrier`. The patched tree compiles (meson/ninja, scratch build, nothing installed).
-**Not installed and not confirmed on hardware:** replacing `/usr/local/lib/mseries/gala/bin/gala` was
+**Installed 2026-10-19 18:00** (old binary kept as `gala.pre-barrier`; no unresolved libraries); active at next login. **Not confirmed on hardware:** replacing `/usr/local/lib/mseries/gala/bin/gala` was
 declined by the permission classifier, and the compositor only changes at next login. The cause is
 inferred from code, not reproduced. Install by building with the installer's prefix and copying only the
 binary (the installer's launcher heredoc is older than the live `mseries-gala`, so do not rerun it blindly);
