@@ -6,7 +6,12 @@ The October 18 evening trial did not complete boot. The machine is back on
 `.20`, no candidate journal/pstore diagnosis was retained, and `next_entry` is
 empty. [Offline investigation and diagnostic preparation](../hardware-tests/2026-10-18-j314s-enh1-boot-hang.md)
 records what was checked and the separate uninstalled diagnostic initramfs.
-The staging and proposed test steps below are historical context; do not rearm
+The diagnostic image is now staged separately as
+`/boot/initrd.img-7.1.12-elementary-aurora20-enh1-diagnostic`, with non-default
+manual entry `elementary-aurora20-enh1-diagnostic`. [Staging receipt](../hardware-tests/2026-10-18-j314s-enh1-diagnostic-staging.json)
+confirms that grubenv and original kernel/initramfs/boot payload hashes are
+unchanged. No test is armed and no reboot has been performed.
+The original staging and proposed test steps below are historical context; do not rearm
 or repeat the trial without a new explicit owner request. No candidate hardware
 boot qualification or driver fix is claimed.
 
