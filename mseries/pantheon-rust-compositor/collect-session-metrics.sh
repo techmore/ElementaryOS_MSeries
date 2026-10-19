@@ -26,6 +26,7 @@ last_sample_epoch=$start_epoch
 process_list() {
   ps -eo pid=,comm=,args= | awk '
     $2 == "gala" || $2 == "mseries-gala" || $2 == "pantheon-compositor" ||
+    $0 ~ /\/pantheon-compositor( |$)/ ||
     $2 ~ /^io\.elementary\.(wingpanel|dock)/ ||
     $0 ~ /\/io\.elementary\.(wingpanel|dock)( |$)/ {
       print $1, $2
