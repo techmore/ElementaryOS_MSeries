@@ -1,5 +1,46 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Screen-share real dock qualification — 2026-10-18
+
+PR #225 was exercised with its real share server and GTK app on a private Gala
+Wayland desktop with the actual patched elementary dock. The dock build had only
+a read-only launcher observer to report widget state and render its icon to PNG.
+The running launcher appeared; a pending viewer produced visible badge text 1
+with opacity 1; admission cleared it; stop plus link revocation exited the app.
+The original immediate present/minimize sequence left the window visible on
+Wayland. Deferring initial minimize until the compositor has processed mapping
+fixes that case; explicit activation cancels a pending initial minimize. Private
+Gala now reports the window hidden at startup. Actual dock Super+1 activation
+restores/focuses it, and Alt+F4 returns it to the dock. No owner desktop restart,
+real screen capture or production server change was performed. This qualifies
+the private Wayland dock path; factory boot and production Internet/LAN routing
+remain separate acceptance work.
+
+## PR #159 merge validation — 2026-10-18
+
+Merged current main (including calendar PR #211) into the startup repair branch,
+retaining both the startup report and all newer handoff/roadmap entries. On this
+composed tree: 12 display-space Python tests, native notch/crowding allocation,
+private actual-Gala startup test (old timeout reproduced, repaired timeout absent,
+finite pre-surface sizing and 20 clock transitions), and six image-wiring tests
+pass. New shell scripts pass ShellCheck; installer shell syntax passes. Non-patch
+changes pass whitespace checks; unified patch context lines retain their required
+leading spaces. No desktop installation or panel restart was performed in this
+merge review. Fresh-login timing and owner visual acceptance remain pending.
+
+## Aurora .20 top bar and startup repair — 2026-10-18
+
+[Installed repair and tests](display-space/STARTUP-FIX-2026-10-18.md): Wingpanel
+now requests a finite monitor width before its first surface/monitor event;
+empty bars and clock reparenting no longer emit the tested GTK criticals. Migrated
+stale cropped saved modes to full-height modes, preserving desk VRR and external
+preferences. The deliberately disabled dock no longer counts toward Gala's panel
+readiness. A nonfatal, board-guarded pre-start helper keeps stale modes from loading.
+The patched panel is running. Native tests reproduce/remove the five-second
+panel timeout and pass initial sizing plus 20 clock transitions; 12 Python tests
+and existing native allocation checks pass. Fresh-login timing and owner visual
+confirmation remain pending. Kernel, bootloader and dock-disabled state preserved.
+
 ## CodexBar inclusive15% quota display — 2026-10-18
 
 Owner clarified that Claude must reveal the bold red written percentage at15%
@@ -878,6 +919,13 @@ Installer: `bash mseries/install-calendar-agenda.sh`; rollback:
 `bash mseries/install-calendar-agenda.sh --uninstall`. Reload Wingpanel after
 installation. Next: owner selects Calendar Accounts → Google, completes sign-in,
 enables Calendar and confirms a known remote event appears on its date.
+
+**Verse of the Day + tab (2026-10-18).** A third **+** tab beside Events/Tasks
+shows a daily World English Bible verse (400-verse public-domain list, seeded
+per-year shuffle, no repeats within a year) with SermonAudio, YouTube sermon and
+Bible Gateway links, laid out with Granite/Wingpanel widgets. 22/22 private
+fixture groups pass in light and dark; the patch applies to the pin and rebuilds
+byte-identically. See [calendar/README.md](calendar/README.md#verse-of-the-day--tab).
 
 
 ## README status overview — 2026-10-18
