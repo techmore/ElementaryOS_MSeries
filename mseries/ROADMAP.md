@@ -59,9 +59,10 @@ libinput, connected outputs on the first usable KMS device, calloop rendering
 and vblank completion. It prioritizes eDP and places additional outputs to its
 right. DisplayConfig no longer advertises a fabricated Winit output in native
 mode. Both build configurations pass locally. Native mode has not been
-launched because it deliberately takes over the active display; output hotplug,
-user-configured layouts, session switching and actual M-series scanout remain
-unqualified. Local `cargo check --bins` and `cargo build --bins` pass both with
+launched because it deliberately takes over the active display. Connector
+addition/removal reconciliation is implemented with a two-second poll, but
+hotplug, user-configured layouts, session switching and actual M-series
+scanout remain unqualified. Local `cargo check --bins` and `cargo build --bins` pass both with
 and without `native-drm`; they establish compilation only, not successful
 connector modesetting.
 

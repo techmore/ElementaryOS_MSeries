@@ -442,7 +442,7 @@ impl PantheonCompositor {
         self.space.map_element(window.clone(), target.loc, false);
     }
 
-    fn reconfigure_managed_windows(&mut self) {
+    pub(crate) fn reconfigure_managed_windows(&mut self) {
         let mut managed = Vec::new();
         for window in self.space.elements() {
             let Some(surface) = window.toplevel().cloned() else {

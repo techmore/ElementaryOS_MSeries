@@ -5505,7 +5505,7 @@ does not steal focus. Default and `native-drm` feature `cargo check --bins`
 both pass locally. Runtime window launch/focus/close behavior remains
 unverified. The opt-in native DRM startup path is now implemented but has not
 been launched on this active desktop; isolated session qualification and
-dynamic connector lifecycle remain open.
+physical connector lifecycle qualification remain open.
 
 ### systemd readiness notification — 2026-10-18
 
@@ -5533,3 +5533,23 @@ retained to match the local session convention. The payload is not installed;
 Gala and the active login chooser remain untouched. Next: qualify the native
 path only in a separate login environment. No native runtime qualification is
 claimed.
+
+### Native DRM connector reconciliation — 2026-10-18
+
+Added a two-second calloop timer to the native path. It polls connected DRM
+connectors while the logind/libseat session is active, initializes new outputs
+with unclaimed compatible CRTCs, and removes disconnected outputs. Removal
+disables the Wayland `wl_output` global before deleting it two seconds later;
+the DRM output handle is dropped so Smithay releases its CRTC compositor.
+Output positions and read-only DisplayConfig snapshots are reflowed, output
+metadata is updated, panels are repositioned, maximized/fullscreen windows are
+reconfigured, and windows outside the remaining logical outputs are moved back
+onto the primary output. Polling pauses during session deactivation. The
+relative-pointer path now ignores motion while no output is mapped, avoiding
+an empty-bounds panic during full disconnect and allowing later recovery. The
+`native-drm` binary builds locally; the default build also passes. No hardware
+hotplug or native session was run, so connector detection, scanout transitions,
+and recovery on the M1 Pro remain unqualified. User-selected layouts and mode
+changes are still not implemented. Next: validate this lifecycle in a separate
+native session, then add mode/layout application and rollback based on the
+actual display workflow.

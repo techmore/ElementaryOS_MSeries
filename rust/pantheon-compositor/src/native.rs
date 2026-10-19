@@ -7,7 +7,7 @@
 
 use std::collections::HashSet;
 use std::path::Path;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use smithay::{
     backend::{
@@ -34,7 +34,11 @@ use smithay::{
     },
     output::{Mode, Output, PhysicalProperties},
     reexports::{
-        calloop::{EventLoop, channel, channel::Event as ChannelEvent},
+        calloop::{
+            EventLoop, channel,
+            channel::Event as ChannelEvent,
+            timer::{TimeoutAction, Timer},
+        },
         drm::control::{Device as DrmControlDevice, ModeTypeFlags, connector},
         input::Libinput,
         rustix::fs::OFlags,
@@ -74,6 +78,7 @@ pub struct NativeKmsOutput {
     pub crtc: smithay::reexports::drm::control::crtc::Handle,
     pub output: Output,
     pub drm_output: NativeDrmOutput,
+    pub global_id: smithay::reexports::wayland_server::backend::GlobalId,
     pub frame_pending: bool,
 }
 
@@ -82,12 +87,17 @@ pub struct NativeKmsDevice {
     pub manager: NativeOutputManager,
     pub outputs: Vec<NativeKmsOutput>,
     pub notifier: Option<DrmDeviceNotifier>,
+    pending_global_removals: Vec<(
+        smithay::reexports::wayland_server::backend::GlobalId,
+        Instant,
+    )>,
 }
 
 pub struct NativeBackend {
     pub _session: LibSeatSession,
     pub renderer: NativeRenderer,
     pub kms: NativeKmsDevice,
+    session_paused: bool,
 }
 
 struct ConnectedOutput {
@@ -186,6 +196,252 @@ impl NativeKmsDevice {
         output.drm_output.frame_submitted()?;
         output.frame_pending = false;
         Ok(Some(output.output.clone()))
+    }
+
+    /// Reconcile connected DRM connectors with the outputs published to the
+    /// Wayland space. Smithay's DRM notifier reports page flips and failures,
+    /// so connector state is polled on a short timer instead of assuming a
+    /// hotplug event will arrive through that source.
+    fn refresh_connectors(
+        &mut self,
+        renderer: &mut NativeRenderer,
+        state: &mut PantheonCompositor,
+    ) -> Result<bool, Box<dyn std::error::Error>> {
+        let resources = self.manager.device_mut().resource_handles()?;
+        let mut connected = Vec::new();
+        let mut connected_handles = HashSet::new();
+        for handle in resources.connectors() {
+            let info = self.manager.device_mut().get_connector(*handle, false)?;
+            if info.state() == connector::State::Connected {
+                connected_handles.insert(info.handle());
+                if !info.modes().is_empty() {
+                    connected.push(info);
+                }
+            }
+        }
+        connected.sort_by_key(|info| {
+            (
+                info.interface() != connector::Interface::EmbeddedDisplayPort,
+                info.interface_id(),
+            )
+        });
+        let disconnected = self
+            .outputs
+            .iter()
+            .filter(|output| !connected_handles.contains(&output.connector))
+            .map(|output| output.connector)
+            .collect::<Vec<_>>();
+        let mut changed = !disconnected.is_empty();
+        if changed {
+            for output in self
+                .outputs
+                .iter()
+                .filter(|output| !connected_handles.contains(&output.connector))
+            {
+                state
+                    .display_handle
+                    .disable_global::<PantheonCompositor>(output.global_id.clone());
+                self.pending_global_removals
+                    .push((output.global_id.clone(), Instant::now()));
+                state.space.unmap_output(&output.output);
+                state.display_config.remove(output.output.name());
+                tracing::info!(output = %output.output.name(), "unmapped disconnected DRM output");
+            }
+            self.outputs
+                .retain(|output| connected_handles.contains(&output.connector));
+        }
+
+        let mut claimed_crtcs = self
+            .outputs
+            .iter()
+            .map(|output| output.crtc)
+            .collect::<HashSet<_>>();
+        for info in connected {
+            if self
+                .outputs
+                .iter()
+                .any(|output| output.connector == info.handle())
+            {
+                continue;
+            }
+
+            let encoder = info
+                .current_encoder()
+                .and_then(|handle| self.manager.device_mut().get_encoder(handle).ok())
+                .or_else(|| {
+                    info.encoders()
+                        .iter()
+                        .find_map(|handle| self.manager.device_mut().get_encoder(*handle).ok())
+                });
+            let Some(encoder) = encoder else {
+                tracing::warn!(connector = ?info.handle(), "connected DRM connector has no usable encoder");
+                continue;
+            };
+            let Some(crtc) = resources
+                .filter_crtcs(encoder.possible_crtcs())
+                .into_iter()
+                .find(|crtc| !claimed_crtcs.contains(crtc))
+            else {
+                tracing::warn!(connector = ?info.handle(), "connected DRM connector has no unclaimed compatible CRTC");
+                continue;
+            };
+
+            let drm_mode = info
+                .modes()
+                .iter()
+                .find(|mode| mode.mode_type().contains(ModeTypeFlags::PREFERRED))
+                .copied()
+                .unwrap_or(info.modes()[0]);
+            let mode = Mode::from(drm_mode);
+            let name = format!("{}-{}", info.interface().as_str(), info.interface_id());
+            let (physical_width, physical_height) = info.size().unwrap_or((0, 0));
+            let output = Output::new(
+                name.clone(),
+                PhysicalProperties {
+                    size: (physical_width as i32, physical_height as i32).into(),
+                    subpixel: info.subpixel().into(),
+                    make: "Apple".into(),
+                    model: name.clone(),
+                    serial_number: "Unknown".into(),
+                },
+            );
+            output.set_preferred(mode);
+            output.change_current_state(Some(mode), None, None, Some((0, 0).into()));
+
+            let mut gpu_renderer = renderer.gpus.single_renderer(&renderer.render_node)?;
+            let render_elements = DrmOutputRenderElements::<
+                NativeMultiRenderer<'_>,
+                CursorRenderElement<NativeMultiRenderer<'_>>,
+            >::default();
+            let drm_output = match self.manager.lock().initialize_output(
+                crtc,
+                drm_mode,
+                &[info.handle()],
+                &output,
+                None,
+                &mut gpu_renderer,
+                &render_elements,
+            ) {
+                Ok(output) => output,
+                Err(error) => {
+                    tracing::warn!(%name, ?error, "could not initialize newly connected KMS output");
+                    continue;
+                }
+            };
+
+            let global_id = output.create_global::<PantheonCompositor>(&state.display_handle);
+            self.outputs.push(NativeKmsOutput {
+                connector: info.handle(),
+                crtc,
+                output,
+                drm_output,
+                global_id,
+                frame_pending: false,
+            });
+            claimed_crtcs.insert(crtc);
+            changed = true;
+            tracing::info!(%name, ?mode, "mapped newly connected DRM output");
+        }
+
+        if changed {
+            self.outputs.sort_by_key(|output| {
+                (
+                    !output.output.name().starts_with("eDP-"),
+                    output.output.name(),
+                )
+            });
+            let mut x = 0;
+            for (index, output) in self.outputs.iter().enumerate() {
+                state.space.map_output(&output.output, (x, 0));
+                if let Some(mode) = output.output.current_mode() {
+                    output
+                        .output
+                        .change_current_state(None, None, None, Some((x, 0).into()));
+                    state.display_config.update(OutputSnapshot {
+                        connector: output.output.name(),
+                        vendor: "Apple".into(),
+                        product: output.output.name(),
+                        serial: "Unknown".into(),
+                        width: mode.size.w,
+                        height: mode.size.h,
+                        refresh_millihz: mode.refresh,
+                        scale: 1.0,
+                        x,
+                        y: 0,
+                        primary: index == 0,
+                    });
+                    x += mode.size.w;
+                }
+            }
+
+            let output_geometries = state
+                .space
+                .outputs()
+                .filter_map(|output| state.space.output_geometry(output))
+                .collect::<Vec<_>>();
+            let fallback = output_geometries.first().copied();
+            if let Some(fallback) = fallback {
+                let windows = state.space.elements().cloned().collect::<Vec<_>>();
+                for window in windows {
+                    let Some(location) = state.space.element_location(&window) else {
+                        continue;
+                    };
+                    let size = window.geometry().size;
+                    let center_x = location.x + size.w / 2;
+                    let center_y = location.y + size.h / 2;
+                    let on_output = output_geometries.iter().any(|geometry| {
+                        center_x >= geometry.loc.x
+                            && center_x < geometry.loc.x + geometry.size.w
+                            && center_y >= geometry.loc.y
+                            && center_y < geometry.loc.y + geometry.size.h
+                    });
+                    if !on_output {
+                        let max_x = fallback.loc.x + (fallback.size.w - size.w).max(0);
+                        let max_y = fallback.loc.y + (fallback.size.h - size.h).max(0);
+                        let x = (fallback.loc.x + (fallback.size.w - size.w) / 2)
+                            .clamp(fallback.loc.x, max_x);
+                        let y = (fallback.loc.y + (fallback.size.h - size.h) / 2)
+                            .clamp(fallback.loc.y, max_y);
+                        state.space.map_element(window, (x, y), false);
+                    }
+                }
+            }
+
+            state.last_work_area = None;
+            let panels = state
+                .space
+                .elements()
+                .filter_map(|window| {
+                    let surface = window.toplevel()?.wl_surface();
+                    state.is_panel_surface(surface).then(|| surface.clone())
+                })
+                .collect::<Vec<_>>();
+            let has_mapped_panels = !panels.is_empty();
+            for panel in panels {
+                state.update_panel(&panel, |_| {});
+            }
+            if !has_mapped_panels && state.space.outputs().next().is_some() {
+                state.reconfigure_managed_windows();
+            }
+            state.space.refresh();
+            let _ = state.display_handle.flush_clients();
+            state.request_native_redraw();
+        }
+
+        let now = Instant::now();
+        self.pending_global_removals
+            .retain(|(global, disabled_at)| {
+                if now.duration_since(*disabled_at) >= Duration::from_secs(2) {
+                    state
+                        .display_handle
+                        .remove_global::<PantheonCompositor>(global.clone());
+                    false
+                } else {
+                    true
+                }
+            });
+
+        Ok(changed)
     }
 
     fn open_output_device(
@@ -324,7 +580,7 @@ impl NativeKmsDevice {
                 }
             };
 
-            output.create_global::<PantheonCompositor>(&state.display_handle);
+            let global_id = output.create_global::<PantheonCompositor>(&state.display_handle);
             state.space.map_output(&output, (x, 0));
             state.display_config.update(OutputSnapshot {
                 connector: name.clone(),
@@ -345,6 +601,7 @@ impl NativeKmsDevice {
                 crtc: selected.crtc,
                 output,
                 drm_output,
+                global_id,
                 frame_pending: false,
             });
         }
@@ -357,6 +614,7 @@ impl NativeKmsDevice {
             manager,
             outputs,
             notifier: Some(notifier),
+            pending_global_removals: Vec::new(),
         })
     }
 }
@@ -397,6 +655,7 @@ impl NativeBackend {
                     libinput_context.suspend();
                     if let Some(backend) = state.native_backend.as_mut() {
                         backend.kms.manager.pause();
+                        backend.session_paused = true;
                     }
                     tracing::info!("native compositor session paused");
                 }
@@ -406,8 +665,12 @@ impl NativeBackend {
                         tracing::error!(?error, "failed to resume libinput");
                     }
                     if let Some(backend) = state.native_backend.as_mut() {
-                        if let Err(error) = backend.kms.manager.lock().activate(false) {
-                            tracing::error!(?error, "failed to reactivate DRM output");
+                        backend.session_paused = true;
+                        match backend.kms.manager.lock().activate(false) {
+                            Ok(()) => backend.session_paused = false,
+                            Err(error) => {
+                                tracing::error!(?error, "failed to reactivate DRM output");
+                            }
                         }
                     }
                     state.request_native_redraw();
@@ -454,6 +717,7 @@ impl NativeBackend {
             _session: session,
             renderer,
             kms,
+            session_paused: false,
         });
         event_loop
             .handle()
@@ -469,6 +733,22 @@ impl NativeBackend {
                 }
                 state.native_backend = Some(backend);
             })?;
+
+        event_loop.handle().insert_source(
+            Timer::from_duration(Duration::from_secs(2)),
+            |_, _, state| {
+                let Some(mut backend) = state.native_backend.take() else {
+                    return TimeoutAction::ToDuration(Duration::from_secs(2));
+                };
+                if !backend.session_paused
+                    && let Err(error) = backend.kms.refresh_connectors(&mut backend.renderer, state)
+                {
+                    tracing::warn!(?error, "failed to reconcile native DRM connectors");
+                }
+                state.native_backend = Some(backend);
+                TimeoutAction::ToDuration(Duration::from_secs(2))
+            },
+        )?;
         state.request_native_redraw();
         Ok(())
     }

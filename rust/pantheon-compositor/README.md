@@ -96,11 +96,14 @@ EGL/GBM renderer and a separate connected KMS output, publishes it as a
 Wayland output, assigns libinput to the active seat, and registers redraw,
 vblank, and session pause/resume sources with calloop. It initializes all
 connected outputs with compatible CRTCs on the selected KMS device, puts eDP
-first, and places other outputs to its right. Hotplug, changing display
-arrangement and modes, session-shell integration, and M-series scanout/input
-behavior remain unqualified. Default and feature-enabled `cargo check --bins` and
-`cargo build --bins` pass locally; builds do not initialize or take over a
-native session.
+first, and places other outputs to its right. It polls connector state while
+the session is active, adds newly connected outputs, removes disconnected
+outputs, updates Wayland/DisplayConfig state, and moves windows back onto a
+remaining display when needed. This path is compile-checked only; physical
+hotplug, mode changes, user-configured arrangement, session-shell integration,
+and M-series scanout/input behavior remain unqualified. Default and
+feature-enabled `cargo check --bins` and `cargo build --bins` pass locally;
+builds do not initialize or take over a native session.
 
 With `native-drm` enabled, `pantheon-drm-probe` safely enumerates EGL devices
 without acquiring DRM master or changing display modes. On the current M-series
@@ -115,9 +118,11 @@ does not force a connector reprobe or test modesetting.
 
 Relative pointer motion now updates Wayland pointer focus and dispatches motion
 through active compositor grabs; coordinates are clamped to the mapped output
-bounds. This allows the existing xdg move/resize grab implementations to receive
-physical pointer motion. Multi-output bounds, pointer constraints, and hardware
-input remain unqualified.
+bounds. If all outputs are disconnected, relative motion is ignored until a
+display returns instead of panicking on empty bounds. This allows the existing
+xdg move/resize grab implementations to receive physical pointer motion.
+Multi-output bounds, pointer constraints, and hardware input remain
+unqualified.
 
 Xdg popup requests now resolve their root to a managed toplevel and install
 Smithay's popup keyboard and pointer grabs, including the serial checks needed

@@ -43,12 +43,14 @@ impl PantheonCompositor {
             InputEvent::PointerMotion { event, .. } => {
                 let pointer = self.seat.get_pointer().unwrap();
                 let location = pointer.current_location();
-                let output_bounds = self
+                let Some(output_bounds) = self
                     .space
                     .outputs()
                     .filter_map(|output| self.space.output_geometry(output))
                     .reduce(|bounds, output| bounds.merge(output))
-                    .unwrap();
+                else {
+                    return;
+                };
                 let max_x = (output_bounds.loc.x + output_bounds.size.w - 1) as f64;
                 let max_y = (output_bounds.loc.y + output_bounds.size.h - 1) as f64;
                 let target = location + event.delta();
