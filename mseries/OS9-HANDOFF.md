@@ -5994,3 +5994,13 @@ New `mseries/install-gala-mutter-fix.sh` rebuilds Ubuntu's exact mutter with tha
 Installed on the owner's machine; `mseries/test-gala-mutter-fix.sh` passes headless. The crash was not reproduced; the
 next Pantheon session is the real test. After an Ubuntu mutter update, re-run the installer (the launcher logs and skips
 a stale build). Details: `mseries/PANTHEON-CRASH-2026-10-18.md`.
+
+## Rust bindings to Pantheon libraries — 2026-10-18 (Claude)
+
+Strategy: keep Gala, Wingpanel, Dock and Granite upstream Vala; write new code in Rust against them via GIR;
+rewrite only with evidence (the compositor, on Codex's `codex/rust-mutter-pantheon`). New `rust/granite-smoke`
+uses crates.io `granite-rs 3.3.0` with system Granite 7.8.1 and GTK 4.22: PASS under Xvfb. Needed workaround:
+gtk4 feature `v4_20` (granite-rs does not enable `v4_10`, so `gtk::Accessible` is missing). New
+`mseries/patches/wingpanel-export-gir.patch` makes Wingpanel export `Wingpanel-9.gir` + typelib; built and loaded in
+a sandbox, not installed. All upstream pins and update steps: `mseries/RUST-UPSTREAM-MAINTENANCE.md`. Next:
+an opt-in Rust login session entry once the compositor has DRM/KMS, input and lock screen.
