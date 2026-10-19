@@ -16,4 +16,4 @@ Categories=Office;ProjectManagement;
 DESKTOP
 chmod 0644 "$applications/org.techmore.HomeboardBoard.desktop"
 echo "Installed Homeboard launcher in $applications"
-echo 'The board requires Google sign-in. The separate Tasks sync bridge needs Evolution Data Server packages.'
+echo 'The board requires Google sign-in. For two-way sync with elementary Tasks and the calendar, run mseries/install-homeboard-sync.sh instead.'
