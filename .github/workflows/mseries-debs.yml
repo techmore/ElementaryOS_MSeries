@@ -66,11 +66,16 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get install -y --no-install-recommends \
-            evolution-data-server gsettings-desktop-schemas dbus-x11 xvfb xauth \
-            accountsservice elementary-default-settings
-          # Granite reads the colour-scheme preference from AccountsService (with
-          # elementary's io.elementary.pantheon extension) on the system bus, as
-          # on every elementary desktop; the bare runner has neither.
+            evolution-data-server gsettings-desktop-schemas dbus-x11 xvfb xauth accountsservice
+          # Granite reads the colour-scheme preference from AccountsService with
+          # elementary's io.elementary.pantheon extension on the system bus, as on
+          # every elementary desktop. The full elementary-default-settings package
+          # needs a newer flatpak than the runner has, so take only that interface.
+          (cd "$RUNNER_TEMP" && apt-get download elementary-default-settings)
+          dpkg-deb -x "$RUNNER_TEMP"/elementary-default-settings_*.deb "$RUNNER_TEMP/eds-settings"
+          sudo install -D -m 0644 \
+            "$RUNNER_TEMP/eds-settings/usr/share/accountsservice/interfaces/io.elementary.pantheon.AccountsService.xml" \
+            /usr/share/accountsservice/interfaces/io.elementary.pantheon.AccountsService.xml
           sudo systemctl restart accounts-daemon
           dpkg-deb -x out/mseries-debs/mseries-wingpanel-datetime_*.deb "$RUNNER_TEMP/datetime"
           bash mseries/calendar/test-agenda.sh \
