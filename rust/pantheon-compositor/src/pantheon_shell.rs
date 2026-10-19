@@ -305,7 +305,7 @@ impl PantheonCompositor {
         true
     }
 
-    fn find_window_for_surface(&self, surface: &WlSurface) -> Option<Window> {
+    pub(crate) fn find_window_for_surface(&self, surface: &WlSurface) -> Option<Window> {
         self.space
             .elements()
             .find(|window| {

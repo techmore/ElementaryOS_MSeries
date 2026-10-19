@@ -20,12 +20,16 @@ use smithay::{
     utils::{Logical, Point, Size},
     wayland::{
         compositor::{CompositorClientState, CompositorState},
+        fractional_scale::{
+            FractionalScaleHandler, FractionalScaleManagerState, with_fractional_scale,
+        },
         output::OutputManagerState,
         selection::data_device::DataDeviceState,
         session_lock::{LockSurface, SessionLockManagerState, SessionLocker},
         shell::xdg::XdgShellState,
         shm::ShmState,
         socket::ListeningSocketSource,
+        viewporter::ViewporterState,
     },
 };
 
@@ -54,6 +58,8 @@ pub struct PantheonCompositor {
     pub xdg_shell_state: XdgShellState,
     pub shm_state: ShmState,
     pub output_manager_state: OutputManagerState,
+    pub fractional_scale_manager_state: FractionalScaleManagerState,
+    pub viewporter_state: ViewporterState,
     pub session_lock_state: SessionLockManagerState,
     pub session_locked: bool,
     pub lock_surfaces: HashMap<String, LockSurface>,
@@ -111,6 +117,8 @@ impl PantheonCompositor {
         let popups = PopupManager::default();
 
         let output_manager_state = OutputManagerState::new_with_xdg_output::<Self>(&dh);
+        let fractional_scale_manager_state = FractionalScaleManagerState::new::<Self>(&dh);
+        let viewporter_state = ViewporterState::new::<Self>(&dh);
         let session_lock_state = SessionLockManagerState::new::<Self, _>(&dh, |_| true);
 
         // Data device is responsible for clipboard and drag-and-drop
@@ -166,6 +174,8 @@ impl PantheonCompositor {
             xdg_shell_state,
             shm_state,
             output_manager_state,
+            fractional_scale_manager_state,
+            viewporter_state,
             session_lock_state,
             session_locked: false,
             lock_surfaces: HashMap::new(),
@@ -363,6 +373,7 @@ impl PantheonCompositor {
         }
         self.reconfigure_managed_windows();
         self.space.refresh();
+        self.update_fractional_scale_preferences();
         let _ = self.display_handle.flush_clients();
         #[cfg(feature = "native-drm")]
         self.request_native_redraw();
@@ -371,6 +382,20 @@ impl PantheonCompositor {
                 .map_err(|error| format!("could not save monitor configuration: {error}"))?;
         }
         Ok(())
+    }
+
+    pub fn update_fractional_scale_preferences(&self) {
+        for window in self.space.elements() {
+            let Some(output) = self.space.outputs_for_element(window).first().cloned() else {
+                continue;
+            };
+            let scale = output.current_scale().fractional_scale();
+            window.with_surfaces(|_, states| {
+                with_fractional_scale(states, |fractional_scale| {
+                    fractional_scale.set_preferred_scale(scale);
+                });
+            });
+        }
     }
 
     fn init_wayland_listener(
@@ -485,6 +510,26 @@ impl PantheonCompositor {
                 confirmation.lock();
                 self.shell_compat.set_locked(true);
             }
+        }
+    }
+}
+
+impl FractionalScaleHandler for PantheonCompositor {
+    fn new_fractional_scale(&mut self, surface: WlSurface) {
+        let mut root = surface.clone();
+        while let Some(parent) = smithay::wayland::compositor::get_parent(&root) {
+            root = parent;
+        }
+        let output = self
+            .find_window_for_surface(&root)
+            .and_then(|window| self.space.outputs_for_element(&window).first().cloned())
+            .or_else(|| self.space.outputs().next().cloned());
+        if let Some(output) = output {
+            smithay::wayland::compositor::with_states(&surface, |states| {
+                with_fractional_scale(states, |fractional_scale| {
+                    fractional_scale.set_preferred_scale(output.current_scale().fractional_scale());
+                });
+            });
         }
     }
 }

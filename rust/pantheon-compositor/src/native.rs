@@ -288,6 +288,7 @@ impl NativeKmsDevice {
         renderer: &mut NativeRenderer,
         state: &PantheonCompositor,
     ) -> Result<usize, Box<dyn std::error::Error>> {
+        state.update_fractional_scale_preferences();
         let mut rendered = 0;
         for output in &mut self.outputs {
             if output.frame_pending {

@@ -35,7 +35,10 @@ shared output manager with rollback, and applies temporary layout changes.
 Method 2 saves a per-user monitor profile and native startup restores it.
 Disabling outputs, mirroring, unsupported properties and nested Winit mode
 changes are rejected. Both default and native DRM builds compile; live native
-mode changes remain unqualified. The compositor now serves Wingpanel's `org.gnome.Shell`
+mode changes remain unqualified. The compositor advertises
+`wp_fractional_scale_v1` and `wp_viewporter`, updating window surface scale
+preferences from mapped outputs. Moving surfaces across differently scaled
+outputs still needs runtime verification. The compositor also serves Wingpanel's `org.gnome.Shell`
 accelerator API and matched `Super+N` to an `AcceleratorActivated` signal during
 an isolated nested run. `ShowOSD`, lock-screen action modes and physical media
 key activation remain unimplemented or unqualified. Relative pointer motion now

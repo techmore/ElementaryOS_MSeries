@@ -22,10 +22,13 @@ required by the M-series/Pantheon session, in independently qualified slices.
 
 ## Current prototype
 
-[`rust/pantheon-compositor`](../../rust/pantheon-compositor/README.md) is an
-opt-in nested Smithay/Winit prototype. It serves a separate Wayland socket from
-an existing desktop and does not own DRM/KMS or change the login session. It is
-the first development harness, not a finished compositor or a session swap-in.
+[`rust/pantheon-compositor`](../../rust/pantheon-compositor/README.md) has an
+opt-in nested Smithay/Winit backend for development and an explicit native DRM
+backend for M-series qualification. It supports the Pantheon shell contract,
+window basics, monitor configuration and lock bridge, but native display,
+session, input and recovery behavior still need on-device qualification. The
+staged login-session files are separate from the active Gala session and are
+not installed or selected by default.
 
 ## Dock HDMI boundary
 

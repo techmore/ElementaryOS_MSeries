@@ -169,7 +169,11 @@ saved modes and layout. Output disabling, mirroring, unsupported properties and
 nested Winit mode changes are rejected. Output and configuration updates
 increment the serial and emit `MonitorsChanged`. Default and native DRM builds
 compile, but no native session or live monitor change has been run from this
-development session. The isolated
+development session. The compositor also advertises `wp_fractional_scale_v1`
+and `wp_viewporter`, setting window surfaces' preferred scale from their first
+mapped output and refreshing preferences during rendering and after monitor
+configuration changes. Cross-output moves and fractional rendering quality
+still need an isolated client/runtime check. The isolated
 Wingpanel run no longer reports missing DisplayConfig or Shell keybinding
 services. Pressing `Super+N` in the nested window produced the registered
 `AcceleratorActivated` signal. The sound indicator's media-key registrations

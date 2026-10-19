@@ -124,6 +124,7 @@ pub fn init_winit(
                 }
                 WinitEvent::Input(event) => state.process_input_event(event),
                 WinitEvent::Redraw => {
+                    state.update_fractional_scale_preferences();
                     let size = backend.window_size();
                     let damage = Rectangle::from_size(size);
 

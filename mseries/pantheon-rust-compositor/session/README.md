@@ -38,4 +38,6 @@ session must include an `ext-session-lock-v1` client with PAM authentication
 (the Ubuntu `gtklock` package provides this protocol client); the source tree
 does not install it. `PANTHEON_LOCK_COMMAND` can select another installed
 client. Authentication, D-Bus activation and session lock/unlock have not yet
-been runtime-qualified.
+been runtime-qualified. The compositor advertises fractional-scale and
+viewporter globals, but rendering quality and moving windows between outputs
+with different scales still need nested-session qualification.

@@ -5618,6 +5618,11 @@ later request fails. Persistent requests are written atomically to
 `$XDG_CONFIG_HOME/pantheon-rust-compositor/monitors.conf` (or the user's
 `~/.config`) and native startup restores saved mode/layout values. The
 `MonitorsChanged` update is batched for a complete apply operation.
+The compositor now advertises `wp_fractional_scale_v1` and `wp_viewporter`;
+new window surfaces receive the preferred scale of their first mapped output,
+and output scale preferences refresh during rendering and after configuration
+changes. Cross-output movement and fractional rendering still require a nested
+client check.
 
 Local verification: `cargo check -p pantheon-compositor --bin
 pantheon-compositor` and the same command with `--features native-drm` both

@@ -94,7 +94,10 @@ layout, scale and transform changes update Wayland outputs. Method 2 saves a
 per-user profile and native startup restores saved modes and layout. Disabling
 outputs, mirroring, unsupported properties and nested Winit mode changes are
 rejected. Both default and native DRM builds compile; runtime changes on the
-active M-series display remain unqualified. It also
+active M-series display remain unqualified. The compositor advertises
+`wp_fractional_scale_v1` and `wp_viewporter`, setting each window surface's
+preferred scale from its first mapped output. Runtime checks for moving a
+surface between differently scaled outputs remain open. It also
 implements the `org.gnome.Shell`
 accelerator registration and activation path: pressing the registered
 `Super+N` chord emits `AcceleratorActivated` in the nested run. Dock integration,
