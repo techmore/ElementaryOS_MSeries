@@ -59,6 +59,12 @@ no behavior. Touch input, DRM/KMS, libinput device management, multi-monitor
 configuration, accessibility, IBus, Xwayland, screen-sharing portals and
 production crash recovery also remain unimplemented.
 
+The session bus also exposes the small `org.gnome.Shell` accelerator API used
+by Wingpanel and its sound indicator. Accelerator registrations are matched
+through the compositor's active XKB state and reported with
+`AcceleratorActivated`; `ShowOSD` is currently a no-op, and lock-screen action
+modes are not implemented.
+
 The code is based on Smithay's `smallvil` learning compositor at pinned commit
 `023b78b1c5a05ca512767cacc07efca55fae8be4`; see `SMITHAY-LICENSE.txt`. Keep the
 upstream revision pinned until an explicit upgrade is reviewed. The Pantheon
@@ -74,8 +80,10 @@ and attached shared-memory buffers. Wingpanel requires
 `org.gnome.Mutter.DisplayConfig`; the compositor now serves the read-only
 `GetCurrentState` query it calls, with the current nested output and logical
 layout mode, and emits `MonitorsChanged` when the output resizes. The isolated
-Wingpanel run no longer reports a missing DisplayConfig service. GNOME Shell
-keybinding and sound hooks still have no service on the isolated bus. This is
-evidence of panel compatibility at the protocol/rendering path, not full
-session qualification. Applying monitor modes, Dock behavior and M-series
-DRM/KMS remain unqualified.
+Wingpanel run no longer reports missing DisplayConfig or Shell keybinding
+services. Pressing `Super+N` in the nested window produced the registered
+`AcceleratorActivated` signal. The sound indicator's media-key registrations
+also completed without its prior D-Bus error; physical media-key activation has
+not been checked. This is evidence of panel compatibility at the
+protocol/rendering path, not full session qualification. Applying monitor
+modes, Dock behavior and M-series DRM/KMS remain unqualified.

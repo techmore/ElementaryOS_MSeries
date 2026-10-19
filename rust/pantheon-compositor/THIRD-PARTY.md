@@ -18,3 +18,10 @@ reply follows the public D-Bus contract in GNOME Mutter's
 The Rust implementation is a fresh subset for Wingpanel's current read-only
 layout query; it does not copy Mutter implementation code or provide mode
 application.
+
+The `org.gnome.Shell` accelerator compatibility surface follows the client
+interfaces in elementary/Wingpanel `lib/KeybindingHelper.vala` at
+`e737de88bc02ddc82a9f4d23f574cc3c04098c03` and
+elementary/wingpanel-indicator-sound `src/Services/ShellKeyGrabber.vala` at
+`115d1495b754e2692c112fa5b02f9f3b5860a314`. These files are API references;
+the Rust D-Bus service and accelerator matcher are original implementation.

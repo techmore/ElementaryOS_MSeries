@@ -19,6 +19,7 @@ impl PantheonCompositor {
             InputEvent::Keyboard { event, .. } => {
                 let serial = SERIAL_COUNTER.next_serial();
                 let time = Event::time(&event);
+                let key_state = event.state();
 
                 self.seat.get_keyboard().unwrap().input::<(), _>(
                     self,
@@ -26,7 +27,15 @@ impl PantheonCompositor {
                     event.state(),
                     serial,
                     time,
-                    |_, _, _| FilterResult::Forward,
+                    |state, modifiers, keysym| {
+                        if key_state == smithay::backend::input::KeyState::Pressed
+                            && state.shell_compat.activate_key(keysym.modified_sym(), modifiers)
+                        {
+                            FilterResult::Intercept(())
+                        } else {
+                            FilterResult::Forward
+                        }
+                    },
                 );
             }
             InputEvent::PointerMotion { .. } => {}

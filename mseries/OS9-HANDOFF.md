@@ -17,11 +17,15 @@ Shell keybinding/sound services. Added a read-only D-Bus
 output and logical layout, plus `MonitorsChanged` on nested-output resize. Local
 `cargo check` and build pass; `gdbus call` returned one 1280×800@60 mode and
 logical layout mode 1. A second isolated Wingpanel launch no longer reports the
-missing DisplayConfig service and attaches SHM buffers. The GNOME Shell hooks
-remain unresolved; applying monitor modes, Dock behavior and M-series DRM/KMS
-remain unqualified. Next: trace the remaining Wingpanel Shell/Dock requirements
-and implement needed behavior against the nested output. The WD22TB4 HDMI G3
-DCP/kernel issue remains separate. Scope and limits:
+missing DisplayConfig service and attaches SHM buffers. Added the
+`org.gnome.Shell` accelerator API used by Wingpanel and its sound indicator;
+`Super+N` on the nested window produced `AcceleratorActivated` for Wingpanel's
+registered action, and media-key registrations completed without a D-Bus
+failure. `ShowOSD`, lock-screen modes and physical media-key activation remain
+unimplemented/unqualified. Applying monitor modes, Dock behavior and M-series
+DRM/KMS remain unqualified. Next: trace the Dock's shell protocol and window
+interaction requirements against this output. The WD22TB4 HDMI G3 DCP/kernel
+issue remains separate. Scope and limits:
 `mseries/pantheon-rust-compositor/`.
 
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18

@@ -6,6 +6,7 @@ mod display_config;
 mod input;
 mod pantheon_shell;
 mod protocols;
+mod shell_compat;
 mod state;
 mod winit;
 

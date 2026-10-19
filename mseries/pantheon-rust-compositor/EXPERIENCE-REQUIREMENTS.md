@@ -84,5 +84,8 @@ and `cargo build` pass. Its protocol probe completed under Xvfb over a nested
 Wayland socket. Installed Wingpanel 8.0.4 also connected in an isolated nested
 Wayland session and rendered SHM buffers. The prototype serves the read-only
 `org.gnome.Mutter.DisplayConfig.GetCurrentState` query Wingpanel uses, and
-Wingpanel completes that call. Dock integration and M-series hardware remain
-unqualified; this is not full session or hardware qualification.
+Wingpanel completes that call. It also implements the `org.gnome.Shell`
+accelerator registration and activation path: pressing the registered
+`Super+N` chord emits `AcceleratorActivated` in the nested run. Dock integration,
+physical media-key activation and M-series hardware remain unqualified; this
+is not full session or hardware qualification.

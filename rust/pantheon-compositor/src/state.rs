@@ -25,6 +25,7 @@ use smithay::{
 
 use crate::pantheon_shell::{PanelState, PantheonShellState};
 use crate::display_config::DisplayConfigHandle;
+use crate::shell_compat::ShellCompatHandle;
 
 pub struct PantheonCompositor {
     pub start_time: std::time::Instant,
@@ -43,6 +44,7 @@ pub struct PantheonCompositor {
     pub data_device_state: DataDeviceState,
     pub pantheon_shell_state: PantheonShellState,
     pub display_config: DisplayConfigHandle,
+    pub shell_compat: ShellCompatHandle,
     pub panels: HashMap<smithay::reexports::wayland_server::backend::ObjectId, PanelState>,
     pub last_work_area: Option<smithay::utils::Rectangle<i32, smithay::utils::Logical>>,
     pub managed_windows:
@@ -82,6 +84,7 @@ impl PantheonCompositor {
         let data_device_state = DataDeviceState::new::<Self>(&dh);
         let pantheon_shell_state = PantheonShellState::new::<Self>(&dh);
         let display_config = DisplayConfigHandle::start();
+        let shell_compat = ShellCompatHandle::start();
 
         // A seat is a group of keyboards, pointer and touch devices.
         // A seat typically has a pointer and maintains a keyboard focus and a pointer focus.
@@ -124,6 +127,7 @@ impl PantheonCompositor {
             data_device_state,
             pantheon_shell_state,
             display_config,
+            shell_compat,
             panels: HashMap::new(),
             last_work_area: None,
             managed_windows: HashMap::new(),
