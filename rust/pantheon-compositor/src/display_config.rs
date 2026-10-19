@@ -420,7 +420,7 @@ fn serve_display_config(
 
     tracing::info!("serving Mutter display configuration queries and apply requests");
     loop {
-        match receiver.recv_timeout(Duration::from_millis(100)) {
+        match receiver.recv() {
             Ok(update) => {
                 let mut state = snapshot.lock().expect("display config lock poisoned");
                 match update {
@@ -458,8 +458,7 @@ fn serve_display_config(
                     tracing::warn!(%error, "could not emit MonitorsChanged");
                 }
             }
-            Err(mpsc::RecvTimeoutError::Timeout) => {}
-            Err(mpsc::RecvTimeoutError::Disconnected) => return,
+            Err(_) => return,
         }
     }
 }

@@ -283,10 +283,9 @@ fn serve_gala_compat(
 
     tracing::info!("serving Pantheon Dock window and workspace integration");
     loop {
-        let signal = match signal_receiver.recv_timeout(Duration::from_millis(100)) {
+        let signal = match signal_receiver.recv() {
             Ok(signal) => signal,
-            Err(mpsc::RecvTimeoutError::Timeout) => continue,
-            Err(mpsc::RecvTimeoutError::Disconnected) => return,
+            Err(_) => return,
         };
         let result = match signal {
             GalaSignal::RunningApplications => connection.emit_signal(

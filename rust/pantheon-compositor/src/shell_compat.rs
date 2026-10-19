@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     ffi::OsString,
-    process::{Child, Command},
+    process::Command,
     sync::{
         Arc, Mutex,
         atomic::{AtomicBool, Ordering},
@@ -166,7 +166,7 @@ struct ScreenSaverCompat {
     lock_command: OsString,
     active: Arc<AtomicBool>,
     active_since: Arc<Mutex<Option<Instant>>>,
-    lock_child: Arc<Mutex<Option<Child>>>,
+    lock_running: Arc<Mutex<bool>>,
 }
 
 #[interface(name = "org.gnome.Shell")]
@@ -263,20 +263,31 @@ impl ScreenSaverCompat {
             return Ok(());
         }
 
-        let mut child = self.lock_child.lock().expect("lock child poisoned");
-        if let Some(running) = child.as_mut() {
-            match running.try_wait() {
-                Ok(None) => return Ok(()),
-                Ok(Some(_)) => *child = None,
-                Err(error) => return Err(zbus::fdo::Error::Failed(error.to_string())),
-            }
+        let mut running = self.lock_running.lock().expect("lock child poisoned");
+        if *running {
+            return Ok(());
         }
 
-        let process = Command::new(&self.lock_command)
+        let mut process = Command::new(&self.lock_command)
             .env("WAYLAND_DISPLAY", &self.wayland_display)
             .spawn()
             .map_err(|error| zbus::fdo::Error::Failed(error.to_string()))?;
-        *child = Some(process);
+        *running = true;
+        // A blocking waiter reaps the locker the moment it exits, so the
+        // D-Bus thread never has to poll for it.
+        let flag = self.lock_running.clone();
+        let spawned = thread::Builder::new()
+            .name("pantheon-locker-reaper".into())
+            .spawn(move || {
+                if let Err(error) = process.wait() {
+                    tracing::warn!(%error, "could not reap the session locker");
+                }
+                *flag.lock().expect("lock child poisoned") = false;
+            });
+        if let Err(error) = spawned {
+            *running = false;
+            return Err(zbus::fdo::Error::Failed(error.to_string()));
+        }
         Ok(())
     }
 
@@ -355,7 +366,7 @@ fn serve_shell_compat(context: ShellCompatContext) {
 
     let lock_command =
         std::env::var_os("PANTHEON_LOCK_COMMAND").unwrap_or_else(|| OsString::from("gtklock"));
-    let lock_child = Arc::new(Mutex::new(None));
+    let lock_running = Arc::new(Mutex::new(false));
     if let Err(error) = connection.object_server().at(
         SCREENSAVER_OBJECT_PATH,
         ScreenSaverCompat {
@@ -363,7 +374,7 @@ fn serve_shell_compat(context: ShellCompatContext) {
             lock_command,
             active,
             active_since,
-            lock_child: lock_child.clone(),
+            lock_running,
         },
     ) {
         tracing::warn!(%error, "cannot register the ScreenSaver compatibility interface");
@@ -376,19 +387,7 @@ fn serve_shell_compat(context: ShellCompatContext) {
 
     tracing::info!("serving Shell accelerator and ScreenSaver compatibility interfaces");
     loop {
-        {
-            let mut child = lock_child.lock().expect("lock child poisoned");
-            if let Some(running) = child.as_mut() {
-                match running.try_wait() {
-                    Ok(Some(_)) => {
-                        *child = None;
-                    }
-                    Ok(None) => {}
-                    Err(error) => tracing::warn!(%error, "could not reap the session locker"),
-                }
-            }
-        }
-        match receiver.recv_timeout(Duration::from_millis(100)) {
+        match receiver.recv() {
             Ok(ShellEvent::AcceleratorActivated(action)) => {
                 let parameters = HashMap::<String, OwnedValue>::new();
                 if let Err(error) = connection.emit_signal(
@@ -412,8 +411,7 @@ fn serve_shell_compat(context: ShellCompatContext) {
                     tracing::warn!(%error, "could not emit ScreenSaver ActiveChanged");
                 }
             }
-            Err(mpsc::RecvTimeoutError::Timeout) => {}
-            Err(mpsc::RecvTimeoutError::Disconnected) => return,
+            Err(_) => return,
         }
     }
 }
