@@ -135,11 +135,212 @@ struct ConnectedOutput {
 }
 
 impl NativeKmsDevice {
+    fn render_elements_for_output<'a>(
+        &self,
+        gpu_renderer: &mut NativeMultiRenderer<'a>,
+        state: &PantheonCompositor,
+        replacement: Option<(smithay::reexports::drm::control::crtc::Handle, &Output)>,
+    ) -> Result<
+        DrmOutputRenderElements<
+            NativeMultiRenderer<'a>,
+            CursorRenderElement<NativeMultiRenderer<'a>>,
+        >,
+        String,
+    > {
+        let mut render_elements = DrmOutputRenderElements::new();
+        for output in &self.outputs {
+            let render_output = replacement
+                .filter(|(crtc, _)| *crtc == output.crtc)
+                .map(|(_, output)| output)
+                .unwrap_or(&output.output);
+            let elements = if state.session_locked {
+                render_lock_surface_elements(gpu_renderer, state, render_output)
+            } else {
+                let space_elements = smithay::desktop::space::space_render_elements(
+                    gpu_renderer,
+                    [&state.space],
+                    render_output,
+                    render_output.current_scale().fractional_scale() as f32,
+                )
+                .map_err(|error| format!("could not prepare output frame: {error:?}"))?;
+                let cursor_elements = render_cursor_elements(gpu_renderer, state, render_output);
+                let mut elements = space_elements
+                    .into_iter()
+                    .map(|element| match element {
+                        smithay::desktop::space::SpaceRenderElements::Surface(surface) => {
+                            CursorRenderElement::from(surface)
+                        }
+                        smithay::desktop::space::SpaceRenderElements::Element(element) => {
+                            CursorRenderElement::from(element)
+                        }
+                        smithay::desktop::space::SpaceRenderElements::_GenericCatcher(_) => {
+                            unreachable!("SpaceRenderElements generic catcher is never constructed")
+                        }
+                    })
+                    .collect::<Vec<_>>();
+                elements.extend(cursor_elements);
+                elements
+            };
+            render_elements.add_output(&output.crtc, [0.1, 0.1, 0.1, 1.0].into(), elements);
+        }
+        Ok(render_elements)
+    }
+
+    fn reassign_crtc_connector(
+        &mut self,
+        renderer: &mut NativeRenderer,
+        state: &mut PantheonCompositor,
+        old_name: &str,
+        connector_info: &connector::Info,
+        mode: smithay::reexports::drm::control::Mode,
+    ) -> Result<(), String> {
+        let Some(index) = self
+            .outputs
+            .iter()
+            .position(|output| output.output.name() == old_name)
+        else {
+            return Err(format!("output {old_name} is no longer active"));
+        };
+        let old_output = self.outputs[index].output.clone();
+        let old_connector = self.outputs[index].connector;
+        let old_drm_mode = old_output
+            .current_mode()
+            .and_then(|current| {
+                self.outputs[index]
+                    .modes
+                    .iter()
+                    .find(|mode| Mode::from(**mode) == current)
+                    .copied()
+            })
+            .ok_or_else(|| format!("{old_name} has no current DRM mode to restore"))?;
+        let crtc = self.outputs[index].crtc;
+        let location = old_output.current_location();
+        let scale = old_output.current_scale();
+        let transform = old_output.current_transform();
+        let name = format!(
+            "{}-{}",
+            connector_info.interface().as_str(),
+            connector_info.interface_id()
+        );
+        let (physical_width, physical_height) = connector_info.size().unwrap_or((0, 0));
+        let output = Output::new(
+            name.clone(),
+            PhysicalProperties {
+                size: (physical_width as i32, physical_height as i32).into(),
+                subpixel: connector_info.subpixel().into(),
+                make: "Apple".into(),
+                model: name.clone(),
+                serial_number: "Unknown".into(),
+            },
+        );
+        let available_modes = connector_info.modes().to_vec();
+        let preferred = available_modes
+            .iter()
+            .find(|candidate| candidate.mode_type().contains(ModeTypeFlags::PREFERRED))
+            .copied()
+            .unwrap_or(mode);
+        output.set_preferred(Mode::from(preferred));
+        for available_mode in &available_modes {
+            output.add_mode(Mode::from(*available_mode));
+        }
+        output.change_current_state(
+            Some(Mode::from(mode)),
+            Some(transform),
+            Some(scale),
+            Some(location),
+        );
+
+        state.space.map_output(&output, location);
+        let connectors = [connector_info.handle()];
+        let connector_result = self.outputs[index]
+            .drm_output
+            .with_compositor(|compositor| {
+                compositor.set_output_mode_source((&output).into());
+                compositor.set_connectors(&connectors)
+            });
+        if let Err(error) = connector_result {
+            self.outputs[index]
+                .drm_output
+                .with_compositor(|compositor| {
+                    compositor.set_output_mode_source((&old_output).into());
+                });
+            state.space.unmap_output(&output);
+            return Err(format!("DRM rejected connector reassignment: {error:?}"));
+        }
+
+        let result = (|| {
+            let mut gpu_renderer = renderer
+                .gpus
+                .single_renderer(&renderer.render_node)
+                .map_err(|error| format!("could not activate display renderer: {error:?}"))?;
+            let render_elements =
+                self.render_elements_for_output(&mut gpu_renderer, state, Some((crtc, &output)))?;
+            self.outputs[index]
+                .drm_output
+                .use_mode(mode, &mut gpu_renderer, &render_elements)
+                .map_err(|error| format!("could not commit connector reassignment: {error:?}"))
+        })();
+
+        if let Err(error) = result {
+            let connectors = [old_connector];
+            self.outputs[index]
+                .drm_output
+                .with_compositor(|compositor| {
+                    compositor.set_output_mode_source((&old_output).into());
+                    compositor.set_connectors(&connectors)
+                })
+                .map_err(|rollback| {
+                    state.space.unmap_output(&output);
+                    format!("{error}; could not restore previous connector: {rollback:?}")
+                })?;
+            let mut gpu_renderer = renderer
+                .gpus
+                .single_renderer(&renderer.render_node)
+                .map_err(|rollback| {
+                    state.space.unmap_output(&output);
+                    format!("{error}; could not activate renderer for rollback: {rollback:?}")
+                })?;
+            let old_elements = self.render_elements_for_output(
+                &mut gpu_renderer,
+                state,
+                Some((crtc, &old_output)),
+            )?;
+            self.outputs[index]
+                .drm_output
+                .use_mode(old_drm_mode, &mut gpu_renderer, &old_elements)
+                .map_err(|rollback| {
+                    state.space.unmap_output(&output);
+                    format!("{error}; previous output rollback failed: {rollback:?}")
+                })?;
+            state.space.unmap_output(&output);
+            return Err(error);
+        }
+
+        state
+            .display_handle
+            .disable_global::<PantheonCompositor>(self.outputs[index].global_id.clone());
+        self.pending_global_removals
+            .push((self.outputs[index].global_id.clone(), Instant::now()));
+        state.space.unmap_output(&old_output);
+        state.forget_output_during_lock(old_name);
+        state.track_output_for_lock(&output);
+        let global_id = output.create_global::<PantheonCompositor>(&state.display_handle);
+        self.outputs[index].connector = connector_info.handle();
+        self.outputs[index].modes = available_modes;
+        self.outputs[index].output = output;
+        self.outputs[index].global_id = global_id;
+        self.outputs[index].frame_pending = false;
+        self.disabled_connectors.insert(old_connector);
+        self.disabled_connectors.remove(&connector_info.handle());
+        Ok(())
+    }
+
     pub fn set_enabled_outputs(
         &mut self,
         renderer: &mut NativeRenderer,
         state: &mut PantheonCompositor,
         enabled: &HashSet<String>,
+        requested_mode_ids: &HashMap<String, String>,
     ) -> Result<(), String> {
         if enabled.is_empty() {
             return Err("at least one output must remain enabled".into());
@@ -171,51 +372,13 @@ impl NativeKmsDevice {
             .iter()
             .map(|output| output.output.name())
             .collect::<HashSet<_>>();
-        let anchor = current
-            .iter()
-            .find(|name| enabled.contains(*name))
-            .cloned()
-            .or_else(|| {
-                current
-                    .iter()
-                    .find(|name| name.starts_with("eDP-"))
-                    .cloned()
-            })
-            .or_else(|| current.iter().next().cloned())
-            .ok_or_else(|| {
-                "native backend has no active output to anchor the transition".to_string()
-            })?;
+        if current.is_empty() {
+            return Err("native backend has no active output to anchor the transition".into());
+        }
 
         for (name, connector) in &name_to_connector {
-            if !enabled.contains(name) && name != &anchor {
+            if !enabled.contains(name) && !current.contains(name) {
                 self.disabled_connectors.insert(*connector);
-            }
-        }
-        let disabling = self
-            .outputs
-            .iter()
-            .filter(|output| {
-                output.output.name() != anchor && !enabled.contains(&output.output.name())
-            })
-            .map(|output| output.connector)
-            .collect::<Vec<_>>();
-        for connector in disabling {
-            if let Some(index) = self
-                .outputs
-                .iter()
-                .position(|output| output.connector == connector)
-            {
-                let output = self.outputs.remove(index);
-                state
-                    .display_handle
-                    .disable_global::<PantheonCompositor>(output.global_id.clone());
-                self.pending_global_removals
-                    .push((output.global_id.clone(), Instant::now()));
-                state.space.unmap_output(&output.output);
-                state.forget_output_during_lock(&output.output.name());
-                self.disabled_connectors.insert(connector);
-                tracing::info!(output = %output.output.name(), "disabled DRM output by monitor configuration");
-                drop(output);
             }
         }
 
@@ -227,6 +390,68 @@ impl NativeKmsDevice {
         }
         self.refresh_connectors(renderer, state)
             .map_err(|error| format!("could not enable requested monitor: {error}"))?;
+        let active_names = self
+            .outputs
+            .iter()
+            .map(|output| output.output.name())
+            .collect::<HashSet<_>>();
+        let mut missing = enabled
+            .difference(&active_names)
+            .cloned()
+            .collect::<Vec<_>>();
+        missing.sort();
+        for target_name in missing {
+            let target_handle = name_to_connector[&target_name];
+            let info = self
+                .manager
+                .device_mut()
+                .get_connector(target_handle, false)
+                .map_err(|error| error.to_string())?;
+            let encoder = info
+                .current_encoder()
+                .and_then(|handle| self.manager.device_mut().get_encoder(handle).ok())
+                .or_else(|| {
+                    info.encoders()
+                        .iter()
+                        .find_map(|handle| self.manager.device_mut().get_encoder(*handle).ok())
+                })
+                .ok_or_else(|| format!("monitor {target_name} has no usable encoder"))?;
+            let compatible_crtcs = resources.filter_crtcs(encoder.possible_crtcs());
+            let old_name = self
+                .outputs
+                .iter()
+                .find(|output| {
+                    !enabled.contains(&output.output.name())
+                        && compatible_crtcs.contains(&output.crtc)
+                })
+                .map(|output| output.output.name())
+                .ok_or_else(|| {
+                    format!("no compatible active CRTC can be reassigned to {target_name}")
+                })?;
+            let mode = info
+                .modes()
+                .iter()
+                .find(|mode| {
+                    requested_mode_ids.get(&target_name).is_some_and(|mode_id| {
+                        let mode = Mode::from(**mode);
+                        format!(
+                            "{}x{}@{:.3}",
+                            mode.size.w,
+                            mode.size.h,
+                            f64::from(mode.refresh) / 1000.0
+                        ) == *mode_id
+                    })
+                })
+                .or_else(|| {
+                    info.modes()
+                        .iter()
+                        .find(|mode| mode.mode_type().contains(ModeTypeFlags::PREFERRED))
+                })
+                .copied()
+                .or_else(|| info.modes().first().copied())
+                .ok_or_else(|| format!("monitor {target_name} has no modes"))?;
+            self.reassign_crtc_connector(renderer, state, &old_name, &info, mode)?;
+        }
         let mut active = self
             .outputs
             .iter()
@@ -240,12 +465,20 @@ impl NativeKmsDevice {
             }
             return Err("native backend could not activate every requested output; the prior output remains active".into());
         }
-        if !enabled.contains(&anchor)
-            && let Some(index) = self
+        let disabling = self
+            .outputs
+            .iter()
+            .filter(|output| !enabled.contains(&output.output.name()))
+            .map(|output| output.connector)
+            .collect::<Vec<_>>();
+        for connector in disabling {
+            let Some(index) = self
                 .outputs
                 .iter()
-                .position(|output| output.output.name() == anchor)
-        {
+                .position(|output| output.connector == connector)
+            else {
+                continue;
+            };
             let output = self.outputs.remove(index);
             state
                 .display_handle
@@ -255,9 +488,14 @@ impl NativeKmsDevice {
             state.space.unmap_output(&output.output);
             state.forget_output_during_lock(&output.output.name());
             self.disabled_connectors.insert(output.connector);
+            tracing::info!(output = %output.output.name(), "disabled DRM output by monitor configuration");
             drop(output);
-            active.remove(&anchor);
         }
+        active = self
+            .outputs
+            .iter()
+            .map(|output| output.output.name())
+            .collect();
         if &active != enabled {
             return Err("native backend could not activate the requested output set".into());
         }

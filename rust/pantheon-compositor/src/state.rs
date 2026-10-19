@@ -385,6 +385,21 @@ impl PantheonCompositor {
             .filter(|snapshot| snapshot.enabled)
             .map(|snapshot| snapshot.connector.clone())
             .collect::<std::collections::HashSet<_>>();
+        let requested_mode_ids = snapshots
+            .iter()
+            .filter(|snapshot| snapshot.enabled)
+            .map(|snapshot| {
+                (
+                    snapshot.connector.clone(),
+                    format!(
+                        "{}x{}@{:.3}",
+                        snapshot.width,
+                        snapshot.height,
+                        f64::from(snapshot.refresh_millihz) / 1000.0
+                    ),
+                )
+            })
+            .collect::<HashMap<_, _>>();
         let Some(mut backend) = self.native_backend.take() else {
             return Err("native DRM backend is unavailable during monitor rollback".into());
         };
@@ -392,10 +407,12 @@ impl PantheonCompositor {
             let mut restored = false;
             let mut last_error = String::new();
             for _ in 0..=snapshots.len() {
-                match backend
-                    .kms
-                    .set_enabled_outputs(&mut backend.renderer, self, &enabled)
-                {
+                match backend.kms.set_enabled_outputs(
+                    &mut backend.renderer,
+                    self,
+                    &enabled,
+                    &requested_mode_ids,
+                ) {
                     Ok(()) => {
                         restored = true;
                         break;
@@ -690,14 +707,21 @@ impl PantheonCompositor {
             .cloned()
             .collect::<std::collections::HashSet<_>>();
         #[cfg(feature = "native-drm")]
+        let requested_mode_ids = configurations
+            .iter()
+            .map(|(name, configuration)| (name.clone(), configuration.5.clone()))
+            .collect::<HashMap<_, _>>();
+        #[cfg(feature = "native-drm")]
         {
             let Some(mut backend) = self.native_backend.take() else {
                 return Err("native DRM backend is unavailable".into());
             };
-            let result =
-                backend
-                    .kms
-                    .set_enabled_outputs(&mut backend.renderer, self, &enabled_connectors);
+            let result = backend.kms.set_enabled_outputs(
+                &mut backend.renderer,
+                self,
+                &enabled_connectors,
+                &requested_mode_ids,
+            );
             self.native_backend = Some(backend);
             if let Err(error) = result {
                 if let Err(rollback_error) =

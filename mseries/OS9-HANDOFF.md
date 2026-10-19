@@ -5797,15 +5797,15 @@ Package metadata and contents were inspected. It was not installed.
 
 ### Stage disjoint native output-set changes with a live anchor — 2026-10-19
 
-Removed the old/new set overlap requirement. The native backend retains one
-current output while it releases other CRTCs and initializes the requested
-connectors, then removes the anchor after output initialization succeeds. When
+Removed the old/new set overlap requirement. The native backend retains
+existing outputs while it initializes requested connectors, then removes old
+outputs after output initialization succeeds. When
 initialization or modesetting fails, the compositor attempts to restore the
 previous enabled set, modes, layout, work areas and window placement, and
 reconciles `GetCurrentState` if rollback itself fails. This supports disjoint
-transitions when the DRM device has enough compatible CRTCs. The current
-Smithay output-manager path still cannot reassign a single CRTC atomically, so
-a one-CRTC disjoint switch returns an error and retains the old output.
+transitions when the DRM device has enough compatible CRTCs. At that point,
+single-CRTC reassignment was not yet supported; the follow-up below adds it via
+the pinned Smithay surface connector/mode API.
 
 Default and `native-drm` `cargo check` pass. No tests or display session were
 run; failure injection, page-flip timing, disjoint transitions on hardware and
@@ -5815,3 +5815,22 @@ The ARM64 package built from `6ec3113` is at
 `/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-monitor-toggle-stage-release/pantheon-rust-compositor_0.1.0+git6ec3113_arm64.deb`
 (SHA-256 `457a2847d8588cc108f44b726909a42eeb2b804bb38e71fa74034de537f11a88`).
 Its package metadata and contents were inspected; it was not installed.
+
+### Reassign a single DRM CRTC to a new connector — 2026-10-19
+
+The pinned Smithay API supports double-buffered connector changes on a DRM
+surface. `NativeKmsDevice` now uses that surface's connector and mode update to
+route an existing CRTC to a newly requested connector, preserving the scanout
+pipeline when no spare CRTC is available. The new Wayland output replaces the
+old connector's global after the mode commit. If connector activation fails,
+the old connector and mode are restored; the outer ApplyMonitorsConfig rollback
+restores the previous output set, modes, layout and work areas. Targets that
+cannot use the existing CRTC still require another compatible CRTC and return
+an error without intentionally dropping all active outputs.
+
+Both default and `native-drm` `cargo check` pass. Smithay source inspection
+confirms the connector set is double-buffered and `use_mode` submits the pending
+mode with the composited frame; this is source/API evidence, not runtime proof.
+No monitor switch, page-flip check or failure injection has been run on the
+M-series device. The ARM64 package at `6ec3113` predates this change and must
+not be used to qualify it.
