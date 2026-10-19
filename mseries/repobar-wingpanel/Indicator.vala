@@ -50,6 +50,8 @@ namespace MSeries {
         private int64 last_notified_fetch = 0;
         private bool notify_ci = true;
         private bool show_contributions = true;
+        private string contribution_style = "dots";
+        private bool contributions_expanded = false;
         private string local_root = "";
 
         public RepoBarIndicator () {
@@ -457,6 +459,7 @@ namespace MSeries {
                 schedule_refresh ((uint) settings.get_int_member_with_default ("refreshInterval", 300));
                 notify_ci = settings.get_boolean_member_with_default ("notifyCi", true);
                 show_contributions = settings.get_boolean_member_with_default ("showContributions", true);
+                contribution_style = settings.get_string_member_with_default ("contributionStyle", "dots");
                 local_root = settings.get_string_member_with_default ("localRoot", "");
             }
             if (error.length == 0 && fetched_at > last_notified_fetch) {
@@ -628,12 +631,19 @@ namespace MSeries {
             } catch (Error e) {
                 // First run: Dashboard, no filter.
             }
+            try {
+                file.load_from_file (ui_state_path, KeyFileFlags.NONE);
+                contributions_expanded = file.get_boolean ("panel", "contributionsExpanded");
+            } catch (Error e) {
+                // The contribution graph starts collapsed.
+            }
         }
 
         private void save_ui_state () {
             var file = new KeyFile ();
             file.set_integer ("panel", "scope", scope);
             file.set_integer ("panel", "filter", filter);
+            file.set_boolean ("panel", "contributionsExpanded", contributions_expanded);
             try {
                 DirUtils.create_with_parents (GLib.Path.get_dirname (ui_state_path), 0700);
                 file.save_to_file (ui_state_path);
@@ -665,6 +675,7 @@ namespace MSeries {
         }
 
         private delegate void UndoAction ();
+        private delegate void LayoutAction ();
 
         private void show_toast (string title, owned UndoAction? undo) {
             if (toast != null) {
@@ -691,29 +702,61 @@ namespace MSeries {
             if (!contributions.has_member ("weeks")) return null;
             var weeks = contributions.get_array_member ("weeks");
             if (weeks.get_length () == 0) return null;
-            var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
-            card.add_css_class ("repo-card");
-            var head = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
-            var title = new Gtk.Label ("Contributions") { xalign = 0, hexpand = true };
-            title.add_css_class ("section-title");
-            head.append (title);
             int64 total = contributions.get_int_member_with_default ("total", 0);
             int64 week_total = 0;
             var last = weeks.get_array_element (weeks.get_length () - 1);
             for (uint i = 0; i < last.get_length (); i++) week_total += last.get_array_element (i).get_int_element (1);
-            var summary = new Gtk.Label ("%s this week · %s this year".printf (group_digits (week_total), group_digits (total)));
+            string full = "%s this week · %s this year".printf (group_digits (week_total), group_digits (total));
+
+            // Collapsed (the default) is a single line: heading, one mark per week, and this week's count.
+            // Clicking the heading expands it to the day-by-day calendar; clicking the calendar opens the profile.
+            var card = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
+            card.add_css_class ("repo-card");
+            var head = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            head.set_cursor_from_name ("pointer");
+            var chevron = new Gtk.Image.from_icon_name ("pan-end-symbolic") { pixel_size = 12, opacity = 0.55 };
+            head.append (chevron);
+            var title = new Gtk.Label ("Contributions") { xalign = 0 };
+            title.add_css_class ("section-title");
+            head.append (title);
+            var graph = new ContributionGraph (weeks, contribution_style, true) { valign = Gtk.Align.CENTER };
+            var summary = new Gtk.Label ("") { xalign = 1, hexpand = true };
             summary.add_css_class ("caption");
             summary.add_css_class ("dim-label");
             summary.add_css_class ("numeric");
             head.append (summary);
             card.append (head);
-            var graph = new ContributionGraph (weeks);
-            card.append (graph);
-            card.set_cursor_from_name ("pointer");
-            card.set_tooltip_text (null);
-            var click = new Gtk.GestureClick () { button = 1 };
-            click.released.connect (() => open_url ("https://" + host + "/" + account, card));
-            card.add_controller (click);
+            var open_profile = new Gtk.GestureClick () { button = 1 };
+            open_profile.released.connect (() => {
+                if (contributions_expanded) open_url ("https://" + host + "/" + account, graph);
+            });
+            graph.add_controller (open_profile);
+
+            LayoutAction layout = () => {
+                if (graph.get_parent () == card) card.remove (graph);
+                else if (graph.get_parent () == head) head.remove (graph);
+                graph.set_compact (!contributions_expanded);
+                if (contributions_expanded) {
+                    card.append (graph);
+                    graph.set_tooltip_text (null);
+                } else {
+                    head.insert_child_after (graph, title);
+                }
+                graph.margin_start = contributions_expanded ? 0 : 4;
+                summary.hexpand = contributions_expanded;
+                summary.set_text (contributions_expanded ? full : "%s this week".printf (group_digits (week_total)));
+                chevron.icon_name = contributions_expanded ? "pan-down-symbolic" : "pan-end-symbolic";
+                head.set_tooltip_text (contributions_expanded ? "Collapse to one line" : full + "\nClick to show every day");
+            };
+            layout ();
+            var toggle = new Gtk.GestureClick () { button = 1 };
+            toggle.released.connect (() => {
+                contributions_expanded = !contributions_expanded;
+                save_ui_state ();
+                layout ();
+            });
+            head.add_controller (toggle);
+            card.update_property (Gtk.AccessibleProperty.LABEL, "Contributions: " + full, -1);
             return card;
         }
 
@@ -1600,32 +1643,64 @@ namespace MSeries {
     }
 
     /* GitHub's contribution calendar: one column per week (newest at the right), as many weeks as fit,
-     * shaded from the accent colour; hovering a day names its date and count. */
+     * shaded from the accent colour; hovering a mark names its date and count. Styles: "squares" (GitHub's
+     * look), "dots" (smaller circles) and "fine" (toned periods). Compact mode is one row: a mark per week. */
     internal class ContributionGraph : Gtk.DrawingArea {
-        private const int CELL = 9;
-        private const int GAP = 2;
         private Json.Array weeks;
+        private string style;
+        private bool compact;
+        private int cell;
+        private int gap;
 
-        public ContributionGraph (Json.Array weeks) {
+        public ContributionGraph (Json.Array weeks, string style, bool compact) {
             this.weeks = weeks;
+            this.style = style == "squares" || style == "fine" ? style : "dots";
+            cell = this.style == "squares" ? 9 : this.style == "fine" ? 3 : 6;
+            gap = this.style == "squares" ? 2 : this.style == "fine" ? 3 : 2;
             add_css_class ("contribution-graph");
-            content_height = 7 * (CELL + GAP) - GAP;
             hexpand = true;
             has_tooltip = true;
             set_draw_func (draw);
             query_tooltip.connect (on_tooltip);
+            set_compact (compact);
+        }
+
+        public void set_compact (bool value) {
+            compact = value;
+            // A compact row keeps a hover target of at least 8 px even for fine dots.
+            content_height = compact ? int.max (cell, 8) : 7 * (cell + gap) - gap;
+            queue_draw ();
         }
 
         private int visible_weeks (int width) {
-            return int.min ((int) weeks.get_length (), (width + GAP) / (CELL + GAP));
+            return int.min ((int) weeks.get_length (), (width + gap) / (cell + gap));
+        }
+
+        private int64 week_total (Json.Array week) {
+            int64 total = 0;
+            for (uint d = 0; d < week.get_length (); d++) total += week.get_array_element (d).get_int_element (1);
+            return total;
         }
 
         private void draw (Gtk.DrawingArea area, Cairo.Context cr, int width, int height) {
             var color = get_color ();
             int shown = visible_weeks (width);
-            int offset = width - (shown * (CELL + GAP) - GAP);
+            int offset = width - (shown * (cell + gap) - gap);
             uint first = weeks.get_length () - shown;
-            double[] alphas = { 0.1, 0.35, 0.55, 0.78, 1.0 };
+            // Empty days stay faintly visible so the grid (or row of periods) still reads as a calendar.
+            double[] alphas = { style == "squares" ? 0.1 : 0.16, 0.35, 0.55, 0.78, 1.0 };
+            if (compact) {
+                int64 peak = 1;
+                for (int w = 0; w < shown; w++) peak = int64.max (peak, week_total (weeks.get_array_element (first + w)));
+                double top = (height - cell) / 2.0;
+                for (int w = 0; w < shown; w++) {
+                    int64 total = week_total (weeks.get_array_element (first + w));
+                    int level = total == 0 ? 0 : (int) ((4 * total + peak - 1) / peak).clamp (1, 4);
+                    cr.set_source_rgba (color.red, color.green, color.blue, alphas[level]);
+                    mark (cr, offset + w * (cell + gap), top);
+                }
+                return;
+            }
             for (int w = 0; w < shown; w++) {
                 var week = weeks.get_array_element (first + w);
                 for (uint d = 0; d < week.get_length (); d++) {
@@ -1634,29 +1709,45 @@ namespace MSeries {
                     int row = week.get_length () < 7 && w == 0 ? (int) (7 - week.get_length () + d) : (int) d;
                     int level = (int) day.get_int_element (2).clamp (0, 4);
                     cr.set_source_rgba (color.red, color.green, color.blue, alphas[level]);
-                    rounded (cr, offset + w * (CELL + GAP), row * (CELL + GAP), CELL, CELL, 2);
-                    cr.fill ();
+                    mark (cr, offset + w * (cell + gap), row * (cell + gap));
                 }
             }
         }
 
-        private static void rounded (Cairo.Context cr, double x, double y, double w, double h, double r) {
-            cr.new_sub_path ();
-            cr.arc (x + w - r, y + r, r, -Math.PI / 2, 0);
-            cr.arc (x + w - r, y + h - r, r, 0, Math.PI / 2);
-            cr.arc (x + r, y + h - r, r, Math.PI / 2, Math.PI);
-            cr.arc (x + r, y + r, r, Math.PI, 3 * Math.PI / 2);
-            cr.close_path ();
+        private void mark (Cairo.Context cr, double x, double y) {
+            if (style == "squares") {
+                double r = 2;
+                cr.new_sub_path ();
+                cr.arc (x + cell - r, y + r, r, -Math.PI / 2, 0);
+                cr.arc (x + cell - r, y + cell - r, r, 0, Math.PI / 2);
+                cr.arc (x + r, y + cell - r, r, Math.PI / 2, Math.PI);
+                cr.arc (x + r, y + r, r, Math.PI, 3 * Math.PI / 2);
+                cr.close_path ();
+            } else {
+                cr.new_sub_path ();
+                cr.arc (x + cell / 2.0, y + cell / 2.0, cell / 2.0, 0, 2 * Math.PI);
+            }
+            cr.fill ();
         }
 
         private bool on_tooltip (int x, int y, bool keyboard, Gtk.Tooltip tooltip) {
             int width = get_width ();
             int shown = visible_weeks (width);
-            int offset = width - (shown * (CELL + GAP) - GAP);
-            int w = (x - offset) / (CELL + GAP);
-            int row = y / (CELL + GAP);
-            if (x < offset || w < 0 || w >= shown || row < 0 || row > 6) return false;
+            int offset = width - (shown * (cell + gap) - gap);
+            // Hit-test by slot (mark plus its gap) so the tiny "fine" marks are still easy to hover.
+            int w = (x - offset) / (cell + gap);
+            if (x < offset || w < 0 || w >= shown) return false;
             var week = weeks.get_array_element (weeks.get_length () - shown + w);
+            if (compact) {
+                if (week.get_length () == 0) return false;
+                int64 total = week_total (week);
+                var start = new DateTime.from_iso8601 (week.get_array_element (0).get_string_element (0) + "T12:00:00Z", null);
+                tooltip.set_text ("%s contribution%s · week of %s".printf (total == 0 ? "No" : total.to_string (),
+                    total == 1 ? "" : "s", start != null ? start.format ("%-d %b %Y") : week.get_array_element (0).get_string_element (0)));
+                return true;
+            }
+            int row = y / (cell + gap);
+            if (row < 0 || row > 6) return false;
             int d = week.get_length () < 7 && w == 0 ? row - (int) (7 - week.get_length ()) : row;
             if (d < 0 || d >= week.get_length ()) return false;
             var day = week.get_array_element (d);
