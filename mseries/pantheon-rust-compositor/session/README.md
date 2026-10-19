@@ -46,9 +46,9 @@ after compositor readiness and Wingpanel-before-Dock. A local ARM64 package
 build includes the new units, but they have not been installed or run in a live
 session. The first native package had no wallpaper; compositor-side wallpaper
 rendering has since been implemented and visually smoke-tested in nested Xvfb,
-and staged ARM64 package `0.1.0+gitc24d53a` includes it, along with the Dock
-opt-out guard. The package has not been installed or qualified on native
-output. The installed five-minute
+and staged ARM64 package `0.1.0+git8c784dc` includes it, along with the live
+wallpaper settings watcher and Dock opt-out guard. The package has not been
+installed or qualified on native output. The installed five-minute
 rollback was exercised and returned LightDM to Gala.
 
 The session carries forward the installed Pantheon settings-daemon, keyring,

@@ -24,8 +24,10 @@ or wallpaper/background. A timed LightDM rollback returned to Gala and
 restored the background. Separate systemd user services have since been staged
 to launch Wingpanel and Dock after the compositor. A local ARM64 package build
 now includes those units. The staged ARM64 package
-`0.1.0+gitc24d53a` also includes the wallpaper renderer and Dock opt-out
-guard; it is built but not installed or runtime-qualified.
+`0.1.0+git8c784dc` also includes the wallpaper renderer, live wallpaper
+settings watcher, and Dock opt-out guard; it is built but not installed or
+runtime-qualified. Package SHA-256:
+`a83d4709064bc447ecd24909a4d9a0830d5f168ee20b62e468e23557e5257329`.
 This proves the native display path and rollback, not a
 complete Pantheon session or a performance/stability improvement.
 

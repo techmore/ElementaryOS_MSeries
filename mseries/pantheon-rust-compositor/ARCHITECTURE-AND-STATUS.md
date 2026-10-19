@@ -120,10 +120,11 @@ honoring the user's opt-out even though it invokes the distro executable by
 absolute path. The compositor loads the configured local wallpaper, renders it
 behind windows, and honors the `zoom` crop mode. It polls for URI or crop-mode
 changes every two seconds and requests a redraw; this path is build-checked but
-not runtime-qualified. The staged ARM64 package `0.1.0+gitc24d53a` includes the
-wallpaper renderer, shell units, and Dock opt-out guard; it has not been
-installed or qualified on native output. Its SHA-256 is
-`39b5ea3c57c6bed02584fd27bd1ecdec8a9da73ec9c535fc03eec0e6600672c1`. In the
+not runtime-qualified. The staged ARM64 package `0.1.0+git8c784dc` includes the
+wallpaper renderer, live wallpaper settings watcher, shell units, and Dock
+opt-out guard; it has not been installed or qualified on native output. Its
+SHA-256 is
+`a83d4709064bc447ecd24909a4d9a0830d5f168ee20b62e468e23557e5257329`. In the
 nested Winit backend, the default transform is set to compensate
 for the framebuffer orientation observed under Xvfb; this produced an upright
 wallpaper and top Wingpanel in a fresh nested run. It does not alter the native
