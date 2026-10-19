@@ -185,11 +185,14 @@ sent `get_panel`, `set_anchor(top)`, and `set_hide_mode(never)`, then allocated
 and attached shared-memory buffers. Wingpanel requires
 `org.gnome.Mutter.DisplayConfig`; the compositor serves its `GetCurrentState`
 query with every tracked output's current mode, logical position, scale, and
-primary status. A 2026-10-19 rerun with `GSK_RENDERER=cairo` again showed
-Wingpanel binding the shell global, sending `get_panel`, anchor and hide-mode
-requests, and attaching shared-memory buffers to its panel surface. It emitted
-an `io.elementary.panel.keyboard` critical assertion under Xvfb, so panel
-keyboard interaction remains unqualified. Native outputs list connector modes
+primary status. A 2026-10-19 rerun with `GSK_RENDERER=cairo` and the host's
+input-source settings copied into a private GSettings keyfile showed Wingpanel
+binding the shell global, sending `get_panel`, anchor and hide-mode requests,
+receiving the compositor keymap and keyboard focus, and attaching 69 shared-
+memory buffers without a critical assertion. A run with empty input-source
+settings had emitted an `io.elementary.panel.keyboard` assertion; that result
+was caused by the incomplete test fixture. Panel keyboard interaction still
+needs direct input qualification. Native outputs list connector modes
 reported by DRM and mark active/preferred entries; the nested backend reports
 its actual Winit size.
 `ApplyMonitorsConfig` validates serials, connector assignments, mode IDs, scale

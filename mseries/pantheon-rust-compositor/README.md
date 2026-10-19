@@ -92,9 +92,11 @@ Neither result demonstrates that the session can replace Gala. No isolated
 native login has been run, so actual scanout, native keyboard/pointer input,
 application launch, IBus text commits, Dock behavior, lock/unlock and crash
 recovery are still unknown. Installed Wingpanel now binds the shell protocol
-and attaches shared-memory panel buffers in an isolated Xvfb run, but its
-keyboard module emits a critical assertion there; that does not qualify full
-panel behavior. Keep Gala selected and use the Rust compositor only in an
+and attaches shared-memory panel buffers in an isolated Xvfb run. The panel
+keyboard assertion seen with empty settings disappeared after the test used a
+private GSettings fixture containing the host's input-source values; this
+confirms a fixture issue, while direct keyboard interaction remains untested.
+Keep Gala selected and use the Rust compositor only in an
 explicitly isolated qualification session after its prerequisites are checked.
 
 The next gate is staged nested qualification with real GTK/Qt clients and the
