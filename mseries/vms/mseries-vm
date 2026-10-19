@@ -421,8 +421,14 @@ cmd_start() {
         if (( index == 0 )) && [[ $BOOT == iso ]] && [[ -n $ISO ]]; then
             boot_arg=",bootindex=1"
         fi
+        # Extra media can ride on USB: Windows PE reads USB storage with its
+        # in-box driver but has no virtio-scsi driver until you load one from it.
+        local cd_device=scsi-cd
+        if (( index > 0 )) && [[ ${EXTRA_BUS:-scsi} == usb ]]; then
+            cd_device=usb-storage
+        fi
         cmd+=(-drive "if=none,id=cdrom$index,format=raw,media=cdrom,readonly=on,file=$medium"
-              -device "scsi-cd,drive=cdrom$index$boot_arg")
+              -device "$cd_device,drive=cdrom$index$boot_arg")
         index=$((index + 1))
     done
     if [[ $NET == none ]]; then
@@ -621,6 +627,7 @@ cmd_set() {
         TPM) [[ $value == on || $value == off ]] || die "$key must be on or off" ;;
         AUDIO|GL) [[ $value == on || $value == off ]] || die "$key must be on or off" ;;
         GPU) [[ $value == virtio || $value == ramfb ]] || die "GPU must be virtio or ramfb" ;;
+        EXTRA_BUS) [[ $value == scsi || $value == usb ]] || die "EXTRA_BUS must be scsi or usb" ;;
         CPUS|MEMORY_MB) [[ $value =~ ^[1-9][0-9]*$ ]] || die "$key must be a positive integer" ;;
         DISK_BUS) [[ $value == virtio || $value == nvme ]] || die "DISK_BUS must be virtio or nvme" ;;
         FIRMWARE) [[ -f $AAVMF_DIR/$value ]] || die "firmware not found: $AAVMF_DIR/$value" ;;
