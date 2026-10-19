@@ -1,5 +1,40 @@
 # OS 9 implementation / Claude Code handoff
 
+## CodexBar v0.78.0 deployed; CLI blocked by libxml2 soname — 2026-10-19
+
+PR #271 (production hardening: the valac nested-ternary use-after-free behind the
+quota captions and reset countdowns, Grok Build provider, upstream v0.78.0)
+merged into `dev` at `b772dc8`. The full deploy then ran on this machine.
+
+**Deployed and live:** `install-codexbar.sh --skip-system-deps` (v0.78.0),
+CodexBar restarted, `deploy-codexbar.sh --restart` passed **17/17** tests and
+installed `libcodexbar.so`; Wingpanel reloaded and CodexBar is running. The
+use-after-free fix and the Grok provider are in the live panel.
+
+**Probe fix landed first (`23cd4ea` on `dev`):** `grok-panel` failed on this
+machine while CI passed, because the Grok CLI installer puts `~/.grok/bin` on
+PATH, so `grok_binary()` resolved the real binary instead of the fixture stub and
+the sign-in assertion could not match. `probe/run-probe.sh` now drops PATH
+entries that provide a `grok` executable, making the probe deterministic on any
+host. Verified: both grok scenarios render here; CI (no grok on PATH) is
+unchanged.
+
+**Port check FAILED — one root cause, not several:** the v0.78.0 upstream CLI
+(`CodexBarCLI`) links `libxml2.so.2`, and this base ships libxml2 2.14, whose
+soname is `libxml2.so.16` (`/usr/lib/aarch64-linux-gnu/libxml2.so.16`). The CLI
+cannot load, so every CLI-dependent check fails: "upstream CLI not runnable",
+`--all-accounts`/`--account` lost, "no longer lists provider grok", the pin
+comparison, and codex usage. The desktop app does not link xml2, which is why
+the panel itself is fine, and v0.77.0's CLI had no such dependency. v0.78.0
+(published 2026-10-19T18:29Z) is the latest upstream release; there is no newer
+build to move to.
+
+Not done, needs an owner decision: (a) report the soname break upstream, (b)
+vendor a libxml2.so.2 (or symlink to .so.16 behind `LD_LIBRARY_PATH` — the ABI
+question is unverified), or (c) hold the CLI at v0.77.0 until upstream rebuilds.
+Also still owner-gated: the interactive `grok login` that gives the Grok card
+live credits — and that needs the CLI running first.
+
 ## CodexBar production hardening + Grok Build; upstream v0.78.0 — 2026-10-19 (Claude Code)
 
 **Pin:** `install-codexbar.sh` now pins upstream **v0.78.0** (was v0.77.0). Both Linux aarch64
