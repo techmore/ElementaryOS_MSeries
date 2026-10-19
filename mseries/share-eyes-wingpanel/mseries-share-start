@@ -4,4 +4,5 @@
 core=$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/rupert-share/core-path" 2>/dev/null || echo "$HOME/Projects/rupert-share/core")
 [ -x "$core/scripts/share-demo.sh" ] || { echo "share-demo.sh not found in $core" >&2; exit 1; }
 if ss -ltn 2>/dev/null | awk '{print $4}' | grep -qE '[:.]8799$'; then exit 0; fi
-cd "$core" && exec setsid timeout --signal=TERM 24h scripts/share-demo.sh --lan --port 8799 >/dev/null 2>&1 </dev/null
+pub=$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/rupert-share/public-url" 2>/dev/null || true)   # e.g. https://tm-remote.stoverparc.org
+cd "$core" && exec setsid timeout --signal=TERM 24h scripts/share-demo.sh --lan --port 8799 ${pub:+--public "$pub"} >/dev/null 2>&1 </dev/null
