@@ -109,6 +109,17 @@ The nested stock Dock 8.3.3 smoke bound the panel protocol and attached buffers,
 but also logged its known asynchronous workspace-initialization critical, so
 Dock interaction is still not qualified end to end.
 
+The current ARM64 release candidate from commit `619ca5c` is saved at
+`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-workspace-release/pantheon-rust-compositor_0.1.0+git619ca5c_arm64.deb`
+(SHA-256 `aee4c9af0d12c1a2bddbfd45dcd5a79e71afe8c8adc28d9ff46e7cf204d0ea13`).
+The package contents, control dependencies and shared-library links were
+inspected; it was not installed. Its release binary started in private Xvfb,
+reported XWayland ready, and served a Zenity window through `GetWindows` with
+`app-id=zenity`, focus true and the initial two-workspace count. This qualifies
+the nested release path for continued development testing only. It does not
+qualify visible rendering, native DRM scanout, the full Pantheon shell or a
+login session.
+
 The next gate is staged nested qualification with real GTK/Qt clients and the
 existing Pantheon shell clients, including Dock launcher/window switching and
 IBus focus/commit behavior. After that passes, run the package in a separate native login with a tested recovery
@@ -129,13 +140,9 @@ login.
 with the separate experimental session files. It derives shared-library
 dependencies and requires `gnome-session` and `gtklock`. Build it locally with
 `OUTDIR=/path/to/output mseries/pantheon-rust-compositor/build-deb.sh`. The
-The locally built arm64 package from commit `7b1b46b` is saved at
-`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-ibus-release/pantheon-rust-compositor_0.1.0+git7b1b46b_arm64.deb`
-(SHA-256 `031b409e6c367487bc97adba375a865c79cb691bd48ea8f8b7e9b4255d3dd885`).
-It includes the XWayland runtime dependency and is for isolated qualification;
-the build script does not install it. The package contents and dependency
-metadata were inspected after building. The IBus Wayland path has not yet been
-runtime-qualified, and no display takeover was run.
+current package above includes the XWayland runtime dependency and is for
+isolated qualification; the build script does not install it. The IBus Wayland
+path has not yet been runtime-qualified, and no display takeover was run.
 
 ## Dock HDMI boundary
 

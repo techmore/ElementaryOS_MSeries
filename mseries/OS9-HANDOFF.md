@@ -5837,3 +5837,19 @@ not be used to qualify it. The ARM64 release candidate built from `c91ec2d` is
 at `/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-crtc-reassign-release/pantheon-rust-compositor_0.1.0+gitc91ec2d_arm64.deb`
 (SHA-256 `46baf4fc264cb23b8e784bc57a2b23d7f34b5a8f0930391a34f9d341f327303c`).
 Its package metadata and contents were inspected; it was not installed.
+
+### Build current Rust Pantheon workspace release candidate — 2026-10-19
+
+Built the current `619ca5c` ARM64 `native-drm` release package locally at
+`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-workspace-release/pantheon-rust-compositor_0.1.0+git619ca5c_arm64.deb`
+(SHA-256 `aee4c9af0d12c1a2bddbfd45dcd5a79e71afe8c8adc28d9ff46e7cf204d0ea13`).
+Package contents, Debian dependency metadata and `ldd` links were inspected;
+the package was not installed. The release binary started under private D-Bus
+and Xvfb, initialized Winit and XWayland, and launched a Zenity Wayland window.
+`GetNWorkspaces` returned 2, and `GetWindows` returned the focused Zenity
+window on workspace 0. This proves a useful nested release-build path and
+means development qualification can proceed now. It does not prove the UI was
+visually inspected, the Pantheon shell works end to end, or native scanout,
+input, locking and recovery. Gala remains the selected session. Next: qualify
+GTK/Qt apps, IBus commit behavior, and the installed shell clients in the
+isolated nested session; do not install this package as the active session.
