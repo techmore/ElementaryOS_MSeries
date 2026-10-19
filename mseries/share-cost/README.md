@@ -17,9 +17,11 @@ encoder available from Linux.
 
 ## Run it
 
-Start a share the usual way (`mseries-share-start`, or
-`~/Projects/rupert-share/core/scripts/share-demo.sh --lan|--tailnet|--public …`),
-connect your viewers, then capture a matched pair:
+Start the existing demo server with at least the viewer count under test. The
+usual `mseries-share-start` launcher caps at 1, so a 3-viewer arm needs the
+server's `--max-viewers 3` option (for example
+`~/Projects/rupert-share/core/scripts/share-demo.sh --lan --max-viewers 3`).
+Connect your viewers, then capture a matched pair:
 
 ```bash
 # same machine, display, content and interval; only the viewer count changes
@@ -28,6 +30,7 @@ bash mseries/share-cost/collect-share-cost.sh 60 fullscreen-video 3 5 > viewers-
 
 python3 mseries/share-cost/summarize-share-cost.py viewers-*.csv
 python3 mseries/share-cost/summarize-share-cost.py --process viewers-3.csv   # per-process detail
+python3 mseries/share-cost/compare-share-cost.py viewers-*.csv               # matched-pair verdict
 ```
 
 Arguments: `<duration-seconds> <workload-label> <viewers> [interval-seconds]`,
@@ -36,6 +39,13 @@ launcher reports a live share). The collector is read-only: it reads `/proc`,
 hwmon and the launcher's `state.json`, and never starts, stops or touches a
 share, the portal or PipeWire. It records viewer counts as the launcher reports
 them, so a run that expected 3 viewers but had 2 says so.
+
+`compare-share-cost.py` refuses a set whose recorded workload, display mode,
+duration, interval or browser differ, and refuses a capture whose observed
+viewer count or AC state does not match its header. It reports the condition
+medians, the delta, the within-condition spread and the verdict; with fewer than
+two captures on either side it says `insufficient repeats` rather than treating
+a single run as a result.
 
 To verify the collector itself against a real share server without touching the
 live desktop, `probe-live-share.sh /path/to/rupert-share/core` starts a
@@ -69,15 +79,19 @@ cost, because no browser capture runs in it.
 
 - A difference in owner-side CPU or whole-system watts that exceeds the spread
   between repeated arms of the same condition, with the conditions above
-  recorded. Until then the honest statement is "no measured difference".
-- For any proposed change (Rust capture/SFU, TURN, more viewers): before/after
-  captures under the same protocol. Language choice is not a result.
+  recorded. `compare-share-cost.py` applies that rule and needs at least two
+  captures on each side; until then the honest statement is "no measured
+  difference".
+- For any proposed change (TURN, more viewers, a different capture path):
+  before/after captures under the same protocol. Language choice is not a
+  result.
 
 ## Relationship to the other collectors
 
 Same CSV shape as `pantheon-rust-compositor/collect-session-metrics.sh` plus
-`role`, power and share-state columns, and the reducer reads both (captures
-without a `role` column fall back to per-process grouping). Results can feed
+`role`, power and share-state columns. The summarizer reads both (captures
+without a `role` column fall back to per-process grouping); the matched-pair
+comparison applies only to share captures with viewer counts. Results can feed
 the Optimization repository's `powerlab` workflow the same way other
 measurements do.
 

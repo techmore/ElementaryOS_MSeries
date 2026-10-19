@@ -114,6 +114,28 @@ def observed_viewers(rows):
     return seen
 
 
+def power_samples(rows):
+    """Whole-system watts, one value per sample timestamp. NA/absent excluded."""
+    per_sample = {}
+    for row in rows:
+        utc = row.get("utc")
+        if not utc or utc in per_sample:
+            continue
+        value = numeric(row.get("system_power_w"))
+        if value is not None:
+            per_sample[utc] = value
+    return list(per_sample.values())
+
+
+def observed_ac(rows):
+    seen = []
+    for row in rows:
+        value = row.get("ac_online")
+        if value and value != "NA" and value not in seen:
+            seen.append(value)
+    return seen
+
+
 def capture_summary(path, per_process=False):
     metadata, rows = read_capture(path)
     has_role = any(row.get("role") for row in rows)
@@ -138,6 +160,8 @@ def capture_summary(path, per_process=False):
         "file": str(path),
         "metadata": metadata,
         "viewers_observed": observed_viewers(rows),
+        "ac_online_observed": observed_ac(rows),
+        "power": stats(power_samples(rows)),
         "groups": processes,
     }
 
@@ -154,6 +178,14 @@ def render_text(summary):
               viewers_expected=meta.get("viewers_expected", "?")))
     observed = summary["viewers_observed"]
     print(f"   viewers observed in capture: {', '.join(observed) if observed else 'NA'}")
+    power = summary["power"]
+    ac = summary["ac_online_observed"]
+    if power["n"]:
+        suffix = f" ac_online={','.join(ac)}" if ac else ""
+        print(f"   system power: median {power['median']} W (n={power['n']}, "
+              f"min {power['min']}, max {power['max']}){suffix}")
+    else:
+        print("   system power: NA (no SMC power rail samples)")
     print(f"   {'group':<24} {'n':>3} {'cpu mean':>9} {'cpu median':>11} {'cpu min':>8} {'cpu max':>8} {'rss median KiB':>15}")
     for g in summary["groups"]:
         cpu, rss = g["cpu"], g["rss"]

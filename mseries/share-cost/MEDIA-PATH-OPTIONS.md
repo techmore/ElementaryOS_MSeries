@@ -132,8 +132,10 @@ links, admission, status and audit; viewer pages move to the LiveKit JS SDK.
 ## Decision gates
 
 1. **Owner-side CPU, 1 viewer vs 3 viewers**, matched pairs from
-   `collect-share-cost.sh` (≥60 s arms, alternating, same content and display).
-   This is the gate that decides whether Option A includes a viewer-cap raise.
+   `collect-share-cost.sh` (≥60 s arms, alternating, same content and display)
+   and interpreted by `compare-share-cost.py`, which requires at least two
+   captures per condition and applies the within-condition spread rule. This is
+   the gate that decides whether Option A includes a viewer-cap raise.
 2. **Whole-system watts** for the same arms on AC (SMC `power1_input`).
 3. **Media on the server — resolved: no.** The owner rejected B/C/D on
    2026-10-19. Reopening this gate requires an explicit owner decision.

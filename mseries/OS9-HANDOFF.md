@@ -1,5 +1,19 @@
 # OS 9 implementation / Claude Code handoff
 
+## Matched-pair reducer for share cost — 2026-10-19
+
+Added `mseries/share-cost/compare-share-cost.py` (+ seven tests): it groups
+captures by expected viewer count, refuses a set whose recorded workload,
+display mode, duration, interval or browser differ, refuses a capture whose
+observed viewer count or AC state disagrees with its header, and applies the
+README rule — a difference counts only when it exceeds the larger
+within-condition spread, with at least two captures per condition. The
+summarizer now also reduces the SMC `system_power_w` column, which the README
+already told readers to use. CI compiles and runs both share-cost test files.
+
+The matched pair itself is still pending the owner's live share and real
+viewers. No performance claim has been made.
+
 ## Screen-share media path: owner decision — 2026-10-19
 
 Recorded the owner's media-path decision for the share-cost work. Media stays
