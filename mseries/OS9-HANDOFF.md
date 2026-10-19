@@ -1,5 +1,36 @@
 # OS 9 implementation / Claude Code handoff
 
+## First native Rust compositor login and scanout — 2026-10-19
+
+Installed the ARM64 opt-in session package
+`pantheon-rust-compositor_0.1.0+git83a663c_arm64.deb` on the M1 Pro, along
+with its missing `gnome-session` and `gtklock` dependencies. Gala's existing
+LightDM session entry remains intact. For one isolated native qualification,
+LightDM autologin was temporarily pointed at `pantheon-rust-wayland` and a
+five-minute systemd rollback timer was armed to remove the override and restart
+LightDM back into the original Gala session.
+
+The experimental GNOME session reached `READY=1`, opened `/dev/dri/card1` and
+Apple `/dev/dri/card2`, started XWayland and the installed Pantheon settings
+services, and launched the user's existing desktop apps. Kernel DRM state at
+`/sys/kernel/debug/dri/2/state` confirms plane 0 on `crtc-0` is scanning out
+framebuffer 87, allocated by `pantheon-compositor`, in AR30 at 3024x1964. The
+owner reports the desktop appears to work and is usable, with slower-feeling
+startup. The top menu/Wingpanel and bottom dock are both missing; neither
+process is running, and the experimental session's `RequiredComponents` list
+does not include either shell client. This proves first native login and
+visible internal-panel scanout, but not full Pantheon readiness, external
+display use, input coverage, lock/logout/recovery, performance improvement or
+crash-rate improvement. Gala remains the rollback path.
+
+Also passed an isolated XWayland smoke before native login: an X11 Zenity
+window mapped under Xvfb, accepted keyboard input, and appeared in the live
+window-list D-Bus query. Clipboard/PRIMARY transfers and broader X11 workflows
+remain open. The quality gates now explicitly call for matched Gala/Rust
+startup, resource, latency, power and crash/recovery measurements before
+claiming the migration is faster, lighter or more reliable. See
+[`pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md`](pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md).
+
 ## Mutter-minimal viable Rust compositor: KMS framebuffer preflight — 2026-10-19
 
 Ran the existing release-mode `pantheon-drm-probe` on the M1 Pro with

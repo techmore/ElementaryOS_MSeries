@@ -29,11 +29,12 @@ have not been exercised in a live GNOME session.
 The directory layout mirrors install paths below `usr/`. A distro package can
 stage the payload under its package root and install it with the compositor
 binary at `/usr/bin/pantheon-compositor`; the repository's
-`../build-deb.sh` creates that arm64 package. Do not add these files to
-the active host session until the native backend, login, app startup, lock,
-logout and recovery have been qualified on a separate session. Native DRM
-startup takes over the display device and has not been runtime-qualified on
-this machine.
+`../build-deb.sh` creates that arm64 package. On 2026-10-19 the installed opt-in
+session completed a native M1 Pro login and first scanout at 3024x1964 using an
+AR30 framebuffer. The owner confirmed the desktop became usable. Wingpanel and
+the bottom dock were missing, startup felt slow, and app behavior, lock/logout,
+recovery, performance and external-monitor use remain unqualified. Keep Gala as
+the rollback session while these gates are addressed.
 
 The session carries forward the installed Pantheon settings-daemon, keyring,
 Orca and elementary settings-daemon targets. It intentionally does not promise

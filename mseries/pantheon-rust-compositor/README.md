@@ -46,9 +46,11 @@ fullscreen, minimize, restore, and activation requests, sends keyboard input to
 focused X11 clients, and bridges clipboard and PRIMARY selection ownership and
 transfers. Native startup exports the selected `DISPLAY` through D-Bus and
 systemd activation environments; the `--run` client waits for XWayland
-readiness. XWayland keyboard, clipboard, PRIMARY selection, session activation,
-and X11 window behavior compile but still need runtime qualification. The
-package depends on the `xwayland` executable.
+readiness. An isolated Xvfb smoke mapped an X11 Zenity window, accepted
+keyboard input, and exposed the focused window (`zenity`, workspace 0) through
+the live window-list D-Bus method. Clipboard/PRIMARY transfers, session
+activation, and broader X11 window behavior remain unqualified. The package
+depends on the `xwayland` executable.
 
 Panel reservations and managed maximize/tile layouts are tracked per output
 connector. Maximized/fullscreen windows and popup constraints use the window's

@@ -5,8 +5,13 @@
 The `619ca5c` workspace slice is committed and pushed. A current ARM64 release
 candidate was packaged locally and checked in private Xvfb: Winit and XWayland
 started, and Zenity appeared in the compositor's live Gala-compatible window
-snapshot with focus and the expected two-workspace count. This allows broader
-nested development qualification to proceed. Installed Wingpanel also
+snapshot with focus and the expected two-workspace count. On 2026-10-19 the
+opt-in LightDM session also completed its first native M1 Pro login and scanout:
+kernel DRM state showed the compositor's AR30 framebuffer active at 3024x1964,
+and the owner confirmed the desktop was usable. Startup felt slow, and Wingpanel
+and the bottom dock were absent because the experimental session does not start
+them yet. This proves the first native display path, not full Pantheon readiness
+or daily-use stability. Installed Wingpanel also
 connected in private Xvfb, sent shell v2 panel requests, allocated SHM buffers,
 and received a valid nested `GetCurrentState` response. It is not evidence for
 physical keyboard input or native display takeover. A private GTK/Wayland

@@ -29,7 +29,12 @@ cargo run -p pantheon-compositor --features native-drm -- --backend native
 
 Native startup acquires the active libseat session and initializes a DRM/KMS
 output. It takes over the display device, so do not launch it inside the
-currently active desktop. It is not yet runtime-qualified on M-series hardware.
+currently active desktop. On 2026-10-19 the opt-in LightDM session reached a
+real M1 Pro scanout: Apple DRM plane 0 had an active 3024x1964 AR30 framebuffer
+allocated by `pantheon-compositor`, and the owner confirmed the desktop was
+visible and usable. This is first-login evidence, not daily-use qualification;
+the top panel and bottom dock were absent, startup felt slow, and performance,
+crash recovery and external-monitor behavior remain open.
 Fatal DRM event/frame-completion errors end the process with a failure status;
 three consecutive native render failures do likewise. In the experimental
 session service this allows systemd's bounded restart and shutdown policy to
@@ -45,7 +50,10 @@ The separate Pantheon login-session payload is maintained in
 [`../../mseries/pantheon-rust-compositor/session/`](../../mseries/pantheon-rust-compositor/session/README.md).
 Its `PANTHEON_WAYLAND_DISPLAY` environment override selects a fixed socket for
 the session service; without it the compositor chooses an available socket.
-The payload has not been installed or runtime-qualified.
+The ARM64 package has been installed on the M1 Pro, and LightDM lists the
+separate **Pantheon (Rust compositor, experimental)** session. It reached
+native scanout on the M1 Pro, but still lacks a complete shell: Wingpanel and
+the bottom dock did not start. Gala remains the rollback session.
 
 To exercise the Pantheon protocol against the nested socket, build both binaries
 and start the compositor with its probe client:
@@ -117,8 +125,11 @@ D-Bus/session path still need runtime qualification. Widget, extended-behavior
 and greeter protocol requests are accepted but currently have no behavior.
 
 Rootless XWayland startup, X11 window management, keyboard routing, session
-`DISPLAY` propagation, clipboard and PRIMARY selection bridging are implemented
-and compile-checked, but still need runtime qualification. Native multi-output
+`DISPLAY` propagation, clipboard and PRIMARY selection bridging are implemented.
+A private Xvfb smoke mapped an X11 Zenity window, typed `wayland input 42` into
+it, and observed its focused `zenity` entry on workspace 0 through the live
+window-list D-Bus method. Clipboard/PRIMARY transfer, activation from the
+desktop session, and other X11 workflows remain unqualified. Native multi-output
 enumeration and hotplug reconciliation exist; configuration rejects output
 disabling, mirroring, unsupported monitor properties and nested mode changes.
 Monitor modeset/rollback and hotplug remain unqualified on hardware. Smithay's

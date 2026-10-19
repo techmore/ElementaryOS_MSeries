@@ -96,6 +96,21 @@ planning against a release.
 4. Add conditional capabilities only against named apps/workflows and explicit
    acceptance checks. Keep Gala available as rollback until owner acceptance.
 
+## Reliability and performance gates
+
+The migration target includes a measurable quality improvement: faster startup
+and interaction, lower steady-state CPU/memory/GPU and power use, and fewer
+crashes than Gala on the same M-series hardware. Do not claim those gains from
+feature coverage or a single successful login. Capture a Gala baseline and a
+Rust result under the same display mode and workloads: cold login-to-usable
+time; idle and representative-workload CPU, resident memory, GPU activity and
+battery/power draw; frame/input latency where measurable; and crash-free
+session duration plus restart/recovery outcomes. Keep dated results and the
+workload/environment with each run. Set numerical pass thresholds from the
+baseline before calling the migration better or ready for daily use. Track
+startup and runtime faults with journal excerpts and crash signatures so
+regressions can be tied to a specific branch revision.
+
 The nested prototype serves the Pantheon shell protocol v2, places a panel from
 its anchor/size/offset, and honors hide modes by tracking maximized/focused or
 overlapping windows. Pointer motion at the output edge reveals hidden panels;
