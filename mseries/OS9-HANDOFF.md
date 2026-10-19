@@ -5833,4 +5833,7 @@ confirms the connector set is double-buffered and `use_mode` submits the pending
 mode with the composited frame; this is source/API evidence, not runtime proof.
 No monitor switch, page-flip check or failure injection has been run on the
 M-series device. The ARM64 package at `6ec3113` predates this change and must
-not be used to qualify it.
+not be used to qualify it. The ARM64 release candidate built from `c91ec2d` is
+at `/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-crtc-reassign-release/pantheon-rust-compositor_0.1.0+gitc91ec2d_arm64.deb`
+(SHA-256 `46baf4fc264cb23b8e784bc57a2b23d7f34b5a8f0930391a34f9d341f327303c`).
+Its package metadata and contents were inspected; it was not installed.
