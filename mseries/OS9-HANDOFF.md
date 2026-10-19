@@ -6160,3 +6160,13 @@ about two minutes. Changed: greeter default session set back to `pantheon-waylan
 `~/.dmrc`); new `mseries/install-portal-relogin-fix.sh` installed for the owner (portal needs
 `WAYLAND_DISPLAY`; unverified until the next crash). Mutter frames not yet symbolized (debuginfod timed
 out); stock-Gala A/B is the owner's call. Details: `mseries/PANTHEON-CRASH-2026-10-18.md`.
+
+## 2026-10-18: Machine Lab (native VM app)
+
+`mseries/machine-lab/` is the elementary-styled VM app (Vala/GTK4/Granite 7); `bash mseries/install-machine-lab.sh`
+installs it to `~/.local` and pins it in the dock. Merged in the Codex spike's Omarchy nightly updater and
+unattended-install launcher; added pause/resume (QMP), import of `mseries-vm` guests, new-vs-installed panels,
+free-space warning. Verified: builds, Broadway renders, pause/resume against a headless QEMU, `--check` of the
+Omarchy nightly. Not verified: a complete guest install/boot (~6 GiB download; host had ~19 GiB free) and
+suspend/resume of the app itself. Next: run the Omarchy automatic install once space is freed, and lift
+`~/Documents/Codex/2026-10-18/f-2/work/youtube-iso-test` (42 GB, owner decides) if space is needed.
