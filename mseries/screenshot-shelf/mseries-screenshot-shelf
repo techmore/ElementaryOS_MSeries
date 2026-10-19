@@ -327,15 +327,24 @@ class Shelf(Gtk.Window):
         return bool(keyboard and keyboard.get_modifier_state() & Gdk.ModifierType.ALT_MASK)
 
     def drop_path(self):
-        """The path a drop target gets: a portal export when possible, so Flatpak apps can read it."""
+        """The path a drop target gets: a portal export only when a Flatpak app is running to read it.
+
+        Native apps (Signal Beta is one) read the staged file directly. A portal path that does not exist
+        on the host (the FUSE mount can lag or lose exports) is a dead file URI and the drop is refused,
+        so it is never offered.
+        """
+        if not running_flatpak_apps():
+            return self.staged
         try:
             if self.export is None:
                 self.export = PortalExport(self.staged)
             self.export.grant_running()
-            return self.export.path
+            if os.path.exists(self.export.path):
+                return self.export.path
+            log("portal export not visible on the host; offering the staged path")
         except (GLib.Error, OSError) as error:
             log(f"document portal unavailable ({error}); offering the staged path")
-            return self.staged
+        return self.staged
 
     def on_prepare(self, source, _x, _y):
         if self.alt_held():
