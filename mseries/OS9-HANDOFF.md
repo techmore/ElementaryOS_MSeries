@@ -23,8 +23,10 @@ missing DisplayConfig service and attaches SHM buffers. Added the
 registered action, and media-key registrations completed without a D-Bus
 failure. `ShowOSD`, lock-screen modes and physical media-key activation remain
 unimplemented/unqualified. Implemented relative pointer motion, pointer focus
-updates, and dispatch through active window move/resize grabs; local `cargo
-check --bins` and build pass. Applying monitor modes, Dock behavior and
+updates, and dispatch through active window move/resize grabs. Added xdg popup
+keyboard/pointer grabs rooted at managed toplevels, including nested serial
+validation; local `cargo check --bins` and `cargo build --bins` pass. Popup
+behavior is not yet runtime-qualified. Applying monitor modes, Dock behavior and
 M-series DRM/KMS remain unqualified. Read-only host enumeration sees `/dev/dri/card1`
 on the `asahi` driver and `/dev/dri/card2` on `apple-drm`; `eDP-1` and `DP-2`
 are connected while `HDMI-A-1` is disconnected. No modeset was attempted. Next:

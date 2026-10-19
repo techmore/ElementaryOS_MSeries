@@ -42,8 +42,8 @@ a Mutter port or a Pantheon replacement yet. The target is only the
 M-series/Pantheon behavior documented in
 [`../../mseries/pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md`](../../mseries/pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md).
 It currently has one nested output,
-basic keyboard/pointer handling, xdg-shell windows, move/resize grabs, clipboard
-and drag-and-drop. It now advertises the existing Pantheon desktop-shell
+basic keyboard/pointer handling, xdg-shell windows and popup grabs, move/resize
+grabs, clipboard and drag-and-drop. It now advertises the existing Pantheon desktop-shell
 protocol v2: panel surfaces can set their anchor, size, hide mode and offset;
 the compositor places those surfaces and uses exclusive panel geometry for
 xdg-toplevel maximize requests. The Dock's M-series offset request is therefore
@@ -64,6 +64,11 @@ through active compositor grabs; coordinates are clamped to the mapped output
 bounds. This allows the existing xdg move/resize grab implementations to receive
 physical pointer motion. Multi-output bounds, pointer constraints, and hardware
 input remain unqualified.
+
+Xdg popup requests now resolve their root to a managed toplevel and install
+Smithay's popup keyboard and pointer grabs, including the serial checks needed
+to preserve valid nested grabs. Popup interaction has only been build-checked;
+it has not yet been exercised with a real application menu.
 
 The session bus also exposes the small `org.gnome.Shell` accelerator API used
 by Wingpanel and its sound indicator. Accelerator registrations are matched

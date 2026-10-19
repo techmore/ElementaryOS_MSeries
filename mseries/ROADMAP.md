@@ -28,8 +28,10 @@ accelerator API and matched `Super+N` to an `AcceleratorActivated` signal during
 an isolated nested run. `ShowOSD`, lock-screen action modes and physical media
 key activation remain unimplemented or unqualified. Relative pointer motion now
 updates pointer focus and drives the compositor's existing move/resize grabs;
-the Rust binaries build locally. Autohide, blur, multi-output reflow, monitor
-mode application, Dock behavior, full session integration and M-series hardware
+xdg popup requests now install Smithay keyboard/pointer grabs for managed
+toplevel roots. Both features build locally; popup behavior has not been
+runtime-qualified. Autohide, blur, multi-output reflow, monitor mode
+application, Dock behavior, full session integration and M-series hardware
 remain unqualified. A public search found elementary's
 [Gala](https://github.com/elementary/gala) still based on libmutter, with no
 first-party Rust compositor to reuse. The WD22TB4 HDMI G3 DCP/kernel blocker
