@@ -5790,4 +5790,7 @@ Default and `native-drm` `cargo check` pass, and the compositor source is
 formatted. No test or display session was run. Live disable/re-enable,
 disconnect/reconnect, modeset failure recovery, Wingpanel Settings behavior,
 and native output-set changes remain unqualified. The existing Gala session was
-not changed.
+not changed. The native ARM64 release build from `4458354` is packaged at
+`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-monitor-toggle-release/pantheon-rust-compositor_0.1.0+git4458354_arm64.deb`
+(SHA-256 `c2371d1b8810de75e137a61f05f7b6ecacb8e066ebc001239a6a3dee3191638f`).
+Package metadata and contents were inspected. It was not installed.
