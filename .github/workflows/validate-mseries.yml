@@ -187,7 +187,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install offline test tools
-        run: sudo apt-get update && sudo apt-get install -y mtools fdisk shellcheck
+        run: sudo apt-get update && sudo apt-get install -y mtools fdisk shellcheck python3-libarchive-c keyutils
       - name: Validate hardware ports without target hardware
         run: |
           set -euo pipefail
@@ -202,3 +202,6 @@ jobs:
           python3 mseries/video-decode/test-youtube-launch.py
           python3 mseries/boot/test-prepare-uki-kernels.py
           python3 mseries/test-power-install.py
+          python3 mseries/test-omdrop-installer.py
+          python3 -m unittest discover -s mseries/omdrop-awdl/tests
+          python3 -m unittest discover -s mseries/omdrop/tests

@@ -1,0 +1,592 @@
+#!/usr/bin/env bash
+# Make this machine discoverable to AirDrop "Everyone" for a bounded window.
+#
+#   omdrop-discoverable start <seconds>    become discoverable for N seconds
+#   omdrop-discoverable stop               stop advertising, tear down
+#   omdrop-discoverable status [--json]    {"visible":bool,"remaining":int|null,"reason":str}
+#
+# This owns everything BELOW the receiver: the data-path gate, the AWDL service
+# identity, the action-frame announcer, the mDNS responder, peer registration,
+# and (opt-in) the BLE Continuity advert. It never touches port 8771 and never
+# signals the receiver -- that is a separate, longer-lived user service, and
+# killing it from here once left a live window with nothing listening.
+#
+# ROOT: required. Every step is an nl80211 vendor dcmd on awdl0 (awdl=0/1,
+# awdl_payload, awdl_afs_pload, awdl_peer_op) or AF_PACKET on awdl0; as a normal
+# user they all return EPERM. Invoke with pkexec, never sudo (machine rule).
+#
+# NEVER loads or reloads the driver: that costs ~7 minutes of Wi-Fi and is not
+# something a button may do behind a user's back. It WILL rebuild a missing
+# awdl0 when the driver is loaded (awdl-up, ~2 s, no reload) -- a Wi-Fi off/on
+# destroys the vif, and refusing to recreate it stranded the user with a
+# message blaming the driver. Exits 4 only when the interface cannot be had.
+#
+# Exit codes (the contract the omdrop CLI and panel call against):
+#   0  visible (start), stopped (stop), always (status)
+#   2  usage error, or not root
+#   3  data path parked -- the firmware would not transmit; retryable
+#   4  awdl0 absent or down; driver not loaded
+#   5  already discoverable; the window was extended instead of stacking
+set -uo pipefail
+# pkexec keeps the caller's umask. Everything this creates under $RUN is read
+# by `status` as the user and must be written by root alone: after `umask 000`
+# the directory came out 0777 and its files 0666 (security review,
+# RADIO-RUNDIR-TRUST).
+umask 022
+
+# Helpers live beside this script: /usr/lib/omdrop when packaged. Resolved from
+# our own realpath rather than the working directory, because pkexec runs us
+# with the caller's cwd -- from the panel that is wherever the shell was
+# started, and a helper looked up relatively there is simply not found.
+SELF="$(readlink -f "$0")"
+LIB="$(cd "$(dirname "$SELF")" && pwd)"
+# The constants, logging, number checks and the whole Broadcom side -- the
+# data-path gate, the AWDL identity, the iovar helpers and the read-only
+# diagnostics -- live in omdrop-broadcom.sh beside this script, which the
+# radio backend hooks in radio/ source too. Same directory, same trust: both
+# are root-owned under /usr/lib/omdrop.
+# shellcheck source=omdrop-broadcom.sh
+. "$LIB/omdrop-broadcom.sh" || { echo "omdrop-discoverable: cannot read $LIB/omdrop-broadcom.sh" >&2; exit 2; }
+# Before any command, because every one of them, even a usage error, writes
+# under $RUN as root (log appends there). run_dir repairs a directory an
+# earlier helper left writable to others; unprivileged, there is nothing to
+# protect and `status` must stay read-only.
+if [[ $EUID -eq 0 ]]; then need_run_dir; fi
+# Announcer burst: 40 frames per interval is what reaches Apple devices through
+# our 4 active slots of 16 (~25% of submitted frames make the air).
+ADV_COUNT=40
+ADV_INTERVAL=6
+# Receiver capability flags in the AirDrop advert and the mDNS TXT record.
+# 0x88 is OpenDrop's set (SUPPORTS_MIXED_TYPES 0x08 | SUPPORTS_DISCOVER_MAYBE
+# 0x80) and it omits SUPPORTS_URL (0x01) -- which is the standing suspect for
+# iOS 26 accepting a `TransferType: links` Ask and then never uploading the
+# webloc (five sends, 2026-09-12). macOS's own default is 0x3fb, URL bit set.
+# 0x89 = 0x88 + SUPPORTS_URL: one bit changed, and MIXED_TYPES stays set so
+# sharingd's removeInvalidNodes: still considers us a valid node.
+ADV_FLAGS=${AWDL_ADV_FLAGS:-137}
+
+# Data frames delivered, sampled rather than waited for. The completions probe
+# proves TRANSMIT only, and the receive half parks independently (00:23-00:30Z:
+# 20/20 completions, action frames arriving continuously, zero data frames for
+# seven minutes, and no peer could see us).
+#
+# This used to be a 15 s wait inside the gate, and it cost every single start
+# those 15 s: in an empty room the sample cannot succeed, because no data frame
+# exists until a sender has already found us and connected. The window opened
+# UNPROVEN anyway. So the gate no longer waits; the supervisor samples the same
+# counter every interval and marks the window proven the moment frames arrive.
+#
+# Note what this counter can and cannot see: action frames -- the peer's PSFs
+# and MIFs, which is what discovery actually runs on -- never increment it.
+# Silence is weak evidence; check `diag` afrx and the peer table before
+# believing a radio is deaf.
+rx_packets(){ cat "/sys/class/net/$IF/statistics/rx_packets" 2>/dev/null || echo 0; }
+
+# Called once per supervision interval. Cheap: two file reads until the window
+# is proven, and nothing at all afterwards.
+rx_watch(){
+  [[ $(cat "$RUN/rx_proven" 2>/dev/null || echo 0) == 1 ]] && return 0
+  local base; base=$(cat "$RUN/rx_base" 2>/dev/null || echo "")
+  is_uint "$base" || { rx_packets > "$RUN/rx_base"; return 0; }
+  if (( $(rx_packets) > base )); then
+    rx_mark 1
+    log "receive confirmed: data frames arriving"
+  fi
+  return 0
+}
+
+rx_mark(){ printf '%s' "$1" > "$RUN/rx_proven"; }
+
+# The window's state, as the moved radio code reports it (omdrop-broadcom.sh,
+# "the radio backend hooks"): why a start failed, and the receive proof's reset
+# and baseline, taken where the gate decides the radio transmits.
+set_reason(){ printf '%s' "$1" > "$RUN/reason"; }
+rx_reset(){ rx_mark 0; rm -f "$RUN/rx_base"; }
+rx_baseline(){ rx_packets > "$RUN/rx_base"; }
+
+# --- children ---------------------------------------------------------------
+# Everything started here is recorded in $RUN/pids and killed by stop/expiry.
+# airdrop-serve.py is deliberately NOT in this set: the receiver is not ours.
+spawn(){  # spawn <tag> <command...>
+  local tag=$1; shift
+  "$@" >>"$RUN/$tag.log" 2>&1 &
+  echo "$! $tag" >> "$RUN/pids"
+  log "started $tag (pid $!)"
+}
+
+# Idempotent by construction. Two teardowns can run at once -- `stop` TERMs the
+# supervisor, whose own trap also calls this -- and the old version read
+# $RUN/pids TWICE with a sleep between, so the loser died on "No such file or
+# directory" partway through ("stopped" logged twice). A
+# half-run teardown left the window's state inconsistent. `mv` is atomic: the
+# winner takes the list and the loser sees no file and returns quietly, so the
+# whole teardown happens exactly once no matter how many callers arrive.
+#
+# omdrop-core's root helper shares this run directory and writes its lines as
+# `<pid> <tag> <start time>`. A pid alone may have been reused since by any
+# process; with the start time it names exactly one, so a line that has one is
+# signalled only while /proc still shows that process (security review,
+# LEGACY-START-OVER-CORE-WINDOW). Our own lines carry no start time.
+kill_children(){
+  local pidfile=$RUN/pids snapshot=$RUN/pids.dying.$$
+  [[ -f $pidfile ]] || return 0
+  mv "$pidfile" "$snapshot" 2>/dev/null || return 0
+  local pid tag start
+  while read -r pid tag start; do
+    same_process "${pid:-}" "${start:-}" || continue
+    kill -TERM "$pid" 2>/dev/null && log "stopped $tag (pid $pid)"
+  done < "$snapshot"
+  sleep 1
+  while read -r pid tag start; do
+    same_process "${pid:-}" "${start:-}" || continue
+    kill -KILL "$pid" 2>/dev/null
+  done < "$snapshot"
+  rm -f "$snapshot"
+}
+
+# start_time <pid>: the process's start time in clock ticks since boot, field
+# 22 of /proc/<pid>/stat. Counted after the command name, which is in
+# parentheses and may itself hold spaces and parentheses.
+start_time(){
+  local stat
+  local -a f=()
+  stat=$(cat "/proc/$1/stat" 2>/dev/null) || return 1
+  read -r -a f <<<"${stat##*) }"
+  printf '%s' "${f[19]:-}"
+}
+
+# same_process <pid> [start time]: whether a pids line still names a process
+# that may be signalled. Only a positive pid: kill(1) reads 0 as our own
+# process group and -1 as every process. With a start time, only the process
+# that started then; without, whatever has the pid, as this helper always did.
+same_process(){
+  [[ $1 =~ ^[1-9][0-9]{0,9}$ ]] || return 1
+  [[ -z $2 ]] && return 0
+  local now
+  now=$(start_time "$1") || return 1
+  [[ -n $now && $now == "$2" ]]
+}
+
+# The supervisor owns the window: it starts the advertising children, bursts
+# the announcer every interval, and tears everything down at expiry, so a
+# crashed caller cannot leave us advertising forever.
+#
+# The children are started HERE and not in cmd_start on purpose: pkexec kills
+# its process group when the invoking command exits, which silently took the
+# responder and the watcher with it (observed 22:46:10Z, both gone within
+# seconds while the setsid'd supervisor lived on). Only this process is
+# detached, so only its children survive.
+supervise(){
+  # $1 was the deadline at spawn; it is deliberately not bound, because the
+  # loop below re-reads $RUN/until so a later press can move it.
+  local secs=$2 seq=0
+  is_duration "$secs" || die 2 "__supervise: seconds must be a number"
+  echo $$ > "$RUN/supervisor"
+  trap 'kill_children; printf stopped > "$RUN/reason"; rm -f "$RUN/until"; exit 0' TERM INT
+  spawn mdns python3 "$LIB/awdl-mdns-respond.py" --iface "$IF" --port 8771 --flags "$ADV_FLAGS"
+  # Peer registration is what makes our SYN-ACKs leave the radio: unicast to a
+  # MAC with no firmware peer entry completes 0x0003 FW_TOSSED (074311Z).
+  spawn peers python3 "$LIB/awdl-peer-watch.py" --iface "$IF" --only ""
+  if [[ -e $CONF/ble-wake ]]; then
+    # Opt-in: a Mac publishes _airdrop._tcp 1.13 s after a sender's BLE advert,
+    # so this helps the iPhone path -- but it advertises us as a SENDER and it
+    # shares the 2.4 GHz radio with AWDL. Off unless $CONF/ble-wake exists.
+    # --seconds wants a number to pace itself against; a day stands in for an
+    # unbounded window, which is longer than any battery.
+    #
+    # The resolver takes hashes from this window's selected identity record.
+    # Zeros mean "no contact match": measured on hume 2026-09-21, a
+    # Contacts Only Mac runs a contact check on the advert and starts its
+    # AirDrop Bonjour Server 0.2 ms after recognizing the hashes, so zeros wake
+    # a receiver set to Everyone and nothing else.
+    spawn ble python3 "$LIB/ble-airdrop-adv.py" --arm A \
+      --seconds "$(( secs > 0 ? secs : 86400 ))"
+  fi
+  # The deadline is re-read every interval, not captured at spawn. cmd_start
+  # rewrites $RUN/until when a second press extends a live window, and the
+  # supervisor used to loop on its argument -- so "window extended to ..." was
+  # logged while the radio still stopped at the original time.
+  #
+  # 0 is "no expiry", the panel's "Until I turn it off". A missing file means
+  # someone tore the window down underneath us, which is a reason to stop.
+  local deadline
+  while deadline=$(cat "$RUN/until" 2>/dev/null) && is_uint "$deadline" \
+        && { [[ $deadline == 0 ]] || [[ $(now) -lt $deadline ]]; }; do
+    seq=$(( seq + 1 ))
+    radio_tick
+    # The gate opens on transmit alone; this is where the receive half earns
+    # its claim, without any start paying for the measurement.
+    rx_watch
+    # An infrastructure reassociation can make avahi re-announce on awdl0 and
+    # rename itself after hearing its own record. Keep the host name repaired
+    # throughout a long receive window.
+    if (( seq % 10 == 1 )); then mdns_reclaim; fi
+    python3 "$LIB/awdl-airdrop-adv.py" --iface "$IF" --count "$ADV_COUNT" \
+      --interval 0.02 --flags "$ADV_FLAGS" --seq $(( seq * 100 )) >/dev/null 2>&1
+    # In the background with `wait`, so a TERM runs the trap at once. bash
+    # defers a trap until the foreground command ends: with a plain sleep, a
+    # stop followed quickly by a start let this supervisor's trap fire seconds
+    # later and tear down the new window.
+    sleep "$ADV_INTERVAL" & wait $!
+  done
+  log "window expired"
+  kill_children
+  printf expired > "$RUN/reason"
+  rm -f "$RUN/until"
+}
+
+# The supervisor is an internal subcommand, but polkit authorizes the program,
+# not its arguments, so `pkexec omdrop-discoverable __supervise ...` reached it
+# directly and skipped every check `start` makes. Only a supervisor that
+# cmd_start spawned may run: cmd_start writes a fresh random token to a
+# root-only file and passes it in the child's environment. pkexec strips the
+# caller's environment, and an unprivileged caller can neither read the file
+# nor another root process's environment, so a direct call has no token.
+supervise_entry(){
+  need_root __supervise
+  local want got
+  want=${OMDROP_SUPERVISOR_TOKEN:-}
+  unset OMDROP_SUPERVISOR_TOKEN
+  got=$(cat "$RUN/supervisor.token" 2>/dev/null) || got=
+  # Removed only by the spawn it was written for. A direct call that cannot
+  # present it leaves it alone, so it cannot make a real start fail; guessing
+  # 128 random bits again gains nothing.
+  [[ -n $want && $want =~ ^[0-9a-f]{32}$ && $want == "$got" ]] \
+    || die 2 "__supervise is internal; use: $0 start <seconds>"
+  rm -f "$RUN/supervisor.token"
+  is_uint "$1" || die 2 "__supervise: deadline must be a number"
+  supervise "$1" "$2"
+}
+
+# The pid only: omdrop-core's root helper, which shares this run directory,
+# writes `<pid> <start time>` here.
+supervisor_pid(){ local pid _; { read -r pid _ < "$RUN/supervisor"; } 2>/dev/null; printf '%s' "${pid:-}"; }
+
+# Enumerate by exact argv pairs instead of grepping /proc/*/cmdline. Omarchy's
+# small grep replacement does not search those NUL-separated procfs files, so
+# the old predicate declared every successfully spawned supervisor dead. Each
+# retry then created another supervisor while the caller reported failure.
+#
+# Match only processes whose real UID is root's (SUPERVISOR_UID). Any local
+# user can start a process whose argv contains "$SELF __supervise" and ignore
+# TERM; matching it would let that process hold `stop` in wait_supervisors_gone
+# for the full 10 s and log that a supervisor ignored TERM. Read the real UID
+# from /proc/<pid>/status rather than stat'ing /proc/<pid>: the directory carries
+# the effective UID, and `status` runs as the unprivileged user so `[[ -O ]]`
+# would reject the root supervisor.
+is_supervisor(){
+  local i k ruid _
+  local -a argv=()
+  mapfile -d '' -t argv 2>/dev/null < "$1/cmdline" || return 1
+  for (( i = 0; i + 1 < ${#argv[@]}; i++ )); do
+    [[ ${argv[i]} == "$SELF" && ${argv[i + 1]} == __supervise ]] || continue
+    while IFS=$'\t ' read -r k ruid _; do
+      [[ $k == Uid: ]] && { [[ $ruid == "${SUPERVISOR_UID:-0}" ]]; return; }
+    done 2>/dev/null < "$1/status"
+    return 1
+  done
+  return 1
+}
+supervisor_pids(){
+  local proc
+  for proc in /proc/[0-9]*; do
+    is_supervisor "$proc" && printf '%s\n' "${proc##*/}"
+  done
+  return 0
+}
+
+# omdrop-core's root helper runs the same window from the same run directory
+# (its docs/backend-contract.md). Its supervisor is that binary, exec'd as
+# itself and running as root, so its argv[0] and argv[1] are fixed. Matched by
+# position and owner, not anywhere in argv: a root process this helper runs
+# for any user, such as a 600 s `diag`, used to carry whatever argv tail the
+# user chose (security review, RADIO-ARGV-PAIR-ANYWHERE).
+CORE_RADIO=/usr/lib/omdrop-core/omdrop-radio
+CORE_UID=0
+is_core_supervisor(){
+  local key= real= eff= _
+  local -a argv=()
+  # 2>/dev/null first: redirections apply left to right, so a process that
+  # exits between the glob and this read would report its failed < itself.
+  mapfile -d '' -t argv 2>/dev/null < "$1/cmdline" || return 1
+  [[ ${argv[0]:-} == "$CORE_RADIO" && ${argv[1]:-} == __supervise ]] || return 1
+  while read -r key real eff _; do
+    [[ $key == Uid: ]] && break
+  done 2>/dev/null < "$1/status"
+  [[ $key == Uid: && $real == "$CORE_UID" && $eff == "$CORE_UID" ]]
+}
+core_supervisor_pids(){
+  local proc
+  for proc in /proc/[0-9]*; do
+    is_core_supervisor "$proc" && printf '%s\n' "${proc##*/}"
+  done
+  return 0
+}
+
+# /proc, not `kill -0`: status runs as the unprivileged user and signalling a
+# root process fails with EPERM, which reported a live window as expired. A
+# window omdrop-core's helper opened is live too.
+supervisor_alive(){
+  local recorded owned
+  recorded=$(supervisor_pid)
+  [[ $recorded =~ ^[1-9][0-9]*$ && -d /proc/$recorded ]] || return 1
+  while read -r owned; do
+    [[ $owned == "$recorded" ]] && return 0
+  done < <(supervisor_pids; core_supervisor_pids)
+  return 1
+}
+
+# Every supervisor of the window, ours and omdrop-core's, as `<pid> <start
+# time>`: what `stop` ends.
+window_supervisors(){
+  local p t
+  while read -r p; do
+    t=$(start_time "$p") && [[ -n $t ]] && printf '%s %s\n' "$p" "$t"
+  done < <(supervisor_pids; core_supervisor_pids)
+}
+
+# signal_supervisor <signal> <pid> <start time>: only while the pid is still
+# the process window_supervisors listed -- same start time, still a supervisor
+# by argv and owner -- checked immediately before the signal, so a pid reused
+# since is never signalled.
+signal_supervisor(){
+  [[ -n $3 ]] && same_process "$2" "$3" || return 1
+  is_supervisor "/proc/$2" || is_core_supervisor "/proc/$2" || return 1
+  kill "-$1" "$2" 2>/dev/null
+}
+
+# A TERMed supervisor still runs its teardown (kill_children alone takes a
+# second), so "signalled" is not "gone". Poll until none is left, ours or
+# omdrop-core's, up to 10 s.
+wait_supervisors_gone(){
+  local i
+  for (( i = 0; i < 50; i++ )); do
+    [[ -z $(supervisor_pids; core_supervisor_pids) ]] && return 0
+    sleep 0.2
+  done
+  return 1
+}
+
+# --- commands ---------------------------------------------------------------
+cmd_start(){
+  local secs=${1:-}
+  # 0 is a window with no expiry, which is what the panel's "Until I turn it
+  # off" asks for. Rejecting it made that setting fail with a usage string in
+  # the panel: omdrop passes ${secs:-0}, so every unbounded press sent a 0.
+  is_duration "$secs" || die 2 "usage: $0 start <seconds> (0 = until stopped, at most 999999999)"
+  need_root start "$secs"
+  mkdir -p "$RUN"
+  # One start at a time. `supervisor_alive` only catches a window that is
+  # already UP; two presses of the button seconds apart put two starts in the
+  # GATE phase at once, and they toggle `awdl=0/1` under each other so both
+  # probe 0 completions forever and both report parked (observed 00:16-00:17Z:
+  # two `start 600` processes, three consecutive 0-completion probes).
+  exec 9>"$RUN/start.lock"
+  if ! flock -n 9; then
+    log "another start is already in its gate; not racing it"
+    exit 5
+  fi
+
+  # A window omdrop-core's helper opened is not ours to extend or replace:
+  # carrying on would kill its children, toggle awdl=0/1 under its supervisor
+  # and open a second window (security review, LEGACY-START-OVER-CORE-WINDOW).
+  # Its deadline is left as it is; `stop` from either helper ends it.
+  local core
+  core=$(core_supervisor_pids)
+  if [[ -n $core ]]; then
+    log "omdrop-core's helper is supervising this window (pid ${core//$'\n'/ }); leaving it alone"
+    log "Already discoverable through omdrop-core; that window was not changed."
+    exit 5
+  fi
+
+  if supervisor_alive; then
+    # A live supervisor reads $RUN/until every interval, so rewriting it is how
+    # a second press changes the deadline -- including to 0, "no expiry".
+    if (( secs > 0 )); then
+      date -d "+$secs seconds" +%s > "$RUN/until"
+      log "already discoverable; window extended to $(date -u -d "@$(cat "$RUN/until")" +%H:%M:%SZ)"
+    else
+      printf 0 > "$RUN/until"
+      log "already discoverable; window now runs until turned off"
+    fi
+    printf ok > "$RUN/reason"
+    exit 5
+  fi
+  # A dead supervisor may still have left children behind (SIGKILL, crash).
+  kill_children
+
+  radio_up
+
+  write_identity
+
+  # 0 in, 0 through: an unbounded window has no deadline to write, and the
+  # supervisor and status both read the sentinel rather than a date.
+  local until; until=0
+  (( secs > 0 )) && until=$(( $(now) + secs ))
+  echo "$until" > "$RUN/until"
+  printf ok > "$RUN/reason"
+  # Detached: pkexec tears down its process group when this call returns, and
+  # the advertising children must outlive it. The supervisor writes its own pid.
+  # 9>&-: the start lock must not be inherited, or the supervisor would hold it
+  # for the whole window and every later start would exit 5 instead of extending.
+  # The token is what lets supervise_entry tell this spawn from a direct call.
+  local token
+  token=$(od -An -tx1 -N16 /dev/urandom | tr -d ' \n')
+  [[ $token =~ ^[0-9a-f]{32}$ ]] || die 3 "could not read /dev/urandom for the supervisor token"
+  (umask 077 && printf '%s' "$token" > "$RUN/supervisor.token") \
+    || die 3 "could not write the supervisor token"
+  OMDROP_SUPERVISOR_TOKEN=$token setsid "$SELF" __supervise "$until" "$secs" >>"$LOG" 2>&1 9>&- &
+  # Wait for the supervisor to claim the window, so `start` never returns 0 on
+  # a window that failed to come up.
+  local i
+  for i in 1 2 3 4 5 6 7 8 9 10; do supervisor_alive && break; sleep 0.5; done
+  supervisor_alive || { rm -f "$RUN/supervisor.token"; printf stopped > "$RUN/reason"; die 3 "supervisor did not start"; }
+  if (( secs > 0 )); then
+    log "discoverable until $(date -u -d "@$until" +%H:%M:%SZ) (${secs}s)"
+  else
+    log "discoverable until turned off"
+  fi
+  exit 0
+}
+
+# --- mDNS identity ------------------------------------------------------------
+# Infrastructure reassociations make avahi re-announce on every interface.
+# avahi also publishes on awdl0, where an announcement comes back off the AWDL
+# link; avahi reads the echo as another host holding the name and renames itself
+# -- host -> host-2 (observed 130913T180746, 66 mDNS frames on awdl0 in the same
+# window).
+#
+# The rename outlives the window. Every other machine resolving <host>.local
+# gets nothing, so `ping` and `scp` to this host fail long after AirDrop is off.
+# Receiving a file must not cost the host its name on the network, so a drifted
+# name is put back wherever we touch the radio.
+mdns_want(){ cat /proc/sys/kernel/hostname 2>/dev/null; }
+
+mdns_current(){
+  command -v busctl >/dev/null 2>&1 || return 0
+  busctl --no-pager call org.freedesktop.Avahi / org.freedesktop.Avahi.Server \
+    GetHostName 2>/dev/null | sed -n 's/^s "\(.*\)"$/\1/p'
+}
+
+# Only ever undoes avahi's own conflict rename: the name must be exactly ours
+# with avahi's numeric suffix. A deliberately different mDNS name -- someone who
+# set one on purpose -- does not match, and is left alone.
+mdns_reclaim(){
+  local want cur
+  want=$(mdns_want); cur=$(mdns_current)
+  [[ -n ${want:-} && -n ${cur:-} && $cur != "$want" ]] || return 0
+  [[ $want =~ ^[A-Za-z0-9-]+$ ]] || return 0
+  [[ $cur =~ ^${want}-[0-9]+$ ]] || return 0
+  command -v avahi-set-host-name >/dev/null 2>&1 || return 0
+  avahi-set-host-name "$want" >/dev/null 2>&1 \
+    && log "reclaimed the mDNS name $want.local (avahi had renamed it $cur.local)"
+}
+
+
+cmd_stop(){
+  need_root stop
+  mkdir -p "$RUN"
+  # Stop every supervisor we own, not only the last PID written. Older builds
+  # could misclassify a live supervisor and spawn another; leaving either one
+  # alive keeps rewriting the shared template after the panel says Omdrop is off.
+  # omdrop-core's supervisor too: `start` leaves a window it opened alone and
+  # points here, so stop has to end it, or this returned 0 with core's window
+  # still up and the next start refused. Core's supervisor stops its own
+  # children on TERM, as ours does.
+  local p t
+  while read -r p t; do
+    signal_supervisor TERM "${p:-}" "${t:-}"
+  done < <(window_supervisors)
+  # Return only once they are gone: a supervisor's teardown landing after
+  # this stop would take down a window started right after it (the old fixed
+  # 1 s wait was shorter than the supervisor's 6 s interval sleep). A KILLed
+  # supervisor cannot stop its children, so kill_children does, from the pids
+  # each recorded: core's lines carry start times and name exact processes.
+  if ! wait_supervisors_gone; then
+    while read -r p t; do
+      signal_supervisor KILL "${p:-}" "${t:-}"
+    done < <(window_supervisors)
+    kill_children
+    log "a supervisor ignored TERM for 10 s; killed it"
+  fi
+  # A `start` still in its gate phase owns no supervisor and no pids file, but
+  # it is toggling `awdl=0/1` -- so "stop" has to mean that too, or a stuck gate
+  # keeps cycling the radio after the user has switched the button off.
+  local other
+  for other in $(pgrep -f "$0 start" 2>/dev/null); do
+    [[ $other == $$ ]] && continue
+    kill -TERM "$other" 2>/dev/null && log "cancelled a start still in its gate (pid $other)"
+  done
+  rm -f "$RUN/until" "$RUN/supervisor"
+  printf stopped > "$RUN/reason"
+  mdns_reclaim
+  log "stopped"
+  exit 0
+}
+
+cmd_status(){
+  local until remaining visible reason rxp
+  until=$(cat "$RUN/until" 2>/dev/null || echo "")
+  reason=$(cat "$RUN/reason" 2>/dev/null || echo stopped)
+  rxp=$(cat "$RUN/rx_proven" 2>/dev/null || echo 0)
+  if ! ip link show "$IF" >/dev/null 2>&1; then
+    visible=false; remaining=null; reason=no_awdl0
+  elif ! ip -6 addr show dev "$IF" scope link 2>/dev/null | grep -q inet6; then
+    # Present but unusable. The interface can exist and the firmware can be
+    # transmitting (afrx/aftx climbing) while the netdev is administratively
+    # down -- no IFF_UP, no link-local -- and then nothing can bind to :8771
+    # and no transfer can land. Reporting ok there is worse than reporting
+    # nothing: it sent a peer into three sends against a void (08:26:12Z) and
+    # cost an evening of 5 GHz false negatives. A window is only ok when the
+    # address a sender must reach actually exists.
+    visible=false; remaining=null; reason=no_awdl0
+  elif supervisor_alive && is_uint "$until" && [[ $until == 0 || $(now) -lt $until ]]; then
+    # The window is live either way -- we ARE advertising and remaining is real
+    # -- but the gate may have opened it on transmit alone. Say which, so a
+    # panel can distinguish "visible to everyone" from "advertising, nothing
+    # has answered yet" instead of calling both ok.
+    visible=true
+    remaining=$([[ $until == 0 ]] && echo null || echo $(( until - $(now) )))
+    if [[ $rxp == 1 ]]; then reason=ok; else reason=unproven; fi
+  else
+    visible=false; remaining=null
+    [[ $reason == ok || $reason == unproven ]] && reason=expired
+  fi
+  # A peer whose firmware entry is missing loses every unicast frame we send
+  # it, before air. Advertising is then true and useless for that device, so
+  # the window must not report a bare "ok": on 2026-09-19 an ESPIPE run made
+  # two Macs undiscoverable for hours while every surface here said healthy.
+  local peerop=ok
+  [[ -e $RUN/peerop.degraded ]] && peerop=degraded
+  [[ $peerop == degraded && $reason == ok ]] && reason=peer_op_failed
+  if [[ ${1:-} == --json ]]; then
+    printf '{"visible":%s,"remaining":%s,"reason":"%s","rx_proven":%s,"peer_op":"%s"}\n' \
+      "$visible" "$remaining" "$reason" "$([[ $rxp == 1 ]] && echo true || echo false)" "$peerop"
+  else
+    printf 'visible=%s remaining=%s reason=%s rx_proven=%s peer_op=%s\n' \
+      "$visible" "$remaining" "$reason" "$([[ $rxp == 1 ]] && echo true || echo false)" "$peerop"
+    [[ $peerop == degraded ]] && printf 'peer_op ADD is failing: some devices cannot see you and will not receive anything you send.\nClear it with: pkexec /usr/lib/omdrop/awdl-up --reload\n' >&2
+  fi
+  exit 0
+}
+
+# Extra arguments are refused, not ignored. polkit authorizes the program, not
+# its argv, and a root process this helper runs for any user -- `diag` lives up
+# to 600 s -- carried whatever tail the user appended, such as another
+# program's `<path> __supervise`, which made it look like that program's
+# supervisor (security review, RADIO-ARGV-PAIR-ANYWHERE).
+usage(){
+  printf 'usage: %s start <seconds> | stop | status [--json] | peers | diag [seconds] | read <iovar> [len] | trace [on|off]\n' "$0" >&2
+  exit 2
+}
+case "${1:-}" in
+  start)  (( $# <= 2 )) || usage; shift; cmd_start "$@" ;;
+  stop)   (( $# == 1 )) || usage; cmd_stop ;;
+  status) (( $# <= 2 )) || usage; shift; cmd_status "$@" ;;
+  peers)  (( $# == 1 )) || usage; cmd_peers ;;
+  diag)   (( $# <= 2 )) || usage; shift; cmd_diag "$@" ;;
+  read)   (( $# <= 3 )) || usage; shift; cmd_read "$@" ;;
+  trace)  (( $# <= 2 )) || usage; shift; cmd_trace "$@" ;;
+  __supervise) (( $# <= 3 )) || usage; shift; supervise_entry "$@" ;;
+  *) usage ;;
+esac

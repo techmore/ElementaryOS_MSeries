@@ -16,6 +16,7 @@ namespace MSeries {
         public bool live = false;
         public bool reachable = false;
         public int link_count = 0;
+        public bool link_auto = false;
         public string? link_id = null;
         public string? link_token = null;
         public int64 link_expires = 0;
@@ -104,6 +105,7 @@ namespace MSeries {
                     var o = n.get_object ();
                     if (link_id != null && o.get_string_member ("id") == link_id) {
                         link_alive = true;
+                        link_auto = o.has_member ("auto_admit") && o.get_boolean_member ("auto_admit");
                         link_expires = o.get_int_member ("expires_at");
                     }
                 });
@@ -123,8 +125,8 @@ namespace MSeries {
             return link_token == null ? null : base_for_viewers + "/v/" + link_token;
         }
 
-        public async bool create_link () {
-            var r = yield call ("POST", "/api/v1/share/links", "{}");
+        public async bool create_link (bool auto_admit = false) {
+            var r = yield call ("POST", "/api/v1/share/links", auto_admit ? "{\"auto_admit\":true}" : "{}");
             if (r == null || !r.has_member ("token")) return false;
             link_id = r.get_string_member ("id");
             link_token = r.get_string_member ("token");
