@@ -106,31 +106,141 @@ public class Machine : Object {
 
     // ---- QMP: pause and resume ----
 
-    private string? qmp (string command) {
+    // One persistent QMP connection per machine, shared by the poller (main
+    // thread) and the display worker thread, so access is serialized.
+    private Mutex qmp_lock = Mutex ();
+    private SocketConnection? qmp_conn = null;
+    private DataInputStream? qmp_in = null;
+
+    private bool qmp_open () {
+        if (qmp_conn != null) {
+            return true;
+        }
         var sock = Path.build_filename (dir, "qmp.sock");
         if (!FileUtils.test (sock, FileTest.EXISTS)) {
-            return null;
+            return false;
         }
         try {
             var client = new SocketClient ();
-            client.timeout = 2;
-            var conn = client.connect (new UnixSocketAddress (sock));
-            var input = new DataInputStream (conn.input_stream);
-            var output = conn.output_stream;
-            input.read_line ();   // greeting
-            output.write ("{\"execute\":\"qmp_capabilities\"}\n".data);
-            input.read_line ();
-            output.write ("{\"execute\":\"%s\"}\n".printf (command).data);
-            string? reply = input.read_line ();
-            // Events can arrive before the return value.
-            while (reply != null && !reply.contains ("\"return\"") && !reply.contains ("\"error\"")) {
-                reply = input.read_line ();
-            }
-            conn.close ();
-            return reply;
+            client.timeout = 3;
+            qmp_conn = client.connect (new UnixSocketAddress (sock));
+            qmp_in = new DataInputStream (qmp_conn.input_stream);
+            qmp_in.read_line ();   // greeting
+            qmp_conn.output_stream.write ("{\"execute\":\"qmp_capabilities\"}\n".data);
+            qmp_in.read_line ();
+            return true;
         } catch (Error e) {
-            return null;
+            qmp_close ();
+            return false;
         }
+    }
+
+    private void qmp_close () {
+        try {
+            if (qmp_conn != null) {
+                qmp_conn.close ();
+            }
+        } catch (Error e) {}
+        qmp_conn = null;
+        qmp_in = null;
+    }
+
+    /* Send one QMP command (a full JSON object) and return its reply line. */
+    public string? qmp_raw (string json) {
+        qmp_lock.lock ();
+        string? reply = null;
+        for (int attempt = 0; attempt < 2 && reply == null; attempt++) {
+            if (!qmp_open ()) {
+                break;
+            }
+            try {
+                qmp_conn.output_stream.write ((json + "\n").data);
+                reply = qmp_in.read_line ();
+                // Events can arrive before the return value.
+                while (reply != null && !reply.contains ("\"return\"") && !reply.contains ("\"error\"")) {
+                    reply = qmp_in.read_line ();
+                }
+            } catch (Error e) {
+                reply = null;
+            }
+            if (reply == null) {
+                qmp_close ();   // stale socket (machine restarted): reconnect once
+            }
+        }
+        qmp_lock.unlock ();
+        return reply;
+    }
+
+    private string? qmp (string command) {
+        return qmp_raw ("{\"execute\":\"%s\"}".printf (command));
+    }
+
+    // ---- Display: frames and input over QMP ----
+
+    public signal void frame_ready (string path);
+
+    private AsyncQueue<string>? input_queue = null;
+    private bool frame_busy = false;
+
+    public string frame_path () {
+        var d = Path.build_filename (Environment.get_user_runtime_dir (), "machine-lab");
+        DirUtils.create_with_parents (d, 0700);
+        return Path.build_filename (d, id + ".png");
+    }
+
+    /* Ask QEMU for the current screen. At most one request is in flight. */
+    public void request_frame () {
+        if (!running || frame_busy) {
+            return;
+        }
+        frame_busy = true;
+        string path = frame_path ();
+        new Thread<void> ("ml-frame", () => {
+            var reply = qmp_raw ("{\"execute\":\"screendump\",\"arguments\":{\"filename\":\"%s\",\"format\":\"png\"}}".printf (path));
+            bool ok = reply != null && reply.contains ("\"return\"");
+            Idle.add (() => {
+                frame_busy = false;
+                if (ok) {
+                    frame_ready (path);
+                }
+                return Source.REMOVE;
+            });
+        });
+    }
+
+    /* Queue an input event; a worker thread sends them in order. */
+    public void send_input (string events_json) {
+        if (!running) {
+            return;
+        }
+        if (input_queue == null) {
+            input_queue = new AsyncQueue<string> ();
+            var q = input_queue;
+            new Thread<void> ("ml-input", () => {
+                while (true) {
+                    string cmd = q.pop ();
+                    if (cmd == "") {
+                        break;
+                    }
+                    qmp_raw ("{\"execute\":\"input-send-event\",\"arguments\":{\"events\":%s}}".printf (cmd));
+                }
+            });
+        }
+        input_queue.push (events_json);
+    }
+
+    public void send_pointer (double fx, double fy) {
+        int x = (int) (fx.clamp (0.0, 1.0) * 32767);
+        int y = (int) (fy.clamp (0.0, 1.0) * 32767);
+        send_input ("[{\"type\":\"abs\",\"data\":{\"axis\":\"x\",\"value\":%d}},{\"type\":\"abs\",\"data\":{\"axis\":\"y\",\"value\":%d}}]".printf (x, y));
+    }
+
+    public void send_button (string button, bool down) {
+        send_input ("[{\"type\":\"btn\",\"data\":{\"button\":\"%s\",\"down\":%s}}]".printf (button, down ? "true" : "false"));
+    }
+
+    public void send_key (string qcode, bool down) {
+        send_input ("[{\"type\":\"key\",\"data\":{\"down\":%s,\"key\":{\"type\":\"qcode\",\"data\":\"%s\"}}}]".printf (down ? "true" : "false", qcode));
     }
 
     public void pause () {
@@ -214,13 +324,14 @@ public class Machine : Object {
         var l = new SubprocessLauncher (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_MERGE);
         string[] argv;
         if (managed) {
-            argv = { launcher, "start", vm_name, "--daemon" };
+            argv = { launcher, "start", vm_name, "--headless" };
         } else {
             l.setenv ("MACHINE_CPUS", cpus.to_string (), true);
             l.setenv ("MACHINE_MEM_GIB", mem_gib.to_string (), true);
             l.setenv ("MACHINE_DISK_GIB", disk_gib.to_string (), true);
             l.setenv ("MACHINE_SSH_PORT", ssh_port.to_string (), true);
             l.setenv ("MACHINE_NAME", name, true);
+            l.setenv ("MACHINE_DISPLAY", "none", true);   // the app shows the screen itself
             if (recipe == "omarchy" && installer == null) {
                 string? updater = find_runtime ("machine-lab-prepare-omarchy", "prepare-latest-omarchy.py");
                 if (updater == null) {

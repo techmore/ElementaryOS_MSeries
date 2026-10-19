@@ -16,7 +16,7 @@ resources = gnome.compile_resources('machine-lab-resources',
 add_project_arguments(['--pkg', 'posix'], language: 'vala')
 
 executable('machine-lab',
-  'src/main.vala', 'src/machine.vala', 'src/page.vala',
+  'src/main.vala', 'src/machine.vala', 'src/page.vala', 'src/viewer.vala',
   resources,
   dependencies: [gtk, granite],
   install: true
