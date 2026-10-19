@@ -5973,3 +5973,15 @@ obsolete stacked base to main and retained the merged Calendar/Homeboard changes
 No radio activation, panel reload or reboot was
 performed during this cleanup review. The diagnostic boot selection is untouched.
 
+
+## Pantheon session crash and slow GNOME Shell relogin — 2026-10-18 (Claude)
+
+Patched Gala SIGSEGV at 21:43:11 (and 19:52:43, which ended the previous boot): same stack, a NULL read in
+stock mutter 50.1 under `clutter_sprite_invalidate_cursor` during pointer event filtering. Gala's unit takes
+the session down on failure; the greeter then logged the owner into the remembered **Ubuntu** session
+(GNOME Shell). GNOME Shell itself started in 0.7 s; the slowness was a stuck `xdg-desktop-portal` start left
+over from the crash, which blocked gnome-session's D-Bus restart, so apps waited on 25 s portal timeouts for
+about two minutes. Changed: greeter default session set back to `pantheon-wayland` (AccountsService and
+`~/.dmrc`); new `mseries/install-portal-relogin-fix.sh` installed for the owner (portal needs
+`WAYLAND_DISPLAY`; unverified until the next crash). Mutter frames not yet symbolized (debuginfod timed
+out); stock-Gala A/B is the owner's call. Details: `mseries/PANTHEON-CRASH-2026-10-18.md`.
