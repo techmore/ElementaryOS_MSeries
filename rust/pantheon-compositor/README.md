@@ -123,10 +123,13 @@ window across workspaces. An isolated Xvfb run with a temporary Wayland client
 exercised creation, movement, switching and focus. Gala's multitasking view is
 not implemented. The Gala `PerformAction` compatibility path now implements
 actions 2 (toggle maximize on the focused window) and 3 (minimize the focused window) for
-Wayland and XWayland application windows; these two actions have build
-coverage but still need runtime D-Bus qualification. Action 1 (multitasking
-view) remains unsupported because the Rust session has no overview UI. Stock
-Dock also logged its existing
+Wayland and XWayland application windows. A private Xvfb/Winit D-Bus smoke
+focused a GTK Wayland window, invoked action 2 twice, minimized it with action
+3, and restored it through `FocusWindow`; each D-Bus call succeeded. The
+smoke did not inspect the rendered maximize geometry, and the XWayland and
+native paths remain unqualified. Action 1 (multitasking view) remains
+unsupported because the Rust session has no overview UI. Stock Dock also
+logged its existing
 workspace-startup race during the nested smoke, so full Dock behavior remains
 unqualified. Hiding is immediate; blur and multi-output Dock behavior remain
 open. The
