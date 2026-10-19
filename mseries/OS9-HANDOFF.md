@@ -6247,3 +6247,14 @@ using `windows` and `windows-install-test*`). Stopped at "Applicable notices and
 license is the owner's call. The Setup UI is driven with absolute-pointer clicks over QMP; typing into WinPE text
 fields drops characters, so use the Browse tree. Not verified: the install finishing, first boot, or the virtio-win
 guest drivers after install.
+
+### Windows 11 ARM64 installed and first-booted in QEMU/KVM (2026-10-19)
+
+With `GPU=ramfb`, `EXTRA_BUS=usb`, virtio-win `vioscsi` loaded in Setup, and the disk grown to 64 GiB (Setup refuses a
+system drive under 52 GB: `qemu-img resize disk.qcow2 64G`), the `26100.1` Professional ARM64 ISO installed to the
+blank NVMe disk of the test VM `windows-lab` (license accepted with the owner's approval, no product key, so it is
+unactivated; Setup rebooted several times by itself) and **first boot reached the OOBE screen** ("Is this the right
+country or region?"): [`windows11-arm64-qemu-first-boot-oobe.png`](../docs/images/windows11-arm64-qemu-first-boot-oobe.png).
+At each reboot the "Press any key to boot from CD" prompt must be left alone so it boots the disk. Not done: OOBE
+(network or local account), the desktop, virtio-win guest drivers (network, display), activation, suspend, anything on
+real hardware. VM left powered off.
