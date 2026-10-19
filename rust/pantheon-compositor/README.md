@@ -123,8 +123,11 @@ enumeration and hotplug reconciliation exist; configuration rejects output
 disabling, mirroring, unsupported monitor properties and nested mode changes.
 Monitor modeset/rollback and hotplug remain unqualified on hardware. Smithay's
 text-input-v3 and input-method-v2 globals are now wired for the trusted IBus
-daemon, including input-method popup tracking; this path is compile-checked but
-still needs a real IBus-to-Wayland field qualification. Accessibility protocol
+daemon, including input-method popup tracking. A private Xvfb test with the
+release binary and a GTK Wayland Zenity field committed `konnichiha` as
+`こんにちは` through IBus/Mozc `mozc-jp` after enabling Hiragana mode in the
+private profile. Host source switching, the F5 workflow and native keyboard
+input remain unqualified. Accessibility protocol
 support, screen-sharing portals, touch input and production crash recovery
 remain unimplemented or unqualified; add them only when an observed Pantheon
 workflow requires them.

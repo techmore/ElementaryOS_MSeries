@@ -36,9 +36,9 @@ options, and repeat settings from GNOME GSettings. This applies the M-series
 once per second and applies layout, option, and repeat changes live; this path
 is build-checked but not runtime-qualified. The current source is US;
 `mozc-jp` is installed but inactive. F5 dictation is an active IBus workflow
-and inserts committed Unicode into focused fields; the Rust compositor now
-advertises Smithay text-input-v3/input-method-v2 for that path, but still needs
-qualification with the running IBus daemon and a native Wayland field.
+and inserts committed Unicode into focused fields. The Rust compositor's
+nested GTK Wayland field now passed a Mozc `mozc-jp` commit using the private
+test profile described below; the native field and F5 workflow remain open.
 
 The prototype now starts Smithay's rootless XWayland window manager, maps X11
 windows into the shared desktop space, routes move/resize, maximize,
@@ -90,14 +90,16 @@ The nested backend is suitable for development and controlled protocol
 qualification, and the ARM64 `native-drm` package builds on the M-series host.
 Neither result demonstrates that the session can replace Gala. No isolated
 native login has been run, so actual scanout, native keyboard/pointer input,
-application launch, IBus text commits, Dock behavior, lock/unlock and crash
-recovery are still unknown. Installed Wingpanel now binds the shell protocol
-and attaches shared-memory panel buffers in an isolated Xvfb run. The panel
-keyboard assertion seen with empty settings disappeared after the test used a
-private GSettings fixture containing the host's input-source values; this
-confirms a fixture issue, while direct keyboard interaction remains untested.
-Keep Gala selected and use the Rust compositor only in an
-explicitly isolated qualification session after its prerequisites are checked.
+Dock behavior, lock/unlock and crash recovery are still unknown. In private
+Xvfb, the release binary launched a GTK Wayland Zenity field; synthetic key
+events reached it, and IBus/Mozc committed `konnichiha` as `こんにちは` using
+the configured `mozc-jp` engine with Hiragana enabled in a private profile.
+The same session verified the compositor's focus action was needed before the
+field accepted input. This qualifies nested input-method-v2/text-input-v3
+delivery, not the host's source switching, F5 dictation, physical keyboard or
+native session. Installed Wingpanel also binds the shell protocol and submits
+shared-memory panel buffers in private Xvfb. Keep Gala selected and continue
+only in isolated qualification sessions.
 
 The compositor now exposes Dock's `org.pantheon.gala.DesktopIntegration`
 D-Bus interface. Window enumeration, app IDs, focus state, workspace listing,
@@ -126,11 +128,12 @@ output. Both runs used private D-Bus/Xvfb and a private GSettings fixture; the
 active Wingpanel session was not restarted. These checks do not qualify native
 DRM scanout, physical keyboard input, the Dock, or a complete login session.
 
-The next gate is staged nested qualification with real GTK/Qt clients and the
-existing Pantheon shell clients, including Dock launcher/window switching and
-IBus focus/commit behavior. After that passes, run the package in a separate native login with a tested recovery
-path. Only record it as an experimental session that works after those runtime
-gates pass; a successful compile or package build is not that evidence.
+The next gate is staged nested qualification with additional GTK/Qt clients
+and existing Pantheon shell clients, including Dock launcher/window switching
+and the real F5 dictation path. After that passes, run the package in a
+separate native login with a tested recovery path. Only record it as an
+experimental session that works after those runtime gates pass; a successful
+compile or package build is not that evidence.
 
 The staged systemd service now retries an unexpected compositor failure with
 a two-second delay, capped at three starts per minute. After that limit, its
@@ -147,8 +150,9 @@ with the separate experimental session files. It derives shared-library
 dependencies and requires `gnome-session` and `gtklock`. Build it locally with
 `OUTDIR=/path/to/output mseries/pantheon-rust-compositor/build-deb.sh`. The
 current package above includes the XWayland runtime dependency and is for
-isolated qualification; the build script does not install it. The IBus Wayland
-path has not yet been runtime-qualified, and no display takeover was run.
+isolated qualification; the build script does not install it. The nested IBus
+path is qualified for one GTK/Mozc configuration; native IBus behavior and any
+display takeover remain unqualified.
 
 ## Dock HDMI boundary
 

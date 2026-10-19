@@ -5865,6 +5865,25 @@ mode, and shared-memory pool allocation. A Mutter DisplayConfig
 1280×800@60. No panel keyboard assertion occurred. The user-owned Wingpanel
 process remained untouched; no Dock binary was run. The package remains
 uninstalled. This qualifies protocol connection and panel buffer submission,
-not visual inspection or direct keyboard interaction. Next: qualify nested
-keyboard delivery and actual IBus commits in a GTK field, then the Dock only
-through the approved local GUI policy.
+not visual inspection or direct keyboard interaction. The follow-on input
+qualification is recorded below.
+
+### Qualify nested keyboard and IBus/Mozc commit — 2026-10-19
+
+Used the current `619ca5c` release binary under private D-Bus/Xvfb, with
+private HOME, cache, GSettings and Mozc config. XTest events sent only to the
+Xvfb Winit window reached a focused GTK Wayland Zenity entry, which returned
+the exact typed text. With a private Mozc `ibus_config.textproto` selecting
+`mozc-jp`, US layout and `active_on_launch: True`, romaji `konnichiha` plus
+Space/Return committed exactly `こんにちは` into the GTK field. The
+compositor's `FocusWindow` D-Bus action moved the mapped field from unfocused to
+focused before entry; the active XKB/IBus source state on the host was not
+changed. Mozc documents `active_on_launch` as false by default (see
+https://github.com/google/mozc/blob/master/docs/configurations.md#activate-mozc-on-launch).
+This qualifies nested keyboard delivery and IBus input-method-v2/text-input-v3
+commit behavior for that client and setting. F5 dictation, host source
+switching, physical keyboard input, candidate-window visual behavior and
+native session behavior remain open. All temporary compositor, Xvfb, Zenity,
+IBus and Mozc processes were cleaned up; the host IBus engine remains
+`xkb:us::eng`. Next: qualify more GTK/Qt clients and the F5 app workflow, then
+the Dock only through the approved local GUI policy.

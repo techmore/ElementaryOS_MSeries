@@ -9,8 +9,11 @@ snapshot with focus and the expected two-workspace count. This allows broader
 nested development qualification to proceed. Installed Wingpanel also
 connected in private Xvfb, sent shell v2 panel requests, allocated SHM buffers,
 and received a valid nested `GetCurrentState` response. It is not evidence for
-direct keyboard input, IBus commits, native display takeover, or an
-experimental Pantheon login; those remain unqualified.
+physical keyboard input or native display takeover. A private GTK/Wayland
+Zenity field now also receives nested key events and commits Japanese text
+through IBus/Mozc `mozc-jp` with a private Hiragana-on profile. F5 app behavior,
+host source switching, native display/input, and an experimental Pantheon login
+remain unqualified.
 
 Working title: `Mutter-Minimal-Viable-Rust_elementaryos-mseries`. The owner
 clarified that the goal is to identify and implement the compositor features

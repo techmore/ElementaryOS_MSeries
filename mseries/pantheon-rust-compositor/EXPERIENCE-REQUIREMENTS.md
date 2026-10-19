@@ -35,9 +35,14 @@ presence in Mutter is not by itself a reason to reproduce them in the first
 cut.
 
 On the current host, the configured sources are US XKB and IBus `mozc-jp`, with
-US selected. The active F5 dictation workflow uses focus-bound IBus output;
-`mozc-jp` composition itself is not currently selected and still needs its own
-acceptance check.
+US selected. The nested release binary has now passed a GTK Wayland field
+commit using `mozc-jp`: romaji `konnichiha` produced `こんにちは`. The test
+used a private Mozc profile with `active_on_launch: True` because the documented
+default is direct Latin input; it did not change host settings. This qualifies
+the compositor's nested IBus/text-input path, not host source switching,
+physical keyboard input or the F5 dictation workflow. See the
+[Mozc IBus configuration](https://github.com/google/mozc/blob/master/docs/configurations.md#activate-mozc-on-launch)
+for the input-mode setting.
 
 The 2026-10-19 user-settings snapshot has the screen reader, screen magnifier,
 and accessibility keyboard features disabled. Toolkit accessibility is enabled
