@@ -141,8 +141,9 @@ this run's opening time as really good; the journal milestone measures panel
 buffer readiness, not first interactive use. The owner also reported that
 window corners look inconsistent and unwanted. This is now a visual
 acceptance issue; affected apps and window states still need examples. The
-3024×1964 panel mode looked too zoomed out, so the next Rust login should keep
-the high-resolution mode and try 2× logical UI scaling. These owner reports
+3024×1964 panel mode looked too zoomed out. A Rust-only 2× logical scale
+profile is staged for the next login while keeping the high-resolution mode;
+the resulting UI size and panel layout remain unqualified. These owner reports
 are tracked in [`EXPERIENCE-REQUIREMENTS.md`](EXPERIENCE-REQUIREMENTS.md) and
 the [migration dashboard](dashboard.html).
 
