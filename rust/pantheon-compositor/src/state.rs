@@ -78,7 +78,7 @@ pub struct PantheonCompositor {
     pub display_config: DisplayConfigHandle,
     pub shell_compat: ShellCompatHandle,
     pub panels: HashMap<smithay::reexports::wayland_server::backend::ObjectId, PanelState>,
-    pub last_work_area: Option<smithay::utils::Rectangle<i32, smithay::utils::Logical>>,
+    pub last_work_areas: HashMap<String, smithay::utils::Rectangle<i32, smithay::utils::Logical>>,
     pub managed_windows:
         HashMap<smithay::reexports::wayland_server::backend::ObjectId, ManagedWindow>,
     pub tiled_windows: HashMap<smithay::reexports::wayland_server::backend::ObjectId, TiledWindow>,
@@ -232,7 +232,7 @@ impl PantheonCompositor {
             display_config,
             shell_compat,
             panels: HashMap::new(),
-            last_work_area: None,
+            last_work_areas: HashMap::new(),
             managed_windows: HashMap::new(),
             tiled_windows: HashMap::new(),
             tiling_bindings: TilingBindings::load(),
@@ -408,7 +408,7 @@ impl PantheonCompositor {
         }
         self.display_config.update_many(snapshots);
 
-        self.last_work_area = None;
+        self.last_work_areas.clear();
         let panels = self
             .space
             .elements()

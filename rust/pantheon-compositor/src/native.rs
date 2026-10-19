@@ -579,7 +579,7 @@ impl NativeKmsDevice {
                 }
             }
 
-            state.last_work_area = None;
+            state.last_work_areas.clear();
             let panels = state
                 .space
                 .elements()

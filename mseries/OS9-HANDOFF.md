@@ -5,7 +5,10 @@
 On branch `codex/rust-mutter-pantheon`, recent changes reconfigure already
 maximized windows when a committed Pantheon panel change alters its exclusive
 work area; unchanged panel repaints do not trigger redundant xdg configure
-events. Added `pantheon-shell-probe`, which binds shell/panel v2 and sends
+events. Work-area state now tracks each active output, maximized/fullscreen
+windows and popup constraints use their current output, and removing a panel
+reflows managed windows. Multi-output panel placement remains unqualified.
+Added `pantheon-shell-probe`, which binds shell/panel v2 and sends
 `get_panel`, anchor, size, hide-mode, and offset requests. Local `cargo check`
 and `cargo build --bins` pass. The 12-second Xvfb nested run completed the probe
 over Wayland using Mesa llvmpipe. Then installed Wingpanel 8.0.4 ran against the

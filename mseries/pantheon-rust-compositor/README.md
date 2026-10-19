@@ -30,6 +30,11 @@ shortcut and multi-output behavior remain open. During a compositor move, the
 snaps the window, and Escape cancels the snap. Fixed-size windows are excluded.
 The drag preview and release path also need runtime qualification.
 
+Panel reservations and managed maximize/tile layouts are tracked per output
+connector. Maximized/fullscreen windows and popup constraints use the window's
+current output, and removing a panel releases its work area. Multi-output
+placement and panel behavior remain runtime-unqualified.
+
 The pinned Gala 8.6.2 audit found 79 Vala files directly using `Meta.*` across
 24,534 lines of Gala core source, with Clutter/Cogl/Mtk dependencies. That
 explains why swapping out Mutter underneath Gala is not a drop-in operation.

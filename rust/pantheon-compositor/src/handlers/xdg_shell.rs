@@ -428,8 +428,18 @@ impl PantheonCompositor {
             return;
         };
 
-        let output = self.space.outputs().next().unwrap();
-        let output_geo = self.space.output_geometry(output).unwrap();
+        let Some(output) = self
+            .space
+            .outputs_for_element(window)
+            .first()
+            .cloned()
+            .or_else(|| self.space.outputs().next().cloned())
+        else {
+            return;
+        };
+        let Some(output_geo) = self.space.output_geometry(&output) else {
+            return;
+        };
         let window_geo = self.space.element_geometry(window).unwrap();
 
         // The target geometry for the positioner should be relative to its parent's geometry, so

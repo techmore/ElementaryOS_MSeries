@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use smithay::{
     desktop::Window,
     reexports::wayland_server::{
@@ -37,8 +39,11 @@ pub struct ShellSurfaceData {
     pub surface: WlSurface,
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct PanelState {
+    /// Connector name selected for this panel. Missing or disconnected names
+    /// fall back to the first active output and are updated on placement.
+    pub output_name: Option<String>,
     /// Pantheon protocol values: top=0, bottom=1, left=2, right=3.
     pub anchor: Option<u32>,
     /// Non-positive dimensions use the committed surface size.
@@ -227,13 +232,16 @@ impl PantheonCompositor {
 
     pub fn remove_panel(&mut self, surface: &WlSurface) {
         self.panels.remove(&surface.id());
+        if self.refresh_work_areas() {
+            self.reconfigure_managed_windows();
+        }
     }
 
     pub fn update_panel(&mut self, surface: &WlSurface, update: impl FnOnce(&mut PanelState)) {
         let panel = self.panels.entry(surface.id()).or_default();
         update(panel);
         self.position_panel(surface);
-        if self.refresh_work_area() {
+        if self.refresh_work_areas() {
             self.reconfigure_managed_windows();
         }
     }
@@ -290,18 +298,19 @@ impl PantheonCompositor {
         )
     }
 
-    fn refresh_work_area(&mut self) -> bool {
-        let Some(output) = self.space.outputs().next().cloned() else {
-            return false;
-        };
-        let Some(output_geometry) = self.space.output_geometry(&output) else {
-            return false;
-        };
-        let work_area = self.work_area_for_output(output_geometry);
-        if self.last_work_area == Some(work_area) {
+    fn refresh_work_areas(&mut self) -> bool {
+        let work_areas = self
+            .space
+            .outputs()
+            .filter_map(|output| {
+                let geometry = self.space.output_geometry(output)?;
+                Some((output.name(), self.work_area_for_output(geometry)))
+            })
+            .collect::<HashMap<_, _>>();
+        if self.last_work_areas == work_areas {
             return false;
         }
-        self.last_work_area = Some(work_area);
+        self.last_work_areas = work_areas;
         true
     }
 
@@ -317,7 +326,7 @@ impl PantheonCompositor {
     }
 
     fn position_panel(&mut self, surface: &WlSurface) {
-        let Some(panel) = self.panels.get(&surface.id()).copied() else {
+        let Some(mut panel) = self.panels.get(&surface.id()).cloned() else {
             return;
         };
         let Some(anchor) = panel.anchor else {
@@ -326,12 +335,23 @@ impl PantheonCompositor {
         let Some(window) = self.find_window_for_surface(surface) else {
             return;
         };
-        let Some(output) = self.space.outputs().next().cloned() else {
+        let Some(output) = panel
+            .output_name
+            .as_deref()
+            .and_then(|name| self.space.outputs().find(|output| output.name() == name))
+            .cloned()
+            .or_else(|| self.space.outputs_for_element(&window).first().cloned())
+            .or_else(|| self.space.outputs().next().cloned())
+        else {
             return;
         };
         let Some(output_geometry) = self.space.output_geometry(&output) else {
             return;
         };
+        if panel.output_name.as_deref() != Some(output.name().as_str()) {
+            panel.output_name = Some(output.name());
+            self.panels.insert(surface.id(), panel.clone());
+        }
 
         let surface_size = window.geometry().size;
         let width = if panel.width > 0 {
@@ -411,7 +431,13 @@ impl PantheonCompositor {
         maximized: bool,
         fullscreen: bool,
     ) {
-        let Some(output) = self.space.outputs().next().cloned() else {
+        let Some(output) = self
+            .space
+            .outputs_for_element(window)
+            .first()
+            .cloned()
+            .or_else(|| self.space.outputs().next().cloned())
+        else {
             return;
         };
         let Some(output_geometry) = self.space.output_geometry(&output) else {
