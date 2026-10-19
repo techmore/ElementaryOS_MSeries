@@ -1,0 +1,20 @@
+[package]
+name = "pantheon-compositor"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-only"
+description = "Nested Rust Wayland compositor prototype for elementary OS"
+
+[[bin]]
+name = "pantheon-compositor"
+path = "src/main.rs"
+
+[dependencies]
+tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
+bitflags = "2.2.1"
+
+[dependencies.smithay]
+git = "https://github.com/Smithay/smithay.git"
+rev = "023b78b1c5a05ca512767cacc07efca55fae8be4"
+default-features = false
+features = ["backend_winit", "wayland_frontend", "desktop"]

@@ -5271,3 +5271,34 @@ Fresh physical-F5/microphone, authenticated Gmail, natural/full-duplex voice,
 Calendar GUI/reminders, indefinite soak, power/battery and factory boot remain
 separate work. Six-hour developer tracking remains the existing workflow; the
 old completion heartbeat is already PAUSED. No duplicate automation was created.
+
+## Rust Mutter replacement for Pantheon — 2026-10-18
+
+Started branch `codex/rust-mutter-pantheon` for a Rust compositor intended to
+replace the Gala/Mutter display-server role in the Pantheon session. The source
+audit found Gala 8.6.2 directly uses Mutter's `Meta` objects and Clutter/Cogl/Mtk
+APIs and is itself started as the Wayland display server by its session unit.
+Therefore, serving Wayland clients alone is not a swap-in; Gala's dependency
+boundary and the complete Pantheon session contract need to move as well.
+Recorded nested-compositor, shell-contract, hardware/input, parallel-session,
+and swap-in gates in `mseries/rust-mutter/README.md`.
+
+Public source check found no first-party Rust Mutter/Gala replacement to reuse:
+elementary's public [Gala repository](https://github.com/elementary/gala) remains
+the libmutter-based Vala implementation. Independent Smithay projects are useful
+references, but they do not provide Pantheon session compatibility.
+
+Added `rust/pantheon-compositor`, an opt-in nested prototype based on Smithay's
+smallvil at pinned revision `023b78b1c5a05ca512767cacc07efca55fae8be4`. Its
+workspace manifest and lockfile are wired; it uses Smithay's Winit backend,
+needs an existing X11/Wayland session, and can launch a requested Wayland client
+on its nested display. It does not open DRM/KMS or alter the session. It has
+not been built or tested.
+
+No compositor has been installed and no desktop configuration has changed. No
+active desktop, kernel, bootloader, or audio-stack changes were made. The
+WD22TB4 HDMI G3 link-training blocker remains on the DCP/kernel path; it must be
+tracked separately from Rust compositor output and hotplug qualification.
+Next: compile and run the nested prototype with a Wayland client, then inventory
+the Gala/Pantheon shell contract for the next implementation milestone. Do not
+switch the login session at this stage.

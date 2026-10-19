@@ -1,5 +1,22 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Rust Mutter replacement for Pantheon — started 2026-10-18
+
+Work begins on branch `codex/rust-mutter-pantheon`. Gala is the Wayland
+display server and directly depends on Mutter `Meta`, Clutter, Cogl, and Mtk;
+the replacement needs to cover the Pantheon session contract, not just draw
+Wayland client surfaces. The source audit and staged acceptance gates are in
+[`rust-mutter/README.md`](rust-mutter/README.md). First implementation gate:
+an opt-in nested Smithay compositor that can be exercised without replacing
+the active desktop. Prototype code is in `rust/pantheon-compositor/`, pinned to
+a Smithay revision, and has not been compiled or hardware qualified. A public
+search found the first-party [Gala repository](https://github.com/elementary/gala)
+still based on libmutter, but no first-party Rust port to reuse. Independent
+Smithay compositors are references, not Pantheon replacements. The WD22TB4
+dock's G3 link-training blocker remains in the kernel/DCP workstream and is not
+a compositor acceptance result.
+
+
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18
 
 Removed “local” from the seven-day panel/card labels and moved counting scope into
