@@ -12,6 +12,7 @@ public class Machine : Object {
     public int color { get; set; default = 0; }
     public string? url { get; set; default = null; }       // where to get an installer
     public string? installer { get; set; default = null; }
+    public bool clipboard { get; set; default = false; }     // share the clipboard (needs spice-vdagent in the guest)
     public string? recipe { get; set; default = null; }      // "omarchy": download and install unattended
 
     // Live information, not persisted.
@@ -193,6 +194,68 @@ public class Machine : Object {
         return qmp_raw ("{\"execute\":\"%s\"}".printf (command));
     }
 
+    // ---- Clipboard: QEMU's D-Bus display over a socketpair ----
+
+    /* Hand QEMU one end of a socketpair as a D-Bus display client (QMP getfd +
+     * add_client "@dbus-display") and return our end, or -1. QEMU must have been
+     * started with -display dbus,p2p=on (MACHINE_CLIPBOARD=on / CLIPBOARD=on). */
+    public int qmp_add_dbus_client () {
+        int[] fds = new int[2];
+        if (Posix.socketpair (Posix.AF_UNIX, Posix.SOCK_STREAM, 0, fds) != 0) {
+            return -1;
+        }
+        int ours = -1;
+        qmp_lock.lock ();
+        try {
+            var client = new SocketClient ();
+            client.timeout = 3;
+            var conn = client.connect (new UnixSocketAddress (Path.build_filename (dir, "qmp.sock")));
+            var din = new DataInputStream (conn.input_stream);
+            qmp_handshake (conn, din);
+
+            var list = new UnixFDList ();
+            list.append (fds[1]);
+            var message = new UnixFDMessage.with_fd_list (list);
+            string getfd = "{\"execute\":\"getfd\",\"arguments\":{\"fdname\":\"mlbus\"}}\n";
+            OutputVector[] vectors = { OutputVector () { buffer = getfd.data, size = getfd.length } };
+            conn.socket.send_message (null, vectors, { message }, 0, null);
+            string? reply = din.read_line ();
+            while (reply != null && !reply.contains ("\"return\"") && !reply.contains ("\"error\"")) {
+                reply = din.read_line ();
+            }
+            if (reply != null && reply.contains ("\"return\"")) {
+                reply = qmp_exchange (conn, din, "{\"execute\":\"add_client\",\"arguments\":{\"protocol\":\"@dbus-display\",\"fdname\":\"mlbus\"}}");
+                if (reply != null && reply.contains ("\"return\"")) {
+                    ours = fds[0];
+                }
+            }
+            conn.close ();
+        } catch (Error e) {
+            ours = -1;
+        }
+        qmp_lock.unlock ();
+        Posix.close (fds[1]);
+        if (ours < 0) {
+            Posix.close (fds[0]);
+        }
+        return ours;
+    }
+
+    /* Turn clipboard sharing on or off. Managed guests keep it in vm.conf (applies on next start). */
+    public void apply_clipboard (bool on) {
+        clipboard = on;
+        if (managed) {
+            string? tool = find_mseries_vm ();
+            if (tool != null) {
+                try {
+                    new Subprocess.newv ({ tool, "set", vm_name, "CLIPBOARD", on ? "on" : "off" }, SubprocessFlags.STDOUT_SILENCE | SubprocessFlags.STDERR_SILENCE);
+                } catch (Error e) {
+                    append_log ("[could not save clipboard setting: %s]\n".printf (e.message));
+                }
+            }
+        }
+    }
+
     // ---- Display: frames and input over QMP ----
 
     public signal void frame_ready (string path);
@@ -362,6 +425,7 @@ public class Machine : Object {
             l.setenv ("MACHINE_SSH_PORT", ssh_port.to_string (), true);
             l.setenv ("MACHINE_NAME", name, true);
             l.setenv ("MACHINE_DISPLAY", "none", true);   // the app shows the screen itself
+            l.setenv ("MACHINE_CLIPBOARD", clipboard ? "on" : "off", true);
             if (recipe == "omarchy" && installer == null) {
                 string? updater = find_runtime ("machine-lab-prepare-omarchy", "prepare-latest-omarchy.py");
                 if (updater == null) {
@@ -610,6 +674,9 @@ public class MachineStore : Object {
                 if (kf.has_key (id, "url")) {
                     m.url = kf.get_string (id, "url");
                 }
+                if (kf.has_key (id, "clipboard")) {
+                    m.clipboard = kf.get_boolean (id, "clipboard");
+                }
                 if (kf.has_key (id, "recipe")) {
                     m.recipe = kf.get_string (id, "recipe");
                 }
@@ -658,6 +725,9 @@ public class MachineStore : Object {
                 if (kf.has_key ("c", "ISO") && kf.get_string ("c", "ISO") != "") {
                     m.installer = kf.get_string ("c", "ISO");
                 }
+                if (kf.has_key ("c", "CLIPBOARD")) {
+                    m.clipboard = kf.get_string ("c", "CLIPBOARD") == "on";
+                }
                 if (kf.has_key ("c", "CPUS")) {
                     m.cpus = kf.get_integer ("c", "CPUS");
                 }
@@ -701,6 +771,7 @@ public class MachineStore : Object {
             if (m.url != null) {
                 kf.set_string (m.id, "url", m.url);
             }
+            kf.set_boolean (m.id, "clipboard", m.clipboard);
             if (m.recipe != null) {
                 kf.set_string (m.id, "recipe", m.recipe);
             }
