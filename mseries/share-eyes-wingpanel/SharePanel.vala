@@ -23,6 +23,8 @@ namespace MSeries {
         public bool spawn_dock_app { get; set; default = false; }
         /* In Quick Settings: a desktop notification when a viewer starts waiting, so it is noticed without opening the menu. */
         public bool notify_waiting { get; set; default = false; }
+        /* In Quick Settings the section is always there; when no share server runs it offers to start one. */
+        public bool always_visible { get; set; default = false; }
         private int last_waiting = 0;
         private uint32 notification_id = 0;
 
@@ -63,7 +65,7 @@ namespace MSeries {
                 text = null;
             }
             state.parse (text, GLib.get_real_time () / 1000000);
-            visible = state.running;
+            visible = state.running || always_visible;
             if (state.running) {
                 client.configure (state.local_url, state.email, state.password);
                 yield client.refresh ();
@@ -282,8 +284,8 @@ namespace MSeries {
                 halign = Gtk.Align.START, xalign = 0 };
             title.add_css_class ("state-title");
             texts.append (title);
-            texts.append (dim (toast != "" ? toast + " ✓"
-                : !state.running ? "Start the demo with core/scripts/share-demo.sh."
+            texts.append (dim (toast != "" ? toast + (toast == "Starting" ? "…" : " ✓")
+                : !state.running ? (always_visible ? "Nothing is being shared" : "Start the demo with core/scripts/share-demo.sh.")
                 : !client.reachable ? "The share server is not answering."
                 : waiting > 0 ? "Allow or deny below. Nothing is sent until you allow."
                 : client.live ? (watching == 0 ? "Nobody is watching yet" : watching == 1 ? "1 person watching" : "%d people watching".printf (watching))
@@ -296,7 +298,26 @@ namespace MSeries {
                 head.append (chip);
             }
             content.append (head);
-            if (!state.running || !client.reachable) return;
+            if (!state.running) {
+                if (always_visible) {
+                    var go = new Gtk.Button.with_label ("Start screen share");
+                    go.add_css_class ("suggested-action");
+                    go.add_css_class ("primary-wide");
+                    go.clicked.connect (() => {
+                        try {
+                            new GLib.Subprocess (GLib.SubprocessFlags.STDOUT_SILENCE | GLib.SubprocessFlags.STDERR_SILENCE, "mseries-share-start");
+                            toast = "Starting";
+                        } catch (GLib.Error e) {
+                            toast = "Could not start";
+                            warning ("%s", e.message);
+                        }
+                        act ();
+                    });
+                    content.append (go);
+                }
+                return;
+            }
+            if (!client.reachable) return;
 
             // Anyone waiting is the one thing that needs you: it goes straight under the header.
             if (waiting > 0) content.append (watchers_card ());
