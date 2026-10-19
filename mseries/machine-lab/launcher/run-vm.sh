@@ -3,7 +3,7 @@
 #   run-vm.sh ISO [VM_DIR] [CIDATA_ISO]   boot an installer (ISO "-" = none)
 #   run-vm.sh --disk-only VM_DIR          boot the installed disk
 # Hardware comes from the environment: MACHINE_CPUS, MACHINE_MEM_GIB,
-# MACHINE_DISK_GIB, MACHINE_SSH_PORT, MACHINE_NAME. A QMP socket (qmp.sock in
+# MACHINE_DISK_GIB, MACHINE_SSH_PORT, MACHINE_NAME, MACHINE_DISPLAY (gtk|none). A QMP socket (qmp.sock in
 # VM_DIR) lets Machine Lab pause and resume the guest.
 set -euo pipefail
 
@@ -67,6 +67,9 @@ if [ ! -e "$VM_DIR/disk.qcow2" ]; then
 fi
 rm -f "$VM_DIR/qmp.sock"
 
+DISPLAY_ARGS=(-display gtk,gl=off)
+[ "${MACHINE_DISPLAY:-gtk}" = none ] && DISPLAY_ARGS=(-display none)
+
 QEMU_ARGS=(
     -name "$VM_NAME"
     -machine virt,gic-version=3,msi=gicv2m,acpi=off
@@ -105,7 +108,7 @@ QEMU_ARGS+=(
     -device virtio-gpu-pci
     -device virtio-rng-pci
     -qmp unix:"$VM_DIR/qmp.sock",server=on,wait=off
-    -display gtk,gl=off
+    "${DISPLAY_ARGS[@]}"
     -boot menu=on
 )
 

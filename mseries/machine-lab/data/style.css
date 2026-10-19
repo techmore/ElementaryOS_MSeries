@@ -156,3 +156,10 @@ textview.ml-console, textview.ml-console text {
 .ml-gallery-card:hover { box-shadow: 0 0 0 2px @accent_color, 0 2px 8px alpha(black, 0.18); }
 
 .ml-pill.paused { color: #946800; background: alpha(#f9c440, 0.35); }
+
+.ml-screen-frame {
+    border-radius: 10px;
+    background: #000;
+    box-shadow: 0 0 0 1px alpha(@fg_color, 0.2), 0 2px 8px alpha(black, 0.25);
+}
+.ml-screen-frame label, .ml-screen-frame image { color: #d8dde6; }

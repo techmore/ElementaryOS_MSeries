@@ -49,6 +49,8 @@ public class MachinePage : Gtk.Box {
     private Gtk.Button start_button;
     private Gtk.Button stop_button;
     private Gtk.Stack stack;
+    private Viewer viewer;
+    private bool was_running = false;
     private Gtk.Box settings_form;
     private Gtk.Label settings_note;
     private Gtk.Entry name_entry;
@@ -72,6 +74,9 @@ public class MachinePage : Gtk.Box {
         stack.transition_type = Gtk.StackTransitionType.CROSSFADE;
         stack.vexpand = true;
         stack.add_titled (build_overview (), "overview", "Overview");
+        viewer = new Viewer (machine);
+        viewer.toast.connect ((m) => toast (m));
+        stack.add_titled (viewer, "display", "Display");
         stack.add_titled (build_console (), "console", "Console");
         stack.add_titled (build_settings (), "settings", "Settings");
 
@@ -97,7 +102,17 @@ public class MachinePage : Gtk.Box {
         append (handle);
         append (stack);
 
+        stack.notify["visible-child-name"].connect (() => {
+            viewer.set_active (stack.visible_child_name == "display");
+        });
         machine.state_changed.connect (refresh);
+        machine.state_changed.connect (() => {
+            // Take the user to the screen as soon as a machine starts.
+            if (machine.running && !was_running) {
+                show_tab ("display");
+            }
+            was_running = machine.running;
+        });
         machine.finished.connect ((code) => {
             if (code > 0) {
                 show_tab ("console");
