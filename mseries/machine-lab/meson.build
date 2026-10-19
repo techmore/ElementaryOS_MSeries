@@ -1,5 +1,5 @@
 project('machine-lab', 'vala',
-  version: '0.3.0',
+  version: '0.4.0',
   meson_version: '>= 1.0.0',
   default_options: ['warning_level=2']
 )
@@ -22,7 +22,7 @@ config = configure_file(
 )
 
 executable('machine-lab',
-  'src/main.vala', 'src/machine.vala', 'src/page.vala', 'src/viewer.vala', 'src/macexp.vala', config,
+  'src/main.vala', 'src/machine.vala', 'src/page.vala', 'src/viewer.vala', 'src/macexp.vala', 'src/clipboard.vala', config,
   resources,
   dependencies: [gtk, granite],
   install: true

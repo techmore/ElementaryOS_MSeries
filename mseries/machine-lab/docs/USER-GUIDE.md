@@ -39,7 +39,10 @@ Starting a machine opens its Display tab: the guest's screen at about 30 fps wit
 Other shortcuts: Ctrl+N new machine, F5 or Ctrl+R re-check disk space and requirements, Ctrl+Q quit (running
 machines are stopped).
 
-Clipboard sharing and drag-and-drop between host and guest are not built yet (issues #263, #264).
+**Clipboard (text).** Settings, "Share clipboard" (off by default). It applies the next time the machine starts, and the guest needs the
+SPICE agent (`spice-vdagent`; the elementary OS image already has it). What works today: copy in the guest, paste on the Mac. Copy on the
+Mac and paste in the guest is not working yet (see `experiments/clipboard/README.md`). Images, files and drag-and-drop are not supported by
+QEMU's clipboard channel yet (issue #264).
 
 ## Installing a system
 

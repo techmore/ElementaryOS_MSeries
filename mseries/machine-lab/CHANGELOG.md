@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0 (2026-10-19)
+- Clipboard sharing over QEMU's D-Bus display (Settings, off by default): guest-to-host text verified with the elementary OS guest; host-to-guest not working yet.
+- Machines started with it use `-display dbus,p2p=on` and a `qemu-vdagent` channel (`MACHINE_CLIPBOARD`, vm.conf `CLIPBOARD=on`).
+
 ## 0.3.0 (2026-10-19)
 - Display tab: guest screen, mouse, keyboard, full screen with exit controls, Ctrl+Alt+Del, screenshots.
 - macOS (experimental) page that runs real probes and shows how each route fails.
