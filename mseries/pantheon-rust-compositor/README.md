@@ -93,12 +93,13 @@ exercised in an isolated login.
 with the separate experimental session files. It derives shared-library
 dependencies and requires `gnome-session` and `gtklock`. Build it locally with
 `OUTDIR=/path/to/output mseries/pantheon-rust-compositor/build-deb.sh`. The
-The locally built arm64 package from commit `144b91f` is saved at
-`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-primary-selection-release/pantheon-rust-compositor_0.1.0+git144b91f_arm64.deb`
-(SHA-256 `fa140652fcd8daf2ba2254062436c17c9ab581e5a2c9606760f1b7859e492513`).
+The locally built arm64 package from commit `7b1b46b` is saved at
+`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-ibus-release/pantheon-rust-compositor_0.1.0+git7b1b46b_arm64.deb`
+(SHA-256 `031b409e6c367487bc97adba375a865c79cb691bd48ea8f8b7e9b4255d3dd885`).
 It includes the XWayland runtime dependency and is for isolated qualification;
 the build script does not install it. The package contents and dependency
-metadata were inspected after building. No runtime or display takeover was run.
+metadata were inspected after building. The IBus Wayland path has not yet been
+runtime-qualified, and no display takeover was run.
 
 ## Dock HDMI boundary
 
