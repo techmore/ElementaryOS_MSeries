@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+# Build the M-series Wingpanel plugin .debs from pinned sources.
+# Pilot scope (issue #52): network + quick-settings only.
+#
+#   OUTDIR=out/mseries-debs bash mseries/debs/build.sh
+#
+# Inputs (environment):
+#   OUTDIR        where finished .debs and SHA256SUMS land (required)
+#   REPO_ROOT     repository checkout (default: script's grandparent)
+#   ONLY          build just this package (default: all; useful for local checks)
+# Layout mirrors mkosi.images/apple-silicon/build-{network-indicator,quick-settings}
+# plus the firstboot-only extras from mseries/install-network-throughput.sh.
+set -euo pipefail
+
+OUTDIR=${OUTDIR:?set OUTDIR to the output directory}
+HERE=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+ROOT=${REPO_ROOT:-$(cd -- "$HERE/../.." && pwd)}
+WORK=$(mktemp -d "${TMPDIR:-/tmp}/mseries-debs.XXXXXX")
+trap 'rm -rf "$WORK"' EXIT
+mkdir -p "$OUTDIR"
+
+record() { printf '%s\n' "$*" >> "$OUTDIR/BUILD-PROVENANCE.txt"; }
+: > "$OUTDIR/BUILD-PROVENANCE.txt"
+record "source-commit: $(git -C "$ROOT" rev-parse HEAD)"
+record "built: $(date -u +%FT%TZ)"
+
+# build_plugin DEB BASE_PKG GATE_PREFIX PLUGIN_PATH MARKER REPO_URL COMMIT [PATCH...] [--] [EXTRA_SETUP]
+# EXTRA_SETUP, when present, is a function name run inside the source tree
+# after patches (e.g. copying widget sources, running wire scripts).
+build_plugin() {
+  local deb=$1 base=$2 gate=$3 plugin_path=$4 marker=$5 repo_url=$6 commit=$7
+  shift 7
+  if [[ -n ${ONLY:-} && $ONLY != "$deb" ]]; then
+    record "$deb: skipped (ONLY=$ONLY)"
+    return 0
+  fi
+  local patches=() extra=""
+  while (( $# > 0 )); do
+    case $1 in
+      --) extra=$2; shift 2 ;;
+      *) patches+=("$1"); shift ;;
+    esac
+  done
+
+  local base_version
+  base_version=$(dpkg-query -W -f='${Version}' "$base" 2>/dev/null || true)
+  if [[ $base_version != "$gate"* ]]; then
+    echo "error: $deb targets $base $gate.x; image has ${base_version:-no package}" >&2
+    exit 1
+  fi
+  record "$deb: base $base $base_version, source $commit"
+
+  local src=$WORK/$deb-source bld=$WORK/$deb-build
+  git init -q "$src"
+  git -C "$src" remote add origin "$repo_url"
+  git -C "$src" fetch -q --depth=1 origin "$commit"
+  git -C "$src" checkout -q --detach FETCH_HEAD
+  local p
+  for p in "${patches[@]}"; do git -C "$src" apply "$ROOT/$p"; done
+  if [[ -n $extra ]]; then ( cd "$src" && "$extra" "$ROOT" "$src" ); fi
+
+  # meson and ninja report errors on stdout: keep it in a log, show it on failure.
+  local log=$WORK/$deb-build.log
+  meson setup "$bld" "$src" --prefix=/usr --libdir=lib/aarch64-linux-gnu \
+    --buildtype=release >"$log" 2>&1 || { cat "$log" >&2; echo "error: $deb meson setup failed" >&2; exit 1; }
+  ninja -C "$bld" >>"$log" 2>&1 || { tail -n 200 "$log" >&2; echo "error: $deb build failed" >&2; exit 1; }
+
+  local lib=$bld/$plugin_path
+  [[ -s $lib ]] || { echo "error: $deb produced no plugin" >&2; exit 1; }
+  if ldd "$lib" | grep -q 'not found'; then
+    echo "error: $deb has unresolved libraries" >&2; exit 1
+  fi
+  grep -aqF "$marker" "$lib" || { echo "error: $deb missing marker '$marker'" >&2; exit 1; }
+
+  local pkg=$WORK/$deb-pkg
+  rm -rf "$pkg"
+  mkdir -p "$pkg/DEBIAN" "$pkg/usr/lib/aarch64-linux-gnu/wingpanel-9"
+  install -m 0644 "$lib" "$pkg/usr/lib/aarch64-linux-gnu/wingpanel-9/$(basename "$plugin_path")"
+  cat > "$pkg/DEBIAN/control" <<EOF
+Package: $deb
+Version: $gate-0mseries1
+Architecture: arm64
+Maintainer: techmore <sdolbec1@gmail.com>
+Depends: $base (>= $gate), $base (<< ${gate%.*}.$((${gate##*.} + 1)))
+Description: M-series $(basename "$plugin_path" .so) plugin (see issue #52)
+ Replaces the stock plugin via dpkg-divert; version-gated to the $gate.x ABI.
+EOF
+  local soname
+  soname=/usr/lib/aarch64-linux-gnu/wingpanel-9/$(basename "$plugin_path")
+  cat > "$pkg/DEBIAN/preinst" <<EOF
+#!/bin/sh
+set -e
+if [ "\$1" = install ] || [ "\$1" = upgrade ]; then
+  dpkg-divert --package $deb --add --rename \\
+    --divert "$soname.mseries-orig" "$soname" >/dev/null
+fi
+EOF
+  cat > "$pkg/DEBIAN/postinst" <<'EOF'
+#!/bin/sh
+set -e
+if [ "$1" = configure ]; then
+  pkill -x io.elementary.w 2>/dev/null || true
+fi
+EOF
+  cat > "$pkg/DEBIAN/postrm" <<EOF
+#!/bin/sh
+set -e
+if [ "\$1" = remove ] || [ "\$1" = purge ]; then
+  dpkg-divert --package $deb --rename --remove "$soname" >/dev/null || true
+fi
+EOF
+  chmod 0755 "$pkg/DEBIAN/preinst" "$pkg/DEBIAN/postinst" "$pkg/DEBIAN/postrm"
+  bash -n "$pkg/DEBIAN/preinst"; bash -n "$pkg/DEBIAN/postinst"; bash -n "$pkg/DEBIAN/postrm"
+  dpkg-deb --build --root-owner-group "$pkg" "$OUTDIR/${deb}_${gate}-0mseries1_arm64.deb" >/dev/null
+  record "$deb: $(cd "$OUTDIR" && sha256sum "${deb}_${gate}-0mseries1_arm64.deb")"
+}
+
+# --- per-package extras ----------------------------------------------------
+
+network_extra() { # ROOT SRC
+  git -C "$2" apply --include=data/Indicator.css \
+    --include=src/Widgets/UsageWidget.vala \
+    --include=src/Widgets/WifiInterface.vala \
+    "$1/mseries/netspeed/panel-network.patch"
+  python3 "$1/mseries/netspeed/wire-network-usage.py" "$2"
+}
+
+quick_extra() { # ROOT SRC
+  install -m 0644 "$1/mseries/quick-settings/ScreenBrightness.vala" "$2/src/Widgets/"
+  install -m 0644 "$1/mseries/quick-settings/KeyboardBrightness.vala" "$2/src/Widgets/"
+  install -m 0644 "$1/mseries/quick-settings/ChargeLimit.vala" "$2/src/Widgets/"
+}
+
+build_plugin mseries-wingpanel-network io.elementary.panel.network 8.0.1 \
+  libnetwork.so 'Show speed in menu bar' \
+  https://github.com/elementary/panel-network.git \
+  8685ec8e55a45e48da0c12931a353cd440d11664 \
+  mseries/patches/network-throughput.patch \
+  mseries/patches/network-null-devices.patch \
+  mseries/patches/network-panel-speed.patch \
+  -- network_extra
+
+build_plugin mseries-quick-settings io.elementary.quick-settings 1.4.0 \
+  src/libquick-settings.so 'KeyboardBrightness' \
+  https://github.com/elementary/quick-settings.git \
+  fb721d4b5640a2a25ae011370c8fe8aaff8d93f4 \
+  mseries/patches/quick-settings-brightness.patch \
+  -- quick_extra
+
+(cd "$OUTDIR" && sha256sum -- ./*.deb | sed 's|\./||' > SHA256SUMS)
+echo "built: $(ls "$OUTDIR"/*.deb | wc -l) packages in $OUTDIR"

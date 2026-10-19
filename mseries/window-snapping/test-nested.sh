@@ -13,8 +13,9 @@ export GDK_BACKEND=wayland
 export WAYLAND_DISPLAY=mseries-snapping-test-$$
 mkdir -p "$XDG_CONFIG_HOME" "$XDG_DATA_HOME"
 printf '# No panels or dock in the isolated test desktop.\n' > "$XDG_CONFIG_HOME/io.elementary.desktop.wm.shell"
-gala=/usr/local/lib/mseries/gala/bin/gala
-export LD_LIBRARY_PATH=/usr/local/lib/mseries/gala/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+prefix=${MSERIES_TEST_GALA_PREFIX:-/usr/local/lib/mseries/gala}
+gala=$prefix/bin/gala
+export LD_LIBRARY_PATH=$prefix/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 [[ -x $gala ]] || gala=$(command -v gala)
 "$gala" --wayland --headless --no-x11 --wayland-display="$WAYLAND_DISPLAY" \
     --virtual-monitor=1600x1000 >"$test_dir/gala.log" 2>&1 &

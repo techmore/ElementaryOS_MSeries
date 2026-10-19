@@ -33,6 +33,36 @@ index bfd5c8a..d97686d 100644
 +    font-size: 0.7em;
 +    opacity: 0.65;
 +}
+diff --git a/data/meson.build b/data/meson.build
+index 3ff13d0..f4afedb 100644
+--- a/data/meson.build
++++ b/data/meson.build
+@@ -18,3 +18,8 @@ i18n.merge_file(
+     install: true,
+     install_dir: get_option('prefix') / get_option('datadir') / 'metainfo'
+ )
++
++install_data(
++    'org.techmore.mseries.dock.gschema.xml',
++    install_dir: get_option('prefix') / get_option('datadir') / 'glib-2.0' / 'schemas'
++)
+diff --git a/data/org.techmore.mseries.dock.gschema.xml b/data/org.techmore.mseries.dock.gschema.xml
+new file mode 100644
+index 0000000..3abd3f9
+--- /dev/null
++++ b/data/org.techmore.mseries.dock.gschema.xml
+@@ -0,0 +1,11 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<schemalist>
++  <schema id="org.techmore.mseries.dock" path="/org/techmore/mseries/dock/">
++    <key type="i" name="offset">
++      <range min="-8192" max="8192"/>
++      <default>0</default>
++      <summary>Dock offset from the screen centre in logical pixels</summary>
++      <description>Command-drag placement, clamped to the current monitor. Zero centres the dock.</description>
++    </key>
++  </schema>
++</schemalist>
 diff --git a/protocol/pantheon-desktop-shell-v1.xml b/protocol/pantheon-desktop-shell-v1.xml
 index fcd0f17..ac5a907 100644
 --- a/protocol/pantheon-desktop-shell-v1.xml
@@ -85,6 +115,106 @@ index 1006411..0dadb04 100644
      }
  
      [CCode (cheader_filename = "pantheon-desktop-shell-client-protocol.h", cname = "struct io_elementary_pantheon_widget_v1", cprefix = "io_elementary_pantheon_widget_v1_", free_function = "io_elementary_pantheon_widget_v1_destroy")]
+diff --git a/src/DisplayConfig.vala b/src/DisplayConfig.vala
+new file mode 100644
+index 0000000..067df84
+--- /dev/null
++++ b/src/DisplayConfig.vala
+@@ -0,0 +1,94 @@
++/*
++ * Copyright 2024 elementary, Inc. (https://elementary.io)
++ * SPDX-License-Identifier: GPL-3.0-or-later
++ */
++
++[DBus (name = "org.gnome.Mutter.DisplayConfig")]
++public interface Dock.Services.DisplayConfig : Object {
++    private static bool? _is_logical_layout = null;
++    private static DisplayConfig? proxy = null;
++
++    public static bool is_logical_layout () {
++        if (_is_logical_layout == null) {
++            init ();
++        }
++
++        return _is_logical_layout;
++    }
++
++    private static void init () {
++        try {
++            proxy = Bus.get_proxy_sync (BusType.SESSION, "org.gnome.Mutter.DisplayConfig", "/org/gnome/Mutter/DisplayConfig");
++            proxy.monitors_changed.connect (update);
++        } catch (Error e) {
++            critical (e.message);
++            _is_logical_layout = true;
++            return;
++        }
++
++        update ();
++    }
++
++    private static void update () {
++        uint current_serial;
++        MutterReadMonitor[] mutter_monitors;
++        MutterReadLogicalMonitor[] mutter_logical_monitors;
++        GLib.HashTable<string, GLib.Variant> properties;
++        try {
++            proxy.get_current_state (out current_serial, out mutter_monitors, out mutter_logical_monitors, out properties);
++        } catch (Error e) {
++            critical (e.message);
++            _is_logical_layout = true;
++            return;
++        }
++
++        uint layout_mode = 1; // Absence of "layout-mode" means logical (= 1) according to the documentation.
++        var layout_mode_variant = properties.lookup ("layout-mode");
++        if (layout_mode_variant != null) {
++            layout_mode = layout_mode_variant.get_uint32 ();
++        }
++
++        _is_logical_layout = layout_mode == 1;
++    }
++
++    public signal void monitors_changed ();
++    public abstract void get_current_state (out uint serial, out MutterReadMonitor[] monitors, out MutterReadLogicalMonitor[] logical_monitors, out GLib.HashTable<string, GLib.Variant> properties) throws Error;
++}
++
++public struct MutterReadMonitorInfo {
++    public string connector;
++    public string vendor;
++    public string product;
++    public string serial;
++    public uint hash {
++        get {
++            return (connector + vendor + product + serial).hash ();
++        }
++    }
++}
++
++public struct MutterReadMonitorMode {
++    public string id;
++    public int width;
++    public int height;
++    public double frequency;
++    public double preferred_scale;
++    public double[] supported_scales;
++    public GLib.HashTable<string, GLib.Variant> properties;
++}
++
++public struct MutterReadMonitor {
++    public MutterReadMonitorInfo monitor;
++    public MutterReadMonitorMode[] modes;
++    public GLib.HashTable<string, GLib.Variant> properties;
++}
++
++public struct MutterReadLogicalMonitor {
++    public int x;
++    public int y;
++    public double scale;
++    public uint transform;
++    public bool primary;
++    public MutterReadMonitorInfo[] monitors;
++    public GLib.HashTable<string, GLib.Variant> properties;
++}
 diff --git a/src/Drawers.vala b/src/Drawers.vala
 new file mode 100644
 index 0000000..331c76b
@@ -374,15 +504,17 @@ index a3e7e96..0377885 100644
  
          var drop_target_file = new Gtk.DropTarget (typeof (File), COPY) {
 diff --git a/src/MainWindow.vala b/src/MainWindow.vala
-index 2d05ae0..8f4f20e 100644
+index 2d05ae0..652c549 100644
 --- a/src/MainWindow.vala
 +++ b/src/MainWindow.vala
-@@ -27,6 +27,15 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -27,6 +27,17 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
      private bool initialized_blur = false;
      private int border_radius = 0;
  
 +    // Drawers/M-series: Command (Control) + left-drag moves the dock along its edge.
++    private static Settings mseries_settings = new Settings ("org.techmore.mseries.dock");
 +    private int panel_offset = 0;
++    private int sent_panel_offset = int.MAX;
 +    private int panel_drag_start_offset = 0;
 +    private bool draging_panel = false;
 +
@@ -393,7 +525,7 @@ index 2d05ae0..8f4f20e 100644
      class construct {
          set_css_name ("dock-window");
      }
-@@ -52,6 +61,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -52,6 +63,11 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
          size_group.add_widget (dock_box);
          size_group.add_widget (launcher_manager);
  
@@ -405,11 +537,16 @@ index 2d05ae0..8f4f20e 100644
          child = overlay;
  
          remove_css_class ("background");
-@@ -78,6 +92,74 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -78,6 +94,96 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
          }
  
          window_drag_manager = new WindowDragManager (this);
 +
++        panel_offset = mseries_settings.get_int ("offset");
++        mseries_settings.changed["offset"].connect (() => {
++            panel_offset = mseries_settings.get_int ("offset");
++            apply_panel_offset ();
++        });
 +        init_panel_move ();
 +        init_drawers_panel_gesture ();
 +    }
@@ -466,6 +603,9 @@ index 2d05ae0..8f4f20e 100644
 +            apply_panel_offset ();
 +        });
 +        drag.drag_end.connect (() => {
++            if (draging_panel) {
++                mseries_settings.set_int ("offset", panel_offset.clamp (-8192, 8192));
++            }
 +            draging_panel = false;
 +        });
 +        // Cast to Widget: Gtk.Window also implements Gtk.ShortcutManager, whose
@@ -475,12 +615,26 @@ index 2d05ae0..8f4f20e 100644
 +
 +    private void apply_panel_offset () {
 +        if (panel != null && panel.get_version () >= 2) {
-+            panel.set_offset (panel_offset);
++            var offset = panel_offset;
++            var surface = get_surface ();
++            var monitor = get_display ().get_monitor_at_surface (surface);
++            if (monitor != null) {
++                var monitor_width = monitor.geometry.width;
++                if (!Services.DisplayConfig.is_logical_layout ()) {
++                    monitor_width /= get_scale_factor ();
++                }
++                var limit = int.max (0, (monitor_width - ItemManager.get_default ().get_width ()) / 2 - 8);
++                offset = offset.clamp (-limit, limit);
++            }
++            if (offset != sent_panel_offset) {
++                panel.set_offset (offset);
++                sent_panel_offset = offset;
++            }
 +        }
      }
  
      private void update_transparency () {
-@@ -91,7 +173,7 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+@@ -91,12 +197,13 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
  
      public void registry_handle_global (Wl.Registry wl_registry, uint32 name, string @interface, uint32 version) {
          if (@interface == "io_elementary_pantheon_shell_v1") {
@@ -489,7 +643,19 @@ index 2d05ae0..8f4f20e 100644
              unowned var surface = get_surface ();
              if (surface is Gdk.Wayland.Surface) {
                  unowned var wl_surface = ((Gdk.Wayland.Surface) surface).get_wl_surface ();
-@@ -124,12 +206,22 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+                 panel = desktop_shell.get_panel (wl_surface);
+                 panel.set_anchor (BOTTOM);
++                apply_panel_offset ();
+                 panel.set_hide_mode (settings.get_enum ("autohide-mode"));
+ #if WORKSPACE_SWITCHER
+                 panel.request_visible_in_multitasking_view ();
+@@ -119,17 +226,28 @@ public class Dock.MainWindow : Gtk.ApplicationWindow {
+         });
+
+         surface.layout.connect ((surface, width, height) => {
++            apply_panel_offset ();
+             // manually set input region since container's shadow are is the content of the window
+             // and it still gets window events
              var item_manager_width = ItemManager.get_default ().get_width ();
              var shadow_size = (width - item_manager_width) / 2;
              var top_margin = TOP_MARGIN + shadow_size;
@@ -519,10 +685,10 @@ index 2d05ae0..8f4f20e 100644
              if (initialized_blur) {
                  return;
 diff --git a/src/meson.build b/src/meson.build
-index 4e860de..034e3ce 100644
+index 4e860de..052d4a5 100644
 --- a/src/meson.build
 +++ b/src/meson.build
-@@ -4,6 +4,7 @@ sources = [
+@@ -4,9 +4,11 @@ sources = [
      'BaseItem.vala',
      'BottomMargin.vala',
      'ContainerItem.vala',
@@ -530,3 +696,7 @@ index 4e860de..034e3ce 100644
      'ItemGroup.vala',
      'ItemManager.vala',
      'MainWindow.vala',
++    'DisplayConfig.vala',
+     'RenderNodeWalker.vala',
+     'AppSystem' / 'App.vala',
+     'AppSystem' / 'AppSystem.vala',

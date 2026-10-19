@@ -1,5 +1,14 @@
 # Hardware test receipts and release freezes
 
+## Later local VRR and boot-archive observations
+
+[October 18 report](2026-10-18-j314s-vrr-and-boot-archive.md): built-in VRR retained
+in the current desk profile, owner visual pass and working dock confirmed.
+Kernel activation was observed briefly (3/25 samples), so sustained VRR remains
+unqualified. External fixed 1080p/60 configuration preserved. The report includes
+the next-kernel acceptance checklist and sanitized boot archive manifest.
+These observations follow exp1 and do not modify its frozen evidence or labels.
+
 Hardware labels belong to an exact board + kernel image + selected module/DTB
 hashes + m1n1 boot-payload hash + runtime feature parameters. Tests on a J316S
 are not automatically J314S tests. A successful compile, a bound driver and a
@@ -42,6 +51,19 @@ asset digests were verified remotely. It remains **hardware untested**.
 hardware-qualified labels. The same Git history guard protects their IDs.
 [Native build evidence](../branch-audits/2026-10-18-native-builds.json) records
 both profiles and the exact `.20-enh1` source-tree match to host controls.
+
+## Next-boot trial now staged
+
+`.20-enh1` is one-shot armed; later boots default to the unchanged .20 fallback.
+The [staging proof](2026-10-18-j314s-enh1-staging.json) and
+[trial guide](../trial/README.md) describe the unchanged shared DTB/m1n1 chain,
+working unlock-userspace preservation, 93-module candidate initramfs and exact
+rollback. A new [baseline capture](2026-10-18-j314s-aurora20-pre-enh1.json) and
+[smoke receipt](2026-10-18-j314s-aurora20-pre-enh1-smoke.json) completed on .20.
+Median 24.46 W (p10 19.61/p90 30.36, n=121) is an active-session observation,
+not a controlled power baseline or improvement. Automatic post-login capture
+is enabled for the exact candidate/baseline identities. Candidate boot remains
+pending; no frozen assets or qualification labels were altered.
 
 ## Collect without changing the machine
 

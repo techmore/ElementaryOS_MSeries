@@ -115,9 +115,10 @@ restart. Only the gsettings hotkeys need the Gala restart.
 `bash mseries/install-gala-screen-corners.sh --disable` — both take effect at the
 next login.
 
-**Known gap:** the dock's slide offset is held in memory, so it resets to centred
-when the dock restarts. Persisting it needs a settings key on the dock's
-(system-wide) schema.
+**Updated 2026-10-18:** the [native desktop profile](display-space/README.md)
+adds a private GSettings offset key, restores it at dock startup and clamps it
+to the current monitor. The previous in-memory-only offset limitation is fixed
+in source; post-reboot placement still needs hardware confirmation.
 
 ### 2. Kernel boot — Touch ID / SEP (Aurora)
 

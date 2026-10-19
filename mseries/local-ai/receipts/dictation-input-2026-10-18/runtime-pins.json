@@ -1,0 +1,12 @@
+{
+  "versions": {
+    "transcribe_cpp": "0.4.0",
+    "transcribe_cpp_native": "0.4.0",
+    "numpy": "2.5.4"
+  },
+  "native_sha256": {
+    "libtranscribe.so": "9f1f839d89a6d3a874c939ecf3108007cc0964a338596a35adb47c7e6c5c921d",
+    "libggml-cpu-armv8.2_2.so": "21142ec778e9225d79d8fdca3b66ae5c1be9e57f1d0ac4c62e816578f2570252"
+  },
+  "note": "Installed service override and SDK-provider wheel libraries were byte-identical for libtranscribe and the selected CPU backend."
+}

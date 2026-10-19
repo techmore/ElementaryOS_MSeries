@@ -1,5 +1,18 @@
 # Display profiles
 
+## Built-in VRR on the current Aurora .20 host
+
+The owner enabled builtin VRR in the saved `desk-4k` profile; external fixed
+1080p/60 mode, scale, position and primary selection were preserved. The watcher
+reapplies a saved fixed mode on `MonitorsChanged`, so a temporary VRR selection
+alone can revert: save the intended builtin mode in the matching profile as well.
+The laptop-only profile is separate and remains unchanged in this trial.
+
+[Scoped hardware receipt and next-kernel checklist](../aurora/hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md)
+record a user visual pass and brief kernel activation, not sustained VRR. Save a
+private backup/rollback before changing profiles. No default installer setting
+or watcher implementation was changed by the host-specific opt-in.
+
 Remember a monitor layout per set of attached displays (home desk, work dock, ...)
 and re-apply it on hotplug.
 

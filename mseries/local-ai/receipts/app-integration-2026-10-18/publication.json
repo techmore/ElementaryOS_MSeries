@@ -1,0 +1,16 @@
+{
+  "complete": true,
+  "backend_complete": true,
+  "client_complete": true,
+  "completed_client_receipts": 3,
+  "required_client_receipts": 3,
+  "client_passed_receipts": 2,
+  "client_failed_receipts": [
+    "newelle-client-negative.json"
+  ],
+  "backend_passed_cases": 6,
+  "completed_cases": 6,
+  "required_cases": 6,
+  "privacy": "Allowlisted synthetic MCP traces, bounded GUI booleans, machine samples, public source pins. No account/calendar contents, settings clones, journals, browser profile or full UI logs.",
+  "source_note": "The evaluated snapshot used app-workflow-smoke.py as its temporary filename. Keep the historical repo Tasks-to-note harness; the maintained new suite is calendar-mail-workflow-smoke.py. Original evaluated bytes are retained here."
+}

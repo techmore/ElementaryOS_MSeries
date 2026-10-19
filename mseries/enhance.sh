@@ -193,6 +193,12 @@ mod_session() {
 ambient-enabled=false
 idle-dim=false
 EOF
+  put 0644 /etc/dconf/db/local.d/00-mseries-peripherals <<'EOF'
+# Mac-like inverted scrolling with a mouse; the touchpad already defaults to it.
+# Users can still override this default from their desktop settings.
+[org/gnome/desktop/peripherals/mouse]
+natural-scroll=true
+EOF
   # Window snapping remains enabled even if an old user database disables it.
   copy 0644 "$here/window-snapping/10-mseries-snapping" /etc/dconf/db/local.d/10-mseries-snapping
   copy 0644 "$here/window-snapping/locks" /etc/dconf/db/local.d/locks/mseries-snapping
@@ -307,9 +313,11 @@ mod_theme() {
 # their data relative to the directory above themselves.
 mod_payload() {
   local prefix=/usr/share/elementary-mac f
-  for f in lib-backup.sh lib-apt.sh install-brave.sh install-video-decode.sh video-decode/90-mseries-avd.conf install-native-firefox.sh install-touchegg.sh \
+  for f in install-desktop-space.sh install-dock-drawers.sh install-wingpanel-codexbar-left.sh \
+           display-space/full_height_boot.py display-space/dock_profile.py \
+           calendar/accounts lib-backup.sh lib-apt.sh install-brave.sh install-video-decode.sh video-decode/90-mseries-avd.conf video-decode/brave-youtube install-native-firefox.sh install-touchegg.sh \
            install-network-throughput.sh install-quick-settings-brightness.sh \
-           install-sound-indicator-fix.sh install-keyboard-indicator-fix.sh \
+           install-sound-indicator-fix.sh install-keyboard-indicator-fix.sh install-calendar-agenda.sh \
            install-files-portal-fix.sh install-gala-osk-fix.sh install-netusage-policy.sh \
            install-codexbar.sh install-brave-widevine.sh codexbar-opencode-local.py codexbar-accounts.py codexbar-claude.py codexbar-opencode-login.py deploy-codexbar.sh \
            codexbar-opencode-wrapper.py user-enhance.sh install-dark-mode.sh \
@@ -317,10 +325,15 @@ mod_payload() {
            netspeed/netusage/install.sh netspeed/netusage/netusage.py \
            netspeed/netusage/netusage.service netspeed/netusage/49-mseries-netusage.rules \
            quick-settings/ScreenBrightness.vala quick-settings/KeyboardBrightness.vala \
-           quick-settings/ChargeLimit.vala gala-daemon-fix/build.py \
+           quick-settings/ChargeLimit.vala quick-settings/AudioOutputModel.vala quick-settings/AudioOutput.vala quick-settings/AirPlayOutputs.vala \
+           gala-daemon-fix/build.py \
            netspeed/panel-network.patch netspeed/wire-network-usage.py; do
     copy 0755 "$here/$f" "$prefix/mseries/$f"
   done
+  # Shared application ID matches the contained Brave window, including in the dock.
+  copy 0644 "$here/video-decode/brave-youtube.desktop" /usr/share/applications/mseries-brave-youtube.desktop
+  copy 0644 "$here/video-decode/mseries-youtube.svg" /usr/share/icons/hicolor/scalable/apps/mseries-youtube.svg
+  copy 0644 "$here/panel-factory-pins.json" "$prefix/mseries/panel-factory-pins.json"
   for f in "$here"/patches/*.patch; do
     copy 0644 "$f" "$prefix/mseries/patches/$(basename "$f")"
   done

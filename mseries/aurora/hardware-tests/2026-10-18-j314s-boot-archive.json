@@ -1,0 +1,106 @@
+{
+  "schema": 1,
+  "kind": "local-boot-archive-receipt",
+  "date": "2026-10-18",
+  "bootloader_backups": [
+    {
+      "file": "boot.bin.pre-aurora20-20261018-043254",
+      "bytes": 9038457,
+      "sha256": "8b8e2bb0cdf7e4349546157e049be59d7e52763d960c94bf1aa7e09bfd4fe768"
+    },
+    {
+      "file": "boot.bin.pre-e4-20261017-120704",
+      "bytes": 9038733,
+      "sha256": "f233a505a384095ba24120d4c8a74884adb0d3fa327639fa045752e94fb3a29a"
+    },
+    {
+      "file": "boot.bin.pre-fingerprint-20261017-103254",
+      "bytes": 9038129,
+      "sha256": "8681550001e556b08725ff579f8bd4662e812e9ef09a26e6e269af88eee0ad2b"
+    },
+    {
+      "file": "boot.bin.pre-sep-20261017-100328",
+      "bytes": 9038097,
+      "sha256": "6702f2c7f88f166187183d9fc32776a22d2ba3bbf804854ed74533db93d4f8a6"
+    }
+  ],
+  "fairydust_test_files": [
+    {
+      "file": "vmlinuz-linux-asahi-fairydust-usb4",
+      "bytes": 13304375,
+      "sha256": "f85908b497cbc799dcd6135907cc457933c6c76b1fed18d936e0fe5a6768fe9e"
+    },
+    {
+      "file": "initramfs-linux-asahi-fairydust-usb4.img",
+      "bytes": 24419617,
+      "sha256": "caa39c3488f4ded32b10f6b2a0fad92b7dcecb98af382b8c0e700cd9c965ddc4"
+    },
+    {
+      "file": "vmlinuz-linux-asahi-fairydust-usb4-dptunnel",
+      "bytes": 13305989,
+      "sha256": "0658a895ac6b7d5c8ae19a970dc5093b6578f037ee9cd2f0b135019dea73265c"
+    },
+    {
+      "file": "initramfs-linux-asahi-fairydust-usb4-dptunnel.img",
+      "bytes": 24421478,
+      "sha256": "146a2841fd82f0e524788083fc9efd0039fe771f518d631afdd474471909f361"
+    },
+    {
+      "file": "initramfs-linux-asahi-fairydust-usb4-dpin-controlled.img",
+      "bytes": 29779883,
+      "sha256": "2c036651415dbd363d7fed1a744e35b174a35037a7763ddcb19b37f7f958a20e"
+    },
+    {
+      "file": "initramfs-linux-asahi-fairydust-usb4-dptunnel-vrr.img",
+      "bytes": 29776327,
+      "sha256": "f8828a5af403cfc4143bd2ee3022c3dfd6710a0d0a1dafded7d6da41f5527135"
+    },
+    {
+      "file": "initramfs-linux-asahi-fairydust-usb4-dpin-clock.img",
+      "bytes": 29779655,
+      "sha256": "fedca33e2c6af6df35e5916634f7cac4d78844c2a076a8bf2f61706d13ab1121"
+    }
+  ],
+  "removed_menu_entry_ids": [
+    "elementary-usb4-dpin-clock",
+    "elementary-usb4-dpin-controlled",
+    "elementary-usb4-dpin-nobypass",
+    "elementary-usb4-dptunnel",
+    "elementary-usb4-test",
+    "elementary-usb4-vrr"
+  ],
+  "archived_bytes": 200940740,
+  "fairydust_archived_bytes": 164787324,
+  "bootloader_archived_bytes": 36153416,
+  "boot_space_before": {
+    "size_mib_rounded": 499,
+    "used_percent": 96,
+    "free_mib_rounded": 23
+  },
+  "boot_space_after": {
+    "used_percent_rounded": 58,
+    "free_mib": 214.02
+  },
+  "preserved_boot_file_sha256": {
+    "vmlinuz-linux-asahi": "c9764582601a847d64943d1a19008c589e87b9e79c5ad416773dee6a8a05a17c",
+    "initramfs-linux-asahi.img": "6ab016bbf82032c0f28e58d08c2e817bb4aa88fc4c24f4a3383c17398ae22a15",
+    "vmlinuz-aurora-sep-20261017.20": "543d1efd2dffaf621d1d7d1ba092cec71ee955903ec63c112bbcd32d921edbbd",
+    "initrd.img-7.1.12-2-20261017.20-sep-ARCH": "ea7c89aae15adc9760a64226e9834c54a62e75f3f9dddde144e08b9c26aaecf3",
+    "vmlinuz-aurora20-enh1": "21ee66cf7b7afd0a999c8e9087411aef4b121d1ecffab88989ba5cacf1dfdaa7",
+    "initrd.img-7.1.12-elementary-aurora20-enh1": "06a885396f5613154b2fbb6774744efde95a9d25512698d297b3f14da0d4f3aa",
+    "m1n1/boot.bin": "9c9c2d01c3bdb2784daf99cecd6f0e2327eb8f148ea43c8e522e5bae09a14d5f",
+    "grub/grub.cfg": "d05353d41c61263c99ddaf10042132f1ebf46abe191521c3bbd5f5ca272b5602",
+    "grub/grubenv": "f7d957c8592161aaef7956b671f7559fd5b6a135f712876e430915443adbaae5",
+    "EFI/BOOT/BOOTAA64.EFI": "693ba06c8756fae65324656cffdc3e44e16f63f2b8252cea00bc6d571184546f"
+  },
+  "custom_cfg_before_sha256": "3b9d64887aaac3f358f25c90509477737c24b65b0c74ca3868d8878f258c53b0",
+  "custom_cfg_after_sha256": "733619513d422518e028ca2e14e8818a2ca1c7abdd5bd2764b9c01e3fbfcdf6a",
+  "verification": "Copied, SHA256-verified and fsynced before deleting originals; retained boot files unchanged; both GRUB syntax checks passed.",
+  "scope": "At archive time only; later independent full-height boot/menu changes are recorded separately.",
+  "retained_kernel_module_trees": "left on main filesystem",
+  "private_archives": [
+    "bootloader-backups-20261018-060834",
+    "fairydust-test-kernels-20261018-062354"
+  ],
+  "publication": "Binary backups, kernel/initramfs images, raw GRUB configs, full command lines and private display profiles stay local."
+}

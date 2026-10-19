@@ -20,6 +20,7 @@ import base64
 import json
 import os
 import pathlib
+import shutil
 import signal
 import subprocess
 import sys
@@ -230,8 +231,63 @@ def usage_report(cli: str) -> list[dict[str, Any]]:
     return report
 
 
+def codex_cli() -> str | None:
+    candidates = [shutil.which("codex"), "/usr/lib/chatgpt/resources/codex", "/opt/Codex/resources/codex"]
+    return next((p for p in candidates if p and os.path.isfile(p) and os.access(p, os.X_OK)), None)
+
+
+def login(cli: str | None) -> tuple[bool, str]:
+    """Browser sign-in in an isolated Codex home; the live app's auth.json is never replaced."""
+    if not cli:
+        return False, "Codex was not found. Install or open the Codex app, then try again."
+    save_current()
+    root = store_dir().parent
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    previous_handler = signal.getsignal(signal.SIGTERM)
+    def cancelled(*unused):
+        raise InterruptedError()
+    signal.signal(signal.SIGTERM, cancelled)
+    try:
+        with tempfile.TemporaryDirectory(prefix=".codex-login-", dir=root) as directory:
+            environment = {k: v for k, v in os.environ.items()
+                           if k not in {"OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN"}}
+            environment["CODEX_HOME"] = directory
+            process = subprocess.Popen([cli, "login", "-c", 'cli_auth_credentials_store="file"'],
+                env=environment, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            try:
+                code = process.wait(timeout=600)
+            finally:
+                if process.poll() is None:
+                    process.terminate()
+                    try:
+                        process.wait(timeout=3)
+                    except subprocess.TimeoutExpired:
+                        process.kill()
+                        process.wait()
+            if code:
+                return False, "Sign-in did not finish. Close any previous Codex sign-in and try again."
+            auth = read_auth(pathlib.Path(directory) / "auth.json")
+            ident = identity(auth) if auth else None
+            if not auth or not ident:
+                return False, "No ChatGPT account was returned. Sign in with ChatGPT and try again."
+            write_private(store_dir() / slug(ident["id"]) / "auth.json", auth)
+            return True, f"Added {ident['email']}. Your current Codex account is unchanged; choose Switch when you're ready."
+    except InterruptedError:
+        return False, "Sign-in cancelled. Your current account is unchanged."
+    except subprocess.TimeoutExpired:
+        return False, "Sign-in timed out. Your current account is unchanged; try again."
+    except OSError:
+        return False, "Codex sign-in could not start. Open the Codex app, then try again."
+    finally:
+        signal.signal(signal.SIGTERM, previous_handler)
+
+
 def main(arguments: list[str]) -> int:
     command = arguments[0] if arguments else "list"
+    if command == "login":
+        ok, message = login(codex_cli())
+        print(message, file=sys.stdout if ok else sys.stderr)
+        return 0 if ok else 1
     if command == "save":
         ident = save_current()
         if ident:

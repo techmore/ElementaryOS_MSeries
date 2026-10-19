@@ -33,9 +33,11 @@ namespace MSeries {
         }
 
         public static string plan_label (string plan) {
-            if (plan.length == 0) return "";
-            if (plan == "prolite") return "Pro Lite";
-            return plan.substring (0, 1).up () + plan.substring (1);
+            var value = plan.strip ();
+            if (value.length == 0 || value.down () == "unknown") return "";
+            if (value.down () == "prolite") return "Pro Lite";
+            if (value.down () == "go") return "Go";
+            return value.substring (0, 1).up () + value.substring (1);
         }
 
         public static string age_text (int64 seconds) {
@@ -98,6 +100,107 @@ namespace MSeries {
                 }
             }
             return best;
+        }
+
+        /* Saved accounts retain every window: a weekly balance must never hide an empty 5-hour limit. */
+        public static string account_quota (Json.Array? windows, int64 now_unix) {
+            var parts = new StringBuilder ();
+            for (uint i = 0; windows != null && i < windows.get_length (); i++) {
+                var window = windows.get_object_element (i);
+                var node = window.get_member ("remaining");
+                if (node == null || node.get_node_type () != Json.NodeType.VALUE) continue;
+                var minutes = (int) window.get_int_member_with_default ("minutes", 0);
+                var label = short_window_label (window.get_string_member_with_default ("label", "Quota"), minutes);
+                var reset = new DateTime.from_iso8601 (window.get_string_member_with_default ("resetsAt", ""), null);
+                var eta = reset == null ? "?" : reset.to_unix () <= now_unix ? "now"
+                    : countdown_text (reset.to_unix () - now_unix);
+                if (parts.len > 0) parts.append (" · ");
+                parts.append ("%s %.0f%% ↻%s".printf (label, node.get_double ().clamp (0, 100), eta));
+            }
+            return parts.len > 0 ? parts.str : "Quota unavailable";
+        }
+
+        public static string account_quota_markup (Json.Array? windows, int64 now_unix,
+                                                    string healthy, string low, string critical) {
+            var text = new StringBuilder ();
+            for (uint i = 0; windows != null && i < windows.get_length (); i++) {
+                var window = windows.get_object_element (i);
+                var remaining = window.get_member ("remaining");
+                if (remaining == null || remaining.get_node_type () != Json.NodeType.VALUE) continue;
+                var single = new Json.Array ();
+                single.add_object_element (window.ref ());
+                var parts = account_quota (single, now_unix).split (" ↻", 2);
+                var level = level_for (remaining.get_double ());
+                var color = level == QuotaLevel.CRITICAL ? critical : level == QuotaLevel.LOW ? low : healthy;
+                if (text.len > 0) text.append (" · ");
+                text.append ("<span foreground=\"%s\" weight=\"semibold\">%s</span>".printf (color, Markup.escape_text (parts[0])));
+                if (parts.length > 1) text.append ("<span alpha=\"65%\"> ↻%s</span>".printf (Markup.escape_text (parts[1])));
+            }
+            return text.len > 0 ? text.str : "Quota unavailable";
+        }
+
+        /* Percent of quota is the only comparable unit supplied by these providers.
+         * The lowest window is usable headroom: 0% session + 90% weekly cannot win.
+         * Unknown/expired windows and stale accounts never earn a recommendation. */
+        public static double account_headroom (Json.Array? windows, int64 now_unix) {
+            double lowest = 101;
+            for (uint i = 0; windows != null && i < windows.get_length (); i++) {
+                var window = windows.get_object_element (i);
+                var node = window.get_member ("remaining");
+                if (node == null || node.get_node_type () != Json.NodeType.VALUE) return -1;
+                var remaining = node.get_double ();
+                if (remaining < 0 || remaining > 100 || remaining.is_nan ()) return -1;
+                var reset = new DateTime.from_iso8601 (window.get_string_member_with_default ("resetsAt", ""), null);
+                if (reset != null && reset.to_unix () <= now_unix) return -1;
+                lowest = double.min (lowest, remaining);
+            }
+            return lowest <= 100 ? lowest : -1;
+        }
+
+        public static int64 account_weekly_reset (Json.Array? windows, int64 now_unix) {
+            int64 earliest = 0;
+            for (uint i = 0; windows != null && i < windows.get_length (); i++) {
+                var window = windows.get_object_element (i);
+                var minutes = window.get_int_member_with_default ("minutes", 0);
+                var label = window.get_string_member_with_default ("label", "").down ();
+                if (minutes != 10080 && !(minutes == 0 && (label.contains ("week")
+                    || label == "7d" || label.has_prefix ("7 day")))) continue;
+                var reset = new DateTime.from_iso8601 (window.get_string_member_with_default ("resetsAt", ""), null);
+                if (reset != null && reset.to_unix () > now_unix && (earliest == 0 || reset.to_unix () < earliest)) {
+                    earliest = reset.to_unix ();
+                }
+            }
+            return earliest;
+        }
+
+        public static Json.Object account_hints (Json.Array accounts, int64 now_unix) {
+            var best = new Json.Array ();
+            var weekly = new Json.Array ();
+            double highest = 0;
+            int64 soonest = 0;
+            for (uint i = 0; i < accounts.get_length (); i++) {
+                var account = accounts.get_object_element (i);
+                if (account.get_boolean_member_with_default ("stale", false)) continue;
+                var id = account.get_string_member_with_default ("id", "");
+                if (id.length == 0) continue;
+                var windows = account.has_member ("windows") ? account.get_array_member ("windows") : null;
+                var remaining = account_headroom (windows, now_unix);
+                if (remaining > 0 && remaining >= highest) {
+                    if (remaining > highest) best = new Json.Array ();
+                    highest = remaining;
+                    best.add_string_element (id);
+                }
+                var reset = account_weekly_reset (windows, now_unix);
+                if (reset > 0 && (soonest == 0 || reset <= soonest)) {
+                    if (soonest == 0 || reset < soonest) weekly = new Json.Array ();
+                    soonest = reset;
+                    weekly.add_string_element (id);
+                }
+            }
+            var hints = new Json.Object ();
+            hints.set_array_member ("best", best);
+            hints.set_array_member ("weekly", weekly);
+            return hints;
         }
 
         /* One line of local OpenCode Go activity: an estimate from this machine's history, not account quota. */

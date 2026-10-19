@@ -1,0 +1,15 @@
+{
+  "sample_seconds": 5.000537281999641,
+  "processes": {
+    "input_bridge": {
+      "cpu_percent_of_one_core": 0.0,
+      "rss_bytes": 39698432
+    },
+    "speech": {
+      "cpu_percent_of_one_core": 0.0,
+      "rss_bytes": 927088640
+    }
+  },
+  "scope": "Two owned main processes, all their threads; shared IBus/accessibility services and other owner workloads excluded. RSS includes shared mappings; no system idle or exclusive-memory claim.",
+  "microphone_recorded": false
+}

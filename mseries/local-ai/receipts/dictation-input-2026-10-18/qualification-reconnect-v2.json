@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "source_sha256": {
+    "stream-dictate.py": "452b3213c6d48a8b554275997728d34e6142f5ce37e65c62a23d54e451141c44",
+    "dictation-input.py": "fcafaa03ba33d4c3293adc41b5e1066d5e584e476293de32fb13ad6d28fbd50e",
+    "dictation-input-client.py": "f25e53319d500d350c09a6e23ab254d728073ebf657b8b3b7dd83a99ca287c37",
+    "dictation_status.py": "50dadbf4f6a7f5edf8e4cb8b91d8931adf75cd899455285547d653c5af591903",
+    "dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+    "gtk-input-smoke.py": "1aac588ea43838e1ff83eee11f2f973c3a8b410d9bc953c5fa51d6619c9c1d40",
+    "machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27"
+  },
+  "gtk_version": 3,
+  "display_backend": "x11",
+  "unicode_field": true,
+  "changed_field_untouched": true,
+  "password_untouched": true,
+  "session_engine_restore": true,
+  "overlapping_begin_refused": true,
+  "owner_selection_preserved": true,
+  "reconnect": {
+    "private_ibus_restarted": true,
+    "bridge_clean_disconnect": true,
+    "unset_engine_recovered_from_native_source": true,
+    "gtk_client_reconnected": true
+  },
+  "speech": null,
+  "keyboard": null,
+  "method": "Actual Gtk.Entry fields, private Xvfb/IBus/session bus; no ASR or microphone"
+}

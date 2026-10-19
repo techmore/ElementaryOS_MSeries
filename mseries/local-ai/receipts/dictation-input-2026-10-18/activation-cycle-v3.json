@@ -1,0 +1,17 @@
+{
+  "activation_health_passed": true,
+  "full_rollback_passed": true,
+  "original_payload_restored_during_rollback": true,
+  "prior_settings_and_launcher_restored_during_rollback": true,
+  "reactivation_health_passed": true,
+  "final_output": "ibus",
+  "final_backend": "cpu",
+  "final_phase": "ready",
+  "screen_reader_enabled": false,
+  "microphone_recorded": false,
+  "owner_windows_closed": false,
+  "original_baseline_sha256": "9e9ba17fe03db37661f65babd706dee10752f730a9acdd6cf4b48cff8ff1f29a",
+  "manager_sha256": "01a808d1d78f46b623a6e467bcd3f4e556edfd1cee49b2a697013be999da2748",
+  "attempt_parent_head": "3f20e2723372f0120d606ba4b8e42442e0f49e7f",
+  "limitation": "Immediate health and rollback checks passed; the keyboard indicator later reset the permanently selected engine. Superseded by session-scoped selection, not an end-to-end usability pass."
+}

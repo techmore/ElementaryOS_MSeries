@@ -1,5 +1,14 @@
 # Build notes — road to a testable arm64 ISO
 
+## New installer and YouTube guest pass — 2026-10-18
+
+Run [39128555434](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39128555434)
+built the factory Brave image from `5c0c60e`. Independent checksum, blank-disk
+installation and default installed generic UKI boot passed. The installed launcher,
+YouTube dock logo and 480p/1080p video with decoded audio passed in an ARM64 KVM
+guest with virgl. [Receipt and limits](video-decode/receipts/factory-2026-10-18/README.md).
+Fairydust was disabled for this build; physical Apple qualification remains pending.
+
 ## Where upstream stands
 
 elementary/os `main` already builds **both** arches in CI
@@ -53,3 +62,20 @@ qualification remains pending; see FIRST-ISO-BUILD.md. See `OS9-HANDOFF.md`.
 - Hyprland/Omarchy desktop behavior — this is Pantheon/Gala.
 - Touching this Mac's bootloader or macOS install — builds happen in CI or
   containers; installs happen only to external media or a spare machine.
+
+## October 18 factory build and installed-boot corrections
+
+The factory builders run through `build-in-image.chroot` because the build tools
+and target development libraries are installed by BuildPackages inside the image;
+the mkosi tools tree is a different execution root. Builder pins and output
+paths are unchanged.
+
+Ubuntu ARM64's vmlinuz may be an EFI wrapper containing a `.linux` payload and
+DTB resources. Nesting that relocatable wrapper inside a generated systemd UKI
+fails the inner-kernel relocation check. The ARM64 overlay supplies
+`prepare-uki-kernels`; sysupdate runs it before generating UKIs. Original vendor
+bytes and hashes are retained under `/usr/share/doc/mseries-kernel-inputs`.
+Plain Linux EFI images and complete existing UKIs are left alone. Unexpected
+initrd/command-line payloads and invalid inner EFI images fail closed. The live
+ISO's GRUB/casper kernel path is unchanged. Apple DTB/boot qualification remains
+open; the installed generic-kernel diagnostic was performed only in QEMU/KVM.

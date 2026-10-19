@@ -50,13 +50,13 @@ declare -A SCRIPT=(
 # Build requirements per module (apt names). A module whose packages cannot be
 # installed is skipped, not guessed at.
 declare -A DEPS=(
-  [brave]="curl gpg"
+  [brave]="curl gpg bubblewrap xdg-dbus-proxy"
   [video]="meson ninja-build gcc pkg-config curl libva-dev libdrm-dev linux-libc-dev vainfo"
   [gestures]="cmake g++ git libinput-dev libudev-dev libpugixml-dev libcairo2-dev libgtk-3-dev libx11-dev libxtst-dev libxrandr-dev libxi-dev libsystemd-dev systemd-dev"
   [network]="git meson ninja-build valac gettext pkg-config libwingpanel-9-dev libgranite-7-dev libgtk-4-dev libnm-dev libnma-gtk4-dev libpolkit-gobject-1-dev"
-  [quick]="git meson ninja-build valac gettext pkg-config libwingpanel-9-dev libgranite-7-dev libgtk-4-dev libadwaita-1-dev libnm-dev libpolkit-gobject-1-dev"
+  [quick]="libpackagekit-glib2-dev libaccountsservice-dev libportal-dev libwayland-dev git meson ninja-build valac gettext pkg-config libwingpanel-9-dev libgranite-7-dev libgtk-4-dev libadwaita-1-dev libjson-glib-dev libnm-dev libpolkit-gobject-1-dev"
   [sound]="git meson ninja-build valac gettext pkg-config libwingpanel-9-dev libgranite-7-dev libgtk-4-dev libpulse-dev libcanberra-dev libgee-0.8-dev"
-  [keyboard]="git meson ninja-build valac gettext pkg-config libwingpanel-9-dev libgranite-7-dev libgtk-4-dev libgnome-desktop-4-dev libibus-1.0-dev libgee-0.8-dev"
+  [keyboard]="libxml2-dev xkb-data git meson ninja-build valac gettext pkg-config libwingpanel-9-dev libgranite-7-dev libgtk-4-dev libgnome-desktop-4-dev libibus-1.0-dev libgee-0.8-dev"
   [files]="git meson ninja-build valac pkg-config libgtk-3-dev libgranite-dev libhandy-1-dev libportal-dev libportal-gtk3-dev libpoppler-glib-dev libcanberra-dev libsqlite3-dev libgee-0.8-dev libgit2-glib-1.0-dev libcloudproviders-dev libnotify-dev libwingpanel-9-dev"
   [osk]="git meson ninja-build valac pkg-config python3 libmutter-18-dev libgala-dev libgranite-7-dev libgtk-4-dev libibus-1.0-dev libgee-0.8-dev"
   [firefox]="curl gpg"

@@ -1,5 +1,504 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Factory YouTube ISO: installed VM pass — 2026-10-18
+
+The new ISO from `5c0c60e` built successfully in run `39128555434`, passed its
+independent checksum, installed to a blank virtual disk and booted without the
+ISO. Bundled Brave, its runtime libraries, the system YouTube logo and the running
+dock application identity passed. Anonymous video/audio decoding advanced at
+480p and selected 1080p with an empty browser profile; the guest screenshot shows
+the playing movie and YouTube dock logo. [Measurements and exact artifact](video-decode/receipts/factory-2026-10-18/README.md).
+Apple physical boot, V4L2 decoding and DRM remain separate hardware gates.
+
+## Add Tasks from the panel — 2026-10-18
+
+The Tasks tab now has a compact title entry, Add button and writable-list selector.
+Enter or Add creates an undated task in the same EDS list as elementary Tasks.
+The default list is selected initially; explicit list choices persist while the
+panel runs. Pending saves block duplicate submissions and keep the popup open.
+Errors retain the draft, and unavailable/read-only lists cannot receive tasks.
+
+Debug and installed release builds pass all seventeen private plugin/EDS workflow
+groups. New coverage checks Enter/Add, correct-list persistence, literal titles,
+metadata, duplicate suppression and unavailable-list draft recovery. Real task
+and event comparisons are read-only; no personal task was created by tests.
+Six image-wiring checks pass. The release build is installed and Wingpanel reloaded.
+[Usage and tests](calendar/README.md#adding-tasks-in-the-panel).
+
+## Complete Tasks from the panel — 2026-10-18
+
+Task rows now have accessible checkboxes that update the same EDS records as
+elementary Tasks. Pending saves disable repeat activation; read-only or
+unavailable lists disable completion. Failed saves restore the checkbox and
+show a retry error. Clicking a completion checkbox keeps the panel open.
+
+The model refetches the latest source/UID/recurrence record before changing it,
+preserving newer edits. EDS’s completion helper handles repeating tasks on a
+worker thread; saves record UTC modification time and sequence. Tests use only
+owned synthetic data on a private bus. Fourteen plugin/EDS groups pass, including
+checkbox completion metadata, stale edits, source identity, recurring
+advancement, failure recovery and all existing agenda modes/navigation.
+The release build is installed; real task/event row comparisons are read-only
+and pass. Six image-wiring tests pass. No personal task was completed by tests.
+[Behavior and tests](calendar/README.md#completing-tasks-in-the-panel).
+
+
+## Factory pinned-component development dependencies — 2026-10-18
+
+The chroot retry staged Brave and compiled the network plugin, then identified
+missing Quick Settings PackageKit headers. An audit of the pinned component
+build definitions added PackageKit/AccountsService/portal/Wayland, keyboard XML/XKB
+and zlib development requirements explicitly. Six image-wiring tests pass.
+The ISO rebuild and fresh installed YouTube qualification remain in progress.
+
+
+## Orchard session memory and native qualification — 2026-10-18
+
+Fixed three retained-object paths in the installed Python/GTK4 manager:
+read-only Run output now disables GTK undo; deleted guests release output
+buffers after active commands finish (rename preserves output across stale
+listings); creation/name/image-search forms disconnect owned signal callbacks
+on response/destruction. Hidden dashboard cards are pruned even off-page, and
+image selection releases its read slot. The synthetic 12-identity / 72 MiB UTF-8
+probe grew RSS 153.05 MiB before / 6.75 MiB after and ended with 12 / zero cached
+buffers. The 60-form probe retained 60 dialogs plus 540 input/support wrappers
+before / none after. RSS is not a portable pass/fail threshold.
+
+Real Wayland/Vulkan + elementary blueberry qualification: baseline 12.7 minutes,
+candidate 14.7 minutes; three cycles each (33 main workflow groups per build),
+then another 11 groups against the installed candidate with stricter runner
+scope guards. Candidate runtime hashes match all probes and the installed
+package. All groups passed; owned guests were removed and original guest states
+preserved. Native logs contain no unexpected UI errors or GTK warnings/criticals.
+The separate Vala manager/panel was not requalified.
+
+Candidate post-workflow idle lasted ten minutes; after the first minute settled,
+app CPU averaged 0.451% of one core, with 0.305% reaped CLI-client CPU separately.
+Focused intervals measured 0.526% app CPU (390 seconds), inactive 0.250% (143 seconds).
+Focus was sampled, not inferred; baseline idle was inactive, so these are not
+matched-focus speedup figures. Median RSS 149.88 MiB, PSS 91.69 MiB, private
+74.55 MiB; settled RSS fell 1.52 MiB and private fell 0.75 MiB. FDs varied 49–51
+and threads 13–14 with short-lived polls, ending at 49/13. Rows/cards/histories
+stayed at two; reads/timers at two, output buffers at zero. After-cycle buffers
+were 4→8→12 before / 0→0→0 after; GC-tracked process object counts (including
+the harness) were roughly flat after the fix. A bare GTK FileDialog control
+held 39 FDs through 20 API cancellations and a 60-second settle, with no retained
+FileDialog wrappers. Warm graphics/GVFS caches are distinct from object leaks.
+
+Repeated action-to-presentation p95 was 22.32–35.73 ms across the three candidate
+probes (18 programmatic actions each, 120 Hz feedback), without a material
+regression relative to these baseline runs. This is not physical input-to-photon
+or a zero-jank claim. Desktop applications/builds continued during the audit.
+
+Verification: 117 Python tests, 111 passed / six opt-in live tests skipped;
+all five ARM64 CI jobs passed, including the new GTK/Granite regression job.
+The live runner rejects non-Wayland sessions before waiting, records five-second
+RSS/PSS/private/CPU/FD/thread/cache samples, supports repeated unique fixtures,
+stops on window closure and fails on workflow/cleanup errors. Scope guards cover
+backend writes, direct Run/Terminal launches, both file-transfer directions,
+host mounts and symlink escapes. An additional installed-build live cycle
+verified these stricter guards. Earlier XWayland/interrupted pilots are excluded
+from the native comparison; the separate 30-minute installed-window observation
+is labeled XWayland in the receipt.
+
+From `mseries/orchard-incus`, reproduce with `GDK_BACKEND=wayland python3 tools/qualify-wayland.py --source "$PWD" --output /new/empty/dir --run --cycles 3 --idle-before 120 --idle-after 600`.
+Independent no-Incus probe: `xvfb-run -a env -u DBUS_SESSION_BUS_ADDRESS GSK_RENDERER=cairo GDK_BACKEND=x11 python3 tools/probe-output-retention.py --output /new/retention.json`.
+Evidence: `mseries/orchard-incus/audit/2026-10-18-session.json`, corresponding
+before/after JSONL samples, and `docs/orchard-incus.html`. The long-session driver
+revision is recorded separately from the later scope hardening; runtime hashes
+are identical. Installed with `sh mseries/orchard-incus/install.sh` and standard
+Orchard reopened as a native Wayland client, with a clean startup log.
+
+Remaining: multi-hour/day stability, controlled thermal/battery measurements,
+huge fleets, other themes/scales, physical keyboard/focus traversal and interactive
+upload/download/Console input. No kernel, bootloader, audio or global display
+settings were changed. Next: qualify these remaining environments as needed.
+
+## Installed-boot and image build blockers corrected — 2026-10-18
+
+The first retry staged Brave successfully, then exposed builders running outside
+the root containing BuildPackages. A `.chroot` build driver now runs them in that
+root. A separate older-image rehearsal found nested Ubuntu ARM64 EFI wrappers
+rejected by systemd-stub. Build-time kernel preparation now embeds the actual
+Linux payload and retains the vendor wrapper/provenance. A diagnostic guest
+reached its installed erofs /usr and first-boot GUI after this correction.
+Six kernel-input and five image-wiring regressions pass. New ISO assembly,
+blank-disk install, dock matching and YouTube playback remain pending.
+
+## Combined compact Upcoming and period views — 2026-10-18
+
+Integrated main's Month/Week/Day agendas and readable neutral event cards with
+the compact Upcoming default. Upcoming remains independent of calendar browsing
+and spans the next 30 local dates; explicit period views and their navigation
+remain available. Event title/time share one compact row. Expand a row for its
+calendar/location/description; full titles retain hover text. Tasks stays compact.
+
+All eleven actual-plugin/EDS groups pass, covering Upcoming boundaries, all
+period modes, recurring/multi-day events, descriptions, navigation, retained
+mode, task completion and live source changes. Both earlier implementation
+histories are retained below. Factory build/boot remains unverified.
+
+
+## Compact upcoming agenda — 2026-10-18
+
+Event title and time now share one line with tighter row padding and date
+headings. Task rows have less vertical spacing and compact subtitles.
+Ellipsized event/task titles and task details retain full hover text.
+The Upcoming 30-day label and date grouping remain. Integrated current main's
+standalone factory account frontend and preserved both documentation histories.
+
+Validation: native ARM64 build and existing real-plugin EDS/navigation
+regressions; rendered Events and Tasks previews. Authenticated read-only
+calendar/task comparisons pass, and the release build is installed locally.
+Five image-wiring regressions pass. Factory boot remains separate.
+
+
+## Upcoming calendar agenda — 2026-10-18
+
+Events now always displays a rolling 30-day agenda, explicitly labeled
+“Upcoming · next 30 days” and grouped by local date with Today/Tomorrow headings.
+The independent EDS view spans month boundaries and is unaffected by browsing
+the left calendar. Ongoing events stay visible; ended and out-of-range events
+are hidden. A minute timer while open updates expiry and daily range rollover.
+Tasks retains its shared EDS data. The prior Calendar Today-navigation fix is
+preserved. [Behavior and install](calendar/README.md).
+
+Validation: native ARM64 build, real-plugin EDS regressions for rolling range,
+ongoing/past/boundary events and calendar navigation, plus existing live
+edit/completion/source tests. The release build is installed and Wingpanel
+loaded its new module. Authenticated read-only comparisons with real Google
+events and Tasks pass without logging titles or modifying records. Four image
+wiring tests pass. Factory build/boot remains unverified.
+
+## OpenCode browser accounts from CodexBar + — 2026-10-18
+
+The native Connect sheet now offers browser sign-in to save a second OpenCode account for
+existing dropdown switching. Official CLI device login stores/activates it; previous credentials
+are verified intact. API-key setup remains available. Duplicate accounts, cancellation and
+abandoned attempts have explicit handling; account/plan/usage refresh follows completion.
+Ten new login tests and native build/tests pass; live approval-link/cancel smoke preserved saved
+accounts. Remaining acceptance: owner browser approval for a distinct account and dropdown switch.
+See [the port notes](CODEXBAR-PORT.md#opencode-account-switching).
+
+## Month/Week/Day agenda views — 2026-10-18
+
+Implemented and deployed period selectors and arrows, grouped dates, readable
+source-colored cards with time/calendar/location/description, bounded scrolling
+and synchronized date selection. Tasks stays independent; Today retains the
+chosen mode. Replaced relative carousel bookkeeping with actual grid months to
+reject stale page notifications during opening/navigation.
+
+Ten isolated real-plugin/EDS workflow groups pass in light and dark modes and
+against the installed production library. Five merged-tree image-wiring tests
+and focused shell/whitespace checks pass; synthetic previews inspected. Wingpanel
+reloaded and mapped-library inode verified. Next: owner acceptance on real
+accounts; Google remote sync, other locales and factory boot remain separate.
+[Views and validation](calendar/README.md#month-week-and-day-views).
+
+## Fresh YouTube ISO qualification in progress — 2026-10-18
+
+Initial run 39126016747 failed before Brave staging because the calendar's GNOME
+Settings dependency is excluded by elementary's package policy. Both ARM64
+consumers and the Apple overlay now use the existing launcher's supported
+`gnome-online-accounts-gtk` frontend. Five image-wiring tests pass, including the
+package-policy regression. ISO rebuild, blank-disk installation, dock matching and
+in-guest YouTube playback remain pending.
+
+## Calendar Today navigation regression resolved — 2026-10-18
+
+Repeated Today clicks during a return from another month could reuse the relative
+month offset, request invalid carousel pages and desynchronize the heading and
+agenda. Fixed the return/reset path and arrow bounds, and labeled the control
+Today. Fresh ARM64 build and six installed-plugin EDS groups pass, including a
+regression that fails on the previous library; four image-wiring tests also pass.
+Deployed and reloaded Wingpanel, verifying the installed library mapping.
+Remaining: owner confirmation with real accounts; no personal events were changed.
+See [calendar navigation](calendar/README.md#month-navigation-and-today).
+
+## Factory YouTube browser included — 2026-10-18
+
+Brave 1.97.59 arm64 is now checksum-pinned and bundled under `/usr/lib/mseries-brave`
+in both factory consumers. The YouTube launcher prefers it, without a first-login
+browser download. Vendor resources/licenses, provenance and hash manifest survive
+factory pruning; final hooks verify payload integrity and library resolution.
+Six packaging regressions, four image wiring tests, real staging/finalization,
+empty-profile Xvfb rendering and clean Resolute dependency checks pass. Headless
+DOM timeout is retained as a limitation. New ISO/hardware boot and YouTube/AVD/DRM
+playback still need qualification.
+[Packaging and update instructions](video-decode/README.md#factory-brave-runtime--2026-10-18).
+
+## Merged calendar desktop deployment — 2026-10-18
+
+Merged Events/Tasks plugin built and installed with the maintained installer;
+five isolated workflow groups pass against the deployed library. Wingpanel
+reloaded and its new process mapping matches the installed calendar inode.
+Next acceptance is the owner's clock-dropdown check and optional Google sign-in/
+remote event round trip; factory hardware qualification remains separate.
+
+## Calendar integration on main — 2026-10-18
+
+Events/Tasks agenda, account setup, installer and factory payload are integrated.
+Merged-source ARM64 build, five isolated EDS workflow groups, four image-wiring
+tests, focused shell checks and README links pass. README no longer labels the
+calendar work as awaiting integration. Remaining acceptance: owner Google OAuth
+and remote event sync, factory assembly/boot, and account-backed desktop use.
+See [calendar setup and checks](calendar/README.md). The test harness isolates
+portal activation so its temporary session cleans up without document mounts.
+
+## Calendar Events/Tasks tabs and Google account setup — 2026-10-18
+
+The clock dropdown's right pane now has Events and Tasks tabs. Events follows
+its selected day; Tasks reads all incomplete items from elementary Tasks' EDS
+lists, including due-only and undated items. Activating a task opens Tasks.
+Calendar Accounts opens the desktop Google/online-account sign-in. No desktop
+Google account was configured at verification time: owner OAuth consent and a
+real Google Calendar round trip remain required; local tests do not claim them.
+
+Pinned datetime source `d0b3a703a7efbb5b3040d7be1ccb616eeb919c54` plus
+`datetime-agenda-tabs.patch` retains upstream notices. Native ARM64 compilation
+and five isolated real-plugin/EDS test groups pass: tabs/shared event UIDs,
+live edits, completion/deletion, enable/disable and sources added/removed after
+opening. Async source connections and generation checks reject stale views;
+changed/deleted events requery their source, preserving recurring siblings.
+All-day events use date semantics; undated tasks do not create calendar dots.
+The release installer completed locally; the installed production plugin passes
+the same five test groups. Wingpanel was reloaded and its mapped plugin inode
+matched the newly installed library.
+Four image-wiring tests and shell/diff checks pass. Runtime account/Tasks/EDS
+packages are in both arm64 consumers; plugin and license survive pruning.
+Factory image assembly/boot and Google network sync are still unverified.
+
+[Build, install, restore, account setup and tests](calendar/README.md).
+Installer: `bash mseries/install-calendar-agenda.sh`; rollback:
+`bash mseries/install-calendar-agenda.sh --uninstall`. Reload Wingpanel after
+installation. Next: owner selects Calendar Accounts → Google, completes sign-in,
+enables Calendar and confirms a known remote event appears on its date.
+
+
+## README status overview — 2026-10-18
+
+The [README fixes/tests/remaining-work overview](../README.md#fixes-tests-and-remaining-work)
+summarizes desktop and external docks, panel, kernel, power/performance parity,
+CPU/GPU and local-LLM file access. Keep its pending gates aligned with the
+evidence linked there as results land. Full-height hardware acceptance, dock
+stability/sleep, Touch ID, factory hardware boot and matched macOS comparisons
+remain open; this documentation pass does not complete those gates.
+
+## YouTube assets on fresh installs — 2026-10-18
+
+The default enhancement payload now installs the YouTube launcher and scalable
+logo system-wide, with a checkout-independent Exec and the dock's existing window
+identity. Factory prune and `/usr` artifact checks pass. Both ARM64 consumers
+refresh the icon/application caches and install the container dependencies; the
+transform's Brave first-boot module also carries them. Empty-user GTK4 lookup and
+offline staging checks pass. Factory Brave package provisioning, a new ISO build
+and fresh hardware playback remain open.
+[Details](video-decode/README.md#youtube-launcher-icon--2026-10-18).
+
+## Orchard real Wayland qualification and cleanup protection — 2026-10-18
+
+- Verified the installed Python/GTK4 foreground app on real `GdkWaylandDisplay`/`GdkWaylandToplevel`, Vulkan and the elementary blueberry stylesheet at 120 Hz. This was not Xvfb or forced Cairo. Final run: 11 live workflow groups passed, including stale-inventory duplicate-name preservation, container/VM creation, agent-backed VM Run, lifecycle/pause/resume, snapshots/restore, clone/rename/delete, real Terminal login, native elementary backup Save portal/archive validation, file listing and CLI transfer round trip, mounted-folder reads, TCP proxy, bounded Unicode output, and cancellation cleanup. All audit fixtures were swept; original guests were preserved.
+- Fixed a serious creation cleanup issue: names alone no longer authorize cleanup. Each launch carries `user.orchard.creation-token`; failed/cancelled cleanup verifies it before touching operations/instances, starts after client exit and uses bounded CLI requests. Missing/malformed ownership data fails closed. Duplicate names are rejected before launch and in the form. The live negative case confirmed an existing disposable guest survives a failed same-name request.
+- Also fixed idempotent bulk settings and per-instance metadata serialization (self-induced ETag races), duplicate clicks, stale rename/filtered selection, explicit VM Secure Boot choice, agent guidance/Console launcher, a scrolling creation form, full-name tooltip and the Devices page's nested-scroll collapse.
+- Final metrics (810 completed presentation records / 811 frames, eight seconds; 18 actions): frame-start→presentation median 21.923 ms / p95 29.630 / max 38.619; action→presentation median 26.257 / p95 33.620 / max 38.442; presented spacing p95 17.124 ms. Simple GTK control median 20.606 / p95 24.472 ms in a separate run. These are compositor feedback, not physical input-to-photon or a zero-jank guarantee; early action measurements used a different attribution rule and are not an improvement baseline.
+- Checks: 103 tests, 97 pass / six opt-in live tests skipped, with fatal GTK criticals enabled for the GUI checks; final live run had one expected duplicate-name error and no unexpected errors/GTK warnings. Source/install parity passed. Installed with `sh mseries/orchard-incus/install.sh`; reopen Orchard to load it.
+- Reproduction/evidence: `tools/qualify-wayland.py`, `tools/wayland-save-portal.py`, `tools/wayland-frame-control.py`, `audit/2026-10-18-wayland.json`, `docs/orchard-incus.html`. Driver waits for mapped/painted dialogs, guards fixture names/resources and records source hashes. An early pre-map driver response crashed GTK Wayland; invalid early attempts, foreground text interference and too-short agent waits are documented separately from the final passing run.
+- Remaining qualification: physical input/focus traversal, interactive upload/download chooser selection and Console input, long-duration RSS/thermal soak, very large real fleets, other themes/scales, and the separate Vala manager/panel. No kernel, bootloader, display or audio configuration was changed.
+
+
+## Orchard native developer UX and performance audit — 2026-10-18
+
+- Enhanced the installed Python/GTK4 app in `mseries/orchard-incus/`: sidebar name/image/status/IP search and no-match state; native keyboard-accessible dashboard buttons; shortcut help/menu and view shortcuts; 780px header and scrolling Devices form; refresh indicator and safer loading/settings ownership.
+- Bounded/coalesced work: latest-result-only tab/resource/catalog reads, 20s JSON reads, timer/theme/monitor cleanup, event follow-up debounce, chunked UTF-8 command output (64K-character pending mailbox/256K-character text tail), dashboard construction in 16-card batches, viewport-only chart updates, unchanged-presentation caching, linear history pruning. Busy operations no longer start twice or change another selected instance's detail.
+- Verified: 86 Python tests (80 pass, six live tests skipped), including real local noisy subprocess and fatal GTK critical checks; Vala manager + Wingpanel compiled and all five Meson suites passed under Xvfb. Live read-only preflight/list passed, two existing instances preserved.
+- Synthetic full-history 500-instance median UI-thread updates: Instances 55.57→4.72 ms, Dashboard 26.18→5.91 ms in one sequential run. Initial list update 93.93 ms excludes deferred dashboard construction. These are not real Wayland frame-latency or long-duration memory results.
+- Evidence/method: `mseries/orchard-incus/audit/2026-10-18.json`, `tools/audit-ui.py`, and `docs/orchard-incus.html`. Remaining: virtualized rows for very large fleets, real Wayland/manual workflow qualification, and choosing/removing duplicate manager launchers. Vala UI/performance was not modified.
+- Install: `sh mseries/orchard-incus/install.sh` preserves one previous package. Source/install parity checked after deployment. Reopen Orchard to load new Python code; no owner's running window, container, kernel, display or audio configuration was restarted.
+
+
+## Orchard for Incus narrow-window fixes — 2026-10-17
+
+Found at 760 px: the window was forced to ~850 px, and the instance action row
+(with the More menu holding Clone/Rename/Delete) was clipped off-screen.
+Fixes in `mseries/orchard-incus/`: action row is a wrapping FlowBox (hidden
+buttons leave no gap, FlowBox children are not extra tab stops); stat tiles use
+`ui.TileRow` and wrap 2+2 when narrow; filter box shortened; instance sidebar
+240 px (was 290); detail margins 20 px; declared minimum window is now 780x480
+(was 760x480, which the content could not honour). Screenshots checked at
+780x480 and 1180x740, no clipping; wide layout unchanged.
+- Tests: 71 run, 6 live skipped, all pass; `tests/test_layout.py` (2, need a
+  display; run under xvfb-run) guards tile wrapping and action-row shrink.
+- Installed with `./install.sh`. Not verified: elementary stylesheet/Wayland,
+  the other tabs (Snapshots/Run/Files/Devices/Settings) and dialogs at narrow
+  width, More-menu popover contents, keyboard focus order. Sidebar IPs truncate
+  at 240 px.
+## Orchard for Incus charts — 2026-10-17
+
+`mseries/orchard-incus/`: charts now say what they show. Large charts (Dashboard
+totals, instance Overview) draw the scale top-left and the covered time span
+("last 4.5 min") top-right, and show "Collecting data…" until 3 samples exist.
+CPU charts auto-scale with a 10% floor instead of a fixed 100% (idle looks idle,
+busy multi-core is no longer clipped); the scale label keeps that honest.
+Small sidebar/dashboard sparklines stay unlabelled. Logic in
+`backend.chart_top/chart_ready/span_text`.
+- Tests: 69 run, 6 live skipped, all pass (7 new). Checked headlessly: live
+  shoot.py pages (collecting state) and a synthetic full-history render, dark.
+- Installed with `./install.sh`. Not verified: light theme with full history,
+  real Wayland/elementary stylesheet, narrow 760 px.
+## Orchard for Incus UI/UX pass — 2026-10-17
+
+Reviewed every page from headless screenshots (`mseries/orchard-incus/tools/shoot.py`
+under Xvfb with the cairo renderer, a throwaway XDG_STATE_HOME and no D-Bus
+session; read-only against the live Incus; nothing shown on the real display).
+Changes, all in `mseries/orchard-incus/`:
+- Instance actions are contextual (`backend.visible_actions`): running shows
+  Stop/Restart/Pause/Shell/Snapshot, stopped shows Start/Snapshot. Delete moved
+  out of the primary row into the More menu ("Delete…", red, still confirms).
+- Images: Container/VM badge per row (identical-title rows are now
+  distinguishable), alias shown, Delete is a quiet icon button with tooltip and
+  accessible name.
+- Storage: usage gauge (LevelBar, warns at 85%/95%) with percentage, from
+  `backend.parse_space`.
+- Filter box only shows on the Instances page; Ctrl+F jumps there first.
+- Tests: 62 run, 6 live skipped, all pass (11 new). Screenshots checked in light
+  1180x740 and dark 900x600. Installed with `./install.sh` (backup in `.prev`).
+- Not verified: real-display rendering with the elementary stylesheet and
+  Wayland (screenshots use the default GTK theme under X11); clicking through
+  actions (nothing was started, stopped or deleted); narrow 760 px layout; the
+  More-menu popover; keyboard focus order. Dashboard/chart axis labels and the
+  empty-history look of the charts are still open.
+## Orchard for Incus (Python) audit and fixes — 2026-10-17
+
+Audit of `mseries/orchard-incus/` (installed copy was identical to source):
+- Fixed: every `incus` call defaulted to a 600 s timeout, so a hung daemon
+  stacked a new `incus list` thread every 3 s and never tripped the
+  two-failure check. Now `backend.IncusTimeout` (a RuntimeError), a 20 s
+  `POLL_TIMEOUT` for the list refresh, and an in-flight guard in `refresh()`.
+- Fixed: any unrecognised Incus error was shown as "Incus isn't running" and
+  the real message dropped. Socket/connect errors keep that wording; others now
+  show "Incus reported an error" with the message.
+- Fixed: `install.sh` deleted the old code before copying. It now stages,
+  keeps one backup as `~/.local/share/orchard-incus/orchard_incus.prev`, then
+  swaps; a stale `.new` dir from a crashed run is cleaned.
+- Tests: `cd mseries/orchard-incus && python3 -m unittest discover -s tests`
+  = 51 run, 6 live skipped, all pass (9 new: timeouts, preflight wording,
+  install idempotence/backup/uninstall in a temp HOME).
+- Live read-only check: `preflight()` None in 0.01 s, `list` 2 instances 0.01 s.
+- Installed with `./install.sh` (backup in `orchard_incus.prev`).
+- Not verified: the GTK window itself (refresh guard and problem page were
+  compile-checked only, not exercised; app was not running, nothing relaunched);
+  the 6 live tests; the Vala app build. Not changed: the monitor thread
+  flaps `monitor_ok` every ~5 s when the daemon is down.
+- Noted, not touched: stale `com.github.techmore.orchard-incus` launcher,
+  desktop file and `liborchard-incus.so` (Vala app) coexist with the Python
+  app's `io.github.techmore.OrchardIncus.desktop`: two menu entries.
+- Next: pick the canonical implementation; build/test the Vala app.
+
+## Orchard for Incus upstreamed into this repo — 2026-10-17
+
+Both Orchard for Incus implementations now live in `ElementaryOS_MSeries`
+(previously only on the `claude/airplay-destinations` branch and in the
+separate `techmore/orchard-incus` repo):
+
+- `mseries/orchard-incus/` — Python/GTK 4 app (installed to
+  `~/.local/share/orchard-incus`, launcher `~/.local/bin/orchard-incus`),
+  imported from `claude/airplay-destinations` @ 0eeefa7. Tests:
+  `cd mseries/orchard-incus && python3 -m unittest discover -s tests`
+  (42 run, 6 live tests skipped).
+- `mseries/orchard-incus-native/` — Vala/Granite app + Wingpanel indicator,
+  imported from `techmore/orchard-incus` `codex/wingpanel-indicator` @ 3913611
+  (no build output; MIT LICENSE and NOTICE.md with Orchard attribution kept).
+  Not rebuilt or re-tested during the import.
+- Installed copy of the Python app was byte-identical to the source (diff clean).
+- Not done: audit/fix pass (error states, install idempotence), Vala build
+  and tests, deciding which implementation is canonical.
+- Next: choose canonical implementation, then audit failure states
+  (incus missing/permission denied/daemon down) with tests first.
+
+## YouTube launcher logo — 2026-10-18
+
+The contained Brave YouTube shortcut uses a bundled scalable YouTube play-button
+icon, also installed for the current user. Desktop entry, SVG and GTK icon lookup
+checks pass; live dock appearance after reopening remains to confirm.
+[Installation instructions](video-decode/README.md#youtube-launcher-icon--2026-10-18).
+
+## Dock startup and focus audit — 2026-10-18
+
+Reviewed the pending startup fix against current main and added quiet repeated
+activation plus wrapper stop forwarding/child reaping. Delayed Gala readiness,
+stale workspace removals and false stock fallback now have regression coverage.
+Two native production-method harnesses, seven generated-wrapper groups, eight
+boot-profile tests, the ARM64 composed dock build and eleven isolated Wayland
+groups pass. The latter retain focus and typed input during repeated activation.
+Current dock remains stopped; no live redeployment. The reported floating dock
+still needs physical-session/restart/monitor-transition qualification.
+[Implementation and test scope](display-space/README.md#dock-activation-and-session-stops).
+
+## Dock-aware window space — 2026-10-18
+
+Visible dock space is reserved by the native compositor; hiding returns it to
+maximized and half/quarter-snapped windows. Quarter layouts reflow, manual sizes
+remain, fullscreen retains the monitor, and overlap hiding stays stable after
+reveal. Installed into the private Gala and both quarter-plugin directories;
+loads next sign-in. Ten isolated real-dock/GTK checks, nine existing snapping
+checks, ARM64 builds and shell checks pass. Physical-monitor confirmation remains.
+[Behavior, tests and install commands](display-space/README.md#dock-space-follows-visibility).
+
+
+## Built-in VRR and boot space — 2026-10-18
+
+[Scoped result and next-kernel checklist](aurora/hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md):
+Aurora .20's builtin VRR is selected and retained in the current desk profile;
+owner confirms both displays look normal and the dock works. External fixed
+1080p/60 mode/layout preserved. Kernel VRR activation was brief (3/25 samples),
+so sustained VRR, focus/presentation behavior, docking transitions and sleep
+remain open. This display change must be controlled in future energy comparisons.
+Four bootloader backups and seven retired Fairydust test files were archived
+locally; six test entries removed. `/boot` reached 214.02 MiB free (~58% used
+at cleanup). Aurora and stock recovery files remain; historical Fairydust-default
+instructions below are superseded for the owner's current host, not removed
+from factory/source tooling.
+
+
+## Universal speech-to-text priority — 2026-10-18
+
+Owner order: universal F5 dictation, deeper troubleshooting/optimization, then a
+low-overhead machine assistant; Gmail preferred for future mail coverage.
+Prepared IBus/AT-SPI output now preserves compose keys, uses shared resource
+limits, private lifecycle status and anonymous-RAM fallback. Fifteen contracts,
+GTK/Qt/Brave and synthetic Electron field checks pass. One guarded public-clip
+CPU speech-to-GTK check passed at 0% normalized WER, 4.31 s first text and max
+2525 RPM; no general accuracy/acoustic/speedup claim. Stage-only rollback passed
+without restarting the original F5. Actual activation/rollback, real human F5,
+remaining app sessions and optional grammar/translation review remain. Existing
+browsers need accessibility on their next launch; no owner window is closed.
+[Current implementation/evidence](dictation/README.md).
+
+## Native full-height desktop and compact dock — 2026-10-18
+
+The [J314 native desktop profile](display-space/README.md) restores the 74-pixel
+camera strip with a protected Wingpanel clock layout, compact overlap-hiding dock
+and persistent monitor-clamped placement. Installed on the current transformed
+M1 Pro; ARM64 builds, eight boot helper tests, GTK allocation and payload checks
+pass. The separate full-height normal-boot choice preserves recovery and the
+already queued one-shot kernel trial. At the owner’s request, that queued
+`.20-enh1` trial now also uses `appledrm.show_notch=1`, so one normal reboot
+loads the trial and full-height layout together. Full-height hardware boot/clock/monitor
+switching and dock placement persistence still need post-reboot confirmation.
+Factory images retain their cropped initial mode. See the latest handoff for
+commands, runtime warnings and rollback.
+
+
+## .20-enh1 one-shot hardware trial staged — 2026-10-18
+
+[Trial and rollback guide](aurora/trial/README.md): next boot selects
+`elementary-aurora20-enh1`; later boots default to the retained .20 kernel.
+Matched J314S DTB/shared m1n1 payload and existing fallback files are unchanged.
+The first 120-second active-desktop baseline and GPU/filesystem smoke tests
+completed. Identity-pinned user capture runs automatically on the next trial
+boot after login/settling. Candidate boot, complete hardware/suspend/recovery
+and controlled AB/BA energy qualification remain open; no savings claimed.
+
 ## Power audit and dock status on `.20` — 2026-10-18
 
 [Power audit](power/AUDIT-2026-10-18.md): 19-22 W observed docked with two displays under an active desktop; no idle
@@ -254,9 +753,9 @@ with the corrected live-session hardware overlay before progressing.
 
 | Feature | How | Evidence |
 |---|---|---|
-| Local desktop and personal AI | Private MLX v0.7.33 + Newelle summary memory + typed OS MCP | Qwen9 12/15 short tasks, 9/9 tool workflows; synthetic EDS calendar/task round trips and personal-memory recall; [full qualification](local-ai/receipts/2026-10-16.md) |
-| Quiet inference and coding profiles | One worker, six-GiB reserve, early cooling and hard fan/temperature limits; Crush 16K profile | Short suites measured with apps retained; long coding/Bonsai tests are queued for idle windows, with interrupted runs retained |
-| Kernel and developer branch watch | Live fault signatures/previous boot; six-hour all-head and PR discovery | 41 assistant tests and 4 image wiring tests; 1,103 public branch heads observed; recurring enhancement activates on main |
+| Local desktop and personal AI | Private MLX v0.7.33 + Newelle summary memory + typed OS MCP | Default Qwen3.5 4B: 9/15 short tasks, 9/9 corrected MCP workflows and personal-memory recall; Qwen9: 12/15 short tasks, later reserve interruption; [full qualification](local-ai/receipts/2026-10-16.md) |
+| Quiet inference and coding profiles | One worker, six-GiB reserve, early cooling and hard fan/temperature limits; Crush 16K profile | Real Crush edit passed; Bonsai corrected MCP 9/9 and native decode 5.571 tokens/s complete; resumed 12/15 short tasks retain earlier fan interruption and are not a quiet-policy pass |
+| Kernel and developer branch watch | Live fault signatures/previous boot; six-hour all-head and PR discovery | Six-hour watcher active on main; verified repair run retained 1,180 public branch heads and 193 PR heads, zero fetch errors; small-model repair advice remains excluded after two failed trials |
 | CodexBar quota ETA | Visible per-limit forecasts and the earliest available limit in the bar; exhausted quotas show reset time | 11 ETA tests, 5 refresh tests, GTK render probe, and installed-module/live-snapshot checks passed |
 | CodexBar popover redesign | Quota / Sessions / Spend tabs so nothing sits below the fold; level-colored limits with one caption line each; a quiet bar that only adds ETA on a real warning, labels non-session windows ("7D 35%") and dims when cached; plan chips, status dots, explained empty/error states with actions; no rebuild or flicker between unchanged polls; accessible labels | 3 Meson suites (incl. 9 presentation cases), 16 headless Xvfb renders (8 states x light/dark), no-rebuild stability probe (verified against a mutant), module installed; takes effect at next login |
 | CodexBar usage freshness | One-minute backend polling; asynchronous five-second panel reads; throttled refresh on open | Meson policy tests and delayed-IPC GTK probe passed; installed on the working desktop |
@@ -305,7 +804,7 @@ sudo available to enable DNS collection without dialogs.
 |---|---|---|
 | Deferred per-user setup | Firstboot prepares CodexBar and Widevine tools and DNS policy; the user timer installs apps/services and stops after completion. Staged-root tests cover payload delivery, timer enablement and completion handling. | Verify a fresh desktop user's setup, including starting then quitting Brave to create its profile. |
 | Keyboard brightness slider | Added to Pantheon's Quick Settings gear menu by `install-quick-settings-brightness.sh`; included in manual post-install, transform firstboot, and now the Apple Silicon overlay build. | Rebuild the image, then confirm it appears and changes the keyboard backlight on the live desktop. |
-| OpenCode Go in M-series CodexBar | The installer enables the provider; the wrapper passes an OpenCode Go API key from `~/.local/share/opencode/auth.json` when one exists. Current OpenCode keeps its login (an OAuth account, not a Go API key) in `opencode.db`, so on this desktop no key is found and quota needs a browser sign-in at opencode.ai (upstream reads session cookies). The panel's OpenCode Go card shows a local usage estimate (5h/7d/30d cost, requests, tokens from `opencode.db`, labelled not account quota) until a quota exists; local activity is also under Sessions. | Sign in to OpenCode Go in a browser on the desktop and confirm the quota row appears. |
+| OpenCode Go in M-series CodexBar | The wrapper passes an explicit API key from `auth.json`, falling back to the active unexpired OAuth access token in OpenCode v2’s `credential` table. Live account quota works; seven-day local token counts accompany it in the panel and card. | Live OAuth quota verified on 0.77.0; wrapper/helper tests and port checks pass. OAuth refresh remains OpenCode’s responsibility. |
 
 ## Open problems
 
@@ -352,13 +851,15 @@ Performance work stays measured: use `mseries/benchmarks/` before and after each
 0. **Battery drain, phone-tether internet and minimum brightness** (reported 2026-10-14; rows in `BUG-FIX-ROADMAP.md`). The owner suspects the planned Rust battery-profile migration might fix the drain; measurement says the largest found cause was an audio rule, not the profile code, so port it for safety (see `EDGE-AND-RUST-PLAN.md`) but test the claim with before and after power readings.
 0. **Universal Siri/Whisper-like speech to text** (requested 2026-10-14; see `BUG-FIX-ROADMAP.md`). Dictate into any focused text field in any app, plus a later voice-assistant layer. Local only (no audio leaves the Mac). Candidate engine: whisper.cpp or similar on the M1 Pro (Vulkan on Honeykrisp, or CPU); universal insertion through an IBus input method (works for GTK, Qt and Electron apps) rather than per-app plugins. Depends on the built-in microphone working: the Asahi mic mapping from Omarchy is not ported yet (parity list item 3). F5 hold-to-talk dictation installed 2026-10-18 (Voxtype + Whisper base.en); live speech round trip unverified, see `mseries/dictation/README.md`.
 0. **Stay within 24 h of upstream, and port privileged code to Rust** (requested 2026-10-14; plan in [`EDGE-AND-RUST-PLAN.md`](EDGE-AND-RUST-PLAN.md)). Watched projects: [`WATCHLIST.md`](WATCHLIST.md).
+0. **Minimum brightness** (requested 2026-10-14). Investigated and implemented 2026-10-16: the hardware floor is 2 nits, Mutter capped controls at 5, keys now walk an even 25-step ladder through logind, and a patched Gala adds four software steps below 2 nits. Owner validation is the next step; the phased plan (BR-01..BR-21), acceptance criteria and test protocol are in `BRIGHTNESS.md`.
 0. **True Tone-like display** (requested 2026-10-14; see `BUG-FIX-ROADMAP.md`). Shift the display's white point toward the room light. Apple's True Tone uses a multi-channel sensor; the M1 Pro ambient light sensor (`iio:device1`, `aop-sensors-als`) exposes only `in_illuminance_input` (lux) on this kernel, so a faithful version is not possible yet. Interim plan: map lux plus time of day to a colour temperature through the colour plugin's night-light path (`night-light-temperature`, currently 4500 K, night light off), with slow easing and an off switch. Must not touch brightness (ambient auto-brightness stays off, see the dimming fix).
 0. **Lid open shows the login screen, with Touch ID.** Today the login needs a power-button press after resume (bug tracked in `BUG-FIX-ROADMAP.md`). First fix the wake path; then investigate fingerprint login. No Linux driver for the Mac Touch ID sensor (Secure Enclave) is known to this project, so treat Touch ID as research, not a plan.
 
 1. **Dock video via m1n1 hypervisor trace.** Needs a second computer (below). Result would also help every Asahi user.
 2. ~~**Panel toggle for the battery charge limit**~~ Done 2026-10-13: a switch in the gear menu (`quick-settings/ChargeLimit.vala`, polkit action in `power/`). Pending your click-through: check `charge-limit-toggle`.
+2b. **Sound Output switcher and AirPlay destinations** Built 2026-10-16, merged 2026-10-18: a Mac-style output list in the gear menu (`quick-settings/AudioOutput*.vala`) with a dot per AirPlay receiver (`quick-settings/AirPlayOutputs.vala`, `airplay/`). Discovery through `install-airplay-discovery.sh`, the helper through `install-airplay-outputs.sh`. Headless tests pass; audible AirPlay and the live panel are not verified.
 3. ~~**Docked lid mode**~~ Done 2026-10-13: `install-docked-lid.sh` (user service). Real lid close pending: check `docked-lid-works`.
-4. ~~**Linux VMs with KVM**~~ Guide written 2026-10-13: [`KVM-VMS.md`](KVM-VMS.md) (boot verified headless; graphics, networking address and benchmark overhead not yet measured).
+4. ~~**Linux VMs with KVM**~~ Guide written 2026-10-13: [`KVM-VMS.md`](KVM-VMS.md) (boot verified headless; graphics, networking address and benchmark overhead not yet measured). Scripted end to end 2026-10-16: [`vms/mseries-vm`](vms/README.md) creates, fetches media for and runs the guests (elementary OS, Windows 11 ARM64, Omarchy 4), with a 71-check hermetic suite in CI.
 5. **Publish benchmark history** for every kernel/Mesa update, plot trends.
 6. **Install media / transform script** for other M1/M2 Macs (see `TRANSFORM-DESIGN.md`).
 7. **Tether continuity add-on**: pinned, removable ARM64 package installer and optional Brave integration are implemented (merged to main 2026-10-14); iPhone/Brave qualification remains. Current BlueZ 5.85 is below Tether's 5.86 minimum for Messages. See [`TETHER-CONTINUITY.md`](TETHER-CONTINUITY.md).
@@ -561,4 +1062,112 @@ browser integration and remaining Files/Gala patches remain open.
 
 - MCP app follow-through: create-only local Assistant Tasks adapter and settings-preserving tool refresh implemented. Concurrent/retry/conflict EDS checks and 53 contracts pass. Model note-to-task/instruction rejection (three repeats) wait for cool/idle windows; see local-ai/APP-INTEGRATION.md. Calendar writes and browser/mail/messaging adapters remain open.
 
+- Developer watcher recovery (October 18): treat exact deleted named-ref responses as absent observations, preserving pending history and continuing branch/PR discovery. Two regression contracts and a full candidate dispatch pass; verify main dispatch after merge. This repair is independent of draft Calendar/browser/Mail GPU qualification (#86).
+
 - MCP Tasks qualification complete: note-to-task/scoped read-back 3/3 and file-instruction rejection 3/3; all synthetic sources removed. URLError checkpoint retained. PR #66 publishes data and app coverage; default restore waits for quiet admission. Calendar writes, browser/mail adapters, Tasks GUI/reminders and full factory hardware qualification remain open.
+
+- Agent-first Pantheon feature proposal (October 18): shared broker/permissions and durable alerts before UI, native app adapters, speech-to-text/speech-to-speech, and explicitly paired WebRTC interaction. See [design and acceptance plan](local-ai/PANTHEON-MCP-DESIGN.md). Proposal only; no new alert broker, voice conversation or WebRTC service installed.
+
+- Upstream performance review (October 18): MLX main d8ac5fe is 28 commits ahead of tested 33630f9. Native-GQA is a candidate; numerically rejected gather routes remain excluded. Mac/MX notification-agent/voice patterns and oMLX options inform the agent-first design. [Pinned comparison and experiment plan](local-ai/UPSTREAM-FEATURE-COMPARISON.md); no runtime/governor changes or M1 Pro speedup claimed.
+## CodexBar native Claude account switching — 2026-10-18
+
+Implemented app session capture, one-time native sign-in setup, and **CLI only / Switch both** choices.
+The app restarts for a native switch; its encrypted login is restored without changing preferences.
+Missing sessions are labelled **app sign-in needed**. Both native accounts are now saved on this desktop. Automated snapshot round trips, rollback and
+setup recovery pass. A real native account-2 → account-1 round trip completed, and the owner confirmed
+the Gmail account’s chats remained visible without signing in again. See
+[CODEXBAR-PORT.md](CODEXBAR-PORT.md) for the repeatable workflow and limitations.
+
+
+### CodexBar account quota UX and sign-in — 2026-10-18
+
+Alternate accounts now expose 5-hour and weekly/monthly quota separately, each with a reset countdown,
+in dense dropdown rows and a second panel line. OpenCode duplicate OAuth records are collapsed into
+distinct account/workspace identities. Codex + provides browser sign-in without replacing the current
+login, using a native Granite window with progress and cancellation. Formatting, login isolation and
+OpenCode read-only/deduplication tests pass; port compatibility and headless light/dark probes pass. The owner verified that a second real Codex account appears after the new browser sign-in flow.
+
+Secondary quota balances are colour coded per window, matching the usage bar thresholds, while reset
+countdowns stay muted. The Codex account dialog now uses a centered brand panel, stronger typography,
+a compact instruction card and native actions. Light/dark render checks cover the visual changes.
+
+
+### CodexBar account-choice hints — 2026-10-18
+
+Yellow stars identify the service/account with the highest usable remaining quota percentage, using
+its tightest reported limit so an exhausted five-hour session does not win on weekly balance. Red
+exclamation marks independently identify the next weekly reset, including secondary accounts. Markers
+include explanatory tooltips; ties are marked, stale/unknown data is excluded, and monthly resets do
+not qualify. Selection tests and light/dark fixtures cover the behavior.
+
+- Owner priority refinement (October 18): universal native dictation first, stronger on-demand troubleshooting/optimization second, lightweight everyday machine interface third. Share the existing worker and typed broker; deterministic idle alerts and command routing must not require continuous inference. Gmail is the preferred later mail adapter. See [three-tier acceptance requirements](local-ai/PANTHEON-MCP-DESIGN.md#owner-priority-three-tiers). Live dictation services have passed an activation/rollback cycle, but native input-source selection resets remain a blocker; isolated text insertion is not a stable desktop rollout.
+
+- Universal F5 input follow-through (October 18): activated CPU/IBus with per-utterance engine acquisition/restoration; no native source list edits or IBus restart. Seventeen contracts and GTK/Qt/Brave/synthetic-Electron field checks pass, including focus/password and owner-layout preservation. Changed-source public-clip speech-to-field WER0, first5.09s, maxfan2523RPM; failures retained. Human F5 and optional grammar/translation review remain pending. Everyday4B stopped itself on reserve guard and must pass admission before resuming; no simultaneous-residency claim.
+
+
+### CodexBar native account-sheet refinement — 2026-10-18
+
+All provider add prompts share a refined Granite sheet: raised brand emblem, elementary accent icons,
+framed instruction rows, concise copy and native footer buttons. Codex waiting, success and retry
+states follow the same design with explicit keyboard defaults and bounded helper detail. Browser
+sign-in, account storage and Claude native-app sessions retain their existing behavior. Four Meson
+suites and 12 light/dark render previews pass; real authentication was previously owner-verified and
+was not repeated for this visual change. The separate OpenCode API-key entry window is unchanged.
+
+
+### OpenCode native API-key window — 2026-10-18
+
+The separate OpenCode key-entry window now matches CodexBar's Granite account sheet: raised brand
+mark, elementary theme accents, framed sections, labeled masked input and native Cancel/Connect
+buttons. Inline checking/error states provide progress and retry focus. Existing key validation,
+storage and browser/embedded sign-in methods are preserved. Six light/dark previews, mocked
+cancel/invalid/rejected/success checks, four Meson suites and the port compatibility check pass.
+No real authentication was repeated. Runtime GI dependencies are explicit in the panel installer.
+
+
+### OpenCode one-click account entry — 2026-10-18
+
+OpenCode **+** now opens the native API-key sheet directly; the redundant Continue popup is removed.
+The existing sign-in helper, validation/storage and result/refresh flow remain intact. Module build
+and four Meson suites pass; no live sign-in was required for this routing change.
+
+
+### Direct Claude sign-in and account levels — 2026-10-18
+
+Claude **+** now starts browser sign-in immediately. Dropdown active and saved-account identities
+show their reported plan, with a quiet “Plan unavailable” when metadata is missing. Codex uses its
+existing claims, Claude projects subscription labels from saved/live login metadata, and OpenCode
+uses reported plan metadata where available. Four Meson suites, 35 Claude/9 OpenCode tests, port
+compatibility, and light/dark normal-width render checks pass. Native Claude sessions and provider
+authentication methods are preserved; live reauthentication was not repeated for this UI change.
+
+
+### OpenCode actual subscription level — 2026-10-18
+
+OpenCode OAuth account badges now read the workspace's current Go/Go Plus product from the official
+Console status API. The live account resolves to Go. A future renewal tier or quota limit is never
+used as the current level; unreadable/expired subscriptions keep an unavailable label where no
+reported metadata is usable. Read-only workspace-scoped lookup, bounded timeout/body, no login or
+token mutation. Seventeen helper tests, four Meson suites, port check and light/dark renders pass.
+
+- Human F5 acceptance remains failed: owner saw a microphone desktop function rather than listening. Physical F5 remap matches listenerF14; exact prompt/app context pending. Optional GTK4 review UI/local transformation path is source-only, with22 contracts and synthetic wiring pass; no model-quality or live deployment claim. Fix F5 before panel rollout; preserve reserve/quiet admission.
+
+- F5 diagnostics (October 18): fixed3s parent/4s client timeout mismatch, bounded field ancestor checks and async startup, deployed anonymous key/refusal tracing;23 contracts and isolated native/framework checks pass. Owner F5 failure remains unresolved pending popup/app detail. A single frozen six-case grammar/translation queue waits for quiet/default-model admission; preserve its service/checkpoint and completed failures.
+
+- IBus reconnect recovery (October 18): Always restart the owned bridge on clean disconnect; Wants+After avoids speech-model reloads; restore native input only when global engine is empty. Private GTK reconnect and exact installed-unit clean TERM/manual stop tests pass,24 contracts. Earlier recovery and fixture failures retained. Graphical-session lifetime wiring checked, actual logout untested. Human F5 retry/model review/merge remain pending. Idle ASR pressure-release coverage is still open.
+
+
+### OpenCode dropdown account switching — 2026-10-18
+
+Secondary saved browser accounts now have Switch, using OpenCode's official service-backed auth
+command and verifying the resulting selection. Identity/usage follow the active v2 credential,
+with native OAuth refresh and pending-read invalidation. Workspace labels distinguish choices;
+unusable sign-ins explain the need to sign in again. Twenty-five helper tests, 13 wrapper tests,
+four Meson suites, port check and light/dark previews pass. Live same-account saved-session round trip
+passed and the original selection was restored; distinct-account round trips use temporary fixtures.
+
+- Local review pilot:6 completed synthetic requests,5/6 limited checks; French identifier PWNED→PWNÉ remains failed, grammar literal remains unpolished. All within policy,1.99–3.43s warm path and≤2516RPM/min9.48GiB available. Separate English/German/Japanese probes complete3/3 limited checks. Actual public-file ASR→GTK4 panel→French translation→grammar→private copy passes functional checks, preserving semantic errors (stew→soup; bruised→crushed potatoes). Original/intermediate preserved; three explicit review modes,28 contracts. No physical F5 or broad translation-quality pass; panel rollout still waits for human F5 recovery. Source/receipts are merged through PR86 with initial Pages publication verified; on-device idle-pressure release and physical F5 remain open.
+
+- On-demand speech candidate:46 contracts plus actual private Qt6/Brave/GTK4 Wayland Check/stale-focus refusal pass. One new CPU file→field/close/reload fixture reclaimed784MiB; separate no-inference timer test released at61.00s, reclaiming767MiB. Both≥11.07GiB available, reported0RPM/<40.0C. Retained allocator/library memory and long-run stability remain limits. Not deployed over pending human F5 retry; optional panel uninstalled. Publish tested opt-in code/receipts with physical F5, rollout and continuous translation gates explicit; merge alone does not complete the goal.
+
+- Publication follow-through: PR86 merged077bfe5; current-source CI39130696811 passed all5 jobs. Initial Pages39138713351 succeeded and canonical report bytes matched reviewed source.46 dictation/72 assistant/6 image checks pass. Publishing the opt-in candidate does not complete physical F5, panel/lazy rollout or continuous translation gates.

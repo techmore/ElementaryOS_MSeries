@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Verify runtime dependencies survive the pruned Apple Silicon overlay."""
 import configparser
+import json
 import os
 from pathlib import Path
 import shutil
@@ -18,6 +19,26 @@ def packages(path):
     return set(config.get('Content', 'Packages', fallback='').split())
 
 
+
+def verify_youtube_payload(root):
+    root = Path(root)
+    desktop = root / 'usr/share/applications/mseries-brave-youtube.desktop'
+    config = configparser.ConfigParser(interpolation=None)
+    config.read(desktop)
+    entry = config['Desktop Entry']
+    if entry['Icon'] != 'mseries-youtube' or entry['StartupWMClass'] != 'brave-www.youtube.com__-Default':
+        raise ValueError('YouTube menu/dock identity changed')
+    expected = '/usr/share/elementary-mac/mseries/video-decode/brave-youtube'
+    if entry['Exec'] != expected + ' %U' or not os.access(root / expected.lstrip('/'), os.X_OK):
+        raise ValueError('YouTube launcher must run without a source checkout')
+    icon = root / 'usr/share/icons/hicolor/scalable/apps/mseries-youtube.svg'
+    if icon.read_bytes() != (ROOT / 'mseries/video-decode/mseries-youtube.svg').read_bytes():
+        raise ValueError('YouTube logo missing or changed in image')
+    for name in ('install-brave-widevine.sh', 'install-brave.sh', 'lib-apt.sh'):
+        if not (root / 'usr/share/elementary-mac/mseries' / name).is_file():
+            raise ValueError('YouTube runtime helper missing: ' + name)
+
+
 def verify_image_output(output):
     roots = [p for p in Path(output).glob('liveiso_*') if p.is_dir()]
     if len(roots) != 1:
@@ -25,6 +46,7 @@ def verify_image_output(output):
     plugin = roots[0] / 'usr/lib/aarch64-linux-gnu/wingpanel-9/libnetwork.so'
     if not plugin.is_file() or b'Show speed in menu bar' not in plugin.read_bytes():
         raise ValueError('Built live ISO is missing the patched network indicator')
+    verify_youtube_payload(roots[0])
     source = ROOT / 'mkosi.images/apple-silicon/mkosi.extra'
     required = [p.relative_to(source) for p in source.rglob('*')
                 if p.is_file() and '__pycache__' not in p.parts and p.suffix != '.pyc']
@@ -51,6 +73,8 @@ class ImageWiringTests(unittest.TestCase):
             plugin = root / 'usr/lib/aarch64-linux-gnu/wingpanel-9/libnetwork.so'
             plugin.parent.mkdir(parents=True, exist_ok=True)
             plugin.write_bytes(b'patched network indicator: Show speed in menu bar')
+            subprocess.run(['bash', str(ROOT / 'mseries/enhance.sh'), '--root', str(root),
+                            '--only', 'payload'], check=True, stdout=subprocess.DEVNULL)
             verify_image_output(directory)
             (root / 'usr/libexec/mseries-brightness').unlink()
             with self.assertRaises(ValueError):
@@ -77,7 +101,15 @@ class ImageWiringTests(unittest.TestCase):
                          'usr/lib/mseries-ai/llama/bin/llama-server',
                          'usr/bin/mlx-omarchy-serve',
                          'usr/share/omarchy-mlx/serve-catalog.json',
-                         'usr/share/doc/mseries-local-ai/SOURCE']:
+                         'usr/share/doc/mseries-local-ai/SOURCE',
+                         'usr/lib/aarch64-linux-gnu/wingpanel-9/libdatetime.so',
+                         'usr/share/doc/mseries-panel-datetime/COPYING',
+                         'usr/lib/mseries-brave/brave',
+                         'usr/lib/mseries-brave/locales/en-US.pak',
+                         'usr/libexec/mseries/verify-factory-brave',
+                         'usr/share/doc/mseries-brave/LICENSE',
+                         'usr/share/doc/mseries-brave/files.json',
+                         'usr/share/doc/mseries-brave/pin.json']:
                 target = image / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text('synthetic local AI payload')
@@ -96,23 +128,58 @@ class ImageWiringTests(unittest.TestCase):
             for path in expected:
                 with self.subTest(path=str(path)):
                     self.assertTrue((image / path).is_file())
+            verify_youtube_payload(image)
+            icon = image / 'usr/share/icons/hicolor/scalable/apps/mseries-youtube.svg'
+            icon.unlink()
+            with self.assertRaises(FileNotFoundError):
+                verify_youtube_payload(image)
             self.assertFalse(payload.exists())
+            self.assertTrue((image / 'usr/bin/mseries-calendar-accounts').is_file())
+            self.assertTrue((image / 'usr/share/elementary-mac/mseries/calendar/accounts').is_file())
+            self.assertTrue((image / 'usr/share/elementary-mac/mseries/patches/datetime-agenda-tabs.patch').is_file())
             for name in ('mseries-power.service', 'mseries-power-follow.service'):
                 unit = image / 'etc/systemd/system' / name
                 self.assertIn('ExecStart=/usr/libexec/mseries/power ', unit.read_text())
                 self.assertNotIn('/usr/local/', unit.read_text())
             self.assertTrue((image / 'usr/libexec/mseries/power').is_file())
-            for path in ('usr/libexec/mseries/sleep-cost', 'usr/bin/mseries-power-report',
+            for path in ('usr/libexec/mseries/sleep-cost', 'usr/libexec/mseries/prepare-uki-kernels', 'usr/bin/mseries-power-report',
                          'usr/lib/systemd/system-sleep/mseries-sleep-cost',
                          'usr/lib/systemd/user/graphical-session.target.wants/mseries-sleep-cost.service',
                          'usr/libexec/mseries/bluetooth-resume-fix'):
                 self.assertTrue((image / path).is_file(), path)
             self.assertFalse((image / 'etc/systemd/system/suspend.target.wants/mseries-bluetooth-resume-fix.service').is_symlink())
 
+    def test_factory_accounts_frontend_respects_elementary_package_policy(self):
+        policy = (ROOT / 'repos/common-files/etc/apt/preferences.d/deprioritize-gnome').read_text()
+        blocked = set(next(line for line in policy.splitlines() if line.startswith('Package:')).split()[1:])
+        for name in ('apple-silicon/mkosi.conf', 'liveiso/mkosi.conf.d/arch.arm64.conf',
+                     'sysupdate/mkosi.conf.d/arch.arm64.conf'):
+            selected = packages('mkosi.images/' + name)
+            self.assertFalse(selected & blocked, name + ' selects a prohibited package')
+            self.assertIn('gnome-online-accounts-gtk', selected)
+
+    def test_pinned_panel_build_dependencies_are_declared(self):
+        config = configparser.ConfigParser(interpolation=None, strict=False)
+        config.read(ROOT / 'mkosi.images/apple-silicon/mkosi.conf')
+        build = set(config.get('Content', 'BuildPackages').split())
+        required = {'libpackagekit-glib2-dev', 'libaccountsservice-dev', 'libportal-dev',
+                    'libwayland-dev', 'libxml2-dev', 'xkb-data', 'zlib1g-dev'}
+        self.assertFalse(required - build, 'Pinned plugin build dependency missing')
+
     def test_consumers_install_overlay_runtime_dependencies(self):
         overlay = packages('mkosi.images/apple-silicon/mkosi.conf')
+        self.assertTrue({'bubblewrap', 'xdg-dbus-proxy', 'desktop-file-utils', 'libgtk-3-bin'} <= overlay)
         runtime = overlay - {'initramfs-tools'}
         self.assertTrue(runtime)
+        brave = json.loads((ROOT / 'mseries/video-decode/brave-factory.json').read_text())
+        self.assertFalse(set(brave['runtime_packages']) - runtime)
+        self.assertIn('BuildScripts=build-in-image.chroot', (ROOT / 'mkosi.images/apple-silicon/mkosi.conf').read_text())
+        builder = (ROOT / 'mkosi.images/apple-silicon/build-in-image.chroot').read_text()
+        self.assertIn('build-brave', builder)
+        self.assertIn('export BUILDROOT=/', builder)
+        for name in ('liveiso', 'sysupdate'):
+            self.assertIn('verify-factory-brave --root / --ldd',
+                          (ROOT / f'mkosi.images/{name}/mkosi.postinst.chroot').read_text())
         for consumer in (
             'mkosi.images/liveiso/mkosi.conf.d/arch.arm64.conf',
             'mkosi.images/sysupdate/mkosi.conf.d/arch.arm64.conf',

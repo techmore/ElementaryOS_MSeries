@@ -59,6 +59,7 @@ Start with the [power documentation map](power/README.md) for current evidence, 
 | [ATOMIC-APP-DEPLOYMENT.md](ATOMIC-APP-DEPLOYMENT.md) | Requested atomic app updates, rollback, apt performance investigation and Flatpak/Nix evaluation |
 | [BUG-FIX-ROADMAP.md](BUG-FIX-ROADMAP.md) | Upstream comparison and prioritised bug backlog |
 | [OMARCHY-AUDIT-2026-10.md](OMARCHY-AUDIT-2026-10.md) | Audit of omarchy-mac |
+| [UPGRADE-SURVEY-2026-10-18.md](UPGRADE-SURVEY-2026-10-18.md) | Pinned-vs-latest upgrade table, Aurora Silicon release lanes, upstream and own WIP branch merge recommendations |
 
 ## Factory ISO and VMs (unverified on hardware)
 

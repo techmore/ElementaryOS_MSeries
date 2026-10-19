@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# BuildPackages live in the image root, not the separate mkosi tools tree.
+set -euo pipefail
+export BUILDROOT=/
+for builder in build-brave build-network-indicator build-quick-settings \
+    build-touchegg build-video-decode build-desktop-indicators build-local-ai; do
+    bash "$SRCDIR/mkosi.images/apple-silicon/$builder"
+done

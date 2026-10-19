@@ -1,5 +1,77 @@
+Json.Object hint_account (string id, double session, double weekly, string weekly_reset, bool stale = false) {
+    var account = new Json.Object ();
+    account.set_string_member ("id", id);
+    account.set_boolean_member ("stale", stale);
+    var windows = new Json.Array ();
+    var short_window = new Json.Object ();
+    short_window.set_string_member ("label", "5 hour");
+    short_window.set_int_member ("minutes", 300);
+    short_window.set_double_member ("remaining", session);
+    short_window.set_string_member ("resetsAt", "2026-10-18T12:05:00Z");
+    windows.add_object_element (short_window);
+    var long_window = new Json.Object ();
+    long_window.set_string_member ("label", "7 day");
+    long_window.set_int_member ("minutes", 10080);
+    long_window.set_double_member ("remaining", weekly);
+    long_window.set_string_member ("resetsAt", weekly_reset);
+    windows.add_object_element (long_window);
+    account.set_array_member ("windows", windows);
+    return account;
+}
+
 int main (string[] args) {
     GLib.Test.init (ref args);
+    GLib.Test.add_func ("/presentation/account-hints-usable-headroom", () => {
+        var now = new DateTime.from_iso8601 ("2026-10-18T12:00:00Z", null).to_unix ();
+        var accounts = new Json.Array ();
+        accounts.add_object_element (hint_account ("exhausted-session", 0, 99, "2026-10-18T12:30:00Z"));
+        accounts.add_object_element (hint_account ("limited-weekly", 95, 20, "2026-10-19T12:00:00Z"));
+        accounts.add_object_element (hint_account ("saved-best", 80, 75, "2026-10-20T12:00:00Z"));
+        accounts.add_object_element (hint_account ("stale", 100, 100, "2026-10-18T12:01:00Z", true));
+        var hints = MSeries.Presentation.account_hints (accounts, now);
+        assert (hints.get_array_member ("best").get_length () == 1);
+        assert (hints.get_array_member ("best").get_string_element (0) == "saved-best");
+        assert (hints.get_array_member ("weekly").get_length () == 1);
+        assert (hints.get_array_member ("weekly").get_string_element (0) == "exhausted-session");
+    });
+    GLib.Test.add_func ("/presentation/account-hints-ties-and-expired", () => {
+        var now = new DateTime.from_iso8601 ("2026-10-18T12:00:00Z", null).to_unix ();
+        var accounts = new Json.Array ();
+        accounts.add_object_element (hint_account ("a", 75, 80, "2026-10-19T12:00:00Z"));
+        accounts.add_object_element (hint_account ("b", 80, 75, "2026-10-19T12:00:00Z"));
+        accounts.add_object_element (hint_account ("past", 100, 100, "2026-10-18T11:59:00Z"));
+        var hints = MSeries.Presentation.account_hints (accounts, now);
+        assert (hints.get_array_member ("best").get_length () == 2);
+        assert (hints.get_array_member ("weekly").get_length () == 2);
+        // The five-hour resets at 12:05 do not change the 7-day reset selection.
+        hints = MSeries.Presentation.account_hints (accounts, now + 300);
+        assert (hints.get_array_member ("best").get_length () == 0);
+        assert (hints.get_array_member ("weekly").get_length () == 2);
+    });
+    GLib.Test.add_func ("/presentation/account-hints-unknown-monthly-zero", () => {
+        var now = new DateTime.from_iso8601 ("2026-10-18T12:00:00Z", null).to_unix ();
+        var accounts = new Json.Array ();
+        var zero = hint_account ("zero", 0, 0, "2026-10-19T12:00:00Z");
+        accounts.add_object_element (zero);
+        var unknown = hint_account ("unknown", 99, 99, "bad timestamp");
+        unknown.get_array_member ("windows").get_object_element (0).set_null_member ("remaining");
+        accounts.add_object_element (unknown);
+        var monthly = hint_account ("monthly", 0, 0, "2026-10-18T12:01:00Z");
+        var window = monthly.get_array_member ("windows").get_object_element (1);
+        window.set_int_member ("minutes", 43200);
+        window.set_string_member ("label", "30 day");
+        accounts.add_object_element (monthly);
+        var hints = MSeries.Presentation.account_hints (accounts, now);
+        assert (hints.get_array_member ("best").get_length () == 0);
+        assert (hints.get_array_member ("weekly").get_length () == 1);
+        assert (hints.get_array_member ("weekly").get_string_element (0) == "zero");
+        // A monthly label with no duration metadata must not fall back to "7D".
+        window.set_int_member ("minutes", 0);
+        hints = MSeries.Presentation.account_hints (accounts, now);
+        assert (hints.get_array_member ("weekly").get_length () == 1);
+        assert (hints.get_array_member ("weekly").get_string_element (0) == "zero");
+        assert (MSeries.Presentation.account_headroom (null, now) < 0);
+    });
     GLib.Test.add_func ("/presentation/level", () => {
         assert (MSeries.Presentation.level_for (-1) == MSeries.QuotaLevel.UNKNOWN);
         assert (MSeries.Presentation.level_for (0) == MSeries.QuotaLevel.CRITICAL);
@@ -8,6 +80,22 @@ int main (string[] args) {
         assert (MSeries.Presentation.level_for (25) == MSeries.QuotaLevel.LOW);
         assert (MSeries.Presentation.level_for (25.5) == MSeries.QuotaLevel.OK);
         assert (MSeries.Presentation.level_for (100) == MSeries.QuotaLevel.OK);
+    });
+    GLib.Test.add_func ("/presentation/alternate-account-windows", () => {
+        var parser = new Json.Parser ();
+        try {
+            parser.load_from_data ("[{\"label\":\"5 hour\",\"minutes\":300,\"remaining\":0,\"resetsAt\":\"2026-10-18T13:30:00Z\"},{\"label\":\"7 day\",\"minutes\":10080,\"remaining\":72,\"resetsAt\":\"2026-10-20T12:00:00Z\"},{\"label\":\"30 day\",\"minutes\":43200,\"remaining\":91}]");
+        } catch (Error e) { assert_not_reached (); }
+        var now = new DateTime.from_iso8601 ("2026-10-18T12:00:00Z", null).to_unix ();
+        assert (MSeries.Presentation.account_quota (parser.get_root ().get_array (), now)
+            == "5H 0% ↻1h30m · 7D 72% ↻2d0h · 30D 91% ↻?");
+        assert (MSeries.Presentation.account_quota (parser.get_root ().get_array (), now + 5400)
+            .has_prefix ("5H 0% ↻now"));
+        assert (MSeries.Presentation.account_quota (null, now) == "Quota unavailable");
+        var colored = MSeries.Presentation.account_quota_markup (parser.get_root ().get_array (), now,
+            "#00aa00", "#ffaa00", "#ff0000");
+        assert (colored.contains ("foreground=\"#ff0000\" weight=\"semibold\">5H 0%"));
+        assert (colored.contains ("foreground=\"#00aa00\" weight=\"semibold\">7D 72%"));
     });
     GLib.Test.add_func ("/presentation/worst-level", () => {
         assert (MSeries.Presentation.worse (MSeries.QuotaLevel.OK, MSeries.QuotaLevel.LOW) == MSeries.QuotaLevel.LOW);
@@ -68,6 +156,9 @@ int main (string[] args) {
         assert (MSeries.Presentation.plan_label ("max") == "Max");
         assert (MSeries.Presentation.plan_label ("") == "");
         assert (MSeries.Presentation.plan_label ("enterprise") == "Enterprise");
+        assert (MSeries.Presentation.plan_label (" plus ") == "Plus");
+        assert (MSeries.Presentation.plan_label ("go") == "Go");
+        assert (MSeries.Presentation.plan_label ("unknown") == "");
     });
     GLib.Test.add_func ("/presentation/age", () => {
         assert (MSeries.Presentation.age_text (-5) == "just now");

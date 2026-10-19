@@ -24,6 +24,44 @@ on:
       - ".github/workflows/**"
 
 jobs:
+  orchard:
+    name: Orchard GTK output and lifecycle regressions (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install GTK and Granite test dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-granite-7.0 xvfb xauth
+      - name: Test without a daemon or real guests
+        run: |
+          python3 -m py_compile mseries/orchard-incus/orchard_incus/*.py mseries/orchard-incus/tools/*.py
+          xvfb-run -a env -u DBUS_SESSION_BUS_ADDRESS GSK_RENDERER=cairo GDK_BACKEND=x11 \
+            PYTHONWARNINGS=ignore::DeprecationWarning G_DEBUG=fatal-criticals \
+            python3 -m unittest discover -s mseries/orchard-incus/tests
+
+  dock-startup:
+    name: Dock startup and launcher regressions (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install native test dependencies
+        run: sudo apt-get update && sudo apt-get install -y git valac libglib2.0-dev
+      - name: Verify activation, delayed Gala readiness and session stops
+        run: |
+          bash mseries/dock-tests/test-startup.sh
+          python3 mseries/dock-tests/test-launcher.py
+
+  desktop-space:
+    name: Native notch GTK allocation (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install GTK test dependencies
+        run: sudo apt-get update && sudo apt-get install -y git valac libgtk-4-dev xvfb xauth build-essential
+      - name: Test production notch geometry and crowded panel allocation
+        run: bash mseries/display-space/test-notch-layout.sh
+      - name: Verify exact-kernel boot profile and rollback
+        run: python3 -m unittest discover -s mseries/display-space -p 'test_*.py'
+
   validate:
     name: mkosi summary + script checks (arm64)
     runs-on: ubuntu-26.04-arm
@@ -48,7 +86,10 @@ jobs:
           bash -n transform/elementary-grow.sh
           bash -n bin/elementary-mac-setup
           for f in mseries/install-*.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/disable-notch-for-pantheon.sh; do bash -n "$f"; done
-          shellcheck -S warning bin/elementary-mac-setup transform/elementary-grow.sh mseries/install-unlock-screen.sh mseries/install-boot-isolation.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/enhance.sh mseries/enhance-firstboot.sh mseries/install-brave.sh mseries/install-video-decode.sh mseries/test-installer-flow.sh mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh
+          shellcheck -S warning bin/elementary-mac-setup transform/elementary-grow.sh mseries/install-unlock-screen.sh mseries/install-boot-isolation.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/enhance.sh mseries/enhance-firstboot.sh mseries/install-brave.sh mseries/install-video-decode.sh mseries/test-installer-flow.sh mseries/vms/mseries-vm mseries/vms/test-mseries-vm.sh mseries/install-quieter-sound-theme.sh mseries/test-quieter-sound-theme.sh mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh
+          bash -n mseries/vms/mseries-vm
+          bash mseries/vms/test-mseries-vm.sh
+          bash mseries/test-quieter-sound-theme.sh
           bash mseries/test-elementary-mac-setup.sh
           bash mseries/test-installer-flow.sh
           bash -n assemble-iso.sh
@@ -75,6 +116,10 @@ jobs:
           python3 mseries/test-codexbar-claude.py
           python3 mseries/test-codexbar-wrapper.py
           python3 mseries/test-codexbar-opencode-local.py
+          python3 mseries/test-codexbar-opencode-login.py
+          python3 -m unittest discover -s mseries/display-space -p 'test_*.py'
+          python3 -m py_compile mseries/display-space/*.py
+          bash -n mseries/display-space/test-notch-layout.sh
           python3 -m py_compile mseries/apply-desktop-settings.py
           python3 -m py_compile mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness
           python3 mseries/test-wifi-resume.py
@@ -91,6 +136,8 @@ jobs:
           python3 -m unittest discover -s mseries/aurora -p 'test_*.py'
           python3 mseries/local-ai/test_people_watch.py
           python3 mseries/test-image-wiring.py
+          python3 mseries/video-decode/test-brave-factory.py
+          python3 mseries/boot/test-prepare-uki-kernels.py
           python3 mseries/test-kernel-config.py
           python3 mseries/test-local-build-preflight.py
           node mseries/test-build-status.mjs
@@ -98,7 +145,9 @@ jobs:
           python3 -m unittest discover -s mseries/brightness -p 'test_*.py'
           python3 -m unittest discover -s mseries/keyboard-backlight -p 'test_*.py'
           python3 -m unittest discover -s mseries/audio -p 'test_*.py'
+          python3 -m unittest discover -s mseries/airplay -p 'test_*.py'
           python3 -m unittest discover -s mseries/local-ai -p 'test_*.py'
+          python3 -m unittest discover -s mseries/dictation -p 'test_*.py'
 
       - name: Validate experimental dock patches offline
         run: |
@@ -130,4 +179,6 @@ jobs:
           shellcheck -S warning mseries/install-hardware-support.sh mseries/hardware/bluetooth-resume-fix mseries/hardware/bluetooth-supported mseries/power/mseries-sleep-cost-hook
           bash -n mseries/enhance.sh mseries/stage-factory-enhancements.sh mseries/aurora-sep/install-touchid-gui.sh
           python3 mseries/test-image-wiring.py
+          python3 mseries/video-decode/test-brave-factory.py
+          python3 mseries/boot/test-prepare-uki-kernels.py
           python3 mseries/test-power-install.py

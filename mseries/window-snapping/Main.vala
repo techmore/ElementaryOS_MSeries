@@ -8,6 +8,15 @@ namespace Mseries.Snapping {
         private ulong begin_handler;
         private ulong end_handler;
         private ulong key_handler;
+        private ulong workarea_handler;
+        private uint reflow_idle;
+        private class Placement {
+            public int corner;
+            public int monitor;
+            public Mtk.Rectangle rect;
+        }
+        private Gee.HashMap<Meta.Window, Placement> placements = new Gee.HashMap<Meta.Window, Placement> ();
+        private Gee.HashMap<Meta.Window, ulong> watched_windows = new Gee.HashMap<Meta.Window, ulong> ();
         private uint poll;
         private Meta.Window? dragged;
         private Clutter.Actor? preview;
@@ -26,7 +35,16 @@ namespace Mseries.Snapping {
                 (d, w, e, b) => snap_focused (2));
             display.add_keybinding ("bottom-right", settings, Meta.KeyBindingFlags.IGNORE_AUTOREPEAT,
                 (d, w, e, b) => snap_focused (3));
+            workarea_handler = display.workareas_changed.connect (() => {
+                if (reflow_idle != 0) return;
+                reflow_idle = Idle.add (() => {
+                    reflow_idle = 0;
+                    reflow_quarters ();
+                    return Source.REMOVE;
+                });
+            });
             begin_handler = display.grab_op_begin.connect ((win, op) => {
+                placements.unset (win);
                 if (op != Meta.GrabOp.MOVING && op != Meta.GrabOp.MOVING_UNCONSTRAINED) return;
                 if (!eligible (win)) return;
                 clear_drag ();
@@ -86,6 +104,34 @@ namespace Mseries.Snapping {
             win.unmaximize ();
             win.move_to_monitor (monitor);
             win.move_resize_frame (true, rect.x, rect.y, rect.width, rect.height);
+            if (!watched_windows.has_key (win)) {
+                watched_windows[win] = win.unmanaged.connect (on_window_unmanaged);
+            }
+            placements[win] = new Placement () { corner = corner, monitor = monitor, rect = rect };
+        }
+
+        private void on_window_unmanaged (Meta.Window win) {
+            placements.unset (win);
+            SignalHandler.disconnect (win, watched_windows[win]);
+            watched_windows.unset (win);
+        }
+
+        private void reflow_quarters () {
+            foreach (var win in placements.keys.to_array ()) {
+                var placement = placements[win];
+                // A manual/app resize, maximize or monitor move ends our layout.
+                var current = win.get_frame_rect ();
+                // Mutter may already have shifted a bottom quarter above the
+                // new strut before this idle runs. Compare size, not position.
+                if (!eligible (win) || win.maximized_vertically || win.get_monitor () != placement.monitor ||
+                    current.width != placement.rect.width || current.height != placement.rect.height) {
+                    placements.unset (win);
+                    continue;
+                }
+                var rect = quarter (win, win.get_monitor (), placement.corner);
+                placement.rect = rect;
+                win.move_resize_frame (false, rect.x, rect.y, rect.width, rect.height);
+            }
         }
 
         private int pointer_corner (out int monitor) {
@@ -138,7 +184,14 @@ namespace Mseries.Snapping {
 
         public override void destroy () {
             clear_drag ();
+            if (reflow_idle != 0) Source.remove (reflow_idle);
+            placements.clear ();
+            foreach (var win in watched_windows.keys) {
+                SignalHandler.disconnect (win, watched_windows[win]);
+            }
+            watched_windows.clear ();
             var display = wm.get_display ();
+            SignalHandler.disconnect (display, workarea_handler);
             SignalHandler.disconnect (display, begin_handler);
             SignalHandler.disconnect (display, end_handler);
             SignalHandler.disconnect (display.get_compositor ().get_stage (), key_handler);

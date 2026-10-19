@@ -1,0 +1,113 @@
+{
+  "complete": true,
+  "cases_completed": 3,
+  "checks_passed": 3,
+  "metadata": {
+    "runtime": {
+      "artifact_sha256": {
+        "libmlx": "1187d5715b66edd47518ba59950813bb78a7bd3383327ced369699bc9521c176",
+        "vulkan": "e92aa6fed95f1add1f712c28294937983583b52984bfc739f5840f30f86a2f8c",
+        "model_weights": "5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db"
+      },
+      "versions": {
+        "mlx_omarchy": "0.32.4.dev202610160529+33630f9c",
+        "mlx_lm": "0.31.3",
+        "transformers": "5.16.1",
+        "numpy": "2.5.4"
+      }
+    },
+    "kernel": "7.1.12-2-20261017.20-sep-ARCH",
+    "policy": {
+      "reserve_gib": 6,
+      "max_fan_rpm": 3500,
+      "max_temp_c": 80,
+      "cool_fan_rpm": 2700,
+      "resume_fan_rpm": 2600,
+      "burst_s": 3,
+      "sample_s": 1
+    },
+    "profile_sha256": "65ec7a668cf2859d07c2756d05ef455f33bee75e523b197446016b313a90a3a4",
+    "source_sha256": {
+      "dictation_review.py": "8489eafbeb3eb88cefde732f65247bf0e30db2250fa8b78933e0d3bfdcb3f943",
+      "dictation_resources.py": "52325e4835fc4c2af65c27521afb8c1d0e141a5da57ec19c416b55aaa8f39fb0",
+      "review-smoke.py": "3bbf070f53fd165ce73a020822716cd857cbbb1f67826498d5ca59683a50838c",
+      "machine.py": "31cf7bcb81c9c89add1d2e151f632f77fcc41a84b7fdb963135698236207dd27",
+      "review-language-smoke.py": "06c5cafe97a75895af56cb63d10031f354dcafca07045c80e1bfcb8434168b08"
+    },
+    "model_revision": "32f3e8ecf65426fc3306969496342d504bfa13f3",
+    "model_weights_sha256": "5fb9acd0246866381cf8c5c354c6db1019f6498eec4ccb4f5edcc71ffeacb2db",
+    "test_set": "additional-language-options-v1"
+  },
+  "cases": [
+    {
+      "id": "language-german",
+      "mode": "translate",
+      "language": "German",
+      "synthetic_source": "Mira has 3 tasks. She has not sent the email.",
+      "completed": true,
+      "proposal": "Mira hat 3 Aufgaben. Sie hat die E-Mail noch nicht gesendet.",
+      "elapsed_s": 3.2111286259987537,
+      "microphone_recorded": false,
+      "min_available_bytes": 12355239936,
+      "max_fan_rpm": 0.0,
+      "max_temp_c": 39.882,
+      "quiet_policy_passed": true,
+      "quality_scope": "Limited synthetic checks only; independent meaning/grammar review required",
+      "checks": {
+        "name_count_negation": true,
+        "email_term": true
+      },
+      "checks_passed": true,
+      "qualitative_inspection": "Mira,3 tasks and the negated sending action are preserved; readable German."
+    },
+    {
+      "id": "language-japanese",
+      "mode": "translate",
+      "language": "Japanese",
+      "synthetic_source": "The meeting is not on Tuesday. It is on Wednesday at 14:30.",
+      "completed": true,
+      "proposal": "会議は火曜日ではありません。水曜日の 14 時 30 分です。",
+      "elapsed_s": 3.641625396001473,
+      "microphone_recorded": false,
+      "min_available_bytes": 12499468288,
+      "max_fan_rpm": 0.0,
+      "max_temp_c": 40.043,
+      "quiet_policy_passed": true,
+      "quality_scope": "Limited synthetic checks only; independent meaning/grammar review required",
+      "checks": {
+        "weekday_terms": true,
+        "negation_term": true,
+        "time_preserved": true
+      },
+      "checks_passed": true,
+      "qualitative_inspection": "火曜日 is negated; 水曜日 and14時30分 preserve Wednesday and14:30. Basic Japanese sentence pair only."
+    },
+    {
+      "id": "language-english",
+      "mode": "translate",
+      "language": "English",
+      "synthetic_source": "La réunion n'est pas mardi. Elle est mercredi à 14h30.",
+      "completed": true,
+      "proposal": "The meeting is not on Tuesday. It is on Wednesday at 14:30.",
+      "elapsed_s": 3.3646684670002287,
+      "microphone_recorded": false,
+      "min_available_bytes": 12453429248,
+      "max_fan_rpm": 0.0,
+      "max_temp_c": 40.298,
+      "quiet_policy_passed": true,
+      "quality_scope": "Limited synthetic checks only; independent meaning/grammar review required",
+      "checks": {
+        "weekday_negation_terms": true,
+        "time_preserved": true
+      },
+      "checks_passed": true,
+      "qualitative_inspection": "French weekday negation and14h30 are preserved in English as Tuesday/Wednesday and14:30."
+    }
+  ],
+  "scope": "Three additional text-output choices; separate cohort, no repeat or replacement of the original6-case5/6 result. Basic functional probes, not general translation quality.",
+  "fan_scope": "Sensors reported0RPM in this cohort; no acoustic measurement or fan-control change by this task.",
+  "driver_note": "Archived base driver retained a six-case completion message; actual case IDs/checkpoint count3 are authoritative. Current source fixes the wording.",
+  "microphone_recorded": false,
+  "owner_windows_opened": false,
+  "tools_exposed": false
+}

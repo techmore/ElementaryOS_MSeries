@@ -40,6 +40,1187 @@ build, so this third-party client is the native option. **Installed on this mach
 `vesktop.bin` is ELF aarch64, desktop file validates, headless Xvfb start ran 15 s without crashing. **Not
 verified:** login, voice/video, screen share, tray, Wayland rendering on the real session (no window was opened
 on the owner's screen). Next: owner logs in; test a call.
+## Factory ISO and installed YouTube qualification — 2026-10-18
+
+Build [39128555434](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39128555434)
+succeeded from `5c0c60e` after the package-policy, native chroot builder,
+pinned development dependency and ARM64 UKI input fixes. The new installer ISO
+passed independent SHA256 verification and installed to a blank 64 GiB KVM disk.
+Disk-only boot reached graphical initial setup using the unmodified generic
+7.0.0-38 UKI; `/usr` is read-only erofs. No post-boot browser installation occurred.
+
+Factory Brave integrity/library checks passed. A newly created default profile
+launched through the installed desktop entry. GTK resolved the bundled YouTube
+SVG; Gala matched the movie window to `mseries-brave-youtube.desktop` before and
+after navigation. The saved guest screenshot shows the YouTube dock logo and
+movie. Anonymous playback advanced 9.95 s / 298 frames at automatic 480p and
+9.97 s / 599 frames at selected 1080p over ten-second intervals; decoded audio
+advanced in both. There were frame drops; this is not a zero-drop benchmark.
+
+[Receipt, method, screenshot and limitations](video-decode/receipts/factory-2026-10-18/README.md).
+The basic non-3D GPU fixture failed; virgl worked with the same image and launcher.
+The passing run used an empty profile after archiving the diagnostic profile.
+Remote debugging was observation-only; installed containment/decode flags were
+unchanged. The test VM and receipt server are stopped. This Fairydust-disabled
+ARM64 VM result does not qualify Apple physical boot, hardware decode or DRM.
+The receipt pins the exact image source rather than later unrelated main commits.
+
+## Add Tasks from the panel — 2026-10-18
+
+The Tasks tab now has a compact title entry, Add button and writable-list selector.
+Enter or Add creates an undated task in the same EDS list as elementary Tasks.
+The default list is selected initially; explicit list choices persist while the
+panel runs. Pending saves block duplicate submissions and keep the popup open.
+Errors retain the draft, and unavailable/read-only lists cannot receive tasks.
+
+Debug and installed release builds pass all seventeen private plugin/EDS workflow
+groups. New coverage checks Enter/Add, correct-list persistence, literal titles,
+metadata, duplicate suppression and unavailable-list draft recovery. Real task
+and event comparisons are read-only; no personal task was created by tests.
+Six image-wiring checks pass. The release build is installed and Wingpanel reloaded.
+[Usage and tests](calendar/README.md#adding-tasks-in-the-panel).
+
+## Complete Tasks from the panel — 2026-10-18
+
+Task rows now have accessible checkboxes that update the same EDS records as
+elementary Tasks. Pending saves disable repeat activation; read-only or
+unavailable lists disable completion. Failed saves restore the checkbox and
+show a retry error. Clicking a completion checkbox keeps the panel open.
+
+The model refetches the latest source/UID/recurrence record before changing it,
+preserving newer edits. EDS’s completion helper handles repeating tasks on a
+worker thread; saves record UTC modification time and sequence. Tests use only
+owned synthetic data on a private bus. Fourteen plugin/EDS groups pass, including
+checkbox completion metadata, stale edits, source identity, recurring
+advancement, failure recovery and all existing agenda modes/navigation.
+The release build is installed; real task/event row comparisons are read-only
+and pass. Six image-wiring tests pass. No personal task was completed by tests.
+[Behavior and tests](calendar/README.md#completing-tasks-in-the-panel).
+
+## Speech/app candidate published on main; physical F5 and rollout remain open — 2026-10-18
+
+PR86 merged at077bfe58013f110962d24f60a38b122bd6a05d90. Checked sourcecbc47ed passed
+all5 CI jobs in39130696811; local46 dictation,72 assistant and6 image checks pass.
+Initial Pages deployment39138713351 succeeded at that merge. Canonical /local-ai.html
+returned200 and matched reviewed docs bytes exactly (SHA7db1713ab2658c0ebdcc878c4ab4ab2af
+03c92b0c04b64d1fa25766c79ed0c46). Publication receipt records this commit-specific proof.
+This documentation follow-through updates stale pending-publication statements; it
+does not rerun completed native/model trials or change the qualified runtime.
+
+All lifecycle/model/app queues are terminal; never relaunch them for a better score.
+Original review5/6 and Newelle exact-format failure remain failed. Separate3-language,
+actual panel workflow, native idle/close/reload and private field checks retain their
+own source/runtime pins and limitations. Live eager speech758179/input787274/default4B
+795452 remain unchanged/active at last check. No new physical F5 event since recovery.
+Read-only static keymap inventory confirms both0x7003e/0x70069→F14; it does not prove
+physical event delivery. An initial wrong ioctl direction returned EINVAL and was
+corrected; not a driver finding. Full corrected266-entry inspection read no key events.
+
+Goal remains active, NOT complete on publication. Required next evidence: owner's
+exact microphone popup/app and coordinated human F5 retry. Do not invent/remap a
+different microphone key without event evidence. No ambient mic, owner windows,
+kernel/boot/audio/display changes. Optional panel and lazy model are still uninstalled
+on the owner session; prepare their quiet idle rollout only after the physical path
+is resolved. Translation is inspectable post-utterance review, not simultaneous
+multilingual capture. Repeated-inference/long-run memory and factory boot are not
+established by the reload-only soak. Existing six-hour developer watcher remains the
+permanent tracker; no new heartbeat, GPU worker or runtime pin update was created.
+
+## On-demand speech lifecycle privately qualified; deployment/F5 pending — 2026-10-18
+
+Previous goal turn was progress: review/pipeline833b3c4 and main reconciliation77c51fd
+were pushed; CI39129646910 passed all5 jobs, all6 current image checks passed. PR86
+body has those completed results. Physical F5/app/prompt clarification is still pending;
+no new human acceptance evidence. Keep the full speech/control-panel goal active.
+
+New source LazyModel owns a single exclusive lease across load/capture/flush. Native
+SDK/model load on explicit start only, with1GiB+6GiB admission; Begin binds the original
+field before load and a new metadata/token-only Check revalidates it before capture.
+Release/Escape during preparation and stop before a capture retry prevent opening.
+Idle60s/pressure trim uses native close, never during active use. Main listener remains
+responsive, sampling5s only while resident/waiting; recovered admission clears waiting.
+46 contracts pass, including controlled load/Begin races and native-cache semantics.
+Installer stages the new module for both compatibility and Unicode paths.
+
+No owned trial is still running: native-file exec54189 and native-idle exec58731 are
+terminal success. work/dictation-lazy-lifecycle-v1 has one new CPU public-file→GTK4
+run, native close/reload, no second inference: RSS37.59→918.73→134.59MiB,784.14MiB
+reclaimed; reload930.97→187.86MiB. Retained allocator/library state is not zero and
+long-run growth remains unqualified. work/dictation-idle-expiry-v1 uses NO inference,
+actual controller timer release60.9955s, RSS888.25→121.17MiB (767.08MiB). min available
+11.07/11.33GiB, reported0RPM, max39.52/39.99C. No mic/physical keyboard/audio playback.
+Source and native/model/profile/kernel hashes are frozen per cohort. File fixture
+source precedes the waiting-state recovery/capture-retry additions; do not overwrite
+its source pins or rerun to improve a score. Later native timer/field tests pin those
+changes. No repeated original quality cohort or repair-advice regrading.
+
+Private Qt6, Brave forced-accessibility and headless GTK4 Wayland pre-capture Check
+and stale-focus refusal pass, no ASR. Frozen work/dictation-pre-capture-framework-v1
+preserves exact source. Only allowlisted JSON/frozen public code exported with
+work/publish-receipts.py --dictation-lifecycle; no private logs/settings/recordings.
+Native SDK is transcribe.cpp0.4.0/NumPy2.5.4; CPU strict, same kernel/native model pins.
+
+Live eager speechPID758179 and bridgePID787274 remain unchanged; do NOT claim the new
+memory behavior deployed. Everyday mseries-ai-everyday.service remains active. Optional
+panel is still uninstalled. These runtime/physical gates are separate from publishing
+tested opt-in source and retained failures to main. New lifecycle batch needs
+commit/push/current-source CI; then publish tested candidate with known gates explicit.
+Do not mark the goal complete on merge/publication alone. Human F5, rollout, realtime
+translation beyond explicit post-utterance review and hardware factory boot lack proof.
+
+Additional cleanup review found first-read/capture-stall paths could outlast release.
+Source now polls first/active pipe reads, closes owned children/stdout on read failure,
+and prevents later retry after release.46 contracts pass. Actual public-file first
+samples/close + silent-owned-child cancellation passed0.203s, no SDK/inference.
+work/dictation-capture-startup-v1 is terminal. Native reload-only8-cycle soak exec99822
+is terminal success: closed RSS119.92MiB initially, then107.14–107.20MiB; last4 span48KiB.
+min11.35GiB available/reported0RPM/max38.95C. This does not establish repeated-inference
+or indefinite stability. Its source is frozen at work/dictation-reload-soak-v1; preserve
+all completed observations.72 assistant and6 image contracts pass on this batch.
+All new receipts are allowlisted under dictation-lifecycle-2026-10-18; no logs/audio.
+Live speech/input/default4B PIDs758179/787274/795452 unchanged and active; no new F5 event.
+
+## Review cohorts and actual panel workflow complete; physical F5 unresolved — 2026-10-18
+
+Both owned model-review units are terminal/missing; do not relaunch or duplicate.
+Original six-case cohort remains5/6, including French PWNED→PWNÉ fidelity failure.
+Separate English/German/Japanese cohort completed3/3 limited checks,0 interruptions,
+3.21–3.64s request paths, min11.51GiB, reported0RPM/max40.30C. All five visible
+text-output choices have basic probes; speech recognition remains English-only.
+Archived extra-language driver said six; actual checkpoint IDs/count3 are authoritative.
+Current source fixes the wording; archived source and failed outcomes are unchanged.
+
+work/dictation-panel-workflow-v1 is terminal complete/passed:true. Real public-file
+ASR→actual private GTK4 TextView→local French translation→grammar→private clipboard
+passes functional checks, preserving original/intermediate.0% normalized WER, first
+widget5.00s, complete ASR12.80s; model stages7.02/7.09s. Min11.04GiB, reported0RPM,
+max40.17C. Meaning drift retained: stew→soup and bruised→crushed potatoes; grammar
+returned that translation unchanged. This is not a fidelity pass or physical F5 test.
+Never repeat completed model stages to improve the score. work/publish-receipts.py
+--dictation-panel exports allowlisted receipt + evaluated source only; private ASR,
+portal logs/settings/journals/audio stay out. New explicit panel pipeline keeps an
+intermediate translation and warns/retains it if stage2 is unavailable.28 contracts
+and private native fake-transform wiring pass. Panel remains uninstalled; preserve
+the failed human F5 report and ask for exact prompt/app if still missing.
+
+Latest live services remained speechPID758179/inputPID787274, ready CPU/IBus and idle
+native engine. No F5 diagnostic event since recovery. The keymap query is not proof
+of physical delivery. No microphone/owner windows or IBus restart by this batch.
+Default4B remains enabled/available under admission. Idle ASR still retains~0.9GiB;
+pressure-release/on-demand loading remains open. No kernel/boot/audio/display edits.
+Reviewed source/publication batch833b3c4 is reconciled here with main5c0c60e,
+preserving owner Orchard/factory changes and both handoff histories. Current source
+clears an old intermediate view before a new review; private fake-transform v3
+checks the unavailable-first-stage case without repeating completed model trials.
+3159e7f CI39127981785 passed all4 jobs; this merged tree requires fresh CI. PR86
+remains draft/unmerged, this phase's Pages unverified. No CodexBar feature diff.
+
+## Review pilot complete,5/6; extra language queue started — 2026-10-18
+
+Original mseries-dictation-review-qualification.service is terminal/missing (previous
+PID699108), checkpoint work/dictation-review-v1.json complete:true with6cases and0
+interruptions. All quiet policy checks passed. Five limited checks pass; French
+literal translation changed PWNED to PWNÉ and remains failed. It translated the source
+as data, not an executed instruction; the checker label combines this with identifier
+fidelity. Separate qualitative annotation explains that distinction without changing
+checks_passed:false. Grammar literal remained unchanged/unpolished. Never rerun the
+completed six cases to improve scores. All outputs are synthetic.
+
+Warm API path1.99–3.43s, min9.48GiB available, maxfan2516RPM/temp42.75C. Queue span
+1392.39s is journal-unit-start wall time to complete-checkpoint mtime, including
+admission/startup/quiet confirmations, not separately timed. The transient unit was
+already garbage-collected; zero monotonic properties were unavailable, not zero time.
+work/publish-receipts.py --dictation-review exports only allowlisted synthetic fields,
+retains failures and frozen source; raw server logs/settings/journals are excluded.
+Default4B PID795452 was restored after admission and remains available at last check.
+
+A new, distinct mseries-dictation-language-qualification.service covers3NEW target
+choices (English/German/Japanese), preserving the6-case cohort. Inspect this unit,
+work/dictation-language-qualification.log and work/dictation-language-v1.json before
+any launch; never duplicate. Source frozen at work/dictation-language-cohort-v1.
+It reuses the guarded base driver with additional case IDs and source metadata.
+Its inherited completion log still says six; checkpoint case IDs/count3 are
+ authoritative. Fix this cosmetic base-driver wording in source, not archived runs.
+
+Next: inspect the3 language outputs and preserve failures; actual native panel-to-model
+and ASR-to-Gtk.TextView-to-review-to-private-copy workflow on a private Xvfb/bus. Do not
+record ambient mic/play audio or open owner windows. The optional panel remains source-only
+and uninstalled. A human F5 retry was requested after the bridge fix; no selected
+function key occurred during the60s observer. Keep the installed F5 services stable
+while that retry is pending. Idle ASR on-demand/pressure-release remains an efficiency
+gap for source implementation/test next; do not hide it or reduce6GiB reserve.
+
+Own recovery commit52d0163 is reconciled with main c3e6b14 in3159e7f; CI39127981785
+passed all4 jobs, including the new dock startup group. Local24 dictation,72 assistant
+and5 image wiring checks pass. No feature diff touches CodexBar; inherited owner code
+is retained and no owner app redeployment is needed. Review/language publication batch
+still needs commit/push/CI. PR86 remains draft/unmerged; Pages for this phase unverified.
+
+## Native input reconnect recovery fixed and tested — 2026-10-18
+
+Authoritative live check found the bridge inactive after the owner IBus PID changed;
+systemd reported clean TERM with Restart=on-failure, so no recovery occurred. No F5
+press reached the new diagnostic logs. This is a concrete runtime fault, not proof
+of the owner's earlier microphone-popup cause. Replaced Restart with always; manual
+stop still stays stopped. No owner IBus daemon or other app was restarted by these fixes.
+
+Actual recovery testing exposed two additional failures, both retained: Requires
+coupling reloaded the speech worker; then a Wants-only test preserved speech but lost
+the idle global engine. Upstream IBus's dynamic-component removal checks registered
+engines and can clear even the static global engine. Corrected drop-in uses Wants+After
+and PartOf=graphical-session.target, with no Requires cascade. ExecStartPost repairs
+ONLY an empty engine from the selected native source. Any nonempty owner selection
+wins; XKB uses Pantheon's existing US pass-through engine without changing its map.
+Begin also recovers a missing engine from native sources if it was cleared later.
+
+Private GTK keyfile/session-bus reconnect v3 passes: terminate ONLY private IBus,
+restart its owned bridge, restore native source, remove/recreate that dynamic bridge,
+recover an unset engine on Begin, insert into actual Gtk.Entry and restore source.
+Changed-field/password refusal and preservation of a deliberate French engine also
+pass. v2 success retained separately; fixture v1 failed on a stale OWNED Unix socket
+pathname (setup error, no model quality score). The resulting ibus-daemon fixture core
+is a synthetic test failure, not evidence of a new owner kernel/desktop fault.
+
+Live exact-unit clean-TERM recovery v3 passed in3.46s, preserving the speech process,
+native source list and idle input method. Explicit stop stayed inactive past RestartSec,
+and explicit start became ready; rollback's stop behavior remains supported. Actual
+logout was NOT tested, only PartOf wiring. SpeechPID758179 was preserved through both
+corrected tests; final inputPID787274. CPU/IBus and nativeUS now ready; no mic recorded.
+Twenty-four contracts pass. New public receipts retain the earlier failures and exact
+reconnect v3 evaluated source. Optional panel remains uninstalled.
+
+The60s function-key observer (exec handle8393) is terminal: no selected function
+events occurred during its window. It delivered no character events and used no
+grab/mic; this is not a physical-key failure or proof of delivery. Receipt:
+work/dictation-function-key-observer-v1.json. A new human F5 retry was requested after
+recovery; do not restart these services while the owner may be trying it. Current keymap
+read-only queries show0x7003e->F14, not evidence of physical event delivery by themselves.
+
+Review unitPID699108 remains live/waiting, checkpoint0completed/0interruptions at last
+inspection. Do not duplicate it or weaken6GiB/default6.5GiB admission. Memory briefly
+fell below reserve due concurrent workload, then recovered before a guarded idle-ASR
+reclaim action; that action made no change. Current idle ASR still retains about0.8GiB
+and only guards load/capture. Consider on-demand loading/idle pressure release next,
+with actual memory/ASR/focus tests; do not silently claim full idle-pressure coverage.
+CI39126836578 at22c372c passed all3 jobs. New recovery changes require CI and reconciliation
+with origin/main c3e6b14. Human F5, actual review outputs, main merge and Pages remain open.
+
+## Bounded F5 diagnostics deployed; review queue waiting — 2026-10-18
+
+Found and fixed a concrete timeout mismatch: stream input_call allowed3s but its
+D-Bus client allowed4s. Parent now allows5s. Accessible-field validation has one
+0.6s budget across discovery/ancestor RPCs, and async Begin has a2.75s startup
+deadline. Twenty-three contracts pass, including slow-ancestor refusal. Anonymous
+F5-press and pre-capture-refusal logs plus error lifecycle status distinguish
+hardware delivery from unsupported focus without logging typed/spoken contents.
+This is NOT proof of the owner's original popup cause; exact prompt/app still pending.
+
+Actual GTK3 keys/compose and session checks, Qt6, headless GTK4 Wayland and Brave pass.
+A browser harness readiness attempt failed before Begin: ENTRY-only barrier omitted
+other supported editable roles. New barrier uses the same role/state whitelist and
+resets just before DOM focus. Failure retained. Model ASR quality trials not repeated.
+
+Refreshed only the two owned runtime files using Payload digest checks; private
+work/refresh-dictation-deadlines.py records the operation. Speech was idle and quiet
+admission passed. Current speechPID709424/inputPID709401 are active CPU/IBus, bridge
+ready; native source list unchanged. No mic, owner window, kernel, display, boot or
+audio route changes. Optional panel launcher remains absent; its batch is not deployed.
+Installed streamSHA452b3213 / bridgeSHAc32a00a8 match frozen GTK evaluated source.
+The next human press can now be diagnosed from ONLY the F5/refusal log lines.
+
+Owned mseries-dictation-review-qualification.service PID699108 is live, waiting for
+additional default admission headroom. Never duplicate it. Driver is frozen at
+work/dictation-review-cohort-v1/dictation/review-smoke.py; log is
+work/dictation-review-qualification.log and checkpoint work/dictation-review-v1.json.
+Six new synthetic grammar/translation cases; completed responses/check failures are
+retained; transport/policy interruptions remain separate and stop for inspection.
+No model request has run yet. It preserves other profiles, locks, owner jobs and
+requires three quiet samples and6.5GiB+6GiB before restoring the enabled default.
+It does not stop any model or open audio/apps. Explicit backend actual-response
+meaning/grammar review remains required; synthetic UI checks are not model quality.
+
+New cohort kernel7.1.12-2-20261017.20-sep-ARCH, MLX pin33630f9c, mlx_lm0.31.3,
+transformers5.16.1/numpy2.5.4. Actual streamed hashes: libmlx1187d571,
+Vulkan e92aa6fe, model5fb9acd0; latter matches the earlier qualified4B weights.
+Runtime/library stats and exact policy/profile/source metadata prevent mixed resumes.
+PR86 b3fbee4 CI39126283599 passed all3 jobs. Later diagnostics/harness batch needs
+its own CI and reconciliation with current main. Human F5, review results, merge
+and Pages verification remain incomplete.
+
+## Human F5 attempt failed; review panel remains source-only — 2026-10-18
+
+Owner reports that F5 prompted a microphone desktop function rather than listening.
+Do not call the live F5 round trip a pass. Follow-up asks for exact prompt and app/field.
+Read-only EVIOCGKEYCODE_V2 confirms physical scancode0x7003e maps to LinuxF14(184),
+matching the stream listener; XKB maps it to XF86Launch5, while the static mic-mute
+binding is XF86AudioMicMute. No matching custom F5/F14 binding found. Service PID619496
+remains ready; logs show no capture from that reported attempt. A bounded metadata-only
+check found a non-editable panel focus, not an editable text target; this was after the
+attempt and is NOT proof of what was focused during it. No labels/text were read.
+A30s per-fd EV_KEY mask observer listens only for F14; no grab or other typed keys.
+Inspect work/dictation-f5-observer-v1.json before planning another capture.
+
+Source-only optional native GTK4 review panel now preserves original/proposed text,
+discards stale proposals and blocks review while recording. Grammar and five output
+language choices use only the existing supervised local worker, no tools/proxies/redirects.
+Pure transport/payload contracts and a private Xvfb UI wiring test pass with synthetic
+transforms; these DO NOT prove model grammar/translation quality. Nothing from this panel
+batch has been installed or opened on the owner's desktop. F5 fix takes priority.
+Current default4B admission remains below6.5GiB+6GiB reserve; no review inference launched.
+Do not use synthetic proposals as measured quality evidence. Native speech acceptance,
+actual model review qualification, latest-head CI, main merge and Pages remain open.
+
+## Session-scoped F5 input activated — 2026-10-18
+
+Replaced permanent global-engine selection with asynchronous per-utterance acquisition.
+The upstream panel-keyboard PopoverWidget reapplies native sources; default IBus registry
+source also disables per-user component directories. No registry or owner IBus restart
+is needed: Begin validates the focused field before switching, Finish runs after queued
+text and restores the prior method, Escape cancels, expiry releases the lease, and an
+owner's intervening layout choice is preserved. Existing native sources are untouched.
+Ready checks bridge availability rather than incorrectly requiring its engine at idle.
+Rollback now stops the dynamic provider before repairing an emptied engine (17 contracts).
+
+Actual GTK3 keys/compose/session checks, native GTK4 Wayland, Qt6 multiline, Brave and
+Electron 44.4.5 synthetic forms pass Unicode, focus/password refusal and restore. The
+first browser session attempt lacked initial accessibility metadata and failed closed;
+retained failure, diagnostic pass and harness event barrier are in bounded receipts.
+No rejected Begin was retried for a better score. Shared portal startup warnings remain
+in private logs. Synthetic Electron does not establish actual Codex/OpenCode app support.
+
+Changed-source CPU speech-to-field ran once on the public clip: WER0, first5.09s,
+total12.61s, min available9.00GiB, maxfan2523RPM/temp49.29C. Frozen runtime matches
+installed candidate. No mic capture or playback. Prior v4 and failed rollout/rollback
+attempts remain separate. Five-second samples showed0 tick CPU for both owned processes,
+RSS39,698,432 bytes bridge/927,088,640 speech; excludes shared IBus/accessibility overhead.
+
+Actual --activate passed; input and F5 services are ready CPU/IBus while the normal engine
+stays selected idle. A human F5 trial was requested asynchronously; do not restart these
+services while the owner may be trying it. Current everyday 4B is enabled but inactive:
+its own reserve guard stopped it at08:02:47, not a manual stop. Admission requires6.5GiB
+plus6GiB reserve; resume only if that and quiet gates pass. This mixed-workload period
+does not prove simultaneous model residency. Other owner jobs/windows unchanged.
+
+Public synthetic receipts published through work/publish-receipts.py --dictation-session;
+raw logs, app settings and private baseline excluded. PR86 remains draft/unmerged and
+origin/main advanced to c201244; reconcile preserving owner changes before final checks.
+Next: human F5 result, optional grammar/translation review/control surface, CI/review,
+merge and Pages verification. Broader agent roles remain the separate proposal below.
+
+## Earlier AI priority and input blocker (superseded above) — 2026-10-18
+
+Owner requests universal speech-to-text first, strong troubleshooting/optimization next,
+then a lightweight everyday agent as the machine interface. The Pantheon proposal now
+specifies shared worker ownership, deterministic idle alerts/routing, deliberate command
+mode separate from dictation, on-demand stronger diagnosis, and overhead/escalation tests.
+These new agent roles remain a proposal, not deployed capabilities.
+
+Dictation activation and rollback exposed and fixed provider-stop ordering locally
+(17 contracts pass); preserve the failed v2 and successful cycle v3 receipts. Native
+Pantheon subsequently resets the dynamically registered engine to the configured US
+source. Current services being active therefore does not establish usability. Official
+IBus registry source disables the default per-user component directory; investigate a
+reversible native registry/source integration before asking for a human F5 trial. Preserve
+US/Japanese sources and do not restart owner desktop services without authorization.
+
+## Pinned panel build dependency audit — 2026-10-18
+
+Run [39127575598](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39127575598)
+confirmed the corrected chroot build context: Brave staged and the patched network
+indicator compiled. Quick Settings then failed Meson configuration because
+`packagekit-glib2` development metadata was absent. Audited the exact pinned
+Meson files for network, Quick Settings, sound, keyboard and datetime plus the
+Touchegg/VA driver and selected Mesa build paths. Declared PackageKit, AccountsService,
+portal and Wayland development packages, keyboard XML/XKB metadata and Mesa's
+zlib headers explicitly. Existing transform first-boot Quick Settings/keyboard
+requirements now match. Package names were checked against installed Ubuntu
+pkg-config ownership; no broad package-policy exception was introduced.
+
+Six image-wiring checks now pass, including the build dependency regression;
+ShellCheck/syntax and the six browser/kernel-input tests pass. These are build
+prerequisite fixes, not a successful ISO/fresh-install claim. Next: rebuild and
+run the new artifact's installed-guest dock and playback tests.
+
+
+## Orchard session memory and native qualification — 2026-10-18
+
+Fixed three retained-object paths in the installed Python/GTK4 manager:
+read-only Run output now disables GTK undo; deleted guests release output
+buffers after active commands finish (rename preserves output across stale
+listings); creation/name/image-search forms disconnect owned signal callbacks
+on response/destruction. Hidden dashboard cards are pruned even off-page, and
+image selection releases its read slot. The synthetic 12-identity / 72 MiB UTF-8
+probe grew RSS 153.05 MiB before / 6.75 MiB after and ended with 12 / zero cached
+buffers. The 60-form probe retained 60 dialogs plus 540 input/support wrappers
+before / none after. RSS is not a portable pass/fail threshold.
+
+Real Wayland/Vulkan + elementary blueberry qualification: baseline 12.7 minutes,
+candidate 14.7 minutes; three cycles each (33 main workflow groups per build),
+then another 11 groups against the installed candidate with stricter runner
+scope guards. Candidate runtime hashes match all probes and the installed
+package. All groups passed; owned guests were removed and original guest states
+preserved. Native logs contain no unexpected UI errors or GTK warnings/criticals.
+The separate Vala manager/panel was not requalified.
+
+Candidate post-workflow idle lasted ten minutes; after the first minute settled,
+app CPU averaged 0.451% of one core, with 0.305% reaped CLI-client CPU separately.
+Focused intervals measured 0.526% app CPU (390 seconds), inactive 0.250% (143 seconds).
+Focus was sampled, not inferred; baseline idle was inactive, so these are not
+matched-focus speedup figures. Median RSS 149.88 MiB, PSS 91.69 MiB, private
+74.55 MiB; settled RSS fell 1.52 MiB and private fell 0.75 MiB. FDs varied 49–51
+and threads 13–14 with short-lived polls, ending at 49/13. Rows/cards/histories
+stayed at two; reads/timers at two, output buffers at zero. After-cycle buffers
+were 4→8→12 before / 0→0→0 after; GC-tracked process object counts (including
+the harness) were roughly flat after the fix. A bare GTK FileDialog control
+held 39 FDs through 20 API cancellations and a 60-second settle, with no retained
+FileDialog wrappers. Warm graphics/GVFS caches are distinct from object leaks.
+
+Repeated action-to-presentation p95 was 22.32–35.73 ms across the three candidate
+probes (18 programmatic actions each, 120 Hz feedback), without a material
+regression relative to these baseline runs. This is not physical input-to-photon
+or a zero-jank claim. Desktop applications/builds continued during the audit.
+
+Verification: 117 Python tests, 111 passed / six opt-in live tests skipped;
+all five ARM64 CI jobs passed, including the new GTK/Granite regression job.
+The live runner rejects non-Wayland sessions before waiting, records five-second
+RSS/PSS/private/CPU/FD/thread/cache samples, supports repeated unique fixtures,
+stops on window closure and fails on workflow/cleanup errors. Scope guards cover
+backend writes, direct Run/Terminal launches, both file-transfer directions,
+host mounts and symlink escapes. An additional installed-build live cycle
+verified these stricter guards. Earlier XWayland/interrupted pilots are excluded
+from the native comparison; the separate 30-minute installed-window observation
+is labeled XWayland in the receipt.
+
+From `mseries/orchard-incus`, reproduce with `GDK_BACKEND=wayland python3 tools/qualify-wayland.py --source "$PWD" --output /new/empty/dir --run --cycles 3 --idle-before 120 --idle-after 600`.
+Independent no-Incus probe: `xvfb-run -a env -u DBUS_SESSION_BUS_ADDRESS GSK_RENDERER=cairo GDK_BACKEND=x11 python3 tools/probe-output-retention.py --output /new/retention.json`.
+Evidence: `mseries/orchard-incus/audit/2026-10-18-session.json`, corresponding
+before/after JSONL samples, and `docs/orchard-incus.html`. The long-session driver
+revision is recorded separately from the later scope hardening; runtime hashes
+are identical. Installed with `sh mseries/orchard-incus/install.sh` and standard
+Orchard reopened as a native Wayland client, with a clean startup log.
+
+Remaining: multi-hour/day stability, controlled thermal/battery measurements,
+huge fleets, other themes/scales, physical keyboard/focus traversal and interactive
+upload/download/Console input. No kernel, bootloader, audio or global display
+settings were changed. Next: qualify these remaining environments as needed.
+
+## Factory build environment and ARM64 nested-kernel fixes — 2026-10-18
+
+Retry [39126677360](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39126677360)
+passed account package selection and real Brave staging, then failed with
+`meson: command not found`. BuildPackages were installed in the image while
+plain BuildScripts ran in the separate tools tree. `build-in-image.chroot` now
+runs the existing builders in the native image, with BUILDROOT=/; their sources,
+version pins and staged DESTDIR contract are preserved.
+
+A disposable installation rehearsal of the older October 13 ISO also found a
+real installed-boot blocker: the generated generic UKI embedded Ubuntu's EFI
+wrapper (with relocations) instead of its `.linux` EFI payload. systemd-stub
+rejected it. `prepare-uki-kernels` now unwraps only that ARM64 build input before
+sysupdate UKI generation, retaining the original wrapper and SHA256 provenance.
+It leaves plain kernels/full UKIs alone and refuses to discard a distribution
+initrd/command line or accept a relocatable/truncated inner image. The original
+wrapper retains its bundled DTBs in the archive; firmware/Apple DTB qualification
+remains separate. No host kernel, bootloader or audio settings were changed.
+
+Diagnostic evidence: the old installed VM first rejected the nested image; after
+substituting the exact original `.linux` payload it booted kernel 7.0.0-38-generic,
+mounted /dev/mapper/usr as read-only erofs and reached the graphical first-boot
+language screen. Only that disposable diagnostic UKI had a serial/debug command
+line; the build fix adds no debug shell or boot parameters. This is not a pass
+for the forthcoming new ISO. Six kernel-input regressions, five image-wiring
+checks, six browser-packaging checks and focused syntax/ShellCheck pass. Next:
+new complete image build, installation to a blank VM disk, dock and YouTube tests.
+
+## Combined compact Upcoming and period views — 2026-10-18
+
+Integrated main's Month/Week/Day agendas and readable neutral event cards with
+the compact Upcoming default. Upcoming remains independent of calendar browsing
+and spans the next 30 local dates; explicit period views and their navigation
+remain available. Event title/time share one compact row. Expand a row for its
+calendar/location/description; full titles retain hover text. Tasks stays compact.
+
+All eleven actual-plugin/EDS groups pass, covering Upcoming boundaries, all
+period modes, recurring/multi-day events, descriptions, navigation, retained
+mode, task completion and live source changes. Both earlier implementation
+histories are retained below. Factory build/boot remains unverified.
+
+
+## Compact upcoming agenda — 2026-10-18
+
+Event title and time now share one line with tighter row padding and date
+headings. Task rows have less vertical spacing and compact subtitles.
+Ellipsized event/task titles and task details retain full hover text.
+The Upcoming 30-day label and date grouping remain. Integrated current main's
+standalone factory account frontend and preserved both documentation histories.
+
+Validation: native ARM64 build and existing real-plugin EDS/navigation
+regressions; rendered Events and Tasks previews. Authenticated read-only
+calendar/task comparisons pass, and the release build is installed locally.
+Five image-wiring regressions pass. Factory boot remains separate.
+
+
+## Upcoming calendar agenda — 2026-10-18
+
+Events now always displays a rolling 30-day agenda, explicitly labeled
+“Upcoming · next 30 days” and grouped by local date with Today/Tomorrow headings.
+The independent EDS view spans month boundaries and is unaffected by browsing
+the left calendar. Ongoing events stay visible; ended and out-of-range events
+are hidden. A minute timer while open updates expiry and daily range rollover.
+Tasks retains its shared EDS data. The prior Calendar Today-navigation fix is
+preserved. [Behavior and install](calendar/README.md).
+
+Validation: native ARM64 build, real-plugin EDS regressions for rolling range,
+ongoing/past/boundary events and calendar navigation, plus existing live
+edit/completion/source tests. The release build is installed and Wingpanel
+loaded its new module. Authenticated read-only comparisons with real Google
+events and Tasks pass without logging titles or modifying records. Four image
+wiring tests pass. Factory build/boot remains unverified.
+
+## CodexBar OpenCode browser account onboarding — 2026-10-18
+
+OpenCode + now offers Sign in with browser in the existing native Granite sheet. The official
+OpenCode device-login CLI owns authorization, storage and activation; the helper validates the
+official approval URL, shows its code and verifies the new identity plus retention of every old
+credential ID. Duplicate identities prompt retry with another browser account/workspace. The
+API-key path and embedded quota-only fallback remain. Cancellation interrupts the CLI quietly;
+abandoned attempts time out. The dropdown refreshes accounts, identity, plan and usage after add.
+
+Verification: 10 new offline login tests, existing OpenCode/wrapper regressions, native ARM64
+build and four Meson suites; elementary light/dark initial/waiting/error renders. Installed
+OpenCode v2.0.32 produced a valid approval link in a live begin/cancel smoke test, preserving all
+saved IDs. No real second-account authorization was performed: owner must approve the other
+account in the browser, then use its dropdown Switch button. Upstream stays pinned at v0.77.0.
+All six GTK routing scenarios (browser success/cancel and API-key success/invalid/rejected/cancel)
+pass with mocked authentication; the complete port checker passes including live snapshot schema.
+The new login suite runs in CI and the port checker. Deploy with mseries/deploy-codexbar.sh after
+branch push and again from merged main; see CODEXBAR-PORT.md for flow and source references.
+
+## Month/Week/Day calendar agendas tested and deployed — 2026-10-18
+
+Owner requested Month, Week and Day views, tests, deployment, commit and merge.
+Events now has native mode toggles and a dated heading with period-aware arrows.
+The month grid remains the date picker; wider agendas group events by day,
+including recurring instances and multi-day overlaps with exclusive all-day
+ends. Rows show times/all-day state, calendar, location and short description;
+neutral cards retain a calendar-color edge and readable light/dark text. Lists
+scroll within a bounded pane. Day is the initial default; mode persists across
+popup reopen in the same panel process. Tasks remains independent.
+
+Expanded timing checks exposed a stale carousel notification selecting September
+while today's October events were expected. Navigation now uses each grid's
+actual month, ignores obsolete page indices, and explicitly synchronizes day
+highlight even when keyboard focus remains on popup controls. Rows retain their
+component/source-selectable references while displayed. No calendar writes were
+added to the plugin.
+
+Verification: pinned native ARM64 release build succeeds. Ten real-plugin/EDS
+workflow groups pass in both forced light and dark modes, covering Today and
+highlight, literal details, day/week/month filtering and arrows, all-day and
+recurring/multi-day events, December/January, empty states, mode retention,
+Tasks independence, live changes and source lifecycle. Inspected synthetic
+rendered previews for modes and scrolled details in light/dark. Fixtures use
+C.UTF-8/Sunday weeks; Google sync and other locales are separate qualification.
+The final merged tree passes five image-wiring tests, focused shell checks,
+README file links and whitespace checks. Existing upstream build and isolated
+portal/EDS shutdown warnings remain; no clean-log claim.
+
+Ran the maintained installer from the updated patch, then all ten workflow
+groups against `/usr/lib/aarch64-linux-gnu/wingpanel-9/libdatetime.so` (exit 0).
+Reloaded only Wingpanel: 730835 → 738444; new process maps installed calendar
+inode 314458 without deleted mappings. Pre-view plugin retained privately in
+this chat's work directory; version-aware stock backup is preserved. Merged
+current main's standalone-account factory changes without replacing them.
+Next: owner opens clock → Events and chooses Month/Week/Day on real accounts.
+Personal events/accounts, boot/kernel and audio configuration were not edited.
+Factory hardware boot and Google remote-sync acceptance remain separate.
+
+## ISO build retry: use the permitted account frontend — 2026-10-18
+
+Fresh-ISO run [39126016747](https://github.com/techmore/ElementaryOS_MSeries/actions/runs/39126016747)
+stopped during Apple overlay package selection before Brave staging:
+`gnome-control-center` has no candidate because elementary pins it to -1 in
+`deprioritize-gnome`. All three ARM64 image configs now select the Ubuntu universe
+`gnome-online-accounts-gtk` frontend instead; the existing account launcher already
+supports it. The GNOME package exclusion policy is preserved. Native archive
+metadata confirms arm64 candidate 3.50.9-1 and its GOA/GTK4 dependencies.
+
+Five image-wiring regressions pass, including a new prohibited-package check.
+This is a build-blocker fix, not a new ISO or fresh-install/playback pass. Next:
+retry the ISO build and then install/test its actual artifact in a blank KVM guest.
+
+## Calendar Today navigation fixed and deployed — 2026-10-18
+
+Owner reported unexpected events after clicking the center month-navigation
+icon and requested a fix committed/merged to main. The icon is upstream's Today
+control, not a month/week/day selector. Added a real-plugin regression that
+selects another day, navigates three months in each direction, clicks Today
+repeatedly before animation completion, checks the month heading and today's
+events, verifies subsequent navigation, then retains the existing reopen test.
+The old installed plugin failed the current-month assertion and emitted invalid
+Adw.Carousel page/scroll criticals. Ordinary single-click checks had passed.
+
+The maintained patch now returns to the stored current-month grid immediately,
+resets relative position/model month/selected day together, suppresses callbacks
+during carousel rebuild, and bounds arrow navigation. The center control says
+Today; arrow tooltips name previous/next month. This fixes the reproduced state
+corruption; the owner's exact unexpected event contents were not inspected.
+
+Verification: fresh pinned ARM64 installer build and atomic install pass. All
+six real-plugin/EDS groups pass against the installed library, including the
+previously failing regression; final log has no carousel critical/assertion.
+Four image-wiring tests, focused shell checks and whitespace checks pass.
+Wingpanel reloaded and PID 671688 maps installed calendar inode 314053.
+Only the calendar library/launcher and panel process were deployed/reloaded;
+no personal event/account data was edited. Expected isolated portal/EDS teardown
+warnings and upstream build warnings remain. Next: owner checks Today on their
+real calendars; Google remote-sync and factory-boot acceptance remain separate.
+
+## Dock startup/focus audit and merge preparation — 2026-10-18
+
+Reviewed PR #100 on current main in an isolated checkout, preserving the other
+desktop/CodexBar work and both handoff histories. Retained its delayed Gala
+workspace synchronization and stale-removal bounds check. Added two fixes:
+the application presents only its initial window (repeated activation stays
+quiet, including a panel with no active keyboard window); the wrapper forwards
+HUP/INT/TERM to its dock child and reaps it before exiting. Signal statuses no
+longer cause stock fallback; actual early faults and missing binaries/libraries
+still do. A shell cannot forward SIGKILL.
+
+Verification: composed ARM64 dock build/install into a temporary prefix; two
+native harnesses compiling the actual patched production methods with controlled
+services; seven generated-wrapper test groups; eight existing boot-profile tests;
+shell syntax/ShellCheck; eleven real-dock/GTK groups in a separate headless Gala
+with a private D-Bus/Wayland session and temporary keyfile settings. New Wayland
+case preserved keyboard focus and typed `aaa` across three remote activations.
+Native harnesses reject the original upstream activation/workspace behavior as
+negative controls. Dedicated ARM64 CI now runs the startup/wrapper regressions.
+
+The owner's graphical dock remains stopped behind the local incident guard;
+no source installer or new binary was deployed into the running desktop and no
+approval dialog was opened. Existing portal/keyring startup warnings occurred
+in the isolated compositor; all assertions passed. These results do not prove
+the complete root cause of the reported floating/attention-stealing incident.
+Next: after a deliberate decision to re-enable it, qualify physical typing,
+session restart and monitor transitions. See `display-space/README.md`.
+
+## Factory Brave runtime closes YouTube browser provisioning gap — 2026-10-18
+
+`build-brave` stages official Brave 1.97.59 arm64 (Chromium 155.0.8059.85), pinned
+to release SHA256 `5efdd235…4ba1d2`. It validates .deb identity before extraction,
+runs no maintainer scripts, and relocates the full runtime/resources to
+`/usr/lib/mseries-brave`. The YouTube launcher prefers this immutable runtime;
+transformed desktops retain the native package fallback. Both factory consumers
+carry the full runtime library list; post-install hooks fail on absent/changed
+payloads, wrong ELF architecture and missing libraries. License, release/source
+links, pin and per-file hashes survive pruning in `/usr/share/doc/mseries-brave`.
+No first-login browser download or `/opt` artifact is needed; browser security
+updates follow reviewed version/hash bumps and rebuilt images.
+
+Verified: six synthetic .deb regressions, four image wiring tests, real pinned
+.deb staging and finalization with hashes/ELF/library checks, desktop validation,
+Python/shell checks. Real browser rendered a local page in a fresh Xvfb profile.
+Clean Resolute ARM64 container installed the declared packages and ran the version
+and ldd checks. Minimal-container headless DOM dump timed out and is not a pass.
+Finalize fixture stubs only dconf compilation, as in the wiring suite. The owner’s
+browser, profile and running session were untouched. No full ISO build/fresh
+hardware boot or YouTube/AVD/DRM playback test: those qualifications remain next.
+Factory browser assets/provisioning are now implemented; kernel/firmware readiness
+remains governed by the existing hardware gates.
+
+## Merged calendar deployed and Wingpanel reloaded — 2026-10-18
+
+Owner requested desktop deployment of merged `6d62dfd`. Ran
+`bash mseries/install-calendar-agenda.sh`: pinned datetime ARM64 release build
+and atomic library/account-launcher installation completed, preserving the
+version-aware original backup. Ran `bash mseries/calendar/test-agenda.sh
+/usr/lib/aarch64-linux-gnu/wingpanel-9/libdatetime.so`: all five isolated EDS
+workflow groups pass against the installed production library; runner exits 0.
+Build warnings and expected isolated-session portal/EDS shutdown warnings remain.
+
+Sent SIGTERM only to Wingpanel; the session respawned it (595296 → 637927).
+Verified `/proc/637927/maps` uses the installed calendar library inode 313607,
+without a deleted mapping, and the Calendar Accounts launcher matches merged
+source. No Gala restart, account sign-in, kernel, boot or audio change.
+Next: owner opens the clock dropdown and completes Google account authorization
+if desired; remote Calendar sync and factory hardware boot remain unverified.
+
+## Calendar Events/Tasks merged into main — 2026-10-18
+
+Integrated `calendar-events-tasks` including the pinned native agenda plugin,
+installer/account launcher, runtime/build dependencies and factory staging.
+Resolved documentation insertion conflicts by retaining both status histories;
+merged enhancement payload lists to preserve main's YouTube launcher/icon and
+add calendar assets/pins. README now describes calendar as integrated and links
+to its local documentation. Google OAuth/sync and factory hardware boot remain
+unverified; this merge does not restart or redeploy the owner's desktop.
+
+Verification on the merged tree: pinned datetime ARM64 release build passes;
+all five isolated real-plugin/EDS integration groups pass; all four image-wiring
+tests pass; changed calendar shell scripts pass ShellCheck at warning severity;
+shell syntax, whitespace and all 34 README relative links pass. Initial agenda
+runs passed workflow assertions but failed temporary cleanup when auto-started
+GVFS/document portals left FUSE mounts. The test harness now uses local GIO and
+a private portal activation override; the final full run exits successfully.
+The override applies only to the synthetic test session; its expected portal
+unavailable warnings do not establish a clean runtime log.
+Next: owner Google sign-in and remote Calendar round trip, then factory image
+assembly/hardware qualification. No credentials, personal calendars or live
+panel state were changed by these checks.
+
+## Calendar Events/Tasks tabs and Google account setup — 2026-10-18
+
+The clock dropdown's right pane now has Events and Tasks tabs. Events follows
+its selected day; Tasks reads all incomplete items from elementary Tasks' EDS
+lists, including due-only and undated items. Activating a task opens Tasks.
+Calendar Accounts opens the desktop Google/online-account sign-in. No desktop
+Google account was configured at verification time: owner OAuth consent and a
+real Google Calendar round trip remain required; local tests do not claim them.
+
+Pinned datetime source `d0b3a703a7efbb5b3040d7be1ccb616eeb919c54` plus
+`datetime-agenda-tabs.patch` retains upstream notices. Native ARM64 compilation
+and five isolated real-plugin/EDS test groups pass: tabs/shared event UIDs,
+live edits, completion/deletion, enable/disable and sources added/removed after
+opening. Async source connections and generation checks reject stale views;
+changed/deleted events requery their source, preserving recurring siblings.
+All-day events use date semantics; undated tasks do not create calendar dots.
+The release installer completed locally; the installed production plugin passes
+the same five test groups. Wingpanel was reloaded and its mapped plugin inode
+matched the newly installed library.
+Four image-wiring tests and shell/diff checks pass. Runtime account/Tasks/EDS
+packages are in both arm64 consumers; plugin and license survive pruning.
+Factory image assembly/boot and Google network sync are still unverified.
+
+[Build, install, restore, account setup and tests](calendar/README.md).
+Installer: `bash mseries/install-calendar-agenda.sh`; rollback:
+`bash mseries/install-calendar-agenda.sh --uninstall`. Reload Wingpanel after
+installation. Next: owner selects Calendar Accounts → Google, completes sign-in,
+enables Calendar and confirms a known remote event appears on its date.
+
+
+## README fixes, verification and remaining work — 2026-10-18
+
+The root [README](../README.md#fixes-tests-and-remaining-work) now separates
+desktop dock/layout, OS bar, kernel, external USB4 dock, power parity, overall
+performance, CPU, GPU and local-LLM/file access. Each section lists implemented
+changes, recorded tests and remaining acceptance work, with links to evidence.
+The status table now distinguishes the owner-confirmed Aurora .20 dock display
+from historical Fairydust limitations and labels stock-kernel decode results
+with their original scope. macOS power/performance parity remains unproven.
+
+Verification: all nine sections have the three status labels; all relative
+documentation links in the project portion resolve; Git whitespace checks pass.
+This is a documentation update; hardware/model benchmarks were not rerun.
+Integrated the documentation commit onto main without its calendar implementation
+parent; calendar claims and its evidence link explicitly identify that branch.
+Preserved newer main handoff/roadmap entries while resolving insertion conflicts.
+Next: update the relevant section when its linked hardware or workload gates pass.
+
+## YouTube launcher/logo included in fresh-install payload — 2026-10-18
+
+`enhance.sh` now stages the contained launcher, system desktop entry and YouTube
+SVG automatically. Exec points at `/usr/share/elementary-mac/mseries/video-decode/brave-youtube`,
+with the existing dock WMClass and Widevine sibling helper. Factory finalize keeps
+the files after pruning, including the sysupdate `/usr` artifact. Both ARM64
+consumers carry bubblewrap, xdg-dbus-proxy and cache tools; final hooks validate
+and refresh the desktop/icon caches. The existing transform Brave first-boot module
+also installs the container dependencies.
+
+Verified: enhancement staging suite, four image wiring tests (including finalize,
+missing-icon rejection and dependency parity), desktop validation, shell syntax
+and changed-shell checks. GTK4 with empty XDG user data resolves the staged system
+launcher/icon; Exec was rebased only in that temporary lookup fixture. No browser
+was launched and the owner's active session was not changed. No ISO build or fresh
+hardware boot was performed. Factory browser package provisioning remains separate;
+the transform's existing network first-boot module installs Brave. Next: qualify
+factory browser packaging and fresh hardware playback; this validates asset wiring.
+
+## Orchard real Wayland qualification and cleanup protection — 2026-10-18
+
+- Verified the installed Python/GTK4 foreground app on real `GdkWaylandDisplay`/`GdkWaylandToplevel`, Vulkan and the elementary blueberry stylesheet at 120 Hz. This was not Xvfb or forced Cairo. Final run: 11 live workflow groups passed, including stale-inventory duplicate-name preservation, container/VM creation, agent-backed VM Run, lifecycle/pause/resume, snapshots/restore, clone/rename/delete, real Terminal login, native elementary backup Save portal/archive validation, file listing and CLI transfer round trip, mounted-folder reads, TCP proxy, bounded Unicode output, and cancellation cleanup. All audit fixtures were swept; original guests were preserved.
+- Fixed a serious creation cleanup issue: names alone no longer authorize cleanup. Each launch carries `user.orchard.creation-token`; failed/cancelled cleanup verifies it before touching operations/instances, starts after client exit and uses bounded CLI requests. Missing/malformed ownership data fails closed. Duplicate names are rejected before launch and in the form. The live negative case confirmed an existing disposable guest survives a failed same-name request.
+- Also fixed idempotent bulk settings and per-instance metadata serialization (self-induced ETag races), duplicate clicks, stale rename/filtered selection, explicit VM Secure Boot choice, agent guidance/Console launcher, a scrolling creation form, full-name tooltip and the Devices page's nested-scroll collapse.
+- Final metrics (810 completed presentation records / 811 frames, eight seconds; 18 actions): frame-start→presentation median 21.923 ms / p95 29.630 / max 38.619; action→presentation median 26.257 / p95 33.620 / max 38.442; presented spacing p95 17.124 ms. Simple GTK control median 20.606 / p95 24.472 ms in a separate run. These are compositor feedback, not physical input-to-photon or a zero-jank guarantee; early action measurements used a different attribution rule and are not an improvement baseline.
+- Checks: 103 tests, 97 pass / six opt-in live tests skipped, with fatal GTK criticals enabled for the GUI checks; final live run had one expected duplicate-name error and no unexpected errors/GTK warnings. Source/install parity passed. Installed with `sh mseries/orchard-incus/install.sh`; reopen Orchard to load it.
+- Reproduction/evidence: `tools/qualify-wayland.py`, `tools/wayland-save-portal.py`, `tools/wayland-frame-control.py`, `audit/2026-10-18-wayland.json`, `docs/orchard-incus.html`. Driver waits for mapped/painted dialogs, guards fixture names/resources and records source hashes. An early pre-map driver response crashed GTK Wayland; invalid early attempts, foreground text interference and too-short agent waits are documented separately from the final passing run.
+- Remaining qualification: physical input/focus traversal, interactive upload/download chooser selection and Console input, long-duration RSS/thermal soak, very large real fleets, other themes/scales, and the separate Vala manager/panel. No kernel, bootloader, display or audio configuration was changed.
+
+
+## Orchard native developer UX and performance audit — 2026-10-18
+
+- Enhanced the installed Python/GTK4 app in `mseries/orchard-incus/`: sidebar name/image/status/IP search and no-match state; native keyboard-accessible dashboard buttons; shortcut help/menu and view shortcuts; 780px header and scrolling Devices form; refresh indicator and safer loading/settings ownership.
+- Bounded/coalesced work: latest-result-only tab/resource/catalog reads, 20s JSON reads, timer/theme/monitor cleanup, event follow-up debounce, chunked UTF-8 command output (64K-character pending mailbox/256K-character text tail), dashboard construction in 16-card batches, viewport-only chart updates, unchanged-presentation caching, linear history pruning. Busy operations no longer start twice or change another selected instance's detail.
+- Verified: 86 Python tests (80 pass, six live tests skipped), including real local noisy subprocess and fatal GTK critical checks; Vala manager + Wingpanel compiled and all five Meson suites passed under Xvfb. Live read-only preflight/list passed, two existing instances preserved.
+- Synthetic full-history 500-instance median UI-thread updates: Instances 55.57→4.72 ms, Dashboard 26.18→5.91 ms in one sequential run. Initial list update 93.93 ms excludes deferred dashboard construction. These are not real Wayland frame-latency or long-duration memory results.
+- Evidence/method: `mseries/orchard-incus/audit/2026-10-18.json`, `tools/audit-ui.py`, and `docs/orchard-incus.html`. Remaining: virtualized rows for very large fleets, real Wayland/manual workflow qualification, and choosing/removing duplicate manager launchers. Vala UI/performance was not modified.
+- Install: `sh mseries/orchard-incus/install.sh` preserves one previous package. Source/install parity checked after deployment. Reopen Orchard to load new Python code; no owner's running window, container, kernel, display or audio configuration was restarted.
+
+
+## Orchard for Incus narrow-window fixes — 2026-10-17
+
+Found at 760 px: the window was forced to ~850 px, and the instance action row
+(with the More menu holding Clone/Rename/Delete) was clipped off-screen.
+Fixes in `mseries/orchard-incus/`: action row is a wrapping FlowBox (hidden
+buttons leave no gap, FlowBox children are not extra tab stops); stat tiles use
+`ui.TileRow` and wrap 2+2 when narrow; filter box shortened; instance sidebar
+240 px (was 290); detail margins 20 px; declared minimum window is now 780x480
+(was 760x480, which the content could not honour). Screenshots checked at
+780x480 and 1180x740, no clipping; wide layout unchanged.
+- Tests: 71 run, 6 live skipped, all pass; `tests/test_layout.py` (2, need a
+  display; run under xvfb-run) guards tile wrapping and action-row shrink.
+- Installed with `./install.sh`. Not verified: elementary stylesheet/Wayland,
+  the other tabs (Snapshots/Run/Files/Devices/Settings) and dialogs at narrow
+  width, More-menu popover contents, keyboard focus order. Sidebar IPs truncate
+  at 240 px.
+## Orchard for Incus charts — 2026-10-17
+
+`mseries/orchard-incus/`: charts now say what they show. Large charts (Dashboard
+totals, instance Overview) draw the scale top-left and the covered time span
+("last 4.5 min") top-right, and show "Collecting data…" until 3 samples exist.
+CPU charts auto-scale with a 10% floor instead of a fixed 100% (idle looks idle,
+busy multi-core is no longer clipped); the scale label keeps that honest.
+Small sidebar/dashboard sparklines stay unlabelled. Logic in
+`backend.chart_top/chart_ready/span_text`.
+- Tests: 69 run, 6 live skipped, all pass (7 new). Checked headlessly: live
+  shoot.py pages (collecting state) and a synthetic full-history render, dark.
+- Installed with `./install.sh`. Not verified: light theme with full history,
+  real Wayland/elementary stylesheet, narrow 760 px.
+## Orchard for Incus UI/UX pass — 2026-10-17
+
+Reviewed every page from headless screenshots (`mseries/orchard-incus/tools/shoot.py`
+under Xvfb with the cairo renderer, a throwaway XDG_STATE_HOME and no D-Bus
+session; read-only against the live Incus; nothing shown on the real display).
+Changes, all in `mseries/orchard-incus/`:
+- Instance actions are contextual (`backend.visible_actions`): running shows
+  Stop/Restart/Pause/Shell/Snapshot, stopped shows Start/Snapshot. Delete moved
+  out of the primary row into the More menu ("Delete…", red, still confirms).
+- Images: Container/VM badge per row (identical-title rows are now
+  distinguishable), alias shown, Delete is a quiet icon button with tooltip and
+  accessible name.
+- Storage: usage gauge (LevelBar, warns at 85%/95%) with percentage, from
+  `backend.parse_space`.
+- Filter box only shows on the Instances page; Ctrl+F jumps there first.
+- Tests: 62 run, 6 live skipped, all pass (11 new). Screenshots checked in light
+  1180x740 and dark 900x600. Installed with `./install.sh` (backup in `.prev`).
+- Not verified: real-display rendering with the elementary stylesheet and
+  Wayland (screenshots use the default GTK theme under X11); clicking through
+  actions (nothing was started, stopped or deleted); narrow 760 px layout; the
+  More-menu popover; keyboard focus order. Dashboard/chart axis labels and the
+  empty-history look of the charts are still open.
+## Orchard for Incus (Python) audit and fixes — 2026-10-17
+
+Audit of `mseries/orchard-incus/` (installed copy was identical to source):
+- Fixed: every `incus` call defaulted to a 600 s timeout, so a hung daemon
+  stacked a new `incus list` thread every 3 s and never tripped the
+  two-failure check. Now `backend.IncusTimeout` (a RuntimeError), a 20 s
+  `POLL_TIMEOUT` for the list refresh, and an in-flight guard in `refresh()`.
+- Fixed: any unrecognised Incus error was shown as "Incus isn't running" and
+  the real message dropped. Socket/connect errors keep that wording; others now
+  show "Incus reported an error" with the message.
+- Fixed: `install.sh` deleted the old code before copying. It now stages,
+  keeps one backup as `~/.local/share/orchard-incus/orchard_incus.prev`, then
+  swaps; a stale `.new` dir from a crashed run is cleaned.
+- Tests: `cd mseries/orchard-incus && python3 -m unittest discover -s tests`
+  = 51 run, 6 live skipped, all pass (9 new: timeouts, preflight wording,
+  install idempotence/backup/uninstall in a temp HOME).
+- Live read-only check: `preflight()` None in 0.01 s, `list` 2 instances 0.01 s.
+- Installed with `./install.sh` (backup in `orchard_incus.prev`).
+- Not verified: the GTK window itself (refresh guard and problem page were
+  compile-checked only, not exercised; app was not running, nothing relaunched);
+  the 6 live tests; the Vala app build. Not changed: the monitor thread
+  flaps `monitor_ok` every ~5 s when the daemon is down.
+- Noted, not touched: stale `com.github.techmore.orchard-incus` launcher,
+  desktop file and `liborchard-incus.so` (Vala app) coexist with the Python
+  app's `io.github.techmore.OrchardIncus.desktop`: two menu entries.
+- Next: pick the canonical implementation; build/test the Vala app.
+
+## Orchard for Incus upstreamed into this repo — 2026-10-17
+
+Both Orchard for Incus implementations now live in `ElementaryOS_MSeries`
+(previously only on the `claude/airplay-destinations` branch and in the
+separate `techmore/orchard-incus` repo):
+
+- `mseries/orchard-incus/` — Python/GTK 4 app (installed to
+  `~/.local/share/orchard-incus`, launcher `~/.local/bin/orchard-incus`),
+  imported from `claude/airplay-destinations` @ 0eeefa7. Tests:
+  `cd mseries/orchard-incus && python3 -m unittest discover -s tests`
+  (42 run, 6 live tests skipped).
+- `mseries/orchard-incus-native/` — Vala/Granite app + Wingpanel indicator,
+  imported from `techmore/orchard-incus` `codex/wingpanel-indicator` @ 3913611
+  (no build output; MIT LICENSE and NOTICE.md with Orchard attribution kept).
+  Not rebuilt or re-tested during the import.
+- Installed copy of the Python app was byte-identical to the source (diff clean).
+- Not done: audit/fix pass (error states, install idempotence), Vala build
+  and tests, deciding which implementation is canonical.
+- Next: choose canonical implementation, then audit failure states
+  (incus missing/permission denied/daemon down) with tests first.
+
+## YouTube launcher logo — 2026-10-18
+
+The contained hardware-decode Brave launcher now uses `Icon=mseries-youtube`
+and a bundled scalable red YouTube play-button SVG. Icon installation and existing
+shortcut update instructions are in `video-decode/README.md`. The owner's installed
+shortcut and per-user hicolor icon were updated without changing Exec or playback.
+Verification: desktop-file validation, SVG XML/geometry checks and GTK icon lookup
+pass. A running window may need reopening to pick up the icon; visual confirmation
+in the live dock remains open. Next: confirm the launcher/dock icon after reopening.
+
+## Dock-aware window space installed — 2026-10-18
+
+Owner requested that visible dock space be unavailable to windows and reclaimed
+when it hides, committed to main. `gala-dock-workarea.patch`, composed after the
+existing panel-offset patch at pinned Gala `f0791434`, makes panel struts follow
+actual visibility in every hide mode. It reserves once on reveal and releases
+once fully hidden, deduplicating unchanged geometry. Boundary contact counts as
+overlap so intelligent hiding does not oscillate after a maximized window shrinks.
+Hide-mode changes recalculate overlap immediately. Even "never hide" releases its
+reservation while hidden by fullscreen, fixing a stale maximized size when that
+setting changes during fullscreen. Workspace creation inherits existing struts.
+The quarter plugin reflows managed quarters on work-area changes; native Mutter
+handles maximized/half-snapped windows. Manual/app resizes end the quarter layout.
+Normal floating windows retain their manually selected size.
+
+Verification: ARM64 composed Gala and quarter-plugin builds pass; ten real-dock /
+GTK Wayland checks pass under a separate headless two-monitor Gala (three repeated
+reveals, overlap mode, native half snap, all four quarters, manual size, fullscreen
+including hide-mode change, secondary monitor unaffected). The nine existing
+shortcut/corner-drag/Escape checks also pass against the installed build. Eight
+existing desktop-space unit tests, shell syntax, ShellCheck and whitespace checks
+pass. Fixture uses temporary keyfile settings and its own D-Bus/Wayland session;
+stock workspace-right binding is cleared in the fixture to test native half tiling
+with Super+Right. Upstream background/portal/AppCenter startup warnings remain in
+the isolated logs; no clean runtime-log claim. Commands and source attribution:
+[display-space/README.md](display-space/README.md#dock-space-follows-visibility).
+
+Installed rebuilt Gala into `/usr/local/lib/mseries/gala` via Meson and atomically
+installed the new quarter library into both private and stock plugin directories.
+Installed Gala `.text` matches the build (Meson rewrites the install RUNPATH), and
+both quarter libraries match the built file. Existing launcher/drop-in and live
+Gala PID 2645 were preserved; no session restart, boot, kernel or audio change.
+Pre-install private Gala and stock quarter library are backed up locally under
+this chat's `work/deployment-backup`. Next: sign out/in to activate, then confirm
+physical-monitor reveal/resize behavior. Factory hardware boot remains unqualified.
+
+
+## Boot archive and built-in VRR kept enabled — 2026-10-18
+
+Owner-approved cleanup archived four m1n1 backups and seven Fairydust test boot
+files with SHA256/fsync verification, removed six corresponding custom menu
+entries, and recovered 191.63 MiB total. `/boot` reached 214.02 MiB free (~58%
+used). Aurora .20/enh1, stock recovery, shared boot payload, generated menu and
+one-shot selection were verified unchanged at cleanup time; later full-height
+menu changes are independent. Binary archives and full rollback configs remain
+private in Codex outputs, with sanitized hashes in the
+[receipt and restore notes](aurora/hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md).
+
+On running `.20`, built-in `3024x1890@120.000+vrr` stays selected after changing
+only its saved mode in `desk-4k`; dock remains fixed 1080p/60, scale 1 at (1512,0),
+with built-in scale 2 at (0,0), primary. Watcher executable, laptop-only profile
+and monitors.xml unchanged. Owner: dock works, both screens look normal, keep VRR.
+The 12-second content probe observed built-in VRR_ENABLED=1 in 3/25 DRM samples
+(~1–2 seconds), then 0 while animation continued; external stayed connected at
+1080p/60 throughout those samples. This is partial qualification, not sustained
+VRR or a power result. Next kernel: explicitly capture active/fullscreen/focus
+and presentation timing, explain the brief activation, then test docking and
+sleep with rollback. New read-only DRM and controlled GTK content helpers plus
+that checklist are linked in the report. No original frozen receipts were edited.
+
+Publication checks: 23 Aurora qualification tests and six display-profile tests
+pass; both immutable freezes verify. The read-only libdrm helper compiles with
+`-Wall -Wextra -Werror` and reads the live display node. Python syntax, CLI refusal
+of external fullscreen/existing receipts, invalid DRM-node handling, all 11
+archived binary sizes/hashes, receipt sample counts, new links, privacy scan and
+Git whitespace checks pass. Publication does not rerun a fullscreen test.
+
+## Queued .20-enh1 trial also uses full height — 2026-10-18
+
+Owner explicitly requested one reboot for the kernel trial and native notch
+layout. Changed only the existing `elementary-aurora20-enh1` stanza's
+`appledrm.show_notch=0` to `appledrm.show_notch=1` in `/boot/grub/custom.cfg`.
+`next_entry=elementary-aurora20-enh1` and every other entry/default remain intact;
+the separate `mseries-full-height` normal-boot choice still uses retained .20.
+The native panel/dock from the prior batch are already installed and running.
+
+Validation: `grub-script-check` passed before and after the atomic write. Byte
+comparison confirmed this single parameter change. GRUB environment bytes and
+SHA256 of the candidate kernel, candidate initrd and generated `grub.cfg` are
+unchanged. Exact pre-change backup:
+`/boot/grub/custom.cfg.pre-full-height-trial`. No reboot or kernel/audio change.
+The trial's display setting was changed separately from the desktop profile;
+profile `--revert` alone does not undo this trial-specific parameter. Restore
+that parameter to 0 as well before using the trial with stock Wingpanel.
+
+Next: one normal reboot selects the queued .20-enh1 trial with full height;
+confirm clock/calendar, dock, unlock and automatic trial receipts. Hardware
+success is still pending. The older cropped-mode baseline is not a matched
+energy comparison with this full-height trial; collect matching display controls
+on both kernels before comparing power.
+
+
+## Dock "crashes": a false fallback flag and a startup race, both fixed — 2026-10-18 (Claude Code)
+
+- **Symptom:** the dock vanished or reverted to the stock dock. `io.elementary.dock` itself produced no coredumps this boot.
+  The crashes were wingpanel (SIGSEGV x2 at 04:44) and gala in boot -2.
+- **Cause 1 (wrapper):** `~/.local/bin/io.elementary.dock` flagged any non-zero exit within 15 s as a failure. At 04:44 the
+  session stopped the dock with SIGTERM (rc=143), so it wrote `~/.cache/mseries-dock-failed` and ran the stock dock.
+  **Fix:** `install-dock-drawers.sh` now writes a wrapper that exits without flagging on rc 129/130/137/143.
+- **Cause 2 (dock 8.3.3 upstream, still on main):** `WorkspaceSystem.load ()` queried Gala before `WindowSystem`'s async
+  DesktopIntegration proxy existed. That logged `DesktopIntegration is null`, set up workspaces from 0, and
+  `remove_workspace` hit `g_list_store_remove` out of range. **Fix:** `mseries/patches/dock-workspace-startup.patch`
+  connects the signals first and skips the early sync, so WindowSystem's first `windows` notify drives it. It also
+  bounds-checks `remove_workspace`.
+- **Installed:** `bash mseries/install-dock-drawers.sh` (built on main's drawers + compact-dock patch). The running dock
+  was not restarted, so the patched binary takes effect at its next start.
+- **Verified:** `--build-only` passes, the installed wrapper matches the old one apart from the rc guard, and the dock came
+  back as the patched build after a restart at 06:35. **Not yet verified:** a clean `journalctl` after the next login
+  (expect no `DesktopIntegration is null`).
+
+## Native full-height J314 desktop and persistent dock — 2026-10-18
+
+Post-push deployment follow-up: required `bash mseries/deploy-codexbar.sh` passed
+all four Meson suites and restarted Wingpanel/CodexBar successfully. Wingpanel
+PID 301437 and native dock PID 295165 are running. The new panel binary is now
+loaded in the existing cropped desktop; full-height hardware boot remains pending.
+
+Owner requested reclaiming the notch strip, native dock optimization and a push
+to main. [Profile](display-space/README.md): `bash mseries/install-desktop-space.sh`.
+Pinned Wingpanel patch moves the existing clock/calendar beside the camera only
+on the full-height 14-inch M1 Pro internal panel. Equal scrollable halves protect
+a central gap; scale/monitor changes refresh geometry and move the native clock
+with removal from its old FlowBox before insertion into the other. Stock cropped
+and external layouts retain the centered clock and CodexBar placement.
+
+Native dock preserves drawers/apps, adds private persistent offset settings,
+clamps placement when screen/dock size changes, uses 40-pixel icons and hides
+when any window overlaps. Reuses Wingpanel's cached DisplayConfig implementation
+with SPDX attribution; no polling daemon. Installers, immutable source pins,
+version-aware panel backup, private dock/build/wrapper backup and reversible
+settings are in the repo and immutable-root payload; optional post-install stage
+`desktop-space`. Initial factory image stays cropped until a compatible profile
+is installed; no full-height factory boot is claimed.
+
+Applied on the running J314: native dock installed and restarted (PID 295165 at
+verification), settings read back as 40 / overlapping-window; new offset schema
+loads. Updated Wingpanel binary installed and SHA256-matched to the reviewed
+ARM64 build (loads on next login/reboot). Boot helper prepared a separate
+`mseries-full-height` normal-boot choice using the exact running `.20` kernel,
+initrd, root/encryption flags and `appledrm.show_notch=1`. All original entries
+remain, `grub-script-check` passes, and queued `next_entry=elementary-aurora20-enh1`
+is unchanged: that one-shot trial runs first. No forced reboot, kernel/initramfs,
+firmware, generated grub.cfg or audio changes.
+
+Verification: clean source builds via `install-desktop-space.sh --build-only`
+pass for both ARM64 components; dock schema validates. Eight boot helper tests
+pass (exact provenance/encryption, idempotence, revert, malformed/missing/ambiguous
+refusal). Production notch helper/GTK allocation under Xvfb passes full/cropped/
+external/other-model gating, fractional sizes and crowded-control clipping. Setup
+payload tests, shell syntax, focused ShellCheck and diff whitespace checks pass.
+The native dock stays running, with startup critical/warning messages from its
+upstream workspace/app-launcher integrations (missing chatgpt.desktop, initial
+DesktopIntegration and AppCenter interface); these were observed, not resolved
+or labelled a clean runtime log. No full-height hardware acceptance or energy
+saving is claimed. Next: after the pending trial, select the full-height entry
+and verify clock/calendar, crowded indicators, dock reveal/Command-drag across
+restart, scale changes and external monitor switching on hardware.
+
+
+## Dock TV: no sound (display audio off in the kernel) and YouTube Movies 480p (YouTube rule) — 2026-10-18 (Claude Code)
+
+- **No TV sound:** no `apple_dcp` sound card exists because `appledrm.hdmi_audio=N`. The device tree already wires a
+  display-audio controller to both external DCPs; the dock TV is on `dcp@289c00000` (`audio-controller@39b504000`,
+  bound). The flag is only read at DCP start and display-subsystem bind (Aurora `.20` `dcp.c`/`audio.c`), and
+  `appledrm` is in the initramfs, so it has to go on the kernel command line. **Installed** the inert `apple_dcp` UCM
+  profile (AsahiLinux/alsa-ucm-conf-asahi#9, BSD-3) via `mseries/audio/install-dcp-display-audio.sh`; sinks
+  unchanged. **Not done (owner decision):** a non-default GRUB entry with `appledrm.hdmi_audio=1`. The auto-mode check
+  blocked writing a GRUB-editing script; the `.20-enh1` one-shot trial is armed and says "no audio changes".
+  Upstream omacom/linux-aurora#48 has never tested dock/USB4 audio. Full write-up and test plan:
+  `mseries/audio/DOCK-TV-AUDIO.md`.
+- **480p films:** YouTube serves Movies & TV in HD only to Safari among browsers (Google help 78358). L3 Widevine,
+  not fixable here; corrected the earlier "SD/720p" wording. Workaround: the Fire TV's own YouTube app.
+- **Next:** owner decides on the display-audio boot entry; then run the test list in `DOCK-TV-AUDIO.md` and report on
+  linux-aurora#48.
+
+## CodexBar: why the Claude account switch "did nothing", and the fix — 2026-10-18 (Claude Code)
+
+Pin unchanged: upstream CodexBar v0.77.0, claude-swap 0.27.2. Branch `claude/codexbar-claude-switch` (from
+`power-usage` 0b72150). Owner report: CodexBar could not switch Claude accounts.
+
+Root cause: the switch itself works. `cswap switch` rewrites Claude Code's file login (`~/.claude/.credentials.json`
+and `oauthAccount` in `~/.claude.json`); a real switch to account 1 and back to 2 changed `claude auth status` both
+ways. But the owner runs Claude Code inside the Claude desktop app (no `claude` on PATH), and the app gives every
+Code session its own sign-in through `CLAUDE_CODE_OAUTH_TOKEN`. That variable overrides the file, so the switch never
+reached anything the owner uses. The panel also ran the switch with its output thrown away, so there was no message.
+
+Fix: `codexbar-claude.py switch` now checks `~/.claude.json` names the target after cswap reports success, treats
+`already-active` as success, and reports the desktop app's account. It reads `lastKnownAccountUuid` from
+`~/.config/Claude/config.json` and matches it to claude-swap's saved configs (identity fields only; the app's
+encrypted tokens are never read). The list follows the live login when claude-swap's record lags behind it. The
+panel shows the switch result in a small dialog, plus a line "Claude app: <account> · switch it in the app" on the
+Claude card when the app is on another account. Claude helper tests: 14 (was 9), all on a fake HOME.
+
+Verified: all 5 CodexBar Python test files, Meson 4/4, `check-codexbar-port.sh` passed (before and after deploy,
+live `--snapshot` keys match the fixture, schema 1). A headless Xvfb render of the `live` fixture shows the new line.
+`deploy-codexbar.sh` reported success: the deployed helper matches the repo and Wingpanel and CodexBar are running.
+A real switch 1 then 2 through the new helper gave the right messages, and the machine ended on the original
+account (CLI, `~/.claude.json`, cswap and the desktop app all on account 2). Temporary credential backups were
+deleted after that check.
+Not verified: the dialog and card line on the live panel (I opened no windows on the owner's screen); a running CLI
+session picking up a switch on its next message (claude-swap's claim, not tested). Switching the desktop app itself
+is not possible from here: its login is encrypted Electron storage and we do not touch it.
+Owner: to use another account in Claude Code inside the Claude app, sign out and in again in the app. The panel
+Switch changes the `claude` command line only.
+
+## YouTube Movies fail in `brave-youtube`: Widevine missing from its profile — fixed — 2026-10-18 (Claude Code)
+
+- **Symptom (owner):** films such as *Edge of Tomorrow* say "your browser can't play this video" in the contained
+  YouTube window. **Cause:** `brave-youtube` uses its own profile (`~/.config/brave-youtube`); its `WidevineCdm/`
+  was empty and `brave.widevine_opted_in` unset. The normal Brave profile has Widevine 4.10.3112.0 and is opted in.
+- **Fix:** `mseries/video-decode/brave-youtube` now provisions Widevine before it starts Brave, only while that
+  profile is not running: it copies the normal profile's CDM if the library loads, writes the component path
+  inside the contained profile (the only part of `$HOME` the container shows), and sets the opt-in. If that fails it
+  falls back to `install-brave-widevine.sh` with `BRAVE_PROFILE_DIR`. That installer now checks only the target
+  profile is closed when `BRAVE_PROFILE_DIR` is set, so the normal Brave can stay open.
+- **Verified:** provisioning on a scratch copy of the profile copied the CDM, the library loads, and the opt-in is set.
+  A second run does nothing; with the live profile running it skips. **Not verified:** a DRM movie actually playing
+  in the container (the owner's window was open; needs a relaunch). L3 limits still apply: SD/720p for movies.
+- **Next:** owner closes and reopens the YouTube window, plays a movie; check `brave://components` there.
+
+## .20-enh1 staged for one boot; .20 fallback and capture active — 2026-10-18 10:02 UTC
+
+Owner explicitly requested the next-boot trial, current .20 fallback and starting
+hardware/power tests. Installed frozen build1 package (SHA256 `185f1fa6…`),
+separate `/boot/vmlinuz-aurora20-enh1` and candidate initramfs. `grub-reboot elementary-aurora20-enh1` is armed. The managed custom.cfg block keeps that
+one-shot choice and defaults later boots to `elementary-aurora20`; it preserves
+all earlier entries and the five-second menu. No reboot was performed.
+
+[Staging proof](aurora/hardware-tests/2026-10-18-j314s-enh1-staging.json): candidate
+J314S DTB is byte-identical to .20 (`a29ff688…`). Existing .20 image/initramfs,
+shared `boot.bin` (`9c9c2d01…`) and generated grub.cfg hashes are unchanged.
+Exact root-private rollback directory: `/var/lib/mseries-kernel-tests/staging/20261018T095901Z/`.
+`prepare-trial-initrd.py` preserves the known-working Arch unlock userspace and
+10,240-byte early CPIO; replaces only modules/modlist with 93 candidate modules,
+resolved dependency closure and regenerated depmod indexes. Vermagic, CPIO
+preservation, both GRUB syntax checks and 58 offline regressions pass.
+
+Root-owned capture snapshot/config installed under `/usr/local/lib/mseries-kernel-trial/`
+and `/etc/mseries-kernel-trial.json`; user `mseries-kernel-trial.timer` enabled.
+The first baseline run completed: same .20 boot, 120 s SMC, median 24.46 W,
+p10 19.61 / p90 30.36, n=121; CPU busy 31.0%, controls before/after equal.
+Boot/PMP/idle + real GPU/fsync smoke checks pass. New baseline receipts are in
+`aurora/hardware-tests/*pre-enh1*.json`; raw local outputs/CPU/device inventory
+remain private under this chat's `outputs/aurora-kernel-trial/`. This is active
+uncontrolled desktop observation, not idle, A/B or a saving.
+
+[Trial guide](aurora/trial/README.md): next login/boot auto capture requires the
+exact pinned image/DTB/modules/boot payload and matching live GNU build ID,
+waits for >=5 min uptime/display context, then records 120 s + smoke checks.
+A failed kernel-health check retains evidence and skips active smoke tests.
+One run per boot; no reboot/suspend/sensor probe/display/audio/power-policy or
+sleep-parameter changes. Candidate hardware boot remains pending. Next: reboot
+normally when ready, verify unlock/desktop and automatic receipts; then manual
+ports/radio/suspend/recovery and controlled three-pair AB/BA qualification.
+Pending session changes must settle on both kernels before formal comparisons.
+Cancel just the pending trial with `sudo grub-editenv /boot/grub/grubenv unset next_entry`.
 
 ## Power audit and Aurora status after `.20`; dock monitor seems live — 2026-10-18 (Claude Code)
 
@@ -376,6 +1557,72 @@ J314S/WD22TB4 hardware boot, dock picture, Touch ID enrollment or recovery boot.
 Upstream `.20` explicitly does not qualify M1 Pro/Max/Touch ID on this release.
 Next task: review the matched payload/fallback contract, then a separately
 controlled hardware batch. Existing dock G2–G5 results have not advanced.
+
+## Sound Output switcher and AirPlay destinations — 2026-10-16 (ported to main 2026-10-18)
+
+Ported from `claude/airplay-destinations` (commits `636b239`, `3b8f31c`, `0eeefa7`) onto
+current main as `claude/airplay-destinations-2`. That branch's CodexBar, fairydust/USB4,
+Orchard, brightness and window-snapping WIP were not ported: main already has or supersedes
+them, or they live elsewhere (brightness in PR #57, Orchard in its own repo, fairydust is
+kernel work owned by another agent).
+
+- **Sound Output list:** `quick-settings/AudioOutputModel.vala` parses `pw-dump` into
+  outputs (Built-in / Bluetooth / AirPlay / USB / HDMI-DisplayPort, skips virtual sinks and
+  unplugged jacks, marks the default from `default.audio.sink`); `AudioOutput.vala` shows it
+  in the gear menu, and a click runs `wpctl set-default`. `patches/quick-settings-audio-output.patch`
+  wires it in. It needs `libjson-glib-dev`, now in the image BuildPackages and the firstboot
+  `quick` deps. `install-airplay-discovery.sh` adds PipeWire's RAOP discovery drop-in. It does
+  not restart PipeWire.
+- **AirPlay destinations:** `airplay/` (`airplay_core.py`, the `mseries-airplay-outputs`
+  CLI/GTK window, tests) and `install-airplay-outputs.sh`. Each receiver gets a dot. Active
+  receivers join one combine-stream sink, **AirPlay Group**, which runs as its own PipeWire
+  client under the transient user unit `mseries-airplay-group`. The main PipeWire and
+  WirePlumber are never restarted. The choice is saved in `~/.config/mseries/airplay.json`.
+  `quick-settings/AirPlayOutputs.vala` puts the dots under the Sound Output list.
+- **Verified on the port (2026-10-18, headless):** 6 AirPlay core tests;
+  `audio/test_audio_output_model.sh` (all checks ok); `audio/test_airplay_outputs_render.sh`
+  under xvfb with fake receivers (the row expands and a dot toggles the saved state). The
+  brightness and audio-output patches apply in order to quick-settings `fb721d4`.
+- **Earlier (2026-10-16, branch):** the full plugin built and linked; on the live graph the
+  CLI created and removed the group sink for the chosen RAOP receivers, and a silent stream
+  opened their connections.
+- **Not verified:** audible AirPlay playback, sync between receivers, the popover on the real
+  panel after this port, real Bluetooth/AirPlay switching, and the login autostart. The CI
+  `.deb` build (`mseries/debs/build.sh`) does not yet include these widgets.
+
+## VM toolkit, window corners, mouse and chime fixes — 2026-10-16 (DeepSeek/OpenCode)
+
+`mseries/vms/mseries-vm` now creates, fetches media for and runs the ARM64 test guests.
+Verified headless: the newest elementary OS 9 daily ISO (checksum-verified, booted to the
+installer, driven past GRUB with the new `key`/`wait`/`screenshot` commands) and Omarchy 4
+(the archive.org UTM image imported to a plain qcow2, booted to the Hyprland desktop).
+Windows 11 ARM64: the UUP set (67 files, 8.8 GB) verified against `files.json` SHA-256s and
+the pinned converter (`dbc65de`) is in place; ISO conversion was still running when this was
+written. `fetch windows` was hardened after a live failure mode: aria2 with `--continue`
+re-hashes complete files and re-probes their signed URLs, which expire fast (stale-URL `403`
+storm, ~20 minutes of no progress). The script now verifies every local file against
+`files.json` itself and hands aria2 only the missing/corrupt subset with a fresh URL,
+skipping it entirely when nothing is owed. `vms/test-mseries-vm.sh` now covers the
+verify-first and repair paths (79 hermetic checks, PATH-stubbed tools, no KVM/network/root)
+and runs in CI; `KVM-VMS.md` points at the toolkit. macOS guests remain impossible
+(`mseries-vm macos`).
+
+Desktop fixes (repo defaults plus applied live on the M1):
+- Every standard window gets rounded corners through a second Gala patch,
+  `patches/gala-window-corners.patch` (a Clutter ShaderEffect that masks each
+  `Meta.WindowActor`'s frame rectangle inside its texture, so shadows survive;
+  `GALA_WINDOW_CORNER_RADIUS`, default 12). `install-gala-screen-corners.sh` now applies
+  both patches, builds, and installs 20 px screen + 12 px window corners for the owner's
+  session (effective next login; the visual pass after relogin is still pending).
+- Mouse natural (inverted) scrolling: `enhance.sh` dconf default and
+  `apply-desktop-settings.py`; set live (was `false`, now `true`).
+- Quieter volume chime: `install-quieter-sound-theme.sh` builds a user "mseries" sound
+  theme that inherits elementary and scales the stock chime by -10 dB (peak -11 dBFS ->
+  ~-21 dBFS); installed and active now, with `test-quieter-sound-theme.sh` in CI.
+
+Not verified: the window corners at next login (build compiles, both patches stack
+cleanly, compositor installed — needs the visual pass), Windows ISO conversion completion,
+logins inside the Omarchy guest.
 
 ## Dock video E1 boot result — set_hpd cleared, sink/AUX is the frontier — 2026-10-16 (OpenCode)
 
@@ -2420,6 +3667,28 @@ Three 5 s traces of `drm_sched_job_queue` (read-only): the ChatGPT desktop app s
 
 Owner declined closing the ChatGPT/Codex app, so no A/B was run. New finding: that app is an X11 client under Xwayland while Claude Desktop and Brave are native Wayland. Installed `~/.config/environment.d/60-mseries-electron-wayland.conf` (`ELECTRON_OZONE_PLATFORM_HINT=auto`; script `mseries/install-electron-wayland.sh`, `--uninstall` removes it); takes effect at next login, effect NOT yet measured. Also found: s2idle is the only sleep mode, deep idle is ~7% of CPU0 idle time, sleep drain is unmeasured. Full plan: `mseries/POWER-ROADMAP.md` (workstreams A to G, phases 0 to 4, six owner decisions). Next: after the next login, re-trace GPU jobs/s for the ChatGPT app and compare with the 4,000 to 5,000/s baseline.
 
+## Minimum brightness: sub-5-nit control — 2026-10-16
+
+- **Cause:** Mutter's sysfs backlight sets `min = MAX(1, max/100)` = 5 of 500; every control (keys, slider, bridge) went through Mutter. The Asahi DCP driver (`dcp_backlight.c`, identical in OpenBSD and maralcbr/linux) maps 0-2 nits to one DAC value, so the hardware floor is 2 nits. Keys moved 25 nits per press (30 -> 5).
+- **Prior art:** omacom/omarchy, omacom/omarchy-mac and maralcbr/omarchy-mx-mac use `brightnessctl set N%` with a 1% floor (same 5 nits) and 1% steps at or below 5%. No branch, issue or fork has sub-floor code. Nothing to copy except the finer dim-end steps.
+- **Change:** `mkosi.images/apple-silicon/mkosi.extra/usr/libexec/mseries-brightness` now reads sysfs, writes through logind `Session.SetBrightness` (Mutter fallback), uses `nits = 2 + (max-2)*level^2.2`, steps a 25-value ladder (2, 3, 4, 5, 7, 10, 13, 16, 20, 26, 37 ... 500), adds `--nits N` and read-only `--status`; `--set N` is now a perceptual level. `mseries/quick-settings/ScreenBrightness.vala` uses the same curve and path. New tests: `mseries/brightness/test_keys.py` (12 brightness tests pass). `DESKTOP-SETUP.md` updated.
+- **Verified:** unit tests; `valac -C` typecheck of the widget; `--status` read-only on this Mac (105 of 500). **Not verified:** any write to the live panel (none made, by instruction), Mutter's reaction to a sub-5 value, the Quick Settings build, and a 2-3 nit look in the dark. `test-image-wiring.py` has one failing finalize test that fails identically without these edits.
+- **Next:** install (`mseries/apply-desktop-settings.py` copies the helper; restart it or re-login; rebuild Quick Settings with `install-quick-settings-brightness.sh`), then owner looks at 2-3 nits. If too bright, add a software dim layer below the floor.
+
+### Follow-up: sub-floor software dim — 2026-10-16
+
+- **Dead ends (read-only probes):** the CRTC reports a gamma LUT size of 0 (`GetCrtcGamma` returns empty arrays; `NightLightSupported=false`, `supports-color-transform=false`), so gamma/night-light dimming is unavailable on this DCP. The compositor offers no `wlr-layer-shell`, so a separate overlay client is not possible. The one workable route is a Gala actor, as the screen-corner masks already do.
+- **Added:** `mseries/patches/gala-screen-dim.patch` (applies on top of `gala-screen-corners.patch` at f0791434; `install-gala-screen-corners.sh` applies both). `ScreenDim` is a click-through black layer over the built-in panel, topmost except the corner masks, alpha (capped 0.85) read from `$XDG_RUNTIME_DIR/mseries-dim` and re-read on change, publishes its PID in `mseries-dim.gala`, and is hidden while `ScreenshotManager.take_screenshot` paints. `mseries-brightness` adds four steps below 2 nits (luminance 0.7, 0.5, 0.35, 0.25 of the floor, alpha corrected for gamma 2.2) only while that Gala is alive; the Quick Settings slider clears the dim when it writes.
+- **Verified:** 20 brightness tests pass; the patched Gala typechecks and its dim, layout and screenshot objects compile (`gnome-bg-4` dev headers are missing here, so the full binary was not linked); both patches apply in order to a fresh checkout. **Not verified:** running the patched Gala (needs sudo install and a re-login), banding at the deepest step, screen-recording (PipeWire) capture still including the layer, and anything on the panel.
+- **Installed on this Mac:** the new helper at `~/.local/libexec/mseries-brightness` (running, key handler restarted, no brightness write). Not installed: the patched Gala and the Quick Settings plugin (needs `libadwaita-1-dev`).
+- **Installed 2026-10-16 (owner approved):** apt dev packages `libgnome-bg-4-dev libadwaita-1-dev libpackagekit-glib2-dev libaccountsservice-dev libportal-dev`; patched Gala with corners and dim in `/usr/local/lib/mseries/gala` (user drop-in `mseries-screen-corners.conf`, active at next login, stock fallback launcher); rebuilt Quick Settings plugin with the new slider (backup via `lib-backup.sh`; reload Wingpanel or log in). Pending owner check after re-login: `mseries-brightness --status` should report the dim layer running; keys then go below 2 nits.
+
+### Brightness documentation and ladder refinement — 2026-10-16
+
+- New `mseries/BRIGHTNESS.md`: goals and acceptance (A1–A7), findings with sources, dead ends (no gamma LUT, no layer-shell), prior-art survey, full design with data flow and failure table, implementation inventory, verification matrix, the owner's 10-step test protocol, risk register and the phased roadmap BR-01..BR-21 with owners and acceptance.
+- The key ladder was refined: where neighbours differed by more than 1.45x (the dim end), integer geometric midpoints are inserted, giving 2, 3, 4, 5, 7, 10, 13, 16, 20, 26, 37, 51, 68, 88, 110 ... 500 (25 steps; before: 2, 3, 5, 10, 16, 26, which doubled at 5 → 10). Updated helper installed and key handler restarted (no brightness write); 23 tests pass, including three that fail if `BRIGHTNESS.md` stops matching the code.
+- Still waiting on: the owner's login to the patched Gala and the `BRIGHTNESS.md` section 6 protocol (BR-01).
+
 ## 2026-10-16 (Claude) — dock HDMI sink tests and built-in HDMI reference
 
 - DP-port sink test (07:23–07:27, bypass off): `RESULT=SILENT`, 6 x `DPRX read timeout`; bypass re-armed.
@@ -2427,6 +3696,108 @@ Owner declined closing the ChatGPT/Codex app, so no A/B was run. New finding: th
 - After reboot (kernel 7.1.13-elementary-fairydust-usb4-dptunnel, bypass=1): `1:14` HPD set, tunnel `0:5 <-> 1:14` forms, `DP source preparation failed: -110` at ~22 s. Matches DeepSeek/OpenCode commit 9fb6ff1.
 - Built-in HDMI works (38 modes, desktop extended). Working DCP (`289c`) sequence: DP2HDMI HPD irq -> `powering nub` -> `acking unhandled call 21` -> `set_drive_settings` x2 (link training) -> `plug_gated` -> `set_digital_out_mode`. The dock tunnel DCP (`28cc`) stops after `powering nub`. Saved as `mseries/fairydust/usb4/DCP-REFERENCE-BUILTIN-HDMI-20261016.txt`.
 - No driver, kernel, bootloader or display change made. Next task: DeepSeek drives the DCP to run the call 21 / drive-settings stage for the tunnelled port.
+
+## Restore scheduled developer branch discovery — October 18, 2026
+
+Two explicitly watched Aurora refs were deleted. GitHub returns 422 (No commit found for SHA), so the previous watcher aborted Aurora PR comparisons even though its public branch-head artifact was retained. branch-watch.py now records these exact missing-ref responses as absent-ref observations and continues discovery. Historical pending changes remain; other 422/network/comparison failures still fail the run. Response handles are closed after bounded reads.
+
+Two regression contracts cover preserved PR/head discovery and genuine-error reporting. The same fix passed full candidate workflow 39117953694: 1,114 public heads, 111 observed sources, zero fetch errors and 24 pending changes retained. This small recovery is separated from draft app-integration PR #86 so the permanent six-hour schedule need not wait for quiet GPU qualification. Main dispatch/CI and merge must be verified before reporting recovery complete. No runtime, driver, kernel, boot or audio change.
+
+## Calendar/browser/Mail integration qualification — October 18, 2026
+
+Branch feat/mcp-calendar-browser-mail, draft PR #86, implementation a78bc9b. Sixteen typed MCP tools now cover create-only local Assistant Calendar events, a separate Assistant Browser profile's page reads, and local unsent Mail drafts with an explicit native review window. Quiet policy/reserve unchanged. `configure-assistants.py --refresh-tools` installed the adapters/launchers while preserving the user's other settings.
+
+Verified: 65 contracts; four image-wiring checks after adding GTK3/WebSocket dependencies to both overlay consumers; real Brave/CDP synthetic page read; concurrent/retry/conflict EDS Calendar writes with literal text and independent readback/owned cleanup; actual Assistant Mail Drafts review button → installed Mail composer with exact plus-address, Unicode/reserved subject and multiline body under isolated Xvfb/D-Bus/XDG; exact sixteen-tool Newelle controller discovery without inference. Send never activated, no inbox/account reads or real Calendar records in evaluation. Private full logs/settings clones are not for publication.
+
+Recovered six provably dead pre-reboot MLX CLI reservations via the pinned upstream owner-checked API; added recovery that preserves live/paired/unknown leases and requires both PID and group absent. Default 4B restarted through normal admission. Kernel is now 7.1.12-2-20261017.20-sep-ARCH from separate owner work; do not compare new timings as an identical-state extension of October 16.
+
+Owned `mseries-app-workflow-qualification.service` runs work/run-app-workflows.py and work/app-workflow-qualification.log. Never duplicate it/GPU workers. Its six model cases are browser→Calendar→Mail and hostile-page rejection, three repeats each, with per-second telemetry and retained checkpoints. Wait for quiet windows; preserve owner jobs. Final model outcome, sanitized receipts, public docs and merge are pending. Existing historical app-workflow-smoke.py must be retained; the new suite will be named calendar-mail-workflow-smoke.py when its executing snapshot is archived. Speech decision in local-ai/SPEECH-INTEGRATION.md extends existing F5 capture with future opt-in review; this phase does not change audio or claim grammar/translation shipped.
+
+Watcher follow-through in this branch: the last scheduled run 39097623225 failed because Aurora deleted the explicitly watched fix/m1m2-regressions and fix/m1m2-typec-usb4-router refs; GitHub returns HTTP 422, not 404. The watcher now records these exact absent-ref observations and continues public head/PR discovery, preserving earlier pending history. Other HTTP 422 errors still fail. Two regression contracts cover this distinction. Live recheck and the next dispatched watcher run must be inspected before calling tracking healthy.
+
+### Owner feature direction: agent-first Pantheon with WebRTC
+
+The owner requested kernel/app alerts connected to agents, speech-to-text/speech-to-speech and desktop control, then clarified this as a **feature write-up**, agent-first, with **WebRTC** (not WebMCP). `local-ai/PANTHEON-MCP-DESIGN.md` now proposes the headless broker/permission boundary, durable alert/workflow states, native app/desktop adapters, capture/review/TTS and paired WebRTC sessions. It distinguishes current evidence from proposed functionality and includes phased acceptance tests, cancellation/reconnect/idempotency, quiet limits and privacy boundaries. No new alert, capture, desktop-control or WebRTC daemon was started; current audio remains untouched. The local deliverable is outputs/pantheon-mcp-agent-first-feature.md.
+
+Full repaired developer watcher run 39117953694 succeeded: 1,114 public heads, 111 observed sources, zero fetch errors; two absent refs and 24 pending changes retained. First real Calendar/browser/Mail model chain passed in 347.37 s (cooling pauses included), followed by hostile-page rejection in 12.85 s. First chain has 345 per-second samples, min available 11.44 GiB, max sampled fan 3236 RPM and max temperature 58.40 C; not acoustic measurements or a fast uninterrupted run. Four model cases remain; do not repeat the completed pair.
+
+### Upstream feature/performance comparison requested by owner
+
+`local-ai/UPSTREAM-FEATURE-COMPARISON.md` now compares MX main e5714f9, Mac default quattro ba546a6 and canonical integration quattro-upstream a76179c, and MLX main d8ac5fe against our tested 33630f9 pin (28 commits behind; latest release still v0.7.33). Public source-audit.json records exact revisions, 27 file hashes/links, MIT license metadata and four detailed developer heads. No upstream source or runtime was imported/updated. The source comparison covers crash-agent/notification contracts, native voice options, Laya, oMLX/cache/batching and native Bonsai versus our distinct GGUF test.
+
+High-interest candidate: opt-in GDN_PF_GQA from merged PR #229 reports ~8–9% decode gain on M1 Max/M2 Max, not yet M1 Pro. WORD/WORD2 gather shortcuts stay excluded because upstream fidelity gates reject/do not accept them. Process uclamp already returns EPERM on this kernel; no governor change. A served M1 Max governor experiment's ~2.3% gain/~2 W idle cost is not an always-on quiet default. Test voice/ANE contention rather than assume concurrent ASR always helps. Named developer heads have unique commits but are substantially behind main; graph divergence is not patch novelty or a speed ranking. The existing all-head/PR watcher remains the discovery mechanism.
+
+Local deliverable: outputs/m1pro-upstream-feature-comparison.md. The Pantheon proposal links the comparison and its controlled experiment backlog. Current frozen model cohort still has two completed passes and is waiting on quiet admission for the remaining four; never replace its sources or rerun its completed pair.
+
+### Reproducibility and publication staging
+
+Frozen evaluated sources were copied to work/app-cohort-evaluated-source and SHA-checked against the executing v1 report. The new maintained calendar-mail-workflow-smoke.py is a separate v2 harness: includes runtime/app/profile/helper identities in checkpoint compatibility, explicitly records telemetry loss as interruption and fixes owned-browser timeout cleanup. Three regression cases bring the contract total to 70, all passing. Do not switch the running v1 queue to it or rerun completed v1 results. The dirty temporary app-workflow-smoke.py must remain until the owned queue exits, then restore its historical HEAD contents.
+
+work/publish-receipts.py --app-integration now uses an explicit allowlist, sanitizes paths, checks tool scopes/source digests/cleanup, and requires six completed cases for final publication. --allow-incomplete prepares a clearly labeled checkpoint only. Staged public app-integration-2026-10-18 receipts include two passes, exact evaluated source, installed source/package/binary pins, GUI booleans and only owned cooling-policy events. First positive workflow includes ~226.53 s cooling pause within 347.37 s elapsed. Full logs/settings/browser profiles/journals/private app contents remain excluded.
+
+Merged origin/main 86582a0 into this branch, retaining owner hardware/audio/CodexBar/VM changes and both handoff histories. Frozen executing app harness, adapter, MCP and helper digests still match; no installed owner services/apps were restarted by this reconciliation. The newly inherited dictation handoff reports two live F5 attempts with zero recognized characters and a native AOP signal/noise blocker. The feature proposal/speech decision now records that concrete failure and makes capture validation a gate; no automatic audio/kernel change or new mic recording was performed.
+
+Public page is staged with explicit two-pass/four-pending status, exact source/receipt links, current 70-contract count, the Pantheon/WebRTC proposal and upstream comparison. Reconciliation checks pass (70 assistant contracts and 4 image-wiring tests). A known-missing-ref HTTPError handle is now closed after reading its bounded response; all 17 app/branch/harness contracts pass. Do not claim final publication or merge yet. The only intentional dirty runtime input is the executing temporary app-workflow-smoke.py (digest 93ee800a...), retained for the owned live queue.
+
+### Permanent developer tracking recovery verified on main
+
+PR #94 merged at b240b9abef82fbf4a4504b904d0060dab565a10a after CI (55 assistant contracts on that isolated branch; both validation jobs passed). Subsequent main changes are preserved: dispatch 39119487518 ran on 85926644e666c6babb403a763fe5f84c076e13ab, which contains the fix. It passed with 1,180 branch heads/193 PR heads and zero fetch errors. Every artifact bucket count/digest matches the decoded issue dashboard. Later main configuration selects aurora-rc/edge/wip rather than the deleted explicit refs; prior absent-ref observations and pending history remain. Candidate run 39117953694 separately exercised missing-ref handling (1,114 heads). No duplicate recurring watcher.
+
+App branch incorporates current main and canonical watcher tests, removing duplicate copies without changing the executing cohort. Seventy assistant contracts, four image-wiring tests and CI including native notch checks pass. Two model passes remain completed; the first attempt at repeat two found the fan-stopped endpoint offline and is retained as an unscored URLError interruption. The existing controller handles recovery only through quiet admission. work/collect-app-quiet.py refreshes sanitized worker pause overlap before final publication.
+
+### Prepared additional real-client acceptance checks
+
+The API suite exposes only the six workflow tools. To verify the actual client path with all sixteen schemas, newelle-app-workflow-smoke.py is prepared for hidden Newelle Send/controller positive and hostile-page workflows. Its isolated server denies private/out-of-workflow reads before dispatch; allowed calls use the installed production MCP and data adapters. Two guard contracts bring the assistant total to 72, all passing. The new GUI helper is compiled, **not yet executed**. It does not start/switch GPU workers, refuses GUI inference while mseries-app-workflow-qualification.service is live, and can require the prior six-case report. Run discovery-only first, then one GUI positive and one GUI hostile-page case in fresh dedicated work output folders only after the owned backend queue is terminal/completed. Do not merge #86 as final acceptance until these actual-client gates are inspected as well.
+
+Full GUI logs/settings clones stay private. The helper uses Xvfb, cairo rendering, NON_UNIQUE Newelle, --die-with-parent and owned process-group cleanup. Memory, TTS, search and title generation are disabled only in its isolated clone. Synthetic-only traces, per-second telemetry, independent EDS/RFC822 matches and cleanup become bounded receipts; provider/guard interruptions are not quality failures. Never rerun a completed failed receipt to improve its score. The executing old app-workflow-smoke.py and its four hashed inputs remain unchanged.
+
+### Three-case app checkpoint retained — October 18
+
+The existing owned queue remains live (PID 193250 at inspection). Browser→Calendar→Mail repeat 2 passed in 129.95 s with independent event/draft matches and owned cleanup; three of six backend cases now pass, three remain. The preceding connection-refused attempt remains unscored in interrupted_model_cases and its archive. The quiet collector recorded zero cooling-paused overlap for this second positive case; waiting before admission is separate. Sanitized partial receipts/checksums and staged docs were refreshed to three completed cases, complete:false. No GUI inference or duplicate GPU worker started. All three GitHub validation jobs on 49b8116 passed. The actual Newelle all-schema discovery/conversation gates remain pending after this owned queue ends. ROADMAP current-evidence rows now distinguish the tested 4B default, completed prior coding/Bonsai work and verified main watcher recovery from historical queued entries.
+
+### Four-case checkpoint and retained timeout — October 18
+
+Owned queue still active, PID 193250. Hostile-page repeat 2 passed in 104.75 s (~91.07 s cooling-paused). Four backend cases pass; two incomplete. Positive repeat 3 performed six tool calls then timed out (280.07 s total, ~156.43 s cooling-paused); outcome None, owned source cleanup true, not a quality failure. Child 315632 exited authoritatively; existing parent waits for quiet admission before its third infrastructure attempt. Do not launch a duplicate queue, change frozen hashes or rerun the four completed passes. Partial sanitized checkpoint now includes this interruption.
+
+work/publish-app-receipts.py now requires six backend outcomes AND three Newelle client receipts (discovery/positive/negative) before complete:true. It allowlists bounded receipt fields, rejects unexplained private-read outputs and missing cleanup, excludes full UI logs/settings, and was checked against absent/complete/interrupted/unknown-field/cleanup/private-read fixtures. Final publishing correctly refuses current incomplete qualification. GUI gates remain unrun; installed default worker is cooling in bounded bursts, other owner jobs untouched.
+
+### Owner reprioritization: universal dictation first
+
+Owner now prioritizes universal STT, then a deeper troubleshooting/optimization agent, then a low-overhead everyday machine interface; Gmail preferred for mail. These expand pending scope, not completed capabilities. Merged origin/main 661b901, including installed native mic fix b20c808: source SHA 9e9ba17f... matches installed stream script. Do not repeat the earlier incorrect mic-noise diagnosis; corrected FLOAT_LE capture has upstream loopback/self-test evidence, human F5-to-app still open. No audio/service/kernel/display or owner window was changed by this merge; inherited CodexBar changes are already owner work, not redeployed here. Frozen app cohort helpers remained unchanged by the merge.
+
+New prepared dictation-input.py/client/service and optional STREAM_OUTPUT=ibus stream route provide Unicode commits bound to one focus/session, sensitive-field refusal, 120s expiry and Escape cancellation. Five pure session contracts pass. A real isolated IBus InputContext test passes Unicode, stale focus-out and password refusal; early test/factory mistakes corrected first. Raw test logs in work/dictation-ibus-context*.log retain a PyGObject floating-object warning; inspect/fix before promotion. Source changes are not installed/activated. Next: actual isolated GTK/Qt/browser fields, stream output integration tests, status/cancel usability, deployment and owner F5 trial. No mic capture or new model inference performed for these tests. The existing app queue PID 193250 is still live/waiting for quiet admission; never duplicate it or restore its dirty temporary app harness yet.
+
+### Input field results, browser gap and terminal backend queue
+
+Six pure input contracts now pass. Real isolated GTK3 and GTK4 Entry fields passed Unicode commits, stale-focus rejection and password refusal. GTK3 also passed two chunks through the real stdin client. The low-level Python commit-text callback caused a floating-object warning; the test now observes serialized wire signals and passes without it; GTK native field tests had no such warning. Raw development failures remain in work/dictation-ibus-*.log. Brave X11/XIM accepted normal Unicode and rejected field changes but incorrectly accepted Begin in a password field. work/dictation-browser-input.log retains the failed acceptance evidence. Production bridge now refuses client xim entirely; new pure regression passes. Do not activate/promote this as universal yet. Next build a reliable browser/Qt route with sensitive-field/focus metadata (consider AT-SPI metadata or native Wayland), test actual app fields, then install/activate. No owner input engine change (still xkb:us::eng), audio/mic capture or owner windows changed. New app tests use private Xvfb/IBus/session buses; GTK renderer is now explicitly cairo/software.
+
+Backend queue mseries-app-workflow-qualification exited terminal/inactive with all six passes and all four frozen source hashes matching. Positive repeats: 347.37/129.95/124.37 s; rejection repeats: 12.85/104.75/26.90 s. Both connection-refused and timeout interruptions retained; all cleanup true. Only after verifying terminal state, restored historical app-workflow-smoke.py from HEAD. Newelle isolated wrapper discovery passed in 11.80 s, exact sixteen tools, no inference. Started sole next-stage owned unit mseries-newelle-app-client-qualification.service using work/run-newelle-app-clients.py, log work/newelle-app-client-qualification.log: positive then hostile-page actual Send conversations, pinned existing endpoint only, no new model worker. Inspect this unit before any new model/ASR test; preserve all outcomes. Publisher now keeps newelle-client-discovery.json distinct from older discovery receipt. Partial six-case receipts retain complete:false/client_complete:false until both conversation receipts exist and are inspected. Final merge/publication remains pending.
+
+### Revised input metadata gate and completed Newelle cases
+
+All input clients now require AT-SPI focused-field role/state/identity and active top-level window in addition to IBus hints. The original browser failure was insufficient content-purpose metadata; the first XIM-only guard did not cover the actual failing route. Preserve both failed logs, do not present that early guard as the complete fix. Metadata gate now applies to all clients. It requests no field text. Qt QWidget root reports active FILLER under APPLICATION; recognize that active top-level case. Seven pure contracts pass and were added to arm64 validation CI.
+
+Final exact-source field suite in work/dictation-input-final-v2 passed: contracts, unbacked IBus context refusal, GTK3 X11 multi-chunk stdin, GTK4 native Wayland in separate headless software-rendered Gala, Qt6 X11 Unicode/multiline and Brave X11 with accessibility enabled. Password and changed-field refusal passed in actual widgets. All final manifest hashes match candidate source. Published qualification-v2.json is separate from retained original failed qualification.json; no ASR, mic capture, owner engine or window change. PyQt6 plus seven small Qt test dependencies were installed (0 upgrades/removals), no audio packages changed. GTK test had to pump its event loop while the bridge queried metadata; synchronous test calls had blocked its own AT-SPI replies. Browser harness now waits/kills only its owned process group before temp profile cleanup. Raw private test logs retain transient portal/cache warnings. Source is still uninstalled; next installation/rollback, streaming-ASR-to-field, Electron/remaining apps and owner F5, then optional grammar/translation review. Native Wayland wrapper lives in mseries/dictation/test-wayland-input.sh.
+
+Owned Newelle client queue is terminal/inactive. Positive actual Send passed 367.95 s: six calls, independent event/draft matches, cleanup and quiet policy true. Negative 35.46 s used only browser reads, no events/drafts, cleanup/policy true, but answered “The meeting time is **14:30**.” rather than exactly “14:30”; strict passed:false is retained, no rerun/regrade. Discovery also passed 11.80 s. All app receipts are now complete:true (six backend passes, two of three client receipts passed including discovery; negative strict failure listed explicitly). Complete denotes complete evidence, not all-quality-pass. Default everyday unit remains enabled/active; no owned GPU work remains from app queues. Publisher source work/publish-app-receipts.py uses distinct newelle-client-* names and records failed receipt names; full logs/settings are excluded. Main merge and Pages remain pending, with universal dictation first per owner.
+
+### Guarded streaming-to-field and reversible deployment prepared
+
+Source batch adds install-dictation-input.py with first-baseline/digest-preserving payload transactions, active capture detection across all worker threads (ignoring dead notification children), model-ready lifecycle verification, CPU/IBus drop-in, toolkit accessibility/input settings, future-session environment defaults and direct Brave launcher accessibility flags. Unknown custom launcher wrappers are preserved. It does not enable screen reading or close/restart owner apps. The installed launcher helper accepts ordinary argument arrays (no shell) for other app sessions. Base stream installer copies the new helpers, pins measured NumPy 2.5.4, supports --universal, preserves an active universal upgrade and invokes rollback before uninstall. Activation still pending; don't claim it live yet.
+
+Sixteen contracts pass. Actual --stage then --rollback restored original installed source SHA 9e9ba17f and xkb:us::eng while keeping original F5 PID 287567 unchanged; saved receipt work/dictation-stage-rollback.json, baseline at ~/.local/state/mseries-dictation-input (private, retained). Current --status: staged:false, activated:false, input_active:false, original stream active. Source had to inherit IBus.EngineSimple to preserve US-international dead-key composition: initial keyboard fixture produced e instead of é, retained keyboard-regression-v1.json; revised keys/shift/backspace/compose pass. No owner keyboard layout changed. Subsequent Qt initial-focus timing exposed the need to discover an already-focused field: metadata fallback now scans only active top-levels on demand, a 0.6 s/1024-node request budget with 200 ms per-RPC timeout, never labels/text. A child-enumeration budget contract was added so a wide/slow provider cannot bypass that budget. Real Qt6 field and unbacked-context refusal checks pass after that change.
+
+Guarded CPU streaming-to-GTK v4 passed on the public existing LibriSpeech clip: normalized WER 0, first widget text 4.3126 s, total 12.0186 s, min available 12,402,786,304 bytes (~11.55 GiB), max fan 2525 RPM/temp45.76 C, 56 samples. No mic capture or playback. Source copies were frozen BEFORE starting the engine/model and all seven digests still match candidate. work/dictation-speech-guarded-v4 contains bounded receipt and evaluated-source; private-asr.log is NOT for publication. Using CPU backend (strict) is verified in private log; original GPU-capable F5 process stayed idle. Runtime now shares reserve/hard limits and stops only its own speech work on a guard violation; it never stops owner jobs. v1/v3 development results retained separately; don't rank their timings as controlled identical-state comparisons. Anonymous memfd Whisper fallback passed actual CLI compatibility in 1.32 s (imperfect final words retained). No persistent fallback audio file.
+
+Electron 44.4.5 synthetic X11 form passed Unicode/focus/password checks. Cached archive was verified against official SHASUMS256 (3bf0acab49c4ea3c9283cdb86bf3dd7204bd52a6fba6c8ae51101bdba2adae0e), extracted only under work/electron44-test-runtime; do not redistribute it. Ordinary Brave without force-renderer-accessibility failed closed even after private OS IsEnabled=true; direct Brave desktop flags are therefore part of future-launch setup. ScreenReaderEnabled was not changed. Current owner screen-reader settings remain untouched.
+
+Public dictation receipts now include exact v3/v4 evaluated code, SDK/model/fixture pins, original browser and keyboard failures, framework follow-through and stage-only rollback; full logs, private settings and audio excluded. All app GPU queues are terminal, six backend passes and strict Newelle format failure retained; default 4B still active. Before activation finish/review this batch, merge latest main preserving other owner work, re-run CI. Prior run 39121820998 failed ONLY downloading a pinned Asahi archive (HTTP429); hardware/native-notch jobs passed. Current PR #86 is conflicting with newer main and checks won't run until reconciliation. No kernel/boot/display/audio routing changed. Next actual activate/health/rollback/re-activate at quiet admission, owner F5 confirmation, optional review UI and final merge/Pages. Never repeat completed app model trials.
+
+### First live rollout failed safely; input-selector fix prepared
+
+Merged current main 1a88fe5 at e366dcd, preserving owner CodexBar/display work without redeploying/restarting those apps. Fresh validation run 39124608646 passed all three jobs (previous HTTP429 infra failure remains historical). Actual activation attempt e366dcd failed in input service ExecStartPost. Source files/settings rolled back and original speech restarted; global engine was briefly unset after the provider stopped, then explicitly restored to xkb:us::eng. No recording or owner app close. Failed attempt is preserved in activation-attempt-v1.json; do not claim successful activation yet.
+
+Root cause confirmed in upstream IBus tools/main.vala: CLI selects the engine, then exec_setxkbmap returns failure for layout=default when use-system-keyboard-layout=false. Tests had used the direct API, so they did not exercise this CLI extra step. Unit/manager now use the installed Python client's IBus API select path, which preserves the keyboard map. Real isolated selector/Unicode/compose/focus/password regression passes; exact code saved in evaluated-selector-v1. Rollback additionally restores an empty/dummy engine, while preserving another valid owner selection; new contract makes total sixteen. CLI X11/Wayland bus address hashes matched, so this was not a display-bus mismatch. No IBus restart or global layout-policy change performed. Current original source SHA9e9ba17f, native stream active, input bridge inactive, original source selected, preferences restored; next retry actual activation/health/rollback/re-activation after this fix is pushed.
 
 ## October 16 local AI rollout and qualification
 
@@ -2780,3 +4151,359 @@ Verified: both full release Meson/Ninja builds; installer bash syntax; GTK harne
 Owner found elementary's connected Ethernet glyph (`<…>`) unrecognizable. `network-ethernet-icon.patch` replaces the bundled 16/24px connected wired assets with a monochrome Ethernet socket/contact glyph and preserves a padlock on the secure/VPN variant. Icon names, network-state selection and Wi-Fi/cellular assets are unchanged. The installer applies the new patch after the compact panel patch; image payload already includes all patches. New vector artwork is CC0-1.0, attributed in the SVG headers.
 
 Verified: full network module rebuild; connected and VPN assets rendered through GdkPixbuf and visually inspected; installer applied the full pinned patch series and installed/reloaded Wingpanel. Live panel appearance by eye remains for the owner.
+## CodexBar: dense left-side panel readout and OpenCode Go sign-in — 2026-10-18
+
+The owner asked for CodexBar on the left of the top panel, showing all three providers densely with company
+marks, percentages and time to reset. The Wingpanel display widget now shows one segment per provider in the
+order Codex, Claude, OpenCode Go: the mark, % left of the window that will stop you first (lowest remaining;
+labelled `7D` when it isn't the 5-hour window), and a compact countdown to that window's reset (`4h44m`,
+`6d22h`) that ticks every poll while the popover is rebuilt only on data changes. Claude comes from the
+claude-swap helper's active account when upstream's snapshot has no Claude entry; OpenCode Go without account
+quota shows this machine's 7-day token count (`121M 7d tok`). Warnings colour the % and stale data dims the
+segment; the tooltip lists every window. The left placement uses the existing
+`install-wingpanel-codexbar-left.sh` patch, which was not installed (stock binary was running); it is now
+installed with the stock binary backed up at `/usr/local/lib/mseries/io.elementary.wingpanel.pre-codexbar-left`.
+
+OpenCode Go quota did not load because upstream v0.77.0 imports opencode.ai cookies only on macOS. New helper
+`codexbar-opencode-login.py login` opens a native WebKitGTK 6 sign-in window (private persistent profile in
+`~/.local/share/codexbar-opencode-login`), keeps only the `auth` / `__Host-auth` / `__Host-console_session`
+cookies upstream forwards, saves them as `providers[opencodego]` `cookieSource: manual` + `cookieHeader` in
+`~/.config/codexbar/config.json` (0600, locked, atomic), then checks `codexbar usage --provider opencodego
+--source web`. The OpenCode card now has an Accounts **+** like Claude's, and its Sign in… button runs the same
+flow. Side effect while probing: `codexbar config enable --provider opencodego` created
+`~/.config/codexbar/config.json` (previously absent; defaults plus OpenCode Go enabled).
+
+Verified: Meson 4/4 (new countdown, binding-window and panel-count tests); headless renders of the bar in
+healthy, depleting, provider-error and live fixtures, light and dark; helper config writes against a temp
+config; the sign-in window loads opencode.ai's login page headlessly (`/console/login`, no cookies before
+sign-in, so it cannot close early); `check-codexbar-port.sh` passes. Not verified: a real opencode.ai sign-in
+end to end (needs the owner's credentials) and the panel on the live desktop by eye.
+
+## CodexBar: OpenCode Go connects with an API key so passkeys work — 2026-10-18
+
+The owner reported that the built-in OpenCode sign-in window does not allow passkeys: WebKitGTK has no
+WebAuthn support on Linux. Reading Brave's cookie store and keyring instead was rejected as credential access.
+`codexbar-opencode-login.py login` now opens a small Connect window: Open opencode.ai (default browser, so
+passkeys work), create and copy an API key in the console, paste it (masked). The key is checked with
+`codexbar usage --provider opencodego --source api` (key passed only in the environment) and stored with
+upstream's `codexbar config set-api-key --provider opencodego --stdin`. "Sign in here instead" keeps the
+built-in window for email or GitHub sign-ins, saving the web session as before. `status` counts either.
+
+Verified headlessly (Xvfb): the window renders; a fake key shows upstream's "credentials are invalid or
+expired" and nothing is saved (real config unchanged); `set-api-key` into a temp config stores `apiKey` and
+upstream then reads it (error changes from "No OpenCode Go API key configured" to "invalid or expired").
+Not verified: a real key end to end (needs the owner's key).
+
+## Original plan (implemented below): Claude desktop-app switch, OpenCode OAuth, OpenCode bar — 2026-10-18
+
+Owner wants fast account switching for Claude, OpenAI and OpenCode, with Claude first. Usage ran out
+before any of this was built.
+
+1. **Claude desktop app switch.** The app keeps its own login in `~/.config/Claude`: the `Cookies` sqlite file
+   and the `oauth:tokenCache` / `oauth:tokenCacheV2` / `lastKnownAccountUuid` keys in `config.json`
+   (safeStorage-encrypted, so copy them without decrypting). claude-swap only changes the CLI login.
+   Plan, in `codexbar-claude.py`:
+   - `list` snapshots the app's current account to `~/.local/share/codexbar-claude-app/<uuid>/`
+     (0700): Cookies via the sqlite backup API, plus only those three keys.
+   - `app-switch <uuid>` must be spawned by the panel, not by a process inside the app. It quits
+     `/usr/lib/claude-desktop/claude-desktop` (SIGTERM the main pid, then wait), snapshots the current
+     account, restores the target (replace Cookies and remove `-journal`; merge the keys into
+     config.json), then relaunches with `gtk-launch com.anthropic.Claude`.
+   - Account 1 has no app snapshot yet. The owner signs in once in the app; `list` then saves it.
+   - The panel's Claude switch should do cswap plus app-switch, after a dialog warning that the app
+     restarts.
+   At 06:40 both accounts were out on the 5-hour limit (account 1 0%, resets ~08:30; account 2,
+   the app's, 2%, resets ~11:00).
+2. **OpenCode from `opencode auth login opencode`.** opencode v2 keeps credentials in the `credential`
+   table of `~/.local/share/opencode/opencode.db` (`integration_id='opencode'`, `active=1`). The value is
+   JSON: `type=oauth`, `access`, `refresh`, `expires` (~30 days), `metadata.orgID/email`. Verified:
+   `OPENCODE_API_KEY=<access>` with `codexbar usage --provider opencodego --source api` returns real
+   quota (5h/weekly/monthly windows). Make `codexbar-opencode-wrapper.py` fall back to this access
+   token, read-only and only when it hasn't expired, when auth.json has no key.
+3. **OpenCode usage bar with tokens.** Once (2) feeds the snapshot, the OpenCode segment and card get
+   real windows. Add the local token count (from `codexbar-opencode-local.py`) next to the bar.
+
+
+## CodexBar: finish native Claude switching and OpenCode OAuth — 2026-10-18
+
+Completed the interrupted `claude-app-switch` branch, keeping upstream pinned at **0.77.0** and preserving
+the existing native Settings, dense cards, helpers and port/deploy workflow.
+
+- `codexbar-claude.py` now snapshots the installed native app's encrypted `Cookies` SQLite database and
+  the three identity/token-cache config keys into atomic private bundles. Backup includes committed WAL
+  data and converts to DELETE journal mode so the snapshot is standalone. The panel offers **CLI only**
+  or **Switch both**; a native switch validates the saved target before touching the app or CLI, stops
+  the app gracefully, saves its final session, merges the target login, changes the CLI and restarts via
+  `gtk-launch com.anthropic.Claude`. Preferences are retained; old SQLite sidecars are removed. Failures
+  in restore/CLI switching attempt to restore the previous app session. No app tokens are decrypted or
+  returned in helper output. Launching this from within the app is refused to avoid killing its caller.
+- Accounts without a native snapshot say **app sign-in needed**. **Set up app** saves the current app
+  session, restarts with a locally cleared login (no server logout request), then the owner signs in
+  once in native Claude and uses **Save app login**. Setup can be cancelled by switching back to the
+  saved previous account; a private pending marker retains that recovery path. Sessions may expire or
+  be revoked; a valid local snapshot is not proof of server authentication.
+- The OpenCode wrapper now falls back from `auth.json` to an active OAuth row in `opencode.db`'s
+  `credential` table (`integration_id=opencode`). It only passes an access token with more than 60s
+  validity; reads are read-only, and refresh stays with OpenCode. Explicit environment/auth.json keys
+  take precedence. Live requests with both `--source api` and automatic source return real 5h, 7d and
+  monthly quota. The panel and card show seven-day local tokens beside the account quota, explicitly
+  labelled as local activity across local accounts.
+- Owner requested ordering: **Codex first, Claude second, OpenCode Go third**. This is now consistent
+  across the top-panel segments and quota/account cards, including Claude's injected helper card.
+
+Validation: 56 Python helper tests (29 Claude, 11 wrapper, 7 Codex accounts, 5 OpenCode local, 4 sessions),
+4 Meson suites, port compatibility check, syntax checks, light/dark headless connected-quota renders.
+Claude tests use temporary homes and fake process control; they cover two-account session round trips,
+private permissions, WAL backup, corrupted/missing targets, setup cancellation, rollback, restart failure
+reporting and inherited-token removal. Live `app-save` works, account 2 is app-ready, same-account
+`switch 2 --desktop` succeeds without restarting the app, and `switch 1 --desktop` refuses the missing
+snapshot before changing either login.
+
+**Remaining user action / validation:** account 1 still needs its one-time native sign-in via **Set up
+app**, then **Save app login**. Authenticated switching between both real native accounts is unverified
+until that is done. The working Claude app was not interrupted during implementation. No kernel,
+bootloader or audio changes. Deployed with `bash mseries/deploy-codexbar.sh`; Wingpanel and CodexBar restarted successfully. The running snapshot reports one Codex window and three OpenCode Go windows with no provider errors. Merged current `origin/main` without conflicts before publishing.
+
+
+## CodexBar: native Claude switching verified with owner — 2026-10-18
+
+The owner completed native sign-in for account 1. Live verification exposed two lifecycle bugs and a
+cookie-persistence gap that mocked process tests could not catch:
+
+- `gtk-launch` can leave its output pipes inherited by the GUI. Restart now detaches with DEVNULL
+  streams and checks native process presence rather than waiting for those pipes to close.
+- Chromium can rewrite the entire command line into argv[0], so looking for a separate `--type=` flag
+  misidentified utility processes. Stop now uses parent PID relationships and signals only the main
+  native app, then waits for the process tree to exit.
+- Native OAuth caches alone did not restore chat sign-in. The first test asked for login again.
+  Snapshots now require the actual `sessionKey` cookie, and Save app login waits up to 35 seconds for
+  Electron’s deferred cookie writes. Incomplete sign-ins cannot overwrite a good snapshot or be marked
+  app-ready. The owner signed in again, the complete cookie persisted, and the snapshot was saved.
+
+Real `switch 2 --desktop` and `switch 1 --desktop` both succeeded with app restarts after that save.
+The owner explicitly confirmed **“Yes, chats are visible”** on the returned Gmail account without
+signing in again. Both accounts now have complete native app snapshots. The app and CLI are left on
+account 1 (`sdolbec1@gmail.com`); Codex/Claude/OpenCode ordering is unchanged.
+
+Validation: 32 Claude helper tests now cover delayed cookie persistence, rejection of OAuth-only
+snapshots, detached launch and parent-based main-process selection (59 Python helper tests total).
+The existing PR validation run passed all three jobs before this follow-up; this push reruns CI.
+The fixed helper was installed atomically for the live test; the normal deployment runs after push.
+Upstream pin remains 0.77.0. PR #101 carries the completion and fixes.
+
+
+## CodexBar: dense alternate quotas, 5-hour priority and native account onboarding — 2026-10-18
+
+Owner asked to see non-main-account remaining quota and reset ETA, explicitly retaining both the 5h
+window and total weekly/monthly windows for Claude and OpenCode. Implemented shared dense formatting
+(`5H 0% ↻3h10m · 7D 72% ↻5d13h`, plus 30D where provided), a compact alternate-account second line in
+the panel, and two-line dropdown account rows with email/Switch above all quota windows. Panel account
+numbers map to identities in their tooltip. Main readouts now prioritize 5h rather than letting a lower
+weekly number hide it. All countdowns tick with normal polls; manual Refresh also updates saved accounts.
+The APIs provide quota percentages rather than raw remaining-token quantities.
+
+Added read-only `codexbar-opencode-local.py accounts`: deduplicates OAuth sessions by account/workspace,
+ignores expired credentials, and fetches inactive-account 5h/7d/30d quota without changing active login.
+The two real OpenCode credentials here share one account/workspace; the live helper correctly reports
+one active account rather than inventing a second. Temporary fixtures exercise genuinely distinct
+alternate OpenCode accounts and a 0% short-window balance alongside nonzero longer-term totals.
+
+Owner also reported Codex + could not add an account and requested native elementary styling. It
+previously only saved whichever account was already active elsewhere. New `codexbar-accounts.py login`
+uses the bundled/PATH Codex CLI's official browser login in a private temporary CODEX_HOME, forces file
+credential storage, saves the new account, and leaves ~/.codex/auth.json unchanged. Cancelling stops
+the login child and removes its temporary home. New Granite `AccountDialog.vala` keeps sign-in,
+progress, result and retry in one elementary window; other provider add prompts/results also use
+Granite. Native switch logic and tested Claude sessions are preserved.
+
+Validation: 65 Python helper tests (32 Claude, 10 Codex accounts, 11 wrapper, 8 OpenCode local, 4 sessions),
+4 Meson suites with short-window/long-window reset-format coverage; port compatibility check passes;
+light/dark headless account dialog and dense quota fixtures. Live OpenCode identity deduplication checked.
+Normal deployment installs the UI/helpers and restarts Wingpanel/CodexBar; Claude is not restarted.
+The owner completed the new browser flow and confirmed: “Yes, the second account appears.” Adding a second real Codex account is now verified.
+Owner explicitly requested **all work merged to GitHub main**; publish this batch through PR #101 after
+checks, merge it, and deploy the resulting main version.
+
+
+### Follow-up: colour cues and account-dialog visual polish — 2026-10-18
+
+Owner confirmed the new Codex browser flow worked, then requested colour-coded secondary usage and
+further dialog polish. Each saved-account window now gets the theme’s success/warning/error colour
+with exactly the usage bars’ thresholds (>25% healthy, >10% low, <=10% critical). A 0% 5h balance stays
+red alongside a healthy green weekly balance; reset ETAs remain quiet. This applies in both the top
+panel’s alternate-account line and the dropdown. Pure formatting tests assert independent colours.
+
+Replaced the basic message-dialog layout for Codex onboarding with a centered provider mark, stronger
+title, brief subtitle, a rounded instruction card and native footer actions. Progress/result/cancel
+behaviour is unchanged from the owner-verified sign-in flow. Rebuilt and passed four Meson suites;
+light/dark previews are checked. This follow-up is included in the owner-authorized merge of PR #101
+into main and subsequent desktop deployment.
+
+
+## CodexBar: best-available account and next-weekly-reset hints — 2026-10-18
+
+Owner requested a yellow star for the coding service/account with the most remaining tokens and a
+red exclamation near the account closest to its weekly reset. The providers do not report comparable
+absolute token budgets; the implementation explicitly compares available quota percentages instead.
+The star ranks each fresh account by its **lowest remaining percentage across reported windows**.
+Thus 0% 5h / 99% weekly cannot beat a usable account, nor can a high 5h balance hide a low weekly/monthly
+balance. Positive ties are all marked; exhausted, unknown, stale and awaiting-reset balances do not
+receive a star. Tooltips disclose the metric and name the account.
+
+The red ! independently selects the earliest future seven-day reset. Five-hour and monthly resets do
+not qualify; expired reset dates and stale accounts are excluded, and equal reset times all get marked.
+The tooltip identifies the account and local reset date. The ! means next weekly reset, with no arbitrary
+"within one day" threshold. Provider headers, alternate-account identities and both lines of the panel
+carry the hints. A provider-level marker may refer to its secondary login; the matching account row is
+marked too. Normal polling recalculates selection and updates the UI when a winner changes or a reset
+passes. No new network requests, credentials handling or account switching were added.
+
+Validation: four Meson suites pass, with three new selection cases covering session exhaustion,
+long-window bottlenecks, stale and unknown data, ties, reset boundaries, and monthly exclusion even
+without duration metadata. The `hints` render fixture deliberately makes a saved Claude account best
+and a saved Codex account next to reset; checked in light/dark. Upstream pin remains 0.77.0. Publish,
+merge to main and deploy as the owner requested for this ongoing CodexBar work.
+
+
+## CodexBar: native account-sheet visual refinement — 2026-10-18
+
+Owner requested a more beautiful add-account popup that belongs on elementary OS, merged to main.
+`AccountDialog.vala` now uses a raised provider emblem, theme-colored instruction icons, a bordered
+two-row instruction group, clearer typography and spacing, and the standard Granite response area.
+Colors follow the elementary accent/light/dark theme; Claude retains its recognizable terracotta mark.
+Codex, Claude and OpenCode add prompts share the sheet with provider-specific copy and actions.
+Claude/OpenCode keep their existing confirmation-to-helper flow; the separate OpenCode key-entry
+window and its authentication logic are unchanged. Codex still uses the owner-verified isolated browser
+sign-in helper; the active account and native Claude session handling are unchanged.
+
+Codex waiting, success and retry states use the same visual hierarchy, native default actions and
+keyboard focus. Helper detail is selectable, bounded to four lines and available in full on hover;
+long errors cannot stretch the dialog. Cancel still terminates the running login helper.
+
+Validation: built the module and render probe, passed four Meson suites, and inspected 12 headless
+previews (three provider prompts plus waiting/success/failure in light/dark). `CB_DIALOG` probe modes
+use only mock commands, never the owner's sign-in or credentials. No live reauthentication was needed
+for this presentation change. Upstream pin remains 0.77.0. Publish through a PR, merge to main and run
+`bash mseries/deploy-codexbar.sh` after publishing and after deploying the merged revision.
+
+
+## CodexBar: native OpenCode API-key sheet — 2026-10-18
+
+Owner requested that the separate API-key window match the refined add-account dialog and land on
+main. `codexbar-opencode-login.py` now builds a Granite dialog with the same raised OpenCode emblem,
+heading/spacing, elementary accent icon, framed browser and key sections, and native Cancel/Connect
+response buttons. The masked/peekable key field has a mnemonic label; Enter submits, Cancel closes,
+and inline validation shows a spinner while editing and alternative sign-ins are disabled. Rejected
+keys restore focus and editing. Error detail wraps within the sheet and remains available on hover.
+
+Browser/passkey access, the built-in email/GitHub fallback, validation-before-storage, config paths
+and storage commands are preserved. The sheet factory imports GTK/Granite lazily so CLI status and
+non-GUI functions remain usable without GUI initialization. Installer explicitly includes the Python
+GI/Granite/WebKit runtime packages used by this helper. Upstream remains pinned to 0.77.0.
+
+Validation: Python compilation, installer shell syntax, all four Meson suites and the port check pass.
+Six headless previews cover initial/checking/error in light and dark; the committed
+`mseries/codexbar-wingpanel/probe/render-opencode.py` uses dummy masked keys and never calls auth or
+storage. Mocked end-to-end window response checks passed cancellation, invalid syntax, rejected key
+with retry enabled, and successful validation/storage. These checks used an isolated non-unique GTK
+application, dummy keys and mocked network/storage; no real account was changed. Live sign-in was
+not repeated for this visual refinement. Publish, merge to main and deploy as authorized by the owner.
+
+
+## CodexBar: OpenCode + opens the key sheet directly — 2026-10-18
+
+Owner requested removal of the extra Continue popup. `add_opencode_account()` now starts the existing
+`codexbar-opencode-login.py login` helper immediately, opening the native API-key sheet in one click.
+Validation, storage, cancellation, result reporting and quota refresh retain the existing helper path.
+Claude and Codex onboarding are unchanged. Reviewed the OpenCode + callback and direct helper dispatch;
+built the module and passed all four Meson suites. No live credentials or account changes were needed.
+Upstream pin remains 0.77.0. Publish to main and deploy the merged revision as requested.
+
+
+## CodexBar: direct Claude sign-in and account plan badges — 2026-10-18
+
+Owner requested Claude + skip confirmation like OpenCode +, and account levels in the dropdown.
+The Claude handler now dispatches the existing browser-login helper immediately; the unused
+confirmation wrapper was removed. Existing Claude/native-app account switching and login capture
+remain intact; no real login or account switch was performed for this UI change.
+
+Active identities and each saved-account row now show a compact reported-plan pill. Codex already
+exposes per-account plan claims; Claude now projects known subscriptionType labels (free/pro/max/team/
+enterprise) from its saved claude-swap Linux credential records and verified active CLI login. Only
+plan labels enter helper JSON, never credential fields. Native Electron app sessions are untouched.
+OpenCode projects per-account plan metadata when present, while the active upstream snapshot supplies
+its normal plan. Current saved OpenCode metadata may omit a plan, so these rows say “Plan unavailable.”
+An active account's plan is never assigned to a different saved account, and quota size is not used
+to infer a subscription. Tooltips describe plans as reported since login metadata may be cached.
+
+Validation: 35 Claude and 9 OpenCode helper tests pass, including account-specific saved plans,
+verified-active-only fallback, corrupt/missing metadata, and credential exclusion. Four Meson suites
+pass with plan formatting coverage; module/probe builds and port compatibility check pass. Light/dark
+fixtures show Pro/Plus/Max/Go and missing plans, with normal-width bottom-of-dropdown checks using new
+CB_HIDE_PANEL/CB_SCROLL probe controls. Upstream pin remains 0.77.0. Publish, merge to main and deploy
+the merged version as explicitly requested.
+
+
+## CodexBar: OpenCode's actual account level — 2026-10-18
+
+Owner requested replacing unavailable OpenCode plan labels where possible. Confirmed the official
+Console's read-only `GET https://opencode.ai/console/api/go/status` accepts the saved OAuth bearer
+credential plus its `x-org-id` workspace header. The live account returns current `product: go`.
+The raw usage API strips product data from the upstream quota model, and saved credential metadata
+has no plan field, which explains the earlier unavailable label.
+
+The account helper now reads this endpoint for distinct unexpired saved OAuth accounts, including
+the active one, and projects only Go/Go Plus plus a console-source marker. A valid access period and
+current product determine the label; renewal product, cancellation scheduled after the period, quota
+size and other accounts never determine it. Current Console data supersedes upstream's generic Go
+provider label. Missing/expired/unrecognized subscriptions remain unknown, while failed lookups can
+retain an existing reported metadata label. Billing identifiers and credentials are not exported.
+
+Requests are fixed to the official HTTPS host, workspace-scoped, redirect-blocked, bounded to 128 KiB
+and an eight-second timeout. OpenCode owns token refresh; its database is still opened read-only.
+Normal existing account polling drives refresh. API-key-only/custom-server records without this
+Console authorization retain the existing fallback rather than being assigned a guessed tier.
+
+References: OpenCode provider auth/header source at `214fb7fdbab9ad13773629839f1178382400cf97`
+(`packages/core/src/plugin/provider/opencode.ts`); CodexBar v0.77.0
+`OpenCodeGoUsageFetcher.swift` uses the same Console status endpoint for cookie-authenticated meters;
+https://dev.opencode.ai/v2/docs/console/go/ documents Go and Go Plus. No upstream code was imported.
+Upstream pin stays 0.77.0. Validation: 17 OpenCode tests, four Meson suites, module/probe builds, port
+check and light/dark normal-width fixtures with active Go Plus and secondary Go. Tests cover scoped
+headers, current versus renewal product, expired/malformed/missing data, network/oversize failure,
+foreign-host rejection, account isolation and credential exclusion. Live product resolution checked
+read-only. Merge to main and deploy as explicitly requested.
+
+
+## CodexBar: native OpenCode account switching — 2026-10-18
+
+Owner requested Switch beside OpenCode accounts, like Codex/Claude, and merge to main. Secondary
+browser-account rows now activate via `codexbar-opencode-local.py switch ID`. The helper validates
+local integration/type/identity, invokes `opencode auth switch opencode ID` without a shell or stdin,
+and verifies the requested ID is the only active OpenCode credential before reporting success.
+OpenCode's normal service publishes the activation event; the helper never writes SQLite directly.
+Raw CLI output is withheld from result JSON. Refreshable OAuth logins remain switchable even when
+access has expired; OpenCode owns refresh. Unusable logins have disabled Switch and a sign-in hint.
+Workspace names are shown on secondary rows to distinguish same-email workspace choices.
+
+Fixed two selection-following issues: identity reads now prefer active v2 credential metadata over
+legacy account_state, and the quota wrapper prefers the selected v2 OAuth token over a legacy Go key.
+During native refresh it keeps the selected identity rather than substituting a legacy account.
+Explicit OPENCODE_API_KEY environment overrides remain honored. Switching invalidates accounts/local
+identity caches and requests backend quota refresh. A generation check discards pending pre-switch
+helper reads and retries them so an old response cannot undo the new selection.
+
+Validation: 25 helper and 13 wrapper tests pass, with verified A→B→A selection/identity/usage-token
+changes, invalid/wrong-provider/expired-unrefreshable rejection, refreshable-expiry activation,
+missing CLI, timeout, failed command, no-op and false-success verification. Credential/error output
+exclusion is covered. Module/probe builds, four Meson suites and port check pass; normal-width light/
+dark previews show the new Switch beside the secondary OpenCode plan/quota. Installed OpenCode v2.0.32
+accepted a same-account activation. A live round trip through the two saved sessions for the same
+account/workspace then succeeded, with the original credential selection restored and verified.
+Distinct account switching is covered with temporary test accounts; the owner's current records are
+one distinct account/workspace, so a second row requires another distinct login saved in OpenCode.
+
+References: OpenCode `214fb7fdbab9ad13773629839f1178382400cf97`, auth/switch.ts, core credential.activate,
+provider/opencode.ts and integration.connection.resolve (native activation event and refresh behavior);
+https://dev.opencode.ai/v2/docs/cli/commands/ and /providers/. No upstream code was copied. CodexBar
+remains pinned to 0.77.0. Publish, merge to main and deploy as explicitly requested.

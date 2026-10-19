@@ -1,0 +1,147 @@
+{
+  "prefix": "oi-wayland-342df5f1",
+  "source": "$XDG_DATA_HOME/orchard-incus",
+  "workflow_driver": "programmatic native GTK widget actions + independent Incus CLI assertions",
+  "results": [
+    {
+      "workflow": "create-dialog",
+      "passed": true,
+      "seconds": 0.72
+    },
+    {
+      "workflow": "duplicate-name-preserves-existing-guest",
+      "passed": true,
+      "seconds": 1.21
+    },
+    {
+      "workflow": "run-files-and-transfer",
+      "passed": true,
+      "seconds": 0.47
+    },
+    {
+      "workflow": "settings",
+      "passed": true,
+      "seconds": 0.25
+    },
+    {
+      "workflow": "folder-and-port-devices",
+      "passed": true,
+      "seconds": 1.58
+    },
+    {
+      "workflow": "lifecycle-and-snapshot-restore",
+      "passed": true,
+      "seconds": 16.61
+    },
+    {
+      "workflow": "clone-rename-delete",
+      "passed": true,
+      "seconds": 1.58
+    },
+    {
+      "workflow": "native-vm-create-run-delete",
+      "passed": true,
+      "seconds": 13.28
+    },
+    {
+      "workflow": "native-terminal-and-backup-portal",
+      "passed": true,
+      "seconds": 2.26
+    },
+    {
+      "workflow": "cancel-create-and-cleanup",
+      "passed": true,
+      "seconds": 1.16
+    },
+    {
+      "workflow": "frame-presentation-and-layout",
+      "passed": true,
+      "seconds": 9.34
+    }
+  ],
+  "desktop": {
+    "display": "GdkWaylandDisplay",
+    "renderer": "VulkanRenderer",
+    "theme": "io.elementary.stylesheet.blueberry",
+    "surface": "GdkWaylandToplevel"
+  },
+  "duplicate_name_preserved_original": true,
+  "native_export_bytes": 9714376,
+  "frames": {
+    "measured": 811,
+    "presentation_feedback": 810,
+    "refresh_interval_us": 8333.0,
+    "frame_start_to_presentation_ms": {
+      "p50": 21.923,
+      "p95": 29.63,
+      "max": 38.619
+    },
+    "presentation_gap_ms": {
+      "p50": 8.347,
+      "p95": 17.124,
+      "max": 26.29
+    },
+    "programmatic_action_to_presentation_ms": {
+      "samples": 18,
+      "p50": 26.257,
+      "p95": 33.62,
+      "max": 38.442
+    },
+    "limits": "Continuous status-text damage plus programmatic GTK navigation, not physical input-to-photon. Missing feedback is not classified as a dropped frame."
+  },
+  "narrow_size": [
+    780,
+    510
+  ],
+  "cleanup": {
+    "owned_remaining": [],
+    "existing_guests_preserved": true,
+    "all_audit_attempts_swept": true
+  },
+  "expected_errors": [
+    {
+      "what": "Create instance",
+      "error": "Launching oi-wayland-342df5f1-dev\nError: Instance \"oi-wayland-342df5f1-dev\" already exists"
+    }
+  ],
+  "errors": [],
+  "source_sha256": {
+    "__init__.py": "9c5824ea99503be3b0f538df8daefbf912ecb6850b5835d05dbe33d46fd9d373",
+    "app.py": "dddfd74f3e79b5b200414680e069848f486751b6c49eb8d7d641abedfedd10b5",
+    "backend.py": "a03713d92e38e954980117935988d4bce0c4d1b9c85eea715d4d4211ed881e6f",
+    "ui.py": "5aa7c69449cecf04a3b28611806aebbc34642af7dab660f303b44e73a79545c0",
+    "window.py": "f5f5db6d2a3854462678fee3ee4b39898259cc64884118a8a208a731b2b7dd32",
+    "runtime.py": "4748899d3786599a6fbc149b69ee505df9b38a7d111330c2163f5cbcca57e140"
+  },
+  "date": "2026-10-18",
+  "unit_tests": {
+    "run": 103,
+    "passed": 97,
+    "skipped_opt_in_live": 6
+  },
+  "control": {
+    "display": "GdkWaylandDisplay",
+    "renderer": "VulkanRenderer",
+    "frames": 649,
+    "frame_start_to_presentation_ms": {
+      "p50": 20.606,
+      "p95": 24.472,
+      "max": 32.506
+    },
+    "presentation_gap_ms": {
+      "p50": 8.337,
+      "p95": 16.664,
+      "max": 20.968
+    }
+  },
+  "method_notes": [
+    "Final installed Python/GTK4 foreground app; native GdkWaylandDisplay/GdkWaylandToplevel, Vulkan, actual elementary blueberry stylesheet. No Xvfb or forced Cairo for the live run.",
+    "Eight-second probe: continuous status-text damage plus native navigation; GdkFrameTimings compositor presentation feedback. Action attribution uses the first frame counter containing the tick-callback action. Not physical keyboard/mouse input-to-photon.",
+    "810/811 frame records had completed presentation feedback; missing feedback is not classified as a dropped frame. The 120 Hz refresh interval is 8.333 ms; some presented intervals exceed it.",
+    "The simple GTK control is a separate six-second continuous-damage run, not a matched-content or isolated-load causal benchmark. Other owner workloads were preserved.",
+    "Native GTK actions were invoked programmatically. Files listing and real CLI transfer round trips passed; Terminal reached a one-shot guest login profile; the elementary backup Save portal was driven through AT-SPI and the archive was independently listed with tar.",
+    "Interactive upload/download picker selection, physical keyboard/focus traversal, interactive Console input, long-duration RSS/thermal soak, very large real fleets, other themes/scales and the separate Vala manager/panel remain outside this receipt.",
+    "Initial driver errors included responding before a dialog was mapped (GTK Wayland critical/crash), deprecated AT-SPI method dispatch, an overly short VM-agent wait and foreground entry text changes. The final driver waits for mapped/painted dialogs, guards fixture names and allows VM startup. Preliminary action-latency values used different attribution and are not a before/after speedup claim.",
+    "One altered-name fixture from an interrupted early driver was separately identified and removed. The final sweep found no audit fixtures; original owner guests remained present and running."
+  ]
+}

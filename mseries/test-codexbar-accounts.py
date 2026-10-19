@@ -97,6 +97,47 @@ class AccountsTest(unittest.TestCase):
         self.assertEqual(len(MODULE.list_accounts()), 2)
         self.assertFalse(MODULE.switch("a@example.com")[0])  # ambiguous email needs the exact id
 
+    def test_browser_login_saves_second_account_without_replacing_active_credentials(self):
+        self.sign_in(auth_for("a@example.com", account_id="1", marker="active-secret"))
+        before = (self.home / "auth.json").read_bytes()
+        process = mock.Mock()
+        process.wait.return_value = 0
+        process.poll.return_value = 0
+        def launch(argv, **kwargs):
+            isolated = pathlib.Path(kwargs["env"]["CODEX_HOME"])
+            self.assertNotEqual(isolated, self.home)
+            self.assertIn('cli_auth_credentials_store="file"', argv)
+            (isolated / "auth.json").write_text(json.dumps(auth_for("b@example.com", account_id="2", marker="new-secret")))
+            return process
+        with mock.patch.object(MODULE.subprocess, "Popen", side_effect=launch):
+            ok, message = MODULE.login("codex")
+        self.assertTrue(ok)
+        self.assertIn("b@example.com", message)
+        self.assertNotIn("secret", message)
+        self.assertEqual((self.home / "auth.json").read_bytes(), before)
+        self.assertEqual(len(MODULE.list_accounts()), 2)
+
+    def test_cancelled_browser_login_terminates_child_and_preserves_current_account(self):
+        self.sign_in(auth_for("a@example.com", marker="active-secret"))
+        before = (self.home / "auth.json").read_bytes()
+        process = mock.Mock()
+        process.wait.side_effect = [InterruptedError(), 0]
+        process.poll.return_value = None
+        with mock.patch.object(MODULE.subprocess, "Popen", return_value=process):
+            ok, message = MODULE.login("codex")
+        self.assertFalse(ok)
+        self.assertIn("cancelled", message)
+        process.terminate.assert_called_once()
+        self.assertEqual((self.home / "auth.json").read_bytes(), before)
+
+    def test_missing_cli_and_failed_login_return_actionable_errors(self):
+        self.assertFalse(MODULE.login(None)[0])
+        process = mock.Mock()
+        process.wait.return_value = 1
+        process.poll.return_value = 1
+        with mock.patch.object(MODULE.subprocess, "Popen", return_value=process):
+            self.assertFalse(MODULE.login("codex")[0])
+
 
 if __name__ == "__main__":
     unittest.main()

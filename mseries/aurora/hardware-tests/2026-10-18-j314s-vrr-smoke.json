@@ -1,0 +1,247 @@
+{
+  "schema": 1,
+  "kind": "scoped-vrr-smoke-observation",
+  "date": "2026-10-18",
+  "board": "J314S / M1 Pro",
+  "kernel_release": "7.1.12-2-20261017.20-sep-ARCH",
+  "kernel_image_sha256": "543d1efd2dffaf621d1d7d1ba092cec71ee955903ec63c112bbcd32d921edbbd",
+  "boot_payload_sha256": "9c9c2d01c3bdb2784daf99cecd6f0e2327eb8f148ea43c8e522e5bae09a14d5f",
+  "status": "partial: activation observed; sustained VRR not validated",
+  "builtin": {
+    "connector": "eDP-1",
+    "before_mode": "3024x1890@120.000",
+    "selected_mode": "3024x1890@120.000+vrr",
+    "advertised_vrr_range_hz": [
+      24,
+      120
+    ],
+    "scale": 2,
+    "position": [
+      0,
+      0
+    ],
+    "primary": true
+  },
+  "external": {
+    "connector": "DP-2",
+    "selected_mode": "1920x1080@60.000",
+    "scale": 1,
+    "position": [
+      1512,
+      0
+    ],
+    "primary": false,
+    "user_reports_dock_working": true,
+    "physical_dock_port_independently_verified": false
+  },
+  "profile_change": {
+    "profile": "desk-4k",
+    "changed_fields": [
+      "builtin monitor mode"
+    ],
+    "laptop_only_profile": "unchanged",
+    "monitors_xml": "unchanged",
+    "watcher_executable": "unchanged",
+    "first_attempt": "saved fixed-120-Hz profile restored the prior mode",
+    "watcher_reapply": "brief external 59.94-Hz nudge observed, then fixed 60 Hz restored"
+  },
+  "fullscreen_probe": {
+    "duration_seconds": 12.008,
+    "requested_content_fps": [
+      24,
+      60,
+      90
+    ],
+    "draw_calls": 634,
+    "samples": [
+      {
+        "elapsed_seconds": 0.0,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 0.501,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 1.003,
+        "builtin_vrr_enabled": 1,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 1.504,
+        "builtin_vrr_enabled": 1,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 2.006,
+        "builtin_vrr_enabled": 1,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 2.508,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 3.01,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 3.511,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 4.013,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 4.514,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 5.016,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 5.518,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 6.019,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 6.521,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 7.023,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 7.525,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 8.027,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 8.529,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 9.03,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 9.532,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 10.034,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 10.535,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 11.038,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 11.539,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      },
+      {
+        "elapsed_seconds": 12.041,
+        "builtin_vrr_enabled": 0,
+        "external_vrr_enabled": 0,
+        "external_connected": true,
+        "external_fixed_1080p_60": true
+      }
+    ],
+    "sampling_interval_seconds": 0.5,
+    "internal_VRR_ENABLED_1_samples": 3,
+    "total_samples": 25
+  },
+  "user_visual_result": "Both displays look normal; keep VRR enabled.",
+  "limits": [
+    "Sustained VRR throughout fullscreen animation not established; inspect compositor focus/policy and presentation timing in next trial",
+    "No physical panel refresh measurement",
+    "No battery efficiency claim",
+    "No suspend/resume or unplug/replug test",
+    "Next kernel not booted or tested"
+  ],
+  "next_test": "2026-10-18-j314s-vrr-and-boot-archive.md#next-kernel-vrr-acceptance",
+  "source_notes": "Samples captured with a local read-only libdrm helper and native GTK4 probe. Public helpers are adapted versions; no new fullscreen test was run during publication."
+}

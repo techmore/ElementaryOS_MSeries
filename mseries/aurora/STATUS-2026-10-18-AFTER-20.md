@@ -2,6 +2,16 @@
 
 Source: `gh` against `omacom/linux-aurora` at 2026-10-18T09:50Z.
 
+## Later owner confirmation and VRR observation
+
+The owner subsequently confirmed the dock works and both displays look normal
+with builtin VRR selected. [Scoped receipt](hardware-tests/2026-10-18-j314s-vrr-and-boot-archive.md)
+records external fixed 1080p/60, unchanged layout, and brief builtin kernel VRR
+activation (3/25 samples). This updates the visible-picture uncertainty below;
+the physical dock port was not independently verified, and long-run stability,
+suspend/resume and sustained VRR are still open. No upstream release statement
+or original freeze is changed by this host observation.
+
 ## What changed since `.20`
 - **No new release.** `aurora-2026.10.17.20` (2026-10-17 19:20Z) is still latest; default-branch HEAD is
   `5d570a78a` (the `.20` merge, #137). Zero commits on it since.
