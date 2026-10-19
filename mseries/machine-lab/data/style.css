@@ -136,3 +136,21 @@ textview.ml-console, textview.ml-console text {
     100% { box-shadow: 0 0 0 2px @bg_color, 0 0 0 7px alpha(#68b723, 0); }
 }
 .ml-dot.running { animation: ml-pulse 1.6s ease-out infinite; }
+
+.ml-step-badge {
+    min-width: 26px; min-height: 26px;
+    border-radius: 99px;
+    font-weight: 700; font-size: 0.9em;
+    background: alpha(@accent_color, 0.15);
+    color: @accent_color;
+}
+.ml-step-badge.done { background: #68b723; color: white; }
+.ml-pill.new { color: @accent_color; background: alpha(@accent_color, 0.15); }
+
+.ml-gallery-card {
+    padding: 16px;
+    border-radius: 14px;
+    background: @card_bg_color;
+    box-shadow: 0 0 0 1px alpha(@fg_color, 0.1), 0 1px 3px alpha(black, 0.12);
+}
+.ml-gallery-card:hover { box-shadow: 0 0 0 2px @accent_color, 0 2px 8px alpha(black, 0.18); }

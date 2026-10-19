@@ -13,14 +13,15 @@ struct Preset {
     public int mem;
     public int disk;
     public int color;
+    public string url;
 }
 
 const Preset[] presets = {
-    { "Omarchy", "Arch-based tiling desktop", 4, 6, 64, 0 },
-    { "Ubuntu", "Friendly general-purpose desktop", 4, 4, 48, 4 },
-    { "Debian", "Rock-solid and lightweight", 2, 2, 32, 5 },
-    { "Fedora", "Fresh packages, GNOME", 4, 4, 48, 0 },
-    { "Blank Machine", "Start from scratch", 2, 4, 32, 7 }
+    { "Omarchy", "Arch-based tiling desktop", 4, 6, 32, 7, "https://omarchy.org" },
+    { "Ubuntu", "Friendly general-purpose desktop", 4, 4, 24, 4, "https://ubuntu.com/download/server/arm" },
+    { "Debian", "Rock-solid and lightweight", 2, 2, 16, 5, "https://www.debian.org/CD/netinst/" },
+    { "Fedora", "Fresh packages, GNOME", 4, 4, 24, 0, "https://fedoraproject.org/server/download" },
+    { "Blank Machine", "Bring any ARM64 .iso", 2, 4, 16, 1, "" }
 };
 
 public class MachineRow : Gtk.ListBoxRow {
@@ -29,6 +30,9 @@ public class MachineRow : Gtk.ListBoxRow {
     private Gtk.Label sub_label;
     private Gtk.Box dot;
     private Gtk.Image icon;
+
+    public signal void group_changed ();
+    public int group { get { return machine.is_fresh () ? 1 : 0; } }
 
     public MachineRow (Machine machine) {
         Object (machine: machine);
@@ -75,8 +79,8 @@ public class MachineRow : Gtk.ListBoxRow {
 
     public void update () {
         name_label.label = machine.name;
-        sub_label.label = "%s · %d CPU · %d GiB".printf (
-            machine.running ? "Running" : "Stopped", machine.cpus, machine.mem_gib);
+        string state = machine.running ? "Running" : machine.is_fresh () ? "Not installed" : "Stopped";
+        sub_label.label = "%s · %d CPU · %d GiB".printf (state, machine.cpus, machine.mem_gib);
         for (int i = 0; i < 8; i++) {
             icon.remove_css_class ("ml-c-%d".printf (i));
         }
@@ -139,6 +143,7 @@ public class MachineLab : Gtk.Application {
             return;
         }
         machines = MachineStore.load ();
+        MachineStore.discover (machines);
 
         window = new Gtk.ApplicationWindow (this);
         window.title = "Machine Lab";
@@ -173,6 +178,15 @@ public class MachineLab : Gtk.Application {
             }
             return false;
         });
+        Timeout.add_seconds (2, () => {
+            foreach (var m in machines.data) {
+                m.poll ();
+            }
+            return Source.CONTINUE;
+        });
+        foreach (var m in machines.data) {
+            m.poll ();
+        }
         window.present ();
     }
 
@@ -191,14 +205,27 @@ public class MachineLab : Gtk.Application {
         handle.child = header;
         side.append (handle);
 
-        var heading = new Gtk.Label ("MACHINES");
-        heading.xalign = 0;
-        heading.add_css_class ("ml-sidebar-title");
-        side.append (heading);
 
         list = new Gtk.ListBox ();
         list.selection_mode = Gtk.SelectionMode.SINGLE;
         list.add_css_class ("navigation-sidebar");
+        list.set_sort_func ((a, b) => {
+            var ra = (MachineRow) a;
+            var rb = (MachineRow) b;
+            if (ra.group != rb.group) return ra.group - rb.group;
+            return strcmp (ra.machine.name.down (), rb.machine.name.down ());
+        });
+        list.set_header_func ((row, before) => {
+            var r = (MachineRow) row;
+            if (before != null && ((MachineRow) before).group == r.group) {
+                row.set_header (null);
+                return;
+            }
+            var h = new Gtk.Label (r.group == 0 ? "YOUR MACHINES" : "NEW — NOT INSTALLED");
+            h.xalign = 0;
+            h.add_css_class ("ml-sidebar-title");
+            row.set_header (h);
+        });
         list.row_selected.connect ((row) => {
             if (row == null) {
                 content.visible_child_name = "empty";
@@ -271,31 +298,60 @@ public class MachineLab : Gtk.Application {
         handle.child = header;
         page.append (handle);
 
-        var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 10);
+        var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
         box.vexpand = true;
         box.valign = Gtk.Align.CENTER;
         box.halign = Gtk.Align.CENTER;
-        box.width_request = 380;
-        var icon = new Gtk.Image.from_icon_name ("computer");
-        icon.pixel_size = 128;
-        icon.add_css_class ("ml-empty-icon");
-        box.append (icon);
-        var t = new Gtk.Label ("No Machines Yet");
+        box.margin_start = 32;
+        box.margin_end = 32;
+        box.width_request = 520;
+        var t = new Gtk.Label ("Create a Machine");
         t.add_css_class ("title-1");
-        t.margin_top = 12;
         box.append (t);
-        var d = new Gtk.Label ("Create a machine to run another Linux next to elementary OS, with full hardware acceleration.");
+        var d = new Gtk.Label ("Pick a starting point. Machine Lab sets up sensible hardware, then walks you through the installer.");
         d.wrap = true;
         d.justify = Gtk.Justification.CENTER;
+        d.margin_bottom = 14;
         d.add_css_class ("dim-label");
         box.append (d);
-        var b = new Gtk.Button.with_label ("New Machine");
-        b.add_css_class ("suggested-action");
-        b.add_css_class ("pill");
-        b.halign = Gtk.Align.CENTER;
-        b.margin_top = 12;
-        b.clicked.connect (() => add_machine (presets[0]));
-        box.append (b);
+
+        var grid = new Gtk.Grid ();
+        grid.column_homogeneous = true;
+        grid.column_spacing = 12;
+        grid.row_spacing = 12;
+        int i = 0;
+        foreach (var p in presets) {
+            var card = new Gtk.Button ();
+            card.add_css_class ("flat");
+            var cb = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
+            cb.add_css_class ("ml-gallery-card");
+            var ic = new Gtk.Image.from_icon_name ("computer");
+            ic.pixel_size = 40;
+            ic.add_css_class ("ml-row-icon");
+            ic.add_css_class ("ml-c-%d".printf (p.color));
+            cb.append (ic);
+            var tb = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
+            tb.valign = Gtk.Align.CENTER;
+            var n = new Gtk.Label (p.name);
+            n.xalign = 0;
+            n.add_css_class ("ml-spec-value");
+            var bl = new Gtk.Label (p.blurb);
+            bl.xalign = 0;
+            bl.add_css_class ("ml-spec-label");
+            var sp = new Gtk.Label ("%d CPU · %d GiB RAM · %d GiB disk".printf (p.cpus, p.mem, p.disk));
+            sp.xalign = 0;
+            sp.add_css_class ("ml-fineprint");
+            tb.append (n);
+            tb.append (bl);
+            tb.append (sp);
+            cb.append (tb);
+            card.child = cb;
+            var preset = p;
+            card.clicked.connect (() => add_machine (preset));
+            grid.attach (card, i % 2, i / 2);
+            i++;
+        }
+        box.append (grid);
         page.append (box);
         return page;
     }
@@ -309,11 +365,18 @@ public class MachineLab : Gtk.Application {
             MachineStore.save (machines);
             row_for (m).update ();
         });
+        m.installer_detached.connect (() => {
+            MachineStore.save (machines);
+            send_toast ("%s is installed. It will boot from its disk now.".printf (m.name));
+        });
         page.start_requested.connect (() => start_machine (m));
         page.remove_requested.connect (() => confirm_remove.begin (m));
         pages[m.id] = page;
         content.add_named (page, m.id);
-        list.append (new MachineRow (m));
+        var row = new MachineRow (m);
+        m.state_changed.connect (() => list.invalidate_sort ());
+        m.state_changed.connect (() => list.invalidate_headers ());
+        list.append (row);
     }
 
     private MachineRow row_for (Machine m) {
@@ -343,6 +406,7 @@ public class MachineLab : Gtk.Application {
         m.mem_gib = preset.mem;
         m.disk_gib = preset.disk;
         m.color = preset.color;
+        m.url = preset.url == "" ? null : preset.url;
         int port = 2222;
         bool clash = true;
         while (clash) {
@@ -361,9 +425,23 @@ public class MachineLab : Gtk.Application {
     }
 
     private void start_machine (Machine m) {
+        if (m.managed) {
+            string? tool = Machine.find_mseries_vm ();
+            if (tool == null) {
+                show_error ("mseries-vm was not found. Set MSERIES_VM_TOOL to its full path.");
+                return;
+            }
+            try {
+                m.start (tool);
+                send_toast ("Starting %s…".printf (m.name));
+            } catch (Error e) {
+                show_error (e.message);
+            }
+            return;
+        }
         string? launcher = find_launcher ();
         if (launcher == null) {
-            show_error ("The QEMU launcher was not found. Set MACHINE_LAB_LAUNCHER to the full path of run-vm.sh.");
+            show_error ("The QEMU launcher (run-vm.sh) was not found next to the app. Set MACHINE_LAB_LAUNCHER to its full path.");
             return;
         }
         if (!m.has_disk () && m.installer == null) {
@@ -421,11 +499,18 @@ public class MachineLab : Gtk.Application {
         if (override_path != null && FileUtils.test (override_path, FileTest.IS_EXECUTABLE)) {
             return override_path;
         }
-        string installed = "/usr/bin/machine-lab-run-vm";
-        if (FileUtils.test (installed, FileTest.IS_EXECUTABLE)) {
-            return installed;
+        foreach (var installed in new string[] {
+            Path.build_filename (Environment.get_home_dir (), ".local", "bin", "machine-lab-run-vm"),
+            "/usr/bin/machine-lab-run-vm"
+        }) {
+            if (FileUtils.test (installed, FileTest.IS_EXECUTABLE)) {
+                return installed;
+            }
         }
-        string exe_dir = Path.get_dirname (Environment.get_prgname () ?? "");
+        string exe_dir = "";
+        try {
+            exe_dir = Path.get_dirname (FileUtils.read_link ("/proc/self/exe"));
+        } catch (Error e) {}
         string[] candidates = {
             Path.build_filename (exe_dir, "run-vm.sh"),
             Path.build_filename (exe_dir, "..", "launcher", "run-vm.sh")

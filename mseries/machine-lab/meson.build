@@ -22,6 +22,8 @@ executable('machine-lab',
   install: true
 )
 
+install_data('data/io.github.mseries.MachineLab.svg',
+  install_dir: get_option('datadir') / 'icons/hicolor/scalable/apps')
 install_data('data/io.github.mseries.MachineLab.desktop',
   install_dir: get_option('datadir') / 'applications')
 install_data('launcher/run-vm.sh',

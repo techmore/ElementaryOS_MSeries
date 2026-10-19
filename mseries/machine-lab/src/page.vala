@@ -20,6 +20,15 @@ public class MachinePage : Gtk.Box {
     private Gtk.Label net_v;
     private Gtk.Label ssh_cmd;
     private Gtk.Image hero_icon;
+    private Gtk.Label hero_sub;
+    private Gtk.Box setup_card;
+    private Gtk.Box connect_card;
+    private Gtk.MenuButton more_button;
+    private Gtk.Label[] step_badges = {};
+    private Gtk.Label step2_detail;
+    private Gtk.Label step1_detail;
+    private Gtk.Label step3_detail;
+    private Gtk.Button get_button;
     private Gtk.Box ready_card;
     private Gtk.Image ready_icon;
     private Gtk.Label ready_title;
@@ -64,6 +73,7 @@ public class MachinePage : Gtk.Box {
         switcher.stack = stack;
         header.title_widget = switcher;
         var more = new Gtk.MenuButton ();
+        more_button = more;
         more.icon_name = "view-more-symbolic";
         more.tooltip_text = "More actions";
         var pop = new Gtk.Popover ();
@@ -80,6 +90,9 @@ public class MachinePage : Gtk.Box {
 
         machine.state_changed.connect (refresh);
         machine.finished.connect ((code) => {
+            if (code > 0) {
+                show_tab ("console");
+            }
             toast (code > 0 ? "%s stopped with an error (exit %d)".printf (machine.name, code)
                             : "%s stopped".printf (machine.name));
         });
@@ -125,10 +138,11 @@ public class MachinePage : Gtk.Box {
         title.xalign = 0;
         title.ellipsize = Pango.EllipsizeMode.END;
         text.append (title);
-        var sub = new Gtk.Label ("Linux ARM64 · hardware accelerated");
-        sub.xalign = 0;
-        sub.add_css_class ("dim-label");
-        text.append (sub);
+        hero_sub = new Gtk.Label ("");
+        hero_sub.xalign = 0;
+        hero_sub.wrap = true;
+        hero_sub.add_css_class ("dim-label");
+        text.append (hero_sub);
 
         var pills = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
         pills.margin_top = 6;
@@ -141,6 +155,35 @@ public class MachinePage : Gtk.Box {
         text.append (pills);
         hero.append (text);
         clamp.append (hero);
+
+        // Guided first run: shown only for a machine that has never been installed.
+        setup_card = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+        setup_card.add_css_class ("ml-card");
+        var setup_head = new Gtk.Label ("Set up in three steps");
+        setup_head.xalign = 0;
+        setup_head.add_css_class ("title-4");
+        setup_head.margin_top = 14;
+        setup_head.margin_start = 16;
+        setup_head.margin_bottom = 4;
+        setup_card.append (setup_head);
+
+        get_button = new Gtk.Button.with_label ("Get ISO");
+        get_button.valign = Gtk.Align.CENTER;
+        get_button.clicked.connect (() => {
+            if (machine.url != null) {
+                new Gtk.UriLauncher (machine.url).launch.begin ((Gtk.Window) get_root (), null);
+            }
+        });
+        setup_card.append (step_row (1, "Get an ARM64 installer",
+            "Download a Linux ARM64 .iso, or use one you already have.", get_button, out step1_detail));
+        var pick = new Gtk.Button.with_label ("Choose…");
+        pick.valign = Gtk.Align.CENTER;
+        pick.clicked.connect (() => choose_installer.begin ());
+        setup_card.append (step_row (2, "Choose the installer file",
+            "Pick it here, or drop it on the box below.", pick, out step2_detail));
+        setup_card.append (step_row (3, "Start the installer",
+            "Install inside the window. Shut the guest down when it finishes and Machine Lab boots the new disk from then on.", null, out step3_detail, true));
+        clamp.append (setup_card);
 
         var specs = new Gtk.Grid ();
         specs.column_homogeneous = true;
@@ -177,6 +220,7 @@ public class MachinePage : Gtk.Box {
 
         // Connect row
         var connect = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
+        connect_card = connect;
         connect.add_css_class ("ml-card");
         connect.add_css_class ("ml-spec");
         var term = new Gtk.Image.from_icon_name ("utilities-terminal-symbolic");
@@ -268,6 +312,38 @@ public class MachinePage : Gtk.Box {
         fine.add_css_class ("ml-fineprint");
         clamp.append (fine);
         return scroller;
+    }
+
+    private Gtk.Widget step_row (int n, string title, string detail, Gtk.Widget? action,
+                                 out Gtk.Label? detail_label, bool last = false) {
+        var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 14);
+        row.add_css_class ("ml-form-row");
+        if (!last) {
+            row.add_css_class ("ml-form-sep");
+        }
+        var badge = new Gtk.Label ("%d".printf (n));
+        badge.add_css_class ("ml-step-badge");
+        badge.valign = Gtk.Align.START;
+        step_badges += badge;
+        row.append (badge);
+        var t = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
+        t.hexpand = true;
+        var tl = new Gtk.Label (title);
+        tl.xalign = 0;
+        tl.add_css_class ("ml-spec-value");
+        var dl = new Gtk.Label (detail);
+        dl.xalign = 0;
+        dl.wrap = true;
+        dl.ellipsize = Pango.EllipsizeMode.NONE;
+        dl.add_css_class ("ml-spec-label");
+        t.append (tl);
+        t.append (dl);
+        row.append (t);
+        detail_label = dl;
+        if (action != null) {
+            row.append (action);
+        }
+        return row;
     }
 
     private Gtk.Widget spec_card (string icon_name, out Gtk.Label value, string label) {
@@ -492,23 +568,53 @@ public class MachinePage : Gtk.Box {
 
     public void refresh () {
         bool running = machine.running;
+        bool managed = machine.managed;
+        bool fresh = machine.is_fresh ();
         title.label = machine.name;
         cpu_v.label = machine.cpus == 1 ? "1 virtual CPU" : "%d virtual CPUs".printf (machine.cpus);
         mem_v.label = "%d GiB".printf (machine.mem_gib);
-        disk_v.label = "%d GiB".printf (machine.disk_gib);
+        disk_v.label = machine.disk_gib > 0 ? "%d GiB".printf (machine.disk_gib) : "Disk";
         net_v.label = "Shared (NAT)";
         ssh_cmd.label = "ssh -p %d localhost".printf (machine.ssh_port);
 
+        setup_card.visible = fresh && !managed;
+        connect_card.visible = !managed && !fresh;
+        drop_zone.visible = !managed;
+        more_button.visible = !managed;
+        get_button.visible = machine.url != null;
+        hero_sub.label = managed ? (fresh ? "Imported from mseries-vm · installer not finished" : "Installed · imported from mseries-vm")
+            : fresh ? "New machine · not installed yet"
+            : "Linux ARM64 · installed";
+
+        var problems = Readiness.problems ();
+        bool installing = running && machine.installer != null;
         start_button.visible = !running;
         stop_button.visible = running;
-        start_button.sensitive = true;
-        start_button.label = machine.installer != null ? "Start Installer" : "Start Machine";
+        stop_button.label = managed ? "Shut Down" : "Force Stop";
+        start_button.label = fresh ? "Start Installer" : "Start";
+        start_button.sensitive = problems.length == 0 && (!fresh || managed || machine.installer != null);
+        start_button.tooltip_text = problems.length > 0 ? "Fix the items in the setup check first"
+            : (fresh && !managed && machine.installer == null ? "Choose an installer first" : null);
 
-        status_pill.label = running ? "Running" : "Stopped";
+        status_pill.label = running ? (installing ? "Installing" : "Running")
+            : fresh ? "Not installed" : "Stopped";
+        status_pill.remove_css_class ("running");
+        status_pill.remove_css_class ("new");
         if (running) {
             status_pill.add_css_class ("running");
-        } else {
-            status_pill.remove_css_class ("running");
+        } else if (fresh) {
+            status_pill.add_css_class ("new");
+        }
+
+        // Step badges: a check once done.
+        bool have_iso = machine.installer != null;
+        for (int i = 0; i < step_badges.length; i++) {
+            bool done = i == 1 && have_iso;
+            step_badges[i].label = done ? "✓" : "%d".printf (i + 1);
+            if (done) step_badges[i].add_css_class ("done"); else step_badges[i].remove_css_class ("done");
+        }
+        if (step2_detail != null) {
+            step2_detail.label = have_iso ? Path.get_basename (machine.installer) : "Pick it here, or drop it on the box below.";
         }
 
         if (machine.installer != null) {
@@ -517,8 +623,10 @@ public class MachinePage : Gtk.Box {
             drop_detail.label = machine.installer;
         } else {
             drop_zone.remove_css_class ("chosen");
-            drop_title.label = machine.has_disk () ? "Boots from its disk" : "Choose an installer";
-            drop_detail.label = "Drop an ARM64 .iso here, or browse for one.";
+            drop_title.label = !fresh ? "Boots from its disk" : "Drop an installer here";
+            drop_detail.label = !fresh
+                ? "Attach an ARM64 .iso only if you want to reinstall."
+                : "Drop an ARM64 .iso here, or browse for one.";
         }
 
         for (int i = 0; i < 8; i++) {
@@ -530,13 +638,22 @@ public class MachinePage : Gtk.Box {
             disk_v.label = "%.1f of %d GiB".printf (used / 1073741824.0, machine.disk_gib);
         }
 
-        var problems = Readiness.problems ();
         ready_card.remove_css_class ("bad");
-        if (problems.length == 0) {
+        int64 free = Readiness.free_gib ();
+        bool low_space = fresh && free >= 0 && free < machine.disk_gib / 2 + 10;
+        if (problems.length == 0 && !low_space) {
             ready_icon.icon_name = "emblem-default-symbolic";
             ready_icon.add_css_class ("ml-ok");
             ready_title.label = "Ready to run";
-            ready_detail.label = "QEMU, UEFI firmware and hardware acceleration are available.";
+            ready_detail.label = free >= 0
+                ? "QEMU, UEFI firmware and acceleration are available. %d GiB free on this Mac.".printf ((int) free)
+                : "QEMU, UEFI firmware and acceleration are available.";
+        } else if (problems.length == 0) {
+            ready_icon.icon_name = "dialog-warning-symbolic";
+            ready_icon.remove_css_class ("ml-ok");
+            ready_card.add_css_class ("bad");
+            ready_title.label = "Low disk space";
+            ready_detail.label = "Only %d GiB free on this Mac. The %d GiB disk grows as the guest writes, so free some space or shrink the disk in Settings before installing.".printf ((int) free, machine.disk_gib);
         } else {
             ready_icon.icon_name = "dialog-warning-symbolic";
             ready_icon.remove_css_class ("ml-ok");
@@ -557,10 +674,12 @@ public class MachinePage : Gtk.Box {
         disk_scale_v.label = "%d GiB".printf (machine.disk_gib);
         loading = false;
 
-        settings_form.sensitive = !running;
-        disk_scale.sensitive = !running && !machine.has_disk ();
-        settings_note.visible = running || machine.has_disk ();
-        settings_note.label = running
+        settings_form.sensitive = !running && !managed;
+        disk_scale.sensitive = !running && !managed && !machine.has_disk ();
+        settings_note.visible = running || machine.has_disk () || managed;
+        settings_note.label = managed
+            ? "This machine is managed by mseries-vm. Change it with: mseries-vm set %s KEY VALUE".printf (machine.vm_name)
+            : running
             ? "Stop the machine to change its settings."
             : "The disk already exists, so its size is fixed. Other settings apply the next time you start.";
         update_uptime ();

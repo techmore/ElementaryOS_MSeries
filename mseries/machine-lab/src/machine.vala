@@ -1,28 +1,50 @@
-/* Machine model, persistence and QEMU process control. */
+/* Machine model, persistence, discovery of mseries-vm guests, and process control. */
 
 public class Machine : Object {
     public string id { get; set; }
     public string name { get; set; default = "New Machine"; }
+    public string kind { get; set; default = "native"; }   // "native" = ours, "managed" = mseries-vm guest
+    public string vm_name { get; set; default = ""; }      // managed: directory name under ~/vms
     public int cpus { get; set; default = 4; }
     public int mem_gib { get; set; default = 6; }
     public int disk_gib { get; set; default = 64; }
     public int ssh_port { get; set; default = 2222; }
     public int color { get; set; default = 0; }
+    public string? url { get; set; default = null; }       // where to get an installer
     public string? installer { get; set; default = null; }
 
     public Subprocess? proc { get; private set; default = null; }
     public DateTime? started { get; private set; default = null; }
     public Gtk.TextBuffer log { get; private set; default = new Gtk.TextBuffer (null); }
+    private bool managed_running = false;
 
     public signal void state_changed ();
     public signal void finished (int code);
+    public signal void installer_detached ();
 
-    public bool running { get { return proc != null; } }
+    public bool managed { get { return kind == "managed"; } }
+    public bool running { get { return managed ? managed_running : proc != null; } }
 
     public string dir {
         owned get {
+            if (managed) {
+                return Path.build_filename (vms_dir (), vm_name);
+            }
             return Path.build_filename (Environment.get_user_data_dir (), "machine-lab", id);
         }
+    }
+
+    public static string vms_dir () {
+        return Environment.get_variable ("MSERIES_VM_DIR") ?? Path.build_filename (Environment.get_home_dir (), "vms");
+    }
+
+    /* An empty disk file is just a placeholder: installed means the guest wrote real data. */
+    public bool installed () {
+        return disk_used_bytes () >= 1073741824;
+    }
+
+    public bool is_fresh () {
+        return !running && !installed ();
     }
 
     public bool has_disk () {
@@ -39,28 +61,42 @@ public class Machine : Object {
         }
     }
 
+    // ---- Native ----
+
     public void start (string launcher) throws Error {
         if (running) {
             return;
         }
         var l = new SubprocessLauncher (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_MERGE);
-        l.setenv ("MACHINE_CPUS", cpus.to_string (), true);
-        l.setenv ("MACHINE_MEM_GIB", mem_gib.to_string (), true);
-        l.setenv ("MACHINE_DISK_GIB", disk_gib.to_string (), true);
-        l.setenv ("MACHINE_SSH_PORT", ssh_port.to_string (), true);
-        l.setenv ("MACHINE_NAME", name, true);
-        string[] argv = { launcher, installer ?? "-", dir };
-        proc = l.spawnv (argv);
-        started = new DateTime.now_local ();
+        string[] argv;
+        if (managed) {
+            argv = { launcher, "start", vm_name, "--daemon" };
+        } else {
+            l.setenv ("MACHINE_CPUS", cpus.to_string (), true);
+            l.setenv ("MACHINE_MEM_GIB", mem_gib.to_string (), true);
+            l.setenv ("MACHINE_DISK_GIB", disk_gib.to_string (), true);
+            l.setenv ("MACHINE_SSH_PORT", ssh_port.to_string (), true);
+            l.setenv ("MACHINE_NAME", name, true);
+            argv = { launcher, installer ?? "-", dir };
+        }
+        var p = l.spawnv (argv);
         log.text = "";
         append_log ("$ %s\n".printf (string.joinv (" ", argv)));
-        read_output.begin (proc);
-        watch.begin (proc);
+        read_output.begin (p);
+        if (managed) {
+            watch_managed_start.begin (p);
+        } else {
+            proc = p;
+            started = new DateTime.now_local ();
+            watch.begin (p);
+        }
         state_changed ();
     }
 
     public void stop () {
-        if (proc != null) {
+        if (managed) {
+            stop_managed.begin ();
+        } else if (proc != null) {
             proc.force_exit ();
         }
     }
@@ -93,6 +129,11 @@ public class Machine : Object {
         append_log ("\n[machine exited with status %d]\n".printf (code));
         proc = null;
         started = null;
+        // The installer did its job once a disk exists: next start boots the disk.
+        if (installer != null && installed ()) {
+            installer = null;
+            installer_detached ();
+        }
         state_changed ();
         finished (code);
     }
@@ -102,6 +143,114 @@ public class Machine : Object {
             FileUtils.remove (Path.build_filename (dir, f));
         }
         DirUtils.remove (dir);
+    }
+
+    // ---- Managed (mseries-vm) ----
+
+    private async void watch_managed_start (Subprocess p) {
+        try {
+            yield p.wait_async ();
+        } catch (Error e) {
+            append_log ("[wait: %s]\n".printf (e.message));
+        }
+        int code = p.get_if_exited () ? p.get_exit_status () : -1;
+        poll ();
+        if (code != 0) {
+            finished (code);
+        }
+    }
+
+    private async void stop_managed () {
+        string? tool = Machine.find_mseries_vm ();
+        if (tool == null) {
+            return;
+        }
+        try {
+            var l = new SubprocessLauncher (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_MERGE);
+            var p = l.spawnv ({ tool, "stop", vm_name });
+            append_log ("\n$ mseries-vm stop %s (asks the guest to power off)\n".printf (vm_name));
+            read_output.begin (p);
+            yield p.wait_async ();
+        } catch (Error e) {
+            append_log ("[stop: %s]\n".printf (e.message));
+        }
+        poll ();
+        finished (0);
+    }
+
+    public static string? find_mseries_vm () {
+        var env = Environment.get_variable ("MSERIES_VM_TOOL");
+        if (env != null && FileUtils.test (env, FileTest.IS_EXECUTABLE)) {
+            return env;
+        }
+        string exe_dir = "";
+        try {
+            exe_dir = Path.get_dirname (FileUtils.read_link ("/proc/self/exe"));
+        } catch (Error e) {}
+        string[] candidates = {
+            Path.build_filename (exe_dir, "..", "..", "vms", "mseries-vm"),
+            Path.build_filename (Environment.get_home_dir (), "ElementaryOS_MSeries", "mseries", "vms", "mseries-vm")
+        };
+        foreach (var c in candidates) {
+            if (FileUtils.test (c, FileTest.IS_EXECUTABLE)) {
+                return c;
+            }
+        }
+        return Environment.find_program_in_path ("mseries-vm");
+    }
+
+    /* Refresh run state from the guest's qemu.pid, and tail its serial log. */
+    public void poll () {
+        if (!managed) {
+            return;
+        }
+        bool now = false;
+        DateTime? since = null;
+        string pidfile = Path.build_filename (dir, "qemu.pid");
+        try {
+            string pid;
+            FileUtils.get_contents (pidfile, out pid);
+            pid = pid.strip ();
+            string cmdline;
+            FileUtils.get_contents ("/proc/%s/cmdline".printf (pid), out cmdline);
+            now = cmdline.contains ("qemu-system");
+            if (now) {
+                var info = File.new_for_path (pidfile).query_info ("time::modified", FileQueryInfoFlags.NONE);
+                since = info.get_modification_date_time ().to_local ();
+            }
+        } catch (Error e) {
+            now = false;
+        }
+        bool changed = now != managed_running;
+        managed_running = now;
+        started = now ? since : null;
+        if (now) {
+            load_serial_tail ();
+        }
+        if (changed) {
+            state_changed ();
+        }
+    }
+
+    private void load_serial_tail () {
+        try {
+            var f = File.new_for_path (Path.build_filename (dir, "serial.log"));
+            var stream = f.read ();
+            var info = stream.query_info ("standard::size");
+            int64 size = info.get_size ();
+            int64 max = 12000;
+            if (size > max) {
+                stream.seek (size - max, SeekType.SET);
+            }
+            var bytes = stream.read_bytes ((size_t) int64.min (size, max));
+            string text = ((string) bytes.get_data ()).make_valid ((ssize_t) bytes.length);
+            try {
+                text = new Regex ("\\x1b\\[[0-9;?]*[ -/]*[@-~]|\\x1b\\][^\\x07\\x1b]*(\\x07|\\x1b\\\\)|\\x1b[()][A-Z0-9]|[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f]").replace (text, -1, 0, "");
+            } catch (RegexError e) {}
+            log.text = text;
+        } catch (Error e) {
+            // no serial log yet
+        }
     }
 }
 
@@ -126,32 +275,94 @@ public class MachineStore : Object {
                 if (kf.has_key (id, "color")) {
                     m.color = kf.get_integer (id, "color");
                 }
+                if (kf.has_key (id, "url")) {
+                    m.url = kf.get_string (id, "url");
+                }
                 if (kf.has_key (id, "installer")) {
                     m.installer = kf.get_string (id, "installer");
                 }
                 list.add (m);
             }
         } catch (Error e) {
-            // First run, or unreadable file: start from the default profile below.
-        }
-        if (list.length == 0 && !FileUtils.test (config_path (), FileTest.EXISTS)) {
-            var m = new Machine ();
-            m.id = "omarchy-arm64"; // keeps the disk made by the earlier prototype
-            m.name = "Omarchy";
-            list.add (m);
+            // First run: no machines until the user creates one.
         }
         return list;
+    }
+
+    // Guests already set up with mseries-vm: one vm.conf per directory under ~/vms.
+    public static void discover (GenericArray<Machine> list) {
+        try {
+            var d = Dir.open (Machine.vms_dir ());
+            string? entry;
+            string[] names = {};
+            while ((entry = d.read_name ()) != null) {
+                names += entry;
+            }
+            qsort_with_data<string> (names, sizeof (string), (a, b) => strcmp (a, b));
+            foreach (var n in names) {
+                string conf;
+                string path = Path.build_filename (Machine.vms_dir (), n, "vm.conf");
+                var kf = new KeyFile ();
+                try {
+                    FileUtils.get_contents (path, out conf);
+                    kf.load_from_data ("[c]\n" + conf, -1, KeyFileFlags.NONE);
+                } catch (Error e) {
+                    continue;   // not a VM directory (downloads, trials, ...)
+                }
+                var m = new Machine ();
+                m.kind = "managed";
+                m.vm_name = n;
+                m.id = "vm-" + n;
+                string guest = kf.has_key ("c", "GUEST") ? kf.get_string ("c", "GUEST") : n;
+                switch (guest) {
+                    case "omarchy": m.name = "Omarchy"; m.color = 7; break;
+                    case "elementary": m.name = "elementary OS"; m.color = 0; break;
+                    case "windows": m.name = "Windows 11"; m.color = 3; break;
+                    default: m.name = n; m.color = 1; break;
+                }
+                if (kf.has_key ("c", "CPUS")) {
+                    m.cpus = kf.get_integer ("c", "CPUS");
+                }
+                if (kf.has_key ("c", "MEMORY_MB")) {
+                    m.mem_gib = int.max (1, (kf.get_integer ("c", "MEMORY_MB") + 512) / 1024);
+                }
+                m.disk_gib = virtual_size_gib (Path.build_filename (Machine.vms_dir (), n, "disk.qcow2"));
+                list.add (m);
+            }
+        } catch (Error e) {
+            // No ~/vms directory: nothing to import.
+        }
+    }
+
+    private static int virtual_size_gib (string disk) {
+        try {
+            string output;
+            Process.spawn_sync (null, { "qemu-img", "info", "--output=json", disk }, null,
+                SpawnFlags.SEARCH_PATH | SpawnFlags.STDERR_TO_DEV_NULL, null, out output);
+            Regex r = new Regex ("\\n    \"virtual-size\":\\s*(\\d+)");
+            MatchInfo mi;
+            if (r.match (output, 0, out mi)) {
+                return (int) (int64.parse (mi.fetch (1)) / 1073741824);
+            }
+        } catch (Error e) {}
+        return 0;
     }
 
     public static void save (GenericArray<Machine> list) {
         var kf = new KeyFile ();
         foreach (var m in list.data) {
+            if (m.managed) {
+                continue;
+            }
             kf.set_string (m.id, "name", m.name);
             kf.set_integer (m.id, "cpus", m.cpus);
             kf.set_integer (m.id, "mem_gib", m.mem_gib);
             kf.set_integer (m.id, "disk_gib", m.disk_gib);
             kf.set_integer (m.id, "ssh_port", m.ssh_port);
             kf.set_integer (m.id, "color", m.color);
+            if (m.url != null) {
+                kf.set_string (m.id, "url", m.url);
+            }
             if (m.installer != null) {
                 kf.set_string (m.id, "installer", m.installer);
             }
@@ -168,19 +379,30 @@ public class MachineStore : Object {
 /* Checks the host has what the launcher needs. */
 public class Readiness : Object {
     public static string[] problems () {
-        string[] out = {};
+        string[] found = {};
         if (Environment.find_program_in_path ("qemu-system-aarch64") == null) {
-            out += "QEMU is missing. Install qemu-system-arm.";
+            found += "QEMU is missing. Install qemu-system-arm.";
         }
         if (Environment.find_program_in_path ("qemu-img") == null) {
-            out += "qemu-img is missing. Install qemu-utils.";
+            found += "qemu-img is missing. Install qemu-utils.";
         }
         if (!FileUtils.test ("/usr/share/AAVMF/AAVMF_CODE.fd", FileTest.EXISTS)) {
-            out += "UEFI firmware is missing. Install qemu-efi-aarch64.";
+            found += "UEFI firmware is missing. Install qemu-efi-aarch64.";
         }
         if (Posix.access ("/dev/kvm", Posix.R_OK | Posix.W_OK) != 0) {
-            out += "No access to /dev/kvm. Add your user to the kvm group.";
+            found += "No access to /dev/kvm. Add your user to the kvm group.";
         }
-        return out;
+        return found;
+    }
+
+    /* Free space, in GiB, on the volume that holds machine disks. */
+    public static int64 free_gib () {
+        try {
+            var info = File.new_for_path (Environment.get_user_data_dir ())
+                .query_filesystem_info ("filesystem:free");
+            return (int64) (info.get_attribute_uint64 ("filesystem:free") / 1073741824);
+        } catch (Error e) {
+            return -1;
+        }
     }
 }
