@@ -104,10 +104,14 @@ window.shelf { background: transparent; box-shadow: none; }
 .shelf-card { background: #1c1c20; color: #ffffff; border-radius: 14px; padding: 10px;
               border: 1px solid rgba(255,255,255,0.18); }
 .shelf-thumb { border-radius: 8px; background: rgba(255,255,255,0.06); }
-.shelf-hint { color: rgba(255,255,255,0.80); font-size: 12px; }
-.shelf-hint.saving { color: #9ad1a4; font-weight: bold; }
-.shelf-card button.flat { color: #ffffff; min-height: 22px; min-width: 22px; padding: 0 6px; }
-.shelf-card button.markup { background: rgba(255,255,255,0.14); color: #ffffff; border-radius: 8px; padding: 2px 10px; }
+.shelf-status { background: rgba(0,0,0,0.62); color: #ffffff; border-radius: 8px; padding: 4px 12px;
+                font-size: 13px; font-weight: bold; margin: 8px; }
+.shelf-status.good { color: #9ad1a4; }
+.shelf-status.bad { color: #ffb4a8; }
+.shelf-actions { background: rgba(0,0,0,0.55); border-radius: 8px; padding: 4px; margin: 8px; }
+.shelf-card button.flat { color: #ffffff; background: rgba(0,0,0,0.55); border-radius: 12px;
+                          min-height: 22px; min-width: 22px; padding: 0 6px; margin: 8px; }
+.shelf-card button.markup { background: rgba(255,255,255,0.16); color: #ffffff; border-radius: 6px; padding: 2px 10px; }
 """
 
 
@@ -258,31 +262,46 @@ class Shelf(Gtk.Window):
         self.picture = picture
         card.append(picture)
 
-        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        self.hint = Gtk.Label(label="Drag to use  ·  Alt keeps", xalign=0, hexpand=True)
-        self.hint.set_ellipsize(3)   # Pango.EllipsizeMode.END: never widen the card
-        self.hint.add_css_class("shelf-hint")
+        # The thumbnail is the whole card. Actions and the close button show only while the pointer is on it;
+        # the status line shows for a moment after a drop.
+        overlay = Gtk.Overlay()
+        overlay.set_child(picture)
+        card.remove(picture)
+        card.append(overlay)
+
+        self.status = Gtk.Label()
+        self.status.add_css_class("shelf-status")
+        self.status.set_halign(Gtk.Align.CENTER)
+        self.status.set_valign(Gtk.Align.CENTER)
+        self.status.set_can_target(False)
+        self.status.set_visible(False)
+        overlay.add_overlay(self.status)
+
+        actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+        actions.add_css_class("shelf-actions")
+        actions.set_halign(Gtk.Align.CENTER)
+        actions.set_valign(Gtk.Align.END)
         copy = Gtk.Button(label="Copy")
-        copy.add_css_class("markup")
         copy.set_tooltip_text("Copy the image to the clipboard")
         copy.connect("clicked", lambda *_: self.copy_to_clipboard())
         self.copy_button = copy
         show = Gtk.Button(label="Show")
-        show.add_css_class("markup")
         show.set_tooltip_text("Show the saved file in Files, to attach or drag from there")
         show.connect("clicked", lambda *_: self.show_in_files())
         markup = Gtk.Button(label="Markup")
-        markup.add_css_class("markup")
         markup.connect("clicked", lambda *_: self.open_markup())
+        for button in (copy, show, markup):
+            button.add_css_class("markup")
+            actions.append(button)
         close = Gtk.Button(label="✕")
         close.add_css_class("flat")
+        close.set_halign(Gtk.Align.END)
+        close.set_valign(Gtk.Align.START)
         close.connect("clicked", lambda *_: self.finish("dismissed"))
-        row.append(self.hint)
-        row.append(copy)
-        row.append(show)
-        row.append(markup)
-        row.append(close)
-        card.append(row)
+        self.hover_widgets = (actions, close)
+        for widget in self.hover_widgets:
+            widget.set_visible(False)
+            overlay.add_overlay(widget)
         self.set_child(card)
 
         source = Gtk.DragSource()
@@ -355,6 +374,25 @@ class Shelf(Gtk.Window):
 
     def set_hover(self, value):
         self.hover = value
+        for widget in self.hover_widgets:
+            widget.set_visible(value)
+
+    def flash_status(self, text, kind="", seconds=1.5):
+        """One short line over the thumbnail, gone after a moment."""
+        self.status.set_label(text)
+        for name in ("good", "bad"):
+            self.status.remove_css_class(name)
+        if kind:
+            self.status.add_css_class(kind)
+        self.status.set_visible(True)
+        if getattr(self, "status_timer", None):
+            GLib.source_remove(self.status_timer)
+        self.status_timer = GLib.timeout_add(int(seconds * 1000), self.hide_status)
+
+    def hide_status(self):
+        self.status_timer = None
+        self.status.set_visible(False)
+        return False
 
     # ------------------------------------------------------------------ drag
 
@@ -401,8 +439,6 @@ class Shelf(Gtk.Window):
             return False
         if self.alt_held():
             self.alt_seen = True
-        self.hint.set_label("Keeping a copy (Alt)" if self.alt_seen else "Drag to use  ·  Alt keeps")
-        (self.hint.add_css_class if self.alt_seen else self.hint.remove_css_class)("saving")
         return True
 
     def on_drag_cancel(self, _source, _drag, reason):
@@ -418,11 +454,10 @@ class Shelf(Gtk.Window):
         if self.cancelled:
             self.restart_timer()
             self.alt_seen = False
-            self.hint.set_label("Not accepted. Use Show")
-            self.hint.add_css_class("saving")
+            self.flash_status("Not accepted", "bad", 2.5)
             log("RESULT refused: no app took the drop (clipboard copy attempted; Show reveals the file)")
             return
-        self.hint.set_label("Dropped ✓")
+        self.flash_status("Dropped ✓ (copy kept)" if self.alt_seen else "Dropped ✓", "good", 1.2)
         log("RESULT accepted: an app took the drop")
         if self.alt_seen:
             log(f"used and kept (Alt): {os.path.basename(self.path)}")
@@ -480,7 +515,10 @@ class Shelf(Gtk.Window):
         # The staged copy is what an app may still be reading after a drop, so it outlives the window.
         GLib.timeout_add_seconds(max(delay, 1), self.cleanup, delete_saved)
         self.app.shelf = None
-        self.close()
+        if reason.startswith("used"):
+            GLib.timeout_add(1300, lambda: self.close() and False)   # let "Dropped ✓" be seen
+        else:
+            self.close()
 
     def cleanup(self, delete_saved):
         if self.export:
@@ -521,19 +559,31 @@ class ShelfApp(Gtk.Application):
         if not name.lower().endswith(".png") or not name.startswith("Screenshot") or name in self.seen:
             return
         self.seen.add(name)
-        GLib.timeout_add(250, self.show, file.get_path())
+        self.changed_at = time.time()
+        GLib.timeout_add(30, self.show, file.get_path())
 
     def show(self, path):
+        started = time.time()
         try:
             staged = os.path.join(STAGE, os.path.basename(path))
             shutil.copy2(path, staged)
         except OSError as error:
             log(f"could not stage {path}: {error}")
             return False
+        self.stage_done = time.time()
         if self.shelf:
             self.shelf.finish("replaced")
         log(f"showing {os.path.basename(path)}")
         self.shelf = Shelf(self, path, staged)
+        done = time.time()
+        try:
+            written = os.path.getmtime(path)
+        except OSError:
+            written = started
+        log("TIMING file written -> card built: %d ms (notice %d ms, stage %d ms, build %d ms)" % (
+            (done - written) * 1000, (started - written) * 1000,
+            (self.stage_done - started) * 1000, (done - self.stage_done) * 1000))
+        self.shelf.connect("map", lambda *_: log("TIMING file written -> card on screen: %d ms" % ((time.time() - written) * 1000)))
         return False
 
 
@@ -546,6 +596,10 @@ def snapshot(out, image):
 
     def on(app):
         shelf = Shelf(app, image, image)
+        if "--hover" in sys.argv:
+            shelf.set_hover(True)
+        if "--dropped" in sys.argv:
+            shelf.flash_status("Dropped ✓", "good", 60)
 
         def snap():
             child = shelf.get_child()
