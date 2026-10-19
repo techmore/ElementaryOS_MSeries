@@ -148,6 +148,9 @@ and first buffer at +2.22 s, relative to session-manager start. This is about
 2.11 s from wallpaper load to first panel buffer; the journal milestone is not
 a direct measure of visible pixels or first interactive use. The five-minute
 rollback completed successfully at 12:26 EDT and returned LightDM to Gala.
+The Wingpanel user unit is ordered immediately after compositor readiness;
+about 1.10 s of the observed gap is after its process starts and before its
+first surface request. The cause of that interval remains unidentified.
 The owner also reported that
 window corners look inconsistent and unwanted. This is now a visual
 acceptance issue; affected apps and window states still need examples. The
