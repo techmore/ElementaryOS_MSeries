@@ -62,8 +62,9 @@ production crash recovery also remain unimplemented.
 `native-drm` is an opt-in Cargo feature that stages Smithay's DRM, GBM,
 libinput, udev, libseat, EGL, and multi-GPU dependencies. The current executable
 still starts through Winit; the native session/backend wiring is not implemented
-yet. Building this feature also requires the host `libseat` development package
-(`libseat.pc`), which is absent on the current host.
+yet. The feature-enabled `cargo check` and `cargo build` pass locally after
+installing the host `libseat-dev` package; neither command initializes a native
+session.
 
 Relative pointer motion now updates Wayland pointer focus and dispatches motion
 through active compositor grabs; coordinates are clamped to the mapped output

@@ -29,13 +29,12 @@ validation; local `cargo check --bins` and `cargo build --bins` pass. Popup
 behavior is not yet runtime-qualified. Applying monitor modes, Dock behavior and
 M-series DRM/KMS remain unqualified. Read-only host enumeration sees `/dev/dri/card1`
 on the `asahi` driver and `/dev/dri/card2` on `apple-drm`; `eDP-1` and `DP-2`
-are connected while `HDMI-A-1` is disconnected. No modeset was attempted. Next:
-added an opt-in `native-drm` Cargo feature to stage Smithay's DRM/GBM,
-libinput/udev/libseat, EGL and multi-GPU dependencies. The
-`cargo check --features native-drm --bins` command currently stops at
-`libseat-sys`: this host lacks
-the `libseat.pc` development package. The normal Winit binaries still build;
-native startup is not wired. Next: satisfy the host dependency and implement an
+are connected while `HDMI-A-1` is disconnected. No modeset was attempted. Added
+an opt-in `native-drm` Cargo feature to stage Smithay's DRM/GBM,
+libinput/udev/libseat, EGL and multi-GPU dependencies. Installed `libseat-dev`
+0.9.2-2 on the host; both `cargo check --features native-drm --bins` and
+`cargo build --features native-drm --bins` pass. The default Winit binary also
+builds. No native session startup is wired or tested yet. Next: implement an
 opt-in native DRM path against the exposed M-series device stack. The WD22TB4
 HDMI G3 DCP/kernel issue remains separate. Scope and limits:
 `mseries/pantheon-rust-compositor/`.
