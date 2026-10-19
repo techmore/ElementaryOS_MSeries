@@ -1,24 +1,5 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
-## PR #234 cleanup qualification — 2026-10-18
-
-Merged current main and retained the parallel radio-test report. Radio install now
-aborts on failed copies and refuses existing helper/policy paths instead of
-overwriting their ownership manifest; uninstall without our manifest leaves
-services alone. Three sandboxed installer tests pass. The userspace radio suite
-passes 168 tests (8 explicit skips for absent DKMS/Arch packaging or prerequisites);
-the plugin suite passes 318 tests (30 explicit optional-core/platform skips), and
-the native widget passes all eight stub checks, with portal access disabled so
-temporary test homes clean up reliably. The libarchive-c 5.1 archive-name fixture
-was corrected using in-memory archive entries; receiver code is unchanged. CI now
-checks both vendored userspace suites. These are source/UI qualifications, not
-a completed phone transfer. The other session's steps 0–4 remain scoped evidence;
-the subsequent parallel report records one iPhone receive pass. Send and real-panel
-acceptance remain pending; AWDL stop leaves elevated Wi-Fi latency. Retargeted the
-obsolete stacked base to main and retained the merged Calendar/Homeboard changes.
-No radio activation, panel reload or reboot was
-performed during this cleanup review. The diagnostic boot selection is untouched.
-
 ## Signal Granite palette completeness — 2026-10-18
 
 PR #222's Granite path now maps Signal brand/logo blue `#3b45fd` as well as the
@@ -1897,3 +1878,23 @@ passed and the original selection was restored; distinct-account round trips use
 
 - Publication follow-through: PR86 merged077bfe5; current-source CI39130696811 passed all5 jobs. Initial Pages39138713351 succeeded and canonical report bytes matched reviewed source.46 dictation/72 assistant/6 image checks pass. Publishing the opt-in candidate does not complete physical F5, panel/lazy rollout or continuous translation gates.
 - Deployment follow-through (October18): qualified lazy CPU speech/IBus and Dictation launcher installed after idle/quiet/pref checks. Fresh listener32.67MiB before SDK load; not after-use memory. Owner reports physical F5 speech appears in Original transcript: native-app human pass, earlier popup failure retained. New installed focus-retry regression failed then passed after fix; receipts retain both and installed-source checks.46 contracts pass. Real spoken content/private backups excluded. Continuous translated previews and final grammar-after-release remain the next work; current translation is post-utterance.
+
+## PR #234 cleanup qualification — 2026-10-18
+
+Merged current main and retained the parallel radio-test report. Radio install now
+aborts on failed copies and refuses existing helper/policy paths instead of
+overwriting their ownership manifest; uninstall without our manifest leaves
+services alone. Three sandboxed installer tests pass. The userspace radio suite
+passes 168 tests (8 explicit skips for absent DKMS/Arch packaging or prerequisites);
+the plugin suite passes 318 tests (30 explicit optional-core/platform skips), and
+the native widget passes all eight stub checks, with portal access disabled so
+temporary test homes clean up reliably. The libarchive-c 5.1 archive-name fixture
+was corrected using in-memory archive entries; receiver code is unchanged. CI now
+checks both vendored userspace suites. These are source/UI qualifications, not
+a completed phone transfer. The other session's steps 0–4 remain scoped evidence;
+the subsequent parallel report records one iPhone receive pass. Send and real-panel
+acceptance remain pending; AWDL stop leaves elevated Wi-Fi latency. Retargeted the
+obsolete stacked base to main and retained the merged Calendar/Homeboard changes.
+No radio activation, panel reload or reboot was
+performed during this cleanup review. The diagnostic boot selection is untouched.
+

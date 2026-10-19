@@ -1,24 +1,5 @@
 # OS 9 implementation / Claude Code handoff
 
-## PR #234 cleanup qualification — 2026-10-18
-
-Merged current main and retained the parallel radio-test report. Radio install now
-aborts on failed copies and refuses existing helper/policy paths instead of
-overwriting their ownership manifest; uninstall without our manifest leaves
-services alone. Three sandboxed installer tests pass. The userspace radio suite
-passes 168 tests (8 explicit skips for absent DKMS/Arch packaging or prerequisites);
-the plugin suite passes 318 tests (30 explicit optional-core/platform skips), and
-the native widget passes all eight stub checks, with portal access disabled so
-temporary test homes clean up reliably. The libarchive-c 5.1 archive-name fixture
-was corrected using in-memory archive entries; receiver code is unchanged. CI now
-checks both vendored userspace suites. These are source/UI qualifications, not
-a completed phone transfer. The other session's steps 0–4 remain scoped evidence;
-the subsequent parallel report records one iPhone receive pass. Send and real-panel
-acceptance remain pending; AWDL stop leaves elevated Wi-Fi latency. Retargeted the
-obsolete stacked base to main and retained the merged Calendar/Homeboard changes.
-No radio activation, panel reload or reboot was
-performed during this cleanup review. The diagnostic boot selection is untouched.
-
 ## Calendar Tasks and Homeboard sync — 2026-10-18
 
 Branch `claude/calendar-tasks-homeboard`. The calendar dropdown's Tasks tab now
@@ -5949,3 +5930,23 @@ Not yet installed: the desktop still runs the seasonal build from 19:39.
 - **Fix found by the test:** `install-omdrop.sh` did not copy `manifest.json`, so `omdrop on` said it could not tell where it was installed. Fixed (copies `manifest.json`).
 - **Finding (needs a decision):** `omdrop-discoverable stop` does NOT turn AWDL off in the firmware (upstream avoids `awdl=0` with a template loaded: documented firmware hang). Read back after stop: firmware `awdl` = 1, `awdl0` UP. Wi-Fi RTT stayed elevated well after the window closed (baseline ~6 ms; 275 ms avg right after, then ~67/85/40 ms avg over the next minutes, max 220-285 ms). So AirDrop use leaves a Wi-Fi latency tax until the driver is reloaded or the machine reboots. Not yet characterised: whether it decays to baseline on its own.
 - **Not run:** step 6 (send to the iPhone), step 7 (boot enable), the Quick Settings switch on the real panel (Wingpanel not reloaded). The 24 vendored-suite failures are unchanged (core/ not vendored).
+
+## PR #234 cleanup qualification — 2026-10-18
+
+Merged current main and retained the parallel radio-test report. Radio install now
+aborts on failed copies and refuses existing helper/policy paths instead of
+overwriting their ownership manifest; uninstall without our manifest leaves
+services alone. Three sandboxed installer tests pass. The userspace radio suite
+passes 168 tests (8 explicit skips for absent DKMS/Arch packaging or prerequisites);
+the plugin suite passes 318 tests (30 explicit optional-core/platform skips), and
+the native widget passes all eight stub checks, with portal access disabled so
+temporary test homes clean up reliably. The libarchive-c 5.1 archive-name fixture
+was corrected using in-memory archive entries; receiver code is unchanged. CI now
+checks both vendored userspace suites. These are source/UI qualifications, not
+a completed phone transfer. The other session's steps 0–4 remain scoped evidence;
+the subsequent parallel report records one iPhone receive pass. Send and real-panel
+acceptance remain pending; AWDL stop leaves elevated Wi-Fi latency. Retargeted the
+obsolete stacked base to main and retained the merged Calendar/Homeboard changes.
+No radio activation, panel reload or reboot was
+performed during this cleanup review. The diagnostic boot selection is untouched.
+
