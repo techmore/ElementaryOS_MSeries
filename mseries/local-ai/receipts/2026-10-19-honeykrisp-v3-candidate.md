@@ -30,13 +30,13 @@ The pin's `precise` failures do not occur on the candidate (the candidate's run 
 
 ## The blocker
 
-`./cmshape2 16 16 16 f16 f16 f16 f16 row randint 7 16` (any workgroup size other than 32) segfaults the candidate during pipeline compile: `pick_regs` in `agx_ra`, via `agx_compile_shader_nir` → `hk_compile_nir` → `vk_common_CreateComputePipelines`. The pin passes the same command. Workgroup size 32 passes on both. That is the software cooperative-matrix path; the suspects are the late-October register-allocation and software-lowering patches, but I did not bisect. A segfault in a compile path an MLX kernel could reach is not acceptable for the shared compute driver.
+`./cmshape2 16 16 16 f16 f16 f16 f16 row randint 7 16` (any workgroup size other than 32) segfaults the candidate during pipeline compile: `pick_regs` in `agx_ra`, via `agx_compile_shader_nir` → `hk_compile_nir` → `vk_common_CreateComputePipelines`. The pin passes the same command. Workgroup size 32 passes on both. That is the software cooperative-matrix path. **Bisected** (linear stack, good `f06b1b24b67`, 5 builds; `bisect.sh`, `bisect-trace.txt`): first bad commit `ff013781c00` "agx: skip the register-pressure scheduler for compute shaders" (09-29, claims +1.4 to 1.8% decode on M1). On the tip, `AGX_SCHED_COMPUTE=1` makes the case pass, so skipping the scheduler exposes a register-allocation crash. Why `pick_regs` faults is a hypothesis, not verified (release build, no source read). Draft report: `ISSUE-DRAFT-mesa-1-agx-ra-pick-regs-crash.md` (not posted). A segfault in a compile path an MLX kernel could reach is not acceptable for the shared compute driver.
 
 ## Not done
 
 - **No decode or token-identity A/B.** `mlx_lm.benchmark` needs the Qwen3.5-4B/9B MLX weights, which are not on this machine (no `*.safetensors` anywhere, no `~/.cache/huggingface/hub`). The wrapper `microbenchmark.py everyday` fails on the missing model path. Fetching them needs the owner's go-ahead.
-- No bisect of the crash; no check of other v3 branches (`agent/v3-final3`, `jw16/omacom-pr`).
+- No check of other v3 branches (`agent/v3-final3`, `jw16/omacom-pr`).
 - Single run per cell; no repeated medians for timings.
-- The crash has not been reported upstream. A report to `joshuaswarren/mesa-1` is the next step.
+- The crash has not been reported upstream; the draft is ready. The scheduler change may also be what produces the 1.4-1.8% decode gain, so a decode A/B with `AGX_SCHED_COMPUTE=1` on the tip would separate it from the other v3 patches.
 
 Raw run logs and summaries are in `2026-10-19-honeykrisp-v3-candidate/`.
