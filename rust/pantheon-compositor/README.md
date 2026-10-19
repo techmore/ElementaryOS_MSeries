@@ -127,9 +127,11 @@ Wayland and XWayland application windows. A private Xvfb/Winit D-Bus smoke
 focused a GTK Wayland window, invoked action 2 twice, minimized it with action
 3, and restored it through `FocusWindow`; each D-Bus call succeeded. The
 smoke did not inspect the rendered maximize geometry, and the XWayland and
-native paths remain unqualified. Action 1 (multitasking view) remains
-unsupported because the Rust session has no overview UI. Stock Dock also
-logged its existing
+native paths remain unqualified. Action 4 now launches the configured
+`panel-main-menu-action` from `io.elementary.desktop.wm.behavior`, keeping the
+existing Wingpanel launcher in charge of its UI; it is build-checked but not
+runtime-qualified. Action 1 (multitasking view) remains unsupported because
+the Rust session has no overview UI. Stock Dock also logged its existing
 workspace-startup race during the nested smoke, so full Dock behavior remains
 unqualified. Hiding is immediate; blur and multi-output Dock behavior remain
 open. The

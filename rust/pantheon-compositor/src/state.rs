@@ -529,10 +529,33 @@ impl PantheonCompositor {
             }
             GalaAction::PerformAction(2) => self.maximize_focused_window(),
             GalaAction::PerformAction(3) => self.minimize_focused_window(),
+            GalaAction::PerformAction(4) => self.launch_panel_main_menu(),
             GalaAction::PerformAction(action) => Err(format!(
                 "Gala action {action} is not implemented by this compositor"
             )),
         }
+    }
+
+    fn launch_panel_main_menu(&self) -> Result<(), String> {
+        use gio::prelude::SettingsExt;
+
+        if self.session_locked {
+            return Err("cannot open the application launcher while the session is locked".into());
+        }
+        let settings = gio::Settings::new("io.elementary.desktop.wm.behavior");
+        let command = settings.string("panel-main-menu-action");
+        let argv = gio::glib::shell_parse_argv(command.as_str())
+            .map_err(|error| format!("could not parse panel main-menu action: {error}"))?;
+        if argv.is_empty() {
+            return Err("panel main-menu action is empty".into());
+        }
+        let argv = argv
+            .iter()
+            .map(std::ffi::OsString::as_os_str)
+            .collect::<Vec<_>>();
+        gio::Subprocess::newv(&argv, gio::SubprocessFlags::NONE)
+            .map_err(|error| format!("could not launch panel main-menu action: {error}"))?;
+        Ok(())
     }
 
     fn focused_window(&self) -> Option<Window> {
