@@ -25,8 +25,11 @@ Calendar (`mseries/patches/datetime-agenda-tabs.patch`): the Homeboard strip use
 D-Bus activation (the direct launch remains for older bridges), icon buttons have
 accessible names, `HomeboardStatus.vala` is in `po/POTFILES`. New CI job
 **Calendar Events/Tasks/Homeboard agenda** builds the pinned indicator with the patch
-on arm64 Ubuntu and runs all 27 groups (`mseries/calendar/ci-test-agenda.sh`, run
-locally: 27/27).
+on arm64 Ubuntu and runs all 27 groups (`mseries/calendar/ci-test-agenda.sh`; 27/27
+locally, 27/27 on GitHub's runner). The runner needs Ubuntu's Granite, AccountsService
+and elementary's `io.elementary.pantheon.AccountsService.xml` (pinned
+`elementary/default-settings` `915d1a0`, identical to this desktop's copy): the clock
+reads its `TimeFormat`, and the fixture treats any GTK critical as fatal.
 
 `mseries/install-homeboard-sync.sh` is now a pinned wrapper around the bridge's own
 installer (start, upgrade, `--uninstall`). Run live: the running bridge was replaced
