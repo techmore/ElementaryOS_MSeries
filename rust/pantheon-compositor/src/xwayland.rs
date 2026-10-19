@@ -224,6 +224,7 @@ impl XwmHandler for PantheonCompositor {
         };
         self.x11_minimized_windows
             .insert(surface.window_id(), (window.clone(), location));
+        window.set_activated(false);
         self.space.unmap_elem(&window);
         if let Err(error) = surface.set_mapped(false) {
             tracing::warn!(?error, "could not minimize X11 window");
@@ -541,6 +542,9 @@ impl PantheonCompositor {
         window: &Window,
         serial: smithay::utils::Serial,
     ) {
+        for candidate in self.space.elements() {
+            candidate.set_activated(candidate == window);
+        }
         if let Some(surface) = window.x11_surface() {
             self.set_x11_keyboard_focus(Some(surface.clone()), serial);
         } else if let Some(toplevel) = window.toplevel() {

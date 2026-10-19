@@ -281,8 +281,11 @@ impl PantheonCompositor {
             .rev()
             .find(|window| {
                 window
-                    .toplevel()
-                    .is_none_or(|top| !self.is_panel_surface(top.wl_surface()))
+                    .x11_surface()
+                    .is_none_or(|surface| !surface.is_override_redirect())
+                    && window
+                        .toplevel()
+                        .is_none_or(|top| !self.is_panel_surface(top.wl_surface()))
             })
             .cloned();
         if let Some(window) = next_window {
