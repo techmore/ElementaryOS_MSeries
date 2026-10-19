@@ -39,6 +39,12 @@ US selected. The active F5 dictation workflow uses focus-bound IBus output;
 `mozc-jp` composition itself is not currently selected and still needs its own
 acceptance check.
 
+The 2026-10-19 user-settings snapshot has the screen reader, screen magnifier,
+and accessibility keyboard features disabled. Toolkit accessibility is enabled
+for app-field metadata used by the F5 workflow; that app-side AT-SPI use does
+not itself require compositor accessibility protocols. GNOME Remote Desktop
+RDP and VNC are both disabled, so remote screen sharing remains conditional.
+
 Keep notification UI, app launchers, panel/dock rendering, settings surfaces,
 wallpaper and other shell UI in their existing Pantheon components unless a
 documented requirement shows they cannot work through the compositor contract.
