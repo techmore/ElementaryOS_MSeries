@@ -360,7 +360,7 @@ namespace MSeries {
             }
             if (client.viewer_link (state.viewer_base) == null) {
                 var mk = item ("list-add-symbolic", "Create viewer link", null, "Make a link to send to your viewer");
-                mk.clicked.connect (() => { client.create_link.begin (auto_allow, (o, r) => { client.create_link.end (r); act (); }); });
+                mk.clicked.connect (() => { auto_allow = FileUtils.test (GLib.Path.build_filename (GLib.Environment.get_user_config_dir (), "rupert-share", "auto-allow"), FileTest.EXISTS); client.create_link.begin (auto_allow, (o, r) => { client.create_link.end (r); act (); }); });
                 links.append (mk);
             }
             // Opt-in, per link: people who open a link made while this is on skip the Allow step (you are still notified).
