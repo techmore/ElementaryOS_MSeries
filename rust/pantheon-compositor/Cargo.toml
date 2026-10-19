@@ -3,13 +3,11 @@ name = "pantheon-compositor"
 version = "0.1.0"
 edition = "2024"
 license = "GPL-3.0-only"
-description = "Nested Rust Wayland compositor prototype for elementary OS"
+description = "Mutter-minimal Rust Wayland compositor for elementary OS"
 
 [features]
 default = []
-# Dependencies for the opt-in native M-series DRM/session backend. The current
-# executable still starts through Winit; native session startup is being added
-# separately so routine development cannot take over the active display.
+# Dependencies for the explicit opt-in native M-series DRM/session backend.
 native-drm = [
     "smithay/backend_drm",
     "smithay/backend_gbm",

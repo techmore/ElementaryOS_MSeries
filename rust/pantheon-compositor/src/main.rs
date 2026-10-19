@@ -4,12 +4,12 @@ mod display_config;
 mod grabs;
 mod handlers;
 mod input;
+#[cfg(feature = "native-drm")]
+pub mod native;
 mod pantheon_shell;
 mod protocols;
 mod shell_compat;
 mod state;
-#[cfg(feature = "native-drm")]
-pub mod native;
 mod winit;
 
 use smithay::reexports::{calloop::EventLoop, wayland_server::Display};
@@ -18,21 +18,43 @@ pub use state::PantheonCompositor;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_logging();
 
-    if std::env::var_os("WAYLAND_DISPLAY").is_none() && std::env::var_os("DISPLAY").is_none() {
-        return Err("nested prototype requires an existing Wayland or X11 session".into());
-    }
-
-    let command = parse_command()?;
+    let (backend, command) = parse_arguments()?;
     let mut event_loop: EventLoop<PantheonCompositor> = EventLoop::try_new()?;
     let display: Display<PantheonCompositor> = Display::new()?;
-    let mut state = PantheonCompositor::new(&mut event_loop, display, "winit");
+    let mut state = match backend {
+        BackendChoice::Nested => {
+            if std::env::var_os("WAYLAND_DISPLAY").is_none()
+                && std::env::var_os("DISPLAY").is_none()
+            {
+                return Err("nested backend requires an existing Wayland or X11 session".into());
+            }
+            let mut state = PantheonCompositor::new(&mut event_loop, display, "winit");
+            crate::winit::init_winit(&mut event_loop, &mut state)?;
+            state
+        }
+        BackendChoice::Native => {
+            #[cfg(feature = "native-drm")]
+            {
+                use smithay::backend::session::{Session, libseat::LibSeatSession};
+                let (session, notifier) = LibSeatSession::new()?;
+                let seat_name = session.seat();
+                let mut state = PantheonCompositor::new(&mut event_loop, display, &seat_name);
+                crate::native::NativeBackend::start(
+                    &mut event_loop,
+                    &mut state,
+                    session,
+                    notifier,
+                )?;
+                state
+            }
+            #[cfg(not(feature = "native-drm"))]
+            {
+                return Err("native backend requires a build with --features native-drm".into());
+            }
+        }
+    };
 
-    // This prototype deliberately uses the nested winit backend. It does not
-    // open DRM/KMS devices or replace the active desktop session.
-    crate::winit::init_winit(&mut event_loop, &mut state)?;
-
-    // The host backend is already initialized from the original environment.
-    // Launch requested clients against the nested display only.
+    // Launch requested clients against the compositor socket selected above.
     unsafe { std::env::set_var("WAYLAND_DISPLAY", &state.socket_name) };
 
     if let Some((program, args)) = command {
@@ -51,14 +73,36 @@ fn init_logging() {
     }
 }
 
-fn parse_command() -> Result<Option<(String, Vec<String>)>, Box<dyn std::error::Error>> {
+#[derive(Clone, Copy)]
+enum BackendChoice {
+    Nested,
+    Native,
+}
+
+fn parse_arguments()
+-> Result<(BackendChoice, Option<(String, Vec<String>)>), Box<dyn std::error::Error>> {
     let mut args = std::env::args().skip(1);
-    match args.next().as_deref() {
-        None => Ok(None),
-        Some("--run") => {
-            let program = args.next().ok_or("--run requires a program")?;
-            Ok(Some((program, args.collect())))
+    let mut backend = BackendChoice::Nested;
+    let mut command = None;
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--backend" => {
+                backend = match args.next().as_deref() {
+                    Some("nested") => BackendChoice::Nested,
+                    Some("native") => BackendChoice::Native,
+                    _ => return Err("--backend requires either nested or native".into()),
+                };
+            }
+            "--run" => {
+                let program = args.next().ok_or("--run requires a program")?;
+                command = Some((program, args.collect()));
+                break;
+            }
+            _ => return Err(
+                "usage: pantheon-compositor [--backend nested|native] [--run PROGRAM [ARGS...]]"
+                    .into(),
+            ),
         }
-        Some(_) => Err("usage: pantheon-compositor [--run PROGRAM [ARGS...]]".into()),
     }
+    Ok((backend, command))
 }

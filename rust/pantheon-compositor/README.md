@@ -1,10 +1,10 @@
 # pantheon-compositor
 
-First development harness for the Mutter-minimal viable Rust effort: an
-opt-in, nested Wayland compositor prototype using Smithay's Winit backend. It
-runs in a window on an existing Wayland or X11 session and serves its own
-Wayland socket. It does not open DRM/KMS, become a login session, or replace
-Gala.
+Mutter-minimal Rust compositor for the M-series/Pantheon experience. The
+default backend is a nested Wayland compositor using Smithay's Winit backend;
+an explicit, feature-gated native backend is also wired for M-series DRM/KMS,
+libseat and libinput startup. This is still an early development harness, not
+a drop-in Gala replacement or a qualified login session.
 
 ## Run
 
@@ -20,6 +20,16 @@ system. With no `--run` argument, the nested compositor starts without launching
 a client. `WAYLAND_DISPLAY` is changed only inside the compositor process after
 the host Winit backend has initialized; the requested child uses the nested
 socket. The active session's services and configuration are not touched.
+
+The native backend is selected explicitly and requires native dependencies:
+
+```sh
+cargo run -p pantheon-compositor --features native-drm -- --backend native
+```
+
+Native startup acquires the active libseat session and initializes a DRM/KMS
+output. It takes over the display device, so do not launch it inside the
+currently active desktop. It is not yet runtime-qualified on M-series hardware.
 
 To exercise the Pantheon protocol against the nested socket, build both binaries
 and start the compositor with its probe client:
@@ -37,8 +47,8 @@ integration.
 
 ## Current limits
 
-This is a nested proof of rendering and basic interactive Wayland surfaces, not
-a Mutter port or a Pantheon replacement yet. The target is only the
+This is an early compositor implementation, not a Mutter port or a Pantheon
+replacement yet. The target is only the
 M-series/Pantheon behavior documented in
 [`../../mseries/pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md`](../../mseries/pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md).
 It currently has one nested output,
@@ -61,23 +71,21 @@ This is only the first shell integration slice. Autohide/overlap tracking,
 animated hiding, blur, overview behavior, multi-output work-area updates for
 already maximized windows, and session/lock integration are not complete. Widget,
 extended-behavior and greeter protocol requests are accepted but currently have
-no behavior. Touch input, DRM/KMS, libinput device management, multi-monitor
-configuration, accessibility, IBus, Xwayland, screen-sharing portals and
-production crash recovery also remain unimplemented.
+no behavior. Touch input, multi-monitor configuration, accessibility, IBus,
+Xwayland, screen-sharing portals and production crash recovery also remain
+unimplemented.
 
-`native-drm` is an opt-in Cargo feature that stages Smithay's DRM, GBM,
-libinput, udev, libseat, EGL, and multi-GPU dependencies. The current executable
-still starts through Winit. Behind this feature, `native.rs` can initialize a
-hardware EGL/GBM renderer on a libseat GPU and register it with Smithay's
-multi-GPU manager. It is not yet called by the executable and does not open a
-multi-GPU manager. `NativeKmsOutput` can open a separate KMS device, choose a
-connected connector/CRTC, build the GBM framebuffer exporter/output manager,
-publish its Wayland output, render the current space, queue a damaged frame,
-and acknowledge its KMS submission. The executable does not call these native
-methods yet; the DRM vblank/session event loop, frame scheduling, hotplug,
-pause/resume and native input are unfinished. Default and feature-enabled `cargo check` and
-`cargo build` pass locally after installing the host `libseat-dev` package;
-none of those commands initializes a native session.
+`native-drm` enables Smithay's DRM, GBM, libinput, udev, libseat, EGL, and
+multi-GPU dependencies. The executable defaults to nested Winit; only
+`--backend native` starts the native session. That path initializes a hardware
+EGL/GBM renderer and a separate connected KMS output, publishes it as a
+Wayland output, assigns libinput to the active seat, and registers redraw,
+vblank, and session pause/resume sources with calloop. It currently selects
+one output. Hotplug, multiple-output lifecycle, display mode management,
+session-shell integration and M-series scanout/input behavior remain
+unqualified. Default and feature-enabled `cargo check --bins` and
+`cargo build --bins` pass locally; builds do not initialize or take over a
+native session.
 
 With `native-drm` enabled, `pantheon-drm-probe` safely enumerates EGL devices
 without acquiring DRM master or changing display modes. On the current M-series

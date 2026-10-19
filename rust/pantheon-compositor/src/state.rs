@@ -24,8 +24,12 @@ use smithay::{
 };
 
 use crate::display_config::DisplayConfigHandle;
+#[cfg(feature = "native-drm")]
+use crate::native::NativeBackend;
 use crate::pantheon_shell::{PanelState, PantheonShellState};
 use crate::shell_compat::ShellCompatHandle;
+#[cfg(feature = "native-drm")]
+use smithay::reexports::calloop::channel::Sender;
 
 pub struct PantheonCompositor {
     pub start_time: std::time::Instant,
@@ -53,6 +57,10 @@ pub struct PantheonCompositor {
     pub popups: PopupManager,
 
     pub seat: Seat<Self>,
+    #[cfg(feature = "native-drm")]
+    pub native_backend: Option<NativeBackend>,
+    #[cfg(feature = "native-drm")]
+    pub native_redraw_sender: Option<Sender<()>>,
 }
 
 #[derive(Clone, Copy)]
@@ -135,6 +143,17 @@ impl PantheonCompositor {
             initially_positioned: HashSet::new(),
             popups,
             seat,
+            #[cfg(feature = "native-drm")]
+            native_backend: None,
+            #[cfg(feature = "native-drm")]
+            native_redraw_sender: None,
+        }
+    }
+
+    #[cfg(feature = "native-drm")]
+    pub fn request_native_redraw(&self) {
+        if let Some(sender) = &self.native_redraw_sender {
+            let _ = sender.send(());
         }
     }
 

@@ -6,6 +6,7 @@
 //! attached by the native output backend built on top of this manager.
 
 use std::path::Path;
+use std::time::Duration;
 
 use smithay::{
     backend::{
@@ -19,17 +20,23 @@ use smithay::{
     },
     backend::{
         egl::{EGLContext, EGLDevice, EGLDisplay, context::ContextPriority},
+        libinput::{LibinputInputBackend, LibinputSessionInterface},
         renderer::{
             element::surface::WaylandSurfaceRenderElement,
             gles::GlesRenderer,
             multigpu::{GpuManager, MultiRenderer, gbm::GbmGlesBackend},
         },
-        session::{Session, libseat::LibSeatSession},
+        session::{
+            Event as SessionEvent, Session,
+            libseat::{LibSeatSession, LibSeatSessionNotifier},
+        },
         udev::all_gpus,
     },
     output::{Mode, Output, PhysicalProperties},
     reexports::{
+        calloop::{EventLoop, channel, channel::Event as ChannelEvent},
         drm::control::{Device as DrmControlDevice, ModeTypeFlags, connector},
+        input::Libinput,
         rustix::fs::OFlags,
     },
     utils::DeviceFd,
@@ -61,10 +68,17 @@ pub struct NativeRenderer {
 pub struct NativeKmsOutput {
     pub node: DrmNode,
     pub connector: connector::Handle,
+    pub crtc: smithay::reexports::drm::control::crtc::Handle,
     pub output: Output,
     pub manager: NativeOutputManager,
     pub drm_output: NativeDrmOutput,
-    pub notifier: DrmDeviceNotifier,
+    pub notifier: Option<DrmDeviceNotifier>,
+}
+
+pub struct NativeBackend {
+    pub _session: LibSeatSession,
+    pub renderer: NativeRenderer,
+    pub output: NativeKmsOutput,
 }
 
 struct ConnectedOutput {
@@ -270,11 +284,124 @@ impl NativeKmsOutput {
         Ok(Self {
             node,
             connector: selected.connector.handle(),
+            crtc: selected.crtc,
             output,
             manager,
             drm_output,
-            notifier,
+            notifier: Some(notifier),
         })
+    }
+}
+
+impl NativeBackend {
+    /// Initialize native input, renderer and the first KMS output, then register
+    /// their event sources. This is called only for explicit `--backend native`
+    /// startup; the default nested backend never opens a libseat session.
+    pub fn start(
+        event_loop: &mut EventLoop<PantheonCompositor>,
+        state: &mut PantheonCompositor,
+        session: LibSeatSession,
+        session_notifier: LibSeatSessionNotifier,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let mut renderer = NativeRenderer::initialize(&session)?;
+        let mut output = NativeKmsOutput::initialize(&session, &mut renderer, state)?;
+        let drm_notifier = output.notifier.take().expect("DRM notifier is present");
+
+        let mut libinput_context = Libinput::new_with_udev::<
+            LibinputSessionInterface<LibSeatSession>,
+        >(session.clone().into());
+        libinput_context
+            .udev_assign_seat(&session.seat())
+            .map_err(|_| "libinput failed to assign the active seat")?;
+        let libinput_backend = LibinputInputBackend::new(libinput_context.clone());
+        event_loop
+            .handle()
+            .insert_source(libinput_backend, |event, _, state| {
+                state.process_input_event(event);
+                #[cfg(feature = "native-drm")]
+                state.request_native_redraw();
+            })?;
+
+        event_loop.handle().insert_source(
+            session_notifier,
+            move |event, _, state| match event {
+                SessionEvent::PauseSession => {
+                    libinput_context.suspend();
+                    if let Some(backend) = state.native_backend.as_mut() {
+                        backend.output.manager.pause();
+                    }
+                    tracing::info!("native compositor session paused");
+                }
+                SessionEvent::ActivateSession => {
+                    tracing::info!("native compositor session activated");
+                    if let Err(error) = libinput_context.resume() {
+                        tracing::error!(?error, "failed to resume libinput");
+                    }
+                    if let Some(backend) = state.native_backend.as_mut() {
+                        if let Err(error) = backend.output.manager.lock().activate(false) {
+                            tracing::error!(?error, "failed to reactivate DRM output");
+                        }
+                    }
+                    state.request_native_redraw();
+                }
+            },
+        )?;
+
+        event_loop
+            .handle()
+            .insert_source(drm_notifier, |event, _, state| match event {
+                smithay::backend::drm::DrmEvent::VBlank(crtc) => {
+                    let Some(backend) = state.native_backend.as_mut() else {
+                        return;
+                    };
+                    if crtc != backend.output.crtc {
+                        return;
+                    }
+                    if let Err(error) = backend.output.frame_submitted() {
+                        tracing::error!(?error, "failed to complete native DRM frame");
+                        return;
+                    }
+                    let output = backend.output.output.clone();
+                    state.space.elements().for_each(|window| {
+                        window.send_frame(
+                            &output,
+                            state.start_time.elapsed(),
+                            Some(Duration::ZERO),
+                            |_, _| Some(output.clone()),
+                        );
+                    });
+                    state.space.refresh();
+                    state.popups.cleanup();
+                    let _ = state.display_handle.flush_clients();
+                }
+                smithay::backend::drm::DrmEvent::Error(error) => {
+                    tracing::error!(?error, "native DRM event source failed");
+                }
+            })?;
+
+        let (redraw_sender, redraw_receiver) = channel::channel();
+        state.native_redraw_sender = Some(redraw_sender);
+        state.native_backend = Some(Self {
+            _session: session,
+            renderer,
+            output,
+        });
+        event_loop
+            .handle()
+            .insert_source(redraw_receiver, |event, _, state| {
+                if !matches!(event, ChannelEvent::Msg(())) {
+                    return;
+                }
+                let Some(mut backend) = state.native_backend.take() else {
+                    return;
+                };
+                if let Err(error) = backend.output.render(&mut backend.renderer, state) {
+                    tracing::error!(?error, "native output render failed");
+                }
+                state.native_backend = Some(backend);
+            })?;
+        state.request_native_redraw();
+        Ok(())
     }
 }
 

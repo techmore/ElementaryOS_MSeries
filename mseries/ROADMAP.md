@@ -53,7 +53,12 @@ owns `eDP-1` and `DP-2`, while `HDMI-A-1` is disconnected; card2 has no EGL
 device. Therefore cross-device buffer import, display-controller scanout
 allocation and failure handling are first-session requirements for this M1 Pro,
 not optional general multi-GPU support. The read-only probe did not change
-modes. No session startup is wired yet.
+modes. The executable now keeps nested Winit as its default and provides an
+explicit `--backend native` path behind `native-drm`; this wires libseat,
+libinput, the first DRM output, calloop rendering and vblank completion. Both
+build configurations pass locally. Native mode has not been launched because
+it deliberately takes over the active display; output hotplug, multiple
+outputs, session switching and actual M-series scanout remain unqualified.
 
 
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18
