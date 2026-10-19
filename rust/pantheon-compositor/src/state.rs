@@ -7,7 +7,7 @@ use smithay::{
     input::{Seat, SeatState, pointer::CursorImageStatus},
     reexports::{
         calloop::{
-            EventLoop, Interest, LoopSignal, Mode, PostAction, channel,
+            EventLoop, Interest, LoopHandle, LoopSignal, Mode, PostAction, channel,
             generic::Generic,
             timer::{TimeoutAction, Timer},
         },
@@ -89,6 +89,8 @@ pub struct PantheonCompositor {
     pub fractional_scale_manager_state: FractionalScaleManagerState,
     pub viewporter_state: ViewporterState,
     pub xdg_activation_state: XdgActivationState,
+    loop_handle: LoopHandle<'static, PantheonCompositor>,
+    activation_sweep_armed: bool,
     pub session_lock_state: SessionLockManagerState,
     pub session_locked: bool,
     pub lock_surfaces: HashMap<String, LockSurface>,
@@ -178,7 +180,7 @@ pub struct TiledWindow {
 
 impl PantheonCompositor {
     pub fn new(
-        event_loop: &mut EventLoop<Self>,
+        event_loop: &mut EventLoop<'static, Self>,
         display: Display<Self>,
         seat_name: &str,
     ) -> Result<Self, Box<dyn std::error::Error>> {
@@ -215,22 +217,12 @@ impl PantheonCompositor {
         let pantheon_shell_state = PantheonShellState::new::<Self>(&dh);
         let (display_config, apply_requests) = DisplayConfigHandle::start();
         event_loop.handle().insert_source(
-            Timer::from_duration(Duration::from_millis(25)),
-            move |_, _, state| {
-                while let Ok(request) = apply_requests.try_recv() {
+            crate::wakeups::forward("display-apply", apply_requests),
+            |event, _, state| {
+                if let channel::Event::Msg(request) = event {
                     let result = state.apply_display_configuration(&request);
                     let _ = request.response.send(result);
                 }
-                TimeoutAction::ToDuration(Duration::from_millis(25))
-            },
-        )?;
-        event_loop.handle().insert_source(
-            Timer::from_duration(Duration::from_secs(10)),
-            |_, _, state| {
-                state
-                    .xdg_activation_state
-                    .retain_tokens(|_, token| token.timestamp.elapsed() < Duration::from_secs(60));
-                TimeoutAction::ToDuration(Duration::from_secs(10))
             },
         )?;
 
@@ -258,51 +250,26 @@ impl PantheonCompositor {
                 keyboard_config.repeat_rate,
             )?;
         }
+        // GSettings change notifications replace the former 1 s keyboard and
+        // 2 s wallpaper polls. Each handler re-reads and diffs exactly as the
+        // polls did, so a spurious notification is harmless.
         event_loop.handle().insert_source(
-            Timer::from_duration(Duration::from_secs(1)),
-            |_, _, state| {
-                let config = crate::input::startup_keyboard_config();
-                if let Some(keyboard) = state.seat.get_keyboard() {
-                    let keymap_changed = config.model != state.keyboard_config.model
-                        || config.layout != state.keyboard_config.layout
-                        || config.variant != state.keyboard_config.variant
-                        || config.options != state.keyboard_config.options;
-                    if keymap_changed
-                        && let Err(error) =
-                            keyboard.set_xkb_config(state, crate::input::xkb_config(&config))
-                    {
-                        tracing::warn!(?error, "could not apply changed XKB settings");
-                    }
-                    if config.repeat_delay != state.keyboard_config.repeat_delay
-                        || config.repeat_rate != state.keyboard_config.repeat_rate
-                    {
-                        keyboard.change_repeat_info(config.repeat_rate, config.repeat_delay);
-                    }
+            crate::wakeups::watch_settings(&[
+                "org.gnome.desktop.input-sources",
+                "org.gnome.desktop.peripherals.keyboard",
+            ]),
+            |event, _, state| {
+                if matches!(event, channel::Event::Msg(())) {
+                    state.refresh_keyboard_config();
                 }
-                state.keyboard_config = config;
-                TimeoutAction::ToDuration(Duration::from_secs(1))
             },
         )?;
         event_loop.handle().insert_source(
-            Timer::from_duration(Duration::from_secs(2)),
-            |_, _, state| {
-                match crate::wallpaper::configured_selection() {
-                    Ok(selection) => {
-                        tracing::trace!(?selection, "polled desktop wallpaper selection");
-                        if selection != state.wallpaper_selection {
-                            tracing::info!(?selection, "desktop wallpaper settings changed");
-                            state.wallpaper = selection
-                                .as_ref()
-                                .and_then(crate::wallpaper::load_wallpaper);
-                            state.wallpaper_selection = selection;
-                            state.request_native_redraw();
-                        }
-                    }
-                    Err(error) => {
-                        tracing::debug!(%error, "could not check desktop wallpaper settings")
-                    }
+            crate::wakeups::watch_settings(&["org.gnome.desktop.background"]),
+            |event, _, state| {
+                if matches!(event, channel::Event::Msg(())) {
+                    state.refresh_wallpaper();
                 }
-                TimeoutAction::ToDuration(Duration::from_secs(2))
             },
         )?;
 
@@ -340,17 +307,16 @@ impl PantheonCompositor {
         let shell_compat = ShellCompatHandle::start(socket_name.clone(), osd_redraw_sender);
         let (gala_compat, gala_actions) = GalaCompatHandle::start();
         event_loop.handle().insert_source(
-            Timer::from_duration(Duration::from_millis(100)),
-            move |_, _, state| {
-                while let Ok(request) = gala_actions.try_recv() {
+            crate::wakeups::forward("gala-actions", gala_actions),
+            |event, _, state| {
+                if let channel::Event::Msg(request) = event {
                     let result = state.handle_gala_action(request.action);
                     state.publish_gala_snapshot();
                     let _ = request.response.send(result);
                 }
-                state.publish_gala_snapshot();
-                TimeoutAction::ToDuration(Duration::from_millis(100))
             },
         )?;
+        let loop_handle = event_loop.handle();
 
         // Get the loop signal, used to stop the event loop
         let loop_signal = event_loop.get_signal();
@@ -370,6 +336,8 @@ impl PantheonCompositor {
             fractional_scale_manager_state,
             viewporter_state,
             xdg_activation_state,
+            loop_handle,
+            activation_sweep_armed: false,
             session_lock_state,
             session_locked: false,
             lock_surfaces: HashMap::new(),
@@ -439,7 +407,50 @@ impl PantheonCompositor {
         }
     }
 
-    fn publish_gala_snapshot(&self) {
+    /// Re-read the keyboard settings and apply any difference.
+    fn refresh_keyboard_config(&mut self) {
+        let config = crate::input::startup_keyboard_config();
+        if let Some(keyboard) = self.seat.get_keyboard() {
+            let keymap_changed = config.model != self.keyboard_config.model
+                || config.layout != self.keyboard_config.layout
+                || config.variant != self.keyboard_config.variant
+                || config.options != self.keyboard_config.options;
+            if keymap_changed
+                && let Err(error) = keyboard.set_xkb_config(self, crate::input::xkb_config(&config))
+            {
+                tracing::warn!(?error, "could not apply changed XKB settings");
+            }
+            if config.repeat_delay != self.keyboard_config.repeat_delay
+                || config.repeat_rate != self.keyboard_config.repeat_rate
+            {
+                keyboard.change_repeat_info(config.repeat_rate, config.repeat_delay);
+            }
+        }
+        self.keyboard_config = config;
+    }
+
+    /// Reload the wallpaper when the configured URI or crop mode changed.
+    fn refresh_wallpaper(&mut self) {
+        match crate::wallpaper::configured_selection() {
+            Ok(selection) => {
+                if selection != self.wallpaper_selection {
+                    tracing::info!(?selection, "desktop wallpaper settings changed");
+                    self.wallpaper = selection
+                        .as_ref()
+                        .and_then(crate::wallpaper::load_wallpaper);
+                    self.wallpaper_selection = selection;
+                    self.request_native_redraw();
+                }
+            }
+            Err(error) => {
+                tracing::debug!(%error, "could not check desktop wallpaper settings")
+            }
+        }
+    }
+
+    /// Publish the window/workspace snapshot to the Gala-compat D-Bus service.
+    /// Called after every event-loop dispatch (it only copies on change).
+    pub(crate) fn publish_gala_snapshot(&self) {
         let focus = self
             .seat
             .get_keyboard()
@@ -1679,6 +1690,42 @@ impl FractionalScaleHandler for PantheonCompositor {
     }
 }
 
+const ACTIVATION_TOKEN_TTL: Duration = Duration::from_secs(60);
+
+impl PantheonCompositor {
+    /// Expire stale activation tokens without a periodic timer: a one-shot
+    /// timer is armed when a token exists and drops itself once none remain.
+    fn arm_activation_sweep(&mut self) {
+        if self.activation_sweep_armed {
+            return;
+        }
+        self.activation_sweep_armed = true;
+        let armed = self.loop_handle.insert_source(
+            Timer::from_duration(ACTIVATION_TOKEN_TTL),
+            |_, _, state| {
+                let mut oldest = Duration::ZERO;
+                state.xdg_activation_state.retain_tokens(|_, token| {
+                    let age = token.timestamp.elapsed();
+                    let keep = age < ACTIVATION_TOKEN_TTL;
+                    if keep {
+                        oldest = oldest.max(age);
+                    }
+                    keep
+                });
+                if oldest.is_zero() {
+                    state.activation_sweep_armed = false;
+                    TimeoutAction::Drop
+                } else {
+                    TimeoutAction::ToDuration(ACTIVATION_TOKEN_TTL - oldest)
+                }
+            },
+        );
+        if armed.is_err() {
+            self.activation_sweep_armed = false;
+        }
+    }
+}
+
 impl XdgActivationHandler for PantheonCompositor {
     fn activation_state(&mut self) -> &mut XdgActivationState {
         &mut self.xdg_activation_state
@@ -1686,7 +1733,8 @@ impl XdgActivationHandler for PantheonCompositor {
 
     fn token_created(&mut self, _token: XdgActivationToken, data: XdgActivationTokenData) -> bool {
         self.xdg_activation_state
-            .retain_tokens(|_, token| token.timestamp.elapsed() < Duration::from_secs(60));
+            .retain_tokens(|_, token| token.timestamp.elapsed() < ACTIVATION_TOKEN_TTL);
+        self.arm_activation_sweep();
         let Some((serial, seat)) = data.serial else {
             return false;
         };
