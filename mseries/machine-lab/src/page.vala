@@ -40,6 +40,8 @@ public class MachinePage : Gtk.Box {
     private Gtk.Label strip;
     private Gtk.Box creds_card;
     private Gtk.Label creds_label;
+    private string creds_real = "";
+    private bool creds_shown = false;
     private Gtk.Box ready_card;
     private Gtk.Image ready_icon;
     private Gtk.Label ready_title;
@@ -156,6 +158,20 @@ public class MachinePage : Gtk.Box {
         refresh ();
         int64 free = Readiness.free_gib ();
         toast (free >= 0 ? "Checked again: %d GiB free".printf ((int) free) : "Checked again");
+    }
+
+    /* Passwords stay hidden until asked for: "Password: abc" becomes "Password: ••••••". */
+    public static string mask_credentials (string text) {
+        try {
+            var re = new Regex ("(?i)((?:sudo )?password:\\s*)(\\S+)");
+            return re.replace_eval (text, -1, 0, 0, (m, sb) => {
+                sb.append (m.fetch (1));
+                sb.append ("••••••••");
+                return false;
+            });
+        } catch (RegexError e) {
+            return "••••••••";
+        }
     }
 
     public void toggle_fullscreen () {
@@ -277,10 +293,20 @@ public class MachinePage : Gtk.Box {
         ccopy.valign = Gtk.Align.CENTER;
         ccopy.tooltip_text = "Copy sign-in";
         ccopy.clicked.connect (() => {
-            Gdk.Display.get_default ().get_clipboard ().set_text (creds_label.label);
+            Gdk.Display.get_default ().get_clipboard ().set_text (creds_real);
             toast ("Copied sign-in");
         });
         creds_card.append (ccopy);
+        var creveal = new Gtk.ToggleButton ();
+        creveal.icon_name = "view-reveal-symbolic";
+        creveal.add_css_class ("flat");
+        creveal.valign = Gtk.Align.CENTER;
+        creveal.tooltip_text = "Show or hide the password";
+        creveal.toggled.connect (() => {
+            creds_shown = creveal.active;
+            creds_label.label = creds_shown ? creds_real : mask_credentials (creds_real);
+        });
+        creds_card.append (creveal);
         clamp.append (creds_card);
 
         var specs = new Gtk.Grid ();
@@ -765,7 +791,10 @@ public class MachinePage : Gtk.Box {
         strip.label = machine.status_text;
         var creds = machine.credentials ();
         creds_card.visible = creds != null;
-        if (creds != null) creds_label.label = creds;
+        if (creds != null) {
+            creds_real = creds;
+            creds_label.label = creds_shown ? creds : mask_credentials (creds);
+        }
         hero_sub.label = "ARM64 · " + (managed ? (fresh ? (machine.installer != null ? "Imported from mseries-vm · installer ready: %s".printf (Path.get_basename (machine.installer)) : "Imported from mseries-vm · installer not finished") : "Installed · imported from mseries-vm")
             : fresh ? "New machine · not installed yet"
             : "Linux ARM64 · installed");

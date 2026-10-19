@@ -111,6 +111,15 @@ public class MachineLab : Gtk.Application {
             application_id: "io.github.mseries.MachineLab",
             flags: ApplicationFlags.DEFAULT_FLAGS
         );
+        add_main_option ("version", 'v', OptionFlags.NONE, OptionArg.NONE, "Print the version and exit", null);
+    }
+
+    protected override int handle_local_options (VariantDict options) {
+        if (options.contains ("version")) {
+            print ("machine-lab %s\n", Config.VERSION);
+            return 0;
+        }
+        return -1;
     }
 
     protected override void startup () {

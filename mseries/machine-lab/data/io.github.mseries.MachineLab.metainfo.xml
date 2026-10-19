@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.mseries.MachineLab</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Machine Lab</name>
+  <summary>Run other Linux and Windows machines on this Mac</summary>
+  <description>
+    <p>Machine Lab creates and runs ARM64 virtual machines with QEMU and KVM, with the look and feel of an elementary OS app.</p>
+    <p>See each machine's desktop in a built-in Display tab with full screen, mouse and keyboard, pause and resume, a live console, and readiness and disk-space checks. Import guests already managed with mseries-vm, or create new ones from elementary OS, Omarchy, Ubuntu, Debian, Fedora or any ARM64 installer image.</p>
+  </description>
+  <launchable type="desktop-id">io.github.mseries.MachineLab.desktop</launchable>
+  <url type="homepage">https://github.com/techmore/ElementaryOS_MSeries</url>
+  <url type="bugtracker">https://github.com/techmore/ElementaryOS_MSeries/issues</url>
+  <provides><binary>machine-lab</binary></provides>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.3.0" date="2026-10-19">
+      <description>
+        <p>Display tab with full screen, in-app mouse and keyboard, a macOS experiment page, masked credentials, a non-blocking status poll and a test suite.</p>
+      </description>
+    </release>
+  </releases>
+</component>

@@ -6,6 +6,7 @@
 # MACHINE_DISK_GIB, MACHINE_SSH_PORT, MACHINE_NAME, MACHINE_DISPLAY (gtk|none). Two QMP sockets in
 # VM_DIR: qmp.sock (control: pause, resume, mseries-vm) and qmp-view.sock (the
 # Machine Lab display) so a viewer never blocks control commands.
+# shellcheck disable=SC2054  # commas inside QEMU option strings are intentional
 set -euo pipefail
 
 CPUS=${MACHINE_CPUS:-4}

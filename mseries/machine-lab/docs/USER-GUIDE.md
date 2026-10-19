@@ -1,0 +1,67 @@
+# Machine Lab user guide
+
+Machine Lab runs other ARM64 operating systems on this Mac with QEMU and KVM. Everything here is ARM64 (aarch64):
+x86-64 / amd64 images do not run.
+
+## Install
+
+```sh
+bash mseries/install-machine-lab.sh        # builds, installs to ~/.local and pins it in the dock
+bash mseries/machine-lab/build-deb.sh      # or build machine-lab_<version>_arm64.deb (runs the tests first)
+```
+
+Needs QEMU (`qemu-system-arm`, `qemu-utils`), UEFI firmware (`qemu-efi-aarch64`) and access to `/dev/kvm`.
+The Overview tab's setup check tells you which of these is missing and how to fix it.
+
+## Machines
+
+- **YOUR MACHINES** are installed guests, including any managed with `mseries/vms/mseries-vm` (`~/vms/*/vm.conf`),
+  which Machine Lab finds on its own.
+- **NEW: NOT INSTALLED** are machines that have not been installed yet. New Machine (Ctrl+N) offers presets: Omarchy
+  (can download and install itself), elementary OS (uses an ARM64 ISO already downloaded by mseries-vm), Ubuntu, Debian,
+  Fedora, or a blank machine for any ARM64 `.iso`.
+- Each machine has Overview, Display, Console and Settings tabs. Settings (CPUs, memory, disk, SSH port, colour) are
+  locked while it runs; the disk size is fixed once the disk exists.
+
+## Display
+
+Starting a machine opens its Display tab: the guest's screen at about 30 fps with its own mouse and keyboard.
+
+| Action | How |
+| --- | --- |
+| Send the keyboard and mouse to the machine | click the screen |
+| Give them back | Ctrl+Alt+G, or Release Keyboard in full screen |
+| Full screen | F11, the button under the screen, or Ctrl+Alt+F (works while the machine has the keyboard) |
+| Leave full screen | F11, Ctrl+Alt+F, or the Exit Full Screen button that appears when the pointer reaches the top |
+| Ctrl+Alt+Del | the button under the screen |
+| Screenshot | camera button, saved to Pictures |
+
+Other shortcuts: Ctrl+N new machine, F5 or Ctrl+R re-check disk space and requirements, Ctrl+Q quit (running
+machines are stopped).
+
+Clipboard sharing and drag-and-drop between host and guest are not built yet (issues #263, #264).
+
+## Installing a system
+
+1. Pick the preset. Omarchy: use **Download and Install** (checks the latest ARM64 nightly, verifies its SHA-256 and
+   installs unattended; the sign-in is shown and saved with owner-only permissions). Any other system: choose or drop
+   an ARM64 `.iso`, then **Start Installer**.
+2. Install in the Display tab. When the guest shuts down after a real install, Machine Lab detaches the installer and
+   boots the disk from then on.
+3. **Windows 11 ARM64** needs extra steps (virtio-win drivers, a 64 GB disk, `GPU=ramfb`): see
+   `mseries/OS9-HANDOFF.md`, "Windows 11 ARM64 installed and first-booted".
+
+## Troubleshooting
+
+| Symptom | Cause and fix |
+| --- | --- |
+| "No access to /dev/kvm" | add your user to the `kvm` group and log in again |
+| Low disk space warning | machine disks grow as the guest writes; free space or shrink the disk in Settings, then press F5 |
+| Display stays black | the guest may use a kernel without a graphics driver for QEMU's virtual GPU; see the Console tab. elementary OS images default to the Apple-only Fairydust kernel, which does not boot on QEMU (see the handoff) |
+| `mseries-vm` commands hang | they should not: the Display uses its own `qmp-view.sock`. Guests started before that socket existed hold the control socket while the Display tab is open; restart them |
+| Keys dropped in the Windows installer | type slowly or use the Browse tree; WinPE loses fast input |
+
+## macOS
+
+macOS guests cannot run on Linux here. The "macOS (experimental)" page runs real probes and shows how each route fails.
+See `ROADMAP.md`.

@@ -24,6 +24,8 @@ meson setup build && meson compile -C build
 ./build/machine-lab        # finds ../launcher/run-vm.sh; MACHINE_LAB_LAUNCHER overrides
 ```
 
+Guides: `docs/USER-GUIDE.md`, `ROADMAP.md`, `CHANGELOG.md`. Tests: `meson test -C build`. Package: `bash mseries/machine-lab/build-deb.sh`.
+
 Layout: `src/machine.vala` (model, QMP, process control, discovery), `src/page.vala` (machine pane),
 `src/main.vala` (window, sidebar, presets), `launcher/` (QEMU launcher and Omarchy updater).
 
