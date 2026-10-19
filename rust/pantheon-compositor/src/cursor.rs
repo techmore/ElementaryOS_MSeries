@@ -13,7 +13,7 @@ use smithay::{
     },
     input::pointer::{CursorImageAttributes, CursorImageStatus},
     render_elements,
-    utils::{IsAlive, Scale, Transform},
+    utils::{IsAlive, Logical, Point, Rectangle, Scale, Size, Transform},
     wayland::compositor::with_states,
 };
 
@@ -136,6 +136,154 @@ where
         elements.push(element.into());
     }
 
+    elements.extend(render_shell_osd_elements(renderer, state, output));
+
+    elements
+}
+
+fn render_shell_osd_elements<R>(
+    _renderer: &mut R,
+    state: &PantheonCompositor,
+    output: &smithay::output::Output,
+) -> Vec<CursorRenderElement<R>>
+where
+    R: Renderer + ImportAll + ImportMem,
+    R::TextureId: Texture + Clone + Send + 'static,
+{
+    let Some(osd) = state.shell_compat.active_osd() else {
+        return Vec::new();
+    };
+    let outputs = state.space.outputs().collect::<Vec<_>>();
+    let target_name = osd
+        .connector
+        .as_ref()
+        .filter(|connector| {
+            outputs
+                .iter()
+                .any(|candidate| candidate.name().as_str() == connector.as_str())
+        })
+        .cloned()
+        .or_else(|| {
+            osd.monitor
+                .and_then(|index| outputs.get(index as usize).map(|target| target.name()))
+        })
+        .or_else(|| state.primary_output().map(|target| target.name()));
+    if target_name.as_deref() != Some(output.name().as_str()) {
+        return Vec::new();
+    }
+    let Some(geometry) = state.space.output_geometry(output) else {
+        return Vec::new();
+    };
+
+    let width = 304.min(geometry.size.w.saturating_sub(32).max(120));
+    let height = 76.min(geometry.size.h.saturating_sub(32).max(48));
+    let card = Rectangle::<i32, Logical>::new(
+        Point::from((
+            geometry.loc.x + (geometry.size.w - width) / 2,
+            geometry.loc.y + (geometry.size.h - height) / 2,
+        )),
+        Size::from((width, height)),
+    );
+    let scale = Scale::from(output.current_scale().fractional_scale());
+    let mut elements = Vec::new();
+    let mut append = |rect: Rectangle<i32, Logical>, color: [f32; 4], opacity: f32| {
+        let location = (rect.loc - geometry.loc)
+            .to_f64()
+            .to_physical(scale)
+            .to_i32_round();
+        let size = rect.size;
+        if size.w > 0 && size.h > 0 {
+            let buffer = SolidColorBuffer::new(size, color);
+            let element = SolidColorRenderElement::from_buffer(
+                &buffer,
+                location,
+                scale,
+                opacity,
+                Kind::Unspecified,
+            );
+            elements.push(element.into());
+        }
+    };
+
+    append(card, [0.055, 0.065, 0.085, 1.0], 0.94);
+    let icon_x = card.loc.x + 22;
+    let icon_y = card.loc.y + 25;
+    if osd
+        .icon
+        .as_deref()
+        .is_some_and(|icon| icon.contains("brightness"))
+    {
+        // A simple sun glyph keeps the brightness OSD recognizable without
+        // pulling a shell toolkit or image stack into the compositor.
+        append(
+            Rectangle::new((icon_x + 7, icon_y + 7).into(), (12, 12).into()),
+            [1.0, 0.86, 0.49, 1.0],
+            1.0,
+        );
+        for (x, y, w, h) in [
+            (icon_x + 11, icon_y, 4, 5),
+            (icon_x + 11, icon_y + 21, 4, 5),
+            (icon_x, icon_y + 11, 5, 4),
+            (icon_x + 21, icon_y + 11, 5, 4),
+            (icon_x + 3, icon_y + 3, 4, 4),
+            (icon_x + 19, icon_y + 3, 4, 4),
+            (icon_x + 3, icon_y + 19, 4, 4),
+            (icon_x + 19, icon_y + 19, 4, 4),
+        ] {
+            append(
+                Rectangle::new((x, y).into(), (w, h).into()),
+                [1.0, 0.86, 0.49, 1.0],
+                1.0,
+            );
+        }
+    } else {
+        // The sound indicator uses the same endpoint for volume and mute.
+        append(
+            Rectangle::new((icon_x, icon_y + 8).into(), (8, 12).into()),
+            [0.76, 0.85, 1.0, 1.0],
+            1.0,
+        );
+        append(
+            Rectangle::new((icon_x + 8, icon_y + 3).into(), (7, 22).into()),
+            [0.76, 0.85, 1.0, 1.0],
+            1.0,
+        );
+        if !osd
+            .icon
+            .as_deref()
+            .is_some_and(|icon| icon.contains("muted"))
+        {
+            append(
+                Rectangle::new((icon_x + 18, icon_y + 8).into(), (4, 12).into()),
+                [0.76, 0.85, 1.0, 1.0],
+                1.0,
+            );
+        }
+    }
+
+    if let Some(level) = osd.level {
+        let max_level = osd.max_level.filter(|value| *value > 0.0).unwrap_or(1.0);
+        if level.is_finite() && max_level.is_finite() {
+            let bar_width = (width - 76).max(32);
+            let bar_height = 8;
+            let bar_x = card.loc.x + 62;
+            let bar_y = card.loc.y + (height - bar_height) / 2;
+            append(
+                Rectangle::new((bar_x, bar_y).into(), (bar_width, bar_height).into()),
+                [0.28, 0.31, 0.37, 1.0],
+                1.0,
+            );
+            let fill_width =
+                ((level / max_level).clamp(0.0, 1.0) * f64::from(bar_width)).round() as i32;
+            if fill_width > 0 {
+                append(
+                    Rectangle::new((bar_x, bar_y).into(), (fill_width, bar_height).into()),
+                    [0.45, 0.67, 1.0, 1.0],
+                    1.0,
+                );
+            }
+        }
+    }
     elements
 }
 

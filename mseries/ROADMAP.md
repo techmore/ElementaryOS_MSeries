@@ -61,8 +61,9 @@ reload, multi-output behavior, and runtime snapping qualification remain open.
 Quarter drag previews now appear in the 40-logical-pixel output corners,
 Escape cancels the snap, fixed-size windows are excluded, and release applies
 the selected quarter. This path is compile-checked only.
-`ShowOSD`, lock-screen action modes and physical media
-key activation remain unimplemented or unqualified. Relative pointer motion now
+`ShowOSD` renders a minimal brightness/volume indicator with icon and level
+meter; text labels, full Pantheon styling, lock-screen action modes and physical
+media-key activation remain unimplemented or unqualified. Relative pointer motion now
 updates pointer focus and drives the compositor's existing move/resize grabs;
 xdg popup requests now install Smithay keyboard/pointer grabs for managed
 toplevel roots. Both features build locally; popup behavior has not been

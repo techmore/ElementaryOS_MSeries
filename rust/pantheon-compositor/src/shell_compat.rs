@@ -12,6 +12,7 @@ use std::{
 };
 
 use smithay::input::keyboard::{Keysym, ModifiersState, xkb};
+use smithay::reexports::calloop::channel::Sender;
 use zbus::{blocking::Connection, interface, object_server::SignalEmitter, zvariant::OwnedValue};
 
 const BUS_NAME: &str = "org.gnome.Shell";
@@ -41,6 +42,22 @@ pub(crate) struct ParsedAccelerator {
     modifiers: AcceleratorModifiers,
 }
 
+#[derive(Clone, Debug)]
+pub(crate) struct ShellOsd {
+    pub icon: Option<String>,
+    pub level: Option<f64>,
+    pub max_level: Option<f64>,
+    pub connector: Option<String>,
+    pub monitor: Option<u32>,
+    expires_at: Instant,
+}
+
+impl ShellOsd {
+    pub fn visible(&self) -> bool {
+        Instant::now() < self.expires_at
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 struct KeyBinding {
     id: u32,
@@ -53,10 +70,11 @@ pub struct ShellCompatHandle {
     events: mpsc::Sender<ShellEvent>,
     active: Arc<AtomicBool>,
     active_since: Arc<Mutex<Option<Instant>>>,
+    osd: Arc<Mutex<Option<ShellOsd>>>,
 }
 
 impl ShellCompatHandle {
-    pub fn start(wayland_display: OsString) -> Self {
+    pub fn start(wayland_display: OsString, redraw_sender: Sender<()>) -> Self {
         let bindings = Arc::new(Mutex::new(Vec::new()));
         let (events, receiver) = mpsc::channel();
         let active = Arc::new(AtomicBool::new(false));
@@ -64,6 +82,14 @@ impl ShellCompatHandle {
         let service_bindings = bindings.clone();
         let service_active = active.clone();
         let service_active_since = active_since.clone();
+        let osd = Arc::new(Mutex::new(None));
+        let service_osd = osd.clone();
+        let (osd_expiry, expiry_receiver) = mpsc::channel();
+        let expiry_redraw_sender = redraw_sender.clone();
+        thread::Builder::new()
+            .name("pantheon-osd-expiry".into())
+            .spawn(move || run_osd_expiry(expiry_receiver, expiry_redraw_sender))
+            .expect("failed to start OSD expiry worker");
         thread::Builder::new()
             .name("pantheon-shell-dbus".into())
             .spawn(move || {
@@ -71,6 +97,9 @@ impl ShellCompatHandle {
                     service_bindings,
                     service_active,
                     service_active_since,
+                    service_osd,
+                    redraw_sender,
+                    osd_expiry,
                     wayland_display,
                     receiver,
                 )
@@ -81,6 +110,17 @@ impl ShellCompatHandle {
             events,
             active,
             active_since,
+            osd,
+        }
+    }
+
+    pub(crate) fn active_osd(&self) -> Option<ShellOsd> {
+        let mut osd = self.osd.lock().expect("OSD state lock poisoned");
+        if osd.as_ref().is_some_and(ShellOsd::visible) {
+            osd.clone()
+        } else {
+            *osd = None;
+            None
         }
     }
 
@@ -115,6 +155,9 @@ impl ShellCompatHandle {
 
 struct ShellKeyGrabber {
     bindings: Arc<Mutex<Vec<KeyBinding>>>,
+    osd: Arc<Mutex<Option<ShellOsd>>>,
+    redraw_sender: Sender<()>,
+    osd_expiry: mpsc::Sender<Instant>,
     next_id: u32,
 }
 
@@ -148,7 +191,32 @@ impl ShellKeyGrabber {
         removed == actions.len()
     }
 
-    fn show_osd(&self, _parameters: HashMap<String, OwnedValue>) {}
+    fn show_osd(&self, parameters: HashMap<String, OwnedValue>) {
+        let value = |key: &str| parameters.get(key);
+        let icon = value("icon")
+            .and_then(|value| value.try_clone().ok())
+            .and_then(|value| String::try_from(value).ok());
+        let connector = value("connector")
+            .and_then(|value| value.try_clone().ok())
+            .and_then(|value| String::try_from(value).ok());
+        let level = value("level").and_then(|value| f64::try_from(value).ok());
+        let max_level = value("maxLevel").and_then(|value| f64::try_from(value).ok());
+        let monitor = value("monitor")
+            .and_then(|value| i32::try_from(value).ok())
+            .and_then(|value| u32::try_from(value).ok());
+        *self.osd.lock().expect("OSD state lock poisoned") = Some(ShellOsd {
+            icon,
+            level,
+            max_level,
+            connector,
+            monitor,
+            expires_at: Instant::now() + Duration::from_millis(1400),
+        });
+        let _ = self.redraw_sender.send(());
+        let _ = self
+            .osd_expiry
+            .send(Instant::now() + Duration::from_millis(1450));
+    }
 
     #[zbus(signal)]
     async fn accelerator_activated(
@@ -241,6 +309,9 @@ fn serve_shell_compat(
     bindings: Arc<Mutex<Vec<KeyBinding>>>,
     active: Arc<AtomicBool>,
     active_since: Arc<Mutex<Option<Instant>>>,
+    osd: Arc<Mutex<Option<ShellOsd>>>,
+    redraw_sender: Sender<()>,
+    osd_expiry: mpsc::Sender<Instant>,
     wayland_display: OsString,
     receiver: mpsc::Receiver<ShellEvent>,
 ) {
@@ -256,6 +327,9 @@ fn serve_shell_compat(
         OBJECT_PATH,
         ShellKeyGrabber {
             bindings,
+            osd,
+            redraw_sender,
+            osd_expiry,
             next_id: 1,
         },
     ) {
@@ -328,6 +402,26 @@ fn serve_shell_compat(
             }
             Err(mpsc::RecvTimeoutError::Timeout) => {}
             Err(mpsc::RecvTimeoutError::Disconnected) => return,
+        }
+    }
+}
+
+fn run_osd_expiry(receiver: mpsc::Receiver<Instant>, redraw_sender: Sender<()>) {
+    loop {
+        let mut deadline = match receiver.recv() {
+            Ok(deadline) => deadline,
+            Err(_) => return,
+        };
+        loop {
+            let wait = deadline.saturating_duration_since(Instant::now());
+            match receiver.recv_timeout(wait) {
+                Ok(next_deadline) => deadline = next_deadline,
+                Err(mpsc::RecvTimeoutError::Timeout) => {
+                    let _ = redraw_sender.send(());
+                    break;
+                }
+                Err(mpsc::RecvTimeoutError::Disconnected) => return,
+            }
         }
     }
 }

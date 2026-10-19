@@ -138,10 +138,13 @@ it has not yet been exercised with a real application menu.
 The session bus also exposes the small `org.gnome.Shell` accelerator API used
 by Wingpanel and its sound indicator. Accelerator registrations are matched
 through the compositor's active XKB state and reported with
-`AcceleratorActivated`; `ShowOSD` is currently a no-op, and lock-screen action
-modes are not implemented. Separately, the observed `org.gnome.ScreenSaver`
-interface launches the configured session locker; its action and authentication
-path still need runtime qualification.
+`AcceleratorActivated`. `ShowOSD` now renders a short brightness or volume
+indicator, including the requested output connector and normalized level when
+provided. It uses compositor-drawn icons and a meter; text labels and the full
+Pantheon OSD styling are not implemented. Lock-screen action modes remain
+unimplemented. Separately, the observed `org.gnome.ScreenSaver` interface
+launches the configured session locker; its action and authentication path
+still need runtime qualification.
 
 The code is based on Smithay's `smallvil` learning compositor at pinned commit
 `023b78b1c5a05ca512767cacc07efca55fae8be4`; see `SMITHAY-LICENSE.txt`. Keep the

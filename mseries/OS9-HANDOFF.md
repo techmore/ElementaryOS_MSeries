@@ -5686,3 +5686,16 @@ multi-monitor arrangement whenever a connector changes. Local default
 `mseries-power` and `grabs/resize_grab.rs`; the touched native compositor
 source was formatted directly. No display session was launched and hotplug
 behavior remains unqualified on hardware.
+
+### Render the Shell `ShowOSD` compatibility call — 2026-10-19
+
+The `org.gnome.Shell.ShowOSD(a{sv})` method now retains the current icon,
+level, optional maximum level, connector and legacy monitor index. Both render
+paths draw a brief volume or brightness card with an icon and level meter on
+the selected connector, falling back to the primary output. The native backend
+receives redraw requests when the OSD appears and expires. This provides
+feedback for the existing Shell accelerator clients without relying on Gala.
+It does not draw caller-supplied text labels or reproduce Pantheon's complete
+OSD styling; physical key activation and visual runtime behavior still need
+qualification. Local default `cargo check`/`cargo build` and the
+`native-drm` build pass. No tests or display session were run.

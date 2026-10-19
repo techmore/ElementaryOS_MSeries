@@ -7,7 +7,7 @@ use smithay::{
     input::{Seat, SeatState, pointer::CursorImageStatus},
     reexports::{
         calloop::{
-            EventLoop, Interest, LoopSignal, Mode, PostAction,
+            EventLoop, Interest, LoopSignal, Mode, PostAction, channel,
             generic::Generic,
             timer::{TimeoutAction, Timer},
         },
@@ -200,7 +200,16 @@ impl PantheonCompositor {
 
         // Setup a wayland socket that will be used to accept clients
         let socket_name = Self::init_wayland_listener(display, event_loop)?;
-        let shell_compat = ShellCompatHandle::start(socket_name.clone());
+        let (osd_redraw_sender, osd_redraw_receiver) = channel::channel();
+        event_loop
+            .handle()
+            .insert_source(osd_redraw_receiver, |event, _, _state| {
+                if matches!(event, channel::Event::Msg(())) {
+                    #[cfg(feature = "native-drm")]
+                    _state.request_native_redraw();
+                }
+            })?;
+        let shell_compat = ShellCompatHandle::start(socket_name.clone(), osd_redraw_sender);
 
         // Get the loop signal, used to stop the event loop
         let loop_signal = event_loop.get_signal();
