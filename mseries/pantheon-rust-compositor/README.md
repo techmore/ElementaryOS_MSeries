@@ -83,6 +83,23 @@ session, input and recovery behavior still need on-device qualification. The
 staged login-session files are separate from the active Gala session and are
 not installed or selected by default.
 
+### Readiness decision (2026-10-19)
+
+This branch is **not yet ready to use as an experimental Pantheon session**.
+The nested backend is suitable for development and controlled protocol
+qualification, and the ARM64 `native-drm` package builds on the M-series host.
+Neither result demonstrates that the session can replace Gala. No isolated
+native login has been run, so actual scanout, keyboard/pointer input, app
+launch, IBus text commits, panel/dock behavior, lock/unlock and crash recovery
+are still unknown. Keep Gala selected and use the Rust compositor only in an
+explicitly isolated qualification session after its prerequisites are checked.
+
+The next gate is staged nested qualification with real GTK/Qt clients and the
+existing Pantheon shell clients, including IBus focus/commit behavior. After
+that passes, run the package in a separate native login with a tested recovery
+path. Only record it as an experimental session that works after those runtime
+gates pass; a successful compile or package build is not that evidence.
+
 The staged systemd service now retries an unexpected compositor failure with
 a two-second delay, capped at three starts per minute. After that limit, its
 `OnFailure` action requests the GNOME session shutdown target rather than

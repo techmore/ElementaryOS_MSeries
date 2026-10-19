@@ -5762,3 +5762,13 @@ does not prove DRM framebuffer creation or physical scanout. The probe opens
 the devices but does not acquire DRM master, create framebuffers, or modeset.
 The next hardware gate remains a controlled native compositor start in an
 isolated session.
+
+### Rust Pantheon branch readiness decision — 2026-10-19
+
+The branch is useful for nested development and has a locally built ARM64
+native candidate, but it is **not yet an experimental Pantheon swap-in**. No
+isolated native login or real Wayland app/IBus/panel/dock/lock workflow has been
+qualified. Gala remains selected. The next gate is nested runtime qualification
+with GTK/Qt plus the existing shell clients, then native login only with a
+separate tested recovery path. See
+`mseries/pantheon-rust-compositor/README.md` for the readiness criteria.
