@@ -5624,6 +5624,13 @@ and output scale preferences refresh during rendering and after configuration
 changes. Cross-output movement and fractional rendering still require a nested
 client check.
 
+The compositor also now serves Smithay's `xdg-activation-v1`. Client tokens
+must carry a recent serial from this compositor's seat; tokens expire after a
+minute if unused and are consumed on activation. Recent activation requests
+raise/focus an already mapped target window, except while the session is
+locked. The new app-launch path has only been compile-checked, not exercised by
+a client.
+
 Local verification: `cargo check -p pantheon-compositor --bin
 pantheon-compositor` and the same command with `--features native-drm` both
 pass; touched Rust files pass `rustfmt --check`; `git diff --check` passes.

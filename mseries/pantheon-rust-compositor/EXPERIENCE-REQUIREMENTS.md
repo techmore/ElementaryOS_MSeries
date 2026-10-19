@@ -97,7 +97,10 @@ rejected. Both default and native DRM builds compile; runtime changes on the
 active M-series display remain unqualified. The compositor advertises
 `wp_fractional_scale_v1` and `wp_viewporter`, setting each window surface's
 preferred scale from its first mapped output. Runtime checks for moving a
-surface between differently scaled outputs remain open. It also
+surface between differently scaled outputs remain open. The compositor now
+serves `xdg-activation-v1`, requiring a recent token associated with this seat
+and using it to raise/focus mapped windows outside a locked session. App-launch
+activation remains runtime-unverified. It also
 implements the `org.gnome.Shell`
 accelerator registration and activation path: pressing the registered
 `Super+N` chord emits `AcceleratorActivated` in the nested run. Dock integration,

@@ -30,6 +30,9 @@ use smithay::{
         shm::ShmState,
         socket::ListeningSocketSource,
         viewporter::ViewporterState,
+        xdg_activation::{
+            XdgActivationHandler, XdgActivationState, XdgActivationToken, XdgActivationTokenData,
+        },
     },
 };
 
@@ -60,6 +63,7 @@ pub struct PantheonCompositor {
     pub output_manager_state: OutputManagerState,
     pub fractional_scale_manager_state: FractionalScaleManagerState,
     pub viewporter_state: ViewporterState,
+    pub xdg_activation_state: XdgActivationState,
     pub session_lock_state: SessionLockManagerState,
     pub session_locked: bool,
     pub lock_surfaces: HashMap<String, LockSurface>,
@@ -119,6 +123,7 @@ impl PantheonCompositor {
         let output_manager_state = OutputManagerState::new_with_xdg_output::<Self>(&dh);
         let fractional_scale_manager_state = FractionalScaleManagerState::new::<Self>(&dh);
         let viewporter_state = ViewporterState::new::<Self>(&dh);
+        let xdg_activation_state = XdgActivationState::new::<Self>(&dh);
         let session_lock_state = SessionLockManagerState::new::<Self, _>(&dh, |_| true);
 
         // Data device is responsible for clipboard and drag-and-drop
@@ -133,6 +138,15 @@ impl PantheonCompositor {
                     let _ = request.response.send(result);
                 }
                 TimeoutAction::ToDuration(Duration::from_millis(25))
+            },
+        )?;
+        event_loop.handle().insert_source(
+            Timer::from_duration(Duration::from_secs(10)),
+            |_, _, state| {
+                state
+                    .xdg_activation_state
+                    .retain_tokens(|_, token| token.timestamp.elapsed() < Duration::from_secs(60));
+                TimeoutAction::ToDuration(Duration::from_secs(10))
             },
         )?;
 
@@ -176,6 +190,7 @@ impl PantheonCompositor {
             output_manager_state,
             fractional_scale_manager_state,
             viewporter_state,
+            xdg_activation_state,
             session_lock_state,
             session_locked: false,
             lock_surfaces: HashMap::new(),
@@ -531,6 +546,64 @@ impl FractionalScaleHandler for PantheonCompositor {
                 });
             });
         }
+    }
+}
+
+impl XdgActivationHandler for PantheonCompositor {
+    fn activation_state(&mut self) -> &mut XdgActivationState {
+        &mut self.xdg_activation_state
+    }
+
+    fn token_created(&mut self, _token: XdgActivationToken, data: XdgActivationTokenData) -> bool {
+        self.xdg_activation_state
+            .retain_tokens(|_, token| token.timestamp.elapsed() < Duration::from_secs(60));
+        let Some((serial, seat)) = data.serial else {
+            return false;
+        };
+        let Some(keyboard) = self.seat.get_keyboard() else {
+            return false;
+        };
+        Seat::from_resource(&seat) == Some(self.seat.clone())
+            && keyboard
+                .last_enter()
+                .is_some_and(|last_enter| serial.is_no_older_than(&last_enter))
+    }
+
+    fn request_activation(
+        &mut self,
+        token: XdgActivationToken,
+        token_data: XdgActivationTokenData,
+        surface: WlSurface,
+    ) {
+        self.xdg_activation_state.remove_token(&token);
+        if self.session_locked || token_data.timestamp.elapsed() > Duration::from_secs(10) {
+            return;
+        }
+
+        let mut root = surface;
+        while let Some(parent) = smithay::wayland::compositor::get_parent(&root) {
+            root = parent;
+        }
+        let Some(window) = self.find_window_for_surface(&root) else {
+            return;
+        };
+        self.space.raise_element(&window, true);
+        if let Some(surface) = window
+            .toplevel()
+            .map(|toplevel| toplevel.wl_surface().clone())
+        {
+            let serial = smithay::utils::SERIAL_COUNTER.next_serial();
+            if let Some(keyboard) = self.seat.get_keyboard() {
+                keyboard.set_focus(self, Some(surface), serial);
+            }
+            self.space.elements().for_each(|window| {
+                if let Some(toplevel) = window.toplevel() {
+                    toplevel.send_pending_configure();
+                }
+            });
+        }
+        #[cfg(feature = "native-drm")]
+        self.request_native_redraw();
     }
 }
 

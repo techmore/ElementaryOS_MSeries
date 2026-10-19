@@ -40,7 +40,10 @@ mode changes remain unqualified. The compositor advertises
 preferences from mapped outputs. Moving surfaces across differently scaled
 outputs still needs runtime verification. The compositor also serves Wingpanel's `org.gnome.Shell`
 accelerator API and matched `Super+N` to an `AcceleratorActivated` signal during
-an isolated nested run. `ShowOSD`, lock-screen action modes and physical media
+an isolated nested run. `xdg-activation-v1` now validates recent seat-backed
+tokens, consumes them after use and raises/focuses mapped target windows when
+the session is unlocked; app launch flows remain unverified.
+`ShowOSD`, lock-screen action modes and physical media
 key activation remain unimplemented or unqualified. Relative pointer motion now
 updates pointer focus and drives the compositor's existing move/resize grabs;
 xdg popup requests now install Smithay keyboard/pointer grabs for managed
