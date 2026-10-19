@@ -9,8 +9,8 @@ namespace MSeries {
         // Scopes are the segmented switcher; filters narrow any scope from the search row's menu.
         private const string[] SCOPES = { "Dashboard", "Pinned", "Attention", "All" };
         private const string[] FILTERS = { "Any repository", "Has open issues", "Has open pull requests", "Local checkout", "Failing CI" };
-        private const string[] DETAIL_KEYS = { "pulls", "issues", "ci", "releases", "commits", "branches", "tags", "activity" };
-        private const string[] DETAIL_TITLES = { "PRs", "Issues", "CI", "Releases", "Commits", "Branches", "Tags", "Activity" };
+        private const string[] DETAIL_KEYS = { "pulls", "issues", "ci", "traffic", "releases", "commits", "branches", "tags", "activity" };
+        private const string[] DETAIL_TITLES = { "PRs", "Issues", "CI", "Traffic", "Releases", "Commits", "Branches", "Tags", "Activity" };
 
         private Gtk.Box panel;
         private Gtk.Label panel_prs;
@@ -1362,6 +1362,12 @@ namespace MSeries {
 
         private void render_repo_detail (string key, Json.Node node, string repo_url, Gtk.Box content) {
             clear_box (content);
+            if (key == "traffic" && node.get_node_type () == Json.NodeType.OBJECT) {
+                var traffic = node.get_object ();
+                content.append (traffic_row (traffic, "views", "Views", "visitors", repo_url + "/graphs/traffic"));
+                content.append (traffic_row (traffic, "clones", "Clones", "cloners", repo_url + "/graphs/traffic"));
+                return;
+            }
             Json.Array? items = null;
             if (node.get_node_type () == Json.NodeType.ARRAY) {
                 items = node.get_array ();
@@ -1422,6 +1428,33 @@ namespace MSeries {
                 var row = link_row (key == "ci" ? ci_run_icon (detail) : icon, label, detail.down (), url);
                 content.append (row);
             }
+        }
+
+        /* One traffic series: label, 14-day bars, total and unique count; opens GitHub's traffic graph. */
+        private static Gtk.Widget traffic_row (Json.Object traffic, string key, string title, string unique_word, string url) {
+            var series = traffic.has_member (key) ? traffic.get_object_member (key) : new Json.Object ();
+            int64 total = series.get_int_member_with_default ("count", 0);
+            int64 uniques = series.get_int_member_with_default ("uniques", 0);
+            var days = series.has_member (key) ? series.get_array_member (key) : new Json.Array ();
+            var line = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
+            var name = new Gtk.Label (title) { xalign = 0, width_chars = 6 };
+            name.add_css_class ("window-name");
+            line.append (name);
+            line.append (new TrafficBars (days));
+            var totals = new Gtk.Label ("%s · %s %s".printf (group_digits (total), group_digits (uniques), unique_word)) {
+                xalign = 1, width_chars = 18
+            };
+            totals.add_css_class ("caption");
+            totals.add_css_class ("numeric");
+            line.append (totals);
+            var button = new Gtk.Button () {
+                child = line,
+                tooltip_text = "%s in the last 14 days: %s from %s unique %s".printf (title, group_digits (total), group_digits (uniques), unique_word)
+            };
+            button.add_css_class ("flat");
+            button.add_css_class ("link-row");
+            button.clicked.connect (() => open_url (url, button));
+            return button;
         }
 
         private static string ci_run_icon (string conclusion) {
@@ -1488,6 +1521,12 @@ namespace MSeries {
             }
         }
 
+        private static void select_chip (Gtk.Widget widget, string label) {
+            var chip = widget as Gtk.ToggleButton;
+            if (chip != null && chip.label != null && chip.label.has_prefix (label)) { chip.set_active (true); return; }
+            for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ()) select_chip (child, label);
+        }
+
         public void probe_toast () {
             show_toast ("Hid dock", () => {});
         }
@@ -1499,7 +1538,12 @@ namespace MSeries {
                 var card = row.get_child ();
                 var head = card != null && card.get_first_child () != null ? card.get_first_child ().get_first_child () : null;
                 var toggle = head != null ? head.get_last_child () as Gtk.ToggleButton : null;
-                if (toggle != null) { toggle.set_active (true); return; }
+                if (toggle != null) {
+                    toggle.set_active (true);
+                    var chip_name = Environment.get_variable ("RB_DETAIL");
+                    if (chip_name != null) select_chip (card, chip_name);
+                    return;
+                }
             }
         }
 
@@ -1521,6 +1565,40 @@ namespace MSeries {
 }
 
 namespace MSeries {
+    /* Fourteen daily bars scaled to the busiest day, in the accent colour; empty days show a faint stub. */
+    internal class TrafficBars : Gtk.DrawingArea {
+        private int64[] counts = new int64[14];
+
+        public TrafficBars (Json.Array days) {
+            // GitHub lists only days with data; place each by its date, newest at the right.
+            var today = new DateTime.now_utc ();
+            for (uint i = 0; i < days.get_length (); i++) {
+                var day = days.get_object_element (i);
+                var stamp = new DateTime.from_iso8601 (day.get_string_member_with_default ("timestamp", ""), null);
+                if (stamp == null) continue;
+                int ago = (int) ((today.to_unix () - stamp.to_unix ()) / 86400);
+                if (ago >= 0 && ago < 14) counts[13 - ago] += day.get_int_member_with_default ("count", 0);
+            }
+            add_css_class ("contribution-graph");
+            content_height = 16;
+            hexpand = true;
+            set_draw_func (draw);
+        }
+
+        private void draw (Gtk.DrawingArea area, Cairo.Context cr, int width, int height) {
+            var color = get_color ();
+            int64 peak = 1;
+            foreach (var count in counts) peak = int64.max (peak, count);
+            double slot = width / 14.0;
+            for (int i = 0; i < 14; i++) {
+                double bar = counts[i] == 0 ? 1.5 : double.max (2, height * (double) counts[i] / peak);
+                cr.set_source_rgba (color.red, color.green, color.blue, counts[i] == 0 ? 0.2 : 0.85);
+                cr.rectangle (i * slot + 1, height - bar, slot - 2, bar);
+                cr.fill ();
+            }
+        }
+    }
+
     /* GitHub's contribution calendar: one column per week (newest at the right), as many weeks as fit,
      * shaded from the accent colour; hovering a day names its date and count. */
     internal class ContributionGraph : Gtk.DrawingArea {
