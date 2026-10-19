@@ -37,6 +37,13 @@ hwmon and the launcher's `state.json`, and never starts, stops or touches a
 share, the portal or PipeWire. It records viewer counts as the launcher reports
 them, so a run that expected 3 viewers but had 2 says so.
 
+To verify the collector itself against a real share server without touching the
+live desktop, `probe-live-share.sh /path/to/rupert-share/core` starts a
+throwaway loopback-only share in a private `HOME` and `XDG_RUNTIME_DIR`, joins
+one viewer through the API, and reduces a 15-second capture. It proves the
+plumbing (live state, viewer count, server role) — it does not measure sharing
+cost, because no browser capture runs in it.
+
 ## The protocol (what makes a number mean something)
 
 1. **Matched pairs, not single runs.** Same display mode and scale, same

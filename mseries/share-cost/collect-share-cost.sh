@@ -50,7 +50,9 @@ state_file="${XDG_RUNTIME_DIR:-/tmp}/rupert-share/state.json"
 # browsers do not silently join the sample.
 process_list() {
   ps -eo pid=,comm=,args= | awk -v browser="$browser" '
-    $2 ~ /^(rupert|rupert-core|share-core)$/ || $0 ~ /\/rupert-share\/core/ { print $1, $2, "server"; next }
+    # The server binary only: matching any path under rupert-share/core would
+    # also catch the launcher shell and the state poller.
+    $2 == "rupert-core" || $0 ~ /(^|[[:space:]\/])rupert-core([[:space:]]|$)/ { print $1, $2, "server"; next }
     $2 ~ /^io\.elementary\.(wingpanel|dock)$/ || $2 == "ShareEyes" || $2 == "mseries-share-start" { print $1, $2, "panel"; next }
     $2 == "gala" || $2 == "mseries-gala" || $2 == "pantheon-compositor" || $0 ~ /\/pantheon-compositor( |$)/ { print $1, $2, "compositor"; next }
     $2 ~ /^(pipewire|wireplumber|xdg-desktop-portal|xdg-desktop-portal-gtk|xdg-desktop-portal-pantheon)$/ { print $1, $2, "pipewire"; next }
