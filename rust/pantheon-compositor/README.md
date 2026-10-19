@@ -113,8 +113,10 @@ run forced to Wayland. Its client trace confirms it bound the shell global,
 sent `get_panel`, `set_anchor(top)`, and `set_hide_mode(never)`, then allocated
 and attached shared-memory buffers. Wingpanel requires
 `org.gnome.Mutter.DisplayConfig`; the compositor now serves the read-only
-`GetCurrentState` query it calls, with the current nested output and logical
-layout mode, and emits `MonitorsChanged` when the output resizes. The isolated
+`GetCurrentState` query it calls, with every tracked output's current mode,
+logical position, scale, and primary status. Output add/update/remove changes
+increment the state serial and emit `MonitorsChanged`. The service remains
+read-only and does not apply monitor modes or layouts. The isolated
 Wingpanel run no longer reports missing DisplayConfig or Shell keybinding
 services. Pressing `Super+N` in the nested window produced the registered
 `AcceleratorActivated` signal. The sound indicator's media-key registrations

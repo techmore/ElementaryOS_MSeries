@@ -21,6 +21,9 @@ pub struct OutputSnapshot {
     pub height: i32,
     pub refresh_millihz: i32,
     pub scale: f64,
+    pub x: i32,
+    pub y: i32,
+    pub primary: bool,
 }
 
 impl Default for OutputSnapshot {
@@ -34,13 +37,21 @@ impl Default for OutputSnapshot {
             height: 800,
             refresh_millihz: 60_000,
             scale: 1.0,
+            x: 0,
+            y: 0,
+            primary: true,
         }
     }
 }
 
 #[derive(Clone)]
 pub struct DisplayConfigHandle {
-    updates: mpsc::Sender<OutputSnapshot>,
+    updates: mpsc::Sender<DisplayConfigUpdate>,
+}
+
+enum DisplayConfigUpdate {
+    Upsert(OutputSnapshot),
+    Remove(String),
 }
 
 impl DisplayConfigHandle {
@@ -54,11 +65,17 @@ impl DisplayConfigHandle {
     }
 
     pub fn update(&self, snapshot: OutputSnapshot) {
-        let _ = self.updates.send(snapshot);
+        let _ = self.updates.send(DisplayConfigUpdate::Upsert(snapshot));
+    }
+
+    pub fn remove(&self, connector: impl Into<String>) {
+        let _ = self
+            .updates
+            .send(DisplayConfigUpdate::Remove(connector.into()));
     }
 }
 
-struct DisplayConfigServer(Arc<Mutex<OutputSnapshot>>);
+struct DisplayConfigServer(Arc<Mutex<(u32, HashMap<String, OutputSnapshot>)>>);
 
 type Properties = HashMap<String, OwnedValue>;
 type MonitorInfo = (String, String, String, String);
@@ -69,51 +86,63 @@ type LogicalMonitor = (i32, i32, f64, u32, bool, Vec<MonitorInfo>, Properties);
 #[interface(name = "org.gnome.Mutter.DisplayConfig")]
 impl DisplayConfigServer {
     fn get_current_state(&self) -> (u32, Vec<Monitor>, Vec<LogicalMonitor>, Properties) {
-        let output = self.0.lock().expect("display config lock poisoned").clone();
-        let monitor_info = (
-            output.connector.clone(),
-            output.vendor,
-            output.product,
-            output.serial,
-        );
-        let mode_id = format!(
-            "{}x{}@{:.3}",
-            output.width,
-            output.height,
-            f64::from(output.refresh_millihz) / 1000.0
-        );
-        let mut mode_properties = Properties::new();
-        mode_properties.insert("is-current".into(), OwnedValue::from(true));
-        mode_properties.insert("is-preferred".into(), OwnedValue::from(true));
-        let mode = (
-            mode_id,
-            output.width,
-            output.height,
-            f64::from(output.refresh_millihz) / 1000.0,
-            output.scale,
-            vec![output.scale],
-            mode_properties,
-        );
-        let monitor = (monitor_info.clone(), vec![mode], Properties::new());
-        let logical_monitor = (
-            0,
-            0,
-            output.scale,
-            0,
-            true,
-            vec![monitor_info],
-            Properties::new(),
-        );
+        let (serial, outputs) = self.0.lock().expect("display config lock poisoned").clone();
+        let mut outputs = outputs.into_values().collect::<Vec<_>>();
+        outputs.sort_by(|a, b| (a.x, a.y, &a.connector).cmp(&(b.x, b.y, &b.connector)));
+        if !outputs.iter().any(|output| output.primary)
+            && let Some(first) = outputs.first_mut()
+        {
+            first.primary = true;
+        }
+
+        let mut monitors = Vec::with_capacity(outputs.len());
+        let mut logical_monitors = Vec::with_capacity(outputs.len());
+        for output in outputs {
+            let monitor_info = (
+                output.connector.clone(),
+                output.vendor,
+                output.product,
+                output.serial,
+            );
+            let mode_id = format!(
+                "{}x{}@{:.3}",
+                output.width,
+                output.height,
+                f64::from(output.refresh_millihz) / 1000.0
+            );
+            let mut mode_properties = Properties::new();
+            mode_properties.insert("is-current".into(), OwnedValue::from(true));
+            mode_properties.insert("is-preferred".into(), OwnedValue::from(true));
+            let mode = (
+                mode_id,
+                output.width,
+                output.height,
+                f64::from(output.refresh_millihz) / 1000.0,
+                output.scale,
+                vec![output.scale],
+                mode_properties,
+            );
+            monitors.push((monitor_info.clone(), vec![mode], Properties::new()));
+            logical_monitors.push((
+                output.x,
+                output.y,
+                output.scale,
+                0,
+                output.primary,
+                vec![monitor_info],
+                Properties::new(),
+            ));
+        }
         let mut properties = Properties::new();
         properties.insert("layout-mode".into(), OwnedValue::from(1_u32));
-        (1, vec![monitor], vec![logical_monitor], properties)
+        (serial, monitors, logical_monitors, properties)
     }
 
     #[zbus(signal)]
     async fn monitors_changed(emitter: &SignalEmitter<'_>) -> zbus::Result<()>;
 }
 
-fn serve_display_config(receiver: mpsc::Receiver<OutputSnapshot>) {
+fn serve_display_config(receiver: mpsc::Receiver<DisplayConfigUpdate>) {
     let connection = match Connection::session() {
         Ok(connection) => connection,
         Err(error) => {
@@ -122,7 +151,8 @@ fn serve_display_config(receiver: mpsc::Receiver<OutputSnapshot>) {
         }
     };
 
-    let snapshot = Arc::new(Mutex::new(OutputSnapshot::default()));
+    let initial = HashMap::from([("winit".to_string(), OutputSnapshot::default())]);
+    let snapshot = Arc::new(Mutex::new((1, initial)));
     if let Err(error) = connection
         .object_server()
         .at(OBJECT_PATH, DisplayConfigServer(snapshot.clone()))
@@ -139,8 +169,23 @@ fn serve_display_config(receiver: mpsc::Receiver<OutputSnapshot>) {
     tracing::info!("serving the read-only Mutter display config query used by Wingpanel");
     loop {
         match receiver.recv_timeout(Duration::from_millis(100)) {
-            Ok(output) => {
-                *snapshot.lock().expect("display config lock poisoned") = output;
+            Ok(update) => {
+                let mut state = snapshot.lock().expect("display config lock poisoned");
+                match update {
+                    DisplayConfigUpdate::Upsert(output) => {
+                        if output.primary {
+                            for current in state.1.values_mut() {
+                                current.primary = false;
+                            }
+                        }
+                        state.1.insert(output.connector.clone(), output);
+                    }
+                    DisplayConfigUpdate::Remove(connector) => {
+                        state.1.remove(&connector);
+                    }
+                }
+                state.0 = state.0.wrapping_add(1).max(1);
+                drop(state);
                 if let Err(error) = connection.emit_signal(
                     None::<&str>,
                     OBJECT_PATH,

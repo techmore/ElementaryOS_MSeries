@@ -50,6 +50,9 @@ pub fn init_winit(
         height: mode.size.h,
         refresh_millihz: mode.refresh,
         scale: 1.0,
+        x: 0,
+        y: 0,
+        primary: true,
     });
 
     let mut damage_tracker = OutputDamageTracker::from_output(&output);
@@ -76,6 +79,9 @@ pub fn init_winit(
                     height: mode.size.h,
                     refresh_millihz: mode.refresh,
                     scale: 1.0,
+                    x: 0,
+                    y: 0,
+                    primary: true,
                 });
             }
             WinitEvent::Input(event) => state.process_input_event(event),

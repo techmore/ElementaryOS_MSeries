@@ -5394,6 +5394,18 @@ backend; nested startup continues to advertise `winit`. Both default and
 Wayland seat identity for a libseat-backed session but does not initialize or
 control a native session yet.
 
+### Multi-output DisplayConfig state — 2026-10-18
+
+The compatibility `org.gnome.Mutter.DisplayConfig.GetCurrentState` response now
+tracks outputs by connector, reports their current modes, scales, logical x/y
+positions, and primary flags, and removes disconnected outputs. Each output
+change advances the state serial and emits `MonitorsChanged`. The D-Bus
+interface remains read-only: it does not apply monitor configuration. Nested
+startup continues to publish one `winit` output. Default and `native-drm`
+`cargo check --bins` pass; multi-output D-Bus runtime behavior remains
+unverified. This prepares the native connector lifecycle to report hotplug
+state without claiming mode-setting support.
+
 ### Absolute pointer mapping — 2026-10-18
 
 Absolute pointer events previously mapped normalized coordinates against only

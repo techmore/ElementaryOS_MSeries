@@ -27,7 +27,8 @@ Wayland socket. Installed Wingpanel 8.0.4 also connected in an
 isolated nested Wayland run, sent `get_panel`, anchor and hide-mode requests,
 and attached SHM buffers. It reports the absent `org.gnome.Mutter.DisplayConfig`
 service. The prototype now returns its read-only `GetCurrentState` query using
-the nested output and logical layout mode; Wingpanel connects without the
+all tracked output modes and logical positions, and increments the state serial
+on output add/update/remove before emitting `MonitorsChanged`; Wingpanel connects without the
 missing-service error. The compositor now serves Wingpanel's `org.gnome.Shell`
 accelerator API and matched `Super+N` to an `AcceleratorActivated` signal during
 an isolated nested run. `ShowOSD`, lock-screen action modes and physical media
