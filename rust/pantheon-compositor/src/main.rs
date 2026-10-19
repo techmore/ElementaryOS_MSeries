@@ -15,11 +15,16 @@ mod winit;
 
 use smithay::reexports::{calloop::EventLoop, wayland_server::Display};
 pub use state::PantheonCompositor;
+use std::{
+    io,
+    os::{linux::net::SocketAddrExt, unix::net::UnixDatagram},
+    path::Path,
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_logging();
 
-    let (backend, command) = parse_arguments()?;
+    let (backend, notify_systemd, command) = parse_arguments()?;
     let mut event_loop: EventLoop<PantheonCompositor> = EventLoop::try_new()?;
     let display: Display<PantheonCompositor> = Display::new()?;
     let mut state = match backend {
@@ -58,6 +63,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Launch requested clients against the compositor socket selected above.
     unsafe { std::env::set_var("WAYLAND_DISPLAY", &state.socket_name) };
 
+    if notify_systemd {
+        notify_systemd_ready()?;
+    }
+
     if let Some((program, args)) = command {
         std::process::Command::new(program).args(args).spawn()?;
     }
@@ -74,6 +83,25 @@ fn init_logging() {
     }
 }
 
+/// Tell a systemd user service that the compositor has initialized its
+/// Wayland socket and selected backend. Native startup only reaches this point
+/// after the renderer and connected KMS outputs have been initialized.
+fn notify_systemd_ready() -> io::Result<()> {
+    let socket = std::env::var_os("NOTIFY_SOCKET")
+        .ok_or_else(|| io::Error::other("--notify-systemd requires NOTIFY_SOCKET"))?;
+    let encoded_socket = socket.as_encoded_bytes();
+    let address = if let Some(abstract_name) = encoded_socket.strip_prefix(b"@") {
+        std::os::unix::net::SocketAddr::from_abstract_name(abstract_name)?
+    } else {
+        std::os::unix::net::SocketAddr::from_pathname(Path::new(&socket))?
+    };
+
+    let notification = UnixDatagram::unbound()?;
+    notification.connect_addr(&address)?;
+    notification.send(b"READY=1\nSTATUS=Wayland socket and compositor backend initialized")?;
+    Ok(())
+}
+
 #[derive(Clone, Copy)]
 enum BackendChoice {
     Nested,
@@ -81,9 +109,10 @@ enum BackendChoice {
 }
 
 fn parse_arguments()
--> Result<(BackendChoice, Option<(String, Vec<String>)>), Box<dyn std::error::Error>> {
+-> Result<(BackendChoice, bool, Option<(String, Vec<String>)>), Box<dyn std::error::Error>> {
     let mut args = std::env::args().skip(1);
     let mut backend = BackendChoice::Nested;
+    let mut notify_systemd = false;
     let mut command = None;
     while let Some(arg) = args.next() {
         match arg.as_str() {
@@ -99,11 +128,11 @@ fn parse_arguments()
                 command = Some((program, args.collect()));
                 break;
             }
+            "--notify-systemd" => notify_systemd = true,
             _ => return Err(
-                "usage: pantheon-compositor [--backend nested|native] [--run PROGRAM [ARGS...]]"
-                    .into(),
+                "usage: pantheon-compositor [--backend nested|native] [--notify-systemd] [--run PROGRAM [ARGS...]]".into(),
             ),
         }
     }
-    Ok((backend, command))
+    Ok((backend, notify_systemd, command))
 }

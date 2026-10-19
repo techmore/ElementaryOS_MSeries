@@ -65,6 +65,13 @@ unqualified. Local `cargo check --bins` and `cargo build --bins` pass both with
 and without `native-drm`; they establish compilation only, not successful
 connector modesetting.
 
+The compositor can now optionally send systemd `READY=1` after its Wayland
+listener and selected backend initialize (`--notify-systemd`). On native
+startup, readiness follows renderer and connected-output initialization. This
+provides a truthful readiness boundary for a future opt-in service; it does
+not add or install a session unit, and native runtime/session behavior remains
+unqualified.
+
 
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18
 

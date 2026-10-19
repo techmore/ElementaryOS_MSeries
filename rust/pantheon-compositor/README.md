@@ -31,6 +31,12 @@ Native startup acquires the active libseat session and initializes a DRM/KMS
 output. It takes over the display device, so do not launch it inside the
 currently active desktop. It is not yet runtime-qualified on M-series hardware.
 
+For a future systemd user service, `--notify-systemd` sends `READY=1` to
+`NOTIFY_SOCKET` after the Wayland listener and selected backend initialize. On
+the native path, that includes renderer and connected-output initialization.
+The flag fails startup if systemd did not provide the notification socket. No
+service unit or login-session entry is installed by the compositor build.
+
 To exercise the Pantheon protocol against the nested socket, build both binaries
 and start the compositor with its probe client:
 

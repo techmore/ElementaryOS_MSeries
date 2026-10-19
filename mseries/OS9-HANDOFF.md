@@ -5502,5 +5502,21 @@ destroyed toplevel had keyboard focus, focus moves to the topmost remaining
 non-panel window (or clears if none remains); destroying a background window
 does not steal focus. Default and `native-drm` feature `cargo check --bins`
 both pass locally. Runtime window launch/focus/close behavior remains
-unverified; this does not add native DRM startup, and native session work
-remains the next major milestone.
+unverified. The opt-in native DRM startup path is now implemented but has not
+been launched on this active desktop; isolated session qualification and
+dynamic connector lifecycle remain open.
+
+### systemd readiness notification — 2026-10-18
+
+Added opt-in `--notify-systemd` support. After the Wayland listener and chosen
+backend are initialized, it sends `READY=1` and a status string to the
+`NOTIFY_SOCKET`, supporting both filesystem and Linux abstract Unix sockets.
+For native startup, this point follows renderer and connected-output
+initialization. Missing notification socket or send errors fail startup when
+the flag is supplied. Updated the compositor README and roadmap. The active
+session, installed service units and login chooser were not changed. Default
+and `native-drm` `cargo build -p pantheon-compositor --bins` both pass locally;
+no runtime notification or native display check was performed. Next, design a
+distinct opt-in user service/session entry after validating the installed
+Pantheon session-manager startup contract. No native runtime qualification is
+claimed.
