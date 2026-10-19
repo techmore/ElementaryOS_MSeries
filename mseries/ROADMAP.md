@@ -1924,6 +1924,85 @@ passed and the original selection was restored; distinct-account round trips use
 - Publication follow-through: PR86 merged077bfe5; current-source CI39130696811 passed all5 jobs. Initial Pages39138713351 succeeded and canonical report bytes matched reviewed source.46 dictation/72 assistant/6 image checks pass. Publishing the opt-in candidate does not complete physical F5, panel/lazy rollout or continuous translation gates.
 - Deployment follow-through (October18): qualified lazy CPU speech/IBus and Dictation launcher installed after idle/quiet/pref checks. Fresh listener32.67MiB before SDK load; not after-use memory. Owner reports physical F5 speech appears in Original transcript: native-app human pass, earlier popup failure retained. New installed focus-retry regression failed then passed after fix; receipts retain both and installed-source checks.46 contracts pass. Real spoken content/private backups excluded. Continuous translated previews and final grammar-after-release remain the next work; current translation is post-utterance.
 
+
+## Optional Apple Passwords experiment — 2026-10-18
+
+Added `install-icloud-passwords.sh --experimental`, a per-user opt-in installer
+and three application launchers. Default first-boot behavior stays disabled;
+`enhance.sh` ships the installer/public key only. Pinned upstream client
+916ef17a5a14965f353d556a53ca3eedc1439113 and ARM64 anisette image digest;
+rootless user service binds localhost and persists its identity volume.
+Brave receives a stable Chromium MV3 extension manifest and native-host registration.
+Keyring failure is fatal instead of falling back to a disk master key.
+
+Locally installed and reinstallation checked; helper HTTP/JSON and isolated
+empty-vault native ping pass. Keyring is unlocked and listener is loopback-only.
+92 upstream tests + 11 subtests, three integration contracts, shell syntax and
+shellcheck pass. No Apple account credentials entered or real vault inspected.
+Owner must load the extension once in Brave, then sign in directly via the
+Set Up Apple Passwords launcher. Account recovery, actual sync/autofill, ADP,
+reboot and factory-image behavior remain unverified. See
+[setup, limitations, disable steps and source pins](icloud-passwords/README.md).
+
+
+### Apple Passwords native GTK/Granite onboarding and -80045 follow-up
+
+Owner requested a native elementary GUI after GSA init returned -80045. Added
+GTK4/Granite7 sign-in, private pipe worker, 2FA/device selection, unchecked explicit
+recovery consent, search/reveal, Sync Now and local sign-out. The UI blocks closing
+or cancellation while an irreversible recovery request is in flight. Password
+retention is opt-in; credentials never enter process argv/environment or logs.
+Installed a single native Applications entry, retired the terminal setup/sync entries
+and opened the GUI locally. Default feature opt-in boundary remains unchanged.
+
+Applied the reported endpoint-specific identity workaround from Dadoum/anisette-v3-server#61
+without resetting the client/helper identity. Enforced TLS verification across GSA,
+iCloud and web auth, with fingerprint-pinned Apple PKI roots in an app-scoped CA
+bundle; system trust unchanged. Verified GSA/setup/idmsa TLS using credential-free
+GETs. Added safe GSA transport/non-plist errors.
+
+Validation: ten GUI/IPC/keyring/CA-pin tests, four mocked endpoint/TLS/consent tests,
+129 upstream tests + 11 subtests; the one obsolete Mac-escrow-header assertion is
+superseded by the port endpoint test. Installer repeat, shell syntax and compilation
+pass. First owner attempt never reached passcode recovery. No agent login attempted;
+actual compatibility fix, account recovery, sync/autofill and factory boot remain
+unverified pending owner testing in the native app. Details: icloud-passwords/README.md.
+
+
+### Approval/code waiting fix — 2026-10-18
+
+Owner reports phone approval arrives but Linux fails before code entry. The native
+worker now offers the code dialog before waiting on the trusted-device notification
+HTTP response. Code entry waits on the private input pipe without a user-entry timeout;
+there is only one code dialog and one notification request. A notification read timeout
+continues to normal code validation without resending; TLS, connection and explicit
+HTTP errors remain fatal. Errors now retain a safe stage label. No recovery behavior
+or retry budget changed. This addresses a demonstrated timeout path, not a proven
+root cause of the owner’s current failure.
+
+Three mocked tests cover prompt-before-response, one-request read-timeout handoff,
+and fatal TLS failure. Six native GUI/IPC tests pass. Installed the updated worker
+and notification patch for the next owner-initiated sign-in. Live authentication
+and sync remain unverified; no credentials or codes were entered by the agent.
+
+
+### Native Apple Passwords UX refinement — 2026-10-18
+
+Added persistent mnemonic account/password labels, clearer optional password-storage
+copy, sign-in step guidance, and contextual Verify Code / Use This Device / Unlock
+Keychain actions. Verification codes are visible for proofreading, accept pasted
+spacing, and require exactly six ASCII digits before submission. Waiting for the
+owner pauses the spinner and explicitly says the app is waiting; notification
+progress cannot overwrite that state. Recovery consent remains unchecked by default.
+
+Added sorted password results, empty/no-match guidance, labeled username/password
+details, distinct error styling, and contextual Complete Setup. Sync is hidden
+until keychain setup is complete; sign-in fields disable during an operation.
+Helper startup moved into the background worker so the GTK thread stays responsive.
+Eight GUI/IPC tests and three mocked approval-handoff tests pass. Installed updated
+app/worker bytes locally without restarting an active session; reopen the app for
+new layout code. Authentication/sync success is still unqualified.
+
 ## PR #234 cleanup qualification — 2026-10-18
 
 Merged current main and retained the parallel radio-test report. Radio install now
