@@ -4,14 +4,17 @@ Planning only. No models were launched or stopped for this plan.
 
 ## Current readiness
 
-- Candidate source `61495cb` builds at `~/.cache/omarchy-mlx-candidate-61495cb`; selected C++ results are recorded in [the candidate build receipt](receipts/2026-10-19-omarchy-mlx-candidate-build.md). It has no Python bindings or wheel yet, so it cannot currently run the model A/B.
+- Candidate source `61495cb` builds at `~/.cache/omarchy-mlx-candidate-61495cb`; selected C++ results are recorded in [the candidate build receipt](receipts/2026-10-19-omarchy-mlx-candidate-build.md). A Python-enabled candidate wheel has since been built and installed in that cache's `runtime-venv`; details are in [the Python runtime receipt](receipts/2026-10-19-omarchy-mlx-candidate-python-runtime.md).
+- The host lacks LAPACKE development files and Python 3.14 C headers. To keep the build isolated, I unpacked the matching Ubuntu Python development packages into the cache (no system packages installed) and built with `MLX_BUILD_CPU=OFF`. The candidate imports alongside mlx-lm 0.31.3 and completed a small GPU sum on Honeykrisp. It has no CPU backend, so do not use it for tests or code paths that require CPU execution.
+- Source version discrepancy to resolve before considering a bump: omarchy-mlx `mlx.lock` labels pinned MLX commit `9c3d355` as 0.32.3, while the downloaded, checksum-verified archive's `mlx/version.h` and the built wheel both identify 0.32.4. Keep the immutable commit as provenance; do not describe this build simply as MLX 0.32.3.
 - The installed runtime remains v0.7.33. Keep it intact as the baseline.
 - At 08:00 EDT on October 19, `mseries-ai-everyday.service` was failed, not active. Its log says the explicitly named `qwen3.5-4b-mseries-4bit` target is incomplete locally and offline mode refused to download it. No MLX model worker process was present. `mseries-ai-quality.service` was inactive. Confirm model availability and restore a healthy baseline before any comparison; do not count this failure as an A/B result.
+- The pinned 4B model download (`mlx-community/Qwen3.5-4B-MLX-4bit`, revision `32f3e8ecf65426fc3306969496342d504bfa13f3`) is now underway in the standard Hugging Face cache so both runtimes can use identical weights. It was still in progress at the last check. Do not start generation until it completes and its catalog file hashes are verified.
 - The 9B profile is configured as `qwen3.5-9b-mlx-4bit`; model files were not confirmed in this readiness check.
 
 ## Candidate preparation gate
 
-1. Build the Python-enabled candidate runtime from the frozen `61495cb` source in a separate prefix/venv. Do not run the repository installer or write into `/usr/lib/omarchy-mlx` or `~/.local/share/mlx-omarchy`.
+1. ~~Build Python-enabled candidate from frozen `61495cb` in a separate prefix/venv~~ Done in `~/.cache/omarchy-mlx-candidate-61495cb/runtime-venv`. Do not run the repository installer or write into `/usr/lib/omarchy-mlx` or `~/.local/share/mlx-omarchy`.
 2. Keep mlx-lm pinned to the version/API the candidate supports. Do not apply the upstream 0.32-only server patches to our installed 0.31.3 environment. Use an isolated direct generation harness unless the private server patches are reviewed and applied to the candidate venv.
 3. Verify candidate and baseline library provenance and hashes, model revision and file completeness, Vulkan device/ICD, and effective environment flags before the first model load. Verify that logs/counters show the selected kernel route is actually reached.
 4. Use fixed local prompts and greedy decoding. Save token IDs, timing samples and telemetry to a new receipt; omit personal prompts or model output containing private data.

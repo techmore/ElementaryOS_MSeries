@@ -26,14 +26,21 @@ build (cause suspected, unconfirmed). Receipt:
 Model A/B has not run. Readiness check at 08:00 EDT found
 `mseries-ai-everyday.service` failed because its configured 4B target was
 incomplete and offline mode refused a download; no MLX worker was running.
-The current candidate is C++-only, with no Python bindings/wheel. A detailed
-plan now records candidate preparation, 4B row-reduce and optional 9B native
-GQA gates, required service handling, and a proposed after-10 PM Eastern quiet
-window: `mseries/local-ai/OMARCHY-MLX-MODEL-AB-PLAN-2026-10-19.md`.
-Next: build a Python-capable candidate in a separate venv/prefix and confirm
-the same pinned model is complete and the installed baseline is healthy before
-any model launch. Owner's desktop is not to be interrupted outside an agreed
-quiet window.
+Since then, a Python wheel for `61495cb` was built and installed in an isolated
+cache-local venv. It imports mlx-lm 0.31.3 and completes a tiny GPU sum on
+Honeykrisp. Build used CPU=OFF because LAPACKE development files are absent;
+Python 3.14 headers were unpacked to the candidate cache without system package
+installation. The wheel is `0.32.4.dev202610191211+61495cb`, while omarchy-mlx's
+lock labels its pinned MLX archive 0.32.3; the hash-verified archive's
+`mlx/version.h` says 0.32.4. Resolve/document this mismatch before any bump.
+
+The pinned 4B model download is now underway in the normal HF cache, still
+incomplete at the last check. No model generation has run and no service was
+started or stopped. The detailed plan records the A/B gates and quiet window:
+`mseries/local-ai/OMARCHY-MLX-MODEL-AB-PLAN-2026-10-19.md`. Next: finish the
+download and verify pinned files, then check baseline service readiness and
+wait for the agreed quiet window before generation. Do not interrupt the
+owner's desktop outside that window.
 
 ## apt upgrade of 25 elementary daily packages — 2026-10-19 (Claude Code)
 
