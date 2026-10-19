@@ -4,7 +4,8 @@
 
 `main` is now the stable (v0.0.1) line and `dev` (cut from `main` after this lands)
 is where feature PRs merge. Release PRs `dev` → `main` promote batches and get a
-`v0.0.N` tag. `proposed-9.0.yml` now also runs on PRs to `dev`. Rules in
+`v0.0.N` tag. `dev` is the GitHub default branch and is what the owner runs;
+`main` is effectively frozen between releases. `proposed-9.0.yml` now also runs on PRs to `dev`. Rules in
 `mseries/BRANCHING.md`; AGENTS.md points to it.
 
 ## RepoBar compact contribution graph — 2026-10-18
