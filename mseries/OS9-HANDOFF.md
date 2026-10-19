@@ -5984,3 +5984,13 @@ about two minutes. Changed: greeter default session set back to `pantheon-waylan
 `~/.dmrc`); new `mseries/install-portal-relogin-fix.sh` installed for the owner (portal needs
 `WAYLAND_DISPLAY`; unverified until the next crash). Mutter frames not yet symbolized (debuginfod timed
 out); stock-Gala A/B is the owner's call. Details: `mseries/PANTHEON-CRASH-2026-10-18.md`.
+
+## Gala crash fix: private libmutter with upstream c18af474 — 2026-10-18 (Claude)
+
+The 19:52 and 21:43 Gala SEGVs are mutter's `meta_surface_actor_wayland_get_cursor_for_sprite` reading a destroyed
+surface when a popup closes (symbolized with Ubuntu dbgsym). Upstream fix `c18af474` is not in Ubuntu 50.1-0ubuntu2.4.
+New `mseries/install-gala-mutter-fix.sh` rebuilds Ubuntu's exact mutter with that one patch and installs only
+`libmutter-18.so.0` beside the patched Gala; the launcher uses it only while the system mutter version matches.
+Installed on the owner's machine; `mseries/test-gala-mutter-fix.sh` passes headless. The crash was not reproduced; the
+next Pantheon session is the real test. After an Ubuntu mutter update, re-run the installer (the launcher logs and skips
+a stale build). Details: `mseries/PANTHEON-CRASH-2026-10-18.md`.

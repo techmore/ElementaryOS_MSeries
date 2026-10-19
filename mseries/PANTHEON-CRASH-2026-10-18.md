@@ -35,7 +35,7 @@ So while handling a pointer event, mutter invalidates the cursor and reads a fie
 (the instruction before loads it from `[obj + 48]`). Just before 21:43 Gala logged repeated
 `meta_window_set_stack_position_no_sync: assertion 'window->stack_position >= 0' failed`, which points
 at a window that was being unmanaged while the pointer was over it. That link is an inference, not proven.
-Ubuntu's debuginfod did not answer within the time limit, so the mutter frames are not named yet.
+Symbolized later with Ubuntu's `libmutter-18-0-dbgsym` (see "Fix" below).
 
 Not established: whether the stock `/usr/bin/gala` also hits this (it has not run for a full session today),
 and which of our Gala patches (corners, drawers, snapping, shelf) is involved, if any.
@@ -70,3 +70,30 @@ This is specific to logging in after a compositor crash; a clean login was not m
   from one of our patches. That drops the rounded corners and drawers, so it is the owner's call.
 - Agents reinstalling Gala or Wingpanel plugins into the live session should say so in the handoff; the crash is not tied
   to those installs, but they make the timeline harder to read.
+
+## Fix (later the same evening)
+
+Symbols from `libmutter-18-0-dbgsym_50.1-0ubuntu2.4` name the frames: `meta_surface_actor_wayland_get_cursor_for_sprite`
+<- `meta_wayland_pointer_update` <- `event_callback` <- `meta_wayland_input_detach_event_handler` <- `meta_wayland_xdg_popup_finish`.
+So the crash happens when a **popup closes** and the pointer is re-picked over a surface actor whose Wayland surface was
+already destroyed (`self->surface == NULL`, offset 48; then `surface->compositor`, offset 40). Not caused by our Gala patches.
+
+Upstream mutter fixed exactly this in `c18af474` "compositor: Handle destroyed surfaces when updating cursor" (May 2026,
+first in 51.alpha). Ubuntu's 50.1-0ubuntu2.4 does not have it, and the 2.5 changelog in -proposed does not list it.
+
+- `mseries/patches/mutter-surface-actor-null-cursor.patch`: the upstream commit, unchanged.
+- `mseries/install-gala-mutter-fix.sh`: downloads Ubuntu's source for the installed `libmutter-18-0` version (checksums
+  checked by `dpkg-source`), applies the patch, builds with Ubuntu's `debian/rules` flags, and installs only
+  `libmutter-18.so.0` to `/usr/local/lib/mseries/gala/mutter-fix` with the packaged RPATH. System mutter, GNOME Shell
+  and the greeter are untouched.
+- The `mseries-gala` launcher (in `install-gala-screen-corners.sh`) puts that directory on the patched Gala's library
+  path only while the system `libmutter-18-0` version equals the one it was built from, so an Ubuntu mutter update
+  turns it off instead of mixing versions.
+- `mseries/test-gala-mutter-fix.sh`: headless Gala on a private bus; checks the fixed library is loaded alongside the
+  system clutter and that a GTK4 window can map and close.
+
+Verified on the owner's machine: installer ran end to end (1 m 05 s); exported symbols identical to Ubuntu's library;
+the function sits at the same address and now has both NULL checks in its machine code; smoke test PASS; launcher
+selects the fix. Not verified: the crash itself was not reproduced, so "no more crash" is only shown by the code;
+the next real Pantheon session is the test. Build packages added: `libei-dev libsysprof-6-dev sysprof
+libcanberra-gtk3-dev libpam0g-dev libumockdev-dev python3-argcomplete python3-docutils patchelf`.
