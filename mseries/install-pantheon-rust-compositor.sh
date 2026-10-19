@@ -163,12 +163,25 @@ install_deb() {
 }
 
 write_autologin() {
-  local value=$1
-  if [[ -f $autologin_dropin ]]; then
+  local value=$1 tmp
+  # Keep the first backup: a second --select must not back up an already
+  # modified file. Rewrite only the autologin-session key and keep the rest of
+  # the drop-in (the [Seat:*] group header is required, or LightDM rejects the
+  # whole file and falls back to the greeter/default session).
+  if [[ -f $autologin_dropin && ! -f $autologin_dropin.pantheon-rust-backup ]]; then
     as_root cp -a "$autologin_dropin" "$autologin_dropin.pantheon-rust-backup"
     log "backup: $autologin_dropin.pantheon-rust-backup"
   fi
-  printf 'autologin-session=%s\n' "$value" | as_root tee "$autologin_dropin" >/dev/null
+  tmp=$(mktemp)
+  if [[ -f $autologin_dropin ]] && grep -q '^[[:space:]]*autologin-session=' "$autologin_dropin"; then
+    sed "s|^\([[:space:]]*autologin-session=\).*|\1$value|" "$autologin_dropin" >"$tmp"
+  elif [[ -f $autologin_dropin ]] && grep -q '^\[Seat:\*\]' "$autologin_dropin"; then
+    sed "/^\[Seat:\*\]/a autologin-session=$value" "$autologin_dropin" >"$tmp"
+  else
+    { [[ -f $autologin_dropin ]] && cat "$autologin_dropin"; printf '[Seat:*]\nautologin-session=%s\n' "$value"; } >"$tmp"
+  fi
+  as_root install -m 0644 "$tmp" "$autologin_dropin"
+  rm -f "$tmp"
   log "wrote autologin-session=$value to $autologin_dropin"
 }
 

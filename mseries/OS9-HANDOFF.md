@@ -6861,3 +6861,7 @@ Native Rust-session Wingpanel looped on Vulkan `SURFACE_LOST` (compositor has no
 ## Repo housekeeping — 2026-10-19
 
 Owner-approved cleanup: deleted 58 remote branches fully merged into origin/main (all 2026-10-18 feature/docs/fix branches), removed 15 clean merged worktrees (none busy) and pruned 2 missing /tmp worktree entries. Kept: main, dev, every unmerged or squash-merged-unknown branch, all unmerged/detached worktrees. Local branches were not deleted. Recovery: merged branch tips remain reachable from main.
+
+## Rust session select bug — 2026-10-19 18:00
+
+First trial of `0.1.0+git69cb0f1` did not reach the Rust compositor. `install-pantheon-rust-compositor.sh --select` overwrote the whole LightDM drop-in with a single `autologin-session=` line (no `[Seat:*]` header, user/timeout dropped); LightDM logged "Key file does not start with a group" and fell back to the default Ubuntu session. This probably also explains the earlier "fell back to Ubuntu" attempt with `8c784dc`. Fixed: `write_autologin` now edits only that key, keeps the existing groups/keys and keeps the first backup; checked against temp files. Drop-in restored from backup, rollback timer cancelled, Gala is the autologin session. The native Rust trial is still pending a second logout.
