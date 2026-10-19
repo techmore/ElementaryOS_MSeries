@@ -252,10 +252,10 @@ namespace MSeries {
                 ".mseries-codexbar button.compact { padding: 1px 8px; min-height: 0; min-width: 0; } " +
                 ".mseries-codexbar button.flat.compact { padding: 0 4px; } " +
                 ".mseries-codexbar .mseries-switcher button { padding: 2px 6px; } " +
-                ".mseries-codexbar-bar label { font-size: 8.5pt; font-feature-settings: \"tnum\"; } " +
-                ".mseries-codexbar-bar .seg-value { font-size: 7.5pt; font-weight: 700; } " +
-                ".mseries-codexbar-bar .seg-reset { font-size: 7pt; opacity: 0.7; } " +
-                ".mseries-codexbar-bar .seg-secondary { font-size: 6.75pt; } " +
+                ".mseries-codexbar-bar label { font-size: 7.5pt; font-feature-settings: \"tnum\"; } " +
+                ".mseries-codexbar-bar .seg-value { font-size: 7pt; font-weight: 700; } " +
+                ".mseries-codexbar-bar .seg-reset { font-size: 6.5pt; opacity: 0.7; } " +
+                ".mseries-codexbar-bar .seg-secondary { font-size: 6pt; } " +
                 ".mseries-codexbar-bar .level-low { color: @warning_color; } " +
                 ".mseries-codexbar-bar .level-critical { color: @error_color; } " +
                 ".mseries-codexbar-bar .provider-mark { opacity: 0.92; } " +
@@ -798,28 +798,6 @@ namespace MSeries {
             }
 
             var listed = accounts != null ? accounts.get_length () : 0;
-            // The helper saves the Claude app's login by itself whenever it lists accounts, so a standing
-            // button is noise. Offer it only when the app's current login is not one of the saved accounts.
-            var app_installed = desktop != null && JsonBoundary.flag (desktop, "installed", false);
-            var app_login_saved = false;
-            for (uint i = 0; i < listed; i++) {
-                if (JsonBoundary.flag (accounts.get_object_element (i), "desktopActive", false)) {
-                    app_login_saved = true;
-                }
-            }
-            if (app_installed && (!app_login_saved || snapshot_error.length > 0)) {
-                var save_app = new Gtk.Button.with_label ("Save Claude app login") {
-                    halign = Gtk.Align.START, tooltip_text = "The Claude app's current sign-in isn't saved yet. Save it for fast switching."
-                };
-                save_app.add_css_class ("flat");
-                save_app.add_css_class ("caption");
-                save_app.clicked.connect (() => {
-                    popdown_from (save_app);
-                    run_saver.begin ({ "python3", helper_path ("codexbar-claude.py"), "app-save" },
-                        "Claude app login saved", "Couldn't save the app login", true);
-                });
-                card.append (save_app);
-            }
             for (uint i = 0; i < listed; i++) {
                 var account = accounts.get_object_element (i);
                 if (JsonBoundary.flag (account, "active", false) &&

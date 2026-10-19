@@ -25,7 +25,7 @@ mapfile -t pids < <(
   ps -eo pid=,comm=,args= | awk -v session="$session" '
     session == "gala" && ($2 == "gala" || $2 == "mseries-gala") { print $1; next }
     session == "rust" && ($2 == "pantheon-compositor" || $0 ~ /\/pantheon-compositor([[:space:]]|$)/) { print $1; next }
-    $2 ~ /^io\.elementary\.(wingpanel|dock)/ || $0 ~ /(^|[[:space:]])io\.elementary\.(wingpanel|dock)([[:space:]]|$)/ { print $1 }
+    $2 ~ /^io\.elementary\.(wingpanel|dock)/ || $0 ~ /(^|[[:space:]\/])io\.elementary\.(wingpanel|dock)([[:space:]]|$)/ { print $1 }
   ' | sort -n -u
 )
 

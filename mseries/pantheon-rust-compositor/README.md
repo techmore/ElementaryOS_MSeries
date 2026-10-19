@@ -154,11 +154,40 @@ first surface request. The cause of that interval remains unidentified.
 The owner also reported that
 window corners look inconsistent and unwanted. This is now a visual
 acceptance issue; affected apps and window states still need examples. The
-3024×1964 panel mode looked too zoomed out. A Rust-only 2× logical scale
-profile is staged for the next login while keeping the high-resolution mode;
-the resulting UI size and panel layout remain unqualified. These owner reports
+3024×1964 panel mode looked too zoomed out. A later Rust-only 2× run retained
+the high-resolution mode; the owner now prefers 1.25×, which is staged for the
+next login and remains unqualified. These owner reports
 are tracked in [`EXPERIENCE-REQUIREMENTS.md`](EXPERIENCE-REQUIREMENTS.md) and
 the [migration dashboard](dashboard.html).
+
+In a later isolated login on 2026-10-19, the staged 2× Rust display scale
+preserved the 3024×1964@120 Hz mode. Wallpaper loaded +0.14 s after session
+manager start; Wingpanel requested its first panel surface at +1.60 s and
+committed its first buffer at +2.25 s. A 45-second post-login desktop sample
+measured median CPU at 5.4% of one core for the compositor and 0.5% for
+Wingpanel; median RSS was about 190.5 MiB and 422.5 MiB, respectively. A
+one-minute `pidstat` profile captured both processes and their threads. The
+machine was on AC and the workload was not controlled idle, so these values
+cannot establish a performance win against Gala. The owner preferred 1.25×
+after seeing 2×; that Rust-only fractional scale is staged for the next login
+and has not yet been qualified. Raw captures are in the task-local artifacts
+directory, outside this repository.
+
+After the timed rollback, Gala's compositor, wallpaper and Wingpanel processes
+started at 12:44:49 EDT. The owner saw the background well before Wingpanel,
+which appeared about two minutes later. At login, systemd skipped
+`xdg-desktop-portal.service` because `WAYLAND_DISPLAY` was absent from the user
+manager environment; portal requests then timed out at 120 seconds, and the
+portal and its backends started at 12:46:49 EDT. This timing strongly implicates
+portal activation in the delayed panel, but does not prove it caused the
+visible delay. Investigate early display-environment publication and portal
+activation ordering before the next startup comparison. Gala remains active.
+
+The metrics helpers now match Wingpanel/Dock processes by their absolute
+executable path as well as their truncated `comm` name. A corrected 30-second
+Gala capture measured median CPU of 15.6% for Gala and 0.7% for Wingpanel;
+this quiet-desktop sample and the Rust post-login sample used different
+workloads, so they are not a matched comparison.
 
 An exploratory 30-second per-thread sample of the returned Gala session at
 12:33 UTC included Gala and Wingpanel (Dock was opted out). `pidstat` reported

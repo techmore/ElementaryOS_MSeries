@@ -317,6 +317,10 @@ Verified native light/dark render probes with all three providers, including alt
 the routine deploy also builds and runs all 12 native targets. Upstream stays v0.77.0.
 Installed/staged without restarting Wingpanel; native appearance loads at next login or an explicit reload.
 
+## Smaller CodexBar text and remove redundant Claude save action — 2026-10-19
+
+Owner reported the Wingpanel text still looked too large and the Claude app-login save action took up room. Reduced panel text sizes one step (base 8.5→7.5 pt, primary values 7.5→7 pt, reset labels 7→6.5 pt, secondary rows 6.75→6 pt). Removed the conditional “Save Claude app login” button; the helper already captures the app login when it lists accounts. Existing Claude account display and switch actions remain. The module is built and installed without restarting Wingpanel; the new appearance is pending the next session load and needs the owner's visual check.
+
 ## Compact two-row OpenCode panel — 2026-10-18
 
 Owner requested denser OpenCode information in the desktop bar. The active OpenCode quota/reset

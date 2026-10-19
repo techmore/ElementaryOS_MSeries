@@ -28,7 +28,7 @@ process_list() {
     $2 == "gala" || $2 == "mseries-gala" || $2 == "pantheon-compositor" ||
     $0 ~ /\/pantheon-compositor( |$)/ ||
     $2 ~ /^io\.elementary\.(wingpanel|dock)/ ||
-    $0 ~ /\/io\.elementary\.(wingpanel|dock)( |$)/ {
+    $0 ~ /(^|[[:space:]\/])io\.elementary\.(wingpanel|dock)([[:space:]]|$)/ {
       print $1, $2
     }' | sort -n -u
 }

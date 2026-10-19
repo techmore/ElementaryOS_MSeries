@@ -103,7 +103,7 @@
   <header>
     <div class="topline"><span class="eyebrow">M-series Pantheon compositor migration</span><span class="updated">Evidence updated 19 Oct 2026 · branch <code>codex/rust-mutter-pantheon</code></span></div>
     <h1>Gala/Mutter and Rust/Smithay</h1>
-    <p class="lede">A stage-by-stage view of the existing elementary desktop and the experimental Rust replacement. This is an experience-focused compositor, not a feature-for-feature Mutter port. The latest bounded Rust qualification felt much quicker to open overall, while the owner still noticed a slow wallpaper-to-Wingpanel transition. Its timed rollback completed and Gala is active.</p>
+    <p class="lede">A stage-by-stage view of the existing elementary desktop and the experimental Rust replacement. This is an experience-focused compositor, not a feature-for-feature Mutter port. The latest Rust run recorded a 2.11-second wallpaper-to-Wingpanel-buffer interval at 2× scale, then rolled back to Gala. Gala's current login showed a roughly two-minute panel delay associated with late portal activation; that relationship still needs a controlled check. Gala is active, with 1.25× staged for the next Rust login.</p>
   </header>
 
   <section class="cards" aria-label="Compared compositor stacks">
@@ -115,7 +115,7 @@
     <article class="card">
       <div class="system-head"><div><h2>Rust Pantheon</h2><p>Smithay compositor · opt-in session</p></div><span class="status partial">Experimental</span></div>
       <p>Native scanout, wallpaper, Wingpanel service, IBus daemon and portal startup now work in qualification. The saved Dock opt-out is respected. Several user-facing protocols and runtime gates remain open.</p>
-      <small>Latest instrumented ARM64 build: <code>0.1.0+git7a0ac92</code> · timed rollback completed successfully; Gala is active.</small>
+      <small>Latest instrumented ARM64 build: <code>0.1.0+git7a0ac92</code> · 2× run and rollback completed; 1.25× is staged for the next Rust login.</small>
     </article>
   </section>
 
@@ -125,7 +125,7 @@
       <div class="metric"><strong>20.8 s</strong><span>OS boot to default target</span></div>
       <div class="metric"><strong>10.5 s</strong><span>OS boot to graphical target</span></div>
       <div class="metric"><strong>0.46 s</strong><span>Rust compositor service start → ready</span></div>
-      <div class="metric"><strong>2.1 s</strong><span>Wallpaper loaded → first Wingpanel buffer</span></div>
+      <div class="metric"><strong>2.25 s</strong><span>Rust session start → first Wingpanel buffer (2×)</span></div>
     </div>
     <div class="grid">
       <article class="card">
@@ -135,7 +135,7 @@
           <div class="bar-row"><span class="bar-label">Gala</span><div class="track"><div class="fill" style="width:55.5%"></div></div><span class="bar-value">11.10%</span></div>
           <div class="bar-row"><span class="bar-label">Rust</span><div class="track"><div class="fill rust" style="width:55.6%"></div></div><span class="bar-value">11.12%</span></div>
         </div>
-        <div class="callout"><p><strong>No measured idle CPU win yet.</strong> Summing processes present at each sample gives Rust compositor + Wingpanel a <strong>12.4% median</strong> of one core; Gala + its wrapper measured <strong>11.2%</strong>. The Gala sample did not include Wingpanel, so this is not a matched total-session result, but the available evidence does not show Rust using less CPU. Code inspection found the native DRM vblank handler requests another compositor redraw after each completed frame; this is a lead to profile, with client frame-callback behavior checked before changing scheduling.</p></div>
+        <div class="callout"><p><strong>No performance win is established.</strong> The corrected 30-second Gala quiet-desktop sample included Wingpanel (median 15.6% of one core for Gala; 0.7% for Wingpanel). The 45-second Rust post-login sample at 2× measured 5.4% for the compositor and 0.5% for Wingpanel. These workloads were not matched and the figures must not be read as a Rust win. The one-minute Rust thread profile is saved for hotspot work. Earlier source inspection found continuous redraw after native DRM vblank as a lead to profile, with client frame-callback semantics checked before changing scheduling.</p></div>
       </article>
       <article class="card">
         <h3>Compositor memory · idle snapshots</h3>
@@ -194,11 +194,14 @@
           <tr><td>Dock</td><td><span class="status done">Daily path</span></td><td><span class="status partial">Opted out</span></td><td>Rust session correctly skips Dock because <code>~/.config/mseries/dock/user-disabled</code> exists. Dock render/hide/reveal passed only in nested session.</td></tr>
           <tr><td>Portals / session env</td><td><span class="status done">Established</span></td><td><span class="status partial">Activation fixed</span></td><td>Rust publishes <code>WAYLAND_DISPLAY</code> after ready; portal providers now start without the former 120-second timeout. GNOME backend still lacks Mutter's private <code>ServiceChannel</code>.</td></tr>
           <tr><td>Input methods</td><td><span class="status done">Daily workflow</span></td><td><span class="status partial">Nested only</span></td><td>IBus/Mozc text commit passed in nested GTK; IBus daemon starts natively, but native text commit and source switching are unqualified.</td></tr>
+          <tr><td>Mac-style trackpad swipes</td><td><span class="status done">High owner priority</span></td><td><span class="status open">Not implemented</span></td><td>Add multi-finger workspace navigation and the configured overview gesture with direction, cancellation and edge handling; qualify on the built-in M-series trackpad.</td></tr>
+          <tr><td>Window snapping</td><td><span class="status done">Half and quarter shortcuts</span></td><td><span class="status partial">Nested paths; runtime open</span></td><td>Owner requested richer layouts beyond quarters. Extend toward configurable halves, thirds, grid/edge zones and drag preview; preserve work-area and multi-display behavior.</td></tr>
           <tr><td>Window actions / XWayland</td><td><span class="status done">Established</span></td><td><span class="status partial">Partial</span></td><td>Nested XWayland keyboard smoke and basic Gala actions passed; overview, clipboard/PRIMARY, and native app behavior remain open.</td></tr>
           <tr><td>Consistent window corners</td><td><span class="status partial">Baseline to check</span></td><td><span class="status open">Owner-reported issue</span></td><td>Window corner appearance varies in the Rust session and is unwanted. Source review found no xdg-decoration manager or compositor-managed frame/rounding layer; the cause is still unconfirmed. Capture app/window-state examples and inspect client decoration/alpha before choosing a fix.</td></tr>
           <tr><td>External monitors / dock HDMI</td><td><span class="status partial">Kernel-bound</span></td><td><span class="status open">Not qualified</span></td><td>External hotplug remains open. The G3 black screen is DCP/kernel display firmware; a compositor replacement cannot fix missing DRM output.</td></tr>
           <tr><td>Lock, accessibility, sharing, recovery</td><td><span class="status done">Established</span></td><td><span class="status open">Open</span></td><td>Native end-to-end qualification is still needed before Rust could replace Gala.</td></tr>
           <tr><td>Performance and power</td><td><span class="status done">Reference</span></td><td><span class="status open">Unproven</span></td><td>No matched interactive/Gala benchmark, whole-system power result, GPU/latency measurement or crash-free soak yet.</td></tr>
+          <tr><td>Gala panel startup</td><td><span class="status partial">Current baseline issue</span></td><td><span class="status open">About 2 minutes on rollback login</span></td><td>Gala and Wingpanel processes started at login, but the portal service was skipped because the user manager lacked <code>WAYLAND_DISPLAY</code>; portal requests hit 120-second timeouts and portal backends started at +2 minutes. This is a strong delay lead, not yet a proven cause.</td></tr>
         </tbody>
       </table>
     </div>
