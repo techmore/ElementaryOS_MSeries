@@ -36,7 +36,7 @@ impl CompositorHandler for PantheonCompositor {
             if let Some(window) = self
                 .space
                 .elements()
-                .find(|w| w.toplevel().unwrap().wl_surface() == &root)
+                .find(|w| w.toplevel().is_some_and(|top| top.wl_surface() == &root))
             {
                 window.on_commit();
             }

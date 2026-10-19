@@ -33,6 +33,7 @@ use smithay::{
         xdg_activation::{
             XdgActivationHandler, XdgActivationState, XdgActivationToken, XdgActivationTokenData,
         },
+        xwayland_shell::XWaylandShellState,
     },
 };
 
@@ -72,6 +73,13 @@ pub struct PantheonCompositor {
     pub lock_confirmation: Option<SessionLocker>,
     pub lock_confirmation_outputs: HashSet<String>,
     pub keyboard_focus_before_lock: Option<WlSurface>,
+    pub x11_keyboard_focus_before_lock: Option<smithay::xwayland::X11Surface>,
+    pub x11_keyboard_focus: Option<smithay::xwayland::X11Surface>,
+    pub xwayland_shell_state: XWaylandShellState,
+    pub xwm: Option<smithay::xwayland::X11Wm>,
+    pub xdisplay: Option<u32>,
+    pub pending_command: Option<(String, Vec<String>)>,
+    pub notify_systemd_when_ready: bool,
     pub seat_state: SeatState<PantheonCompositor>,
     pub(crate) keyboard_config: crate::input::StartupKeyboardConfig,
     pub data_device_state: DataDeviceState,
@@ -155,6 +163,7 @@ impl PantheonCompositor {
         let viewporter_state = ViewporterState::new::<Self>(&dh);
         let xdg_activation_state = XdgActivationState::new::<Self>(&dh);
         let session_lock_state = SessionLockManagerState::new::<Self, _>(&dh, |_| true);
+        let xwayland_shell_state = XWaylandShellState::new::<Self>(&dh);
 
         // Data device is responsible for clipboard and drag-and-drop
         let data_device_state = DataDeviceState::new::<Self>(&dh);
@@ -278,6 +287,13 @@ impl PantheonCompositor {
             lock_confirmation: None,
             lock_confirmation_outputs: HashSet::new(),
             keyboard_focus_before_lock: None,
+            x11_keyboard_focus_before_lock: None,
+            x11_keyboard_focus: None,
+            xwayland_shell_state,
+            xwm: None,
+            xdisplay: None,
+            pending_command: None,
+            notify_systemd_when_ready: false,
             seat_state,
             keyboard_config,
             data_device_state,

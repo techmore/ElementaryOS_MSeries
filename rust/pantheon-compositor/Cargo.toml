@@ -46,4 +46,4 @@ gio = "0.20"
 git = "https://github.com/Smithay/smithay.git"
 rev = "023b78b1c5a05ca512767cacc07efca55fae8be4"
 default-features = false
-features = ["backend_winit", "wayland_frontend", "desktop"]
+features = ["backend_winit", "wayland_frontend", "desktop", "xwayland"]

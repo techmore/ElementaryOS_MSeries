@@ -15,10 +15,10 @@ use smithay::reexports::wayland_server::protocol::{wl_output::WlOutput, wl_surfa
 use smithay::utils::{IsAlive, Serial};
 use smithay::wayland::output::OutputHandler;
 use smithay::wayland::pointer_constraints::PointerConstraintsHandler;
-use smithay::wayland::selection::SelectionHandler;
 use smithay::wayland::selection::data_device::{
     DataDeviceHandler, DataDeviceState, WaylandDndGrabHandler, set_data_device_focus,
 };
+use smithay::wayland::selection::{SelectionHandler, SelectionSource, SelectionTarget};
 use smithay::wayland::session_lock::{
     LockSurface, SessionLockHandler, SessionLockManagerState, SessionLocker,
 };
@@ -57,6 +57,39 @@ impl PointerConstraintsHandler for PantheonCompositor {}
 
 impl SelectionHandler for PantheonCompositor {
     type SelectionUserData = ();
+
+    fn new_selection(
+        &mut self,
+        selection: SelectionTarget,
+        source: Option<SelectionSource>,
+        _seat: Seat<Self>,
+    ) {
+        if let Some(xwm) = self.xwm.as_mut()
+            && let Err(error) =
+                xwm.new_selection(selection, source.map(|source| source.mime_types()))
+        {
+            tracing::warn!(
+                ?selection,
+                ?error,
+                "failed to forward Wayland selection to XWayland"
+            );
+        }
+    }
+
+    fn send_selection(
+        &mut self,
+        selection: SelectionTarget,
+        mime_type: String,
+        fd: std::os::fd::OwnedFd,
+        _seat: Seat<Self>,
+        _user_data: &Self::SelectionUserData,
+    ) {
+        if let Some(xwm) = self.xwm.as_mut()
+            && let Err(error) = xwm.send_selection(selection, mime_type, fd)
+        {
+            tracing::warn!(?selection, ?error, "failed to send selection to XWayland");
+        }
+    }
 }
 
 impl DataDeviceHandler for PantheonCompositor {
@@ -117,6 +150,8 @@ impl SessionLockHandler for PantheonCompositor {
         let keyboard = self.seat.get_keyboard().unwrap();
         keyboard.unset_grab(self);
         self.keyboard_focus_before_lock = keyboard.current_focus();
+        self.x11_keyboard_focus_before_lock = self.x11_keyboard_focus.clone();
+        self.set_x11_keyboard_focus(None, serial);
         keyboard.set_focus(self, None, serial);
 
         self.session_locked = true;
@@ -156,11 +191,19 @@ impl SessionLockHandler for PantheonCompositor {
             .keyboard_focus_before_lock
             .take()
             .filter(|surface| surface.alive());
-        self.seat.get_keyboard().unwrap().set_focus(
-            self,
-            focus,
-            smithay::utils::SERIAL_COUNTER.next_serial(),
-        );
+        let serial = smithay::utils::SERIAL_COUNTER.next_serial();
+        if let Some(x11_focus) = self
+            .x11_keyboard_focus_before_lock
+            .take()
+            .filter(IsAlive::alive)
+        {
+            self.set_x11_keyboard_focus(Some(x11_focus), serial);
+        } else {
+            self.seat
+                .get_keyboard()
+                .unwrap()
+                .set_focus(self, focus, serial);
+        }
 
         let pointer = self.seat.get_pointer().unwrap();
         let location = pointer.current_location();
@@ -196,6 +239,7 @@ impl SessionLockHandler for PantheonCompositor {
 
         let output_name = output.name().to_string();
         self.lock_surfaces.insert(output_name, surface.clone());
+        self.set_x11_keyboard_focus(None, smithay::utils::SERIAL_COUNTER.next_serial());
         self.seat.get_keyboard().unwrap().set_focus(
             self,
             Some(surface.wl_surface().clone()),

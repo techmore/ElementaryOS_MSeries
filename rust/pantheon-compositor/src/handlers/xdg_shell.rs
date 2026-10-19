@@ -74,7 +74,10 @@ impl XdgShellHandler for PantheonCompositor {
             let window = self
                 .space
                 .elements()
-                .find(|w| w.toplevel().unwrap().wl_surface() == wl_surface)
+                .find(|w| {
+                    w.toplevel()
+                        .is_some_and(|top| top.wl_surface() == wl_surface)
+                })
                 .unwrap()
                 .clone();
             let initial_window_location = self.space.element_location(&window).unwrap();
@@ -107,7 +110,10 @@ impl XdgShellHandler for PantheonCompositor {
             let window = self
                 .space
                 .elements()
-                .find(|w| w.toplevel().unwrap().wl_surface() == wl_surface)
+                .find(|w| {
+                    w.toplevel()
+                        .is_some_and(|top| top.wl_surface() == wl_surface)
+                })
                 .unwrap()
                 .clone();
             let initial_window_location = self.space.element_location(&window).unwrap();
@@ -276,29 +282,25 @@ impl PantheonCompositor {
             .find(|window| {
                 window
                     .toplevel()
-                    .is_some_and(|top| !self.is_panel_surface(top.wl_surface()))
+                    .is_none_or(|top| !self.is_panel_surface(top.wl_surface()))
             })
             .cloned();
         if let Some(window) = next_window {
             self.space.raise_element(&window, true);
-            if let Some(surface) = window.toplevel().map(|top| top.wl_surface().clone()) {
-                let serial = smithay::utils::SERIAL_COUNTER.next_serial();
-                self.seat
-                    .get_keyboard()
-                    .unwrap()
-                    .set_focus(self, Some(surface), serial);
-                self.space.elements().for_each(|window| {
-                    if let Some(toplevel) = window.toplevel() {
-                        toplevel.send_pending_configure();
-                    }
-                });
-            }
+            let serial = smithay::utils::SERIAL_COUNTER.next_serial();
+            self.focus_window_keyboard(&window, serial);
+            self.space.elements().for_each(|window| {
+                if let Some(toplevel) = window.toplevel() {
+                    toplevel.send_pending_configure();
+                }
+            });
         } else {
             let serial = smithay::utils::SERIAL_COUNTER.next_serial();
+            self.set_x11_keyboard_focus(None, serial);
             self.seat
                 .get_keyboard()
                 .unwrap()
-                .set_focus(self, Option::<WlSurface>::None, serial);
+                .set_focus(self, None, serial);
         }
         self.refresh_panel_visibility();
     }
@@ -341,7 +343,7 @@ pub fn handle_commit(state: &mut PantheonCompositor, surface: &WlSurface) {
     let window = state
         .space
         .elements()
-        .find(|w| w.toplevel().unwrap().wl_surface() == surface)
+        .find(|w| w.toplevel().is_some_and(|top| top.wl_surface() == surface))
         .cloned();
     if let Some(window) = window {
         let initial_configure_sent = with_states(surface, |states| {
@@ -449,7 +451,7 @@ impl PantheonCompositor {
         let Some(window) = self
             .space
             .elements()
-            .find(|w| w.toplevel().unwrap().wl_surface() == &root)
+            .find(|w| w.toplevel().is_some_and(|top| top.wl_surface() == &root))
         else {
             return;
         };

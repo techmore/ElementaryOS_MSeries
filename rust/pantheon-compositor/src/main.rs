@@ -13,6 +13,7 @@ mod shell_compat;
 mod state;
 mod tiling;
 mod winit;
+mod xwayland;
 
 use smithay::reexports::{calloop::EventLoop, wayland_server::Display};
 pub use state::PantheonCompositor;
@@ -61,16 +62,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
+    crate::xwayland::start(
+        &mut event_loop,
+        &mut state,
+        matches!(backend, BackendChoice::Native),
+    )?;
+    state.pending_command = command;
+    state.notify_systemd_when_ready = notify_systemd;
+
     // Launch requested clients against the compositor socket selected above.
     unsafe { std::env::set_var("WAYLAND_DISPLAY", &state.socket_name) };
-
-    if notify_systemd {
-        notify_systemd_ready()?;
-    }
-
-    if let Some((program, args)) = command {
-        std::process::Command::new(program).args(args).spawn()?;
-    }
 
     event_loop.run(None, &mut state, move |_| {})?;
     Ok(())
@@ -87,7 +88,7 @@ fn init_logging() {
 /// Tell a systemd user service that the compositor has initialized its
 /// Wayland socket and selected backend. Native startup only reaches this point
 /// after the renderer and connected KMS outputs have been initialized.
-fn notify_systemd_ready() -> io::Result<()> {
+pub(crate) fn notify_systemd_ready() -> io::Result<()> {
     let socket = std::env::var_os("NOTIFY_SOCKET")
         .ok_or_else(|| io::Error::other("--notify-systemd requires NOTIFY_SOCKET"))?;
     let encoded_socket = socket.as_encoded_bytes();

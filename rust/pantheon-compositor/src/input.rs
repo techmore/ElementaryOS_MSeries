@@ -8,10 +8,9 @@ use smithay::{
         KeyboardKeyEvent, PointerAxisEvent, PointerButtonEvent, PointerMotionEvent,
     },
     input::{
-        keyboard::{FilterResult, XkbConfig},
+        keyboard::{FilterResult, KeyboardTarget, XkbConfig},
         pointer::{AxisFrame, ButtonEvent, MotionEvent, RelativeMotionEvent},
     },
-    reexports::wayland_server::protocol::wl_surface::WlSurface,
     utils::SERIAL_COUNTER,
 };
 
@@ -106,6 +105,8 @@ impl PantheonCompositor {
                 let serial = SERIAL_COUNTER.next_serial();
                 let time = Event::time(&event);
                 let key_state = event.state();
+                let x11_focus = self.x11_keyboard_focus.clone();
+                let seat = self.seat.clone();
 
                 self.seat.get_keyboard().unwrap().input::<(), _>(
                     self,
@@ -129,6 +130,14 @@ impl PantheonCompositor {
                                     .shell_compat
                                     .activate_key(keysym.modified_sym(), modifiers))
                         {
+                            FilterResult::Intercept(())
+                        } else if let Some(focus) = x11_focus.as_ref() {
+                            <smithay::xwayland::X11Surface as KeyboardTarget<PantheonCompositor>>::key(
+                                focus, &seat, state, keysym, key_state, serial, time,
+                            );
+                            <smithay::xwayland::X11Surface as KeyboardTarget<PantheonCompositor>>::modifiers(
+                                focus, &seat, state, *modifiers, serial,
+                            );
                             FilterResult::Intercept(())
                         } else {
                             FilterResult::Forward
@@ -233,22 +242,29 @@ impl PantheonCompositor {
                         .element_under(pointer.current_location())
                         .map(|(w, l)| (w.clone(), l))
                     {
-                        let surface = window.toplevel().unwrap().wl_surface().clone();
-                        if self.is_panel_surface(&surface) {
+                        let panel_surface = window
+                            .toplevel()
+                            .is_some_and(|top| self.is_panel_surface(top.wl_surface()));
+                        if panel_surface {
                             self.space.raise_element(&window, false);
                         } else {
                             self.space.raise_element(&window, true);
-                            keyboard.set_focus(self, Some(surface), serial);
+                            self.focus_window_keyboard(&window, serial);
                         }
                         self.space.elements().for_each(|window| {
-                            window.toplevel().unwrap().send_pending_configure();
+                            if let Some(toplevel) = window.toplevel() {
+                                toplevel.send_pending_configure();
+                            }
                         });
                     } else {
+                        self.set_x11_keyboard_focus(None, serial);
                         self.space.elements().for_each(|window| {
                             window.set_activated(false);
-                            window.toplevel().unwrap().send_pending_configure();
+                            if let Some(toplevel) = window.toplevel() {
+                                toplevel.send_pending_configure();
+                            }
                         });
-                        keyboard.set_focus(self, Option::<WlSurface>::None, serial);
+                        keyboard.set_focus(self, None, serial);
                     }
                 };
 

@@ -38,6 +38,14 @@ is build-checked but not runtime-qualified. The current source is US;
 `mozc-jp` is installed but inactive, so IBus remains a conditional workflow
 rather than a first-session requirement.
 
+The prototype now starts Smithay's rootless XWayland window manager, maps X11
+windows into the shared desktop space, routes keyboard input to focused X11
+clients, and bridges clipboard ownership and transfers. Native startup exports
+the selected `DISPLAY` through D-Bus and systemd activation environments; the
+`--run` client waits for XWayland readiness. XWayland keyboard, clipboard,
+session activation, and X11 window behavior compile but still need runtime
+qualification. The package depends on the `xwayland` executable.
+
 Panel reservations and managed maximize/tile layouts are tracked per output
 connector. Maximized/fullscreen windows and popup constraints use the window's
 current output, and removing a panel releases its work area. Multi-output
