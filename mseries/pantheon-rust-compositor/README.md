@@ -137,8 +137,14 @@ sharing, native text commits, or a performance/power improvement over Gala.
 The instrumented `0.1.0+git7a0ac92` login reached the first committed
 Wingpanel buffer about 2.2 seconds after the Rust session manager started
 (about 1.7 seconds after the compositor service started). The owner described
-this run's opening time as really good; the journal milestone measures panel
-buffer readiness, not first interactive use. The owner also reported that
+this run's overall opening time as really good, then noted the wallpaper-to-
+Wingpanel gap still felt slow. The journal shows wallpaper load at +0.11 s,
+Wingpanel service start at +0.51 s, first panel surface request at +1.61 s,
+and first buffer at +2.22 s, relative to session-manager start. This is about
+2.11 s from wallpaper load to first panel buffer; the journal milestone is not
+a direct measure of visible pixels or first interactive use. The five-minute
+rollback completed successfully at 12:26 EDT and returned LightDM to Gala.
+The owner also reported that
 window corners look inconsistent and unwanted. This is now a visual
 acceptance issue; affected apps and window states still need examples. The
 3024×1964 panel mode looked too zoomed out. A Rust-only 2× logical scale

@@ -103,7 +103,7 @@
   <header>
     <div class="topline"><span class="eyebrow">M-series Pantheon compositor migration</span><span class="updated">Evidence updated 19 Oct 2026 · branch <code>codex/rust-mutter-pantheon</code></span></div>
     <h1>Gala/Mutter and Rust/Smithay</h1>
-    <p class="lede">A stage-by-stage view of the existing elementary desktop and the experimental Rust replacement. This is an experience-focused compositor, not a feature-for-feature Mutter port. The latest bounded Rust qualification felt much quicker to open; its timed rollback returns the machine to Gala.</p>
+    <p class="lede">A stage-by-stage view of the existing elementary desktop and the experimental Rust replacement. This is an experience-focused compositor, not a feature-for-feature Mutter port. The latest bounded Rust qualification felt much quicker to open overall, while the owner still noticed a slow wallpaper-to-Wingpanel transition. Its timed rollback completed and Gala is active.</p>
   </header>
 
   <section class="cards" aria-label="Compared compositor stacks">
@@ -115,7 +115,7 @@
     <article class="card">
       <div class="system-head"><div><h2>Rust Pantheon</h2><p>Smithay compositor · opt-in session</p></div><span class="status partial">Experimental</span></div>
       <p>Native scanout, wallpaper, Wingpanel service, IBus daemon and portal startup now work in qualification. The saved Dock opt-out is respected. Several user-facing protocols and runtime gates remain open.</p>
-      <small>Latest instrumented ARM64 build: <code>0.1.0+git7a0ac92</code> · first Wingpanel buffer observed; automatic Gala rollback is scheduled.</small>
+      <small>Latest instrumented ARM64 build: <code>0.1.0+git7a0ac92</code> · timed rollback completed successfully; Gala is active.</small>
     </article>
   </section>
 
@@ -125,7 +125,7 @@
       <div class="metric"><strong>20.8 s</strong><span>OS boot to default target</span></div>
       <div class="metric"><strong>10.5 s</strong><span>OS boot to graphical target</span></div>
       <div class="metric"><strong>0.46 s</strong><span>Rust compositor service start → ready</span></div>
-      <div class="metric"><strong>2.2 s</strong><span>Rust session start → first Wingpanel buffer</span></div>
+      <div class="metric"><strong>2.1 s</strong><span>Wallpaper loaded → first Wingpanel buffer</span></div>
     </div>
     <div class="grid">
       <article class="card">
@@ -171,10 +171,10 @@
       <article class="card">
         <h3>Startup milestones</h3>
         <div class="timeline" aria-label="Rust startup milestones">
-          <div class="step"><span class="dot"></span><strong>Wallpaper loaded</strong><span>Before panel unit starts</span></div>
+          <div class="step"><span class="dot"></span><strong>Wallpaper loaded</strong><span>~0.11 s after session start</span></div>
           <div class="step"><span class="dot"></span><strong>Compositor ready</strong><span>~0.46 s after service start</span></div>
           <div class="step"><span class="dot"></span><strong>Portal ready</strong><span>~0.8 s after compositor readiness</span></div>
-          <div class="step"><span class="dot"></span><strong>Wingpanel buffer</strong><span>First buffer ~2.2 s after session start</span></div>
+          <div class="step"><span class="dot"></span><strong>Wingpanel buffer</strong><span>~2.22 s after start; ~2.11 s after wallpaper</span></div>
         </div>
       </article>
     </div>
@@ -190,7 +190,7 @@
           <tr><td>Native M1 panel</td><td><span class="status done">Daily path</span></td><td><span class="status done">Passed twice</span></td><td>Rust scanout at 3024×1964 via Asahi render GPU and Apple DRM/KMS. Initial page-flip attempt logged one transient <code>Device or resource busy</code>.</td></tr>
           <tr><td>Display scale / density</td><td><span class="status partial">Compare baseline</span></td><td><span class="status open">2× profile staged</span></td><td>The native 3024×1964 panel looks too zoomed out to the owner. A Rust-only 2× logical scale profile is staged for the next login; visual layout and panel behavior still need qualification.</td></tr>
           <tr><td>Wallpaper / background</td><td><span class="status done">Established</span></td><td><span class="status partial">Native loaded</span></td><td>Configured wallpaper rendered and loaded in Rust native session; nested live-setting reload also passed.</td></tr>
-          <tr><td>Wingpanel</td><td><span class="status done">Daily path</span></td><td><span class="status partial">Delay reported</span></td><td>Service starts promptly, but user sees wallpaper well before the panel. New logs measure surface request and first non-null buffer commit; run pending.</td></tr>
+          <tr><td>Wingpanel</td><td><span class="status done">Daily path</span></td><td><span class="status partial">~2.1 s after wallpaper</span></td><td>Wallpaper loaded ~0.11 s after session start; Wingpanel service started ~0.51 s; its surface request arrived ~1.61 s and first buffer ~2.22 s. Owner noticed the gap as slow. This splits compositor startup from Wingpanel client initialization and first-buffer work.</td></tr>
           <tr><td>Dock</td><td><span class="status done">Daily path</span></td><td><span class="status partial">Opted out</span></td><td>Rust session correctly skips Dock because <code>~/.config/mseries/dock/user-disabled</code> exists. Dock render/hide/reveal passed only in nested session.</td></tr>
           <tr><td>Portals / session env</td><td><span class="status done">Established</span></td><td><span class="status partial">Activation fixed</span></td><td>Rust publishes <code>WAYLAND_DISPLAY</code> after ready; portal providers now start without the former 120-second timeout. GNOME backend still lacks Mutter's private <code>ServiceChannel</code>.</td></tr>
           <tr><td>Input methods</td><td><span class="status done">Daily workflow</span></td><td><span class="status partial">Nested only</span></td><td>IBus/Mozc text commit passed in nested GTK; IBus daemon starts natively, but native text commit and source switching are unqualified.</td></tr>
@@ -204,6 +204,12 @@
     </div>
   </section>
 
+  <section class="card" style="margin-top:16px" aria-labelledby="gala-port-heading">
+    <h2 id="gala-port-heading">Could Gala run on the Rust stack?</h2>
+    <p>Gala is itself a Wayland compositor built around libmutter, Clutter and Mutter’s <code>Meta</code> APIs. The local Gala 8.6.2 audit found 79 Vala files using <code>Meta.*</code> across 24,534 lines of core source. Reusing Gala as a shell inside Smithay would require separating and porting much of that compositor-specific code.</p>
+    <p>That is a much larger rewrite than implementing the Pantheon behaviors we need, and it would not change the DCP/kernel HDMI limit. Keep Gala as the daily baseline; port a behavior only when it appears in the M-series acceptance list, then require matched performance, visual quality and reliability wins before considering a swap.</p>
+  </section>
+
   <section class="card" style="margin-top:16px">
     <h2>What would count as “better”</h2>
     <p>The Rust branch should only be called a performance improvement after the same M-series machine, display mode, workload, session age, and panel/dock composition are compared against Gala. Track login-to-first-usable time, CPU, total session RSS, GPU activity, latency, battery discharge or measured input power, and crashes/recovery.</p>
@@ -211,8 +217,8 @@
       <ul>
         <li><code>metrics/gala-idle-20261019.csv</code> and <code>metrics/rust-idle-qualification-20261019.csv</code>: short internal-panel idle samples; different session ages and incomplete process parity.</li>
         <li><code>metrics/rust-interactive-20261019.csv</code>: 30-second interactive Rust sample; machine on mains, so its battery-flow reading is not device power use.</li>
-        <li><code>collect-session-startup.sh</code>: boot chain and service/journal milestones. In build <code>0.1.0+git7a0ac92</code>, the first Wingpanel buffer was committed about 2.2 seconds after the Rust session manager started; this is not a direct measurement of first interaction.</li>
-        <li>The owner reported this run had a really good opening time. Corner inconsistency is a separate visual issue reported during this qualification; exact affected apps and states are not yet recorded.</li>
+        <li><code>collect-session-startup.sh</code>: boot chain and service/journal milestones. In build <code>0.1.0+git7a0ac92</code>, wallpaper loaded at +0.11 s and the first Wingpanel buffer committed at +2.22 s relative to the Rust session manager start. The owner noticed this ~2.1 s wallpaper-to-panel gap as slow, despite reporting good overall opening time. Journal milestones are not direct measures of visual perception or first interaction.</li>
+        <li>The owner reported inconsistent window corners; exact affected apps and states are not yet recorded.</li>
       </ul>
     </details>
   </section>
