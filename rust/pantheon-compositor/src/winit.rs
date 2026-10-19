@@ -46,7 +46,10 @@ pub fn init_winit(
     let x = saved.as_ref().map_or(0, |saved| saved.x);
     let y = saved.as_ref().map_or(0, |saved| saved.y);
     let scale = saved.as_ref().map_or(1.0, |saved| saved.scale);
-    let transform = match saved.as_ref().map_or(7, |saved| saved.transform) {
+    // The nested Winit target's framebuffer is vertically flipped relative to
+    // Smithay's logical output coordinates. Cancel that here; native DRM uses
+    // the connector transform reported by the kernel instead.
+    let transform = match saved.as_ref().map_or(6, |saved| saved.transform) {
         0 => Transform::Normal,
         1 => Transform::_90,
         2 => Transform::_180,

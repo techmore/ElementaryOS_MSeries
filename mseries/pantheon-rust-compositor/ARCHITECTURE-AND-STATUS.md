@@ -119,7 +119,17 @@ now loads the configured local wallpaper at startup and renders it behind
 windows, honoring the `zoom` crop mode; live wallpaper changes still require a
 session restart. Refreshed package `0.1.0+gitb486d56` includes the wallpaper
 renderer and shell units; it has not been installed or qualified on native
-output.
+output. In the nested Winit backend, the default transform is set to compensate
+for the framebuffer orientation observed under Xvfb; this produced an upright
+wallpaper and top Wingpanel in a fresh nested run. It does not alter the native
+DRM output transform.
+
+**Development shell smoke:** installed Wingpanel 8.0.4 and the local Dock
+binary both stayed alive as Wayland clients in an isolated nested session.
+Wingpanel appeared upright along the top edge after the Winit transform fix.
+Dock remained invisible even though its process was alive, so Dock protocol,
+reveal behavior and positioning are still open. The test used a private
+Xvfb/D-Bus profile and did not replace the active Gala session.
 
 ## What is complete and what has been tested
 
@@ -130,18 +140,19 @@ output.
 | Session recovery | Five-minute LightDM rollback returned to Gala; Wingpanel and background came back | Automatic rollback passed once |
 | XWayland | Private Xvfb Zenity window mapped and accepted synthetic keyboard input; exposed through window-list D-Bus | Isolated smoke passed |
 | Nested text input | Private GTK Wayland field accepted an IBus/Mozc Japanese commit | Isolated smoke passed; native input remains unqualified |
-| Pantheon panel protocol | Wingpanel connected in private nested Wayland, requested a top panel, and attached shared-memory buffers | Protocol smoke passed; panel absent from native session |
-| Desktop wallpaper | Loaded the configured 5000×2813 elementary wallpaper and captured it behind a GTK Zenity window in isolated Xvfb | Nested visual smoke passed; native output and live setting changes remain open |
-| Native full desktop | In the first Rust login, the owner observed slow startup, no top panel, no bottom dock, and no colored background | Incomplete; wallpaper rendering landed afterward and has not been qualified on native output |
+| Pantheon panel protocol | Wingpanel connected in private nested Wayland, requested a top panel, attached shared-memory buffers and rendered upright after the nested Winit transform correction | Nested visual smoke passed; panel absent from native session |
+| Pantheon shell process startup | Installed Wingpanel and local Dock both remained alive in a private nested Wayland session | Process smoke passed; Dock was not visible, and map/reveal behavior remains open |
+| Desktop wallpaper | Loaded the configured 5000×2813 elementary wallpaper and captured it behind a GTK Zenity window in isolated Xvfb; fresh nested shell run showed wallpaper upright | Nested visual smoke passed; native output and live setting changes remain open |
+| Native full desktop | In the first Rust login, the owner observed slow startup, no top panel, no bottom dock, and no colored background. After returning to the regular desktop, a background was visible, but the active session was uncertain | Incomplete; wallpaper rendering landed afterward and has not been qualified on native output |
 | Native keyboard, pointer, external display, lock/unlock, sharing, accessibility, crash recovery | No end-to-end qualification in the native session | Open |
 | Performance, power, reliability | No matched Gala/Rust measurements or crash-free soak yet | Open; do not claim faster or more reliable yet |
 
 The current login observation is useful development evidence, not a daily-use
 readiness result. Continue testing in the isolated experimental session while
-Gala remains the working fallback. The next development gate is to qualify
-Wingpanel/Dock startup in a nested session and qualify the new wallpaper path
-on native output, then qualify shell startup and basic interaction before
-another native login.
+Gala remains the working fallback. The next development gate is to diagnose
+why the live Dock process does not render or reveal, then qualify shell startup
+and basic interaction and the wallpaper path on native output before another
+native login.
 After that, measure the same startup, idle and representative workloads under
 Gala and Rust, and record crashes and recovery behavior.
 
