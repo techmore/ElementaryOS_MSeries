@@ -90,7 +90,27 @@ def hls_to_hex(h, l, s):
     return "#" + "".join(f"{round(max(0, min(1, c)) * 255):02x}" for c in colorsys.hls_to_rgb(h, max(0, min(1, l)), s))
 
 
+# Granite palette stops (100 light, 300 dark-theme, 700 pressed) keyed by the 500 accent.
+RAMPS = {
+    "#c6262e": ("#ff8c82", "#ed5353", "#a10705"), "#f37329": ("#ffc27d", "#ffa154", "#cc3b02"),
+    "#d48e15": ("#fff394", "#ffe16b", "#ad5f00"), "#68b723": ("#d1ff82", "#9bdb4d", "#3a9104"),
+    "#28bca3": ("#89ffdd", "#43d6b5", "#0e9a83"), "#3689e6": ("#8cd5ff", "#64baff", "#0d52bf"),
+    "#a56de2": ("#e4c6fa", "#cd9ef7", "#7239b3"), "#de3e80": ("#fe9ab8", "#f4679d", "#bc245d"),
+}
+# Pale tints: how far the 100 stop is mixed toward white.
+TINT_MIX = {"#abc4f8": 0.25, "#b0c8f9": 0.3, "#d2dffb": 0.6, "#dde7fc": 0.7}
+
+
+def mix_white(value, amount):
+    return "#" + "".join(f"{round(int(value[i:i + 2], 16) * (1 - amount) + 255 * amount):02x}" for i in (1, 3, 5))
+
+
 def build_map(accent):
+    if accent in RAMPS:
+        light, dark, pressed = RAMPS[accent]
+        mapping = {"#2c6bed": accent, "#3b45fd": accent, "#1851b4": pressed, "#6191f3": dark}
+        mapping.update({k: mix_white(light, v) for k, v in TINT_MIX.items()})
+        return mapping
     h, l, s = hex_to_hls(accent)
     mapping = {}
     for source, offset in FAMILY.items():
