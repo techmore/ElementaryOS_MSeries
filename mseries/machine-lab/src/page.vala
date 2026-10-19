@@ -1,6 +1,8 @@
 /* One machine's content pane: header with tabs, Overview / Console / Settings. */
 using Gtk;
 
+const string[] swatch_names = { "Blueberry", "Mint", "Lime", "Banana", "Orange", "Strawberry", "Bubblegum", "Grape" };
+
 public class MachinePage : Gtk.Box {
     public Machine machine { get; construct; }
 
@@ -17,6 +19,12 @@ public class MachinePage : Gtk.Box {
     private Gtk.Label disk_v;
     private Gtk.Label net_v;
     private Gtk.Label ssh_cmd;
+    private Gtk.Image hero_icon;
+    private Gtk.Box ready_card;
+    private Gtk.Image ready_icon;
+    private Gtk.Label ready_title;
+    private Gtk.Label ready_detail;
+    private Gtk.ToggleButton[] swatches = {};
     private Gtk.Box drop_zone;
     private Gtk.Label drop_title;
     private Gtk.Label drop_detail;
@@ -103,11 +111,11 @@ public class MachinePage : Gtk.Box {
         scroller.child = clamp;
 
         var hero = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 18);
-        var icon = new Gtk.Image.from_icon_name ("computer");
-        icon.pixel_size = 64;
-        icon.add_css_class ("ml-hero-icon");
-        icon.valign = Gtk.Align.START;
-        hero.append (icon);
+        hero_icon = new Gtk.Image.from_icon_name ("computer");
+        hero_icon.pixel_size = 64;
+        hero_icon.add_css_class ("ml-hero-icon");
+        hero_icon.valign = Gtk.Align.START;
+        hero.append (hero_icon);
 
         var text = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
         text.hexpand = true;
@@ -144,6 +152,28 @@ public class MachinePage : Gtk.Box {
         specs.attach (spec_card ("drive-harddisk-symbolic", out disk_v, "Disk, grows as used"), 0, 1);
         specs.attach (spec_card ("network-wired-symbolic", out net_v, "Network"), 1, 1);
         clamp.append (specs);
+
+        // Readiness
+        ready_card = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
+        ready_card.add_css_class ("ml-card");
+        ready_card.add_css_class ("ml-spec");
+        ready_icon = new Gtk.Image ();
+        ready_icon.pixel_size = 24;
+        ready_icon.valign = Gtk.Align.START;
+        ready_card.append (ready_icon);
+        var rt = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
+        rt.hexpand = true;
+        ready_title = new Gtk.Label ("");
+        ready_title.xalign = 0;
+        ready_title.add_css_class ("ml-spec-value");
+        ready_detail = new Gtk.Label ("");
+        ready_detail.xalign = 0;
+        ready_detail.wrap = true;
+        ready_detail.add_css_class ("ml-spec-label");
+        rt.append (ready_title);
+        rt.append (ready_detail);
+        ready_card.append (rt);
+        clamp.append (ready_card);
 
         // Connect row
         var connect = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
@@ -353,6 +383,26 @@ public class MachinePage : Gtk.Box {
         });
         settings_form.append (form_row ("Name", null, name_entry));
 
+        var sw_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+        for (int i = 0; i < 8; i++) {
+            var b = new Gtk.ToggleButton ();
+            b.add_css_class ("ml-swatch");
+            b.add_css_class ("ml-s-%d".printf (i));
+            b.tooltip_text = swatch_names[i];
+            int idx = i;
+            b.toggled.connect (() => {
+                if (loading || !b.active) return;
+                machine.color = idx;
+                changed (); refresh ();
+            });
+            if (swatches.length > 0) {
+                b.group = swatches[0];
+            }
+            swatches += b;
+            sw_box.append (b);
+        }
+        settings_form.append (form_row ("Color", null, sw_box));
+
         cpu_scale = new Gtk.Scale.with_range (Gtk.Orientation.HORIZONTAL, 1, cores, 1);
         cpu_scale_v = new Gtk.Label ("");
         settings_form.append (form_row ("Processors", cpu_scale_v, cpu_scale));
@@ -471,7 +521,32 @@ public class MachinePage : Gtk.Box {
             drop_detail.label = "Drop an ARM64 .iso here, or browse for one.";
         }
 
+        for (int i = 0; i < 8; i++) {
+            hero_icon.remove_css_class ("ml-c-%d".printf (i));
+        }
+        hero_icon.add_css_class ("ml-c-%d".printf (machine.color));
+        int64 used = machine.disk_used_bytes ();
+        if (used > 0) {
+            disk_v.label = "%.1f of %d GiB".printf (used / 1073741824.0, machine.disk_gib);
+        }
+
+        var problems = Readiness.problems ();
+        ready_card.remove_css_class ("bad");
+        if (problems.length == 0) {
+            ready_icon.icon_name = "emblem-default-symbolic";
+            ready_icon.add_css_class ("ml-ok");
+            ready_title.label = "Ready to run";
+            ready_detail.label = "QEMU, UEFI firmware and hardware acceleration are available.";
+        } else {
+            ready_icon.icon_name = "dialog-warning-symbolic";
+            ready_icon.remove_css_class ("ml-ok");
+            ready_card.add_css_class ("bad");
+            ready_title.label = problems.length == 1 ? "One thing to fix" : "%d things to fix".printf (problems.length);
+            ready_detail.label = string.joinv ("\n", problems);
+        }
+
         loading = true;
+        if (swatches.length == 8) swatches[machine.color.clamp (0, 7)].active = true;
         if (name_entry.text != machine.name) name_entry.text = machine.name;
         cpu_scale.set_value (machine.cpus);
         mem_scale.set_value (machine.mem_gib);
@@ -492,6 +567,12 @@ public class MachinePage : Gtk.Box {
     }
 
     private void update_uptime () {
+        if (machine.running) {
+            int64 used = machine.disk_used_bytes ();
+            if (used > 0) {
+                disk_v.label = "%.1f of %d GiB".printf (used / 1073741824.0, machine.disk_gib);
+            }
+        }
         if (machine.started == null) {
             uptime.label = "";
             return;

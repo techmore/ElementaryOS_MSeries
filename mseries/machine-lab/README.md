@@ -14,3 +14,5 @@ meson setup build && meson compile -C build
 
 Launcher and known gaps: `launcher/README.md`. Moved here from the Codex native-vm-poc spike.
 Visual check was done headless via GTK Broadway; not yet launched on the desktop or booted with a guest ISO.
+
+Also: per-machine color (elementary palette), distro presets from New Machine, host readiness check (QEMU, UEFI, /dev/kvm), real disk usage, pulsing running indicator.

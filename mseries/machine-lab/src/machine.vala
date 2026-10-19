@@ -7,6 +7,7 @@ public class Machine : Object {
     public int mem_gib { get; set; default = 6; }
     public int disk_gib { get; set; default = 64; }
     public int ssh_port { get; set; default = 2222; }
+    public int color { get; set; default = 0; }
     public string? installer { get; set; default = null; }
 
     public Subprocess? proc { get; private set; default = null; }
@@ -26,6 +27,16 @@ public class Machine : Object {
 
     public bool has_disk () {
         return FileUtils.test (Path.build_filename (dir, "disk.qcow2"), FileTest.EXISTS);
+    }
+
+    public int64 disk_used_bytes () {
+        try {
+            var info = File.new_for_path (Path.build_filename (dir, "disk.qcow2"))
+                .query_info ("standard::allocated-size", FileQueryInfoFlags.NONE);
+            return (int64) info.get_attribute_uint64 ("standard::allocated-size");
+        } catch (Error e) {
+            return 0;
+        }
     }
 
     public void start (string launcher) throws Error {
@@ -112,6 +123,9 @@ public class MachineStore : Object {
                 m.mem_gib = kf.get_integer (id, "mem_gib");
                 m.disk_gib = kf.get_integer (id, "disk_gib");
                 m.ssh_port = kf.get_integer (id, "ssh_port");
+                if (kf.has_key (id, "color")) {
+                    m.color = kf.get_integer (id, "color");
+                }
                 if (kf.has_key (id, "installer")) {
                     m.installer = kf.get_string (id, "installer");
                 }
@@ -137,6 +151,7 @@ public class MachineStore : Object {
             kf.set_integer (m.id, "mem_gib", m.mem_gib);
             kf.set_integer (m.id, "disk_gib", m.disk_gib);
             kf.set_integer (m.id, "ssh_port", m.ssh_port);
+            kf.set_integer (m.id, "color", m.color);
             if (m.installer != null) {
                 kf.set_string (m.id, "installer", m.installer);
             }
@@ -147,5 +162,25 @@ public class MachineStore : Object {
         } catch (Error e) {
             warning ("Could not save machines: %s", e.message);
         }
+    }
+}
+
+/* Checks the host has what the launcher needs. */
+public class Readiness : Object {
+    public static string[] problems () {
+        string[] out = {};
+        if (Environment.find_program_in_path ("qemu-system-aarch64") == null) {
+            out += "QEMU is missing. Install qemu-system-arm.";
+        }
+        if (Environment.find_program_in_path ("qemu-img") == null) {
+            out += "qemu-img is missing. Install qemu-utils.";
+        }
+        if (!FileUtils.test ("/usr/share/AAVMF/AAVMF_CODE.fd", FileTest.EXISTS)) {
+            out += "UEFI firmware is missing. Install qemu-efi-aarch64.";
+        }
+        if (Posix.access ("/dev/kvm", Posix.R_OK | Posix.W_OK) != 0) {
+            out += "No access to /dev/kvm. Add your user to the kvm group.";
+        }
+        return out;
     }
 }

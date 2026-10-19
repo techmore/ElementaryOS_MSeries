@@ -13,6 +13,8 @@ resources = gnome.compile_resources('machine-lab-resources',
   source_dir: 'data'
 )
 
+add_project_arguments(['--pkg', 'posix'], language: 'vala')
+
 executable('machine-lab',
   'src/main.vala', 'src/machine.vala', 'src/page.vala',
   resources,

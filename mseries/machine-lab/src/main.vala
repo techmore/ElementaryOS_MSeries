@@ -6,11 +6,29 @@
  */
 using Gtk;
 
+struct Preset {
+    public string name;
+    public string blurb;
+    public int cpus;
+    public int mem;
+    public int disk;
+    public int color;
+}
+
+const Preset[] presets = {
+    { "Omarchy", "Arch-based tiling desktop", 4, 6, 64, 0 },
+    { "Ubuntu", "Friendly general-purpose desktop", 4, 4, 48, 4 },
+    { "Debian", "Rock-solid and lightweight", 2, 2, 32, 5 },
+    { "Fedora", "Fresh packages, GNOME", 4, 4, 48, 0 },
+    { "Blank Machine", "Start from scratch", 2, 4, 32, 7 }
+};
+
 public class MachineRow : Gtk.ListBoxRow {
     public Machine machine { get; construct; }
     private Gtk.Label name_label;
     private Gtk.Label sub_label;
     private Gtk.Box dot;
+    private Gtk.Image icon;
 
     public MachineRow (Machine machine) {
         Object (machine: machine);
@@ -24,8 +42,9 @@ public class MachineRow : Gtk.ListBoxRow {
         box.margin_end = 6;
 
         var overlay = new Gtk.Overlay ();
-        var icon = new Gtk.Image.from_icon_name ("computer");
+        icon = new Gtk.Image.from_icon_name ("computer");
         icon.pixel_size = 32;
+        icon.add_css_class ("ml-row-icon");
         overlay.child = icon;
         dot = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
         dot.add_css_class ("ml-dot");
@@ -58,6 +77,10 @@ public class MachineRow : Gtk.ListBoxRow {
         name_label.label = machine.name;
         sub_label.label = "%s · %d CPU · %d GiB".printf (
             machine.running ? "Running" : "Stopped", machine.cpus, machine.mem_gib);
+        for (int i = 0; i < 8; i++) {
+            icon.remove_css_class ("ml-c-%d".printf (i));
+        }
+        icon.add_css_class ("ml-c-%d".printf (machine.color));
         if (machine.running) {
             dot.add_css_class ("running");
         } else {
@@ -101,7 +124,7 @@ public class MachineLab : Gtk.Application {
         );
 
         var new_action = new SimpleAction ("new-machine", null);
-        new_action.activate.connect (() => add_machine ());
+        new_action.activate.connect (() => add_machine (presets[0]));
         add_action (new_action);
         set_accels_for_action ("app.new-machine", { "<Control>n" });
         set_accels_for_action ("app.quit", { "<Control>q" });
@@ -189,7 +212,7 @@ public class MachineLab : Gtk.Application {
         side.append (scroll);
 
         side.append (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
-        var add = new Gtk.Button ();
+        var add = new Gtk.MenuButton ();
         var add_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 6);
         add_box.append (new Gtk.Image.from_icon_name ("list-add-symbolic"));
         add_box.append (new Gtk.Label ("New Machine"));
@@ -200,8 +223,40 @@ public class MachineLab : Gtk.Application {
         add.margin_start = 6;
         add.margin_end = 6;
         add.halign = Gtk.Align.START;
+        add.direction = Gtk.ArrowType.UP;
         add.tooltip_markup = Granite.markup_accel_tooltip ({ "<Control>n" }, "Create a new machine");
-        add.clicked.connect (() => add_machine ());
+        var pop = new Gtk.Popover ();
+        var pbox = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
+        pbox.margin_top = 6;
+        pbox.margin_bottom = 6;
+        pbox.margin_start = 6;
+        pbox.margin_end = 6;
+        foreach (var p in presets) {
+            var item = new Gtk.Button ();
+            item.add_css_class ("flat");
+            var ib = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 10);
+            var ic = new Gtk.Image.from_icon_name ("computer");
+            ic.pixel_size = 28;
+            ic.add_css_class ("ml-row-icon");
+            ic.add_css_class ("ml-c-%d".printf (p.color));
+            ib.append (ic);
+            var tb = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+            var n = new Gtk.Label (p.name);
+            n.xalign = 0;
+            n.add_css_class ("ml-machine-name");
+            var d = new Gtk.Label ("%s · %d CPU · %d GiB".printf (p.blurb, p.cpus, p.mem));
+            d.xalign = 0;
+            d.add_css_class ("ml-machine-sub");
+            tb.append (n);
+            tb.append (d);
+            ib.append (tb);
+            item.child = ib;
+            var preset = p;
+            item.clicked.connect (() => { pop.popdown (); add_machine (preset); });
+            pbox.append (item);
+        }
+        pop.child = pbox;
+        add.popover = pop;
         side.append (add);
         return side;
     }
@@ -239,7 +294,7 @@ public class MachineLab : Gtk.Application {
         b.add_css_class ("pill");
         b.halign = Gtk.Align.CENTER;
         b.margin_top = 12;
-        b.clicked.connect (() => add_machine ());
+        b.clicked.connect (() => add_machine (presets[0]));
         box.append (b);
         page.append (box);
         return page;
@@ -279,11 +334,15 @@ public class MachineLab : Gtk.Application {
         }
     }
 
-    private void add_machine () {
+    private void add_machine (Preset preset) {
         var m = new Machine ();
         m.id = "machine-%s".printf (Uuid.string_random ().substring (0, 8));
         int n = machines.length + 1;
-        m.name = "Machine %d".printf (n);
+        m.name = machines.length == 0 ? preset.name : "%s %d".printf (preset.name, n);
+        m.cpus = preset.cpus;
+        m.mem_gib = preset.mem;
+        m.disk_gib = preset.disk;
+        m.color = preset.color;
         int port = 2222;
         bool clash = true;
         while (clash) {
