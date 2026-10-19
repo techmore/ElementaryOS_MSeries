@@ -24,7 +24,11 @@ and clears the display variables and fixed socket when it stops.
 `PANTHEON_WAYLAND_DISPLAY` selects the explicit socket; without that variable
 the nested development backend continues to allocate an automatic socket, and
 the native backend can also use automatic allocation for manual development
-launches.
+launches. After readiness, `dbus-update-activation-environment --systemd`
+publishes `WAYLAND_DISPLAY` to both D-Bus and the user manager, then the service
+queues `xdg-desktop-portal.service` asynchronously. This addresses a native
+handoff where early portal activation was skipped while the display variable
+was unset; the ordering change is staged and still needs native qualification.
 
 The experimental service retries an unexpected compositor failure, with a
 two-second delay and a limit of three starts within one minute. Once the limit
@@ -36,15 +40,16 @@ have not been exercised in a live GNOME session.
 The directory layout mirrors install paths below `usr/`. A distro package can
 stage the payload under its package root and install it with the compositor
 binary at `/usr/bin/pantheon-compositor`; the repository's
-`../build-deb.sh` creates that arm64 package. On 2026-10-19 the installed opt-in
-session completed a native M1 Pro login and first scanout at 3024x1964 using an
-AR30 framebuffer. The owner confirmed the desktop became usable. Wingpanel and
-the bottom dock and colored wallpaper/background were missing, and startup felt
-slow. The five-minute LightDM rollback was exercised successfully and returned
-to Gala; the owner reports its background was visible again. App behavior,
-lock/logout, recovery under compositor failure, performance and external-monitor
-use remain unqualified. Keep Gala as the rollback session while these gates are
-addressed.
+`../build-deb.sh` creates that arm64 package. On 2026-10-19 package
+`0.1.0+git8023955` completed a native M1 Pro login and initialized the 3024×1964
+internal output. The compositor loaded the configured wallpaper and the
+Wingpanel service ran; the Dock service honored the existing user opt-out
+marker. The owner reported slow startup, and native panel appearance was not
+visually confirmed. The five-minute LightDM rollback returned to Gala. Portal
+clients timed out after activation was skipped before `WAYLAND_DISPLAY` was
+published, and native IBus portal activation failed. App behavior, lock/logout,
+crash recovery, external displays, and portal/IBus behavior remain unqualified.
+Keep Gala as the rollback session while these gates are addressed.
 
 The default desktop shell entries in `/etc/xdg/io.elementary.desktop.wm.shell`
 name `io.elementary.wingpanel` and `io.elementary.dock`. The experimental

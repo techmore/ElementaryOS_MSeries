@@ -187,7 +187,8 @@ login.
 
 `build-deb.sh` builds an arm64 release binary with `native-drm` and packages it
 with the separate experimental session files. It derives shared-library
-dependencies and requires `gnome-session` and `gtklock`. Build it locally with
+dependencies and requires `dbus-bin`, `gnome-session`, `gtklock`, and
+`xdg-desktop-portal`. Build it locally with
 `OUTDIR=/path/to/output mseries/pantheon-rust-compositor/build-deb.sh`. The
 current package above includes the XWayland runtime dependency and is for
 isolated qualification; the build script does not install it. The nested IBus

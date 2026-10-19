@@ -60,7 +60,7 @@ Package: pantheon-rust-compositor
 Version: $VERSION
 Architecture: arm64
 Maintainer: techmore <sdolbec1@gmail.com>
-Depends: $SHLIB_DEPENDS, gnome-session, gtklock, io.elementary.dock, io.elementary.wingpanel, libegl1, libgles2, xwayland
+Depends: $SHLIB_DEPENDS, dbus-bin, gnome-session, gtklock, io.elementary.dock, io.elementary.wingpanel, libegl1, libgles2, xdg-desktop-portal, xwayland
 Description: experimental Rust compositor for the Pantheon M-series session
  An opt-in Smithay Wayland compositor and a separate experimental GNOME session.
 EOF

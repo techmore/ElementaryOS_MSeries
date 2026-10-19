@@ -116,6 +116,20 @@ baseline before calling the migration better or ready for daily use. Track
 startup and runtime faults with journal excerpts and crash signatures so
 regressions can be tied to a specific branch revision.
 
+The current Omarchy shell design offers two relevant startup ideas: one
+long-lived Quickshell process serves panels and overlays through IPC, and its
+Hyprland autostart publishes session variables to systemd and D-Bus before
+launching shell services. This is a responsiveness and activation-ordering
+pattern, not evidence that a full machine boot takes under one second. For
+this host, the last `systemd-analyze` report was 20.8 seconds to the system
+default target and 10.5 seconds to the graphical target; it does not include
+firmware time or measure login-to-usable. The native Rust run separately
+reached compositor readiness about one second after LightDM started, while
+portal requests later timed out after 120 seconds. Track firmware-to-greeter,
+login-to-compositor, login-to-panel, and login-to-usable as separate intervals.
+
+References: [Omarchy shell architecture](https://github.com/maralcbr/omarchy-mx-mac/blob/main/shell/README.md), [Omarchy session autostart](https://github.com/omacom/omarchy/blob/quattro/default/hypr/autostart.lua). The Omarchy-MX README says that fork is feature-frozen and directs new Apple Silicon work to `omacom/omarchy-mac`.
+
 `collect-session-metrics.sh` provides a read-only, per-process CPU/RSS sampler
 for Gala or the Rust compositor, panels and dock. It records the session label,
 workload, display mode, timestamps and battery power/capacity when exported by
