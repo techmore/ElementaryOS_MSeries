@@ -7779,3 +7779,7 @@ waits on the owner's signing-key decision (#52).
 - elementary/os main + kmscon default (#917, a6b2376ae8); CodexBar v0.78.0 matches pin; omarchy-mac-pkgs head 1e4c6e2b08.
 - Not verified: lore, asahilinux.org, blog, Mesa/PipeWire versions; audit-upstream.py import failed.
 - Next: owner decision on a read-only 7.2.10 diff against aurora/enhancements/.
+
+## Honeykrisp v3 candidate vs the 7faf04c065 pin — 2026-10-19
+
+Branch `claude/honeykrisp-v3-bump`. Built `joshuaswarren/mesa-1` `honeykrisp-omarchy-v3` (`f144c7949b`) beside the running runtime and compared the omarchy-mlx C++ tests and Mesa cooperative-matrix cases against the 7faf04c065 pin. The candidate segfaults the compiler (`pick_regs` in `agx_ra`) on 16x16x16 f16 cooperative matrices at workgroup sizes other than 32; the pin passes. **Pin unchanged; candidate not promoted.** Bisected to `ff013781c00` (skip the compute register-pressure scheduler); `AGX_SCHED_COMPUTE=1` avoids the crash. No decode A/B was run because the Qwen3.5 MLX weights are absent. The Mesa issue draft is retained but not posted. Details: `mseries/local-ai/receipts/2026-10-19-honeykrisp-v3-candidate.md`. Next: owner decision on publishing the issue and fetching weights for a repeated decode A/B.
