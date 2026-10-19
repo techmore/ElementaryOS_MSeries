@@ -16,6 +16,7 @@ it does not imply that the current prototype supports it.
 | First usable session | Launch and stop the session predictably; run ordinary Wayland apps; focus, raise, move, resize, maximize, minimize, close and fullscreen windows; recover from a compositor exit | Current Gala session unit and window-management source; app use across the M-series handoff | Own the Wayland display, seat, xdg-shell lifecycle, visible initial placement and focus, stacking, basic window state, startup readiness and orderly failure/restart behavior |
 | M-series panel and dock | Preserve panel and dock placement, keep windows out of visible dock space, return that space when the dock hides, support full-height/notch layout and monitor/scale changes | [`display-space`](../display-space/README.md), including 3024×1964 full-height panel, dock work area and hide/reveal behavior | Implement the existing Pantheon panel/dock shell protocol (or a small maintained successor) and usable-area/work-area updates. Leave panel rendering and dock UI in their existing apps |
 | Display and input | Use the built-in panel at the configured scale; survive internal display changes and connected-display hotplug when the kernel exposes a usable output; keyboard, pointer, shortcuts and Command/Ctrl mapping | [`display-profiles`](../display-profiles/README.md), [`window-snapping`](../window-snapping/README.md), handoff display/input fixes | Output enumeration, mode/layout application and rollback; keyboard/pointer events; map absolute pointer coordinates to the complete logical desktop; xkb layouts and shortcut routing. Keep dock video link training in kernel/DCP scope |
+| Input methods and dictation | Keep IBus composition and focus-bound F5 Unicode output working in focused Wayland fields; retain the configured `mozc-jp` source | [F5 app qualification](../dictation/F5-ENGLISH-ACCEPTANCE.md) records the active IBus output workflow; current sources include US XKB and IBus `mozc-jp` | Advertise text-input-v3 and a trusted input-method-v2 global, track keyboard/text focus and input-method popups; qualify actual IBus commits in installed GTK/Qt apps |
 | Existing X11 clients | Launch rootless XWayland clients, keep keyboard focus, clipboard and PRIMARY selection exchange usable, and export the X display to session-activated apps | Current Pantheon session exposes `ibus-x11`, `ChatGPT`, and `mutter-x11-frames` as Xwayland clients | XWayland startup/window management and session `DISPLAY` propagation are implemented in the Rust prototype; keyboard, clipboard and PRIMARY selection paths compile but still need nested and on-device runtime qualification |
 | M-series render-to-display bridge | Render ordinary client surfaces on the Asahi GPU and present them through the Apple display controller | Read-only M1 Pro inventory: Asahi `/dev/dri/card1` exposes `renderD128` but no KMS resources; Apple `/dev/dri/card2` owns connected `eDP-1` and `DP-2` and has no EGL device | For this measured topology, import/share rendered buffers across the two DRM devices, allocate scanout buffers on the display controller, and handle import/presentation failure without losing the session |
 | Window arrangement | Native half snapping and the four quarter positions; preserve work-area geometry as the dock appears or hides; move windows between displays | [`window-snapping`](../window-snapping/README.md), [`display-space`](../display-space/README.md) | Basic tiling and monitor movement only where this behavior belongs to the compositor; keep shortcut policy configurable and test window geometry against the current work area |
@@ -24,8 +25,8 @@ it does not imply that the current prototype supports it.
 ## Conditional work, driven by an observed need
 
 Add these only when an M-series workflow depends on them, and keep each as a
-separate acceptance item: IBus/input-method support for the installed input method; accessibility protocols/actions used by
-the owner's setup; screencast/remote-desktop portal support for screen sharing;
+separate acceptance item: accessibility protocols/actions used by the owner's
+setup; screencast/remote-desktop portal support for screen sharing;
 touch/gestures if the selected hardware and workflow use them. The measured M1
 Pro topology already requires cross-device buffer sharing for native display
 output; additional GPU topologies remain conditional.
@@ -34,9 +35,9 @@ presence in Mutter is not by itself a reason to reproduce them in the first
 cut.
 
 On the current host, the configured sources are US XKB and IBus `mozc-jp`, with
-US selected. `ibus` and `ibus-mozc` are installed. This confirms the input
-method is available but does not establish it as an active daily workflow; keep
-the IBus bridge conditional until that workflow is confirmed.
+US selected. The active F5 dictation workflow uses focus-bound IBus output;
+`mozc-jp` composition itself is not currently selected and still needs its own
+acceptance check.
 
 Keep notification UI, app launchers, panel/dock rendering, settings surfaces,
 wallpaper and other shell UI in their existing Pantheon components unless a

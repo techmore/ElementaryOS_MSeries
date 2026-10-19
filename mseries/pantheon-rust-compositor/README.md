@@ -35,8 +35,10 @@ options, and repeat settings from GNOME GSettings. This applies the M-series
 `ctrl:swap_lwin_lctl` Command/Ctrl mapping. The compositor polls settings
 once per second and applies layout, option, and repeat changes live; this path
 is build-checked but not runtime-qualified. The current source is US;
-`mozc-jp` is installed but inactive, so IBus remains a conditional workflow
-rather than a first-session requirement.
+`mozc-jp` is installed but inactive. F5 dictation is an active IBus workflow
+and inserts committed Unicode into focused fields; the Rust compositor now
+advertises Smithay text-input-v3/input-method-v2 for that path, but still needs
+qualification with the running IBus daemon and a native Wayland field.
 
 The prototype now starts Smithay's rootless XWayland window manager, maps X11
 windows into the shared desktop space, routes move/resize, maximize,

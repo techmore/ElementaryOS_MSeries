@@ -12,7 +12,7 @@ use smithay::{
             timer::{TimeoutAction, Timer},
         },
         wayland_server::{
-            Display, DisplayHandle, Resource,
+            Client, Display, DisplayHandle, Resource,
             backend::{ClientData, ClientId, DisconnectReason},
             protocol::wl_surface::WlSurface,
         },
@@ -23,12 +23,14 @@ use smithay::{
         fractional_scale::{
             FractionalScaleHandler, FractionalScaleManagerState, with_fractional_scale,
         },
+        input_method::InputMethodManagerState,
         output::OutputManagerState,
         selection::{data_device::DataDeviceState, primary_selection::PrimarySelectionState},
         session_lock::{LockSurface, SessionLockManagerState, SessionLocker},
         shell::xdg::XdgShellState,
         shm::ShmState,
         socket::ListeningSocketSource,
+        text_input::TextInputManagerState,
         viewporter::ViewporterState,
         xdg_activation::{
             XdgActivationHandler, XdgActivationState, XdgActivationToken, XdgActivationTokenData,
@@ -49,6 +51,25 @@ use crate::shell_compat::ShellCompatHandle;
 use crate::tiling::{CornerSnapPreview, TilingBindings};
 #[cfg(feature = "native-drm")]
 use smithay::reexports::calloop::channel::Sender;
+
+fn is_ibus_input_method_client(client: &Client, display: &DisplayHandle) -> bool {
+    use std::os::unix::fs::MetadataExt;
+
+    let Ok(credentials) = client.get_credentials(display) else {
+        return false;
+    };
+    let Ok(current_user) = std::fs::metadata("/proc/self") else {
+        return false;
+    };
+    if credentials.uid != current_user.uid() {
+        return false;
+    }
+
+    std::fs::read_link(format!("/proc/{}/exe", credentials.pid))
+        .ok()
+        .and_then(|path| path.file_name().map(|name| name.to_owned()))
+        .is_some_and(|name| name == "ibus-daemon")
+}
 
 pub struct PantheonCompositor {
     pub start_time: std::time::Instant,
@@ -84,6 +105,8 @@ pub struct PantheonCompositor {
     pub(crate) keyboard_config: crate::input::StartupKeyboardConfig,
     pub data_device_state: DataDeviceState,
     pub primary_selection_state: PrimarySelectionState,
+    pub text_input_manager_state: TextInputManagerState,
+    pub input_method_manager_state: InputMethodManagerState,
     pub pantheon_shell_state: PantheonShellState,
     pub display_config: DisplayConfigHandle,
     pub shell_compat: ShellCompatHandle,
@@ -171,6 +194,12 @@ impl PantheonCompositor {
         // Data device is responsible for clipboard and drag-and-drop
         let data_device_state = DataDeviceState::new::<Self>(&dh);
         let primary_selection_state = PrimarySelectionState::new::<Self>(&dh);
+        let text_input_manager_state = TextInputManagerState::new::<Self>(&dh);
+        let input_method_display_handle = dh.clone();
+        let input_method_manager_state =
+            InputMethodManagerState::new::<Self, _>(&dh, move |client| {
+                is_ibus_input_method_client(client, &input_method_display_handle)
+            });
         let pantheon_shell_state = PantheonShellState::new::<Self>(&dh);
         let (display_config, apply_requests) = DisplayConfigHandle::start();
         event_loop.handle().insert_source(
@@ -302,6 +331,8 @@ impl PantheonCompositor {
             keyboard_config,
             data_device_state,
             primary_selection_state,
+            text_input_manager_state,
+            input_method_manager_state,
             pantheon_shell_state,
             display_config,
             shell_compat,

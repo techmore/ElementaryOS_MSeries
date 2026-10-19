@@ -101,10 +101,13 @@ Rootless XWayland startup, X11 window management, keyboard routing, session
 and compile-checked, but still need runtime qualification. Native multi-output
 enumeration and hotplug reconciliation exist; configuration rejects output
 disabling, mirroring, unsupported monitor properties and nested mode changes.
-Monitor modeset/rollback and hotplug remain unqualified on hardware. IBus text
-input, accessibility protocol support, screen-sharing portals, touch input and
-production crash recovery remain unimplemented or unqualified; add them only
-when an observed Pantheon workflow requires them.
+Monitor modeset/rollback and hotplug remain unqualified on hardware. Smithay's
+text-input-v3 and input-method-v2 globals are now wired for the trusted IBus
+daemon, including input-method popup tracking; this path is compile-checked but
+still needs a real IBus-to-Wayland field qualification. Accessibility protocol
+support, screen-sharing portals, touch input and production crash recovery
+remain unimplemented or unqualified; add them only when an observed Pantheon
+workflow requires them.
 
 `native-drm` enables Smithay's DRM, GBM, libinput, udev, libseat, EGL, and
 multi-GPU dependencies. The executable defaults to nested Winit; only
