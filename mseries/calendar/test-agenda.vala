@@ -567,11 +567,71 @@ class AgendaTest : Object {
         return text;
     }
 
+    string header_text (Gtk.Widget root, string property) {
+        string text;
+        named (root, "verse-day").get (property, out text);
+        return text;
+    }
+
+    async void study_checks (Gtk.Window window) throws Error {
+        var study = (Gtk.ToggleButton) named (widget, "verse-mode-study");
+        assert (study.label == "Titus" && study.sensitive);
+        study.active = true;
+        yield expect ("About the Letter");
+        assert (header_text (widget, "label") == "Titus");
+        var previous = (Gtk.Button) named (widget, "verse-previous");
+        var next = (Gtk.Button) named (widget, "verse-next");
+        var overview = (Gtk.Button) named (widget, "verse-today");
+        assert (overview.label == "Overview" && !overview.sensitive && !previous.sensitive);
+        assert (!named (widget, "study-passage").visible);
+        assert (!((Gtk.Button) named (widget, "verse-copy")).sensitive);
+        for (int i = 0; i < 5; i++) yield pause ();
+        preview (window, "study-overview");
+
+        next.clicked ();
+        assert (header_text (widget, "label") == "Titus 1:1–4");
+        assert (header_text (widget, "secondary-text") == "A Greeting Full of the Gospel · 1 of 9");
+        var passage = ((Gtk.Label) named (widget, "study-passage")).get_text ();
+        assert (passage.has_prefix ("1\u2009Paul, a servant of God"));
+        assert (passage.contains ("4\u2009to Titus, my true child"));
+        assert (((Gtk.Label) named (widget, "study-insight")).label.contains ("compressed sermon"));
+        for (int i = 0; i < 6; i++) next.clicked ();
+        assert (header_text (widget, "label") == "Titus 3:1–7");
+        for (int i = 0; i < 5; i++) yield pause ();
+        preview (window, "study-section");
+        for (int i = 0; i < 5; i++) next.clicked ();
+        assert (header_text (widget, "label") == "Titus 3:12–15" && !next.sensitive && previous.sensitive);
+        ((Gtk.Button) named (widget, "verse-copy")).clicked ();
+        yield expect ("Copied");
+        var copied = yield widget.get_clipboard ().read_text_async (null);
+        assert (copied.has_prefix ("Titus 3:12–15 (WEB)\nWhen I send Artemas to you"));
+        assert (!copied.contains ("{") && copied.has_suffix ("Grace be with you all. Amen."));
+        yield expect ("Copy Passage");
+
+        // A fresh panel (as after logging in) reopens the study on the same section.
+        void* symbol;
+        var module = Module.open (library, ModuleFlags.LAZY);
+        assert (module.symbol ("get_indicator", out symbol));
+        var second = ((IndicatorFactory) symbol) (module, Wingpanel.ServerType.SESSION).get_widget ();
+        assert (((Gtk.ToggleButton) named (second, "verse-mode-study")).active);
+        assert (header_text (second, "label") == "Titus 3:12–15");
+
+        // Back to the daily verse; the study keeps its place for next time.
+        indicator.closed ();
+        indicator.opened ();
+        assert (header_text (widget, "label") == "Titus 3:12–15");
+        ((Gtk.ToggleButton) named (widget, "verse-mode-daily")).active = true;
+        assert (header_text (widget, "label") == "Verse of the Day");
+        assert (verse_date ().has_suffix (" · " + new GLib.DateTime.now_local ().format ("%A, %B %-d")));
+        assert (((Gtk.Button) named (widget, "verse-today")).label == "Today");
+        stdout.printf ("PASS Titus study: overview, sections, verse numbers, copy, remembered place\n");
+    }
+
     async void verse_checks (Gtk.Window window) throws Error {
         var stack = find_stack (widget);
         var page = stack.get_page (stack.get_child_by_name ("verse"));
         assert (page.icon_name == "list-add-symbolic");
-        assert (page.title == "Verse of the Day");
+        assert (page.title == "Bible");
         stack.visible_child_name = "verse";
         var data = GLib.resources_lookup_data ("/io/elementary/desktop/wingpanel/datetime/daily-verses.tsv",
             GLib.ResourceLookupFlags.NONE);
@@ -595,7 +655,7 @@ class AgendaTest : Object {
         string[,] feasts = {
             { "2026-12-24", "Isaiah 9:6" }, { "2026-12-25", "Luke 2:10-12" },
             { "2027-01-01", "Lamentations 3:22-23" }, { "2027-01-06", "Matthew 2:10-11" },
-            { "2026-02-18", "Joel 2:13" }, { "2026-03-29", "John 12:13" },
+            { "2026-02-18", "Joel 2:13" }, { "2026-03-29", "John 12:12-13" },
             { "2026-04-03", "Isaiah 53:5" }, { "2026-04-05", "Matthew 28:6" },
             { "2026-05-24", "Acts 2:4" }, { "2026-11-26", "Psalm 100:4-5" },
             { "2027-03-28", "Matthew 28:6" }, { "2027-11-25", "Psalm 100:4-5" },
@@ -1099,6 +1159,7 @@ class AgendaTest : Object {
             preview (window, "calendar-tasks");
             stdout.printf ("PASS tabs, separate calendars with shared UID, undated task\n");
             yield verse_checks (window);
+            yield study_checks (window);
             find_stack (widget).visible_child_name = "tasks";
 
             events.modify_object_sync (new ICal.Component.from_string (event ("Updated event")), ECal.ObjModType.ALL, ECal.OperationFlags.NONE, null);
@@ -1144,7 +1205,10 @@ class AgendaTest : Object {
         loop.quit ();
     }
 
+    string library;
+
     public int execute (string library) {
+        this.library = library;
         var module = Module.open (library, ModuleFlags.LAZY);
         assert (module != null);
         module.make_resident ();

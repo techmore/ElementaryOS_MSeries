@@ -82,6 +82,8 @@ jobs:
       - name: Install deps
         run: sudo apt-get update && sudo apt-get install just podman zstd bison flex device-tree-compiler mtools fdisk shellcheck -y
 
+      - name: Signal accent palette completeness
+        run: python3 mseries/test-signal-accent.py
       - name: Shell syntax check (M-series scripts)
         run: |
           set -e

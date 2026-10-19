@@ -16,7 +16,7 @@ bridge over D-Bus; it is hidden when the bridge is absent. Patch:
 `json-glib-1.0` (already in the factory build packages).
 
 Verification: `bash mseries/calendar/test-agenda.sh build/libdatetime.so` passes
-all 26 groups (22 existing + 4 new) in light and dark on Xvfb with a private
+all 27 groups (23 existing + 4 new) in light and dark on Xvfb with a private
 D-Bus and private XDG dirs, including `XDG_STATE_HOME`.
 
 Homeboard bridge (owner's private `techmore/homeboard`, `linux/`): due dates and
@@ -41,6 +41,26 @@ installed, D-Bus actions exported. Google sign-in remains the owner's step.
 
 Next: land the Homeboard change, bump the pin, install the bridge, owner signs in,
 then check a real round trip (tick in the dropdown → Homeboard within seconds).
+## Signal Granite palette completeness — 2026-10-18
+
+PR #222's Granite path now maps Signal brand/logo blue `#3b45fd` as well as the
+UI color family. Three focused tests cover every system accent, fixed-width
+asset replacement including uppercase logo colors, and custom-color fallback;
+the validation workflow runs them. This fixes the reviewed regression without
+claiming the broader native app or screenshot drag work in issue #227. No local
+Signal installation, account migration or application restart was performed.
+
+## Diagnostic entry armed once; no reboot — 2026-10-18
+
+Owner explicitly authorized arming `elementary-aurora20-enh1-diagnostic` for one
+boot, without rebooting. Verified image hashes and GRUB syntax first; then
+`grub-reboot` set exactly that next_entry. Host still runs `.20`. GRUB clears
+next_entry before launching the selected kernel; subsequent normal boots retain
+`mseries-full-height` on `.20`. [Arming receipt](aurora/hardware-tests/2026-10-18-j314s-enh1-diagnostic-armed.json).
+Watch the last initcall and mseries-boot stage markers; capture the last screen
+if the trial stalls. Recovery: power off if unresponsive, then explicitly select
+“elementary OS (M-series full-height desktop)” in the five-second GRUB menu.
+No candidate boot result or fix is claimed yet. Do not reboot on the owner's behalf.
 
 ## Diagnostic candidate staged, no trial armed — 2026-10-18
 
@@ -5863,4 +5883,22 @@ a figure space): the date is now %-d. 22/22 light and dark; 14 feast-date
 assertions for 2026-2028; patch rebuilds byte-identically; image wiring OK.
 Open question for owner: ~70 verses carry an unpaired quotation mark from their
 neighbouring verse (WEB text kept unchanged on purpose).
+
+### Titus study and quotation cleanup — 2026-10-18 (same branch/PR #211)
+
+Owner's church is preaching through Titus. The + tab (tooltip now "Bible")
+gains a Daily | Titus toggle. Titus has an overview plus 9 sections covering all
+46 verses, with WEB passage and raised verse numbers, an original Insight and a
+Reflect question. ◀ Overview ▶ navigation, section links and Copy Passage.
+Mode and section persist in ~/.config/mseries/verse-of-the-day.ini (written only
+on change). Data: mseries/calendar/titus-study.txt -> titus-study.tsv (GResource),
+built by build-verses.py, which checks full single coverage of Titus.
+Quotations: owner delegated the choice. An order-aware check widened 23
+references and trimmed 35 edge-only unmatched marks (no words changed). 11 kept
+as-is (intro + open quote, e.g. Jeremiah 29:11).
+Titus 3:4-5 and 3:8 were added to the daily list (405 verses, 395 unreserved).
+Verified: 23/23 light and dark (new group: overview, section navigation, ends
+disabled, verse numerals, clipboard, persistence across a freshly constructed
+panel, return to Daily). Patch rebuilds byte-identically; image wiring OK.
+Not yet installed: the desktop still runs the seasonal build from 19:39.
 
