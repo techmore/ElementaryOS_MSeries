@@ -132,8 +132,11 @@ anchor and submitting shared-memory buffers. The normal local Dock command is
 a wrapper; its existing user-disabled marker makes it run `sleep infinity`, so
 the earlier “Dock process alive” check was a false positive. The marker remains
 untouched, and the visual test launched the stock executable directly only
-inside the private session. Hide/reveal behavior and native-session appearance
-remain unqualified. No Gala session was replaced.
+inside the private session. In that isolated profile's `overlapping-focused`
+mode, a maximized focused GTK window hid the Dock, bottom-edge pointer motion
+revealed it over the window, and closing the window restored it. The user's
+saved hide mode and native-session appearance remain unqualified. No Gala
+session was replaced.
 
 ## What is complete and what has been tested
 
@@ -145,7 +148,7 @@ remain unqualified. No Gala session was replaced.
 | XWayland | Private Xvfb Zenity window mapped and accepted synthetic keyboard input; exposed through window-list D-Bus | Isolated smoke passed |
 | Nested text input | Private GTK Wayland field accepted an IBus/Mozc Japanese commit | Isolated smoke passed; native input remains unqualified |
 | Pantheon panel protocol | Wingpanel connected in private nested Wayland, requested a top panel, attached shared-memory buffers and rendered upright after the nested Winit transform correction | Nested visual smoke passed; panel absent from native session |
-| Pantheon shell clients | Current release rendered Wingpanel at top and stock Dock at bottom in isolated Xvfb; Dock trace requested bottom anchoring and submitted shared-memory buffers | Nested visual smoke passed; native appearance and hide/reveal behavior remain open. The local Dock wrapper remains intentionally disabled by the existing user marker |
+| Pantheon shell clients | Current release rendered Wingpanel at top and stock Dock at bottom in isolated Xvfb; with private `overlapping-focused` mode, a maximized GTK window hid Dock, bottom-edge motion revealed it, and closing restored it | Nested visual and hide/reveal smoke passed; host hide mode and native appearance remain open. The local Dock wrapper remains intentionally disabled by the existing user marker |
 | Desktop wallpaper | Loaded the configured 5000×2813 elementary wallpaper and captured it behind a GTK Zenity window in isolated Xvfb; fresh nested shell run showed wallpaper upright | Nested visual smoke passed; native output and live setting changes remain open |
 | Native full desktop | In the first Rust login, the owner observed slow startup, no top panel, no bottom dock, and no colored background. After returning to the regular desktop, a background was visible, but the active session was uncertain | Incomplete; wallpaper rendering landed afterward and has not been qualified on native output |
 | Native keyboard, pointer, external display, lock/unlock, sharing, accessibility, crash recovery | No end-to-end qualification in the native session | Open |
@@ -154,9 +157,9 @@ remain unqualified. No Gala session was replaced.
 The current login observation is useful development evidence, not a daily-use
 readiness result. Continue testing in the isolated experimental session while
 Gala remains the working fallback. The next development gate is to exercise
-Dock hide/reveal behavior and basic shell interaction in the nested session,
-then qualify startup and the wallpaper path on native output before another
-native login. The existing user-disabled Dock marker should remain in effect
+basic shell interaction and startup timing in the nested session, then qualify
+startup and the wallpaper path on native output before another native login.
+The existing user-disabled Dock marker should remain in effect
 unless the user explicitly chooses to re-enable Dock in the desktop session.
 After that, measure the same startup, idle and representative workloads under
 Gala and Rust, and record crashes and recovery behavior.

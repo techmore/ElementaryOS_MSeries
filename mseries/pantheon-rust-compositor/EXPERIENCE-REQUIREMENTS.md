@@ -121,8 +121,14 @@ overlapping windows. Pointer motion at the output edge reveals hidden panels;
 work-area reservations are released while hidden and restored while visible,
 with managed windows reconfigured on transitions. Hiding currently moves the
 panel immediately without an animation. The active host Dock setting is
-`overlapping-window`; the code has compile checks but no Dock runtime
-qualification yet. It updates already-maximized windows when work areas change.
+`overlapping-window`. In an isolated Xvfb session, the stock Dock rendered at
+the bottom; with its private-profile `overlapping-focused` mode, a maximized
+focused GTK window hid it, bottom-edge pointer motion revealed it over that
+window, and closing the window restored it. The host's saved hide mode and
+native behavior remain unqualified. The existing local wrapper is held at
+`sleep infinity` by the user's disabled marker; the test invoked
+`/usr/bin/io.elementary.dock` directly without changing that marker. The
+compositor updates already-maximized windows when work areas change.
 The last local `cargo check`
 and `cargo build` pass. Its protocol probe completed under Xvfb over a nested
 Wayland socket. Installed Wingpanel 8.0.4 also connected in an isolated nested
@@ -158,10 +164,12 @@ retains a window, and a later valid activation request restores it. Minimize /
 restore behavior remains runtime-unverified. It also
 implements the `org.gnome.Shell`
 accelerator registration and activation path: pressing the registered
-`Super+N` chord emits `AcceleratorActivated` in the nested run. Dock integration
-and physical media-key activation remain unqualified. The first M1 Pro scanout
-passed in an isolated native login, but one scanout is not full session or
-hardware qualification.
+`Super+N` chord emits `AcceleratorActivated` in the nested run. Wingpanel and
+Dock have nested visual smoke coverage, including Dock hide/reveal in the
+private `overlapping-focused` mode. The host's configured hide mode, native
+Dock behavior and physical media-key activation remain unqualified. The first
+M1 Pro scanout passed in an isolated native login, but one scanout is not full
+session or hardware qualification.
 
 The compositor now implements Smithay's `ext-session-lock-v1` protocol and the
 observed `org.gnome.ScreenSaver` action interface. Lock requests suppress
