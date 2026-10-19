@@ -141,6 +141,11 @@ For example, collect one-minute idle samples at a recorded mode with
 `./collect-session-metrics.sh gala 60 idle 3024x1964 > gala-idle.csv` and
 repeat in the Rust session with the same arguments except `rust`. Collect a
 separate pair for each named workload; do not compare unlike runs.
+`collect-session-startup.sh gala` or `collect-session-startup.sh rust` records
+the OS boot critical chain and journal milestones for the display manager,
+compositor, shell clients, portal and IBus. Run it after each login and keep the
+output with a manual timestamp for first usable interaction; journal service
+readiness alone is not proof that the desktop was visibly ready.
 
 The nested prototype serves the Pantheon shell protocol v2, places a panel from
 its anchor/size/offset, and honors hide modes by tracking maximized/focused or
