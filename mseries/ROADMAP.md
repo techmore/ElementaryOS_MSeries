@@ -1,5 +1,56 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Signal Granite palette completeness — 2026-10-18
+
+PR #222's Granite path now maps Signal brand/logo blue `#3b45fd` as well as the
+UI color family. Three focused tests cover every system accent, fixed-width
+asset replacement including uppercase logo colors, and custom-color fallback;
+the validation workflow runs them. This fixes the reviewed regression without
+claiming the broader native app or screenshot drag work in issue #227. No local
+Signal installation, account migration or application restart was performed.
+
+## Diagnostic entry armed once; no reboot — 2026-10-18
+
+Owner explicitly authorized arming `elementary-aurora20-enh1-diagnostic` for one
+boot, without rebooting. Verified image hashes and GRUB syntax first; then
+`grub-reboot` set exactly that next_entry. Host still runs `.20`. GRUB clears
+next_entry before launching the selected kernel; subsequent normal boots retain
+`mseries-full-height` on `.20`. [Arming receipt](aurora/hardware-tests/2026-10-18-j314s-enh1-diagnostic-armed.json).
+Watch the last initcall and mseries-boot stage markers; capture the last screen
+if the trial stalls. Recovery: power off if unresponsive, then explicitly select
+“elementary OS (M-series full-height desktop)” in the five-second GRUB menu.
+No candidate boot result or fix is claimed yet. Do not reboot on the owner's behalf.
+
+## Diagnostic candidate staged, no trial armed — 2026-10-18
+
+PR #229 merged as `387d1ec`. The diagnostic image regenerated from merged source
+matches `b7c6a3e74e1c90d4d5925551cdfa44d41e38f1e0f83d456c4a5eb1bea9dd8c35`
+and is staged separately at
+`/boot/initrd.img-7.1.12-elementary-aurora20-enh1-diagnostic`. A non-default manual
+GRUB entry `elementary-aurora20-enh1-diagnostic` uses the existing candidate kernel
+with initcall/debug logging arguments. GRUB syntax passes. The complete grubenv
+bytes are unchanged and next_entry remains empty. Original candidate, working
+.20 image/initramfs, shared boot.bin and generated grub.cfg hashes are unchanged.
+[Staging receipt](aurora/hardware-tests/2026-10-18-j314s-enh1-diagnostic-staging.json)
+records exact hashes and the private rollback directory. No reboot, trial arming
+or hardware qualification. The owner must explicitly authorize the later test;
+the cause of the original hang remains unknown.
+
+## Candidate kernel boot hang: offline audit — 2026-10-18
+
+Owner reports kernel messages followed by a hang before completing candidate
+boot. Current host is back on `.20`; no retained candidate journal/pstore cause.
+[Review](aurora/hardware-tests/2026-10-18-j314s-enh1-boot-hang.md) records unchanged
+staged hashes, exact preserved unlock userspace, 93 matching candidate modules
+and valid archive dependency references. No causal driver fault was established.
+Added a read-only archive audit and a separate offline diagnostic initramfs
+preparer with stage markers and preserved hook failure status. Real candidate
+archive audit and generated shell syntax pass; five new regression tests pass.
+No kernel/bootloader/module installation, boot selection change or reboot.
+Next: review diagnostics before any separately authorized hardware trial; failed
+candidate remains unqualified. The login-time capture cannot diagnose pre-login
+hangs and QEMU without the required console driver was inconclusive.
+
 ## Screen-share real dock qualification — 2026-10-18
 
 PR #225 was exercised with its real share server and GTK app on a private Gala
