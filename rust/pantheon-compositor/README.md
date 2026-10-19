@@ -66,6 +66,13 @@ yet. The feature-enabled `cargo check` and `cargo build` pass locally after
 installing the host `libseat-dev` package; neither command initializes a native
 session.
 
+With `native-drm` enabled, `pantheon-drm-probe` safely enumerates EGL devices
+without opening a session or changing display modes. On the current M-series
+host it finds EGL/GBM rendering on `/dev/dri/card1` (`/dev/dri/renderD128`,
+Asahi), while the Apple display-controller `/dev/dri/card2` has no EGL device.
+The native backend therefore needs Smithay's explicit multi-GPU render/import
+path to connect the Asahi renderer to Apple KMS; single-node setup is not enough.
+
 Relative pointer motion now updates Wayland pointer focus and dispatches motion
 through active compositor grabs; coordinates are clamped to the mapped output
 bounds. This allows the existing xdg move/resize grab implementations to receive

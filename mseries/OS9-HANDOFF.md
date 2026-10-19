@@ -34,9 +34,13 @@ an opt-in `native-drm` Cargo feature to stage Smithay's DRM/GBM,
 libinput/udev/libseat, EGL and multi-GPU dependencies. Installed `libseat-dev`
 0.9.2-2 on the host; both `cargo check --features native-drm --bins` and
 `cargo build --features native-drm --bins` pass. The default Winit binary also
-builds. No native session startup is wired or tested yet. Next: implement an
-opt-in native DRM path against the exposed M-series device stack. The WD22TB4
-HDMI G3 DCP/kernel issue remains separate. Scope and limits:
+builds. Added and ran `pantheon-drm-probe`, which only enumerates EGL devices.
+It identifies Asahi `/dev/dri/card1` plus `/dev/dri/renderD128` for rendering;
+the Apple display-controller `/dev/dri/card2` has no EGL device. Native startup
+will therefore need the multi-GPU import path across the renderer and KMS
+devices. No native session startup is wired or tested yet. Next: implement an
+opt-in DRM path with this split-device topology. The WD22TB4 HDMI G3 DCP/kernel
+issue remains separate. Scope and limits:
 `mseries/pantheon-rust-compositor/`.
 
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18

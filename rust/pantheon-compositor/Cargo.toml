@@ -28,6 +28,11 @@ path = "src/main.rs"
 name = "pantheon-shell-probe"
 path = "src/bin/pantheon-shell-probe.rs"
 
+[[bin]]
+name = "pantheon-drm-probe"
+path = "src/bin/pantheon-drm-probe.rs"
+required-features = ["native-drm"]
+
 [dependencies]
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 tracing = "0.1"
