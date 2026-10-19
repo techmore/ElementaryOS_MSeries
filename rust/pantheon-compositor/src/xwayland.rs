@@ -3,6 +3,7 @@ use std::process::Stdio;
 use smithay::{
     desktop::Window,
     input::keyboard::KeyboardTarget,
+    input::pointer::Focus,
     reexports::calloop::EventLoop,
     utils::{Logical, Point, Rectangle},
     wayland::{
@@ -22,6 +23,9 @@ use smithay::{
 };
 
 use crate::PantheonCompositor;
+use crate::grabs::{
+    MoveSurfaceGrab, ResizeSurfaceGrab, resize_grab::ResizeEdge as PantheonResizeEdge,
+};
 
 pub fn start(
     event_loop: &mut EventLoop<'static, PantheonCompositor>,
@@ -184,6 +188,10 @@ impl XwmHandler for PantheonCompositor {
         {
             tracing::warn!(?error, "could not unmap X11 window");
         }
+        if self.x11_keyboard_focus.as_ref() == Some(&surface) {
+            self.set_x11_keyboard_focus(None, smithay::utils::SERIAL_COUNTER.next_serial());
+            self.focus_next_window();
+        }
     }
 
     fn destroyed_window(&mut self, _xwm: XwmId, _window: X11Surface) {}
@@ -240,16 +248,13 @@ impl XwmHandler for PantheonCompositor {
         self.request_native_redraw();
     }
 
-    fn resize_request(
-        &mut self,
-        _xwm: XwmId,
-        _window: X11Surface,
-        _button: u32,
-        _edge: ResizeEdge,
-    ) {
+    fn resize_request(&mut self, _xwm: XwmId, window: X11Surface, _button: u32, edge: ResizeEdge) {
+        self.begin_x11_resize(&window, edge);
     }
 
-    fn move_request(&mut self, _xwm: XwmId, _window: X11Surface, _button: u32) {}
+    fn move_request(&mut self, _xwm: XwmId, window: X11Surface, _button: u32) {
+        self.begin_x11_move(&window);
+    }
 
     fn allow_selection_access(&mut self, xwm: XwmId, selection: SelectionTarget) -> bool {
         selection == SelectionTarget::Clipboard
@@ -289,9 +294,107 @@ impl XwmHandler for PantheonCompositor {
             clear_data_device_selection(&self.display_handle, &self.seat);
         }
     }
+
+    fn active_window_request(
+        &mut self,
+        _xwm: XwmId,
+        surface: X11Surface,
+        _timestamp: u32,
+        _currently_active_window: Option<X11Surface>,
+    ) {
+        if self.session_locked {
+            return;
+        }
+        let Some(window) = self.find_x11_window(&surface) else {
+            return;
+        };
+        self.space.raise_element(&window, true);
+        self.focus_window_keyboard(&window, smithay::utils::SERIAL_COUNTER.next_serial());
+        #[cfg(feature = "native-drm")]
+        self.request_native_redraw();
+    }
 }
 
 impl PantheonCompositor {
+    fn find_x11_window(&self, surface: &X11Surface) -> Option<Window> {
+        self.space
+            .elements()
+            .find(|window| {
+                window
+                    .x11_surface()
+                    .is_some_and(|candidate| candidate == surface)
+            })
+            .cloned()
+    }
+
+    fn begin_x11_move(&mut self, surface: &X11Surface) {
+        let Some(pointer) = self.seat.get_pointer() else {
+            return;
+        };
+        let Some(start_data) = pointer.grab_start_data() else {
+            return;
+        };
+        let Some(window) = self.find_x11_window(surface) else {
+            return;
+        };
+        let Some(initial_window_location) = self.space.element_location(&window) else {
+            return;
+        };
+        if let Some(wl_surface) = surface.wl_surface() {
+            self.clear_tiling_for_surface(&wl_surface);
+        }
+        self.move_grab_active = true;
+        self.corner_snap_cancelled = false;
+        self.corner_snap_preview = None;
+        let grab = MoveSurfaceGrab {
+            start_data,
+            window,
+            initial_window_location,
+        };
+        pointer.set_grab(
+            self,
+            grab,
+            smithay::utils::SERIAL_COUNTER.next_serial(),
+            Focus::Clear,
+        );
+    }
+
+    fn begin_x11_resize(&mut self, surface: &X11Surface, edge: ResizeEdge) {
+        let Some(pointer) = self.seat.get_pointer() else {
+            return;
+        };
+        let Some(start_data) = pointer.grab_start_data() else {
+            return;
+        };
+        let Some(window) = self.find_x11_window(surface) else {
+            return;
+        };
+        let Some(location) = self.space.element_location(&window) else {
+            return;
+        };
+        if let Some(wl_surface) = surface.wl_surface() {
+            self.clear_tiling_for_surface(&wl_surface);
+        }
+        let edges = match edge {
+            ResizeEdge::Top => PantheonResizeEdge::TOP,
+            ResizeEdge::Bottom => PantheonResizeEdge::BOTTOM,
+            ResizeEdge::Left => PantheonResizeEdge::LEFT,
+            ResizeEdge::TopLeft => PantheonResizeEdge::TOP_LEFT,
+            ResizeEdge::BottomLeft => PantheonResizeEdge::BOTTOM_LEFT,
+            ResizeEdge::Right => PantheonResizeEdge::RIGHT,
+            ResizeEdge::TopRight => PantheonResizeEdge::TOP_RIGHT,
+            ResizeEdge::BottomRight => PantheonResizeEdge::BOTTOM_RIGHT,
+        };
+        let rect = Rectangle::new(location, window.geometry().size);
+        let grab = ResizeSurfaceGrab::start(start_data, window, edges, rect);
+        pointer.set_grab(
+            self,
+            grab,
+            smithay::utils::SERIAL_COUNTER.next_serial(),
+            Focus::Clear,
+        );
+    }
+
     pub(crate) fn set_x11_keyboard_focus(
         &mut self,
         focus: Option<X11Surface>,
