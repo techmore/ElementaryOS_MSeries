@@ -1,10 +1,14 @@
+use gio::{
+    Settings, SettingsBackend, SettingsSchemaSource,
+    prelude::{SettingsExt, SettingsExtManual},
+};
 use smithay::{
     backend::input::{
         AbsolutePositionEvent, Axis, AxisSource, ButtonState, Event, InputBackend, InputEvent,
         KeyboardKeyEvent, PointerAxisEvent, PointerButtonEvent, PointerMotionEvent,
     },
     input::{
-        keyboard::FilterResult,
+        keyboard::{FilterResult, XkbConfig},
         pointer::{AxisFrame, ButtonEvent, MotionEvent, RelativeMotionEvent},
     },
     reexports::wayland_server::protocol::wl_surface::WlSurface,
@@ -12,6 +16,88 @@ use smithay::{
 };
 
 use crate::state::PantheonCompositor;
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct StartupKeyboardConfig {
+    pub model: String,
+    pub layout: String,
+    pub variant: String,
+    pub options: Option<String>,
+    pub repeat_delay: i32,
+    pub repeat_rate: i32,
+}
+
+pub(crate) fn startup_keyboard_config() -> StartupKeyboardConfig {
+    let mut config = StartupKeyboardConfig {
+        model: String::new(),
+        layout: String::new(),
+        variant: String::new(),
+        options: None,
+        repeat_delay: 500,
+        repeat_rate: 33,
+    };
+    let Some(source) = SettingsSchemaSource::default() else {
+        return config;
+    };
+
+    if let Some(schema) = source.lookup("org.gnome.desktop.input-sources", true) {
+        let settings = Settings::new_full(&schema, None::<&SettingsBackend>, None);
+        config.model = settings.string("xkb-model").to_string();
+        config.options = Some(
+            settings
+                .strv("xkb-options")
+                .iter()
+                .map(|option| option.to_string())
+                .collect::<Vec<_>>()
+                .join(","),
+        );
+        let sources = settings
+            .value("sources")
+            .get::<Vec<(String, String)>>()
+            .unwrap_or_default();
+        let current_index = settings.uint("current") as usize;
+        let current = sources.get(current_index);
+        let selected = current
+            .filter(|(kind, _)| kind == "xkb")
+            .or_else(|| sources.iter().find(|(kind, _)| kind == "xkb"));
+        if let Some((_, source_id)) = selected {
+            if let Some((layout, variant)) = source_id.split_once('+') {
+                config.layout = layout.to_owned();
+                config.variant = variant.to_owned();
+            } else {
+                config.layout.clone_from(source_id);
+            }
+        }
+    }
+
+    if let Some(schema) = source.lookup("org.gnome.desktop.peripherals.keyboard", true) {
+        let settings = Settings::new_full(&schema, None::<&SettingsBackend>, None);
+        if !settings.boolean("repeat") {
+            config.repeat_delay = 0;
+            config.repeat_rate = 0;
+        } else {
+            config.repeat_delay = settings.uint("delay").min(i32::MAX as u32) as i32;
+            let interval = settings.uint("repeat-interval");
+            config.repeat_rate = if interval == 0 {
+                33
+            } else {
+                (1000 / interval).min(i32::MAX as u32) as i32
+            };
+        }
+    }
+
+    config
+}
+
+pub(crate) fn xkb_config(config: &StartupKeyboardConfig) -> XkbConfig<'_> {
+    XkbConfig {
+        model: &config.model,
+        layout: &config.layout,
+        variant: &config.variant,
+        options: config.options.clone(),
+        ..XkbConfig::default()
+    }
+}
 
 impl PantheonCompositor {
     pub fn process_input_event<I: InputBackend>(&mut self, event: InputEvent<I>) {

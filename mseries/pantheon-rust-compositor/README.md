@@ -30,6 +30,14 @@ shortcut and multi-output behavior remain open. During a compositor move, the
 snaps the window, and Escape cancels the snap. Fixed-size windows are excluded.
 The drag preview and release path also need runtime qualification.
 
+At startup, the keyboard now loads the user's XKB model, active XKB layout,
+options, and repeat settings from GNOME GSettings. This applies the M-series
+`ctrl:swap_lwin_lctl` Command/Ctrl mapping. The compositor polls settings
+once per second and applies layout, option, and repeat changes live; this path
+is build-checked but not runtime-qualified. The current source is US;
+`mozc-jp` is installed but inactive, so IBus remains a conditional workflow
+rather than a first-session requirement.
+
 Panel reservations and managed maximize/tile layouts are tracked per output
 connector. Maximized/fullscreen windows and popup constraints use the window's
 current output, and removing a panel releases its work area. Multi-output

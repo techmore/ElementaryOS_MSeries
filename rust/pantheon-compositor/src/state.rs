@@ -73,6 +73,7 @@ pub struct PantheonCompositor {
     pub lock_confirmation_outputs: HashSet<String>,
     pub keyboard_focus_before_lock: Option<WlSurface>,
     pub seat_state: SeatState<PantheonCompositor>,
+    pub(crate) keyboard_config: crate::input::StartupKeyboardConfig,
     pub data_device_state: DataDeviceState,
     pub pantheon_shell_state: PantheonShellState,
     pub display_config: DisplayConfigHandle,
@@ -184,9 +185,50 @@ impl PantheonCompositor {
         let mut seat_state = SeatState::new();
         let mut seat: Seat<Self> = seat_state.new_wl_seat(&dh, seat_name);
 
-        // Notify clients that we have a keyboard, for the sake of the example we assume that keyboard is always present.
-        // You may want to track keyboard hot-plug in real compositor.
-        seat.add_keyboard(Default::default(), 200, 25).unwrap();
+        // Initialize the physical keyboard with the user's XKB layout,
+        // Command/Ctrl options, and repeat preferences when the desktop
+        // settings schemas are available.
+        let keyboard_config = crate::input::startup_keyboard_config();
+        if let Err(error) = seat.add_keyboard(
+            crate::input::xkb_config(&keyboard_config),
+            keyboard_config.repeat_delay,
+            keyboard_config.repeat_rate,
+        ) {
+            tracing::warn!(
+                ?error,
+                "configured XKB keymap failed; using environment defaults"
+            );
+            seat.add_keyboard(
+                Default::default(),
+                keyboard_config.repeat_delay,
+                keyboard_config.repeat_rate,
+            )?;
+        }
+        event_loop.handle().insert_source(
+            Timer::from_duration(Duration::from_secs(1)),
+            |_, _, state| {
+                let config = crate::input::startup_keyboard_config();
+                if let Some(keyboard) = state.seat.get_keyboard() {
+                    let keymap_changed = config.model != state.keyboard_config.model
+                        || config.layout != state.keyboard_config.layout
+                        || config.variant != state.keyboard_config.variant
+                        || config.options != state.keyboard_config.options;
+                    if keymap_changed
+                        && let Err(error) =
+                            keyboard.set_xkb_config(state, crate::input::xkb_config(&config))
+                    {
+                        tracing::warn!(?error, "could not apply changed XKB settings");
+                    }
+                    if config.repeat_delay != state.keyboard_config.repeat_delay
+                        || config.repeat_rate != state.keyboard_config.repeat_rate
+                    {
+                        keyboard.change_repeat_info(config.repeat_rate, config.repeat_delay);
+                    }
+                }
+                state.keyboard_config = config;
+                TimeoutAction::ToDuration(Duration::from_secs(1))
+            },
+        )?;
 
         // Notify clients that we have a pointer (mouse)
         // Here we assume that there is always pointer plugged in
@@ -237,6 +279,7 @@ impl PantheonCompositor {
             lock_confirmation_outputs: HashSet::new(),
             keyboard_focus_before_lock: None,
             seat_state,
+            keyboard_config,
             data_device_state,
             pantheon_shell_state,
             display_config,

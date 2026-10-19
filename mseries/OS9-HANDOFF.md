@@ -5699,3 +5699,15 @@ It does not draw caller-supplied text labels or reproduce Pantheon's complete
 OSD styling; physical key activation and visual runtime behavior still need
 qualification. Local default `cargo check`/`cargo build` and the
 `native-drm` build pass. No tests or display session were run.
+
+### Apply the configured XKB keymap and repeat settings — 2026-10-19
+
+The compositor now initializes its XKB model, current XKB source, XKB options,
+and keyboard repeat settings from `org.gnome.desktop.input-sources` and
+`org.gnome.desktop.peripherals.keyboard`. A one-second poll applies live
+changes to the keymap and Wayland repeat info. Current host settings are model
+`pc105+inet`, US layout, `ctrl:swap_lwin_lctl`, repeat enabled, 500 ms delay,
+and 30 ms interval; this preserves the desktop's Command/Ctrl mapping. The
+configured `mozc-jp` IBus source is installed but not selected, and no IBus
+bridge was added. Default and native DRM builds pass. No live key injection or
+layout change was run, so physical mapping and reload remain runtime-unverified.

@@ -33,6 +33,11 @@ They are important capabilities in a general-purpose desktop, but their
 presence in Mutter is not by itself a reason to reproduce them in the first
 cut.
 
+On the current host, the configured sources are US XKB and IBus `mozc-jp`, with
+US selected. `ibus` and `ibus-mozc` are installed. This confirms the input
+method is available but does not establish it as an active daily workflow; keep
+the IBus bridge conditional until that workflow is confirmed.
+
 Keep notification UI, app launchers, panel/dock rendering, settings surfaces,
 wallpaper and other shell UI in their existing Pantheon components unless a
 documented requirement shows they cannot work through the compositor contract.

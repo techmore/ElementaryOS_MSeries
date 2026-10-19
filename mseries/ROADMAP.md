@@ -58,6 +58,12 @@ compile-checked only. It loads shortcut arrays from the installed Mutter,
 Pantheon and GNOME GSettings schemas at session startup, with built-in defaults
 when those schemas are unavailable. Drag-to-corner preview, live binding
 reload, multi-output behavior, and runtime snapping qualification remain open.
+The keyboard's XKB model, active layout, options, and repeat settings now load
+from the user's GNOME input-source and keyboard schemas. A one-second settings
+poll applies layout/option and repeat changes to connected Wayland clients.
+Live behavior has only been compile-checked. The M1 Pro currently selects US
+XKB with `ctrl:swap_lwin_lctl`; its installed `mozc-jp` IBus source is inactive
+and remains conditional.
 Quarter drag previews now appear in the 40-logical-pixel output corners,
 Escape cancels the snap, fixed-size windows are excluded, and release applies
 the selected quarter. This path is compile-checked only.
