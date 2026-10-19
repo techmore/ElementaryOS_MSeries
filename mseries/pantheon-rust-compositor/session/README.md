@@ -31,3 +31,11 @@ Orca and elementary settings-daemon targets. It intentionally does not promise
 that those services or the compositor are fully compatible; this is an
 experimental selection for staged qualification, with Gala still available
 as rollback.
+
+The compositor's `org.gnome.ScreenSaver.Lock` bridge launches `gtklock` by
+default and passes it the session's Wayland socket. A distro package for this
+session must include an `ext-session-lock-v1` client with PAM authentication
+(the Ubuntu `gtklock` package provides this protocol client); the source tree
+does not install it. `PANTHEON_LOCK_COMMAND` can select another installed
+client. Authentication, D-Bus activation and session lock/unlock have not yet
+been runtime-qualified.

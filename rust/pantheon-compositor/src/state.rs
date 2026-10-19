@@ -110,7 +110,6 @@ impl PantheonCompositor {
         let data_device_state = DataDeviceState::new::<Self>(&dh);
         let pantheon_shell_state = PantheonShellState::new::<Self>(&dh);
         let display_config = DisplayConfigHandle::start();
-        let shell_compat = ShellCompatHandle::start();
 
         // A seat is a group of keyboards, pointer and touch devices.
         // A seat typically has a pointer and maintains a keyboard focus and a pointer focus.
@@ -133,6 +132,7 @@ impl PantheonCompositor {
 
         // Setup a wayland socket that will be used to accept clients
         let socket_name = Self::init_wayland_listener(display, event_loop)?;
+        let shell_compat = ShellCompatHandle::start(socket_name.clone());
 
         // Get the loop signal, used to stop the event loop
         let loop_signal = event_loop.get_signal();
@@ -293,6 +293,7 @@ impl PantheonCompositor {
         if self.lock_confirmation_outputs.is_empty() {
             if let Some(confirmation) = self.lock_confirmation.take() {
                 confirmation.lock();
+                self.shell_compat.set_locked(true);
             }
         }
     }

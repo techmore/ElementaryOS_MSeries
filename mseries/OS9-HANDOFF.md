@@ -5572,3 +5572,21 @@ not supply an authentication UI or policy; a Pantheon locker must implement
 the session-lock protocol and authenticate the user. Next: validate a real
 locker in a nested session, then qualify login/lock/unlock in an isolated
 native session before considering this a swap-in capability.
+
+### Pantheon screensaver action bridge — 2026-10-18
+
+Read-only inspection of the running Gala session confirmed that Gala owns
+`org.gnome.ScreenSaver` and exports `Lock`, `GetActive`, `SetActive`,
+`GetActiveTime` and `ActiveChanged`. Added that D-Bus interface to the Rust
+session service. `Lock` and `SetActive(true)` launch `gtklock` by default (or
+the executable named by `PANTHEON_LOCK_COMMAND`) with the compositor's own
+`WAYLAND_DISPLAY`; the active state and signal follow successful protocol lock
+confirmation and authenticated unlock. `SetActive(false)` cannot unlock the
+session; only the session-lock client can send `unlock_and_destroy`. Default
+and `native-drm` checks/builds pass. The host does not have `gtklock` installed,
+and no D-Bus or locker runtime call was made. The experimental session payload
+must depend on a locker package; Gtklock is available in the distro package
+index and upstream documents its use of `ext-session-lock-v1`, but its UI/PAM
+behavior on this Pantheon session remains unqualified. Next: stage the package
+in an isolated nested session, verify D-Bus activation and authentication,
+then exercise lock/unlock without touching Gala's live session.

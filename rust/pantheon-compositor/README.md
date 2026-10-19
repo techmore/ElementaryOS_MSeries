@@ -86,8 +86,10 @@ animated hiding, blur, overview behavior and multi-output work-area updates for
 already maximized windows are not complete. The compositor now implements
 Smithay's `ext-session-lock-v1`: it blanks each output until its lock surface is
 ready, confines input to the locker, and restores the prior keyboard focus on
-unlock. A Pantheon locker/authentication UI and session action wiring are not
-provided, and the protocol has not yet been runtime-qualified. Widget,
+unlock. The compositor exports the observed `org.gnome.ScreenSaver` API and
+launches `gtklock` on `Lock`/`SetActive(true)`; set `PANTHEON_LOCK_COMMAND` to
+select another executable. The locker is not installed by this source tree, and
+the D-Bus/session path has not yet been runtime-qualified. Widget,
 extended-behavior and greeter protocol requests are accepted but currently have
 no behavior. Touch input, multi-monitor configuration, accessibility, IBus,
 Xwayland, screen-sharing portals and production crash recovery also remain
@@ -137,9 +139,9 @@ The session bus also exposes the small `org.gnome.Shell` accelerator API used
 by Wingpanel and its sound indicator. Accelerator registrations are matched
 through the compositor's active XKB state and reported with
 `AcceleratorActivated`; `ShowOSD` is currently a no-op, and lock-screen action
-modes are not implemented. This is distinct from the compositor's
-`ext-session-lock-v1` protocol, which now accepts a locker client but still
-needs session-service wiring and runtime qualification.
+modes are not implemented. Separately, the observed `org.gnome.ScreenSaver`
+interface launches the configured session locker; its action and authentication
+path still need runtime qualification.
 
 The code is based on Smithay's `smallvil` learning compositor at pinned commit
 `023b78b1c5a05ca512767cacc07efca55fae8be4`; see `SMITHAY-LICENSE.txt`. Keep the

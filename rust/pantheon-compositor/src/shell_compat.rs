@@ -1,8 +1,14 @@
 use std::{
     collections::HashMap,
-    sync::{Arc, Mutex, mpsc},
+    ffi::OsString,
+    process::{Child, Command},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicBool, Ordering},
+        mpsc,
+    },
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use smithay::input::keyboard::{Keysym, ModifiersState, xkb};
@@ -11,6 +17,15 @@ use zbus::{blocking::Connection, interface, object_server::SignalEmitter, zvaria
 const BUS_NAME: &str = "org.gnome.Shell";
 const OBJECT_PATH: &str = "/org/gnome/Shell";
 const INTERFACE: &str = "org.gnome.Shell";
+const SCREENSAVER_BUS_NAME: &str = "org.gnome.ScreenSaver";
+const SCREENSAVER_OBJECT_PATH: &str = "/org/gnome/ScreenSaver";
+const SCREENSAVER_INTERFACE: &str = "org.gnome.ScreenSaver";
+
+#[derive(Clone, Copy)]
+enum ShellEvent {
+    AcceleratorActivated(u32),
+    ActiveChanged(bool),
+}
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 struct AcceleratorModifiers {
@@ -35,21 +50,37 @@ struct KeyBinding {
 #[derive(Clone)]
 pub struct ShellCompatHandle {
     bindings: Arc<Mutex<Vec<KeyBinding>>>,
-    activated: mpsc::Sender<u32>,
+    events: mpsc::Sender<ShellEvent>,
+    active: Arc<AtomicBool>,
+    active_since: Arc<Mutex<Option<Instant>>>,
 }
 
 impl ShellCompatHandle {
-    pub fn start() -> Self {
+    pub fn start(wayland_display: OsString) -> Self {
         let bindings = Arc::new(Mutex::new(Vec::new()));
-        let (activated, receiver) = mpsc::channel();
+        let (events, receiver) = mpsc::channel();
+        let active = Arc::new(AtomicBool::new(false));
+        let active_since = Arc::new(Mutex::new(None));
         let service_bindings = bindings.clone();
+        let service_active = active.clone();
+        let service_active_since = active_since.clone();
         thread::Builder::new()
             .name("pantheon-shell-dbus".into())
-            .spawn(move || serve_shell_compat(service_bindings, receiver))
+            .spawn(move || {
+                serve_shell_compat(
+                    service_bindings,
+                    service_active,
+                    service_active_since,
+                    wayland_display,
+                    receiver,
+                )
+            })
             .expect("failed to start shell compatibility D-Bus thread");
         Self {
             bindings,
-            activated,
+            events,
+            active,
+            active_since,
         }
     }
 
@@ -67,15 +98,32 @@ impl ShellCompatHandle {
             return false;
         }
         for id in matched {
-            let _ = self.activated.send(id);
+            let _ = self.events.send(ShellEvent::AcceleratorActivated(id));
         }
         true
+    }
+
+    pub fn set_locked(&self, locked: bool) {
+        let previous = self.active.swap(locked, Ordering::AcqRel);
+        if previous == locked {
+            return;
+        }
+        *self.active_since.lock().expect("lock timer poisoned") = locked.then(Instant::now);
+        let _ = self.events.send(ShellEvent::ActiveChanged(locked));
     }
 }
 
 struct ShellKeyGrabber {
     bindings: Arc<Mutex<Vec<KeyBinding>>>,
     next_id: u32,
+}
+
+struct ScreenSaverCompat {
+    wayland_display: OsString,
+    lock_command: OsString,
+    active: Arc<AtomicBool>,
+    active_since: Arc<Mutex<Option<Instant>>>,
+    lock_child: Arc<Mutex<Option<Child>>>,
 }
 
 #[interface(name = "org.gnome.Shell")]
@@ -140,7 +188,62 @@ impl ShellKeyGrabber {
     }
 }
 
-fn serve_shell_compat(bindings: Arc<Mutex<Vec<KeyBinding>>>, receiver: mpsc::Receiver<u32>) {
+#[interface(name = "org.gnome.ScreenSaver")]
+impl ScreenSaverCompat {
+    fn lock(&self) -> zbus::fdo::Result<()> {
+        if self.active.load(Ordering::Acquire) {
+            return Ok(());
+        }
+
+        let mut child = self.lock_child.lock().expect("lock child poisoned");
+        if let Some(running) = child.as_mut() {
+            match running.try_wait() {
+                Ok(None) => return Ok(()),
+                Ok(Some(_)) => *child = None,
+                Err(error) => return Err(zbus::fdo::Error::Failed(error.to_string())),
+            }
+        }
+
+        let process = Command::new(&self.lock_command)
+            .env("WAYLAND_DISPLAY", &self.wayland_display)
+            .spawn()
+            .map_err(|error| zbus::fdo::Error::Failed(error.to_string()))?;
+        *child = Some(process);
+        Ok(())
+    }
+
+    fn get_active(&self) -> bool {
+        self.active.load(Ordering::Acquire)
+    }
+
+    fn set_active(&self, active: bool) -> zbus::fdo::Result<()> {
+        if active {
+            self.lock()?;
+        }
+        // A caller cannot unlock the session through this legacy API; the
+        // authenticated session-lock client owns unlock_and_destroy.
+        Ok(())
+    }
+
+    fn get_active_time(&self) -> u32 {
+        self.active_since
+            .lock()
+            .expect("lock timer poisoned")
+            .map(|since| since.elapsed().as_secs().min(u32::MAX as u64) as u32)
+            .unwrap_or(0)
+    }
+
+    #[zbus(signal)]
+    async fn active_changed(emitter: &SignalEmitter<'_>, new_value: bool) -> zbus::Result<()>;
+}
+
+fn serve_shell_compat(
+    bindings: Arc<Mutex<Vec<KeyBinding>>>,
+    active: Arc<AtomicBool>,
+    active_since: Arc<Mutex<Option<Instant>>>,
+    wayland_display: OsString,
+    receiver: mpsc::Receiver<ShellEvent>,
+) {
     let connection = match Connection::session() {
         Ok(connection) => connection,
         Err(error) => {
@@ -164,10 +267,43 @@ fn serve_shell_compat(bindings: Arc<Mutex<Vec<KeyBinding>>>, receiver: mpsc::Rec
         return;
     }
 
-    tracing::info!("serving the Wingpanel Shell accelerator compatibility interface");
+    let lock_command =
+        std::env::var_os("PANTHEON_LOCK_COMMAND").unwrap_or_else(|| OsString::from("gtklock"));
+    let lock_child = Arc::new(Mutex::new(None));
+    if let Err(error) = connection.object_server().at(
+        SCREENSAVER_OBJECT_PATH,
+        ScreenSaverCompat {
+            wayland_display,
+            lock_command,
+            active,
+            active_since,
+            lock_child: lock_child.clone(),
+        },
+    ) {
+        tracing::warn!(%error, "cannot register the ScreenSaver compatibility interface");
+        return;
+    }
+    if let Err(error) = connection.request_name(SCREENSAVER_BUS_NAME) {
+        tracing::warn!(%error, "cannot own the ScreenSaver compatibility name");
+        return;
+    }
+
+    tracing::info!("serving Shell accelerator and ScreenSaver compatibility interfaces");
     loop {
+        {
+            let mut child = lock_child.lock().expect("lock child poisoned");
+            if let Some(running) = child.as_mut() {
+                match running.try_wait() {
+                    Ok(Some(_)) => {
+                        *child = None;
+                    }
+                    Ok(None) => {}
+                    Err(error) => tracing::warn!(%error, "could not reap the session locker"),
+                }
+            }
+        }
         match receiver.recv_timeout(Duration::from_millis(100)) {
-            Ok(action) => {
+            Ok(ShellEvent::AcceleratorActivated(action)) => {
                 let parameters = HashMap::<String, OwnedValue>::new();
                 if let Err(error) = connection.emit_signal(
                     None::<&str>,
@@ -177,6 +313,17 @@ fn serve_shell_compat(bindings: Arc<Mutex<Vec<KeyBinding>>>, receiver: mpsc::Rec
                     &(action, parameters),
                 ) {
                     tracing::warn!(%error, "could not emit AcceleratorActivated");
+                }
+            }
+            Ok(ShellEvent::ActiveChanged(active)) => {
+                if let Err(error) = connection.emit_signal(
+                    None::<&str>,
+                    SCREENSAVER_OBJECT_PATH,
+                    SCREENSAVER_INTERFACE,
+                    "ActiveChanged",
+                    &(active,),
+                ) {
+                    tracing::warn!(%error, "could not emit ScreenSaver ActiveChanged");
                 }
             }
             Err(mpsc::RecvTimeoutError::Timeout) => {}

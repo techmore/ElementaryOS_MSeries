@@ -145,6 +145,7 @@ impl SessionLockHandler for PantheonCompositor {
     }
 
     fn unlock(&mut self) {
+        self.shell_compat.set_locked(false);
         self.session_locked = false;
         self.lock_owner = None;
         self.lock_confirmation = None;
