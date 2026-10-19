@@ -43,12 +43,16 @@ The default desktop shell entries in `/etc/xdg/io.elementary.desktop.wm.shell`
 name `io.elementary.wingpanel` and `io.elementary.dock`. The experimental
 session now stages separate systemd user services for these clients, ordered
 after compositor readiness and Wingpanel-before-Dock. A local ARM64 package
-build includes the new units, but they have not been installed or run in a live
-session. The first native package had no wallpaper; compositor-side wallpaper
+build includes the new units, and package `0.1.0+git8c784dc` was installed for
+a second native qualification attempt. LightDM requested the Rust session,
+but GNOME systemd rejected its target while the prior session was stopping;
+subsequent autologin fell back to Ubuntu without starting the Rust compositor.
+The temporary session-selection settings were restored and Gala is active.
+The first native package had no wallpaper; compositor-side wallpaper
 rendering has since been implemented and visually smoke-tested in nested Xvfb,
-and staged ARM64 package `0.1.0+git8c784dc` includes it, along with the live
-wallpaper settings watcher and Dock opt-out guard. The package has not been
-installed or qualified on native output. The installed five-minute
+and installed ARM64 package `0.1.0+git8c784dc` includes it, along with the live
+wallpaper settings watcher and Dock opt-out guard. The package still has not
+qualified its wallpaper or shell on native output. The installed five-minute
 rollback was exercised and returned LightDM to Gala.
 
 The session carries forward the installed Pantheon settings-daemon, keyring,

@@ -22,11 +22,14 @@ M1 Pro login and scanned out an AR30 3024x1964 framebuffer. The owner reported
 that startup felt slow; the first Rust session had no Wingpanel, bottom dock,
 or wallpaper/background. A timed LightDM rollback returned to Gala and
 restored the background. Separate systemd user services have since been staged
-to launch Wingpanel and Dock after the compositor. A local ARM64 package build
-now includes those units. The staged ARM64 package
-`0.1.0+git8c784dc` also includes the wallpaper renderer, live wallpaper
-settings watcher, and Dock opt-out guard; it is built but not installed or
-runtime-qualified. Package SHA-256:
+to launch Wingpanel and Dock after the compositor. Installed ARM64 package
+`0.1.0+git8c784dc` includes those units. Its attempted second LightDM launch
+did not reach the compositor: GNOME systemd reported a target transaction
+conflict while the previous session was stopping, then LightDM fell back to
+Ubuntu. The temporary LightDM, `.dmrc`, and AccountsService selections were
+restored, and Gala is active. Package `0.1.0+git8c784dc` also includes the
+wallpaper renderer, live wallpaper settings watcher, and Dock opt-out guard; it
+is installed but not qualified on native output. Package SHA-256:
 `a83d4709064bc447ecd24909a4d9a0830d5f168ee20b62e468e23557e5257329`.
 This proves the native display path and rollback, not a
 complete Pantheon session or a performance/stability improvement.

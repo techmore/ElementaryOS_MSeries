@@ -283,14 +283,17 @@ impl PantheonCompositor {
             Timer::from_duration(Duration::from_secs(2)),
             |_, _, state| {
                 match crate::wallpaper::configured_selection() {
-                    Ok(selection) if selection != state.wallpaper_selection => {
-                        state.wallpaper = selection
-                            .as_ref()
-                            .and_then(crate::wallpaper::load_wallpaper);
-                        state.wallpaper_selection = selection;
-                        state.request_native_redraw();
+                    Ok(selection) => {
+                        tracing::trace!(?selection, "polled desktop wallpaper selection");
+                        if selection != state.wallpaper_selection {
+                            tracing::info!(?selection, "desktop wallpaper settings changed");
+                            state.wallpaper = selection
+                                .as_ref()
+                                .and_then(crate::wallpaper::load_wallpaper);
+                            state.wallpaper_selection = selection;
+                            state.request_native_redraw();
+                        }
                     }
-                    Ok(_) => {}
                     Err(error) => {
                         tracing::debug!(%error, "could not check desktop wallpaper settings")
                     }

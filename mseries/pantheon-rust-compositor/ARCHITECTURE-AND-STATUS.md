@@ -113,17 +113,19 @@ flowchart TD
 **Current implementation detail:** the session file starts the compositor;
 new user units are staged to start Wingpanel and Dock after it. `After=` orders
 process startup but does not yet wait for the panel to map or prove the
-`wait-for-n-panels=1` shell-launcher contract. The units are included in a local
-ARM64 package build but are not installed or native-session-qualified. The Dock
-unit now skips startup when the existing user-disabled marker is present,
+`wait-for-n-panels=1` shell-launcher contract. Package `0.1.0+git8c784dc` was
+installed for a second native qualification attempt, but its session handoff
+did not reach the compositor or shell units. The Dock unit now skips startup
+when the existing user-disabled marker is present,
 honoring the user's opt-out even though it invokes the distro executable by
 absolute path. The compositor loads the configured local wallpaper, renders it
 behind windows, and honors the `zoom` crop mode. It polls for URI or crop-mode
 changes every two seconds and requests a redraw; this path is build-checked but
-not runtime-qualified. The staged ARM64 package `0.1.0+git8c784dc` includes the
-wallpaper renderer, live wallpaper settings watcher, shell units, and Dock
-opt-out guard; it has not been installed or qualified on native output. Its
-SHA-256 is
+not runtime-qualified on native output. A private D-Bus/dconf + Xvfb smoke
+changed the wallpaper URI during compositor runtime; logs showed the changed
+selection and new image loading. Installed package `0.1.0+git8c784dc` includes
+the wallpaper renderer, live wallpaper settings watcher, shell units, and Dock
+opt-out guard. Its SHA-256 is
 `a83d4709064bc447ecd24909a4d9a0830d5f168ee20b62e468e23557e5257329`. In the
 nested Winit backend, the default transform is set to compensate
 for the framebuffer orientation observed under Xvfb; this produced an upright
@@ -149,15 +151,16 @@ session was replaced.
 
 | Area | Evidence | State |
 | --- | --- | --- |
-| Rust compositor and opt-in session package | Smithay prototype; nested Winit and native DRM backends; locally rebuilt ARM64 package includes wallpaper, staged shell units and Dock opt-out guard; compositor remains separate from the default Gala session | Builds; newer package not installed; native shell service runtime remains open |
+| Rust compositor and opt-in session package | Smithay prototype; nested Winit and native DRM backends; installed ARM64 package includes wallpaper, shell units and Dock opt-out guard; compositor remains separate from the default Gala session | Builds; latest session handoff fell back before compositor start; native shell service runtime remains open |
 | Native display path | Experimental LightDM login reached the M1 Pro internal display; kernel DRM state showed compositor-owned AR30 framebuffer at 3024×1964 | Native internal-panel scanout passed once |
 | Session recovery | Five-minute LightDM rollback returned to Gala; Wingpanel and background came back | Automatic rollback passed once |
 | XWayland | Private Xvfb Zenity window mapped and accepted synthetic keyboard input; exposed through window-list D-Bus | Isolated smoke passed |
 | Nested text input | Private GTK Wayland field accepted an IBus/Mozc Japanese commit | Isolated smoke passed; native input remains unqualified |
 | Pantheon panel protocol | Wingpanel connected in private nested Wayland, requested a top panel, attached shared-memory buffers and rendered upright after the nested Winit transform correction | Nested visual smoke passed; panel absent from native session |
 | Pantheon shell clients | Current release rendered Wingpanel at top and stock Dock at bottom in isolated Xvfb. Hide/reveal passed with both private `overlapping-focused` and `overlapping-window` profiles; the latter matches the host's saved value | Nested visual and hide/reveal smoke passed; native appearance remains open. The local Dock wrapper remains intentionally disabled by the existing user marker |
-| Desktop wallpaper | Loaded the configured 5000×2813 elementary wallpaper and captured it behind a GTK Zenity window in isolated Xvfb; fresh nested shell run showed wallpaper upright | Nested visual smoke passed; native output and live setting changes remain open |
-| Native full desktop | The first Rust login used installed package `0.1.0+git83a663c`; user journal shows compositor unit start at 09:55:58.981, XWayland ready at 09:55:59.329 and unit ready at 09:55:59.342. That installed package had no Wingpanel/Dock user service files and predated the wallpaper renderer | Missing shell and background in that run do not qualify the current staged package. Startup felt slow to the owner, but the compositor became ready in about 0.36 seconds; total login time has not been measured |
+| Desktop wallpaper | Loaded the configured 5000×2813 elementary wallpaper and captured it behind a GTK Zenity window in isolated Xvfb; a private dconf/Xvfb run changed the URI while running and logs confirmed the new image loaded | Nested visual and settings-reload smokes passed; native output and rendering remain open |
+| Native Rust session handoff | Second qualification installed `0.1.0+git8c784dc`. LightDM invoked `gnome-session --session=pantheon-rust-wayland`, but the user manager rejected the Rust target while the prior GNOME target was stopping. Later LightDM autologin selected Ubuntu; no Rust compositor or shell unit became active. Temporary LightDM, `.dmrc`, and AccountsService changes were restored, and Gala is active | This attempt produced no new native compositor evidence; resolve the session-manager handoff before retrying |
+| Native full desktop | The first Rust login used installed package `0.1.0+git83a663c`; user journal shows compositor unit start at 09:55:58.981, XWayland ready at 09:55:59.329 and unit ready at 09:55:59.342. That installed package had no Wingpanel/Dock user service files and predated the wallpaper renderer | Missing shell and background in that run do not qualify the current package. Startup felt slow to the owner, but the compositor became ready in about 0.36 seconds; total login time has not been measured |
 | Native keyboard, pointer, external display, lock/unlock, sharing, accessibility, crash recovery | No end-to-end qualification in the native session | Open |
 | Performance, power, reliability | No matched Gala/Rust measurements or crash-free soak yet | Open; do not claim faster or more reliable yet |
 
