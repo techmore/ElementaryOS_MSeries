@@ -6853,3 +6853,7 @@ gtk4 feature `v4_20` (granite-rs does not enable `v4_10`, so `gtk::Accessible` i
 `mseries/patches/wingpanel-export-gir.patch` makes Wingpanel export `Wingpanel-9.gir` + typelib; built and loaded in
 a sandbox, not installed. All upstream pins and update steps: `mseries/RUST-UPSTREAM-MAINTENANCE.md`. Next:
 an opt-in Rust login session entry once the compositor has DRM/KMS, input and lock screen.
+
+## Rust session shell clients: renderer fix — 2026-10-19
+
+Native Rust-session Wingpanel looped on Vulkan `SURFACE_LOST` (compositor has no `linux-dmabuf`), spinning CPU and holding 2.3 GB; Dock was skipped only by the owner's opt-out marker. Reproduced in a private nested Xvfb run; `GSK_RENDERER=gl` removed it. Added to both shell units plus `mseries/pantheon-rust-compositor/test-session-units.sh` (passes). Not verified: native panel visibility, Dock render. Next: implement `linux-dmabuf` in the compositor, then a native login with the new package (needs owner OK).

@@ -9,6 +9,10 @@ StartLimitBurst=3
 
 [Service]
 Type=simple
+# The compositor advertises wl_shm only (no linux-dmabuf), so GTK4's default
+# Vulkan renderer logs VK_ERROR_SURFACE_LOST_KHR in a loop and spins the CPU
+# (observed natively 2026-10-19: 2.5 min CPU in 5 min, 2.3G peak). Use GL.
+Environment=GSK_RENDERER=gl
 ExecStart=/usr/bin/io.elementary.wingpanel
 Restart=on-failure
 RestartSec=2s

@@ -90,3 +90,17 @@ client. Authentication, D-Bus activation and session lock/unlock have not yet
 been runtime-qualified. The compositor advertises fractional-scale and
 viewporter globals, but rendering quality and moving windows between outputs
 with different scales still need nested-session qualification.
+
+## Shell client renderer (2026-10-19)
+
+The compositor advertises `wl_shm` but not `linux-dmabuf`. In the native
+2026-10-19 login Wingpanel ran but looped on `VK_ERROR_SURFACE_LOST_KHR`
+(GTK4's Vulkan renderer) and used about 2.5 CPU-minutes in 5 minutes with a
+2.3 GB peak, which matches the "panel not visible, startup slow" reports. The
+Dock did not start only because the owner's `user-disabled` marker was set.
+In a private nested Xvfb run of the release compositor the default renderer
+reproduced the Vulkan warnings and `GSK_RENDERER=gl` did not. Both shell
+units now set `GSK_RENDERER=gl`. `../test-session-units.sh` statically checks
+the ordering, restart and renderer settings. Native visibility after this
+change is NOT yet verified; the proper long-term fix is `linux-dmabuf` in the
+compositor. No native session was started for this change.
