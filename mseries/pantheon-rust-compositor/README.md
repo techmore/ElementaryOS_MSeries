@@ -80,9 +80,11 @@ exercised in an isolated login.
 `build-deb.sh` builds an arm64 release binary with `native-drm` and packages it
 with the separate experimental session files. It derives shared-library
 dependencies and requires `gnome-session` and `gtklock`. Build it locally with
-`OUTDIR=/tmp/pantheon-rust-compositor-deb mseries/pantheon-rust-compositor/build-deb.sh`.
-The resulting package is for isolated qualification; it is not installed by
-the build script.
+`OUTDIR=/path/to/output mseries/pantheon-rust-compositor/build-deb.sh`. The
+current package from commit `2c8422f` is saved at
+`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-rust-compositor_0.1.0+git2c8422f_arm64.deb`
+(SHA-256 `613415f318dcc7c3421d7eb3823b7e2f35525a1f75201f31677646f71e3f6ce8`).
+The package is for isolated qualification; the build script does not install it.
 
 ## Dock HDMI boundary
 

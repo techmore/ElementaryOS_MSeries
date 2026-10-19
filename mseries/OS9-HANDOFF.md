@@ -5731,9 +5731,10 @@ it built the optimized `native-drm` executable and an arm64 Debian package
 containing the opt-in session files. `dpkg-shlibdeps` derived shared-library
 dependencies; the package also requires `gnome-session`, `gtklock`, `libegl1`
 and `libgles2`. `dpkg-deb --info` and `--contents` confirm the package metadata,
-binary and session units. Artifact:
-`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-rust-compositor_0.1.0+gitbe5747a_arm64.deb`
-(SHA-256 `976823c9bc75c6f5f07cebe5967b4cab59ab38457f2196df7cef1fc8910a1038`).
+binary and session units. The package was rebuilt from commit `2c8422f` after
+implementing Dock hide modes. Current artifact:
+`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-rust-compositor_0.1.0+git2c8422f_arm64.deb`
+(SHA-256 `613415f318dcc7c3421d7eb3823b7e2f35525a1f75201f31677646f71e3f6ce8`).
 The package was not installed and the experimental session was not selected.
 
 ### Honor Pantheon Dock hide modes — 2026-10-19
