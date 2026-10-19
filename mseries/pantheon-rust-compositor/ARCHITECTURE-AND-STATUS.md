@@ -124,12 +124,16 @@ for the framebuffer orientation observed under Xvfb; this produced an upright
 wallpaper and top Wingpanel in a fresh nested run. It does not alter the native
 DRM output transform.
 
-**Development shell smoke:** installed Wingpanel 8.0.4 and the local Dock
-binary both stayed alive as Wayland clients in an isolated nested session.
-Wingpanel appeared upright along the top edge after the Winit transform fix.
-Dock remained invisible even though its process was alive, so Dock protocol,
-reveal behavior and positioning are still open. The test used a private
-Xvfb/D-Bus profile and did not replace the active Gala session.
+**Development shell smoke:** the current release build rendered installed
+Wingpanel 8.0.4 across the top and the stock `/usr/bin/io.elementary.dock`
+along the bottom, over the wallpaper, in an isolated Xvfb session. Its Wayland
+trace shows the Dock binding the Pantheon panel protocol, requesting the bottom
+anchor and submitting shared-memory buffers. The normal local Dock command is
+a wrapper; its existing user-disabled marker makes it run `sleep infinity`, so
+the earlier “Dock process alive” check was a false positive. The marker remains
+untouched, and the visual test launched the stock executable directly only
+inside the private session. Hide/reveal behavior and native-session appearance
+remain unqualified. No Gala session was replaced.
 
 ## What is complete and what has been tested
 
@@ -141,7 +145,7 @@ Xvfb/D-Bus profile and did not replace the active Gala session.
 | XWayland | Private Xvfb Zenity window mapped and accepted synthetic keyboard input; exposed through window-list D-Bus | Isolated smoke passed |
 | Nested text input | Private GTK Wayland field accepted an IBus/Mozc Japanese commit | Isolated smoke passed; native input remains unqualified |
 | Pantheon panel protocol | Wingpanel connected in private nested Wayland, requested a top panel, attached shared-memory buffers and rendered upright after the nested Winit transform correction | Nested visual smoke passed; panel absent from native session |
-| Pantheon shell process startup | Installed Wingpanel and local Dock both remained alive in a private nested Wayland session | Process smoke passed; Dock was not visible, and map/reveal behavior remains open |
+| Pantheon shell clients | Current release rendered Wingpanel at top and stock Dock at bottom in isolated Xvfb; Dock trace requested bottom anchoring and submitted shared-memory buffers | Nested visual smoke passed; native appearance and hide/reveal behavior remain open. The local Dock wrapper remains intentionally disabled by the existing user marker |
 | Desktop wallpaper | Loaded the configured 5000×2813 elementary wallpaper and captured it behind a GTK Zenity window in isolated Xvfb; fresh nested shell run showed wallpaper upright | Nested visual smoke passed; native output and live setting changes remain open |
 | Native full desktop | In the first Rust login, the owner observed slow startup, no top panel, no bottom dock, and no colored background. After returning to the regular desktop, a background was visible, but the active session was uncertain | Incomplete; wallpaper rendering landed afterward and has not been qualified on native output |
 | Native keyboard, pointer, external display, lock/unlock, sharing, accessibility, crash recovery | No end-to-end qualification in the native session | Open |
@@ -149,10 +153,11 @@ Xvfb/D-Bus profile and did not replace the active Gala session.
 
 The current login observation is useful development evidence, not a daily-use
 readiness result. Continue testing in the isolated experimental session while
-Gala remains the working fallback. The next development gate is to diagnose
-why the live Dock process does not render or reveal, then qualify shell startup
-and basic interaction and the wallpaper path on native output before another
-native login.
+Gala remains the working fallback. The next development gate is to exercise
+Dock hide/reveal behavior and basic shell interaction in the nested session,
+then qualify startup and the wallpaper path on native output before another
+native login. The existing user-disabled Dock marker should remain in effect
+unless the user explicitly chooses to re-enable Dock in the desktop session.
 After that, measure the same startup, idle and representative workloads under
 Gala and Rust, and record crashes and recovery behavior.
 
