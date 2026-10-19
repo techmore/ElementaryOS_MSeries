@@ -5406,6 +5406,18 @@ startup continues to publish one `winit` output. Default and `native-drm`
 unverified. This prepares the native connector lifecycle to report hotplug
 state without claiming mode-setting support.
 
+### Native renderer initialization slice — 2026-10-18
+
+Added feature-gated `native.rs` with a libseat-scoped hardware renderer
+initializer: it tries the session's primary GPU first, opens each candidate via
+libseat, rejects software EGL, discovers its render node, and registers the GBM
+device with Smithay `GpuManager`. This establishes the rendering side needed
+for the measured Asahi-render/Apple-KMS split. It is not yet called by the
+executable and does not initialize a KMS output, cross-device framebuffer
+exporter, input backend, or native event loop. No libseat session was opened at
+runtime. Default and `native-drm` cargo builds/checks pass locally; next wire
+this renderer into the native backend and pair it with the Apple KMS allocator.
+
 ### Absolute pointer mapping — 2026-10-18
 
 Absolute pointer events previously mapped normalized coordinates against only

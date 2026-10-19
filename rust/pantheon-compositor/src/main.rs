@@ -8,6 +8,8 @@ mod pantheon_shell;
 mod protocols;
 mod shell_compat;
 mod state;
+#[cfg(feature = "native-drm")]
+pub mod native;
 mod winit;
 
 use smithay::reexports::{calloop::EventLoop, wayland_server::Display};

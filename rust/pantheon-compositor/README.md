@@ -67,9 +67,12 @@ production crash recovery also remain unimplemented.
 
 `native-drm` is an opt-in Cargo feature that stages Smithay's DRM, GBM,
 libinput, udev, libseat, EGL, and multi-GPU dependencies. The current executable
-still starts through Winit; the native session/backend wiring is not implemented
-yet. The feature-enabled `cargo check` and `cargo build` pass locally after
-installing the host `libseat-dev` package; neither command initializes a native
+still starts through Winit. Behind this feature, `native.rs` can initialize a
+hardware EGL/GBM renderer on a libseat GPU and register it with Smithay's
+multi-GPU manager. It is not yet called by the executable and does not open a
+KMS output, allocate scanout buffers, or drive native input. Default and
+feature-enabled `cargo check` and `cargo build` pass locally after installing
+the host `libseat-dev` package; none of those commands initializes a native
 session.
 
 With `native-drm` enabled, `pantheon-drm-probe` safely enumerates EGL devices
