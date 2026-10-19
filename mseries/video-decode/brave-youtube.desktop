@@ -2,7 +2,7 @@
 Type=Application
 Name=YouTube (hardware decode, contained)
 Comment=Separate Brave profile in a bubblewrap container; YouTube only. Experimental.
-Exec=/home/sdolbec/ElementaryOS_MSeries/mseries/video-decode/brave-youtube %U
+Exec=@BIN@ %U
 Icon=brave-browser
 Categories=AudioVideo;Video;
 StartupWMClass=brave-www.youtube.com__-Default
