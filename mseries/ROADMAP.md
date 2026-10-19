@@ -10,8 +10,10 @@ its features. The scoped requirements and upstream feature radar are in
 [`EXPERIENCE-REQUIREMENTS.md`](pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md).
 The list is grounded in this repo's notch-aware panel, dock work area, display
 profiles/hotplug, window snapping, input and session work. Features such as
-Xwayland, IBus, accessibility, screencasting and multi-GPU are conditional on
-an actual supported workflow. The opt-in Smithay nested prototype in
+Xwayland, IBus, accessibility and screencasting are conditional on an actual
+supported workflow. The measured M1 Pro requires cross-device rendering:
+Asahi `/dev/dri/card1` supplies EGL/renderD128 but no KMS resources, while Apple
+`/dev/dri/card2` owns connected displays and has no EGL device. The opt-in Smithay nested prototype in
 `rust/pantheon-compositor/` passes local `cargo check` and `cargo build`. It
 advertises Pantheon's protocol v2, places
 panel surfaces using anchor/size/offset, and applies exclusive panel geometry
@@ -44,8 +46,10 @@ native DRM path while keeping the nested backend available. The opt-in
 `libseat-dev`. The new non-invasive `pantheon-drm-probe` reports the Asahi
 renderer on card1/renderD128, with KMS resource queries unsupported there. Card2
 owns `eDP-1` and `DP-2`, while `HDMI-A-1` is disconnected; card2 has no EGL
-device. The native backend must bridge rendering to KMS across these devices;
-the read-only probe did not change modes. No session startup is wired yet.
+device. Therefore cross-device buffer import, display-controller scanout
+allocation and failure handling are first-session requirements for this M1 Pro,
+not optional general multi-GPU support. The read-only probe did not change
+modes. No session startup is wired yet.
 
 
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18

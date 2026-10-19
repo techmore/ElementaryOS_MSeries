@@ -5374,3 +5374,16 @@ tracked separately from Rust compositor output and hotplug qualification.
 Next: connect a Wayland protocol probe, then qualify the Pantheon protocol
 against Wingpanel and Dock and add overlap-based autohide. Do not switch the
 login session at this stage.
+
+### Native M-series topology requirement — 2026-10-18
+
+Reconciled the read-only DRM inventory with the compositor requirements. This
+M1 Pro cannot use a single GPU for both rendering and scanout: Asahi card1 has
+the EGL render node but no KMS resources; Apple display card2 owns connected
+eDP/DP outputs but has no EGL device. Cross-device rendered-buffer import plus
+scanout allocation on card2 is therefore a first-session requirement for this
+machine. This changes the earlier conditional treatment of multi-GPU support;
+it does not change the separate DCP/kernel diagnosis for dock HDMI G3. Native
+session startup remains unwired and no modesetting has been attempted. Next:
+build the optional native path around Smithay's multi-GPU renderer and validate
+it without taking over the active desktop.
