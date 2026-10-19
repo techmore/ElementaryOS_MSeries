@@ -19,6 +19,7 @@ struct Preset {
 
 const Preset[] presets = {
     { "Omarchy", "Arch-based tiling desktop", 4, 6, 32, 7, "https://omarchy.org", "omarchy" },
+    { "elementary OS", "Pantheon desktop, daily ARM64 build", 4, 4, 32, 0, "https://elementary.io", "elementary" },
     { "Ubuntu", "Friendly general-purpose desktop", 4, 4, 24, 4, "https://ubuntu.com/download/server/arm", "" },
     { "Debian", "Rock-solid and lightweight", 2, 2, 16, 5, "https://www.debian.org/CD/netinst/", "" },
     { "Fedora", "Fresh packages, GNOME", 4, 4, 24, 0, "https://fedoraproject.org/server/download", "" },
@@ -292,6 +293,14 @@ public class MachineLab : Gtk.Application {
             item.clicked.connect (() => { pop.popdown (); add_machine (preset); });
             pbox.append (item);
         }
+        var mac_item = new Gtk.Button ();
+        mac_item.add_css_class ("flat");
+        var mac_lbl = new Gtk.Label ("macOS… (not available on Linux)");
+        mac_lbl.xalign = 0;
+        mac_lbl.add_css_class ("ml-machine-sub");
+        mac_item.child = mac_lbl;
+        mac_item.clicked.connect (() => { pop.popdown (); show_macos_info (); });
+        pbox.append (mac_item);
         pop.child = pbox;
         add.popover = pop;
         side.append (add);
@@ -361,6 +370,33 @@ public class MachineLab : Gtk.Application {
             grid.attach (card, i % 2, i / 2);
             i++;
         }
+        var mac = new Gtk.Button ();
+        mac.add_css_class ("flat");
+        var mb = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
+        mb.add_css_class ("ml-gallery-card");
+        var mi = new Gtk.Image.from_icon_name ("computer");
+        mi.pixel_size = 40;
+        mi.add_css_class ("ml-row-icon");
+        mi.add_css_class ("ml-c-6");
+        mb.append (mi);
+        var mt = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
+        mt.valign = Gtk.Align.CENTER;
+        var mn = new Gtk.Label ("macOS");
+        mn.xalign = 0;
+        mn.add_css_class ("ml-spec-value");
+        var mbl = new Gtk.Label ("Not possible on this Mac under Linux");
+        mbl.xalign = 0;
+        mbl.add_css_class ("ml-spec-label");
+        var mlearn = new Gtk.Label ("Tap to see what works instead");
+        mlearn.xalign = 0;
+        mlearn.add_css_class ("ml-fineprint");
+        mt.append (mn);
+        mt.append (mbl);
+        mt.append (mlearn);
+        mb.append (mt);
+        mac.child = mb;
+        mac.clicked.connect (() => show_macos_info ());
+        grid.attach (mac, i % 2, i / 2);
         box.append (grid);
         page.append (box);
         return page;
@@ -407,6 +443,37 @@ public class MachineLab : Gtk.Application {
         }
     }
 
+    private void show_macos_info () {
+        var dialog = new Gtk.AlertDialog ("macOS can't run as a guest here");
+        dialog.detail = "A macOS guest on Apple Silicon needs Apple's Virtualization framework and virtual hardware, which only exist on macOS hosts. Linux KVM on this Mac can't provide them, and no open implementation boots macOS.\n\nWhat works:\n• Your internal macOS is still installed. Hold the power button at startup and pick it at the boot picker.\n• Run a macOS VM on a Mac that runs macOS (UTM or Tart) and reach it over the network.\n• Use the elementary OS, Omarchy and other Linux machines here for everything else.";
+        dialog.buttons = { "OK" };
+        dialog.show (window);
+    }
+
+    private string? newest_iso (string pattern) {
+        string? best = null;
+        int64 best_time = 0;
+        try {
+            var root = Path.build_filename (Machine.vms_dir (), "downloads");
+            var top = Dir.open (root);
+            string? d;
+            while ((d = top.read_name ()) != null) {
+                var sub = Path.build_filename (root, d);
+                if (!FileUtils.test (sub, FileTest.IS_DIR)) continue;
+                var inner = Dir.open (sub);
+                string? f;
+                while ((f = inner.read_name ()) != null) {
+                    if (!PatternSpec.match_simple (pattern, f)) continue;
+                    var path = Path.build_filename (sub, f);
+                    var info = File.new_for_path (path).query_info ("time::modified", FileQueryInfoFlags.NONE);
+                    int64 t = info.get_modification_date_time ().to_unix ();
+                    if (t > best_time) { best_time = t; best = path; }
+                }
+            }
+        } catch (Error e) {}
+        return best;
+    }
+
     private void add_machine (Preset preset) {
         var m = new Machine ();
         m.id = "machine-%s".printf (Uuid.string_random ().substring (0, 8));
@@ -418,6 +485,11 @@ public class MachineLab : Gtk.Application {
         m.color = preset.color;
         m.url = preset.url == "" ? null : preset.url;
         m.recipe = preset.recipe == "" ? null : preset.recipe;
+        if (preset.recipe == "elementary") {
+            // Use the ARM64 ISO mseries-vm already downloaded, if there is one.
+            m.recipe = null;
+            m.installer = newest_iso ("elementaryos*arm64*.iso");
+        }
         int port = 2222;
         bool clash = true;
         while (clash) {
