@@ -13,10 +13,11 @@ The session is named **Pantheon (Rust compositor, experimental)** and uses the
 separate `pantheon-rust-wayland` session ID. The existing
 `pantheon-wayland` entry and Gala units are not modified. The service binds
 `wayland-0`, publishes that value to the systemd user manager after readiness,
-and clears the manager value when it stops. `PANTHEON_WAYLAND_DISPLAY` selects
-the explicit socket; without that variable the nested development backend
-continues to allocate an automatic socket, and the native backend can also use
-automatic allocation for manual development launches.
+and clears the display variables and fixed socket when it stops.
+`PANTHEON_WAYLAND_DISPLAY` selects the explicit socket; without that variable
+the nested development backend continues to allocate an automatic socket, and
+the native backend can also use automatic allocation for manual development
+launches.
 
 The experimental service retries an unexpected compositor failure, with a
 two-second delay and a limit of three starts within one minute. Once the limit
