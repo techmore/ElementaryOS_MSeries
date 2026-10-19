@@ -1,12 +1,10 @@
-/* Screen share in Wingpanel: a pair of eyes whose popover is the whole interaction
- * (login to copy, viewer link, approve or remove watchers, stop). See ShareState for the launcher contract. */
+/* Screen share section for the Quick Settings popover (top-right menu): status, approve/remove watchers, stop,
+ * links and login. Hidden unless the share launcher is running. See ShareState for the launcher contract. */
 using Gtk;
-using Wingpanel;
 
 namespace MSeries {
-    public class ShareEyesIndicator : Wingpanel.Indicator {
+    public class SharePanel : Gtk.Box {
         private Gtk.Image eyes;
-        private Gtk.Box menu;
         private Gtk.Box content;
         private ShareState state = new ShareState ();
         private ShareClient client = new ShareClient ();
@@ -16,30 +14,40 @@ namespace MSeries {
         private uint poll_source = 0;
         private bool busy = false;
         private bool details_open = false;
+        private int tick_count = 0;
+        private bool dock_check_busy = false;
 
-        public ShareEyesIndicator () {
-            GLib.Object (code_name: "mseries-share-eyes");
-        }
+        /* Fired after every poll: what a dock badge or a notification needs to know. offering = a link exists or a share is live. */
+        public signal void status_changed (bool running, bool offering, int waiting, int watching);
+        /* In Quick Settings this is true: while a share is offered it starts the dock app (eyes in the dock). The app itself sets it false. */
+        public bool spawn_dock_app { get; set; default = false; }
+        /* In Quick Settings: a desktop notification when a viewer starts waiting, so it is noticed without opening the menu. */
+        public bool notify_waiting { get; set; default = false; }
+        /* In Quick Settings the section is always there; when no share server runs it offers to start one. */
+        public bool always_visible { get; set; default = false; }
+        private int last_waiting = 0;
+        private uint32 notification_id = 0;
 
         construct {
             eyes = new Gtk.Image.from_icon_name ("mseries-share-eyes-symbolic") { pixel_size = 18 };
             eyes.add_css_class ("mseries-eyes");
             eyes.set_tooltip_text (state.tooltip ());
-            this.visible = false;
+            orientation = Gtk.Orientation.VERTICAL;
+            visible = false;
+            add_css_class ("mseries-share");
+            margin_top = 6; margin_bottom = 6; margin_start = 6; margin_end = 6;
 
             content = new Gtk.Box (Gtk.Orientation.VERTICAL, 8);
             install_style (content.get_display ());
-            menu = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) {
-                margin_top = 8, margin_bottom = 8, margin_start = 8, margin_end = 8, width_request = 320
-            };
-            menu.add_css_class ("mseries-share");
-            menu.append (content);
+            append (content);
+            // The list is rebuilt as soon as the menu is shown, and polled while it stays open.
+            map.connect (() => { last_digest = ""; tick.begin (); });
 
             tick.begin ();
             poll_source = GLib.Timeout.add_seconds (2, () => { tick.begin (); return GLib.Source.CONTINUE; });
         }
 
-        ~ShareEyesIndicator () {
+        ~SharePanel () {
             if (poll_source != 0) {
                 GLib.Source.remove (poll_source);
             }
@@ -57,7 +65,7 @@ namespace MSeries {
                 text = null;
             }
             state.parse (text, GLib.get_real_time () / 1000000);
-            this.visible = state.running;
+            visible = state.running || always_visible;
             if (state.running) {
                 client.configure (state.local_url, state.email, state.password);
                 yield client.refresh ();
@@ -73,6 +81,11 @@ namespace MSeries {
                     : watching == 0 ? "Sharing your screen · nobody watching yet"
                     : "Sharing your screen · %d people watching".printf (watching))
                 : "Screen share ready · not sharing yet";
+            bool offering = state.running && client.reachable && (client.live || client.link_count > 0);
+            status_changed (state.running, offering, waiting, watching);
+            if (notify_waiting && waiting > last_waiting) notify_viewer.begin ();
+            last_waiting = waiting;
+            if (spawn_dock_app && offering && tick_count++ % 3 == 0) ensure_dock_app.begin ();
             eyes.set_tooltip_text (tip);
             eyes.remove_css_class ("live");
             eyes.remove_css_class ("ask");
@@ -83,6 +96,45 @@ namespace MSeries {
                 rebuild (tip);
             }
             busy = false;
+        }
+
+        private async void notify_viewer () {
+            try {
+                var bus = yield GLib.Bus.get (GLib.BusType.SESSION);
+                var args = new GLib.VariantBuilder (new GLib.VariantType ("(susssasa{sv}i)"));
+                args.add ("s", "Screen Share");
+                args.add ("u", notification_id);
+                args.add ("s", "mseries-share-eyes-symbolic");
+                args.add ("s", "Someone wants to watch your screen");
+                args.add ("s", "Open the eyes menu to allow or deny.");
+                args.add_value (new GLib.Variant.array (new GLib.VariantType ("s"), {}));
+                args.add_value (new GLib.Variant.array (new GLib.VariantType ("{sv}"), {}));
+                args.add ("i", 15000);
+                var r = yield bus.call ("org.freedesktop.Notifications", "/org/freedesktop/Notifications", "org.freedesktop.Notifications", "Notify",
+                    args.end (), new GLib.VariantType ("(u)"), GLib.DBusCallFlags.NONE, 2000);
+                r.get ("(u)", out notification_id);
+            } catch (GLib.Error e) {
+                warning ("notification: %s", e.message);
+            }
+        }
+
+        /* Starts the dock app when nothing owns its bus name. It is not started twice: a second launch would raise its window. */
+        private async void ensure_dock_app () {
+            if (dock_check_busy) return;
+            dock_check_busy = true;
+            try {
+                var bus = yield GLib.Bus.get (GLib.BusType.SESSION);
+                var r = yield bus.call ("org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameHasOwner",
+                    new GLib.Variant ("(s)", "io.github.techmore.ShareEyes"), new GLib.VariantType ("(b)"), GLib.DBusCallFlags.NONE, 2000);
+                bool owned;
+                r.get ("(b)", out owned);
+                if (!owned) {
+                    new GLib.Subprocess.newv ({ "mseries-share-eyes" }, GLib.SubprocessFlags.STDOUT_SILENCE | GLib.SubprocessFlags.STDERR_SILENCE);
+                }
+            } catch (GLib.Error e) {
+                warning ("share dock app: %s", e.message);
+            }
+            dock_check_busy = false;
         }
 
         private void copy (string text, string what) {
@@ -232,8 +284,8 @@ namespace MSeries {
                 halign = Gtk.Align.START, xalign = 0 };
             title.add_css_class ("state-title");
             texts.append (title);
-            texts.append (dim (toast != "" ? toast + " ✓"
-                : !state.running ? "Start the demo with core/scripts/share-demo.sh."
+            texts.append (dim (toast != "" ? toast + (toast == "Starting" ? "…" : " ✓")
+                : !state.running ? (always_visible ? "Nothing is being shared" : "Start the demo with core/scripts/share-demo.sh.")
                 : !client.reachable ? "The share server is not answering."
                 : waiting > 0 ? "Allow or deny below. Nothing is sent until you allow."
                 : client.live ? (watching == 0 ? "Nobody is watching yet" : watching == 1 ? "1 person watching" : "%d people watching".printf (watching))
@@ -246,7 +298,26 @@ namespace MSeries {
                 head.append (chip);
             }
             content.append (head);
-            if (!state.running || !client.reachable) return;
+            if (!state.running) {
+                if (always_visible) {
+                    var go = new Gtk.Button.with_label ("Start screen share");
+                    go.add_css_class ("suggested-action");
+                    go.add_css_class ("primary-wide");
+                    go.clicked.connect (() => {
+                        try {
+                            new GLib.Subprocess (GLib.SubprocessFlags.STDOUT_SILENCE | GLib.SubprocessFlags.STDERR_SILENCE, "mseries-share-start");
+                            toast = "Starting";
+                        } catch (GLib.Error e) {
+                            toast = "Could not start";
+                            warning ("%s", e.message);
+                        }
+                        act ();
+                    });
+                    content.append (go);
+                }
+                return;
+            }
+            if (!client.reachable) return;
 
             // Anyone waiting is the one thing that needs you: it goes straight under the header.
             if (waiting > 0) content.append (watchers_card ());
@@ -271,13 +342,19 @@ namespace MSeries {
 
             // Links: one flat menu-style item each, so the card reads as a short list.
             var links = card (null);
-            var link = client.viewer_link (state.viewer_base);
-            if (link != null) {
-                var cv = item ("insert-link-symbolic", "Copy viewer link",
-                    "until " + new GLib.DateTime.from_unix_local (client.link_expires).format ("%H:%M"), "Copy the link for your viewer");
-                cv.clicked.connect (() => copy (link, "Viewer link"));
-                links.append (cv);
-            } else {
+            var bases = state.link_bases ();
+            for (int bi = 0; bi < bases.length[0]; bi++) {
+                var label = bases[bi, 0];
+                var origin = bases[bi, 1];
+                var link = client.viewer_link (origin);
+                if (link != null) {
+                    var cv = item ("insert-link-symbolic", "Copy %s link".printf (label.down ()),
+                        bi == 0 ? "until " + new GLib.DateTime.from_unix_local (client.link_expires).format ("%H:%M") : null, "Copy the " + label.down () + " link for your viewer");
+                    cv.clicked.connect (() => copy (link, label + " link"));
+                    links.append (cv);
+                }
+            }
+            if (client.viewer_link (state.viewer_base) == null) {
                 var mk = item ("list-add-symbolic", "Create viewer link", null, "Make a link to send to your viewer");
                 mk.clicked.connect (() => { client.create_link.begin ((o, r) => { client.create_link.end (r); act (); }); });
                 links.append (mk);
@@ -298,28 +375,5 @@ namespace MSeries {
             more.notify["expanded"].connect (() => { details_open = more.expanded; });
             content.append (more);
         }
-
-        public override Gtk.Widget get_display_widget () {
-            return eyes;
-        }
-
-        public override Gtk.Widget? get_widget () {
-            return menu;
-        }
-
-        public override void opened () {
-            last_digest = "";
-            tick.begin ();
-        }
-
-        public override void closed () {
-        }
     }
-}
-
-public Wingpanel.Indicator? get_indicator (Module module, Wingpanel.ServerType server_type) {
-    if (server_type != Wingpanel.ServerType.SESSION) {
-        return null;
-    }
-    return new MSeries.ShareEyesIndicator ();
 }
