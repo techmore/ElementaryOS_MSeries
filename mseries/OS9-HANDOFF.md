@@ -5877,3 +5877,11 @@ disabled, verse numerals, clipboard, persistence across a freshly constructed
 panel, return to Daily). Patch rebuilds byte-identically; image wiring OK.
 Not yet installed: the desktop still runs the seasonal build from 19:39.
 
+
+### 2026-10-18 (night): AirDrop radio test plan, steps 0-4 run on the j314s (owner present)
+
+- **Step 0-1:** `python3-libarchive-c` installed (apt); preflight OK; `install-omdrop-radio.sh install` put 30 files in place (awdl0.service not enabled). `omdrop doctor` dropped the driver item.
+- **Step 2:** `nmcli general reload conf`; wld0 and dock Ethernet stayed connected; baseline ping 0% loss, ~7 ms.
+- **Step 3 PASS:** `awdl-up` exit 0: `awdl-if create -> OK`, awdl0 registered, MAC be:d0:74:8f:d9:31, chan_seq/sync_params set; kernel log "AWDL interface awdl0 created (bsscfgidx 2)"; Wi-Fi 0% loss; NetworkManager shows awdl0 unmanaged. Firmware 20.96.31.0.8.7.148, kernel 7.1.12-2-20261017.20-sep-ARCH, no driver change.
+- **Step 4 PASS with a caveat:** a 120 s window opened (`discoverable until ...`, awdl0 UP with fe80:: link-local, status visible=true reason=unproven). The data-path gate needed 3 enable attempts (~2 min): attempts 1-2 sent 20 frames and got 0 completions, attempt 3 got 20/20 (the documented "parked data path"). During the window Wi-Fi stayed up, 0% loss, but RTT rose from ~6 ms to ~240-420 ms; after `stop` it was recovering (~79 ms avg, still settling). `rx_proven` stays false until a peer's frames arrive.
+- **Not run yet:** step 5 (receive from an iPhone), step 6 (send), step 7 (boot enable). No Wi-Fi hang or kernel error seen.
