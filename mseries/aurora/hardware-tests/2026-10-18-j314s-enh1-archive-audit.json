@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "status": "offline archive audit passed; not a boot qualification",
+  "baseline_sha256": "ea7c89aae15adc9760a64226e9834c54a62e75f3f9dddde144e08b9c26aaecf3",
+  "candidate_sha256": "06a885396f5613154b2fbb6774744efde95a9d25512698d297b3f14da0d4f3aa",
+  "candidate_release": "7.1.12-elementary-aurora20-enh1",
+  "verified_module_count": 93,
+  "early_prefix_unchanged": true,
+  "nonmodule_entries_unchanged": true,
+  "module_bytes_match_candidate_tree": true,
+  "dependency_files_present": true
+}
