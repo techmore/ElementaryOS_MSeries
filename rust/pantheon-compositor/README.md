@@ -121,7 +121,12 @@ across workspaces, switches visible windows, and supports Dock requests to
 create the dynamic workspace, move windows, reorder workspaces and focus a
 window across workspaces. An isolated Xvfb run with a temporary Wayland client
 exercised creation, movement, switching and focus. Gala's multitasking view is
-not implemented. Stock Dock also logged its existing
+not implemented. The Gala `PerformAction` compatibility path now implements
+actions 2 (toggle maximize on the focused window) and 3 (minimize the focused window) for
+Wayland and XWayland application windows; these two actions have build
+coverage but still need runtime D-Bus qualification. Action 1 (multitasking
+view) remains unsupported because the Rust session has no overview UI. Stock
+Dock also logged its existing
 workspace-startup race during the nested smoke, so full Dock behavior remains
 unqualified. Hiding is immediate; blur and multi-output Dock behavior remain
 open. The

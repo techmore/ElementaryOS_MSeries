@@ -527,10 +527,119 @@ impl PantheonCompositor {
                     Err("workspace index is outside the current workspace list".into())
                 }
             }
+            GalaAction::PerformAction(2) => self.maximize_focused_window(),
+            GalaAction::PerformAction(3) => self.minimize_focused_window(),
             GalaAction::PerformAction(action) => Err(format!(
                 "Gala action {action} is not implemented by this compositor"
             )),
         }
+    }
+
+    fn focused_window(&self) -> Option<Window> {
+        if let Some(surface) = self
+            .seat
+            .get_keyboard()
+            .and_then(|keyboard| keyboard.current_focus())
+        {
+            let mut root = surface;
+            while let Some(parent) = smithay::wayland::compositor::get_parent(&root) {
+                root = parent;
+            }
+            if let Some(window) = self.find_window_for_surface(&root) {
+                return Some(window);
+            }
+        }
+        let surface = self.x11_keyboard_focus.as_ref()?;
+        self.space
+            .elements()
+            .find(|window| window.x11_surface() == Some(surface))
+            .cloned()
+    }
+
+    fn maximize_focused_window(&mut self) -> Result<(), String> {
+        if self.session_locked {
+            return Err("cannot maximize a window while the session is locked".into());
+        }
+        let window = self
+            .focused_window()
+            .ok_or_else(|| "there is no focused application window to maximize".to_string())?;
+        if let Some(toplevel) = window.toplevel().cloned() {
+            if self.is_panel_surface(toplevel.wl_surface()) {
+                return Err("cannot maximize a panel surface".into());
+            }
+            let maximized = self
+                .managed_windows
+                .get(&toplevel.wl_surface().id())
+                .is_some_and(|state| state.maximized);
+            self.configure_window_mode(toplevel, !maximized, false);
+        } else if let Some(surface) = window.x11_surface().cloned() {
+            let maximized = self
+                .x11_managed_windows
+                .get(&surface.window_id())
+                .is_some_and(|state| state.maximized);
+            self.configure_x11_window_mode(&surface, !maximized, false);
+        } else {
+            return Err("the focused surface is not a managed application window".into());
+        }
+        self.refresh_panel_visibility();
+        self.request_native_redraw();
+        Ok(())
+    }
+
+    fn minimize_focused_window(&mut self) -> Result<(), String> {
+        if self.session_locked {
+            return Err("cannot minimize a window while the session is locked".into());
+        }
+        let window = self
+            .focused_window()
+            .ok_or_else(|| "there is no focused application window to minimize".to_string())?;
+        let Some(location) = self.space.element_location(&window) else {
+            return Err("the focused window is not currently mapped".into());
+        };
+
+        if let Some(toplevel) = window.toplevel() {
+            let surface = toplevel.wl_surface();
+            if self.is_panel_surface(surface) {
+                return Err("cannot minimize a panel surface".into());
+            }
+            let was_focused = self
+                .seat
+                .get_keyboard()
+                .and_then(|keyboard| keyboard.current_focus())
+                .is_some_and(|mut focused| {
+                    while let Some(parent) = smithay::wayland::compositor::get_parent(&focused) {
+                        focused = parent;
+                    }
+                    focused == *surface
+                });
+            self.workspace_manager.set_location(window.id(), location);
+            window.set_activated(false);
+            self.space.unmap_elem(&window);
+            self.minimized_windows
+                .insert(surface.id(), (window, location));
+            if was_focused {
+                self.focus_next_window();
+            }
+        } else if let Some(surface) = window.x11_surface().cloned() {
+            surface
+                .set_mapped(false)
+                .map_err(|error| format!("could not minimize X11 window: {error}"))?;
+            let id = surface.window_id();
+            self.workspace_manager.set_location(window.id(), location);
+            window.set_activated(false);
+            self.space.unmap_elem(&window);
+            self.x11_minimized_windows.insert(id, (window, location));
+            if self.x11_keyboard_focus.as_ref() == Some(&surface) {
+                self.set_x11_keyboard_focus(None, smithay::utils::SERIAL_COUNTER.next_serial());
+                self.focus_next_window();
+            }
+        } else {
+            return Err("the focused surface is not a managed application window".into());
+        }
+        self.refresh_panel_visibility();
+        self.gala_compat.request_windows_changed();
+        self.request_native_redraw();
+        Ok(())
     }
 
     fn window_app_id(&self, window: &Window) -> Option<String> {

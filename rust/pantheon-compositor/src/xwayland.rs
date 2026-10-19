@@ -422,7 +422,7 @@ impl PantheonCompositor {
             .cloned()
     }
 
-    fn configure_x11_window_mode(
+    pub(crate) fn configure_x11_window_mode(
         &mut self,
         surface: &X11Surface,
         maximized: bool,
