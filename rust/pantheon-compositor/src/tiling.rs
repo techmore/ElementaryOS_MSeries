@@ -333,7 +333,7 @@ impl PantheonCompositor {
         }
     }
 
-    fn apply_tile(
+    pub(crate) fn apply_tile(
         &mut self,
         surface: &ToplevelSurface,
         window: &Window,
@@ -422,7 +422,10 @@ impl PantheonCompositor {
     }
 }
 
-fn tile_rect(area: Rectangle<i32, Logical>, position: TilePosition) -> Rectangle<i32, Logical> {
+pub(crate) fn tile_rect(
+    area: Rectangle<i32, Logical>,
+    position: TilePosition,
+) -> Rectangle<i32, Logical> {
     let half_width = area.size.w / 2;
     let half_height = area.size.h / 2;
     let (right, bottom, width, height) = match position {

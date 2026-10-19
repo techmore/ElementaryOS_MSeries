@@ -129,6 +129,8 @@ pub struct PantheonCompositor {
     pub move_grab_active: bool,
     /// In-flight three-or-more-finger swipe, if the active backend reports one.
     pub(crate) swipe_gesture: Option<crate::gestures::SwipeGestureState>,
+    /// Active grid overview ("expose") session, if any.
+    pub(crate) overview: Option<crate::overview::OverviewState>,
     pub minimized_windows: HashMap<
         smithay::reexports::wayland_server::backend::ObjectId,
         (Window, Point<i32, Logical>),
@@ -406,6 +408,7 @@ impl PantheonCompositor {
             corner_snap_cancelled: false,
             move_grab_active: false,
             swipe_gesture: None,
+            overview: None,
             minimized_windows: HashMap::new(),
             initially_positioned: HashSet::new(),
             popups,
@@ -530,6 +533,7 @@ impl PantheonCompositor {
                     Err("workspace index is outside the current workspace list".into())
                 }
             }
+            GalaAction::PerformAction(1) => self.toggle_overview(),
             GalaAction::PerformAction(2) => self.maximize_focused_window(),
             GalaAction::PerformAction(3) => self.minimize_focused_window(),
             GalaAction::PerformAction(4) => self.launch_panel_main_menu(),
@@ -737,6 +741,7 @@ impl PantheonCompositor {
             crate::gestures::SwipeOutcome::None => Ok(()),
             crate::gestures::SwipeOutcome::NextWorkspace => self.switch_workspace_relative(1),
             crate::gestures::SwipeOutcome::PreviousWorkspace => self.switch_workspace_relative(-1),
+            crate::gestures::SwipeOutcome::ToggleOverview => self.toggle_overview(),
         }
     }
 

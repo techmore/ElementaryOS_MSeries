@@ -212,7 +212,12 @@ D-Bus interface. Window enumeration, app IDs, focus state, workspace listing,
 activation and reorder, dynamic workspace creation, window movement, and
 cross-workspace focus are implemented. An isolated Xvfb run with a temporary
 Wayland client exercised workspace creation, movement, switching and focus.
-Overview remains unsupported.
+Gala's scaled multitasking view remains unsupported; `PerformAction(1)` and an
+upward three-finger swipe now toggle a grid overview ("expose") instead, which
+rearranges the active workspace's windows per output and restores the prior
+plain, tiled, maximized or fullscreen arrangement on exit. A private
+Xvfb/Winit D-Bus smoke with two GTK Wayland windows opened and closed it; see
+`ARCHITECTURE-AND-STATUS.md` for open visual/native gaps.
 The nested stock Dock 8.3.3 smoke bound the panel protocol and attached buffers,
 but also logged its known asynchronous workspace-initialization critical, so
 Dock interaction is still not qualified end to end.

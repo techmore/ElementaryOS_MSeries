@@ -116,6 +116,13 @@ impl PantheonCompositor {
                     time,
                     |state, modifiers, keysym| {
                         if key_state == smithay::backend::input::KeyState::Pressed
+                            && keysym.modified_sym()
+                                == smithay::input::keyboard::xkb::keysyms::KEY_Escape.into()
+                            && state.handle_overview_key()
+                        {
+                            return FilterResult::Intercept(());
+                        }
+                        if key_state == smithay::backend::input::KeyState::Pressed
                             && state.move_grab_active
                             && keysym.modified_sym()
                                 == smithay::input::keyboard::xkb::keysyms::KEY_Escape.into()
@@ -235,6 +242,14 @@ impl PantheonCompositor {
 
                 if !self.session_locked
                     && ButtonState::Pressed == button_state
+                    && self.handle_overview_click(pointer.current_location())
+                {
+                    pointer.frame(self);
+                    return;
+                }
+
+                if !self.session_locked
+                    && ButtonState::Pressed == button_state
                     && !pointer.is_grabbed()
                 {
                     if let Some((window, _loc)) = self
@@ -330,9 +345,8 @@ impl PantheonCompositor {
                 if self.session_locked || pointer_grabbed {
                     self.swipe_gesture = None;
                 } else {
-                    self.swipe_gesture = Some(crate::gestures::SwipeGestureState::begin(
-                        event.fingers(),
-                    ));
+                    self.swipe_gesture =
+                        Some(crate::gestures::SwipeGestureState::begin(event.fingers()));
                 }
             }
             InputEvent::GestureSwipeUpdate { event, .. } => {

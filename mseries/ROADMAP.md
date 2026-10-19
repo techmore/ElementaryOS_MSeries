@@ -185,18 +185,30 @@ one core in both sessions under unmatched workloads, whole-system power is
 unmeasured, and no performance win is established.
 
 The prototype now recognizes native libinput touchpad swipes for workspace
-navigation: non-cancelled three-or-more-finger swipes that pass a 90-logical-
-pixel threshold with horizontal dominance select the adjacent workspace in the
-content-following direction and stop at the first/last workspace. Gestures are
-ignored while the session is locked or a move, resize or popup grab is active;
-pinch and vertical swipes remain unrecognized until an overview action exists.
-The state machine lives in `rust/pantheon-compositor/src/gestures.rs` with
-three unit tests; `cargo test -p pantheon-compositor` passes, both default and
-`native-drm` builds check, and clippy is clean. The installed nested Winit
-backend never emits gesture events, so physical M-series trackpad
-qualification, user-configurable bindings and vertical/overview routing remain
-open. Gala is still the active session and no package was installed from this
-batch.
+navigation and the overview: non-cancelled three-or-more-finger swipes that
+pass a 90-logical-pixel threshold with horizontal dominance select the adjacent
+workspace in the content-following direction and stop at the first/last
+workspace, and an upward swipe of the same size toggles the grid overview.
+Gestures are ignored while the session is locked or a move, resize or popup
+grab is active; pinch gestures remain unrecognized. The state machine lives in
+`rust/pantheon-compositor/src/gestures.rs` with unit tests; `cargo test -p
+pantheon-compositor` passes, both default and `native-drm` builds check, and
+clippy is clean.
+
+`PerformAction(1)` no longer errors: it toggles a grid overview ("expose")
+implemented in `rust/pantheon-compositor/src/overview.rs`. The mode arranges
+each output's active-workspace windows into a centered grid inside the work
+area, saves and restores plain, tiled, maximized and fullscreen arrangements,
+focuses a clicked window and closes on Escape or a second toggle. A private
+Xvfb/Winit D-Bus smoke with two GTK Wayland windows opened and closed the mode
+and the compositor logged both transitions; the grid layout has unit tests.
+Scaled thumbnails, animations, drag reorganization and native qualification
+remain open.
+
+The installed nested Winit backend never emits gesture events, so physical
+M-series trackpad qualification, user-configurable bindings and where the
+overview lands on the keyboard-accessible path remain open. Gala is still the
+active session and no package was installed from this batch.
 
 ## Signal Granite palette completeness — 2026-10-18
 

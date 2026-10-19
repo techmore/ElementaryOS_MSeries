@@ -9,6 +9,7 @@ mod handlers;
 mod input;
 #[cfg(feature = "native-drm")]
 pub mod native;
+mod overview;
 mod pantheon_shell;
 mod protocols;
 mod shell_compat;

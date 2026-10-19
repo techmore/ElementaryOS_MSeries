@@ -2,10 +2,12 @@
 //!
 //! The native libinput backend forwards raw gesture events here. This module
 //! keeps the small amount of state needed to turn a swipe sequence into a
-//! single workspace action: a gesture only fires when it is not cancelled,
-//! uses at least three fingers, and is dominated by one axis past a distance
-//! threshold. Swipe direction follows the content: moving three fingers left
-//! reveals the workspace to the right and selects the next workspace.
+//! single action: a gesture only fires when it is not cancelled, uses at least
+//! three fingers, and is dominated by one axis past a distance threshold.
+//! Swipe direction follows the content: moving three fingers left reveals the
+//! workspace to the right and selects the next workspace; moving three fingers
+//! up toggles the grid overview (the explicit replacement for Gala's
+//! multitasking view).
 //!
 //! Pinch gestures are deliberately ignored until the compositor has an
 //! overview surface that zoom actions could drive.
@@ -24,6 +26,7 @@ pub(crate) enum SwipeOutcome {
     None,
     PreviousWorkspace,
     NextWorkspace,
+    ToggleOverview,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -51,14 +54,19 @@ impl SwipeGestureState {
             return SwipeOutcome::None;
         }
         let (dx, dy) = (self.delta.x, self.delta.y);
-        if dx.abs() < SWIPE_THRESHOLD || dx.abs() <= dy.abs() {
-            return SwipeOutcome::None;
+        if dx.abs() >= SWIPE_THRESHOLD && dx.abs() > dy.abs() {
+            return if dx < 0.0 {
+                SwipeOutcome::NextWorkspace
+            } else {
+                SwipeOutcome::PreviousWorkspace
+            };
         }
-        if dx < 0.0 {
-            SwipeOutcome::NextWorkspace
-        } else {
-            SwipeOutcome::PreviousWorkspace
+        // An upward swipe opens or closes the grid overview, mirroring the
+        // installed Gala overlay gesture mapping to PerformAction(1).
+        if dy <= -SWIPE_THRESHOLD && dy.abs() > dx.abs() {
+            return SwipeOutcome::ToggleOverview;
         }
+        SwipeOutcome::None
     }
 }
 
@@ -76,6 +84,19 @@ mod tests {
         let mut gesture = SwipeGestureState::begin(3);
         gesture.update((120.0, 0.0).into());
         assert_eq!(gesture.finish(false), SwipeOutcome::PreviousWorkspace);
+    }
+
+    #[test]
+    fn upward_swipe_toggles_the_overview() {
+        let mut gesture = SwipeGestureState::begin(3);
+        gesture.update((-5.0, -60.0).into());
+        gesture.update((4.0, -70.0).into());
+        assert_eq!(gesture.finish(false), SwipeOutcome::ToggleOverview);
+
+        // Downward swipes are not bound yet.
+        let mut gesture = SwipeGestureState::begin(3);
+        gesture.update((0.0, 140.0).into());
+        assert_eq!(gesture.finish(false), SwipeOutcome::None);
     }
 
     #[test]

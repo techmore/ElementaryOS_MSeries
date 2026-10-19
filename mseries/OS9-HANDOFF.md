@@ -1,5 +1,48 @@
 # OS 9 implementation / Claude Code handoff
 
+## Rust compositor: grid overview for PerformAction(1) and upward swipe — 2026-10-19
+
+Branch `codex/rust-gala-stack-integration`, worktree
+`/home/sdolbec/ElementaryOS_MSeries-wt/rust-gala-stack-integration`.
+
+- `PerformAction(1)` no longer errors. It toggles a new grid overview
+  ("expose") mode in `rust/pantheon-compositor/src/overview.rs`: each output's
+  active-workspace application windows (panels and minimized windows excluded)
+  are rearranged into a centered grid inside that output's work area with
+  24-logical-pixel margins and 12-pixel gaps, sized `ceil(sqrt(n))` columns.
+- The mode is the explicit supported replacement for Gala's scaled
+  multitasking view, per `mseries/pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md`.
+  Entering saves each window's prior location, size and managed state (plain,
+  tiled, maximized, fullscreen) and restores all of it on exit. Clicking a
+  window focuses it and closes the mode; Escape closes it; a window closed
+  while the overview is open is skipped during restore.
+- Gestures: `SwipeOutcome::ToggleOverview` added to
+  `rust/pantheon-compositor/src/gestures.rs`; a non-cancelled
+  three-or-more-finger upward swipe past the 90-logical-pixel threshold with
+  vertical dominance toggles the overview. `input.rs` intercepts Escape while
+  the overview is open, routes pointer presses through
+  `handle_overview_click`, and `state.rs` maps the Gala action and the swipe
+  outcome to `toggle_overview`. `tiling.rs` exposes `apply_tile`/`tile_rect`
+  crate-wide so the overview can restore tiled windows through the normal
+  tiling path.
+- Verification (this host, no session taken over): `cargo check --workspace
+  --all-targets`, `cargo check -p pantheon-compositor --bins --features
+  native-drm`, `cargo test -p pantheon-compositor` (7 tests: 4 gesture, 3 grid
+  layout) and `cargo clippy -p pantheon-compositor --all-targets` all pass.
+- New private nested smoke (Xvfb + dbus-run-session, fake
+  `XDG_RUNTIME_DIR`, `PANTHEON_WAYLAND_DISPLAY=pantheon-overview-smoke`, two
+  GTK Wayland `zenity` windows): `gdbus call … org.pantheon.gala.PerformAction
+  1` twice both returned `()`, and the compositor logged `opened the grid
+  overview windows=2` then `closed the grid overview`. The overview visuals
+  and the restored geometry were not screenshot-inspected.
+
+Not done / next task: rendered scaled thumbnails/animations and drag
+reorganization in the overview; XWayland and mixed Wayland/XWayland windows in
+the overview smoke; physical M-series trackpad qualification (the nested Winit
+backend emits no gesture events); pinch gestures; user-configurable bindings.
+No package was built, nothing was installed, and Gala remains the active
+session.
+
 ## Rust compositor: repaired build, clippy cleanups, touchpad workspace swipes — 2026-10-19
 
 Branch `codex/rust-gala-stack-integration`, worktree

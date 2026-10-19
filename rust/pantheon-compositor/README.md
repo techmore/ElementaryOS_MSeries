@@ -121,17 +121,25 @@ across workspaces, switches visible windows, and supports Dock requests to
 create the dynamic workspace, move windows, reorder workspaces and focus a
 window across workspaces. An isolated Xvfb run with a temporary Wayland client
 exercised creation, movement, switching and focus. Gala's multitasking view is
-not implemented. The Gala `PerformAction` compatibility path now implements
-actions 2 (toggle maximize on the focused window) and 3 (minimize the focused window) for
-Wayland and XWayland application windows. A private Xvfb/Winit D-Bus smoke
-focused a GTK Wayland window, invoked action 2 twice, minimized it with action
-3, and restored it through `FocusWindow`; each D-Bus call succeeded. The
-smoke did not inspect the rendered maximize geometry, and the XWayland and
-native paths remain unqualified. Action 4 now launches the configured
-`panel-main-menu-action` from `io.elementary.desktop.wm.behavior`, keeping the
-existing Wingpanel launcher in charge of its UI; it is build-checked but not
-runtime-qualified. Action 1 (multitasking view) remains unsupported because
-the Rust session has no overview UI. Stock Dock also logged its existing
+replaced by a grid overview ("expose") mode: the active workspace's windows are
+arranged into a per-output grid, a click focuses the chosen window, Escape
+closes the mode, and the prior plain, tiled, maximized or fullscreen
+arrangement is restored. The Gala `PerformAction` compatibility path now
+implements action 1 as a grid-overview toggle, actions 2 (toggle maximize on
+the focused window) and 3 (minimize the focused window) for Wayland and
+XWayland application windows. A private Xvfb/Winit D-Bus smoke opened and
+closed the overview with two GTK Wayland windows; each D-Bus call succeeded
+and the compositor logged both transitions. A separate private smoke focused
+a GTK Wayland window, invoked action 2 twice, minimized it with action
+3, and restored it through `FocusWindow`; each D-Bus call succeeded. Those
+smokes did not inspect the rendered maximize geometry or the overview visuals,
+and the XWayland and native paths remain unqualified. Action 4 now launches
+the configured `panel-main-menu-action` from
+`io.elementary.desktop.wm.behavior`, keeping the existing Wingpanel launcher
+in charge of its UI; it is build-checked but not runtime-qualified. The grid
+overview is a supported replacement, not a pixel-faithful Gala animation:
+scaled window thumbnails, drag-reorganization and transitions remain open.
+Stock Dock also logged its existing
 workspace-startup race during the nested smoke, so full Dock behavior remains
 unqualified. Hiding is immediate; blur and multi-output Dock behavior remain
 open. The
@@ -207,14 +215,15 @@ xdg move/resize grab implementations to receive physical pointer motion.
 Multi-output bounds, pointer constraints, and hardware input remain
 unqualified.
 
-Native libinput swipe gestures are now recognized for workspace navigation:
-three-or-more-finger swipes that are not cancelled and that travel past a
-logical-pixel threshold with horizontal dominance select the adjacent
-workspace, stopping at the first and last workspace. Gestures are dropped
+Native libinput swipe gestures are now recognized for workspace navigation and
+the overview: three-or-more-finger swipes that are not cancelled and that
+travel past a logical-pixel threshold with horizontal dominance select the
+adjacent workspace, stopping at the first and last workspace, while an upward
+swipe of the same size toggles the grid overview. Gestures are dropped
 while the session is locked or a pointer grab (move, resize or popup) is
-active. Pinch and vertical swipes remain unrecognized until an overview action
-exists. The recognition state machine has unit tests; the libinput event path
-is compile-checked only and no physical trackpad qualification has been run.
+active. Pinch gestures remain unrecognized. The recognition state machine has
+unit tests; the libinput event path is compile-checked only and no physical
+trackpad qualification has been run.
 
 Xdg popup requests now resolve their root to a managed toplevel and install
 Smithay's popup keyboard and pointer grabs, including the serial checks needed
