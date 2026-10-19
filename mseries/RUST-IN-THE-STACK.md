@@ -37,12 +37,20 @@ Kernel               drm/asahi GPU driver (RUST)          apple-dcp display driv
 ## Upstream Rust work for Pantheon or mutter
 
 Searched 2026-10-18: no Rust branch in GNOME/vala, GNOME/mutter (only `wip/nielsdg/uncrustify`, a C
-formatter), or elementary/gala, granite, wingpanel, dock. Neither project has a Rust port in progress.
+formatter), or elementary/gala, granite, wingpanel, dock. So there is nothing upstream to port from.
 Rust compositors exist outside them: Smithay (library), cosmic-comp (System76 COSMIC), niri. GTK4 apps
 can be written in Rust with gtk4-rs today.
 
+**Our own effort:** branch `codex/rust-mutter-pantheon` ("Mutter-minimal viable Rust", Codex): a nested
+Smithay/Winit compositor in `rust/pantheon-compositor` that already advertises the Pantheon desktop-shell
+protocol v2 (panel anchor, size, hide mode, offset; maximize respects panel geometry). Scope and acceptance
+list: `mseries/pantheon-rust-compositor/` on that branch. It is a nested prototype; Gala stays the production
+session. The 2026-10-18 mutter crash (destroyed surface reached from popup close) is a good acceptance test
+for it: closing a popup under the pointer must not touch a freed surface.
+
 ## Where Rust fits this project
 
-Our repo has no Rust crates yet. Best candidates are our own long-running daemons that touch hardware or
-parse input: power (`mseries-power`), display profiles, docked-lid, dictation input. Rewriting mutter or Gala
-is a separate, multi-year effort and not on the path to the primary goal.
+Main already has a Rust workspace (`rust/`) with `mseries-power`; `rust/pantheon-compositor` is on the
+compositor branch. Further daemon candidates: display profiles, docked-lid, dictation input. The compositor
+replaces mutter only in qualified slices; Gala remains the session until on-device acceptance, and the
+dock HDMI goal (G3) stays a kernel/DCP problem either way.
