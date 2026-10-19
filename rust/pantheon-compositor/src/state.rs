@@ -12,7 +12,7 @@ use smithay::{
             timer::{TimeoutAction, Timer},
         },
         wayland_server::{
-            Client, Display, DisplayHandle, Resource,
+            Display, DisplayHandle, Resource,
             backend::{ClientData, ClientId, DisconnectReason},
             protocol::wl_surface::WlSurface,
         },
@@ -52,20 +52,20 @@ use crate::tiling::{CornerSnapPreview, TilingBindings};
 #[cfg(feature = "native-drm")]
 use smithay::reexports::calloop::channel::Sender;
 
-fn is_ibus_input_method_client(client: &Client, display: &DisplayHandle) -> bool {
+fn is_ibus_input_method_stream(stream: &std::os::unix::net::UnixStream) -> bool {
     use std::os::unix::fs::MetadataExt;
 
-    let Ok(credentials) = client.get_credentials(display) else {
+    let Ok(credentials) = smithay::reexports::rustix::net::sockopt::socket_peercred(stream) else {
         return false;
     };
     let Ok(current_user) = std::fs::metadata("/proc/self") else {
         return false;
     };
-    if credentials.uid != current_user.uid() {
+    if credentials.uid.as_raw() != current_user.uid() {
         return false;
     }
 
-    std::fs::read_link(format!("/proc/{}/exe", credentials.pid))
+    std::fs::read_link(format!("/proc/{}/exe", credentials.pid.as_raw_pid()))
         .ok()
         .and_then(|path| path.file_name().map(|name| name.to_owned()))
         .is_some_and(|name| name == "ibus-daemon")
@@ -197,11 +197,11 @@ impl PantheonCompositor {
         let data_device_state = DataDeviceState::new::<Self>(&dh);
         let primary_selection_state = PrimarySelectionState::new::<Self>(&dh);
         let text_input_manager_state = TextInputManagerState::new::<Self>(&dh);
-        let input_method_display_handle = dh.clone();
-        let input_method_manager_state =
-            InputMethodManagerState::new::<Self, _>(&dh, move |client| {
-                is_ibus_input_method_client(client, &input_method_display_handle)
-            });
+        let input_method_manager_state = InputMethodManagerState::new::<Self, _>(&dh, |client| {
+            client
+                .get_data::<ClientState>()
+                .is_some_and(|data| data.is_ibus_input_method_client)
+        });
         let pantheon_shell_state = PantheonShellState::new::<Self>(&dh);
         let (display_config, apply_requests) = DisplayConfigHandle::start();
         event_loop.handle().insert_source(
@@ -291,8 +291,6 @@ impl PantheonCompositor {
             .handle()
             .insert_source(osd_redraw_receiver, |event, _, _state| {
                 if matches!(event, channel::Event::Msg(())) {
-                    _state.request_winit_redraw();
-                    #[cfg(feature = "native-drm")]
                     _state.request_native_redraw();
                 }
             })?;
@@ -366,6 +364,7 @@ impl PantheonCompositor {
     }
 
     pub fn request_native_redraw(&self) {
+        self.request_winit_redraw();
         #[cfg(feature = "native-drm")]
         if let Some(sender) = &self.native_redraw_sender {
             let _ = sender.send(());
@@ -956,9 +955,16 @@ impl PantheonCompositor {
             // Inside the callback, you should insert the client into the display.
             //
             // You may also associate some data with the client when inserting the client.
+            let is_ibus_input_method_client = is_ibus_input_method_stream(&client_stream);
             state
                 .display_handle
-                .insert_client(client_stream, Arc::new(ClientState::default()))
+                .insert_client(
+                    client_stream,
+                    Arc::new(ClientState {
+                        is_ibus_input_method_client,
+                        ..ClientState::default()
+                    }),
+                )
                 .unwrap();
         })?;
 
@@ -1140,6 +1146,7 @@ impl XdgActivationHandler for PantheonCompositor {
 #[derive(Default)]
 pub struct ClientState {
     pub compositor_state: CompositorClientState,
+    pub is_ibus_input_method_client: bool,
 }
 
 impl ClientData for ClientState {

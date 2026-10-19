@@ -13,6 +13,7 @@ use smithay::{
         },
         shm::{ShmHandler, ShmState},
     },
+    xwayland::XWaylandClientData,
 };
 
 use super::xdg_shell;
@@ -23,7 +24,13 @@ impl CompositorHandler for PantheonCompositor {
     }
 
     fn client_compositor_state<'a>(&self, client: &'a Client) -> &'a CompositorClientState {
-        &client.get_data::<ClientState>().unwrap().compositor_state
+        if let Some(state) = client.get_data::<ClientState>() {
+            return &state.compositor_state;
+        }
+        if let Some(state) = client.get_data::<XWaylandClientData>() {
+            return &state.compositor_state;
+        }
+        panic!("unknown Wayland client data type")
     }
 
     fn commit(&mut self, surface: &WlSurface) {
@@ -45,8 +52,6 @@ impl CompositorHandler for PantheonCompositor {
         xdg_shell::handle_commit(self, surface);
         pantheon_shell::handle_surface_commit(self, surface);
         resize_grab::handle_commit(&mut self.space, surface);
-        self.request_winit_redraw();
-        #[cfg(feature = "native-drm")]
         self.request_native_redraw();
     }
 }
