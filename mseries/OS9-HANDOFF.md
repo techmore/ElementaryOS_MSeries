@@ -6857,3 +6857,7 @@ an opt-in Rust login session entry once the compositor has DRM/KMS, input and lo
 ## Rust session shell clients: renderer fix — 2026-10-19
 
 Native Rust-session Wingpanel looped on Vulkan `SURFACE_LOST` (compositor has no `linux-dmabuf`), spinning CPU and holding 2.3 GB; Dock was skipped only by the owner's opt-out marker. Reproduced in a private nested Xvfb run; `GSK_RENDERER=gl` removed it. Added to both shell units plus `mseries/pantheon-rust-compositor/test-session-units.sh` (passes). Not verified: native panel visibility, Dock render. Next: implement `linux-dmabuf` in the compositor, then a native login with the new package (needs owner OK).
+
+## Repo housekeeping — 2026-10-19
+
+Owner-approved cleanup: deleted 58 remote branches fully merged into origin/main (all 2026-10-18 feature/docs/fix branches), removed 15 clean merged worktrees (none busy) and pruned 2 missing /tmp worktree entries. Kept: main, dev, every unmerged or squash-merged-unknown branch, all unmerged/detached worktrees. Local branches were not deleted. Recovery: merged branch tips remain reachable from main.
