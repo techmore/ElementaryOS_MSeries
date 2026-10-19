@@ -28,6 +28,7 @@ pub struct OutputSnapshot {
     pub x: i32,
     pub y: i32,
     pub primary: bool,
+    pub enabled: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -60,6 +61,7 @@ pub struct SavedMonitorConfiguration {
     pub scale: f64,
     pub transform: u32,
     pub primary: bool,
+    pub enabled: bool,
 }
 
 fn monitor_configuration_path() -> Option<PathBuf> {
@@ -100,6 +102,14 @@ pub fn load_saved_monitor_configurations() -> HashMap<String, SavedMonitorConfig
             else {
                 return None;
             };
+            let enabled = match fields.next() {
+                None | Some("1") => true,
+                Some("0") => false,
+                Some(_) => return None,
+            };
+            if fields.next().is_some() {
+                return None;
+            }
             let scale = scale.parse::<f64>().ok()?;
             let transform = transform.parse::<u32>().ok()?;
             if !scale.is_finite() || !(0.5..=4.0).contains(&scale) || transform > 7 {
@@ -113,13 +123,14 @@ pub fn load_saved_monitor_configurations() -> HashMap<String, SavedMonitorConfig
                 scale,
                 transform,
                 primary: primary == "1",
+                enabled,
             })
         })
         .map(|configuration| (configuration.connector.clone(), configuration))
         .collect::<HashMap<_, _>>();
     if configurations
         .values()
-        .filter(|configuration| configuration.primary)
+        .filter(|configuration| configuration.primary && configuration.enabled)
         .count()
         == 1
     {
@@ -153,7 +164,7 @@ pub fn save_monitor_configurations(configurations: &[SavedMonitorConfiguration])
             ));
         }
         contents.push_str(&format!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
             configuration.connector,
             configuration.mode,
             configuration.x,
@@ -161,6 +172,7 @@ pub fn save_monitor_configurations(configurations: &[SavedMonitorConfiguration])
             configuration.scale,
             configuration.transform,
             u8::from(configuration.primary),
+            u8::from(configuration.enabled),
         ));
     }
     fs::write(&temporary_path, contents)?;
@@ -187,6 +199,7 @@ pub struct ApplyRequest {
     pub serial: u32,
     pub method: u32,
     pub logical_monitors: Vec<ApplyLogicalMonitor>,
+    pub current_outputs: Vec<OutputSnapshot>,
     pub response: mpsc::SyncSender<Result<(), String>>,
 }
 
@@ -246,8 +259,10 @@ impl DisplayConfigServer {
         let (serial, outputs) = self.0.lock().expect("display config lock poisoned").clone();
         let mut outputs = outputs.into_values().collect::<Vec<_>>();
         outputs.sort_by(|a, b| (a.x, a.y, &a.connector).cmp(&(b.x, b.y, &b.connector)));
-        if !outputs.iter().any(|output| output.primary)
-            && let Some(first) = outputs.first_mut()
+        if !outputs
+            .iter()
+            .any(|output| output.primary && output.enabled)
+            && let Some(first) = outputs.iter_mut().find(|output| output.enabled)
         {
             first.primary = true;
         }
@@ -301,15 +316,17 @@ impl DisplayConfigServer {
                 })
                 .collect();
             monitors.push((monitor_info.clone(), modes, Properties::new()));
-            logical_monitors.push((
-                output.x,
-                output.y,
-                output.scale,
-                output.transform,
-                output.primary,
-                vec![monitor_info],
-                Properties::new(),
-            ));
+            if output.enabled {
+                logical_monitors.push((
+                    output.x,
+                    output.y,
+                    output.scale,
+                    output.transform,
+                    output.primary,
+                    vec![monitor_info],
+                    Properties::new(),
+                ));
+            }
         }
         let mut properties = Properties::new();
         properties.insert("layout-mode".into(), OwnedValue::from(1_u32));
@@ -323,13 +340,13 @@ impl DisplayConfigServer {
         logical_monitors: Vec<ApplyLogicalMonitor>,
         _properties: Properties,
     ) -> zbus::fdo::Result<()> {
-        let current_serial = self
+        let (current_serial, current_outputs) = self
             .0
             .lock()
             .map_err(|_| {
                 zbus::fdo::Error::Failed("display configuration state is unavailable".into())
             })?
-            .0;
+            .clone();
         if serial != current_serial {
             return Err(zbus::fdo::Error::Failed(format!(
                 "stale display configuration serial {serial}; current serial is {current_serial}"
@@ -347,6 +364,7 @@ impl DisplayConfigServer {
                 serial,
                 method,
                 logical_monitors,
+                current_outputs: current_outputs.into_values().collect(),
                 response,
             })
             .map_err(|_| zbus::fdo::Error::Failed("compositor event loop is unavailable".into()))?;

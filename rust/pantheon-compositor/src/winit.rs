@@ -81,6 +81,7 @@ pub fn init_winit(
         x: output.current_location().x,
         y: output.current_location().y,
         primary: true,
+        enabled: true,
     });
 
     let mut damage_tracker = OutputDamageTracker::from_output(&output);
@@ -121,6 +122,7 @@ pub fn init_winit(
                         x: output.current_location().x,
                         y: output.current_location().y,
                         primary: true,
+                        enabled: true,
                     });
                 }
                 WinitEvent::Input(event) => state.process_input_event(event),

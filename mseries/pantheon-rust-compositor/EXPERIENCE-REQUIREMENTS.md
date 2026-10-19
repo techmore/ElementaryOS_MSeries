@@ -106,13 +106,20 @@ Wayland session and rendered SHM buffers. The prototype serves the
 `org.gnome.Mutter.DisplayConfig.GetCurrentState` query Wingpanel uses, and
 Wingpanel completes that call. Native `GetCurrentState` lists connector modes
 reported by DRM and marks current/preferred modes. `ApplyMonitorsConfig` now
-validates serials, output assignments, mode IDs, scale and transform. Native
-mode changes use Smithay's shared output manager with rollback; temporary
-layout, scale and transform changes update Wayland outputs. Method 2 saves a
-per-user profile and native startup restores saved modes and layout. Disabling
-outputs, mirroring, unsupported properties and nested Winit mode changes are
-rejected. Both default and native DRM builds compile; runtime changes on the
-active M-series display remain unqualified. The compositor advertises
+validates serials, connector assignments, mode IDs, scale and transform. It
+supports disabling and re-enabling native outputs: disabled connectors remain
+in the monitor inventory without a logical placement, the KMS output is
+released/recreated, and method 2 persists enabled state alongside each
+monitor's mode and layout. Existing seven-field profiles default to enabled.
+For safety, a single apply request must retain at least one currently active
+output; a disjoint output-set transition must enable the replacement first and
+disable the old output in a subsequent apply.
+Native mode changes use Smithay's shared output manager with rollback;
+temporary layout, scale and transform changes update Wayland outputs. Mirroring,
+unsupported properties and nested Winit monitor-set changes remain rejected.
+Both default and native DRM builds compile; disable/re-enable, reconnect and
+mode-rollback behavior remain unqualified at runtime on the active M-series
+display. The compositor advertises
 `wp_fractional_scale_v1` and `wp_viewporter`, setting each window surface's
 preferred scale from its first mapped output. Runtime checks for moving a
 surface between differently scaled outputs remain open. The compositor now

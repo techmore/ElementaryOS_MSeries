@@ -383,13 +383,14 @@ impl PantheonCompositor {
             return Err("monitor configuration cannot change while the session is locked".into());
         }
 
+        #[cfg(not(feature = "native-drm"))]
         let outputs = self.space.outputs().cloned().collect::<Vec<_>>();
-        if request.logical_monitors.len() != outputs.len() {
-            return Err("disabling outputs and monitor mirroring are not supported yet".into());
-        }
-
+        let known_outputs = request
+            .current_outputs
+            .iter()
+            .map(|output| (output.connector.clone(), output.clone()))
+            .collect::<HashMap<_, _>>();
         let mut configurations = HashMap::new();
-        let mut saved_configurations = Vec::new();
         let mut primary_count = 0;
         for (x, y, scale, transform, primary, monitors, properties) in &request.logical_monitors {
             if !scale.is_finite() || !(0.5..=4.0).contains(scale) {
@@ -417,23 +418,31 @@ impl PantheonCompositor {
             if !monitor_properties.is_empty() {
                 return Err("monitor configuration properties are not supported".into());
             }
-            let Some(output) = outputs.iter().find(|output| output.name() == *connector) else {
+            let Some(snapshot) = known_outputs.get(connector) else {
                 return Err(format!("monitor {connector} is no longer connected"));
             };
-            let Some(mode) = output.modes().into_iter().find(|mode| {
+            if !snapshot.modes.iter().any(|mode| {
                 format!(
                     "{}x{}@{:.3}",
-                    mode.size.w,
-                    mode.size.h,
-                    f64::from(mode.refresh) / 1000.0
+                    mode.width,
+                    mode.height,
+                    f64::from(mode.refresh_millihz) / 1000.0
                 ) == *mode_id
-            }) else {
+            }) {
                 return Err(format!("mode {mode_id} is unavailable on {connector}"));
-            };
+            }
             if configurations
                 .insert(
                     connector.clone(),
-                    (*x, *y, *scale, transform, *primary, mode),
+                    (
+                        *x,
+                        *y,
+                        *scale,
+                        transform,
+                        *primary,
+                        mode_id.clone(),
+                        transform_value,
+                    ),
                 )
                 .is_some()
             {
@@ -442,36 +451,109 @@ impl PantheonCompositor {
             if *primary {
                 primary_count += 1;
             }
-            saved_configurations.push(SavedMonitorConfiguration {
-                connector: connector.clone(),
-                mode: mode_id.clone(),
-                x: *x,
-                y: *y,
-                scale: *scale,
-                transform: transform_value,
-                primary: *primary,
-            });
         }
-        if configurations.len() != outputs.len() {
-            return Err("every connected output must appear exactly once".into());
-        }
-        if primary_count != 1 {
+        if configurations.is_empty() || primary_count != 1 {
             return Err("exactly one primary monitor is required".into());
         }
+        if configurations
+            .values()
+            .filter(|configuration| configuration.4)
+            .count()
+            != 1
+        {
+            return Err("at least one enabled output and exactly one primary are required".into());
+        }
+
+        let mut saved_configurations = known_outputs
+            .values()
+            .map(|snapshot| {
+                if let Some((x, y, scale, _transform, primary, mode, transform_value)) =
+                    configurations.get(&snapshot.connector)
+                {
+                    SavedMonitorConfiguration {
+                        connector: snapshot.connector.clone(),
+                        mode: mode.clone(),
+                        x: *x,
+                        y: *y,
+                        scale: *scale,
+                        transform: *transform_value,
+                        primary: *primary,
+                        enabled: true,
+                    }
+                } else {
+                    SavedMonitorConfiguration {
+                        connector: snapshot.connector.clone(),
+                        mode: format!(
+                            "{}x{}@{:.3}",
+                            snapshot.width,
+                            snapshot.height,
+                            f64::from(snapshot.refresh_millihz) / 1000.0
+                        ),
+                        x: snapshot.x,
+                        y: snapshot.y,
+                        scale: snapshot.scale,
+                        transform: snapshot.transform,
+                        primary: false,
+                        enabled: false,
+                    }
+                }
+            })
+            .collect::<Vec<_>>();
+        saved_configurations.sort_by(|a, b| a.connector.cmp(&b.connector));
 
         if request.method == 0 {
             return Ok(());
         }
 
-        let primary_output_name = outputs
+        let primary_output_name = configurations
             .iter()
-            .find(|output| configurations[&output.name()].4)
-            .map(|output| output.name());
+            .find_map(|(name, configuration)| configuration.4.then(|| name.clone()));
 
-        let requested_modes = configurations
+        let enabled_connectors = configurations
+            .keys()
+            .cloned()
+            .collect::<std::collections::HashSet<_>>();
+        #[cfg(feature = "native-drm")]
+        {
+            let Some(mut backend) = self.native_backend.take() else {
+                return Err("native DRM backend is unavailable".into());
+            };
+            let result =
+                backend
+                    .kms
+                    .set_enabled_outputs(&mut backend.renderer, self, &enabled_connectors);
+            self.native_backend = Some(backend);
+            result?;
+        }
+        #[cfg(not(feature = "native-drm"))]
+        if outputs
             .iter()
-            .map(|(name, (_, _, _, _, _, mode))| (name.clone(), *mode))
-            .collect::<HashMap<_, _>>();
+            .map(|output| output.name())
+            .collect::<std::collections::HashSet<_>>()
+            != enabled_connectors
+        {
+            return Err("the nested backend cannot enable or disable monitors".into());
+        }
+
+        let outputs = self.space.outputs().cloned().collect::<Vec<_>>();
+
+        let mut requested_modes = HashMap::new();
+        for output in &outputs {
+            let (_, _, _, _, _, mode_id, _) = &configurations[&output.name()];
+            let mode = output
+                .modes()
+                .into_iter()
+                .find(|mode| {
+                    format!(
+                        "{}x{}@{:.3}",
+                        mode.size.w,
+                        mode.size.h,
+                        f64::from(mode.refresh) / 1000.0
+                    ) == *mode_id
+                })
+                .ok_or_else(|| format!("mode {mode_id} is unavailable on {}", output.name()))?;
+            requested_modes.insert(output.name(), mode);
+        }
         if outputs
             .iter()
             .any(|output| output.current_mode() != requested_modes.get(&output.name()).copied())
@@ -493,14 +575,15 @@ impl PantheonCompositor {
 
         let mut snapshots = Vec::with_capacity(outputs.len());
         for output in outputs {
-            let (x, y, scale, transform, primary, mode) = configurations[&output.name()];
+            let (x, y, scale, transform, primary, _mode_id, _) = &configurations[&output.name()];
+            let mode = requested_modes[&output.name()];
             output.change_current_state(
                 Some(mode),
-                Some(transform),
-                Some(smithay::output::Scale::Fractional(scale)),
-                Some((x, y).into()),
+                Some(*transform),
+                Some(smithay::output::Scale::Fractional(*scale)),
+                Some((*x, *y).into()),
             );
-            self.space.map_output(&output, (x, y));
+            self.space.map_output(&output, (*x, *y));
             let physical = output.physical_properties();
             snapshots.push(OutputSnapshot {
                 connector: output.name(),
@@ -520,15 +603,57 @@ impl PantheonCompositor {
                         preferred: output.preferred_mode() == Some(mode),
                     })
                     .collect(),
-                scale,
-                transform: transform_to_dbus(transform),
-                x,
-                y,
-                primary,
+                scale: *scale,
+                transform: transform_to_dbus(*transform),
+                x: *x,
+                y: *y,
+                primary: *primary,
+                enabled: true,
             });
+        }
+        for output in &request.current_outputs {
+            if !enabled_connectors.contains(&output.connector) {
+                let mut disabled = output.clone();
+                disabled.enabled = false;
+                disabled.primary = false;
+                snapshots.push(disabled);
+            }
         }
         self.primary_output_name = primary_output_name;
         self.display_config.update_many(snapshots);
+
+        let output_geometries = self
+            .space
+            .outputs()
+            .filter_map(|output| self.space.output_geometry(output))
+            .collect::<Vec<_>>();
+        if let Some(fallback) = self
+            .primary_output()
+            .and_then(|output| self.space.output_geometry(&output))
+        {
+            let windows = self.space.elements().cloned().collect::<Vec<_>>();
+            for window in windows {
+                let Some(location) = self.space.element_location(&window) else {
+                    continue;
+                };
+                let size = window.geometry().size;
+                let center_x = location.x + size.w / 2;
+                let center_y = location.y + size.h / 2;
+                let visible = output_geometries.iter().any(|geometry| {
+                    center_x >= geometry.loc.x
+                        && center_x < geometry.loc.x + geometry.size.w
+                        && center_y >= geometry.loc.y
+                        && center_y < geometry.loc.y + geometry.size.h
+                });
+                if !visible {
+                    self.space.map_element(
+                        window,
+                        (fallback.loc.x + 32, fallback.loc.y + 32),
+                        false,
+                    );
+                }
+            }
+        }
 
         self.last_work_areas.clear();
         let panels = self

@@ -5772,3 +5772,22 @@ qualified. Gala remains selected. The next gate is nested runtime qualification
 with GTK/Qt plus the existing shell clients, then native login only with a
 separate tested recovery path. See
 `mseries/pantheon-rust-compositor/README.md` for the readiness criteria.
+
+### Add native monitor disable/re-enable — 2026-10-19
+
+`ApplyMonitorsConfig` now accepts an active logical-monitor list that omits
+connected connectors. Disabled monitors remain in `GetCurrentState`'s monitor
+inventory but have no logical placement. Native DRM drops their Smithay output
+and recreates it when re-enabled. Monitor profiles now store enabled state;
+existing seven-field profiles load as enabled, and native startup honors saved
+disabled connectors. Disabling a monitor moves windows whose centers would be
+off-screen onto the primary output. To avoid an apply leaving no scanout if a
+replacement fails to initialize, each request must preserve one current output;
+enable a replacement in one apply before disabling the old output in another.
+Mirroring and nested Winit monitor-set changes remain unsupported.
+
+Default and `native-drm` `cargo check` pass, and the compositor source is
+formatted. No test or display session was run. Live disable/re-enable,
+disconnect/reconnect, modeset failure recovery, Wingpanel Settings behavior,
+and native output-set changes remain unqualified. The existing Gala session was
+not changed.

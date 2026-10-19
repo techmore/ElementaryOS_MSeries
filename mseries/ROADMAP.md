@@ -38,9 +38,13 @@ missing-service error. `ApplyMonitorsConfig` validates connector assignments,
 mode IDs, scale and transform, applies native DRM mode changes through Smithay's
 shared output manager with rollback, and applies temporary layout changes.
 Method 2 saves a per-user monitor profile and native startup restores it.
-Disabling outputs, mirroring, unsupported properties and nested Winit mode
-changes are rejected. Both default and native DRM builds compile; live native
-mode changes remain unqualified. The compositor advertises
+Native output disable/re-enable is implemented, including persistence of the
+enabled state and keeping disabled connectors in the monitor inventory.
+Each apply must retain one currently active output; enable a replacement in
+one apply before disabling the old output in a second apply.
+Mirroring, unsupported properties and nested Winit monitor-set changes remain
+rejected. Both default and native DRM builds compile; live native mode and
+output-set changes remain unqualified. The compositor advertises
 `wp_fractional_scale_v1` and `wp_viewporter`, updating window surface scale
 preferences from mapped outputs. Moving surfaces across differently scaled
 outputs still needs runtime verification. The compositor also serves Wingpanel's `org.gnome.Shell`

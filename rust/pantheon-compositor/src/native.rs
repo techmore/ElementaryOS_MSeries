@@ -112,6 +112,8 @@ pub struct NativeKmsDevice {
     pub node: DrmNode,
     pub manager: NativeOutputManager,
     pub outputs: Vec<NativeKmsOutput>,
+    disabled_connectors: HashSet<connector::Handle>,
+    disconnected_disabled_connectors: HashSet<connector::Handle>,
     pub notifier: Option<DrmDeviceNotifier>,
     pending_global_removals: Vec<(
         smithay::reexports::wayland_server::backend::GlobalId,
@@ -133,6 +135,93 @@ struct ConnectedOutput {
 }
 
 impl NativeKmsDevice {
+    pub fn set_enabled_outputs(
+        &mut self,
+        renderer: &mut NativeRenderer,
+        state: &mut PantheonCompositor,
+        enabled: &HashSet<String>,
+    ) -> Result<(), String> {
+        if enabled.is_empty() {
+            return Err("at least one output must remain enabled".into());
+        }
+        let resources = self
+            .manager
+            .device_mut()
+            .resource_handles()
+            .map_err(|error| error.to_string())?;
+        let mut name_to_connector = HashMap::new();
+        for handle in resources.connectors() {
+            let info = self
+                .manager
+                .device_mut()
+                .get_connector(*handle, false)
+                .map_err(|error| error.to_string())?;
+            if info.state() == connector::State::Connected {
+                let name = format!("{}-{}", info.interface().as_str(), info.interface_id());
+                name_to_connector.insert(name, info.handle());
+            }
+        }
+        for name in enabled {
+            if !name_to_connector.contains_key(name) {
+                return Err(format!("monitor {name} is no longer connected"));
+            }
+        }
+        let current = self
+            .outputs
+            .iter()
+            .map(|output| output.output.name())
+            .collect::<HashSet<_>>();
+        if !current.iter().any(|name| enabled.contains(name)) {
+            return Err(
+                "monitor change must keep one current output active while enabling the new layout"
+                    .into(),
+            );
+        }
+        let disabling = self
+            .outputs
+            .iter()
+            .filter(|output| !enabled.contains(&output.output.name()))
+            .map(|output| output.connector)
+            .collect::<Vec<_>>();
+        for connector in disabling {
+            if let Some(index) = self
+                .outputs
+                .iter()
+                .position(|output| output.connector == connector)
+            {
+                let output = self.outputs.remove(index);
+                state
+                    .display_handle
+                    .disable_global::<PantheonCompositor>(output.global_id.clone());
+                self.pending_global_removals
+                    .push((output.global_id.clone(), Instant::now()));
+                state.space.unmap_output(&output.output);
+                state.forget_output_during_lock(&output.output.name());
+                self.disabled_connectors.insert(connector);
+                tracing::info!(output = %output.output.name(), "disabled DRM output by monitor configuration");
+                drop(output);
+            }
+        }
+
+        for name in enabled {
+            let connector = name_to_connector
+                .get(name)
+                .ok_or_else(|| format!("monitor {name} is no longer connected"))?;
+            self.disabled_connectors.remove(connector);
+        }
+        self.refresh_connectors(renderer, state)
+            .map_err(|error| format!("could not enable requested monitor: {error}"))?;
+        let active = self
+            .outputs
+            .iter()
+            .map(|output| output.output.name())
+            .collect::<HashSet<_>>();
+        if &active != enabled {
+            return Err("native backend could not activate the requested output set".into());
+        }
+        Ok(())
+    }
+
     /// Apply output modes as one transaction. Smithay coordinates the shared
     /// DRM device while retaining rendered content for every CRTC; if a mode
     /// fails, previously switched outputs are restored before returning.
@@ -401,6 +490,15 @@ impl NativeKmsDevice {
             .filter(|output| !connected_handles.contains(&output.connector))
             .map(|output| output.connector)
             .collect::<Vec<_>>();
+        for connector in self.disabled_connectors.iter().copied() {
+            if !connected_handles.contains(&connector)
+                && let Ok(info) = self.manager.device_mut().get_connector(connector, false)
+            {
+                let name = format!("{}-{}", info.interface().as_str(), info.interface_id());
+                state.display_config.remove(name);
+                self.disconnected_disabled_connectors.insert(connector);
+            }
+        }
         let mut changed = !disconnected.is_empty();
         if changed {
             for output in self
@@ -428,6 +526,36 @@ impl NativeKmsDevice {
             .map(|output| output.crtc)
             .collect::<HashSet<_>>();
         for info in connected {
+            if self.disabled_connectors.contains(&info.handle()) {
+                if self.disconnected_disabled_connectors.remove(&info.handle())
+                    && let Some(mode) = info
+                        .modes()
+                        .iter()
+                        .find(|mode| mode.mode_type().contains(ModeTypeFlags::PREFERRED))
+                        .copied()
+                        .or_else(|| info.modes().first().copied())
+                {
+                    let mode = Mode::from(mode);
+                    let name = format!("{}-{}", info.interface().as_str(), info.interface_id());
+                    state.display_config.update(OutputSnapshot {
+                        connector: name.clone(),
+                        vendor: "Apple".into(),
+                        product: name,
+                        serial: "Unknown".into(),
+                        width: mode.size.w,
+                        height: mode.size.h,
+                        refresh_millihz: mode.refresh,
+                        modes: output_mode_snapshots(info.modes()),
+                        scale: 1.0,
+                        transform: 0,
+                        x: 0,
+                        y: 0,
+                        primary: false,
+                        enabled: false,
+                    });
+                }
+                continue;
+            }
             if self
                 .outputs
                 .iter()
@@ -593,6 +721,7 @@ impl NativeKmsDevice {
                         y: location.y,
                         primary: primary_output_name.as_deref()
                             == Some(output.output.name().as_str()),
+                        enabled: true,
                     });
                 }
             }
@@ -704,8 +833,58 @@ impl NativeKmsDevice {
         });
 
         let mut connected = Vec::new();
+        let mut disabled_connectors = HashSet::new();
         let mut claimed_crtcs = HashSet::new();
         for connector in discovered {
+            let name = format!(
+                "{}-{}",
+                connector.interface().as_str(),
+                connector.interface_id()
+            );
+            if let Some(saved) = saved_configurations
+                .get(&name)
+                .filter(|configuration| !configuration.enabled)
+            {
+                let preferred = connector
+                    .modes()
+                    .iter()
+                    .find(|mode| mode.mode_type().contains(ModeTypeFlags::PREFERRED))
+                    .copied()
+                    .unwrap_or(connector.modes()[0]);
+                let selected = connector
+                    .modes()
+                    .iter()
+                    .find(|mode| {
+                        let mode = Mode::from(**mode);
+                        format!(
+                            "{}x{}@{:.3}",
+                            mode.size.w,
+                            mode.size.h,
+                            f64::from(mode.refresh) / 1000.0
+                        ) == saved.mode
+                    })
+                    .copied()
+                    .unwrap_or(preferred);
+                let mode = Mode::from(selected);
+                state.display_config.update(OutputSnapshot {
+                    connector: name.clone(),
+                    vendor: "Apple".into(),
+                    product: name,
+                    serial: "Unknown".into(),
+                    width: mode.size.w,
+                    height: mode.size.h,
+                    refresh_millihz: mode.refresh,
+                    modes: output_mode_snapshots(connector.modes()),
+                    scale: saved.scale,
+                    transform: saved.transform,
+                    x: saved.x,
+                    y: saved.y,
+                    primary: false,
+                    enabled: false,
+                });
+                disabled_connectors.insert(connector.handle());
+                continue;
+            }
             let encoder = connector
                 .current_encoder()
                 .and_then(|handle| drm.get_encoder(handle).ok())
@@ -730,11 +909,6 @@ impl NativeKmsDevice {
                 .find(|mode| mode.mode_type().contains(ModeTypeFlags::PREFERRED))
                 .copied()
                 .unwrap_or(connector.modes()[0]);
-            let name = format!(
-                "{}-{}",
-                connector.interface().as_str(),
-                connector.interface_id()
-            );
             let mode = saved_configurations
                 .get(&name)
                 .and_then(|saved| {
@@ -877,6 +1051,7 @@ impl NativeKmsDevice {
                 x,
                 y,
                 primary,
+                enabled: true,
             });
             next_x = next_x.max(x + (mode.size.w as f64 / scale).round() as i32);
             outputs.push(NativeKmsOutput {
@@ -900,6 +1075,8 @@ impl NativeKmsDevice {
             node,
             manager,
             outputs,
+            disabled_connectors,
+            disconnected_disabled_connectors: HashSet::new(),
             notifier: Some(notifier),
             pending_global_removals: Vec::new(),
         })

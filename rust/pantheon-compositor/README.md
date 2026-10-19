@@ -184,11 +184,19 @@ roll back earlier changes if a later mode fails. Temporary layout, scale and
 transform changes update the Wayland outputs. Method 2 saves a per-user profile
 at `$XDG_CONFIG_HOME/pantheon-rust-compositor/monitors.conf` (or
 `~/.config/pantheon-rust-compositor/monitors.conf`); native startup restores
-saved modes and layout. Output disabling, mirroring, unsupported properties and
-nested Winit mode changes are rejected. Output and configuration updates
-increment the serial and emit `MonitorsChanged`. Default and native DRM builds
-compile, but no native session or live monitor change has been run from this
-development session. The compositor also advertises `wp_fractional_scale_v1`
+saved modes and layout. Native output disable/re-enable is implemented by
+removing/recreating the KMS output, and disabled connectors stay in the monitor
+inventory without a logical placement. Existing seven-field profiles remain
+enabled by default; new profiles store an enabled flag. A single apply request
+must retain one currently active output so a failed enable cannot leave the
+session without scanout; enable a replacement first before disabling the old
+output. Mirroring, unsupported properties and nested Winit monitor-set changes
+are rejected. Output and
+configuration updates increment the serial and emit `MonitorsChanged`. Default
+and native DRM builds compile, but no native session or live monitor change has
+been run from this development session. Disable/re-enable, reconnect and
+combined mode/layout rollback remain runtime-unqualified. The compositor also
+advertises `wp_fractional_scale_v1`
 and `wp_viewporter`, setting window surfaces' preferred scale from their first
 mapped output and refreshing preferences during rendering and after monitor
 configuration changes. Cross-output moves and fractional rendering quality
