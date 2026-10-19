@@ -163,3 +163,16 @@ textview.ml-console, textview.ml-console text {
     box-shadow: 0 0 0 1px alpha(@fg_color, 0.2), 0 2px 8px alpha(black, 0.25);
 }
 .ml-screen-frame label, .ml-screen-frame image { color: #d8dde6; }
+
+.ml-fs-bar {
+    padding: 6px 8px;
+    border-radius: 99px;
+    background: alpha(black, 0.72);
+    box-shadow: 0 4px 16px alpha(black, 0.4);
+    transition: opacity 250ms ease;
+}
+
+.ml-fs-bar button.suggested-action { background: #3689e6; color: #fff; }
+.ml-step-ok { color: #3a9104; font-weight: 700; }
+.ml-step-fail { color: #c6262e; font-weight: 700; }
+.ml-step-skip { opacity: 0.55; font-weight: 700; }
