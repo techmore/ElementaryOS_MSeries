@@ -1,5 +1,16 @@
 # J314S .20-enh1 next-boot trial — 2026-10-18
 
+## Latest result: owner-reported hung candidate boot
+
+The October 18 evening trial did not complete boot. The machine is back on
+`.20`, no candidate journal/pstore diagnosis was retained, and `next_entry` is
+empty. [Offline investigation and diagnostic preparation](../hardware-tests/2026-10-18-j314s-enh1-boot-hang.md)
+records what was checked and the separate uninstalled diagnostic initramfs.
+The staging and proposed test steps below are historical context; do not rearm
+or repeat the trial without a new explicit owner request. No candidate hardware
+boot qualification or driver fix is claimed.
+
+
 ## Additional display acceptance for this trial
 
 The owner subsequently enabled built-in VRR in the current desk profile on .20.
