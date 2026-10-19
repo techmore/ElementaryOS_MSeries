@@ -39,7 +39,10 @@ remains a separate workstream. Read-only enumeration on the current M-series
 host found the Asahi GPU at `/dev/dri/card1`, Apple display controller at
 `/dev/dri/card2`, and connected `eDP-1`/`DP-2` outputs; this is device presence,
 not evidence of compositor modesetting. Next implementation work is an opt-in
-native DRM path while keeping the nested backend available.
+native DRM path while keeping the nested backend available. The opt-in
+`native-drm` Smithay dependency feature is staged, but its local build currently
+needs the missing `libseat.pc` development package; no native session code is
+wired yet.
 
 
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18

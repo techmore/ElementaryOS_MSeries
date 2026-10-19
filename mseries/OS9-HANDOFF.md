@@ -30,8 +30,13 @@ behavior is not yet runtime-qualified. Applying monitor modes, Dock behavior and
 M-series DRM/KMS remain unqualified. Read-only host enumeration sees `/dev/dri/card1`
 on the `asahi` driver and `/dev/dri/card2` on `apple-drm`; `eDP-1` and `DP-2`
 are connected while `HDMI-A-1` is disconnected. No modeset was attempted. Next:
-trace the Dock's shell protocol and window interaction requirements, then build
-an opt-in native DRM path against the exposed M-series device stack. The WD22TB4
+added an opt-in `native-drm` Cargo feature to stage Smithay's DRM/GBM,
+libinput/udev/libseat, EGL and multi-GPU dependencies. The
+`cargo check --features native-drm --bins` command currently stops at
+`libseat-sys`: this host lacks
+the `libseat.pc` development package. The normal Winit binaries still build;
+native startup is not wired. Next: satisfy the host dependency and implement an
+opt-in native DRM path against the exposed M-series device stack. The WD22TB4
 HDMI G3 DCP/kernel issue remains separate. Scope and limits:
 `mseries/pantheon-rust-compositor/`.
 
