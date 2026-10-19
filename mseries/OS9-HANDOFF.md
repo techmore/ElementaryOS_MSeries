@@ -5388,6 +5388,12 @@ session startup remains unwired and no modesetting has been attempted. Next:
 build the optional native path around Smithay's multi-GPU renderer and validate
 it without taking over the active desktop.
 
+The compositor state constructor now accepts the seat name supplied by the
+backend; nested startup continues to advertise `winit`. Both default and
+`native-drm` `cargo check --bins` pass after this seam change. This prepares the
+Wayland seat identity for a libseat-backed session but does not initialize or
+control a native session yet.
+
 ### Absolute pointer mapping — 2026-10-18
 
 Absolute pointer events previously mapped normalized coordinates against only

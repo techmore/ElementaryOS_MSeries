@@ -1,8 +1,8 @@
 #![allow(irrefutable_let_patterns)]
 
-mod handlers;
-mod grabs;
 mod display_config;
+mod grabs;
+mod handlers;
 mod input;
 mod pantheon_shell;
 mod protocols;
@@ -23,7 +23,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let command = parse_command()?;
     let mut event_loop: EventLoop<PantheonCompositor> = EventLoop::try_new()?;
     let display: Display<PantheonCompositor> = Display::new()?;
-    let mut state = PantheonCompositor::new(&mut event_loop, display);
+    let mut state = PantheonCompositor::new(&mut event_loop, display, "winit");
 
     // This prototype deliberately uses the nested winit backend. It does not
     // open DRM/KMS devices or replace the active desktop session.

@@ -64,7 +64,7 @@ pub struct ManagedWindow {
 }
 
 impl PantheonCompositor {
-    pub fn new(event_loop: &mut EventLoop<Self>, display: Display<Self>) -> Self {
+    pub fn new(event_loop: &mut EventLoop<Self>, display: Display<Self>, seat_name: &str) -> Self {
         let start_time = std::time::Instant::now();
 
         let dh = display.handle();
@@ -90,7 +90,7 @@ impl PantheonCompositor {
         // A seat is a group of keyboards, pointer and touch devices.
         // A seat typically has a pointer and maintains a keyboard focus and a pointer focus.
         let mut seat_state = SeatState::new();
-        let mut seat: Seat<Self> = seat_state.new_wl_seat(&dh, "winit");
+        let mut seat: Seat<Self> = seat_state.new_wl_seat(&dh, seat_name);
 
         // Notify clients that we have a keyboard, for the sake of the example we assume that keyboard is always present.
         // You may want to track keyboard hot-plug in real compositor.
