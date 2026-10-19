@@ -105,7 +105,15 @@ public class MachinePage : Gtk.Box {
         if (machine.recipe != null && machine.is_fresh ()) {
             machine.check_latest.begin ();
         }
-        tick = Timeout.add_seconds (1, () => { update_uptime (); return Source.CONTINUE; });
+        uint ticks = 0;
+        tick = Timeout.add_seconds (1, () => {
+            update_uptime ();
+            // Keep free-space and requirement checks current without a click.
+            if (++ticks % 15 == 0 && !machine.running) {
+                refresh ();
+            }
+            return Source.CONTINUE;
+        });
         refresh ();
     }
 
@@ -113,6 +121,16 @@ public class MachinePage : Gtk.Box {
         if (tick != 0) {
             Source.remove (tick);
         }
+    }
+
+    /* Re-read free space and host requirements (and Omarchy's latest nightly). */
+    public void recheck () {
+        if (machine.recipe != null && machine.is_fresh ()) {
+            machine.check_latest.begin ();
+        }
+        refresh ();
+        int64 free = Readiness.free_gib ();
+        toast (free >= 0 ? "Checked again: %d GiB free".printf ((int) free) : "Checked again");
     }
 
     public void show_tab (string name) {
@@ -264,6 +282,12 @@ public class MachinePage : Gtk.Box {
         rt.append (ready_title);
         rt.append (ready_detail);
         ready_card.append (rt);
+        var recheck_btn = new Gtk.Button.from_icon_name ("view-refresh-symbolic");
+        recheck_btn.valign = Gtk.Align.CENTER;
+        recheck_btn.add_css_class ("flat");
+        recheck_btn.tooltip_markup = Granite.markup_accel_tooltip ({ "F5", "<Control>r" }, "Check disk space and requirements again");
+        recheck_btn.clicked.connect (() => recheck ());
+        ready_card.append (recheck_btn);
         clamp.append (ready_card);
 
         // Connect row

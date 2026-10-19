@@ -574,8 +574,12 @@ public class Readiness : Object {
     /* Free space, in GiB, on the volume that holds machine disks. */
     public static int64 free_gib () {
         try {
-            var info = File.new_for_path (Environment.get_user_data_dir ())
-                .query_filesystem_info ("filesystem:free");
+            // The data folder may not exist yet: ask about the nearest folder that does.
+            var dir = File.new_for_path (Environment.get_user_data_dir ());
+            while (!dir.query_exists () && dir.get_parent () != null) {
+                dir = dir.get_parent ();
+            }
+            var info = dir.query_filesystem_info ("filesystem:free");
             return (int64) (info.get_attribute_uint64 ("filesystem:free") / 1073741824);
         } catch (Error e) {
             return -1;

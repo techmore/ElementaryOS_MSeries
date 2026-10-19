@@ -132,6 +132,15 @@ public class MachineLab : Gtk.Application {
         new_action.activate.connect (() => add_machine (presets[0]));
         add_action (new_action);
         set_accels_for_action ("app.new-machine", { "<Control>n" });
+        var refresh_action = new SimpleAction ("refresh", null);
+        refresh_action.activate.connect (() => {
+            var row = list.get_selected_row ();
+            if (row != null) {
+                pages[((MachineRow) row).machine.id].recheck ();
+            }
+        });
+        add_action (refresh_action);
+        set_accels_for_action ("app.refresh", { "F5", "<Control>r" });
         set_accels_for_action ("app.quit", { "<Control>q" });
         var quit = new SimpleAction ("quit", null);
         quit.activate.connect (() => window.close ());
