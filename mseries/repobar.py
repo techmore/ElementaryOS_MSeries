@@ -75,6 +75,7 @@ DEFAULT_SETTINGS = {
     "localDepth": 4,
     "notifyCi": True,
     "showContributions": True,
+    "contributionStyle": "dots",
     "repoStates": {},
 }
 REPO_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
@@ -758,6 +759,10 @@ def _settings_set(key: str, value: str) -> dict:
         member = {"show-forks": "showForks", "show-archived": "showArchived", "notify-ci": "notifyCi",
                   "show-contributions": "showContributions"}[normalized]
         settings[member] = value.lower() == "true"
+    elif normalized == "contribution-style":
+        if value not in {"squares", "dots", "fine"}:
+            raise RuntimeError("contribution-style must be squares, dots, or fine")
+        settings["contributionStyle"] = value
     elif normalized == "activity-scope":
         if value not in {"all", "my"}:
             raise RuntimeError("activity-scope must be all or my")
@@ -779,7 +784,8 @@ def _settings_set(key: str, value: str) -> dict:
                                                         "menu-sort": "menuSort", "show-forks": "showForks",
                                                         "show-archived": "showArchived", "activity-scope": "activityScope",
                                                         "local-root": "localRoot", "local-depth": "localDepth",
-                                                        "notify-ci": "notifyCi", "show-contributions": "showContributions"}.get(normalized, normalized))}
+                                                        "notify-ci": "notifyCi", "show-contributions": "showContributions",
+                                                        "contribution-style": "contributionStyle"}.get(normalized, normalized))}
 
 
 def _auth_status() -> dict:
