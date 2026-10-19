@@ -206,10 +206,10 @@ namespace MSeries {
                 ".mseries-codexbar button.compact { padding: 1px 8px; min-height: 0; min-width: 0; } " +
                 ".mseries-codexbar button.flat.compact { padding: 0 4px; } " +
                 ".mseries-codexbar .mseries-switcher button { padding: 2px 6px; } " +
-                ".mseries-codexbar-bar label { font-size: 8.5pt; font-feature-settings: \"tnum\"; } " +
+                ".mseries-codexbar-bar label { font-size: 7.5pt; font-feature-settings: \"tnum\"; } " +
                 ".mseries-codexbar-bar .seg-value { font-weight: 700; } " +
-                ".mseries-codexbar-bar .seg-reset { font-size: 7.5pt; opacity: 0.7; } " +
-                ".mseries-codexbar-bar .seg-secondary { font-size: 7.5pt; } " +
+                ".mseries-codexbar-bar .seg-reset { font-size: 6.5pt; opacity: 0.7; } " +
+                ".mseries-codexbar-bar .seg-secondary { font-size: 6.5pt; } " +
                 ".mseries-codexbar-bar .level-low { color: @warning_color; } " +
                 ".mseries-codexbar-bar .level-critical { color: @error_color; } " +
                 ".mseries-codexbar-bar .mark-claude { color: #d97757; } " +
