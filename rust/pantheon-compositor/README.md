@@ -59,6 +59,12 @@ no behavior. Touch input, DRM/KMS, libinput device management, multi-monitor
 configuration, accessibility, IBus, Xwayland, screen-sharing portals and
 production crash recovery also remain unimplemented.
 
+Relative pointer motion now updates Wayland pointer focus and dispatches motion
+through active compositor grabs; coordinates are clamped to the mapped output
+bounds. This allows the existing xdg move/resize grab implementations to receive
+physical pointer motion. Multi-output bounds, pointer constraints, and hardware
+input remain unqualified.
+
 The session bus also exposes the small `org.gnome.Shell` accelerator API used
 by Wingpanel and its sound indicator. Accelerator registrations are matched
 through the compositor's active XKB state and reported with

@@ -1,11 +1,11 @@
 use smithay::{
     backend::input::{
         AbsolutePositionEvent, Axis, AxisSource, ButtonState, Event, InputBackend, InputEvent,
-        KeyboardKeyEvent, PointerAxisEvent, PointerButtonEvent,
+        KeyboardKeyEvent, PointerAxisEvent, PointerButtonEvent, PointerMotionEvent,
     },
     input::{
         keyboard::FilterResult,
-        pointer::{AxisFrame, ButtonEvent, MotionEvent},
+        pointer::{AxisFrame, ButtonEvent, MotionEvent, RelativeMotionEvent},
     },
     reexports::wayland_server::protocol::wl_surface::WlSurface,
     utils::SERIAL_COUNTER,
@@ -38,7 +38,45 @@ impl PantheonCompositor {
                     },
                 );
             }
-            InputEvent::PointerMotion { .. } => {}
+            InputEvent::PointerMotion { event, .. } => {
+                let pointer = self.seat.get_pointer().unwrap();
+                let location = pointer.current_location();
+                let output_bounds = self
+                    .space
+                    .outputs()
+                    .filter_map(|output| self.space.output_geometry(output))
+                    .reduce(|bounds, output| bounds.merge(output))
+                    .unwrap();
+                let max_x = (output_bounds.loc.x + output_bounds.size.w - 1) as f64;
+                let max_y = (output_bounds.loc.y + output_bounds.size.h - 1) as f64;
+                let target = location + event.delta();
+                let new_location = smithay::utils::Point::from((
+                    target.x.clamp(output_bounds.loc.x as f64, max_x),
+                    target.y.clamp(output_bounds.loc.y as f64, max_y),
+                ));
+                let serial = SERIAL_COUNTER.next_serial();
+                let under = self.surface_under(location);
+
+                pointer.relative_motion(
+                    self,
+                    under.clone(),
+                    &RelativeMotionEvent {
+                        delta: event.delta(),
+                        delta_unaccel: event.delta_unaccel(),
+                        time: event.time(),
+                    },
+                );
+                pointer.motion(
+                    self,
+                    self.surface_under(new_location),
+                    &MotionEvent {
+                        location: new_location,
+                        serial,
+                        time: event.time(),
+                    },
+                );
+                pointer.frame(self);
+            }
             InputEvent::PointerMotionAbsolute { event, .. } => {
                 let output = self.space.outputs().next().unwrap();
 

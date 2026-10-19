@@ -22,10 +22,15 @@ missing DisplayConfig service and attaches SHM buffers. Added the
 `Super+N` on the nested window produced `AcceleratorActivated` for Wingpanel's
 registered action, and media-key registrations completed without a D-Bus
 failure. `ShowOSD`, lock-screen modes and physical media-key activation remain
-unimplemented/unqualified. Applying monitor modes, Dock behavior and M-series
-DRM/KMS remain unqualified. Next: trace the Dock's shell protocol and window
-interaction requirements against this output. The WD22TB4 HDMI G3 DCP/kernel
-issue remains separate. Scope and limits:
+unimplemented/unqualified. Implemented relative pointer motion, pointer focus
+updates, and dispatch through active window move/resize grabs; local `cargo
+check --bins` and build pass. Applying monitor modes, Dock behavior and
+M-series DRM/KMS remain unqualified. Read-only host enumeration sees `/dev/dri/card1`
+on the `asahi` driver and `/dev/dri/card2` on `apple-drm`; `eDP-1` and `DP-2`
+are connected while `HDMI-A-1` is disconnected. No modeset was attempted. Next:
+trace the Dock's shell protocol and window interaction requirements, then build
+an opt-in native DRM path against the exposed M-series device stack. The WD22TB4
+HDMI G3 DCP/kernel issue remains separate. Scope and limits:
 `mseries/pantheon-rust-compositor/`.
 
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18

@@ -26,12 +26,18 @@ the nested output and logical layout mode; Wingpanel connects without the
 missing-service error. The compositor now serves Wingpanel's `org.gnome.Shell`
 accelerator API and matched `Super+N` to an `AcceleratorActivated` signal during
 an isolated nested run. `ShowOSD`, lock-screen action modes and physical media
-key activation remain unimplemented or unqualified. Autohide, blur,
-multi-output reflow, monitor mode application, Dock behavior, full session
-integration and M-series hardware remain unqualified. A public search found elementary's
+key activation remain unimplemented or unqualified. Relative pointer motion now
+updates pointer focus and drives the compositor's existing move/resize grabs;
+the Rust binaries build locally. Autohide, blur, multi-output reflow, monitor
+mode application, Dock behavior, full session integration and M-series hardware
+remain unqualified. A public search found elementary's
 [Gala](https://github.com/elementary/gala) still based on libmutter, with no
 first-party Rust compositor to reuse. The WD22TB4 HDMI G3 DCP/kernel blocker
-remains a separate workstream.
+remains a separate workstream. Read-only enumeration on the current M-series
+host found the Asahi GPU at `/dev/dri/card1`, Apple display controller at
+`/dev/dri/card2`, and connected `eDP-1`/`DP-2` outputs; this is device presence,
+not evidence of compositor modesetting. Next implementation work is an opt-in
+native DRM path while keeping the nested backend available.
 
 
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18
