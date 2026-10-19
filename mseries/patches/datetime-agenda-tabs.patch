@@ -566,16 +566,17 @@ index ec722ae..61772f0 100644
          libecal_dep,
          dependency('libedataserver-1.2'),
 diff --git a/po/POTFILES b/po/POTFILES
-index 383cf96..f39b77f 100644
+index 383cf96..cb7de92 100644
 --- a/po/POTFILES
 +++ b/po/POTFILES
-@@ -8,2 +8,6 @@ src/Widgets/calendar/GridDay.vala
+@@ -8,2 +8,7 @@ src/Widgets/calendar/GridDay.vala
  src/Widgets/calendar/Util.vala
  src/Services/TimeManager.vala
 +src/Widgets/TaskRow.vala
 +src/Widgets/TaskComposer.vala
 +src/Widgets/TimeGrid.vala
 +src/Widgets/DailyVerse.vala
++src/Widgets/HomeboardStatus.vala
 diff --git a/src/Indicator.vala b/src/Indicator.vala
 index 7b6ec63..b77c204 100644
 --- a/src/Indicator.vala
@@ -1690,10 +1691,10 @@ index 0000000..a3b0f84
 +}
 diff --git a/src/Widgets/HomeboardStatus.vala b/src/Widgets/HomeboardStatus.vala
 new file mode 100644
-index 0000000..933d454
+index 0000000..ea7a54d
 --- /dev/null
 +++ b/src/Widgets/HomeboardStatus.vala
-@@ -0,0 +1,185 @@
+@@ -0,0 +1,190 @@
 +/* Copyright 2026 M-Series contributors. SPDX-License-Identifier: GPL-3.0-or-later */
 +/*
 + * Homeboard sync status above the Tasks list. The Homeboard bridge keeps a dedicated
@@ -1726,7 +1727,9 @@ index 0000000..933d454
 +        Object (orientation: Gtk.Orientation.HORIZONTAL, spacing: 6, name: "homeboard-status",
 +            margin_start: 6, margin_end: 6, margin_bottom: 3);
 +        status_file = File.new_build_filename (Environment.get_user_state_dir (), "homeboard", "panel.json");
-+        icon = new Gtk.Image.from_icon_name ("emblem-synchronizing-symbolic");
++        icon = new Gtk.Image.from_icon_name ("emblem-synchronizing-symbolic") {
++            accessible_role = Gtk.AccessibleRole.PRESENTATION
++        };
 +        spinner = new Gtk.Spinner () { visible = false };
 +        append (icon);
 +        append (spinner);
@@ -1752,12 +1755,14 @@ index 0000000..933d454
 +            name = "homeboard-sync", valign = Gtk.Align.CENTER, tooltip_text = _("Sync with Homeboard now")
 +        };
 +        sync_button.add_css_class ("flat");
++        sync_button.update_property (Gtk.AccessibleProperty.LABEL, _("Sync with Homeboard now"), -1);
 +        sync_button.clicked.connect (() => request ("sync"));
 +        append (sync_button);
 +        var open_board = new Gtk.Button.from_icon_name ("web-browser-symbolic") {
 +            name = "homeboard-open", valign = Gtk.Align.CENTER, tooltip_text = _("Open Homeboard")
 +        };
 +        open_board.add_css_class ("flat");
++        open_board.update_property (Gtk.AccessibleProperty.LABEL, _("Open Homeboard"), -1);
 +        open_board.clicked.connect (() => {
 +            try { AppInfo.launch_default_for_uri (BOARD_URI, null); } catch (Error e) {
 +                warning ("Could not open Homeboard: %s", e.message);
@@ -1840,7 +1845,8 @@ index 0000000..933d454
 +        return when.to_local ().format ("%b %e");
 +    }
 +
-+    /* Ask the running bridge over D-Bus; start it in the background if it is not running. */
++    /* Ask the bridge over D-Bus; its D-Bus service file starts it if needed. The direct
++     * launch covers bridges installed before that file existed. */
 +    private void request (string action) {
 +        if (action == "sync") {
 +            requested = true;
@@ -1856,7 +1862,7 @@ index 0000000..933d454
 +            try {
 +                var bus = Bus.get.end (res);
 +                bus.call.begin (APP_ID, "/org/techmore/Homeboard", "org.gtk.Actions", "Activate",
-+                    parameters, null, DBusCallFlags.NO_AUTO_START, 5000, null,
++                    parameters, null, DBusCallFlags.NONE, 20000, null,
 +                    (o, r) => {
 +                        try { bus.call.end (r); } catch (Error e) { launch (action); }
 +                    });

@@ -129,6 +129,21 @@ jobs:
           ninja -C "$RUNNER_TEMP/codexbar"
           meson test -C "$RUNNER_TEMP/codexbar" --print-errorlogs
 
+  calendar-agenda:
+    name: Calendar Events/Tasks/Homeboard agenda on a private EDS (arm64)
+    runs-on: ubuntu-26.04-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install build and headless EDS test dependencies
+        run: >-
+          sudo apt-get update && sudo apt-get install -y git meson ninja-build valac gcc pkg-config gettext sassc
+          libgtk-4-dev libadwaita-1-dev libgee-0.8-dev libjson-glib-dev libecal2.0-dev libedataserver1.2-dev
+          libical-dev evolution-data-server gsettings-desktop-schemas libglib2.0-bin python3 xvfb xauth dbus
+          dbus-x11 librsvg2-common
+      - name: Build the pinned indicator with our patch and run every agenda group
+        run: bash mseries/calendar/ci-test-agenda.sh "$RUNNER_TEMP/agenda"
+
   validate:
     name: mkosi summary + script checks (arm64)
     runs-on: ubuntu-26.04-arm
@@ -215,6 +230,7 @@ jobs:
           python3 mseries/video-decode/test-brave-factory.py
           python3 mseries/video-decode/test-youtube-launch.py
           shellcheck -S warning mseries/video-decode/brave-youtube mseries/install-brave-widevine.sh
+          shellcheck -S warning mseries/calendar/ci-test-agenda.sh mseries/install-homeboard-sync.sh
           shellcheck -S warning mseries/lib-codexbar.sh mseries/deploy-codexbar.sh mseries/install-codexbar.sh mseries/install-codexbar-wingpanel.sh mseries/check-codexbar-port.sh mseries/codexbar-wingpanel/probe/ci-build-deps.sh mseries/codexbar-wingpanel/probe/run-grok-probe.sh
           python3 mseries/boot/test-prepare-uki-kernels.py
           python3 mseries/test-kernel-config.py
