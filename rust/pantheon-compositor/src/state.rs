@@ -127,6 +127,8 @@ pub struct PantheonCompositor {
     pub corner_snap_preview: Option<CornerSnapPreview>,
     pub corner_snap_cancelled: bool,
     pub move_grab_active: bool,
+    /// In-flight three-or-more-finger swipe, if the active backend reports one.
+    pub(crate) swipe_gesture: Option<crate::gestures::SwipeGestureState>,
     pub minimized_windows: HashMap<
         smithay::reexports::wayland_server::backend::ObjectId,
         (Window, Point<i32, Logical>),
@@ -403,6 +405,7 @@ impl PantheonCompositor {
             corner_snap_preview: None,
             corner_snap_cancelled: false,
             move_grab_active: false,
+            swipe_gesture: None,
             minimized_windows: HashMap::new(),
             initially_positioned: HashSet::new(),
             popups,
@@ -722,6 +725,27 @@ impl PantheonCompositor {
         self.refresh_panel_visibility();
         self.request_native_redraw();
         Ok(())
+    }
+
+    /// Apply the outcome of an in-flight touchpad swipe. Workspace changes stop
+    /// at the first and last workspace instead of creating or wrapping.
+    pub(crate) fn apply_swipe_outcome(
+        &mut self,
+        outcome: crate::gestures::SwipeOutcome,
+    ) -> Result<(), String> {
+        match outcome {
+            crate::gestures::SwipeOutcome::None => Ok(()),
+            crate::gestures::SwipeOutcome::NextWorkspace => self.switch_workspace_relative(1),
+            crate::gestures::SwipeOutcome::PreviousWorkspace => self.switch_workspace_relative(-1),
+        }
+    }
+
+    fn switch_workspace_relative(&mut self, delta: i32) -> Result<(), String> {
+        let target = self.workspace_manager.active() as i32 + delta;
+        if target < 0 || target as usize >= self.workspace_manager.workspace_count() {
+            return Err("no adjacent workspace in that direction".into());
+        }
+        self.activate_workspace(target)
     }
 
     fn activate_workspace(&mut self, index: i32) -> Result<(), String> {
@@ -1576,9 +1600,7 @@ impl PantheonCompositor {
                     continue;
                 }
                 let output_name = output.name();
-                let Some(lock_surface) = self.lock_surfaces.get(&output_name) else {
-                    return None;
-                };
+                let lock_surface = self.lock_surfaces.get(&output_name)?;
                 let local = pos - geometry.loc.to_f64();
                 return smithay::desktop::utils::under_from_surface_tree(
                     lock_surface.wl_surface(),
@@ -1623,11 +1645,11 @@ impl PantheonCompositor {
         if !self.session_locked || self.lock_confirmation.is_none() {
             return;
         }
-        if self.lock_confirmation_outputs.is_empty() {
-            if let Some(confirmation) = self.lock_confirmation.take() {
-                confirmation.lock();
-                self.shell_compat.set_locked(true);
-            }
+        if self.lock_confirmation_outputs.is_empty()
+            && let Some(confirmation) = self.lock_confirmation.take()
+        {
+            confirmation.lock();
+            self.shell_compat.set_locked(true);
         }
     }
 }

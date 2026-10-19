@@ -1,5 +1,48 @@
 # OS 9 implementation / Claude Code handoff
 
+## Rust compositor: repaired build, clippy cleanups, touchpad workspace swipes — 2026-10-19
+
+Branch `codex/rust-gala-stack-integration`, worktree
+`/home/sdolbec/ElementaryOS_MSeries-wt/rust-gala-stack-integration`.
+
+- The worktree carried an unfinished `GalaSignal` variant rename: the enum had
+  been renamed (`RunningApplications`, `Windows`, `ActiveWorkspace`) in only
+  part of `rust/pantheon-compositor/src/gala_compat.rs`, so `cargo check` failed
+  with five `E0599` errors. The remaining `WindowsChanged`/`ActiveWorkspaceChanged`
+  uses now match the renamed enum; D-Bus signal names are unchanged.
+- Finished the pending clippy cleanups: `checked_div` for the keyboard repeat
+  interval and `as_chunks_mut::<4>()` in the wallpaper BGRA swap. `cargo clippy
+  -p pantheon-compositor --all-targets` now reports no warnings.
+- Added `rust/pantheon-compositor/src/gestures.rs`: a small, backend-independent
+  swipe state machine for native libinput gesture events. Non-cancelled
+  three-or-more-finger swipes that pass a 90-logical-pixel threshold with
+  horizontal dominance select the adjacent workspace (content-following
+  direction: swipe left selects the next workspace); switching stops at the
+  first and last workspace instead of wrapping or creating one. Gestures are
+  dropped while the session is locked or a pointer grab is active. Pinch and
+  vertical swipes are intentionally unrecognized until an overview action
+  exists.
+- Wired the state machine into `process_input_event` and
+  `PantheonCompositor::apply_swipe_outcome`/`switch_workspace_relative`;
+  workspace switching reuses the existing `switch_workspace` path, so panel
+  visibility, Gala-compat signals, fractional-scale preferences and redraws
+  behave like other workspace changes.
+
+Verification (this host, no session taken over):
+
+- `CARGO_TARGET_DIR=/tmp/opencode/pantheon-target cargo check --workspace --all-targets`
+  passes.
+- `cargo check -p pantheon-compositor --bins --features native-drm` passes.
+- `cargo test -p pantheon-compositor` runs the three new gesture unit tests;
+  all pass. `cargo clippy -p pantheon-compositor --all-targets` is clean.
+
+Not done / next task: physical trackpad qualification on the M1 Pro native
+session (the Winit nested backend does not emit gesture events), vertical
+swipe and pinch routing once action 1/overview exists, and user-configurable
+gesture bindings. No package was built, nothing was installed, and Gala
+remains the active session. The uncommitted refactor was completed in place;
+no commit or push was made from this batch.
+
 ## Rust compositor on the existing stack: installer, metrics reducer, public performance page — 2026-10-19
 
 Batch on branch `codex/rust-gala-stack-integration` (from

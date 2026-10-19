@@ -207,6 +207,15 @@ xdg move/resize grab implementations to receive physical pointer motion.
 Multi-output bounds, pointer constraints, and hardware input remain
 unqualified.
 
+Native libinput swipe gestures are now recognized for workspace navigation:
+three-or-more-finger swipes that are not cancelled and that travel past a
+logical-pixel threshold with horizontal dominance select the adjacent
+workspace, stopping at the first and last workspace. Gestures are dropped
+while the session is locked or a pointer grab (move, resize or popup) is
+active. Pinch and vertical swipes remain unrecognized until an overview action
+exists. The recognition state machine has unit tests; the libinput event path
+is compile-checked only and no physical trackpad qualification has been run.
+
 Xdg popup requests now resolve their root to a managed toplevel and install
 Smithay's popup keyboard and pointer grabs, including the serial checks needed
 to preserve valid nested grabs. Popup interaction has only been build-checked;

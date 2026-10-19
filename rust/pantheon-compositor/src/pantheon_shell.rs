@@ -135,14 +135,14 @@ impl
                 state.update_panel(surface, |panel| panel.anchor = Some(anchor.into()));
             }
             protocol::io_elementary_pantheon_panel_v1::Request::Focus => {
-                if state.find_window_for_surface(surface).is_some() {
-                    if let Some(keyboard) = state.seat.get_keyboard() {
-                        keyboard.set_focus(
-                            state,
-                            Some(surface.clone()),
-                            SERIAL_COUNTER.next_serial(),
-                        );
-                    }
+                if state.find_window_for_surface(surface).is_some()
+                    && let Some(keyboard) = state.seat.get_keyboard()
+                {
+                    keyboard.set_focus(
+                        state,
+                        Some(surface.clone()),
+                        SERIAL_COUNTER.next_serial(),
+                    );
                 }
             }
             protocol::io_elementary_pantheon_panel_v1::Request::SetSize { width, height } => {

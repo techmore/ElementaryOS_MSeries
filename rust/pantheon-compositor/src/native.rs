@@ -64,6 +64,7 @@ pub type NativeExporter = GbmFramebufferExporter<DrmDeviceFd>;
 pub type NativeOutputManager = DrmOutputManager<NativeAllocator, NativeExporter, (), DrmDeviceFd>;
 pub type NativeDrmOutput = DrmOutput<NativeAllocator, NativeExporter, (), DrmDeviceFd>;
 type NativeMultiRenderer<'a> = MultiRenderer<'a, 'a, GbmRendererBackend, GbmRendererBackend>;
+type HardwareNode = (DrmNode, GbmDevice<DrmDeviceFd>);
 
 const OUTPUT_FORMATS: &[smithay::backend::allocator::Fourcc] = &[
     smithay::backend::allocator::Fourcc::Argb2101010,
@@ -977,7 +978,7 @@ impl NativeKmsDevice {
                 let location = existing_locations.get(&name).copied().unwrap_or_else(|| {
                     let location = (next_x, 0).into();
                     if let Some(mode) = output.output.current_mode() {
-                        let scale = output.output.current_scale().fractional_scale() as f64;
+                        let scale = output.output.current_scale().fractional_scale();
                         next_x += (mode.size.w as f64 / scale).round() as i32;
                     }
                     location
@@ -988,7 +989,7 @@ impl NativeKmsDevice {
                 state.space.map_output(&output.output, location);
                 state.track_output_for_lock(&output.output);
                 if let Some(mode) = output.output.current_mode() {
-                    let scale = output.output.current_scale().fractional_scale() as f64;
+                    let scale = output.output.current_scale().fractional_scale();
                     let scale = if scale.is_finite() && scale > 0.0 {
                         scale
                     } else {
@@ -1589,7 +1590,7 @@ impl NativeRenderer {
         session: &LibSeatSession,
         gpus: &mut NativeGpuManager,
         path: &Path,
-    ) -> Result<Option<(DrmNode, GbmDevice<DrmDeviceFd>)>, Box<dyn std::error::Error>> {
+    ) -> Result<Option<HardwareNode>, Box<dyn std::error::Error>> {
         let node = DrmNode::from_path(path)?;
         let mut session = session.clone();
         let fd = session.open(

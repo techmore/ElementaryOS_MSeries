@@ -4,8 +4,9 @@ use gio::{
 };
 use smithay::{
     backend::input::{
-        AbsolutePositionEvent, Axis, AxisSource, ButtonState, Event, InputBackend, InputEvent,
-        KeyboardKeyEvent, PointerAxisEvent, PointerButtonEvent, PointerMotionEvent,
+        AbsolutePositionEvent, Axis, AxisSource, ButtonState, Event, GestureBeginEvent,
+        GestureEndEvent, GestureSwipeUpdateEvent, InputBackend, InputEvent, KeyboardKeyEvent,
+        PointerAxisEvent, PointerButtonEvent, PointerMotionEvent,
     },
     input::{
         keyboard::{FilterResult, KeyboardTarget, XkbConfig},
@@ -77,11 +78,10 @@ pub(crate) fn startup_keyboard_config() -> StartupKeyboardConfig {
         } else {
             config.repeat_delay = settings.uint("delay").min(i32::MAX as u32) as i32;
             let interval = settings.uint("repeat-interval");
-            config.repeat_rate = if interval == 0 {
-                33
-            } else {
-                (1000 / interval).min(i32::MAX as u32) as i32
-            };
+            config.repeat_rate = 1000u32
+                .checked_div(interval)
+                .unwrap_or(33)
+                .min(i32::MAX as u32) as i32;
         }
     }
 
@@ -318,6 +318,37 @@ impl PantheonCompositor {
                 let pointer = self.seat.get_pointer().unwrap();
                 pointer.axis(self, frame);
                 pointer.frame(self);
+            }
+            InputEvent::GestureSwipeBegin { event, .. } => {
+                // Workspace switching must not race a compositor move/resize
+                // grab, a popup grab, or the lock screen. In those states the
+                // sequence is dropped rather than deferred.
+                let pointer_grabbed = self
+                    .seat
+                    .get_pointer()
+                    .is_some_and(|pointer| pointer.is_grabbed());
+                if self.session_locked || pointer_grabbed {
+                    self.swipe_gesture = None;
+                } else {
+                    self.swipe_gesture = Some(crate::gestures::SwipeGestureState::begin(
+                        event.fingers(),
+                    ));
+                }
+            }
+            InputEvent::GestureSwipeUpdate { event, .. } => {
+                if let Some(gesture) = self.swipe_gesture.as_mut() {
+                    gesture.update(event.delta());
+                }
+            }
+            InputEvent::GestureSwipeEnd { event, .. } => {
+                let outcome = self
+                    .swipe_gesture
+                    .take()
+                    .map(|gesture| gesture.finish(event.cancelled()))
+                    .unwrap_or(crate::gestures::SwipeOutcome::None);
+                if let Err(error) = self.apply_swipe_outcome(outcome) {
+                    tracing::debug!(%error, "touchpad swipe did not change workspace");
+                }
             }
             _ => {}
         }

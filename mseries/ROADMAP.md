@@ -184,6 +184,20 @@ publishes them with the honest status: idle compositor CPU is about 11.1 % of
 one core in both sessions under unmatched workloads, whole-system power is
 unmeasured, and no performance win is established.
 
+The prototype now recognizes native libinput touchpad swipes for workspace
+navigation: non-cancelled three-or-more-finger swipes that pass a 90-logical-
+pixel threshold with horizontal dominance select the adjacent workspace in the
+content-following direction and stop at the first/last workspace. Gestures are
+ignored while the session is locked or a move, resize or popup grab is active;
+pinch and vertical swipes remain unrecognized until an overview action exists.
+The state machine lives in `rust/pantheon-compositor/src/gestures.rs` with
+three unit tests; `cargo test -p pantheon-compositor` passes, both default and
+`native-drm` builds check, and clippy is clean. The installed nested Winit
+backend never emits gesture events, so physical M-series trackpad
+qualification, user-configurable bindings and vertical/overview routing remain
+open. Gala is still the active session and no package was installed from this
+batch.
+
 ## Signal Granite palette completeness — 2026-10-18
 
 PR #222's Granite path now maps Signal brand/logo blue `#3b45fd` as well as the

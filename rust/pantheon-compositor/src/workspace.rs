@@ -37,10 +37,10 @@ impl WorkspaceManager {
 
     pub fn add_window(&mut self, window: Window, location: Point<i32, Logical>) {
         let id = window.id();
-        if let Some(previous) = self.assignments.remove(&id) {
-            if let Some(windows) = self.workspaces.get_mut(previous) {
-                windows.retain(|existing| *existing != id);
-            }
+        if let Some(previous) = self.assignments.remove(&id)
+            && let Some(windows) = self.workspaces.get_mut(previous)
+        {
+            windows.retain(|existing| *existing != id);
         }
         self.windows.insert(id, window);
         self.assignments.insert(id, self.active);
