@@ -5811,3 +5811,7 @@ Default and `native-drm` `cargo check` pass. No tests or display session were
 run; failure injection, page-flip timing, disjoint transitions on hardware and
 rollback remain runtime-unqualified. Build a new candidate from this commit
 before any monitor qualification; the `4458354` package predates this change.
+The ARM64 package built from `6ec3113` is at
+`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-monitor-toggle-stage-release/pantheon-rust-compositor_0.1.0+git6ec3113_arm64.deb`
+(SHA-256 `457a2847d8588cc108f44b726909a42eeb2b804bb38e71fa74034de537f11a88`).
+Its package metadata and contents were inspected; it was not installed.
