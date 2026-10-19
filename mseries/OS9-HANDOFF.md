@@ -1,5 +1,47 @@
 # OS 9 implementation / Claude Code handoff
 
+## CodexBar production hardening + Grok Build; upstream v0.78.0 — 2026-10-19 (Claude Code)
+
+**Pin:** `install-codexbar.sh` now pins upstream **v0.78.0** (was v0.77.0). Both Linux aarch64
+tarballs downloaded and their published `sha256` verified; the CLI reports `0.78.0` and contains the
+Grok `_x.ai/billing` / CLI-proxy paths. No changes upstream between the tags in
+`Integrations/Linux` (DesktopController, QML settings, snapshot), so `SettingsModel.vala` and the
+panel schema are unchanged. The only CLI behaviour change touching us is opt-in upstream claude-swap
+following, which our config does not enable.
+
+**Defects fixed (latent in the running panel):**
+- Use-after-free from a valac nested-ternary code-generation defect: alternate-account reset
+  countdowns (`Presentation.account_quota`) and every dropdown quota caption (`build_window`) were
+  copied from freed memory. The existing `presentation` Meson test was failing on `dev` because of it.
+  Fixed with explicit owned strings; new Meson test `generated-c-temporaries` scans all generated C and
+  fails on the pattern (confirmed: 11 hits on the old build, 0 now).
+- `install-codexbar-wingpanel.sh` skipped `codexbar_claude_handoff.py` (hard-imported by
+  `codexbar-claude.py`) and `codexbar-opencode-login.py`; `--uninstall` removed one mark of three.
+  All three scripts now source `lib-codexbar.sh` for one helper/mark list; `test-codexbar-deploy.py`
+  fails if any helper imports a module missing from it or `enhance.sh` omits one (mutation-checked).
+- Settings window: provider catalog parsing no longer trips GLib criticals on malformed CLI entries.
+
+**Grok Build integrated** (owner has Grok Build 1.0.62 at `~/.grok`, signed in): see
+[CODEXBAR-PORT.md#grok-build](CODEXBAR-PORT.md#grok-build). Card/bar/mark/order, product-share and
+reset-credit lines, `grok login` and open-in-terminal, seven-day local tokens from `usage.json`, sign-in
+email only. Installer adds `grok` to `providerOrder` when the CLI is installed.
+
+**CI:** new `codexbar-wingpanel` job builds the native module and runs all 17 Meson tests (unit, generated-C
+guard, Switch/ingestion/token/live-preference/Grok Xvfb probes). `probe/ci-build-deps.sh` builds Granite
+7.7 and Wingpanel's `lib/` at the installer's pinned commit only when the distro lacks them.
+
+**Verified here (x86_64 container, not the owner's machine):** 11 Python suites; from-scratch dependency
+bootstrap then 17/17 Meson tests; shellcheck; render probes (light/dark) of the Grok scenarios; the
+sessions helper on a copy of the owner's real Grok session (762,841 tokens, matching `grok usage`).
+
+**Not verified:** a live `codexbar usage --provider grok` against the owner's account (ARM64 CLI could
+not run here; no account access); the CI job on `ubuntu-26.04-arm` (first run is this PR);
+`check-codexbar-port.sh` Grok lines against the live app; native module not loaded in the real panel.
+
+**Owner steps after merge:** `bash mseries/install-codexbar.sh --skip-system-deps` (bump + Grok in provider
+order), `bash mseries/deploy-codexbar.sh` (stages module and mark; loads at next login), then
+`bash mseries/check-codexbar-port.sh`.
+
 ## enh1 diagnostic boot reached the desktop; crash triage after reboot — 2026-10-18 (Claude Code)
 
 **Kernel now:** `7.1.12-elementary-aurora20-enh1` via the one-shot

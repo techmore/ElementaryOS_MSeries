@@ -159,6 +159,51 @@ int main (string[] args) {
             bar.measure (Gtk.Orientation.VERTICAL, -1, out minimum, out natural, null, null);
             assert (natural <= 32);
         }
+        if (Environment.get_variable ("CB_ASSERT_GROK") != null) {
+            // Bar: Grok follows Codex and Claude, token-first with its weekly credits beside the count.
+            var text = local_label_text (bar);
+            assert (text.contains ("763K tok") && text.contains ("7D 76%"));
+            var grok_tokens = find_label (bar, "763K tok");
+            var claude_tokens = find_label (bar, "31.2M tok");
+            Graphene.Rect grok_bounds, claude_bounds;
+            assert (grok_tokens.compute_bounds (bar, out grok_bounds));
+            assert (claude_tokens.compute_bounds (bar, out claude_bounds));
+            assert (grok_bounds.origin.x > claude_bounds.origin.x);
+            assert (find_label (bar, "7D 76%").get_parent () == grok_tokens.get_parent ());
+            // Menu: tier, product shares and reset credits; malformed sections are skipped.
+            var menu = local_label_text (popover_body);
+            assert (menu.contains ("SuperGrok") && menu.contains ("me@grok.example"));
+            // Its only window is weekly and already sits beside the token count: no repeated lower row.
+            assert (text.index_of ("7D 76%") == text.last_index_of ("7D 76%"));
+            assert (menu.contains ("Usage breakdown · Grok Build 18% · Grok Chat 6%"));
+            assert (menu.contains ("Limit Reset Credits · Available 1 available"));
+            assert (!menu.contains ("Malformed") && !menu.contains ("not an object"));
+            assert (menu.contains ("763K tokens"));
+        }
+        if (Environment.get_variable ("CB_ASSERT_GROK_SIGNIN") != null) {
+            var menu = local_label_text (popover_body);
+            assert (menu.contains ("If you are signed out, run grok login"));
+            var sign_in = find_button (popover_body, "Sign in…");
+            assert (sign_in != null);
+            assert (find_button (popover_body, "Open Settings…") == null);
+            sign_in.clicked ();
+            var log = GLib.Path.build_filename (Environment.get_home_dir (), "terminal.log");
+            // Checked before the 1 s capture ends the probe; the fake launcher only appends one line.
+            Timeout.add (500, () => {
+                string contents;
+                try {
+                    FileUtils.get_contents (log, out contents);
+                } catch (Error e) {
+                    contents = "";
+                }
+                var expected = GLib.Path.build_filename (Environment.get_home_dir (), ".grok/bin/grok") + " login";
+                if (!contents.contains (expected)) {
+                    stderr.printf ("grok login was not launched; terminal log: %s\n", contents);
+                    render_failed = true;
+                }
+                return Source.REMOVE;
+            });
+        }
         assert_quota_bar_colors (popover_body);
         var page = Environment.get_variable ("CB_PAGE");
         var pages = find_pages (root);
@@ -240,6 +285,16 @@ Gtk.ScrolledWindow? find_scroll (Gtk.Widget root) {
     if (root is Gtk.ScrolledWindow) return (Gtk.ScrolledWindow) root;
     for (var child = root.get_first_child (); child != null; child = child.get_next_sibling ()) {
         var found = find_scroll (child);
+        if (found != null) return found;
+    }
+    return null;
+}
+
+Gtk.Button? find_button (Gtk.Widget widget, string text) {
+    var button = widget as Gtk.Button;
+    if (button != null && button.label == text) return button;
+    for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ()) {
+        var found = find_button (child, text);
         if (found != null) return found;
     }
     return null;
