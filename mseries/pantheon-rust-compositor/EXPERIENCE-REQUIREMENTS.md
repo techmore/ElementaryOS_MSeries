@@ -82,7 +82,7 @@ its anchor/size/offset, reserves exclusive panel geometry, and updates already
 maximized windows when that work area changes. The last local `cargo check`
 and `cargo build` pass. Its protocol probe completed under Xvfb over a nested
 Wayland socket. Installed Wingpanel 8.0.4 also connected in an isolated nested
-Wayland session and rendered SHM buffers, but reports that
-`org.gnome.Mutter.DisplayConfig` is unavailable. Dock integration and M-series
-hardware remain unqualified; this is not full session or hardware
-qualification.
+Wayland session and rendered SHM buffers. The prototype serves the read-only
+`org.gnome.Mutter.DisplayConfig.GetCurrentState` query Wingpanel uses, and
+Wingpanel completes that call. Dock integration and M-series hardware remain
+unqualified; this is not full session or hardware qualification.

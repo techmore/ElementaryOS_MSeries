@@ -2,6 +2,7 @@
 
 mod handlers;
 mod grabs;
+mod display_config;
 mod input;
 mod pantheon_shell;
 mod protocols;

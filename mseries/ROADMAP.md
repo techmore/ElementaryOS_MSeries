@@ -21,10 +21,12 @@ configures. Its v2 protocol probe completed a nested Xvfb run and sent panel
 requests over the Wayland socket. Installed Wingpanel 8.0.4 also connected in an
 isolated nested Wayland run, sent `get_panel`, anchor and hide-mode requests,
 and attached SHM buffers. It reports the absent `org.gnome.Mutter.DisplayConfig`
-service (plus GNOME Shell keybinding/sound hooks), so the next slice is to
-identify and provide only the display-config query Wingpanel requires.
-Autohide, blur, multi-output reflow, Dock behavior, full session integration
-and M-series hardware remain unqualified. A public search found elementary's
+service. The prototype now returns its read-only `GetCurrentState` query using
+the nested output and logical layout mode; Wingpanel connects without the
+missing-service error. The GNOME Shell keybinding/sound hooks still need
+session-level compatibility. Autohide, blur, multi-output reflow, monitor mode
+application, Dock behavior, full session integration and M-series hardware
+remain unqualified. A public search found elementary's
 [Gala](https://github.com/elementary/gala) still based on libmutter, with no
 first-party Rust compositor to reuse. The WD22TB4 HDMI G3 DCP/kernel blocker
 remains a separate workstream.

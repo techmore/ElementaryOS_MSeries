@@ -70,8 +70,12 @@ for the 12-second Xvfb integration smoke and the probe completed its protocol
 requests. Installed Wingpanel 8.0.4 also connected in an isolated D-Bus/Xvfb
 run forced to Wayland. Its client trace confirms it bound the shell global,
 sent `get_panel`, `set_anchor(top)`, and `set_hide_mode(never)`, then allocated
-and attached shared-memory buffers. It logged that
-`org.gnome.Mutter.DisplayConfig` is unavailable; its GNOME Shell keybinding and
-sound hooks also had no service on the isolated bus. This is evidence of panel
-client compatibility at the protocol/rendering path, not full session
-qualification. Dock behavior and M-series DRM/KMS remain unqualified.
+and attached shared-memory buffers. Wingpanel requires
+`org.gnome.Mutter.DisplayConfig`; the compositor now serves the read-only
+`GetCurrentState` query it calls, with the current nested output and logical
+layout mode, and emits `MonitorsChanged` when the output resizes. The isolated
+Wingpanel run no longer reports a missing DisplayConfig service. GNOME Shell
+keybinding and sound hooks still have no service on the isolated bus. This is
+evidence of panel compatibility at the protocol/rendering path, not full
+session qualification. Applying monitor modes, Dock behavior and M-series
+DRM/KMS remain unqualified.

@@ -15,11 +15,13 @@ path = "src/bin/pantheon-shell-probe.rs"
 
 [dependencies]
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
+tracing = "0.1"
 bitflags = "2.2.1"
 wayland-scanner = "0.31.11"
 wayland-backend = "0.3.17"
 wayland-client = "0.31.11"
 wayland-server = "0.31.14"
+zbus = "=5.19.0"
 
 [dependencies.smithay]
 git = "https://github.com/Smithay/smithay.git"

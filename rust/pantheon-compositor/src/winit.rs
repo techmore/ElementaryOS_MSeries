@@ -13,6 +13,7 @@ use smithay::{
 };
 
 use crate::PantheonCompositor;
+use crate::display_config::OutputSnapshot;
 
 pub fn init_winit(
     event_loop: &mut EventLoop<PantheonCompositor>,
@@ -40,21 +41,42 @@ pub fn init_winit(
     output.set_preferred(mode);
 
     state.space.map_output(&output, (0, 0));
+    state.display_config.update(OutputSnapshot {
+        connector: "winit".into(),
+        vendor: "Smithay".into(),
+        product: "Winit".into(),
+        serial: "Nested".into(),
+        width: mode.size.w,
+        height: mode.size.h,
+        refresh_millihz: mode.refresh,
+        scale: 1.0,
+    });
 
     let mut damage_tracker = OutputDamageTracker::from_output(&output);
 
     event_loop.handle().insert_source(winit, move |event, _, state| {
         match event {
             WinitEvent::Resized { size, .. } => {
+                let mode = Mode {
+                    size,
+                    refresh: 60_000,
+                };
                 output.change_current_state(
-                    Some(Mode {
-                        size,
-                        refresh: 60_000,
-                    }),
+                    Some(mode),
                     None,
                     None,
                     None,
                 );
+                state.display_config.update(OutputSnapshot {
+                    connector: "winit".into(),
+                    vendor: "Smithay".into(),
+                    product: "Winit".into(),
+                    serial: "Nested".into(),
+                    width: mode.size.w,
+                    height: mode.size.h,
+                    refresh_millihz: mode.refresh,
+                    scale: 1.0,
+                });
             }
             WinitEvent::Input(event) => state.process_input_event(event),
             WinitEvent::Redraw => {
