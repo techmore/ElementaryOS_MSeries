@@ -49,7 +49,7 @@ use smithay::{
 use crate::{
     PantheonCompositor,
     cursor::{CursorRenderElement, render_cursor_elements, render_lock_surface_elements},
-    display_config::OutputSnapshot,
+    display_config::{OutputModeSnapshot, OutputSnapshot},
 };
 
 pub type GbmRendererBackend = GbmGlesBackend<GlesRenderer, DrmDeviceFd>;
@@ -67,6 +67,29 @@ const OUTPUT_FORMATS: &[smithay::backend::allocator::Fourcc] = &[
     smithay::backend::allocator::Fourcc::Argb8888,
 ];
 
+fn output_mode_snapshots(
+    modes: &[smithay::reexports::drm::control::Mode],
+) -> Vec<OutputModeSnapshot> {
+    let mut snapshots = modes
+        .iter()
+        .map(|drm_mode| {
+            let mode = Mode::from(*drm_mode);
+            OutputModeSnapshot {
+                width: mode.size.w,
+                height: mode.size.h,
+                refresh_millihz: mode.refresh,
+                preferred: drm_mode.mode_type().contains(ModeTypeFlags::PREFERRED),
+            }
+        })
+        .collect::<Vec<_>>();
+    if !snapshots.iter().any(|mode| mode.preferred)
+        && let Some(first) = snapshots.first_mut()
+    {
+        first.preferred = true;
+    }
+    snapshots
+}
+
 pub struct NativeRenderer {
     pub render_node: DrmNode,
     pub render_gbm: GbmDevice<DrmDeviceFd>,
@@ -76,6 +99,7 @@ pub struct NativeRenderer {
 pub struct NativeKmsOutput {
     pub connector: connector::Handle,
     pub crtc: smithay::reexports::drm::control::crtc::Handle,
+    pub modes: Vec<smithay::reexports::drm::control::Mode>,
     pub output: Output,
     pub drm_output: NativeDrmOutput,
     pub global_id: smithay::reexports::wayland_server::backend::GlobalId,
@@ -304,6 +328,7 @@ impl NativeKmsDevice {
                 .copied()
                 .unwrap_or(info.modes()[0]);
             let mode = Mode::from(drm_mode);
+            let available_modes = info.modes().to_vec();
             let name = format!("{}-{}", info.interface().as_str(), info.interface_id());
             let (physical_width, physical_height) = info.size().unwrap_or((0, 0));
             let output = Output::new(
@@ -344,6 +369,7 @@ impl NativeKmsDevice {
             self.outputs.push(NativeKmsOutput {
                 connector: info.handle(),
                 crtc,
+                modes: available_modes,
                 output,
                 drm_output,
                 global_id,
@@ -377,6 +403,7 @@ impl NativeKmsDevice {
                         width: mode.size.w,
                         height: mode.size.h,
                         refresh_millihz: mode.refresh,
+                        modes: output_mode_snapshots(&output.modes),
                         scale: 1.0,
                         x,
                         y: 0,
@@ -557,6 +584,8 @@ impl NativeKmsDevice {
         let mut x = 0;
         for selected in connected {
             let mode = Mode::from(selected.mode);
+            let available_modes = selected.connector.modes().to_vec();
+            let mode_snapshots = output_mode_snapshots(&available_modes);
             let name = format!(
                 "{}-{}",
                 selected.connector.interface().as_str(),
@@ -602,6 +631,7 @@ impl NativeKmsDevice {
                 width: mode.size.w,
                 height: mode.size.h,
                 refresh_millihz: mode.refresh,
+                modes: mode_snapshots,
                 scale: 1.0,
                 x,
                 y: 0,
@@ -611,6 +641,7 @@ impl NativeKmsDevice {
             outputs.push(NativeKmsOutput {
                 connector: selected.connector.handle(),
                 crtc: selected.crtc,
+                modes: available_modes,
                 output,
                 drm_output,
                 global_id,

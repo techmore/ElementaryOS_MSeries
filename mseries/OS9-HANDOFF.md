@@ -5590,3 +5590,16 @@ index and upstream documents its use of `ext-session-lock-v1`, but its UI/PAM
 behavior on this Pantheon session remains unqualified. Next: stage the package
 in an isolated nested session, verify D-Bus activation and authentication,
 then exercise lock/unlock without touching Gala's live session.
+
+### Advertise kernel-reported display modes — 2026-10-18
+
+`org.gnome.Mutter.DisplayConfig.GetCurrentState` no longer fabricates a single
+mode for each native connector. It now lists every mode returned by that
+connector's DRM resources, marks the active and preferred modes, and computes
+refresh rates from DRM timing data. The nested Winit backend continues to
+advertise only its actual current window size. Default and `native-drm` checks
+pass. This improves the settings UI's inventory only: `ApplyMonitorsConfig`
+is not implemented, mode changes and layout application remain unavailable,
+and no live display configuration was changed. Next: validate connector mode
+IDs against Pantheon Settings, then implement verified apply/rollback on the
+native KMS outputs.

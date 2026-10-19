@@ -12,7 +12,7 @@ use smithay::{
 
 use crate::PantheonCompositor;
 use crate::cursor::{CursorRenderElement, render_cursor_elements, render_lock_surface_elements};
-use crate::display_config::OutputSnapshot;
+use crate::display_config::{OutputModeSnapshot, OutputSnapshot};
 
 pub fn init_winit(
     event_loop: &mut EventLoop<PantheonCompositor>,
@@ -53,6 +53,12 @@ pub fn init_winit(
         width: mode.size.w,
         height: mode.size.h,
         refresh_millihz: mode.refresh,
+        modes: vec![OutputModeSnapshot {
+            width: mode.size.w,
+            height: mode.size.h,
+            refresh_millihz: mode.refresh,
+            preferred: true,
+        }],
         scale: 1.0,
         x: 0,
         y: 0,
@@ -86,6 +92,12 @@ pub fn init_winit(
                         width: mode.size.w,
                         height: mode.size.h,
                         refresh_millihz: mode.refresh,
+                        modes: vec![OutputModeSnapshot {
+                            width: mode.size.w,
+                            height: mode.size.h,
+                            refresh_millihz: mode.refresh,
+                            preferred: true,
+                        }],
                         scale: 1.0,
                         x: 0,
                         y: 0,

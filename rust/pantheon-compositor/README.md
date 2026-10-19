@@ -157,7 +157,9 @@ sent `get_panel`, `set_anchor(top)`, and `set_hide_mode(never)`, then allocated
 and attached shared-memory buffers. Wingpanel requires
 `org.gnome.Mutter.DisplayConfig`; the compositor now serves the read-only
 `GetCurrentState` query it calls, with every tracked output's current mode,
-logical position, scale, and primary status. Output add/update/remove changes
+logical position, scale, and primary status. Native outputs now list all
+connector modes reported by DRM and mark active/preferred entries; the nested
+backend reports only its current Winit size. Output add/update/remove changes
 increment the state serial and emit `MonitorsChanged`. The service remains
 read-only and does not apply monitor modes or layouts. The isolated
 Wingpanel run no longer reports missing DisplayConfig or Shell keybinding

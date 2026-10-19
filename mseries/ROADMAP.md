@@ -66,6 +66,11 @@ scanout remain unqualified. Local `cargo check --bins` and `cargo build --bins` 
 and without `native-drm`; they establish compilation only, not successful
 connector modesetting.
 
+Read-only DisplayConfig now lists the modes reported by each native DRM
+connector, including current/preferred flags and timing-derived refresh rates.
+It still cannot apply a requested mode, position, scale or transform; native
+mode/layout configuration and rollback are the next display-settings work.
+
 Smithay's `ext-session-lock-v1` is implemented in both rendering backends:
 applications are hidden behind lock surfaces or black, input is confined to
 the locker, and lock confirmation waits for each mapped output to present a

@@ -20,10 +20,30 @@ pub struct OutputSnapshot {
     pub width: i32,
     pub height: i32,
     pub refresh_millihz: i32,
+    pub modes: Vec<OutputModeSnapshot>,
     pub scale: f64,
     pub x: i32,
     pub y: i32,
     pub primary: bool,
+}
+
+#[derive(Clone, Debug)]
+pub struct OutputModeSnapshot {
+    pub width: i32,
+    pub height: i32,
+    pub refresh_millihz: i32,
+    pub preferred: bool,
+}
+
+impl OutputModeSnapshot {
+    pub fn id(&self) -> String {
+        format!(
+            "{}x{}@{:.3}",
+            self.width,
+            self.height,
+            f64::from(self.refresh_millihz) / 1000.0
+        )
+    }
 }
 
 #[derive(Clone)]
@@ -86,25 +106,41 @@ impl DisplayConfigServer {
                 output.product,
                 output.serial,
             );
-            let mode_id = format!(
-                "{}x{}@{:.3}",
-                output.width,
-                output.height,
-                f64::from(output.refresh_millihz) / 1000.0
-            );
-            let mut mode_properties = Properties::new();
-            mode_properties.insert("is-current".into(), OwnedValue::from(true));
-            mode_properties.insert("is-preferred".into(), OwnedValue::from(true));
-            let mode = (
-                mode_id,
-                output.width,
-                output.height,
-                f64::from(output.refresh_millihz) / 1000.0,
-                output.scale,
-                vec![output.scale],
-                mode_properties,
-            );
-            monitors.push((monitor_info.clone(), vec![mode], Properties::new()));
+            let modes = if output.modes.is_empty() {
+                vec![OutputModeSnapshot {
+                    width: output.width,
+                    height: output.height,
+                    refresh_millihz: output.refresh_millihz,
+                    preferred: true,
+                }]
+            } else {
+                output.modes
+            };
+            let modes = modes
+                .into_iter()
+                .map(|mode| {
+                    let mut mode_properties = Properties::new();
+                    let current = mode.width == output.width
+                        && mode.height == output.height
+                        && mode.refresh_millihz == output.refresh_millihz;
+                    if current {
+                        mode_properties.insert("is-current".into(), OwnedValue::from(true));
+                    }
+                    if mode.preferred {
+                        mode_properties.insert("is-preferred".into(), OwnedValue::from(true));
+                    }
+                    (
+                        mode.id(),
+                        mode.width,
+                        mode.height,
+                        f64::from(mode.refresh_millihz) / 1000.0,
+                        output.scale,
+                        vec![output.scale],
+                        mode_properties,
+                    )
+                })
+                .collect();
+            monitors.push((monitor_info.clone(), modes, Properties::new()));
             logical_monitors.push((
                 output.x,
                 output.y,
