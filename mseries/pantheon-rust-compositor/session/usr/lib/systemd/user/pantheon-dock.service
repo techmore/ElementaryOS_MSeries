@@ -9,6 +9,9 @@ StartLimitBurst=3
 
 [Service]
 Type=simple
+# Respect the local user's opt-out even though this unit launches the distro
+# binary directly rather than resolving the per-user Dock wrapper through PATH.
+ExecCondition=/usr/bin/test ! -e %h/.config/mseries/dock/user-disabled
 ExecStart=/usr/bin/io.elementary.dock
 Restart=on-failure
 RestartSec=2s
