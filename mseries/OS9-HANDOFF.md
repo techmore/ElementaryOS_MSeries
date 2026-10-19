@@ -5398,3 +5398,13 @@ file, `cargo check --bins`, and `cargo check --features native-drm --bins` pass
 on the M1 Pro build host. This is compile evidence only; no absolute-input
 device or multi-output runtime check was run. The pinned Smithay input and
 multi-GPU paths remain the next focus; native session startup is still absent.
+
+### Initial toplevel placement and focus — 2026-10-18
+
+New toplevels are centered on the first available output when their first
+non-empty buffer commits. Later windows are offset in a bounded cascade, the
+new window is activated and receives keyboard focus, and toplevel destruction
+clears placement/window-mode tracking and unmaps it from `Space`. Default and
+`native-drm` feature `cargo check --bins` both pass locally. Runtime window
+launch/focus/close behavior remains unverified; this does not add native DRM
+startup, and native session work remains the next major milestone.

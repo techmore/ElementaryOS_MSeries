@@ -19,8 +19,11 @@ advertises Pantheon's protocol v2, places
 panel surfaces using anchor/size/offset, and applies exclusive panel geometry
 when configuring maximized windows. A changed panel work area now reconfigures
 already maximized windows, while unchanged panel repaints do not send redundant
-configures. Its v2 protocol probe completed a nested Xvfb run and sent panel
-requests over the Wayland socket. Installed Wingpanel 8.0.4 also connected in an
+configures. New committed toplevels are centered and cascaded on the first
+output, activated, and focused; absolute pointer events map to all logical
+outputs. These new behaviors are compile-checked but not runtime-qualified. The
+v2 protocol probe completed a nested Xvfb run and sent panel requests over the
+Wayland socket. Installed Wingpanel 8.0.4 also connected in an
 isolated nested Wayland run, sent `get_panel`, anchor and hide-mode requests,
 and attached SHM buffers. It reports the absent `org.gnome.Mutter.DisplayConfig`
 service. The prototype now returns its read-only `GetCurrentState` query using

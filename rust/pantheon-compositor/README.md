@@ -43,7 +43,11 @@ M-series/Pantheon behavior documented in
 [`../../mseries/pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md`](../../mseries/pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md).
 It currently has one nested output,
 basic keyboard/pointer handling, xdg-shell windows and popup grabs, move/resize
-grabs, clipboard and drag-and-drop. It now advertises the existing Pantheon desktop-shell
+grabs, clipboard and drag-and-drop. On the first non-empty toplevel commit,
+windows are centered and cascaded on the first output, activated, and given
+keyboard focus; toplevel destruction removes the placement tracking. Absolute
+pointer input maps to the complete logical output bounds. These behaviors have
+compile checks but no new runtime qualification. It now advertises the existing Pantheon desktop-shell
 protocol v2: panel surfaces can set their anchor, size, hide mode and offset;
 the compositor places those surfaces and uses exclusive panel geometry for
 xdg-toplevel maximize requests. The Dock's M-series offset request is therefore

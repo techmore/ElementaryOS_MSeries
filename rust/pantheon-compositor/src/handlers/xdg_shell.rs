@@ -1,7 +1,7 @@
 use smithay::{
     desktop::{
-        PopupKeyboardGrab, PopupKind, PopupManager, PopupPointerGrab, PopupUngrabStrategy, Space,
-        Window, find_popup_root_surface, get_popup_toplevel_coords,
+        PopupKeyboardGrab, PopupKind, PopupPointerGrab, PopupUngrabStrategy, Window,
+        find_popup_root_surface, get_popup_toplevel_coords,
     },
     input::{
         Seat,
@@ -145,6 +145,26 @@ impl XdgShellHandler for PantheonCompositor {
         self.configure_window_mode(surface, false, false);
     }
 
+    fn toplevel_destroyed(&mut self, surface: ToplevelSurface) {
+        let wl_surface = surface.wl_surface();
+        let id = wl_surface.id();
+        self.initially_positioned.remove(&id);
+        self.managed_windows.remove(&id);
+
+        let window = self
+            .space
+            .elements()
+            .find(|window| {
+                window
+                    .toplevel()
+                    .is_some_and(|top| top.wl_surface() == wl_surface)
+            })
+            .cloned();
+        if let Some(window) = window {
+            self.space.unmap_elem(&window);
+        }
+    }
+
     fn grab(&mut self, surface: PopupSurface, seat_resource: wl_seat::WlSeat, serial: Serial) {
         let seat = Seat::from_resource(&seat_resource).unwrap();
         let kind = PopupKind::Xdg(surface);
@@ -212,14 +232,15 @@ fn check_grab(
     Some(start_data)
 }
 
-/// Should be called on `WlSurface::commit`
-pub fn handle_commit(popups: &mut PopupManager, space: &Space<Window>, surface: &WlSurface) {
+/// Should be called on `WlSurface::commit` after `Window::on_commit`.
+pub fn handle_commit(state: &mut PantheonCompositor, surface: &WlSurface) {
     // Handle toplevel commits.
-    if let Some(window) = space
+    let window = state
+        .space
         .elements()
         .find(|w| w.toplevel().unwrap().wl_surface() == surface)
-        .cloned()
-    {
+        .cloned();
+    if let Some(window) = window {
         let initial_configure_sent = with_states(surface, |states| {
             states
                 .data_map
@@ -233,11 +254,53 @@ pub fn handle_commit(popups: &mut PopupManager, space: &Space<Window>, surface: 
         if !initial_configure_sent {
             window.toplevel().unwrap().send_configure();
         }
+
+        // The first committed buffer makes the requested window size known.
+        // Center new app windows on the first available output and offset later
+        // launches so they remain visible and easy to find.
+        let surface_id = surface.id();
+        let size = window.geometry().size;
+        if size.w > 0 && size.h > 0 && !state.initially_positioned.contains(&surface_id) {
+            let cascade = (state.space.elements().count().saturating_sub(1) % 10) as i32 * 24;
+            let placement = state
+                .space
+                .outputs()
+                .next()
+                .and_then(|output| state.space.output_geometry(output))
+                .map(|output_geometry| {
+                    let max_x = output_geometry.loc.x + (output_geometry.size.w - size.w).max(0);
+                    let max_y = output_geometry.loc.y + (output_geometry.size.h - size.h).max(0);
+                    let x =
+                        (output_geometry.loc.x + (output_geometry.size.w - size.w) / 2 + cascade)
+                            .clamp(output_geometry.loc.x, max_x);
+                    let y =
+                        (output_geometry.loc.y + (output_geometry.size.h - size.h) / 2 + cascade)
+                            .clamp(output_geometry.loc.y, max_y);
+                    (x, y)
+                });
+
+            if let Some(location) = placement {
+                state.space.map_element(window.clone(), location, true);
+                state.initially_positioned.insert(surface_id);
+
+                let serial = smithay::utils::SERIAL_COUNTER.next_serial();
+                state
+                    .seat
+                    .get_keyboard()
+                    .unwrap()
+                    .set_focus(state, Some(surface.clone()), serial);
+                state.space.elements().for_each(|window| {
+                    if let Some(toplevel) = window.toplevel() {
+                        toplevel.send_pending_configure();
+                    }
+                });
+            }
+        }
     }
 
     // Handle popup commits.
-    popups.commit(surface);
-    if let Some(popup) = popups.find_popup(surface) {
+    state.popups.commit(surface);
+    if let Some(popup) = state.popups.find_popup(surface) {
         match popup {
             PopupKind::Xdg(ref xdg) => {
                 if !xdg.is_initial_configure_sent() {

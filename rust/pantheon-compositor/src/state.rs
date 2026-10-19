@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::{ffi::OsString, sync::Arc};
 
 use smithay::{
@@ -23,8 +23,8 @@ use smithay::{
     },
 };
 
-use crate::pantheon_shell::{PanelState, PantheonShellState};
 use crate::display_config::DisplayConfigHandle;
+use crate::pantheon_shell::{PanelState, PantheonShellState};
 use crate::shell_compat::ShellCompatHandle;
 
 pub struct PantheonCompositor {
@@ -49,6 +49,7 @@ pub struct PantheonCompositor {
     pub last_work_area: Option<smithay::utils::Rectangle<i32, smithay::utils::Logical>>,
     pub managed_windows:
         HashMap<smithay::reexports::wayland_server::backend::ObjectId, ManagedWindow>,
+    pub initially_positioned: HashSet<smithay::reexports::wayland_server::backend::ObjectId>,
     pub popups: PopupManager,
 
     pub seat: Seat<Self>,
@@ -131,12 +132,16 @@ impl PantheonCompositor {
             panels: HashMap::new(),
             last_work_area: None,
             managed_windows: HashMap::new(),
+            initially_positioned: HashSet::new(),
             popups,
             seat,
         }
     }
 
-    fn init_wayland_listener(display: Display<PantheonCompositor>, event_loop: &mut EventLoop<Self>) -> OsString {
+    fn init_wayland_listener(
+        display: Display<PantheonCompositor>,
+        event_loop: &mut EventLoop<Self>,
+    ) -> OsString {
         // Creates a new listening socket, automatically choosing the next available `wayland` socket name.
         let listening_socket = ListeningSocketSource::new_auto().unwrap();
 
@@ -175,12 +180,17 @@ impl PantheonCompositor {
         socket_name
     }
 
-    pub fn surface_under(&self, pos: Point<f64, Logical>) -> Option<(WlSurface, Point<f64, Logical>)> {
-        self.space.element_under(pos).and_then(|(window, location)| {
-            window
-                .surface_under(pos - location.to_f64(), WindowSurfaceType::ALL)
-                .map(|(s, p)| (s, (p + location).to_f64()))
-        })
+    pub fn surface_under(
+        &self,
+        pos: Point<f64, Logical>,
+    ) -> Option<(WlSurface, Point<f64, Logical>)> {
+        self.space
+            .element_under(pos)
+            .and_then(|(window, location)| {
+                window
+                    .surface_under(pos - location.to_f64(), WindowSurfaceType::ALL)
+                    .map(|(s, p)| (s, (p + location).to_f64()))
+            })
     }
 }
 
