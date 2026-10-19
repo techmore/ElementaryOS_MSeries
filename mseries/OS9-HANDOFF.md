@@ -6440,3 +6440,26 @@ desktop (it would divert a file the manual installer already replaced, so
 switching needs `install-calendar-agenda.sh --uninstall` first), and live-panel
 checks.
 
+### Bible tab production readiness: merged — 2026-10-19 (PR #277 -> dev ca2cc6b)
+
+Running the suite on a clean CI runner found an upstream bug we ship:
+TimeManager.vala tested `"12h" in time_format` on the user's AccountsService
+record without a null check. An account the greeter never stored a TimeFormat
+for (a new or externally created user, a CI runner) raised a string_contains
+critical and never set the clock format. Our patch now falls back to the
+org.gnome.desktop.interface clock-format setting in that case (fb119d7).
+
+CI lessons for the packages job: a private-EDS GTK test also needs
+AccountsService on the system bus, plus elementary's
+io.elementary.pantheon.AccountsService interface. elementary-default-settings
+itself can't install on the Ubuntu runner (it needs flatpak >= 1.17), so the job
+extracts just that XML from the daily .deb.
+
+Verified: packages job green (build, bundled-data check, 27/27 test groups on
+the library extracted from the .deb, metadata, upload); all validation jobs green
+(including the separate Calendar Events/Tasks/Homeboard job); 27/27 locally.
+Owner's desktop not changed: the running panel is still the manual-install
+build, and Wingpanel was not reloaded (AGENTS.md: no routine reloads).
+Switching to the package means `install-calendar-agenda.sh --uninstall`, then
+installing the .deb. Apt publishing still waits on the signing key (#52).
+
