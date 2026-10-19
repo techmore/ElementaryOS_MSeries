@@ -190,7 +190,32 @@ Factory builds use the same pin and patch in `build-desktop-indicators`; the
 account launcher is staged into immutable `/usr/bin`. A source build does not
 qualify a factory image or a Google account connection.
 
+### Package (`mseries-wingpanel-datetime`)
+
+`mseries/debs/build.sh` also builds the panel as
+`mseries-wingpanel-datetime_2.4.2-0mseries1_arm64.deb`. It uses the factory
+pin, applies the same patch and ships the plugin plus
+`/usr/bin/mseries-calendar-accounts`. It depends on
+`io.elementary.panel.datetime (>= 2.4.2, << 2.4.3)` and recommends
+`evolution-data-server`, `gnome-online-accounts-gtk` and `io.elementary.tasks`.
+Its preinst uses `dpkg-divert` to move the stock plugin aside, so an upgrade
+of the stock package can't overwrite ours. The manual installer above has no
+such protection. A new upstream minor version is refused by the dependency
+instead of loading a plugin built for another ABI.
+
+The **M-series plugin packages** workflow builds it on every change to the
+patch, `mseries/calendar/` or the panel pins. It then runs
+`check-bundled-data.py`, which confirms that the verse and study data inside the
+patch match this directory, and runs `test-agenda.sh` against the library
+extracted from the package on a clean runner with elementary's daily packages.
+Publishing to the apt repository still waits on the signing-key decision (#52),
+so for now the package is a CI artifact.
+
 ## Validation
+
+`python3 mseries/calendar/check-bundled-data.py` checks, offline, that the
+verse and study data in the patch match `daily-verses.tsv` and
+`titus-study.tsv` here. Run it after `build-verses.py`.
 
 `bash mseries/calendar/test-agenda.sh /absolute/path/to/libdatetime.so` runs the
 actual plugin on Xvfb with a private D-Bus and private XDG config/data/cache.
