@@ -86,7 +86,8 @@ required workflows need.
 flowchart TD
   Apps[Existing Pantheon / GTK / Qt apps]
   XApps[X11 apps]
-  Shell[Existing Pantheon shell clients\nWingpanel + Dock + wallpaper]
+  Shell[Existing Pantheon shell clients\nWingpanel + Dock]
+  Settings[Existing desktop background settings\nwallpaper URI + picture options]
   Services[GNOME / Pantheon session services\nsettings, IBus, accessibility, sharing, lock UI]
   Xwayland[XWayland]
   Session[GNOME session + systemd user units]
@@ -99,6 +100,7 @@ flowchart TD
   Apps -->|Wayland| Rust
   XApps --> Xwayland --> Rust
   Shell -->|Wayland + Pantheon shell protocol| Rust
+  Settings -->|GSettings read at startup| Rust
   Services <-->|required compositor bridges| Rust
   Session -->|start compositor, then shell clients| Rust
   Session --> Shell
@@ -112,9 +114,10 @@ flowchart TD
 new user units are staged to start Wingpanel and Dock after it. `After=` orders
 process startup but does not yet wait for the panel to map or prove the
 `wait-for-n-panels=1` shell-launcher contract. The units are included in a local
-ARM64 package build but are not installed or runtime-qualified. The Rust
-session also does not yet provide the
-wallpaper/background path.
+ARM64 package build but are not installed or runtime-qualified. The compositor
+now loads the configured local wallpaper at startup and renders it behind
+windows, honoring the `zoom` crop mode; live wallpaper changes still require a
+session restart.
 
 ## What is complete and what has been tested
 
@@ -126,15 +129,17 @@ wallpaper/background path.
 | XWayland | Private Xvfb Zenity window mapped and accepted synthetic keyboard input; exposed through window-list D-Bus | Isolated smoke passed |
 | Nested text input | Private GTK Wayland field accepted an IBus/Mozc Japanese commit | Isolated smoke passed; native input remains unqualified |
 | Pantheon panel protocol | Wingpanel connected in private nested Wayland, requested a top panel, and attached shared-memory buffers | Protocol smoke passed; panel absent from native session |
-| Native full desktop | Owner observed slow startup, no top panel, no bottom dock, and no colored background during the Rust login | Incomplete; shell launch and wallpaper path remain open |
+| Desktop wallpaper | Loaded the configured 5000×2813 elementary wallpaper and captured it behind a GTK Zenity window in isolated Xvfb | Nested visual smoke passed; native output and live setting changes remain open |
+| Native full desktop | In the first Rust login, the owner observed slow startup, no top panel, no bottom dock, and no colored background | Incomplete; wallpaper rendering landed afterward and has not been qualified on native output |
 | Native keyboard, pointer, external display, lock/unlock, sharing, accessibility, crash recovery | No end-to-end qualification in the native session | Open |
 | Performance, power, reliability | No matched Gala/Rust measurements or crash-free soak yet | Open; do not claim faster or more reliable yet |
 
 The current login observation is useful development evidence, not a daily-use
 readiness result. Continue testing in the isolated experimental session while
 Gala remains the working fallback. The next development gate is to qualify
-Wingpanel/Dock startup in a nested session and implement the background path,
-then qualify shell startup and basic interaction before another native login.
+Wingpanel/Dock startup in a nested session and qualify the new wallpaper path
+on native output, then qualify shell startup and basic interaction before
+another native login.
 After that, measure the same startup, idle and representative workloads under
 Gala and Rust, and record crashes and recovery behavior.
 

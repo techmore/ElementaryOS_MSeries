@@ -135,6 +135,7 @@ pub struct PantheonCompositor {
     pub popups: PopupManager,
     pub cursor_status: CursorImageStatus,
     pub default_cursor: MemoryRenderBuffer,
+    pub(crate) wallpaper: Option<crate::wallpaper::Wallpaper>,
 
     pub seat: Seat<Self>,
     pub winit_redraw_sender: Option<channel::Sender<()>>,
@@ -373,6 +374,7 @@ impl PantheonCompositor {
             popups,
             cursor_status: CursorImageStatus::default_named(),
             default_cursor: default_cursor_buffer(),
+            wallpaper: crate::wallpaper::load_configured_wallpaper(),
             seat,
             winit_redraw_sender: None,
             #[cfg(feature = "native-drm")]

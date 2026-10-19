@@ -13,6 +13,7 @@ mod protocols;
 mod shell_compat;
 mod state;
 mod tiling;
+mod wallpaper;
 mod winit;
 mod workspace;
 mod xwayland;

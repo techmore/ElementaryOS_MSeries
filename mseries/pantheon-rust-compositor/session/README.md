@@ -44,10 +44,10 @@ name `io.elementary.wingpanel` and `io.elementary.dock`. The experimental
 session now stages separate systemd user services for these clients, ordered
 after compositor readiness and Wingpanel-before-Dock. A local ARM64 package
 build includes the new units, but they have not been installed or run in a live
-session. The
-desktop background is also missing; its provider/rendering path remains to be
-implemented. The installed five-minute rollback was exercised and returned
-LightDM to Gala.
+session. The first native package had no wallpaper; compositor-side wallpaper
+rendering has since been implemented and visually smoke-tested in nested Xvfb,
+but not yet qualified on native output. The installed five-minute rollback was
+exercised and returned LightDM to Gala.
 
 The session carries forward the installed Pantheon settings-daemon, keyring,
 Orca and elementary settings-daemon targets. It intentionally does not promise

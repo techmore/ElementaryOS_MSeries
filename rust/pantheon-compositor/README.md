@@ -79,6 +79,12 @@ This is an early compositor implementation, not a Mutter port or a Pantheon
 replacement yet. The target is only the
 M-series/Pantheon behavior documented in
 [`../../mseries/pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md`](../../mseries/pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md).
+The compositor reads `org.gnome.desktop.background` at startup, loads a local
+PNG/JPEG/WebP wallpaper and renders it behind app surfaces; `picture-options=zoom`
+uses a centered crop. A private Xvfb screenshot showed the configured
+elementary wallpaper behind a GTK Zenity window. Live wallpaper changes and
+native image rendering still need qualification; restart the session after
+changing the wallpaper.
 It currently has one nested output,
 basic keyboard/pointer handling, xdg-shell windows and popup grabs, move/resize
 grabs, clipboard, drag-and-drop and a compositor-rendered pointer. Client-set

@@ -48,7 +48,10 @@ use smithay::{
 
 use crate::{
     PantheonCompositor,
-    cursor::{CursorRenderElement, render_cursor_elements, render_lock_surface_elements},
+    cursor::{
+        CursorRenderElement, render_cursor_elements, render_lock_surface_elements,
+        render_wallpaper_element,
+    },
     display_config::{
         OutputModeSnapshot, OutputSnapshot, load_saved_monitor_configurations, transform_to_dbus,
     },
@@ -163,21 +166,23 @@ impl NativeKmsDevice {
                 )
                 .map_err(|error| format!("could not prepare output frame: {error:?}"))?;
                 let cursor_elements = render_cursor_elements(gpu_renderer, state, render_output);
-                let mut elements = space_elements
-                    .into_iter()
-                    .map(|element| match element {
-                        smithay::desktop::space::SpaceRenderElements::Surface(surface) => {
-                            CursorRenderElement::from(surface)
-                        }
-                        smithay::desktop::space::SpaceRenderElements::Element(element) => {
-                            CursorRenderElement::from(element)
-                        }
-                        smithay::desktop::space::SpaceRenderElements::_GenericCatcher(_) => {
-                            unreachable!("SpaceRenderElements generic catcher is never constructed")
-                        }
-                    })
-                    .collect::<Vec<_>>();
-                elements.extend(cursor_elements);
+                let mut elements = cursor_elements;
+                elements.extend(space_elements.into_iter().map(|element| match element {
+                    smithay::desktop::space::SpaceRenderElements::Surface(surface) => {
+                        CursorRenderElement::from(surface)
+                    }
+                    smithay::desktop::space::SpaceRenderElements::Element(element) => {
+                        CursorRenderElement::from(element)
+                    }
+                    smithay::desktop::space::SpaceRenderElements::_GenericCatcher(_) => {
+                        unreachable!("SpaceRenderElements generic catcher is never constructed")
+                    }
+                }));
+                if let Some(wallpaper) =
+                    render_wallpaper_element(gpu_renderer, state, render_output)
+                {
+                    elements.push(wallpaper);
+                }
                 elements
             };
             render_elements.add_output(&output.crtc, [0.1, 0.1, 0.1, 1.0].into(), elements);
@@ -531,21 +536,23 @@ impl NativeKmsDevice {
                 .map_err(|error| format!("could not prepare current output contents: {error:?}"))?;
                 let cursor_elements =
                     render_cursor_elements(&mut gpu_renderer, state, &output.output);
-                let mut elements = space_elements
-                    .into_iter()
-                    .map(|element| match element {
-                        smithay::desktop::space::SpaceRenderElements::Surface(surface) => {
-                            CursorRenderElement::from(surface)
-                        }
-                        smithay::desktop::space::SpaceRenderElements::Element(element) => {
-                            CursorRenderElement::from(element)
-                        }
-                        smithay::desktop::space::SpaceRenderElements::_GenericCatcher(_) => {
-                            unreachable!("SpaceRenderElements generic catcher is never constructed")
-                        }
-                    })
-                    .collect::<Vec<_>>();
-                elements.extend(cursor_elements);
+                let mut elements = cursor_elements;
+                elements.extend(space_elements.into_iter().map(|element| match element {
+                    smithay::desktop::space::SpaceRenderElements::Surface(surface) => {
+                        CursorRenderElement::from(surface)
+                    }
+                    smithay::desktop::space::SpaceRenderElements::Element(element) => {
+                        CursorRenderElement::from(element)
+                    }
+                    smithay::desktop::space::SpaceRenderElements::_GenericCatcher(_) => {
+                        unreachable!("SpaceRenderElements generic catcher is never constructed")
+                    }
+                }));
+                if let Some(wallpaper) =
+                    render_wallpaper_element(&mut gpu_renderer, state, &output.output)
+                {
+                    elements.push(wallpaper);
+                }
                 elements
             };
             render_elements.add_output(&output.crtc, [0.1, 0.1, 0.1, 1.0].into(), elements);
@@ -674,21 +681,23 @@ impl NativeKmsDevice {
                 )?;
                 let cursor_elements =
                     render_cursor_elements(&mut gpu_renderer, state, &output.output);
-                let mut elements = space_elements
-                    .into_iter()
-                    .map(|element| match element {
-                        smithay::desktop::space::SpaceRenderElements::Surface(surface) => {
-                            CursorRenderElement::from(surface)
-                        }
-                        smithay::desktop::space::SpaceRenderElements::Element(element) => {
-                            CursorRenderElement::from(element)
-                        }
-                        smithay::desktop::space::SpaceRenderElements::_GenericCatcher(_) => {
-                            unreachable!("SpaceRenderElements generic catcher is never constructed")
-                        }
-                    })
-                    .collect::<Vec<_>>();
-                elements.extend(cursor_elements);
+                let mut elements = cursor_elements;
+                elements.extend(space_elements.into_iter().map(|element| match element {
+                    smithay::desktop::space::SpaceRenderElements::Surface(surface) => {
+                        CursorRenderElement::from(surface)
+                    }
+                    smithay::desktop::space::SpaceRenderElements::Element(element) => {
+                        CursorRenderElement::from(element)
+                    }
+                    smithay::desktop::space::SpaceRenderElements::_GenericCatcher(_) => {
+                        unreachable!("SpaceRenderElements generic catcher is never constructed")
+                    }
+                }));
+                if let Some(wallpaper) =
+                    render_wallpaper_element(&mut gpu_renderer, state, &output.output)
+                {
+                    elements.push(wallpaper);
+                }
                 elements
             };
             let frame = output.drm_output.render_frame(

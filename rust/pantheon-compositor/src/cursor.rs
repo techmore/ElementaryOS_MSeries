@@ -141,6 +141,51 @@ where
     elements
 }
 
+pub fn render_wallpaper_element<R>(
+    renderer: &mut R,
+    state: &PantheonCompositor,
+    output: &smithay::output::Output,
+) -> Option<CursorRenderElement<R>>
+where
+    R: Renderer + ImportAll + ImportMem,
+    R::TextureId: Texture + Clone + Send + 'static,
+{
+    let wallpaper = state.wallpaper.as_ref()?;
+    let output_geometry = state.space.output_geometry(output)?;
+    let source: Size<f64, Logical> = (wallpaper.width as f64, wallpaper.height as f64).into();
+    let target = output_geometry.size.to_f64();
+    let source_region = if wallpaper.picture_options == "zoom" && target.w > 0.0 && target.h > 0.0 {
+        let source_aspect = source.w / source.h;
+        let target_aspect = target.w / target.h;
+        if source_aspect > target_aspect {
+            let width = source.h * target_aspect;
+            Some(Rectangle::<f64, Logical>::new(
+                ((source.w - width) / 2.0, 0.0).into(),
+                (width, source.h).into(),
+            ))
+        } else {
+            let height = source.w / target_aspect;
+            Some(Rectangle::<f64, Logical>::new(
+                (0.0, (source.h - height) / 2.0).into(),
+                (source.w, height).into(),
+            ))
+        }
+    } else {
+        None
+    };
+    MemoryRenderBufferRenderElement::from_buffer(
+        renderer,
+        (0.0, 0.0),
+        &wallpaper.buffer,
+        None,
+        source_region,
+        Some(output_geometry.size),
+        Kind::Unspecified,
+    )
+    .map(CursorRenderElement::from)
+    .ok()
+}
+
 fn render_shell_osd_elements<R>(
     _renderer: &mut R,
     state: &PantheonCompositor,

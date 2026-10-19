@@ -19,8 +19,8 @@ the proposed Pantheon MVP—along with a tested-versus-open status table—see
 
 On 2026-10-19 the installed experimental session completed its first native
 M1 Pro login and scanned out an AR30 3024x1964 framebuffer. The owner reported
-that startup felt slow; the Rust session had no Wingpanel, bottom dock, or
-colored wallpaper/background. A timed LightDM rollback returned to Gala and
+that startup felt slow; the first Rust session had no Wingpanel, bottom dock,
+or wallpaper/background. A timed LightDM rollback returned to Gala and
 restored the background. Separate systemd user services have since been staged
 to launch Wingpanel and Dock after the compositor. A local ARM64 package build
 now includes those units; they are not installed or runtime-qualified. This
@@ -104,11 +104,11 @@ This branch is **not ready to replace Gala for daily Pantheon use**. On
 2026-10-19, an isolated five-minute LightDM login completed and produced the
 first native scanout on the M1 Pro: plane 0 used the compositor's AR30
 framebuffer at 3024x1964. The owner confirmed the desktop was usable but slow
-to appear. Wingpanel, Dock and a colored wallpaper/background were missing.
+to appear. Wingpanel, Dock and wallpaper were missing in that first run.
 The timed rollback returned to Gala and restored the background. This qualifies
 native startup, internal-panel scanout and automatic rollback only; native
 keyboard/pointer workflows, complete shell integration, external displays,
-lock/unlock and compositor-failure recovery remain open.
+wallpaper after the new renderer, lock/unlock and compositor-failure recovery remain open.
 
 In private Xvfb, the release binary launched a GTK Wayland Zenity field;
 synthetic key events reached it, and IBus/Mozc committed `konnichiha` as
@@ -118,7 +118,8 @@ switching, F5 dictation or native input. XWayland also passed an isolated X11
 Zenity window and keyboard smoke; clipboard/PRIMARY remain unqualified.
 Installed Wingpanel binds the shell protocol and submits SHM panel buffers in
 private Xvfb, but the Rust session did not launch it. Keep Gala selected while
-the shell launcher and background path are implemented and runtime-qualified.
+the shell launcher is qualified and the new wallpaper renderer is tested on
+native output.
 
 The compositor now exposes Dock's `org.pantheon.gala.DesktopIntegration`
 D-Bus interface. Window enumeration, app IDs, focus state, workspace listing,
@@ -155,8 +156,8 @@ active Wingpanel session was not restarted. These checks do not qualify native
 DRM scanout, physical keyboard input, the Dock, or a complete login session.
 
 The next gate is to nested-qualify the staged Wingpanel and Dock startup against
-`/etc/xdg/io.elementary.desktop.wm.shell`, and implement a desktop background
-path. Then qualify shell rendering, Dock launcher/window switching,
+`/etc/xdg/io.elementary.desktop.wm.shell`, and qualify the new wallpaper renderer
+on native output. Then qualify shell rendering, Dock launcher/window switching,
 GTK/Qt clients and real F5 dictation. Package those changes before another
 native login. Keep the measured startup, resource, latency, power and
 crash/recovery comparison against Gala open; one successful login does not

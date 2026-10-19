@@ -11,7 +11,10 @@ use smithay::{
 };
 
 use crate::PantheonCompositor;
-use crate::cursor::{CursorRenderElement, render_cursor_elements, render_lock_surface_elements};
+use crate::cursor::{
+    CursorRenderElement, render_cursor_elements, render_lock_surface_elements,
+    render_wallpaper_element,
+};
 use crate::display_config::{
     OutputModeSnapshot, OutputSnapshot, load_saved_monitor_configurations, transform_to_dbus,
 };
@@ -154,23 +157,48 @@ pub fn init_winit(
                                 .unwrap();
                         } else {
                             let cursor_elements = render_cursor_elements(renderer, state, &output);
-                            smithay::desktop::space::render_output::<
-                                _,
-                                CursorRenderElement<GlesRenderer>,
-                                _,
-                                _,
-                            >(
-                                &output,
+                            let space_elements = smithay::desktop::space::space_render_elements(
                                 renderer,
-                                &mut framebuffer,
-                                output.current_scale().fractional_scale() as f32,
-                                0,
                                 [&state.space],
-                                &cursor_elements,
-                                &mut damage_tracker,
-                                [0.1, 0.1, 0.1, 1.0],
+                                &output,
+                                output.current_scale().fractional_scale() as f32,
                             )
                             .unwrap();
+                            let mut elements: Vec<CursorRenderElement<GlesRenderer>> =
+                                cursor_elements;
+                            elements.extend(space_elements.into_iter().map(
+                                |element| {
+                                    match element {
+                                smithay::desktop::space::SpaceRenderElements::Surface(surface) => {
+                                    CursorRenderElement::from(surface)
+                                }
+                                smithay::desktop::space::SpaceRenderElements::Element(element) => {
+                                    CursorRenderElement::from(element)
+                                }
+                                smithay::desktop::space::SpaceRenderElements::_GenericCatcher(
+                                    _,
+                                ) => {
+                                    unreachable!(
+                                        "SpaceRenderElements generic catcher is never constructed"
+                                    )
+                                }
+                            }
+                                },
+                            ));
+                            if let Some(wallpaper) =
+                                render_wallpaper_element(renderer, state, &output)
+                            {
+                                elements.push(wallpaper);
+                            }
+                            damage_tracker
+                                .render_output(
+                                    renderer,
+                                    &mut framebuffer,
+                                    0,
+                                    &elements,
+                                    [0.1, 0.1, 0.1, 1.0],
+                                )
+                                .unwrap();
                         }
                     }
                     backend.submit(Some(&[damage])).unwrap();
