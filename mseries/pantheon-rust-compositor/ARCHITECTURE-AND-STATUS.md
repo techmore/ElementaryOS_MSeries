@@ -119,9 +119,11 @@ unit now skips startup when the existing user-disabled marker is present,
 honoring the user's opt-out even though it invokes the distro executable by
 absolute path. The compositor now loads the configured local wallpaper at startup and renders it behind
 windows, honoring the `zoom` crop mode; live wallpaper changes still require a
-session restart. Refreshed package `0.1.0+gitb486d56` includes the wallpaper
-renderer and shell units; it has not been installed or qualified on native
-output. In the nested Winit backend, the default transform is set to compensate
+session restart. The staged ARM64 package `0.1.0+gitc24d53a` includes the
+wallpaper renderer, shell units, and Dock opt-out guard; it has not been
+installed or qualified on native output. Its SHA-256 is
+`39b5ea3c57c6bed02584fd27bd1ecdec8a9da73ec9c535fc03eec0e6600672c1`. In the
+nested Winit backend, the default transform is set to compensate
 for the framebuffer orientation observed under Xvfb; this produced an upright
 wallpaper and top Wingpanel in a fresh nested run. It does not alter the native
 DRM output transform.
@@ -162,8 +164,9 @@ readiness result. Continue testing in the isolated experimental session while
 Gala remains the working fallback. The next development gate is to qualify the
 newly built package's shell startup and wallpaper on native output. The earlier
 compositor startup timing does not explain the owner's slower overall login;
-capture session and client timing separately. The existing user-disabled Dock marker should remain in effect
-unless the user explicitly chooses to re-enable Dock in the desktop session.
+capture session, compositor, Wingpanel, Dock, and wallpaper timing separately.
+The existing user-disabled Dock marker should remain in effect unless the user
+explicitly chooses to re-enable Dock in the desktop session.
 After that, measure the same startup, idle and representative workloads under
 Gala and Rust, and record crashes and recovery behavior.
 
