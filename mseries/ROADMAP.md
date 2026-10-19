@@ -1,5 +1,20 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Release stages: F5 parity first, support assistants after — 2026-10-18
+
+Owner's order:
+
+1. **Stage 1 (gates v0.0.1):** F5 speech-to-text with the ease of macOS dictation
+   ([#196](https://github.com/techmore/ElementaryOS_MSeries/issues/196)), plus the
+   native elementary OS / Granite app audit
+   ([#242](https://github.com/techmore/ElementaryOS_MSeries/issues/242)). Open
+   gate: physical F5 in ChatGPT still fails (see the v0.0.1 F5 entry below).
+2. **Stage 2:** support assistants on the shared Pantheon MCP broker, starting
+   with troubleshooting ([#203](https://github.com/techmore/ElementaryOS_MSeries/issues/203),
+   draft PR #185, disabled). Speech and Share eyes become clients of that broker.
+
+v0.0.1 is cut (`dev` → `main`, see `mseries/BRANCHING.md`) only when stage 1 passes.
+
 ## v0.0.1 English F5 candidate; ChatGPT input correction staged — 2026-10-18
 
 The owner narrowed v0.0.1 to English F5 speech to text on the existing M1 Pro
