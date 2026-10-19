@@ -306,8 +306,8 @@ impl PantheonCompositor {
         })
     }
 
-    #[cfg(feature = "native-drm")]
     pub fn request_native_redraw(&self) {
+        #[cfg(feature = "native-drm")]
         if let Some(sender) = &self.native_redraw_sender {
             let _ = sender.send(());
         }
@@ -710,6 +710,7 @@ impl XdgActivationHandler for PantheonCompositor {
                 }
             });
         }
+        self.refresh_panel_visibility();
         #[cfg(feature = "native-drm")]
         self.request_native_redraw();
     }

@@ -53,6 +53,8 @@ pub struct PanelState {
     /// Pantheon protocol values: never=0, maximized-focused=1,
     /// overlapping-focused=2, overlapping-any=3, always=4.
     pub hide_mode: u32,
+    /// Whether the compositor has moved this panel out of view for its hide mode.
+    pub hidden: bool,
     pub visible_in_multitasking_view: bool,
 }
 
@@ -235,15 +237,18 @@ impl PantheonCompositor {
         if self.refresh_work_areas() {
             self.reconfigure_managed_windows();
         }
+        self.request_native_redraw();
     }
 
     pub fn update_panel(&mut self, surface: &WlSurface, update: impl FnOnce(&mut PanelState)) {
         let panel = self.panels.entry(surface.id()).or_default();
         update(panel);
         self.position_panel(surface);
+        self.refresh_panel_visibility();
         if self.refresh_work_areas() {
             self.reconfigure_managed_windows();
         }
+        self.request_native_redraw();
     }
 
     pub fn is_panel_surface(&self, surface: &WlSurface) -> bool {
@@ -256,7 +261,7 @@ impl PantheonCompositor {
     ) -> Rectangle<i32, Logical> {
         let (mut top, mut bottom, mut left, mut right) = (0, 0, 0, 0);
         for (surface_id, panel) in &self.panels {
-            if panel.anchor.is_none() || panel.hide_mode != 0 {
+            if panel.anchor.is_none() || panel.hidden {
                 continue;
             }
             let Some(window) = self.space.elements().find(|window| {
@@ -365,7 +370,7 @@ impl PantheonCompositor {
             surface_size.h
         };
         let offset = panel.offset;
-        let location = match anchor {
+        let mut location = match anchor {
             0 => (
                 output_geometry.loc.x + (output_geometry.size.w - width) / 2 + offset,
                 output_geometry.loc.y,
@@ -384,8 +389,218 @@ impl PantheonCompositor {
             ),
             _ => return,
         };
+        if panel.hidden {
+            match anchor {
+                0 => location.1 -= height,
+                1 => location.1 += height,
+                2 => location.0 -= width,
+                3 => location.0 += width,
+                _ => return,
+            }
+        }
         self.space.map_element(window.clone(), location, false);
         self.space.raise_element(&window, false);
+    }
+
+    /// Apply the hide mode requested by the Pantheon panel protocol. The
+    /// current Dock uses `overlapping-window`; edge motion reveals it again.
+    pub fn refresh_panel_visibility(&mut self) {
+        const EDGE_REVEAL_DISTANCE: f64 = 2.0;
+
+        let pointer = self
+            .seat
+            .get_pointer()
+            .map(|pointer| pointer.current_location());
+        let panels = self
+            .panels
+            .iter()
+            .map(|(id, panel)| (id.clone(), panel.clone()))
+            .collect::<Vec<_>>();
+        let mut changed = false;
+
+        for (surface_id, mut panel) in panels {
+            if panel.anchor.is_none() {
+                continue;
+            }
+            let Some(window) = self.space.elements().find(|window| {
+                window
+                    .toplevel()
+                    .is_some_and(|top| top.wl_surface().id() == surface_id)
+            }) else {
+                continue;
+            };
+            let Some(output) = panel
+                .output_name
+                .as_deref()
+                .and_then(|name| self.space.outputs().find(|output| output.name() == name))
+                .cloned()
+                .or_else(|| self.space.outputs_for_element(window).first().cloned())
+                .or_else(|| self.primary_output())
+            else {
+                continue;
+            };
+            let Some(output_rect) = self.space.output_geometry(&output) else {
+                continue;
+            };
+            let surface_size = window.geometry().size;
+            let width = if panel.width > 0 {
+                panel.width
+            } else {
+                surface_size.w
+            };
+            let height = if panel.height > 0 {
+                panel.height
+            } else {
+                surface_size.h
+            };
+            let base_location = match panel.anchor.unwrap() {
+                0 => (
+                    output_rect.loc.x + (output_rect.size.w - width) / 2 + panel.offset,
+                    output_rect.loc.y,
+                ),
+                1 => (
+                    output_rect.loc.x + (output_rect.size.w - width) / 2 + panel.offset,
+                    output_rect.loc.y + output_rect.size.h - height,
+                ),
+                2 => (
+                    output_rect.loc.x,
+                    output_rect.loc.y + (output_rect.size.h - height) / 2 + panel.offset,
+                ),
+                3 => (
+                    output_rect.loc.x + output_rect.size.w - width,
+                    output_rect.loc.y + (output_rect.size.h - height) / 2 + panel.offset,
+                ),
+                _ => continue,
+            };
+            let panel_rect =
+                Rectangle::new(Point::from(base_location), Size::from((width, height)));
+            let pointer_over_panel = !panel.hidden
+                && pointer.is_some_and(|position| panel_rect.to_f64().contains(position));
+            let pointer_at_edge = pointer.is_some_and(|position| {
+                output_rect.to_f64().contains(position)
+                    && match panel.anchor.unwrap() {
+                        0 => position.y <= (output_rect.loc.y as f64 + EDGE_REVEAL_DISTANCE),
+                        1 => {
+                            position.y
+                                >= (output_rect.loc.y + output_rect.size.h) as f64
+                                    - EDGE_REVEAL_DISTANCE
+                        }
+                        2 => position.x <= (output_rect.loc.x as f64 + EDGE_REVEAL_DISTANCE),
+                        3 => {
+                            position.x
+                                >= (output_rect.loc.x + output_rect.size.w) as f64
+                                    - EDGE_REVEAL_DISTANCE
+                        }
+                        _ => false,
+                    }
+            });
+            let pointer_reveals_panel = pointer_over_panel || pointer_at_edge;
+
+            let focused_window = self
+                .seat
+                .get_keyboard()
+                .and_then(|keyboard| keyboard.current_focus())
+                .map(|mut focused| {
+                    while let Some(parent) = smithay::wayland::compositor::get_parent(&focused) {
+                        focused = parent;
+                    }
+                    focused
+                })
+                .and_then(|focused| self.find_window_for_surface(&focused));
+            let focused_window = focused_window.filter(|focused| {
+                focused
+                    .toplevel()
+                    .is_none_or(|top| !self.is_panel_surface(top.wl_surface()))
+            });
+            let focused_maximized = focused_window.as_ref().is_some_and(|focused| {
+                focused
+                    .toplevel()
+                    .and_then(|top| self.managed_windows.get(&top.wl_surface().id()))
+                    .is_some_and(|managed| managed.maximized || managed.fullscreen)
+            });
+            let focused_overlaps = focused_window.as_ref().is_some_and(|focused| {
+                self.window_overlaps_panel(focused, panel_rect, panel.anchor.unwrap())
+            });
+            let any_window_overlaps = self.space.elements().any(|other| {
+                let Some(top) = other.toplevel() else {
+                    return false;
+                };
+                if self.is_panel_surface(top.wl_surface()) {
+                    return false;
+                }
+                self.window_overlaps_panel(other, panel_rect, panel.anchor.unwrap())
+            });
+            let should_hide = match panel.hide_mode {
+                0 => false,
+                1 => focused_maximized,
+                2 => focused_overlaps,
+                3 => any_window_overlaps,
+                4 => true,
+                _ => false,
+            };
+            let hidden = should_hide && !pointer_reveals_panel;
+            if panel.hidden != hidden {
+                panel.hidden = hidden;
+                self.panels.insert(surface_id.clone(), panel);
+                if let Some(surface) = self
+                    .panels
+                    .get(&surface_id)
+                    .and_then(|_| {
+                        self.space.elements().find(|window| {
+                            window
+                                .toplevel()
+                                .is_some_and(|top| top.wl_surface().id() == surface_id)
+                        })
+                    })
+                    .and_then(|window| window.toplevel().map(|top| top.wl_surface().clone()))
+                {
+                    self.position_panel(&surface);
+                }
+                changed = true;
+            }
+        }
+
+        if changed {
+            if self.refresh_work_areas() {
+                self.reconfigure_managed_windows();
+            }
+            self.request_native_redraw();
+        }
+    }
+
+    fn window_overlaps_panel(
+        &self,
+        window: &Window,
+        panel_rect: Rectangle<i32, Logical>,
+        anchor: u32,
+    ) -> bool {
+        let collision_rect = match anchor {
+            0 => Rectangle::new(
+                panel_rect.loc,
+                Size::from((panel_rect.size.w, panel_rect.size.h + 1)),
+            ),
+            1 => Rectangle::new(
+                Point::from((panel_rect.loc.x, panel_rect.loc.y - 1)),
+                Size::from((panel_rect.size.w, panel_rect.size.h + 1)),
+            ),
+            2 => Rectangle::new(
+                panel_rect.loc,
+                Size::from((panel_rect.size.w + 1, panel_rect.size.h)),
+            ),
+            3 => Rectangle::new(
+                Point::from((panel_rect.loc.x - 1, panel_rect.loc.y)),
+                Size::from((panel_rect.size.w + 1, panel_rect.size.h)),
+            ),
+            _ => panel_rect,
+        };
+        let geometry = self.space.element_geometry(window).unwrap_or_else(|| {
+            let size = window.geometry().size;
+            Rectangle::new(
+                self.space.element_location(window).unwrap_or_default(),
+                size,
+            )
+        });
+        collision_rect.intersection(geometry).is_some()
     }
 
     pub fn configure_window_mode(
@@ -417,6 +632,7 @@ impl PantheonCompositor {
         }
 
         self.apply_window_mode(&surface, &window, restore, maximized, fullscreen);
+        self.refresh_panel_visibility();
 
         if !maximized && !fullscreen {
             self.managed_windows.remove(&surface_id);
@@ -493,5 +709,6 @@ pub fn handle_surface_commit(state: &mut PantheonCompositor, surface: &WlSurface
         state.update_panel(surface, |_| {});
     } else {
         state.update_tiling_after_commit(surface);
+        state.refresh_panel_visibility();
     }
 }

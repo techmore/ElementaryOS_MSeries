@@ -184,6 +184,7 @@ impl XdgShellHandler for PantheonCompositor {
         if was_focused {
             self.focus_next_window();
         }
+        self.refresh_panel_visibility();
         #[cfg(feature = "native-drm")]
         self.request_native_redraw();
     }
@@ -299,6 +300,7 @@ impl PantheonCompositor {
                 .unwrap()
                 .set_focus(self, Option::<WlSurface>::None, serial);
         }
+        self.refresh_panel_visibility();
     }
 }
 

@@ -5732,6 +5732,20 @@ containing the opt-in session files. `dpkg-shlibdeps` derived shared-library
 dependencies; the package also requires `gnome-session`, `gtklock`, `libegl1`
 and `libgles2`. `dpkg-deb --info` and `--contents` confirm the package metadata,
 binary and session units. Artifact:
-`/tmp/pantheon-rust-compositor-deb/pantheon-rust-compositor_0.1.0+gitbe5747a_arm64.deb`
+`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-rust-compositor_0.1.0+gitbe5747a_arm64.deb`
 (SHA-256 `976823c9bc75c6f5f07cebe5967b4cab59ab38457f2196df7cef1fc8910a1038`).
 The package was not installed and the experimental session was not selected.
+
+### Honor Pantheon Dock hide modes — 2026-10-19
+
+The active `io.elementary.dock` setting is `autohide-mode='overlapping-window'`.
+The compositor now evaluates Pantheon panel hide modes 0–4 against managed
+maximize state, focused-window overlap, and any application-window overlap.
+Hidden panels move outside their output; pointer movement within 2 logical
+pixels of that output's panel edge reveals them. A visible panel reserves its
+work area, and hiding releases it and reconfigures maximized/tiled windows.
+This is an immediate transition without Gala's animation. Default and
+`native-drm` `cargo check` pass, and touched files were formatted. No automated
+tests or Dock runtime session were run; overlap timing, edge reveal and work
+area behavior still need an isolated Wingpanel/Dock session before hardware
+qualification. The active Gala session remains untouched.

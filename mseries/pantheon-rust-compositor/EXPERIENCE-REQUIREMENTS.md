@@ -85,8 +85,14 @@ planning against a release.
    acceptance checks. Keep Gala available as rollback until owner acceptance.
 
 The nested prototype serves the Pantheon shell protocol v2, places a panel from
-its anchor/size/offset, reserves exclusive panel geometry, and updates already
-maximized windows when that work area changes. The last local `cargo check`
+its anchor/size/offset, and honors hide modes by tracking maximized/focused or
+overlapping windows. Pointer motion at the output edge reveals hidden panels;
+work-area reservations are released while hidden and restored while visible,
+with managed windows reconfigured on transitions. Hiding currently moves the
+panel immediately without an animation. The active host Dock setting is
+`overlapping-window`; the code has compile checks but no Dock runtime
+qualification yet. It updates already-maximized windows when work areas change.
+The last local `cargo check`
 and `cargo build` pass. Its protocol probe completed under Xvfb over a nested
 Wayland socket. Installed Wingpanel 8.0.4 also connected in an isolated nested
 Wayland session and rendered SHM buffers. The prototype serves the

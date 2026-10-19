@@ -135,6 +135,7 @@ impl PantheonCompositor {
                         }
                     },
                 );
+                self.refresh_panel_visibility();
             }
             InputEvent::PointerMotion { event, .. } => {
                 let pointer = self.seat.get_pointer().unwrap();
@@ -175,6 +176,7 @@ impl PantheonCompositor {
                         time: event.time(),
                     },
                 );
+                self.refresh_panel_visibility();
                 pointer.frame(self);
             }
             InputEvent::PointerMotionAbsolute { event, .. } => {
@@ -209,6 +211,7 @@ impl PantheonCompositor {
                         time: event.time(),
                     },
                 );
+                self.refresh_panel_visibility();
                 pointer.frame(self);
             }
             InputEvent::PointerButton { event, .. } => {
@@ -258,6 +261,7 @@ impl PantheonCompositor {
                         time: event.time(),
                     },
                 );
+                self.refresh_panel_visibility();
                 pointer.frame(self);
             }
             InputEvent::PointerAxis { event, .. } => {

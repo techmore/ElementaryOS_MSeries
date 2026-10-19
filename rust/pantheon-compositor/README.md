@@ -81,9 +81,13 @@ available to protocol-v2 clients. When panel commits change the exclusive work
 area, already maximized windows are reconfigured to its new bounds; unchanged
 panel repaints do not issue redundant configures.
 
-This is only the first shell integration slice. Autohide/overlap tracking,
-animated hiding, blur, overview behavior and multi-output work-area updates for
-already maximized windows are not complete. The compositor now implements
+The Dock's existing hide modes now drive compositor visibility: maximize and
+overlap modes hide while their condition is true, `always` starts hidden, and
+pointer motion at the panel's output edge reveals it. Hiding releases the
+panel's work area; revealing it restores that area and reconfigures managed
+windows. The active host Dock setting is `overlapping-window`. The transition
+is immediate; animated hiding and runtime Dock interaction remain unqualified.
+Blur, overview behavior and multi-output Dock behavior also remain open. The compositor now implements
 Smithay's `ext-session-lock-v1`: it blanks each output until its lock surface is
 ready, confines input to the locker, and restores the prior keyboard focus on
 unlock. The compositor exports the observed `org.gnome.ScreenSaver` API and
