@@ -55,3 +55,15 @@ Compiled and installed on the M1 Pro; how it looks in the panel is for the owner
 Open the battery menu and turn **Show Watts in Menu Bar** off to hide the watts label immediately. Turn it on to show the latest reading again. The choice persists in `~/.config/mseries/battery-meter.ini` (`[panel] show-watts`), shared by the menu and bar; missing configuration keeps the existing enabled default. Percentage and charging-time displays keep their existing controls.
 
 The installer applies `panel-power-watts-toggle.patch` after the ETA/watts patches. Verified with a full release build and an isolated GTK harness: menu binding hides/shows the label immediately, later sensor updates cannot unhide it, and a second process restores the saved off choice. Installed live with `bash mseries/install-battery-eta.sh`; Wingpanel restarted successfully. The live menu still needs an owner visual check.
+
+## Battery menu redesign — 2026-10-19
+
+`patches/panel-power-battery-menu.patch` (applied last by `install-battery-eta.sh`) restyles the Wingpanel battery menu to match the
+CodexBar dropdown (8 pt type, rounded cards, chips, the `mseries-dock` pill): a headline card with big percentage, state chip, time
+remaining/until full, level bar (green/amber/red), stored Wh, and tiles for Power (W), Health, Charge cycles and Temperature; an
+"at charge limit" state when UPower reports a charge-end threshold (e.g. holding at 80%); peripherals as compact rows with percentages
+(the internal battery is no longer duplicated as a row); a slim brightness card; power mode as a segmented dock; the two toggles in
+one card; and a footer dock with Power Settings and Battery History. UPower `ChargeCycles` and `ChargeEndThreshold` are newly read.
+
+Verified: all four patches apply in order to `elementary/panel-power` at `e05723d`, and the module builds in release mode with no errors.
+Not verified: how it looks on screen, and installation (needs sudo and a Wingpanel restart): run `bash mseries/install-battery-eta.sh`.
