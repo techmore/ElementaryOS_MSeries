@@ -56,3 +56,7 @@ Then, with `-accel kvm`:
 What a real boot still needs: Apple's `AVPBooter.vmapple2.bin` copied from a macOS install, aux and root images from a macOS 12 VM
 made with Virtualization.framework (`macosvm`), and an answer for graphics (none exists on Linux; the guest would be headless over
 serial, ssh or screen sharing). Unknowns: whether the guest tolerates running on KVM with Apple's cores instead of HVF.
+
+Update: with the GPU device skipped (`experiments/vmapple/linux-vmapple.patch`), the machine initialises and KVM then fails on the
+first run: `error: kvm run failed Invalid argument` at `PC=0x100000`. TCG runs silently on dummy firmware. See
+`experiments/vmapple/README.md` for the table and how to reproduce.
