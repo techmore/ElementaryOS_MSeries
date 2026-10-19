@@ -15,7 +15,7 @@ Review only. Nothing was installed, built or pinned. Sources were read from shal
 
 | Change | Default | M1 Pro relevance | Verdict |
 |---|---|---|---|
-| #231 GDN decode: untiled prefetch + native GQA | **On, only when the Vulkan device name contains G14C or G13C** | Needs f32 A_log and Hk != Hv (Qwen3.5-9B). Upstream measured about 8% on M1 Max/M2 Max. Our M1 Pro's device string is not recorded; it may be G13S/G13C-class. Our 4B route eligibility is unchecked. | Test, 9B only; check `vulkaninfo` device name first |
+| #231 GDN decode: untiled prefetch + native GQA | **On, only when the Vulkan device name contains G14C or G13C** | Needs f32 A_log and Hk != Hv (Qwen3.5-9B). Upstream measured about 8% on M1 Max/M2 Max. Our M1 Pro's device string is not recorded; it may be G13S/G13C-class. Our 4B route eligibility is unchecked. | **Does not apply by default here**: the device is `Apple M1 Pro (G13S C0)` (measured 2026-10-19), which contains neither G14C nor G13C. Only the explicit `MLX_OMARCHY_GDN_PF_GQA=1` opt-in could reach it; test that on 9B only |
 | #229/#225 GDN native GQA opt-in flags | Off | Superseded by #231 for f32; #225 is for bf16 A_log models | Skip unless a model needs it |
 | #226 Row-reduce Sum (workgroup per row) | **On** (`MLX_OMARCHY_ROW_REDUCE=0` disables) | Changes summation order for float sums over rows of 256 or more outside fused kernels. Upstream says Qwen3.5-9B and 27B profiles contain no Reduce dispatch. Qwen3.5-4B is not profiled. One Muse NLL check fell outside the registered bound (Apache passage −0.0124 vs 0.01). | Bit-compare 4B greedy output on/off before accepting; keep the kill switch in the profile |
 | #223 ArgMax/LogSumExp chunked routes | Off | Possible large-vocab sampling help; separate numerics contract | Optional one-at-a-time test |
@@ -31,13 +31,13 @@ Net: no commit is a clear win for the 4B default. The only plausible gain is the
 
 ## ANE side (your two links)
 
-- **omarchy-ane**: lists M1 Pro (T6000) "on by default", with one passing smoke row. This host already has the driver bound: `/dev/accel/accel0`, driver `ane`, `apple,t6000-ane` on `7.1.12-elementary-aurora20-enh1`. Its source is not recorded in our docs (in-tree aurora driver from aurora-silicon/linux #155 vs DKMS); check that first. The DKMS package is Arch/pacman-oriented; for Ubuntu base, use the in-tree driver or build DKMS manually. No need to replace the working driver.
+- **omarchy-ane**: lists M1 Pro (T6000) "on by default", with one passing smoke row. This host already has the driver bound: `/dev/accel/accel0`, driver `ane`, `apple,t6000-ane` on `7.1.12-elementary-aurora20-enh1`. Verified it is the in-tree module (`intree: Y`), so the Arch-oriented DKMS package is not needed; do not replace the working driver.
 - **mil-hwx-compiler**: a MIL to ANE-package compiler (H13 = M1 family, targets our chip). It is a build-time input to omarchy-mlx's ANE bundles (`ane-compiler.lock`), not a runtime dependency for chat. Relevant only if we want our own ANE programs or Parakeet encoder bundles; the omarchy-mlx aarch64 wheel already ships the pinned Parakeet bundles. H13 support is fixed-shape fp16 with a limited op set. LICENSE file present (verify terms before redistributing).
 - Existing doc `ANE-PREFLIGHT.md` already covers part of this; the ANE+GPU contention risk (#213) is the main gate.
 
 ## Proposed bump procedure (not executed)
 
-1. Record the exact device string (`vulkaninfo --summary`) and the current driver source for `ane`.
+1. ~~Record device string and ANE driver source~~ Done 2026-10-19, read-only: Vulkan `Apple M1 Pro (G13S C0)`, Honeykrisp, system Mesa 26.0.8-1ubuntu0.3 (the private compute ICD is separate); ANE bound to `ane` (`apple,t6000-ane`), in-tree module `kernel/drivers/accel/ane/ane.ko` (`CONFIG_DRM_ACCEL_ANE=m`, no DKMS).
 2. Build a candidate **beside** the running runtime (separate prefix, `MSERIES_AI_SOURCES` copy), using main `61495cb` or a release if one appears. Preserve the v0.7.33 runtime; do not touch desktop Mesa.
 3. Read the `apply-mlx-lm-patches.sh` diff; confirm our private patch (prefill 256, thinking off, rsqrt/RMSNorm numerics) still applies.
 4. Run upstream C++ tests (`omarchy_reduce_row_tests`, `omarchy_gdn_gqa_bf16a`) on the Pro.
@@ -47,4 +47,4 @@ Net: no commit is a clear win for the 4B default. The only plausible gain is the
 
 ## Not verified
 
-Device string of this GPU; whether the 4B model reaches the row-reduce or GDN routes; whether the ANE driver here is in-tree or DKMS; license terms for `mil-hwx-compiler` binaries; any benefit on this host (all figures above are upstream's on M1 Max/M2 Max, one boot each).
+Whether the 4B model reaches the row-reduce or GDN routes; license terms for `mil-hwx-compiler` binaries; any benefit on this host (all figures above are upstream's on M1 Max/M2 Max, one boot each).
