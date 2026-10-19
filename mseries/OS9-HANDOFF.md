@@ -5781,9 +5781,9 @@ inventory but have no logical placement. Native DRM drops their Smithay output
 and recreates it when re-enabled. Monitor profiles now store enabled state;
 existing seven-field profiles load as enabled, and native startup honors saved
 disabled connectors. Disabling a monitor moves windows whose centers would be
-off-screen onto the primary output. To avoid an apply leaving no scanout if a
-replacement fails to initialize, each request must preserve one current output;
-enable a replacement in one apply before disabling the old output in another.
+off-screen onto the primary output. The first implementation required overlap
+between old and new output sets; the follow-up below stages disjoint sets while
+retaining one live output.
 Mirroring and nested Winit monitor-set changes remain unsupported.
 
 Default and `native-drm` `cargo check` pass, and the compositor source is
@@ -5794,3 +5794,20 @@ not changed. The native ARM64 release build from `4458354` is packaged at
 `/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-monitor-toggle-release/pantheon-rust-compositor_0.1.0+git4458354_arm64.deb`
 (SHA-256 `c2371d1b8810de75e137a61f05f7b6ecacb8e066ebc001239a6a3dee3191638f`).
 Package metadata and contents were inspected. It was not installed.
+
+### Stage disjoint native output-set changes with a live anchor — 2026-10-19
+
+Removed the old/new set overlap requirement. The native backend retains one
+current output while it releases other CRTCs and initializes the requested
+connectors, then removes the anchor after output initialization succeeds. When
+initialization or modesetting fails, the compositor attempts to restore the
+previous enabled set, modes, layout, work areas and window placement, and
+reconciles `GetCurrentState` if rollback itself fails. This supports disjoint
+transitions when the DRM device has enough compatible CRTCs. The current
+Smithay output-manager path still cannot reassign a single CRTC atomically, so
+a one-CRTC disjoint switch returns an error and retains the old output.
+
+Default and `native-drm` `cargo check` pass. No tests or display session were
+run; failure injection, page-flip timing, disjoint transitions on hardware and
+rollback remain runtime-unqualified. Build a new candidate from this commit
+before any monitor qualification; the `4458354` package predates this change.

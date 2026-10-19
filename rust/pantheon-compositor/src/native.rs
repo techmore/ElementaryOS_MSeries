@@ -171,16 +171,32 @@ impl NativeKmsDevice {
             .iter()
             .map(|output| output.output.name())
             .collect::<HashSet<_>>();
-        if !current.iter().any(|name| enabled.contains(name)) {
-            return Err(
-                "monitor change must keep one current output active while enabling the new layout"
-                    .into(),
-            );
+        let anchor = current
+            .iter()
+            .find(|name| enabled.contains(*name))
+            .cloned()
+            .or_else(|| {
+                current
+                    .iter()
+                    .find(|name| name.starts_with("eDP-"))
+                    .cloned()
+            })
+            .or_else(|| current.iter().next().cloned())
+            .ok_or_else(|| {
+                "native backend has no active output to anchor the transition".to_string()
+            })?;
+
+        for (name, connector) in &name_to_connector {
+            if !enabled.contains(name) && name != &anchor {
+                self.disabled_connectors.insert(*connector);
+            }
         }
         let disabling = self
             .outputs
             .iter()
-            .filter(|output| !enabled.contains(&output.output.name()))
+            .filter(|output| {
+                output.output.name() != anchor && !enabled.contains(&output.output.name())
+            })
             .map(|output| output.connector)
             .collect::<Vec<_>>();
         for connector in disabling {
@@ -211,11 +227,37 @@ impl NativeKmsDevice {
         }
         self.refresh_connectors(renderer, state)
             .map_err(|error| format!("could not enable requested monitor: {error}"))?;
-        let active = self
+        let mut active = self
             .outputs
             .iter()
             .map(|output| output.output.name())
             .collect::<HashSet<_>>();
+        if !enabled.is_subset(&active) {
+            for name in enabled.difference(&active) {
+                if let Some(connector) = name_to_connector.get(name) {
+                    self.disabled_connectors.insert(*connector);
+                }
+            }
+            return Err("native backend could not activate every requested output; the prior output remains active".into());
+        }
+        if !enabled.contains(&anchor)
+            && let Some(index) = self
+                .outputs
+                .iter()
+                .position(|output| output.output.name() == anchor)
+        {
+            let output = self.outputs.remove(index);
+            state
+                .display_handle
+                .disable_global::<PantheonCompositor>(output.global_id.clone());
+            self.pending_global_removals
+                .push((output.global_id.clone(), Instant::now()));
+            state.space.unmap_output(&output.output);
+            state.forget_output_during_lock(&output.output.name());
+            self.disabled_connectors.insert(output.connector);
+            drop(output);
+            active.remove(&anchor);
+        }
         if &active != enabled {
             return Err("native backend could not activate the requested output set".into());
         }

@@ -187,11 +187,14 @@ at `$XDG_CONFIG_HOME/pantheon-rust-compositor/monitors.conf` (or
 saved modes and layout. Native output disable/re-enable is implemented by
 removing/recreating the KMS output, and disabled connectors stay in the monitor
 inventory without a logical placement. Existing seven-field profiles remain
-enabled by default; new profiles store an enabled flag. A single apply request
-must retain one currently active output so a failed enable cannot leave the
-session without scanout; enable a replacement first before disabling the old
-output. Mirroring, unsupported properties and nested Winit monitor-set changes
-are rejected. Output and
+enabled by default; new profiles store an enabled flag. During a native
+transition the backend keeps one output live while freeing CRTCs and
+initializing the requested set, then retires that output when initialization
+succeeds. It attempts to restore the prior set, modes and layout if
+initialization or modesetting fails. Disjoint transitions work when the device
+has enough compatible CRTCs; this Smithay output-manager path cannot yet
+reassign a single CRTC atomically. Mirroring, unsupported properties and nested
+Winit monitor-set changes are rejected. Output and
 configuration updates increment the serial and emit `MonitorsChanged`. Default
 and native DRM builds compile, but no native session or live monitor change has
 been run from this development session. Disable/re-enable, reconnect and

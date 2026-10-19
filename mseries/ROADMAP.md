@@ -40,8 +40,10 @@ shared output manager with rollback, and applies temporary layout changes.
 Method 2 saves a per-user monitor profile and native startup restores it.
 Native output disable/re-enable is implemented, including persistence of the
 enabled state and keeping disabled connectors in the monitor inventory.
-Each apply must retain one currently active output; enable a replacement in
-one apply before disabling the old output in a second apply.
+Native transitions keep an output live while staging replacements, then retire
+it after initialization succeeds; disjoint sets can be staged when the DRM
+device has enough compatible CRTCs. Failures attempt to restore the prior set,
+modes and layout. Atomic reassignment of a single CRTC remains a gap.
 Mirroring, unsupported properties and nested Winit monitor-set changes remain
 rejected. Both default and native DRM builds compile; live native mode and
 output-set changes remain unqualified. The compositor advertises

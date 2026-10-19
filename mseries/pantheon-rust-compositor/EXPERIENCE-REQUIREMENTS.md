@@ -111,9 +111,12 @@ supports disabling and re-enabling native outputs: disabled connectors remain
 in the monitor inventory without a logical placement, the KMS output is
 released/recreated, and method 2 persists enabled state alongside each
 monitor's mode and layout. Existing seven-field profiles default to enabled.
-For safety, a single apply request must retain at least one currently active
-output; a disjoint output-set transition must enable the replacement first and
-disable the old output in a subsequent apply.
+The native backend keeps one output live while it releases CRTCs and
+initializes the requested set, then retires that anchor after initialization
+succeeds. If an output cannot be initialized or modesetting fails, it attempts
+to restore the previous enabled set, modes and layout. Disjoint output-set
+changes can be staged when the device has enough compatible CRTCs; a single
+CRTC cannot be reassigned atomically by this Smithay output-manager path yet.
 Native mode changes use Smithay's shared output manager with rollback;
 temporary layout, scale and transform changes update Wayland outputs. Mirroring,
 unsupported properties and nested Winit monitor-set changes remain rejected.

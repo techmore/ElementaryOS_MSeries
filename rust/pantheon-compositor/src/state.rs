@@ -375,6 +375,182 @@ impl PantheonCompositor {
             .or_else(|| self.space.outputs().next().cloned())
     }
 
+    #[cfg(feature = "native-drm")]
+    fn restore_native_outputs_from_snapshots(
+        &mut self,
+        snapshots: &[OutputSnapshot],
+    ) -> Result<(), String> {
+        let enabled = snapshots
+            .iter()
+            .filter(|snapshot| snapshot.enabled)
+            .map(|snapshot| snapshot.connector.clone())
+            .collect::<std::collections::HashSet<_>>();
+        let Some(mut backend) = self.native_backend.take() else {
+            return Err("native DRM backend is unavailable during monitor rollback".into());
+        };
+        let result = (|| {
+            let mut restored = false;
+            let mut last_error = String::new();
+            for _ in 0..=snapshots.len() {
+                match backend
+                    .kms
+                    .set_enabled_outputs(&mut backend.renderer, self, &enabled)
+                {
+                    Ok(()) => {
+                        restored = true;
+                        break;
+                    }
+                    Err(error) => last_error = error,
+                }
+            }
+            if !restored {
+                return Err(format!(
+                    "could not restore the previous output set: {last_error}"
+                ));
+            }
+            let outputs = self.space.outputs().cloned().collect::<Vec<_>>();
+            let mut requested_modes = HashMap::new();
+            for output in &outputs {
+                let snapshot = snapshots
+                    .iter()
+                    .find(|snapshot| snapshot.connector == output.name() && snapshot.enabled)
+                    .ok_or_else(|| format!("missing rollback state for {}", output.name()))?;
+                let mode = output
+                    .modes()
+                    .into_iter()
+                    .find(|mode| {
+                        mode.size.w == snapshot.width
+                            && mode.size.h == snapshot.height
+                            && mode.refresh == snapshot.refresh_millihz
+                    })
+                    .ok_or_else(|| {
+                        format!("rollback mode is no longer available on {}", output.name())
+                    })?;
+                requested_modes.insert(output.name(), mode);
+            }
+            backend
+                .kms
+                .apply_modes(&mut backend.renderer, self, &requested_modes)?;
+
+            let primary = snapshots
+                .iter()
+                .find(|snapshot| snapshot.enabled && snapshot.primary)
+                .map(|snapshot| snapshot.connector.clone());
+            for output in outputs {
+                let snapshot = snapshots
+                    .iter()
+                    .find(|snapshot| snapshot.connector == output.name() && snapshot.enabled)
+                    .expect("rollback state was validated for every active output");
+                let transform = match snapshot.transform {
+                    0 => smithay::utils::Transform::Normal,
+                    1 => smithay::utils::Transform::_90,
+                    2 => smithay::utils::Transform::_180,
+                    3 => smithay::utils::Transform::_270,
+                    4 => smithay::utils::Transform::Flipped,
+                    5 => smithay::utils::Transform::Flipped90,
+                    6 => smithay::utils::Transform::Flipped180,
+                    _ => smithay::utils::Transform::Flipped270,
+                };
+                let mode = requested_modes[&output.name()];
+                output.change_current_state(
+                    Some(mode),
+                    Some(transform),
+                    Some(smithay::output::Scale::Fractional(snapshot.scale)),
+                    Some((snapshot.x, snapshot.y).into()),
+                );
+                self.space.map_output(&output, (snapshot.x, snapshot.y));
+            }
+            self.primary_output_name = primary;
+            self.display_config.update_many(snapshots.to_vec());
+            self.last_work_areas.clear();
+            let panels = self
+                .space
+                .elements()
+                .filter_map(|window| {
+                    let surface = window.toplevel()?.wl_surface();
+                    self.is_panel_surface(surface).then(|| surface.clone())
+                })
+                .collect::<Vec<_>>();
+            for panel in panels {
+                self.update_panel(&panel, |_| {});
+            }
+            self.reconfigure_managed_windows();
+            self.space.refresh();
+            self.update_fractional_scale_preferences();
+            self.request_native_redraw();
+            let _ = self.display_handle.flush_clients();
+            Ok(())
+        })();
+        self.native_backend = Some(backend);
+        result
+    }
+
+    #[cfg(feature = "native-drm")]
+    fn reconcile_display_config_after_failed_apply(&mut self, previous: &[OutputSnapshot]) {
+        let outputs = self.space.outputs().cloned().collect::<Vec<_>>();
+        let active_names = outputs
+            .iter()
+            .map(|output| output.name())
+            .collect::<std::collections::HashSet<_>>();
+        let primary = self
+            .primary_output_name
+            .as_ref()
+            .filter(|name| active_names.contains(*name))
+            .cloned()
+            .or_else(|| {
+                outputs
+                    .iter()
+                    .find(|output| output.name().starts_with("eDP-"))
+                    .map(|output| output.name())
+            })
+            .or_else(|| outputs.first().map(|output| output.name()));
+        self.primary_output_name = primary.clone();
+
+        let mut snapshots = outputs
+            .iter()
+            .filter_map(|output| {
+                let mode = output.current_mode()?;
+                let physical = output.physical_properties();
+                let location = output.current_location();
+                Some(OutputSnapshot {
+                    connector: output.name(),
+                    vendor: physical.make,
+                    product: physical.model,
+                    serial: physical.serial_number,
+                    width: mode.size.w,
+                    height: mode.size.h,
+                    refresh_millihz: mode.refresh,
+                    modes: output
+                        .modes()
+                        .into_iter()
+                        .map(|mode| OutputModeSnapshot {
+                            width: mode.size.w,
+                            height: mode.size.h,
+                            refresh_millihz: mode.refresh,
+                            preferred: output.preferred_mode() == Some(mode),
+                        })
+                        .collect(),
+                    scale: output.current_scale().fractional_scale(),
+                    transform: transform_to_dbus(output.current_transform()),
+                    x: location.x,
+                    y: location.y,
+                    primary: primary.as_deref() == Some(output.name().as_str()),
+                    enabled: true,
+                })
+            })
+            .collect::<Vec<_>>();
+        snapshots.extend(previous.iter().filter_map(|snapshot| {
+            if active_names.contains(&snapshot.connector) {
+                return None;
+            }
+            let mut snapshot = snapshot.clone();
+            snapshot.enabled = false;
+            snapshot.primary = false;
+            Some(snapshot)
+        }));
+        self.display_config.update_many(snapshots);
+    }
+
     fn apply_display_configuration(&mut self, request: &ApplyRequest) -> Result<(), String> {
         if request.logical_monitors.is_empty() {
             return Err("at least one logical monitor is required".into());
@@ -523,7 +699,17 @@ impl PantheonCompositor {
                     .kms
                     .set_enabled_outputs(&mut backend.renderer, self, &enabled_connectors);
             self.native_backend = Some(backend);
-            result?;
+            if let Err(error) = result {
+                if let Err(rollback_error) =
+                    self.restore_native_outputs_from_snapshots(&request.current_outputs)
+                {
+                    self.reconcile_display_config_after_failed_apply(&request.current_outputs);
+                    return Err(format!(
+                        "{error}; monitor rollback failed: {rollback_error}"
+                    ));
+                }
+                return Err(error);
+            }
         }
         #[cfg(not(feature = "native-drm"))]
         if outputs
@@ -567,7 +753,17 @@ impl PantheonCompositor {
                     .kms
                     .apply_modes(&mut backend.renderer, self, &requested_modes);
                 self.native_backend = Some(backend);
-                result?;
+                if let Err(error) = result {
+                    if let Err(rollback_error) =
+                        self.restore_native_outputs_from_snapshots(&request.current_outputs)
+                    {
+                        self.reconcile_display_config_after_failed_apply(&request.current_outputs);
+                        return Err(format!(
+                            "{error}; monitor rollback failed: {rollback_error}"
+                        ));
+                    }
+                    return Err(error);
+                }
             }
             #[cfg(not(feature = "native-drm"))]
             return Err("this build cannot change native display modes".into());
