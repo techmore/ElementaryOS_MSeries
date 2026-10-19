@@ -117,13 +117,15 @@ process startup but does not yet wait for the panel to map or prove the
 ARM64 package build but are not installed or runtime-qualified. The compositor
 now loads the configured local wallpaper at startup and renders it behind
 windows, honoring the `zoom` crop mode; live wallpaper changes still require a
-session restart.
+session restart. Refreshed package `0.1.0+gitb486d56` includes the wallpaper
+renderer and shell units; it has not been installed or qualified on native
+output.
 
 ## What is complete and what has been tested
 
 | Area | Evidence | State |
 | --- | --- | --- |
-| Rust compositor and opt-in session package | Smithay prototype; nested Winit and native DRM backends; local ARM64 package build includes the staged shell startup units; compositor remains separate from the default Gala session | Builds; shell service runtime not yet qualified |
+| Rust compositor and opt-in session package | Smithay prototype; nested Winit and native DRM backends; local ARM64 package `0.1.0+gitb486d56` includes wallpaper and staged shell startup units; compositor remains separate from the default Gala session | Builds; not installed; shell service runtime not yet qualified |
 | Native display path | Experimental LightDM login reached the M1 Pro internal display; kernel DRM state showed compositor-owned AR30 framebuffer at 3024×1964 | Native internal-panel scanout passed once |
 | Session recovery | Five-minute LightDM rollback returned to Gala; Wingpanel and background came back | Automatic rollback passed once |
 | XWayland | Private Xvfb Zenity window mapped and accepted synthetic keyboard input; exposed through window-list D-Bus | Isolated smoke passed |

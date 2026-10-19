@@ -23,8 +23,9 @@ that startup felt slow; the first Rust session had no Wingpanel, bottom dock,
 or wallpaper/background. A timed LightDM rollback returned to Gala and
 restored the background. Separate systemd user services have since been staged
 to launch Wingpanel and Dock after the compositor. A local ARM64 package build
-now includes those units; they are not installed or runtime-qualified. This
-proves the native display path and rollback, not a
+now includes those units. Refreshed package `0.1.0+gitb486d56` also includes
+the wallpaper renderer; it is built but not installed or runtime-qualified.
+This proves the native display path and rollback, not a
 complete Pantheon session or a performance/stability improvement.
 
 The nested prototype now handles the existing half-snap chords (`Super+Left`
