@@ -138,7 +138,7 @@ jobs:
       - name: Install build and headless EDS test dependencies
         run: >-
           sudo apt-get update && sudo apt-get install -y git meson ninja-build valac gcc pkg-config gettext sassc
-          libgtk-4-dev libadwaita-1-dev libgee-0.8-dev libjson-glib-dev libecal2.0-dev libedataserver1.2-dev
+          libgtk-4-dev libgranite-7-dev libadwaita-1-dev libgee-0.8-dev libjson-glib-dev libecal2.0-dev libedataserver1.2-dev
           libical-dev evolution-data-server gsettings-desktop-schemas libglib2.0-bin python3 xvfb xauth dbus
           dbus-x11 librsvg2-common
       - name: Build the pinned indicator with our patch and run every agenda group

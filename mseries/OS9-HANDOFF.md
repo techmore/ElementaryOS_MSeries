@@ -5,7 +5,8 @@
 Branch `claude/homeboard-production` (from `dev`).
 
 Bridge (`techmore/homeboard`): [#9](https://github.com/techmore/homeboard/pull/9)
-merged as `eae570c`, [#10](https://github.com/techmore/homeboard/pull/10) open.
+merged as `eae570c`, [#10](https://github.com/techmore/homeboard/pull/10) merged as
+`5a7feb9` (the installer pin).
 A locked keyring now times out after 20 s with a clear status (it could stall every
 sync before); routine syncs back off 2/4/8 … max 15 min after failures; malformed
 remote text is emptied/trimmed instead of failing every sync; the first sync after a
@@ -29,7 +30,8 @@ locally: 27/27).
 
 `mseries/install-homeboard-sync.sh` is now a pinned wrapper around the bridge's own
 installer (start, upgrade, `--uninstall`). Run live: the running bridge was replaced
-by `eae570c` (new PID, `quit` action, D-Bus service file, AutoRestart present).
+by `eae570c` (new PID, `quit` action, D-Bus service file, AutoRestart present), then
+upgraded to `5a7feb9`.
 
 Not verified: a live round trip with the server — the owner is still signed out.
 Next: owner signs in from the Tasks tab, then check both directions.

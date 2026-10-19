@@ -11,7 +11,7 @@
 # in the calendar's Tasks tab afterwards.
 set -euo pipefail
 repository=https://github.com/techmore/homeboard.git
-commit=${HOMEBOARD_COMMIT:-eae570cffd47c5c61415ad32fb48154a48822d39}
+commit=${HOMEBOARD_COMMIT:-5a7feb93bb292e5a6720ab72b31d419fe30aabbd}
 case ${1:-} in
     ''|--uninstall) ;;
     *) echo 'Usage: install-homeboard-sync.sh [--uninstall]' >&2; exit 2 ;;
