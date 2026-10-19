@@ -18,11 +18,14 @@ public class MachinePage : Gtk.Box {
     private Gtk.Label mem_v;
     private Gtk.Label disk_v;
     private Gtk.Label net_v;
+    private Gtk.Label arch_v;
     private Gtk.Label ssh_cmd;
     private Gtk.Image hero_icon;
     private Gtk.Label hero_sub;
     private Gtk.Box setup_card;
     private Gtk.Box connect_card;
+    private Gtk.Box ssh_row;
+    private Gtk.Label display_detail;
     private Gtk.MenuButton more_button;
     private Gtk.Label[] step_badges = {};
     private Gtk.Label step2_detail;
@@ -260,6 +263,8 @@ public class MachinePage : Gtk.Box {
         specs.attach (spec_card ("media-optical-symbolic", out mem_v, "Memory"), 1, 0);
         specs.attach (spec_card ("drive-harddisk-symbolic", out disk_v, "Disk, grows as used"), 0, 1);
         specs.attach (spec_card ("network-wired-symbolic", out net_v, "Network"), 1, 1);
+        specs.attach (spec_card ("applications-system-symbolic", out arch_v, "Architecture · native ARM64, not x86-64 / amd64"), 0, 2, 2, 1);
+        arch_v.label = "ARM64 (aarch64)";
         clamp.append (specs);
 
         // Readiness
@@ -290,27 +295,74 @@ public class MachinePage : Gtk.Box {
         ready_card.append (recheck_btn);
         clamp.append (ready_card);
 
-        // Connect row
-        var connect = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
+        // Connect: the clear way into a running machine.
+        var connect = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
         connect_card = connect;
         connect.add_css_class ("ml-card");
-        connect.add_css_class ("ml-spec");
+        var chead = new Gtk.Label ("Connect");
+        chead.xalign = 0;
+        chead.margin_top = 14;
+        chead.margin_start = 16;
+        chead.margin_bottom = 4;
+        chead.add_css_class ("title-4");
+        connect.append (chead);
+
+        // Display
+        var drow = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 14);
+        drow.add_css_class ("ml-form-row");
+        drow.add_css_class ("ml-form-sep");
+        var dicon = new Gtk.Image.from_icon_name ("video-display-symbolic");
+        dicon.pixel_size = 24;
+        drow.append (dicon);
+        var dtext = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
+        dtext.hexpand = true;
+        var dtitle = new Gtk.Label ("Display");
+        dtitle.xalign = 0;
+        dtitle.add_css_class ("ml-spec-value");
+        display_detail = new Gtk.Label ("");
+        display_detail.xalign = 0;
+        display_detail.wrap = true;
+        display_detail.add_css_class ("ml-spec-label");
+        dtext.append (dtitle);
+        dtext.append (display_detail);
+        drow.append (dtext);
+        var console_btn = new Gtk.Button.with_label ("Open Console");
+        console_btn.valign = Gtk.Align.CENTER;
+        console_btn.tooltip_text = "Show the machine's console output";
+        console_btn.clicked.connect (() => show_tab ("console"));
+        drow.append (console_btn);
+        connect.append (drow);
+
+        // SSH terminal
+        ssh_row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 14);
+        ssh_row.add_css_class ("ml-form-row");
         var term = new Gtk.Image.from_icon_name ("utilities-terminal-symbolic");
         term.pixel_size = 24;
-        connect.append (term);
-        var ct = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+        ssh_row.append (term);
+        var ct = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
         ct.hexpand = true;
-        ct.valign = Gtk.Align.CENTER;
+        var ttitle = new Gtk.Label ("Terminal (SSH)");
+        ttitle.xalign = 0;
+        ttitle.add_css_class ("ml-spec-value");
         ssh_cmd = new Gtk.Label ("");
         ssh_cmd.xalign = 0;
         ssh_cmd.selectable = true;
         ssh_cmd.add_css_class ("ml-mono");
-        var cl = new Gtk.Label ("Connect once the guest is running");
-        cl.xalign = 0;
-        cl.add_css_class ("ml-spec-label");
+        ct.append (ttitle);
         ct.append (ssh_cmd);
-        ct.append (cl);
-        connect.append (ct);
+        ssh_row.append (ct);
+        var open_term = new Gtk.Button.with_label ("Open Terminal");
+        open_term.valign = Gtk.Align.CENTER;
+        open_term.clicked.connect (() => {
+            try {
+                Process.spawn_async (null, { "io.elementary.terminal", "-e",
+                    "ssh -p %d -o StrictHostKeyChecking=accept-new localhost".printf (machine.ssh_port) },
+                    null, SpawnFlags.SEARCH_PATH, null, null);
+            } catch (Error e) {
+                toast ("Couldn't open Terminal: " + e.message);
+            }
+        });
+        ssh_row.append (open_term);
         var copy = new Gtk.Button.from_icon_name ("edit-copy-symbolic");
         copy.valign = Gtk.Align.CENTER;
         copy.add_css_class ("flat");
@@ -319,7 +371,8 @@ public class MachinePage : Gtk.Box {
             Gdk.Display.get_default ().get_clipboard ().set_text (ssh_cmd.label);
             toast ("Copied SSH command");
         });
-        connect.append (copy);
+        ssh_row.append (copy);
+        connect.append (ssh_row);
         clamp.append (connect);
 
         // Installer
@@ -658,7 +711,12 @@ public class MachinePage : Gtk.Box {
         ssh_cmd.label = "ssh -p %d localhost".printf (machine.ssh_port);
 
         setup_card.visible = fresh && !managed;
-        connect_card.visible = !managed && !fresh;
+        connect_card.visible = running || !fresh;
+        connect_card.sensitive = running;
+        ssh_row.visible = !managed;
+        display_detail.label = !running
+            ? "Start the machine, then its screen opens in its own window on this desktop."
+            : "Opens in its own window on this desktop. Look for “%s” in the dock, or press Alt+Tab. If it was started without a window, use the console.".printf (machine.name);
         drop_zone.visible = !managed;
         more_button.visible = !managed;
         get_button.visible = machine.url != null || machine.recipe != null;
@@ -679,9 +737,9 @@ public class MachinePage : Gtk.Box {
         var creds = machine.credentials ();
         creds_card.visible = creds != null;
         if (creds != null) creds_label.label = creds;
-        hero_sub.label = managed ? (fresh ? (machine.installer != null ? "Imported from mseries-vm · installer ready: %s".printf (Path.get_basename (machine.installer)) : "Imported from mseries-vm · installer not finished") : "Installed · imported from mseries-vm")
+        hero_sub.label = "ARM64 · " + (managed ? (fresh ? (machine.installer != null ? "Imported from mseries-vm · installer ready: %s".printf (Path.get_basename (machine.installer)) : "Imported from mseries-vm · installer not finished") : "Installed · imported from mseries-vm")
             : fresh ? "New machine · not installed yet"
-            : "Linux ARM64 · installed";
+            : "Linux ARM64 · installed");
 
         var problems = Readiness.problems ();
         bool installing = running && machine.installer != null;

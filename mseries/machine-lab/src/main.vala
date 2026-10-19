@@ -82,7 +82,7 @@ public class MachineRow : Gtk.ListBoxRow {
     public void update () {
         name_label.label = machine.name;
         string state = machine.running ? (machine.paused ? "Paused" : "Running") : machine.is_fresh () ? "Not installed" : "Stopped";
-        sub_label.label = "%s · %d CPU · %d GiB".printf (state, machine.cpus, machine.mem_gib);
+        sub_label.label = "ARM64 · %s · %d CPU · %d GiB".printf (state, machine.cpus, machine.mem_gib);
         for (int i = 0; i < 8; i++) {
             icon.remove_css_class ("ml-c-%d".printf (i));
         }
@@ -282,7 +282,7 @@ public class MachineLab : Gtk.Application {
             var n = new Gtk.Label (p.name);
             n.xalign = 0;
             n.add_css_class ("ml-machine-name");
-            var d = new Gtk.Label ("%s · %d CPU · %d GiB".printf (p.blurb, p.cpus, p.mem));
+            var d = new Gtk.Label ("%s · ARM64 · %d CPU · %d GiB".printf (p.blurb, p.cpus, p.mem));
             d.xalign = 0;
             d.add_css_class ("ml-machine-sub");
             tb.append (n);
@@ -357,7 +357,7 @@ public class MachineLab : Gtk.Application {
             var bl = new Gtk.Label (p.blurb);
             bl.xalign = 0;
             bl.add_css_class ("ml-spec-label");
-            var sp = new Gtk.Label ("%d CPU · %d GiB RAM · %d GiB disk".printf (p.cpus, p.mem, p.disk));
+            var sp = new Gtk.Label ("ARM64 · %d CPU · %d GiB RAM · %d GiB disk".printf (p.cpus, p.mem, p.disk));
             sp.xalign = 0;
             sp.add_css_class ("ml-fineprint");
             tb.append (n);
