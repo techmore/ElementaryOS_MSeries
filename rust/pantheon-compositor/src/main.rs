@@ -6,6 +6,8 @@ mod gala_compat;
 mod gestures;
 mod grabs;
 mod handlers;
+#[cfg(feature = "native-drm")]
+mod hotplug;
 mod input;
 #[cfg(feature = "native-drm")]
 pub mod native;
