@@ -183,9 +183,10 @@ second-account authorization still requires owner browser approval. Account acti
 including a live same-account saved-session round trip with the original selection restored.
 [Official account commands](https://dev.opencode.ai/v2/docs/cli/commands/) document the activation API.
 
-## Panel bar font size
+## Panel sizing
 
-The text shown in the Wingpanel bar is styled in `install_style` in `codexbar-wingpanel/Indicator.vala`
-(`.mseries-codexbar-bar` rules). It was shrunk on 2026-10-19 because it rendered too large next to the other
-indicators: main label 8.5pt -> 7.5pt, `.seg-reset` and `.seg-secondary` 7.5pt -> 6.5pt. The popover text
-(`.mseries-codexbar`, 9pt) is unchanged. To resize again, edit those values and run `bash mseries/deploy-codexbar.sh`.
+The Wingpanel bar text is styled in `install_style` in `codexbar-wingpanel/Indicator.vala`
+(`.mseries-codexbar-bar` rules): main label 7.5pt, `.seg-reset` and `.seg-secondary` 6.5pt.
+The dropdown is deliberately compact: 300px requested width and 300px maximum page height, 8pt base text,
+8.5pt provider titles, 7pt captions, reduced card/button padding and 6px section spacing. To resize again,
+edit `Indicator.vala` and run `bash mseries/deploy-codexbar.sh`.

@@ -1,5 +1,15 @@
 # OS 9 implementation / Claude Code handoff
 
+## CodexBar dropdown compacted — 2026-10-19
+
+Owner asked to shrink the CodexBar dropdown and keep it that way. In `codexbar-wingpanel/Indicator.vala`,
+reduced its requested width and maximum content height from 340px to 300px, base text 9pt to 8pt, provider
+titles 9.5pt to 8.5pt, captions 8pt to 7pt, and tightened card, button and section spacing. The compact
+style is compiled into the Wingpanel indicator module, so it is loaded on each Wingpanel startup. Built
+with Meson/Ninja, installed at `/usr/lib/aarch64-linux-gnu/wingpanel-9/libcodexbar.so`, and restarted
+Wingpanel. Verified the installed module contains the 8pt dropdown style and the Wingpanel process is
+running again. The tests in the deploy script were not run.
+
 ## CodexBar panel font shrink — 2026-10-19 (Claude Code)
 
 Owner reported the CodexBar bar text was too large (it may also have made the Applications menu hard to
