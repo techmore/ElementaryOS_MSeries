@@ -679,7 +679,7 @@ public class MachinePage : Gtk.Box {
         var creds = machine.credentials ();
         creds_card.visible = creds != null;
         if (creds != null) creds_label.label = creds;
-        hero_sub.label = managed ? (fresh ? "Imported from mseries-vm · installer not finished" : "Installed · imported from mseries-vm")
+        hero_sub.label = managed ? (fresh ? (machine.installer != null ? "Imported from mseries-vm · installer ready: %s".printf (Path.get_basename (machine.installer)) : "Imported from mseries-vm · installer not finished") : "Installed · imported from mseries-vm")
             : fresh ? "New machine · not installed yet"
             : "Linux ARM64 · installed";
 
