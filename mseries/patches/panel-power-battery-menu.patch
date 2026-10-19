@@ -437,7 +437,7 @@ index 9055c04..a0ff1b9 100644
      public static unowned WattSettings get_default () {
          if (instance == null) instance = new WattSettings ();
 diff --git a/src/Widgets/PopoverWidget.vala b/src/Widgets/PopoverWidget.vala
-index 9b38b42..f3dab67 100644
+index 9b38b42..d191a2a 100644
 --- a/src/Widgets/PopoverWidget.vala
 +++ b/src/Widgets/PopoverWidget.vala
 @@ -22,8 +22,6 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
@@ -449,7 +449,7 @@ index 9b38b42..f3dab67 100644
      private PowerModeList power_mode_list;
  
      public PopoverWidget (bool is_in_session) {
-@@ -34,126 +32,124 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
+@@ -34,126 +32,134 @@ public class Power.Widgets.PopoverWidget : Gtk.Box {
          dm = Services.DeviceManager.get_default ();
      }
  
@@ -463,7 +463,12 @@ index 9b38b42..f3dab67 100644
          var settings = new GLib.Settings ("io.elementary.panel.power");
  
 -        var device_list = new DeviceList ();
--
++        add_css_class ("mseries-battery");
++        MenuStyle.install (Gdk.Display.get_default ());
++
++        var hero = new BatteryHero ();
++        var hero_revealer = new Gtk.Revealer () { child = hero };
+ 
 -        var device_list_revealer = new Gtk.Revealer () {
 -            child = device_list,
 -        };
@@ -476,41 +481,38 @@ index 9b38b42..f3dab67 100644
 -        device_separator_revealer = new Gtk.Revealer () {
 -            child = device_separator,
 -        };
-+        add_css_class ("mseries-battery");
-+        MenuStyle.install (Gdk.Display.get_default ());
- 
+-
 -        var last_separator = new Gtk.Separator (Gtk.Orientation.HORIZONTAL) {
 -            margin_top = 3,
 -            margin_bottom = 3
 -        };
-+        var hero = new BatteryHero ();
-+        var hero_revealer = new Gtk.Revealer () { child = hero };
- 
+-
 -        var last_separator_revealer = new Gtk.Revealer () {
 -            reveal_child = dm.brightness != -1,
 -            child = last_separator,
 -        };
-+        var device_list = new DeviceList ();
-+        var devices_title = section_title (_("Devices"));
-+        var devices_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
-+        devices_box.append (devices_title);
-+        devices_box.append (device_list);
-+        device_list.bind_property ("visible", devices_box, "visible", GLib.BindingFlags.SYNC_CREATE);
- 
-         var show_percent_switch = new Granite.SwitchModelButton (_("Show Percentage"));
+-
+-        var show_percent_switch = new Granite.SwitchModelButton (_("Show Percentage"));
 -        show_percent_switch.add_css_class (Granite.STYLE_CLASS_H4_LABEL);
 -
 -        var show_percent_sep = new Gtk.Separator (Gtk.Orientation.HORIZONTAL) {
 -            margin_top = 3,
 -            margin_bottom = 3
 -        };
-+        show_percent_switch.add_css_class ("prefs-row");
- 
+-
 -        var show_percent_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
 -        show_percent_box.append (show_percent_switch);
-         var show_watts_switch = new Granite.SwitchModelButton (_("Show Watts in Menu Bar"));
+-        var show_watts_switch = new Granite.SwitchModelButton (_("Show Watts in Menu Bar"));
 -        show_watts_switch.add_css_class (Granite.STYLE_CLASS_H4_LABEL);
-+        show_watts_switch.add_css_class ("prefs-row");
++        var device_list = new DeviceList ();
++        var devices_title = section_title (_("Devices"));
++        var devices_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
++        devices_box.append (devices_title);
++        devices_box.append (device_list);
++        device_list.bind_property ("visible", devices_box, "visible", GLib.BindingFlags.SYNC_CREATE);
++
++        var show_percent_switch = new Gtk.Switch () { valign = Gtk.Align.CENTER };
++        var show_watts_switch = new Gtk.Switch () { valign = Gtk.Align.CENTER };
          WattSettings.get_default ().bind_property (
              "enabled", show_watts_switch, "active",
              GLib.BindingFlags.SYNC_CREATE | GLib.BindingFlags.BIDIRECTIONAL
@@ -521,13 +523,13 @@ index 9b38b42..f3dab67 100644
 -        var show_percent_revealer = new Gtk.Revealer () {
 -            child = show_percent_box,
 -        };
--
--        power_mode_list = new PowerModeList ();
-+        var prefs_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
++        var prefs_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 4);
 +        prefs_box.add_css_class ("card");
-+        prefs_box.append (show_percent_switch);
-+        prefs_box.append (show_watts_switch);
++        prefs_box.append (pref_row (_("Show Percentage"), show_percent_switch));
++        prefs_box.append (pref_row (_("Show Watts in Menu Bar"), show_watts_switch));
  
+-        power_mode_list = new PowerModeList ();
+-
 -        var power_mode_separator = new Gtk.Separator (Gtk.Orientation.HORIZONTAL) {
 -            margin_top = 3,
 -            margin_bottom = 3
@@ -557,14 +559,20 @@ index 9b38b42..f3dab67 100644
          if (dm.backlight.present) {
 -            var screen_brightness = new ScreenBrightness ();
 -            append (screen_brightness);
-+            append (section_title (_("Display")));
-+            append (new ScreenBrightness ());
++            var display_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 2) { visible = dm.brightness != -1 };
++            display_box.append (section_title (_("Display")));
++            display_box.append (new ScreenBrightness ());
++            dm.brightness_changed.connect ((brightness) => display_box.visible = brightness != -1);
++            append (display_box);
          }
  
          if (PowerModeList.successfully_initialized) {
 -            append (power_mode_separator);
-+            append (section_title (_("Power Mode")));
-             append (power_mode_list);
+-            append (power_mode_list);
++            var mode_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
++            mode_box.append (section_title (_("Power Mode")));
++            mode_box.append (power_mode_list);
++            append (mode_box);
          }
  
 -        if (is_in_session) {
@@ -612,12 +620,19 @@ index 9b38b42..f3dab67 100644
 -            "reveal-child",
 -            GLib.BindingFlags.DEFAULT | GLib.BindingFlags.SYNC_CREATE
 -        );
--
++        dm.bind_property ("has-battery", hero_revealer, "reveal-child", GLib.BindingFlags.SYNC_CREATE);
++        dm.bind_property ("has-battery", prefs_revealer, "reveal-child", GLib.BindingFlags.SYNC_CREATE);
++    }
+ 
 -        if (dm.has_battery && dm.display_device.is_a_battery) {
 -            show_percent_revealer.reveal_child = true;
 -        }
-+        dm.bind_property ("has-battery", hero_revealer, "reveal-child", GLib.BindingFlags.SYNC_CREATE);
-+        dm.bind_property ("has-battery", prefs_revealer, "reveal-child", GLib.BindingFlags.SYNC_CREATE);
++    private static Gtk.Widget pref_row (string text, Gtk.Switch toggle) {
++        var label = new Gtk.Label (text) { halign = Gtk.Align.START, hexpand = true };
++        var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
++        row.append (label);
++        row.append (toggle);
++        return row;
 +    }
  
 -        show_settings_button.clicked.connect (() => {
@@ -661,7 +676,7 @@ index 9b38b42..f3dab67 100644
      }
  }
 diff --git a/src/Widgets/PowerModeList.vala b/src/Widgets/PowerModeList.vala
-index 8fd2656..b2f35ef 100644
+index 8fd2656..9ff809a 100644
 --- a/src/Widgets/PowerModeList.vala
 +++ b/src/Widgets/PowerModeList.vala
 @@ -58,11 +58,10 @@ public class Power.Widgets.PowerModeList : Gtk.Box {
@@ -689,7 +704,7 @@ index 8fd2656..b2f35ef 100644
          public string icon_name { get; construct; }
          public new string label { get; construct; }
          public string profile { get; construct; }
-@@ -107,24 +106,19 @@ public class Power.Widgets.PowerModeList : Gtk.Box {
+@@ -107,24 +106,20 @@ public class Power.Widgets.PowerModeList : Gtk.Box {
          }
  
          construct {
@@ -715,6 +730,7 @@ index 8fd2656..b2f35ef 100644
  
 -            get_style_context ().add_class ("image-button");
 +            tooltip_text = label;
++            add_css_class ("flat");
          }
      }
  }
