@@ -6170,3 +6170,16 @@ free-space warning. Verified: builds, Broadway renders, pause/resume against a h
 Omarchy nightly. Not verified: a complete guest install/boot (~6 GiB download; host had ~19 GiB free) and
 suspend/resume of the app itself. Next: run the Omarchy automatic install once space is freed, and lift
 `~/Documents/Codex/2026-10-18/f-2/work/youtube-iso-test` (42 GB, owner decides) if space is needed.
+
+## 2026-10-19: elementary OS ARM64 install test in Machine Lab's VM
+
+Booted the CI ISO `elementaryos-9.0-daily-arm64.20261013230825.iso` (SHA-256 verified) in QEMU/KVM, headless, and drove the
+installer (Erase Disk and Install, no encryption, no proprietary drivers) to completion on a 32 GiB virtual disk: 11.3 GiB
+written, an "elementary OS 9 Early Access" UEFI entry created, the firmware loaded `shimaa64.efi`. **The installed system
+then showed no output at all for 5+ minutes** (no serial text, display "not active", QEMU at 100% CPU). So the live ISO
+boots and the installer works, but the *installed-system boot is not working on QEMU virt*. Not diagnosed: the installed
+kernel is most likely the Fairydust (Apple M-series) kernel, which has no virtio-gpu/console path on QEMU; the
+installer's root partition is LVM so the disk could not be inspected without root device-mapper. Next: boot the installed
+disk with a console on serial (kernel args `console=ttyAMA0 earlycon`) or boot the live ISO with the disk attached and
+read `/boot/grub/grub.cfg` and the initramfs; kernel work belongs to DeepSeek per the coordination rule.
+Machine Lab: ARM64 now listed on every machine, plus a Connect section (display, console, SSH terminal).
