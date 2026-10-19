@@ -5307,10 +5307,24 @@ port targets; each needs a demonstrated workflow. Mutter upstream is a feature
 reference: its CTM Night Light change is relevant only if the M-series driver
 exposes CTM, which the current handoff says it did not.
 
+Implemented the first Pantheon shell integration slice in the prototype:
+vendored elementary's desktop-shell protocol XML with the repository's v2
+`set_offset` extension, advertised it from Smithay, and handled panel creation,
+anchor, size, hide-mode, focus and offset requests. Panel windows are placed on
+the nested output; xdg maximize configures the work area after exclusive panel
+reservation, while fullscreen uses the full output. Panel clicks do not take
+keyboard focus unless the panel explicitly requests it. `cargo check
+-p pantheon-compositor` passes after the change. Autohide/overlap tracking,
+blur, reflow of already maximized windows, display/session startup and other
+Pantheon shell behaviors remain incomplete. Wingpanel and Dock have not yet
+been run against the Rust compositor. The nested event loop stayed up for an
+8-second Xvfb smoke run on the local build host; no Wayland client connected,
+and this is not M-series hardware qualification.
+
 No compositor has been installed and no desktop configuration has changed. No
 active desktop, kernel, bootloader, or audio-stack changes were made. The
 WD22TB4 HDMI G3 link-training blocker remains on the DCP/kernel path; it must be
 tracked separately from Rust compositor output and hotplug qualification.
-Next: complete nested runtime/client smoke, then implement the first
-experience-derived requirement with a narrow Pantheon shell protocol and
-work-area behavior. Do not switch the login session at this stage.
+Next: connect a Wayland protocol probe, then qualify the Pantheon protocol
+against Wingpanel and Dock and add overlap-based autohide. Do not switch the
+login session at this stage.

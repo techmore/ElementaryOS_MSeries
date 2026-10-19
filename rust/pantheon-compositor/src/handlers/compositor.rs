@@ -1,4 +1,4 @@
-use crate::{PantheonCompositor, grabs::resize_grab, state::ClientState};
+use crate::{PantheonCompositor, grabs::resize_grab, pantheon_shell, state::ClientState};
 use smithay::{
     backend::renderer::utils::on_commit_buffer_handler,
     reexports::wayland_server::{
@@ -42,6 +42,7 @@ impl CompositorHandler for PantheonCompositor {
         };
 
         xdg_shell::handle_commit(&mut self.popups, &self.space, surface);
+        pantheon_shell::handle_surface_commit(self, surface);
         resize_grab::handle_commit(&mut self.space, surface);
     }
 }

@@ -1,5 +1,7 @@
 use smithay::{
-    desktop::{PopupKind, PopupManager, Space, Window, find_popup_root_surface, get_popup_toplevel_coords},
+    desktop::{
+        PopupKind, PopupManager, Space, Window, find_popup_root_surface, get_popup_toplevel_coords,
+    },
     input::{
         Seat,
         pointer::{Focus, GrabStartData as PointerGrabStartData},
@@ -41,7 +43,12 @@ impl XdgShellHandler for PantheonCompositor {
         let _ = self.popups.track_popup(PopupKind::Xdg(surface));
     }
 
-    fn reposition_request(&mut self, surface: PopupSurface, positioner: PositionerState, token: u32) {
+    fn reposition_request(
+        &mut self,
+        surface: PopupSurface,
+        positioner: PositionerState,
+        token: u32,
+    ) {
         surface.with_pending_state(|state| {
             let geometry = positioner.get_geometry();
             state.geometry = geometry;
@@ -115,6 +122,26 @@ impl XdgShellHandler for PantheonCompositor {
 
             pointer.set_grab(self, grab, serial, Focus::Clear);
         }
+    }
+
+    fn maximize_request(&mut self, surface: ToplevelSurface) {
+        self.configure_window_mode(surface, true, false);
+    }
+
+    fn unmaximize_request(&mut self, surface: ToplevelSurface) {
+        self.configure_window_mode(surface, false, false);
+    }
+
+    fn fullscreen_request(
+        &mut self,
+        surface: ToplevelSurface,
+        _output: Option<smithay::reexports::wayland_server::protocol::wl_output::WlOutput>,
+    ) {
+        self.configure_window_mode(surface, false, true);
+    }
+
+    fn unfullscreen_request(&mut self, surface: ToplevelSurface) {
+        self.configure_window_mode(surface, false, false);
     }
 
     fn grab(&mut self, _surface: PopupSurface, _seat: wl_seat::WlSeat, _serial: Serial) {

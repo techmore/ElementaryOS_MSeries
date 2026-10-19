@@ -29,13 +29,25 @@ M-series/Pantheon behavior documented in
 [`../../mseries/pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md`](../../mseries/pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md).
 It currently has one nested output,
 basic keyboard/pointer handling, xdg-shell windows, move/resize grabs, clipboard
-and drag-and-drop. Touch input is not implemented. DRM/KMS, libinput device
-management, multi-monitor configuration, accessibility, IBus, Xwayland, screen
-sharing/remote-desktop portals, lock screen integration, Pantheon panel/dock
-protocols, and production crash recovery are not implemented here.
+and drag-and-drop. It now advertises the existing Pantheon desktop-shell
+protocol v2: panel surfaces can set their anchor, size, hide mode and offset;
+the compositor places those surfaces and uses exclusive panel geometry for
+xdg-toplevel maximize requests. The Dock's M-series offset request is therefore
+available to protocol-v2 clients.
+
+This is only the first shell integration slice. Autohide/overlap tracking,
+animated hiding, blur, overview behavior, full work-area updates for already
+maximized windows, and session/lock integration are not complete. Widget,
+extended-behavior and greeter protocol requests are accepted but currently have
+no behavior. Touch input, DRM/KMS, libinput device management, multi-monitor
+configuration, accessibility, IBus, Xwayland, screen-sharing portals and
+production crash recovery also remain unimplemented.
 
 The code is based on Smithay's `smallvil` learning compositor at pinned commit
 `023b78b1c5a05ca512767cacc07efca55fae8be4`; see `SMITHAY-LICENSE.txt`. Keep the
-upstream revision pinned until an explicit upgrade is reviewed. `cargo check
--p pantheon-compositor` passes on the development host; the runtime path has not
-yet been exercised in a nested display or on M-series hardware.
+upstream revision pinned until an explicit upgrade is reviewed. The Pantheon
+protocol XML is based on elementary/Gala commit `f0791434` (LGPL-2.1-or-later)
+with the repository's v2 `set_offset` extension; see `THIRD-PARTY.md`.
+`cargo check -p pantheon-compositor` passes on the local build host. The nested
+event loop stayed up in an 8-second Xvfb smoke run; no Wayland client connected.
+Wingpanel/Dock behavior and M-series hardware remain unqualified.

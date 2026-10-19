@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::{ffi::OsString, sync::Arc};
 
 use smithay::{
@@ -11,7 +12,7 @@ use smithay::{
             protocol::wl_surface::WlSurface,
         },
     },
-    utils::{Logical, Point},
+    utils::{Logical, Point, Size},
     wayland::{
         compositor::{CompositorClientState, CompositorState},
         output::OutputManagerState,
@@ -21,6 +22,8 @@ use smithay::{
         socket::ListeningSocketSource,
     },
 };
+
+use crate::pantheon_shell::{PanelState, PantheonShellState};
 
 pub struct PantheonCompositor {
     pub start_time: std::time::Instant,
@@ -37,9 +40,19 @@ pub struct PantheonCompositor {
     pub output_manager_state: OutputManagerState,
     pub seat_state: SeatState<PantheonCompositor>,
     pub data_device_state: DataDeviceState,
+    pub pantheon_shell_state: PantheonShellState,
+    pub panels: HashMap<smithay::reexports::wayland_server::backend::ObjectId, PanelState>,
+    pub managed_windows:
+        HashMap<smithay::reexports::wayland_server::backend::ObjectId, ManagedWindow>,
     pub popups: PopupManager,
 
     pub seat: Seat<Self>,
+}
+
+#[derive(Clone, Copy)]
+pub struct ManagedWindow {
+    pub restore_location: Point<i32, Logical>,
+    pub restore_size: Size<i32, Logical>,
 }
 
 impl PantheonCompositor {
@@ -62,6 +75,7 @@ impl PantheonCompositor {
 
         // Data device is responsible for clipboard and drag-and-drop
         let data_device_state = DataDeviceState::new::<Self>(&dh);
+        let pantheon_shell_state = PantheonShellState::new::<Self>(&dh);
 
         // A seat is a group of keyboards, pointer and touch devices.
         // A seat typically has a pointer and maintains a keyboard focus and a pointer focus.
@@ -102,6 +116,9 @@ impl PantheonCompositor {
             output_manager_state,
             seat_state,
             data_device_state,
+            pantheon_shell_state,
+            panels: HashMap::new(),
+            managed_windows: HashMap::new(),
             popups,
             seat,
         }

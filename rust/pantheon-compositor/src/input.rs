@@ -70,12 +70,13 @@ impl PantheonCompositor {
                         .element_under(pointer.current_location())
                         .map(|(w, l)| (w.clone(), l))
                     {
-                        self.space.raise_element(&window, true);
-                        keyboard.set_focus(
-                            self,
-                            Some(window.toplevel().unwrap().wl_surface().clone()),
-                            serial,
-                        );
+                        let surface = window.toplevel().unwrap().wl_surface().clone();
+                        if self.is_panel_surface(&surface) {
+                            self.space.raise_element(&window, false);
+                        } else {
+                            self.space.raise_element(&window, true);
+                            keyboard.set_focus(self, Some(surface), serial);
+                        }
                         self.space.elements().for_each(|window| {
                             window.toplevel().unwrap().send_pending_configure();
                         });

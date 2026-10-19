@@ -12,6 +12,9 @@ path = "src/main.rs"
 [dependencies]
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 bitflags = "2.2.1"
+wayland-scanner = "0.31.11"
+wayland-backend = "0.3.17"
+wayland-server = "0.31.14"
 
 [dependencies.smithay]
 git = "https://github.com/Smithay/smithay.git"

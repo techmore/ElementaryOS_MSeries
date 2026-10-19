@@ -3,6 +3,8 @@
 mod handlers;
 mod grabs;
 mod input;
+mod pantheon_shell;
+mod protocols;
 mod state;
 mod winit;
 
