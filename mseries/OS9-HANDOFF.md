@@ -1,5 +1,45 @@
 # OS 9 implementation / Claude Code handoff
 
+## Screen-share cost baseline harness — 2026-10-19
+
+Added `mseries/share-cost/`: a read-only collector and reducer that measure what
+a live screen share costs this desktop, so the resource question has a baseline
+before anyone changes the media path. The share stack today is Rust on the
+server side (`rupert-share/core`, `src/share.rs`) with peer-to-peer WebRTC from
+the owner's browser — each viewer is a separate encode chain in that browser —
+and its own test record lists owner-browser CPU while sharing as never measured.
+This closes that gap on the desktop side.
+
+- `collect-share-cost.sh <duration> <workload> <viewers> [interval]` samples the
+  owner browser, share server, panel, compositor and PipeWire capture path from
+  `/proc`, the SMC `power1_input` rail (node `macsmc_hwmon`, whole-system watts
+  on AC), battery state, and the launcher's `state.json` viewer count. It never
+  starts, stops or touches a share, the portal or PipeWire; `--require-live`
+  fails unless the launcher reports a live share. Same CSV shape as
+  `pantheon-rust-compositor/collect-session-metrics.sh` plus `role`, power and
+  share-state columns.
+- `summarize-share-cost.py` (+ test) reduces a capture per role — processes are
+  summed per sample, because that is the cost the desktop feels — and also reads
+  the session captures (no `role` column → per-process grouping).
+- `README.md` records the protocol: matched pairs with only the viewer count
+  changed, ≥60 s arms, alternating 1 → 3 → 1 → 3, conditions recorded, AC for
+  CPU comparisons (the battery frequency cap skews them), and the viewer side
+  explicitly out of scope.
+
+Verified locally: `bash -n` and `shellcheck -S warning` clean, five reducer
+tests pass, and a 15-second smoke capture on the live desktop (no share running)
+reported the expected roles — browser 2.6 % of one core, gala 22.8 %, Wingpanel
+1.2 %, PipeWire ~0 % — with whole-system power 15–16 W on battery. Two collector
+bugs were found and fixed by that smoke run: the SMC total-power rail is on the
+node named `macsmc_hwmon` (`macsmc_battery` reports battery flow, which first
+produced a negative "system power"), and the elementary clients are matched on
+their full path because `comm` is truncated at 15 characters
+(`io.elementary.w`).
+
+No share was started, no viewer connected, and no media path was changed. The
+next step is the owner-run matched pair (1 vs 3 viewers) whenever a share is
+convenient; until then there is no measured cost for the share path either way.
+
 ## Branch model: `main` stable, `dev` integration — 2026-10-18
 
 `main` is now the stable (v0.0.1) line and `dev` (cut from `main` after this lands)
