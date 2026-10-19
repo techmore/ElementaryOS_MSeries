@@ -5272,16 +5272,22 @@ Calendar GUI/reminders, indefinite soak, power/battery and factory boot remain
 separate work. Six-hour developer tracking remains the existing workflow; the
 old completion heartbeat is already PAUSED. No duplicate automation was created.
 
-## Rust Mutter replacement for Pantheon — 2026-10-18
+## Mutter-minimal viable Rust for elementaryOS M-series — 2026-10-18
 
-Started branch `codex/rust-mutter-pantheon` for a Rust compositor intended to
-replace the Gala/Mutter display-server role in the Pantheon session. The source
-audit found Gala 8.6.2 directly uses Mutter's `Meta` objects and Clutter/Cogl/Mtk
-APIs and is itself started as the Wayland display server by its session unit.
-Therefore, serving Wayland clients alone is not a swap-in; Gala's dependency
-boundary and the complete Pantheon session contract need to move as well.
-Recorded nested-compositor, shell-contract, hardware/input, parallel-session,
-and swap-in gates in `mseries/rust-mutter/README.md`.
+Started branch `codex/rust-mutter-pantheon`. The working title is
+`Mutter-Minimal-Viable-Rust_elementaryos-mseries`. **Scope clarified by the
+owner:** identify the features needed for the M-series/Pantheon experience and
+implement those; do not port Mutter or target full feature parity. Requirements
+and decision gates are documented in
+`mseries/pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md`.
+
+Gala 8.6.2 directly uses Mutter `Meta` objects and Clutter/Cogl/Mtk APIs and is
+started as the Wayland display server by its session unit. The source audit
+found 79 Vala files using `Meta.*` across 24,534 lines, which demonstrates that
+replacing Gala underneath with a small shim is not a drop-in. This is migration
+context, not a list of features to port. The initial scope derives from our
+documented notch-aware panel, dock work-area behavior, display profiles and
+hotplug, snapping, input, and session reliability.
 
 Public source check found no first-party Rust Mutter/Gala replacement to reuse:
 elementary's public [Gala repository](https://github.com/elementary/gala) remains
@@ -5292,13 +5298,19 @@ Added `rust/pantheon-compositor`, an opt-in nested prototype based on Smithay's
 smallvil at pinned revision `023b78b1c5a05ca512767cacc07efca55fae8be4`. Its
 workspace manifest and lockfile are wired; it uses Smithay's Winit backend,
 needs an existing X11/Wayland session, and can launch a requested Wayland client
-on its nested display. It does not open DRM/KMS or alter the session. It has
-not been built or tested.
+on its nested display. It does not open DRM/KMS or alter the session. `cargo
+check -p pantheon-compositor` passes on the development host; runtime/client
+behavior and M-series hardware remain unqualified. The prototype is a
+development harness, not a finished session. Conditional needs such as
+Xwayland, IBus, accessibility, screencasting and multi-GPU are not automatic
+port targets; each needs a demonstrated workflow. Mutter upstream is a feature
+reference: its CTM Night Light change is relevant only if the M-series driver
+exposes CTM, which the current handoff says it did not.
 
 No compositor has been installed and no desktop configuration has changed. No
 active desktop, kernel, bootloader, or audio-stack changes were made. The
 WD22TB4 HDMI G3 link-training blocker remains on the DCP/kernel path; it must be
 tracked separately from Rust compositor output and hotplug qualification.
-Next: compile and run the nested prototype with a Wayland client, then inventory
-the Gala/Pantheon shell contract for the next implementation milestone. Do not
-switch the login session at this stage.
+Next: complete nested runtime/client smoke, then implement the first
+experience-derived requirement with a narrow Pantheon shell protocol and
+work-area behavior. Do not switch the login session at this stage.

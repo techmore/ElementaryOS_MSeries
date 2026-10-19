@@ -1,20 +1,22 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
-## Rust Mutter replacement for Pantheon — started 2026-10-18
+## Mutter-minimal viable Rust for elementaryOS M-series — started 2026-10-18
 
-Work begins on branch `codex/rust-mutter-pantheon`. Gala is the Wayland
-display server and directly depends on Mutter `Meta`, Clutter, Cogl, and Mtk;
-the replacement needs to cover the Pantheon session contract, not just draw
-Wayland client surfaces. The source audit and staged acceptance gates are in
-[`rust-mutter/README.md`](rust-mutter/README.md). First implementation gate:
-an opt-in nested Smithay compositor that can be exercised without replacing
-the active desktop. Prototype code is in `rust/pantheon-compositor/`, pinned to
-a Smithay revision, and has not been compiled or hardware qualified. A public
-search found the first-party [Gala repository](https://github.com/elementary/gala)
-still based on libmutter, but no first-party Rust port to reuse. Independent
-Smithay compositors are references, not Pantheon replacements. The WD22TB4
-dock's G3 link-training blocker remains in the kernel/DCP workstream and is not
-a compositor acceptance result.
+Working title: `Mutter-Minimal-Viable-Rust_elementaryos-mseries`. The owner
+clarified that the goal is to identify and implement the compositor features
+needed by the M-series/Pantheon experience, not port Mutter or reproduce all
+its features. The scoped requirements and upstream feature radar are in
+[`pantheon-rust-compositor/README.md`](pantheon-rust-compositor/README.md) and
+[`EXPERIENCE-REQUIREMENTS.md`](pantheon-rust-compositor/EXPERIENCE-REQUIREMENTS.md).
+The list is grounded in this repo's notch-aware panel, dock work area, display
+profiles/hotplug, window snapping, input and session work. Features such as
+Xwayland, IBus, accessibility, screencasting and multi-GPU are conditional on
+an actual supported workflow. The opt-in Smithay nested prototype in
+`rust/pantheon-compositor/` passes `cargo check`; nested runtime and M-series
+hardware remain unqualified. A public search found elementary's
+[Gala](https://github.com/elementary/gala) still based on libmutter, with no
+first-party Rust compositor to reuse. The WD22TB4 HDMI G3 DCP/kernel blocker
+remains a separate workstream.
 
 
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18

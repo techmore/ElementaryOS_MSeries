@@ -1,0 +1,39 @@
+# Mutter-minimal viable Rust for elementaryOS M-series
+
+Working title: **Mutter-Minimal-Viable-Rust_elementaryos-mseries**. The goal is
+a focused Rust compositor for the Pantheon experience on our M-series machines.
+Mutter is the proven reference; porting Mutter itself or reproducing all of its
+features is explicitly out of scope.
+
+The requirements come from the actual desktop work recorded in this repo:
+normal app/window behavior, the M1 Pro's full-height/notch-aware panel, dock
+visibility and work-area handling, supported display changes, window snapping,
+input, and a reliable Pantheon login/lock/recovery path. Existing apps should
+keep providing panel, dock and settings UI through a narrow shell contract.
+Anything beyond those needs is conditional on a named app or workflow. The
+prioritized list and upstream feature radar are in
+[`EXPERIENCE-REQUIREMENTS.md`](EXPERIENCE-REQUIREMENTS.md).
+
+The pinned Gala 8.6.2 audit found 79 Vala files directly using `Meta.*` across
+24,534 lines of Gala core source, with Clutter/Cogl/Mtk dependencies. That
+explains why swapping out Mutter underneath Gala is not a drop-in operation.
+It does not mean all those APIs need to be ported: replace only the behavior
+required by the M-series/Pantheon session, in independently qualified slices.
+
+## Current prototype
+
+[`rust/pantheon-compositor`](../../rust/pantheon-compositor/README.md) is an
+opt-in nested Smithay/Winit prototype. It serves a separate Wayland socket from
+an existing desktop and does not own DRM/KMS or change the login session. It is
+the first development harness, not a finished compositor or a session swap-in.
+
+## Dock HDMI boundary
+
+The WD22TB4 HDMI goal remains in
+[`../fairydust/usb4/PRIMARY-GOAL.md`](../fairydust/usb4/PRIMARY-GOAL.md). The
+G3 gate is DCP/kernel link training; a compositor cannot fix an output the
+kernel has not exposed. Keep compositor modeset/hotplug qualification separate.
+
+No change here qualifies an M-series session or hardware. Gala remains the
+production session and rollback until the scoped experience passes on-device
+acceptance.
