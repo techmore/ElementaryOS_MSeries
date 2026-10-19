@@ -1,5 +1,17 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## Diagnostic entry armed once; no reboot — 2026-10-18
+
+Owner explicitly authorized arming `elementary-aurora20-enh1-diagnostic` for one
+boot, without rebooting. Verified image hashes and GRUB syntax first; then
+`grub-reboot` set exactly that next_entry. Host still runs `.20`. GRUB clears
+next_entry before launching the selected kernel; subsequent normal boots retain
+`mseries-full-height` on `.20`. [Arming receipt](aurora/hardware-tests/2026-10-18-j314s-enh1-diagnostic-armed.json).
+Watch the last initcall and mseries-boot stage markers; capture the last screen
+if the trial stalls. Recovery: power off if unresponsive, then explicitly select
+“elementary OS (M-series full-height desktop)” in the five-second GRUB menu.
+No candidate boot result or fix is claimed yet. Do not reboot on the owner's behalf.
+
 ## Diagnostic candidate staged, no trial armed — 2026-10-18
 
 PR #229 merged as `387d1ec`. The diagnostic image regenerated from merged source

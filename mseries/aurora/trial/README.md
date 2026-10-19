@@ -1,5 +1,16 @@
 # J314S .20-enh1 next-boot trial — 2026-10-18
 
+## Current selection: diagnostic one-shot armed, no reboot performed
+
+The owner subsequently authorized exactly one diagnostic boot. Verified
+`next_entry=elementary-aurora20-enh1-diagnostic`; running kernel is still `.20`.
+GRUB consumes this selection before loading the kernel. If it hangs, retain the
+last messages, power off if unresponsive, and select
+**elementary OS (M-series full-height desktop)** at the next GRUB menu to use `.20`.
+[Arming receipt](../hardware-tests/2026-10-18-j314s-enh1-diagnostic-armed.json).
+Earlier staging/no-arming records below describe the prior state.
+
+
 ## Latest result: owner-reported hung candidate boot
 
 The October 18 evening trial did not complete boot. The machine is back on
