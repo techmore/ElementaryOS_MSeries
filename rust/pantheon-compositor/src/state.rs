@@ -943,6 +943,7 @@ impl PantheonCompositor {
         let loop_handle = event_loop.handle();
 
         loop_handle.insert_source(listening_socket, move |client_stream, _, state| {
+            tracing::debug!("accepted Wayland client connection");
             // Inside the callback, you should insert the client into the display.
             //
             // You may also associate some data with the client when inserting the client.
@@ -959,7 +960,9 @@ impl PantheonCompositor {
                 |_, display, state| {
                     // Safety: we don't drop the display
                     unsafe {
-                        display.get_mut().dispatch_clients(state).unwrap();
+                        let display = display.get_mut();
+                        display.dispatch_clients(state).unwrap();
+                        display.flush_clients().unwrap();
                     }
                     Ok(PostAction::Continue)
                 },
