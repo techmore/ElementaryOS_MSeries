@@ -1,5 +1,16 @@
 # OS 9 implementation / Claude Code handoff
 
+## apt upgrade of 25 elementary daily packages — 2026-10-19 (Claude Code)
+
+`sudo apt upgrade` (gala r3203->r3204, panel power/sound/bluetooth, granite, settings-daemon, pantheon-files,
+claude-desktop 2.42304.2) finished cleanly; `dpkg --audit` empty. The upgrade overwrote our patched
+`libpower.so`, `libsound.so` and `libbluetooth.so` with stock builds. Re-ran `install-battery-eta.sh`
+(Wingpanel restarted by it, still running) and `install-sound-indicator-fix.sh` (needs a Wingpanel reload to
+show). `check-codexbar-port.sh` passed. **Open:** the patched Bluetooth indicator has no installer or patch in
+the repo and is stock again (nothing saved before the upgrade); the running session still uses the old Gala until
+re-login; snapping/PiP gala plugins are not checked against the new `libgala0`. Lesson: re-run the
+indicator installers after every `apt upgrade` that touches `io.elementary.panel.*`.
+
 ## Dock icons halved — 2026-10-18 (Claude Code)
 
 Owner asked for the applications tray icons at half size. Ran
