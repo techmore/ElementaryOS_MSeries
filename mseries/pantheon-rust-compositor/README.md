@@ -71,6 +71,12 @@ session, input and recovery behavior still need on-device qualification. The
 staged login-session files are separate from the active Gala session and are
 not installed or selected by default.
 
+The staged systemd service now retries an unexpected compositor failure with
+a two-second delay, capped at three starts per minute. After that limit, its
+`OnFailure` action requests the GNOME session shutdown target rather than
+looping indefinitely. This is configuration only; a crash/restart has not been
+exercised in an isolated login.
+
 ## Dock HDMI boundary
 
 The WD22TB4 HDMI goal remains in

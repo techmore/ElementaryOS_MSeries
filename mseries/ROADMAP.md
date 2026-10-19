@@ -128,9 +128,11 @@ A separate `pantheon-rust-wayland` session payload now mirrors the installed
 GNOME session/systemd contract: a unique login entry, a compositor component
 hidden under systemd, a notify service with an explicit Wayland socket, and a
 session-target drop-in preserving the installed Pantheon support services.
-It is repository-only and has not been installed or runtime-qualified. The
-next gate is native-session qualification in an isolated login, including
-socket/environment handoff, ordinary apps, lock/logout and failure recovery.
+The service retries unexpected exits after two seconds, capped at three starts
+per minute, then requests the session shutdown target. It is repository-only
+and has not been installed or runtime-qualified. The next gate is native-session
+qualification in an isolated login, including socket/environment handoff,
+ordinary apps, lock/logout and failure recovery.
 
 
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18

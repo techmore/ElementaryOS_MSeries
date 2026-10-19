@@ -5711,3 +5711,15 @@ and 30 ms interval; this preserves the desktop's Command/Ctrl mapping. The
 configured `mozc-jp` IBus source is installed but not selected, and no IBus
 bridge was added. Default and native DRM builds pass. No live key injection or
 layout change was run, so physical mapping and reload remain runtime-unverified.
+
+### Bound experimental-session crash recovery — 2026-10-19
+
+The staged `pantheon-rust-compositor@.service` now uses `Restart=on-failure`
+with a two-second delay and a three-start/60-second limit. A hung startup has a
+90-second readiness timeout. After the limit, the existing
+`OnFailure=gnome-session-shutdown.target` path stops the experimental session;
+normal session stops are not restarted. `systemd-analyze verify` parsed both
+staged units and reported only expected unresolved install-time dependencies
+(`gnome-session-initialized.target`) and the not-yet-installed
+`/usr/bin/pantheon-compositor` path. The service remains uninstalled; no live
+crash, restart, login, or rollback was exercised.

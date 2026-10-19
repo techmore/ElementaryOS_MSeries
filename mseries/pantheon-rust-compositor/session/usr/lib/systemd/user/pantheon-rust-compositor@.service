@@ -11,15 +11,19 @@ Requisite=gnome-session-initialized.target
 PartOf=gnome-session-initialized.target
 Before=gnome-session-initialized.target
 ConditionEnvironment=XDG_SESSION_TYPE=%I
+StartLimitIntervalSec=60s
+StartLimitBurst=3
 
 [Service]
 Slice=session.slice
 Type=notify
+TimeoutStartSec=90s
 Environment=WAYLAND_DISPLAY=wayland-0
 Environment=PANTHEON_WAYLAND_DISPLAY=wayland-0
 ExecStart=/usr/bin/pantheon-compositor --backend native --notify-systemd
 ExecStartPost=/usr/bin/systemctl --user import-environment WAYLAND_DISPLAY
 ExecStopPost=-/usr/bin/systemctl --user unset-environment WAYLAND_DISPLAY
-Restart=no
+Restart=on-failure
+RestartSec=2s
 TimeoutStopSec=5
 OOMScoreAdjust=-1000

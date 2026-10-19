@@ -18,6 +18,13 @@ the explicit socket; without that variable the nested development backend
 continues to allocate an automatic socket, and the native backend can also use
 automatic allocation for manual development launches.
 
+The experimental service retries an unexpected compositor failure, with a
+two-second delay and a limit of three starts within one minute. Once the limit
+is reached, its existing `OnFailure=gnome-session-shutdown.target` path ends
+the failed experimental session instead of restarting indefinitely. A normal
+session stop is not restarted. These recovery settings are staged only and
+have not been exercised in a live GNOME session.
+
 The directory layout mirrors install paths below `usr/`. A distro package can
 stage the payload under its package root and install it with the compositor
 binary at `/usr/bin/pantheon-compositor`. Do not add these files to
