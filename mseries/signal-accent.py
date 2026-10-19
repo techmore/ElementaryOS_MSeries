@@ -108,7 +108,7 @@ def mix_white(value, amount):
 def build_map(accent):
     if accent in RAMPS:
         light, dark, pressed = RAMPS[accent]
-        mapping = {"#2c6bed": accent, "#1851b4": pressed, "#6191f3": dark}
+        mapping = {"#2c6bed": accent, "#3b45fd": accent, "#1851b4": pressed, "#6191f3": dark}
         mapping.update({k: mix_white(light, v) for k, v in TINT_MIX.items()})
         return mapping
     h, l, s = hex_to_hls(accent)
