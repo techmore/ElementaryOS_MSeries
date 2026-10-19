@@ -22,11 +22,21 @@ mkdir -p "$home/.grok/bin"
 printf '#!/bin/sh\nexit 0\n' > "$home/.grok/bin/grok"
 printf '#!/bin/sh\nprintf "%%s\\n" "$*" >> "$HOME/terminal.log"\n' > "$home/.local/bin/xdg-terminal-exec"
 chmod +x "$home/.grok/bin/grok" "$home/.local/bin/xdg-terminal-exec"
+# A real `grok` on PATH (the Grok CLI installer puts ~/.grok/bin there) wins over
+# the fixture stub inside grok_binary(), so the panel would launch the real
+# binary and the sign-in assertion would not match. Drop every PATH entry that
+# provides a grok executable, so the probe is deterministic on any host.
+probe_path=""
+while IFS= read -r -d ':' dir; do
+  [[ -n $dir ]] || continue
+  [[ -x $dir/grok ]] && continue
+  probe_path="${probe_path:+$probe_path:}$dir"
+done < <(printf '%s:' "$PATH")
 chmod +x "$home/.local/lib/codexbar-cli/codexbar-claude.py" "$home/.local/lib/codexbar-cli/codexbar-accounts.py" "$home/.local/bin/codexbar-linux" "$home/.local/lib/codexbar-cli/codexbar-sessions.py" "$home/.local/lib/codexbar-cli/codexbar-opencode-local.py"
 scenarios=("$@"); [ ${#scenarios[@]} -gt 0 ] || scenarios=(healthy connected hints live depleting exhausted provider-error stale empty busy)
 theme=io.elementary.stylesheet.blueberry; [ "$scheme" = dark ] && theme="$theme:dark"
 for name in "${scenarios[@]}"; do
-  env -i PATH="$home/.local/bin:$PATH" HOME="$home" LANG=C.UTF-8 GTK_THEME="$theme" GSK_RENDERER=cairo GDK_BACKEND=x11 ${CB_DEBUG:+CB_DEBUG=1} ${CB_HIDE_PANEL:+CB_HIDE_PANEL=1} ${CB_SCROLL:+CB_SCROLL=$CB_SCROLL} ${CB_DIALOG:+CB_DIALOG=$CB_DIALOG} ${CB_PAGE:+CB_PAGE=$CB_PAGE} ${CB_STABILITY:+CB_STABILITY=1} ${CB_ASSERT_LOCAL:+CB_ASSERT_LOCAL=1} ${CB_ASSERT_HIDDEN_TOKENS:+CB_ASSERT_HIDDEN_TOKENS=1} ${CB_ASSERT_DOTS:+CB_ASSERT_DOTS=1} ${CB_ASSERT_GROK:+CB_ASSERT_GROK=1} ${CB_ASSERT_GROK_SIGNIN:+CB_ASSERT_GROK_SIGNIN=1} \
+  env -i PATH="$home/.local/bin:$probe_path" HOME="$home" LANG=C.UTF-8 GTK_THEME="$theme" GSK_RENDERER=cairo GDK_BACKEND=x11 ${CB_DEBUG:+CB_DEBUG=1} ${CB_HIDE_PANEL:+CB_HIDE_PANEL=1} ${CB_SCROLL:+CB_SCROLL=$CB_SCROLL} ${CB_DIALOG:+CB_DIALOG=$CB_DIALOG} ${CB_PAGE:+CB_PAGE=$CB_PAGE} ${CB_STABILITY:+CB_STABILITY=1} ${CB_ASSERT_LOCAL:+CB_ASSERT_LOCAL=1} ${CB_ASSERT_HIDDEN_TOKENS:+CB_ASSERT_HIDDEN_TOKENS=1} ${CB_ASSERT_DOTS:+CB_ASSERT_DOTS=1} ${CB_ASSERT_GROK:+CB_ASSERT_GROK=1} ${CB_ASSERT_GROK_SIGNIN:+CB_ASSERT_GROK_SIGNIN=1} \
     CB_FIXTURE="$here/fixtures/$name.json" CB_SESSIONS="$here/fixtures/sessions.json" \
     xvfb-run -a -s "-screen 0 800x900x24" "$build/render-probe" "$out/$name${CB_PAGE:+-$CB_PAGE}-$scheme.png" "${CB_DELAY:-3000}"
   echo "rendered $name ($scheme)"
