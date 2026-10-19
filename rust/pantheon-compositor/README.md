@@ -99,9 +99,12 @@ run of Dock 8.3.3 bound the shell protocol, requested anchor and hide mode, and
 attached shared-memory buffers. The compositor now exposes the Gala
 `DesktopIntegration` D-Bus contract used by Dock, including a live window list
 and focus requests; a temporary Wayland window appeared in `GetWindows`, and
-`FocusWindow` routed back to the compositor. The current workspace model is
-single-workspace: moving/reordering windows across workspaces and Gala's
-multitasking view are not implemented. Stock Dock also logged its existing
+`FocusWindow` routed back to the compositor. The compositor tracks windows
+across workspaces, switches visible windows, and supports Dock requests to
+create the dynamic workspace, move windows, reorder workspaces and focus a
+window across workspaces. An isolated Xvfb run with a temporary Wayland client
+exercised creation, movement, switching and focus. Gala's multitasking view is
+not implemented. Stock Dock also logged its existing
 workspace-startup race during the nested smoke, so full Dock behavior remains
 unqualified. Hiding is immediate; blur and multi-output Dock behavior remain
 open. The

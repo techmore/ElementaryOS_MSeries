@@ -14,7 +14,7 @@ use smithay::{
             protocol::{wl_seat, wl_surface::WlSurface},
         },
     },
-    utils::{Rectangle, Serial},
+    utils::{Point, Rectangle, Serial},
     wayland::{
         compositor::with_states,
         shell::xdg::{
@@ -36,7 +36,9 @@ impl XdgShellHandler for PantheonCompositor {
 
     fn new_toplevel(&mut self, surface: ToplevelSurface) {
         let window = Window::new_wayland_window(surface);
-        self.space.map_element(window, (0, 0), false);
+        self.space.map_element(window.clone(), (0, 0), false);
+        self.workspace_manager
+            .add_window(window, Point::from((0, 0)));
     }
 
     fn new_popup(&mut self, surface: PopupSurface, _positioner: PositionerState) {
@@ -185,6 +187,7 @@ impl XdgShellHandler for PantheonCompositor {
             .get_keyboard()
             .and_then(|keyboard| keyboard.current_focus())
             .is_some_and(|focused| surface_has_root(&focused, wl_surface));
+        self.workspace_manager.set_location(window.id(), location);
         self.space.unmap_elem(&window);
         self.minimized_windows.insert(id, (window, location));
         if was_focused {
@@ -216,9 +219,21 @@ impl XdgShellHandler for PantheonCompositor {
                     .toplevel()
                     .is_some_and(|top| top.wl_surface() == wl_surface)
             })
-            .cloned();
+            .cloned()
+            .or_else(|| {
+                self.workspace_manager
+                    .windows()
+                    .into_iter()
+                    .find(|(window, _, _)| {
+                        window
+                            .toplevel()
+                            .is_some_and(|top| top.wl_surface() == wl_surface)
+                    })
+                    .map(|(window, _, _)| window)
+            });
         if let Some(window) = window {
             self.space.unmap_elem(&window);
+            self.workspace_manager.remove_window(window.id());
         }
 
         if was_focused {

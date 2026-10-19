@@ -229,6 +229,19 @@ impl
 impl PantheonCompositor {
     pub fn add_panel(&mut self, surface: WlSurface) {
         self.panels.insert(surface.id(), PanelState::default());
+        let window_id = self
+            .workspace_manager
+            .windows()
+            .into_iter()
+            .find(|(window, _, _)| {
+                window
+                    .toplevel()
+                    .is_some_and(|toplevel| toplevel.wl_surface() == &surface)
+            })
+            .map(|(window, _, _)| window.id());
+        if let Some(window_id) = window_id {
+            self.workspace_manager.remove_window(window_id);
+        }
         self.position_panel(&surface);
     }
 

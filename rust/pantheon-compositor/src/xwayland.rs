@@ -157,6 +157,7 @@ impl XwmHandler for PantheonCompositor {
             .unwrap_or(Point::from((0, 0)));
         let window = Window::new_x11_window(surface.clone());
         self.space.map_element(window.clone(), location, true);
+        self.workspace_manager.add_window(window.clone(), location);
         let configured = Rectangle::new(location, geometry.size);
         if let Err(error) = surface.configure(Some(configured)) {
             tracing::warn!(?error, "could not configure mapped X11 window");
@@ -183,9 +184,22 @@ impl XwmHandler for PantheonCompositor {
                         .is_some_and(|candidate| candidate == &surface)
                 })
                 .cloned()
-        };
+        }
+        .or_else(|| {
+            self.workspace_manager
+                .windows()
+                .into_iter()
+                .find(|(window, _, _)| window.x11_surface() == Some(&surface))
+                .map(|(window, _, _)| window)
+        });
         if let Some(window) = window {
             self.space.unmap_elem(&window);
+            if !self
+                .x11_minimized_windows
+                .contains_key(&surface.window_id())
+            {
+                self.workspace_manager.remove_window(window.id());
+            }
         }
         if !surface.is_override_redirect()
             && let Err(error) = surface.set_mapped(false)
@@ -201,6 +215,15 @@ impl XwmHandler for PantheonCompositor {
     fn destroyed_window(&mut self, _xwm: XwmId, surface: X11Surface) {
         self.x11_managed_windows.remove(&surface.window_id());
         self.x11_minimized_windows.remove(&surface.window_id());
+        let id = self
+            .workspace_manager
+            .windows()
+            .into_iter()
+            .find(|(window, _, _)| window.x11_surface() == Some(&surface))
+            .map(|(window, _, _)| window.id());
+        if let Some(id) = id {
+            self.workspace_manager.remove_window(id);
+        }
     }
 
     fn maximize_request(&mut self, _xwm: XwmId, surface: X11Surface) {
@@ -228,6 +251,7 @@ impl XwmHandler for PantheonCompositor {
         };
         self.x11_minimized_windows
             .insert(surface.window_id(), (window.clone(), location));
+        self.workspace_manager.set_location(window.id(), location);
         window.set_activated(false);
         self.space.unmap_elem(&window);
         if let Err(error) = surface.set_mapped(false) {

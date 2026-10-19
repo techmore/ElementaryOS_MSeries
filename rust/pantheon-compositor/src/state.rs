@@ -50,6 +50,7 @@ use crate::native::NativeBackend;
 use crate::pantheon_shell::{PanelState, PantheonShellState};
 use crate::shell_compat::ShellCompatHandle;
 use crate::tiling::{CornerSnapPreview, TilingBindings};
+use crate::workspace::WorkspaceManager;
 #[cfg(feature = "native-drm")]
 use smithay::reexports::calloop::channel::Sender;
 
@@ -112,6 +113,7 @@ pub struct PantheonCompositor {
     pub pantheon_shell_state: PantheonShellState,
     pub display_config: DisplayConfigHandle,
     pub(crate) gala_compat: GalaCompatHandle,
+    pub(crate) workspace_manager: WorkspaceManager,
     pub shell_compat: ShellCompatHandle,
     pub primary_output_name: Option<String>,
     pub panels: HashMap<smithay::reexports::wayland_server::backend::ObjectId, PanelState>,
@@ -301,8 +303,10 @@ impl PantheonCompositor {
         event_loop.handle().insert_source(
             Timer::from_duration(Duration::from_millis(100)),
             move |_, _, state| {
-                while let Ok(action) = gala_actions.try_recv() {
-                    state.handle_gala_action(action);
+                while let Ok(request) = gala_actions.try_recv() {
+                    let result = state.handle_gala_action(request.action);
+                    state.publish_gala_snapshot();
+                    let _ = request.response.send(result);
                 }
                 state.publish_gala_snapshot();
                 TimeoutAction::ToDuration(Duration::from_millis(100))
@@ -351,6 +355,7 @@ impl PantheonCompositor {
             pantheon_shell_state,
             display_config,
             gala_compat,
+            workspace_manager: WorkspaceManager::new(),
             shell_compat,
             primary_output_name: None,
             panels: HashMap::new(),
@@ -397,9 +402,15 @@ impl PantheonCompositor {
             .get_keyboard()
             .and_then(|keyboard| keyboard.current_focus());
         let windows = self
-            .space
-            .elements()
-            .map(|window| {
+            .workspace_manager
+            .windows()
+            .into_iter()
+            .filter(|(window, _, _)| {
+                window
+                    .toplevel()
+                    .is_none_or(|toplevel| !self.is_panel_surface(toplevel.wl_surface()))
+            })
+            .map(|(window, workspace_index, _)| {
                 let app_id = if let Some(toplevel) = window.toplevel() {
                     smithay::wayland::compositor::with_states(toplevel.wl_surface(), |states| {
                         states
@@ -429,52 +440,59 @@ impl PantheonCompositor {
                     uid: window.id() as u64,
                     app_id,
                     has_focus,
-                    workspace_index: 0,
+                    workspace_index: workspace_index as i32,
                     time_appeared_on_workspace: window.id() as i64,
                 }
             })
             .collect();
         self.gala_compat.update(DesktopSnapshot {
             windows,
-            active_workspace: 0,
-            workspace_count: 1,
+            active_workspace: self.workspace_manager.active() as i32,
+            workspace_count: self.workspace_manager.workspace_count() as i32 + 1,
         });
     }
 
-    fn handle_gala_action(&mut self, action: GalaAction) {
+    fn handle_gala_action(&mut self, action: GalaAction) -> Result<(), String> {
         match action {
             GalaAction::FocusWindow(uid) => self.focus_window_by_uid(uid),
             GalaAction::ShowWindowsFor(app_id) => {
                 let uid = self
-                    .space
-                    .elements()
-                    .find(|window| self.window_app_id(window).as_deref() == Some(app_id.as_str()))
-                    .map(|window| window.id() as u64);
+                    .workspace_manager
+                    .windows()
+                    .into_iter()
+                    .find(|(window, _, _)| {
+                        self.window_app_id(window).as_deref() == Some(app_id.as_str())
+                    })
+                    .map(|(window, _, _)| window.id() as u64);
                 if let Some(uid) = uid {
-                    self.focus_window_by_uid(uid);
+                    self.focus_window_by_uid(uid)
+                } else {
+                    Err(format!("no mapped windows found for app {app_id}"))
                 }
             }
             GalaAction::MoveWindowToWorkspace(uid, index) => {
-                if index != 0 {
-                    tracing::warn!(uid, index, "Dock requested an unavailable workspace");
-                }
+                self.move_window_to_workspace(uid, index)
             }
-            GalaAction::ActivateWorkspace(index) => {
-                if index != 0 {
-                    tracing::warn!(index, "Dock requested an unavailable workspace");
-                }
-            }
+            GalaAction::ActivateWorkspace(index) => self.activate_workspace(index),
             GalaAction::ReorderWorkspace(index, new_index) => {
-                if index != new_index {
-                    tracing::warn!(index, new_index, "Dock requested workspace reordering");
+                if self.session_locked {
+                    return Err("cannot reorder workspaces while the session is locked".into());
+                }
+                let (Ok(index), Ok(new_index)) =
+                    (usize::try_from(index), usize::try_from(new_index))
+                else {
+                    return Err("workspace indices must be non-negative".into());
+                };
+                if self.workspace_manager.reorder_workspace(index, new_index) {
+                    self.gala_compat.request_windows_changed();
+                    Ok(())
+                } else {
+                    Err("workspace index is outside the current workspace list".into())
                 }
             }
-            GalaAction::PerformAction(action) => {
-                tracing::warn!(
-                    action,
-                    "Dock requested a Gala action that is not implemented"
-                );
-            }
+            GalaAction::PerformAction(action) => Err(format!(
+                "Gala action {action} is not implemented by this compositor"
+            )),
         }
     }
 
@@ -499,15 +517,28 @@ impl PantheonCompositor {
         }
     }
 
-    fn focus_window_by_uid(&mut self, uid: u64) {
-        let Some(window) = self
-            .space
-            .elements()
-            .find(|window| window.id() as u64 == uid)
-            .cloned()
-        else {
-            return;
+    fn focus_window_by_uid(&mut self, uid: u64) -> Result<(), String> {
+        if self.session_locked {
+            return Err("cannot focus a window while the session is locked".into());
+        }
+        let Ok(id) = usize::try_from(uid) else {
+            return Err("window ID is outside the supported range".into());
         };
+        let Some(workspace) = self.workspace_manager.workspace_for(id) else {
+            return Err(format!("window {uid} does not exist"));
+        };
+        if workspace != self.workspace_manager.active() {
+            self.switch_workspace(workspace)?;
+        }
+        let Some(window) = self.workspace_manager.window(id).cloned() else {
+            return Err(format!("window {uid} does not exist"));
+        };
+        if !self.space.elements().any(|candidate| candidate == &window) {
+            self.restore_minimized_workspace_window(&window);
+            if !self.space.elements().any(|candidate| candidate == &window) {
+                return Err(format!("window {uid} could not be restored"));
+            }
+        }
         self.space.raise_element(&window, true);
         let serial = smithay::utils::SERIAL_COUNTER.next_serial();
         if let Some(toplevel) = window.toplevel() {
@@ -521,6 +552,214 @@ impl PantheonCompositor {
         }
         self.refresh_panel_visibility();
         self.request_native_redraw();
+        Ok(())
+    }
+
+    fn activate_workspace(&mut self, index: i32) -> Result<(), String> {
+        if self.session_locked {
+            return Err("cannot switch workspaces while the session is locked".into());
+        }
+        let Ok(index) = usize::try_from(index) else {
+            return Err("workspace index must be non-negative".into());
+        };
+        let workspace = if index == self.workspace_manager.dynamic_workspace_index() {
+            self.workspace_manager.add_workspace()
+        } else {
+            index
+        };
+        self.switch_workspace(workspace)
+    }
+
+    fn switch_workspace(&mut self, workspace: usize) -> Result<(), String> {
+        let current = self.workspace_manager.active();
+        if workspace >= self.workspace_manager.workspace_count() {
+            return Err("workspace index is outside the current workspace list".into());
+        }
+        if current == workspace {
+            return Ok(());
+        }
+
+        let visible = self
+            .space
+            .elements()
+            .filter(|window| self.workspace_manager.workspace_for(window.id()) == Some(current))
+            .cloned()
+            .collect::<Vec<_>>();
+        let ordered_ids = visible.iter().map(Window::id).collect::<Vec<_>>();
+        for window in &visible {
+            if let Some(location) = self.space.element_location(window) {
+                self.workspace_manager.set_location(window.id(), location);
+            }
+        }
+        self.workspace_manager
+            .set_order_from_visible(&ordered_ids, current);
+
+        let focused = self
+            .seat
+            .get_keyboard()
+            .and_then(|keyboard| keyboard.current_focus());
+        if focused.as_ref().is_some_and(|surface| {
+            visible.iter().any(|window| {
+                window
+                    .toplevel()
+                    .is_some_and(|toplevel| toplevel.wl_surface() == surface)
+            })
+        }) && let Some(keyboard) = self.seat.get_keyboard()
+        {
+            keyboard.set_focus(self, None, smithay::utils::SERIAL_COUNTER.next_serial());
+        }
+        if self.x11_keyboard_focus.as_ref().is_some_and(|focused| {
+            visible
+                .iter()
+                .any(|window| window.x11_surface() == Some(focused))
+        }) {
+            self.set_x11_keyboard_focus(None, smithay::utils::SERIAL_COUNTER.next_serial());
+        }
+
+        for window in &visible {
+            window.set_activated(false);
+            self.space.unmap_elem(window);
+        }
+        self.workspace_manager.set_active(workspace);
+
+        let minimized_wayland = self
+            .minimized_windows
+            .values()
+            .map(|(window, _)| window.id())
+            .collect::<std::collections::HashSet<_>>();
+        let minimized_x11 = self
+            .x11_minimized_windows
+            .values()
+            .map(|(window, _)| window.id())
+            .collect::<std::collections::HashSet<_>>();
+        let target_windows = self
+            .workspace_manager
+            .windows_in(workspace)
+            .into_iter()
+            .filter(|(window, _)| {
+                !minimized_wayland.contains(&window.id()) && !minimized_x11.contains(&window.id())
+            })
+            .collect::<Vec<_>>();
+        for (window, location) in &target_windows {
+            self.space.map_element(window.clone(), *location, false);
+        }
+        if let Some((window, _)) = target_windows.last() {
+            self.space.raise_element(window, true);
+            let serial = smithay::utils::SERIAL_COUNTER.next_serial();
+            if let Some(toplevel) = window.toplevel() {
+                if let Some(keyboard) = self.seat.get_keyboard() {
+                    keyboard.set_focus(self, Some(toplevel.wl_surface().clone()), serial);
+                }
+            } else if let Some(surface) = window.x11_surface().cloned() {
+                self.set_x11_keyboard_focus(Some(surface), serial);
+            }
+        }
+        self.refresh_panel_visibility();
+        self.reconfigure_managed_windows();
+        self.update_fractional_scale_preferences();
+        self.gala_compat.request_windows_changed();
+        self.request_native_redraw();
+        Ok(())
+    }
+
+    fn move_window_to_workspace(&mut self, uid: u64, index: i32) -> Result<(), String> {
+        if self.session_locked {
+            return Err("cannot move windows while the session is locked".into());
+        }
+        let Ok(id) = usize::try_from(uid) else {
+            return Err("window ID is outside the supported range".into());
+        };
+        let Ok(index) = usize::try_from(index) else {
+            return Err("workspace index must be non-negative".into());
+        };
+        if self.workspace_manager.workspace_for(id).is_none() {
+            return Err(format!("window {uid} does not exist"));
+        }
+        let target = if index == self.workspace_manager.dynamic_workspace_index() {
+            self.workspace_manager.add_workspace()
+        } else {
+            index
+        };
+        if target >= self.workspace_manager.workspace_count() {
+            return Err("workspace index is outside the current workspace list".into());
+        }
+        let source = self.workspace_manager.workspace_for(id).unwrap();
+        if source == target {
+            return Ok(());
+        }
+        let Some(window) = self.workspace_manager.window(id).cloned() else {
+            return Err(format!("window {uid} does not exist"));
+        };
+        if source == self.workspace_manager.active() {
+            if let Some(location) = self.space.element_location(&window) {
+                self.workspace_manager.set_location(id, location);
+            }
+            let was_x11_focused = window
+                .x11_surface()
+                .is_some_and(|surface| self.x11_keyboard_focus.as_ref() == Some(surface));
+            window.set_activated(false);
+            self.space.unmap_elem(&window);
+            if was_x11_focused {
+                self.set_x11_keyboard_focus(None, smithay::utils::SERIAL_COUNTER.next_serial());
+                self.focus_next_window();
+            }
+            if window.toplevel().is_some_and(|toplevel| {
+                self.seat
+                    .get_keyboard()
+                    .and_then(|keyboard| keyboard.current_focus())
+                    .is_some_and(|focused| focused == *toplevel.wl_surface())
+            }) {
+                self.focus_next_window();
+            }
+        }
+        self.workspace_manager.assign_window(id, target);
+        if target == self.workspace_manager.active() && !self.is_workspace_window_minimized(&window)
+        {
+            if let Some(location) = self.workspace_manager.location(id) {
+                self.space.map_element(window.clone(), location, true);
+            }
+            self.focus_window_by_uid(uid)?;
+        }
+        self.refresh_panel_visibility();
+        self.request_native_redraw();
+        self.gala_compat.request_windows_changed();
+        Ok(())
+    }
+
+    fn is_workspace_window_minimized(&self, window: &Window) -> bool {
+        self.minimized_windows
+            .values()
+            .any(|(minimized, _)| minimized == window)
+            || self
+                .x11_minimized_windows
+                .values()
+                .any(|(minimized, _)| minimized == window)
+    }
+
+    fn restore_minimized_workspace_window(&mut self, window: &Window) {
+        if let Some((_, location)) = window
+            .toplevel()
+            .and_then(|toplevel| self.minimized_windows.remove(&toplevel.wl_surface().id()))
+        {
+            let location = self
+                .workspace_manager
+                .location(window.id())
+                .unwrap_or(location);
+            self.space.map_element(window.clone(), location, true);
+            return;
+        }
+        if let Some(surface) = window.x11_surface()
+            && let Some((_, location)) = self.x11_minimized_windows.remove(&surface.window_id())
+        {
+            let location = self
+                .workspace_manager
+                .location(window.id())
+                .unwrap_or(location);
+            if surface.set_mapped(true).is_ok() {
+                self.space.map_element(window.clone(), location, true);
+                window.set_activated(true);
+            }
+        }
     }
 
     #[cfg(feature = "native-drm")]
@@ -1028,10 +1267,32 @@ impl PantheonCompositor {
                         && center_y < geometry.loc.y + geometry.size.h
                 });
                 if !visible {
-                    self.space.map_element(
-                        window,
-                        (fallback.loc.x + 32, fallback.loc.y + 32),
-                        false,
+                    let target = Point::from((fallback.loc.x + 32, fallback.loc.y + 32));
+                    self.space.map_element(window.clone(), target, false);
+                    self.workspace_manager.set_location(window.id(), target);
+                }
+            }
+
+            let hidden_windows = self
+                .workspace_manager
+                .windows()
+                .into_iter()
+                .filter(|(_, workspace, _)| *workspace != self.workspace_manager.active())
+                .collect::<Vec<_>>();
+            for (window, _, location) in hidden_windows {
+                let size = window.geometry().size;
+                let center_x = location.x + size.w / 2;
+                let center_y = location.y + size.h / 2;
+                let visible = output_geometries.iter().any(|geometry| {
+                    center_x >= geometry.loc.x
+                        && center_x < geometry.loc.x + geometry.size.w
+                        && center_y >= geometry.loc.y
+                        && center_y < geometry.loc.y + geometry.size.h
+                });
+                if !visible {
+                    self.workspace_manager.set_location(
+                        window.id(),
+                        Point::from((fallback.loc.x + 32, fallback.loc.y + 32)),
                     );
                 }
             }
@@ -1257,15 +1518,32 @@ impl XdgActivationHandler for PantheonCompositor {
         while let Some(parent) = smithay::wayland::compositor::get_parent(&root) {
             root = parent;
         }
-        let root_id = root.id();
-        let window = self.find_window_for_surface(&root).or_else(|| {
-            let (window, location) = self.minimized_windows.remove(&root_id)?;
-            self.space.map_element(window.clone(), location, false);
-            Some(window)
-        });
+        let managed = self
+            .workspace_manager
+            .windows()
+            .into_iter()
+            .find(|(window, _, _)| {
+                window
+                    .toplevel()
+                    .is_some_and(|toplevel| toplevel.wl_surface() == &root)
+            });
+        if let Some((_, workspace, _)) = &managed
+            && *workspace != self.workspace_manager.active()
+        {
+            let _ = self.switch_workspace(*workspace);
+        }
+        let window = self
+            .find_window_for_surface(&root)
+            .or_else(|| managed.map(|(window, _, _)| window));
         let Some(window) = window else {
             return;
         };
+        if !self.space.elements().any(|candidate| candidate == &window) {
+            self.restore_minimized_workspace_window(&window);
+            if !self.space.elements().any(|candidate| candidate == &window) {
+                return;
+            }
+        }
         self.space.raise_element(&window, true);
         if let Some(surface) = window
             .toplevel()

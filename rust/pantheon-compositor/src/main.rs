@@ -14,6 +14,7 @@ mod shell_compat;
 mod state;
 mod tiling;
 mod winit;
+mod workspace;
 mod xwayland;
 
 use smithay::reexports::{calloop::EventLoop, wayland_server::Display};

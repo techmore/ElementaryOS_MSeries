@@ -100,11 +100,11 @@ Keep Gala selected and use the Rust compositor only in an
 explicitly isolated qualification session after its prerequisites are checked.
 
 The compositor now exposes Dock's `org.pantheon.gala.DesktopIntegration`
-D-Bus interface. Window enumeration, app IDs, focus state and focusing a
-window are implemented. A temporary Wayland window was returned with its app
-ID and focus state; a direct `FocusWindow` call focused it. The current model
-exposes one workspace and does not implement overview or cross-workspace
-movement.
+D-Bus interface. Window enumeration, app IDs, focus state, workspace listing,
+activation and reorder, dynamic workspace creation, window movement, and
+cross-workspace focus are implemented. An isolated Xvfb run with a temporary
+Wayland client exercised workspace creation, movement, switching and focus.
+Overview remains unsupported.
 The nested stock Dock 8.3.3 smoke bound the panel protocol and attached buffers,
 but also logged its known asynchronous workspace-initialization critical, so
 Dock interaction is still not qualified end to end.

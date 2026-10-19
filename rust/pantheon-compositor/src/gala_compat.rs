@@ -37,6 +37,11 @@ pub(crate) enum GalaAction {
     ReorderWorkspace(i32, i32),
 }
 
+pub(crate) struct GalaActionRequest {
+    pub action: GalaAction,
+    pub response: mpsc::SyncSender<Result<(), String>>,
+}
+
 enum GalaSignal {
     RunningApplicationsChanged,
     WindowsChanged,
@@ -50,8 +55,11 @@ pub(crate) struct GalaCompatHandle {
 }
 
 impl GalaCompatHandle {
-    pub fn start() -> (Self, mpsc::Receiver<GalaAction>) {
-        let snapshot = Arc::new(Mutex::new(DesktopSnapshot::default()));
+    pub fn start() -> (Self, mpsc::Receiver<GalaActionRequest>) {
+        let snapshot = Arc::new(Mutex::new(DesktopSnapshot {
+            workspace_count: 2,
+            ..DesktopSnapshot::default()
+        }));
         let (signals, signal_receiver) = mpsc::channel();
         let (actions, action_receiver) = mpsc::channel();
         let service_snapshot = snapshot.clone();
@@ -63,7 +71,7 @@ impl GalaCompatHandle {
     }
 
     pub fn update(&self, next: DesktopSnapshot) {
-        let (windows_changed, apps_changed, active_changed) = {
+        let (windows_changed, apps_changed, active_changed, count_changed) = {
             let mut snapshot = self
                 .snapshot
                 .lock()
@@ -81,37 +89,40 @@ impl GalaCompatHandle {
             let windows_changed = snapshot.windows != next.windows;
             let apps_changed = previous_apps != next_apps;
             let active_changed = snapshot.active_workspace != next.active_workspace;
+            let count_changed = snapshot.workspace_count != next.workspace_count;
             if windows_changed || active_changed || snapshot.workspace_count != next.workspace_count
             {
                 *snapshot = next;
             }
-            (windows_changed, apps_changed, active_changed)
+            (windows_changed, apps_changed, active_changed, count_changed)
         };
 
         if apps_changed {
             let _ = self.signals.send(GalaSignal::RunningApplicationsChanged);
         }
-        if windows_changed {
+        if windows_changed || count_changed {
             let _ = self.signals.send(GalaSignal::WindowsChanged);
         }
         if active_changed {
             let _ = self.signals.send(GalaSignal::ActiveWorkspaceChanged);
         }
     }
+
+    pub fn request_windows_changed(&self) {
+        let _ = self.signals.send(GalaSignal::WindowsChanged);
+    }
 }
 
-struct GalaRootServer(mpsc::Sender<GalaAction>);
+struct GalaRootServer(mpsc::Sender<GalaActionRequest>);
 
 #[interface(name = "org.pantheon.gala")]
 impl GalaRootServer {
     fn perform_action(&self, action: i32) -> zbus::fdo::Result<()> {
-        self.0
-            .send(GalaAction::PerformAction(action))
-            .map_err(|_| zbus::fdo::Error::Failed("compositor event loop is unavailable".into()))
+        dispatch_action(&self.0, GalaAction::PerformAction(action))
     }
 }
 
-struct DesktopIntegrationServer(Arc<Mutex<DesktopSnapshot>>, mpsc::Sender<GalaAction>);
+struct DesktopIntegrationServer(Arc<Mutex<DesktopSnapshot>>, mpsc::Sender<GalaActionRequest>);
 
 type WindowProperties = (u64, HashMap<String, OwnedValue>);
 type RunningApplication = (String, HashMap<String, OwnedValue>);
@@ -163,21 +174,15 @@ impl DesktopIntegrationServer {
     }
 
     fn focus_window(&self, uid: u64) -> zbus::fdo::Result<()> {
-        self.1
-            .send(GalaAction::FocusWindow(uid))
-            .map_err(|_| zbus::fdo::Error::Failed("compositor event loop is unavailable".into()))
+        dispatch_action(&self.1, GalaAction::FocusWindow(uid))
     }
 
     fn move_window_to_workspace(&self, uid: u64, index: i32) -> zbus::fdo::Result<()> {
-        self.1
-            .send(GalaAction::MoveWindowToWorkspace(uid, index))
-            .map_err(|_| zbus::fdo::Error::Failed("compositor event loop is unavailable".into()))
+        dispatch_action(&self.1, GalaAction::MoveWindowToWorkspace(uid, index))
     }
 
     fn activate_workspace(&self, index: i32) -> zbus::fdo::Result<()> {
-        self.1
-            .send(GalaAction::ActivateWorkspace(index))
-            .map_err(|_| zbus::fdo::Error::Failed("compositor event loop is unavailable".into()))
+        dispatch_action(&self.1, GalaAction::ActivateWorkspace(index))
     }
 
     fn get_n_workspaces(&self) -> zbus::fdo::Result<i32> {
@@ -197,15 +202,11 @@ impl DesktopIntegrationServer {
     }
 
     fn show_windows_for(&self, app_id: String) -> zbus::fdo::Result<()> {
-        self.1
-            .send(GalaAction::ShowWindowsFor(app_id))
-            .map_err(|_| zbus::fdo::Error::Failed("compositor event loop is unavailable".into()))
+        dispatch_action(&self.1, GalaAction::ShowWindowsFor(app_id))
     }
 
     fn reorder_workspace(&self, index: i32, new_index: i32) -> zbus::fdo::Result<()> {
-        self.1
-            .send(GalaAction::ReorderWorkspace(index, new_index))
-            .map_err(|_| zbus::fdo::Error::Failed("compositor event loop is unavailable".into()))
+        dispatch_action(&self.1, GalaAction::ReorderWorkspace(index, new_index))
     }
 
     #[zbus(signal)]
@@ -228,9 +229,29 @@ fn string_value(value: &str) -> zbus::fdo::Result<OwnedValue> {
     .map_err(|error| zbus::fdo::Error::Failed(error.to_string()))
 }
 
+fn dispatch_action(
+    sender: &mpsc::Sender<GalaActionRequest>,
+    action: GalaAction,
+) -> zbus::fdo::Result<()> {
+    let (response, result) = mpsc::sync_channel(1);
+    sender
+        .send(GalaActionRequest { action, response })
+        .map_err(|_| zbus::fdo::Error::Failed("compositor event loop is unavailable".into()))?;
+    match result.recv_timeout(Duration::from_secs(5)) {
+        Ok(Ok(())) => Ok(()),
+        Ok(Err(error)) => Err(zbus::fdo::Error::Failed(error)),
+        Err(mpsc::RecvTimeoutError::Timeout) => Err(zbus::fdo::Error::Timeout(
+            "compositor did not complete the requested action in time".into(),
+        )),
+        Err(mpsc::RecvTimeoutError::Disconnected) => Err(zbus::fdo::Error::Failed(
+            "compositor stopped before completing the requested action".into(),
+        )),
+    }
+}
+
 fn serve_gala_compat(
     snapshot: Arc<Mutex<DesktopSnapshot>>,
-    actions: mpsc::Sender<GalaAction>,
+    actions: mpsc::Sender<GalaActionRequest>,
     signal_receiver: mpsc::Receiver<GalaSignal>,
 ) {
     let connection = match Connection::session() {
