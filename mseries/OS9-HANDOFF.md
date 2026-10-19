@@ -11,8 +11,14 @@ returned HTTP 502/504, so the successful local build used the matching GNOME
 1.40.18 release archive pinned with SHA-256. The reproducible recipe is
 [`mseries/install-protonvpn-arm64.sh`](install-protonvpn-arm64.sh), based on
 [Flathub recipe commit `7387931`](https://github.com/flathub/com.protonvpn.www/tree/7387931c14c4d57763618d83644be19b3475c77c).
-The launcher is installed for the user. Installation is confirmed; Proton
-sign-in and VPN connection are not.
+The launcher is installed for the user. Because Pantheon's Wingpanel has no
+StatusNotifierWatcher, Proton's native tray item cannot register. Added and
+installed a GTK4 Wingpanel launcher indicator instead; it uses the exported
+Proton icon and opens the app from its top-panel button/menu. The live Wingpanel
+process maps `libmseries-protonvpn.so`, and GTK resolves the icon. This is a
+launcher, not a VPN-status tray, so no connection state appears in Wingpanel.
+Proton sign-in and VPN connection are not yet qualified. Build/install command:
+`bash mseries/install-protonvpn-wingpanel.sh`.
 
 ## enh1 diagnostic boot reached the desktop; crash triage after reboot — 2026-10-18 (Claude Code)
 
