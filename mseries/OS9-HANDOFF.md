@@ -17,6 +17,10 @@ Owner then clarified they meant the Applications menu. Upstream has no icon-size
 loaded**: Wingpanel was not restarted, so it shows after the next reload/login, and the result is
 not visually checked. The dock stays at 24; revert it if only the menu was wanted.
 
+Follow-up: the same patch now also makes the grid page 7x4 (28 apps, was 5x3 = 15), label width
+12 chars, row spacing 12, to roughly keep the popover footprint. Rebuilt, installed and Wingpanel
+reloaded; layout not visually checked.
+
 ## Official Discord via FEX in a 4 KB-page microVM — 2026-10-18 (Claude Code)
 
 Owner required official Discord (amd64 only). FEX alone aborts here (16 KB pages, `<jemalloc>: Unsupported system

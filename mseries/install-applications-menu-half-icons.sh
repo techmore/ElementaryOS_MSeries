@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Builds the elementary Applications menu (Slingshot) with icons at half size:
-# grid 64->32, list rows 32->16, search results 32->16 (patches/applications-menu-half-icons.patch).
+# grid 64->32 and a denser 7x4 page (was 5x3), list rows 32->16, search results 32->16
+# (patches/applications-menu-half-icons.patch).
 # Upstream has no setting for this. Reload Wingpanel to activate; --uninstall restores the package build.
 set -euo pipefail
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
