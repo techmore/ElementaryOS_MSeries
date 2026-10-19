@@ -1,5 +1,21 @@
 # OS 9 implementation / Claude Code handoff
 
+## Pointer stuck at the top edge: Gala panel barrier patch — 2026-10-19 (Claude Code)
+
+Owner reported the mouse sometimes sticks at the top of the screen until slid sideways to the edge. Cause
+found by reading the pinned Gala source (`f079143`): `HideTracker` creates a pointer barrier along the
+panel's edge for **every** panel, including Wingpanel, which never auto-hides. The barrier spans the
+screen minus 50px at each end, which matches "slide to the edge frees it". Its release logic also only
+released after a later hit more than 150ms past the trigger. Added `mseries/patches/gala-panel-barrier.patch`
+(applied last by `install-gala-screen-corners.sh`): no barrier when the panel's hide mode is NEVER (and it
+is rebuilt when the mode changes), non-retriggering barriers release right after triggering, and a null
+guard in `~Barrier`. The patched tree compiles (meson/ninja, scratch build, nothing installed).
+**Not installed and not confirmed on hardware:** replacing `/usr/local/lib/mseries/gala/bin/gala` was
+declined by the permission classifier, and the compositor only changes at next login. The cause is
+inferred from code, not reproduced. Install by building with the installer's prefix and copying only the
+binary (the installer's launcher heredoc is older than the live `mseries-gala`, so do not rerun it blindly);
+after login, check whether the stick is gone.
+
 ## CodexBar dropdown compacted — 2026-10-19
 
 Owner asked to shrink the CodexBar dropdown and keep it that way. In `codexbar-wingpanel/Indicator.vala`,

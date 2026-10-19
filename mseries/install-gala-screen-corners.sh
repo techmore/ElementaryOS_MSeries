@@ -28,6 +28,8 @@
 # And gala-screenshot-window-pick.patch: in the Command+Shift+4 selector a plain click on a window
 # screenshots that window (macOS style); dragging still selects an area.
 # gala-dock-workarea.patch reserves visible dock space and releases it after hiding.
+# gala-panel-barrier.patch stops panels that never auto-hide (Wingpanel) from putting a pointer
+# barrier on the screen edge, which could pin the pointer at the top until slid sideways.
 set -euo pipefail
 
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
@@ -84,6 +86,7 @@ git -C "$source_dir" apply "$repo/mseries/patches/gala-window-corners.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/gala-panel-offset.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/gala-screenshot-window-pick.patch"
 git -C "$source_dir" apply "$repo/mseries/patches/gala-dock-workarea.patch"
+git -C "$source_dir" apply "$repo/mseries/patches/gala-panel-barrier.patch"
 
 meson setup "$build_dir" "$source_dir" --prefix="$prefix" --libdir=lib --buildtype=release >/dev/null
 ninja -C "$build_dir" >/dev/null
