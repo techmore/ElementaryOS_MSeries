@@ -13,13 +13,19 @@ keep providing panel, dock and settings UI through a narrow shell contract.
 Anything beyond those needs is conditional on a named app or workflow. The
 prioritized list and upstream feature radar are in
 [`EXPERIENCE-REQUIREMENTS.md`](EXPERIENCE-REQUIREMENTS.md).
+For a stack drawing comparing existing elementary OS, Omarchy on Asahi, and
+the proposed Pantheon MVP—along with a tested-versus-open status table—see
+[`ARCHITECTURE-AND-STATUS.md`](ARCHITECTURE-AND-STATUS.md).
 
 On 2026-10-19 the installed experimental session completed its first native
 M1 Pro login and scanned out an AR30 3024x1964 framebuffer. The owner reported
 that startup felt slow; the Rust session had no Wingpanel, bottom dock, or
 colored wallpaper/background. A timed LightDM rollback returned to Gala and
-restored the background. This proves the native display path and rollback,
-not a complete Pantheon session or a performance/stability improvement.
+restored the background. Separate systemd user services have since been staged
+to launch Wingpanel and Dock after the compositor. A local ARM64 package build
+now includes those units; they are not installed or runtime-qualified. This
+proves the native display path and rollback, not a
+complete Pantheon session or a performance/stability improvement.
 
 The nested prototype now handles the existing half-snap chords (`Super+Left`
 and `Super+Right`) and quarter-snap chords (`Super+Alt+U/I/J/K` plus the
@@ -86,29 +92,33 @@ required by the M-series/Pantheon session, in independently qualified slices.
 
 [`rust/pantheon-compositor`](../../rust/pantheon-compositor/README.md) has an
 opt-in nested Smithay/Winit backend for development and an explicit native DRM
-backend for M-series qualification. It supports the Pantheon shell contract,
-window basics, monitor configuration and lock bridge, but native display,
-session, input and recovery behavior still need on-device qualification. The
-staged login-session files are separate from the active Gala session and are
-not installed or selected by default.
+backend for M-series qualification. It supports the Pantheon shell protocol,
+window basics, monitor configuration and lock bridge. The installed opt-in
+session completed a first native display scanout on the M1 Pro, while full
+shell, input and recovery behavior still need qualification. The staged session
+remains separate from Gala and is not selected by default.
 
 ### Readiness decision (2026-10-19)
 
-This branch is **not yet ready to use as an experimental Pantheon session**.
-The nested backend is suitable for development and controlled protocol
-qualification, and the ARM64 `native-drm` package builds on the M-series host.
-Neither result demonstrates that the session can replace Gala. No isolated
-native login has been run, so actual scanout, native keyboard/pointer input,
-Dock behavior, lock/unlock and crash recovery are still unknown. In private
-Xvfb, the release binary launched a GTK Wayland Zenity field; synthetic key
-events reached it, and IBus/Mozc committed `konnichiha` as `こんにちは` using
-the configured `mozc-jp` engine with Hiragana enabled in a private profile.
-The same session verified the compositor's focus action was needed before the
-field accepted input. This qualifies nested input-method-v2/text-input-v3
-delivery, not the host's source switching, F5 dictation, physical keyboard or
-native session. Installed Wingpanel also binds the shell protocol and submits
-shared-memory panel buffers in private Xvfb. Keep Gala selected and continue
-only in isolated qualification sessions.
+This branch is **not ready to replace Gala for daily Pantheon use**. On
+2026-10-19, an isolated five-minute LightDM login completed and produced the
+first native scanout on the M1 Pro: plane 0 used the compositor's AR30
+framebuffer at 3024x1964. The owner confirmed the desktop was usable but slow
+to appear. Wingpanel, Dock and a colored wallpaper/background were missing.
+The timed rollback returned to Gala and restored the background. This qualifies
+native startup, internal-panel scanout and automatic rollback only; native
+keyboard/pointer workflows, complete shell integration, external displays,
+lock/unlock and compositor-failure recovery remain open.
+
+In private Xvfb, the release binary launched a GTK Wayland Zenity field;
+synthetic key events reached it, and IBus/Mozc committed `konnichiha` as
+`こんにちは` using `mozc-jp` with Hiragana enabled in a private profile. This
+qualifies one nested input-method-v2/text-input-v3 workflow, not host source
+switching, F5 dictation or native input. XWayland also passed an isolated X11
+Zenity window and keyboard smoke; clipboard/PRIMARY remain unqualified.
+Installed Wingpanel binds the shell protocol and submits SHM panel buffers in
+private Xvfb, but the Rust session did not launch it. Keep Gala selected while
+the shell launcher and background path are implemented and runtime-qualified.
 
 The compositor now exposes Dock's `org.pantheon.gala.DesktopIntegration`
 D-Bus interface. Window enumeration, app IDs, focus state, workspace listing,
@@ -120,12 +130,14 @@ The nested stock Dock 8.3.3 smoke bound the panel protocol and attached buffers,
 but also logged its known asynchronous workspace-initialization critical, so
 Dock interaction is still not qualified end to end.
 
-The current ARM64 package candidate from commit `83a663c` is saved at
+The ARM64 package from commit `83a663c` is saved at
 `/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-workspace-release/pantheon-rust-compositor_0.1.0+git83a663c_arm64.deb`
 (SHA-256 `f34220be364417e92c4dab2aa8b9c3c29b5b1cfc9427c710318b42634684634a`).
 Its package contents, dependencies and shared-library links were inspected;
-it was not installed. The preflight and native DRM release build match this
-candidate's source. The nested runtime evidence below used the earlier package
+it was installed with `gnome-session` and `gtklock` on 2026-10-19 and selected
+once through LightDM. The compositor source is unchanged from `83a663c`; the
+later commits in this branch update the DRM probe and documentation. The nested
+runtime evidence below used the earlier package
 from commit `619ca5c`, saved at
 `/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/pantheon-workspace-release/pantheon-rust-compositor_0.1.0+git619ca5c_arm64.deb`
 (SHA-256 `aee4c9af0d12c1a2bddbfd45dcd5a79e71afe8c8adc28d9ff46e7cf204d0ea13`).
@@ -142,12 +154,13 @@ output. Both runs used private D-Bus/Xvfb and a private GSettings fixture; the
 active Wingpanel session was not restarted. These checks do not qualify native
 DRM scanout, physical keyboard input, the Dock, or a complete login session.
 
-The next gate is staged nested qualification with additional GTK/Qt clients
-and existing Pantheon shell clients, including Dock launcher/window switching
-and the real F5 dictation path. After that passes, run the package in a
-separate native login with a tested recovery path. Only record it as an
-experimental session that works after those runtime gates pass; a successful
-compile or package build is not that evidence.
+The next gate is to nested-qualify the staged Wingpanel and Dock startup against
+`/etc/xdg/io.elementary.desktop.wm.shell`, and implement a desktop background
+path. Then qualify shell rendering, Dock launcher/window switching,
+GTK/Qt clients and real F5 dictation. Package those changes before another
+native login. Keep the measured startup, resource, latency, power and
+crash/recovery comparison against Gala open; one successful login does not
+establish the migration as faster, lighter or more reliable.
 
 The staged systemd service now retries an unexpected compositor failure with
 a two-second delay, capped at three starts per minute. After that limit, its

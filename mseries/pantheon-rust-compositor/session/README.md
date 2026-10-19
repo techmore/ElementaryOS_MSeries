@@ -39,6 +39,16 @@ lock/logout, recovery under compositor failure, performance and external-monitor
 use remain unqualified. Keep Gala as the rollback session while these gates are
 addressed.
 
+The default desktop shell entries in `/etc/xdg/io.elementary.desktop.wm.shell`
+name `io.elementary.wingpanel` and `io.elementary.dock`. The experimental
+session now stages separate systemd user services for these clients, ordered
+after compositor readiness and Wingpanel-before-Dock. A local ARM64 package
+build includes the new units, but they have not been installed or run in a live
+session. The
+desktop background is also missing; its provider/rendering path remains to be
+implemented. The installed five-minute rollback was exercised and returned
+LightDM to Gala.
+
 The session carries forward the installed Pantheon settings-daemon, keyring,
 Orca and elementary settings-daemon targets. It intentionally does not promise
 that those services or the compositor are fully compatible; this is an

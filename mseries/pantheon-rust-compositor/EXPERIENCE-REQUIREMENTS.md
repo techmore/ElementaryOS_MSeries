@@ -154,15 +154,17 @@ retains a window, and a later valid activation request restores it. Minimize /
 restore behavior remains runtime-unverified. It also
 implements the `org.gnome.Shell`
 accelerator registration and activation path: pressing the registered
-`Super+N` chord emits `AcceleratorActivated` in the nested run. Dock integration,
-physical media-key activation and M-series hardware remain unqualified; this
-is not full session or hardware qualification.
+`Super+N` chord emits `AcceleratorActivated` in the nested run. Dock integration
+and physical media-key activation remain unqualified. The first M1 Pro scanout
+passed in an isolated native login, but one scanout is not full session or
+hardware qualification.
 
 The compositor now implements Smithay's `ext-session-lock-v1` protocol and the
 observed `org.gnome.ScreenSaver` action interface. Lock requests suppress
 application rendering, clear active grabs, route input to the lock surface,
 and confirm the lock only after each mapped output presents a cleared frame.
-`Lock` starts a configured locker (default `gtklock`), but that package is not
-installed by this source tree and no locker has been connected. Authentication,
-runtime input/visual checks, native login and crash recovery remain open
-acceptance items.
+`Lock` starts a configured locker (default `gtklock`). The source tree does not
+install the locker; the experimental ARM64 package includes the Ubuntu
+`gtklock` dependency, but lock/unlock has not been exercised. Authentication,
+runtime input/visual checks, full native session behavior and crash recovery
+remain open acceptance items.

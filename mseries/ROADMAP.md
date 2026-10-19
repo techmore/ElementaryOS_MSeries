@@ -101,8 +101,9 @@ updates pointer focus and drives the compositor's existing move/resize grabs;
 xdg popup requests now install Smithay keyboard/pointer grabs for managed
 toplevel roots. Both features build locally; popup behavior has not been
 runtime-qualified. Autohide, blur, multi-output reflow, monitor mode
-application, Dock behavior, full session integration and M-series hardware
-remain unqualified. A public search found elementary's
+application, Dock behavior and full session integration remain unqualified.
+The first internal-panel native scanout is confirmed; external output, input,
+stability and comparative performance work remains. A public search found elementary's
 [Gala](https://github.com/elementary/gala) still based on libmutter, with no
 first-party Rust compositor to reuse. The WD22TB4 HDMI G3 DCP/kernel blocker
 remains a separate workstream. Read-only enumeration on the current M-series
