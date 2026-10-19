@@ -77,7 +77,7 @@ jobs:
           test -f "$RUNNER_TEMP/candidate-inspect/usr/lib/modprobe.d/$pkg-phram.conf"
       - name: Preserve resolved configuration on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: aurora-enhancement-diagnostics-${{ matrix.profile }}-${{ github.run_id }}
           path: |
@@ -86,7 +86,7 @@ jobs:
           retention-days: 7
           include-hidden-files: true
       - name: Preserve package, complete corresponding source and provenance
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: elementary-aurora-enhancements-${{ matrix.profile }}-${{ github.run_id }}
           path: ${{ runner.temp }}/aurora-enhancements/

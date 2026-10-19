@@ -1,5 +1,9 @@
 # J314S dock hotplug, desktop startup and old module cleanup — 2026-10-18
 
+Later [desktop startup repair](../../display-space/STARTUP-FIX-2026-10-18.md)
+addresses the panel sizing, stale-mode and disabled-dock readiness paths below.
+Fresh-login verification remains pending; dock/audio faults remain open.
+
 Follow-up to the [earlier boot archive and VRR result](2026-10-18-j314s-vrr-and-boot-archive.md).
 The owner reported that unplugging/replugging the dock appeared to make audio
 start, the native top bar was initially overstretched, and startup had large

@@ -1,5 +1,32 @@
 # J314S .20-enh1 next-boot trial — 2026-10-18
 
+## Current selection: diagnostic one-shot armed, no reboot performed
+
+The owner subsequently authorized exactly one diagnostic boot. Verified
+`next_entry=elementary-aurora20-enh1-diagnostic`; running kernel is still `.20`.
+GRUB consumes this selection before loading the kernel. If it hangs, retain the
+last messages, power off if unresponsive, and select
+**elementary OS (M-series full-height desktop)** at the next GRUB menu to use `.20`.
+[Arming receipt](../hardware-tests/2026-10-18-j314s-enh1-diagnostic-armed.json).
+Earlier staging/no-arming records below describe the prior state.
+
+
+## Latest result: owner-reported hung candidate boot
+
+The October 18 evening trial did not complete boot. The machine is back on
+`.20`, no candidate journal/pstore diagnosis was retained, and `next_entry` is
+empty. [Offline investigation and diagnostic preparation](../hardware-tests/2026-10-18-j314s-enh1-boot-hang.md)
+records what was checked and the separate uninstalled diagnostic initramfs.
+The diagnostic image is now staged separately as
+`/boot/initrd.img-7.1.12-elementary-aurora20-enh1-diagnostic`, with non-default
+manual entry `elementary-aurora20-enh1-diagnostic`. [Staging receipt](../hardware-tests/2026-10-18-j314s-enh1-diagnostic-staging.json)
+confirms that grubenv and original kernel/initramfs/boot payload hashes are
+unchanged. No test is armed and no reboot has been performed.
+The original staging and proposed test steps below are historical context; do not rearm
+or repeat the trial without a new explicit owner request. No candidate hardware
+boot qualification or driver fix is claimed.
+
+
 ## Additional display acceptance for this trial
 
 The owner subsequently enabled built-in VRR in the current desk profile on .20.

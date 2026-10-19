@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Screen Share
+Comment=Share a window with someone and approve who watches
+Exec=mseries-share-eyes
+Icon=mseries-share-eyes-symbolic
+Categories=Network;
+StartupNotify=false
+NoDisplay=false
+StartupWMClass=io.github.techmore.ShareEyes

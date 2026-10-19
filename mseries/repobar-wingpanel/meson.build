@@ -16,5 +16,25 @@ shared_module(
 
 install_data(
   'icons/github-symbolic.svg',
+  'icons/mseries-repobar-globe-symbolic.svg',
+  'icons/mseries-repobar-commit-symbolic.svg',
+  'icons/mseries-repobar-issue-symbolic.svg',
+  'icons/mseries-repobar-pull-symbolic.svg',
   install_dir: icon_theme_dir,
+)
+
+# Headless render probe (not installed): see probe/run-probe.sh.
+executable(
+  'render-probe',
+  'Indicator.vala', 'probe/render-probe.vala',
+  dependencies: [libwingpanel_dep, granite_dep, json_dep],
+  install: false,
+)
+
+# Native settings window, launched from the menu's dock; installed per user by mseries/deploy-repobar.sh.
+executable(
+  'mseries-repobar-settings',
+  'settings/SettingsApp.vala',
+  dependencies: [granite_dep, json_dep],
+  install: false,
 )

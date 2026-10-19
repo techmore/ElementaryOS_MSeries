@@ -82,6 +82,8 @@ jobs:
       - name: Install deps
         run: sudo apt-get update && sudo apt-get install just podman zstd bison flex device-tree-compiler mtools fdisk shellcheck -y
 
+      - name: Signal accent palette completeness
+        run: python3 mseries/test-signal-accent.py
       - name: Shell syntax check (M-series scripts)
         run: |
           set -e
@@ -128,9 +130,11 @@ jobs:
           bash -n mseries/check-codexbar-port.sh
           python3 mseries/test-codexbar-cache.py
           python3 mseries/test-codexbar-sessions.py
+          python3 mseries/test-codexbar-performance.py
           python3 mseries/test-codexbar-accounts.py
           python3 mseries/test-codexbar-claude.py
           python3 mseries/test-codexbar-claude-history.py
+          python3 mseries/test-codexbar-claude-handoff.py
           python3 mseries/test-codexbar-wrapper.py
           python3 mseries/test-codexbar-opencode-local.py
           python3 mseries/test-codexbar-opencode-login.py
@@ -187,7 +191,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Install offline test tools
-        run: sudo apt-get update && sudo apt-get install -y mtools fdisk shellcheck
+        run: sudo apt-get update && sudo apt-get install -y mtools fdisk shellcheck python3-libarchive-c keyutils
       - name: Validate hardware ports without target hardware
         run: |
           set -euo pipefail
@@ -202,3 +206,6 @@ jobs:
           python3 mseries/video-decode/test-youtube-launch.py
           python3 mseries/boot/test-prepare-uki-kernels.py
           python3 mseries/test-power-install.py
+          python3 mseries/test-omdrop-installer.py
+          python3 -m unittest discover -s mseries/omdrop-awdl/tests
+          python3 -m unittest discover -s mseries/omdrop/tests

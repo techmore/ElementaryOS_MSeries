@@ -12,7 +12,7 @@ esac
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 lib="$HOME/.local/lib/codexbar-cli"
 mkdir -p "$lib"
-for helper in codexbar_claude_history.py codexbar_cache.py codexbar_tokens.py codexbar-opencode-local.py codexbar-sessions.py codexbar-accounts.py codexbar-claude.py codexbar-opencode-login.py; do
+for helper in codexbar_claude_handoff.py codexbar_claude_history.py codexbar_cache.py codexbar-wingpanel-watch.py codexbar_history.py codexbar_tokens.py codexbar-opencode-local.py codexbar-sessions.py codexbar-accounts.py codexbar-claude.py codexbar-opencode-login.py; do
   install -m 0755 "$repo/mseries/$helper" "$lib/$helper"
 done
 install -m 0755 "$repo/mseries/codexbar-opencode-wrapper.py" "$HOME/.local/bin/codexbar.new"

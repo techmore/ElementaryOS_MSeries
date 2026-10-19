@@ -16,5 +16,11 @@ void main () {
     assert (s.tooltip () == "Sharing your screen · 1 person watching");
     s.parse ("{\"live\":true,\"viewers\":0,\"updated\":1000,\"port\":1}", now);
     assert (s.tooltip ().contains ("nobody"));
+    s.parse ("{\"live\":true,\"viewers\":0,\"updated\":1000,\"port\":1,\"public_url\":\"https://tm-remote.stoverparc.org\",\"lan_url\":\"http://192.168.1.5:8799\"}", now);
+    var b = s.link_bases ();
+    assert (b.length[0] == 2 && b[0, 0] == "Internet" && b[0, 1] == "https://tm-remote.stoverparc.org" && b[1, 0] == "Local network" && b[1, 1] == "http://192.168.1.5:8799");
+    s.parse ("{\"live\":true,\"viewers\":0,\"updated\":1000,\"port\":1,\"public_url\":\"http://192.168.1.5:8799\"}", now);
+    b = s.link_bases ();
+    assert (b.length[0] == 1 && b[0, 0] == "Local network" && b[0, 1] == "http://192.168.1.5:8799");
     print ("share-state: ok\n");
 }

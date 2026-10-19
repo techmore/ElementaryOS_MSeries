@@ -1,0 +1,62 @@
+diff --git a/src/ShellClients/ShellClientsManager.vala b/src/ShellClients/ShellClientsManager.vala
+index d244baf..d84249d 100644
+--- a/src/ShellClients/ShellClientsManager.vala
++++ b/src/ShellClients/ShellClientsManager.vala
+@@ -41,6 +41,8 @@ public class Gala.ShellClientsManager : Object, GestureTarget {
+     construct {
+         notifications_client = new NotificationsClient (wm.get_display ());
+ 
++        wm.get_display ().window_created.connect (watch_screenshot_shelf);
++
+         start_clients.begin ();
+ 
+         if (!Meta.Util.is_wayland_compositor ()) {
+@@ -53,6 +55,48 @@ public class Gala.ShellClientsManager : Object, GestureTarget {
+         Timeout.add_seconds_once (5, on_failsafe_timeout);
+     }
+ 
++    // The screenshot shelf is a plain Wayland window (so drag and drop to Wayland apps works) that cannot
++    // place itself: keep it in the bottom-right corner of the primary monitor, above other windows.
++    private const string SCREENSHOT_SHELF_APP_ID = "org.techmore.mseries.ScreenshotShelf";
++    private const int SCREENSHOT_SHELF_MARGIN = 24;
++
++    private void watch_screenshot_shelf (Meta.Window window) {
++        if (window.get_gtk_application_id () == SCREENSHOT_SHELF_APP_ID) {
++            adopt_screenshot_shelf (window);
++            return;
++        }
++
++        window.notify["gtk-application-id"].connect (() => {
++            if (window.get_gtk_application_id () == SCREENSHOT_SHELF_APP_ID) {
++                adopt_screenshot_shelf (window);
++            }
++        });
++    }
++
++    private void adopt_screenshot_shelf (Meta.Window window) {
++        if (window.get_data<bool> ("mseries-shelf")) {
++            return;
++        }
++        window.set_data<bool> ("mseries-shelf", true);
++
++        ManagedClient.make_dock (window);
++        window.stick ();
++        window.size_changed.connect (place_screenshot_shelf);
++        window.shown.connect (place_screenshot_shelf);
++        place_screenshot_shelf (window);
++    }
++
++    private void place_screenshot_shelf (Meta.Window window) {
++        var display = window.display;
++        var area = display.get_monitor_geometry (display.get_primary_monitor ());
++        var frame = window.get_frame_rect ();
++        var x = area.x + area.width - frame.width - SCREENSHOT_SHELF_MARGIN;
++        var y = area.y + area.height - frame.height - SCREENSHOT_SHELF_MARGIN;
++        if (frame.x != x || frame.y != y) {
++            window.move_frame (false, x, y);
++        }
++    }
++
+     private async void start_clients () {
+         // Prioritize user config over system
+         (unowned string)[] config_dirs = { Environment.get_user_config_dir () };

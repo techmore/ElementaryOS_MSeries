@@ -83,7 +83,10 @@ def locked(path: pathlib.Path, timeout: float = 10.0) -> Iterator[None]:
 def backoff_seconds(failures: int) -> int:
     if failures <= 0:
         return 0
-    return min(BASE_BACKOFF_SECONDS * 2 ** (failures - 1), MAX_BACKOFF_SECONDS)
+    # Clamp before exponentiation: a long-lived/corrupt failure counter must not
+    # allocate an enormous integer just to discard it at the one-hour limit.
+    exponent = min(failures - 1, (MAX_BACKOFF_SECONDS // BASE_BACKOFF_SECONDS).bit_length())
+    return min(BASE_BACKOFF_SECONDS * 2 ** exponent, MAX_BACKOFF_SECONDS)
 
 
 def is_fresh(entry: dict[str, Any] | None, ttl: float, now: float) -> bool:

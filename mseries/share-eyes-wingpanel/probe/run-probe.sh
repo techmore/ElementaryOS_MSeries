@@ -11,7 +11,7 @@ demo=$!
 cleanup() { kill -TERM "$demo" 2>/dev/null; wait "$demo" 2>/dev/null || true; rm -rf "$home" 2>/dev/null || true; }
 trap cleanup EXIT
 for _ in $(seq 1 120); do [ -s "$run/rupert-share/state.json" ] && break; sleep 0.5; done
-probe() { env -i PATH="$PATH" HOME="$home" XDG_RUNTIME_DIR="$run" XDG_DATA_DIRS="$home/share:/usr/share" LANG=C.UTF-8 \
+probe() { env -i PATH="$PATH" PROBE_W="${PROBE_W:-0}" HOME="$home" XDG_RUNTIME_DIR="$run" XDG_DATA_DIRS="$home/share:/usr/share" LANG=C.UTF-8 \
     GTK_THEME=io.elementary.stylesheet.blueberry GSK_RENDERER=cairo GDK_BACKEND=x11 \
     xvfb-run -a -s "-screen 0 500x700x24" "$build/render-probe" "$out/$1.png"; }
 probe idle
@@ -21,4 +21,10 @@ pass=$(python3 -I -c "import json,sys;print(json.load(open('$run/rupert-share/st
 jar="$home/jar"; curl -fs -c "$jar" "http://127.0.0.1:$port/auth/login" -H 'content-type: application/json' -d "{\"email\":\"$email\",\"password\":\"$pass\"}" >/dev/null
 tok=$(curl -fs -b "$jar" -H 'x-rupert-share: 1' -H 'content-type: application/json' -d '{}' "http://127.0.0.1:$port/api/v1/share/links" | python3 -I -c "import json,sys;print(json.load(sys.stdin)['token'])")
 probe with-link
-echo "tok=$tok" >"$home/tok"
+# go live with a waiting viewer, then admit it (the same calls the popover and owner page make)
+api() { curl -fs -b "$jar" -H 'x-rupert-share: 1' -H 'content-type: application/json' -d "${3:-{\}}" "http://127.0.0.1:$port/api/v1/share/$2"; }
+api x start >/dev/null
+vid=$(curl -fs -H "authorization: Bearer $tok" -X POST "http://127.0.0.1:$port/api/v1/share/view/join" | python3 -I -c "import json,sys;print(json.load(sys.stdin)['vid'])")
+probe waiting
+api x "viewers/$vid/admit" >/dev/null
+probe watching
