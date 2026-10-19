@@ -42,9 +42,10 @@ not evidence of compositor modesetting. Next implementation work is an opt-in
 native DRM path while keeping the nested backend available. The opt-in
 `native-drm` Smithay dependency feature now compiles locally after installing
 `libseat-dev`. The new non-invasive `pantheon-drm-probe` reports the Asahi
-renderer on card1/renderD128 and no EGL device for the Apple display controller
-on card2. Native session code must bridge rendering to KMS across these devices;
-no session startup is wired yet.
+renderer on card1/renderD128, with KMS resource queries unsupported there. Card2
+owns `eDP-1` and `DP-2`, while `HDMI-A-1` is disconnected; card2 has no EGL
+device. The native backend must bridge rendering to KMS across these devices;
+the read-only probe did not change modes. No session startup is wired yet.
 
 
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18

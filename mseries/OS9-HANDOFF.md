@@ -36,11 +36,14 @@ libinput/udev/libseat, EGL and multi-GPU dependencies. Installed `libseat-dev`
 `cargo build --features native-drm --bins` pass. The default Winit binary also
 builds. Added and ran `pantheon-drm-probe`, which only enumerates EGL devices.
 It identifies Asahi `/dev/dri/card1` plus `/dev/dri/renderD128` for rendering;
-the Apple display-controller `/dev/dri/card2` has no EGL device. Native startup
-will therefore need the multi-GPU import path across the renderer and KMS
-devices. No native session startup is wired or tested yet. Next: implement an
-opt-in DRM path with this split-device topology. The WD22TB4 HDMI G3 DCP/kernel
-issue remains separate. Scope and limits:
+read-only KMS queries there return `Operation not supported`. DRM card2 owns the
+connected `eDP-1` (3024×1964@120 Hz) and `DP-2` (up to 3840×2160@30 Hz); its
+`HDMI-A-1` connector is disconnected. Card2 has no EGL device, so native startup
+must bridge the renderer and display controller. The probe uses read-only file
+descriptors, does not acquire DRM master, and does not force-probe connectors or
+change modes. No native session startup is wired or tested yet. Next: implement
+an opt-in DRM path with this split-device topology. The WD22TB4 HDMI G3
+DCP/kernel issue remains separate. Scope and limits:
 `mseries/pantheon-rust-compositor/`.
 
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18

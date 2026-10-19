@@ -67,11 +67,15 @@ installing the host `libseat-dev` package; neither command initializes a native
 session.
 
 With `native-drm` enabled, `pantheon-drm-probe` safely enumerates EGL devices
-without opening a session or changing display modes. On the current M-series
-host it finds EGL/GBM rendering on `/dev/dri/card1` (`/dev/dri/renderD128`,
-Asahi), while the Apple display-controller `/dev/dri/card2` has no EGL device.
-The native backend therefore needs Smithay's explicit multi-GPU render/import
-path to connect the Asahi renderer to Apple KMS; single-node setup is not enough.
+without acquiring DRM master or changing display modes. On the current M-series
+host it finds EGL rendering on `/dev/dri/card1` (`/dev/dri/renderD128`, Asahi)
+but KMS resource queries there return `Operation not supported`. The Apple
+display-controller `/dev/dri/card2` owns KMS: `eDP-1` is connected at
+3024×1964@120 Hz and `DP-2` is connected with 3840×2160@30 Hz and 1920×1080@60
+Hz modes; `HDMI-A-1` is disconnected. Card2 has no EGL device. The native backend
+therefore needs Smithay's multi-GPU render/import path from Asahi to Apple KMS;
+single-node setup is not enough. This probe reads connector state and modes but
+does not force a connector reprobe or test modesetting.
 
 Relative pointer motion now updates Wayland pointer focus and dispatches motion
 through active compositor grabs; coordinates are clamped to the mapped output
