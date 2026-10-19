@@ -44,9 +44,9 @@ first-party Rust compositor to reuse. The WD22TB4 HDMI G3 DCP/kernel blocker
 remains a separate workstream. Read-only enumeration on the current M-series
 host found the Asahi GPU at `/dev/dri/card1`, Apple display controller at
 `/dev/dri/card2`, and connected `eDP-1`/`DP-2` outputs; this is device presence,
-not evidence of compositor modesetting. Next implementation work is an opt-in
-native DRM path while keeping the nested backend available. The opt-in
-`native-drm` Smithay dependency feature now compiles locally after installing
+not evidence of compositor modesetting. The opt-in native DRM path is
+implemented while keeping nested Winit as the default. The `native-drm`
+Smithay dependency feature now compiles locally after installing
 `libseat-dev`. The new non-invasive `pantheon-drm-probe` reports the Asahi
 renderer on card1/renderD128, with KMS resource queries unsupported there. Card2
 owns `eDP-1` and `DP-2`, while `HDMI-A-1` is disconnected; card2 has no EGL
@@ -68,9 +68,17 @@ connector modesetting.
 The compositor can now optionally send systemd `READY=1` after its Wayland
 listener and selected backend initialize (`--notify-systemd`). On native
 startup, readiness follows renderer and connected-output initialization. This
-provides a truthful readiness boundary for a future opt-in service; it does
-not add or install a session unit, and native runtime/session behavior remains
-unqualified.
+provides a truthful readiness boundary used by the repository-only opt-in
+service; it does not install or switch the host login session. Native
+runtime/session behavior remains unqualified.
+
+A separate `pantheon-rust-wayland` session payload now mirrors the installed
+GNOME session/systemd contract: a unique login entry, a compositor component
+hidden under systemd, a notify service with an explicit Wayland socket, and a
+session-target drop-in preserving the installed Pantheon support services.
+It is repository-only and has not been installed or runtime-qualified. The
+next gate is native-session qualification in an isolated login, including
+socket/environment handoff, ordinary apps, lock/logout and failure recovery.
 
 
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18

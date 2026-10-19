@@ -31,11 +31,16 @@ Native startup acquires the active libseat session and initializes a DRM/KMS
 output. It takes over the display device, so do not launch it inside the
 currently active desktop. It is not yet runtime-qualified on M-series hardware.
 
-For a future systemd user service, `--notify-systemd` sends `READY=1` to
+The experimental systemd user service uses `--notify-systemd` to send `READY=1` to
 `NOTIFY_SOCKET` after the Wayland listener and selected backend initialize. On
 the native path, that includes renderer and connected-output initialization.
 The flag fails startup if systemd did not provide the notification socket. No
 service unit or login-session entry is installed by the compositor build.
+The separate Pantheon login-session payload is maintained in
+[`../../mseries/pantheon-rust-compositor/session/`](../../mseries/pantheon-rust-compositor/session/README.md).
+Its `PANTHEON_WAYLAND_DISPLAY` environment override selects a fixed socket for
+the session service; without it the compositor chooses an available socket.
+The payload has not been installed or runtime-qualified.
 
 To exercise the Pantheon protocol against the nested socket, build both binaries
 and start the compositor with its probe client:

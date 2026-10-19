@@ -76,7 +76,11 @@ pub struct ManagedWindow {
 }
 
 impl PantheonCompositor {
-    pub fn new(event_loop: &mut EventLoop<Self>, display: Display<Self>, seat_name: &str) -> Self {
+    pub fn new(
+        event_loop: &mut EventLoop<Self>,
+        display: Display<Self>,
+        seat_name: &str,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
         let start_time = std::time::Instant::now();
 
         let dh = display.handle();
@@ -119,12 +123,12 @@ impl PantheonCompositor {
         let space = Space::default();
 
         // Setup a wayland socket that will be used to accept clients
-        let socket_name = Self::init_wayland_listener(display, event_loop);
+        let socket_name = Self::init_wayland_listener(display, event_loop)?;
 
         // Get the loop signal, used to stop the event loop
         let loop_signal = event_loop.get_signal();
 
-        Self {
+        Ok(Self {
             start_time,
             display_handle: dh,
 
@@ -153,7 +157,7 @@ impl PantheonCompositor {
             native_backend: None,
             #[cfg(feature = "native-drm")]
             native_redraw_sender: None,
-        }
+        })
     }
 
     #[cfg(feature = "native-drm")]
@@ -166,9 +170,16 @@ impl PantheonCompositor {
     fn init_wayland_listener(
         display: Display<PantheonCompositor>,
         event_loop: &mut EventLoop<Self>,
-    ) -> OsString {
-        // Creates a new listening socket, automatically choosing the next available `wayland` socket name.
-        let listening_socket = ListeningSocketSource::new_auto().unwrap();
+    ) -> Result<OsString, Box<dyn std::error::Error>> {
+        // A session service may request a stable name; nested development keeps automatic allocation.
+        let listening_socket = if let Some(name) = std::env::var_os("PANTHEON_WAYLAND_DISPLAY") {
+            let name = name
+                .to_str()
+                .ok_or("PANTHEON_WAYLAND_DISPLAY must be valid UTF-8")?;
+            ListeningSocketSource::with_name(name)?
+        } else {
+            ListeningSocketSource::new_auto()?
+        };
 
         // Get the name of the listening socket.
         // Clients will connect to this socket.
@@ -176,17 +187,15 @@ impl PantheonCompositor {
 
         let loop_handle = event_loop.handle();
 
-        loop_handle
-            .insert_source(listening_socket, move |client_stream, _, state| {
-                // Inside the callback, you should insert the client into the display.
-                //
-                // You may also associate some data with the client when inserting the client.
-                state
-                    .display_handle
-                    .insert_client(client_stream, Arc::new(ClientState::default()))
-                    .unwrap();
-            })
-            .expect("Failed to init the wayland event source.");
+        loop_handle.insert_source(listening_socket, move |client_stream, _, state| {
+            // Inside the callback, you should insert the client into the display.
+            //
+            // You may also associate some data with the client when inserting the client.
+            state
+                .display_handle
+                .insert_client(client_stream, Arc::new(ClientState::default()))
+                .unwrap();
+        })?;
 
         // You also need to add the display itself to the event loop, so that client events will be processed by wayland-server.
         loop_handle
@@ -202,7 +211,7 @@ impl PantheonCompositor {
             )
             .unwrap();
 
-        socket_name
+        Ok(socket_name)
     }
 
     pub fn surface_under(

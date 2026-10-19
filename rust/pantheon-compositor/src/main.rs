@@ -34,7 +34,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             {
                 return Err("nested backend requires an existing Wayland or X11 session".into());
             }
-            let mut state = PantheonCompositor::new(&mut event_loop, display, "winit");
+            let mut state = PantheonCompositor::new(&mut event_loop, display, "winit")?;
             crate::winit::init_winit(&mut event_loop, &mut state)?;
             state
         }
@@ -44,7 +44,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 use smithay::backend::session::{Session, libseat::LibSeatSession};
                 let (session, notifier) = LibSeatSession::new()?;
                 let seat_name = session.seat();
-                let mut state = PantheonCompositor::new(&mut event_loop, display, &seat_name);
+                let mut state = PantheonCompositor::new(&mut event_loop, display, &seat_name)?;
                 crate::native::NativeBackend::start(
                     &mut event_loop,
                     &mut state,

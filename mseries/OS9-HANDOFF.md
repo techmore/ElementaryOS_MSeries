@@ -41,8 +41,8 @@ connected `eDP-1` (3024×1964@120 Hz) and `DP-2` (up to 3840×2160@30 Hz); its
 `HDMI-A-1` connector is disconnected. Card2 has no EGL device, so native startup
 must bridge the renderer and display controller. The probe uses read-only file
 descriptors, does not acquire DRM master, and does not force-probe connectors or
-change modes. No native session startup is wired or tested yet. Next: implement
-an opt-in DRM path with this split-device topology. The WD22TB4 HDMI G3
+change modes. The opt-in native path now wires this split-device topology, but
+it has not been launched in a real session. The WD22TB4 HDMI G3
 DCP/kernel issue remains separate. Scope and limits:
 `mseries/pantheon-rust-compositor/`.
 
@@ -5490,7 +5490,8 @@ coordinates to reach secondary outputs. `rustfmt --edition 2024` on the changed
 file, `cargo check --bins`, and `cargo check --features native-drm --bins` pass
 on the M1 Pro build host. This is compile evidence only; no absolute-input
 device or multi-output runtime check was run. The pinned Smithay input and
-multi-GPU paths remain the next focus; native session startup is still absent.
+multi-GPU paths remain unqualified; opt-in native startup is now implemented,
+but has not been launched on the active desktop.
 
 ### Initial toplevel placement and focus — 2026-10-18
 
@@ -5516,7 +5517,19 @@ initialization. Missing notification socket or send errors fail startup when
 the flag is supplied. Updated the compositor README and roadmap. The active
 session, installed service units and login chooser were not changed. Default
 and `native-drm` `cargo build -p pantheon-compositor --bins` both pass locally;
-no runtime notification or native display check was performed. Next, design a
-distinct opt-in user service/session entry after validating the installed
-Pantheon session-manager startup contract. No native runtime qualification is
+no runtime notification or native display check was performed. Read-only
+inspection confirmed the installed `gnome-session@<session>.target` drop-in
+and systemd-hidden component pattern. Added a distinct
+`pantheon-rust-wayland` login entry, `.session`, compositor desktop component,
+notify service, target and session-target drop-in under
+`mseries/pantheon-rust-compositor/session/`. The service binds `wayland-0`,
+imports it into the user manager after compositor readiness, and clears it on
+stop. `PANTHEON_WAYLAND_DISPLAY` now lets the compositor bind a requested
+socket name; nested startup still allocates automatically. Staged
+`systemd-analyze --user verify` passes with one unrelated warning from the
+host's `spice-vdagent.service`. The desktop-file validator flags `DesktopNames`
+on the new entry, as it does on the installed Pantheon entry; that key is
+retained to match the local session convention. The payload is not installed;
+Gala and the active login chooser remain untouched. Next: qualify the native
+path only in a separate login environment. No native runtime qualification is
 claimed.

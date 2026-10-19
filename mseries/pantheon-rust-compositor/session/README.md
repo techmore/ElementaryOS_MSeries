@@ -1,0 +1,33 @@
+# Experimental Pantheon Rust Wayland session
+
+This tree contains an opt-in GNOME session definition for the Rust compositor.
+It uses the installed `gnome-session@SESSION.target` contract: GNOME hides the
+required compositor component from its own launcher, and a session target
+drop-in requires the dedicated compositor target. That target starts a
+`Type=notify` service and therefore waits for the compositor's `READY=1`
+notification before session initialization continues. This follows the
+[GNOME session systemd documentation](https://gnome.pages.gitlab.gnome.org/gnome-session/re01.html)
+and the matching Pantheon units installed on this machine.
+
+The session is named **Pantheon (Rust compositor, experimental)** and uses the
+separate `pantheon-rust-wayland` session ID. The existing
+`pantheon-wayland` entry and Gala units are not modified. The service binds
+`wayland-0`, publishes that value to the systemd user manager after readiness,
+and clears the manager value when it stops. `PANTHEON_WAYLAND_DISPLAY` selects
+the explicit socket; without that variable the nested development backend
+continues to allocate an automatic socket, and the native backend can also use
+automatic allocation for manual development launches.
+
+The directory layout mirrors install paths below `usr/`. A distro package can
+stage the payload under its package root and install it with the compositor
+binary at `/usr/bin/pantheon-compositor`. Do not add these files to
+the active host session until the native backend, login, app startup, lock,
+logout and recovery have been qualified on a separate session. Native DRM
+startup takes over the display device and has not been runtime-qualified on
+this machine.
+
+The session carries forward the installed Pantheon settings-daemon, keyring,
+Orca and elementary settings-daemon targets. It intentionally does not promise
+that those services or the compositor are fully compatible; this is an
+experimental selection for staged qualification, with Gala still available
+as rollback.

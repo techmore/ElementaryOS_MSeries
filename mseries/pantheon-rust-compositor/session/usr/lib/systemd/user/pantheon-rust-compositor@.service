@@ -1,0 +1,25 @@
+[Unit]
+Description=Pantheon Rust compositor (%I)
+OnFailure=gnome-session-shutdown.target
+OnFailureJobMode=replace-irreversibly
+CollectMode=inactive-or-failed
+RefuseManualStart=on
+RefuseManualStop=on
+
+After=gnome-session-manager.target
+Requisite=gnome-session-initialized.target
+PartOf=gnome-session-initialized.target
+Before=gnome-session-initialized.target
+ConditionEnvironment=XDG_SESSION_TYPE=%I
+
+[Service]
+Slice=session.slice
+Type=notify
+Environment=WAYLAND_DISPLAY=wayland-0
+Environment=PANTHEON_WAYLAND_DISPLAY=wayland-0
+ExecStart=/usr/bin/pantheon-compositor --backend native --notify-systemd
+ExecStartPost=/usr/bin/systemctl --user import-environment WAYLAND_DISPLAY
+ExecStopPost=-/usr/bin/systemctl --user unset-environment WAYLAND_DISPLAY
+Restart=no
+TimeoutStopSec=5
+OOMScoreAdjust=-1000
