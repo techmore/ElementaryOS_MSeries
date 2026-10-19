@@ -10,7 +10,7 @@ indicator_sources = files(
   'PanelPreferences.vala', 'RefreshPolicy.vala', 'QuotaEta.vala', 'Presentation.vala',
 )
 
-shared_module(
+libcodexbar = shared_module(
   'codexbar',
   indicator_sources,
   dependencies: [libwingpanel_dep, granite_dep, json_dep],
@@ -57,7 +57,7 @@ install_data(
   rename: 'mseries-codexbar-openai-symbolic.svg',
 )
 
-foreach provider : ['claude', 'opencode']
+foreach provider : ['claude', 'opencode', 'grok']
   install_data(
     'icons/@0@.svg'.format(provider),
     install_dir: join_paths(get_option('datadir'), 'icons', 'hicolor', 'scalable', 'apps'),
@@ -73,7 +73,7 @@ settings_model_test = executable(
 )
 test('settings-model', settings_model_test)
 
-executable(
+codexbar_settings = executable(
   'codexbar-settings',
   'settings/SettingsModel.vala',
   'settings/SettingsApp.vala',
@@ -132,6 +132,18 @@ endif
 if find_program('xvfb-run', required: false).found() and find_program('dbus-run-session', required: false).found()
   test('local-token-panel', find_program('bash'),
     args: [join_paths(meson.current_source_dir(), 'probe/run-token-probe.sh'), meson.current_build_dir()],
+    depends: render_probe, timeout: 30)
+endif
+
+# Guards against valac emitting a use-after-free for nested owned/unowned conditionals.
+python = find_program('python3')
+test('generated-c-temporaries', python,
+  args: [join_paths(meson.current_source_dir(), 'probe/check-generated-c.py'), meson.current_build_dir()],
+  depends: [libcodexbar, codexbar_settings], timeout: 30)
+
+if find_program('xvfb-run', required: false).found() and find_program('dbus-run-session', required: false).found()
+  test('grok-panel', find_program('bash'),
+    args: [join_paths(meson.current_source_dir(), 'probe/run-grok-probe.sh'), meson.current_build_dir()],
     depends: render_probe, timeout: 30)
 endif
 

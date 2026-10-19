@@ -4,7 +4,7 @@ set -euo pipefail
 [[ $(uname -m) == aarch64 ]] || { echo 'This installer requires ARM64' >&2; exit 1; }
 repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 source "$repo/mseries/lib-apt.sh"
-version=v0.77.0
+version=v0.78.0
 if [[ ${1:-} != --skip-system-deps ]]; then
   mseries_apt_refresh
   sudo apt-get install -y \
@@ -23,29 +23,22 @@ for component in CLI Desktop; do
   curl -fLsS "$base/$archive.sha256" -o "$archive.sha256"
   sha256sum -c "$archive.sha256"
 done
-mkdir -p "$HOME/.local/lib/codexbar-cli" "$HOME/.local/bin"
-install -m 0755 "$repo/mseries/codexbar-opencode-local.py" "$HOME/.local/lib/codexbar-cli/codexbar-opencode-local.py"
-install -m 0644 "$repo/mseries/codexbar_tokens.py" "$HOME/.local/lib/codexbar-cli/codexbar_tokens.py"
-install -m 0644 "$repo/mseries/codexbar_history.py" "$HOME/.local/lib/codexbar-cli/codexbar_history.py"
-install -m 0755 "$repo/mseries/codexbar-wingpanel-watch.py" "$HOME/.local/lib/codexbar-cli/codexbar-wingpanel-watch.py"
-install -m 0644 "$repo/mseries/codexbar_cache.py" "$HOME/.local/lib/codexbar-cli/codexbar_cache.py"
-install -m 0644 "$repo/mseries/codexbar_claude_history.py" "$HOME/.local/lib/codexbar-cli/codexbar_claude_history.py"
-install -m 0644 "$repo/mseries/codexbar_claude_handoff.py" "$HOME/.local/lib/codexbar-cli/codexbar_claude_handoff.py"
-install -m 0755 "$repo/mseries/codexbar-sessions.py" "$HOME/.local/lib/codexbar-cli/codexbar-sessions.py"
-install -m 0755 "$repo/mseries/codexbar-accounts.py" "$HOME/.local/lib/codexbar-cli/codexbar-accounts.py"
-install -m 0755 "$repo/mseries/codexbar-claude.py" "$HOME/.local/lib/codexbar-cli/codexbar-claude.py"
-install -m 0755 "$repo/mseries/codexbar-opencode-login.py" "$HOME/.local/lib/codexbar-cli/codexbar-opencode-login.py"
+source "$repo/mseries/lib-codexbar.sh"
+codexbar_install_helpers "$repo"
 tar -xzf "CodexBarCLI-${version}-linux-aarch64.tar.gz" -C "$HOME/.local/lib/codexbar-cli"
 mv -f "$HOME/.local/lib/codexbar-cli/codexbar" "$HOME/.local/lib/codexbar-cli/codexbar-upstream"
-# Replace atomically so the panel never finds ~/.local/bin/codexbar missing mid-install.
-install -m 0755 "$repo/mseries/codexbar-opencode-wrapper.py" "$HOME/.local/bin/codexbar.new"
-mv -f "$HOME/.local/bin/codexbar.new" "$HOME/.local/bin/codexbar"
+codexbar_install_wrapper "$repo"
 tar -xzf "CodexBarDesktop-${version}-linux-aarch64.tar.gz"
 cd "CodexBarDesktop-${version}-linux-aarch64"
 python3 Integrations/Linux/install.py --cli "$HOME/.local/bin/codexbar"
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/codexbar"
 config_file="$config_dir/linux.json"
-python3 - "$config_file" <<'PY'
+# Grok Build joins the panel only when its CLI is installed; upstream reads ~/.grok/auth.json and `grok agent stdio`.
+grok_installed=0
+if command -v grok >/dev/null || [[ -x "${GROK_HOME:-$HOME/.grok}/bin/grok" || -x "$HOME/.local/bin/grok" ]]; then
+  grok_installed=1
+fi
+python3 - "$config_file" "$grok_installed" <<'PY'
 import json
 import os
 import pathlib
@@ -53,6 +46,7 @@ import sys
 import tempfile
 
 path = pathlib.Path(sys.argv[1])
+grok_installed = sys.argv[2] == "1"
 path.parent.mkdir(parents=True, exist_ok=True)
 config = {}
 if path.exists():
@@ -74,10 +68,12 @@ if provider in {"codex", "both", "custom"}:
         order = ["codex", *[item for item in order if item != "codex"]]
     elif provider == "both":
         order = ["codex", "claude", *[item for item in order if item not in {"codex", "claude"}]]
-    config["providerOrder"] = list(dict.fromkeys([*order, "opencodego"]))
+    added = ["opencodego", *(["grok"] if grok_installed else [])]
+    config["providerOrder"] = list(dict.fromkeys([*order, *added]))
     config["provider"] = "custom"
 else:
-    print(f"Preserved CodexBar provider selection '{provider}'; add OpenCode Go in Settings → Providers.")
+    print(f"Preserved CodexBar provider selection '{provider}'; add OpenCode Go"
+          f"{' and Grok' if grok_installed else ''} in Settings → Providers.")
 
 if config.get("provider") == "custom":
     destination = path.resolve()

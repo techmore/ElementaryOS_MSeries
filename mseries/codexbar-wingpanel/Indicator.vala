@@ -728,11 +728,44 @@ namespace MSeries {
             }
         }
 
-        private void open_desktop_app (string provider, Gtk.Widget from) {
+        private static string? grok_binary () {
+            var found = Environment.find_program_in_path ("grok");
+            if (found != null) return found;
+            foreach (var relative in new string[] { ".grok/bin/grok", ".local/bin/grok" }) {
+                var candidate = GLib.Path.build_filename (Environment.get_home_dir (), relative);
+                if (FileUtils.test (candidate, FileTest.IS_EXECUTABLE)) return candidate;
+            }
+            return null;
+        }
+
+        /* Grok Build is a terminal program: its card opens it, and its sign-in runs `grok login`, in the
+         * default terminal (xdg-terminal-exec, installed with CodexBar). Null when either is missing. */
+        private static GLib.AppInfo? terminal_app_for (string provider, string[] arguments = {}) {
+            if (provider != "grok") return null;
+            var terminal = Environment.find_program_in_path ("xdg-terminal-exec");
+            var grok = grok_binary ();
+            if (terminal == null || grok == null) return null;
+            var command = new StringBuilder (Shell.quote (terminal));
+            command.append (" " + Shell.quote (grok));
+            foreach (var argument in arguments) command.append (" " + Shell.quote (argument));
+            try {
+                return GLib.AppInfo.create_from_commandline (command.str, "Grok Build", GLib.AppInfoCreateFlags.NONE);
+            } catch (Error e) {
+                return null;
+            }
+        }
+
+        private void open_desktop_app (string provider, Gtk.Widget from, string[] arguments = {}) {
             var id = desktop_id_for (provider);
-            var app = id != null ? new GLib.DesktopAppInfo (id) : null;
+            GLib.AppInfo? app = null;
+            if (id != null) {
+                app = new GLib.DesktopAppInfo (id);
+            } else {
+                app = terminal_app_for (provider, arguments);
+            }
             if (app == null) {
-                subtitle_label.set_text ("%s isn't installed as a desktop app".printf (provider_title (provider)));
+                subtitle_label.set_text (provider == "grok" ? "Grok Build or a terminal (xdg-terminal-exec) isn't installed"
+                    : "%s isn't installed as a desktop app".printf (provider_title (provider)));
                 return;
             }
             popdown_from (from);
@@ -744,7 +777,7 @@ namespace MSeries {
         }
 
         private void open_app_on_click (Gtk.Widget card, string provider) {
-            if (desktop_id_for (provider) == null) {
+            if (desktop_id_for (provider) == null && terminal_app_for (provider) == null) {
                 return;
             }
             var click = new Gtk.GestureClick () { button = 1 };
@@ -1066,7 +1099,9 @@ namespace MSeries {
         }
 
         private string weekly_tokens_digest () {
-            return local_week_tokens ("codex") + "|" + local_week_tokens ("claude") + "|" + local_week_tokens ("opencodego");
+            var digest = new StringBuilder ();
+            foreach (var provider in TOKEN_PROVIDERS) digest.append (local_week_tokens (provider) + "|");
+            return digest.str;
         }
 
         private void repaint_cached_quota () {
@@ -1176,8 +1211,13 @@ namespace MSeries {
             }
         }
 
+        /* Known providers first (Codex, Claude, OpenCode Go, Grok); anything else upstream reports follows. */
+        private const int LAST_PROVIDER_RANK = 4;
+        private const string[] TOKEN_PROVIDERS = { "codex", "claude", "opencodego", "grok" };
+
         private static int provider_rank (string provider) {
-            return provider == "codex" ? 0 : provider == "claude" ? 1 : provider == "opencodego" ? 2 : 3;
+            return provider == "codex" ? 0 : provider == "claude" ? 1 : provider == "opencodego" ? 2
+                : provider == "grok" ? 3 : LAST_PROVIDER_RANK;
         }
 
         private static string hint_id (string provider, Json.Object account) {
@@ -1419,7 +1459,7 @@ namespace MSeries {
                 }
             }
 
-            foreach (var provider in new string[] { "codex", "claude", "opencodego" }) {
+            foreach (var provider in TOKEN_PROVIDERS) {
                 var count = local_week_tokens (provider);
                 if (count.length > 0) tooltip.append ("\n\n%s · 7d: %s tokens".printf (provider_title (provider), count));
             }
@@ -1430,9 +1470,9 @@ namespace MSeries {
 
             var digest = new StringBuilder ();
             digest.append (hints_digest);
-            foreach (var provider in new string[] { "codex", "claude", "opencodego" })
+            foreach (var provider in TOKEN_PROVIDERS)
                 digest.append (local_week_tokens (provider) + "|");
-            foreach (var provider in new string[] { "codex", "claude", "opencodego" }) {
+            foreach (var provider in TOKEN_PROVIDERS) {
                 digest.append (alternate_account_text (provider, now_unix));
                 var windows = active_panel_windows (provider);
                 if (windows != null) digest.append (colored_account_quota (panel_display, windows, now_unix, true));
@@ -1445,7 +1485,7 @@ namespace MSeries {
             panel_digest = digest.str;
 
             clear (panel_segments);
-            for (int rank = 0; rank <= 3; rank++) {
+            for (int rank = 0; rank <= LAST_PROVIDER_RANK; rank++) {
                 for (int i = 0; i < providers.length; i++) {
                     if (provider_rank (providers[i]) != rank) continue;
                     if (panel_segments.get_first_child () != null) {
@@ -1518,20 +1558,25 @@ namespace MSeries {
                 (int) JsonBoundary.integer (window, "minutes")), JsonBoundary.number (window, "remaining", -1), quota_reset_tooltip (window));
         }
 
-        private void append_weekly_panel_quota (Gtk.Box heading, string provider) {
+        /* Returns whether the weekly value or its countdown was drawn in the heading. */
+        private bool append_weekly_panel_quota (Gtk.Box heading, string provider) {
             var windows = active_panel_windows (provider);
             for (uint i = 0; windows != null && i < windows.get_length (); i++) {
                 var window = windows.get_object_element (i);
                 if (JsonBoundary.integer (window, "minutes") != 10080) continue;
                 var remaining = JsonBoundary.number (window, "remaining", -1);
-                if (remaining < 0) return;
+                if (remaining < 0) return false;
                 var value = new Gtk.Label ("· 7D %0.0f%%".printf (remaining));
                 value.add_css_class ("seg-value");
                 var level = Presentation.level_for (remaining);
                 if (level == QuotaLevel.LOW) value.add_css_class ("level-low");
                 if (level == QuotaLevel.CRITICAL) value.add_css_class ("level-critical");
                 apply_quota_dot (value, "7D", remaining, quota_reset_tooltip (window));
-                if (display_preferences.get_bool ("showPercent")) heading.append (value);
+                var shown = false;
+                if (display_preferences.get_bool ("showPercent")) {
+                    heading.append (value);
+                    shown = true;
+                }
                 if (display_preferences.get_bool ("showReset") && !display_preferences.get_bool ("compactQuota")) {
                     var timestamp = new DateTime.from_iso8601 (JsonBoundary.text (window, "resetsAt"), null);
                     var countdown = timestamp != null
@@ -1541,17 +1586,19 @@ namespace MSeries {
                         var reset = new Gtk.Label (countdown);
                         reset.add_css_class ("seg-reset");
                         heading.append (reset);
+                        shown = true;
                     }
                 }
-                return;
+                return shown;
             }
+            return false;
         }
 
         private Gtk.Widget build_panel_segment (string provider, string value_text, string reset_text,
                                                        QuotaLevel level, bool stale) {
             var local_tokens = display_preferences.get_bool ("showTokens") ? local_week_tokens (provider) : "";
             var dot_mode = display_preferences.get_bool ("compactQuota");
-            var details_on_top = dot_mode || (provider == "codex" || provider == "claude") && (local_tokens.length > 0 ||
+            var details_on_top = dot_mode || (provider == "codex" || provider == "claude" || provider == "grok") && (local_tokens.length > 0 ||
                 ((display_preferences.get_bool ("showPercent") || display_preferences.get_bool ("showReset")) && active_panel_windows (provider) != null));
             var segment = new Gtk.Box (Gtk.Orientation.HORIZONTAL, provider == "opencodego" ? 2 : 3);
             if (provider == "opencodego") segment.add_css_class ("seg-opencode");
@@ -1563,6 +1610,7 @@ namespace MSeries {
                 icon.valign = Gtk.Align.CENTER;
             }
             var heading = details_on_top ? new Gtk.Box (Gtk.Orientation.HORIZONTAL, 3) : segment;
+            var weekly_shown = false;
             if (details_on_top && stale) heading.add_css_class ("stale");
             heading.append (mark);
             if (display_preferences.get_bool ("showHints")) heading.append (build_hint_badges (provider, true));
@@ -1573,22 +1621,25 @@ namespace MSeries {
                     tokens.tooltip_text = "Tokens processed in seven days";
                     heading.append (tokens);
                 }
-                if (!dot_mode) append_weekly_panel_quota (heading, provider);
+                if (!dot_mode) weekly_shown = append_weekly_panel_quota (heading, provider);
             }
             var value = new Gtk.Label (value_text) { valign = Gtk.Align.BASELINE_CENTER };
             value.add_css_class ("seg-value");
             if (level == QuotaLevel.LOW) value.add_css_class ("level-low");
             if (level == QuotaLevel.CRITICAL) value.add_css_class ("level-critical");
             apply_primary_quota_dot (value, provider);
+            // A provider whose binding window is its weekly one (Grok's credits) already shows it in the
+            // token heading; repeating the same value and countdown on the lower row adds nothing.
+            var weekly_in_heading = weekly_shown && value_text.has_prefix ("7D ");
             if (display_preferences.get_bool ("showPercent")) {
                 if (dot_mode) heading.append (value);
-                else segment.append (value);
+                else if (!weekly_in_heading) segment.append (value);
             } else {
                 if (level == QuotaLevel.LOW) mark.add_css_class ("level-low");
                 if (level == QuotaLevel.CRITICAL) mark.add_css_class ("level-critical");
             }
             if (dot_mode && !value.get_text ().has_prefix ("7D ")) append_weekly_panel_quota (heading, provider);
-            if (display_preferences.get_bool ("showReset") && !dot_mode && reset_text.length > 0) {
+            if (display_preferences.get_bool ("showReset") && !dot_mode && reset_text.length > 0 && !weekly_in_heading) {
                 var reset = new Gtk.Label (reset_text) { valign = Gtk.Align.BASELINE_CENTER };
                 reset.add_css_class ("seg-reset");
                 segment.append (reset);
@@ -1676,7 +1727,8 @@ namespace MSeries {
         private static string provider_title (string provider) {
             return provider == "codex" ? "OpenAI Codex" :
                 provider == "claude" ? "Claude" :
-                provider == "opencodego" ? "OpenCode Go" : provider;
+                provider == "opencodego" ? "OpenCode Go" :
+                provider == "grok" ? "Grok" : provider;
         }
 
         private void render_quota (Json.Array entries, int64 now_unix) {
@@ -1688,7 +1740,7 @@ namespace MSeries {
                 has_claude = has_claude || JsonBoundary.text (entries.get_object_element (i), "provider", "").down () == "claude";
             }
             // Match the panel order, including Claude's locally supplied accounts card.
-            for (int rank = 0; rank <= 3; rank++) {
+            for (int rank = 0; rank <= LAST_PROVIDER_RANK; rank++) {
                 if (rank == provider_rank ("claude") && !has_claude && claude_data != null) {
                     quota_box.append (build_claude_card (now_unix));
                 }
@@ -1773,6 +1825,9 @@ namespace MSeries {
             if (provider == "codex") {
                 card.append (build_codex_accounts ());
             }
+            if (provider == "grok") {
+                append_detail_rows (card, entry);
+            }
             if (provider == "opencodego") {
                 for (uint i = 0; opencode_accounts != null && i < opencode_accounts.get_length (); i++) {
                     var account = opencode_accounts.get_object_element (i);
@@ -1807,18 +1862,25 @@ namespace MSeries {
                             JsonBoundary.integer (period, "tokens", 0))));
                     }
                     card.append (subtle_label ("Sign in to OpenCode or connect a Go API key to load account quota."));
+                } else if (provider == "grok") {
+                    card.append (subtle_label ("No Grok credits reported. If you are signed out, run grok login. Local activity is under Sessions."));
                 } else {
                     card.append (subtle_label (provider == "opencodego"
                         ? "Sign in to OpenCode or connect a Go API key. Local activity is under Sessions."
                         : error.length > 0 ? error : "No usage reported yet."));
                 }
-                var settings = new Gtk.Button.with_label (provider == "opencodego" ? "Sign in…" : "Open Settings…") {
+                // Grok signs in with its own CLI; without a terminal launcher, Settings remains the fallback.
+                var grok_login = provider == "grok" && terminal_app_for ("grok", { "login" }) != null;
+                var settings = new Gtk.Button.with_label (provider == "opencodego" || grok_login ? "Sign in…" : "Open Settings…") {
                     halign = Gtk.Align.START
                 };
+                if (grok_login) settings.tooltip_text = "Open grok login in a terminal, then refresh CodexBar";
                 settings.clicked.connect (() => {
                     popdown_from (settings);
                     if (provider == "opencodego") {
                         add_opencode_account ();
+                    } else if (grok_login) {
+                        open_desktop_app ("grok", settings, { "login" });
                     } else {
                         run_action ("--settings");
                     }
@@ -1826,6 +1888,34 @@ namespace MSeries {
                 card.append (settings);
             }
             return card;
+        }
+
+        /* Upstream's informational detail sections (Grok: "Usage breakdown" product shares and
+         * "Limit Reset Credits"), shown as compact text lines. Every collection is type-checked here
+         * because the boundary validator treats these keys as forward-compatible unknowns. */
+        private void append_detail_rows (Gtk.Box card, Json.Object entry) {
+            var sections = JsonBoundary.array (entry, "details");
+            for (uint i = 0; sections != null && i < sections.get_length () && i < 4; i++) {
+                var section_node = sections.get_element (i);
+                if (section_node.get_node_type () != Json.NodeType.OBJECT) continue;
+                var section = section_node.get_object ();
+                var rows = JsonBoundary.array (section, "rows");
+                var parts = new StringBuilder ();
+                for (uint r = 0; rows != null && r < rows.get_length () && r < 8; r++) {
+                    var row_node = rows.get_element (r);
+                    if (row_node.get_node_type () != Json.NodeType.OBJECT) continue;
+                    var row = row_node.get_object ();
+                    var label = JsonBoundary.text (row, "label").strip ();
+                    var value = JsonBoundary.text (row, "value").strip ();
+                    if (label.length == 0 && value.length == 0) continue;
+                    if (parts.len > 0) parts.append (" · ");
+                    parts.append (label.length > 0 && value.length > 0 ? label + " " + value : label + value);
+                }
+                if (parts.len == 0) continue;
+                var title = JsonBoundary.text (section, "title").strip ();
+                var line = subtle_label (title.length > 0 ? title + " · " + parts.str : parts.str);
+                card.append (line);
+            }
         }
 
         private string opencode_week_tokens () {
@@ -1858,7 +1948,8 @@ namespace MSeries {
         private static Gtk.Widget build_provider_mark (string provider, string title_text) {
             var icon_name = provider == "codex" ? "mseries-codexbar-openai-symbolic" :
                 provider == "claude" ? "mseries-codexbar-claude-symbolic" :
-                provider == "opencodego" ? "mseries-codexbar-opencode-symbolic" : "";
+                provider == "opencodego" ? "mseries-codexbar-opencode-symbolic" :
+                provider == "grok" ? "mseries-codexbar-grok-symbolic" : "";
             if (icon_name.length == 0 || !Gtk.IconTheme.get_for_display (Gdk.Display.get_default ()).has_icon (icon_name)) {
                 var text = new Gtk.Label (title_text) { xalign = 0 };
                 text.add_css_class ("provider-title");
@@ -2018,6 +2109,13 @@ namespace MSeries {
             if (email.length == 0 && provider == "opencodego" && opencode_local != null) {
                 email = JsonBoundary.text (opencode_local, "accountEmail", "");
             }
+            if (email.length == 0 && provider == "grok") {
+                // codexbar-sessions.py reports only the email from Grok's own sign-in file.
+                for (uint i = 0; local_sessions != null && i < local_sessions.get_length (); i++) {
+                    var session = local_sessions.get_object_element (i);
+                    if (JsonBoundary.text (session, "id") == "grok") email = JsonBoundary.text (session, "accountEmail", "");
+                }
+            }
             if (email.length == 0 && provider == "opencodego") {
                 for (uint i = 0; opencode_accounts != null && i < opencode_accounts.get_length (); i++) {
                     var account = opencode_accounts.get_object_element (i);
@@ -2075,9 +2173,13 @@ namespace MSeries {
 
             // The forecast only gets its own line when it is a warning; otherwise the reset sits inline.
             if (!known || eta.state == EtaState.EXHAUSTED || eta.state == EtaState.DEPLETING) {
-                var caption_text = !known ? "Usage not reported yet"
-                    : display_preferences.get_bool ("showReset") ? Presentation.window_caption (reset, eta.state, eta.detail)
-                    : eta.state == EtaState.EXHAUSTED ? "Limit reached" : eta.detail;
+                // Explicit owned string; see Presentation.account_quota for the nested-ternary valac defect.
+                string caption_text = "Usage not reported yet";
+                if (known) {
+                    caption_text = display_preferences.get_bool ("showReset")
+                        ? Presentation.window_caption (reset, eta.state, eta.detail)
+                        : eta.state == EtaState.EXHAUSTED ? "Limit reached" : eta.detail;
+                }
                 var caption = new Gtk.Label (caption_text) { xalign = 0, wrap = true, margin_start = 40 };
                 caption.add_css_class ("caption");
                 caption.add_css_class (eta.state == EtaState.EXHAUSTED ? "text-critical" :

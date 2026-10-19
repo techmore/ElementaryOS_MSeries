@@ -1,5 +1,14 @@
 # Roadmap, features and follow-ups (MacBook Pro 14" M1 Pro, elementary OS 9 on Asahi)
 
+## CodexBar: Grok Build, upstream v0.78.0 and native CI — 2026-10-19
+
+Done on `claude/codexbar-grok-production`: Grok Build card and local tokens; upstream pin v0.78.0
+(restores Grok CLI billing); two use-after-free strings in the panel fixed with a generated-C guard;
+one shared helper list for installers/deploy/image; native module and Xvfb probes in CI.
+Follow-ups: live Grok usage check on the owner's account after install; first CI run of the
+`codexbar-wingpanel` job on `ubuntu-26.04-arm`; incremental transcript offsets and `Indicator.vala`
+card extraction remain from the [performance audit](CODEXBAR-PERFORMANCE-AUDIT-2026-10-18.md#next-measured-work).
+
 ## Release stages: F5 parity first, support assistants after — 2026-10-18
 
 Owner's order:
