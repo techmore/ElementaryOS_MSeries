@@ -56,10 +56,13 @@ cargo run -p pantheon-compositor -- --run target/debug/pantheon-shell-probe
 ```
 
 The probe binds the shell and panel v2 interfaces, creates a Wayland surface,
-and sends `get_panel`, anchor, size, hide-mode, and offset requests. It has
-passed under Xvfb with Mesa llvmpipe. It does not attach a buffer or xdg role, so
-it validates protocol dispatch rather than panel rendering or Wingpanel/Dock
-integration.
+and sends `get_panel`, anchor, size, hide-mode, and offset requests. An earlier
+run passed under Xvfb with Mesa llvmpipe, but the latest isolated rerun hangs
+waiting for the initial registry roundtrip: the client connects, while the
+compositor does not accept the queued socket connection. Treat nested protocol
+dispatch as unqualified until this is resolved. Even a passing probe does not
+attach a buffer or xdg role, so it validates protocol dispatch rather than
+panel rendering or Wingpanel/Dock integration.
 
 ## Current limits
 

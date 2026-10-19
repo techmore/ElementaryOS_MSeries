@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{cell::RefCell, rc::Rc, time::Duration};
 
 use smithay::{
     backend::{
@@ -6,7 +6,7 @@ use smithay::{
         winit::{self, WinitEvent},
     },
     output::{Mode, Output, PhysicalProperties, Subpixel},
-    reexports::calloop::EventLoop,
+    reexports::calloop::{EventLoop, channel},
     utils::{Rectangle, Transform},
 };
 
@@ -20,10 +20,11 @@ pub fn init_winit(
     event_loop: &mut EventLoop<PantheonCompositor>,
     state: &mut PantheonCompositor,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let (mut backend, winit) = winit::init()?;
+    let (backend, winit) = winit::init()?;
+    let backend = Rc::new(RefCell::new(backend));
 
     let mode = Mode {
-        size: backend.window_size(),
+        size: backend.borrow().window_size(),
         refresh: 60_000,
     };
 
@@ -86,9 +87,11 @@ pub fn init_winit(
 
     let mut damage_tracker = OutputDamageTracker::from_output(&output);
 
+    let event_backend = backend.clone();
     event_loop
         .handle()
         .insert_source(winit, move |event, _, state| {
+            let mut backend = event_backend.borrow_mut();
             match event {
                 WinitEvent::Resized { size, .. } => {
                     let mode = Mode {
@@ -125,8 +128,12 @@ pub fn init_winit(
                         enabled: true,
                     });
                 }
-                WinitEvent::Input(event) => state.process_input_event(event),
+                WinitEvent::Input(event) => {
+                    state.process_input_event(event);
+                    backend.window().request_redraw();
+                }
                 WinitEvent::Redraw => {
+                    tracing::trace!("rendering nested compositor frame");
                     state.update_fractional_scale_preferences();
                     let size = backend.window_size();
                     let damage = Rectangle::from_size(size);
@@ -184,9 +191,6 @@ pub fn init_winit(
                     state.space.refresh();
                     state.popups.cleanup();
                     let _ = state.display_handle.flush_clients();
-
-                    // Ask for redraw to schedule new frame.
-                    backend.window().request_redraw();
                 }
                 WinitEvent::CloseRequested => {
                     state.loop_signal.stop();
@@ -194,6 +198,18 @@ pub fn init_winit(
                 _ => (),
             };
         })?;
+
+    let (redraw_sender, redraw_receiver) = channel::channel();
+    state.winit_redraw_sender = Some(redraw_sender);
+    let redraw_backend = backend.clone();
+    event_loop
+        .handle()
+        .insert_source(redraw_receiver, move |event, _, _state| {
+            if matches!(event, channel::Event::Msg(())) {
+                redraw_backend.borrow().window().request_redraw();
+            }
+        })?;
+    backend.borrow().window().request_redraw();
 
     Ok(())
 }

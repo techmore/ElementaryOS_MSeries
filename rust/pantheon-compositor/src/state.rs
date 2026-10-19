@@ -133,6 +133,7 @@ pub struct PantheonCompositor {
     pub default_cursor: MemoryRenderBuffer,
 
     pub seat: Seat<Self>,
+    pub winit_redraw_sender: Option<channel::Sender<()>>,
     #[cfg(feature = "native-drm")]
     pub native_backend: Option<NativeBackend>,
     #[cfg(feature = "native-drm")]
@@ -290,6 +291,7 @@ impl PantheonCompositor {
             .handle()
             .insert_source(osd_redraw_receiver, |event, _, _state| {
                 if matches!(event, channel::Event::Msg(())) {
+                    _state.request_winit_redraw();
                     #[cfg(feature = "native-drm")]
                     _state.request_native_redraw();
                 }
@@ -355,6 +357,7 @@ impl PantheonCompositor {
             cursor_status: CursorImageStatus::default_named(),
             default_cursor: default_cursor_buffer(),
             seat,
+            winit_redraw_sender: None,
             #[cfg(feature = "native-drm")]
             native_backend: None,
             #[cfg(feature = "native-drm")]
@@ -365,6 +368,12 @@ impl PantheonCompositor {
     pub fn request_native_redraw(&self) {
         #[cfg(feature = "native-drm")]
         if let Some(sender) = &self.native_redraw_sender {
+            let _ = sender.send(());
+        }
+    }
+
+    pub fn request_winit_redraw(&self) {
+        if let Some(sender) = &self.winit_redraw_sender {
             let _ = sender.send(());
         }
     }

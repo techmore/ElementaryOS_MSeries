@@ -45,6 +45,7 @@ impl CompositorHandler for PantheonCompositor {
         xdg_shell::handle_commit(self, surface);
         pantheon_shell::handle_surface_commit(self, surface);
         resize_grab::handle_commit(&mut self.space, surface);
+        self.request_winit_redraw();
         #[cfg(feature = "native-drm")]
         self.request_native_redraw();
     }
