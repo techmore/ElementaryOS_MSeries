@@ -164,7 +164,10 @@ accepted by Apple KMS and omit AB30. This qualifies cross-device import and
 framebuffer registration at the preferred panel size. It does not prove plane
 acceptance, atomic modesetting, or visible scanout. The probe does not acquire
 DRM master, attach a framebuffer to a plane, force a connector reprobe, or
-change modes.
+change modes. A follow-up read-only plane query found AR30, AB24 and AR24 in
+the advertised format lists of all three Apple KMS planes; the query returned
+no current CRTC or framebuffer assignment. This confirms format advertisement
+only, not plane routing or acceptance by a real modeset.
 
 Relative pointer motion now updates Wayland pointer focus and dispatches motion
 through active compositor grabs; coordinates are clamped to the mapped output

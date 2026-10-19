@@ -114,7 +114,9 @@ AB30 with `EINVAL`; it accepted AR30, AB24 and AR24. Each unassigned test
 framebuffer was immediately removed. Native output formats now omit AB30 and
 prefer the three accepted formats. The probe did not acquire DRM master, attach
 a framebuffer to a plane, modeset, or change output state. This establishes
-cross-device import and KMS framebuffer registration only; atomic modesetting,
+cross-device import and KMS framebuffer registration. All three DRM plane
+objects also advertise AR30, AB24 and AR24, though the non-master query reports
+no current CRTC/framebuffer assignment. Plane routing, atomic modesetting,
 visible scanout and failure handling remain first-session requirements for
 this M1 Pro, not optional general multi-GPU support. The executable now keeps nested Winit as
 its default and provides an explicit `--backend native` path behind

@@ -11,10 +11,13 @@ preferred panel size and imported AB30, AR30, AB24 and AR24 into Apple GBM using
 the implicit modifier. Apple KMS rejected AB30 with `EINVAL`, but accepted
 AR30, AB24 and AR24 as `ADDFB2` framebuffers; each was immediately removed
 without plane attachment. Native output format selection now omits AB30 and
-prefers the three formats that passed. The probe did not acquire DRM master,
-modeset, or change output state. Gala stayed active. This qualifies buffer
-import and framebuffer registration, not plane acceptance, visible scanout or
-an interactive native session. The next display gate requires an isolated
+prefers the three formats that passed. A read-only query also found AR30,
+AB24 and AR24 in each of the three Apple plane format lists; none reported a
+current CRTC or framebuffer assignment to this non-master client. The probe
+did not acquire DRM master, attach a framebuffer to a plane, modeset, or change
+output state. Gala stayed active. This qualifies buffer import, framebuffer
+registration and advertised plane formats, not plane routing, visible scanout
+or an interactive native session. The next display gate requires an isolated
 session to attempt its first real modeset, with a tested return path.
 
 The release probe rebuilt successfully in 0.85 seconds locally, and the

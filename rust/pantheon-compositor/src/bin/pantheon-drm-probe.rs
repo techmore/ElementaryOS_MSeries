@@ -159,9 +159,65 @@ fn inspect_kms_connectors(
                 Err(error) => println!("  connector {:?}: {error}", handle),
             }
         }
+
+        let is_render_device = render_path.is_some_and(|render_path| {
+            smithay::backend::drm::DrmNode::from_path(render_path)
+                .ok()
+                .zip(smithay::backend::drm::DrmNode::from_path(&path).ok())
+                .is_some_and(|(render, kms)| render.dev_id() == kms.dev_id())
+        });
+        if !is_render_device {
+            inspect_kms_planes(&device);
+        }
     }
 
     Ok(connected_kms)
+}
+
+/// Read advertised plane formats from the KMS device. This does not change
+/// plane state or attach a framebuffer.
+fn inspect_kms_planes(device: &DrmDeviceFile) {
+    use smithay::reexports::drm::control::Device as _;
+
+    let plane_handles = match device.plane_handles() {
+        Ok(planes) => planes,
+        Err(error) => {
+            println!("  cannot query KMS planes: {error}");
+            return;
+        }
+    };
+
+    println!("  KMS planes:");
+    for handle in plane_handles {
+        let plane = match device.get_plane(handle) {
+            Ok(plane) => plane,
+            Err(error) => {
+                println!("    {handle:?}: {error}");
+                continue;
+            }
+        };
+        let supported = [
+            (Fourcc::Argb2101010, "AR30"),
+            (Fourcc::Abgr8888, "AB24"),
+            (Fourcc::Argb8888, "AR24"),
+            (Fourcc::Abgr2101010, "AB30"),
+        ]
+        .into_iter()
+        .filter_map(|(format, name)| {
+            plane
+                .formats()
+                .contains(&(format as u32))
+                .then_some(name)
+        })
+        .collect::<Vec<_>>();
+        println!(
+            "    {handle:?}: crtc={:?} framebuffer={:?}, tested formats advertised={:?} ({} total formats)",
+            plane.crtc(),
+            plane.framebuffer(),
+            supported,
+            plane.formats().len()
+        );
+    }
 }
 
 /// Check whether the render GPU can allocate a scanout-capable DMA-BUF that
