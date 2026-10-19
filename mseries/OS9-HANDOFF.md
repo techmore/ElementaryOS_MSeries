@@ -1,5 +1,44 @@
 # OS 9 implementation / Claude Code handoff
 
+## Homeboard Tasks sync: production hardening — 2026-10-19
+
+Branch `claude/homeboard-production` (from `dev`).
+
+Bridge (`techmore/homeboard`): [#9](https://github.com/techmore/homeboard/pull/9)
+merged as `eae570c`, [#10](https://github.com/techmore/homeboard/pull/10) merged as
+`5a7feb9` (the installer pin).
+A locked keyring now times out after 20 s with a clear status (it could stall every
+sync before); routine syncs back off 2/4/8 … max 15 min after failures; malformed
+remote text is emptied/trimmed instead of failing every sync; the first sync after a
+new Homeboard list is created waits for the calendar factory to see it (this was the
+unexplained 1-in-20 test error from the first round, now reproduced and fixed: 5/5
+clean runs after). The session restarts the bridge if it exits, D-Bus activation
+starts it on demand, `install.sh` records `VERSION`, replaces a running bridge of
+another revision (`app.quit`, with a fallback for bridges without it) and supports
+`--uninstall`. Journal logs carry counts and failures only. New Homeboard CI
+(`elementary-bridge.yml`): unit tests, server guard, EDS round trip, installer
+lifecycle — passing on GitHub's runner. #10 fixes two gaps found during the live
+upgrade: installer-started bridges logged to /dev/null, and an old `sync.lock` stayed
+0664.
+
+Calendar (`mseries/patches/datetime-agenda-tabs.patch`): the Homeboard strip uses
+D-Bus activation (the direct launch remains for older bridges), icon buttons have
+accessible names, `HomeboardStatus.vala` is in `po/POTFILES`. New CI job
+**Calendar Events/Tasks/Homeboard agenda** builds the pinned indicator with the patch
+on arm64 Ubuntu and runs all 27 groups (`mseries/calendar/ci-test-agenda.sh`; 27/27
+locally, 27/27 on GitHub's runner). The runner needs Ubuntu's Granite, AccountsService
+and elementary's `io.elementary.pantheon.AccountsService.xml` (pinned
+`elementary/default-settings` `915d1a0`, identical to this desktop's copy): the clock
+reads its `TimeFormat`, and the fixture treats any GTK critical as fatal.
+
+`mseries/install-homeboard-sync.sh` is now a pinned wrapper around the bridge's own
+installer (start, upgrade, `--uninstall`). Run live: the running bridge was replaced
+by `eae570c` (new PID, `quit` action, D-Bus service file, AutoRestart present), then
+upgraded to `5a7feb9`.
+
+Not verified: a live round trip with the server — the owner is still signed out.
+Next: owner signs in from the Tasks tab, then check both directions.
+
 ## CodexBar v0.78.0 deployed; CLI blocked by libxml2 soname — 2026-10-19
 
 PR #271 (production hardening: the valac nested-ternary use-after-free behind the
