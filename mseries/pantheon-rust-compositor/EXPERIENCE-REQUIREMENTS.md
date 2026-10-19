@@ -122,11 +122,12 @@ work-area reservations are released while hidden and restored while visible,
 with managed windows reconfigured on transitions. Hiding currently moves the
 panel immediately without an animation. The active host Dock setting is
 `overlapping-window`. In an isolated Xvfb session, the stock Dock rendered at
-the bottom; with its private-profile `overlapping-focused` mode, a maximized
-focused GTK window hid it, bottom-edge pointer motion revealed it over that
-window, and closing the window restored it. The host's saved hide mode and
-native behavior remain unqualified. The existing local wrapper is held at
-`sleep infinity` by the user's disabled marker; the test invoked
+the bottom. Hide/reveal passed in two private profiles: `overlapping-focused`
+and `overlapping-window` (matching the host's saved value). With a maximized
+GTK window, the Dock hid; bottom-edge pointer motion revealed it over that
+window; closing the window restored it. This validates the behavior in nested
+Winit, not on native DRM. The existing local wrapper is held at
+`sleep infinity` by the user's disabled marker; each test invoked
 `/usr/bin/io.elementary.dock` directly without changing that marker. The
 compositor updates already-maximized windows when work areas change.
 The last local `cargo check`
