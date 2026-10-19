@@ -34,13 +34,18 @@ installation. The wheel is `0.32.4.dev202610191211+61495cb`, while omarchy-mlx's
 lock labels its pinned MLX archive 0.32.3; the hash-verified archive's
 `mlx/version.h` says 0.32.4. Resolve/document this mismatch before any bump.
 
-The pinned 4B model download is now underway in the normal HF cache, still
-incomplete at the last check. No model generation has run and no service was
-started or stopped. The detailed plan records the A/B gates and quiet window:
-`mseries/local-ai/OMARCHY-MLX-MODEL-AB-PLAN-2026-10-19.md`. Next: finish the
-download and verify pinned files, then check baseline service readiness and
-wait for the agreed quiet window before generation. Do not interrupt the
-owner's desktop outside that window.
+The pinned 4B model download is complete in the normal HF cache and verified
+against the catalog hashes. A separate diagnostics
+wheel proves a synthetic 8192-element float32 Sum dispatches `ReduceRowF32`
+on G13S; this does not prove the 4B model reaches it. At the latest machine
+sample, 12.26 GiB was available, below the 12.5 GiB admission needed for the
+6.5 GiB model plus 6 GiB desktop reserve. No model generation has run and no
+service was started or stopped; everyday remains failed from its earlier
+missing-weights launch. Detailed A/B gates are in
+`mseries/local-ai/OMARCHY-MLX-MODEL-AB-PLAN-2026-10-19.md`. Next: wait until
+memory admission passes, verify baseline service readiness, and run the model
+comparison only in the planned quiet window. Do not force admission or
+interrupt the owner's desktop.
 
 ## apt upgrade of 25 elementary daily packages — 2026-10-19 (Claude Code)
 
