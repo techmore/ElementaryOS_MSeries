@@ -182,3 +182,10 @@ expected approval URL in a live begin/cancel smoke test with saved IDs preserved
 second-account authorization still requires owner browser approval. Account activation was checked with OpenCode v2.0.32,
 including a live same-account saved-session round trip with the original selection restored.
 [Official account commands](https://dev.opencode.ai/v2/docs/cli/commands/) document the activation API.
+
+## Panel bar font size
+
+The text shown in the Wingpanel bar is styled in `install_style` in `codexbar-wingpanel/Indicator.vala`
+(`.mseries-codexbar-bar` rules). It was shrunk on 2026-10-19 because it rendered too large next to the other
+indicators: main label 8.5pt -> 7.5pt, `.seg-reset` and `.seg-secondary` 7.5pt -> 6.5pt. The popover text
+(`.mseries-codexbar`, 9pt) is unchanged. To resize again, edit those values and run `bash mseries/deploy-codexbar.sh`.

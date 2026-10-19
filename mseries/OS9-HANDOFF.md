@@ -1,5 +1,13 @@
 # OS 9 implementation / Claude Code handoff
 
+## CodexBar panel font shrink — 2026-10-19 (Claude Code)
+
+Owner reported the CodexBar bar text was too large (it may also have made the Applications menu hard to
+open). Changed `.mseries-codexbar-bar` sizes in `codexbar-wingpanel/Indicator.vala`: label 8.5->7.5pt,
+reset/secondary 7.5->6.5pt. Tests pass, `deploy-codexbar.sh` ran (Wingpanel and CodexBar restarted), owner
+confirmed it looks right; pushed as `fa563ce`. **Open:** whether the Applications menu not opening is fully
+fixed is not confirmed; the dock (`io.elementary.dock`) is still stopped. Documented in `CODEXBAR-PORT.md`.
+
 ## Phosphene local media feasibility — 2026-10-19
 
 Reviewed Phosphene `v4.19.5` at `287a964` against the 32 GB M1 Pro/T6000 and
