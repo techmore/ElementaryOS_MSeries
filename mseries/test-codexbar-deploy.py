@@ -15,7 +15,7 @@ class DeployTest(unittest.TestCase):
             repo = root / 'repo' / 'mseries'
             repo.mkdir(parents=True)
             (repo / SCRIPT.name).write_bytes(SCRIPT.read_bytes())
-            for name in ('codexbar_claude_history.py', 'codexbar_cache.py', 'codexbar_tokens.py', 'codexbar_history.py', 'codexbar-wingpanel-watch.py', 'codexbar-opencode-local.py',
+            for name in ('codexbar_claude_handoff.py', 'codexbar_claude_history.py', 'codexbar_cache.py', 'codexbar_tokens.py', 'codexbar_history.py', 'codexbar-wingpanel-watch.py', 'codexbar-opencode-local.py',
                          'codexbar-sessions.py', 'codexbar-accounts.py', 'codexbar-claude.py',
                          'codexbar-opencode-login.py', 'codexbar-opencode-wrapper.py'):
                 (repo / name).touch()

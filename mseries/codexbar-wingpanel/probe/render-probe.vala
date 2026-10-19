@@ -36,6 +36,17 @@ Gtk.Label? find_label (Gtk.Widget widget, string text) {
     return null;
 }
 
+void assert_quota_bar_colors (Gtk.Widget widget) {
+    var bar = widget as Gtk.ProgressBar;
+    if (bar != null && bar.sensitive) {
+        var level = MSeries.Presentation.visual_level (bar.fraction * 100);
+        assert (bar.has_css_class (level == MSeries.QuotaLevel.OK ? "level-ok" :
+            level == MSeries.QuotaLevel.LOW ? "level-low" : "level-critical"));
+    }
+    for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ())
+        assert_quota_bar_colors (child);
+}
+
 int main (string[] args) {
     if (args.length < 2) {
         stderr.printf ("usage: render-probe OUT.png [delay-ms]\n");
@@ -118,6 +129,37 @@ int main (string[] args) {
             bar.measure (Gtk.Orientation.VERTICAL, -1, out min, out nat, null, null);
             assert (nat <= 32); // Provider totals and alternate accounts still fit two rows.
         }
+        if (Environment.get_variable ("CB_ASSERT_HIDDEN_TOKENS") != null) {
+            var text = local_label_text (bar);
+            assert (!text.contains ("tok"));
+            assert (text.contains ("7D 64%") && text.contains ("7D 55%"));
+            var menu_text = local_label_text (popover_body);
+            assert (menu_text.contains ("42.0M tokens") && menu_text.contains ("31.2M tokens") && menu_text.contains ("121M tokens"));
+        }
+        if (Environment.get_variable ("CB_ASSERT_DOTS") != null) {
+            var text = local_label_text (bar);
+            assert (text.contains ("7D ●") && text.contains ("5H ●"));
+            assert (!text.contains ("7D 64%") && !text.contains ("5H 72%"));
+            assert (!text.contains ("7D 62%") && !text.contains ("7D 72%"));
+            assert (text.contains ("5H ● 5%") && text.contains ("5H ● 0%"));
+            var weekly = find_label (bar, "7D ●");
+            assert (weekly != null && weekly.tooltip_text.contains ("% remaining") && weekly.tooltip_text.contains ("Resets in"));
+            var primary = find_label (bar, "5H ●");
+            assert (primary != null && primary.tooltip_text.contains ("Resets in"));
+            assert (primary.get_parent () == weekly.get_parent ());
+            var alternate = find_label (bar, "5H ● 5%");
+            assert (alternate != null && alternate.get_parent () != primary.get_parent ());
+            assert (alternate.label.contains ("weight=\"bold\"") && alternate.label.contains ("foreground="));
+            Graphene.Rect primary_bounds, alternate_bounds;
+            assert (primary.compute_bounds (bar, out primary_bounds));
+            assert (alternate.compute_bounds (bar, out alternate_bounds));
+            assert (primary_bounds.origin.y < alternate_bounds.origin.y);
+            assert (!text.contains ("↻") && !text.contains ("3d11h") && !text.contains ("3h09m"));
+            int minimum, natural;
+            bar.measure (Gtk.Orientation.VERTICAL, -1, out minimum, out natural, null, null);
+            assert (natural <= 32);
+        }
+        assert_quota_bar_colors (popover_body);
         var page = Environment.get_variable ("CB_PAGE");
         var pages = find_pages (root);
         if (page != null && pages != null) {
@@ -204,7 +246,7 @@ Gtk.ScrolledWindow? find_scroll (Gtk.Widget root) {
 }
 
 string local_label_text (Gtk.Widget widget) {
-    var text = (widget is Gtk.Label) ? ((Gtk.Label) widget).label : "";
+    var text = (widget is Gtk.Label) ? ((Gtk.Label) widget).get_text () : "";
     for (var child = widget.get_first_child (); child != null; child = child.get_next_sibling ())
         text += " " + local_label_text (child);
     return text;

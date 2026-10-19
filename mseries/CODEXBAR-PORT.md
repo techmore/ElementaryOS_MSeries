@@ -322,3 +322,55 @@ for next login without reloading a healthy panel.
 ChatGPT/Codex and Claude's token-first heading also includes the active seven-day
 percentage and its reset countdown. Five-hour and alternate-account details remain
 on the lower row. The token probe asserts the weekly values share the token heading.
+
+## Saved OpenCode account cache and display density
+
+Saved-account console plans use a 3600-second cache and inactive quota uses 300
+seconds, scoped to database/account/workspace/sign-in identity. Manual Refresh
+bypasses both. Reset boundaries invalidate cached quota; failures back off and
+retain sanitized last-good values with a stale marker. The active account uses
+the upstream snapshot. Credential inventory stays live; no credentials or raw
+provider responses are persisted. Shared private JSON cache/locks require no new
+database or service.
+
+Native Display settings persist `showTokens` (default true) and `compactQuota`
+(default false) in Wingpanel's own preferences. Dropdown token counts remain
+available when hidden from the bar. Compact active quota dots show remaining
+balance (>70 green, 25–70 yellow, <25 red, percentage visible below 10); hover
+reports the measured percentage. Popup quotas stay literal; alternate bar accounts use matching dots with full values on hover.
+Menu bar marks use 13px; card marks retain their existing size.
+
+In visual dot mode, reset countdowns are hover-only on both bar rows, regardless
+of the literal-mode reset visibility preference. Active dot hover reports the
+measured percentage and reset state; alternate-account hover retains every window.
+The dropdown and literal mode still honor the existing reset preference.
+
+Explicit Claude desktop switches always stop/restore/relaunch after target
+validation, even when local account UUID hints match. Persisted identity hints
+and process existence do not verify the account authenticated by the main UI.
+
+Compact bar rows group by account: active 5H and 7D share the top row; alternate
+account windows share the lower row. Token location remains independently set.
+
+Numeric dot-mode percentages now appear below 15% in bold red (superseding the
+earlier below-10 rule). The green/yellow/red dot thresholds are unchanged.
+
+## Claude switch handoff extension
+
+Ship codexbar_claude_handoff.py alongside the history helper in installers, deploy
+and image payloads. Cross-account app Switch saves a private brief before auth
+changes and registers a fresh handoff-only Code conversation. A45-second tool-free
+Claude Code safe-mode call summarizes recent visible text; unavailable/mismatched
+login or exhausted quota produces labeled emergency excerpts. Originals stay intact.
+The native completion dialog offers a local GitHub review window. Only its explicit
+Publish action sends edited text to the workspace origin in a separate branch/draft
+PR. Emergency excerpts never automatically become public. No extra polling/service.
+See CODEXBAR-CLAUDE-HISTORY.md for qualifications and limits.
+
+Dot-mode numeric visibility is inclusive: remaining<=15% displays the written
+percentage in bold red; values above15% stay dot-only. This supersedes earlier
+below-15 wording and applies consistently to all provider/account rows.
+
+Dropdown quota bars and percentage labels use the same visual thresholds as the
+menu dots: green >70%, yellow25–70%, red<25%. The shared visual formatter is
+separate from ETA/alert warning thresholds.

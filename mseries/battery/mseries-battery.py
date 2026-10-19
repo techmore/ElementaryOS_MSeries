@@ -1,6 +1,10 @@
 #!/usr/bin/python3 -I
 """mseries-battery: read the battery history the logger keeps.
 
+  mseries-battery diagnose          check the battery stack (sensors, logger, data, condition)
+  mseries-battery daily [days]      energy and time on battery per day
+  mseries-battery import            backfill from UPower's own battery history
+  mseries-battery open              open the Battery app
   mseries-battery status            health, current draw and runtime estimate
   mseries-battery sessions [days]   each unplugged run: length, charge used, average watts, projected runtime
   mseries-battery profile [days]    average draw and runtime by CPU load band, plus the biggest CPU users
@@ -37,6 +41,12 @@ def days_arg(argv, default):
 def main(argv):
     command = argv[0] if argv else "status"
     rest = argv[1:]
+    if command == "import":
+        wconn = core.connect()
+        print("Imported %d samples from UPower history." % core.import_upower(wconn))
+        return 0
+    if command == "open":
+        os.execv("/usr/bin/python3", ["python3", os.path.join(os.path.dirname(os.path.realpath(__file__)), "mseries-battery-app.py")])
     try:
         conn = core.connect(readonly=True)
     except Exception:
@@ -67,7 +77,7 @@ def main(argv):
                 run["wh_used"], run["avg_w"] or "—", core.fmt_hours(run["projected_hours"])))
     elif command == "profile":
         rows = core.fetch(conn, int(time.time() - days_arg(rest, 14) * 86400))
-        print("%-9s %-8s %7s %8s %12s" % ("Usage", "CPU", "Hours", "Avg W", "Runtime"))
+        print("%-9s %-8s %7s %8s %12s" % ("Usage", "Draw", "Hours", "Avg W", "Runtime"))
         for band in core.usage_profile(rows):
             print("%-9s %-8s %7.1f %8s %12s" % (band["band"], band["cpu_range"], band["hours"],
                                                 band["avg_w"] if band["avg_w"] is not None else "—",
@@ -114,6 +124,18 @@ def main(argv):
             print("%-40s %s%s  since %s%s" % (dev["name"], dev["level"] or dev["status"],
                   " %.0f%%" % dev["pct"] if dev["pct"] is not None else "", stamp(dev["since"]),
                   "  (~%.0f days left)" % dev["days_left"] if dev["days_left"] else ""))
+    elif command == "diagnose":
+        worst = 0
+        for c in core.diagnose(conn):
+            print("%-4s %-26s %s" % (c["status"].upper(), c["name"], c["detail"]))
+            worst = max(worst, {"ok": 0, "warn": 1, "fail": 2}[c["status"]])
+        return worst
+    elif command == "daily":
+        rows = core.fetch(conn, int(time.time() - 40 * 86400))
+        print("%-11s %9s %9s %9s %8s" % ("Day", "On battery", "Charger", "Energy", "Low"))
+        for d in core.daily_usage(rows, int(days_arg(rest, 10))):
+            print("%-11s %9s %9s %7.1fWh %7s" % (d["day"], core.fmt_hours(d["battery_h"]), core.fmt_hours(d["charger_h"]), d["wh"],
+                  "%.0f%%" % d["min_pct"] if d["min_pct"] is not None else "—"))
     elif command == "tips":
         rows = core.fetch(conn, int(time.time() - days_arg(rest, 14) * 86400))
         for item in core.profile_breakdown(rows):
