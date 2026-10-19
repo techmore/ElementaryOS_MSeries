@@ -1,5 +1,31 @@
 # OS 9 implementation / Claude Code handoff
 
+## CodexBar CLI: private libxml2.so.2 instead of a self-exec launcher — 2026-10-19 (Claude Code)
+
+Follows "v0.78.0 deployed; CLI blocked by libxml2 soname" below. After that entry, the live
+`~/.local/lib/codexbar-cli/CodexBarCLI` was replaced by a 388-byte launcher that `exec`s
+`$dir/CodexBarCLI`, i.e. itself; the real binary was gone, so every CLI call looped and never
+returned (Codex/OpenCode quotas stop updating). That launcher is not in the repo.
+
+**Fix (option b, made safe):** `codexbar_install_cli_compat` in `lib-codexbar.sh`, called by
+`install-codexbar.sh` right after extraction. Only when `ldd` reports `libxml2.so.2 => not found`
+(or `CODEXBAR_FORCE_LIBXML2_COMPAT=1`) it builds libxml2 **2.13.9** (GNOME GitHub mirror, commit
+`04af2cab…`, the last `.so.2` series) with ICU/lzma/zlib/Python off and upstream's `libxml2.syms`
+version script, into `compat/`, keeps the real binary as `CodexBarCLI.bin` and installs a launcher
+that only runs `CodexBarCLI.bin`. It refuses a non-ELF `CodexBarCLI` and removes the stale
+`codexbar-upstream.real`. The installer then requires `codexbar-upstream --version` to succeed.
+Checked here: all 98 libxml2 symbols the v0.78.0 CLI imports resolve at their exact `LIBXML2_*`
+versions; the library needs only libc/libm. `test-codexbar-cli-compat.sh` passes (fake CLI: auto,
+forced, reinstall over the launcher, refusal; `LD_DEBUG` confirms the private library loads).
+New CI job `codexbar-cli` runs the real pinned ARM64 CLI through the same path and requires Grok
+in `config providers`. `check-codexbar-port.sh` now reports unresolved CLI libraries first.
+
+**Owner step:** `cd ~/ElementaryOS_MSeries-deploy && git checkout --detach origin/dev` after merge, then
+`bash mseries/install-codexbar.sh --skip-system-deps` (re-extracts the real binary, builds compat once,
+needs git/meson/ninja/cc), restart CodexBar (`~/.local/bin/codexbar-linux --quit`, then
+`setsid -f ~/.local/bin/codexbar-linux --background`), and `bash mseries/check-codexbar-port.sh`.
+The panel module needs no redeploy. Still owner-gated: `grok login` if the Grok card shows no credits.
+
 ## CodexBar v0.78.0 deployed; CLI blocked by libxml2 soname — 2026-10-19
 
 PR #271 (production hardening: the valac nested-ternary use-after-free behind the

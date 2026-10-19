@@ -41,6 +41,12 @@ ones.** Upgrade by re-pinning, re-installing upstream, and re-verifying each ite
 
 - Our helpers are installed from this repo by the installers and the deploy script; the installer does not delete user config.
 - `~/.local/bin/codexbar` is the wrapper, not upstream's binary (upstream's CLI is `codexbar-upstream`).
+- Upstream's CLI (v0.78.0+) links `libxml2.so.2`; bases with libxml2 2.14+ ship only `libxml2.so.16`.
+  `install-codexbar.sh` then builds a private libxml2 2.13.9 (pinned commit, libc/libm only, upstream symbol
+  versions) into `~/.local/lib/codexbar-cli/compat/`, keeps the real binary as `CodexBarCLI.bin` and puts a
+  launcher at `CodexBarCLI`. Never wrap a non-ELF `CodexBarCLI` (a launcher that execs itself loops forever;
+  this happened 2026-10-19). `test-codexbar-cli-compat.sh` and the `codexbar-cli` CI job run the real pinned
+  ARM64 CLI through this path. Drop it when upstream links `libxml2.so.16` or stops using libxml2.
 - Account stores: `~/.local/share/codexbar-mseries/codex-accounts` (private, 0600) and claude-swap's own store. Never commit these.
 
 Quota and account cards, like the top-panel readout, always order Codex first, Claude second, OpenCode Go third,

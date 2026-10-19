@@ -27,6 +27,10 @@ source "$repo/mseries/lib-codexbar.sh"
 codexbar_install_helpers "$repo"
 tar -xzf "CodexBarCLI-${version}-linux-aarch64.tar.gz" -C "$HOME/.local/lib/codexbar-cli"
 mv -f "$HOME/.local/lib/codexbar-cli/codexbar" "$HOME/.local/lib/codexbar-cli/codexbar-upstream"
+# v0.78.0+ links libxml2.so.2; provide a private copy only when this base lacks it (see lib-codexbar.sh).
+codexbar_install_cli_compat "$HOME/.local/lib/codexbar-cli"
+timeout 30 "$HOME/.local/lib/codexbar-cli/codexbar-upstream" --version >/dev/null \
+  || { echo 'The upstream CodexBar CLI does not run; see the messages above.' >&2; exit 1; }
 codexbar_install_wrapper "$repo"
 tar -xzf "CodexBarDesktop-${version}-linux-aarch64.tar.gz"
 cd "CodexBarDesktop-${version}-linux-aarch64"

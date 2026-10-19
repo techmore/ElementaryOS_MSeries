@@ -107,6 +107,28 @@ jobs:
           ninja -C "$RUNNER_TEMP/codexbar"
           meson test -C "$RUNNER_TEMP/codexbar" --print-errorlogs
 
+  codexbar-cli:
+    name: CodexBar upstream CLI loads and lists Grok (arm64)
+    runs-on: ubuntu-26.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install the CLI's runtime and the private libxml2 build tools
+        run: >-
+          sudo apt-get update && sudo apt-get install -y curl git meson ninja-build gcc pkg-config
+          libcurl4t64 libsqlite3-0 binutils
+      - name: Download the pinned CLI and verify its published checksum
+        run: |
+          version=$(sed -n 's/^version=//p' mseries/install-codexbar.sh | head -1)
+          archive="CodexBarCLI-${version}-linux-aarch64.tar.gz"
+          base="https://github.com/steipete/CodexBar/releases/download/${version}"
+          cd "$RUNNER_TEMP"
+          curl -fLsS "$base/$archive" -o "$archive"
+          curl -fLsS "$base/$archive.sha256" -o "$archive.sha256"
+          sha256sum -c "$archive.sha256"
+          echo "CODEXBAR_CLI_TARBALL=$RUNNER_TEMP/$archive" >> "$GITHUB_ENV"
+      - name: Install as install-codexbar.sh does, run --version and config providers (auto and forced libxml2)
+        run: bash mseries/test-codexbar-cli-compat.sh "$CODEXBAR_CLI_TARBALL"
+
   validate:
     name: mkosi summary + script checks (arm64)
     runs-on: ubuntu-26.04-arm
@@ -193,7 +215,7 @@ jobs:
           python3 mseries/video-decode/test-brave-factory.py
           python3 mseries/video-decode/test-youtube-launch.py
           shellcheck -S warning mseries/video-decode/brave-youtube mseries/install-brave-widevine.sh
-          shellcheck -S warning mseries/lib-codexbar.sh mseries/deploy-codexbar.sh mseries/install-codexbar.sh mseries/install-codexbar-wingpanel.sh mseries/check-codexbar-port.sh mseries/codexbar-wingpanel/probe/ci-build-deps.sh mseries/codexbar-wingpanel/probe/run-grok-probe.sh
+          shellcheck -S warning mseries/test-codexbar-cli-compat.sh mseries/lib-codexbar.sh mseries/deploy-codexbar.sh mseries/install-codexbar.sh mseries/install-codexbar-wingpanel.sh mseries/check-codexbar-port.sh mseries/codexbar-wingpanel/probe/ci-build-deps.sh mseries/codexbar-wingpanel/probe/run-grok-probe.sh
           python3 mseries/boot/test-prepare-uki-kernels.py
           python3 mseries/test-kernel-config.py
           python3 mseries/test-local-build-preflight.py

@@ -9,6 +9,18 @@ ok()   { printf 'ok    %s\n' "$1"; }
 bad()  { printf 'FAIL  %s\n' "$1"; fail=1; }
 note() { printf 'check %s\n' "$1"; }
 
+# shellcheck source=lib-codexbar.sh
+source "$repo/mseries/lib-codexbar.sh"
+cli_dir=$(dirname -- "$(readlink -f -- "$cli")")
+missing=$(codexbar_cli_missing_libs "$cli_dir")
+if [[ -n $missing ]]; then
+  bad "upstream CLI cannot load $(tr '\n' ' ' <<<"$missing")- rerun install-codexbar.sh (it builds a private libxml2.so.2)"
+elif [[ -f $cli_dir/CodexBarCLI.bin ]]; then
+  ok "upstream CLI loads through the private libxml2 $(cat "$cli_dir/compat/libxml2.commit" 2>/dev/null | cut -c1-12)"
+else
+  ok "upstream CLI loads with system libraries"
+fi
+
 pin=$(sed -n 's/^version=//p' "$repo/mseries/install-codexbar.sh" | head -1)
 have=$("$cli" --version 2>/dev/null | awk '{print $2}')
 [[ -n $have ]] && ok "upstream CLI $have (pin $pin)" || bad "upstream CLI not runnable at $cli"
