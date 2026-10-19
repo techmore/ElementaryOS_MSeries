@@ -6235,3 +6235,15 @@ Downloaded Fedora's stable `virtio-win-0.1.302` ISO to `~/vms/downloads/virtio-w
 Install remains blocked before Windows Setup. Test4's virtual disk is blank (196 KiB allocated). Its ARM64 Windows ISO contains `EFI/BOOT/BOOTAA64.EFI`, `sources/boot.wim` and `sources/install.wim`, but AAVMF times out starting the installer from both SCSI CD-ROM and USB storage. Repeated with Secure Boot firmware and without it, with 4 GiB and 8 GiB RAM, and with a VGA device alongside ramfb; the same timeout recurred. No Windows files were installed. The test VM was stopped cleanly and retained for further diagnosis. PR #260 is merged to `dev` at `493fa2ba88b3f4ce651e29cfa13d7f4f7410f62f`.
 
 The companion `mseries-vm` change adds `EXTRA_BUS=usb` for presenting the extra driver ISO through USB storage. The USB path was exercised in test4, but the installer boot timeout means driver loading and installation remain unverified. Next: diagnose why this AAVMF build cannot complete the ARM64 Windows boot path, then continue Setup and load the storage driver if prompted.
+
+### Windows installer: storage fixed (2026-10-19, later)
+
+`virtio-win.iso` 0.1.302 (stable, from fedorapeople.org, 877 MB, SHA-256 `303f7ae4…867949d`, kept in
+`~/vms/downloads/virtio-win/`) attached as extra media on USB (`mseries-vm set NAME EXTRA_BUS usb`; new key) is readable by
+Windows PE. In Setup's "Install driver" page, browse to `D:\vioscsi\w11\ARM64`, pick "Red Hat VirtIO SCSI pass-through
+controller" and Install: Setup then reads the installer ISO, and reaches language, setup option, product key
+("I don't have a product key") and the license terms page. Tested in a separate VM `windows-lab` (other agents were
+using `windows` and `windows-install-test*`). Stopped at "Applicable notices and license terms": accepting Microsoft's
+license is the owner's call. The Setup UI is driven with absolute-pointer clicks over QMP; typing into WinPE text
+fields drops characters, so use the Browse tree. Not verified: the install finishing, first boot, or the virtio-win
+guest drivers after install.
