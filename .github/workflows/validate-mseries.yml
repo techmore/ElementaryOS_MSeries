@@ -141,6 +141,14 @@ jobs:
           libgtk-4-dev libgranite-7-dev libadwaita-1-dev libgee-0.8-dev libjson-glib-dev libecal2.0-dev libedataserver1.2-dev
           libical-dev evolution-data-server gsettings-desktop-schemas libglib2.0-bin python3 xvfb xauth dbus
           dbus-x11 librsvg2-common accountsservice
+      - name: Add elementary's AccountsService extension (the clock reads its TimeFormat)
+        run: |
+          # elementary/default-settings, GPL-3.0; the same file elementary OS installs.
+          url=https://raw.githubusercontent.com/elementary/default-settings/915d1a0b63865ce3f0d44a68318d55ef9ca90fe6/accountsservice/io.elementary.pantheon.AccountsService.xml
+          sudo curl -fsSL "$url" -o /usr/share/dbus-1/interfaces/io.elementary.pantheon.AccountsService.xml
+          sudo mkdir -p /usr/share/accountsservice/interfaces
+          sudo ln -sf ../../dbus-1/interfaces/io.elementary.pantheon.AccountsService.xml /usr/share/accountsservice/interfaces/
+          sudo systemctl restart accounts-daemon
       - name: Build the pinned indicator with our patch and run every agenda group
         run: bash mseries/calendar/ci-test-agenda.sh "$RUNNER_TEMP/agenda"
 
