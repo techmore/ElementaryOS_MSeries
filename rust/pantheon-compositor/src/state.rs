@@ -101,6 +101,7 @@ pub struct PantheonCompositor {
     pub xdisplay: Option<u32>,
     pub pending_command: Option<(String, Vec<String>)>,
     pub notify_systemd_when_ready: bool,
+    pub fatal_error: Option<String>,
     pub seat_state: SeatState<PantheonCompositor>,
     pub(crate) keyboard_config: crate::input::StartupKeyboardConfig,
     pub data_device_state: DataDeviceState,
@@ -327,6 +328,7 @@ impl PantheonCompositor {
             xdisplay: None,
             pending_command: None,
             notify_systemd_when_ready: false,
+            fatal_error: None,
             seat_state,
             keyboard_config,
             data_device_state,
@@ -365,6 +367,12 @@ impl PantheonCompositor {
         if let Some(sender) = &self.native_redraw_sender {
             let _ = sender.send(());
         }
+    }
+
+    #[cfg(feature = "native-drm")]
+    pub fn stop_with_error(&mut self, error: impl Into<String>) {
+        self.fatal_error = Some(error.into());
+        self.loop_signal.stop();
     }
 
     pub fn primary_output(&self) -> Option<smithay::output::Output> {

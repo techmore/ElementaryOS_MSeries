@@ -1434,6 +1434,9 @@ impl NativeBackend {
                         Ok(None) => return,
                         Err(error) => {
                             tracing::error!(?error, "failed to complete native DRM frame");
+                            state.stop_with_error(format!(
+                                "native DRM frame completion failed: {error:?}"
+                            ));
                             return;
                         }
                     };
@@ -1453,6 +1456,7 @@ impl NativeBackend {
                 }
                 smithay::backend::drm::DrmEvent::Error(error) => {
                     tracing::error!(?error, "native DRM event source failed");
+                    state.stop_with_error(format!("native DRM event source failed: {error:?}"));
                 }
             })?;
 
@@ -1464,17 +1468,33 @@ impl NativeBackend {
             kms,
             session_paused: false,
         });
+        let mut consecutive_render_failures = 0;
         event_loop
             .handle()
-            .insert_source(redraw_receiver, |event, _, state| {
+            .insert_source(redraw_receiver, move |event, _, state| {
                 if !matches!(event, ChannelEvent::Msg(())) {
                     return;
                 }
                 let Some(mut backend) = state.native_backend.take() else {
                     return;
                 };
-                if let Err(error) = backend.kms.render(&mut backend.renderer, state) {
-                    tracing::error!(?error, "native output render failed");
+                match backend.kms.render(&mut backend.renderer, state) {
+                    Ok(_) => consecutive_render_failures = 0,
+                    Err(error) => {
+                        consecutive_render_failures += 1;
+                        tracing::error!(
+                            ?error,
+                            consecutive_render_failures,
+                            "native output render failed"
+                        );
+                        if consecutive_render_failures >= 3 {
+                            state.stop_with_error(format!(
+                                "native output rendering failed {consecutive_render_failures} consecutive times: {error}"
+                            ));
+                        } else {
+                            state.request_native_redraw();
+                        }
+                    }
                 }
                 state.native_backend = Some(backend);
             })?;

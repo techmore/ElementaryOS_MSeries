@@ -74,6 +74,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     unsafe { std::env::set_var("WAYLAND_DISPLAY", &state.socket_name) };
 
     event_loop.run(None, &mut state, move |_| {})?;
+    if let Some(error) = state.fatal_error.take() {
+        return Err(io::Error::other(error).into());
+    }
     Ok(())
 }
 

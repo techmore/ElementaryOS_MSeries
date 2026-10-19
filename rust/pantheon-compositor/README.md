@@ -30,6 +30,11 @@ cargo run -p pantheon-compositor --features native-drm -- --backend native
 Native startup acquires the active libseat session and initializes a DRM/KMS
 output. It takes over the display device, so do not launch it inside the
 currently active desktop. It is not yet runtime-qualified on M-series hardware.
+Fatal DRM event/frame-completion errors end the process with a failure status;
+three consecutive native render failures do likewise. In the experimental
+session service this allows systemd's bounded restart and shutdown policy to
+run. These failure paths have only been compile-checked, not induced on the
+active display.
 
 The experimental systemd user service uses `--notify-systemd` to send `READY=1` to
 `NOTIFY_SOCKET` after the Wayland listener and selected backend initialize. On
@@ -126,17 +131,17 @@ feature-enabled `cargo check --bins` and `cargo build --bins` pass locally;
 builds do not initialize or take over a native session.
 
 With `native-drm` enabled, `pantheon-drm-probe` safely enumerates EGL devices
-without acquiring DRM master or changing display modes. On the current M-series
-host it finds EGL rendering on `/dev/dri/card1` (`/dev/dri/renderD128`, Asahi)
-but KMS resource queries there return `Operation not supported`. The Apple
-display-controller `/dev/dri/card2` owns KMS: `eDP-1` is connected at
-3024×1964@120 Hz and `DP-2` is connected with 3840×2160@30 Hz and 1920×1080@60
-Hz modes; `HDMI-A-1` is disconnected. Card2 has no EGL device. The probe now
-allocates 64×64 render/scanout GBM buffers on Asahi and attempts GBM DMA-BUF
-imports on Apple KMS. On this host, implicit-modifier imports succeeded for
-AB30, AR30, AB24 and AR24. This supports the chosen cross-device path, but does
-not prove DRM framebuffer creation, atomic modesetting, or display scanout. The
-probe does not acquire DRM master, force a connector reprobe, or change modes.
+without acquiring DRM master or changing display modes. In the 2026-10-19
+snapshot it finds EGL rendering on `/dev/dri/card1` (`/dev/dri/renderD128`,
+Asahi) but KMS resource queries there return `Operation not supported`. The
+Apple display-controller `/dev/dri/card2` owns KMS and the connected internal
+`eDP-1` at 3024×1964@120 Hz; external connectors are currently disconnected.
+Card2 has no EGL device. The probe allocates 64×64 render/scanout GBM buffers on
+Asahi and attempts GBM DMA-BUF imports on Apple KMS. Implicit-modifier imports
+succeeded for AB30, AR30, AB24 and AR24. This supports the chosen cross-device
+path, but does not prove DRM framebuffer creation, atomic modesetting, or
+display scanout. The probe does not acquire DRM master, force a connector
+reprobe, or change modes.
 
 Relative pointer motion now updates Wayland pointer focus and dispatches motion
 through active compositor grabs; coordinates are clamped to the mapped output

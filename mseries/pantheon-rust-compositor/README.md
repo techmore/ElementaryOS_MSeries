@@ -103,8 +103,12 @@ gates pass; a successful compile or package build is not that evidence.
 The staged systemd service now retries an unexpected compositor failure with
 a two-second delay, capped at three starts per minute. After that limit, its
 `OnFailure` action requests the GNOME session shutdown target rather than
-looping indefinitely. This is configuration only; a crash/restart has not been
-exercised in an isolated login.
+looping indefinitely. Native DRM event-source and frame-completion errors now
+stop the compositor with a failure status; three consecutive render failures
+do the same. This connects unrecoverable display failures to the service's
+restart path instead of leaving a running but unusable session. The restart,
+shutdown and hardware-failure paths have not been exercised in an isolated
+login.
 
 `build-deb.sh` builds an arm64 release binary with `native-drm` and packages it
 with the separate experimental session files. It derives shared-library
