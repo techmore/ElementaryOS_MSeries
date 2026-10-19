@@ -54,3 +54,5 @@ Main already has a Rust workspace (`rust/`) with `mseries-power`; `rust/pantheon
 compositor branch. Further daemon candidates: display profiles, docked-lid, dictation input. The compositor
 replaces mutter only in qualified slices; Gala remains the session until on-device acceptance, and the
 dock HDMI goal (G3) stays a kernel/DCP problem either way.
+
+Maintenance (upstream pins, update steps, Granite and Wingpanel bindings): [`RUST-UPSTREAM-MAINTENANCE.md`](RUST-UPSTREAM-MAINTENANCE.md).
