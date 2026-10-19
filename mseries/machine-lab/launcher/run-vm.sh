@@ -3,8 +3,9 @@
 #   run-vm.sh ISO [VM_DIR] [CIDATA_ISO]   boot an installer (ISO "-" = none)
 #   run-vm.sh --disk-only VM_DIR          boot the installed disk
 # Hardware comes from the environment: MACHINE_CPUS, MACHINE_MEM_GIB,
-# MACHINE_DISK_GIB, MACHINE_SSH_PORT, MACHINE_NAME, MACHINE_DISPLAY (gtk|none). A QMP socket (qmp.sock in
-# VM_DIR) lets Machine Lab pause and resume the guest.
+# MACHINE_DISK_GIB, MACHINE_SSH_PORT, MACHINE_NAME, MACHINE_DISPLAY (gtk|none). Two QMP sockets in
+# VM_DIR: qmp.sock (control: pause, resume, mseries-vm) and qmp-view.sock (the
+# Machine Lab display) so a viewer never blocks control commands.
 set -euo pipefail
 
 CPUS=${MACHINE_CPUS:-4}
@@ -65,7 +66,7 @@ fi
 if [ ! -e "$VM_DIR/disk.qcow2" ]; then
     "$QEMU_IMG" create -f qcow2 "$VM_DIR/disk.qcow2" "${DISK_GIB}G"
 fi
-rm -f "$VM_DIR/qmp.sock"
+rm -f "$VM_DIR/qmp.sock" "$VM_DIR/qmp-view.sock"
 
 DISPLAY_ARGS=(-display gtk,gl=off)
 [ "${MACHINE_DISPLAY:-gtk}" = none ] && DISPLAY_ARGS=(-display none)
@@ -108,6 +109,7 @@ QEMU_ARGS+=(
     -device virtio-gpu-pci
     -device virtio-rng-pci
     -qmp unix:"$VM_DIR/qmp.sock",server=on,wait=off
+    -qmp unix:"$VM_DIR/qmp-view.sock",server=on,wait=off
     "${DISPLAY_ARGS[@]}"
     -boot menu=on
 )

@@ -372,7 +372,7 @@ cmd_start() {
     rotate_file() { [[ -f $1 ]] && mv -f "$1" "$1.prev"; return 0; }
     rotate_file "$dir/serial.log"
     rotate_file "$dir/qemu.log"
-    rm -f "$dir/qmp.sock"
+    rm -f "$dir/qmp.sock" "$dir/qmp-view.sock"
 
     local machine="virt,accel=kvm"
 
@@ -430,6 +430,7 @@ cmd_start() {
     fi
     cmd+=(-serial "file:$dir/serial.log" -monitor none
           -qmp "unix:$dir/qmp.sock,server=on,wait=off"
+          -qmp "unix:$dir/qmp-view.sock,server=on,wait=off"
           -msg timestamp=on)
     if (( headless )); then
         cmd+=(-display none)
@@ -495,7 +496,7 @@ cmd_stop() {
         kill -KILL "$pid" 2>/dev/null || true
         sleep 1
     fi
-    rm -f "$dir/qemu.pid" "$dir/qmp.sock"
+    rm -f "$dir/qemu.pid" "$dir/qmp.sock" "$dir/qmp-view.sock"
     stop_swtpm "$name"
     echo "VM '$name' stopped."
 }
