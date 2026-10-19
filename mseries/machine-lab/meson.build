@@ -30,3 +30,7 @@ install_data('launcher/run-vm.sh',
   install_dir: get_option('bindir'),
   install_mode: 'rwxr-xr-x',
   rename: 'machine-lab-run-vm')
+install_data('launcher/prepare-latest-omarchy.py',
+  install_dir: get_option('bindir'),
+  install_mode: 'rwxr-xr-x',
+  rename: 'machine-lab-prepare-omarchy')

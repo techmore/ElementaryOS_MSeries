@@ -4520,3 +4520,13 @@ References: OpenCode `214fb7fdbab9ad13773629839f1178382400cf97`, auth/switch.ts,
 provider/opencode.ts and integration.connection.resolve (native activation event and refresh behavior);
 https://dev.opencode.ai/v2/docs/cli/commands/ and /providers/. No upstream code was copied. CodexBar
 remains pinned to 0.77.0. Publish, merge to main and deploy as explicitly requested.
+
+## 2026-10-18: Machine Lab (native VM app)
+
+`mseries/machine-lab/` is the elementary-styled VM app (Vala/GTK4/Granite 7); `bash mseries/install-machine-lab.sh`
+installs it to `~/.local` and pins it in the dock. Merged in the Codex spike's Omarchy nightly updater and
+unattended-install launcher; added pause/resume (QMP), import of `mseries-vm` guests, new-vs-installed panels,
+free-space warning. Verified: builds, Broadway renders, pause/resume against a headless QEMU, `--check` of the
+Omarchy nightly. Not verified: a complete guest install/boot (~6 GiB download; host had ~19 GiB free) and
+suspend/resume of the app itself. Next: run the Omarchy automatic install once space is freed, and lift
+`~/Documents/Codex/2026-10-18/f-2/work/youtube-iso-test` (42 GB, owner decides) if space is needed.

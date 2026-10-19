@@ -29,6 +29,12 @@ public class MachinePage : Gtk.Box {
     private Gtk.Label step1_detail;
     private Gtk.Label step3_detail;
     private Gtk.Button get_button;
+    private Gtk.Button pause_button;
+    private Gtk.Label step1_title;
+    private Gtk.Label step2_title;
+    private Gtk.Label strip;
+    private Gtk.Box creds_card;
+    private Gtk.Label creds_label;
     private Gtk.Box ready_card;
     private Gtk.Image ready_icon;
     private Gtk.Label ready_title;
@@ -96,6 +102,9 @@ public class MachinePage : Gtk.Box {
             toast (code > 0 ? "%s stopped with an error (exit %d)".printf (machine.name, code)
                             : "%s stopped".printf (machine.name));
         });
+        if (machine.recipe != null && machine.is_fresh ()) {
+            machine.check_latest.begin ();
+        }
         tick = Timeout.add_seconds (1, () => { update_uptime (); return Source.CONTINUE; });
         refresh ();
     }
@@ -170,7 +179,9 @@ public class MachinePage : Gtk.Box {
         get_button = new Gtk.Button.with_label ("Get ISO");
         get_button.valign = Gtk.Align.CENTER;
         get_button.clicked.connect (() => {
-            if (machine.url != null) {
+            if (machine.recipe != null) {
+                machine.check_latest.begin ();
+            } else if (machine.url != null) {
                 new Gtk.UriLauncher (machine.url).launch.begin ((Gtk.Window) get_root (), null);
             }
         });
@@ -184,6 +195,43 @@ public class MachinePage : Gtk.Box {
         setup_card.append (step_row (3, "Start the installer",
             "Install inside the window. Shut the guest down when it finishes and Machine Lab boots the new disk from then on.", null, out step3_detail, true));
         clamp.append (setup_card);
+
+        strip = new Gtk.Label ("");
+        strip.wrap = true;
+        strip.xalign = 0;
+        strip.add_css_class ("ml-note");
+        clamp.append (strip);
+
+        creds_card = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
+        creds_card.add_css_class ("ml-card");
+        creds_card.add_css_class ("ml-spec");
+        var key = new Gtk.Image.from_icon_name ("dialog-password-symbolic");
+        key.pixel_size = 24;
+        creds_card.append (key);
+        var ctext = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+        ctext.hexpand = true;
+        ctext.valign = Gtk.Align.CENTER;
+        creds_label = new Gtk.Label ("");
+        creds_label.xalign = 0;
+        creds_label.wrap = true;
+        creds_label.selectable = true;
+        creds_label.add_css_class ("ml-mono");
+        var cl2 = new Gtk.Label ("Sign-in for this machine, saved with its files");
+        cl2.xalign = 0;
+        cl2.add_css_class ("ml-spec-label");
+        ctext.append (creds_label);
+        ctext.append (cl2);
+        creds_card.append (ctext);
+        var ccopy = new Gtk.Button.from_icon_name ("edit-copy-symbolic");
+        ccopy.add_css_class ("flat");
+        ccopy.valign = Gtk.Align.CENTER;
+        ccopy.tooltip_text = "Copy sign-in";
+        ccopy.clicked.connect (() => {
+            Gdk.Display.get_default ().get_clipboard ().set_text (creds_label.label);
+            toast ("Copied sign-in");
+        });
+        creds_card.append (ccopy);
+        clamp.append (creds_card);
 
         var specs = new Gtk.Grid ();
         specs.column_homogeneous = true;
@@ -296,6 +344,12 @@ public class MachinePage : Gtk.Box {
 
         var actions = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
         actions.halign = Gtk.Align.END;
+        pause_button = new Gtk.Button.with_label ("Pause");
+        pause_button.clicked.connect (() => {
+            if (machine.paused) machine.resume (); else machine.pause ();
+            refresh ();
+        });
+        actions.append (pause_button);
         stop_button = new Gtk.Button.with_label ("Force Stop");
         stop_button.add_css_class ("destructive-action");
         stop_button.clicked.connect (() => machine.stop ());
@@ -329,6 +383,8 @@ public class MachinePage : Gtk.Box {
         var t = new Gtk.Box (Gtk.Orientation.VERTICAL, 2);
         t.hexpand = true;
         var tl = new Gtk.Label (title);
+        if (n == 1) step1_title = tl;
+        if (n == 2) step2_title = tl;
         tl.xalign = 0;
         tl.add_css_class ("ml-spec-value");
         var dl = new Gtk.Label (detail);
@@ -581,7 +637,24 @@ public class MachinePage : Gtk.Box {
         connect_card.visible = !managed && !fresh;
         drop_zone.visible = !managed;
         more_button.visible = !managed;
-        get_button.visible = machine.url != null;
+        get_button.visible = machine.url != null || machine.recipe != null;
+        if (machine.recipe != null) {
+            step1_title.label = "Download Omarchy automatically";
+            step1_detail.label = machine.check_summary ?? "Fetches the latest verified ARM64 nightly and installs it unattended.";
+            get_button.label = machine.checking ? "Checking…" : "Check again";
+            get_button.sensitive = !machine.checking;
+            step2_title.label = "Or use your own installer";
+        } else {
+            step1_title.label = "Get an ARM64 installer";
+            step1_detail.label = "Download a Linux ARM64 .iso, or use one you already have.";
+            get_button.label = "Get ISO";
+            step2_title.label = "Choose the installer file";
+        }
+        strip.visible = machine.status_text != "";
+        strip.label = machine.status_text;
+        var creds = machine.credentials ();
+        creds_card.visible = creds != null;
+        if (creds != null) creds_label.label = creds;
         hero_sub.label = managed ? (fresh ? "Imported from mseries-vm · installer not finished" : "Installed · imported from mseries-vm")
             : fresh ? "New machine · not installed yet"
             : "Linux ARM64 · installed";
@@ -591,16 +664,23 @@ public class MachinePage : Gtk.Box {
         start_button.visible = !running;
         stop_button.visible = running;
         stop_button.label = managed ? "Shut Down" : "Force Stop";
-        start_button.label = fresh ? "Start Installer" : "Start";
-        start_button.sensitive = problems.length == 0 && (!fresh || managed || machine.installer != null);
+        start_button.label = fresh ? (machine.recipe != null && machine.installer == null ? "Download and Install" : "Start Installer") : "Start";
+        pause_button.visible = running;
+        pause_button.label = machine.paused ? "Resume" : "Pause";
+        if (machine.paused) pause_button.add_css_class ("suggested-action"); else pause_button.remove_css_class ("suggested-action");
+        bool auto_ok = machine.recipe != null && machine.installer == null && machine.check_ok;
+        start_button.sensitive = problems.length == 0 && (!fresh || managed || machine.installer != null || auto_ok);
         start_button.tooltip_text = problems.length > 0 ? "Fix the items in the setup check first"
-            : (fresh && !managed && machine.installer == null ? "Choose an installer first" : null);
+            : (fresh && !managed && machine.installer == null && !auto_ok ? (machine.recipe != null ? "Wait for the version check, or choose an installer" : "Choose an installer first") : null);
 
-        status_pill.label = running ? (installing ? "Installing" : "Running")
+        status_pill.label = running ? (machine.paused ? "Paused" : (installing || (machine.recipe != null && machine.status_text.contains ("Installing")) ? "Installing" : "Running"))
             : fresh ? "Not installed" : "Stopped";
         status_pill.remove_css_class ("running");
         status_pill.remove_css_class ("new");
-        if (running) {
+        status_pill.remove_css_class ("paused");
+        if (running && machine.paused) {
+            status_pill.add_css_class ("paused");
+        } else if (running) {
             status_pill.add_css_class ("running");
         } else if (fresh) {
             status_pill.add_css_class ("new");

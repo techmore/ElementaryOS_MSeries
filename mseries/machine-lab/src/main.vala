@@ -14,14 +14,15 @@ struct Preset {
     public int disk;
     public int color;
     public string url;
+    public string recipe;
 }
 
 const Preset[] presets = {
-    { "Omarchy", "Arch-based tiling desktop", 4, 6, 32, 7, "https://omarchy.org" },
-    { "Ubuntu", "Friendly general-purpose desktop", 4, 4, 24, 4, "https://ubuntu.com/download/server/arm" },
-    { "Debian", "Rock-solid and lightweight", 2, 2, 16, 5, "https://www.debian.org/CD/netinst/" },
-    { "Fedora", "Fresh packages, GNOME", 4, 4, 24, 0, "https://fedoraproject.org/server/download" },
-    { "Blank Machine", "Bring any ARM64 .iso", 2, 4, 16, 1, "" }
+    { "Omarchy", "Arch-based tiling desktop", 4, 6, 32, 7, "https://omarchy.org", "omarchy" },
+    { "Ubuntu", "Friendly general-purpose desktop", 4, 4, 24, 4, "https://ubuntu.com/download/server/arm", "" },
+    { "Debian", "Rock-solid and lightweight", 2, 2, 16, 5, "https://www.debian.org/CD/netinst/", "" },
+    { "Fedora", "Fresh packages, GNOME", 4, 4, 24, 0, "https://fedoraproject.org/server/download", "" },
+    { "Blank Machine", "Bring any ARM64 .iso", 2, 4, 16, 1, "", "" }
 };
 
 public class MachineRow : Gtk.ListBoxRow {
@@ -79,7 +80,7 @@ public class MachineRow : Gtk.ListBoxRow {
 
     public void update () {
         name_label.label = machine.name;
-        string state = machine.running ? "Running" : machine.is_fresh () ? "Not installed" : "Stopped";
+        string state = machine.running ? (machine.paused ? "Paused" : "Running") : machine.is_fresh () ? "Not installed" : "Stopped";
         sub_label.label = "%s · %d CPU · %d GiB".printf (state, machine.cpus, machine.mem_gib);
         for (int i = 0; i < 8; i++) {
             icon.remove_css_class ("ml-c-%d".printf (i));
@@ -407,6 +408,7 @@ public class MachineLab : Gtk.Application {
         m.disk_gib = preset.disk;
         m.color = preset.color;
         m.url = preset.url == "" ? null : preset.url;
+        m.recipe = preset.recipe == "" ? null : preset.recipe;
         int port = 2222;
         bool clash = true;
         while (clash) {

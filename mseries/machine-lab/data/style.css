@@ -154,3 +154,5 @@ textview.ml-console, textview.ml-console text {
     box-shadow: 0 0 0 1px alpha(@fg_color, 0.1), 0 1px 3px alpha(black, 0.12);
 }
 .ml-gallery-card:hover { box-shadow: 0 0 0 2px @accent_color, 0 2px 8px alpha(black, 0.18); }
+
+.ml-pill.paused { color: #946800; background: alpha(#f9c440, 0.35); }

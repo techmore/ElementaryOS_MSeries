@@ -12,6 +12,14 @@ public class Machine : Object {
     public int color { get; set; default = 0; }
     public string? url { get; set; default = null; }       // where to get an installer
     public string? installer { get; set; default = null; }
+    public string? recipe { get; set; default = null; }      // "omarchy": download and install unattended
+
+    // Live information, not persisted.
+    public bool paused { get; private set; default = false; }
+    public string status_text { get; private set; default = ""; }
+    public string? check_summary { get; private set; default = null; }
+    public bool check_ok { get; private set; default = false; }
+    public bool checking { get; private set; default = false; }
 
     public Subprocess? proc { get; private set; default = null; }
     public DateTime? started { get; private set; default = null; }
@@ -61,6 +69,142 @@ public class Machine : Object {
         }
     }
 
+    /* Sign-in details the unattended installer saved for the guest. */
+    public string? credentials () {
+        try {
+            string text;
+            FileUtils.get_contents (Path.build_filename (dir, "credentials.txt"), out text);
+            return text.strip ().replace ("\n", "  ·  ");
+        } catch (Error e) {
+            return null;
+        }
+    }
+
+    public static string cache_dir () {
+        return Path.build_filename (Environment.get_user_data_dir (), "machine-lab", "cache", "omarchy-arm64");
+    }
+
+    /* Find a helper script: installed beside the app, or in the source tree. */
+    public static string? find_runtime (string installed_name, string source_name) {
+        string exe_dir = "";
+        try {
+            exe_dir = Path.get_dirname (FileUtils.read_link ("/proc/self/exe"));
+        } catch (Error e) {}
+        string[] candidates = {
+            Path.build_filename (Environment.get_home_dir (), ".local", "bin", installed_name),
+            "/usr/bin/" + installed_name,
+            Path.build_filename (exe_dir, installed_name),
+            Path.build_filename (exe_dir, "..", "launcher", source_name)
+        };
+        foreach (var c in candidates) {
+            if (FileUtils.test (c, FileTest.IS_EXECUTABLE)) {
+                return c;
+            }
+        }
+        return null;
+    }
+
+    // ---- QMP: pause and resume ----
+
+    private string? qmp (string command) {
+        var sock = Path.build_filename (dir, "qmp.sock");
+        if (!FileUtils.test (sock, FileTest.EXISTS)) {
+            return null;
+        }
+        try {
+            var client = new SocketClient ();
+            client.timeout = 2;
+            var conn = client.connect (new UnixSocketAddress (sock));
+            var input = new DataInputStream (conn.input_stream);
+            var output = conn.output_stream;
+            input.read_line ();   // greeting
+            output.write ("{\"execute\":\"qmp_capabilities\"}\n".data);
+            input.read_line ();
+            output.write ("{\"execute\":\"%s\"}\n".printf (command).data);
+            string? reply = input.read_line ();
+            // Events can arrive before the return value.
+            while (reply != null && !reply.contains ("\"return\"") && !reply.contains ("\"error\"")) {
+                reply = input.read_line ();
+            }
+            conn.close ();
+            return reply;
+        } catch (Error e) {
+            return null;
+        }
+    }
+
+    public void pause () {
+        if (running && qmp ("stop") != null) {
+            sync_paused ();
+        }
+    }
+
+    public void resume () {
+        if (running && qmp ("cont") != null) {
+            sync_paused ();
+        }
+    }
+
+    private void sync_paused () {
+        var reply = qmp ("query-status");
+        bool now = reply != null && reply.contains ("\"status\": \"paused\"");
+        if (reply != null && !now) {
+            now = reply.contains ("\"status\":\"paused\"");
+        }
+        if (now != paused) {
+            paused = now;
+            state_changed ();
+        }
+    }
+
+    // ---- Unattended Omarchy: latest-version check ----
+
+    public async void check_latest () {
+        if (recipe != "omarchy" || checking) {
+            return;
+        }
+        string? updater = find_runtime ("machine-lab-prepare-omarchy", "prepare-latest-omarchy.py");
+        if (updater == null) {
+            return;
+        }
+        checking = true;
+        check_summary = "Checking Omarchy's latest ARM64 nightly…";
+        state_changed ();
+        try {
+            var l = new SubprocessLauncher (SubprocessFlags.STDOUT_PIPE | SubprocessFlags.STDERR_SILENCE);
+            var p = l.spawnv ({ "python3", updater, "--check", dir, cache_dir () });
+            var stream = new DataInputStream (p.get_stdout_pipe ());
+            string? line;
+            check_ok = false;
+            check_summary = "Couldn't reach nightly.omarchy.org. Choose your own ISO instead.";
+            while ((line = yield stream.read_line_async ()) != null) {
+                var f = line.split ("\t");
+                if (f[0] == "CHECK" && f.length >= 14) {
+                    double size_gib = double.parse (f[4]) / 1073741824.0;
+                    bool enough = f[11] == "1";
+                    string problems = f[13];
+                    check_ok = enough && problems == "-";
+                    if (problems != "-") {
+                        check_summary = "Fix first: " + problems;
+                    } else if (!enough) {
+                        check_summary = "Latest nightly %s · not enough free space (needs %.0f GiB free).".printf (
+                            f[1], (double.parse (f[9]) / 1073741824.0));
+                    } else {
+                        check_summary = "Latest nightly %s · Omarchy %s · %.1f GiB download · space OK".printf (
+                            f[1], f[3], size_gib);
+                    }
+                } else if (f[0] == "STATUS" && f.length > 1) {
+                    check_summary = f[1];
+                }
+            }
+            yield p.wait_async ();
+        } catch (Error e) {
+            check_summary = "Couldn't check the latest version: " + e.message;
+        }
+        checking = false;
+        state_changed ();
+    }
+
     // ---- Native ----
 
     public void start (string launcher) throws Error {
@@ -77,10 +221,20 @@ public class Machine : Object {
             l.setenv ("MACHINE_DISK_GIB", disk_gib.to_string (), true);
             l.setenv ("MACHINE_SSH_PORT", ssh_port.to_string (), true);
             l.setenv ("MACHINE_NAME", name, true);
-            argv = { launcher, installer ?? "-", dir };
+            if (recipe == "omarchy" && installer == null) {
+                string? updater = find_runtime ("machine-lab-prepare-omarchy", "prepare-latest-omarchy.py");
+                if (updater == null) {
+                    throw new IOError.NOT_FOUND ("The Omarchy installer helper (machine-lab-prepare-omarchy) was not found.");
+                }
+                argv = { "python3", updater, launcher, dir, cache_dir () };
+            } else {
+                argv = { launcher, installer ?? "-", dir };
+            }
         }
         var p = l.spawnv (argv);
         log.text = "";
+        status_text = "";
+        paused = false;
         append_log ("$ %s\n".printf (string.joinv (" ", argv)));
         read_output.begin (p);
         if (managed) {
@@ -112,7 +266,16 @@ public class Machine : Object {
         try {
             string? line;
             while ((line = yield stream.read_line_async ()) != null) {
-                append_log (line + "\n");
+                if (line.has_prefix ("STATUS\t")) {
+                    status_text = line.substring (7);
+                    append_log (status_text + "\n");
+                    state_changed ();
+                } else if (line.has_prefix ("CREDENTIAL\t")) {
+                    append_log ("Sign-in: " + line.substring (11) + "\n");
+                    state_changed ();
+                } else {
+                    append_log (line + "\n");
+                }
             }
         } catch (Error e) {
             append_log ("[log: %s]\n".printf (e.message));
@@ -129,6 +292,7 @@ public class Machine : Object {
         append_log ("\n[machine exited with status %d]\n".printf (code));
         proc = null;
         started = null;
+        paused = false;
         // The installer did its job once a disk exists: next start boots the disk.
         if (installer != null && installed ()) {
             installer = null;
@@ -202,6 +366,9 @@ public class Machine : Object {
     /* Refresh run state from the guest's qemu.pid, and tail its serial log. */
     public void poll () {
         if (!managed) {
+            if (running) {
+                sync_paused ();
+            }
             return;
         }
         bool now = false;
@@ -226,6 +393,9 @@ public class Machine : Object {
         started = now ? since : null;
         if (now) {
             load_serial_tail ();
+            sync_paused ();
+        } else if (paused) {
+            paused = false;
         }
         if (changed) {
             state_changed ();
@@ -277,6 +447,9 @@ public class MachineStore : Object {
                 }
                 if (kf.has_key (id, "url")) {
                     m.url = kf.get_string (id, "url");
+                }
+                if (kf.has_key (id, "recipe")) {
+                    m.recipe = kf.get_string (id, "recipe");
                 }
                 if (kf.has_key (id, "installer")) {
                     m.installer = kf.get_string (id, "installer");
@@ -362,6 +535,9 @@ public class MachineStore : Object {
             kf.set_integer (m.id, "color", m.color);
             if (m.url != null) {
                 kf.set_string (m.id, "url", m.url);
+            }
+            if (m.recipe != null) {
+                kf.set_string (m.id, "recipe", m.recipe);
             }
             if (m.installer != null) {
                 kf.set_string (m.id, "installer", m.installer);
