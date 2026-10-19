@@ -150,11 +150,11 @@ then retain stdout with the branch/package revision and journal evidence.
 `collect-session-thread-profile.sh` complements this with `pidstat` per-thread
 CPU and resident-memory samples for the compositor, Wingpanel and Dock. Capture
 the same idle or interactive workload in each session; for example, use
-`./collect-session-thread-profile.sh gala 60 1` and
-`./collect-session-thread-profile.sh rust 60 1`, then save each result beside
-the matching process-level CSV and startup journal. Thread samples identify hot
-threads but do not provide call stacks, so use a sampling profiler for
-function-level attribution when one is available.
+`./collect-session-thread-profile.sh gala idle 60 1` and
+`./collect-session-thread-profile.sh rust idle 60 1`, then save each result
+beside the matching process-level CSV and startup journal. Thread samples
+identify hot threads but do not provide call stacks, so use a sampling profiler
+for function-level attribution when one is available.
 For example, collect one-minute idle samples at a recorded mode with
 `./collect-session-metrics.sh gala 60 idle 3024x1964 > gala-idle.csv` and
 repeat in the Rust session with the same arguments except `rust`. Collect a

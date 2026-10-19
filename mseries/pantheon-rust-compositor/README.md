@@ -157,6 +157,13 @@ the resulting UI size and panel layout remain unqualified. These owner reports
 are tracked in [`EXPERIENCE-REQUIREMENTS.md`](EXPERIENCE-REQUIREMENTS.md) and
 the [migration dashboard](dashboard.html).
 
+An exploratory 30-second per-thread sample of the returned Gala session at
+12:33 UTC included Gala and Wingpanel (Dock was opted out). `pidstat` reported
+26.26% of one core for Gala, 0.50% for Wingpanel, with 24.29% on Gala's main
+thread. Foreground activity was not controlled, so this is not an idle or
+Rust-comparison result. The raw capture is outside the repository at
+`/home/sdolbec/Documents/Codex/2026-10-18/i-no/work/artifacts/gala-thread-profile-20261019.txt`.
+
 In private Xvfb, the release binary launched a GTK Wayland Zenity field;
 synthetic key events reached it, and IBus/Mozc committed `konnichiha` as
 `こんにちは` using `mozc-jp` with Hiragana enabled in a private profile. This
