@@ -42,6 +42,7 @@ pub struct PantheonCompositor {
     pub data_device_state: DataDeviceState,
     pub pantheon_shell_state: PantheonShellState,
     pub panels: HashMap<smithay::reexports::wayland_server::backend::ObjectId, PanelState>,
+    pub last_work_area: Option<smithay::utils::Rectangle<i32, smithay::utils::Logical>>,
     pub managed_windows:
         HashMap<smithay::reexports::wayland_server::backend::ObjectId, ManagedWindow>,
     pub popups: PopupManager,
@@ -53,6 +54,8 @@ pub struct PantheonCompositor {
 pub struct ManagedWindow {
     pub restore_location: Point<i32, Logical>,
     pub restore_size: Size<i32, Logical>,
+    pub maximized: bool,
+    pub fullscreen: bool,
 }
 
 impl PantheonCompositor {
@@ -118,6 +121,7 @@ impl PantheonCompositor {
             data_device_state,
             pantheon_shell_state,
             panels: HashMap::new(),
+            last_work_area: None,
             managed_windows: HashMap::new(),
             popups,
             seat,

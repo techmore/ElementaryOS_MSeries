@@ -15,8 +15,10 @@ an actual supported workflow. The opt-in Smithay nested prototype in
 `rust/pantheon-compositor/` passes `cargo check`; nested runtime and M-series
 hardware remain unqualified. It now advertises Pantheon's protocol v2, places
 panel surfaces using anchor/size/offset, and applies exclusive panel geometry
-when configuring maximized windows. Autohide, blur, dynamic reflow of already
-maximized windows and session integration remain incomplete. A public search found elementary's
+when configuring maximized windows. A changed panel work area now reconfigures
+already maximized windows, while unchanged panel repaints do not send redundant
+configures. Autohide, blur, multi-output reflow and session integration remain
+incomplete. A public search found elementary's
 [Gala](https://github.com/elementary/gala) still based on libmutter, with no
 first-party Rust compositor to reuse. The WD22TB4 HDMI G3 DCP/kernel blocker
 remains a separate workstream.

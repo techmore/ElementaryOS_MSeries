@@ -1,5 +1,17 @@
 # OS 9 implementation / Claude Code handoff
 
+## Mutter-minimal viable Rust compositor progress — 2026-10-18
+
+On branch `codex/rust-mutter-pantheon`, the nested Smithay compositor now
+reconfigures existing maximized windows when a committed Pantheon panel change
+alters its exclusive work area. It caches the last work-area rectangle so normal
+panel repaints do not trigger redundant xdg configure events. `cargo check
+-p pantheon-compositor` passes on the local build host. This remains unqualified
+with a Wayland panel client or on M-series DRM/KMS hardware. Next: connect an
+isolated Wayland client probe, then qualify Wingpanel/Dock protocol behavior
+before implementing overlap-based autohide. The WD22TB4 HDMI G3 DCP/kernel issue
+remains separate. Scope and limitations: `mseries/pantheon-rust-compositor/`.
+
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18
 
 Removed “local” from the seven-day panel/card labels and moved counting scope into

@@ -77,5 +77,8 @@ planning against a release.
 4. Add conditional capabilities only against named apps/workflows and explicit
    acceptance checks. Keep Gala available as rollback until owner acceptance.
 
-The prototype currently only passes `cargo check`; it has not yet run with a
-client or on M-series hardware. A check is not session or hardware qualification.
+The nested prototype serves the Pantheon shell protocol v2, places a panel from
+its anchor/size/offset, reserves exclusive panel geometry, and updates already
+maximized windows when that work area changes. The last local `cargo check`
+passes. It has not yet run with a Wayland client or on M-series hardware. A
+build check is not session or hardware qualification.

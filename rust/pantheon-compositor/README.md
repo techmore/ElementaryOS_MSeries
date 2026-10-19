@@ -33,11 +33,13 @@ and drag-and-drop. It now advertises the existing Pantheon desktop-shell
 protocol v2: panel surfaces can set their anchor, size, hide mode and offset;
 the compositor places those surfaces and uses exclusive panel geometry for
 xdg-toplevel maximize requests. The Dock's M-series offset request is therefore
-available to protocol-v2 clients.
+available to protocol-v2 clients. When panel commits change the exclusive work
+area, already maximized windows are reconfigured to its new bounds; unchanged
+panel repaints do not issue redundant configures.
 
 This is only the first shell integration slice. Autohide/overlap tracking,
-animated hiding, blur, overview behavior, full work-area updates for already
-maximized windows, and session/lock integration are not complete. Widget,
+animated hiding, blur, overview behavior, multi-output work-area updates for
+already maximized windows, and session/lock integration are not complete. Widget,
 extended-behavior and greeter protocol requests are accepted but currently have
 no behavior. Touch input, DRM/KMS, libinput device management, multi-monitor
 configuration, accessibility, IBus, Xwayland, screen-sharing portals and

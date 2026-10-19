@@ -233,6 +233,9 @@ impl PantheonCompositor {
         let panel = self.panels.entry(surface.id()).or_default();
         update(panel);
         self.position_panel(surface);
+        if self.refresh_work_area() {
+            self.reconfigure_managed_windows();
+        }
     }
 
     pub fn is_panel_surface(&self, surface: &WlSurface) -> bool {
@@ -285,6 +288,21 @@ impl PantheonCompositor {
                 output_geometry.size.h - top - bottom,
             )),
         )
+    }
+
+    fn refresh_work_area(&mut self) -> bool {
+        let Some(output) = self.space.outputs().next().cloned() else {
+            return false;
+        };
+        let Some(output_geometry) = self.space.output_geometry(&output) else {
+            return false;
+        };
+        let work_area = self.work_area_for_output(output_geometry);
+        if self.last_work_area == Some(work_area) {
+            return false;
+        }
+        self.last_work_area = Some(work_area);
+        true
     }
 
     fn find_window_for_surface(&self, surface: &WlSurface) -> Option<Window> {
@@ -368,8 +386,30 @@ impl PantheonCompositor {
             .or_insert_with(|| ManagedWindow {
                 restore_location: self.space.element_location(&window).unwrap_or_default(),
                 restore_size: window.geometry().size,
+                maximized: false,
+                fullscreen: false,
             });
 
+        if let Some(managed) = self.managed_windows.get_mut(&surface_id) {
+            managed.maximized = maximized;
+            managed.fullscreen = fullscreen;
+        }
+
+        self.apply_window_mode(&surface, &window, restore, maximized, fullscreen);
+
+        if !maximized && !fullscreen {
+            self.managed_windows.remove(&surface_id);
+        }
+    }
+
+    fn apply_window_mode(
+        &mut self,
+        surface: &ToplevelSurface,
+        window: &Window,
+        restore: ManagedWindow,
+        maximized: bool,
+        fullscreen: bool,
+    ) {
         let Some(output) = self.space.outputs().next().cloned() else {
             return;
         };
@@ -399,10 +439,23 @@ impl PantheonCompositor {
             state.size = Some(target.size);
         });
         surface.send_pending_configure();
-        self.space.map_element(window, target.loc, false);
+        self.space.map_element(window.clone(), target.loc, false);
+    }
 
-        if !maximized && !fullscreen {
-            self.managed_windows.remove(&surface_id);
+    fn reconfigure_managed_windows(&mut self) {
+        let mut managed = Vec::new();
+        for window in self.space.elements() {
+            let Some(surface) = window.toplevel().cloned() else {
+                continue;
+            };
+            let Some(state) = self.managed_windows.get(&surface.wl_surface().id()) else {
+                continue;
+            };
+            managed.push((surface, (*window).clone(), *state));
+        }
+
+        for (surface, window, state) in managed {
+            self.apply_window_mode(&surface, &window, state, state.maximized, state.fullscreen);
         }
     }
 }
