@@ -5404,7 +5404,10 @@ multi-GPU paths remain the next focus; native session startup is still absent.
 New toplevels are centered on the first available output when their first
 non-empty buffer commits. Later windows are offset in a bounded cascade, the
 new window is activated and receives keyboard focus, and toplevel destruction
-clears placement/window-mode tracking and unmaps it from `Space`. Default and
-`native-drm` feature `cargo check --bins` both pass locally. Runtime window
-launch/focus/close behavior remains unverified; this does not add native DRM
-startup, and native session work remains the next major milestone.
+clears placement/window-mode tracking and unmaps it from `Space`. When the
+destroyed toplevel had keyboard focus, focus moves to the topmost remaining
+non-panel window (or clears if none remains); destroying a background window
+does not steal focus. Default and `native-drm` feature `cargo check --bins`
+both pass locally. Runtime window launch/focus/close behavior remains
+unverified; this does not add native DRM startup, and native session work
+remains the next major milestone.

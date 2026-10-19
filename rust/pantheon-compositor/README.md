@@ -45,7 +45,9 @@ It currently has one nested output,
 basic keyboard/pointer handling, xdg-shell windows and popup grabs, move/resize
 grabs, clipboard and drag-and-drop. On the first non-empty toplevel commit,
 windows are centered and cascaded on the first output, activated, and given
-keyboard focus; toplevel destruction removes the placement tracking. Absolute
+keyboard focus; when the focused toplevel is destroyed, focus moves to the
+topmost remaining app window. Toplevel destruction removes placement tracking.
+Absolute
 pointer input maps to the complete logical output bounds. These behaviors have
 compile checks but no new runtime qualification. It now advertises the existing Pantheon desktop-shell
 protocol v2: panel surfaces can set their anchor, size, hide mode and offset;

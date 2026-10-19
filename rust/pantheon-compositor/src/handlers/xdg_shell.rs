@@ -148,6 +148,11 @@ impl XdgShellHandler for PantheonCompositor {
     fn toplevel_destroyed(&mut self, surface: ToplevelSurface) {
         let wl_surface = surface.wl_surface();
         let id = wl_surface.id();
+        let was_focused = self
+            .seat
+            .get_keyboard()
+            .and_then(|keyboard| keyboard.current_focus())
+            .is_some_and(|focused| focused == *wl_surface);
         self.initially_positioned.remove(&id);
         self.managed_windows.remove(&id);
 
@@ -162,6 +167,41 @@ impl XdgShellHandler for PantheonCompositor {
             .cloned();
         if let Some(window) = window {
             self.space.unmap_elem(&window);
+        }
+
+        if was_focused {
+            let next_window = self
+                .space
+                .elements()
+                .rev()
+                .find(|window| {
+                    window
+                        .toplevel()
+                        .is_some_and(|top| !self.is_panel_surface(top.wl_surface()))
+                })
+                .cloned();
+            if let Some(window) = next_window {
+                self.space.raise_element(&window, true);
+                if let Some(surface) = window.toplevel().map(|top| top.wl_surface().clone()) {
+                    let serial = smithay::utils::SERIAL_COUNTER.next_serial();
+                    self.seat
+                        .get_keyboard()
+                        .unwrap()
+                        .set_focus(self, Some(surface), serial);
+                    self.space.elements().for_each(|window| {
+                        if let Some(toplevel) = window.toplevel() {
+                            toplevel.send_pending_configure();
+                        }
+                    });
+                }
+            } else {
+                let serial = smithay::utils::SERIAL_COUNTER.next_serial();
+                self.seat.get_keyboard().unwrap().set_focus(
+                    self,
+                    Option::<WlSurface>::None,
+                    serial,
+                );
+            }
         }
     }
 
