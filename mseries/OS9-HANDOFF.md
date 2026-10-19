@@ -1,5 +1,24 @@
 # OS 9 implementation / Claude Code handoff
 
+## Screen-share media path: owner decision — 2026-10-19
+
+Recorded the owner's media-path decision for the share-cost work. Media stays
+**peer-to-peer**: the Rust-SFU, server-side-capture and stock-SFU options are
+rejected for this MVP, and no screen-share media plane is to be built in
+`rupert-share`, TM-Remote, or anywhere else. The work stays in this repository
+(`ElementaryOS_MSeries`); the existing demo server is a dependency used to
+produce the baseline, not a home for streaming work.
+
+- `mseries/share-cost/MEDIA-PATH-OPTIONS.md` now opens with that decision,
+  marks options B/C/D rejected, and narrows the gates to the matched-pair
+  baseline. Option A (TURN deployment plus the tailnet link label in
+  `mseries/share-eyes-wingpanel`) is the only candidate; the baseline decides
+  only whether the viewer cap can be raised.
+- The matched pair has not produced a result yet. It requires AC power, one
+  fixed fullscreen content, and real 1 vs 3 admitted viewers; the earlier
+  attempt found the host on battery and no live share. The collector and
+  reducer are unchanged and their tests pass.
+
 ## Screen-share cost baseline harness — 2026-10-19
 
 Added `mseries/share-cost/`: a read-only collector and reducer that measure what

@@ -83,9 +83,10 @@ measurements do.
 
 ## What the baseline feeds
 
-[`MEDIA-PATH-OPTIONS.md`](MEDIA-PATH-OPTIONS.md) records the media-path options
-(keep P2P + TURN/tailnet polish, a Rust SFU with browser simulcast, server-side
-capture, or a stock SFU), what each changes about the consent model and threat
-model, and the decision gates. None of them is justified until the matched-pair
-baseline exists; that document is the go/no-go frame, this directory is the
+[`MEDIA-PATH-OPTIONS.md`](MEDIA-PATH-OPTIONS.md) records the owner decision
+(2026-10-19): screen-share media stays **peer-to-peer**, the work stays in this
+repository, and the Rust-SFU/server-capture/stock-SFU options are rejected for
+this MVP. Option A (TURN deployment plus the tailnet link label) is the only
+candidate, and the matched-pair baseline decides only whether the viewer cap
+can be raised. That document is the go/no-go frame; this directory is the
 evidence.
