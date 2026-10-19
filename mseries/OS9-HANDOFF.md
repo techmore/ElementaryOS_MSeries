@@ -5853,3 +5853,18 @@ visually inspected, the Pantheon shell works end to end, or native scanout,
 input, locking and recovery. Gala remains the selected session. Next: qualify
 GTK/Qt apps, IBus commit behavior, and the installed shell clients in the
 isolated nested session; do not install this package as the active session.
+
+### Qualify release candidate with installed Wingpanel — 2026-10-19
+
+Ran `/usr/bin/io.elementary.wingpanel` in a separate D-Bus/Xvfb session against
+the release binary from `619ca5c`, with Wayland forced and a private GSettings
+fixture populated from the host's input sources and keyboard settings. The
+Wingpanel client trace shows shell v2 `get_panel`, top anchor, `never` hide
+mode, and shared-memory pool allocation. A Mutter DisplayConfig
+`GetCurrentState` call returned serial 2 and the nested Winit output at
+1280×800@60. No panel keyboard assertion occurred. The user-owned Wingpanel
+process remained untouched; no Dock binary was run. The package remains
+uninstalled. This qualifies protocol connection and panel buffer submission,
+not visual inspection or direct keyboard interaction. Next: qualify nested
+keyboard delivery and actual IBus commits in a GTK field, then the Dock only
+through the approved local GUI policy.

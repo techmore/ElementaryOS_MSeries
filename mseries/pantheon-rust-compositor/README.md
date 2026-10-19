@@ -118,7 +118,13 @@ reported XWayland ready, and served a Zenity window through `GetWindows` with
 `app-id=zenity`, focus true and the initial two-workspace count. This qualifies
 the nested release path for continued development testing only. It does not
 qualify visible rendering, native DRM scanout, the full Pantheon shell or a
-login session.
+login session. A second isolated run started Wingpanel against the same release
+binary: it sent `get_panel`, top anchor and `never` hide-mode requests, and
+allocated SHM buffers without a keyboard assertion. The compositor's
+`org.gnome.Mutter.DisplayConfig.GetCurrentState` returned the nested 1280×800
+output. Both runs used private D-Bus/Xvfb and a private GSettings fixture; the
+active Wingpanel session was not restarted. These checks do not qualify native
+DRM scanout, physical keyboard input, the Dock, or a complete login session.
 
 The next gate is staged nested qualification with real GTK/Qt clients and the
 existing Pantheon shell clients, including Dock launcher/window switching and

@@ -6,8 +6,11 @@ The `619ca5c` workspace slice is committed and pushed. A current ARM64 release
 candidate was packaged locally and checked in private Xvfb: Winit and XWayland
 started, and Zenity appeared in the compositor's live Gala-compatible window
 snapshot with focus and the expected two-workspace count. This allows broader
-nested development qualification to proceed. It is not evidence for native
-display takeover or an experimental Pantheon login; those remain unqualified.
+nested development qualification to proceed. Installed Wingpanel also
+connected in private Xvfb, sent shell v2 panel requests, allocated SHM buffers,
+and received a valid nested `GetCurrentState` response. It is not evidence for
+direct keyboard input, IBus commits, native display takeover, or an
+experimental Pantheon login; those remain unqualified.
 
 Working title: `Mutter-Minimal-Viable-Rust_elementaryos-mseries`. The owner
 clarified that the goal is to identify and implement the compositor features
