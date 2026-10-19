@@ -91,3 +91,11 @@ accelerator registration and activation path: pressing the registered
 `Super+N` chord emits `AcceleratorActivated` in the nested run. Dock integration,
 physical media-key activation and M-series hardware remain unqualified; this
 is not full session or hardware qualification.
+
+The compositor now implements Smithay's `ext-session-lock-v1` protocol. Lock
+requests suppress application rendering, clear active grabs, route input to
+the lock surface, and confirm the lock only after each mapped output presents
+a cleared frame. The API and both backend builds are in place, but no Pantheon
+locker has been connected; authentication, session action wiring, runtime
+input/visual checks, native login and crash recovery remain open acceptance
+items.

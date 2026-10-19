@@ -82,8 +82,12 @@ area, already maximized windows are reconfigured to its new bounds; unchanged
 panel repaints do not issue redundant configures.
 
 This is only the first shell integration slice. Autohide/overlap tracking,
-animated hiding, blur, overview behavior, multi-output work-area updates for
-already maximized windows, and session/lock integration are not complete. Widget,
+animated hiding, blur, overview behavior and multi-output work-area updates for
+already maximized windows are not complete. The compositor now implements
+Smithay's `ext-session-lock-v1`: it blanks each output until its lock surface is
+ready, confines input to the locker, and restores the prior keyboard focus on
+unlock. A Pantheon locker/authentication UI and session action wiring are not
+provided, and the protocol has not yet been runtime-qualified. Widget,
 extended-behavior and greeter protocol requests are accepted but currently have
 no behavior. Touch input, multi-monitor configuration, accessibility, IBus,
 Xwayland, screen-sharing portals and production crash recovery also remain
@@ -133,7 +137,9 @@ The session bus also exposes the small `org.gnome.Shell` accelerator API used
 by Wingpanel and its sound indicator. Accelerator registrations are matched
 through the compositor's active XKB state and reported with
 `AcceleratorActivated`; `ShowOSD` is currently a no-op, and lock-screen action
-modes are not implemented.
+modes are not implemented. This is distinct from the compositor's
+`ext-session-lock-v1` protocol, which now accepts a locker client but still
+needs session-service wiring and runtime qualification.
 
 The code is based on Smithay's `smallvil` learning compositor at pinned commit
 `023b78b1c5a05ca512767cacc07efca55fae8be4`; see `SMITHAY-LICENSE.txt`. Keep the
