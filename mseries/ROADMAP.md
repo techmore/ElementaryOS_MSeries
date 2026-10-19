@@ -1069,6 +1069,8 @@ browser integration and remaining Files/Gala patches remain open.
 - Agent-first Pantheon feature proposal (October 18): shared broker/permissions and durable alerts before UI, native app adapters, speech-to-text/speech-to-speech, and explicitly paired WebRTC interaction. See [design and acceptance plan](local-ai/PANTHEON-MCP-DESIGN.md). Proposal only; no new alert broker, voice conversation or WebRTC service installed.
 
 - Upstream performance review (October 18): MLX main d8ac5fe is 28 commits ahead of tested 33630f9. Native-GQA is a candidate; numerically rejected gather routes remain excluded. Mac/MX notification-agent/voice patterns and oMLX options inform the agent-first design. [Pinned comparison and experiment plan](local-ai/UPSTREAM-FEATURE-COMPARISON.md); no runtime/governor changes or M1 Pro speedup claimed.
+
+- Phosphene feasibility (October 19): reviewed v4.19.5 / `287a964` for the 32 GB M1 Pro and elementary OS Vulkan MLX stack. Linux Apple Silicon is community/best-effort, but the checked installer still gates on Darwin/ARM64; MLX video operations are not qualified on our Vulkan fork. Advanced modes need 48 GB and compact-Q8 Hailuo is listed at 36 GB+, so a port is not a priority. No install or render test. [Assessment](local-ai/PHOSPHENE-FEASIBILITY-2026-10-19.md).
 ## CodexBar native Claude account switching — 2026-10-18
 
 Implemented app session capture, one-time native sign-in setup, and **CLI only / Switch both** choices.

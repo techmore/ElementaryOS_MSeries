@@ -1,5 +1,19 @@
 # OS 9 implementation / Claude Code handoff
 
+## Phosphene local media feasibility — 2026-10-19
+
+Reviewed Phosphene `v4.19.5` at `287a964` against the 32 GB M1 Pro/T6000 and
+our elementary OS ARM64 + omarchy-mlx Vulkan stack. The project now describes
+Linux on Apple Silicon as community-maintained/best-effort, though the checked
+Pinokio installer still gates on Darwin/ARM64. The video stack is MLX-specific;
+compatibility with our Vulkan fork is unproven. Phosphene lists 48 GB for
+advanced features and 36 GB+ for compact-Q8 Hailuo H3, exceeding this host's
+memory. Its 27.5 GB LTX base is model download/storage size, not asserted runtime
+RAM. No software or weights were installed and no renders were run. Decision:
+do not prioritize a port; reconsider with a specific media need or backend
+support. Full evidence and privacy/license caveats:
+[`local-ai/PHOSPHENE-FEASIBILITY-2026-10-19.md`](local-ai/PHOSPHENE-FEASIBILITY-2026-10-19.md).
+
 ## omarchy-mlx main candidate and planned model A/B — 2026-10-19
 
 Candidate `61495cb` built in `~/.cache/omarchy-mlx-candidate-61495cb`, isolated
