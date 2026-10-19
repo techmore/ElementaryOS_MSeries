@@ -66,7 +66,7 @@ jobs:
           (cd out/mseries-debs && sha256sum --check SHA256SUMS)
 
       - name: Upload plugin packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mseries-plugin-debs-${{ github.run_id }}
           path: out/mseries-debs/

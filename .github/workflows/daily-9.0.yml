@@ -78,7 +78,7 @@ jobs:
           (cd mkosi.packages && sha256sum fairydust-m1n1-boot.bin > FAIRYDUST-BOOT-SHA256SUMS)
           (cd mkosi.packages && sha256sum *.deb > SHA256SUMS)
       - name: Preserve pinned experimental kernel packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fairydust-kernel-packages-${{ github.run_id }}
           path: mkosi.packages/
@@ -158,13 +158,13 @@ jobs:
           stat --printf='%n %s bytes\n' elementaryos-*.iso > ../build-record/installer-sizes.txt
       - name: Preserve build records
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: os9-mseries-build-record-${{ github.run_id }}
           path: build-record/
           retention-days: 14
       - name: Preserve experimental installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: os9-mseries-arm64-${{ github.run_id }}
           path: |
