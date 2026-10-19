@@ -269,6 +269,41 @@ isolated qualification; the build script does not install it. The nested IBus
 path is qualified for one GTK/Mozc configuration; native IBus behavior and any
 display takeover remain unqualified.
 
+## Install on the existing stack
+
+`mseries/install-pantheon-rust-compositor.sh` deploys the package beside Gala.
+Dry run is the default and changes nothing; acting needs root and `--yes`:
+
+```sh
+bash mseries/install-pantheon-rust-compositor.sh --dry-run        # checks and plan only
+bash mseries/install-pantheon-rust-compositor.sh --status         # installed-vs-loaded state
+bash mseries/install-pantheon-rust-compositor.sh --verify         # read-only integrity checks
+sudo bash mseries/install-pantheon-rust-compositor.sh --install --yes --deb <package>
+sudo bash mseries/install-pantheon-rust-compositor.sh --select --yes        # next login
+sudo bash mseries/install-pantheon-rust-compositor.sh --restore-gala --yes # rollback
+sudo bash mseries/install-pantheon-rust-compositor.sh --uninstall --yes
+```
+
+The Gala package, `/usr/bin/gala` and the `pantheon-wayland` session entry are
+never modified; the installer refuses to run without them. It starts and
+enables nothing — after `dpkg` it only reloads the user manager's unit list, and
+the compositor units carry `RefuseManualStart=on`. Selecting the Rust session
+only rewrites the LightDM autologin drop-in (with a backup) and takes effect at
+the next login; no timer is armed and nobody is logged out.
+
+## Performance evidence
+
+Matched captures come from `collect-session-metrics.sh`; reduce them with
+`summarize-metrics.py` (per-process mean, median, min, max; `NA` samples are
+excluded and counted). Startup and per-thread evidence come from
+`collect-session-startup.sh` and `collect-session-thread-profile.sh`. The
+public summary is the published performance page
+[`docs/rust-compositor-performance.html`](../../docs/rust-compositor-performance.html),
+linked from the build monitor; the stage-by-stage migration view is the
+standalone [`dashboard.html`](dashboard.html). Retained captures are in
+[`metrics/`](metrics/). No capture so far is a matched A/B, and no power
+measurement exists; the readiness decision above still stands.
+
 ## Dock HDMI boundary
 
 The WD22TB4 HDMI goal remains in

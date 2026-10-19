@@ -171,6 +171,19 @@ and has not been installed or runtime-qualified. The next gate is native-session
 qualification in an isolated login, including socket/environment handoff,
 ordinary apps, lock/logout and failure recovery.
 
+The experimental compositor can now be deployed onto the existing stack beside
+Gala with `mseries/install-pantheon-rust-compositor.sh` (dry run by default;
+`--status`/`--verify` read-only; `--install`, `--select`, `--restore-gala`,
+`--uninstall` need root and `--yes`). The Gala package, binary and
+`pantheon-wayland` session entry are never modified, no unit is started or
+enabled, and selecting the Rust session only rewrites the LightDM autologin
+drop-in with a backup. `summarize-metrics.py` reduces the retained session
+captures to per-process mean/median/min/max, and the public performance page
+`docs/rust-compositor-performance.html` (linked from the build monitor)
+publishes them with the honest status: idle compositor CPU is about 11.1 % of
+one core in both sessions under unmatched workloads, whole-system power is
+unmeasured, and no performance win is established.
+
 
 ## CodexBar labels and confirmed popup lifetime defect — 2026-10-18
 

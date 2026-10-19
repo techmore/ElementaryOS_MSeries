@@ -96,7 +96,11 @@ jobs:
           bash -n transform/elementary-grow.sh
           bash -n bin/elementary-mac-setup
           for f in mseries/install-*.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/disable-notch-for-pantheon.sh; do bash -n "$f"; done
-          shellcheck -S warning bin/elementary-mac-setup transform/elementary-grow.sh mseries/install-unlock-screen.sh mseries/install-boot-isolation.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/enhance.sh mseries/enhance-firstboot.sh mseries/install-brave.sh mseries/install-video-decode.sh mseries/test-installer-flow.sh mseries/vms/mseries-vm mseries/vms/test-mseries-vm.sh mseries/install-quieter-sound-theme.sh mseries/test-quieter-sound-theme.sh mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh
+          for f in mseries/pantheon-rust-compositor/*.sh; do bash -n "$f"; done
+          python3 -m py_compile mseries/pantheon-rust-compositor/summarize-metrics.py
+          python3 mseries/pantheon-rust-compositor/test-summarize-metrics.py
+          python3 mseries/pantheon-rust-compositor/summarize-metrics.py mseries/pantheon-rust-compositor/metrics/*.csv > /dev/null
+          shellcheck -S warning bin/elementary-mac-setup transform/elementary-grow.sh mseries/install-unlock-screen.sh mseries/install-boot-isolation.sh mseries/lib-backup.sh mseries/boot/mkinitcpio-snippet mseries/enhance.sh mseries/enhance-firstboot.sh mseries/install-brave.sh mseries/install-video-decode.sh mseries/test-installer-flow.sh mseries/vms/mseries-vm mseries/vms/test-mseries-vm.sh mseries/install-quieter-sound-theme.sh mseries/test-quieter-sound-theme.sh mseries/aurora-sep/install-aurora-sep.sh mseries/aurora-sep/install-touchid-gui.sh mseries/install-pantheon-rust-compositor.sh
           bash -n mseries/vms/mseries-vm
           bash mseries/vms/test-mseries-vm.sh
           bash mseries/test-quieter-sound-theme.sh

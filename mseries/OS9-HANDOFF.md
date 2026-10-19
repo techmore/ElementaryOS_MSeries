@@ -1,5 +1,56 @@
 # OS 9 implementation / Claude Code handoff
 
+## Rust compositor on the existing stack: installer, metrics reducer, public performance page — 2026-10-19
+
+Batch on branch `codex/rust-gala-stack-integration` (from
+`codex/rust-mutter-pantheon` @ `c1d92f1`). No package was built, nothing was
+installed or selected, and the live session was not touched: LightDM autologin
+is still `pantheon-wayland` and Gala is active.
+
+- **`mseries/install-pantheon-rust-compositor.sh`** deploys the experimental
+  compositor beside Gala. Dry run is the default; `--status` and `--verify` are
+  read-only; `--install`, `--select`, `--restore-gala` and `--uninstall` need
+  root and `--yes`. The installer refuses to act if the Gala package,
+  `/usr/bin/gala` or the `pantheon-wayland` session entry is missing, never
+  starts or enables a unit (only `systemctl --user daemon-reload` after dpkg),
+  and `--select` only rewrites the LightDM autologin drop-in after saving a
+  backup. It records installed-vs-loaded state: package version, `dpkg -V`,
+  payload paths, whether the user manager knows the units, and whether the
+  compositor service is active.
+- **`mseries/pantheon-rust-compositor/summarize-metrics.py`** (+ unit test)
+  reduces the `collect-session-metrics.sh` CSVs to per-process mean, median,
+  min and max, excluding and counting `NA` samples. It interprets nothing.
+- **`docs/rust-compositor-performance.html`** publishes the measured evidence
+  (idle CPU, memory, the Rust interactive sample, startup milestones, open
+  gates, method and rollback), linked from `docs/build-status.html` and
+  `docs/index.html`. The page states the statistic for every number and keeps
+  the "no performance win is established" framing.
+- CI (`validate-mseries.yml`) now syntax-checks the component scripts,
+  compiles and runs the summarizer test, and shellchecks the installer.
+
+Verified locally: `bash -n` and `shellcheck -S warning` on the installer, four
+unit tests pass, the summarizer reproduces the retained captures, and
+`--dry-run`/`--status` ran read-only on the M1 Pro. Live state found:
+`pantheon-rust-compositor 0.1.0+git7a0ac92` installed with a clean `dpkg -V`,
+all payload files present, units known to the user manager, compositor service
+not active, autologin `pantheon-wayland`. The branch HEAD is `c1d92f1`, so the
+installed package predates this batch; upgrading is an `--install` away but was
+not performed.
+
+Documentation correction carried into the new page: the in-branch migration
+dashboard's headline compositor CPU figures (Gala 11.10 %, Rust 11.12 %) are
+**means** of the six-sample captures, although `EXPERIENCE-REQUIREMENTS.md`
+calls 11.12/11.10 medians; the true medians are 11.20 % and 11.32 %. Both
+statistics are now published side by side. The retained Gala idle CSV also has
+no Wingpanel row, so total-session CPU remains unpaired against the Rust
+sample; the later corrected Gala capture (median 15.6 % Gala, 0.7 % Wingpanel)
+came from a different session and is not a match.
+
+Next gates are unchanged: matched idle/interactive captures with whole process
+trees, frame pacing and input latency, a battery-discharge or external-meter
+power run, and native lock/recovery qualification — before the Rust session is
+selected for anything beyond isolated logins.
+
 ## First native Rust compositor login and scanout — 2026-10-19
 
 Installed the ARM64 opt-in session package
