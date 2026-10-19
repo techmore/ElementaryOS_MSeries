@@ -138,21 +138,30 @@ public class Viewer : Gtk.Box {
         }
     }
 
-    /* Only fetch frames while this tab is on screen. */
+    /* Only fetch frames while this tab is on screen: ~30 fps while the screen
+     * changes, ~7 fps once it has been still for a moment. */
     public void set_active (bool on) {
         active = on;
         if (on && timer == 0) {
-            timer = Timeout.add (90, () => {
-                if (active && machine.running) {
-                    machine.request_frame ();
-                }
-                return Source.CONTINUE;
-            });
-            machine.request_frame ();
+            schedule (0);
         } else if (!on && timer != 0) {
             Source.remove (timer);
             timer = 0;
         }
+    }
+
+    private void schedule (uint ms) {
+        timer = Timeout.add (ms, () => {
+            timer = 0;
+            if (!active) {
+                return Source.REMOVE;
+            }
+            if (machine.running) {
+                machine.request_frame ();
+            }
+            schedule (still > 20 ? 150 : 33);
+            return Source.REMOVE;
+        });
     }
 
     private void sync_state () {
@@ -163,17 +172,58 @@ public class Viewer : Gtk.Box {
         }
     }
 
+    private Bytes? last_frame = null;
+    private int still = 0;
+
+    /* Frames arrive as binary PPM (P6): no compression on either end, which is
+     * far cheaper than PNG and lets the view run near 30 fps. */
     private void on_frame (string path) {
+        uint8[] data;
         try {
-            var tex = Gdk.Texture.from_filename (path);
-            tex_w = tex.get_width ();
-            tex_h = tex.get_height ();
-            picture.paintable = tex;
-            size_label.label = "%d × %d".printf (tex_w, tex_h);
-            stack.visible_child_name = "screen";
+            FileUtils.get_data (path, out data);
         } catch (Error e) {
-            // A frame can be caught mid-write; the next one will do.
+            return;
         }
+        if (data.length < 16 || data[0] != 'P' || data[1] != '6') {
+            return;
+        }
+        // Header: "P6 <w> <h> <maxval>" then one whitespace byte, then RGB.
+        int pos = 2;
+        int[] header = {};
+        while (header.length < 3 && pos < data.length) {
+            while (pos < data.length && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r' || data[pos] == '\t')) pos++;
+            if (pos < data.length && data[pos] == '#') {
+                while (pos < data.length && data[pos] != '\n') pos++;
+                continue;
+            }
+            int v = 0;
+            int start = pos;
+            while (pos < data.length && data[pos] >= '0' && data[pos] <= '9') {
+                v = v * 10 + (data[pos] - '0');
+                pos++;
+            }
+            if (pos == start) return;
+            header += v;
+        }
+        pos++;
+        int w = header[0];
+        int h = header[1];
+        if (w <= 0 || h <= 0 || data.length - pos < w * h * 3) {
+            return;   // caught mid-write; the next frame will do
+        }
+        var whole = new Bytes (data);
+        if (last_frame != null && last_frame.compare (whole) == 0) {
+            still++;   // nothing changed: let the poller slow down
+            return;
+        }
+        last_frame = whole;
+        still = 0;
+        tex_w = w;
+        tex_h = h;
+        picture.paintable = new Gdk.MemoryTexture (w, h, Gdk.MemoryFormat.R8G8B8,
+            whole.slice (pos, pos + w * h * 3), w * 3);
+        size_label.label = "%d × %d".printf (w, h);
+        stack.visible_child_name = "screen";
     }
 
     private void update_hint () {
@@ -297,19 +347,18 @@ public class Viewer : Gtk.Box {
     }
 
     private void save_screenshot () {
-        string path = machine.frame_path ();
-        if (!FileUtils.test (path, FileTest.EXISTS)) {
+        var tex = picture.paintable as Gdk.Texture;
+        if (tex == null) {
             toast ("No screen to save yet");
             return;
         }
         var pictures = Environment.get_user_special_dir (UserDirectory.PICTURES) ?? Environment.get_home_dir ();
         var stamp = new DateTime.now_local ().format ("%Y-%m-%d %H.%M.%S");
         var dest = Path.build_filename (pictures, "%s %s.png".printf (machine.name, stamp));
-        try {
-            File.new_for_path (path).copy (File.new_for_path (dest), FileCopyFlags.OVERWRITE);
+        if (tex.save_to_png (dest)) {
             toast ("Saved to Pictures");
-        } catch (Error e) {
-            toast ("Couldn't save: " + e.message);
+        } else {
+            toast ("Couldn't save the screenshot");
         }
     }
 
